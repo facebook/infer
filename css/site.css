@@ -1,0 +1,101 @@
+* {
+  font-family: 'Roboto', sans-serif;
+}
+
+a {
+  border-bottom: 1px dotted #4caf50;
+  color: #4caf50;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.title {
+    font-weight: 300;
+    font-size: 48px;
+}
+
+.subtitle {
+  font-weight: 300;
+  font-size: 16px;
+  margin-top: 48px;
+}
+
+.section_title {
+  font-weight: 400;
+  font-size: 24px;
+  margin-top: 48px;
+}
+
+.section_subtitle {
+  font-weight: 400;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.content {
+  width: 600px;
+  margin: auto;
+  padding: 20px;
+  position: relative;
+  margin-bottom: 100px;
+}
+
+.code {
+  padding-left: 20px;
+}
+
+.code * {
+  font-size: 14px;
+  font-family: 'Droid Sans Mono', sans-serif;
+  font-weight: normal;
+}
+
+p {
+  font-weight: 300;
+  font-size: 16px;
+  color: #333;
+}
+
+.download_link {
+  margin: 20px 0;
+  background: #4caf50;
+  border-radius: 12px;
+  -moz-border-radius: 12px;
+  -webkit-border-radius: 12px;
+  -o-border-radius: 12px;
+  color: #fff;
+  padding: 15px;
+  display: block;
+  font-size:18px;
+  width: 180px;
+  text-align: center;
+}
+
+.header {
+  padding-left: 0px;
+  position: relative;
+}
+
+.logo.project_name {
+  background-image: url(../images/logo_project.png);
+  width: 243px;
+  height: 70px;
+  display: block;
+  background-size: 243px auto;
+  background-color: white;
+  background-repeat: no-repeat;
+  position: relative;
+  left: -85px;
+  top: 7px;
+}
+
+.image.project_feature_1_example_image {
+  background-image: url(../images/feature_1_example.png);
+  width: 589px;
+  height: 410px;
+  display: block;
+  background-size: 589px 410px;
+  position: relative;
+  left: 0px;
+  top: 7px;
+}
