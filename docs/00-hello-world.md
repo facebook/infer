@@ -90,3 +90,58 @@ $> infer -- gcc -c hello.c
 ...
 no errors
 ```
+
+## Hello World Objective-C
+
+Here is a simple Objective-C example to illustrate Infer at work.
+
+```Objective-C
+// Hello.m
+#import <Foundation/Foundation.h>
+
+@interface Hello: NSObject
+@property NSString* s;
+@end
+
+@implementation Hello
+NSString* m() {
+    Hello* hello = nil;
+    return hello->_s;
+}
+@end
+```
+
+To run Infer on the file, do
+
+```bash
+$> infer -- clang -c Hello.m
+...
+Hello.m:10 NULL_DEREFERENCE
+  [B1] pointer hello last assigned on line 9 could be null and is dereferenced at line 10, column 12
+```
+
+Now edit the file to use the getter instead of accessing the instance variable:
+
+```Objective-C
+// Hello.m
+#import <Foundation/Foundation.h>
+
+@interface Hello: NSObject
+@property NSString* s;
+@end
+
+@implementation Hello
+NSString* m() {
+    Hello* hello = nil;
+    return hello.s;
+}
+@end
+```
+
+This time we get no error:
+
+```bash
+$> infer -- clang -c Hello.m
+...
+no errors
+```
