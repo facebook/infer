@@ -21,7 +21,8 @@ Start with our <a href="/docs/getting-started.html">Getting Started</a> guide to
 try Infer yourself. Infer is open-source, so you can also start with the code on the <a href="https://github.com/facebook/Infer">GitHub repo</a>.
 
 Infer is still evolving. 
-It is already used within 
+We already use it
+within 
 Facebook, where it is
 deployed and running continuously to verify select properties of every code modification in our mobile apps;
 these include the main Facebook apps for Android and iOS, 
