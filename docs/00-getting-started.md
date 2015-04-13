@@ -1,20 +1,20 @@
 ---
 id: getting-started
-title: Getting started with Flow
+title: Getting started with Infer
 layout: docs
 permalink: /docs/getting-started.html
-prev: about-flow.html
-next: five-simple-examples.html
+prev: about-infer.html
+next: analyzing-android-app.html
 ---
 
-## Installing Flow
+## Installing Infer
 
-We provide pre-built binaries for Flow, depending on your operating system:
+We provide pre-built binaries for Infer, depending on your operating system:
 
   * Mac OS X: [http://flowtype.org/downloads/flow-osx-latest.zip](/downloads/flow-osx-latest.zip)
   * Linux (64 bit): [http://flowtype.org/downloads/flow-linux64-latest.zip](/downloads/flow-linux64-latest.zip)
 
-Flow is packaged as a zip file. To install, simply unzip it:
+Infer is packaged as a zip file. To install, simply unzip it:
 
 ```bash
 $> unzip flow.zip

@@ -1,10 +1,10 @@
 ---
-id: running
-title: Running Flow code
+id: analyzing-ios-app
+title: Analyzing an iOS app
 layout: docs
-permalink: /docs/running.html
-prev: third-party.html
-next: troubleshooting.html
+permalink: /docs/analyzing-ios-app.html
+prev: analyzing-android-app.html
+next: analyzing-c-project.html
 ---
 
 Since types are not part of the JavaScript specification, we need to strip them out before sending the file to the user. There are two ways to do so:
