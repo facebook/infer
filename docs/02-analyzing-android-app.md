@@ -3,7 +3,7 @@ id: analyzing-android-app
 title: Analyzing an Android app
 layout: docs
 permalink: /docs/analyzing-android-app.html
-prev: getting-started.html
+prev: hello-world.html
 next: analyzing-ios-app.html
 ---
 ## Using gradle

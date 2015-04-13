@@ -4,6 +4,8 @@
     title: About Infer
   - id: getting-started
     title: Getting started with Infer
+  - id:  hello-world
+    title: Hello World
 - title: User Guide
   items:
   - id: analyzing-android-app
