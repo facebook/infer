@@ -3,11 +3,11 @@ id: coming-soon
 title: Future Plans
 layout: docs
 permalink: /docs/coming-soon.html
-prev: underscore.html
-next: type-annotations.html
+prev: analyzing-c-project.html
+next:
 ---
 
-Flow is still in early stages, and we're iterating fast. Here's a (partial) list of features we're planning to add soon. As always, if you run into any bugs or have any feature requests, just let us know by filing issues on GitHub! 
+Flow is still in early stages, and we're iterating fast. Here's a (partial) list of features we're planning to add soon. As always, if you run into any bugs or have any feature requests, just let us know by filing issues on GitHub!
 
 * Support for converting existing TypeScript declaration files (.d.ts) for common libraries on DefinitelyTyped.org to Flow declarations.
 

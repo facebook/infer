@@ -12,10 +12,10 @@ If you give it input code Infer creates a list of potential bugs as well as cont
 the analysis.
 
 
-
 <IMG SRC="Infer-landing.jpg" ALT="whatever" WIDTH=500 HEIGHT=500>
 
 
+<<<<<<< HEAD
 Infer is in deployment inside Facebook,
 where we use it to improve the quality of our mobile apps.
 Every 
@@ -39,12 +39,12 @@ At present, Infer reports
 null pointer exceptions and resource leaks for Android and Java code, and additionally memory leaks for 
 iOS and C.
 These are some of the more important error-types
-on mobile apps. We will be extending Infer's capabilities over time.
+on mobile apps. We will be extending Infer's capabilities as we develop it further.
 
 
 ##Using Infer
 
-Start with our <a href="/docs/getting-started.html">Getting Started</a> guide to download and 
+Start with our <a href="/docs/getting-started.html">Getting Started</a> guide to download and
 try Infer yourself. Infer is open-source, so you can also start with the code on the <a href="https://github.com/facebook/Infer">GitHub repo</a>.
 
 

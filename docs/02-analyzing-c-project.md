@@ -1,10 +1,10 @@
 ---
-id: third-party
-title: Checking third-party code
+id: analyzing-c-project
+title: Analyzing a C project
 layout: docs
-permalink: /docs/third-party.html
-prev: existing.html
-next: running.html
+permalink: /docs/analyzing-c-project.html
+prev: analyzing-c-project.html
+next: coming-soon.html
 ---
 
 Most real JavaScript programs depend on third-party libraries. This guide shows how to use Flow in a project with external dependencies, without having to typecheck library code.
@@ -66,6 +66,6 @@ $> flow check --lib interfaces/
 Found 0 errors
 ```
 
-If you modify the code you can verify that it's being checked against this interface file - errors in the use of this very small slice of Underscore would be caught. 
+If you modify the code you can verify that it's being checked against this interface file - errors in the use of this very small slice of Underscore would be caught.
 
 When defining the interface for a library, you can use the `any` type whenever you don't need Flow to check a value. This lets you gradually add type definitions for the parts of the library you care most about. See the reference guide on [declarations](declarations.html) for more details.

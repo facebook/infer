@@ -1,17 +1,11 @@
 ---
-id: new-project
-title: Starting a new Flow project
+id: analyzing-android-app
+title: Analyzing an Android app
 layout: docs
-permalink: /docs/new-project.html
-prev: five-simple-examples.html
-next: existing.html
+permalink: /docs/analyzing-android-app.html
+prev: getting-started.html
+next: analyzing-ios-app.html
 ---
-
-One of the most powerful ways to use Flow is to have it checking your code from the first line you write. This allows you to ensure type safety from the very beginning and reduce the likelihood of errors, even while prototyping.
-
-## Setting up your project
-
-To set up a new project using Flow, all you need to do is initialize the root of the folder to tell Flow to start typechecking files within your project:
 
 ```bash
 $> mkdir new_project
