@@ -31,3 +31,46 @@ $> echo "PATH=\"\$PATH:/usr/local/infer/bin/\"" >> ~/.bashrc && source ~/.bashrc
 ```bash
 $> echo "PATH=\"\$PATH:/usr/local/infer/bin/\"" >> ~/.bashrc && source ~/.bashrc
 ```
+
+## Hello World
+
+Here is a simple example to illustrate Infer at work.
+
+  ```java
+  // Hello.java
+  class Hello {
+    int test() {
+      String s = null;
+      return s.length();
+    }
+  }
+  ```
+
+To run Infer on the file, do
+
+  ```bash
+  $> infer -- javac Hello.java
+  ...
+  /Users/me/test/Hello.java:5: error: NULL_DEREFERENCE
+    [B1] object s last assigned on line 4 could be null and is dereferenced at line 5  
+  ```
+
+Now edit the file to add null checks:
+
+  ```java
+  // Hello.java
+  class Hello {
+    int test() {
+      String s = null;
+      return s == null ? 0 : s.length();
+    }
+  }
+  ```
+  
+This time we get no error:
+
+  ```bash
+  $> infer -- javac Hello.java
+  ...
+  no errors
+  ```
