@@ -7,7 +7,7 @@ hero: true
 
 ##What is Infer?
 
-Infer is a static analyzer, designed to find bugs in Java and C projects.
+Infer is a static analyzer, designed to find bugs in Java and C projects and Objective-C.
 
 {% highlight javascript linenos=table %}
 /* @flow */
