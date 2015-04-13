@@ -6,14 +6,13 @@ permalink: /docs/analyzing-android-app.html
 prev: getting-started.html
 next: analyzing-ios-app.html
 ---
-## Analyzing a gradle project
+## Using gradle
 
 ```bash
 $> gradle clean
 $> infer -- gradle <gradle task, i.e. "build">
 ```
-## Analyzing a buck project
-
+## Using buck
 
 ```bash
 $> buck clean
