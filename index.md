@@ -15,7 +15,6 @@ the analysis.
 <IMG SRC="Infer-landing.jpg" ALT="whatever" WIDTH=500 HEIGHT=500>
 
 
-<<<<<<< HEAD
 Infer is in deployment inside Facebook,
 where we use it to improve the quality of our mobile apps.
 Every 
