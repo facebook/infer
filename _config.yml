@@ -1,6 +1,6 @@
 ---
 permalink: /blog/:categories/:year/:month/:day/:title.html
-url: http://flowtype.org
+url: http://fb-infer.org
 name: Flow
 relative_permalinks: false
 markdown: redcarpet

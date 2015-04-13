@@ -11,7 +11,7 @@ next: analyzing-android-app.html
 
 We provide pre-built binaries for Infer, depending on your operating system:
 
-  * Mac OS X: [http://flowtype.org/downloads/flow-osx-latest.zip](/downloads/flow-osx-latest.zip)
+  * Mac OS X: [http://fb-infer.org/downloads/fb-infer-osx-latest.pkg](/downloads/fb-infer-osx-latest.pkg)
   * Linux (64 bit): [http://flowtype.org/downloads/flow-linux64-latest.zip](/downloads/flow-linux64-latest.zip)
 
 Infer is packaged as a zip file. To install, simply unzip it:
