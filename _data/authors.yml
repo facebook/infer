@@ -1,12 +1,12 @@
 glevi:
-  display_name: Gabe Levi
-  facebook: https://www.facebook.com/Gabe
+  full_name: Gabe Levi
+  fbid: Gabe
 bhosmer:
-  display_name: Basil Hosmer
-  facebook: https://www.facebook.com/basil.hosmer
+  full_name: Basil Hosmer
+  fbid: basil.hosmer
 jeffmo:
-  display_name: Jeff Morrison
-  facebook: https://www.facebook.com/lbljeffmo
+  full_name: Jeff Morrison
+  fbid: lbljeffmo
 avik:
-  display_name: Avik Chaudhuri
-  facebook: https://www.facebook.com/chaudhuri.avik
+  full_name: Avik Chaudhuri
+  fbid: chaudhuri.avik

@@ -4,7 +4,12 @@
   <body>    
     {% include nav.html alwayson=true %}
     <div class="navPusher">
-      {{ content }}
+      {% include header.html %}
+      <div class="mainContainer">
+        <div id="main_wrap" class="wrapper mainWrapper">
+          {{ content }}
+        </div>
+      </div>
       {% include footer.html %}
     </div>
   </body>

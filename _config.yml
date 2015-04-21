@@ -1,24 +1,45 @@
----
-permalink: /blog/:categories/:year/:month/:day/:title.html
-url: http://fb-infer.org
-name: Infer
-relative_permalinks: false
-markdown: redcarpet
-description: Static analyzer for mobile apps
-timezone: America/Los_Angeles
+# Site settings
+permalink: /blog/:year/:month/:day/:title.html
+title: Infer
+tagline: A static analyzer for Android apps
+fbappid: "1615782811974223"
+gacode: "UA-44373548-7"
+description: Infer is a static analyzer, designed to find bugs in Java and C projects and Objective-C. If you give it input code Infer creates a list of potential bugs as well as contracts it finds during the analysis.
+baseurl: "/inf-temp-web-ph" # the subpath of your site, e.g. /blog/
+url: "http://facebook.github.io" # the base hostname & protocol for your site
+ghrepo: "facebook/infer"
 
-safe: true
-lsi: false
+# Build settings
+markdown: redcarpet
 highlighter: pygments
 
-paginate: 5
-paginate_path: "/blog/page:num/"
+collections:
+  docs:
+    output: true
+    permalink: /docs/:name/
 
-defaults:
-  -
-    scope:
-      path: ""
-      type: "posts"
-    values:
-      layout: post
-      is_post: true
+sass:
+  style: :compressed
+  
+redcarpet:
+  extensions: [with_toc_data]  
+  
+color:
+  # Provides colour for background of top header of homepage
+  primary: "#6223b0"
+  # Provides colour for background of elsewhere on site
+  secondary: "#e4e4e4"
+  # A color that will work for buttons laid on top of primary colour
+  light: "#2e0067"
+  # Color that will work for text on top of light color
+  lighttext: "#fff"
+  # Color of text in the top header of homepage, must be legible on top of primary color
+  headertext: "#fff"
+  # Color of text on top of the secondary color background
+  bodytext: "#151515"
+  # Background of fixed nav header - headertext color is used for mini logo text
+  nav: "#7d29e4"
+  # Text of links in the nav
+  navtext: "#c79aff"
+  # Color of link underlines in the main body, and hover background color for links
+  link: "#6223b0"
