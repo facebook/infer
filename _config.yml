@@ -5,8 +5,8 @@ tagline: A static analyzer for Android apps
 fbappid: "1615782811974223"
 gacode: "UA-44373548-7"
 description: Infer is a static analyzer, designed to find bugs in Java and C projects and Objective-C. If you give it input code Infer creates a list of potential bugs as well as contracts it finds during the analysis.
-baseurl: "/inf-temp-web-ph" # the subpath of your site, e.g. /blog/
-url: "http://facebook.github.io" # the base hostname & protocol for your site
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://127.0.0.1:4000/" # the base hostname & protocol for your site
 ghrepo: "facebook/infer"
 
 # Build settings
@@ -20,10 +20,10 @@ collections:
 
 sass:
   style: :compressed
-  
+
 redcarpet:
-  extensions: [with_toc_data]  
-  
+  extensions: [with_toc_data]
+
 color:
   # Provides colour for background of top header of homepage
   primary: "#6223b0"
