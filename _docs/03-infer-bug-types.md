@@ -182,10 +182,8 @@ axe control skips past the return leaving no one to close. Here is a simple exam
     return new BugReportAttachment(Uri.fromFile(file), stream);
   }
 ```
-
-If you look for the definition of <kbd>BugReportAttachment</kbd> (you can do ''abgs BugReportAttachment'' in bunnylol to find it)
-you will see that it is intended here that an object that wraps <kbd>stream </kbd> is passed to the caller of <kbd> createAttachment</kbd>.
-You should certainly not close stream hear, because it is being passed to the outside.
+In this case it is intended that an object that wraps `stream` is passed to the caller of `createAttachment`.
+You should certainly not close stream here, because it is being passed to the outside.
 
 But for escaping resources like this you still need to be careful of exceptions. For example, in
 
@@ -298,6 +296,19 @@ This is similar to NULL_DEREFERENCE, but Infer hasn't found a whole trace where 
   }
 ```
 
+## PREMATURE\_NIL\_TERMINATION\_ARGUMENT
+
+In many variadic methods, `nil` is used to signify the end of the list of input objects. This is similar to nil-termination of C strings. If one of the arguments that is not the last argument to the method is nil as well, Infer reports an error because that may lead to unexpected behaviour.
+
+An example of such variadic methods is [arrayWithObjects](https://developer.apple.com/library/prerelease/ios/documentation/Cocoa/Reference/Foundation/Classes/NSArray_Class/index.html#//apple_ref/occ/clm/NSArray/arrayWithObjects)
+
+```objc
+  NSArray *foo = [NSArray arrayWithObjects: @"aaa", str, @"bbb", nil];
+```
+
+In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
+
+
 ## CHECKERS\_IMMUTABLE\_CAST
 
 This error fires when an immutable collection is returned from a method whose type is mutable.
@@ -309,13 +320,13 @@ This error fires when an immutable collection is returned from a method whose ty
   }
 ```
 
-This can lead to a runtime error if users of <kbd> getSomeList</kbd> try to modify the list e.g. by adding elements.
+This can lead to a runtime error if users of ` getSomeList` try to modify the list e.g. by adding elements.
 
 '''Action:''' you can change the return type to be immutable, or make a copy of the collection so that it can be modified.
 
 ## CHECKERS\_PRINTF\_ARGS
 
-This error fires when either the arguments of a <kbd>printf</kbd> like function don't match the given format string. With <kbd>BLog</kbd> another common mistake is passing an exception as the last argument because this is how android's <kbd>Log</kbd> are used. Note that this argument will simply be swallowed. The exception should be passed ''before'' the format string.
+This error fires when either the arguments of a `printf` like function don't match the given format string. With `BLog` another common mistake is passing an exception as the last argument because this is how android's `Log` are used. Note that this argument will simply be swallowed. The exception should be passed ''before'' the format string.
 
 ```java
 catch (Execption ex) {
