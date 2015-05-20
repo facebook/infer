@@ -13,7 +13,7 @@ order: 01
 We provide pre-built binaries for Infer, depending on your operating system:
 
 ### Mac OS X
-[http://fb-infer.org/downloads/fb-infer-osx-latest.pkg](/downloads/fb-infer-osx-latest.pkg)
+[http://fb-infer.org/downloads/fb-infer-osx-latest.pkg](http://home.fburl.com/~cristianoc/fb-infer-osx-latest.pkg)
 
 Install the package and update the path (if there is a security warning, open it in Finder, right click and select Open).
 
