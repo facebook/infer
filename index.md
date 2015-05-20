@@ -7,12 +7,14 @@ id: home
 ## What is Infer?
 
 Infer is a static analyzer based on recent research
-in program verification that we are developing inside Facebook. 
-We deploy it as part of our development process, where we use it to improve the quality of our mobile apps.
-Infer runs on
-of code diffs submitted to our mobile code bases, including the main Facebook apps for Android and iOS, Facebook Messenger, Instagram, and other apps which are used by over a billion people in total.
+in program verification that we are developing at Facebook. 
+We use as part of our development process, where
+it runs on
+code modifications submitted for our mobile apps; 
+these include the main Facebook apps for Android and iOS, Facebook Messenger, Instagram, and other apps which are used by over a billion people in total.
 Each month, hundreds of potential bugs are reported by Infer and fixed by Facebook developers,
 before they are committed and shipped to peoples' phones.
+
 
 If you give Infer an input program, it produces a list of potential bugs.
 
