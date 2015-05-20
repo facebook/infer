@@ -18,17 +18,17 @@ We provide pre-built binaries for Infer, depending on your operating system:
 Install the package and update the path (if there is a security warning, open it in Finder, right click and select Open).
 
 ```bash
-$> echo "PATH=\"\$PATH:/usr/local/infer/bin/\"" >> ~/.bashrc && source ~/.bashrc
+ $> echo "export PATH=$PATH:/usr/local/infer/bin" >> ~/.bashrc && source ~/.bashrc
 ```
 
 ### Linux (64 bit)
 
- [http://flowtype.org/downloads/infer-linux64-latest.zip](/downloads/flow-linux64-latest.zip)
+ [http://home.fburl.com/~martinoluca/infer-linux-x64.tar.gz](http://home.fburl.com/~martinoluca/infer-linux-x64.tar.gz)
 
  ```bash
- $> unzip infer-linux64-latest.zip
+ $> tar xzvf infer_linux_x64.tar.gx -C ${HOME}
  ```
 
 ```bash
-$> echo "PATH=\"\$PATH:/usr/local/infer/bin/\"" >> ~/.bashrc && source ~/.bashrc
+ $> echo "export PATH=$PATH:${HOME}/infer/infer/bin" >> ~/.bashrc && source ~/.bashrc
 ```
