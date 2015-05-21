@@ -13,16 +13,21 @@ order: 01
 We provide pre-built binaries for Infer, depending on your operating system.
 
 ### Mac OS X
+<p>Install the package
+
 [http://fb-infer.org/downloads/fb-infer-osx-latest.pkg](http://home.fburl.com/~cristianoc/fb-infer-osx-latest.pkg)
 
-Install the package and update `$PATH` by typing the following command in your terminal:
+If you get a security warning that stops you on this step, you can open the
+folder holding the pkg file in Finder, then control-click on it and select Open. (Shortly, we will put
+a link to a binary here if you prefer not to use a pkg)
+
+Next, update your
+`$PATH` with `/usr/local/infer/bin`, e.g. by typing the following command in your terminal:
 
 ```bash
-echo "export PATH=$PATH:/usr/local/infer/bin" \
+echo "export PATH=/usr/local/infer/bin:$PATH" \
      >> ~/.bashrc && source ~/.bashrc
 ```
-
-If there is a security warning that prevents you from installing Infer, open the folder with the pkg file in Finder, then right click on it and select Open.
 
 ### Linux (64 bit)
 
