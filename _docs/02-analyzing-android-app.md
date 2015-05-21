@@ -8,7 +8,7 @@ section_order: 01
 order: 00
 ---
 ## Run infer on a sample android app
-Download an example android app that contains some bugs and run infer on it:
+Download the example android app that contains some bugs and run infer on it:
 
 ```bash
 wget localhost:4000/downloads/InferAndroidExample.tar.gz
