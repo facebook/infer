@@ -8,6 +8,20 @@ section_order: 01
 order: 00
 ---
 
+## MEMORY\_LEAK 
+
+Infer reports memory leaks that happen when objects from Core Foundation or Core Graphics don't get released. 
+It also reports a memory leak when objects are created with malloc and not freed. For example:
+
+```objc
+-(void) memory_leak_bug_cf { 
+    CGPathRef shadowPath = CGPathCreateWithRect(self.inputView.bounds, NULL); //object created and not released.
+}
+-(void) memory_leak_bug { 
+    struct Person *p = malloc(sizeof(struct Person));
+}
+```
+
 ## RESOURCE\_LEAK
 
 TIP: A common source of bugs is  <b>exceptions skipping past close() statements</b>. That is the first thing to look for if INFER reports a potential resource leak.
@@ -266,7 +280,7 @@ The call checkNotNull(foo()) will never return null; in case foo()  returns null
 <b> If you are absolutely sure that foo() will not be null </b>, then if you land your diff this case will no longer be reported after your diff makes it to master.  In the future we might include analysis directives (hey, analyser, p is not null!) like in Hack that tell the analyser
 the information that you know, but that is for later.
 
-## PARAMETER\_NOT\_NULLABLE
+## PARAMETER\_NOT\_NULL\_CHECKED
 
 This is similar to NULL_DEREFERENCE, but Infer hasn't found a whole trace where the error can happen, but only found that a null dereference can happen if you call a method with nil as an argument. For example:
 
@@ -285,7 +299,7 @@ or when the parameter is a block:
    }
 ```
 
-## IVAR\_NOT\_NULLABLE
+## IVAR\_NOT\_NULL\_CHECKED
 
 This is similar to NULL_DEREFERENCE, but Infer hasn't found a whole trace where the error can happen, but only found that a null dereference can happen if an instance variable of a parameter is nil. For example:
 
