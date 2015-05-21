@@ -1,6 +1,6 @@
 ---
 id: eradicate-bug-types
-title: Eradicate Bug Types
+title: Eradicate @Nullable Checker
 layout: docs
 permalink: /docs/eradicate-bug-types.html
 section: Bug Types Reference
@@ -18,6 +18,11 @@ order: 00
 Infer:Eradicate is a type checker for @Nullable annotations for Java. It is part of the Infer static analysis suite of tools.
 The goal is to eradicate null pointer exceptions.
 
+Starting from @Nullable-annotated programs, the checker performs a flow sensitive analysis
+to propagate the nullability through assignments and calls, and flags errors for
+unprotected accesses to nullable values or inconsistent/missing annotations.
+It can also be used to add annotations to a previously un-annotated program.
+
 ##What is the @Nullable convention?
 
 If you say nothing, you're saying that the value cannot be null. This is the recommended option when possible:
@@ -33,6 +38,38 @@ Annotations are placed at the interface of method calls and field accesses:
 - Parameters and return type of a method declaration.
 
 - Field declarations.
+
+Local variable declarations are not annotated: their nullability is inferred.
+
+##How is Infer:Eradicate invoked?
+
+Infer:Eradicate can be invoked by adding the option ```-a eradicate``` to the analysis command as in this example:
+
+```infer -a eradicate -- javac Test.java```
+
+The checker will report an error on the following program that accesses a nullable value without null check:
+
+```java
+class C {
+  int getLength(@Nullable String s) {
+    return s.length();
+  }
+}
+```
+
+But it will not report an error on this:
+
+```java
+class C {
+  int getLength(@Nullable String s) {
+    if (s == null) {
+      return s.length;
+    } else {
+      return s.length();
+    }
+  }
+}
+```
 
 
 ##What warnings are reported by Eradicate?
@@ -161,48 +198,6 @@ by changing the code or changing annotations.
 If this cannot be done, add a @Nullable annotation to the the method declaration.
 This annotation might trigger more warnings in the callers of method m, as the callers must now deal with null values.
 
-###ERADICATE\_CONDITION\_REDUNDANT
-Condition (x != null) or (x == null) when x cannot be null: the first condition is always true and the second is always false
-
-Example:
-
-```java
-class C {
-  void m() {
-    String s = new String("abc");
-    if (s != null) {
-      int n = s.length();
-    }
-  }
-}
-```
-
-Action:
-Make sure that the annotations are correct, as the condition is considered redundant based on the existing annotations.
-In particular, check the annotation of any input parameters and fields of the current method, as well
-as the annotations of any method called directly by the current method, if relevant.
-If the annotations are correct, you can remove the redundant case.
-
-###ERADICATE\_RETURN\_OVER\_ANNOTATED
-Method m is annotated with @Nullable but the method cannot return null
-
-Example:
-
-```java
-class C {
-  @Nullable String m() {
-    String s = new String("abc");
-    return s;
-  }
-}
-```
-
-Action:
-Make sure that the annotations are correct, as the return annotation is considered redundant based on the existing annotations.
-In particular, check the annotation of any input parameters and fields of the current method, as well
-as the annotations of any method called directly by the current method, if relevant.
-If the annotations are correct, you can remove the @Nullable annotation.
-
 
 ###ERADICATE\_INCONSISTENT\_SUBCLASS\_RETURN\_ANNOTATION
 The return type of the overridden method is annotated @Nullable, but the corresponding method in the superclass is not.
@@ -283,3 +278,45 @@ public class Main {
   }
 }
 ```
+
+###ERADICATE\_CONDITION\_REDUNDANT (inactive by default)
+Condition (x != null) or (x == null) when x cannot be null: the first condition is always true and the second is always false
+
+Example:
+
+```java
+class C {
+  void m() {
+    String s = new String("abc");
+    if (s != null) {
+      int n = s.length();
+    }
+  }
+}
+```
+
+Action:
+Make sure that the annotations are correct, as the condition is considered redundant based on the existing annotations.
+In particular, check the annotation of any input parameters and fields of the current method, as well
+as the annotations of any method called directly by the current method, if relevant.
+If the annotations are correct, you can remove the redundant case.
+
+###ERADICATE\_RETURN\_OVER\_ANNOTATED (inactive by default)
+Method m is annotated with @Nullable but the method cannot return null
+
+Example:
+
+```java
+class C {
+  @Nullable String m() {
+    String s = new String("abc");
+    return s;
+  }
+}
+```
+
+Action:
+Make sure that the annotations are correct, as the return annotation is considered redundant based on the existing annotations.
+In particular, check the annotation of any input parameters and fields of the current method, as well
+as the annotations of any method called directly by the current method, if relevant.
+If the annotations are correct, you can remove the @Nullable annotation.
