@@ -1,6 +1,6 @@
 ---
 layout: post
-author: avik
+author: peteroh
 ---
 
 ### Announcing Bounded Polymorphism
@@ -17,8 +17,8 @@ function eat<T: Food>(meal: T): Indigestion<T> { ... }
 Consider the following code that defines a polymorphic function in Flow:
 
 ```JavaScript
-function fooBad<T>(obj: T): T { 
-  console.log(Math.abs(obj.x)); 
+function fooBad<T>(obj: T): T {
+  console.log(Math.abs(obj.x));
   return obj;
 }
 ```
@@ -31,9 +31,9 @@ But what if you wanted `T` to not range over all types, but instead over only th
 
 ```JavaScript
 // Old lame workaround
-function fooStillBad(obj: { x: number }): {x: number } { 
-  console.log(Math.abs(obj.x)); 
-  return obj; 
+function fooStillBad(obj: { x: number }): {x: number } {
+  console.log(Math.abs(obj.x));
+  return obj;
 }
 ```
 
@@ -47,16 +47,16 @@ var result = fooStillBad({x: 42, y: "oops"});
 // This will be an error since result's type
 // doesn't have a property "y"
 var test: {x: number; y: string} = result;
-``` 
+```
 
 ### The solution
 
 As of version 0.5.0, such typing problems can be solved elegantly using bounded polymorphism. Type parameters such as `T` can specify bounds that constrain the types that the type parameters range over. For example, we can write:
 
 ```JavaScript
-function fooGood<T: { x: number }>(obj: T): T { 
-  console.log(Math.abs(obj.x)); 
-  return obj; 
+function fooGood<T: { x: number }>(obj: T): T {
+  console.log(Math.abs(obj.x));
+  return obj;
 }
 ```
 
@@ -69,7 +69,7 @@ var result = fooGood({x: 42, y: "yay"});
 
 // This works!
 var test: {x: number; y: string} = result;
-``` 
+```
 
 Of course, polymorphic classes may also specify bounds. For example, the following code type checks:
 
@@ -94,10 +94,10 @@ Any type may be used as a type parameter's bound. The type does not need to be a
 ```JavaScript
 class Store<T: { x: number }> {
   ...
-  bar<U: T>(obj: U): U { 
-    this.obj = obj; 
-    console.log(Math.abs(obj.x)); 
-    return obj; 
+  bar<U: T>(obj: U): U {
+    this.obj = obj;
+    console.log(Math.abs(obj.x));
+    return obj;
   }
 }
 ```
@@ -117,7 +117,7 @@ Since `U` is a subtype of `T`, the method body type checks (as you may expect, `
 Also, in a polymorphic definition with multiple type parameters, any type parameter may appear in the bound of any following type parameter. This is useful for type checking examples like the following:
 
 ```JavaScript
-function copyArray<T, S: T>(from: Array<S>, to: Array<T>) { 
+function copyArray<T, S: T>(from: Array<S>, to: Array<T>) {
   from.forEach(elem => to.push(elem));
 }
 ```

@@ -1,6 +1,6 @@
 ---
 layout: post
-author: glevi
+author: dulmarod
 ---
 
 ### Announcing Flow Comments
@@ -20,10 +20,10 @@ There are 3 special comments that Flow currently supports. You may recognize thi
 `/*: <your code> */` is interpreted by Flow as `: <your code>`
 
 ```JavaScript
-function foo(x/*: number*/)/* : string */ { ... } 
+function foo(x/*: number*/)/* : string */ { ... }
 ```
 
-is interpreted by Flow as 
+is interpreted by Flow as
 
 ```JavaScript
 function foo(x: number): string { ... }
@@ -75,7 +75,7 @@ but appears to the runtime (ignoring comments) as
 
 ```
 
-Note: whitespace is ignored after the `/*` but before the `:`, `::`, or `flow-include`. So you can write things like 
+Note: whitespace is ignored after the `/*` but before the `:`, `::`, or `flow-include`. So you can write things like
 
 ```JavaScript
 /* : number */

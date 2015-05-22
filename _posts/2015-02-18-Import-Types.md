@@ -1,6 +1,6 @@
 ---
 layout: post
-author: jeffmo 
+author: ddino 
 ---
 
 ### Announcing Import Type
@@ -15,7 +15,7 @@ Has this ever happened to you:
 // Post-transformation lint error: Unused variable 'URI'
 var URI = require('URI');
 
-// But if you delete the require you get a Flow error: 
+// But if you delete the require you get a Flow error:
 // identifier URI - Unknown global name
 module.exports = function(x: URI): URI {
   return x;
@@ -32,8 +32,8 @@ So instead of the above code, you can now write this:
 
 ```JavaScript
 import type * as URI from 'URI';
-module.exports = function(x: URI): URI { 
-  return x; 
+module.exports = function(x: URI): URI {
+  return x;
 };
 ```
 
@@ -46,7 +46,7 @@ module.exports = function junkDrawer(x: Crayon, y: Marker): void {}
 
 ### Transformations
 
-Like type annotations and other Flow features, `import type` need to be transformed away before the code can be run. The transforms will be available in react-tools `0.13.0` when it is published soon, but for now they're available in `0.13.0-beta.2`, which you can install with 
+Like type annotations and other Flow features, `import type` need to be transformed away before the code can be run. The transforms will be available in react-tools `0.13.0` when it is published soon, but for now they're available in `0.13.0-beta.2`, which you can install with
 
 ```bash
 npm install react-tools@0.13.0-beta.2
@@ -59,4 +59,3 @@ npm install react-tools@0.13.0-beta.2
 
 #### **Can I use `import type` to pull in type aliases from another module, too?**
 *Not quite yet...but soon! There are a few other moving parts that we need to build first, but we're working on it.*
-

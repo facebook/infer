@@ -1,6 +1,6 @@
 ---
 layout: post
-author: bhosmer 
+author: cristianoc 
 ---
 
 ### Announcing Typecasts
@@ -27,14 +27,14 @@ For any JavaScript expression `<expr>` and any Flow type `<type>`, you can write
 
 ### How Typecasts Work
 
-To evaluate a typecast expression, Flow will first check that `<expr>` is a `<type>`. 
+To evaluate a typecast expression, Flow will first check that `<expr>` is a `<type>`.
 
 ```JavaScript
 (1+1: number); // this is fine
 (1+1: string); // but this is is an error
 ```
- 
-Second, Flow will infer that the typecast expression `(<expr>: <type>)` has the type `<type>`. 
+
+Second, Flow will infer that the typecast expression `(<expr>: <type>)` has the type `<type>`.
 
 ```JavaScript
 [(0: ?number)]; // Flow will infer the type Array<?number>
@@ -51,17 +51,17 @@ class Child extends Base {}
 var child: Child = new Child();
 
 // Upcast from Child to Base, a more general type: OK
-var base: Base = new Child(); 
+var base: Base = new Child();
 
 // Upcast from Child to Base, a more general type: OK
-(child: Base); 
+(child: Base);
 
 // Downcast from Base to Child: unsafe, ERROR
-(base: Child); 
+(base: Child);
 
 // Upcast base to any then downcast any to Child.
 // Unsafe downcasting from any is allowed: OK
-((base: any): Child); 
+((base: any): Child);
 ```
 
 ### More examples
@@ -76,9 +76,8 @@ Typecasts are particularly useful to check assumptions and help Flow infer the t
 
 ### Transformations
 
-Like type annotations and other Flow features, typecasts need to be transformed away before the code can be run. The transforms will be available in react-tools `0.13.0` when it is published soon, but for now they're available in `0.13.0-beta.2`, which you can install with 
+Like type annotations and other Flow features, typecasts need to be transformed away before the code can be run. The transforms will be available in react-tools `0.13.0` when it is published soon, but for now they're available in `0.13.0-beta.2`, which you can install with
 
 ```bash
 npm install react-tools@0.13.0-beta.2
 ```
-
