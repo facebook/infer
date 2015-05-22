@@ -6,7 +6,7 @@ fbappid: "1615782811974223"
 gacode: "UA-44373548-7"
 description: Infer is a static analyzer in deployment at Facebook, where we use it as part of the development process for our mobile apps. Infer targets critical bugs such as null pointer exceptions and resource and memory leaks, which can lead to crashes or performance degradation in apps.
 baseurl: "" # the subpath of your site, e.g. /blog/
-url: "http://127.0.0.1:4000/" # the base hostname & protocol for your site
+url: "http://127.0.0.1:4000" # the base hostname & protocol for your site
 ghrepo: "facebook/infer"
 
 # Build settings

@@ -1,6 +1,8 @@
 - title: Docs
   href: docs/
 
+- title: Blog
+  href: blog/
+
 - title: Github
   href: http://github.com/facebook/infer
-
