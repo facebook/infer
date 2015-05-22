@@ -57,15 +57,15 @@ class C {
 }
 ```
 
-But it will not report an error on this:
+But it will not report an error on this guarded dereference:
 
 ```java
 class C {
   int getLength(@Nullable String s) {
-    if (s == null) {
-      return s.length;
-    } else {
+    if (s != null) {
       return s.length();
+    } else {
+      return -1;
     }
   }
 }
@@ -90,7 +90,7 @@ class C {
 ```
 
 Action:
-Make sure that x cannot be null, by changing the code or changing annotations.
+Make sure that x cannot be null by changing the code or changing annotations.
 If this cannot be done, the only choice is to use defensive programming:
   if (x != null) { ... x.field ... }
   else {  ... you need to decide what to do when x is null ... }
