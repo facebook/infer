@@ -19,10 +19,3 @@ if __name__ == '__main__':
                               inferlib.get_javac_args(cmd_args))
     stats = analysis.start()
 
-    if stats:
-        logging.info('Capture time: {0:.2f}s'.format(
-            stats['float']['capture_time']
-        ))
-        logging.info('Analysis time: {0:.2f}s'.format(
-            stats['float']['analysis_time']
-        ))
