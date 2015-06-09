@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CheckStyle-IDEA">
+    <option name="configuration">
+      <map>
+        <entry key="active-configuration" value="LOCAL_FILE:$PRJ_DIR$/checkstyle.xml:Buck Checkstyle" />
+        <entry key="check-nonjava-files" value="false" />
+        <entry key="check-test-classes" value="false" />
+        <entry key="location-0" value="CLASSPATH:/sun_checks.xml:The default CheckStyle rules" />
+        <entry key="location-1" value="LOCAL_FILE:$PRJ_DIR$/checkstyle.xml:Buck Checkstyle" />
+        <entry key="property-1.com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.ignorePattern" value="^(package .*;\s*)|(import .*;\s*)|( *[\*\/]* *https?://.*)$" />
+        <entry key="property-1.com.puppycrawl.tools.checkstyle.checks.sizes.LineLength.max" value="100" />
+        <entry key="suppress-errors" value="true" />
+        <entry key="thirdparty-classpath" value="" />
+      </map>
+    </option>
+  </component>
+</project>
+

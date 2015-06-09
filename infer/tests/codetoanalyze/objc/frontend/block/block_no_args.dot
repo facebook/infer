@@ -1,0 +1,40 @@
+digraph iCFG {
+10 [label="10:  BinaryOperatorStmt: Assign \n   *&#GB$g:int =7 [line 19]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9:  DeclStmt \n   *&z:int =3 [line 21]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_my_mehtod______1); [line 22]\n  n$4=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_my_mehtod______1 ):class __objc_anonymous_block_My_manager_my_mehtod______1 *) [line 22]\n  *&__objc_anonymous_block_My_manager_my_mehtod______1:class __objc_anonymous_block_My_manager_my_mehtod______1 =n$4 [line 22]\n  n$5=*&z:int  [line 22]\n  *n$4.z:int =n$5 [line 22]\n  n$2=*&z:int  [line 22]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_my_mehtod______1,n$2) [line 22]\n  REMOVE_TEMPS(n$4,n$5,n$2); [line 22]\n " shape="box"]
+	
+
+	 8 -> 4 ;
+7 [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&z:int  [line 23]\n  *&#GB$g:int =(n$3 + 3) [line 23]\n  REMOVE_TEMPS(n$3); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6: Exit __objc_anonymous_block_My_manager_my_mehtod______1 \n  " color=yellow style=filled]
+	
+
+5 [label="5: Start __objc_anonymous_block_My_manager_my_mehtod______1\nFormals:  z:int \nLocals: \nCaptured:  z:int  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	
+
+	 5 -> 7 ;
+4 [label="4:  Call n$1 \n   n$1=*&b:_fn_ (*) [line 25]\n  n$1() [line 25]\n  REMOVE_TEMPS(n$1); [line 25]\n  NULLIFY(&b,false); [line 25]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&z:int  [line 26]\n  *&return:int =n$0 [line 26]\n  REMOVE_TEMPS(n$0); [line 26]\n  NULLIFY(&__objc_anonymous_block_My_manager_my_mehtod______1,true); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit My_manager_my_mehtod \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start My_manager_my_mehtod\nFormals:  self:class My_manager *\nLocals:  b:_fn_ (*) z:int  \n   DECLARE_LOCALS(&return,&b,&z); [line 17]\n  NULLIFY(&b,false); [line 17]\n  NULLIFY(&self,false); [line 17]\n " color=yellow style=filled]
+	
+
+	 1 -> 10 ;
+}

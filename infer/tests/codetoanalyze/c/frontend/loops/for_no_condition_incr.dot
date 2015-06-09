@@ -1,0 +1,38 @@
+digraph iCFG {
+9 [label="9:  DeclStmt \n   *&j:int =0 [line 7]\n " shape="box"]
+	
+
+	 9 -> 5 ;
+8 [label="8:  ComppoundAssignStmt \n   n$0=*&j:int  [line 9]\n  n$1=*&j:int  [line 9]\n  *&j:int =(n$1 + n$0) [line 9]\n  REMOVE_TEMPS(n$0,n$1); [line 9]\n  APPLY_ABSTRACTION; [line 9]\n " shape="box"]
+	
+
+	 8 -> 4 ;
+7 [label="7: Prune (false branch) \n   PRUNE((1 == 0), false); [line 8]\n " shape="invhouse"]
+	
+
+	 7 -> 3 ;
+6 [label="6: Prune (true branch) \n   PRUNE((1 != 0), true); [line 8]\n " shape="invhouse"]
+	
+
+	 6 -> 8 ;
+5 [label="5:  DeclStmt \n   *&b:int =0 [line 8]\n  NULLIFY(&b,false); [line 8]\n  APPLY_ABSTRACTION; [line 8]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4: + \n  " ]
+	
+
+	 4 -> 6 ;
+	 4 -> 7 ;
+3 [label="3:  Return Stmt \n   NULLIFY(&j,false); [line 11]\n  *&return:int =0 [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start main\nFormals: \nLocals:  j:int  b:int  \n   DECLARE_LOCALS(&return,&j,&b); [line 6]\n  NULLIFY(&b,false); [line 6]\n  NULLIFY(&j,false); [line 6]\n " color=yellow style=filled]
+	
+
+	 1 -> 9 ;
+}

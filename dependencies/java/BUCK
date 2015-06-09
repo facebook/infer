@@ -1,0 +1,17 @@
+java_library(
+    name = 'java_libraries',
+    deps=[
+        '//dependencies/java/guava:guava',
+        '//dependencies/java/junit:hamcrest',
+        '//dependencies/java/jackson:jackson',
+        '//dependencies/java/jsr-305:jsr-305',
+        '//dependencies/java/junit:junit',
+        '//dependencies/java/opencsv:opencsv'
+    ],
+    visibility = [
+        'PUBLIC'
+    ]
+)
+project_config(
+    src_target = ':java_libraries',
+)

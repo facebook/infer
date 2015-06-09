@@ -1,0 +1,13 @@
+digraph iCFG {
+3 [label="3:  InitListExp \n   n$0=*&z:int  [line 8]\n  *&a[0][0]:int =(n$0 + 1) [line 8]\n  *&a[0][1]:int =2 [line 8]\n  *&a[0][2]:int =3 [line 8]\n  *&a[1][0]:int =5 [line 8]\n  *&a[1][1]:int =6 [line 8]\n  *&a[1][2]:int =7 [line 8]\n  REMOVE_TEMPS(n$0); [line 8]\n  NULLIFY(&z,false); [line 8]\n  APPLY_ABSTRACTION; [line 8]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start main\nFormals: \nLocals:  z:int  a:int [2][3] \n   DECLARE_LOCALS(&return,&z,&a); [line 6]\n  NULLIFY(&a,false); [line 6]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

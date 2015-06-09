@@ -1,0 +1,1181 @@
+(*
+* Copyright (c) 2009 -2013 Monoidics ltd.
+* Copyright (c) 2013 - Facebook. All rights reserved.
+*)
+
+(** General utility functions and definition with global scope *)
+
+module F = Format
+
+(** initial time of the analysis, i.e. when this module is loaded, gotten from Unix.time *)
+let initial_analysis_time = Unix.time ()
+
+(** precise time of day at the start of the analysis *)
+let initial_timeofday = Unix.gettimeofday ()
+
+(** {2 Generic Utility Functions} *)
+
+(** Compare police: generic compare disabled. *)
+let compare = ()
+
+let string_equal (s1: string) (s2: string) = s1 = s2
+
+let string_compare (s1: string) (s2: string) = Pervasives.compare s1 s2
+
+let float_compare (f1: float) (f2: float) = Pervasives.compare f1 f2
+
+let bool_compare (b1: bool) (b2: bool) = Pervasives.compare b1 b2
+
+let bool_equal (b1: bool) (b2: bool) = b1 = b2
+
+(** Extend and equality function to an option type. *)
+let opt_equal cmp x1 x2 = match x1, x2 with
+  | None, None -> true
+  | Some _, None -> false
+  | None, Some _ -> false
+  | Some y1, Some y2 -> cmp y1 y2
+
+(** Efficient comparison for integers *)
+let int_compare (i: int) (j: int) = i - j
+
+let int_equal (i: int) (j: int) = i = j
+
+(** Generic comparison of pairs given a compare function for each element of the pair. *)
+let pair_compare compare compare' (x1, y1) (x2, y2) =
+  let n = compare x1 x2 in
+  if n <> 0 then n else compare' y1 y2
+
+(** Generic comparison of pairs given a compare function for each element of the triple *)
+let triple_compare compare compare' compare'' (x1, y1, z1) (x2, y2, z2) =
+  let n = compare x1 x2 in
+  if n <> 0 then n else let n = compare' y1 y2 in
+    if n <> 0 then n else compare'' z1 z2
+
+let list_exists = List.exists
+let list_filter = List.filter
+let list_find = List.find
+let list_fold_left = List.fold_left
+let list_fold_left2 = List.fold_left2
+let list_for_all = List.for_all
+let list_for_all2 = List.for_all2
+let list_hd = List.hd
+let list_iter = List.iter
+let list_iter2 = List.iter2
+let list_length = List.length
+let list_nth = List.nth
+let list_partition = List.partition
+let list_rev = List.rev
+let list_rev_append = List.rev_append
+let list_rev_map = List.rev_map
+let list_sort = List.sort
+let list_stable_sort = List.stable_sort
+let list_tl = List.tl
+
+(** tail-recursive variant of List.fold_right *)
+let list_fold_right f l a =
+  let g x y = f y x in
+  list_fold_left g a (list_rev l)
+
+(** tail-recursive variant of List.combine *)
+let list_combine =
+  let rec combine acc l1 l2 = match l1, l2 with
+    | [], [] -> acc
+    | x1:: l1, x2:: l2 -> combine ((x1, x2):: acc) l1 l2
+    | [], _:: _
+    | _:: _, [] -> raise (Invalid_argument "list_combine") in
+  fun l1 l2 -> list_rev (combine [] l1 l2)
+
+(** tail-recursive variant of List.split *)
+let list_split =
+  let rec split acc1 acc2 = function
+    | [] -> (acc1, acc2)
+    | (x, y):: l -> split (x:: acc1) (y:: acc2) l in
+  fun l ->
+      let acc1, acc2 = split [] [] l in
+      list_rev acc1, list_rev acc2
+
+(** Like List.mem but without builtin equality *)
+let list_mem equal x l = list_exists (equal x) l
+
+(** tail-recursive variant of List.flatten *)
+let list_flatten =
+  let rec flatten acc l = match l with
+    | [] -> acc
+    | x:: l' -> flatten (list_rev_append x acc) l' in
+  fun l -> list_rev (flatten [] l)
+
+let list_flatten_options list =
+  list_fold_left (fun list -> function | Some x -> x:: list | None -> list) [] list
+  |> list_rev
+
+let rec list_drop_first n = function
+  | xs when n == 0 -> xs
+  | x:: xs -> list_drop_first (n - 1) xs
+  | [] -> []
+
+let list_drop_last n list =
+  list_rev (list_drop_first n (list_rev list))
+
+(** List police: don't use the list module to avoid non-tail recursive functions and builtin equality *)
+module List = struct end
+
+(** Generic comparison of lists given a compare function for the elements of the list *)
+let rec list_compare compare l1 l2 =
+  match l1, l2 with
+  | [],[] -> 0
+  | [], _ -> - 1
+  | _, [] -> 1
+  | x1:: l1', x2:: l2' ->
+      let n = compare x1 x2 in
+      if n <> 0 then n else list_compare compare l1' l2'
+
+(** Returns (reverse input_list) *)
+let rec list_rev_with_acc acc = function
+  | [] -> acc
+  | x :: xs -> list_rev_with_acc (x:: acc) xs
+
+(** tail-recursive variant of List.append *)
+let list_append l1 l2 =
+  list_rev_append (list_rev l1) l2
+
+(** tail-recursive variant of List.map *)
+let list_map f l =
+  list_rev (list_rev_map f l)
+
+(** Remove consecutive equal elements from a list (according to the given comparison functions) *)
+let list_remove_duplicates compare l =
+  let rec remove compare acc = function
+    | [] -> list_rev acc
+    | [x] -> list_rev (x:: acc)
+    | x:: ((y:: l'') as l') ->
+        if compare x y = 0 then remove compare acc (x:: l'')
+        else remove compare (x:: acc) l' in
+  remove compare [] l
+
+(** Remove consecutive equal irrelevant elements from a list (according to the given comparison and relevance functions) *)
+let list_remove_irrelevant_duplicates compare relevant l =
+  let rec remove compare acc = function
+    | [] -> list_rev acc
+    | [x] -> list_rev (x:: acc)
+    | x:: ((y:: l'') as l') ->
+        if compare x y = 0 then begin
+          match relevant x, relevant y with
+          | false, _ -> remove compare acc l'
+          | true, false -> remove compare acc (x:: l'')
+          | true, true -> remove compare (x:: acc) l'
+        end
+        else remove compare (x:: acc) l' in
+  remove compare [] l
+
+(** The function works on sorted lists without duplicates *)
+let rec list_merge_sorted_nodup compare res xs1 xs2 =
+  match xs1, xs2 with
+  | [], _ ->
+      list_rev_with_acc xs2 res
+  | _, [] ->
+      list_rev_with_acc xs1 res
+  | x1 :: xs1', x2 :: xs2' ->
+      let n = compare x1 x2 in
+      if n = 0 then
+        list_merge_sorted_nodup compare (x1 :: res) xs1' xs2'
+      else if n < 0 then
+        list_merge_sorted_nodup compare (x1 :: res) xs1' xs2
+      else
+        list_merge_sorted_nodup compare (x2 :: res) xs1 xs2'
+
+let list_intersect compare l1 l2 =
+  let l1_sorted = list_sort compare l1 in
+  let l2_sorted = list_sort compare l2 in
+  let rec f l1 l2 = match l1, l2 with
+    | ([], _) | (_,[]) -> false
+    | (x1:: l1', x2:: l2') ->
+        let x_comparison = compare x1 x2 in
+        if x_comparison = 0 then true
+        else if x_comparison < 0 then f l1' l2
+        else f l1 l2' in
+  f l1_sorted l2_sorted
+
+exception Fail
+
+(** Apply [f] to pairs of elements; raise [Fail] if the two lists have different lenghts. *)
+let list_map2 f l1 l2 =
+  let rec go l1 l2 acc =
+    match l1, l2 with
+    | [],[] -> list_rev acc
+    | x1 :: l1', x2 :: l2' ->
+        let x' = f x1 x2 in
+        go l1' l2' (x':: acc)
+    | _ -> raise Fail in
+  go l1 l2 []
+
+let list_to_string f l =
+  let rec aux l =
+    match l with
+    | [] -> ""
+    | s:: [] -> (f s)
+    | s:: rest -> (f s)^", "^(aux rest) in
+  "["^(aux l)^"]"
+
+(** {2 Useful Modules} *)
+
+(** Set of integers *)
+module IntSet =
+  Set.Make(struct
+    type t = int
+    let compare = int_compare
+  end)
+
+(** Set of strings *)
+module StringSet = Set.Make(String)
+
+(** Pretty print a set of strings *)
+let pp_stringset fmt ss =
+  StringSet.iter (fun s -> F.fprintf fmt "%s " s) ss
+
+(** Maps from strings *)
+module StringMap = Map.Make (struct
+    type t = string
+    let compare (s1: string) (s2: string) = Pervasives.compare s1 s2 end)
+
+(** {2 Printing} *)
+
+(** Kind of simple printing: default or with full types *)
+type pp_simple_kind = PP_SIM_DEFAULT | PP_SIM_WITH_TYP
+
+(** Kind of printing *)
+type printkind = PP_TEXT | PP_LATEX | PP_HTML
+
+(** Colors supported in printing *)
+type color = Black | Blue | Green | Orange | Red
+
+(** map subexpressions (as Obj.t element compared by physical equality) to colors *)
+type colormap = Obj.t -> color
+
+(** Print environment threaded through all the printing functions *)
+type printenv = {
+  pe_opt : pp_simple_kind; (** Current option for simple printing *)
+  pe_kind : printkind; (** Current kind of printing *)
+  pe_cmap_norm : colormap; (** Current colormap for the normal part *)
+  pe_cmap_foot : colormap; (** Current colormap for the footprint part *)
+  pe_color : color; (** Current color *)
+  pe_obj_sub : (Obj.t -> Obj.t) option (** generic object substitution *)
+}
+
+(** Create a colormap of a given color *)
+let colormap_from_color color (o: Obj.t) = color
+
+(** standard colormap: black *)
+let colormap_black (o: Obj.t) = Black
+
+(** red colormap *)
+let colormap_red (o: Obj.t) = Red
+
+(** Default text print environment *)
+let pe_text =
+  { pe_opt = PP_SIM_DEFAULT;
+    pe_kind = PP_TEXT;
+    pe_cmap_norm = colormap_black;
+    pe_cmap_foot = colormap_black;
+    pe_color = Black;
+    pe_obj_sub = None }
+
+(** Default html print environment *)
+let pe_html color =
+  { pe_text with
+    pe_kind = PP_HTML;
+    pe_cmap_norm = colormap_from_color color;
+    pe_cmap_foot = colormap_from_color color;
+    pe_color = color }
+
+(** Default latex print environment *)
+let pe_latex color =
+  { pe_opt = PP_SIM_DEFAULT;
+    pe_kind = PP_LATEX;
+    pe_cmap_norm = colormap_from_color color;
+    pe_cmap_foot = colormap_from_color color;
+    pe_color = color;
+    pe_obj_sub = None }
+
+(** Extend the normal colormap for the given object with the given color *)
+let pe_extend_colormap pe (x: Obj.t) (c: color) =
+  let colormap (y: Obj.t) =
+    if x == y then c
+    else pe.pe_cmap_norm y in
+  { pe with pe_cmap_norm = colormap }
+
+(** Set the object substitution, which is supposed to preserve the type.
+Currently only used for a map from (identifier) expressions to the program var containing them *)
+let pe_set_obj_sub pe (sub: 'a -> 'a) =
+  let new_obj_sub x =
+    let x' = Obj.repr (sub (Obj.obj x)) in
+    match pe.pe_obj_sub with
+    | None -> x'
+    | Some sub' -> sub' x' in
+  { pe with pe_obj_sub = Some (new_obj_sub) }
+
+(** Reset the object substitution, so that no substitution takes place *)
+let pe_reset_obj_sub pe =
+  { pe with pe_obj_sub = None }
+
+(** string representation of colors *)
+let color_string = function
+  | Black -> "color_black"
+  | Blue -> "color_blue"
+  | Green -> "color_green"
+  | Orange -> "color_orange"
+  | Red -> "color_red"
+
+(** Pretty print a space-separated sequence *)
+let rec pp_seq pp f = function
+  | [] -> ()
+  | [x] -> F.fprintf f "%a" pp x
+  | x:: l -> F.fprintf f "%a %a" pp x (pp_seq pp) l
+
+(** Print a comma-separated sequence *)
+let rec pp_comma_seq pp f = function
+  | [] -> ()
+  | [x] -> F.fprintf f "%a" pp x
+  | x:: l -> F.fprintf f "%a,%a" pp x (pp_comma_seq pp) l
+
+(** Print a ;-separated sequence. *)
+let rec _pp_semicolon_seq oneline pe pp f =
+  let pp_sep fmt () =
+    if oneline then F.fprintf fmt " " else F.fprintf fmt "@\n" in
+  function
+  | [] -> ()
+  | [x] -> F.fprintf f "%a" pp x
+  | x:: l ->
+      (match pe.pe_kind with
+        | PP_TEXT | PP_HTML ->
+            F.fprintf f "%a ; %a%a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l
+        | PP_LATEX ->
+            F.fprintf f "%a ;\\\\%a %a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l)
+
+(** Print a ;-separated sequence with newlines. *)
+let pp_semicolon_seq pe = _pp_semicolon_seq false pe
+
+(** Print a ;-separated sequence on one line. *)
+let pp_semicolon_seq_oneline pe = _pp_semicolon_seq true pe
+
+(** Print an or-separated sequence. *)
+let rec pp_or_seq pe pp f = function
+  | [] -> ()
+  | [x] -> F.fprintf f "%a" pp x
+  | x:: l ->
+      (match pe.pe_kind with
+        | PP_TEXT ->
+            F.fprintf f "%a || %a" pp x (pp_semicolon_seq pe pp) l
+        | PP_HTML ->
+            F.fprintf f "%a &or; %a" pp x (pp_semicolon_seq pe pp) l
+        | PP_LATEX ->
+            F.fprintf f "%a \\vee %a" pp x (pp_semicolon_seq pe pp) l)
+
+(** Produce a string from a 1-argument pretty printer function *)
+let pp_to_string pp x =
+  let buf = Buffer.create 1 in
+  let fmt = Format.formatter_of_buffer buf in
+  Format.fprintf fmt "%a@?" pp x;
+  Buffer.contents buf
+
+(** Print the current time and date in a format similar to the "date" command *)
+let pp_current_time f () =
+  let tm = Unix.localtime (Unix.time ()) in
+  F.fprintf f "%02d/%02d/%4d %02d:%02d" tm.Unix.tm_mday tm.Unix.tm_mon (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
+
+(** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
+let pp_elapsed_time fmt () =
+  let elapsed = Unix.gettimeofday () -. initial_timeofday in
+  Format.fprintf fmt "%f" elapsed
+
+(** Type of location in ml source: file,line,column *)
+type ml_location = string * int * int
+
+(** Turn an ml location into a string *)
+let ml_location_string ((file: string), (line: int), (column: int)) =
+  "File " ^ file ^ " Line " ^ string_of_int line ^ " Column " ^ string_of_int column
+
+(** Pretty print a location of ml source *)
+let pp_ml_location fmt mloc =
+  F.fprintf fmt "%s" (ml_location_string mloc)
+
+let pp_ml_location_opt fmt mloco =
+  if !Config.developer_mode then match mloco with
+    | None -> ()
+    | Some mloc -> F.fprintf fmt "(%a)" pp_ml_location mloc
+
+(** {2 SymOp and Timeouts: units of symbolic execution} *)
+
+type timeout_kind =
+  | TOtime (* max time exceeded *)
+  | TOsymops of int (* max symop's exceeded *)
+  | TOrecursion of int (* max recursion level exceeded *)
+
+(** Timeout exception *)
+exception Timeout_exe of timeout_kind
+
+let exn_not_timeout = function
+  | Timeout_exe _ -> false
+  | _ -> true
+
+let symops_timeout, seconds_timeout =
+  (* default timeout and long timeout are the same for now, but this will change shortly *)
+  let default_symops_timeout = 333 in
+  let default_seconds_timeout = 10 in
+  let long_symops_timeout = 1000 in
+  let long_seconds_timeout = 30 in
+  let analyzing_models = Config.from_env_variable "ANALYZE_MODELS" in
+  if analyzing_models then
+    (* use longer timeouts when analyzing models *)
+    long_symops_timeout, long_seconds_timeout
+  else
+    default_symops_timeout, default_seconds_timeout
+
+(** number of symops to multiply by the number of iterations, after which there is a timeout *)
+let symops_per_iteration = ref symops_timeout
+
+(** number of seconds to multiply by the number of iterations, after which there is a timeout *)
+let seconds_per_iteration = ref seconds_timeout
+
+(** timeout value from the -iterations command line option *)
+let iterations_cmdline = ref 1
+
+(** Timeout in seconds for each function *)
+let timeout_seconds = ref !seconds_per_iteration
+
+(** Timeout in SymOps *)
+let timeout_symops = ref !symops_per_iteration
+
+(** Set the timeout values in seconds and symops, computed as a multiple of the integer parameter *)
+let set_iterations n =
+  timeout_symops := !symops_per_iteration * n;
+  timeout_seconds := !seconds_per_iteration * n
+
+let get_timeout_seconds () = !timeout_seconds
+
+(** Count the number of symbolic operations *)
+module SymOp = struct
+  (** Number of symop's *)
+  let symop_count = ref 0
+
+  (** Total number of symop's since the beginning *)
+  let symop_total = ref 0
+
+  (** Only throw timeout exception when alarm is active *)
+  let alarm_active = ref false
+
+  (** last wallclock set by an alarm, if any *)
+  let last_wallclock = ref None
+
+  (** handler for the wallclock timeout *)
+  let wallclock_timeout_handler = ref None
+
+  (** set the handler for the wallclock timeout *)
+  let set_wallclock_timeout_handler handler =
+    wallclock_timeout_handler := Some handler
+
+  (** Set the wallclock alarm checked at every pay() *)
+  let set_wallclock_alarm nsecs =
+    last_wallclock := Some (Unix.gettimeofday () +. float_of_int nsecs)
+
+  (** Unset the wallclock alarm checked at every pay() *)
+  let unset_wallclock_alarm () =
+    last_wallclock := None
+
+  (** if the wallclock alarm has expired, raise a timeout exception *)
+  let check_wallclock_alarm () =
+    match !last_wallclock, !wallclock_timeout_handler with
+    | Some alarm_time, Some handler when Unix.gettimeofday () >= alarm_time ->
+        unset_wallclock_alarm ();
+        handler ()
+    | _ -> ()
+
+  (** Return the total number of symop's since the beginning *)
+  let get_total () = !symop_total
+
+  (** Reset the total number of symop's *)
+  let reset_total () = symop_total := 0
+
+  (** timer at load time *)
+  let initial_time = Unix.gettimeofday ()
+
+  (** Time in the beginning *)
+  let timer = ref initial_time
+
+  (** Count one symop *)
+  let pay () =
+    incr symop_count; incr symop_total;
+    if !symop_count > !timeout_symops && !alarm_active
+    then raise (Timeout_exe (TOsymops !symop_count));
+    check_wallclock_alarm ()
+
+  (** Reset the counters *)
+  let reset () =
+    symop_count := 0;
+    timer := Unix.gettimeofday ()
+
+  (** Reset the counter and activate the alarm *)
+  let set_alarm () =
+    reset ();
+    alarm_active := true
+
+  (** De-activate the alarm *)
+  let unset_alarm () =
+    alarm_active := false
+
+  let report_stats f symops elapsed =
+    F.fprintf f "SymOp stats -- symops:%d time:%f symops/sec:%f" symops elapsed ((float_of_int symops) /. elapsed)
+
+  (** Report the stats since the last reset *)
+  let report f () =
+    let elapsed = Unix.gettimeofday () -. !timer in
+    report_stats f !symop_count elapsed
+
+  (** Report the stats since the loading of this module *)
+  let report_total f () =
+    let elapsed = Unix.gettimeofday () -. initial_time in
+    report_stats f !symop_total elapsed
+end
+
+(** Check if the lhs is a substring of the rhs. *)
+let string_is_prefix s1 s2 =
+  String.length s1 <= String.length s2 &&
+  String.sub s2 0 (String.length s1) = s1
+
+(** Check if the lhs is a postfix of the rhs. *)
+let string_is_suffix s1 s2 =
+  let l1 = String.length s1 in
+  let l2 = String.length s2 in
+  l1 <= l2 &&
+  String.sub s2 (l2 - l1) l1 = s1
+
+(** Check if the lhs is contained in the rhs. *)
+let string_contains s1 s2 =
+  let rexp = Str.regexp_string s1 in
+  try
+    ignore (Str.search_forward rexp s2 0);
+    true
+  with Not_found -> false
+
+(** Split a string across the given character, if given. (e.g. split first.second with '.').*)
+let string_split_character s c =
+  try
+    let index = String.rindex s c in
+    let lhs = String.sub s 0 index in
+    let rhs = String.sub s (index + 1) ((String.length s) - (1 + index)) in
+    (Some lhs, rhs)
+  with Not_found -> (None, s)
+
+let string_value_or_empty_string
+    (string_option: string option): string =
+  match string_option with
+  | Some s -> s
+  | None -> ""
+
+(** read a source file and return a list of lines, or None in case of error *)
+let read_file fname =
+  let res = ref [] in
+  let cin_ref = ref None in
+  let cleanup () =
+    match !cin_ref with
+    | None -> ()
+    | Some cin -> close_in cin in
+  try
+    let cin = open_in fname in
+    cin_ref := Some cin;
+    while true do
+      let line = input_line cin in
+      res := line :: !res
+    done;
+    assert false
+  with
+  | End_of_file ->
+      cleanup ();
+      Some (list_rev !res)
+  | Sys_error _ ->
+      cleanup ();
+      None
+
+(** copy a source file, return the number of lines, or None in case of error *)
+let copy_file fname_from fname_to =
+  let res = ref 0 in
+  let cin_ref = ref None in
+  let cout_ref = ref None in
+  let cleanup () =
+    begin match !cin_ref with
+      | None -> ()
+      | Some cin -> close_in cin
+    end;
+    begin match !cout_ref with
+      | None -> ()
+      | Some cout -> close_out cout
+    end in
+  try
+    let cin = open_in fname_from in
+    cin_ref := Some cin;
+    let cout = open_out fname_to in
+    cout_ref := Some cout;
+    while true do
+      let line = input_line cin in
+      output_string cout line;
+      output_char cout '\n';
+      incr res
+    done;
+    assert false
+  with
+  | End_of_file ->
+      cleanup ();
+      Some !res
+  | Sys_error _ ->
+      cleanup();
+      None
+
+module FileLOC = (** count lines of code of files and keep processed results in a cache *)
+  struct
+    let include_loc_hash = Hashtbl.create 1
+
+    let reset () = Hashtbl.clear include_loc_hash
+
+    let file_get_loc fname =
+      try Hashtbl.find include_loc_hash fname with Not_found ->
+          let loc = match read_file fname with
+            | None -> 0
+            | Some l -> list_length l in
+          Hashtbl.add include_loc_hash fname loc;
+          loc
+  end
+
+(** type for files used for printing *)
+type outfile =
+  { fname : string; (** name of the file *)
+    out_c : out_channel; (** output channel *)
+    fmt : F.formatter (** formatter for printing *) }
+
+(** create an outfile for the command line *)
+let create_outfile fname =
+  try
+    let out_c = open_out fname in
+    let fmt = F.formatter_of_out_channel out_c in
+    Some { fname = fname; out_c = out_c; fmt = fmt }
+  with Sys_error _ ->
+      F.fprintf F.err_formatter "error: cannot create file %s@." fname;
+      None
+
+(** operate on an outfile reference if it is not None *)
+let do_outf outf_ref f =
+  match !outf_ref with
+  | None -> ()
+  | Some outf ->
+      f outf
+
+(** close an outfile *)
+let close_outf outf =
+  close_out outf.out_c
+
+(** convert a filename to absolute path and normalize by removing occurrences of "." and ".." *)
+module FileNormalize = struct
+  let rec fname_to_list_rev fname =
+    if fname = "" then [] else
+      let base = Filename.basename fname in
+      let dir = Filename.dirname fname in
+      let does_not_split = (* make sure it terminates whatever the implementation of Filename *)
+        fname = base || String.length dir >= String.length fname in
+      if does_not_split then [fname]
+      else base :: fname_to_list_rev dir
+
+  (* split a file name into a list of strings representing it as a path *)
+  let fname_to_list fname =
+    list_rev (fname_to_list_rev fname)
+
+  (* concatenate a list of strings representing a path into a filename *)
+  let rec list_to_fname base path = match path with
+    | [] -> base
+    | x :: path' -> list_to_fname (Filename.concat base x) path'
+
+  (* normalize a path where done_l is a reversed path from the root already normalized *)
+  (* and todo_l is the path still to normalize *)
+  let rec normalize done_l todo_l = match done_l, todo_l with
+    | _, y :: tl when y = Filename.current_dir_name -> (* path/. --> path *)
+        normalize done_l tl
+    | [root], y :: tl when y = Filename.parent_dir_name -> (* /.. --> / *)
+        normalize done_l tl
+    | x :: dl, y :: tl when y = Filename.parent_dir_name -> (* path/x/.. --> path *)
+        normalize dl tl
+    | _, y :: tl -> normalize (y :: done_l) tl
+    | _, [] -> list_rev done_l
+
+  (* check if the filename contains "." or ".." *)
+  let fname_contains_current_parent fname =
+    let l = fname_to_list fname in
+    list_exists (fun x -> x = Filename.current_dir_name || x = Filename.parent_dir_name) l
+
+  (* convert a filename to absolute path, if necessary, and normalize "." and ".." *)
+  let fname_to_absolute_normalize fname =
+    let is_relative = Filename.is_relative fname in
+    let must_normalize = fname_contains_current_parent fname in
+    let simple_case () =
+      if is_relative then Filename.concat (Unix.getcwd ()) fname
+      else fname in
+    if must_normalize then begin
+      let done_l, todo_l =
+        if is_relative then
+          fname_to_list_rev (Unix.getcwd ()), fname_to_list fname
+        else match fname_to_list fname with
+          | [] -> [fname], [] (* should not happen *)
+          | root :: l -> [root], l in
+      let normal_l = normalize done_l todo_l in
+      match normal_l with
+      | base :: l -> list_to_fname base l
+      | [] -> (* should not happen *) simple_case ()
+    end
+    else simple_case ()
+
+  (*
+  let test () =
+  let test_fname fname =
+  let fname' = fname_to_absolute_normalize fname in
+  Format.fprintf Format.std_formatter "fname %s --> %s@." fname fname' in
+  let tests = [".";
+  "..";
+  "aaa.c";
+  "/";
+  "/..";
+  "../test.c";
+  "src/../././test.c"] in
+  List.map test_fname tests
+  *)
+end
+
+(** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
+let filename_to_absolute fname =
+  FileNormalize.fname_to_absolute_normalize fname
+
+(** Convert an absolute filename to one relative to the current directory. *)
+let filename_to_relative root fname =
+  let string_strict_subtract s1 s2 =
+    let n1, n2 = String.length s1, String.length s2 in
+    if n1 < n2 && String.sub s2 0 n1 = s1 then
+      String.sub s2 (n1 + 1) (n2 - (n1 + 1))
+    else s2 in
+  let norm_root = (* norm_root is root without any trailing / *)
+    Filename.concat (Filename.dirname root) (Filename.basename root) in
+  let remainder = (* remove the path prefix to root including trailing / *)
+    string_strict_subtract norm_root fname in
+  remainder
+
+
+let base_arg_desc =
+  [
+  "-results_dir",
+  Arg.String (fun s -> Config.results_dir := s),
+  Some "dir",
+  "set the project results directory (default dir=" ^ Config.default_results_dir ^ ")";
+  "-coverage",
+  Arg.Unit (fun () -> Config.worklist_mode:= 2),
+  None,
+  "analysis mode to maximize coverage (can take longer)";
+  "-lib",
+  Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library),
+  Some "dir",
+  "add dir to the list of directories to be searched for spec files";
+  "-models",
+  Arg.String (fun s -> Config.add_models (filename_to_absolute s)),
+  Some "zip file",
+  "add a zip file containing the models";
+  "-ziplib",
+  Arg.String (fun s -> Config.add_zip_library (filename_to_absolute s)),
+  Some "zip file",
+  "add a zip file containing library spec files";
+  "-project_root",
+  Arg.String (fun s -> Config.project_root := Some (filename_to_absolute s)),
+  Some "dir",
+  "root directory of the project";
+  "-infer_cache",
+  Arg.String (fun s -> Config.JarCache.infer_cache := Some (filename_to_absolute s)),
+  Some "dir",
+  "Select a directory to contain the infer cache";
+  ]
+
+let reserved_arg_desc =
+  [
+  "-absstruct", Arg.Set_int Config.abs_struct, Some "n", "abstraction level for fields of structs (default n = 1)";
+  "-absval", Arg.Set_int Config.abs_val, Some "n", "abstraction level for expressions (default n = 2)";
+  "-arraylevel", Arg.Set_int Config.array_level, Some "n", "the level of treating the array indexing and pointer arithmetic (default n = 0)";
+  "-developer_mode", Arg.Set Config.developer_mode, None, "reserved";
+  "-dotty", Arg.Set Config.write_dotty, None, "produce dotty files in the results directory";
+  "-exit_node_bias", Arg.Unit (fun () -> Config.worklist_mode:= 1), None, "nodes nearest the exit node are analyzed first";
+  "-html", Arg.Set Config.write_html, None, "produce hmtl output in the results directory";
+  "-join_cond", Arg.Set_int Config.join_cond, Some "n", "set the strength of the final information-loss check used by the join (default n=1)";
+  "-leak", Arg.Set Config.allowleak, None, "forget leaks during abstraction";
+  "-max_procs", Arg.Set_int Config.max_num_proc, Some "n", "set the maximum number of processes to be used for parallel execution (default n=0)";
+  "-monitor_prop_size", Arg.Set Config.monitor_prop_size, None, "monitor size of props";
+  "-nelseg", Arg.Set Config.nelseg, None, "use only nonempty lsegs";
+  "-noliveness", Arg.Clear Config.liveness, None, "turn the dead program variable elimination off";
+  "-noprintdiff", Arg.Clear Config.print_using_diff, None, "turn off highlighting diff w.r.t. previous prop in printing";
+  "-notest", Arg.Clear Config.test, None, "turn test mode off";
+  "-num_cores", Arg.Set_int Config.num_cores, Some "n", "set the number of cores used in parallel by the analysis (default n=1)";
+  "-only_footprint", Arg.Set Config.only_footprint, None, "skip the re-execution phase";
+  "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
+  "-set_pp_margin", Arg.Int (fun i -> F.set_margin i), Some "n", "set right margin for the pretty printing functions";
+  "-slice_fun", Arg.Set_string Config.slice_fun, None, "analyze only functions recursively called by function given as argument";
+  "-spec_abs_level", Arg.Set_int Config.spec_abs_level, Some "n", "set the level of abstracting the postconditions of discovered specs (default n=1)";
+  "-trace_error", Arg.Set Config.trace_error, None, "turn on tracing of error explanation";
+  "-trace_join", Arg.Set Config.trace_join, None, "turn on tracing of join";
+  "-trace_rearrange", Arg.Set Config.trace_rearrange, None, "turn on tracing of rearrangement";
+  "-visits_bias", Arg.Unit (fun () -> Config.worklist_mode:= 2), None, "nodes visited fewer times are analyzed first";
+  ]
+
+(**************** START MODULE Arg2 -- modified from Arg in the ocaml distribution ***************)
+module Arg2 = struct
+  type key = string
+  type doc = string
+  type usage_msg = string
+  type anon_fun = (string -> unit)
+
+  type spec = Arg.spec
+
+  exception Bad of string
+  exception Help of string
+
+  type error =
+    | Unknown of string
+    | Wrong of string * string * string  (* option, actual, expected *)
+    | Missing of string
+    | Message of string
+
+  exception Stop of error (* used internally *)
+
+  open Printf
+
+  let rec assoc3 x l =
+    match l with
+    | [] -> raise Not_found
+    | (y1, y2, y3) :: t when y1 = x -> y2
+    | _ :: t -> assoc3 x t
+
+  let make_symlist prefix sep suffix l =
+    match l with
+    | [] -> "<none>"
+    | h:: t -> (list_fold_left (fun x y -> x ^ sep ^ y) (prefix ^ h) t) ^ suffix
+
+  let print_spec buf (key, spec, doc) =
+    match spec with
+    | Arg.Symbol (l, _) -> bprintf buf "  %s %s%s\n" key (make_symlist "{" "|" "}" l)
+          doc
+    | _ ->
+        let sep = if String.length doc != 0 && String.get doc 0 = '=' then "" else " " in
+        bprintf buf "  %s%s%s\n" key sep doc
+
+  let help_action () = raise (Stop (Unknown "-help"))
+
+  let add_help speclist =
+    let add1 =
+      try ignore (assoc3 "-help" speclist); []
+      with Not_found ->
+          ["-help", Arg.Unit help_action, " Display this list of options"]
+    and add2 =
+      try ignore (assoc3 "--help" speclist); []
+      with Not_found ->
+          ["--help", Arg.Unit help_action, " Display this list of options"]
+    in
+    speclist @ (add1 @ add2)
+
+  let usage_b buf speclist errmsg =
+    bprintf buf "%s\n" errmsg;
+    list_iter (print_spec buf) (add_help speclist)
+
+  let usage speclist errmsg =
+    let b = Buffer.create 200 in
+    usage_b b speclist errmsg;
+    eprintf "%s" (Buffer.contents b)
+  let current = ref 0;;
+
+  let parse_argv ?(current = current) argv speclist anonfun errmsg =
+    let l = Array.length argv in
+    let b = Buffer.create 200 in
+    let initpos = !current in
+    let stop error =
+      let progname = if initpos < l then argv.(initpos) else "(?)" in
+      begin match error with
+        | Unknown "-help" -> ()
+        | Unknown "--help" -> ()
+        | Unknown s ->
+            bprintf b "%s: unknown option `%s'.\n" progname s
+        | Missing s ->
+            bprintf b "%s: option `%s' needs an argument.\n" progname s
+        | Wrong (opt, arg, expected) ->
+            bprintf b "%s: wrong argument `%s'; option `%s' expects %s.\n"
+              progname arg opt expected
+        | Message s ->
+            bprintf b "%s: %s.\n" progname s
+      end;
+      usage_b b speclist errmsg;
+      if error = Unknown "-help" || error = Unknown "--help"
+      then raise (Help (Buffer.contents b))
+      else raise (Bad (Buffer.contents b))
+    in
+    incr current;
+    while !current < l do
+      let s = argv.(!current) in
+      if String.length s >= 1 && String.get s 0 = '-' then begin
+        let action =
+          try assoc3 s speclist
+          with Not_found -> stop (Unknown s)
+        in
+        begin try
+          let rec treat_action = function
+            | Arg.Unit f -> f ();
+            | Arg.Bool f when !current + 1 < l ->
+                let arg = argv.(!current + 1) in
+                begin try f (bool_of_string arg)
+                with Invalid_argument "bool_of_string" ->
+                    raise (Stop (Wrong (s, arg, "a boolean")))
+                end;
+                incr current;
+            | Arg.Set r -> r := true;
+            | Arg.Clear r -> r := false;
+            | Arg.String f when !current + 1 < l ->
+                f argv.(!current + 1);
+                incr current;
+            | Arg.Symbol (symb, f) when !current + 1 < l ->
+                let arg = argv.(!current + 1) in
+                if list_mem string_equal arg symb then begin
+                  f argv.(!current + 1);
+                  incr current;
+                end else begin
+                  raise (Stop (Wrong (s, arg, "one of: "
+                          ^ (make_symlist "" " " "" symb))))
+                end
+            | Arg.Set_string r when !current + 1 < l ->
+                r := argv.(!current + 1);
+                incr current;
+            | Arg.Int f when !current + 1 < l ->
+                let arg = argv.(!current + 1) in
+                begin try f (int_of_string arg)
+                with Failure "int_of_string" ->
+                    raise (Stop (Wrong (s, arg, "an integer")))
+                end;
+                incr current;
+            | Arg.Set_int r when !current + 1 < l ->
+                let arg = argv.(!current + 1) in
+                begin try r := (int_of_string arg)
+                with Failure "int_of_string" ->
+                    raise (Stop (Wrong (s, arg, "an integer")))
+                end;
+                incr current;
+            | Arg.Float f when !current + 1 < l ->
+                let arg = argv.(!current + 1) in
+                begin try f (float_of_string arg);
+                with Failure "float_of_string" ->
+                    raise (Stop (Wrong (s, arg, "a float")))
+                end;
+                incr current;
+            | Arg.Set_float r when !current + 1 < l ->
+                let arg = argv.(!current + 1) in
+                begin try r := (float_of_string arg);
+                with Failure "float_of_string" ->
+                    raise (Stop (Wrong (s, arg, "a float")))
+                end;
+                incr current;
+            | Arg.Tuple specs ->
+                list_iter treat_action specs;
+            | Arg.Rest f ->
+                while !current < l - 1 do
+                  f argv.(!current + 1);
+                  incr current;
+                done;
+            | _ -> raise (Stop (Missing s))
+          in
+          treat_action action
+        with Bad m -> stop (Message m);
+        | Stop e -> stop e;
+        end;
+        incr current;
+      end else begin
+        (try anonfun s with Bad m -> stop (Message m));
+        incr current;
+      end;
+    done
+
+  let parse l f msg =
+    try
+      parse_argv Sys.argv l f msg;
+    with
+    | Bad msg -> eprintf "%s" msg; exit 2;
+    | Help msg -> printf "%s" msg; exit 0
+
+  (** Custom version of Arg.aling so that keywords are on one line and documentation is on the next *)
+  let align arg_desc =
+    let do_arg (key, spec, doc) =
+      let first_space =
+        try
+          let index = String.index doc ' ' in
+          if String.get doc index = '=' then 0 else index
+        with Not_found -> 0 in
+      let len = String.length doc in
+      let doc1 = String.sub doc 0 first_space in
+      let doc2 = String.sub doc first_space (len - first_space) in
+      if len = 0 then (key, spec, doc)
+      else (key, spec, doc1 ^ "\n     " ^ doc2) in
+    list_map do_arg arg_desc
+
+  type aligned = (key * spec * doc)
+
+  let to_arg_desc x = x
+  let from_arg_desc x = x
+
+  (** Create a group of sorted command-line arguments *)
+  let create_options_desc double_minus title unsorted_desc =
+    let handle_double_minus (opname, spec, param_opt, text) = match param_opt with
+      | None ->
+          if double_minus then ("-"^opname, spec, " " ^ text)
+          else (opname, spec, " " ^ text)
+      | Some param ->
+          if double_minus then ("-"^opname, spec, "=" ^ param ^ " " ^ text)
+          else (opname, spec, param ^ " " ^ text) in
+    let unsorted_desc' = list_map handle_double_minus unsorted_desc in
+    let dlist =
+      ("", Arg.Unit (fun () -> ()), " \n  " ^ title ^ "\n") ::
+      list_sort (fun (x, _, _) (y, _, _) -> Pervasives.compare x y) unsorted_desc' in
+    align dlist
+end
+(********** END OF MODULE Arg2 **********)
+
+(** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
+module Escape = struct
+  (** apply a map function for escape sequences *)
+  let escape_map map_fun s =
+    let len = String.length s in
+    let buf = Buffer.create len in
+    for i = 0 to len - 1 do
+      let c = String.unsafe_get s i in
+      match map_fun c with
+      | None -> Buffer.add_char buf c
+      | Some s' -> Buffer.add_string buf s'
+    done;
+    Buffer.contents buf
+
+  let escape_csv s =
+    let map = function
+      | '"' -> Some "\"\""
+      | c when Char.code c > 127 -> Some "?" (* non-ascii character: escape *)
+      | _ -> None in
+    escape_map map s
+
+  let escape_xml s =
+    let map = function
+      | '"' -> (* on next line to avoid bad indentation *)
+          Some "&quot;"
+      | '>' -> Some "&gt;"
+      | '<' -> Some "&lt;"
+      | '&' -> Some "&amp;"
+      | '%' -> Some "&#37;"
+      | c when Char.code c > 127 -> (* non-ascii character: escape *)
+          Some ("&#" ^ string_of_int (Char.code c) ^ ";")
+      | _ -> None in
+    escape_map map s
+
+  let escape_dotty s =
+    let map = function
+      | '"' -> Some "\\\""
+      | '\\' -> Some "\\\\"
+      | _ -> None in
+    escape_map map s
+
+  let escape_path s =
+    let map_csv = function
+      | c ->
+          if (Char.escaped c) = Filename.dir_sep
+          then Some "_"
+          else None in
+    escape_map map_csv s
+end
+
+
+(** flags for a procedure, these can be set programmatically by __infer_set_flag: see frontend.ml *)
+type proc_flags = (string, string) Hashtbl.t
+
+let proc_flags_empty () : proc_flags = Hashtbl.create 1
+
+let proc_flag_iterations = "iterations"
+let proc_flag_skip = "skip"
+let proc_flag_ignore_return = "ignore_return"
+
+let proc_flags_add proc_flags key value =
+  Hashtbl.replace proc_flags key value
+
+let proc_flags_find proc_flags key =
+  Hashtbl.find proc_flags key
+
+let join_strings sep = function
+  | [] -> ""
+  | hd:: tl ->
+      list_fold_left (fun str p -> str ^ sep ^ p) hd tl
+
+let next compare =
+  fun x y n ->
+      if n <> 0 then n
+      else compare x y
+
+
+let directory_fold f init path =
+  let collect current_dir (accu, dirs) path =
+    let full_path = (Filename.concat current_dir path) in
+    try
+      if Sys.is_directory full_path then
+        (accu, full_path:: dirs)
+      else
+        (f accu full_path, dirs)
+    with Sys_error _ ->
+        (accu, dirs) in
+  let rec loop accu dirs =
+    match dirs with
+    | [] -> accu
+    | d:: tl ->
+        let (new_accu, new_dirs) = Array.fold_left (collect d) (accu, tl) (Sys.readdir d) in
+        loop new_accu new_dirs in
+  if Sys.is_directory path then
+    loop init [path]
+  else
+    f init path
+
+
+let directory_iter f path =
+  let apply current_dir dirs path =
+    let full_path = (Filename.concat current_dir path) in
+    try
+      if Sys.is_directory full_path then
+        full_path:: dirs
+      else
+        let () = f full_path in
+        dirs
+    with Sys_error _ ->
+        dirs in
+  let rec loop dirs =
+    match dirs with
+    | [] -> ()
+    | d:: tl ->
+        let new_dirs = Array.fold_left (apply d) tl (Sys.readdir d) in
+        loop new_dirs in
+  if Sys.is_directory path then
+    loop [path]
+  else
+    f path
+
+type analyzer = Infer | Eradicate | Checkers | Tracing
+
+let analyzers = [Infer; Eradicate; Checkers; Tracing]
+
+let string_of_analyzer = function
+  | Infer -> "infer"
+  | Eradicate -> "eradicate"
+  | Checkers -> "checkers"
+  | Tracing -> "tracing"
+
+exception Unknown_analyzer
+
+let analyzer_of_string = function
+  | "infer" -> Infer
+  | "eradicate" -> Eradicate
+  | "checkers" -> Checkers
+  | "tracing" -> Tracing
+  | _ -> raise Unknown_analyzer

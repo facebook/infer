@@ -1,0 +1,24 @@
+#!/bin/bash -e
+
+# Copyright (c) 2013 - Facebook.
+# All rights reserved.
+
+# This script takes a buck target and runs the respective tests.
+
+# Arguments:
+# $1 : buck target
+# [$2] : "keep" or "replace". Keep will keep the temporary folders used in the tests.
+#         Replace will replace the saved dot files with the new created ones.
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd $SCRIPT_DIR/../../
+
+case $2 in
+    keep)
+        INFER_KEEP_FOLDER=Y buck test --no-results-cache $1 ;;
+    replace)
+        INFER_DOT_REPLACE=Y buck test --no-results-cache $1 ;;
+    *)
+        buck test --no-results-cache $1 ;;
+esac

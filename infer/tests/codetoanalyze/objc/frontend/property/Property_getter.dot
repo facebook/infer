@@ -1,0 +1,35 @@
+digraph iCFG {
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$4=*&self:class A * [line -1]\n  n$5=*&x:int  [line -1]\n  *n$4._x:int =n$5 [line -1]\n  REMOVE_TEMPS(n$4,n$5); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&x,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit A_setX: \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start A_setX:\nFormals:  self:class A * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 7 -> 9 ;
+6 [label="6:  Return Stmt \n   n$2=*&self:class A * [line -1]\n  n$3=*n$2._x:int  [line -1]\n  *&return:int =n$3 [line -1]\n  REMOVE_TEMPS(n$2,n$3); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit A_x \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start A_x\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   n$1=*&target:class A * [line 15]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 15]\n  *&return:int =n$0 [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  NULLIFY(&target,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_addTarget: \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_addTarget:\nFormals:  self:class A * target:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n  NULLIFY(&self,false); [line 14]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

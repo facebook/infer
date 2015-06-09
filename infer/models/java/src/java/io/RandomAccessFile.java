@@ -1,0 +1,174 @@
+package java.io;
+
+import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.models.InferUndefined;
+import dalvik.system.CloseGuard;
+
+import java.nio.FileChannelImpl;
+import java.nio.channels.FileChannel;
+
+public class RandomAccessFile implements Closeable {
+
+    private FileDescriptor fd;
+    private boolean syncMetadata;
+    private FileChannel channel;
+    private int mode;
+    private CloseGuard guard;
+
+    private byte[] scratch;
+
+
+    public RandomAccessFile(String name, String mode)
+            throws FileNotFoundException {
+        this.guard = new CloseGuard();
+        InferBuiltins.__set_file_attribute(this.guard);
+    }
+
+    public RandomAccessFile(File file, String mode)
+            throws FileNotFoundException {
+        this.guard = new CloseGuard();
+        InferBuiltins.__set_file_attribute(this.guard);
+    }
+
+    public FileChannel getChannel() {
+        channel = new FileChannelImpl(this, fd, InferUndefined.int_undefined());
+        return channel;
+    }
+
+    public void close() throws IOException {
+        InferBuiltins.__set_mem_attribute(this.guard);
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public int read() throws IOException {
+        return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public int read(byte b[], int off, int len) throws IOException {
+        return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public int read(byte b[]) throws IOException {
+        return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public final void readFully(byte b[]) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void readFully(byte b[], int off, int len) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public void write(int b) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public void write(byte b[]) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public void write(byte b[], int off, int len) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public void seek(long pos) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public long length() throws IOException {
+        return InferUndefined.can_throw_ioexception_long();
+    }
+
+    public final boolean readBoolean() throws IOException {
+        return InferUndefined.can_throw_ioexception_boolean();
+    }
+
+    public final byte readByte() throws IOException {
+        return InferUndefined.can_throw_ioexception_byte();
+    }
+
+    public final int readUnsignedByte() throws IOException {
+        return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public final short readShort() throws IOException {
+        return InferUndefined.can_throw_ioexception_short();
+    }
+
+    public final int readUnsignedShort() throws IOException {
+        return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public final char readChar() throws IOException {
+        return InferUndefined.can_throw_ioexception_char();
+    }
+
+    public final int readInt() throws IOException {
+        return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public final long readLong() throws IOException {
+        return InferUndefined.can_throw_ioexception_long();
+    }
+
+    public final float readFloat() throws IOException {
+        return InferUndefined.can_throw_ioexception_float();
+    }
+
+    public final double readDouble() throws IOException {
+        return InferUndefined.can_throw_ioexception_double();
+    }
+
+    public final String readLine() throws IOException {
+        return InferUndefined.can_throw_ioexception_string();
+    }
+
+    public final String readUTF() throws IOException {
+        return InferUndefined.can_throw_ioexception_string();
+    }
+
+    public final void writeBoolean(boolean v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeByte(int v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeShort(int v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeChar(int v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeInt(int v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeLong(long v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeFloat(float v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeDouble(double v) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeBytes(String s) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeChars(String s) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+
+    public final void writeUTF(String str) throws IOException {
+        InferUndefined.can_throw_ioexception_void();
+    }
+}

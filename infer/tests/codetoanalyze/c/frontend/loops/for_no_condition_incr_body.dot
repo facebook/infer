@@ -1,0 +1,34 @@
+digraph iCFG {
+8 [label="8:  DeclStmt \n   *&d:int =0 [line 7]\n  NULLIFY(&d,false); [line 7]\n " shape="box"]
+	
+
+	 8 -> 5 ;
+7 [label="7: Prune (false branch) \n   PRUNE((1 == 0), false); [line 8]\n " shape="invhouse"]
+	
+
+	 7 -> 3 ;
+6 [label="6: Prune (true branch) \n   PRUNE((1 != 0), true); [line 8]\n  APPLY_ABSTRACTION; [line 8]\n " shape="invhouse"]
+	
+
+	 6 -> 4 ;
+5 [label="5:  BinaryOperatorStmt: Assign \n   *&d:int =0 [line 8]\n  NULLIFY(&d,false); [line 8]\n  APPLY_ABSTRACTION; [line 8]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4: + \n  " ]
+	
+
+	 4 -> 6 ;
+	 4 -> 7 ;
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start main\nFormals: \nLocals:  d:int  \n   DECLARE_LOCALS(&return,&d); [line 6]\n  NULLIFY(&d,false); [line 6]\n " color=yellow style=filled]
+	
+
+	 1 -> 8 ;
+}

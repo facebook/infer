@@ -1,0 +1,103 @@
+digraph iCFG {
+27 [label="27:  DeclStmt \n   n$18=_fun_A_sharedInstance() [line 46]\n  *&b:class A *=n$18 [line 46]\n  REMOVE_TEMPS(n$18); [line 46]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26:  Message Call: setX: \n   n$17=*&b:class A * [line 47]\n  _fun_A_setX:(n$17:class A *,17:int ) virtual [line 47]\n  REMOVE_TEMPS(n$17); [line 47]\n  NULLIFY(&b,false); [line 47]\n " shape="box"]
+	
+
+	 26 -> 25 ;
+25 [label="25:  Return Stmt \n   *&return:int =0 [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+	
+
+	 25 -> 24 ;
+24 [label="24: Exit main \n  " color=yellow style=filled]
+	
+
+23 [label="23: Start main\nFormals: \nLocals:  b:class A * \n   DECLARE_LOCALS(&return,&b); [line 45]\n  NULLIFY(&b,false); [line 45]\n " color=yellow style=filled]
+	
+
+	 23 -> 27 ;
+22 [label="22:  BinaryOperatorStmt: Assign \n   n$15=*&self:class A * [line -1]\n  n$16=*&x:int  [line -1]\n  *n$15._x:int =n$16 [line -1]\n  REMOVE_TEMPS(n$15,n$16); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&x,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 22 -> 21 ;
+21 [label="21: Exit A_setX: \n  " color=yellow style=filled]
+	
+
+20 [label="20: Start A_setX:\nFormals:  self:class A * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 20 -> 22 ;
+19 [label="19:  Return Stmt \n   n$13=*&self:class A * [line -1]\n  n$14=*n$13._x:int  [line -1]\n  *&return:int =n$14 [line -1]\n  REMOVE_TEMPS(n$13,n$14); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18: Exit A_x \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start A_x\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 17 -> 19 ;
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$11=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 37]\n  n$9=_fun_A_init(n$11:class A *) virtual [line 37]\n  *&#GB$A_trans_SI_sharedInstance:struct objc_object *=n$9 [line 37]\n  REMOVE_TEMPS(n$9,n$11); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15: Exit __objc_anonymous_block_A_trans_SI______2 \n  " color=yellow style=filled]
+	
+
+14 [label="14: Start __objc_anonymous_block_A_trans_SI______2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 36]\n " color=yellow style=filled]
+	
+
+	 14 -> 16 ;
+13 [label="13:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_trans_SI______2); [line 36]\n  n$12=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_trans_SI______2 ):class __objc_anonymous_block_A_trans_SI______2 *) [line 36]\n  *&__objc_anonymous_block_A_trans_SI______2:class __objc_anonymous_block_A_trans_SI______2 =n$12 [line 36]\n  *&dummy_block:_fn_ (*)=(_fun___objc_anonymous_block_A_trans_SI______2) [line 36]\n  REMOVE_TEMPS(n$12); [line 36]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12:  Call n$8 \n   n$8=*&dummy_block:_fn_ (*) [line 39]\n  n$8() [line 39]\n  REMOVE_TEMPS(n$8); [line 39]\n  NULLIFY(&dummy_block,false); [line 39]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11:  Return Stmt \n   n$7=*&#GB$A_trans_SI_sharedInstance:struct objc_object * [line 40]\n  *&return:struct objc_object *=n$7 [line 40]\n  REMOVE_TEMPS(n$7); [line 40]\n  NULLIFY(&__objc_anonymous_block_A_trans_SI______2,true); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit A_trans_SI \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start A_trans_SI\nFormals: \nLocals:  dummy_block:_fn_ (*) \n   DECLARE_LOCALS(&return,&dummy_block); [line 32]\n  NULLIFY(&dummy_block,false); [line 32]\n " color=yellow style=filled]
+	
+
+	 9 -> 13 ;
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$5=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 25]\n  n$3=_fun_A_init(n$5:class A *) virtual [line 25]\n  *&#GB$A_sharedInstance_sharedInstance:struct objc_object *=n$3 [line 25]\n  REMOVE_TEMPS(n$3,n$5); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit __objc_anonymous_block_A_sharedInstance______1 \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start __objc_anonymous_block_A_sharedInstance______1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	
+
+	 6 -> 8 ;
+5 [label="5:  DeclStmt \n   DECLARE_LOCALS(&infer___objc_anonymous_block_A_sharedInstance______1); [line 26]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_sharedInstance______1); [line 24]\n  n$6=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_sharedInstance______1 ):class __objc_anonymous_block_A_sharedInstance______1 *) [line 24]\n  *&__objc_anonymous_block_A_sharedInstance______1:class __objc_anonymous_block_A_sharedInstance______1 =n$6 [line 24]\n  *&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*)=(_fun___objc_anonymous_block_A_sharedInstance______1) [line 26]\n  REMOVE_TEMPS(n$6); [line 26]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  Call n$1 \n   n$1=*&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) [line 26]\n  n$2=n$1() [line 26]\n  REMOVE_TEMPS(n$1,n$2); [line 26]\n  NULLIFY(&infer___objc_anonymous_block_A_sharedInstance______1,true); [line 26]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 28]\n  *&return:struct objc_object *=n$0 [line 28]\n  REMOVE_TEMPS(n$0); [line 28]\n  NULLIFY(&__objc_anonymous_block_A_sharedInstance______1,true); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_sharedInstance \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_sharedInstance\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 1 -> 5 ;
+}

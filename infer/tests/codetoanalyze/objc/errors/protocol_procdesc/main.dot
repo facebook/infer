@@ -1,0 +1,21 @@
+digraph iCFG {
+5 [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class Bicycle ):class Bicycle *) [line 11]\n  *&bike:class Bicycle *=n$2 [line 11]\n  REMOVE_TEMPS(n$2); [line 11]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  Message Call: signalStop \n   n$0=*&bike:class Bicycle * [line 13]\n  _fun_Bicycle_signalStop(n$0:class Bicycle *) virtual [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&bike,false); [line 13]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start main\nFormals: \nLocals:  bike:class Bicycle * \n   DECLARE_LOCALS(&return,&bike); [line 9]\n  NULLIFY(&bike,false); [line 9]\n " color=yellow style=filled]
+	
+
+	 1 -> 5 ;
+}

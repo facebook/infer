@@ -1,0 +1,54 @@
+digraph iCFG {
+14 [label="14:  InitListExp \n   *&e.ssn:int =12 [line 37]\n  *&e.salary:float =3000.500000 [line 37]\n  *&e.doj.date:int =12 [line 37]\n  *&e.doj.month:int =12 [line 37]\n  *&e.doj.year:int =2010 [line 37]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13:  Return Stmt \n   n$1=*&e.ssn:int  [line 38]\n  *&return:int =n$1 [line 38]\n  REMOVE_TEMPS(n$1); [line 38]\n  NULLIFY(&e,false); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12: Exit main2 \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start main2\nFormals: \nLocals:  e:struct Employee  \n   DECLARE_LOCALS(&return,&e); [line 36]\n " color=yellow style=filled]
+	
+
+	 11 -> 14 ;
+10 [label="10:  InitListExp \n   *&p.x:int =4 [line 20]\n  *&p.y:int =5 [line 20]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9:  Return Stmt \n   *&return:int =0 [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit test \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start test\nFormals:  p:Point *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n  NULLIFY(&p,false); [line 19]\n " color=yellow style=filled]
+	
+
+	 7 -> 10 ;
+6 [label="6:  InitListExp \n   n$0=_fun_foo() [line 16]\n  *&p.x:int =1 [line 16]\n  *&p.y:int =(n$0 + 3) [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit main \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start main\nFormals: \nLocals:  p:struct Point  \n   DECLARE_LOCALS(&return,&p); [line 15]\n  NULLIFY(&p,false); [line 15]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   *&return:int =5 [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit foo \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start foo\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

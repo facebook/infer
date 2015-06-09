@@ -1,0 +1,73 @@
+digraph iCFG {
+19 [label="19:  Return Stmt \n   n$10=_fun___builtin___CFStringMakeConstantString(\"Icon\":char *) [line 39]\n  n$11=_fun_CTFontCreateWithName(n$10:struct __CFString *,17.000000:double ,0:CGAffineTransform *) [line 39]\n  n$12=_fun___objc_cast(n$11:void *,sizeof(void ):void ) [line 39]\n  *&return:struct __CTFont *=n$12 [line 39]\n  REMOVE_TEMPS(n$10,n$11,n$12); [line 39]\n  APPLY_ABSTRACTION; [line 39]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18: Exit cfautorelease_test \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start cfautorelease_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 38]\n " color=yellow style=filled]
+	
+
+	 17 -> 19 ;
+16 [label="16:  DeclStmt \n   n$9=_fun_CFHTTPMessageCopyAllHeaderFields(0:struct __CFHTTPMessage *) [line 34]\n  *&ref:struct __CFDictionary *=n$9 [line 34]\n  REMOVE_TEMPS(n$9); [line 34]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  Call _fun_CFBridgingRelease \n   n$7=*&ref:struct __CFDictionary * [line 35]\n  n$8=_fun___objc_cast(n$7:void *,sizeof(struct objc_object ):void ) [line 35]\n  REMOVE_TEMPS(n$7,n$8); [line 35]\n  NULLIFY(&ref,false); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14: Exit TollBridgeExample__readHTTPHeader \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start TollBridgeExample__readHTTPHeader\nFormals:  self:class TollBridgeExample *\nLocals:  ref:struct __CFDictionary * \n   DECLARE_LOCALS(&return,&ref); [line 32]\n  NULLIFY(&ref,false); [line 32]\n  NULLIFY(&self,false); [line 32]\n " color=yellow style=filled]
+	
+
+	 13 -> 16 ;
+12 [label="12:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class NSLocale ):class NSLocale *) [line 28]\n  *&observer:struct objc_object *=n$6 [line 28]\n  REMOVE_TEMPS(n$6); [line 28]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11:  DeclStmt \n   n$4=*&observer:struct objc_object * [line 29]\n  *&a:struct __CFLocale *=n$4 [line 29]\n  REMOVE_TEMPS(n$4); [line 29]\n  NULLIFY(&a,false); [line 29]\n  NULLIFY(&observer,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit TollBridgeExample_brideRetained \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start TollBridgeExample_brideRetained\nFormals:  self:class TollBridgeExample *\nLocals:  observer:struct objc_object * a:struct __CFLocale * \n   DECLARE_LOCALS(&return,&observer,&a); [line 27]\n  NULLIFY(&a,false); [line 27]\n  NULLIFY(&observer,false); [line 27]\n  NULLIFY(&self,false); [line 27]\n " color=yellow style=filled]
+	
+
+	 9 -> 12 ;
+8 [label="8:  DeclStmt \n   n$3=_fun_CFLocaleCreate(0:struct __CFAllocator *,0:struct __CFString *) [line 22]\n  *&nameRef:struct __CFLocale *=n$3 [line 22]\n  REMOVE_TEMPS(n$3); [line 22]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7:  DeclStmt \n   n$2=*&nameRef:struct __CFLocale * [line 23]\n  *&a:class NSLocale *=(struct __CFLocale *)n$2 [line 23]\n  REMOVE_TEMPS(n$2); [line 23]\n  NULLIFY(&a,false); [line 23]\n  NULLIFY(&nameRef,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6: Exit TollBridgeExample_bridge \n  " color=yellow style=filled]
+	
+
+5 [label="5: Start TollBridgeExample_bridge\nFormals:  self:class TollBridgeExample *\nLocals:  nameRef:struct __CFLocale * a:class NSLocale * \n   DECLARE_LOCALS(&return,&nameRef,&a); [line 21]\n  NULLIFY(&a,false); [line 21]\n  NULLIFY(&nameRef,false); [line 21]\n  NULLIFY(&self,false); [line 21]\n " color=yellow style=filled]
+	
+
+	 5 -> 8 ;
+4 [label="4:  DeclStmt \n   n$1=_fun_CFLocaleCreate(0:struct __CFAllocator *,0:struct __CFString *) [line 17]\n  *&nameRef:struct __CFLocale *=n$1 [line 17]\n  REMOVE_TEMPS(n$1); [line 17]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  DeclStmt \n   n$0=*&nameRef:struct __CFLocale * [line 18]\n  *&a:class NSLocale *=(struct __CFLocale *)n$0 [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&a,false); [line 18]\n  NULLIFY(&nameRef,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit TollBridgeExample_bridgeTransfer \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:class TollBridgeExample *\nLocals:  nameRef:struct __CFLocale * a:class NSLocale * \n   DECLARE_LOCALS(&return,&nameRef,&a); [line 16]\n  NULLIFY(&a,false); [line 16]\n  NULLIFY(&nameRef,false); [line 16]\n  NULLIFY(&self,false); [line 16]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+}

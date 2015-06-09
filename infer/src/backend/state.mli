@@ -1,0 +1,112 @@
+(*
+* Copyright (c) 2009 -2013 Monoidics ltd.
+* Copyright (c) 2013 - Facebook.
+* All rights reserved.
+*)
+
+(** State of symbolic execution *)
+
+open Utils
+
+(** Add diverging states *)
+val add_diverging_states : Paths.PathSet.t -> unit
+
+(** Get the diverging states for the node *)
+val get_diverging_states_node : unit -> Paths.PathSet.t
+
+(** Get the diverging states for the procedure *)
+val get_diverging_states_proc : unit -> Paths.PathSet.t
+
+(** Get the node target of a Sil.Goto_node instruction, if any *)
+val get_goto_node : unit -> int option
+
+(** Get update instrumentation for the current loc *)
+val get_inst_update : Sil.path_pos -> Sil.inst
+
+(** Get last instruction seen in symbolic execution *)
+val get_instr : unit -> Sil.instr option
+
+(** Get last location seen in symbolic execution *)
+val get_loc : unit -> Sil.location
+
+(** Get the location trace of the last path seen in symbolic execution *)
+val get_loc_trace : unit -> Errlog.loc_trace
+
+(** Get last node seen in symbolic execution *)
+val get_node : unit -> Cfg.Node.t
+
+(** Get id of last node seen in symbolic execution *)
+val get_node_id : unit -> int
+
+(** Get id and key of last node seen in symbolic execution *)
+val get_node_id_key : unit -> int * int
+
+(** return the normalized precondition extracted form the last prop seen, if any
+the abstraction function is a parameter to get around module dependencies *)
+val get_normalized_pre : (Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
+
+(** Get last path seen in symbolic execution *)
+val get_path : unit -> Paths.Path.t * (Sil.path_pos option)
+
+(** Get the last path position seen in symbolic execution *)
+val get_path_pos : unit -> Sil.path_pos
+
+(** Get last last prop,tenv,pdesc seen in symbolic execution *)
+val get_prop_tenv_pdesc : unit -> (Prop.normal Prop.t * Sil.tenv * Cfg.Procdesc.t) option
+
+(** Get last session seen in symbolic execution *)
+val get_session : unit -> int
+
+(** Mark the end of symbolic execution of a node *)
+val mark_execution_end : Cfg.Node.t -> unit
+
+(** Mark the start of symbolic execution of a node *)
+val mark_execution_start : Cfg.Node.t -> unit
+
+(** Mark that the execution of the current instruction failed *)
+val mark_instr_fail : (Prop.normal Prop.t) option -> exn -> unit
+
+(** Mark that the execution of the current instruction was OK *)
+val mark_instr_ok : unit -> unit
+
+(** Create a function to find duplicate nodes.
+A node is a duplicate of another one if they have the same kind and location
+and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
+val mk_find_duplicate_nodes: Cfg.Procdesc.t -> (Cfg.Node.t -> Cfg.NodeSet.t)
+
+type log_issue =
+  Procname.t ->
+  ?loc: Sil.location option ->
+  ?node_id: (int * int) option ->
+  ?session: int option ->
+  ?ltr: Errlog.loc_trace option ->
+  ?pre: Prop.normal Prop.t option ->
+  exn ->
+  unit
+
+(** Process the failures during symbolic execution of a procedure *)
+val process_execution_failures : log_issue -> Procname.t -> unit
+
+(** Reset all the global data in the module: diverging states and failure stats *)
+val reset : unit -> unit
+
+(** Reset the diverging states and goto information for the node *)
+val reset_diverging_states_goto_node : unit -> unit
+
+(** Set the node target of a Sil.Goto_node instruction *)
+val set_goto_node : int -> unit
+
+(** Set last instruction seen in symbolic execution *)
+val set_instr : Sil.instr -> unit
+
+(** Set last node seen in symbolic execution *)
+val set_node : Cfg.node -> unit
+
+(** Get last path seen in symbolic execution *)
+val set_path : Paths.Path.t -> Sil.path_pos option -> unit
+
+(** Set last prop,tenv,pdesc seen in symbolic execution *)
+val set_prop_tenv_pdesc : Prop.normal Prop.t -> Sil.tenv -> Cfg.Procdesc.t -> unit
+
+(** Set last session seen in symbolic execution *)
+val set_session : int -> unit

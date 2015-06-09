@@ -1,0 +1,10 @@
+prebuilt_jar(
+    name = 'jackson',
+    binary_jar = 'jackson-2.2.3.jar',
+    deps = [
+        '//dependencies/java/guava:guava',
+    ],
+    visibility = [ 
+        'PUBLIC',
+    ]
+)

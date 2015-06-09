@@ -1,0 +1,32 @@
+digraph iCFG {
+8 [label="8:  DeclStmt \n   n$8=_fun___objc_alloc_no_fail(sizeof(class C ):class C *) [line 18]\n  *&c1:class C *=n$8 [line 18]\n  REMOVE_TEMPS(n$8); [line 18]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class C ):class C *) [line 19]\n  *&c2:class C *=n$6 [line 19]\n  REMOVE_TEMPS(n$6); [line 19]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6:  InitListExp \n   n$2=*&c1:class C * [line 20]\n  n$1=_fun_C_init(n$2:class C *) virtual [line 20]\n  n$3=*&c1:class C * [line 20]\n  n$4=*&c2:class C * [line 20]\n  *&a[0]:C *=n$1 [line 20]\n  _fun___objc_retain(n$3:C *) [line 20]\n  *&a[1]:C *=n$3 [line 20]\n  _fun___objc_retain(n$4:C *) [line 20]\n  *&a[2]:C *=n$4 [line 20]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$4); [line 20]\n  NULLIFY(&c1,false); [line 20]\n  NULLIFY(&c2,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit test \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start test\nFormals: \nLocals:  c1:class C * c2:class C * a:C *[3] \n   DECLARE_LOCALS(&return,&c1,&c2,&a); [line 17]\n  NULLIFY(&a,false); [line 17]\n  NULLIFY(&c1,false); [line 17]\n  NULLIFY(&c2,false); [line 17]\n " color=yellow style=filled]
+	
+
+	 4 -> 8 ;
+3 [label="3:  InitListExp \n   n$0=*&z:int  [line 10]\n  *&a[0][0]:int =(n$0 + 1) [line 10]\n  *&a[0][1]:int =2 [line 10]\n  *&a[0][2]:int =3 [line 10]\n  *&a[1][0]:int =5 [line 10]\n  *&a[1][1]:int =6 [line 10]\n  *&a[1][2]:int =7 [line 10]\n  REMOVE_TEMPS(n$0); [line 10]\n  NULLIFY(&z,false); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start main\nFormals: \nLocals:  z:int  a:int [2][3] \n   DECLARE_LOCALS(&return,&z,&a); [line 8]\n  NULLIFY(&a,false); [line 8]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

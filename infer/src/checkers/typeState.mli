@@ -1,0 +1,39 @@
+(*
+* Copyright (c) 2014 - Facebook. All rights reserved.
+*)
+
+(** Module for typestates: maps from expressions to annotated types, with extensions. *)
+
+(** Parameters of a call. *)
+type parameters = (Sil.exp * Sil.typ) list
+
+type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
+
+(** Extension to a typestate with values of type 'a. *)
+type 'a ext =
+  {
+    empty : 'a; (** empty extension *)
+    check_instr : (** check the extension for an instruction *)
+    get_proc_desc -> Procname.t -> Cfg.Procdesc.t -> Cfg.Node.t
+    ->'a -> Sil.instr -> parameters -> 'a;
+    join : 'a -> 'a -> 'a; (** join two extensions *)
+    pp : Format.formatter -> 'a -> unit (** pretty print an extension *)
+  }
+
+(** Typestate extended with elements of type 'a. *)
+type 'a t
+
+type range = Sil.typ * TypeAnnotation.t * (Sil.location list)
+
+val add_id : Ident.t -> range -> 'a t -> 'a t
+val add_pvar : Sil.pvar -> range -> 'a t -> 'a t
+val empty : 'a ext -> 'a t
+val equal : 'a t -> 'a t -> bool
+val get_extension : 'a t -> 'a
+val join : 'a ext -> 'a t -> 'a t -> 'a t
+val lookup_id : Ident.t -> 'a t -> range option
+val lookup_pvar : Sil.pvar -> 'a t -> range option
+val pp : 'a ext -> Format.formatter -> 'a t -> unit
+val range_add_locs : range -> (Sil.location list) -> range
+val remove_id : Ident.t -> 'a t -> 'a t
+val set_extension : 'a t -> 'a -> 'a t

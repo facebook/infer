@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2013- Facebook.  All rights reserved.
+#
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import logging
+import sys
+
+import inferlib
+
+if __name__ == '__main__':
+    cmd_args = sys.argv[1:]
+    analysis = inferlib.Infer(inferlib.get_inferJ_args(cmd_args),
+                              inferlib.get_javac_args(cmd_args))
+    stats = analysis.start()
+
+    if stats:
+        logging.info('Capture time: {0:.2f}s'.format(
+            stats['float']['capture_time']
+        ))
+        logging.info('Analysis time: {0:.2f}s'.format(
+            stats['float']['analysis_time']
+        ))

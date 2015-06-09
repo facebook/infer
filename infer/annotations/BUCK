@@ -1,0 +1,7 @@
+prebuilt_jar(
+    name = 'annotations',
+    binary_jar = 'annotations.jar',
+    visibility = [
+        'PUBLIC',
+    ]
+)

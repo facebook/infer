@@ -1,0 +1,55 @@
+sources = glob(['**/*.java'])
+
+dependencies = [
+    '//infer/lib/java/android:android',
+    '//dependencies/java/jackson:jackson',
+]
+
+java_library(
+    name = 'infer',
+    srcs = sources,
+    deps = dependencies,
+    visibility = [
+        'PUBLIC'
+    ]
+)
+
+def analysis_cmd(analyzer):
+    out = 'out'
+    inferconfig_file = '$(location //infer/tests/codetoanalyze/java:inferconfig)'
+    copy_inferconfig = ' '.join(['cp', inferconfig_file, '$SRCDIR'])
+    clean_cmd = ' '.join(['rm', '-rf', out])
+    classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
+    infer_cmd = ' '.join([
+        'infer',
+        '-o', out,
+        '-a', analyzer,
+        '--',
+        'javac',
+        '-cp', classpath,
+        '$SRCS',
+    ])
+    copy_cmd = ' '.join(['cp', out + '/report.csv', '$OUT'])
+    return ' && '.join([clean_cmd, copy_inferconfig, infer_cmd, copy_cmd])
+
+genrule(
+    name = 'analyze',
+    out = 'report.csv',
+    cmd = analysis_cmd('infer'),
+    deps = dependencies + [':infer'],
+    srcs = sources,
+    visibility = [
+        'PUBLIC',
+    ],
+)
+
+genrule(
+    name = 'tracing',
+    out = 'comparison_report.csv',
+    cmd = analysis_cmd('tracing'),
+    deps = dependencies + [':infer'],
+    srcs = sources,
+    visibility = [
+        'PUBLIC',
+    ],
+)

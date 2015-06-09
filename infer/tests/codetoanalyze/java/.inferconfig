@@ -1,0 +1,16 @@
+{
+  "never_returning_null": [
+    {
+      "language": "Java",
+      "source_contains": "_AUTOMATICALLY_GENERATED_"
+    },
+    {
+      "language": "Java",
+      "class": "codetoanalyze.java.infer.SomeLibrary",
+      "method": "get"
+    }
+  ],
+  "infer_blacklist_files_containing": [
+    "@generated"
+  ]
+}

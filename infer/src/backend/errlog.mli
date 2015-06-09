@@ -1,0 +1,68 @@
+(*
+* Copyright (c) 2015 - Facebook.
+* All rights reserved.
+*)
+
+(** Module for error logs. *)
+
+(** Element of a loc trace *)
+type loc_trace_elem = {
+  lt_level : int; (** nesting level of procedure calls *)
+  lt_loc : Sil.location; (** source location at the current step in the trace *)
+  lt_description : string; (** description of the current step in the trace *)
+  lt_node_tags : (string * string) list (** tags describing the node at the current location *)
+}
+
+(** Trace of locations *)
+type loc_trace = loc_trace_elem list
+
+(** Type of the error log *)
+type t
+
+(** Empty error log *)
+val empty : unit -> t
+
+(** type of the function to be passed to iter *)
+type iter_fun =
+  (int * int) -> Sil.location -> Exceptions.err_kind -> bool -> Localise.t -> Localise.error_desc ->
+  string -> loc_trace -> Prop.normal Prop.t option -> Exceptions.err_class -> unit
+
+(** Apply f to nodes and error names *)
+val iter : iter_fun -> t -> unit
+
+(** Print an error log *)
+val pp : Format.formatter -> t -> unit
+
+(** Print an error log in html format *)
+val pp_html : DB.Results_dir.path -> Format.formatter -> t -> unit
+
+(** Return the number of elements in the error log which satisfy the filter.  *)
+val size : (Exceptions.err_kind -> bool -> bool) -> t -> int
+
+(** Update an old error log with a new one *)
+val update : t -> t -> unit
+
+val log_issue :
+Exceptions.err_kind ->
+t -> Sil.location -> (int * int) -> int -> loc_trace ->
+(Prop.normal Prop.t) option -> exn -> unit
+
+(** {2 Functions for manipulating per-file error tables} *)
+
+(** Type for per-file error tables *)
+type err_table
+
+(** Create an error table *)
+val create_err_table : unit -> err_table
+
+(** Add an error log to the global per-file table *)
+val extend_table : err_table -> t -> unit
+
+(** Size of the global per-file error table for the footprint phase *)
+val err_table_size_footprint : Exceptions.err_kind -> err_table -> int
+
+(** Print stats for the global per-file error table *)
+val pp_err_table_stats : Exceptions.err_kind -> Format.formatter -> err_table -> unit
+
+(** Print details of the global per-file error table *)
+val print_err_table_details : Format.formatter -> err_table -> unit

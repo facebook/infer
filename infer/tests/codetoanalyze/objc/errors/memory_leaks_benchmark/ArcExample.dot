@@ -1,0 +1,54 @@
+digraph iCFG {
+14 [label="14:  BinaryOperatorStmt: Assign \n   n$10=*&self:class A * [line -1]\n  n$11=*&son:class A * [line -1]\n  _fun___objc_retain(n$11:class A *) [line -1]\n  n$12=*n$10._son:class A * [line -1]\n  *n$10._son:class A *=n$11 [line -1]\n  _fun___objc_release(n$12:class A *) [line -1]\n  REMOVE_TEMPS(n$10,n$11,n$12); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&son,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13: Exit A_setSon: \n  " color=yellow style=filled]
+	
+
+12 [label="12: Start A_setSon:\nFormals:  self:class A * son:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 12 -> 14 ;
+11 [label="11:  Return Stmt \n   n$7=*&self:class A * [line -1]\n  n$8=*n$7._son:class A * [line -1]\n  *&return:class A *=n$8 [line -1]\n  n$9=_fun___set_autorelease_attribute(n$8:class A *) [line -1]\n  REMOVE_TEMPS(n$7,n$8,n$9); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit A_son \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start A_son\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 9 -> 11 ;
+8 [label="8:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 25]\n  *&s:class NSString *=n$6 [line 25]\n  REMOVE_TEMPS(n$6); [line 25]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7:  Return Stmt \n   n$4=*&s:class NSString * [line 26]\n  *&return:class NSString *=n$4 [line 26]\n  REMOVE_TEMPS(n$4); [line 26]\n  NULLIFY(&s,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6: Exit A_newS \n  " color=yellow style=filled]
+	
+
+5 [label="5: Start A_newS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 24]\n  NULLIFY(&s,false); [line 24]\n  NULLIFY(&self,false); [line 24]\n " color=yellow style=filled]
+	
+
+	 5 -> 8 ;
+4 [label="4:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 19]\n  *&s:class NSString *=n$3 [line 19]\n  REMOVE_TEMPS(n$3); [line 19]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&s:class NSString * [line 20]\n  *&return:class NSString *=n$0 [line 20]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&s,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_getS \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_getS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 18]\n  NULLIFY(&s,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+}

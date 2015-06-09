@@ -1,0 +1,54 @@
+(*
+* Copyright (c) 2009-2013 Monoidics ltd.
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*)
+
+(** Pretty printing functions in dot format. *)
+
+(** {2 Propositions} *)
+
+type kind_of_dotty_prop =
+  | Generic_proposition
+  | Spec_precondition
+  | Spec_postcondition of Prop.normal Prop.t (** the precondition associated with the post *)
+  | Lambda_pred of int * int * bool
+
+val reset_proposition_counter : unit -> unit
+
+val pp_dotty : Format.formatter -> kind_of_dotty_prop -> Prop.normal Prop.t -> unit
+
+(* create a dotty file with a single proposition *)
+val dotty_prop_to_dotty_file: string -> Prop.normal Prop.t -> unit
+
+(** {2 Sets and lists of propositions} *)
+
+val pp_dotty_prop_list_in_path: Format.formatter -> Prop.normal Prop.t list -> int -> int -> unit
+
+val pp_proplist_parsed2dotty_file : string -> Prop.normal Prop.t list -> unit
+
+(** {2 Contol-Flow Graph} *)
+
+(** Print the cfg with extra edges *)
+val print_icfg_dotty : Cfg.cfg -> ((Cfg.Node.t * Cfg.Node.t) list) -> unit
+
+(** [store_icfg_to_file f cfg] saves the dotty representation of the control flow graph [cfg] into the file [f] *)
+val store_icfg_to_file: string -> Cfg.cfg -> unit
+
+(** {2 Specs} *)
+val reset_dotty_spec_counter : unit -> unit
+
+(** Dotty printing for specs *)
+val pp_speclist_dotty_file : DB.filename -> Prop.normal Specs.spec list -> unit
+
+(* create a dotty file with a single proposition *)
+val dotty_prop_to_dotty_file : string -> Prop.normal Prop.t -> unit
+
+(** reset the counter used for node and heap identifiers *)
+val reset_node_counter : unit -> unit
+
+(** convert a proposition to xml with the given tag and id *)
+val prop_to_xml : Prop.normal Prop.t -> string -> int -> Io_infer.Xml.node
+
+(** Print a list of specs in XML format *)
+val print_specs_xml : string -> Prop.normal Specs.spec list -> Sil.location -> Format.formatter -> unit

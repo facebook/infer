@@ -1,0 +1,17 @@
+digraph iCFG {
+4 [label="4:  DeclStmt \n   n$4=_fun_NSString_stringWithUTF8String:(\"cat\":char *) [line 9]\n  n$5=_fun_NSString_stringWithUTF8String:(\"dog\":char *) [line 9]\n  n$3=_fun_NSArray_arrayWithObjects:(n$4:struct objc_object *,n$5:class NSString *,0:void *) [line 9]\n  *&animals:class NSArray *=n$3 [line 9]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 9]\n  NULLIFY(&animals,false); [line 9]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$1=_fun_NSString_stringWithUTF8String:(\"cat\":char *) [line 10]\n  n$2=_fun_NSString_stringWithUTF8String:(\"dog\":char *) [line 10]\n  n$0=_fun_NSArray_arrayWithObjects:count:(n$1:struct objc_object *,n$2:struct objc_object *,0:struct objc_object *) [line 10]\n  *&return:class NSArray *=n$0 [line 10]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit get_array \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start get_array\nFormals: \nLocals:  animals:class NSArray * \n   DECLARE_LOCALS(&return,&animals); [line 8]\n  NULLIFY(&animals,false); [line 8]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+}

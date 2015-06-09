@@ -1,0 +1,25 @@
+digraph iCFG {
+6 [label="6:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class EOCPerson ):class EOCPerson *) [line 9]\n  n$2=_fun_EOCPerson_init(n$4:class EOCPerson *) virtual [line 9]\n  *&person:class EOCPerson *=n$2 [line 9]\n  REMOVE_TEMPS(n$2,n$4); [line 9]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5:  Message Call: performDaysWork \n   n$1=*&person:class EOCPerson * [line 10]\n  _fun_EOCPerson_performDaysWork(n$1:class EOCPerson *) virtual [line 10]\n  REMOVE_TEMPS(n$1); [line 10]\n  NULLIFY(&person,false); [line 10]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  DeclStmt \n   n$0=_fun_malloc_no_fail(sizeof(int ):int ) [line 11]\n  *&x:int *=n$0 [line 11]\n  REMOVE_TEMPS(n$0); [line 11]\n  NULLIFY(&x,false); [line 11]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit main \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start main\nFormals: \nLocals:  person:class EOCPerson * x:int * \n   DECLARE_LOCALS(&return,&person,&x); [line 8]\n  NULLIFY(&person,false); [line 8]\n  NULLIFY(&x,false); [line 8]\n " color=yellow style=filled]
+	
+
+	 1 -> 6 ;
+}

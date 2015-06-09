@@ -1,0 +1,8 @@
+export_file(
+    name = 'inferconfig',
+    src = '.inferconfig',
+    out = '.inferconfig',
+    visibility = [
+        'PUBLIC'
+    ]
+)

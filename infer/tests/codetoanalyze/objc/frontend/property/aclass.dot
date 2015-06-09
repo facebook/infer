@@ -1,0 +1,32 @@
+digraph iCFG {
+8 [label="8:  Message Call: retain \n   n$8=*&aDynValue:class NSObject * [line -1]\n  n$7=_fun___objc_retain(n$8:class NSObject *) [line -1]\n  REMOVE_TEMPS(n$7,n$8); [line -1]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7:  Message Call: release \n   n$5=*&self:class AClass * [line -1]\n  n$6=*n$5.aDynValue:class NSObject * [line -1]\n  n$4=_fun___objc_release(n$6:class NSObject *) [line -1]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line -1]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&self:class AClass * [line -1]\n  n$3=*&aDynValue:class NSObject * [line -1]\n  *n$2.aDynValue:class NSObject *=n$3 [line -1]\n  REMOVE_TEMPS(n$2,n$3); [line -1]\n  NULLIFY(&aDynValue,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit AClass_setADynValue: \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start AClass_setADynValue:\nFormals:  self:class AClass * aDynValue:class NSObject *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 4 -> 8 ;
+3 [label="3:  Return Stmt \n   n$0=*&self:class AClass * [line -1]\n  n$1=*n$0.aDynValue:class NSObject * [line -1]\n  *&return:class NSObject *=n$1 [line -1]\n  REMOVE_TEMPS(n$0,n$1); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit AClass_aDynValue \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start AClass_aDynValue\nFormals:  self:class AClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

@@ -1,0 +1,28 @@
+(*
+* Copyright (c) 2009-2013 Monoidics ltd.
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*)
+
+type style =
+  | Boldface
+  | Roman
+  | Italics
+
+(** Convert a string to a latex-friendly format *)
+val convert_string : string -> string
+
+(** Print a string in the given style, after converting it into latex-friendly format *)
+val pp_string : style -> Format.formatter -> string -> unit
+
+(** Print color command *)
+val pp_color : Format.formatter -> Utils.color -> unit
+
+(** Prelude for a latex file with the given author and title and table of contents flag *)
+val pp_begin : Format.formatter -> (string * string * bool) -> unit
+
+(** Epilogue for a latex file *)
+val pp_end : Format.formatter -> unit -> unit
+
+(** Section with the given title *)
+val pp_section : Format.formatter -> string -> unit

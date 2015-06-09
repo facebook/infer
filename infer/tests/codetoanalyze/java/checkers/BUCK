@@ -1,0 +1,40 @@
+sources = glob(['**/*.java'])
+
+dependencies = [
+    '//infer/lib/java/android:android',
+]
+
+java_library(
+  name = 'checkers',
+  srcs = sources,
+  deps = dependencies,
+  visibility = [
+      'PUBLIC'
+  ]
+)
+
+out = 'out'
+clean_cmd = ' '.join(['rm', '-rf', out])
+classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
+infer_cmd = ' '.join([
+    'infer',
+    '-o', out,
+    '-a', 'checkers',
+    '--',
+    'javac',
+    '-cp', classpath,
+    '$SRCS',
+])
+copy_cmd = ' '.join(['cp', out + '/report.csv', '$OUT'])
+command = ' && '.join([clean_cmd, infer_cmd, copy_cmd])
+
+genrule(
+    name = 'analyze',
+    srcs = sources,
+    out = 'report.csv',
+    cmd = command,
+    deps = dependencies + [':checkers'],
+    visibility = [
+        'PUBLIC',
+    ]
+)

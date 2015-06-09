@@ -1,0 +1,12 @@
+[Based on a linux machine]
+
+1) comment out the line
+  # PROFILE := true  #To activate profiler
+in cil/Makefile.in
+2) configure
+3) make
+4) run test, e.g.
+  ./bin/cilly -c --doanalysis --test ../test/creation.c
+5) display the profile info:
+  gprof ./obj/x86_LINUX/cilly.asm.exe
+

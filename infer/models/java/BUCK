@@ -1,0 +1,11 @@
+java_library(
+  name = 'models',
+  srcs = glob(['src/**/*.java']),
+  visibility = [
+    'PUBLIC',
+  ],
+  deps = [
+       '//dependencies/java/jackson:jackson',
+       '//infer/lib/java/android:android',
+       ]
+)
