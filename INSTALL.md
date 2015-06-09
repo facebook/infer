@@ -4,15 +4,19 @@ We provide pre-built Infer binaries for Linux and MacOS.
 If you just wish to use Infer, and are not interested in making contributions to it, then these binaries are all you need.
 Otherwise, if you wish to compile Infer, here are also instructions to do so, depending on your operating system.
 
-- [Install the Infer binaries](INSTALL.md#Install-the-Infer-binaries)
-	- [Mac OS X](INSTALL.md#Mac-OS-X)
-	- [Linux](INSTALL.md#Linux)
-- [Install Infer from source](INSTALL.md#Install-Infer-from-source)
-	- [Download Infer](INSTALL.md#Download-Infer)
-	- [Mac OS X](INSTALL.md#Mac-OS-X)
-	- [Linux](INSTALL.md#Linux)
+- [Install the Infer binaries](INSTALL.md#install-the-infer-binaries)
+	- [Mac OS X](INSTALL.md#mac-os-x)
+	- [Linux](INSTALL.md#linux-64-bit)
+- [Install Infer from source](INSTALL.md#install-infer-from-source)
+	- [Download Infer](INSTALL.md#download-infer)
+	- [Mac OS X](INSTALL.md#macos-x)
+	- [Linux](INSTALL.md#linux)
 
 ##Install the Infer binaries
+
+###Requirements
+
+- Python 2.7
 
 ###Mac OS X 
 
@@ -43,6 +47,10 @@ echo "export PATH=$PATH:`pwd`/infer-0.1-x64-linux/infer/infer/bin" \
 
 The following instructions describe how to compile Infer on different platforms. 
 
+###Requirements
+
+- Python 2.7
+
 ###<a name="download"></a> Download the Infer repository
 
 git clone https://github.com/facebook/infer.git
@@ -59,11 +67,9 @@ To analyse C and ObjC, Infer requires clang and the [facebook-clang-plugin](http
 - `Java <= 1.7`
 - Android dev setup for analysis of Android apps.
 
-
 ##### Requirements for C/ObjC analysis 
 - `XCode <= 6.3, >= 6.1`
 - `clang` (XCode command line tools. You can install them with the command `xcode-select --install`)
-
 
 ###Installation instructions
 

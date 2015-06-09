@@ -1,8 +1,9 @@
 Infer
 =====
 
-Infer is a static analysis tool for Java and C / Objective C.
-To see what it can do for you, check out the documentation at <http://facebook.github.io/infer/>.
+Infer is a static analysis tool for Java, Objective-C and C, written in [OCaml](https://ocaml.org/).
+To see what it can do for you, check out the documentation at <http://facebook.github.io/infer/>. 
+Check out [FILES.md](FILES.md) for a quick overview of the files in `infer/bin`.
 
 Installation
 ------------
