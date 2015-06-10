@@ -7,8 +7,6 @@
 *inferTest* : Shell script for running Infer's tests. Uses Buck for running the tests.
 Usage: inferTest {c, objc, java} for the tests about the analysis of C, Objective-C, or Java files.
 
-*clang_frontend_stats.sh* : Shell script for obtaining statistics about the translation of C and Objective-C files with the clang frontend. It's mostly useful for developers of Infer.
-
 ## Helper commands
 
 The rest of the commands in infer/bin/ are not meant to be called directly, but are used by the top-level commands above.
