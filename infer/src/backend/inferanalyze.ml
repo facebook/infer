@@ -731,7 +731,7 @@ let analyzer_err_name = "analyzer_err"
 let () =
   let () =
     match !cluster_cmdline with
-    | None -> L.stdout "Starting analysis@.";
+    | None -> L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
     | Some clname -> L.stdout "Cluster %s@." clname in
   RegisterCheckers.register ();
   Facebook.register_checkers ();
