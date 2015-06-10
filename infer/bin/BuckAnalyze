@@ -64,6 +64,9 @@ def prepare_build(args):
     if args.debug:
         inferJ_options.append('--debug')
 
+    if args.no_filtering:
+        inferJ_options.append('--no-filtering')
+
     if args.analyzer_mode:
        inferJ_options.append('--analyzer_mode')
        inferJ_options.append(args.analyzer_mode)
@@ -428,7 +431,7 @@ def collect_results(args, start_time):
     utils.create_json_report(args.infer_out)
 
     print('\n')
-    inferlib.print_errors(csv_report, bugs_out, args.analyzer)
+    inferlib.print_errors(csv_report, bugs_out)
 
     stats['int']['total_time'] = int(round(utils.elapsed_time(start_time)))
 

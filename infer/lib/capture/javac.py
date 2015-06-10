@@ -31,6 +31,8 @@ class JavacCapture:
         capture_cmd = [utils.get_cmd_in_bin_dir('inferJ')]
         capture_cmd += ['--out', self.args.infer_out]
         capture_cmd += ['--analyzer', self.args.analyzer]
+        if self.args.no_filtering:
+            capture_cmd.append('--no-filtering')
         if self.args.debug:
             capture_cmd.append('-g')
         capture_cmd += self.cmd

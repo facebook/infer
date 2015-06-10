@@ -22,6 +22,7 @@ def analysis_cmd(analyzer):
     classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
     infer_cmd = ' '.join([
         'infer',
+        '--no-filtering',
         '-o', out,
         '-a', analyzer,
         '--',

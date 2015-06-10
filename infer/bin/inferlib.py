@@ -41,6 +41,10 @@ MODES = [COMPILE, CAPTURE, INFER, ERADICATE, CHECKERS, TRACING]
 
 INFER_ANALYZE_BINARY = "InferAnalyze"
 
+ERROR = 'ERROR'
+WARNING = 'WARNING'
+INFO = 'INFO'
+
 class AbsolutePathAction(argparse.Action):
     """Convert a path from relative to absolute in the arg parser"""
     def __call__(self, parser, namespace, values, option_string=None):
@@ -85,6 +89,10 @@ base_group.add_argument('-a', '--analyzer',
 base_group.add_argument('-m', '--analyzer_mode', metavar='<analyzer_mode>',
                         help='''Select a special analyzer mode such as
                         graphql1 or graphql2''')
+base_group.add_argument('-nf', '--no-filtering', action='store_true',
+                        help='''Also show the results from the experimental
+                        checks. Warning: some checks may contain many false
+                        alarms''')
 base_parser.add_argument('-v', '--version', help='Get version of the analyzer',
                          action=VersionAction)
 
@@ -190,31 +198,7 @@ def compare_rows(row_1, row_2):
         return line_1 - line_2
 
 
-def sort_csv(csv_report, infer_out):
-    collected_rows = []
-    with open(csv_report, 'r') as file_in:
-        reader = csv.reader(file_in)
-        rows = [row for row in reader]
-        if len(rows) <= 1:
-            return rows
-        else:
-            for row in rows[1:]:
-                filename = row[utils.CSV_INDEX_FILENAME]
-                if os.path.isfile(filename):
-                    collected_rows.append(row)
-            collected_rows = sorted(
-                collected_rows,
-                cmp=compare_rows)
-            collected_rows = [rows[0]] + collected_rows
-    temporary_file = tempfile.mktemp()
-    with open(temporary_file, 'w') as file_out:
-        writer = csv.writer(file_out)
-        writer.writerows(collected_rows)
-        file_out.flush()
-        shutil.move(temporary_file, csv_report)
-
-
-def should_print(analyzer, row):
+def should_report(analyzer, row):
     error_kind = row[utils.CSV_INDEX_KIND]
     error_type = row[utils.CSV_INDEX_TYPE]
     error_bucket = ''  # can be updated later once we extract it from qualifier
@@ -229,7 +213,7 @@ def should_print(analyzer, row):
         pass  # this will skip any invalid xmls
 
     # config what to print is listed below
-    error_kinds = ['ERROR', 'WARNING']
+    error_kinds = [ERROR, WARNING]
 
     null_style_bugs = [
         'NULL_DEREFERENCE',
@@ -241,16 +225,12 @@ def should_print(analyzer, row):
 
     other_bugs = ['RESOURCE_LEAK', 'MEMORY_LEAK', 'RETAIN_CYCLE']
 
-    filter_by_type = True
-    if analyzer in [ERADICATE, CHECKERS]:
-        # report all issues for eredicate and checkers
-        filter_by_type = False
+    if analyzer in [ERADICATE, CHECKERS, TRACING]:
+        # report all issues for eradicate and checkers
+        return True
 
     if error_kind not in error_kinds:
         return False
-
-    if not filter_by_type:
-        return True
 
     if not error_type:
         return False
@@ -266,6 +246,31 @@ def should_print(analyzer, row):
         return False
 
 
+def clean_csv(args, csv_report):
+    collected_rows = []
+    with open(csv_report, 'r') as file_in:
+        reader = csv.reader(file_in)
+        rows = [row for row in reader]
+        if len(rows) <= 1:
+            return rows
+        else:
+            for row in rows[1:]:
+                filename = row[utils.CSV_INDEX_FILENAME]
+                if os.path.isfile(filename):
+                    if args.no_filtering or should_report(args.analyzer, row):
+                        collected_rows.append(row)
+            collected_rows = sorted(
+                collected_rows,
+                cmp=compare_rows)
+            collected_rows = [rows[0]] + collected_rows
+    temporary_file = tempfile.mktemp()
+    with open(temporary_file, 'w') as file_out:
+        writer = csv.writer(file_out)
+        writer.writerows(collected_rows)
+        file_out.flush()
+        shutil.move(temporary_file, csv_report)
+
+
 def remove_bucket(bug_message):
     """ Remove anything from the beginning if the message that
         looks like a bucket """
@@ -277,15 +282,16 @@ def print_and_write(file_out, message):
     file_out.write(message + '\n')
 
 
-def print_errors(csv_report, bugs_out, analyzer):
+def print_errors(csv_report, bugs_out):
     with open(csv_report, 'r') as file_in:
         reader = csv.reader(file_in)
         reader.next()  # first line is header, skip it
 
         errors = filter(
-            lambda row: should_print(analyzer, row),
+            lambda row: row[utils.CSV_INDEX_KIND] in [ERROR, WARNING],
             reader
         )
+
         with open(bugs_out, 'w') as file_out:
             if not errors:
                 print_and_write(file_out, 'No issues found')
@@ -359,6 +365,7 @@ class Infer:
 
             self.stats = {'int': {}, 'float': {}}
             self.timing = {}
+
 
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
@@ -578,13 +585,13 @@ class Infer:
             logging.error('Error with InferPrint with the command: '
                           + infer_print_cmd)
         else:
-            sort_csv(csv_report, self.args.infer_out)
+            clean_csv(self.args, csv_report)
             self.update_stats(csv_report)
             utils.create_json_report(self.args.infer_out)
 
             print('\n')
             if not self.args.buck:
-                print_errors(csv_report, bugs_out, self.args.analyzer)
+                print_errors(csv_report, bugs_out)
 
         return exit_status
 

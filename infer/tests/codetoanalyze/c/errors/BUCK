@@ -5,7 +5,14 @@ out = 'out'
 
 clean_cmd = ' '.join(['rm', '-rf', out])
 env_cmd = ' '.join(['export', 'REPORT_ASSERTION_FAILURE=1'])
-infer_cmd = ' '.join(['infer', '-o', 'out', '--testing_mode', '--', 'make'])
+infer_cmd = ' '.join([
+    'infer',
+    '--no-filtering',
+    '-o', 'out',
+    '--testing_mode',
+    '--',
+    'make'
+])
 copy_cmd = ' '.join(['cp', out + '/report.csv', '$OUT'])
 command = ' && '.join([clean_cmd, env_cmd, infer_cmd, copy_cmd])
 
