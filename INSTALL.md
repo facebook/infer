@@ -8,7 +8,7 @@ Otherwise, if you wish to compile Infer, here are also instructions to do so, de
 	- [Mac OS X](INSTALL.md#mac-os-x)
 	- [Linux](INSTALL.md#linux-64-bit)
 - [Install Infer from source](INSTALL.md#install-infer-from-source)
-	- [Download Infer](INSTALL.md#download-infer)
+	- [Download the Infer repository](INSTALL.md#download-the-infer-repository)
 	- [Mac OS X](INSTALL.md#macos-x)
 	- [Linux](INSTALL.md#linux)
 
@@ -51,7 +51,7 @@ The following instructions describe how to compile Infer on different platforms.
 
 - Python 2.7
 
-###<a name="download"></a> Download the Infer repository
+### Download the Infer repository
 
 git clone https://github.com/facebook/infer.git
 
