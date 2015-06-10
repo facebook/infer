@@ -511,7 +511,7 @@ class Infer:
         if self.args.buck and exit_status == os.EX_OK:
             clean_infer_out(self.args.infer_out)
 
-        cfgs = os.path.join(self.args.infer_out, 'captured', '*', '*.cfg')
+        cfgs = os.path.join(self.args.infer_out, 'captured', '*', '')
         captured_total = len(glob.glob(cfgs))
         captured_plural = '' if captured_total <= 1 else 's'
         print('\n%d file%s analyzed' % (captured_total, captured_plural))
