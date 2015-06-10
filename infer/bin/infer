@@ -90,6 +90,10 @@ def create_argparser(parents=[]):
 
 
 def main():
+    if sys.version_info < (2, 7, 0):
+        print("You need python 2.7 or later to run this script")
+        exit(1)
+
     to_parse, cmd = split_args_to_parse()
     # get the module name (if any), then load it
     capture_module_name = os.path.basename(cmd[0]) if len(cmd) > 0 else None
