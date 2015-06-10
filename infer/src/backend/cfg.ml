@@ -790,8 +790,8 @@ let remove_abducted_retvars p =
   (* compute the heap predicates reachable from the set of seed expressions in [exps] *)
   let compute_reachable_hpreds sigma seed_exps =
     let rec collect_exps exps = function
-      | Sil.Eexp (e, _) ->
-        Sil.ExpSet.add e exps
+      | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
+      | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
       | Sil.Estruct (flds, _) ->
         list_fold_left (fun exps (fld, strexp) -> collect_exps exps strexp) exps flds
       | Sil.Earray (_, elems, _) ->
@@ -802,7 +802,7 @@ let remove_abducted_retvars p =
           let reach' = Sil.HpredSet.add hpred reach in
           let exps' = collect_exps exps rhs in
           (reach', exps')
-        | _ -> reach, exps in
+        | hpred -> reach, exps in
       let reach', exps' = list_fold_left add_hpred_if_reachable (reach, exps) sigma in
       if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
       else compute_reachable_hpreds_rec sigma (reach', exps') in
@@ -813,7 +813,7 @@ let remove_abducted_retvars p =
     list_fold_left
       (fun pvars hpred ->
         match hpred with
-        | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (e, _), _) ->
+        | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
           let abducted_pvars, normal_pvars = pvars in
           if Sil.pvar_is_abducted_retvar pvar then pvar :: abducted_pvars, normal_pvars
           else abducted_pvars, pvar :: normal_pvars
@@ -828,13 +828,7 @@ let remove_abducted_retvars p =
       normal_pvars in
   (* walk forward from non-abducted pvars, keep everything reachable. remove everything else *)
   let sigma' = compute_reachable_hpreds (Prop.get_sigma p') normal_pvar_set in
-  let _ = Prop.normalize (Prop.replace_sigma sigma' p) in
-  let is_abducted_retvar_hpred hpred =
-    match hpred with
-    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> Sil.pvar_is_abducted_retvar pvar
-    | _ -> false in
-  let sigma' = list_filter (fun hpred -> not (is_abducted_retvar_hpred hpred)) (Prop.get_sigma p) in
-  Prop.normalize (Prop.replace_sigma sigma' p)
+  Prop.normalize (Prop.replace_sigma sigma' p')
 
 let remove_locals (curr_f : Procdesc.t) p =
   let names_of_locals = list_map (get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
