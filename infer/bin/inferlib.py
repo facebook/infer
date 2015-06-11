@@ -76,7 +76,7 @@ base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
                         default=utils.DEFAULT_INFER_OUT, dest='infer_out',
                         action=AbsolutePathAction,
-                        help='Set the INFER results directory')
+                        help='Set the Infer results directory')
 base_group.add_argument('-i', '--incremental', action='store_true',
                         help='''Do not delete the results directory across
                         Infer runs''')
@@ -349,7 +349,7 @@ class Infer:
                 help_exit('No javac command detected')
 
             if self.args.infer_out is None:
-                help_exit('Expect INFER results directory')
+                help_exit('Expect Infer results directory')
 
             if self.args.buck:
                 self.args.infer_out = os.path.join(
