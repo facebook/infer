@@ -14,8 +14,6 @@ if [ "$1" == "--xml" ]; then
     XML="--xml test.xml"
 fi
 
-platform=`uname`
-
 TARGETS_TO_COMPILE=()
 TARGETS_TO_TEST=()
 if [ -e "$INFER_BIN/InferJava" ]; then
@@ -23,8 +21,9 @@ if [ -e "$INFER_BIN/InferJava" ]; then
     TARGETS_TO_TEST+=('java')
 fi
 
+platform=`uname`
 if [ -e "$INFER_BIN/InferClang" ]; then
-    TARGETS_TO_COMPILE=('clang')
+    TARGETS_TO_COMPILE+=('clang')
     TARGETS_TO_TEST+=('c' 'cpp')
     if [ $platform == 'Darwin' ]; then
         TARGETS_TO_TEST+=('objc')
