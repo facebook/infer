@@ -22,21 +22,18 @@ the reasoning chunks together.
 
 
 Separation logic is based on a logical connective \\( * \\) called the *separating conjunction* and pronounced "and separately". Separation logic formulae are interpreted over program allocated heaps. The logical formula
-\\( A*B \\) holds of a piece of program heap (a heaplet) when it can be divided into two subheaplets described by \\(A\\) and \\(B\\).
+\\( A*B \\) holds of a piece of program heap (a heaplet) when it can be divided into two sub-heaplets described by \\(A\\) and \\(B\\).
 For example, the formula
-$$z \mapsto y * y \mapsto x $$ can be read "\\(x\\) points to \\(y\\) and separately \\(y\\) points to \\(x\\)" states that
-there is precisely two allocated memory cells. The first cell is 
-allocated at the address denoted by the pointer \\(z\\) and the content of this cell is the value of \\(y\\).
+$$x \mapsto y * y \mapsto x $$ can be read "\\(x\\) points to \\(y\\) and separately \\(y\\) points to \\(x\\)". This formula describes precisely two allocated memory cells. The first cell is allocated at the address denoted by the pointer \\(x\\) and the content of this cell is the value of \\(y\\).
 The second cell is 
-allocated at the address denoted by the pointer \\(y\\) and the content of this second cell is the value of \\(z\\). Crucially, we know that there are precisely two cells because \\( * \\) stipulates that they are separated and therefore the cells are allocated in two different parts of memory. In other words, \\( * \\) 
-says that \\(y\\) and \\(z\\) do not have the same value (i.e., these pointers are not alias). 
-At work the heaplet partitioning defined by the formula above  is like in this picture:
+allocated at the address denoted by the pointer \\(y\\) and the content of this second cell is the value of \\(x\\). Crucially, we know that there are precisely two cells because \\( * \\) stipulates that they are separated and therefore the cells are allocated in two different parts of memory. In other words, \\( * \\) 
+says that \\(x\\) and \\(y\\) do not hold the same value (i.e., these pointers are not aliased).
+The heaplet partitioning defined by the formula above can visualized like so:
 
 ![static/images/SepSplit.jpg](static/images/SepSplit.jpg)
 
 
-
-The important thing about the separating conjunction is
+The important thing about separating conjunction is
 the way that it fits together with mutation to computer memory; reasoning about program commands
 tends to work by updating \\(*\\)-conjuncts in-place, mimicking the operational in-place update of RAM. 
 
