@@ -9,7 +9,7 @@ public class JunitAssertion {
     }
   }
 
-  public void consistentAssumtion(A a) {
+  public void consistentAssertion(A a) {
     assertTrue(a != null);
     a.f();
   }

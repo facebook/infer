@@ -35,7 +35,7 @@ public class JunitAssertionTest {
         doesNotContain(
             NULL_DEREFERENCE,
             JunitAssertionFile,
-            "consistentAssumtion"
+            "consistentAssertion"
         )
     );
   }

@@ -20,7 +20,8 @@ public class InferBuiltins {
     public static void _exit() {
     }
 
-    public static void __infer_assume(boolean condition) {
+    public static void assume(boolean condition) {
+      while (!condition) {}
     }
 
     public static String __split_get_nth(String s, String sep, int n) {

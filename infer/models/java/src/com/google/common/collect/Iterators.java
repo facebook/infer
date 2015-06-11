@@ -2,6 +2,8 @@ package com.google.common.collect;
 
 import java.util.NoSuchElementException;
 
+import com.facebook.infer.models.InferBuiltins;
+
 import javax.annotation.Nullable;
 
 public class Iterators {
@@ -33,13 +35,12 @@ public class Iterators {
 
       @Override
       public T next() {
-        while (value == null) {}
+        InferBuiltins.assume(value != null);
         if (done) {
           throw new NoSuchElementException();
         }
         done = true;
         return value;
-//        return null;
       }
     };
   }

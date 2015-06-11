@@ -6,9 +6,12 @@
 
 package com.facebook.infer.models;
 
+import com.facebook.infer.models.InferBuiltins;
+
 import java.io.IOException;
 import java.net.SocketException;
 import java.sql.SQLException;
+
 
 public class InferUndefined {
 
@@ -130,9 +133,7 @@ public class InferUndefined {
 
     public static int nonneg_int() {
         int res = int_undefined();
-        if (res < 0)
-            while (true) {
-            }
+        InferBuiltins.assume(res >= 0);
         return res;
     }
 
