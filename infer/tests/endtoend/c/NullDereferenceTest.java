@@ -22,6 +22,7 @@ public class NullDereferenceTest {
   public static final String SOURCE_FILE =
       "null_dereference/null_pointer_dereference.c";
 
+
   public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
 
   private static InferResults inferResults;

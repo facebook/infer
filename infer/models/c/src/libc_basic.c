@@ -702,12 +702,16 @@ int fputs(const char *str, FILE *stream) {
 // return a nondeterministic value
 int getc(FILE *stream)
 {
+  FILE tmp;
+    tmp = *stream;
   return __infer_nondet_int();
 }
 
 // return a nondeterministic value
 int fgetc(FILE *stream)
 {
+  FILE tmp;
+  tmp = *stream;
   return __infer_nondet_int();
 }
 
