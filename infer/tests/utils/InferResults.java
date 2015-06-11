@@ -107,6 +107,7 @@ public class InferResults {
     for (InferError e : errors) {
       s = s + "\n" + e.toString();
     }
+    if (s.length() == 0) return "No results.";
     return s;
   }
 

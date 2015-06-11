@@ -1,57 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-
-void crashgetc() {
-
-    
+void crash_getc() {
     FILE *f;
     int i;
-    
-    f=fopen("this_file_doesnt_exists", "r");
-      i =getc(f);
-      printf("i =%i\n", i);
+    f = fopen("this_file_doesnt_exists", "r");
+    i = getc(f);
+    printf("i =%i\n", i);
     fclose(f);
 }
 
-void nocrashgetc() {
-    
-    
+void nocrash_getc() {
     FILE *f;
     int i;
-    
-    f=fopen("this_file_doesnt_exists", "r");
-    
-    
+    f = fopen("this_file_doesnt_exists", "r");
     if (f) {
-      i =getc(f);
+      i = getc(f);
       printf("i =%i\n", i);
       fclose(f);
     }
 }
 
-void crashfgetc() {
-
+void crash_fgetc() {
     FILE *f;
     int i;
-    
-    f=fopen("this_file_doesnt_exists", "r");
-    i =fgetc(f);
+    f = fopen("this_file_doesnt_exists", "r");
+    i = fgetc(f);
     printf("i =%i\n", i);
     fclose(f);
 }
 
-void nocrashfgetc() {
-
+void nocrash_fgetc() {
     FILE *f;
     int i;
-    
-    f=fopen("this_file_doesnt_exists", "r");
+    f = fopen("this_file_doesnt_exists", "r");
     if (f) {
-      i =fgetc(f);
+      i = fgetc(f);
       printf("i =%i\n", i);
-        fclose(f);
+      fclose(f);
     }
 }
 

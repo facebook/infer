@@ -6,8 +6,7 @@
 package endtoend.c;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
-
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -20,7 +19,7 @@ import utils.InferResults;
 public class NullDereferenceTest2 {
 
   public static final String SOURCE_FILE =
-      "null_dereference/get.c";
+      "null_dereference/getc.c";
 
 
   public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
@@ -34,31 +33,21 @@ public class NullDereferenceTest2 {
         SOURCE_FILE);
   }
 
-  /*
   @Test
-  public void nullDereferenceTest2() throws InterruptedException, IOException, InferException {
+  public void nullDereferenceTest() throws InterruptedException, IOException, InferException {
+    String[] procedures = {
+        "crash_getc",
+        "crash_fgetc",
+    };
+    System.out.println(inferResults.toString());
     assertThat(
         "Results should contain null pointer dereference error",
         inferResults,
-        contains(
+        containsExactly(
             NULL_DEREFERENCE,
             SOURCE_FILE,
-            "crashgetc"
+            procedures
         )
     );
   }
-
-  @Test
-  public void nullDereferenceTest2_fgetc() throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain null pointer dereference error",
-        inferResults,
-        contains(
-            NULL_DEREFERENCE,
-            SOURCE_FILE,
-            "crashfgetc"
-        )
-    );
-  }
-    */
 }
