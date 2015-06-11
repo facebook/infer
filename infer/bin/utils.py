@@ -172,49 +172,53 @@ def infer_key(analyzer):
 
 def vcs_branch(dir='.'):
     cwd = os.getcwd()
+    devnull = open(os.devnull, 'w')
     try:
         os.chdir(dir)
 
-        branch = subprocess.check_output([
-            'git',
-            'rev-parse',
-            '--abbrev-ref',
-            'HEAD',
-        ]).decode().strip()
+        branch = subprocess.check_output(
+            ['git',
+             'rev-parse',
+             '--abbrev-ref',
+             'HEAD'],
+            stderr=devnull).decode().strip()
     except subprocess.CalledProcessError:
         try:
-            branch = subprocess.check_output([
-                'hg',
-                'id',
-                '-B',
-            ]).decode().strip()
+            branch = subprocess.check_output(
+                ['hg',
+                 'id',
+                 '-B'],
+                stderr=devnull).decode().strip()
         except subprocess.CalledProcessError:
             branch = 'not-versioned'
     finally:
+        devnull.close()
         os.chdir(cwd)
     return branch
 
 
 def vcs_revision(dir='.'):
     cwd = os.getcwd()
+    devnull = open(os.devnull, 'w')
     try:
         os.chdir(dir)
 
-        revision = subprocess.check_output([
-            'git',
-            'rev-parse',
-            'HEAD',
-        ]).decode().strip()
+        revision = subprocess.check_output(
+            ['git',
+             'rev-parse',
+             'HEAD'],
+            stderr=devnull).decode().strip()
     except subprocess.CalledProcessError:
         try:
-            revision = subprocess.check_output([
-                'hg',
-                'id',
-                '-i',
-            ]).decode().strip()
+            revision = subprocess.check_output(
+                ['hg',
+                 'id',
+                 '-i'],
+                stderr=devnull).decode().strip()
         except subprocess.CalledProcessError:
             revision = 'not-versioned'
     finally:
+        devnull.close()
         os.chdir(cwd)
     return revision
 
