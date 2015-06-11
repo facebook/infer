@@ -51,9 +51,10 @@ assume that Infer's binaries are in your PATH.
 If you are using bash, you can run the following command from the
 directory where you unpacked the tarball to add Infer to your PATH.
 
- ```bash
-cd infer-*-v0.1.0 && echo "export PATH=\"\$PATH:`pwd`/infer/infer/bin\"" \
-     >> ~/.bash_profile && source ~/.bash_profile
+```bash
+cd infer-*v0\.\1\.0 &&
+echo "export PATH=\"\$PATH:`pwd`/infer/infer/bin\"" \ >> ~/.bash_profile &&
+source ~/.bash_profile
 ```
 
 You can find out which shell you are using by running ```echo
