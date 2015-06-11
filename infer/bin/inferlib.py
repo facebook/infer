@@ -14,7 +14,6 @@ import json
 import logging
 import multiprocessing
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -45,11 +44,6 @@ ERROR = 'ERROR'
 WARNING = 'WARNING'
 INFO = 'INFO'
 
-class AbsolutePathAction(argparse.Action):
-    """Convert a path from relative to absolute in the arg parser"""
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, os.path.abspath(values))
-
 
 # https://github.com/python/cpython/blob/aa8ea3a6be22c92e774df90c6a6ee697915ca8ec/Lib/argparse.py
 class VersionAction(argparse._VersionAction):
@@ -75,7 +69,7 @@ base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
                         default=utils.DEFAULT_INFER_OUT, dest='infer_out',
-                        action=AbsolutePathAction,
+                        action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
 base_group.add_argument('-i', '--incremental', action='store_true',
                         help='''Do not delete the results directory across
@@ -271,12 +265,6 @@ def clean_csv(args, csv_report):
         shutil.move(temporary_file, csv_report)
 
 
-def remove_bucket(bug_message):
-    """ Remove anything from the beginning if the message that
-        looks like a bucket """
-    return re.sub(r'(^\[[a-zA-Z0-9]*\])', '', bug_message, 1)
-
-
 def print_and_write(file_out, message):
     print(message)
     file_out.write(message + '\n')
@@ -301,7 +289,7 @@ def print_errors(csv_report, bugs_out):
                     kind = row[utils.CSV_INDEX_KIND]
                     line = row[utils.CSV_INDEX_LINE]
                     error_type = row[utils.CSV_INDEX_TYPE]
-                    msg = remove_bucket(row[utils.CSV_INDEX_QUALIFIER])
+                    msg = utils.remove_bucket(row[utils.CSV_INDEX_QUALIFIER])
                     print_and_write(
                         file_out,
                         '{0}:{1}: {2}: {3}\n  {4}\n'.format(

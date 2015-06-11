@@ -138,4 +138,5 @@ def main():
         analysis.analyze_and_report()
         analysis.save_stats()
 
-main()
+if __name__ == '__main__':
+    main()

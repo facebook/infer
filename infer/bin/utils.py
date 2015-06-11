@@ -7,12 +7,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import argparse
 import csv
 import fnmatch
 import gzip
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -97,6 +99,12 @@ def elapsed_time(start_time):
 
 def error(msg):
     print(msg, file=sys.stderr)
+
+
+def remove_bucket(bug_message):
+    """ Remove anything from the beginning if the message that
+        looks like a bucket """
+    return re.sub(r'(^\[[a-zA-Z0-9]*\])', '', bug_message, 1)
 
 
 def get_cmd_in_bin_dir(binary_name):
@@ -345,5 +353,11 @@ def create_json_report(out_dir):
         headers = rows[0]
         issues = rows[1:]
         json.dump([dict(zip(headers, row)) for row in issues], file_out)
+
+
+class AbsolutePathAction(argparse.Action):
+    """Convert a path from relative to absolute in the arg parser"""
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, os.path.abspath(values))
 
 # vim: set sw=4 ts=4 et:
