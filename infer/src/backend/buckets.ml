@@ -101,9 +101,9 @@ let check_access access_opt =
       Some Localise.BucketLevel.b1
   | _ -> None
 
-let classify_access desc access_opt =
-  L.d_strln "Doing classification";
+let classify_access desc access_opt is_nullable =
+  let default_bucket = if is_nullable then Localise.BucketLevel.b1 else Localise.BucketLevel.b5 in
   let show_in_message = !Config.show_buckets in
   match check_access access_opt with
-  | None -> Localise.error_desc_set_bucket desc Localise.BucketLevel.b5 show_in_message
+  | None -> Localise.error_desc_set_bucket desc default_bucket show_in_message
   | Some bucket -> Localise.error_desc_set_bucket desc bucket show_in_message

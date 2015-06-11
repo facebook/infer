@@ -749,7 +749,7 @@ let create_dereference_desc
             | _ -> desc)
       | _ -> desc
     else desc in
-  if use_buckets then Buckets.classify_access desc access_opt'
+  if use_buckets then Buckets.classify_access desc access_opt' is_nullable
   else desc
 
 (** explain memory access performed by the current instruction
