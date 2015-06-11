@@ -1,0 +1,23 @@
+- title: Quick Start
+  items:
+  - id: getting-started
+  - id: hello-world
+- title: User Guide
+  items:
+  - id: infer-workflow
+  - id: analyzing-apps-or-projects
+  - id: checkers
+  - id: eradicate
+  - id: install-from-source
+  - id: advanced-features
+  - id: adding-models
+- title: Foundations
+  items:
+  - id: about-Infer
+  - id: separation-logic-and-bi-abduction
+  - id: limitations
+- title: Bug Types Reference
+  items:
+  - id: infer-bug-types
+  - id: checkers-bug-types
+  - id: eradicate-warnings

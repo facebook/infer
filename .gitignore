@@ -1,0 +1,11 @@
+.DS_STORE
+_site/
+Gemfile
+Gemfile.lock
+*.swo
+*.swp
+_site
+.sass-cache
+*.psd
+*~
+

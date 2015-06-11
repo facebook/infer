@@ -1,0 +1,48 @@
+# Site settings
+permalink: /blog/:year/:month/:day/:title.html
+title: Infer
+tagline: A tool to detect bugs in Android and iOS apps before they ship
+fbappid: "1615782811974223"
+gacode: "UA-44373548-7"
+description: 
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "http://localhost:4000" # the base hostname & protocol for your site
+ghrepo: "facebook/infer"
+
+# Build settings
+markdown: redcarpet
+highlighter: pygments
+
+collections:
+  docs:
+    output: true
+    permalink: /docs/:name/
+  support:
+    output: true
+    permalink: /support.html
+
+sass:
+  style: :compressed
+
+redcarpet:
+  extensions: [with_toc_data]
+
+color:
+  # Provides colour for background of top header of homepage
+  primary: "#6223b0"
+  # Provides colour for background of elsewhere on site
+  secondary: "#e4e4e4"
+  # A color that will work for buttons laid on top of primary colour
+  light: "#2e0067"
+  # Color that will work for text on top of light color
+  lighttext: "#fff"
+  # Color of text in the top header of homepage, must be legible on top of primary color
+  headertext: "#fff"
+  # Color of text on top of the secondary color background
+  bodytext: "#151515"
+  # Background of fixed nav header - headertext color is used for mini logo text
+  nav: "#7d29e4"
+  # Text of links in the nav
+  navtext: "#c79aff"
+  # Color of link underlines in the main body, and hover background color for links
+  link: "#6223b0"
