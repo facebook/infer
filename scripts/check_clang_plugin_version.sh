@@ -37,7 +37,8 @@ cd $REPO_DIR
 [ ! -d ".git" ] && {
     echoerr "SKIPPING the facebook-clang-plugins version check since";
     echoerr "$REPO_DIR is NOT a Git repository";
-    exit 0;
+    echoerr "To ensure that you keep clang plugins in sync with Infer, consider \
+deleting $REPO_DIR and running this script again."
 }
 
 echoerr "Checking that the revision of facebook-clang-plugins is correct..."

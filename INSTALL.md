@@ -46,31 +46,40 @@ dependencies. Details below.
 
 Install the OCaml dependencies:
 
-```bash
-opam init --comp=4.01.0  # (answer 'y' to the question)
-eval `opam config env`
-opam install sawja.1.5 atdgen.1.5.0 javalib.2.3a extlib.1.5.4
+If you do not require support for the C/Objective-C analysis in Infer, and only
+wish to analyse Java files, run `scripts/mac_osx_build.sh` with the following
+options. By the way, Java 1.8 is not supported.
+
+```
+./scripts/mac_osx_build.sh --java-only
+export PATH=`pwd`/infer/bin:$PATH
 ```
 
-If you do not require support for the C/Objective-C analysis in Infer,
-and only wish to analyse Java files, continue with these
-instructions. By the way, Java 1.8 is not supported.
+Once you've installed the dependencies, you can simply execute the following
+from the `infer` directory to re-build:
 
 ```bash
 cd infer
 make -C infer java
+```
+
+To install build dependencies and compile support for both Java and
+C/Objective-C, do this instead.
+
+```bash
+./scripts/mac_osx_build.sh
 export PATH=`pwd`/infer/bin:$PATH
 ```
 
-To compile support for both Java and C/Objective-C, do this instead.
+Once you've installed the dependencies, you can simply execute the following
+from the `infer` directory to re-build:
 
 ```bash
 cd infer
-./update-fcp.sh && ../facebook-clang-plugin/clang/setup.sh && ./compile-fcp.sh # go have a coffee :)
 make -C infer
-export PATH=`pwd`/infer/bin:$PATH
 ```
 
+To update the Facebook clang plugins, simply re-run `mac_osx_build.sh`.
 
 ## Linux
 
