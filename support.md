@@ -55,3 +55,21 @@ Here are some frequently asked questions. More to come.
 
 Infer is not supported on Windows at the moment. You may try
 installing Infer on a Linux virtual machine.
+
+### How does Infer compare to the Clang Static Analyzer?
+
+On iOS there is the Clang Static analyzer. Infer does some things different, 
+in particular reasoning that spans across multiple files. But CSA checks for 
+more kinds of issues and is also more mature than Infer when it comes to iOS: 
+we send big respect to CSA! Infer has only got started there recently. Really, 
+these tools complement one another and it would even make sense to use both. 
+Indeed, that's what we do inside FB.
+
+### How does Infer compare to Android linters and Findbugs?
+
+Infer finds deeper infer-procedural bugs sometimes spanning multiple files. 
+Linters, in contrast, typically implement simple syntactic checks that are 
+local within one procedure. But they are valuable and Infer doesn't try to 
+duplicate what they are good at. At Facebook we run both Infer and a 
+collection of Android linters. Findbugs can be useful too; it is more akin 
+to linters.
