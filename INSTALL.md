@@ -108,7 +108,9 @@ To compile support for both Java and C/Objective-C, do this instead.
 
 ```bash
 cd infer
-./update-fcp.sh && ../facebook-clang-plugin/clang/setup.sh && ./compile-fcp.sh # go have a coffee :)
+./update-fcp.sh
+$(cat .facebook-clang-plugin-dir)/facebook-clang-plugin/clang/setup.sh  # go have a coffee :)
+./compile-fcp.sh
 make -C infer
 export PATH=`pwd`/infer/bin:$PATH
 ```
@@ -154,14 +156,14 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt-get install gcc-4.8 g++-4.8
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
-``` 
+```
 
 Then continue with:
 
 ```bash
 cd infer
 ./update-fcp.sh
-../facebook-clang-plugin/clang/setup.sh  # go have a coffee :)
+$(cat .facebook-clang-plugin-dir)/facebook-clang-plugin/clang/setup.sh  # go have a coffee :)
 ./compile-fcp.sh
 make -C infer
 export PATH=`pwd`/infer/bin:$PATH
