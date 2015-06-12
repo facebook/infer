@@ -1,4 +1,4 @@
-#Install Infer
+# Install Infer
 
 We provide pre-built Infer binaries for Linux and MacOS.  If you just
 wish to use Infer, and are not interested in making contributions to
@@ -6,86 +6,43 @@ it, then these binaries are all you need.  Otherwise, if you wish to
 compile Infer, here are also instructions to do so, depending on your
 operating system.
 
-- [Install the Infer binaries](INSTALL.md#install-the-infer-binaries)
-	- [Mac OS X](INSTALL.md#mac-os-x)
-	- [Linux](INSTALL.md#linux-64-bit)
-- [Install Infer from source](INSTALL.md#install-infer-from-source)
-	- [Download the Infer repository](INSTALL.md#download-the-infer-repository)
-	- [Mac OS X](INSTALL.md#macos-x)
-	- [Linux](INSTALL.md#linux)
+Installing Infer from binaries is described [in the Infer's getting
+started page](http://fbinfer.com/docs/getting-started.html).
 
-##Install the Infer binaries
-
-###Requirements
-
-- Python >= 2.7
-
-###Mac OS X 
-
-Get the latest `infer-osx-vXX.tar.xz` from [infer
-releases](https://github.com/facebook/infer/releases) and run the
-commands below in your terminal to install Infer.
-
- ```bash
-tar xf infer-osx-vXX.tar.xz
-# this assumes you use bash, adapt to your needs in case you use
-# another shell
-echo "export PATH=$PATH:`pwd`/infer-osx/infer/infer/bin" \
-     >> ~/.bashrc && source ~/.bashrc
-```
-
-###Linux (64 bit)
-
-Get the latest `infer-linux64-vXX.tar.xz` from [infer
-releases](https://github.com/facebook/infer/releases) and run the
-commands below in your terminal to install Infer.
-
- ```bash
-tar xf infer-linux64-vXX.tar.xz 
-# this assumes you use bash, adapt to your needs in case you use
-# another shell
-echo "export PATH=$PATH:`pwd`/infer-0.1-x64-linux/infer/infer/bin" \
-     >> ~/.bashrc && source ~/.bashrc
-```
+The rest of this document describes how to install Infer from source
+on different platforms.
 
 
-##Install Infer from source
-
-The following instructions describe how to compile Infer on different
-platforms.
-
-###Requirements
-
-- Python >= 2.7
-
-### Download the Infer repository
+## Download the Infer repository
 
 ```bash
 git clone https://github.com/facebook/infer.git
 ```
 
-To analyse C and ObjC, Infer requires clang and the
+To analyse C and Objective-C, Infer requires clang and the
 [facebook-clang-plugin](https://github.com/facebook/facebook-clang-plugins). If
 you wish to analyse only Java/Android code, then you could skip these
 dependencies. Details below.
 
-###MacOS X 
 
-####Requirements
+## MacOS X
 
+### Requirements
+
+- Python >= 2.7
 - [opam](https://opam.ocaml.org/doc/Install.html#OSX)
 
-##### Requirements for Java analysis
+#### Requirements for the Java analysis
 
 - Java <= 1.7
 - Android dev environment setup for analysis of Android apps.
 
-##### Requirements for C/ObjC analysis 
+#### Requirements for the C/Objective-C analysis
 
 - XCode <= 6.3, >= 6.1
 - clang (in XCode command line tools. You can install them with the command `xcode-select --install`)
 
-###Installation instructions
+### Installation instructions
 
 Install the OCaml dependencies:
 
@@ -113,7 +70,14 @@ make -C infer
 export PATH=`pwd`/infer/bin:$PATH
 ```
 
-###Linux
+
+## Linux
+
+### Requirements
+
+- Python >= 2.7
+
+### Installation instructions
 
 These instructions were tested on Linux 64 bits on the following
 distributions: Debian 7, Ubuntu 14.04 and Ubuntu 12.04.4 LTS.
@@ -154,7 +118,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt-get install gcc-4.8 g++-4.8
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
-``` 
+```
 
 Then continue with:
 
