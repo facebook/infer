@@ -30,7 +30,7 @@ commands below in your terminal to install Infer.
 tar xf infer-osx-vXX.tar.xz
 # this assumes you use bash, adapt to your needs in case you use
 # another shell
-echo "export PATH=$PATH:`pwd`/infer-osx/infer/infer/bin" \
+echo "export PATH=$PATH:`pwd`/infer-osx-v0.1.0/infer/infer/bin" \
      >> ~/.bashrc && source ~/.bashrc
 ```
 
