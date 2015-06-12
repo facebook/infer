@@ -6,7 +6,6 @@ import inferlib
 import os
 import sys
 
-SCRIPT_FOLDER = os.path.dirname(os.path.realpath(__file__))
 CAPTURE_PACKAGE = 'capture'
 LIB_FOLDER = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), os.path.pardir, 'lib')
