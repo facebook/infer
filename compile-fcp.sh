@@ -8,7 +8,11 @@ set -x
 # THE INSTALLATION OF THE PLUGINS.
 
 INFER_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PLUGIN_DIR="$INFER_ROOT/../facebook-clang-plugin"
+
+# Find the temp directory with the clang plugin
+PLUGIN_POINTER_FILE="$INFER_ROOT/.facebook-clang-plugin-dir"
+PLUGIN_SETUP_DIR="$( cat "$PLUGIN_POINTER_FILE" )"
+PLUGIN_DIR="$PLUGIN_SETUP_DIR/facebook-clang-plugin"
 CLANG_EXEC="$PLUGIN_DIR/clang/bin/clang"
 
 # check if clang is available

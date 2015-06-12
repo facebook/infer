@@ -90,3 +90,5 @@ infer/models/out/
 /infer/src/clang/clang_ast_t.mli
 
 /infer/annotations/annotations.jar
+
+/.facebook-clang-plugin-dir
