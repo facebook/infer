@@ -9,7 +9,7 @@ order: 01
 ---
 ## Dependencies
 
-To run Infer you will need Python >= 2.7.
+To run Infer you will need Python 2.7
 
 ## Getting Infer
 
