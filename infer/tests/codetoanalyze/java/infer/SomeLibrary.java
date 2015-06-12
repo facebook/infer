@@ -2,6 +2,8 @@ package codetoanalyze.java.infer;
 
 public class SomeLibrary {
 
+  class $$Z {}
+
   T t;
 
   T get() {

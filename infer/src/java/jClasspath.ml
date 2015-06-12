@@ -106,6 +106,7 @@ let load_sources_and_classes () =
     with
     | JBasics.Class_structure_error _
     | Parsing.Parse_error
+    | Invalid_argument _
     | Failure "lexing: empty token" -> loop paths roots sources classes
     | End_of_file ->
         close_in file_in;
