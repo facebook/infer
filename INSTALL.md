@@ -94,6 +94,8 @@ opam init --comp=4.01.0  # (answer 'y' to the question)
 opam install sawja.1.5 atdgen.1.5.0 javalib.2.3 extlib.1.5.4
 ```
 
+> Note that opam modifies your login scripts, and those environment changes will need to be loaded into your bash session before proceeding.
+
 If you do not require support for the C/Objective-C analysis in Infer,
 and only wish to analyse Java files, continue with these
 instructions. By the way, Java 1.8 is not supported.
