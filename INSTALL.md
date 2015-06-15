@@ -29,7 +29,7 @@ dependencies. Details below.
 
 ### Requirements
 
-- Python >= 2.7
+- Python 2.7
 - [opam](https://opam.ocaml.org/doc/Install.html#OSX)
 
 #### Requirements for the Java analysis
@@ -75,7 +75,7 @@ export PATH=`pwd`/infer/bin:$PATH
 
 ### Requirements
 
-- Python >= 2.7
+- Python 2.7
 
 ### Installation instructions
 
