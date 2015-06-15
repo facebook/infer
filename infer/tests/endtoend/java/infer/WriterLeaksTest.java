@@ -6,9 +6,7 @@
 package endtoend.java.infer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
-import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
-import static utils.matchers.ResultContainsOnlyTheseErrors.containsOnly;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,7 +19,7 @@ import utils.InferResults;
 public class WriterLeaksTest {
 
 
-  public static final String WriterLeaks =
+  public static final String SOURCE_FILE =
       "infer/tests/codetoanalyze/java/infer/WriterLeaks.java";
 
   public static final String RESOURCE_LEAK = "RESOURCE_LEAK";
@@ -30,235 +28,31 @@ public class WriterLeaksTest {
 
   @BeforeClass
   public static void loadResults() throws InterruptedException, IOException {
-    inferResults = InferResults.loadInferResults(WriterLeaksTest.class, WriterLeaks);
+    inferResults = InferResults.loadInferResults(WriterLeaksTest.class, SOURCE_FILE);
   }
 
-  //Writer tests
 
   @Test
-  public void whenInferRunsOnWriterNotClosedAfterWriteThenRLIsFound()
+  public void test()
       throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain a resource leak error",
-        inferResults,
-        contains(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "writerNotClosedAfterWrite"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnWriterClosedThenResourceLeakIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak error",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "writerClosed"
-        )
-    );
-  }
-
-  //PrintWriter tests
-
-  @Test
-  public void whenInferRunsOnPrintWriterNotClosedAfterAppendThenRLIsFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain a resource leak error",
-        inferResults,
-        contains(
-            RESOURCE_LEAK, WriterLeaks,
-            "printWriterNotClosedAfterAppend"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnPrintWriterClosedThenResourceLeakIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak error",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK, WriterLeaks,
-            "printWriterClosed"
-        )
-    );
-  }
-
-  //BufferedWriter tests
-
-  @Test
-  public void whenInferRunsOnBufferedWriterNotClosedAfterWriteThenRLIsFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain a resource leak error",
-        inferResults,
-        contains(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "bufferedWriterNotClosedAfterWrite"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnBufferedWriterClosedThenResourceLeakIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak error",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK, WriterLeaks,
-            "bufferedWriterClosed"
-        )
-    );
-  }
-
-  //OutputStreamWriter tests
-  @Test
-  public void whenInferRunsOnOutputStreamWriterNotClosedAfterThenRLIsFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain a resource leak error",
-        inferResults,
-        contains(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "outputStreamWriterNotClosedAfterWrite"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnOutputStreamWriterClosedThenRLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak error",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK, WriterLeaks,
-            "outputStreamWriterClosed"
-        )
-    );
-  }
-
-  //FileWriter tests
-  @Test
-  public void whenInferRunsOnFileWriterNotClosedAfterWriteThenRLIsFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain a resource leak error",
-        inferResults,
-        contains(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "fileWriterNotClosedAfterWrite"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnFileWriterClosedThenResourceLeakIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak error",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "fileWriterClosed"
-        )
-    );
-  }
-
-  //PipedWriter  tests
-  @Test
-  public void whenInferRunsOnPipedWriterNotClosedAfterConstrThenRLIsFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain a resource leak error",
-        inferResults,
-        contains(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "pipedWriterNotClosedAfterConstructedWithReader"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnPipedWriterNotClosedAfterConnectThenRLIsFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should contain a resource leak error",
-        inferResults,
-        contains(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "pipedWriterNotClosedAfterConnect"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnPipedWriterClosedThenResourceLeakIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak error",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "pipedWriterClosed"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnPipedWriterNotConnectedThenRLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak error",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK,
-            WriterLeaks,
-            "pipedWriterNotConnected"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnPrintWriterThenOnlyTheExpectedErrorsAreFound()
-      throws InterruptedException, IOException, InferException {
-    String[] expectedMethods = {
+    String[] methods = {
         "writerNotClosedAfterWrite",
-        "writerClosed",
         "printWriterNotClosedAfterAppend",
-        "printWriterClosed",
         "bufferedWriterNotClosedAfterWrite",
-        "bufferedWriterClosed",
         "outputStreamWriterNotClosedAfterWrite",
-        "outputStreamWriterClosed",
         "fileWriterNotClosedAfterWrite",
-        "fileWriterClosed",
         "pipedWriterNotClosedAfterConstructedWithReader",
         "pipedWriterNotClosedAfterConnect",
-        "pipedWriterClosed",
-        "pipedWriterNotConnected",
     };
     assertThat(
-        "No unexpected errors should be found", inferResults,
-        containsOnly(
+        "Results should contain a resource leak error",
+        inferResults,
+        containsExactly(
             RESOURCE_LEAK,
-            WriterLeaks,
-            expectedMethods));
+            SOURCE_FILE,
+            methods
+        )
+    );
   }
 
 }
