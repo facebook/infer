@@ -1,0 +1,24 @@
+opam-version: "1.2"
+name: "infer"
+version: "0.1.0"
+maintainer: "opam-devel@lists.ocaml.org"
+authors: "Facebook"
+homepage: "https://github.com/facebook/infer"
+bug-reports: "https://github.com/facebook/infer/issues"
+dev-repo: "https://github.com/facebook/infer.git"
+license: "BSD"
+build: [ [make "-C" "infer" "java"] ]
+install: []
+remove: []
+depends: [
+  "ocamlfind" {build}
+  "sawja" {>="1.5"}
+  "atdgen" {>="1.5"}
+  "javalib" {>="2.3"}
+  "extlib" {>="1.5.4"}
+]
+depexts: [
+  [ ["ubuntu"] ["python2.7-dev"] ]
+  [ ["debian"] ["python2.7-dev"] ]
+]
+
