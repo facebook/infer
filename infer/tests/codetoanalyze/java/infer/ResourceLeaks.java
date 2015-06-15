@@ -101,16 +101,18 @@ public class ResourceLeaks {
   }
 
   public static void twoResourcesHeliosFix() throws IOException {
-    FileInputStream fis = new FileInputStream(new File("whatever.txt"));
+    FileInputStream fis = null;
+    FileOutputStream fos = null;
     try {
-      FileOutputStream fos = new FileOutputStream(new File("everwhat.txt"));
+      fis = new FileInputStream(new File("whatever.txt"));
       try {
+        fos = new FileOutputStream(new File("everwhat.txt"));
         fos.write(fis.read());
       } finally {
-        fos.close();
+        if (fos != null) fos.close();
       }
     } finally {
-      fis.close();
+      if (fis != null) fis.close();
     }
   }
 
@@ -867,6 +869,14 @@ public class ResourceLeaks {
       return;
     } finally {
       unknownClose(inputStream);
+    }
+  }
+
+  public int tryWithResource() {
+    try (FileInputStream inputStream = new FileInputStream("paf.txt")) {
+      return inputStream.read();
+    } catch (IOException e) {
+      return 0;
     }
   }
 
