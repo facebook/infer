@@ -164,6 +164,6 @@ let do_all_files classpath sources classes =
 let () =
   let classpath, sources, classes = JClasspath.load_sources_and_classes () in
   if StringMap.is_empty sources then
-    print_endline "TODO: print error message"
+    failwith "Failed to load any Java source code"
   else
     do_all_files classpath sources classes
