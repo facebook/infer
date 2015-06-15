@@ -48,6 +48,7 @@ Install the OCaml dependencies:
 
 ```bash
 opam init --comp=4.01.0  # (answer 'y' to the question)
+eval `opam config env`
 opam install sawja.1.5 atdgen.1.5.0 javalib.2.3 extlib.1.5.4
 ```
 
