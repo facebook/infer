@@ -38,6 +38,22 @@ public class NullDereferenceTest2 {
     String[] procedures = {
         "crash_getc",
         "crash_fgetc",
+        "crash_ungetc",
+        "crash_fputs",
+        "crash_fputc",
+        "crash_putc",
+        "crash_fseeks",
+        "crash_ftell",
+        "crash_fgets",
+        "crash_rewind",
+        "crash_fileno",
+        "crash_clearerr",
+        "crash_ferror",
+        "crash_feof",
+        "crash_fprintf",
+        "crash_vfprintf",
+        "crash_fgetpos",
+        "crash_fsetpos",
     };
     System.out.println(inferResults.toString());
     assertThat(

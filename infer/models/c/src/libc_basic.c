@@ -647,25 +647,35 @@ FILE *fdopen(int fildes, const char *mode) {
 }
 
 // return nonteterministically 0 or -1
+// requires stream to be allocated
 int fseek(FILE *stream, long int offset, int whence) {
   int n;
+  FILE tmp;
+  tmp = *stream;
   n = __infer_nondet_int();
   if (n) return 0;
   else return -1;
 }
 
 // return nondeterministically a nonnegative value or -1
+// requires stream to be allocated
 long int ftell(FILE *stream) {
   int n;
+  FILE tmp;
+  tmp = *stream;
   n = __infer_nondet_int();
   if (n>=0) return n;
   else return -1;
 }
 
 // on success return str otherwise null
+// requires stream to be allocated
 char *fgets( char *str, int num, FILE *stream ) {
   int n;
   int size1;
+  FILE tmp;
+    
+  tmp = *stream;
   n = __infer_nondet_int();
 
   if (n>0) {
@@ -695,19 +705,24 @@ int puts(const char *str) {
 }
 
 // modeled using puts
+// require the stream to be allocated
 int fputs(const char *str, FILE *stream) {
+  FILE tmp;
+  tmp = *stream;
   return puts(str);
 }
 
 // return a nondeterministic value
+// requires stream to be allocated
 int getc(FILE *stream)
 {
   FILE tmp;
-    tmp = *stream;
+  tmp = *stream;
   return __infer_nondet_int();
 }
 
 // return a nondeterministic value
+// requires stream to be allocated
 int fgetc(FILE *stream)
 {
   FILE tmp;
@@ -716,17 +731,23 @@ int fgetc(FILE *stream)
 }
 
 // return nondeterministically c or EOF
+// requires stream to be allocated
 int ungetc(int c, FILE *stream) {
   int n;
-
+  FILE tmp;
+  tmp = *stream;
+    
   n = __infer_nondet_int();
   if (n) return c;
   else return EOF;
 }
 
 // modeled like putc
+// requires stream to be allocated
 int fputc(int c, FILE *stream)
 {
+  FILE tmp;
+  tmp = *stream;
   return putc(c,stream);
 }
 
@@ -754,7 +775,10 @@ int rename(const char *old, const char *new) {
 }
 
 // modeled as skip
+// requires stream to be allocated
 void rewind(FILE *stream) {
+    FILE tmp;
+    tmp = *stream;
 }
 
 // modeled as just return a nondeterministic value
@@ -1174,9 +1198,12 @@ int printf(const char *format, ...)
 }
 
 // return a nondeterministic nonnegative integer
+// requires stream to be allocated
 int fprintf(FILE *stream, const char *format, ...)
 {
   int res;
+  FILE tmp;
+  tmp= *stream;
   res = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(res < 0);
   return res;
@@ -1204,9 +1231,13 @@ int sprintf(char *s, const char *format, ...)
 }
 
 // return a nondeterministic nonnegative integer
+// requires stream to be allocated
 int vfprintf(FILE *stream, const char *format, va_list arg)
 {
   int res;
+  FILE tmp;
+    
+  tmp= *stream;
   res = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(res < 0);
   return res;
@@ -1382,9 +1413,12 @@ long random(void) {
   return ret;
 }
 
+// requires stream to be allocated
 int putc(int c, FILE *stream){
   int rand;
-
+  FILE tmp;
+    
+  tmp = *stream;
   rand = __infer_nondet_int();
   if (rand > 0)
     return c; //success
@@ -1423,6 +1457,7 @@ size_t confstr(int name, char *buf, size_t len){
 }
 
 // return a non-deterministic value
+// stream is not required to be allocated
 int fflush(FILE *stream){
   return __infer_nondet_int();
 }
@@ -1582,8 +1617,11 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type){
 }
 
 // return a positive non-deterministic number or -1.
+// requires stream to be allocated
 int fileno(FILE *stream){
   int ret = __infer_nondet_int();
+  FILE tmp;
+  tmp = *stream;
   INFER_EXCLUDE_CONDITION(ret<-1 || ret==0 );
   return ret;
 }
@@ -1657,22 +1695,37 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact){
 //It is normally a builtin that should not be implemented and LLVM complains about this
 
 // modelled as skip
+// stream is required to be allocated
 void clearerr(FILE *stream) {
+    FILE tmp;
+    tmp = *stream;
 }
 
 // return a nondeterministic value
+// stream required to be allocated
 int ferror(FILE *stream) {
+    
+  FILE tmp;
+  tmp = *stream;
   return __infer_nondet_int();
 }
 
 // return a nondeterministic value
+// stream required to be allocated
 int feof(FILE *stream) {
+    
+  FILE tmp;
+  tmp = *stream;
   return __infer_nondet_int();
 }
 
 // write to *pos and return either 0 or -1
+// stream is required to be allocated
 int fgetpos(FILE *__restrict stream, fpos_t *__restrict pos) {
+    
   int success;
+  FILE tmp;
+  tmp = *stream;
   fpos_t t;
   *pos = t;
   success = __infer_nondet_int();
@@ -1681,8 +1734,12 @@ int fgetpos(FILE *__restrict stream, fpos_t *__restrict pos) {
 }
 
 // read from *pos and return either 0 or -1
+// stream is required to be allocated
 int fsetpos(FILE *stream, const fpos_t *pos) {
+    
   int success;
+  FILE tmp;
+  tmp = *stream;
   fpos_t t;
   t = *pos;
   success = __infer_nondet_int();
