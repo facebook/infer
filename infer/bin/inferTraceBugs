@@ -187,13 +187,10 @@ class Selector(object):
         if len(self) > 1:
             report_number_str = raw_input(
                 'Choose report to display (default=0): ')
-            if report_number_str == '':
-                report_number = 0
-            else:
+            if report_number_str != '':
                 report_number = self.parse_report_number(report_number_str)
         elif len(self) == 1:
             print('Auto-selecting the only report.')
-            report_number = 0
 
         return report_number
 
