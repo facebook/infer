@@ -5,8 +5,6 @@ import com.facebook.infer.models.InferUndefined;
 
 public class PipedInputStream extends InputStream {
 
-    private Thread lastReader;
-
     public PipedInputStream(PipedOutputStream src) throws IOException {
         this();
     }
@@ -17,8 +15,7 @@ public class PipedInputStream extends InputStream {
     }
 
     public PipedInputStream() {
-        lastReader = new Thread();
-        InferBuiltins.__set_file_attribute(lastReader);
+        InferBuiltins.__set_file_attribute(this);
     }
 
     public PipedInputStream(int pipeSize) {
@@ -26,7 +23,7 @@ public class PipedInputStream extends InputStream {
     }
 
     public void close() throws IOException {
-        InferBuiltins.__set_mem_attribute(lastReader);
+        InferBuiltins.__set_mem_attribute(this);
         InferUndefined.can_throw_ioexception_void();
     }
 

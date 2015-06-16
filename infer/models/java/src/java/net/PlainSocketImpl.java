@@ -35,21 +35,9 @@ import java.io.OutputStream;
 
 
 class PlainSocketImpl extends SocketImpl {
-    private static InetAddress lastConnectedAddress;
-
-    private static int lastConnectedPort;
-
-    private boolean streaming = true;
-
-    private boolean shutdownInput;
-
-    private Proxy proxy;
-
-    private CloseGuard guard;
 
     PlainSocketImpl() {
-        guard = new CloseGuard();
-        InferBuiltins.__set_file_attribute(guard);
+        InferBuiltins.__set_file_attribute(this);
     }
 
 
@@ -101,7 +89,7 @@ class PlainSocketImpl extends SocketImpl {
     }
 
     protected void close() throws IOException {
-        InferBuiltins.__set_mem_attribute(guard);
+        InferBuiltins.__set_mem_attribute(this);
         InferUndefined.can_throw_ioexception_void();
     }
 

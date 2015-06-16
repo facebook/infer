@@ -5,13 +5,9 @@ import com.facebook.infer.models.InferUndefined;
 
 public abstract class PipedWriter extends Writer {
 
-    private PipedReader destination;
-    private boolean isClosed;
-
     private void init() throws IOException {
         InferUndefined.can_throw_ioexception_void();
-        this.destination = new PipedReader();
-        InferBuiltins.__set_file_attribute(this.destination);
+        InferBuiltins.__set_file_attribute(this);
     }
 
     public PipedWriter() {
@@ -66,7 +62,7 @@ public abstract class PipedWriter extends Writer {
     }
 
     public void close() throws IOException {
-        InferBuiltins.__set_mem_attribute(this.destination);
+        InferBuiltins.__set_mem_attribute(this);
         InferUndefined.can_throw_ioexception_void();
     }
 

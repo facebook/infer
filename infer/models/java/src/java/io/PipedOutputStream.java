@@ -5,20 +5,17 @@ import com.facebook.infer.models.InferUndefined;
 
 public class PipedOutputStream extends OutputStream {
 
-    private PipedInputStream target;
 
     public PipedOutputStream(PipedInputStream snk) throws IOException {
-        this.target = snk;
-        InferBuiltins.__set_file_attribute(target);
+        InferBuiltins.__set_file_attribute(this);
     }
 
     public PipedOutputStream() {
-        this.target = new PipedInputStream();
-        InferBuiltins.__set_file_attribute(target);
+        InferBuiltins.__set_file_attribute(this);
     }
 
     public void close() throws IOException {
-        InferBuiltins.__set_mem_attribute(target);
+        InferBuiltins.__set_mem_attribute(this);
         InferUndefined.can_throw_ioexception_void();
     }
 

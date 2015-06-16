@@ -10,24 +10,17 @@ import java.nio.channels.FileChannel;
 public class RandomAccessFile implements Closeable {
 
     private FileDescriptor fd;
-    private boolean syncMetadata;
     private FileChannel channel;
-    private int mode;
-    private CloseGuard guard;
-
-    private byte[] scratch;
 
 
     public RandomAccessFile(String name, String mode)
             throws FileNotFoundException {
-        this.guard = new CloseGuard();
-        InferBuiltins.__set_file_attribute(this.guard);
+        InferBuiltins.__set_file_attribute(this);
     }
 
     public RandomAccessFile(File file, String mode)
             throws FileNotFoundException {
-        this.guard = new CloseGuard();
-        InferBuiltins.__set_file_attribute(this.guard);
+        InferBuiltins.__set_file_attribute(this);
     }
 
     public FileChannel getChannel() {
@@ -36,7 +29,7 @@ public class RandomAccessFile implements Closeable {
     }
 
     public void close() throws IOException {
-        InferBuiltins.__set_mem_attribute(this.guard);
+        InferBuiltins.__set_mem_attribute(this);
         InferUndefined.can_throw_ioexception_void();
     }
 

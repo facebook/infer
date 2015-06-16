@@ -30,7 +30,7 @@ public class TypedArray {
     public void recycle() {
         // Release resource
         if (mLength > 0) {
-            InferBuiltins.__set_mem_attribute(this.mValue);
+            InferBuiltins.__set_mem_attribute(this);
         }
     }
 
@@ -42,7 +42,7 @@ public class TypedArray {
 
         // Acquire resource
         if (mLength > 0) {
-            InferBuiltins.__set_file_attribute(this.mValue);
+            InferBuiltins.__set_file_attribute(this);
         }
     }
 

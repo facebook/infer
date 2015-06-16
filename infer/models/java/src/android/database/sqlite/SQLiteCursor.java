@@ -20,28 +20,10 @@ import android.database.Cursor;
 import com.facebook.infer.models.InferBuiltins;
 import com.facebook.infer.models.InferUndefined;
 
-import java.util.Map;
-
 
 public class SQLiteCursor extends Cursor {
-    static final String TAG = "SQLiteCursor";
-    static int NO_COUNT;
 
     private String mEditTable;
-
-    private String[] mColumns;
-
-    private SQLiteQuery mQuery;
-
-    private SQLiteCursorDriver mDriver;
-
-    private int mCount = NO_COUNT;
-
-    private int mCursorWindowCapacity;
-
-    private Map<String, Integer> mColumnNameMap;
-
-    private Throwable mStackTrace;
 
     @Deprecated
     public SQLiteCursor(SQLiteDatabase db, SQLiteCursorDriver driver,
