@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 23 -> 27 ;
-22 [label="22:  BinaryOperatorStmt: Assign \n   n$15=*&self:class A * [line -1]\n  n$16=*&x:int  [line -1]\n  *n$15._x:int =n$16 [line -1]\n  REMOVE_TEMPS(n$15,n$16); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&x,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+22 [label="22:  BinaryOperatorStmt: Assign \n   n$15=*&self:class A * [line 10]\n  n$16=*&x:int  [line 10]\n  *n$15._x:int =n$16 [line -1]\n  REMOVE_TEMPS(n$15,n$16); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&x,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
 	
 
 	 22 -> 21 ;

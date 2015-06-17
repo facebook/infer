@@ -1,5 +1,5 @@
 digraph iCFG {
-14 [label="14:  BinaryOperatorStmt: Assign \n   n$10=*&self:class A * [line -1]\n  n$11=*&son:class A * [line -1]\n  _fun___objc_retain(n$11:class A *) [line -1]\n  n$12=*n$10._son:class A * [line -1]\n  *n$10._son:class A *=n$11 [line -1]\n  _fun___objc_release(n$12:class A *) [line -1]\n  REMOVE_TEMPS(n$10,n$11,n$12); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&son,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+14 [label="14:  BinaryOperatorStmt: Assign \n   n$10=*&self:class A * [line 12]\n  n$11=*&son:class A * [line 12]\n  _fun___objc_retain(n$11:class A *) [line -1]\n  n$12=*n$10._son:class A * [line -1]\n  *n$10._son:class A *=n$11 [line -1]\n  _fun___objc_release(n$12:class A *) [line -1]\n  REMOVE_TEMPS(n$10,n$11,n$12); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&son,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
 	
 
 	 14 -> 13 ;

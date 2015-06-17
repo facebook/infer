@@ -119,7 +119,7 @@ digraph iCFG {
 	
 
 	 11 -> 14 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$6=*&self:class A * [line -1]\n  n$7=*&son:class A * [line -1]\n  *n$6._son:class A *=n$7 [line -1]\n  REMOVE_TEMPS(n$6,n$7); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&son,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$6=*&self:class A * [line 13]\n  n$7=*&son:class A * [line 13]\n  *n$6._son:class A *=n$7 [line -1]\n  REMOVE_TEMPS(n$6,n$7); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&son,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
 	
 
 	 10 -> 9 ;

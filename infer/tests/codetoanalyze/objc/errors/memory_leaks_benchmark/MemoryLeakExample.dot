@@ -1,5 +1,5 @@
 digraph iCFG {
-60 [label="60:  BinaryOperatorStmt: Assign \n   n$41=*&self:class MemoryLeakExample * [line -1]\n  n$42=*&attachmentContainerView:class UIView * [line -1]\n  *n$41._attachmentContainerView:class UIView *=n$42 [line -1]\n  REMOVE_TEMPS(n$41,n$42); [line -1]\n  NULLIFY(&attachmentContainerView,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+60 [label="60:  BinaryOperatorStmt: Assign \n   n$41=*&self:class MemoryLeakExample * [line 12]\n  n$42=*&attachmentContainerView:class UIView * [line 12]\n  *n$41._attachmentContainerView:class UIView *=n$42 [line -1]\n  REMOVE_TEMPS(n$41,n$42); [line -1]\n  NULLIFY(&attachmentContainerView,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
 	
 
 	 60 -> 59 ;
@@ -21,7 +21,7 @@ digraph iCFG {
 	
 
 	 55 -> 57 ;
-54 [label="54:  BinaryOperatorStmt: Assign \n   n$37=*&self:class MemoryLeakExample * [line -1]\n  n$38=*&backgroundCoveringView:class UIView * [line -1]\n  *n$37._backgroundCoveringView:class UIView *=n$38 [line -1]\n  REMOVE_TEMPS(n$37,n$38); [line -1]\n  NULLIFY(&backgroundCoveringView,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+54 [label="54:  BinaryOperatorStmt: Assign \n   n$37=*&self:class MemoryLeakExample * [line 11]\n  n$38=*&backgroundCoveringView:class UIView * [line 11]\n  *n$37._backgroundCoveringView:class UIView *=n$38 [line -1]\n  REMOVE_TEMPS(n$37,n$38); [line -1]\n  NULLIFY(&backgroundCoveringView,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
 	
 
 	 54 -> 53 ;

@@ -32,7 +32,7 @@ digraph iCFG {
 	
 
 	 245 -> 244 ;
-244 [label="244:  Call _fun_printf \n   n$57=_fun_printf(\"wow\\n\":char *) [line 184]\n  REMOVE_TEMPS(n$57); [line 184]\n  APPLY_ABSTRACTION; [line 184]\n " shape="box"]
+244 [label="244:  Call _fun_printf \n   n$57=_fun_printf(\"wow\\n\":char *) [line 186]\n  REMOVE_TEMPS(n$57); [line 186]\n  APPLY_ABSTRACTION; [line 186]\n " shape="box"]
 	
 
 	 244 -> 240 ;
@@ -108,7 +108,7 @@ digraph iCFG {
 	
 
 	 227 -> 226 ;
-226 [label="226:  Call _fun_printf \n   n$52=_fun_printf(\"out!\\n\":char *) [line 177]\n  REMOVE_TEMPS(n$52); [line 177]\n " shape="box"]
+226 [label="226:  Call _fun_printf \n   n$52=_fun_printf(\"out!\\n\":char *) [line 193]\n  REMOVE_TEMPS(n$52); [line 193]\n " shape="box"]
 	
 
 	 226 -> 225 ;
@@ -116,7 +116,7 @@ digraph iCFG {
 	
 
 	 225 -> 224 ;
-224 [label="224:  Call _fun_printf \n   n$51=_fun_printf(\"terminating!\\n\":char *) [line 177]\n  REMOVE_TEMPS(n$51); [line 177]\n " shape="box"]
+224 [label="224:  Call _fun_printf \n   n$51=_fun_printf(\"terminating!\\n\":char *) [line 195]\n  REMOVE_TEMPS(n$51); [line 195]\n " shape="box"]
 	
 
 	 224 -> 223 ;
@@ -147,7 +147,7 @@ digraph iCFG {
 	
 
 	 217 -> 213 ;
-216 [label="216:  Call _fun_printf \n   n$47=_fun_printf(\"wow\\n\":char *) [line 159]\n  REMOVE_TEMPS(n$47); [line 159]\n " shape="box"]
+216 [label="216:  Call _fun_printf \n   n$47=_fun_printf(\"wow\\n\":char *) [line 162]\n  REMOVE_TEMPS(n$47); [line 162]\n " shape="box"]
 	
 
 	 216 -> 196 ;
@@ -223,7 +223,7 @@ digraph iCFG {
 	
 
 	 199 -> 198 ;
-198 [label="198:  Call _fun_printf \n   n$42=_fun_printf(\"out!\\n\":char *) [line 153]\n  REMOVE_TEMPS(n$42); [line 153]\n " shape="box"]
+198 [label="198:  Call _fun_printf \n   n$42=_fun_printf(\"out!\\n\":char *) [line 169]\n  REMOVE_TEMPS(n$42); [line 169]\n " shape="box"]
 	
 
 	 198 -> 197 ;
@@ -235,7 +235,7 @@ digraph iCFG {
 	
 
 	 196 -> 195 ;
-195 [label="195:  Call _fun_printf \n   n$41=_fun_printf(\"terminating!\\n\":char *) [line 153]\n  REMOVE_TEMPS(n$41); [line 153]\n " shape="box"]
+195 [label="195:  Call _fun_printf \n   n$41=_fun_printf(\"terminating!\\n\":char *) [line 172]\n  REMOVE_TEMPS(n$41); [line 172]\n " shape="box"]
 	
 
 	 195 -> 194 ;
@@ -250,7 +250,7 @@ digraph iCFG {
 	
 
 	 192 -> 220 ;
-191 [label="191:  Call _fun_printf \n   n$40=_fun_printf(\"B\\n\":char *) [line 129]\n  REMOVE_TEMPS(n$40); [line 129]\n " shape="box"]
+191 [label="191:  Call _fun_printf \n   n$40=_fun_printf(\"B\\n\":char *) [line 131]\n  REMOVE_TEMPS(n$40); [line 131]\n " shape="box"]
 	
 
 	 191 -> 184 ;
@@ -367,7 +367,7 @@ digraph iCFG {
 	
 
 	 164 -> 163 ;
-163 [label="163:  Call _fun_printf \n   n$33=_fun_printf(\"exit\\n\":char *) [line 129]\n  REMOVE_TEMPS(n$33); [line 129]\n  APPLY_ABSTRACTION; [line 129]\n " shape="box"]
+163 [label="163:  Call _fun_printf \n   n$33=_fun_printf(\"exit\\n\":char *) [line 147]\n  REMOVE_TEMPS(n$33); [line 147]\n  APPLY_ABSTRACTION; [line 147]\n " shape="box"]
 	
 
 	 163 -> 162 ;
@@ -382,7 +382,7 @@ digraph iCFG {
 	
 
 	 160 -> 172 ;
-159 [label="159:  Call _fun_printf \n   n$32=_fun_printf(\"B\\n\":char *) [line 106]\n  REMOVE_TEMPS(n$32); [line 106]\n " shape="box"]
+159 [label="159:  Call _fun_printf \n   n$32=_fun_printf(\"B\\n\":char *) [line 108]\n  REMOVE_TEMPS(n$32); [line 108]\n " shape="box"]
 	
 
 	 159 -> 152 ;
@@ -499,7 +499,7 @@ digraph iCFG {
 	
 
 	 132 -> 131 ;
-131 [label="131:  Call _fun_printf \n   n$25=_fun_printf(\"exit\\n\":char *) [line 106]\n  REMOVE_TEMPS(n$25); [line 106]\n  APPLY_ABSTRACTION; [line 106]\n " shape="box"]
+131 [label="131:  Call _fun_printf \n   n$25=_fun_printf(\"exit\\n\":char *) [line 124]\n  REMOVE_TEMPS(n$25); [line 124]\n  APPLY_ABSTRACTION; [line 124]\n " shape="box"]
 	
 
 	 131 -> 130 ;
@@ -514,7 +514,7 @@ digraph iCFG {
 	
 
 	 128 -> 140 ;
-127 [label="127:  Call _fun_printf \n   n$24=_fun_printf(\"B\\n\":char *) [line 84]\n  REMOVE_TEMPS(n$24); [line 84]\n " shape="box"]
+127 [label="127:  Call _fun_printf \n   n$24=_fun_printf(\"B\\n\":char *) [line 86]\n  REMOVE_TEMPS(n$24); [line 86]\n " shape="box"]
 	
 
 	 127 -> 120 ;
@@ -635,7 +635,7 @@ digraph iCFG {
 	
 
 	 99 -> 98 ;
-98 [label="98:  Call _fun_printf \n   n$16=_fun_printf(\"exit\\n\":char *) [line 84]\n  REMOVE_TEMPS(n$16); [line 84]\n " shape="box"]
+98 [label="98:  Call _fun_printf \n   n$16=_fun_printf(\"exit\\n\":char *) [line 101]\n  REMOVE_TEMPS(n$16); [line 101]\n " shape="box"]
 	
 
 	 98 -> 97 ;
@@ -650,7 +650,7 @@ digraph iCFG {
 	
 
 	 95 -> 108 ;
-94 [label="94:  Call _fun_printf \n   n$15=_fun_printf(\"B\\n\":char *) [line 61]\n  REMOVE_TEMPS(n$15); [line 61]\n " shape="box"]
+94 [label="94:  Call _fun_printf \n   n$15=_fun_printf(\"B\\n\":char *) [line 63]\n  REMOVE_TEMPS(n$15); [line 63]\n " shape="box"]
 	
 
 	 94 -> 87 ;
@@ -775,7 +775,7 @@ digraph iCFG {
 	
 
 	 65 -> 64 ;
-64 [label="64:  Call _fun_printf \n   n$7=_fun_printf(\"exit\\n\":char *) [line 61]\n  REMOVE_TEMPS(n$7); [line 61]\n " shape="box"]
+64 [label="64:  Call _fun_printf \n   n$7=_fun_printf(\"exit\\n\":char *) [line 79]\n  REMOVE_TEMPS(n$7); [line 79]\n " shape="box"]
 	
 
 	 64 -> 63 ;
@@ -794,7 +794,7 @@ digraph iCFG {
 	
 
 	 60 -> 40 ;
-59 [label="59:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 38]\n  NULLIFY(&a,false); [line 38]\n " shape="box"]
+59 [label="59:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 41]\n  NULLIFY(&a,false); [line 41]\n " shape="box"]
 	
 
 	 59 -> 52 ;
@@ -915,7 +915,7 @@ digraph iCFG {
 	
 
 	 31 -> 30 ;
-30 [label="30:  BinaryOperatorStmt: Assign \n   *&a:int =3 [line 38]\n  NULLIFY(&a,false); [line 38]\n " shape="box"]
+30 [label="30:  BinaryOperatorStmt: Assign \n   *&a:int =3 [line 56]\n  NULLIFY(&a,false); [line 56]\n " shape="box"]
 	
 
 	 30 -> 29 ;
@@ -959,7 +959,7 @@ digraph iCFG {
 	
 
 	 20 -> 19 ;
-19 [label="19:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 26]\n  NULLIFY(&a,false); [line 26]\n " shape="box"]
+19 [label="19:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 33]\n  NULLIFY(&a,false); [line 33]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -1007,7 +1007,7 @@ digraph iCFG {
 	
 
 	 8 -> 7 ;
-7 [label="7:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 13]\n  NULLIFY(&a,false); [line 13]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 21]\n  NULLIFY(&a,false); [line 21]\n " shape="box"]
 	
 
 	 7 -> 6 ;

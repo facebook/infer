@@ -1,5 +1,5 @@
 digraph iCFG {
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$4=*&self:class A * [line -1]\n  n$5=*&x:int  [line -1]\n  *n$4._x:int =n$5 [line -1]\n  REMOVE_TEMPS(n$4,n$5); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&x,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$4=*&self:class A * [line 9]\n  n$5=*&x:int  [line 9]\n  *n$4._x:int =n$5 [line -1]\n  REMOVE_TEMPS(n$4,n$5); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&x,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
 	
 
 	 9 -> 8 ;

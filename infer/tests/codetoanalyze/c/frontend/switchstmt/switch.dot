@@ -757,7 +757,7 @@ digraph iCFG {
 	
 
 	 12 -> 11 ;
-11 [label="11:  Call _fun_printf \n   n$3=_fun_printf(\"(2/def)HELLO WORLD!\":char *) [line 11]\n  REMOVE_TEMPS(n$3); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+11 [label="11:  Call _fun_printf \n   n$3=_fun_printf(\"(2/def)HELLO WORLD!\":char *) [line 24]\n  REMOVE_TEMPS(n$3); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 11 -> 4 ;
