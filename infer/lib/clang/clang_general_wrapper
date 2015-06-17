@@ -131,6 +131,7 @@ if [ -n "$ATTACH_PLUGIN" ]; then
     if [ -n "$LANGUAGE" ]; then INFER_FRONTEND_ARGS+=("-x" "$LANGUAGE"); fi
     if [ "$FOBJC_ARC_FLAG" == 0 ]; then INFER_FRONTEND_ARGS+=("-fobjc-arc"); fi
 
+    [[ "$SOURCE_FILE" = /* ]] || { SOURCE_FILE="${CWD}/$SOURCE_FILE"; }
     INFERCLANG_CMD=(
         "${BIN_DIR}/InferClang"
         "-c" "$SOURCE_FILE"

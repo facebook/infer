@@ -20,20 +20,18 @@ let init_curr_source_file source_file =
   current_source_file := source_file
 
 let source_file_from_path path =
-  let path = Utils.filename_to_absolute path in
+  if Filename.is_relative path then
+    (Logging.out
+        "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
+        path;
+      exit 1);
   match !Config.project_root with
   | Some root ->
       (try
         DB.rel_source_file_from_abs_path root path
       with DB.Path_not_prefix_root ->
           DB.source_file_from_string path)
-  | None ->
-      if (Filename.is_relative path) then
-        (Logging.out
-            "ERROR: Path %s is relative. Please pass either a project root or an absolute path in the -c argument.@."
-            path;
-          exit(1))
-      else (DB.source_file_from_string path)
+  | None -> DB.source_file_from_string path
 
 let choose_sloc sloc1 sloc2 prefer_first =
   let sloc_bad sloc =
