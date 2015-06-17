@@ -14,27 +14,20 @@ module F = Format
 
 module Printing =
 struct
-  let log_out ?fmt s =
-    if !CFrontend_config.debug_mode then
-      match fmt with
-      | Some fmt' ->
-          Format.printf fmt' s
-      | None -> Format.printf "%s" s
+  let log_out fmt =
+    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
+    pp Format.std_formatter fmt
 
-  let log_err ?fmt s =
-    if !CFrontend_config.debug_mode then
-      match fmt with
-      | Some fmt' ->
-          Format.eprintf fmt' s
-      | None -> Format.eprintf "%s" s
+  let log_err fmt =
+    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
+    pp Format.err_formatter fmt
 
-  let log_stats ?fmt s =
-    if !CFrontend_config.stats_mode ||
-    !CFrontend_config.debug_mode then
-      match fmt with
-      | Some fmt' ->
-          Format.printf fmt' s
-      | None -> Format.eprintf "%s" s
+  let log_stats fmt =
+    let pp =
+      if !CFrontend_config.stats_mode || !CFrontend_config.debug_mode
+      then Format.fprintf else Format.ifprintf in
+    pp Format.std_formatter fmt
+
 
   let print_tenv tenv =
     Sil.tenv_iter (fun typname typ ->
@@ -237,10 +230,10 @@ struct
     pointer_counter := !pointer_counter + 1;
     CFrontend_config.pointer_prefix^(string_of_int (!pointer_counter))
 
-let type_from_unary_expr_or_type_trait_expr_info info =
-  match info.uttei_qual_type with
-  | Some qt -> Some qt
-  | None -> None
+  let type_from_unary_expr_or_type_trait_expr_info info =
+    match info.uttei_qual_type with
+    | Some qt -> Some qt
+    | None -> None
 
 end
 
@@ -309,8 +302,8 @@ struct
     | Some sc -> sc = CFrontend_config.static
     | _ -> false
 
-let block_procname_with_index defining_proc i =
-     Config.anonymous_block_prefix^(Procname.to_string defining_proc)^Config.anonymous_block_num_sep^(string_of_int i)
+  let block_procname_with_index defining_proc i =
+    Config.anonymous_block_prefix^(Procname.to_string defining_proc)^Config.anonymous_block_num_sep^(string_of_int i)
 
   (* Makes a fresh name for a block defined inside the defining procedure.*)
   (* It updates the global block_counter *)
@@ -318,8 +311,8 @@ let block_procname_with_index defining_proc i =
     let name = block_procname_with_index defining_proc (get_fresh_block_index ()) in
     Procname.mangled_objc_block name
 
- (* Returns the next fresh name for a block defined inside the defining procedure *)
- (* It does not update the global block_counter *)
+  (* Returns the next fresh name for a block defined inside the defining procedure *)
+  (* It does not update the global block_counter *)
   let get_next_block_pvar defining_proc =
     let name = block_procname_with_index defining_proc (!block_counter +1) in
     Sil.mk_pvar (Mangled.from_string (CFrontend_config.temp_var^"_"^name)) defining_proc

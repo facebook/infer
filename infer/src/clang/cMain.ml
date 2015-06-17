@@ -101,8 +101,8 @@ let do_run source_path ast_path =
       | None -> "stdin of " ^ source_path, validate_decl_from_stdin () in
 
     let ast_decl' = CAstProcessor.preprocess_ast_decl ast_decl in
-    L.stdout "Original AST@.%a@." CAstProcessor.pp_ast_decl ast_decl;
-    L.stdout "AST with explicit locations:@.%a@." CAstProcessor.pp_ast_decl ast_decl';
+    Printing.log_out "Original AST@.%a@." CAstProcessor.pp_ast_decl ast_decl;
+    Printing.log_out "AST with explicit locations:@.%a@." CAstProcessor.pp_ast_decl ast_decl';
 
 
     CFrontend_config.json := ast_filename;
@@ -112,7 +112,7 @@ let do_run source_path ast_path =
     CFrontend.do_source_file source_file ast_decl';
     print_endline ("End translation AST file " ^ !CFrontend_config.json ^ "... OK!")
   with
-    (Yojson.Json_error s) as exc -> Printing.log_err ~fmt:"%s\n" s;
+    (Yojson.Json_error s) as exc -> Printing.log_err "%s\n" s;
       raise exc
 
 let _ =

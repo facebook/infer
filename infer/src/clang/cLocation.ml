@@ -122,7 +122,7 @@ let check_source_file source_file =
   let extensions_allowed = [".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"] in
   let allowed = list_exists (fun ext -> Filename.check_suffix source_file ext) extensions_allowed in
   if not allowed then
-    (Printing.log_stats
+    (Printing.log_stats "%s"
         ("\nThe source file "^source_file^
           " should end with "^(Utils.list_to_string (fun x -> x) extensions_allowed)^"\n\n");
       assert false)

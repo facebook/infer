@@ -48,8 +48,8 @@ struct
     let par_to_ms_par par =
       match par with
       | ParmVarDecl(decl_info, name, qtype, var_decl_info) ->
-          Printing.log_out ~fmt:"Adding  param '%s' " name;
-          Printing.log_out ~fmt:"with pointer %s@." decl_info.Clang_ast_t.di_pointer;
+          Printing.log_out "Adding  param '%s' " name;
+          Printing.log_out "with pointer %s@." decl_info.Clang_ast_t.di_pointer;
           (name, CTypes.get_type qtype)
       | _ -> assert false in
     match function_method_decl_info with
@@ -93,7 +93,7 @@ struct
   let add_method tenv cg cfg class_decl_opt procname namespace instrs is_objc_method is_instance
       captured_vars is_anonym_block =
     Printing.log_out
-      ~fmt:"\n\n>>---------- ADDING METHOD: '%s' ---------<<\n" (Procname.to_string procname);
+      "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n" (Procname.to_string procname);
     try
       (match Cfg.Procdesc.find_from_name cfg procname with
         | Some procdesc ->
@@ -108,7 +108,7 @@ struct
                 Cfg.Procdesc.append_locals procdesc local_vars;
                 Cfg.Node.add_locals_ret_declaration start_node local_vars;
                 Printing.log_out
-                  ~fmt:"\n\n>>---------- Start translating the function: '%s' ---------<<"
+                  "\n\n>>---------- Start translating the function: '%s' ---------<<"
                   (Procname.to_string procname);
                 let meth_body_nodes = T.instructions_trans context instrs exit_node in
                 if (not is_anonym_block) then CContext.LocalVars.reset_block ();
@@ -127,7 +127,7 @@ struct
         ()
 
   let function_decl tenv cfg cg namespace is_instance di name qt fdecl_info captured_vars anonym_block_opt curr_class =
-    Printing.log_out ~fmt:"\nFound FunctionDecl '%s'. Processing...\n" name;
+    Printing.log_out "\nFound FunctionDecl '%s'. Processing...\n" name;
     Printing.log_out "\nResetting the goto_labels hashmap...\n";
     CTrans_utils.GotoLabel.reset_all_labels (); (* C Language Std 6.8.6.1-1 *)
     match create_function_signature di fdecl_info name qt is_instance anonym_block_opt with
@@ -147,7 +147,7 @@ struct
     let procname = CMethod_trans.mk_procname_from_method class_name method_name in
     let method_decl = Meth_decl_info (method_decl_info, class_name) in
     let ms = build_method_signature decl_info procname method_decl false false in
-    Printing.log_out ~fmt:" ....Processing implementation for method '%s'\n" (Procname.to_string procname);
+    Printing.log_out " ....Processing implementation for method '%s'\n" (Procname.to_string procname);
     (match method_body_to_translate decl_info ms method_decl_info.Clang_ast_t.omdi_body with
       | Some body ->
           let is_instance = CMethod_signature.ms_is_instance ms in
@@ -167,7 +167,7 @@ struct
 
     | EmptyDecl _ | ObjCIvarDecl _ -> ()
     | d -> Printing.log_err
-          ~fmt:"\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl d);
+          "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl d);
         ()
 
   let process_methods tenv cg cfg curr_class namespace decl_list =

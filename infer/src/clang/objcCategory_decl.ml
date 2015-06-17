@@ -39,7 +39,7 @@ let get_category_name_from_category_impl category_impl_info =
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category tenv name class_name decl_list =
   let name = if name ="" then noname_category class_name else name in
-  Printing.log_out ~fmt:"Now name is '%s'\n" name;
+  Printing.log_out "Now name is '%s'\n" name;
   let curr_class = CContext.ContextCategory (name, class_name) in
   let fields = CField_decl.get_fields tenv curr_class decl_list in
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
@@ -53,19 +53,19 @@ let process_category tenv name class_name decl_list =
         Sil.Tstruct (
           new_fields, [], Sil.Class, Some mang_name, superclass, new_methods, annotation
         ) in
-      Printing.log_out ~fmt:" Updating info for class '%s' in tenv\n" class_name;
+      Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Sil.tenv_add tenv class_tn_name class_type_info;
       curr_class
   | _ -> assert false
 
 let category_decl tenv name category_decl_info decl_list =
-  Printing.log_out ~fmt:"ADDING: ObjCCategoryDecl for '%s'\n" name;
+  Printing.log_out "ADDING: ObjCCategoryDecl for '%s'\n" name;
   let class_name = get_class_from_category_decl category_decl_info in
   process_category tenv name class_name decl_list
 
 let category_impl_decl tenv name decl_info category_impl_decl_info decl_list =
   let category_name = get_category_name_from_category_impl category_impl_decl_info in
-  Printing.log_out ~fmt:"ADDING: ObjCCategoryImplDecl for '%s'\n" category_name;
+  Printing.log_out "ADDING: ObjCCategoryImplDecl for '%s'\n" category_name;
   let cat_class = get_class_from_category_impl category_impl_decl_info in
   process_category tenv category_name cat_class decl_list
 

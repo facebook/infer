@@ -45,7 +45,7 @@ let rec get_enum_constants context decl_list v =
   | [] -> []
   | EnumConstantDecl(decl_info, name, qual_type, enum_constant_decl_info) :: decl_list' ->
       (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
-        | None -> Printing.log_out ("  ...Defining Enum Constant ("^name^", "^(string_of_int v));
+        | None -> Printing.log_out "%s" ("  ...Defining Enum Constant ("^name^", "^(string_of_int v));
             (Mangled.from_string name, Sil.Cint (Sil.Int.of_int v))
             :: get_enum_constants context decl_list' (v + 1)
         | Some stmt ->
@@ -55,13 +55,13 @@ let rec get_enum_constants context decl_list v =
                 | Sil.Const c -> c
                 | _ -> (* This is a hack to avoid failing in some strange definition of Enum *)
                     Sil.Cint Sil.Int.zero) in
-            Printing.log_out ~fmt:"  ...Defining Enum Constant ('%s', " name;
-            Printing.log_out ~fmt:"'%s')\n" (Sil.exp_to_string (Sil.Const const));
+            Printing.log_out "  ...Defining Enum Constant ('%s', " name;
+            Printing.log_out "'%s')\n" (Sil.exp_to_string (Sil.Const const));
             (Mangled.from_string name, const) :: get_enum_constants context decl_list' v)
   | _ -> assert false
 
 let enum_decl name tenv cfg cg namespace decl_list opt_type =
-  Printing.log_out ~fmt:"ADDING: EnumDecl '%s'\n" name;
+  Printing.log_out "ADDING: EnumDecl '%s'\n" name;
   let context' =
     CContext.create_context tenv cg cfg !global_procdesc namespace CContext.ContextNoCls
       false [] false in
@@ -72,5 +72,5 @@ let enum_decl name tenv cfg cg namespace decl_list opt_type =
   (* Here we could give "enum "^name but I want to check that this the type is always defined *)
   let typename = Sil.TN_enum (Mangled.from_string name) in
   let typ = Sil.Tenum enum_constants in
-  Printing.log_out ~fmt:"  TN_typename('%s')\n" (Sil.typename_to_string typename);
+  Printing.log_out "  TN_typename('%s')\n" (Sil.typename_to_string typename);
   Sil.tenv_add tenv typename typ

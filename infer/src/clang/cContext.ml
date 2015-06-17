@@ -81,7 +81,7 @@ struct
     let var_name = Mangled.from_string name in
     let global_var = CGlobal_vars.find var_name in
     let var = CGlobal_vars.var_get_name global_var in
-    Printing.log_out ~fmt:"   ...Variable '%s' found in globals!!\n" (Sil.pvar_to_string var);
+    Printing.log_out "   ...Variable '%s' found in globals!!@\n" (Sil.pvar_to_string var);
     let typ = CGlobal_vars.var_get_typ global_var in
     var, typ
 
@@ -99,36 +99,36 @@ struct
     let print_stack var_name stack =
       Stack.iter
         (fun (var_name, typ, level) ->
-              Printing.log_out ~fmt:"var item %s:" (Mangled.to_string var_name);
-              Printing.log_out ~fmt:"%s" (Sil.typ_to_string typ);
-              Printing.log_out ~fmt:"- %s \n%!" (string_of_int level)) stack in
-    Printing.log_out "LOCAL VARS:%s\n";
+              Printing.log_out "var item %s:" (Mangled.to_string var_name);
+              Printing.log_out "%s" (Sil.typ_to_string typ);
+              Printing.log_out "- %s @." (string_of_int level)) stack in
+    Printing.log_out "LOCAL VARS:@\n";
     StringMap.iter print_stack context.local_vars_stack
 
   let print_pointer_vars context =
     let print_pointer_var pointer var =
-      Printing.log_out ~fmt:"%s ->" pointer;
-      Printing.log_out ~fmt:" %s\n" (Sil.pvar_to_string var) in
-    Printing.log_out "POINTER VARS:\n";
+      Printing.log_out "%s ->" pointer;
+      Printing.log_out " %s@\n" (Sil.pvar_to_string var) in
+    Printing.log_out "POINTER VARS:@\n";
     StringMap.iter print_pointer_var context.local_vars_pointer
 
   let add_pointer_var pointer var context =
-    Printing.log_out ~fmt:"     ...Adding pointer '%s' " pointer;
-    Printing.log_out ~fmt:"to the map with variable '%s'\n%!" (Sil.pvar_to_string var);
+    Printing.log_out "     ...Adding pointer '%s' " pointer;
+    Printing.log_out "to the map with variable '%s'@." (Sil.pvar_to_string var);
     context.local_vars_pointer <- StringMap.add pointer var context.local_vars_pointer
 
   let find_var_with_pointer context pointer =
     try
       StringMap.find pointer context.local_vars_pointer
     with Not_found ->
-        (Printing.log_err ~fmt:"   ...Variable for pointer %s not found!!\n%!" pointer);
+        (Printing.log_err "   ...Variable for pointer %s not found!!\n%!" pointer);
         print_pointer_vars context;
         assert false
 
   let lookup_var_locals context procname var_name =
     let stack = lookup_var_map context var_name in
     let (var_name, typ, level) = Stack.top stack in
-    Printing.log_out ~fmt:"   ...Variable %s found in locals!!\n%!" (Mangled.to_string var_name);
+    Printing.log_out "   ...Variable %s found in locals!!@." (Mangled.to_string var_name);
     (Sil.mk_pvar var_name procname), typ
 
   let lookup_var context pointer var_name kind =
@@ -144,7 +144,7 @@ struct
                 try (* if it's a captured variable we need to look at the parameters list*)
                   Some (fst (lookup_var_formals context procname var_name))
                 with Not_found ->
-                    Printing.log_err ~fmt:"Variable %s not found!!\n%!" var_name;
+                    Printing.log_err "Variable %s not found!!\n%!" var_name;
                     print_locals context;
                     None
               else None
@@ -153,19 +153,19 @@ struct
         Some (fst (lookup_var_formals context procname var_name))
       with Not_found ->
           let list_to_string = list_to_string (fun (a, typ) -> a^":"^(Sil.typ_to_string typ)) in
-          Printing.log_err ~fmt:"Warning: Parameter %s not found!!\n%!" var_name;
-          Printing.log_err ~fmt:"Formals of procdesc %s" (Procname.to_string procname);
-          Printing.log_err ~fmt:" are %s\n%!" (list_to_string (Cfg.Procdesc.get_formals context.procdesc));
+          Printing.log_err "Warning: Parameter %s not found!!\n%!" var_name;
+          Printing.log_err "Formals of procdesc %s" (Procname.to_string procname);
+          Printing.log_err " are %s\n%!" (list_to_string (Cfg.Procdesc.get_formals context.procdesc));
           Printing.print_failure_info pointer;
           assert false
     else if (kind = `Function || kind = `ImplicitParam) then (
       (* ImplicitParam are 'self' and '_cmd'. These are never defined but they can be referred to in the code. *)
-      Printing.log_err ~fmt:"Creating a variable for '%s' \n%!" var_name;
+      Printing.log_err "Creating a variable for '%s' \n%!" var_name;
       Some (Sil.mk_pvar (Mangled.from_string var_name) procname))
     else if (kind = `EnumConstant) then
       (Printing.print_failure_info pointer;
         assert false)
-    else (Printing.log_err ~fmt:"WARNING: In lookup_var kind %s not handled. Giving up!\n%!" (Clang_ast_j.string_of_decl_kind kind);
+    else (Printing.log_err "WARNING: In lookup_var kind %s not handled. Giving up!\n%!" (Clang_ast_j.string_of_decl_kind kind);
       Printing.print_failure_info pointer;
       assert false)
 
@@ -173,8 +173,8 @@ struct
     Mangled.mangled name ((string_of_int(Block.depth ())))
 
   let add_local_var context var_name typ pointer is_static =
-    Printing.log_out ~fmt:"     ...Creating var %s" var_name;
-    Printing.log_out ~fmt:" with pointer %s\n" pointer;
+    Printing.log_out "     ...Creating var %s" var_name;
+    Printing.log_out " with pointer %s@\n" pointer;
     if not (is_global_var context var_name) || is_static then
       let var = get_variable_name var_name in
       context.local_vars <- context.local_vars@[(var, typ, is_static)] ;

@@ -10,11 +10,11 @@ open Clang_ast_t
 module Printing :
 sig
 
-  val log_out : ?fmt: (string -> unit, Format.formatter, unit) format -> string -> unit
+  val log_out : ('a, Format.formatter, unit) format -> 'a
 
-  val log_err : ?fmt: (string -> unit, Format.formatter, unit) format -> string -> unit
+  val log_err : ('a, Format.formatter, unit) format -> 'a
 
-  val log_stats : ?fmt: (string -> unit, Format.formatter, unit) format -> string -> unit
+  val log_stats : ('a, Format.formatter, unit) format -> 'a
 
   val print_failure_info : string -> unit
 

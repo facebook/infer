@@ -49,12 +49,12 @@ let resolve_method tenv class_name method_name =
 let get_superclass_curr_class context =
   let retrive_super cname super_opt =
     let iname = Sil.TN_csu (Sil.Class, Mangled.from_string cname) in
-    Printing.log_out ~fmt:"Checking for superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
+    Printing.log_out "Checking for superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
     match Sil.tenv_lookup (CContext.get_tenv context) iname with
     | Some Sil.Tstruct(_, _, _, _, (_, super_name):: _, _, _) ->
         Mangled.to_string super_name
     | _ ->
-        Printing.log_err ~fmt:"NOT FOUND superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
+        Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
         (match super_opt with
           | Some super -> super
           | _ -> assert false) in
@@ -105,7 +105,7 @@ let captured_vars_from_block_info context cvl =
   let find lv n =
     try
       list_find (fun (n', _, _) -> Mangled.to_string n' = n) lv
-    with Not_found -> Printing.log_err ~fmt:"Trying to find variable %s@." n; assert false in
+    with Not_found -> Printing.log_err "Trying to find variable %s@." n; assert false in
   let rec f cvl' =
     match cvl' with
     | [] -> []
@@ -117,7 +117,7 @@ let captured_vars_from_block_info context cvl =
                     if n = CFrontend_config.self && not context.is_instance then []
                     else
                       (let procdesc_formals = Cfg.Procdesc.get_formals context.procdesc in
-                        (Printing.log_err ~fmt:"formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
+                        (Printing.log_err "formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
                         let formals = list_map formal2captured procdesc_formals in
                         [find (context.local_vars @ formals) n])
                 | _ -> assert false)
@@ -140,7 +140,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_str @formals in
     let source_range = CMethod_signature.ms_get_loc ms in
-    Printing.log_out ~fmt:
+    Printing.log_out
       "\n\n>>------------------------- Start creating a new procdesc for function: '%s' ---------<<\n" pname;
     let loc_start = CLocation.get_sil_location_from_range source_range true in
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
@@ -183,7 +183,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
         Cfg.Procdesc.set_exit_node procdesc exit_node) in
   match Cfg.Procdesc.find_from_name cfg procname with
   | Some prevoius_procdesc ->
-      Printing.log_err ~fmt:"\n\n!!!WARNING: procdesc for %s already defined \n" pname;
+      Printing.log_err "\n\n!!!WARNING: procdesc for %s already defined \n" pname;
       if defined && not (Cfg.Procdesc.is_defined prevoius_procdesc) then
         (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
           create_new_procdesc ())

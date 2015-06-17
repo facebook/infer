@@ -21,7 +21,7 @@ let get_function_return_type s =
   match buf with
   | ret:: _ ->
       let ret'= String.trim ret in
-      Printing.log_out ~fmt:"return type ='%s'@." ret';
+      Printing.log_out "return type ='%s'@." ret';
       ret'
   | _ -> assert false
 
@@ -38,24 +38,24 @@ let lookup_var_type context pvar =
   let locals = Cfg.Procdesc.get_locals context.CContext.procdesc in
   try
     let s, t = list_find (fun (s, t) -> s = (Sil.pvar_to_string pvar)) formals in
-    Printing.log_out ~fmt:"When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
-    Printing.log_out ~fmt:"found '%s' in formals.@." (Sil.typ_to_string t);
+    Printing.log_out "When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
+    Printing.log_out "found '%s' in formals.@." (Sil.typ_to_string t);
     t
   with Not_found ->
       try
         let s, t = list_find (fun (s, t) -> Mangled.equal (Sil.pvar_get_name pvar) s) locals in
-        Printing.log_out ~fmt:"When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
-        Printing.log_out ~fmt:"found '%s' in locals.@." (Sil.typ_to_string t);
+        Printing.log_out "When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
+        Printing.log_out "found '%s' in locals.@." (Sil.typ_to_string t);
         t
       with Not_found ->
           try
             let typ = CGlobal_vars.var_get_typ (CGlobal_vars.find (Sil.pvar_get_name pvar)) in
-            Printing.log_out ~fmt:"When looking for type of variable '%s'" (Sil.pvar_to_string pvar);
-            Printing.log_out ~fmt:" found '%s' in globals.@." (Sil.typ_to_string typ);
+            Printing.log_out "When looking for type of variable '%s'" (Sil.pvar_to_string pvar);
+            Printing.log_out " found '%s' in globals.@." (Sil.typ_to_string typ);
             typ
           with Not_found ->
               Printing.log_err
-                ~fmt:"WARNING: Variable '%s' not found in local+formal when looking for its type. Returning void.\n%!"
+                "WARNING: Variable '%s' not found in local+formal when looking for its type. Returning void.\n%!"
                 (Sil.pvar_to_string pvar);
               Sil.Tvoid
 
@@ -116,7 +116,7 @@ let extract_type_from_stmt s =
   | UnaryOperator(_, _, expr_info, _)
   | VAArgExpr (_, _, expr_info) -> expr_info.Clang_ast_t.ei_qual_type
   | _ -> (* For the other case we cannot get the type info *)
-      Printing.log_err ~fmt:"WARNING: Could not get type of statement '%s'\n%!" (Clang_ast_j.string_of_stmt s);
+      Printing.log_err "WARNING: Could not get type of statement '%s'\n%!" (Clang_ast_j.string_of_stmt s);
       assert false
 
 let get_desugared_type t =
@@ -127,7 +127,7 @@ let get_desugared_type t =
 (* Remove the work 'struct' from a type name. Used to avoid repetition when typename are constructed*)
 (* E.g. 'struct struct s' *)
 let cut_struct_union s =
-  Printing.log_out ~fmt:"Cutting '%s'@." s;
+  Printing.log_out "Cutting '%s'@." s;
   let buf = Str.split (Str.regexp "[ \t]+") s in
   match buf with
   | "struct":: l (*-> Printing.string_from_list l *)
@@ -145,7 +145,7 @@ let rec get_type_list nn ll =
   | [] -> []
   | (n, t):: ll' -> (* Printing.log_out ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
       if n = nn then (
-        Printing.log_out ~fmt:">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@." (Sil.typ_to_string t);
+        Printing.log_out ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@." (Sil.typ_to_string t);
         [t]
       ) else get_type_list nn ll'
 
@@ -163,8 +163,10 @@ let classname_of_type typ =
   | Sil.Tstruct(_, _, _, (Some name), _, _, _)
   | Sil.Tvar (Sil.TN_typedef name) -> Mangled.to_string name
   | Sil.Tfun _ -> CFrontend_config.objc_object
-  | _ -> (Printing.log_out
-          ~fmt:"Classname of type cannot be extracted in type %s" (Sil.typ_to_string typ)); assert false
+  | _ ->
+      Printing.log_out
+        "Classname of type cannot be extracted in type %s" (Sil.typ_to_string typ);
+      assert false
 
 let get_raw_qual_type_decl_ref_exp_info decl_ref_expr_info =
   match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with

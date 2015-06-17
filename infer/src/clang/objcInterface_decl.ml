@@ -20,21 +20,21 @@ module L = Logging
 let objc_class_str = "ObjC-Class"
 
 let objc_class_annotation =
-  [({ Sil.class_name=objc_class_str; Sil.parameters=[]}, true)]
+  [({ Sil.class_name = objc_class_str; Sil.parameters =[]}, true)]
 
 let is_objc_class_annotation a =
   match a with
-  | [({Sil.class_name=n; Sil.parameters=[]},true)] when n=objc_class_str -> true
+  | [({ Sil.class_name = n; Sil.parameters =[]}, true)] when n = objc_class_str -> true
   | _ -> false
 
 let is_pointer_to_objc_class tenv typ =
   match typ with
   | Sil.Tptr (Sil.Tvar (Sil.TN_csu (Sil.Class, cname)), _) ->
-    (match Sil.tenv_lookup tenv (Sil.TN_csu (Sil.Class, cname)) with
-    | Some Sil.Tstruct(_, _, Sil.Class, _, _, _, a) when is_objc_class_annotation a -> true
-    | _ -> false)
+      (match Sil.tenv_lookup tenv (Sil.TN_csu (Sil.Class, cname)) with
+        | Some Sil.Tstruct(_, _, Sil.Class, _, _, _, a) when is_objc_class_annotation a -> true
+        | _ -> false)
   | Sil.Tptr (Sil.Tstruct(_, _, Sil.Class, _, _, _, a), _) when
-     is_objc_class_annotation a -> true
+  is_objc_class_annotation a -> true
   | _ -> false
 
 let get_super_interface_decl otdi_super =
@@ -89,7 +89,7 @@ let update_curr_class curr_class superclasses =
 
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
-  Printing.log_out ~fmt:"ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
+  Printing.log_out "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
   let interface_name = CTypes.mk_classname class_name in
   let curr_class, superclasses, fields =
     create_curr_class_and_superclasses_fields tenv decl_list class_name
@@ -98,8 +98,8 @@ let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let fields_sc = CField_decl.fields_superclass tenv obj_c_interface_decl_info in
   list_iter (fun (fn, ft, _) ->
-          Printing.log_out ~fmt:"----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
-          Printing.log_out ~fmt:"type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
+          Printing.log_out "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
+          Printing.log_out "type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, superclasses, methods =
     match Sil.tenv_lookup tenv interface_name with
@@ -111,17 +111,17 @@ let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
   let fields = append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
   let fields = append_no_duplicates_fields [Sil.objc_ref_counter_field] fields in
-  Printing.log_out ~fmt:"Class %s field:\n" class_name;
+  Printing.log_out "Class %s field:\n" class_name;
   list_iter (fun (fn, ft, _) ->
-          Printing.log_out ~fmt:"-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
+          Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
   let interface_type_info =
     Sil.Tstruct(fields, [], Sil.Class, Some (Mangled.from_string class_name),
       superclasses, methods, objc_class_annotation) in
   Sil.tenv_add tenv interface_name interface_type_info;
   Printing.log_out
-    ~fmt:"  >>>Verifying that Typename '%s' is in tenv\n" (Sil.typename_to_string interface_name);
+    "  >>>Verifying that Typename '%s' is in tenv\n" (Sil.typename_to_string interface_name);
   (match Sil.tenv_lookup tenv interface_name with
-    | Some t -> Printing.log_out ~fmt:"  >>>OK. Found typ='%s'\n" (Sil.typ_to_string t)
+    | Some t -> Printing.log_out "  >>>OK. Found typ='%s'\n" (Sil.typ_to_string t)
     | None -> Printing.log_out "  >>>NOT Found!!\n");
   curr_class
 
@@ -134,7 +134,7 @@ let add_missing_fields tenv class_name decl_list idi =
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Sil.TN_csu (Sil.Class, mang_name) in
   Printing.log_out
-    ~fmt:"  >>>Verifying that Typename TN_csu('%s') is in tenv\n"
+    "  >>>Verifying that Typename TN_csu('%s') is in tenv\n"
     (Sil.typename_to_string class_tn_name);
   let curr_class =
     (match Sil.tenv_lookup tenv class_tn_name with
@@ -144,19 +144,19 @@ let add_missing_fields tenv class_name decl_list idi =
               let missing_field f = not (list_mem equal_fields f intf_fields) in
               list_filter missing_field fields in
             Printing.log_out
-              ~fmt:" Looking for extra fields defined only in the implementation of '%s'\n"
+              " Looking for extra fields defined only in the implementation of '%s'\n"
               class_name;
             let extra_fields = compute_extra_fields fields intf_fields in
             list_iter (fun (fn, _, _) ->
                     Printing.log_out
-                      ~fmt:"  ---> Extra non-static field: '%s'\n" (Ident.fieldname_to_string fn))
+                      "  ---> Extra non-static field: '%s'\n" (Ident.fieldname_to_string fn))
               extra_fields;
             let new_fields = append_no_duplicates_fields extra_fields intf_fields in
             let class_type_info =
               Sil.Tstruct (
                 new_fields, [], Sil.Class, Some mang_name, superclass, methods, annotation
               ) in
-            Printing.log_out ~fmt:" Updating info for class '%s' in tenv\n" class_name;
+            Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
             Sil.tenv_add tenv class_tn_name class_type_info;
             update_curr_class curr_class superclass )
       | _ -> assert false) in
@@ -181,7 +181,7 @@ let interface_declaration tenv class_name decl_list obj_c_interface_decl_info =
 let interface_impl_declaration tenv class_name decl_list implementation_decl_info =
   let curr_class = add_missing_fields tenv class_name decl_list implementation_decl_info in
   add_missing_methods tenv class_name decl_list curr_class;
-  Printing.log_out ~fmt:"ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
+  Printing.log_out "ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
   Printing.log_out " Processing method declarations...\n";
   curr_class
 
@@ -217,9 +217,9 @@ let rec find_field tenv nfield str searched_late_defined =
   | Some _ -> nfield
   | None -> (Mangled.to_string cname)^"_"^nfield in *)
   let print_error name_field fields =
-    Printing.log_err ~fmt:"\nFaild to find name field '%s'\n\n" (Ident.fieldname_to_string name_field) ;
+    Printing.log_err "\nFaild to find name field '%s'\n\n" (Ident.fieldname_to_string name_field) ;
     Printing.log_err "In the following list of fields\n";
-    list_iter (fun (fn, _, _) -> Printing.log_err ~fmt:"\nField name: '%s'\n\n" (Ident.fieldname_to_string fn)) fields;
+    list_iter (fun (fn, _, _) -> Printing.log_err "\nField name: '%s'\n\n" (Ident.fieldname_to_string fn)) fields;
     Printing.print_failure_info "" in
   let rec search_super s =
     match s with

@@ -217,7 +217,7 @@ clang_type:
   | VOLATILE pointer_clang_type { $2 }
   | ident ANONYM_IDENT { CFrontend_utils.Printing.log_out "   ...Found just an identifier modified with a protocol. Ignoring protocol!. Parsing as Named Type!\n";
             Sil.Tvar (Sil.TN_typedef(Mangled.from_string $1))}
-  | ident { CFrontend_utils.Printing.log_out ~fmt:"   ...Found just an identifier. Parsing as Named Type %s !\n" $1;
+  | ident { CFrontend_utils.Printing.log_out "   ...Found just an identifier. Parsing as Named Type %s !\n" $1;
             Sil.Tvar (Sil.TN_typedef(Mangled.from_string $1))}
   | csu_sil ident_csu { let typename=Sil.TN_csu($1, Mangled.from_string $2) in
                         Sil.Tvar typename }

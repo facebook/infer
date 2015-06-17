@@ -75,9 +75,9 @@ struct
       let item_annot = Sil.item_annotation_empty in
       fname, typ, item_annot in
     let fields = list_map mk_field_from_captured_var captured_vars in
-    Printing.log_out ~fmt:"Block %s field:\n" block_name;
+    Printing.log_out "Block %s field:\n" block_name;
     list_iter (fun (fn, ft, _) ->
-            Printing.log_out ~fmt:"-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
+            Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
     let block_type = Sil.Tstruct(fields, [], Sil.Class, Some mblock, [], [], []) in
     let block_name = Sil.TN_csu(Sil.Class, mblock) in
@@ -173,7 +173,7 @@ struct
     | _ -> assert false
 
   let stringLiteral_trans trans_state stmt_info expr_info str =
-    Printing.log_out ~fmt:"Passing from StringLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from StringLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let exp = Sil.Const (Sil.Cstr (str)) in
     { empty_res_trans with exps = [(exp, typ)]}
@@ -183,7 +183,7 @@ struct
   (* extension is typically  only used by system headers, which define NULL as __null in C++ rather than using 0 *)
   (* (which is an integer that may not match the size of a pointer)". So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state stmt_info expr_info =
-    Printing.log_out ~fmt:"Passing from GNUNullExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from GNUNullExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let exp = Sil.Const (Sil.Cint (Sil.Int.zero)) in
     { empty_res_trans with exps = [(exp, typ)]}
@@ -192,24 +192,24 @@ struct
     stringLiteral_trans trans_state stmt_info expr_info selector
 
   let objCEncodeExpr_trans trans_state stmt_info expr_info qual_type =
-    Printing.log_out ~fmt:"Passing from ObjCEncodeExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ObjCEncodeExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     stringLiteral_trans trans_state stmt_info expr_info (CTypes.get_type qual_type)
 
   let objCProtocolExpr_trans trans_state stmt_info expr_info decl_ref =
-    Printing.log_out ~fmt:"Passing from ObjCProtocolExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ObjCProtocolExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let name = (match decl_ref.Clang_ast_t.dr_name with
         | Some s -> s
         | _ -> "") in
     stringLiteral_trans trans_state stmt_info expr_info name
 
   let characterLiteral_trans trans_state stmt_info expr_info n =
-    Printing.log_out ~fmt:"Passing from CharacterLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from CharacterLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let exp = Sil.Const (Sil.Cint (Sil.Int.of_int n)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
   let floatingLiteral_trans trans_state stmt_info expr_info float_string =
-    Printing.log_out ~fmt:"Passing from FloatingLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from FloatingLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let exp = Sil.Const (Sil.Cfloat (float_of_string float_string)) in
     { empty_res_trans with exps = [(exp, typ)]}
@@ -217,7 +217,7 @@ struct
   (* Note currently we don't have support for different qual     *)
   (* type like long, unsigned long, etc                                *)
   and integerLiteral_trans trans_state stmt_info expr_info integer_literal_info =
-    Printing.log_out ~fmt:"Passing from IntegerLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from IntegerLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let i = try
         int_of_string (integer_literal_info.Clang_ast_t.ili_value)
@@ -227,12 +227,12 @@ struct
     { empty_res_trans with exps = [(exp, typ)]}
 
   let nullStmt_trans succ_nodes stmt_info =
-    Printing.log_out ~fmt:"Passing from NullStmt '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from NullStmt '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
     { empty_res_trans with root_nodes = succ_nodes }
 
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state stmt_info expr_info unary_expr_or_type_trait_expr_info =
-    Printing.log_out ~fmt:"Passing from UnaryExprOrTypeTraitExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from UnaryExprOrTypeTraitExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.qual_type_to_sil_type trans_state.context.tenv expr_info.Clang_ast_t.ei_qual_type in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
     | `SizeOf ->
@@ -243,20 +243,20 @@ struct
           | None -> typ in (* Some default type since the type is missing *)
         { empty_res_trans with exps = [(Sil.Sizeof(sizeof_typ, Sil.Subtype.exact), sizeof_typ)]}
     | k -> Printing.log_stats
-          ~fmt:"\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression ignored, returned -1... \n"
+          "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression ignored, returned -1... \n"
           (Clang_ast_j.string_of_unary_expr_or_type_trait_kind k);
         { empty_res_trans with exps =[(Sil.exp_minus_one, typ)]}
 
   (* search the label into the hashtbl - create a fake node eventually *)
   (* connect that node with this stmt *)
   let gotoStmt_trans trans_state stmt_info label_name =
-    Printing.log_out ~fmt:"\nPassing from `GotoStmt '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "\nPassing from `GotoStmt '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let sil_loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
   let declRefExpr_trans trans_state stmt_info expr_info decl_ref_expr_info d =
-    Printing.log_out ~fmt:"Passing from DeclRefExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from DeclRefExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let context = trans_state.context in
     let typ = CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
     let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
@@ -269,11 +269,11 @@ struct
       let const_exp = (match CTypes.search_enum_type_by_name context.tenv name with
           | Some v ->
               let ce = Sil.Const v in
-              Printing.log_out ~fmt:"   ....Found enum constant '%s', " name;
-              Printing.log_out ~fmt:"replacing with integer '%s' \n" (Sil.exp_to_string ce); ce
+              Printing.log_out "   ....Found enum constant '%s', " name;
+              Printing.log_out "replacing with integer '%s' \n" (Sil.exp_to_string ce); ce
           | None ->
               Printing.log_stats
-                ~fmt:"   WARNING: Found enum constant '%s', but its value was not found in the tenv. Returning 0.\n" name;
+                "   WARNING: Found enum constant '%s', but its value was not found in the tenv. Returning 0.\n" name;
               (Sil.Const(Sil.Cint Sil.Int.zero))) in
       { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
     ) else if is_function then (
@@ -321,12 +321,12 @@ struct
                 (CTypes_decl.get_type_curr_class context.tenv (CContext.get_curr_class context)) in
             [(e, typ)]
         else [(e, typ)] in
-      Printing.log_out ~fmt:"\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
+      Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
       { empty_res_trans with exps = exps }
     )
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
-    Printing.log_out ~fmt:"\nPassing from `LabelStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "\nPassing from `LabelStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     (* go ahead with the translation *)
     let res_trans = match stmt_list with
       | [stmt] ->
@@ -340,7 +340,7 @@ struct
 
   and arraySubscriptExpr_trans trans_state stmt_info expr_info stmt_list =
     Printing.log_out
-      ~fmt:"Passing from ArraySubscriptExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+      "Passing from ArraySubscriptExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let array_stmt, idx_stmt = (match stmt_list with
         | [a; i] -> a, i  (* Assumption: the statement list contains 2 elements,
@@ -382,9 +382,9 @@ struct
 
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     let bok = (Clang_ast_j.string_of_binary_operator_kind binary_operator_info.Clang_ast_t.boi_kind) in
-    Printing.log_out ~fmt:"Passing from BinaryOperator '%s' " bok;
-    Printing.log_out ~fmt:"pointer = '%s'  " stmt_info.Clang_ast_t.si_pointer;
-    Printing.log_out ~fmt:"priority node free = '%s'.\n" (string_of_bool (PriorityNode.is_priority_free trans_state));
+    Printing.log_out "Passing from BinaryOperator '%s' " bok;
+    Printing.log_out "pointer = '%s'  " stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "priority node free = '%s'.\n" (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let parent_line_number = trans_state.parent_line_number in
     let succ_nodes = trans_state.succ_nodes in
@@ -473,14 +473,14 @@ struct
             else if e2_has_nodes then res_trans_e2.leaf_nodes
             else res_trans_e1.leaf_nodes in
 
-          Printing.log_out ~fmt:"....BinaryOperator '%s' " bok;
-          Printing.log_out ~fmt:"has ids_to_ancestor |ids_to_ancestor|=%s "
+          Printing.log_out "....BinaryOperator '%s' " bok;
+          Printing.log_out "has ids_to_ancestor |ids_to_ancestor|=%s "
             (string_of_int (list_length ids_to_ancestor));
-          Printing.log_out ~fmt:" |nodes_e1|=%s .\n"
+          Printing.log_out " |nodes_e1|=%s .\n"
             (string_of_int (list_length res_trans_e1.root_nodes));
-          Printing.log_out ~fmt:" |nodes_e2|=%s .\n"
+          Printing.log_out " |nodes_e2|=%s .\n"
             (string_of_int (list_length res_trans_e2.root_nodes));
-          list_iter (fun id -> Printing.log_out ~fmt:"     ... '%s'\n"
+          list_iter (fun id -> Printing.log_out "     ... '%s'\n"
                     (Ident.to_string id)) ids_to_ancestor;
           { root_nodes = root_nodes_to_ancestor;
             leaf_nodes = leaf_nodes_to_ancestor;
@@ -493,7 +493,7 @@ struct
     let pln = trans_state.parent_line_number in
     let context = trans_state.context in
     let function_type = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
-    Printing.log_out ~fmt:"Passing from CallExpr '%s'.\n" si.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from CallExpr '%s'.\n" si.Clang_ast_t.si_pointer;
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let sil_loc = get_sil_location si pln context in
     let fun_exp_stmt, params_stmt = (match stmt_list with (* First stmt is the function expr and the rest are params*)
@@ -573,14 +573,14 @@ struct
             | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
-    Printing.log_out ~fmt:"Passing from ObjMessageExpr '%s'.\n" si.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ObjMessageExpr '%s'.\n" si.Clang_ast_t.si_pointer;
     let context = trans_state.context in
     let parent_line_number = trans_state.parent_line_number in
     let sil_loc = get_sil_location si parent_line_number context in
     let selector, receiver_kind = get_selector_receiver obj_c_message_expr_info in
     let is_alloc_or_new = (selector = CFrontend_config.alloc) || (selector = CFrontend_config.new_str) in
-    Printing.log_out ~fmt:"\n!!!!!!! Calling with selector = '%s' " selector;
-    Printing.log_out ~fmt:"    receiver_kind= '%s'\n\n" (Clang_ast_j.string_of_receiver_kind receiver_kind);
+    Printing.log_out "\n!!!!!!! Calling with selector = '%s' " selector;
+    Printing.log_out "    receiver_kind= '%s'\n\n" (Clang_ast_j.string_of_receiver_kind receiver_kind);
     let method_type = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
     let ret_id = if Sil.typ_equal method_type Sil.Tvoid then []
       else [Ident.create_fresh Ident.knormal] in
@@ -655,7 +655,7 @@ struct
     res_state
 
   and compoundStmt_trans trans_state stmt_info stmt_list =
-    Printing.log_out ~fmt:"Passing from CompoundStmt '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from CompoundStmt '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
     let line_number = get_line stmt_info trans_state.parent_line_number in
     let trans_state' = { trans_state with parent_line_number = line_number } in
     instructions trans_state' (list_rev stmt_list)
@@ -667,7 +667,7 @@ struct
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let mk_temp_var id =
       Sil.mk_pvar (Mangled.from_string ("SIL_temp_conditional___"^(string_of_int id))) procname in
-    Printing.log_out ~fmt:"Passing from ConditionalOperator '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ConditionalOperator '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let sil_loc = get_sil_location stmt_info parent_line_number context in
     let line_number = get_line stmt_info parent_line_number in
     (* We have two different kind of join type for conditional operator. *)
@@ -820,7 +820,7 @@ struct
     | _ -> no_short_circuit_cond ()
 
   and ifStmt_trans trans_state stmt_info stmt_list =
-    Printing.log_out ~fmt:"Passing from IfStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from IfStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
     let succ_nodes = trans_state.succ_nodes in
@@ -853,7 +853,7 @@ struct
 
   (* Assumption: the CompoundStmt can be made of different stmts, not just CaseStmts *)
   and switchStmt_trans trans_state stmt_info switch_stmt_list =
-    Printing.log_out ~fmt:"\nPassing from `SwitchStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "\nPassing from `SwitchStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
     let succ_nodes = trans_state.succ_nodes in
@@ -975,7 +975,7 @@ struct
 
   and stmtExpr_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
-    Printing.log_out ~fmt:"Passing from StmtExpr '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from StmtExpr '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
     let stmt = extract_stmt_from_singleton stmt_list "ERROR: StmtExpr should have only one statement.\n" in
     let res_trans_stmt = instruction trans_state stmt in
     let idl = res_trans_stmt.ids in
@@ -1079,8 +1079,8 @@ struct
   and compoundAssignOperator trans_state stmt_info binary_operator_info expr_info stmt_list =
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
-    Printing.log_out ~fmt:"Passing from CompoundAssignOperator '%s'" stmt_info.Clang_ast_t.si_pointer;
-    Printing.log_out ~fmt:"'%s' .\n"
+    Printing.log_out "Passing from CompoundAssignOperator '%s'" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "'%s' .\n"
       (Clang_ast_j.string_of_binary_operator_kind binary_operator_info.Clang_ast_t.boi_kind);
     (* claim priority if no ancestors has claimed priority before *)
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -1280,7 +1280,7 @@ struct
   (* the init expression. We use the latter info.                      *)
   and declStmt_trans trans_state decl_list stmt_info =
     let succ_nodes = trans_state.succ_nodes in
-    Printing.log_out ~fmt:"Passing from DeclStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from DeclStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let line_number = get_line stmt_info trans_state.parent_line_number in
     let trans_state' = { trans_state with parent_line_number = line_number } in
     let res_trans = (match decl_list with
@@ -1296,14 +1296,14 @@ struct
     { res_trans with leaf_nodes = []}
 
   and objCPropertyRefExpr_trans trans_state stmt_info stmt_list =
-    Printing.log_out ~fmt:"Passing from ObjCPropertyRefExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ObjCPropertyRefExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     (match stmt_list with
       | [stmt] -> instruction trans_state stmt
       | _ -> assert false)
 
   (* For OpaqueValueExpr we return the translation generated from its source expression*)
   and opaqueValueExpr_trans trans_state stmt_info opaque_value_expr_info =
-    Printing.log_out ~fmt:"Passing from OpaqueValueExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from OpaqueValueExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
       | Some stmt -> instruction trans_state stmt
       | _ -> assert false)
@@ -1325,7 +1325,7 @@ struct
   and pseudoObjectExpr_trans trans_state stmt_info stmt_list =
     let line_number = get_line stmt_info trans_state.parent_line_number in
     let trans_state' = { trans_state with parent_line_number = line_number } in
-    Printing.log_out ~fmt:"Passing from PseudoObjectExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from PseudoObjectExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let rec do_semantic_elements el =
       (match el with
         | OpaqueValueExpr _ :: el' -> do_semantic_elements el'
@@ -1340,7 +1340,7 @@ struct
   and cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_expr_info is_objc_bridged =
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
-    Printing.log_out ~fmt:"Passing from CastExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from CastExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let sil_loc = get_sil_location stmt_info pln context in
     let stmt = extract_stmt_from_singleton stmt_list
         "WARNING: In CastExpr There must be only one stmt defining the expression to be cast.\n" in
@@ -1359,7 +1359,7 @@ struct
 
   (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
   and do_memb_ivar_ref_exp trans_state expr_info exp_stmt sil_loc nfield =
-    Printing.log_out ~fmt:"!!!!! Dealing with field '%s' @." nfield;
+    Printing.log_out "!!!!! Dealing with field '%s' @." nfield;
     let res_trans_exp_stmt = instruction trans_state exp_stmt in
     let (e, class_typ) = extract_exp_from_list res_trans_exp_stmt.exps
         "WARNING: in MemberExpr we expect the translation of the stmt to return an expression\n" in
@@ -1372,7 +1372,7 @@ struct
       (match class_typ with
         | Sil.Tvoid -> Sil.exp_minus_one
         | _ ->
-            Printing.log_out ~fmt:"Type is  '%s' @." (Sil.typ_to_string class_typ);
+            Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
             ( match ObjcInterface_decl.find_field trans_state.context.tenv nfield (Some class_typ) false with
               | Some (fn, _, _) -> Sil.Lfield (e, fn, class_typ)
               | None -> assert false)) in
@@ -1380,7 +1380,7 @@ struct
       exps = [(exp, typ)] }
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
-    Printing.log_out ~fmt:"Passing from ObjCIvarRefExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ObjCIvarRefExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let sil_loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
@@ -1390,7 +1390,7 @@ struct
     do_memb_ivar_ref_exp trans_state expr_info exp_stmt sil_loc name_field
 
   and memberExpr_trans trans_state stmt_info expr_info stmt_list member_expr_info =
-    Printing.log_out ~fmt:"Passing from MemberExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from MemberExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let sil_loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
@@ -1400,7 +1400,7 @@ struct
   and unaryOperator_trans trans_state stmt_info expr_info stmt_list unary_operator_info =
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
-    Printing.log_out ~fmt:"Passing from UnaryOperator '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from UnaryOperator '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let sil_loc = get_sil_location stmt_info pln context in
     let line_number = get_line stmt_info pln in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -1445,7 +1445,7 @@ struct
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
     let succ_nodes = trans_state.succ_nodes in
-    Printing.log_out ~fmt:"Passing from ReturnOperator '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ReturnOperator '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
     let sil_loc = get_sil_location stmt_info pln context in
     let line_number = get_line stmt_info pln in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -1480,7 +1480,7 @@ struct
   (* For ParenExpression we translate its body composed by the stmt_list.  *)
   (* In paren expression there should be only one stmt that defines the  expression  *)
   and parenExpr_trans trans_state stmt_info stmt_list =
-    Printing.log_out ~fmt:"Passing from ParenExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ParenExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let line_number = get_line stmt_info trans_state.parent_line_number in
     let trans_state'= { trans_state with parent_line_number = line_number } in
     let stmt = extract_stmt_from_singleton stmt_list
@@ -1539,13 +1539,13 @@ struct
   (* For the same reason we also ignore the stmt_info that is related with the ObjCAtSynchronizedStmt construct *)
   (* Finally we recursively work on the CompoundStmt, the second item of stmt_list *)
   and objCAtSynchronizedStmt_trans trans_state stmt_info stmt_list =
-    Printing.log_out ~fmt:"Passing from `ObjCAtSynchronizedStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from `ObjCAtSynchronizedStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     (match stmt_list with
       | [_; compound_stmt] -> instruction trans_state compound_stmt
       | _ -> assert false)
 
   and blockExpr_trans trans_state stmt_info expr_info decl =
-    Printing.log_out ~fmt:"Passing from BlockExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from BlockExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
@@ -1609,7 +1609,7 @@ struct
         gotoStmt_trans trans_state stmt_info label_name
 
     | LabelStmt(stmt_info, stmt_list, label_name) ->
-        Printing.log_out ~fmt:"\nPassing from `LabelStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+        Printing.log_out "\nPassing from `LabelStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
         labelStmt_trans trans_state stmt_info stmt_list label_name
 
     | ArraySubscriptExpr(stmt_info, stmt_list, expr_info) ->
@@ -1786,16 +1786,16 @@ struct
         (match stmts with
           | [stmt1; ostmt1; ostmt2; stmt2] when contains_opaque_value_expr ostmt1 && contains_opaque_value_expr ostmt2 ->
               conditionalOperator_trans trans_state stmt_info [stmt1; stmt1; stmt2] expr_info
-          | _ -> Printing.log_stats ~fmt: "BinaryConditionalOperator not translated %s @." (Ast_utils.string_of_stmt instr);
+          | _ -> Printing.log_stats  "BinaryConditionalOperator not translated %s @." (Ast_utils.string_of_stmt instr);
               assert false)
     | s -> (Printing.log_stats
-            ~fmt:"\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
+            "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
             (Ast_utils.string_of_stmt s);
           assert false)
 
   (* Given a translation state, this function traslates a list of clang statements. *)
   and instructions trans_state clang_stmt_list =
-    (* Printing.log_err ~fmt:"\n instruction list %i" (List.length clang_stmt_list); *)
+    (* Printing.log_err "\n instruction list %i" (List.length clang_stmt_list); *)
     match clang_stmt_list with
     | [] -> { empty_res_trans with root_nodes = trans_state.succ_nodes }
     | s:: clang_stmt_list' ->

@@ -150,7 +150,7 @@ struct
     let key = (curr_class, property_name) in
     let getter_name = get_getter_name property_name attributes in
     let setter_name = get_setter_name property_name attributes in
-    Printing.log_out ~fmt:"  ...Using '%s' in property table\n" (property_key_to_string key);
+    Printing.log_out "  ...Using '%s' in property table\n" (property_key_to_string key);
     PropertyTableHash.add property_table key
       (qt, attributes, decl_info, (getter_name, None), (setter_name, None), None)
 end
@@ -194,7 +194,7 @@ let check_for_property curr_class method_name meth_decl body =
             if is_getter then (method_name = getter_name)
             else (method_name = setter_name) in
           if found then
-            (Printing.log_out ~fmt:"  Found property  '%s'  defined in property table\n"
+            (Printing.log_out "  Found property  '%s'  defined in property table\n"
                 (Property.property_key_to_string (curr_class, property_name));
               upgrade_property_accessor
                 (curr_class, property_name) property_type meth_decl defined is_getter) in
@@ -211,7 +211,7 @@ let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
           | None -> None) in
       (* update property info with proper ivar name *)
       Property.replace_property (curr_class, pname) (qt', atts, di, getter, setter, ivar);
-      Printing.log_out ~fmt: "Updated property table by adding ivar name for property pname '%s'\n" pname;
+      Printing.log_out  "Updated property table by adding ivar name for property pname '%s'\n" pname;
       Some qt'
     with Not_found -> L.err "Property '%s' not found in the table. Ivar not updated and qual_type not found.@." pname;
         None) in
@@ -263,12 +263,12 @@ let get_memory_management_attribute attributes =
 let make_getter_setter cfg curr_class decl_info property_impl_decl_info =
   let class_name = CContext.get_curr_class_name curr_class in
   let prop_name = Ast_utils.property_name property_impl_decl_info in
-  Printing.log_out ~fmt:"ADDING: ObjCPropertyImplDecl for property '%s' " prop_name;
-  Printing.log_out ~fmt:"pointer = '%s'\n" decl_info.Clang_ast_t.di_pointer;
+  Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' " prop_name;
+  Printing.log_out "pointer = '%s'\n" decl_info.Clang_ast_t.di_pointer;
   let qt, attributes, decl_info, (getter_name, getter), (setter_name, setter), _ = (try
       Property.find_property curr_class prop_name
     with _ ->
-        Printing.log_out ~fmt:"Property %s not found@." prop_name;
+        Printing.log_out "Property %s not found@." prop_name;
         assert false) in
   let ivar_name = get_ivarname_property property_impl_decl_info in
   let make_getter () =
@@ -354,7 +354,7 @@ let rec get_methods curr_class decl_list =
   match decl_list with
   | [] -> []
   | (ObjCMethodDecl(decl_info, method_name, method_decl_info) as d):: decl_list' ->
-      Printing.log_out ~fmt:"  ...Adding Method '%s' \n" (class_name^"_"^method_name);
+      Printing.log_out "  ...Adding Method '%s' \n" (class_name^"_"^method_name);
       let methods = get_methods curr_class decl_list' in
       let _ = check_for_property curr_class method_name d method_decl_info.Clang_ast_t.omdi_body in
       let meth_name = CMethod_trans.mk_procname_from_method class_name method_name in
@@ -363,8 +363,8 @@ let rec get_methods curr_class decl_list =
   | ObjCPropertyDecl(decl_info, pname, pdi):: decl_list' ->
   (* Property declaration register the property on the property table to be *)
   (* used later on in case getter and setters need to be synthesized by ObjCPropertyImplDecl *)
-      Printing.log_out ~fmt:"  ...Adding Property Declaration '%s' " pname;
-      Printing.log_out ~fmt:"  pointer= '%s' \n" decl_info.Clang_ast_t.di_pointer;
+      Printing.log_out "  ...Adding Property Declaration '%s' " pname;
+      Printing.log_out "  pointer= '%s' \n" decl_info.Clang_ast_t.di_pointer;
       Property.add_property (curr_class, pname) pdi.opdi_qual_type pdi.opdi_property_attributes decl_info;
       get_methods curr_class decl_list' (* TODO maybe add prop_name here *)
 

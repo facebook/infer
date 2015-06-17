@@ -85,7 +85,7 @@ let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
   (* These should be treated by compound_assignment_binary_operation_instruction*)
   | bok ->
       Printing.log_stats
-        ~fmt:"\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
+        "\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
         (Clang_ast_j.string_of_binary_operator_kind bok);
       (Sil.exp_minus_one, [], [])
 
@@ -128,7 +128,7 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
         (e1, [Sil.Set (e1, typ, e1_xor_e2, loc)])
     | bok ->
         Printing.log_stats
-          ~fmt:"\nWARNING: Missing translation for CompoundAssignment Binary Operator Kind %s. Construct ignored...\n"
+          "\nWARNING: Missing translation for CompoundAssignment Binary Operator Kind %s. Construct ignored...\n"
           (Clang_ast_j.string_of_binary_operator_kind bok);
         (Sil.exp_minus_one, []) in
   ([id], e_res, instr1:: instr_op)
@@ -168,7 +168,7 @@ let unary_operation_instruction uoi e typ loc =
   | `AddrOf -> ([], e, [])
   | `Real | `Imag | `Extension ->
       Printing.log_stats
-        ~fmt:"\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...\n" uok;
+        "\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...\n" uok;
       ([], e, [])
 
 let bin_op_to_string boi =

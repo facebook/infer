@@ -32,7 +32,7 @@ let make_var name typ =
 let add name typ =
   let name = (Mangled.from_string name) in
   let pvar = Sil.mk_pvar_global name in
-  Printing.log_out ~fmt:"Adding global variable %s !!\n%!" (Sil.pvar_to_string pvar);
+  Printing.log_out "Adding global variable %s !!@." (Sil.pvar_to_string pvar);
   let var_el = make_var pvar typ in
   varMap := MangledMap.add name var_el !varMap
 

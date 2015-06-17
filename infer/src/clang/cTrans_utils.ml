@@ -19,7 +19,7 @@ module L = Logging
 let extract_item_from_singleton l warning_string failure_val =
   match l with
   | [item] -> item
-  | _ -> Printing.log_err warning_string; failure_val
+  | _ -> Printing.log_err "%s" warning_string; failure_val
 
 let dummy_exp = (Sil.exp_minus_one, Sil.Tint Sil.IInt)
 
@@ -362,7 +362,7 @@ let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
         ([], [], Sil.Cast(typ, exp))
     | _ ->
         Printing.log_err
-          ~fmt:"\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
+          "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
           (Clang_ast_j.string_of_cast_kind cast_kind);
         ([],[], exp)
 
@@ -451,14 +451,14 @@ let get_value_enum_constant tenv enum_type stmt =
   let typename = Sil.TN_enum(Mangled.from_string enum_type) in
   match Sil.tenv_lookup tenv typename with
   | Some (Sil.Tenum enum_constants) ->
-      Printing.log_out ~fmt:">>>Found enum with typename TN_typename('%s')\n" (Sil.typename_to_string typename);
+      Printing.log_out ">>>Found enum with typename TN_typename('%s')\n" (Sil.typename_to_string typename);
       let _, v = try
           list_find (fun (c, _) -> Mangled.equal c (Mangled.from_string constant)) enum_constants
         with _ -> (Printing.log_err
-                ~fmt:"Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
+                "Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
       v
   | _ -> Printing.log_err
-        ~fmt:"Enum type '%s' not found in tenv. Cannot continue...\n" (Sil.typename_to_string typename);
+        "Enum type '%s' not found in tenv. Cannot continue...\n" (Sil.typename_to_string typename);
       assert false
 
 let get_selector_receiver obj_c_message_expr_info =
@@ -520,7 +520,7 @@ let rec get_type_from_exp_stmt stmt =
   | ImplicitCastExpr(_, stmt_list, _, _) ->
       get_type_from_exp_stmt (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
   | DeclRefExpr(_, _, _, info) -> do_decl_ref_exp info
-  | _ -> Printing.log_err ~fmt:"Failing with: %s \n%!" (Clang_ast_j.string_of_stmt stmt);
+  | _ -> Printing.log_err "Failing with: %s \n%!" (Clang_ast_j.string_of_stmt stmt);
       Printing.print_failure_info "";
       assert false
 
