@@ -1,17 +1,25 @@
 digraph iCFG {
-4 [label="4:  DeclStmt \n   *&#GB$main_kDuration:int =3 [line 13]\n " shape="box"]
+6 [label="6:  DeclStmt \n   *&#GB$main_kDuration:int =3 [line 13]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5:  DeclStmt \n   *&large_int:int =9223372036854775807 [line 15]\n  NULLIFY(&large_int,false); [line 15]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  DeclStmt \n   *&overflow_int:int =n$0 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&overflow_int,false); [line 16]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  a:int  b:int * c:float * d:long double  \n   DECLARE_LOCALS(&return,&a,&b,&c,&d); [line 6]\n  NULLIFY(&a,false); [line 6]\n  NULLIFY(&b,false); [line 6]\n  NULLIFY(&c,false); [line 6]\n  NULLIFY(&d,false); [line 6]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  a:int  b:int * c:float * d:long double  large_int:int  overflow_int:int  \n   DECLARE_LOCALS(&return,&a,&b,&c,&d,&large_int,&overflow_int); [line 6]\n  NULLIFY(&a,false); [line 6]\n  NULLIFY(&b,false); [line 6]\n  NULLIFY(&c,false); [line 6]\n  NULLIFY(&d,false); [line 6]\n  NULLIFY(&large_int,false); [line 6]\n  NULLIFY(&overflow_int,false); [line 6]\n " color=yellow style=filled]
 	
 
-	 1 -> 4 ;
+	 1 -> 6 ;
 }

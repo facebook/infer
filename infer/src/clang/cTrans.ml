@@ -219,12 +219,20 @@ struct
   and integerLiteral_trans trans_state stmt_info expr_info integer_literal_info =
     Printing.log_out "Passing from IntegerLiteral '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
-    let i = try
-        int_of_string (integer_literal_info.Clang_ast_t.ili_value)
-      with _ -> (Random.int 10000) +1 in
-    let exp = Sil.Const (Sil.Cint (Sil.Int.of_int i)) in
-    (* In case of overflow we return a random number. To avoid 0 we add plus one.*)
-    { empty_res_trans with exps = [(exp, typ)]}
+    let exp, ids =
+      try
+        let i = Int64.of_string integer_literal_info.Clang_ast_t.ili_value in
+        let exp = Sil.exp_int (Sil.Int.of_int64 i) in
+        exp, []
+      with
+      | Failure _ ->
+      (* Parse error: return a nondeterministic value *)
+          let id = Ident.create_fresh Ident.knormal in
+          let exp = Sil.Var id in
+          exp, [id] in
+    { empty_res_trans with
+      exps = [(exp, typ)];
+      ids = ids; }
 
   let nullStmt_trans succ_nodes stmt_info =
     Printing.log_out "Passing from NullStmt '%s'.\n" stmt_info.Clang_ast_t.si_pointer;
@@ -1786,7 +1794,9 @@ struct
         (match stmts with
           | [stmt1; ostmt1; ostmt2; stmt2] when contains_opaque_value_expr ostmt1 && contains_opaque_value_expr ostmt2 ->
               conditionalOperator_trans trans_state stmt_info [stmt1; stmt1; stmt2] expr_info
-          | _ -> Printing.log_stats  "BinaryConditionalOperator not translated %s @." (Ast_utils.string_of_stmt instr);
+          | _ -> Printing.log_stats
+                "BinaryConditionalOperator not translated %s @."
+                (Ast_utils.string_of_stmt instr);
               assert false)
     | s -> (Printing.log_stats
             "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
