@@ -37,11 +37,10 @@ let print_usage_exit () =
   exit(1)
 
 let () =
-  let analysing_models = Config.from_env_variable "ANALYZE_MODELS" in
   Arg2.parse arg_desc (fun arg -> ()) usage;
-  if analysing_models && !JClasspath.models_jar <> "" then
+  if Config.analyze_models && !JClasspath.models_jar <> "" then
     failwith "Not expecting model file when analyzing the models";
-  if not analysing_models && !JClasspath.models_jar = "" then
+  if not Config.analyze_models && !JClasspath.models_jar = "" then
     failwith "Java model file is required"
 
 

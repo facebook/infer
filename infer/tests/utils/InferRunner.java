@@ -471,7 +471,7 @@ public class InferRunner {
     ProcessBuilder pb = new ProcessBuilder(inferCmd);
 
     Map<String, String> env = pb.environment();
-    env.put("REPORT_ASSERTION_FAILURE", "1");
+    env.put("INFER_REPORT_ASSERTION_FAILURE", "1");
 
     Process process = pb.start();
     StringBuilder stderr = new StringBuilder();

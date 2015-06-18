@@ -344,8 +344,10 @@ let arc_mode = ref false
 
 let objc_memory_model_on = ref false
 
-let report_assertion_failure = from_env_variable "REPORT_ASSERTION_FAILURE"
+let report_assertion_failure = from_env_variable "INFER_REPORT_ASSERTION_FAILURE"
 let default_failure_name = "Assertion_failure"
+
+let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
 
 module Experiment = struct
 

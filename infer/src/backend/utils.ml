@@ -423,8 +423,7 @@ let symops_timeout, seconds_timeout =
   let default_seconds_timeout = 10 in
   let long_symops_timeout = 1000 in
   let long_seconds_timeout = 30 in
-  let analyzing_models = Config.from_env_variable "ANALYZE_MODELS" in
-  if analyzing_models then
+  if Config.analyze_models then
     (* use longer timeouts when analyzing models *)
     long_symops_timeout, long_seconds_timeout
   else

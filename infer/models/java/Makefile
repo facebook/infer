@@ -2,7 +2,7 @@ SHELL := /bin/bash
 CWD = $(shell pwd)
 BINDIR = $(CWD)/../../bin
 
-INFERJ = ANALYZE_MODELS=1 $(BINDIR)/inferJ --buck --analyzer infer --multicore 1
+INFERJ = INFER_ANALYZE_MODELS=1 $(BINDIR)/inferJ --buck --analyzer infer --multicore 1
 
 ANDROID_JAR = ../../lib/java/android/android-19.jar
 JACKSON_JAR = ../../../dependencies/java/jackson/jackson-2.2.3.jar
