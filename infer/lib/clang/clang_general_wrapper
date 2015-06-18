@@ -35,6 +35,8 @@ INFER_FRONTEND_ARGS=($FCP_INFER_FRONTEND_ARGS)
 REPORT_FRONTEND_FAILURE="${FCP_REPORT_FRONTEND_FAILURE}"
 # enable debug mode (to get more data saved to disk for future inspections)
 DEBUG_MODE="${FCP_DEBUG_MODE}"
+# specify where is located Apple's clang
+APPLE_CLANG="${FCP_APPLE_CLANG}"
 
 if [ -z "$RESULTS_DIR" ]; then
     echo '$FCP_RESULTS_DIR with the name of the output directory not provided.' > /dev/stderr
@@ -105,11 +107,20 @@ then
 
     if [ -n "$SOURCE_FILE" ]
     then
+        # (t7400979) this is a workaround to avoid that clang crashes when the -fmodules flag
+        # and the YojsonASTExporter plugin are used. Since the -plugin argument disables
+        # the generation of .o files, we invoke apple clang again to generate the expected
+        # artifacts. This will keep xcodebuild plus all the sub-steps happy.
+        if [ -n "$APPLE_CLANG" ]; then
+            ADD_PLUGIN_FLAG="-plugin"
+        else
+            ADD_PLUGIN_FLAG="-add-plugin"
+        fi
         ATTACH_PLUGIN="1"
         IFS=$'\n'
         EXTRA_ARGS=("-Xclang" "-load"
             "-Xclang" "${PLUGIN_PATH}"
-            "-Xclang" "-add-plugin"
+            "-Xclang" "$ADD_PLUGIN_FLAG"
             "-Xclang" "${PLUGIN_NAME}")
         if [ -n "$SYNTAX_ONLY" ]; then
             EXTRA_ARGS+=("-fsyntax-only")
@@ -162,6 +173,11 @@ if [ -n "$ATTACH_PLUGIN" ]; then
 else
     "${CLANG_CMD[@]}"
     STATUS=$?
+fi
+
+# run apple clang if required (and if any)
+if [ -n "$APPLE_CLANG" ]; then
+    "${APPLE_CLANG}$XX" "$@" || exit $?
 fi
 
 exit $STATUS

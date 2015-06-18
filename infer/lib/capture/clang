@@ -16,4 +16,5 @@ if [ -z $INFER_RESULTS_DIR ]; then
     exit $?
 fi
 
+
 "${SCRIPT_PATH%/}/../clang/clang_general_wrapper$XX" "$@"
