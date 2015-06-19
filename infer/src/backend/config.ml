@@ -372,6 +372,8 @@ let anonymous_block_num_sep = "______"
 
 let property_attributes = "property_attributes"
 
+let ivar_attributes = "ivar_attributes"
+
 let unsafe_unret = "<\"Unsafe_unretained\">"
 
 let weak = "<\"Weak\">"

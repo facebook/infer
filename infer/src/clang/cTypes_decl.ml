@@ -92,7 +92,8 @@ let string_type_to_sil_type tenv s =
       try
         let t = CTypes_parser.parse (Ast_lexer.token) lexbuf in
         Printing.log_out
-          "    ...Parsed. Translated with sil TYPE '%s'@." (Sil.typ_to_string t); t
+          "    ...Parsed. Translated with sil TYPE '%a'@." (Sil.pp_typ_full pe_text) t;
+          t
       with Parsing.Parse_error -> (
             Printing.log_stats
               "\nXXXXXXX PARSE ERROR for string '%s'. RETURNING Void.TODO@.@." s;
