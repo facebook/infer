@@ -86,8 +86,7 @@ CLANG_SOURCES = clang
 INFERCLANG_MAIN = $(CLANG_SOURCES)/cMain
 INFERCLANG_BINARY = $(BINDIR)/InferClang
 
-CLANG_PLUGIN_ROOT ?= $(shell cd $(ROOT)/../facebook-clang-plugin && pwd)
-CLANG_PLUGIN_BUILD = $(CLANG_PLUGIN_ROOT)/build
+CLANG_PLUGIN_ROOT ?= $(ROOT)/../facebook-clang-plugin
 CLANG_PLUGIN_BINARIES = $(addprefix $(CLANG_PLUGIN_ROOT)/clang-ocaml/build/, clang_ast_converter clang_ast_named_decl_printer)
 
 CLANG_OCAML_ROOT = $(CLANG_PLUGIN_ROOT)/clang-ocaml
@@ -140,8 +139,8 @@ $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
 	atdgen -j $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
 
 $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ): $(CLANG_ATDGEN_STUB_ATD) $(CLANG_PLUGIN_BINARIES) $(FCP_CLANG_AST_PROJ)
-	# rebuild the artifacts of the AST files whenever they're upated in FCP
-	# also copy the ast_proj files whenever they are updated
+# rebuild the artifacts of the AST files whenever they're upated in FCP
+# also copy the ast_proj files whenever they are updated
 	atdgen -rec -t $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
 	atdgen -rec -j $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
 	$(COPY) $(CLANG_OCAML_BUILD)/clang_ast_proj.ml $(CLANG_SOURCES)
