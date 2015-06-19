@@ -73,7 +73,8 @@ struct
     let qt = get_return_type function_method_decl_info in
     let is_instance_method = is_instance_method function_method_decl_info is_instance is_anonym_block in
     let parameters = get_parameters function_method_decl_info in
-    CMethod_signature.make_ms procname parameters qt source_range is_instance_method
+    let attributes = decl_info.Clang_ast_t.di_attributes in
+    CMethod_signature.make_ms procname parameters qt attributes source_range is_instance_method
 
   let create_function_signature di fdecl_info name qt is_instance anonym_block_opt =
     let procname, is_anonym_block =
@@ -140,7 +141,9 @@ struct
         let curr_class = if is_anonym_block then curr_class else CContext.ContextNoCls in
         add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
           captured_vars is_anonym_block
-    | None, ms -> CMethod_signature.add ms
+    | None, ms ->
+      CMethod_trans.create_local_procdesc cfg tenv ms [] captured_vars false;
+      CMethod_signature.add ms
 
   let process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info =
     let class_name = CContext.get_curr_class_name curr_class in

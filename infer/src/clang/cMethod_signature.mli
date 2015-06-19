@@ -20,12 +20,14 @@ val ms_get_args : method_signature -> (string * string) list
 
 val ms_get_ret_type : method_signature -> string
 
+val ms_get_attributes : method_signature -> Clang_ast_t.attribute list
+
 val ms_get_loc : method_signature -> Clang_ast_t.source_range
 
 val ms_is_instance : method_signature -> bool
 
-val make_ms : Procname.t -> (string * string) list -> string -> Clang_ast_t.source_range ->
-bool -> method_signature
+val make_ms : Procname.t -> (string * string) list -> string -> Clang_ast_t.attribute list ->
+Clang_ast_t.source_range -> bool -> method_signature
 
 val replace_name_ms : method_signature -> Procname.t -> method_signature
 

@@ -295,6 +295,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.is_objc_instance_method = false;
                   Sil.is_synthetic_method = am.Javalib.am_synthetic;
                   Sil.language = Sil.Java;
+                  Sil.func_attributes = [];
                   Sil.method_annotation = method_annotation;
                 } in
               create {
@@ -329,6 +330,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.is_objc_instance_method = false;
                   Sil.is_synthetic_method = cm.Javalib.cm_synthetic;
                   Sil.language = Sil.Java;
+                  Sil.func_attributes = [];
                   Sil.method_annotation = method_annotation;
                 } in
               create {
@@ -364,6 +366,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.is_objc_instance_method = false;
                   Sil.is_synthetic_method = cm.Javalib.cm_synthetic;
                   Sil.language = Sil.Java;
+                  Sil.func_attributes = [];
                   Sil.method_annotation = method_annotation;
                 } in
               create {
@@ -418,6 +421,7 @@ let create_external_procdesc program cfg tenv cn ms method_annotation is_static 
           Sil.is_objc_instance_method = false;
           Sil.is_synthetic_method = false;
           Sil.language = Sil.Java;
+          Sil.func_attributes = [];
           Sil.method_annotation = method_annotation;
         } in
       create {

@@ -43,6 +43,9 @@ type item_annotation = (annotation * bool) list
 type method_annotation =
   item_annotation * item_annotation list
 
+type func_attribute =
+  | FA_sentinel of int * int
+
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected
 
@@ -56,6 +59,7 @@ type proc_attributes =
     is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
     mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
     language : language;
+    func_attributes : func_attribute list;
     method_annotation : method_annotation;
   }
 
@@ -782,6 +786,9 @@ val item_annotation_is_empty : item_annotation -> bool
 
 (** Check if the method annodation is empty. *)
 val method_annotation_is_empty : method_annotation -> bool
+
+(** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
+val get_sentinel_func_attribute_value : func_attribute list -> (int * int) option
 
 (** {2 Pretty Printing} *)
 

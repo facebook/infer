@@ -24,6 +24,9 @@ type item_annotation = (annotation * bool) list
 type method_annotation =
   item_annotation * item_annotation list
 
+type func_attribute =
+  | FA_sentinel of int * int (** __attribute__((sentinel(int, int))) *)
+
 (** Programming language. *)
 type language = C_CPP | Java
 
@@ -40,6 +43,7 @@ type proc_attributes =
     is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
     mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
     language : language;
+    func_attributes : func_attribute list;
     method_annotation : method_annotation;
   }
 
@@ -52,6 +56,7 @@ let copy_proc_attributes pa =
     is_objc_instance_method = pa.is_objc_instance_method;
     is_synthetic_method = pa.is_synthetic_method;
     language = pa.language;
+    func_attributes = pa.func_attributes;
     method_annotation = pa.method_annotation;
   }
 
@@ -99,6 +104,15 @@ let pp_item_annotation fmt item_annotation =
 (** Pretty print a method annotation. *)
 let pp_method_annotation s fmt (ia, ial) =
   F.fprintf fmt "%a %s(%a)" pp_item_annotation ia s (pp_seq pp_item_annotation) ial
+
+(** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
+let get_sentinel_func_attribute_value attr_list =
+  (* Sentinel is the only kind of attributes *)
+  let is_sentinel a = true in
+  try
+    match list_find is_sentinel attr_list with
+    | FA_sentinel (sentinel, null_pos) -> Some (sentinel, null_pos)
+  with Not_found -> None
 
 (** current language *)
 let curr_language = ref C_CPP

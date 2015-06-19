@@ -129,11 +129,22 @@ let get_return_type tenv ms =
   CTypes_decl.qual_type_to_sil_type tenv
     (Ast_expressions.create_qual_type (CTypes.get_function_return_type qt))
 
+let sil_func_attributes_of_attributes attrs =
+  let rec do_translation acc al = match al with
+    | [] -> list_rev acc
+    | Clang_ast_t.SentinelAttr attribute_info::tl ->
+      (* TODO(t7466561) right now the clang plugin does not emit attribute arguments *)
+      (* so we default to (0,0) --the default sentinel values. *)
+      do_translation (Sil.FA_sentinel(0,0)::acc) tl
+    | _::tl -> do_translation acc tl in
+  do_translation [] attrs
+
 (** Creates a procedure description. *)
 let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let defined = not ((list_length fbody) == 0) in
   let procname = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string procname in
+  let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_str = list_map (fun (s, t, _) -> (Mangled.to_string s, t)) captured in
@@ -159,6 +170,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           Sil.is_objc_instance_method = is_objc_inst_method;
           Sil.is_synthetic_method = false;
           Sil.language = Sil.C_CPP;
+          Sil.func_attributes = attributes;
           Sil.method_annotation = Sil.method_annotation_empty;
         } in
       create {
@@ -211,6 +223,7 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
             Sil.is_objc_instance_method = is_objc_inst_method;
             Sil.is_synthetic_method = false;
             Sil.language = Sil.C_CPP;
+            Sil.func_attributes = [];
             Sil.method_annotation = Sil.method_annotation_empty;
           } in
         create {

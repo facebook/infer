@@ -10,6 +10,7 @@ type method_signature = {
   _name : Procname.t;
   _args : (string * string) list; (* (name, type) *)
   _ret_type : string;
+  _attributes : Clang_ast_t.attribute list;
   _loc : Clang_ast_t.source_range;
   _is_instance : bool
 }
@@ -23,6 +24,9 @@ let ms_get_args ms =
 let ms_get_ret_type ms =
   ms._ret_type
 
+let ms_get_attributes ms =
+  ms._attributes
+
 let ms_get_loc ms =
   ms._loc
 
@@ -33,23 +37,18 @@ type methodMap = method_signature Procname.Map.t
 
 let methodMap = ref Procname.Map.empty
 
-let make_ms procname args ret_type loc is_instance =
+let make_ms procname args ret_type attributes loc is_instance =
   let meth_signature = {
     _name = procname;
     _args = args;
     _ret_type = ret_type;
+    _attributes = attributes;
     _loc = loc;
     _is_instance = is_instance } in
   meth_signature
 
 let replace_name_ms ms name =
-  let meth_signature = {
-    _name = name;
-    _args = ms._args;
-    _ret_type = ms._ret_type;
-    _loc = ms._loc;
-    _is_instance = ms._is_instance } in
-  meth_signature
+  { ms with _name = name }
 
 let ms_to_string ms =
   "Method "^(Procname.to_string ms._name)^" "^

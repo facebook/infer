@@ -21,6 +21,7 @@ let create_empty_procdesc () =
       Sil.is_objc_instance_method = false;
       Sil.is_synthetic_method = false;
       Sil.language = Sil.C_CPP;
+      Sil.func_attributes = [];
       Sil.method_annotation = Sil.method_annotation_empty;
     } in
   create {
