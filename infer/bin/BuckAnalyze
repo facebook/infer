@@ -67,10 +67,6 @@ def prepare_build(args):
     if args.no_filtering:
         inferJ_options.append('--no-filtering')
 
-    if args.analyzer_mode:
-       inferJ_options.append('--analyzer_mode')
-       inferJ_options.append(args.analyzer_mode)
-
     # Create a temporary directory as a cache for jar files.
     infer_cache_dir = os.path.join(args.infer_out, 'cache')
     if not os.path.isdir(infer_cache_dir):

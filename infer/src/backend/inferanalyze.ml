@@ -112,7 +112,6 @@ let print_version_json () =
   exit 0
 
 let arg_desc =
-  let analyzer_mode s = Facebook.analyzer_mode s in
   let base_arg =
     let exclude s = match read_file s with
       | None ->
@@ -161,7 +160,6 @@ let arg_desc =
       "-intraprocedural", Arg.Set Config.intraprocedural, None, "perform an intraprocedural analysis only";
       "-makefile", Arg.Set_string makefile_cmdline, Some "file", "create a makefile to perform the analysis";
       "-max_cluster", Arg.Set_int Config.max_cluster_size, Some "n", "set the max number of procedures in each cluster (default n=2000)";
-      "-analyzer_mode", Arg.String analyzer_mode, Some "mode", " run the analysis in a specific mode";
       "-only_nospecs", Arg.Set Config.only_nospecs, None, " only analyze procedures which were analyzed before but have no specs";
       "-only_skips", Arg.Set Config.only_skips, None, " only analyze procedures dependent on previous skips which now have a .specs file";
       "-seconds_per_iteration", Arg.Set_int seconds_per_iteration, Some "n", "set the number of seconds per iteration (default n=30)";

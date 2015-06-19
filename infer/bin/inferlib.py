@@ -80,9 +80,6 @@ base_group.add_argument('-a', '--analyzer',
                         help='Select the analyzer within: {0}'.format(
                             ', '.join(MODES)),
                         default=INFER)
-base_group.add_argument('-m', '--analyzer_mode', metavar='<analyzer_mode>',
-                        help='''Select a special analyzer mode such as
-                        graphql1 or graphql2''')
 base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
@@ -423,9 +420,6 @@ class Infer:
             if os.path.isfile(utils.MODELS_JAR):
                 infer_options += ['-models', utils.MODELS_JAR]
 
-        if self.args.analyzer_mode:
-            infer_options += ['-analyzer_mode', self.args.analyzer_mode]
-
         if self.args.infer_cache:
             infer_options += ['-infer_cache', self.args.infer_cache]
 
@@ -622,8 +616,6 @@ class Infer:
         if self.javac.args.version:
             if self.args.buck:
                 key = self.args.analyzer
-                if self.args.analyzer_mode:
-                    key += '_' + self.args.analyzer_mode
                 print(utils.infer_key(key), file=sys.stderr)
             else:
                 return self.javac.run()
