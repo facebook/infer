@@ -23,8 +23,6 @@ import com.facebook.infer.models.InferUndefined;
 
 public class SQLiteCursor extends Cursor {
 
-    private String mEditTable;
-
     @Deprecated
     public SQLiteCursor(SQLiteDatabase db, SQLiteCursorDriver driver,
                         String editTable, SQLiteQuery query) {
@@ -33,8 +31,7 @@ public class SQLiteCursor extends Cursor {
 
 
     public SQLiteCursor(SQLiteCursorDriver driver, String editTable, SQLiteQuery query) {
-        mEditTable = new String();
-        InferBuiltins.__set_file_attribute(mEditTable);
+        InferBuiltins.__set_file_attribute(this);
     }
 
 
@@ -48,6 +45,7 @@ public class SQLiteCursor extends Cursor {
     }
 
     public void close() {
-        InferBuiltins.__set_mem_attribute(mEditTable);
+        InferBuiltins.__set_mem_attribute(this);
     }
+
 }

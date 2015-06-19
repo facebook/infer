@@ -213,4 +213,12 @@ public class CursorLeaks {
     Cursor c = new NamedCursor(cursor, "abc");
     c.close();
   }
+
+  native NamedCursor createWrapper(Cursor cursor);
+
+  public NamedCursor cursorAttachedTheWrapper(SQLiteDatabase sqLiteDatabase) {
+    Cursor cursor = sqLiteDatabase.query("events", null, null, null, null, null, null);
+    return createWrapper(cursor);
+  }
+
 }
