@@ -696,13 +696,11 @@ let collect_postconditions tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
   res
 
 let create_seed_vars sigma =
-  let sigma_seed = ref [] in
-  let hpred_add_seed = function
-    | Sil.Hpointsto (Sil.Lvar pv, se, typ) ->
-        sigma_seed := Sil.Hpointsto(Sil.Lvar (Sil.pvar_to_seed pv), se, typ) :: !sigma_seed
-    | _ -> () in
-  list_iter hpred_add_seed sigma;
-  !sigma_seed
+  let hpred_add_seed sigma = function
+    | Sil.Hpointsto (Sil.Lvar pv, se, typ) when not (Sil.pvar_is_abducted pv) ->
+      Sil.Hpointsto(Sil.Lvar (Sil.pvar_to_seed pv), se, typ) :: sigma
+    | _ -> sigma in
+  list_fold_left hpred_add_seed [] sigma
 
 (** Initialize proposition for execution given formal and global
 parameters. The footprint is initialized according to the

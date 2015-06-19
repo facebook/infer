@@ -150,11 +150,13 @@ type pvar_kind =
   | Local_var of Procname.t (** local variable belonging to a function *)
   | Callee_var of Procname.t (** local variable belonging to a callee *)
   | Abducted_retvar of Procname.t * location (** synthetic variable to represent return value *)
+  | Abducted_ref_param of Procname.t * pvar * location
+    (** synthetic variable to represent param passed by reference *)
   | Global_var (** gloval variable *)
   | Seed_var (** variable used to store the initial value of formal parameters *)
 
 (** Names for program variables. *)
-type pvar = { pv_name: Mangled.t; pv_kind: pvar_kind }
+and pvar = { pv_name: Mangled.t; pv_kind: pvar_kind }
 
 (** Unary operations *)
 type unop =
@@ -872,6 +874,11 @@ let has_objc_ref_counter hpred =
       list_exists is_objc_ref_counter_field fl
   | _ -> false
 
+(** turn a *T into a T. fails if [typ] is not a pointer type *)
+let typ_strip_ptr = function
+  | Tptr (t, _) -> t
+  | _ -> assert false
+
 let pvar_get_name pv = pv.pv_name
 
 let pvar_to_string pv = Mangled.to_string pv.pv_name
@@ -884,6 +891,12 @@ let pvar_get_simplified_name pv =
         | Some s3, s4 -> s4 ^ "." ^ s2
         | _ -> s)
   | _ -> s
+
+(** Check if the pvar is an abucted return var or param passed by ref *)
+let pvar_is_abducted pv =
+  match pv.pv_kind with
+  | Abducted_retvar _ | Abducted_ref_param _ -> true
+  | _ -> false
 
 (** Turn a pvar into a seed pvar (which stored the initial value) *)
 let pvar_to_seed pv = { pv with pv_kind = Seed_var }
@@ -898,12 +911,6 @@ let pvar_is_local pv =
 let pvar_is_callee pv =
   match pv.pv_kind with
   | Callee_var _ -> true
-  | _ -> false
-
-(** Check if the pvar is an abucted return var *)
-let pvar_is_abducted_retvar pv =
-  match pv.pv_kind with
-  | Abducted_retvar _ -> true
   | _ -> false
 
 (** Check if the pvar is a seed var *)
@@ -942,24 +949,31 @@ let loc_compare loc1 loc2 =
 let loc_equal loc1 loc2 =
   loc_compare loc1 loc2 = 0
 
-let pv_kind_compare k1 k2 = match k1, k2 with
+let rec pv_kind_compare k1 k2 = match k1, k2 with
   | Local_var n1, Local_var n2 -> Procname.compare n1 n2
   | Local_var _, _ -> - 1
   | _, Local_var _ -> 1
   | Callee_var n1, Callee_var n2 -> Procname.compare n1 n2
   | Callee_var _, _ -> - 1
+  | _, Callee_var _ -> 1
   | Abducted_retvar (p1, l1), Abducted_retvar (p2, l2) ->
       let n = Procname.compare p1 p2 in
       if n <> 0 then n else loc_compare l1 l2
   | Abducted_retvar _, _ -> - 1
   | _, Abducted_retvar _ -> 1
-  | _, Callee_var _ -> 1
+  | Abducted_ref_param (p1, pv1, l1), Abducted_ref_param (p2, pv2, l2) ->
+      let n = Procname.compare p1 p2 in
+      if n <> 0 then n else
+        let n = pvar_compare pv1 pv2 in
+        if n <> 0 then n else loc_compare l1 l2
+  | Abducted_ref_param _, _ -> - 1
+  | _, Abducted_ref_param _ -> 1
   | Global_var, Global_var -> 0
   | Global_var, _ -> - 1
   | _, Global_var -> 1
   | Seed_var, Seed_var -> 0
 
-let pvar_compare pv1 pv2 =
+and pvar_compare pv1 pv2 =
   let n = Mangled.compare pv1.pv_name pv2.pv_name in
   if n <> 0 then n else pv_kind_compare pv1.pv_kind pv2.pv_kind
 
@@ -1768,7 +1782,7 @@ let loc_to_string loc =
 (** Dump a location *)
 let d_loc (loc: location) = L.add_print_action (L.PTloc, Obj.repr loc)
 
-let _pp_pvar f pv =
+let rec _pp_pvar f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
   | Local_var n ->
@@ -1780,6 +1794,9 @@ let _pp_pvar f pv =
   | Abducted_retvar (n, l) ->
       if !Config.pp_simple then F.fprintf f "%a|abductedRetvar" Mangled.pp name
       else F.fprintf f "%a$%a%a|abductedRetvar" Procname.pp n pp_loc l Mangled.pp name
+  | Abducted_ref_param (n, pv, l) ->
+      if !Config.pp_simple then F.fprintf f "%a|%a|abductedRefParam" _pp_pvar pv Mangled.pp name
+      else F.fprintf f "%a$%a%a|abductedRefParam" Procname.pp n pp_loc l Mangled.pp name
   | Global_var -> F.fprintf f "#GB$%a" Mangled.pp name
   | Seed_var -> F.fprintf f "old_%a" Mangled.pp name
 
@@ -1795,6 +1812,9 @@ let pp_pvar_latex f pv =
   | Abducted_retvar (n, l) ->
       F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abductedRetvar"
+   | Abducted_ref_param (n, pv, l) ->
+      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
+        (Latex.pp_string Latex.Roman) "abductedRefParam"
   | Global_var ->
       Latex.pp_string Latex.Boldface f (Mangled.to_string name)
   | Seed_var ->
@@ -3769,12 +3789,16 @@ let mk_pvar_abducted_ret (proc_name : Procname.t) (loc : location) : pvar =
   let name = Mangled.from_string ("$RET_" ^ (Procname.to_unique_id proc_name)) in
   { pv_name = name; pv_kind = Abducted_retvar (proc_name, loc) }
 
+let mk_pvar_abducted_ref_param (proc_name : Procname.t) (pv : pvar) (loc : location) : pvar =
+  let name = Mangled.from_string ("$REF_PARAM_" ^ (Procname.to_unique_id proc_name)) in
+  { pv_name = name; pv_kind = Abducted_ref_param (proc_name, pv, loc) }
+
 (** Turn an ordinary program variable into a callee program variable *)
 let pvar_to_callee pname pvar = match pvar.pv_kind with
   | Local_var _ ->
       { pvar with pv_kind = Callee_var pname }
   | Global_var -> pvar
-  | Callee_var _ | Abducted_retvar _ | Seed_var ->
+  | Callee_var _ | Abducted_retvar _ | Abducted_ref_param _ | Seed_var ->
       L.d_str "Cannot convert pvar to callee: ";
       d_pvar pvar; L.d_ln ();
       assert false

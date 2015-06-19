@@ -85,10 +85,6 @@ let check_block_retain_cycle cfg tenv pname _prop block_nullified =
   let _ = Abs.abstract_junk ~original_prop: _prop pname tenv _prop'' in
   ()
 
-let mark_id_as_undefined id prop att_undef =
-  let check_attr_change att_old att_new = () in
-  Prop.add_or_replace_exp_attribute check_attr_change prop (Sil.Var id) att_undef
-
 (** Apply function [f] to the expression at position [offlist] in [strexp].
 If not found, expand [strexp] and apply [f] to [None].
 The routine should maintain the invariant that strexp and typ correspond to
@@ -520,15 +516,12 @@ let call_should_be_skipped caller_pname callee_pname callee_pdesc =
     | None ->
         not (Cfg.Procdesc.is_defined callee_pdesc)
         (* treat calls with no specs as skip functions in angelic mode *)
-        (* TODO: turn angelic back on for C_CPP once we have abductive angelic analysis (t6935559) *)
-        || (!Config.angelic_execution && !Sil.curr_language <> Sil.C_CPP)
+        || !Config.angelic_execution
     | Some summary ->
         Specs.get_flag callee_pname proc_flag_skip <> None (* check skip flag *)
         || summary.Specs.attributes.Sil.is_abstract (* skip abstract methods *)
         (* treat calls with no specs as skip functions in angelic mode *)
-        (* TODO: turn angelic back on for C_CPP once we have abductive angelic analysis (t6935559) *)
-        || (!Config.angelic_execution && !Sil.curr_language <> Sil.C_CPP
-          && Specs.get_specs_from_payload summary == []) in
+        || (!Config.angelic_execution && Specs.get_specs_from_payload summary == []) in
   if !Config.intraprocedural then true
   else if should_skip () then (print_skip_warning (); true)
   else false
@@ -1040,114 +1033,158 @@ and sym_exec_generated mask_errors cfg tenv pdesc instrs ppl =
   let f plist instr = list_flatten (list_map (exe_instr instr) plist) in
   list_fold_left f ppl instrs
 
+and add_to_footprint abducted_pv typ prop =
+  let abducted_lvar = Sil.Lvar abducted_pv in
+  let fresh_fp_var = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+  let lvar_pt_fpvar =
+    let sizeof_exp = Sil.Sizeof (typ, Sil.Subtype.subtypes) in
+    Prop.mk_ptsto abducted_lvar (Sil.Eexp (fresh_fp_var, Sil.Inone)) sizeof_exp in
+  let sigma_fp = Prop.get_sigma_footprint prop in
+  (Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop), fresh_fp_var)
+
+and add_constraints_on_retval pdesc prop ret_ids ret_type_option callee_pname =
+  if Procname.is_infer_undefined callee_pname then prop
+  else
+    match ret_ids, ret_type_option with
+    | [ret_id], Some ret_typ ->
+      (* To avoid obvious false positives, assume skip functions do not return null pointers *)
+      let add_ret_non_null ret_id ret_typ prop =
+        match ret_typ with
+        | Sil.Tptr _ -> Prop.conjoin_neq (Sil.Var ret_id) Sil.exp_zero prop
+        | _ -> prop in
+      let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
+        Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
+      if !Config.angelic_execution && not (is_rec_call callee_pname) then
+        (* introduce a fresh program variable to allow abduction on the return value *)
+        let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname (State.get_loc ()) in
+        let already_has_abducted_retval p =
+          list_exists
+            (fun hpred -> match hpred with
+              | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
+              | _ -> false)
+            (Prop.get_sigma_footprint p) in
+          (* prevent introducing multiple abducted retvals for a single call site in a loop *)
+        if already_has_abducted_retval prop then prop
+        else
+          if !Config.footprint then
+            let (prop', fresh_fp_var) = add_to_footprint abducted_ret_pv ret_typ prop in
+            let prop'' = Prop.conjoin_eq ~footprint:true (Sil.Var ret_id) fresh_fp_var prop' in
+            add_ret_non_null ret_id ret_typ prop''
+          else
+            (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
+            let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
+              let bind_exp prop = function
+                | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
+                  when Sil.pvar_equal pv abducted_pvar ->
+                  Prop.conjoin_eq exp_to_bind rhs prop
+                | _ -> prop in
+              list_fold_left bind_exp prop (Prop.get_sigma prop) in
+            (* bind return id to the abducted value pointed to by the pvar we introduced *)
+            bind_exp_to_abducted_val (Sil.Var ret_id) abducted_ret_pv prop
+      else add_ret_non_null ret_id ret_typ prop
+    | _ -> prop
+
+and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
+  (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
+  let replace_actual_hpred actual_var new_hpred prop =
+    let sigma' =
+      list_map
+        (function
+          | Sil.Hpointsto (lhs, _, _) when Sil.exp_equal lhs actual_var -> new_hpred
+          | hpred -> hpred)
+        (Prop.get_sigma prop) in
+    Prop.normalize (Prop.replace_sigma sigma' prop) in
+  if !Config.angelic_execution then
+    let add_actual_by_ref_to_footprint prop (actual, actual_typ) =
+      match actual with
+      | Sil.Lvar actual_pv ->
+        (* introduce a fresh program variable to allow abduction on the return value *)
+        let abducted_ref_pv =
+          Sil.mk_pvar_abducted_ref_param callee_pname actual_pv (State.get_loc ()) in
+        let already_has_abducted_retval p =
+          list_exists
+            (fun hpred -> match hpred with
+              | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ref_pv
+              | _ -> false)
+            (Prop.get_sigma_footprint p) in
+          (* prevent introducing multiple abducted retvals for a single call site in a loop *)
+        if already_has_abducted_retval prop then prop
+        else
+          if !Config.footprint then
+            let (prop', fresh_fp_var) =
+              add_to_footprint abducted_ref_pv (Sil.typ_strip_ptr actual_typ) prop in
+            (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
+            let filtered_sigma =
+              list_map
+                (function
+                  | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
+                    Sil.Hpointsto (lhs, Sil.Eexp (fresh_fp_var, Sil.Inone), typ_exp)
+                  | hpred -> hpred)
+                (Prop.get_sigma prop') in
+            Prop.normalize (Prop.replace_sigma filtered_sigma prop')
+          else
+            (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
+            let prop' =
+              let filtered_sigma =
+                list_filter
+                (function
+                  | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
+                    false
+                  | _ -> true)
+                (Prop.get_sigma prop) in
+              Prop.normalize (Prop.replace_sigma filtered_sigma prop) in
+            list_fold_left
+              (fun p hpred ->
+                match hpred with
+                | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Sil.pvar_equal pv abducted_ref_pv ->
+                  let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
+                  Prop.normalize (Prop.replace_sigma (new_hpred :: (Prop.get_sigma prop')) p)
+                | _ -> p)
+              prop'
+              (Prop.get_sigma prop')
+      | _ -> assert false in
+    list_fold_left add_actual_by_ref_to_footprint prop actuals_by_ref
+  else
+    (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
+    let havoc_actual_by_ref (actual, actual_typ) prop =
+      let actual_pt_havocd_var =
+        let havocd_var = Sil.Var (Ident.create_fresh Ident.kprimed) in
+        let sizeof_exp = Sil.Sizeof (Sil.typ_strip_ptr actual_typ, Sil.Subtype.subtypes) in
+        Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
+      replace_actual_hpred actual actual_pt_havocd_var prop in
+    list_fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
+
 (** execute a call for an unknown or scan function *)
 and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     ret_ids ret_type_option actual_pars callee_pname loc =
-  let instrs, undef_vars = (* instructions to set vars passed by reference to fresh ids *)
-    let gen_instrs = ref [] in
-    let gen_undef_vars = ref [] in
-    let add_instr instr = gen_instrs := instr :: !gen_instrs in
-    let add_undef_var var = gen_undef_vars := var :: !gen_undef_vars in
-    let type_is_not_structured = function
-      | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tenum _ -> true
-      | Sil.Tvar _ | Sil.Tstruct _ | Sil.Tarray _ -> false in
-    let expand_ptr_type t = match t with
-      | Sil.Tptr (Sil.Tvar tn, pk) ->
-          (match Sil.tenv_lookup tenv tn with
-            | Some typ -> Sil.Tptr (typ, pk)
-            | None -> t)
-      | _ -> t in
-    let do_actual_par (e, _t) =
-      let t = expand_ptr_type _t in
-      L.d_str "do_actual_par exp: "; Sil.d_exp e; L.d_str" typ: "; Sil.d_typ_full t; L.d_ln();
-      match e, t with
-      | _, Sil.Tptr (Sil.Tint ik, pk) when is_scan && Sil.ikind_is_char ik -> (* scan case "%s" *)
-          let infer_get_array_size = Procname.from_string "__get_array_size" in
-          let instr1 = Sil.Call ([], Sil.Const (Sil.Cfun infer_get_array_size), [(e, Sil.Tptr (Sil.Tint ik, pk))], loc, Sil.cf_default) in
-          let id_fresh = Ident.create_fresh Ident.kprimed in
-          let instr2 = Sil.Letderef (id_fresh, e, t, loc) in
-          add_instr instr1;
-          add_instr instr2
-      | Sil.Lvar _, Sil.Tptr (t', _) when type_is_not_structured t' ->
-          let id_fresh = Ident.create_fresh Ident.kprimed in
-          let instr = Sil.Set (e, t, Sil.Var id_fresh, loc) in
-          add_instr instr;
-          add_undef_var id_fresh
-      | Sil.Lvar _, Sil.Tptr ((Sil.Tstruct (ftal, sftal, _, _, _, _, _) as tstruct, _)) ->
-          let do_fld (f, typ, ann) =
-            let id_fresh = Ident.create_fresh Ident.kprimed in
-            let instr = Sil.Set (Sil.Lfield (e, f, tstruct), typ, Sil.Var id_fresh, loc) in
-            add_instr instr;
-            add_undef_var id_fresh in
-          list_iter do_fld ftal
-      | _ -> () in
-    list_iter do_actual_par actual_pars;
-    list_rev !gen_instrs, list_rev !gen_undef_vars in
   let remove_resource_att prop =
     let do_exp p (e, t) =
       let do_attribute q = function
         | Sil.Aresource _ as res ->
-            Prop.remove_attribute res q
+          Prop.remove_attribute res q
         | _ -> q in
       list_fold_left do_attribute p (Prop.get_exp_attributes p e) in
     list_fold_left do_exp prop actual_pars in
-  let prop =
-    if !Sil.curr_language <> Sil.Java || Procname.is_infer_undefined callee_pname then pre
-    else
-      let prop_no_res = remove_resource_att pre in
-      match ret_ids, ret_type_option with
-      | [ret_id], Some ret_typ ->
-      (* To avoid obvious false positives, assume skip functions do not return null pointers *)
-          let add_ret_non_null ret_id ret_typ prop =
-            match ret_typ with
-            | Sil.Tptr _ -> Prop.conjoin_neq (Sil.Var ret_id) Sil.exp_zero prop
-            | _ -> prop in
-          let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
-            Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
-          if !Config.angelic_execution && not (is_rec_call callee_pname) then
-            (* introduce a fresh program variable to allow abduction on the return value *)
-            let ret_pv = Sil.mk_pvar_abducted_ret callee_pname (State.get_loc ()) in
-            let already_has_abducted_retval p =
-              list_exists
-                (fun hpred -> match hpred with
-                      | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv ret_pv
-                      | _ -> false
-                )
-                (Prop.get_sigma_footprint p) in
-            (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-            if already_has_abducted_retval prop_no_res then prop_no_res
-            else
-              let ret_lvar = Sil.Lvar ret_pv in
-              let sizeof_exp = Sil.Sizeof (ret_typ, Sil.Subtype.subtypes) in
-              if !Config.footprint then
-                let fresh_fp_var = Sil.Var (Ident.create_fresh Ident.kfootprint) in
-                let retval_pt_fpvar =
-                  Prop.mk_ptsto ret_lvar (Sil.Eexp (fresh_fp_var, Sil.Inone)) sizeof_exp in
-                let sigma_fp = Prop.get_sigma_footprint prop_no_res in
-                let prop = Prop.replace_sigma_footprint (retval_pt_fpvar :: sigma_fp) prop_no_res in
-                let prop' = Prop.normalize prop in
-                let prop'' = Prop.conjoin_eq ~footprint: true (Sil.Var ret_id) fresh_fp_var prop' in
-                add_ret_non_null ret_id ret_typ prop''
-              else
-                (* bind return id to the abducted value pointed to by the pvar we introduced *)
-                let bind_return_id prop = function
-                  | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
-                  when Sil.pvar_equal pv ret_pv ->
-                      Prop.conjoin_eq (Sil.Var ret_id) rhs prop
-                  | _ -> prop in
-                list_fold_left bind_return_id prop_no_res (Prop.get_sigma prop_no_res)
-          else add_ret_non_null ret_id ret_typ prop_no_res
-      | _ -> prop_no_res in
-  let after_ref_var_instrs = (* assign fresh values to vars passed by ref *)
-    let report_error = is_scan in
-    sym_exec_generated (not report_error) cfg tenv pdesc instrs [(prop, path)] in
-  let vars_to_mark_undefined = ret_ids @ undef_vars in
-  let att_undef = Sil.Aundef (callee_pname, loc, State.get_path_pos ()) in
-  let mark_undefined_vars p = (* add undefined attribute to returned vars and new values for vars passed by ref *)
-    list_fold_left (fun p id -> mark_id_as_undefined id p att_undef) p vars_to_mark_undefined in
-  if is_scan (* if scan function, don't mark values with undef attributes *)
-  then list_map (fun (p, path) -> (Tabulation.remove_constant_string_class p, path)) after_ref_var_instrs
-  else list_map (fun (p, path) -> (mark_undefined_vars p, path)) after_ref_var_instrs
+  let actuals_by_ref =
+    list_filter
+      (function
+        | Sil.Lvar _, _ -> true
+        | _ -> false)
+      actual_pars in
+  (* in Java, assume that skip functions close resources passed as params *)
+  let pre' = if !Sil.curr_language = Sil.Java then remove_resource_att pre else pre in
+  let pre'' = add_constraints_on_retval pdesc pre' ret_ids ret_type_option callee_pname in
+  let pre''' = add_constraints_on_actuals_by_ref pre'' actuals_by_ref callee_pname in
+  if is_scan (* if scan function, don't mark anything with undef attributes *)
+  then [(Tabulation.remove_constant_string_class pre''', path)]
+  else
+    (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
+    let exps_to_mark =
+      let ret_exps = list_map (fun ret_id -> Sil.Var ret_id) ret_ids in
+      list_fold_left
+        (fun exps_to_mark (exp, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
+    let path_pos = State.get_path_pos () in
+    [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
 
 (** Perform symbolic execution for a function call *)
 and sym_exe_call cfg pdesc tenv pre path ret_ids actual_pars callee_pdesc loc =

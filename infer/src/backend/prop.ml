@@ -1769,6 +1769,16 @@ let add_or_replace_exp_attribute check_attribute_change prop exp att =
   if !found then replace_pi pi' prop
   else set_exp_attribute prop nexp att
 
+(** mark Sil.Var's or Sil.Lvar's as undefined *)
+let mark_vars_as_undefined prop vars_to_mark callee_pname loc path_pos =
+  let att_undef = Sil.Aundef (callee_pname, loc, path_pos) in
+  let mark_var_as_undefined exp prop =
+    let do_nothing _ _ = () in
+    match exp with
+    | Sil.Var _ | Sil.Lvar _ -> add_or_replace_exp_attribute do_nothing prop exp att_undef
+    | _ -> prop in
+  list_fold_left (fun prop id -> mark_var_as_undefined id prop) prop vars_to_mark
+
 (** Remove an attribute from all the atoms in the heap *)
 let remove_attribute att prop =
   let atom_remove atom pi = match atom with

@@ -37,6 +37,7 @@ public class AngelismTest {
   public void angelismTest() throws InterruptedException, IOException, InferException {
     String[] procedures = {
         "bake",
+        "call_by_ref_actual_already_in_footprint_bad"
     };
     assertThat(
         "Results should contain null pointer dereference error",

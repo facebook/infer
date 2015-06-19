@@ -802,7 +802,7 @@ let remove_abducted_retvars p =
           let reach' = Sil.HpredSet.add hpred reach in
           let exps' = collect_exps exps rhs in
           (reach', exps')
-        | hpred -> reach, exps in
+        | _ -> reach, exps in
       let reach', exps' = list_fold_left add_hpred_if_reachable (reach, exps) sigma in
       if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
       else compute_reachable_hpreds_rec sigma (reach', exps') in
@@ -815,7 +815,7 @@ let remove_abducted_retvars p =
         match hpred with
         | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
           let abducted_pvars, normal_pvars = pvars in
-          if Sil.pvar_is_abducted_retvar pvar then pvar :: abducted_pvars, normal_pvars
+          if Sil.pvar_is_abducted pvar then pvar :: abducted_pvars, normal_pvars
           else abducted_pvars, pvar :: normal_pvars
         | _ -> pvars)
       ([], [])

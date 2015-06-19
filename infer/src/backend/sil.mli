@@ -592,6 +592,9 @@ val loc_equal : location -> location -> bool
 
 val path_pos_equal : path_pos -> path_pos -> bool
 
+(** turn a *T into a T. fails if [typ] is not a pointer type *)
+val typ_strip_ptr : typ -> typ
+
 val pvar_get_name : pvar -> Mangled.t
 
 val pvar_to_string : pvar -> string
@@ -602,8 +605,8 @@ val pvar_to_seed : pvar -> pvar
 (** Check if the pvar is a callee var *)
 val pvar_is_callee : pvar -> bool
 
-(** Check if the pvar is an abducted return var *)
-val pvar_is_abducted_retvar : pvar -> bool
+(** Check if the pvar is an abducted return var or param passed by ref *)
+val pvar_is_abducted : pvar -> bool
 
 (** Check if the pvar is a local var *)
 val pvar_is_local : pvar -> bool
@@ -1323,6 +1326,8 @@ val mk_pvar_global : Mangled.t -> pvar
 
 (** create an abducted return variable for a call to [proc_name] at [loc] *)
 val mk_pvar_abducted_ret : Procname.t -> location -> pvar
+
+val mk_pvar_abducted_ref_param : Procname.t -> pvar -> location -> pvar
 
 (** Turn an ordinary program variable into a callee program variable *)
 val pvar_to_callee : Procname.t -> pvar -> pvar

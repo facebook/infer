@@ -40,3 +40,43 @@ struct delicious *skip_external_function(void) {
   i = cake->yum;
   return cake;
 }
+
+void by_ref_actual_already_in_footprint(struct delicious *param) {
+  int i;
+  struct delicious * ret = bakery(&param);
+  i = param->yum;
+}
+
+void call_by_ref_actual_already_in_footprint_ok() {
+  by_ref_actual_already_in_footprint(NULL); // should not report a warning
+}
+
+void by_ref_actual_already_in_footprint2(struct delicious *param) {
+  int i;
+  i = param->yum;  // should not report a warning
+  struct delicious * ret = bakery(&param);
+  i = param->yum;  // should not report a warning
+}
+
+void call_by_ref_actual_already_in_footprint_bad() {
+  by_ref_actual_already_in_footprint2(NULL); // should report a warning
+}
+
+void passByRefTwice() {
+  struct delicious *param;
+  bakery2(&param, &param); // should not report a warning
+  int i = param->yum;
+}
+
+struct delicious * returnPassByRef2() {
+  struct delicious *param = NULL;
+  bakery(&param);
+  int i = param->yum; // should not report a warning
+  return param;
+}
+
+void returnPassByRefDeref() {
+  struct delicious *ret = returnPassByRef();
+  ret->yum = 2; // should not report a warning
+  free(ret);
+}
