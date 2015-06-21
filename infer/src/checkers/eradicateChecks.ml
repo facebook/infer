@@ -470,7 +470,10 @@ let check_call_parameters
     | _ -> () in
   let should_check_parameters =
     if check_library_calls then true
-    else Models.is_modelled_nullable callee_pname || Cfg.Procdesc.is_defined callee_pdesc in
+    else
+      Models.is_modelled_nullable callee_pname ||
+      Cfg.Procdesc.is_defined callee_pdesc ||
+      Specs.get_summary callee_pname <> None in
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
     check (list_rev sig_params) (list_rev call_params)
