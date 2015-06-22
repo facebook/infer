@@ -87,6 +87,9 @@ val is_anonymous_inner_class_name : string -> bool
 (** [is_constructor pname] returns true if [pname] is a constructor *)
 val is_constructor : t -> bool
 
+(** [java_is_close pname] returns true if the method name is "close" *)
+val java_is_close : t -> bool
+
 (** [is_class_initializer pname] returns true if [pname] is a class initializer *)
 val is_class_initializer : t -> bool
 

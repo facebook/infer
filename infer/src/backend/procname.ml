@@ -301,8 +301,13 @@ let java_is_vararg = function
 let is_constructor = function
   | JAVA js -> js.methodname = "<init>"
   | OBJC name -> Utils.string_is_prefix "init" name.objc_method
-  (* TODO: Add cases for ObjC and C++ *)
   | _ -> false
+
+
+let java_is_close = function
+  | JAVA js -> js.methodname = "close"
+  | _ -> false
+
 
 (** [is_class_initializer pname] returns true if [pname] is a class initializer *)
 let is_class_initializer = function
