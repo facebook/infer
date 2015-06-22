@@ -1,21 +1,15 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.lang;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+
 
 public class Runtime {
-
-    private static Runtime mRuntime;
-    private String[] mLibPaths;
-    private List<Thread> shutdownHooks;
-    private static boolean finalizeOnExit;
-    private boolean shuttingDown;
-    private boolean tracingMethods;
-
-    public static Runtime getRuntime() {
-        return mRuntime;
-    }
 
     private Runtime() {
     }

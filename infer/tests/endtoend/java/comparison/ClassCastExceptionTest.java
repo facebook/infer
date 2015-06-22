@@ -33,7 +33,10 @@ public class ClassCastExceptionTest {
   @Test
   public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
       throws IOException, InterruptedException, InferException {
-    String[] methods = {"classCastException", "classCastExceptionImplementsInterface"};
+    String[] methods = {
+        "classCastException",
+        "classCastExceptionImplementsInterface",
+    };
     assertThat(
         "Results should contain " + CLASS_CAST_EXCEPTION,
         inferResults,

@@ -1,10 +1,11 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 public class PrintStream extends FilterOutputStream implements Closeable {
-
-    private boolean ioError;
-    private boolean autoFlush;
-    private String encoding;
 
     public PrintStream(OutputStream out) {
         super(out);

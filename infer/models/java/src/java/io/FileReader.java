@@ -1,4 +1,10 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
+
 
 public class FileReader extends InputStreamReader {
 

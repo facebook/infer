@@ -1,8 +1,12 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferBuiltins;
 import com.facebook.infer.models.InferUndefined;
-import dalvik.system.CloseGuard;
 
 import java.nio.FileChannelImpl;
 import java.nio.channels.FileChannel;

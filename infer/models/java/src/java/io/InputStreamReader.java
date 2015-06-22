@@ -1,17 +1,18 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
 public class InputStreamReader extends Reader {
 
     private InputStream in;
-    private boolean endOfInput;
-    private CharsetDecoder decoder;
-    private ByteBuffer bytes;
 
     public InputStreamReader(InputStream in) {
         this.in = in;

@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package com.google.common.collect;
 
 import com.facebook.infer.models.InferBuiltins;

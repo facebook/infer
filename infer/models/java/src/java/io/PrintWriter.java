@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
@@ -5,8 +10,6 @@ import com.facebook.infer.models.InferUndefined;
 public class PrintWriter extends Writer {
 
     protected Writer out;
-    private boolean ioError;
-    private boolean autoFlush;
 
     public PrintWriter(OutputStream out) {
         this(new OutputStreamWriter(out));

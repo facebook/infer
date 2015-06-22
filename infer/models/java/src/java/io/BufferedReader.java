@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
@@ -5,14 +10,6 @@ import com.facebook.infer.models.InferUndefined;
 public class BufferedReader extends Reader {
 
     private Reader in;
-    private char[] buf;
-    private int pos;
-    private int end;
-    private int mark;
-    private int markLimit;
-    private boolean lastWasCR;
-    private boolean markedLastWasCR;
-
 
     public BufferedReader(Reader in, int sz) {
         this.in = in;

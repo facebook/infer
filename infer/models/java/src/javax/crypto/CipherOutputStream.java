@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package javax.crypto;
 
 import com.facebook.infer.models.InferUndefined;
@@ -8,7 +13,6 @@ import java.io.OutputStream;
 
 public class CipherOutputStream extends FilterOutputStream {
 
-    private Cipher cipher;
 
     public CipherOutputStream(OutputStream os, Cipher c) {
         super(os);

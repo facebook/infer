@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package javax.net.ssl;
 
 import com.facebook.infer.models.InferBuiltins;

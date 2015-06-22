@@ -1,35 +1,19 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.util.zip;
+
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import com.facebook.infer.models.InferUndefined;
 
-import java.io.*;
-import java.util.HashSet;
 
 public class ZipOutputStream extends DeflaterOutputStream {
-
-    public static int DEFLATED;
-
-    public static int STORED;
-
-    private static int ZIP_VERSION_2_0;
-
-    private byte[] commentBytes;
-
-    private HashSet<String> entries;
-
-    private int defaultCompressionMethod;
-
-    private int compressionLevel;
-
-    private ByteArrayOutputStream cDir;
-
-    private ZipEntry currentEntry;
-
-    private CRC32 crc;
-
-    private int offset, curOffset, nameLength;
-
-    private byte[] nameBytes;
 
     public ZipOutputStream(OutputStream out) {
         super(out);

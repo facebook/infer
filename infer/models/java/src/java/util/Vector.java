@@ -1,14 +1,15 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.util;
 
 import com.facebook.infer.models.InferUndefined;
 
 public class Vector<E> extends AbstractList<E> {
 
-    private static long serialVersionUID;
-    protected int elementCount;
     protected Object[] elementData;
-    protected int capacityIncrement;
-    private static int DEFAULT_SIZE;
 
     E elementData(int index) {
         return (E) elementData[index];

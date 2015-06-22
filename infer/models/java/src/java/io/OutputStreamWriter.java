@@ -1,18 +1,18 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
 public class OutputStreamWriter extends Writer {
 
     private OutputStream out;
-
-    private CharsetEncoder encoder;
-
-    private ByteBuffer bytes;
 
     public OutputStreamWriter(OutputStream out, String charsetName)
             throws UnsupportedEncodingException {

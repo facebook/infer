@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.util;
 
 import com.facebook.infer.models.InferUndefined;
@@ -7,18 +12,7 @@ import java.io.*;
 
 public class Properties extends Hashtable<Object, Object> {
 
-    private static long serialVersionUID;
-
-    private transient DocumentBuilder builder;
-
-    private static String PROP_DTD_NAME;
-
-    private static String PROP_DTD;
-
     protected Properties defaults;
-
-    private static int NONE, SLASH, UNICODE, CONTINUE, KEY_DONE, IGNORE;
-
 
     public Properties() {
     }

@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.lang;
 
 import com.facebook.infer.models.InferUndefined;

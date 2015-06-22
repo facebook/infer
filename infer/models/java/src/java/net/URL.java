@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.net;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -5,23 +10,10 @@ import java.util.Hashtable;
 
 public final class URL implements java.io.Serializable {
 
-    private static long serialVersionUID;
-    private static URLStreamHandlerFactory streamHandlerFactory;
-    private static Hashtable<String, URLStreamHandler> streamHandlers;
-
     private String protocol;
-    private String authority;
     private String host;
     private int port;
     private String file;
-    private String ref;
-
-    private transient String userInfo;
-    private transient String path;
-    private transient String query;
-    transient URLStreamHandler streamHandler;
-    private transient int hashCode;
-
 
     public URL(String protocol, String host, int port, String file) throws MalformedURLException {
         this(protocol, host, port, file, null);

@@ -1,45 +1,21 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 public class ObjectInputStream extends InputStream {
 
-    private InputStream emptyStream;
-    private static Object UNSHARED_OBJ;
-    private boolean hasPushbackTC;
-    private byte pushbackTC;
-    private int nestedLevels;
-    private int nextHandle;
     private DataInputStream input;
-
-    private DataInputStream primitiveTypes;
-    private InputStream primitiveData;
-    private boolean enableResolve;
-    private ArrayList<Object> objectsRead;
-    private Object currentObject;
-    private ObjectStreamClass currentClass;
-    private InputValidationDesc[] validations;
-
-    private boolean subclassOverridingImplementation;
-    private ClassLoader callerClassLoader;
-    private boolean mustResolve;
-    private int descriptorHandle;
-
-    private static HashMap<String, Class<?>> PRIMITIVE_CLASSES;
 
     static class InputValidationDesc {
         ObjectInputValidation validator;
         int priority;
     }
-
-    private static ClassLoader bootstrapLoader;
-    private static ClassLoader systemLoader;
-
-    private HashMap<Class<?>, List<Class<?>>> cachedSuperclasses;
 
     public ObjectInputStream(InputStream in) throws IOException {
         this.input = new DataInputStream(in);

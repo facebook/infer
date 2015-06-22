@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.util.zip;
 
 import com.facebook.infer.models.InferUndefined;
@@ -7,8 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class CheckedInputStream extends FilterInputStream {
-
-    private Checksum check;
 
     public CheckedInputStream(InputStream in, Checksum cksum) {
         super(in);

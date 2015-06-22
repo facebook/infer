@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.security;
 
 import com.facebook.infer.models.InferUndefined;
@@ -7,9 +12,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class DigestOutputStream extends FilterOutputStream {
-
-    protected MessageDigest digest;
-    private boolean isOn;
 
     public DigestOutputStream(OutputStream stream, MessageDigest digest) {
         super(stream);

@@ -1,13 +1,11 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.lang;
 
 public final class Class<T> {
-    private static long serialVersionUID;
-
-    private transient int dexClassDefIndex;
-
-    private transient int dexTypeIndex;
-
-    private transient volatile boolean dexIndicesInitialized;
 
     transient String name;
 

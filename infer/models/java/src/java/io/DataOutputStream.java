@@ -1,11 +1,14 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
 
-public class DataOutputStream extends FilterOutputStream {
 
-    private byte[] scratch;
-    protected int written;
+public class DataOutputStream extends FilterOutputStream {
 
     public DataOutputStream(OutputStream out) {
         super(out);

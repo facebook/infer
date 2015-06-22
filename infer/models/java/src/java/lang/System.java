@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.lang;
 
 import com.facebook.infer.models.InferBuiltins;
@@ -6,7 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Properties;
+
 
 public final class System {
 
@@ -25,10 +30,6 @@ public final class System {
 
     public final static PrintStream err = new PrintStream(
             new ByteArrayOutputStream());
-
-    private static Properties systemProperties;
-
-    private static String lineSeparator;
 
     public static void exit(int status) {
         InferBuiltins._exit();

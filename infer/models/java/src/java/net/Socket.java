@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.net;
 
 import java.io.IOException;
@@ -6,21 +11,7 @@ import java.io.OutputStream;
 
 public class Socket {
 
-    private static SocketImplFactory factory;
-
     SocketImpl impl;
-    private Proxy proxy;
-
-    volatile boolean isCreated;
-    private boolean isBound;
-    private boolean isConnected;
-    private boolean isClosed;
-    private boolean isInputShutdown;
-    private boolean isOutputShutdown;
-
-    private InetAddress localAddress;
-
-    private Object connectLock;
 
     public Socket() {
         try {

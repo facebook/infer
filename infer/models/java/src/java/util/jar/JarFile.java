@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.util.jar;
 
 import java.io.File;
@@ -9,14 +14,6 @@ import java.util.zip.ZipFile;
 
 public class JarFile extends ZipFile {
 
-    public static String MANIFEST_NAME;
-    static String META_DIR;
-    private Manifest manifest;
-    private ZipEntry manifestEntry;
-
-    JarVerifier verifier;
-
-    private boolean closed;
 
     public JarFile(String name) throws IOException {
         super(name);

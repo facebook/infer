@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package com.google.common.io;
 
 import com.facebook.infer.models.InferCloseables;

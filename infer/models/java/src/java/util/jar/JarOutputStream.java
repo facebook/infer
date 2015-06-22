@@ -1,3 +1,8 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.util.jar;
 
 import com.facebook.infer.models.InferUndefined;
@@ -8,8 +13,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class JarOutputStream extends ZipOutputStream {
-
-    private Manifest manifest;
 
     public JarOutputStream(OutputStream out, Manifest man) throws IOException {
         super(out);

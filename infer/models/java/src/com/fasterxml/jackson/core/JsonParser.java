@@ -1,7 +1,7 @@
-/* Jackson JSON-processor.
- *
- * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
- */
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
 
 package com.fasterxml.jackson.core;
 
@@ -13,13 +13,6 @@ import java.io.IOException;
 
 public abstract class JsonParser
         implements Closeable, Versioned {
-    private static int MIN_BYTE_I;
-    private static int MAX_BYTE_I;
-
-    private static int MIN_SHORT_I;
-    private static int MAX_SHORT_I;
-
-    protected int _features;
 
     public void close() throws IOException {
         if (this instanceof UTF8StreamJsonParser) {
@@ -44,4 +37,3 @@ public abstract class JsonParser
     }
 
 }
-    

@@ -5,7 +5,6 @@
 
 package android.database;
 
-import android.database.sqlite.SQLiteCursor;
 
 public class CursorWrapper extends Cursor {
   protected final Cursor mCursor;

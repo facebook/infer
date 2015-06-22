@@ -1,14 +1,16 @@
+/*
+* Copyright (c) 2013- Facebook.
+* All rights reserved.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
 
+
 public class BufferedWriter extends Writer {
 
     private Writer out;
-
-    private char[] buf;
-
-    private int pos;
 
     public BufferedWriter(Writer out) {
         this.out = out;
