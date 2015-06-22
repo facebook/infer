@@ -472,7 +472,6 @@ class Infer:
                 shutil.rmtree(multicore_dir)
             os.mkdir(multicore_dir)
             os.chdir(multicore_dir)
-            os.environ['INFER_DEVELOPER'] = 'Y'
             analyze_cmd = infer_analyze + ['-makefile', 'Makefile']
             analyze_cmd += infer_options
             makefile_status = run_command(
