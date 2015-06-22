@@ -5,6 +5,7 @@
 %token EOL EOF
 %token LEFT_SQUARE_BRACKET RIGHT_SQUARE_BRACKET
 %token COLON COMMA
+%token EMPTY
 %token PARSING STARTED WROTE SEARCH_PATH
 %token REGULARFILEOBJECT ZIPFILEINDEXFILEOBJECT
 %token <string> CLASS_FILENAME
@@ -34,6 +35,8 @@ classpath:
 ;
 
 classpath_parts:
+  | EMPTY { [] }
   | PATH  { [$1] }
+  | EMPTY COMMA classpath_parts  { $3 }
   | PATH COMMA classpath_parts  { $1 :: $3 }
 ;
