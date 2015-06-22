@@ -25,9 +25,8 @@ CLANGPLUSPLUS_WRAPPER = os.path.join(
 def gen_instance(*args):
     return XcodebuildCapture(*args)
 
-# This creates an empty argparser for the module, which provides only
-# description/usage information and no arguments.
-create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
+create_argparser = \
+    util.clang_frontend_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 
 class XcodebuildCapture:
@@ -35,14 +34,20 @@ class XcodebuildCapture:
         self.args = args
         self.cmd = cmd
 
-    def capture(self):
+    def get_envvars(self):
         env_vars = dict(os.environ)
 
-        # get the path to 'true' using xcrun
-        true_path = subprocess.check_output(['xcrun', '--find', 'true']).strip()
         apple_clang_path = \
             subprocess.check_output(['xcrun', '--find', 'clang']).strip()
 
+        env_vars['FCP_APPLE_CLANG'] = apple_clang_path
+
+        frontend_env_vars = \
+            util.get_clang_frontend_envvars(self.args)
+        env_vars.update(frontend_env_vars)
+        return env_vars
+
+    def capture(self):
         # these settings will instruct xcodebuild on which clang to use
         self.cmd += ['CC={wrapper}'.format(wrapper=CLANG_WRAPPER)]
         self.cmd += ['CPLUSPLUS={wrapper}'.format(wrapper=CLANGPLUSPLUS_WRAPPER)]
@@ -52,11 +57,8 @@ class XcodebuildCapture:
         # the open-source one
         self.cmd += ['GCC_PRECOMPILE_PREFIX_HEADER=NO']
 
-        env_vars['INFER_RESULTS_DIR'] = self.args.infer_out
-        env_vars['FCP_APPLE_CLANG'] = apple_clang_path
-
         try:
-            subprocess.check_call(self.cmd, env=env_vars)
+            subprocess.check_call(self.cmd, env=self.get_envvars())
             return os.EX_OK
         except subprocess.CalledProcessError as exc:
             if self.args.debug:
