@@ -121,7 +121,11 @@ then
         EXTRA_ARGS=("-Xclang" "-load"
             "-Xclang" "${PLUGIN_PATH}"
             "-Xclang" "$ADD_PLUGIN_FLAG"
-            "-Xclang" "${PLUGIN_NAME}")
+            "-Xclang" "${PLUGIN_NAME}"
+            "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
+            "-Xclang" "-"
+            "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
+            "-Xclang" "PREPEND_CURRENT_DIR=1")
         if [ -n "$SYNTAX_ONLY" ]; then
             EXTRA_ARGS+=("-fsyntax-only")
         fi
@@ -152,14 +156,13 @@ if [ -n "$ATTACH_PLUGIN" ]; then
     INFERCLANG_LOG_FILE="/dev/null"
 
     if [ -n "$DEBUG_MODE" ]; then
-        # Emit the clang command with the extra args
-        echo "${CLANG_CMD[@]}" > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+        # Emit the clang command with the extra args piped to InferClang
+        echo "${CLANG_CMD[@]} | tee ${OBJECT_FILENAME}.yjson | ${INFERCLANG_CMD[@]}" > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
         # Emit the InferClang cmd used to run the frontend
         INFERCLANG_LOG_FILE="${OBJECT_FILENAME}${INFERCLANG_LOG_FILE_EXT}"
         echo "${INFERCLANG_CMD[@]}" > "$INFERCLANG_LOG_FILE"
     fi
 
-    export CLANG_FRONTEND_PLUGIN__PREPEND_CURRENT_DIR="1"
     # run clang and pipe its output to InferClang, or flush it in case the latter crashes
     "${CLANG_CMD[@]}" | ("${INFERCLANG_CMD[@]}" || { EC=$?; cat > /dev/null; exit $EC; }) >> "$INFERCLANG_LOG_FILE" 2>&1
     STATUSES=("${PIPESTATUS[@]}")
