@@ -74,6 +74,19 @@ class SubclassExample {
   }
 }
 
+class ConstructorsAreExcluded {
+  class Base {
+    Base (@Nullable String s) {
+    }
+  }
+
+  class Derived extends Base {
+    Derived (String s) { // OK: there's no sub-typing between constructors
+      super(s);
+    }
+  }
+}
+
 public class InconsistentSubclassAnnotation {
 
   public static void callFromSuperclass(SubclassExample.A a) {
