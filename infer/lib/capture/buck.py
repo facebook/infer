@@ -3,6 +3,7 @@ import os
 import subprocess
 import traceback
 import util
+import logging
 
 import utils  # this is module located in ../utils.py
 
@@ -43,6 +44,9 @@ def create_argparser(group_name=MODULE_NAME):
 class BuckAnalyzer:
     def __init__(self, args, cmd):
         self.args = args
+        util.log_java_version()
+        logging.info(util.run_cmd_ignore_fail(['buck', '--version']))
+
         self.cmd = cmd[2:]  # TODO: make the extraction of targets smarter
 
     def capture(self):

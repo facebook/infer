@@ -1,6 +1,7 @@
 import os
 import subprocess
 import traceback
+import logging
 import util
 
 MODULE_NAME = __name__
@@ -32,15 +33,22 @@ create_argparser = \
 class XcodebuildCapture:
     def __init__(self, args, cmd):
         self.args = args
+        self.apple_clang_path = \
+            subprocess.check_output(['xcrun', '--find', 'clang']).strip()
+
+        xcode_version = util.run_cmd_ignore_fail(['xcodebuild', '-version'])
+        apple_clang_version = util.run_cmd_ignore_fail([self.apple_clang_path,
+                                                        '--version'])
+        logging.info('Xcode version:\n%s', xcode_version)
+
+        logging.info('clang version:\n%s', apple_clang_version)
+
         self.cmd = cmd
 
     def get_envvars(self):
         env_vars = dict(os.environ)
 
-        apple_clang_path = \
-            subprocess.check_output(['xcrun', '--find', 'clang']).strip()
-
-        env_vars['FCP_APPLE_CLANG'] = apple_clang_path
+        env_vars['FCP_APPLE_CLANG'] = self.apple_clang_path
 
         frontend_env_vars = \
             util.get_clang_frontend_envvars(self.args)

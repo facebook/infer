@@ -21,10 +21,6 @@ def gen_instance(*args):
     return MakeCapture(*args)
 
 
-def mkdir_if_not_exists(path):
-    if not os.path.exists(path):
-        os.mkdir(path)
-
 create_argparser = \
     util.clang_frontend_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
@@ -33,13 +29,6 @@ class MakeCapture:
     def __init__(self, args, cmd):
         self.args = args
         self.cmd = [os.path.basename(cmd[0])] + cmd[1:]
-
-    def create_results_dir(self):
-        results_dir = self.args.infer_out
-        mkdir_if_not_exists(results_dir)
-        mkdir_if_not_exists(os.path.join(results_dir, 'specs'))
-        mkdir_if_not_exists(os.path.join(results_dir, 'captured'))
-        mkdir_if_not_exists(os.path.join(results_dir, 'sources'))
 
     def get_envvars(self):
         env_vars = dict(os.environ)
@@ -58,8 +47,6 @@ class MakeCapture:
         return env_vars
 
     def capture(self):
-        self.create_results_dir()
-
         try:
             subprocess.check_call(self.cmd, env=self.get_envvars())
             return os.EX_OK

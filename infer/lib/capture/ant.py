@@ -1,4 +1,5 @@
 import os
+import logging
 import util
 
 MODULE_NAME = __name__
@@ -20,6 +21,8 @@ class AntCapture:
 
     def __init__(self, args, cmd):
         self.args = args
+        util.log_java_version()
+        logging.info(util.run_cmd_ignore_fail(['ant', '-version']))
         # TODO: make the extraction of targets smarter
         self.build_cmd = ['ant', '-verbose'] + cmd[1:]
 

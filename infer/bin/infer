@@ -2,9 +2,12 @@
 
 import argparse
 import imp
+import utils
 import inferlib
+import logging
 import os
 import sys
+import platform
 
 CAPTURE_PACKAGE = 'capture'
 LIB_FOLDER = os.path.join(
@@ -28,6 +31,8 @@ MODULE_TO_COMMAND = {
     'mvn': ['mvn']
 }
 
+FORMAT = '[%(levelname)s] %(message)s'
+LOG_FILE = 'toplevel.log'
 
 def get_commands():
     """Return all commands that are supported."""
@@ -88,11 +93,17 @@ def create_argparser(parents=[]):
     return parser
 
 
-def main():
-    if sys.version_info < (2, 7, 0):
-        print("You need python 2.7 or later to run this script")
-        exit(1)
+def configure_logging(infer_dir, log_to_stderr):
+    if log_to_stderr:
+        logging.basicConfig(level=logging.INFO, format=FORMAT)
+    else:
+        logging.basicConfig(level=logging.INFO,
+                            format=FORMAT,
+                            filename=os.path.join(infer_dir, LOG_FILE),
+                            filemode='w')
 
+
+def main():
     to_parse, cmd = split_args_to_parse()
     # get the module name (if any), then load it
     capture_module_name = os.path.basename(cmd[0]) if len(cmd) > 0 else None
@@ -112,12 +123,28 @@ def main():
 
     args = global_argparser.parse_args(to_parse)
 
+    if (imported_module and not args.incremental and
+            capture_module_name != 'analyze'):
+        inferlib.remove_infer_out(args.infer_out)
+
+    inferlib.create_results_dir(args.infer_out)
+
+    configure_logging(args.infer_out, args.log_to_stderr)
+    logging.info('Running command %s', ' '.join(sys.argv))
+    logging.info('Path to infer script %s (%s)', __file__,
+                 os.path.realpath(__file__))
+    logging.info(inferlib.get_infer_version())
+    logging.info('Platform: %s', platform.platform())
+    logging.info('PATH=%s', os.getenv('PATH'))
+    logging.info('SHELL=%s', os.getenv('SHELL'))
+    logging.info('PWD=%s', os.getenv('PWD'))
+
     if imported_module:
-        if capture_module_name != 'analyze' and not args.incremental:
-            inferlib.remove_infer_out(args.infer_out)
         capture_exitcode = imported_module.gen_instance(args, cmd).capture()
         if capture_exitcode != os.EX_OK:
+            logging.error('Error during capture phase, exiting')
             exit(capture_exitcode)
+        logging.info('Capture phase was successful')
     elif capture_module_name is not None:
         # There was a command, but it's not supported
         print('Command "{cmd}" not recognised'.format(

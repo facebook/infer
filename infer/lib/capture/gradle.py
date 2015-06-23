@@ -1,5 +1,7 @@
 import os
 import util
+import logging
+import subprocess
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -22,8 +24,11 @@ class GradleCapture:
 
     def __init__(self, args, cmd):
         self.args = args
-         # TODO: make the extraction of targets smarter
+        # TODO: make the extraction of targets smarter
         self.build_cmd = [cmd[0], '--debug'] + cmd[1:]
+        # That contains javac version as well
+        version_str = util.run_cmd_ignore_fail([cmd[0], '--version'])
+        logging.info("Running with:\n" + version_str)
 
     def get_inferJ_commands(self, verbose_output):
         argument_start_pattern = ' Compiler arguments: '

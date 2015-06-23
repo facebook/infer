@@ -5,8 +5,10 @@
 
 import argparse
 import os
+import logging
 import subprocess
 import inferlib
+import traceback
 
 
 def create_inferJ_command(args, javac_arguments):
@@ -34,6 +36,21 @@ def run_commands(cmds):
         if not cmd.start():
             return os.EX_SOFTWARE
     return os.EX_OK
+
+
+def run_cmd_ignore_fail(cmd):
+    try:
+        return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    except:
+        return 'calling {cmd} failed\n{trace}'.format(
+            cmd=' '.join(cmd),
+            trace=traceback.format_exc())
+
+
+def log_java_version():
+    java_version = run_cmd_ignore_fail(['java', '-version'])
+    javac_version = run_cmd_ignore_fail(['javac', '-version'])
+    logging.info("java versions:\n%s%s", java_version, javac_version)
 
 
 def base_argparser(description, module_name):

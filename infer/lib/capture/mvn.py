@@ -3,6 +3,7 @@
 #
 
 import os
+import logging
 import re
 import util
 
@@ -24,6 +25,7 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 class MavenCapture:
     def __init__(self, args, cmd):
         self.args = args
+        logging.info(util.run_cmd_ignore_fail(['mvn', '-version']))
         # TODO: make the extraction of targets smarter
         self.build_cmd = ['mvn', '-X'] + cmd[1:]
 
