@@ -29,6 +29,7 @@ let active_procedure_checkers () =
       Checkers.callback_check_field_access, false;
       ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
       RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
+      PrintfArgs.callback_printf_args, checkers_enabled;
       ] in
     list_map (fun (x, y) -> (x, y, Some Sil.Java)) l in
   let c_cpp_checkers =
