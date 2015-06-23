@@ -75,6 +75,7 @@ struct
       let item_annot = Sil.item_annotation_empty in
       fname, typ, item_annot in
     let fields = list_map mk_field_from_captured_var captured_vars in
+    let fields = CFrontend_utils.General_utils.sort_fields fields in
     Printing.log_out "Block %s field:\n" block_name;
     list_iter (fun (fn, ft, _) ->
             Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;

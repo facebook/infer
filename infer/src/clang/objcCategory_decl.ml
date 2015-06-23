@@ -48,6 +48,7 @@ let process_category tenv name class_name decl_list =
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct (intf_fields, _, _, _, superclass, intf_methods, annotation) ->
       let new_fields = General_utils.append_no_duplicates_fields fields intf_fields in
+      let new_fields = CFrontend_utils.General_utils.sort_fields new_fields in
       let new_methods = General_utils.append_no_duplicates_methods methods intf_methods in
       let class_type_info =
         Sil.Tstruct (

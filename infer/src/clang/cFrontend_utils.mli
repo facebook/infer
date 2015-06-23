@@ -79,6 +79,8 @@ sig
 
   val append_no_duplicated_pvars : (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ) list
 
+  val sort_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
+
   val collect_list_tuples : ('a list * 'b list * 'c list * 'd list * 'e list) list ->
   'a list * 'b list * 'c list * 'd list * 'e list -> 'a list * 'b list * 'c list * 'd list * 'e list
 

@@ -111,6 +111,7 @@ let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
   let fields = append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
   let fields = append_no_duplicates_fields [Sil.objc_ref_counter_field] fields in
+  let fields = CFrontend_utils.General_utils.sort_fields fields in
   Printing.log_out "Class %s field:\n" class_name;
   list_iter (fun (fn, ft, _) ->
           Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
@@ -152,6 +153,7 @@ let add_missing_fields tenv class_name decl_list idi =
                       "  ---> Extra non-static field: '%s'\n" (Ident.fieldname_to_string fn))
               extra_fields;
             let new_fields = append_no_duplicates_fields extra_fields intf_fields in
+            let new_fields = CFrontend_utils.General_utils.sort_fields new_fields in
             let class_type_info =
               Sil.Tstruct (
                 new_fields, [], Sil.Class, Some mang_name, superclass, methods, annotation

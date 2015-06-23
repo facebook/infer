@@ -211,6 +211,7 @@ and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_cont
   let non_static_fields = if CTrans_models.is_objc_memory_model_controlled n then
       append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
     else non_static_fields in
+  let non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields in
   let static_fields = [] in (* Warning for the moment we do not treat static field. *)
   let typ = (match opt_type with
       | `Type s -> qual_type_to_sil_type_no_expansions tenv (Ast_expressions.create_qual_type s)

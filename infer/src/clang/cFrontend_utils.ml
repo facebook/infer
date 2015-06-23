@@ -28,7 +28,6 @@ struct
       then Format.fprintf else Format.ifprintf in
     pp Format.std_formatter fmt
 
-
   let print_tenv tenv =
     Sil.tenv_iter (fun typname typ ->
             match typname with
@@ -291,6 +290,11 @@ struct
       | true, true, _ -> true
       | _, _, _ -> false in
     append_no_duplicates field_eq list1 list2
+
+  let sort_fields fields =
+    let compare (name1, _, _) (name2, _, _) =
+      Ident.fieldname_compare name1 name2 in
+    list_sort compare fields
 
   let rec collect_list_tuples l (a, a1, b, c, d) =
     match l with
