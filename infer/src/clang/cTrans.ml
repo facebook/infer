@@ -605,8 +605,7 @@ struct
                 let fst_res_trans = instruction trans_state_param stmt in
                 obj_c_message_expr_info, fst_res_trans
               with Self.SelfClassException class_name ->
-                  let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class selector
-                      (Ast_expressions.create_qual_type class_name) in
+                  let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class selector class_name in
                   obj_c_message_expr_info, empty_res_trans) in
             let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) rest in
             obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
@@ -1078,9 +1077,9 @@ struct
     let root_nodes, leaf_nodes = loop_instruction trans_state dowhile_kind stmt_info in
     { empty_res_trans with root_nodes = root_nodes; leaf_nodes = leaf_nodes }
 
-  and objCForCollectionStmt_trans trans_state cond body stmt_info =
-    let cond = Ast_expressions.make_nondet_exp stmt_info in
-    let while_kind = Loops.While (cond, body) in
+  and objCForCollectionStmt_trans trans_state item items body stmt_info =
+    let bin_op = Ast_expressions.make_next_object_exp stmt_info item items in
+    let while_kind = Loops.While (bin_op, body) in
     let root_nodes, leaf_nodes = loop_instruction trans_state while_kind stmt_info in
     { empty_res_trans with root_nodes = root_nodes; leaf_nodes = leaf_nodes }
 
@@ -1498,14 +1497,14 @@ struct
 
   and objCBoxedExpr_trans trans_state info sel stmt_info stmts =
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.tenv info.Clang_ast_t.ei_qual_type in
-    let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info sel typ in
+    let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class sel typ in
     let message_stmt = ObjCMessageExpr(stmt_info, stmts, info, obj_c_message_expr_info) in
     instruction trans_state message_stmt
 
   and objCArrayLiteral_trans trans_state info stmt_info stmts =
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.tenv info.Clang_ast_t.ei_qual_type in
     let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info CFrontend_config.array_with_objects_count_m typ in
+      Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.array_with_objects_count_m typ in
     let stmts = stmts@[Ast_expressions.create_nil stmt_info] in
     let message_stmt = ObjCMessageExpr(stmt_info, stmts, info, obj_c_message_expr_info) in
     instruction trans_state message_stmt
@@ -1513,7 +1512,7 @@ struct
   and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.tenv info.Clang_ast_t.ei_qual_type in
     let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info CFrontend_config.dict_with_objects_and_keys_m typ in
+      Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.dict_with_objects_and_keys_m typ in
     let stmts = swap_elements_list stmts in
     let stmts = stmts@[Ast_expressions.create_nil stmt_info] in
     let message_stmt = ObjCMessageExpr(stmt_info, stmts, info, obj_c_message_expr_info) in
@@ -1524,7 +1523,7 @@ struct
         (Ast_expressions.create_char_type ()) `ArrayToPointerDecay] in
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.tenv info.Clang_ast_t.ei_qual_type in
     let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info CFrontend_config.string_with_utf8_m typ in
+      Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.string_with_utf8_m typ in
     let message_stmt = ObjCMessageExpr(stmt_info, stmts, info, obj_c_message_expr_info) in
     instruction trans_state message_stmt
 
@@ -1667,8 +1666,8 @@ struct
     | DoStmt(stmt_info, [body; cond]) ->
         doStmt_trans trans_state stmt_info cond body
 
-    | ObjCForCollectionStmt(stmt_info, [item; _; body]) ->
-        objCForCollectionStmt_trans trans_state item body stmt_info
+    | ObjCForCollectionStmt(stmt_info, [item; items; body]) ->
+        objCForCollectionStmt_trans trans_state item items body stmt_info
 
     | NullStmt(stmt_info, stmt_list) ->
         nullStmt_trans trans_state.succ_nodes stmt_info

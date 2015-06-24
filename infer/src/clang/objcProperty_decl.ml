@@ -315,15 +315,15 @@ let make_getter_setter cfg curr_class decl_info property_impl_decl_info =
               let param_decl =
                 Ast_expressions.make_decl_ref_exp_var (param_name, qt_param) `ParmVar stmt_info in
               let retain_call =
-                Ast_expressions.make_message_expr qt_param retain param_decl stmt_info in
+                Ast_expressions.make_message_expr qt_param retain param_decl stmt_info true in
               let release_call =
-                Ast_expressions.make_message_expr qt_param release lhs_exp stmt_info in
+                Ast_expressions.make_message_expr qt_param release lhs_exp stmt_info true in
               [retain_call; release_call; setter]
             else if Ast_utils.is_copy memory_management_attribute then
               let param_decl =
                 Ast_expressions.make_decl_ref_exp_var (param_name, qt_param) `ParmVar stmt_info in
               let copy_call =
-                Ast_expressions.make_message_expr qt_param copy param_decl stmt_info in
+                Ast_expressions.make_message_expr qt_param copy param_decl stmt_info true in
               let setter =
                 Ast_expressions.make_binary_stmt lhs_exp copy_call stmt_info expr_info boi in
               [setter]

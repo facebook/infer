@@ -19,6 +19,8 @@ let nsstring_cl = "NSString"
 
 let nsobject_cl = "NSObject"
 
+let next_object = "nextObject"
+
 let nsautorelease_pool_cl = "NSAutoreleasePool"
 
 let id_cl = "id"

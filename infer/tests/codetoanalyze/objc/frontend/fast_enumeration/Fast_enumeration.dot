@@ -1,0 +1,78 @@
+digraph iCFG {
+19 [label="19:  DeclStmt \n   *&size:int =0 [line 17]\n " shape="box"]
+	
+
+	 19 -> 18 ;
+18 [label="18:  DeclStmt \n   *&item:class NSArray *=0 [line 18]\n  NULLIFY(&item,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+	
+
+	 18 -> 13 ;
+17 [label="17:  ComppoundAssignStmt \n   n$12=*&item:class NSArray * [line 20]\n  n$11=_fun_NSArray_count(n$12:class NSArray *) virtual [line 20]\n  n$13=*&size:int  [line 20]\n  *&size:int =(n$13 + n$11) [line 20]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line 20]\n  NULLIFY(&item,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+	
+
+	 17 -> 13 ;
+16 [label="16: Prune (false branch) \n   PRUNE((n$10 == 0), false); [line 19]\n  REMOVE_TEMPS(n$8,n$9,n$10); [line 19]\n " shape="invhouse"]
+	
+
+	 16 -> 12 ;
+15 [label="15: Prune (true branch) \n   PRUNE((n$10 != 0), true); [line 19]\n  REMOVE_TEMPS(n$8,n$9,n$10); [line 19]\n " shape="invhouse"]
+	
+
+	 15 -> 17 ;
+14 [label="14:  BinaryOperatorStmt: Assign \n   n$9=*&items:class NSArray * [line 19]\n  n$8=_fun_NSArray_nextObject(n$9:class NSArray *) virtual [line 19]\n  *&item:class NSArray *=n$8 [line 19]\n  n$10=*&item:class NSArray * [line 19]\n " shape="box"]
+	
+
+	 14 -> 15 ;
+	 14 -> 16 ;
+13 [label="13: + \n  " ]
+	
+
+	 13 -> 14 ;
+12 [label="12:  Return Stmt \n   NULLIFY(&item,false); [line 22]\n  NULLIFY(&items,false); [line 22]\n  n$7=*&size:int  [line 22]\n  *&return:int =n$7 [line 22]\n  REMOVE_TEMPS(n$7); [line 22]\n  NULLIFY(&size,false); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11: Exit A_while_loop: \n  " color=yellow style=filled]
+	
+
+10 [label="10: Start A_while_loop:\nFormals:  self:class A * items:class NSArray *\nLocals:  size:int  item:class NSArray * \n   DECLARE_LOCALS(&return,&size,&item); [line 16]\n  NULLIFY(&item,false); [line 16]\n  NULLIFY(&self,false); [line 16]\n  NULLIFY(&size,false); [line 16]\n " color=yellow style=filled]
+	
+
+	 10 -> 19 ;
+9 [label="9:  DeclStmt \n   *&size:int =0 [line 9]\n  APPLY_ABSTRACTION; [line 9]\n " shape="box"]
+	
+
+	 9 -> 4 ;
+8 [label="8:  ComppoundAssignStmt \n   n$5=*&item:class NSArray * [line 11]\n  n$4=_fun_NSArray_count(n$5:class NSArray *) virtual [line 11]\n  n$6=*&size:int  [line 11]\n  *&size:int =(n$6 + n$4) [line 11]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 11]\n  NULLIFY(&item,false); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+	
+
+	 8 -> 4 ;
+7 [label="7: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 10]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 10]\n " shape="invhouse"]
+	
+
+	 7 -> 3 ;
+6 [label="6: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 10]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 10]\n " shape="invhouse"]
+	
+
+	 6 -> 8 ;
+5 [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&items:class NSArray * [line 10]\n  n$1=_fun_NSArray_nextObject(n$2:class NSArray *) virtual [line 10]\n  *&item:class NSArray *=n$1 [line 10]\n  n$3=*&item:class NSArray * [line 10]\n " shape="box"]
+	
+
+	 5 -> 6 ;
+	 5 -> 7 ;
+4 [label="4: + \n  " ]
+	
+
+	 4 -> 5 ;
+3 [label="3:  Return Stmt \n   NULLIFY(&item,false); [line 13]\n  NULLIFY(&items,false); [line 13]\n  n$0=*&size:int  [line 13]\n  *&return:int =n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&size,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A_fast_loop: \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A_fast_loop:\nFormals:  self:class A * items:class NSArray *\nLocals:  size:int  item:class NSArray * \n   DECLARE_LOCALS(&return,&size,&item); [line 8]\n  NULLIFY(&item,false); [line 8]\n  NULLIFY(&self,false); [line 8]\n  NULLIFY(&size,false); [line 8]\n " color=yellow style=filled]
+	
+
+	 1 -> 9 ;
+}

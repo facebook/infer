@@ -147,10 +147,16 @@ let make_decl_ref_exp stmt_info expr_info drei =
   } in
   DeclRefExpr(stmt_info, [], expr_info, drei)
 
-let make_obj_c_message_expr_info sel typ =
+let make_obj_c_message_expr_info_instance sel =
   {
     Clang_ast_t.omei_selector = sel;
-    Clang_ast_t.omei_receiver_kind = `Class (create_qual_type typ)
+    Clang_ast_t.omei_receiver_kind = `Instance
+  }
+
+let make_obj_c_message_expr_info_class selector qt =
+  {
+    omei_selector = selector;
+    omei_receiver_kind = `Class (create_qual_type qt);
   }
 
 let make_general_decl_ref k name is_hidden qt = {
@@ -180,17 +186,6 @@ let make_obj_c_ivar_ref_expr_info k n qt = {
   Clang_ast_t.ovrei_pointer = Ast_utils.get_fresh_pointer ();
   Clang_ast_t.ovrei_is_free_ivar = true;
 }
-
-let make_nondet_exp stmt_info =
-  let drei = {
-    Clang_ast_t.drti_decl_ref = Some (make_decl_ref "__INFER_NON_DET");
-    Clang_ast_t.drti_found_decl_ref = None; } in
-  let qt = create_int_type () in
-  let ei = make_expr_info qt `Ordinary in
-  let e = make_decl_ref_exp stmt_info ei drei in
-  let cast = create_implicit_cast_expr stmt_info [e] qt `LValueToRValue in
-  let zero = create_integer_literal stmt_info "0" in
-  BinaryOperator(stmt_info, [cast; zero], ei, { Clang_ast_t.boi_kind = `GT } )
 
 (* Build an AST cast expression of a decl_ref_expr *)
 let make_cast_expr qt di decl_ref_expr_info objc_kind =
@@ -232,7 +227,7 @@ let make_objc_ivar_decl decl_info qt property_impl_decl_info =
   let qt = match qt with
     | Some qt' -> qt'
     | None -> (* a qual_type was not found by the caller, so we try to get it out of property_impl_decl_info *)
-      (match property_impl_decl_info.Clang_ast_t.opidi_ivar_decl with
+        (match property_impl_decl_info.Clang_ast_t.opidi_ivar_decl with
           | Some decl_ref -> (match decl_ref.Clang_ast_t.dr_qual_type with
                 | Some qt' -> qt'
                 | None -> assert false)
@@ -260,14 +255,14 @@ let make_decl_ref_exp_var (var_name, var_qt) var_kind stmt_info =
   let expr_info = make_expr_info var_qt in
   make_decl_ref_exp stmt_info expr_info (make_decl_ref_expr_info decl_ref)
 
-let make_message_expr param_qt selector decl_ref_exp stmt_info =
+let make_message_expr param_qt selector decl_ref_exp stmt_info add_cast =
   let stmt_info = stmt_info_with_fresh_pointer stmt_info in
-  let cast_expr = create_implicit_cast_expr stmt_info [decl_ref_exp] param_qt `LValueToRValue in
-  let parameters = [cast_expr] in
-  let obj_c_message_expr_info = {
-    omei_selector = selector;
-    omei_receiver_kind = `Instance
-  } in
+  let parameters =
+    if add_cast then
+      let cast_expr = create_implicit_cast_expr stmt_info [decl_ref_exp] param_qt `LValueToRValue in
+      [cast_expr]
+    else [decl_ref_exp] in
+  let obj_c_message_expr_info = make_obj_c_message_expr_info_instance selector in
   let expr_info = make_expr_info param_qt in
   ObjCMessageExpr (stmt_info, parameters, expr_info, obj_c_message_expr_info)
 
@@ -279,11 +274,22 @@ let make_binary_stmt stmt1 stmt2 stmt_info expr_info boi =
   let stmt_info = stmt_info_with_fresh_pointer stmt_info in
   BinaryOperator(stmt_info, [stmt1; stmt2], expr_info, boi)
 
-let make_obj_c_message_expr_info_class selector qt =
-  {
-    omei_selector = selector;
-    omei_receiver_kind = `Class qt;
-  }
+let make_next_object_exp stmt_info item items =
+  let var_decl_ref, var_type =
+    match item with
+    | DeclStmt (stmt_info, _, [VarDecl(di, var_name, var_type, _)]) ->
+        let decl_ref = make_general_decl_ref `Var var_name false var_type in
+        let stmt_info_var = {
+          si_pointer = di.Clang_ast_t.di_pointer;
+          si_source_range = di.Clang_ast_t.di_source_range
+        } in
+        DeclRefExpr(stmt_info_var, [], (make_expr_info var_type), (make_decl_ref_expr_info decl_ref)),
+        var_type
+    | _ -> assert false in
+  let message_call = make_message_expr (create_qual_type CFrontend_config.id_cl)
+      CFrontend_config.next_object items stmt_info false in
+  let boi = { Clang_ast_t.boi_kind = `Assign } in
+  make_binary_stmt var_decl_ref message_call stmt_info (make_expr_info var_type) boi
 
 let empty_var_decl = {
   vdi_storage_class = None;

@@ -47,6 +47,8 @@ val nsstring_cl : string
 
 val nsobject_cl : string
 
+val next_object : string
+
 val nsautorelease_pool_cl : string
 
 val string_with_utf8_m : string
