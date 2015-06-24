@@ -1726,8 +1726,11 @@ int fgetpos(FILE *__restrict stream, fpos_t *__restrict pos) {
   int success;
   FILE tmp;
   tmp = *stream;
-  fpos_t t;
-  *pos = t;
+  #ifdef __APPLE__  //fpos_t is a long in MacOS, but a struct in Linux.
+    *pos = __infer_nondet_long();
+  #else
+    pos->__pos = __infer_nondet_long();
+  #endif
   success = __infer_nondet_int();
   if(success) return 0;
   else return -1;
