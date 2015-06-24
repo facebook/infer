@@ -42,6 +42,7 @@ public class InferRunner {
       "/infer/lib/java/android/android-19.jar";
 
   private static final String[] LIBRARIES = {
+      "/infer/lib/java/models.jar",
       "/infer/annotations/annotations.jar",
       "/dependencies/java/guava/guava-10.0.1-fork.jar",
       "/dependencies/java/jackson/jackson-2.2.3.jar",

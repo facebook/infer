@@ -2117,13 +2117,14 @@ module ModelBuiltins = struct
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (* forces the expression passed as parameter to be assumed true at the point where this
-  builtin is called *)
+  builtin is called, blocks if this causes an inconsistency *)
   let execute___infer_assume
       cfg pdesc instr tenv prop path ret_ids args callee_pname loc: Builtin.ret_typ =
     match args with
     | [(lexp, typ)] ->
         let prop_assume = Prop.conjoin_eq lexp (Sil.exp_bool true) prop in
-        [(prop_assume, path)]
+        if Prover.check_inconsistency prop_assume then execute_diverge prop_assume path
+        else [(prop_assume, path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (* creates a named error state *)

@@ -632,8 +632,8 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
       init
       expr_list in
   let callee_procname =
-    if JBasics.cn_equal cn JConfig.infer_builtins_cl then
-      Procname.from_string (JBasics.ms_name ms)
+    let proc = Procname.from_string (JBasics.ms_name ms) in
+    if JBasics.cn_equal cn JConfig.infer_builtins_cl && SymExec.function_is_builtin proc then proc
     else Cfg.Procdesc.get_proc_name callee_procdesc in
   let call_idl, call_instrs =
     let callee_fun = Sil.Const (Sil.Cfun callee_procname) in

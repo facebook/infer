@@ -9,6 +9,7 @@ package android.database;
 import java.io.Closeable;
 
 import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.models.InferBuiltins;
 
 import android.database.sqlite.SQLiteCursor;
 
@@ -27,7 +28,7 @@ public class Cursor implements Closeable {
 
     public int getColumnIndex(String columnName) {
       int index = InferUndefined.int_undefined();
-      while (index < -1) {}
+      InferBuiltins.assume(index < -1);
       return index;
     }
 

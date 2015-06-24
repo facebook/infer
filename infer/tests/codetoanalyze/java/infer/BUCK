@@ -3,6 +3,7 @@ sources = glob(['**/*.java'])
 dependencies = [
     '//infer/lib/java/android:android',
     '//dependencies/java/jackson:jackson',
+    '//infer/lib/java:models'
 ]
 
 java_library(
