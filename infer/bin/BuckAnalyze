@@ -33,16 +33,16 @@ import utils
 ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
 
 BUCK_CONFIG = '.buckconfig.local'
-BUCK_CONFIG_BACKUP = '.buckconfig.local.backup_generated_by_BuckAnalyze'
+BUCK_CONFIG_BACKUP = '.buckconfig.local.backup_generated_by_infer'
 DEFAULT_BUCK_OUT = os.path.join(os.getcwd(), 'buck-out')
 DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
 INFER_REPORT = os.path.join(utils.BUCK_INFER_OUT, utils.CSV_REPORT_FILENAME)
 INFER_STATS = os.path.join(utils.BUCK_INFER_OUT, utils.STATS_FILENAME)
 
-INFERJ_SCRIPT = """\
+INFER_SCRIPT = """\
 #!/bin/sh
-{0} {1} javac $@
+{0} {1} -- javac $@
 """
 
 LOCAL_CONFIG = """\
@@ -55,31 +55,33 @@ def prepare_build(args):
     """Creates script that redirects javac calls to inferJ and a local buck
     configuration that tells buck to use that script.
     """
-    inferJ_options = [
+
+    infer_options = [
         '--buck',
+        '--incremental',
         '--analyzer',
         args.analyzer,
     ]
 
     if args.debug:
-        inferJ_options.append('--debug')
+        infer_options.append('--debug')
 
     if args.no_filtering:
-        inferJ_options.append('--no-filtering')
+        infer_options.append('--no-filtering')
 
     # Create a temporary directory as a cache for jar files.
     infer_cache_dir = os.path.join(args.infer_out, 'cache')
     if not os.path.isdir(infer_cache_dir):
        os.mkdir(infer_cache_dir)
-    inferJ_options.append('--infer_cache')
-    inferJ_options.append(infer_cache_dir)
+    infer_options.append('--infer_cache')
+    infer_options.append(infer_cache_dir)
     temp_files = [infer_cache_dir]
 
     try:
-        inferJ = utils.get_cmd_in_bin_dir('inferJ') + ' ' +\
-            ' '.join(inferJ_options)
+        infer = utils.get_cmd_in_bin_dir('infer') + ' ' +\
+            ' '.join(infer_options)
     except subprocess.CalledProcessError as e:
-        logging.error('Could not find inferJ')
+        logging.error('Could not find infer')
         raise e
 
     # Disable the use of buckd as this scripts modifies .buckconfig.local
@@ -91,17 +93,17 @@ def prepare_build(args):
     os.environ['INFER_ANALYSIS'] = '1'
 
     # Create a script to be called by buck
-    inferJ_script = None
+    infer_script = None
     with tempfile.NamedTemporaryFile(delete=False,
-                                     prefix='inferJ_',
+                                     prefix='infer_',
                                      suffix='.sh',
-                                     dir='.') as inferJ_script:
-        logging.info('Creating %s' % inferJ_script.name)
-        inferJ_script.file.write(
-            (INFERJ_SCRIPT.format(sys.executable, inferJ)).encode())
+                                     dir='.') as infer_script:
+        logging.info('Creating %s' % infer_script.name)
+        infer_script.file.write(
+            (INFER_SCRIPT.format(sys.executable, infer)).encode())
 
-    st = os.stat(inferJ_script.name)
-    os.chmod(inferJ_script.name, st.st_mode | stat.S_IEXEC)
+    st = os.stat(infer_script.name)
+    os.chmod(infer_script.name, st.st_mode | stat.S_IEXEC)
 
     # Backup and patch local buck config
     patched_config = ''
@@ -113,12 +115,12 @@ def prepare_build(args):
 
     javac_section = '[tools]\n{0}javac = {1}'.format(
         ' ' * 4,
-        inferJ_script.name)
+        infer_script.name)
     patched_config += javac_section
     with open(BUCK_CONFIG, 'w') as buckconfig:
         buckconfig.write(patched_config)
 
-    temp_files += [inferJ_script.name]
+    temp_files += [infer_script.name]
     return temp_files
 
 
@@ -344,7 +346,6 @@ def collect_results(args, start_time):
     """Walks through buck-gen, collects results for the different buck targets
     and stores them in in args.infer_out/results.csv.
     """
-
     buck_stats = get_buck_stats()
     logging.info(buck_stats)
     with open(os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT), 'w') as f:
@@ -450,7 +451,7 @@ def collect_results(args, start_time):
 
 
 def cleanup(temp_files):
-    """Removes the generated .buckconfig.local and the temporary inferJ script.
+    """Removes the generated .buckconfig.local and the temporary infer script.
     """
     for file in [BUCK_CONFIG] + temp_files:
         try:
