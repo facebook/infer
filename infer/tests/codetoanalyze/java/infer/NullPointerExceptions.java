@@ -323,4 +323,10 @@ public class NullPointerExceptions {
     int i = arr.length;
   }
 
+  class $$Class$Name$With$Dollars {
+    void npeWithDollars() {
+      String s = null;
+      int n = s.length();
+    }
+  }
 }

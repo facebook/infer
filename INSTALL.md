@@ -49,7 +49,7 @@ Install the OCaml dependencies:
 ```bash
 opam init --comp=4.01.0  # (answer 'y' to the question)
 eval `opam config env`
-opam install sawja.1.5 atdgen.1.5.0 javalib.2.3 extlib.1.5.4
+opam install sawja.1.5 atdgen.1.5.0 javalib.2.3a extlib.1.5.4
 ```
 
 If you do not require support for the C/Objective-C analysis in Infer,
@@ -93,7 +93,7 @@ wget https://github.com/ocaml/opam/releases/download/1.2.2/opam-1.2.2-x86_64-Lin
 chmod +x opam
 ./opam init --comp=4.01.0 #(then say 'y' to the final question)
 eval `./opam config env`
-./opam install sawja.1.5 atdgen.1.5.0 javalib.2.3 extlib.1.5.4 #(then say 'y' to the question)
+./opam install sawja.1.5 atdgen.1.5.0 javalib.2.3a extlib.1.5.4 #(then say 'y' to the question)
 ```
 
 If you do not require support for the C/Objective-C analysis in Infer,
