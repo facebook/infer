@@ -2,8 +2,11 @@
 
 package codetoanalyze.java.infer;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.StringReader;
 
 public class CloseableAsResourceExample {
 
@@ -78,5 +81,17 @@ public class CloseableAsResourceExample {
     Sub s = new Sub(new Res());
     s.mR.close();
   }  // should report a resource leak
+
+  void noNeedToCloseStringReader() {
+    StringReader stringReader = new StringReader("paf!");
+  }
+
+  void noNeedToCloseByteArrayOutputStream() {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream(42);
+  }
+
+  void noNeedToCloseByteArrayInputStream(byte[] array) {
+    ByteArrayInputStream stream = new ByteArrayInputStream(array);
+  }
 
 }
