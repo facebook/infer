@@ -8,6 +8,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringReader;
 
+
 public class CloseableAsResourceExample {
 
   class LocalException extends IOException {
@@ -92,6 +93,26 @@ public class CloseableAsResourceExample {
 
   void noNeedToCloseByteArrayInputStream(byte[] array) {
     ByteArrayInputStream stream = new ByteArrayInputStream(array);
+  }
+
+  void closingWithCloseQuietly() {
+    SomeResource r = null;
+    try {
+      r = new SomeResource();
+      r.doSomething();
+    } catch (IOException e) {
+    } finally {
+      Utils.closeQuietly(r);
+    }
+  }
+
+  void failToCloseWithCloseQuietly() {
+    try {
+      SomeResource r = new SomeResource();
+      r.doSomething();
+      Utils.closeQuietly(r);
+    } catch (IOException e) {
+    }
   }
 
 }
