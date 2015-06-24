@@ -193,16 +193,12 @@ let translate_instr_static_field context callee_procdesc fs field_type loc =
 
 
 let is_static_final_field context cn fs =
-  let node =
-    match JClasspath.lookup_node cn (JContext.get_program context) with
-    | None -> assert false
-    | Some n -> n in
-  try
-    let f = Javalib.get_field node fs in
-    let is_static = Javalib.is_static_field f in
-    let is_final = Javalib.is_final_field f in
-    (is_static && is_final)
-  with Not_found -> false
-(* assert false *)
-(* TODO: should nornally not be reachable but it appears to be on the *)
-(* standard library. Probably a JBir translation issue *)
+  match JClasspath.lookup_node cn (JContext.get_program context) with
+  | None -> false
+  | Some node ->
+    try
+      let f = Javalib.get_field node fs in
+      let is_static = Javalib.is_static_field f in
+      let is_final = Javalib.is_final_field f in
+      (is_static && is_final)
+    with Not_found -> false
