@@ -212,7 +212,6 @@ void rewind(FILE *stream);
 int scanf(const char *format, ...); // builtin: modeled internally
 void setbuf(FILE * __restrict stream, char * __restrict buf);
 int setitimer(int which, const struct itimerval *__restrict value, struct itimerval *__restrict ovalue);
-int setjmp(jmp_buf env);
 char *setlocale(int category, const char *locale);
 int setlogin(const char *name);
 int setpassent(int stayopen);
@@ -779,11 +778,6 @@ int rename(const char *old, const char *new) {
 void rewind(FILE *stream) {
     FILE tmp;
     tmp = *stream;
-}
-
-// modeled as just return a nondeterministic value
-int setjmp(jmp_buf env) {
-  return __infer_nondet_int();
 }
 
 // modeled as exit()
