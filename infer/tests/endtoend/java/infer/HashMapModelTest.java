@@ -8,7 +8,6 @@ package endtoend.java.infer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsErrorInMethod.contains;
 import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
-import static utils.matchers.ResultContainsOnlyTheseErrors.containsOnly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,7 +20,7 @@ import utils.InferResults;
 public class HashMapModelTest {
 
   public static final String HashMapModelTest =
-      "infer/tests/codetoanalyze/java/infer/HashMapModelTest.java";
+      "infer/tests/codetoanalyze/java/infer/HashMapExample.java";
 
   public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
 
@@ -87,15 +86,28 @@ public class HashMapModelTest {
   }
 
   @Test
-  public void whenInferRunsOnGetTwoParameterIntegersWithOneCheckThenNPEIsFound()
+  public void whenInferRunsOnGetOrCreateIntegerThenNPEIsNotFound()
       throws InterruptedException, IOException, InferException {
     assertThat(
-      "Results should contain null pointer exception error",
+      "Results should not contain null pointer exception error",
       inferResults,
-      contains(
+      doesNotContain(
         NULL_DEREFERENCE,
         HashMapModelTest,
-        "getTwoParameterIntegersWithOneCheck")
+        "getOrCreateInteger")
+    );
+  }
+
+  @Test
+  public void whenInferRunsOnGetOrCreateIntegerThenDerefThenNPEIsNotFound()
+      throws InterruptedException, IOException, InferException {
+    assertThat(
+      "Results should not contain null pointer exception error",
+      inferResults,
+      doesNotContain(
+        NULL_DEREFERENCE,
+        HashMapModelTest,
+        "getOrCreateIntegerThenDeref")
     );
   }
 

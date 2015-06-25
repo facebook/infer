@@ -441,9 +441,9 @@ module Subtype = struct
           if (should_add) then c:: rest' else rest'
 
   let get_subtypes (c1, (st1, flag1)) (c2, (st2, flag2)) f is_interface =
-    (* (L.d_strln_color Orange ((Mangled.to_string c1)^(subtypes_to_string (st1, flag1))^" <: "^
-    (Mangled.to_string c2)^(subtypes_to_string (st2, flag2))^" ?"^(string_of_bool is_sub)));*)
     let is_sub = f c1 c2 in
+    (* L.d_strln_color Orange ((Mangled.to_string c1)^(subtypes_to_string (st1, flag1))^" <: "^ *)
+    (* (Mangled.to_string c2)^(subtypes_to_string (st2, flag2))^" ?"^(string_of_bool is_sub)); *)
     let pos_st, neg_st = match st1, st2 with
       | Exact, Exact ->
           if (is_sub) then (Some st1, None)
