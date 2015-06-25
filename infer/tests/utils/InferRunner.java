@@ -166,6 +166,16 @@ public class InferRunner {
     return langOption;
   }
 
+  public static String getStdParam(Language lang) {
+    String stdParam = "";
+    switch (lang) {
+      case CPP:
+        stdParam = "-std=c++11";
+        break;
+    }
+    return stdParam;
+  }
+
   public static ImmutableList<String> createClangCommand(
     String sourceFile,
     Language lang,
@@ -188,6 +198,7 @@ public class InferRunner {
         .add("clang")
         .add("-x")
         .add(getClangLangOption(lang))
+        .add(getStdParam(lang))
         .addAll(isysrootOption.build())
         .addAll(arcOption.build())
         .add("-c")

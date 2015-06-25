@@ -189,6 +189,11 @@ struct
     let exp = Sil.Const (Sil.Cint (Sil.Int.zero)) in
     { empty_res_trans with exps = [(exp, typ)]}
 
+  let nullPtrExpr_trans trans_state stmt_info expr_info =
+    Printing.log_out "Passing from nullptr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
+    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
+    { empty_res_trans with exps = [(Sil.exp_null, typ)]}
+
   let objCSelectorExpr_trans trans_state stmt_info expr_info selector =
     stringLiteral_trans trans_state stmt_info expr_info selector
 
@@ -1707,6 +1712,9 @@ struct
 
     | GNUNullExpr(stmt_info, stmt_list, expr_info) ->
         gNUNullExpr_trans trans_state stmt_info expr_info
+
+    | CXXNullPtrLiteralExpr(stmt_info, stmt_list, expr_info) ->
+        nullPtrExpr_trans trans_state stmt_info expr_info
 
     | ObjCSelectorExpr(stmt_info, stmt_list, expr_info, selector) ->
         objCSelectorExpr_trans trans_state stmt_info expr_info selector
