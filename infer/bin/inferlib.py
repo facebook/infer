@@ -151,7 +151,10 @@ def get_javac_args(args):
         return None
     else:
         # replace any -g:.* flag with -g to preserve debugging symbols
-        return map(lambda arg: '-g' if '-g:' in arg else arg, javac_args)
+        args = map(lambda arg: '-g' if '-g:' in arg else arg, javac_args)
+        # skip -Werror
+        args = filter(lambda arg: arg != '-Werror', args)
+        return args
 
 
 def remove_infer_out(infer_out):
