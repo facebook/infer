@@ -154,8 +154,8 @@ sanitize:
 
 ifneq ($(shell which git),)
 MAJOR = 0
-MINOR = 1
-PATCH = 1
+MINOR = 2
+PATCH = 0
 
 GIT_COMMIT = $(shell git rev-parse HEAD | awk '{print $0; exit}' | xargs echo -n | sed 's/[\/&]/\\&/g')
 GIT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD | awk '{print $0; exit}' | xargs echo -n | sed 's/[\/&]/\\&/g')
