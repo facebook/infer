@@ -16,8 +16,8 @@ To run Infer you will need Python 2.7
 We provide pre-built binaries for Infer. Currently, only Mac OS X and
 Linux 64 bits are supported.
 
-- Mac OS X: [https://github.com/facebook/infer/releases/download/v0.1.1/infer-osx-v0.1.1.tar.xz](https://github.com/facebook/infer/releases/download/v0.1.1/infer-osx-v0.1.1.tar.xz)
-- Linux: [https://github.com/facebook/infer/releases/download/v0.1.1/infer-linux64-v0.1.1.tar.xz](https://github.com/facebook/infer/releases/download/v0.1.1/infer-linux64-v0.1.1.tar.xz)
+- Mac OS X: [https://github.com/facebook/infer/releases/download/v0.2.0/infer-osx-v0.2.0.tar.xz](https://github.com/facebook/infer/releases/download/v0.2.0/infer-osx-v0.2.0.tar.xz)
+- Linux: [https://github.com/facebook/infer/releases/download/v0.2.0/infer-linux64-v0.2.0.tar.xz](https://github.com/facebook/infer/releases/download/v0.2.0/infer-linux64-v0.2.0.tar.xz)
 
 
 ## Installing Infer
@@ -28,18 +28,18 @@ Infer. Unpack the tarball:
 - If you are on Mac OS X, run
 
     ```bash
-    tar xf infer-osx-v0.1.1.tar.xz
+    tar xf infer-osx-v0.2.0.tar.xz
     ```
 
 - If you are on Linux, run
 
     ```bash
-    tar xf infer-linux64-v0.1.1.tar.xz
+    tar xf infer-linux64-v0.2.0.tar.xz
     ```
 
-This will create an ```infer-osx-v0.1.1/``` directory (or an
-```infer-linux64-v0.1.1/``` directory), with Infer's main executables
-located in ```infer-osx-v0.1.1/infer/infer/bin/```.
+This will create an ```infer-osx-v0.2.0/``` directory (or an
+```infer-linux64-v0.2.0/``` directory), with Infer's main executables
+located in ```infer-osx-v0.2.0/infer/infer/bin/```.
 
 ### Adding Infer to your PATH
 
@@ -52,7 +52,7 @@ If you are using bash, you can run the following command from the
 directory where you unpacked the tarball to add Infer to your PATH.
 
 ```bash
-cd infer-*v0.1.1 &&
+cd infer-*v0.2.0 &&
 echo "export PATH=\"\$PATH:`pwd`/infer/infer/bin\"" \ >> ~/.bash_profile &&
 source ~/.bash_profile
 ```
