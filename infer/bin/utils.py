@@ -101,12 +101,6 @@ def error(msg):
     print(msg, file=sys.stderr)
 
 
-def remove_bucket(bug_message):
-    """ Remove anything from the beginning if the message that
-        looks like a bucket """
-    return re.sub(r'(^\[[a-zA-Z0-9]*\])', '', bug_message, 1)
-
-
 def get_cmd_in_bin_dir(binary_name):
     # this relies on the fact that utils.py is located in infer/bin
     return os.path.join(

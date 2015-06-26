@@ -172,7 +172,9 @@ let arg_desc =
       "-tracing", Arg.Unit (fun () -> Config.report_runtime_exceptions := true), None,
       "Report error traces for runtime exceptions (Only for Java)";
       "-allow_specs_cleanup", Arg.Unit (fun () -> allow_specs_cleanup := true), None,
-      "Allow to remove existing specs before running analysis when it's not incremental"
+      "Allow to remove existing specs before running analysis when it's not incremental";
+      "-print_buckets", Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true), None,
+      "Add buckets to issue descriptions, useful when developing infer"
       ] in
     Arg2.create_options_desc false "Reserved Options: Experimental features, use with caution!" desc in
   base_arg @ reserved_arg

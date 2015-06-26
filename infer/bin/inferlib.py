@@ -308,7 +308,7 @@ def print_errors(csv_report, bugs_out):
                     kind = row[utils.CSV_INDEX_KIND]
                     line = row[utils.CSV_INDEX_LINE]
                     error_type = row[utils.CSV_INDEX_TYPE]
-                    msg = utils.remove_bucket(row[utils.CSV_INDEX_QUALIFIER])
+                    msg = row[utils.CSV_INDEX_QUALIFIER]
                     print_and_write(
                         file_out,
                         '{0}:{1}: {2}: {3}\n  {4}\n'.format(
@@ -459,6 +459,7 @@ class Infer:
                 '-dotty',
                 '-print_types',
                 '-trace_error',
+                '-print_buckets',
                 # '-notest',
             ]
 

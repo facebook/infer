@@ -318,10 +318,10 @@ let optimistic_cast = ref false
 let filter_buckets = ref false
 
 (** if true, show buckets in textual description of errors *)
-let show_buckets = ref true
+let show_buckets = ref false
 
 (** if true, show memory leak buckets in textual description of errors *)
-let show_ml_buckets = ref true
+let show_ml_buckets = ref false
 
 (** if true, print cfg nodes in the dot file that are not defined in that file *)
 let dotty_cfg_libs = ref true
