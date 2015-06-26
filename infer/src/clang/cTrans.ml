@@ -1701,7 +1701,8 @@ struct
     | ObjCBridgedCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _) ->
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind true
     | ImplicitCastExpr(stmt_info, stmt_list, expr_info, cast_kind)
-    | CStyleCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _) ->
+    | CStyleCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _)
+    | CXXStaticCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _) ->
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind false
 
     | IntegerLiteral(stmt_info, _, expr_info, integer_literal_info) ->
