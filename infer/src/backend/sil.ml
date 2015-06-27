@@ -151,7 +151,7 @@ type pvar_kind =
   | Callee_var of Procname.t (** local variable belonging to a callee *)
   | Abducted_retvar of Procname.t * location (** synthetic variable to represent return value *)
   | Abducted_ref_param of Procname.t * pvar * location
-    (** synthetic variable to represent param passed by reference *)
+  (** synthetic variable to represent param passed by reference *)
   | Global_var (** gloval variable *)
   | Seed_var (** variable used to store the initial value of formal parameters *)
 
@@ -667,8 +667,8 @@ and attribute =
   | Adiv0 of path_pos (** value appeared in second argument of division in path position *)
   | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
   | Avariadic_function_argument of Procname.t * int * int (** (pn, n, i) the exp. is used as [i]th
-                                                          argument of a call to the variadic
-                                                          function [pn] that has [n] arguments *)
+  argument of a call to the variadic
+  function [pn] that has [n] arguments *)
   | Aretval of Procname.t (** value was returned from a call to the given procedure *)
 
 (** Categories of attributes *)
@@ -1812,7 +1812,7 @@ let pp_pvar_latex f pv =
   | Abducted_retvar (n, l) ->
       F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abductedRetvar"
-   | Abducted_ref_param (n, pv, l) ->
+  | Abducted_ref_param (n, pv, l) ->
       F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abductedRefParam"
   | Global_var ->

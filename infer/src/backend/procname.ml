@@ -317,11 +317,11 @@ let is_class_initializer = function
 (** [is_infer_undefined pn] returns true if [pn] is a special Infer undefined proc *)
 let is_infer_undefined pn = match pn with
   | JAVA j ->
-    let regexp = Str.regexp "com.facebook.infer.models.InferUndefined" in
-    Str.string_match regexp (java_get_class pn) 0
+      let regexp = Str.regexp "com.facebook.infer.models.InferUndefined" in
+      Str.string_match regexp (java_get_class pn) 0
   | _ ->
-    (* TODO: add cases for obj-c, c, c++ *)
-    false
+  (* TODO: add cases for obj-c, c, c++ *)
+      false
 
 (** to_string for C_CPP and STATIC types *)
 let to_readable_string (c1, c2) verbose =

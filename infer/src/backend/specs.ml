@@ -560,8 +560,8 @@ let load_summary_to_spec_table proc_name =
     true in
   let load_summary_models models_dir =
     match load_summary models_dir with
-      | None -> false
-      | Some summ -> add summ Models in
+    | None -> false
+    | Some summ -> add summ Models in
   let rec load_summary_libs = function (* try to load the summary from a list of libs *)
     | [] -> false
     | spec_path :: spec_paths ->
@@ -587,11 +587,11 @@ let load_summary_to_spec_table proc_name =
   let default_spec_dir = res_dir_specs_filename proc_name in
   match load_summary default_spec_dir with
   | None ->
-      (* search on models, libzips, and libs *)
+  (* search on models, libzips, and libs *)
       if load_summary_models (specs_models_filename proc_name) then true
       else if load_summary_ziplibs !Config.zip_libraries then true
       else load_summary_libs (specs_library_filenames proc_name)
-      
+
   | Some summ ->
       add summ Res_dir
 

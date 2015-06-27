@@ -1047,41 +1047,41 @@ and add_constraints_on_retval pdesc prop ret_ids ret_type_option callee_pname =
   else
     match ret_ids, ret_type_option with
     | [ret_id], Some ret_typ ->
-      (* To avoid obvious false positives, assume skip functions do not return null pointers *)
-      let add_ret_non_null ret_id ret_typ prop =
-        match ret_typ with
-        | Sil.Tptr _ -> Prop.conjoin_neq (Sil.Var ret_id) Sil.exp_zero prop
-        | _ -> prop in
-      let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
-        Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
-      if !Config.angelic_execution && not (is_rec_call callee_pname) then
-        (* introduce a fresh program variable to allow abduction on the return value *)
-        let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname (State.get_loc ()) in
-        let already_has_abducted_retval p =
-          list_exists
-            (fun hpred -> match hpred with
-              | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
-              | _ -> false)
-            (Prop.get_sigma_footprint p) in
+    (* To avoid obvious false positives, assume skip functions do not return null pointers *)
+        let add_ret_non_null ret_id ret_typ prop =
+          match ret_typ with
+          | Sil.Tptr _ -> Prop.conjoin_neq (Sil.Var ret_id) Sil.exp_zero prop
+          | _ -> prop in
+        let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
+          Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
+        if !Config.angelic_execution && not (is_rec_call callee_pname) then
+          (* introduce a fresh program variable to allow abduction on the return value *)
+          let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname (State.get_loc ()) in
+          let already_has_abducted_retval p =
+            list_exists
+              (fun hpred -> match hpred with
+                    | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
+                    | _ -> false)
+              (Prop.get_sigma_footprint p) in
           (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-        if already_has_abducted_retval prop then prop
-        else
+          if already_has_abducted_retval prop then prop
+          else
           if !Config.footprint then
             let (prop', fresh_fp_var) = add_to_footprint abducted_ret_pv ret_typ prop in
-            let prop'' = Prop.conjoin_eq ~footprint:true (Sil.Var ret_id) fresh_fp_var prop' in
+            let prop'' = Prop.conjoin_eq ~footprint: true (Sil.Var ret_id) fresh_fp_var prop' in
             add_ret_non_null ret_id ret_typ prop''
           else
             (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
             let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
               let bind_exp prop = function
                 | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
-                  when Sil.pvar_equal pv abducted_pvar ->
-                  Prop.conjoin_eq exp_to_bind rhs prop
+                when Sil.pvar_equal pv abducted_pvar ->
+                    Prop.conjoin_eq exp_to_bind rhs prop
                 | _ -> prop in
               list_fold_left bind_exp prop (Prop.get_sigma prop) in
             (* bind return id to the abducted value pointed to by the pvar we introduced *)
             bind_exp_to_abducted_val (Sil.Var ret_id) abducted_ret_pv prop
-      else add_ret_non_null ret_id ret_typ prop
+        else add_ret_non_null ret_id ret_typ prop
     | _ -> prop
 
 and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
@@ -1098,18 +1098,18 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
     let add_actual_by_ref_to_footprint prop (actual, actual_typ) =
       match actual with
       | Sil.Lvar actual_pv ->
-        (* introduce a fresh program variable to allow abduction on the return value *)
-        let abducted_ref_pv =
-          Sil.mk_pvar_abducted_ref_param callee_pname actual_pv (State.get_loc ()) in
-        let already_has_abducted_retval p =
-          list_exists
-            (fun hpred -> match hpred with
-              | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ref_pv
-              | _ -> false)
-            (Prop.get_sigma_footprint p) in
+      (* introduce a fresh program variable to allow abduction on the return value *)
+          let abducted_ref_pv =
+            Sil.mk_pvar_abducted_ref_param callee_pname actual_pv (State.get_loc ()) in
+          let already_has_abducted_retval p =
+            list_exists
+              (fun hpred -> match hpred with
+                    | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ref_pv
+                    | _ -> false)
+              (Prop.get_sigma_footprint p) in
           (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-        if already_has_abducted_retval prop then prop
-        else
+          if already_has_abducted_retval prop then prop
+          else
           if !Config.footprint then
             let (prop', fresh_fp_var) =
               add_to_footprint abducted_ref_pv (Sil.typ_strip_ptr actual_typ) prop in
@@ -1118,7 +1118,7 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
               list_map
                 (function
                   | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
-                    Sil.Hpointsto (lhs, Sil.Eexp (fresh_fp_var, Sil.Inone), typ_exp)
+                      Sil.Hpointsto (lhs, Sil.Eexp (fresh_fp_var, Sil.Inone), typ_exp)
                   | hpred -> hpred)
                 (Prop.get_sigma prop') in
             Prop.normalize (Prop.replace_sigma filtered_sigma prop')
@@ -1127,19 +1127,19 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
             let prop' =
               let filtered_sigma =
                 list_filter
-                (function
-                  | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
-                    false
-                  | _ -> true)
-                (Prop.get_sigma prop) in
+                  (function
+                    | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
+                        false
+                    | _ -> true)
+                  (Prop.get_sigma prop) in
               Prop.normalize (Prop.replace_sigma filtered_sigma prop) in
             list_fold_left
               (fun p hpred ->
-                match hpred with
-                | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Sil.pvar_equal pv abducted_ref_pv ->
-                  let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
-                  Prop.normalize (Prop.replace_sigma (new_hpred :: (Prop.get_sigma prop')) p)
-                | _ -> p)
+                    match hpred with
+                    | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Sil.pvar_equal pv abducted_ref_pv ->
+                        let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
+                        Prop.normalize (Prop.replace_sigma (new_hpred :: (Prop.get_sigma prop')) p)
+                    | _ -> p)
               prop'
               (Prop.get_sigma prop')
       | _ -> assert false in
@@ -1161,7 +1161,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     let do_exp p (e, t) =
       let do_attribute q = function
         | Sil.Aresource _ as res ->
-          Prop.remove_attribute res q
+            Prop.remove_attribute res q
         | _ -> q in
       list_fold_left do_attribute p (Prop.get_exp_attributes p e) in
     list_fold_left do_exp prop actual_pars in
