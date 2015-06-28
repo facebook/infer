@@ -31,7 +31,8 @@ class CompilerCall:
         if self.args.version:
             return subprocess.call(['javac'] + self.original_arguments)
         else:
-            javac_cmd = ['javac', '-verbose', '-g', '-J-Duser.language=en'] + self.original_arguments
+            javac_cmd = ['javac', '-verbose', '-g'] + self.original_arguments
+            javac_cmd.append('-J-Duser.language=en')
 
             with tempfile.NamedTemporaryFile(
                     mode='w',
