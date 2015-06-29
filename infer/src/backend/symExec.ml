@@ -2157,9 +2157,6 @@ module ModelBuiltins = struct
       Sil.Set (Sil.Lvar Sil.global_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
     sym_exec_generated true cfg tenv pdesc [set_instr] [(prop, path)]
 
-  (** match any function whose plain name is shared_ptr, and set the ignore attribute *)
-  (* let _ = Builtin.register_plain "shared_ptr" execute___method_set_ignore_attribute *)
-
   let _ = Builtin.register "__method_set_ignore_attribute" execute___method_set_ignore_attribute
   let _ = Builtin.register "__builtin_va_arg" execute___builtin_va_arg (* model va_arg *)
   let _ = Builtin.register "__builtin_va_copy" execute_skip (** NOTE: __builtin_va_copy should have been handled in the translation already (see frontend.ml) *)

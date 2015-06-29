@@ -17,6 +17,8 @@ val is_assert_log : Sil.exp -> bool
 
 val is_handleFailureInMethod : string -> bool
 
+val is_modeled_builtin : string -> bool
+
 val is_toll_free_bridging : Procname.t option -> bool
 
 val get_predefined_model_method_signature : string -> string -> (string -> string -> Procname.t) ->

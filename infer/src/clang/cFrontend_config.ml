@@ -108,6 +108,10 @@ let cf_autorelease = "CFAutorelease"
 
 let builtin_expect = "__builtin_expect"
 
+let builtin_memset_chk = "__builtin___memset_chk"
+
+let builtin_object_size = "__builtin_object_size"
+
 let assert_fail = "__assert_fail"
 
 let assert_rtn = "__assert_rtn"

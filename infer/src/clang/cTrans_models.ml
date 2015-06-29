@@ -66,9 +66,9 @@ let get_builtinname method_name =
     Some SymExec.ModelBuiltins.__objc_release
   else None
 
-(* Not used *)
-let is_builtin_expect funct =
-  funct = CFrontend_config.builtin_expect
+let is_modeled_builtin funct =
+  funct = CFrontend_config.builtin_expect ||
+  funct = CFrontend_config.builtin_memset_chk
 
 let is_assert_log_s funct =
   funct = CFrontend_config.assert_rtn ||

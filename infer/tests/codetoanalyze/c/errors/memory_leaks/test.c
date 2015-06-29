@@ -4,6 +4,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 void simple_leak() {
   int *p;
@@ -30,4 +31,8 @@ void uses_allocator() {
   int *p;
   p = allocate();
   *p = 42;
+}
+
+void * builtin_no_leak(size_t s) {
+  return memset(malloc(s), 0, s);
 }

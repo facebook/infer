@@ -105,6 +105,10 @@ val cf_autorelease : string
 
 val builtin_expect : string
 
+val builtin_memset_chk : string
+
+val builtin_object_size : string
+
 val fbAssertWithSignalAndLogFunctionHelper : string
 
 val assert_fail : string

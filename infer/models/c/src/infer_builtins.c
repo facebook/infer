@@ -87,3 +87,8 @@ long infer__builtin_expect(long e, long x) {
     return e;
   }
 }
+
+void *infer__builtin___memset_chk(void *dest, int val, unsigned long len, unsigned long dstlen) {
+  INFER_EXCLUDE_CONDITION(dstlen < len);
+  return dest;
+}

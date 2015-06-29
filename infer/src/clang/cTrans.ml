@@ -292,7 +292,7 @@ struct
       { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
     ) else if is_function then (
       let name =
-        if name = CFrontend_config.builtin_expect then ("infer"^CFrontend_config.builtin_expect)
+        if CTrans_models.is_modeled_builtin name then ("infer" ^ name)
         else name in
       let qt = CTypes.get_raw_qual_type_decl_ref_exp_info decl_ref_expr_info in
       let pname, type_opt =
@@ -525,12 +525,25 @@ struct
     (* afterwards. The 'instructions' function does not do that          *)
     let trans_state_param =
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
+    let (sil_fe, typ_fe) = extract_exp_from_list res_trans_callee.exps
+        "WARNING: The translation of fun_exp did not return an expression. Returning -1. NEED TO BE FIXED" in
+    let callee_pname_opt =
+        match sil_fe with
+        | Sil.Const (Sil.Cfun pn) ->
+            Some pn
+        | _ -> None (* function pointer *) in
+    let should_translate_args =
+      match callee_pname_opt with
+      | Some pn ->
+        (* we cannot translate the arguments of this builtin because preprocessing copies them *)
+        (* verbatim from a call to a different function, and they might be side-effecting *)
+        (Procname.to_string pn) <> CFrontend_config.builtin_object_size
+      | _ -> true in
+    let params_stmt = if should_translate_args then params_stmt else [] in
     let res_trans_par =
       let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) params_stmt in
       let rt = collect_res_trans (res_trans_callee :: l) in
       { rt with exps = list_tl rt.exps } in
-    let (sil_fe, typ_fe) = extract_exp_from_list res_trans_callee.exps
-        "WARNING: The translation of fun_exp did not return an expression. Returning -1. NEED TO BE FIXED" in
     let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
     if CTrans_models.is_assert_log sil_fe then
       if Config.report_assertion_failure then
@@ -538,11 +551,6 @@ struct
       else
         CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes
     else
-      let callee_pname_opt =
-        match sil_fe with
-        | Sil.Const (Sil.Cfun pn) ->
-            Some pn
-        | _ -> None (* function pointer *) in
       let act_params = if list_length res_trans_par.exps = list_length params_stmt then
           res_trans_par.exps
         else (Printing.log_err
