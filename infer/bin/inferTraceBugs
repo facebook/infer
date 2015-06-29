@@ -52,7 +52,7 @@ def describe_report(report, indent=0):
     kind = report['kind']
     line = report['line']
     error_type = report['type']
-    msg = utils.remove_bucket(report['qualifier'])
+    msg = report['qualifier']
     return '{0}:{1}: {2}: {3}\n  {4}{5}\n'.format(
         filename,
         line,
