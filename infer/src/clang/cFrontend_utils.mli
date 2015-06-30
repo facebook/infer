@@ -57,6 +57,8 @@ sig
 
   val is_copy : Clang_ast_t.property_attribute option -> bool
 
+  val is_type_nonnull : Clang_ast_t.qual_type -> Clang_ast_t.attribute list -> bool
+
   val get_fresh_pointer : unit -> string
 
   val type_from_unary_expr_or_type_trait_expr_info :

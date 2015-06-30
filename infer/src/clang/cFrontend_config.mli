@@ -118,3 +118,5 @@ val assert_rtn : string
 val handleFailureInMethod : string
 
 val handleFailureInFunction : string
+
+val nonnull_attribute : string

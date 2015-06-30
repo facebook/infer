@@ -90,9 +90,21 @@ struct
   let model_exists procname =
     Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
 
+  let rec add_assume_not_null_calls param_decls attributes =
+    match param_decls with
+    | [] -> []
+    | decl:: rest ->
+        let rest_assume_calls = add_assume_not_null_calls rest attributes in
+        (match decl with
+          | ParmVarDecl(decl_info, name, qtype, var_decl_info)
+          when CFrontend_utils.Ast_utils.is_type_nonnull qtype attributes ->
+              let assume_call = Ast_expressions.create_assume_not_null_call decl_info name qtype in
+              assume_call:: rest_assume_calls
+          | _ -> rest_assume_calls)
+
   (* Translates the method/function's body into nodes of the cfg. *)
   let add_method tenv cg cfg class_decl_opt procname namespace instrs is_objc_method is_instance
-      captured_vars is_anonym_block =
+      captured_vars is_anonym_block param_decls attributes =
     Printing.log_out
       "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n" (Procname.to_string procname);
     try
@@ -111,7 +123,9 @@ struct
                 Printing.log_out
                   "\n\n>>---------- Start translating the function: '%s' ---------<<"
                   (Procname.to_string procname);
-                let meth_body_nodes = T.instructions_trans context instrs exit_node in
+                let nonnull_assume_calls = add_assume_not_null_calls param_decls in
+                let instrs' = instrs@nonnull_assume_calls attributes in
+                let meth_body_nodes = T.instructions_trans context instrs' exit_node in
                 if (not is_anonym_block) then CContext.LocalVars.reset_block ();
                 Cfg.Node.set_succs_exn start_node meth_body_nodes [];
                 Cg.add_node (CContext.get_cg context) (Cfg.Procdesc.get_proc_name procdesc))
@@ -139,11 +153,12 @@ struct
         let is_anonym_block = Option.is_some anonym_block_opt in
         let is_objc_method = is_anonym_block in
         let curr_class = if is_anonym_block then curr_class else CContext.ContextNoCls in
+        let attributes = CMethod_signature.ms_get_attributes ms in
         add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
-          captured_vars is_anonym_block
+          captured_vars is_anonym_block fdecl_info.Clang_ast_t.fdi_parameters attributes
     | None, ms ->
-      CMethod_trans.create_local_procdesc cfg tenv ms [] captured_vars false;
-      CMethod_signature.add ms
+        CMethod_trans.create_local_procdesc cfg tenv ms [] captured_vars false;
+        CMethod_signature.add ms
 
   let process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info =
     let class_name = CContext.get_curr_class_name curr_class in
@@ -154,8 +169,10 @@ struct
     (match method_body_to_translate decl_info ms method_decl_info.Clang_ast_t.omdi_body with
       | Some body ->
           let is_instance = CMethod_signature.ms_is_instance ms in
+          let attributes = CMethod_signature.ms_get_attributes ms in
           CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance;
           add_method tenv cg cfg curr_class procname namespace [body] true is_instance [] false
+            method_decl_info.Clang_ast_t.omdi_parameters attributes
       | None ->
           CMethod_signature.add ms)
 

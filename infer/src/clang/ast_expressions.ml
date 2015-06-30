@@ -128,7 +128,7 @@ let dummy_stmt () =
 let make_stmt_info di =
   { Clang_ast_t.si_pointer = di.Clang_ast_t.di_pointer; Clang_ast_t.si_source_range = di.Clang_ast_t.di_source_range }
 
-let make_expr_info qt objc_kind = {
+let make_expr_info_with_objc_kind qt objc_kind = {
   Clang_ast_t.ei_qual_type = qt;
   Clang_ast_t.ei_value_kind = `LValue;
   Clang_ast_t.ei_object_kind = objc_kind;}
@@ -189,7 +189,7 @@ let make_obj_c_ivar_ref_expr_info k n qt = {
 
 (* Build an AST cast expression of a decl_ref_expr *)
 let make_cast_expr qt di decl_ref_expr_info objc_kind =
-  let expr_info = make_expr_info qt objc_kind in
+  let expr_info = make_expr_info_with_objc_kind qt objc_kind in
   let stmt_info = make_stmt_info di in
   let decl_ref_exp = make_decl_ref_exp stmt_info expr_info decl_ref_expr_info in
   let cast_expr = {
@@ -202,7 +202,7 @@ let make_cast_expr qt di decl_ref_expr_info objc_kind =
 (* Build AST expression self.field_name as `LValue *)
 let make_self_field class_type di qt field_name =
   let qt_class = create_qual_type class_type in
-  let expr_info = make_expr_info qt `ObjCProperty in
+  let expr_info = make_expr_info_with_objc_kind qt `ObjCProperty in
   let stmt_info = make_stmt_info di in
   let cast_exp = make_cast_expr qt_class di (make_decl_ref_expr_info (make_decl_ref_self qt_class)) `ObjCProperty in
   let obj_c_ivar_ref_expr_info = make_obj_c_ivar_ref_expr_info (`ObjCIvar) field_name qt in
@@ -213,7 +213,7 @@ let make_self_field class_type di qt field_name =
 let make_deref_self_field class_decl_opt di qt field_name =
   let stmt_info = make_stmt_info di in
   let ivar_ref_exp = make_self_field class_decl_opt di qt field_name in
-  let expr_info' = make_expr_info qt `ObjCProperty in
+  let expr_info' = make_expr_info_with_objc_kind qt `ObjCProperty in
   let cast_exp_info =
     {
       Clang_ast_t.cei_cast_kind = `LValueToRValue;
@@ -346,3 +346,34 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
 let trans_negation_with_conditional stmt_info expr_info stmt_list =
   let stmt_list_cond = stmt_list @ [create_integer_literal stmt_info "0"] @ [create_integer_literal stmt_info "1"] in
   ConditionalOperator(stmt_info, stmt_list_cond, expr_info)
+
+let create_call stmt_info function_name qt parameters =
+  let expr_info_call = {
+    Clang_ast_t.ei_qual_type = qt;
+    Clang_ast_t.ei_value_kind = `XValue;
+    Clang_ast_t.ei_object_kind = `Ordinary
+  } in
+  let expr_info_dre = make_expr_info_with_objc_kind qt `Ordinary in
+  let decl_ref = make_general_decl_ref `Function function_name false qt in
+  let decl_ref_info = make_decl_ref_expr_info decl_ref in
+  let decl_ref_exp = DeclRefExpr(stmt_info, [], expr_info_dre, decl_ref_info) in
+  CallExpr(stmt_info, decl_ref_exp:: parameters, expr_info_call)
+
+let create_assume_not_null_call decl_info var_name var_type =
+  let stmt_info = stmt_info_with_fresh_pointer (make_stmt_info decl_info) in
+  let boi = { Clang_ast_t.boi_kind = `NE } in
+  let decl_ref = make_general_decl_ref `Var var_name false var_type in
+  let stmt_info_var = dummy_stmt_info () in
+  let decl_ref_info = make_decl_ref_expr_info decl_ref in
+  let var_decl_ref = DeclRefExpr(stmt_info_var, [], (make_expr_info var_type), decl_ref_info) in
+  let expr_info = {
+    Clang_ast_t.ei_qual_type = var_type;
+    Clang_ast_t.ei_value_kind = `RValue;
+    Clang_ast_t.ei_object_kind = `Ordinary
+  } in
+  let cast_info_call = { cei_cast_kind = `LValueToRValue; cei_base_path = [] } in
+  let decl_ref_exp_cast = ImplicitCastExpr(stmt_info, [var_decl_ref], expr_info, cast_info_call) in
+  let null_expr = create_integer_literal stmt_info "0" in
+  let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info (make_expr_info var_type) boi in
+  let parameters = [bin_op] in
+  create_call stmt_info (Procname.to_string SymExec.ModelBuiltins.__infer_assume) (create_void_type ()) parameters

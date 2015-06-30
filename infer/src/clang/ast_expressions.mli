@@ -62,3 +62,5 @@ val translate_dispatch_function : string -> stmt_info -> stmt list -> expr_info 
 (* We translate the logical negation of an integer with a conditional*)
 (* !x <=> x?0:1 *)
 val trans_negation_with_conditional : stmt_info -> expr_info -> stmt list -> stmt
+
+val create_assume_not_null_call : decl_info -> string -> qual_type -> stmt

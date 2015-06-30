@@ -121,3 +121,5 @@ let handleFailureInMethod = "handleFailureInMethod:object:file:lineNumber:descri
 let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:description:"
 
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
+
+let nonnull_attribute = "__nonnull"

@@ -223,6 +223,10 @@ struct
         | `Setter setter -> setter.Clang_ast_t.dr_name
         | _ -> (setter_attribute_opt rest)
 
+  (*TODO: take the attributes into account too. To be done after we get the attribute's arguments. *)
+  let is_type_nonnull qt attributes =
+    Utils.string_is_prefix CFrontend_config.nonnull_attribute qt.Clang_ast_t.qt_raw
+
   let pointer_counter = ref 0
 
   let get_fresh_pointer () =
