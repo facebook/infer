@@ -141,7 +141,7 @@ let find_ident_assignment node id : (Cfg.Node.t * Sil.exp) option =
         visited := Cfg.NodeSet.add node !visited;
         let res = ref None in
         let find_instr = function
-         | Sil.Letderef(_id, e, _,_) when Ident.equal _id id ->
+          | Sil.Letderef(_id, e, _, _) when Ident.equal _id id ->
               res := Some (node, e);
               true
           | _ -> false in
@@ -728,20 +728,20 @@ let explain_dereference_access outermost_array is_nullable _de_opt prop =
 
 (** Create a description of a dereference operation *)
 let create_dereference_desc
-    ?use_buckets:(use_buckets=false)
-    ?outermost_array:(outermost_array=false)
-    ?is_nullable:(is_nullable=false)
-    ?is_premature_nil:(is_premature_nil=false)
-    _de_opt deref_str prop loc =
+    ?use_buckets: (use_buckets = false)
+    ?outermost_array: (outermost_array = false)
+    ?is_nullable: (is_nullable = false)
+    ?is_premature_nil: (is_premature_nil = false)
+    de_opt deref_str prop loc =
   let value_str, access_opt =
-    explain_dereference_access outermost_array is_nullable _de_opt prop in
+    explain_dereference_access outermost_array is_nullable de_opt prop in
   let access_opt' = match access_opt with
     | Some (Localise.Last_accessed _) when outermost_array -> None (* don't report last accessed for arrays *)
     | _ -> access_opt in
   let desc = Localise.dereference_string deref_str value_str access_opt' loc in
   let desc =
     if !Sil.curr_language = Sil.C_CPP && not is_premature_nil then
-      match _de_opt with
+      match de_opt with
       | Some (Sil.Dpvar pvar)
       | Some (Sil.Dpvaraddr pvar) ->
           (match Prop.get_objc_null_attribute prop (Sil.Lvar pvar) with
@@ -749,7 +749,7 @@ let create_dereference_desc
             | _ -> desc)
       | _ -> desc
     else desc in
-  if use_buckets then Buckets.classify_access desc access_opt' is_nullable
+  if use_buckets then Buckets.classify_access desc access_opt' de_opt is_nullable
   else desc
 
 (** explain memory access performed by the current instruction
@@ -757,11 +757,11 @@ if outermost_array is true, the outermost array access is removed
 if outermost_dereference is true, stop at the outermost dereference
 (skipping e.g. outermost field access) *)
 let _explain_access
-    ?use_buckets:(use_buckets=false)
-    ?outermost_array:(outermost_array=false)
-    ?outermost_dereference:(outermost_dereference=false)
-    ?is_nullable:(is_nullable=false)
-    ?is_premature_nil:(is_premature_nil=false)
+    ?use_buckets: (use_buckets = false)
+    ?outermost_array: (outermost_array = false)
+    ?outermost_dereference: (outermost_dereference = false)
+    ?is_nullable: (is_nullable = false)
+    ?is_premature_nil: (is_premature_nil = false)
     deref_str prop loc =
   let rec find_outermost_dereference node e = match e with
     | Sil.Const c ->
@@ -822,18 +822,18 @@ let _explain_access
 (** Produce a description of which expression is dereferenced in the current instruction, if any.
 The subexpression to focus on is obtained by removing field and index accesses. *)
 let explain_dereference
-    ?use_buckets:(use_buckets=false)
-    ?is_nullable:(is_nullable=false)
-    ?is_premature_nil:(is_premature_nil=false)
+    ?use_buckets: (use_buckets = false)
+    ?is_nullable: (is_nullable = false)
+    ?is_premature_nil: (is_premature_nil = false)
     deref_str prop loc =
   _explain_access
-    ~use_buckets ~outermost_array:false ~outermost_dereference:true ~is_nullable ~is_premature_nil
+    ~use_buckets ~outermost_array: false ~outermost_dereference: true ~is_nullable ~is_premature_nil
     deref_str prop loc
 
 (** Produce a description of the array access performed in the current instruction, if any.
 The subexpression to focus on is obtained by removing the outermost array access. *)
 let explain_array_access deref_str prop loc =
-  _explain_access ~outermost_array:true deref_str prop loc
+  _explain_access ~outermost_array: true deref_str prop loc
 
 (** Produce a description of the memory access performed in the current instruction, if any. *)
 let explain_memory_access deref_str prop loc =
@@ -865,7 +865,8 @@ let explain_nth_function_parameter use_buckets deref_str prop n pvar_off =
         let arg = fst (list_nth args (n - 1)) in
         let dexp_opt = exp_rv_dexp node arg in
         let dexp_opt' = match dexp_opt with
-          | Some de -> Some (dexp_apply_pvar_off de pvar_off)
+          | Some de ->
+              Some (dexp_apply_pvar_off de pvar_off)
           | None -> None in
         create_dereference_desc ~use_buckets dexp_opt' deref_str prop loc
       with exn when exn_not_timeout exn -> Localise.no_desc)
@@ -899,7 +900,7 @@ let find_pvar_with_exp prop exp =
 (** return a description explaining value [exp] in [prop] in terms of a source expression
 using the formal parameters of the call *)
 let explain_dereference_as_caller_expression
-    ?use_buckets:(use_buckets=false)
+    ?use_buckets: (use_buckets = false)
     deref_str actual_pre spec_pre exp node loc formal_params =
   let find_formal_param_number name =
     let rec find n = function

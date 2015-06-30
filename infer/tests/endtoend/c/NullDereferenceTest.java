@@ -44,6 +44,7 @@ public class NullDereferenceTest {
         "no_check_for_null_after_malloc",
         "no_check_for_null_after_realloc",
         "potentially_null_pointer_passed_as_argument",
+        "null_passed_as_argument",
         "function_call_can_return_null_pointer",
     };
     assertThat(

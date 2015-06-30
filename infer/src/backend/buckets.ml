@@ -39,8 +39,9 @@ let check_nested_loop path pos_opt =
   Paths.Path.iter_longest_sequence f pos_opt path;
   in_nested_loop ()
 
-(** Check that we know where the value was last assigned, and that there is a local access instruction at that line. **)
-let check_access access_opt =
+(** Check that we know where the value was last assigned,
+and that there is a local access instruction at that line. **)
+let check_access access_opt de_opt =
   let find_bucket line_number null_case_flag =
     let find_formal_ids node = (* find ids obtained by a letref on a formal parameter *)
       let node_instrs = Cfg.Node.get_instrs node in
@@ -99,11 +100,17 @@ let check_access access_opt =
       find_bucket n false
   | Some (Localise.Last_accessed (n, is_nullable)) when is_nullable ->
       Some Localise.BucketLevel.b1
-  | _ -> None
+  | _ ->
+      begin
+        match de_opt with
+        | Some (Sil.Dconst _) ->
+            Some Localise.BucketLevel.b1
+        | _ -> None
+      end
 
-let classify_access desc access_opt is_nullable =
+let classify_access desc access_opt de_opt is_nullable =
   let default_bucket = if is_nullable then Localise.BucketLevel.b1 else Localise.BucketLevel.b5 in
   let show_in_message = !Config.show_buckets in
-  match check_access access_opt with
+  match check_access access_opt de_opt with
   | None -> Localise.error_desc_set_bucket desc default_bucket show_in_message
   | Some bucket -> Localise.error_desc_set_bucket desc bucket show_in_message

@@ -89,6 +89,10 @@ void potentially_null_pointer_passed_as_argument() {
   free(p);
 }
 
+void null_passed_as_argument() {
+  assign(NULL, 42);  // NULL dereference
+}
+
 void allocated_pointer_passed_as_argument() {
   int *p = NULL;
   p = (int*) malloc(sizeof(int));
