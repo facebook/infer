@@ -87,7 +87,7 @@ let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
     match pl with
     | [] -> []
-    | (name, raw_type):: pl' ->
+    | (name, raw_type, _):: pl' ->
         let qt =
           if (name = CFrontend_config.self && CMethod_signature.ms_is_instance ms) then
             (Ast_expressions.create_pointer_type raw_type)

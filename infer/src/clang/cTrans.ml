@@ -539,7 +539,28 @@ struct
         (* verbatim from a call to a different function, and they might be side-effecting *)
         (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
-    let params_stmt = if should_translate_args then params_stmt else [] in
+
+    let assign_default_params params_stmt =
+      match callee_pname_opt with
+      | None -> params_stmt
+      | Some callee_pname ->
+        try
+          let callee_ms = CMethod_signature.find callee_pname in
+          let args = CMethod_signature.ms_get_args callee_ms in
+          let params_args = list_combine params_stmt args in
+          let replace_default_arg param =
+            match param with
+            | CXXDefaultArgExpr(_, _, _), (_, _, Some default_instr) -> default_instr
+            | instr, _ -> instr in
+          list_map replace_default_arg params_args
+        with
+        | Invalid_argument _ ->
+          (* list_combine failed because of different list lengths *)
+          Printing.log_err "Param count doesn't match %s\n" (Procname.to_string callee_pname);
+          params_stmt
+        | Not_found -> params_stmt in
+
+    let params_stmt = if should_translate_args then assign_default_params params_stmt else [] in
     let res_trans_par =
       let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) params_stmt in
       let rt = collect_res_trans (res_trans_callee :: l) in

@@ -50,7 +50,7 @@ struct
       | ParmVarDecl(decl_info, name, qtype, var_decl_info) ->
           Printing.log_out "Adding  param '%s' " name;
           Printing.log_out "with pointer %s@." decl_info.Clang_ast_t.di_pointer;
-          (name, CTypes.get_type qtype)
+          (name, CTypes.get_type qtype, var_decl_info.vdi_init_expr)
       | _ -> assert false in
     match function_method_decl_info with
     | Func_decl_info (function_decl_info, _) ->
@@ -58,7 +58,7 @@ struct
     | Meth_decl_info (method_decl_info, class_name) ->
         let pars = list_map par_to_ms_par method_decl_info.Clang_ast_t.omdi_parameters in
         if (is_instance_method function_method_decl_info false false) then
-          ("self", class_name):: pars
+          ("self", class_name, None):: pars
         else pars
 
   let get_return_type function_method_decl_info =
@@ -154,6 +154,7 @@ struct
         let is_objc_method = is_anonym_block in
         let curr_class = if is_anonym_block then curr_class else CContext.ContextNoCls in
         let attributes = CMethod_signature.ms_get_attributes ms in
+        CMethod_signature.add ms;
         add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
           captured_vars is_anonym_block fdecl_info.Clang_ast_t.fdi_parameters attributes
     | None, ms ->
@@ -166,6 +167,7 @@ struct
     let method_decl = Meth_decl_info (method_decl_info, class_name) in
     let ms = build_method_signature decl_info procname method_decl false false in
     Printing.log_out " ....Processing implementation for method '%s'\n" (Procname.to_string procname);
+    CMethod_signature.add ms;
     (match method_body_to_translate decl_info ms method_decl_info.Clang_ast_t.omdi_body with
       | Some body ->
           let is_instance = CMethod_signature.ms_is_instance ms in
@@ -173,8 +175,7 @@ struct
           CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance;
           add_method tenv cg cfg curr_class procname namespace [body] true is_instance [] false
             method_decl_info.Clang_ast_t.omdi_parameters attributes
-      | None ->
-          CMethod_signature.add ms)
+      | None -> ())
 
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =
     match dec with

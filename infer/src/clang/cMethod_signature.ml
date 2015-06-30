@@ -8,7 +8,7 @@
 
 type method_signature = {
   _name : Procname.t;
-  _args : (string * string) list; (* (name, type) *)
+  _args : (string * string * Clang_ast_t.stmt option) list; (* (name, type, default value) *)
   _ret_type : string;
   _attributes : Clang_ast_t.attribute list;
   _loc : Clang_ast_t.source_range;
@@ -52,7 +52,7 @@ let replace_name_ms ms name =
 
 let ms_to_string ms =
   "Method "^(Procname.to_string ms._name)^" "^
-  (Utils.list_to_string (fun (s1, s2) -> s1^", "^s2) ms._args)^"->"^ms._ret_type^" "^
+  (Utils.list_to_string (fun (s1, s2, _) -> s1^", "^s2) ms._args)^"->"^ms._ret_type^" "^
   Clang_ast_j.string_of_source_range ms._loc
 
 let find ms =
