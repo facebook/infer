@@ -690,23 +690,21 @@ let resolve_method tenv class_name proc_name =
       proc_name
   | Some proc_name -> proc_name
 
-(** If the dynamic type of the object calling a method is known, the method from the dynamic type is called  *)
-let call_virtual cfg tenv (_prop: Prop.normal Prop.t) actual_params pdesc fn : Cfg.Procdesc.t =
-  let exp = (match actual_params with
-      | [] -> assert false
-      | (exp, typ):: rest -> exp) in
-  let typexp =
-    try
-      let hpred = list_find (function
-            | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e exp
-            | _ -> false) (Prop.get_sigma _prop) in
-      match hpred with
-      | Sil.Hpointsto(e, _, texp) ->
-          Some texp
-      | _ -> None
-    with Not_found -> None in
-  match typexp with
-  | Some (Sil.Sizeof (Sil.Tstruct (l, _, Sil.Class, (Some class_name), _, _, _), st)) ->
+(** If the dynamic type of the object calling a method is known, the method from the dynamic type
+is called *)
+let call_virtual cfg tenv prop actual_params pdesc fn : Cfg.Procdesc.t =
+  let obj_exp =
+    match actual_params with
+    | [] -> failwith "Expecting the first parameter to be the object expression"
+    | (exp, typ):: rest -> exp in
+  let typexp_opt =
+    let rec loop = function
+      | [] -> None
+      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e obj_exp -> Some typexp
+      | _ :: hpreds -> loop hpreds in
+    loop (Prop.get_sigma prop) in
+  match typexp_opt with
+  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Sil.Class, (Some class_name), _, _, _), _)) ->
       let fn' = resolve_method tenv class_name fn in
       proc_desc_copy cfg pdesc fn fn'
   | _ -> pdesc
@@ -843,6 +841,15 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
       res_null @ res
     else res (* Not known if receiver = 0 and not footprint. Standard tabulation *)
 
+
+let normalize_params pdesc prop actual_params =
+  let norm_arg (p, args) (e, t) =
+    let e', p' = exp_norm_check_arith pdesc p e in
+    (p', (e', t) :: args) in
+  let prop, args = list_fold_left norm_arg (prop, []) actual_params in
+  (prop, list_rev args)
+
+
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
 : (Prop.normal Prop.t * Paths.Path.t) list =
@@ -925,37 +932,33 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       let sym_exe_builtin = Builtin.get_sym_exe_builtin fn in
       sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args fn loc
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun _fn), _actual_params, loc, call_flags) -> (** Generic fun call with known name *)
-      let prop_r = ref _prop in
-      let _n_actual_params = list_map (fun (e, t) ->
-                let e', p' = exp_norm_check_arith pdesc !prop_r e in
-                prop_r := p';
-                e', t) _actual_params in
+      let (prop_r, _n_actual_params) = normalize_params pdesc _prop _actual_params in
       let fn, n_actual_params = handle_special_cases_call tenv cfg _fn _n_actual_params in
-      let callee_pdesc = match Cfg.Procdesc.find_from_name cfg fn with
-        | Some callee_pdesc -> callee_pdesc
-        | None -> assert false in
-      let callee_pdesc' =
-        if call_flags.Sil.cf_virtual then
-          (call_virtual cfg tenv _prop n_actual_params callee_pdesc fn)
-        else callee_pdesc in
-      sym_exe_call cfg pdesc tenv !prop_r path ret_ids n_actual_params callee_pdesc' loc
+      begin
+        match Cfg.Procdesc.find_from_name cfg fn with
+        | None ->
+            call_unknown_or_scan
+              false cfg pdesc tenv prop_r path ret_ids None n_actual_params fn loc
+        | Some callee_pdesc ->
+            let callee_pdesc' =
+              if call_flags.Sil.cf_virtual then
+                (call_virtual cfg tenv _prop n_actual_params callee_pdesc fn)
+              else callee_pdesc in
+            sym_exe_call cfg pdesc tenv prop_r path ret_ids n_actual_params callee_pdesc' loc
+      end
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
-      let prop_r = ref _prop in
-      let n_actual_params = list_map (fun (e, t) ->
-                let e', p' = exp_norm_check_arith pdesc !prop_r e in
-                prop_r := p';
-                e', t) actual_params in
+      let (prop_r, n_actual_params) = normalize_params pdesc _prop actual_params in
       if call_flags.Sil.cf_is_objc_block then
-        Rearrange.check_call_to_objc_block_error pdesc !prop_r fun_exp loc;
-      Rearrange.check_dereference_error pdesc !prop_r fun_exp loc;
+        Rearrange.check_call_to_objc_block_error pdesc prop_r fun_exp loc;
+      Rearrange.check_dereference_error pdesc prop_r fun_exp loc;
       if call_flags.Sil.cf_noreturn then begin
         L.d_str "Unknown function pointer with noreturn attribute "; Sil.d_exp fun_exp; L.d_strln ", diverging.";
-        execute_diverge !prop_r path
+        execute_diverge prop_r path
       end else begin
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp; L.d_strln ", returning undefined value.";
         let callee_pname = Procname.from_string "__function_pointer__" in
         call_unknown_or_scan
-          false cfg pdesc tenv !prop_r path ret_ids None n_actual_params callee_pname loc
+          false cfg pdesc tenv prop_r path ret_ids None n_actual_params callee_pname loc
       end
   | Sil.Nullify (pvar, loc, deallocate) ->
       begin
