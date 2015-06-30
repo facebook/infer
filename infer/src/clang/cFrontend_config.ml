@@ -106,6 +106,8 @@ let cf_bridging_retain = "CFBridgingRetain"
 
 let cf_autorelease = "CFAutorelease"
 
+let ns_make_collectable = "NSMakeCollectable"
+
 let builtin_expect = "__builtin_expect"
 
 let builtin_memset_chk = "__builtin___memset_chk"

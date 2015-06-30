@@ -90,7 +90,8 @@ let is_toll_free_bridging pn_opt =
       let funct = (Procname.to_string pn) in
       funct = CFrontend_config.cf_bridging_release ||
       funct = CFrontend_config.cf_bridging_retain ||
-      funct = CFrontend_config.cf_autorelease
+      funct = CFrontend_config.cf_autorelease ||
+      funct = CFrontend_config.ns_make_collectable
   | None -> false
 
 (** If the function is a builtin model, return the model, otherwise return the function *)

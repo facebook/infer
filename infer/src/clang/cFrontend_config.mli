@@ -103,6 +103,8 @@ val cf_bridging_retain : string
 
 val cf_autorelease : string
 
+val ns_make_collectable : string
+
 val builtin_expect : string
 
 val builtin_memset_chk : string
