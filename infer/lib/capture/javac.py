@@ -30,6 +30,6 @@ class JavacCapture:
             self.analysis.start()
             return os.EX_OK
         except subprocess.CalledProcessError as exc:
-            if self.args.debug:
+            if self.analysis.args.debug:
                 traceback.print_exc()
             return exc.returncode
