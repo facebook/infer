@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/adding-models.html
 section: User Guide
 section_order: 01
-order: 07
+order: 06
 ---
 
 ## Why do we need models
