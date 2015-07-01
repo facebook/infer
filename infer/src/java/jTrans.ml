@@ -651,27 +651,30 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
         let sil_var = JContext.set_pvar context var return_type in
         (call_ret_instrs sil_var) in
   let instrs =
-      match call_args with
-      (* modeling a class bypasses the treatment of Closeable *)
-      | _ when Config.analyze_models || JClasspath.is_model callee_procname -> call_instrs
+    match call_args with
+    (* modeling a class bypasses the treatment of Closeable *)
+    | _ when Config.analyze_models || JClasspath.is_model callee_procname -> call_instrs
 
-      (* add a file attribute when calling the constructor of a subtype of Closeable *)
-      | (var, typ) as exp :: _
-      when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
-          let set_file_attr =
-            let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_file_attribute) in
-            Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
-          call_instrs @ [set_file_attr]
+    (* add a file attribute when calling the constructor of a subtype of Closeable *)
+    | (var, typ) as exp :: _
+         when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
+       let set_file_attr =
+         let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_file_attribute) in
+         Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
+       (* Exceptions thrown in the constructor should prevent adding the resource attribute *)
+       call_instrs @ [set_file_attr]
 
-      (* remove file attribute when calling the close method of a subtype of Closeable *)
-      | (var, typ) as exp :: []
-      when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
-          let set_mem_attr =
-            let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_mem_attribute) in
-            Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
-          call_instrs @ [set_mem_attr]
+    (* remove file attribute when calling the close method of a subtype of Closeable *)
+    | (var, typ) as exp :: []
+         when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
+       let set_mem_attr =
+         let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_mem_attribute) in
+         Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
+       (* Exceptions thrown in the close method should not prevent the resource from being *)
+       (* considered as closed *)
+       [set_mem_attr] @ call_instrs
 
-      | _ -> call_instrs in
+    | _ -> call_instrs in
 
   (callee_procdesc, callee_procname, call_idl, instrs)
 

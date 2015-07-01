@@ -11,17 +11,19 @@ import java.io.StringReader;
 
 public class CloseableAsResourceExample {
 
+  native boolean star();
+
   class LocalException extends IOException {
   }
 
   class SomeResource implements Closeable {
 
-      native boolean isValid();
       void doSomething() throws LocalException {
-        if (!isValid()) {
+        if (!star()) {
           throw new LocalException();
         }
       }
+
       public void close() {}
   }
 
@@ -50,15 +52,15 @@ public class CloseableAsResourceExample {
     res.close();
   } // should report a resource leak
 
-  class Res implements Closeable {
-    public Res() {
+  class Resource implements Closeable {
+    public Resource() {
     }
     public void close() {}
   }
 
   class Wrapper implements Closeable {
-    Res mR;
-    public Wrapper(Res r) {
+    Resource mR;
+    public Wrapper(Resource r) {
       mR = r;
     }
     public void close() {
@@ -67,19 +69,19 @@ public class CloseableAsResourceExample {
   }
 
   class Sub extends Wrapper {
-    public Sub(Res r) {
+    public Sub(Resource r) {
       super(r);
     }
   }
 
   void closingWrapper() {
-    Res r = new Res();
+    Resource r = new Resource();
     Sub s = new Sub(r);
     s.close();
   }
 
   void notClosingWrapper() {
-    Sub s = new Sub(new Res());
+    Sub s = new Sub(new Resource());
     s.mR.close();
   }  // should report a resource leak
 
@@ -113,6 +115,25 @@ public class CloseableAsResourceExample {
       Utils.closeQuietly(r);
     } catch (IOException e) {
     }
+  }
+
+  class ResourceWithException implements Closeable {
+
+    public void close() throws IOException {
+      if (star()) {
+        throw new IOException();
+      }
+    }
+  }
+
+  void noLeakwithExceptionOnClose() throws IOException {
+    ResourceWithException res = new ResourceWithException();
+    res.close();
+  }
+
+  void noLeakWithCloseQuietlyAndExceptionOnClose() {
+    ResourceWithException res = new ResourceWithException();
+    Utils.closeQuietly(res);
   }
 
 }

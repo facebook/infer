@@ -1160,10 +1160,11 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
 (** execute a call for an unknown or scan function *)
 and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     ret_ids ret_type_option actual_pars callee_pname loc =
-  let remove_resource_att prop =
+  let remove_file_attribute prop =
     let do_exp p (e, t) =
       let do_attribute q = function
-        | Sil.Aresource _ as res ->
+        | Sil.Aresource res_action as res
+             when res_action.Sil.ra_res = Sil.Rfile ->
             Prop.remove_attribute res q
         | _ -> q in
       list_fold_left do_attribute p (Prop.get_exp_attributes p e) in
@@ -1175,7 +1176,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
         | _ -> false)
       actual_pars in
   (* in Java, assume that skip functions close resources passed as params *)
-  let pre' = if !Sil.curr_language = Sil.Java then remove_resource_att pre else pre in
+  let pre' = if !Sil.curr_language = Sil.Java then remove_file_attribute pre else pre in
   let pre'' = add_constraints_on_retval pdesc pre' ret_ids ret_type_option callee_pname in
   let pre''' = add_constraints_on_actuals_by_ref pre'' actuals_by_ref callee_pname in
   if is_scan (* if scan function, don't mark anything with undef attributes *)
