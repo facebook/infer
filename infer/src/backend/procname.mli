@@ -13,6 +13,10 @@ type t
 
 type java_type = string option * string
 
+type method_kind =
+  | Static (* in Java, procedures called with invokestatic *)
+  | Non_Static (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
+
 (** Comparison for proc names *)
 val compare : t -> t -> int
 
@@ -28,8 +32,8 @@ val mangled_cpp : string -> string -> t
 (** Create a static procedure name from a plain name and source file *)
 val mangled_static : string -> DB.source_file -> t
 
-(** Create a Java procedure name from its class_name method_name args_type_name return_type_name *)
-val mangled_java : java_type -> java_type option -> string -> java_type list -> t
+(** Create a Java procedure name from its class_name method_name args_type_name return_type_name method_kind *)
+val mangled_java : java_type -> java_type option -> string -> java_type list -> method_kind -> t
 
 (** Create an objc procedure name from a class_name and method_name. *)
 val mangled_objc : string -> string -> t
@@ -75,6 +79,9 @@ val java_get_return_type : t -> string
 
 (** Return the parameters of a java procedure name. *)
 val java_get_parameters : t -> string list
+
+(** Return true if the java procedure is static *)
+val java_is_static : t -> bool
 
 (** Check if the last parameter is a hidden inner class, and remove it if present.
 This is used in private constructors, where a proxy constructor is generated

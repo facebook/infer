@@ -13,12 +13,17 @@ open Str
 
 type java_type = string option * string (* e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects *)
 
+type method_kind =
+  | Static (* in Java, procedures called with invokestatic *)
+  | Non_Static (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
+
 (* java_signature extends base_signature with a classname and a package *)
 type java_signature = {
   classname: java_type;
   returntype: java_type option; (* option because constructors have no return type *)
   methodname: string;
-  parameters: java_type list
+  parameters: java_type list;
+  kind: method_kind
 }
 
 type objc_signature = {
@@ -51,6 +56,12 @@ let mangled_compare so1 so2 = match so1, so2 with
   | None, Some _ -> -1
   | Some _, None -> 1
   | Some s1, Some s2 -> string_compare s1 s2
+
+let method_kind_compare k0 k1 =
+  match k0, k1 with
+  | _ when k0 = k1 -> 0
+  | Static, _ -> 1
+  | Non_Static, _ -> -1
 
 (** A type is a pair (package, type_name) that is translated in a string package.type_name *)
 let java_type_to_string p verbosity =
@@ -98,6 +109,7 @@ let java_sig_compare js1 js2 =
   |> next java_type_list_compare js1.parameters js2.parameters
   |> next java_type_compare js1.classname js2.classname
   |> next java_return_type_compare js1.returntype js2.returntype
+  |> next method_kind_compare js1.kind js2.kind
 
 (** Compare objc signatures. *)
 let objc_sig_compare osig1 osig2 =
@@ -121,12 +133,13 @@ let mangled_static (plain: string) (source_file: DB.source_file) =
     else None in STATIC (plain, mangled)
 
 (** Creates a java procname, given classname, return type, method name and its parameters *)
-let mangled_java class_name ret_type method_name params =
+let mangled_java class_name ret_type method_name params _kind =
   JAVA {
     classname = class_name;
     returntype = ret_type;
     methodname = method_name;
-    parameters = params
+    parameters = params;
+    kind = _kind
   }
 
 (** Create an objc procedure name from a class_name and method_name. *)
@@ -195,11 +208,6 @@ let clang_get_method = function
   | OBJC_BLOCK name -> name
   | _ -> assert false
 
-(** Replace the method name of an existing java procname. *)
-let java_replace_method p methodname = match p with
-  | JAVA j -> JAVA { j with methodname = methodname }
-  | _ -> assert false
-
 (** Return the return type of a java procname. *)
 let java_get_return_type = function
   | JAVA j -> java_return_type_to_string j VERBOSE
@@ -208,6 +216,11 @@ let java_get_return_type = function
 (** Return the parameters of a java procname. *)
 let java_get_parameters = function
   | JAVA j -> list_map (fun param -> java_type_to_string param VERBOSE) j.parameters
+  | _ -> assert false
+
+(** Return true if the java procedure is static *)
+let java_is_static = function
+  | JAVA j -> j.kind = Static
   | _ -> assert false
 
 (** Prints a string of a java procname with the given level of verbosity *)

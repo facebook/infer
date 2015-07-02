@@ -22,17 +22,12 @@ type defined_status =
   | Defined of Cfg.Procdesc.t
   | Called of Cfg.Procdesc.t
 
-type method_kind =
-  | Static
-  | Non_Static
-
 (** returns the procedure description of the given method and creates it if it hasn't been created before *)
-val get_method_procdesc : JClasspath.program -> Cfg.cfg -> Sil.tenv -> JBasics.class_name -> JBasics.method_signature -> method_kind -> defined_status
+val get_method_procdesc : JClasspath.program -> Cfg.cfg -> Sil.tenv -> JBasics.class_name ->
+  JBasics.method_signature -> Procname.method_kind -> defined_status
 
 (** [create_local_procdesc linereader cfg tenv program m] creates a procedure description for the method m and adds it to cfg  *)
 val create_local_procdesc : JClasspath.program -> Printer.LineReader.t -> Cfg.cfg -> Sil.tenv -> JCode.jcode Javalib.interface_or_class -> JCode.jcode Javalib.jmethod -> unit
-
-val get_method_kind : JCode.jcode Javalib.jmethod -> method_kind
 
 (** returns the implementation of a given method *)
 val get_implementation : JCode.jcode Javalib.concrete_method -> JBir.t

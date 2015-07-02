@@ -163,7 +163,7 @@ let create_android_harness proc_file_map tenv =
                       * inhabitation module to create a harness for us *)
                           let harness_procname =
                             let harness_cls_name = PatternMatch.get_type_name typ in
-                            Procname.mangled_java (None, harness_cls_name) None "InferGeneratedHarness" [] in
+                            Procname.mangled_java (None, harness_cls_name) None "InferGeneratedHarness" [] Procname.Static in
                           let callback_fields =
                             extract_callbacks lifecycle_trace harness_procname proc_file_map tenv in
                           Inhabit.inhabit_trace lifecycle_trace callback_fields harness_procname proc_file_map tenv

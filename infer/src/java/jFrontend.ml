@@ -156,7 +156,7 @@ let create_icfg never_null_matcher linereader program icfg source_file cn node =
   begin
     Javalib.m_iter (JTrans.create_local_procdesc program linereader cfg tenv node) node;
     Javalib.m_iter (fun m ->
-            let method_kind = JTrans.get_method_kind m in
+            let method_kind = JTransType.get_method_kind m in
             match m with
             | Javalib.ConcreteMethod cm ->
                 add_cmethod never_null_matcher program icfg node cm method_kind

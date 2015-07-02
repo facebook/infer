@@ -760,7 +760,7 @@ let redirect_shared_ptr tenv cfg pname actual_params =
 
 (** recognize calls to the constructor java.net.URL and splits the argument string to be only the protocol.  *)
 let call_constructor_url_update_args tenv cfg pname actual_params =
-  let url_pname = Procname.mangled_java ((Some "java.net"), "URL") None "<init>" [(Some "java.lang"), "String"] in
+  let url_pname = Procname.mangled_java ((Some "java.net"), "URL") None "<init>" [(Some "java.lang"), "String"] Procname.Non_Static in
   if (Procname.equal url_pname pname) then
     (match actual_params with
       | [this; (Sil.Const (Sil.Cstr s), atype)] ->

@@ -6,9 +6,7 @@ open Utils
 
 (** Type transformations between Javalib datatypes and sil datatypes *)
 
-
 exception Type_tranlsation_error of string
-
 
 let basic_type = function
   | `Int -> Sil.Tint Sil.IInt
@@ -181,20 +179,20 @@ let method_signature_names ms =
   let args_types = args_to_signature (JBasics.ms_args ms) in
   (return_type_name, method_name, args_types)
 
+let get_method_kind m = if Javalib.is_static_method m then Procname.Static else Procname.Non_Static
 
 (* create a mangled procname from an abstract or concrete method *)
-let get_method_procname cn ms =
+let get_method_procname cn ms kind =
   let return_type_name, method_name, args_type_name = method_signature_names ms in
   let class_name = cn_to_java_type cn in
-  Procname.mangled_java class_name return_type_name method_name args_type_name
-
+  Procname.mangled_java class_name return_type_name method_name args_type_name kind
 
 let get_class_procnames cn node =
   let collect jmethod procnames =
-    let ms = (Javalib.get_method_signature jmethod) in
-    (get_method_procname cn ms) :: procnames in
+    let ms = Javalib.get_method_signature jmethod in
+    let kind = get_method_kind jmethod in
+    (get_method_procname cn ms kind) :: procnames in
   Javalib.m_fold collect node []
-
 
 let create_fieldname cn fs =
   let fieldname cn fs =
@@ -202,7 +200,6 @@ let create_fieldname cn fs =
     let classname = (JBasics.cn_name cn) in
     Mangled.from_string (classname^"."^fieldname) in
   Ident.create_fieldname (fieldname cn fs) 0
-
 
 let create_sil_class_field cn cf =
   let fs = cf.Javalib.cf_signature in
@@ -508,15 +505,15 @@ let never_returning_null =
   let fragment_type = "android.support.v4.app.Fragment" in
   let never_null_method_sigs =
     [
-    (fragment_type, "getContext", [], "android.content.Context");
-    (fragment_type, "getActivity", [], "android.support.v4.app.FragmentActivity")
+    (fragment_type, "getContext", [], "android.content.Context", Procname.Non_Static);
+    (fragment_type, "getActivity", [], "android.support.v4.app.FragmentActivity", Procname.Non_Static)
     ] in
   let make_procname = function
-    | (class_name, method_name, arg_types, ret_type) ->
+    | (class_name, method_name, arg_types, ret_type, kind) ->
         let return_cn = JBasics.make_cn ret_type in
         let cn = JBasics.make_cn class_name
         and ms =
           JBasics.make_ms
             method_name arg_types (Some (JBasics.TObject (JBasics.TClass return_cn))) in
-        get_method_procname cn ms in
+        get_method_procname cn ms kind in
   list_map make_procname never_null_method_sigs

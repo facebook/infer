@@ -10,8 +10,11 @@ val typename_of_classname : JBasics.class_name -> Sil.typename
 (** returns a name for a field based on a class name and a field name  *)
 val create_fieldname : JBasics.class_name -> JBasics.field_signature -> Ident.fieldname
 
+val get_method_kind : JCode.jcode Javalib.jmethod -> Procname.method_kind
+
 (** returns a procedure name based on the class name and the method's signature. *)
-val get_method_procname : JBasics.class_name -> JBasics.method_signature -> Procname.t
+val get_method_procname : JBasics.class_name -> JBasics.method_signature -> Procname.method_kind ->
+  Procname.t
 
 (** [get_class_type_no_pointer program tenv cn] returns the sil type representation of the class
 without the pointer part *)
