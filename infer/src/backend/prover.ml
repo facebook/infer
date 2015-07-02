@@ -821,9 +821,8 @@ let check_inconsistency_base prop =
           Sil.pvar_is_seed pv
       | _ -> false in
     list_exists do_hpred sigma in
-  let inconsistent_self () = (* "self" cannot be null in ObjC, outside of initializers *)
+  let inconsistent_self () = (* "self" cannot be null in ObjC *)
     let procdesc = Cfg.Node.get_proc_desc (State.get_node ()) in
-    let procname = Cfg.Procdesc.get_proc_name procdesc in
     let procedure_attr = Cfg.Procdesc.get_attributes procdesc in
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
@@ -831,8 +830,7 @@ let check_inconsistency_base prop =
           Sil.exp_equal e Sil.exp_zero &&
           Sil.pvar_is_seed pv &&
           Sil.pvar_get_name pv = Mangled.from_string "self" &&
-          procedure_attr.Sil.is_objc_instance_method &&
-          not (Procname.is_constructor procname)
+          procedure_attr.Sil.is_objc_instance_method
       | _ -> false in
     list_exists do_hpred sigma in
   let inconsistent_atom = function

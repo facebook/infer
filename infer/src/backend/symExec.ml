@@ -784,13 +784,6 @@ let handle_special_cases_call tenv cfg pname actual_params =
   else pname, actual_params
 
 let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path =
-  let receiver_self receiver prop =
-    list_exists (fun hpred ->
-            match hpred with
-            | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
-                Sil.exp_equal e receiver && Sil.pvar_is_seed pv &&
-                Sil.pvar_get_name pv = Mangled.from_string "self"
-            | _ -> false) (Prop.get_sigma prop) in
   let path_description = "Message "^(Procname.to_simplified_string callee_pname)^" with receiver nil returns nil." in
   let receiver = (match actual_pars with
       | (e, _):: _ -> e
@@ -800,10 +793,6 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
     match actual_pars with
     | (e, _):: _ when Sil.exp_equal e Sil.exp_zero || Option.is_some (Prop.get_objc_null_attribute pre e) -> true
     | _ -> false in
-  let prop_null =
-    match ret_ids with
-    | [ret_id] -> Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero pre
-    | _ -> pre in
   let add_objc_null_attribute_or_nullify_result prop =
     match ret_ids with
     | [ret_id] ->
@@ -826,21 +815,15 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
       | _ -> false in
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
-        let is_receiver_self = receiver_self receiver pre in
-        let pre_with_attr_or_null =
-          if is_receiver_self then prop_null
-          else add_objc_null_attribute_or_nullify_result pre in
+        let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
         let propset = prune_ne tenv false receiver Sil.exp_zero pre_with_attr_or_null in
         if Propset.is_empty propset then []
         else
           let prop = list_hd (Propset.to_proplist propset) in
-          let path =
-            if is_receiver_self then path
-            else Paths.Path.add_description path path_description in
+          let path = Paths.Path.add_description path path_description in
           [(prop, path)] in
       res_null @ res
     else res (* Not known if receiver = 0 and not footprint. Standard tabulation *)
-
 
 let normalize_params pdesc prop actual_params =
   let norm_arg (p, args) (e, t) =
@@ -848,7 +831,6 @@ let normalize_params pdesc prop actual_params =
     (p', (e', t) :: args) in
   let prop, args = list_fold_left norm_arg (prop, []) actual_params in
   (prop, list_rev args)
-
 
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
@@ -1164,7 +1146,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     let do_exp p (e, t) =
       let do_attribute q = function
         | Sil.Aresource res_action as res
-             when res_action.Sil.ra_res = Sil.Rfile ->
+        when res_action.Sil.ra_res = Sil.Rfile ->
             Prop.remove_attribute res q
         | _ -> q in
       list_fold_left do_attribute p (Prop.get_exp_attributes p e) in
