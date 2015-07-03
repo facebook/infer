@@ -60,8 +60,8 @@ public class NPESelfTest {
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmdNPD);
     assertThat(
-        "NPE should not be found", inferResults,
-        doesNotContain(
+        "NPE should be found", inferResults,
+        contains(
             NULL_DEREFERENCE,
             NPE_FILE,
             "init"));
