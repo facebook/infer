@@ -501,30 +501,31 @@ let dangerous_functions =
   let dangerous_list = ["gets"] in
   ref ((list_map Procname.from_string) dangerous_list)
 
-let check_inherently_dangerous_function caller_pname callee_pname callee_pdesc =
+let check_inherently_dangerous_function caller_pname callee_pname =
   if list_exists (Procname.equal callee_pname) !dangerous_functions then
     let exn = Exceptions.Inherently_dangerous_function (Localise.desc_inherently_dangerous_function callee_pname) in
     let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
     Reporting.log_warning caller_pname ~pre: pre_opt exn
 
-let call_should_be_skipped caller_pname callee_pname callee_pdesc =
-  let print_skip_warning () =
-    let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-    Reporting.log_info caller_pname exn in
+
+let is_defined cfg pname =
+  match Cfg.Procdesc.find_from_name cfg pname with
+  | None -> false
+  | Some pdesc -> Cfg.Procdesc.is_defined pdesc
+
+
+let call_should_be_skipped cfg caller_pname callee_pname =
   let should_skip () =
     match Specs.get_summary callee_pname with
-    | None ->
-        not (Cfg.Procdesc.is_defined callee_pdesc)
-        (* treat calls with no specs as skip functions in angelic mode *)
-        || !Config.angelic_execution
+    | None -> true
     | Some summary ->
         Specs.get_flag callee_pname proc_flag_skip <> None (* check skip flag *)
         || summary.Specs.attributes.Sil.is_abstract (* skip abstract methods *)
         (* treat calls with no specs as skip functions in angelic mode *)
         || (!Config.angelic_execution && Specs.get_specs_from_payload summary == []) in
   if !Config.intraprocedural then true
-  else if should_skip () then (print_skip_warning (); true)
-  else false
+  else should_skip ()
+
 
 let report_raise_memory_leak tenv msg hpred prop =
   L.d_strln msg;
@@ -660,6 +661,7 @@ let method_exists right_proc_name methods =
   else (* ObjC case *)
   Specs.summary_exists right_proc_name
 
+
 let resolve_method tenv class_name proc_name =
   let found_class =
     let visited = ref Mangled.MangledSet.empty in
@@ -690,24 +692,33 @@ let resolve_method tenv class_name proc_name =
       proc_name
   | Some proc_name -> proc_name
 
-(** If the dynamic type of the object calling a method is known, the method from the dynamic type
-is called *)
-let call_virtual cfg tenv prop actual_params pdesc fn : Cfg.Procdesc.t =
-  let obj_exp =
-    match actual_params with
-    | [] -> failwith "Expecting the first parameter to be the object expression"
-    | (exp, typ):: rest -> exp in
+
+let resolve_typename prop arg =
+  let (arg_exp, _) = arg in
   let typexp_opt =
     let rec loop = function
       | [] -> None
-      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e obj_exp -> Some typexp
+      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e arg_exp -> Some typexp
       | _ :: hpreds -> loop hpreds in
     loop (Prop.get_sigma prop) in
   match typexp_opt with
-  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Sil.Class, (Some class_name), _, _, _), _)) ->
-      let fn' = resolve_method tenv class_name fn in
-      proc_desc_copy cfg pdesc fn fn'
-  | _ -> pdesc
+  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Sil.Class, class_name_opt, _, _, _), _)) -> class_name_opt
+  | _ -> None
+
+
+(** If the dynamic type of the object calling a method is known, the method from the dynamic type
+is called *)
+let resolve_virtual_pname cfg tenv prop args pname : Procname.t =
+  match args with
+  | [] -> failwith "Expecting the first parameter to be the object expression"
+  | obj_exp :: _ ->
+      begin
+        match resolve_typename prop obj_exp with
+        | Some class_name -> resolve_method tenv class_name pname
+        | _ -> pname
+      end
+
+(* let resolve_procname cfg tenv prop args pname : Procname.t = *)
 
 (** recognize calls to shared_ptr procedures and re-direct them to infer procedures for modelling *)
 let redirect_shared_ptr tenv cfg pname actual_params =
@@ -931,20 +942,22 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun fn), args, loc, call_flags) when function_is_builtin fn ->
       let sym_exe_builtin = Builtin.get_sym_exe_builtin fn in
       sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args fn loc
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun _fn), _actual_params, loc, call_flags) -> (** Generic fun call with known name *)
-      let (prop_r, _n_actual_params) = normalize_params pdesc _prop _actual_params in
-      let fn, n_actual_params = handle_special_cases_call tenv cfg _fn _n_actual_params in
+  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_param, loc, call_flags) ->
+     (** Generic fun call with known name *)
+      let (prop_r, _n_actual_params) = normalize_params pdesc _prop actual_param in
+      let fn, n_actual_params = handle_special_cases_call tenv cfg callee_pname _n_actual_params in
+      let resolved_pname =
+        if call_flags.Sil.cf_virtual then
+          resolve_virtual_pname cfg tenv prop_r n_actual_params fn
+        else fn in
       begin
         match Cfg.Procdesc.find_from_name cfg fn with
         | None ->
             call_unknown_or_scan
               false cfg pdesc tenv prop_r path ret_ids None n_actual_params fn loc
         | Some callee_pdesc ->
-            let callee_pdesc' =
-              if call_flags.Sil.cf_virtual then
-                (call_virtual cfg tenv _prop n_actual_params callee_pdesc fn)
-              else callee_pdesc in
-            sym_exe_call cfg pdesc tenv prop_r path ret_ids n_actual_params callee_pdesc' loc
+            let callee_pdesc' = proc_desc_copy cfg callee_pdesc fn resolved_pname in
+            sym_exec_call cfg pdesc tenv prop_r path ret_ids n_actual_params callee_pdesc' loc
       end
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params pdesc _prop actual_params in
@@ -1190,15 +1203,16 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     let path_pos = State.get_path_pos () in
     [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
 
+
 (** Perform symbolic execution for a function call *)
-and sym_exe_call cfg pdesc tenv pre path ret_ids actual_pars callee_pdesc loc =
+and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars callee_pdesc loc =
   let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
   let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
+  let ret_typ = Cfg.Procdesc.get_ret_type callee_pdesc in
   let check_return_value_ignored () = (* check if the return value of the call is ignored, and issue a warning *)
-    let ret_typ = Cfg.Procdesc.get_ret_type callee_pdesc in
     let is_ignored = match ret_typ, ret_ids with
       | Sil.Tvoid, _ -> false
-      | Sil.Tint _, _ when Cfg.Procdesc.is_defined callee_pdesc = false ->
+      | Sil.Tint _, _ when not (is_defined cfg callee_pname) ->
       (* if the proc returns Tint and is not defined, *)
       (* don't report ignored return value *)
           false
@@ -1211,20 +1225,20 @@ and sym_exe_call cfg pdesc tenv pre path ret_ids actual_pars callee_pdesc loc =
       let exn = (Exceptions.Return_value_ignored (err_desc, try assert false with Assert_failure x -> x)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
       Reporting.log_warning caller_pname ~pre: pre_opt exn in
-  check_inherently_dangerous_function caller_pname callee_pname callee_pdesc;
-  let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
-  if call_should_be_skipped caller_pname callee_pname callee_pdesc then
+  check_inherently_dangerous_function caller_pname callee_pname;
+  if call_should_be_skipped cfg caller_pname callee_pname then
     begin
+      let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
+      Reporting.log_info caller_pname exn;
       L.d_strln ("Undefined function " ^ Procname.to_string callee_pname ^ ", returning undefined value.");
-      let proc_name = Cfg.Procdesc.get_proc_name pdesc in
-      let summary = Specs.get_summary_unsafe proc_name in
-      Specs.CallStats.trace
-        summary.Specs.stats.Specs.call_stats callee_pname loc
-        (Specs.CallStats.CR_skip) !Config.footprint;
-      let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc
-      and ret_type_option = Some (Cfg.Procdesc.get_ret_type callee_pdesc) in
+      (match Specs.get_summary caller_pname with
+       | None -> ()
+       | Some summary ->
+          Specs.CallStats.trace
+            summary.Specs.stats.Specs.call_stats callee_pname loc
+            (Specs.CallStats.CR_skip) !Config.footprint);
       call_unknown_or_scan
-        false cfg pdesc tenv pre path ret_ids ret_type_option actual_pars callee_pname loc
+        false cfg pdesc tenv pre path ret_ids (Some ret_typ) actual_pars callee_pname loc
     end
   else begin
     let formal_types = list_map (fun (_, typ) -> typ) (Cfg.Procdesc.get_formals callee_pdesc) in
@@ -2038,7 +2052,7 @@ module ModelBuiltins = struct
                 | Some callee_pdesc -> callee_pdesc
                 | None -> assert false in
               L.d_strln ("pthread_create: calling function " ^ fun_string);
-              sym_exe_call
+              sym_exec_call
                 cfg pdesc tenv prop path ret_ids [(routine_arg, snd arg)] callee_pdesc loc
           | _ ->
               L.d_str "pthread_create: unknown function "; Sil.d_exp routine_name; L.d_strln ", skipping call.";
