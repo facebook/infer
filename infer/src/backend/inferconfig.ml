@@ -8,6 +8,8 @@ open Utils
 (** Name of the infer configuration file *)
 let inferconfig_file = ".inferconfig"
 
+let inferconfig_home = ref None
+
 (** Look up a key in a json file containing a list of strings *)
 let lookup_string_list key json =
   Yojson.Basic.Util.filter_member key [json]
@@ -42,7 +44,11 @@ type filter_config =
 
 let load_filters analyzer =
   try
-    let json = Yojson.Basic.from_file inferconfig_file in
+    let json =
+      match !inferconfig_home with
+      | Some dir ->
+          Yojson.Basic.from_file (Filename.concat dir inferconfig_file)
+      | None -> Yojson.Basic.from_file inferconfig_file in
     let inferconfig =
       {
         whitelist = lookup_string_list (analyzer ^ "_whitelist") json;
@@ -53,7 +59,6 @@ let load_filters analyzer =
       } in
     Some inferconfig
   with Sys_error _ -> None
-
 
 let is_matching patterns =
   fun source_file ->
@@ -79,7 +84,6 @@ module FileContainsStringMatcher = struct
       | End_of_file -> false in
     loop ()
 
-
   let create_matcher s_patterns =
     if s_patterns = [] then
       default_matcher
@@ -97,7 +101,6 @@ module FileContainsStringMatcher = struct
               source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
               pattern_found
 end
-
 
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
@@ -191,7 +194,6 @@ module NeverReturnNull = struct
         Format.fprintf fmt "Source contains (%s) {\n%a}\n"
           (Sil.string_of_language language) pp_source_contains sc
 
-
   let detect_language assoc =
     let rec loop = function
       | [] ->
@@ -201,7 +203,6 @@ module NeverReturnNull = struct
           language_of_string s
       | _:: tl -> loop tl in
     loop assoc
-
 
   let detect_pattern assoc =
     let language = detect_language assoc in
@@ -216,7 +217,6 @@ module NeverReturnNull = struct
           Source_contains (language, default_source_contains)
       | _:: tl -> loop tl in
     loop assoc
-
 
   let create_pattern (assoc : (string * Yojson.Basic.json) list) =
     let collect_params l =
@@ -247,13 +247,11 @@ module NeverReturnNull = struct
     | Source_contains (language, sc) ->
         Source_contains (language, create_string_contains sc assoc)
 
-
   let rec translate accu (json : Yojson.Basic.json) : pattern list =
     match json with
     | `Assoc l -> (create_pattern l):: accu
     | `List l -> list_fold_left translate accu l
     | _ -> assert false
-
 
   let create_method_matcher language m_patterns =
     if language <> Sil.Java then assert false
@@ -284,7 +282,6 @@ module NeverReturnNull = struct
               class_patterns
           with Not_found -> false
 
-
   let create_file_matcher language patterns =
     let s_patterns, m_patterns =
       let collect (s_patterns, m_patterns) = function
@@ -300,7 +297,6 @@ module NeverReturnNull = struct
     fun source_file proc_name ->
         m_matcher source_file proc_name || s_matcher source_file proc_name
 
-
   let load_matcher language =
     try
       let patterns =
@@ -313,9 +309,7 @@ module NeverReturnNull = struct
     with Sys_error _ ->
         default_matcher
 
-
 end (* of module NeverReturnNull *)
-
 
 (* This function loads and list the path that are being filtered by the analyzer. The results *)
 (* are of the form: path/to/file.java -> {infer, eradicate} meaning that analysis results will *)
