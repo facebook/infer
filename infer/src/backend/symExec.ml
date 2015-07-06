@@ -1342,10 +1342,11 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
 
 let lifted_sym_exec
     handle_exn cfg tenv pdesc (pset : Paths.PathSet.t) node (instrs : Sil.instr list)
-: Paths.PathSet.t =
+    : Paths.PathSet.t =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =
-      if Tabulation.prop_is_exn pdesc p && not (Sil.instr_is_auxiliary instr)
+      if Tabulation.prop_is_exn pname p && not (Sil.instr_is_auxiliary instr)
       && Cfg.Node.get_kind node <> Cfg.Node.exn_handler_kind
       (* skip normal instructions if an exception was thrown, unless this is an exception handler node *)
       then

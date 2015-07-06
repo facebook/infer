@@ -3776,7 +3776,8 @@ let pp_tenv f (tenv : tenv) =
 let mk_pvar (name: Mangled.t) (proc_name: Procname.t) : pvar =
   { pv_name = name; pv_kind = Local_var proc_name }
 
-let mk_ret_var pname =
+
+let get_ret_pvar pname =
   mk_pvar Ident.name_return pname
 
 (** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)

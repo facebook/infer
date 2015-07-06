@@ -1318,8 +1318,8 @@ val loc_none : location
 (** [mk_pvar name proc_name suffix] creates a program var with the given function name and suffix *)
 val mk_pvar : Mangled.t -> Procname.t -> pvar
 
-(** [mk_ret_var proc_name] creates the retun pvar based on the procedure name *)
-val mk_ret_var : Procname.t -> pvar
+(** [get_ret_pvar proc_name] retuns the return pvar associated with the procedure name *)
+val get_ret_pvar : Procname.t -> pvar
 
 (** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)
 val mk_pvar_callee : Mangled.t -> Procname.t -> pvar

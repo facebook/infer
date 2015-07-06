@@ -831,13 +831,15 @@ let rec instruction context pc instr : translation =
   let cn = JContext.get_cn context in
   let program = JContext.get_program context in
   let meth_kind = JContext.get_meth_kind context in
+  let proc_name = Cfg.Procdesc.get_proc_name (JContext.get_procdesc context) in
+  let ret_var = Sil.get_ret_pvar proc_name in
+  let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
   let loc = get_location (JContext.get_impl context) pc meth_kind cn in
   let match_never_null = JContext.get_never_null_matcher context in
   let create_node node_kind temps sil_instrs =
     Cfg.Node.create
       cfg (get_location (JContext.get_impl context) pc meth_kind cn) node_kind sil_instrs (JContext.get_procdesc context) temps in
   let return_not_null () =
-    let proc_name = Cfg.Procdesc.get_proc_name (JContext.get_procdesc context) in
     (match_never_null loc.Sil.file proc_name
       || list_exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
   try
@@ -858,8 +860,6 @@ let rec instruction context pc instr : translation =
               create_node node_kind [] []
           | Some expr ->
               let (idl, stml, sil_expr) = expression context pc expr in
-              let ret_var = Cfg.Procdesc.get_ret_var (JContext.get_procdesc context) in
-              let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
               let sil_instrs =
                 let return_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_expr, loc) in
                 if return_not_null () then
@@ -938,8 +938,6 @@ let rec instruction context pc instr : translation =
     | JBir.Throw expr ->
         let node_kind = Cfg.Node.Stmt_node "throw" in
         let (ids, instrs, sil_expr) = expression context pc expr in
-        let ret_var = Cfg.Procdesc.get_ret_var (JContext.get_procdesc context) in
-        let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
         let sil_exn = Sil.Const (Sil.Cexn sil_expr) in
         let sil_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
         let node = create_node node_kind ids (instrs @ [sil_instr]) in
@@ -1076,8 +1074,6 @@ let rec instruction context pc instr : translation =
             let ret_opt = Some (Sil.Var ret_id, class_type) in
             method_invocation context loc pc None npe_cn constr_ms ret_opt [] I_Special Procname.Static in
           let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
-          let ret_var = Cfg.Procdesc.get_ret_var (JContext.get_procdesc context) in
-          let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
           let set_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
           let npe_instrs = instrs @ [sil_prune_null] @ (new_instr :: call_instrs) @ [set_instr] in
           create_node npe_kind (ids @ call_ids) npe_instrs in
@@ -1133,8 +1129,6 @@ let rec instruction context pc instr : translation =
               context loc pc None out_of_bound_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
           let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
-          let ret_var = Cfg.Procdesc.get_ret_var (JContext.get_procdesc context) in
-          let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
           let set_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
           let out_of_bound_instrs =
             instrs @ [sil_assume_out_of_bound] @ (new_instr :: call_instrs) @ [set_instr] in
@@ -1173,8 +1167,6 @@ let rec instruction context pc instr : translation =
             method_invocation context loc pc None cce_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
           let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
-          let ret_var = Cfg.Procdesc.get_ret_var (JContext.get_procdesc context) in
-          let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
           let set_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
           let cce_instrs =
             instrs @ [call; asssume_not_instance_of] @ (new_instr :: call_instrs) @ [set_instr] in

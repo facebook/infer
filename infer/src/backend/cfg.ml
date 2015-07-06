@@ -333,7 +333,8 @@ module Node = struct
   let replace_instrs node instrs =
     node.nd_instrs <- instrs
 
-  let proc_desc_get_ret_var pdesc = Sil.mk_pvar Ident.name_return pdesc.pd_name
+  let proc_desc_get_ret_var pdesc =
+    Sil.get_ret_pvar pdesc.pd_name
 
   (** Add declarations for local variables and return variable to the node *)
   let add_locals_ret_declaration node locals =
