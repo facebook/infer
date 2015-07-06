@@ -850,14 +850,12 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
       res_null @ res
     else res (* Not known if receiver = 0 and not footprint. Standard tabulation *)
 
-
 let normalize_params pdesc prop actual_params =
   let norm_arg (p, args) (e, t) =
     let e', p' = exp_norm_check_arith pdesc p e in
     (p', (e', t) :: args) in
   let prop, args = list_fold_left norm_arg (prop, []) actual_params in
   (prop, list_rev args)
-
 
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
@@ -1220,6 +1218,40 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     let path_pos = State.get_path_pos () in
     [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
 
+and sym_exe_check_variadic_sentinel cfg pdesc tenv prop path actual_params fails_on_nil (sentinel, null_pos) pname loc =
+  let proc_attributes = Cfg.Procdesc.get_attributes pdesc in
+  let args = if proc_attributes.Sil.is_objc_instance_method then
+      (* we are calling an objc method so the first actual is the instance *)
+      list_tl actual_params
+    else
+      actual_params in
+  let nargs = list_length args in
+  (* sentinels start counting from the last argument to the function *)
+  let n = nargs - sentinel - 1 in
+  let build_argsi (acc, i) a =
+    if i = n then (acc, i+1)
+    else ((a,i)::acc, i+1) in
+  (* list_fold_left reverses the arguments *)
+  let non_terminal_actuals_i = fst (list_fold_left build_argsi ([], 0) args) in
+  let check_allocated result ((lexp, typ), i) =
+  (* simulate a Letderef for [lexp] *)
+    let tmp_id_deref = Ident.create_fresh Ident.kprimed in
+    let letderef = Sil.Letderef (tmp_id_deref, lexp, typ, loc) in
+    try
+      sym_exec_generated false cfg tenv pdesc [letderef] result
+    with e when exn_not_timeout e ->
+      if not fails_on_nil then
+        let deref_str = Localise.deref_str_nil_argument_in_variadic_method pname nargs i in
+        let err_desc =
+          Errdesc.explain_dereference ~use_buckets: true ~is_premature_nil: true
+            deref_str prop loc in
+        raise (Exceptions.Premature_nil_termination
+                 (err_desc, try assert false with Assert_failure x -> x))
+      else
+        raise e in
+  (* list_fold_left reverses the arguments back so that we report an *)
+  (* error on the first premature nil argument *)
+  list_fold_left check_allocated [(prop, path)] non_terminal_actuals_i
 
 (** Perform symbolic execution for a function call *)
 and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
@@ -2246,62 +2278,33 @@ module ModelBuiltins = struct
   let _ = Builtin.register "vwscanf" (execute_scan_function 1) (* vsscanf from C library *)
   let _ = Builtin.register "wscanf" (execute_scan_function 1) (* vsscanf from C library *)
 
-  let execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
-    (** like list_map but applies [g] to the last element instead of [f] *)
-    let rec list_map_except_last f g = function
-      | [] -> []
-      | a::[] -> g a::[]
-      | x:: l -> f x:: list_map_except_last f g l in
-    (** simulates a Letderef for each argument *)
-    let create_letderef (lexp, typ) =
-      let tmp_id = Ident.create_fresh Ident.kprimed in
-      Sil.Letderef (tmp_id, lexp, typ, loc) in
-    (** allocates an object *)
-    let create_alloc _ =
-      let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
-      let nsarray_typ = Sil.Tvar (Sil.TN_csu (Sil.Class, Mangled.from_string "NSArray")) in
-      let nsarray_typ = Sil.expand_type tenv nsarray_typ in
-      let nsarray_ptr_typ = Sil.Tptr (nsarray_typ, Sil.Pk_pointer) in
-      let sizeof_nsarray = Sil.Sizeof (nsarray_typ, Sil.Subtype.exact) in
-      Sil.Call (ret_ids, alloc_fun, [sizeof_nsarray, nsarray_ptr_typ], loc, Sil.cf_default) in
-    (* OPTIM: take advantage of the fact that [args] has an extra nil
-    argument we don't care about to replace it with our final
-    instruction *)
-    let instrs = list_map_except_last create_letderef create_alloc args in
-    sym_exec_generated false cfg tenv pdesc instrs [(prop, path)]
+  let execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids typ loc =
+    let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
+    let ptr_typ = Sil.Tptr (typ, Sil.Pk_pointer) in
+    let sizeof_typ = Sil.Sizeof (typ, Sil.Subtype.exact) in
+    let alloc_instr = Sil.Call (ret_ids, alloc_fun, [sizeof_typ, ptr_typ], loc, Sil.cf_default) in
+    sym_exec_generated false cfg tenv pdesc [alloc_instr] symb_state
 
-  let objc_nsarray_arrayWithObjects = Procname.mangled_objc "NSArray" "arrayWithObjects:"
+  let execute_objc_NSArray_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
+    let nsarray_typ = Sil.Tvar (Sil.TN_csu (Sil.Class, Mangled.from_string "NSArray")) in
+    let nsarray_typ = Sil.expand_type tenv nsarray_typ in
+    execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsarray_typ loc
+
+  let execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
+    let res' = sym_exe_check_variadic_sentinel cfg pdesc tenv prop path args true (0,1) callee_pname loc in
+    execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let execute_NSArray_arrayWithObjects cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
-    (* tag args to trigger a custom error in Rearrange.rearrange *)
-    let n = list_length args in
-    (** add our attribute to [arg] (which is argument #[i] of the
-    * function) in [prop] and accumulate the added attributes *)
-    let tag (prop, added_attrs, i) arg =
-      (* skip last element *)
-      if i <> n - 1 then
-        let attr =
-          Sil.Avariadic_function_argument (objc_nsarray_arrayWithObjects, list_length args, i) in
-        L.err "tagging: %s\n" (Sil.exp_to_string (fst arg));
-        let dummy_check_attr_change att_old att_new = () in
-        let tagged_prop =
-          Prop.add_or_replace_exp_attribute dummy_check_attr_change prop (fst arg) attr in
-        (tagged_prop, attr:: added_attrs, i + 1)
-      else (prop, added_attrs, i) in
-    let (prop, added_attrs, _) = list_fold_left tag (prop, [], 0) args in
-    let result =
-      execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc in
-
-    (* remove the tags we just added to temporarily instrument the Letderefs *)
-    let remove_attrs (prop, path) =
-      let remove_attr prop tag = Prop.remove_attribute tag prop in
-      (list_fold_left remove_attr prop added_attrs, path) in
-    list_map remove_attrs result
+    let res' = sym_exe_check_variadic_sentinel cfg pdesc tenv prop path args false (0,1) callee_pname loc in
+    execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let _ =
     Builtin.register_procname
       (Procname.mangled_objc "NSArray" "arrayWithObjects:count:")
       execute_NSArray_arrayWithObjects_count
-  let _ = Builtin.register_procname objc_nsarray_arrayWithObjects execute_NSArray_arrayWithObjects
+  let _ =
+    Builtin.register_procname
+      (Procname.mangled_objc "NSArray" "arrayWithObjects:")
+      execute_NSArray_arrayWithObjects
 end
 (* ============== END of ModelBuiltins ============== *)
