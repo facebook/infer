@@ -672,13 +672,8 @@ let combine
       Prop.normalize (Prop.replace_pi (Prop.get_pi post_p1 @ new_footprint_pi) post_p1') in
 
     let post_p3 = (** replace [result|callee] with an aux variable dedicated to this proc *)
-      let callee_pdesc =
-        match Cfg.Procdesc.find_from_name cfg callee_pname with
-        | Some pd -> pd
-        | None ->
-            L.d_strln ("proc_desc not_found for " ^ Procname.to_string callee_pname);
-            assert false in
-      let callee_ret_pvar = Sil.Lvar (Sil.pvar_to_callee callee_pname (Cfg.Procdesc.get_ret_var callee_pdesc)) in
+      let callee_ret_pvar =
+        Sil.Lvar (Sil.pvar_to_callee callee_pname (Sil.mk_ret_var callee_pname)) in
       match Prop.prop_iter_create post_p2 with
       | None -> post_p2
       | Some iter ->

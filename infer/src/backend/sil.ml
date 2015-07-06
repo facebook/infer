@@ -666,9 +666,9 @@ and attribute =
   | Auntaint
   | Adiv0 of path_pos (** value appeared in second argument of division in path position *)
   | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
-  | Avariadic_function_argument of Procname.t * int * int (** (pn, n, i) the exp. is used as [i]th
-  argument of a call to the variadic
-  function [pn] that has [n] arguments *)
+  | Avariadic_function_argument of Procname.t * int * int
+  (** (pn, n, i) the exp. is used as [i]th argument of a call to the variadic function
+  [pn] that has [n] arguments *)
   | Aretval of Procname.t (** value was returned from a call to the given procedure *)
 
 (** Categories of attributes *)
@@ -3775,6 +3775,9 @@ let pp_tenv f (tenv : tenv) =
 (** [mk_pvar name proc_name] creates a program var with the given function name *)
 let mk_pvar (name: Mangled.t) (proc_name: Procname.t) : pvar =
   { pv_name = name; pv_kind = Local_var proc_name }
+
+let mk_ret_var pname =
+  mk_pvar Ident.name_return pname
 
 (** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)
 let mk_pvar_callee (name: Mangled.t) (proc_name: Procname.t) : pvar =

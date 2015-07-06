@@ -663,6 +663,12 @@ let get_timestamp summary =
 let get_proc_name summary =
   summary.proc_name
 
+let get_ret_type summary =
+  summary.ret_type
+
+let get_formals summary =
+  summary.formals
+
 let get_attributes summary =
   summary.attributes
 

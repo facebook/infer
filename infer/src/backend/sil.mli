@@ -289,8 +289,8 @@ and attribute =
   | Adiv0 of path_pos (** value appeared in second argument of division at given path position *)
   | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
   | Avariadic_function_argument of Procname.t * int * int (** (pn, n, i) the exp. is used as [i]th
-                                                          argument of a call to the variadic
-                                                          function [pn] that has [n] arguments *)
+  argument of a call to the variadic
+  function [pn] that has [n] arguments *)
   | Aretval of Procname.t (** value was returned from a call to the given procedure *)
 
 (** Categories of attributes *)
@@ -1317,6 +1317,9 @@ val loc_none : location
 
 (** [mk_pvar name proc_name suffix] creates a program var with the given function name and suffix *)
 val mk_pvar : Mangled.t -> Procname.t -> pvar
+
+(** [mk_ret_var proc_name] creates the retun pvar based on the procedure name *)
+val mk_ret_var : Procname.t -> pvar
 
 (** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)
 val mk_pvar_callee : Mangled.t -> Procname.t -> pvar
