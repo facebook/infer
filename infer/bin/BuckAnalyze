@@ -273,12 +273,14 @@ def get_basic_stats(stats):
         'total_time',
     }
     bugs_found = 'Errors found:\n\n'
+    n_errors = 0
     for key, value in sorted(stats['int'].items()):
         if key not in to_skip:
+            n_errors += 1
             bugs_found += '  {0:>8}  {1}\n'.format(value, key)
 
     basic_stats_message = files_analyzed + phase_times + bugs_found + '\n'
-    return basic_stats_message
+    return basic_stats_message, n_errors
 
 
 def get_buck_stats():
@@ -438,7 +440,7 @@ def collect_results(args, start_time):
     with open(stats_filename, 'w') as stats_out:
         json.dump(stats, stats_out)
 
-    basic_stats = get_basic_stats(stats)
+    basic_stats, n_errors = get_basic_stats(stats)
 
     if args.print_harness:
         harness_code = get_harness_code()
@@ -448,6 +450,8 @@ def collect_results(args, start_time):
 
     with open(os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT), 'a') as f:
         f.write(basic_stats)
+
+    return n_errors
 
 
 def cleanup(temp_files):
@@ -513,7 +517,7 @@ if __name__ == '__main__':
         timer.stop('Buck finished')
 
         timer.start('Collecting results...')
-        collect_results(args, start_time)
+        n_errors = collect_results(args, start_time)
         timer.stop('Done')
 
     except KeyboardInterrupt as e:
@@ -526,6 +530,9 @@ if __name__ == '__main__':
         sys.exit(1)
     finally:
         cleanup(temp_files)
+
+    if n_errors > 0:
+        sys.exit(1)
 
 
 # vim: set sw=4 ts=4 et:
