@@ -282,9 +282,6 @@ val get_div0_attribute : 'a t -> exp -> attribute option
 (** Get the objc null attribute associated to the expression, if any *)
 val get_objc_null_attribute : 'a t -> exp -> attribute option
 
-(** Get the variadic function argument attribute associated to the expression, if any *)
-val get_variadic_function_argument_attribute : 'a t -> exp -> attribute option
-
 (** Get all the attributes of the prop *)
 val get_all_attributes : 'a t -> (exp * attribute) list
 

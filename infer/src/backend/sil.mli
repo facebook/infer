@@ -288,9 +288,6 @@ and attribute =
   | Auntaint
   | Adiv0 of path_pos (** value appeared in second argument of division at given path position *)
   | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
-  | Avariadic_function_argument of Procname.t * int * int (** (pn, n, i) the exp. is used as [i]th
-  argument of a call to the variadic
-  function [pn] that has [n] arguments *)
   | Aretval of Procname.t (** value was returned from a call to the given procedure *)
 
 (** Categories of attributes *)
@@ -300,7 +297,6 @@ and attribute_category =
   | ACtaint
   | ACdiv0
   | ACobjc_null
-  | ACvariadic_function_argument
 
 (** Constants *)
 and const =

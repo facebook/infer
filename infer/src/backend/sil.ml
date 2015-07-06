@@ -666,9 +666,6 @@ and attribute =
   | Auntaint
   | Adiv0 of path_pos (** value appeared in second argument of division in path position *)
   | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
-  | Avariadic_function_argument of Procname.t * int * int
-  (** (pn, n, i) the exp. is used as [i]th argument of a call to the variadic function
-  [pn] that has [n] arguments *)
   | Aretval of Procname.t (** value was returned from a call to the given procedure *)
 
 (** Categories of attributes *)
@@ -678,7 +675,6 @@ and attribute_category =
   | ACtaint
   | ACdiv0
   | ACobjc_null
-  | ACvariadic_function_argument
 
 (** Constants *)
 and const =
@@ -1183,7 +1179,6 @@ let attribute_to_category att =
   | Aautorelease -> ACautorelease
   | Adiv0 _ -> ACdiv0
   | Aobjc_null _ -> ACobjc_null
-  | Avariadic_function_argument _ -> ACvariadic_function_argument
 
 let cname_opt_compare nameo1 nameo2 = match nameo1, nameo2 with
   | None, None -> 0
@@ -1416,12 +1411,6 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
       exp_compare exp1 exp2
   | Aobjc_null _, _ -> -1
   | _, Aobjc_null _ -> 1
-  | Avariadic_function_argument (pn1, n1, i1), Avariadic_function_argument (pn2, n2, i2) ->
-      Procname.compare pn1 pn2
-      |> next int_compare n1 n2
-      |> next int_compare i1 i2
-  | Avariadic_function_argument _, _ -> -1
-  | _, Avariadic_function_argument _ -> 1
   | Aretval pn1, Aretval pn2 -> Procname.compare pn1 pn2
   | Aretval _, _ -> -1
   | _, Aretval _ -> 1
@@ -2006,10 +1995,6 @@ and attribute_to_string pe = function
         | Lfield _ -> "FIELD "^(exp_to_string exp)
         | _ -> "" in
       "OBJC_NULL["^ info_s ^"]"
-  | Avariadic_function_argument (pn, n, i) ->
-      Printf.sprintf "VA_ARG" ^ (str_binop pe Lt)
-      ^ Procname.to_string pn ^ "," ^ (string_of_int n) ^ "," ^ (string_of_int i)
-      ^ (str_binop pe Gt)
   | Aretval pn -> "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
 
 and pp_const pe f = function

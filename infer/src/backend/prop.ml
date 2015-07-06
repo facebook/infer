@@ -1728,9 +1728,6 @@ let get_autorelease_attribute prop exp =
 let get_objc_null_attribute prop exp =
   get_attribute prop exp Sil.ACobjc_null
 
-let get_variadic_function_argument_attribute prop exp =
-  get_attribute prop exp Sil.ACvariadic_function_argument
-
 let get_div0_attribute prop exp =
   get_attribute prop exp Sil.ACdiv0
 
