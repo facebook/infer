@@ -3,7 +3,7 @@
 package endtoend.java.tracing;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,13 +33,16 @@ public class NullPointerExceptionTest {
   @Test
   public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
       throws IOException, InterruptedException, InferException {
+    String[] methods = {
+        "callDeref"
+    };
     assertThat(
         "Results should contain " + NPE,
         inferResults,
-        contains(
+        containsExactly(
             NPE,
             SOURCE_FILE,
-            "callDeref"
+            methods
         )
     );
   }

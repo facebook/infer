@@ -7,7 +7,9 @@ import com.facebook.infer.annotation.Verify;
 public class ArrayIndexOutOfBoundsExceptionExample {
 
   void callMethodFromArray(T[] array, int index) {
-    array[index].f();
+    if (array[index] != null) {
+      array[index].f();
+    }
   }
 
   @Verify
@@ -19,10 +21,23 @@ public class ArrayIndexOutOfBoundsExceptionExample {
     }
   }
 
-  @Verify
   void callOutOfBound() {
     T[] array = new T[42];
     callMethodFromArray(array, -5);
+  }
+
+  void callAtIndex(T[] array, int index) {
+    array[index].f();
+  }
+
+  void withFixedIndex(T[] array) {
+    int index = 9;
+    callAtIndex(array, index);
+  }
+
+  void ArrayIndexOutOfBoundsInCallee() {
+    T[] array = new T[8];
+    withFixedIndex(array);
   }
 
 }

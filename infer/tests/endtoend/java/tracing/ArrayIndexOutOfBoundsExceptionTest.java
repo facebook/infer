@@ -3,7 +3,7 @@
 package endtoend.java.tracing;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,13 +33,18 @@ public class ArrayIndexOutOfBoundsExceptionTest {
   @Test
   public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
       throws IOException, InterruptedException, InferException {
+    String[] methods = {
+        "callOutOfBound",
+        "callWithWrongIndex",
+        "ArrayIndexOutOfBoundsInCallee",
+    };
     assertThat(
         "Results should contain " + ARRAY_OUT_OF_BOUND,
         inferResults,
-        contains(
+        containsExactly(
             ARRAY_OUT_OF_BOUND,
             SOURCE_FILE,
-            "callOutOfBound"
+            methods
         )
     );
   }
