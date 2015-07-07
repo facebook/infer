@@ -47,7 +47,8 @@ struct
   let get_parameters function_method_decl_info =
     let par_to_ms_par par =
       match par with
-      | ParmVarDecl(decl_info, name, qtype, var_decl_info) ->
+      | ParmVarDecl(decl_info, name_info, qtype, var_decl_info) ->
+          let name = name_info.Clang_ast_t.ni_name in
           Printing.log_out "Adding  param '%s' " name;
           Printing.log_out "with pointer %s@." decl_info.Clang_ast_t.di_pointer;
           (name, CTypes.get_type qtype, var_decl_info.vdi_init_expr)
@@ -96,8 +97,9 @@ struct
     | decl:: rest ->
         let rest_assume_calls = add_assume_not_null_calls rest attributes in
         (match decl with
-          | ParmVarDecl(decl_info, name, qtype, var_decl_info)
+          | ParmVarDecl(decl_info, name_info, qtype, var_decl_info)
           when CFrontend_utils.Ast_utils.is_type_nonnull qtype attributes ->
+              let name = name_info.Clang_ast_t.ni_name in
               let assume_call = Ast_expressions.create_assume_not_null_call decl_info name qtype in
               assume_call:: rest_assume_calls
           | _ -> rest_assume_calls)
@@ -179,7 +181,8 @@ struct
 
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =
     match dec with
-    | ObjCMethodDecl(decl_info, method_name, method_decl_info) ->
+    | ObjCMethodDecl(decl_info, name_info, method_decl_info) ->
+        let method_name = name_info.Clang_ast_t.ni_name in
         process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info
 
     | ObjCPropertyImplDecl(decl_info, property_impl_decl_info) ->

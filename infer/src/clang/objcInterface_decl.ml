@@ -39,13 +39,13 @@ let is_pointer_to_objc_class tenv typ =
 
 let get_super_interface_decl otdi_super =
   match otdi_super with
-  | Some dr -> dr.Clang_ast_t.dr_name
+  | Some dr -> Ast_utils.name_opt_of_name_info_opt dr.Clang_ast_t.dr_name
   | _ -> None
 
 let get_protocols protocols =
   let protocol_names = list_map (
         fun decl -> match decl.Clang_ast_t.dr_name with
-            | Some name -> name
+            | Some name -> name.Clang_ast_t.ni_name
             | None -> assert false
       ) protocols in
   protocol_names
@@ -198,16 +198,16 @@ let lookup_late_defined_interface tenv cname =
   let rec scan decls =
     match decls with
     | [] -> ()
-    | ObjCInterfaceDecl(decl_info, name, decl_list, decl_context_info, obj_c_interface_decl_info)
+    | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
     :: decls'
-    when (Mangled.from_string name) = cname ->
+    when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
         scan decls'
-    | ObjCInterfaceDecl(decl_info, name, decl_list, decl_context_info, obj_c_interface_decl_info)
+    | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
     :: decls'
-    when (Mangled.from_string name) = cname ->
+    when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
     (* Assumption: here we assume that the first interface declaration with non empty set of fields is the *)
     (* correct one. So we stop. *)
-        ignore (interface_declaration tenv name decl_list obj_c_interface_decl_info)
+        ignore (interface_declaration tenv name_info.Clang_ast_t.ni_name decl_list obj_c_interface_decl_info)
     | _:: decls' -> scan decls' in
   scan !CFrontend_config.global_translation_unit_decls
 

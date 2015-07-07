@@ -41,6 +41,8 @@ sig
 
   val string_of_unary_operator_kind : Clang_ast_t.unary_operator_kind -> string
 
+  val name_opt_of_name_info_opt : Clang_ast_t.named_decl_info option -> string option
+
   val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> string
 
   val property_attribute_compare : property_attribute -> property_attribute -> int

@@ -204,7 +204,7 @@ struct
   let objCProtocolExpr_trans trans_state stmt_info expr_info decl_ref =
     Printing.log_out "Passing from ObjCProtocolExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let name = (match decl_ref.Clang_ast_t.dr_name with
-        | Some s -> s
+        | Some s -> s.Clang_ast_t.ni_name
         | _ -> "") in
     stringLiteral_trans trans_state stmt_info expr_info name
 
@@ -1427,7 +1427,7 @@ struct
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
     let name_field = (match obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref.Clang_ast_t.dr_name with
-        | Some s -> s
+        | Some s -> s.Clang_ast_t.ni_name
         | _ -> assert false) in
     do_memb_ivar_ref_exp trans_state expr_info exp_stmt sil_loc name_field
 
@@ -1436,7 +1436,7 @@ struct
     let sil_loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
-    let name_field = member_expr_info.Clang_ast_t.mei_name in
+    let name_field = member_expr_info.Clang_ast_t.mei_name.Clang_ast_t.ni_name in
     do_memb_ivar_ref_exp trans_state expr_info exp_stmt sil_loc name_field
 
   and unaryOperator_trans trans_state stmt_info expr_info stmt_list unary_operator_info =

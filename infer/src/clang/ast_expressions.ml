@@ -159,9 +159,14 @@ let make_obj_c_message_expr_info_class selector qt =
     omei_receiver_kind = `Class (create_qual_type qt);
   }
 
+let make_name_decl name = {
+  Clang_ast_t.ni_name = name;
+  Clang_ast_t.ni_qual_name = [name];
+}
+
 let make_general_decl_ref k name is_hidden qt = {
   Clang_ast_t.dr_kind = k;
-  Clang_ast_t.dr_name = Some name;
+  Clang_ast_t.dr_name = Some (make_name_decl name);
   Clang_ast_t.dr_is_hidden = is_hidden ;
   Clang_ast_t.dr_qual_type = Some (qt)
 }
@@ -171,7 +176,7 @@ let make_decl_ref name =
 
 let make_decl_ref_self qt = {
   Clang_ast_t.dr_kind = `ImplicitParam;
-  Clang_ast_t.dr_name = Some "self";
+  Clang_ast_t.dr_name = Some (make_name_decl "self");
   Clang_ast_t.dr_is_hidden = false ;
   Clang_ast_t.dr_qual_type = Some qt
 }
@@ -240,7 +245,7 @@ let make_objc_ivar_decl decl_info qt property_impl_decl_info =
   let obj_c_ivar_decl_info = {
     Clang_ast_t.ovdi_is_synthesize = true; (* NOTE: We set true here because we use this definition to synthesize the getter/setter*)
     Clang_ast_t.ovdi_access_control = `Private } in
-  ObjCIvarDecl(decl_info, name, qt, field_decl_info, obj_c_ivar_decl_info)
+  ObjCIvarDecl(decl_info, make_name_decl name, qt, field_decl_info, obj_c_ivar_decl_info)
 
 let make_expr_info qt =
   {
@@ -278,7 +283,7 @@ let make_next_object_exp stmt_info item items =
   let var_decl_ref, var_type =
     match item with
     | DeclStmt (stmt_info, _, [VarDecl(di, var_name, var_type, _)]) ->
-        let decl_ref = make_general_decl_ref `Var var_name false var_type in
+        let decl_ref = make_general_decl_ref `Var var_name.Clang_ast_t.ni_name false var_type in
         let stmt_info_var = {
           si_pointer = di.Clang_ast_t.di_pointer;
           si_source_range = di.Clang_ast_t.di_source_range
@@ -305,6 +310,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
   let block_expr =
     try Utils.list_nth stmt_list (n + 1)
     with Not_found -> assert false in
+  let block_name_info = make_name_decl block_name in
   match block_expr with BlockExpr(bsi, bsl, bei, bd) ->
       let qt = bei.Clang_ast_t.ei_qual_type in
       let cast_info = { cei_cast_kind = `BitCast; cei_base_path =[]} in
@@ -312,7 +318,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
       let decl_info = { empty_decl_info
         with di_pointer = stmt_info.si_pointer; di_source_range = stmt_info.si_source_range } in
       let var_decl_info = { empty_var_decl with vdi_init_expr = Some block_def } in
-      let block_var_decl = VarDecl(decl_info, block_name, ei.ei_qual_type, var_decl_info) in
+      let block_var_decl = VarDecl(decl_info, block_name_info, ei.ei_qual_type, var_decl_info) in
       let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
       let expr_info_call = {
         Clang_ast_t.ei_qual_type = create_void_type ();
@@ -326,7 +332,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
       } in
       let decl_ref = {
         dr_kind = `Var;
-        dr_name = Some block_name;
+        dr_name = Some block_name_info;
         dr_is_hidden = false;
         dr_qual_type = Some qt;
       } in

@@ -29,7 +29,7 @@ let fields_superclass tenv interface_decl_info =
   match interface_decl_info.Clang_ast_t.otdi_super with
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
-        | Some sc -> get_fields_super_classes tenv (CTypes.mk_classname sc)
+        | Some sc -> get_fields_super_classes tenv (CTypes.mk_classname sc.Clang_ast_t.ni_name)
         | _ -> [])
   | _ -> []
 
@@ -80,8 +80,9 @@ let rec get_fields tenv curr_class decl_list =
   let class_name = CContext.get_curr_class_name curr_class in
   match decl_list with
   | [] -> []
-  | ObjCIvarDecl(decl_info, field_name, qual_type, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
+  | ObjCIvarDecl(decl_info, name_info, qual_type, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
       let fields = get_fields tenv curr_class decl_list' in
+      let field_name = name_info.Clang_ast_t.ni_name in
       (* Doing a post visit here. Adding Ivar after all the declaration have been visited so that *)
       (* ivar names will be added in the property list. *)
       Printing.log_out "  ...Adding Instance Variable '%s' @." field_name;

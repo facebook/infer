@@ -178,7 +178,8 @@ and do_typedef_declaration tenv namespace decl_info name opt_type typedef_decl_i
 and get_struct_fields tenv namespace decl_list =
   match decl_list with
   | [] -> []
-  | FieldDecl(decl_info, name, qual_type, field_decl_info):: decl_list' ->
+  | FieldDecl(decl_info, name_info, qual_type, field_decl_info):: decl_list' ->
+      let name = name_info.Clang_ast_t.ni_name in
       Printing.log_out "  ...Defining field '%s'.\n" name;
       let id = Ident.create_fieldname (Mangled.from_string name) 0 in
       let typ = qual_type_to_sil_type tenv qual_type in
@@ -189,7 +190,7 @@ and get_struct_fields tenv namespace decl_list =
   (* C++/C Records treated in the same way*)
   | RecordDecl (decl_info, name, opt_type, decl_list, decl_context_info, record_decl_info)
   :: decl_list'->
-      do_record_declaration tenv namespace decl_info name opt_type decl_list decl_context_info record_decl_info;
+      do_record_declaration tenv namespace decl_info name.Clang_ast_t.ni_name opt_type decl_list decl_context_info record_decl_info;
       get_struct_fields tenv namespace decl_list'
   | _ :: decl_list' -> get_struct_fields tenv namespace decl_list'
 
@@ -253,7 +254,7 @@ and add_late_defined_record tenv namespace typename =
                     Sil.typename_equal typename pot_union_type) &&
                   record_decl_info.Clang_ast_t.rdi_is_complete_definition then (
                     Printing.log_out "!!!! Adding late-defined record '%s'\n" t;
-                    do_record_declaration tenv namespace decl_info record_name opt_type decl_list
+                    do_record_declaration tenv namespace decl_info record_name.Clang_ast_t.ni_name opt_type decl_list
                       decl_context_info record_decl_info;
                     true)
                   else scan decls'
@@ -272,7 +273,8 @@ and add_late_defined_typedef tenv namespace typename =
       let rec scan decls =
         match decls with
         | [] -> false
-        | TypedefDecl (decl_info, name', opt_type, tdi) :: decls' ->
+        | TypedefDecl (decl_info, name_info, opt_type, tdi) :: decls' ->
+            let name' = name_info.Clang_ast_t.ni_name in
             (match opt_type with
               | `Type t ->
                   if (Mangled.to_string name) = name' then (

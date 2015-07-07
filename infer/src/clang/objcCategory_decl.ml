@@ -17,7 +17,7 @@ let noname_category class_name =
 
 let cat_class_decl dr =
   match dr.Clang_ast_t.dr_name with
-  | Some n -> n
+  | Some n -> n.Clang_ast_t.ni_name
   | _ -> assert false
 
 let get_class_from_category_decl category_decl_info =

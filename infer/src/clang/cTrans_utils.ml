@@ -427,7 +427,7 @@ let fix_param_exps_mismatch params_stmt exps_param =
 let get_name_decl_ref_exp_info decl_ref_expr_info si =
   match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
   | Some d -> (match d.Clang_ast_t.dr_name with
-        | Some n -> n
+        | Some n -> n.Clang_ast_t.ni_name
         | _ -> assert false)
   | _ -> L.err "FAILING WITH %s pointer=%s@.@."
         (Clang_ast_j.string_of_decl_ref_expr_info decl_ref_expr_info )
@@ -646,7 +646,8 @@ let is_dispatch_function stmt_list =
         | None -> None
         | Some d ->
             (match d.Clang_ast_t.dr_kind, d.Clang_ast_t.dr_name with
-              | `Function, Some s ->
+              | `Function, Some name_info ->
+                  let s = name_info.Clang_ast_t.ni_name in
                   (match (CTrans_models.is_dispatch_function_name s) with
                     | None -> None
                     | Some (dispatch_function, block_arg_pos) ->

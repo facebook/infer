@@ -39,7 +39,8 @@ let rec lookup_ahead_for_vardecl context pointer var_name kind decl_list =
   match decl_list with
   | [] -> Printing.log_out "     Failing when looking ahead for variable '%s'\n" var_name;
       assert false (* nothing has been found ahead, maybe something bad in the AST *)
-  | VarDecl(decl_info, var_name', t, _) :: rest when var_name = var_name' ->
+  | VarDecl(decl_info, var_info, t, _) :: rest when var_name = var_info.Clang_ast_t.ni_name ->
+      let var_name' = var_info.Clang_ast_t.ni_name in
       if global_to_be_added decl_info then (
         let tenv = CContext.get_tenv context in
         Printing.log_out "ADDING (later-defined): VarDecl '%s' to global procdesc\n" var_name';
@@ -137,8 +138,9 @@ and get_fun_locals context (stmts : Clang_ast_t.stmt list) : unit =
 and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
   let do_one_decl decl =
     match decl with
-    | VarDecl (decl_info, name, qual_type, var_decl_info) ->
+    | VarDecl (decl_info, name_info, qual_type, var_decl_info) ->
         Printing.log_out "Collecting variables, passing from VarDecl '%s'\n" decl_info.Clang_ast_t.di_pointer;
+        let name = name_info.Clang_ast_t.ni_name in
         let typ = get_var_type context.CContext.tenv name qual_type in
         (match var_decl_info.Clang_ast_t.vdi_storage_class with
           | Some "static" ->
@@ -150,14 +152,14 @@ and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
           | _ ->
               CContext.LocalVars.add_local_var context name typ decl_info.Clang_ast_t.di_pointer
                 (CFrontend_utils.General_utils.is_static_var var_decl_info))
-    | CXXRecordDecl(di, n', ot, dl, dci, rdi)
-    | RecordDecl(di, n', ot, dl, dci, rdi) ->
+    | CXXRecordDecl(di, n_info, ot, dl, dci, rdi)
+    | RecordDecl(di, n_info, ot, dl, dci, rdi) ->
         let typ = CTypes_decl.get_declaration_type context.CContext.tenv context.CContext.namespace
-            di n' ot dl dci rdi in
+            di n_info.Clang_ast_t.ni_name ot dl dci rdi in
         CTypes_decl.add_struct_to_tenv context.CContext.tenv typ
-    | TypedefDecl (decl_info, name, opt_type, typedef_decl_info) ->
+    | TypedefDecl (decl_info, name_info, opt_type, typedef_decl_info) ->
         CTypes_decl.do_typedef_declaration context.CContext.tenv context.CContext.namespace
-          decl_info name opt_type typedef_decl_info
+          decl_info name_info.Clang_ast_t.ni_name opt_type typedef_decl_info
     | StaticAssertDecl decl_info -> (* We do not treat Assertions. *)
         Printing.log_out
           "WARNING: When collecting variables, passing from StaticAssertDecl '%s'. Skipped.\n"

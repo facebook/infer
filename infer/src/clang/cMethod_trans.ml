@@ -113,7 +113,8 @@ let captured_vars_from_block_info context cvl =
         (match cv.Clang_ast_t.bcv_variable with
           | Some dr ->
               (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_qual_type with
-                | Some n, _ ->
+                | Some name_info, _ ->
+                    let n = name_info.Clang_ast_t.ni_name in
                     if n = CFrontend_config.self && not context.is_instance then []
                     else
                       (let procdesc_formals = Cfg.Procdesc.get_formals context.procdesc in

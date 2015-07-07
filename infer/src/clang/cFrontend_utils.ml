@@ -148,7 +148,7 @@ struct
     match property_impl_decl_info.Clang_ast_t.opidi_property_decl with
     | Some decl_ref ->
         (match decl_ref.Clang_ast_t.dr_name with
-          | Some n -> n
+          | Some n -> n.Clang_ast_t.ni_name
           | _ -> no_property_name)
     | None -> no_property_name
 
@@ -207,12 +207,18 @@ struct
         attribute = `Copy
     | _ -> false
 
+
+ let name_opt_of_name_info_opt name_info_opt =
+      match name_info_opt with
+      | Some name_info -> Some name_info.Clang_ast_t.ni_name
+      | None -> None
+
   let rec getter_attribute_opt attributes =
     match attributes with
     | [] -> None
     | attr:: rest ->
         match attr with
-        | `Getter getter -> getter.Clang_ast_t.dr_name
+        | `Getter getter -> name_opt_of_name_info_opt getter.Clang_ast_t.dr_name
         | _ -> (getter_attribute_opt rest)
 
   let rec setter_attribute_opt attributes =
@@ -220,7 +226,7 @@ struct
     | [] -> None
     | attr:: rest ->
         match attr with
-        | `Setter setter -> setter.Clang_ast_t.dr_name
+        | `Setter setter -> name_opt_of_name_info_opt setter.Clang_ast_t.dr_name
         | _ -> (setter_attribute_opt rest)
 
   (*TODO: take the attributes into account too. To be done after we get the attribute's arguments. *)

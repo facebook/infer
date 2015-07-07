@@ -99,7 +99,7 @@ let pp_ast_decl fmt ast_decl =
     | FunctionDecl (decl_info, name, qt, fdecl_info) ->
         F.fprintf fmt "%sFunctionDecl %s %a@\n"
           prefix
-          name
+          name.Clang_ast_t.ni_name
           pp_source_range decl_info.di_source_range;
         list_iter (dump_decl prefix1) fdecl_info.fdi_decls_in_prototype_scope;
         list_iter (dump_decl prefix1) fdecl_info.fdi_parameters;
@@ -107,10 +107,10 @@ let pp_ast_decl fmt ast_decl =
     | ObjCMethodDecl (decl_info, name, obj_c_method_decl_info) ->
         F.fprintf fmt "%sObjCMethodDecl %s %a@\n"
           prefix
-          name
+          name.Clang_ast_t.ni_name
           pp_source_range decl_info.di_source_range;
         Option.may (dump_stmt prefix1) obj_c_method_decl_info.omdi_body
-    | VarDecl (decl_info, string, qual_type, var_decl_info) ->
+    | VarDecl (decl_info, name, qual_type, var_decl_info) ->
         F.fprintf fmt "%sVarDecl %a@\n"
           prefix
           pp_source_range decl_info.di_source_range;
