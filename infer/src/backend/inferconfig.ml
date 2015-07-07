@@ -95,11 +95,13 @@ module FileContainsStringMatcher = struct
           try
             DB.SourceFileMap.find source_file !source_map
           with Not_found ->
-              let file_in = open_in (DB.source_file_to_string source_file) in
-              let pattern_found = file_contains regexp file_in in
-              close_in file_in;
-              source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
-              pattern_found
+              try
+                let file_in = open_in (DB.source_file_to_string source_file) in
+                let pattern_found = file_contains regexp file_in in
+                close_in file_in;
+                source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
+                pattern_found
+              with Sys_error _ -> false
 end
 
 let filters_from_inferconfig inferconfig : filters =
