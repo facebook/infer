@@ -177,22 +177,22 @@ class Selector(object):
                   describe_report(report, n_length + 2))
             n += 1
 
-    def prompt_number(self):
-        if self.args.select is not None:
-            return self.parse_report_number(self.args.select[0], True)
-
-        self.show_choices()
-
+    def prompt_report(self):
         report_number = 0
-        if len(self) > 1:
-            report_number_str = raw_input(
-                'Choose report to display (default=0): ')
-            if report_number_str != '':
-                report_number = self.parse_report_number(report_number_str)
-        elif len(self) == 1:
-            print('Auto-selecting the only report.')
+        if self.args.select is not None:
+            report_number = self.parse_report_number(self.args.select[0], True)
+        else:
+            self.show_choices()
 
-        return report_number
+            if len(self) > 1:
+                report_number_str = raw_input(
+                    'Choose report to display (default=0): ')
+                if report_number_str != '':
+                    report_number = self.parse_report_number(report_number_str)
+            elif len(self) == 1:
+                print('Auto-selecting the only report.')
+
+        return self.reports[report_number]
 
     def prompt_level(self):
         if self.args.max_level is not None:
@@ -258,11 +258,11 @@ def main():
         sel.show_choices()
         exit(0)
 
-    report_number = sel.prompt_number()
+    report = sel.prompt_report()
     max_level = sel.prompt_level()
 
     tracer = Tracer(args, max_level)
-    tracer.build_report(reports[report_number])
+    tracer.build_report(report)
     print(tracer)
 
 
