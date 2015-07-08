@@ -49,13 +49,21 @@ public class ReturnNotNullableTest {
       throws IOException, InterruptedException, InferException {
 
 
-    String[] nullableMethods = {"returnNull", "returnNullable"};
+    String[] nullableMethods = {
+        "returnNull",
+        "returnNullable",
+        "return_null_in_catch",
+        "return_null_in_catch_after_throw",
+    };
     List<ErrorPattern> errorPatterns = createPatterns(
         RETURN_NOT_NULLABLE,
         SOURCE_FILE,
         nullableMethods);
 
-    String[] redundantMethods = {"redundantEq", "redundantNeq"};
+    String[] redundantMethods = {
+        "redundantEq",
+        "redundantNeq",
+    };
     errorPatterns.addAll(
         createPatterns(
             CONDITION_REDUNDANT_NONNULL,

@@ -936,11 +936,10 @@ let rec instruction context pc instr : translation =
         else
           Prune (prune_node_true, prune_node_false)
     | JBir.Throw expr ->
-        let node_kind = Cfg.Node.Stmt_node "throw" in
         let (ids, instrs, sil_expr) = expression context pc expr in
         let sil_exn = Sil.Const (Sil.Cexn sil_expr) in
         let sil_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_exn, loc) in
-        let node = create_node node_kind ids (instrs @ [sil_instr]) in
+        let node = create_node Cfg.Node.throw_kind ids (instrs @ [sil_instr]) in
         JContext.add_goto_jump context pc JContext.Exit;
         Instr node
     | JBir.New (var, cn, constr_type_list, constr_arg_list) ->

@@ -88,4 +88,27 @@ public class ReturnNotNullable {
   String testOptional(Optional<String> os) {
     return os.orNull();
   }
+
+  class E extends Exception {
+  }
+
+  String return_null_in_catch() {
+    try {
+      throw new E();
+    } catch (E e) {
+      return null;
+    }
+  }
+
+  String return_null_in_catch_after_throw() {
+    try {
+      try {
+        throw new E();
+      } catch (E e) {
+        throw e;
+      }
+    } catch (E e) {
+      return null;
+    }
+  }
 }

@@ -54,6 +54,8 @@ module Node = struct
 
   let exn_handler_kind = Stmt_node "exception handler"
   let exn_sink_kind = Stmt_node "exceptions sink"
+  let throw_kind = Stmt_node "throw"
+
 
   type cfg = (** data type for the control flow graph *)
     { node_id : int ref;

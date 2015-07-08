@@ -145,6 +145,9 @@ module Node : sig
   (** kind of Stmt_node for an exceptions sink. *)
   val exn_sink_kind : nodekind
 
+  (** kind of Stmt_node for a throw instruction. *)
+  val throw_kind : nodekind
+
   (** Append the instructions and temporaries to the list of instructions to execute *)
   val append_instrs_temps : t -> Sil.instr list -> Ident.t list -> unit
 
