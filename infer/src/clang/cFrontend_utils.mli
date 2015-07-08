@@ -63,6 +63,8 @@ sig
 
   val get_fresh_pointer : unit -> string
 
+  val get_invalid_pointer : unit -> string
+
   val type_from_unary_expr_or_type_trait_expr_info :
   Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.qual_type option
 

@@ -239,6 +239,9 @@ struct
     pointer_counter := !pointer_counter + 1;
     CFrontend_config.pointer_prefix^(string_of_int (!pointer_counter))
 
+  let get_invalid_pointer () =
+    CFrontend_config.pointer_prefix^("INVALID")
+
   let type_from_unary_expr_or_type_trait_expr_info info =
     match info.uttei_qual_type with
     | Some qt -> Some qt

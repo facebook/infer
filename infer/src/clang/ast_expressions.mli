@@ -27,7 +27,7 @@ val make_stmt_info : decl_info -> stmt_info
 
 val make_method_decl_info : obj_c_method_decl_info -> stmt -> obj_c_method_decl_info
 
-val make_general_decl_ref : decl_kind -> string -> bool -> qual_type -> decl_ref
+val make_general_decl_ref : decl_kind -> pointer -> string -> bool -> qual_type -> decl_ref
 
 val make_decl_ref_expr_info : decl_ref -> decl_ref_expr_info
 
@@ -49,7 +49,7 @@ val make_message_expr : qual_type -> string -> stmt -> stmt_info -> bool -> stmt
 
 val make_compound_stmt : stmt list -> stmt_info -> stmt
 
-val make_decl_ref_exp_var : string * qual_type -> decl_kind -> stmt_info -> stmt
+val make_decl_ref_exp_var : string * qual_type * pointer -> decl_kind -> stmt_info -> stmt
 
 val make_binary_stmt : stmt -> stmt -> stmt_info -> expr_info -> binary_operator_info -> stmt
 

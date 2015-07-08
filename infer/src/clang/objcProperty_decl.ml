@@ -300,8 +300,9 @@ let make_getter_setter cfg curr_class decl_info property_impl_decl_info =
           let is_hidden = (match property_impl_decl_info.Clang_ast_t.opidi_ivar_decl with
               | Some dr -> dr.Clang_ast_t.dr_is_hidden
               | _ -> false) in
+          let decl_ptr = Ast_utils.get_invalid_pointer () in
           let drti_decl_ref' =
-            Ast_expressions.make_general_decl_ref (`ParmVar) param_name is_hidden qt_param in
+            Ast_expressions.make_general_decl_ref (`ParmVar) decl_ptr param_name is_hidden qt_param in
           let decl_ref_expr_info' = Ast_expressions.make_decl_ref_expr_info drti_decl_ref' in
           let expr_info = Ast_expressions.make_expr_info qt_param in
           let stmt_info = Ast_expressions.make_stmt_info dummy_info in
@@ -314,7 +315,7 @@ let make_getter_setter cfg curr_class decl_info property_impl_decl_info =
           let code =
             if Ast_utils.is_retain memory_management_attribute then
               let param_decl =
-                Ast_expressions.make_decl_ref_exp_var (param_name, qt_param) `ParmVar stmt_info in
+                Ast_expressions.make_decl_ref_exp_var (param_name, qt_param, decl_ptr) `ParmVar stmt_info in
               let retain_call =
                 Ast_expressions.make_message_expr qt_param retain param_decl stmt_info true in
               let release_call =
@@ -322,7 +323,7 @@ let make_getter_setter cfg curr_class decl_info property_impl_decl_info =
               [retain_call; release_call; setter]
             else if Ast_utils.is_copy memory_management_attribute then
               let param_decl =
-                Ast_expressions.make_decl_ref_exp_var (param_name, qt_param) `ParmVar stmt_info in
+                Ast_expressions.make_decl_ref_exp_var (param_name, qt_param, decl_ptr) `ParmVar stmt_info in
               let copy_call =
                 Ast_expressions.make_message_expr qt_param copy param_decl stmt_info true in
               let setter =
