@@ -21,7 +21,7 @@ public class AssertionFailureTest {
   public static final String SOURCE_FILE =
       "assertions/assertion_failure.c";
 
-  public static final String ASSERTION_FAILURE = "Assertion_failure";
+  public static final String ASSERTION_FAILURE = "ASSERTION_FAILURE";
 
   private static InferResults inferResults;
 

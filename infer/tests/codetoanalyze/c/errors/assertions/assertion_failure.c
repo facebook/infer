@@ -50,7 +50,7 @@ void __infer_fail(char*);
 
 void my_assert(int x) {
   if (!x) {
-    __infer_fail("Assertion_failure");
+    __infer_fail("ASSERTION_FAILURE");
   }
 }
 

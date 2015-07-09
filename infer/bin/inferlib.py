@@ -236,7 +236,12 @@ def should_report(analyzer, row):
     ]
     null_style_buckets = ['B1', 'B2']
 
-    other_bugs = ['RESOURCE_LEAK', 'MEMORY_LEAK', 'RETAIN_CYCLE']
+    other_bugs = [
+        'RESOURCE_LEAK',
+        'MEMORY_LEAK',
+        'RETAIN_CYCLE',
+        'ASSERTION_FAILURE'
+    ]
 
     if analyzer in [ERADICATE, CHECKERS, TRACING]:
         # report all issues for eradicate and checkers

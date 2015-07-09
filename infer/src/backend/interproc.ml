@@ -1055,7 +1055,8 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let prev_summary = Specs.get_summary_unsafe proc_name in
   let updated_summary =
     update_summary prev_summary specs proc_name elapsed res in
-  if (Config.report_assertion_failure || !Config.report_runtime_exceptions) then
+  if (!Sil.curr_language <> Sil.Java && Config.report_assertion_failure)
+     || !Config.report_runtime_exceptions then
     report_runtime_exceptions tenv cfg proc_desc updated_summary;
   updated_summary
 

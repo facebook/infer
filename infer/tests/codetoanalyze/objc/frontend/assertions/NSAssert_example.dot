@@ -1,5 +1,5 @@
 digraph iCFG {
-69 [label="69:  Assertion failure \n   _fun___infer_fail(\"Assertion_failure\":void ) [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+69 [label="69:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 69 -> 56 ;
@@ -61,7 +61,7 @@ digraph iCFG {
 	
 
 	 55 -> 58 ;
-54 [label="54:  Assertion failure \n   _fun___infer_fail(\"Assertion_failure\":void ) [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+54 [label="54:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 54 -> 40 ;
@@ -149,7 +149,7 @@ digraph iCFG {
 	
 
 	 33 -> 35 ;
-32 [label="32:  Assertion failure \n   _fun___infer_fail(\"Assertion_failure\":void ) [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+32 [label="32:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 32 -> 18 ;
@@ -215,7 +215,7 @@ digraph iCFG {
 	
 
 	 17 -> 20 ;
-16 [label="16:  Assertion failure \n   _fun___infer_fail(\"Assertion_failure\":void ) [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+16 [label="16:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 16 -> 2 ;
