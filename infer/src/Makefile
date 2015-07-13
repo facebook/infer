@@ -100,6 +100,12 @@ CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME), $(ATDG
 INFER_CLANG_AST_PROJ = $(addprefix $(CLANG_SOURCES)/, clang_ast_proj.ml clang_ast_proj.mli)
 FCP_CLANG_AST_PROJ = $(addprefix $(CLANG_OCAML_BUILD)/, clang_ast_proj.ml clang_ast_proj.mli)
 
+#### LLVM declarations ####
+
+LLVM_SOURCES = llvm
+INFERLLVM_MAIN = $(LLVM_SOURCES)/main
+INFERLLVM_BINARY = $(BINDIR)/InferLLVM
+
 #### End of declarations ####
 
 # Check whether .facebook file exists in a root directory.
@@ -114,19 +120,24 @@ DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/g
 
 OCAMLBUILD = ocamlbuild -build-dir $(BUILDDIR) -j 0 $(addprefix -I , $(DEPENDENCIES)) $(GLOBAL_OPTIONS) $(ATDGEN_OPTIONS)  $(JAVA_OPTIONS)
 
-.PHONY: all java clang build_java build_clang annotations init sanitize version clean
+.PHONY: all java clang llvm build_java build_clang build_llvm annotations init sanitize version clean
 
-all: java clang
+all: java clang llvm
 
 java: build_java annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY)
 
 clang: build_clang annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERCLANG_BINARY)
+
+llvm: build_llvm annotations $(INFERLLVM_BINARY)
 
 build_java: init $(INFERPRINT_ATDGEN_STUBS)
 	$(OCAMLBUILD) $(TYPEPROP_MAIN).native $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERJAVA_MAIN).native
 
 build_clang: init $(INFERPRINT_ATDGEN_STUBS) check_clang_plugin $(CLANG_ATDGEN_STUBS)
 	$(OCAMLBUILD) $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERCLANG_MAIN).native
+
+build_llvm:
+	$(OCAMLBUILD) -use-menhir $(INFERLLVM_MAIN).native
 
 annotations:
 	rsync -r --delete --exclude=*.ml* --exclude=*.o --exclude=*.cm* --exclude=*.native $(BUILDDIR)/* $(ANNOTDIR)
@@ -189,10 +200,13 @@ $(INFERJAVA_BINARY): $(BUILDDIR)/$(INFERJAVA_MAIN).native
 $(INFERCLANG_BINARY): $(BUILDDIR)/$(INFERCLANG_MAIN).native
 	$(COPY) $(BUILDDIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BINARY)
 
+$(INFERLLVM_BINARY): $(BUILDDIR)/$(INFERLLVM_MAIN).native
+	$(COPY) $(BUILDDIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BINARY)
+
 $(TYPEPROP_BINARY): $(BUILDDIR)/$(TYPEPROP_MAIN).native
 	$(COPY) $(BUILDDIR)/$(TYPEPROP_MAIN).native $(TYPEPROP_BINARY)
 
 clean: $(BUILDDIR)
 	$(OCAMLBUILD) -clean
 	$(REMOVE_DIR) $(ANNOTDIR)
-	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY)
+	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY) $(INFERLLVM_BINARY)
