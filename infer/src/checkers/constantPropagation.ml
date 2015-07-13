@@ -8,10 +8,6 @@ module L = Logging
 
 type t
 
-module ConstantMap = Map.Make(struct
-  type t = string
-  let compare = string_compare
-end)
 
 let string_widening_limit = 1000
 let verbose = false
@@ -24,85 +20,81 @@ let merge_values key c1_opt c2_opt =
   | None, Some c -> Some c
   | _ -> Some None
 
+module ConstantMap = Sil.ExpMap
+
 (** Dataflow struct *)
 module ConstantFlow = Dataflow.MakeDF(struct
-  type t = (Sil.const option) ConstantMap.t
+    type t = (Sil.const option) ConstantMap.t
 
-  let pp fmt constants =
-    let print_kv k = function
-      | Some v -> Format.fprintf fmt "  %s -> %a@." k (Sil.pp_const pe_text) v
-      | _ -> Format.fprintf fmt "  %s -> None@." k in
-    Format.fprintf fmt "[@.";
-    ConstantMap.iter print_kv constants;
-    Format.fprintf fmt "]@."
+    let pp fmt constants =
+      let pp_key fmt = Sil.pp_exp pe_text fmt in
+      let print_kv k = function
+        | Some v -> Format.fprintf fmt "  %a -> %a@." pp_key k (Sil.pp_const pe_text) v
+        | _ -> Format.fprintf fmt "  %a -> None@." pp_key k in
+      Format.fprintf fmt "[@.";
+      ConstantMap.iter print_kv constants;
+      Format.fprintf fmt "]@."
 
-  (* Item-wise equality where values are equal iff
+    (* Item - wise equality where values are equal iff
     - both are None
     - both are a constant and equal wrt. Sil.const_equal *)
-  let equal m n = ConstantMap.equal (opt_equal Sil.const_equal) m n
+    let equal m n = ConstantMap.equal (opt_equal Sil.const_equal) m n
 
-  let join = ConstantMap.merge merge_values
+    let join = ConstantMap.merge merge_values
 
-  let proc_throws pn = Dataflow.DontKnow
+    let proc_throws pn = Dataflow.DontKnow
 
-  let do_node node constants =
+    let do_node node constants =
 
-    let do_instr constants instr =
-      try
-        let update key value constants =
-          ConstantMap.merge
-            merge_values
-            constants
-            (ConstantMap.add key value ConstantMap.empty) in
+      let do_instr constants instr =
+        try
+          let update key value constants =
+            ConstantMap.merge
+              merge_values
+              constants
+              (ConstantMap.add key value ConstantMap.empty) in
 
-        match instr with
-        | Sil.Letderef (i, Sil.Lvar p, _, _) ->        (* tmp = var *)
-            let lvar = Ident.to_string i in
-            let rvar = Sil.pvar_to_string p in
-            update lvar (ConstantMap.find rvar constants) constants
+          match instr with
+          | Sil.Letderef (i, Sil.Lvar p, _, _) ->        (* tmp = var *)
+              update (Sil.Var i) (ConstantMap.find (Sil.Lvar p) constants) constants
 
-        | Sil.Set (Sil.Lvar p, _, Sil.Const c, _) ->   (* var = const *)
-            update (Sil.pvar_to_string p) (Some c) constants
+          | Sil.Set (Sil.Lvar p, _, Sil.Const c, _) ->   (* var = const *)
+              update (Sil.Lvar p) (Some c) constants
 
-        | Sil.Set (Sil.Lvar p, _, Sil.Var i, _) ->     (* var = tmp *)
-            let lvar = Sil.pvar_to_string p in
-            let rvar = Ident.to_string i in
-            update lvar (ConstantMap.find rvar constants) constants
+          | Sil.Set (Sil.Lvar p, _, Sil.Var i, _) ->     (* var = tmp *)
+              update (Sil.Lvar p) (ConstantMap.find (Sil.Var i) constants) constants
 
-        (* Handle propagation of string with StringBuilder. Does not handle null case *)
-        | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var sb, _):: [], _, _)
-        when Procname.java_get_class pn = "java.lang.StringBuilder"
-        && Procname.java_get_method pn = "<init>" ->  (* StringBuilder.<init> *)
-            update (Ident.to_string sb) (Some (Sil.Cstr "")) constants
+          (* Handle propagation of string with StringBuilder. Does not handle null case *)
+          | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var sb, _):: [], _, _)
+          when Procname.java_get_class pn = "java.lang.StringBuilder"
+          && Procname.java_get_method pn = "<init>" ->  (* StringBuilder.<init> *)
+              update (Sil.Var sb) (Some (Sil.Cstr "")) constants
 
-        | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: [], _, _)
-        when Procname.java_get_class pn = "java.lang.StringBuilder"
-        && Procname.java_get_method pn = "toString" -> (* StringBuilder.toString *)
-            let lvar = Ident.to_string i in
-            let rvar = Ident.to_string i1 in
-            update lvar (ConstantMap.find rvar constants) constants
+          | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: [], _, _)
+          when Procname.java_get_class pn = "java.lang.StringBuilder"
+          && Procname.java_get_method pn = "toString" -> (* StringBuilder.toString *)
+              update (Sil.Var i) (ConstantMap.find (Sil.Var i1) constants) constants
 
-        | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], _, _)
-        when Procname.java_get_class pn = "java.lang.StringBuilder"
-        && Procname.java_get_method pn = "append" -> (* StringBuilder.append *)
-            let lvar = Ident.to_string i in
-            let rvar1 = Ident.to_string i1 in
-            let rvar2 = Ident.to_string i2 in
-            (match ConstantMap.find rvar1 constants, ConstantMap.find rvar2 constants with
-            | Some (Sil.Cstr s1), Some (Sil.Cstr s2) ->
-              begin
-                let s = s1 ^ s2 in
-                let u =
-                  if String.length s < string_widening_limit then
-                    Some (Sil.Cstr s)
-                  else
-                    None in
-                update lvar u constants
-              end
-            | _ -> constants)
+          | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], _, _)
+          when Procname.java_get_class pn = "java.lang.StringBuilder"
+          && Procname.java_get_method pn = "append" -> (* StringBuilder.append *)
+              (match
+                ConstantMap.find (Sil.Var i1) constants,
+                ConstantMap.find (Sil.Var i2) constants with
+                | Some (Sil.Cstr s1), Some (Sil.Cstr s2) ->
+                    begin
+                      let s = s1 ^ s2 in
+                      let u =
+                        if String.length s < string_widening_limit then
+                          Some (Sil.Cstr s)
+                        else
+                          None in
+                      update (Sil.Var i) u constants
+                    end
+                | _ -> constants)
 
-        | _ -> constants
-      with Not_found -> constants in
+          | _ -> constants
+        with Not_found -> constants in
 
       if verbose then
         begin
@@ -119,7 +111,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
           (Cfg.Node.get_instrs node) in
       if verbose then L.stdout "%a\n@." pp constants;
       [constants], [constants]
-end)
+  end)
 
 let run proc_desc =
   let transitions = ConstantFlow.run proc_desc ConstantMap.empty in
@@ -128,3 +120,15 @@ let run proc_desc =
     | ConstantFlow.Transition (_, post_states, _) -> ConstantFlow.join post_states ConstantMap.empty
     | ConstantFlow.Dead_state -> ConstantMap.empty in
   get_constants
+
+type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
+
+(** Build a const map lazily. *)
+let build_const_map pdesc =
+  let const_map = lazy (run pdesc) in
+  let f node exp =
+    try
+      let map = (Lazy.force const_map) node in
+      ConstantMap.find exp map
+    with Not_found -> None in
+  f

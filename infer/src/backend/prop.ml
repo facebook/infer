@@ -2772,23 +2772,19 @@ end = struct
 
   let pi_size pi = pi_weight * list_length pi
 
-  module ExpMap =
-    Map.Make (struct
-      type t = Sil.exp
-      let compare = Sil.exp_compare end)
 
   (** Approximate the size of the longest chain by counting the max
   number of |-> with the same type and whose lhs is primed or
   footprint *)
   let sigma_chain_size sigma =
-    let tbl = ref ExpMap.empty in
+    let tbl = ref Sil.ExpMap.empty in
     let add t =
       try
-        let count = ExpMap.find t !tbl in
-        tbl := ExpMap.add t (count + 1) !tbl
+        let count = Sil.ExpMap.find t !tbl in
+        tbl := Sil.ExpMap.add t (count + 1) !tbl
       with
       | Not_found ->
-          tbl := ExpMap.add t 1 !tbl in
+          tbl := Sil.ExpMap.add t 1 !tbl in
     let process_hpred = function
       | Sil.Hpointsto (e, _, te) ->
           (match e with
@@ -2797,7 +2793,7 @@ end = struct
       | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
     list_iter process_hpred sigma;
     let size = ref 0 in
-    ExpMap.iter (fun t n -> size := max n !size) !tbl;
+    Sil.ExpMap.iter (fun t n -> size := max n !size) !tbl;
     !size
 
   (** Compute a size value for the prop, which indicates its

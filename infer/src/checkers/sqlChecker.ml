@@ -3,7 +3,6 @@
 *)
 
 open Utils
-open ConstantPropagation
 
 module L = Logging
 
@@ -23,36 +22,31 @@ let callback_sql all_procs get_proc_desc idenv tenv proc_name proc_desc =
     list_map Str.regexp_case_fold _sql_start in
 
   (* Check for SQL string concatenations *)
-  let do_instr get_constants node = function
+  let do_instr const_map node = function
     | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], l, _)
     when Procname.java_get_class pn = "java.lang.StringBuilder"
     && Procname.java_get_method pn = "append" ->
-        let rvar1 = Ident.to_string i1 in
-        let rvar2 = Ident.to_string i2 in
+        let rvar1 = Sil.Var i1 in
+        let rvar2 = Sil.Var i2 in
         begin
           let matches s r = Str.string_match r s 0 in
-          let constants = get_constants node in
-          if ConstantMap.mem rvar1 constants
-          && ConstantMap.mem rvar2 constants then
-            begin
-              match ConstantMap.find rvar1 constants, ConstantMap.find rvar2 constants with
-              | Some (Sil.Cstr ""), Some (Sil.Cstr s2) ->
-                  if list_exists (matches s2) sql_start then
-                    begin
-                      L.stdout
-                        "%s%s@."
-                        "Possible SQL query using string concatenation. "
-                        "Please consider using a prepared statement instead.";
-                      let linereader = Printer.LineReader.create () in
-                      L.stdout "%a@." (Checkers.PP.pp_loc_range linereader 2 2) l
-                    end
-              | _ -> ()
-            end
+          match const_map node rvar1, const_map node rvar2 with
+          | Some (Sil.Cstr ""), Some (Sil.Cstr s2) ->
+              if list_exists (matches s2) sql_start then
+                begin
+                  L.stdout
+                    "%s%s@."
+                    "Possible SQL query using string concatenation. "
+                    "Please consider using a prepared statement instead.";
+                  let linereader = Printer.LineReader.create () in
+                  L.stdout "%a@." (Checkers.PP.pp_loc_range linereader 2 2) l
+                end
+          | _ -> ()
         end
     | _ -> () in
 
   try
-    let get_constants = ConstantPropagation.run proc_desc in
+    let const_map = ConstantPropagation.build_const_map proc_desc in
     if verbose then L.stdout "Analyzing %a...\n@." Procname.pp proc_name;
-    Cfg.Procdesc.iter_instrs (do_instr get_constants) proc_desc
+    Cfg.Procdesc.iter_instrs (do_instr const_map) proc_desc
   with _ -> ()

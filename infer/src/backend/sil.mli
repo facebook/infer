@@ -349,6 +349,9 @@ module TypMap : Map.S with type key = typ
 (** Sets of expressions. *)
 module ExpSet : Set.S with type elt = exp
 
+(** Maps with expression keys. *)
+module ExpMap : Map.S with type key = exp
+
 (** Hashtable with expressions as keys. *)
 module ExpHash : Hashtbl.S with type key = exp
 

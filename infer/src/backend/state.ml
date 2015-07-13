@@ -10,6 +10,12 @@ module L = Logging
 module F = Format
 open Utils
 
+type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
+
+(** Constant map for the procedure *)
+let const_map : const_map ref =
+  ref (fun node exp -> None)
+
 (** Diverging states since the last reset for the node *)
 let diverging_states_node = ref Paths.PathSet.empty
 
@@ -318,3 +324,9 @@ let set_node (node: Cfg.node) =
 
 let set_session (session: int) =
   last_session := session
+
+let get_const_map () =
+  !const_map
+
+let set_const_map const_map' =
+  const_map := const_map'

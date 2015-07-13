@@ -467,11 +467,12 @@ let check_assignement_guard node =
 (** Perform symbolic execution for a node starting from an initial prop *)
 let do_symbolic_execution handle_exn cfg tenv
     (node : Cfg.node) (prop: Prop.normal Prop.t) (path : Paths.Path.t) =
+  let pdesc = Cfg.Node.get_proc_desc node in
   State.mark_execution_start node;
+  State.set_const_map (ConstantPropagation.build_const_map pdesc); (* build the const map lazily *)
   check_assignement_guard node;
   let instrs = Cfg.Node.get_instrs node in
   Ident.update_name_generator (instrs_get_normal_vars instrs); (* fresh normal vars must be fresh w.r.t. instructions *)
-  let pdesc = Cfg.Node.get_proc_desc node in
   let pset =
     SymExec.lifted_sym_exec handle_exn cfg tenv pdesc
       (Paths.PathSet.from_renamed_list [(prop, path)]) node instrs in
@@ -698,7 +699,7 @@ let collect_postconditions tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
 let create_seed_vars sigma =
   let hpred_add_seed sigma = function
     | Sil.Hpointsto (Sil.Lvar pv, se, typ) when not (Sil.pvar_is_abducted pv) ->
-      Sil.Hpointsto(Sil.Lvar (Sil.pvar_to_seed pv), se, typ) :: sigma
+        Sil.Hpointsto(Sil.Lvar (Sil.pvar_to_seed pv), se, typ) :: sigma
     | _ -> sigma in
   list_fold_left hpred_add_seed [] sigma
 

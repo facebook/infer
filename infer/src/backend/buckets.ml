@@ -61,9 +61,17 @@ let check_access access_opt de_opt =
       !formal_ids in
     let formal_param_used_in_call = ref false in
     let has_call_or_sets_null node =
-      let rec exp_is_null = function
+      let rec exp_is_null exp = match exp with
         | Sil.Const (Sil.Cint n) -> Sil.Int.iszero n
         | Sil.Cast (_, e) -> exp_is_null e
+        | Sil.Var _
+        | Sil.Lvar _ ->
+            begin
+              match State.get_const_map () node exp with
+              | Some (Sil.Cint n) ->
+                  Sil.Int.iszero n
+              | _ -> false
+            end
         | _ -> false in
       let filter = function
         | Sil.Call (_, _, etl, _, _) ->
@@ -73,7 +81,8 @@ let check_access access_opt de_opt =
               | _ -> false in
             if list_exists arg_is_formal_param etl then formal_param_used_in_call := true;
             true
-        | Sil.Set (_, _, e, _) -> exp_is_null e
+        | Sil.Set (_, _, e, _) ->
+            exp_is_null e
         | _ -> false in
       list_exists filter (Cfg.Node.get_instrs node) in
     let local_access_found = ref false in

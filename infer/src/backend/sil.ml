@@ -1658,6 +1658,12 @@ module ExpSet = Set.Make
     let compare = exp_compare
   end)
 
+module ExpMap = Map.Make(struct
+    type t = exp
+    let compare = exp_compare
+  end)
+
+
 let elist_to_eset es =
   list_fold_left (fun set e -> ExpSet.add e set) ExpSet.empty es
 

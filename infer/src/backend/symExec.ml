@@ -939,7 +939,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       let sym_exe_builtin = Builtin.get_sym_exe_builtin fn in
       sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args fn loc
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_param, loc, call_flags) ->
-     (** Generic fun call with known name *)
+  (** Generic fun call with known name *)
       let (prop_r, _n_actual_params) = normalize_params pdesc _prop actual_param in
       let fn, n_actual_params = handle_special_cases_call tenv cfg callee_pname _n_actual_params in
       let resolved_pname =
@@ -955,13 +955,13 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         Reporting.log_info pname exn;
         L.d_strln
           ("Undefined function " ^ Procname.to_string callee_pname
-           ^ ", returning undefined value.");
+            ^ ", returning undefined value.");
         (match Specs.get_summary pname with
-         | None -> ()
-         | Some summary ->
-            Specs.CallStats.trace
-              summary.Specs.stats.Specs.call_stats callee_pname loc
-              (Specs.CallStats.CR_skip) !Config.footprint);
+          | None -> ()
+          | Some summary ->
+              Specs.CallStats.trace
+                summary.Specs.stats.Specs.call_stats callee_pname loc
+                (Specs.CallStats.CR_skip) !Config.footprint);
         call_unknown_or_scan
           false cfg pdesc tenv prop_r path
           ret_ids ret_typ_opt n_actual_params resolved_pname loc in
@@ -969,10 +969,10 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         match Specs.get_summary resolved_pname with
         | None -> skip_call ()
         | Some summary when call_should_be_skipped resolved_pname summary ->
-           skip_call ()
+            skip_call ()
         | Some summary ->
-           sym_exec_call
-             cfg pdesc tenv prop_r path ret_ids n_actual_params summary loc
+            sym_exec_call
+              cfg pdesc tenv prop_r path ret_ids n_actual_params summary loc
       end
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params pdesc _prop actual_params in
@@ -1192,7 +1192,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     let do_exp p (e, t) =
       let do_attribute q = function
         | Sil.Aresource res_action as res
-             when res_action.Sil.ra_res = Sil.Rfile ->
+        when res_action.Sil.ra_res = Sil.Rfile ->
             Prop.remove_attribute res q
         | _ -> q in
       list_fold_left do_attribute p (Prop.get_exp_attributes p e) in
@@ -1229,26 +1229,26 @@ and sym_exe_check_variadic_sentinel cfg pdesc tenv prop path actual_params fails
   (* sentinels start counting from the last argument to the function *)
   let n = nargs - sentinel - 1 in
   let build_argsi (acc, i) a =
-    if i = n then (acc, i+1)
-    else ((a,i)::acc, i+1) in
+    if i = n then (acc, i +1)
+    else ((a, i):: acc, i +1) in
   (* list_fold_left reverses the arguments *)
   let non_terminal_actuals_i = fst (list_fold_left build_argsi ([], 0) args) in
   let check_allocated result ((lexp, typ), i) =
-  (* simulate a Letderef for [lexp] *)
+    (* simulate a Letderef for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
     let letderef = Sil.Letderef (tmp_id_deref, lexp, typ, loc) in
     try
       sym_exec_generated false cfg tenv pdesc [letderef] result
     with e when exn_not_timeout e ->
-      if not fails_on_nil then
-        let deref_str = Localise.deref_str_nil_argument_in_variadic_method pname nargs i in
-        let err_desc =
-          Errdesc.explain_dereference ~use_buckets: true ~is_premature_nil: true
-            deref_str prop loc in
-        raise (Exceptions.Premature_nil_termination
-                 (err_desc, try assert false with Assert_failure x -> x))
-      else
-        raise e in
+        if not fails_on_nil then
+          let deref_str = Localise.deref_str_nil_argument_in_variadic_method pname nargs i in
+          let err_desc =
+            Errdesc.explain_dereference ~use_buckets: true ~is_premature_nil: true
+              deref_str prop loc in
+          raise (Exceptions.Premature_nil_termination
+              (err_desc, try assert false with Assert_failure x -> x))
+        else
+          raise e in
   (* list_fold_left reverses the arguments back so that we report an *)
   (* error on the first premature nil argument *)
   list_fold_left check_allocated [(prop, path)] non_terminal_actuals_i
@@ -1374,7 +1374,7 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
 
 let lifted_sym_exec
     handle_exn cfg tenv pdesc (pset : Paths.PathSet.t) node (instrs : Sil.instr list)
-    : Paths.PathSet.t =
+: Paths.PathSet.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =
@@ -2088,8 +2088,8 @@ module ModelBuiltins = struct
                 match Specs.get_summary (Procname.from_string fun_string) with
                 | None -> assert false
                 | Some callee_summary ->
-                   sym_exec_call
-                     cfg pdesc tenv prop path ret_ids [(routine_arg, snd arg)] callee_summary loc
+                    sym_exec_call
+                      cfg pdesc tenv prop path ret_ids [(routine_arg, snd arg)] callee_summary loc
               end
           | _ ->
               L.d_str "pthread_create: unknown function "; Sil.d_exp routine_name; L.d_strln ", skipping call.";
