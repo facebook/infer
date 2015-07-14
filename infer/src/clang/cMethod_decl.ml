@@ -159,9 +159,7 @@ struct
         CMethod_signature.add ms;
         add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
           captured_vars is_anonym_block fdecl_info.Clang_ast_t.fdi_parameters attributes
-    | None, ms ->
-        CMethod_trans.create_local_procdesc cfg tenv ms [] captured_vars false;
-        CMethod_signature.add ms
+    | None, ms -> CMethod_signature.add ms
 
   let process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info =
     let class_name = CContext.get_curr_class_name curr_class in

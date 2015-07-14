@@ -300,7 +300,6 @@ struct
         | Some v ->
             CMethod_trans.mk_procname_from_function name v, CTypes_decl.parse_func_type name v
         | None -> Procname.from_string name, None in
-      CMethod_trans.create_external_procdesc context.cfg pname false type_opt;
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)
       (* As e.g. in fun_ptr = foo; *)
@@ -528,39 +527,20 @@ struct
     let (sil_fe, typ_fe) = extract_exp_from_list res_trans_callee.exps
         "WARNING: The translation of fun_exp did not return an expression. Returning -1. NEED TO BE FIXED" in
     let callee_pname_opt =
-        match sil_fe with
-        | Sil.Const (Sil.Cfun pn) ->
-            Some pn
-        | _ -> None (* function pointer *) in
+      match sil_fe with
+      | Sil.Const (Sil.Cfun pn) ->
+          Some pn
+      | _ -> None (* function pointer *) in
     let should_translate_args =
       match callee_pname_opt with
       | Some pn ->
-        (* we cannot translate the arguments of this builtin because preprocessing copies them *)
-        (* verbatim from a call to a different function, and they might be side-effecting *)
-        (Procname.to_string pn) <> CFrontend_config.builtin_object_size
+      (* we cannot translate the arguments of this builtin because preprocessing copies them *)
+      (* verbatim from a call to a different function, and they might be side-effecting *)
+          (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
-
-    let assign_default_params params_stmt =
-      match callee_pname_opt with
-      | None -> params_stmt
-      | Some callee_pname ->
-        try
-          let callee_ms = CMethod_signature.find callee_pname in
-          let args = CMethod_signature.ms_get_args callee_ms in
-          let params_args = list_combine params_stmt args in
-          let replace_default_arg param =
-            match param with
-            | CXXDefaultArgExpr(_, _, _), (_, _, Some default_instr) -> default_instr
-            | instr, _ -> instr in
-          list_map replace_default_arg params_args
-        with
-        | Invalid_argument _ ->
-          (* list_combine failed because of different list lengths *)
-          Printing.log_err "Param count doesn't match %s\n" (Procname.to_string callee_pname);
-          params_stmt
-        | Not_found -> params_stmt in
-
-    let params_stmt = if should_translate_args then assign_default_params params_stmt else [] in
+    let params_stmt = if should_translate_args then
+        CTrans_utils.assign_default_params params_stmt callee_pname_opt
+      else [] in
     let res_trans_par =
       let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) params_stmt in
       let rt = collect_res_trans (res_trans_callee :: l) in

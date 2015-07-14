@@ -659,3 +659,23 @@ let is_dispatch_function stmt_list =
                   )
               | _ -> None))
   | _ -> None
+
+let assign_default_params params_stmt callee_pname_opt =
+  match callee_pname_opt with
+  | None -> params_stmt
+  | Some callee_pname ->
+      try
+        let callee_ms = CMethod_signature.find callee_pname in
+        let args = CMethod_signature.ms_get_args callee_ms in
+        let params_args = list_combine params_stmt args in
+        let replace_default_arg param =
+          match param with
+          | CXXDefaultArgExpr(_, _, _), (_, _, Some default_instr) -> default_instr
+          | instr, _ -> instr in
+        list_map replace_default_arg params_args
+      with
+      | Invalid_argument _ ->
+      (* list_combine failed because of different list lengths *)
+          Printing.log_err "Param count doesn't match %s\n" (Procname.to_string callee_pname);
+          params_stmt
+      | Not_found -> params_stmt
