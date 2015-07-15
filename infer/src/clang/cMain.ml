@@ -104,7 +104,7 @@ let do_run source_path ast_path =
     Printing.log_out "Original AST@.%a@." CAstProcessor.pp_ast_decl ast_decl;
     Printing.log_out "AST with explicit locations:@.%a@." CAstProcessor.pp_ast_decl ast_decl';
 
-
+    CFrontend_config.pointer_decl_index := Clang_ast_main.index_decl_pointers ast_decl';
     CFrontend_config.json := ast_filename;
     CLocation.check_source_file source_path;
     let source_file = CLocation.source_file_from_path source_path in

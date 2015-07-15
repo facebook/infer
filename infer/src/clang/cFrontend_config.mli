@@ -37,6 +37,8 @@ val testing_mode : bool ref
 
 val json : string ref
 
+val pointer_decl_index : Clang_ast_t.decl Clang_ast_cache.PointerMap.t ref
+
 val objc_object : string
 
 val id_cl : string

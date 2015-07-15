@@ -39,6 +39,8 @@ let ast_file : string option ref = ref None
 
 let json = ref ""
 
+let pointer_decl_index = ref Clang_ast_cache.PointerMap.empty
+
 let debug_mode = ref false
 
 let stats_mode = ref false

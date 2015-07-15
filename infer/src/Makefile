@@ -12,7 +12,7 @@ OCAML_INCLUDE_DIR = $(shell ocamlc -where)
 
 #### ATDGEN declarations ####
 
-ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
+ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli _v.ml _v.mli
 
 ATDGEN_INCLUDE_DIR = $(shell ocamlfind query atdgen)
 BINIOU_INCLUDE_DIR = $(shell ocamlfind query biniou)
@@ -99,6 +99,7 @@ CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME), $(ATDG
 
 INFER_CLANG_AST_PROJ = $(addprefix $(CLANG_SOURCES)/, clang_ast_proj.ml clang_ast_proj.mli)
 FCP_CLANG_AST_PROJ = $(addprefix $(CLANG_OCAML_BUILD)/, clang_ast_proj.ml clang_ast_proj.mli)
+FCP_CLANG_AST_CACHE = $(addprefix $(CLANG_OCAML_ROOT)/, clang_ast_cache.ml clang_ast_main.ml)
 
 #### LLVM declarations ####
 
@@ -149,13 +150,16 @@ $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
 	atdgen -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
 	atdgen -j $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
 
-$(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ): $(CLANG_ATDGEN_STUB_ATD) $(CLANG_PLUGIN_BINARIES) $(FCP_CLANG_AST_PROJ)
+$(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ): $(CLANG_ATDGEN_STUB_ATD) $(CLANG_PLUGIN_BINARIES) $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_CACHE)
 # rebuild the artifacts of the AST files whenever they're upated in FCP
 # also copy the ast_proj files whenever they are updated
 	atdgen -rec -t $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
 	atdgen -rec -j $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
+	atdgen -rec -v $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
 	$(COPY) $(CLANG_OCAML_BUILD)/clang_ast_proj.ml $(CLANG_SOURCES)
 	$(COPY) $(CLANG_OCAML_BUILD)/clang_ast_proj.mli $(CLANG_SOURCES)
+	$(COPY) $(CLANG_OCAML_ROOT)/clang_ast_cache.ml $(CLANG_SOURCES)
+	$(COPY) $(CLANG_OCAML_ROOT)/clang_ast_main.ml $(CLANG_SOURCES)
 
 
 init: sanitize version $(BUILDDIR)

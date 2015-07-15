@@ -13,7 +13,7 @@ remove: []
 depends: [
   "ocamlfind" {build}
   "sawja" {>="1.5"}
-  "atdgen" {>="1.5"}
+  "atdgen" {>="1.6"}
   "javalib" {>="2.3"}
   "extlib" {>="1.5.4"}
 ]
