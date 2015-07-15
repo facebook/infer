@@ -1,3 +1,5 @@
+// Copyright (c) 2015-Present Facebook. All rights reserved.
+
 package java.io;
 
 public class ByteArrayInputStream extends InputStream implements Closeable {

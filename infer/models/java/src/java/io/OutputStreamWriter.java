@@ -6,6 +6,7 @@
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.models.InferUtils;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
@@ -18,10 +19,7 @@ public class OutputStreamWriter extends Writer {
             throws UnsupportedEncodingException {
         if (charsetName == null)
             throw new NullPointerException("charsetName");
-        else if (charsetName == "UTF8" || charsetName == "UTF-8"
-                || charsetName == "US-ASCII" || charsetName == "ISO-8859-1"
-                || charsetName == "UTF-16BE" || charsetName == "UTF-16LE"
-                || charsetName == "UTF-16") {
+        else if (InferUtils.isValidCharset(charsetName)) {
             this.out = out;
         } else
             throw new UnsupportedEncodingException();

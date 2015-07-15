@@ -1,3 +1,5 @@
+// Copyright (c) 2015-Present Facebook. All rights reserved.
+
 package java.io;
 
 public class ByteArrayOutputStream extends OutputStream implements Closeable {

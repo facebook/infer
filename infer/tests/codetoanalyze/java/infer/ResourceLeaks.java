@@ -12,6 +12,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.Closeables;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -20,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -878,6 +880,26 @@ public class ResourceLeaks {
     } catch (IOException e) {
       return 0;
     }
+  }
+
+  public InputStreamReader withCharset(URLConnection urlConnection) {
+    InputStreamReader reader = null;
+    try {
+      reader = new InputStreamReader(
+          urlConnection.getInputStream(),
+          "iso-8859-1");
+    } catch (Exception e) {
+      return null;
+    } finally {
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException e) {
+          // do nothing
+        }
+      }
+    }
+    return reader;
   }
 
 }
