@@ -15,6 +15,13 @@ submit pull request!
 The [GitHub issues](https://github.com/facebook/Infer/issues) page is
 a good place to ask questions, find answers, and report issues.
 
+Please include as many details as possible when submitting a GitHub
+issue. If your are able to run Infer, please include the contents of
+`infer-out/toplevel.log` in your report. If not, please include at
+least your operating system and the version of Infer that you are
+using.
+
+
 ### Twitter
 
 Keep up to date with the latest Infer news on
@@ -28,12 +35,94 @@ Freenode.net.
 
 ## Troubleshooting
 
-### Running "infer -- \<build command\>" fails.
+### Infer cannot analyze my CocoaPods project
+
+In the presence of CocoaPods, you should use xcworkspace and not
+xcodeproj in the compilation command that you supply to Infer. Here is
+an example you can adapt to your project:
+
+```sh
+infer -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld
+```
+
+### "infer -- \<build command\>" fails during a linking step
+
+The linker will sometimes not work if files have been compiled using a
+different compiler, such as the one Infer uses [under the
+hood](/docs/infer-workflow.html) to analyze your files.
+
+A workaround consists in setting the `LD` environment variable to a
+dummy linker, for instance:
+
+```
+LD=/bin/true infer -- <build command>
+```
+
+### I get a compilation error involving PCH files when running Infer
+
+For instance, `error: PCH file uses an older PCH format that is no longer supported`.
+
+This is a [known issue](https://github.com/facebook/infer/issues/96).
+
+Please run Infer with the following environment variable setting:
+
+```sh
+GCC_PRECOMPILE_PREFIX_HEADER=NO
+```
+
+### Using Infer with Maven results in no output
+
+Try upgrading `maven-compiler-plugin`. See also [this GitHub issue](https://github.com/facebook/infer/issues/38).
+
+### Infer reports a "Too many open files" error
+
+The maximum number of files a program can simultaneously hold open is
+a bit low on MacOs. You can increase the limit by running these
+commands for example:
+
+```sh
+sysctl -w kern.maxfiles=20480
+sysctl -w kern.maxfilesperproc=22480
+ulimit -S -n 2048
+```
+
+Note that the settings will be reset at the next reboot.
+
+See also [this GitHub issue](https://github.com/facebook/infer/issues/22).
+
+
+### I get a lint error when running Infer with gradle
+
+You need to manually disable linters to run Infer. For instance
+
+```sh
+infer -- gradle build -x lint
+```
+
+See also [this GitHub issue](https://github.com/facebook/infer/issues/58).
+
+### How do I use Infer in a CMake project?
+
+CMake hardcodes the compiler in generated Makefiles, which prevents
+Infer from capturing calls to your compiler. You need to reconfigure
+your project to use Infer's version of clang whenever you want Infer
+to run:
+
+```sh
+rm -f CMakeCache.txt
+CC=/path/to/infer/infer/lib/capture/clang cmake .
+infer -- make
+```
+
+See also [this GitHub issue](https://github.com/facebook/infer/issues/25).
+
+### Running "infer -- \<build command\>" fails with some other error
 
 Please make sure that:
 
 - \<build command\> runs successfully on its own.
 - `infer` is in your `$PATH` (try `which infer`, it should show where `infer` is located)
+- The paths of the files you want to analyze (including their names) do not have whitespaces in them. This is a [known issue](https://github.com/facebook/infer/issues/99).
 
 ### Running Infer fails with "ImportError: No module named xml.etree.ElementTree"
 
@@ -41,6 +130,14 @@ Make sure that the `xml` Python package is installed. For instance, on
 OpenSuse 13.1, it is provided by the
 [`python-xmldiff`](http://software.opensuse.org/download.html?project=XML&package=python-xmldiff)
 package.
+
+### I get errors compiling Infer
+
+Make sure the dependencies are up to date. They may change as we
+update Infer itself; you may also need to recompile the
+facebook-clang-plugins when it changes version. See the [installation
+document](https://github.com/facebook/infer/blob/master/INSTALL.md)
+for an up-to-date list of dependencies and how to get them.
 
 ### My problem is not listed here
 
@@ -54,7 +151,8 @@ Here are some frequently asked questions. More to come.
 ### Is Infer supported for Windows?
 
 Infer is not supported on Windows at the moment. You may try
-installing Infer on a Linux virtual machine.
+installing Infer on a Linux virtual machine if your project can be
+compiled on Linux.
 
 ### How does Infer compare to the Clang Static Analyzer?
 
@@ -63,7 +161,7 @@ in particular reasoning that spans across multiple files. But CSA checks for
 more kinds of issues and is also more mature than Infer when it comes to iOS: 
 we send big respect to CSA! Infer has only got started there recently. Really, 
 these tools complement one another and it would even make sense to use both. 
-Indeed, that's what we do inside FB.
+Indeed, that's what we do inside Facebook.
 
 ### How does Infer compare to Android linters and Findbugs?
 

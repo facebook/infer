@@ -14,10 +14,7 @@ To run Infer you will need Python 2.7
 
 ## Getting Infer
 
-Download the latest release from GitHub
-[here](https://github.com/facebook/infer/releases/latest/).
-
-You can also clone the latest development version of Infer with the command
+Clone the latest development version of Infer with the command
 
 ```sh
 git clone https://github.com/facebook/infer.git
