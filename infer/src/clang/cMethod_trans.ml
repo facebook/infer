@@ -134,9 +134,11 @@ let sil_func_attributes_of_attributes attrs =
   let rec do_translation acc al = match al with
     | [] -> list_rev acc
     | Clang_ast_t.SentinelAttr attribute_info::tl ->
-      (* TODO(t7466561) right now the clang plugin does not emit attribute arguments *)
-      (* so we default to (0,0) --the default sentinel values. *)
-      do_translation (Sil.FA_sentinel(0,0)::acc) tl
+      let (sentinel, null_pos) = match attribute_info.Clang_ast_t.ai_parameters with
+        | a::b::[] -> (int_of_string a, int_of_string b)
+        | _ -> assert false
+      in
+      do_translation (Sil.FA_sentinel(sentinel, null_pos)::acc) tl
     | _::tl -> do_translation acc tl in
   do_translation [] attrs
 
