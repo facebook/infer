@@ -13,10 +13,10 @@ public class ArrayIndexOutOfBoundsExceptionExample {
   }
 
   @Verify
-  void callWithWrongIndex(T[] array, int index) {
+  public void missingCheckOnIndex(T[] array, int index) {
     if (array != null) {
-      if (index >= 0 && index <= array.length) {
-        callMethodFromArray(array, index); // No longer found!
+      if (index < array.length) {
+        callMethodFromArray(array, index);
       }
     }
   }
@@ -26,16 +26,12 @@ public class ArrayIndexOutOfBoundsExceptionExample {
     callMethodFromArray(array, -5);
   }
 
-  void callAtIndex(T[] array, int index) {
-    array[index].f();
-  }
-
   void withFixedIndex(T[] array) {
     int index = 9;
-    callAtIndex(array, index);
+    callMethodFromArray(array, index);
   }
 
-  void ArrayIndexOutOfBoundsInCallee() {
+  void arrayIndexOutOfBoundsInCallee() {
     T[] array = new T[8];
     withFixedIndex(array);
   }

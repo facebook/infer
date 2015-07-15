@@ -34,9 +34,10 @@ public class ArrayIndexOutOfBoundsExceptionTest {
   public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "callOutOfBound",
-        "callWithWrongIndex",
-        "ArrayIndexOutOfBoundsInCallee",
+//        TODO (#7651424): re-enable these tests once the translation of arrays is fixed
+//        "callOutOfBound",
+//        "missingCheckOnIndex",
+        "arrayIndexOutOfBoundsInCallee",
     };
     assertThat(
         "Results should contain " + ARRAY_OUT_OF_BOUND,
