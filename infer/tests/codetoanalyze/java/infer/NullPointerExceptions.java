@@ -9,6 +9,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.text.TextUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -329,4 +330,11 @@ public class NullPointerExceptions {
       int n = s.length();
     }
   }
+
+  void nullableNonNullStringAfterTextUtilsIsEmptyCheckShouldNotCauseNPE(@Nullable String str) {
+    if(!TextUtils.isEmpty(str)) {
+      str.length();
+    }
+  }
+
 }
