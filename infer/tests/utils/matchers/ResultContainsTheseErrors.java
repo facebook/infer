@@ -1,4 +1,7 @@
-// Copyright (c) 2015-Present Facebook. All rights reserved.
+/*
+* Copyright (c) 2015 - present Facebook, Inc.
+* All rights reserved.
+*/
 
 package utils.matchers;
 

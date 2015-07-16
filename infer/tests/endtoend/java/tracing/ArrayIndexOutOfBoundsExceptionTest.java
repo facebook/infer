@@ -1,4 +1,8 @@
-// Copyright (c) 2015-Present Facebook. All rights reserved.
+/*
+* Copyright (c) 2015-present Facebook.
+* All rights reserved.
+*/
+
 
 package endtoend.java.tracing;
 

@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 module L = Logging
@@ -208,7 +212,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =
 let error_desc_to_qualifier_tags_records error_desc =
   let tag_value_pairs = Localise.error_desc_to_tag_value_pairs error_desc in
   let tag_value_to_record (tag, value) =
-    {tag = tag; value = value } in
+    { tag = tag; value = value } in
   list_map (fun tag_value -> tag_value_to_record tag_value) tag_value_pairs
 
 type summary_val =
