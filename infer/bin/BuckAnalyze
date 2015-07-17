@@ -440,7 +440,7 @@ def collect_results(args, start_time):
 
     stats_filename = os.path.join(args.infer_out, utils.STATS_FILENAME)
     with open(stats_filename, 'w') as stats_out:
-        json.dump(stats, stats_out)
+        json.dump(stats, stats_out, indent=2)
 
     basic_stats = get_basic_stats(stats)
 

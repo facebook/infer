@@ -348,8 +348,8 @@ def create_json_report(out_dir):
         rows = [row for row in reader]
     with open(json_report_filename, 'w') as file_out:
         headers = rows[0]
-        issues = rows[1:]
-        json.dump([dict(zip(headers, row)) for row in issues], file_out)
+        issues = [dict(zip(headers, row)) for row in rows[1:]]
+        json.dump(issues, file_out, indent=2)
 
 
 class AbsolutePathAction(argparse.Action):

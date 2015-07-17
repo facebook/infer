@@ -629,7 +629,7 @@ class Infer:
         self.stats['normal']['infer_version'] = utils.infer_version()
 
         with open(stats_path, 'w') as stats_file:
-            json.dump(self.stats, stats_file)
+            json.dump(self.stats, stats_file, indent=2)
 
     def close(self):
         if self.args.analyzer != COMPILE:
