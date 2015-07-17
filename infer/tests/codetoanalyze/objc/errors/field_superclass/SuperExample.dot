@@ -1,46 +1,46 @@
 digraph iCFG {
-12 [label="12:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 41]\n  n$7=_fun_A_init(n$6:class A *) virtual [line 41]\n  *&a:struct objc_object *=n$7 [line 42]\n  REMOVE_TEMPS(n$6,n$7); [line 42]\n  NULLIFY(&a,false); [line 42]\n " shape="box"]
+12 [label="12:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 45]\n  n$7=_fun_A_init(n$6:class A *) virtual [line 45]\n  *&a:struct objc_object *=n$7 [line 46]\n  REMOVE_TEMPS(n$6,n$7); [line 46]\n  NULLIFY(&a,false); [line 46]\n " shape="box"]
 	
 
 	 12 -> 11 ;
-11 [label="11:  Release the autorelease pool \n   n$4=_fun___objc_release_autorelease_pool() [line 40]\n  REMOVE_TEMPS(n$4); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
+11 [label="11:  Release the autorelease pool \n   n$4=_fun___objc_release_autorelease_pool() [line 44]\n  REMOVE_TEMPS(n$4); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
 	 11 -> 10 ;
 10 [label="10: Exit main \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start main\nFormals:  argc:int  argv:char **\nLocals:  a:struct objc_object * \n   DECLARE_LOCALS(&return,&a); [line 39]\n  NULLIFY(&a,false); [line 39]\n  NULLIFY(&argc,false); [line 39]\n  NULLIFY(&argv,false); [line 39]\n " color=yellow style=filled]
+9 [label="9: Start main\nFormals:  argc:int  argv:char **\nLocals:  a:struct objc_object * \n   DECLARE_LOCALS(&return,&a); [line 43]\n  NULLIFY(&a,false); [line 43]\n  NULLIFY(&argc,false); [line 43]\n  NULLIFY(&argv,false); [line 43]\n " color=yellow style=filled]
 	
 
 	 9 -> 12 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 32]\n  n$2=_fun_B_init(n$3:class A *) [line 32]\n  *&self:class A *=n$2 [line 32]\n  REMOVE_TEMPS(n$2,n$3); [line 32]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 36]\n  n$2=_fun_B_init(n$3:class A *) [line 36]\n  *&self:class A *=n$2 [line 36]\n  REMOVE_TEMPS(n$2,n$3); [line 36]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  BinaryOperatorStmt: Assign \n   n$1=*&self:class A * [line 33]\n  *n$1.a:int =4 [line 33]\n  REMOVE_TEMPS(n$1); [line 33]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: Assign \n   n$1=*&self:class A * [line 37]\n  *n$1.a:int =4 [line 37]\n  REMOVE_TEMPS(n$1); [line 37]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  Return Stmt \n   n$0=*&self:class A * [line 34]\n  *&return:struct objc_object *=n$0 [line 34]\n  REMOVE_TEMPS(n$0); [line 34]\n  NULLIFY(&self,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&self:class A * [line 38]\n  *&return:struct objc_object *=n$0 [line 38]\n  REMOVE_TEMPS(n$0); [line 38]\n  NULLIFY(&self,false); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
 	
 
 	 6 -> 5 ;
 5 [label="5: Exit A_init \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start A_init\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
+4 [label="4: Start A_init\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
 	
 
 	 4 -> 8 ;
-3 [label="3:  Return Stmt \n   *&return:struct objc_object *=0 [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:struct objc_object *=0 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit B_init \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start B_init\nFormals:  self:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n  NULLIFY(&self,false); [line 14]\n " color=yellow style=filled]
+1 [label="1: Start B_init\nFormals:  self:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

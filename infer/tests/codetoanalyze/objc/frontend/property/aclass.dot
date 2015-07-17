@@ -3,11 +3,11 @@ digraph iCFG {
 	
 
 	 8 -> 7 ;
-7 [label="7:  Message Call: release \n   n$5=*&self:class AClass * [line 9]\n  n$6=*n$5.aDynValue:class NSObject * [line -1]\n  n$4=_fun___objc_release(n$6:class NSObject *) [line -1]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line -1]\n " shape="box"]
+7 [label="7:  Message Call: release \n   n$5=*&self:class AClass * [line 13]\n  n$6=*n$5.aDynValue:class NSObject * [line -1]\n  n$4=_fun___objc_release(n$6:class NSObject *) [line -1]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line -1]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&self:class AClass * [line 9]\n  n$3=*&aDynValue:class NSObject * [line 9]\n  *n$2.aDynValue:class NSObject *=n$3 [line -1]\n  REMOVE_TEMPS(n$2,n$3); [line -1]\n  NULLIFY(&aDynValue,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&self:class AClass * [line 13]\n  n$3=*&aDynValue:class NSObject * [line 13]\n  *n$2.aDynValue:class NSObject *=n$3 [line -1]\n  REMOVE_TEMPS(n$2,n$3); [line -1]\n  NULLIFY(&aDynValue,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
 	
 
 	 6 -> 5 ;
