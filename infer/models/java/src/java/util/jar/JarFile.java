@@ -11,8 +11,6 @@ package java.util.jar;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 
@@ -41,11 +39,6 @@ public class JarFile extends ZipFile {
 
     public Manifest getManifest() throws IOException {
         throw new IOException();
-    }
-
-    public synchronized InputStream getInputStream(ZipEntry ze)
-            throws IOException {
-        return super.getInputStream(ze);
     }
 
     public void close() throws IOException {

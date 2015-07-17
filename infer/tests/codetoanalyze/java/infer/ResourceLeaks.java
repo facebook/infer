@@ -16,7 +16,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.Closeables;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -904,6 +903,13 @@ public class ResourceLeaks {
       }
     }
     return reader;
+  }
+
+  public void withZipFile() throws IOException {
+    ZipFile f = new ZipFile("hi");
+    InputStream s = f.getInputStream(f.getEntry("there"));
+    if (s != null) s.toString();
+    f.close();
   }
 
 }
