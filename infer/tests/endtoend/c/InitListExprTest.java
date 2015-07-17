@@ -10,7 +10,7 @@
 package endtoend.c;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import com.google.common.collect.ImmutableList;
 
@@ -27,33 +27,31 @@ import utils.InferRunner;
 
 public class InitListExprTest {
 
-  public static final String initlistexpr_file =
-      "infer/tests/" +
-          "codetoanalyze/c/errors/initialization/initlistexpr.c";
-
-  private static ImmutableList<String> inferCmd;
+  public static final String SOURCE_FILE =
+      "initialization/initlistexpr.c";
 
   public static final String DIVIDE_BY_ZERO = "DIVIDE_BY_ZERO";
 
-  @ClassRule
-  public static DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
+  private static InferResults inferResults;
 
   @BeforeClass
-  public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createCInferCommand(folder, initlistexpr_file);
+  public static void loadResults() throws InterruptedException, IOException {
+    inferResults = InferResults.loadCInferResults(InitListExprTest.class, SOURCE_FILE);
   }
 
   @Test
   public void whenInferRunsOnInitListExprThenDivideByZeroIsFound()
       throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferC(inferCmd);
+    String[] methods = {
+      "init_divide_by_zero"
+    };
     assertThat(
-        "Results should contain divide by zero error",
+        "Results should contain " + DIVIDE_BY_ZERO,
         inferResults,
-        contains(
+        containsExactly(
             DIVIDE_BY_ZERO,
-            initlistexpr_file,
-            "divide_by_zero"
+            SOURCE_FILE,
+            methods
         )
     );
   }

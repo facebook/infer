@@ -37,7 +37,7 @@ public class DivideByZeroTest {
   @Test
   public void whenInferRunsOnDivideByZeroThenDivideByZeroIsFound()
       throws InterruptedException, IOException, InferException {
-    String[] procedures = {"divide_by_zero"};
+    String[] procedures = {"arith_divide_by_zero"};
     assertThat(
         "Results should contain divide by zero error",
         inferResults,

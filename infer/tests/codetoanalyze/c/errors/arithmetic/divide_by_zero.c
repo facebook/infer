@@ -7,7 +7,7 @@
 * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int divide_by_zero() {
+int arith_divide_by_zero() {
   int x = 0;
   int y = 5;
   return y / x;
