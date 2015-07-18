@@ -1,5 +1,6 @@
 
 ANNOTATIONS_JAR = ../annotations/annotations.jar
+MODELS_JAR = ../lib/java/models.jar
 JACKSON_JAR = ../../dependencies/java/jackson/jackson-2.2.3.jar
 ANDROID_JAR = ../lib/java/android/android-19.jar
 GUAVA_JAR = ../../dependencies/java/guava/guava-10.0.1-fork.jar
@@ -16,7 +17,7 @@ TRACING_CMD = $(INFERJ) -o $(TRACING_OUT) -a tracing $(TRACING_JAVAC_CMD)
 INFER_OUT = infer_out
 INFER_REPORT = $(INFER_OUT)/report.csv
 INFER_SOURCES = $(shell find codetoanalyze/java/infer -name "*.java")
-INFER_JAVAC_CMD = javac -cp $(JACKSON_JAR):$(ANDROID_JAR) $(INFER_SOURCES)
+INFER_JAVAC_CMD = javac -cp $(JACKSON_JAR):$(ANDROID_JAR):$(MODELS_JAR) $(INFER_SOURCES)
 INFER_CMD = $(INFERJ) -o $(INFER_OUT) -a infer $(INFER_JAVAC_CMD)
 
 ERADICATE_OUT = eradicate_out

@@ -1,25 +1,19 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package java.io;
 
 import com.facebook.infer.models.InferUndefined;
 
 public class ObjectOutputStream extends OutputStream {
 
-    private static Class<?>[] WRITE_UNSHARED_PARAM_TYPES;
-    private static byte NOT_SC_BLOCK_DATA;
-    private int nestedLevels;
     private DataOutputStream output;
-    private boolean enableReplace;
-    private DataOutputStream primitiveTypes;
-    private ByteArrayOutputStream primitiveTypesBuffer;
-    private SerializationHandleMap objectsWritten;
-    private int currentHandle;
-    private Object currentObject;
-    private ObjectStreamClass currentClass;
-    private int protocolVersion;
-    private StreamCorruptedException nestedException;
-    private EmulatedFieldsForDumping currentPutField;
-    private boolean subclassOverridingImplementation;
-    private ObjectStreamClass proxyClassDesc;
 
     public ObjectOutputStream(OutputStream out) throws IOException {
         this.output = new DataOutputStream(out);

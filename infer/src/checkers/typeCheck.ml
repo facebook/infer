@@ -1,5 +1,10 @@
 (*
-* Copyright (c) 2014 - Facebook. All rights reserved.
+* Copyright (c) 2014 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 open Utils
@@ -938,13 +943,19 @@ let typecheck_node
   let typestates_exn = ref [] in
   let handle_exceptions typestate instr = match instr with
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pname), _, _, _) ->
+    (* check if the call might throw an exception *)
         let exceptions =
           match get_proc_desc callee_pname with
           | Some callee_pdesc ->
               (Specs.proc_get_attributes callee_pname callee_pdesc).Sil.exceptions
           | None -> [] in
         if exceptions <> [] then
-          typestates_exn := typestate :: !typestates_exn;
+          typestates_exn := typestate :: !typestates_exn
+    | Sil.Set (Sil.Lvar pv, _, _, _) when
+    Sil.pvar_is_return pv &&
+    Cfg.Node.get_kind node = Cfg.Node.throw_kind ->
+    (* throw instruction *)
+        typestates_exn := typestate :: !typestates_exn
     | _ -> () in
 
   let canonical_node = find_canonical_duplicate node in

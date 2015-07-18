@@ -1,6 +1,10 @@
 /*
- * Copyright (c) 2013- Facebook.
- * All rights reserved.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package endtoend.objc;
@@ -24,7 +28,7 @@ import utils.InferRunner;
 
 public class PrematureNilTerminationTest {
 
-  public static final String PREMATURE_NIL_FILE =
+  public static final String SOURCE_FILE =
       "infer/tests/codetoanalyze/objc/errors/variadic_methods/premature_nil_termination.m";
 
   private static ImmutableList<String> inferCmd;
@@ -39,13 +43,13 @@ public class PrematureNilTerminationTest {
   public static void runInfer() throws InterruptedException, IOException {
     inferCmd = InferRunner.createObjCInferCommandWithMLBuckets(
         folderNPD,
-        PREMATURE_NIL_FILE,
+        SOURCE_FILE,
         "cf",
         true);
   }
 
   @Test
-  public void whenInferRunsOnTestThenNoNPENotFound()
+  public void whenInferRunsOnPrematureNileFileThenOnePNTAIsFound()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     String[] expectedPNTAProcedures = {"nilInArrayWithObjects"};
@@ -54,7 +58,8 @@ public class PrematureNilTerminationTest {
         "Only PNTA should be found", inferResults,
         containsExactly(
             PREMATURE_NIL_TERMINATION_ARGUMENT,
-            PREMATURE_NIL_FILE,
+            SOURCE_FILE,
             expectedPNTAProcedures));
   }
+
 }

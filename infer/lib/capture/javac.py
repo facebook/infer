@@ -1,9 +1,17 @@
+# Copyright (c) 2015 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
 import os
 import subprocess
 import traceback
 import util
 
-import utils  # this is module located in ../utils.py
+import inferlib
+
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
 javac <options> <source files>
@@ -22,25 +30,13 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 class JavacCapture:
     def __init__(self, args, cmd):
-        self.args = args
-        self.cmd = cmd
+        self.analysis = inferlib.Infer(args, cmd[1:])
 
     def capture(self):
-        # run inferJ only in capture mode
-        # pass all the frontend args (if any)
-        capture_cmd = [utils.get_cmd_in_bin_dir('inferJ')]
-        capture_cmd += ['--out', self.args.infer_out]
-        capture_cmd += ['--analyzer', self.args.analyzer]
-        if self.args.no_filtering:
-            capture_cmd.append('--no-filtering')
-        if self.args.debug:
-            capture_cmd.append('-g')
-        capture_cmd += self.cmd
-
         try:
-            subprocess.check_call(capture_cmd)
+            self.analysis.start()
             return os.EX_OK
         except subprocess.CalledProcessError as exc:
-            if self.args.debug:
+            if self.analysis.args.debug:
                 traceback.print_exc()
             return exc.returncode

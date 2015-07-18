@@ -1,6 +1,10 @@
 /*
-* Copyright (c) 2013- Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 */
 
 package utils;
@@ -42,6 +46,7 @@ public class InferRunner {
       "/infer/lib/java/android/android-19.jar";
 
   private static final String[] LIBRARIES = {
+      "/infer/lib/java/models.jar",
       "/infer/annotations/annotations.jar",
       "/dependencies/java/guava/guava-10.0.1-fork.jar",
       "/dependencies/java/jackson/jackson-2.2.3.jar",
@@ -165,6 +170,16 @@ public class InferRunner {
     return langOption;
   }
 
+  public static String getStdParam(Language lang) {
+    String stdParam = "";
+    switch (lang) {
+      case CPP:
+        stdParam = "-std=c++11";
+        break;
+    }
+    return stdParam;
+  }
+
   public static ImmutableList<String> createClangCommand(
     String sourceFile,
     Language lang,
@@ -187,6 +202,7 @@ public class InferRunner {
         .add("clang")
         .add("-x")
         .add(getClangLangOption(lang))
+        .add(getStdParam(lang))
         .addAll(isysrootOption.build())
         .addAll(arcOption.build())
         .add("-c")
@@ -471,7 +487,7 @@ public class InferRunner {
     ProcessBuilder pb = new ProcessBuilder(inferCmd);
 
     Map<String, String> env = pb.environment();
-    env.put("REPORT_ASSERTION_FAILURE", "1");
+    env.put("INFER_REPORT_ASSERTION_FAILURE", "1");
 
     Process process = pb.start();
     StringBuilder stderr = new StringBuilder();

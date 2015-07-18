@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 open Utils
@@ -66,9 +70,9 @@ let get_builtinname method_name =
     Some SymExec.ModelBuiltins.__objc_release
   else None
 
-(* Not used *)
-let is_builtin_expect funct =
-  funct = CFrontend_config.builtin_expect
+let is_modeled_builtin funct =
+  funct = CFrontend_config.builtin_expect ||
+  funct = CFrontend_config.builtin_memset_chk
 
 let is_assert_log_s funct =
   funct = CFrontend_config.assert_rtn ||
@@ -90,7 +94,8 @@ let is_toll_free_bridging pn_opt =
       let funct = (Procname.to_string pn) in
       funct = CFrontend_config.cf_bridging_release ||
       funct = CFrontend_config.cf_bridging_retain ||
-      funct = CFrontend_config.cf_autorelease
+      funct = CFrontend_config.cf_autorelease ||
+      funct = CFrontend_config.ns_make_collectable
   | None -> false
 
 (** If the function is a builtin model, return the model, otherwise return the function *)
@@ -117,21 +122,21 @@ let is_objc_memory_model_controlled o =
   Core_foundation_model.is_objc_memory_model_controlled o
 
 let get_predefined_ms_method condition class_name method_name mk_procname
-    arguments return_type builtin =
+    arguments return_type attributes builtin =
   if condition then
     let procname =
       match builtin with
       | Some procname -> procname
       | None -> mk_procname class_name method_name in
-    let ms = CMethod_signature.make_ms procname arguments return_type
+    let ms = CMethod_signature.make_ms procname arguments return_type attributes
         (Ast_expressions.dummy_source_range ()) false in
     Some ms
   else None
 
 let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname =
   let condition = class_name = nsstring_cl && method_name = string_with_utf8_m in
-  get_predefined_ms_method condition class_name method_name mk_procname [("x", "char *")]
-    id_cl None
+  get_predefined_ms_method condition class_name method_name mk_procname [("x", "char *", None)]
+    id_cl [] None
 
 let get_predefined_ms_retain_release class_name method_name mk_procname =
   let condition = is_retain_or_release method_name in
@@ -139,18 +144,18 @@ let get_predefined_ms_retain_release class_name method_name mk_procname =
     if is_retain_method method_name || is_autorelease_method method_name
     then id_cl else void in
   get_predefined_ms_method condition nsobject_cl method_name mk_procname
-    [(self, class_name)] return_type (get_builtinname method_name)
+    [(self, class_name, None)] return_type [] (get_builtinname method_name)
 
 let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname =
   let condition = (method_name = init) && (class_name = nsautorelease_pool_cl) in
   get_predefined_ms_method condition class_name method_name mk_procname
-    [(self, class_name)] void None
+    [(self, class_name, None)] void [] None
 
 let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname =
   let condition = (method_name = release || method_name = drain) &&
     (class_name = nsautorelease_pool_cl) in
-  get_predefined_ms_method condition class_name method_name mk_procname [(self, class_name)]
-    void (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
+  get_predefined_ms_method condition class_name method_name mk_procname [(self, class_name, None)]
+    void [] (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
 
 let get_predefined_model_method_signature class_name method_name mk_procname =
   match get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname with

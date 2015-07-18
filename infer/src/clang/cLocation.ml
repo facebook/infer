@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
@@ -20,20 +24,18 @@ let init_curr_source_file source_file =
   current_source_file := source_file
 
 let source_file_from_path path =
-  let path = Utils.filename_to_absolute path in
+  if Filename.is_relative path then
+    (Logging.out
+        "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
+        path;
+      exit 1);
   match !Config.project_root with
   | Some root ->
       (try
         DB.rel_source_file_from_abs_path root path
       with DB.Path_not_prefix_root ->
           DB.source_file_from_string path)
-  | None ->
-      if (Filename.is_relative path) then
-        (Logging.out
-            "ERROR: Path %s is relative. Please pass either a project root or an absolute path in the -c argument.@."
-            path;
-          exit(1))
-      else (DB.source_file_from_string path)
+  | None -> DB.source_file_from_string path
 
 let choose_sloc sloc1 sloc2 prefer_first =
   let sloc_bad sloc =
@@ -124,7 +126,7 @@ let check_source_file source_file =
   let extensions_allowed = [".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"] in
   let allowed = list_exists (fun ext -> Filename.check_suffix source_file ext) extensions_allowed in
   if not allowed then
-    (Printing.log_stats
+    (Printing.log_stats "%s"
         ("\nThe source file "^source_file^
           " should end with "^(Utils.list_to_string (fun x -> x) extensions_allowed)^"\n\n");
       assert false)

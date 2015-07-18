@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Module for utility functions for the whole frontend. Includes functions for printing,  *)
@@ -10,11 +14,11 @@ open Clang_ast_t
 module Printing :
 sig
 
-  val log_out : ?fmt: (string -> unit, Format.formatter, unit) format -> string -> unit
+  val log_out : ('a, Format.formatter, unit) format -> 'a
 
-  val log_err : ?fmt: (string -> unit, Format.formatter, unit) format -> string -> unit
+  val log_err : ('a, Format.formatter, unit) format -> 'a
 
-  val log_stats : ?fmt: (string -> unit, Format.formatter, unit) format -> string -> unit
+  val log_stats : ('a, Format.formatter, unit) format -> 'a
 
   val print_failure_info : string -> unit
 
@@ -41,6 +45,8 @@ sig
 
   val string_of_unary_operator_kind : Clang_ast_t.unary_operator_kind -> string
 
+  val name_opt_of_name_info_opt : Clang_ast_t.named_decl_info option -> string option
+
   val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> string
 
   val property_attribute_compare : property_attribute -> property_attribute -> int
@@ -57,7 +63,11 @@ sig
 
   val is_copy : Clang_ast_t.property_attribute option -> bool
 
+  val is_type_nonnull : Clang_ast_t.qual_type -> Clang_ast_t.attribute list -> bool
+
   val get_fresh_pointer : unit -> string
+
+  val get_invalid_pointer : unit -> string
 
   val type_from_unary_expr_or_type_trait_expr_info :
   Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.qual_type option
@@ -78,6 +88,8 @@ sig
   val append_no_duplicated_vars : (Mangled.t * Sil.typ) list -> (Mangled.t * Sil.typ) list -> (Mangled.t * Sil.typ) list
 
   val append_no_duplicated_pvars : (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ) list -> (Sil.exp * Sil.typ) list
+
+  val sort_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
 
   val collect_list_tuples : ('a list * 'b list * 'c list * 'd list * 'e list) list ->
   'a list * 'b list * 'c list * 'd list * 'e list -> 'a list * 'b list * 'c list * 'd list * 'e list

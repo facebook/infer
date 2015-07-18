@@ -1,7 +1,11 @@
 (*
 * Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Symbolic Execution *)
@@ -84,10 +88,6 @@ let check_block_retain_cycle cfg tenv pname _prop block_nullified =
   let _prop'' = Prop.prop_rename_fav_with_existentials _prop' in
   let _ = Abs.abstract_junk ~original_prop: _prop pname tenv _prop'' in
   ()
-
-let mark_id_as_undefined id prop att_undef =
-  let check_attr_change att_old att_new = () in
-  Prop.add_or_replace_exp_attribute check_attr_change prop (Sil.Var id) att_undef
 
 (** Apply function [f] to the expression at position [offlist] in [strexp].
 If not found, expand [strexp] and apply [f] to [None].
@@ -505,33 +505,29 @@ let dangerous_functions =
   let dangerous_list = ["gets"] in
   ref ((list_map Procname.from_string) dangerous_list)
 
-let check_inherently_dangerous_function caller_pname callee_pname callee_pdesc =
+let check_inherently_dangerous_function caller_pname callee_pname =
   if list_exists (Procname.equal callee_pname) !dangerous_functions then
     let exn = Exceptions.Inherently_dangerous_function (Localise.desc_inherently_dangerous_function callee_pname) in
     let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
     Reporting.log_warning caller_pname ~pre: pre_opt exn
 
-let call_should_be_skipped caller_pname callee_pname callee_pdesc =
-  let print_skip_warning () =
-    let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-    Reporting.log_info caller_pname exn in
-  let should_skip () =
-    match Specs.get_summary callee_pname with
-    | None ->
-        not (Cfg.Procdesc.is_defined callee_pdesc)
-        (* treat calls with no specs as skip functions in angelic mode *)
-        (* TODO: turn angelic back on for C_CPP once we have abductive angelic analysis (t6935559) *)
-        || (!Config.angelic_execution && !Sil.curr_language <> Sil.C_CPP)
-    | Some summary ->
-        Specs.get_flag callee_pname proc_flag_skip <> None (* check skip flag *)
-        || summary.Specs.attributes.Sil.is_abstract (* skip abstract methods *)
-        (* treat calls with no specs as skip functions in angelic mode *)
-        (* TODO: turn angelic back on for C_CPP once we have abductive angelic analysis (t6935559) *)
-        || (!Config.angelic_execution && !Sil.curr_language <> Sil.C_CPP
-          && Specs.get_specs_from_payload summary == []) in
-  if !Config.intraprocedural then true
-  else if should_skip () then (print_skip_warning (); true)
-  else false
+
+let is_defined cfg pname =
+  match Cfg.Procdesc.find_from_name cfg pname with
+  | None -> false
+  | Some pdesc -> Cfg.Procdesc.is_defined pdesc
+
+
+let call_should_be_skipped callee_pname summary =
+  (* skip all procedures in intra-precedural mode *)
+  !Config.intraprocedural
+  (* check skip flag *)
+  || Specs.get_flag callee_pname proc_flag_skip <> None
+  (* skip abstract methods *)
+  || summary.Specs.attributes.Sil.is_abstract
+  (* treat calls with no specs as skip functions in angelic mode *)
+  || (!Config.angelic_execution && Specs.get_specs_from_payload summary == [])
+
 
 let report_raise_memory_leak tenv msg hpred prop =
   L.d_strln msg;
@@ -667,6 +663,7 @@ let method_exists right_proc_name methods =
   else (* ObjC case *)
   Specs.summary_exists right_proc_name
 
+
 let resolve_method tenv class_name proc_name =
   let found_class =
     let visited = ref Mangled.MangledSet.empty in
@@ -697,26 +694,33 @@ let resolve_method tenv class_name proc_name =
       proc_name
   | Some proc_name -> proc_name
 
-(** If the dynamic type of the object calling a method is known, the method from the dynamic type is called  *)
-let call_virtual cfg tenv (_prop: Prop.normal Prop.t) actual_params pdesc fn : Cfg.Procdesc.t =
-  let exp = (match actual_params with
-      | [] -> assert false
-      | (exp, typ):: rest -> exp) in
-  let typexp =
-    try
-      let hpred = list_find (function
-            | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e exp
-            | _ -> false) (Prop.get_sigma _prop) in
-      match hpred with
-      | Sil.Hpointsto(e, _, texp) ->
-          Some texp
-      | _ -> None
-    with Not_found -> None in
-  match typexp with
-  | Some (Sil.Sizeof (Sil.Tstruct (l, _, Sil.Class, (Some class_name), _, _, _), st)) ->
-      let fn' = resolve_method tenv class_name fn in
-      proc_desc_copy cfg pdesc fn fn'
-  | _ -> pdesc
+
+let resolve_typename prop arg =
+  let (arg_exp, _) = arg in
+  let typexp_opt =
+    let rec loop = function
+      | [] -> None
+      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e arg_exp -> Some typexp
+      | _ :: hpreds -> loop hpreds in
+    loop (Prop.get_sigma prop) in
+  match typexp_opt with
+  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Sil.Class, class_name_opt, _, _, _), _)) -> class_name_opt
+  | _ -> None
+
+
+(** If the dynamic type of the object calling a method is known, the method from the dynamic type
+is called *)
+let resolve_virtual_pname cfg tenv prop args pname : Procname.t =
+  match args with
+  | [] -> failwith "Expecting the first parameter to be the object expression"
+  | obj_exp :: _ ->
+      begin
+        match resolve_typename prop obj_exp with
+        | Some class_name -> resolve_method tenv class_name pname
+        | _ -> pname
+      end
+
+(* let resolve_procname cfg tenv prop args pname : Procname.t = *)
 
 (** recognize calls to shared_ptr procedures and re-direct them to infer procedures for modelling *)
 let redirect_shared_ptr tenv cfg pname actual_params =
@@ -769,7 +773,7 @@ let redirect_shared_ptr tenv cfg pname actual_params =
 
 (** recognize calls to the constructor java.net.URL and splits the argument string to be only the protocol.  *)
 let call_constructor_url_update_args tenv cfg pname actual_params =
-  let url_pname = Procname.mangled_java ((Some "java.net"), "URL") None "<init>" [(Some "java.lang"), "String"] in
+  let url_pname = Procname.mangled_java ((Some "java.net"), "URL") None "<init>" [(Some "java.lang"), "String"] Procname.Non_Static in
   if (Procname.equal url_pname pname) then
     (match actual_params with
       | [this; (Sil.Const (Sil.Cstr s), atype)] ->
@@ -849,6 +853,13 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
           [(prop, path)] in
       res_null @ res
     else res (* Not known if receiver = 0 and not footprint. Standard tabulation *)
+
+let normalize_params pdesc prop actual_params =
+  let norm_arg (p, args) (e, t) =
+    let e', p' = exp_norm_check_arith pdesc p e in
+    (p', (e', t) :: args) in
+  let prop, args = list_fold_left norm_arg (prop, []) actual_params in
+  (prop, list_rev args)
 
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
@@ -931,38 +942,55 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun fn), args, loc, call_flags) when function_is_builtin fn ->
       let sym_exe_builtin = Builtin.get_sym_exe_builtin fn in
       sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args fn loc
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun _fn), _actual_params, loc, call_flags) -> (** Generic fun call with known name *)
-      let prop_r = ref _prop in
-      let _n_actual_params = list_map (fun (e, t) ->
-                let e', p' = exp_norm_check_arith pdesc !prop_r e in
-                prop_r := p';
-                e', t) _actual_params in
-      let fn, n_actual_params = handle_special_cases_call tenv cfg _fn _n_actual_params in
-      let callee_pdesc = match Cfg.Procdesc.find_from_name cfg fn with
-        | Some callee_pdesc -> callee_pdesc
-        | None -> assert false in
-      let callee_pdesc' =
+  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_param, loc, call_flags) ->
+  (** Generic fun call with known name *)
+      let (prop_r, _n_actual_params) = normalize_params pdesc _prop actual_param in
+      let fn, n_actual_params = handle_special_cases_call tenv cfg callee_pname _n_actual_params in
+      let resolved_pname =
         if call_flags.Sil.cf_virtual then
-          (call_virtual cfg tenv _prop n_actual_params callee_pdesc fn)
-        else callee_pdesc in
-      sym_exe_call cfg pdesc tenv !prop_r path ret_ids n_actual_params callee_pdesc' loc
+          resolve_virtual_pname cfg tenv prop_r n_actual_params fn
+        else fn in
+      let ret_typ_opt =
+        match Cfg.Procdesc.find_from_name cfg resolved_pname with
+        | None -> None
+        | Some pd -> Some (Cfg.Procdesc.get_ret_type pd) in
+      let skip_call () =
+        let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
+        Reporting.log_info pname exn;
+        L.d_strln
+          ("Undefined function " ^ Procname.to_string callee_pname
+            ^ ", returning undefined value.");
+        (match Specs.get_summary pname with
+          | None -> ()
+          | Some summary ->
+              Specs.CallStats.trace
+                summary.Specs.stats.Specs.call_stats callee_pname loc
+                (Specs.CallStats.CR_skip) !Config.footprint);
+        call_unknown_or_scan
+          false cfg pdesc tenv prop_r path
+          ret_ids ret_typ_opt n_actual_params resolved_pname loc in
+      begin
+        match Specs.get_summary resolved_pname with
+        | None -> skip_call ()
+        | Some summary when call_should_be_skipped resolved_pname summary ->
+            skip_call ()
+        | Some summary ->
+            sym_exec_call
+              cfg pdesc tenv prop_r path ret_ids n_actual_params summary loc
+      end
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
-      let prop_r = ref _prop in
-      let n_actual_params = list_map (fun (e, t) ->
-                let e', p' = exp_norm_check_arith pdesc !prop_r e in
-                prop_r := p';
-                e', t) actual_params in
+      let (prop_r, n_actual_params) = normalize_params pdesc _prop actual_params in
       if call_flags.Sil.cf_is_objc_block then
-        Rearrange.check_call_to_objc_block_error pdesc !prop_r fun_exp loc;
-      Rearrange.check_dereference_error pdesc !prop_r fun_exp loc;
+        Rearrange.check_call_to_objc_block_error pdesc prop_r fun_exp loc;
+      Rearrange.check_dereference_error pdesc prop_r fun_exp loc;
       if call_flags.Sil.cf_noreturn then begin
         L.d_str "Unknown function pointer with noreturn attribute "; Sil.d_exp fun_exp; L.d_strln ", diverging.";
-        execute_diverge !prop_r path
+        execute_diverge prop_r path
       end else begin
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp; L.d_strln ", returning undefined value.";
         let callee_pname = Procname.from_string "__function_pointer__" in
         call_unknown_or_scan
-          false cfg pdesc tenv !prop_r path ret_ids None n_actual_params callee_pname loc
+          false cfg pdesc tenv prop_r path ret_ids None n_actual_params callee_pname loc
       end
   | Sil.Nullify (pvar, loc, deallocate) ->
       begin
@@ -1040,124 +1068,204 @@ and sym_exec_generated mask_errors cfg tenv pdesc instrs ppl =
   let f plist instr = list_flatten (list_map (exe_instr instr) plist) in
   list_fold_left f ppl instrs
 
+and add_to_footprint abducted_pv typ prop =
+  let abducted_lvar = Sil.Lvar abducted_pv in
+  let fresh_fp_var = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+  let lvar_pt_fpvar =
+    let sizeof_exp = Sil.Sizeof (typ, Sil.Subtype.subtypes) in
+    Prop.mk_ptsto abducted_lvar (Sil.Eexp (fresh_fp_var, Sil.Inone)) sizeof_exp in
+  let sigma_fp = Prop.get_sigma_footprint prop in
+  (Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop), fresh_fp_var)
+
+and add_constraints_on_retval pdesc prop ret_ids ret_type_option callee_pname =
+  if Procname.is_infer_undefined callee_pname then prop
+  else
+    match ret_ids, ret_type_option with
+    | [ret_id], Some ret_typ ->
+    (* To avoid obvious false positives, assume skip functions do not return null pointers *)
+        let add_ret_non_null ret_id ret_typ prop =
+          match ret_typ with
+          | Sil.Tptr _ -> Prop.conjoin_neq (Sil.Var ret_id) Sil.exp_zero prop
+          | _ -> prop in
+        let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
+          Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
+        if !Config.angelic_execution && not (is_rec_call callee_pname) then
+          (* introduce a fresh program variable to allow abduction on the return value *)
+          let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname (State.get_loc ()) in
+          let already_has_abducted_retval p =
+            list_exists
+              (fun hpred -> match hpred with
+                    | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
+                    | _ -> false)
+              (Prop.get_sigma_footprint p) in
+          (* prevent introducing multiple abducted retvals for a single call site in a loop *)
+          if already_has_abducted_retval prop then prop
+          else
+          if !Config.footprint then
+            let (prop', fresh_fp_var) = add_to_footprint abducted_ret_pv ret_typ prop in
+            let prop'' = Prop.conjoin_eq ~footprint: true (Sil.Var ret_id) fresh_fp_var prop' in
+            add_ret_non_null ret_id ret_typ prop''
+          else
+            (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
+            let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
+              let bind_exp prop = function
+                | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
+                when Sil.pvar_equal pv abducted_pvar ->
+                    Prop.conjoin_eq exp_to_bind rhs prop
+                | _ -> prop in
+              list_fold_left bind_exp prop (Prop.get_sigma prop) in
+            (* bind return id to the abducted value pointed to by the pvar we introduced *)
+            bind_exp_to_abducted_val (Sil.Var ret_id) abducted_ret_pv prop
+        else add_ret_non_null ret_id ret_typ prop
+    | _ -> prop
+
+and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
+  (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
+  let replace_actual_hpred actual_var new_hpred prop =
+    let sigma' =
+      list_map
+        (function
+          | Sil.Hpointsto (lhs, _, _) when Sil.exp_equal lhs actual_var -> new_hpred
+          | hpred -> hpred)
+        (Prop.get_sigma prop) in
+    Prop.normalize (Prop.replace_sigma sigma' prop) in
+  if !Config.angelic_execution then
+    let add_actual_by_ref_to_footprint prop (actual, actual_typ) =
+      match actual with
+      | Sil.Lvar actual_pv ->
+      (* introduce a fresh program variable to allow abduction on the return value *)
+          let abducted_ref_pv =
+            Sil.mk_pvar_abducted_ref_param callee_pname actual_pv (State.get_loc ()) in
+          let already_has_abducted_retval p =
+            list_exists
+              (fun hpred -> match hpred with
+                    | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ref_pv
+                    | _ -> false)
+              (Prop.get_sigma_footprint p) in
+          (* prevent introducing multiple abducted retvals for a single call site in a loop *)
+          if already_has_abducted_retval prop then prop
+          else
+          if !Config.footprint then
+            let (prop', fresh_fp_var) =
+              add_to_footprint abducted_ref_pv (Sil.typ_strip_ptr actual_typ) prop in
+            (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
+            let filtered_sigma =
+              list_map
+                (function
+                  | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
+                      Sil.Hpointsto (lhs, Sil.Eexp (fresh_fp_var, Sil.Inone), typ_exp)
+                  | hpred -> hpred)
+                (Prop.get_sigma prop') in
+            Prop.normalize (Prop.replace_sigma filtered_sigma prop')
+          else
+            (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
+            let prop' =
+              let filtered_sigma =
+                list_filter
+                  (function
+                    | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
+                        false
+                    | _ -> true)
+                  (Prop.get_sigma prop) in
+              Prop.normalize (Prop.replace_sigma filtered_sigma prop) in
+            list_fold_left
+              (fun p hpred ->
+                    match hpred with
+                    | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Sil.pvar_equal pv abducted_ref_pv ->
+                        let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
+                        Prop.normalize (Prop.replace_sigma (new_hpred :: (Prop.get_sigma prop')) p)
+                    | _ -> p)
+              prop'
+              (Prop.get_sigma prop')
+      | _ -> assert false in
+    list_fold_left add_actual_by_ref_to_footprint prop actuals_by_ref
+  else
+    (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
+    let havoc_actual_by_ref (actual, actual_typ) prop =
+      let actual_pt_havocd_var =
+        let havocd_var = Sil.Var (Ident.create_fresh Ident.kprimed) in
+        let sizeof_exp = Sil.Sizeof (Sil.typ_strip_ptr actual_typ, Sil.Subtype.subtypes) in
+        Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
+      replace_actual_hpred actual actual_pt_havocd_var prop in
+    list_fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
+
 (** execute a call for an unknown or scan function *)
 and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     ret_ids ret_type_option actual_pars callee_pname loc =
-  let instrs, undef_vars = (* instructions to set vars passed by reference to fresh ids *)
-    let gen_instrs = ref [] in
-    let gen_undef_vars = ref [] in
-    let add_instr instr = gen_instrs := instr :: !gen_instrs in
-    let add_undef_var var = gen_undef_vars := var :: !gen_undef_vars in
-    let type_is_not_structured = function
-      | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tenum _ -> true
-      | Sil.Tvar _ | Sil.Tstruct _ | Sil.Tarray _ -> false in
-    let expand_ptr_type t = match t with
-      | Sil.Tptr (Sil.Tvar tn, pk) ->
-          (match Sil.tenv_lookup tenv tn with
-            | Some typ -> Sil.Tptr (typ, pk)
-            | None -> t)
-      | _ -> t in
-    let do_actual_par (e, _t) =
-      let t = expand_ptr_type _t in
-      L.d_str "do_actual_par exp: "; Sil.d_exp e; L.d_str" typ: "; Sil.d_typ_full t; L.d_ln();
-      match e, t with
-      | _, Sil.Tptr (Sil.Tint ik, pk) when is_scan && Sil.ikind_is_char ik -> (* scan case "%s" *)
-          let infer_get_array_size = Procname.from_string "__get_array_size" in
-          let instr1 = Sil.Call ([], Sil.Const (Sil.Cfun infer_get_array_size), [(e, Sil.Tptr (Sil.Tint ik, pk))], loc, Sil.cf_default) in
-          let id_fresh = Ident.create_fresh Ident.kprimed in
-          let instr2 = Sil.Letderef (id_fresh, e, t, loc) in
-          add_instr instr1;
-          add_instr instr2
-      | Sil.Lvar _, Sil.Tptr (t', _) when type_is_not_structured t' ->
-          let id_fresh = Ident.create_fresh Ident.kprimed in
-          let instr = Sil.Set (e, t, Sil.Var id_fresh, loc) in
-          add_instr instr;
-          add_undef_var id_fresh
-      | Sil.Lvar _, Sil.Tptr ((Sil.Tstruct (ftal, sftal, _, _, _, _, _) as tstruct, _)) ->
-          let do_fld (f, typ, ann) =
-            let id_fresh = Ident.create_fresh Ident.kprimed in
-            let instr = Sil.Set (Sil.Lfield (e, f, tstruct), typ, Sil.Var id_fresh, loc) in
-            add_instr instr;
-            add_undef_var id_fresh in
-          list_iter do_fld ftal
-      | _ -> () in
-    list_iter do_actual_par actual_pars;
-    list_rev !gen_instrs, list_rev !gen_undef_vars in
-  let remove_resource_att prop =
+  let remove_file_attribute prop =
     let do_exp p (e, t) =
       let do_attribute q = function
-        | Sil.Aresource _ as res ->
+        | Sil.Aresource res_action as res
+        when res_action.Sil.ra_res = Sil.Rfile ->
             Prop.remove_attribute res q
         | _ -> q in
       list_fold_left do_attribute p (Prop.get_exp_attributes p e) in
     list_fold_left do_exp prop actual_pars in
-  let prop =
-    if !Sil.curr_language <> Sil.Java || Procname.is_infer_undefined callee_pname then pre
+  let actuals_by_ref =
+    list_filter
+      (function
+        | Sil.Lvar _, _ -> true
+        | _ -> false)
+      actual_pars in
+  (* in Java, assume that skip functions close resources passed as params *)
+  let pre' = if !Sil.curr_language = Sil.Java then remove_file_attribute pre else pre in
+  let pre'' = add_constraints_on_retval pdesc pre' ret_ids ret_type_option callee_pname in
+  let pre''' = add_constraints_on_actuals_by_ref pre'' actuals_by_ref callee_pname in
+  if is_scan (* if scan function, don't mark anything with undef attributes *)
+  then [(Tabulation.remove_constant_string_class pre''', path)]
+  else
+    (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
+    let exps_to_mark =
+      let ret_exps = list_map (fun ret_id -> Sil.Var ret_id) ret_ids in
+      list_fold_left
+        (fun exps_to_mark (exp, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
+    let path_pos = State.get_path_pos () in
+    [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
+
+and sym_exe_check_variadic_sentinel cfg pdesc tenv prop path actual_params fails_on_nil (sentinel, null_pos) pname loc =
+  let proc_attributes = Cfg.Procdesc.get_attributes pdesc in
+  let args = if proc_attributes.Sil.is_objc_instance_method then
+      (* we are calling an objc method so the first actual is the instance *)
+      list_tl actual_params
     else
-      let prop_no_res = remove_resource_att pre in
-      match ret_ids, ret_type_option with
-      | [ret_id], Some ret_typ ->
-      (* To avoid obvious false positives, assume skip functions do not return null pointers *)
-          let add_ret_non_null ret_id ret_typ prop =
-            match ret_typ with
-            | Sil.Tptr _ -> Prop.conjoin_neq (Sil.Var ret_id) Sil.exp_zero prop
-            | _ -> prop in
-          let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
-            Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
-          if !Config.angelic_execution && not (is_rec_call callee_pname) then
-            (* introduce a fresh program variable to allow abduction on the return value *)
-            let ret_pv = Sil.mk_pvar_abducted_ret callee_pname (State.get_loc ()) in
-            let already_has_abducted_retval p =
-              list_exists
-                (fun hpred -> match hpred with
-                      | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv ret_pv
-                      | _ -> false
-                )
-                (Prop.get_sigma_footprint p) in
-            (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-            if already_has_abducted_retval prop_no_res then prop_no_res
-            else
-              let ret_lvar = Sil.Lvar ret_pv in
-              let sizeof_exp = Sil.Sizeof (ret_typ, Sil.Subtype.subtypes) in
-              if !Config.footprint then
-                let fresh_fp_var = Sil.Var (Ident.create_fresh Ident.kfootprint) in
-                let retval_pt_fpvar =
-                  Prop.mk_ptsto ret_lvar (Sil.Eexp (fresh_fp_var, Sil.Inone)) sizeof_exp in
-                let sigma_fp = Prop.get_sigma_footprint prop_no_res in
-                let prop = Prop.replace_sigma_footprint (retval_pt_fpvar :: sigma_fp) prop_no_res in
-                let prop' = Prop.normalize prop in
-                let prop'' = Prop.conjoin_eq ~footprint: true (Sil.Var ret_id) fresh_fp_var prop' in
-                add_ret_non_null ret_id ret_typ prop''
-              else
-                (* bind return id to the abducted value pointed to by the pvar we introduced *)
-                let bind_return_id prop = function
-                  | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
-                  when Sil.pvar_equal pv ret_pv ->
-                      Prop.conjoin_eq (Sil.Var ret_id) rhs prop
-                  | _ -> prop in
-                list_fold_left bind_return_id prop_no_res (Prop.get_sigma prop_no_res)
-          else add_ret_non_null ret_id ret_typ prop_no_res
-      | _ -> prop_no_res in
-  let after_ref_var_instrs = (* assign fresh values to vars passed by ref *)
-    let report_error = is_scan in
-    sym_exec_generated (not report_error) cfg tenv pdesc instrs [(prop, path)] in
-  let vars_to_mark_undefined = ret_ids @ undef_vars in
-  let att_undef = Sil.Aundef (callee_pname, loc, State.get_path_pos ()) in
-  let mark_undefined_vars p = (* add undefined attribute to returned vars and new values for vars passed by ref *)
-    list_fold_left (fun p id -> mark_id_as_undefined id p att_undef) p vars_to_mark_undefined in
-  if is_scan (* if scan function, don't mark values with undef attributes *)
-  then list_map (fun (p, path) -> (Tabulation.remove_constant_string_class p, path)) after_ref_var_instrs
-  else list_map (fun (p, path) -> (mark_undefined_vars p, path)) after_ref_var_instrs
+      actual_params in
+  let nargs = list_length args in
+  (* sentinels start counting from the last argument to the function *)
+  let n = nargs - sentinel - 1 in
+  let build_argsi (acc, i) a =
+    if i = n then (acc, i +1)
+    else ((a, i):: acc, i +1) in
+  (* list_fold_left reverses the arguments *)
+  let non_terminal_actuals_i = fst (list_fold_left build_argsi ([], 0) args) in
+  let check_allocated result ((lexp, typ), i) =
+    (* simulate a Letderef for [lexp] *)
+    let tmp_id_deref = Ident.create_fresh Ident.kprimed in
+    let letderef = Sil.Letderef (tmp_id_deref, lexp, typ, loc) in
+    try
+      sym_exec_generated false cfg tenv pdesc [letderef] result
+    with e when exn_not_timeout e ->
+        if not fails_on_nil then
+          let deref_str = Localise.deref_str_nil_argument_in_variadic_method pname nargs i in
+          let err_desc =
+            Errdesc.explain_dereference ~use_buckets: true ~is_premature_nil: true
+              deref_str prop loc in
+          raise (Exceptions.Premature_nil_termination
+              (err_desc, try assert false with Assert_failure x -> x))
+        else
+          raise e in
+  (* list_fold_left reverses the arguments back so that we report an *)
+  (* error on the first premature nil argument *)
+  list_fold_left check_allocated [(prop, path)] non_terminal_actuals_i
 
 (** Perform symbolic execution for a function call *)
-and sym_exe_call cfg pdesc tenv pre path ret_ids actual_pars callee_pdesc loc =
+and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
   let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
-  let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc in
+  let callee_pname = Specs.get_proc_name summary in
+  let ret_typ = Specs.get_ret_type summary in
   let check_return_value_ignored () = (* check if the return value of the call is ignored, and issue a warning *)
-    let ret_typ = Cfg.Procdesc.get_ret_type callee_pdesc in
     let is_ignored = match ret_typ, ret_ids with
       | Sil.Tvoid, _ -> false
-      | Sil.Tint _, _ when Cfg.Procdesc.is_defined callee_pdesc = false ->
+      | Sil.Tint _, _ when not (is_defined cfg callee_pname) ->
       (* if the proc returns Tint and is not defined, *)
       (* don't report ignored return value *)
           false
@@ -1170,23 +1278,9 @@ and sym_exe_call cfg pdesc tenv pre path ret_ids actual_pars callee_pdesc loc =
       let exn = (Exceptions.Return_value_ignored (err_desc, try assert false with Assert_failure x -> x)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
       Reporting.log_warning caller_pname ~pre: pre_opt exn in
-  check_inherently_dangerous_function caller_pname callee_pname callee_pdesc;
-  let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
-  if call_should_be_skipped caller_pname callee_pname callee_pdesc then
-    begin
-      L.d_strln ("Undefined function " ^ Procname.to_string callee_pname ^ ", returning undefined value.");
-      let proc_name = Cfg.Procdesc.get_proc_name pdesc in
-      let summary = Specs.get_summary_unsafe proc_name in
-      Specs.CallStats.trace
-        summary.Specs.stats.Specs.call_stats callee_pname loc
-        (Specs.CallStats.CR_skip) !Config.footprint;
-      let callee_pname = Cfg.Procdesc.get_proc_name callee_pdesc
-      and ret_type_option = Some (Cfg.Procdesc.get_ret_type callee_pdesc) in
-      call_unknown_or_scan
-        false cfg pdesc tenv pre path ret_ids ret_type_option actual_pars callee_pname loc
-    end
-  else begin
-    let formal_types = list_map (fun (_, typ) -> typ) (Cfg.Procdesc.get_formals callee_pdesc) in
+  check_inherently_dangerous_function caller_pname callee_pname;
+  begin
+    let formal_types = list_map (fun (_, typ) -> typ) (Specs.get_formals summary) in
     let rec comb actual_pars formal_types =
       match actual_pars, formal_types with
       | [], [] -> actual_pars
@@ -1213,7 +1307,7 @@ and sym_exe_call cfg pdesc tenv pre path ret_ids actual_pars callee_pdesc loc =
     (* In case we call an objc instance method we add and extra spec *)
     (* were the receiver is null and the semantics of the call is nop*)
     if (!Sil.curr_language <> Sil.Java) && !Config.objc_method_call_semantics &&
-    (Cfg.Procdesc.get_attributes callee_pdesc).Sil.is_objc_instance_method then
+    (Specs.get_attributes summary).Sil.is_objc_instance_method then
       handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path
     else  (* non-objective-c method call. Standard tabulation *)
     Tabulation.exe_function_call tenv cfg ret_ids pdesc callee_pname loc actual_params pre path
@@ -1285,9 +1379,10 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
 let lifted_sym_exec
     handle_exn cfg tenv pdesc (pset : Paths.PathSet.t) node (instrs : Sil.instr list)
 : Paths.PathSet.t =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =
-      if Tabulation.prop_is_exn pdesc p && not (Sil.instr_is_auxiliary instr)
+      if Tabulation.prop_is_exn pname p && not (Sil.instr_is_auxiliary instr)
       && Cfg.Node.get_kind node <> Cfg.Node.exn_handler_kind
       (* skip normal instructions if an exception was thrown, unless this is an exception handler node *)
       then
@@ -1992,13 +2087,14 @@ module ModelBuiltins = struct
           | Sil.Lvar pvar, _ ->
               let fun_name = Sil.pvar_get_name pvar in
               let fun_string = Mangled.to_string fun_name in
-              let callee_pdesc =
-                match Cfg.Procdesc.find_from_name cfg (Procname.from_string fun_string) with
-                | Some callee_pdesc -> callee_pdesc
-                | None -> assert false in
               L.d_strln ("pthread_create: calling function " ^ fun_string);
-              sym_exe_call
-                cfg pdesc tenv prop path ret_ids [(routine_arg, snd arg)] callee_pdesc loc
+              begin
+                match Specs.get_summary (Procname.from_string fun_string) with
+                | None -> assert false
+                | Some callee_summary ->
+                    sym_exec_call
+                      cfg pdesc tenv prop path ret_ids [(routine_arg, snd arg)] callee_summary loc
+              end
           | _ ->
               L.d_str "pthread_create: unknown function "; Sil.d_exp routine_name; L.d_strln ", skipping call.";
               [(prop, path)])
@@ -2080,13 +2176,14 @@ module ModelBuiltins = struct
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (* forces the expression passed as parameter to be assumed true at the point where this
-  builtin is called *)
+  builtin is called, blocks if this causes an inconsistency *)
   let execute___infer_assume
       cfg pdesc instr tenv prop path ret_ids args callee_pname loc: Builtin.ret_typ =
     match args with
     | [(lexp, typ)] ->
         let prop_assume = Prop.conjoin_eq lexp (Sil.exp_bool true) prop in
-        [(prop_assume, path)]
+        if Prover.check_inconsistency prop_assume then execute_diverge prop_assume path
+        else [(prop_assume, path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (* creates a named error state *)
@@ -2118,9 +2215,6 @@ module ModelBuiltins = struct
     let set_instr =
       Sil.Set (Sil.Lvar Sil.global_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
     sym_exec_generated true cfg tenv pdesc [set_instr] [(prop, path)]
-
-  (** match any function whose plain name is shared_ptr, and set the ignore attribute *)
-  (* let _ = Builtin.register_plain "shared_ptr" execute___method_set_ignore_attribute *)
 
   let _ = Builtin.register "__method_set_ignore_attribute" execute___method_set_ignore_attribute
   let _ = Builtin.register "__builtin_va_arg" execute___builtin_va_arg (* model va_arg *)
@@ -2188,62 +2282,33 @@ module ModelBuiltins = struct
   let _ = Builtin.register "vwscanf" (execute_scan_function 1) (* vsscanf from C library *)
   let _ = Builtin.register "wscanf" (execute_scan_function 1) (* vsscanf from C library *)
 
-  let execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
-    (** like list_map but applies [g] to the last element instead of [f] *)
-    let rec list_map_except_last f g = function
-      | [] -> []
-      | a::[] -> g a::[]
-      | x:: l -> f x:: list_map_except_last f g l in
-    (** simulates a Letderef for each argument *)
-    let create_letderef (lexp, typ) =
-      let tmp_id = Ident.create_fresh Ident.kprimed in
-      Sil.Letderef (tmp_id, lexp, typ, loc) in
-    (** allocates an object *)
-    let create_alloc _ =
-      let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
-      let nsarray_typ = Sil.Tvar (Sil.TN_csu (Sil.Class, Mangled.from_string "NSArray")) in
-      let nsarray_typ = Sil.expand_type tenv nsarray_typ in
-      let nsarray_ptr_typ = Sil.Tptr (nsarray_typ, Sil.Pk_pointer) in
-      let sizeof_nsarray = Sil.Sizeof (nsarray_typ, Sil.Subtype.exact) in
-      Sil.Call (ret_ids, alloc_fun, [sizeof_nsarray, nsarray_ptr_typ], loc, Sil.cf_default) in
-    (* OPTIM: take advantage of the fact that [args] has an extra nil
-    argument we don't care about to replace it with our final
-    instruction *)
-    let instrs = list_map_except_last create_letderef create_alloc args in
-    sym_exec_generated false cfg tenv pdesc instrs [(prop, path)]
+  let execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids typ loc =
+    let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
+    let ptr_typ = Sil.Tptr (typ, Sil.Pk_pointer) in
+    let sizeof_typ = Sil.Sizeof (typ, Sil.Subtype.exact) in
+    let alloc_instr = Sil.Call (ret_ids, alloc_fun, [sizeof_typ, ptr_typ], loc, Sil.cf_default) in
+    sym_exec_generated false cfg tenv pdesc [alloc_instr] symb_state
 
-  let objc_nsarray_arrayWithObjects = Procname.mangled_objc "NSArray" "arrayWithObjects:"
+  let execute_objc_NSArray_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
+    let nsarray_typ = Sil.Tvar (Sil.TN_csu (Sil.Class, Mangled.from_string "NSArray")) in
+    let nsarray_typ = Sil.expand_type tenv nsarray_typ in
+    execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsarray_typ loc
+
+  let execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
+    let res' = sym_exe_check_variadic_sentinel cfg pdesc tenv prop path args true (0,1) callee_pname loc in
+    execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let execute_NSArray_arrayWithObjects cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
-    (* tag args to trigger a custom error in Rearrange.rearrange *)
-    let n = list_length args in
-    (** add our attribute to [arg] (which is argument #[i] of the
-    * function) in [prop] and accumulate the added attributes *)
-    let tag (prop, added_attrs, i) arg =
-      (* skip last element *)
-      if i <> n - 1 then
-        let attr =
-          Sil.Avariadic_function_argument (objc_nsarray_arrayWithObjects, list_length args, i) in
-        L.err "tagging: %s\n" (Sil.exp_to_string (fst arg));
-        let dummy_check_attr_change att_old att_new = () in
-        let tagged_prop =
-          Prop.add_or_replace_exp_attribute dummy_check_attr_change prop (fst arg) attr in
-        (tagged_prop, attr:: added_attrs, i + 1)
-      else (prop, added_attrs, i) in
-    let (prop, added_attrs, _) = list_fold_left tag (prop, [], 0) args in
-    let result =
-      execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc in
-
-    (* remove the tags we just added to temporarily instrument the Letderefs *)
-    let remove_attrs (prop, path) =
-      let remove_attr prop tag = Prop.remove_attribute tag prop in
-      (list_fold_left remove_attr prop added_attrs, path) in
-    list_map remove_attrs result
+    let res' = sym_exe_check_variadic_sentinel cfg pdesc tenv prop path args false (0,1) callee_pname loc in
+    execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let _ =
     Builtin.register_procname
       (Procname.mangled_objc "NSArray" "arrayWithObjects:count:")
       execute_NSArray_arrayWithObjects_count
-  let _ = Builtin.register_procname objc_nsarray_arrayWithObjects execute_NSArray_arrayWithObjects
+  let _ =
+    Builtin.register_procname
+      (Procname.mangled_objc "NSArray" "arrayWithObjects:")
+      execute_NSArray_arrayWithObjects
 end
 (* ============== END of ModelBuiltins ============== *)

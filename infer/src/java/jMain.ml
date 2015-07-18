@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 open Javalib_pack
@@ -37,11 +41,10 @@ let print_usage_exit () =
   exit(1)
 
 let () =
-  let analysing_models = Config.from_env_variable "ANALYZE_MODELS" in
   Arg2.parse arg_desc (fun arg -> ()) usage;
-  if analysing_models && !JClasspath.models_jar <> "" then
+  if Config.analyze_models && !JClasspath.models_jar <> "" then
     failwith "Not expecting model file when analyzing the models";
-  if not analysing_models && !JClasspath.models_jar = "" then
+  if not Config.analyze_models && !JClasspath.models_jar = "" then
     failwith "Java model file is required"
 
 
@@ -164,6 +167,6 @@ let do_all_files classpath sources classes =
 let () =
   let classpath, sources, classes = JClasspath.load_sources_and_classes () in
   if StringMap.is_empty sources then
-    print_endline "TODO: print error message"
+    failwith "Failed to load any Java source code"
   else
     do_all_files classpath sources classes

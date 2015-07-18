@@ -1,6 +1,10 @@
 /*
-* Copyright (c) 2013- Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 */
 
 package codetoanalyze.java.infer;
@@ -20,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -101,16 +106,18 @@ public class ResourceLeaks {
   }
 
   public static void twoResourcesHeliosFix() throws IOException {
-    FileInputStream fis = new FileInputStream(new File("whatever.txt"));
+    FileInputStream fis = null;
+    FileOutputStream fos = null;
     try {
-      FileOutputStream fos = new FileOutputStream(new File("everwhat.txt"));
+      fis = new FileInputStream(new File("whatever.txt"));
       try {
+        fos = new FileOutputStream(new File("everwhat.txt"));
         fos.write(fis.read());
       } finally {
-        fos.close();
+        if (fos != null) fos.close();
       }
     } finally {
-      fis.close();
+      if (fis != null) fis.close();
     }
   }
 
@@ -868,6 +875,41 @@ public class ResourceLeaks {
     } finally {
       unknownClose(inputStream);
     }
+  }
+
+  public int tryWithResource() {
+    try (FileInputStream inputStream = new FileInputStream("paf.txt")) {
+      return inputStream.read();
+    } catch (IOException e) {
+      return 0;
+    }
+  }
+
+  public InputStreamReader withCharset(URLConnection urlConnection) {
+    InputStreamReader reader = null;
+    try {
+      reader = new InputStreamReader(
+          urlConnection.getInputStream(),
+          "iso-8859-1");
+    } catch (Exception e) {
+      return null;
+    } finally {
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException e) {
+          // do nothing
+        }
+      }
+    }
+    return reader;
+  }
+
+  public void withZipFile() throws IOException {
+    ZipFile f = new ZipFile("hi");
+    InputStream s = f.getInputStream(f.getEntry("there"));
+    if (s != null) s.toString();
+    f.close();
   }
 
 }

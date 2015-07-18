@@ -37,6 +37,7 @@ rule token = parse
 | ']'                       { RIGHT_SQUARE_BRACKET }
 | ':'                       { COLON }
 | ','                       { COMMA }
+| "\'\'"                    { EMPTY }
 | "parsing"                 { PARSING }
 | "started"                 { STARTED }
 | "wrote"                   { WROTE }

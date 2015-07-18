@@ -1,5 +1,9 @@
-# Copyright 2013 - present Facebook.
-# All Rights Reserved.
+# Copyright (c) 2013 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
 
 REMOVE = rm -vf
 REMOVE_DIR = rm -rvf
@@ -12,7 +16,7 @@ OCAML_INCLUDE_DIR = $(shell ocamlc -where)
 
 #### ATDGEN declarations ####
 
-ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
+ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli _v.ml _v.mli
 
 ATDGEN_INCLUDE_DIR = $(shell ocamlfind query atdgen)
 BINIOU_INCLUDE_DIR = $(shell ocamlfind query biniou)
@@ -86,8 +90,7 @@ CLANG_SOURCES = clang
 INFERCLANG_MAIN = $(CLANG_SOURCES)/cMain
 INFERCLANG_BINARY = $(BINDIR)/InferClang
 
-CLANG_PLUGIN_ROOT ?= $(shell cd $(ROOT)/../facebook-clang-plugin && pwd)
-CLANG_PLUGIN_BUILD = $(CLANG_PLUGIN_ROOT)/build
+CLANG_PLUGIN_ROOT ?= $(ROOT)/../facebook-clang-plugin
 CLANG_PLUGIN_BINARIES = $(addprefix $(CLANG_PLUGIN_ROOT)/clang-ocaml/build/, clang_ast_converter clang_ast_named_decl_printer)
 
 CLANG_OCAML_ROOT = $(CLANG_PLUGIN_ROOT)/clang-ocaml
@@ -100,6 +103,13 @@ CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME), $(ATDG
 
 INFER_CLANG_AST_PROJ = $(addprefix $(CLANG_SOURCES)/, clang_ast_proj.ml clang_ast_proj.mli)
 FCP_CLANG_AST_PROJ = $(addprefix $(CLANG_OCAML_BUILD)/, clang_ast_proj.ml clang_ast_proj.mli)
+FCP_CLANG_AST_CACHE = $(addprefix $(CLANG_OCAML_ROOT)/, clang_ast_cache.ml clang_ast_main.ml)
+
+#### LLVM declarations ####
+
+LLVM_SOURCES = llvm
+INFERLLVM_MAIN = $(LLVM_SOURCES)/main
+INFERLLVM_BINARY = $(BINDIR)/InferLLVM
 
 #### End of declarations ####
 
@@ -115,19 +125,24 @@ DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/g
 
 OCAMLBUILD = ocamlbuild -build-dir $(BUILDDIR) -j 0 $(addprefix -I , $(DEPENDENCIES)) $(GLOBAL_OPTIONS) $(ATDGEN_OPTIONS)  $(JAVA_OPTIONS)
 
-.PHONY: all java clang build_java build_clang annotations init sanitize version clean
+.PHONY: all java clang llvm build_java build_clang build_llvm annotations init sanitize version clean
 
-all: java clang
+all: java clang llvm
 
 java: build_java annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY)
 
 clang: build_clang annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERCLANG_BINARY)
+
+llvm: build_llvm annotations $(INFERLLVM_BINARY)
 
 build_java: init $(INFERPRINT_ATDGEN_STUBS)
 	$(OCAMLBUILD) $(TYPEPROP_MAIN).native $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERJAVA_MAIN).native
 
 build_clang: init $(INFERPRINT_ATDGEN_STUBS) check_clang_plugin $(CLANG_ATDGEN_STUBS)
 	$(OCAMLBUILD) $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERCLANG_MAIN).native
+
+build_llvm:
+	$(OCAMLBUILD) -use-menhir $(INFERLLVM_MAIN).native
 
 annotations:
 	rsync -r --delete --exclude=*.ml* --exclude=*.o --exclude=*.cm* --exclude=*.native $(BUILDDIR)/* $(ANNOTDIR)
@@ -139,13 +154,16 @@ $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
 	atdgen -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
 	atdgen -j $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
 
-$(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ): $(CLANG_ATDGEN_STUB_ATD) $(CLANG_PLUGIN_BINARIES) $(FCP_CLANG_AST_PROJ)
-	# rebuild the artifacts of the AST files whenever they're upated in FCP
-	# also copy the ast_proj files whenever they are updated
+$(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ): $(CLANG_ATDGEN_STUB_ATD) $(CLANG_PLUGIN_BINARIES) $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_CACHE)
+# rebuild the artifacts of the AST files whenever they're upated in FCP
+# also copy the ast_proj files whenever they are updated
 	atdgen -rec -t $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
 	atdgen -rec -j $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
+	atdgen -rec -v $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
 	$(COPY) $(CLANG_OCAML_BUILD)/clang_ast_proj.ml $(CLANG_SOURCES)
 	$(COPY) $(CLANG_OCAML_BUILD)/clang_ast_proj.mli $(CLANG_SOURCES)
+	$(COPY) $(CLANG_OCAML_ROOT)/clang_ast_cache.ml $(CLANG_SOURCES)
+	$(COPY) $(CLANG_OCAML_ROOT)/clang_ast_main.ml $(CLANG_SOURCES)
 
 
 init: sanitize version $(BUILDDIR)
@@ -155,7 +173,7 @@ sanitize:
 
 ifneq ($(shell which git),)
 MAJOR = 0
-MINOR = 1
+MINOR = 2
 PATCH = 0
 
 GIT_COMMIT = $(shell git rev-parse HEAD | awk '{print $0; exit}' | xargs echo -n | sed 's/[\/&]/\\&/g')
@@ -190,10 +208,13 @@ $(INFERJAVA_BINARY): $(BUILDDIR)/$(INFERJAVA_MAIN).native
 $(INFERCLANG_BINARY): $(BUILDDIR)/$(INFERCLANG_MAIN).native
 	$(COPY) $(BUILDDIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BINARY)
 
+$(INFERLLVM_BINARY): $(BUILDDIR)/$(INFERLLVM_MAIN).native
+	$(COPY) $(BUILDDIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BINARY)
+
 $(TYPEPROP_BINARY): $(BUILDDIR)/$(TYPEPROP_MAIN).native
 	$(COPY) $(BUILDDIR)/$(TYPEPROP_MAIN).native $(TYPEPROP_BINARY)
 
 clean: $(BUILDDIR)
 	$(OCAMLBUILD) -clean
 	$(REMOVE_DIR) $(ANNOTDIR)
-	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY)
+	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY) $(INFERLLVM_BINARY)

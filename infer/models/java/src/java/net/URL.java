@@ -1,3 +1,12 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package java.net;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -5,23 +14,10 @@ import java.util.Hashtable;
 
 public final class URL implements java.io.Serializable {
 
-    private static long serialVersionUID;
-    private static URLStreamHandlerFactory streamHandlerFactory;
-    private static Hashtable<String, URLStreamHandler> streamHandlers;
-
     private String protocol;
-    private String authority;
     private String host;
     private int port;
     private String file;
-    private String ref;
-
-    private transient String userInfo;
-    private transient String path;
-    private transient String query;
-    transient URLStreamHandler streamHandler;
-    private transient int hashCode;
-
 
     public URL(String protocol, String host, int port, String file) throws MalformedURLException {
         this(protocol, host, port, file, null);

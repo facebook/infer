@@ -1,5 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook. All rights reserved.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Generate a procedure that calls a given sequence of methods. Useful for harness/test
@@ -285,6 +290,7 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
         Sil.is_objc_instance_method = false;
         Sil.is_synthetic_method = false;
         Sil.language = Sil.Java;
+        Sil.func_attributes = [];
         Sil.method_annotation = Sil.method_annotation_empty;
       } in
     create {
@@ -335,6 +341,7 @@ let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
         Sil.is_objc_instance_method = false;
         Sil.is_synthetic_method = false;
         Sil.language = Sil.Java;
+        Sil.func_attributes = [];
         Sil.method_annotation = Sil.method_annotation_empty;
       } in
     create {

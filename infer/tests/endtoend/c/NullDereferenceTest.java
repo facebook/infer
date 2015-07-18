@@ -1,6 +1,10 @@
 /*
- * Copyright (c) 2013- Facebook.
- * All rights reserved.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package endtoend.c;
@@ -44,6 +48,7 @@ public class NullDereferenceTest {
         "no_check_for_null_after_malloc",
         "no_check_for_null_after_realloc",
         "potentially_null_pointer_passed_as_argument",
+        "null_passed_as_argument",
         "function_call_can_return_null_pointer",
     };
     assertThat(
@@ -60,7 +65,7 @@ public class NullDereferenceTest {
   @Test
   public void whenInferRunsOnSimpleNpe_interprocThenCorrectLineIsReported()
       throws InterruptedException, IOException, InferException {
-    int[] lines = {16, 30};
+    int[] lines = {20, 34};
     assertThat(
         "Results should contain null pointer dereference error",
         inferResults,

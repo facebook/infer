@@ -1,6 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook. All rights reserved.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** General utility functions and definition with global scope *)
@@ -423,8 +428,7 @@ let symops_timeout, seconds_timeout =
   let default_seconds_timeout = 10 in
   let long_symops_timeout = 1000 in
   let long_seconds_timeout = 30 in
-  let analyzing_models = Config.from_env_variable "ANALYZE_MODELS" in
-  if analyzing_models then
+  if Config.analyze_models then
     (* use longer timeouts when analyzing models *)
     long_symops_timeout, long_seconds_timeout
   else

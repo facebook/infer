@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Specifications and spec table *)
@@ -560,8 +564,8 @@ let load_summary_to_spec_table proc_name =
     true in
   let load_summary_models models_dir =
     match load_summary models_dir with
-      | None -> false
-      | Some summ -> add summ Models in
+    | None -> false
+    | Some summ -> add summ Models in
   let rec load_summary_libs = function (* try to load the summary from a list of libs *)
     | [] -> false
     | spec_path :: spec_paths ->
@@ -587,11 +591,11 @@ let load_summary_to_spec_table proc_name =
   let default_spec_dir = res_dir_specs_filename proc_name in
   match load_summary default_spec_dir with
   | None ->
-      (* search on models, libzips, and libs *)
+  (* search on models, libzips, and libs *)
       if load_summary_models (specs_models_filename proc_name) then true
       else if load_summary_ziplibs !Config.zip_libraries then true
       else load_summary_libs (specs_library_filenames proc_name)
-      
+
   | Some summ ->
       add summ Res_dir
 
@@ -662,6 +666,12 @@ let get_timestamp summary =
 
 let get_proc_name summary =
   summary.proc_name
+
+let get_ret_type summary =
+  summary.ret_type
+
+let get_formals summary =
+  summary.formals
 
 let get_attributes summary =
   summary.attributes
@@ -775,6 +785,7 @@ let reset_summary call_graph proc_name loc =
     Sil.is_objc_instance_method = false;
     Sil.is_synthetic_method = false;
     Sil.language = !Sil.curr_language;
+    Sil.func_attributes = [];
     Sil.method_annotation = Sil.method_annotation_empty;
   } in
   init_summary (

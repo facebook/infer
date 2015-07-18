@@ -1,7 +1,16 @@
+/*
+* Copyright (c) 2015 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package endtoend.java.tracing;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,13 +40,16 @@ public class LocallyDefinedExceptionTest {
   @Test
   public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
       throws IOException, InterruptedException, InferException {
+    String[] methods = {
+        "fieldInvariant"
+    };
     assertThat(
         "Results should contain " + LOCALLY_DEFINED_EXCEPTION,
         inferResults,
-        contains(
+        containsExactly(
             LOCALLY_DEFINED_EXCEPTION,
             SOURCE_FILE,
-            "fieldInvariant"
+            methods
         )
     );
   }

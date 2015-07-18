@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Module for utility functions for the whole frontend. Includes functions for printing,  *)
@@ -14,27 +18,19 @@ module F = Format
 
 module Printing =
 struct
-  let log_out ?fmt s =
-    if !CFrontend_config.debug_mode then
-      match fmt with
-      | Some fmt' ->
-          Format.printf fmt' s
-      | None -> Format.printf "%s" s
+  let log_out fmt =
+    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
+    pp Format.std_formatter fmt
 
-  let log_err ?fmt s =
-    if !CFrontend_config.debug_mode then
-      match fmt with
-      | Some fmt' ->
-          Format.eprintf fmt' s
-      | None -> Format.eprintf "%s" s
+  let log_err fmt =
+    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
+    pp Format.err_formatter fmt
 
-  let log_stats ?fmt s =
-    if !CFrontend_config.stats_mode ||
-    !CFrontend_config.debug_mode then
-      match fmt with
-      | Some fmt' ->
-          Format.printf fmt' s
-      | None -> Format.eprintf "%s" s
+  let log_stats fmt =
+    let pp =
+      if !CFrontend_config.stats_mode || !CFrontend_config.debug_mode
+      then Format.fprintf else Format.ifprintf in
+    pp Format.std_formatter fmt
 
   let print_tenv tenv =
     Sil.tenv_iter (fun typname typ ->
@@ -156,7 +152,7 @@ struct
     match property_impl_decl_info.Clang_ast_t.opidi_property_decl with
     | Some decl_ref ->
         (match decl_ref.Clang_ast_t.dr_name with
-          | Some n -> n
+          | Some n -> n.Clang_ast_t.ni_name
           | _ -> no_property_name)
     | None -> no_property_name
 
@@ -215,12 +211,18 @@ struct
         attribute = `Copy
     | _ -> false
 
+
+ let name_opt_of_name_info_opt name_info_opt =
+      match name_info_opt with
+      | Some name_info -> Some name_info.Clang_ast_t.ni_name
+      | None -> None
+
   let rec getter_attribute_opt attributes =
     match attributes with
     | [] -> None
     | attr:: rest ->
         match attr with
-        | `Getter getter -> getter.Clang_ast_t.dr_name
+        | `Getter getter -> name_opt_of_name_info_opt getter.Clang_ast_t.dr_name
         | _ -> (getter_attribute_opt rest)
 
   let rec setter_attribute_opt attributes =
@@ -228,8 +230,12 @@ struct
     | [] -> None
     | attr:: rest ->
         match attr with
-        | `Setter setter -> setter.Clang_ast_t.dr_name
+        | `Setter setter -> name_opt_of_name_info_opt setter.Clang_ast_t.dr_name
         | _ -> (setter_attribute_opt rest)
+
+  (*TODO: take the attributes into account too. To be done after we get the attribute's arguments. *)
+  let is_type_nonnull qt attributes =
+    Utils.string_is_prefix CFrontend_config.nonnull_attribute qt.Clang_ast_t.qt_raw
 
   let pointer_counter = ref 0
 
@@ -237,10 +243,13 @@ struct
     pointer_counter := !pointer_counter + 1;
     CFrontend_config.pointer_prefix^(string_of_int (!pointer_counter))
 
-let type_from_unary_expr_or_type_trait_expr_info info =
-  match info.uttei_qual_type with
-  | Some qt -> Some qt
-  | None -> None
+  let get_invalid_pointer () =
+    CFrontend_config.pointer_prefix^("INVALID")
+
+  let type_from_unary_expr_or_type_trait_expr_info info =
+    match info.uttei_qual_type with
+    | Some qt -> Some qt
+    | None -> None
 
 end
 
@@ -299,6 +308,11 @@ struct
       | _, _, _ -> false in
     append_no_duplicates field_eq list1 list2
 
+  let sort_fields fields =
+    let compare (name1, _, _) (name2, _, _) =
+      Ident.fieldname_compare name1 name2 in
+    list_sort compare fields
+
   let rec collect_list_tuples l (a, a1, b, c, d) =
     match l with
     | [] -> (a, a1, b, c, d)
@@ -309,8 +323,8 @@ struct
     | Some sc -> sc = CFrontend_config.static
     | _ -> false
 
-let block_procname_with_index defining_proc i =
-     Config.anonymous_block_prefix^(Procname.to_string defining_proc)^Config.anonymous_block_num_sep^(string_of_int i)
+  let block_procname_with_index defining_proc i =
+    Config.anonymous_block_prefix^(Procname.to_string defining_proc)^Config.anonymous_block_num_sep^(string_of_int i)
 
   (* Makes a fresh name for a block defined inside the defining procedure.*)
   (* It updates the global block_counter *)
@@ -318,8 +332,8 @@ let block_procname_with_index defining_proc i =
     let name = block_procname_with_index defining_proc (get_fresh_block_index ()) in
     Procname.mangled_objc_block name
 
- (* Returns the next fresh name for a block defined inside the defining procedure *)
- (* It does not update the global block_counter *)
+  (* Returns the next fresh name for a block defined inside the defining procedure *)
+  (* It does not update the global block_counter *)
   let get_next_block_pvar defining_proc =
     let name = block_procname_with_index defining_proc (!block_counter +1) in
     Sil.mk_pvar (Mangled.from_string (CFrontend_config.temp_var^"_"^name)) defining_proc

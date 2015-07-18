@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Copyright 2013 - present Facebook.
-# All Rights Reserved.
+# Copyright (c) 2013 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
 
 set -x
 set -e
@@ -40,11 +44,12 @@ find $PKG_DIR -name "*.pyc" | xargs rm
 
 # Add facebook-clang-plugin
 PKG_PLUGIN_DIR=$PKG_DIR/facebook-clang-plugin
-mkdir -p $PKG_PLUGIN_DIR/clang/{bin,lib}
+mkdir -p $PKG_PLUGIN_DIR/clang/{bin,lib,include}
 mkdir -p $PKG_PLUGIN_DIR/libtooling/build
 cp $CLANG_PLUGIN_DIR/{CONTRIBUTING.md,LICENSE,LLVM-LICENSE,PATENTS,README.md} $PKG_PLUGIN_DIR
 cp -r $CLANG_PLUGIN_DIR/clang/bin/clang* $PKG_PLUGIN_DIR/clang/bin
 cp -r $CLANG_PLUGIN_DIR/clang/lib/* $PKG_PLUGIN_DIR/clang/lib
+cp -r $CLANG_PLUGIN_DIR/clang/include/* $PKG_PLUGIN_DIR/clang/include
 rm $PKG_PLUGIN_DIR/clang/lib/*.a
 
 cp -r $CLANG_PLUGIN_DIR/libtooling/build/* $PKG_PLUGIN_DIR/libtooling/build

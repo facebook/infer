@@ -1,6 +1,9 @@
+# Copyright (c) 2013 - present Facebook, Inc.
+# All rights reserved.
 #
-# Copyright (c) 2013- Facebook.  All rights reserved.
-#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
 
 from __future__ import absolute_import
 from __future__ import division
@@ -99,12 +102,6 @@ def elapsed_time(start_time):
 
 def error(msg):
     print(msg, file=sys.stderr)
-
-
-def remove_bucket(bug_message):
-    """ Remove anything from the beginning if the message that
-        looks like a bucket """
-    return re.sub(r'(^\[[a-zA-Z0-9]*\])', '', bug_message, 1)
 
 
 def get_cmd_in_bin_dir(binary_name):
@@ -351,8 +348,8 @@ def create_json_report(out_dir):
         rows = [row for row in reader]
     with open(json_report_filename, 'w') as file_out:
         headers = rows[0]
-        issues = rows[1:]
-        json.dump([dict(zip(headers, row)) for row in issues], file_out)
+        issues = [dict(zip(headers, row)) for row in rows[1:]]
+        json.dump(issues, file_out, indent=2)
 
 
 class AbsolutePathAction(argparse.Action):

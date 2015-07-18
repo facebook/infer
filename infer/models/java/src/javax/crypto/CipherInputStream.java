@@ -1,3 +1,12 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package javax.crypto;
 
 import com.facebook.infer.models.InferUndefined;
@@ -8,16 +17,8 @@ import java.io.InputStream;
 
 public class CipherInputStream extends FilterInputStream {
 
-    private static int I_BUFFER_SIZE;
 
-    private Cipher cipher;
-    private byte[] inputBuffer;
-    private byte[] outputBuffer;
-    private int outputIndex;
-    private int outputLength;
-    private boolean finished;
-
-    public CipherInputStream(InputStream is, Cipher c) {
+  public CipherInputStream(InputStream is, Cipher c) {
         super(is);
     }
 

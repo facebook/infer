@@ -35,6 +35,8 @@ INFER_FRONTEND_ARGS=($FCP_INFER_FRONTEND_ARGS)
 REPORT_FRONTEND_FAILURE="${FCP_REPORT_FRONTEND_FAILURE}"
 # enable debug mode (to get more data saved to disk for future inspections)
 DEBUG_MODE="${FCP_DEBUG_MODE}"
+# specify where is located Apple's clang
+APPLE_CLANG="${FCP_APPLE_CLANG}"
 
 if [ -z "$RESULTS_DIR" ]; then
     echo '$FCP_RESULTS_DIR with the name of the output directory not provided.' > /dev/stderr
@@ -105,12 +107,25 @@ then
 
     if [ -n "$SOURCE_FILE" ]
     then
+        # (t7400979) this is a workaround to avoid that clang crashes when the -fmodules flag
+        # and the YojsonASTExporter plugin are used. Since the -plugin argument disables
+        # the generation of .o files, we invoke apple clang again to generate the expected
+        # artifacts. This will keep xcodebuild plus all the sub-steps happy.
+        if [ -n "$APPLE_CLANG" ]; then
+            ADD_PLUGIN_FLAG="-plugin"
+        else
+            ADD_PLUGIN_FLAG="-add-plugin"
+        fi
         ATTACH_PLUGIN="1"
         IFS=$'\n'
         EXTRA_ARGS=("-Xclang" "-load"
             "-Xclang" "${PLUGIN_PATH}"
-            "-Xclang" "-add-plugin"
-            "-Xclang" "${PLUGIN_NAME}")
+            "-Xclang" "$ADD_PLUGIN_FLAG"
+            "-Xclang" "${PLUGIN_NAME}"
+            "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
+            "-Xclang" "-"
+            "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
+            "-Xclang" "PREPEND_CURRENT_DIR=1")
         if [ -n "$SYNTAX_ONLY" ]; then
             EXTRA_ARGS+=("-fsyntax-only")
         fi
@@ -131,6 +146,7 @@ if [ -n "$ATTACH_PLUGIN" ]; then
     if [ -n "$LANGUAGE" ]; then INFER_FRONTEND_ARGS+=("-x" "$LANGUAGE"); fi
     if [ "$FOBJC_ARC_FLAG" == 0 ]; then INFER_FRONTEND_ARGS+=("-fobjc-arc"); fi
 
+    [[ "$SOURCE_FILE" = /* ]] || { SOURCE_FILE="${CWD}/$SOURCE_FILE"; }
     INFERCLANG_CMD=(
         "${BIN_DIR}/InferClang"
         "-c" "$SOURCE_FILE"
@@ -140,14 +156,13 @@ if [ -n "$ATTACH_PLUGIN" ]; then
     INFERCLANG_LOG_FILE="/dev/null"
 
     if [ -n "$DEBUG_MODE" ]; then
-        # Emit the clang command with the extra args
-        echo "${CLANG_CMD[@]}" > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+        # Emit the clang command with the extra args piped to InferClang
+        echo "${CLANG_CMD[@]} | tee ${OBJECT_FILENAME}.yjson | ${INFERCLANG_CMD[@]}" > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
         # Emit the InferClang cmd used to run the frontend
         INFERCLANG_LOG_FILE="${OBJECT_FILENAME}${INFERCLANG_LOG_FILE_EXT}"
         echo "${INFERCLANG_CMD[@]}" > "$INFERCLANG_LOG_FILE"
     fi
 
-    export CLANG_FRONTEND_PLUGIN__PREPEND_CURRENT_DIR="1"
     # run clang and pipe its output to InferClang, or flush it in case the latter crashes
     "${CLANG_CMD[@]}" | ("${INFERCLANG_CMD[@]}" || { EC=$?; cat > /dev/null; exit $EC; }) >> "$INFERCLANG_LOG_FILE" 2>&1
     STATUSES=("${PIPESTATUS[@]}")
@@ -161,6 +176,11 @@ if [ -n "$ATTACH_PLUGIN" ]; then
 else
     "${CLANG_CMD[@]}"
     STATUS=$?
+fi
+
+# run apple clang if required (and if any)
+if [ -n "$APPLE_CLANG" ]; then
+    "${APPLE_CLANG}$XX" "$@" || exit $?
 fi
 
 exit $STATUS

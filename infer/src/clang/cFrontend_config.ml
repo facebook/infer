@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Module that contains constants and variables used in the frontend *)
@@ -19,6 +23,8 @@ let nsstring_cl = "NSString"
 
 let nsobject_cl = "NSObject"
 
+let next_object = "nextObject"
+
 let nsautorelease_pool_cl = "NSAutoreleasePool"
 
 let id_cl = "id"
@@ -36,6 +42,8 @@ let source_file : string option ref = ref None
 let ast_file : string option ref = ref None
 
 let json = ref ""
+
+let pointer_decl_index = ref Clang_ast_cache.PointerMap.empty
 
 let debug_mode = ref false
 
@@ -104,7 +112,13 @@ let cf_bridging_retain = "CFBridgingRetain"
 
 let cf_autorelease = "CFAutorelease"
 
+let ns_make_collectable = "NSMakeCollectable"
+
 let builtin_expect = "__builtin_expect"
+
+let builtin_memset_chk = "__builtin___memset_chk"
+
+let builtin_object_size = "__builtin_object_size"
 
 let assert_fail = "__assert_fail"
 
@@ -115,3 +129,5 @@ let handleFailureInMethod = "handleFailureInMethod:object:file:lineNumber:descri
 let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:description:"
 
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
+
+let nonnull_attribute = "__nonnull"

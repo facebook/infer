@@ -1,6 +1,10 @@
 /*
- * Copyright (c) 2015 - Facebook.
- * All rights reserved.
+* Copyright (c) 2015 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
  */
 
 #include <stdlib.h>
@@ -87,6 +91,10 @@ void potentially_null_pointer_passed_as_argument() {
   p = (int*) malloc(sizeof(int));
   assign(p, 42);  // NULL dereference
   free(p);
+}
+
+void null_passed_as_argument() {
+  assign(NULL, 42);  // NULL dereference
 }
 
 void allocated_pointer_passed_as_argument() {

@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 module F = Format;;
@@ -318,10 +322,10 @@ let optimistic_cast = ref false
 let filter_buckets = ref false
 
 (** if true, show buckets in textual description of errors *)
-let show_buckets = ref true
+let show_buckets = ref false
 
 (** if true, show memory leak buckets in textual description of errors *)
-let show_ml_buckets = ref true
+let show_ml_buckets = ref false
 
 (** if true, print cfg nodes in the dot file that are not defined in that file *)
 let dotty_cfg_libs = ref true
@@ -344,8 +348,10 @@ let arc_mode = ref false
 
 let objc_memory_model_on = ref false
 
-let report_assertion_failure = from_env_variable "REPORT_ASSERTION_FAILURE"
-let default_failure_name = "Assertion_failure"
+let report_assertion_failure = from_env_variable "INFER_REPORT_ASSERTION_FAILURE"
+let default_failure_name = "ASSERTION_FAILURE"
+
+let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
 
 module Experiment = struct
 
@@ -369,6 +375,8 @@ let anonymous_block_prefix = "__objc_anonymous_block_"
 let anonymous_block_num_sep = "______"
 
 let property_attributes = "property_attributes"
+
+let ivar_attributes = "ivar_attributes"
 
 let unsafe_unret = "<\"Unsafe_unretained\">"
 

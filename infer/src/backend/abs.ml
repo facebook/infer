@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Implementation of Abstraction Functions *)
@@ -1189,7 +1193,8 @@ let remove_opt _prop =
   | Some (Some p) -> p
   | _ -> Prop.prop_emp
 
-(* Checks if cycle has fields with property attributes weak/unsafe_unretained *)
+(* Checks if cycle has fields (derived from a property or directly defined as ivar) *)
+(* with attributes weak/unsafe_unretained/assing *)
 let cycle_has_weak_or_unretained_or_assign_field cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation t fn =
@@ -1203,10 +1208,11 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
   let rec has_weak_or_unretained_or_assign params =
     match params with
     | [] -> false
-    | att::_ when Config.unsafe_unret = att || Config.weak = att || Config.assign = att -> true
+    | att:: _ when Config.unsafe_unret = att || Config.weak = att || Config.assign = att -> true
     | _:: params' -> has_weak_or_unretained_or_assign params' in
   let do_annotation (a, _) =
-    (a.Sil.class_name = Config.property_attributes && has_weak_or_unretained_or_assign a.Sil.parameters) in
+    ((a.Sil.class_name = Config.property_attributes) ||
+      (a.Sil.class_name = Config.ivar_attributes)) && has_weak_or_unretained_or_assign a.Sil.parameters in
   let rec do_cycle c =
     match c with
     | [] -> false

@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
@@ -1728,9 +1732,6 @@ let get_autorelease_attribute prop exp =
 let get_objc_null_attribute prop exp =
   get_attribute prop exp Sil.ACobjc_null
 
-let get_variadic_function_argument_attribute prop exp =
-  get_attribute prop exp Sil.ACvariadic_function_argument
-
 let get_div0_attribute prop exp =
   get_attribute prop exp Sil.ACdiv0
 
@@ -1768,6 +1769,16 @@ let add_or_replace_exp_attribute check_attribute_change prop exp att =
   let pi' = list_map atom_map (get_pi prop) in
   if !found then replace_pi pi' prop
   else set_exp_attribute prop nexp att
+
+(** mark Sil.Var's or Sil.Lvar's as undefined *)
+let mark_vars_as_undefined prop vars_to_mark callee_pname loc path_pos =
+  let att_undef = Sil.Aundef (callee_pname, loc, path_pos) in
+  let mark_var_as_undefined exp prop =
+    let do_nothing _ _ = () in
+    match exp with
+    | Sil.Var _ | Sil.Lvar _ -> add_or_replace_exp_attribute do_nothing prop exp att_undef
+    | _ -> prop in
+  list_fold_left (fun prop id -> mark_var_as_undefined id prop) prop vars_to_mark
 
 (** Remove an attribute from all the atoms in the heap *)
 let remove_attribute att prop =
@@ -2765,23 +2776,19 @@ end = struct
 
   let pi_size pi = pi_weight * list_length pi
 
-  module ExpMap =
-    Map.Make (struct
-      type t = Sil.exp
-      let compare = Sil.exp_compare end)
 
   (** Approximate the size of the longest chain by counting the max
   number of |-> with the same type and whose lhs is primed or
   footprint *)
   let sigma_chain_size sigma =
-    let tbl = ref ExpMap.empty in
+    let tbl = ref Sil.ExpMap.empty in
     let add t =
       try
-        let count = ExpMap.find t !tbl in
-        tbl := ExpMap.add t (count + 1) !tbl
+        let count = Sil.ExpMap.find t !tbl in
+        tbl := Sil.ExpMap.add t (count + 1) !tbl
       with
       | Not_found ->
-          tbl := ExpMap.add t 1 !tbl in
+          tbl := Sil.ExpMap.add t 1 !tbl in
     let process_hpred = function
       | Sil.Hpointsto (e, _, te) ->
           (match e with
@@ -2790,7 +2797,7 @@ end = struct
       | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
     list_iter process_hpred sigma;
     let size = ref 0 in
-    ExpMap.iter (fun t n -> size := max n !size) !tbl;
+    Sil.ExpMap.iter (fun t n -> size := max n !size) !tbl;
     !size
 
   (** Compute a size value for the prop, which indicates its

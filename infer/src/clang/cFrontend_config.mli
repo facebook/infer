@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Module that contains constants and variables used in the frontend *)
@@ -37,6 +41,8 @@ val testing_mode : bool ref
 
 val json : string ref
 
+val pointer_decl_index : Clang_ast_t.decl Clang_ast_cache.PointerMap.t ref
+
 val objc_object : string
 
 val id_cl : string
@@ -46,6 +52,8 @@ val self : string
 val nsstring_cl : string
 
 val nsobject_cl : string
+
+val next_object : string
 
 val nsautorelease_pool_cl : string
 
@@ -101,7 +109,13 @@ val cf_bridging_retain : string
 
 val cf_autorelease : string
 
+val ns_make_collectable : string
+
 val builtin_expect : string
+
+val builtin_memset_chk : string
+
+val builtin_object_size : string
 
 val fbAssertWithSignalAndLogFunctionHelper : string
 
@@ -112,3 +126,5 @@ val assert_rtn : string
 val handleFailureInMethod : string
 
 val handleFailureInFunction : string
+
+val nonnull_attribute : string

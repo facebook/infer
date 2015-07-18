@@ -5,7 +5,7 @@ LIBDIR = $(CWD)/../../lib
 LIB_SPECS = $(LIBDIR)/specs
 C_MODELS_FILE = $(LIB_SPECS)/c_models
 
-INFER = ANALYZE_MODELS=1 $(BINDIR)/infer
+INFER = INFER_ANALYZE_MODELS=1 $(BINDIR)/infer
 
 default: run_infer
 

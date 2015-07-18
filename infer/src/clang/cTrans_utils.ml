@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
@@ -19,7 +23,7 @@ module L = Logging
 let extract_item_from_singleton l warning_string failure_val =
   match l with
   | [item] -> item
-  | _ -> Printing.log_err warning_string; failure_val
+  | _ -> Printing.log_err "%s" warning_string; failure_val
 
 let dummy_exp = (Sil.exp_minus_one, Sil.Tint Sil.IInt)
 
@@ -362,7 +366,7 @@ let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
         ([], [], Sil.Cast(typ, exp))
     | _ ->
         Printing.log_err
-          ~fmt:"\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
+          "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
           (Clang_ast_j.string_of_cast_kind cast_kind);
         ([],[], exp)
 
@@ -427,7 +431,7 @@ let fix_param_exps_mismatch params_stmt exps_param =
 let get_name_decl_ref_exp_info decl_ref_expr_info si =
   match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
   | Some d -> (match d.Clang_ast_t.dr_name with
-        | Some n -> n
+        | Some n -> n.Clang_ast_t.ni_name
         | _ -> assert false)
   | _ -> L.err "FAILING WITH %s pointer=%s@.@."
         (Clang_ast_j.string_of_decl_ref_expr_info decl_ref_expr_info )
@@ -451,14 +455,14 @@ let get_value_enum_constant tenv enum_type stmt =
   let typename = Sil.TN_enum(Mangled.from_string enum_type) in
   match Sil.tenv_lookup tenv typename with
   | Some (Sil.Tenum enum_constants) ->
-      Printing.log_out ~fmt:">>>Found enum with typename TN_typename('%s')\n" (Sil.typename_to_string typename);
+      Printing.log_out ">>>Found enum with typename TN_typename('%s')\n" (Sil.typename_to_string typename);
       let _, v = try
           list_find (fun (c, _) -> Mangled.equal c (Mangled.from_string constant)) enum_constants
         with _ -> (Printing.log_err
-                ~fmt:"Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
+                "Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
       v
   | _ -> Printing.log_err
-        ~fmt:"Enum type '%s' not found in tenv. Cannot continue...\n" (Sil.typename_to_string typename);
+        "Enum type '%s' not found in tenv. Cannot continue...\n" (Sil.typename_to_string typename);
       assert false
 
 let get_selector_receiver obj_c_message_expr_info =
@@ -520,7 +524,7 @@ let rec get_type_from_exp_stmt stmt =
   | ImplicitCastExpr(_, stmt_list, _, _) ->
       get_type_from_exp_stmt (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
   | DeclRefExpr(_, _, _, info) -> do_decl_ref_exp info
-  | _ -> Printing.log_err ~fmt:"Failing with: %s \n%!" (Clang_ast_j.string_of_stmt stmt);
+  | _ -> Printing.log_err "Failing with: %s \n%!" (Clang_ast_j.string_of_stmt stmt);
       Printing.print_failure_info "";
       assert false
 
@@ -646,7 +650,8 @@ let is_dispatch_function stmt_list =
         | None -> None
         | Some d ->
             (match d.Clang_ast_t.dr_kind, d.Clang_ast_t.dr_name with
-              | `Function, Some s ->
+              | `Function, Some name_info ->
+                  let s = name_info.Clang_ast_t.ni_name in
                   (match (CTrans_models.is_dispatch_function_name s) with
                     | None -> None
                     | Some (dispatch_function, block_arg_pos) ->
@@ -658,3 +663,23 @@ let is_dispatch_function stmt_list =
                   )
               | _ -> None))
   | _ -> None
+
+let assign_default_params params_stmt callee_pname_opt =
+  match callee_pname_opt with
+  | None -> params_stmt
+  | Some callee_pname ->
+      try
+        let callee_ms = CMethod_signature.find callee_pname in
+        let args = CMethod_signature.ms_get_args callee_ms in
+        let params_args = list_combine params_stmt args in
+        let replace_default_arg param =
+          match param with
+          | CXXDefaultArgExpr(_, _, _), (_, _, Some default_instr) -> default_instr
+          | instr, _ -> instr in
+        list_map replace_default_arg params_args
+      with
+      | Invalid_argument _ ->
+      (* list_combine failed because of different list lengths *)
+          Printing.log_err "Param count doesn't match %s\n" (Procname.to_string callee_pname);
+          params_stmt
+      | Not_found -> params_stmt

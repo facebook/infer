@@ -1,36 +1,17 @@
-package java.lang;
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
 
-import java.util.List;
+package java.lang;
 
 public class Thread implements Runnable {
 
-    private static int NANOS_PER_MILLI;
-
-    public static int MAX_PRIORITY;
-    public static int MIN_PRIORITY;
-
-    public static int NORM_PRIORITY;
-
-    volatile VMThread vmThread;
-    volatile ThreadGroup group;
-    volatile boolean daemon;
-    volatile String name;
-    volatile int priority;
-    volatile long stackSize;
     Runnable target;
-    private static int count;
-
-    private long id;
-    ThreadLocal.Values localValues;
-    ThreadLocal.Values inheritableValues;
-    private List<Runnable> interruptActions;
-    private ClassLoader contextClassLoader;
-    private UncaughtExceptionHandler uncaughtHandler;
-    private static UncaughtExceptionHandler defaultUncaughtHandler;
-    boolean hasBeenStarted;
-
-    private int parkState;
-    private Object parkBlocker;
 
     public static interface UncaughtExceptionHandler {
     }

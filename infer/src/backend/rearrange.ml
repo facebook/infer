@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Re-arrangement and extension of structures with fresh variables *)
@@ -961,7 +965,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
     not (is_definitely_non_null root prop) && is_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
     Prop.get_resource_undef_attribute;
-    Prop.get_variadic_function_argument_attribute ] in
+  ] in
   let get_relevant_attributes exp =
     let rec fold_getters = function
       | [] -> None
@@ -976,11 +980,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
           | Sil.BinOp((Sil.PlusPI | Sil.PlusA | Sil.MinusPI | Sil.MinusA), base, _) -> base
           | _ -> root in
         get_relevant_attributes root_no_offset in
-  let is_premature_nil_termination = match attribute_opt with
-    | Some (Sil.Avariadic_function_argument _) -> true
-    | _ -> false in
-  if not is_premature_nil_termination
-  && (Prover.check_zero (Sil.root_of_lexp root) || is_deref_of_nullable) then
+  if Prover.check_zero (Sil.root_of_lexp root) || is_deref_of_nullable then
     begin
       let deref_str =
         if is_deref_of_nullable then Localise.deref_str_nullable None !nullable_obj_str
@@ -1009,12 +1009,6 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
       let deref_str = Localise.deref_str_freed ra in
       let err_desc = Errdesc.explain_dereference ~use_buckets: true deref_str prop loc in
       raise (Exceptions.Use_after_free (err_desc, try assert false with Assert_failure x -> x))
-  | Some (Sil.Avariadic_function_argument (pn, n, i)) ->
-      let deref_str = Localise.deref_str_nil_argument_in_variadic_method pn n i in
-      let err_desc =
-        Errdesc.explain_dereference ~use_buckets: true ~is_premature_nil: true
-          deref_str prop loc in
-      raise (Exceptions.Premature_nil_termination (err_desc, try assert false with Assert_failure x -> x))
   | _ ->
       if Prover.check_equal Prop.prop_emp (Sil.root_of_lexp root) Sil.exp_minus_one then
         let deref_str = Localise.deref_str_dangling None in

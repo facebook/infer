@@ -1,6 +1,10 @@
 /*
- * Copyright (c) 2013- Facebook.
- * All rights reserved.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package codetoanalyze.java.infer;
@@ -9,6 +13,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.text.TextUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -321,6 +326,19 @@ public class NullPointerExceptions {
   void nullPointerExceptionArrayLength() {
     Object[] arr = null;
     int i = arr.length;
+  }
+
+  class $$Class$Name$With$Dollars {
+    void npeWithDollars() {
+      String s = null;
+      int n = s.length();
+    }
+  }
+
+  void nullableNonNullStringAfterTextUtilsIsEmptyCheckShouldNotCauseNPE(@Nullable String str) {
+    if(!TextUtils.isEmpty(str)) {
+      str.length();
+    }
   }
 
 }

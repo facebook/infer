@@ -29,7 +29,7 @@ dependencies. Details below.
 
 ### Requirements
 
-- Python >= 2.7
+- Python 2.7
 - [opam](https://opam.ocaml.org/doc/Install.html#OSX)
 
 #### Requirements for the Java analysis
@@ -48,7 +48,8 @@ Install the OCaml dependencies:
 
 ```bash
 opam init --comp=4.01.0  # (answer 'y' to the question)
-opam install sawja.1.5 atdgen.1.5.0 javalib.2.3 extlib.1.5.4
+eval `opam config env`
+opam install extlib.1.5.4 atdgen.1.6.0 javalib.2.3.1 sawja.1.5.1
 ```
 
 If you do not require support for the C/Objective-C analysis in Infer,
@@ -75,7 +76,7 @@ export PATH=`pwd`/infer/bin:$PATH
 
 ### Requirements
 
-- Python >= 2.7
+- Python 2.7
 
 ### Installation instructions
 
@@ -92,7 +93,7 @@ wget https://github.com/ocaml/opam/releases/download/1.2.2/opam-1.2.2-x86_64-Lin
 chmod +x opam
 ./opam init --comp=4.01.0 #(then say 'y' to the final question)
 eval `./opam config env`
-./opam install sawja.1.5 atdgen.1.5.0 javalib.2.3 extlib.1.5.4 #(then say 'y' to the question)
+./opam install extlib.1.5.4 atdgen.1.6.0 javalib.2.3.1 sawja.1.5.1 #(then say 'y' to the question)
 ```
 
 If you do not require support for the C/Objective-C analysis in Infer,

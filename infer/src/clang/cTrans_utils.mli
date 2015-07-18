@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
@@ -196,3 +200,5 @@ val compute_autorelease_pool_vars : CContext.t -> Clang_ast_t.stmt list -> (Sil.
 val is_logical_negation_of_int : Sil.tenv -> Clang_ast_t.expr_info -> Clang_ast_t.unary_operator_info -> bool
 
 val is_dispatch_function : Clang_ast_t.stmt list -> int option
+
+val assign_default_params : Clang_ast_t.stmt list -> Procname.t option -> Clang_ast_t.stmt list

@@ -1,5 +1,10 @@
 (*
-* Copyright (c) 2014 - Facebook. All rights reserved.
+* Copyright (c) 2014 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 open Utils
@@ -470,7 +475,10 @@ let check_call_parameters
     | _ -> () in
   let should_check_parameters =
     if check_library_calls then true
-    else Models.is_modelled_nullable callee_pname || Cfg.Procdesc.is_defined callee_pdesc in
+    else
+      Models.is_modelled_nullable callee_pname ||
+      Cfg.Procdesc.is_defined callee_pdesc ||
+      Specs.get_summary callee_pname <> None in
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
     check (list_rev sig_params) (list_rev call_params)
@@ -531,14 +539,17 @@ let check_overridden_annotations
         check_params overriden_proc_name overriden_signature
     | None -> () in
 
-  let check_overriden_methods super_class_name =
+  let check_overridden_methods super_class_name =
     let super_proc_name = Procname.java_replace_class proc_name super_class_name in
     let type_name = Sil.TN_csu (Sil.Class, Mangled.from_string super_class_name) in
     match Sil.tenv_lookup tenv type_name with
     | Some (Sil.Tstruct (_, _, _, _, _, methods, _)) ->
+        let is_override pname =
+          Procname.equal pname super_proc_name &&
+          not (Procname.is_constructor pname) in
         list_iter
           (fun pname ->
-                if Procname.equal pname super_proc_name
+                if is_override pname
                 then check pname)
           methods
     | _ -> () in
@@ -552,4 +563,4 @@ let check_overridden_annotations
         list_map Mangled.to_string (PatternMatch.type_get_direct_supertypes curr_type)
     | None -> [] in
 
-  list_iter check_overriden_methods super_types
+  list_iter check_overridden_methods super_types

@@ -1,6 +1,10 @@
-# Copyright (c) 2009-2013 Monoidics ltd.
-# Copyright (c) 2013- Facebook.
+# Copyright (c) 2009 - 2013 Monoidics ltd.
+# Copyright (c) 2013 - present Facebook, Inc.
 # All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
 
 import argparse
 import logging
@@ -16,7 +20,7 @@ current_directory = os.getcwd()
 parser.add_argument('-version', action='store_true')
 parser.add_argument('-cp', '-classpath', type=str, dest='classpath')
 parser.add_argument('-bootclasspath', type=str)
-parser.add_argument('-d', dest='classes_out')
+parser.add_argument('-d', dest='classes_out', default=current_directory)
 
 
 class CompilerCall:
@@ -32,6 +36,7 @@ class CompilerCall:
             return subprocess.call(['javac'] + self.original_arguments)
         else:
             javac_cmd = ['javac', '-verbose', '-g'] + self.original_arguments
+            javac_cmd.append('-J-Duser.language=en')
 
             with tempfile.NamedTemporaryFile(
                     mode='w',

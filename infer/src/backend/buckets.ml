@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Classify bugs into buckets *)
@@ -39,8 +43,9 @@ let check_nested_loop path pos_opt =
   Paths.Path.iter_longest_sequence f pos_opt path;
   in_nested_loop ()
 
-(** Check that we know where the value was last assigned, and that there is a local access instruction at that line. **)
-let check_access access_opt =
+(** Check that we know where the value was last assigned,
+and that there is a local access instruction at that line. **)
+let check_access access_opt de_opt =
   let find_bucket line_number null_case_flag =
     let find_formal_ids node = (* find ids obtained by a letref on a formal parameter *)
       let node_instrs = Cfg.Node.get_instrs node in
@@ -60,9 +65,17 @@ let check_access access_opt =
       !formal_ids in
     let formal_param_used_in_call = ref false in
     let has_call_or_sets_null node =
-      let rec exp_is_null = function
+      let rec exp_is_null exp = match exp with
         | Sil.Const (Sil.Cint n) -> Sil.Int.iszero n
         | Sil.Cast (_, e) -> exp_is_null e
+        | Sil.Var _
+        | Sil.Lvar _ ->
+            begin
+              match State.get_const_map () node exp with
+              | Some (Sil.Cint n) ->
+                  Sil.Int.iszero n
+              | _ -> false
+            end
         | _ -> false in
       let filter = function
         | Sil.Call (_, _, etl, _, _) ->
@@ -72,7 +85,8 @@ let check_access access_opt =
               | _ -> false in
             if list_exists arg_is_formal_param etl then formal_param_used_in_call := true;
             true
-        | Sil.Set (_, _, e, _) -> exp_is_null e
+        | Sil.Set (_, _, e, _) ->
+            exp_is_null e
         | _ -> false in
       list_exists filter (Cfg.Node.get_instrs node) in
     let local_access_found = ref false in
@@ -99,11 +113,17 @@ let check_access access_opt =
       find_bucket n false
   | Some (Localise.Last_accessed (n, is_nullable)) when is_nullable ->
       Some Localise.BucketLevel.b1
-  | _ -> None
+  | _ ->
+      begin
+        match de_opt with
+        | Some (Sil.Dconst _) ->
+            Some Localise.BucketLevel.b1
+        | _ -> None
+      end
 
-let classify_access desc access_opt is_nullable =
+let classify_access desc access_opt de_opt is_nullable =
   let default_bucket = if is_nullable then Localise.BucketLevel.b1 else Localise.BucketLevel.b5 in
   let show_in_message = !Config.show_buckets in
-  match check_access access_opt with
+  match check_access access_opt de_opt with
   | None -> Localise.error_desc_set_bucket desc default_bucket show_in_message
   | Some bucket -> Localise.error_desc_set_bucket desc bucket show_in_message

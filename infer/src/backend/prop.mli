@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009-2013 Monoidics ltd.
-* Copyright (c) 2013- Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
@@ -282,14 +286,15 @@ val get_div0_attribute : 'a t -> exp -> attribute option
 (** Get the objc null attribute associated to the expression, if any *)
 val get_objc_null_attribute : 'a t -> exp -> attribute option
 
-(** Get the variadic function argument attribute associated to the expression, if any *)
-val get_variadic_function_argument_attribute : 'a t -> exp -> attribute option
-
 (** Get all the attributes of the prop *)
 val get_all_attributes : 'a t -> (exp * attribute) list
 
 (** Replace an attribute associated to the expression *)
 val add_or_replace_exp_attribute : (Sil.attribute -> Sil.attribute -> unit) -> normal t -> exp -> attribute -> normal t
+
+(** mark Sil.Var's or Sil.Lvar's as undefined *)
+val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Sil.location ->
+  Sil.path_pos -> normal t
 
 (** Remove an attribute from all the atoms in the heap *)
 val remove_attribute : Sil.attribute -> 'a t -> normal t

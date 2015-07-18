@@ -1,6 +1,10 @@
 /*
-* Copyright (c) 2013- Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 */
 
 package endtoend.java.eradicate;
@@ -49,13 +53,21 @@ public class ReturnNotNullableTest {
       throws IOException, InterruptedException, InferException {
 
 
-    String[] nullableMethods = {"returnNull", "returnNullable"};
+    String[] nullableMethods = {
+        "returnNull",
+        "returnNullable",
+        "return_null_in_catch",
+        "return_null_in_catch_after_throw",
+    };
     List<ErrorPattern> errorPatterns = createPatterns(
         RETURN_NOT_NULLABLE,
         SOURCE_FILE,
         nullableMethods);
 
-    String[] redundantMethods = {"redundantEq", "redundantNeq"};
+    String[] redundantMethods = {
+        "redundantEq",
+        "redundantNeq",
+    };
     errorPatterns.addAll(
         createPatterns(
             CONDITION_REDUNDANT_NONNULL,

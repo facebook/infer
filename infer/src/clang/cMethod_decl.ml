@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Process methods or functions declarations by adding them to the cfg. *)
@@ -47,10 +51,11 @@ struct
   let get_parameters function_method_decl_info =
     let par_to_ms_par par =
       match par with
-      | ParmVarDecl(decl_info, name, qtype, var_decl_info) ->
-          Printing.log_out ~fmt:"Adding  param '%s' " name;
-          Printing.log_out ~fmt:"with pointer %s@." decl_info.Clang_ast_t.di_pointer;
-          (name, CTypes.get_type qtype)
+      | ParmVarDecl(decl_info, name_info, qtype, var_decl_info) ->
+          let name = name_info.Clang_ast_t.ni_name in
+          Printing.log_out "Adding  param '%s' " name;
+          Printing.log_out "with pointer %s@." decl_info.Clang_ast_t.di_pointer;
+          (name, CTypes.get_type qtype, var_decl_info.vdi_init_expr)
       | _ -> assert false in
     match function_method_decl_info with
     | Func_decl_info (function_decl_info, _) ->
@@ -58,7 +63,7 @@ struct
     | Meth_decl_info (method_decl_info, class_name) ->
         let pars = list_map par_to_ms_par method_decl_info.Clang_ast_t.omdi_parameters in
         if (is_instance_method function_method_decl_info false false) then
-          ("self", class_name):: pars
+          ("self", class_name, None):: pars
         else pars
 
   let get_return_type function_method_decl_info =
@@ -73,7 +78,8 @@ struct
     let qt = get_return_type function_method_decl_info in
     let is_instance_method = is_instance_method function_method_decl_info is_instance is_anonym_block in
     let parameters = get_parameters function_method_decl_info in
-    CMethod_signature.make_ms procname parameters qt source_range is_instance_method
+    let attributes = decl_info.Clang_ast_t.di_attributes in
+    CMethod_signature.make_ms procname parameters qt attributes source_range is_instance_method
 
   let create_function_signature di fdecl_info name qt is_instance anonym_block_opt =
     let procname, is_anonym_block =
@@ -89,11 +95,24 @@ struct
   let model_exists procname =
     Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
 
+  let rec add_assume_not_null_calls param_decls attributes =
+    match param_decls with
+    | [] -> []
+    | decl:: rest ->
+        let rest_assume_calls = add_assume_not_null_calls rest attributes in
+        (match decl with
+          | ParmVarDecl(decl_info, name_info, qtype, var_decl_info)
+          when CFrontend_utils.Ast_utils.is_type_nonnull qtype attributes ->
+              let name = name_info.Clang_ast_t.ni_name in
+              let assume_call = Ast_expressions.create_assume_not_null_call decl_info name qtype in
+              assume_call:: rest_assume_calls
+          | _ -> rest_assume_calls)
+
   (* Translates the method/function's body into nodes of the cfg. *)
   let add_method tenv cg cfg class_decl_opt procname namespace instrs is_objc_method is_instance
-      captured_vars is_anonym_block =
+      captured_vars is_anonym_block param_decls attributes =
     Printing.log_out
-      ~fmt:"\n\n>>---------- ADDING METHOD: '%s' ---------<<\n" (Procname.to_string procname);
+      "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n" (Procname.to_string procname);
     try
       (match Cfg.Procdesc.find_from_name cfg procname with
         | Some procdesc ->
@@ -108,9 +127,11 @@ struct
                 Cfg.Procdesc.append_locals procdesc local_vars;
                 Cfg.Node.add_locals_ret_declaration start_node local_vars;
                 Printing.log_out
-                  ~fmt:"\n\n>>---------- Start translating the function: '%s' ---------<<"
+                  "\n\n>>---------- Start translating the function: '%s' ---------<<"
                   (Procname.to_string procname);
-                let meth_body_nodes = T.instructions_trans context instrs exit_node in
+                let nonnull_assume_calls = add_assume_not_null_calls param_decls in
+                let instrs' = instrs@nonnull_assume_calls attributes in
+                let meth_body_nodes = T.instructions_trans context instrs' exit_node in
                 if (not is_anonym_block) then CContext.LocalVars.reset_block ();
                 Cfg.Node.set_succs_exn start_node meth_body_nodes [];
                 Cg.add_node (CContext.get_cg context) (Cfg.Procdesc.get_proc_name procdesc))
@@ -127,7 +148,7 @@ struct
         ()
 
   let function_decl tenv cfg cg namespace is_instance di name qt fdecl_info captured_vars anonym_block_opt curr_class =
-    Printing.log_out ~fmt:"\nFound FunctionDecl '%s'. Processing...\n" name;
+    Printing.log_out "\nFound FunctionDecl '%s'. Processing...\n" name;
     Printing.log_out "\nResetting the goto_labels hashmap...\n";
     CTrans_utils.GotoLabel.reset_all_labels (); (* C Language Std 6.8.6.1-1 *)
     match create_function_signature di fdecl_info name qt is_instance anonym_block_opt with
@@ -138,8 +159,10 @@ struct
         let is_anonym_block = Option.is_some anonym_block_opt in
         let is_objc_method = is_anonym_block in
         let curr_class = if is_anonym_block then curr_class else CContext.ContextNoCls in
+        let attributes = CMethod_signature.ms_get_attributes ms in
+        CMethod_signature.add ms;
         add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
-          captured_vars is_anonym_block
+          captured_vars is_anonym_block fdecl_info.Clang_ast_t.fdi_parameters attributes
     | None, ms -> CMethod_signature.add ms
 
   let process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info =
@@ -147,18 +170,21 @@ struct
     let procname = CMethod_trans.mk_procname_from_method class_name method_name in
     let method_decl = Meth_decl_info (method_decl_info, class_name) in
     let ms = build_method_signature decl_info procname method_decl false false in
-    Printing.log_out ~fmt:" ....Processing implementation for method '%s'\n" (Procname.to_string procname);
+    Printing.log_out " ....Processing implementation for method '%s'\n" (Procname.to_string procname);
+    CMethod_signature.add ms;
     (match method_body_to_translate decl_info ms method_decl_info.Clang_ast_t.omdi_body with
       | Some body ->
           let is_instance = CMethod_signature.ms_is_instance ms in
+          let attributes = CMethod_signature.ms_get_attributes ms in
           CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance;
           add_method tenv cg cfg curr_class procname namespace [body] true is_instance [] false
-      | None ->
-          CMethod_signature.add ms)
+            method_decl_info.Clang_ast_t.omdi_parameters attributes
+      | None -> ())
 
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =
     match dec with
-    | ObjCMethodDecl(decl_info, method_name, method_decl_info) ->
+    | ObjCMethodDecl(decl_info, name_info, method_decl_info) ->
+        let method_name = name_info.Clang_ast_t.ni_name in
         process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info
 
     | ObjCPropertyImplDecl(decl_info, property_impl_decl_info) ->
@@ -167,7 +193,7 @@ struct
 
     | EmptyDecl _ | ObjCIvarDecl _ -> ()
     | d -> Printing.log_err
-          ~fmt:"\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl d);
+          "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl d);
         ()
 
   let process_methods tenv cg cfg curr_class namespace decl_list =

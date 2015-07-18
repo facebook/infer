@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** The Smallfoot Intermediate Language *)
@@ -9,6 +13,8 @@
 module L = Logging
 module F = Format
 open Utils
+
+let () = if CheckCopyright.active then CheckCopyright.check ()
 
 (** {2 Programs and Types} *)
 
@@ -23,6 +29,9 @@ type item_annotation = (annotation * bool) list
 (** Annotation for a method: return value and list of parameters. *)
 type method_annotation =
   item_annotation * item_annotation list
+
+type func_attribute =
+  | FA_sentinel of int * int (** __attribute__((sentinel(int, int))) *)
 
 (** Programming language. *)
 type language = C_CPP | Java
@@ -40,6 +49,7 @@ type proc_attributes =
     is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
     mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
     language : language;
+    func_attributes : func_attribute list;
     method_annotation : method_annotation;
   }
 
@@ -52,6 +62,7 @@ let copy_proc_attributes pa =
     is_objc_instance_method = pa.is_objc_instance_method;
     is_synthetic_method = pa.is_synthetic_method;
     language = pa.language;
+    func_attributes = pa.func_attributes;
     method_annotation = pa.method_annotation;
   }
 
@@ -100,6 +111,15 @@ let pp_item_annotation fmt item_annotation =
 let pp_method_annotation s fmt (ia, ial) =
   F.fprintf fmt "%a %s(%a)" pp_item_annotation ia s (pp_seq pp_item_annotation) ial
 
+(** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
+let get_sentinel_func_attribute_value attr_list =
+  (* Sentinel is the only kind of attributes *)
+  let is_sentinel a = true in
+  try
+    match list_find is_sentinel attr_list with
+    | FA_sentinel (sentinel, null_pos) -> Some (sentinel, null_pos)
+  with Not_found -> None
+
 (** current language *)
 let curr_language = ref C_CPP
 
@@ -136,11 +156,13 @@ type pvar_kind =
   | Local_var of Procname.t (** local variable belonging to a function *)
   | Callee_var of Procname.t (** local variable belonging to a callee *)
   | Abducted_retvar of Procname.t * location (** synthetic variable to represent return value *)
+  | Abducted_ref_param of Procname.t * pvar * location
+  (** synthetic variable to represent param passed by reference *)
   | Global_var (** gloval variable *)
   | Seed_var (** variable used to store the initial value of formal parameters *)
 
 (** Names for program variables. *)
-type pvar = { pv_name: Mangled.t; pv_kind: pvar_kind }
+and pvar = { pv_name: Mangled.t; pv_kind: pvar_kind }
 
 (** Unary operations *)
 type unop =
@@ -425,9 +447,9 @@ module Subtype = struct
           if (should_add) then c:: rest' else rest'
 
   let get_subtypes (c1, (st1, flag1)) (c2, (st2, flag2)) f is_interface =
-    (* (L.d_strln_color Orange ((Mangled.to_string c1)^(subtypes_to_string (st1, flag1))^" <: "^
-    (Mangled.to_string c2)^(subtypes_to_string (st2, flag2))^" ?"^(string_of_bool is_sub)));*)
     let is_sub = f c1 c2 in
+    (* L.d_strln_color Orange ((Mangled.to_string c1)^(subtypes_to_string (st1, flag1))^" <: "^ *)
+    (* (Mangled.to_string c2)^(subtypes_to_string (st2, flag2))^" ?"^(string_of_bool is_sub)); *)
     let pos_st, neg_st = match st1, st2 with
       | Exact, Exact ->
           if (is_sub) then (Some st1, None)
@@ -650,9 +672,6 @@ and attribute =
   | Auntaint
   | Adiv0 of path_pos (** value appeared in second argument of division in path position *)
   | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
-  | Avariadic_function_argument of Procname.t * int * int (** (pn, n, i) the exp. is used as [i]th
-                                                          argument of a call to the variadic
-                                                          function [pn] that has [n] arguments *)
   | Aretval of Procname.t (** value was returned from a call to the given procedure *)
 
 (** Categories of attributes *)
@@ -662,7 +681,6 @@ and attribute_category =
   | ACtaint
   | ACdiv0
   | ACobjc_null
-  | ACvariadic_function_argument
 
 (** Constants *)
 and const =
@@ -858,6 +876,11 @@ let has_objc_ref_counter hpred =
       list_exists is_objc_ref_counter_field fl
   | _ -> false
 
+(** turn a *T into a T. fails if [typ] is not a pointer type *)
+let typ_strip_ptr = function
+  | Tptr (t, _) -> t
+  | _ -> assert false
+
 let pvar_get_name pv = pv.pv_name
 
 let pvar_to_string pv = Mangled.to_string pv.pv_name
@@ -870,6 +893,12 @@ let pvar_get_simplified_name pv =
         | Some s3, s4 -> s4 ^ "." ^ s2
         | _ -> s)
   | _ -> s
+
+(** Check if the pvar is an abucted return var or param passed by ref *)
+let pvar_is_abducted pv =
+  match pv.pv_kind with
+  | Abducted_retvar _ | Abducted_ref_param _ -> true
+  | _ -> false
 
 (** Turn a pvar into a seed pvar (which stored the initial value) *)
 let pvar_to_seed pv = { pv with pv_kind = Seed_var }
@@ -884,12 +913,6 @@ let pvar_is_local pv =
 let pvar_is_callee pv =
   match pv.pv_kind with
   | Callee_var _ -> true
-  | _ -> false
-
-(** Check if the pvar is an abucted return var *)
-let pvar_is_abducted_retvar pv =
-  match pv.pv_kind with
-  | Abducted_retvar _ -> true
   | _ -> false
 
 (** Check if the pvar is a seed var *)
@@ -928,24 +951,31 @@ let loc_compare loc1 loc2 =
 let loc_equal loc1 loc2 =
   loc_compare loc1 loc2 = 0
 
-let pv_kind_compare k1 k2 = match k1, k2 with
+let rec pv_kind_compare k1 k2 = match k1, k2 with
   | Local_var n1, Local_var n2 -> Procname.compare n1 n2
   | Local_var _, _ -> - 1
   | _, Local_var _ -> 1
   | Callee_var n1, Callee_var n2 -> Procname.compare n1 n2
   | Callee_var _, _ -> - 1
+  | _, Callee_var _ -> 1
   | Abducted_retvar (p1, l1), Abducted_retvar (p2, l2) ->
       let n = Procname.compare p1 p2 in
       if n <> 0 then n else loc_compare l1 l2
   | Abducted_retvar _, _ -> - 1
   | _, Abducted_retvar _ -> 1
-  | _, Callee_var _ -> 1
+  | Abducted_ref_param (p1, pv1, l1), Abducted_ref_param (p2, pv2, l2) ->
+      let n = Procname.compare p1 p2 in
+      if n <> 0 then n else
+        let n = pvar_compare pv1 pv2 in
+        if n <> 0 then n else loc_compare l1 l2
+  | Abducted_ref_param _, _ -> - 1
+  | _, Abducted_ref_param _ -> 1
   | Global_var, Global_var -> 0
   | Global_var, _ -> - 1
   | _, Global_var -> 1
   | Seed_var, Seed_var -> 0
 
-let pvar_compare pv1 pv2 =
+and pvar_compare pv1 pv2 =
   let n = Mangled.compare pv1.pv_name pv2.pv_name in
   if n <> 0 then n else pv_kind_compare pv1.pv_kind pv2.pv_kind
 
@@ -1155,7 +1185,6 @@ let attribute_to_category att =
   | Aautorelease -> ACautorelease
   | Adiv0 _ -> ACdiv0
   | Aobjc_null _ -> ACobjc_null
-  | Avariadic_function_argument _ -> ACvariadic_function_argument
 
 let cname_opt_compare nameo1 nameo2 = match nameo1, nameo2 with
   | None, None -> 0
@@ -1388,12 +1417,6 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
       exp_compare exp1 exp2
   | Aobjc_null _, _ -> -1
   | _, Aobjc_null _ -> 1
-  | Avariadic_function_argument (pn1, n1, i1), Avariadic_function_argument (pn2, n2, i2) ->
-      Procname.compare pn1 pn2
-      |> next int_compare n1 n2
-      |> next int_compare i1 i2
-  | Avariadic_function_argument _, _ -> -1
-  | _, Avariadic_function_argument _ -> 1
   | Aretval pn1, Aretval pn2 -> Procname.compare pn1 pn2
   | Aretval _, _ -> -1
   | _, Aretval _ -> 1
@@ -1641,6 +1664,12 @@ module ExpSet = Set.Make
     let compare = exp_compare
   end)
 
+module ExpMap = Map.Make(struct
+    type t = exp
+    let compare = exp_compare
+  end)
+
+
 let elist_to_eset es =
   list_fold_left (fun set e -> ExpSet.add e set) ExpSet.empty es
 
@@ -1754,7 +1783,7 @@ let loc_to_string loc =
 (** Dump a location *)
 let d_loc (loc: location) = L.add_print_action (L.PTloc, Obj.repr loc)
 
-let _pp_pvar f pv =
+let rec _pp_pvar f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
   | Local_var n ->
@@ -1766,6 +1795,9 @@ let _pp_pvar f pv =
   | Abducted_retvar (n, l) ->
       if !Config.pp_simple then F.fprintf f "%a|abductedRetvar" Mangled.pp name
       else F.fprintf f "%a$%a%a|abductedRetvar" Procname.pp n pp_loc l Mangled.pp name
+  | Abducted_ref_param (n, pv, l) ->
+      if !Config.pp_simple then F.fprintf f "%a|%a|abductedRefParam" _pp_pvar pv Mangled.pp name
+      else F.fprintf f "%a$%a%a|abductedRefParam" Procname.pp n pp_loc l Mangled.pp name
   | Global_var -> F.fprintf f "#GB$%a" Mangled.pp name
   | Seed_var -> F.fprintf f "old_%a" Mangled.pp name
 
@@ -1781,6 +1813,9 @@ let pp_pvar_latex f pv =
   | Abducted_retvar (n, l) ->
       F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abductedRetvar"
+  | Abducted_ref_param (n, pv, l) ->
+      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
+        (Latex.pp_string Latex.Roman) "abductedRefParam"
   | Global_var ->
       Latex.pp_string Latex.Boldface f (Mangled.to_string name)
   | Seed_var ->
@@ -1972,10 +2007,6 @@ and attribute_to_string pe = function
         | Lfield _ -> "FIELD "^(exp_to_string exp)
         | _ -> "" in
       "OBJC_NULL["^ info_s ^"]"
-  | Avariadic_function_argument (pn, n, i) ->
-      Printf.sprintf "VA_ARG" ^ (str_binop pe Lt)
-      ^ Procname.to_string pn ^ "," ^ (string_of_int n) ^ "," ^ (string_of_int i)
-      ^ (str_binop pe Gt)
   | Aretval pn -> "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
 
 and pp_const pe f = function
@@ -3742,6 +3773,10 @@ let pp_tenv f (tenv : tenv) =
 let mk_pvar (name: Mangled.t) (proc_name: Procname.t) : pvar =
   { pv_name = name; pv_kind = Local_var proc_name }
 
+
+let get_ret_pvar pname =
+  mk_pvar Ident.name_return pname
+
 (** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)
 let mk_pvar_callee (name: Mangled.t) (proc_name: Procname.t) : pvar =
   { pv_name = name; pv_kind = Callee_var proc_name }
@@ -3755,12 +3790,16 @@ let mk_pvar_abducted_ret (proc_name : Procname.t) (loc : location) : pvar =
   let name = Mangled.from_string ("$RET_" ^ (Procname.to_unique_id proc_name)) in
   { pv_name = name; pv_kind = Abducted_retvar (proc_name, loc) }
 
+let mk_pvar_abducted_ref_param (proc_name : Procname.t) (pv : pvar) (loc : location) : pvar =
+  let name = Mangled.from_string ("$REF_PARAM_" ^ (Procname.to_unique_id proc_name)) in
+  { pv_name = name; pv_kind = Abducted_ref_param (proc_name, pv, loc) }
+
 (** Turn an ordinary program variable into a callee program variable *)
 let pvar_to_callee pname pvar = match pvar.pv_kind with
   | Local_var _ ->
       { pvar with pv_kind = Callee_var pname }
   | Global_var -> pvar
-  | Callee_var _ | Abducted_retvar _ | Seed_var ->
+  | Callee_var _ | Abducted_retvar _ | Abducted_ref_param _ | Seed_var ->
       L.d_str "Cannot convert pvar to callee: ";
       d_pvar pvar; L.d_ln ();
       assert false

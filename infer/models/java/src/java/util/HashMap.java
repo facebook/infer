@@ -1,3 +1,12 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package java.util;
 import java.io.*;
 
@@ -44,7 +53,7 @@ public abstract class HashMap<K,V> extends AbstractMap<K,V>
     return null;
   }
 
-  public V put(Object key, Object value) {
+  public V put(K key, V value) {
     pushKey(key);
 
     if (InferUndefined.boolean_undefined()) {
@@ -61,7 +70,13 @@ public abstract class HashMap<K,V> extends AbstractMap<K,V>
   }
 
   private boolean _containsKey(Object key) {
-    return lastKey1 == key || lastKey2 == key;
+      return areEqual(key, lastKey1) || areEqual(key, lastKey2);
+  }
+
+  /* does explicit dynamic dispatch to help Infer out */
+  private static boolean areEqual(Object x, Object y) {
+      return x == y
+          || (x instanceof Integer && ((Integer) x).equals(y));
   }
 
 }

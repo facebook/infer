@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** State of symbolic execution *)
@@ -9,6 +13,12 @@
 module L = Logging
 module F = Format
 open Utils
+
+type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
+
+(** Constant map for the procedure *)
+let const_map : const_map ref =
+  ref (fun node exp -> None)
 
 (** Diverging states since the last reset for the node *)
 let diverging_states_node = ref Paths.PathSet.empty
@@ -318,3 +328,9 @@ let set_node (node: Cfg.node) =
 
 let set_session (session: int) =
   last_session := session
+
+let get_const_map () =
+  !const_map
+
+let set_const_map const_map' =
+  const_map := const_map'

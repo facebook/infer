@@ -1,29 +1,26 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package java.net;
 
-import java.io.*;
-import java.util.Hashtable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 
 public class URLConnection {
 
     protected URL url;
-    private String contentType;
-    private static boolean defaultAllowUserInteraction;
-    private static boolean defaultUseCaches;
-    ContentHandler defaultHandler;
-    private long lastModified;
-    protected long ifModifiedSince;
-    protected boolean useCaches;
-    protected boolean connected;
-    protected boolean doOutput;
-    protected boolean doInput;
-    protected boolean allowUserInteraction;
-
-    private static ContentHandlerFactory contentHandlerFactory;
-    private int readTimeout;
-    private int connectTimeout;
-    static Hashtable<String, Object> contentHandlers;
-    private static FileNameMap fileNameMap;
-
 
     public URLConnection(URL url) {
         this.url = url;

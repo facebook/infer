@@ -1,14 +1,16 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package dalvik.system;
 
+
 public class CloseGuard {
-
-
-    private static CloseGuard NOOP;
-
-    private static volatile boolean ENABLED;
-
-    private static volatile Reporter REPORTER;
-
 
     public static interface Reporter {
         public void report(String message, Throwable allocationSite);

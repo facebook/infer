@@ -1,9 +1,14 @@
 /*
- * Copyright (c) 2013 - Facebook.
- * All rights reserved.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 void simple_leak() {
   int *p;
@@ -30,4 +35,8 @@ void uses_allocator() {
   int *p;
   p = allocate();
   *p = 42;
+}
+
+void * builtin_no_leak(size_t s) {
+  return memset(malloc(s), 0, s);
 }

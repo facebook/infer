@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** The Smallfoot Intermediate Language *)
@@ -43,6 +47,9 @@ type item_annotation = (annotation * bool) list
 type method_annotation =
   item_annotation * item_annotation list
 
+type func_attribute =
+  | FA_sentinel of int * int
+
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected
 
@@ -56,6 +63,7 @@ type proc_attributes =
     is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
     mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
     language : language;
+    func_attributes : func_attribute list;
     method_annotation : method_annotation;
   }
 
@@ -284,9 +292,6 @@ and attribute =
   | Auntaint
   | Adiv0 of path_pos (** value appeared in second argument of division at given path position *)
   | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
-  | Avariadic_function_argument of Procname.t * int * int (** (pn, n, i) the exp. is used as [i]th
-                                                          argument of a call to the variadic
-                                                          function [pn] that has [n] arguments *)
   | Aretval of Procname.t (** value was returned from a call to the given procedure *)
 
 (** Categories of attributes *)
@@ -296,7 +301,6 @@ and attribute_category =
   | ACtaint
   | ACdiv0
   | ACobjc_null
-  | ACvariadic_function_argument
 
 (** Constants *)
 and const =
@@ -348,6 +352,9 @@ module TypMap : Map.S with type key = typ
 
 (** Sets of expressions. *)
 module ExpSet : Set.S with type elt = exp
+
+(** Maps with expression keys. *)
+module ExpMap : Map.S with type key = exp
 
 (** Hashtable with expressions as keys. *)
 module ExpHash : Hashtbl.S with type key = exp
@@ -588,6 +595,9 @@ val loc_equal : location -> location -> bool
 
 val path_pos_equal : path_pos -> path_pos -> bool
 
+(** turn a *T into a T. fails if [typ] is not a pointer type *)
+val typ_strip_ptr : typ -> typ
+
 val pvar_get_name : pvar -> Mangled.t
 
 val pvar_to_string : pvar -> string
@@ -598,8 +608,8 @@ val pvar_to_seed : pvar -> pvar
 (** Check if the pvar is a callee var *)
 val pvar_is_callee : pvar -> bool
 
-(** Check if the pvar is an abducted return var *)
-val pvar_is_abducted_retvar : pvar -> bool
+(** Check if the pvar is an abducted return var or param passed by ref *)
+val pvar_is_abducted : pvar -> bool
 
 (** Check if the pvar is a local var *)
 val pvar_is_local : pvar -> bool
@@ -782,6 +792,9 @@ val item_annotation_is_empty : item_annotation -> bool
 
 (** Check if the method annodation is empty. *)
 val method_annotation_is_empty : method_annotation -> bool
+
+(** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
+val get_sentinel_func_attribute_value : func_attribute list -> (int * int) option
 
 (** {2 Pretty Printing} *)
 
@@ -1308,6 +1321,9 @@ val loc_none : location
 (** [mk_pvar name proc_name suffix] creates a program var with the given function name and suffix *)
 val mk_pvar : Mangled.t -> Procname.t -> pvar
 
+(** [get_ret_pvar proc_name] retuns the return pvar associated with the procedure name *)
+val get_ret_pvar : Procname.t -> pvar
+
 (** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)
 val mk_pvar_callee : Mangled.t -> Procname.t -> pvar
 
@@ -1316,6 +1332,8 @@ val mk_pvar_global : Mangled.t -> pvar
 
 (** create an abducted return variable for a call to [proc_name] at [loc] *)
 val mk_pvar_abducted_ret : Procname.t -> location -> pvar
+
+val mk_pvar_abducted_ref_param : Procname.t -> pvar -> location -> pvar
 
 (** Turn an ordinary program variable into a callee program variable *)
 val pvar_to_callee : Procname.t -> pvar -> pvar

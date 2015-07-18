@@ -1,93 +1,66 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package java.util.zip;
 
 import com.facebook.infer.models.InferBuiltins;
 import com.facebook.infer.models.InferUndefined;
-import dalvik.system.CloseGuard;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Enumeration;
-import java.util.LinkedHashMap;
 import java.util.NoSuchElementException;
 
 public class ZipFile {
-    static int GPBF_ENCRYPTED_FLAG;
-    static int GPBF_DATA_DESCRIPTOR_FLAG;
 
-    static int GPBF_UTF8_FLAG;
-    static int GPBF_UNSUPPORTED_MASK;
-    public static int OPEN_READ;
-    public static int OPEN_DELETE;
+  private void init() throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+    InferBuiltins.__set_file_attribute(this);
+  }
 
-    private String filename;
-    private File fileToDeleteOnClose;
-    private RandomAccessFile raf;
-    private LinkedHashMap<String, ZipEntry> entries;
-    private String comment;
-    private CloseGuard guard;
+  public ZipFile(String name) throws IOException {
+    init();
+  }
 
+  public ZipFile(File file, int mode) throws IOException {
+    init();
+  }
 
-    public ZipFile(String name) throws IOException {
-        this.filename = new String();
-        InferUndefined.can_throw_ioexception_void();
-        //Had to throw before setting attribute else
-        // whenInferRunsOnJarFileClosedThenResourceLeakIsNotFound fails
-        InferBuiltins.__set_file_attribute(this.filename);
-    }
+  public ZipFile(File file) throws ZipException, IOException {
+    init();
+  }
 
-    public ZipFile(File file, int mode) throws IOException {
-        this.filename = new String();
-        InferUndefined.can_throw_ioexception_void();
-        InferBuiltins.__set_file_attribute(this.filename);
-    }
+  public void close() throws IOException {
+    InferBuiltins.__set_mem_attribute(this);
+    InferUndefined.can_throw_ioexception_void();
+  }
 
-    public ZipFile(File file) throws ZipException, IOException {
-        this(file, 0);
-    }
+  protected void finalize() throws IOException {
+    close();
+  }
 
-    public InputStream getInputStream(ZipEntry entry) throws IOException {
-        FileInputStream in = new FileInputStream("");
-        return new InflaterInputStream(in, null, 0) {
-            private boolean isClosed = false;
+  public Enumeration<? extends ZipEntry> entries() {
 
-            public void close() throws IOException {
-                super.close();
-            }
+    return new Enumeration<ZipEntry>() {
+      private boolean hasEls;
 
-            protected void fill() throws IOException {
-            }
+      public boolean hasMoreElements() {
+        return hasEls;
+      }
 
-            private boolean eof;
+      public ZipEntry nextElement() throws NoSuchElementException {
+        if (hasEls)
+          return new ZipEntry("");
+        else
+          throw new NoSuchElementException();
+      }
+    };
+  }
 
-            public int available() throws IOException {
-                return InferUndefined.can_throw_ioexception_int();
-            }
-        };
-    }
-
-    public void close() throws IOException {
-        InferBuiltins.__set_mem_attribute(this.filename);
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    protected void finalize() throws IOException {
-        close();
-    }
-
-    public Enumeration<? extends ZipEntry> entries() {
-
-        return new Enumeration<ZipEntry>() {
-            private boolean hasEls;
-
-            public boolean hasMoreElements() {
-                return hasEls;
-            }
-
-            public ZipEntry nextElement() throws NoSuchElementException {
-                if (hasEls)
-                    return new ZipEntry("");
-                else
-                    throw new NoSuchElementException();
-            }
-        };
-    }
 }

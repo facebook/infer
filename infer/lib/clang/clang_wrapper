@@ -15,7 +15,7 @@ COMMAND=("${CLANG_COMPILER}${XX}")
 # Remove command line options not supported by the opensource compiler or the plugins.
 for X in "$@"
 do
-    if [ "$X" != "-fapplication-extension" ] && [ "$X" != "-fmodules" ]
+    if [ "$X" != "-fapplication-extension" ]
     then
         COMMAND+=("$X")
     fi

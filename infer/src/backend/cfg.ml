@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 module L = Logging
@@ -54,6 +58,8 @@ module Node = struct
 
   let exn_handler_kind = Stmt_node "exception handler"
   let exn_sink_kind = Stmt_node "exceptions sink"
+  let throw_kind = Stmt_node "throw"
+
 
   type cfg = (** data type for the control flow graph *)
     { node_id : int ref;
@@ -333,7 +339,8 @@ module Node = struct
   let replace_instrs node instrs =
     node.nd_instrs <- instrs
 
-  let proc_desc_get_ret_var pdesc = Sil.mk_pvar Ident.name_return pdesc.pd_name
+  let proc_desc_get_ret_var pdesc =
+    Sil.get_ret_pvar pdesc.pd_name
 
   (** Add declarations for local variables and return variable to the node *)
   let add_locals_ret_declaration node locals =
@@ -802,7 +809,7 @@ let remove_abducted_retvars p =
           let reach' = Sil.HpredSet.add hpred reach in
           let exps' = collect_exps exps rhs in
           (reach', exps')
-        | hpred -> reach, exps in
+        | _ -> reach, exps in
       let reach', exps' = list_fold_left add_hpred_if_reachable (reach, exps) sigma in
       if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
       else compute_reachable_hpreds_rec sigma (reach', exps') in
@@ -815,7 +822,7 @@ let remove_abducted_retvars p =
         match hpred with
         | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
           let abducted_pvars, normal_pvars = pvars in
-          if Sil.pvar_is_abducted_retvar pvar then pvar :: abducted_pvars, normal_pvars
+          if Sil.pvar_is_abducted pvar then pvar :: abducted_pvars, normal_pvars
           else abducted_pvars, pvar :: normal_pvars
         | _ -> pvars)
       ([], [])

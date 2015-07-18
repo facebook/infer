@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** State of symbolic execution *)
@@ -10,6 +14,11 @@ open Utils
 
 (** Add diverging states *)
 val add_diverging_states : Paths.PathSet.t -> unit
+
+type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
+
+(** Get the constant map for the current procedure. *)
+val get_const_map : unit -> const_map
 
 (** Get the diverging states for the node *)
 val get_diverging_states_node : unit -> Paths.PathSet.t
@@ -92,6 +101,9 @@ val reset : unit -> unit
 
 (** Reset the diverging states and goto information for the node *)
 val reset_diverging_states_goto_node : unit -> unit
+
+(** Set the constant map for the current procedure. *)
+val set_const_map : const_map -> unit
 
 (** Set the node target of a Sil.Goto_node instruction *)
 val set_goto_node : int -> unit

@@ -1,6 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook. All rights reserved.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Main module for the analysis after the capture phase *)
@@ -112,7 +117,6 @@ let print_version_json () =
   exit 0
 
 let arg_desc =
-  let analyzer_mode s = Facebook.analyzer_mode s in
   let base_arg =
     let exclude s = match read_file s with
       | None ->
@@ -161,7 +165,6 @@ let arg_desc =
       "-intraprocedural", Arg.Set Config.intraprocedural, None, "perform an intraprocedural analysis only";
       "-makefile", Arg.Set_string makefile_cmdline, Some "file", "create a makefile to perform the analysis";
       "-max_cluster", Arg.Set_int Config.max_cluster_size, Some "n", "set the max number of procedures in each cluster (default n=2000)";
-      "-analyzer_mode", Arg.String analyzer_mode, Some "mode", " run the analysis in a specific mode";
       "-only_nospecs", Arg.Set Config.only_nospecs, None, " only analyze procedures which were analyzed before but have no specs";
       "-only_skips", Arg.Set Config.only_skips, None, " only analyze procedures dependent on previous skips which now have a .specs file";
       "-seconds_per_iteration", Arg.Set_int seconds_per_iteration, Some "n", "set the number of seconds per iteration (default n=30)";
@@ -174,7 +177,9 @@ let arg_desc =
       "-tracing", Arg.Unit (fun () -> Config.report_runtime_exceptions := true), None,
       "Report error traces for runtime exceptions (Only for Java)";
       "-allow_specs_cleanup", Arg.Unit (fun () -> allow_specs_cleanup := true), None,
-      "Allow to remove existing specs before running analysis when it's not incremental"
+      "Allow to remove existing specs before running analysis when it's not incremental";
+      "-print_buckets", Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true), None,
+      "Add buckets to issue descriptions, useful when developing infer"
       ] in
     Arg2.create_options_desc false "Reserved Options: Experimental features, use with caution!" desc in
   base_arg @ reserved_arg

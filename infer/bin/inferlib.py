@@ -1,6 +1,9 @@
+# Copyright (c) 2013 - present Facebook, Inc.
+# All rights reserved.
 #
-# Copyright (c) 2013- Facebook.  All rights reserved.
-#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
 
 from __future__ import absolute_import
 from __future__ import division
@@ -45,24 +48,27 @@ WARNING = 'WARNING'
 INFO = 'INFO'
 
 
+def get_infer_version():
+    try:
+        return subprocess.check_output([
+            utils.get_cmd_in_bin_dir(INFER_ANALYZE_BINARY), '-version'])
+    except:
+        print("Failed to run {0} binary, exiting".
+              format(INFER_ANALYZE_BINARY))
+        sys.exit(os.EX_UNAVAILABLE)
+
+
 # https://github.com/python/cpython/blob/aa8ea3a6be22c92e774df90c6a6ee697915ca8ec/Lib/argparse.py
 class VersionAction(argparse._VersionAction):
     def __call__(self, parser, namespace, values, option_string=None):
         # set self.version so that argparse version action knows it
-        self.version = self.get_infer_version()
+        self.version = get_infer_version()
         super(VersionAction, self).__call__(parser,
                                             namespace,
                                             values,
                                             option_string)
 
-    def get_infer_version(self):
-        try:
-            return subprocess.check_output([
-                utils.get_cmd_in_bin_dir(INFER_ANALYZE_BINARY), '-version'])
-        except:
-            print("Failed to run {0} binary, exiting".
-                  format(INFER_ANALYZE_BINARY))
-            exit(2)
+
 
 
 base_parser = argparse.ArgumentParser(add_help=False)
@@ -80,13 +86,14 @@ base_group.add_argument('-a', '--analyzer',
                         help='Select the analyzer within: {0}'.format(
                             ', '.join(MODES)),
                         default=INFER)
-base_group.add_argument('-m', '--analyzer_mode', metavar='<analyzer_mode>',
-                        help='''Select a special analyzer mode such as
-                        graphql1 or graphql2''')
 base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
                         alarms''')
+
+base_group.add_argument('--log_to_stderr', action='store_true',
+                        help='''When set, all logging will go to stderr instead
+                        of log file''')
 base_parser.add_argument('-v', '--version', help='Get version of the analyzer',
                          action=VersionAction)
 
@@ -147,7 +154,10 @@ def get_javac_args(args):
         return None
     else:
         # replace any -g:.* flag with -g to preserve debugging symbols
-        return map(lambda arg: '-g' if '-g:' in arg else arg, javac_args)
+        args = map(lambda arg: '-g' if '-g:' in arg else arg, javac_args)
+        # skip -Werror
+        args = filter(lambda arg: arg != '-Werror', args)
+        return args
 
 
 def remove_infer_out(infer_out):
@@ -156,9 +166,21 @@ def remove_infer_out(infer_out):
     shutil.rmtree(infer_out, True)
 
 
+def mkdir_if_not_exists(path):
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+
+def create_results_dir(results_dir):
+    mkdir_if_not_exists(results_dir)
+    mkdir_if_not_exists(os.path.join(results_dir, 'specs'))
+    mkdir_if_not_exists(os.path.join(results_dir, 'captured'))
+    mkdir_if_not_exists(os.path.join(results_dir, 'sources'))
+
+
 def clean_infer_out(infer_out):
 
-    directories = ['multicore', 'classnames', 'sources']
+    directories = ['multicore', 'classnames', 'sources', 'filelists']
     extensions = ['.cfg', '.cg']
 
     for root, dirs, files in os.walk(infer_out):
@@ -217,7 +239,12 @@ def should_report(analyzer, row):
     ]
     null_style_buckets = ['B1', 'B2']
 
-    other_bugs = ['RESOURCE_LEAK', 'MEMORY_LEAK', 'RETAIN_CYCLE']
+    other_bugs = [
+        'RESOURCE_LEAK',
+        'MEMORY_LEAK',
+        'RETAIN_CYCLE',
+        'ASSERTION_FAILURE'
+    ]
 
     if analyzer in [ERADICATE, CHECKERS, TRACING]:
         # report all issues for eradicate and checkers
@@ -289,7 +316,7 @@ def print_errors(csv_report, bugs_out):
                     kind = row[utils.CSV_INDEX_KIND]
                     line = row[utils.CSV_INDEX_LINE]
                     error_type = row[utils.CSV_INDEX_TYPE]
-                    msg = utils.remove_bucket(row[utils.CSV_INDEX_QUALIFIER])
+                    msg = row[utils.CSV_INDEX_QUALIFIER]
                     print_and_write(
                         file_out,
                         '{0}:{1}: {2}: {3}\n  {4}\n'.format(
@@ -402,6 +429,7 @@ class Infer:
             return javac_status
 
     def analyze(self):
+        logging.info('Starting analysis')
         infer_analyze = [
             utils.get_cmd_in_bin_dir(INFER_ANALYZE_BINARY),
             '-results_dir',
@@ -423,9 +451,6 @@ class Infer:
             if os.path.isfile(utils.MODELS_JAR):
                 infer_options += ['-models', utils.MODELS_JAR]
 
-        if self.args.analyzer_mode:
-            infer_options += ['-analyzer_mode', self.args.analyzer_mode]
-
         if self.args.infer_cache:
             infer_options += ['-infer_cache', self.args.infer_cache]
 
@@ -442,6 +467,7 @@ class Infer:
                 '-dotty',
                 '-print_types',
                 '-trace_error',
+                '-print_buckets',
                 # '-notest',
             ]
 
@@ -478,7 +504,6 @@ class Infer:
                 shutil.rmtree(multicore_dir)
             os.mkdir(multicore_dir)
             os.chdir(multicore_dir)
-            os.environ['INFER_DEVELOPER'] = 'Y'
             analyze_cmd = infer_analyze + ['-makefile', 'Makefile']
             analyze_cmd += infer_options
             makefile_status = run_command(
@@ -510,6 +535,9 @@ class Infer:
         captured_total = len(glob.glob(cfgs))
         captured_plural = '' if captured_total <= 1 else 's'
         print('\n%d file%s analyzed' % (captured_total, captured_plural))
+
+        logging.info('Analyzed file count: %d', captured_total)
+        logging.info('Analysis status: %d', exit_status)
 
         return exit_status
 
@@ -601,7 +629,7 @@ class Infer:
         self.stats['normal']['infer_version'] = utils.infer_version()
 
         with open(stats_path, 'w') as stats_file:
-            json.dump(self.stats, stats_file)
+            json.dump(self.stats, stats_file, indent=2)
 
     def close(self):
         if self.args.analyzer != COMPILE:
@@ -622,8 +650,6 @@ class Infer:
         if self.javac.args.version:
             if self.args.buck:
                 key = self.args.analyzer
-                if self.args.analyzer_mode:
-                    key += '_' + self.args.analyzer_mode
                 print(utils.infer_key(key), file=sys.stderr)
             else:
                 return self.javac.run()

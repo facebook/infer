@@ -1,5 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook. All rights reserved.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Module for registering checkers. *)
@@ -29,6 +34,7 @@ let active_procedure_checkers () =
       Checkers.callback_check_field_access, false;
       ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
       RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
+      PrintfArgs.callback_printf_args, checkers_enabled;
       ] in
     list_map (fun (x, y) -> (x, y, Some Sil.Java)) l in
   let c_cpp_checkers =

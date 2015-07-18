@@ -1,30 +1,30 @@
 digraph iCFG {
-17 [label="17:  DeclStmt \n   *&k:int =0 [line 7]\n " shape="box"]
+17 [label="17:  DeclStmt \n   *&k:int =0 [line 11]\n " shape="box"]
 	
 
 	 17 -> 5 ;
-16 [label="16:  BinaryOperatorStmt: Assign \n   n$5=*&k:int  [line 10]\n  n$6=*&i:int  [line 10]\n  *&k:int =(n$5 + n$6) [line 10]\n  REMOVE_TEMPS(n$5,n$6); [line 10]\n " shape="box"]
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$5=*&k:int  [line 14]\n  n$6=*&i:int  [line 14]\n  *&k:int =(n$5 + n$6) [line 14]\n  REMOVE_TEMPS(n$5,n$6); [line 14]\n " shape="box"]
 	
 
 	 16 -> 12 ;
-15 [label="15: Prune (false branch) \n   PRUNE(((n$4 < 10) == 0), false); [line 9]\n  REMOVE_TEMPS(n$4); [line 9]\n " shape="invhouse"]
+15 [label="15: Prune (false branch) \n   PRUNE(((n$4 < 10) == 0), false); [line 13]\n  REMOVE_TEMPS(n$4); [line 13]\n " shape="invhouse"]
 	
 
 	 15 -> 6 ;
-14 [label="14: Prune (true branch) \n   PRUNE(((n$4 < 10) != 0), true); [line 9]\n  REMOVE_TEMPS(n$4); [line 9]\n " shape="invhouse"]
+14 [label="14: Prune (true branch) \n   PRUNE(((n$4 < 10) != 0), true); [line 13]\n  REMOVE_TEMPS(n$4); [line 13]\n " shape="invhouse"]
 	
 
 	 14 -> 16 ;
-13 [label="13:  BinaryOperatorStmt: LT \n   n$4=*&j:int  [line 9]\n " shape="box"]
+13 [label="13:  BinaryOperatorStmt: LT \n   n$4=*&j:int  [line 13]\n " shape="box"]
 	
 
 	 13 -> 14 ;
 	 13 -> 15 ;
-12 [label="12:  UnaryOperator \n   n$3=*&j:int  [line 9]\n  *&j:int =(n$3 + 1) [line 9]\n  REMOVE_TEMPS(n$3); [line 9]\n  APPLY_ABSTRACTION; [line 9]\n " shape="box"]
+12 [label="12:  UnaryOperator \n   n$3=*&j:int  [line 13]\n  *&j:int =(n$3 + 1) [line 13]\n  REMOVE_TEMPS(n$3); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 12 -> 10 ;
-11 [label="11:  DeclStmt \n   *&j:int =0 [line 9]\n  APPLY_ABSTRACTION; [line 9]\n " shape="box"]
+11 [label="11:  DeclStmt \n   *&j:int =0 [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 11 -> 10 ;
@@ -32,24 +32,24 @@ digraph iCFG {
 	
 
 	 10 -> 13 ;
-9 [label="9: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 8]\n  REMOVE_TEMPS(n$2); [line 8]\n " shape="invhouse"]
+9 [label="9: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 12]\n  REMOVE_TEMPS(n$2); [line 12]\n " shape="invhouse"]
 	
 
 	 9 -> 3 ;
-8 [label="8: Prune (true branch) \n   PRUNE(((n$2 < 10) != 0), true); [line 8]\n  REMOVE_TEMPS(n$2); [line 8]\n " shape="invhouse"]
+8 [label="8: Prune (true branch) \n   PRUNE(((n$2 < 10) != 0), true); [line 12]\n  REMOVE_TEMPS(n$2); [line 12]\n " shape="invhouse"]
 	
 
 	 8 -> 11 ;
-7 [label="7:  BinaryOperatorStmt: LT \n   n$2=*&i:int  [line 8]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: LT \n   n$2=*&i:int  [line 12]\n " shape="box"]
 	
 
 	 7 -> 8 ;
 	 7 -> 9 ;
-6 [label="6:  UnaryOperator \n   NULLIFY(&j,false); [line 8]\n  n$1=*&i:int  [line 8]\n  *&i:int =(n$1 + 1) [line 8]\n  REMOVE_TEMPS(n$1); [line 8]\n  APPLY_ABSTRACTION; [line 8]\n " shape="box"]
+6 [label="6:  UnaryOperator \n   NULLIFY(&j,false); [line 12]\n  n$1=*&i:int  [line 12]\n  *&i:int =(n$1 + 1) [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 6 -> 4 ;
-5 [label="5:  DeclStmt \n   *&i:int =0 [line 8]\n  APPLY_ABSTRACTION; [line 8]\n " shape="box"]
+5 [label="5:  DeclStmt \n   *&i:int =0 [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 5 -> 4 ;
@@ -57,14 +57,14 @@ digraph iCFG {
 	
 
 	 4 -> 7 ;
-3 [label="3:  Return Stmt \n   NULLIFY(&i,false); [line 13]\n  n$0=*&k:int  [line 13]\n  *&return:int =n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&k,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+3 [label="3:  Return Stmt \n   NULLIFY(&i,false); [line 17]\n  n$0=*&k:int  [line 17]\n  *&return:int =n$0 [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&k,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  k:int  i:int  j:int  \n   DECLARE_LOCALS(&return,&k,&i,&j); [line 6]\n  NULLIFY(&i,false); [line 6]\n  NULLIFY(&j,false); [line 6]\n  NULLIFY(&k,false); [line 6]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  k:int  i:int  j:int  \n   DECLARE_LOCALS(&return,&k,&i,&j); [line 10]\n  NULLIFY(&i,false); [line 10]\n  NULLIFY(&j,false); [line 10]\n  NULLIFY(&k,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 17 ;

@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 open Javalib_pack
@@ -156,7 +160,7 @@ let create_icfg never_null_matcher linereader program icfg source_file cn node =
   begin
     Javalib.m_iter (JTrans.create_local_procdesc program linereader cfg tenv node) node;
     Javalib.m_iter (fun m ->
-            let method_kind = JTrans.get_method_kind m in
+            let method_kind = JTransType.get_method_kind m in
             match m with
             | Javalib.ConcreteMethod cm ->
                 add_cmethod never_null_matcher program icfg node cm method_kind

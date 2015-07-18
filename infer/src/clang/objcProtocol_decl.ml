@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 open Utils
@@ -13,7 +17,7 @@ let protocol_decl tenv name decl_list =
   (* Protocol_type_info contains the methods composing the protocol. *)
   (* Here we are giving a similar treatment as interfaces (see above)*)
   (* It may turn out that we need a more specific treatment for protocols*)
-  Printing.log_out ~fmt:"ADDING: ObjCProtocolDecl for '%s'\n" name;
+  Printing.log_out "ADDING: ObjCProtocolDecl for '%s'\n" name;
   let mang_name = Mangled.from_string name in
   let curr_class = CContext.ContextProtocol name in
   let protocol_name = Sil.TN_csu(Sil.Protocol, mang_name) in

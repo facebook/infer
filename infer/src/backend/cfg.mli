@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (**  Control Flow Graph for Interprocedural Analysis *)
@@ -144,6 +148,9 @@ module Node : sig
 
   (** kind of Stmt_node for an exceptions sink. *)
   val exn_sink_kind : nodekind
+
+  (** kind of Stmt_node for a throw instruction. *)
+  val throw_kind : nodekind
 
   (** Append the instructions and temporaries to the list of instructions to execute *)
   val append_instrs_temps : t -> Sil.instr list -> Ident.t list -> unit

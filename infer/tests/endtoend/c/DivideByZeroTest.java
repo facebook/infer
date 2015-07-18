@@ -1,6 +1,10 @@
 /*
- * Copyright (c) 2013- Facebook.
- * All rights reserved.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package endtoend.c;
@@ -33,7 +37,7 @@ public class DivideByZeroTest {
   @Test
   public void whenInferRunsOnDivideByZeroThenDivideByZeroIsFound()
       throws InterruptedException, IOException, InferException {
-    String[] procedures = {"divide_by_zero"};
+    String[] procedures = {"arith_divide_by_zero"};
     assertThat(
         "Results should contain divide by zero error",
         inferResults,

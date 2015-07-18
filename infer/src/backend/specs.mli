@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Specifications and spec table *)
@@ -163,6 +167,12 @@ val get_proc_name : summary -> Procname.t
 
 (** Get the attributes of the procedure. *)
 val get_attributes : summary -> Sil.proc_attributes
+
+(** Get the return type of the procedure *)
+val get_ret_type : summary -> Sil.typ
+
+(** Get the formal paramters of the procedure *)
+val get_formals : summary -> (string * Sil.typ) list
 
 (** Get the flag with the given key for the procedure, if any *)
 val get_flag : Procname.t -> string -> string option

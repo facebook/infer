@@ -1,22 +1,21 @@
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package java.util.jar;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 
 public class JarFile extends ZipFile {
 
-    public static String MANIFEST_NAME;
-    static String META_DIR;
-    private Manifest manifest;
-    private ZipEntry manifestEntry;
-
-    JarVerifier verifier;
-
-    private boolean closed;
 
     public JarFile(String name) throws IOException {
         super(name);
@@ -40,11 +39,6 @@ public class JarFile extends ZipFile {
 
     public Manifest getManifest() throws IOException {
         throw new IOException();
-    }
-
-    public synchronized InputStream getInputStream(ZipEntry ze)
-            throws IOException {
-        return super.getInputStream(ze);
     }
 
     public void close() throws IOException {

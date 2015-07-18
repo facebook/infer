@@ -1,57 +1,27 @@
-/* Jackson JSON-processor.
- *
- * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
- */
+/*
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
 package com.fasterxml.jackson.core;
 
-import com.fasterxml.jackson.core.io.CharacterEscapes;
-import com.fasterxml.jackson.core.io.InputDecorator;
-import com.fasterxml.jackson.core.io.OutputDecorator;
+import com.android.internal.util.FileRotator.Reader;
 import com.fasterxml.jackson.core.json.PackageVersion;
 import com.fasterxml.jackson.core.json.UTF8StreamJsonParser;
-import com.fasterxml.jackson.core.sym.BytesToNameCanonicalizer;
-import com.fasterxml.jackson.core.sym.CharsToNameCanonicalizer;
-import com.fasterxml.jackson.core.util.BufferRecycler;
 
-import java.io.*;
-import java.lang.ref.SoftReference;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 public class JsonFactory
         implements Versioned, java.io.Serializable {
-    private static long serialVersionUID;
 
-    public static String FORMAT_NAME_JSON;
-
-    protected static int DEFAULT_FACTORY_FEATURE_FLAGS;
-
-    protected static int DEFAULT_PARSER_FEATURE_FLAGS;
-
-    protected static int DEFAULT_GENERATOR_FEATURE_FLAGS;
-
-    private static SerializableString DEFAULT_ROOT_VALUE_SEPARATOR;
-
-    protected static ThreadLocal<SoftReference<BufferRecycler>> _recyclerRef;
-
-    protected transient CharsToNameCanonicalizer _rootCharSymbols;
-
-    protected transient BytesToNameCanonicalizer _rootByteSymbols;
-
-    protected ObjectCodec _objectCodec;
-
-    protected int _factoryFeatures;
-
-    protected int _parserFeatures;
-
-    protected int _generatorFeatures;
-
-    protected CharacterEscapes _characterEscapes;
-
-    protected InputDecorator _inputDecorator;
-
-    protected OutputDecorator _outputDecorator;
-
-    protected SerializableString _rootValueSeparator;
 
     @Override
     public Version version() {

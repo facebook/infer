@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Methods for creating a procdesc from a method or function declaration *)
@@ -49,12 +53,12 @@ let resolve_method tenv class_name method_name =
 let get_superclass_curr_class context =
   let retrive_super cname super_opt =
     let iname = Sil.TN_csu (Sil.Class, Mangled.from_string cname) in
-    Printing.log_out ~fmt:"Checking for superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
+    Printing.log_out "Checking for superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
     match Sil.tenv_lookup (CContext.get_tenv context) iname with
     | Some Sil.Tstruct(_, _, _, _, (_, super_name):: _, _, _) ->
         Mangled.to_string super_name
     | _ ->
-        Printing.log_err ~fmt:"NOT FOUND superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
+        Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
         (match super_opt with
           | Some super -> super
           | _ -> assert false) in
@@ -87,7 +91,7 @@ let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
     match pl with
     | [] -> []
-    | (name, raw_type):: pl' ->
+    | (name, raw_type, _):: pl' ->
         let qt =
           if (name = CFrontend_config.self && CMethod_signature.ms_is_instance ms) then
             (Ast_expressions.create_pointer_type raw_type)
@@ -105,7 +109,7 @@ let captured_vars_from_block_info context cvl =
   let find lv n =
     try
       list_find (fun (n', _, _) -> Mangled.to_string n' = n) lv
-    with Not_found -> Printing.log_err ~fmt:"Trying to find variable %s@." n; assert false in
+    with Not_found -> Printing.log_err "Trying to find variable %s@." n; assert false in
   let rec f cvl' =
     match cvl' with
     | [] -> []
@@ -113,11 +117,12 @@ let captured_vars_from_block_info context cvl =
         (match cv.Clang_ast_t.bcv_variable with
           | Some dr ->
               (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_qual_type with
-                | Some n, _ ->
+                | Some name_info, _ ->
+                    let n = name_info.Clang_ast_t.ni_name in
                     if n = CFrontend_config.self && not context.is_instance then []
                     else
                       (let procdesc_formals = Cfg.Procdesc.get_formals context.procdesc in
-                        (Printing.log_err ~fmt:"formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
+                        (Printing.log_err "formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
                         let formals = list_map formal2captured procdesc_formals in
                         [find (context.local_vars @ formals) n])
                 | _ -> assert false)
@@ -129,18 +134,31 @@ let get_return_type tenv ms =
   CTypes_decl.qual_type_to_sil_type tenv
     (Ast_expressions.create_qual_type (CTypes.get_function_return_type qt))
 
+let sil_func_attributes_of_attributes attrs =
+  let rec do_translation acc al = match al with
+    | [] -> list_rev acc
+    | Clang_ast_t.SentinelAttr attribute_info::tl ->
+      let (sentinel, null_pos) = match attribute_info.Clang_ast_t.ai_parameters with
+        | a::b::[] -> (int_of_string a, int_of_string b)
+        | _ -> assert false
+      in
+      do_translation (Sil.FA_sentinel(sentinel, null_pos)::acc) tl
+    | _::tl -> do_translation acc tl in
+  do_translation [] attrs
+
 (** Creates a procedure description. *)
 let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let defined = not ((list_length fbody) == 0) in
   let procname = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string procname in
+  let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_str = list_map (fun (s, t, _) -> (Mangled.to_string s, t)) captured in
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_str @formals in
     let source_range = CMethod_signature.ms_get_loc ms in
-    Printing.log_out ~fmt:
+    Printing.log_out
       "\n\n>>------------------------- Start creating a new procdesc for function: '%s' ---------<<\n" pname;
     let loc_start = CLocation.get_sil_location_from_range source_range true in
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
@@ -159,6 +177,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           Sil.is_objc_instance_method = is_objc_inst_method;
           Sil.is_synthetic_method = false;
           Sil.language = Sil.C_CPP;
+          Sil.func_attributes = attributes;
           Sil.method_annotation = Sil.method_annotation_empty;
         } in
       create {
@@ -183,7 +202,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
         Cfg.Procdesc.set_exit_node procdesc exit_node) in
   match Cfg.Procdesc.find_from_name cfg procname with
   | Some prevoius_procdesc ->
-      Printing.log_err ~fmt:"\n\n!!!WARNING: procdesc for %s already defined \n" pname;
+      Printing.log_err "\n\n!!!WARNING: procdesc for %s already defined \n" pname;
       if defined && not (Cfg.Procdesc.is_defined prevoius_procdesc) then
         (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
           create_new_procdesc ())
@@ -211,6 +230,7 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
             Sil.is_objc_instance_method = is_objc_inst_method;
             Sil.is_synthetic_method = false;
             Sil.language = Sil.C_CPP;
+            Sil.func_attributes = [];
             Sil.method_annotation = Sil.method_annotation_empty;
           } in
         create {

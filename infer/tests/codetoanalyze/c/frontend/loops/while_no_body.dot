@@ -1,9 +1,9 @@
 digraph iCFG {
-6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 7]\n " shape="invhouse"]
+6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 11]\n " shape="invhouse"]
 	
 
 	 6 -> 3 ;
-5 [label="5: Prune (true branch) \n   PRUNE((1 != 0), true); [line 7]\n  APPLY_ABSTRACTION; [line 7]\n " shape="invhouse"]
+5 [label="5: Prune (true branch) \n   PRUNE((1 != 0), true); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="invhouse"]
 	
 
 	 5 -> 4 ;
@@ -12,14 +12,14 @@ digraph iCFG {
 
 	 4 -> 5 ;
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 8]\n  APPLY_ABSTRACTION; [line 8]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 6]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

@@ -1,8 +1,12 @@
+# Copyright (c) 2015 - present Facebook, Inc.
+# All rights reserved.
 #
-# Copyright (c) 2013- Facebook.  All rights reserved.
-#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
 
 import os
+import logging
 import re
 import util
 
@@ -24,6 +28,7 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 class MavenCapture:
     def __init__(self, args, cmd):
         self.args = args
+        logging.info(util.run_cmd_ignore_fail(['mvn', '-version']))
         # TODO: make the extraction of targets smarter
         self.build_cmd = ['mvn', '-X'] + cmd[1:]
 

@@ -1,6 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook. All rights reserved.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Interprocedural Analysis *)
@@ -246,11 +251,11 @@ let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list 
 (* =============== START of symbolic execution =============== *)
 
 (* propagate a set of results to the given node *)
-let propagate proc_desc is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
+let propagate pname is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
   let edgeset_todo =
     let f prop path edgeset_curr = (** prop must be a renamed prop by the invariant preserved by PropSet *)
       let exn_opt =
-        if is_exception then Some (Tabulation.prop_get_exn_name proc_desc prop)
+        if is_exception then Some (Tabulation.prop_get_exn_name pname prop)
         else None in
       Paths.PathSet.add_renamed_prop prop (Paths.Path.extend curr_node exn_opt (State.get_session ()) path) edgeset_curr in
     Paths.PathSet.fold f pset Paths.PathSet.empty in
@@ -263,7 +268,7 @@ let propagate_nodes_divergence
     (path: Paths.Path.t) (kind_curr_node : Cfg.Node.nodekind) (_succ_nodes: Cfg.node list)
     (exn_nodes: Cfg.node list) =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pdesc) pset in
+  let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   let succ_nodes = match State.get_goto_node () with (* handle Sil.Goto_node target, if any *)
     | Some node_id ->
         list_filter (fun n -> Cfg.Node.get_id n = node_id) _succ_nodes
@@ -281,17 +286,17 @@ let propagate_nodes_divergence
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
-      propagate pdesc false prop_incons exit_node
+      propagate pname false prop_incons exit_node
     end;
-  list_iter (propagate pdesc false pset_ok) succ_nodes;
-  list_iter (propagate pdesc true pset_exn) exn_nodes
+  list_iter (propagate pname false pset_ok) succ_nodes;
+  list_iter (propagate pname true pset_exn) exn_nodes
 
 (* ===================== END of symbolic execution ===================== *)
 
 (* =============== START of forward_tabulate =============== *)
 
 (** Symbolic execution for a Join node *)
-let do_symexec_join proc_desc tenv curr_node (edgeset_todo : Paths.PathSet.t) =
+let do_symexec_join pname tenv curr_node (edgeset_todo : Paths.PathSet.t) =
   let curr_pdesc = Cfg.Node.get_proc_desc curr_node in
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
   let curr_id = Cfg.Node.get_id curr_node in
@@ -303,7 +308,7 @@ let do_symexec_join proc_desc tenv curr_node (edgeset_todo : Paths.PathSet.t) =
   list_iter (fun node ->
           Paths.PathSet.iter (fun prop path ->
                   State.set_path path None;
-                  propagate proc_desc false (Paths.PathSet.from_renamed_list [(prop, path)]) node)
+                  propagate pname false (Paths.PathSet.from_renamed_list [(prop, path)]) node)
             new_dset') succ_nodes
 
 let prop_max_size = ref (0, Prop.prop_emp)
@@ -467,11 +472,12 @@ let check_assignement_guard node =
 (** Perform symbolic execution for a node starting from an initial prop *)
 let do_symbolic_execution handle_exn cfg tenv
     (node : Cfg.node) (prop: Prop.normal Prop.t) (path : Paths.Path.t) =
+  let pdesc = Cfg.Node.get_proc_desc node in
   State.mark_execution_start node;
+  State.set_const_map (ConstantPropagation.build_const_map pdesc); (* build the const map lazily *)
   check_assignement_guard node;
   let instrs = Cfg.Node.get_instrs node in
   Ident.update_name_generator (instrs_get_normal_vars instrs); (* fresh normal vars must be fresh w.r.t. instructions *)
-  let pdesc = Cfg.Node.get_proc_desc node in
   let pset =
     SymExec.lifted_sym_exec handle_exn cfg tenv pdesc
       (Paths.PathSet.from_renamed_list [(prop, path)]) node instrs in
@@ -549,7 +555,7 @@ let forward_tabulate cfg tenv =
       L.d_ln (); L.d_ln ();
 
       match kind_curr_node with
-      | Cfg.Node.Join_node -> do_symexec_join proc_desc tenv curr_node pathset_todo
+      | Cfg.Node.Join_node -> do_symexec_join proc_name tenv curr_node pathset_todo
       | Cfg.Node.Stmt_node _
       | Cfg.Node.Prune_node _
       | Cfg.Node.Exit_node _
@@ -696,13 +702,11 @@ let collect_postconditions tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
   res
 
 let create_seed_vars sigma =
-  let sigma_seed = ref [] in
-  let hpred_add_seed = function
-    | Sil.Hpointsto (Sil.Lvar pv, se, typ) ->
-        sigma_seed := Sil.Hpointsto(Sil.Lvar (Sil.pvar_to_seed pv), se, typ) :: !sigma_seed
-    | _ -> () in
-  list_iter hpred_add_seed sigma;
-  !sigma_seed
+  let hpred_add_seed sigma = function
+    | Sil.Hpointsto (Sil.Lvar pv, se, typ) when not (Sil.pvar_is_abducted pv) ->
+        Sil.Hpointsto(Sil.Lvar (Sil.pvar_to_seed pv), se, typ) :: sigma
+    | _ -> sigma in
+  list_fold_left hpred_add_seed [] sigma
 
 (** Initialize proposition for execution given formal and global
 parameters. The footprint is initialized according to the
@@ -942,10 +946,10 @@ let reset_global_counters cfg proc_name proc_desc =
   set_current_language cfg proc_desc
 
 (* Collect all pairs of the kind (precondition, exception) from a summary *)
-let exception_preconditions tenv pdesc summary =
+let exception_preconditions tenv pname summary =
   let collect_exceptions pre exns (prop, path) =
-    if Tabulation.prop_is_exn pdesc prop then
-      let exn_name = Tabulation.prop_get_exn_name pdesc prop in
+    if Tabulation.prop_is_exn pname prop then
+      let exn_name = Tabulation.prop_get_exn_name pname prop in
       if AndroidFramework.is_runtime_exception tenv exn_name then
         (pre, exn_name):: exns
       else exns
@@ -986,19 +990,19 @@ let remove_this_not_null prop =
 (** Detects if there are specs of the form {precondition} proc {runtime exception} and report
 an error in that case, generating the trace that lead to the runtime exception if the method is
 called in the context { precondition } *)
-let report_runtime_exceptions tenv cfg proc_desc summary =
-  let proc_name = Specs.get_proc_name summary in
+let report_runtime_exceptions tenv cfg pdesc summary =
+  let pname = Specs.get_proc_name summary in
   let is_public_method =
     (Specs.get_attributes summary).Sil.access = Sil.Public in
   let is_main =
     is_public_method
     (* TODO (#4559939): add check for static method *)
-    && Procname.is_java proc_name
-    && (Procname.java_get_method proc_name) = "main" in
+    && Procname.is_java pname
+    && (Procname.java_get_method pname) = "main" in
   let is_annotated =
     let annotated_signature =
       Annotations.get_annotated_signature
-        Specs.proc_get_method_annotation proc_desc proc_name in
+        Specs.proc_get_method_annotation pdesc pname in
     let ret_annotation, _ = annotated_signature.Annotations.ret in
     Annotations.ia_is_verify ret_annotation in
   let is_unavoidable pre =
@@ -1013,10 +1017,10 @@ let report_runtime_exceptions tenv cfg proc_desc summary =
     if should_report pre then
       let pre_str =
         Utils.pp_to_string (Prop.pp_prop pe_text) (Specs.Jprop.to_prop pre) in
-      let exn_desc = Localise.java_unchecked_exn_desc proc_name runtime_exception pre_str in
+      let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
-      Reporting.log_error proc_name ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
-  list_iter report (exception_preconditions tenv proc_desc summary)
+      Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
+  list_iter report (exception_preconditions tenv pname summary)
 
 
 (** update a summary after analysing a procedure *)
@@ -1057,7 +1061,8 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let prev_summary = Specs.get_summary_unsafe proc_name in
   let updated_summary =
     update_summary prev_summary specs proc_name elapsed res in
-  if (Config.report_assertion_failure || !Config.report_runtime_exceptions) then
+  if (!Sil.curr_language <> Sil.Java && Config.report_assertion_failure)
+     || !Config.report_runtime_exceptions then
     report_runtime_exceptions tenv cfg proc_desc updated_summary;
   updated_summary
 

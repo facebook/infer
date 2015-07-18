@@ -7,6 +7,7 @@ all:
 	make -C null_dereference
 	make -C resource_leaks
 	make -C memory_leaks
+	make -C lists
 
 clean:
 	make -C arithmetic clean
@@ -16,4 +17,5 @@ clean:
 	make -C null_dereference clean
 	make -C resource_leaks clean
 	make -C memory_leaks
+	make -C lists
 

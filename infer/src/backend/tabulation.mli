@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Interprocedural footprint analysis *)
@@ -23,10 +27,10 @@ val raise_cast_exception :
 Utils.ml_location -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
 
 (** check if a prop is an exception *)
-val prop_is_exn : Cfg.Procdesc.t -> 'a Prop.t -> bool
+val prop_is_exn : Procname.t -> 'a Prop.t -> bool
 
 (** when prop is an exception, return the exception name *)
-val prop_get_exn_name : Cfg.Procdesc.t -> 'a Prop.t -> Mangled.t
+val prop_get_exn_name : Procname.t -> 'a Prop.t -> Mangled.t
 
 (** search in prop contains an error state *)
 val lookup_global_errors : 'a Prop.t -> Mangled.t option

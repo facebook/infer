@@ -1,7 +1,11 @@
 (*
-* Copyright (c) 2009 -2013 Monoidics ltd.
-* Copyright (c) 2013 - Facebook.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 
 (** Interprocedural footprint analysis *)
@@ -537,8 +541,8 @@ let exp_is_exn = function
   | _ -> false
 
 (** check if a prop is an exception *)
-let prop_is_exn pdesc prop =
-  let ret_pvar = Sil.Lvar (Cfg.Procdesc.get_ret_var pdesc) in
+let prop_is_exn pname prop =
+  let ret_pvar = Sil.Lvar (Sil.get_ret_pvar pname) in
   let is_exn = function
     | Sil.Hpointsto (e1, Sil.Eexp(e2, _), _) when Sil.exp_equal e1 ret_pvar ->
         exp_is_exn e2
@@ -546,8 +550,8 @@ let prop_is_exn pdesc prop =
   list_exists is_exn (Prop.get_sigma prop)
 
 (** when prop is an exception, return the exception name *)
-let prop_get_exn_name pdesc prop =
-  let ret_pvar = Sil.Lvar (Cfg.Procdesc.get_ret_var pdesc) in
+let prop_get_exn_name pname prop =
+  let ret_pvar = Sil.Lvar (Sil.get_ret_pvar pname) in
   let exn_name = ref (Mangled.from_string "") in
   let find_exn_name e =
     let do_hpred = function
@@ -574,8 +578,8 @@ let lookup_global_errors prop =
   search_error (Prop.get_sigma prop)
 
 (** set a prop to an exception sexp *)
-let prop_set_exn pdesc prop se_exn =
-  let ret_pvar = Sil.Lvar (Cfg.Procdesc.get_ret_var pdesc) in
+let prop_set_exn pname prop se_exn =
+  let ret_pvar = Sil.Lvar (Sil.get_ret_pvar pname) in
   let map_hpred = function
     | Sil.Hpointsto (e, _, t) when Sil.exp_equal e ret_pvar ->
         Sil.Hpointsto(e, se_exn, t)
@@ -672,13 +676,8 @@ let combine
       Prop.normalize (Prop.replace_pi (Prop.get_pi post_p1 @ new_footprint_pi) post_p1') in
 
     let post_p3 = (** replace [result|callee] with an aux variable dedicated to this proc *)
-      let callee_pdesc =
-        match Cfg.Procdesc.find_from_name cfg callee_pname with
-        | Some pd -> pd
-        | None ->
-            L.d_strln ("proc_desc not_found for " ^ Procname.to_string callee_pname);
-            assert false in
-      let callee_ret_pvar = Sil.Lvar (Sil.pvar_to_callee callee_pname (Cfg.Procdesc.get_ret_var callee_pdesc)) in
+      let callee_ret_pvar =
+        Sil.Lvar (Sil.pvar_to_callee callee_pname (Sil.get_ret_pvar callee_pname)) in
       match Prop.prop_iter_create post_p2 with
       | None -> post_p2
       | Some iter ->
@@ -691,7 +690,7 @@ let combine
               match fst (Prop.prop_iter_current iter') with
               | Sil.Hpointsto (e, Sil.Eexp (e', inst), t) when exp_is_exn e' -> (* resuls is an exception: set in caller *)
                   let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
-                  prop_set_exn caller_pdesc p (Sil.Eexp (e', inst))
+                  prop_set_exn caller_pname p (Sil.Eexp (e', inst))
               | Sil.Hpointsto (e, Sil.Eexp (e', inst), t) when list_length ret_ids = 1 ->
                   let p = Prop.prop_iter_remove_curr_then_to_prop iter' in
                   Prop.conjoin_eq e' (Sil.Var (list_hd ret_ids)) p

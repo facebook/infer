@@ -1,31 +1,31 @@
 /*
- * Copyright (c) 2009-2013 Monoidics ltd.
- * Copyright (c) 2013- Facebook.
- * All rights reserved.
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package com.facebook.infer.models;
 
 public class InferBuiltins {
 
-    public static void __set_file_attribute(Object o) {
-    }
+    public native static void __set_file_attribute(Object o);
 
-    public static void __set_mem_attribute(Object o) {
-    }
+    public native static void __set_mem_attribute(Object o);
 
-    public static void __set_lock_attribute(Object o) {
-    }
+    public native static void __set_lock_attribute(Object o);
 
-    public static void _exit() {
-    }
+    public native static void _exit();
+
+    private native static void __infer_assume(boolean condition);
 
     public static void assume(boolean condition) {
-      while (!condition) {}
+      __infer_assume(condition);
     }
 
-    public static String __split_get_nth(String s, String sep, int n) {
-        return null;
-    }
+    public native static String __split_get_nth(String s, String sep, int n);
 
 }
