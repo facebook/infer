@@ -153,10 +153,7 @@ let os_type = match Sys.os_type with
 
 (** default path of the project results directory *)
 let default_results_dir =
-  let dir = match os_type with
-    | Win32 -> Sys.getenv "TEMP"
-    | Unix | Cygwin -> "/tmp" in
-  Filename.concat dir "infer_results_dir"
+  Filename.concat (Sys.getcwd ()) "infer-out"
 
 (** If true shows internal exceptions*)
 let developer_mode = ref false
