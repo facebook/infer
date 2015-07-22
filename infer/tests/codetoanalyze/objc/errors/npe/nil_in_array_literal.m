@@ -22,11 +22,32 @@
   NSArray *foofoo = @[foo];
 }
 
--(void) nilInArrayLiteral {
+-(void) nilInArrayLiteral0 {
+  NSString *str = nil;
+
+  // nil argument in array literal crashes
+  NSArray *foo = @[str];
+}
+
+-(void) nilInArrayLiteral1 {
+  NSString *str = nil;
+
+  // nil argument in array literal crashes
+  NSArray *foo = @[str, @"bbb"];
+}
+
+-(void) nilInArrayLiteral2 {
   NSString *str = nil;
 
   // nil argument in array literal crashes
   NSArray *foo = @[@"aaa", str, @"bbb"];
+}
+
+-(void) nilInArrayLiteral3 {
+  NSString *str = nil;
+
+  // nil argument in array literal crashes
+  NSArray *foo = @[@"aaa", @"bbb", str];
 }
 
 @end
@@ -34,6 +55,6 @@
 int main() {
   A *a = [A alloc];
   [a noProblem];
-  [a nilInArrayLiteral];
+  [a nilInArrayLiteral0];
   return 0;
 }

@@ -59,7 +59,12 @@ public class NPEArrayLiteralTest {
             PREMATURE_NIL_FILE,
             "no_problem"));
 
-    String[] expectedNPEProcedures = {"nilInArrayLiteral"};
+    String[] expectedNPEProcedures = {
+        "nilInArrayLiteral0",
+        "nilInArrayLiteral1",
+        "nilInArrayLiteral2",
+        "nilInArrayLiteral3"
+    };
     assertThat(
         "Only NPE should be found", inferResults,
         containsExactly(

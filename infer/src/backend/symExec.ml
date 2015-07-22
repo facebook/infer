@@ -942,9 +942,9 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun fn), args, loc, call_flags) when function_is_builtin fn ->
       let sym_exe_builtin = Builtin.get_sym_exe_builtin fn in
       sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args fn loc
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_param, loc, call_flags) ->
+  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags) ->
   (** Generic fun call with known name *)
-      let (prop_r, _n_actual_params) = normalize_params pdesc _prop actual_param in
+      let (prop_r, _n_actual_params) = normalize_params pdesc _prop actual_params in
       let fn, n_actual_params = handle_special_cases_call tenv cfg callee_pname _n_actual_params in
       let resolved_pname =
         if call_flags.Sil.cf_virtual then
@@ -954,7 +954,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         match Cfg.Procdesc.find_from_name cfg resolved_pname with
         | None -> None
         | Some pd -> Some (Cfg.Procdesc.get_ret_type pd) in
-      let skip_call () =
+      let skip_call prop path =
         let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
         Reporting.log_info pname exn;
         L.d_strln
@@ -967,17 +967,21 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
                 summary.Specs.stats.Specs.call_stats callee_pname loc
                 (Specs.CallStats.CR_skip) !Config.footprint);
         call_unknown_or_scan
-          false cfg pdesc tenv prop_r path
+          false cfg pdesc tenv prop path
           ret_ids ret_typ_opt n_actual_params resolved_pname loc in
-      begin
+      let sentinel_result =
+        if !Sil.curr_language = Sil.C_CPP then
+          sym_exe_check_variadic_sentinel_if_present cfg pdesc tenv prop_r path actual_params callee_pname loc
+        else [(prop_r, path)] in
+      let do_call (prop, path) =
         match Specs.get_summary resolved_pname with
-        | None -> skip_call ()
+        | None -> skip_call prop path
         | Some summary when call_should_be_skipped resolved_pname summary ->
-            skip_call ()
+            skip_call prop path
         | Some summary ->
             sym_exec_call
-              cfg pdesc tenv prop_r path ret_ids n_actual_params summary loc
-      end
+              cfg pdesc tenv prop path ret_ids n_actual_params summary loc in
+      list_flatten (list_map do_call sentinel_result)
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params pdesc _prop actual_params in
       if call_flags.Sil.cf_is_objc_block then
@@ -1222,21 +1226,21 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     let path_pos = State.get_path_pos () in
     [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
 
-and sym_exe_check_variadic_sentinel cfg pdesc tenv prop path actual_params fails_on_nil (sentinel, null_pos) pname loc =
-  let proc_attributes = Cfg.Procdesc.get_attributes pdesc in
-  let args = if proc_attributes.Sil.is_objc_instance_method then
-      (* we are calling an objc method so the first actual is the instance *)
-      list_tl actual_params
-    else
-      actual_params in
-  let nargs = list_length args in
+and sym_exe_check_variadic_sentinel ?(fails_on_nil=false) cfg pdesc tenv prop path n_formals actual_params (sentinel, null_pos) callee_pname loc =
+  (* from clang's lib/Sema/SemaExpr.cpp: *)
+  (* "nullPos" is the number of formal parameters at the end which *)
+  (* effectively count as part of the variadic arguments.  This is *)
+  (* useful if you would prefer to not have *any* formal parameters, *)
+  (* but the language forces you to have at least one. *)
+  let first_var_arg_pos = if null_pos > n_formals then 0 else n_formals - null_pos in
+  let nargs = list_length actual_params in
   (* sentinels start counting from the last argument to the function *)
-  let n = nargs - sentinel - 1 in
-  let build_argsi (acc, i) a =
-    if i = n then (acc, i +1)
-    else ((a, i):: acc, i +1) in
+  let sentinel_pos = nargs - sentinel - 1 in
+  let mk_non_terminal_argsi (acc, i) a =
+    if i < first_var_arg_pos || i >= sentinel_pos then (acc, i+1)
+    else ((a,i)::acc, i+1) in
   (* list_fold_left reverses the arguments *)
-  let non_terminal_actuals_i = fst (list_fold_left build_argsi ([], 0) args) in
+  let non_terminal_argsi = fst (list_fold_left mk_non_terminal_argsi ([], 0) actual_params) in
   let check_allocated result ((lexp, typ), i) =
     (* simulate a Letderef for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
@@ -1245,7 +1249,7 @@ and sym_exe_check_variadic_sentinel cfg pdesc tenv prop path actual_params fails
       sym_exec_generated false cfg tenv pdesc [letderef] result
     with e when exn_not_timeout e ->
         if not fails_on_nil then
-          let deref_str = Localise.deref_str_nil_argument_in_variadic_method pname nargs i in
+          let deref_str = Localise.deref_str_nil_argument_in_variadic_method callee_pname nargs i in
           let err_desc =
             Errdesc.explain_dereference ~use_buckets: true ~is_premature_nil: true
               deref_str prop loc in
@@ -1255,7 +1259,19 @@ and sym_exe_check_variadic_sentinel cfg pdesc tenv prop path actual_params fails
           raise e in
   (* list_fold_left reverses the arguments back so that we report an *)
   (* error on the first premature nil argument *)
-  list_fold_left check_allocated [(prop, path)] non_terminal_actuals_i
+  list_fold_left check_allocated [(prop, path)] non_terminal_argsi
+
+
+and sym_exe_check_variadic_sentinel_if_present cfg pdesc tenv prop path actual_params callee_pname loc =
+  match Cfg.Procdesc.find_from_name cfg callee_pname with
+  | None -> [(prop, path)]
+  | Some callee_pdesc ->
+      let proc_attributes = Cfg.Procdesc.get_attributes callee_pdesc in
+      match Sil.get_sentinel_func_attribute_value proc_attributes.Sil.func_attributes with
+      | None -> [(prop,path)]
+      | Some sentinel_arg ->
+          let formals = Cfg.Procdesc.get_formals callee_pdesc in
+          sym_exe_check_variadic_sentinel cfg pdesc tenv prop path (list_length formals) actual_params sentinel_arg callee_pname loc
 
 (** Perform symbolic execution for a function call *)
 and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
@@ -2295,11 +2311,13 @@ module ModelBuiltins = struct
     execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsarray_typ loc
 
   let execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
-    let res' = sym_exe_check_variadic_sentinel cfg pdesc tenv prop path args true (0,1) callee_pname loc in
+    let n_formals = 1 in
+    let res' = sym_exe_check_variadic_sentinel ~fails_on_nil:true cfg pdesc tenv prop path n_formals args (0,1) callee_pname loc in
     execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let execute_NSArray_arrayWithObjects cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
-    let res' = sym_exe_check_variadic_sentinel cfg pdesc tenv prop path args false (0,1) callee_pname loc in
+    let n_formals = 1 in
+    let res' = sym_exe_check_variadic_sentinel cfg pdesc tenv prop path n_formals args (0,1) callee_pname loc in
     execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let _ =
