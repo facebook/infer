@@ -5,9 +5,9 @@
 * This source code is licensed under the BSD style license found in the
 * LICENSE file in the root directory of this source tree. An additional grant
 * of patent rights can be found in the PATENTS file in the same directory.
- *)
+*)
 %{
-  open Ast
+  open LAst
 %}
 
 (* keywords *)
@@ -27,9 +27,12 @@
 %token EQUALS
 %token STAR
 %token X
+%token AT
+%token PERCENT
 
 (* TYPES *)
 %token VOID
+%token BIT (* i1 *)
 %token <int> INT
 %token HALF
 %token FLOAT
@@ -43,9 +46,7 @@
 
 %token <int> SIZE
 (* CONSTANTS *)
-%token TRUE
-%token FALSE
-%token <int> INTLIT
+%token <int> CONSTINT
 %token NULL
 
 (* INSTRUCTIONS *)
@@ -131,10 +132,10 @@
 %token EOF
 
 %start prog
-%type <Ast.prog> prog
-%type <Ast.func_def> func_def
-%type <Ast.typ option> ret_typ
-%type <Ast.typ> typ
+%type <LAst.prog> prog
+%type <LAst.func_def> func_def
+%type <LAst.typ option> ret_typ
+%type <LAst.typ> typ
 
 %%
 
@@ -142,7 +143,7 @@ prog:
   | defs=list(func_def) EOF { Prog defs }
 
 func_def:
-  | DEFINE ret_tp=ret_typ name=IDENT LPAREN params=separated_list(COMMA, pair(typ, IDENT)) RPAREN instrs=block {
+  | DEFINE ret_tp=ret_typ name=variable LPAREN params=separated_list(COMMA, pair(typ, IDENT)) RPAREN instrs=block {
     FuncDef (name, ret_tp, params, instrs) }
 
 ret_typ:
@@ -154,8 +155,8 @@ typ:
   (*| X86_MMX { () }*)
   | tp=vector_typ { tp }
   | LSQBRACK sz=SIZE X tp=element_typ RSQBRACK { Tarray (sz, tp) } (* array type *)
-  (*| LABEL { () }
-  | METADATA { () }*)
+  | LABEL { Tlabel }
+  | METADATA { Tmetadata }
   (* TODO structs *)
 
 vector_typ:
@@ -182,11 +183,13 @@ block:
 
 instr:
   | term=terminator { term }
-  | IDENT EQUALS binop { Ret None }
+  | variable EQUALS binop { Ret None } (* TODO *)
 
 terminator:
-  | RET tp=typ v=value { Ret (Some (tp, v)) }
+  | RET tp=typ op=operand { Ret (Some (tp, op)) }
   | RET VOID { Ret None }
+  | BR LABEL lbl=variable { UncondBranch lbl }
+  | BR BIT op=operand COMMA LABEL lbl1=variable COMMA LABEL lbl2=variable { CondBranch (op, lbl1, lbl2) }
   (*
   | switch
   | indirectbr
@@ -216,8 +219,8 @@ binop:
   | OR binop_args { () }
   | XOR binop_args { () }
   (* vector *)
-  | EXTRACTELEMENT vector_typ value COMMA typ IDENT { () }
-  | INSERTELEMENT vector_typ value COMMA typ element COMMA typ IDENT { () }
+  | EXTRACTELEMENT vector_typ operand COMMA typ operand { () }
+  | INSERTELEMENT vector_typ operand COMMA typ operand COMMA typ operand { () }
 
 arith_options:
   | option(NUW) option(NSW) { () }
@@ -231,14 +234,13 @@ binop_args:
 (* below is fuzzy *)
 
 operand:
-  (* variable *)
-  | v=value { v }
+  | var=variable { Var var }
+  | const=constant { Const const }
 
-element:
-  | v=value { v }
+variable:
+  | AT id=IDENT { Global id }
+  | PERCENT id=IDENT { Local id }
 
-value:
-  | TRUE { True }
-  | FALSE { False }
-  | i=INTLIT { Intlit i }
-  | NULL { Null }
+constant:
+  | i=CONSTINT { Cint i }
+  | NULL { Cnull }

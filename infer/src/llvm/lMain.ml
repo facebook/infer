@@ -5,7 +5,7 @@
 * This source code is licensed under the BSD style license found in the
 * LICENSE file in the root directory of this source tree. An additional grant
 * of patent rights can be found in the PATENTS file in the same directory.
- *)
+*)
 open Lexing
 open Printf
 
@@ -17,8 +17,8 @@ let () = try
   else
     let filename = Sys.argv.(1) in
     let lexbuf = Lexing.from_channel (open_in filename) in
-    let prog = Parser.prog Lexer.token lexbuf in
-    let pretty = Pretty.pretty_prog prog in
-    print_string pretty
+    let prog = LParser.prog LLexer.token lexbuf in
+    let pretty = LPretty.pretty_prog prog in
+    LTrans.gen_prog prog; ()
 with
   | UsageError msg -> print_string ("Usage error: " ^ msg ^ "\n")

@@ -5,10 +5,10 @@
 * This source code is licensed under the BSD style license found in the
 * LICENSE file in the root directory of this source tree. An additional grant
 * of patent rights can be found in the PATENTS file in the same directory.
- *)
+*)
 {
   open Lexing
-  open Parser
+  open LParser
 
   exception LexingError of string
 }
@@ -26,7 +26,7 @@ let lower = ['a'-'z']
 let upper = ['A'-'Z']
 let id_special_char = ['-' '$' '.' '_']
 let id_char = lower | upper | id_special_char
-let id = ['%' '@'] id_char (id_char | digit)*
+let id = id_char (id_char | digit)*
 
 rule token = parse
   | space | comment  { token lexbuf }
@@ -52,6 +52,7 @@ rule token = parse
 
   (* TYPES *)
   | "void"  { VOID }
+  | "i1" { BIT (* INT 1 *) }
   | 'i' (pos_int as width)  { INT (int_of_string width) }
   | "half"  { HALF }
   | "float"  { FLOAT }
@@ -65,9 +66,9 @@ rule token = parse
 
   | pos_int as size  { SIZE (int_of_string size) }
   (* CONSTANTS *)
-  | "true"  { TRUE }
-  | "false"  { FALSE }
-  | intlit as i  { INTLIT (int_of_string i) }
+  | "true"  { CONSTINT 1 }
+  | "false"  { CONSTINT 0 }
+  | intlit as i  { CONSTINT (int_of_string i) }
   (* floating point constants *)
   | "null"  { NULL }
 
@@ -150,6 +151,8 @@ rule token = parse
   | "landingpad"  { LANDINGPAD }
 
   (* identifiers - make this complete *)
+  | '@'  { AT }
+  | '%'  { PERCENT }
   | id as str  { IDENT str }
 
   | eof  { EOF }

@@ -108,7 +108,7 @@ FCP_CLANG_AST_CACHE = $(addprefix $(CLANG_OCAML_ROOT)/, clang_ast_cache.ml clang
 #### LLVM declarations ####
 
 LLVM_SOURCES = llvm
-INFERLLVM_MAIN = $(LLVM_SOURCES)/main
+INFERLLVM_MAIN = $(LLVM_SOURCES)/lMain
 INFERLLVM_BINARY = $(BINDIR)/InferLLVM
 
 #### End of declarations ####
