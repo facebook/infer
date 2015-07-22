@@ -1,18 +1,5 @@
 # Install Infer
 
-We provide pre-built Infer binaries for Linux and MacOS.  If you just
-wish to use Infer, and are not interested in making contributions to
-it, then these binaries are all you need.  Otherwise, if you wish to
-compile Infer, here are also instructions to do so, depending on your
-operating system.
-
-Installing Infer from binaries is described [in the Infer's getting
-started page](http://fbinfer.com/docs/getting-started.html).
-
-The rest of this document describes how to install Infer from source
-on different platforms.
-
-
 ## Download the Infer repository
 
 ```bash
