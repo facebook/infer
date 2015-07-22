@@ -10,8 +10,7 @@
 package endtoend.c;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
-import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,29 +35,22 @@ public class ResourceLeakTest {
   }
 
   @Test
-  public void whenInferRunsOnFileNotClosedThenLeakFound()
+  public void mathErrors()
       throws InterruptedException, IOException, InferException {
+    String[] functions = {
+        "fileNotClosed",
+        "socketNotClosed"
+    };
+
     assertThat(
-        "Results should not contain a resource leak",
+        "Results should contain " + RESOURCE_LEAK,
         inferResults,
-        contains(
+        containsExactly(
             RESOURCE_LEAK,
             SOURCE_FILE,
-            "fileNotClosed"
+            functions
         )
     );
-  }
-
-  @Test
-  public void whenInferRunsOnFileClosedThenLeakNotFound()
-      throws InterruptedException, IOException, InferException {
-    assertThat(
-        "Results should not contain a resource leak",
-        inferResults,
-        doesNotContain(
-            RESOURCE_LEAK,
-            SOURCE_FILE,
-            "fileClosed"));
   }
 
 }

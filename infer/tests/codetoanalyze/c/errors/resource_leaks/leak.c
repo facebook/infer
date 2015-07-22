@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/select.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 
@@ -39,4 +40,46 @@ void fileClosed()
         write(fd, buffer, strlen(buffer));
         close(fd);
     }
+}
+
+void socketNotClosed()
+{
+    int fd = socket(AF_LOCAL, SOCK_RAW, 0);
+    if (fd != -1) {
+        char buffer[256];
+        // We can easily batch that by separating with space
+        write(fd, buffer, strlen(buffer));
+    }
+}
+
+int socketClosed()
+{
+    int socketFD = socket(AF_LOCAL, SOCK_RAW, 0);
+    if (socketFD == -1) {
+      return -1;
+    }
+
+    int status;
+
+    status = fcntl(socketFD, F_SETFL, O_NONBLOCK);
+    if (status == -1) {
+      close(socketFD);
+      return -1;
+    }
+
+    int reuseaddr = 1;
+    status = setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr));
+    if (status == -1) {
+      close(socketFD);
+      return -1;
+    }
+
+    int nosigpipe = 1;
+    status = setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &nosigpipe, sizeof(nosigpipe));
+    if (status == -1) {
+      close(socketFD);
+      return -1;
+    }
+
+    return socketFD;
 }

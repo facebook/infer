@@ -628,7 +628,7 @@ int open(const char *path, int oflag, ...) {
   if(ret) {
     __set_file_attribute(ret);
     INFER_EXCLUDE_CONDITION(ret < (int *)1); // force result to be > 0
-    return (long) ret;
+    return ret;
   }
   return -1;
 }
@@ -1877,12 +1877,12 @@ int wctomb(char *s, wchar_t wc) {
 }
 
 // modeled like open
-int socket (int namespace, int style, int protocol) {
+int socket(int namespace, int style, int protocol) {
   int *ret = malloc(sizeof(int));
   if(ret) {
     __set_file_attribute(ret);
-    INFER_EXCLUDE_CONDITION(ret < (int *)1); // force result to be >= 0
-    return (long) (ret-1);
+    INFER_EXCLUDE_CONDITION(ret < (int *)1); // force result to be > 0
+    return ret;
   }
   return -1;
 }
