@@ -112,4 +112,7 @@ sig
 
   val replicate: int -> 'a -> 'a list
 
+  val mk_class_field_name : string -> string -> Ident.fieldname
+
+
 end

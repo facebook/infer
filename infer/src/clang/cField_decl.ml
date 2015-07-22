@@ -16,9 +16,6 @@ open Clang_ast_t
 
 module L = Logging
 
-let mk_class_field_name class_name field_name =
-  Ident.create_fieldname (Mangled.mangled field_name (class_name^"_"^field_name)) 0
-
 let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Sil.typename_to_string super_class);
   match Sil.tenv_lookup tenv super_class with

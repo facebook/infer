@@ -248,13 +248,13 @@ let rec find_field tenv nfield str searched_late_defined =
   match str with
   | Some Sil.Tstruct (sf, nsf, Sil.Struct, Some cname, _, _, _)
   | Some Sil.Tstruct (sf, nsf, Sil.Union, Some cname, _, _, _) ->
-      (let name_field = Ident.create_fieldname (Mangled.from_string nfield) 0 in
+      (let name_field = General_utils.mk_class_field_name (Mangled.to_string cname) nfield in
         try
           Some (list_find (fun (fn, _, _) -> Sil.fld_equal fn name_field) (sf@nsf))
         with Not_found ->
             print_error name_field (sf@nsf); None)
   | Some Sil.Tstruct (sf, nsf, Sil.Class, Some cname, super, _, _) ->
-      (let name_field = CField_decl.mk_class_field_name (Mangled.to_string cname) nfield in
+      (let name_field = General_utils.mk_class_field_name (Mangled.to_string cname) nfield in
         try
           Some (list_find (fun (fn, _, _) -> Sil.fld_equal fn name_field) (sf@nsf))
         with Not_found ->

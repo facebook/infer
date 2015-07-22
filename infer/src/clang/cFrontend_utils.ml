@@ -369,6 +369,9 @@ struct
 
   let replicate n el = list_map (fun i -> el) (list_range 0 (n -1))
 
+  let mk_class_field_name class_name field_name =
+    Ident.create_fieldname (Mangled.mangled field_name (class_name^"_"^field_name)) 0
+
 end
 
 

@@ -75,7 +75,7 @@ struct
     let procdesc = trans_state.context.procdesc in
     let procname = Cfg.Procdesc.get_proc_name procdesc in
     let mk_field_from_captured_var (vname, typ, b) =
-      let fname = CField_decl.mk_class_field_name block_name (Mangled.to_string vname) in
+      let fname = General_utils.mk_class_field_name block_name (Mangled.to_string vname) in
       let item_annot = Sil.item_annotation_empty in
       fname, typ, item_annot in
     let fields = list_map mk_field_from_captured_var captured_vars in

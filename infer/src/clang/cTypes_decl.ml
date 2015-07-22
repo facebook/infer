@@ -179,24 +179,24 @@ and do_typedef_declaration tenv namespace decl_info name opt_type typedef_decl_i
       (Sil.typename_to_string typename);
     Sil.tenv_add tenv typename typ
 
-and get_struct_fields tenv namespace decl_list =
+and get_struct_fields tenv record_name namespace decl_list =
   match decl_list with
   | [] -> []
   | FieldDecl(decl_info, name_info, qual_type, field_decl_info):: decl_list' ->
-      let name = name_info.Clang_ast_t.ni_name in
-      Printing.log_out "  ...Defining field '%s'.\n" name;
-      let id = Ident.create_fieldname (Mangled.from_string name) 0 in
+      let field_name = name_info.Clang_ast_t.ni_name in
+      Printing.log_out "  ...Defining field '%s'.\n" field_name;
+      let id = mk_class_field_name record_name field_name in
       let typ = qual_type_to_sil_type tenv qual_type in
       let annotation_items = [] in (* For the moment we don't use them*)
-      (id, typ, annotation_items):: get_struct_fields tenv namespace decl_list'
+      (id, typ, annotation_items):: get_struct_fields tenv record_name namespace decl_list'
   | CXXRecordDecl (decl_info, name, opt_type, decl_list, decl_context_info, record_decl_info)
   :: decl_list'
   (* C++/C Records treated in the same way*)
   | RecordDecl (decl_info, name, opt_type, decl_list, decl_context_info, record_decl_info)
   :: decl_list'->
       do_record_declaration tenv namespace decl_info name.Clang_ast_t.ni_name opt_type decl_list decl_context_info record_decl_info;
-      get_struct_fields tenv namespace decl_list'
-  | _ :: decl_list' -> get_struct_fields tenv namespace decl_list'
+      get_struct_fields tenv record_name namespace decl_list'
+  | _ :: decl_list' -> get_struct_fields tenv record_name namespace decl_list'
 
 and do_record_declaration tenv namespace decl_info name opt_type decl_list decl_context_info record_decl_info =
   Printing.log_out "ADDING: RecordDecl for '%s'" name;
@@ -207,12 +207,18 @@ and do_record_declaration tenv namespace decl_info name opt_type decl_list decl_
   let typ = expand_structured_type tenv typ in
   add_struct_to_tenv tenv typ
 
+(* We need to take the name out of the type as the struct can be anonymous*)
+and get_record_name opt_type = match opt_type with
+  | `Type n' -> CTypes.cut_struct_union n'
+  | `NoType -> assert false
+
 (* For a record declaration it returns/constructs the type *)
 and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_context_info record_decl_info =
   let ns_suffix = Ast_utils.namespace_to_string namespace in
   let n = ns_suffix^n in
+  let name_str = get_record_name opt_type in
   Printing.log_out "Record Declaration '%s' defined as struct\n" n;
-  let non_static_fields = get_struct_fields tenv namespace decl_list in
+  let non_static_fields = get_struct_fields tenv name_str namespace decl_list in
   let non_static_fields = if CTrans_models.is_objc_memory_model_controlled n then
       append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
     else non_static_fields in
@@ -224,9 +230,7 @@ and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_cont
   let csu = (match typ with
       | Sil.Tvar (Sil.TN_csu (csu, _)) -> csu
       | _ -> Sil.Struct) in
-  let name = (match opt_type with (* We need to take the name out of the type as the struct can be anonymous*)
-      | `Type n' -> Some (Mangled.from_string (CTypes.cut_struct_union n'))
-      | `NoType -> assert false) in
+  let name = Some (Mangled.from_string name_str) in
   let superclass_list = [] in (* No super class for structs *)
   let methods_list = [] in (* No methods list for structs *)
   let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
