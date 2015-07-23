@@ -478,7 +478,7 @@ let callback_check_field_access all_procs get_proc_desc idenv tenv proc_name pro
 let callback_print_c_method_calls all_procs get_proc_desc idenv tenv proc_name proc_desc =
   let do_instr node = function
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (e, t):: args, loc, cf)
-    when Procname.is_objc pn ->
+    when Procname.is_c_method pn ->
         let receiver = match Errdesc.exp_rv_dexp node e with
           | Some de -> Sil.dexp_to_string de
           | None -> "?" in

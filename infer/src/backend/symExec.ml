@@ -672,7 +672,7 @@ let resolve_method tenv class_name proc_name =
       let right_proc_name =
         if Procname.is_java proc_name then
           Procname.java_replace_class proc_name (Mangled.to_string class_name)
-        else Procname.objc_replace_class proc_name (Mangled.to_string class_name) in
+        else Procname.c_method_replace_class proc_name (Mangled.to_string class_name) in
       let type_name = Sil.TN_csu (Sil.Class, class_name) in
       match Sil.tenv_lookup tenv type_name with
       | Some (Sil.Tstruct (_, _, Sil.Class, cls, super_classes, methods, iann)) ->
@@ -2322,11 +2322,11 @@ module ModelBuiltins = struct
 
   let _ =
     Builtin.register_procname
-      (Procname.mangled_objc "NSArray" "arrayWithObjects:count:")
+      (Procname.mangled_c_method "NSArray" "arrayWithObjects:count:" None)
       execute_NSArray_arrayWithObjects_count
   let _ =
     Builtin.register_procname
-      (Procname.mangled_objc "NSArray" "arrayWithObjects:")
+      (Procname.mangled_c_method "NSArray" "arrayWithObjects:" None)
       execute_NSArray_arrayWithObjects
 end
 (* ============== END of ModelBuiltins ============== *)

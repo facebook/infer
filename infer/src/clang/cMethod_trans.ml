@@ -28,10 +28,10 @@ type method_call_type =
 
 let mk_procname_from_function name type_name =
   let type_name_crc = CRC.crc16 type_name in
-  Procname.mangled_cpp name type_name_crc
+  Procname.mangled_c_fun name type_name_crc
 
 let mk_procname_from_method class_name method_name =
-  Procname.mangled_objc class_name method_name
+  Procname.mangled_c_method class_name method_name None
 
 let rec resolve_method_class tenv class_name method_name =
   let type_name = Sil.TN_csu (Sil.Class, class_name) in

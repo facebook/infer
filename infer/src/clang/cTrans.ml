@@ -38,7 +38,7 @@ module CTrans_funct(M: CModule_type.CMethod_declaration) : CTrans =
 struct
 
   let add_autorelease_call context exp typ sil_loc =
-    let method_name = Procname.clang_get_method (Cfg.Procdesc.get_proc_name context.procdesc) in
+    let method_name = Procname.c_get_method (Cfg.Procdesc.get_proc_name context.procdesc) in
     if !Config.arc_mode &&
     not (CTrans_utils.is_owning_name method_name) &&
     ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then

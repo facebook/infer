@@ -269,7 +269,7 @@ let deref_str_nullable proc_name_opt nullable_obj_str =
 let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
   let tags = Tags.create () in
   let function_method, nil_null =
-    if Procname.is_objc pn then ("method", "nil") else ("function", "null") in
+    if Procname.is_c_method pn then ("method", "nil") else ("function", "null") in
   let problem_str =
     Printf.sprintf
       "could be %s which results in a call to %s with %d arguments instead of %d \

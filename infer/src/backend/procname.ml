@@ -30,16 +30,18 @@ type java_signature = {
   kind: method_kind
 }
 
-type objc_signature = {
-  objc_class : string;
-  objc_method: string;
+(* C++/ObjC method signature *)
+type c_method_signature = {
+  class_name: string;
+  method_name: string;
+  mangled: string option;
 }
 
 type t =
   | JAVA of java_signature
-  | C_CPP of string * (string option) (* it is a pair (plain, mangled optional) *)
+  | C_FUNCTION of string * (string option) (* it is a pair (plain, mangled optional) *)
   | STATIC of string * (string option) (* it is a pair (plain name, filename optional) *)
-  | OBJC of objc_signature
+  | C_METHOD of c_method_signature
   | OBJC_BLOCK of string
 
 (* Defines the level of verbosity of some to_string functions *)
@@ -115,20 +117,18 @@ let java_sig_compare js1 js2 =
   |> next java_return_type_compare js1.returntype js2.returntype
   |> next method_kind_compare js1.kind js2.kind
 
-(** Compare objc signatures. *)
-let objc_sig_compare osig1 osig2 =
-  let n = string_compare osig1.objc_class osig2.objc_class in
-  if n <> 0 then n else string_compare osig1.objc_method osig2.objc_method
+(** Compare c_method signatures. *)
+let c_meth_sig_compare osig1 osig2 =
+  let n = string_compare osig1.class_name osig2.class_name in
+  if n <> 0 then n else string_compare osig1.method_name osig2.method_name
 
 (** Given a package.classname string, it looks for the latest dot and split the string in two (package, classname) *)
 let split_classname package_classname =
   string_split_character package_classname '.'
 
-let from_string (s: string) = C_CPP (s, None)
+let from_string (s: string) = C_FUNCTION (s, None)
 
-let empty = C_CPP ("", None)
-
-let mangled_cpp (plain: string) (mangled: string) = C_CPP (plain, Some mangled)
+let mangled_c_fun (plain: string) (mangled: string) = C_FUNCTION (plain, Some mangled)
 
 (** Create a static procedure name from a plain name and source file *)
 let mangled_static (plain: string) (source_file: DB.source_file) =
@@ -147,10 +147,11 @@ let mangled_java class_name ret_type method_name params _kind =
   }
 
 (** Create an objc procedure name from a class_name and method_name. *)
-let mangled_objc objc_class objc_method =
-  OBJC {
-    objc_class = objc_class;
-    objc_method = objc_method;
+let mangled_c_method class_name method_name mangled =
+  C_METHOD {
+    class_name = class_name;
+    method_name = method_name;
+    mangled = mangled;
   }
 
 (** Create an objc procedure name from a class_name and method_name. *)
@@ -161,8 +162,8 @@ let is_java = function
   | JAVA _ -> true
   | _ -> false
 
-let is_objc = function
-  | OBJC _ -> true
+let is_c_method = function
+  | C_METHOD _ -> true
   | _ -> false
 
 (** Replace package and classname of a java procname. *)
@@ -172,9 +173,9 @@ let java_replace_class p package_classname =
   | _ -> assert false
 
 (** Replace the class name of an objc procedure name. *)
-let objc_replace_class t objc_class =
+let c_method_replace_class t class_name =
   match t with
-  | OBJC osig -> OBJC { osig with objc_class = objc_class }
+  | C_METHOD osig -> C_METHOD { osig with class_name = class_name }
   | _ -> assert false
 
 (** Return the package.classname of a java procname. *)
@@ -205,10 +206,10 @@ let java_replace_return_type p ret_type = match p with
   | JAVA p -> JAVA { p with returntype = Some ret_type }
   | _ -> assert false
 
-(** Return the method of a objc procname. *)
-let clang_get_method = function
-  | OBJC name -> name.objc_method
-  | C_CPP (name, _) -> name
+(** Return the method of a objc/c++ procname. *)
+let c_get_method = function
+  | C_METHOD name -> name.method_name
+  | C_FUNCTION (name, _) -> name
   | OBJC_BLOCK name -> name
   | _ -> assert false
 
@@ -317,7 +318,7 @@ let java_is_vararg = function
 (** [is_constructor pname] returns true if [pname] is a constructor *)
 let is_constructor = function
   | JAVA js -> js.methodname = "<init>"
-  | OBJC name -> Utils.string_is_prefix "init" name.objc_method
+  | C_METHOD name -> Utils.string_is_prefix "init" name.method_name
   | _ -> false
 
 
@@ -340,7 +341,7 @@ let is_infer_undefined pn = match pn with
   (* TODO: add cases for obj-c, c, c++ *)
       false
 
-(** to_string for C_CPP and STATIC types *)
+(** to_string for C_FUNCTION and STATIC types *)
 let to_readable_string (c1, c2) verbose =
   let plain = c1 in
   if verbose then
@@ -350,38 +351,41 @@ let to_readable_string (c1, c2) verbose =
   else
     plain
 
-let objc_to_string osig detail_level =
+let c_method_to_string osig detail_level =
   match detail_level with
   | SIMPLE ->
-      osig.objc_method
+      osig.method_name
   | VERBOSE | NON_VERBOSE ->
-      osig.objc_class ^ "_" ^ osig.objc_method
+      let m_str = match osig.mangled with
+        | None -> ""
+        | Some s -> "{" ^ s ^ "}" in
+      osig.class_name ^ "_" ^ osig.method_name ^ m_str
 
 (** Very verbose representation of an existing Procname.t *)
 let to_unique_id pn =
   match pn with
   | JAVA j -> java_to_string j VERBOSE
-  | C_CPP (c1, c2) -> to_readable_string (c1, c2) true
+  | C_FUNCTION (c1, c2) -> to_readable_string (c1, c2) true
   | STATIC (s1, s2) -> to_readable_string (s1, s2) true
-  | OBJC osig -> objc_to_string osig VERBOSE
+  | C_METHOD osig -> c_method_to_string osig VERBOSE
   | OBJC_BLOCK name -> name
 
 (** Convert a proc name to a string for the user to see *)
 let to_string p =
   match p with
   | JAVA j -> (java_to_string j NON_VERBOSE)
-  | C_CPP (c1, c2) | STATIC (c1, c2) ->
+  | C_FUNCTION (c1, c2) | STATIC (c1, c2) ->
       to_readable_string (c1, c2) false
-  | OBJC osig -> objc_to_string osig NON_VERBOSE
+  | C_METHOD osig -> c_method_to_string osig NON_VERBOSE
   | OBJC_BLOCK name -> name
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
 let to_simplified_string ?withclass: (wc = false) p =
   match p with
   | JAVA j -> (java_to_string ~withclass: wc j SIMPLE)
-  | C_CPP (c1, c2) | STATIC (c1, c2) ->
+  | C_FUNCTION (c1, c2) | STATIC (c1, c2) ->
       to_readable_string (c1, c2) false ^ "()"
-  | OBJC osig -> objc_to_string osig SIMPLE
+  | C_METHOD osig -> c_method_to_string osig SIMPLE
   | OBJC_BLOCK name -> "block"
 
 (** Convert a proc name to a filename *)
@@ -400,16 +404,16 @@ let pp f pn =
 
 (** Compare function for Procname.t types *)
 (* These rules create an ordered set of procnames grouped with the following priority (lowest to highest): *)
-(* JAVA, C_CPP, STATIC, OBJC *)
+(* JAVA, C_FUNCTION, STATIC, OBJC *)
 let compare pn1 pn2 = match pn1, pn2 with
   | JAVA j1, JAVA j2 -> java_sig_compare j1 j2
   | JAVA _, _ -> -1
   | _, JAVA _ -> 1
-  | C_CPP (c1, c2), C_CPP (c3, c4) -> (* Compare C_CPP types *)
+  | C_FUNCTION (c1, c2), C_FUNCTION (c3, c4) -> (* Compare C_FUNCTION types *)
       let n = string_compare c1 c3 in
       if n <> 0 then n else mangled_compare c2 c4
-  | C_CPP _, _ -> -1
-  | _, C_CPP _ -> 1
+  | C_FUNCTION _, _ -> -1
+  | _, C_FUNCTION _ -> 1
   | STATIC (c1, c2), STATIC (c3, c4) -> (* Compare STATIC types *)
       let n = string_compare c1 c3 in
       if n <> 0 then n else mangled_compare c2 c4
@@ -419,7 +423,7 @@ let compare pn1 pn2 = match pn1, pn2 with
       string_compare s1 s2
   | OBJC_BLOCK _, _ -> -1
   | _, OBJC_BLOCK _ -> 1
-  | OBJC osig1, OBJC osig2 -> objc_sig_compare osig1 osig2
+  | C_METHOD osig1, C_METHOD osig2 -> c_meth_sig_compare osig1 osig2
 
 let equal pn1 pn2 =
   compare pn1 pn2 = 0

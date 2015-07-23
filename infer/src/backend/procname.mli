@@ -31,7 +31,7 @@ val equal : t -> t -> bool
 val from_string : string -> t
 
 (** Create a C++ procedure name from plain and mangled name *)
-val mangled_cpp : string -> string -> t
+val mangled_c_fun : string -> string -> t
 
 (** Create a static procedure name from a plain name and source file *)
 val mangled_static : string -> DB.source_file -> t
@@ -40,7 +40,7 @@ val mangled_static : string -> DB.source_file -> t
 val mangled_java : java_type -> java_type option -> string -> java_type list -> method_kind -> t
 
 (** Create an objc procedure name from a class_name and method_name. *)
-val mangled_objc : string -> string -> t
+val mangled_c_method : string -> string -> string option -> t
 
 (** Create an objc block name. *)
 val mangled_objc_block : string -> t
@@ -48,8 +48,8 @@ val mangled_objc_block : string -> t
 (** Return true if this is a Java procedure name *)
 val is_java : t -> bool
 
-(** Return true if this is an Objective-C procedure name *)
-val is_objc : t -> bool
+(** Return true if this is an Objective-C/C++ method name *)
+val is_c_method : t -> bool
 
 (** Replace package and classname of a java procname. *)
 val java_replace_class : t -> string -> t
@@ -61,7 +61,7 @@ val java_replace_method : t -> string -> t
 val java_replace_return_type : t -> java_type -> t
 
 (** Replace the class name of an Objective-C procedure name. *)
-val objc_replace_class : t -> string -> t
+val c_method_replace_class : t -> string -> t
 
 (** Return the class name of a java procedure name. *)
 val java_get_class : t -> string
@@ -72,8 +72,8 @@ val java_get_simple_class : t -> string
 (** Return the method name of a java procedure name. *)
 val java_get_method : t -> string
 
-(** Return the method name of a objc procedure name. *)
-val clang_get_method : t -> string
+(** Return the method of a objc/c++ procname. *)
+val c_get_method : t -> string
 
 (** Replace the method name of an existing java procname. *)
 val java_replace_method : t -> string -> t
@@ -132,9 +132,6 @@ val to_unique_id : t -> string
 
 (** Convert a proc name to a filename *)
 val to_filename : t -> string
-
-(** empty proc name *)
-val empty : t
 
 (** Pretty print a proc name *)
 val pp : Format.formatter -> t -> unit
