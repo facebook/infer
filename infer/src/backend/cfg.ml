@@ -794,13 +794,14 @@ let get_name_of_objc_block_locals p =
   list_flatten (list_flatten vars_sigma)
 
 let remove_abducted_retvars p =
-  (* compute the heap predicates reachable from the set of seed expressions in [exps] *)
-  let compute_reachable_hpreds sigma seed_exps =
+  (* compute the hpreds and pure atoms reachable from the set of seed expressions in [exps] *)
+  let compute_reachable p seed_exps =
+    let sigma, pi = Prop.get_sigma p, Prop.get_pi p in
     let rec collect_exps exps = function
       | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
       | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
       | Sil.Estruct (flds, _) ->
-        list_fold_left (fun exps (fld, strexp) -> collect_exps exps strexp) exps flds
+        list_fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
       | Sil.Earray (_, elems, _) ->
         list_fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
     let rec compute_reachable_hpreds_rec sigma (reach, exps) =
@@ -813,8 +814,20 @@ let remove_abducted_retvars p =
       let reach', exps' = list_fold_left add_hpred_if_reachable (reach, exps) sigma in
       if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
       else compute_reachable_hpreds_rec sigma (reach', exps') in
-    let reach, _ = compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, seed_exps) in
-    Sil.HpredSet.elements reach in
+    let reach_hpreds, reach_exps =
+      compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, seed_exps) in
+    (* filter away the pure atoms without reachable exps *)
+    let reach_pi =
+      let rec exp_contains = function
+        | exp when Sil.ExpSet.mem exp reach_exps -> true
+        | Sil.UnOp (_, e, _) | Sil.Cast (_, e) | Sil.Lfield (e, _, _) -> exp_contains e
+        | Sil.BinOp (_, e0, e1) | Sil.Lindex (e0, e1) -> exp_contains e0 || exp_contains e1
+        | _ -> false in
+      list_filter
+        (function
+        | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) -> exp_contains lhs || exp_contains rhs)
+        pi in
+    Sil.HpredSet.elements reach_hpreds, reach_pi in
   (* separate the abducted pvars from the normal ones, deallocate the abducted ones*)
   let abducted_pvars, normal_pvars =
     list_fold_left
@@ -834,8 +847,8 @@ let remove_abducted_retvars p =
       Sil.ExpSet.empty
       normal_pvars in
   (* walk forward from non-abducted pvars, keep everything reachable. remove everything else *)
-  let sigma' = compute_reachable_hpreds (Prop.get_sigma p') normal_pvar_set in
-  Prop.normalize (Prop.replace_sigma sigma' p')
+  let sigma_reach, pi_reach = compute_reachable p' normal_pvar_set in
+  Prop.normalize (Prop.replace_pi pi_reach (Prop.replace_sigma sigma_reach p'))
 
 let remove_locals (curr_f : Procdesc.t) p =
   let names_of_locals = list_map (get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
