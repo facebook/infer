@@ -97,7 +97,7 @@ let string_type_to_sil_type tenv s =
         let t = CTypes_parser.parse (Ast_lexer.token) lexbuf in
         Printing.log_out
           "    ...Parsed. Translated with sil TYPE '%a'@." (Sil.pp_typ_full pe_text) t;
-          t
+        t
       with Parsing.Parse_error -> (
             Printing.log_stats
               "\nXXXXXXX PARSE ERROR for string '%s'. RETURNING Void.TODO@.@." s;
@@ -115,7 +115,6 @@ let opt_type_to_sil_type tenv opt_type =
   match opt_type with
   | `Type(s) -> qual_type_to_sil_type_no_expansions tenv (Ast_expressions.create_qual_type s)
   | `NoType -> Sil.Tvoid
-
 
 let parse_func_type name func_type =
   try
@@ -202,7 +201,7 @@ and do_record_declaration tenv namespace decl_info name opt_type decl_list decl_
   Printing.log_out "ADDING: RecordDecl for '%s'" name;
   Printing.log_out " pointer= '%s'\n" decl_info.Clang_ast_t.di_pointer;
   if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
-    Printing.log_err "   ...Warning, definition incomplete. The full definition will probably be later \n";
+    Printing.log_err "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
   let typ = get_declaration_type tenv namespace decl_info name opt_type decl_list decl_context_info record_decl_info in
   let typ = expand_structured_type tenv typ in
   add_struct_to_tenv tenv typ

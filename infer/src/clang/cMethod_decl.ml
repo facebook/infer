@@ -112,7 +112,7 @@ struct
   let add_method tenv cg cfg class_decl_opt procname namespace instrs is_objc_method is_instance
       captured_vars is_anonym_block param_decls attributes =
     Printing.log_out
-      "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n" (Procname.to_string procname);
+      "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n@." (Procname.to_string procname);
     try
       (match Cfg.Procdesc.find_from_name cfg procname with
         | Some procdesc ->
@@ -127,7 +127,7 @@ struct
                 Cfg.Procdesc.append_locals procdesc local_vars;
                 Cfg.Node.add_locals_ret_declaration start_node local_vars;
                 Printing.log_out
-                  "\n\n>>---------- Start translating the function: '%s' ---------<<"
+                  "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
                   (Procname.to_string procname);
                 let nonnull_assume_calls = add_assume_not_null_calls param_decls in
                 let instrs' = instrs@nonnull_assume_calls attributes in
@@ -191,7 +191,7 @@ struct
         let prop_methods = ObjcProperty_decl.make_getter_setter cfg curr_class decl_info property_impl_decl_info in
         list_iter (process_one_method_decl tenv cg cfg curr_class namespace) prop_methods
 
-    | EmptyDecl _ | ObjCIvarDecl _ -> ()
+    | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | d -> Printing.log_err
           "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl d);
         ()

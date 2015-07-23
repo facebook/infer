@@ -183,6 +183,25 @@ public class BlockTest {
             " the dotty files should be the same.",
         newDotFile, dotFileEqualTo(block_dotty));
   }
-  
-    
+
+  @Test
+  public void whenCaptureRunOnBlockit_exampleThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+
+    String block_src =
+        "infer/tests/codetoanalyze/objc/frontend/block/block-it.m";
+
+    String block_dotty =
+        "infer/tests/codetoanalyze/objc/frontend/block/block-it.dot";
+
+    ImmutableList<String> inferCmd =
+        InferRunner.createiOSInferCommandFrontend(folder, block_src);
+    File newDotFile = InferRunner.runInferFrontend(inferCmd);
+    assertThat(
+        "In the capture of " + block_src +
+            " the dotty files should be the same.",
+        newDotFile, dotFileEqualTo(block_dotty));
+  }
+
+
 }

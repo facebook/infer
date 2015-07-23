@@ -306,7 +306,7 @@ let make_getter_setter cfg curr_class decl_info property_impl_decl_info =
               | _ -> false) in
           let decl_ptr = Ast_utils.get_invalid_pointer () in
           let drti_decl_ref' =
-            Ast_expressions.make_general_decl_ref (`ParmVar) decl_ptr param_name is_hidden qt_param in
+            Ast_expressions.make_decl_ref_qt (`ParmVar) decl_ptr param_name is_hidden qt_param in
           let decl_ref_expr_info' = Ast_expressions.make_decl_ref_expr_info drti_decl_ref' in
           let expr_info = Ast_expressions.make_expr_info qt_param in
           let stmt_info = Ast_expressions.make_stmt_info dummy_info in

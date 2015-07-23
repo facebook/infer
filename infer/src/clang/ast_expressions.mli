@@ -31,9 +31,11 @@ val make_stmt_info : decl_info -> stmt_info
 
 val make_method_decl_info : obj_c_method_decl_info -> stmt -> obj_c_method_decl_info
 
-val make_general_decl_ref : decl_kind -> pointer -> string -> bool -> qual_type -> decl_ref
+val make_decl_ref_qt : decl_kind -> pointer -> string -> bool -> qual_type -> decl_ref
 
 val make_decl_ref_expr_info : decl_ref -> decl_ref_expr_info
+
+val make_general_expr_info : qual_type -> value_kind -> object_kind -> expr_info
 
 val make_expr_info : qual_type -> expr_info
 
@@ -62,6 +64,8 @@ val make_obj_c_message_expr_info_class : string -> string -> obj_c_message_expr_
 val make_obj_c_message_expr_info_instance : string -> obj_c_message_expr_info
 
 val translate_dispatch_function : string -> stmt_info -> stmt list -> expr_info -> int -> stmt * qual_type
+
+val translate_block_enumerate : string ->  stmt_info  -> stmt list -> expr_info -> stmt * (string * string* qual_type) list
 
 (* We translate the logical negation of an integer with a conditional*)
 (* !x <=> x?0:1 *)

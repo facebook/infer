@@ -15,6 +15,8 @@ let testing_mode = ref false
 
 let array_with_objects_count_m = "arrayWithObjects:count:"
 
+let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"
+
 let dict_with_objects_and_keys_m = "dictionaryWithObjectsAndKeys:"
 
 let string_with_utf8_m = "stringWithUTF8String:"
@@ -34,6 +36,8 @@ let self = "self"
 let alloc = "alloc"
 
 let malloc = "malloc"
+
+let free = "free"
 
 let static = "static"
 
@@ -131,3 +135,13 @@ let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:descripti
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
 
 let nonnull_attribute = "__nonnull"
+
+let pseudo_object_type = "<pseudo-object type>"
+
+let count = "count"
+
+let objects = "objects"
+
+let ns_array_ptr = "NSArray *"
+
+let enumerateObjectsUsingBlock = "enumerateObjectsUsingBlock:"

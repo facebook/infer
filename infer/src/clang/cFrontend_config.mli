@@ -63,9 +63,13 @@ val alloc : string
 
 val malloc : string
 
+val free : string
+
 val static : string
 
 val array_with_objects_count_m : string
+
+val object_at_indexed_subscript_m : string
 
 val dict_with_objects_and_keys_m : string
 
@@ -128,3 +132,13 @@ val handleFailureInMethod : string
 val handleFailureInFunction : string
 
 val nonnull_attribute : string
+
+val pseudo_object_type : string
+
+val count : string
+
+val objects : string
+
+val ns_array_ptr : string
+
+val enumerateObjectsUsingBlock : string

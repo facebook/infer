@@ -194,8 +194,12 @@ struct
 
   let try_claim_priority_node trans_state stmt_info =
     match trans_state.priority with
-    | Free -> { trans_state with priority = Busy stmt_info.Clang_ast_t.si_pointer }
-    | _ -> trans_state
+    | Free ->
+        Printing.log_out "Priority is free. Locking priority node in %s\n@." stmt_info.Clang_ast_t.si_pointer;
+        { trans_state with priority = Busy stmt_info.Clang_ast_t.si_pointer }
+    | _ ->
+        Printing.log_out "Priority busy in %s. No claim possible\n@." stmt_info.Clang_ast_t.si_pointer;
+        trans_state
 
   let is_priority_free trans_state =
     match trans_state.priority with
@@ -683,3 +687,6 @@ let assign_default_params params_stmt callee_pname_opt =
           Printing.log_err "Param count doesn't match %s\n" (Procname.to_string callee_pname);
           params_stmt
       | Not_found -> params_stmt
+
+let is_block_enumerate_function mei =
+  mei.Clang_ast_t.omei_selector = CFrontend_config.enumerateObjectsUsingBlock

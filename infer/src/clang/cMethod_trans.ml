@@ -158,8 +158,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_str @formals in
     let source_range = CMethod_signature.ms_get_loc ms in
-    Printing.log_out
-      "\n\n>>------------------------- Start creating a new procdesc for function: '%s' ---------<<\n" pname;
+    Printing.log_out "\nCreating a new procdesc for function: '%s'\n@." pname;
     let loc_start = CLocation.get_sil_location_from_range source_range true in
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
     let ret_type = get_return_type tenv ms in

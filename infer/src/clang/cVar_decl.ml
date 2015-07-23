@@ -94,7 +94,7 @@ let lookup_var stmt_info context pointer var_name kind =
       try
         lookup_var_static_globals context var_name
       with Not_found ->
-          (Printing.log_out "Looking on later-defined decls for '%s'\n" var_name;
+          (Printing.log_out "Looking on later-defined decls for '%s' with pointer '%s' \n" var_name stmt_info.Clang_ast_t.si_pointer;
             let decl_list = !CFrontend_config.global_translation_unit_decls in
             lookup_ahead_for_vardecl context pointer var_name kind decl_list )
 

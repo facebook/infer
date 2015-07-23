@@ -202,3 +202,5 @@ val is_logical_negation_of_int : Sil.tenv -> Clang_ast_t.expr_info -> Clang_ast_
 val is_dispatch_function : Clang_ast_t.stmt list -> int option
 
 val assign_default_params : Clang_ast_t.stmt list -> Procname.t option -> Clang_ast_t.stmt list
+
+val is_block_enumerate_function : Clang_ast_t.obj_c_message_expr_info -> bool

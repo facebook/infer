@@ -143,8 +143,9 @@ struct
   (* At the end of block translation, we need to get the proirity back.*)
   (* the parameter f will be called with function instruction *)
   let exec_with_block_priority_exception f trans_state e stmt_info =
-    if (is_block_expr e) && (PriorityNode.own_priority_node trans_state.priority stmt_info) then
-      f { trans_state with priority = Free } e
+    if (is_block_expr e) && (PriorityNode.own_priority_node trans_state.priority stmt_info) then (
+      Printing.log_out "Translating block expression by freeing the priority";
+      f { trans_state with priority = Free } e)
     else f trans_state e
 
   (* This is the standard way of dealing with self:Class or a call [a class]. We translate it as sizeof(<type pf a>) *)
@@ -274,7 +275,8 @@ struct
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
   let declRefExpr_trans trans_state stmt_info expr_info decl_ref_expr_info d =
-    Printing.log_out "Passing from DeclRefExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from DeclRefExpr '%s' priority node free = '%s'\n@." stmt_info.Clang_ast_t.si_pointer
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let typ = CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
     let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
@@ -543,8 +545,7 @@ struct
           (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
     let params_stmt = if should_translate_args then
-        CTrans_utils.assign_default_params params_stmt callee_pname_opt
-      else [] in
+        CTrans_utils.assign_default_params params_stmt callee_pname_opt else [] in
     let res_trans_par =
       let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) params_stmt in
       let rt = collect_res_trans (res_trans_callee :: l) in
@@ -600,7 +601,8 @@ struct
             | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
-    Printing.log_out "Passing from ObjMessageExpr '%s'.\n" si.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from ObjMessageExpr '%s'   priority node free ='%s'.\n@." si.Clang_ast_t.si_pointer
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let parent_line_number = trans_state.parent_line_number in
     let sil_loc = get_sil_location si parent_line_number context in
@@ -656,8 +658,8 @@ struct
         instrs = res_trans_par.instrs@instr_block_param@[stmt_call];
         exps =[]
       } in
-      let res_trans_to_parent =
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp in
+      let res_trans_to_parent = (
+          PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp) in
       (match ret_id with
         | [] -> { res_trans_to_parent with exps = [] }
         | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
@@ -678,6 +680,29 @@ struct
     let preds = list_flatten (list_map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
     (* Add nullify of the temp block var to the last node (predecessor or the successor nodes)*)
     list_iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds;
+    res_state
+
+  and block_enumeration_trans trans_state stmt_info stmt_list ei =
+    let declare_nullify_vars loc res_state roots preds (pvar, typ) =
+      (* Add declare locals to the first node *)
+      list_iter (fun n -> Cfg.Node.prepend_instrs_temps n [Sil.Declare_locals([(pvar, typ)], loc)] []) roots;
+      (* Add nullify of the temp block var to the last node (predecessor or the successor nodes)*)
+      list_iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds in
+
+    Printing.log_out "\n Call to a block enumeration function treated as special case...\n@.";
+    let procname = Cfg.Procdesc.get_proc_name trans_state.context.procdesc in
+    let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
+    let transformed_stmt, vars_to_register =
+      Ast_expressions.translate_block_enumerate (Sil.pvar_to_string pvar) stmt_info stmt_list ei in
+    let pvars_types = list_map (fun (v, pointer, qt) ->
+              let pvar = Sil.mk_pvar (Mangled.from_string v) procname in
+              let typ = CTypes_decl.qual_type_to_sil_type trans_state.context.tenv qt in
+              CContext.LocalVars.add_pointer_var pointer pvar trans_state.context;
+              (pvar, typ)) vars_to_register in
+    let loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
+    let res_state = instruction trans_state transformed_stmt in
+    let preds = list_flatten (list_map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
+    list_iter (declare_nullify_vars loc res_state res_state.root_nodes preds) pvars_types;
     res_state
 
   and compoundStmt_trans trans_state stmt_info stmt_list =
@@ -1282,7 +1307,6 @@ struct
               let node = list_hd next_node in
               Cfg.Node.append_instrs_temps node instrs ids;
               list_iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
-
               let root_nodes = if (list_length root_nodes) = 0 then next_node else root_nodes in
               { root_nodes = root_nodes; leaf_nodes =[]; ids = ids; instrs = instrs; exps = [(Sil.Lvar pvar, ie_typ)]}
             ) else { root_nodes = root_nodes; leaf_nodes =[]; ids = ids; instrs = instrs; exps =[(Sil.Lvar pvar, ie_typ)]}) in
@@ -1329,7 +1353,8 @@ struct
 
   (* For OpaqueValueExpr we return the translation generated from its source expression*)
   and opaqueValueExpr_trans trans_state stmt_info opaque_value_expr_info =
-    Printing.log_out "Passing from OpaqueValueExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from OpaqueValueExpr '%s'  priority node free ='%s'\n@." stmt_info.Clang_ast_t.si_pointer
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
     (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
       | Some stmt -> instruction trans_state stmt
       | _ -> assert false)
@@ -1351,7 +1376,8 @@ struct
   and pseudoObjectExpr_trans trans_state stmt_info stmt_list =
     let line_number = get_line stmt_info trans_state.parent_line_number in
     let trans_state' = { trans_state with parent_line_number = line_number } in
-    Printing.log_out "Passing from PseudoObjectExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from PseudoObjectExpr '%s' priority node free ='%s' \n" stmt_info.Clang_ast_t.si_pointer
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
     let rec do_semantic_elements el =
       (match el with
         | OpaqueValueExpr _ :: el' -> do_semantic_elements el'
@@ -1366,7 +1392,8 @@ struct
   and cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_expr_info is_objc_bridged =
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
-    Printing.log_out "Passing from CastExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
+    Printing.log_out "Passing from CastExpr '%s' priority node free = '%s' \n" stmt_info.Clang_ast_t.si_pointer
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
     let sil_loc = get_sil_location stmt_info pln context in
     let stmt = extract_stmt_from_singleton stmt_list
         "WARNING: In CastExpr There must be only one stmt defining the expression to be cast.\n" in
@@ -1652,7 +1679,10 @@ struct
               callExpr_trans trans_state stmt_info stmt_list ei)
 
     | ObjCMessageExpr(stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
-        objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
+        if is_block_enumerate_function obj_c_message_expr_info then
+          block_enumeration_trans trans_state stmt_info stmt_list expr_info
+        else
+          objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
 
     | CompoundStmt (stmt_info, stmt_list) ->
     (* No node for this statement. We just collect its statement list*)
