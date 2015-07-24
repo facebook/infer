@@ -1524,24 +1524,18 @@ The empty lsegs include
 (c) "lseg_pe para e1 e2 elist" and the rest of sigma contains the "cell" e1,
 (d) "dllseg_pe para iF oB oF iB elist" and the rest of sigma contains
 cell iF or iB. *)
-
-module ExpSet = Set.Make(struct
-    type t = Sil.exp
-    let compare = Sil.exp_compare
-  end)
-
 let sigma_remove_emptylseg sigma =
   let alloc_set =
     let rec f_alloc set = function
       | [] ->
           set
       | Sil.Hpointsto (e, _, _) :: sigma' | Sil.Hlseg (Sil.Lseg_NE, _, e, _, _) :: sigma' ->
-          f_alloc (ExpSet.add e set) sigma'
+          f_alloc (Sil.ExpSet.add e set) sigma'
       | Sil.Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) :: sigma' ->
-          f_alloc (ExpSet.add iF (ExpSet.add iB set)) sigma'
+          f_alloc (Sil.ExpSet.add iF (Sil.ExpSet.add iB set)) sigma'
       | _ :: sigma' ->
           f_alloc set sigma' in
-    f_alloc ExpSet.empty sigma
+    f_alloc Sil.ExpSet.empty sigma
   in
   let rec f eqs_zero sigma_passed = function
     | [] ->
@@ -1549,13 +1543,13 @@ let sigma_remove_emptylseg sigma =
     | Sil.Hpointsto _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) :: sigma'
-    when (Sil.exp_equal e1 Sil.exp_zero) || (ExpSet.mem e1 alloc_set) ->
+    when (Sil.exp_equal e1 Sil.exp_zero) || (Sil.ExpSet.mem e1 alloc_set) ->
         f (Sil.Aeq(e1, e2) :: eqs_zero) sigma_passed sigma'
     | Sil.Hlseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hdllseg (Sil.Lseg_PE, _, iF, oB, oF, iB, _) :: sigma'
-    when (Sil.exp_equal iF Sil.exp_zero) || (ExpSet.mem iF alloc_set)
-    || (Sil.exp_equal iB Sil.exp_zero) || (ExpSet.mem iB alloc_set) ->
+    when (Sil.exp_equal iF Sil.exp_zero) || (Sil.ExpSet.mem iF alloc_set)
+    || (Sil.exp_equal iB Sil.exp_zero) || (Sil.ExpSet.mem iB alloc_set) ->
         f (Sil.Aeq(iF, oF):: Sil.Aeq(iB, oB):: eqs_zero) sigma_passed sigma'
     | Sil.Hdllseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
