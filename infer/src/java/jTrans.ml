@@ -295,6 +295,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.language = Sil.Java;
                   Sil.func_attributes = [];
                   Sil.method_annotation = method_annotation;
+                  Sil.is_generated = false;
                 } in
               create {
                   cfg = cfg;
@@ -330,6 +331,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.language = Sil.Java;
                   Sil.func_attributes = [];
                   Sil.method_annotation = method_annotation;
+                  Sil.is_generated = false;
                 } in
               create {
                   cfg = cfg;
@@ -366,6 +368,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.language = Sil.Java;
                   Sil.func_attributes = [];
                   Sil.method_annotation = method_annotation;
+                  Sil.is_generated = false;
                 } in
               create {
                   cfg = cfg;
@@ -421,6 +424,7 @@ let create_external_procdesc program cfg tenv cn ms method_annotation kind =
           Sil.language = Sil.Java;
           Sil.func_attributes = [];
           Sil.method_annotation = method_annotation;
+          Sil.is_generated = false;
         } in
       create {
           cfg = cfg;

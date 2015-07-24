@@ -129,7 +129,7 @@ let get_predefined_ms_method condition class_name method_name mk_procname
       | Some procname -> procname
       | None -> mk_procname class_name method_name in
     let ms = CMethod_signature.make_ms procname arguments return_type attributes
-        (Ast_expressions.dummy_source_range ()) false in
+        (Ast_expressions.dummy_source_range ()) false false in
     Some ms
   else None
 

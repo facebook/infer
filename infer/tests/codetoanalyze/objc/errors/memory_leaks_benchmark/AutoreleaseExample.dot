@@ -119,25 +119,25 @@ digraph iCFG {
 	
 
 	 11 -> 14 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$6=*&self:class A * [line 17]\n  n$7=*&son:class A * [line 17]\n  *n$6._son:class A *=n$7 [line -1]\n  REMOVE_TEMPS(n$6,n$7); [line -1]\n  NULLIFY(&self,false); [line -1]\n  NULLIFY(&son,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$6=*&self:class A * [line 17]\n  n$7=*&son:class A * [line 17]\n  *n$6._son:class A *=n$7 [line 17]\n  REMOVE_TEMPS(n$6,n$7); [line 17]\n  NULLIFY(&self,false); [line 17]\n  NULLIFY(&son,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 10 -> 9 ;
 9 [label="9: Exit A_setSon: \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start A_setSon:\nFormals:  self:class A * son:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+8 [label="8: Start A_setSon: (generated)\nFormals:  self:class A * son:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 8 -> 10 ;
-7 [label="7:  Return Stmt \n   n$4=*&self:class A * [line -1]\n  n$5=*n$4._son:class A * [line -1]\n  *&return:class A *=n$5 [line -1]\n  REMOVE_TEMPS(n$4,n$5); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+7 [label="7:  Return Stmt \n   n$4=*&self:class A * [line 17]\n  n$5=*n$4._son:class A * [line 17]\n  *&return:class A *=n$5 [line 17]\n  REMOVE_TEMPS(n$4,n$5); [line 17]\n  NULLIFY(&self,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 7 -> 6 ;
 6 [label="6: Exit A_son \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start A_son\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+5 [label="5: Start A_son (generated)\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 5 -> 7 ;

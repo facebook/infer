@@ -51,6 +51,7 @@ type proc_attributes =
     language : language;
     func_attributes : func_attribute list;
     method_annotation : method_annotation;
+    is_generated : bool;
   }
 
 let copy_proc_attributes pa =
@@ -64,6 +65,7 @@ let copy_proc_attributes pa =
     language = pa.language;
     func_attributes = pa.func_attributes;
     method_annotation = pa.method_annotation;
+    is_generated = pa.is_generated;
   }
 
 (** Compare function for annotations. *)

@@ -292,6 +292,7 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
         Sil.language = Sil.Java;
         Sil.func_attributes = [];
         Sil.method_annotation = Sil.method_annotation_empty;
+        Sil.is_generated = false;
       } in
     create {
         cfg = harness_cfg;
@@ -343,6 +344,7 @@ let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
         Sil.language = Sil.Java;
         Sil.func_attributes = [];
         Sil.method_annotation = Sil.method_annotation_empty;
+        Sil.is_generated = false;
       } in
     create {
         cfg = harness_cfg;

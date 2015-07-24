@@ -140,6 +140,12 @@ let node_defined (g: t) n =
     info.defined
   with Not_found -> false
 
+let node_set_defined (g: t) n defined =
+  try
+    let info = Procname.Hash.find g.node_map n in
+    info.defined <- defined
+  with Not_found -> ()
+
 let add_edge g nfrom nto =
   _add_node g nfrom false;
   _add_node g nto false;

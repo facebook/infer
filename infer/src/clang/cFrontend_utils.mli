@@ -51,6 +51,8 @@ sig
 
   val property_attribute_compare : property_attribute -> property_attribute -> int
 
+  val generated_ivar_name : string -> string
+
   val property_attribute_eq : property_attribute -> property_attribute -> bool
 
   val getter_attribute_opt : property_attribute list -> string option
@@ -71,6 +73,8 @@ sig
 
   val type_from_unary_expr_or_type_trait_expr_info :
   Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.qual_type option
+
+  val is_generated : Clang_ast_t.named_decl_info -> bool
 
 end
 

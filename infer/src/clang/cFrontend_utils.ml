@@ -156,6 +156,9 @@ struct
           | _ -> no_property_name)
     | None -> no_property_name
 
+  let generated_ivar_name property_name =
+    "_"^property_name
+
   let property_attribute_compare att1 att2 =
     match att1, att2 with
       `Readonly, `Readonly -> 0
@@ -211,11 +214,10 @@ struct
         attribute = `Copy
     | _ -> false
 
-
- let name_opt_of_name_info_opt name_info_opt =
-      match name_info_opt with
-      | Some name_info -> Some name_info.Clang_ast_t.ni_name
-      | None -> None
+  let name_opt_of_name_info_opt name_info_opt =
+    match name_info_opt with
+    | Some name_info -> Some name_info.Clang_ast_t.ni_name
+    | None -> None
 
   let rec getter_attribute_opt attributes =
     match attributes with
@@ -250,6 +252,11 @@ struct
     match info.uttei_qual_type with
     | Some qt -> Some qt
     | None -> None
+
+  let is_generated name_info =
+    match name_info.Clang_ast_t.ni_qual_name with
+    | generated:: rest -> generated = CFrontend_config.generated_suffix
+    | _ -> false
 
 end
 

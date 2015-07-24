@@ -65,6 +65,7 @@ type proc_attributes =
     language : language;
     func_attributes : func_attribute list;
     method_annotation : method_annotation;
+    is_generated : bool;
   }
 
 (** Create a copy of a proc_attributes *)

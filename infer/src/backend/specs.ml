@@ -787,6 +787,7 @@ let reset_summary call_graph proc_name loc =
     Sil.language = !Sil.curr_language;
     Sil.func_attributes = [];
     Sil.method_annotation = Sil.method_annotation_empty;
+    Sil.is_generated = false;
   } in
   init_summary (
       proc_name,

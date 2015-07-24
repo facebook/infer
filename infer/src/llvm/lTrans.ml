@@ -1,6 +1,10 @@
 (*
-* Copyright (c) 2015 - Facebook.
+* Copyright (c) 2015 - present Facebook, Inc.
 * All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
 *)
 open LAst
 
@@ -47,11 +51,12 @@ let gen_func_def (old_cfg : Cfg.cfg) : func_def -> unit = function
         is_synthetic_method = false;
         language = Sil.C_CPP;
         func_attributes = [];
-        method_annotation = Sil.method_annotation_empty
+        method_annotation = Sil.method_annotation_empty;
+        is_generated = false
       } in
     let (pdesc_builder : Cfg.Procdesc.proc_desc_builder) =
       { cfg = old_cfg;
-        name = Procname.from_string (string_of_variable func_name);
+        name = Procname.from_string_c_fun (string_of_variable func_name);
         is_defined = true; (** is defined and not just declared *)
         proc_attributes = proc_attrs;
         ret_type = (match ret_tp_opt with

@@ -736,12 +736,15 @@ let analyzer_err_name = "analyzer_err"
 let () =
   let () =
     match !cluster_cmdline with
-    | None -> L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
+    | None ->
+        if !Sil.curr_language = Sil.C_CPP then
+          Objc_preanal.do_objc_preanalysis ();
+        L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
     | Some clname -> L.stdout "Cluster %s@." clname in
   RegisterCheckers.register ();
   Facebook.register_checkers ();
 
-  if !allow_specs_cleanup = true && !incremental_mode = ANALYZE_ALL  && !cluster_cmdline = None then
+  if !allow_specs_cleanup = true && !incremental_mode = ANALYZE_ALL && !cluster_cmdline = None then
     DB.Results_dir.clean_specs_dir ();
 
   let log_dir = DB.filename_to_string (DB.Results_dir.path_to_filename DB.Results_dir.Abs_root [log_dir_name]) in

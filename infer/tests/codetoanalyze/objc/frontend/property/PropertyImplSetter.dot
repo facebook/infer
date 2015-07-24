@@ -1,15 +1,4 @@
 digraph iCFG {
-6 [label="6:  Return Stmt \n   n$1=*&self:class PropertyImplSetter * [line -1]\n  n$2=*n$1._maximumFileSize:int  [line -1]\n  *&return:int =n$2 [line -1]\n  REMOVE_TEMPS(n$1,n$2); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
-	
-
-	 6 -> 5 ;
-5 [label="5: Exit PropertyImplSetter_maximumFileSize \n  " color=yellow style=filled]
-	
-
-4 [label="4: Start PropertyImplSetter_maximumFileSize\nFormals:  self:class PropertyImplSetter *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
-	
-
-	 4 -> 6 ;
 3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:class PropertyImplSetter * [line 16]\n  *n$0._maximumFileSize:int =0 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&self,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 

@@ -20,11 +20,8 @@ type method_call_type =
   | MCNoVirtual
   | MCStatic
 
-val get_callee_objc_method : CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list
--> Procname.t * method_call_type
-
 val create_local_procdesc : Cfg.cfg -> Sil.tenv -> CMethod_signature.method_signature ->
-Clang_ast_t.stmt list -> (Mangled.t * Sil.typ * bool) list -> bool -> unit
+Clang_ast_t.stmt list -> (Mangled.t * Sil.typ * bool) list -> bool -> bool
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.typ list) option -> unit
 
@@ -36,3 +33,7 @@ val mk_procname_from_function : string -> string -> Procname.t
 
 val get_class_selector_instance : CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list
 -> (string * string * method_call_type)
+
+val resolve_method : Sil.tenv -> string -> string -> CMethod_signature.method_signature option
+
+val should_create_procdesc : Cfg.cfg -> Procname.t -> bool -> bool -> bool

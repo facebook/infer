@@ -75,4 +75,5 @@ val get_tenv : t -> Sil.tenv
 val create_context : Sil.tenv -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
 string option -> curr_class -> bool -> (Mangled.t * Sil.typ * bool) list -> bool -> t
 
+val create_curr_class : Sil.tenv -> string -> curr_class
 

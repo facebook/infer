@@ -254,9 +254,11 @@ let get_curr_class_name curr_class =
 
 let curr_class_to_string curr_class =
   match curr_class with
-  | ContextCls (name, _, _) -> ("class "^name)
-  | ContextCategory (name, cls) -> ("category "^name^" of class "^cls)
-  | ContextProtocol name -> ("protocol "^name)
+  | ContextCls (name, superclass, protocols) ->
+      ("class " ^ name ^ ", superclass: " ^ (Option.default "" superclass) ^
+        ",  protocols: " ^ (Utils.list_to_string (fun x -> x) protocols))
+  | ContextCategory (name, cls) -> ("category " ^ name ^ " of class " ^ cls)
+  | ContextProtocol name -> ("protocol " ^ name)
   | ContextNoCls -> "no class"
 
 let curr_class_compare curr_class1 curr_class2 =
@@ -290,5 +292,13 @@ let get_qt_curr_class curr_class =
 
 let get_captured_vars context = context.captured_vars
 
-
-
+let create_curr_class tenv class_name =
+  let class_tn_name = Sil.TN_csu (Sil.Class, (Mangled.from_string class_name)) in
+  match Sil.tenv_lookup tenv class_tn_name with
+  | Some Sil.Tstruct(intf_fields, _, _, _, superclasses, methods, annotation) ->
+      (let superclasses_names = list_map (fun (_, name) -> Mangled.to_string name) superclasses in
+        match superclasses_names with
+        | superclass:: protocols ->
+            ContextCls (class_name, Some superclass, protocols)
+        | [] -> ContextCls (class_name, None, []))
+  | _ -> assert false

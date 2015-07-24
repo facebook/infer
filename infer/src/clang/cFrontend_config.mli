@@ -142,3 +142,5 @@ val objects : string
 val ns_array_ptr : string
 
 val enumerateObjectsUsingBlock : string
+
+val generated_suffix : string

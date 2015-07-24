@@ -37,6 +37,30 @@ end
 module CTrans_funct(M: CModule_type.CMethod_declaration) : CTrans =
 struct
 
+  (*Returns the procname and whether is instance, according to the selector *)
+  (* information and according to the method signature *)
+  let get_callee_objc_method context obj_c_message_expr_info act_params =
+    let (class_name, method_name, mc_type) =
+      CMethod_trans.get_class_selector_instance context obj_c_message_expr_info act_params in
+    let is_instance = mc_type != CMethod_trans.MCStatic in
+    match CTrans_models.get_predefined_model_method_signature class_name method_name
+      CMethod_trans.mk_procname_from_method with
+    | Some ms ->
+        ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
+        CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
+    | None ->
+        match CMethod_trans.resolve_method context.tenv class_name method_name with
+        | Some callee_ms ->
+            (let procname = CMethod_signature.ms_get_name callee_ms in
+              if not (M.process_getter_setter context procname) then
+                (let is_instance = is_instance || (CMethod_signature.ms_is_instance callee_ms) in
+                  ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
+              procname, mc_type)
+        | None ->
+            let callee_pn = CMethod_trans.mk_procname_from_method class_name method_name in
+            CMethod_trans.create_external_procdesc context.cfg callee_pn is_instance None;
+            callee_pn, mc_type
+
   let add_autorelease_call context exp typ sil_loc =
     let method_name = Procname.c_get_method (Cfg.Procdesc.get_proc_name context.procdesc) in
     if !Config.arc_mode &&
@@ -590,7 +614,7 @@ struct
                     Cg.add_edge context.cg procname callee_pname;
                     try
                       let callee_ms = CMethod_signature.find callee_pname in
-                      CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false
+                      ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
                     with Not_found ->
                         CMethod_trans.create_external_procdesc context.cfg callee_pname false None
                   end
@@ -642,8 +666,7 @@ struct
         CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes
     else
       let procname = Cfg.Procdesc.get_proc_name context.procdesc in
-      let callee_name, method_call_type =
-        CMethod_trans.get_callee_objc_method context obj_c_message_expr_info res_trans_par.exps in
+      let callee_name, method_call_type = get_callee_objc_method context obj_c_message_expr_info res_trans_par.exps in
       let res_trans_par = Self.add_self_parameter_for_super_instance context procname sil_loc
           obj_c_message_expr_info res_trans_par in
       let is_virtual = method_call_type = CMethod_trans.MCVirtual in

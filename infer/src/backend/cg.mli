@@ -50,3 +50,4 @@ val node_defined : t -> Procname.t -> bool (** Returns true if the node is defin
 val restrict_defined : t -> Procname.Set.t option -> unit  (** if not None, restrict defined nodes to the given set *)
 val save_call_graph_dotty : DB.filename option -> (Procname.t -> 'a list) -> t -> unit (** Print the current call graph as a dotty file. If the filename is [None], use the current file dir inside the DB dir. *)
 val store_to_file : DB.filename -> t -> unit (** Save a call graph into a file *)
+val node_set_defined : t -> Procname.t -> bool -> unit (** Change the defined flag of a node *)

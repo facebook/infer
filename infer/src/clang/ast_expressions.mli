@@ -15,6 +15,8 @@ val dummy_stmt : unit -> stmt
 
 val dummy_decl_info : decl_info -> decl_info
 
+val dummy_decl_info_in_curr_file : decl_info -> decl_info
+
 val dummy_source_range : unit -> source_range
 
 val dummy_stmt_info : unit -> stmt_info
@@ -23,7 +25,7 @@ val create_qual_type : string -> qual_type
 
 val create_pointer_type : string -> qual_type
 
-val make_objc_ivar_decl : decl_info -> qual_type option -> obj_c_property_impl_decl_info -> decl
+val make_objc_ivar_decl : decl_info -> qual_type -> obj_c_property_impl_decl_info -> string -> decl
 
 val make_deref_self_field : string -> decl_info -> qual_type -> string -> stmt
 

@@ -7,9 +7,6 @@
 * of patent rights can be found in the PATENTS file in the same directory.
 *)
 
-(** Process properties by creating their getters and setters in the case that they need to be syntethized *)
-(** or in the case of dynamic. *)
-
 type prop_getter_setter = string * (Clang_ast_t.decl * bool) option
 
 (** For each property, we save the getter and the setter method declarations (no implementation). *)
@@ -17,23 +14,6 @@ type prop_getter_setter = string * (Clang_ast_t.decl * bool) option
 (** (qual_type, property attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar name ) *)
 type property_type = Clang_ast_t.qual_type * Clang_ast_t.property_attribute list *
   Clang_ast_t.decl_info * prop_getter_setter * prop_getter_setter * string option
-
-val prepare_dynamic_property : CContext.curr_class -> Clang_ast_t.decl_info ->
-Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.decl list
-
-val get_methods : CContext.curr_class -> Clang_ast_t.decl list -> Procname.t list
-
-val make_getter_setter : Cfg.cfg -> CContext.curr_class -> Clang_ast_t.decl_info -> Clang_ast_t.obj_c_property_impl_decl_info ->
-Clang_ast_t.decl list
-
-val reset_property_table : unit -> unit
-
-val print_property_table : unit -> unit
-
-val is_property_read_only : Clang_ast_t.property_attribute list -> bool
-
-val find_properties_class : CContext.curr_class -> (string * property_type) list
-
 
 module type PropertySig =
 sig
@@ -60,6 +40,33 @@ sig
   val print_property_table : unit -> unit
 
   val find_property_name_from_ivar : CContext.curr_class -> string -> string option
+
 end
 
 module Property: PropertySig
+
+(** Process properties by creating their getters and setters in the case that they need to be syntethized *)
+(** or in the case of dynamic. *)
+
+val prepare_dynamic_property : CContext.curr_class -> Clang_ast_t.decl_info ->
+Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.decl list
+
+val get_methods : CContext.curr_class -> Clang_ast_t.decl list -> Procname.t list
+
+val reset_property_table : unit -> unit
+
+val print_property_table : unit -> unit
+
+val is_property_read_only : Clang_ast_t.property_attribute list -> bool
+
+val find_properties_class : CContext.curr_class -> (string * property_type) list
+
+val make_getter : CContext.curr_class -> string -> property_type -> Clang_ast_t.decl list
+
+val make_setter : CContext.curr_class -> string -> property_type -> Clang_ast_t.decl list
+
+val make_getter_setter : CContext.curr_class -> Clang_ast_t.decl_info -> string -> Clang_ast_t.decl list
+
+val method_is_property_accesor : CContext.curr_class -> string -> (string * property_type * bool) option
+
+val get_ivar_name : string -> string option -> string

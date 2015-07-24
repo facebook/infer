@@ -903,10 +903,12 @@ let pp_cfgnodelabel fmt (n : Cfg.Node.t) =
   let pp_label fmt n =
     match Cfg.Node.get_kind n with
     | Cfg.Node.Start_node (pdesc) ->
+      let gen = if (Cfg.Procdesc.get_attributes pdesc).Sil.is_generated then " (generated)" else "" in
     (* let def = if Cfg.Procdesc.is_defined pdesc then "defined" else "declared" in *)
     (* Format.fprintf fmt "Start %a (%s)" pp_id (Procname.to_string (Cfg.Procdesc.get_proc_name pdesc)) def *)
-        Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a"
+        Format.fprintf fmt "Start %s%s\\nFormals: %a\\nLocals: %a"
           (Procname.to_string (Cfg.Procdesc.get_proc_name pdesc))
+          gen
           pp_etlist (Cfg.Procdesc.get_formals pdesc)
           pp_local_list (Cfg.Procdesc.get_locals pdesc);
         if list_length (Cfg.Procdesc.get_captured pdesc) <> 0 then

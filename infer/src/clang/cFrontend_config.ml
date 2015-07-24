@@ -145,3 +145,5 @@ let objects = "objects"
 let ns_array_ptr = "NSArray *"
 
 let enumerateObjectsUsingBlock = "enumerateObjectsUsingBlock:"
+
+let generated_suffix = "*generated"

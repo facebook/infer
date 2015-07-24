@@ -73,19 +73,19 @@ let get_superclass_curr_class context =
 let get_class_selector_instance context obj_c_message_expr_info act_params =
   let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
   match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
-    | `Class qt -> (CTypes.get_type qt, selector, MCStatic)
-    | `Instance ->
-        (match act_params with
-          | (instance_obj, Sil.Tptr(t, _)):: _
-          | (instance_obj, t):: _ ->
-              (CTypes.classname_of_type t, selector, MCVirtual)
-          | _ -> assert false)
-    | `SuperInstance ->
-        let superclass = get_superclass_curr_class context in
-        (superclass, selector, MCNoVirtual)
-    | `SuperClass ->
-        let superclass = get_superclass_curr_class context in
-        (superclass, selector, MCStatic)
+  | `Class qt -> (CTypes.get_type qt, selector, MCStatic)
+  | `Instance ->
+      (match act_params with
+        | (instance_obj, Sil.Tptr(t, _)):: _
+        | (instance_obj, t):: _ ->
+            (CTypes.classname_of_type t, selector, MCVirtual)
+        | _ -> assert false)
+  | `SuperInstance ->
+      let superclass = get_superclass_curr_class context in
+      (superclass, selector, MCNoVirtual)
+  | `SuperClass ->
+      let superclass = get_superclass_curr_class context in
+      (superclass, selector, MCStatic)
 
 let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
@@ -137,14 +137,27 @@ let get_return_type tenv ms =
 let sil_func_attributes_of_attributes attrs =
   let rec do_translation acc al = match al with
     | [] -> list_rev acc
-    | Clang_ast_t.SentinelAttr attribute_info::tl ->
-      let (sentinel, null_pos) = match attribute_info.Clang_ast_t.ai_parameters with
-        | a::b::[] -> (int_of_string a, int_of_string b)
-        | _ -> assert false
-      in
-      do_translation (Sil.FA_sentinel(sentinel, null_pos)::acc) tl
-    | _::tl -> do_translation acc tl in
+    | Clang_ast_t.SentinelAttr attribute_info:: tl ->
+        let (sentinel, null_pos) = match attribute_info.Clang_ast_t.ai_parameters with
+          | a:: b::[] -> (int_of_string a, int_of_string b)
+          | _ -> assert false
+        in
+        do_translation (Sil.FA_sentinel(sentinel, null_pos):: acc) tl
+    | _:: tl -> do_translation acc tl in
   do_translation [] attrs
+
+let should_create_procdesc cfg procname defined generated =
+  match Cfg.Procdesc.find_from_name cfg procname with
+  | Some prevoius_procdesc ->
+      let is_defined_previous = Cfg.Procdesc.is_defined prevoius_procdesc in
+      let is_generated_previous =
+        (Cfg.Procdesc.get_attributes prevoius_procdesc).Sil.is_generated in
+      if defined &&
+      ((not is_defined_previous) || (generated && is_generated_previous)) then
+        (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
+          true)
+      else false
+  | None -> true
 
 (** Creates a procedure description. *)
 let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
@@ -152,6 +165,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let procname = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string procname in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
+  let is_generated = CMethod_signature.ms_is_generated ms in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_str = list_map (fun (s, t, _) -> (Mangled.to_string s, t)) captured in
@@ -178,6 +192,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           Sil.language = Sil.C_CPP;
           Sil.func_attributes = attributes;
           Sil.method_annotation = Sil.method_annotation_empty;
+          Sil.is_generated = is_generated;
         } in
       create {
           cfg = cfg;
@@ -199,13 +214,10 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
         let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc [] in
         Cfg.Procdesc.set_start_node procdesc start_node;
         Cfg.Procdesc.set_exit_node procdesc exit_node) in
-  match Cfg.Procdesc.find_from_name cfg procname with
-  | Some prevoius_procdesc ->
-      Printing.log_err "\n\n!!!WARNING: procdesc for %s already defined \n" pname;
-      if defined && not (Cfg.Procdesc.is_defined prevoius_procdesc) then
-        (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
-          create_new_procdesc ())
-  | None -> create_new_procdesc ()
+  let generated = CMethod_signature.ms_is_generated ms in
+  if should_create_procdesc cfg procname defined generated then
+    (create_new_procdesc (); true)
+  else false
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
 let create_external_procdesc cfg procname is_objc_inst_method type_opt =
@@ -231,6 +243,7 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
             Sil.language = Sil.C_CPP;
             Sil.func_attributes = [];
             Sil.method_annotation = Sil.method_annotation_empty;
+            Sil.is_generated = false;
           } in
         create {
             cfg = cfg;
@@ -248,25 +261,3 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
 let instance_to_method_call_type instance =
   if instance then MCVirtual
   else MCStatic
-
-(*Returns the procname and whether is instance, according to the selector *)
-(* information and according to the method signature *)
-let get_callee_objc_method context obj_c_message_expr_info act_params =
-  let (class_name, method_name, mc_type) =
-    get_class_selector_instance context obj_c_message_expr_info act_params in
-  let is_instance = mc_type != MCStatic in
-  match CTrans_models.get_predefined_model_method_signature class_name method_name
-    mk_procname_from_method with
-  | Some ms ->
-      create_local_procdesc context.cfg context.tenv ms [] [] is_instance;
-      CMethod_signature.ms_get_name ms, MCNoVirtual
-  | None ->
-      match resolve_method context.tenv class_name method_name with
-      | Some callee_ms ->
-          let is_instance = is_instance || (CMethod_signature.ms_is_instance callee_ms) in
-          create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance;
-          (CMethod_signature.ms_get_name callee_ms), mc_type
-      | None ->
-          let callee_pn = mk_procname_from_method class_name method_name in
-          create_external_procdesc context.cfg callee_pn is_instance None;
-          callee_pn, mc_type

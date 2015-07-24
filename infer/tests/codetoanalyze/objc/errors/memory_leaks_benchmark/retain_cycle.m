@@ -18,16 +18,9 @@
 @end
 
 
-@implementation AA
-@end
-
-
 @interface BBStrong : NSObject
 
 @property (nonatomic, strong) AA* a;
-@end
-
-@implementation BBStrong
 @end
 
 
@@ -36,23 +29,14 @@
 @property (nonatomic, unsafe_unretained) AA* a;
 @end
 
-@implementation BBUnsafeUnretained
-@end
-
 @interface BBWeak : NSObject
 
 @property (nonatomic, weak) AA* a;
 @end
 
-@implementation BBWeak
-@end
-
 @interface BBAssign : NSObject
 
 @property (nonatomic) AA* a;
-@end
-
-@implementation BBAssign
 @end
 
 int strongcycle() {

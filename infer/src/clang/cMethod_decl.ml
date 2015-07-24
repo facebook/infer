@@ -12,6 +12,7 @@
 open Utils
 open CFrontend_utils
 open Clang_ast_t
+open CContext
 
 module L = Logging
 
@@ -24,6 +25,8 @@ module type CMethod_decl = sig
 
   val create_function_signature : Clang_ast_t.decl_info -> Clang_ast_t.function_decl_info -> string ->
   Clang_ast_t.qual_type -> bool -> Procname.t option -> Clang_ast_t.stmt option * CMethod_signature.method_signature
+
+  val process_getter_setter : CContext.t -> Procname.t -> bool
 end
 
 module CMethod_decl_funct(T: CModule_type.CTranslation) : CMethod_decl =
@@ -73,13 +76,13 @@ struct
         let qt = method_decl_info.Clang_ast_t.omdi_result_type in
         CTypes.get_type qt
 
-  let build_method_signature decl_info procname function_method_decl_info is_instance is_anonym_block =
+  let build_method_signature decl_info procname function_method_decl_info is_instance is_anonym_block is_generated =
     let source_range = decl_info.Clang_ast_t.di_source_range in
     let qt = get_return_type function_method_decl_info in
     let is_instance_method = is_instance_method function_method_decl_info is_instance is_anonym_block in
     let parameters = get_parameters function_method_decl_info in
     let attributes = decl_info.Clang_ast_t.di_attributes in
-    CMethod_signature.make_ms procname parameters qt attributes source_range is_instance_method
+    CMethod_signature.make_ms procname parameters qt attributes source_range is_instance_method is_generated
 
   let create_function_signature di fdecl_info name qt is_instance anonym_block_opt =
     let procname, is_anonym_block =
@@ -87,7 +90,7 @@ struct
       | Some block -> block, true
       | None -> CMethod_trans.mk_procname_from_function name (CTypes.get_type qt), false in
     let ms = build_method_signature di procname
-        (Func_decl_info (fdecl_info, CTypes.get_type qt)) is_instance is_anonym_block in
+        (Func_decl_info (fdecl_info, CTypes.get_type qt)) is_instance is_anonym_block false in
     (match method_body_to_translate di ms fdecl_info.Clang_ast_t.fdi_body with
       | Some body -> Some body, ms
       | None -> None, ms)
@@ -154,42 +157,45 @@ struct
     match create_function_signature di fdecl_info name qt is_instance anonym_block_opt with
     | Some body, ms -> (* Only in the case the function declaration has a defined body we create a procdesc *)
         let procname = CMethod_signature.ms_get_name ms in
-        CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false;
-        let is_instance = CMethod_signature.ms_is_instance ms in
-        let is_anonym_block = Option.is_some anonym_block_opt in
-        let is_objc_method = is_anonym_block in
-        let curr_class = if is_anonym_block then curr_class else CContext.ContextNoCls in
-        let attributes = CMethod_signature.ms_get_attributes ms in
-        CMethod_signature.add ms;
-        add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
-          captured_vars is_anonym_block fdecl_info.Clang_ast_t.fdi_parameters attributes
+        if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
+          let is_instance = CMethod_signature.ms_is_instance ms in
+          let is_anonym_block = Option.is_some anonym_block_opt in
+          let is_objc_method = is_anonym_block in
+          let curr_class = if is_anonym_block then curr_class else CContext.ContextNoCls in
+          let attributes = CMethod_signature.ms_get_attributes ms in
+          CMethod_signature.add ms;
+          add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
+            captured_vars is_anonym_block fdecl_info.Clang_ast_t.fdi_parameters attributes
     | None, ms -> CMethod_signature.add ms
 
-  let process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info =
+  let process_objc_method_decl tenv cg cfg namespace curr_class decl_info name_info method_decl_info =
     let class_name = CContext.get_curr_class_name curr_class in
+    let method_name = name_info.Clang_ast_t.ni_name in
     let procname = CMethod_trans.mk_procname_from_method class_name method_name in
     let method_decl = Meth_decl_info (method_decl_info, class_name) in
-    let ms = build_method_signature decl_info procname method_decl false false in
+    let is_generated = Ast_utils.is_generated name_info in
+    let ms = build_method_signature decl_info procname method_decl false false is_generated in
     Printing.log_out " ....Processing implementation for method '%s'\n" (Procname.to_string procname);
     CMethod_signature.add ms;
     (match method_body_to_translate decl_info ms method_decl_info.Clang_ast_t.omdi_body with
       | Some body ->
           let is_instance = CMethod_signature.ms_is_instance ms in
           let attributes = CMethod_signature.ms_get_attributes ms in
-          CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance;
-          add_method tenv cg cfg curr_class procname namespace [body] true is_instance [] false
-            method_decl_info.Clang_ast_t.omdi_parameters attributes
+          if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance then
+            add_method tenv cg cfg curr_class procname namespace [body] true is_instance [] false
+              method_decl_info.Clang_ast_t.omdi_parameters attributes
       | None -> ())
 
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =
     match dec with
     | ObjCMethodDecl(decl_info, name_info, method_decl_info) ->
-        let method_name = name_info.Clang_ast_t.ni_name in
-        process_objc_method_decl tenv cg cfg namespace curr_class decl_info method_name method_decl_info
+        process_objc_method_decl tenv cg cfg namespace curr_class decl_info name_info method_decl_info
 
     | ObjCPropertyImplDecl(decl_info, property_impl_decl_info) ->
-        let prop_methods = ObjcProperty_decl.make_getter_setter cfg curr_class decl_info property_impl_decl_info in
-        list_iter (process_one_method_decl tenv cg cfg curr_class namespace) prop_methods
+        let pname = Ast_utils.property_name property_impl_decl_info in
+        Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' " pname;
+        let getter_setter = ObjcProperty_decl.make_getter_setter curr_class decl_info pname in
+        list_iter (process_one_method_decl tenv cg cfg curr_class namespace) getter_setter
 
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | d -> Printing.log_err
@@ -198,5 +204,24 @@ struct
 
   let process_methods tenv cg cfg curr_class namespace decl_list =
     list_iter (process_one_method_decl tenv cg cfg curr_class namespace) decl_list
+
+  let process_getter_setter context procname =
+    let class_name = Procname.c_get_class procname in
+    let cls = CContext.create_curr_class context.tenv class_name in
+    let method_name = Procname.c_get_method procname in
+    match ObjcProperty_decl.method_is_property_accesor cls method_name with
+    | Some (property_name, property_type, is_getter) when
+    CMethod_trans.should_create_procdesc context.cfg procname true true ->
+        (match property_type with qt, atts, decl_info, _, _, ivar_opt ->
+              let ivar_name = ObjcProperty_decl.get_ivar_name property_name ivar_opt in
+              let field = CField_decl.build_sil_field_property cls context.tenv ivar_name qt (Some atts) in
+              ignore (CField_decl.add_missing_fields context.tenv class_name [field]);
+              let accessor =
+                if is_getter then
+                  ObjcProperty_decl.make_getter cls property_name property_type
+                else ObjcProperty_decl.make_setter cls property_name property_type in
+              list_iter (process_one_method_decl context.tenv context.cg context.cfg cls context.namespace) accessor;
+              true)
+    | _ -> false
 
 end

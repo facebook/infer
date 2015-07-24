@@ -37,6 +37,20 @@ let dummy_decl_info decl_info =
     Clang_ast_t.di_source_range = dummy_source_range ();
   }
 
+let dummy_decl_info_in_curr_file decl_info =
+  let source_loc = {
+    sl_file = Some (DB.source_file_to_abs_path !CLocation.current_source_file);
+    sl_line = None;
+    sl_column = None
+  } in {
+    decl_info with
+    Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer ();
+    Clang_ast_t.di_source_range =
+      if !CFrontend_config.testing_mode then
+        decl_info.Clang_ast_t.di_source_range
+      else (source_loc, source_loc)
+  }
+
 let empty_decl_info = {
   Clang_ast_t.di_pointer = "";
   Clang_ast_t.di_parent_pointer = None;
@@ -265,16 +279,7 @@ let make_deref_self_field class_decl_opt di qt field_name =
   let cast_exp' = ImplicitCastExpr(stmt_info, [ivar_ref_exp], expr_info', cast_exp_info) in
   cast_exp'
 
-let make_objc_ivar_decl decl_info qt property_impl_decl_info =
-  let name = Ast_utils.property_name property_impl_decl_info in
-  let qt = match qt with
-    | Some qt' -> qt'
-    | None -> (* a qual_type was not found by the caller, so we try to get it out of property_impl_decl_info *)
-        (match property_impl_decl_info.Clang_ast_t.opidi_ivar_decl with
-          | Some decl_ref -> (match decl_ref.Clang_ast_t.dr_qual_type with
-                | Some qt' -> qt'
-                | None -> assert false)
-          | _ -> assert false) in
+let make_objc_ivar_decl decl_info qt property_impl_decl_info ivar_name =
   let field_decl_info = {
     Clang_ast_t.fldi_is_mutable = true;
     Clang_ast_t.fldi_is_module_private = true;
@@ -283,7 +288,7 @@ let make_objc_ivar_decl decl_info qt property_impl_decl_info =
   let obj_c_ivar_decl_info = {
     Clang_ast_t.ovdi_is_synthesize = true; (* NOTE: We set true here because we use this definition to synthesize the getter/setter*)
     Clang_ast_t.ovdi_access_control = `Private } in
-  ObjCIvarDecl(decl_info, make_name_decl name, qt, field_decl_info, obj_c_ivar_decl_info)
+  ObjCIvarDecl(decl_info, make_name_decl ivar_name, qt, field_decl_info, obj_c_ivar_decl_info)
 
 let make_expr_info qt =
   {

@@ -297,6 +297,9 @@ val get_all_procs : cfg -> Procdesc.t list
 (** Get the procedures whose body is defined in this cfg *)
 val get_defined_procs : cfg -> Procdesc.t list
 
+(** Get the objc procedures whose body is generated *)
+val get_objc_generated_procs : cfg -> Procdesc.t list
+
 (** get the function names which should be analyzed before the other ones *)
 val get_priority_procnames : cfg -> Procname.Set.t
 

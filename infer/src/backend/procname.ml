@@ -178,6 +178,12 @@ let c_method_replace_class t class_name =
   | C_METHOD osig -> C_METHOD { osig with class_name = class_name }
   | _ -> assert false
 
+(** Get the class name of a Objective-C/C++ procedure name. *)
+let c_get_class t =
+  match t with
+  | C_METHOD osig -> osig.class_name
+  | _ -> assert false
+
 (** Return the package.classname of a java procname. *)
 let java_get_class = function
   | JAVA j -> java_type_to_string j.classname VERBOSE
@@ -321,11 +327,9 @@ let is_constructor = function
   | C_METHOD name -> Utils.string_is_prefix "init" name.method_name
   | _ -> false
 
-
 let java_is_close = function
   | JAVA js -> js.methodname = "close"
   | _ -> false
-
 
 (** [is_class_initializer pname] returns true if [pname] is a class initializer *)
 let is_class_initializer = function

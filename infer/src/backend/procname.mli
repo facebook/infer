@@ -63,6 +63,9 @@ val java_replace_return_type : t -> java_type -> t
 (** Replace the class name of an Objective-C procedure name. *)
 val c_method_replace_class : t -> string -> t
 
+(** Get the class name of a Objective-C/C++ procedure name. *)
+val c_get_class : t -> string
+
 (** Return the class name of a java procedure name. *)
 val java_get_class : t -> string
 

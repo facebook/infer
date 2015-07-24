@@ -1,48 +1,4 @@
 digraph iCFG {
-60 [label="60:  BinaryOperatorStmt: Assign \n   n$41=*&self:class MemoryLeakExample * [line 16]\n  n$42=*&attachmentContainerView:class UIView * [line 16]\n  *n$41._attachmentContainerView:class UIView *=n$42 [line -1]\n  REMOVE_TEMPS(n$41,n$42); [line -1]\n  NULLIFY(&attachmentContainerView,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
-	
-
-	 60 -> 59 ;
-59 [label="59: Exit MemoryLeakExample_setAttachmentContainerView: \n  " color=yellow style=filled]
-	
-
-58 [label="58: Start MemoryLeakExample_setAttachmentContainerView:\nFormals:  self:class MemoryLeakExample * attachmentContainerView:class UIView *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
-	
-
-	 58 -> 60 ;
-57 [label="57:  Return Stmt \n   n$39=*&self:class MemoryLeakExample * [line -1]\n  n$40=*n$39._attachmentContainerView:class UIView * [line -1]\n  *&return:class UIView *=n$40 [line -1]\n  REMOVE_TEMPS(n$39,n$40); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
-	
-
-	 57 -> 56 ;
-56 [label="56: Exit MemoryLeakExample_attachmentContainerView \n  " color=yellow style=filled]
-	
-
-55 [label="55: Start MemoryLeakExample_attachmentContainerView\nFormals:  self:class MemoryLeakExample *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
-	
-
-	 55 -> 57 ;
-54 [label="54:  BinaryOperatorStmt: Assign \n   n$37=*&self:class MemoryLeakExample * [line 15]\n  n$38=*&backgroundCoveringView:class UIView * [line 15]\n  *n$37._backgroundCoveringView:class UIView *=n$38 [line -1]\n  REMOVE_TEMPS(n$37,n$38); [line -1]\n  NULLIFY(&backgroundCoveringView,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
-	
-
-	 54 -> 53 ;
-53 [label="53: Exit MemoryLeakExample_setBackgroundCoveringView: \n  " color=yellow style=filled]
-	
-
-52 [label="52: Start MemoryLeakExample_setBackgroundCoveringView:\nFormals:  self:class MemoryLeakExample * backgroundCoveringView:class UIView *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
-	
-
-	 52 -> 54 ;
-51 [label="51:  Return Stmt \n   n$35=*&self:class MemoryLeakExample * [line -1]\n  n$36=*n$35._backgroundCoveringView:class UIView * [line -1]\n  *&return:class UIView *=n$36 [line -1]\n  REMOVE_TEMPS(n$35,n$36); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
-	
-
-	 51 -> 50 ;
-50 [label="50: Exit MemoryLeakExample_backgroundCoveringView \n  " color=yellow style=filled]
-	
-
-49 [label="49: Start MemoryLeakExample_backgroundCoveringView\nFormals:  self:class MemoryLeakExample *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
-	
-
-	 49 -> 51 ;
 48 [label="48:  DeclStmt \n   n$34=_fun_FBColorCreateWithGray(0.000000:double ,0.300000:double ) [line 95]\n  *&borderColor:struct CGColor *=n$34 [line 95]\n  REMOVE_TEMPS(n$34); [line 95]\n " shape="box"]
 	
 

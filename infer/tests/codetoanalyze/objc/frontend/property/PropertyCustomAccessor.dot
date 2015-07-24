@@ -1,23 +1,23 @@
 digraph iCFG {
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&self:class ASDisplayNode * [line 14]\n  n$3=*&opaque:signed char  [line 14]\n  *n$2._opaque:signed char =n$3 [line -1]\n  REMOVE_TEMPS(n$2,n$3); [line -1]\n  NULLIFY(&opaque,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$2=*&self:class ASDisplayNode * [line 14]\n  n$3=*&opaque:signed char  [line 14]\n  *n$2._opaque:signed char =n$3 [line 14]\n  REMOVE_TEMPS(n$2,n$3); [line 14]\n  NULLIFY(&opaque,false); [line 14]\n  NULLIFY(&self,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 6 -> 5 ;
 5 [label="5: Exit ASDisplayNode_setOpaque: \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start ASDisplayNode_setOpaque:\nFormals:  self:class ASDisplayNode * opaque:signed char \nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+4 [label="4: Start ASDisplayNode_setOpaque: (generated)\nFormals:  self:class ASDisplayNode * opaque:signed char \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   n$0=*&self:class ASDisplayNode * [line -1]\n  n$1=*n$0._opaque:signed char  [line -1]\n  *&return:signed char =n$1 [line -1]\n  REMOVE_TEMPS(n$0,n$1); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&self:class ASDisplayNode * [line 14]\n  n$1=*n$0._opaque:signed char  [line 14]\n  *&return:signed char =n$1 [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&self,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit ASDisplayNode_isOpaque \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start ASDisplayNode_isOpaque\nFormals:  self:class ASDisplayNode *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+1 [label="1: Start ASDisplayNode_isOpaque (generated)\nFormals:  self:class ASDisplayNode *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

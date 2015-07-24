@@ -31,8 +31,10 @@ val ms_get_loc : method_signature -> Clang_ast_t.source_range
 val ms_is_instance : method_signature -> bool
 
 val make_ms : Procname.t -> (string * string * Clang_ast_t.stmt option) list -> string -> Clang_ast_t.attribute list ->
-Clang_ast_t.source_range -> bool -> method_signature
+Clang_ast_t.source_range -> bool -> bool -> method_signature
 
 val replace_name_ms : method_signature -> Procname.t -> method_signature
 
 val ms_to_string : method_signature -> string
+
+val ms_is_generated : method_signature -> bool

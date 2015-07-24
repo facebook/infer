@@ -18,25 +18,25 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  BinaryOperatorStmt: Assign \n   n$14=*&self:class C * [line 31]\n  n$16=*&name:class NSString * [line -1]\n  n$15=_fun_NSString_copy(n$16:class NSString *) virtual [line -1]\n  *n$14._name:class NSString *=n$15 [line -1]\n  REMOVE_TEMPS(n$14,n$15,n$16); [line -1]\n  NULLIFY(&name,false); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+15 [label="15:  BinaryOperatorStmt: Assign \n   n$14=*&self:class C * [line 31]\n  n$16=*&name:class NSString * [line 31]\n  n$15=_fun_NSString_copy(n$16:class NSString *) virtual [line 31]\n  *n$14._name:class NSString *=n$15 [line 31]\n  REMOVE_TEMPS(n$14,n$15,n$16); [line 31]\n  NULLIFY(&name,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 15 -> 14 ;
 14 [label="14: Exit C_setName: \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start C_setName:\nFormals:  self:class C * name:class NSString *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+13 [label="13: Start C_setName: (generated)\nFormals:  self:class C * name:class NSString *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
 	 13 -> 16 ;
-12 [label="12:  Return Stmt \n   n$11=*&self:class C * [line -1]\n  n$12=*n$11._name:class NSString * [line -1]\n  *&return:class NSString *=n$12 [line -1]\n  n$13=_fun___set_autorelease_attribute(n$12:class NSString *) [line -1]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line -1]\n  NULLIFY(&self,false); [line -1]\n  APPLY_ABSTRACTION; [line -1]\n " shape="box"]
+12 [label="12:  Return Stmt \n   n$11=*&self:class C * [line 31]\n  n$12=*n$11._name:class NSString * [line 31]\n  *&return:class NSString *=n$12 [line 31]\n  n$13=_fun___set_autorelease_attribute(n$12:class NSString *) [line 31]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line 31]\n  NULLIFY(&self,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 12 -> 11 ;
 11 [label="11: Exit C_name \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start C_name\nFormals:  self:class C *\nLocals:  \n   DECLARE_LOCALS(&return); [line -1]\n " color=yellow style=filled]
+10 [label="10: Start C_name (generated)\nFormals:  self:class C *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
 	 10 -> 12 ;

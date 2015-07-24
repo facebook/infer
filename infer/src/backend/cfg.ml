@@ -724,6 +724,12 @@ let get_all_procs cfg =
 let get_defined_procs cfg =
   list_filter Procdesc.is_defined (get_all_procs cfg)
 
+(** Get the objc procedures whose body is generated *)
+let get_objc_generated_procs cfg =
+  list_filter (
+      fun procdesc ->
+          (Procdesc.get_attributes procdesc).Sil.is_generated) (get_all_procs cfg)
+
 (** get the function names which should be analyzed before the other ones *)
 let get_priority_procnames cfg =
   cfg.Node.priority_set

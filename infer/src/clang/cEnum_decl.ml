@@ -27,6 +27,7 @@ let create_empty_procdesc () =
       Sil.language = Sil.C_CPP;
       Sil.func_attributes = [];
       Sil.method_annotation = Sil.method_annotation_empty;
+      Sil.is_generated = false;
     } in
   create {
       cfg = Cfg.Node.create_cfg ();
