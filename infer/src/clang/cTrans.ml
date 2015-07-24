@@ -305,7 +305,7 @@ struct
         match qt with
         | Some v ->
             CMethod_trans.mk_procname_from_function name v, CTypes_decl.parse_func_type name v
-        | None -> Procname.from_string name, None in
+        | None -> Procname.from_string_c_fun name, None in
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)
       (* As e.g. in fun_ptr = foo; *)
@@ -314,7 +314,7 @@ struct
         (!CFrontend_config.language = CFrontend_config.OBJC ||
           !CFrontend_config.language = CFrontend_config.OBJCPP) then
           SymExec.ModelBuiltins.malloc_no_fail
-        else Procname.from_string name in
+        else Procname.from_string_c_fun name in
       let is_builtin = SymExec.function_is_builtin non_mangled_func_name in
       if is_builtin then (* malloc, free, exit, scanf, ... *)
       { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)]}

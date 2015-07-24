@@ -348,13 +348,13 @@ module Builtin = struct
 
   (* register a builtin function name and symbolic execution handler *)
   let register proc_name_str (sym_exe_fun: sym_exe_builtin) =
-    let proc_name = Procname.from_string proc_name_str in
+    let proc_name = Procname.from_string_c_fun proc_name_str in
     Procname.Hash.replace builtin_functions proc_name sym_exe_fun;
     proc_name
 
   (* register a builtin plain function name and symbolic execution handler *)
   let register_plain proc_name_str (sym_exe_fun: sym_exe_builtin) =
-    let proc_name = Procname.from_string proc_name_str in
+    let proc_name = Procname.from_string_c_fun proc_name_str in
     Hashtbl.replace builtin_plain_functions proc_name_str sym_exe_fun;
     proc_name
 
@@ -503,7 +503,7 @@ let prune_prop tenv condition prop =
 
 let dangerous_functions =
   let dangerous_list = ["gets"] in
-  ref ((list_map Procname.from_string) dangerous_list)
+  ref ((list_map Procname.from_string_c_fun) dangerous_list)
 
 let check_inherently_dangerous_function caller_pname callee_pname =
   if list_exists (Procname.equal callee_pname) !dangerous_functions then
@@ -748,17 +748,17 @@ let redirect_shared_ptr tenv cfg pname actual_params =
   let ptr_to_something typ = ptr_to (fun _ -> true) typ in
   let pname' = match Procname.to_string pname, actual_params with
     | "shared_ptr", [(_, this_t); (_, t1)] when ptr_to_shared_ptr this_t && ptr_to_something t1 ->
-        Procname.from_string "__infer_shared_ptr"
+        Procname.from_string_c_fun "__infer_shared_ptr"
     | "shared_ptr", [(_, this_t); (_, t1)] when ptr_to_shared_ptr this_t && ref_to_shared_ptr t1 ->
-        Procname.from_string "__infer_shared_ptr_ref"
+        Procname.from_string_c_fun "__infer_shared_ptr_ref"
     | "operator=", [(_, this_t); (_, t1)] when ptr_to_shared_ptr this_t && ref_to_shared_ptr t1 ->
-        Procname.from_string "__infer_shared_ptr_eq"
+        Procname.from_string_c_fun "__infer_shared_ptr_eq"
     | "operator==", [(_, t1); (_, t2)] when ref_to_shared_ptr t1 && ref_to_shared_ptr t2 ->
-        Procname.from_string "__infer_shared_ptr_eqeq"
+        Procname.from_string_c_fun "__infer_shared_ptr_eqeq"
     | ("operator->" | "operator*"),[(_, t1)] when ptr_to_shared_ptr t1 ->
-        Procname.from_string "__infer_shared_ptr_arrow"
+        Procname.from_string_c_fun "__infer_shared_ptr_arrow"
     | "~shared_ptr",[(_, t1)] ->
-        Procname.from_string "__infer_shared_ptr_destructor"
+        Procname.from_string_c_fun "__infer_shared_ptr_destructor"
     | _ -> pname in
   if Procname.equal pname pname' then pname
   else
@@ -992,7 +992,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         execute_diverge prop_r path
       end else begin
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp; L.d_strln ", returning undefined value.";
-        let callee_pname = Procname.from_string "__function_pointer__" in
+        let callee_pname = Procname.from_string_c_fun "__function_pointer__" in
         call_unknown_or_scan
           false cfg pdesc tenv prop_r path ret_ids None n_actual_params callee_pname loc
       end
@@ -2105,7 +2105,7 @@ module ModelBuiltins = struct
               let fun_string = Mangled.to_string fun_name in
               L.d_strln ("pthread_create: calling function " ^ fun_string);
               begin
-                match Specs.get_summary (Procname.from_string fun_string) with
+                match Specs.get_summary (Procname.from_string_c_fun fun_string) with
                 | None -> assert false
                 | Some callee_summary ->
                     sym_exec_call

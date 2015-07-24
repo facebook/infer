@@ -1130,17 +1130,17 @@ let mem_kind_to_num = function
 
 (** name of the allocation function for the given memory kind *)
 let mem_alloc_pname = function
-  | Mmalloc -> Procname.from_string "malloc"
-  | Mnew -> Procname.from_string "new"
-  | Mnew_array -> Procname.from_string "new[]"
-  | Mobjc -> Procname.from_string "alloc"
+  | Mmalloc -> Procname.from_string_c_fun "malloc"
+  | Mnew -> Procname.from_string_c_fun "new"
+  | Mnew_array -> Procname.from_string_c_fun "new[]"
+  | Mobjc -> Procname.from_string_c_fun "alloc"
 
 (** name of the deallocation function for the given memory kind *)
 let mem_dealloc_pname = function
-  | Mmalloc -> Procname.from_string "free"
-  | Mnew -> Procname.from_string "delete"
-  | Mnew_array -> Procname.from_string "delete[]"
-  | Mobjc -> Procname.from_string "dealloc"
+  | Mmalloc -> Procname.from_string_c_fun "free"
+  | Mnew -> Procname.from_string_c_fun "delete"
+  | Mnew_array -> Procname.from_string_c_fun "delete[]"
+  | Mobjc -> Procname.from_string_c_fun "dealloc"
 
 let mem_kind_compare mk1 mk2 =
   int_compare (mem_kind_to_num mk1) (mem_kind_to_num mk2)
@@ -3888,4 +3888,4 @@ let global_error =
 
 (* A block pvar used to explain retain cycles *)
 let block_pvar =
-  mk_pvar (Mangled.from_string "block") (Procname.from_string "")
+  mk_pvar (Mangled.from_string "block") (Procname.from_string_c_fun "")

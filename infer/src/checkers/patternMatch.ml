@@ -160,7 +160,7 @@ let get_vararg_type_names
     | Sil.Call ([t1], Sil.Const (Sil.Cfun pn), _, _, _)::
     Sil.Set (Sil.Lvar iv, _, Sil.Var t2, _):: is ->
         (Sil.pvar_equal ivar iv && Ident.equal t1 t2 &&
-          Procname.equal pn (Procname.from_string "__new_array"))
+          Procname.equal pn (Procname.from_string_c_fun "__new_array"))
         || initializes_array is
     | i:: is -> initializes_array is
     | _ -> false in

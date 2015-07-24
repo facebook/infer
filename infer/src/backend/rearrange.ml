@@ -416,7 +416,7 @@ let mk_ptsto_exp_footprint
     | Sil.Java -> Sil.Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ with
     | Sil.Lvar pvar, [], Sil.Tfun _ ->
-        let fun_name = Procname.from_string (Mangled.to_string (Sil.pvar_get_name pvar)) in
+        let fun_name = Procname.from_string_c_fun (Mangled.to_string (Sil.pvar_get_name pvar)) in
         let fun_exp = Sil.Const (Sil.Cfun fun_name) in
         ([], Prop.mk_ptsto root (Sil.Eexp (fun_exp, inst)) (Sil.Sizeof (typ, st)))
     | _, [], Sil.Tfun _ ->

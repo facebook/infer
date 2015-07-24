@@ -251,7 +251,7 @@ let get_session () =
 let get_path_pos () =
   let pname = match get_prop_tenv_pdesc () with
     | Some (_, _, pdesc) -> Cfg.Procdesc.get_proc_name pdesc
-    | None -> Procname.from_string "unknown_procedure" in
+    | None -> Procname.from_string_c_fun "unknown_procedure" in
   let nid = get_node_id () in
   (pname, nid)
 

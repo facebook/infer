@@ -28,7 +28,7 @@ val compare : t -> t -> int
 val equal : t -> t -> bool
 
 (** Convert a string to a proc name *)
-val from_string : string -> t
+val from_string_c_fun : string -> t
 
 (** Create a C++ procedure name from plain and mangled name *)
 val mangled_c_fun : string -> string -> t

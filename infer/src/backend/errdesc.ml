@@ -222,7 +222,7 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp 
         if !verbose then (L.d_str "find_normal_variable_letderef defining "; Sil.d_exp e; L.d_ln ());
         res := _exp_lv_dexp seen node e;
         true
-    | Sil.Call ([id0], Sil.Const (Sil.Cfun pn), (e, _):: _, _, _) when Ident.equal id id0 && Procname.equal pn (Procname.from_string "__cast") ->
+    | Sil.Call ([id0], Sil.Const (Sil.Cfun pn), (e, _):: _, _, _) when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if !verbose then (L.d_str "find_normal_variable_letderef cast on "; Sil.d_exp e; L.d_ln ());
         res := _exp_rv_dexp seen node e;
         true

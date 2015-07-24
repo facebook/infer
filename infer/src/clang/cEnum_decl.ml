@@ -14,7 +14,7 @@ open CFrontend_utils
 open Clang_ast_t
 
 let create_empty_procdesc () =
-  let procname = Procname.from_string "__INFER_$GLOBAL_VAR_env" in
+  let procname = Procname.from_string_c_fun "__INFER_$GLOBAL_VAR_env" in
   let open Cfg.Procdesc in
   let proc_attributes =
     {

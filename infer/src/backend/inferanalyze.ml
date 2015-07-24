@@ -347,7 +347,7 @@ let source_file_from_pname pname =
   DB.source_file_from_string (Procname.to_string pname)
 
 let source_file_to_pname fname =
-  Procname.from_string (DB.source_file_to_string fname)
+  Procname.from_string_c_fun (DB.source_file_to_string fname)
 
 (** create clusters of minimal size in the dependence order, with recursive parts grouped together *)
 let create_minimal_clusters file_cg exe_env (only_analyze : Procname.Set.t option) : cluster list =

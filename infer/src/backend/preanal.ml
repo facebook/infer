@@ -57,7 +57,7 @@ let aliased_var = ref Vset.empty
 let captured_var = ref Vset.empty
 
 let is_not_function cfg x =
-  let pname = Procname.from_string (Mangled.to_string (Sil.pvar_get_name x)) in
+  let pname = Procname.from_string_c_fun (Mangled.to_string (Sil.pvar_get_name x)) in
   Cfg.Procdesc.find_from_name cfg pname = None
 
 let is_captured_pvar pdesc x =

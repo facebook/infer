@@ -126,7 +126,7 @@ let c_meth_sig_compare osig1 osig2 =
 let split_classname package_classname =
   string_split_character package_classname '.'
 
-let from_string (s: string) = C_FUNCTION (s, None)
+let from_string_c_fun (s: string) = C_FUNCTION (s, None)
 
 let mangled_c_fun (plain: string) (mangled: string) = C_FUNCTION (plain, Some mangled)
 

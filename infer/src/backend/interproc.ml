@@ -1124,9 +1124,9 @@ let filter_out (call_graph: Cg.t) (proc_name: Procname.t) : bool =
   if !Config.trace_anal then L.err "===filter_out@.";
   let slice_out = (* filter out if slicing is active and [proc_name] not in slice *)
     (!Config.slice_fun <> "") &&
-    (Procname.compare (Procname.from_string !Config.slice_fun) proc_name != 0) &&
+    (Procname.compare (Procname.from_string_c_fun !Config.slice_fun) proc_name != 0) &&
     (Cg.node_defined call_graph proc_name) &&
-    not (Cg.calls_recursively call_graph (Procname.from_string !Config.slice_fun) proc_name) in
+    not (Cg.calls_recursively call_graph (Procname.from_string_c_fun !Config.slice_fun) proc_name) in
   slice_out
 
 let check_skipped_procs procs_and_defined_children =
