@@ -60,7 +60,6 @@ module Node = struct
   let exn_sink_kind = Stmt_node "exceptions sink"
   let throw_kind = Stmt_node "throw"
 
-
   type cfg = (** data type for the control flow graph *)
     { node_id : int ref;
       node_list : t list ref;
@@ -359,15 +358,26 @@ module Node = struct
   (** Counter for identifiers of procdescs *)
   let proc_desc_id_counter = ref 0
 
-  let remove_node cfg node =
+  let remove_node' filter_out_fun cfg node =
     let remove_node_in_cfg nodes =
-      list_filter (fun node' -> not (equal node node')) nodes in
+      list_filter filter_out_fun nodes in
     cfg.node_list := remove_node_in_cfg !(cfg.node_list)
+
+  let remove_node cfg node =
+    remove_node' (fun node' -> not (equal node node'))
+      cfg node
+
+  let remove_node_set cfg nodes =
+    remove_node' (fun node' -> not (NodeSet.mem node' nodes))
+      cfg nodes
 
   let proc_desc_remove cfg name remove_nodes =
     (if remove_nodes then
         let pdesc = pdesc_tbl_find cfg name in
-        list_iter (remove_node cfg) pdesc.pd_nodes);
+        let proc_nodes =
+          list_fold_right (fun node set -> NodeSet.add node set)
+            pdesc.pd_nodes NodeSet.empty in
+        remove_node_set cfg proc_nodes);
     pdesc_tbl_remove cfg name
 
   let proc_desc_get_start_node proc_desc =
@@ -801,15 +811,16 @@ let remove_abducted_retvars p =
       | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
       | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
       | Sil.Estruct (flds, _) ->
-        list_fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
+          list_fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
+
       | Sil.Earray (_, elems, _) ->
-        list_fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
+          list_fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
     let rec compute_reachable_hpreds_rec sigma (reach, exps) =
       let add_hpred_if_reachable (reach, exps) = function
-        | Sil.Hpointsto (lhs, rhs, _) as hpred when Sil.ExpSet.mem lhs exps->
-          let reach' = Sil.HpredSet.add hpred reach in
-          let exps' = collect_exps exps rhs in
-          (reach', exps')
+        | Sil.Hpointsto (lhs, rhs, _) as hpred when Sil.ExpSet.mem lhs exps ->
+            let reach' = Sil.HpredSet.add hpred reach in
+            let exps' = collect_exps exps rhs in
+            (reach', exps')
         | _ -> reach, exps in
       let reach', exps' = list_fold_left add_hpred_if_reachable (reach, exps) sigma in
       if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
@@ -825,19 +836,19 @@ let remove_abducted_retvars p =
         | _ -> false in
       list_filter
         (function
-        | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) -> exp_contains lhs || exp_contains rhs)
+          | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) -> exp_contains lhs || exp_contains rhs)
         pi in
     Sil.HpredSet.elements reach_hpreds, reach_pi in
   (* separate the abducted pvars from the normal ones, deallocate the abducted ones*)
   let abducted_pvars, normal_pvars =
     list_fold_left
       (fun pvars hpred ->
-        match hpred with
-        | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
-          let abducted_pvars, normal_pvars = pvars in
-          if Sil.pvar_is_abducted pvar then pvar :: abducted_pvars, normal_pvars
-          else abducted_pvars, pvar :: normal_pvars
-        | _ -> pvars)
+            match hpred with
+            | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
+                let abducted_pvars, normal_pvars = pvars in
+                if Sil.pvar_is_abducted pvar then pvar :: abducted_pvars, normal_pvars
+                else abducted_pvars, pvar :: normal_pvars
+            | _ -> pvars)
       ([], [])
       (Prop.get_sigma p) in
   let _, p' = Prop.deallocate_stack_vars p abducted_pvars in
