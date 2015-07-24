@@ -74,21 +74,21 @@ end = struct
   let from_leq acc (e1, e2) =
     match e1, e2 with
     | Sil.BinOp(Sil.MinusA, (Sil.Var id11 as e11), (Sil.Var id12 as e12)), Sil.Const (Sil.Cint n)
-    when not (Ident.equal id11 id12) ->
+      when not (Ident.equal id11 id12) ->
         (match Sil.Int.to_signed n with
-          | None -> acc (* ignore: constraint algorithm only terminates on signed integers *)
-          | Some n' ->
-              (e11, e12, n') :: acc)
+         | None -> acc (* ignore: constraint algorithm only terminates on signed integers *)
+         | Some n' ->
+             (e11, e12, n') :: acc)
     | _ -> acc
   let from_lt acc (e1, e2) =
     match e1, e2 with
     | Sil.Const (Sil.Cint n), Sil.BinOp(Sil.MinusA, (Sil.Var id21 as e21), (Sil.Var id22 as e22))
-    when not (Ident.equal id21 id22) ->
+      when not (Ident.equal id21 id22) ->
         (match Sil.Int.to_signed n with
-          | None -> acc (* ignore: constraint algorithm only terminates on signed integers *)
-          | Some n' ->
-              let m = Sil.Int.zero -- n' -- Sil.Int.one in
-              (e22, e21, m) :: acc)
+         | None -> acc (* ignore: constraint algorithm only terminates on signed integers *)
+         | Some n' ->
+             let m = Sil.Int.zero -- n' -- Sil.Int.one in
+             (e22, e21, m) :: acc)
     | _ -> acc
 
   let rec generate ((e1, e2, n) as constr) acc = function
@@ -191,7 +191,7 @@ let check_type_size_lt t1 t2 = match type_size_compare t1 t2 with
 
 (** Reasoning about inequalities *)
 module Inequalities : sig
-(** type for inequalities (and implied disequalities) *)
+  (** type for inequalities (and implied disequalities) *)
   type t
 
   (** Extract inequalities and disequalities from [pi] *)
@@ -310,7 +310,7 @@ end = struct
               let new_umap = umap_add umap e1 new_upper1 in
               umap_improve_by_difference_constraints new_umap constrs_rest
             with Not_found ->
-                umap_improve_by_difference_constraints umap constrs_rest in
+              umap_improve_by_difference_constraints umap constrs_rest in
       let rec lmap_improve_by_difference_constraints lmap = function
         | [] -> lmap
         | constr:: constrs_rest -> (* e2 - e1 > -n-1 *)
@@ -321,7 +321,7 @@ end = struct
               let new_lmap = lmap_add lmap e2 new_lower2 in
               lmap_improve_by_difference_constraints new_lmap constrs_rest
             with Not_found ->
-                lmap_improve_by_difference_constraints lmap constrs_rest in
+              lmap_improve_by_difference_constraints lmap constrs_rest in
       let leqs_res =
         let umap = umap_create_from_leqs Sil.ExpMap.empty leqs in
         let umap' = umap_improve_by_difference_constraints umap diff_constraints2 in
@@ -375,8 +375,8 @@ end = struct
       | Sil.Earray (size, isel, _) ->
           add_lt_minus1_e size;
           list_iter (fun (idx, se) ->
-                  add_lt_minus1_e idx;
-                  strexp_extract se) isel in
+              add_lt_minus1_e idx;
+              strexp_extract se) isel in
     let hpred_extract = function
       | Sil.Hpointsto(_, se, texp) ->
           if texp_is_unsigned texp then strexp_lt_minus1 se;
@@ -408,7 +408,7 @@ end = struct
     match e1, e2 with
     | Sil.Const (Sil.Cint n1), Sil.Const (Sil.Cint n2) -> Sil.Int.leq n1 n2
     | Sil.BinOp (Sil.MinusA, Sil.Sizeof (t1, _), Sil.Sizeof (t2, _)), Sil.Const(Sil.Cint n2)
-    when Sil.Int.isminusone n2 && type_size_comparable t1 t2 -> (* [ sizeof(t1) - sizeof(t2) <= -1 ] *)
+      when Sil.Int.isminusone n2 && type_size_comparable t1 t2 -> (* [ sizeof(t1) - sizeof(t2) <= -1 ] *)
         check_type_size_lt t1 t2
     | e, Sil.Const (Sil.Cint n) -> (* [e <= n' <= n |- e <= n] *)
         list_exists (function
@@ -533,9 +533,9 @@ let check_zero e =
   check_equal Prop.prop_emp e Sil.exp_zero
 
 (** [is_root prop base_exp exp] checks whether [base_exp =
-exp.offlist] for some list of offsets [offlist]. If so, it returns
-[Some(offlist)]. Otherwise, it returns [None]. Assumes that
-[base_exp] points to the beginning of a structure, not the middle.
+    exp.offlist] for some list of offsets [offlist]. If so, it returns
+    [Some(offlist)]. Otherwise, it returns [None]. Assumes that
+    [base_exp] points to the beginning of a structure, not the middle.
 *)
 let is_root prop base_exp exp =
   let rec f offlist_past e = match e with
@@ -599,27 +599,27 @@ let check_disequal prop e1 e2 =
       | [] -> None
       | Sil.Hpointsto (base, _, _) as hpred :: sigma_rest ->
           (match is_root prop base e with
-            | None ->
-                let sigma_irrelevant' = hpred :: sigma_irrelevant
-                in f sigma_irrelevant' e sigma_rest
-            | Some _ ->
-                let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
-                in Some (true, sigma_irrelevant'))
+           | None ->
+               let sigma_irrelevant' = hpred :: sigma_irrelevant
+               in f sigma_irrelevant' e sigma_rest
+           | Some _ ->
+               let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
+               in Some (true, sigma_irrelevant'))
       | Sil.Hlseg (k, _, e1, e2, _) as hpred :: sigma_rest ->
           (match is_root prop e1 e with
-            | None ->
-                let sigma_irrelevant' = hpred :: sigma_irrelevant
-                in f sigma_irrelevant' e sigma_rest
-            | Some _ ->
-                if (k == Sil.Lseg_NE || check_pi_implies_disequal e1 e2) then
-                  let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
-                  in Some (true, sigma_irrelevant')
-                else if (Sil.exp_equal e2 Sil.exp_zero) then
-                  let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
-                  in Some (false, sigma_irrelevant')
-                else
-                  let sigma_rest' = (list_rev sigma_irrelevant) @ sigma_rest
-                  in f [] e2 sigma_rest')
+           | None ->
+               let sigma_irrelevant' = hpred :: sigma_irrelevant
+               in f sigma_irrelevant' e sigma_rest
+           | Some _ ->
+               if (k == Sil.Lseg_NE || check_pi_implies_disequal e1 e2) then
+                 let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
+                 in Some (true, sigma_irrelevant')
+               else if (Sil.exp_equal e2 Sil.exp_zero) then
+                 let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
+                 in Some (false, sigma_irrelevant')
+               else
+                 let sigma_rest' = (list_rev sigma_irrelevant) @ sigma_rest
+                 in f [] e2 sigma_rest')
       | Sil.Hdllseg (Sil.Lseg_NE, _, iF, oB, oF, iB, _) :: sigma_rest ->
           if is_root prop iF e != None || is_root prop iB e != None then
             let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
@@ -629,19 +629,19 @@ let check_disequal prop e1 e2 =
             in Some (false, sigma_irrelevant')
       | Sil.Hdllseg (Sil.Lseg_PE, _, iF, oB, oF, iB, _) as hpred :: sigma_rest ->
           (match is_root prop iF e with
-            | None ->
-                let sigma_irrelevant' = hpred :: sigma_irrelevant
-                in f sigma_irrelevant' e sigma_rest
-            | Some _ ->
-                if (check_pi_implies_disequal iF oF) then
-                  let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
-                  in Some (true, sigma_irrelevant')
-                else if (Sil.exp_equal oF Sil.exp_zero) then
-                  let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
-                  in Some (false, sigma_irrelevant')
-                else
-                  let sigma_rest' = (list_rev sigma_irrelevant) @ sigma_rest
-                  in f [] oF sigma_rest') in
+           | None ->
+               let sigma_irrelevant' = hpred :: sigma_irrelevant
+               in f sigma_irrelevant' e sigma_rest
+           | Some _ ->
+               if (check_pi_implies_disequal iF oF) then
+                 let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
+                 in Some (true, sigma_irrelevant')
+               else if (Sil.exp_equal oF Sil.exp_zero) then
+                 let sigma_irrelevant' = (list_rev sigma_irrelevant) @ sigma_rest
+                 in Some (false, sigma_irrelevant')
+               else
+                 let sigma_rest' = (list_rev sigma_irrelevant) @ sigma_rest
+                 in f [] oF sigma_rest') in
     let f_null_check sigma_irrelevant e sigma_rest =
       if not (Sil.exp_equal e Sil.exp_zero) then f sigma_irrelevant e sigma_rest
       else
@@ -651,8 +651,8 @@ let check_disequal prop e1 e2 =
     | None -> false
     | Some (e1_allocated, spatial_part_leftover) ->
         (match f_null_check [] n_e2 spatial_part_leftover with
-          | None -> false
-          | Some ((e2_allocated : bool), _) -> e1_allocated || e2_allocated) in
+         | None -> false
+         | Some ((e2_allocated : bool), _) -> e1_allocated || e2_allocated) in
   let neq_pure_part () =
     check_pi_implies_disequal n_e1 n_e2 in
   check_disequal_const () || neq_pure_part () || neq_spatial_part ()
@@ -841,12 +841,12 @@ let check_inconsistency_base prop =
   let inconsistent_atom = function
     | Sil.Aeq (e1, e2) ->
         (match e1, e2 with
-          | Sil.Const c1, Sil.Const c2 -> not (Sil.const_equal c1 c2)
-          | _ -> check_disequal prop e1 e2)
+         | Sil.Const c1, Sil.Const c2 -> not (Sil.const_equal c1 c2)
+         | _ -> check_disequal prop e1 e2)
     | Sil.Aneq (e1, e2) ->
         (match e1, e2 with
-          | Sil.Const c1, Sil.Const c2 -> Sil.const_equal c1 c2
-          | _ -> (Sil.exp_compare e1 e2 = 0)) in
+         | Sil.Const c1, Sil.Const c2 -> Sil.const_equal c1 c2
+         | _ -> (Sil.exp_compare e1 e2 = 0)) in
   let inconsistent_inequalities () =
     let ineq = Inequalities.from_prop prop in
     (*
@@ -1097,8 +1097,8 @@ let extend_sub sub v e =
   Sil.sub_join new_sub (Sil.sub_range_map (Sil.exp_sub new_sub) sub)
 
 (** Extend [sub1] and [sub2] to witnesses that each instance of
-[e1[sub1]] is an instance of [e2[sub2]]. Raise IMPL_FALSE if not
-possible. *)
+    [e1[sub1]] is an instance of [e2[sub2]]. Raise IMPL_FALSE if not
+    possible. *)
 let exp_imply calc_missing subs e1_in e2_in : subst2 =
   let e1 = Prop.exp_normalize_noabs (fst subs) e1_in in
   let e2 = Prop.exp_normalize_noabs (snd subs) e2_in in
@@ -1128,7 +1128,7 @@ let exp_imply calc_missing subs e1_in e2_in : subst2 =
     | e1, Sil.Var v2 ->
         let occurs_check v e = (* check whether [v] occurs in normalized [e] *)
           if Sil.fav_mem (Sil.exp_fav e) v
-          && Sil.fav_mem (Sil.exp_fav (Prop.exp_normalize_prop Prop.prop_emp e)) v
+             && Sil.fav_mem (Sil.exp_fav (Prop.exp_normalize_prop Prop.prop_emp e)) v
           then raise (IMPL_EXC ("occurs check", subs, (EXC_FALSE_EXPS (e1, e2)))) in
         if Ident.is_primed v2 then
           let () = occurs_check v2 e1 in
@@ -1177,9 +1177,9 @@ let exp_imply calc_missing subs e1_in e2_in : subst2 =
   do_imply subs e1 e2
 
 (** Convert a path (from lhs of a |-> to a field name present only in
-the rhs) into an id. If the lhs was a footprint var, the id is a
-new footprint var. Othewise it is a var with the path in the name
-and stamp - 1 *)
+    the rhs) into an id. If the lhs was a footprint var, the id is a
+    new footprint var. Othewise it is a var with the path in the name
+    and stamp - 1 *)
 let path_to_id path =
   let rec f = function
     | Sil.Var id ->
@@ -1187,12 +1187,12 @@ let path_to_id path =
         else Some (Ident.name_to_string (Ident.get_name id) ^ (string_of_int (Ident.get_stamp id)))
     | Sil.Lfield (e, fld, t) ->
         (match f e with
-          | None -> None
-          | Some s -> Some (s ^ "_" ^ (Ident.fieldname_to_string fld)))
+         | None -> None
+         | Some s -> Some (s ^ "_" ^ (Ident.fieldname_to_string fld)))
     | Sil.Lindex (e, ind) ->
         (match f e with
-          | None -> None
-          | Some s -> Some (s ^ "_" ^ (Sil.exp_to_string ind)))
+         | None -> None
+         | Some s -> Some (s ^ "_" ^ (Sil.exp_to_string ind)))
     | Sil.Lvar pv ->
         Some (Sil.exp_to_string path)
     | Sil.Const (Sil.Cstr s) ->
@@ -1216,15 +1216,15 @@ let array_size_imply calc_missing subs size1 size2 indices2 =
   | _, Sil.BinOp (Sil.PlusA, _, Sil.Var _)
   | Sil.BinOp (Sil.Mult, _, _), _ ->
       (try exp_imply calc_missing subs size1 size2 with
-      | IMPL_EXC (s, subs', x) ->
-          raise (IMPL_EXC ("array size:" ^ s, subs', x)))
+       | IMPL_EXC (s, subs', x) ->
+           raise (IMPL_EXC ("array size:" ^ s, subs', x)))
   | _ ->
       ProverState.add_bounds_check (ProverState.BCsize_imply (size1, size2, indices2));
       subs
 
 (** Extend [sub1] and [sub2] to witnesses that each instance of
-[se1[sub1]] is an instance of [se2[sub2]]. Raise IMPL_FALSE if not
-possible. *)
+    [se1[sub1]] is an instance of [se2[sub2]]. Raise IMPL_FALSE if not
+    possible. *)
 let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subst2 * (Sil.strexp option) * (Sil.strexp option) =
   (* L.d_str "sexp_imply "; Sil.d_sexp se1; L.d_str " "; Sil.d_sexp se2; L.d_str " : "; Sil.d_typ_full typ2; L.d_ln(); *)
   match se1, se2 with
@@ -1309,8 +1309,8 @@ and struct_imply source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ident.fi
       subs'', fld_frame, (f2, se2):: fld_missing
 
 and array_imply source calc_index_frame calc_missing subs esel1 esel2 typ2
-: subst2 * ((Sil.exp * Sil.strexp) list) * ((Sil.exp * Sil.strexp) list)
-=
+  : subst2 * ((Sil.exp * Sil.strexp) list) * ((Sil.exp * Sil.strexp) list)
+  =
   let typ_elem = Sil.array_typ_elem (Some Sil.Tvoid) typ2 in
   match esel1, esel2 with
   | _,[] -> subs, esel1, []
@@ -1321,8 +1321,8 @@ and array_imply source calc_index_frame calc_missing subs esel1 esel2 typ2
       if n < 0 then array_imply source calc_index_frame calc_missing subs esel1' esel2 typ2
       else if n > 0 then array_imply source calc_index_frame calc_missing subs esel1 esel2' typ2
       else (* n=0 *)
-      let subs', _, _ = sexp_imply (Sil.Lindex (source, e1)) false calc_missing subs se1 se2 typ_elem in
-      array_imply source calc_index_frame calc_missing subs' esel1' esel2' typ2
+        let subs', _, _ = sexp_imply (Sil.Lindex (source, e1)) false calc_missing subs se1 se2 typ_elem in
+        array_imply source calc_index_frame calc_missing subs' esel1' esel2' typ2
   | [], (e2, se2) :: esel2' ->
       let subs' = sexp_imply_nolhs (Sil.Lindex (source, e2)) calc_missing subs se2 typ_elem in
       let subs'', index_frame, index_missing = array_imply source calc_index_frame calc_missing subs' [] esel2' typ2 in
@@ -1415,7 +1415,7 @@ let move_primed_lhs_from_front subs sigma = match sigma with
 let name_n = Ident.string_to_name "n"
 
 (** [expand_hpred_pointer calc_index_frame hpred] expands [hpred] if it is a |-> whose lhs is a Lfield or Lindex or ptr+off.
-Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
+    Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
 let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
   let rec expand changed calc_index_frame hpred = match hpred with
     | Sil.Hpointsto (Sil.Lfield (e, fld, typ_fld), se, t) ->
@@ -1509,7 +1509,7 @@ let rec case_analysis_type tenv (t1, st1) (t2, st2) =
 
   | Sil.Tstruct (_, _, Sil.Class, Some c1, _, _, _), Sil.Tarray _ ->
       if ((Mangled.equal c1 serializable_type) || (Mangled.equal c1 cloneable_type) || (Mangled.equal c1 object_type)) &&
-      (st1 <> Sil.Subtype.exact) then (Some st1, None)
+         (st1 <> Sil.Subtype.exact) then (Some st1, None)
       else (None, Some st1)
 
   | _ -> if (check_subtype_basic_type t1 t2) then (Some st1, None)
@@ -1565,27 +1565,27 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
             not (texp_equal_modulo_subtype_flag texp1' texp1)
         | None -> false in
       if (calc_missing) then (* footprint *)
-      begin
-        match pos_type_opt with
-        | None -> cast_exception tenv texp1 texp2 e1 subs
-        | Some texp1' ->
-            if has_changed then None, pos_type_opt (* missing *)
-            else pos_type_opt, None (* frame *)
-      end
+        begin
+          match pos_type_opt with
+          | None -> cast_exception tenv texp1 texp2 e1 subs
+          | Some texp1' ->
+              if has_changed then None, pos_type_opt (* missing *)
+              else pos_type_opt, None (* frame *)
+        end
       else (* re-execution *)
-      begin
-        match neg_type_opt with
-        | Some _ -> cast_exception tenv texp1 texp2 e1 subs
-        | None ->
-            if has_changed then cast_exception tenv texp1 texp2 e1 subs (* missing *)
-            else pos_type_opt, None (* frame *)
-      end
+        begin
+          match neg_type_opt with
+          | Some _ -> cast_exception tenv texp1 texp2 e1 subs
+          | None ->
+              if has_changed then cast_exception tenv texp1 texp2 e1 subs (* missing *)
+              else pos_type_opt, None (* frame *)
+        end
     end
   else
     None, None
 
 (** pre-process implication between a non-array and an array: the non-array is turned into an array of size given by its type
-only active in type_size mode *)
+    only active in type_size mode *)
 let sexp_imply_preprocess se1 texp1 se2 = match se1, texp1, se2 with
   | Sil.Eexp (e1, inst), Sil.Sizeof _, Sil.Earray _ when !Config.type_size ->
       let se1' = Sil.Earray (texp1, [(Sil.exp_zero, se1)], inst) in
@@ -1594,7 +1594,7 @@ let sexp_imply_preprocess se1 texp1 se2 = match se1, texp1, se2 with
   | _ -> se1
 
 (** handle parameter subtype for java: when the type of a callee variable in the caller is a strict subtype
-of the one in the callee, add a type frame and type missing *)
+    of the one in the callee, add a type frame and type missing *)
 let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2) =
   let is_callee = match e1 with
     | Sil.Lvar pv -> Sil.pvar_is_callee pv
@@ -1639,84 +1639,84 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
         | Sil.Lvar p -> ()
         | Sil.Var v -> if Ident.is_primed v then
               (d_impl_err ("rhs |-> not implemented", subs, (EXC_FALSE_HPRED hpred2));
-                raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
         | _ -> () in
       (match Prop.prop_iter_create prop1 with
-        | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
-        | Some iter1 ->
-            (match Prop.prop_iter_find iter1 (filter_ne_lhs (fst subs) e2) with
-              | None -> raise (IMPL_EXC ("lhs does not have e|->", subs, (EXC_FALSE_HPRED hpred2)))
-              | Some iter1' ->
-                  (match Prop.prop_iter_current iter1' with
-                    | Sil.Hpointsto (e1, se1, texp1), _ ->
-                        (try
-                          let typ2 = Sil.texp_to_typ (Some Sil.Tvoid) texp2 in
-                          let typing_frame, typing_missing = texp_imply tenv subs texp1 texp2 e1 calc_missing in
-                          let se1' = sexp_imply_preprocess se1 texp1 se2 in
-                          let subs', fld_frame, fld_missing = sexp_imply e1 calc_index_frame calc_missing subs se1' se2 typ2 in
-                          if calc_missing then
-                            begin
-                              handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2);
-                              (match fld_missing with
-                                | Some fld_missing ->
-                                    ProverState.add_missing_fld (Sil.Hpointsto(_e2, fld_missing, texp1))
-                                | None -> ());
-                              (match fld_frame with
-                                | Some fld_frame ->
-                                    ProverState.add_frame_fld (Sil.Hpointsto(e1, fld_frame, texp1))
-                                | None -> ());
-                              (match typing_missing with
-                                | Some t_missing ->
-                                    ProverState.add_missing_typ (_e2, t_missing)
-                                | None -> ());
-                              (match typing_frame with
-                                | Some t_frame ->
-                                    ProverState.add_frame_typ (e1, t_frame)
-                                | None -> ())
-                            end;
-                          let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1'
-                          in (subs', prop1')
-                        with
-                        | IMPL_EXC (s, _, body) when calc_missing ->
-                            raise (MISSING_EXC s))
-                    | Sil.Hlseg (Sil.Lseg_NE, para1, e1, f1, elist1), _ -> (** Unroll lseg *)
-                        let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
-                        let (_, para_inst1) = Sil.hpara_instantiate para1 e1 n' elist1 in
-                        let hpred_list1 = para_inst1@[Prop.mk_lseg Sil.Lseg_PE para1 n' f1 elist1] in
-                        let iter1'' = Prop.prop_iter_update_current_by_list iter1' hpred_list1 in
-                        L.d_increase_indent 1;
-                        let res =
-                          decrease_indent_when_exception
-                            (fun () -> hpred_imply tenv calc_index_frame calc_missing subs (Prop.prop_iter_to_prop iter1'') sigma2 hpred2) in
-                        L.d_decrease_indent 1;
-                        res
-                    | Sil.Hdllseg (Sil.Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
-                    when Sil.exp_equal (Sil.exp_sub (fst subs) iF1) e2 -> (** Unroll dllseg forward *)
-                        let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
-                        let (_, para_inst1) = Sil.hpara_dll_instantiate para1 iF1 oB1 n' elist1 in
-                        let hpred_list1 = para_inst1@[Prop.mk_dllseg Sil.Lseg_PE para1 n' iF1 oF1 iB1 elist1] in
-                        let iter1'' = Prop.prop_iter_update_current_by_list iter1' hpred_list1 in
-                        L.d_increase_indent 1;
-                        let res =
-                          decrease_indent_when_exception
-                            (fun () -> hpred_imply tenv calc_index_frame calc_missing subs (Prop.prop_iter_to_prop iter1'') sigma2 hpred2) in
-                        L.d_decrease_indent 1;
-                        res
-                    | Sil.Hdllseg (Sil.Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
-                    when Sil.exp_equal (Sil.exp_sub (fst subs) iB1) e2 -> (** Unroll dllseg backward *)
-                        let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
-                        let (_, para_inst1) = Sil.hpara_dll_instantiate para1 iB1 n' oF1 elist1 in
-                        let hpred_list1 = para_inst1@[Prop.mk_dllseg Sil.Lseg_PE para1 iF1 oB1 iB1 n' elist1] in
-                        let iter1'' = Prop.prop_iter_update_current_by_list iter1' hpred_list1 in
-                        L.d_increase_indent 1;
-                        let res =
-                          decrease_indent_when_exception
-                            (fun () -> hpred_imply tenv calc_index_frame calc_missing subs (Prop.prop_iter_to_prop iter1'') sigma2 hpred2) in
-                        L.d_decrease_indent 1;
-                        res
-                    | _ -> assert false
-                  )
-            )
+       | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
+       | Some iter1 ->
+           (match Prop.prop_iter_find iter1 (filter_ne_lhs (fst subs) e2) with
+            | None -> raise (IMPL_EXC ("lhs does not have e|->", subs, (EXC_FALSE_HPRED hpred2)))
+            | Some iter1' ->
+                (match Prop.prop_iter_current iter1' with
+                 | Sil.Hpointsto (e1, se1, texp1), _ ->
+                     (try
+                        let typ2 = Sil.texp_to_typ (Some Sil.Tvoid) texp2 in
+                        let typing_frame, typing_missing = texp_imply tenv subs texp1 texp2 e1 calc_missing in
+                        let se1' = sexp_imply_preprocess se1 texp1 se2 in
+                        let subs', fld_frame, fld_missing = sexp_imply e1 calc_index_frame calc_missing subs se1' se2 typ2 in
+                        if calc_missing then
+                          begin
+                            handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2);
+                            (match fld_missing with
+                             | Some fld_missing ->
+                                 ProverState.add_missing_fld (Sil.Hpointsto(_e2, fld_missing, texp1))
+                             | None -> ());
+                            (match fld_frame with
+                             | Some fld_frame ->
+                                 ProverState.add_frame_fld (Sil.Hpointsto(e1, fld_frame, texp1))
+                             | None -> ());
+                            (match typing_missing with
+                             | Some t_missing ->
+                                 ProverState.add_missing_typ (_e2, t_missing)
+                             | None -> ());
+                            (match typing_frame with
+                             | Some t_frame ->
+                                 ProverState.add_frame_typ (e1, t_frame)
+                             | None -> ())
+                          end;
+                        let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1'
+                        in (subs', prop1')
+                      with
+                      | IMPL_EXC (s, _, body) when calc_missing ->
+                          raise (MISSING_EXC s))
+                 | Sil.Hlseg (Sil.Lseg_NE, para1, e1, f1, elist1), _ -> (** Unroll lseg *)
+                     let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
+                     let (_, para_inst1) = Sil.hpara_instantiate para1 e1 n' elist1 in
+                     let hpred_list1 = para_inst1@[Prop.mk_lseg Sil.Lseg_PE para1 n' f1 elist1] in
+                     let iter1'' = Prop.prop_iter_update_current_by_list iter1' hpred_list1 in
+                     L.d_increase_indent 1;
+                     let res =
+                       decrease_indent_when_exception
+                         (fun () -> hpred_imply tenv calc_index_frame calc_missing subs (Prop.prop_iter_to_prop iter1'') sigma2 hpred2) in
+                     L.d_decrease_indent 1;
+                     res
+                 | Sil.Hdllseg (Sil.Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
+                   when Sil.exp_equal (Sil.exp_sub (fst subs) iF1) e2 -> (** Unroll dllseg forward *)
+                     let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
+                     let (_, para_inst1) = Sil.hpara_dll_instantiate para1 iF1 oB1 n' elist1 in
+                     let hpred_list1 = para_inst1@[Prop.mk_dllseg Sil.Lseg_PE para1 n' iF1 oF1 iB1 elist1] in
+                     let iter1'' = Prop.prop_iter_update_current_by_list iter1' hpred_list1 in
+                     L.d_increase_indent 1;
+                     let res =
+                       decrease_indent_when_exception
+                         (fun () -> hpred_imply tenv calc_index_frame calc_missing subs (Prop.prop_iter_to_prop iter1'') sigma2 hpred2) in
+                     L.d_decrease_indent 1;
+                     res
+                 | Sil.Hdllseg (Sil.Lseg_NE, para1, iF1, oB1, oF1, iB1, elist1), _
+                   when Sil.exp_equal (Sil.exp_sub (fst subs) iB1) e2 -> (** Unroll dllseg backward *)
+                     let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
+                     let (_, para_inst1) = Sil.hpara_dll_instantiate para1 iB1 n' oF1 elist1 in
+                     let hpred_list1 = para_inst1@[Prop.mk_dllseg Sil.Lseg_PE para1 iF1 oB1 iB1 n' elist1] in
+                     let iter1'' = Prop.prop_iter_update_current_by_list iter1' hpred_list1 in
+                     L.d_increase_indent 1;
+                     let res =
+                       decrease_indent_when_exception
+                         (fun () -> hpred_imply tenv calc_index_frame calc_missing subs (Prop.prop_iter_to_prop iter1'') sigma2 hpred2) in
+                     L.d_decrease_indent 1;
+                     res
+                 | _ -> assert false
+                )
+           )
       )
   | Sil.Hlseg (k, para2, _e2, _f2, _elist2) -> (* for now ignore implications between PE and NE *)
       let e2, f2 = Sil.exp_sub (snd subs) _e2, Sil.exp_sub (snd subs) _f2 in
@@ -1724,85 +1724,18 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
         | Sil.Lvar p -> ()
         | Sil.Var v -> if Ident.is_primed v then
               (d_impl_err ("rhs |-> not implemented", subs, (EXC_FALSE_HPRED hpred2));
-                raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
         | _ -> ()
       in
       if Sil.exp_equal e2 f2 && k == Sil.Lseg_PE then (subs, prop1)
       else
         (match Prop.prop_iter_create prop1 with
-          | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
-          | Some iter1 ->
-              (match Prop.prop_iter_find iter1 (filter_hpred (fst subs) (Sil.hpred_sub (snd subs) hpred2)) with
-                | None ->
-                    let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) _elist2 in
-                    let _, para_inst2 = Sil.hpara_instantiate para2 e2 f2 elist2 in
-                    L.d_increase_indent 1;
-                    let res =
-                      decrease_indent_when_exception
-                        (fun () -> sigma_imply tenv calc_index_frame false subs prop1 para_inst2) in
-                    (* calc_missing is false as we're checking an instantiation of the original list *)
-                    L.d_decrease_indent 1;
-                    res
-                | Some iter1' ->
-                    let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) _elist2 in
-                    let subs' = exp_list_imply calc_missing subs (f2:: elist2) (f2:: elist2) in (* force instantiation of existentials *)
-                    let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1' in
-                    let hpred1 = match Prop.prop_iter_current iter1' with
-                      | hpred1, b ->
-                          if b then ProverState.add_missing_pi (Sil.Aneq(_e2, _f2)); (* for PE |- NE *)
-                          hpred1
-                    in match hpred1 with
-                    | Sil.Hlseg _ -> (subs', prop1')
-                    | Sil.Hpointsto _ -> (* unroll rhs list and try again *)
-                        let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
-                        let (_, para_inst2) = Sil.hpara_instantiate para2 _e2 n' elist2 in
-                        let hpred_list2 = para_inst2@[Prop.mk_lseg Sil.Lseg_PE para2 n' _f2 _elist2] in
-                        L.d_increase_indent 1;
-                        let res =
-                          decrease_indent_when_exception
-                            (fun () ->
-                                  try sigma_imply tenv calc_index_frame calc_missing subs prop1 hpred_list2
-                                  with exn when exn_not_timeout exn ->
-                                      begin
-                                        (L.d_strln_color Red) "backtracking lseg: trying rhs of length exactly 1";
-                                        let (_, para_inst3) = Sil.hpara_instantiate para2 _e2 _f2 elist2 in
-                                        sigma_imply tenv calc_index_frame calc_missing subs prop1 para_inst3
-                                      end) in
-                        L.d_decrease_indent 1;
-                        res
-                    | Sil.Hdllseg _ -> assert false
-              )
-        )
-  | Sil.Hdllseg (Sil.Lseg_PE, _, _, _, _, _, _) ->
-      (d_impl_err ("rhs dllsegPE not implemented", subs, (EXC_FALSE_HPRED hpred2));
-        raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
-  | Sil.Hdllseg (k, para2, iF2, oB2, oF2, iB2, elist2) -> (* for now ignore implications between PE and NE *)
-      let iF2, oF2 = Sil.exp_sub (snd subs) iF2, Sil.exp_sub (snd subs) oF2 in
-      let iB2, oB2 = Sil.exp_sub (snd subs) iB2, Sil.exp_sub (snd subs) oB2 in
-      let _ = match oF2 with
-        | Sil.Lvar p -> ()
-        | Sil.Var v -> if Ident.is_primed v then
-              (d_impl_err ("rhs dllseg not implemented", subs, (EXC_FALSE_HPRED hpred2));
-                raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
-        | _ -> ()
-      in
-      let _ = match oB2 with
-        | Sil.Lvar p -> ()
-        | Sil.Var v -> if Ident.is_primed v then
-              (d_impl_err ("rhs dllseg not implemented", subs, (EXC_FALSE_HPRED hpred2));
-                raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
-        | _ -> ()
-      in
-      (match Prop.prop_iter_create prop1 with
-        | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
-        | Some iter1 ->
-            (match Prop.prop_iter_find iter1 (filter_hpred (fst subs) (Sil.hpred_sub (snd subs) hpred2)) with
+         | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
+         | Some iter1 ->
+             (match Prop.prop_iter_find iter1 (filter_hpred (fst subs) (Sil.hpred_sub (snd subs) hpred2)) with
               | None ->
-                  let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
-                  let _, para_inst2 =
-                    if Sil.exp_equal iF2 iB2 then
-                      Sil.hpara_dll_instantiate para2 iF2 oB2 oF2 elist2
-                    else assert false in  (** Only base case of rhs list considered for now *)
+                  let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) _elist2 in
+                  let _, para_inst2 = Sil.hpara_instantiate para2 e2 f2 elist2 in
                   L.d_increase_indent 1;
                   let res =
                     decrease_indent_when_exception
@@ -1810,26 +1743,93 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                   (* calc_missing is false as we're checking an instantiation of the original list *)
                   L.d_decrease_indent 1;
                   res
-              | Some iter1' -> (** Only consider implications between identical listsegs for now *)
-                  let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
-                  let subs' = exp_list_imply calc_missing subs (iF2:: oB2:: oF2:: iB2:: elist2) (iF2:: oB2:: oF2:: iB2:: elist2) in (* force instantiation of existentials *)
-                  let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1'
-                  in (subs', prop1')
-            )
+              | Some iter1' ->
+                  let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) _elist2 in
+                  let subs' = exp_list_imply calc_missing subs (f2:: elist2) (f2:: elist2) in (* force instantiation of existentials *)
+                  let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1' in
+                  let hpred1 = match Prop.prop_iter_current iter1' with
+                    | hpred1, b ->
+                        if b then ProverState.add_missing_pi (Sil.Aneq(_e2, _f2)); (* for PE |- NE *)
+                        hpred1
+                  in match hpred1 with
+                  | Sil.Hlseg _ -> (subs', prop1')
+                  | Sil.Hpointsto _ -> (* unroll rhs list and try again *)
+                      let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
+                      let (_, para_inst2) = Sil.hpara_instantiate para2 _e2 n' elist2 in
+                      let hpred_list2 = para_inst2@[Prop.mk_lseg Sil.Lseg_PE para2 n' _f2 _elist2] in
+                      L.d_increase_indent 1;
+                      let res =
+                        decrease_indent_when_exception
+                          (fun () ->
+                             try sigma_imply tenv calc_index_frame calc_missing subs prop1 hpred_list2
+                             with exn when exn_not_timeout exn ->
+                               begin
+                                 (L.d_strln_color Red) "backtracking lseg: trying rhs of length exactly 1";
+                                 let (_, para_inst3) = Sil.hpara_instantiate para2 _e2 _f2 elist2 in
+                                 sigma_imply tenv calc_index_frame calc_missing subs prop1 para_inst3
+                               end) in
+                      L.d_decrease_indent 1;
+                      res
+                  | Sil.Hdllseg _ -> assert false
+             )
+        )
+  | Sil.Hdllseg (Sil.Lseg_PE, _, _, _, _, _, _) ->
+      (d_impl_err ("rhs dllsegPE not implemented", subs, (EXC_FALSE_HPRED hpred2));
+       raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+  | Sil.Hdllseg (k, para2, iF2, oB2, oF2, iB2, elist2) -> (* for now ignore implications between PE and NE *)
+      let iF2, oF2 = Sil.exp_sub (snd subs) iF2, Sil.exp_sub (snd subs) oF2 in
+      let iB2, oB2 = Sil.exp_sub (snd subs) iB2, Sil.exp_sub (snd subs) oB2 in
+      let _ = match oF2 with
+        | Sil.Lvar p -> ()
+        | Sil.Var v -> if Ident.is_primed v then
+              (d_impl_err ("rhs dllseg not implemented", subs, (EXC_FALSE_HPRED hpred2));
+               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+        | _ -> ()
+      in
+      let _ = match oB2 with
+        | Sil.Lvar p -> ()
+        | Sil.Var v -> if Ident.is_primed v then
+              (d_impl_err ("rhs dllseg not implemented", subs, (EXC_FALSE_HPRED hpred2));
+               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+        | _ -> ()
+      in
+      (match Prop.prop_iter_create prop1 with
+       | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
+       | Some iter1 ->
+           (match Prop.prop_iter_find iter1 (filter_hpred (fst subs) (Sil.hpred_sub (snd subs) hpred2)) with
+            | None ->
+                let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
+                let _, para_inst2 =
+                  if Sil.exp_equal iF2 iB2 then
+                    Sil.hpara_dll_instantiate para2 iF2 oB2 oF2 elist2
+                  else assert false in  (** Only base case of rhs list considered for now *)
+                L.d_increase_indent 1;
+                let res =
+                  decrease_indent_when_exception
+                    (fun () -> sigma_imply tenv calc_index_frame false subs prop1 para_inst2) in
+                (* calc_missing is false as we're checking an instantiation of the original list *)
+                L.d_decrease_indent 1;
+                res
+            | Some iter1' -> (** Only consider implications between identical listsegs for now *)
+                let elist2 = list_map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
+                let subs' = exp_list_imply calc_missing subs (iF2:: oB2:: oF2:: iB2:: elist2) (iF2:: oB2:: oF2:: iB2:: elist2) in (* force instantiation of existentials *)
+                let prop1' = Prop.prop_iter_remove_curr_then_to_prop iter1'
+                in (subs', prop1')
+           )
       )
 
 (** Check that [sigma1] implies [sigma2] and return two substitution
-instantiations for the primed variables of [sigma1] and [sigma2]
-and a frame. Raise IMPL_FALSE if the implication cannot be
-proven. *)
+    instantiations for the primed variables of [sigma1] and [sigma2]
+    and a frame. Raise IMPL_FALSE if the implication cannot be
+    proven. *)
 and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 * Prop.normal Prop.t) =
   let is_constant_string_class subs = function (* if the hpred represents a constant string, return the string *)
     | Sil.Hpointsto (_e2, _, _) ->
         let e2 = Sil.exp_sub (snd subs) _e2 in
         (match e2 with
-          | Sil.Const (Sil.Cstr s) -> Some (s, true)
-          | Sil.Const (Sil.Cclass c) -> Some (Ident.name_to_string c, false)
-          | _ -> None)
+         | Sil.Const (Sil.Cstr s) -> Some (s, true)
+         | Sil.Const (Sil.Cclass c) -> Some (Ident.name_to_string c, false)
+         | _ -> None)
     | _ -> None in
   let mk_constant_string_hpred s = (* create an hpred from a constant string *)
     let size = Sil.exp_int (Sil.Int.of_int (1 + String.length s)) in
@@ -1869,60 +1869,60 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     Sil.Hpointsto (root, sexp, class_texp) in
   try
     (match move_primed_lhs_from_front subs sigma2 with
-      | [] ->
-          L.d_strln "Final Implication";
-          d_impl subs (prop1, Prop.prop_emp);
-          (subs, prop1)
-      | hpred2 :: sigma2' ->
-          L.d_strln "Current Implication";
-          d_impl subs (prop1, Prop.normalize (Prop.from_sigma (hpred2 :: sigma2')));
-          L.d_ln ();
-          L.d_ln ();
-          let normal_case hpred2' =
-            let (subs', prop1') =
-              try
-                L.d_increase_indent 1;
-                let res =
-                  decrease_indent_when_exception
-                    (fun () -> hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2') in
-                L.d_decrease_indent 1;
-                res
-              with IMPL_EXC _ when calc_missing ->
-                  begin
-                    match is_constant_string_class subs hpred2' with
-                    | Some (s, is_string) -> (* allocate constant string hpred1', do implication, then add hpred1' as missing *)
-                        let hpred1' = if is_string then mk_constant_string_hpred s else mk_constant_class_hpred s in
-                        let prop1' = Prop.normalize (Prop.replace_sigma (hpred1' :: Prop.get_sigma prop1) prop1) in
-                        let subs', frame_prop = hpred_imply tenv calc_index_frame calc_missing subs prop1' sigma2 hpred2' in
-                        (* ProverState.add_missing_sigma [hpred1']; *)
-                        subs', frame_prop
-                    | None ->
-                        let subs' = match hpred2' with
-                          | Sil.Hpointsto (e2, se2, te2) ->
-                              let typ2 = Sil.texp_to_typ (Some Sil.Tvoid) te2 in
-                              sexp_imply_nolhs e2 calc_missing subs se2 typ2
-                          | _ -> subs in
-                        ProverState.add_missing_sigma [hpred2'];
-                        subs', prop1
-                  end in
-            L.d_increase_indent 1;
-            let res =
-              decrease_indent_when_exception
-                (fun () -> sigma_imply tenv calc_index_frame calc_missing subs' prop1' sigma2') in
-            L.d_decrease_indent 1;
-            res in
-          (match hpred2 with
-            | Sil.Hpointsto(_e2, se2, t) ->
-                let changed, calc_index_frame', hpred2' = expand_hpred_pointer calc_index_frame (Sil.Hpointsto (Prop.exp_normalize_noabs (snd subs) _e2, se2, t)) in
-                if changed
-                then sigma_imply tenv calc_index_frame' calc_missing subs prop1 (hpred2' :: sigma2') (* calc_index_frame=true *)
-                else normal_case hpred2'
-            | _ -> normal_case hpred2)
+     | [] ->
+         L.d_strln "Final Implication";
+         d_impl subs (prop1, Prop.prop_emp);
+         (subs, prop1)
+     | hpred2 :: sigma2' ->
+         L.d_strln "Current Implication";
+         d_impl subs (prop1, Prop.normalize (Prop.from_sigma (hpred2 :: sigma2')));
+         L.d_ln ();
+         L.d_ln ();
+         let normal_case hpred2' =
+           let (subs', prop1') =
+             try
+               L.d_increase_indent 1;
+               let res =
+                 decrease_indent_when_exception
+                   (fun () -> hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2') in
+               L.d_decrease_indent 1;
+               res
+             with IMPL_EXC _ when calc_missing ->
+               begin
+                 match is_constant_string_class subs hpred2' with
+                 | Some (s, is_string) -> (* allocate constant string hpred1', do implication, then add hpred1' as missing *)
+                     let hpred1' = if is_string then mk_constant_string_hpred s else mk_constant_class_hpred s in
+                     let prop1' = Prop.normalize (Prop.replace_sigma (hpred1' :: Prop.get_sigma prop1) prop1) in
+                     let subs', frame_prop = hpred_imply tenv calc_index_frame calc_missing subs prop1' sigma2 hpred2' in
+                     (* ProverState.add_missing_sigma [hpred1']; *)
+                     subs', frame_prop
+                 | None ->
+                     let subs' = match hpred2' with
+                       | Sil.Hpointsto (e2, se2, te2) ->
+                           let typ2 = Sil.texp_to_typ (Some Sil.Tvoid) te2 in
+                           sexp_imply_nolhs e2 calc_missing subs se2 typ2
+                       | _ -> subs in
+                     ProverState.add_missing_sigma [hpred2'];
+                     subs', prop1
+               end in
+           L.d_increase_indent 1;
+           let res =
+             decrease_indent_when_exception
+               (fun () -> sigma_imply tenv calc_index_frame calc_missing subs' prop1' sigma2') in
+           L.d_decrease_indent 1;
+           res in
+         (match hpred2 with
+          | Sil.Hpointsto(_e2, se2, t) ->
+              let changed, calc_index_frame', hpred2' = expand_hpred_pointer calc_index_frame (Sil.Hpointsto (Prop.exp_normalize_noabs (snd subs) _e2, se2, t)) in
+              if changed
+              then sigma_imply tenv calc_index_frame' calc_missing subs prop1 (hpred2' :: sigma2') (* calc_index_frame=true *)
+              else normal_case hpred2'
+          | _ -> normal_case hpred2)
     )
   with IMPL_EXC (s, _, _) when calc_missing ->
-      L.d_strln ("Adding rhs as missing: " ^ s);
-      ProverState.add_missing_sigma sigma2;
-      subs, prop1
+    L.d_strln ("Adding rhs as missing: " ^ s);
+    ProverState.add_missing_sigma sigma2;
+    subs, prop1
 
 let prepare_prop_for_implication (sub1, sub2) pi1 sigma1 =
   let pi1' = (Prop.pi_sub sub2 (ProverState.get_missing_pi ())) @ pi1 in
@@ -1946,8 +1946,8 @@ let imply_atom calc_missing (sub1, sub2) prop a =
   imply_pi calc_missing (sub1, sub2) prop [a]
 
 (** Check pure implications before looking at the spatial part. Add
-necessary instantiations for equalities and check that instantiations
-are possible for disequalities. *)
+    necessary instantiations for equalities and check that instantiations
+    are possible for disequalities. *)
 let rec pre_check_pure_implication calc_missing subs pi1 pi2 =
   match pi2 with
   | [] -> subs
@@ -1956,21 +1956,21 @@ let rec pre_check_pure_implication calc_missing subs pi1 pi2 =
       if Sil.exp_equal e2 f2 then pre_check_pure_implication calc_missing subs pi1 pi2'
       else
         (match e2, f2 with
-          | Sil.Var v2, f2
-          when Ident.is_primed v2 (* && not (Sil.mem_sub v2 (snd subs)) *) ->
-          (* The commented-out condition should always hold. *)
-              let sub2' = extend_sub (snd subs) v2 f2 in
-              pre_check_pure_implication calc_missing (fst subs, sub2') pi1 pi2'
-          | e2, Sil.Var v2
-          when Ident.is_primed v2 (* && not (Sil.mem_sub v2 (snd subs)) *) ->
-          (* The commented-out condition should always hold. *)
-              let sub2' = extend_sub (snd subs) v2 e2 in
-              pre_check_pure_implication calc_missing (fst subs, sub2') pi1 pi2'
-          | e2, f2 ->
-              let pi1' = Prop.pi_sub (fst subs) pi1 in
-              let prop_for_impl = prepare_prop_for_implication subs pi1' [] in
-              imply_atom calc_missing subs prop_for_impl (Sil.Aeq (e2_in, f2_in));
-              pre_check_pure_implication calc_missing subs pi1 pi2'
+         | Sil.Var v2, f2
+           when Ident.is_primed v2 (* && not (Sil.mem_sub v2 (snd subs)) *) ->
+             (* The commented-out condition should always hold. *)
+             let sub2' = extend_sub (snd subs) v2 f2 in
+             pre_check_pure_implication calc_missing (fst subs, sub2') pi1 pi2'
+         | e2, Sil.Var v2
+           when Ident.is_primed v2 (* && not (Sil.mem_sub v2 (snd subs)) *) ->
+             (* The commented-out condition should always hold. *)
+             let sub2' = extend_sub (snd subs) v2 e2 in
+             pre_check_pure_implication calc_missing (fst subs, sub2') pi1 pi2'
+         | e2, f2 ->
+             let pi1' = Prop.pi_sub (fst subs) pi1 in
+             let prop_for_impl = prepare_prop_for_implication subs pi1' [] in
+             imply_atom calc_missing subs prop_for_impl (Sil.Aeq (e2_in, f2_in));
+             pre_check_pure_implication calc_missing subs pi1 pi2'
         )
   | Sil.Aeq (e1, e2) :: pi2' -> (* must be an inequality *)
       pre_check_pure_implication calc_missing subs pi1 pi2'
@@ -1983,8 +1983,8 @@ let rec pre_check_pure_implication calc_missing subs pi1 pi2 =
       else raise (IMPL_EXC ("ineq e2=f2 in rhs with e2 not primed var", (Sil.sub_empty, Sil.sub_empty), EXC_FALSE))
 
 (** Perform the array bound checks delayed (to instantiate variables) by the prover.
-If there is a provable violation of the array bounds, set the prover status to Bounds_check
-and make the proof fail. *)
+    If there is a provable violation of the array bounds, set the prover status to Bounds_check
+    and make the proof fail. *)
 let check_array_bounds (sub1, sub2) prop =
   let check_failed atom =
     ProverState.checks := Bounds_check :: !ProverState.checks;
@@ -2008,7 +2008,7 @@ let check_array_bounds (sub1, sub2) prop =
   list_iter check_bound (ProverState.get_bounds_checks ())
 
 (** [check_implication_base] returns true if [prop1|-prop2],
-ignoring the footprint part of the props *)
+    ignoring the footprint part of the props *)
 let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2 =
   try
     ProverState.reset prop1 prop2;
@@ -2063,9 +2063,9 @@ type implication_result =
   | ImplFail of check list
 
 (** [check_implication_for_footprint p1 p2] returns
-[Some(sub, frame, missing)] if [sub(p1 * missing) |- sub(p2 * frame)]
-where [sub] is a substitution which instantiates the
-primed vars of [p1] and [p2], which are assumed to be disjoint. *)
+    [Some(sub, frame, missing)] if [sub(p1 * missing) |- sub(p2 * frame)]
+    where [sub] is a substitution which instantiates the
+    primed vars of [p1] and [p2], which are assumed to be disjoint. *)
 let check_implication_for_footprint pname tenv p1 (p2: Prop.exposed Prop.t) =
   let check_frame_empty = false in
   let calc_missing = true in

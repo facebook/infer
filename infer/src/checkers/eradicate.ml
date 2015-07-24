@@ -32,9 +32,9 @@ type parameters = TypeState.parameters
 module type CallBackT =
 sig
   val callback :
-  TypeCheck.checks -> Procname.t list -> TypeCheck.get_proc_desc ->
-  Idenv.t -> Sil.tenv -> Procname.t ->
-  Cfg.Procdesc.t -> unit
+    TypeCheck.checks -> Procname.t list -> TypeCheck.get_proc_desc ->
+    Idenv.t -> Sil.tenv -> Procname.t ->
+    Cfg.Procdesc.t -> unit
 end (* CallBackT *)
 
 (** Extension to the type checker. *)
@@ -47,7 +47,7 @@ end
 (** Create a module with the toplevel callback. *)
 module MkCallback
     (Extension : ExtensionT)
-: CallBackT =
+  : CallBackT =
 struct
   (** Update the summary with stats from the checker. *)
   let update_summary proc_name proc_desc final_typestate_opt =
@@ -126,10 +126,10 @@ struct
               find_canonical_duplicate annotated_signature typestate node linereader in
           if trace then
             list_iter (fun typestate_succ ->
-                    L.stdout
-                      "Typestate After Node %a@\n%a@."
-                      Cfg.Node.pp node
-                      (TypeState.pp Extension.ext) typestate_succ)
+                L.stdout
+                  "Typestate After Node %a@\n%a@."
+                  Cfg.Node.pp node
+                  (TypeState.pp Extension.ext) typestate_succ)
               typestates_succ;
           typestates_succ, typestates_exn
         let proc_throws pn = DontKnow
@@ -190,7 +190,7 @@ struct
           !res in
 
         (** Get the initializers recursively called by computing a fixpoint.
-        Start from the initializers of the current class and the current procedure. *)
+            Start from the initializers of the current class and the current procedure. *)
         let initializers_recursive : init list =
           let initializers_base_case = initializers_current_class in
 
@@ -227,8 +227,8 @@ struct
       let pname_and_pdescs_with f =
         list_map
           (fun n -> match get_proc_desc n with
-                | Some d -> [(n, d)]
-                | None -> [])
+             | Some d -> [(n, d)]
+             | None -> [])
           all_procs
         |> list_flatten
         |> list_filter f
@@ -243,8 +243,8 @@ struct
           let initializers_current_class =
             pname_and_pdescs_with
               (fun (pname, pdesc) ->
-                    is_initializer pdesc pname &&
-                    Procname.java_get_class pname = Procname.java_get_class curr_pname) in
+                 is_initializer pdesc pname &&
+                 Procname.java_get_class pname = Procname.java_get_class curr_pname) in
           final_typestates ((curr_pname, curr_pdesc):: initializers_current_class)
         end
 
@@ -254,8 +254,8 @@ struct
           let constructors_current_class =
             pname_and_pdescs_with
               (fun (n, d) ->
-                    Procname.is_constructor n &&
-                    Procname.java_get_class n = Procname.java_get_class curr_pname) in
+                 Procname.is_constructor n &&
+                 Procname.java_get_class n = Procname.java_get_class curr_pname) in
           final_typestates constructors_current_class
         end
 
@@ -265,8 +265,8 @@ struct
       let do_typestate typestate =
         let start_node = Cfg.Procdesc.get_start_node curr_pdesc in
         if not calls_this && (* if 'this(...)' is called, no need to check initialization *)
-        check_field_initialization &&
-        checks.TypeCheck.eradicate
+           check_field_initialization &&
+           checks.TypeCheck.eradicate
         then begin
           EradicateChecks.check_constructor_initialization
             find_canonical_duplicate
@@ -305,7 +305,7 @@ struct
 
     let filter_special_cases () =
       if Procname.java_is_access_method proc_name ||
-      (Specs.proc_get_attributes proc_name proc_desc).Sil.is_bridge_method
+         (Specs.proc_get_attributes proc_name proc_desc).Sil.is_bridge_method
       then None
       else
         begin
@@ -313,11 +313,11 @@ struct
           if (Specs.proc_get_attributes proc_name proc_desc).Sil.is_abstract then
             begin
               if Models.infer_library_return &&
-              EradicateChecks.classify_procedure proc_name proc_desc = "L" then
+                 EradicateChecks.classify_procedure proc_name proc_desc = "L" then
                 (let ret_is_nullable = (* get the existing annotation *)
-                    let ia, _ = annotated_signature.Annotations.ret in
-                    Annotations.ia_is_nullable ia in
-                  EradicateChecks.pp_inferred_return_annotation ret_is_nullable proc_name);
+                   let ia, _ = annotated_signature.Annotations.ret in
+                   Annotations.ia_is_nullable ia in
+                 EradicateChecks.pp_inferred_return_annotation ret_is_nullable proc_name);
               Some annotated_signature
             end
           else
@@ -342,7 +342,7 @@ end (* MkCallback *)
 (** Given an extension to the typestate with a check, call the check on each instruction. *)
 module Build
     (Extension : ExtensionT)
-: CallBackT =
+  : CallBackT =
 struct
   module Callback = MkCallback(Extension)
   let callback = Callback.callback

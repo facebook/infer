@@ -103,9 +103,9 @@ struct
     let print_stack var_name stack =
       Stack.iter
         (fun (var_name, typ, level) ->
-              Printing.log_out "var item %s:" (Mangled.to_string var_name);
-              Printing.log_out "%s" (Sil.typ_to_string typ);
-              Printing.log_out "- %s @." (string_of_int level)) stack in
+           Printing.log_out "var item %s:" (Mangled.to_string var_name);
+           Printing.log_out "%s" (Sil.typ_to_string typ);
+           Printing.log_out "- %s @." (string_of_int level)) stack in
     Printing.log_out "LOCAL VARS:@\n";
     StringMap.iter print_stack context.local_vars_stack
 
@@ -125,9 +125,9 @@ struct
     try
       StringMap.find pointer context.local_vars_pointer
     with Not_found ->
-        (Printing.log_err "   ...Variable for pointer %s not found!!\n%!" pointer);
-        print_pointer_vars context;
-        assert false
+      (Printing.log_err "   ...Variable for pointer %s not found!!\n%!" pointer);
+      print_pointer_vars context;
+      assert false
 
   let lookup_var_locals context procname var_name =
     let stack = lookup_var_map context var_name in
@@ -141,37 +141,37 @@ struct
       try
         Some (fst (lookup_var_locals context procname var_name))
       with Stack.Empty ->
-          try
-            Some (fst (lookup_var_globals context procname var_name))
-          with Not_found ->
-              if is_captured_var context var_name then
-                try (* if it's a captured variable we need to look at the parameters list*)
-                  Some (fst (lookup_var_formals context procname var_name))
-                with Not_found ->
-                    Printing.log_err "Variable %s not found!!\n%!" var_name;
-                    print_locals context;
-                    None
-              else None
+        try
+          Some (fst (lookup_var_globals context procname var_name))
+        with Not_found ->
+          if is_captured_var context var_name then
+            try (* if it's a captured variable we need to look at the parameters list*)
+              Some (fst (lookup_var_formals context procname var_name))
+            with Not_found ->
+              Printing.log_err "Variable %s not found!!\n%!" var_name;
+              print_locals context;
+              None
+          else None
     else if (kind = `ParmVar) then
       try
         Some (fst (lookup_var_formals context procname var_name))
       with Not_found ->
-          let list_to_string = list_to_string (fun (a, typ) -> a^":"^(Sil.typ_to_string typ)) in
-          Printing.log_err "Warning: Parameter %s not found!!\n%!" var_name;
-          Printing.log_err "Formals of procdesc %s" (Procname.to_string procname);
-          Printing.log_err " are %s\n%!" (list_to_string (Cfg.Procdesc.get_formals context.procdesc));
-          Printing.print_failure_info pointer;
-          assert false
+        let list_to_string = list_to_string (fun (a, typ) -> a^":"^(Sil.typ_to_string typ)) in
+        Printing.log_err "Warning: Parameter %s not found!!\n%!" var_name;
+        Printing.log_err "Formals of procdesc %s" (Procname.to_string procname);
+        Printing.log_err " are %s\n%!" (list_to_string (Cfg.Procdesc.get_formals context.procdesc));
+        Printing.print_failure_info pointer;
+        assert false
     else if (kind = `Function || kind = `ImplicitParam) then (
       (* ImplicitParam are 'self' and '_cmd'. These are never defined but they can be referred to in the code. *)
       Printing.log_err "Creating a variable for '%s' \n%!" var_name;
       Some (Sil.mk_pvar (Mangled.from_string var_name) procname))
     else if (kind = `EnumConstant) then
       (Printing.print_failure_info pointer;
-        assert false)
+       assert false)
     else (Printing.log_err "WARNING: In lookup_var kind %s not handled. Giving up!\n%!" (Clang_ast_j.string_of_decl_kind kind);
-      Printing.print_failure_info pointer;
-      assert false)
+          Printing.print_failure_info pointer;
+          assert false)
 
   let get_variable_name name =
     Mangled.mangled name ((string_of_int(Block.depth ())))
@@ -201,8 +201,8 @@ struct
         let (top_var, top_typ, top_level) = Stack.top stack in
         if top_level == (Block.depth ()) then
           (ignore (Stack.pop stack);
-            context.local_vars_stack <-
-            StringMap.add var_name stack context.local_vars_stack)
+           context.local_vars_stack <-
+             StringMap.add var_name stack context.local_vars_stack)
         else ()
       with Stack.Empty -> () in
     StringMap.iter remove_top context.local_vars_stack
@@ -256,7 +256,7 @@ let curr_class_to_string curr_class =
   match curr_class with
   | ContextCls (name, superclass, protocols) ->
       ("class " ^ name ^ ", superclass: " ^ (Option.default "" superclass) ^
-        ",  protocols: " ^ (Utils.list_to_string (fun x -> x) protocols))
+       ",  protocols: " ^ (Utils.list_to_string (fun x -> x) protocols))
   | ContextCategory (name, cls) -> ("category " ^ name ^ " of class " ^ cls)
   | ContextProtocol name -> ("protocol " ^ name)
   | ContextNoCls -> "no class"
@@ -297,8 +297,8 @@ let create_curr_class tenv class_name =
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct(intf_fields, _, _, _, superclasses, methods, annotation) ->
       (let superclasses_names = list_map (fun (_, name) -> Mangled.to_string name) superclasses in
-        match superclasses_names with
-        | superclass:: protocols ->
-            ContextCls (class_name, Some superclass, protocols)
-        | [] -> ContextCls (class_name, None, []))
+       match superclasses_names with
+       | superclass:: protocols ->
+           ContextCls (class_name, Some superclass, protocols)
+       | [] -> ContextCls (class_name, None, []))
   | _ -> assert false

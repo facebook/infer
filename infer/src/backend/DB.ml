@@ -142,12 +142,12 @@ let find_source_dirs () =
   let add_cg_files_from_dir dir =
     let files = Array.to_list (Sys.readdir dir) in
     list_iter (fun fname ->
-            let path = Filename.concat dir fname in
-            if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs)
+        let path = Filename.concat dir fname in
+        if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs)
       files in
   list_iter (fun fname ->
-          let dir = Filename.concat capt_dir fname in
-          if Sys.is_directory dir then add_cg_files_from_dir dir)
+      let dir = Filename.concat capt_dir fname in
+      if Sys.is_directory dir then add_cg_files_from_dir dir)
     files_in_results_dir;
   list_rev !source_dirs
 
@@ -193,15 +193,15 @@ let create_dir dir =
   try
     if (Unix.stat dir).Unix.st_kind != Unix.S_DIR then
       (L.err "@.ERROR: file %s exists and is not a directory@." dir;
-        assert false)
+       assert false)
   with Unix.Unix_error _ ->
-      (try Unix.mkdir dir 0o700 with
-        Unix.Unix_error _ ->
-          let created_concurrently = (* check if another process created it meanwhile *)
-            (Unix.stat dir).Unix.st_kind = Unix.S_DIR in
-          if not created_concurrently then
-            (L.err "@.ERROR: cannot create directory %s@." dir;
-              assert false))
+    (try Unix.mkdir dir 0o700 with
+       Unix.Unix_error _ ->
+         let created_concurrently = (* check if another process created it meanwhile *)
+           (Unix.stat dir).Unix.st_kind = Unix.S_DIR in
+         if not created_concurrently then
+           (L.err "@.ERROR: cannot create directory %s@." dir;
+            assert false))
 
 let read_whole_file fd =
   let stats = Unix.fstat fd in
@@ -216,9 +216,9 @@ let read_whole_file fd =
   buf
 
 (** Update the file contents with the update function provided.
-If the directory does not exist, it is created.
-If the file does not exist, it is created, and update is given the empty string.
-A lock is used to allow write attempts in parallel. *)
+    If the directory does not exist, it is created.
+    If the file does not exist, it is created, and update is given the empty string.
+    A lock is used to allow write attempts in parallel. *)
 let update_file_with_lock dir fname update =
   let reset_file fd =
     let n = Unix.lseek fd 0 Unix.SEEK_SET in
@@ -238,7 +238,7 @@ let update_file_with_lock dir fname update =
   if (i = (String.length str))
   then (Unix.lockf fd Unix.F_ULOCK 0; Unix.close fd)
   else (L.err "@.save_with_lock: fail on path: %s@." path;
-    assert false)
+        assert false)
 
 (** Read a file using a lock to allow write attempts in parallel. *)
 let read_file_with_lock dir fname =
@@ -252,8 +252,8 @@ let read_file_with_lock dir fname =
       Unix.close fd;
       Some buf
     with Unix.Unix_error _ ->
-        L.stderr "read_file_with_lock: Unix error";
-        assert false
+      L.stderr "read_file_with_lock: Unix error";
+      assert false
   with Unix.Unix_error _ -> None
 
 (** {2 Results Directory} *)

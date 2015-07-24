@@ -35,10 +35,10 @@ let is_pointer_to_objc_class tenv typ =
   match typ with
   | Sil.Tptr (Sil.Tvar (Sil.TN_csu (Sil.Class, cname)), _) ->
       (match Sil.tenv_lookup tenv (Sil.TN_csu (Sil.Class, cname)) with
-        | Some Sil.Tstruct(_, _, Sil.Class, _, _, _, a) when is_objc_class_annotation a -> true
-        | _ -> false)
+       | Some Sil.Tstruct(_, _, Sil.Class, _, _, _, a) when is_objc_class_annotation a -> true
+       | _ -> false)
   | Sil.Tptr (Sil.Tstruct(_, _, Sil.Class, _, _, _, a), _) when
-  is_objc_class_annotation a -> true
+      is_objc_class_annotation a -> true
   | _ -> false
 
 let get_super_interface_decl otdi_super =
@@ -48,10 +48,10 @@ let get_super_interface_decl otdi_super =
 
 let get_protocols protocols =
   let protocol_names = list_map (
-        fun decl -> match decl.Clang_ast_t.dr_name with
-            | Some name -> name.Clang_ast_t.ni_name
-            | None -> assert false
-      ) protocols in
+      fun decl -> match decl.Clang_ast_t.dr_name with
+        | Some name -> name.Clang_ast_t.ni_name
+        | None -> assert false
+    ) protocols in
   protocol_names
 
 (*The superclass is the first element in the list of super classes of structs in the tenv, *)
@@ -62,8 +62,8 @@ let get_interface_superclasses super_opt protocols =
     | None -> []
     | Some super -> [(Sil.Class, Mangled.from_string super)] in
   let protocol_names = list_map (
-        fun name -> (Sil.Protocol, Mangled.from_string name)
-      ) protocols in
+      fun name -> (Sil.Protocol, Mangled.from_string name)
+    ) protocols in
   let super_classes = super_class@protocol_names in
   super_classes
 
@@ -77,11 +77,11 @@ let create_curr_class_and_superclasses_fields tenv decl_list class_name otdi_sup
 
 let update_curr_class curr_class superclasses =
   let get_protocols protocols = list_fold_right (
-        fun protocol converted_protocols ->
-            match protocol with
-            | (Sil.Protocol, name) -> (Mangled.to_string name):: converted_protocols
-            | _ -> converted_protocols
-      ) protocols [] in
+      fun protocol converted_protocols ->
+        match protocol with
+        | (Sil.Protocol, name) -> (Mangled.to_string name):: converted_protocols
+        | _ -> converted_protocols
+    ) protocols [] in
   match curr_class with
   | CContext.ContextCls (class_name, _, _) ->
       let super, protocols =
@@ -102,8 +102,8 @@ let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let fields_sc = CField_decl.fields_superclass tenv obj_c_interface_decl_info in
   list_iter (fun (fn, ft, _) ->
-          Printing.log_out "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
-          Printing.log_out "type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
+      Printing.log_out "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
+      Printing.log_out "type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, superclasses, methods =
     match Sil.tenv_lookup tenv interface_name with
@@ -118,16 +118,16 @@ let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
   let fields = CFrontend_utils.General_utils.sort_fields fields in
   Printing.log_out "Class %s field:\n" class_name;
   list_iter (fun (fn, ft, _) ->
-          Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
+      Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
   let interface_type_info =
     Sil.Tstruct(fields, [], Sil.Class, Some (Mangled.from_string class_name),
-      superclasses, methods, objc_class_annotation) in
+                superclasses, methods, objc_class_annotation) in
   Sil.tenv_add tenv interface_name interface_type_info;
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Sil.typename_to_string interface_name);
   (match Sil.tenv_lookup tenv interface_name with
-    | Some t -> Printing.log_out "  >>>OK. Found typ='%s'\n" (Sil.typ_to_string t)
-    | None -> Printing.log_out "  >>>NOT Found!!\n");
+   | Some t -> Printing.log_out "  >>>OK. Found typ='%s'\n" (Sil.typ_to_string t)
+   | None -> Printing.log_out "  >>>NOT Found!!\n");
   curr_class
 
 let add_missing_methods tenv class_name decl_list curr_class =
@@ -165,14 +165,14 @@ let lookup_late_defined_interface tenv cname =
     match decls with
     | [] -> ()
     | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
-    :: decls'
-    when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
+      :: decls'
+      when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
         scan decls'
     | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
-    :: decls'
-    when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
-    (* Assumption: here we assume that the first interface declaration with non empty set of fields is the *)
-    (* correct one. So we stop. *)
+      :: decls'
+      when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
+        (* Assumption: here we assume that the first interface declaration with non empty set of fields is the *)
+        (* correct one. So we stop. *)
         ignore (interface_declaration tenv name_info.Clang_ast_t.ni_name decl_list obj_c_interface_decl_info)
     | _:: decls' -> scan decls' in
   scan !CFrontend_config.global_translation_unit_decls
@@ -181,9 +181,9 @@ let lookup_late_defined_interface tenv cname =
 (* the search is extended in a recursive way to the hierarchy of superclasses. *)
 let rec find_field tenv nfield str searched_late_defined =
   (* let add_namespace_to_namefield cname =
-  match namespace with
-  | Some _ -> nfield
-  | None -> (Mangled.to_string cname)^"_"^nfield in *)
+     match namespace with
+     | Some _ -> nfield
+     | None -> (Mangled.to_string cname)^"_"^nfield in *)
   let print_error name_field fields =
     Printing.log_err "\nFaild to find name field '%s'\n\n" (Ident.fieldname_to_string name_field) ;
     Printing.log_err "In the following list of fields\n";
@@ -196,8 +196,8 @@ let rec find_field tenv nfield str searched_late_defined =
         Printing.log_err "@. ....Searching field in superclass (Class, '%s')@." (Mangled.to_string sname);
         let str' = Sil.tenv_lookup tenv (Sil.TN_csu(Sil.Class, sname)) in
         (match find_field tenv nfield str' searched_late_defined with
-          | Some field -> Some field
-          | None -> search_super s')
+         | Some field -> Some field
+         | None -> search_super s')
     | (Sil.Protocol, sname):: s' ->
         Printing.log_err "@. ... Searching field in protocol (Protocol, '%s')@." (Mangled.to_string sname);
         search_super s'
@@ -211,24 +211,24 @@ let rec find_field tenv nfield str searched_late_defined =
   | Some Sil.Tstruct (sf, nsf, Sil.Struct, Some cname, _, _, _)
   | Some Sil.Tstruct (sf, nsf, Sil.Union, Some cname, _, _, _) ->
       (let name_field = General_utils.mk_class_field_name (Mangled.to_string cname) nfield in
-        try
-          Some (list_find (fun (fn, _, _) -> Sil.fld_equal fn name_field) (sf@nsf))
-        with Not_found ->
-            print_error name_field (sf@nsf); None)
+       try
+         Some (list_find (fun (fn, _, _) -> Sil.fld_equal fn name_field) (sf@nsf))
+       with Not_found ->
+         print_error name_field (sf@nsf); None)
   | Some Sil.Tstruct (sf, nsf, Sil.Class, Some cname, super, _, _) ->
       (let name_field = General_utils.mk_class_field_name (Mangled.to_string cname) nfield in
-        try
-          Some (list_find (fun (fn, _, _) -> Sil.fld_equal fn name_field) (sf@nsf))
-        with Not_found ->
-        (* if we have already searched for late defined interfaces we check recursively *)
-        (* whether the field is defined in the hiearchy of superclasses.*)
-        (* If we don't find it we stop, giving error. *)
-            print_error name_field (sf@nsf);
-            if searched_late_defined then search_super super
-            else (
-              Printing.log_err "@. Search late defined...@.@.";
-              (* if we don't find the field the first thing we do is scanning later definitions of interfaces. *)
-              lookup_late_defined_interface tenv cname;
-              let str' = Sil.tenv_lookup tenv (Sil.TN_csu(Sil.Class, cname)) in
-              find_field tenv nfield str' true))
+       try
+         Some (list_find (fun (fn, _, _) -> Sil.fld_equal fn name_field) (sf@nsf))
+       with Not_found ->
+         (* if we have already searched for late defined interfaces we check recursively *)
+         (* whether the field is defined in the hiearchy of superclasses.*)
+         (* If we don't find it we stop, giving error. *)
+         print_error name_field (sf@nsf);
+         if searched_late_defined then search_super super
+         else (
+           Printing.log_err "@. Search late defined...@.@.";
+           (* if we don't find the field the first thing we do is scanning later definitions of interfaces. *)
+           lookup_late_defined_interface tenv cname;
+           let str' = Sil.tenv_lookup tenv (Sil.TN_csu(Sil.Class, cname)) in
+           find_field tenv nfield str' true))
   | _ -> None

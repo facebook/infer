@@ -21,7 +21,7 @@ module IdMap = Map.Make (Ident) (** maps from identifiers *)
 
 (** Constraint solving module *)
 module Constraint : sig
-(** Collect constraints on [vars] from [pi], and return a satisfying instantiation *)
+  (** Collect constraints on [vars] from [pi], and return a satisfying instantiation *)
   val solve_from_pure : Sil.atom list -> Ident.t list -> Sil.Int.t IdMap.t
 end = struct
   (** flag for debug mode of the module *)
@@ -162,9 +162,9 @@ end = struct
     if !found = None then search_down ();
     if !found = None then
       (L.err "Constraint Error: empty range %a@." (pp_range id) rng;
-        rng.top <- Some Sil.Int.zero;
-        rng.bottom <- Some Sil.Int.zero;
-        rng.excluded <- [])
+       rng.top <- Some Sil.Int.zero;
+       rng.bottom <- Some Sil.Int.zero;
+       rng.excluded <- [])
 
   (** return the solution if the id is solved (has unique solution) *)
   let solved ev id =
@@ -239,20 +239,20 @@ end = struct
           add_excluded rng id n
       | Sil.Var id1, Sil.Var id2 ->
           (match solved ev id1, solved ev id2 with
-            | None, None -> ()
-            | Some _, Some _ -> ()
-            | Some n1, None ->
-                do_neq (Sil.exp_int n1) e2
-            | None, Some n2 ->
-                do_neq e1 (Sil.exp_int n2))
+           | None, None -> ()
+           | Some _, Some _ -> ()
+           | Some n1, None ->
+               do_neq (Sil.exp_int n1) e2
+           | None, Some n2 ->
+               do_neq e1 (Sil.exp_int n2))
       | Sil.Var id1, Sil.BinOp(Sil.PlusA, Sil.Var id2, Sil.Const (Sil.Cint n)) ->
           (match solved ev id1, solved ev id2 with
-            | None, None -> ()
-            | Some _, Some _ -> ()
-            | Some n1, None ->
-                do_neq (Sil.exp_int (n1 -- n)) (Sil.Var id2)
-            | None, Some n2 ->
-                do_neq (Sil.Var id1) (Sil.exp_int (n2 ++ n)))
+           | None, None -> ()
+           | Some _, Some _ -> ()
+           | Some n1, None ->
+               do_neq (Sil.exp_int (n1 -- n)) (Sil.Var id2)
+           | None, Some n2 ->
+               do_neq (Sil.Var id1) (Sil.exp_int (n2 ++ n)))
       | _ -> if debug then assert false in
     let do_ident id =
       if debug then F.fprintf F.std_formatter "constraints before doing %a:@.%a@." (Ident.pp pe_text) id pp_eval ev;
@@ -442,9 +442,9 @@ let gen_sigma code proc_name spec_num env idmap sigma =
         list_iter (fun (f, se) -> do_strexp code' (base ^ accessor ^ Ident.fieldname_to_string f) false se) fsel
     | Sil.Earray (size, esel, _) ->
         list_iter (fun (e, se) ->
-                let pp f () = F.fprintf f "%a" (pp_exp_c pe) e in
-                let index = pp_to_string pp () in
-                do_strexp code' (base ^ "[" ^ index ^ "]") false se) esel in
+            let pp f () = F.fprintf f "%a" (pp_exp_c pe) e in
+            let index = pp_to_string pp () in
+            do_strexp code' (base ^ "[" ^ index ^ "]") false se) esel in
 
   let gen_hpred = function
     | Sil.Hpointsto (Sil.Lvar pvar, se, _) ->

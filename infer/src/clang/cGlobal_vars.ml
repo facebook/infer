@@ -54,4 +54,4 @@ let print_map () =
       (Sil.pp_typ_full Utils.pe_text) value._type in
   if !CFrontend_config.debug_mode then
     (L.out "GLOBAL VARS:@.";
-      MangledMap.iter print_item !varMap)
+     MangledMap.iter print_item !varMap)

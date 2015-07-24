@@ -49,10 +49,10 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
       Sil.pvar_equal pvar ret_pvar in
     match instr with
     | Sil.Set (Sil.Lvar pvar, typ, Sil.Const (Sil.Cexn _), loc) when pvar_is_return pvar ->
-    (* assignment to return variable is an artifact of a throw instruction *)
+        (* assignment to return variable is an artifact of a throw instruction *)
         Throws
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), args, loc, _)
-    when SymExec.function_is_builtin callee_pn ->
+      when SymExec.function_is_builtin callee_pn ->
         if Procname.equal callee_pn SymExec.ModelBuiltins.__cast
         then DontKnow
         else DoesNotThrow

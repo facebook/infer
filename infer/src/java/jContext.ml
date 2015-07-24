@@ -81,11 +81,11 @@ let get_or_set_pvar_type context var typ =
     else set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
     (pvar, typ)
   with Not_found ->
-      let procname = (Cfg.Procdesc.get_proc_name (get_procdesc context)) in
-      let varname = Mangled.from_string (JBir.var_name_g var) in
-      let pvar = Sil.mk_pvar varname procname in
-      set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
-      (pvar, typ)
+    let procname = (Cfg.Procdesc.get_proc_name (get_procdesc context)) in
+    let varname = Mangled.from_string (JBir.var_name_g var) in
+    let pvar = Sil.mk_pvar varname procname in
+    set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
+    (pvar, typ)
 
 let lookup_pvar_type context var typ = (get_or_set_pvar_type context var typ)
 
@@ -95,7 +95,7 @@ let reset_pvar_type context =
   let var_map = get_var_map context in
   let aux var item =
     match item with (pvar, otyp, typ) ->
-        set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map) in
+      set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map) in
   JBir.VarMap.iter aux var_map
 
 let get_var_type context var =

@@ -8,7 +8,7 @@
  *)
 
 (** Generate a procedure that calls a given sequence of methods. Useful for harness/test
-* generation. *)
+ * generation. *)
 
 module L = Logging
 module F = Format
@@ -22,14 +22,14 @@ type lifecycle_trace = (Procname.t * Sil.typ option) list
 type callback_trace = (Sil.exp * Sil.typ) list
 
 (** list of instrs and temporary variables created during inhabitation and a cache of types that
-* have already been inhabited *)
+ * have already been inhabited *)
 type env = { instrs : Sil.instr list;
-  tmp_vars : Ident.t list;
-  cache : Sil.exp TypMap.t;
-  (* set of types currently being inhabited. consult to prevent infinite recursion *)
-  cur_inhabiting : TypSet.t;
-  pc : Sil.location;
-  harness_name : Procname.t }
+             tmp_vars : Ident.t list;
+             cache : Sil.exp TypMap.t;
+             (* set of types currently being inhabited. consult to prevent infinite recursion *)
+             cur_inhabiting : TypSet.t;
+             pc : Sil.location;
+             harness_name : Procname.t }
 
 (** add an instruction to the env, update tmp_vars, and bump the pc *)
 let env_add_instr instr tmp_vars env =
@@ -84,8 +84,8 @@ let tl_or_empty l = if l = [] then l else list_tl l
 let get_non_receiver_formals formals = tl_or_empty formals
 
 (** create Sil corresponding to x = new typ() or x = new typ[]. For ordinary allocation, sizeof_typ
-* and ret_typ should be the same, but arrays are slightly odd in that sizeof_typ will have a size
-* component but the size component of ret_typ is always -1. *)
+ * and ret_typ should be the same, but arrays are slightly odd in that sizeof_typ will have a size
+ * component but the size component of ret_typ is always -1. *)
 let inhabit_alloc sizeof_typ ret_typ alloc_kind env =
   let retval = Ident.create_fresh Ident.knormal in
   let inhabited_exp = Sil.Var retval in
@@ -100,59 +100,59 @@ let inhabit_alloc sizeof_typ ret_typ alloc_kind env =
 let rec inhabit_typ typ proc_file_map env =
   try (TypMap.find typ env.cache, env)
   with Not_found ->
-      let inhabit_internal typ env = match typ with
-        | Sil.Tptr (Sil.Tarray (inner_typ, Sil.Const (Sil.Cint size)), Sil.Pk_pointer) ->
-            let arr_size = Sil.Const (Sil.Cint (Sil.Int.one)) in
-            let arr_typ = Sil.Tarray (inner_typ, arr_size) in
-            inhabit_alloc arr_typ typ SymExec.ModelBuiltins.__new_array env
-        | Sil.Tptr (typ, Sil.Pk_pointer) as ptr_to_typ ->
-        (* TODO (t4575417): this case does not work correctly for enums, but they are currently
-        * broken in Infer anyway (see t4592290) *)
-            let (allocated_obj_exp, env) = inhabit_alloc typ typ SymExec.ModelBuiltins.__new env in
-            (* select methods that are constructors and won't force us into infinite recursion because
-            * we are already inhabiting one of their argument types *)
-            let get_all_suitable_constructors typ = match typ with
-              | Sil.Tstruct (_, _, Sil.Class, _, superclasses, methods, _) ->
-                  let is_suitable_constructor p =
-                    let try_get_non_receiver_formals p =
-                      try get_non_receiver_formals (formals_from_name p proc_file_map)
-                      with Not_found -> [] in
-                    Procname.is_constructor p && list_for_all (fun (_, typ) ->
-                            not (TypSet.mem typ env.cur_inhabiting)) (try_get_non_receiver_formals p) in
-                  list_filter (fun p -> is_suitable_constructor p) methods
-              | _ -> [] in
-            let (env, typ_class_name) = match get_all_suitable_constructors typ with
-              | constructor :: _ ->
-              (* arbitrarily choose a constructor for typ and invoke it. eventually, we may want to
-              * nondeterministically call all possible constructors instead *)
-                  let env =
-                    inhabit_constructor constructor (allocated_obj_exp, ptr_to_typ) proc_file_map env in
-                  (* try to get the unqualified name as a class (e.g., Object for java.lang.Object so we
-                  * we can use it as a descriptive local variable name in the harness *)
-                  let typ_class_name =
-                    if Procname.is_java constructor then Procname.java_get_simple_class constructor
-                    else create_fresh_local_name () in
-                  (env, Mangled.from_string typ_class_name)
-              | [] -> (env, Mangled.from_string (create_fresh_local_name ())) in
-            (* add the instructions *& local = [allocated_obj_exp]; id = *& local, where local and id are
-            * both fresh. the only point of this is to add a descriptive local name that makes error
-            * reports from the harness look nicer -- it's not necessary to make symbolic execution work *)
-            let fresh_local_exp = Sil.Lvar (Sil.mk_pvar typ_class_name env.harness_name) in
-            let write_to_local_instr =
-              Sil.Set (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
-            let env' = env_add_instr write_to_local_instr [] env in
-            let fresh_id = Ident.create_fresh Ident.knormal in
-            let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
-            (Sil.Var fresh_id, env_add_instr read_from_local_instr [fresh_id] env')
-        | Sil.Tint (_) -> (Sil.Const (Sil.Cint (Sil.Int.zero)), env)
-        | Sil.Tfloat (_) -> (Sil.Const (Sil.Cfloat 0.0), env)
-        | typ ->
-            L.err "Couldn't inhabit typ: %a@." (Sil.pp_typ pe_text) typ;
-            assert false in
-      let (inhabited_exp, env') =
-        inhabit_internal typ { env with cur_inhabiting = TypSet.add typ env.cur_inhabiting } in
-      (inhabited_exp, { env' with cache = TypMap.add typ inhabited_exp env.cache;
-          cur_inhabiting = env.cur_inhabiting })
+    let inhabit_internal typ env = match typ with
+      | Sil.Tptr (Sil.Tarray (inner_typ, Sil.Const (Sil.Cint size)), Sil.Pk_pointer) ->
+          let arr_size = Sil.Const (Sil.Cint (Sil.Int.one)) in
+          let arr_typ = Sil.Tarray (inner_typ, arr_size) in
+          inhabit_alloc arr_typ typ SymExec.ModelBuiltins.__new_array env
+      | Sil.Tptr (typ, Sil.Pk_pointer) as ptr_to_typ ->
+          (* TODO (t4575417): this case does not work correctly for enums, but they are currently
+           * broken in Infer anyway (see t4592290) *)
+          let (allocated_obj_exp, env) = inhabit_alloc typ typ SymExec.ModelBuiltins.__new env in
+          (* select methods that are constructors and won't force us into infinite recursion because
+           * we are already inhabiting one of their argument types *)
+          let get_all_suitable_constructors typ = match typ with
+            | Sil.Tstruct (_, _, Sil.Class, _, superclasses, methods, _) ->
+                let is_suitable_constructor p =
+                  let try_get_non_receiver_formals p =
+                    try get_non_receiver_formals (formals_from_name p proc_file_map)
+                    with Not_found -> [] in
+                  Procname.is_constructor p && list_for_all (fun (_, typ) ->
+                      not (TypSet.mem typ env.cur_inhabiting)) (try_get_non_receiver_formals p) in
+                list_filter (fun p -> is_suitable_constructor p) methods
+            | _ -> [] in
+          let (env, typ_class_name) = match get_all_suitable_constructors typ with
+            | constructor :: _ ->
+                (* arbitrarily choose a constructor for typ and invoke it. eventually, we may want to
+                 * nondeterministically call all possible constructors instead *)
+                let env =
+                  inhabit_constructor constructor (allocated_obj_exp, ptr_to_typ) proc_file_map env in
+                (* try to get the unqualified name as a class (e.g., Object for java.lang.Object so we
+                 * we can use it as a descriptive local variable name in the harness *)
+                let typ_class_name =
+                  if Procname.is_java constructor then Procname.java_get_simple_class constructor
+                  else create_fresh_local_name () in
+                (env, Mangled.from_string typ_class_name)
+            | [] -> (env, Mangled.from_string (create_fresh_local_name ())) in
+          (* add the instructions *& local = [allocated_obj_exp]; id = *& local, where local and id are
+           * both fresh. the only point of this is to add a descriptive local name that makes error
+           * reports from the harness look nicer -- it's not necessary to make symbolic execution work *)
+          let fresh_local_exp = Sil.Lvar (Sil.mk_pvar typ_class_name env.harness_name) in
+          let write_to_local_instr =
+            Sil.Set (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
+          let env' = env_add_instr write_to_local_instr [] env in
+          let fresh_id = Ident.create_fresh Ident.knormal in
+          let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
+          (Sil.Var fresh_id, env_add_instr read_from_local_instr [fresh_id] env')
+      | Sil.Tint (_) -> (Sil.Const (Sil.Cint (Sil.Int.zero)), env)
+      | Sil.Tfloat (_) -> (Sil.Const (Sil.Cfloat 0.0), env)
+      | typ ->
+          L.err "Couldn't inhabit typ: %a@." (Sil.pp_typ pe_text) typ;
+          assert false in
+    let (inhabited_exp, env') =
+      inhabit_internal typ { env with cur_inhabiting = TypSet.add typ env.cur_inhabiting } in
+    (inhabited_exp, { env' with cache = TypMap.add typ inhabited_exp env.cache;
+                                cur_inhabiting = env.cur_inhabiting })
 
 (** inhabit each of the types in the formals list *)
 and inhabit_args formals proc_file_map env =
@@ -162,11 +162,11 @@ and inhabit_args formals proc_file_map env =
   list_fold_right inhabit_arg formals ([], env)
 
 (** create Sil that calls the constructor in constr_name on allocated_obj and inhabits the
-* remaining arguments *)
+ * remaining arguments *)
 and inhabit_constructor constr_name (allocated_obj, obj_type) proc_file_map env =
   try
-  (* this lookup can fail when we try to get the procdesc of a procedure from a different
-  * module. this could be solved with a whole - program class hierarchy analysis *)
+    (* this lookup can fail when we try to get the procdesc of a procedure from a different
+     * module. this could be solved with a whole - program class hierarchy analysis *)
     let (args, env) =
       let non_receiver_formals = tl_or_empty (formals_from_name constr_name proc_file_map) in
       inhabit_args non_receiver_formals proc_file_map env in
@@ -219,12 +219,12 @@ let inhabit_fld_trace flds proc_file_map env =
               inhabit_args (tl_or_empty formals) proc_file_map env in
             inhabit_call_with_args procname procdesc ((Sil.Var lhs, fld_typ) :: args) env
           with Not_found ->
-          (* TODO (t4645631): investigate why this failure occurs *)
-              env in
+            (* TODO (t4645631): investigate why this failure occurs *)
+            env in
         list_fold_left (fun env procname ->
-                if not (Procname.is_constructor procname) &&
-                not (Procname.java_is_access_method procname) then inhabit_cb_call procname env
-                else env) env procs
+            if not (Procname.is_constructor procname) &&
+               not (Procname.java_is_access_method procname) then inhabit_cb_call procname env
+            else env) env procs
     | _ -> assert false in
   list_fold_left (fun env fld -> invoke_cb fld env) env flds
 
@@ -247,10 +247,10 @@ let write_harness_to_file harness_instrs harness_file =
     let harness_file_name = DB.source_file_to_string harness_file in
     ref (create_outfile harness_file_name) in
   let pp_harness fmt = list_iter (fun instr ->
-            Format.fprintf fmt "%a\n" (Sil.pp_instr pe_text) instr) harness_instrs in
+      Format.fprintf fmt "%a\n" (Sil.pp_instr pe_text) instr) harness_instrs in
   do_outf harness_file (fun outf ->
-          pp_harness outf.fmt;
-          close_outf outf)
+      pp_harness outf.fmt;
+      close_outf outf)
 
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
@@ -272,7 +272,7 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
           let array_typ_size = Sil.exp_get_undefined false in
           Sil.Tptr (Sil.Tarray (lookup_typ stripped_typ, array_typ_size), Sil.Pk_pointer)
       | _ ->
-      (* non-primitive/non-array type--resolve it in the tenv *)
+          (* non-primitive/non-array type--resolve it in the tenv *)
           match Sil.get_typ (Mangled.from_string typ_str) None tenv with
           | Some typ -> typ
           | None -> failwith ("Failed to look up typ " ^ typ_str) in
@@ -295,30 +295,30 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
         Sil.is_generated = false;
       } in
     create {
-        cfg = harness_cfg;
-        name = procname;
-        is_defined = false;
-        ret_type = return_typ;
-        formals = params;
-        locals = [];
-        captured = [];
-        loc = loc;
-        proc_attributes = proc_attributes;
-      } in
+      cfg = harness_cfg;
+      name = procname;
+      is_defined = false;
+      ret_type = return_typ;
+      formals = params;
+      locals = [];
+      captured = [];
+      loc = loc;
+      proc_attributes = proc_attributes;
+    } in
   list_iter (fun p ->
       (* add harness -> callee edge to the call graph *)
-          Cg.add_edge cg harness_name p;
-          (* create dummy procdescs for callees not in the module. hopefully t4583729 will remove the
-          * need to do this in the future *)
-          if not (SymExec.function_is_builtin p) then
-            (* simulate symbolic execution's lookup of a procedure *)
-            match Cfg.Procdesc.find_from_name harness_cfg p with
-            | Some _ -> ()
-            | None -> ignore (create_dummy_procdesc p)
+      Cg.add_edge cg harness_name p;
+      (* create dummy procdescs for callees not in the module. hopefully t4583729 will remove the
+       * need to do this in the future *)
+      if not (SymExec.function_is_builtin p) then
+        (* simulate symbolic execution's lookup of a procedure *)
+        match Cfg.Procdesc.find_from_name harness_cfg p with
+        | Some _ -> ()
+        | None -> ignore (create_dummy_procdesc p)
     ) (Cfg.Node.get_callees harness_node)
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
-* proc to the cg *)
+ * proc to the cg *)
 let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
   (* TMP: pick an arbitrary cg and cfg to piggyback the harness code onto *)
   (* TODO (t4707171): create our own fresh cfg / cg instead *)
@@ -347,16 +347,16 @@ let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
         Sil.is_generated = false;
       } in
     create {
-        cfg = harness_cfg;
-        name = harness_name;
-        is_defined = true;
-        ret_type = Sil.Tvoid;
-        formals = [];
-        locals = [];
-        captured = [];
-        loc = env.pc;
-        proc_attributes = proc_attributes;
-      } in
+      cfg = harness_cfg;
+      name = harness_name;
+      is_defined = true;
+      ret_type = Sil.Tvoid;
+      formals = [];
+      locals = [];
+      captured = [];
+      loc = env.pc;
+      proc_attributes = proc_attributes;
+    } in
   let harness_node =
     (* important to reverse the list or there will be scoping issues! *)
     let instrs = (list_rev env.instrs) in
@@ -380,7 +380,7 @@ let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
   Cfg.store_cfg_to_file cfg_file false harness_cfg
 
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
-* order with the specified receiver and add it to the execution environment *)
+ * order with the specified receiver and add it to the execution environment *)
 let inhabit_trace trace cb_flds harness_name proc_file_map tenv = if list_length trace > 0 then
     let harness_cfg = Cfg.Node.create_cfg () in
     let harness_file = create_dummy_harness_file harness_name harness_cfg tenv in

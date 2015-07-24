@@ -137,8 +137,8 @@ module Process_fork : Process_signature = struct
       let (summ : Specs.summary) = Marshal.from_channel p_str.c2p_in in
       (p_str, summ)
     with Not_found ->
-        L.err "@.ERROR: process %d was killed while trying to communicate with the parent@." sender_pid;
-        receive_from_child () (* wait for communication from the next process *)
+      L.err "@.ERROR: process %d was killed while trying to communicate with the parent@." sender_pid;
+      receive_from_child () (* wait for communication from the next process *)
 
   let receive_from_parent p_str : val_t =
     Marshal.from_channel p_str.p2c_in
@@ -290,20 +290,20 @@ let compute_weighed_pnameset gr =
   !pnameset
 
 (* Return true if there are no children of [pname] whose specs
-have changed since [pname] was last analyzed. *)
+   have changed since [pname] was last analyzed. *)
 let proc_is_up_to_date gr pname =
   match Specs.get_summary pname with
   | None -> false
   | Some summary ->
       let filter dependent_proc = Specs.get_timestamp summary =
-        Procname.Map.find dependent_proc summary.Specs.dependency_map in
+                                  Procname.Map.find dependent_proc summary.Specs.dependency_map in
       let res =
         Specs.is_inactive pname &&
         Procname.Set.for_all filter (Cg.get_defined_children gr pname) in
       res
 
 (** Return the list of procedures which should perform a phase
-transition from [FOOTPRINT] to [RE_EXECUTION] *)
+    transition from [FOOTPRINT] to [RE_EXECUTION] *)
 let should_perform_transition gr proc_name : Procname.t list =
   let recursive_dependents = Cg.get_recursive_dependents gr proc_name in
   let recursive_dependents_plus_self = Procname.Set.add proc_name recursive_dependents in
@@ -332,10 +332,10 @@ let transition_footprint_re_exe proc_name joined_pres =
           let specs =
             list_map
               (fun jp ->
-                    Specs.spec_normalize
-                      { Specs.pre = jp;
-                        Specs.posts = [];
-                        Specs.visited = Specs.Visitedset.empty })
+                 Specs.spec_normalize
+                   { Specs.pre = jp;
+                     Specs.posts = [];
+                     Specs.visited = Specs.Visitedset.empty })
               joined_pres in
           Specs.PrePosts specs
       } in
@@ -355,11 +355,11 @@ let update_specs proc_name (new_specs : Specs.NormSpec.t list) : Specs.NormSpec.
   let current_specs =
     ref
       (list_fold_left
-          (fun map spec ->
-                SpecMap.add
-                  spec.Specs.pre
-                  (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
-          SpecMap.empty old_specs) in
+         (fun map spec ->
+            SpecMap.add
+              spec.Specs.pre
+              (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
+         SpecMap.empty old_specs) in
   let re_exe_filter old_spec = (* filter out pres which failed re-exe *)
     if phase == Specs.RE_EXECUTION && not (list_exists (fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre) new_specs)
     then begin
@@ -381,9 +381,9 @@ let update_specs proc_name (new_specs : Specs.NormSpec.t list) : Specs.NormSpec.
         current_specs := SpecMap.add spec.Specs.pre (new_post, new_visited) (SpecMap.remove spec.Specs.pre !current_specs) end
 
     with Not_found ->
-        changed := true;
-        L.out "Specs changed: added new pre@\n%a@." (Specs.Jprop.pp_short pe_text) spec.Specs.pre;
-        current_specs :=
+      changed := true;
+      L.out "Specs changed: added new pre@\n%a@." (Specs.Jprop.pp_short pe_text) spec.Specs.pre;
+      current_specs :=
         SpecMap.add
           spec.Specs.pre
           ((Paths.PathSet.from_renamed_list spec.Specs.posts), spec.Specs.visited)
@@ -391,10 +391,10 @@ let update_specs proc_name (new_specs : Specs.NormSpec.t list) : Specs.NormSpec.
   let res = ref [] in
   let convert pre (post_set, visited) =
     res :=
-    Specs.spec_normalize
-      { Specs.pre = pre;
-        Specs.posts = Paths.PathSet.elements post_set;
-        Specs.visited = visited }:: !res in
+      Specs.spec_normalize
+        { Specs.pre = pre;
+          Specs.posts = Paths.PathSet.elements post_set;
+          Specs.visited = visited }:: !res in
   list_iter re_exe_filter old_specs; (* filter out pre's which failed re-exe *)
   list_iter add_spec new_specs; (* add new specs *)
   SpecMap.iter convert !current_specs;
@@ -420,10 +420,10 @@ let procs_become_done gr pname : Procname.t list =
   let nonrecursive_dependents = Cg.get_nonrecursive_dependents gr pname in
   let summary = Specs.get_summary_unsafe pname in
   let is_done = Specs.get_timestamp summary <> 0 &&
-    Specs.is_inactive pname &&
-    (!Config.only_footprint || Specs.get_phase pname == Specs.RE_EXECUTION) &&
-    Procname.Set.for_all (proc_is_done gr) nonrecursive_dependents &&
-    Procname.Set.for_all (proc_is_up_to_date gr) recursive_dependents in
+                Specs.is_inactive pname &&
+                (!Config.only_footprint || Specs.get_phase pname == Specs.RE_EXECUTION) &&
+                Procname.Set.for_all (proc_is_done gr) nonrecursive_dependents &&
+                Procname.Set.for_all (proc_is_up_to_date gr) recursive_dependents in
   if !trace then L.err "proc is%s done@." (if is_done then "" else " not");
   if is_done
   then
@@ -441,30 +441,30 @@ let post_process_procs exe_env procs_done =
     end in
   let cg = Exe_env.get_cg exe_env in
   list_iter (fun pn ->
-          let elem = (pn, Cg.get_calls cg pn) in
-          if WeightedPnameSet.mem elem !wpnames_todo then
-            begin
-              incr num_procs_done;
-              wpnames_todo := WeightedPnameSet.remove (pn, Cg.get_calls cg pn) !wpnames_todo;
-              let whole_seconds = false in
-              check_no_specs pn;
-              Printer.proc_write_log whole_seconds (Exe_env.get_cfg exe_env pn) pn
-            end
+      let elem = (pn, Cg.get_calls cg pn) in
+      if WeightedPnameSet.mem elem !wpnames_todo then
+        begin
+          incr num_procs_done;
+          wpnames_todo := WeightedPnameSet.remove (pn, Cg.get_calls cg pn) !wpnames_todo;
+          let whole_seconds = false in
+          check_no_specs pn;
+          Printer.proc_write_log whole_seconds (Exe_env.get_cfg exe_env pn) pn
+        end
     ) procs_done
 
 (** Activate a check which ensures that multi-core mode gives the same result as one-core.
-If true, detect when a dependent proc is active (analyzed concurrently)
-and in that case wait for a process to terminate next *)
+    If true, detect when a dependent proc is active (analyzed concurrently)
+    and in that case wait for a process to terminate next *)
 let one_core_compatibility_mode = ref true
 
 (** Find the max string in the [set] which satisfies [filter], and count the number of attempts.
-Precedence is given to strings in [priority_set] *)
+    Precedence is given to strings in [priority_set] *)
 let filter_max exe_env cg filter set priority_set =
   let rec find_max n filter set =
     let elem = WeightedPnameSet.max_elt set in
     let check_one_core_compatibility () =
       if !one_core_compatibility_mode &&
-      Procname.Set.exists (fun child -> Specs.is_active child) (Cg.get_dependents cg (fst elem))
+         Procname.Set.exists (fun child -> Specs.is_active child) (Cg.get_dependents cg (fst elem))
       then raise Not_found in
     check_one_core_compatibility ();
     if filter elem then
@@ -499,8 +499,8 @@ end = struct
     match Config.os_type with
     | Config.Unix | Config.Cygwin ->
         ignore (Unix.setitimer Unix.ITIMER_REAL
-              { Unix.it_interval = 3.0; (* try again after 3 seconds if the signal is lost *)
-                Unix.it_value = float_of_int nsecs })
+                  { Unix.it_interval = 3.0; (* try again after 3 seconds if the signal is lost *)
+                    Unix.it_value = float_of_int nsecs })
     | Config.Win32 ->
         SymOp.set_wallclock_alarm nsecs
 
@@ -522,14 +522,14 @@ end = struct
     raise (Timeout_exe (TOtime))
 
   let () = begin
-      match Config.os_type with
-      | Config.Unix | Config.Cygwin ->
-          Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action);
-          Sys.set_signal Sys.sigalrm (Sys.Signal_handle timeout_action)
-      | Config.Win32 ->
-          SymOp.set_wallclock_timeout_handler timeout_action;
-          ignore (Gc.create_alarm SymOp.check_wallclock_alarm) (* use the Gc alarm for periodic timeout checks *)
-    end
+    match Config.os_type with
+    | Config.Unix | Config.Cygwin ->
+        Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action);
+        Sys.set_signal Sys.sigalrm (Sys.Signal_handle timeout_action)
+    | Config.Win32 ->
+        SymOp.set_wallclock_timeout_handler timeout_action;
+        ignore (Gc.create_alarm SymOp.check_wallclock_alarm) (* use the Gc alarm for periodic timeout checks *)
+  end
 
   let exe_timeout iterations f x =
     try
@@ -555,8 +555,8 @@ end
 module Process = Process_fork
 
 (** Main algorithm responsible for driving the analysis of an Exe_env (set of procedures).
-The algorithm computes dependencies between procedures, spawns processes if required,
-propagates results, and handles fixpoints in the call graph. *)
+    The algorithm computes dependencies between procedures, spawns processes if required,
+    propagates results, and handles fixpoints in the call graph. *)
 let parallel_execution exe_env num_processes analyze_proc filter_out process_result : unit =
   parallel_mode := num_processes > 1 || !Config.max_num_proc > 0;
   let call_graph = Exe_env.get_cg exe_env in
@@ -579,7 +579,7 @@ let parallel_execution exe_env num_processes analyze_proc filter_out process_res
     Procname.Set.for_all
       (fun child -> Specs.is_inactive child) (Cg.get_defined_children call_graph pname) &&
     (Specs.get_timestamp (Specs.get_summary_unsafe pname) = 0
-      || not (proc_is_up_to_date call_graph pname)) in
+     || not (proc_is_up_to_date call_graph pname)) in
   let process_one_proc pname (calls: Cg.in_out_calls) =
     DB.current_source := (Specs.get_summary_unsafe pname).Specs.loc.Sil.file;
     if !trace then
@@ -634,9 +634,9 @@ let parallel_execution exe_env num_processes analyze_proc filter_out process_res
       | Some (p_str, summ) ->
           let (pname, weight) = Process.get_last_input p_str in
           (try
-            DB.current_source := (Specs.get_summary_unsafe pname).Specs.loc.Sil.file;
-            process_result exe_env (pname, weight) summ
-          with exn -> assert false);
+             DB.current_source := (Specs.get_summary_unsafe pname).Specs.loc.Sil.file;
+             process_result exe_env (pname, weight) summ
+           with exn -> assert false);
           Timing_log.event_finish (Procname.to_string pname);
           Process.kill_process p_str;
           incr avail_num
@@ -654,21 +654,21 @@ let parallel_execution exe_env num_processes analyze_proc filter_out process_res
           let pname, calls = filter_max exe_env call_graph wpname_can_be_analyzed !wpnames_todo wpnames_address_of in (** find max analyzable proc *)
           process_one_proc pname calls
         with Not_found -> (* no analyzable procs *)
-            if !avail_num < num_processes (* some other process is doing work *)
-            then wait_for_next_result ()
-            else
-              (L.err "Error: can't analyze any procs. Printing current spec table@\n@[<v>%a@]@." (Specs.pp_spec_table pe_text false) ();
-                raise (Failure "Stopping"))
+          if !avail_num < num_processes (* some other process is doing work *)
+          then wait_for_next_result ()
+          else
+            (L.err "Error: can't analyze any procs. Printing current spec table@\n@[<v>%a@]@." (Specs.pp_spec_table pe_text false) ();
+             raise (Failure "Stopping"))
       end
     else
       wait_for_next_result ()
   done
 
 (** [parallel_iter_nodes cfg call_graph analyze_proc process_result filter_out]
-executes [analyze_proc] in parallel as much as possible as allowed
-by the call graph, and applies [process_result] to the result as
-soon as it is returned by a child process. If [filter_out] returns
-true, no execution. *)
+    executes [analyze_proc] in parallel as much as possible as allowed
+    by the call graph, and applies [process_result] to the result as
+    soon as it is returned by a child process. If [filter_out] returns
+    true, no execution. *)
 let parallel_iter_nodes (exe_env: Exe_env.t) (_analyze_proc: Exe_env.t -> Procname.t -> 'a) (_process_result: Exe_env.t -> (Procname.t * Cg.in_out_calls) -> 'a -> unit) (filter_out: Cg.t -> Procname.t -> bool) : unit =
   let analyze_proc exe_env pname = (* wrap _analyze_proc and handle exceptions *)
     try _analyze_proc exe_env pname with

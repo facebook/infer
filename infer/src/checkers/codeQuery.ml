@@ -47,9 +47,9 @@ module Err = struct
         } in
       [(Specs.spec_normalize spec)] in
     let new_summ = { old_summ with
-      Specs.loc = Cfg.Procdesc.get_loc proc_desc;
-      Specs.nodes = nodes;
-      Specs.payload = Specs.PrePosts specs } in
+                     Specs.loc = Cfg.Procdesc.get_loc proc_desc;
+                     Specs.nodes = nodes;
+                     Specs.payload = Specs.PrePosts specs } in
     Specs.add_summary proc_name new_summ
 
   let add_error_to_spec proc_name s node loc =
@@ -84,8 +84,8 @@ module Match = struct
       let value' = Hashtbl.find env id in
       value_equal value value'
     with Not_found ->
-        Hashtbl.add env id value;
-        true
+      Hashtbl.add env id value;
+      true
   let pp_env fmt env =
     let pp_item id value =
       F.fprintf fmt "%s=%a " id pp_value value in

@@ -30,16 +30,16 @@ let create_empty_procdesc () =
       Sil.is_generated = false;
     } in
   create {
-      cfg = Cfg.Node.create_cfg ();
-      name = procname;
-      is_defined = false;
-      ret_type = Sil.Tvoid;
-      formals = [];
-      locals = [];
-      captured = [];
-      loc = Sil.loc_none;
-      proc_attributes = proc_attributes;
-    }
+    cfg = Cfg.Node.create_cfg ();
+    name = procname;
+    is_defined = false;
+    ret_type = Sil.Tvoid;
+    formals = [];
+    locals = [];
+    captured = [];
+    loc = Sil.loc_none;
+    proc_attributes = proc_attributes;
+  }
 
 (* We will use global_procdesc for storing global variables. *)
 (* Globals will be stored as locals in global_procdesc and they are added*)
@@ -52,19 +52,19 @@ let rec get_enum_constants context decl_list v =
   | EnumConstantDecl(decl_info, name_info, qual_type, enum_constant_decl_info) :: decl_list' ->
       let name = name_info.Clang_ast_t.ni_name in
       (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
-        | None -> Printing.log_out "%s" ("  ...Defining Enum Constant ("^name^", "^(string_of_int v));
-            (Mangled.from_string name, Sil.Cint (Sil.Int.of_int v))
-            :: get_enum_constants context decl_list' (v + 1)
-        | Some stmt ->
-            let e = CGen_trans.CTransImpl.expression_trans context stmt
-                "WARNING: Expression in Enumeration constant not found\n" in
-            let const = (match Prop.exp_normalize_prop Prop.prop_emp e with
-                | Sil.Const c -> c
-                | _ -> (* This is a hack to avoid failing in some strange definition of Enum *)
-                    Sil.Cint Sil.Int.zero) in
-            Printing.log_out "  ...Defining Enum Constant ('%s', " name;
-            Printing.log_out "'%s')\n" (Sil.exp_to_string (Sil.Const const));
-            (Mangled.from_string name, const) :: get_enum_constants context decl_list' v)
+       | None -> Printing.log_out "%s" ("  ...Defining Enum Constant ("^name^", "^(string_of_int v));
+           (Mangled.from_string name, Sil.Cint (Sil.Int.of_int v))
+           :: get_enum_constants context decl_list' (v + 1)
+       | Some stmt ->
+           let e = CGen_trans.CTransImpl.expression_trans context stmt
+               "WARNING: Expression in Enumeration constant not found\n" in
+           let const = (match Prop.exp_normalize_prop Prop.prop_emp e with
+               | Sil.Const c -> c
+               | _ -> (* This is a hack to avoid failing in some strange definition of Enum *)
+                   Sil.Cint Sil.Int.zero) in
+           Printing.log_out "  ...Defining Enum Constant ('%s', " name;
+           Printing.log_out "'%s')\n" (Sil.exp_to_string (Sil.Const const));
+           (Mangled.from_string name, const) :: get_enum_constants context decl_list' v)
   | _ -> assert false
 
 let enum_decl name tenv cfg cg namespace decl_list opt_type =

@@ -41,42 +41,42 @@ let gen_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) : instr -> Sil.instr list
 
 (* Modify the cfg in place *)
 let gen_func_def (old_cfg : Cfg.cfg) : func_def -> unit = function
-  FuncDef (func_name, ret_tp_opt, params, instrs) ->
-    let (proc_attrs : Sil.proc_attributes) =
-      { access = Sil.Default;
-        exceptions = [];
-        is_abstract = false;
-        is_bridge_method = false;
-        is_objc_instance_method = false;
-        is_synthetic_method = false;
-        language = Sil.C_CPP;
-        func_attributes = [];
-        method_annotation = Sil.method_annotation_empty;
-        is_generated = false
-      } in
-    let (pdesc_builder : Cfg.Procdesc.proc_desc_builder) =
-      { cfg = old_cfg;
-        name = Procname.from_string_c_fun (string_of_variable func_name);
-        is_defined = true; (** is defined and not just declared *)
-        proc_attributes = proc_attrs;
-        ret_type = (match ret_tp_opt with
-            | None -> Sil.Tvoid
-            | Some ret_tp -> gen_typ ret_tp);
-        formals = List.map (fun (tp, name) -> (name, gen_typ tp)) params;
-        locals = []; (* TODO *)
-        captured = [];
-        loc = Sil.dummy_location
-      } in
-    let nodekind_of_instr : instr -> Cfg.Node.nodekind = function
-      | Ret _ -> Cfg.Node.Stmt_node "method_body"
-      | _ -> raise (Unimplemented "Need to get node type for instruction.") in
-    let add_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) (ins : instr) : unit =
-      Cfg.Node.create cfg Sil.dummy_location (nodekind_of_instr ins)
+    FuncDef (func_name, ret_tp_opt, params, instrs) ->
+      let (proc_attrs : Sil.proc_attributes) =
+        { access = Sil.Default;
+          exceptions = [];
+          is_abstract = false;
+          is_bridge_method = false;
+          is_objc_instance_method = false;
+          is_synthetic_method = false;
+          language = Sil.C_CPP;
+          func_attributes = [];
+          method_annotation = Sil.method_annotation_empty;
+          is_generated = false
+        } in
+      let (pdesc_builder : Cfg.Procdesc.proc_desc_builder) =
+        { cfg = old_cfg;
+          name = Procname.from_string_c_fun (string_of_variable func_name);
+          is_defined = true; (** is defined and not just declared *)
+          proc_attributes = proc_attrs;
+          ret_type = (match ret_tp_opt with
+              | None -> Sil.Tvoid
+              | Some ret_tp -> gen_typ ret_tp);
+          formals = List.map (fun (tp, name) -> (name, gen_typ tp)) params;
+          locals = []; (* TODO *)
+          captured = [];
+          loc = Sil.dummy_location
+        } in
+      let nodekind_of_instr : instr -> Cfg.Node.nodekind = function
+        | Ret _ -> Cfg.Node.Stmt_node "method_body"
+        | _ -> raise (Unimplemented "Need to get node type for instruction.") in
+      let add_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) (ins : instr) : unit =
+        Cfg.Node.create cfg Sil.dummy_location (nodekind_of_instr ins)
           (gen_instr cfg pdesc ins) pdesc []; () in
-    let pdesc = Cfg.Procdesc.create pdesc_builder in
-    List.iter (fun ins -> add_instr old_cfg pdesc ins) instrs
+      let pdesc = Cfg.Procdesc.create pdesc_builder in
+      List.iter (fun ins -> add_instr old_cfg pdesc ins) instrs
 
 let gen_prog : prog -> Cfg.cfg = function
-  Prog fds ->
-    let cfg = Cfg.Node.create_cfg () in
-    List.iter (gen_func_def cfg) fds; cfg
+    Prog fds ->
+      let cfg = Cfg.Node.create_cfg () in
+      List.iter (gen_func_def cfg) fds; cfg

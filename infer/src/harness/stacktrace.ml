@@ -32,7 +32,7 @@ type stack_frame =
   | Unresolved of str_frame
 
 (** list representation of a stack trace. head of the list is the top of the stack (line/proc where
-exception occurs *)
+    exception occurs *)
 type stack_trace = stack_frame list
 
 (** given [str_frame], try to resolve its components in [exe_env] *)
@@ -40,8 +40,8 @@ let try_resolve_frame str_frame exe_env tenv =
   try
     let class_name = Mangled.from_string str_frame.class_str in
     (* find the class name in the tenv and get the procedure(s) whose names match the procedure name
-    * in the stack trace. Note that the stack trace does not have any type or argument information;
-    * the name is all that we have to go on *)
+     * in the stack trace. Note that the stack trace does not have any type or argument information;
+     * the name is all that we have to go on *)
     match Sil.tenv_lookup tenv (Sil.TN_csu (Sil.Class, class_name)) with
     | Some Sil.Tstruct (_, _, Sil.Class, _, _, decl_procs, _) ->
         let possible_calls =
@@ -53,13 +53,13 @@ let try_resolve_frame str_frame exe_env tenv =
            * same file, which will be true in Java but not necessarily in other languages *)
           let file_name = Exe_env.get_source exe_env (list_hd possible_calls) in
           Resolved
-          { possible_calls = possible_calls; file_name = file_name; line_num = str_frame.line_num; }
+            { possible_calls = possible_calls; file_name = file_name; line_num = str_frame.line_num; }
         else Unresolved str_frame
     | _ -> Unresolved str_frame
   with Not_found -> Unresolved str_frame
 
 (** given a stack trace line like "at com.foo.Class.method(Class.java:42)" extract the class name,
-method name, file name, and line number *)
+    method name, file name, and line number *)
 let parse_frame frame_str exe_env tenv =
   (* separate the qualified method name and the parenthesized text/line number*)
   ignore(Str.string_match (Str.regexp "at \\(.*\\)(\\(.*\\))") frame_str 0);

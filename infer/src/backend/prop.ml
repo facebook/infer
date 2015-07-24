@@ -15,8 +15,8 @@ module F = Format
 open Utils
 
 (** type to describe different strategies for initializing fields of a structure. [No_init] does not
-initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh
-variables (C) or default values (Java). *)
+    initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh
+    variables (C) or default values (Java). *)
 type struct_init_mode =
   | No_init
   | Fld_init
@@ -31,12 +31,12 @@ type normal = Normal (** kind for normal props, i.e. normalized *)
 type exposed = Exposed (** kind for exposed props *)
 
 (** A proposition. The following invariants are mantained. [sub] is of
-the form id1 = e1 ... idn = en where: the id's are distinct and do not
-occur in the e's nor in [pi] or [sigma]; the id's are in sorted
-order; the id's are not existentials; if idn = yn (for yn not
-existential) then idn < yn in the order on ident's. [pi] is sorted
-and normalized, and does not contain x = e. [sigma] is sorted and
-normalized. *)
+    the form id1 = e1 ... idn = en where: the id's are distinct and do not
+    occur in the e's nor in [pi] or [sigma]; the id's are in sorted
+    order; the id's are not existentials; if idn = yn (for yn not
+    existential) then idn < yn in the order on ident's. [pi] is sorted
+    and normalized, and does not contain x = e. [sigma] is sorted and
+    normalized. *)
 type 'a t =
   { sigma: Sil.hpred list;
     sub: Sil.subst;
@@ -127,10 +127,10 @@ let pp_hpred_stackvar pe0 env f hpred =
               { pe with pe_obj_sub = None } (* dont use obj sub on the var defining it *)
           | _ -> pe in
         (match pe'.pe_kind with
-          | PP_TEXT | PP_HTML ->
-              F.fprintf f "%a = %a:%a" (Sil.pp_pvar_value pe') pvar (Sil.pp_sexp pe') se (pp_texp_simple pe') te
-          | PP_LATEX ->
-              F.fprintf f "%a{=}%a" (Sil.pp_pvar_value pe') pvar (Sil.pp_sexp pe') se)
+         | PP_TEXT | PP_HTML ->
+             F.fprintf f "%a = %a:%a" (Sil.pp_pvar_value pe') pvar (Sil.pp_sexp pe') se (pp_texp_simple pe') te
+         | PP_LATEX ->
+             F.fprintf f "%a{=}%a" (Sil.pp_pvar_value pe') pvar (Sil.pp_sexp pe') se)
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> assert false (* should not happen *)
   end;
   Sil.color_post_wrapper changed pe0 f
@@ -173,7 +173,7 @@ let pp_sigma pe =
   pp_semicolon_seq pe (Sil.pp_hpred pe)
 
 (** Split sigma into stack and nonstack parts.
-The boolean indicates whether the stack should only include local variales. *)
+    The boolean indicates whether the stack should only include local variales. *)
 let sigma_get_stack_nonstack only_local_vars sigma =
   let hpred_is_stack_var = function
     | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> not only_local_vars || Sil.pvar_is_local pvar
@@ -188,8 +188,8 @@ let pp_sigma_simple pe env fmt sigma =
     if sg != [] then Format.fprintf fmt "%a" (pp_semicolon_seq pe (pp_hpred_stackvar pe env)) sg in
   let pp_nl fmt doit = if doit then
       (match pe.pe_kind with
-        | PP_TEXT | PP_HTML -> Format.fprintf fmt " ;@\n"
-        | PP_LATEX -> Format.fprintf fmt " ; \\\\@\n") in
+       | PP_TEXT | PP_HTML -> Format.fprintf fmt " ;@\n"
+       | PP_LATEX -> Format.fprintf fmt " ; \\\\@\n") in
   let pp_nonstack fmt = pp_semicolon_seq pe (Sil.pp_hpred_env pe (Some env)) fmt in
   if sigma_stack != [] || sigma_nonstack != [] then
     Format.fprintf fmt "%a%a%a" pp_stack sigma_stack pp_nl (sigma_stack != [] && sigma_nonstack != []) pp_nonstack sigma_nonstack
@@ -312,7 +312,7 @@ let pp_prop pe0 f prop =
     else
       F.fprintf f "%a%a%a" pp_pure () (pp_sigma pe) prop.sigma (pp_footprint pe) prop in
   if !Config.forcing_delayed_prints then (** print in html mode *)
-  F.fprintf f "%a%a%a" Io_infer.Html.pp_start_color Blue do_print () Io_infer.Html.pp_end_color ()
+    F.fprintf f "%a%a%a" Io_infer.Html.pp_start_color Blue do_print () Io_infer.Html.pp_end_color ()
   else
     do_print f () (** print in text mode *)
 
@@ -590,20 +590,20 @@ let sym_eval abs e =
         let e' = Sil.BinOp (Sil.PlusA, e1, e2) in
         eval (Sil.Lindex (ep, e'))
     | Sil.BinOp (Sil.PlusPI, (Sil.BinOp (Sil.PlusPI, e11, e12)), e2) -> (* take care of pattern ((ptr + off1) + off2) *)
-    (* progress: convert inner +I to +A *)
+        (* progress: convert inner +I to +A *)
         let e2' = Sil.BinOp (Sil.PlusA, e12, e2) in
         eval (Sil.BinOp (Sil.PlusPI, e11, e2'))
     | Sil.BinOp (Sil.PlusA, (Sil.Sizeof (Sil.Tstruct (ftal, sftal, csu, name_opt, supers, def_mthds, iann), st) as e1), e2) -> (* pattern for extensible structs
-    given a struct declatead as struct s { ... t arr[n] ... }, allocation pattern malloc(sizeof(struct s) + k * siezof(t))
-    turn it into struct s { ... t arr[n + k] ... } *)
+                                                                                                                                  given a struct declatead as struct s { ... t arr[n] ... }, allocation pattern malloc(sizeof(struct s) + k * siezof(t))
+                                                                                                                                  turn it into struct s { ... t arr[n + k] ... } *)
         let e1' = eval e1 in
         let e2' = eval e2 in
         (match list_rev ftal, e2' with
-            (fname, Sil.Tarray(typ, size), _):: ltfa, Sil.BinOp(Sil.Mult, num_elem, Sil.Sizeof (texp, st)) when ftal != [] && Sil.typ_equal typ texp ->
-              let size' = Sil.BinOp(Sil.PlusA, size, num_elem) in
-              let ltfa' = (fname, Sil.Tarray(typ, size'), Sil.item_annotation_empty) :: ltfa in
-              Sil.Sizeof(Sil.Tstruct (list_rev ltfa', sftal, csu, name_opt, supers, def_mthds, iann), st)
-          | _ -> Sil.BinOp(Sil.PlusA, e1', e2'))
+           (fname, Sil.Tarray(typ, size), _):: ltfa, Sil.BinOp(Sil.Mult, num_elem, Sil.Sizeof (texp, st)) when ftal != [] && Sil.typ_equal typ texp ->
+             let size' = Sil.BinOp(Sil.PlusA, size, num_elem) in
+             let ltfa' = (fname, Sil.Tarray(typ, size'), Sil.item_annotation_empty) :: ltfa in
+             Sil.Sizeof(Sil.Tstruct (list_rev ltfa', sftal, csu, name_opt, supers, def_mthds, iann), st)
+         | _ -> Sil.BinOp(Sil.PlusA, e1', e2'))
     | Sil.BinOp (Sil.PlusA as oplus, e1, e2)
     | Sil.BinOp (Sil.PlusPI as oplus, e1, e2) ->
         let e1' = eval e1 in
@@ -638,7 +638,7 @@ let sym_eval abs e =
           | Sil.Const (Sil.Cint n2), Sil.BinOp (Sil.MinusA, Sil.Const (Sil.Cint n1), e) ->
               Sil.exp_int (n1 ++ n2) --- e
           | Sil.BinOp (Sil.MinusA, e1, e2), e3 -> (* (e1-e2)+e3 --> e1 + (e3-e2) *)
-          (* progress: brings + to the outside *)
+              (* progress: brings + to the outside *)
               eval (e1 +++ (e3 --- e2))
           | _, Sil.Const _ ->
               e1' +++ e2'
@@ -732,7 +732,7 @@ let sym_eval abs e =
           | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
               Sil.exp_float (v /.w)
           | Sil.Sizeof(Sil.Tarray(typ, size), _), Sil.Sizeof(_typ, _) (* pattern: sizeof(arr) / sizeof(arr[0]) = size of arr *)
-          when Sil.typ_equal _typ typ ->
+            when Sil.typ_equal _typ typ ->
               size
           | _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp (Sil.Div, e1', e2')
@@ -884,57 +884,57 @@ let atom_const_lt_exp = function
 let mk_inequality e =
   match e with
   | Sil.BinOp (Sil.Le, base, Sil.Const (Sil.Cint n)) ->
-  (* base <= n case *)
+      (* base <= n case *)
       let nbase = exp_normalize_noabs Sil.sub_empty base in
       (match nbase with
-        | Sil.BinOp(Sil.PlusA, base', Sil.Const (Sil.Cint n')) ->
-            let new_offset = Sil.exp_int (n -- n') in
-            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.BinOp(Sil.PlusA, Sil.Const (Sil.Cint n'), base') ->
-            let new_offset = Sil.exp_int (n -- n') in
-            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.BinOp(Sil.MinusA, base', Sil.Const (Sil.Cint n')) ->
-            let new_offset = Sil.exp_int (n ++ n') in
-            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n'), base') ->
-            let new_offset = Sil.exp_int (n' -- n -- Sil.Int.one) in
-            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.UnOp(Sil.Neg, new_base, _) ->
-        (* In this case, base = -new_base. Construct -n-1 < new_base. *)
-            let new_offset = Sil.exp_int (Sil.Int.zero -- n -- Sil.Int.one) in
-            let new_e = Sil.BinOp (Sil.Lt, new_offset, new_base) in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | _ -> Sil.Aeq (e, Sil.exp_one))
+       | Sil.BinOp(Sil.PlusA, base', Sil.Const (Sil.Cint n')) ->
+           let new_offset = Sil.exp_int (n -- n') in
+           let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.BinOp(Sil.PlusA, Sil.Const (Sil.Cint n'), base') ->
+           let new_offset = Sil.exp_int (n -- n') in
+           let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.BinOp(Sil.MinusA, base', Sil.Const (Sil.Cint n')) ->
+           let new_offset = Sil.exp_int (n ++ n') in
+           let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n'), base') ->
+           let new_offset = Sil.exp_int (n' -- n -- Sil.Int.one) in
+           let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.UnOp(Sil.Neg, new_base, _) ->
+           (* In this case, base = -new_base. Construct -n-1 < new_base. *)
+           let new_offset = Sil.exp_int (Sil.Int.zero -- n -- Sil.Int.one) in
+           let new_e = Sil.BinOp (Sil.Lt, new_offset, new_base) in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | _ -> Sil.Aeq (e, Sil.exp_one))
   | Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n), base) ->
-  (* n < base case *)
+      (* n < base case *)
       let nbase = exp_normalize_noabs Sil.sub_empty base in
       (match nbase with
-        | Sil.BinOp(Sil.PlusA, base', Sil.Const (Sil.Cint n')) ->
-            let new_offset = Sil.exp_int (n -- n') in
-            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.BinOp(Sil.PlusA, Sil.Const (Sil.Cint n'), base') ->
-            let new_offset = Sil.exp_int (n -- n') in
-            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.BinOp(Sil.MinusA, base', Sil.Const (Sil.Cint n')) ->
-            let new_offset = Sil.exp_int (n ++ n') in
-            let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n'), base') ->
-            let new_offset = Sil.exp_int (n' -- n -- Sil.Int.one) in
-            let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | Sil.UnOp(Sil.Neg, new_base, _) ->
-        (* In this case, base = -new_base. Construct new_base <= -n-1 *)
-            let new_offset = Sil.exp_int (Sil.Int.zero -- n -- Sil.Int.one) in
-            let new_e = Sil.BinOp (Sil.Le, new_base, new_offset) in
-            Sil.Aeq (new_e, Sil.exp_one)
-        | _ -> Sil.Aeq (e, Sil.exp_one))
+       | Sil.BinOp(Sil.PlusA, base', Sil.Const (Sil.Cint n')) ->
+           let new_offset = Sil.exp_int (n -- n') in
+           let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.BinOp(Sil.PlusA, Sil.Const (Sil.Cint n'), base') ->
+           let new_offset = Sil.exp_int (n -- n') in
+           let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.BinOp(Sil.MinusA, base', Sil.Const (Sil.Cint n')) ->
+           let new_offset = Sil.exp_int (n ++ n') in
+           let new_e = Sil.BinOp (Sil.Lt, new_offset, base') in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n'), base') ->
+           let new_offset = Sil.exp_int (n' -- n -- Sil.Int.one) in
+           let new_e = Sil.BinOp (Sil.Le, base', new_offset) in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | Sil.UnOp(Sil.Neg, new_base, _) ->
+           (* In this case, base = -new_base. Construct new_base <= -n-1 *)
+           let new_offset = Sil.exp_int (Sil.Int.zero -- n -- Sil.Int.one) in
+           let new_e = Sil.BinOp (Sil.Le, new_base, new_offset) in
+           Sil.Aeq (new_e, Sil.exp_one)
+       | _ -> Sil.Aeq (e, Sil.exp_one))
   | _ -> Sil.Aeq (e, Sil.exp_one)
 
 (** Normalize an inequality *)
@@ -962,9 +962,9 @@ let inequality_normalize a =
     let rec combine pacc nacc = function
       | x:: ps, y:: ng ->
           (match Sil.exp_compare x y with
-            | n when n < 0 -> combine (x:: pacc) nacc (ps, y :: ng)
-            | 0 -> combine pacc nacc (ps, ng)
-            | _ -> combine pacc (y:: nacc) (x :: ps, ng))
+           | n when n < 0 -> combine (x:: pacc) nacc (ps, y :: ng)
+           | 0 -> combine pacc nacc (ps, ng)
+           | _ -> combine pacc (y:: nacc) (x :: ps, ng))
       | ps, ng -> (list_rev pacc) @ ps, (list_rev nacc) @ ng in
     let pos'', neg'' = combine [] [] (pos', neg') in
     (pos'', neg'', off) in
@@ -997,8 +997,8 @@ let inequality_normalize a =
 let exp_reorder e1 e2 = if Sil.exp_compare e1 e2 <= 0 then (e1, e2) else (e2, e1)
 
 (** Normalize an atom.
-We keep the convention that inequalities with constants
-are only of the form [e <= n] and [n < e]. *)
+    We keep the convention that inequalities with constants
+    are only of the form [e <= n] and [n < e]. *)
 let atom_normalize sub a0 =
   let a = Sil.atom_sub sub a0 in
   let rec normalize_eq eq = match eq with
@@ -1072,7 +1072,7 @@ let rec strexp_normalize sub se =
         | _ ->
             let fld_cnts' =
               list_map (fun (fld, cnt) ->
-                      fld, strexp_normalize sub cnt) fld_cnts in
+                  fld, strexp_normalize sub cnt) fld_cnts in
             let fld_cnts'' = list_sort Sil.fld_strexp_compare fld_cnts' in
             Sil.Estruct (fld_cnts'', inst)
       end
@@ -1085,8 +1085,8 @@ let rec strexp_normalize sub se =
         | _ ->
             let idx_cnts' =
               list_map (fun (idx, cnt) ->
-                      let idx' = exp_normalize sub idx in
-                      idx', strexp_normalize sub cnt) idx_cnts in
+                  let idx' = exp_normalize sub idx in
+                  idx', strexp_normalize sub cnt) idx_cnts in
             let idx_cnts'' =
               list_sort Sil.exp_strexp_compare idx_cnts' in
             Sil.Earray (size', idx_cnts'', inst)
@@ -1144,7 +1144,7 @@ let mk_ptsto lexp sexp te =
   Sil.Hpointsto(lexp, nsexp, te)
 
 (** Construct a points-to predicate for an expression using either the provided expression [name] as
-base for fresh identifiers. If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
+    base for fresh identifiers. If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
 let mk_ptsto_exp tenvo struct_init_mode (exp, te, expo) inst : Sil.hpred =
   let default_strexp () = match te with
     | Sil.Sizeof (typ, st) ->
@@ -1177,12 +1177,12 @@ let rec hpred_normalize sub hpred =
       let normalized_te = texp_normalize sub te in
       begin match normalized_cnt, normalized_te with
         | Sil.Earray (Sil.Sizeof (t, st1), [], inst), Sil.Sizeof (Sil.Tarray _, st2) ->
-        (* check for an empty array whose size expression is (Sizeof type), and turn the array into a strexp of the given type *)
+            (* check for an empty array whose size expression is (Sizeof type), and turn the array into a strexp of the given type *)
             let hpred' = mk_ptsto_exp None Fld_init (root, Sil.Sizeof (t, st1), None) inst in
             replace_hpred hpred'
         | Sil.Earray (Sil.BinOp(Sil.Mult, Sil.Sizeof (t, st1), x), esel, inst), Sil.Sizeof (Sil.Tarray _, st2)
         | Sil.Earray (Sil.BinOp(Sil.Mult, x, Sil.Sizeof (t, st1)), esel, inst), Sil.Sizeof (Sil.Tarray _, st2) ->
-        (* check for an array whose size expression is n * (Sizeof type), and turn the array into a strexp of the given type *)
+            (* check for an array whose size expression is n * (Sizeof type), and turn the array into a strexp of the given type *)
             let hpred' = mk_ptsto_exp None Fld_init (root, Sil.Sizeof (Sil.Tarray(t, x), st1), None) inst in
             replace_hpred (replace_array_contents hpred' esel)
         | _ -> Sil.Hpointsto (normalized_root, normalized_cnt, normalized_te)
@@ -1269,12 +1269,12 @@ let pi_tighten_ineq pi =
 (** remove duplicate atoms and redundant inequalities from a sorted pi *)
 let rec pi_sorted_remove_redundant = function
   | (Sil.Aeq(Sil.BinOp (Sil.Le, e1, Sil.Const (Sil.Cint n1)), Sil.Const (Sil.Cint i1)) as a1) ::
-  Sil.Aeq(Sil.BinOp (Sil.Le, e2, Sil.Const (Sil.Cint n2)), Sil.Const (Sil.Cint i2)) :: rest
-  when Sil.Int.isone i1 && Sil.Int.isone i2 && Sil.exp_equal e1 e2 && Sil.Int.lt n1 n2 -> (* second inequality redundant *)
+    Sil.Aeq(Sil.BinOp (Sil.Le, e2, Sil.Const (Sil.Cint n2)), Sil.Const (Sil.Cint i2)) :: rest
+    when Sil.Int.isone i1 && Sil.Int.isone i2 && Sil.exp_equal e1 e2 && Sil.Int.lt n1 n2 -> (* second inequality redundant *)
       pi_sorted_remove_redundant (a1 :: rest)
   | Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n1), e1), Sil.Const (Sil.Cint i1)) ::
-  (Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n2), e2), Sil.Const (Sil.Cint i2)) as a2) :: rest
-  when Sil.Int.isone i1 && Sil.Int.isone i2 && Sil.exp_equal e1 e2 && Sil.Int.lt n1 n2 -> (* first inequality redundant *)
+    (Sil.Aeq(Sil.BinOp (Sil.Lt, Sil.Const (Sil.Cint n2), e2), Sil.Const (Sil.Cint i2)) as a2) :: rest
+    when Sil.Int.isone i1 && Sil.Int.isone i2 && Sil.exp_equal e1 e2 && Sil.Int.lt n1 n2 -> (* first inequality redundant *)
       pi_sorted_remove_redundant (a2 :: rest)
   | a1:: a2:: rest ->
       if Sil.atom_equal a1 a2 then pi_sorted_remove_redundant (a2 :: rest)
@@ -1293,19 +1293,19 @@ let sigma_get_unsigned_exps sigma =
   !uexps
 
 (** Normalization of pi.
-The normalization filters out obviously - true disequalities, such as e <> e + 1. *)
+    The normalization filters out obviously - true disequalities, such as e <> e + 1. *)
 let pi_normalize sub sigma pi0 =
   let pi = list_map (atom_normalize sub) pi0 in
   let ineq_list, nonineq_list = pi_tighten_ineq pi in
   let syntactically_different = function
     | Sil.BinOp(op1, e1, Sil.Const(c1)), Sil.BinOp(op2, e2, Sil.Const(c2))
-    when Sil.exp_equal e1 e2 ->
+      when Sil.exp_equal e1 e2 ->
         Sil.binop_equal op1 op2 && Sil.binop_injective op1 && not (Sil.const_equal c1 c2)
     | e1, Sil.BinOp(op2, e2, Sil.Const(c2))
-    when Sil.exp_equal e1 e2 ->
+      when Sil.exp_equal e1 e2 ->
         Sil.binop_injective op2 && Sil.binop_is_zero_runit op2 && not (Sil.const_equal (Sil.Cint Sil.Int.zero) c2)
     | Sil.BinOp(op1, e1, Sil.Const(c1)), e2
-    when Sil.exp_equal e1 e2 ->
+      when Sil.exp_equal e1 e2 ->
         Sil.binop_injective op1 && Sil.binop_is_zero_runit op1 && not (Sil.const_equal (Sil.Cint Sil.Int.zero) c1)
     | _ -> false in
   let filter_useful_atom =
@@ -1347,13 +1347,13 @@ let footprint_normalize prop =
   let npi', nsigma' =
     if Sil.fav_is_empty fp_vars then npi, nsigma
     else (* replace primed vars by fresh footprint vars *)
-    let ids_primed = Sil.fav_to_list fp_vars in
-    let ids_footprint =
-      list_map (fun id -> (id, Ident.create_fresh Ident.kfootprint)) ids_primed in
-    let ren_sub = Sil.sub_of_list (list_map (fun (id1, id2) -> (id1, Sil.Var id2)) ids_footprint) in
-    let nsigma' = sigma_normalize Sil.sub_empty (sigma_sub ren_sub nsigma) in
-    let npi' = pi_normalize Sil.sub_empty nsigma' (pi_sub ren_sub npi) in
-    (npi', nsigma') in
+      let ids_primed = Sil.fav_to_list fp_vars in
+      let ids_footprint =
+        list_map (fun id -> (id, Ident.create_fresh Ident.kfootprint)) ids_primed in
+      let ren_sub = Sil.sub_of_list (list_map (fun (id1, id2) -> (id1, Sil.Var id2)) ids_footprint) in
+      let nsigma' = sigma_normalize Sil.sub_empty (sigma_sub ren_sub nsigma) in
+      let npi' = pi_normalize Sil.sub_empty nsigma' (pi_sub ren_sub npi) in
+      (npi', nsigma') in
   { prop with foot_pi = npi'; foot_sigma = nsigma' }
 
 let exp_normalize_prop prop exp =
@@ -1366,14 +1366,14 @@ let lexp_normalize_prop p lexp =
   let nroot = exp_normalize_prop p root in
   let noffsets =
     list_map (fun n -> match n with
-            | Sil.Off_fld _ -> n
-            | Sil.Off_index e -> Sil.Off_index (exp_normalize_prop p e)
+        | Sil.Off_fld _ -> n
+        | Sil.Off_index e -> Sil.Off_index (exp_normalize_prop p e)
       ) offsets in
   Sil.exp_add_offsets nroot noffsets
 
 (** Collapse consecutive indices that should be added. For instance,
-this function reduces x[1][1] to x[2]. The [typ] argument is used
-to ensure the soundness of this collapsing. *)
+    this function reduces x[1][1] to x[2]. The [typ] argument is used
+    to ensure the soundness of this collapsing. *)
 let exp_collapse_consecutive_indices_prop p typ exp =
   let typ_is_base = function
     | Sil.Tint _ | Sil.Tfloat _ | Sil.Tstruct _ | Sil.Tvoid | Sil.Tfun _ -> true
@@ -1464,24 +1464,24 @@ let prop_replace_sub sub p =
 let mk_neq e1 e2 =
   run_with_abs_val_eq_zero
     (fun () ->
-          let ne1 = exp_normalize Sil.sub_empty e1 in
-          let ne2 = exp_normalize Sil.sub_empty e2 in
-          atom_normalize Sil.sub_empty (Sil.Aneq (ne1, ne2)))
+       let ne1 = exp_normalize Sil.sub_empty e1 in
+       let ne2 = exp_normalize Sil.sub_empty e2 in
+       atom_normalize Sil.sub_empty (Sil.Aneq (ne1, ne2)))
 
 (** Sil.Construct an equality. *)
 let mk_eq e1 e2 =
   run_with_abs_val_eq_zero
     (fun () ->
-          let ne1 = exp_normalize Sil.sub_empty e1 in
-          let ne2 = exp_normalize Sil.sub_empty e2 in
-          atom_normalize Sil.sub_empty (Sil.Aeq (ne1, ne2)))
+       let ne1 = exp_normalize Sil.sub_empty e1 in
+       let ne2 = exp_normalize Sil.sub_empty e2 in
+       atom_normalize Sil.sub_empty (Sil.Aeq (ne1, ne2)))
 
 let unstructured_type = function
   | Sil.Tstruct _ | Sil.Tarray _ -> false
   | _ -> true
 
 (** Construct a points-to predicate for a single program variable.
-If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
+    If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
 let mk_ptsto_lvar tenv expand_structs inst ((pvar: Sil.pvar), texp, expo) : Sil.hpred =
   mk_ptsto_exp tenv expand_structs (Sil.Lvar pvar, texp, expo) inst
 
@@ -1518,12 +1518,12 @@ let prop_sigma_star (p : 'a t) (sigma : Sil.hpred list) : exposed t =
   { p with sigma = sigma' }
 
 (** Eliminates all empty lsegs from sigma, and collect equalities
-The empty lsegs include
-(a) "lseg_pe para 0 e elist",
-(b) "dllseg_pe para iF oB oF iB elist" with iF = 0 or iB = 0,
-(c) "lseg_pe para e1 e2 elist" and the rest of sigma contains the "cell" e1,
-(d) "dllseg_pe para iF oB oF iB elist" and the rest of sigma contains
-cell iF or iB. *)
+    The empty lsegs include
+    (a) "lseg_pe para 0 e elist",
+    (b) "dllseg_pe para iF oB oF iB elist" with iF = 0 or iB = 0,
+    (c) "lseg_pe para e1 e2 elist" and the rest of sigma contains the "cell" e1,
+    (d) "dllseg_pe para iF oB oF iB elist" and the rest of sigma contains
+    cell iF or iB. *)
 let sigma_remove_emptylseg sigma =
   let alloc_set =
     let rec f_alloc set = function
@@ -1543,13 +1543,13 @@ let sigma_remove_emptylseg sigma =
     | Sil.Hpointsto _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) :: sigma'
-    when (Sil.exp_equal e1 Sil.exp_zero) || (Sil.ExpSet.mem e1 alloc_set) ->
+      when (Sil.exp_equal e1 Sil.exp_zero) || (Sil.ExpSet.mem e1 alloc_set) ->
         f (Sil.Aeq(e1, e2) :: eqs_zero) sigma_passed sigma'
     | Sil.Hlseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
     | Sil.Hdllseg (Sil.Lseg_PE, _, iF, oB, oF, iB, _) :: sigma'
-    when (Sil.exp_equal iF Sil.exp_zero) || (Sil.ExpSet.mem iF alloc_set)
-    || (Sil.exp_equal iB Sil.exp_zero) || (Sil.ExpSet.mem iB alloc_set) ->
+      when (Sil.exp_equal iF Sil.exp_zero) || (Sil.ExpSet.mem iF alloc_set)
+           || (Sil.exp_equal iB Sil.exp_zero) || (Sil.ExpSet.mem iB alloc_set) ->
         f (Sil.Aeq(iF, oF):: Sil.Aeq(iB, oB):: eqs_zero) sigma_passed sigma'
     | Sil.Hdllseg _ as hpred :: sigma' ->
         f eqs_zero (hpred :: sigma_passed) sigma'
@@ -1563,16 +1563,16 @@ let sigma_intro_nonemptylseg e1 e2 sigma =
     | Sil.Hpointsto _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'
     | Sil.Hlseg (Sil.Lseg_PE, para, f1, f2, shared) :: sigma'
-    when (Sil.exp_equal e1 f1 && Sil.exp_equal e2 f2)
-    || (Sil.exp_equal e2 f1 && Sil.exp_equal e1 f2) ->
+      when (Sil.exp_equal e1 f1 && Sil.exp_equal e2 f2)
+           || (Sil.exp_equal e2 f1 && Sil.exp_equal e1 f2) ->
         f (Sil.Hlseg (Sil.Lseg_NE, para, f1, f2, shared) :: sigma_passed) sigma'
     | Sil.Hlseg _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'
     | Sil.Hdllseg (Sil.Lseg_PE, para, iF, oB, oF, iB, shared) :: sigma'
-    when (Sil.exp_equal e1 iF && Sil.exp_equal e2 oF)
-    || (Sil.exp_equal e2 iF && Sil.exp_equal e1 oF)
-    || (Sil.exp_equal e1 iB && Sil.exp_equal e2 oB)
-    || (Sil.exp_equal e2 iB && Sil.exp_equal e1 oB) ->
+      when (Sil.exp_equal e1 iF && Sil.exp_equal e2 oF)
+           || (Sil.exp_equal e2 iF && Sil.exp_equal e1 oF)
+           || (Sil.exp_equal e1 iB && Sil.exp_equal e2 oB)
+           || (Sil.exp_equal e2 iB && Sil.exp_equal e1 oB) ->
         f (Sil.Hdllseg (Sil.Lseg_NE, para, iF, oB, oF, iB, shared) :: sigma_passed) sigma'
     | Sil.Hdllseg _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'
@@ -1708,10 +1708,10 @@ let attributes_in_same_category attr1 attr2 =
 let get_attribute prop exp category =
   let atts = get_exp_attributes prop exp in
   try Some (list_find
-        (fun att ->
-              Sil.attribute_category_equal
-                (Sil.attribute_to_category att) category)
-        atts)
+              (fun att ->
+                 Sil.attribute_category_equal
+                   (Sil.attribute_to_category att) category)
+              atts)
   with Not_found -> None
 
 let get_resource_undef_attribute prop exp =
@@ -1875,12 +1875,12 @@ let find_arithmetic_problem proc_node_session prop exp =
   walk exp;
   try Some (Div0 (list_find check_zero !exps_divided)), !res
   with Not_found ->
-      (match !uminus_unsigned with
-        | (e, t):: _ -> Some (UminusUnsigned (e, t)), !res
-        | _ -> None, !res)
+    (match !uminus_unsigned with
+     | (e, t):: _ -> Some (UminusUnsigned (e, t)), !res
+     | _ -> None, !res)
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
-Return the list of stack variables whose address was still present after deallocation. *)
+    Return the list of stack variables whose address was still present after deallocation. *)
 let deallocate_stack_vars p pvars =
   let filter = function
     | Sil.Hpointsto (Sil.Lvar v, _, _) ->
@@ -1890,11 +1890,11 @@ let deallocate_stack_vars p pvars =
   let fresh_address_vars = ref [] in (* fresh vars substituted for the address of stack vars *)
   let stack_vars_address_in_post = ref [] in (* stack vars whose address is still present *)
   let exp_replace = list_map (function
-        | Sil.Hpointsto (Sil.Lvar v, _, _) ->
-            let freshv = Ident.create_fresh Ident.kprimed in
-            fresh_address_vars := (v, freshv) :: !fresh_address_vars;
-            (Sil.Lvar v, Sil.Var freshv)
-        | _ -> assert false) sigma_stack in
+      | Sil.Hpointsto (Sil.Lvar v, _, _) ->
+          let freshv = Ident.create_fresh Ident.kprimed in
+          fresh_address_vars := (v, freshv) :: !fresh_address_vars;
+          (Sil.Lvar v, Sil.Var freshv)
+      | _ -> assert false) sigma_stack in
   let pi1 = list_map (fun (id, e) -> Sil.Aeq (Sil.Var id, e)) (Sil.sub_to_list p.sub) in
   let pi = list_map (Sil.atom_replace_exp exp_replace) (p.pi @ pi1) in
   let p' = { p with sub = Sil.sub_empty; pi = []; sigma = sigma_replace_exp exp_replace sigma_other } in
@@ -1903,11 +1903,11 @@ let deallocate_stack_vars p pvars =
     let p'_fav = prop_fav p' in
     let do_var (v, freshv) =
       if Sil.fav_mem p'_fav freshv then (* the address of a de-allocated stack var in in the post *)
-      begin
-        stack_vars_address_in_post := v :: !stack_vars_address_in_post;
-        let check_attribute_change att_old att_new = () in
-        res := add_or_replace_exp_attribute check_attribute_change !res (Sil.Var freshv) (Sil.Adangling Sil.DAaddr_stack_var)
-      end in
+        begin
+          stack_vars_address_in_post := v :: !stack_vars_address_in_post;
+          let check_attribute_change att_old att_new = () in
+          res := add_or_replace_exp_attribute check_attribute_change !res (Sil.Var freshv) (Sil.Adangling Sil.DAaddr_stack_var)
+        end in
     list_iter do_var !fresh_address_vars;
     !res in
   !stack_vars_address_in_post, list_fold_left prop_atom_and p'' pi
@@ -1916,8 +1916,8 @@ let deallocate_stack_vars p pvars =
 (** {1 Functions for transforming footprints into propositions.} *)
 
 (** The ones used for abstraction add/remove local stacks in order to
-stop the firing of some abstraction rules. The other usual
-transforation functions do not use this hack. *)
+    stop the firing of some abstraction rules. The other usual
+    transforation functions do not use this hack. *)
 
 (** Extract the footprint and return it as a prop *)
 let extract_footprint p =
@@ -1986,7 +1986,7 @@ let sigma_dfs_sort sigma =
               list_iter ExpStack.push (next:: shared);
               (hpred:: visited, list_rev_append cur seen)
           | Sil.Hdllseg (_, _, iF, oB, oF, iB, shared)
-          when Sil.exp_equal e iF || Sil.exp_equal e iB ->
+            when Sil.exp_equal e iF || Sil.exp_equal e iB ->
               list_iter ExpStack.push (oB:: oF:: shared);
               (hpred:: visited, list_rev_append cur seen)
           | _ ->
@@ -2095,7 +2095,7 @@ let prop_rename_array_indices prop =
     let not_same_base_lt_offsets e1 e2 =
       match e1, e2 with
       | Sil.BinOp(Sil.PlusA, e1', Sil.Const (Sil.Cint n1')),
-      Sil.BinOp(Sil.PlusA, e2', Sil.Const (Sil.Cint n2')) ->
+        Sil.BinOp(Sil.PlusA, e2', Sil.Const (Sil.Cint n2')) ->
           not (Sil.exp_equal e1' e2' && Sil.Int.lt n1' n2')
       | _ -> true in
     let rec select_minimal_indices indices_seen = function
@@ -2272,7 +2272,7 @@ let prop_rename_primed_footprint_vars p =
 
   let sub_for_normalize = Sil.sub_empty in
   (* It is fine to use the empty substituion during normalization
-  because the renaming maintains that a substitution is normalized *)
+     because the renaming maintains that a substitution is normalized *)
   let nsub' = sub_normalize sub' in
   let nsigma' = sigma_normalize sub_for_normalize sigma' in
   let npi' = pi_normalize sub_for_normalize nsigma' pi' in
@@ -2318,7 +2318,7 @@ let prop_ren_sub (ren_sub: Sil.subst) (prop: normal t) : normal t =
   normalize (prop_sub ren_sub prop)
 
 (** Existentially quantify the [ids] in [prop].
-[ids] should not contain any primed variables. *)
+    [ids] should not contain any primed variables. *)
 let exist_quantify fav prop =
   let ids = Sil.fav_to_list fav in
   if list_exists Ident.is_primed ids then assert false; (* sanity check *)
@@ -2412,15 +2412,15 @@ type 'a prop_iter =
 let prop_iter_create prop =
   match prop.sigma with
   | hpred:: sigma' -> Some
-      { pit_sub = prop.sub;
-        pit_pi = prop.pi;
-        pit_newpi = [];
-        pit_old = [];
-        pit_curr = hpred;
-        pit_state = ();
-        pit_new = sigma';
-        pit_foot_pi = prop.foot_pi;
-        pit_foot_sigma = prop.foot_sigma }
+                        { pit_sub = prop.sub;
+                          pit_pi = prop.pi;
+                          pit_newpi = [];
+                          pit_old = [];
+                          pit_curr = hpred;
+                          pit_state = ();
+                          pit_new = sigma';
+                          pit_foot_pi = prop.foot_pi;
+                          pit_foot_sigma = prop.foot_sigma }
   | _ -> None
 
 (** Return the prop associated to the iterator. *)
@@ -2434,13 +2434,13 @@ let prop_iter_to_prop iter =
     prop iter.pit_newpi
 
 (** Add an atom to the pi part of prop iter. The
-first parameter records whether it is done
-during footprint or during re - execution. *)
+    first parameter records whether it is done
+    during footprint or during re - execution. *)
 let prop_iter_add_atom footprint iter atom =
   { iter with pit_newpi = (footprint, atom):: iter.pit_newpi }
 
 (** Remove the current element of the iterator, and return the prop
-associated to the resulting iterator *)
+    associated to the resulting iterator *)
 let prop_iter_remove_curr_then_to_prop iter =
   let sigma = list_rev_append iter.pit_old iter.pit_new in
   let normalized_sigma = sigma_normalize iter.pit_sub sigma in
@@ -2477,21 +2477,21 @@ let prop_iter_next iter =
   match iter.pit_new with
   | [] -> None
   | hpred':: new' -> Some
-      { iter with
-        pit_old = iter.pit_curr:: iter.pit_old;
-        pit_curr = hpred';
-        pit_state = ();
-        pit_new = new'}
+                       { iter with
+                         pit_old = iter.pit_curr:: iter.pit_old;
+                         pit_curr = hpred';
+                         pit_state = ();
+                         pit_new = new'}
 
 let prop_iter_remove_curr_then_next iter =
   match iter.pit_new with
   | [] -> None
   | hpred':: new' -> Some
-      { iter with
-        pit_old = iter.pit_old;
-        pit_curr = hpred';
-        pit_state = ();
-        pit_new = new'}
+                       { iter with
+                         pit_old = iter.pit_old;
+                         pit_curr = hpred';
+                         pit_state = ();
+                         pit_new = new'}
 
 (** Insert before the current element of the iterator. *)
 let prop_iter_prev_then_insert iter hpred =
@@ -2505,8 +2505,8 @@ let rec prop_iter_find iter filter =
   | Some st -> Some { iter with pit_state = st }
   | None ->
       (match prop_iter_next iter with
-        | None -> None
-        | Some iter' -> prop_iter_find iter' filter)
+       | None -> None
+       | Some iter' -> prop_iter_find iter' filter)
 
 (** Set the state of the iterator *)
 let prop_iter_set_state iter state =
@@ -2627,10 +2627,10 @@ let hpred_gc_fields (fav: Sil.fav) hpred = match hpred with
       Sil.exp_fav_add fav e;
       Sil.exp_fav_add fav te;
       (match strexp_gc_fields fav se with
-        | None -> hpred
-        | Some se' ->
-            if Sil.strexp_compare se se' = 0 then hpred
-            else Sil.Hpointsto (e, se', te))
+       | None -> hpred
+       | Some se' ->
+           if Sil.strexp_compare se se' = 0 then hpred
+           else Sil.Hpointsto (e, se', te))
   | Sil.Hlseg _ | Sil.Hdllseg _ ->
       hpred
 
@@ -2697,38 +2697,38 @@ let trans_land_lor op ((idl1, stml1), e1) ((idl2, stml2), e2) loc =
     end
 
 (** Input of this mehtod is an exp in a prop. Output is a formal variable or path from a
-formal variable that is equal to the expression, or the OBJC_NULL attribute of the expression. *)
+    formal variable that is equal to the expression, or the OBJC_NULL attribute of the expression. *)
 let find_equal_formal_path e prop =
   let rec find_in_sigma e seen_hpreds =
     list_fold_right (
-        fun hpred res ->
-            if list_mem Sil.hpred_equal hpred seen_hpreds then None
-            else
-              let seen_hpreds = hpred :: seen_hpreds in
-              match res with
-              | Some _ -> res
-              | None ->
-                  match hpred with
-                  | Sil.Hpointsto (Sil.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal(_, _) ), _)
-                  when Sil.exp_equal exp2 e && (Sil.pvar_is_local pvar1 || Sil.pvar_is_seed pvar1) ->
-                      Some (Sil.Lvar pvar1)
-                  | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
-                      list_fold_right (fun (field, strexp) res ->
-                              match res with
-                              | Some _ -> res
-                              | None ->
-                                  match strexp with
-                                  | Sil.Eexp (exp2, _) when Sil.exp_equal exp2 e ->
-                                      (match find_in_sigma exp1 seen_hpreds with
-                                        | Some exp' -> Some (Sil.Lfield (exp', field, Sil.Tvoid))
-                                        | None -> None)
-                                  | _ -> None) fields None
-                  | _ -> None) (get_sigma prop) None in
+      fun hpred res ->
+        if list_mem Sil.hpred_equal hpred seen_hpreds then None
+        else
+          let seen_hpreds = hpred :: seen_hpreds in
+          match res with
+          | Some _ -> res
+          | None ->
+              match hpred with
+              | Sil.Hpointsto (Sil.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal(_, _) ), _)
+                when Sil.exp_equal exp2 e && (Sil.pvar_is_local pvar1 || Sil.pvar_is_seed pvar1) ->
+                  Some (Sil.Lvar pvar1)
+              | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
+                  list_fold_right (fun (field, strexp) res ->
+                      match res with
+                      | Some _ -> res
+                      | None ->
+                          match strexp with
+                          | Sil.Eexp (exp2, _) when Sil.exp_equal exp2 e ->
+                              (match find_in_sigma exp1 seen_hpreds with
+                               | Some exp' -> Some (Sil.Lfield (exp', field, Sil.Tvoid))
+                               | None -> None)
+                          | _ -> None) fields None
+              | _ -> None) (get_sigma prop) None in
   match find_in_sigma e [] with
   | Some res -> Some res
   | None -> match get_objc_null_attribute prop e with
-      | Some (Sil.Aobjc_null exp) -> Some exp
-      | _ -> None
+    | Some (Sil.Aobjc_null exp) -> Some exp
+    | _ -> None
 
 (** translate an if-then-else expression *)
 let trans_if_then_else ((idl1, stml1), e1) ((idl2, stml2), e2) ((idl3, stml3), e3) loc =
@@ -2772,8 +2772,8 @@ end = struct
 
 
   (** Approximate the size of the longest chain by counting the max
-  number of |-> with the same type and whose lhs is primed or
-  footprint *)
+      number of |-> with the same type and whose lhs is primed or
+      footprint *)
   let sigma_chain_size sigma =
     let tbl = ref Sil.ExpMap.empty in
     let add t =
@@ -2786,8 +2786,8 @@ end = struct
     let process_hpred = function
       | Sil.Hpointsto (e, _, te) ->
           (match e with
-            | Sil.Var id when Ident.is_primed id || Ident.is_footprint id -> add te
-            | _ -> ())
+           | Sil.Var id when Ident.is_primed id || Ident.is_footprint id -> add te
+           | _ -> ())
       | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
     list_iter process_hpred sigma;
     let size = ref 0 in
@@ -2795,15 +2795,15 @@ end = struct
     !size
 
   (** Compute a size value for the prop, which indicates its
-  complexity *)
+      complexity *)
   let prop_size p =
     let size_current = sigma_size p.sigma in
     let size_footprint = sigma_size p.foot_sigma in
     max size_current size_footprint
 
   (** Approximate the size of the longest chain by counting the max
-  number of |-> with the same type and whose lhs is primed or
-  footprint *)
+      number of |-> with the same type and whose lhs is primed or
+      footprint *)
   let prop_chain_size p =
     let fp_size = pi_size p.foot_pi + sigma_size p.foot_sigma in
     pi_size p.pi + sigma_size p.sigma + fp_size

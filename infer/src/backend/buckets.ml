@@ -17,7 +17,7 @@ open Utils
 let verbose = Config.trace_error
 
 (** check if the error was reported inside a nested loop
-the implementation is approximate: check if the last two visits to a loop were entering loops *)
+    the implementation is approximate: check if the last two visits to a loop were entering loops *)
 let check_nested_loop path pos_opt =
   let trace_length = ref 0 in
   let loop_visits_log = ref [] in
@@ -28,7 +28,7 @@ let check_nested_loop path pos_opt =
     | _ -> false in
   let do_node_caller node = match Cfg.Node.get_kind node with
     | Cfg.Node.Prune_node (b, (Sil.Ik_dowhile | Sil.Ik_for | Sil.Ik_while), _) ->
-    (* if !verbose then L.d_strln ((if b then "enter" else "exit") ^ " node " ^ (string_of_int (Cfg.Node.get_id node))); *)
+        (* if !verbose then L.d_strln ((if b then "enter" else "exit") ^ " node " ^ (string_of_int (Cfg.Node.get_id node))); *)
         loop_visits_log := b :: !loop_visits_log
     | _ -> () in
   let do_any_node level node =
@@ -44,7 +44,7 @@ let check_nested_loop path pos_opt =
   in_nested_loop ()
 
 (** Check that we know where the value was last assigned,
-and that there is a local access instruction at that line. **)
+    and that there is a local access instruction at that line. **)
 let check_access access_opt de_opt =
   let find_bucket line_number null_case_flag =
     let find_formal_ids node = (* find ids obtained by a letref on a formal parameter *)

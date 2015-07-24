@@ -53,15 +53,15 @@ let _add_node g n defined =
     let info = Procname.Hash.find g.node_map n in
     if defined then info.defined <- true
   with Not_found ->
-      let info =
-        { defined = defined;
-          parents = Procname.Set.empty;
-          children = Procname.Set.empty;
-          ancestors = None;
-          heirs = None;
-          recursive_dependents = None;
-          in_out_calls = None } in
-      Procname.Hash.add g.node_map n info
+    let info =
+      { defined = defined;
+        parents = Procname.Set.empty;
+        children = Procname.Set.empty;
+        ancestors = None;
+        heirs = None;
+        recursive_dependents = None;
+        in_out_calls = None } in
+    Procname.Hash.add g.node_map n info
 
 let add_node g n =
   _add_node g n true

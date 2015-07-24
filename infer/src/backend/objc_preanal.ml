@@ -17,7 +17,7 @@ type procedure_type =
 let print_map procname_map =
   Procname.Hash.iter
     (fun pname redefined ->
-          print_endline ((Procname.to_string pname)^" "^(string_of_bool redefined)))
+       print_endline ((Procname.to_string pname)^" "^(string_of_bool redefined)))
     procname_map
 
 let process_all_cfgs process_function default_value =
@@ -86,13 +86,13 @@ let update_cfgs generated_proc_map =
             with Not_found -> assert false in
           if is_redefined then
             (Cfg.Procdesc.remove cfg pname true;
-              Cg.node_set_defined cg pname false;
-              true)
+             Cg.node_set_defined cg pname false;
+             true)
           else need_updating in
         let need_updating = list_fold_right update_cfg_procdesc generated_procs false in
         if need_updating then
           (Cfg.store_cfg_to_file cfg_name false cfg;
-            Cg.store_to_file cg_name cg) in
+           Cg.store_to_file cg_name cg) in
   process_all_cfgs update_cfg ()
 
 let do_objc_preanalysis () =

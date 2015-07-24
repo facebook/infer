@@ -28,24 +28,24 @@ let assignment_arc_mode context e1 typ e2 loc rhs_owning_method is_e1_decl =
     Sil.Call([], bi_retain, [(e, t)], loc, Sil.cf_default) in
   match typ with
   | Sil.Tptr (t, Sil.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
-  (* for __strong e1 = e2 the semantics is*)
-  (* retain(e2); tmp=e1; e1=e2; release(tmp); *)
+      (* for __strong e1 = e2 the semantics is*)
+      (* retain(e2); tmp=e1; e1=e2; release(tmp); *)
       let retain = mk_call retain_pname e2 typ in
       let id = Ident.create_fresh Ident.knormal in
       let tmp_assign = Sil.Letderef(id, e1, typ, loc) in
       let release = mk_call release_pname (Sil.Var id) typ in
       (e1,[retain; tmp_assign; assign; release ], [id])
   | Sil.Tptr (t, Sil.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
-  (* for A __strong *e1 = e2 the semantics is*)
-  (* retain(e2); e1=e2; *)
+      (* for A __strong *e1 = e2 the semantics is*)
+      (* retain(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in
       (e1,[retain; assign ], [])
   | Sil.Tptr (t, Sil.Pk_objc_weak)
   | Sil.Tptr (t, Sil.Pk_objc_unsafe_unretained) ->
       (e1, [assign],[])
   | Sil.Tptr (t, Sil.Pk_objc_autoreleasing) ->
-  (* for __autoreleasing e1 = e2 the semantics is*)
-  (* retain(e2); autorelease(e2); e1=e2; *)
+      (* for __autoreleasing e1 = e2 the semantics is*)
+      (* retain(e2); autorelease(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in
       let autorelease = mk_call autorelease_pname e2 typ in
       (e1, [retain; autorelease; assign], [])
@@ -167,7 +167,7 @@ let unary_operation_instruction uoi e typ loc =
   | `Plus -> ([], e, [])
   | `LNot -> ([], un_exp (Sil.LNot), [])
   | `Deref ->
-  (* Actual dereferencing is handled by implicit cast from rvalue to lvalue *)
+      (* Actual dereferencing is handled by implicit cast from rvalue to lvalue *)
       ([], e, [])
   | `AddrOf -> ([], e, [])
   | `Real | `Imag | `Extension ->

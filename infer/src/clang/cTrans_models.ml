@@ -32,7 +32,7 @@ let is_alloc_model typ funct =
       else
         let funct = Procname.to_string procname in
         (* if (Core_foundation_model.is_core_lib_create typ funct) then
-        print_endline ("\nCore Foundation create not modelled "^(Sil.typ_to_string typ)^" "^(funct));*)
+           print_endline ("\nCore Foundation create not modelled "^(Sil.typ_to_string typ)^" "^(funct));*)
         Core_foundation_model.is_core_lib_create typ funct
   | None -> false
 
@@ -104,12 +104,12 @@ let builtin_predefined_model fun_stmt sil_fe =
   | Some exp ->
       let typ = CTypes.get_type exp in
       (match sil_fe with
-        | Sil.Const (Sil.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
-        | Sil.Const (Sil.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->
-            Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__objc_retain_cf) , true
-        | Sil.Const (Sil.Cfun pn) when is_release_predefined_model typ (Procname.to_string pn) ->
-            Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__objc_release_cf), true
-        | _ -> sil_fe, false)
+       | Sil.Const (Sil.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
+       | Sil.Const (Sil.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->
+           Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__objc_retain_cf) , true
+       | Sil.Const (Sil.Cfun pn) when is_release_predefined_model typ (Procname.to_string pn) ->
+           Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__objc_release_cf), true
+       | _ -> sil_fe, false)
   | _ -> sil_fe, false
 
 (** If the function is a builtin model, return the model, otherwise return the function *)
@@ -153,7 +153,7 @@ let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname =
 
 let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname =
   let condition = (method_name = release || method_name = drain) &&
-    (class_name = nsautorelease_pool_cl) in
+                  (class_name = nsautorelease_pool_cl) in
   get_predefined_ms_method condition class_name method_name mk_procname [(self, class_name, None)]
     void [] (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
 
@@ -177,7 +177,7 @@ let dispatch_functions = [
   ("dispatch_group_notify", 2);
   ("dispatch_group_wait", 2);
   ("dispatch_barrier_async", 1);
-  ]
+]
 
 let is_dispatch_function_name function_name =
   let rec is_dispatch functions =

@@ -21,9 +21,9 @@ let type_is_object = function
 
 let java_proc_name_with_class_method pn class_with_path method_name =
   (try
-    Procname.java_get_class pn = class_with_path &&
-    Procname.java_get_method pn = method_name
-  with _ -> false)
+     Procname.java_get_class pn = class_with_path &&
+     Procname.java_get_method pn = method_name
+   with _ -> false)
 
 let is_direct_subtype_of this_type super_type_name =
   match this_type with
@@ -135,12 +135,12 @@ let get_field_type_name
   match typ with
   | Sil.Tstruct (fields, _, _, _, _, _, _)
   | Sil.Tptr (Sil.Tstruct (fields, _, _, _, _, _, _), _) -> (
-        try
-          let _, ft, _ = list_find
-              (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname)
-              fields in
-          Some (get_type_name ft)
-        with Not_found -> None)
+      try
+        let _, ft, _ = list_find
+            (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname)
+            fields in
+        Some (get_type_name ft)
+      with Not_found -> None)
   | _ -> None
 
 let java_get_const_type_name
@@ -158,9 +158,9 @@ let get_vararg_type_names
   let rec initializes_array instrs =
     match instrs with
     | Sil.Call ([t1], Sil.Const (Sil.Cfun pn), _, _, _)::
-    Sil.Set (Sil.Lvar iv, _, Sil.Var t2, _):: is ->
+      Sil.Set (Sil.Lvar iv, _, Sil.Var t2, _):: is ->
         (Sil.pvar_equal ivar iv && Ident.equal t1 t2 &&
-          Procname.equal pn (Procname.from_string_c_fun "__new_array"))
+         Procname.equal pn (Procname.from_string_c_fun "__new_array"))
         || initializes_array is
     | i:: is -> initializes_array is
     | _ -> false in
@@ -170,24 +170,24 @@ let get_vararg_type_names
     let rec nvar_type_name nvar instrs =
       match instrs with
       | Sil.Letderef (nv, Sil.Lfield (_, id, t), _, _):: _
-      when Ident.equal nv nvar -> get_field_type_name t id
+        when Ident.equal nv nvar -> get_field_type_name t id
       | Sil.Letderef (nv, e, t, _):: _
-      when Ident.equal nv nvar ->
+        when Ident.equal nv nvar ->
           Some (get_type_name t)
       | i:: is -> nvar_type_name nvar is
       | _ -> None in
     let rec added_nvar array_nvar instrs =
       match instrs with
       | Sil.Set (Sil.Lindex (Sil.Var iv, _), _, Sil.Var nvar, _):: _
-      when Ident.equal iv array_nvar -> nvar_type_name nvar (Cfg.Node.get_instrs node)
+        when Ident.equal iv array_nvar -> nvar_type_name nvar (Cfg.Node.get_instrs node)
       | Sil.Set (Sil.Lindex (Sil.Var iv, _), _, Sil.Const c, _):: _
-      when Ident.equal iv array_nvar -> Some (java_get_const_type_name c)
+        when Ident.equal iv array_nvar -> Some (java_get_const_type_name c)
       | i:: is -> added_nvar array_nvar is
       | _ -> None in
     let rec array_nvar instrs =
       match instrs with
       | Sil.Letderef (nv, Sil.Lvar iv, _, _):: _
-      when Sil.pvar_equal iv ivar ->
+        when Sil.pvar_equal iv ivar ->
           added_nvar nv instrs
       | i:: is -> array_nvar is
       | _ -> None in
@@ -200,8 +200,8 @@ let get_vararg_type_names
     else
       match (Cfg.Node.get_preds node) with
       | [n] -> (match (added_type_name node) with
-            | Some name -> name:: type_names n
-            | None -> type_names n)
+          | Some name -> name:: type_names n
+          | None -> type_names n)
       | _ -> raise Not_found in
 
   list_rev (type_names call_node)
@@ -232,15 +232,15 @@ let get_java_field_access_signature = function
   | _ -> None
 
 (** Returns the formal signature (class name, method name,
-argument type names and return type name) *)
+    argument type names and return type name) *)
 let get_java_method_call_formal_signature = function
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) ->
       (try
-        let arg_names = list_map (function | e, t -> get_type_name t) args in
-        let rt_name = Procname.java_get_return_type pn in
-        let m_name = Procname.java_get_method pn in
-        Some (get_type_name tt, m_name, arg_names, rt_name)
-      with _ -> None)
+         let arg_names = list_map (function | e, t -> get_type_name t) args in
+         let rt_name = Procname.java_get_return_type pn in
+         let m_name = Procname.java_get_method pn in
+         Some (get_type_name tt, m_name, arg_names, rt_name)
+       with _ -> None)
   | _ -> None
 
 
@@ -256,14 +256,14 @@ let initializer_classes = list_map Mangled.from_string [
     "android.app.Application";
     "android.app.Fragment";
     "android.support.v4.app.Fragment";
-    ]
+  ]
 
 let initializer_methods = [
   "onActivityCreated";
   "onAttach";
   "onCreate";
   "onCreateView";
-  ]
+]
 
 (** Check if the type has in its supertypes from the initializer_classes list. *)
 let type_has_initializer
@@ -291,8 +291,8 @@ let java_get_vararg_values node pvar idenv pdesc =
   let values = ref [] in
   let do_instr = function
     | Sil.Set (Sil.Lindex (array_exp, _), _, content_exp, _)
-    when Sil.exp_equal (Sil.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
-    (* Each vararg argument is an assigment to a pvar denoting an array of objects. *)
+      when Sil.exp_equal (Sil.Lvar pvar) (Idenv.expand_expr idenv array_exp) ->
+        (* Each vararg argument is an assigment to a pvar denoting an array of objects. *)
         values := content_exp :: !values
     | _ -> () in
   let do_node n =

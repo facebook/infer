@@ -66,7 +66,7 @@ let pp f pn =
 
 type mangled_t = t
 module MangledSet = Set.Make
-  (struct
-    type t = mangled_t
-    let compare = compare
-  end)
+    (struct
+      type t = mangled_t
+      let compare = compare
+    end)

@@ -18,8 +18,8 @@ let mem_idlist i l =
   list_exists (Ident.equal i) l
 
 (** Type for a hpred pattern. flag=false means that the implication
-between hpreds is not considered, and flag = true means that it is
-considered during pattern matching *)
+    between hpreds is not considered, and flag = true means that it is
+    considered during pattern matching *)
 type hpred_pat = { hpred : Sil.hpred; flag : bool }
 
 let pp_hpat pe f hpat =
@@ -33,7 +33,7 @@ let rec pp_hpat_list pe f = function
       F.fprintf f "%a * %a" (pp_hpat pe) hpat (pp_hpat_list pe) hpats
 
 (** Checks e1 = e2[sub ++ sub'] for some sub' with dom(sub') subseteq vars.
-Returns (sub ++ sub', vars - dom(sub')). *)
+    Returns (sub ++ sub', vars - dom(sub')). *)
 let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
   let check_equal sub vars e1 e2 =
     let e2_inst = Sil.exp_sub sub e2
@@ -63,8 +63,8 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       None  (* Naive *)
   | Sil.BinOp(b1, e1', e1''), Sil.BinOp(b2, e2', e2'') when Sil.binop_equal b1 b2 ->
       (match exp_match e1' sub vars e2' with
-        | None -> None
-        | Some (sub', vars') -> exp_match e1'' sub' vars' e2'')
+       | None -> None
+       | Some (sub', vars') -> exp_match e1'' sub' vars' e2'')
   | Sil.BinOp _, _ | _, Sil.BinOp _ ->
       None (* Naive *)
   | Sil.Lvar _, _ | _, Sil.Lvar _ ->
@@ -75,8 +75,8 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       None
   | Sil.Lindex(base1, idx1), Sil.Lindex(base2, idx2) ->
       (match exp_match base1 sub vars base2 with
-        | None -> None
-        | Some (sub', vars') -> exp_match idx1 sub' vars' idx2)
+       | None -> None
+       | Some (sub', vars') -> exp_match idx1 sub' vars' idx2)
 
 let exp_list_match es1 sub vars es2 =
   let f res_acc (e1, e2) = match res_acc with
@@ -87,9 +87,9 @@ let exp_list_match es1 sub vars es2 =
   in es_match_res
 
 (** Checks sexp1 = sexp2[sub ++ sub'] for some sub' with
-dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')).
-WARNING: This function does not consider the fact that the analyzer
-sometimes forgets fields of hpred. It can possibly cause a problem. *)
+    dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')).
+    WARNING: This function does not consider the fact that the analyzer
+    sometimes forgets fields of hpred. It can possibly cause a problem. *)
 let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
   match sexp1, sexp2 with
   | Sil.Eexp (exp1, inst1), Sil.Eexp (exp2, inst2) ->
@@ -102,12 +102,12 @@ let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
       None
   | Sil.Earray (size1, isel1, _), Sil.Earray (size2, isel2, _) ->
       (match exp_match size1 sub vars size2 with
-        | Some (sub', vars') -> isel_match isel1 sub' vars' isel2
-        | None -> None)
+       | Some (sub', vars') -> isel_match isel1 sub' vars' isel2
+       | None -> None)
 
 
 (** Checks fsel1 = fsel2[sub ++ sub'] for some sub' with
-dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')). *)
+    dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')). *)
 and fsel_match fsel1 sub vars fsel2 =
   match fsel1, fsel2 with
   | [], [] -> Some (sub, vars)
@@ -124,11 +124,11 @@ and fsel_match fsel1 sub vars fsel2 =
       end
       else if (n < 0 && !Config.abs_struct > 0) then
         fsel_match fsel1' sub vars fsel2
-      (* This can lead to great information loss *)
+        (* This can lead to great information loss *)
       else None
 
 (** Checks isel1 = isel2[sub ++ sub'] for some sub' with
-dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')). *)
+    dom(sub') subseteq vars. Returns (sub ++ sub', vars - dom(sub')). *)
 and isel_match isel1 sub vars isel2 =
   match isel1, isel2 with
   | [], [] -> Some (sub, vars)
@@ -203,8 +203,8 @@ let rec instantiate_to_emp p condition sub vars = function
                   instantiate_to_emp p condition sub_new vars_leftover hpats
 
 (* This function has to be changed in order to
-* implement the idea "All lsegs outside are NE, and all lsegs inside
-* are PE" *)
+ * implement the idea "All lsegs outside are NE, and all lsegs inside
+ * are PE" *)
 let rec iter_match_with_impl iter condition sub vars hpat hpats =
 
   (*
@@ -243,8 +243,8 @@ let rec iter_match_with_impl iter condition sub vars hpat hpats =
   let gen_filter_pointsto lexp2 strexp2 te2 = function
     | Sil.Hpointsto (lexp1, strexp1, te1) when Sil.exp_equal te1 te2 ->
         (match (exp_match lexp1 sub vars lexp2) with
-          | None -> None
-          | Some (sub', vars_leftover) -> strexp_match strexp1 sub' vars_leftover strexp2)
+         | None -> None
+         | Some (sub', vars_leftover) -> strexp_match strexp1 sub' vars_leftover strexp2)
     | _ -> None
   in
   let gen_filter_lseg k2 para2 e_start2 e_end2 es_shared2 = function
@@ -328,19 +328,19 @@ let rec iter_match_with_impl iter condition sub vars hpat hpats =
         | Some _ -> None
       in begin match ((Prop.prop_iter_find iter filter), hpats) with
         | (None, _) when not hpat.flag ->
-        (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
+            (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
             None
         | (None, _) when Sil.lseg_kind_equal k2 Sil.Lseg_NE ->
-        (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
+            (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
             do_para_lseg ()
         | (None, _) ->
-        (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
+            (* L.out "@[.... iter_match_with_impl (lseg not-matched) ....@\n@."; *)
             execute_with_backtracking [do_emp_lseg; do_para_lseg]
         | (Some iter_cur, []) ->
-        (* L.out "@[.... iter_match_with_impl (lseg matched) ....@\n@."; *)
+            (* L.out "@[.... iter_match_with_impl (lseg matched) ....@\n@."; *)
             do_empty_hpats iter_cur ()
         | (Some iter_cur, _) ->
-        (* L.out "@[.... iter_match_with_impl (lseg matched) ....@\n@."; *)
+            (* L.out "@[.... iter_match_with_impl (lseg matched) ....@\n@."; *)
             execute_with_backtracking [do_nonempty_hpats iter_cur; do_next iter_cur]
       end
   | Sil.Hdllseg (k2, para2, iF2, oB2, oF2, iB2, es_shared2) ->
@@ -460,10 +460,10 @@ and hpara_dll_match_with_impl impl_ok para1 para2 : bool =
 
 
 (** [prop_match_with_impl p condition vars hpat hpats]
-returns [(subst, p_leftover)] such that
-1) [dom(subst) = vars]
-2) [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
-Using the flag [field], we can control the strength of |-. *)
+    returns [(subst, p_leftover)] such that
+    1) [dom(subst) = vars]
+    2) [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
+    Using the flag [field], we can control the strength of |-. *)
 let prop_match_with_impl p condition vars hpat hpats =
   prop_match_with_impl_sub p condition Sil.sub_empty vars hpat hpats
 
@@ -571,10 +571,10 @@ let hpara_dll_iso para1 para2 =
 
 
 (** [generic_find_partial_iso] finds isomorphic subsigmas of [sigma_todo].
-The function [update] is used to get rid of hpred pairs from [sigma_todo].
-[sigma_corres] records the isormophic copies discovered so far. The first
-parameter determines how much flexibility we will allow during this partial
-isomorphism finding. *)
+    The function [update] is used to get rid of hpred pairs from [sigma_todo].
+    [sigma_corres] records the isormophic copies discovered so far. The first
+    parameter determines how much flexibility we will allow during this partial
+    isomorphism finding. *)
 let rec generic_find_partial_iso mode update corres sigma_corres todos sigma_todo =
   match todos with
   | [] ->
@@ -599,10 +599,10 @@ let rec generic_find_partial_iso mode update corres sigma_corres todos sigma_tod
         | None, _ | _, None ->
             None
         | Some (Sil.Hpointsto (_, _, te1)), Some (Sil.Hpointsto (_, _, te2))
-        when not (Sil.exp_equal te1 te2) ->
+          when not (Sil.exp_equal te1 te2) ->
             None
         | Some (Sil.Hpointsto (_, se1, _) as hpred1),
-        Some (Sil.Hpointsto (_, se2, _) as hpred2) ->
+          Some (Sil.Hpointsto (_, se2, _) as hpred2) ->
             begin
               match generate_todos_from_strexp mode [] se1 se2 with
               | None -> None
@@ -620,51 +620,51 @@ let rec generic_find_partial_iso mode update corres sigma_corres todos sigma_tod
 
             end
         | Some (Sil.Hlseg (k1, para1, root1, next1, shared1) as hpred1),
-        Some (Sil.Hlseg (k2, para2, root2, next2, shared2) as hpred2) ->
+          Some (Sil.Hlseg (k2, para2, root2, next2, shared2) as hpred2) ->
             if k1 <> k2 || not (hpara_iso para1 para2) then None
             else
               (try
-                let new_corres = match corres_extend_front e1 e2 corres with
-                  | None -> assert false
-                  | Some new_corres -> new_corres in
-                let new_sigma_corres =
-                  let sigma1, sigma2 = sigma_corres in
-                  let new_sigma1 = hpred1 :: sigma1 in
-                  let new_sigma2 = hpred2 :: sigma2 in
-                  (new_sigma1, new_sigma2) in
-                let new_todos =
-                  let shared12 = list_combine shared1 shared2 in
-                  (root1, root2) :: (next1, next2) :: shared12 @ todos' in
-                generic_find_partial_iso mode update new_corres new_sigma_corres new_todos new_sigma_todo
-              with Invalid_argument _ -> None)
+                 let new_corres = match corres_extend_front e1 e2 corres with
+                   | None -> assert false
+                   | Some new_corres -> new_corres in
+                 let new_sigma_corres =
+                   let sigma1, sigma2 = sigma_corres in
+                   let new_sigma1 = hpred1 :: sigma1 in
+                   let new_sigma2 = hpred2 :: sigma2 in
+                   (new_sigma1, new_sigma2) in
+                 let new_todos =
+                   let shared12 = list_combine shared1 shared2 in
+                   (root1, root2) :: (next1, next2) :: shared12 @ todos' in
+                 generic_find_partial_iso mode update new_corres new_sigma_corres new_todos new_sigma_todo
+               with Invalid_argument _ -> None)
         | Some (Sil.Hdllseg(k1, para1, iF1, oB1, oF1, iB1, shared1) as hpred1),
-        Some (Sil.Hdllseg(k2, para2, iF2, oB2, oF2, iB2, shared2) as hpred2) ->
+          Some (Sil.Hdllseg(k2, para2, iF2, oB2, oF2, iB2, shared2) as hpred2) ->
             if k1 <> k2 || not (hpara_dll_iso para1 para2) then None
             else
               (try
-                let new_corres = match corres_extend_front e1 e2 corres with
-                  | None -> assert false
-                  | Some new_corres -> new_corres in
-                let new_sigma_corres =
-                  let sigma1, sigma2 = sigma_corres in
-                  let new_sigma1 = hpred1 :: sigma1 in
-                  let new_sigma2 = hpred2 :: sigma2 in
-                  (new_sigma1, new_sigma2) in
-                let new_todos =
-                  let shared12 = list_combine shared1 shared2 in
-                  (iF1, iF2):: (oB1, oB2):: (oF1, oF2):: (iB1, iB2):: shared12@todos' in
-                generic_find_partial_iso mode update new_corres new_sigma_corres new_todos new_sigma_todo
-              with Invalid_argument _ -> None)
+                 let new_corres = match corres_extend_front e1 e2 corres with
+                   | None -> assert false
+                   | Some new_corres -> new_corres in
+                 let new_sigma_corres =
+                   let sigma1, sigma2 = sigma_corres in
+                   let new_sigma1 = hpred1 :: sigma1 in
+                   let new_sigma2 = hpred2 :: sigma2 in
+                   (new_sigma1, new_sigma2) in
+                 let new_todos =
+                   let shared12 = list_combine shared1 shared2 in
+                   (iF1, iF2):: (oB1, oB2):: (oF1, oF2):: (iB1, iB2):: shared12@todos' in
+                 generic_find_partial_iso mode update new_corres new_sigma_corres new_todos new_sigma_todo
+               with Invalid_argument _ -> None)
         | _ -> None
       end
   | _ -> None
 
 (** [find_partial_iso] finds disjoint isomorphic sub-sigmas inside a given sigma.
-The function returns a partial iso and three sigmas. The first sigma is the first
-copy of the two isomorphic sigmas, so it uses expressions in the domain of
-the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
-and it uses expressions in the range of the isomorphism. The third is the unused
-part of the input sigma. *)
+    The function returns a partial iso and three sigmas. The first sigma is the first
+    copy of the two isomorphic sigmas, so it uses expressions in the domain of
+    the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
+    and it uses expressions in the range of the isomorphism. The third is the unused
+    part of the input sigma. *)
 let find_partial_iso eq corres todos sigma =
   let update e1 e2 sigma0 =
     let (hpredo1, sigma0_no_e1) = sigma_remove_hpred eq sigma0 e1 in
@@ -675,11 +675,11 @@ let find_partial_iso eq corres todos sigma =
   generic_find_partial_iso Exact update corres init_sigma_corres todos init_sigma_todo
 
 (** [find_partial_iso_from_two_sigmas] finds isomorphic sub-sigmas inside two
-given sigmas. The function returns a partial iso and four sigmas. The first
-sigma is the first copy of the two isomorphic sigmas, so it uses expressions in the domain of
-the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
-and it uses expressions in the range of the isomorphism. The third and fourth
-are the unused parts of the two input sigmas. *)
+    given sigmas. The function returns a partial iso and four sigmas. The first
+    sigma is the first copy of the two isomorphic sigmas, so it uses expressions in the domain of
+    the returned isomorphism. The second is the second copy of the two isomorphic sigmas,
+    and it uses expressions in the range of the isomorphism. The third and fourth
+    are the unused parts of the two input sigmas. *)
 let find_partial_iso_from_two_sigmas mode eq corres todos sigma1 sigma2 =
   let update e1 e2 sigma_todo =
     let sigma_todo1, sigma_todo2 = sigma_todo in
@@ -703,12 +703,12 @@ let sigma_lift_to_pe sigma =
   list_map hpred_lift_to_pe sigma
 
 (** [generic_para_create] takes a correspondence, and a sigma
-and a list of expressions for the first part of this
-correspondence. Then, it creates a renaming of expressions
-in the domain of the given correspondence, and applies this
-renaming to the given sigma. The result is a tuple of the renaming,
-the renamed sigma, ids for existentially quantified expressions,
-ids for shared expressions, and shared expressions. *)
+    and a list of expressions for the first part of this
+    correspondence. Then, it creates a renaming of expressions
+    in the domain of the given correspondence, and applies this
+    renaming to the given sigma. The result is a tuple of the renaming,
+    the renamed sigma, ids for existentially quantified expressions,
+    ids for shared expressions, and shared expressions. *)
 let generic_para_create corres sigma1 elist1 =
   let corres_ids =
     let not_same_consts = function
@@ -732,9 +732,9 @@ let generic_para_create corres sigma1 elist1 =
   (renaming, body, ids_exists, ids_shared, es_shared)
 
 (** [hpara_create] takes a correspondence, and a sigma, a root
-and a next for the first part of this correspondence. Then, it creates a
-hpara and discovers a list of shared expressions that are
-passed as arguments to hpara. Both of them are returned as a result. *)
+    and a next for the first part of this correspondence. Then, it creates a
+    hpara and discovers a list of shared expressions that are
+    passed as arguments to hpara. Both of them are returned as a result. *)
 let hpara_create corres sigma1 root1 next1 =
   let renaming, body, ids_exists, ids_shared, es_shared =
     generic_para_create corres sigma1 [root1; next1] in
@@ -755,9 +755,9 @@ let hpara_create corres sigma1 root1 next1 =
   (hpara, es_shared)
 
 (** [hpara_dll_create] takes a correspondence, and a sigma, a root,
-a blink and a flink for the first part of this correspondence. Then, it creates a
-hpara_dll and discovers a list of shared expressions that are
-passed as arguments to hpara. Both of them are returned as a result. *)
+    a blink and a flink for the first part of this correspondence. Then, it creates a
+    hpara_dll and discovers a list of shared expressions that are
+    passed as arguments to hpara. Both of them are returned as a result. *)
 let hpara_dll_create corres sigma1 root1 blink1 flink1 =
   let renaming, body, ids_exists, ids_shared, es_shared =
     generic_para_create corres sigma1 [root1; blink1; flink1] in

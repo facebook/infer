@@ -8,8 +8,8 @@
  *)
 
 (** Module to preprocess location information in the AST.
-The original location information is incremental, each location is a delta
-w.r.t. the previous one. This module processes the AST and makes locations explicit. *)
+    The original location information is incremental, each location is a delta
+    w.r.t. the previous one. This module processes the AST and makes locations explicit. *)
 
 open Utils
 open Clang_ast_j
@@ -140,7 +140,7 @@ let pp_ast_decl fmt ast_decl =
 
 (** Compose incremental location information and make locations explicit. *)
 module LocComposer : sig
-(** Status of the composer. *)
+  (** Status of the composer. *)
   type status
 
   (** Create a new composer with the initial status. *)
@@ -150,9 +150,9 @@ module LocComposer : sig
   val compose : status -> source_range -> source_range
 
   (** Set the current file if specified in the source_range.
-  The composer will not descend into file included from the current one.
-  For locations in included files, it will return instead the last known
-  location of the current file. *)
+      The composer will not descend into file included from the current one.
+      For locations in included files, it will return instead the last known
+      location of the current file. *)
   val set_current_file : status -> source_range -> unit
 end = struct
   type status =
@@ -271,9 +271,9 @@ and decl_process_locs loc_composer decl =
 
 
 (** Process locations in the AST by making them explicit.
-Each toplevel declaration determines the current file,
-and once diving into the details of the declaration, location
-information about other (include) files is ignored. *)
+    Each toplevel declaration determines the current file,
+    and once diving into the details of the declaration, location
+    information about other (include) files is ignored. *)
 let ast_decl_process_locs loc_composer ast_decl =
 
   let toplevel_decl_process_locs decl =

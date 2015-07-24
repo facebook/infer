@@ -73,13 +73,13 @@ let add_cmethod never_null_matcher program icfg node cm is_static =
   let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
   let is_clinit = JBasics.ms_equal ms JBasics.clinit_signature in
   if !JTrans.no_static_final = false
-  && is_clinit
-  && not (JTransStaticField.has_static_final_fields node) then
+     && is_clinit
+     && not (JTransStaticField.has_static_final_fields node) then
     JUtils.log "\t\tskipping class initializer: %s@." (JBasics.ms_name ms)
   else
     match JTrans.get_method_procdesc program cfg tenv cn ms is_static with
     | JTrans.Defined procdesc when JClasspath.is_model (Cfg.Procdesc.get_proc_name procdesc) ->
-    (* do not capture the method if there is a model for it *)
+        (* do not capture the method if there is a model for it *)
         JUtils.log "Skipping method with a model: %s@." (Procname.to_string (Cfg.Procdesc.get_proc_name procdesc));
     | JTrans.Defined procdesc ->
         let start_node = Cfg.Procdesc.get_start_node procdesc in
@@ -112,7 +112,7 @@ let add_amethod program icfg node am is_static =
   let cn, ms = JBasics.cms_split am.Javalib.am_class_method_signature in
   match JTrans.get_method_procdesc program cfg tenv cn ms is_static with
   | JTrans.Defined procdesc when (JClasspath.is_model (Cfg.Procdesc.get_proc_name procdesc)) ->
-  (* do not capture the method if there is a model for it *)
+      (* do not capture the method if there is a model for it *)
       JUtils.log "Skipping method with a model: %s@." (Procname.to_string (Cfg.Procdesc.get_proc_name procdesc));
   | JTrans.Defined procdesc ->
       Cg.add_node icfg.JContext.cg (Cfg.Procdesc.get_proc_name procdesc)
@@ -150,8 +150,8 @@ let is_classname_cached cn =
   Sys.file_exists (path_of_cached_classname cn)
 
 (* Given a source file and a class, translates the code of this class.
-In init - mode, finds out whether this class contains initializers at all,
-in this case translates it. In standard mode, all methods are translated *)
+   In init - mode, finds out whether this class contains initializers at all,
+   in this case translates it. In standard mode, all methods are translated *)
 let create_icfg never_null_matcher linereader program icfg source_file cn node =
   JUtils.log "\tclassname: %s@." (JBasics.cn_name cn);
   cache_classname cn;
@@ -160,12 +160,12 @@ let create_icfg never_null_matcher linereader program icfg source_file cn node =
   begin
     Javalib.m_iter (JTrans.create_local_procdesc program linereader cfg tenv node) node;
     Javalib.m_iter (fun m ->
-            let method_kind = JTransType.get_method_kind m in
-            match m with
-            | Javalib.ConcreteMethod cm ->
-                add_cmethod never_null_matcher program icfg node cm method_kind
-            | Javalib.AbstractMethod am ->
-                add_amethod program icfg node am method_kind
+        let method_kind = JTransType.get_method_kind m in
+        match m with
+        | Javalib.ConcreteMethod cm ->
+            add_cmethod never_null_matcher program icfg node cm method_kind
+        | Javalib.AbstractMethod am ->
+            add_amethod program icfg node am method_kind
       ) node
   end
 
@@ -196,8 +196,8 @@ let should_capture classes source_basename node =
 
 
 (* Computes the control - flow graph and call - graph of a given source file.
-In the standard - mode, it translated all the classes that correspond to this
-source file. *)
+   In the standard - mode, it translated all the classes that correspond to this
+   source file. *)
 let compute_source_icfg
     never_null_matcher linereader classes program tenv source_basename source_file =
   let icfg =
@@ -215,8 +215,8 @@ let compute_source_icfg
   let () =
     JBasics.ClassMap.iter
       (select
-          (should_capture classes source_basename)
-          (create_icfg never_null_matcher linereader program icfg source_file))
+         (should_capture classes source_basename)
+         (create_icfg never_null_matcher linereader program icfg source_file))
       (JClasspath.get_classmap program) in
   (icfg.JContext.cg, icfg.JContext.cfg)
 

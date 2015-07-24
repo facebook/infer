@@ -96,8 +96,8 @@ let list_split =
     | [] -> (acc1, acc2)
     | (x, y):: l -> split (x:: acc1) (y:: acc2) l in
   fun l ->
-      let acc1, acc2 = split [] [] l in
-      list_rev acc1, list_rev acc2
+    let acc1, acc2 = split [] [] l in
+    list_rev acc1, list_rev acc2
 
 (** Like List.mem but without builtin equality *)
 let list_mem equal x l = list_exists (equal x) l
@@ -309,7 +309,7 @@ let pe_extend_colormap pe (x: Obj.t) (c: color) =
   { pe with pe_cmap_norm = colormap }
 
 (** Set the object substitution, which is supposed to preserve the type.
-Currently only used for a map from (identifier) expressions to the program var containing them *)
+    Currently only used for a map from (identifier) expressions to the program var containing them *)
 let pe_set_obj_sub pe (sub: 'a -> 'a) =
   let new_obj_sub x =
     let x' = Obj.repr (sub (Obj.obj x)) in
@@ -351,10 +351,10 @@ let rec _pp_semicolon_seq oneline pe pp f =
   | [x] -> F.fprintf f "%a" pp x
   | x:: l ->
       (match pe.pe_kind with
-        | PP_TEXT | PP_HTML ->
-            F.fprintf f "%a ; %a%a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l
-        | PP_LATEX ->
-            F.fprintf f "%a ;\\\\%a %a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l)
+       | PP_TEXT | PP_HTML ->
+           F.fprintf f "%a ; %a%a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l
+       | PP_LATEX ->
+           F.fprintf f "%a ;\\\\%a %a" pp x pp_sep () (_pp_semicolon_seq oneline pe pp) l)
 
 (** Print a ;-separated sequence with newlines. *)
 let pp_semicolon_seq pe = _pp_semicolon_seq false pe
@@ -368,12 +368,12 @@ let rec pp_or_seq pe pp f = function
   | [x] -> F.fprintf f "%a" pp x
   | x:: l ->
       (match pe.pe_kind with
-        | PP_TEXT ->
-            F.fprintf f "%a || %a" pp x (pp_semicolon_seq pe pp) l
-        | PP_HTML ->
-            F.fprintf f "%a &or; %a" pp x (pp_semicolon_seq pe pp) l
-        | PP_LATEX ->
-            F.fprintf f "%a \\vee %a" pp x (pp_semicolon_seq pe pp) l)
+       | PP_TEXT ->
+           F.fprintf f "%a || %a" pp x (pp_semicolon_seq pe pp) l
+       | PP_HTML ->
+           F.fprintf f "%a &or; %a" pp x (pp_semicolon_seq pe pp) l
+       | PP_LATEX ->
+           F.fprintf f "%a \\vee %a" pp x (pp_semicolon_seq pe pp) l)
 
 (** Produce a string from a 1-argument pretty printer function *)
 let pp_to_string pp x =
@@ -634,19 +634,19 @@ let copy_file fname_from fname_to =
       None
 
 module FileLOC = (** count lines of code of files and keep processed results in a cache *)
-  struct
-    let include_loc_hash = Hashtbl.create 1
+struct
+  let include_loc_hash = Hashtbl.create 1
 
-    let reset () = Hashtbl.clear include_loc_hash
+  let reset () = Hashtbl.clear include_loc_hash
 
-    let file_get_loc fname =
-      try Hashtbl.find include_loc_hash fname with Not_found ->
-          let loc = match read_file fname with
-            | None -> 0
-            | Some l -> list_length l in
-          Hashtbl.add include_loc_hash fname loc;
-          loc
-  end
+  let file_get_loc fname =
+    try Hashtbl.find include_loc_hash fname with Not_found ->
+      let loc = match read_file fname with
+        | None -> 0
+        | Some l -> list_length l in
+      Hashtbl.add include_loc_hash fname loc;
+      loc
+end
 
 (** type for files used for printing *)
 type outfile =
@@ -661,8 +661,8 @@ let create_outfile fname =
     let fmt = F.formatter_of_out_channel out_c in
     Some { fname = fname; out_c = out_c; fmt = fmt }
   with Sys_error _ ->
-      F.fprintf F.err_formatter "error: cannot create file %s@." fname;
-      None
+    F.fprintf F.err_formatter "error: cannot create file %s@." fname;
+    None
 
 (** operate on an outfile reference if it is not None *)
 let do_outf outf_ref f =
@@ -769,63 +769,63 @@ let filename_to_relative root fname =
 
 let base_arg_desc =
   [
-  "-results_dir",
-  Arg.String (fun s -> Config.results_dir := s),
-  Some "dir",
-  "set the project results directory (default dir=" ^ Config.default_results_dir ^ ")";
-  "-coverage",
-  Arg.Unit (fun () -> Config.worklist_mode:= 2),
-  None,
-  "analysis mode to maximize coverage (can take longer)";
-  "-lib",
-  Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library),
-  Some "dir",
-  "add dir to the list of directories to be searched for spec files";
-  "-models",
-  Arg.String (fun s -> Config.add_models (filename_to_absolute s)),
-  Some "zip file",
-  "add a zip file containing the models";
-  "-ziplib",
-  Arg.String (fun s -> Config.add_zip_library (filename_to_absolute s)),
-  Some "zip file",
-  "add a zip file containing library spec files";
-  "-project_root",
-  Arg.String (fun s -> Config.project_root := Some (filename_to_absolute s)),
-  Some "dir",
-  "root directory of the project";
-  "-infer_cache",
-  Arg.String (fun s -> Config.JarCache.infer_cache := Some (filename_to_absolute s)),
-  Some "dir",
-  "Select a directory to contain the infer cache";
+    "-results_dir",
+    Arg.String (fun s -> Config.results_dir := s),
+    Some "dir",
+    "set the project results directory (default dir=" ^ Config.default_results_dir ^ ")";
+    "-coverage",
+    Arg.Unit (fun () -> Config.worklist_mode:= 2),
+    None,
+    "analysis mode to maximize coverage (can take longer)";
+    "-lib",
+    Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library),
+    Some "dir",
+    "add dir to the list of directories to be searched for spec files";
+    "-models",
+    Arg.String (fun s -> Config.add_models (filename_to_absolute s)),
+    Some "zip file",
+    "add a zip file containing the models";
+    "-ziplib",
+    Arg.String (fun s -> Config.add_zip_library (filename_to_absolute s)),
+    Some "zip file",
+    "add a zip file containing library spec files";
+    "-project_root",
+    Arg.String (fun s -> Config.project_root := Some (filename_to_absolute s)),
+    Some "dir",
+    "root directory of the project";
+    "-infer_cache",
+    Arg.String (fun s -> Config.JarCache.infer_cache := Some (filename_to_absolute s)),
+    Some "dir",
+    "Select a directory to contain the infer cache";
   ]
 
 let reserved_arg_desc =
   [
-  "-absstruct", Arg.Set_int Config.abs_struct, Some "n", "abstraction level for fields of structs (default n = 1)";
-  "-absval", Arg.Set_int Config.abs_val, Some "n", "abstraction level for expressions (default n = 2)";
-  "-arraylevel", Arg.Set_int Config.array_level, Some "n", "the level of treating the array indexing and pointer arithmetic (default n = 0)";
-  "-developer_mode", Arg.Set Config.developer_mode, None, "reserved";
-  "-dotty", Arg.Set Config.write_dotty, None, "produce dotty files in the results directory";
-  "-exit_node_bias", Arg.Unit (fun () -> Config.worklist_mode:= 1), None, "nodes nearest the exit node are analyzed first";
-  "-html", Arg.Set Config.write_html, None, "produce hmtl output in the results directory";
-  "-join_cond", Arg.Set_int Config.join_cond, Some "n", "set the strength of the final information-loss check used by the join (default n=1)";
-  "-leak", Arg.Set Config.allowleak, None, "forget leaks during abstraction";
-  "-max_procs", Arg.Set_int Config.max_num_proc, Some "n", "set the maximum number of processes to be used for parallel execution (default n=0)";
-  "-monitor_prop_size", Arg.Set Config.monitor_prop_size, None, "monitor size of props";
-  "-nelseg", Arg.Set Config.nelseg, None, "use only nonempty lsegs";
-  "-noliveness", Arg.Clear Config.liveness, None, "turn the dead program variable elimination off";
-  "-noprintdiff", Arg.Clear Config.print_using_diff, None, "turn off highlighting diff w.r.t. previous prop in printing";
-  "-notest", Arg.Clear Config.test, None, "turn test mode off";
-  "-num_cores", Arg.Set_int Config.num_cores, Some "n", "set the number of cores used in parallel by the analysis (default n=1)";
-  "-only_footprint", Arg.Set Config.only_footprint, None, "skip the re-execution phase";
-  "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
-  "-set_pp_margin", Arg.Int (fun i -> F.set_margin i), Some "n", "set right margin for the pretty printing functions";
-  "-slice_fun", Arg.Set_string Config.slice_fun, None, "analyze only functions recursively called by function given as argument";
-  "-spec_abs_level", Arg.Set_int Config.spec_abs_level, Some "n", "set the level of abstracting the postconditions of discovered specs (default n=1)";
-  "-trace_error", Arg.Set Config.trace_error, None, "turn on tracing of error explanation";
-  "-trace_join", Arg.Set Config.trace_join, None, "turn on tracing of join";
-  "-trace_rearrange", Arg.Set Config.trace_rearrange, None, "turn on tracing of rearrangement";
-  "-visits_bias", Arg.Unit (fun () -> Config.worklist_mode:= 2), None, "nodes visited fewer times are analyzed first";
+    "-absstruct", Arg.Set_int Config.abs_struct, Some "n", "abstraction level for fields of structs (default n = 1)";
+    "-absval", Arg.Set_int Config.abs_val, Some "n", "abstraction level for expressions (default n = 2)";
+    "-arraylevel", Arg.Set_int Config.array_level, Some "n", "the level of treating the array indexing and pointer arithmetic (default n = 0)";
+    "-developer_mode", Arg.Set Config.developer_mode, None, "reserved";
+    "-dotty", Arg.Set Config.write_dotty, None, "produce dotty files in the results directory";
+    "-exit_node_bias", Arg.Unit (fun () -> Config.worklist_mode:= 1), None, "nodes nearest the exit node are analyzed first";
+    "-html", Arg.Set Config.write_html, None, "produce hmtl output in the results directory";
+    "-join_cond", Arg.Set_int Config.join_cond, Some "n", "set the strength of the final information-loss check used by the join (default n=1)";
+    "-leak", Arg.Set Config.allowleak, None, "forget leaks during abstraction";
+    "-max_procs", Arg.Set_int Config.max_num_proc, Some "n", "set the maximum number of processes to be used for parallel execution (default n=0)";
+    "-monitor_prop_size", Arg.Set Config.monitor_prop_size, None, "monitor size of props";
+    "-nelseg", Arg.Set Config.nelseg, None, "use only nonempty lsegs";
+    "-noliveness", Arg.Clear Config.liveness, None, "turn the dead program variable elimination off";
+    "-noprintdiff", Arg.Clear Config.print_using_diff, None, "turn off highlighting diff w.r.t. previous prop in printing";
+    "-notest", Arg.Clear Config.test, None, "turn test mode off";
+    "-num_cores", Arg.Set_int Config.num_cores, Some "n", "set the number of cores used in parallel by the analysis (default n=1)";
+    "-only_footprint", Arg.Set Config.only_footprint, None, "skip the re-execution phase";
+    "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
+    "-set_pp_margin", Arg.Int (fun i -> F.set_margin i), Some "n", "set right margin for the pretty printing functions";
+    "-slice_fun", Arg.Set_string Config.slice_fun, None, "analyze only functions recursively called by function given as argument";
+    "-spec_abs_level", Arg.Set_int Config.spec_abs_level, Some "n", "set the level of abstracting the postconditions of discovered specs (default n=1)";
+    "-trace_error", Arg.Set Config.trace_error, None, "turn on tracing of error explanation";
+    "-trace_join", Arg.Set Config.trace_join, None, "turn on tracing of join";
+    "-trace_rearrange", Arg.Set Config.trace_rearrange, None, "turn on tracing of rearrangement";
+    "-visits_bias", Arg.Unit (fun () -> Config.worklist_mode:= 2), None, "nodes visited fewer times are analyzed first";
   ]
 
 (**************** START MODULE Arg2 -- modified from Arg in the ocaml distribution ***************)
@@ -864,7 +864,7 @@ module Arg2 = struct
   let print_spec buf (key, spec, doc) =
     match spec with
     | Arg.Symbol (l, _) -> bprintf buf "  %s %s%s\n" key (make_symlist "{" "|" "}" l)
-          doc
+                             doc
     | _ ->
         let sep = if String.length doc != 0 && String.get doc 0 = '=' then "" else " " in
         bprintf buf "  %s%s%s\n" key sep doc
@@ -875,11 +875,11 @@ module Arg2 = struct
     let add1 =
       try ignore (assoc3 "-help" speclist); []
       with Not_found ->
-          ["-help", Arg.Unit help_action, " Display this list of options"]
+        ["-help", Arg.Unit help_action, " Display this list of options"]
     and add2 =
       try ignore (assoc3 "--help" speclist); []
       with Not_found ->
-          ["--help", Arg.Unit help_action, " Display this list of options"]
+        ["--help", Arg.Unit help_action, " Display this list of options"]
     in
     speclist @ (add1 @ add2)
 
@@ -926,72 +926,72 @@ module Arg2 = struct
           with Not_found -> stop (Unknown s)
         in
         begin try
-          let rec treat_action = function
-            | Arg.Unit f -> f ();
-            | Arg.Bool f when !current + 1 < l ->
-                let arg = argv.(!current + 1) in
-                begin try f (bool_of_string arg)
-                with Invalid_argument "bool_of_string" ->
-                    raise (Stop (Wrong (s, arg, "a boolean")))
-                end;
-                incr current;
-            | Arg.Set r -> r := true;
-            | Arg.Clear r -> r := false;
-            | Arg.String f when !current + 1 < l ->
-                f argv.(!current + 1);
-                incr current;
-            | Arg.Symbol (symb, f) when !current + 1 < l ->
-                let arg = argv.(!current + 1) in
-                if list_mem string_equal arg symb then begin
+            let rec treat_action = function
+              | Arg.Unit f -> f ();
+              | Arg.Bool f when !current + 1 < l ->
+                  let arg = argv.(!current + 1) in
+                  begin try f (bool_of_string arg)
+                    with Invalid_argument "bool_of_string" ->
+                      raise (Stop (Wrong (s, arg, "a boolean")))
+                  end;
+                  incr current;
+              | Arg.Set r -> r := true;
+              | Arg.Clear r -> r := false;
+              | Arg.String f when !current + 1 < l ->
                   f argv.(!current + 1);
                   incr current;
-                end else begin
-                  raise (Stop (Wrong (s, arg, "one of: "
-                          ^ (make_symlist "" " " "" symb))))
-                end
-            | Arg.Set_string r when !current + 1 < l ->
-                r := argv.(!current + 1);
-                incr current;
-            | Arg.Int f when !current + 1 < l ->
-                let arg = argv.(!current + 1) in
-                begin try f (int_of_string arg)
-                with Failure "int_of_string" ->
-                    raise (Stop (Wrong (s, arg, "an integer")))
-                end;
-                incr current;
-            | Arg.Set_int r when !current + 1 < l ->
-                let arg = argv.(!current + 1) in
-                begin try r := (int_of_string arg)
-                with Failure "int_of_string" ->
-                    raise (Stop (Wrong (s, arg, "an integer")))
-                end;
-                incr current;
-            | Arg.Float f when !current + 1 < l ->
-                let arg = argv.(!current + 1) in
-                begin try f (float_of_string arg);
-                with Failure "float_of_string" ->
-                    raise (Stop (Wrong (s, arg, "a float")))
-                end;
-                incr current;
-            | Arg.Set_float r when !current + 1 < l ->
-                let arg = argv.(!current + 1) in
-                begin try r := (float_of_string arg);
-                with Failure "float_of_string" ->
-                    raise (Stop (Wrong (s, arg, "a float")))
-                end;
-                incr current;
-            | Arg.Tuple specs ->
-                list_iter treat_action specs;
-            | Arg.Rest f ->
-                while !current < l - 1 do
-                  f argv.(!current + 1);
+              | Arg.Symbol (symb, f) when !current + 1 < l ->
+                  let arg = argv.(!current + 1) in
+                  if list_mem string_equal arg symb then begin
+                    f argv.(!current + 1);
+                    incr current;
+                  end else begin
+                    raise (Stop (Wrong (s, arg, "one of: "
+                                                ^ (make_symlist "" " " "" symb))))
+                  end
+              | Arg.Set_string r when !current + 1 < l ->
+                  r := argv.(!current + 1);
                   incr current;
-                done;
-            | _ -> raise (Stop (Missing s))
-          in
-          treat_action action
-        with Bad m -> stop (Message m);
-        | Stop e -> stop e;
+              | Arg.Int f when !current + 1 < l ->
+                  let arg = argv.(!current + 1) in
+                  begin try f (int_of_string arg)
+                    with Failure "int_of_string" ->
+                      raise (Stop (Wrong (s, arg, "an integer")))
+                  end;
+                  incr current;
+              | Arg.Set_int r when !current + 1 < l ->
+                  let arg = argv.(!current + 1) in
+                  begin try r := (int_of_string arg)
+                    with Failure "int_of_string" ->
+                      raise (Stop (Wrong (s, arg, "an integer")))
+                  end;
+                  incr current;
+              | Arg.Float f when !current + 1 < l ->
+                  let arg = argv.(!current + 1) in
+                  begin try f (float_of_string arg);
+                    with Failure "float_of_string" ->
+                      raise (Stop (Wrong (s, arg, "a float")))
+                  end;
+                  incr current;
+              | Arg.Set_float r when !current + 1 < l ->
+                  let arg = argv.(!current + 1) in
+                  begin try r := (float_of_string arg);
+                    with Failure "float_of_string" ->
+                      raise (Stop (Wrong (s, arg, "a float")))
+                  end;
+                  incr current;
+              | Arg.Tuple specs ->
+                  list_iter treat_action specs;
+              | Arg.Rest f ->
+                  while !current < l - 1 do
+                    f argv.(!current + 1);
+                    incr current;
+                  done;
+              | _ -> raise (Stop (Missing s))
+            in
+            treat_action action
+          with Bad m -> stop (Message m);
+             | Stop e -> stop e;
         end;
         incr current;
       end else begin
@@ -1117,8 +1117,8 @@ let join_strings sep = function
 
 let next compare =
   fun x y n ->
-      if n <> 0 then n
-      else compare x y
+    if n <> 0 then n
+    else compare x y
 
 
 let directory_fold f init path =
@@ -1130,7 +1130,7 @@ let directory_fold f init path =
       else
         (f accu full_path, dirs)
     with Sys_error _ ->
-        (accu, dirs) in
+      (accu, dirs) in
   let rec loop accu dirs =
     match dirs with
     | [] -> accu
@@ -1153,7 +1153,7 @@ let directory_iter f path =
         let () = f full_path in
         dirs
     with Sys_error _ ->
-        dirs in
+      dirs in
   let rec loop dirs =
     match dirs with
     | [] -> ()

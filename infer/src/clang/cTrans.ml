@@ -22,10 +22,10 @@ open CTrans_utils.Nodes
 module L = Logging
 
 module type CTrans = sig
-(** Translates instructions: (statements and expressions) from the ast into sil *)
+  (** Translates instructions: (statements and expressions) from the ast into sil *)
 
-(** It receives the context, a list of statements and the exit node and it returns a list of cfg nodes *)
-(** that reporesent the translation of the stmts into sil. *)
+  (** It receives the context, a list of statements and the exit node and it returns a list of cfg nodes *)
+  (** that reporesent the translation of the stmts into sil. *)
   val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> Cfg.Node.t -> Cfg.Node.t list
 
   (** It receives the context and a statement and a warning string and returns the translated sil expression *)
@@ -44,7 +44,7 @@ struct
       CMethod_trans.get_class_selector_instance context obj_c_message_expr_info act_params in
     let is_instance = mc_type != CMethod_trans.MCStatic in
     match CTrans_models.get_predefined_model_method_signature class_name method_name
-      CMethod_trans.mk_procname_from_method with
+            CMethod_trans.mk_procname_from_method with
     | Some ms ->
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
@@ -52,10 +52,10 @@ struct
         match CMethod_trans.resolve_method context.tenv class_name method_name with
         | Some callee_ms ->
             (let procname = CMethod_signature.ms_get_name callee_ms in
-              if not (M.process_getter_setter context procname) then
-                (let is_instance = is_instance || (CMethod_signature.ms_is_instance callee_ms) in
-                  ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
-              procname, mc_type)
+             if not (M.process_getter_setter context procname) then
+               (let is_instance = is_instance || (CMethod_signature.ms_is_instance callee_ms) in
+                ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
+             procname, mc_type)
         | None ->
             let callee_pn = CMethod_trans.mk_procname_from_method class_name method_name in
             CMethod_trans.create_external_procdesc context.cfg callee_pn is_instance None;
@@ -64,8 +64,8 @@ struct
   let add_autorelease_call context exp typ sil_loc =
     let method_name = Procname.c_get_method (Cfg.Procdesc.get_proc_name context.procdesc) in
     if !Config.arc_mode &&
-    not (CTrans_utils.is_owning_name method_name) &&
-    ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
+       not (CTrans_utils.is_owning_name method_name) &&
+       ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
       let fname = SymExec.ModelBuiltins.__set_autorelease_attribute in
       let ret_id = Ident.create_fresh Ident.knormal in
       let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), [(exp, typ)], sil_loc, Sil.cf_default) in
@@ -106,7 +106,7 @@ struct
     let fields = CFrontend_utils.General_utils.sort_fields fields in
     Printing.log_out "Block %s field:\n" block_name;
     list_iter (fun (fn, ft, _) ->
-            Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
+        Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
     let block_type = Sil.Tstruct(fields, [], Sil.Class, Some mblock, [], [], []) in
     let block_name = Sil.TN_csu(Sil.Class, mblock) in
@@ -124,16 +124,16 @@ struct
       if pred_exit = [] then
         [Sil.Nullify(block_var, loc, true)]
       else (list_iter (fun n -> let loc = Cfg.Node.get_loc n in
-                Cfg.Node.append_instrs_temps n [Sil.Nullify(block_var, loc, true)] []) pred_exit;
-        []) in
+                        Cfg.Node.append_instrs_temps n [Sil.Nullify(block_var, loc, true)] []) pred_exit;
+            []) in
     let set_instr = Sil.Set(Sil.Lvar block_var, block_type, Sil.Var id_block, loc) in
     let ids, captured_instrs = list_split (list_map (fun (vname, typ, _) ->
-                  let id = Ident.create_fresh Ident.knormal in
-                  id, Sil.Letderef(id, Sil.Lvar (Sil.mk_pvar vname procname), typ, loc)
-            ) captured_vars) in
+        let id = Ident.create_fresh Ident.knormal in
+        id, Sil.Letderef(id, Sil.Lvar (Sil.mk_pvar vname procname), typ, loc)
+      ) captured_vars) in
     let fields_ids = list_combine fields ids in
     let set_fields = list_map (fun ((f, t, _), id) ->
-              Sil.Set(Sil.Lfield(Sil.Var id_block, f, block_type), t, Sil.Var id, loc)) fields_ids in
+        Sil.Set(Sil.Lfield(Sil.Var id_block, f, block_type), t, Sil.Var id, loc)) fields_ids in
     (declare_block_local :: trans_res.instrs) @ [set_instr] @ captured_instrs @ set_fields @ block_nullify_instr , id_block:: ids
 
   (* From a list of expression extract blocks from tuples and *)
@@ -180,9 +180,9 @@ struct
     try
       f trans_state stmt
     with Self.SelfClassException class_name ->
-        let typ = CTypes_decl.type_name_to_sil_type trans_state.context.tenv class_name in
-        { empty_res_trans with
-          exps = [(Sil.Sizeof(typ, Sil.Subtype.exact), typ)]}
+      let typ = CTypes_decl.type_name_to_sil_type trans_state.context.tenv class_name in
+      { empty_res_trans with
+        exps = [(Sil.Sizeof(typ, Sil.Subtype.exact), typ)]}
 
   (* Execute translation of e forcing to release priority (if it's not free) and then setting it back.*)
   (* This is used in conditional operators where we need to force the priority to be free for the *)
@@ -209,9 +209,9 @@ struct
     { empty_res_trans with exps = [(exp, typ)]}
 
   (* FROM CLANG DOCS: "Implements the GNU __null extension, which is a name for a null pointer constant *)
-  (* that has integral type (e.g., int or long) and is the same size and alignment as a pointer. The __null *)
-  (* extension is typically  only used by system headers, which define NULL as __null in C++ rather than using 0 *)
-  (* (which is an integer that may not match the size of a pointer)". So we implement it as the constant zero *)
+     (* that has integral type (e.g., int or long) and is the same size and alignment as a pointer. The __null *)
+     (* extension is typically  only used by system headers, which define NULL as __null in C++ rather than using 0 *)
+     (* (which is an integer that may not match the size of a pointer)". So we implement it as the constant zero *)
   let gNUNullExpr_trans trans_state stmt_info expr_info =
     Printing.log_out "Passing from GNUNullExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
@@ -261,7 +261,7 @@ struct
         exp, []
       with
       | Failure _ ->
-      (* Parse error: return a nondeterministic value *)
+          (* Parse error: return a nondeterministic value *)
           let id = Ident.create_fresh Ident.knormal in
           let exp = Sil.Var id in
           exp, [id] in
@@ -286,8 +286,8 @@ struct
           | None -> typ in (* Some default type since the type is missing *)
         { empty_res_trans with exps = [(Sil.Sizeof(sizeof_typ, Sil.Subtype.exact), sizeof_typ)]}
     | k -> Printing.log_stats
-          "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression ignored, returned -1... \n"
-          (Clang_ast_j.string_of_unary_expr_or_type_trait_kind k);
+             "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: %s . Expression ignored, returned -1... \n"
+             (Clang_ast_j.string_of_unary_expr_or_type_trait_kind k);
         { empty_res_trans with exps =[(Sil.exp_minus_one, typ)]}
 
   (* search the label into the hashtbl - create a fake node eventually *)
@@ -335,13 +335,13 @@ struct
       (* As e.g. in fun_ptr = foo; *)
       let non_mangled_func_name =
         if name = CFrontend_config.malloc &&
-        (!CFrontend_config.language = CFrontend_config.OBJC ||
-          !CFrontend_config.language = CFrontend_config.OBJCPP) then
+           (!CFrontend_config.language = CFrontend_config.OBJC ||
+            !CFrontend_config.language = CFrontend_config.OBJCPP) then
           SymExec.ModelBuiltins.malloc_no_fail
         else Procname.from_string_c_fun name in
       let is_builtin = SymExec.function_is_builtin non_mangled_func_name in
       if is_builtin then (* malloc, free, exit, scanf, ... *)
-      { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)]}
+        { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)]}
       else
         begin
           if address_of_function then Cfg.set_procname_priority context.cfg pname;
@@ -387,7 +387,7 @@ struct
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let array_stmt, idx_stmt = (match stmt_list with
         | [a; i] -> a, i  (* Assumption: the statement list contains 2 elements,
-        the first is the array expr and the second the index *)
+                             the first is the array expr and the second the index *)
         | _ -> assert false) in (* Let's get notified if the assumption is wrong...*)
     let line_number = get_line stmt_info trans_state.parent_line_number in
     let trans_state'= { trans_state with parent_line_number = line_number } in
@@ -434,103 +434,103 @@ struct
     let sil_loc = get_sil_location stmt_info parent_line_number context in
     let typ = CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
     (match stmt_list with
-      | [s1; ImplicitCastExpr (stmt, [CompoundLiteralExpr (cle_stmt_info, stmts, expr_info)], _, cast_expr_info)] ->
-          let di, line_number = get_decl_ref_info s1 parent_line_number in
-          let line_number = get_line cle_stmt_info line_number in
-          let trans_state' = { trans_state with parent_line_number = line_number } in
-          let res_trans_tmp = initListExpr_trans trans_state' stmt_info expr_info di stmts in
-          { res_trans_tmp with leaf_nodes =[]}
-      | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
-          let rhs_owning_method = CTrans_utils.is_owning_method s2 in
-          (* NOTE: we create a node only if required. In that case this node *)
-          (* becomes the successor of the nodes that may be created when     *)
-          (* translating the operands.                                       *)
-          let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-          let line_number = get_line stmt_info parent_line_number in
-          let trans_state'' = { trans_state_pri with parent_line_number = line_number; succ_nodes =[]} in
-          let res_trans_e1 = exec_with_self_exception instruction trans_state'' s1 in
-          let res_trans_e2 =
-            (* translation of s2 is done taking care of block special case *)
-            exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state'' s2 stmt_info in
-          let (sil_e1, sil_typ1) = extract_exp_from_list res_trans_e1.exps "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
-          let (sil_e2, sil_typ2) = extract_exp_from_list res_trans_e2.exps "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
-          let exp_op, instr, ids_bin =
-            CArithmetic_trans.binary_operation_instruction context binary_operator_info sil_e1 typ sil_e2 sil_loc rhs_owning_method in
-          let instrs = res_trans_e1.instrs@res_trans_e2.instrs@instr in
-          let ids = res_trans_e1.ids@res_trans_e2.ids@ids_bin in
+     | [s1; ImplicitCastExpr (stmt, [CompoundLiteralExpr (cle_stmt_info, stmts, expr_info)], _, cast_expr_info)] ->
+         let di, line_number = get_decl_ref_info s1 parent_line_number in
+         let line_number = get_line cle_stmt_info line_number in
+         let trans_state' = { trans_state with parent_line_number = line_number } in
+         let res_trans_tmp = initListExpr_trans trans_state' stmt_info expr_info di stmts in
+         { res_trans_tmp with leaf_nodes =[]}
+     | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
+         let rhs_owning_method = CTrans_utils.is_owning_method s2 in
+         (* NOTE: we create a node only if required. In that case this node *)
+         (* becomes the successor of the nodes that may be created when     *)
+         (* translating the operands.                                       *)
+         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+         let line_number = get_line stmt_info parent_line_number in
+         let trans_state'' = { trans_state_pri with parent_line_number = line_number; succ_nodes =[]} in
+         let res_trans_e1 = exec_with_self_exception instruction trans_state'' s1 in
+         let res_trans_e2 =
+           (* translation of s2 is done taking care of block special case *)
+           exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state'' s2 stmt_info in
+         let (sil_e1, sil_typ1) = extract_exp_from_list res_trans_e1.exps "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
+         let (sil_e2, sil_typ2) = extract_exp_from_list res_trans_e2.exps "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
+         let exp_op, instr, ids_bin =
+           CArithmetic_trans.binary_operation_instruction context binary_operator_info sil_e1 typ sil_e2 sil_loc rhs_owning_method in
+         let instrs = res_trans_e1.instrs@res_trans_e2.instrs@instr in
+         let ids = res_trans_e1.ids@res_trans_e2.ids@ids_bin in
 
-          (* Create a node if the priority if free and there are instructions *)
-          let creating_node =
-            (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
-            (list_length instrs >0) in
+         (* Create a node if the priority if free and there are instructions *)
+         let creating_node =
+           (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
+           (list_length instrs >0) in
 
-          let instrs_after_assign, assign_ids, exp_to_parent =
-            if (is_binary_assign_op binary_operator_info)
-            && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
-              (* We are in this case when an assignment is inside        *)
-              (* another operator that creates a node. Eg. another       *)
-              (* assignment.  *)
-              (* As no node is created here ids are passed to the parent *)
-              let id = Ident.create_fresh Ident.knormal in
-              let res_instr = [Sil.Letderef (id, sil_e1, sil_typ1, sil_loc)] in
-              instrs@res_instr, ids@[id], Sil.Var id
-            ) else (
-              instrs, ids, exp_op) in
+         let instrs_after_assign, assign_ids, exp_to_parent =
+           if (is_binary_assign_op binary_operator_info)
+              && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
+             (* We are in this case when an assignment is inside        *)
+             (* another operator that creates a node. Eg. another       *)
+             (* assignment.  *)
+             (* As no node is created here ids are passed to the parent *)
+             let id = Ident.create_fresh Ident.knormal in
+             let res_instr = [Sil.Letderef (id, sil_e1, sil_typ1, sil_loc)] in
+             instrs@res_instr, ids@[id], Sil.Var id
+           ) else (
+             instrs, ids, exp_op) in
 
-          let instruction_to_ancestor, ids_to_ancestor, succ_nodes' =
-            if creating_node then (
-              let node_kind =
-                Cfg.Node.Stmt_node ("BinaryOperatorStmt: "^
-                  (CArithmetic_trans.bin_op_to_string binary_operator_info)) in
-              let node_bin_op = create_node node_kind [] [] sil_loc context in
-              Cfg.Node.set_succs_exn node_bin_op succ_nodes [];
-              let succ_nodes'' = [node_bin_op] in
-              (* If a node was created, ids are passed to the parent*)
-              (* if the binop is in the translation of a condition.*)
-              (* Otherwise ids are added to the node. *)
-              (* ids_parent/ids_nodes are the list of ids for the parent/node respectively.*)
-              (* They are computed with continuation which tells us *)
-              (* if we are translating a condition or not *)
-              let ids_parent = ids_to_parent trans_state.continuation assign_ids in
-              let ids_node = ids_to_node trans_state.continuation assign_ids in
-              list_iter (fun n -> Cfg.Node.append_instrs_temps n instrs_after_assign ids_node) succ_nodes'';
-              [], ids_parent, succ_nodes''
-            ) else (
-              instrs_after_assign, assign_ids, succ_nodes) in
+         let instruction_to_ancestor, ids_to_ancestor, succ_nodes' =
+           if creating_node then (
+             let node_kind =
+               Cfg.Node.Stmt_node ("BinaryOperatorStmt: "^
+                                   (CArithmetic_trans.bin_op_to_string binary_operator_info)) in
+             let node_bin_op = create_node node_kind [] [] sil_loc context in
+             Cfg.Node.set_succs_exn node_bin_op succ_nodes [];
+             let succ_nodes'' = [node_bin_op] in
+             (* If a node was created, ids are passed to the parent*)
+             (* if the binop is in the translation of a condition.*)
+             (* Otherwise ids are added to the node. *)
+             (* ids_parent/ids_nodes are the list of ids for the parent/node respectively.*)
+             (* They are computed with continuation which tells us *)
+             (* if we are translating a condition or not *)
+             let ids_parent = ids_to_parent trans_state.continuation assign_ids in
+             let ids_node = ids_to_node trans_state.continuation assign_ids in
+             list_iter (fun n -> Cfg.Node.append_instrs_temps n instrs_after_assign ids_node) succ_nodes'';
+             [], ids_parent, succ_nodes''
+           ) else (
+             instrs_after_assign, assign_ids, succ_nodes) in
 
-          let e1_has_nodes = res_trans_e1.root_nodes <> []
-          and e2_has_nodes = res_trans_e2.root_nodes <> [] in
+         let e1_has_nodes = res_trans_e1.root_nodes <> []
+         and e2_has_nodes = res_trans_e2.root_nodes <> [] in
 
-          let e1_succ_nodes =
-            if e2_has_nodes then res_trans_e2.root_nodes else succ_nodes' in
-          list_iter (fun n -> Cfg.Node.set_succs_exn n e1_succ_nodes []) res_trans_e1.leaf_nodes;
-          list_iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes' []) res_trans_e2.leaf_nodes;
+         let e1_succ_nodes =
+           if e2_has_nodes then res_trans_e2.root_nodes else succ_nodes' in
+         list_iter (fun n -> Cfg.Node.set_succs_exn n e1_succ_nodes []) res_trans_e1.leaf_nodes;
+         list_iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes' []) res_trans_e2.leaf_nodes;
 
-          let root_nodes_to_ancestor = match e1_has_nodes, e2_has_nodes with
-            | false, false -> succ_nodes'
-            | true, _ -> res_trans_e1.root_nodes
-            | false, true -> res_trans_e2.root_nodes in
+         let root_nodes_to_ancestor = match e1_has_nodes, e2_has_nodes with
+           | false, false -> succ_nodes'
+           | true, _ -> res_trans_e1.root_nodes
+           | false, true -> res_trans_e2.root_nodes in
 
-          let leaf_nodes_to_ancestor =
-            if creating_node then succ_nodes'
-            else if e2_has_nodes then res_trans_e2.leaf_nodes
-            else res_trans_e1.leaf_nodes in
+         let leaf_nodes_to_ancestor =
+           if creating_node then succ_nodes'
+           else if e2_has_nodes then res_trans_e2.leaf_nodes
+           else res_trans_e1.leaf_nodes in
 
-          Printing.log_out "....BinaryOperator '%s' " bok;
-          Printing.log_out "has ids_to_ancestor |ids_to_ancestor|=%s "
-            (string_of_int (list_length ids_to_ancestor));
-          Printing.log_out " |nodes_e1|=%s .\n"
-            (string_of_int (list_length res_trans_e1.root_nodes));
-          Printing.log_out " |nodes_e2|=%s .\n"
-            (string_of_int (list_length res_trans_e2.root_nodes));
-          list_iter (fun id -> Printing.log_out "     ... '%s'\n"
-                    (Ident.to_string id)) ids_to_ancestor;
-          { root_nodes = root_nodes_to_ancestor;
-            leaf_nodes = leaf_nodes_to_ancestor;
-            ids = ids_to_ancestor;
-            instrs = instruction_to_ancestor;
-            exps = [(exp_to_parent, sil_typ1)] }
-      | _ -> assert false) (* Binary operator should have two operands*)
+         Printing.log_out "....BinaryOperator '%s' " bok;
+         Printing.log_out "has ids_to_ancestor |ids_to_ancestor|=%s "
+           (string_of_int (list_length ids_to_ancestor));
+         Printing.log_out " |nodes_e1|=%s .\n"
+           (string_of_int (list_length res_trans_e1.root_nodes));
+         Printing.log_out " |nodes_e2|=%s .\n"
+           (string_of_int (list_length res_trans_e2.root_nodes));
+         list_iter (fun id -> Printing.log_out "     ... '%s'\n"
+                       (Ident.to_string id)) ids_to_ancestor;
+         { root_nodes = root_nodes_to_ancestor;
+           leaf_nodes = leaf_nodes_to_ancestor;
+           ids = ids_to_ancestor;
+           instrs = instruction_to_ancestor;
+           exps = [(exp_to_parent, sil_typ1)] }
+     | _ -> assert false) (* Binary operator should have two operands*)
 
   and callExpr_trans trans_state si stmt_list expr_info =
     let pln = trans_state.parent_line_number in
@@ -564,8 +564,8 @@ struct
     let should_translate_args =
       match callee_pname_opt with
       | Some pn ->
-      (* we cannot translate the arguments of this builtin because preprocessing copies them *)
-      (* verbatim from a call to a different function, and they might be side-effecting *)
+          (* we cannot translate the arguments of this builtin because preprocessing copies them *)
+          (* verbatim from a call to a different function, and they might be side-effecting *)
           (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
     let params_stmt = if should_translate_args then
@@ -584,8 +584,8 @@ struct
       let act_params = if list_length res_trans_par.exps = list_length params_stmt then
           res_trans_par.exps
         else (Printing.log_err
-            "WARNING: stmt_list and res_trans_par.exps must have same size. NEED TO BE FIXED\n\n";
-          fix_param_exps_mismatch params_stmt res_trans_par.exps) in
+                "WARNING: stmt_list and res_trans_par.exps must have same size. NEED TO BE FIXED\n\n";
+              fix_param_exps_mismatch params_stmt res_trans_par.exps) in
       let act_params = if is_cf_retain_release then
           (Sil.Const (Sil.Cint Sil.Int.one), Sil.Tint Sil.IBool):: act_params
         else act_params in
@@ -608,21 +608,21 @@ struct
           let res_trans_to_parent =
             PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp in
           (match callee_pname_opt with
-            | Some callee_pname ->
-                if not (SymExec.function_is_builtin callee_pname) then
-                  begin
-                    Cg.add_edge context.cg procname callee_pname;
-                    try
-                      let callee_ms = CMethod_signature.find callee_pname in
-                      ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
-                    with Not_found ->
-                        CMethod_trans.create_external_procdesc context.cfg callee_pname false None
-                  end
-            | None -> ());
+           | Some callee_pname ->
+               if not (SymExec.function_is_builtin callee_pname) then
+                 begin
+                   Cg.add_edge context.cg procname callee_pname;
+                   try
+                     let callee_ms = CMethod_signature.find callee_pname in
+                     ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
+                   with Not_found ->
+                     CMethod_trans.create_external_procdesc context.cfg callee_pname false None
+                 end
+           | None -> ());
           (match ret_id with
-            | [] -> { res_trans_to_parent with exps =[] }
-            | [ret_id'] -> { res_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
-            | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
+           | [] -> { res_trans_to_parent with exps =[] }
+           | [ret_id'] -> { res_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
+           | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
     Printing.log_out "Passing from ObjMessageExpr '%s'   priority node free ='%s'.\n@." si.Clang_ast_t.si_pointer
@@ -643,17 +643,17 @@ struct
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
     let obj_c_message_expr_info, res_trans_par =
       (match stmt_list with
-        | stmt:: rest ->
-            let obj_c_message_expr_info, fst_res_trans =
-              (try
+       | stmt:: rest ->
+           let obj_c_message_expr_info, fst_res_trans =
+             (try
                 let fst_res_trans = instruction trans_state_param stmt in
                 obj_c_message_expr_info, fst_res_trans
               with Self.SelfClassException class_name ->
-                  let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class selector class_name in
-                  obj_c_message_expr_info, empty_res_trans) in
-            let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) rest in
-            obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
-        | [] -> obj_c_message_expr_info, empty_res_trans) in
+                let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class selector class_name in
+                obj_c_message_expr_info, empty_res_trans) in
+           let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) rest in
+           obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
+       | [] -> obj_c_message_expr_info, empty_res_trans) in
     let (class_type, _, _) = CMethod_trans.get_class_selector_instance context obj_c_message_expr_info res_trans_par.exps in
     if (selector = CFrontend_config.class_method && CTypes.is_class method_type) then
       raise (Self.SelfClassException class_type)
@@ -682,11 +682,11 @@ struct
         exps =[]
       } in
       let res_trans_to_parent = (
-          PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp) in
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp) in
       (match ret_id with
-        | [] -> { res_trans_to_parent with exps = [] }
-        | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
-        | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
+       | [] -> { res_trans_to_parent with exps = [] }
+       | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
+       | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
   and dispatch_function_trans trans_state stmt_info stmt_list ei n =
     Printing.log_out "\n Call to a dispatch function treated as special case...\n";
@@ -718,10 +718,10 @@ struct
     let transformed_stmt, vars_to_register =
       Ast_expressions.translate_block_enumerate (Sil.pvar_to_string pvar) stmt_info stmt_list ei in
     let pvars_types = list_map (fun (v, pointer, qt) ->
-              let pvar = Sil.mk_pvar (Mangled.from_string v) procname in
-              let typ = CTypes_decl.qual_type_to_sil_type trans_state.context.tenv qt in
-              CContext.LocalVars.add_pointer_var pointer pvar trans_state.context;
-              (pvar, typ)) vars_to_register in
+        let pvar = Sil.mk_pvar (Mangled.from_string v) procname in
+        let typ = CTypes_decl.qual_type_to_sil_type trans_state.context.tenv qt in
+        CContext.LocalVars.add_pointer_var pointer pvar trans_state.context;
+        (pvar, typ)) vars_to_register in
     let loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let res_state = instruction trans_state transformed_stmt in
     let preds = list_flatten (list_map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
@@ -758,9 +758,9 @@ struct
             let pvar = mk_temp_var (Cfg.Node.get_id n) in
             let pvar' = mk_temp_var (Cfg.Node.get_id n') in
             let ilist =[Sil.Letderef (id, Sil.Lvar pvar', typ, sil_loc);
-              Sil.Declare_locals([(pvar, typ)], sil_loc);
-              Sil.Set (Sil.Lvar pvar, typ, Sil.Var id, sil_loc);
-              Sil.Nullify(pvar', sil_loc, true)] in
+                        Sil.Declare_locals([(pvar, typ)], sil_loc);
+                        Sil.Set (Sil.Lvar pvar, typ, Sil.Var id, sil_loc);
+                        Sil.Nullify(pvar', sil_loc, true)] in
             Cfg.Node.append_instrs_temps n' ilist [id]; n'
         | _ -> create_node (Cfg.Node.Join_node) [] [] sil_loc context in
       Cfg.Node.set_succs_exn join_node' succ_nodes [];
@@ -786,12 +786,12 @@ struct
           | _, true ->
               list_iter
                 (fun n' ->
-                  (* If there is a node with instructions we need to only *)
-                  (* add the set of the temp variable *)
-                      if not (is_prune_node n') then
-                        Cfg.Node.append_instrs_temps n'
-                          (res_trans_b.instrs @ instr_e''@ set_temp_var)
-                          (res_trans_b.ids @ id_e'')
+                   (* If there is a node with instructions we need to only *)
+                   (* add the set of the temp variable *)
+                   if not (is_prune_node n') then
+                     Cfg.Node.append_instrs_temps n'
+                       (res_trans_b.instrs @ instr_e''@ set_temp_var)
+                       (res_trans_b.ids @ id_e'')
                 ) node_b;
               node_b
           | _, false -> node_b) in
@@ -799,26 +799,26 @@ struct
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       list_iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes' in
     (match stmt_list with
-      | [cond; exp1; exp2] ->
-          let typ =
-            CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
-          let join_node = compute_join_node typ in
-          let pvar = mk_temp_var (Cfg.Node.get_id join_node) in
-          let continuation' = mk_cond_continuation trans_state.continuation in
-          let trans_state' = { trans_state with continuation = continuation'; parent_line_number = line_number; succ_nodes =[]} in
-          let res_trans_cond = exec_with_priority_exception trans_state' cond cond_trans in
-          (* Note: by contruction prune nodes are leafs_nodes_cond *)
-          do_branch true exp1 typ res_trans_cond.leaf_nodes join_node pvar;
-          do_branch false exp2 typ res_trans_cond.leaf_nodes join_node pvar;
-          let id = Ident.create_fresh Ident.knormal in
-          let instrs =[Sil.Letderef (id, Sil.Lvar pvar, typ, sil_loc); Sil.Nullify (pvar, sil_loc, true)] in
-          { root_nodes = res_trans_cond.root_nodes;
-            leaf_nodes = [join_node];
-            ids = [id];
-            instrs = instrs;
-            exps = [(Sil.Var id, typ)]
-          }
-      | _ -> assert false)
+     | [cond; exp1; exp2] ->
+         let typ =
+           CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
+         let join_node = compute_join_node typ in
+         let pvar = mk_temp_var (Cfg.Node.get_id join_node) in
+         let continuation' = mk_cond_continuation trans_state.continuation in
+         let trans_state' = { trans_state with continuation = continuation'; parent_line_number = line_number; succ_nodes =[]} in
+         let res_trans_cond = exec_with_priority_exception trans_state' cond cond_trans in
+         (* Note: by contruction prune nodes are leafs_nodes_cond *)
+         do_branch true exp1 typ res_trans_cond.leaf_nodes join_node pvar;
+         do_branch false exp2 typ res_trans_cond.leaf_nodes join_node pvar;
+         let id = Ident.create_fresh Ident.knormal in
+         let instrs =[Sil.Letderef (id, Sil.Lvar pvar, typ, sil_loc); Sil.Nullify (pvar, sil_loc, true)] in
+         { root_nodes = res_trans_cond.root_nodes;
+           leaf_nodes = [join_node];
+           ids = [id];
+           instrs = instrs;
+           exps = [(Sil.Var id, typ)]
+         }
+     | _ -> assert false)
 
   (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
   (* The invariant is that the translation of a condition always contains (at least) *)
@@ -838,8 +838,8 @@ struct
       Printing.log_out " No short-circuit condition\n";
       let res_trans_cond =
         if is_null_stmt cond then {
-            empty_res_trans with exps = [(Sil.Const (Sil.Cint Sil.Int.one), (Sil.Tint Sil.IBool))]
-          }
+          empty_res_trans with exps = [(Sil.Const (Sil.Cint Sil.Int.one), (Sil.Tint Sil.IBool))]
+        }
         (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else
           instruction trans_state cond in
@@ -886,9 +886,9 @@ struct
     match cond with
     | BinaryOperator(si, [s1; s2], expr_info, boi) ->
         (match boi.Clang_ast_t.boi_kind with
-          | `LAnd -> short_circuit (Sil.LAnd) s1 s2
-          | `LOr -> short_circuit (Sil.LOr) s1 s2
-          | _ -> no_short_circuit_cond ())
+         | `LAnd -> short_circuit (Sil.LAnd) s1 s2
+         | `LOr -> short_circuit (Sil.LOr) s1 s2
+         | _ -> no_short_circuit_cond ())
     | ParenExpr(_,[s], _) -> (* condition can be wrapped in parenthesys *)
         cond_trans trans_state s
     | _ -> no_short_circuit_cond ()
@@ -914,16 +914,16 @@ struct
       list_iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes';
       res_trans_b.ids in
     (match stmt_list with
-      | [null_stmt; cond; stmt1; stmt2] -> (* Note: for the moment we don't do anything with the null_stmt/decl*)
-      (* set the flat to inform that we are translating a condition of a if *)
-          let continuation' = mk_cond_continuation trans_state.continuation in
-          let trans_state'' = { trans_state with continuation = continuation'; succ_nodes = []; parent_line_number = line_number } in
-          let res_trans_cond = cond_trans trans_state'' cond in
-          (* Note: by contruction prune nodes are leafs_nodes_cond *)
-          let ids_t = do_branch true stmt1 res_trans_cond.leaf_nodes in
-          let ids_f = do_branch false stmt2 res_trans_cond.leaf_nodes in
-          { root_nodes = res_trans_cond.root_nodes; leaf_nodes =[join_node]; ids = res_trans_cond.ids@ids_t@ids_f; instrs =[]; exps =[] }
-      | _ -> assert false)
+     | [null_stmt; cond; stmt1; stmt2] -> (* Note: for the moment we don't do anything with the null_stmt/decl*)
+         (* set the flat to inform that we are translating a condition of a if *)
+         let continuation' = mk_cond_continuation trans_state.continuation in
+         let trans_state'' = { trans_state with continuation = continuation'; succ_nodes = []; parent_line_number = line_number } in
+         let res_trans_cond = cond_trans trans_state'' cond in
+         (* Note: by contruction prune nodes are leafs_nodes_cond *)
+         let ids_t = do_branch true stmt1 res_trans_cond.leaf_nodes in
+         let ids_f = do_branch false stmt2 res_trans_cond.leaf_nodes in
+         { root_nodes = res_trans_cond.root_nodes; leaf_nodes =[join_node]; ids = res_trans_cond.ids@ids_t@ids_f; instrs =[]; exps =[] }
+     | _ -> assert false)
 
   (* Assumption: the CompoundStmt can be made of different stmts, not just CaseStmts *)
   and switchStmt_trans trans_state stmt_info switch_stmt_list =
@@ -934,118 +934,118 @@ struct
     let continuation = trans_state.continuation in
     let sil_loc = get_sil_location stmt_info pln context in
     (match switch_stmt_list with
-      | [_; cond; CompoundStmt(stmt_info, stmt_list)] ->
-          let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-          let trans_state' ={ trans_state_pri with succ_nodes = []} in
-          let res_trans_cond = instruction trans_state' cond in
-          let switch_special_cond_node =
-            create_node (Cfg.Node.Stmt_node "Switch_stmt") [] res_trans_cond.instrs sil_loc context in
-          let trans_state_no_pri = if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
-              { trans_state_pri with priority = Free }
-            else trans_state_pri in
-          let (switch_e_cond', switch_e_cond'_typ) =
-            extract_exp_from_list res_trans_cond.exps
-              "\nWARNING: The condition of the SwitchStmt is not singleton. Need to be fixed\n" in
-          let switch_exit_point = succ_nodes in
-          let continuation' =
-            match continuation with
-            | Some cont -> Some { cont with break = switch_exit_point }
-            | None -> Some { break = switch_exit_point; continue = []; return_temp = false } in
-          let trans_state'' = { trans_state_no_pri with continuation = continuation'} in
-          let merge_into_cases stmt_list = (* returns list_of_cases * before_any_case_instrs *)
-            let rec aux rev_stmt_list acc cases =
-              (match rev_stmt_list with
-                | CaseStmt(info, a :: b :: (CaseStmt x) :: c) :: rest -> (* case x: case y: ... *)
-                    if c <> [] then assert false; (* empty case with nested case, then followed by some instructions *)
-                    let rest' = [CaseStmt(info, a :: b :: [])] @ rest in
-                    let rev_stmt_list' = (CaseStmt x) :: rest' in
-                    aux rev_stmt_list' acc cases
-                | CaseStmt(info, a :: b :: (DefaultStmt x) :: c) :: rest ->
-                (* case x: default: ... *)
-                    if c <> [] then assert false; (* empty case with nested case, then followed by some instructions *)
-                    let rest' = [CaseStmt(info, a :: b :: [])] @ rest in
-                    let rev_stmt_list' = (DefaultStmt x) :: rest' in
-                    aux rev_stmt_list' acc cases
-                | DefaultStmt(info, (CaseStmt x) :: c) :: rest -> (* default: case x: ... *)
-                    if c <> [] then assert false; (* empty case with nested case, then followed by some instructions *)
-                    let rest' = [DefaultStmt(info, [])] @ rest in
-                    let rev_stmt_list' = (CaseStmt x) :: rest' in
-                    aux rev_stmt_list' acc cases
-                | CaseStmt(info, a :: b :: c) :: rest ->
-                    aux rest [] (CaseStmt(info, a :: b :: c@acc):: cases)
-                | DefaultStmt(info, c) :: rest -> (* default is always the last in the list *)
-                    aux rest [] (DefaultStmt(info, c@acc) :: cases)
-                | x :: rest ->
-                    aux rest (x:: acc) cases
-                | [] ->
-                    cases, acc) in
-            aux (list_rev stmt_list) [] [] in
-          let list_of_cases, pre_case_stmts = merge_into_cases stmt_list in
-          let rec connected_instruction rev_instr_list successor_nodes =
-            (* returns the entry point of the translated set of instr *)
-            match rev_instr_list with
-            | [] -> successor_nodes
-            | instr :: rest ->
-                let trans_state''' = { trans_state'' with succ_nodes = successor_nodes } in
-                let res_trans_instr = instruction trans_state''' instr in
-                let instr_entry_points = res_trans_instr.root_nodes in
-                connected_instruction rest instr_entry_points in
-          let rec translate_and_connect_cases cases next_nodes next_prune_nodes =
-            let create_prune_nodes_for_case case =
-              match case with
-              | CaseStmt(stmt_info, case_const:: _:: _) ->
-                  let trans_state_pri =
-                    PriorityNode.try_claim_priority_node trans_state'' stmt_info in
-                  let res_trans_case_const = instruction trans_state_pri case_const in
-                  let e_const = res_trans_case_const.exps in
-                  let e_const' =
-                    match e_const with
-                    | [(head, typ)] -> head
-                    | _ -> assert false in
-                  let sil_eq_cond = Sil.BinOp(Sil.Eq, switch_e_cond', e_const') in
-                  let sil_loc = get_sil_location stmt_info pln context in
-                  let true_prune_node =
-                    create_prune_node true [(sil_eq_cond, switch_e_cond'_typ)]
-                      res_trans_case_const.ids res_trans_case_const.instrs
-                      sil_loc (Sil.Ik_switch) context in
-                  let false_prune_node =
-                    create_prune_node false [(sil_eq_cond, switch_e_cond'_typ)]
-                      res_trans_case_const.ids res_trans_case_const.instrs
-                      sil_loc (Sil.Ik_switch) context in
-                  (true_prune_node, false_prune_node)
-              | _ -> assert false in
-            match cases with (* top-down to handle default cases *)
-            | [] -> next_nodes, next_prune_nodes
-            | CaseStmt(stmt_info, _ :: _ :: case_content) as case :: rest ->
-                let last_nodes, last_prune_nodes = translate_and_connect_cases rest next_nodes next_prune_nodes in
-                let case_entry_point = connected_instruction (list_rev case_content) last_nodes in
-                (* connects between cases, then continuation has priority about breaks *)
-                let prune_node_t, prune_node_f = create_prune_nodes_for_case case in
-                Cfg.Node.set_succs_exn prune_node_t case_entry_point [];
-                Cfg.Node.set_succs_exn prune_node_f last_prune_nodes [];
-                case_entry_point, [prune_node_t; prune_node_f]
-            | DefaultStmt(stmt_info, default_content) :: rest ->
-                let sil_loc = get_sil_location stmt_info pln context in
-                let placeholder_entry_point =
-                  create_node (Cfg.Node.Stmt_node "DefaultStmt_placeholder") [] [] sil_loc context in
-                let last_nodes, last_prune_nodes = translate_and_connect_cases rest next_nodes [placeholder_entry_point] in
-                let default_entry_point = connected_instruction (list_rev default_content) last_nodes in
-                Cfg.Node.set_succs_exn placeholder_entry_point default_entry_point [];
-                default_entry_point, last_prune_nodes
-            | _ -> assert false in
-          let top_entry_point, top_prune_nodes = translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
-          let _ = connected_instruction (list_rev pre_case_stmts) top_entry_point in
-          Cfg.Node.set_succs_exn switch_special_cond_node top_prune_nodes [];
-          let top_nodes =
-            match res_trans_cond.root_nodes with
-            | [] -> (* here if no root or if the translation of cond needed priority *)
-                [switch_special_cond_node]
-            | _ ->
-                list_iter (fun n' -> Cfg.Node.set_succs_exn n' [switch_special_cond_node] []) res_trans_cond.leaf_nodes;
-                res_trans_cond.root_nodes in
-          list_iter (fun n' -> Cfg.Node.append_instrs_temps n' [] res_trans_cond.ids) succ_nodes; (* succ_nodes will remove the temps *)
-          { root_nodes = top_nodes; leaf_nodes = succ_nodes; ids = []; instrs = []; exps =[]}
-      | _ -> assert false)
+     | [_; cond; CompoundStmt(stmt_info, stmt_list)] ->
+         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+         let trans_state' ={ trans_state_pri with succ_nodes = []} in
+         let res_trans_cond = instruction trans_state' cond in
+         let switch_special_cond_node =
+           create_node (Cfg.Node.Stmt_node "Switch_stmt") [] res_trans_cond.instrs sil_loc context in
+         let trans_state_no_pri = if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
+             { trans_state_pri with priority = Free }
+           else trans_state_pri in
+         let (switch_e_cond', switch_e_cond'_typ) =
+           extract_exp_from_list res_trans_cond.exps
+             "\nWARNING: The condition of the SwitchStmt is not singleton. Need to be fixed\n" in
+         let switch_exit_point = succ_nodes in
+         let continuation' =
+           match continuation with
+           | Some cont -> Some { cont with break = switch_exit_point }
+           | None -> Some { break = switch_exit_point; continue = []; return_temp = false } in
+         let trans_state'' = { trans_state_no_pri with continuation = continuation'} in
+         let merge_into_cases stmt_list = (* returns list_of_cases * before_any_case_instrs *)
+           let rec aux rev_stmt_list acc cases =
+             (match rev_stmt_list with
+              | CaseStmt(info, a :: b :: (CaseStmt x) :: c) :: rest -> (* case x: case y: ... *)
+                  if c <> [] then assert false; (* empty case with nested case, then followed by some instructions *)
+                  let rest' = [CaseStmt(info, a :: b :: [])] @ rest in
+                  let rev_stmt_list' = (CaseStmt x) :: rest' in
+                  aux rev_stmt_list' acc cases
+              | CaseStmt(info, a :: b :: (DefaultStmt x) :: c) :: rest ->
+                  (* case x: default: ... *)
+                  if c <> [] then assert false; (* empty case with nested case, then followed by some instructions *)
+                  let rest' = [CaseStmt(info, a :: b :: [])] @ rest in
+                  let rev_stmt_list' = (DefaultStmt x) :: rest' in
+                  aux rev_stmt_list' acc cases
+              | DefaultStmt(info, (CaseStmt x) :: c) :: rest -> (* default: case x: ... *)
+                  if c <> [] then assert false; (* empty case with nested case, then followed by some instructions *)
+                  let rest' = [DefaultStmt(info, [])] @ rest in
+                  let rev_stmt_list' = (CaseStmt x) :: rest' in
+                  aux rev_stmt_list' acc cases
+              | CaseStmt(info, a :: b :: c) :: rest ->
+                  aux rest [] (CaseStmt(info, a :: b :: c@acc):: cases)
+              | DefaultStmt(info, c) :: rest -> (* default is always the last in the list *)
+                  aux rest [] (DefaultStmt(info, c@acc) :: cases)
+              | x :: rest ->
+                  aux rest (x:: acc) cases
+              | [] ->
+                  cases, acc) in
+           aux (list_rev stmt_list) [] [] in
+         let list_of_cases, pre_case_stmts = merge_into_cases stmt_list in
+         let rec connected_instruction rev_instr_list successor_nodes =
+           (* returns the entry point of the translated set of instr *)
+           match rev_instr_list with
+           | [] -> successor_nodes
+           | instr :: rest ->
+               let trans_state''' = { trans_state'' with succ_nodes = successor_nodes } in
+               let res_trans_instr = instruction trans_state''' instr in
+               let instr_entry_points = res_trans_instr.root_nodes in
+               connected_instruction rest instr_entry_points in
+         let rec translate_and_connect_cases cases next_nodes next_prune_nodes =
+           let create_prune_nodes_for_case case =
+             match case with
+             | CaseStmt(stmt_info, case_const:: _:: _) ->
+                 let trans_state_pri =
+                   PriorityNode.try_claim_priority_node trans_state'' stmt_info in
+                 let res_trans_case_const = instruction trans_state_pri case_const in
+                 let e_const = res_trans_case_const.exps in
+                 let e_const' =
+                   match e_const with
+                   | [(head, typ)] -> head
+                   | _ -> assert false in
+                 let sil_eq_cond = Sil.BinOp(Sil.Eq, switch_e_cond', e_const') in
+                 let sil_loc = get_sil_location stmt_info pln context in
+                 let true_prune_node =
+                   create_prune_node true [(sil_eq_cond, switch_e_cond'_typ)]
+                     res_trans_case_const.ids res_trans_case_const.instrs
+                     sil_loc (Sil.Ik_switch) context in
+                 let false_prune_node =
+                   create_prune_node false [(sil_eq_cond, switch_e_cond'_typ)]
+                     res_trans_case_const.ids res_trans_case_const.instrs
+                     sil_loc (Sil.Ik_switch) context in
+                 (true_prune_node, false_prune_node)
+             | _ -> assert false in
+           match cases with (* top-down to handle default cases *)
+           | [] -> next_nodes, next_prune_nodes
+           | CaseStmt(stmt_info, _ :: _ :: case_content) as case :: rest ->
+               let last_nodes, last_prune_nodes = translate_and_connect_cases rest next_nodes next_prune_nodes in
+               let case_entry_point = connected_instruction (list_rev case_content) last_nodes in
+               (* connects between cases, then continuation has priority about breaks *)
+               let prune_node_t, prune_node_f = create_prune_nodes_for_case case in
+               Cfg.Node.set_succs_exn prune_node_t case_entry_point [];
+               Cfg.Node.set_succs_exn prune_node_f last_prune_nodes [];
+               case_entry_point, [prune_node_t; prune_node_f]
+           | DefaultStmt(stmt_info, default_content) :: rest ->
+               let sil_loc = get_sil_location stmt_info pln context in
+               let placeholder_entry_point =
+                 create_node (Cfg.Node.Stmt_node "DefaultStmt_placeholder") [] [] sil_loc context in
+               let last_nodes, last_prune_nodes = translate_and_connect_cases rest next_nodes [placeholder_entry_point] in
+               let default_entry_point = connected_instruction (list_rev default_content) last_nodes in
+               Cfg.Node.set_succs_exn placeholder_entry_point default_entry_point [];
+               default_entry_point, last_prune_nodes
+           | _ -> assert false in
+         let top_entry_point, top_prune_nodes = translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
+         let _ = connected_instruction (list_rev pre_case_stmts) top_entry_point in
+         Cfg.Node.set_succs_exn switch_special_cond_node top_prune_nodes [];
+         let top_nodes =
+           match res_trans_cond.root_nodes with
+           | [] -> (* here if no root or if the translation of cond needed priority *)
+               [switch_special_cond_node]
+           | _ ->
+               list_iter (fun n' -> Cfg.Node.set_succs_exn n' [switch_special_cond_node] []) res_trans_cond.leaf_nodes;
+               res_trans_cond.root_nodes in
+         list_iter (fun n' -> Cfg.Node.append_instrs_temps n' [] res_trans_cond.ids) succ_nodes; (* succ_nodes will remove the temps *)
+         { root_nodes = top_nodes; leaf_nodes = succ_nodes; ids = []; instrs = []; exps =[]}
+     | _ -> assert false)
 
   and stmtExpr_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
@@ -1055,19 +1055,19 @@ struct
     let idl = res_trans_stmt.ids in
     let exps'= list_rev res_trans_stmt.exps in
     (match exps' with
-      | (last, typ):: _ ->
-      (* The StmtExpr contains a single CompoundStmt node, which it evaluates and *)
-      (* takes the value of the last subexpression.*)
-      (* Exp returned by StmtExpr is always a RValue. So we need to assign to a temp and return the temp.*)
-          let id = Ident.create_fresh Ident.knormal in
-          let loc = get_sil_location stmt_info trans_state.parent_line_number context in
-          let instr' = Sil.Letderef (id, last, typ, loc) in
-          { root_nodes = res_trans_stmt.root_nodes;
-            leaf_nodes = res_trans_stmt.leaf_nodes;
-            ids = id:: idl;
-            instrs = res_trans_stmt.instrs@[instr'];
-            exps = [(Sil.Var id, typ)]}
-      | _ -> assert false)
+     | (last, typ):: _ ->
+         (* The StmtExpr contains a single CompoundStmt node, which it evaluates and *)
+         (* takes the value of the last subexpression.*)
+         (* Exp returned by StmtExpr is always a RValue. So we need to assign to a temp and return the temp.*)
+         let id = Ident.create_fresh Ident.knormal in
+         let loc = get_sil_location stmt_info trans_state.parent_line_number context in
+         let instr' = Sil.Letderef (id, last, typ, loc) in
+         { root_nodes = res_trans_stmt.root_nodes;
+           leaf_nodes = res_trans_stmt.leaf_nodes;
+           ids = id:: idl;
+           instrs = res_trans_stmt.instrs@[instr'];
+           exps = [(Sil.Var id, typ)]}
+     | _ -> assert false)
 
   and loop_instruction trans_state loop_kind stmt_info =
     let outer_continuation = trans_state.continuation in
@@ -1163,44 +1163,44 @@ struct
     let sil_typ =
       CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
     (match stmt_list with
-      | [s1; s2] ->
-          let trans_state' = { trans_state_pri with succ_nodes = []; parent_line_number = line_number } in
-          let res_trans_s1 = instruction trans_state' s1 in
-          let res_trans_s2 = instruction trans_state' s2 in
-          let (lhs_e, lhs_typ) = extract_exp_from_list res_trans_s1.exps
-              "\nWARNING: Missing LHS operand in Compount Assign operator. Need Fixing.\n" in
-          let (sil_e2, sil_typ2) = extract_exp_from_list res_trans_s2.exps
-              "\nWARNING: Missing RHS operand in Compount Assign operator. Need Fixing.\n" in
-          let id_op, exp_op, instr_op = CArithmetic_trans.compound_assignment_binary_operation_instruction
-              binary_operator_info lhs_e sil_typ sil_e2 sil_loc in
-          let ids = res_trans_s1.ids@res_trans_s2.ids@id_op in
-          let instrs = res_trans_s1.instrs@res_trans_s2.instrs@instr_op in
-          let res_trans_tmp = { res_trans_s2 with ids = ids; instrs = instrs; exps =[]} in
-          let res_trans_to_parent =
-            PriorityNode.compute_results_to_parent trans_state_pri sil_loc "ComppoundAssignStmt" stmt_info res_trans_tmp in
+     | [s1; s2] ->
+         let trans_state' = { trans_state_pri with succ_nodes = []; parent_line_number = line_number } in
+         let res_trans_s1 = instruction trans_state' s1 in
+         let res_trans_s2 = instruction trans_state' s2 in
+         let (lhs_e, lhs_typ) = extract_exp_from_list res_trans_s1.exps
+             "\nWARNING: Missing LHS operand in Compount Assign operator. Need Fixing.\n" in
+         let (sil_e2, sil_typ2) = extract_exp_from_list res_trans_s2.exps
+             "\nWARNING: Missing RHS operand in Compount Assign operator. Need Fixing.\n" in
+         let id_op, exp_op, instr_op = CArithmetic_trans.compound_assignment_binary_operation_instruction
+             binary_operator_info lhs_e sil_typ sil_e2 sil_loc in
+         let ids = res_trans_s1.ids@res_trans_s2.ids@id_op in
+         let instrs = res_trans_s1.instrs@res_trans_s2.instrs@instr_op in
+         let res_trans_tmp = { res_trans_s2 with ids = ids; instrs = instrs; exps =[]} in
+         let res_trans_to_parent =
+           PriorityNode.compute_results_to_parent trans_state_pri sil_loc "ComppoundAssignStmt" stmt_info res_trans_tmp in
 
-          let trans_s1_succs =
-            if res_trans_to_parent.root_nodes <> []
-            then res_trans_to_parent.root_nodes
-            else trans_state_pri.succ_nodes in
-          list_iter
-            (fun n -> Cfg.Node.set_succs_exn n trans_s1_succs [])
-            res_trans_s1.leaf_nodes;
+         let trans_s1_succs =
+           if res_trans_to_parent.root_nodes <> []
+           then res_trans_to_parent.root_nodes
+           else trans_state_pri.succ_nodes in
+         list_iter
+           (fun n -> Cfg.Node.set_succs_exn n trans_s1_succs [])
+           res_trans_s1.leaf_nodes;
 
-          let instrs_to_parent', ids_to_parent', exp_to_parent' =
-            compute_instr_ids_exp_to_parent stmt_info res_trans_to_parent.instrs res_trans_to_parent.ids
-              [(exp_op, sil_typ)] lhs_e sil_typ sil_loc trans_state_pri.priority in
+         let instrs_to_parent', ids_to_parent', exp_to_parent' =
+           compute_instr_ids_exp_to_parent stmt_info res_trans_to_parent.instrs res_trans_to_parent.ids
+             [(exp_op, sil_typ)] lhs_e sil_typ sil_loc trans_state_pri.priority in
 
-          let root_nodes =
-            if res_trans_s1.root_nodes <> []
-            then res_trans_s1.root_nodes
-            else res_trans_to_parent.root_nodes in
-          { root_nodes = root_nodes;
-            leaf_nodes = res_trans_to_parent.leaf_nodes;
-            ids = ids_to_parent';
-            instrs = instrs_to_parent';
-            exps = exp_to_parent' }
-      | _ -> assert false) (* Compound assign statement should have two operands*)
+         let root_nodes =
+           if res_trans_s1.root_nodes <> []
+           then res_trans_s1.root_nodes
+           else res_trans_to_parent.root_nodes in
+         { root_nodes = root_nodes;
+           leaf_nodes = res_trans_to_parent.leaf_nodes;
+           ids = ids_to_parent';
+           instrs = instrs_to_parent';
+           exps = exp_to_parent' }
+     | _ -> assert false) (* Compound assign statement should have two operands*)
 
   and initListExpr_trans trans_state stmt_info expr_info di_pointer stmts =
     let context = trans_state.context in
@@ -1218,14 +1218,14 @@ struct
     let rec collect_left_hand_exprs e typ tns = match typ with
       | (Sil.Tvar tn) ->
           (match Sil.tenv_lookup context.tenv tn with
-            | Some (Sil.Tstruct _ as str) -> collect_left_hand_exprs e str tns
-            | Some ((Sil.Tvar typename) as tvar) ->
-                if (StringSet.mem (Sil.typename_to_string typename) tns) then ([[(e, typ)]])
-                else (collect_left_hand_exprs e tvar (StringSet.add (Sil.typename_to_string typename) tns));
-            | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
+           | Some (Sil.Tstruct _ as str) -> collect_left_hand_exprs e str tns
+           | Some ((Sil.Tvar typename) as tvar) ->
+               if (StringSet.mem (Sil.typename_to_string typename) tns) then ([[(e, typ)]])
+               else (collect_left_hand_exprs e tvar (StringSet.add (Sil.typename_to_string typename) tns));
+           | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
       | (Sil.Tstruct (struct_fields, _, _, _, _, _, _) as type_struct) ->
           let lh_exprs = list_map ( fun (fieldname, fieldtype, _) ->
-                    Sil.Lfield (e, fieldname, type_struct) )
+              Sil.Lfield (e, fieldname, type_struct) )
               struct_fields in
           let lh_types = list_map ( fun (fieldname, fieldtype, _) -> fieldtype)
               struct_fields in
@@ -1255,15 +1255,15 @@ struct
       let sil_loc = get_sil_location stmt_info trans_state_pri.parent_line_number context in
       let big_zip = list_map
           (fun ( (lh_exp, lh_t), (_, _, rh_exp, is_method_call, rhs_owning_method, rh_t) ) ->
-                let is_pointer_object = ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv rh_t in
-                if !Config.arc_mode && (is_method_call || is_pointer_object) then
-                  (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
-                  (* we need to add retain/release *)
-                  let (e, instrs, ids) =
-                    CArithmetic_trans.assignment_arc_mode context lh_exp lh_t rh_exp sil_loc rhs_owning_method true in
-                  ([(e, lh_t)], instrs, ids)
-                else
-                  ([], [Sil.Set (lh_exp, lh_t, rh_exp, sil_loc)], []))
+             let is_pointer_object = ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv rh_t in
+             if !Config.arc_mode && (is_method_call || is_pointer_object) then
+               (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
+               (* we need to add retain/release *)
+               let (e, instrs, ids) =
+                 CArithmetic_trans.assignment_arc_mode context lh_exp lh_t rh_exp sil_loc rhs_owning_method true in
+               ([(e, lh_t)], instrs, ids)
+             else
+               ([], [Sil.Set (lh_exp, lh_t, rh_exp, sil_loc)], []))
           (zip lh rh) in
       let rh_instrs = list_flatten ( list_map (fun (_, instrs, _, _, _, _) -> instrs) rh) in
       let assign_instrs = list_flatten(list_map (fun (_, instrs, _) -> instrs) big_zip) in
@@ -1283,60 +1283,60 @@ struct
     let pln = trans_state.parent_line_number in
     let do_var_dec (di, var_name, qtype, vdi) next_node =
       (match vdi.Clang_ast_t.vdi_init_expr with
-        | None -> { empty_res_trans with root_nodes = next_node } (* Nothing to do if no init expression *)
-        | Some (ImplicitValueInitExpr (_, stmt_list, _)) ->
-        (* Seems unclear what it does, so let's keep an eye on the stmts *)
-        (* and report a warning if it finds a non empty list of stmts *)
-            (match stmt_list with
-              | [] -> ()
-              | _ -> Printing.log_stats "\n!!!!WARNING: found statement <\"ImplicitValueInitExpr\"> with non-empty stmt_list.\n");
-            { empty_res_trans with root_nodes = next_node }
-        | Some (InitListExpr (stmt_info , stmts , expr_info))
-        | Some (ExprWithCleanups(_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
-            initListExpr_trans trans_state stmt_info expr_info di.Clang_ast_t.di_pointer stmts
-        | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
-            let sil_loc = get_sil_location stmt_info pln context in
-            let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-            let next_node =
-              if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
-                let node_kind = Cfg.Node.Stmt_node "DeclStmt" in
-                let node = create_node node_kind [] [] sil_loc context in
-                Cfg.Node.set_succs_exn node next_node [];
-                [node]
-              ) else next_node in
-            let pvar = CContext.LocalVars.find_var_with_pointer context di.Clang_ast_t.di_pointer in
-            let line_number = get_line stmt_info pln in
-            (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
-            let res_trans_ie =
-              let trans_state' = { trans_state_pri with succ_nodes = next_node; parent_line_number = line_number } in
-              exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state' ie stmt_info in
-            let root_nodes = res_trans_ie.root_nodes in
-            let leaf_nodes = res_trans_ie.leaf_nodes in
-            let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps
-                "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
-            let rhs_owning_method = CTrans_utils.is_owning_method ie in
-            let _, instrs_assign, ids_assign =
-              if !Config.arc_mode &&
-              (CTrans_utils.is_method_call ie || ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ) then
-                (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
-                (* we need to add retain/release *)
-                let (e, instrs, ids) =
-                  CArithmetic_trans.assignment_arc_mode context (Sil.Lvar pvar) ie_typ sil_e1' sil_loc rhs_owning_method true in
-                ([(e, ie_typ)], instrs, ids)
-              else ([], [Sil.Set (Sil.Lvar pvar, ie_typ, sil_e1', sil_loc)], []) in
-            let ids = res_trans_ie.ids@ids_assign in
-            let instrs = res_trans_ie.instrs@instrs_assign in
-            if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
-              let node = list_hd next_node in
-              Cfg.Node.append_instrs_temps node instrs ids;
-              list_iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
-              let root_nodes = if (list_length root_nodes) = 0 then next_node else root_nodes in
-              { root_nodes = root_nodes; leaf_nodes =[]; ids = ids; instrs = instrs; exps = [(Sil.Lvar pvar, ie_typ)]}
-            ) else { root_nodes = root_nodes; leaf_nodes =[]; ids = ids; instrs = instrs; exps =[(Sil.Lvar pvar, ie_typ)]}) in
+       | None -> { empty_res_trans with root_nodes = next_node } (* Nothing to do if no init expression *)
+       | Some (ImplicitValueInitExpr (_, stmt_list, _)) ->
+           (* Seems unclear what it does, so let's keep an eye on the stmts *)
+           (* and report a warning if it finds a non empty list of stmts *)
+           (match stmt_list with
+            | [] -> ()
+            | _ -> Printing.log_stats "\n!!!!WARNING: found statement <\"ImplicitValueInitExpr\"> with non-empty stmt_list.\n");
+           { empty_res_trans with root_nodes = next_node }
+       | Some (InitListExpr (stmt_info , stmts , expr_info))
+       | Some (ExprWithCleanups(_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
+           initListExpr_trans trans_state stmt_info expr_info di.Clang_ast_t.di_pointer stmts
+       | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
+           let sil_loc = get_sil_location stmt_info pln context in
+           let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+           let next_node =
+             if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
+               let node_kind = Cfg.Node.Stmt_node "DeclStmt" in
+               let node = create_node node_kind [] [] sil_loc context in
+               Cfg.Node.set_succs_exn node next_node [];
+               [node]
+             ) else next_node in
+           let pvar = CContext.LocalVars.find_var_with_pointer context di.Clang_ast_t.di_pointer in
+           let line_number = get_line stmt_info pln in
+           (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
+           let res_trans_ie =
+             let trans_state' = { trans_state_pri with succ_nodes = next_node; parent_line_number = line_number } in
+             exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state' ie stmt_info in
+           let root_nodes = res_trans_ie.root_nodes in
+           let leaf_nodes = res_trans_ie.leaf_nodes in
+           let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps
+               "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
+           let rhs_owning_method = CTrans_utils.is_owning_method ie in
+           let _, instrs_assign, ids_assign =
+             if !Config.arc_mode &&
+                (CTrans_utils.is_method_call ie || ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ) then
+               (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
+               (* we need to add retain/release *)
+               let (e, instrs, ids) =
+                 CArithmetic_trans.assignment_arc_mode context (Sil.Lvar pvar) ie_typ sil_e1' sil_loc rhs_owning_method true in
+               ([(e, ie_typ)], instrs, ids)
+             else ([], [Sil.Set (Sil.Lvar pvar, ie_typ, sil_e1', sil_loc)], []) in
+           let ids = res_trans_ie.ids@ids_assign in
+           let instrs = res_trans_ie.instrs@instrs_assign in
+           if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
+             let node = list_hd next_node in
+             Cfg.Node.append_instrs_temps node instrs ids;
+             list_iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
+             let root_nodes = if (list_length root_nodes) = 0 then next_node else root_nodes in
+             { root_nodes = root_nodes; leaf_nodes =[]; ids = ids; instrs = instrs; exps = [(Sil.Lvar pvar, ie_typ)]}
+           ) else { root_nodes = root_nodes; leaf_nodes =[]; ids = ids; instrs = instrs; exps =[(Sil.Lvar pvar, ie_typ)]}) in
     match var_decls with
     | [] -> { empty_res_trans with root_nodes = next_nodes }
     | VarDecl(di, n, qt, vdi):: var_decls' ->
-    (* Var are defined when procdesc is created, here we only take care of initialization*)
+        (* Var are defined when procdesc is created, here we only take care of initialization*)
         let res_trans_vd = collect_all_decl trans_state var_decls' next_nodes stmt_info in
         let res_trans_tmp = do_var_dec (di, n, qt, vdi) res_trans_vd.root_nodes in
         { root_nodes = res_trans_tmp.root_nodes; leaf_nodes = [];
@@ -1345,7 +1345,7 @@ struct
           exps = res_trans_tmp.exps @ res_trans_vd.exps }
     | CXXRecordDecl _ :: var_decls' (*C++/C record decl treated in the same way *)
     | RecordDecl _ :: var_decls' ->
-    (* Record declaration is done in the beginning when procdesc is defined.*)
+        (* Record declaration is done in the beginning when procdesc is defined.*)
         collect_all_decl trans_state var_decls' next_nodes stmt_info
     | _ -> assert false
 
@@ -1371,16 +1371,16 @@ struct
   and objCPropertyRefExpr_trans trans_state stmt_info stmt_list =
     Printing.log_out "Passing from ObjCPropertyRefExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     (match stmt_list with
-      | [stmt] -> instruction trans_state stmt
-      | _ -> assert false)
+     | [stmt] -> instruction trans_state stmt
+     | _ -> assert false)
 
   (* For OpaqueValueExpr we return the translation generated from its source expression*)
   and opaqueValueExpr_trans trans_state stmt_info opaque_value_expr_info =
     Printing.log_out "Passing from OpaqueValueExpr '%s'  priority node free ='%s'\n@." stmt_info.Clang_ast_t.si_pointer
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
-      | Some stmt -> instruction trans_state stmt
-      | _ -> assert false)
+     | Some stmt -> instruction trans_state stmt
+     | _ -> assert false)
 
   (* NOTE: This translation has several hypothesis. Need to be verified when we have more*)
   (* experience with this construct. Assert false will help to see if we encounter programs*)
@@ -1403,13 +1403,13 @@ struct
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let rec do_semantic_elements el =
       (match el with
-        | OpaqueValueExpr _ :: el' -> do_semantic_elements el'
-        | stmt:: _ -> instruction trans_state' stmt
-        | _ -> assert false) in
+       | OpaqueValueExpr _ :: el' -> do_semantic_elements el'
+       | stmt:: _ -> instruction trans_state' stmt
+       | _ -> assert false) in
     (match stmt_list with
-      | syntactic_form:: semantic_form ->
-          do_semantic_elements semantic_form
-      | _ -> assert false)
+     | syntactic_form:: semantic_form ->
+         do_semantic_elements semantic_form
+     | _ -> assert false)
 
   (* Cast expression are treated the same apart from the cast operation kind*)
   and cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_expr_info is_objc_bridged =
@@ -1441,17 +1441,17 @@ struct
         "WARNING: in MemberExpr we expect the translation of the stmt to return an expression\n" in
     let class_typ =
       (match class_typ with
-        | Sil.Tptr (t, _) -> CTypes_decl.expand_structured_type trans_state.context.tenv t
-        | t -> t) in
+       | Sil.Tptr (t, _) -> CTypes_decl.expand_structured_type trans_state.context.tenv t
+       | t -> t) in
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let exp =
       (match class_typ with
-        | Sil.Tvoid -> Sil.exp_minus_one
-        | _ ->
-            Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
-            ( match ObjcInterface_decl.find_field trans_state.context.tenv nfield (Some class_typ) false with
-              | Some (fn, _, _) -> Sil.Lfield (e, fn, class_typ)
-              | None -> assert false)) in
+       | Sil.Tvoid -> Sil.exp_minus_one
+       | _ ->
+           Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
+           ( match ObjcInterface_decl.find_field trans_state.context.tenv nfield (Some class_typ) false with
+             | Some (fn, _, _) -> Sil.Lfield (e, fn, class_typ)
+             | None -> assert false)) in
     { res_trans_exp_stmt with
       exps = [(exp, typ)] }
 
@@ -1547,7 +1547,7 @@ struct
         | [] -> (* return; *)
             { empty_res_trans with root_nodes =[ret_node]; leaf_nodes =[ret_node]}
         | _ -> Printing.log_out
-              "\nWARNING: Missing translation of Return Expression. Return Statement ignored. Need fixing!\n";
+                 "\nWARNING: Missing translation of Return Expression. Return Statement ignored. Need fixing!\n";
             { empty_res_trans with root_nodes = succ_nodes }) in (* We expect a return with only one expression *)
     trans_result
 
@@ -1588,7 +1588,7 @@ struct
 
   and objCStringLiteral_trans trans_state stmt_info stmts info =
     let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts
-        (Ast_expressions.create_char_type ()) `ArrayToPointerDecay] in
+                   (Ast_expressions.create_char_type ()) `ArrayToPointerDecay] in
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.tenv info.Clang_ast_t.ei_qual_type in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.string_with_utf8_m typ in
@@ -1596,8 +1596,8 @@ struct
     instruction trans_state message_stmt
 
   (** When objects are autoreleased, they get added a flag AUTORELEASE. All these objects will be
-  ignored when checking for memory leaks. When the end of the block autoreleasepool is reached,
-  then those objects are released and the autorelease flag is removed. *)
+      ignored when checking for memory leaks. When the end of the block autoreleasepool is reached,
+      then those objects are released and the autorelease flag is removed. *)
   and objcAutoreleasePool_trans trans_state stmt_info stmts =
     let sil_loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let fname = SymExec.ModelBuiltins.__objc_release_autorelease_pool in
@@ -1617,8 +1617,8 @@ struct
   and objCAtSynchronizedStmt_trans trans_state stmt_info stmt_list =
     Printing.log_out "Passing from `ObjCAtSynchronizedStmt '%s' \n" stmt_info.Clang_ast_t.si_pointer;
     (match stmt_list with
-      | [_; compound_stmt] -> instruction trans_state compound_stmt
-      | _ -> assert false)
+     | [_; compound_stmt] -> instruction trans_state compound_stmt
+     | _ -> assert false)
 
   and blockExpr_trans trans_state stmt_info expr_info decl =
     Printing.log_out "Passing from BlockExpr '%s' \n" stmt_info.Clang_ast_t.si_pointer;
@@ -1627,7 +1627,7 @@ struct
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let loc =
       (match stmt_info.Clang_ast_t.si_source_range with (l1, l2) ->
-            CLocation.clang_to_sil_location l1 pln (Some context.procdesc)) in
+        CLocation.clang_to_sil_location l1 pln (Some context.procdesc)) in
     (* Given a mangled name (possibly full) returns a plain mangled name *)
     let ensure_plain_mangling m =
       Mangled.from_string (Mangled.to_string m) in
@@ -1649,32 +1649,32 @@ struct
       let instr = Sil.Letderef (id, Sil.Lvar (Sil.mk_pvar cvar procname), typ, loc) in
       (id, instr) in
     (match decl with
-      | BlockDecl(decl_info, decl_list, decl_context_info, block_decl_info) ->
-          let qual_type = expr_info.Clang_ast_t.ei_qual_type in
-          let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in
-          let typ = CTypes_decl.qual_type_to_sil_type context.tenv qual_type in
-          (* We need to set the explicit dependency between the newly created block and the *)
-          (* defining procedure. We add an edge in the call graph.*)
-          Cg.add_edge context.cg procname block_pname;
-          let function_decl_info = CFrontend_utils.General_utils.mk_function_decl_info_from_block block_decl_info in
-          let static_locals = list_filter (fun (v, t, s) -> s = true) context.local_vars in
-          (*list_iter (fun (v, _, _) -> L.err "Static Locals %s@." (Mangled.to_string v)) static_locals;*)
-          let static_formals = list_filter (fun (v, t, s) -> s = true) context.captured_vars in
-          (*list_iter (fun (v, _, _) -> L.err "Formal Static %s@." (Mangled.to_string v)) static_formals;*)
-          let static_vars = static_locals @ static_formals in
-          let captured_vars =
-            (CMethod_trans.captured_vars_from_block_info context block_decl_info.Clang_ast_t.bdi_captured_variables) in
-          let all_captured_vars = captured_vars @ static_vars in
-          let ids_instrs = list_map assign_captured_var all_captured_vars in
-          let ids, instrs = list_split ids_instrs in
-          M.function_decl context.tenv context.cfg context.cg context.namespace context.is_instance decl_info
-            (Procname.to_string block_pname) qual_type function_decl_info all_captured_vars (Some block_pname) context.curr_class;
-          Cfg.set_procname_priority context.cfg block_pname;
-          let captured_exps = list_map (fun id -> Sil.Var id) ids in
-          let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)):: captured_exps) in
-          let alloc_block_instr, ids_block = allocate_block trans_state (Procname.to_string block_pname) all_captured_vars loc in
-          { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
-      | _ -> assert false)
+     | BlockDecl(decl_info, decl_list, decl_context_info, block_decl_info) ->
+         let qual_type = expr_info.Clang_ast_t.ei_qual_type in
+         let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in
+         let typ = CTypes_decl.qual_type_to_sil_type context.tenv qual_type in
+         (* We need to set the explicit dependency between the newly created block and the *)
+         (* defining procedure. We add an edge in the call graph.*)
+         Cg.add_edge context.cg procname block_pname;
+         let function_decl_info = CFrontend_utils.General_utils.mk_function_decl_info_from_block block_decl_info in
+         let static_locals = list_filter (fun (v, t, s) -> s = true) context.local_vars in
+         (*list_iter (fun (v, _, _) -> L.err "Static Locals %s@." (Mangled.to_string v)) static_locals;*)
+         let static_formals = list_filter (fun (v, t, s) -> s = true) context.captured_vars in
+         (*list_iter (fun (v, _, _) -> L.err "Formal Static %s@." (Mangled.to_string v)) static_formals;*)
+         let static_vars = static_locals @ static_formals in
+         let captured_vars =
+           (CMethod_trans.captured_vars_from_block_info context block_decl_info.Clang_ast_t.bdi_captured_variables) in
+         let all_captured_vars = captured_vars @ static_vars in
+         let ids_instrs = list_map assign_captured_var all_captured_vars in
+         let ids, instrs = list_split ids_instrs in
+         M.function_decl context.tenv context.cfg context.cg context.namespace context.is_instance decl_info
+           (Procname.to_string block_pname) qual_type function_decl_info all_captured_vars (Some block_pname) context.curr_class;
+         Cfg.set_procname_priority context.cfg block_pname;
+         let captured_exps = list_map (fun id -> Sil.Var id) ids in
+         let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)):: captured_exps) in
+         let alloc_block_instr, ids_block = allocate_block trans_state (Procname.to_string block_pname) all_captured_vars loc in
+         { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
+     | _ -> assert false)
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
@@ -1696,10 +1696,10 @@ struct
 
     | CallExpr(stmt_info, stmt_list, ei) ->
         (match is_dispatch_function stmt_list with
-          | Some block_arg_pos ->
-              dispatch_function_trans trans_state stmt_info stmt_list ei block_arg_pos
-          | None ->
-              callExpr_trans trans_state stmt_info stmt_list ei)
+         | Some block_arg_pos ->
+             dispatch_function_trans trans_state stmt_info stmt_list ei block_arg_pos
+         | None ->
+             callExpr_trans trans_state stmt_info stmt_list ei)
 
     | ObjCMessageExpr(stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         if is_block_enumerate_function obj_c_message_expr_info then
@@ -1708,11 +1708,11 @@ struct
           objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
 
     | CompoundStmt (stmt_info, stmt_list) ->
-    (* No node for this statement. We just collect its statement list*)
+        (* No node for this statement. We just collect its statement list*)
         compoundStmt_trans trans_state stmt_info stmt_list
 
     | ConditionalOperator(stmt_info, stmt_list, expr_info) ->
-    (* Ternary operator "cond ? exp1 : exp2" *)
+        (* Ternary operator "cond ? exp1 : exp2" *)
         conditionalOperator_trans trans_state stmt_info stmt_list expr_info
 
     | IfStmt(stmt_info, stmt_list) ->
@@ -1728,7 +1728,7 @@ struct
         stmtExpr_trans trans_state stmt_info stmt_list expr_info
 
     | ForStmt(stmt_info, [init; null_stmt; cond; incr; body]) ->
-    (* Note: we ignore null_stmt at the moment.*)
+        (* Note: we ignore null_stmt at the moment.*)
         forStmt_trans trans_state init cond incr body stmt_info
 
     | WhileStmt(stmt_info, [_; cond; body]) ->  (* Note: we ignore null_stmt at the moment.*)
@@ -1867,16 +1867,16 @@ struct
 
     | BinaryConditionalOperator (stmt_info, stmts, expr_info) ->
         (match stmts with
-          | [stmt1; ostmt1; ostmt2; stmt2] when contains_opaque_value_expr ostmt1 && contains_opaque_value_expr ostmt2 ->
-              conditionalOperator_trans trans_state stmt_info [stmt1; stmt1; stmt2] expr_info
-          | _ -> Printing.log_stats
-                "BinaryConditionalOperator not translated %s @."
-                (Ast_utils.string_of_stmt instr);
-              assert false)
+         | [stmt1; ostmt1; ostmt2; stmt2] when contains_opaque_value_expr ostmt1 && contains_opaque_value_expr ostmt2 ->
+             conditionalOperator_trans trans_state stmt_info [stmt1; stmt1; stmt2] expr_info
+         | _ -> Printing.log_stats
+                  "BinaryConditionalOperator not translated %s @."
+                  (Ast_utils.string_of_stmt instr);
+             assert false)
     | s -> (Printing.log_stats
-            "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
-            (Ast_utils.string_of_stmt s);
-          assert false)
+              "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
+              (Ast_utils.string_of_stmt s);
+            assert false)
 
   (* Given a translation state, this function traslates a list of clang statements. *)
   and instructions trans_state clang_stmt_list =

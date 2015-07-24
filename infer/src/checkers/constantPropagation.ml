@@ -41,8 +41,8 @@ module ConstantFlow = Dataflow.MakeDF(struct
       Format.fprintf fmt "]@."
 
     (* Item - wise equality where values are equal iff
-    - both are None
-    - both are a constant and equal wrt. Sil.const_equal *)
+       - both are None
+       - both are a constant and equal wrt. Sil.const_equal *)
     let equal m n = ConstantMap.equal (opt_equal Sil.const_equal) m n
 
     let join = ConstantMap.merge merge_values
@@ -71,32 +71,32 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
           (* Handle propagation of string with StringBuilder. Does not handle null case *)
           | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var sb, _):: [], _, _)
-          when Procname.java_get_class pn = "java.lang.StringBuilder"
-          && Procname.java_get_method pn = "<init>" ->  (* StringBuilder.<init> *)
+            when Procname.java_get_class pn = "java.lang.StringBuilder"
+                 && Procname.java_get_method pn = "<init>" ->  (* StringBuilder.<init> *)
               update (Sil.Var sb) (Some (Sil.Cstr "")) constants
 
           | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: [], _, _)
-          when Procname.java_get_class pn = "java.lang.StringBuilder"
-          && Procname.java_get_method pn = "toString" -> (* StringBuilder.toString *)
+            when Procname.java_get_class pn = "java.lang.StringBuilder"
+                 && Procname.java_get_method pn = "toString" -> (* StringBuilder.toString *)
               update (Sil.Var i) (ConstantMap.find (Sil.Var i1) constants) constants
 
           | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], _, _)
-          when Procname.java_get_class pn = "java.lang.StringBuilder"
-          && Procname.java_get_method pn = "append" -> (* StringBuilder.append *)
+            when Procname.java_get_class pn = "java.lang.StringBuilder"
+                 && Procname.java_get_method pn = "append" -> (* StringBuilder.append *)
               (match
-                ConstantMap.find (Sil.Var i1) constants,
-                ConstantMap.find (Sil.Var i2) constants with
-                | Some (Sil.Cstr s1), Some (Sil.Cstr s2) ->
-                    begin
-                      let s = s1 ^ s2 in
-                      let u =
-                        if String.length s < string_widening_limit then
-                          Some (Sil.Cstr s)
-                        else
-                          None in
-                      update (Sil.Var i) u constants
-                    end
-                | _ -> constants)
+                 ConstantMap.find (Sil.Var i1) constants,
+                 ConstantMap.find (Sil.Var i2) constants with
+              | Some (Sil.Cstr s1), Some (Sil.Cstr s2) ->
+                  begin
+                    let s = s1 ^ s2 in
+                    let u =
+                      if String.length s < string_widening_limit then
+                        Some (Sil.Cstr s)
+                      else
+                        None in
+                    update (Sil.Var i) u constants
+                  end
+              | _ -> constants)
 
           | _ -> constants
         with Not_found -> constants in

@@ -23,14 +23,14 @@ let callback_sql all_procs get_proc_desc idenv tenv proc_name proc_desc =
       "insert into.*";
       "update .* set.*";
       "delete .* from.*";
-      ] in
+    ] in
     list_map Str.regexp_case_fold _sql_start in
 
   (* Check for SQL string concatenations *)
   let do_instr const_map node = function
     | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], l, _)
-    when Procname.java_get_class pn = "java.lang.StringBuilder"
-    && Procname.java_get_method pn = "append" ->
+      when Procname.java_get_class pn = "java.lang.StringBuilder"
+           && Procname.java_get_method pn = "append" ->
         let rvar1 = Sil.Var i1 in
         let rvar2 = Sil.Var i2 in
         begin

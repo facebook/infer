@@ -18,7 +18,7 @@ let verbose = ref true
 (** Convenience functions for chechers to print information *)
 module PP = struct
   (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
-  and [nafter] lines after [loc] *)
+      and [nafter] lines after [loc] *)
   let pp_loc_range linereader nbefore nafter fmt loc =
     let printline n = match Printer.LineReader.from_loc linereader { loc with Sil.line = n } with
       | Some s -> F.fprintf fmt "%s%s@\n" (if n = loc.Sil.line then "-->" else "   ") s
@@ -56,7 +56,7 @@ module ST = struct
   let store_summary proc_name =
     Option.may
       (fun summary ->
-            try Specs.store_summary proc_name summary with Sys_error s -> L.err "%s@." s)
+         try Specs.store_summary proc_name summary with Sys_error s -> L.err "%s@." s)
       (Specs.get_summary proc_name)
 
   let report_error
@@ -77,10 +77,10 @@ module ST = struct
     let exn = exception_kind kind localized_description in
 
     (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
-    suppressed with the following annotations:
-    - @android.annotation.SuppressLint("checker-error-name")
-    - @some.PrefixErrorName
-    where the kind matching is case - insensitive and ignores '-' and '_' characters. *)
+       suppressed with the following annotations:
+       - @android.annotation.SuppressLint("checker-error-name")
+       - @some.PrefixErrorName
+       where the kind matching is case - insensitive and ignores '-' and '_' characters. *)
     let suppressed =
       let annotation_matches a =
         let normalize str =
@@ -106,19 +106,19 @@ module ST = struct
       let is_field_suppressed =
         match field_name, PatternMatch.get_this_type proc_desc with
         | Some field_name, Some t -> begin
-              match (Annotations.get_field_type_and_annotation field_name t) with
-              | Some (_, ia) -> Annotations.ia_has_annotation_with ia annotation_matches
-              | None -> false
-            end
+            match (Annotations.get_field_type_and_annotation field_name t) with
+            | Some (_, ia) -> Annotations.ia_has_annotation_with ia annotation_matches
+            | None -> false
+          end
         | _ -> false in
 
       let is_class_suppressed =
         match (PatternMatch.get_this_type proc_desc) with
         | Some t -> begin
-              match (PatternMatch.type_get_annotation t) with
-              | Some ia -> Annotations.ia_has_annotation_with ia annotation_matches
-              | None -> false
-            end
+            match (PatternMatch.type_get_annotation t) with
+            | Some ia -> Annotations.ia_has_annotation_with ia annotation_matches
+            | None -> false
+          end
         | None -> false in
 
       is_method_suppressed || is_field_suppressed || is_class_suppressed in
@@ -213,8 +213,8 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
           let class_name = Procname.java_get_class proc_name in
           let method_name = Procname.java_get_method proc_name in
           (try
-            class_name = "android.os.Parcel" && (String.sub method_name 0 5 = "write" || String.sub method_name 0 4 = "read")
-          with Invalid_argument _ -> false)
+             class_name = "android.os.Parcel" && (String.sub method_name 0 5 = "write" || String.sub method_name 0 4 = "read")
+           with Invalid_argument _ -> false)
       | _ -> assert false in
 
     let is_inverse rc wc =
@@ -256,9 +256,9 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
             match parcel_constructors this_type with
             | x :: xs ->
                 (match get_proc_desc x with
-                  | Some x_proc_desc ->
-                      check x x_proc_desc proc_name proc_desc
-                  | None -> raise Not_found)
+                 | Some x_proc_desc ->
+                     check x x_proc_desc proc_name proc_desc
+                 | None -> raise Not_found)
             | _ -> L.stdout "No parcel constructor found for %a@." Procname.pp proc_name
           with Not_found -> if !verbose then L.stdout "Methods not available@."
         end
@@ -270,15 +270,15 @@ let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc
   let verbose = ref false in
 
   let class_formal_names = lazy (
-      let formals = Cfg.Procdesc.get_formals proc_desc in
-      let class_formals =
-        let is_class_type = function
-          | "this", Sil.Tptr _ -> false (* no need to null check 'this' *)
-          | _, Sil.Tstruct _ -> true
-          | _, Sil.Tptr (Sil.Tstruct _, _) -> true
-          | _ -> false in
-        list_filter is_class_type formals in
-      list_map (fun (s, _) -> Mangled.from_string s) class_formals) in
+    let formals = Cfg.Procdesc.get_formals proc_desc in
+    let class_formals =
+      let is_class_type = function
+        | "this", Sil.Tptr _ -> false (* no need to null check 'this' *)
+        | _, Sil.Tstruct _ -> true
+        | _, Sil.Tptr (Sil.Tstruct _, _) -> true
+        | _ -> false in
+      list_filter is_class_type formals in
+    list_map (fun (s, _) -> Mangled.from_string s) class_formals) in
   let equal_formal_param exp formal_name = match exp with
     | Sil.Lvar pvar ->
         let name = Sil.pvar_get_name pvar in
@@ -363,40 +363,40 @@ let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name p
     try
       ST.pname_find proc_name' ret_const_key
     with Not_found ->
-        match get_proc_desc proc_name' with
-          Some proc_desc' ->
-            let is_return_instr = function
-              | Sil.Set (Sil.Lvar p, _, _, _)
+      match get_proc_desc proc_name' with
+        Some proc_desc' ->
+          let is_return_instr = function
+            | Sil.Set (Sil.Lvar p, _, _, _)
               when Sil.pvar_equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
-              | _ -> false in
-            (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
-              | Some (Sil.Set (_, _, Sil.Const (Sil.Cclass n), _)) -> Ident.name_to_string n
-              | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
-        | None -> "?" in
+            | _ -> false in
+          (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
+           | Some (Sil.Set (_, _, Sil.Const (Sil.Cclass n), _)) -> Ident.name_to_string n
+           | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
+      | None -> "?" in
 
   let get_actual_arguments node instr = match instr with
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) -> (try
-          let find_const exp typ =
-            let expanded = Idenv.expand_expr idenv exp in
-            match expanded with
-            | Sil.Const (Sil.Cclass n) -> Ident.name_to_string n
-            | Sil.Lvar p -> (
-                  let is_call_instr set call = match set, call with
-                    | Sil.Set (_, _, Sil.Var (i1), _), Sil.Call (i2::[], _, _, _, _) when Ident.equal i1 i2 -> true
-                    | _ -> false in
-                  let is_set_instr = function
-                    | Sil.Set (e1, t, e2, l) when Sil.exp_equal expanded e1 -> true
-                    | _ -> false in
-                  match reverse_find_instr is_set_instr node with                  (** Look for ivar := tmp *)
-                  | Some s -> (
-                        match reverse_find_instr (is_call_instr s) node with           (** Look for tmp := foo() *)
-                        | Some (Sil.Call (_, Sil.Const (Sil.Cfun pn), _, l, _)) -> get_return_const pn
-                        | _ -> "?")
-                  | _ -> "?")
-            | _ -> "?" in
-          let arg_name (exp, typ) = find_const exp typ in
-          Some (list_map arg_name args)
-        with _ -> None)
+                                                                                  let find_const exp typ =
+                                                                                    let expanded = Idenv.expand_expr idenv exp in
+                                                                                    match expanded with
+                                                                                    | Sil.Const (Sil.Cclass n) -> Ident.name_to_string n
+                                                                                    | Sil.Lvar p -> (
+                                                                                        let is_call_instr set call = match set, call with
+                                                                                          | Sil.Set (_, _, Sil.Var (i1), _), Sil.Call (i2::[], _, _, _, _) when Ident.equal i1 i2 -> true
+                                                                                          | _ -> false in
+                                                                                        let is_set_instr = function
+                                                                                          | Sil.Set (e1, t, e2, l) when Sil.exp_equal expanded e1 -> true
+                                                                                          | _ -> false in
+                                                                                        match reverse_find_instr is_set_instr node with                  (** Look for ivar := tmp *)
+                                                                                        | Some s -> (
+                                                                                            match reverse_find_instr (is_call_instr s) node with           (** Look for tmp := foo() *)
+                                                                                            | Some (Sil.Call (_, Sil.Const (Sil.Cfun pn), _, l, _)) -> get_return_const pn
+                                                                                            | _ -> "?")
+                                                                                        | _ -> "?")
+                                                                                    | _ -> "?" in
+                                                                                  let arg_name (exp, typ) = find_const exp typ in
+                                                                                  Some (list_map arg_name args)
+                                                                                with _ -> None)
     | _ -> None in
 
   let process_result instr result =
@@ -406,22 +406,22 @@ let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name p
     );
     match result with
     | str when (Str.string_match (Str.regexp "<\\(.*\\)>") str 0) -> (
-          let missing_proc_name = Str.matched_group 1 str in
-          L.stdout "Deserialization of %s requires 2nd phase: " str;
-          L.stdout "missing: %s@." missing_proc_name)
+        let missing_proc_name = Str.matched_group 1 str in
+        L.stdout "Deserialization of %s requires 2nd phase: " str;
+        L.stdout "missing: %s@." missing_proc_name)
     | "?" -> L.stdout "Unable to resolve deserialization\n\n@."
     | _ -> L.stdout "Deserialization of %s\n\n@." result in
 
   let do_instr node instr =
     match PatternMatch.get_java_method_call_formal_signature instr with
     | Some (_, "readValue", _, _) -> (
-          match get_actual_arguments node instr with
-          | Some [_; cl] -> process_result instr cl
-          | _ -> process_result instr "?")
+        match get_actual_arguments node instr with
+        | Some [_; cl] -> process_result instr cl
+        | _ -> process_result instr "?")
     | Some (_, "readValueAs", _, _) -> (
-          match get_actual_arguments node instr with
-          | Some [cl] -> process_result instr cl
-          | _ -> process_result instr "?")
+        match get_actual_arguments node instr with
+        | Some [cl] -> process_result instr cl
+        | _ -> process_result instr "?")
     | _ -> () in
 
   let store_return () =
@@ -478,7 +478,7 @@ let callback_check_field_access all_procs get_proc_desc idenv tenv proc_name pro
 let callback_print_c_method_calls all_procs get_proc_desc idenv tenv proc_name proc_desc =
   let do_instr node = function
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (e, t):: args, loc, cf)
-    when Procname.is_c_method pn ->
+      when Procname.is_c_method pn ->
         let receiver = match Errdesc.exp_rv_dexp node e with
           | Some de -> Sil.dexp_to_string de
           | None -> "?" in

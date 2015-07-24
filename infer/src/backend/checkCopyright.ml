@@ -56,10 +56,10 @@ let find_comment_start_and_style lines_arr n =
   let is_start line = match cur_line_comment with
     | Some (Line (s)) -> if string_is_prefix s line then None else Some (Line (s))
     | _ -> try
-        Some (list_find (function
-            | Block(s, _, _) -> string_contains s line
-            | _ -> false) comment_styles)
-    with Not_found -> None in
+          Some (list_find (function
+              | Block(s, _, _) -> string_contains s line
+              | _ -> false) comment_styles)
+        with Not_found -> None in
   let i = ref (n - 1) in
   (* hacky fake line comment to avoid an option type *)
   let found = ref (-1, Line(">>>>>>>>>>>")) in

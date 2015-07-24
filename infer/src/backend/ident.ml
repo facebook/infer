@@ -73,10 +73,10 @@ let ident_list_equal ids1 ids2 = (ident_list_compare ids1 ids2 = 0)
 (** {2 Set for identifiers} *)
 
 module IdentSet = Set.Make
-  (struct
-    type t = _ident
-    let compare = compare
-  end)
+    (struct
+      type t = _ident
+      let compare = compare
+    end)
 
 module IdentHash =
   Hashtbl.Make(struct
@@ -86,14 +86,14 @@ module IdentHash =
   end)
 
 module FieldSet = Set.Make(struct
-  type t = fieldname
-  let compare = fieldname_compare
-end)
+    type t = fieldname
+    let compare = fieldname_compare
+  end)
 
 module FieldMap = Map.Make(struct
-  type t = fieldname
-  let compare = fieldname_compare
-end)
+    type t = fieldname
+    let compare = fieldname_compare
+  end)
 
 let idlist_to_idset ids =
   list_fold_left (fun set id -> IdentSet.add id set) IdentSet.empty ids
@@ -136,8 +136,8 @@ let fieldname_to_simplified_string fn =
   match string_split_character s '.' with
   | Some s1, s2 ->
       (match string_split_character s1 '.' with
-        | Some s3, s4 -> s4 ^ "." ^ s2
-        | _ -> s)
+       | Some s3, s4 -> s4 ^ "." ^ s2
+       | _ -> s)
   | _ -> s
 
 (** Convert a fieldname to a flat string without path. *)
@@ -221,7 +221,7 @@ let create_with_stamp kind name stamp =
       let new_stamp = max curr_stamp stamp in
       NameHash.replace name_map name new_stamp
     with Not_found ->
-        NameHash.add name_map name stamp in
+      NameHash.add name_map name stamp in
   update_name_hash ();
   { kind = kind; name = name; stamp = stamp }
 
@@ -290,8 +290,8 @@ let create_fresh_ident kind name =
       NameHash.replace name_map name (stamp + 1);
       stamp + 1
     with Not_found ->
-        NameHash.add name_map name 0;
-        0 in
+      NameHash.add name_map name 0;
+      0 in
   { kind = kind; name = name; stamp = stamp }
 
 (** Create a fresh identifier with default name for the given kind. *)

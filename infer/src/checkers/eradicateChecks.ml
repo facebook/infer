@@ -42,7 +42,7 @@ let get_field_annotation fn typ =
         (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
         (* outside of Eradicate in some other way *)
         if (Models.Inference.enabled || not !Config.eradicate)
-        && Models.Inference.field_is_marked fn
+           && Models.Inference.field_is_marked fn
         then Annotations.mk_ia Annotations.Nullable ia
         else ia in
       Some (t, ia')
@@ -138,7 +138,7 @@ let check_condition case_zero find_canonical_duplicate get_proc_desc curr_pname
       | _ -> false in
     let do_instr = function
       | Sil.Call (_, Sil.Const (Sil.Cfun pn), [_; (Sil.Sizeof(t, _), _)], _, _) when
-      Procname.equal pn SymExec.ModelBuiltins.__instanceof && typ_is_throwable t ->
+          Procname.equal pn SymExec.ModelBuiltins.__instanceof && typ_is_throwable t ->
           throwable_found := true
       | _ -> () in
     let do_node n =
@@ -264,10 +264,10 @@ let check_constructor_initialization
               | None -> unknown in
             list_exists
               (function pname, typestate ->
-                    let pvar = Sil.mk_pvar
-                        (Mangled.from_string (Ident.fieldname_to_string fn))
-                        pname in
-                    filter_range_opt (TypeState.lookup_pvar pvar typestate))
+                let pvar = Sil.mk_pvar
+                    (Mangled.from_string (Ident.fieldname_to_string fn))
+                    pname in
+                filter_range_opt (TypeState.lookup_pvar pvar typestate))
               list in
 
           let may_be_assigned_in_final_typestate =
@@ -299,7 +299,7 @@ let check_constructor_initialization
 
               (* Check if field is missing annotation. *)
               if not (nullable_annotated || nonnull_annotated) &&
-              not may_be_assigned_in_final_typestate then
+                 not may_be_assigned_in_final_typestate then
                 report_error
                   find_canonical_duplicate
                   start_node
@@ -310,8 +310,8 @@ let check_constructor_initialization
 
               (* Check if field is over-annotated. *)
               if activate_field_over_annotated &&
-              nullable_annotated &&
-              not (may_be_nullable_in_final_typestate ()) then
+                 nullable_annotated &&
+                 not (may_be_nullable_in_final_typestate ()) then
                 report_error
                   find_canonical_duplicate
                   start_node
@@ -410,7 +410,7 @@ let check_call_receiver
             find_canonical_duplicate
             node
             (TypeErr.Call_receiver_annotation_inconsistent
-              (ann, descr, callee_pname, origin_descr))
+               (ann, descr, callee_pname, origin_descr))
             (Some instr_ref)
             loc curr_pname
         end
@@ -484,7 +484,7 @@ let check_call_parameters
     check (list_rev sig_params) (list_rev call_params)
 
 (** Checks if the annotations are consistent with the inherited class or with the
-implemented interfaces *)
+    implemented interfaces *)
 let check_overridden_annotations
     find_canonical_duplicate get_proc_desc tenv proc_name proc_desc annotated_signature =
 
@@ -512,12 +512,12 @@ let check_overridden_annotations
       let _, overriden_ia, overriden_type = overriden_param in
       let () =
         if not (Annotations.ia_is_nullable current_ia)
-        && Annotations.ia_is_nullable overriden_ia then
+           && Annotations.ia_is_nullable overriden_ia then
           report_error
             find_canonical_duplicate
             start_node
             (TypeErr.Inconsistent_subclass_parameter_annotation
-              (current_name, pos, proc_name, overriden_proc_name))
+               (current_name, pos, proc_name, overriden_proc_name))
             None
             loc proc_name in
       (pos + 1) in
@@ -549,8 +549,8 @@ let check_overridden_annotations
           not (Procname.is_constructor pname) in
         list_iter
           (fun pname ->
-                if is_override pname
-                then check pname)
+             if is_override pname
+             then check pname)
           methods
     | _ -> () in
 

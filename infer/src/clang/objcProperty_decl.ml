@@ -29,7 +29,7 @@ type prop_getter_setter = string * (Clang_ast_t.decl * bool) option
 (** A property type is a tuple: *)
 (** (qual_type, property attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar name) *)
 type property_type = Clang_ast_t.qual_type * Clang_ast_t.property_attribute list *
-  Clang_ast_t.decl_info * prop_getter_setter * prop_getter_setter * string option
+                     Clang_ast_t.decl_info * prop_getter_setter * prop_getter_setter * string option
 
 (** A table that record the property defined in the interface and its getter/setter. *)
 (** This info used later on in the implementation if the getter/setter need to automatically *)
@@ -54,7 +54,7 @@ sig
   val replace_property : property_key -> property_type -> unit
 
   val add_property : property_key -> Clang_ast_t.qual_type ->
-  Clang_ast_t.property_attribute list -> Clang_ast_t.decl_info -> unit
+    Clang_ast_t.property_attribute list -> Clang_ast_t.decl_info -> unit
 
   val print_property_table : unit -> unit
 
@@ -91,25 +91,25 @@ struct
   let rec find_property curr_class property_name =
     try PropertyTableHash.find property_table (curr_class, property_name)
     with Not_found ->
-        match curr_class with
-        | ContextCls (name, _, protocols) ->
-            let res_opt = list_fold_right
-                (fun protocol found_procname_opt ->
-                      match found_procname_opt with
-                      | Some found_procname -> Some found_procname
-                      | None ->
-                          Some (find_property (ContextProtocol protocol) property_name)) protocols None in
-            (match res_opt with
-              | Some res -> res
-              | None -> raise Not_found)
-        | _ -> raise Not_found
+      match curr_class with
+      | ContextCls (name, _, protocols) ->
+          let res_opt = list_fold_right
+              (fun protocol found_procname_opt ->
+                 match found_procname_opt with
+                 | Some found_procname -> Some found_procname
+                 | None ->
+                     Some (find_property (ContextProtocol protocol) property_name)) protocols None in
+          (match res_opt with
+           | Some res -> res
+           | None -> raise Not_found)
+      | _ -> raise Not_found
 
   let find_property_name_from_ivar curr_class ivar =
     let res = ref None in
     PropertyTableHash.iter (fun (cl, pname) (_, _, _, _, _, ivar') ->
-            match ivar' with
-            | Some s when (CContext.curr_class_equal curr_class cl) && s = ivar -> res:= Some pname
-            | _ -> ()) property_table;
+        match ivar' with
+        | Some s when (CContext.curr_class_equal curr_class cl) && s = ivar -> res:= Some pname
+        | _ -> ()) property_table;
     !res
 
   let is_mem_property property =
@@ -168,8 +168,8 @@ let find_properties_class = Property.find_properties_class
 let get_ivarname_property pidi =
   match pidi.Clang_ast_t.opidi_ivar_decl with
   | Some dr -> (match dr.Clang_ast_t.dr_name with
-        | Some n -> n.Clang_ast_t.ni_name
-        | _ -> assert false)
+      | Some n -> n.Clang_ast_t.ni_name
+      | _ -> assert false)
   | _ -> (* If ivar is not defined than we need to take the name of the property to define ivar*)
       Ast_utils.property_name pidi
 
@@ -194,14 +194,14 @@ let check_for_property curr_class method_name meth_decl body =
   let check_property_accessor curr_class method_name is_getter =
     let method_is_getter (property_name, property_type) =
       match property_type with (_, _, _, (getter_name, _), (setter_name, _), _) ->
-          let found =
-            if is_getter then (method_name = getter_name)
-            else (method_name = setter_name) in
-          if found then
-            (Printing.log_out "  Found property  '%s'  defined in property table\n"
-                (Property.property_key_to_string (curr_class, property_name));
-              upgrade_property_accessor
-                (curr_class, property_name) property_type meth_decl defined is_getter) in
+        let found =
+          if is_getter then (method_name = getter_name)
+          else (method_name = setter_name) in
+        if found then
+          (Printing.log_out "  Found property  '%s'  defined in property table\n"
+             (Property.property_key_to_string (curr_class, property_name));
+           upgrade_property_accessor
+             (curr_class, property_name) property_type meth_decl defined is_getter) in
     list_iter method_is_getter properties_class in
   check_property_accessor curr_class method_name true;
   check_property_accessor curr_class method_name false
@@ -213,34 +213,34 @@ let method_is_property_accesor cls method_name =
     | Some res -> res_opt
     | None ->
         match property_type with (_, _, _, (getter_name, _), (setter_name, _), _) ->
-            if method_name = getter_name then Some (property_name, property_type, true)
-            else if method_name = setter_name then Some (property_name, property_type, false)
-            else None in
+          if method_name = getter_name then Some (property_name, property_type, true)
+          else if method_name = setter_name then Some (property_name, property_type, false)
+          else None in
   list_fold_right method_is_getter properties_class None
 
 let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
   let pname = Ast_utils.property_name property_impl_decl_info in
   let res = (try
-      let qt', atts, di, getter, setter, _ = Property.find_property curr_class pname in
-      let ivar = (match property_impl_decl_info.Clang_ast_t.opidi_ivar_decl with
-          | Some dr -> (match dr.Clang_ast_t.dr_name with
-                | Some name_info -> name_info.Clang_ast_t.ni_name
-                | None -> assert false)
-          | None -> Ast_utils.generated_ivar_name pname) in
-      (* update property info with proper ivar name *)
-      Property.replace_property (curr_class, pname) (qt', atts, di, getter, setter, Some ivar);
-      Printing.log_out "Updated property table by adding ivar name for property pname '%s'\n" pname;
-      Some (qt', ivar)
-    with Not_found -> L.err "Property '%s' not found in the table. Ivar not updated and qual_type not found.@." pname;
-        None) in
+               let qt', atts, di, getter, setter, _ = Property.find_property curr_class pname in
+               let ivar = (match property_impl_decl_info.Clang_ast_t.opidi_ivar_decl with
+                   | Some dr -> (match dr.Clang_ast_t.dr_name with
+                       | Some name_info -> name_info.Clang_ast_t.ni_name
+                       | None -> assert false)
+                   | None -> Ast_utils.generated_ivar_name pname) in
+               (* update property info with proper ivar name *)
+               Property.replace_property (curr_class, pname) (qt', atts, di, getter, setter, Some ivar);
+               Printing.log_out "Updated property table by adding ivar name for property pname '%s'\n" pname;
+               Some (qt', ivar)
+             with Not_found -> L.err "Property '%s' not found in the table. Ivar not updated and qual_type not found.@." pname;
+               None) in
   match property_impl_decl_info.Clang_ast_t.opidi_implementation, res with
   | `Dynamic, Some (qt, ivar) ->
-  (* For Dynamic property we need to create the ObjCIvarDecl which specifies*)
-  (* the field of the property. In case of Dynamic this is not in the AST.*)
-  (* Once created the ObjCIvarDecl then we treat the property as synthesized *)
+      (* For Dynamic property we need to create the ObjCIvarDecl which specifies*)
+      (* the field of the property. In case of Dynamic this is not in the AST.*)
+      (* Once created the ObjCIvarDecl then we treat the property as synthesized *)
       [Ast_expressions.make_objc_ivar_decl decl_info qt property_impl_decl_info ivar]
   | _ ->
-  (* No names of fields/method to collect from ObjCPropertyImplDecl when Synthesized *)
+      (* No names of fields/method to collect from ObjCPropertyImplDecl when Synthesized *)
       []
 
 (*NOTE: Assumption: if there is a getter or a setter defined manually, *)
@@ -258,8 +258,8 @@ let is_property_read_only attributes =
 let get_memory_management_attribute attributes =
   let memory_management_attributes = Ast_utils.get_memory_management_attributes () in
   try Some (list_find (
-          fun att -> list_mem (Ast_utils.property_attribute_eq)
-                att memory_management_attributes) attributes)
+      fun att -> list_mem (Ast_utils.property_attribute_eq)
+          att memory_management_attributes) attributes)
   with Not_found -> None
 
 let create_generated_method_name name_info =
@@ -287,7 +287,7 @@ let make_getter curr_class prop_name prop_type =
           Property.replace_property
             (curr_class, prop_name)
             (qt, attributes, decl_info,
-              (getter_name, Some (ObjCMethodDecl(di, name_info, mdi), true)), (setter_name, setter), Some ivar_name);
+             (getter_name, Some (ObjCMethodDecl(di, name_info, mdi), true)), (setter_name, setter), Some ivar_name);
           [ObjCMethodDecl(dummy_info, generated_name_info, mdi')]
       | _ -> []
 
@@ -332,8 +332,8 @@ let make_setter curr_class prop_name prop_type =
           Property.replace_property
             (curr_class, prop_name)
             (qt, attributes, decl_info,
-              (getter_name, getter),
-              (setter_name, Some (ObjCMethodDecl(di, name, mdi), true)), Some ivar_name);
+             (getter_name, getter),
+             (setter_name, Some (ObjCMethodDecl(di, name, mdi), true)), Some ivar_name);
           [ObjCMethodDecl(dummy_info, name_generated, mdi')]
       | _ -> []
 
@@ -351,15 +351,15 @@ let make_getter_setter curr_class decl_info prop_name =
     try
       Property.find_property curr_class prop_name
     with _ ->
-        Printing.log_out "Property %s not found@." prop_name;
-        assert false in
+      Printing.log_out "Property %s not found@." prop_name;
+      assert false in
   (make_getter curr_class prop_name prop_type)@ (make_setter curr_class prop_name prop_type)
 
 let add_properties_to_table curr_class decl_list =
   let add_property_to_table dec =
     match dec with
     | ObjCPropertyDecl(decl_info, name_info, pdi) ->
-    (* Property declaration register the property on the property table to be *)
+        (* Property declaration register the property on the property table to be *)
         let pname = name_info.Clang_ast_t.ni_name in
         Printing.log_out "ADDING: ObjCPropertyDecl for property '%s' " pname;
         Printing.log_out "  pointer= '%s' \n" decl_info.Clang_ast_t.di_pointer;

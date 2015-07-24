@@ -37,28 +37,28 @@ let android_lifecycles =
   let android_app = "android.app" in
   let fragment_lifecycle =
     ["onInflate"; "onAttach"; "onCreate"; "onCreateView"; "onViewCreated"; "onActivityCreated";
-    "onViewStateRestored"; "onStart"; "onResume"; "onPause"; "onSaveInstanceState"; "onStop";
-    on_destroy_view; on_destroy; "onDetach"] in
+     "onViewStateRestored"; "onStart"; "onResume"; "onPause"; "onSaveInstanceState"; "onStop";
+     on_destroy_view; on_destroy; "onDetach"] in
   [ (android_content,
-    "ContentProvider",
-    ["onCreate"]);
-  (android_app,
-    "Activity",
-    ["onCreate"; "onStart"; "onRestoreInstanceState"; "onPostCreate"; "onResume"; "onPostResume";
-    "onCreateDescription"; "onSaveInstanceState"; "onPause"; "onStop"; on_destroy]);
-  (android_app,
-    "Service",
-    ["onCreate"; "onStart"; "onStartCommand"; "onBind"; "onUnbind"; on_destroy]);
-  (android_content,
-    "BroadcastReceiever",
-    ["onReceive"]);
-  (android_app,
-    "Fragment",
-    fragment_lifecycle);
-  (* this is the pre-Android 3.0 Fragment type (can also be used post-3.0) *)
-  ("android.support.v4.app",
-    "Fragment",
-    fragment_lifecycle);
+     "ContentProvider",
+     ["onCreate"]);
+    (android_app,
+     "Activity",
+     ["onCreate"; "onStart"; "onRestoreInstanceState"; "onPostCreate"; "onResume"; "onPostResume";
+      "onCreateDescription"; "onSaveInstanceState"; "onPause"; "onStop"; on_destroy]);
+    (android_app,
+     "Service",
+     ["onCreate"; "onStart"; "onStartCommand"; "onBind"; "onUnbind"; on_destroy]);
+    (android_content,
+     "BroadcastReceiever",
+     ["onReceive"]);
+    (android_app,
+     "Fragment",
+     fragment_lifecycle);
+    (* this is the pre-Android 3.0 Fragment type (can also be used post-3.0) *)
+    ("android.support.v4.app",
+     "Fragment",
+     fragment_lifecycle);
   ]
 
 let android_callbacks =
@@ -244,10 +244,10 @@ let android_callbacks =
     ("android.widget", "TextView$OnEditorActionListener");
     ("android.widget", "TimePicker$OnTimeChangedListener");
     ("android.widget", "ZoomButtonsController$OnZoomListener");
-    ] in
+  ] in
   list_fold_left (fun cbSet (pkg, clazz) ->
-          let qualified_name = Mangled.from_string (pkg ^ "." ^ clazz) in
-          Mangled.MangledSet.add qualified_name cbSet) Mangled.MangledSet.empty cb_strs
+      let qualified_name = Mangled.from_string (pkg ^ "." ^ clazz) in
+      Mangled.MangledSet.add qualified_name cbSet) Mangled.MangledSet.empty cb_strs
 
 (** return the complete set of superclasses of [typ *)
 (* TODO (t4644852): factor out subtyping functions into some sort of JavaUtil module *)
@@ -274,9 +274,9 @@ let is_callback_class_name class_name = Mangled.MangledSet.mem class_name androi
 let is_callback_class typ tenv =
   let supertyps = get_all_supertypes typ tenv in
   TypSet.exists (fun typ -> match typ with
-          | Sil.Tstruct (_, _, Sil.Class, Some classname, _, _, _) ->
-              is_callback_class_name classname
-          | _ -> false) supertyps
+      | Sil.Tstruct (_, _, Sil.Class, Some classname, _, _, _) ->
+          is_callback_class_name classname
+      | _ -> false) supertyps
 
 (** return true if [typ] is a subclass of [lifecycle_typ] *)
 let typ_is_lifecycle_typ typ lifecycle_typ tenv =
@@ -289,24 +289,24 @@ let is_android_lib_class class_name =
   string_is_prefix "android" class_str || string_is_prefix "com.android" class_str
 
 (** returns an option containing the var name and type of a callback registered by [procname], None
-if no callback is registered *)
+    if no callback is registered *)
 let get_callback_registered_by procname args tenv =
   (* TODO (t4565077): this check should be replaced with a membership check in a hardcoded list of
-  * Android callback registration methods *)
+   * Android callback registration methods *)
   (* for now, we assume a method is a callback registration method if it is a setter and has a
-  * callback class as a non - receiver argument *)
+   * callback class as a non - receiver argument *)
   let is_callback_register_like =
     let has_non_this_callback_arg args = list_length args > 1 in
     let has_registery_name procname =
       Procname.is_java procname && (PatternMatch.is_setter procname ||
-        is_known_callback_register_method (Procname.java_get_method procname)) in
+                                    is_known_callback_register_method (Procname.java_get_method procname)) in
     has_registery_name procname && has_non_this_callback_arg args in
   let is_ptr_to_callback_class typ tenv = match typ with
     | Sil.Tptr (typ, Sil.Pk_pointer) -> is_callback_class typ tenv
     | _ -> false in
   if is_callback_register_like then
     (* we don't want to check if the receiver is a callback class; it's one of the method arguments
-    * that's being registered as a callback *)
+     * that's being registered as a callback *)
     let get_non_this_args args = list_tl args in
     try
       Some (list_find (fun (_, typ) -> is_ptr_to_callback_class typ tenv) (get_non_this_args args))
@@ -332,20 +332,20 @@ let is_callback_register_method procname args tenv =
   | None -> false
 
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and
-a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
+    a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
   match Sil.get_typ lifecycle_typ None tenv with
   | Some (Sil.Tstruct(_, _, Sil.Class, Some class_name, _, decl_procs, _) as lifecycle_typ) ->
-  (* TODO (t4645631): collect the procedures for which is_java is returning false *)
+      (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         list_find (fun decl_proc ->
-                Procname.is_java decl_proc && lifecycle_proc = Procname.java_get_method decl_proc
+            Procname.is_java decl_proc && lifecycle_proc = Procname.java_get_method decl_proc
           ) decl_procs in
       (* convert each of the framework lifecycle proc strings to a lifecycle method procname *)
       let lifecycle_procs =
         list_fold_left (fun lifecycle_procs lifecycle_proc_str ->
-                try (lookup_proc lifecycle_proc_str) :: lifecycle_procs
-                with Not_found -> lifecycle_procs)
+            try (lookup_proc lifecycle_proc_str) :: lifecycle_procs
+            with Not_found -> lifecycle_procs)
           [] lifecycle_proc_strs in
       Some (lifecycle_typ, lifecycle_procs)
   | _ -> None

@@ -33,7 +33,7 @@ let is_basic_type fs =
   | JBasics.TObject ot -> false
 
 (** Returns whether the node contains static final fields
-that are not of a primitive type or String. *)
+    that are not of a primitive type or String. *)
 let rec has_static_final_fields node =
   let detect fs f test =
     test || (Javalib.is_static_field f && Javalib.is_final_field f) in
@@ -42,7 +42,7 @@ let rec has_static_final_fields node =
 (* Patricia trees *)
 
 (** collects the code line where the fields are initialised. The list is
-reversed in order to access the previous element in the list easier (as the successor.) *)
+    reversed in order to access the previous element in the list easier (as the successor.) *)
 let collect_field_pc instrs field_pc_list =
   let aux pc instr =
     match instr with
@@ -53,7 +53,7 @@ let collect_field_pc instrs field_pc_list =
   (List.rev !field_pc_list)
 
 (** Changes every position in the code where a static field is set to a value,
-to returning that value *)
+    to returning that value *)
 let add_return_field instrs =
   let aux instr =
     match instr with
@@ -63,8 +63,8 @@ let add_return_field instrs =
   (Array.map aux instrs)
 
 (** Given a list with the lines where the fields are initialised,
-finds the line where the code for the initialisation of the given field starts,
-which is the line after the previous field has been initialised. *)
+    finds the line where the code for the initialisation of the given field starts,
+    which is the line after the previous field has been initialised. *)
 let rec find_pc field list =
   match list with
   | (fs, pc):: rest ->
@@ -107,9 +107,9 @@ let has_unclear_control_flow code =
 
 
 (** In the initialiser of static fields, we add instructions
-for returning the field selected by the parameter. *)
+    for returning the field selected by the parameter. *)
 (* The constant s means the parameter field of the function.
-Note that we remove the initialisation of non - final static fields. *)
+   Note that we remove the initialisation of non - final static fields. *)
 let rec static_field_init_complex cn code fields length =
   let code = Array.append [| (JBir.Goto length ) |] code in
   let s = JConfig.field_cst in
@@ -130,7 +130,7 @@ let rec static_field_init_complex cn code fields length =
         else
           let _ =
             if Javalib.is_static_field field && pc <> -1 then
-                field_nonfinal_pcs := pc::!field_nonfinal_pcs in
+              field_nonfinal_pcs := pc::!field_nonfinal_pcs in
           aux s rest
     | [] -> [| JBir.Nop |] in
   let new_instrs = aux s fields in
@@ -140,8 +140,8 @@ let rec static_field_init_complex cn code fields length =
   code
 
 (** In the initialiser of static fields, we add instructions
-for returning the field selected by the parameter without changing
-the control flow of the original code. *)
+    for returning the field selected by the parameter without changing
+    the control flow of the original code. *)
 let rec static_field_init_simple cn code fields length =
   let s = JConfig.field_cst in
   let rec aux s pc fields =
@@ -161,13 +161,13 @@ let rec static_field_init_simple cn code fields length =
   code
 
 (** In the initialiser of static fields, we add instructions
-for returning the field selected by the parameter. In normal
-cases the code for the initialisation of each field is clearly separated
-from the code for the initialisation of the next field. However, in some cases
-the fields are initialised in static blocks in which they may use try and catch.
-In these cases it is not possible to separate the code for the initialisation
-of each field, so we do not change the original code, but append intructions
-for returning the selected field. *)
+    for returning the field selected by the parameter. In normal
+    cases the code for the initialisation of each field is clearly separated
+    from the code for the initialisation of the next field. However, in some cases
+    the fields are initialised in static blocks in which they may use try and catch.
+    In these cases it is not possible to separate the code for the initialisation
+    of each field, so we do not change the original code, but append intructions
+    for returning the selected field. *)
 let rec static_field_init node cn code =
   try
     let field_list = JBasics.FieldMap.elements (Javalib.get_fields node) in
@@ -200,9 +200,9 @@ let is_static_final_field context cn fs =
   match JClasspath.lookup_node cn (JContext.get_program context) with
   | None -> false
   | Some node ->
-    try
-      let f = Javalib.get_field node fs in
-      let is_static = Javalib.is_static_field f in
-      let is_final = Javalib.is_final_field f in
-      (is_static && is_final)
-    with Not_found -> false
+      try
+        let f = Javalib.get_field node fs in
+        let is_static = Javalib.is_static_field f in
+        let is_final = Javalib.is_final_field f in
+        (is_static && is_final)
+      with Not_found -> false

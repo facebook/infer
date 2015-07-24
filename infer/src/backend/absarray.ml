@@ -18,7 +18,7 @@ type sigma = Sil.hpred list
 
 (** Matcher for the sigma part specialized to strexps *)
 module StrexpMatch : sig
-(** path through a strexp *)
+  (** path through a strexp *)
   type path
 
   (** convert a path into a list of expressions *)
@@ -156,7 +156,7 @@ end = struct
               let t = (fun (x,y,z) -> y) (list_find (fun (f', t, a) -> Sil.fld_equal f' f) ftal) in
               find_offset_sexp sigma_other hpred root ((Field (f, typ)) :: offs) se t
             with Not_found ->
-                L.d_strln ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")
+              L.d_strln ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")
           end;
           find_offset_fsel sigma_other hpred root offs fsel' ftal typ
     and find_offset_esel sigma_other hpred root offs esel t = match esel with
@@ -247,20 +247,20 @@ end = struct
 end
 
 (** This function renames expressions in [p]. The renaming is, roughly
-speaking, to replace [path.i] by [path.i'] for all (i, i') in [map]. *)
+    speaking, to replace [path.i] by [path.i'] for all (i, i') in [map]. *)
 let prop_replace_path_index
     (p: Prop.exposed Prop.t)
     (path: StrexpMatch.path)
     (map : (Sil.exp * Sil.exp) list) : Prop.exposed Prop.t
-=
+  =
   let elist_path = StrexpMatch.path_to_exps path in
   let expmap_list =
     list_fold_left (fun acc_outer e_path ->
-            list_fold_left (fun acc_inner (old_index, new_index) ->
-                    let old_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, old_index)) in
-                    let new_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, new_index)) in
-                    (old_e_path_index, new_e_path_index) :: acc_inner
-              ) acc_outer map
+        list_fold_left (fun acc_inner (old_index, new_index) ->
+            let old_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, old_index)) in
+            let new_e_path_index = Prop.exp_normalize_prop p (Sil.Lindex(e_path, new_index)) in
+            (old_e_path_index, new_e_path_index) :: acc_inner
+          ) acc_outer map
       ) [] elist_path in
   let expmap_fun e' =
     try
@@ -270,11 +270,11 @@ let prop_replace_path_index
   Prop.prop_expmap expmap_fun p
 
 (** This function uses [update] and transforms the two sigma parts of [p],
-the sigma of the current SH of [p] and that of the footprint of [p]. *)
+    the sigma of the current SH of [p] and that of the footprint of [p]. *)
 let prop_update_sigma_and_fp_sigma
     (p : Prop.normal Prop.t)
     (update : bool -> sigma -> sigma * bool) : Prop.normal Prop.t * bool
-=
+  =
   let sigma', changed = update false (Prop.get_sigma p) in
   let ep1 = Prop.replace_sigma sigma' p in
   let ep2, changed2 =
@@ -285,13 +285,13 @@ let prop_update_sigma_and_fp_sigma
   (Prop.normalize ep2, changed || changed2)
 
 (** This function uses [update] and transforms the sigma of the
-current SH of [p] or that of the footprint of [p], depending on
-[footprint_part]. *)
+    current SH of [p] or that of the footprint of [p], depending on
+    [footprint_part]. *)
 let prop_update_sigma_or_fp_sigma
     (footprint_part : bool)
     (p : Prop.normal Prop.t)
     (update : bool -> sigma -> sigma * bool) : Prop.normal Prop.t * bool
-=
+  =
   let ep1, changed1 =
     if footprint_part then (Prop.expose p, false)
     else
@@ -311,15 +311,15 @@ let prop_update_sigma_or_fp_sigma
 let array_abstraction_performed = ref false
 
 (** This function abstracts strexps. The parameter [can_abstract] spots strexps
-where the abstraction might be applicable, and the parameter [do_abstract] does
-the abstraction to those spotted strexps. *)
+    where the abstraction might be applicable, and the parameter [do_abstract] does
+    the abstraction to those spotted strexps. *)
 let generic_strexp_abstract
     (abstraction_name : string)
     (p_in : Prop.normal Prop.t)
     (_can_abstract : sigma -> StrexpMatch.strexp_data -> bool)
     (do_abstract : bool -> Prop.normal Prop.t -> StrexpMatch.strexp_data -> Prop.normal Prop.t * bool)
-: Prop.normal Prop.t
-=
+  : Prop.normal Prop.t
+  =
   let can_abstract s data =
     let r = _can_abstract s data in
     if r then array_abstraction_performed := true;
@@ -382,7 +382,7 @@ let blur_array_index
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
     (index: Sil.exp) : Prop.normal Prop.t
-=
+  =
   try
     let fresh_index = Sil.Var (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)) in
     let p2 =
@@ -415,7 +415,7 @@ let blur_array_indices
     (p: Prop.normal Prop.t)
     (root: StrexpMatch.path)
     (indices: Sil.exp list) : Prop.normal Prop.t * bool
-=
+  =
   let f prop index = blur_array_index footprint_part prop root index in
   (list_fold_left f p indices, list_length indices > 0)
 
@@ -426,7 +426,7 @@ let keep_only_indices
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
     (indices: Sil.exp list) : Prop.normal Prop.t * bool
-=
+  =
   let prune_sigma footprint_part sigma =
     try
       let matched = StrexpMatch.find_path sigma path in
@@ -559,8 +559,8 @@ let check_after_array_abstraction prop =
         else list_iter (fun (ind, se) -> check_se root (offs @ [Sil.Off_index ind]) typ_elem se) esel
     | Sil.Estruct (fsel, _) ->
         list_iter (fun (f, se) ->
-                let typ_f = Sil.struct_typ_fld (Some Sil.Tvoid) f typ in
-                check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
+            let typ_f = Sil.struct_typ_fld (Some Sil.Tvoid) f typ in
+            check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->
         let typ = Sil.texp_to_typ (Some Sil.Tvoid) texp in
@@ -593,7 +593,7 @@ let remove_redundant_elements prop =
     let favl_foot = Sil.fav_to_list fav_foot in
     Sil.fav_duplicates := false;
     (* L.d_str "favl_curr "; list_iter (fun id -> Sil.d_exp (Sil.Var id)) favl_curr; L.d_ln();
-    L.d_str "favl_foot "; list_iter (fun id -> Sil.d_exp (Sil.Var id)) favl_foot; L.d_ln(); *)
+       L.d_str "favl_foot "; list_iter (fun id -> Sil.d_exp (Sil.Var id)) favl_foot; L.d_ln(); *)
     let num_occur l id = list_length (list_filter (fun id' -> Ident.equal id id') l) in
     let at_most_once v =
       num_occur favl_curr v <= 1 && num_occur favl_foot v <= 1 in

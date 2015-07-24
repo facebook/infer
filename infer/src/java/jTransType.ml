@@ -105,14 +105,14 @@ let rec array_type_to_string vt =
     match vt with
     | JBasics.TBasic bt ->
         (match bt with
-          | `Bool -> JConfig.boolean_code
-          | `Byte -> JConfig.byte_code
-          | `Char -> JConfig.char_code
-          | `Double -> JConfig.double_code
-          | `Float -> JConfig.float_code
-          | `Int -> JConfig.int_code
-          | `Long -> JConfig.long_code
-          | `Short -> JConfig.short_code)
+         | `Bool -> JConfig.boolean_code
+         | `Byte -> JConfig.byte_code
+         | `Char -> JConfig.char_code
+         | `Double -> JConfig.double_code
+         | `Float -> JConfig.float_code
+         | `Int -> JConfig.int_code
+         | `Long -> JConfig.long_code
+         | `Short -> JConfig.short_code)
     | JBasics.TObject ot -> object_type_to_string' ot in
   "["^s
 and object_type_to_string' ot =
@@ -158,7 +158,7 @@ let package_to_string p =
 
 let cn_to_java_type cn =
   (package_to_string (JBasics.cn_package cn),
-    (JBasics.cn_simple_name cn))
+   (JBasics.cn_simple_name cn))
 
 
 let rec vt_to_java_type vt =
@@ -274,7 +274,7 @@ let collect_models_class_fields classpath_field_map static cn cf l =
             (Sil.pp_typ_full pe_text) classpath_ft
             (Sil.pp_typ_full pe_text) field_type in l
     with Not_found ->
-        (field_name, field_type, annotation):: l
+      (field_name, field_type, annotation):: l
 
 
 let add_model_fields program (static_fields, nonstatic_fields) cn =
@@ -312,7 +312,7 @@ let rec create_sil_type program tenv cn =
             let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
             (sil_interface_list, [], static_fields, item_annotation)
         | Javalib.JClass jclass ->
-        (* TODO: create two functions to get static fields and non-static ones *)
+            (* TODO: create two functions to get static fields and non-static ones *)
             let static_fields, nonstatic_fields =
               let classpath_static_fields = get_all_fields program true cn
               and classpath_nonstatic_fields = get_all_fields program false cn in
@@ -421,7 +421,7 @@ let extract_array_type typ =
 
 
 (** translate the type of an expression, looking in the method signature for formal parameters
-this is because variables in expressions do not have accurate types *)
+    this is because variables in expressions do not have accurate types *)
 let rec expr_type context expr =
   let program = JContext.get_program context in
   let tenv = JContext.get_tenv context in
@@ -429,8 +429,8 @@ let rec expr_type context expr =
   | JBir.Const const -> value_type program tenv (const_type const)
   | JBir.Var (vt, var) ->
       (match get_var_type context var with
-        | Some typ -> typ
-        | None -> (value_type program tenv vt))
+       | Some typ -> typ
+       | None -> (value_type program tenv vt))
   | JBir.Binop ((JBir.ArrayLoad typ), e1, e2) ->
       let typ = expr_type context e1 in
       (extract_array_type typ)
@@ -438,8 +438,8 @@ let rec expr_type context expr =
 
 
 (** Returns the return type of the method based on the return type
-specified in ms. If the method is the initialiser, return the type
-Object instead. *)
+    specified in ms. If the method is the initialiser, return the type
+    Object instead. *)
 let return_type program tenv ms meth_kind =
   if meth_kind = JContext.Init then
     get_class_type program tenv (JBasics.make_cn JConfig.object_cl)
@@ -467,7 +467,7 @@ let saturate_tenv_with_classpath classpath tenv =
     Sil.TN_csu (Sil.Class, classname) in
   let rec is_useful_subtype jar_tenv = function
     | Sil.TN_csu (Sil.Class, classname) when
-    Mangled.equal classname JConfig.java_lang_object_classname -> false
+        Mangled.equal classname JConfig.java_lang_object_classname -> false
     | typename when Sil.tenv_mem tenv typename -> true
     | typename ->
         begin
@@ -515,8 +515,8 @@ let never_returning_null =
   let fragment_type = "android.support.v4.app.Fragment" in
   let never_null_method_sigs =
     [
-    (fragment_type, "getContext", [], "android.content.Context", Procname.Non_Static);
-    (fragment_type, "getActivity", [], "android.support.v4.app.FragmentActivity", Procname.Non_Static)
+      (fragment_type, "getContext", [], "android.content.Context", Procname.Non_Static);
+      (fragment_type, "getActivity", [], "android.support.v4.app.FragmentActivity", Procname.Non_Static)
     ] in
   let make_procname = function
     | (class_name, method_name, arg_types, ret_type, kind) ->

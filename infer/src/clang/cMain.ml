@@ -8,8 +8,8 @@
  *)
 
 (* Take as input an ast file and a C or ObjectiveC file such that the ast file
-corresponds to the compilation of the C file with clang.
-Parse the ast file into a data structure and translates it into a cfg. *)
+   corresponds to the compilation of the C file with clang.
+   Parse the ast file into a data structure and translates it into a cfg. *)
 
 module L = Logging
 
@@ -26,55 +26,55 @@ let arg_desc =
     let desc =
       (filter Utils.base_arg_desc) @
       [
-      "-c",
-      Arg.String (fun cfile -> source_file := Some cfile),
-      Some "cfile",
-      "C File to translate";
-      "-x",
-      Arg.String (fun lang -> CFrontend_config.lang_from_string lang),
-      Some "cfile",
-      "Language (c, objective-c, c++, objc-++)";
-      "-ast",
-      Arg.String (fun file -> ast_file := Some file),
-      Some "file",
-      "AST file for the translation";
-      "-dotty_cfg_libs",
-      Arg.Unit (fun _ -> Config.dotty_cfg_libs := true),
-      None,
-      "Prints the cfg of the code coming from the libraries";
-      "-no_headers",
-      Arg.Unit (fun _ -> CFrontend_config.no_translate_libs := true),
-      None,
-      "Do not translate code in header files (default)";
-      "-headers",
-      Arg.Unit (fun _ -> CFrontend_config.no_translate_libs := false),
-      None,
-      "Translate code in header files";
-      "-testing_mode",
-      Arg.Unit (fun _ -> CFrontend_config.testing_mode := true),
-      None,
-      "Mode for testing, where no libraries are translated, including enums defined in the libraries";
-      "-debug",
-      Arg.Unit (fun _ -> CFrontend_config.debug_mode := true),
-      None,
-      "Enables debug mode";
-      "-stats",
-      Arg.Unit (fun _ -> CFrontend_config.stats_mode := true),
-      None,
-      "Enables stats mode";
-      "-project_root",
-      Arg.String (fun s ->
+        "-c",
+        Arg.String (fun cfile -> source_file := Some cfile),
+        Some "cfile",
+        "C File to translate";
+        "-x",
+        Arg.String (fun lang -> CFrontend_config.lang_from_string lang),
+        Some "cfile",
+        "Language (c, objective-c, c++, objc-++)";
+        "-ast",
+        Arg.String (fun file -> ast_file := Some file),
+        Some "file",
+        "AST file for the translation";
+        "-dotty_cfg_libs",
+        Arg.Unit (fun _ -> Config.dotty_cfg_libs := true),
+        None,
+        "Prints the cfg of the code coming from the libraries";
+        "-no_headers",
+        Arg.Unit (fun _ -> CFrontend_config.no_translate_libs := true),
+        None,
+        "Do not translate code in header files (default)";
+        "-headers",
+        Arg.Unit (fun _ -> CFrontend_config.no_translate_libs := false),
+        None,
+        "Translate code in header files";
+        "-testing_mode",
+        Arg.Unit (fun _ -> CFrontend_config.testing_mode := true),
+        None,
+        "Mode for testing, where no libraries are translated, including enums defined in the libraries";
+        "-debug",
+        Arg.Unit (fun _ -> CFrontend_config.debug_mode := true),
+        None,
+        "Enables debug mode";
+        "-stats",
+        Arg.Unit (fun _ -> CFrontend_config.stats_mode := true),
+        None,
+        "Enables stats mode";
+        "-project_root",
+        Arg.String (fun s ->
             Config.project_root := Some (Utils.filename_to_absolute s)),
-      Some "dir",
-      "Toot directory of the project";
-      "-fobjc-arc",
-      Arg.Unit (fun s -> Config.arc_mode := true),
-      None,
-      "Translate with Objective-C Automatic Reference Counting (ARC)";
-      "-models_mode",
-      Arg.Unit (fun _ -> CFrontend_config.models_mode := true),
-      None,
-      "Mode for computing the models";
+        Some "dir",
+        "Toot directory of the project";
+        "-fobjc-arc",
+        Arg.Unit (fun s -> Config.arc_mode := true),
+        None,
+        "Translate with Objective-C Automatic Reference Counting (ARC)";
+        "-models_mode",
+        Arg.Unit (fun _ -> CFrontend_config.models_mode := true),
+        None,
+        "Mode for computing the models";
       ] in
     Utils.Arg2.create_options_desc false "Parsing Options" desc in
   base_arg
@@ -123,7 +123,7 @@ let _ =
   Config.print_types:= true;
   if Option.is_none !source_file then
     (Printing.log_err "Incorrect command line arguments\n";
-      print_usage_exit ())
+     print_usage_exit ())
   else
     match !source_file with
     | Some path -> do_run path !ast_file

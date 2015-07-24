@@ -32,8 +32,8 @@ let fields_superclass tenv interface_decl_info =
   match interface_decl_info.Clang_ast_t.otdi_super with
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
-        | Some sc -> get_fields_super_classes tenv (CTypes.mk_classname sc.Clang_ast_t.ni_name)
-        | _ -> [])
+       | Some sc -> get_fields_super_classes tenv (CTypes.mk_classname sc.Clang_ast_t.ni_name)
+       | _ -> [])
   | _ -> []
 
 let get_field_www name_field fl =
@@ -70,12 +70,12 @@ let ivar_property curr_class ivar =
   match ObjcProperty_decl.Property.find_property_name_from_ivar curr_class ivar with
   | Some pname' ->
       (Printing.log_out "Found property name from ivar: '%s'" pname';
-        try
-          let _, atts, _, _, _, _ = ObjcProperty_decl.Property.find_property curr_class pname' in
-          atts
-        with Not_found ->
-            Printing.log_out "Didn't find property for pname '%s'" pname';
-            [])
+       try
+         let _, atts, _, _, _, _ = ObjcProperty_decl.Property.find_property curr_class pname' in
+         atts
+       with Not_found ->
+         Printing.log_out "Didn't find property for pname '%s'" pname';
+         [])
   | None -> Printing.log_out "No property found for ivar '%s'@." ivar;
       []
 
@@ -102,7 +102,7 @@ let rec get_fields tenv curr_class decl_list =
 
       Printing.log_out "  ...Resulting sil field: (%s) with attributes:@." ((Ident.fieldname_to_string fname) ^":"^(Sil.typ_to_string typ));
       list_iter (fun (ia', _) ->
-              list_iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;
+          list_iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;
       (fname, typ, ia):: fields
 
   | ObjCPropertyImplDecl(decl_info, property_impl_decl_info):: decl_list' ->

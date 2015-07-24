@@ -27,10 +27,10 @@ type file_data =
 (** get the path to the tenv file, which either one tenv file per source file or a global tenv file *)
 let tenv_filename file_base =
   let per_source_tenv_filename = DB.filename_add_suffix file_base ".tenv" in
-    if Sys.file_exists (DB.filename_to_string per_source_tenv_filename) then
-      per_source_tenv_filename
-    else
-      DB.global_tenv_fname ()
+  if Sys.file_exists (DB.filename_to_string per_source_tenv_filename) then
+    per_source_tenv_filename
+  else
+    DB.global_tenv_fname ()
 
 (** create a new file_data *)
 let new_file_data source nLOC cg_fname =
@@ -90,14 +90,14 @@ let add_callee (exe_env: t) (source_file : DB.source_file) (pname: Procname.t) =
   let file_data_opt =
     try Some (Hashtbl.find exe_env.file_map source_file)
     with Not_found ->
-        let source_dir = DB.source_dir_from_source_file source_file in
-        let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-        (match Cg.load_from_file cg_fname with
-          | None -> None
-          | Some cg ->
-              let nLOC = Cg.get_nLOC cg in
-              let file_data = new_file_data source_file nLOC cg_fname in
-              Some file_data) in
+      let source_dir = DB.source_dir_from_source_file source_file in
+      let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
+      (match Cg.load_from_file cg_fname with
+       | None -> None
+       | Some cg ->
+           let nLOC = Cg.get_nLOC cg in
+           let file_data = new_file_data source_file nLOC cg_fname in
+           Some file_data) in
   match file_data_opt with
   | None -> ()
   | Some file_data ->
@@ -120,14 +120,14 @@ let add_cg_exclude_fun (exe_env: t) (source_dir : DB.source_dir) exclude_fun =
     let file_data = new_file_data source nLOC cg_fname in
     let defined_procs = Cg.get_defined_nodes cg in
     list_iter (fun pname ->
-            let should_update =
-              if Procname.Hash.mem exe_env.proc_map pname then
-                let old_source = (Procname.Hash.find exe_env.proc_map pname).source in
-                exe_env.procs_defined_in_several_files <- Procname.Set.add pname exe_env.procs_defined_in_several_files;
-                (* L.err "Warning: procedure %a is defined in both %s and %s@." Procname.pp pname (DB.source_file_to_string source) (DB.source_file_to_string old_source); *)
-                source < old_source (* when a procedure is defined in several files, map to the first alphabetically *)
-              else true in
-            if should_update then Procname.Hash.replace exe_env.proc_map pname file_data) defined_procs;
+        let should_update =
+          if Procname.Hash.mem exe_env.proc_map pname then
+            let old_source = (Procname.Hash.find exe_env.proc_map pname).source in
+            exe_env.procs_defined_in_several_files <- Procname.Set.add pname exe_env.procs_defined_in_several_files;
+            (* L.err "Warning: procedure %a is defined in both %s and %s@." Procname.pp pname (DB.source_file_to_string source) (DB.source_file_to_string old_source); *)
+            source < old_source (* when a procedure is defined in several files, map to the first alphabetically *)
+          else true in
+        if should_update then Procname.Hash.replace exe_env.proc_map pname file_data) defined_procs;
     Hashtbl.add exe_env.file_map source file_data;
     Some cg
 
@@ -160,8 +160,8 @@ let get_file_data exe_env pname =
   try
     Procname.Hash.find exe_env.proc_map pname
   with Not_found ->
-      L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
-      raise Not_found
+    L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
+    raise Not_found
 
 (** return the source file associated to the procedure *)
 let get_source exe_env pname =

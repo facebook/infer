@@ -93,9 +93,9 @@ let objc_ml_buckets_arg = ref "cf"
 let allow_specs_cleanup = ref false
 
 (** Compute the exclude function from excluded_files and source_path.
-The exclude function builds an exclude list of file path prefixes, and checks if one
-of them is a prefix of the given source file.
-Prefixes are obtained by prepending source_path, if any, to relative paths in excluded_fies *)
+    The exclude function builds an exclude list of file path prefixes, and checks if one
+    of them is a prefix of the given source file.
+    Prefixes are obtained by prepending source_path, if any, to relative paths in excluded_fies *)
 let compute_exclude_fun () : DB.source_file -> bool =
   let prepend_source_path s =
     if Filename.is_relative s then Filename.concat !source_path s
@@ -133,53 +133,53 @@ let arg_desc =
     let desc =
       base_arg_desc @
       [
-      "-err_file", Arg.Set_string err_file_cmdline, Some "file", "use file for the err channel";
-      "-exclude", Arg.String exclude, Some "file", "exclude from analysis the files and directories specified in file";
-      "-incremental_ignore_dependencies", Arg.Unit (fun () -> incremental_mode := ANALYZE_CHANGED_ONLY), None, "only analyze files captured since the last analysis";
-      "-incremental", Arg.Unit (fun () -> incremental_mode := ANALYZE_CHANGED_AND_DEPENDENCIES), None, "analyze files captured since the last analysis plus any dependencies";
-      "-iterations", Arg.Set_int iterations_cmdline, Some "n", "set the max number of operations for each function, expressed as a multiple of symbolic operations (default n=1)";
-      "-nonstop", Arg.Set Config.nonstop, None, "activate the nonstop mode: the analysis continues after finding errors. With this option the analysis can become less precise.";
-      "-out_file", Arg.Set_string out_file_cmdline, Some "file", "use file for the out channel";
-      "-print_builtins", Arg.Unit SymExec.print_builtins, None, "print the builtin functions and exit";
-      "-source_path", Arg.String source_path, Some "path", "specify the absolute path to the root of the source files. Used to interpret relative paths when using option -exclude.";
-      (* TODO: merge with the -project_root option *)
-      "-java", Arg.Unit (fun () -> Sil.curr_language := Sil.Java), None, "Set language to Java";
-      "-version", Arg.Unit print_version, None, "print version information and exit";
-      "-version_json", Arg.Unit print_version_json, None, "print version json formatted";
-      "-objcm", Arg.Set Config.objc_memory_model_on, None, "Use ObjC memory model";
-      "-objc_ml_buckets", Arg.Set_string objc_ml_buckets_arg, Some "objc_ml_buckets",
-      "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc)";
+        "-err_file", Arg.Set_string err_file_cmdline, Some "file", "use file for the err channel";
+        "-exclude", Arg.String exclude, Some "file", "exclude from analysis the files and directories specified in file";
+        "-incremental_ignore_dependencies", Arg.Unit (fun () -> incremental_mode := ANALYZE_CHANGED_ONLY), None, "only analyze files captured since the last analysis";
+        "-incremental", Arg.Unit (fun () -> incremental_mode := ANALYZE_CHANGED_AND_DEPENDENCIES), None, "analyze files captured since the last analysis plus any dependencies";
+        "-iterations", Arg.Set_int iterations_cmdline, Some "n", "set the max number of operations for each function, expressed as a multiple of symbolic operations (default n=1)";
+        "-nonstop", Arg.Set Config.nonstop, None, "activate the nonstop mode: the analysis continues after finding errors. With this option the analysis can become less precise.";
+        "-out_file", Arg.Set_string out_file_cmdline, Some "file", "use file for the out channel";
+        "-print_builtins", Arg.Unit SymExec.print_builtins, None, "print the builtin functions and exit";
+        "-source_path", Arg.String source_path, Some "path", "specify the absolute path to the root of the source files. Used to interpret relative paths when using option -exclude.";
+        (* TODO: merge with the -project_root option *)
+        "-java", Arg.Unit (fun () -> Sil.curr_language := Sil.Java), None, "Set language to Java";
+        "-version", Arg.Unit print_version, None, "print version information and exit";
+        "-version_json", Arg.Unit print_version_json, None, "print version json formatted";
+        "-objcm", Arg.Set Config.objc_memory_model_on, None, "Use ObjC memory model";
+        "-objc_ml_buckets", Arg.Set_string objc_ml_buckets_arg, Some "objc_ml_buckets",
+        "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc)";
       ] in
     Arg2.create_options_desc false "Analysis Options" desc in
   let reserved_arg =
     let desc =
       reserved_arg_desc @
       [
-      "-analysis_stops", Arg.Set Config.analysis_stops, None, "issue a warning when the analysis stops";
-      "-angelic_execution", Arg.Set Config.angelic_execution, None, "activate angelic execution: the analysis ignores errors caused by unknown procedure calls.";
-      "-checkers", Arg.Set checkers, None, " run only the checkers instead of the full analysis";
-      "-cluster", Arg.String (fun s -> cluster_cmdline := Some s), Some "fname", "specify a .cluster file to be analyzed";
-      "-codequery", Arg.String (fun s -> CodeQuery.query := Some s), Some "query", " execute the code query";
-      "-eradicate", Arg.Set Config.eradicate, None, " activate the eradicate checker for java annotations";
-      "-file", Arg.String (fun s -> only_files_cmdline := s :: !only_files_cmdline), Some "fname", "specify one file to be analyzed (without path); the option can be repeated";
-      "-intraprocedural", Arg.Set Config.intraprocedural, None, "perform an intraprocedural analysis only";
-      "-makefile", Arg.Set_string makefile_cmdline, Some "file", "create a makefile to perform the analysis";
-      "-max_cluster", Arg.Set_int Config.max_cluster_size, Some "n", "set the max number of procedures in each cluster (default n=2000)";
-      "-only_nospecs", Arg.Set Config.only_nospecs, None, " only analyze procedures which were analyzed before but have no specs";
-      "-only_skips", Arg.Set Config.only_skips, None, " only analyze procedures dependent on previous skips which now have a .specs file";
-      "-seconds_per_iteration", Arg.Set_int seconds_per_iteration, Some "n", "set the number of seconds per iteration (default n=30)";
-      "-simulate", Arg.Set simulate, None, " run a simulation of the analysis only";
-      "-subtype_multirange", Arg.Set Config.subtype_multirange, None, "use the multirange subtyping domain";
-      "-optimistic_cast", Arg.Set Config.optimistic_cast, None, "allow cast of undefined values";
-      "-select_proc", Arg.String (fun s -> select_proc := Some s), Some "string", "only consider procedures whose name contains the given string";
-      "-symops_per_iteration", Arg.Set_int symops_per_iteration, Some "n", "set the number of symbolic operations per iteration (default n="^(string_of_int !symops_per_iteration)^")";
-      "-type_size", Arg.Set Config.type_size, None, "consider the size of types during analysis";
-      "-tracing", Arg.Unit (fun () -> Config.report_runtime_exceptions := true), None,
-      "Report error traces for runtime exceptions (Only for Java)";
-      "-allow_specs_cleanup", Arg.Unit (fun () -> allow_specs_cleanup := true), None,
-      "Allow to remove existing specs before running analysis when it's not incremental";
-      "-print_buckets", Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true), None,
-      "Add buckets to issue descriptions, useful when developing infer"
+        "-analysis_stops", Arg.Set Config.analysis_stops, None, "issue a warning when the analysis stops";
+        "-angelic_execution", Arg.Set Config.angelic_execution, None, "activate angelic execution: the analysis ignores errors caused by unknown procedure calls.";
+        "-checkers", Arg.Set checkers, None, " run only the checkers instead of the full analysis";
+        "-cluster", Arg.String (fun s -> cluster_cmdline := Some s), Some "fname", "specify a .cluster file to be analyzed";
+        "-codequery", Arg.String (fun s -> CodeQuery.query := Some s), Some "query", " execute the code query";
+        "-eradicate", Arg.Set Config.eradicate, None, " activate the eradicate checker for java annotations";
+        "-file", Arg.String (fun s -> only_files_cmdline := s :: !only_files_cmdline), Some "fname", "specify one file to be analyzed (without path); the option can be repeated";
+        "-intraprocedural", Arg.Set Config.intraprocedural, None, "perform an intraprocedural analysis only";
+        "-makefile", Arg.Set_string makefile_cmdline, Some "file", "create a makefile to perform the analysis";
+        "-max_cluster", Arg.Set_int Config.max_cluster_size, Some "n", "set the max number of procedures in each cluster (default n=2000)";
+        "-only_nospecs", Arg.Set Config.only_nospecs, None, " only analyze procedures which were analyzed before but have no specs";
+        "-only_skips", Arg.Set Config.only_skips, None, " only analyze procedures dependent on previous skips which now have a .specs file";
+        "-seconds_per_iteration", Arg.Set_int seconds_per_iteration, Some "n", "set the number of seconds per iteration (default n=30)";
+        "-simulate", Arg.Set simulate, None, " run a simulation of the analysis only";
+        "-subtype_multirange", Arg.Set Config.subtype_multirange, None, "use the multirange subtyping domain";
+        "-optimistic_cast", Arg.Set Config.optimistic_cast, None, "allow cast of undefined values";
+        "-select_proc", Arg.String (fun s -> select_proc := Some s), Some "string", "only consider procedures whose name contains the given string";
+        "-symops_per_iteration", Arg.Set_int symops_per_iteration, Some "n", "set the number of symbolic operations per iteration (default n="^(string_of_int !symops_per_iteration)^")";
+        "-type_size", Arg.Set Config.type_size, None, "consider the size of types during analysis";
+        "-tracing", Arg.Unit (fun () -> Config.report_runtime_exceptions := true), None,
+        "Report error traces for runtime exceptions (Only for Java)";
+        "-allow_specs_cleanup", Arg.Unit (fun () -> allow_specs_cleanup := true), None,
+        "Allow to remove existing specs before running analysis when it's not incremental";
+        "-print_buckets", Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true), None,
+        "Add buckets to issue descriptions, useful when developing infer"
       ] in
     Arg2.create_options_desc false "Reserved Options: Experimental features, use with caution!" desc in
   base_arg @ reserved_arg
@@ -210,7 +210,7 @@ module Simulator = struct (** Simulate the analysis only *)
       (Cg.get_nodes_and_calls cg)
 
   (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
-  the procedures enabled after the analysis of [proc_name] *)
+      the procedures enabled after the analysis of [proc_name] *)
   let perform_transition exe_env proc_name =
     let proc_names = Fork.should_perform_transition (Exe_env.get_cg exe_env) proc_name in
     let f proc_name =
@@ -242,23 +242,23 @@ let analyze exe_env =
   Random.self_init ();
   let line_reader = Printer.LineReader.create () in
   if !checkers then (* run the checkers only *)
-  begin
-    let call_graph = Exe_env.get_cg exe_env in
-    Callbacks.iterate_callbacks Checkers.ST.store_summary call_graph exe_env
-  end
+    begin
+      let call_graph = Exe_env.get_cg exe_env in
+      Callbacks.iterate_callbacks Checkers.ST.store_summary call_graph exe_env
+    end
   else if !simulate then (* simulate the analysis *)
-  begin
-    Simulator.reset_summaries (Exe_env.get_cg exe_env);
-    Fork.parallel_iter_nodes exe_env (Simulator.analyze_proc exe_env) Simulator.process_result Simulator.filter_out
-  end
+    begin
+      Simulator.reset_summaries (Exe_env.get_cg exe_env);
+      Fork.parallel_iter_nodes exe_env (Simulator.analyze_proc exe_env) Simulator.process_result Simulator.filter_out
+    end
   else (* full analysis *)
-  begin
-    Interproc.do_analysis exe_env;
-    Printer.c_files_write_html line_reader exe_env;
-    Interproc.print_stats exe_env;
-    let elapsed = Unix.gettimeofday () -. init_time in
-    L.out "Interprocedural footprint analysis terminated in %f sec@." elapsed
-  end
+    begin
+      Interproc.do_analysis exe_env;
+      Printer.c_files_write_html line_reader exe_env;
+      Interproc.print_stats exe_env;
+      let elapsed = Unix.gettimeofday () -. init_time in
+      L.out "Interprocedural footprint analysis terminated in %f sec@." elapsed
+    end
 
 (** add [x] to list [l] at position [nth] *)
 let list_add_nth x l nth =
@@ -270,7 +270,7 @@ let list_add_nth x l nth =
   add [] l nth
 
 (** sort a list weakly w.r.t. a compare function which doest not have to be a total order
-the number returned by [compare x y] indicates 'how strongly' x should come before y *)
+    the number returned by [compare x y] indicates 'how strongly' x should come before y *)
 let weak_sort compare list =
   let weak_add l x =
     let length = list_length l in
@@ -280,14 +280,14 @@ let weak_sort compare list =
     let best_value = ref (fitness.(0)) in
     let i = ref 0 in
     list_iter (fun y ->
-            incr i;
-            let new_value = fitness.(!i - 1) - (compare x y) + (compare y x) in
-            fitness.(!i) <- new_value;
-            if new_value < !best_value then
-              begin
-                best_value := new_value;
-                best_position := !i
-              end)
+        incr i;
+        let new_value = fitness.(!i - 1) - (compare x y) + (compare y x) in
+        fitness.(!i) <- new_value;
+        if new_value < !best_value then
+          begin
+            best_value := new_value;
+            best_position := !i
+          end)
       l;
     list_add_nth x l !best_position in
   list_fold_left weak_add [] list
@@ -316,8 +316,8 @@ let weak_sort_nodes cg =
   weak_sort cmp nodes
 
 (** cluster element: the file name, the number of procedures defined in it, and the list of active procedures
-A procedure is active if it is defined only in this file, or if it is defined in several files and this
-is the representative file for it (see Exe_env.add_cg) *)
+    A procedure is active if it is defined only in this file, or if it is defined in several files and this
+    is the representative file for it (see Exe_env.add_cg) *)
 type cluster_elem =
   { ce_file : DB.source_file;
     ce_naprocs : int; (** number of active procedures defined in the file *)
@@ -364,7 +364,7 @@ let create_minimal_clusters file_cg exe_env (only_analyze : Procname.Set.t optio
     match Cg.load_from_file cg_fname with
     | None -> { ce_file = source_file; ce_naprocs = 0; ce_active_procs = []; ce_source_map = Procname.Map.empty }
     | Some cg ->
-    (* decide whether a proc is active using pname_to_fname, i.e. whether this is the file associated to it *)
+        (* decide whether a proc is active using pname_to_fname, i.e. whether this is the file associated to it *)
         let proc_is_selected pname = match !select_proc with
           | None -> true
           | Some pattern_str -> string_is_prefix pattern_str (Procname.to_unique_id pname) in
@@ -411,9 +411,9 @@ let create_minimal_clusters file_cg exe_env (only_analyze : Procname.Set.t optio
           let cluster, list'' = list_partition (fun node -> Procname.Set.mem node cluster_set) list in
           seen := Procname.Set.union !seen cluster_set;
           let files_to_analyze = list_filter (fun node ->
-                    match only_analyze with
-                    | None -> true
-                    | Some files_to_analyze -> Procname.Set.mem node files_to_analyze) cluster in
+              match only_analyze with
+              | None -> true
+              | Some files_to_analyze -> Procname.Set.mem node files_to_analyze) cluster in
           if files_to_analyze <> [] then
             begin
               let cluster = list_map create_cluster_elem files_to_analyze in
@@ -553,7 +553,7 @@ module ClusterMakefile = struct
       list_iter (fun ce -> file_to_cluster := DB.SourceFileMap.add ce.ce_file !cluster_nr !file_to_cluster) cluster;
       list_iter do_file cluster;
       pp_cluster_dependency !cluster_nr tot_clusters_nr cluster print_files fmt (IntSet.elements !dependent_clusters);
-    (* L.err "cluster %d has %d dependencies@." !cluster_nr (IntSet.cardinal !dependent_clusters) *) in
+      (* L.err "cluster %d has %d dependencies@." !cluster_nr (IntSet.cardinal !dependent_clusters) *) in
     pp_prolog fmt tot_clusters_nr;
     list_iter do_cluster clusters;
     pp_epilog fmt ();
@@ -590,12 +590,12 @@ let compute_clusters exe_env (files_changed : Procname.Set.t) : cluster list =
   if !incremental_mode != ANALYZE_ALL then
     begin
       Procname.Set.iter (fun c_file ->
-              let ancestors =
-                try Cg.get_ancestors file_cg c_file with
-                | Not_found ->
-                    L.err "Warning: modified file %s is ignored, all its functions might be already defined in another file@." (Procname.to_string c_file);
-                    Procname.Set.empty in
-              files_changed_and_dependents := Procname.Set.union ancestors !files_changed_and_dependents) files_changed;
+          let ancestors =
+            try Cg.get_ancestors file_cg c_file with
+            | Not_found ->
+                L.err "Warning: modified file %s is ignored, all its functions might be already defined in another file@." (Procname.to_string c_file);
+                Procname.Set.empty in
+          files_changed_and_dependents := Procname.Set.union ancestors !files_changed_and_dependents) files_changed;
       L.err "Number of files changed since the last analysis: %d.@." (Procname.Set.cardinal files_changed)
     end
   else L.err ".@.";
@@ -625,7 +625,7 @@ let compute_clusters exe_env (files_changed : Procname.Set.t) : cluster list =
   clusters'
 
 (** Check whether the cg file is changed. It is unchanged if for each defined procedure, the .specs
-file exists and is more recent than the cg file. *)
+    file exists and is more recent than the cg file. *)
 let cg_check_changed exe_env source_dir cg =
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
   let defined_nodes = Cg.get_defined_nodes cg in
@@ -637,7 +637,7 @@ let cg_check_changed exe_env source_dir cg =
     let spec_fname = Specs.res_dir_specs_filename pname in
     if is_active then
       changed := (!changed || not (Sys.file_exists (DB.filename_to_string spec_fname)) ||
-        DB.file_modified_time cg_fname > DB.file_modified_time spec_fname) in
+                  DB.file_modified_time cg_fname > DB.file_modified_time spec_fname) in
   list_iter check_needs_update defined_nodes;
   !changed
 
@@ -658,13 +658,13 @@ let load_cg_files _exe_env check_changed (source_dirs : DB.source_dir list) excl
     let check_cg_changed (source_dir, cg) =
       let is_changed = cg_check_changed exe_env source_dir cg in
       if is_changed then files_changed :=
-        Procname.Set.add (source_file_to_pname (Cg.get_source cg)) !files_changed in
+          Procname.Set.add (source_file_to_pname (Cg.get_source cg)) !files_changed in
     list_iter check_cg_changed !cg_list in
   list_iter (fun source_dir ->
-          match load_cg_file _exe_env source_dir exclude_fun with
-          | None -> ()
-          | Some cg ->
-              if check_changed then cg_list := (source_dir, cg) :: !cg_list) sorted_dirs;
+      match load_cg_file _exe_env source_dir exclude_fun with
+      | None -> ()
+      | Some cg ->
+          if check_changed then cg_list := (source_dir, cg) :: !cg_list) sorted_dirs;
   let exe_env = Exe_env.freeze _exe_env in
   if check_changed then check_cgs_changed exe_env;
   !files_changed, exe_env
@@ -706,14 +706,14 @@ let process_cluster_cmdline_exit () =
   | None -> ()
   | Some fname ->
       (match load_cluster_from_file (DB.filename_from_string fname) with
-        | None ->
-            L.err "Cannot find cluster file %s@." fname;
-            exit 0
-        | Some (nr, tot_nr, cluster) ->
-            Fork.tot_files_done := (nr - 1) * list_length cluster;
-            Fork.tot_files := tot_nr * list_length cluster;
-            analyze_cluster (ref (nr -1)) tot_nr cluster;
-            exit 0)
+       | None ->
+           L.err "Cannot find cluster file %s@." fname;
+           exit 0
+       | Some (nr, tot_nr, cluster) ->
+           Fork.tot_files_done := (nr - 1) * list_length cluster;
+           Fork.tot_files := tot_nr * list_length cluster;
+           analyze_cluster (ref (nr -1)) tot_nr cluster;
+           exit 0)
 
 let open_output_file f fname =
   try
@@ -722,8 +722,8 @@ let open_output_file f fname =
     f fmt;
     Some (fmt, cout)
   with Sys_error _ ->
-      Format.fprintf Format.std_formatter "Error: cannot open output file %s@." fname;
-      exit(-1)
+    Format.fprintf Format.std_formatter "Error: cannot open output file %s@." fname;
+    exit(-1)
 
 let close_output_file = function
   | None -> ()

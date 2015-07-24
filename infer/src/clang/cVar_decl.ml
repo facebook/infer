@@ -56,7 +56,7 @@ let rec lookup_ahead_for_vardecl context pointer var_name kind decl_list =
         let global_var = CGlobal_vars.find mangled_var_name in
         CGlobal_vars.var_get_name global_var)
       else (Printing.log_out "SKIPPING VarDecl for '%s'\n" var_name;
-        lookup_ahead_for_vardecl context pointer var_name kind rest)
+            lookup_ahead_for_vardecl context pointer var_name kind rest)
   | _ :: rest ->
       lookup_ahead_for_vardecl context pointer var_name kind rest
 
@@ -94,9 +94,9 @@ let lookup_var stmt_info context pointer var_name kind =
       try
         lookup_var_static_globals context var_name
       with Not_found ->
-          (Printing.log_out "Looking on later-defined decls for '%s' with pointer '%s' \n" var_name stmt_info.Clang_ast_t.si_pointer;
-            let decl_list = !CFrontend_config.global_translation_unit_decls in
-            lookup_ahead_for_vardecl context pointer var_name kind decl_list )
+        (Printing.log_out "Looking on later-defined decls for '%s' with pointer '%s' \n" var_name stmt_info.Clang_ast_t.si_pointer;
+         let decl_list = !CFrontend_config.global_translation_unit_decls in
+         lookup_ahead_for_vardecl context pointer var_name kind decl_list )
 
 (* Traverses the body of the method top down and collects the                                 *)
 (* variable definitions in a map in the context. To be able to find the right variable name   *)
@@ -108,17 +108,17 @@ let rec get_variables_stmt context (stmt : Clang_ast_t.stmt) : unit =
       get_variables_decls context decl_list;
       get_fun_locals context lstmt;
   | DeclRefExpr(stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
-  (* Notice that DeclRefExpr is the reference to a declared var/function/enum... *)
-  (* so no declaration here *)
+      (* Notice that DeclRefExpr is the reference to a declared var/function/enum... *)
+      (* so no declaration here *)
       Printing.log_out "Collecting variables, passing from DeclRefExpr '%s'\n"
         stmt_info.Clang_ast_t.si_pointer;
       let var_name = CTrans_utils.get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
       let kind = CTrans_utils.get_decl_kind decl_ref_expr_info in
       (match kind with
-        | `EnumConstant | `ObjCIvar | `CXXMethod | `ObjCProperty -> ()
-        | _ ->
-            let pvar = lookup_var stmt_info context stmt_info.Clang_ast_t.si_pointer var_name kind in
-            CContext.LocalVars.add_pointer_var stmt_info.Clang_ast_t.si_pointer pvar context)
+       | `EnumConstant | `ObjCIvar | `CXXMethod | `ObjCProperty -> ()
+       | _ ->
+           let pvar = lookup_var stmt_info context stmt_info.Clang_ast_t.si_pointer var_name kind in
+           CContext.LocalVars.add_pointer_var stmt_info.Clang_ast_t.si_pointer pvar context)
   | CompoundStmt(stmt_info, lstmt) ->
       Printing.log_out "Collecting variables, passing from CompoundStmt '%s'\n"
         stmt_info.Clang_ast_t.si_pointer;
@@ -147,15 +147,15 @@ and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
         let name = name_info.Clang_ast_t.ni_name in
         let typ = get_var_type context.CContext.tenv name qual_type in
         (match var_decl_info.Clang_ast_t.vdi_storage_class with
-          | Some "static" ->
-              let pname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
-              let static_name = (Procname.to_string pname)^"_"^name in
-              CGlobal_vars.add static_name typ;
-              let var = Sil.mk_pvar_global (Mangled.from_string static_name) in
-              CContext.LocalVars.add_pointer_var decl_info.Clang_ast_t.di_pointer var context
-          | _ ->
-              CContext.LocalVars.add_local_var context name typ decl_info.Clang_ast_t.di_pointer
-                (CFrontend_utils.General_utils.is_static_var var_decl_info))
+         | Some "static" ->
+             let pname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+             let static_name = (Procname.to_string pname)^"_"^name in
+             CGlobal_vars.add static_name typ;
+             let var = Sil.mk_pvar_global (Mangled.from_string static_name) in
+             CContext.LocalVars.add_pointer_var decl_info.Clang_ast_t.di_pointer var context
+         | _ ->
+             CContext.LocalVars.add_local_var context name typ decl_info.Clang_ast_t.di_pointer
+               (CFrontend_utils.General_utils.is_static_var var_decl_info))
     | CXXRecordDecl(di, n_info, ot, dl, dci, rdi)
     | RecordDecl(di, n_info, ot, dl, dci, rdi) ->
         let typ = CTypes_decl.get_declaration_type context.CContext.tenv context.CContext.namespace
@@ -169,7 +169,7 @@ and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
           "WARNING: When collecting variables, passing from StaticAssertDecl '%s'. Skipped.\n"
           decl_info.Clang_ast_t.di_pointer
     | _ -> Printing.log_out
-          "!!! When collecting locals of a function found '%s'. Cannot continue\n\n"
-          (Clang_ast_j.string_of_decl decl);
+             "!!! When collecting locals of a function found '%s'. Cannot continue\n\n"
+             (Clang_ast_j.string_of_decl decl);
         assert false in
   list_iter do_one_decl decl_list

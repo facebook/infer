@@ -99,10 +99,10 @@ struct
     try
       Hashtbl.find goto_label_node_map label
     with Not_found ->
-        let node_name = Format.sprintf "GotoLabel_%s" label in
-        let new_node = Nodes.create_node (Cfg.Node.Skip_node node_name) [] [] sil_loc context in
-        Hashtbl.add goto_label_node_map label new_node;
-        new_node
+      let node_name = Format.sprintf "GotoLabel_%s" label in
+      let new_node = Nodes.create_node (Cfg.Node.Skip_node node_name) [] [] sil_loc context in
+      Hashtbl.add goto_label_node_map label new_node;
+      new_node
 end
 
 type continuation = {
@@ -233,8 +233,8 @@ struct
           instrs =[];
           exps = []}
     | _, true ->
-    (* We need to create a node but params also created some,*)
-    (* so we need to pass back the nodes/leafs params*)
+        (* We need to create a node but params also created some,*)
+        (* so we need to pass back the nodes/leafs params*)
         let node' = mk_node () in
         Cfg.Node.set_succs_exn node' trans_state.succ_nodes [];
         let ids_parent = ids_to_parent trans_state.continuation res_state_param.ids in
@@ -342,7 +342,7 @@ let cast_trans context exps sil_loc callee_pname_opt function_type =
 
 let builtin_trans trans_state loc stmt_info function_type callee_pname_opt =
   if CTrans_models.is_cf_non_null_alloc callee_pname_opt ||
-  CTrans_models.is_alloc_model function_type callee_pname_opt then
+     CTrans_models.is_alloc_model function_type callee_pname_opt then
     Some (alloc_trans trans_state loc stmt_info function_type true)
   else if CTrans_models.is_alloc callee_pname_opt then
     Some (alloc_trans trans_state loc stmt_info function_type false)
@@ -361,8 +361,8 @@ let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
     | `IntegralToBoolean -> (* This is treated as a nop by returning the same expressions exps*)
         ([],[], exp)
     | `LValueToRValue ->
-    (* Takes an LValue and allow it to use it as RValue. *)
-    (* So we assign the LValue to a temp and we pass it to the parent.*)
+        (* Takes an LValue and allow it to use it as RValue. *)
+        (* So we assign the LValue to a temp and we pass it to the parent.*)
         let id = Ident.create_fresh Ident.knormal in
         let sil_instr = [Sil.Letderef (id, exp, typ, sil_loc)] in
         ([id], sil_instr, Sil.Var id)
@@ -435,11 +435,11 @@ let fix_param_exps_mismatch params_stmt exps_param =
 let get_name_decl_ref_exp_info decl_ref_expr_info si =
   match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
   | Some d -> (match d.Clang_ast_t.dr_name with
-        | Some n -> n.Clang_ast_t.ni_name
-        | _ -> assert false)
+      | Some n -> n.Clang_ast_t.ni_name
+      | _ -> assert false)
   | _ -> L.err "FAILING WITH %s pointer=%s@.@."
-        (Clang_ast_j.string_of_decl_ref_expr_info decl_ref_expr_info )
-        (Clang_ast_j.string_of_stmt_info si); assert false
+           (Clang_ast_j.string_of_decl_ref_expr_info decl_ref_expr_info )
+           (Clang_ast_j.string_of_stmt_info si); assert false
 
 let is_superinstance mei =
   match mei.Clang_ast_t.omei_receiver_kind with
@@ -463,10 +463,10 @@ let get_value_enum_constant tenv enum_type stmt =
       let _, v = try
           list_find (fun (c, _) -> Mangled.equal c (Mangled.from_string constant)) enum_constants
         with _ -> (Printing.log_err
-                "Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
+                     "Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
       v
   | _ -> Printing.log_err
-        "Enum type '%s' not found in tenv. Cannot continue...\n" (Sil.typename_to_string typename);
+           "Enum type '%s' not found in tenv. Cannot continue...\n" (Sil.typename_to_string typename);
       assert false
 
 let get_selector_receiver obj_c_message_expr_info =
@@ -487,10 +487,10 @@ let is_enumeration_constant stmt =
   match stmt with
   | DeclRefExpr(_, _, _, drei) ->
       (match drei.Clang_ast_t.drti_decl_ref with
-        | Some d -> (match d.Clang_ast_t.dr_kind with
-              | `EnumConstant -> true
-              | _ -> false)
-        | _ -> false)
+       | Some d -> (match d.Clang_ast_t.dr_kind with
+           | `EnumConstant -> true
+           | _ -> false)
+       | _ -> false)
   | _ -> false
 
 let is_null_stmt s =
@@ -511,8 +511,8 @@ let rec get_type_from_exp_stmt stmt =
   let do_decl_ref_exp i =
     match i.Clang_ast_t.drti_decl_ref with
     | Some d -> (match d.Clang_ast_t.dr_qual_type with
-          | Some n -> n
-          | _ -> assert false )
+        | Some n -> n
+        | _ -> assert false )
     | _ -> assert false in
   match stmt with
   | CXXOperatorCallExpr(_, _, ei)
@@ -578,14 +578,14 @@ let is_owning_name n =
   match Str.split (Str.regexp_string ":") n with
   | fst:: _ ->
       (match Str.split (Str.regexp "['_']+") fst with
-        | [no_und]
-        | _:: no_und:: _ ->
-            is_family CFrontend_config.alloc no_und ||
-            is_family CFrontend_config.copy no_und ||
-            is_family CFrontend_config.new_str no_und ||
-            is_family CFrontend_config.mutableCopy no_und ||
-            is_family CFrontend_config.init no_und
-        | _ -> assert false)
+       | [no_und]
+       | _:: no_und:: _ ->
+           is_family CFrontend_config.alloc no_und ||
+           is_family CFrontend_config.copy no_und ||
+           is_family CFrontend_config.new_str no_und ||
+           is_family CFrontend_config.mutableCopy no_und ||
+           is_family CFrontend_config.init no_und
+       | _ -> assert false)
   | _ -> assert false
 
 let rec is_owning_method s =
@@ -593,15 +593,15 @@ let rec is_owning_method s =
   | ObjCMessageExpr(_, _ , _, mei) ->
       is_owning_name mei.Clang_ast_t.omei_selector
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
-        | [] -> false
-        | s'':: _ -> is_owning_method s'')
+      | [] -> false
+      | s'':: _ -> is_owning_method s'')
 
 let rec is_method_call s =
   match s with
   | ObjCMessageExpr(_, _ , _, mei) -> true
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
-        | [] -> false
-        | s'':: _ -> is_method_call s'')
+      | [] -> false
+      | s'':: _ -> is_method_call s'')
 
 let rec get_decl_ref_info s parent_line_number =
   match s with
@@ -609,17 +609,17 @@ let rec get_decl_ref_info s parent_line_number =
       let line_number = CLocation.get_line stmt_info parent_line_number in
       stmt_info.Clang_ast_t.si_pointer, line_number
   | _ -> (match Clang_ast_proj.get_stmt_tuple s with
-        | stmt_info, [] -> assert false
-        | stmt_info, s'':: _ ->
-            let line_number = CLocation.get_line stmt_info parent_line_number in
-            get_decl_ref_info s'' line_number)
+      | stmt_info, [] -> assert false
+      | stmt_info, s'':: _ ->
+          let line_number = CLocation.get_line stmt_info parent_line_number in
+          get_decl_ref_info s'' line_number)
 
 let rec contains_opaque_value_expr s =
   match s with
   | OpaqueValueExpr (_, _, _, _) -> true
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
-        | [] -> false
-        | s'':: _ -> contains_opaque_value_expr s'')
+      | [] -> false
+      | s'':: _ -> contains_opaque_value_expr s'')
 
 let rec compute_autorelease_pool_vars context stmts =
   match stmts with
@@ -632,10 +632,10 @@ let rec compute_autorelease_pool_vars context stmts =
           list_filter (fun (m, t) -> Mangled.to_string m = name) local_vars
         with _ -> [] in
       (match mname with
-        | [(m, t)] ->
-            CFrontend_utils.General_utils.append_no_duplicated_pvars
-              [(Sil.Lvar (Sil.mk_pvar m procname), t)] (compute_autorelease_pool_vars context stmts')
-        | _ -> compute_autorelease_pool_vars context stmts')
+       | [(m, t)] ->
+           CFrontend_utils.General_utils.append_no_duplicated_pvars
+             [(Sil.Lvar (Sil.mk_pvar m procname), t)] (compute_autorelease_pool_vars context stmts')
+       | _ -> compute_autorelease_pool_vars context stmts')
   | s:: stmts' ->
       let sl = snd(Clang_ast_proj.get_stmt_tuple s) in
       compute_autorelease_pool_vars context (sl@stmts')
@@ -651,21 +651,21 @@ let is_dispatch_function stmt_list =
   match stmt_list with
   | ImplicitCastExpr(_,[DeclRefExpr(_, _, _, di)], _, _):: stmts ->
       (match di.Clang_ast_t.drti_decl_ref with
-        | None -> None
-        | Some d ->
-            (match d.Clang_ast_t.dr_kind, d.Clang_ast_t.dr_name with
-              | `Function, Some name_info ->
-                  let s = name_info.Clang_ast_t.ni_name in
-                  (match (CTrans_models.is_dispatch_function_name s) with
-                    | None -> None
-                    | Some (dispatch_function, block_arg_pos) ->
-                        try
-                          (match list_nth stmts block_arg_pos with
-                            | BlockExpr _ -> Some block_arg_pos
-                            | _ -> None)
-                        with Not_found -> None
-                  )
-              | _ -> None))
+       | None -> None
+       | Some d ->
+           (match d.Clang_ast_t.dr_kind, d.Clang_ast_t.dr_name with
+            | `Function, Some name_info ->
+                let s = name_info.Clang_ast_t.ni_name in
+                (match (CTrans_models.is_dispatch_function_name s) with
+                 | None -> None
+                 | Some (dispatch_function, block_arg_pos) ->
+                     try
+                       (match list_nth stmts block_arg_pos with
+                        | BlockExpr _ -> Some block_arg_pos
+                        | _ -> None)
+                     with Not_found -> None
+                )
+            | _ -> None))
   | _ -> None
 
 let assign_default_params params_stmt callee_pname_opt =
@@ -683,7 +683,7 @@ let assign_default_params params_stmt callee_pname_opt =
         list_map replace_default_arg params_args
       with
       | Invalid_argument _ ->
-      (* list_combine failed because of different list lengths *)
+          (* list_combine failed because of different list lengths *)
           Printing.log_err "Param count doesn't match %s\n" (Procname.to_string callee_pname);
           params_stmt
       | Not_found -> params_stmt

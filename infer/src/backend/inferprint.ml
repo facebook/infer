@@ -91,38 +91,38 @@ let arg_desc =
   let base_arg =
     let desc =
       [
-      "-bugs", Arg.String (fun s -> bugs_csv := create_outfile s), Some "bugs.csv", "create file bugs.csv containing a list of bugs in CSV format";
-      "-bugs_json", Arg.String (fun s -> bugs_json := create_outfile s), Some "bugs.json", "create file bugs.json containing a list of bugs in JSON format";
-      "-bugs_txt", Arg.String (fun s -> bugs_txt := create_outfile s), Some "bugs.txt", "create file bugs.txt containing a list of bugs in text format";
-      "-bugs_xml", Arg.String (fun s -> bugs_xml := create_outfile s), Some "bugs.xml", "create file bugs.xml containing a list of bugs in XML format";
-      "-calls", Arg.String (fun s -> calls_csv := create_outfile s), Some "calls.csv", "write individual calls in csv format to file.csv";
-      "-load_results", Arg.String (fun s -> load_analysis_results := Some s), Some "file.iar", "load analysis results from Infer Analysis Results file file.iar";
-      "-procs", Arg.String (fun s -> procs_csv := create_outfile s), Some "procs.csv", "create file procs.csv containing statistics for each procedure in CSV format";
-      "-procs_xml", Arg.String (fun s -> procs_xml := create_outfile s), Some "procs.xml", "create file procs.xml containing statistics for each procedure in XML format";
-      "-results_dir", Arg.String (fun s -> results_dir_cmdline := true; Config.results_dir := s), Some "dir", "read all the .specs files in the results dir";
-      "-q", Arg.Set quiet, None, "quiet: do not print specs on standard output";
-      "-save_results", Arg.String (fun s -> save_analysis_results := Some s), Some "file.iar", "save analysis results to Infer Analysis Results file file.iar";
-      "-unit_test", Arg.Set unit_test, None, "print unit test code";
-      "-xml", Arg.Set xml_specs, None, "export specs into XML files file1.xml ... filen.xml";
-      "-test_filtering", Arg.Set test_filtering, None,
-      "list all the files Infer can report on (should be call at the root of the procject, where
+        "-bugs", Arg.String (fun s -> bugs_csv := create_outfile s), Some "bugs.csv", "create file bugs.csv containing a list of bugs in CSV format";
+        "-bugs_json", Arg.String (fun s -> bugs_json := create_outfile s), Some "bugs.json", "create file bugs.json containing a list of bugs in JSON format";
+        "-bugs_txt", Arg.String (fun s -> bugs_txt := create_outfile s), Some "bugs.txt", "create file bugs.txt containing a list of bugs in text format";
+        "-bugs_xml", Arg.String (fun s -> bugs_xml := create_outfile s), Some "bugs.xml", "create file bugs.xml containing a list of bugs in XML format";
+        "-calls", Arg.String (fun s -> calls_csv := create_outfile s), Some "calls.csv", "write individual calls in csv format to file.csv";
+        "-load_results", Arg.String (fun s -> load_analysis_results := Some s), Some "file.iar", "load analysis results from Infer Analysis Results file file.iar";
+        "-procs", Arg.String (fun s -> procs_csv := create_outfile s), Some "procs.csv", "create file procs.csv containing statistics for each procedure in CSV format";
+        "-procs_xml", Arg.String (fun s -> procs_xml := create_outfile s), Some "procs.xml", "create file procs.xml containing statistics for each procedure in XML format";
+        "-results_dir", Arg.String (fun s -> results_dir_cmdline := true; Config.results_dir := s), Some "dir", "read all the .specs files in the results dir";
+        "-q", Arg.Set quiet, None, "quiet: do not print specs on standard output";
+        "-save_results", Arg.String (fun s -> save_analysis_results := Some s), Some "file.iar", "save analysis results to Infer Analysis Results file file.iar";
+        "-unit_test", Arg.Set unit_test, None, "print unit test code";
+        "-xml", Arg.Set xml_specs, None, "export specs into XML files file1.xml ... filen.xml";
+        "-test_filtering", Arg.Set test_filtering, None,
+        "list all the files Infer can report on (should be call at the root of the procject, where
       .inferconfig lives).";
-      "-analyzer", Arg.String (fun s -> analyzer := Some (Utils.analyzer_of_string s)), Some "analyzer",
-      "setup the analyzer for the path filtering";
-      "-inferconfig_home", Arg.String (fun s -> Inferconfig.inferconfig_home := Some s), Some "dir",
-      "Path to the .inferconfig file";
+        "-analyzer", Arg.String (fun s -> analyzer := Some (Utils.analyzer_of_string s)), Some "analyzer",
+        "setup the analyzer for the path filtering";
+        "-inferconfig_home", Arg.String (fun s -> Inferconfig.inferconfig_home := Some s), Some "dir",
+        "Path to the .inferconfig file";
       ] in
     Arg2.create_options_desc false "Options" desc in
   let reserved_arg =
     let desc =
       [
-      "-latex", Arg.String (fun s -> latex := create_outfile s), Some "file.tex", "print latex report to file.tex";
-      "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
-      "-precondition_stats", Arg.Set precondition_stats, None, "print stats about preconditions to standard output";
-      "-report", Arg.String (fun s -> report := create_outfile s), Some "report_file", "create file report_file containing a report of the analysis results";
-      "-source_file_copy", Arg.String (fun s -> source_file_copy := Some (DB.abs_source_file_from_path s)), Some "source_file", "print the path of the copy of source_file in the results directory";
-      "-svg", Arg.Set svg, None, "generate .dot and .svg";
-      "-whole_seconds", Arg.Set whole_seconds, None, "print whole seconds only";
+        "-latex", Arg.String (fun s -> latex := create_outfile s), Some "file.tex", "print latex report to file.tex";
+        "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
+        "-precondition_stats", Arg.Set precondition_stats, None, "print stats about preconditions to standard output";
+        "-report", Arg.String (fun s -> report := create_outfile s), Some "report_file", "create file report_file containing a report of the analysis results";
+        "-source_file_copy", Arg.String (fun s -> source_file_copy := Some (DB.abs_source_file_from_path s)), Some "source_file", "print the path of the copy of source_file in the results directory";
+        "-svg", Arg.Set svg, None, "generate .dot and .svg";
+        "-whole_seconds", Arg.Set whole_seconds, None, "print whole seconds only";
       ] in
     Arg2.create_options_desc false "Reserved Options" desc in
   base_arg @ reserved_arg
@@ -196,7 +196,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =
   match ekind with
   | Exceptions.Kinfo -> []
   | _ ->
-  (* writes a trace as a record for atdgen conversion *)
+      (* writes a trace as a record for atdgen conversion *)
       let node_tags_to_records tags_list =
         list_map (fun tag -> { tag = fst tag; value = snd tag }) tags_list in
       let trace_item_to_record trace_item =
@@ -251,7 +251,7 @@ let summary_values top_proc_set summary =
     list_iter do_spec specs;
     let visited_lines = ref IntSet.empty in
     Specs.Visitedset.iter (fun (n, ls) ->
-            list_iter (fun l -> visited_lines := IntSet.add l !visited_lines) ls)
+        list_iter (fun l -> visited_lines := IntSet.add l !visited_lines) ls)
       !visited;
     Specs.Visitedset.cardinal !visited, IntSet.elements !visited_lines in
   let proof_trace =
@@ -337,26 +337,26 @@ module ProcsXml = struct
       let attributes = [("id", string_of_int !xml_procs_id) ] in
       let forest =
         [
-        subtree Io_infer.Xml.tag_name (Escape.escape_xml sv.vname);
-        subtree Io_infer.Xml.tag_name_id (Escape.escape_xml sv.vname_id);
-        subtree Io_infer.Xml.tag_specs (string_of_int sv.vspecs);
-        subtree Io_infer.Xml.tag_time sv.vtime;
-        subtree Io_infer.Xml.tag_to sv.vto;
-        subtree Io_infer.Xml.tag_symop (string_of_int sv.vsymop);
-        subtree Io_infer.Xml.tag_err (string_of_int sv.verr);
-        subtree Io_infer.Xml.tag_file sv.vfile;
-        subtree Io_infer.Xml.tag_line (string_of_int sv.vline);
-        subtree Io_infer.Xml.tag_loc (string_of_int sv.vloc);
-        subtree Io_infer.Xml.tag_top sv.vtop;
-        subtree Io_infer.Xml.tag_signature (Escape.escape_xml sv.vsignature);
-        subtree Io_infer.Xml.tag_weight (string_of_int sv.vweight);
-        subtree Io_infer.Xml.tag_proof_coverage sv.vproof_coverage;
-        subtree Io_infer.Xml.tag_rank sv.vrank;
-        subtree Io_infer.Xml.tag_in_calls (string_of_int sv.vin_calls);
-        subtree Io_infer.Xml.tag_out_calls (string_of_int sv.vin_calls);
-        subtree Io_infer.Xml.tag_proof_trace sv.vproof_trace;
-        subtree Io_infer.Xml.tag_cyclomatic (string_of_int sv.vcyclomatic);
-        subtree Io_infer.Xml.tag_flags (string_of_int (Hashtbl.length sv.vflags));
+          subtree Io_infer.Xml.tag_name (Escape.escape_xml sv.vname);
+          subtree Io_infer.Xml.tag_name_id (Escape.escape_xml sv.vname_id);
+          subtree Io_infer.Xml.tag_specs (string_of_int sv.vspecs);
+          subtree Io_infer.Xml.tag_time sv.vtime;
+          subtree Io_infer.Xml.tag_to sv.vto;
+          subtree Io_infer.Xml.tag_symop (string_of_int sv.vsymop);
+          subtree Io_infer.Xml.tag_err (string_of_int sv.verr);
+          subtree Io_infer.Xml.tag_file sv.vfile;
+          subtree Io_infer.Xml.tag_line (string_of_int sv.vline);
+          subtree Io_infer.Xml.tag_loc (string_of_int sv.vloc);
+          subtree Io_infer.Xml.tag_top sv.vtop;
+          subtree Io_infer.Xml.tag_signature (Escape.escape_xml sv.vsignature);
+          subtree Io_infer.Xml.tag_weight (string_of_int sv.vweight);
+          subtree Io_infer.Xml.tag_proof_coverage sv.vproof_coverage;
+          subtree Io_infer.Xml.tag_rank sv.vrank;
+          subtree Io_infer.Xml.tag_in_calls (string_of_int sv.vin_calls);
+          subtree Io_infer.Xml.tag_out_calls (string_of_int sv.vin_calls);
+          subtree Io_infer.Xml.tag_proof_trace sv.vproof_trace;
+          subtree Io_infer.Xml.tag_cyclomatic (string_of_int sv.vcyclomatic);
+          subtree Io_infer.Xml.tag_flags (string_of_int (Hashtbl.length sv.vflags));
         ] in
       Io_infer.Xml.create_tree "procedure" attributes forest in
     Io_infer.Xml.pp_inner_node fmt tree
@@ -506,11 +506,11 @@ module BugsXml = struct
         | None -> "" in
       Io_infer.Xml.create_tree Io_infer.Xml.tag_loc [("num", string_of_int !num)]
         [(level_to_xml lt.Errlog.lt_level);
-        (file_to_xml (DB.source_file_to_string loc.Sil.file));
-        (line_to_xml loc.Sil.line);
-        (code_to_xml code);
-        (description_to_xml lt.Errlog.lt_description);
-        (node_tags_to_xml lt.Errlog.lt_node_tags)] in
+         (file_to_xml (DB.source_file_to_string loc.Sil.file));
+         (line_to_xml loc.Sil.line);
+         (code_to_xml code);
+         (description_to_xml lt.Errlog.lt_description);
+         (node_tags_to_xml lt.Errlog.lt_node_tags)] in
     list_rev (list_rev_map loc_to_xml ltr)
 
   (** print bugs from summary in xml *)
@@ -539,19 +539,19 @@ module BugsXml = struct
           let bug_hash = get_bug_hash kind type_str procedure_id filename node_key error_desc in
           let forest =
             [
-            subtree Io_infer.Xml.tag_class error_class;
-            subtree Io_infer.Xml.tag_kind kind;
-            subtree Io_infer.Xml.tag_type type_str;
-            subtree Io_infer.Xml.tag_qualifier err_desc_string;
-            subtree Io_infer.Xml.tag_severity severity;
-            subtree Io_infer.Xml.tag_line error_line;
-            subtree Io_infer.Xml.tag_procedure (Escape.escape_xml procedure_name);
-            subtree Io_infer.Xml.tag_procedure_id (Escape.escape_xml procedure_id);
-            subtree Io_infer.Xml.tag_file filename;
-            Io_infer.Xml.create_tree Io_infer.Xml.tag_trace [] (loc_trace_to_xml linereader ltr);
-            subtree Io_infer.Xml.tag_key (string_of_int node_key);
-            Io_infer.Xml.create_tree Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc);
-            subtree Io_infer.Xml.tag_hash (string_of_int bug_hash)
+              subtree Io_infer.Xml.tag_class error_class;
+              subtree Io_infer.Xml.tag_kind kind;
+              subtree Io_infer.Xml.tag_type type_str;
+              subtree Io_infer.Xml.tag_qualifier err_desc_string;
+              subtree Io_infer.Xml.tag_severity severity;
+              subtree Io_infer.Xml.tag_line error_line;
+              subtree Io_infer.Xml.tag_procedure (Escape.escape_xml procedure_name);
+              subtree Io_infer.Xml.tag_procedure_id (Escape.escape_xml procedure_id);
+              subtree Io_infer.Xml.tag_file filename;
+              Io_infer.Xml.create_tree Io_infer.Xml.tag_trace [] (loc_trace_to_xml linereader ltr);
+              subtree Io_infer.Xml.tag_key (string_of_int node_key);
+              Io_infer.Xml.create_tree Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc);
+              subtree Io_infer.Xml.tag_hash (string_of_int bug_hash)
             ]
             @
             (if include_precondition_tree then precondition_tree () else []) in
@@ -614,7 +614,7 @@ module UnitTest = struct
 end
 
 (** Module to compute the top procedures.
-A procedure is top if it has specs and any procedure calling it has no specs *)
+    A procedure is top if it has specs and any procedure calling it has no specs *)
 module TopProcedures : sig
   type t
   val create : unit -> t
@@ -675,8 +675,8 @@ module Stats = struct
   let process_loc loc stats =
     try Hashtbl.find stats.files loc.Sil.file
     with Not_found ->
-        stats.nLOC <- stats.nLOC + loc.Sil.nLOC;
-        Hashtbl.add stats.files loc.Sil.file ()
+      stats.nLOC <- stats.nLOC + loc.Sil.nLOC;
+      Hashtbl.add stats.files loc.Sil.file ()
 
   let loc_trace_to_string_list linereader indent_num ltr =
     let res = ref [] in
@@ -810,7 +810,7 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
     let always_report () =
       Localise.error_desc_extract_tag_value error_desc "always_report" = "true" in
     (filters.Inferconfig.path_filter summary.Specs.loc.Sil.file
-      || always_report ()) &&
+     || always_report ()) &&
     filters.Inferconfig.error_filter error_name in
   do_outf procs_csv (fun outf -> F.fprintf outf.fmt "%a" (ProcsCsv.pp_summary fname top_proc_set) summary);
   do_outf calls_csv (fun outf -> F.fprintf outf.fmt "%a" (CallsCsv.pp_calls fname) summary);
@@ -829,11 +829,11 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
     let dot_file = DB.filename_add_suffix base ".dot" in
     let svg_file = DB.filename_add_suffix base ".svg" in
     if not (DB.file_exists dot_file)
-    || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time dot_file
+       || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time dot_file
     then
       Dotty.pp_speclist_dotty_file base specs;
     if not (DB.file_exists svg_file)
-    || DB.file_modified_time dot_file > DB.file_modified_time svg_file
+       || DB.file_modified_time dot_file > DB.file_modified_time svg_file
     then
       ignore (Sys.command ("dot -Tsvg \"" ^ (DB.filename_to_string dot_file) ^ "\" >\"" ^ (DB.filename_to_string svg_file) ^"\""))
   end;
@@ -841,13 +841,13 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
     let xml_file = DB.filename_add_suffix base ".xml" in
     let specs = Specs.get_specs_from_payload summary in
     if not (DB.file_exists xml_file)
-    || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
+       || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
     then
       begin
         let xml_out = ref (create_outfile (DB.filename_to_string xml_file)) in
         do_outf xml_out (fun outf ->
-                Dotty.print_specs_xml (Specs.get_signature summary) specs summary.Specs.loc outf.fmt;
-                close_outf outf)
+            Dotty.print_specs_xml (Specs.get_signature summary) specs summary.Specs.loc outf.fmt;
+            close_outf outf)
       end
   end
 (* ignore (Sys.command ("open " ^ base ^ ".svg")) *)
@@ -868,11 +868,11 @@ module AnalysisResults = struct
         exit(0)
       end;
     list_append (if !args = ["."] then begin
-          let arr = Sys.readdir "." in
-          let all_files = Array.to_list arr in
-          list_filter (fun fname -> (Filename.check_suffix fname ".specs")) all_files
-        end
-        else !args) (results_dir_specsfiles ())
+        let arr = Sys.readdir "." in
+        let all_files = Array.to_list arr in
+        list_filter (fun fname -> (Filename.check_suffix fname ".specs")) all_files
+      end
+       else !args) (results_dir_specsfiles ())
 
   (** apply [f] to [arg] with the gc compaction disabled during the execution *)
   let apply_without_gc f arg =
@@ -925,7 +925,7 @@ module AnalysisResults = struct
     Serialization.to_file analysis_results_serializer filename analysis_results
 
   (** Return an iterator over all the summaries.
-  If options - load_results or - save_results are used, all the summaries are loaded in memory *)
+      If options - load_results or - save_results are used, all the summaries are loaded in memory *)
   let get_summary_iterator () =
     let iterator_of_summary_list r =
       fun f -> list_iter f r in
@@ -987,10 +987,10 @@ let () =
   do_outf bugs_txt close_outf;
   do_outf bugs_xml (fun outf -> BugsXml.pp_bugs_close outf.fmt (); close_outf outf);
   do_outf latex (fun outf ->
-          Latex.pp_end outf.fmt ();
-          close_outf outf;
-          pdflatex outf.fname;
-          let pdf_name = (Filename.chop_extension outf.fname) ^ ".pdf" in
-          ignore (Sys.command ("open " ^ pdf_name)));
+      Latex.pp_end outf.fmt ();
+      close_outf outf;
+      pdflatex outf.fname;
+      let pdf_name = (Filename.chop_extension outf.fname) ^ ".pdf" in
+      ignore (Sys.command ("open " ^ pdf_name)));
   do_outf report (fun outf -> F.fprintf outf.fmt "%a@?" Report.pp_stats stats; close_outf outf);
   if !precondition_stats then PreconditionStats.pp_stats ()

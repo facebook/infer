@@ -30,22 +30,22 @@ let printf_signature_to_string
 let printf_like_functions =
   ref
     [
-    { unique_id = "java.io.PrintStream.printf(java.lang.String,java.lang.Object[]):java.io.PrintStream";
-      format_pos = 1;
-      fixed_pos = [];
-      vararg_pos = Some 2 };
-    { unique_id = "java.io.PrintStream.printf(java.lang.Locale,java.lang.String,java.lang.Object[]):java.io.PrintStream";
-      format_pos = 2;
-      fixed_pos = [];
-      vararg_pos = Some 3 };
-    { unique_id = "java.lang.String(java.lang.String,java.lang.Object[]):java.lang.String";
-      format_pos = 1;
-      fixed_pos = [];
-      vararg_pos = Some 2 };
-    { unique_id = "java.lang.String(java.lang.Locale,java.lang.String,java.lang.Object[]):java.lang.String";
-      format_pos = 2;
-      fixed_pos = [];
-      vararg_pos = Some 3 };
+      { unique_id = "java.io.PrintStream.printf(java.lang.String,java.lang.Object[]):java.io.PrintStream";
+        format_pos = 1;
+        fixed_pos = [];
+        vararg_pos = Some 2 };
+      { unique_id = "java.io.PrintStream.printf(java.lang.Locale,java.lang.String,java.lang.Object[]):java.io.PrintStream";
+        format_pos = 2;
+        fixed_pos = [];
+        vararg_pos = Some 3 };
+      { unique_id = "java.lang.String(java.lang.String,java.lang.Object[]):java.lang.String";
+        format_pos = 1;
+        fixed_pos = [];
+        vararg_pos = Some 2 };
+      { unique_id = "java.lang.String(java.lang.Locale,java.lang.String,java.lang.Object[]):java.lang.String";
+        format_pos = 2;
+        fixed_pos = [];
+        vararg_pos = Some 3 };
     ]
 
 let add_printf_like_function plf =
@@ -169,18 +169,18 @@ let callback_printf_args
   let rec array_ivar instrs nvar =
     match instrs, nvar with
     | Sil.Letderef (id, Sil.Lvar iv, _, _):: _, Sil.Var nid
-    when Ident.equal id nid -> iv
+      when Ident.equal id nid -> iv
     | i:: is, _ -> array_ivar is nvar
     | _ -> raise Not_found in
 
   let rec fixed_nvar_type_name instrs nvar =
     match nvar with
     | Sil.Var nid -> (
-          match instrs with
-          | Sil.Letderef (id, Sil.Lvar iv, t, _):: _
+        match instrs with
+        | Sil.Letderef (id, Sil.Lvar iv, t, _):: _
           when Ident.equal id nid -> PatternMatch.get_type_name t
-          | i:: is -> fixed_nvar_type_name is nvar
-          | _ -> raise Not_found)
+        | i:: is -> fixed_nvar_type_name is nvar
+        | _ -> raise Not_found)
     | Sil.Const c -> PatternMatch.java_get_const_type_name c
     | _ -> raise (Failure "Could not resolve fixed type name") in
 
@@ -189,39 +189,39 @@ let callback_printf_args
       (instr: Sil.instr): unit =
     match instr with
     | Sil.Call (_, Sil.Const (Sil.Cfun pn), args, cl, _) -> (
-          match printf_like_function pn with
-          | Some printf -> (
-                try
-                  let fmt, fixed_nvars, array_nvar = format_arguments printf args in
-                  let instrs = Cfg.Node.get_instrs node in
-                  let fixed_nvar_type_names = list_map (fixed_nvar_type_name instrs) fixed_nvars in
-                  let vararg_ivar_type_names = match array_nvar with
-                    | Some nvar -> (
-                          let ivar = array_ivar instrs nvar in
-                          PatternMatch.get_vararg_type_names node ivar)
-                    | None -> [] in
-                  match fmt with
-                  | Some fmt ->
-                      check_type_names
-                        cl
-                        (printf.format_pos + 1)
-                        pn
-                        (format_string_type_names fmt 0)
-                        (fixed_nvar_type_names@ vararg_ivar_type_names)
-                  | None ->
-                      Checkers.ST.report_error
-                        proc_name
-                        proc_desc
-                        printf_args_name
-                        cl
-                        "Format string must be string literal"
-                with e ->
-                    L.stderr
-                      "%s Exception when analyzing %s: %s@."
-                      printf_args_name
-                      (Procname.to_string proc_name)
-                      (Printexc.to_string e))
-          | None -> ())
+        match printf_like_function pn with
+        | Some printf -> (
+            try
+              let fmt, fixed_nvars, array_nvar = format_arguments printf args in
+              let instrs = Cfg.Node.get_instrs node in
+              let fixed_nvar_type_names = list_map (fixed_nvar_type_name instrs) fixed_nvars in
+              let vararg_ivar_type_names = match array_nvar with
+                | Some nvar -> (
+                    let ivar = array_ivar instrs nvar in
+                    PatternMatch.get_vararg_type_names node ivar)
+                | None -> [] in
+              match fmt with
+              | Some fmt ->
+                  check_type_names
+                    cl
+                    (printf.format_pos + 1)
+                    pn
+                    (format_string_type_names fmt 0)
+                    (fixed_nvar_type_names@ vararg_ivar_type_names)
+              | None ->
+                  Checkers.ST.report_error
+                    proc_name
+                    proc_desc
+                    printf_args_name
+                    cl
+                    "Format string must be string literal"
+            with e ->
+              L.stderr
+                "%s Exception when analyzing %s: %s@."
+                printf_args_name
+                (Procname.to_string proc_name)
+                (Printexc.to_string e))
+        | None -> ())
     | _ -> () in
 
   Cfg.Procdesc.iter_instrs do_instr proc_desc

@@ -249,7 +249,7 @@ module Node = struct
     | Join_node, _ -> -1
     | _, Join_node -> 1
     | Prune_node (is_true_branch1, if_kind1, descr1),
-    Prune_node (is_true_branch2, if_kind2, descr2) ->
+      Prune_node (is_true_branch2, if_kind2, descr2) ->
         let n = bool_compare is_true_branch1 is_true_branch2 in
         if n <> 0 then n else let n = Pervasives.compare if_kind1 if_kind2 in
           if n <> 0 then n else string_compare descr1 descr2
@@ -373,11 +373,11 @@ module Node = struct
 
   let proc_desc_remove cfg name remove_nodes =
     (if remove_nodes then
-        let pdesc = pdesc_tbl_find cfg name in
-        let proc_nodes =
-          list_fold_right (fun node set -> NodeSet.add node set)
-            pdesc.pd_nodes NodeSet.empty in
-        remove_node_set cfg proc_nodes);
+       let pdesc = pdesc_tbl_find cfg name in
+       let proc_nodes =
+         list_fold_right (fun node set -> NodeSet.add node set)
+           pdesc.pd_nodes NodeSet.empty in
+       remove_node_set cfg proc_nodes);
     pdesc_tbl_remove cfg name
 
   let proc_desc_get_start_node proc_desc =
@@ -546,27 +546,27 @@ module Node = struct
   let proc_desc_iter_slope f proc_desc =
     let visited = ref NodeSet.empty in
     let rec do_node node = begin
-        visited := NodeSet.add node !visited;
-        f node;
-        match get_succs node with
-        | [n] -> if not (NodeSet.mem n !visited) then do_node n
-        | _ -> ()
-      end in
+      visited := NodeSet.add node !visited;
+      f node;
+      match get_succs node with
+      | [n] -> if not (NodeSet.mem n !visited) then do_node n
+      | _ -> ()
+    end in
     do_node (proc_desc_get_start_node proc_desc)
 
   (** iterate between two nodes or until we reach a branching structure *)
   let proc_desc_iter_slope_range f proc_desc src_node dst_node =
     let visited = ref NodeSet.empty in
     let rec do_node node = begin
-        visited := NodeSet.add node !visited;
-        f node;
-        match get_succs node with
-        | [n] ->
-            if not (NodeSet.mem n !visited)
-            && not (equal node dst_node)
-            then do_node n
-        | _ -> ()
-      end in
+      visited := NodeSet.add node !visited;
+      f node;
+      match get_succs node with
+      | [n] ->
+          if not (NodeSet.mem n !visited)
+             && not (equal node dst_node)
+          then do_node n
+      | _ -> ()
+    end in
     do_node src_node
 
   let proc_desc_iter_slope_calls f proc_desc =
@@ -611,7 +611,7 @@ let save_source_files cfg =
       Node.proc_desc_is_defined pdesc &&
       Sys.file_exists source_file_str &&
       (not (Sys.file_exists dest_file_str) ||
-        DB.file_modified_time (DB.filename_from_string source_file_str) > DB.file_modified_time dest_file) in
+       DB.file_modified_time (DB.filename_from_string source_file_str) > DB.file_modified_time dest_file) in
     if needs_copy then
       match Utils.copy_file source_file_str dest_file_str with
       | Some _ -> ()
@@ -727,8 +727,8 @@ let get_defined_procs cfg =
 (** Get the objc procedures whose body is generated *)
 let get_objc_generated_procs cfg =
   list_filter (
-      fun procdesc ->
-          (Procdesc.get_attributes procdesc).Sil.is_generated) (get_all_procs cfg)
+    fun procdesc ->
+      (Procdesc.get_attributes procdesc).Sil.is_generated) (get_all_procs cfg)
 
 (** get the function names which should be analyzed before the other ones *)
 let get_priority_procnames cfg =
@@ -849,12 +849,12 @@ let remove_abducted_retvars p =
   let abducted_pvars, normal_pvars =
     list_fold_left
       (fun pvars hpred ->
-            match hpred with
-            | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
-                let abducted_pvars, normal_pvars = pvars in
-                if Sil.pvar_is_abducted pvar then pvar :: abducted_pvars, normal_pvars
-                else abducted_pvars, pvar :: normal_pvars
-            | _ -> pvars)
+         match hpred with
+         | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
+             let abducted_pvars, normal_pvars = pvars in
+             if Sil.pvar_is_abducted pvar then pvar :: abducted_pvars, normal_pvars
+             else abducted_pvars, pvar :: normal_pvars
+         | _ -> pvars)
       ([], [])
       (Prop.get_sigma p) in
   let _, p' = Prop.deallocate_stack_vars p abducted_pvars in
@@ -894,7 +894,7 @@ let remove_locals_ret (curr_f : Procdesc.t) p =
   snd (remove_locals curr_f (remove_ret curr_f p))
 
 (** Remove locals and formal parameters from the prop.
-Return the list of stack variables whose address was still present after deallocation. *)
+    Return the list of stack variables whose address was still present after deallocation. *)
 let remove_locals_formals (curr_f : Procdesc.t) p =
   let pvars1, p1 = remove_formals curr_f p in
   let pvars2, p2 = remove_locals curr_f p1 in
@@ -924,11 +924,11 @@ let check_cfg_connectedness cfg =
     | Node.Stmt_node _ | Node.Prune_node _
     | Node.Skip_node _ -> (list_length succs = 0) || (list_length preds = 0)
     | Node.Join_node ->
-    (* Join node has the exception that it may be without predecessors and pointing to an exit node *)
-    (* if the if brances end with a return *)
+        (* Join node has the exception that it may be without predecessors and pointing to an exit node *)
+        (* if the if brances end with a return *)
         (match succs with
-          | [n'] when is_exit_node n' -> false
-          | _ -> (list_length preds = 0)) in
+         | [n'] when is_exit_node n' -> false
+         | _ -> (list_length preds = 0)) in
   let do_pdesc pd =
     let pname = Procname.to_string (Procdesc.get_proc_name pd) in
     let nodes = Procdesc.get_nodes pd in

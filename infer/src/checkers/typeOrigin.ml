@@ -83,8 +83,8 @@ let get_description origin =
         | Some ann ->
             let str = "@Strict" in
             (match ann.Sil.parameters with
-              | par1 :: _ -> Printf.sprintf "%s(%s) " str par1
-              | [] -> Printf.sprintf "%s " str)
+             | par1 :: _ -> Printf.sprintf "%s(%s) " str par1
+             | [] -> Printf.sprintf "%s " str)
         | None -> "" in
       let description = Printf.sprintf
           "call to %s%s %s"

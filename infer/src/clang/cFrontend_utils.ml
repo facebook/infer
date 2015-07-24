@@ -34,59 +34,59 @@ struct
 
   let print_tenv tenv =
     Sil.tenv_iter (fun typname typ ->
-            match typname with
-            | Sil.TN_csu (Sil.Class, _) | Sil.TN_csu (Sil.Protocol, _) ->
-                (match typ with (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
-                      (print_endline (
-                            (Sil.typename_to_string typname)^"\n"^
-                            "---> superclass and protocols "^(list_to_string (fun (csu, x) ->
-                                      let nsu = Sil.TN_csu (csu, x) in
-                                      "\t"^(Sil.typename_to_string nsu)^"\n") super_classes)^
-                            "---> methods "^(list_to_string (fun x ->"\t"^(Procname.to_string x)^"\n") methods)^"  "^
-                            "\t---> static fields "^(list_to_string (fun (fieldname, typ, _) ->
-                                      "\t "^(Ident.fieldname_to_string fieldname)^" "^
-                                      (Sil.typ_to_string typ)^"\n") static_fields)^
-                            "\t---> fields "^(list_to_string (fun (fieldname, typ, _) ->
-                                      "\t "^(Ident.fieldname_to_string fieldname)^" "^
-                                      (Sil.typ_to_string typ)^"\n") fields
-                            )
-                          )
-                      )
-                  | _ -> ())
-            | _ -> ()
+        match typname with
+        | Sil.TN_csu (Sil.Class, _) | Sil.TN_csu (Sil.Protocol, _) ->
+            (match typ with (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
+              (print_endline (
+                  (Sil.typename_to_string typname)^"\n"^
+                  "---> superclass and protocols "^(list_to_string (fun (csu, x) ->
+                      let nsu = Sil.TN_csu (csu, x) in
+                      "\t"^(Sil.typename_to_string nsu)^"\n") super_classes)^
+                  "---> methods "^(list_to_string (fun x ->"\t"^(Procname.to_string x)^"\n") methods)^"  "^
+                  "\t---> static fields "^(list_to_string (fun (fieldname, typ, _) ->
+                      "\t "^(Ident.fieldname_to_string fieldname)^" "^
+                      (Sil.typ_to_string typ)^"\n") static_fields)^
+                  "\t---> fields "^(list_to_string (fun (fieldname, typ, _) ->
+                      "\t "^(Ident.fieldname_to_string fieldname)^" "^
+                      (Sil.typ_to_string typ)^"\n") fields
+                    )
+                )
+              )
+                          | _ -> ())
+        | _ -> ()
       ) tenv
 
   let print_tenv_struct_unions tenv =
     Sil.tenv_iter (fun typname typ ->
-            match typname with
-            | Sil.TN_csu (Sil.Struct, _) | Sil.TN_csu (Sil.Union, _) ->
-                (match typ with
-                  | (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
-                      (print_endline (
-                            (Sil.typename_to_string typname)^"\n"^
-                            "\t---> fields "^(list_to_string (fun (fieldname, typ, _) ->
-                                      match typ with
-                                      | Sil.Tvar tname -> "tvar"^(Sil.typename_to_string tname)
-                                      | Sil.Tstruct (_, _, _, _, _, _, _) | _ ->
-                                          "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
-                                          (Sil.typ_to_string typ)^"\n") fields
-                            )
-                          )
-                      )
-                  | _ -> ())
-            | Sil.TN_typedef typname ->
-                print_endline ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string typ))
-            | _ -> ()
+        match typname with
+        | Sil.TN_csu (Sil.Struct, _) | Sil.TN_csu (Sil.Union, _) ->
+            (match typ with
+             | (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
+                 (print_endline (
+                     (Sil.typename_to_string typname)^"\n"^
+                     "\t---> fields "^(list_to_string (fun (fieldname, typ, _) ->
+                         match typ with
+                         | Sil.Tvar tname -> "tvar"^(Sil.typename_to_string tname)
+                         | Sil.Tstruct (_, _, _, _, _, _, _) | _ ->
+                             "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
+                             (Sil.typ_to_string typ)^"\n") fields
+                       )
+                   )
+                 )
+             | _ -> ())
+        | Sil.TN_typedef typname ->
+            print_endline ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string typ))
+        | _ -> ()
       ) tenv
 
   let print_procedures cfg =
     let procs = Cfg.get_all_procs cfg in
     print_endline
       (list_to_string (fun pdesc ->
-                let pname = Cfg.Procdesc.get_proc_name pdesc in
-                "name> "^
-                (Procname.to_string pname) ^
-                " defined? " ^ (string_of_bool (Cfg.Procdesc.is_defined pdesc)) ^ "\n")
+           let pname = Cfg.Procdesc.get_proc_name pdesc in
+           "name> "^
+           (Procname.to_string pname) ^
+           " defined? " ^ (string_of_bool (Cfg.Procdesc.is_defined pdesc)) ^ "\n")
           procs)
 
   let print_failure_info pointer =
@@ -133,8 +133,8 @@ struct
     match stmt with
     | OpaqueValueExpr(_, lstmt, _, opaque_value_expr_info) ->
         (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
-          | Some stmt -> lstmt@[stmt]
-          | _ -> lstmt)
+         | Some stmt -> lstmt@[stmt]
+         | _ -> lstmt)
     (* given that this has not been translated, looking up for variables *)
     (* inside leads to inconsistencies *)
     | ObjCAtCatchStmt (stmt_info, stmt_list, obj_c_message_expr_kind) ->
@@ -152,8 +152,8 @@ struct
     match property_impl_decl_info.Clang_ast_t.opidi_property_decl with
     | Some decl_ref ->
         (match decl_ref.Clang_ast_t.dr_name with
-          | Some n -> n.Clang_ast_t.ni_name
-          | _ -> no_property_name)
+         | Some n -> n.Clang_ast_t.ni_name
+         | _ -> no_property_name)
     | None -> no_property_name
 
   let generated_ivar_name property_name =

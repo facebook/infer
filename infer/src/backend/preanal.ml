@@ -30,7 +30,7 @@ module AllPreds = struct
             let preds' = Cfg.NodeSet.add nfrom preds in
             NodeHash.replace preds_table nto preds'
           with Not_found ->
-              NodeHash.add preds_table nto (Cfg.NodeSet.singleton nfrom) in
+            NodeHash.add preds_table nto (Cfg.NodeSet.singleton nfrom) in
       let do_node n =
         list_iter (add_edge false n) (Cfg.Node.get_succs n);
         list_iter (add_edge true n) (Cfg.Node.get_exn n) in
@@ -44,7 +44,7 @@ module AllPreds = struct
       let preds = NodeHash.find preds_table n in
       Cfg.NodeSet.elements preds
     with Not_found ->
-        Cfg.Node.get_preds n
+      Cfg.Node.get_preds n
 end
 
 module Vset = Set.Make (struct
@@ -69,21 +69,21 @@ let rec use_exp cfg pdesc (exp: Sil.exp) acc =
   match exp with
   | Sil.Var _ | Sil.Sizeof _ -> acc
   | Sil.Const (Sil.Ctuple((Sil.Const (Sil.Cfun pname)):: _)) ->
-  (* for tuples representing the assignment of a block we take the block name *)
-  (* look for its procdesc and add its captured vars to the set of captured vars. *)
+      (* for tuples representing the assignment of a block we take the block name *)
+      (* look for its procdesc and add its captured vars to the set of captured vars. *)
       let found_pd = ref None in
       Cfg.iter_proc_desc cfg (fun pn pd -> if Procname.equal pn pname then found_pd:= Some pd);
       let defining_proc = Cfg.Procdesc.get_proc_name pdesc in
       (match !found_pd with
-        | Some pd ->
-            list_iter (fun (x, _) ->
-                    captured_var:= Vset.add (Sil.mk_pvar x defining_proc) !captured_var
-              ) (Cfg.Procdesc.get_captured pd)
-        | _ -> ());
+       | Some pd ->
+           list_iter (fun (x, _) ->
+               captured_var:= Vset.add (Sil.mk_pvar x defining_proc) !captured_var
+             ) (Cfg.Procdesc.get_captured pd)
+       | _ -> ());
       acc
   | Sil.Const _ -> acc
   | Sil.Lvar x ->
-  (* If x is a captured var in the current procdesc don't add it to acc *)
+      (* If x is a captured var in the current procdesc don't add it to acc *)
       if is_captured_pvar pdesc x then acc else Vset.add x acc
   | Sil.Cast (_, e) | Sil.UnOp (_, e, _) | Sil.Lfield (e, _, _) -> use_exp cfg pdesc e acc
   | Sil.BinOp (_, e1, e2) | Sil.Lindex (e1, e2) -> use_exp cfg pdesc e1 (use_exp cfg pdesc e2 acc)
@@ -193,7 +193,7 @@ end = struct
         replace node newset;
         if not (Vset.equal oldset newset) then Worklist.add node
       with Not_found ->
-          replace node set; Worklist.add node in
+        replace node set; Worklist.add node in
     list_iter do_node preds
 
   let iter init f =
@@ -298,7 +298,7 @@ let node_assigns_no_variables cfg node =
   Vset.is_empty assign_set
 
 (** Set the dead variables of a node, by default as dead_after.
-If the node is a prune or a join node, propagate as dead_before in the successors *)
+    If the node is a prune or a join node, propagate as dead_before in the successors *)
 let add_dead_pvars_after_conditionals_join cfg n dead_pvars =
   (* L.out "    node %d: %a@." (Cfg.Node.get_id n) (Sil.pp_pvar_list pe_text) dead_pvars; *)
   let seen = ref Cfg.NodeSet.empty in
@@ -316,7 +316,7 @@ let add_dead_pvars_after_conditionals_join cfg n dead_pvars =
           | _ -> false in
         match Cfg.Node.get_kind node with
         | Cfg.Node.Prune_node _ | Cfg.Node.Join_node when node_assigns_no_variables cfg node && not (next_is_exit node) ->
-        (* cannot push nullify instructions after an assignment, as they could nullify the same variable *)
+            (* cannot push nullify instructions after an assignment, as they could nullify the same variable *)
             let succs = Cfg.Node.get_succs node in
             list_iter (add_after_prune_join false) succs
         | _ ->
@@ -329,7 +329,7 @@ let add_dead_pvars_after_conditionals_join cfg n dead_pvars =
   add_after_prune_join true n
 
 (** Find the set of dead variables for the procedure pname and add nullify instructions.
-The variables that are possibly aliased are only considered just before the exit node. *)
+    The variables that are possibly aliased are only considered just before the exit node. *)
 let analyze_and_annotate_proc cfg tenv pname pdesc =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
   let exit_node_is_succ node =
@@ -341,7 +341,7 @@ let analyze_and_annotate_proc cfg tenv pname pdesc =
   captured_var:= Vset.empty;
   analyze_proc cfg tenv pdesc cand; (* as side effect it coputes the set aliased_var  *)
   (* print_aliased_var "@.@.Aliased variable computed: " !aliased_var;
-  L.out "  PROCEDURE %s@." (Procname.to_string pname); *)
+     L.out "  PROCEDURE %s@." (Procname.to_string pname); *)
   let dead_pvars_added = ref 0 in
   let dead_pvars_limit = 100000 in
   let incr_dead_pvars_added pvars =
@@ -350,26 +350,26 @@ let analyze_and_annotate_proc cfg tenv pname pdesc =
     if !dead_pvars_added > dead_pvars_limit && !dead_pvars_added - num <= dead_pvars_limit
     then L.err "WARNING: liveness: more than %d dead pvars added in procedure %a, stopping@." dead_pvars_limit Procname.pp pname in
   Table.iter cand (fun n live_at_predecessors live_current -> (* set dead variables on nodes *)
-          let nonnull_pvars = Vset.inter (def_node cfg n live_at_predecessors) cand in (* live before, or assigned to *)
-          let dead_pvars = Vset.diff nonnull_pvars live_current in (* only nullify when variable become live *)
-          (* L.out "    Node %s " (string_of_int (Cfg.Node.get_id n)); *)
-          let dead_pvars_no_captured = Vset.diff dead_pvars !captured_var in
-          (* print_aliased_var "@.@.Non-nullable variable computed: " nonnull_pvars;
-          print_aliased_var "@.Dead variable computed: " dead_pvars;
-          print_aliased_var "@.Captured variable computed: " !captured_var;
-          print_aliased_var "@.Dead variable excluding captured computed: " dead_pvars_no_captured; *)
-          let dead_pvars_no_alias = get_sorted_cand (Vset.diff dead_pvars_no_captured !aliased_var) in
-          (* print_aliased_var_l "@. Final Dead variable computed: " dead_pvars_no_alias; *)
-          let dead_pvars_to_add =
-            if exit_node_is_succ n (* add dead aliased vars just before the exit node *)
-            then dead_pvars_no_alias @ (get_sorted_cand (Vset.inter cand !aliased_var))
-            else dead_pvars_no_alias in
-          incr_dead_pvars_added dead_pvars_to_add;
-          if !dead_pvars_added < dead_pvars_limit then add_dead_pvars_after_conditionals_join cfg n dead_pvars_to_add);
+      let nonnull_pvars = Vset.inter (def_node cfg n live_at_predecessors) cand in (* live before, or assigned to *)
+      let dead_pvars = Vset.diff nonnull_pvars live_current in (* only nullify when variable become live *)
+      (* L.out "    Node %s " (string_of_int (Cfg.Node.get_id n)); *)
+      let dead_pvars_no_captured = Vset.diff dead_pvars !captured_var in
+      (* print_aliased_var "@.@.Non-nullable variable computed: " nonnull_pvars;
+         print_aliased_var "@.Dead variable computed: " dead_pvars;
+         print_aliased_var "@.Captured variable computed: " !captured_var;
+         print_aliased_var "@.Dead variable excluding captured computed: " dead_pvars_no_captured; *)
+      let dead_pvars_no_alias = get_sorted_cand (Vset.diff dead_pvars_no_captured !aliased_var) in
+      (* print_aliased_var_l "@. Final Dead variable computed: " dead_pvars_no_alias; *)
+      let dead_pvars_to_add =
+        if exit_node_is_succ n (* add dead aliased vars just before the exit node *)
+        then dead_pvars_no_alias @ (get_sorted_cand (Vset.inter cand !aliased_var))
+        else dead_pvars_no_alias in
+      incr_dead_pvars_added dead_pvars_to_add;
+      if !dead_pvars_added < dead_pvars_limit then add_dead_pvars_after_conditionals_join cfg n dead_pvars_to_add);
   list_iter (fun n -> (* generate nullify instructions *)
-          let dead_pvs_after = Cfg.Node.get_dead_pvars n true in
-          let dead_pvs_before = Cfg.Node.get_dead_pvars n false in
-          node_add_nullify_instrs n dead_pvs_after dead_pvs_before)
+      let dead_pvs_after = Cfg.Node.get_dead_pvars n true in
+      let dead_pvs_before = Cfg.Node.get_dead_pvars n false in
+      node_add_nullify_instrs n dead_pvs_after dead_pvs_before)
     (Cfg.Procdesc.get_nodes pdesc);
   Table.reset ()
 

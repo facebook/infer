@@ -24,8 +24,8 @@ type 'a ext =
   {
     empty : 'a; (** empty extension *)
     check_instr : (** check the extension for an instruction *)
-    get_proc_desc -> Procname.t -> Cfg.Procdesc.t -> Cfg.Node.t
-    -> 'a -> Sil.instr -> parameters -> 'a;
+      get_proc_desc -> Procname.t -> Cfg.Procdesc.t -> Cfg.Node.t
+      -> 'a -> Sil.instr -> parameters -> 'a;
     join : 'a -> 'a -> 'a; (** join two extensions *)
     pp : Format.formatter -> 'a -> unit (** pretty print an extension *)
   }
@@ -99,23 +99,23 @@ let map_join m1 m2 =
     try
       let range1 = M.find exp2 m1 in
       (match range_join range1 range2 with
-        | None -> ()
-        | Some range' -> tjoined := M.add exp2 range' !tjoined)
+       | None -> ()
+       | Some range' -> tjoined := M.add exp2 range' !tjoined)
     with Not_found ->
-        let (t2, ta2, locs2) = range2 in
-        let range2' =
-          let ta2' = TypeAnnotation.with_origin ta2 TypeOrigin.Undef in
-          (t2, ta2', locs2) in
-        tjoined := M.add exp2 range2' !tjoined in
+      let (t2, ta2, locs2) = range2 in
+      let range2' =
+        let ta2' = TypeAnnotation.with_origin ta2 TypeOrigin.Undef in
+        (t2, ta2', locs2) in
+      tjoined := M.add exp2 range2' !tjoined in
   let missing_rhs exp1 range1 = (* handle elements missing in the rhs *)
     try
       ignore (M.find exp1 m2)
     with Not_found ->
-        let (t1, ta1, locs1) = range1 in
-        let range1' =
-          let ta1' = TypeAnnotation.with_origin ta1 TypeOrigin.Undef in
-          (t1, ta1', locs1) in
-        tjoined := M.add exp1 range1' !tjoined in
+      let (t1, ta1, locs1) = range1 in
+      let range1' =
+        let ta1' = TypeAnnotation.with_origin ta1 TypeOrigin.Undef in
+        (t1, ta1', locs1) in
+      tjoined := M.add exp1 range1' !tjoined in
   if m1 == m2 then m1
   else
     try

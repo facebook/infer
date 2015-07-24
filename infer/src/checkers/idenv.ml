@@ -8,7 +8,7 @@
  *)
 
 (** Environment for temporary identifiers used in instructions.
-Lazy implementation: only created when actually used. *)
+    Lazy implementation: only created when actually used. *)
 
 
 type t = (Sil.exp Ident.IdentHash.t) Lazy.t * Cfg.cfg
@@ -41,8 +41,8 @@ let lookup (_map, _) id =
 let expand_expr idenv e = match e with
   | Sil.Var id ->
       (match lookup idenv id with
-        | Some e' -> e'
-        | None -> e)
+       | Some e' -> e'
+       | None -> e)
   | _ -> e
 
 let expand_expr_temps idenv node _exp =
@@ -50,9 +50,9 @@ let expand_expr_temps idenv node _exp =
   match exp with
   | Sil.Lvar pvar when Errdesc.pvar_is_frontend_tmp pvar ->
       (match Errdesc.find_program_variable_assignment node pvar with
-        | None -> exp
-        | Some (_, id) ->
-            expand_expr idenv (Sil.Var id))
+       | None -> exp
+       | Some (_, id) ->
+           expand_expr idenv (Sil.Var id))
   | _ -> exp
 
 (** Return true if the expression is a temporary variable introduced by the front-end. *)

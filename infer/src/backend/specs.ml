@@ -120,15 +120,15 @@ module Jprop = struct
       | [] -> acc
       | (Prop (_, p) as jp) :: jpl ->
           (match f jp with
-            | Some x ->
-                do_filter (x:: acc) jpl
-            | None -> do_filter acc jpl)
+           | Some x ->
+               do_filter (x:: acc) jpl
+           | None -> do_filter acc jpl)
       | (Joined (_, p, jp1, jp2) as jp) :: jpl ->
           (match f jp with
-            | Some x ->
-                do_filter (x:: acc) jpl
-            | None ->
-                do_filter acc (jpl @ [jp1; jp2])) in
+           | Some x ->
+               do_filter (x:: acc) jpl
+           | None ->
+               do_filter acc (jpl @ [jp1; jp2])) in
     do_filter [] jpl
 
   let rec map (f : 'a Prop.t -> 'b Prop.t) = function
@@ -148,20 +148,20 @@ let visited_str vis =
   let lines = ref IntSet.empty in
   let do_one (node, ns) =
     (* if list_length ns > 1 then
-    begin
-    let ss = ref "" in
-    list_iter (fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
-    L.err "Node %d has lines %s@." node !ss
-    end; *)
+       begin
+       let ss = ref "" in
+       list_iter (fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
+       L.err "Node %d has lines %s@." node !ss
+       end; *)
     list_iter (fun n -> lines := IntSet.add n !lines) ns in
   Visitedset.iter do_one vis;
   IntSet.iter (fun n -> s := !s ^ " " ^ string_of_int n) !lines;
   !s
 
 (** A spec consists of:
-pre: a joined prop
-post: a list of props with path
-visited: a list of pairs (node_id, line) for the visited nodes *)
+    pre: a joined prop
+    post: a list of props with path
+    visited: a list of pairs (node_id, line) for the visited nodes *)
 type 'a spec = { pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited : Visitedset.t }
 
 module NormSpec : sig (* encapsulate type for normalized specs *)
@@ -407,10 +407,10 @@ let describe_phase summary =
 let get_signature summary =
   let s = ref "" in
   list_iter (fun (p, typ) ->
-          let pp_name f () = F.fprintf f "%s" p in
-          let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
-          let decl = pp_to_string pp () in
-          s := if !s = "" then decl else !s ^ ", " ^ decl) summary.formals;
+      let pp_name f () = F.fprintf f "%s" p in
+      let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
+      let decl = pp_to_string pp () in
+      s := if !s = "" then decl else !s ^ ", " ^ decl) summary.formals;
   let pp_procname f () = F.fprintf f "%a" Procname.pp summary.proc_name in
   let pp f () = Sil.pp_type_decl pe_text pp_procname Sil.pp_exp f summary.ret_type in
   let decl = pp_to_string pp () in
@@ -462,8 +462,8 @@ let empty_stats err_log calls cyclomatic in_out_calls_opt =
     stats_timeout = false;
     stats_calls =
       (match in_out_calls_opt with
-        | Some in_out_calls -> in_out_calls
-        | None -> { Cg.in_calls = 0; Cg.out_calls = 0 });
+       | Some in_out_calls -> in_out_calls
+       | None -> { Cg.in_calls = 0; Cg.out_calls = 0 });
     symops = 0;
     err_log = err_log;
     nodes_visited_fp = IntSet.empty;
@@ -570,9 +570,9 @@ let load_summary_to_spec_table proc_name =
     | [] -> false
     | spec_path :: spec_paths ->
         (match load_summary spec_path with
-          | None -> load_summary_libs spec_paths
-          | Some summ ->
-              add summ Spec_lib) in
+         | None -> load_summary_libs spec_paths
+         | Some summ ->
+             add summ Spec_lib) in
   let rec load_summary_ziplibs zip_libraries = (* try to load the summary from a list of zip libraries *)
     let zip_specs_filename = specs_filename proc_name in
     let zip_specs_path =
@@ -591,7 +591,7 @@ let load_summary_to_spec_table proc_name =
   let default_spec_dir = res_dir_specs_filename proc_name in
   match load_summary default_spec_dir with
   | None ->
-  (* search on models, libzips, and libs *)
+      (* search on models, libzips, and libs *)
       if load_summary_models (specs_models_filename proc_name) then true
       else if load_summary_ziplibs !Config.zip_libraries then true
       else load_summary_libs (specs_library_filenames proc_name)
@@ -603,9 +603,9 @@ let rec get_summary_origin proc_name =
   try
     Some (Procname.Hash.find spec_tbl proc_name)
   with Not_found ->
-      if load_summary_to_spec_table proc_name then
-        get_summary_origin proc_name
-      else None
+    if load_summary_to_spec_table proc_name then
+      get_summary_origin proc_name
+    else None
 
 let get_summary proc_name =
   match get_summary_origin proc_name with
@@ -619,7 +619,7 @@ let get_summary_unsafe proc_name =
   | Some summary -> summary
 
 (** Check if the procedure is from a library:
-It's not defined in the current proc desc, and there is no spec file for it. *)
+    It's not defined in the current proc desc, and there is no spec file for it. *)
 let proc_is_library proc_name proc_desc =
   let defined = Cfg.Procdesc.is_defined proc_desc in
   if not defined then
@@ -688,7 +688,7 @@ let get_flag proc_name key =
       with Not_found -> None
 
 (** Get the iterations associated to the procedure if any, or the default timeout from the
-command line *)
+    command line *)
 let get_iterations proc_name =
   match get_summary proc_name with
   | None ->
@@ -735,7 +735,7 @@ let re_initialize_dependency_map dependency_map =
   Procname.Map.map (fun dep_proc -> - 1) dependency_map
 
 (** Update the dependency map of [proc_name] with the current
-timestamps of the dependents *)
+    timestamps of the dependents *)
 let update_dependency_map proc_name =
   match get_summary_origin proc_name with
   | None ->
@@ -749,12 +749,12 @@ let update_dependency_map proc_name =
       set_summary_origin proc_name { summary with dependency_map = current_dependency_map } origin
 
 (** [init_summary loc (proc_name, ret_type, formals, depend_list, loc, nodes,
-proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt, proc_attributes)]
-initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
+    proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt, proc_attributes)]
+    initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary
     (proc_name, ret_type, formals, depend_list, loc,
-    nodes, proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt,
-    proc_attributes) =
+     nodes, proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt,
+     proc_attributes) =
   let dependency_map = mk_initial_dependency_map depend_list in
   let summary =
     {
@@ -790,19 +790,19 @@ let reset_summary call_graph proc_name loc =
     Sil.is_generated = false;
   } in
   init_summary (
-      proc_name,
-      Sil.Tvoid,
-      [],
-      Procname.Set.elements
-        dependents,
-      loc,
-      [],
-      proc_flags_empty (),
-      Errlog.empty (),
-      [],
-      0,
-      Some (Cg.get_calls call_graph proc_name),
-      proc_attributes
-    )
+    proc_name,
+    Sil.Tvoid,
+    [],
+    Procname.Set.elements
+      dependents,
+    loc,
+    [],
+    proc_flags_empty (),
+    Errlog.empty (),
+    [],
+    0,
+    Some (Cg.get_calls call_graph proc_name),
+    proc_attributes
+  )
 
 (* =============== END of support for spec tables =============== *)

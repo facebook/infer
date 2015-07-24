@@ -76,7 +76,7 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
   | EnumDecl(decl_info, name_info, opt_type, decl_list, decl_context_info, enum_decl_info)
-  when should_translate_enum ->
+    when should_translate_enum ->
       let name = name_info.Clang_ast_t.ni_name in
       CEnum_decl.enum_decl name tenv cfg cg namespace decl_list opt_type
 
@@ -155,5 +155,5 @@ let do_source_file source_file ast =
   if !CFrontend_config.stats_mode then Cfg.check_cfg_connectedness cfg;
   if !CFrontend_config.stats_mode || !CFrontend_config.debug_mode || !CFrontend_config.testing_mode then
     (Dotty.print_icfg_dotty cfg [];
-      Cg.save_call_graph_dotty None Specs.get_specs call_graph)
+     Cg.save_call_graph_dotty None Specs.get_specs call_graph)
 

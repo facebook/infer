@@ -12,13 +12,13 @@ open Printf
 exception UsageError of string
 
 let () = try
-  if Array.length Sys.argv < 2 then
-    raise (UsageError ("Missing source file as first command line argument."))
-  else
-    let filename = Sys.argv.(1) in
-    let lexbuf = Lexing.from_channel (open_in filename) in
-    let prog = LParser.prog LLexer.token lexbuf in
-    let pretty = LPretty.pretty_prog prog in
-    LTrans.gen_prog prog; ()
-with
+    if Array.length Sys.argv < 2 then
+      raise (UsageError ("Missing source file as first command line argument."))
+    else
+      let filename = Sys.argv.(1) in
+      let lexbuf = Lexing.from_channel (open_in filename) in
+      let prog = LParser.prog LLexer.token lexbuf in
+      let pretty = LPretty.pretty_prog prog in
+      LTrans.gen_prog prog; ()
+  with
   | UsageError msg -> print_string ("Usage error: " ^ msg ^ "\n")

@@ -55,8 +55,8 @@ module ErrLogHash = Hashtbl.Make (struct
   end)
 
 (** Type of the error log, to be reset once per function.
-Map err_kind, fotprint / re - execution flag, error name,
-error description, severity, to set of err_data. *)
+    Map err_kind, fotprint / re - execution flag, error name,
+    error description, severity, to set of err_data. *)
 type t = ErrDataSet.t ErrLogHash.t
 
 (** Empty error log *)
@@ -70,19 +70,19 @@ type iter_fun =
 (** Apply f to nodes and error names *)
 let iter (f: iter_fun) (err_log: t) =
   ErrLogHash.iter (fun (ekind, in_footprint, err_name, desc, severity) set ->
-          ErrDataSet.iter
-            (fun (node_id_key, section, loc, mloco, ltr, pre_opt, eclass) ->
-                  f
-                    node_id_key loc ekind in_footprint err_name
-                    desc severity ltr pre_opt eclass)
-            set)
+      ErrDataSet.iter
+        (fun (node_id_key, section, loc, mloco, ltr, pre_opt, eclass) ->
+           f
+             node_id_key loc ekind in_footprint err_name
+             desc severity ltr pre_opt eclass)
+        set)
     err_log
 
 (** Return the number of elements in the error log which satisfy [filter] *)
 let size filter (err_log: t) =
   let count = ref 0 in
   ErrLogHash.iter (fun (ekind, in_footprint, _, _, _) eds ->
-          if filter ekind in_footprint then count := !count + (ErrDataSet.cardinal eds)) err_log;
+      if filter ekind in_footprint then count := !count + (ErrDataSet.cardinal eds)) err_log;
   !count
 
 (** Print an error log *)
@@ -125,7 +125,7 @@ let severity_to_str severity = match severity with
   | Exceptions.Low -> "LOW"
 
 (** Add an error description to the error log unless there is
-one already at the same node + session; return true if added *)
+    one already at the same node + session; return true if added *)
 let add_issue tbl (ekind, in_footprint, err_name, desc, severity) (eds: ErrDataSet.t) : bool =
   try
     let current_eds = ErrLogHash.find tbl (ekind, in_footprint, err_name, desc, severity) in
@@ -138,16 +138,16 @@ let add_issue tbl (ekind, in_footprint, err_name, desc, severity) (eds: ErrDataS
         true
       end
   with Not_found ->
-      begin
-        ErrLogHash.add tbl (ekind, in_footprint, err_name, desc, severity) eds;
-        true
-      end
+    begin
+      ErrLogHash.add tbl (ekind, in_footprint, err_name, desc, severity) eds;
+      true
+    end
 
 (** Update an old error log with a new one *)
 let update errlog_old errlog_new =
   ErrLogHash.iter
     (fun (ekind, infp, s, desc, severity) l ->
-          ignore (add_issue errlog_old (ekind, infp, s, desc, severity) l)) errlog_new
+       ignore (add_issue errlog_old (ekind, infp, s, desc, severity) l)) errlog_new
 
 
 let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
@@ -237,26 +237,26 @@ module Err_table = struct
         let err_list = LocMap.find nslm !map in
         map := LocMap.add nslm ((err_name, desc) :: err_list) !map
       with Not_found ->
-          map := LocMap.add nslm [(err_name, desc)] !map in
+        map := LocMap.add nslm [(err_name, desc)] !map in
     let f err_name eds =
       ErrDataSet.iter (fun loc -> add_err loc err_name) eds in
     ErrLogHash.iter f err_table;
 
     let pp ekind (nodeidkey, session, loc, mloco, ltr, pre_opt, eclass) fmt err_names =
       list_iter (fun (err_name, desc) ->
-              Exceptions.pp_err nodeidkey loc ekind err_name desc mloco fmt ()) err_names in
+          Exceptions.pp_err nodeidkey loc ekind err_name desc mloco fmt ()) err_names in
     F.fprintf fmt "@.Detailed errors during footprint phase:@.";
     LocMap.iter (fun nslm err_names ->
-            F.fprintf fmt "%a" (pp Exceptions.Kerror nslm) err_names) !map_err_fp;
+        F.fprintf fmt "%a" (pp Exceptions.Kerror nslm) err_names) !map_err_fp;
     F.fprintf fmt "@.Detailed errors during re-execution phase:@.";
     LocMap.iter (fun nslm err_names ->
-            F.fprintf fmt "%a" (pp Exceptions.Kerror nslm) err_names) !map_err_re;
+        F.fprintf fmt "%a" (pp Exceptions.Kerror nslm) err_names) !map_err_re;
     F.fprintf fmt "@.Detailed warnings during footprint phase:@.";
     LocMap.iter (fun nslm err_names ->
-            F.fprintf fmt "%a" (pp Exceptions.Kwarning nslm) err_names) !map_warn_fp;
+        F.fprintf fmt "%a" (pp Exceptions.Kwarning nslm) err_names) !map_warn_fp;
     F.fprintf fmt "@.Detailed warnings during re-execution phase:@.";
     LocMap.iter (fun nslm err_names ->
-            F.fprintf fmt "%a" (pp Exceptions.Kwarning nslm) err_names) !map_warn_re
+        F.fprintf fmt "%a" (pp Exceptions.Kwarning nslm) err_names) !map_warn_re
 end
 
 type err_table = Err_table.t

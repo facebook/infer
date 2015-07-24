@@ -46,22 +46,22 @@ let lookup_var_type context pvar =
     Printing.log_out "found '%s' in formals.@." (Sil.typ_to_string t);
     t
   with Not_found ->
+    try
+      let s, t = list_find (fun (s, t) -> Mangled.equal (Sil.pvar_get_name pvar) s) locals in
+      Printing.log_out "When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
+      Printing.log_out "found '%s' in locals.@." (Sil.typ_to_string t);
+      t
+    with Not_found ->
       try
-        let s, t = list_find (fun (s, t) -> Mangled.equal (Sil.pvar_get_name pvar) s) locals in
-        Printing.log_out "When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
-        Printing.log_out "found '%s' in locals.@." (Sil.typ_to_string t);
-        t
+        let typ = CGlobal_vars.var_get_typ (CGlobal_vars.find (Sil.pvar_get_name pvar)) in
+        Printing.log_out "When looking for type of variable '%s'" (Sil.pvar_to_string pvar);
+        Printing.log_out " found '%s' in globals.@." (Sil.typ_to_string typ);
+        typ
       with Not_found ->
-          try
-            let typ = CGlobal_vars.var_get_typ (CGlobal_vars.find (Sil.pvar_get_name pvar)) in
-            Printing.log_out "When looking for type of variable '%s'" (Sil.pvar_to_string pvar);
-            Printing.log_out " found '%s' in globals.@." (Sil.typ_to_string typ);
-            typ
-          with Not_found ->
-              Printing.log_err
-                "WARNING: Variable '%s' not found in local+formal when looking for its type. Returning void.\n%!"
-                (Sil.pvar_to_string pvar);
-              Sil.Tvoid
+        Printing.log_err
+          "WARNING: Variable '%s' not found in local+formal when looking for its type. Returning void.\n%!"
+          (Sil.pvar_to_string pvar);
+        Sil.Tvoid
 
 (* Extract the type out of a statement. This is useful when the statement  *)
 (* denotes actually an expression                                          *)
@@ -176,8 +176,8 @@ let get_raw_qual_type_decl_ref_exp_info decl_ref_expr_info =
   match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
   | Some d ->
       (match d.Clang_ast_t.dr_qual_type with
-        | Some qt -> Some qt.Clang_ast_t.qt_raw
-        | None -> None)
+       | Some qt -> Some qt.Clang_ast_t.qt_raw
+       | None -> None)
   | None -> None
 
 (* Iterates over the tenv to find the value of the enumeration constant    *)

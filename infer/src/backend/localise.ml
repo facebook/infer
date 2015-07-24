@@ -142,7 +142,7 @@ module BucketLevel = struct
 end
 
 (** takes in input a tag to extract from the given error_desc
-and returns its value *)
+    and returns its value *)
 let error_desc_extract_tag_value (_, _, tags) tag_to_extract =
   let find_value tag v =
     match v with
@@ -286,7 +286,7 @@ let deref_str_undef (proc_name, loc) =
     value_pre = Some (pointer_or_object ());
     value_post = None;
     problem_str = "could be assigned by a call to skip function " ^ proc_name_str ^
-      at_line_tag tags Tags.call_line loc ^ " and is dereferenced or freed"; }
+                  at_line_tag tags Tags.call_line loc ^ " and is dereferenced or freed"; }
 
 (** dereference strings for a freed pointer dereference *)
 let deref_str_freed ra =
@@ -403,8 +403,8 @@ let dereference_string deref_str value_str access_opt loc =
     let problem_str =
       match Tags.get !tags Tags.nullable_src with
       | Some nullable_src ->
-        if nullable_src = value_str then "is annotated with @Nullable and is dereferenced without a null check"
-        else "is indirectly marked @Nullable (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
+          if nullable_src = value_str then "is annotated with @Nullable and is dereferenced without a null check"
+          else "is indirectly marked @Nullable (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
       | None -> deref_str.problem_str in
     [(problem_str ^ " " ^ at_line tags loc)] in
   value_desc:: access_desc @ problem_desc, None, !tags

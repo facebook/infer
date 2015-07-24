@@ -113,31 +113,31 @@ let project_root : string option ref = ref None
 (** FLAGS AND GLOBAL VARIABLES *)
 
 (** Flag for abstracting fields of structs
-0 = no
-1 = forget some fields during matching (and so lseg abstraction) *)
+    0 = no
+    1 = forget some fields during matching (and so lseg abstraction) *)
 let abs_struct = ref 1
 
 (** Flag for abstracting numerical values
-0 = no abstraction.
-1 = evaluate all expressions abstractly.
-2 = 1 + abstract constant integer values during join.
+    0 = no abstraction.
+    1 = evaluate all expressions abstractly.
+    2 = 1 + abstract constant integer values during join.
 *)
 let abs_val = ref 2
 
 (** if true, completely ignore the possibility that errors can be caused by unknown procedures
-* during the symbolic execution phase *)
+ * during the symbolic execution phase *)
 let angelic_execution = ref true
 
 (** Flag for forgetting memory leak
-false = no
-true = forget leaked memory cells during abstraction
+    false = no
+    true = forget leaked memory cells during abstraction
 *)
 let allowleak = ref false
 
 (** Flag for ignoring arrays and pointer arithmetic.
-0 = treats both features soundly.
-1 = assumes that the size of every array is infinite.
-2 = assumes that all heap dereferences via array indexing and pointer arithmetic are correct.
+    0 = treats both features soundly.
+    1 = assumes that the size of every array is infinite.
+    2 = assumes that all heap dereferences via array indexing and pointer arithmetic are correct.
 *)
 let array_level = ref 0
 
@@ -186,14 +186,14 @@ let intraprocedural = ref false
 let join_plus = ref true
 
 (** Flag to tune the final information-loss check used by the join
-0 = use the most aggressive join for preconditions
-1 = use the least aggressive join for preconditions
+    0 = use the most aggressive join for preconditions
+    1 = use the least aggressive join for preconditions
 *)
 let join_cond = ref 1
 
 (** Flag for turning on the transformation that
-null is assigned to a program variable when it becomes dead.
-**)
+    null is assigned to a program variable when it becomes dead.
+ **)
 let liveness = ref true
 
 (** if true, give static procs a long name filename::procname *)
@@ -212,9 +212,9 @@ let max_num_proc = ref 0
 let max_recursion = ref 5
 
 (** Flag to tune the level of applying the meet operator for
-preconditions during the footprint analysis.
-0 = do not use the meet.
-1 = use the meet to generate new preconditions.
+    preconditions during the footprint analysis.
+    0 = do not use the meet.
+    1 = use the meet to generate new preconditions.
 *)
 let meet_level = ref 1
 
@@ -258,9 +258,9 @@ let results_dir = ref default_results_dir
 let slice_fun = ref ""
 
 (** Flag to tune the level of abstracting the postconditions of specs discovered
-by the footprint analysis.
-0 = nothing special.
-1 = filter out redundant posts implied by other posts. *)
+    by the footprint analysis.
+    0 = nothing special.
+    1 = filter out redundant posts implied by other posts. *)
 let spec_abs_level = ref 1
 
 (** Flag for test mode *)
@@ -294,15 +294,15 @@ let taint_analysis = ref false
 let trace_anal = ref false
 
 (** Flag for turning on the optimization based on locality
-0 = no
-1 = based on reachability
+    0 = no
+    1 = based on reachability
 *)
 let undo_join = ref true
 
 (** visit mode for the worklist:
-0 depth - fist visit
-1 bias towards exit node
-2 least visited first *)
+    0 depth - fist visit
+    1 bias towards exit node
+    2 least visited first *)
 let worklist_mode = ref 0
 
 (** flag: if true write dot files in db dir*)
@@ -328,16 +328,16 @@ let show_ml_buckets = ref false
 let dotty_cfg_libs = ref true
 
 (** if true, it deals with messages (method calls) in objective-c using the objective-c
-typical semantics. That is: if the receiver is nil then the method is nop and it returns 0.
-When the flag is false we deal with messages as standard method / function calls *)
+    typical semantics. That is: if the receiver is nil then the method is nop and it returns 0.
+    When the flag is false we deal with messages as standard method / function calls *)
 let objc_method_call_semantics = ref true
 
 (** if true, generate preconditions for runtime exceptions in Java and report errors for the public
-methods having preconditions to throw runtime exceptions *)
+    methods having preconditions to throw runtime exceptions *)
 let report_runtime_exceptions = ref false
 
 (** if true, sanity-check inferred preconditions against Nullable annotations and report
-inconsistencies *)
+    inconsistencies *)
 let report_nullable_inconsistency = ref true
 
 (** true if the current objective-c source file is compiled with automatic reference counting (ARC) *)
@@ -356,11 +356,11 @@ module Experiment = struct
   let activate_subtyping_in_cpp = ref false
 
   (** if true, a precondition with e.g. index 3 in an array does not require the caller to have index 3 too
-  this mimics what happens with direct access to the array without a procedure call, where the index is simply materialized if not there *)
+      this mimics what happens with direct access to the array without a procedure call, where the index is simply materialized if not there *)
   let allow_missing_index_in_proc_call = ref true
 
   (** if true, a procedure call succeeds even when there is a bound error
-  this mimics what happens with a direct array access where an error is produced and the analysis continues *)
+      this mimics what happens with a direct array access where an error is produced and the analysis continues *)
   let bound_error_allowed_in_procedure_call = ref true
 
 end

@@ -25,7 +25,7 @@ struct
       type t = Sil.instr
       let compare i1 i2 = match i1, i2 with
         | Sil.Call (ret1, e1, etl1, loc1, cf1), Sil.Call (ret2, e2, etl2, loc2, cf2) ->
-        (* ignore return ids and call flags *)
+            (* ignore return ids and call flags *)
             let n = Sil.exp_compare e1 e2 in
             if n <> 0 then n else let n = list_compare Sil.exp_typ_compare etl1 etl2 in
               if n <> 0 then n else Sil.call_flags_compare cf1 cf2
@@ -61,8 +61,8 @@ struct
     | SomePath (** Check if some path exists *)
 
   (** Check if the procedure performs an allocation operation.
-  If [paths] is AllPaths, check if an allocation happens on all paths.
-  If [paths] is SomePath, check if a path with an allocation exists. *)
+      If [paths] is AllPaths, check if an allocation happens on all paths.
+      If [paths] is SomePath, check if a path with an allocation exists. *)
   let proc_performs_allocation pdesc paths : Sil.location option =
 
     let node_allocates node : Sil.location option =
@@ -113,14 +113,14 @@ struct
     let arguments_not_temp args =
       let filter_arg (e, t) = match e with
         | Sil.Lvar pvar ->
-        (* same temporary variable does not imply same value *)
+            (* same temporary variable does not imply same value *)
             not (Errdesc.pvar_is_frontend_tmp pvar)
         | _ -> true in
       list_for_all filter_arg args in
 
     match instr with
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _, loc, call_flags)
-    when ret_ids <> [] && arguments_not_temp normalized_etl ->
+      when ret_ids <> [] && arguments_not_temp normalized_etl ->
         let instr_normalized_args = Sil.Call (
             ret_ids,
             Sil.Const (Sil.Cfun callee_pname),

@@ -304,9 +304,9 @@ module Subtype = struct
     try
       SubtypesMap.find (c1, c2) !subtMap
     with Not_found ->
-        let is_subt = f c1 c2 in
-        subtMap := (SubtypesMap.add (c1, c2) is_subt !subtMap);
-        is_subt
+      let is_subt = f c1 c2 in
+      subtMap := (SubtypesMap.add (c1, c2) is_subt !subtMap);
+      is_subt
 
   let flag_to_string flag =
     match flag with
@@ -385,12 +385,12 @@ module Subtype = struct
     match st_opt with
     | Some st ->
         (match st with
-          | Exact, flag ->
-              let new_flag = update_flag c1 c2 flag flag' in
-              Some (Exact, new_flag)
-          | Subtypes t, flag ->
-              let new_flag = update_flag c1 c2 flag flag' in
-              Some (Subtypes t, new_flag))
+         | Exact, flag ->
+             let new_flag = update_flag c1 c2 flag flag' in
+             Some (Exact, new_flag)
+         | Subtypes t, flag ->
+             let new_flag = update_flag c1 c2 flag flag' in
+             Some (Subtypes t, new_flag))
     | None -> None
 
   let normalize_subtypes t_opt c1 c2 flag1 flag2 =
@@ -398,9 +398,9 @@ module Subtype = struct
     match t_opt with
     | Some t ->
         (match t with
-          | Exact -> Some (t, new_flag)
-          | Subtypes l ->
-              Some (Subtypes (list_sort Mangled.compare l), new_flag))
+         | Exact -> Some (t, new_flag)
+         | Subtypes l ->
+             Some (Subtypes (list_sort Mangled.compare l), new_flag))
     | None -> None
 
   let subtypes_to_string t =
@@ -417,9 +417,9 @@ module Subtype = struct
     f c1 c2 && not (Mangled.equal c1 c2)
 
   (* checks for redundancies when adding c to l
-  Xi in A - { X1,..., Xn } is redundant in two cases:
-  1) not (Xi <: A) because removing the subtypes of Xi has no effect unless Xi is a subtype of A
-  2) Xi <: Xj because the subtypes of Xi are a subset of the subtypes of Xj *)
+     Xi in A - { X1,..., Xn } is redundant in two cases:
+     1) not (Xi <: A) because removing the subtypes of Xi has no effect unless Xi is a subtype of A
+     2) Xi <: Xj because the subtypes of Xi are a subset of the subtypes of Xj *)
   let check_redundancies f c l =
     let aux (l, add) ci =
       let l, should_add =
@@ -437,7 +437,7 @@ module Subtype = struct
         else (updates_head f c rest)
 
   (* adds the classes of l2 to l1 and checks that no redundancies or inconsistencies will occur
-  A - { X1,..., Xn } is inconsistent if A <: Xi for some i *)
+     A - { X1,..., Xn } is inconsistent if A <: Xi for some i *)
   let rec add_not_subtype f c1 l1 l2 =
     match l2 with
     | [] -> l1
@@ -494,10 +494,10 @@ module Subtype = struct
     (change_flag pos_st c1 c2 flag2), (change_flag neg_st c1 c2 flag2)
 
   (** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2] according to [st1] and [st2]
-  where f c1 c2 is true if c1 is a subtype of c2.
-  get_subtypes returning a pair:
-  - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
-  - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return the updated subtype [st1] *)
+      where f c1 c2 is true if c1 is a subtype of c2.
+      get_subtypes returning a pair:
+      - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
+      - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return the updated subtype [st1] *)
   let case_analysis (c1, st1) (c2, st2) f is_interface =
     let f = check_subtype f in
     if (!Config.subtype_multirange) then
@@ -651,7 +651,7 @@ type dexp =
   | Dretcall of dexp * dexp list * location * call_flags
 
 (** Value paths: identify an occurrence of a value in a symbolic heap
-each expression represents a path, with Dpvar being the simplest one *)
+    each expression represents a path, with Dpvar being the simplest one *)
 and vpath =
   dexp option
 
@@ -708,9 +708,9 @@ and typ =
   | Tptr of typ * ptr_kind (** pointer type *)
   | Tstruct of struct_fields * struct_fields * csu * Mangled.t option * (csu * Mangled.t) list * Procname.t list * item_annotation (** structure type with class/struct/union flag and name and list of superclasses *)
   (** Structure type with nonstatic and static fields, class/struct/union flag, name, list of superclasses,
-  methods defined, and annotations.
-  The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts
-  of C structs. *)
+      methods defined, and annotations.
+      The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts
+      of C structs. *)
   | Tarray of typ * exp (** array type with fixed size *)
   | Tenum of (Mangled.t * const) list
 
@@ -753,7 +753,7 @@ type instr =
   | Prune of exp * location * bool * if_kind (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of Ident.t list * exp * (exp * typ) list * location * call_flags
   (** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
-  [ret_id1..ret_idn = e_fun(arg_ts);] where n = 0 for void return and n > 1 for struct return *)
+      [ret_id1..ret_idn = e_fun(arg_ts);] where n = 0 for void return and n > 1 for struct return *)
   | Nullify of pvar * location * bool (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
   | Abstract of location (** apply abstraction *)
   | Remove_temps of Ident.t list * location (** remove temporaries *)
@@ -810,31 +810,31 @@ type strexp =
   | Estruct of (Ident.fieldname * strexp) list * inst  (** C structure *)
   | Earray of exp * (exp * strexp) list * inst  (** Array of given size. *)
 (** There are two conditions imposed / used in the array case.
-First, if some index and value pair appears inside an array
-in a strexp, then the index is less than the size of the array.
-For instance, x |->[10 | e1: v1] implies that e1 <= 9.
-Second, if two indices appear in an array, they should be different.
-For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
+    First, if some index and value pair appears inside an array
+    in a strexp, then the index is less than the size of the array.
+    For instance, x |->[10 | e1: v1] implies that e1 <= 9.
+    Second, if two indices appear in an array, they should be different.
+    For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
 
 (** an atomic heap predicate *)
 and hpred =
   | Hpointsto of exp * strexp * exp
   (** represents [exp|->strexp:typexp] where [typexp]
-  is an expression representing a type, e.h. [sizeof(t)]. *)
+      is an expression representing a type, e.h. [sizeof(t)]. *)
   | Hlseg of lseg_kind * hpara * exp * exp * exp list
   (** higher - order predicate for singly - linked lists.
-  Should ensure that exp1!= exp2 implies that exp1 is allocated.
-  This assumption is used in the rearrangement. The last [exp list] parameter
-  is used to denote the shared links by all the nodes in the list. *)
+      Should ensure that exp1!= exp2 implies that exp1 is allocated.
+      This assumption is used in the rearrangement. The last [exp list] parameter
+      is used to denote the shared links by all the nodes in the list. *)
   | Hdllseg of lseg_kind * hpara_dll * exp * exp * exp * exp * exp list
-(** higher-order predicate for doubly-linked lists. *)
+  (** higher-order predicate for doubly-linked lists. *)
 
 (** parameter for the higher-order singly-linked list predicate.
-Means "lambda (root,next,svars). Exists evars. body".
-Assume that root, next, svars, evars are disjoint sets of
-primed identifiers, and include all the free primed identifiers in body.
-body should not contain any non - primed identifiers or program
-variables (i.e. pvars). *)
+    Means "lambda (root,next,svars). Exists evars. body".
+    Assume that root, next, svars, evars are disjoint sets of
+    primed identifiers, and include all the free primed identifiers in body.
+    body should not contain any non - primed identifiers or program
+    variables (i.e. pvars). *)
 and hpara =
   { root: Ident.t;
     next: Ident.t;
@@ -843,8 +843,8 @@ and hpara =
     body: hpred list }
 
 (** parameter for the higher-order doubly-linked list predicates.
-Assume that all the free identifiers in body_dll should belong to
-cell, blink, flink, svars_dll, evars_dll. *)
+    Assume that all the free identifiers in body_dll should belong to
+    cell, blink, flink, svars_dll, evars_dll. *)
 and hpara_dll =
   { cell: Ident.t;  (** address cell *)
     blink: Ident.t;  (** backward link *)
@@ -892,8 +892,8 @@ let pvar_get_simplified_name pv =
   match string_split_character s '.' with
   | Some s1, s2 ->
       (match string_split_character s1 '.' with
-        | Some s3, s4 -> s4 ^ "." ^ s2
-        | _ -> s)
+       | Some s3, s4 -> s4 ^ "." ^ s2
+       | _ -> s)
   | _ -> s
 
 (** Check if the pvar is an abucted return var or param passed by ref *)
@@ -1087,8 +1087,8 @@ let binop_compare o1 o2 = match o1, o2 with
 let binop_equal o1 o2 = binop_compare o1 o2 = 0
 
 (** This function returns true if the operation is injective
-wrt. each argument: op(e,-) and op(-, e) is injective for all e.
-The return value false means "don't know". *)
+    wrt. each argument: op(e,-) and op(-, e) is injective for all e.
+    The return value false means "don't know". *)
 let binop_injective = function
   | PlusA | PlusPI | MinusA | MinusPI | MinusPP -> true
   | _ -> false
@@ -1099,9 +1099,9 @@ let binop_invertible = function
   | _ -> false
 
 (** This function inverts an injective binary operator
-with respect to the first argument. It returns an expression [e'] such that
-BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
-the function raises an exception by calling "assert false". *)
+    with respect to the first argument. It returns an expression [e'] such that
+    BinOp([binop], [e'], [exp1]) = [exp2]. If the [binop] operation is not invertible,
+    the function raises an exception by calling "assert false". *)
 let binop_invert bop e1 e2 =
   let inverted_bop = match bop with
     | PlusA -> MinusA
@@ -1112,7 +1112,7 @@ let binop_invert bop e1 e2 =
   BinOp(inverted_bop, e2, e1)
 
 (** This function returns true if 0 is the right unit of [binop].
-The return value false means "don't know". *)
+    The return value false means "don't know". *)
 let binop_is_zero_runit = function
   | PlusA | PlusPI | MinusA | MinusPI | MinusPP -> true
   | _ -> false
@@ -1373,7 +1373,7 @@ and typ_compare t1 t2 =
     | Tarray _, _ -> -1
     | _, Tarray _ -> 1
     | Tenum l1, Tenum l2 ->
-    (* Here we take as result the first non-zero result when comparing their (constant,value) pair.*)
+        (* Here we take as result the first non-zero result when comparing their (constant,value) pair.*)
         let compare_pair (n1, e1) (n2, e2) =
           let n = Mangled.compare n1 n2 in
           if n <> 0 then n else const_compare e1 e2 in
@@ -1661,10 +1661,10 @@ module TypMap = Map.Make(struct
 (** {2 Sets of expressions} *)
 
 module ExpSet = Set.Make
-  (struct
-    type t = exp
-    let compare = exp_compare
-  end)
+    (struct
+      type t = exp
+      let compare = exp_compare
+    end)
 
 module ExpMap = Map.Make(struct
     type t = exp
@@ -1678,10 +1678,10 @@ let elist_to_eset es =
 (** {2 Sets of heap predicates} *)
 
 module HpredSet = Set.Make
-  (struct
-    type t = hpred
-    let compare = hpred_compare
-  end)
+    (struct
+      type t = hpred
+      let compare = hpred_compare
+    end)
 
 (** {2 Pretty Printing} *)
 
@@ -2015,8 +2015,8 @@ and pp_const pe f = function
   | Cint i -> Int.pp f i
   | Cfun fn ->
       (match pe.pe_kind with
-        | PP_HTML -> F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
-        | _ -> F.fprintf f "_fun_%s" (Procname.to_string fn))
+       | PP_HTML -> F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
+       | _ -> F.fprintf f "_fun_%s" (Procname.to_string fn))
   | Cstr s -> F.fprintf f "\"%s\"" (String.escaped s)
   | Cfloat v -> F.fprintf f "%f" v
   | Cattribute att -> F.fprintf f "%s" (attribute_to_string pe att)
@@ -2030,8 +2030,8 @@ and pp_typ pe f te =
   if !Config.print_types then pp_typ_full pe f te else ()
 
 (** Pretty print a type declaration.
-pp_base prints the variable for a declaration, or can be skip to print only the type
-pp_size prints the expression for the array size *)
+    pp_base prints the variable for a declaration, or can be skip to print only the type
+    pp_size prints the expression for the array size *)
 and pp_type_decl pe pp_base pp_size f = function
   | Tvar tname -> F.fprintf f "%s %a" (typename_to_string tname) pp_base ()
   | Tint ik -> F.fprintf f "%s %a" (ikind_to_string ik) pp_base ()
@@ -2048,7 +2048,7 @@ and pp_type_decl pe pp_base pp_size f = function
   | Tstruct (ftal, sftal, csu, Some name, _, _, _) when false -> (* remove "when false" to print the details of struct *)
       F.fprintf f "%s %a {%a} %a" (csu_name csu) Mangled.pp name
         (pp_seq (fun f (fld, t, ann) ->
-                  F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld))
+             F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld))
         ftal pp_base ()
   | Tstruct (ftal, sftal, csu, Some name, _, _, _) ->
       F.fprintf f "%s %a %a" (csu_name csu) Mangled.pp name pp_base ()
@@ -2072,32 +2072,32 @@ and _pp_exp pe0 pp_t f e0 =
     | Some sub -> Obj.obj (sub (Obj.repr e0)) (* apply object substitution to expression *)
     | None -> e0 in
   (if not (exp_equal e0 e)
-    then
-      match e with
-      | Lvar pvar -> pp_pvar_value pe f pvar
-      | _ -> assert false
-    else
-      let pp_exp = _pp_exp pe pp_t in
-      let print_binop_stm_output e1 op e2 =
-        match op with
-        | Eq | Ne | PlusA | Mult -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe op) pp_exp e1
-        | Lt -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Gt) pp_exp e1
-        | Gt -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Lt) pp_exp e1
-        | Le -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Ge) pp_exp e1
-        | Ge -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Le) pp_exp e1
-        | _ -> F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2 in
-      begin match e with
-        | Var id -> (Ident.pp pe) f id
-        | Const c -> F.fprintf f "%a" (pp_const pe) c
-        | Cast (typ, e) -> F.fprintf f "(%a)%a" pp_t typ pp_exp e
-        | UnOp (op, e, _) -> F.fprintf f "%s%a" (str_unop op) pp_exp e
-        | BinOp (op, Const c, e2) when !Config.smt_output -> print_binop_stm_output (Const c) op e2
-        | BinOp (op, e1, e2) -> F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
-        | Lvar pv -> pp_pvar pe f pv
-        | Lfield (e, fld, typ) -> F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
-        | Lindex (e1, e2) -> F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
-        | Sizeof (t, s) -> F.fprintf f "sizeof(%a%a)" pp_t t Subtype.pp s
-      end);
+   then
+     match e with
+     | Lvar pvar -> pp_pvar_value pe f pvar
+     | _ -> assert false
+   else
+     let pp_exp = _pp_exp pe pp_t in
+     let print_binop_stm_output e1 op e2 =
+       match op with
+       | Eq | Ne | PlusA | Mult -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe op) pp_exp e1
+       | Lt -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Gt) pp_exp e1
+       | Gt -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Lt) pp_exp e1
+       | Le -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Ge) pp_exp e1
+       | Ge -> F.fprintf f "(%a %s %a)" pp_exp e2 (str_binop pe Le) pp_exp e1
+       | _ -> F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2 in
+     begin match e with
+       | Var id -> (Ident.pp pe) f id
+       | Const c -> F.fprintf f "%a" (pp_const pe) c
+       | Cast (typ, e) -> F.fprintf f "(%a)%a" pp_t typ pp_exp e
+       | UnOp (op, e, _) -> F.fprintf f "%s%a" (str_unop op) pp_exp e
+       | BinOp (op, Const c, e2) when !Config.smt_output -> print_binop_stm_output (Const c) op e2
+       | BinOp (op, e1, e2) -> F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
+       | Lvar pv -> pp_pvar pe f pv
+       | Lfield (e, fld, typ) -> F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
+       | Lindex (e1, e2) -> F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
+       | Sizeof (t, s) -> F.fprintf f "sizeof(%a%a)" pp_t t Subtype.pp s
+     end);
   color_post_wrapper changed pe0 f
 
 and pp_exp pe f e =
@@ -2209,33 +2209,33 @@ let pp_call_flags f cf =
 let rec pp_instr pe0 f instr =
   let pe, changed = color_pre_wrapper pe0 f instr in
   (match instr with
-    | Letderef (id, e, t, loc) -> F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (pp_typ pe) t pp_loc loc
-    | Set (e1, t, e2, loc) -> F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (pp_typ pe) t (pp_exp pe) e2 pp_loc loc
-    | Prune (cond, loc, true_branch, ik) ->
-        F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch pp_loc loc
-    | Call (ret_ids, e, arg_ts, loc, cf) ->
-        (match ret_ids with
-          | [] -> ()
-          | _ -> F.fprintf f "%a=" (pp_comma_seq (Ident.pp pe)) ret_ids);
-        F.fprintf f "%a(%a)%a %a" (pp_exp pe) e (pp_comma_seq (pp_exp_typ pe)) (arg_ts) pp_call_flags cf pp_loc loc
-    | Nullify (pvar, loc, deallocate) ->
-        F.fprintf f "NULLIFY(%a,%b); %a" (pp_pvar pe) pvar deallocate pp_loc loc
-    | Abstract loc ->
-        F.fprintf f "APPLY_ABSTRACTION; %a" pp_loc loc
-    | Remove_temps (temps, loc) ->
-        F.fprintf f "REMOVE_TEMPS(%a); %a" (Ident.pp_list pe) temps pp_loc loc
-    | Stackop (stackop, loc) ->
-        let s = match stackop with
-          | Push -> "Push"
-          | Swap -> "Swap"
-          | Pop -> "Pop" in
-        F.fprintf f "STACKOP.%s; %a" s pp_loc loc
-    | Declare_locals (ptl, loc) ->
-    (* let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a:%a" (pp_pvar pe) pvar (pp_typ_full pe) typ in *)
-        let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a" (pp_pvar pe) pvar in
-        F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_pvar_typ) ptl pp_loc loc
-    | Goto_node (e, loc) ->
-        F.fprintf f "Goto_node %a %a" (pp_exp pe) e pp_loc loc
+   | Letderef (id, e, t, loc) -> F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (pp_typ pe) t pp_loc loc
+   | Set (e1, t, e2, loc) -> F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (pp_typ pe) t (pp_exp pe) e2 pp_loc loc
+   | Prune (cond, loc, true_branch, ik) ->
+       F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch pp_loc loc
+   | Call (ret_ids, e, arg_ts, loc, cf) ->
+       (match ret_ids with
+        | [] -> ()
+        | _ -> F.fprintf f "%a=" (pp_comma_seq (Ident.pp pe)) ret_ids);
+       F.fprintf f "%a(%a)%a %a" (pp_exp pe) e (pp_comma_seq (pp_exp_typ pe)) (arg_ts) pp_call_flags cf pp_loc loc
+   | Nullify (pvar, loc, deallocate) ->
+       F.fprintf f "NULLIFY(%a,%b); %a" (pp_pvar pe) pvar deallocate pp_loc loc
+   | Abstract loc ->
+       F.fprintf f "APPLY_ABSTRACTION; %a" pp_loc loc
+   | Remove_temps (temps, loc) ->
+       F.fprintf f "REMOVE_TEMPS(%a); %a" (Ident.pp_list pe) temps pp_loc loc
+   | Stackop (stackop, loc) ->
+       let s = match stackop with
+         | Push -> "Push"
+         | Swap -> "Swap"
+         | Pop -> "Pop" in
+       F.fprintf f "STACKOP.%s; %a" s pp_loc loc
+   | Declare_locals (ptl, loc) ->
+       (* let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a:%a" (pp_pvar pe) pvar (pp_typ_full pe) typ in *)
+       let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a" (pp_pvar pe) pvar in
+       F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_pvar_typ) ptl pp_loc loc
+   | Goto_node (e, loc) ->
+       F.fprintf f "Goto_node %a %a" (pp_exp pe) e pp_loc loc
   );
   color_post_wrapper changed pe0 f
 
@@ -2288,8 +2288,8 @@ and exp_iter_types f e =
   | UnOp (op, e1, typo) ->
       exp_iter_types f e1;
       (match typo with
-        | Some t -> typ_iter_types f t
-        | None -> ())
+       | Some t -> typ_iter_types f t
+       | None -> ())
   | BinOp (op, e1, e2) ->
       exp_iter_types f e1;
       exp_iter_types f e2
@@ -2346,26 +2346,26 @@ let pp_atom pe0 f a =
   begin match a with
     | Aeq (BinOp(op, e1, e2), Const (Cint i)) when Int.isone i ->
         (match pe.pe_kind with
-          | PP_TEXT | PP_HTML ->
-              F.fprintf f "%a" (pp_exp pe) (BinOp(op, e1, e2))
-          | PP_LATEX ->
-              F.fprintf f "%a" (pp_exp pe) (BinOp(op, e1, e2))
+         | PP_TEXT | PP_HTML ->
+             F.fprintf f "%a" (pp_exp pe) (BinOp(op, e1, e2))
+         | PP_LATEX ->
+             F.fprintf f "%a" (pp_exp pe) (BinOp(op, e1, e2))
         )
     | Aeq (e1, e2) ->
         (match pe.pe_kind with
-          | PP_TEXT | PP_HTML ->
-              F.fprintf f "%a = %a" (pp_exp pe) e1 (pp_exp pe) e2
-          | PP_LATEX ->
-              F.fprintf f "%a{=}%a" (pp_exp pe) e1 (pp_exp pe) e2)
+         | PP_TEXT | PP_HTML ->
+             F.fprintf f "%a = %a" (pp_exp pe) e1 (pp_exp pe) e2
+         | PP_LATEX ->
+             F.fprintf f "%a{=}%a" (pp_exp pe) e1 (pp_exp pe) e2)
     | Aneq ((Const (Cattribute a) as ea), e)
     | Aneq (e, (Const (Cattribute a) as ea)) ->
         F.fprintf f "%a(%a)" (pp_exp pe) ea (pp_exp pe) e
     | Aneq (e1, e2) ->
         (match pe.pe_kind with
-          | PP_TEXT | PP_HTML ->
-              F.fprintf f "%a != %a" (pp_exp pe) e1 (pp_exp pe) e2
-          | PP_LATEX ->
-              F.fprintf f "%a{\\neq}%a" (pp_exp pe) e1 (pp_exp pe) e2)
+         | PP_TEXT | PP_HTML ->
+             F.fprintf f "%a != %a" (pp_exp pe) e1 (pp_exp pe) e2
+         | PP_LATEX ->
+             F.fprintf f "%a{\\neq}%a" (pp_exp pe) e1 (pp_exp pe) e2)
   end;
   color_post_wrapper changed pe0 f
 
@@ -2384,9 +2384,9 @@ let rec pp_star_seq pp f = function
 
 (********* START OF MODULE Predicates **********)
 (** Module Predicates records the occurrences of predicates as parameters
-of (doubly -)linked lists and Epara. Provides unique numbering for predicates and an iterator. *)
+    of (doubly -)linked lists and Epara. Provides unique numbering for predicates and an iterator. *)
 module Predicates : sig
-(** predicate environment *)
+  (** predicate environment *)
   type env
   (** create an empty predicate environment *)
   val empty_env : unit -> env
@@ -2397,7 +2397,7 @@ module Predicates : sig
   (** return the id of the hpara_dll *)
   val get_hpara_dll_id : env -> hpara_dll -> int
   (** [iter env f f_dll] iterates [f] and [f_dll] on all the hpara and hpara_dll,
-  passing the unique id to the functions. The iterator can only be used once. *)
+      passing the unique id to the functions. The iterator can only be used once. *)
   val iter : env -> (int -> hpara -> unit) -> (int -> hpara_dll -> unit) -> unit
   (** Process one hpred, updating the predicate environment *)
   val process_hpred : env -> hpred -> unit
@@ -2418,7 +2418,7 @@ end = struct
     end)
 
   (** Map each visited hpara to a unique number and a boolean denoting whether it has been emitted,
-  also keep a list of hparas still to be emitted. Same for hpara_dll. *)
+      also keep a list of hparas still to be emitted. Same for hpara_dll. *)
   type env =
     {
       mutable num: int;
@@ -2443,16 +2443,16 @@ end = struct
   let process_hpara env hpara =
     if not (HparaHash.mem env.hash hpara) then
       (HparaHash.add env.hash hpara (env.num, false);
-        env.num <- env.num + 1;
-        env.todo <- env.todo @ [hpara])
+       env.num <- env.num + 1;
+       env.todo <- env.todo @ [hpara])
 
   (** Process one hpara_dll, updating the map from hparas to numbers, and the todo list *)
   let process_hpara_dll env hpara_dll =
     if not (HparaDllHash.mem env.hash_dll hpara_dll)
     then
       (HparaDllHash.add env.hash_dll hpara_dll (env.num, false);
-        env.num <- env.num + 1;
-        env.todo_dll <- env.todo_dll @ [hpara_dll])
+       env.num <- env.num + 1;
+       env.todo_dll <- env.todo_dll @ [hpara_dll])
 
   (** Process a sexp, updating env *)
   let rec process_sexp env = function
@@ -2484,8 +2484,8 @@ end = struct
     }
 
   (** iterator for predicates which are marked as todo in env, unless they have been visited already.
-  This can in turn extend the todo list for the nested predicates, which are then visited as well.
-  Can be applied only once, as it destroys the todo list *)
+      This can in turn extend the todo list for the nested predicates, which are then visited as well.
+      Can be applied only once, as it destroys the todo list *)
   let iter (env: env) f f_dll =
     while env.todo != [] || env.todo_dll != [] do
       if env.todo != [] then
@@ -2683,26 +2683,26 @@ and pp_hpred_env pe0 envo f hpred =
               { pe with pe_obj_sub = None } (* dont use obj sub on the var defining it *)
           | _ -> pe in
         (match pe'.pe_kind with
-          | PP_TEXT | PP_HTML ->
-              F.fprintf f "%a|->%a:%a" (pp_exp pe') e (pp_sexp_env pe' envo) se (pp_texp_simple pe') te
-          | PP_LATEX ->
-              F.fprintf f "%a\\mapsto %a" (pp_exp pe') e (pp_sexp_env pe' envo) se)
+         | PP_TEXT | PP_HTML ->
+             F.fprintf f "%a|->%a:%a" (pp_exp pe') e (pp_sexp_env pe' envo) se (pp_texp_simple pe') te
+         | PP_LATEX ->
+             F.fprintf f "%a\\mapsto %a" (pp_exp pe') e (pp_sexp_env pe' envo) se)
     | Hlseg (k, hpara, e1, e2, elist) ->
         (match pe.pe_kind with
-          | PP_TEXT | PP_HTML ->
-              F.fprintf f "lseg%a(%a,%a,[%a],%a)"
-                pp_lseg_kind k (pp_exp pe) e1 (pp_exp pe) e2 (pp_comma_seq (pp_exp pe)) elist (pp_hpara_env pe envo) hpara
-          | PP_LATEX ->
-              F.fprintf f "\\textsf{lseg}_{%a}(%a,%a,[%a],%a)"
-                pp_lseg_kind k (pp_exp pe) e1 (pp_exp pe) e2 (pp_comma_seq (pp_exp pe)) elist (pp_hpara_env pe envo) hpara)
+         | PP_TEXT | PP_HTML ->
+             F.fprintf f "lseg%a(%a,%a,[%a],%a)"
+               pp_lseg_kind k (pp_exp pe) e1 (pp_exp pe) e2 (pp_comma_seq (pp_exp pe)) elist (pp_hpara_env pe envo) hpara
+         | PP_LATEX ->
+             F.fprintf f "\\textsf{lseg}_{%a}(%a,%a,[%a],%a)"
+               pp_lseg_kind k (pp_exp pe) e1 (pp_exp pe) e2 (pp_comma_seq (pp_exp pe)) elist (pp_hpara_env pe envo) hpara)
     | Hdllseg (k, hpara_dll, iF, oB, oF, iB, elist) ->
         (match pe.pe_kind with
-          | PP_TEXT | PP_HTML ->
-              F.fprintf f "dllseg%a(%a,%a,%a,%a,[%a],%a)"
-                pp_lseg_kind k (pp_exp pe) iF (pp_exp pe) oB (pp_exp pe) oF (pp_exp pe) iB (pp_comma_seq (pp_exp pe)) elist (pp_hpara_dll_env pe envo) hpara_dll
-          | PP_LATEX ->
-              F.fprintf f "\\textsf{dllseg}_{%a}(%a,%a,%a,%a,[%a],%a)"
-                pp_lseg_kind k (pp_exp pe) iF (pp_exp pe) oB (pp_exp pe) oF (pp_exp pe) iB (pp_comma_seq (pp_exp pe)) elist (pp_hpara_dll_env pe envo) hpara_dll)
+         | PP_TEXT | PP_HTML ->
+             F.fprintf f "dllseg%a(%a,%a,%a,%a,[%a],%a)"
+               pp_lseg_kind k (pp_exp pe) iF (pp_exp pe) oB (pp_exp pe) oF (pp_exp pe) iB (pp_comma_seq (pp_exp pe)) elist (pp_hpara_dll_env pe envo) hpara_dll
+         | PP_LATEX ->
+             F.fprintf f "\\textsf{dllseg}_{%a}(%a,%a,%a,%a,[%a],%a)"
+               pp_lseg_kind k (pp_exp pe) iF (pp_exp pe) oB (pp_exp pe) oF (pp_exp pe) iB (pp_comma_seq (pp_exp pe)) elist (pp_hpara_dll_env pe envo) hpara_dll)
   end;
   color_post_wrapper changed pe0 f
 
@@ -2868,24 +2868,24 @@ let unsome_typ s = function
       assert false
 
 (** Turn an expression representing a type into the type it represents
-If not a sizeof, return the default type if given, otherwise raise an exception *)
+    If not a sizeof, return the default type if given, otherwise raise an exception *)
 let texp_to_typ default_opt = function
   | Sizeof (t, _) -> t
   | t ->
       unsome_typ "texp_to_typ" default_opt
 
 (** If a struct type with field f, return the type of f.
-If not, return the default type if given, otherwise raise an exception *)
+    If not, return the default type if given, otherwise raise an exception *)
 let struct_typ_fld default_opt f =
   let def () = unsome_typ "struct_typ_fld" default_opt in
   function
   | Tstruct (ftal, sftal, _, _, _, _, _) ->
       (try (fun (x, y, z) -> y) (list_find (fun (_f, t, ann) -> Ident.fieldname_equal _f f) ftal)
-      with Not_found -> def ())
+       with Not_found -> def ())
   | _ -> def ()
 
 (** If an array type, return the type of the element.
-If not, return the default type if given, otherwise raise an exception *)
+    If not, return the default type if given, otherwise raise an exception *)
 let array_typ_elem default_opt = function
   | Tarray (t_el, _) -> t_el
   | t ->
@@ -2903,7 +2903,7 @@ let rec root_of_lexp lexp = match lexp with
   | Sizeof _ -> lexp
 
 (** Checks whether an expression denotes a location by pointer arithmetic.
-Currently, catches array - indexing expressions such as a[i] only. *)
+    Currently, catches array - indexing expressions such as a[i] only. *)
 let rec exp_pointer_arith = function
   | Lfield (e, _, _) -> exp_pointer_arith e
   | Lindex _ -> true
@@ -2999,9 +2999,9 @@ and hpred_fpv = function
       @ fpvars_in_elist
 
 (** hpara should not contain any program variables.
-This is because it might cause problems when we do interprocedural
-analysis. In interprocedural analysis, we should consider the issue
-of scopes of program variables. *)
+    This is because it might cause problems when we do interprocedural
+    analysis. In interprocedural analysis, we should consider the issue
+    of scopes of program variables. *)
 and hpara_fpv para =
   let fpvars_in_body = list_flatten (list_map hpred_fpv para.body) in
   match fpvars_in_body with
@@ -3009,9 +3009,9 @@ and hpara_fpv para =
   | _ -> assert false
 
 (** hpara_dll should not contain any program variables.
-This is because it might cause problems when we do interprocedural
-analysis. In interprocedural analysis, we should consider the issue
-of scopes of program variables. *)
+    This is because it might cause problems when we do interprocedural
+    analysis. In interprocedural analysis, we should consider the issue
+    of scopes of program variables. *)
 and hpara_dll_fpv para =
   let fpvars_in_body = list_flatten (list_map hpred_fpv para.body_dll) in
   match fpvars_in_body with
@@ -3069,7 +3069,7 @@ let rec remove_duplicates_from_sorted special_equal = function
       else x:: (remove_duplicates_from_sorted special_equal (y:: l))
 
 (** Convert a [fav] to a list of identifiers while preserving the order
-that the identifiers were added to [fav]. *)
+    that the identifiers were added to [fav]. *)
 let fav_to_list fav =
   list_rev !fav
 
@@ -3107,7 +3107,7 @@ let rec ident_sorted_list_subset l1 l2 =
       else false
 
 (** [fav_subset_ident fav1 fav2] returns true if every ident in [fav1]
-is in [fav2].*)
+    is in [fav2].*)
 let fav_subset_ident fav1 fav2 =
   ident_sorted_list_subset (fav_to_list fav1) (fav_to_list fav2)
 
@@ -3173,16 +3173,16 @@ let hpred_fav =
   fav_imperative_to_functional hpred_fav_add
 
 (** This function should be used before adding a new
-index to Earray. The [exp] is the newly created
-index. This function "cleans" [exp] according to whether it is the footprint or current part of the prop.
-The function faults in the re - execution mode, as an internal check of the tool. *)
+    index to Earray. The [exp] is the newly created
+    index. This function "cleans" [exp] according to whether it is the footprint or current part of the prop.
+    The function faults in the re - execution mode, as an internal check of the tool. *)
 let array_clean_new_index footprint_part new_idx =
   if footprint_part && not !Config.footprint then assert false;
   let fav = exp_fav new_idx in
   if footprint_part && fav_exists fav (fun id -> not (Ident.is_footprint id)) then
     begin
       L.d_warning ("Array index " ^ (exp_to_string new_idx) ^
-          " has non-footprint vars: replaced by fresh footprint var");
+                   " has non-footprint vars: replaced by fresh footprint var");
       L.d_ln ();
       let id = Ident.create_fresh Ident.kfootprint in
       Var id
@@ -3288,8 +3288,8 @@ let sub_check_inv sub =
   (sub_check_sortedness sub) && not (sub_check_duplicated_ids sub)
 
 (** Create a substitution from a list of pairs.
-For all (id1, e1), (id2, e2) in the input list,
-if id1 = id2, then e1 = e2. *)
+    For all (id1, e1), (id2, e2) in the input list,
+    if id1 = id2, then e1 = e2. *)
 let sub_of_list sub =
   let sub' = list_sort ident_exp_compare sub in
   let sub'' = remove_duplicates_from_sorted ident_exp_equal sub' in
@@ -3315,7 +3315,7 @@ let sub_to_list sub =
 let sub_empty = sub_of_list []
 
 (** Join two substitutions into one.
-For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). *)
+    For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). *)
 let sub_join sub1 sub2 =
   let sub = sorted_list_merge ident_exp_compare sub1 sub2 in
   let sub' = remove_duplicates_from_sorted ident_exp_equal sub in
@@ -3323,9 +3323,9 @@ let sub_join sub1 sub2 =
   sub
 
 (** Compute the common id-exp part of two inputs [subst1] and [subst2].
-The first component of the output is this common part.
-The second and third components are the remainder of [subst1]
-and [subst2], respectively. *)
+    The first component of the output is this common part.
+    The second and third components are the remainder of [subst1]
+    and [subst2], respectively. *)
 let sub_symmetric_difference sub1_in sub2_in =
   let rec diff sub_common sub1_only sub2_only sub1 sub2 =
     match sub1, sub2 with
@@ -3353,21 +3353,21 @@ let sub_find filter (sub: subst) =
   snd (list_find (fun (i, _) -> filter i) sub)
 
 (** [sub_filter filter sub] restricts the domain of [sub] to the
-identifiers satisfying [filter]. *)
+    identifiers satisfying [filter]. *)
 let sub_filter filter (sub: subst) =
   list_filter (fun (i, _) -> filter i) sub
 
 (** [sub_filter_pair filter sub] restricts the domain of [sub] to the
-identifiers satisfying [filter(id, sub(id))]. *)
+    identifiers satisfying [filter(id, sub(id))]. *)
 let sub_filter_pair = list_filter
 
 (** [sub_range_partition filter sub] partitions [sub] according to
-whether range expressions satisfy [filter]. *)
+    whether range expressions satisfy [filter]. *)
 let sub_range_partition filter (sub: subst) =
   list_partition (fun (_, e) -> filter e) sub
 
 (** [sub_domain_partition filter sub] partitions [sub] according to
-whether domain identifiers satisfy [filter]. *)
+    whether domain identifiers satisfy [filter]. *)
 let sub_domain_partition filter (sub: subst) =
   list_partition (fun (i, _) -> filter i) sub
 
@@ -3384,7 +3384,7 @@ let sub_range_map f sub =
   sub_of_list (list_map (fun (i, e) -> (i, f e)) sub)
 
 (** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
-of [sub] and the substitution [g] to the expressions in the range of [sub]. *)
+    of [sub] and the substitution [g] to the expressions in the range of [sub]. *)
 let sub_map f g sub =
   sub_of_list (list_map (fun (i, e) -> (f i, g e)) sub)
 
@@ -3398,7 +3398,7 @@ let extend_sub sub id exp : subst option =
   else Some (sorted_list_merge compare sub [(id, exp)])
 
 (** Free auxilary variables in the domain and range of the
-substitution. *)
+    substitution. *)
 let sub_fav_add fav (sub: subst) =
   list_iter (fun (id, e) -> fav ++ id; exp_fav_add fav e) sub
 
@@ -3765,8 +3765,8 @@ let tenv_fold f tenv =
 let pp_tenv f (tenv : tenv) =
   TypenameHash.iter
     (fun name typ ->
-          Format.fprintf f "@[<6>NAME: %s@." (typename_to_string name);
-          Format.fprintf f "@[<6>TYPE: %a@." (pp_typ_full pe_text) typ)
+       Format.fprintf f "@[<6>NAME: %s@." (typename_to_string name);
+       Format.fprintf f "@[<6>TYPE: %a@." (pp_typ_full pe_text) typ)
     tenv
 
 (** {2 Functions for constructing or destructing entities in this module} *)
@@ -3840,9 +3840,9 @@ let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
     [([], sigma)]
 
 (** [hpara_instantiate para e1 e2 elist] instantiates [para] with [e1],
-[e2] and [elist]. If [para = lambda (x, y, xs). exists zs. b],
-then the result of the instantiation is [b\[e1 / x, e2 / y, elist / xs, _zs'/ zs\]]
-for some fresh [_zs'].*)
+    [e2] and [elist]. If [para = lambda (x, y, xs). exists zs. b],
+    then the result of the instantiation is [b\[e1 / x, e2 / y, elist / xs, _zs'/ zs\]]
+    for some fresh [_zs'].*)
 let hpara_instantiate para e1 e2 elist =
   let subst_for_svars =
     let g id e = (id, e) in
@@ -3859,9 +3859,9 @@ let hpara_instantiate para e1 e2 elist =
   (ids_evars, list_map (hpred_sub subst) para.body)
 
 (** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
-[blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
-then the result of the instantiation is [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
-for some fresh [_zs'].*)
+    [blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
+    then the result of the instantiation is [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
+    for some fresh [_zs'].*)
 let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   let subst_for_svars =
     let g id e = (id, e) in
@@ -3882,7 +3882,7 @@ let rec strexp_get_target_exps = function
   | Eexp (e, inst) -> [e]
   | Estruct (fsel, inst) -> list_flatten (list_map (fun (_, se) -> strexp_get_target_exps se) fsel)
   | Earray (_, esel, _) ->
-  (* We ignore size and indices since they are not quite outgoing arrows. *)
+      (* We ignore size and indices since they are not quite outgoing arrows. *)
       list_flatten (list_map (fun (_, se) -> strexp_get_target_exps se) esel)
 
 let global_error =

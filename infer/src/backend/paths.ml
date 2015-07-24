@@ -17,7 +17,7 @@ open Utils
 (* =============== START of the Path module ===============*)
 
 module Path : sig
-(** type for paths *)
+  (** type for paths *)
   type t
 
   type session = int
@@ -58,8 +58,8 @@ module Path : sig
   val iter_all_nodes_nocalls : (Cfg.node -> unit) -> t -> unit
 
   (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
-  Do not iterate past the given position.
-  [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] *)
+      Do not iterate past the given position.
+      [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] *)
   val iter_longest_sequence : (int -> t -> int -> Mangled.t option -> unit) -> Sil.path_pos option -> t -> unit
 
   (** join two paths *)
@@ -164,100 +164,100 @@ end = struct
     else p
 
   module Invariant = (** functions in this module either do not assume, or do not re-establish, the invariant on dummy stats *)
-    struct
-      (** check whether a stats is the dummy stats *)
-      let stats_is_dummy stats =
-        stats.max_length == - 1
+  struct
+    (** check whether a stats is the dummy stats *)
+    let stats_is_dummy stats =
+      stats.max_length == - 1
 
-      (** return the stats of the path *)
-      (** assumes that the stats are computed *)
-      let get_stats = function
-        | Pstart (_, stats) -> stats
-        | Pnode (_, _, _, _, stats, _) -> stats
-        | Pjoin (_, _, stats) -> stats
-        | Pcall (_, _, _, stats) -> stats
+    (** return the stats of the path *)
+    (** assumes that the stats are computed *)
+    let get_stats = function
+      | Pstart (_, stats) -> stats
+      | Pnode (_, _, _, _, stats, _) -> stats
+      | Pjoin (_, _, stats) -> stats
+      | Pcall (_, _, _, stats) -> stats
 
-      (** restore the invariant that all the stats are dummy, so the path is ready for another traversal *)
-      (** assumes that the stats are computed beforehand, and ensures that the invariant holds afterwards *)
-      let rec reset_stats = function
-        | Pstart (node, stats) ->
-            if not (stats_is_dummy stats) then set_dummy_stats stats
-        | Pnode (node, exn_opt, session, path, stats, _) ->
-            if not (stats_is_dummy stats) then
-              begin
-                reset_stats path;
-                set_dummy_stats stats
-              end
-        | Pjoin (path1, path2, stats) ->
-            if not (stats_is_dummy stats) then
-              begin
-                reset_stats path1;
-                reset_stats path2;
-                set_dummy_stats stats
-              end
-        | Pcall (path1, pname, path2, stats) ->
-            if not (stats_is_dummy stats) then
-              begin
-                reset_stats path1;
-                reset_stats path2;
-                set_dummy_stats stats
-              end
+    (** restore the invariant that all the stats are dummy, so the path is ready for another traversal *)
+    (** assumes that the stats are computed beforehand, and ensures that the invariant holds afterwards *)
+    let rec reset_stats = function
+      | Pstart (node, stats) ->
+          if not (stats_is_dummy stats) then set_dummy_stats stats
+      | Pnode (node, exn_opt, session, path, stats, _) ->
+          if not (stats_is_dummy stats) then
+            begin
+              reset_stats path;
+              set_dummy_stats stats
+            end
+      | Pjoin (path1, path2, stats) ->
+          if not (stats_is_dummy stats) then
+            begin
+              reset_stats path1;
+              reset_stats path2;
+              set_dummy_stats stats
+            end
+      | Pcall (path1, pname, path2, stats) ->
+          if not (stats_is_dummy stats) then
+            begin
+              reset_stats path1;
+              reset_stats path2;
+              set_dummy_stats stats
+            end
 
-      (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are dummy. *)
-      (** Function [f] (typically with side-effects) is applied once to every node, and max_length in the stats
-      is the length of a longest sequence of nodes in the path where [f] returned [true] on at least one node.
-      max_length is 0 if the path was visited but no node satisfying [f] was found. *)
-      (** Assumes that the invariant holds beforehand, and ensures that all the stats are computed afterwards. *)
-      (** Since this breaks the invariant, it must be followed by reset_stats. *)
-      let rec compute_stats do_calls (f : Cfg.Node.t -> bool) =
-        let nodes_found stats = stats.max_length > 0 in
-        function
-        | Pstart (node, stats) ->
-            if stats_is_dummy stats then
-              begin
-                let found = f node in
-                stats.max_length <- if found then 1 else 0;
-                stats.linear_num <- 1.0;
-              end
-        | Pnode (node, exn_opt, session, path, stats, _) ->
-            if stats_is_dummy stats then
-              begin
-                compute_stats do_calls f path;
-                let stats1 = get_stats path in
-                let found = f node || nodes_found stats1 (* the order is important as f has side-effects *) in
-                stats.max_length <- if found then 1 + stats1.max_length else 0;
-                stats.linear_num <- stats1.linear_num;
-              end
-        | Pjoin (path1, path2, stats) ->
-            if stats_is_dummy stats then
-              begin
-                compute_stats do_calls f path1;
-                compute_stats do_calls f path2;
-                let stats1, stats2 = get_stats path1, get_stats path2 in
-                stats.max_length <- max stats1.max_length stats2.max_length;
-                stats.linear_num <- stats1.linear_num +. stats2.linear_num
-              end
-        | Pcall (path1, pname, path2, stats) ->
-            if stats_is_dummy stats then
-              begin
-                let stats2 = match do_calls with
-                  | true ->
-                      compute_stats do_calls f path2;
-                      get_stats path2
-                  | false ->
-                      { max_length = 0;
-                        linear_num = 0.0 } in
-                let stats1 =
-                  let f' =
-                    if nodes_found stats2
-                    then fun _ -> true (* already found in call, no need to search before the call *)
-                    else f in
-                  compute_stats do_calls f' path1;
-                  get_stats path1 in
-                stats.max_length <- stats1.max_length + stats2.max_length;
-                stats.linear_num <- stats1.linear_num;
-              end
-    end (* End of module Invariant *)
+    (** Iterate [f] over the path and compute the stats, assuming the invariant: all the stats are dummy. *)
+    (** Function [f] (typically with side-effects) is applied once to every node, and max_length in the stats
+        is the length of a longest sequence of nodes in the path where [f] returned [true] on at least one node.
+        max_length is 0 if the path was visited but no node satisfying [f] was found. *)
+    (** Assumes that the invariant holds beforehand, and ensures that all the stats are computed afterwards. *)
+    (** Since this breaks the invariant, it must be followed by reset_stats. *)
+    let rec compute_stats do_calls (f : Cfg.Node.t -> bool) =
+      let nodes_found stats = stats.max_length > 0 in
+      function
+      | Pstart (node, stats) ->
+          if stats_is_dummy stats then
+            begin
+              let found = f node in
+              stats.max_length <- if found then 1 else 0;
+              stats.linear_num <- 1.0;
+            end
+      | Pnode (node, exn_opt, session, path, stats, _) ->
+          if stats_is_dummy stats then
+            begin
+              compute_stats do_calls f path;
+              let stats1 = get_stats path in
+              let found = f node || nodes_found stats1 (* the order is important as f has side-effects *) in
+              stats.max_length <- if found then 1 + stats1.max_length else 0;
+              stats.linear_num <- stats1.linear_num;
+            end
+      | Pjoin (path1, path2, stats) ->
+          if stats_is_dummy stats then
+            begin
+              compute_stats do_calls f path1;
+              compute_stats do_calls f path2;
+              let stats1, stats2 = get_stats path1, get_stats path2 in
+              stats.max_length <- max stats1.max_length stats2.max_length;
+              stats.linear_num <- stats1.linear_num +. stats2.linear_num
+            end
+      | Pcall (path1, pname, path2, stats) ->
+          if stats_is_dummy stats then
+            begin
+              let stats2 = match do_calls with
+                | true ->
+                    compute_stats do_calls f path2;
+                    get_stats path2
+                | false ->
+                    { max_length = 0;
+                      linear_num = 0.0 } in
+              let stats1 =
+                let f' =
+                  if nodes_found stats2
+                  then fun _ -> true (* already found in call, no need to search before the call *)
+                  else f in
+                compute_stats do_calls f' path1;
+                get_stats path1 in
+              stats.max_length <- stats1.max_length + stats2.max_length;
+              stats.linear_num <- stats1.linear_num;
+            end
+  end (* End of module Invariant *)
 
   (** iterate over each node in the path, excluding calls, once *)
   let iter_all_nodes_nocalls f path =
@@ -279,7 +279,7 @@ end = struct
     !found
 
   (** iterate over the longest sequence belonging to the path, restricting to those where [filter] holds of some element.
-  if a node is reached via an exception, pass the exception information to [f] on the previous node *)
+      if a node is reached via an exception, pass the exception information to [f] on the previous node *)
   let iter_longest_sequence_filter (f : int -> t -> int -> Mangled.t option -> unit) (filter: Cfg.Node.t -> bool) (path: t) : unit =
     let rec doit level session path prev_exn_opt = match path with
       | Pstart _ -> f level path session prev_exn_opt
@@ -298,8 +298,8 @@ end = struct
     Invariant.reset_stats path
 
   (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
-  Do not iterate past the last occurrence of the given position.
-  [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
+      Do not iterate past the last occurrence of the given position.
+      [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
   let iter_longest_sequence (f : int -> t -> int -> Mangled.t option -> unit) (pos_opt : Sil.path_pos option) (path: t) : unit =
     let filter node = match pos_opt with
       | None -> true
@@ -338,7 +338,7 @@ end = struct
         let n = NodeMap.find node !map in
         map := NodeMap.add node (n + 1) !map
       with Not_found ->
-          map := NodeMap.add node 1 !map in
+        map := NodeMap.add node 1 !map in
     iter_longest_sequence (fun level p s exn_opt -> add_node (curr_node p)) None path;
     let max_rep_node = ref (Cfg.Node.dummy ()) in
     let max_rep_num = ref 0 in
@@ -372,8 +372,8 @@ end = struct
     let delayed = ref PathMap.empty in
     let add_path p =
       try ignore (PathMap.find p !delayed) with Not_found ->
-          incr delayed_num;
-          delayed := PathMap.add p !delayed_num !delayed in
+        incr delayed_num;
+        delayed := PathMap.add p !delayed_num !delayed in
     let path_seen p = (* path seen before *)
       PathMap.mem p !delayed in
     let rec add_delayed path =
@@ -392,11 +392,11 @@ end = struct
         let num = PathMap.find path !delayed in
         F.fprintf fmt "P%d" num
       with Not_found ->
-          match path with
-          | Pstart (node, _) -> F.fprintf fmt "n%a" Cfg.Node.pp node
-          | Pnode (node, exn_top, session, path, _, _) -> F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path session Cfg.Node.pp node
-          | Pjoin (path1, path2, _) -> F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
-          | Pcall (path1, _, path2, _) -> F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2 in
+        match path with
+        | Pstart (node, _) -> F.fprintf fmt "n%a" Cfg.Node.pp node
+        | Pnode (node, exn_top, session, path, _, _) -> F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path session Cfg.Node.pp node
+        | Pjoin (path1, path2, _) -> F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
+        | Pcall (path1, _, path2, _) -> F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2 in
     let print_delayed () =
       if not (PathMap.is_empty !delayed) then begin
         let f path num = F.fprintf fmt "P%d = %a@\n" num (doit 1) path in
@@ -474,7 +474,7 @@ end = struct
       if n <> 0 then n else Sil.loc_compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
     list_remove_irrelevant_duplicates compare relevant (list_rev !trace)
-  (* list_remove_duplicates compare (list_sort compare !trace) *)
+    (* list_remove_duplicates compare (list_sort compare !trace) *)
 
 end
 (* =============== END of the Path module ===============*)
@@ -610,7 +610,7 @@ end = struct
         if path_nodes_subset path path_old (* do not propagate new path if it has no new nodes *)
         then res := PropMap.remove p !res
       with Not_found ->
-          res := PropMap.remove p !res in
+        res := PropMap.remove p !res in
     PropMap.iter rem ps2;
     !res
 

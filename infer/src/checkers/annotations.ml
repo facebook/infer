@@ -40,9 +40,9 @@ let get_field_type_and_annotation fn = function
   | Sil.Tptr (Sil.Tstruct (ftal, sftal, _, _, _, _, _), _)
   | Sil.Tstruct (ftal, sftal, _, _, _, _, _) ->
       (try
-        let (_, t, a) = list_find (fun (f, t, a) -> Sil.fld_equal f fn) (ftal @ sftal) in
-        Some (t, a)
-      with Not_found -> None)
+         let (_, t, a) = list_find (fun (f, t, a) -> Sil.fld_equal f fn) (ftal @ sftal) in
+         Some (t, a)
+       with Not_found -> None)
   | _ -> None
 
 let ia_iter f =
@@ -140,7 +140,7 @@ let ia_is ann ia = match ann with
 type get_method_annotation = Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
 
 (** Get a method signature with annotations from a proc_name and proc_desc,
-or search in the .specs file if it is not defined in the proc_desc. *)
+    or search in the .specs file if it is not defined in the proc_desc. *)
 let get_annotated_signature get_method_annotation proc_desc proc_name : annotated_signature =
   let method_annotation = get_method_annotation proc_name proc_desc in
   let formals = Cfg.Procdesc.get_formals proc_desc in
@@ -157,8 +157,8 @@ let get_annotated_signature get_method_annotation proc_desc proc_name : annotate
   annotated_signature
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
-These wrappers have the same name as the original method, every type is Object, and the parameters
-are called x0, x1, x2. *)
+    These wrappers have the same name as the original method, every type is Object, and the parameters
+    are called x0, x1, x2. *)
 let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
   let check_ret (ia, t) =
     Sil.item_annotation_is_empty ia && PatternMatch.type_is_object t in
@@ -188,10 +188,10 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
 
 (** Check if the given parameter has a Nullable annotation in the given signature *)
 let param_is_nullable pvar ann_sig =
-   let pvar_str = Mangled.to_string (Sil.pvar_get_name pvar) in
-   list_exists
-     (fun (param_str, annot, _) -> param_str = pvar_str && ia_is_nullable annot)
-     ann_sig.params
+  let pvar_str = Mangled.to_string (Sil.pvar_get_name pvar) in
+  list_exists
+    (fun (param_str, annot, _) -> param_str = pvar_str && ia_is_nullable annot)
+    ann_sig.params
 
 (** Pretty print a method signature with annotations. *)
 let pp_annotated_signature proc_name fmt annotated_signature =

@@ -25,7 +25,7 @@ module PropSet =
 let compare = PropSet.compare
 
 (** Sets of propositions.
-The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is called on any prop added to the set. *)
+    The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is called on any prop added to the set. *)
 type t = PropSet.t
 
 let add p pset =
@@ -78,13 +78,13 @@ let map f pset =
   from_proplist (list_map f (to_proplist pset))
 
 (** [fold f pset a] computes [f (... (f (f a p1) p2) ...) pn]
-where [p1 ... pN] are the elements of pset, in increasing order. *)
+    where [p1 ... pN] are the elements of pset, in increasing order. *)
 let fold f a pset =
   let l = to_proplist pset in
   list_fold_left f a l
 
 (** [iter f pset] computes (f p1;f p2;..;f pN)
-where [p1 ... pN] are the elements of pset, in increasing order. *)
+    where [p1 ... pN] are the elements of pset, in increasing order. *)
 let iter =
   PropSet.iter
 

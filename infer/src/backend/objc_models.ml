@@ -12,7 +12,7 @@
 open Utils
 
 (** This module models special c struct types from the Apple's Core Foundation libraries
-for which there are particular rules for memory management. *)
+    for which there are particular rules for memory management. *)
 
 module Core_foundation_model =
 struct
@@ -57,7 +57,7 @@ struct
     "__CFTree";
     "__CFURLEnumerator";
     "__CFUUID"
-    ]
+  ]
 
   let cf_network = [
     "_CFHTTPAuthentication";
@@ -67,7 +67,7 @@ struct
     "__CFNetService";
     "__CFNetServiceMonitor";
     "__CFNetServiceBrowser"
-    ]
+  ]
 
   let core_media = [
     "OpaqueCMBlockBuffer";
@@ -79,7 +79,7 @@ struct
     "opaqueCMSimpleQueue";
     "OpaqueCMClock";
     "OpaqueCMTimebase"
-    ]
+  ]
 
   let core_text = [
     "__CTFont";
@@ -95,21 +95,21 @@ struct
     "__CTRunDelegate";
     "__CTTextTab";
     "__CTTypesetter"
-    ]
+  ]
 
   let core_video = [
     "__CVBuffer";
     "__CVMetalTextureCache";
     "__CVOpenGLESTextureCache";
     "__CVPixelBufferPool"
-    ]
+  ]
 
   let image_io = [
     "CGImageDestination";
     "CGImageMetadata";
     "CGImageMetadataTag";
     "CGImageSource"
-    ]
+  ]
 
   let security = [
     "__SecCertificate";
@@ -121,7 +121,7 @@ struct
     "__SecCode";
     "__SecTrust";
     "__SecRequirement"
-    ]
+  ]
 
   let system_configuration = [
     "__SCDynamicStore";
@@ -133,7 +133,7 @@ struct
     "__SCNetworkConnection";
     "__SCNetworkReachability";
     "__SCPreferences"
-    ]
+  ]
 
   let core_graphics_types = [
     "CGAffineTransform";
@@ -165,7 +165,7 @@ struct
     "CGPDFStream";
     "CGPDFString";
     "CGShading"
-    ]
+  ]
 
   let core_foundation_types =
     core_foundation @
@@ -227,7 +227,7 @@ struct
   let is_core_lib_create typ funct =
     is_core_lib_type typ &&
     ((string_contains create funct) ||
-      (string_contains copy funct ))
+     (string_contains copy funct ))
 
   let function_arg_is_cftype typ =
     (string_contains cf_type typ)

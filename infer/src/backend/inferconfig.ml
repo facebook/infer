@@ -66,13 +66,13 @@ let load_filters analyzer =
 
 let is_matching patterns =
   fun source_file ->
-      let path = DB.source_file_to_rel_path source_file in
-      Utils.list_exists
-        (fun pattern ->
-              try
-                (Str.search_forward pattern path 0) = 0
-              with Not_found -> false)
-        patterns
+    let path = DB.source_file_to_rel_path source_file in
+    Utils.list_exists
+      (fun pattern ->
+         try
+           (Str.search_forward pattern path 0) = 0
+         with Not_found -> false)
+      patterns
 
 module FileContainsStringMatcher = struct
   type matcher = DB.source_file -> bool
@@ -96,16 +96,16 @@ module FileContainsStringMatcher = struct
       let regexp =
         Str.regexp (join_strings "\\|" s_patterns) in
       fun source_file ->
+        try
+          DB.SourceFileMap.find source_file !source_map
+        with Not_found ->
           try
-            DB.SourceFileMap.find source_file !source_map
-          with Not_found ->
-              try
-                let file_in = open_in (DB.source_file_to_string source_file) in
-                let pattern_found = file_contains regexp file_in in
-                close_in file_in;
-                source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
-                pattern_found
-              with Sys_error _ -> false
+            let file_in = open_in (DB.source_file_to_string source_file) in
+            let pattern_found = file_contains regexp file_in in
+            close_in file_in;
+            source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
+            pattern_found
+          with Sys_error _ -> false
 end
 
 let filters_from_inferconfig inferconfig : filters =
@@ -118,13 +118,13 @@ let filters_from_inferconfig inferconfig : filters =
     let blacklist_files_containing_filter : path_filter =
       FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing in
     function source_file ->
-        whitelist_filter source_file &&
-        not (blacklist_filter source_file) &&
-        not (blacklist_files_containing_filter source_file) in
+      whitelist_filter source_file &&
+      not (blacklist_filter source_file) &&
+      not (blacklist_files_containing_filter source_file) in
   let error_filter =
     function error_name ->
-        let error_str = Localise.to_string error_name in
-        not (list_exists (string_equal error_str) inferconfig.suppress_errors) in
+      let error_str = Localise.to_string error_name in
+      not (list_exists (string_equal error_str) inferconfig.suppress_errors) in
   {
     path_filter = path_filter;
     error_filter = error_filter;
@@ -268,25 +268,25 @@ module NeverReturnNull = struct
       let pattern_map =
         list_fold_left
           (fun map pattern ->
-                let previous =
-                  try
-                    StringMap.find pattern.class_name map
-                  with Not_found -> [] in
-                StringMap.add pattern.class_name (pattern:: previous) map)
+             let previous =
+               try
+                 StringMap.find pattern.class_name map
+               with Not_found -> [] in
+             StringMap.add pattern.class_name (pattern:: previous) map)
           StringMap.empty
           m_patterns in
       fun source_file proc_name ->
-          let class_name = Procname.java_get_class proc_name
-          and method_name = Procname.java_get_method proc_name in
-          try
-            let class_patterns = StringMap.find class_name pattern_map in
-            list_exists
-              (fun p ->
-                    match p.method_name with
-                    | None -> true
-                    | Some m -> string_equal m method_name)
-              class_patterns
-          with Not_found -> false
+        let class_name = Procname.java_get_class proc_name
+        and method_name = Procname.java_get_method proc_name in
+        try
+          let class_patterns = StringMap.find class_name pattern_map in
+          list_exists
+            (fun p ->
+               match p.method_name with
+               | None -> true
+               | Some m -> string_equal m method_name)
+            class_patterns
+        with Not_found -> false
 
   let create_file_matcher language patterns =
     let s_patterns, m_patterns =
@@ -301,7 +301,7 @@ module NeverReturnNull = struct
       fun source_file proc_name -> matcher source_file
     and m_matcher = create_method_matcher language m_patterns in
     fun source_file proc_name ->
-        m_matcher source_file proc_name || s_matcher source_file proc_name
+      m_matcher source_file proc_name || s_matcher source_file proc_name
 
   let load_matcher language =
     try
@@ -313,7 +313,7 @@ module NeverReturnNull = struct
         list_fold_left translate [] found in
       create_file_matcher language patterns
     with Sys_error _ ->
-        default_matcher
+      default_matcher
 
 end (* of module NeverReturnNull *)
 
@@ -330,14 +330,14 @@ let test () =
       [] filters in
   Utils.directory_iter
     (fun path ->
-          if DB.is_source_file path then
-            let source_file = (DB.source_file_from_string path) in
-            let matching = matching_analyzers source_file in
-            if matching <> [] then
-              let matching_s =
-                Utils.join_strings ", "
-                  (Utils.list_map Utils.string_of_analyzer matching) in
-              Logging.stderr "%s -> {%s}@."
-                (DB.source_file_to_rel_path source_file)
-                matching_s)
+       if DB.is_source_file path then
+         let source_file = (DB.source_file_from_string path) in
+         let matching = matching_analyzers source_file in
+         if matching <> [] then
+           let matching_s =
+             Utils.join_strings ", "
+               (Utils.list_map Utils.string_of_analyzer matching) in
+           Logging.stderr "%s -> {%s}@."
+             (DB.source_file_to_rel_path source_file)
+             matching_s)
     (Sys.getcwd ())

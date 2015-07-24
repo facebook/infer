@@ -29,24 +29,24 @@ let inline_synthetic_method ret_ids etl proc_desc proc_name loc_call : Sil.instr
         let instr' = Sil.Letderef (ret_id, Sil.Lfield (e1, fn, ft), bt, loc_call) in
         found instr instr'
     | Sil.Letderef (id1, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, loc), [ret_id], []
-    when Sil.pvar_is_global pvar -> (* getter for static fields *)
+      when Sil.pvar_is_global pvar -> (* getter for static fields *)
         let instr' = Sil.Letderef (ret_id, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, loc_call) in
         found instr instr'
     | Sil.Set (Sil.Lfield (ex1, fn, ft), bt , ex2, loc), _, [(e1, t1); (e2, t2)] -> (* setter for fields *)
         let instr' = Sil.Set (Sil.Lfield (e1, fn, ft), bt , e2, loc_call) in
         found instr instr'
     | Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , ex2, loc), _, [(e1, t1)]
-    when Sil.pvar_is_global pvar -> (* setter for static fields *)
+      when Sil.pvar_is_global pvar -> (* setter for static fields *)
         let instr' = Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , e1, loc_call) in
         found instr instr'
     | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
-    when list_length ret_ids = list_length ret_ids'
-    && list_length etl' = list_length etl ->
+      when list_length ret_ids = list_length ret_ids'
+           && list_length etl' = list_length etl ->
         let instr' = Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl, loc_call, cf) in
         found instr instr'
     | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
-    when list_length ret_ids = list_length ret_ids'
-    && list_length etl' + 1 = list_length etl ->
+      when list_length ret_ids = list_length ret_ids'
+           && list_length etl' + 1 = list_length etl ->
         let etl1 = match list_rev etl with (* remove last element *)
           | _ :: l -> list_rev l
           | [] -> assert false in
@@ -61,15 +61,15 @@ let proc_inline_synthetic_methods cfg proc_desc : unit =
   let instr_inline_synthetic_method = function
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl, loc, _) ->
         (match Cfg.Procdesc.find_from_name cfg pn with
-          | Some pd ->
-              let is_access = Procname.java_is_access_method pn in
-              let attributes = Cfg.Procdesc.get_attributes pd in
-              let is_synthetic = attributes.Sil.is_synthetic_method in
-              let is_bridge = attributes.Sil.is_bridge_method in
-              if is_access || is_bridge || is_synthetic
-              then inline_synthetic_method ret_ids etl pd pn loc
-              else None
-          | None -> None)
+         | Some pd ->
+             let is_access = Procname.java_is_access_method pn in
+             let attributes = Cfg.Procdesc.get_attributes pd in
+             let is_synthetic = attributes.Sil.is_synthetic_method in
+             let is_bridge = attributes.Sil.is_bridge_method in
+             if is_access || is_bridge || is_synthetic
+             then inline_synthetic_method ret_ids etl pd pn loc
+             else None
+         | None -> None)
     | _ -> None in
   let node_inline_synthetic_methods node =
     let modified = ref false in
@@ -119,10 +119,10 @@ let get_procedure_definition exe_env proc_name =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   Option.map
     (fun proc_desc ->
-          proc_inline_synthetic_methods cfg proc_desc;
-          let idenv = Idenv.create cfg proc_desc
-          and language = (Cfg.Procdesc.get_attributes proc_desc).Sil.language in
-          (idenv, tenv, proc_name, proc_desc, language))
+       proc_inline_synthetic_methods cfg proc_desc;
+       let idenv = Idenv.create cfg proc_desc
+       and language = (Cfg.Procdesc.get_attributes proc_desc).Sil.language in
+       (idenv, tenv, proc_name, proc_desc, language))
     (Cfg.Procdesc.find_from_name cfg proc_name)
 
 let get_language proc_name = if Procname.is_java proc_name then Sil.Java else Sil.C_CPP
@@ -146,19 +146,19 @@ let iterate_procedure_callbacks all_procs exe_env proc_name =
 
   Option.may
     (fun (idenv, tenv, proc_name, proc_desc, language) ->
-          list_iter
-            (fun (language_opt, proc_callback) ->
-                  let language_matches = match language_opt with
-                    | Some language -> language = procedure_language
-                    | None -> true in
-                  if language_matches then
-                    begin
-                      let init_time = Unix.gettimeofday () in
-                      proc_callback all_procs get_procdesc idenv tenv proc_name proc_desc;
-                      let elapsed = Unix.gettimeofday () -. init_time in
-                      update_time proc_name elapsed
-                    end)
-            !procedure_callbacks)
+       list_iter
+         (fun (language_opt, proc_callback) ->
+            let language_matches = match language_opt with
+              | Some language -> language = procedure_language
+              | None -> true in
+            if language_matches then
+              begin
+                let init_time = Unix.gettimeofday () in
+                proc_callback all_procs get_procdesc idenv tenv proc_name proc_desc;
+                let elapsed = Unix.gettimeofday () -. init_time in
+                update_time proc_name elapsed
+              end)
+         !procedure_callbacks)
     (get_procedure_definition exe_env proc_name)
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
@@ -187,9 +187,9 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
 
   list_iter
     (fun (language_opt, cluster_callback) ->
-          let proc_names = relevant_procedures language_opt in
-          if list_length proc_names > 0 then
-            cluster_callback all_procs get_procdesc environment)
+       let proc_names = relevant_procedures language_opt in
+       if list_length proc_names > 0 then
+         cluster_callback all_procs get_procdesc environment)
     !cluster_callbacks
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
@@ -205,9 +205,9 @@ let iterate_callbacks store_summary call_graph exe_env =
     let cluster_map =
       list_fold_left
         (fun map proc_name ->
-              let proc_cluster = cluster_id proc_name in
-              let bucket = try StringMap.find proc_cluster map with Not_found -> [] in
-              StringMap.add proc_cluster (proc_name:: bucket) map)
+           let proc_cluster = cluster_id proc_name in
+           let bucket = try StringMap.find proc_cluster map with Not_found -> [] in
+           StringMap.add proc_cluster (proc_name:: bucket) map)
         StringMap.empty
         proc_names in
     (* Return all values of the map *)

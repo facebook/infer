@@ -29,7 +29,7 @@ sig
   type context
   type field_context
   val collect_items : Exe_env.t -> Cfg.cfg -> Sil.tenv -> t -> map ->
-  context -> field_context -> context * field_context * map * ret_t list
+    context -> field_context -> context * field_context * map * ret_t list
   val to_t : ret_t -> t
   val save_items_to_set : bool
   val t_to_string : t -> string
@@ -44,7 +44,7 @@ end
 (* updating the map, add nodes for which the map changed back to TODO. 4.  *)
 (* Until the set is empty.                                                 *)
 module Control_flow =
-functor (TM : TODO_MAP) ->
+  functor (TM : TODO_MAP) ->
   struct
 
     let set_to_string set =
@@ -112,8 +112,8 @@ struct
     | [] -> ""
     | [s, typ] ->
         (match string_typ_to_string (s, typ) with
-          | Some s -> s
-          | None -> "")
+         | Some s -> s
+         | None -> "")
     | (s, typ):: rest ->
         match string_typ_to_string (s, typ) with
         | Some s -> s^", "^(type_signature_to_string rest)
@@ -203,9 +203,9 @@ struct
   let print_stack stack =
     let aux (typ, var_kind, level) =
       print_endline (
-          (string_of_int level)^":"^
-          (Sil.typ_to_string typ)^"-"^
-          (var_kind_to_string var_kind)) in
+        (string_of_int level)^":"^
+        (Sil.typ_to_string typ)^"-"^
+        (var_kind_to_string var_kind)) in
     Stack.iter aux stack
 
   let print_map_value map_value =
@@ -247,11 +247,11 @@ struct
       let new_map_value = { map_value with type_stack = stack } in
       Map.add var new_map_value context
     with Not_found ->
-        let var_kind = typ_to_var_kind new_typ in
-        let stack = Stack.create () in
-        let _ = Stack.push (new_typ, var_kind, curr_level) stack in
-        let map_value = { var_level = curr_level; type_stack = stack } in
-        Map.add var map_value context
+      let var_kind = typ_to_var_kind new_typ in
+      let stack = Stack.create () in
+      let _ = Stack.push (new_typ, var_kind, curr_level) stack in
+      let map_value = { var_level = curr_level; type_stack = stack } in
+      Map.add var map_value context
 
   (* Adds a type to a path starting from a variable. It replaces the top   *)
   (* of the stack if the level if the same as the current level, or it     *)
@@ -297,10 +297,10 @@ struct
       with Not_found -> assert false in
     match Stack.top map_value.type_stack with
     | (typ, var_kind, level) ->
-    (* print_string ((key_to_string pvar)^"->"); print_endline ("typ is    *)
-    (* "^(Sil.typ_to_string typ)); print_endline (var_kind_to_string       *)
-    (* var_kind); print_string "the path is "; print_endline               *)
-    (* (Utils.list_to_string Ident.fieldname_to_string path);              *)
+        (* print_string ((key_to_string pvar)^"->"); print_endline ("typ is    *)
+           (* "^(Sil.typ_to_string typ)); print_endline (var_kind_to_string       *)
+        (* var_kind); print_string "the path is "; print_endline               *)
+        (* (Utils.list_to_string Ident.fieldname_to_string path);              *)
         get_type_var_kind tenv typ path var_kind
 
 end
@@ -317,8 +317,8 @@ let rec super tenv t =
   | Sil.Tptr (dom_type, p) ->
       let super_dom_type = super tenv dom_type in
       (match super_dom_type with
-        | None -> None
-        | Some super -> Some (Sil.Tptr (super, p)))
+       | None -> None
+       | Some super -> Some (Sil.Tptr (super, p)))
   | _ -> None
 
 let rec lub tenv t1 t2 =
@@ -444,20 +444,20 @@ struct
       match exp with
       | Sil.Var id ->
           (match get_id_exptyp id id_context with
-            | Exp exp -> aux exp
-            | Typ typ -> typ)
+           | Exp exp -> aux exp
+           | Typ typ -> typ)
       | Sil.UnOp (unop, exp, typ) -> aux exp
       | Sil.BinOp (binop, exp1, exp2) -> aux exp1
       | Sil.Const const -> get_const_type const
       | Sil.Cast (typ, exp) -> typ
       | Sil.Lfield (e, fld, typ) ->
           (try Field_context.Map.find fld field_context
-          with Not_found -> retrieve_type tenv fld typ)
+           with Not_found -> retrieve_type tenv fld typ)
       | Sil.Lindex (Sil.Var id, i) ->
           (match get_id_exptyp id id_context with
-            | Exp (Sil.Lvar pvar) ->
-                Context_map.get_type_content tenv pvar [] context
-            | _ -> assert false)
+           | Exp (Sil.Lvar pvar) ->
+               Context_map.get_type_content tenv pvar [] context
+           | _ -> assert false)
       | Sil.Sizeof (typ, sub) -> assert false
       | Sil.Lvar pvar ->
           Context_map.get_type pvar context
@@ -488,8 +488,8 @@ struct
         let pred =
           try list_find (fun p -> not (Set.mem p set)) preds
           with Not_found ->
-              try list_hd preds
-              with Failure "hd" -> Set.min_elt set in
+            try list_hd preds
+            with Failure "hd" -> Set.min_elt set in
         (aux pred) in
       if (Set.mem old_node set) then backtrack ()
       else
@@ -500,8 +500,8 @@ struct
         node in
     match el with
     | Some old_node ->
-    (* print_endline "choosing an element when old_element is ";           *)
-    (* print_endline (t_to_string old_node);                               *)
+        (* print_endline "choosing an element when old_element is ";           *)
+        (* print_endline (t_to_string old_node);                               *)
         aux old_node
     | None -> choose_start_node ()
 
@@ -532,23 +532,23 @@ struct
           let exp_typ = get_type tenv exp id_context context field_context in
           let context, field_context =
             (match exp1 with
-              | Sil.Lvar pvar ->
-              (* print_endline ("trying to add variable "^(Context_map.key_to_string     *)
-              (* pvar) ); print_endline ("with type "^(Sil.typ_to_string exp_typ));      *)
-              (* print_endline "Context"; Context_map.print_map context;                 *)
-                  Context_map.add_type pvar exp_typ 0 context, field_context
-              | Sil.Lfield (e, fld, typ) ->
-                  context, Field_context.add_type tenv fld exp_typ field_context
-              | Sil.Lindex (Sil.Var id, _) ->
-                  (match get_id_exptyp id id_context with
-                    | Exp (Sil.Lvar pvar) ->
-                        Context_map.add_type_content pvar [] exp_typ 0 context, field_context
-                    | _ -> assert false)
-              | _ -> assert false) in
+             | Sil.Lvar pvar ->
+                 (* print_endline ("trying to add variable "^(Context_map.key_to_string     *)
+                 (* pvar) ); print_endline ("with type "^(Sil.typ_to_string exp_typ));      *)
+                 (* print_endline "Context"; Context_map.print_map context;                 *)
+                 Context_map.add_type pvar exp_typ 0 context, field_context
+             | Sil.Lfield (e, fld, typ) ->
+                 context, Field_context.add_type tenv fld exp_typ field_context
+             | Sil.Lindex (Sil.Var id, _) ->
+                 (match get_id_exptyp id id_context with
+                  | Exp (Sil.Lvar pvar) ->
+                      Context_map.add_type_content pvar [] exp_typ 0 context, field_context
+                  | _ -> assert false)
+             | _ -> assert false) in
           id_context, context, field_context, map, list
       | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags)
-      when not (SymExec.function_is_builtin callee_pname) ->
-      (* TODO: constraint for virtual calls *)
+        when not (SymExec.function_is_builtin callee_pname) ->
+          (* TODO: constraint for virtual calls *)
           let cfg =
             if (Procname.Set.mem callee_pname !defined_methods) then
               Exe_env.get_cfg exe_env callee_pname
@@ -573,22 +573,22 @@ struct
               id_context, context, field_context, map', list
           else id_context, context, field_context, map, list
       | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), [(exp, class_type)], loc, call_flags)
-      when Procname.equal callee_pname SymExec.ModelBuiltins.__new ->
+        when Procname.equal callee_pname SymExec.ModelBuiltins.__new ->
           let id_context = set_ids ret_ids class_type id_context in
           id_context, context, field_context, map, list
       | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname),
-      [(array_size, array_type)], loc, call_flags)
-      when Procname.equal callee_pname SymExec.ModelBuiltins.__new_array ->
+                  [(array_size, array_type)], loc, call_flags)
+        when Procname.equal callee_pname SymExec.ModelBuiltins.__new_array ->
           let id_context = set_ids ret_ids array_type id_context in
           id_context, context, field_context, map, list
       | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname),
-      [(sil_ex, type_of_ex); (Sil.Sizeof (typ, _), Sil.Tvoid)], loc, call_flags)
-      when Procname.equal callee_pname SymExec.ModelBuiltins.__cast ->
+                  [(sil_ex, type_of_ex); (Sil.Sizeof (typ, _), Sil.Tvoid)], loc, call_flags)
+        when Procname.equal callee_pname SymExec.ModelBuiltins.__cast ->
           let id_context = set_ids ret_ids typ id_context in
           id_context, context, field_context, map, list
       | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname),
-      [(sil_ex, type_of_ex); (_, Sil.Tvoid)], loc, call_flags)
-      when Procname.equal callee_pname SymExec.ModelBuiltins.__instanceof ->
+                  [(sil_ex, type_of_ex); (_, Sil.Tvoid)], loc, call_flags)
+        when Procname.equal callee_pname SymExec.ModelBuiltins.__instanceof ->
           let id_context = set_ids ret_ids (Sil.Tint Sil.IBool) id_context in
           id_context, context, field_context, map, list
       | _ -> id_context, context, field_context, map, list in
@@ -710,8 +710,8 @@ let arg_desc =
     let options_to_keep = ["-results_dir"] in
     let filter arg_desc =
       list_filter (fun desc ->
-              let (option_name, _, _, _) = desc in
-              list_mem string_equal option_name options_to_keep)
+          let (option_name, _, _, _) = desc in
+          list_mem string_equal option_name options_to_keep)
         arg_desc in
     let desc = (filter Utils.base_arg_desc) in
     Utils.Arg2.create_options_desc false "Parsing Options" desc in
@@ -771,7 +771,7 @@ let load_cg_files _exe_env (source_dirs : DB.source_dir list) =
     match Exe_env.add_cg _exe_env source_dir with
     | None -> ()
     | Some cg ->
-    (*L.err "loaded %s@." (DB.source_dir_to_string source_dir) *) () in
+        (*L.err "loaded %s@." (DB.source_dir_to_string source_dir) *) () in
   list_iter (fun source_dir -> load_cg_file _exe_env source_dir) source_dirs;
   let exe_env = Exe_env.freeze _exe_env in
   exe_env

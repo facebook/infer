@@ -70,7 +70,7 @@ type err_instance =
   | Field_over_annotated of Ident.fieldname * Procname.t
   | Null_field_access of string option * Ident.fieldname * origin_descr * bool
   | Call_receiver_annotation_inconsistent
-  of Annotations.annotation * string option * Procname.t * origin_descr
+    of Annotations.annotation * string option * Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
   | Return_annotation_inconsistent of Annotations.annotation * Procname.t * origin_descr
   | Return_over_annotated of Procname.t
@@ -110,14 +110,14 @@ module H = Hashtbl.Make(struct
       | Null_field_access _, _
       | _, Null_field_access _ -> false
       | Call_receiver_annotation_inconsistent (ann1, so1, pn1, od1),
-      Call_receiver_annotation_inconsistent (ann2, so2, pn2, od2) ->
+        Call_receiver_annotation_inconsistent (ann2, so2, pn2, od2) ->
           ann1 = ann2 &&
           (opt_equal string_equal) so1 so2 &&
           Procname.equal pn1 pn2
       | Call_receiver_annotation_inconsistent _, _
       | _, Call_receiver_annotation_inconsistent _ -> false
       | Parameter_annotation_inconsistent (ann1, s1, n1, pn1, cl1, od1),
-      Parameter_annotation_inconsistent (ann2, s2, n2, pn2, cl2, od2) ->
+        Parameter_annotation_inconsistent (ann2, s2, n2, pn2, cl2, od2) ->
           ann1 = ann2 &&
           string_equal s1 s2 &&
           int_equal n1 n2 &&
@@ -126,18 +126,18 @@ module H = Hashtbl.Make(struct
       | Parameter_annotation_inconsistent _, _
       | _, Parameter_annotation_inconsistent _ -> false
       | Return_annotation_inconsistent (ann1, pn1, od1),
-      Return_annotation_inconsistent (ann2, pn2, od2) ->
+        Return_annotation_inconsistent (ann2, pn2, od2) ->
           ann1 = ann2 && Procname.equal pn1 pn2
       | Return_annotation_inconsistent _, _
       | _, Return_annotation_inconsistent _ -> false
       | Return_over_annotated pn1, Return_over_annotated pn2 ->
           Procname.equal pn1 pn2
       | Inconsistent_subclass_return_annotation (pn1, spn1),
-      Inconsistent_subclass_return_annotation (pn2, spn2) ->
+        Inconsistent_subclass_return_annotation (pn2, spn2) ->
           if Procname.equal pn1 pn2 then true
           else Procname.equal spn1 spn2
       | Inconsistent_subclass_parameter_annotation (param_name_1, pos_1, pn_1, overriden_pn_1),
-      Inconsistent_subclass_parameter_annotation (param_name_2, pos_2, pn_2, overriden_pn_2) ->
+        Inconsistent_subclass_parameter_annotation (param_name_2, pos_2, pn_2, overriden_pn_2) ->
           string_equal param_name_1 param_name_2 &&
           int_equal pos_1 pos_2 &&
           Procname.equal pn_1 pn_2 &&
@@ -201,8 +201,8 @@ let err_tbl : err_state H.t =
 let reset () = H.reset err_tbl
 
 (** Get the forall status of an err_instance.
-The forall status indicates that the error should be printed only if it
-occurs on every path. *)
+    The forall status indicates that the error should be printed only if it
+    occurs on every path. *)
 let get_forall = function
   | Condition_redundant _ -> true
   | Field_not_initialized _ -> false
@@ -219,7 +219,7 @@ let get_forall = function
 
 
 (** Reset the always field of the forall erros in the node, so if they are not set again
-we know that they don't fire on every path. *)
+    we know that they don't fire on every path. *)
 let node_reset_forall node =
   let iter (err_instance, instr_ref_opt) err_state =
     match instr_ref_opt, get_forall err_instance with
@@ -255,10 +255,10 @@ module Strict = struct
   let this_type_get_strict signature =
     match signature.Annotations.params with
     | ("this", _, this_type):: _ -> begin
-          match PatternMatch.type_get_annotation this_type with
-          | Some ia -> Annotations.ia_get_strict ia
-          | None -> None
-        end
+        match PatternMatch.type_get_annotation this_type with
+        | Some ia -> Annotations.ia_get_strict ia
+        | None -> None
+      end
     | _ -> None
 
   let signature_get_strict signature =
@@ -283,7 +283,7 @@ module Strict = struct
     | Null_field_access (_, _, origin_descr, _) ->
         origin_descr_get_strict origin_descr
     | Parameter_annotation_inconsistent (Annotations.Nullable, _, _, _, _, origin_descr)
-    when report_on_method_arguments ->
+      when report_on_method_arguments ->
         origin_descr_get_strict origin_descr
     | _ -> None
 end (* Strict *)
@@ -434,12 +434,12 @@ let report_error_now
                 s
                 origin_desc
           | Annotations.Present -> "ERADICATE_PARAMETER_VALUE_ABSENT",
-              P.sprintf
-                "`%s` needs a present value in parameter %d but argument `%s` can be absent. %s"
-                (Procname.to_simplified_string pn)
-                n
-                s
-                origin_desc in
+                                   P.sprintf
+                                     "`%s` needs a present value in parameter %d but argument `%s` can be absent. %s"
+                                     (Procname.to_simplified_string pn)
+                                     n
+                                     s
+                                     origin_desc in
         true,
         kind_s,
         description,
@@ -518,7 +518,7 @@ let report_error_now
 
 
 (** Report an error unless is has been reported already, or unless it's a forall error
-since it requires waiting until the end of the analysis and be printed by flush. *)
+    since it requires waiting until the end of the analysis and be printed by flush. *)
 let report_error st_report_error find_canonical_duplicate node
     err_instance instr_ref_opt loc proc_name =
   let should_report_now =

@@ -51,8 +51,8 @@ type failure_stats = {
   mutable node_fail: int; (* number of node failures (i.e. at least one instruction failure) *)
   mutable node_ok: int; (* number of node successes (i.e. no instruction failures) *)
   mutable first_failure :
-  (Sil.location * (int * int) * int * Errlog.loc_trace *
-  (Prop.normal Prop.t) option * exn) option (* exception at the first failure *)
+    (Sil.location * (int * int) * int * Errlog.loc_trace *
+     (Prop.normal Prop.t) option * exn) option (* exception at the first failure *)
 }
 
 module NodeHash = Cfg.NodeHash
@@ -63,9 +63,9 @@ let failure_map : failure_stats NodeHash.t = NodeHash.create 1
 let get_failure_stats node =
   try NodeHash.find failure_map node
   with Not_found ->
-      let fs = { instr_fail = 0; instr_ok = 0; node_fail = 0; node_ok = 0; first_failure = None } in
-      NodeHash.add failure_map node fs;
-      fs
+    let fs = { instr_fail = 0; instr_ok = 0; node_fail = 0; node_ok = 0; first_failure = None } in
+    NodeHash.add failure_map node fs;
+    fs
 
 let add_diverging_states pset =
   diverging_states_proc := Paths.PathSet.union pset !diverging_states_proc;
@@ -137,8 +137,8 @@ let instrs_normalize instrs =
   list_map (Sil.instr_sub subst) instrs
 
 (** Create a function to find duplicate nodes.
-A node is a duplicate of another one if they have the same kind and location
-and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
+    A node is a duplicate of another one if they have the same kind and location
+    and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
   let module M = (* map from (loc,kind) *)
     Map.Make(struct
@@ -182,7 +182,7 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
       list_iter do_node nodes;
       !m
     with E.Threshold ->
-        M.empty in
+      M.empty in
 
   let find_duplicate_nodes node =
     try
@@ -238,7 +238,7 @@ let extract_pre p tenv pdesc abstract_fun =
   Prop.normalize (Prop.prop_sub sub pre')
 
 (** return the normalized precondition extracted form the last prop seen, if any
-the abstraction function is a parameter to get around module dependencies *)
+    the abstraction function is a parameter to get around module dependencies *)
 let get_normalized_pre (abstract_fun : Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t) : Prop.normal Prop.t option =
   match get_prop_tenv_pdesc () with
   | None -> None

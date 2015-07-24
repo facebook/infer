@@ -57,16 +57,16 @@ end = struct
     Hashtbl.replace log_files (node_fname, !DB.current_source) fd;
     if needs_initialization then
       (F.fprintf fmt "<center><h1>Cfg Node %a</h1></center>" (Io_infer.Html.pp_line_link ~text: (Some (string_of_int nodeid)) [".."]) loc.Sil.line;
-        F.fprintf fmt "PROC: %a LINE:%a\n" (Io_infer.Html.pp_proc_link [".."] proc_name) (Escape.escape_xml (Procname.to_string proc_name)) (Io_infer.Html.pp_line_link [".."]) loc.Sil.line;
-        F.fprintf fmt "<br>PREDS:@\n";
-        list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) preds;
-        F.fprintf fmt "<br>SUCCS: @\n";
-        list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) succs;
-        F.fprintf fmt "<br>EXN: @\n";
-        list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) exn;
-        F.fprintf fmt "<br>@\n";
-        F.pp_print_flush fmt ();
-        true
+       F.fprintf fmt "PROC: %a LINE:%a\n" (Io_infer.Html.pp_proc_link [".."] proc_name) (Escape.escape_xml (Procname.to_string proc_name)) (Io_infer.Html.pp_line_link [".."]) loc.Sil.line;
+       F.fprintf fmt "<br>PREDS:@\n";
+       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) preds;
+       F.fprintf fmt "<br>SUCCS: @\n";
+       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) succs;
+       F.fprintf fmt "<br>EXN: @\n";
+       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) exn;
+       F.fprintf fmt "<br>@\n";
+       F.pp_print_flush fmt ();
+       true
       )
     else false
 
@@ -220,7 +220,7 @@ let force_delayed_prints () =
 let _start_session node (loc: Sil.location) proc_name session =
   let node_id = Cfg.Node.get_id node in
   (if Log_nodes.start_node node_id loc proc_name (Cfg.Node.get_preds node) (Cfg.Node.get_succs node) (Cfg.Node.get_exn node)
-    then F.fprintf !html_formatter "%a@[<v>%a@]%a" Io_infer.Html.pp_start_color Green (Cfg.Node.pp_instr (pe_html Green) None ~sub_instrs: true) node Io_infer.Html.pp_end_color ());
+   then F.fprintf !html_formatter "%a@[<v>%a@]%a" Io_infer.Html.pp_start_color Green (Cfg.Node.pp_instr (pe_html Green) None ~sub_instrs: true) node Io_infer.Html.pp_end_color ());
   F.fprintf !html_formatter "%a%a" Io_infer.Html.pp_hline () (Io_infer.Html.pp_session_link ~with_name: true [".."]) (node_id, session, loc.Sil.line);
   F.fprintf !html_formatter "<LISTING>%a" Io_infer.Html.pp_start_color Black
 
@@ -249,17 +249,17 @@ let _proc_write_log whole_seconds cfg pname =
         linenum;
       list_iter
         (fun n -> Io_infer.Html.pp_node_link []
-                (Cfg.Node.get_description (pe_html Black) n)
-                (list_map Cfg.Node.get_id (Cfg.Node.get_preds n))
-                (list_map Cfg.Node.get_id (Cfg.Node.get_succs n))
-                (list_map Cfg.Node.get_id (Cfg.Node.get_exn n))
-                (is_visited n) false fmt (Cfg.Node.get_id n))
+            (Cfg.Node.get_description (pe_html Black) n)
+            (list_map Cfg.Node.get_id (Cfg.Node.get_preds n))
+            (list_map Cfg.Node.get_id (Cfg.Node.get_succs n))
+            (list_map Cfg.Node.get_id (Cfg.Node.get_exn n))
+            (is_visited n) false fmt (Cfg.Node.get_id n))
         nodes;
       (match Specs.get_summary pname with
-        | None -> ()
-        | Some summary ->
-            Specs.pp_summary (pe_html Black) whole_seconds fmt summary;
-            Io_infer.Html.close (fd, fmt))
+       | None -> ()
+       | Some summary ->
+           Specs.pp_summary (pe_html Black) whole_seconds fmt summary;
+           Io_infer.Html.close (fd, fmt))
   | None -> ()
 
 let proc_write_log whole_seconds cfg pname =
@@ -275,7 +275,7 @@ let create_errors_per_line err_log =
       let set = Hashtbl.find err_per_line loc.Sil.line in
       Hashtbl.replace err_per_line loc.Sil.line (StringSet.add err_str set)
     with Not_found ->
-        Hashtbl.add err_per_line loc.Sil.line (StringSet.singleton err_str) in
+      Hashtbl.add err_per_line loc.Sil.line (StringSet.singleton err_str) in
   Errlog.iter add_err err_log;
   err_per_line
 
@@ -284,7 +284,7 @@ let create_err_message err_string =
   "\n<div class=\"msg\" style=\"margin-left:9ex\">" ^ err_string ^ "</div>"
 
 (** Module to read specific lines from files.
-The data from any file will stay in memory until the handle is collected by the gc *)
+    The data from any file will stay in memory until the handle is collected by the gc *)
 module LineReader : sig
   type t
 
@@ -322,18 +322,18 @@ end = struct
       done;
       assert false (* execution never reaches here *)
     with End_of_file ->
-        (close_in cin;
-          Array.of_list (list_rev !lines))
+      (close_in cin;
+       Array.of_list (list_rev !lines))
 
   let file_data (hash: t) fname =
     try
       Some (Hashtbl.find hash fname)
     with Not_found ->
-        try
-          let lines_arr = read_file (DB.source_file_to_string fname) in
-          Hashtbl.add hash fname lines_arr;
-          Some lines_arr
-        with exn when exn_not_timeout exn -> None
+      try
+        let lines_arr = read_file (DB.source_file_to_string fname) in
+        Hashtbl.add hash fname lines_arr;
+        Some lines_arr
+      with exn when exn_not_timeout exn -> None
 
   let from_file_linenum_original hash fname linenum =
     match file_data hash fname with
@@ -382,8 +382,8 @@ let c_file_write_html proc_is_active linereader fname tenv cfg =
   let err_per_line = create_errors_per_line global_err_log in
   try
     (let s = "<center><h1>File " ^ (DB.source_file_to_string !DB.current_source) ^ "</h1></center>\n" ^
-        "<table class=\"code\">\n" in
-      F.fprintf fmt "%s" s);
+             "<table class=\"code\">\n" in
+     F.fprintf fmt "%s" s);
     let linenum = ref 0 in
     while true do
       incr linenum;
@@ -404,22 +404,22 @@ let c_file_write_html proc_is_active linereader fname tenv cfg =
         "<tr><td class=\"num\" id=\"" ^ line_str ^ "\">" ^ linenum_str ^ "</td><td class=\"line\">" ^ line_html in
       F.fprintf fmt "%s" str;
       list_iter (fun n ->
-              let isproof = Specs.Visitedset.mem (Cfg.Node.get_id n, []) !proof_cover in
-              Io_infer.Html.pp_node_link [fname_encoding] (Cfg.Node.get_description (pe_html Black) n) (list_map Cfg.Node.get_id (Cfg.Node.get_preds n)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs n)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn n)) (is_visited n) isproof fmt (Cfg.Node.get_id n)) nodes_at_linenum;
+          let isproof = Specs.Visitedset.mem (Cfg.Node.get_id n, []) !proof_cover in
+          Io_infer.Html.pp_node_link [fname_encoding] (Cfg.Node.get_description (pe_html Black) n) (list_map Cfg.Node.get_id (Cfg.Node.get_preds n)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs n)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn n)) (is_visited n) isproof fmt (Cfg.Node.get_id n)) nodes_at_linenum;
       list_iter (fun n -> match Cfg.Node.get_kind n with
-              | Cfg.Node.Start_node proc_desc ->
-                  let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
-                  let num_specs = list_length (Specs.get_specs proc_name) in
-                  let label = (Escape.escape_xml (Procname.to_string proc_name)) ^ ": " ^ (string_of_int num_specs) ^ " specs" in
-                  Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label
-              | _ -> ()) nodes_at_linenum;
+          | Cfg.Node.Start_node proc_desc ->
+              let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+              let num_specs = list_length (Specs.get_specs proc_name) in
+              let label = (Escape.escape_xml (Procname.to_string proc_name)) ^ ": " ^ (string_of_int num_specs) ^ " specs" in
+              Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label
+          | _ -> ()) nodes_at_linenum;
       list_iter (fun err_string -> F.fprintf fmt "%s" (create_err_message err_string)) errors_at_linenum;
       F.fprintf fmt "%s" "</td></tr>\n"
     done
   with End_of_file ->
-      (F.fprintf fmt "%s" "</table>\n";
-        Errlog.pp_html [fname_encoding] fmt global_err_log;
-        Io_infer.Html.close (fd, fmt))
+    (F.fprintf fmt "%s" "</table>\n";
+     Errlog.pp_html [fname_encoding] fmt global_err_log;
+     Io_infer.Html.close (fd, fmt))
 
 let c_files_write_html linereader exe_env =
   let proc_is_active = Exe_env.proc_is_active exe_env in

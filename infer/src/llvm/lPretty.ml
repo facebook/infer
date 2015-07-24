@@ -47,10 +47,10 @@ let pretty_instr : instr -> string = function
 let pretty_instr_ln (i : instr) : string = pretty_instr i ^ "\n"
 
 let pretty_func_def : func_def -> string = function
-  FuncDef (name, ret_tp, params, instrs) ->
-    "define " ^ pretty_ret_typ ret_tp ^ " " ^ pretty_variable name ^ "(" ^
-    concatmap ", " (fun (tp, id) -> pretty_typ tp ^ " " ^ id) params ^ ") {\n" ^
-    concatmap "" pretty_instr_ln instrs ^ "}\n"
+    FuncDef (name, ret_tp, params, instrs) ->
+      "define " ^ pretty_ret_typ ret_tp ^ " " ^ pretty_variable name ^ "(" ^
+      concatmap ", " (fun (tp, id) -> pretty_typ tp ^ " " ^ id) params ^ ") {\n" ^
+      concatmap "" pretty_instr_ln instrs ^ "}\n"
 
 let pretty_prog : prog -> string = function
-  Prog defs -> concatmap "" pretty_func_def defs
+    Prog defs -> concatmap "" pretty_func_def defs

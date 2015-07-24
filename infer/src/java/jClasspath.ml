@@ -149,14 +149,14 @@ let lookup_node cn (program: program) =
   try
     Some (JBasics.ClassMap.find cn (get_classmap program))
   with Not_found ->
-      try
-        let jclass = Javalib.get_class (get_classpath program) cn in
-        add_class cn jclass program;
-        Some jclass
-      with
-      | JBasics.No_class_found _
-      | JBasics.Class_structure_error _
-      | Invalid_argument _ -> None
+    try
+      let jclass = Javalib.get_class (get_classpath program) cn in
+      add_class cn jclass program;
+      Some jclass
+    with
+    | JBasics.No_class_found _
+    | JBasics.Class_structure_error _
+    | Invalid_argument _ -> None
 
 
 let classname_of_class_filename class_filename =

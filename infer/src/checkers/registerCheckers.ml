@@ -20,28 +20,28 @@ let active_procedure_checkers () =
   let java_checkers =
     let l =
       [
-      CallbackChecker.callback_checker_main, false;
-      Checkers.callback_check_access, false;
-      Checkers.callback_monitor_nullcheck, false;
-      Checkers.callback_test_state , false;
-      Checkers.callback_checkVisibleForTesting, false;
-      Checkers.callback_check_write_to_parcel, false;
-      Checkers.callback_find_deserialization, false;
-      Dataflow.callback_test_dataflow, false;
-      SqlChecker.callback_sql, false;
-      Eradicate.callback_eradicate, !Config.eradicate;
-      CodeQuery.code_query_callback, !CodeQuery.query <> None;
-      Checkers.callback_check_field_access, false;
-      ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
-      RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
-      PrintfArgs.callback_printf_args, checkers_enabled;
+        CallbackChecker.callback_checker_main, false;
+        Checkers.callback_check_access, false;
+        Checkers.callback_monitor_nullcheck, false;
+        Checkers.callback_test_state , false;
+        Checkers.callback_checkVisibleForTesting, false;
+        Checkers.callback_check_write_to_parcel, false;
+        Checkers.callback_find_deserialization, false;
+        Dataflow.callback_test_dataflow, false;
+        SqlChecker.callback_sql, false;
+        Eradicate.callback_eradicate, !Config.eradicate;
+        CodeQuery.code_query_callback, !CodeQuery.query <> None;
+        Checkers.callback_check_field_access, false;
+        ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
+        RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
+        PrintfArgs.callback_printf_args, checkers_enabled;
       ] in
     list_map (fun (x, y) -> (x, y, Some Sil.Java)) l in
   let c_cpp_checkers =
     let l =
       [
-      Checkers.callback_print_c_method_calls, false;
-      CheckDeadCode.callback_check_dead_code, checkers_enabled;
+        Checkers.callback_print_c_method_calls, false;
+        CheckDeadCode.callback_check_dead_code, checkers_enabled;
       ] in
     list_map (fun (x, y) -> (x, y, Some Sil.C_CPP)) l in
 

@@ -46,8 +46,8 @@ let resolve_method tenv class_name method_name =
   | Some (Sil.TN_csu (Sil.Class, class_name)) ->
       let class_method_name = mk_procname_from_method (Mangled.to_string class_name) method_name in
       (try let ms = CMethod_signature.find class_method_name in
-        Some ms
-      with Not_found -> None)
+         Some ms
+       with Not_found -> None)
   | _ -> None
 
 let get_superclass_curr_class context =
@@ -60,8 +60,8 @@ let get_superclass_curr_class context =
     | _ ->
         Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
         (match super_opt with
-          | Some super -> super
-          | _ -> assert false) in
+         | Some super -> super
+         | _ -> assert false) in
   match CContext.get_curr_class context with
   | CContext.ContextCls (cname, super_opt, _) ->
       retrive_super cname super_opt
@@ -76,10 +76,10 @@ let get_class_selector_instance context obj_c_message_expr_info act_params =
   | `Class qt -> (CTypes.get_type qt, selector, MCStatic)
   | `Instance ->
       (match act_params with
-        | (instance_obj, Sil.Tptr(t, _)):: _
-        | (instance_obj, t):: _ ->
-            (CTypes.classname_of_type t, selector, MCVirtual)
-        | _ -> assert false)
+       | (instance_obj, Sil.Tptr(t, _)):: _
+       | (instance_obj, t):: _ ->
+           (CTypes.classname_of_type t, selector, MCVirtual)
+       | _ -> assert false)
   | `SuperInstance ->
       let superclass = get_superclass_curr_class context in
       (superclass, selector, MCNoVirtual)
@@ -115,18 +115,18 @@ let captured_vars_from_block_info context cvl =
     | [] -> []
     | cv:: cvl'' ->
         (match cv.Clang_ast_t.bcv_variable with
-          | Some dr ->
-              (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_qual_type with
-                | Some name_info, _ ->
-                    let n = name_info.Clang_ast_t.ni_name in
-                    if n = CFrontend_config.self && not context.is_instance then []
-                    else
-                      (let procdesc_formals = Cfg.Procdesc.get_formals context.procdesc in
-                        (Printing.log_err "formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
-                        let formals = list_map formal2captured procdesc_formals in
-                        [find (context.local_vars @ formals) n])
-                | _ -> assert false)
-          | None -> []) :: f cvl'' in
+         | Some dr ->
+             (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_qual_type with
+              | Some name_info, _ ->
+                  let n = name_info.Clang_ast_t.ni_name in
+                  if n = CFrontend_config.self && not context.is_instance then []
+                  else
+                    (let procdesc_formals = Cfg.Procdesc.get_formals context.procdesc in
+                     (Printing.log_err "formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
+                     let formals = list_map formal2captured procdesc_formals in
+                     [find (context.local_vars @ formals) n])
+              | _ -> assert false)
+         | None -> []) :: f cvl'' in
   list_flatten (f cvl)
 
 let get_return_type tenv ms =
@@ -153,9 +153,9 @@ let should_create_procdesc cfg procname defined generated =
       let is_generated_previous =
         (Cfg.Procdesc.get_attributes prevoius_procdesc).Sil.is_generated in
       if defined &&
-      ((not is_defined_previous) || (generated && is_generated_previous)) then
+         ((not is_defined_previous) || (generated && is_generated_previous)) then
         (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
-          true)
+         true)
       else false
   | None -> true
 
@@ -195,25 +195,25 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           Sil.is_generated = is_generated;
         } in
       create {
-          cfg = cfg;
-          name = procname;
-          is_defined = defined;
-          ret_type = ret_type;
-          formals = formals;
-          locals = [];
-          captured = captured';
-          loc = loc_start;
-          proc_attributes = proc_attributes;
-        } in
+        cfg = cfg;
+        name = procname;
+        is_defined = defined;
+        ret_type = ret_type;
+        formals = formals;
+        locals = [];
+        captured = captured';
+        loc = loc_start;
+        proc_attributes = proc_attributes;
+      } in
     if defined then
       (if !Config.arc_mode then
-          Cfg.Procdesc.set_flag procdesc Mleak_buckets.objc_arc_flag "true";
-        let start_kind = Cfg.Node.Start_node procdesc in
-        let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc [] in
-        let exit_kind = Cfg.Node.Exit_node procdesc in
-        let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc [] in
-        Cfg.Procdesc.set_start_node procdesc start_node;
-        Cfg.Procdesc.set_exit_node procdesc exit_node) in
+         Cfg.Procdesc.set_flag procdesc Mleak_buckets.objc_arc_flag "true";
+       let start_kind = Cfg.Node.Start_node procdesc in
+       let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc [] in
+       let exit_kind = Cfg.Node.Exit_node procdesc in
+       let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc [] in
+       Cfg.Procdesc.set_start_node procdesc start_node;
+       Cfg.Procdesc.set_exit_node procdesc exit_node) in
   let generated = CMethod_signature.ms_is_generated ms in
   if should_create_procdesc cfg procname defined generated then
     (create_new_procdesc (); true)
@@ -226,9 +226,9 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
   | None ->
       let ret_type, formals =
         (match type_opt with
-          | Some (ret_type, arg_types) ->
-              ret_type, list_map (fun typ -> ("x", typ)) arg_types
-          | None -> Sil.Tvoid, []) in
+         | Some (ret_type, arg_types) ->
+             ret_type, list_map (fun typ -> ("x", typ)) arg_types
+         | None -> Sil.Tvoid, []) in
       let loc = Sil.loc_none in
       let _ =
         let open Cfg.Procdesc in
@@ -246,16 +246,16 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
             Sil.is_generated = false;
           } in
         create {
-            cfg = cfg;
-            name = procname;
-            is_defined = false;
-            ret_type = ret_type;
-            formals = formals;
-            locals = [];
-            captured = [];
-            loc = loc;
-            proc_attributes = proc_attributes;
-          } in
+          cfg = cfg;
+          name = procname;
+          is_defined = false;
+          ret_type = ret_type;
+          formals = formals;
+          locals = [];
+          captured = [];
+          loc = loc;
+          proc_attributes = proc_attributes;
+        } in
       ()
 
 let instance_to_method_call_type instance =

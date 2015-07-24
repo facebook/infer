@@ -421,10 +421,10 @@ let typ_get_recursive_flds tenv te =
   match te with
   | Sil.Sizeof (typ, _) ->
       (match typ with
-        | Sil.Tvar _ -> assert false (* there should be no indirection *)
-        | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ | Sil.Tenum _ -> []
-        | Sil.Tstruct (fld_typ_ann_list, _, _, _, _, _, _) -> list_map (fun (x, y, z) -> x) (list_filter filter fld_typ_ann_list)
-        | Sil.Tarray _ -> [])
+       | Sil.Tvar _ -> assert false (* there should be no indirection *)
+       | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ | Sil.Tenum _ -> []
+       | Sil.Tstruct (fld_typ_ann_list, _, _, _, _, _, _) -> list_map (fun (x, y, z) -> x) (list_filter filter fld_typ_ann_list)
+       | Sil.Tarray _ -> [])
   | Sil.Var _ -> [] (* type of |-> not known yet *)
   | Sil.Const _ -> []
   | _ ->
@@ -933,7 +933,7 @@ let create_absrules_from_tdecl tenv tname =
     match is_simply_recursive tenv tname with
     | None -> ()
     | Some (fld) ->
-    (* L.out "@[.... Adding Abstraction Rules ....@\n@."; *)
+        (* L.out "@[.... Adding Abstraction Rules ....@\n@."; *)
         let para = create_hpara_from_tname_flds tenv tname fld [] [] Sil.inst_abstraction in
         abs_rules_add_sll para
   else ()
@@ -949,27 +949,27 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
       let filter atom =
         let fav' = Sil.atom_fav atom in
         Sil.fav_for_all fav' (fun id ->
-                if Ident.is_primed id then Sil.fav_mem fav_sigma id
-                else if Ident.is_footprint id then Sil.fav_mem fav_nonpure id
-                else true) in
+            if Ident.is_primed id then Sil.fav_mem fav_sigma id
+            else if Ident.is_footprint id then Sil.fav_mem fav_nonpure id
+            else true) in
       list_filter filter pure in
     let new_pure =
       list_fold_left
         (fun pi a ->
-              match a with
-              | Sil.Aneq (Sil.Var name, _) -> a:: pi
-              (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
-              | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Lt, _, _))
-              | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Sil.Cint i))
-              | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Le, _, _))
-              | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Sil.Cint i)) when Sil.Int.isone i ->
-                  a :: pi
-              | Sil.Aeq (Sil.Var name, e) when not (Ident.is_primed name) ->
-                  (match e with
-                    | Sil.Var _
-                    | Sil.Const _ -> a :: pi
-                    | _ -> pi)
-              | _ -> pi)
+           match a with
+           | Sil.Aneq (Sil.Var name, _) -> a:: pi
+           (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
+           | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Lt, _, _))
+           | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Sil.Cint i))
+           | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Le, _, _))
+           | Sil.Aeq (Sil.BinOp (Sil.Le, _, _), Sil.Const (Sil.Cint i)) when Sil.Int.isone i ->
+               a :: pi
+           | Sil.Aeq (Sil.Var name, e) when not (Ident.is_primed name) ->
+               (match e with
+                | Sil.Var _
+                | Sil.Const _ -> a :: pi
+                | _ -> pi)
+           | _ -> pi)
         [] pi_filtered in
     list_rev new_pure in
 
@@ -988,8 +988,8 @@ let abstract_gc p =
   let p_without_pi = Prop.normalize (Prop.replace_pi [] p) in
   let fav_p_without_pi = Prop.prop_fav p_without_pi in
   (* let weak_filter atom =
-  let fav_atom = atom_fav atom in
-  list_intersect compare fav_p_without_pi fav_atom in *)
+     let fav_atom = atom_fav atom in
+     list_intersect compare fav_p_without_pi fav_atom in *)
   let strong_filter = function
     | Sil.Aeq(e1, e2) | Sil.Aneq(e1, e2) ->
         let fav_e1 = Sil.exp_fav e1 in
@@ -1046,8 +1046,8 @@ let sigma_reachable root_fav sigma =
     if modified then find_fixpoint edges_to_revisit in
   find_fixpoint !edges;
   (* L.d_str "reachable: ";
-  Ident.IdentSet.iter (fun id -> Sil.d_exp (Sil.Var id); L.d_str " ") !reach_set;
-  L.d_ln (); *)
+     Ident.IdentSet.iter (fun id -> Sil.d_exp (Sil.Var id); L.d_str " ") !reach_set;
+     L.d_ln (); *)
   !reach_set
 
 let get_cycle root prop =
@@ -1056,19 +1056,19 @@ let get_cycle root prop =
     match e with
     | Sil.Eexp(e', _) ->
         (try
-          Some(list_find (fun hpred -> match hpred with
-                    | Sil.Hpointsto(e'', _, _) -> Sil.exp_equal e'' e'
-                    | _ -> false) sigma)
-        with _ -> None)
+           Some(list_find (fun hpred -> match hpred with
+               | Sil.Hpointsto(e'', _, _) -> Sil.exp_equal e'' e'
+               | _ -> false) sigma)
+         with _ -> None)
     | _ -> None in
   let print_cycle cyc =
     (L.d_str "Cycle= ";
-      list_iter (fun ((e, t), f, e') ->
-              match e, e' with
-              | Sil.Eexp (e, _), Sil.Eexp (e', _) ->
-                  L.d_str ("("^(Sil.exp_to_string e)^": "^(Sil.typ_to_string t)^", "^(Ident.fieldname_to_string f)^", "^(Sil.exp_to_string e')^")")
-              | _ -> ()) cyc;
-      L.d_strln "") in
+     list_iter (fun ((e, t), f, e') ->
+         match e, e' with
+         | Sil.Eexp (e, _), Sil.Eexp (e', _) ->
+             L.d_str ("("^(Sil.exp_to_string e)^": "^(Sil.typ_to_string t)^", "^(Ident.fieldname_to_string f)^", "^(Sil.exp_to_string e')^")")
+         | _ -> ()) cyc;
+     L.d_strln "") in
   (* perform a dfs of a graph stopping when e_root is reached. *)
   (* Returns a pair (path, bool) where path is a list of edges ((e1,type_e1),f,e2) *)
   (* describing the path to e_root and bool is true if e_root is reached. *)
@@ -1129,7 +1129,7 @@ let full_reachability_algorithm = true
 let should_raise_objc_leak prop hpred =
   match hpred with
   | Sil.Hpointsto(e, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Sil.Cint i)), _)):: _, _), Sil.Sizeof (typ, _))
-  when Ident.fieldname_is_hidden fn && Sil.Int.gt i Sil.Int.zero (* counter > 0 *) ->
+    when Ident.fieldname_is_hidden fn && Sil.Int.gt i Sil.Int.zero (* counter > 0 *) ->
       Mleak_buckets.should_raise_leak typ
   | _ -> None
 
@@ -1155,7 +1155,7 @@ let get_var_retain_cycle _prop =
   let is_hpred_block v h =
     match h, v with
     | Sil.Hpointsto (e, _, Sil.Sizeof(typ, _)), Sil.Eexp (e', _)
-    when Sil.exp_equal e e' && Sil.is_block_type typ -> true
+      when Sil.exp_equal e e' && Sil.is_block_type typ -> true
     | _, _ -> false in
   let find_pvar v =
     try
@@ -1171,8 +1171,8 @@ let get_var_retain_cycle _prop =
     match find_pvar e with
     | Some pvar -> [((sexp pvar, t), f, e')]
     | _ -> (match find_block e with
-          | Some blk -> [((sexp blk, t), f, e')]
-          | _ -> [((sexp (Sil.Sizeof(t, Sil.Subtype.exact)), t), f, e')]) in
+        | Some blk -> [((sexp blk, t), f, e')]
+        | _ -> [((sexp (Sil.Sizeof(t, Sil.Subtype.exact)), t), f, e')]) in
   (* returns the pvars of the first cycle we find in sigma. *)
   (* This is an heuristic that works if there is one cycle. *)
   (* In case there are more than one cycle we may return not necessarily*)
@@ -1202,7 +1202,7 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
     | Sil.Tstruct(nsf, sf, _, _, _, _, _) ->
         let ia = ref [] in
         list_iter (fun (fn', t', ia') ->
-                if Ident.fieldname_equal fn fn' then ia := ia') (nsf@sf);
+            if Ident.fieldname_equal fn fn' then ia := ia') (nsf@sf);
         !ia
     | _ -> [] in
   let rec has_weak_or_unretained_or_assign params =
@@ -1212,7 +1212,7 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
     | _:: params' -> has_weak_or_unretained_or_assign params' in
   let do_annotation (a, _) =
     ((a.Sil.class_name = Config.property_attributes) ||
-      (a.Sil.class_name = Config.ivar_attributes)) && has_weak_or_unretained_or_assign a.Sil.parameters in
+     (a.Sil.class_name = Config.ivar_attributes)) && has_weak_or_unretained_or_assign a.Sil.parameters in
   let rec do_cycle c =
     match c with
     | [] -> false
@@ -1308,26 +1308,26 @@ let check_junk ?original_prop pname tenv prop =
               Exceptions.Leak (fp_part, prop, hpred, Errdesc.explain_leak tenv hpred prop alloc_attribute objc_ml_bucket_opt, !Absarray.array_abstraction_performed, resource, try assert false with Assert_failure x -> x) in
             let ignore_resource, exn =
               (match alloc_attribute, resource with
-                | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->
-                (* When there is a cycle in objc we ignore it only if it has weak or unsafe_unretained fields *)
-                (* Otherwise we report a retain cycle*)
-                    let cycle = get_var_retain_cycle (remove_opt original_prop) in
-                    if cycle_has_weak_or_unretained_or_assign_field cycle then
-                      true, exn_retain_cycle cycle
-                    else false, exn_retain_cycle cycle
-                | Some _, Sil.Rmemory Sil.Mobjc ->
-                    objc_ml_bucket_opt = None, exn_leak
-                | Some _, Sil.Rmemory _ -> !Sil.curr_language = Sil.Java, exn_leak
-                | Some _, Sil.Rignore -> true, exn_leak
-                | Some _, Sil.Rfile -> false, exn_leak
-                | Some _, Sil.Rlock -> false, exn_leak
-                | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter hpred ->
-                (* When its a cycle and the object has a ref counter then *)
-                (* we have a retain cycle. Objc object may not have the *)
-                (* Sil.Mobjc qualifier when added in footprint doing abduction *)
-                    let cycle = get_var_retain_cycle (remove_opt original_prop) in
-                    false, exn_retain_cycle cycle
-                | _ -> !Sil.curr_language = Sil.Java, exn_leak) in
+               | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->
+                   (* When there is a cycle in objc we ignore it only if it has weak or unsafe_unretained fields *)
+                   (* Otherwise we report a retain cycle*)
+                   let cycle = get_var_retain_cycle (remove_opt original_prop) in
+                   if cycle_has_weak_or_unretained_or_assign_field cycle then
+                     true, exn_retain_cycle cycle
+                   else false, exn_retain_cycle cycle
+               | Some _, Sil.Rmemory Sil.Mobjc ->
+                   objc_ml_bucket_opt = None, exn_leak
+               | Some _, Sil.Rmemory _ -> !Sil.curr_language = Sil.Java, exn_leak
+               | Some _, Sil.Rignore -> true, exn_leak
+               | Some _, Sil.Rfile -> false, exn_leak
+               | Some _, Sil.Rlock -> false, exn_leak
+               | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter hpred ->
+                   (* When its a cycle and the object has a ref counter then *)
+                   (* we have a retain cycle. Objc object may not have the *)
+                   (* Sil.Mobjc qualifier when added in footprint doing abduction *)
+                   let cycle = get_var_retain_cycle (remove_opt original_prop) in
+                   false, exn_retain_cycle cycle
+               | _ -> !Sil.curr_language = Sil.Java, exn_leak) in
             let ignore_leak = !Config.allowleak || ignore_resource || is_undefined in
             let report_and_continue = !Config.footprint in (* in footprint mode, report leak and continue *)
             let already_reported () =
@@ -1367,7 +1367,7 @@ let check_junk ?original_prop pname tenv prop =
   else Prop.normalize (Prop.replace_sigma sigma_new (Prop.replace_sigma_footprint sigma_fp_new prop))
 
 (** Check whether the prop contains junk.
-If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
+    If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
 let abstract_junk ?original_prop pname tenv prop =
   Absarray.array_abstraction_performed := false;
   check_junk ~original_prop: original_prop pname tenv prop
@@ -1427,7 +1427,7 @@ let remove_local_stack sigma pvars =
   list_filter filter_non_stack sigma
 
 (** [prop_set_fooprint p p_foot] removes a local stack from [p_foot],
-and sets proposition [p_foot] as footprint of [p]. *)
+    and sets proposition [p_foot] as footprint of [p]. *)
 let set_footprint_for_abs (p : 'a Prop.t) (p_foot : 'a Prop.t) local_stack_pvars : Prop.exposed Prop.t =
   let p_foot_pure = Prop.get_pure p_foot in
   let p_foot_sigma = Prop.get_sigma p_foot in

@@ -238,9 +238,9 @@ let java_is_static = function
 let java_to_string ?withclass: (wc = false) j verbosity =
   match verbosity with
   | VERBOSE | NON_VERBOSE ->
-  (* if verbose, then package.class.method(params): rtype,
-  else rtype package.class.method(params)
-  verbose is used for example to create unique filenames, non_verbose to create reports *)
+      (* if verbose, then package.class.method(params): rtype,
+         else rtype package.class.method(params)
+         verbose is used for example to create unique filenames, non_verbose to create reports *)
       let return_type = java_return_type_to_string j verbosity in
       let params = java_param_list_to_string j.parameters verbosity in
       let classname = java_type_to_string j.classname verbosity in
@@ -279,16 +279,16 @@ let java_is_anonymous_inner_class = function
   | _ -> false
 
 (** Check if the last parameter is a hidden inner class, and remove it if present.
-This is used in private constructors, where a proxy constructor is generated
-with an extra parameter and calls the normal constructor. *)
+    This is used in private constructors, where a proxy constructor is generated
+    with an extra parameter and calls the normal constructor. *)
 let java_remove_hidden_inner_class_parameter = function
   | JAVA js ->
       (match list_rev js.parameters with
-        | (so, s) :: par' ->
-            if is_anonymous_inner_class_name s
-            then Some (JAVA { js with parameters = list_rev par'})
-            else None
-        | [] -> None)
+       | (so, s) :: par' ->
+           if is_anonymous_inner_class_name s
+           then Some (JAVA { js with parameters = list_rev par'})
+           else None
+       | [] -> None)
   | _ -> None
 
 (** Check if the procedure name is an anonymous inner class constructor. *)
@@ -299,19 +299,19 @@ let java_is_anonymous_inner_class_constructor = function
   | _ -> false
 
 (** Check if the procedure name is an acess method (e.g. access$100 used to
-access private members from a nested class. *)
+    access private members from a nested class. *)
 let java_is_access_method = function
   | JAVA js ->
       (match string_split_character js.methodname '$' with
-        | Some "access", s ->
-            let is_int =
-              try ignore (int_of_string s); true with Failure _ -> false in
-            is_int
-        | _ -> false)
+       | Some "access", s ->
+           let is_int =
+             try ignore (int_of_string s); true with Failure _ -> false in
+           is_int
+       | _ -> false)
   | _ -> false
 
 (** Check if the proc name has the type of a java vararg.
-Note: currently only checks that the last argument has type Object[]. *)
+    Note: currently only checks that the last argument has type Object[]. *)
 let java_is_vararg = function
   | JAVA js ->
       begin
@@ -342,7 +342,7 @@ let is_infer_undefined pn = match pn with
       let regexp = Str.regexp "com.facebook.infer.models.InferUndefined" in
       Str.string_match regexp (java_get_class pn) 0
   | _ ->
-  (* TODO: add cases for obj-c, c, c++ *)
+      (* TODO: add cases for obj-c, c, c++ *)
       false
 
 (** to_string for C_FUNCTION and STATIC types *)

@@ -23,7 +23,7 @@ let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
     | Sil.Set (Sil.Lfield (Sil.Var lhs, fld, _), typ, rhs, loc)
-    when Sil.exp_is_null_literal rhs && IdSet.mem lhs this_ids ->
+      when Sil.exp_is_null_literal rhs && IdSet.mem lhs this_ids ->
         (FldSet.add fld nullified_flds, this_ids)
     | Sil.Letderef (id, rhs, _, _) when Sil.exp_is_this rhs ->
         (nullified_flds, IdSet.add id this_ids)
@@ -44,12 +44,12 @@ let android_lifecycle_typs = ref []
 let get_or_create_lifecycle_typs tenv = match !android_lifecycle_typs with
   | [] ->
       let lifecycle_typs = list_fold_left (fun typs (pkg, clazz, methods) ->
-                let qualified_name = Mangled.from_package_class pkg clazz in
-                match AndroidFramework.get_lifecycle_for_framework_typ_opt
+          let qualified_name = Mangled.from_package_class pkg clazz in
+          match AndroidFramework.get_lifecycle_for_framework_typ_opt
                   qualified_name methods tenv with
-                | Some (framework_typ, _) -> framework_typ :: typs
-                | None -> typs
-          ) [] AndroidFramework.get_lifecycles in
+          | Some (framework_typ, _) -> framework_typ :: typs
+          | None -> typs
+        ) [] AndroidFramework.get_lifecycles in
       android_lifecycle_typs := lifecycle_typs;
       lifecycle_typs
   | typs -> typs
@@ -64,21 +64,21 @@ let done_checking num_methods =
   !num_methods_checked = num_methods
 
 (** ask Eradicate to check each of the procs in [registered_callback_procs] (and their transitive
-* callees) in a context where each of the fields in [fields_nullifed] is marked as @Nullable *)
+ * callees) in a context where each of the fields in [fields_nullifed] is marked as @Nullable *)
 let do_eradicate_check all_procs get_procdesc idenv tenv =
   (* tell Eradicate to treat each of the fields nullified in on_destroy as nullable *)
   FldSet.iter (fun fld -> Models.Inference.field_add_nullable_annotation fld) !fields_nullified;
   Procname.Set.iter
     (fun proc_name ->
-          match get_procdesc proc_name with
-          | Some proc_desc ->
-              do_eradicate_check all_procs get_procdesc idenv tenv proc_name proc_desc
-          | None -> ())
+       match get_procdesc proc_name with
+       | Some proc_desc ->
+           do_eradicate_check all_procs get_procdesc idenv tenv proc_name proc_desc
+       | None -> ())
     !registered_callback_procs
 
 (** if [procname] belongs to an Android lifecycle type, save the set of callbacks registered in
-* [procname]. in addition, if [procname] is a special "destroy" /"cleanup" method, save the set of
-* fields that are nullified *)
+ * [procname]. in addition, if [procname] is a special "destroy" /"cleanup" method, save the set of
+ * fields that are nullified *)
 let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc =
   match Sil.get_typ (Mangled.from_string (Procname.java_get_class proc_name)) None tenv with
   | Some (Sil.Tstruct(_, _, csu, Some class_name, _, methods, _) as typ) ->
@@ -93,15 +93,15 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
         (* find the callbacks registered by this procedure and update the list *)
         let registered_callback_procs' = list_fold_left
             (fun callback_procs callback_typ ->
-                  match callback_typ with
-                  | Sil.Tptr (Sil.Tstruct(_, _, Sil.Class, Some class_name, _, methods, _), _) ->
-                      list_fold_left
-                        (fun callback_procs callback_proc ->
-                              if Procname.is_constructor callback_proc then callback_procs
-                              else Procname.Set.add callback_proc callback_procs)
-                        callback_procs
-                        methods
-                  | typ -> callback_procs)
+               match callback_typ with
+               | Sil.Tptr (Sil.Tstruct(_, _, Sil.Class, Some class_name, _, methods, _), _) ->
+                   list_fold_left
+                     (fun callback_procs callback_proc ->
+                        if Procname.is_constructor callback_proc then callback_procs
+                        else Procname.Set.add callback_proc callback_procs)
+                     callback_procs
+                     methods
+               | typ -> callback_procs)
             !registered_callback_procs
             registered_callback_typs in
         registered_callback_procs := registered_callback_procs';

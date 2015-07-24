@@ -28,8 +28,8 @@ let constr_loc_map : Sil.location JBasics.ClassMap.t ref = ref JBasics.ClassMap.
 let init_loc_map : Sil.location JBasics.ClassMap.t ref = ref JBasics.ClassMap.empty
 
 (** Fix the line associated to a method definition.
-Since Sawja often reports a method off by a few lines, we search
-backwards for a line where the method name is. *)
+    Since Sawja often reports a method off by a few lines, we search
+    backwards for a line where the method name is. *)
 let fix_method_definition_line linereader proc_name loc =
   let method_name =
     if Procname.is_constructor proc_name then
@@ -42,7 +42,7 @@ let fix_method_definition_line linereader proc_name loc =
     | None -> raise Not_found
     | Some line ->
         (try ignore (Str.search_forward regex line 0); true
-        with Not_found -> false) in
+         with Not_found -> false) in
   let line = ref loc.Sil.line in
   try
     while not (method_is_defined_here !line) do
@@ -111,9 +111,9 @@ let get_field_name program static tenv cn fs context =
             (fun (fieldname, _, _) -> retrieve_fieldname fieldname = JBasics.fs_name fs)
             (if static then sfields else fields)
         with Not_found ->
-        (* TODO: understand why fields cannot be found here *)
-            JUtils.log "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
-            raise (Frontend_error "Cannot find fieldname") in
+          (* TODO: understand why fields cannot be found here *)
+          JUtils.log "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
+          raise (Frontend_error "Cannot find fieldname") in
       fieldname
   | _ -> assert false
 
@@ -142,8 +142,8 @@ let formals program tenv cn impl =
   list_rev (list_fold_left collect [] (JBir.params impl))
 
 (** Creates the local and formal variables from a procedure based on the
-impl argument. If the meth_kind is Init, we add a parameter field to
-the initialiser method. *)
+    impl argument. If the meth_kind is Init, we add a parameter field to
+    the initialiser method. *)
 let locals_formals program tenv cn impl meth_kind =
   let form_list =
     if meth_kind = JContext.Init then
@@ -298,16 +298,16 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.is_generated = false;
                 } in
               create {
-                  cfg = cfg;
-                  name = procname;
-                  is_defined = true;
-                  ret_type = JTransType.return_type program tenv ms meth_kind;
-                  formals = formals;
-                  locals = [];
-                  captured = [];
-                  loc = Sil.dummy_location;
-                  proc_attributes = proc_attributes
-                } in
+                cfg = cfg;
+                name = procname;
+                is_defined = true;
+                ret_type = JTransType.return_type program tenv ms meth_kind;
+                formals = formals;
+                locals = [];
+                captured = [];
+                loc = Sil.dummy_location;
+                proc_attributes = proc_attributes
+              } in
             let start_kind = Cfg.Node.Start_node procdesc in
             let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
             let exit_kind = (Cfg.Node.Exit_node procdesc) in
@@ -334,16 +334,16 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.is_generated = false;
                 } in
               create {
-                  cfg = cfg;
-                  name = procname;
-                  is_defined = false;
-                  ret_type = JTransType.return_type program tenv ms meth_kind;
-                  formals = formals;
-                  locals = [];
-                  captured = [];
-                  loc = Sil.dummy_location;
-                  proc_attributes = proc_attributes;
-                } in
+                cfg = cfg;
+                name = procname;
+                is_defined = false;
+                ret_type = JTransType.return_type program tenv ms meth_kind;
+                formals = formals;
+                locals = [];
+                captured = [];
+                loc = Sil.dummy_location;
+                proc_attributes = proc_attributes;
+              } in
             ()
         | Javalib.ConcreteMethod cm ->
             let impl = get_implementation cm in
@@ -371,16 +371,16 @@ let create_local_procdesc program linereader cfg tenv node m =
                   Sil.is_generated = false;
                 } in
               create {
-                  cfg = cfg;
-                  name = procname;
-                  is_defined = true;
-                  ret_type = JTransType.return_type program tenv ms meth_kind;
-                  formals = formals;
-                  locals = locals;
-                  captured = [];
-                  loc = loc_start;
-                  proc_attributes = proc_attributes;
-                } in
+                cfg = cfg;
+                name = procname;
+                is_defined = true;
+                ret_type = JTransType.return_type program tenv ms meth_kind;
+                formals = formals;
+                locals = locals;
+                captured = [];
+                loc = loc_start;
+                proc_attributes = proc_attributes;
+              } in
             let start_kind = Cfg.Node.Start_node procdesc in
             let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc [] in
             let exit_kind = (Cfg.Node.Exit_node procdesc) in
@@ -392,7 +392,7 @@ let create_local_procdesc program linereader cfg tenv node m =
             Cfg.Procdesc.set_exit_node procdesc exit_node;
             Cfg.Node.add_locals_ret_declaration start_node locals;
       with JBir.Subroutine ->
-          L.err "create_local_procdesc raised JBir.Subroutine on %a@." Procname.pp procname in
+        L.err "create_local_procdesc raised JBir.Subroutine on %a@." Procname.pp procname in
     match lookup_procdesc cfg procname with
     | Unknown -> create_new_procdesc ()
     | Created defined_status ->
@@ -412,31 +412,31 @@ let create_external_procdesc program cfg tenv cn ms method_annotation kind =
   let formals = formals_from_signature program tenv cn ms kind in
   let procname = JTransType.get_method_procname cn ms kind in
   ignore (
-      let open Cfg.Procdesc in
-      let proc_attributes =
-        {
-          Sil.access = Sil.Default;
-          Sil.exceptions = [];
-          Sil.is_abstract = false;
-          Sil.is_bridge_method = false;
-          Sil.is_objc_instance_method = false;
-          Sil.is_synthetic_method = false;
-          Sil.language = Sil.Java;
-          Sil.func_attributes = [];
-          Sil.method_annotation = method_annotation;
-          Sil.is_generated = false;
-        } in
-      create {
-          cfg = cfg;
-          name = procname;
-          is_defined = false;
-          ret_type = return_type;
-          formals = formals;
-          locals = [];
-          captured = [];
-          loc = Sil.dummy_location;
-          proc_attributes = proc_attributes;
-        })
+    let open Cfg.Procdesc in
+    let proc_attributes =
+      {
+        Sil.access = Sil.Default;
+        Sil.exceptions = [];
+        Sil.is_abstract = false;
+        Sil.is_bridge_method = false;
+        Sil.is_objc_instance_method = false;
+        Sil.is_synthetic_method = false;
+        Sil.language = Sil.Java;
+        Sil.func_attributes = [];
+        Sil.method_annotation = method_annotation;
+        Sil.is_generated = false;
+      } in
+    create {
+      cfg = cfg;
+      name = procname;
+      is_defined = false;
+      ret_type = return_type;
+      formals = formals;
+      locals = [];
+      captured = [];
+      loc = Sil.dummy_location;
+      proc_attributes = proc_attributes;
+    })
 
 (** returns the procedure description of the given method and creates it if it hasn't been created before *)
 let rec get_method_procdesc program cfg tenv cn ms kind =
@@ -510,16 +510,16 @@ let rec expression context pc expr =
         | JBir.InstanceOf ot | JBir.Cast ot ->
             let subtypes =
               (match unop with
-                | JBir.InstanceOf _ -> Sil.Subtype.subtypes_instof
-                | JBir.Cast _ -> Sil.Subtype.subtypes_cast
-                | _ -> assert false) in
+               | JBir.InstanceOf _ -> Sil.Subtype.subtypes_instof
+               | JBir.Cast _ -> Sil.Subtype.subtypes_cast
+               | _ -> assert false) in
             let sizeof_expr =
               JTransType.sizeof_of_object_type program tenv ot subtypes in
             let builtin =
               (match unop with
-                | JBir.InstanceOf ot -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__instanceof)
-                | JBir.Cast ot -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast)
-                | _ -> assert false) in
+               | JBir.InstanceOf ot -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__instanceof)
+               | JBir.Cast ot -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast)
+               | _ -> assert false) in
             let args = [(sil_ex, type_of_ex); (sizeof_expr, Sil.Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
             let call = Sil.Call([ret_id], builtin, args, loc, Sil.cf_default) in
@@ -532,7 +532,7 @@ let rec expression context pc expr =
       begin
         match binop with
         | JBir.ArrayLoad vt ->
-        (* add an instruction that dereferences the array *)
+            (* add an instruction that dereferences the array *)
             let array_typ = Sil.Tarray(type_of_expr, Sil.Var (Ident.create_fresh Ident.kprimed)) in
             let fresh_id, deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
             let id = Ident.create_fresh Ident.knormal in
@@ -609,7 +609,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     match sil_obj_opt with
     | None -> ([], [], [])
     | Some (sil_obj_expr, sil_obj_type) ->
-    (* for non-constructors, add an instruction that dereferences the receiver *)
+        (* for non-constructors, add an instruction that dereferences the receiver *)
         let ids, instrs =
           let is_non_constructor_call =
             match invoke_code with
@@ -628,9 +628,9 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
   let (idl, instrs, call_args) =
     list_fold_left
       (fun (idl_accu, instrs_accu, args_accu) expr ->
-            let (idl, instrs, sil_expr) = expression context pc expr in
-            let sil_expr_type = JTransType.expr_type context expr in
-            (idl_accu @ idl, instrs_accu @ instrs, args_accu @ [(sil_expr, sil_expr_type)]))
+         let (idl, instrs, sil_expr) = expression context pc expr in
+         let sil_expr_type = JTransType.expr_type context expr in
+         (idl_accu @ idl, instrs_accu @ instrs, args_accu @ [(sil_expr, sil_expr_type)]))
       init
       expr_list in
   let callee_procname =
@@ -659,22 +659,22 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
 
     (* add a file attribute when calling the constructor of a subtype of Closeable *)
     | (var, typ) as exp :: _
-         when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
-       let set_file_attr =
-         let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_file_attribute) in
-         Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
-       (* Exceptions thrown in the constructor should prevent adding the resource attribute *)
-       call_instrs @ [set_file_attr]
+      when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
+        let set_file_attr =
+          let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_file_attribute) in
+          Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
+        (* Exceptions thrown in the constructor should prevent adding the resource attribute *)
+        call_instrs @ [set_file_attr]
 
     (* remove file attribute when calling the close method of a subtype of Closeable *)
     | (var, typ) as exp :: []
-         when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
-       let set_mem_attr =
-         let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_mem_attribute) in
-         Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
-       (* Exceptions thrown in the close method should not prevent the resource from being *)
-       (* considered as closed *)
-       [set_mem_attr] @ call_instrs
+      when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
+        let set_mem_attr =
+          let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_mem_attribute) in
+          Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
+        (* Exceptions thrown in the close method should not prevent the resource from being *)
+        (* considered as closed *)
+        [set_mem_attr] @ call_instrs
 
     | _ -> call_instrs in
 
@@ -791,15 +791,15 @@ let rec extends context node1 node2 =
 let instruction_array_call ms obj_type obj args var_opt vt =
   if is_clone ms then
     (let cn = JBasics.make_cn JConfig.infer_array_cl in
-      let vt = (JBasics.TObject obj_type) in
-      let ms = JBasics.make_ms JConfig.clone_name [vt] (Some vt) in
-      JBir.InvokeStatic (var_opt, cn, ms, obj:: args))
+     let vt = (JBasics.TObject obj_type) in
+     let ms = JBasics.make_ms JConfig.clone_name [vt] (Some vt) in
+     JBir.InvokeStatic (var_opt, cn, ms, obj:: args))
   else
     (let undef_cn, undef_ms = get_undefined_method_call (JBasics.ms_rtype ms) in
-      JBir.InvokeStatic (var_opt, undef_cn, undef_ms, []))
+     JBir.InvokeStatic (var_opt, undef_cn, undef_ms, []))
 
 (* special translation of the method start() of a Thread or a Runnable object.
-We translate it directly as the run() method *)
+   We translate it directly as the run() method *)
 let instruction_thread_start context cn ms obj args var_opt =
   match JClasspath.lookup_node cn (JContext.get_program context) with
   | None ->
@@ -849,7 +849,7 @@ let rec instruction context pc instr : translation =
       cfg (get_location (JContext.get_impl context) pc meth_kind cn) node_kind sil_instrs (JContext.get_procdesc context) temps in
   let return_not_null () =
     (match_never_null loc.Sil.file proc_name
-      || list_exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
+     || list_exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
   try
     match instr with
     | JBir.AffectVar (var, expr) ->
@@ -990,8 +990,8 @@ let rec instruction context pc instr : translation =
         let sil_obj_opt, args, ids, instrs =
           match args with
           | [arg] when is_clone ms ->
-          (* hack to null check the receiver of clone when clone is an array. in the array.clone()
-          case, clone is a virtual call that we translate as a static call *)
+              (* hack to null check the receiver of clone when clone is an array. in the array.clone()
+                 case, clone is a virtual call that we translate as a static call *)
               let (ids, instrs, sil_arg_expr) = expression context pc arg in
               let arg_typ = JTransType.expr_type context arg in
               Some (sil_arg_expr, arg_typ), [], ids, instrs
@@ -1051,7 +1051,7 @@ let rec instruction context pc instr : translation =
         Instr call_node
 
     | JBir.Check (JBir.CheckNullPointer expr) when !JConfig.translate_checks && is_this expr ->
-    (* TODO #6509339: refactor the boilterplate code in the translattion of JVM checks *)
+        (* TODO #6509339: refactor the boilterplate code in the translattion of JVM checks *)
         let (ids, instrs, sil_expr) = expression context pc expr in
         let this_not_null_node =
           create_node
@@ -1183,5 +1183,5 @@ let rec instruction context pc instr : translation =
 
     | _ -> Skip
   with Frontend_error s ->
-      JUtils.log "Skipping because of: %s@." s;
-      Skip
+    JUtils.log "Skipping because of: %s@." s;
+    Skip

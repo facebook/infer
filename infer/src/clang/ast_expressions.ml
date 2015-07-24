@@ -373,7 +373,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
       let cast_info = { cei_cast_kind = `BitCast; cei_base_path =[]} in
       let block_def = ImplicitCastExpr(stmt_info,[block_expr], bei, cast_info) in
       let decl_info = { empty_decl_info
-        with di_pointer = stmt_info.si_pointer; di_source_range = stmt_info.si_source_range } in
+                        with di_pointer = stmt_info.si_pointer; di_source_range = stmt_info.si_source_range } in
       let var_decl_info = { empty_var_decl with vdi_init_expr = Some block_def } in
       let block_var_decl = VarDecl(decl_info, block_name_info, ei.ei_qual_type, var_decl_info) in
       let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
@@ -495,8 +495,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     | ParmVarDecl(di, name, qt, _) ->
         let qt_fun = create_void_unsigned_long_type () in
         let parameter = UnaryExprOrTypeTraitExpr((fresh_stmt_info stmt_info), [],
-            make_expr_info (create_unsigned_long_type ()),
-            { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_qual_type = Some (create_BOOL_type ()) }) in
+                                                 make_expr_info (create_unsigned_long_type ()),
+                                                 { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_qual_type = Some (create_BOOL_type ()) }) in
         let malloc = create_call (fresh_stmt_info stmt_info) di.di_pointer CFrontend_config.malloc qt_fun [parameter] in
         let init_exp = create_implicit_cast_expr (fresh_stmt_info stmt_info) [malloc] qt `BitCast in
         make_DeclStmt (fresh_stmt_info stmt_info) di qt name (Some init_exp)
@@ -551,8 +551,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let ei_idx = get_ei_from_cast decl_ref_expr_idx in
         let ove_idx = build_OpaqueValueExpr (fresh_stmt_info stmt_info) decl_ref_expr_idx ei_idx in
         let objc_sre = ObjCSubscriptRefExpr((fresh_stmt_info stmt_info), [ove_array; ove_idx],
-            make_expr_info (pseudo_object_qt ()),
-            { osrei_kind =`ArraySubscript; osrei_getter = None; osrei_setter = None; }) in
+                                            make_expr_info (pseudo_object_qt ()),
+                                            { osrei_kind =`ArraySubscript; osrei_getter = None; osrei_setter = None; }) in
         let obj_c_message_expr_info = { omei_selector = CFrontend_config.object_at_indexed_subscript_m; omei_receiver_kind =`Instance } in
         let ome = ObjCMessageExpr((fresh_stmt_info stmt_info), [ove_array; ove_idx], poe_ei, obj_c_message_expr_info) in
         let pseudo_obj_expr = PseudoObjectExpr((fresh_stmt_info stmt_info), [objc_sre; ove_array; ove_idx; ome], poe_ei) in
@@ -625,8 +625,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let if_stop = build_if_stop stop_cast in
         let free_stop = free_stop pstop in
         [ objects_decl; block_decl; decl_stop; assign_stop;
-        ForStmt(stmt_info, [idx_decl_stmt; dummy_stmt (); guard; incr;
-          CompoundStmt(stmt_info, [obj_assignment; call_block; if_stop])]); free_stop], op
+          ForStmt(stmt_info, [idx_decl_stmt; dummy_stmt (); guard; incr;
+                              CompoundStmt(stmt_info, [obj_assignment; call_block; if_stop])]); free_stop], op
     | _ -> assert false in
 
   match stmt_list with
@@ -636,8 +636,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
       let translated_stmt, op = translate bdi.Clang_ast_t.bdi_parameters s block_decl bei.Clang_ast_t.ei_qual_type in
       CompoundStmt(stmt_info, translated_stmt), vars_to_register@op@bv
   | _ -> (* When it is not the method we expect with only one parameter, we don't translate *)
-    Printing.log_out "WARNING: Block Enumeration called at %s not translated." (Clang_ast_j.string_of_stmt_info stmt_info);
-    CompoundStmt(stmt_info, stmt_list), []
+      Printing.log_out "WARNING: Block Enumeration called at %s not translated." (Clang_ast_j.string_of_stmt_info stmt_info);
+      CompoundStmt(stmt_info, stmt_list), []
 
 (* We translate the logical negation of an integer with a conditional*)
 (* !x <=> x?0:1 *)

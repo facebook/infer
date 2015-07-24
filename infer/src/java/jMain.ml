@@ -21,14 +21,14 @@ let arg_desc =
     let desc =
       (filter base_arg_desc) @
       [
-      "-models", Arg.String (fun filename -> JClasspath.add_models filename), Some "paths", "set the path to the jar containing the models";
-      "-debug", Arg.Unit (fun () -> JConfig.debug_mode := true), None, "write extra translation information";
-      "-dependencies", Arg.Unit (fun _ -> JConfig.dependency_mode := true), None, "translate all the dependencies during the capture";
-      "-no-static_final", Arg.Unit (fun () -> JTrans.no_static_final := true), None, "no special treatment for static final fields";
-      "-tracing", Arg.Unit (fun () -> JConfig.translate_checks := true), None,
-      "Translate JVM checks";
-      "-verbose_out", Arg.String (fun path -> JClasspath.set_verbose_out path), None,
-      "Set the path to the javac verbose output"
+        "-models", Arg.String (fun filename -> JClasspath.add_models filename), Some "paths", "set the path to the jar containing the models";
+        "-debug", Arg.Unit (fun () -> JConfig.debug_mode := true), None, "write extra translation information";
+        "-dependencies", Arg.Unit (fun _ -> JConfig.dependency_mode := true), None, "translate all the dependencies during the capture";
+        "-no-static_final", Arg.Unit (fun () -> JTrans.no_static_final := true), None, "no special treatment for static final fields";
+        "-tracing", Arg.Unit (fun () -> JConfig.translate_checks := true), None,
+        "Translate JVM checks";
+        "-verbose_out", Arg.String (fun path -> JClasspath.set_verbose_out path), None,
+        "Set the path to the javac verbose output"
       ] in
     Arg2.create_options_desc false "Parsing Options" desc in
   base_arg
@@ -93,7 +93,7 @@ let do_source_file
   if JConfig.create_harness then
     list_fold_left
       (fun proc_file_map pdesc ->
-            Procname.Map.add (Cfg.Procdesc.get_proc_name pdesc) source_file proc_file_map)
+         Procname.Map.add (Cfg.Procdesc.get_proc_name pdesc) source_file proc_file_map)
       proc_file_map (Cfg.get_all_procs cfg)
   else proc_file_map
 

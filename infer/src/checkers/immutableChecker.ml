@@ -18,14 +18,14 @@ let check_immutable_cast curr_pname curr_pdesc typ_expected typ_found_opt loc : 
       begin
         let casts =
           [
-          "java.util.List", "com.google.common.collect.ImmutableList";
-          "java.util.Map", "com.google.common.collect.ImmutableMap";
-          "java.util.Set", "com.google.common.collect.ImmutableSet"
+            "java.util.List", "com.google.common.collect.ImmutableList";
+            "java.util.Map", "com.google.common.collect.ImmutableMap";
+            "java.util.Set", "com.google.common.collect.ImmutableSet"
           ] in
         let in_casts expected given =
           list_exists (fun (x, y) -> Mangled.from_string x = expected && Mangled.from_string y = given) casts in
         match PatternMatch.type_get_class_name typ_expected,
-        PatternMatch.type_get_class_name typ_found with
+              PatternMatch.type_get_class_name typ_found with
         | Some name_expected, Some name_given ->
             if in_casts name_expected name_given then
               begin
