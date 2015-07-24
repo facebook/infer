@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for utility functions for the whole frontend. Includes functions for printing,  *)
 (** for transformations of ast nodes and general utility functions such as  functions on lists *)
@@ -72,7 +72,7 @@ sig
   val get_invalid_pointer : unit -> string
 
   val type_from_unary_expr_or_type_trait_expr_info :
-  Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.qual_type option
+    Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.qual_type option
 
   val is_generated : Clang_ast_t.named_decl_info -> bool
 
@@ -83,7 +83,7 @@ sig
   val string_from_list : string list -> string
 
   val append_no_duplicates_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list ->
-  (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
+    (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
 
   val append_no_duplicates_csu : (Sil.csu * Mangled.t) list -> (Sil.csu * Mangled.t) list -> (Sil.csu * Mangled.t) list
 
@@ -96,7 +96,7 @@ sig
   val sort_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
 
   val collect_list_tuples : ('a list * 'b list * 'c list * 'd list * 'e list) list ->
-  'a list * 'b list * 'c list * 'd list * 'e list -> 'a list * 'b list * 'c list * 'd list * 'e list
+    'a list * 'b list * 'c list * 'd list * 'e list -> 'a list * 'b list * 'c list * 'd list * 'e list
 
   val swap_elements_list : 'a list -> 'a list
 

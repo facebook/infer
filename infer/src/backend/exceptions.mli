@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 open Utils
 
@@ -91,10 +91,10 @@ val print_exception_html : string -> exn -> unit
 
 (** pretty print an error given its (id,key), location, kind, name, description, and optional ml location *)
 val pp_err : int * int -> Sil.location -> err_kind -> Localise.t -> Localise.error_desc ->
-Utils.ml_location option -> Format.formatter -> unit -> unit
+  Utils.ml_location option -> Format.formatter -> unit -> unit
 
 (** Turn an exception into an error name, error description,
-location in ml source, and category *)
+    location in ml source, and category *)
 val recognize_exception : exn ->
-(Localise.t * Localise.error_desc * (ml_location option) * exception_visibility *
-exception_severity * err_kind option * err_class)
+  (Localise.t * Localise.error_desc * (ml_location option) * exception_visibility *
+   exception_severity * err_kind option * err_class)

@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
 
@@ -20,8 +20,8 @@ type exposed (** kind for exposed props *)
 type 'a t (** the kind 'a should range over [normal] and [exposed] *)
 
 (** type to describe different strategies for initializing fields of a structure. [No_init] does not
-initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh
-variables (C) or default values (Java). *)
+    initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh
+    variables (C) or default values (Java). *)
 type struct_init_mode =
   | No_init
   | Fld_init
@@ -61,7 +61,7 @@ val d_sigma : Sil.hpred list -> unit
 val d_pi_sigma: Sil.atom list -> Sil.hpred list -> unit
 
 (** Split sigma into stack and nonstack parts.
-The boolean indicates whether the stack should only include local variales. *)
+    The boolean indicates whether the stack should only include local variales. *)
 val sigma_get_stack_nonstack : bool -> Sil.hpred list -> Sil.hpred list * Sil.hpred list
 
 (** Update the object substitution given the stack variables in the prop *)
@@ -98,7 +98,7 @@ val sigma_fav_add : fav -> hpred list -> unit
 val sigma_fav : hpred list -> fav
 
 (** returns free non-program variables that are used to express
-the contents of stack variables *)
+    the contents of stack variables *)
 val sigma_fav_in_pvars_add : fav -> hpred list -> unit
 
 (** Compute free non-program variables of prop *)
@@ -131,8 +131,8 @@ val prop_sub : subst -> 'a t -> exposed t
 val prop_expmap : (Sil.exp -> Sil.exp) -> 'a t -> exposed t
 
 (** Relaces all expressions in the [hpred list] using the first argument.
-Assume that the first parameter defines a partial function.
-No expressions inside hpara are replaced. *)
+    Assume that the first parameter defines a partial function.
+    No expressions inside hpara are replaced. *)
 val sigma_replace_exp : (exp * exp) list -> hpred list -> hpred list
 
 val sigma_map : 'a t -> (hpred -> hpred) -> 'a t
@@ -163,20 +163,20 @@ type arith_problem =
 val find_arithmetic_problem : path_pos -> normal t -> Sil.exp -> arith_problem option * normal t
 
 (** Normalize [exp] using the pure part of [prop].  Later, we should
-change this such that the normalization exposes offsets of [exp]
-as much as possible. *)
+    change this such that the normalization exposes offsets of [exp]
+    as much as possible. *)
 val exp_normalize_prop : 'a t -> Sil.exp -> Sil.exp
 
 (** Normalize the expression without abstracting complex subexpressions *)
 val exp_normalize_noabs : Sil.subst -> Sil.exp -> Sil.exp
 
 (** Collapse consecutive indices that should be added. For instance,
-this function reduces x[1][1] to x[2]. The [typ] argument is used
-to ensure the soundness of this collapsing. *)
+    this function reduces x[1][1] to x[2]. The [typ] argument is used
+    to ensure the soundness of this collapsing. *)
 val exp_collapse_consecutive_indices_prop : 'a t -> Sil.typ -> Sil.exp -> Sil.exp
 
 (** Normalize [exp] used for the address of a heap cell.
-This normalization does not combine two offsets inside [exp]. *)
+    This normalization does not combine two offsets inside [exp]. *)
 val lexp_normalize_prop : 'a t -> exp -> exp
 
 val atom_normalize_prop : 'a t -> atom -> atom
@@ -219,11 +219,11 @@ val create_strexp_of_type: Sil.tenv option -> struct_init_mode -> Sil.typ -> Sil
 val mk_ptsto : exp -> strexp -> exp -> hpred
 
 (** Construct a points-to predicate for an expression using either the provided expression [name] as
-base for fresh identifiers. *)
+    base for fresh identifiers. *)
 val mk_ptsto_exp : Sil.tenv option -> struct_init_mode -> exp * exp * exp option -> Sil.inst -> hpred
 
 (** Construct a points-to predicate for a single program variable.
-If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
+    If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
 val mk_ptsto_lvar : Sil.tenv option -> struct_init_mode -> Sil.inst -> pvar * exp * exp option -> hpred
 
 (** Construct a lseg predicate *)
@@ -330,7 +330,7 @@ val get_pi_footprint : 'a t -> atom list
 val get_sigma_footprint : 'a t -> hpred list
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
-Return the list of stack variables whose address was still present after deallocation. *)
+    Return the list of stack variables whose address was still present after deallocation. *)
 val deallocate_stack_vars : normal t -> pvar list -> Sil.pvar list * normal t
 
 (** Canonicalize the names of primed variables. *)
@@ -407,12 +407,12 @@ val prop_iter_create : normal t -> unit prop_iter option
 val prop_iter_to_prop : 'a prop_iter -> normal t
 
 (** Add an atom to the pi part of prop iter. The
-first parameter records whether it is done
-during footprint or during re - execution. *)
+    first parameter records whether it is done
+    during footprint or during re - execution. *)
 val prop_iter_add_atom : bool -> 'a prop_iter -> atom -> 'a prop_iter
 
 (** Remove the current element from the iterator, and return the prop
-associated to the resulting iterator. *)
+    associated to the resulting iterator. *)
 val prop_iter_remove_curr_then_to_prop : 'a prop_iter -> normal t
 
 (** Return the current hpred and state. *)
@@ -462,12 +462,12 @@ val find_equal_formal_path : exp -> 'a t -> Sil.exp option
 (** {2 Internal modules} *)
 
 module Metrics : sig
-(** Compute a size value for the prop, which indicates its complexity *)
+  (** Compute a size value for the prop, which indicates its complexity *)
   val prop_size : 'a t -> int
 
   (** Approximate the size of the longest chain by counting the max
-  number of |-> with the same type and whose lhs is primed or
-  footprint *)
+      number of |-> with the same type and whose lhs is primed or
+      footprint *)
   val prop_chain_size : 'a t -> int
 end
 

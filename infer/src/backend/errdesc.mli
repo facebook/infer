@@ -1,19 +1,19 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Create descriptions of analysis errors *)
 
 open Utils
 
 (** find the dexp, if any, where the given value is stored
-also return the type of the value if found *)
+    also return the type of the value if found *)
 val vpath_find : 'a Prop.t -> Sil.exp -> Sil.vpath * Sil.typ option
 
 (** Return true if [id] is assigned to a program variable which is then nullified *)
@@ -23,9 +23,9 @@ val id_is_assigned_then_dead : Cfg.Node.t -> Ident.t -> bool
 val hpred_is_open_resource : 'a Prop.t -> Sil.hpred -> Sil.resource option
 
 (** Find the function call instruction used to initialize normal variable [id],
-and return the function name and arguments *)
+    and return the function name and arguments *)
 val find_normal_variable_funcall :
-Cfg.Node.t -> Ident.t -> (Sil.exp * (Sil.exp list) * Sil.location * Sil.call_flags) option
+  Cfg.Node.t -> Ident.t -> (Sil.exp * (Sil.exp list) * Sil.location * Sil.call_flags) option
 
 (** Find a program variable assignment in the current node or straightline predecessor. *)
 val find_program_variable_assignment : Cfg.Node.t -> Sil.pvar -> (Cfg.Node.t * Ident.t) option
@@ -34,7 +34,7 @@ val find_program_variable_assignment : Cfg.Node.t -> Sil.pvar -> (Cfg.Node.t * I
 val find_ident_assignment : Cfg.Node.t -> Ident.t -> (Cfg.Node.t * Sil.exp) option
 
 (** Find a boolean assignment to a temporary variable holding a boolean condition.
-The boolean parameter indicates whether the true or false branch is required. *)
+    The boolean parameter indicates whether the true or false branch is required. *)
 val find_boolean_assignment : Cfg.Node.t -> Sil.pvar -> bool -> Cfg.Node.t option
 
 (** describe rvalue [e] as a dexp *)
@@ -57,15 +57,15 @@ val explain_deallocate_constant_string : string -> Sil.res_action -> Localise.er
 
 (** Produce a description of which expression is dereferenced in the current instruction, if any. *)
 val explain_dereference :
-?use_buckets:bool -> ?is_nullable:bool -> ?is_premature_nil:bool ->
-Localise.deref_str -> 'a Prop.t -> Sil.location -> Localise.error_desc
+  ?use_buckets:bool -> ?is_nullable:bool -> ?is_premature_nil:bool ->
+  Localise.deref_str -> 'a Prop.t -> Sil.location -> Localise.error_desc
 
 (** return a description explaining value [exp] in [prop] in terms of a source expression
-using the formal parameters of the call *)
+    using the formal parameters of the call *)
 val explain_dereference_as_caller_expression :
-?use_buckets:bool ->
-Localise.deref_str -> 'a Prop.t -> 'b Prop.t -> Sil.exp ->
-Cfg.Node.t -> Sil.location -> Sil.pvar list -> Localise.error_desc
+  ?use_buckets:bool ->
+  Localise.deref_str -> 'a Prop.t -> 'b Prop.t -> Sil.exp ->
+  Cfg.Node.t -> Sil.location -> Sil.pvar list -> Localise.error_desc
 
 (** explain a division by zero *)
 val explain_divide_by_zero : Sil.exp -> Cfg.Node.t -> Sil.location -> Localise.error_desc
@@ -98,9 +98,9 @@ val explain_unary_minus_applied_to_unsigned_expression : Sil.exp -> Sil.typ -> C
 val explain_tainted_value_reaching_sensitive_function : Sil.exp -> Sil.location -> Localise.error_desc
 
 (** Produce a description of a leak by looking at the current state.
-If the current instruction is a variable nullify, blame the variable.
-If it is an abstraction, blame any variable nullify at the current node.
-If there is an alloc attribute, print the function call and line number. *)
+    If the current instruction is a variable nullify, blame the variable.
+    If it is an abstraction, blame any variable nullify at the current node.
+    If there is an alloc attribute, print the function call and line number. *)
 val explain_leak : Sil.tenv -> Sil.hpred -> 'a Prop.t -> Sil.attribute option -> string option -> Exceptions.exception_visibility * Localise.error_desc
 
 (** Produce a description of the memory access performed in the current instruction, if any. *)

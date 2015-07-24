@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for Procedure Names *)
 
@@ -91,8 +91,8 @@ val java_get_parameters : t -> string list
 val java_is_static : t -> bool
 
 (** Check if the last parameter is a hidden inner class, and remove it if present.
-This is used in private constructors, where a proxy constructor is generated
-with an extra parameter and calls the normal constructor. *)
+    This is used in private constructors, where a proxy constructor is generated
+    with an extra parameter and calls the normal constructor. *)
 val java_remove_hidden_inner_class_parameter : t -> t option
 
 (** Check if a class string is an anoynmous inner class name *)
@@ -117,11 +117,11 @@ val java_is_anonymous_inner_class : t -> bool
 val java_is_anonymous_inner_class_constructor : t -> bool
 
 (** Check if the procedure name is an acess method (e.g. access$100 used to
-access private members from a nested class. *)
+    access private members from a nested class. *)
 val java_is_access_method : t -> bool
 
 (** Check if the proc name has the type of a java vararg.
-Note: currently only checks that the last argument has type Object[]. *)
+    Note: currently only checks that the last argument has type Object[]. *)
 val java_is_vararg : t -> bool
 
 (** Convert a proc name to a string for the user to see *)

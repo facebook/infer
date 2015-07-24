@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Interprocedural footprint analysis *)
 
@@ -24,7 +24,7 @@ val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * Sil.path_
 
 (** raise a cast exception *)
 val raise_cast_exception :
-Utils.ml_location -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
+  Utils.ml_location -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
 
 (** check if a prop is an exception *)
 val prop_is_exn : Procname.t -> 'a Prop.t -> bool

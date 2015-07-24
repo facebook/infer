@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Database of analysis results *)
 
@@ -31,7 +31,7 @@ val file_modified_time : filename -> float (** Return the time when a file was l
 (** {2 Results Directory} *)
 
 module Results_dir : sig
-(** path expressed as a list of strings *)
+  (** path expressed as a list of strings *)
   type path = string list
 
   (** kind of path: specifies how to interpret a path *)
@@ -138,9 +138,9 @@ val create_dir : string -> unit
 val read_file_with_lock : string -> string -> string option
 
 (** Update the file contents with the update function provided.
-If the directory does not exist, it is created.
-If the file does not exist, it is created, and update is given the empty string.
-A lock is used to allow write attempts in parallel. *)
+    If the directory does not exist, it is created.
+    If the file does not exist, it is created, and update is given the empty string.
+    A lock is used to allow write attempts in parallel. *)
 val update_file_with_lock : string -> string -> (string -> string) -> unit
 
 (** get the path of the global type environment (only used in Java) *)

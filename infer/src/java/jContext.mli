@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 open Javalib_pack
 open Sawja_pack
@@ -24,13 +24,13 @@ type meth_kind =
   | Init
 
 (** Hastable for storing nodes that correspond to if-instructions. These are
-used when adding the edges in the contrl flow graph. *)
+    used when adding the edges in the contrl flow graph. *)
 module NodeTbl : Hashtbl.S with type key = Cfg.Node.t
 
 
 (** data structure for saving the three structures tht contain the intermediate
-representation of a file: the type environment, the control graph and the control
-flow graph *)
+    representation of a file: the type environment, the control graph and the control
+    flow graph *)
 type icfg = {
   tenv : Sil.tenv;
   cg : Cg.t;
@@ -43,15 +43,15 @@ type t
 
 (** cretes a context for a given method.   *)
 val create_context :
-Inferconfig.NeverReturnNull.matcher ->
-icfg ->
-Cfg.Procdesc.t ->
-JBir.t ->
-JBasics.class_name ->
-meth_kind ->
-JCode.jcode Javalib.interface_or_class ->
-JClasspath.program ->
-t
+  Inferconfig.NeverReturnNull.matcher ->
+  icfg ->
+  Cfg.Procdesc.t ->
+  JBir.t ->
+  JBasics.class_name ->
+  meth_kind ->
+  JCode.jcode Javalib.interface_or_class ->
+  JClasspath.program ->
+  t
 
 (** returns the intermediate representation of the Java file from the context.  *)
 val get_icfg : t -> icfg
@@ -72,11 +72,11 @@ val get_cg : t -> Cg.t
 val get_cfg : t -> Cfg.cfg
 
 (** returns the procedure description in the intermediate language for the
-current method. *)
+    current method. *)
 val get_procdesc : t -> Cfg.Procdesc.t
 
 (** returns the method kind of the current method: standard or initialiser of
-static fields. *)
+    static fields. *)
 val get_meth_kind : t -> meth_kind
 
 (** adds to the context the line that an if-node will jump to *)
@@ -89,7 +89,7 @@ val get_if_jump : t -> Cfg.Node.t -> int option
 val add_goto_jump : t -> int -> jump_kind -> unit
 
 (** if the given line corresponds to a goto instruction, then returns the
-line where it jumps to, otherwise returns the next line. *)
+    line where it jumps to, otherwise returns the next line. *)
 val get_goto_jump : t -> int -> jump_kind
 
 (** returns whether the given line corresponds to a goto instruction.  *)
@@ -102,7 +102,7 @@ val get_program : t -> JClasspath.program
 val get_node : t -> JCode.jcode Javalib.interface_or_class
 
 (** returns a match function for procedures that are never returning null
-according to .inferfonfig *)
+    according to .inferfonfig *)
 val get_never_null_matcher : t -> Inferconfig.NeverReturnNull.matcher
 
 (** [set_pvar context var type] adds a variable with a type to the context  *)

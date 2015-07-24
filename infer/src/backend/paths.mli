@@ -1,19 +1,19 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Execution Paths *)
 
 open Utils
 
 module Path : sig
-(** type for paths *)
+  (** type for paths *)
   type t
 
   type session = int
@@ -48,8 +48,8 @@ module Path : sig
   val iter_all_nodes_nocalls : (Cfg.node -> unit) -> t -> unit
 
   (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
-  Do not iterate past the given position.
-  [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
+      Do not iterate past the given position.
+      [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
   val iter_longest_sequence : (int -> t -> int -> Mangled.t option -> unit) -> Sil.path_pos option -> t -> unit
 
   (** join two paths *)

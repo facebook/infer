@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 open Javalib_pack
 open Sawja_pack
@@ -27,7 +27,7 @@ val get_method_procname : JBasics.class_name -> JBasics.method_signature -> Proc
   Procname.t
 
 (** [get_class_type_no_pointer program tenv cn] returns the sil type representation of the class
-without the pointer part *)
+    without the pointer part *)
 val get_class_type_no_pointer: JClasspath.program -> Sil.tenv -> JBasics.class_name -> Sil.typ
 
 (** [get_class_type program tenv cn] returns the sil type representation of the class  *)
@@ -44,7 +44,7 @@ val object_type : JClasspath.program -> Sil.tenv -> JBasics.object_type -> Sil.t
 
 (** create sizeof expressions from the object type and the list of subtypes *)
 val sizeof_of_object_type : JClasspath.program -> Sil.tenv -> JBasics.object_type -> Sil.Subtype.t
--> Sil.exp
+  -> Sil.exp
 
 (** transforms a Java type to a Sil type. *)
 val value_type : JClasspath.program -> Sil.tenv -> JBasics.value_type -> Sil.typ
@@ -53,7 +53,7 @@ val value_type : JClasspath.program -> Sil.tenv -> JBasics.value_type -> Sil.typ
 val param_type : JClasspath.program -> Sil.tenv -> JBasics.class_name -> JBir.var -> JBasics.value_type -> Sil.typ
 
 (** Returns the return type of the method based on the return type specified in ms.
-If the method is the initialiser, return the type Object instead. *)
+    If the method is the initialiser, return the type Object instead. *)
 val return_type : JClasspath.program -> Sil.tenv -> JBasics.method_signature -> JContext.meth_kind -> Sil.typ
 
 (** translates the type of an expression *)

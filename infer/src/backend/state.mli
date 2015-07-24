@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** State of symbolic execution *)
 
@@ -51,7 +51,7 @@ val get_node_id : unit -> int
 val get_node_id_key : unit -> int * int
 
 (** return the normalized precondition extracted form the last prop seen, if any
-the abstraction function is a parameter to get around module dependencies *)
+    the abstraction function is a parameter to get around module dependencies *)
 val get_normalized_pre : (Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
 
 (** Get last path seen in symbolic execution *)
@@ -79,8 +79,8 @@ val mark_instr_fail : (Prop.normal Prop.t) option -> exn -> unit
 val mark_instr_ok : unit -> unit
 
 (** Create a function to find duplicate nodes.
-A node is a duplicate of another one if they have the same kind and location
-and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
+    A node is a duplicate of another one if they have the same kind and location
+    and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 val mk_find_duplicate_nodes: Cfg.Procdesc.t -> (Cfg.Node.t -> Cfg.NodeSet.t)
 
 type log_issue =

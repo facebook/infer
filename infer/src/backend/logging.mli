@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 open Utils
 
@@ -115,7 +115,7 @@ val set_err_formatter : Format.formatter -> unit
 val flush_streams : unit -> unit
 
 (** print a warning with information of the position in the ml source where it oririnated.
-use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
+    use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
 val warning_position: string -> ml_location -> unit
 
 (** dump a string *)

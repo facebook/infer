@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2015 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2015 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 module L = Logging
 module F = Format
@@ -171,7 +171,7 @@ let update_file fname mono fb_year com_style prefix cstart cend lines_arr =
 let file_should_have_copyright fname lines =
   let extensions =
     [".ml"; ".mli"; ".ml"; ".mly"; ".java"; ".c";
-    ".h"; ".cpp"; ".m"; ".mm"; ".py"; ".sh"] in
+     ".h"; ".cpp"; ".m"; ".mm"; ".py"; ".sh"] in
   list_exists (Filename.check_suffix fname) extensions
 
 
@@ -208,7 +208,7 @@ let check_copyright () =
                   | None ->
                       L.stderr "Can't find fb year: %s@." fname
                   | Some fb_year ->
-                      let prefix = "" in
+                      let prefix = if com_style = comment_style_ocaml then " " else "" in
                       if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
                         begin
                           let range = cend - cstart in

@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2014 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2014 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 
 (** Module for Type Error messages. *)
@@ -55,7 +55,7 @@ type err_instance =
   | Field_over_annotated of Ident.fieldname * Procname.t
   | Null_field_access of string option * Ident.fieldname * origin_descr * bool
   | Call_receiver_annotation_inconsistent
-  of Annotations.annotation * string option * Procname.t * origin_descr
+    of Annotations.annotation * string option * Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
   | Return_annotation_inconsistent of Annotations.annotation * Procname.t * origin_descr
   | Return_over_annotated of Procname.t
@@ -77,10 +77,10 @@ type st_report_error =
   unit
 
 val report_error :
-st_report_error ->
-(Cfg.Node.t -> Cfg.Node.t) -> Cfg.Node.t ->
-err_instance -> InstrRef.t option -> Sil.location ->
-Procname.t -> unit
+  st_report_error ->
+  (Cfg.Node.t -> Cfg.Node.t) -> Cfg.Node.t ->
+  err_instance -> InstrRef.t option -> Sil.location ->
+  Procname.t -> unit
 
 val report_forall_checks_and_reset : st_report_error -> Procname.t -> unit
 

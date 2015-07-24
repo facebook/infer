@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Functions for Theorem Proving *)
 
@@ -48,13 +48,13 @@ val check_inconsistency : Prop.normal Prop.t -> bool
 val check_allocatedness : Prop.normal Prop.t -> exp -> bool
 
 (** [is_root prop base_exp exp] checks whether [base_exp =
-exp.offlist] for some list of offsets [offlist]. If so, it returns
-[Some(offlist)]. Otherwise, it returns [None]. Assumes that
-[base_exp] points to the beginning of a structure, not the middle. *)
+    exp.offlist] for some list of offsets [offlist]. If so, it returns
+    [Some(offlist)]. Otherwise, it returns [None]. Assumes that
+    [base_exp] points to the beginning of a structure, not the middle. *)
 val is_root : Prop.normal Prop.t -> exp -> exp -> offset list option
 
 (** [expand_hpred_pointer calc_index_frame hpred] expands [hpred] if it is a |-> whose lhs is a Lfield or Lindex or ptr+off.
-Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
+    Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
 val expand_hpred_pointer : bool -> Sil.hpred -> bool * bool * Sil.hpred
 
 (** Get upper and lower bounds of an expression, if any *)
@@ -76,11 +76,11 @@ type implication_result =
   | ImplFail of check list
 
 (** [check_implication_for_footprint p1 p2] returns
-[Some(sub, frame, missing)] if [sub(p1 * missing) |- sub(p2 *
-frame)] where [sub] is a substitution which instantiates the
-primed vars of [p1] and [p2], which are assumed to be disjoint. *)
+    [Some(sub, frame, missing)] if [sub(p1 * missing) |- sub(p2 *
+    frame)] where [sub] is a substitution which instantiates the
+    primed vars of [p1] and [p2], which are assumed to be disjoint. *)
 val check_implication_for_footprint :
-Procname.t -> Sil.tenv -> Prop.normal Prop.t -> Prop.exposed Prop.t -> implication_result
+  Procname.t -> Sil.tenv -> Prop.normal Prop.t -> Prop.exposed Prop.t -> implication_result
 
 (** {2 Cover: miminum set of pi's whose disjunction is equivalent to true} *)
 
@@ -99,7 +99,7 @@ val compute_upper_bound_of_exp : Prop.normal Prop.t -> Sil.exp -> Sil.Int.t opti
 val check_subtype : Sil.tenv -> Sil.typ -> Sil.typ -> bool
 
 (** subtype_case_analysis tenv tecp1 texp2 performs case analysis on [texp1 <: texp2],
-and returns the updated types in the true and false case, if they are possible *)
+    and returns the updated types in the true and false case, if they are possible *)
 val subtype_case_analysis : Sil.tenv -> Sil.exp -> Sil.exp -> Sil.exp option * Sil.exp option
 
 

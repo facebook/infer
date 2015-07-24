@@ -1,26 +1,26 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Processes types and record declarations by adding them to the tenv *)
 
 val get_declaration_type : Sil.tenv -> string option -> Clang_ast_t.decl_info -> string ->
-Clang_ast_t.opt_type -> Clang_ast_t.decl list -> Clang_ast_t.decl_context_info ->
-Clang_ast_t.record_decl_info -> Sil.typ
+  Clang_ast_t.opt_type -> Clang_ast_t.decl list -> Clang_ast_t.decl_context_info ->
+  Clang_ast_t.record_decl_info -> Sil.typ
 
 val add_struct_to_tenv : Sil.tenv -> Sil.typ -> unit
 
 val do_typedef_declaration : Sil.tenv -> string option -> Clang_ast_t.decl_info -> string ->
-Clang_ast_t.opt_type -> Clang_ast_t.typedef_decl_info -> unit
+  Clang_ast_t.opt_type -> Clang_ast_t.typedef_decl_info -> unit
 
 val do_record_declaration : Sil.tenv -> string option -> Clang_ast_t.decl_info -> string ->
-Clang_ast_t.opt_type -> Clang_ast_t.decl list -> Clang_ast_t.decl_context_info ->
-Clang_ast_t.record_decl_info -> unit
+  Clang_ast_t.opt_type -> Clang_ast_t.decl list -> Clang_ast_t.decl_context_info ->
+  Clang_ast_t.record_decl_info -> unit
 
 val parse_func_type : string -> string -> (Sil.typ * Sil.typ list) option
 

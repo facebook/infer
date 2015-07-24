@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
@@ -18,7 +18,7 @@ val current_source_file : DB.source_file ref
 val curr_file : DB.source_file ref
 
 val clang_to_sil_location : Clang_ast_t.source_location -> int -> Cfg.Procdesc.t option ->
-Sil.location
+  Sil.location
 
 val get_sil_location : Clang_ast_t.stmt_info -> int -> CContext.t -> Sil.location
 

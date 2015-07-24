@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Functions for Sets of Propositions with and without sharing *)
 
@@ -15,7 +15,7 @@ open Utils
 (** {2 Sets of Propositions} *)
 
 (** Sets of propositions.
-The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is called on any prop added to the set. *)
+    The invariant is maintaned that Prop.prop_rename_primed_footprint_vars is called on any prop added to the set. *)
 type t
 
 (** Compare propsets *)
@@ -56,12 +56,12 @@ val map : (Prop.normal Prop.t -> Prop.normal Prop.t) -> t -> t
 val map_option : (Prop.normal Prop.t -> Prop.normal Prop.t option) -> t -> t
 
 (** [fold f pset a] computes [(f pN ... (f p2 (f p1 a))...)],
-where [p1 ... pN] are the elements of pset, in increasing
-order. *)
+    where [p1 ... pN] are the elements of pset, in increasing
+    order. *)
 val fold : ('a -> Prop.normal Prop.t -> 'a) -> 'a -> t -> 'a
 
 (** [iter f pset] computes (f p1;f p2;..;f pN)
-where [p1 ... pN] are the elements of pset, in increasing order. *)
+    where [p1 ... pN] are the elements of pset, in increasing order. *)
 val iter : (Prop.normal Prop.t -> unit) -> t -> unit
 
 val partition : (Prop.normal Prop.t -> bool) -> t -> t * t

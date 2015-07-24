@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module to handle IO. Includes html and xml modules. *)
 
@@ -18,13 +18,13 @@ module Html : sig
   val pp_line_link : ?with_name: bool -> ?text: (string option) -> DB.Results_dir.path -> Format.formatter -> int -> unit (** Print an html link to the given line number of the current source file *)
   val pp_hline : Format.formatter -> unit -> unit (** Print a horizontal line *)
   val pp_end_color : Format.formatter -> unit -> unit (** Print end color *)
-  
+
   (** [pp_node_link path_to_root description isvisited isproof fmt id] prints an html link to the given node.
-  [path_to_root] is the path to the dir for the procedure in the spec db.
-  [description] is a string description.
-  [is_visited] indicates whether the node should be active or greyed out.
-  [is_proof] indicates whether the node is part of a proof and should be green.
-  [id] is the node identifier. *)
+      [path_to_root] is the path to the dir for the procedure in the spec db.
+      [description] is a string description.
+      [is_visited] indicates whether the node should be active or greyed out.
+      [is_proof] indicates whether the node is part of a proof and should be green.
+      [id] is the node identifier. *)
   val pp_node_link : DB.Results_dir.path -> string -> int list -> int list -> int list -> bool -> bool -> Format.formatter -> int -> unit
   val pp_proc_link : DB.Results_dir.path -> Procname.t -> Format.formatter -> string -> unit (** Print an html link to the given proc *)
   val pp_session_link : ?with_name: bool -> string list -> Format.formatter -> int * int * int -> unit (** Print an html link given node id and session *)
@@ -75,16 +75,16 @@ module Xml : sig
   val tag_trace : string
   val tag_type : string
   val tag_weight : string
-  
+
   type tree = { name: string; attributes: (string * string) list; forest: node list }
   and node =
     | Tree of tree
     | String of string
-  (** create a tree *)
+    (** create a tree *)
   val create_tree : string -> (string * string) list -> node list -> node
   (** print an xml document, if the first parameter is false on a single line without preamble *)
   val pp_document : bool -> Format.formatter -> node -> unit
-  
+
   (** print the opening lines of an xml document consisting of a main tree with the given name *)
   val pp_open : Format.formatter -> string -> unit
   (** print the closing lines of an xml document consisting of a main tree with the given name *)

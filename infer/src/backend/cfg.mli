@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (**  Control Flow Graph for Interprocedural Analysis *)
 
@@ -25,7 +25,7 @@ val store_cfg_to_file: DB.filename -> bool -> cfg -> unit
 
 (** proc description *)
 module Procdesc : sig
-(** proc description *)
+  (** proc description *)
   type t
 
   (** Compute the distance of each node to the exit node, if not computed already *)
@@ -171,8 +171,8 @@ module Node : sig
   val compare : t -> t -> int
 
   (** [create cfg loc kind instrs proc_desc temps] create a new cfg node
-  with the given location, kind, list of instructions,
-  procdesc and list of temporary variables *)
+      with the given location, kind, list of instructions,
+      procdesc and list of temporary variables *)
   val create : cfg -> Sil.location -> nodekind -> Sil.instr list -> Procdesc.t -> Ident.t list -> t
 
   (** create a new empty cfg *)
@@ -319,7 +319,7 @@ val remove_ret : Procdesc.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 val remove_locals_ret : Procdesc.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
-Return the list of stack variables whose address was still present after deallocation. *)
+    Return the list of stack variables whose address was still present after deallocation. *)
 val remove_locals_formals : Procdesc.t -> Prop.normal Prop.t -> Sil.pvar list * Prop.normal Prop.t
 
 (** remove seed vars from a prop *)

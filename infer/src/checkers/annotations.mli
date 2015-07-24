@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Annotations. *)
 
@@ -21,8 +21,8 @@ type annotated_signature =
     params: (string * Sil.item_annotation * Sil.typ) list } (** Annotated parameters. *)
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
-These wrappers have the same name as the original method, every type is Object, and the parameters
-are called x0, x1, x2. *)
+    These wrappers have the same name as the original method, every type is Object, and the parameters
+    are called x0, x1, x2. *)
 val annotated_signature_is_anonymous_inner_class_wrapper : annotated_signature -> Procname.t -> bool
 
 (** Check if the given parameter has a Nullable annotation in the given signature *)
@@ -30,15 +30,15 @@ val param_is_nullable : Sil.pvar -> annotated_signature -> bool
 
 (** Mark the annotated signature with the given annotation map. *)
 val annotated_signature_mark :
-Procname.t -> annotation -> annotated_signature -> bool * bool list -> annotated_signature
+  Procname.t -> annotation -> annotated_signature -> bool * bool list -> annotated_signature
 
 (** Mark the return of the annotated signature with the given annotation. *)
 val annotated_signature_mark_return :
-Procname.t -> annotation -> annotated_signature -> annotated_signature
+  Procname.t -> annotation -> annotated_signature -> annotated_signature
 
 (** Mark the return of the annotated signature @Strict. *)
 val annotated_signature_mark_return_strict :
-Procname.t -> annotated_signature -> annotated_signature
+  Procname.t -> annotated_signature -> annotated_signature
 
 val equal : annotated_signature -> annotated_signature -> bool
 
@@ -46,11 +46,11 @@ type get_method_annotation = Procname.t -> Cfg.Procdesc.t -> Sil.method_annotati
 
 (** Get the annotated signature of the procedure *)
 val get_annotated_signature :
-get_method_annotation -> Cfg.Procdesc.t -> Procname.t -> annotated_signature
+  get_method_annotation -> Cfg.Procdesc.t -> Procname.t -> annotated_signature
 
 (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
 val get_field_type_and_annotation :
-Ident.fieldname -> Sil.typ -> (Sil.typ * Sil.item_annotation) option
+  Ident.fieldname -> Sil.typ -> (Sil.typ * Sil.item_annotation) option
 
 val ia_contains : Sil.item_annotation -> string -> bool
 

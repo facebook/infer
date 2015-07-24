@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
 
@@ -57,14 +57,14 @@ val fix_param_exps_mismatch : 'a list -> (Sil.exp * Sil.typ) list -> (Sil.exp * 
 val get_selector_receiver : Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.receiver_kind
 
 val define_condition_side_effects : CContext.t -> (Sil.exp * Sil.typ) list -> Sil.instr list -> Sil.location ->
-(Sil.exp * Sil.typ) list * Sil.instr list
+  (Sil.exp * Sil.typ) list * Sil.instr list
 
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
 
 val is_null_stmt : Clang_ast_t.stmt -> bool
 
 val compute_instr_ids_exp_to_parent : Clang_ast_t.stmt_info -> Sil.instr list -> Ident.t list -> (Sil.exp * Sil.typ) list ->
-Sil.exp -> Sil.typ -> Sil.location -> priority_node -> Sil.instr list * Ident.t list * (Sil.exp * Sil.typ) list
+  Sil.exp -> Sil.typ -> Sil.location -> priority_node -> Sil.instr list * Ident.t list * (Sil.exp * Sil.typ) list
 
 val get_name_decl_ref_exp_info : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.stmt_info -> string
 
@@ -77,7 +77,7 @@ val is_member_exp : Clang_ast_t.stmt -> bool
 val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.qual_type
 
 val cast_operation : CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Sil.location ->
-bool -> Ident.t list * Sil.instr list * Sil.exp
+  bool -> Ident.t list * Sil.instr list * Sil.exp
 
 val trans_assertion_failure : Sil.location -> CContext.t -> trans_result
 
@@ -94,14 +94,14 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 val get_decl_ref_info : Clang_ast_t.stmt -> int -> string * int
 
 val builtin_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info ->
-Sil.typ -> Procname.t option -> trans_result option
+  Sil.typ -> Procname.t option -> trans_result option
 
 val alloc_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> Sil.typ -> bool -> trans_result
 
 val new_or_alloc_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> string -> string -> trans_result
 
 val cast_trans : CContext.t -> (Sil.exp * Sil.typ) list -> Sil.location -> Procname.t option -> Sil.typ ->
-(Ident.t * Sil.instr * Sil.exp) option
+  (Ident.t * Sil.instr * Sil.exp) option
 
 (** Module for creating cfg nodes and other utility functions related to them.  *)
 module Nodes :
@@ -111,12 +111,12 @@ sig
   val need_unary_op_node : Clang_ast_t.unary_operator_info -> bool
 
   val create_node : Cfg.Node.nodekind -> Ident.t list -> Sil.instr list ->
-  Sil.location -> CContext.t -> Cfg.Node.t
+    Sil.location -> CContext.t -> Cfg.Node.t
 
   val is_join_node : Cfg.Node.t -> bool
 
   val create_prune_node : bool -> (Sil.exp * Sil.typ) list -> Ident.t list -> Sil.instr list -> Sil.location -> Sil.if_kind ->
-  CContext.t -> Cfg.Node.t
+    CContext.t -> Cfg.Node.t
 
   val is_prune_node : Cfg.Node.t -> bool
 
@@ -190,7 +190,7 @@ sig
   exception SelfClassException of string
 
   val add_self_parameter_for_super_instance : CContext.t -> Procname.t -> Sil.location -> Clang_ast_t.obj_c_message_expr_info ->
-  trans_result -> trans_result
+    trans_result -> trans_result
 
   val is_var_self : Sil.pvar -> bool -> bool
 end

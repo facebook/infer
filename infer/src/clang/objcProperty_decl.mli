@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 type prop_getter_setter = string * (Clang_ast_t.decl * bool) option
 
@@ -13,7 +13,7 @@ type prop_getter_setter = string * (Clang_ast_t.decl * bool) option
 (** A property type is a tuple: *)
 (** (qual_type, property attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar name ) *)
 type property_type = Clang_ast_t.qual_type * Clang_ast_t.property_attribute list *
-  Clang_ast_t.decl_info * prop_getter_setter * prop_getter_setter * string option
+                     Clang_ast_t.decl_info * prop_getter_setter * prop_getter_setter * string option
 
 module type PropertySig =
 sig
@@ -35,7 +35,7 @@ sig
   val replace_property : property_key -> property_type -> unit
 
   val add_property : property_key -> Clang_ast_t.qual_type ->
-  Clang_ast_t.property_attribute list -> Clang_ast_t.decl_info -> unit
+    Clang_ast_t.property_attribute list -> Clang_ast_t.decl_info -> unit
 
   val print_property_table : unit -> unit
 
@@ -49,7 +49,7 @@ module Property: PropertySig
 (** or in the case of dynamic. *)
 
 val prepare_dynamic_property : CContext.curr_class -> Clang_ast_t.decl_info ->
-Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.decl list
+  Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.decl list
 
 val get_methods : CContext.curr_class -> Clang_ast_t.decl list -> Procname.t list
 

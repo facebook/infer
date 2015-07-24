@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for Pattern matching. *)
 
@@ -13,9 +13,9 @@
 val get_java_field_access_signature : Sil.instr -> (string * string * string) option
 
 (** Returns the formal signature (class name, method name,
-argument type names and return type name) *)
+    argument type names and return type name) *)
 val get_java_method_call_formal_signature :
-Sil.instr -> (string * string * string list * string) option
+  Sil.instr -> (string * string * string list * string) option
 
 (** Get the this type of a procedure *)
 val get_this_type : Cfg.Procdesc.t -> Sil.typ option
@@ -50,8 +50,8 @@ val java_proc_name_with_class_method : Procname.t -> string -> string -> bool
 
 (** [proc_calls get_proc_desc pn pd filter] returns the callees that satisfy [filter]. *)
 val proc_calls : (Procname.t -> Cfg.Procdesc.t option) -> Procname.t -> Cfg.Procdesc.t ->
-(Procname.t -> Cfg.Procdesc.t -> bool) ->
-(Procname.t * Cfg.Procdesc.t) list
+  (Procname.t -> Cfg.Procdesc.t -> bool) ->
+  (Procname.t * Cfg.Procdesc.t) list
 
 val type_get_annotation : Sil.typ -> Sil.item_annotation option
 

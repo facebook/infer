@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Implementation of Abstraction Functions *)
 
@@ -14,12 +14,12 @@
 val create_absrules_from_tdecl : Sil.tenv -> Sil.typename -> unit
 
 (** Check whether the prop contains junk.
-If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
+    If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
 val abstract_junk : ?original_prop:Prop.normal Prop.t -> Procname.t -> Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 (** Remove redundant elements in an array, and check for junk afterwards *)
 val remove_redundant_array_elements :
-Procname.t -> Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t
+  Procname.t -> Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 (** Abstract a proposition. *)
 val abstract : Procname.t -> Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t

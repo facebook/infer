@@ -1,35 +1,35 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for user-defined checkers. *)
 
 
 (** State that persists in the .specs files. *)
 module ST : sig
-(** Add a key/value pair. *)
+  (** Add a key/value pair. *)
   val pname_add : Procname.t -> string -> string -> unit
   (** Find the value associated to the key. Raise Not_found if it does not exist. *)
   val pname_find: Procname.t -> string -> string
 
   (** Report an error. *)
   val report_error:
-  Procname.t ->
-  Cfg.Procdesc.t ->
-  string ->
-  Sil.location ->
-  ?advice: string option ->
-  ?field_name: Ident.fieldname option ->
-  ?origin_loc: Sil.location option ->
-  ?exception_kind: (string -> Localise.error_desc -> exn) ->
-  ?always_report: bool ->
-  string ->
-  unit
+    Procname.t ->
+    Cfg.Procdesc.t ->
+    string ->
+    Sil.location ->
+    ?advice: string option ->
+    ?field_name: Ident.fieldname option ->
+    ?origin_loc: Sil.location option ->
+    ?exception_kind: (string -> Localise.error_desc -> exn) ->
+    ?always_report: bool ->
+    string ->
+    unit
 
   (** Store the summary to a .specs file. *)
   val store_summary : Procname.t -> unit
@@ -37,8 +37,8 @@ module ST : sig
 end (* ST *)
 
 module PP : sig
-(** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
-and [nafter] lines after [loc] *)
+  (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
+      and [nafter] lines after [loc] *)
   val pp_loc_range : Printer.LineReader.t -> int -> int -> Format.formatter -> Sil.location -> unit
 end (* PP *)
 

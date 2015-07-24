@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Specifications and spec table *)
 
@@ -16,7 +16,7 @@ open Utils
 
 (** Module for joined props: the result of joining together propositions repeatedly *)
 module Jprop : sig
-(** Remember when a prop is obtained as the join of two other props; the first parameter is an id *)
+  (** Remember when a prop is obtained as the join of two other props; the first parameter is an id *)
   type 'a t =
     | Prop of int * 'a Prop.t
     | Joined of int * 'a Prop.t * 'a t * 'a t
@@ -37,8 +37,8 @@ module Jprop : sig
   val fav_add : Sil.fav -> 'a t -> unit
 
   (** [jprop_filter filter joinedprops] applies [filter] to the elements
-  of [joindeprops] and applies it to the subparts if the result is
-  [None]. Returns the most absract results which pass [filter]. *)
+      of [joindeprops] and applies it to the subparts if the result is
+      [None]. Returns the most absract results which pass [filter]. *)
   val filter : ('a t -> 'b option) -> 'a t list -> 'b list
 
   (** apply a substitution to a jprop *)
@@ -67,9 +67,9 @@ module Visitedset : Set.S with type elt = int * int list
 val visited_str : Visitedset.t -> string
 
 (** A spec consists of:
-pre: a joined prop
-posts: a list of props with path
-visited: a list of pairs (node_id, line) for the visited nodes *)
+    pre: a joined prop
+    posts: a list of props with path
+    visited: a list of pairs (node_id, line) for the visited nodes *)
 type 'a spec = { pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visited : Visitedset.t }
 
 module NormSpec : sig (* encapsulate type for normalized specs *)
@@ -217,21 +217,21 @@ val is_active : Procname.t -> bool
 val is_inactive : Procname.t -> bool
 
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
-Do nothing if a summary exists already. *)
+    Do nothing if a summary exists already. *)
 val init_summary :
-(Procname.t * (** proc_name *)
-Sil.typ * (** ret type *)
-(string * Sil.typ) list * (** formals *)
-Procname.t list * (** depend list *)
-Sil.location * (** loc *)
-int list * (** nodes *)
-proc_flags * (** procedure flags *)
-Errlog.t * (** initial error log *)
-(Procname.t * Sil.location) list * (** calls *)
-int * (** cyclomatic *)
-(Cg.in_out_calls option) * (** in and out calls *)
-Sil.proc_attributes) (** attributes of the procedure *)
--> unit
+  (Procname.t * (** proc_name *)
+   Sil.typ * (** ret type *)
+   (string * Sil.typ) list * (** formals *)
+   Procname.t list * (** depend list *)
+   Sil.location * (** loc *)
+   int list * (** nodes *)
+   proc_flags * (** procedure flags *)
+   Errlog.t * (** initial error log *)
+   (Procname.t * Sil.location) list * (** calls *)
+   int * (** cyclomatic *)
+   (Cg.in_out_calls option) * (** in and out calls *)
+   Sil.proc_attributes) (** attributes of the procedure *)
+  -> unit
 
 val reset_summary : Cg.t -> Procname.t -> Sil.location -> unit
 
@@ -262,7 +262,7 @@ val proc_get_attributes : Procname.t -> Cfg.Procdesc.t -> Sil.proc_attributes
 val proc_get_method_annotation : Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
 
 (** Check if the procedure is from a library:
-It's not defined in the current proc desc, and there is no spec file for it. *)
+    It's not defined in the current proc desc, and there is no spec file for it. *)
 val proc_is_library : Procname.t -> Cfg.Procdesc.t -> bool
 
 (** Re-initialize a dependency map *)
@@ -284,5 +284,5 @@ val store_summary : Procname.t -> summary -> unit
 val summary_compact : Sil.sharing_env -> summary -> summary
 
 (** Update the dependency map of [proc_name] with the current
-timestamps of the dependents *)
+    timestamps of the dependents *)
 val update_dependency_map : Procname.t -> unit

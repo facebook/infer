@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Symbolic Execution *)
 
@@ -18,12 +18,12 @@ val function_is_builtin : Procname.t -> bool
 
 (** symbolic execution on the level of sets of propositions *)
 val lifted_sym_exec : (exn -> unit) -> Cfg.cfg -> Sil.tenv -> Cfg.Procdesc.t ->
-Paths.PathSet.t -> Cfg.Node.t -> Sil.instr list -> Paths.PathSet.t
+  Paths.PathSet.t -> Cfg.Node.t -> Sil.instr list -> Paths.PathSet.t
 
 (** OO method resolution: given a class name and a method name, climb the class hierarchy to find
-* the procname that the method name will actually resolve to at runtime. For example, if we have
-* a procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
-* toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)
+ * the procname that the method name will actually resolve to at runtime. For example, if we have
+ * a procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
+ * toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)
 val resolve_method : Sil.tenv -> Mangled.t -> Procname.t -> Procname.t
 (** {2 Functions for handling builtins } *)
 

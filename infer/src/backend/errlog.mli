@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2015 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2015 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for error logs. *)
 
@@ -47,9 +47,9 @@ val size : (Exceptions.err_kind -> bool -> bool) -> t -> int
 val update : t -> t -> unit
 
 val log_issue :
-Exceptions.err_kind ->
-t -> Sil.location -> (int * int) -> int -> loc_trace ->
-(Prop.normal Prop.t) option -> exn -> unit
+  Exceptions.err_kind ->
+  t -> Sil.location -> (int * int) -> int -> loc_trace ->
+  (Prop.normal Prop.t) option -> exn -> unit
 
 (** {2 Functions for manipulating per-file error tables} *)
 

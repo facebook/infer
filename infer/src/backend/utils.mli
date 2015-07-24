@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** General utility functions *)
 
@@ -117,7 +117,7 @@ val list_remove_irrelevant_duplicates : ('a -> 'a -> int) -> ('a -> bool) -> 'a 
 val list_merge_sorted_nodup : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list -> 'a list
 
 (** Returns whether there is an intersection in the elements of the two lists.
-The compare function is required to sort the lists. *)
+    The compare function is required to sort the lists. *)
 val list_intersect : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
 
 exception Fail
@@ -178,7 +178,7 @@ type printenv = {
 val pe_reset_obj_sub : printenv -> printenv
 
 (** Set the object substitution, which is supposed to preserve the type.
-Currently only used for a map from (identifier) expressions to the program var containing them *)
+    Currently only used for a map from (identifier) expressions to the program var containing them *)
 val pe_set_obj_sub : printenv -> ('a -> 'a) -> printenv
 
 (** standard colormap: black *)
@@ -259,7 +259,7 @@ val exn_not_timeout : exn -> bool
 
 (** Count the number of symbolic operations *)
 module SymOp : sig
-(** Count one symop *)
+  (** Count one symop *)
   val pay : unit -> unit
 
   (** Reset the counter and activate the alarm *)
@@ -317,13 +317,13 @@ module Arg2 : sig
   val from_arg_desc : (key * spec * doc) -> aligned
 
   (** [create_options_desc double_minus unsorted_desc title] creates a group of sorted command-line arguments.
-  [double_minus] is a booleand indicating whether the [-- option = nn] format or [- option n] format is to be used.
-  [title] is the title of this group of options.
-  It expects a list [opname, desc, param_opt, text] where
-  [opname] is the name of the option
-  [desc] is the Arg.spec
-  [param_opt] is the optional parameter to [opname]
-  [text] is the description of the option *)
+      [double_minus] is a booleand indicating whether the [-- option = nn] format or [- option n] format is to be used.
+      [title] is the title of this group of options.
+      It expects a list [opname, desc, param_opt, text] where
+      [opname] is the name of the option
+      [desc] is the Arg.spec
+      [param_opt] is the optional parameter to [opname]
+      [text] is the description of the option *)
   val create_options_desc : bool -> string -> (string * Arg.spec * string option * string) list -> aligned list
 
 end
@@ -384,7 +384,7 @@ val reserved_arg_desc : (string * Arg.spec * string option * string) list
 
 (** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
 module Escape : sig
-(** escape a string specifying the per character escaping function *)
+  (** escape a string specifying the per character escaping function *)
   val escape_map : (char -> string option) -> string -> string
   val escape_dotty : string -> string (** escape a string to be used in a dotty file *)
   val escape_csv : string -> string (** escape a string to be used in a csv file *)
@@ -414,11 +414,11 @@ val proc_flags_find : proc_flags -> string -> string
 val join_strings : string -> string list -> string
 
 (** [next compare] transforms the comparison function [compare] to another function taking
-the outcome of another comparison as last parameter and only performs this comparison if this value
-is different from 0. Useful to combine comparison functions using the operator |>. The outcome of
-the expression [Int.compare x y |> next Set.compare s t] is: [Int.compare x y] if this value is
-not [0], skipping the evaluation of [Set.compare s t] in such case; or [Set.compare s t] in case
-[Int.compare x y] is [0] *)
+    the outcome of another comparison as last parameter and only performs this comparison if this value
+    is different from 0. Useful to combine comparison functions using the operator |>. The outcome of
+    the expression [Int.compare x y |> next Set.compare s t] is: [Int.compare x y] if this value is
+    not [0], skipping the evaluation of [Set.compare s t] in such case; or [Set.compare s t] in case
+    [Int.compare x y] is [0] *)
 val next : ('a -> 'a -> int) -> ('a -> 'a -> int -> int)
 
 (** Functional fold function over all the file of a directory *)

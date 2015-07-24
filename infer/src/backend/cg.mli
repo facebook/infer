@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for call graphs *)
 
@@ -20,9 +20,9 @@ type in_out_calls =
 type t (** the type of a call graph *)
 
 (** A call graph consists of a set of nodes (Procname.t), and edges between them.
-A node can be defined or undefined (to represent whether we have code for it).
-In an edge from [n1] to [n2], indicating that [n1] calls [n2], [n1] is the parent and [n2] is the child.
-Node [n1] is dependent on [n2] if there is a path from [n1] to [n2] using the child relationship. *)
+    A node can be defined or undefined (to represent whether we have code for it).
+    In an edge from [n1] to [n2], indicating that [n1] calls [n2], [n1] is the parent and [n2] is the child.
+    Node [n1] is dependent on [n2] if there is a path from [n1] to [n2] using the child relationship. *)
 
 (** [add_edge cg f t] adds an edge from [f] to [t] in the call graph [cg]. The nodes are also added as undefined, unless already present. *)
 val add_edge : t -> Procname.t -> Procname.t -> unit
