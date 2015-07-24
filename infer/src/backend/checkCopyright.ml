@@ -11,6 +11,26 @@ module L = Logging
 module F = Format
 open Utils
 
+type comment_style =
+  | Line of string (** line comments, eg "#" for shell *)
+  | Block of string * string * string (** block comments, eg ("(*", "*", "*)") for ocaml *)
+
+let comment_style_ocaml = Block("(*", "*", "*)")
+let comment_style_c = Block("/*", "*", "*/")
+let comment_style_shell = Line("#")
+
+let comment_styles = [
+  comment_style_ocaml;
+  comment_style_c;
+  comment_style_shell;
+]
+
+let lang_of_com_style style =
+  if style = comment_style_ocaml then "ocaml"
+  else if style = comment_style_c then "c"
+  else if style = comment_style_shell then "shell"
+  else "??unknown??"
+
 (** If active, check copyright messages and exit. *)
 let active = Config.from_env_variable "INFER_CHECK_COPYRIGHT"
 
@@ -26,35 +46,39 @@ let rec find_copyright_line lines n = match lines with
       if line_contains_copyright line then Some n
       else find_copyright_line lines' (n + 1)
 
-let find_copyright_start lines_arr n check_hash =
-  let is_start line =
-    if check_hash then
-      not (string_is_prefix "#" line)
-    else
-      string_contains "(*" line
-      ||
-      string_contains "/*" line in
+let find_comment_start_and_style lines_arr n =
+  (* are we in a line comment? *)
+  let cur_line_comment = try
+      Some (list_find (function
+          | Line (s) when string_is_prefix s lines_arr.(n) -> true
+          | _ -> false) comment_styles)
+    with Not_found -> None in
+  let is_start line = match cur_line_comment with
+    | Some (Line (s)) -> if string_is_prefix s line then None else Some (Line (s))
+    | _ -> try
+        Some (list_find (function
+            | Block(s, _, _) -> string_contains s line
+            | _ -> false) comment_styles)
+    with Not_found -> None in
   let i = ref (n - 1) in
-  let found = ref 0 in
-  while !i >= 0 && !found = 0 do
-    if is_start lines_arr.(!i) then found := !i + 1;
-    decr i
+  (* hacky fake line comment to avoid an option type *)
+  let found = ref (-1, Line(">>>>>>>>>>>")) in
+  while !i >= 0 && fst (!found) = -1 do
+    match is_start lines_arr.(!i) with
+    | Some style -> found := (!i, style);
+    | None -> decr i
   done;
   !found
 
-let find_copyright_end lines_arr n check_hash =
-  let is_end line =
-    if check_hash then
-      not (string_is_prefix "#" line)
-    else
-      string_contains "*)" line
-      ||
-      string_contains "*/" line in
+let find_comment_end lines_arr n com_style =
+  let is_end line = match com_style with
+    | Line(s) -> not (string_is_prefix s line)
+    | Block(_, _, s) -> string_contains s line in
   let i = ref (n + 1) in
   let len = Array.length lines_arr in
   let found = ref (len - 1) in
   while !i < len && !found = len - 1 do
-    if is_end lines_arr.(!i) then found := !i - 1;
+    if is_end lines_arr.(!i) then found := !i;
     incr i
   done;
   !found
@@ -68,7 +92,7 @@ let looks_like_copyright_message cstart cend lines_arr =
       if String.length lines_arr.(i) > max_len then ok := false
     done;
     !ok in
-  (cend - cstart) <= 10 && check_len ()
+  cstart >= 0 && (cend - cstart) <= 10 && check_len ()
 
 let contains_monoidics cstart cend lines_arr =
   let found = ref false in
@@ -96,9 +120,17 @@ let get_fb_year cstart cend lines_arr =
   done;
   !found
 
-let pp_copyright mono fb_year check_hash fmt _prefix =
-  let prefix = _prefix ^ (if check_hash then "#" else "*") in
-  let pp_line str = F.fprintf fmt "%s%s@." prefix str in
+let pp_copyright mono fb_year com_style fmt _prefix =
+  let running_comment = match com_style with | Line s | Block (_, s, _) -> s in
+  let prefix = _prefix ^ running_comment in
+  let pp_line str = F.fprintf fmt "%s%s@\n" prefix str in
+  let pp_start () = match com_style with
+    | Line _ -> F.fprintf fmt "@\n";
+    | Block (start, _, _) -> F.fprintf fmt "%s@\n" start in
+  let pp_end () = match com_style with
+    | Line _ -> F.fprintf fmt "@\n";
+    | Block (_, _, finish) -> F.fprintf fmt "%s%s@\n" _prefix finish in
+  pp_start ();
   if mono then
     pp_line " Copyright (c) 2009 - 2013 Monoidics ltd.";
   pp_line (F.sprintf " Copyright (c) %d - present Facebook, Inc." fb_year);
@@ -106,9 +138,10 @@ let pp_copyright mono fb_year check_hash fmt _prefix =
   pp_line "";
   pp_line " This source code is licensed under the BSD style license found in the";
   pp_line " LICENSE file in the root directory of this source tree. An additional grant";
-  pp_line " of patent rights can be found in the PATENTS file in the same directory."
+  pp_line " of patent rights can be found in the PATENTS file in the same directory.";
+  pp_end ()
 
-let copyright_has_changed mono fb_year check_hash cstart cend lines_arr =
+let copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr =
   let old_copyright =
     let r = ref "" in
     for i = cstart to cend do
@@ -116,18 +149,18 @@ let copyright_has_changed mono fb_year check_hash cstart cend lines_arr =
     done;
     !r in
   let new_copyright =
-    let pp fmt () = pp_copyright mono fb_year check_hash fmt "" in
+    let pp fmt () = pp_copyright mono fb_year com_style fmt prefix in
     Utils.pp_to_string pp () in
   old_copyright <> new_copyright
 
-let update_file fname mono fb_year check_hash cstart cend lines_arr =
+let update_file fname mono fb_year com_style prefix cstart cend lines_arr =
   try
     let cout = open_out fname in
     let fmt = F.formatter_of_out_channel cout in
     for i = 0 to cstart - 1 do
       F.fprintf fmt "%s@." lines_arr.(i)
     done;
-    pp_copyright mono fb_year check_hash fmt "";
+    pp_copyright mono fb_year com_style fmt prefix;
     for i = cend + 1 to Array.length lines_arr - 1 do
       F.fprintf fmt "%s@\n" lines_arr.(i)
     done;
@@ -166,10 +199,8 @@ let check_copyright () =
               let lines_arr = Array.of_list lines in
               let line = lines_arr.(n) in
               let len = String.length line in
-              let check_hash = string_is_prefix "#" line in
-              let cstart = find_copyright_start lines_arr n check_hash in
-              let cend = find_copyright_end lines_arr n check_hash in
-              let range = cend - cstart in
+              let (cstart, com_style) = find_comment_start_and_style lines_arr n in
+              let cend = find_comment_end lines_arr n com_style in
               if looks_like_copyright_message cstart cend lines_arr then
                 begin
                   let mono = contains_monoidics cstart cend lines_arr in
@@ -177,17 +208,21 @@ let check_copyright () =
                   | None ->
                       L.stderr "Can't find fb year: %s@." fname
                   | Some fb_year ->
-                      if copyright_has_changed mono fb_year check_hash cstart cend lines_arr then
+                      let prefix = "" in
+                      if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
                         begin
-                          L.stderr "%s (start:%d n:%d end:%d len:%d range:%d mono:%b year:%d)@."
-                            fname cstart n cend len range mono fb_year;
+                          let range = cend - cstart in
+                          let lang = lang_of_com_style com_style in
+                          L.stdout "%s (start:%d n:%d end:%d len:%d range:%d lang:%s mono:%b year:%d)@."
+                            fname cstart n cend len range lang mono fb_year;
                           for i = cstart to cend do
-                            L.stderr "  %s@." lines_arr.(i)
+                            L.stdout "  %s@." lines_arr.(i)
                           done;
-                          L.stderr "-----@.";
-                          L.stderr "%a" (pp_copyright mono fb_year check_hash) "  ";
+                          L.stdout "-----@.";
+                          L.stdout "  @[<v>%a@]" (pp_copyright mono fb_year com_style) prefix;
+                          L.flush_streams ();
                           if update_files then
-                            update_file fname mono fb_year check_hash cstart cend lines_arr
+                            update_file fname mono fb_year com_style prefix cstart cend lines_arr
                         end
                 end
               else
