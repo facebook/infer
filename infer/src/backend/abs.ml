@@ -1121,7 +1121,6 @@ let reachable_when_in_several_hpreds sigma : Ident.t -> bool =
   list_iter add_hpred sigma;
   id_in_several_hpreds
 
-let full_reachability_algorithm = true
 
 (* Check whether the hidden counter field of a struct representing an *)
 (* objective-c object is positive, and whether the leak is part of the *)
@@ -1230,11 +1229,8 @@ let check_junk ?original_prop pname tenv prop =
 
   let remove_junk_once fp_part fav_root sigma =
     let id_considered_reachable = (* reachability function *)
-      if full_reachability_algorithm then
-        let reach_set = sigma_reachable fav_root sigma in
-        fun id -> Ident.IdentSet.mem id reach_set
-      else
-        reachable_when_in_several_hpreds sigma in
+      let reach_set = sigma_reachable fav_root sigma in
+      fun id -> Ident.IdentSet.mem id reach_set in
     let should_remove_hpred entries =
       let predicate = function
         | Sil.Var id ->
@@ -1259,16 +1255,14 @@ let check_junk ?original_prop pname tenv prop =
             Sil.strexp_fav_add fav se;
             Sil.fav_mem fav id
         | _ -> false in
-      hpred_is_loop
-      ||
-      list_exists predicate entries in
+      hpred_is_loop || list_exists predicate entries in
     let rec remove_junk_recursive sigma_done sigma_todo =
       match sigma_todo with
       | [] -> list_rev sigma_done
       | hpred :: sigma_todo' ->
           let entries = hpred_entries hpred in
-          if should_remove_hpred entries
-          then begin
+          if should_remove_hpred entries then
+            begin
             let part = if fp_part then "footprint" else "normal" in
             L.d_strln (".... Prop with garbage in " ^ part ^ " part ....");
             L.d_increase_indent 1;
@@ -1276,8 +1270,9 @@ let check_junk ?original_prop pname tenv prop =
             Prop.d_prop prop; L.d_ln ();
             L.d_strln "PREDICATE:";
             Prop.d_sigma [hpred];
-            L.d_ln ();
-            let alloc_attribute = (* find the alloc attribute of one of the roots of hpred, if it exists *)
+              L.d_ln ();
+              let alloc_attribute =
+                (* find the alloc attribute of one of the roots of hpred, if it exists *)
               let res = ref None in
               let do_entry e =
                 match Prop.get_resource_undef_attribute prop e with
@@ -1328,8 +1323,6 @@ let check_junk ?original_prop pname tenv prop =
                    let cycle = get_var_retain_cycle (remove_opt original_prop) in
                    false, exn_retain_cycle cycle
                | _ -> !Sil.curr_language = Sil.Java, exn_leak) in
-            let ignore_leak = !Config.allowleak || ignore_resource || is_undefined in
-            let report_and_continue = !Config.footprint in (* in footprint mode, report leak and continue *)
             let already_reported () =
               let attr_opt_equal ao1 ao2 = match ao1, ao2 with
                 | None, None -> true
@@ -1337,22 +1330,21 @@ let check_junk ?original_prop pname tenv prop =
                 | Some _, None
                 | None, Some _ -> false in
               (alloc_attribute = None && !leaks_reported <> []) || (* None attribute only reported if it's the first one *)
-              list_mem attr_opt_equal alloc_attribute !leaks_reported in
-            let report_leak () =
-              if report_and_continue then
-                begin
-                  if not (already_reported ()) (* report each leak only once *)
-                  then begin
+                list_mem attr_opt_equal alloc_attribute !leaks_reported in
+              let ignore_leak =
+                !Config.allowleak || ignore_resource || is_undefined || already_reported () in
+              (* in footprint mode, report leak and continue *)
+              let report_and_continue = !Config.footprint in
+              let report_leak () =
+                if not report_and_continue then raise exn
+                else
+                  begin
                     Reporting.log_error pname exn;
-                    Exceptions.print_exception_html "Error: " exn;
-                  end;
-                  leaks_reported := alloc_attribute :: !leaks_reported;
-                  remove_junk_recursive sigma_done sigma_todo'
-                end
-              else raise exn in
-            if ignore_leak then remove_junk_recursive sigma_done sigma_todo'
-            else report_leak ()
-          end
+                    leaks_reported := alloc_attribute :: !leaks_reported;
+                  end in
+              if not ignore_leak then report_leak ();
+              remove_junk_recursive sigma_done sigma_todo'
+            end
           else
             remove_junk_recursive (hpred :: sigma_done) sigma_todo' in
     remove_junk_recursive [] sigma in
