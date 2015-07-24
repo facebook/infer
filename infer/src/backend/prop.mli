@@ -459,6 +459,16 @@ val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
 
 val find_equal_formal_path : exp -> 'a t -> Sil.exp option
 
+(** get the set of expressions on the righthand side of [hpred] *)
+val hpred_get_targets : Sil.hpred -> Sil.ExpSet.t
+
+(** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
+    [exps] *)
+val compute_reachable_hpreds : hpred list -> Sil.ExpSet.t -> Sil.HpredSet.t * Sil.ExpSet.t
+
+(** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
+val compute_reachable_atoms : Sil.atom list -> Sil.ExpSet.t -> Sil.atom list
+
 (** {2 Internal modules} *)
 
 module Metrics : sig

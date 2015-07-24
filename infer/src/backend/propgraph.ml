@@ -52,9 +52,7 @@ let edge_get_source = function
 
 (** Return the successor nodes of the edge *)
 let edge_get_succs = function
-  | Ehpred (Sil.Hpointsto(_, se, _)) -> Sil.strexp_get_target_exps se
-  | Ehpred (Sil.Hlseg(_, _, _, e, el)) -> e:: el
-  | Ehpred (Sil.Hdllseg(_, _, _, oB, oF, iB, elist)) -> oB:: oF:: iB:: elist (* only one direction supported for now *)
+  | Ehpred hpred -> Sil.ExpSet.elements (Prop.hpred_get_targets hpred)
   | Eatom (Sil.Aeq (_, e2)) -> [e2]
   | Eatom (Sil.Aneq (_, e2)) -> [e2]
   | Esub_entry (s, e) -> [e]

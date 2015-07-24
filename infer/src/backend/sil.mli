@@ -1359,9 +1359,6 @@ val hpara_instantiate : hpara -> exp -> exp -> exp list -> Ident.t list * hpred 
     for some fresh [_zs'].*)
 val hpara_dll_instantiate : hpara_dll -> exp -> exp -> exp -> exp list -> Ident.t list * hpred list
 
-(** Return the list of expressions that could be understood as outgoing arrows from the strexp *)
-val strexp_get_target_exps : strexp -> exp list
-
 (** Iterate over all the subtypes in the type (including the type itself) *)
 val typ_iter_types : (typ -> unit) -> typ -> unit
 (** Iterate over all the types (and subtypes) in the expression *)

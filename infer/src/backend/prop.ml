@@ -1517,6 +1517,50 @@ let prop_sigma_star (p : 'a t) (sigma : Sil.hpred list) : exposed t =
   let sigma' = sigma @ p.sigma in
   { p with sigma = sigma' }
 
+(** get the set of expressions on the righthand side of [hpred] *)
+let hpred_get_targets = function
+  | Sil.Hpointsto (_, rhs, _) ->
+      let rec collect_exps exps = function
+        | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
+        | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
+        | Sil.Estruct (flds, _) ->
+            list_fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
+        | Sil.Earray (_, elems, _) ->
+            list_fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
+      collect_exps Sil.ExpSet.empty rhs
+  | Sil.Hlseg (_, _, _, e, el) ->
+      list_fold_left (fun exps e -> Sil.ExpSet.add e exps) Sil.ExpSet.empty (e :: el)
+  | Sil.Hdllseg (_, _, _, oB, oF, iB, el) ->
+      (* only one direction supported for now *)
+      list_fold_left (fun exps e -> Sil.ExpSet.add e exps) Sil.ExpSet.empty (oB :: oF :: iB :: el)
+
+(** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
+    [exps] *)
+let compute_reachable_hpreds sigma exps =
+  let rec compute_reachable_hpreds_rec sigma (reach, exps) =
+    let add_hpred_if_reachable (reach, exps) = function
+      | Sil.Hpointsto (lhs, _, _) as hpred when Sil.ExpSet.mem lhs exps->
+          let reach' = Sil.HpredSet.add hpred reach in
+          let reach_exps = hpred_get_targets hpred in
+          (reach', Sil.ExpSet.union exps reach_exps)
+      | _ -> reach, exps in
+    let reach', exps' = list_fold_left add_hpred_if_reachable (reach, exps) sigma in
+    if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
+    else compute_reachable_hpreds_rec sigma (reach', exps') in
+  compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, exps)
+
+(** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
+let compute_reachable_atoms pi exps =
+  let rec exp_contains = function
+    | exp when Sil.ExpSet.mem exp exps -> true
+    | Sil.UnOp (_, e, _) | Sil.Cast (_, e) | Sil.Lfield (e, _, _) -> exp_contains e
+    | Sil.BinOp (_, e0, e1) | Sil.Lindex (e0, e1) -> exp_contains e0 || exp_contains e1
+    | _ -> false in
+  list_filter
+    (function
+      | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) -> exp_contains lhs || exp_contains rhs)
+    pi
+
 (** Eliminates all empty lsegs from sigma, and collect equalities
     The empty lsegs include
     (a) "lseg_pe para 0 e elist",
