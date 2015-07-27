@@ -53,4 +53,4 @@ let pretty_func_def : func_def -> string = function
       concatmap "" pretty_instr_ln instrs ^ "}\n"
 
 let pretty_prog : prog -> string = function
-    Prog defs -> concatmap "" pretty_func_def defs
+    Prog func_defs -> concatmap "" pretty_func_def func_defs

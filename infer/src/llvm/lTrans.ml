@@ -11,38 +11,39 @@ open LAst
 exception ImproperTypeError of string
 exception Unimplemented of string
 
-let gen_variable : variable -> Sil.exp = function (* HACK *)
+let trans_variable : LAst.variable -> Sil.exp = function (* HACK *)
   | Global id -> Sil.Var (Ident.create_normal (Ident.string_to_name id) 0)
   | Local id -> Sil.Var (Ident.create_normal (Ident.string_to_name id) 0)
 
-let gen_constant : constant -> Sil.exp = function
+let trans_constant : LAst.constant -> Sil.exp = function
   | Cint i -> Sil.Const (Sil.Cint (Sil.Int.of_int i))
   | Cnull -> Sil.exp_null
 
-let gen_operand : operand -> Sil.exp = function
-  | Var var -> gen_variable var
-  | Const const -> gen_constant const
+let trans_operand : LAst.operand -> Sil.exp = function
+  | Var var -> trans_variable var
+  | Const const -> trans_constant const
 
-let rec gen_typ : typ -> Sil.typ = function
-  | Tint i -> Sil.Tint IInt (* need to actually check what size int is needed here *)
-  | Tfloat -> Sil.Tfloat FFloat
-  | Tptr tp -> Tptr (gen_typ tp, Pk_pointer)
+let rec trans_typ : LAst.typ -> Sil.typ = function
+  | Tint i -> Sil.Tint Sil.IInt (* need to actually check what size int is needed here *)
+  | Tfloat -> Sil.Tfloat Sil.FFloat
+  | Tptr tp -> Sil.Tptr (trans_typ tp, Sil.Pk_pointer)
   | Tvector (i, tp)
-  | Tarray (i, tp) -> Sil.Tarray (gen_typ tp, Sil.Const (Sil.Cint (Sil.Int.of_int i)))
+  | Tarray (i, tp) -> Sil.Tarray (trans_typ tp, Sil.Const (Sil.Cint (Sil.Int.of_int i)))
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
-let gen_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) : instr -> Sil.instr list = function
+let trans_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) : LAst.instr -> Sil.instr list = function
   | Ret None -> []
   | Ret (Some (tp, exp)) ->
       let ret_var = Sil.get_ret_pvar (Cfg.Procdesc.get_proc_name pdesc) in
-      [Sil.Set (Sil.Lvar ret_var, gen_typ tp, gen_operand exp, Sil.dummy_location)]
+      [Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, Sil.dummy_location)]
   | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
 
-(* Modify the cfg in place *)
-let gen_func_def (old_cfg : Cfg.cfg) : func_def -> unit = function
+(* Update CFG and call graph with new function definition *)
+let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
     FuncDef (func_name, ret_tp_opt, params, instrs) ->
       let (proc_attrs : Sil.proc_attributes) =
+        let open Sil in
         { access = Sil.Default;
           exceptions = [];
           is_abstract = false;
@@ -54,29 +55,45 @@ let gen_func_def (old_cfg : Cfg.cfg) : func_def -> unit = function
           method_annotation = Sil.method_annotation_empty;
           is_generated = false
         } in
-      let (pdesc_builder : Cfg.Procdesc.proc_desc_builder) =
-        { cfg = old_cfg;
-          name = Procname.from_string_c_fun (string_of_variable func_name);
+      let (procdesc_builder : Cfg.Procdesc.proc_desc_builder) =
+        let open Cfg.Procdesc in
+        { cfg = cfg;
+          name = Procname.from_string_c_fun (LAst.name_of_variable func_name);
           is_defined = true; (** is defined and not just declared *)
           proc_attributes = proc_attrs;
           ret_type = (match ret_tp_opt with
               | None -> Sil.Tvoid
-              | Some ret_tp -> gen_typ ret_tp);
-          formals = List.map (fun (tp, name) -> (name, gen_typ tp)) params;
+              | Some ret_tp -> trans_typ ret_tp);
+          formals = List.map (fun (tp, name) -> (name, trans_typ tp)) params;
           locals = []; (* TODO *)
           captured = [];
           loc = Sil.dummy_location
         } in
-      let nodekind_of_instr : instr -> Cfg.Node.nodekind = function
+      let nodekind_of_instr : LAst.instr -> Cfg.Node.nodekind = function
         | Ret _ -> Cfg.Node.Stmt_node "method_body"
         | _ -> raise (Unimplemented "Need to get node type for instruction.") in
-      let add_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) (ins : instr) : unit =
-        Cfg.Node.create cfg Sil.dummy_location (nodekind_of_instr ins)
-          (gen_instr cfg pdesc ins) pdesc []; () in
-      let pdesc = Cfg.Procdesc.create pdesc_builder in
-      List.iter (fun ins -> add_instr old_cfg pdesc ins) instrs
+      let add_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (instr : LAst.instr) : unit =
+        let _ = Cfg.Node.create
+            cfg Sil.dummy_location (nodekind_of_instr instr)
+            (trans_instr cfg procdesc instr) procdesc [] in
+        () in
+      let procdesc = Cfg.Procdesc.create procdesc_builder in
+      let procname = Cfg.Procdesc.get_proc_name procdesc in
+      let start_kind = Cfg.Node.Start_node procdesc in
+      let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
+      let exit_kind = Cfg.Node.Exit_node procdesc in
+      let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
+      Cfg.Node.set_succs_exn start_node [exit_node] [exit_node];
+      Cfg.Procdesc.set_start_node procdesc start_node;
+      Cfg.Procdesc.set_exit_node procdesc exit_node;
+      (*add_edges context start_node exn_node [exit_node] method_body_nodes impl * false;*)
+      Cg.add_node cg procname;
+      List.iter (fun instr -> add_instr cfg procdesc instr) instrs
 
-let gen_prog : prog -> Cfg.cfg = function
-    Prog fds ->
+let trans_prog : LAst.prog -> Cfg.cfg * Cg.t * Sil.tenv = function
+    Prog func_defs ->
       let cfg = Cfg.Node.create_cfg () in
-      List.iter (gen_func_def cfg) fds; cfg
+      let cg = Cg.create () in
+      let tenv = Sil.create_tenv () in
+      List.iter (trans_func_def cfg cg) func_defs;
+      (cfg, cg, tenv)

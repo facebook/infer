@@ -39,5 +39,5 @@ type func_def = FuncDef of variable * typ option * (typ * string) list * instr l
 
 type prog = Prog of func_def list
 
-let string_of_variable : variable -> string = function
+let name_of_variable : variable -> string = function
   | Global str | Local str -> str
