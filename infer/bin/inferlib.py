@@ -167,9 +167,10 @@ def remove_infer_out(infer_out):
 
 
 def mkdir_if_not_exists(path):
-    if not os.path.exists(path):
+    try:
         os.mkdir(path)
-
+    except OSError:
+        pass
 
 def create_results_dir(results_dir):
     mkdir_if_not_exists(results_dir)
