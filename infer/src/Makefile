@@ -43,7 +43,7 @@ ifneq ($(wildcard $(BUILDDIR)/sanitize.sh),)
 endif
 
 GLOBAL_LFLAGS =  -annot
-GLOBAL_CFLAGS = -bin-annot
+GLOBAL_CFLAGS = "-bin-annot -warn-error @5@8@10..12@20@26"
 GLOBAL_OPTIONS = -lflags $(GLOBAL_LFLAGS) -cflags $(GLOBAL_CFLAGS) $(addprefix -lib ,$(GLOBAL_LIBS))
 
 #### Backend declarations ####
