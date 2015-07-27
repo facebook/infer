@@ -161,7 +161,7 @@ let cn_to_java_type cn =
    (JBasics.cn_simple_name cn))
 
 
-let rec vt_to_java_type vt =
+let vt_to_java_type vt =
   match vt with
   | JBasics.TBasic bt -> None, string_of_basic_type bt
   | JBasics.TObject ot ->

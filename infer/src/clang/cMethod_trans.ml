@@ -33,7 +33,7 @@ let mk_procname_from_function name type_name =
 let mk_procname_from_method class_name method_name =
   Procname.mangled_c_method class_name method_name None
 
-let rec resolve_method_class tenv class_name method_name =
+let resolve_method_class tenv class_name method_name =
   let type_name = Sil.TN_csu (Sil.Class, class_name) in
   match Sil.tenv_lookup tenv type_name with
   | Some (Sil.Tstruct (_, _, Sil.Class, cls, super_classes, methods, iann)) ->

@@ -759,7 +759,7 @@ let resolve_method context cn ms =
 (* TODO: unclear if this corresponds to what JControlFlow.resolve_method'*)
 (* is trying to do. Normally, this implementation below goes deeper into *)
 (* the type hierarchy and it is not clear why we should not do that *)
-let rec extends context node1 node2 =
+let extends context node1 node2 =
   let is_matching cn =
     JBasics.cn_equal cn (Javalib.get_name node2) in
   let rec check cn_list =

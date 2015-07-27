@@ -49,7 +49,7 @@ let get_field_www name_field fl =
     "WARNING: In MemberExpr there must be only one type defininf for the struct. Returning (NO_FIELD_NAME, Tvoid)\n"
     (Ident.create_fieldname (Mangled.from_string "NO_FIELD_NAME") 0, Sil.Tvoid)
 
-let rec build_sil_field tenv class_name field_name qual_type prop_atts =
+let build_sil_field tenv class_name field_name qual_type prop_atts =
   let annotation_from_type t =
     match t with
     | Sil.Tptr (_, Sil.Pk_objc_weak) -> [Config.weak]

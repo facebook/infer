@@ -207,7 +207,7 @@ end = struct
     let (---) n1_op n2_op = match n1_op, n2_op with
       | Some n1, Some n2 -> Some (Sil.Int.sub n1 n2)
       | _ -> None in
-    let rec do_le e1 e2 = match e1, e2 with
+    let do_le e1 e2 = match e1, e2 with
       | Sil.Var id, Sil.Const (Sil.Cint n) ->
           let rng = IdMap.find id ev in
           add_top rng id n
@@ -222,7 +222,7 @@ end = struct
           update_top rng1 id1 (Some n --- rng2.bottom);
           update_top rng2 id2 (Some n --- rng1.bottom)
       | _ -> if debug then assert false in
-    let rec do_lt e1 e2 = match e1, e2 with
+    let do_lt e1 e2 = match e1, e2 with
       | Sil.Const (Sil.Cint n), Sil.Var id ->
           let rng = IdMap.find id ev in
           add_bottom rng id (n ++ Sil.Int.one)

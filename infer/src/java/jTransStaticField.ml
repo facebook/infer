@@ -34,7 +34,7 @@ let is_basic_type fs =
 
 (** Returns whether the node contains static final fields
     that are not of a primitive type or String. *)
-let rec has_static_final_fields node =
+let has_static_final_fields node =
   let detect fs f test =
     test || (Javalib.is_static_field f && Javalib.is_final_field f) in
   JBasics.FieldMap.fold detect (Javalib.get_fields node) false
@@ -110,7 +110,7 @@ let has_unclear_control_flow code =
     for returning the field selected by the parameter. *)
 (* The constant s means the parameter field of the function.
    Note that we remove the initialisation of non - final static fields. *)
-let rec static_field_init_complex cn code fields length =
+let static_field_init_complex cn code fields length =
   let code = Array.append [| (JBir.Goto length ) |] code in
   let s = JConfig.field_cst in
   let field_pc_list = ref [] in
@@ -142,7 +142,7 @@ let rec static_field_init_complex cn code fields length =
 (** In the initialiser of static fields, we add instructions
     for returning the field selected by the parameter without changing
     the control flow of the original code. *)
-let rec static_field_init_simple cn code fields length =
+let static_field_init_simple cn code fields length =
   let s = JConfig.field_cst in
   let rec aux s pc fields =
     match fields with
@@ -168,7 +168,7 @@ let rec static_field_init_simple cn code fields length =
     In these cases it is not possible to separate the code for the initialisation
     of each field, so we do not change the original code, but append intructions
     for returning the selected field. *)
-let rec static_field_init node cn code =
+let static_field_init node cn code =
   try
     let field_list = JBasics.FieldMap.elements (Javalib.get_fields node) in
     (* TODO: this translation to a list can be removed and map iterators can be used afterward *)

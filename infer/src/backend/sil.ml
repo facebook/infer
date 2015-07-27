@@ -2178,7 +2178,7 @@ let instr_get_loc = function
       loc
 
 (** get the expressions occurring in the instruction *)
-let rec instr_get_exps = function
+let instr_get_exps = function
   | Letderef (id, e, _, _) ->
       [Var id; e]
   | Set (e1, _, e2, _) ->
@@ -2206,7 +2206,7 @@ let pp_call_flags f cf =
   if cf.cf_noreturn then F.fprintf f " noreturn"
 
 (** Pretty print an instruction. *)
-let rec pp_instr pe0 f instr =
+let pp_instr pe0 f instr =
   let pe, changed = color_pre_wrapper pe0 f instr in
   (match instr with
    | Letderef (id, e, t, loc) -> F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (pp_typ pe) t pp_loc loc
@@ -2305,7 +2305,7 @@ and exp_iter_types f e =
       typ_iter_types f t
 
 (** Iterate over all the types (and subtypes) in the instruction *)
-let rec instr_iter_types f instr = match instr with
+let instr_iter_types f instr = match instr with
   | Letderef (id, e, t, loc) ->
       exp_iter_types f e;
       typ_iter_types f t
@@ -3132,7 +3132,7 @@ let exp_fav =
 let exp_fav_list e =
   fav_to_list (exp_fav e)
 
-let rec ident_in_exp id e =
+let ident_in_exp id e =
   let fav = fav_new () in
   exp_fav_add fav e;
   fav_mem fav id
@@ -3157,7 +3157,7 @@ let rec strexp_fav_add fav = function
       exp_fav_add fav size;
       list_iter (fun (e, se) -> exp_fav_add fav e; strexp_fav_add fav se) idx_se_list
 
-let rec hpred_fav_add fav = function
+let hpred_fav_add fav = function
   | Hpointsto (base, sexp, te) -> exp_fav_add fav base; strexp_fav_add fav sexp; exp_fav_add fav te
   | Hlseg (_, para, e1, e2, elist) ->
       hpara_fav_add fav para;
@@ -3617,7 +3617,7 @@ let rec strexp_replace_exp epairs = function
         (idx', strexp_replace_exp epairs se) in
       Earray (size', list_map f isel, inst)
 
-let rec hpred_replace_exp epairs = function
+let hpred_replace_exp epairs = function
   | Hpointsto (root, se, te) ->
       let root_repl = exp_replace_exp epairs root in
       let strexp_repl = strexp_replace_exp epairs se in

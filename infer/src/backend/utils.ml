@@ -363,7 +363,7 @@ let pp_semicolon_seq pe = _pp_semicolon_seq false pe
 let pp_semicolon_seq_oneline pe = _pp_semicolon_seq true pe
 
 (** Print an or-separated sequence. *)
-let rec pp_or_seq pe pp f = function
+let pp_or_seq pe pp f = function
   | [] -> ()
   | [x] -> F.fprintf f "%a" pp x
   | x:: l ->

@@ -726,7 +726,7 @@ let () =
 (* Initialises the map of types of the methods that are never called with  *)
 (* the static types.                                                       *)
 let initialize_map exe_env methods =
-  let rec init_method exe_env pname map =
+  let init_method exe_env pname map =
     let cfg = Exe_env.get_cfg exe_env pname in
     let formals = get_formals cfg pname in
     initial_methods := Procname.Set.add pname !initial_methods;

@@ -218,7 +218,7 @@ let rec select_nodes_exp_lambda dotnodes e lambda =
 
 (* look-up the coordinate id in the list of dotnodes those nodes which correspond to expression e*)
 (* this is written in this strange way for legacy reason. It should be changed a bit*)
-let rec look_up dotnodes e lambda =
+let look_up dotnodes e lambda =
   let r = select_nodes_exp_lambda dotnodes e lambda in
   let r'= list_map get_coordinate_id r in
   r' @ look_up_for_back_pointer e dotnodes lambda
@@ -477,7 +477,7 @@ let rec compute_target_array_elements dotnodes list_elements p f lambda =
       let targets_a = find_target_one_element a in
       targets_a @ compute_target_array_elements dotnodes list_ele' p f lambda
 
-let rec compute_target_from_eexp dotnodes e p f lambda =
+let compute_target_from_eexp dotnodes e p f lambda =
   if is_nil e p then
     let n'= make_nil_node lambda in
     [(LinkExpToExp, n', "")]

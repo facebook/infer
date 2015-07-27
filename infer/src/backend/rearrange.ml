@@ -385,7 +385,7 @@ let strexp_extend_values
     | _ -> Sil.Subtype.exact in
   list_map (fun (atoms', se', typ') -> (laundry_atoms @ atoms', se', Sil.Sizeof (typ', st))) atoms_se_typ_list_filtered
 
-let rec collect_root_offset exp =
+let collect_root_offset exp =
   let root = Sil.root_of_lexp exp in
   let offsets = Sil.exp_get_offsets exp in
   (root, offsets)

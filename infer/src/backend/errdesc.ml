@@ -217,7 +217,7 @@ let pvar_is_frontend_tmp pvar =
 let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp option =
   let res = ref None in
   let node_instrs = Cfg.Node.get_instrs node in
-  let rec find_declaration = function
+  let find_declaration = function
     | Sil.Letderef (id0, e, _, _) when Ident.equal id id0 ->
         if !verbose then (L.d_str "find_normal_variable_letderef defining "; Sil.d_exp e; L.d_ln ());
         res := _exp_lv_dexp seen node e;

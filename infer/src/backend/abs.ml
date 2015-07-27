@@ -648,12 +648,12 @@ let sigma_special_cases ids sigma : (Ident.t list * Sil.hpred list) list =
     list_fold_left f [] special_cases_eqs in
   list_rev special_cases_rev
 
-let rec hpara_special_cases hpara : Sil.hpara list =
+let hpara_special_cases hpara : Sil.hpara list =
   let update_para (evars', body') = { hpara with Sil.evars = evars'; Sil.body = body'} in
   let special_cases = sigma_special_cases hpara.Sil.evars hpara.Sil.body in
   list_map update_para special_cases
 
-let rec hpara_special_cases_dll hpara : Sil.hpara_dll list =
+let hpara_special_cases_dll hpara : Sil.hpara_dll list =
   let update_para (evars', body') = { hpara with Sil.evars_dll = evars'; Sil.body_dll = body'} in
   let special_cases = sigma_special_cases hpara.Sil.evars_dll hpara.Sil.body_dll in
   list_map update_para special_cases

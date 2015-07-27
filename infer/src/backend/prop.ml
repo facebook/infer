@@ -377,7 +377,7 @@ let prop_fav_nonpure_add fav prop =
 let prop_fav_nonpure =
   Sil.fav_imperative_to_functional prop_fav_nonpure_add
 
-let rec hpred_fav_in_pvars_add fav = function
+let hpred_fav_in_pvars_add fav = function
   | Sil.Hpointsto (Sil.Lvar _, sexp, _) -> Sil.strexp_fav_add fav sexp
   | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> ()
 
@@ -1438,7 +1438,7 @@ let replace_sigma_footprint sigma (prop : 'a t) : exposed t =
 let replace_pi_footprint pi (prop : 'a t) : exposed t =
   { prop with foot_pi = pi }
 
-let rec sigma_replace_exp epairs sigma =
+let sigma_replace_exp epairs sigma =
   let sigma' = list_map (Sil.hpred_replace_exp epairs) sigma in
   sigma_normalize Sil.sub_empty sigma'
 
