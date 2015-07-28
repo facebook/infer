@@ -37,7 +37,6 @@ let store_icfg tenv cg cfg source_file =
 
 let store_tenv tenv =
   let tenv_filename = DB.global_tenv_fname () in
-  (* TODO: this prevents per compilation step incremental analysis at this stage *)
   if DB.file_exists tenv_filename then DB.file_remove tenv_filename;
   Sil.store_tenv_to_file tenv_filename tenv
 

@@ -11,7 +11,7 @@ open LAst
 exception ImproperTypeError of string
 exception Unimplemented of string
 
-let trans_variable : LAst.variable -> Sil.exp = function (* HACK *)
+let trans_variable : LAst.variable -> Sil.exp = function (* TODO: use unique stamps *)
   | Global id -> Sil.Var (Ident.create_normal (Ident.string_to_name id) 0)
   | Local id -> Sil.Var (Ident.create_normal (Ident.string_to_name id) 0)
 
@@ -24,7 +24,7 @@ let trans_operand : LAst.operand -> Sil.exp = function
   | Const const -> trans_constant const
 
 let rec trans_typ : LAst.typ -> Sil.typ = function
-  | Tint i -> Sil.Tint Sil.IInt (* need to actually check what size int is needed here *)
+  | Tint i -> Sil.Tint Sil.IInt (* TODO: check what size int is needed here *)
   | Tfloat -> Sil.Tfloat Sil.FFloat
   | Tptr tp -> Sil.Tptr (trans_typ tp, Sil.Pk_pointer)
   | Tvector (i, tp)
