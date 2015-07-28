@@ -39,10 +39,6 @@ let env_add_instr instr tmp_vars env =
 (** call flags for an allocation or call to a constructor *)
 let cf_alloc = Sil.cf_default
 
-(** returns true if the procedure description is a Java static method *)
-(* TODO (t4559939): this information isn't in Procdesc, so we can't implement this method *)
-let is_static procdesc = false
-
 let fun_exp_from_name proc_name = Sil.Const (Sil.Cfun (proc_name))
 
 let source_dir_from_name proc_name proc_file_map =
@@ -182,7 +178,9 @@ let inhabit_call_with_args procname procdesc args env =
     if is_void then [] else [Ident.create_fresh Ident.knormal] in
   let call_instr =
     let fun_exp = fun_exp_from_name procname in
-    let flags = { Sil.cf_virtual = not (is_static procdesc); Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
+    let flags =
+      let cf_virtual = not (Procname.java_is_static procname) in
+      { Sil.cf_virtual = cf_virtual; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
     Sil.Call (retval, fun_exp, args, env.pc, flags) in
   env_add_instr call_instr retval env
 

@@ -996,8 +996,8 @@ let report_runtime_exceptions tenv cfg pdesc summary =
     (Specs.get_attributes summary).Sil.access = Sil.Public in
   let is_main =
     is_public_method
-    (* TODO (#4559939): add check for static method *)
     && Procname.is_java pname
+    && Procname.java_is_static pname
     && (Procname.java_get_method pname) = "main" in
   let is_annotated =
     let annotated_signature =
