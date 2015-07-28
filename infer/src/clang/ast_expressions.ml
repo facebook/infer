@@ -83,7 +83,9 @@ let stmt_info_with_fresh_pointer stmt_info =
 let create_qual_type s =
   {
     Clang_ast_t.qt_raw = s;
-    Clang_ast_t.qt_desugared = Some s
+    Clang_ast_t.qt_desugared = Some s;
+    (* pointer needs to be set when we start using these, non trivial to do though *)
+    Clang_ast_t.qt_type_ptr = Ast_utils.get_invalid_pointer ()
   }
 
 let create_pointer_type s =
@@ -97,7 +99,8 @@ let create_id_type () = create_qual_type "id"
 
 let create_char_type () = create_qual_type "char *"
 
-let create_BOOL_type () = { qt_raw = "BOOL"; qt_desugared = Some("signed char") }
+(* pointer needs to be set when we start using these, non trivial to do though *)
+let create_BOOL_type () = { qt_raw = "BOOL"; qt_desugared = Some("signed char"); qt_type_ptr = Ast_utils.get_invalid_pointer () }
 
 let create_void_unsigned_long_type () = create_qual_type "void *(unsigned long)"
 
@@ -194,13 +197,15 @@ let make_decl_ref_exp stmt_info expr_info drei =
 let make_obj_c_message_expr_info_instance sel =
   {
     Clang_ast_t.omei_selector = sel;
-    Clang_ast_t.omei_receiver_kind = `Instance
+    Clang_ast_t.omei_receiver_kind = `Instance;
+    Clang_ast_t.omei_decl_pointer = None (* TODO look into it *)
   }
 
 let make_obj_c_message_expr_info_class selector qt =
   {
     omei_selector = selector;
     omei_receiver_kind = `Class (create_qual_type qt);
+    Clang_ast_t.omei_decl_pointer = None (* TODO look into it *)
   }
 
 let make_name_decl name = {
@@ -553,7 +558,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let objc_sre = ObjCSubscriptRefExpr((fresh_stmt_info stmt_info), [ove_array; ove_idx],
                                             make_expr_info (pseudo_object_qt ()),
                                             { osrei_kind =`ArraySubscript; osrei_getter = None; osrei_setter = None; }) in
-        let obj_c_message_expr_info = { omei_selector = CFrontend_config.object_at_indexed_subscript_m; omei_receiver_kind =`Instance } in
+        let obj_c_message_expr_info = { omei_selector = CFrontend_config.object_at_indexed_subscript_m; omei_receiver_kind =`Instance; omei_decl_pointer = None} in
         let ome = ObjCMessageExpr((fresh_stmt_info stmt_info), [ove_array; ove_idx], poe_ei, obj_c_message_expr_info) in
         let pseudo_obj_expr = PseudoObjectExpr((fresh_stmt_info stmt_info), [objc_sre; ove_array; ove_idx; ome], poe_ei) in
         let vdi = { empty_var_decl_info with vdi_init_expr = Some (pseudo_obj_expr) } in

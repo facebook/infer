@@ -20,14 +20,14 @@ module F = Format
 
 (** Get the sub-declarations of the current declaration. *)
 let decl_get_sub_decls decl = match decl with
-  | CXXRecordDecl (_, _, _, decl_list, _, _)
-  | RecordDecl (_, _, _, decl_list, _, _)
+  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+  | RecordDecl (_, _, _, _, decl_list, _, _)
   | ObjCInterfaceDecl (_, _, decl_list, _, _)
   | ObjCProtocolDecl (_, _, decl_list, _, _)
   | ObjCCategoryDecl (_, _, decl_list, _, _)
   | ObjCCategoryImplDecl (_, _, decl_list, _, _)
   | ObjCImplementationDecl (_, _, decl_list, _, _)
-  | EnumDecl (_, _, _, decl_list, _, _)
+  | EnumDecl (_, _, _, _, decl_list, _, _)
   | LinkageSpecDecl (_, decl_list, _)
   | NamespaceDecl (_, _, decl_list, _, _) ->
       decl_list
@@ -37,10 +37,10 @@ let decl_get_sub_decls decl = match decl with
 
 (** Set the sub-declarations of the current declaration. *)
 let decl_set_sub_decls decl decl_list' = match decl with
-  | CXXRecordDecl (decl_info, name, opt_type, decl_list, decl_context_info, record_decl_info) ->
-      CXXRecordDecl (decl_info, name, opt_type, decl_list', decl_context_info, record_decl_info)
-  | RecordDecl (decl_info, name, opt_type, decl_list, decl_context_info, record_decl_info) ->
-      RecordDecl (decl_info, name, opt_type, decl_list', decl_context_info, record_decl_info)
+  | CXXRecordDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, record_decl_info, cxx_record_info) ->
+      CXXRecordDecl (decl_info, name, opt_type, type_ptr, decl_list', decl_context_info, record_decl_info, cxx_record_info)
+  | RecordDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, record_decl_info) ->
+      RecordDecl (decl_info, name, opt_type, type_ptr, decl_list', decl_context_info, record_decl_info)
   | ObjCInterfaceDecl (decl_info, name, decl_list, decl_context_info, obj_c_interface_decl_info) ->
       ObjCInterfaceDecl (decl_info, name, decl_list', decl_context_info, obj_c_interface_decl_info)
   | ObjCProtocolDecl (decl_info, name, decl_list, decl_context_info, obj_c_protocol_decl_info) ->
@@ -51,8 +51,8 @@ let decl_set_sub_decls decl decl_list' = match decl with
       ObjCCategoryImplDecl (decl_info, name, decl_list', decl_context_info, category_impl_info)
   | ObjCImplementationDecl (decl_info, class_name, decl_list, decl_context_info, idi) ->
       ObjCImplementationDecl (decl_info, class_name, decl_list', decl_context_info, idi)
-  | EnumDecl (decl_info, name, opt_type, decl_list, decl_context_info, enum_decl_info) ->
-      EnumDecl (decl_info, name, opt_type, decl_list', decl_context_info, enum_decl_info)
+  | EnumDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, enum_decl_info) ->
+      EnumDecl (decl_info, name, opt_type, type_ptr, decl_list', decl_context_info, enum_decl_info)
   | LinkageSpecDecl (decl_info, decl_list, decl_context_info) ->
       LinkageSpecDecl (decl_info, decl_list', decl_context_info)
   | NamespaceDecl (decl_info, name, decl_list, decl_context_info, namespace_decl_info) ->
@@ -131,7 +131,7 @@ let pp_ast_decl fmt ast_decl =
 
   let decl_str = Clang_ast_proj.get_decl_kind_string ast_decl in
   match ast_decl with
-  | TranslationUnitDecl (_, decl_list, _) ->
+  | TranslationUnitDecl (_, decl_list, _, _) ->
       F.fprintf fmt "%s (%d declarations)@\n" decl_str (list_length decl_list);
       list_iter (dump_decl "") decl_list
   | _ ->
@@ -282,9 +282,9 @@ let ast_decl_process_locs loc_composer ast_decl =
     decl_process_locs loc_composer decl in
 
   match ast_decl with
-  | TranslationUnitDecl (decl_info, decl_list, decl_context_info) ->
+  | TranslationUnitDecl (decl_info, decl_list, decl_context_info, type_list) ->
       let decl_list' = list_map toplevel_decl_process_locs decl_list in
-      TranslationUnitDecl (decl_info, decl_list', decl_context_info)
+      TranslationUnitDecl (decl_info, decl_list', decl_context_info, type_list)
   | _ ->
       assert false
 

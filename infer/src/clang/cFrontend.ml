@@ -31,13 +31,13 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
   | FunctionDecl(di, name_info, qt, fdecl_info) ->
       let name = name_info.Clang_ast_t.ni_name in
       CMethod_declImpl.function_decl tenv cfg cg namespace false di name qt fdecl_info [] None CContext.ContextNoCls
-  | TypedefDecl (decl_info, name_info, opt_type, typedef_decl_info) ->
+  | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
       let name = name_info.Clang_ast_t.ni_name in
       CTypes_decl.do_typedef_declaration tenv namespace
         decl_info name opt_type typedef_decl_info
   (* Currently C/C++ record decl treated in the same way *)
-  | CXXRecordDecl (decl_info, name_info, opt_type, decl_list, decl_context_info, record_decl_info)
-  | RecordDecl (decl_info, name_info, opt_type, decl_list, decl_context_info, record_decl_info) ->
+  | CXXRecordDecl (decl_info, name_info, opt_type, _, decl_list, decl_context_info, record_decl_info, _)
+  | RecordDecl (decl_info, name_info, opt_type, _, decl_list, decl_context_info, record_decl_info) ->
       let record_name = name_info.Clang_ast_t.ni_name in
       CTypes_decl.do_record_declaration tenv namespace
         decl_info record_name opt_type decl_list decl_context_info record_decl_info
@@ -75,7 +75,7 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
         ObjcInterface_decl.interface_impl_declaration tenv name decl_list idi in
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
-  | EnumDecl(decl_info, name_info, opt_type, decl_list, decl_context_info, enum_decl_info)
+  | EnumDecl(decl_info, name_info, opt_type, _, decl_list, decl_context_info, enum_decl_info)
     when should_translate_enum ->
       let name = name_info.Clang_ast_t.ni_name in
       CEnum_decl.enum_decl name tenv cfg cg namespace decl_list opt_type
@@ -104,7 +104,7 @@ let preprocess_one_declaration tenv cg cfg dec =
 (* Translates a file by translating the ast into a cfg. *)
 let compute_icfg tenv source_file ast =
   match ast with
-  | TranslationUnitDecl(_, decl_list, _) ->
+  | TranslationUnitDecl(_, decl_list, _, _) ->
       CFrontend_config.global_translation_unit_decls:= decl_list;
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in

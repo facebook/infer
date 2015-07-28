@@ -188,10 +188,10 @@ and get_struct_fields tenv record_name namespace decl_list =
       let typ = qual_type_to_sil_type tenv qual_type in
       let annotation_items = [] in (* For the moment we don't use them*)
       (id, typ, annotation_items):: get_struct_fields tenv record_name namespace decl_list'
-  | CXXRecordDecl (decl_info, name, opt_type, decl_list, decl_context_info, record_decl_info)
+  | CXXRecordDecl (decl_info, name, opt_type, _, decl_list, decl_context_info, record_decl_info, _)
     :: decl_list'
   (* C++/C Records treated in the same way*)
-  | RecordDecl (decl_info, name, opt_type, decl_list, decl_context_info, record_decl_info)
+  | RecordDecl (decl_info, name, opt_type, _, decl_list, decl_context_info, record_decl_info)
     :: decl_list'->
       do_record_declaration tenv namespace decl_info name.Clang_ast_t.ni_name opt_type decl_list decl_context_info record_decl_info;
       get_struct_fields tenv record_name namespace decl_list'
@@ -246,10 +246,10 @@ and add_late_defined_record tenv namespace typename =
         match decls with
         | [] -> false
         | CXXRecordDecl
-            (decl_info, record_name, opt_type, decl_list, decl_context_info, record_decl_info)
+            (decl_info, record_name, opt_type, _, decl_list, decl_context_info, record_decl_info, _)
           :: decls'
         | RecordDecl
-            (decl_info, record_name, opt_type, decl_list, decl_context_info, record_decl_info)
+            (decl_info, record_name, opt_type, _, decl_list, decl_context_info, record_decl_info)
           :: decls' ->
             (match opt_type with
              | `Type t ->
@@ -280,7 +280,7 @@ and add_late_defined_typedef tenv namespace typename =
       let rec scan decls =
         match decls with
         | [] -> false
-        | TypedefDecl (decl_info, name_info, opt_type, tdi) :: decls' ->
+        | TypedefDecl (decl_info, name_info, opt_type, _, tdi) :: decls' ->
             let name' = name_info.Clang_ast_t.ni_name in
             (match opt_type with
              | `Type t ->
