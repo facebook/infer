@@ -60,7 +60,7 @@ rule token = parse
   | "fp128"  { FP128 }
   | "x86_fp80"  { X86_FP80 }
   | "ppc_fp128"  { PPC_FP128 }
-  | "x86_mmx"  { X86_MMX }
+  (*| "x86_mmx"  { X86_MMX }*)
   | "label"  { LABEL }
   | "metadata"  { METADATA }
 
@@ -76,11 +76,11 @@ rule token = parse
   (* terminator instructions *)
   | "ret"  { RET }
   | "br"  { BR }
-  | "switch"  { SWITCH }
+  (*| "switch"  { SWITCH }
   | "indirectbr"  { INDIRECTBR }
   | "invoke"  { INVOKE }
   | "resume"  { RESUME }
-  | "unreachable"  { UNREACHABLE }
+  | "unreachable"  { UNREACHABLE }*)
   (* binary operations *)
   | "add"  { ADD }
   | "fadd"  { FADD }
@@ -114,41 +114,41 @@ rule token = parse
   (* vector operations *)
   | "extractelement"  { EXTRACTELEMENT }
   | "insertelement" { INSERTELEMENT }
-  | "shufflevector" { SHUFFLEVECTOR }
+  (*| "shufflevector" { SHUFFLEVECTOR }*)
   (* aggregate operations *)
-  | "extractvalue"  { EXTRACTVALUE }
-  | "insertvalue" { INSERTVALUE }
+  (*| "extractvalue"  { EXTRACTVALUE }*)
+  (*| "insertvalue" { INSERTVALUE }*)
   (* memory access and addressing operations *)
-  | "alloca"  { ALLOCA }
-  | "load"  { LOAD }
-  | "store" { STORE }
-  | "fence" { FENCE }
-  | "cmpxchg" { CMPXCHG }
-  | "atomicrmw" { ATOMICRMW }
-  | "getelementptr" { GETELEMENTPTR }
+  (*| "alloca"  { ALLOCA }*)
+  (*| "load"  { LOAD }*)
+  (*| "store" { STORE }*)
+  (*| "fence" { FENCE }*)
+  (*| "cmpxchg" { CMPXCHG }*)
+  (*| "atomicrmw" { ATOMICRMW }*)
+  (*| "getelementptr" { GETELEMENTPTR }*)
   (* conversion operations *)
-  | "trunc" { TRUNC } (* e.g. trunc ... to ... *)
-  | "zext"  { ZEXT }
-  | "sext"  { SEXT }
-  | "fptrunc" { FPTRUNC }
-  | "fpext" { FPEXT }
-  | "fptoui"  { FPTOUI }
-  | "fptosi"  { FPTOSI }
-  | "uitofp"  { UITOFP }
-  | "sitofp"  { SITOFP }
-  | "ptrtoint"  { PTRTOINT }
-  | "inttoptr"  { INTTOPTR }
-  | "bitcast" { BITCAST }
-  | "addrspacecast" { ADDRSPACECAST }
-  | "to"  { TO } (* all conversion operations include this keyword *)
+  (*| "trunc" { TRUNC }*) (* e.g. trunc ... to ... *)
+  (*| "zext"  { ZEXT }*)
+  (*| "sext"  { SEXT }*)
+  (*| "fptrunc" { FPTRUNC }*)
+  (*| "fpext" { FPEXT }*)
+  (*| "fptoui"  { FPTOUI }*)
+  (*| "fptosi"  { FPTOSI }*)
+  (*| "uitofp"  { UITOFP }*)
+  (*| "sitofp"  { SITOFP }*)
+  (*| "ptrtoint"  { PTRTOINT }*)
+  (*| "inttoptr"  { INTTOPTR }*)
+  (*| "bitcast" { BITCAST }*)
+  (*| "addrspacecast" { ADDRSPACECAST }*)
+  (*| "to"  { TO }*) (* all conversion operations include this keyword *)
   (* other operations *)
-  | "icmp"  { ICMP }
-  | "fcmp"  { FCMP }
-  | "phi" { PHI }
-  | "select"  { SELECT }
-  | "call"  { CALL }
-  | "va_arg"  { VA_ARG }
-  | "landingpad"  { LANDINGPAD }
+  (*| "icmp"  { ICMP }*)
+  (*| "fcmp"  { FCMP }*)
+  (*| "phi" { PHI }*)
+  (*| "select"  { SELECT }*)
+  (*| "call"  { CALL }*)
+  (*| "va_arg"  { VA_ARG }*)
+  (*| "landingpad"  { LANDINGPAD }*)
 
   (* identifiers - make this complete *)
   | '@'  { AT }

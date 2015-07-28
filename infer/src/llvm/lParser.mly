@@ -40,7 +40,7 @@
 %token FP128
 %token X86_FP80
 %token PPC_FP128
-%token X86_MMX
+(*%token X86_MMX*)
 %token LABEL
 %token METADATA
 
@@ -53,11 +53,11 @@
 (* terminator instructions *)
 %token RET
 %token BR
-%token SWITCH
-%token INDIRECTBR
-%token INVOKE
-%token RESUME
-%token UNREACHABLE
+(*%token SWITCH*)
+(*%token INDIRECTBR*)
+(*%token INVOKE*)
+(*%token RESUME*)
+(*%token UNREACHABLE*)
 (* binary operations *)
 %token ADD
 %token FADD
@@ -91,41 +91,41 @@
 (* vector operations *)
 %token EXTRACTELEMENT
 %token INSERTELEMENT
-%token SHUFFLEVECTOR
+(*%token SHUFFLEVECTOR*)
 (* aggregate operations *)
-%token EXTRACTVALUE
-%token INSERTVALUE
+(*%token EXTRACTVALUE*)
+(*%token INSERTVALUE*)
 (* memory access and addressing operations *)
-%token ALLOCA
-%token LOAD
-%token STORE
-%token FENCE
-%token CMPXCHG
-%token ATOMICRMW
-%token GETELEMENTPTR
+(*%token ALLOCA*)
+(*%token LOAD*)
+(*%token STORE*)
+(*%token FENCE*)
+(*%token CMPXCHG*)
+(*%token ATOMICRMW*)
+(*%token GETELEMENTPTR*)
 (* conversion operations *)
-%token TRUNC
-%token ZEXT
-%token SEXT
-%token FPTRUNC
-%token FPEXT
-%token FPTOUI
-%token FPTOSI
-%token UITOFP
-%token SITOFP
-%token PTRTOINT
-%token INTTOPTR
-%token BITCAST
-%token ADDRSPACECAST
-%token TO
+(*%token TRUNC*)
+(*%token ZEXT*)
+(*%token SEXT*)
+(*%token FPTRUNC*)
+(*%token FPEXT*)
+(*%token FPTOUI*)
+(*%token FPTOSI*)
+(*%token UITOFP*)
+(*%token SITOFP*)
+(*%token PTRTOINT*)
+(*%token INTTOPTR*)
+(*%token BITCAST*)
+(*%token ADDRSPACECAST*)
+(*%token TO*)
 (* other operations *)
-%token ICMP
-%token FCMP
-%token PHI
-%token SELECT
-%token CALL
-%token VA_ARG
-%token LANDINGPAD
+(*%token ICMP*)
+(*%token FCMP*)
+(*%token PHI*)
+(*%token SELECT*)
+(*%token CALL*)
+(*%token VA_ARG*)
+(*%token LANDINGPAD*)
 
 %token <string> IDENT
 
