@@ -40,6 +40,9 @@ val find_boolean_assignment : Cfg.Node.t -> Sil.pvar -> bool -> Cfg.Node.t optio
 (** describe rvalue [e] as a dexp *)
 val exp_rv_dexp : Cfg.Node.t -> Sil.exp -> Sil.dexp option
 
+(** Produce a description of a persistent reference to an Android Activity *)
+val explain_activity_leak : Sil.typ -> Ident.fieldname -> Localise.error_desc
+
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
 val explain_allocation_mismatch : Sil.res_action -> Sil.res_action -> Localise.error_desc
 

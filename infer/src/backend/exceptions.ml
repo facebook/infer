@@ -30,6 +30,7 @@ type err_kind =
     Kwarning | Kerror | Kinfo
 
 exception Abduction_case_not_implemented of ml_location
+exception Activity_leak of Localise.error_desc * ml_location
 exception Analysis_stops of Localise.error_desc * ml_location option
 exception Array_out_of_bounds_l1 of Localise.error_desc * ml_location
 exception Array_out_of_bounds_l2 of Localise.error_desc * ml_location
@@ -87,6 +88,8 @@ let recognize_exception exn =
   let err_name, desc, mloco, visibility, severity, force_kind, eclass = match exn with (* all the names of Exn_user errors must be defined in Localise *)
     | Abduction_case_not_implemented mloc ->
         (Localise.from_string "Abduction_case_not_implemented", Localise.no_desc, Some mloc, Exn_developer, Low, None, Nocat)
+    | Activity_leak (desc, _) ->
+        (Localise.activity_leak, desc, None, Exn_user, High, None, Nocat)
     | Analysis_stops (desc, mloco) ->
         let visibility = if !Config.analysis_stops then Exn_user else Exn_developer in
         (Localise.analysis_stops, desc, mloco, visibility, Medium, None, Nocat)

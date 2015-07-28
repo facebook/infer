@@ -30,6 +30,7 @@ type err_kind =
 type err_class = Checker | Prover | Nocat
 
 exception Abduction_case_not_implemented of ml_location
+exception Activity_leak of Localise.error_desc * ml_location
 exception Analysis_stops of Localise.error_desc * ml_location option
 exception Array_of_pointsto of ml_location
 exception Array_out_of_bounds_l1 of Localise.error_desc * ml_location

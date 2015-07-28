@@ -25,6 +25,7 @@ val to_string : t -> string
 (** compare two localised strings *)
 val compare : t -> t -> int
 
+val activity_leak : t
 val analysis_stops : t
 val array_out_of_bounds_l1 : t
 val array_out_of_bounds_l2 : t
@@ -188,6 +189,8 @@ val desc_leak : string option -> Sil.resource option -> Sil.res_action option ->
 val desc_null_test_after_dereference : string -> int -> Sil.location -> error_desc
 
 val java_unchecked_exn_desc : Procname.t -> Mangled.t -> string -> error_desc
+
+val desc_activity_leak : Sil.typ -> Ident.fieldname -> error_desc
 
 (* Create human-readable error description for assertion failures *)
 val desc_assertion_failure : Sil.location -> error_desc

@@ -28,6 +28,7 @@ let to_string s = s
 (** compare two localised strings *)
 let compare (s1: string) (s2: string) = Pervasives.compare s1 s2
 
+let activity_leak = "ACTIVITY_LEAK"
 let analysis_stops = "ANALYSIS_STOPS"
 let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"
 let array_out_of_bounds_l2 = "ARRAY_OUT_OF_BOUNDS_L2"
@@ -362,6 +363,11 @@ let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
   ([Procname.to_string proc_name;
     "can throw "^(Mangled.to_string exn_name);
     "whenever "^pre_str], None, [])
+
+let desc_activity_leak activity_typ fieldname : error_desc =
+  let activity_str = Sil.typ_to_string activity_typ in
+  let fld_str = Ident.fieldname_to_string fieldname in
+  (["Activity subclass"; activity_str; "may leak via static field"; fld_str], None, [])
 
 let desc_assertion_failure loc : error_desc =
   (["could be raised"; at_line (Tags.create ()) loc], None, [])

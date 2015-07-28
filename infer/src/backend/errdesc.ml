@@ -26,6 +26,10 @@ let hpred_is_open_resource prop = function
   | _ ->
       None
 
+(** Produce a description of a persistent reference to an Android Activity *)
+let explain_activity_leak activity_typ fieldname =
+  Localise.desc_activity_leak activity_typ fieldname
+
 (** Explain a deallocate stack variable error *)
 let explain_deallocate_stack_var pvar ra =
   let pvar_str = pvar_to_string pvar in
