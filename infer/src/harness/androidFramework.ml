@@ -267,6 +267,13 @@ let get_all_supertypes typ tenv =
 let is_subtype (typ0 : Sil.typ) (typ1 : Sil.typ) tenv =
   TypSet.mem typ1 (get_all_supertypes typ0 tenv)
 
+(** return true if [typ] <: android.app.Activity *)
+let is_activity typ tenv =
+  let activity_mangled = Mangled.from_package_class "android.app" "Activity" in
+  match Sil.get_typ activity_mangled (Some Sil.Class) tenv with
+  | Some activity_typ -> is_subtype typ activity_typ tenv
+  | None -> false
+
 (** return true if [class_name] is a known callback class name *)
 let is_callback_class_name class_name = Mangled.MangledSet.mem class_name android_callbacks
 
