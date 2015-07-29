@@ -45,8 +45,12 @@ INFER_REPORT = os.path.join(utils.BUCK_INFER_OUT, utils.CSV_REPORT_FILENAME)
 INFER_STATS = os.path.join(utils.BUCK_INFER_OUT, utils.STATS_FILENAME)
 
 INFER_SCRIPT = """\
-#!/bin/sh
-{0} {1} -- javac $@
+#!/usr/bin/env {0}
+import subprocess
+import sys
+
+cmd = ['{0}'] + {1} + ['--', 'javac'] + sys.argv[1:]
+subprocess.check_call(cmd)
 """
 
 LOCAL_CONFIG = """\
@@ -82,8 +86,7 @@ def prepare_build(args):
     temp_files = [infer_cache_dir]
 
     try:
-        infer = utils.get_cmd_in_bin_dir('infer') + ' ' +\
-            ' '.join(infer_options)
+        infer = [utils.get_cmd_in_bin_dir('infer')] + infer_options
     except subprocess.CalledProcessError as e:
         logging.error('Could not find infer')
         raise e
@@ -100,7 +103,7 @@ def prepare_build(args):
     infer_script = None
     with tempfile.NamedTemporaryFile(delete=False,
                                      prefix='infer_',
-                                     suffix='.sh',
+                                     suffix='.py',
                                      dir='.') as infer_script:
         logging.info('Creating %s' % infer_script.name)
         infer_script.file.write(
