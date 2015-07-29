@@ -702,3 +702,18 @@ let desc_tainted_value_reaching_sensitive_function expr_str loc =
       expr_str
       (at_line tags loc) in
   [description], None, !tags
+
+let desc_uninitialized_dangling_pointer_deref deref expr_str loc =
+  let tags = Tags.create () in
+  Tags.add tags Tags.value expr_str;
+  let prefix = match deref.value_pre with
+    | Some s -> s
+    | _ -> "" in
+  let description =
+    Format.sprintf
+      "%s %s %s %s"
+      prefix
+      expr_str
+      deref.problem_str
+      (at_line tags loc) in
+  [description], None, !tags

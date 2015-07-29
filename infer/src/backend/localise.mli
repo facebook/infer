@@ -219,3 +219,5 @@ val desc_inherently_dangerous_function : Procname.t -> error_desc
 val desc_unary_minus_applied_to_unsigned_expression : string option -> string -> Sil.location -> error_desc
 
 val desc_tainted_value_reaching_sensitive_function : string -> Sil.location -> error_desc
+
+val desc_uninitialized_dangling_pointer_deref : deref_str -> string -> Sil.location -> error_desc

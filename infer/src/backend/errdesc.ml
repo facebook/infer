@@ -929,6 +929,9 @@ let explain_dereference_as_caller_expression
         let position = find_formal_param_number pv_name in
         if !verbose then L.d_strln ("parameter number: " ^ string_of_int position);
         explain_nth_function_parameter use_buckets deref_str actual_pre position pvar_off
+      else
+      if Prop.has_dangling_uninit_attribute spec_pre exp then
+        Localise.desc_uninitialized_dangling_pointer_deref deref_str (pvar_to_string pv) loc
       else Localise.no_desc
   | None ->
       if !verbose then (L.d_str "explain_dereference_as_caller_expression "; Sil.d_exp exp; L.d_str ": cannot explain None "; L.d_ln ());

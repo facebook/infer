@@ -30,6 +30,7 @@ type deref_error =
   | Deref_minusone (** dereference -1 *)
   | Deref_null of Sil.path_pos (** dereference null *)
   | Deref_undef of Procname.t * Sil.location * Sil.path_pos (** dereference a value coming from the given undefined function *)
+  | Deref_undef_exp (** dereference an undefined expression *)
 
 type invalid_res =
   | Dereference_error of deref_error * Localise.error_desc * Paths.Path.t option (** dereference error and description *)
@@ -256,6 +257,11 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
       match deref_no_null_check_pos with
       | Some pos -> Some (Deref_null pos, desc true (Localise.deref_str_null (Some callee_pname)))
       | None -> assert false
+    else
+      (* Check if the dereferenced expr has the dangling uninitialized attribute. *)
+      (* In that case it raise a dangling pointer dereferece *)
+    if Prop.has_dangling_uninit_attribute spec_pre e then
+      Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some Sil.DAuninit)) )
     else if Sil.exp_equal e_sub Sil.exp_minus_one then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
     else match Prop.get_resource_undef_attribute actual_pre e_sub with
       | Some (Sil.Aundef (s, loc, pos)) ->
@@ -809,6 +815,13 @@ let get_check_exn check callee_pname loc ml_location = match check with
   | Prover.Class_cast_check (texp1, texp2, exp) ->
       class_cast_exn (Some callee_pname) texp1 texp2 exp ml_location
 
+let check_uninitialize_dangling_deref callee_pname actual_pre sub formal_params props =
+  list_iter (fun (p, _ ) ->
+      match check_dereferences callee_pname actual_pre sub p formal_params with
+      | Some (Deref_undef_exp, desc) ->
+          raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAuninit, desc, try assert false with Assert_failure x -> x))
+      | _ -> ()) props
+
 (** Perform symbolic execution for a single spec *)
 let exe_spec
     tenv cfg ret_ids (n, nspecs) caller_pdesc callee_pname loc prop path_pre
@@ -867,6 +880,8 @@ let exe_spec
                 caller_pdesc callee_pname loc with
         | None -> Invalid_res Cannot_combine
         | Some results ->
+            (* After combining we check that we have not added a points-to of initialized variables.*)
+            check_uninitialize_dangling_deref callee_pname actual_pre split.sub formal_params results;
             let inconsistent_results, consistent_results =
               list_partition (fun (p, _) -> Prover.check_inconsistency p) results in
             let incons_pre_missing = inconsistent_actualpre_missing actual_pre (Some split) in
@@ -989,6 +1004,10 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt None;
                   raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAminusone, desc, try assert false with Assert_failure x -> x))
+              | Dereference_error (Deref_undef_exp, desc, path_opt) ->
+                  trace_call Specs.CallStats.CR_not_met;
+                  extend_path path_opt None;
+                  raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAuninit, desc, try assert false with Assert_failure x -> x))
               | Dereference_error (Deref_null pos, desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt (Some pos);

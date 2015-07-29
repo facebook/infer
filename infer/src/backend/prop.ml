@@ -1773,6 +1773,10 @@ let get_objc_null_attribute prop exp =
 let get_div0_attribute prop exp =
   get_attribute prop exp Sil.ACdiv0
 
+let has_dangling_uninit_attribute prop exp =
+  let la = get_exp_attributes prop exp in
+  list_exists (fun a -> Sil.attribute_equal a (Sil.Adangling (Sil.DAuninit))) la
+
 (** Get all the attributes of the prop *)
 let get_all_attributes prop =
   let res = ref [] in

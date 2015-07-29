@@ -289,6 +289,8 @@ val get_objc_null_attribute : 'a t -> exp -> attribute option
 (** Get all the attributes of the prop *)
 val get_all_attributes : 'a t -> (exp * attribute) list
 
+val has_dangling_uninit_attribute : 'a t -> exp -> bool
+
 (** Replace an attribute associated to the expression *)
 val add_or_replace_exp_attribute : (Sil.attribute -> Sil.attribute -> unit) -> normal t -> exp -> attribute -> normal t
 

@@ -60,6 +60,7 @@ public class InferResults {
           errorType.equals("RETURN_VALUE_IGNORED") ||
           errorType.equals("IMMUTABLE_CAST") ||
           errorType.equals("PARAMETER_NOT_NULL_CHECKED") ||
+          errorType.equals("DANGLING_POINTER_DEREFERENCE") ||
           errorType.equals("IVAR_NOT_NULL_CHECKED") ||
           errorType.startsWith("ERADICATE")) {
         Integer errorLine = Integer.parseInt(items[5].trim());

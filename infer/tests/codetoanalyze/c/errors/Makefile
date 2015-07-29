@@ -9,6 +9,7 @@ all:
 	make -C resource_leaks
 	make -C memory_leaks
 	make -C lists
+	make -C dangling_deref
 
 clean:
 	make -C arithmetic clean
@@ -20,4 +21,5 @@ clean:
 	make -C resource_leaks clean
 	make -C memory_leaks
 	make -C lists
+	make -C dangling_deref
 
