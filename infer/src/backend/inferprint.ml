@@ -100,6 +100,7 @@ let arg_desc =
         "-procs", Arg.String (fun s -> procs_csv := create_outfile s), Some "procs.csv", "create file procs.csv containing statistics for each procedure in CSV format";
         "-procs_xml", Arg.String (fun s -> procs_xml := create_outfile s), Some "procs.xml", "create file procs.xml containing statistics for each procedure in XML format";
         "-results_dir", Arg.String (fun s -> results_dir_cmdline := true; Config.results_dir := s), Some "dir", "read all the .specs files in the results dir";
+        "-lib", Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library), Some "dir", "add dir to the list of directories to be searched for spec files";
         "-q", Arg.Set quiet, None, "quiet: do not print specs on standard output";
         "-save_results", Arg.String (fun s -> save_analysis_results := Some s), Some "file.iar", "save analysis results to Infer Analysis Results file file.iar";
         "-unit_test", Arg.Set unit_test, None, "print unit test code";
@@ -139,18 +140,20 @@ let print_usage_exit err_s =
   Arg2.usage arg_desc usage;
   exit(1)
 
-
-(** return the list of the .specs files in the results dir, if it's defined *)
-let results_dir_specsfiles () = match !results_dir_cmdline with
-  | false -> []
-  | true ->
-      let specs_dir = DB.Results_dir.specs_dir () in
-      let specs_files_in_dir dir =
-        let is_specs_file fname = not (Sys.is_directory fname) && Filename.check_suffix fname ".specs" in
-        let all_filenames = Array.to_list (Sys.readdir dir) in
-        let all_filepaths = list_map (fun fname -> Filename.concat dir fname) all_filenames in
-        list_filter is_specs_file all_filepaths in
-      specs_files_in_dir (DB.filename_to_string specs_dir)
+(** return the list of the .specs files in the results dir and libs, if they're defined *)
+let load_specfiles () =
+  let specs_files_in_dir dir =
+    let is_specs_file fname = not (Sys.is_directory fname) && Filename.check_suffix fname ".specs" in
+    let all_filenames = Array.to_list (Sys.readdir dir) in
+    let all_filepaths = list_map (fun fname -> Filename.concat dir fname) all_filenames in
+    list_filter is_specs_file all_filepaths in
+  let specs_dirs =
+    if !results_dir_cmdline then
+      let result_specs_dir = DB.filename_to_string (DB.Results_dir.specs_dir ()) in
+      result_specs_dir :: !Config.specs_library
+    else
+      !Config.specs_library in
+  list_flatten (list_map specs_files_in_dir specs_dirs)
 
 (** Create and initialize latex file *)
 let begin_latex_file fmt =
@@ -872,7 +875,7 @@ module AnalysisResults = struct
         let all_files = Array.to_list arr in
         list_filter (fun fname -> (Filename.check_suffix fname ".specs")) all_files
       end
-       else !args) (results_dir_specsfiles ())
+       else !args) (load_specfiles ())
 
   (** apply [f] to [arg] with the gc compaction disabled during the execution *)
   let apply_without_gc f arg =

@@ -133,6 +133,14 @@ inferJ_group.add_argument('-nt', '--notest', action='store_true',
                            dest='notest',
                            help='Prints output of symbolic execution')
 
+inferJ_group.add_argument('--specs-dir',
+                          metavar='<dir>',
+                          action='append',
+                          dest='specs_dirs',
+                          help='add dir to the list of directories to be '
+                               'searched for spec files. Repeat the argument '
+                               'in case multiple folders are needed')
+
 def detect_javac(args):
     for index, arg in enumerate(args):
         if arg == 'javac':
@@ -382,6 +390,17 @@ class Infer:
             self.stats = {'int': {}, 'float': {}}
             self.timing = {}
 
+        if self.args.specs_dirs:
+            # Each dir passed in input is prepended by '-lib'.
+            # Convert each path to absolute because when running from
+            # cluster Makefiles (multicore mode) InferAnalyze creates the wrong
+            # absolute path from within the multicore folder
+            self.args.specs_dirs = [item
+                                    for argument in
+                                    (['-lib', os.path.abspath(path)] for path in
+                                     self.args.specs_dirs)
+                                    for item in argument]
+
 
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
@@ -471,6 +490,9 @@ class Infer:
                 '-print_buckets',
                 # '-notest',
             ]
+
+        if self.args.specs_dirs:
+            infer_options += self.args.specs_dirs
 
         exit_status = os.EX_OK
 
@@ -595,6 +617,10 @@ class Infer:
             '-procs', procs_report,
             '-analyzer', self.args.analyzer
         ]
+
+        if self.args.specs_dirs:
+            infer_print_options += self.args.specs_dirs
+
         exit_status = subprocess.check_call(
             infer_print_cmd + infer_print_options
         )
