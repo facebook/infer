@@ -198,6 +198,7 @@ let make_obj_c_message_expr_info_instance sel =
   {
     Clang_ast_t.omei_selector = sel;
     Clang_ast_t.omei_receiver_kind = `Instance;
+    Clang_ast_t.omei_is_definition_found = false;
     Clang_ast_t.omei_decl_pointer = None (* TODO look into it *)
   }
 
@@ -205,6 +206,7 @@ let make_obj_c_message_expr_info_class selector qt =
   {
     omei_selector = selector;
     omei_receiver_kind = `Class (create_qual_type qt);
+    Clang_ast_t.omei_is_definition_found = false;
     Clang_ast_t.omei_decl_pointer = None (* TODO look into it *)
   }
 
@@ -558,7 +560,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let objc_sre = ObjCSubscriptRefExpr((fresh_stmt_info stmt_info), [ove_array; ove_idx],
                                             make_expr_info (pseudo_object_qt ()),
                                             { osrei_kind =`ArraySubscript; osrei_getter = None; osrei_setter = None; }) in
-        let obj_c_message_expr_info = { omei_selector = CFrontend_config.object_at_indexed_subscript_m; omei_receiver_kind =`Instance; omei_decl_pointer = None} in
+        let obj_c_message_expr_info = make_obj_c_message_expr_info_instance CFrontend_config.object_at_indexed_subscript_m in
         let ome = ObjCMessageExpr((fresh_stmt_info stmt_info), [ove_array; ove_idx], poe_ei, obj_c_message_expr_info) in
         let pseudo_obj_expr = PseudoObjectExpr((fresh_stmt_info stmt_info), [objc_sre; ove_array; ove_idx; ome], poe_ei) in
         let vdi = { empty_var_decl_info with vdi_init_expr = Some (pseudo_obj_expr) } in
