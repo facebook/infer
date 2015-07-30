@@ -461,6 +461,9 @@ val prop_iter_gc_fields : unit prop_iter -> unit prop_iter
 
 val find_equal_formal_path : exp -> 'a t -> Sil.exp option
 
+(** return the set of subexpressions of [strexp] *)
+val strexp_get_exps : Sil.strexp -> Sil.ExpSet.t
+
 (** get the set of expressions on the righthand side of [hpred] *)
 val hpred_get_targets : Sil.hpred -> Sil.ExpSet.t
 

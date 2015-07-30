@@ -1517,17 +1517,20 @@ let prop_sigma_star (p : 'a t) (sigma : Sil.hpred list) : exposed t =
   let sigma' = sigma @ p.sigma in
   { p with sigma = sigma' }
 
+(** return the set of subexpressions of [strexp] *)
+let strexp_get_exps strexp =
+  let rec strexp_get_exps_rec exps = function
+    | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
+    | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
+    | Sil.Estruct (flds, _) ->
+        list_fold_left (fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) exps flds
+    | Sil.Earray (_, elems, _) ->
+        list_fold_left (fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) exps elems in
+  strexp_get_exps_rec Sil.ExpSet.empty strexp
+
 (** get the set of expressions on the righthand side of [hpred] *)
 let hpred_get_targets = function
-  | Sil.Hpointsto (_, rhs, _) ->
-      let rec collect_exps exps = function
-        | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
-        | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
-        | Sil.Estruct (flds, _) ->
-            list_fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
-        | Sil.Earray (_, elems, _) ->
-            list_fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
-      collect_exps Sil.ExpSet.empty rhs
+  | Sil.Hpointsto (_, rhs, _) -> strexp_get_exps rhs
   | Sil.Hlseg (_, _, _, e, el) ->
       list_fold_left (fun exps e -> Sil.ExpSet.add e exps) Sil.ExpSet.empty (e :: el)
   | Sil.Hdllseg (_, _, _, oB, oF, iB, el) ->

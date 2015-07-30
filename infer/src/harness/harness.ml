@@ -28,6 +28,13 @@ let insert_after lst test to_insert =
     | [] -> lst in
   insert_rec lst []
 
+(* clear indicator of artificiality, as any real field must have a non-negative offset *)
+let generated_field_offset = -1
+
+(** Return true if [fieldname] was created by the harness generation *)
+let is_generated_field fieldname =
+  Ident.fieldname_offset fieldname = generated_field_offset
+
 (** find callees that register callbacks and add instrumentation to extract the callback.
     return the set of new global static fields created to extract callbacks and their types *)
 let extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar callback_fields =
@@ -55,7 +62,7 @@ let extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar callb
           match AndroidFramework.get_callback_registered_by callee args tenv with
           | Some (cb_obj, (Sil.Tptr (cb_typ, Sil.Pk_pointer) as ptr_to_cb_typ)) ->
               let callback_fld_name = create_descriptive_callback_name ptr_to_cb_typ loc in
-              let created_fld = Ident.create_fieldname callback_fld_name 0 in
+              let created_fld = Ident.create_fieldname callback_fld_name generated_field_offset in
               (* create a function that takes the type of the harness class as an argument and modifies
                * the instruction set with callback extraction code. we do this because we need to know
                * the typ of the harness class before we can write to any of its fields, but we cannot

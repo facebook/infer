@@ -9,5 +9,8 @@
 
 (** Automatically create a harness method to exercise code under test *)
 
+(** Return true if [fieldname] was created by the harness generation *)
+val is_generated_field : Ident.fieldname -> bool
+
 (** Generate a harness method for exe_env and add it to the execution environment *)
 val create_harness : DB.source_file Procname.Map.t -> Sil.tenv -> unit
