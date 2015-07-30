@@ -69,8 +69,6 @@ class VersionAction(argparse._VersionAction):
                                             option_string)
 
 
-
-
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',

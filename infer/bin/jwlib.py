@@ -7,10 +7,10 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 import argparse
-import logging
-import tempfile
 import os
+import tempfile
 import subprocess
+import utils
 
 # javac options
 parser = argparse.ArgumentParser()
@@ -44,14 +44,13 @@ class CompilerCall:
                     prefix='javac_',
                     delete=False) as file_out:
                 self.verbose_out = file_out.name
-
                 try:
                     subprocess.check_call(javac_cmd, stderr=file_out)
-                    return os.EX_OK
-                except subprocess.CalledProcessError as exc:
+                except subprocess.CalledProcessError:
                     error_msg = 'Javac compilation error with: \n\n{}\n'
                     failing_cmd = [arg for arg in javac_cmd
                                    if arg != '-verbose']
-                    logging.error(error_msg.format(failing_cmd))
-                    os.system(' '.join(failing_cmd))
-                    return exc.returncode
+                    utils.error(error_msg.format(failing_cmd))
+                    subprocess.check_call(failing_cmd)
+
+        return os.EX_OK
