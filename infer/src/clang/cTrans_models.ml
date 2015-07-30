@@ -121,13 +121,13 @@ let is_assert_log sil_fe =
 let is_objc_memory_model_controlled o =
   Core_foundation_model.is_objc_memory_model_controlled o
 
-let get_predefined_ms_method condition class_name method_name mk_procname
+let get_predefined_ms_method condition class_name method_name method_kind mk_procname
     arguments return_type attributes builtin =
   if condition then
     let procname =
       match builtin with
       | Some procname -> procname
-      | None -> mk_procname class_name method_name in
+      | None -> mk_procname class_name method_name method_kind in
     let ms = CMethod_signature.make_ms procname arguments return_type attributes
         (Ast_expressions.dummy_source_range ()) false false in
     Some ms
@@ -135,26 +135,27 @@ let get_predefined_ms_method condition class_name method_name mk_procname
 
 let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname =
   let condition = class_name = nsstring_cl && method_name = string_with_utf8_m in
-  get_predefined_ms_method condition class_name method_name mk_procname [("x", "char *", None)]
-    id_cl [] None
+  get_predefined_ms_method condition class_name method_name Procname.Class_objc_method
+    mk_procname [("x", "char *", None)] id_cl [] None
 
 let get_predefined_ms_retain_release class_name method_name mk_procname =
   let condition = is_retain_or_release method_name in
   let return_type =
     if is_retain_method method_name || is_autorelease_method method_name
     then id_cl else void in
-  get_predefined_ms_method condition nsobject_cl method_name mk_procname
-    [(self, class_name, None)] return_type [] (get_builtinname method_name)
+  get_predefined_ms_method condition nsobject_cl method_name Procname.Instance_objc_method
+    mk_procname [(self, class_name, None)] return_type [] (get_builtinname method_name)
 
 let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname =
   let condition = (method_name = init) && (class_name = nsautorelease_pool_cl) in
-  get_predefined_ms_method condition class_name method_name mk_procname
-    [(self, class_name, None)] void [] None
+  get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
+    mk_procname [(self, class_name, None)] void [] None
 
 let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname =
   let condition = (method_name = release || method_name = drain) &&
                   (class_name = nsautorelease_pool_cl) in
-  get_predefined_ms_method condition class_name method_name mk_procname [(self, class_name, None)]
+  get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
+    mk_procname [(self, class_name, None)]
     void [] (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
 
 let get_predefined_model_method_signature class_name method_name mk_procname =

@@ -30,25 +30,9 @@ let mk_procname_from_function name type_name =
   let type_name_crc = CRC.crc16 type_name in
   Procname.mangled_c_fun name type_name_crc
 
-let mk_procname_from_method class_name method_name =
-  Procname.mangled_c_method class_name method_name None
-
-let resolve_method_class tenv class_name method_name =
-  let type_name = Sil.TN_csu (Sil.Class, class_name) in
-  match Sil.tenv_lookup tenv type_name with
-  | Some (Sil.Tstruct (_, _, Sil.Class, cls, super_classes, methods, iann)) ->
-      Some type_name
-  | _ -> None
-
-let resolve_method tenv class_name method_name =
-  let class_name_mangled = Mangled.from_string class_name in
-  match resolve_method_class tenv class_name_mangled method_name with
-  | Some (Sil.TN_csu (Sil.Class, class_name)) ->
-      let class_method_name = mk_procname_from_method (Mangled.to_string class_name) method_name in
-      (try let ms = CMethod_signature.find class_method_name in
-         Some ms
-       with Not_found -> None)
-  | _ -> None
+let mk_procname_from_method class_name method_name method_kind =
+  let mangled = Procname.mangled_of_objc_method_kind method_kind in
+  Procname.mangled_c_method class_name method_name mangled
 
 let get_superclass_curr_class context =
   let retrive_super cname super_opt =

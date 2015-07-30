@@ -171,7 +171,9 @@ struct
   let process_objc_method_decl tenv cg cfg namespace curr_class decl_info name_info method_decl_info =
     let class_name = CContext.get_curr_class_name curr_class in
     let method_name = name_info.Clang_ast_t.ni_name in
-    let procname = CMethod_trans.mk_procname_from_method class_name method_name in
+    let is_instance = method_decl_info.Clang_ast_t.omdi_is_instance_method in
+    let method_kind = Procname.objc_method_kind_of_bool is_instance in
+    let procname = CMethod_trans.mk_procname_from_method class_name method_name method_kind in
     let method_decl = Meth_decl_info (method_decl_info, class_name) in
     let is_generated = Ast_utils.is_generated name_info in
     let ms = build_method_signature decl_info procname method_decl false false is_generated in

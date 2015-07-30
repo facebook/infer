@@ -21,6 +21,16 @@ type method_kind =
   | Static (* in Java, procedures called with invokestatic *)
   | Non_Static (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
 
+type objc_method_kind =
+  | Instance_objc_method (* for instance methods in ObjC *)
+  | Class_objc_method (* for class methods in ObjC *)
+
+(** Mangled string for method types  *)
+val mangled_of_objc_method_kind : objc_method_kind -> string option
+
+(** Create ObjC method type from a bool is_instance *)
+val objc_method_kind_of_bool : bool -> objc_method_kind
+
 (** Comparison for proc names *)
 val compare : t -> t -> int
 

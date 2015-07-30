@@ -1,12 +1,12 @@
 (*
- * Copyright (c) 2009 - 2013 Monoidics ltd.
- * Copyright (c) 2013 - present Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *)
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*)
 
 (** Symbolic Execution *)
 
@@ -511,12 +511,10 @@ let check_inherently_dangerous_function caller_pname callee_pname =
     let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
     Reporting.log_warning caller_pname ~pre: pre_opt exn
 
-
 let is_defined cfg pname =
   match Cfg.Procdesc.find_from_name cfg pname with
   | None -> false
   | Some pdesc -> Cfg.Procdesc.is_defined pdesc
-
 
 let call_should_be_skipped callee_pname summary =
   (* skip all procedures in intra-precedural mode *)
@@ -527,7 +525,6 @@ let call_should_be_skipped callee_pname summary =
   || summary.Specs.attributes.Sil.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
   || (!Config.angelic_execution && Specs.get_specs_from_payload summary == [])
-
 
 let report_raise_memory_leak tenv msg hpred prop =
   L.d_strln msg;
@@ -663,7 +660,6 @@ let method_exists right_proc_name methods =
   else (* ObjC case *)
     Specs.summary_exists right_proc_name
 
-
 let resolve_method tenv class_name proc_name =
   let found_class =
     let visited = ref Mangled.MangledSet.empty in
@@ -694,7 +690,6 @@ let resolve_method tenv class_name proc_name =
       proc_name
   | Some proc_name -> proc_name
 
-
 let resolve_typename prop arg =
   let (arg_exp, _) = arg in
   let typexp_opt =
@@ -706,7 +701,6 @@ let resolve_typename prop arg =
   match typexp_opt with
   | Some (Sil.Sizeof (Sil.Tstruct (_, _, Sil.Class, class_name_opt, _, _, _), _)) -> class_name_opt
   | _ -> None
-
 
 (** If the dynamic type of the object calling a method is known, the method from the dynamic type
     is called *)
@@ -1226,7 +1220,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     let path_pos = State.get_path_pos () in
     [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
 
-and sym_exe_check_variadic_sentinel ?(fails_on_nil=false) cfg pdesc tenv prop path n_formals actual_params (sentinel, null_pos) callee_pname loc =
+and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop path n_formals actual_params (sentinel, null_pos) callee_pname loc =
   (* from clang's lib/Sema/SemaExpr.cpp: *)
   (* "nullPos" is the number of formal parameters at the end which *)
   (* effectively count as part of the variadic arguments.  This is *)
@@ -1237,8 +1231,8 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil=false) cfg pdesc tenv prop pa
   (* sentinels start counting from the last argument to the function *)
   let sentinel_pos = nargs - sentinel - 1 in
   let mk_non_terminal_argsi (acc, i) a =
-    if i < first_var_arg_pos || i >= sentinel_pos then (acc, i+1)
-    else ((a,i)::acc, i+1) in
+    if i < first_var_arg_pos || i >= sentinel_pos then (acc, i +1)
+    else ((a, i):: acc, i +1) in
   (* list_fold_left reverses the arguments *)
   let non_terminal_argsi = fst (list_fold_left mk_non_terminal_argsi ([], 0) actual_params) in
   let check_allocated result ((lexp, typ), i) =
@@ -1261,14 +1255,13 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil=false) cfg pdesc tenv prop pa
   (* error on the first premature nil argument *)
   list_fold_left check_allocated [(prop, path)] non_terminal_argsi
 
-
 and sym_exe_check_variadic_sentinel_if_present cfg pdesc tenv prop path actual_params callee_pname loc =
   match Cfg.Procdesc.find_from_name cfg callee_pname with
   | None -> [(prop, path)]
   | Some callee_pdesc ->
       let proc_attributes = Cfg.Procdesc.get_attributes callee_pdesc in
       match Sil.get_sentinel_func_attribute_value proc_attributes.Sil.func_attributes with
-      | None -> [(prop,path)]
+      | None -> [(prop, path)]
       | Some sentinel_arg ->
           let formals = Cfg.Procdesc.get_formals callee_pdesc in
           sym_exe_check_variadic_sentinel cfg pdesc tenv prop path (list_length formals) actual_params sentinel_arg callee_pname loc
@@ -2312,7 +2305,7 @@ module ModelBuiltins = struct
 
   let execute_NSArray_arrayWithObjects_count cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
     let n_formals = 1 in
-    let res' = sym_exe_check_variadic_sentinel ~fails_on_nil:true cfg pdesc tenv prop path n_formals args (0,1) callee_pname loc in
+    let res' = sym_exe_check_variadic_sentinel ~fails_on_nil: true cfg pdesc tenv prop path n_formals args (0,1) callee_pname loc in
     execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let execute_NSArray_arrayWithObjects cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
@@ -2321,12 +2314,14 @@ module ModelBuiltins = struct
     execute_objc_NSArray_alloc_no_fail cfg pdesc tenv res' ret_ids loc
 
   let _ =
+    let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
     Builtin.register_procname
-      (Procname.mangled_c_method "NSArray" "arrayWithObjects:count:" None)
+      (Procname.mangled_c_method "NSArray" "arrayWithObjects:count:" method_kind)
       execute_NSArray_arrayWithObjects_count
   let _ =
+    let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
     Builtin.register_procname
-      (Procname.mangled_c_method "NSArray" "arrayWithObjects:" None)
+      (Procname.mangled_c_method "NSArray" "arrayWithObjects:" method_kind)
       execute_NSArray_arrayWithObjects
 end
 (* ============== END of ModelBuiltins ============== *)

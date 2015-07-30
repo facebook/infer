@@ -1,12 +1,12 @@
 (*
- * Copyright (c) 2009 - 2013 Monoidics ltd.
- * Copyright (c) 2013 - present Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *)
+* Copyright (c) 2009 - 2013 Monoidics ltd.
+* Copyright (c) 2013 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*)
 
 (** Module for Procedure Names *)
 
@@ -29,6 +29,19 @@ type java_signature = {
   parameters: java_type list;
   kind: method_kind
 }
+
+type objc_method_kind =
+  | Instance_objc_method
+  | Class_objc_method
+
+let mangled_of_objc_method_kind kind =
+  match kind with
+  | Instance_objc_method -> Some "instance"
+  | Class_objc_method -> Some "class"
+
+let objc_method_kind_of_bool is_instance =
+  if is_instance then Instance_objc_method
+  else Class_objc_method
 
 (* C++/ObjC method signature *)
 type c_method_signature = {
@@ -117,10 +130,19 @@ let java_sig_compare js1 js2 =
   |> next java_return_type_compare js1.returntype js2.returntype
   |> next method_kind_compare js1.kind js2.kind
 
+let c_function_mangled_compare mangled1 mangled2 =
+  match mangled1, mangled2 with
+  | Some mangled1, None -> 1
+  | None, Some mangled2 -> -1
+  | None, None -> 0
+  | Some mangled1, Some mangled2 ->
+      string_compare mangled1 mangled2
+
 (** Compare c_method signatures. *)
 let c_meth_sig_compare osig1 osig2 =
-  let n = string_compare osig1.class_name osig2.class_name in
-  if n <> 0 then n else string_compare osig1.method_name osig2.method_name
+  string_compare osig1.method_name osig2.method_name
+  |> next string_compare osig1.class_name osig2.class_name
+  |> next c_function_mangled_compare osig1.mangled osig2.mangled
 
 (** Given a package.classname string, it looks for the latest dot and split the string in two (package, classname) *)
 let split_classname package_classname =
@@ -357,9 +379,9 @@ let to_readable_string (c1, c2) verbose =
 
 let c_method_to_string osig detail_level =
   match detail_level with
-  | SIMPLE ->
-      osig.method_name
-  | VERBOSE | NON_VERBOSE ->
+  | SIMPLE -> osig.method_name
+  | NON_VERBOSE -> osig.class_name ^ "_" ^ osig.method_name
+  | VERBOSE ->
       let m_str = match osig.mangled with
         | None -> ""
         | Some s -> "{" ^ s ^ "}" in

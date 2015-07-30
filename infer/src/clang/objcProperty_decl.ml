@@ -243,15 +243,6 @@ let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
       (* No names of fields/method to collect from ObjCPropertyImplDecl when Synthesized *)
       []
 
-(*NOTE: Assumption: if there is a getter or a setter defined manually, *)
-(* it has been translated already at this point. *)
-let method_exists cfg class_name name attributes =
-  let procname = CMethod_trans.mk_procname_from_method class_name name in
-  match Cfg.Procdesc.find_from_name cfg procname with
-  | Some procdesc ->
-      Cfg.Procdesc.is_defined procdesc
-  | None -> false
-
 let is_property_read_only attributes =
   list_mem (Ast_utils.property_attribute_eq) `Readonly attributes
 
@@ -374,10 +365,12 @@ let get_methods curr_class decl_list =
   let get_method decl list_methods =
     match decl with
       ObjCMethodDecl(decl_info, name_info, method_decl_info) as d ->
+        let is_instance = method_decl_info.Clang_ast_t.omdi_is_instance_method in
+        let method_kind = Procname.objc_method_kind_of_bool is_instance in
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Adding Method '%s' \n" (class_name^"_"^method_name);
         let _ = check_for_property curr_class method_name d method_decl_info.Clang_ast_t.omdi_body in
-        let meth_name = CMethod_trans.mk_procname_from_method class_name method_name in
+        let meth_name = CMethod_trans.mk_procname_from_method class_name method_name method_kind in
         meth_name:: list_methods
     | _ -> list_methods in
   list_fold_right get_method decl_list []
