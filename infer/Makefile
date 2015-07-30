@@ -6,9 +6,9 @@ MODELS = models
 SRCDIR = src
 
 
-.PHONY: clean clang java models
+.PHONY: clean clang java llvm models
 
-all: clang java
+all: clang java llvm
 
 java:
 	make -C $(SRCDIR) java
@@ -18,6 +18,9 @@ java:
 clang:
 	make -C $(SRCDIR) clang
 	make -C $(MODELS) clang
+
+llvm:
+	make -C $(SRCDIR) llvm
 
 clean:
 	make -C $(SRCDIR) clean
