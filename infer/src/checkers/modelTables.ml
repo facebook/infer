@@ -23,6 +23,7 @@ let check_not_null_strict = false
 let o = false and n = true (* o is not annotated and n is annotated with @Nullable *)
 let o1 = (o, [o]) (* not annotated with one argument *)
 let o2 = (o, [o; o]) (* not annotated with two arguments *)
+let o3 = (o, [o; o; o;]) (* not annotated with three arguments *)
 let n1 = (o, [n]) (* one argument nullable *)
 let n2 = (o, [n; n]) (* two arguments nullable *)
 let n3 = (o, [n; n; n]) (* three arguments nullable *)
@@ -136,7 +137,62 @@ let annotated_list_nullable =
     ca, "java.util.List.add(java.lang.Object):boolean"; (* container add *)
     cg, "java.util.Map.get(java.lang.Object):java.lang.Object"; (* container get *)
     cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object"; (* container put *)
+    (n, [o]), "javax.lang.model.element.Element.getAnnotation(java.lang.Class):java.lang.annotation.Annotation";
+    ng, "javax.lang.model.element.Element.getEnclosingElement():javax.lang.model.element.Element";
+    ng, "javax.lang.model.element.ExecutableElement.getDefaultValue():javax.lang.model.element.AnnotationValue";
+    ng, "javax.lang.model.element.PackageElement.getEnclosingElement():javax.lang.model.element.Element";
+    ng, "javax.lang.model.element.VariableElement.getConstantValue():java.lang.Object";
+    ng, "javax.lang.model.type.WildcardType.getSuperBound():javax.lang.model.type.TypeMirror";
+    (n, [o]), "javax.lang.model.util.Elements.getPackageElement(java.lang.CharSequence):javax.lang.model.element.PackageElement";
+    (n, [o]), "javax.lang.model.util.Elements.getTypeElement(java.lang.CharSequence):javax.lang.model.element.TypeElement";
+    (n, [o]), "javax.lang.model.util.Elements.getDocComment(javax.lang.model.element.Element):java.lang.String";
+    o1, "javax.lang.model.util.Elements.getElementValuesWithDefaults(javax.lang.model.element.AnnotationMirror):java.util.Map";
+    o1, "javax.lang.model.util.Elements.isDeprecated(javax.lang.model.element.Element):boolean";
+    o1, "javax.lang.model.util.Elements.getBinaryName(javax.lang.model.element.TypeElement):javax.lang.model.element.Name";
+    o1, "javax.lang.model.util.Elements.getPackageOf(javax.lang.model.element.Element):javax.lang.model.element.PackageElement";
+    o1, "javax.lang.model.util.Elements.getAllMembers(javax.lang.model.element.TypeElement):java.util.List";
+    o1, "javax.lang.model.util.Elements.getAllAnnotationMirrors(javax.lang.model.element.Element):java.util.List";
+    o2, "javax.lang.model.util.Elements.hides(javax.lang.model.element.Element, javax.lang.model.element.Element):boolean";
+    o3, "javax.lang.model.util.Elements.overrides(javax.lang.model.element.ExecutableElement, javax.lang.model.element.ExecutableElement, javax.lang.model.element.TypeElement):boolean";
+    o1, "javax.lang.model.util.Types.asElement(javax.lang.model.type.TypeMirror):javax.lang.model.element.Element";
+    o2, "javax.lang.model.util.Types.isSameType(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean";
+    o2, "javax.lang.model.util.Types.isSubtype(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean";
+    o2, "javax.lang.model.util.Types.isAssignable(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean";
+    o2, "javax.lang.model.util.Types.contains(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):boolean";
+    o2, "javax.lang.model.util.Types.isSubsignature(javax.lang.model.type.ExecutableType, javax.lang.model.type.ExecutableType):boolean";
+    o1, "javax.lang.model.util.Types.directSupertypes(javax.lang.model.type.TypeMirror):java.util.List";
+    o1, "javax.lang.model.util.Types.erasure(javax.lang.model.type.TypeMirror):javax.lang.model.type.TypeMirror";
+    o1, "javax.lang.model.util.Types.boxedClass(javax.lang.model.type.PrimitiveType):javax.lang.model.element.TypeElement";
+    o1, "javax.lang.model.util.Types.unboxedType(javax.lang.model.type.TypeMirror):javax.lang.model.type.PrimitiveType";
+    o1, "javax.lang.model.util.Types.capture(javax.lang.model.type.TypeMirror):javax.lang.model.type.TypeMirror";
+    o1, "javax.lang.model.util.Types.getArrayType(javax.lang.model.type.TypeMirror):javax.lang.model.type.ArrayType";
+    o2, "javax.lang.model.util.Types.getWildcardType(javax.lang.model.type.TypeMirror, javax.lang.model.type.TypeMirror):javax.lang.model.type.WildcardType";
+    o2, "javax.lang.model.util.Types.getDeclaredType(javax.lang.model.element.TypeElement, javax.lang.model.type.TypeMirror[]):javax.lang.model.type.DeclaredType";
+    o3, "javax.lang.model.util.Types.getDeclaredType(javax.lang.model.type.DeclaredType, javax.lang.model.element.TypeElement, javax.lang.model.type.TypeMirror[]):javax.lang.model.type.DeclaredType";
+    o2, "javax.lang.model.util.Types.asMemberOf(javax.lang.model.type.DeclaredType, javax.lang.model.element.Element):javax.lang.model.type.TypeMirror";
     n3, "javax.tools.JavaCompiler.getStandardFileManager(javax.tools.DiagnosticListener,java.util.Locale,java.nio.charset.Charset):javax.tools.StandardJavaFileManager";
+    o2, "com.sun.source.util.SourcePositions.getStartPosition(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):long";
+    o2, "com.sun.source.util.SourcePositions.getEndPosition(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):long";
+    (n, [o; o]), "com.sun.source.util.TreePath.getPath(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):com.sun.source.util.TreePath";
+    (n, [o; o]), "com.sun.source.util.TreePath.getPath(com.sun.source.util.TreePath, com.sun.source.tree.Tree):com.sun.source.util.TreePath";
+    (n, [o]), "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element):com.sun.source.tree.Tree";
+    (n, [o]), "com.sun.source.util.Trees.getTree(javax.lang.model.element.TypeElement):com.sun.source.tree.ClassTree";
+    (n, [o]), "com.sun.source.util.Trees.getTree(javax.lang.model.element.ExecutableElement):com.sun.source.tree.MethodTree";
+    (n, [o; o]), "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror):com.sun.source.tree.Tree";
+    (n, [o; o; o]), "com.sun.source.util.Trees.getTree(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror, javax.lang.model.element.AnnotationValue):com.sun.source.tree.Tree";
+    o2, "com.sun.source.util.Trees.getPath(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):com.sun.source.util.TreePath";
+    (n, [o]), "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element):com.sun.source.util.TreePath";
+    (n, [o; o]), "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror):com.sun.source.util.TreePath";
+    (n, [o; o; o]), "com.sun.source.util.Trees.getPath(javax.lang.model.element.Element, javax.lang.model.element.AnnotationMirror, javax.lang.model.element.AnnotationValue):com.sun.source.util.TreePath";
+    (n, [o]), "com.sun.source.util.Trees.getElement(com.sun.source.util.TreePath):javax.lang.model.element.Element";
+    (n, [o]), "com.sun.source.util.Trees.getTypeMirror(com.sun.source.util.TreePath):javax.lang.model.type.TypeMirror";
+    (n, [o]), "com.sun.source.util.Trees.getScope(com.sun.source.util.TreePath):com.sun.source.tree.Scope";
+    (n, [o]), "com.sun.source.util.Trees.getDocComment(com.sun.source.util.TreePath):java.lang.String";
+    o2, "com.sun.source.util.Trees.isAccessible(com.sun.source.tree.Scope, javax.lang.model.element.TypeElement):boolean";
+    o3, "com.sun.source.util.Trees.isAccessible(com.sun.source.tree.Scope, javax.lang.model.element.Element, javax.lang.model.type.DeclaredType):boolean";
+    o1, "com.sun.source.util.Trees.getOriginalType(javax.lang.model.type.ErrorType):javax.lang.model.type.TypeMirror";
+    (o, [o; o; o; o]), "com.sun.source.util.Trees.printMessage(javax.tools.Diagnostic.Kind, java.lang.CharSequence, com.sun.source.tree.Tree, com.sun.source.tree.CompilationUnitTree):void";
+    o1, "com.sun.source.util.Trees.getLub(com.sun.source.tree.CatchTree):javax.lang.model.type.TypeMirror";
     (n, [o; n; n]), "org.w3c.dom.Document.setUserData(java.lang.String,java.lang.Object,org.w3c.dom.UserDataHandler):java.lang.Object";
     (n, [o; n; n]), "org.w3c.dom.Node.setUserData(java.lang.String,java.lang.Object,org.w3c.dom.UserDataHandler):java.lang.Object";
 
