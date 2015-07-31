@@ -91,16 +91,6 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
   | dec ->
       Printing.log_stats "\nWARNING: found Declaration %s skipped\n" (Ast_utils.string_of_decl dec)
 
-(** Preprocess declarations to create method signatures of function declarations. *)
-let preprocess_one_declaration tenv cg cfg dec =
-  let info = Clang_ast_proj.get_decl_tuple dec in
-  CLocation.update_curr_file info;
-  match dec with
-  | FunctionDecl(di, name_info, qt, fdecl_info) ->
-      let name = name_info.Clang_ast_t.ni_name in
-      ignore (CMethod_declImpl.create_function_signature di fdecl_info name qt false None)
-  | _ -> ()
-
 (* Translates a file by translating the ast into a cfg. *)
 let compute_icfg tenv source_file ast =
   match ast with
@@ -109,7 +99,6 @@ let compute_icfg tenv source_file ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in
-      list_iter (preprocess_one_declaration tenv cg cfg) decl_list;
       list_iter (translate_one_declaration tenv cg cfg None) decl_list;
       Printing.log_out "\n Finished creating icfg\n";
       (cg, cfg)
