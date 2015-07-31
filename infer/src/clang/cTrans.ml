@@ -1434,8 +1434,16 @@ struct
       exps = [(cast_exp, typ)] }
 
   (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
-  and do_memb_ivar_ref_exp trans_state expr_info exp_stmt sil_loc nfield =
-    Printing.log_out "!!!!! Dealing with field '%s' @." nfield;
+  and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =
+    let field_name = match decl_ref.Clang_ast_t.dr_name with
+      | Some s -> s.Clang_ast_t.ni_name
+      | _ -> assert false in
+    let field_typ = match decl_ref.Clang_ast_t.dr_qual_type with
+      | Some t -> CTypes_decl.qual_type_to_sil_type trans_state.context.tenv t
+      | _ -> assert false in
+    Printing.log_out "!!!!! Dealing with field '%s' @." field_name;
+    let exp_stmt = extract_stmt_from_singleton stmt_list
+        "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
     let res_trans_exp_stmt = instruction trans_state exp_stmt in
     let (e, class_typ) = extract_exp_from_list res_trans_exp_stmt.exps
         "WARNING: in MemberExpr we expect the translation of the stmt to return an expression\n" in
@@ -1443,35 +1451,26 @@ struct
       (match class_typ with
        | Sil.Tptr (t, _) -> CTypes_decl.expand_structured_type trans_state.context.tenv t
        | t -> t) in
-    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
     let exp =
       (match class_typ with
        | Sil.Tvoid -> Sil.exp_minus_one
        | _ ->
            Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
-           ( match ObjcInterface_decl.find_field trans_state.context.tenv nfield (Some class_typ) false with
+           ( match ObjcInterface_decl.find_field trans_state.context.tenv field_name (Some class_typ) false with
              | Some (fn, _, _) -> Sil.Lfield (e, fn, class_typ)
              | None -> assert false)) in
     { res_trans_exp_stmt with
-      exps = [(exp, typ)] }
+      exps = [(exp, field_typ)] }
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
     Printing.log_out "Passing from ObjCIvarRefExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
-    let sil_loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
-    let exp_stmt = extract_stmt_from_singleton stmt_list
-        "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
-    let name_field = (match obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref.Clang_ast_t.dr_name with
-        | Some s -> s.Clang_ast_t.ni_name
-        | _ -> assert false) in
-    do_memb_ivar_ref_exp trans_state expr_info exp_stmt sil_loc name_field
+    let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
+    do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref
 
   and memberExpr_trans trans_state stmt_info expr_info stmt_list member_expr_info =
     Printing.log_out "Passing from MemberExpr '%s'\n" stmt_info.Clang_ast_t.si_pointer;
-    let sil_loc = get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
-    let exp_stmt = extract_stmt_from_singleton stmt_list
-        "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
-    let name_field = member_expr_info.Clang_ast_t.mei_name.Clang_ast_t.ni_name in
-    do_memb_ivar_ref_exp trans_state expr_info exp_stmt sil_loc name_field
+    let decl_ref = member_expr_info.Clang_ast_t.mei_decl_ref in
+    do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref
 
   and unaryOperator_trans trans_state stmt_info expr_info stmt_list unary_operator_info =
     let context = trans_state.context in
