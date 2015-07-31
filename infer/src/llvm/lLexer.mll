@@ -121,7 +121,7 @@ rule token = parse
   (* memory access and addressing operations *)
   (*| "alloca" { ALLOCA }*)
   (*| "load" { LOAD }*)
-  (*| "store" { STORE }*)
+  | "store" { STORE }
   (*| "fence" { FENCE }*)
   (*| "cmpxchg" { CMPXCHG }*)
   (*| "atomicrmw" { ATOMICRMW }*)

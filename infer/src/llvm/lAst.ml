@@ -34,6 +34,7 @@ type instr =
   | Ret of (typ * operand) option
   | UncondBranch of variable
   | CondBranch of operand * variable * variable
+  | Store of operand * typ * variable
 
 type func_def = FuncDef of variable * typ option * (typ * string) list * instr list
 

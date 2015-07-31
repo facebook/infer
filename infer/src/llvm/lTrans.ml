@@ -37,6 +37,8 @@ let trans_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) : LAst.instr -> Sil.ins
   | Ret (Some (tp, exp)) ->
       let ret_var = Sil.get_ret_pvar (Cfg.Procdesc.get_proc_name pdesc) in
       [Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, Sil.dummy_location)]
+  | Store (op, tp, var) ->
+      [Sil.Set (trans_variable var, trans_typ tp, trans_operand op, Sil.dummy_location)]
   | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
 
 (* Update CFG and call graph with new function definition *)
@@ -76,7 +78,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
       let exit_kind = Cfg.Node.Exit_node procdesc in
       let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
       let nodekind_of_instr : LAst.instr -> Cfg.Node.nodekind = function
-        | Ret _ -> Cfg.Node.Stmt_node "method_body"
+        | Ret _ | Store _ -> Cfg.Node.Stmt_node "method_body"
         | _ -> raise (Unimplemented "Need to get node type for instruction.") in
       let node_of_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (instr : LAst.instr) : Cfg.Node.t =
         Cfg.Node.create cfg Sil.dummy_location (nodekind_of_instr instr) (trans_instr cfg procdesc instr) procdesc [] in

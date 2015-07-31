@@ -96,7 +96,7 @@
 (* memory access and addressing operations *)
 (*%token ALLOCA*)
 (*%token LOAD*)
-(*%token STORE*)
+%token STORE
 (*%token FENCE*)
 (*%token CMPXCHG*)
 (*%token ATOMICRMW*)
@@ -165,7 +165,7 @@ vector_typ:
 element_typ:
   | width=INT { Tint width }
   | floating_typ { Tfloat }
-  | tp=ptr_typ { tp }
+  | tp=ptr_typ { Tptr tp }
 
 floating_typ:
   | HALF { () }
@@ -176,7 +176,7 @@ floating_typ:
   | PPC_FP128 { () }
 
 ptr_typ:
-  | tp=typ STAR { Tptr tp }
+  | tp=typ STAR { tp }
 
 block:
   | LBRACE instrs=list(instr) RBRACE { instrs }
@@ -184,6 +184,8 @@ block:
 instr:
   | term=terminator { term }
   | variable EQUALS binop { Ret None } (* TODO *)
+  | STORE val_tp=typ value=operand COMMA ptr_tp=ptr_typ var=variable { Store (value, val_tp, var) }
+    (* don't yet know why val_tp and ptr_tp would be different *)
 
 terminator:
   | RET tp=typ op=operand { Ret (Some (tp, op)) }
