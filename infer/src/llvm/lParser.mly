@@ -27,8 +27,6 @@
 %token EQUALS
 %token STAR
 %token X
-%token AT
-%token PERCENT
 
 (* TYPES *)
 %token VOID
@@ -127,6 +125,8 @@
 (*%token VA_ARG*)
 (*%token LANDINGPAD*)
 
+%token <string> GLOBAL
+%token <string> LOCAL
 %token <string> IDENT
 
 %token EOF
@@ -238,8 +238,8 @@ operand:
   | const=constant { Const const }
 
 variable:
-  | AT id=IDENT { Global id }
-  | PERCENT id=IDENT { Local id }
+  | id=GLOBAL { Global id }
+  | id=LOCAL { Local id }
 
 constant:
   | i=CONSTINT { Cint i }

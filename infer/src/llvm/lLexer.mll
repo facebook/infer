@@ -29,98 +29,98 @@ let id_char = lower | upper | id_special_char
 let id = id_char (id_char | digit)*
 
 rule token = parse
-  | space | comment  { token lexbuf }
-  | newline  { token lexbuf }
+  | space | comment { token lexbuf }
+  | newline { token lexbuf }
 
   (* keywords *)
-  | "define"  { DEFINE }
+  | "define" { DEFINE }
 
   (* delimiters *)
-  | ','  { COMMA }
-  | '('  { LPAREN }
-  | ')'  { RPAREN }
-  | '{'  { LBRACE }
-  | '}'  { RBRACE }
-  | '<'  { LANGLE }
-  | '>'  { RANGLE }
-  | '['  { LSQBRACK }
-  | ']'  { RSQBRACK }
+  | ',' { COMMA }
+  | '(' { LPAREN }
+  | ')' { RPAREN }
+  | '{' { LBRACE }
+  | '}' { RBRACE }
+  | '<' { LANGLE }
+  | '>' { RANGLE }
+  | '[' { LSQBRACK }
+  | ']' { RSQBRACK }
   (* symbols *)
-  | '='  { EQUALS }
-  | '*'  { STAR }
-  | ['x' 'X']  { X }
+  | '=' { EQUALS }
+  | '*' { STAR }
+  | ['x' 'X'] { X }
 
   (* TYPES *)
-  | "void"  { VOID }
+  | "void" { VOID }
   | "i1" { BIT (* INT 1 *) }
-  | 'i' (pos_int as width)  { INT (int_of_string width) }
-  | "half"  { HALF }
-  | "float"  { FLOAT }
-  | "double"  { DOUBLE }
-  | "fp128"  { FP128 }
-  | "x86_fp80"  { X86_FP80 }
-  | "ppc_fp128"  { PPC_FP128 }
-  (*| "x86_mmx"  { X86_MMX }*)
-  | "label"  { LABEL }
-  | "metadata"  { METADATA }
+  | 'i' (pos_int as width) { INT (int_of_string width) }
+  | "half" { HALF }
+  | "float" { FLOAT }
+  | "double" { DOUBLE }
+  | "fp128" { FP128 }
+  | "x86_fp80" { X86_FP80 }
+  | "ppc_fp128" { PPC_FP128 }
+  (*| "x86_mmx" { X86_MMX }*)
+  | "label" { LABEL }
+  | "metadata" { METADATA }
 
-  | pos_int as size  { SIZE (int_of_string size) }
+  | pos_int as size { SIZE (int_of_string size) }
   (* CONSTANTS *)
-  | "true"  { CONSTINT 1 }
-  | "false"  { CONSTINT 0 }
-  | intlit as i  { CONSTINT (int_of_string i) }
+  | "true" { CONSTINT 1 }
+  | "false" { CONSTINT 0 }
+  | intlit as i { CONSTINT (int_of_string i) }
   (* floating point constants *)
-  | "null"  { NULL }
+  | "null" { NULL }
 
   (* INSTRUCTIONS *)
   (* terminator instructions *)
-  | "ret"  { RET }
-  | "br"  { BR }
-  (*| "switch"  { SWITCH }
-  | "indirectbr"  { INDIRECTBR }
-  | "invoke"  { INVOKE }
-  | "resume"  { RESUME }
-  | "unreachable"  { UNREACHABLE }*)
+  | "ret" { RET }
+  | "br" { BR }
+  (*| "switch" { SWITCH }
+  | "indirectbr" { INDIRECTBR }
+  | "invoke" { INVOKE }
+  | "resume" { RESUME }
+  | "unreachable" { UNREACHABLE }*)
   (* binary operations *)
-  | "add"  { ADD }
-  | "fadd"  { FADD }
-  | "sub"  { SUB }
-  | "fsub"  { FSUB }
-  | "mul"  { MUL }
-  | "fmul"  { FMUL }
-  | "udiv"  { UDIV }
-  | "sdiv"  { SDIV }
-  | "fdiv"  { FDIV }
-  | "urem"  { UREM }
-  | "srem"  { SREM }
-  | "frem"  { FREM }
+  | "add" { ADD }
+  | "fadd" { FADD }
+  | "sub" { SUB }
+  | "fsub" { FSUB }
+  | "mul" { MUL }
+  | "fmul" { FMUL }
+  | "udiv" { UDIV }
+  | "sdiv" { SDIV }
+  | "fdiv" { FDIV }
+  | "urem" { UREM }
+  | "srem" { SREM }
+  | "frem" { FREM }
   (* arithmetic options *)
-  | "nuw"  { NUW }
-  | "nsw"  { NSW }
-  | "exact"  { EXACT }
+  | "nuw" { NUW }
+  | "nsw" { NSW }
+  | "exact" { EXACT }
   (* floating point options *)
-  | "nnan"  { NNAN }
-  | "ninf"  { NINF }
-  | "nsz"  { NSZ }
-  | "arcp"  { ARCP }
-  | "fast"  { FAST }
+  | "nnan" { NNAN }
+  | "ninf" { NINF }
+  | "nsz" { NSZ }
+  | "arcp" { ARCP }
+  | "fast" { FAST }
   (* bitwise binary operations *)
   | "shl" { SHL }
-  | "lshr"  { LSHR }
-  | "ashr"  { ASHR }
+  | "lshr" { LSHR }
+  | "ashr" { ASHR }
   | "and" { AND }
-  | "or"  { OR }
+  | "or" { OR }
   | "xor" { XOR }
   (* vector operations *)
-  | "extractelement"  { EXTRACTELEMENT }
+  | "extractelement" { EXTRACTELEMENT }
   | "insertelement" { INSERTELEMENT }
   (*| "shufflevector" { SHUFFLEVECTOR }*)
   (* aggregate operations *)
-  (*| "extractvalue"  { EXTRACTVALUE }*)
+  (*| "extractvalue" { EXTRACTVALUE }*)
   (*| "insertvalue" { INSERTVALUE }*)
   (* memory access and addressing operations *)
-  (*| "alloca"  { ALLOCA }*)
-  (*| "load"  { LOAD }*)
+  (*| "alloca" { ALLOCA }*)
+  (*| "load" { LOAD }*)
   (*| "store" { STORE }*)
   (*| "fence" { FENCE }*)
   (*| "cmpxchg" { CMPXCHG }*)
@@ -128,31 +128,31 @@ rule token = parse
   (*| "getelementptr" { GETELEMENTPTR }*)
   (* conversion operations *)
   (*| "trunc" { TRUNC }*) (* e.g. trunc ... to ... *)
-  (*| "zext"  { ZEXT }*)
-  (*| "sext"  { SEXT }*)
+  (*| "zext" { ZEXT }*)
+  (*| "sext" { SEXT }*)
   (*| "fptrunc" { FPTRUNC }*)
   (*| "fpext" { FPEXT }*)
-  (*| "fptoui"  { FPTOUI }*)
-  (*| "fptosi"  { FPTOSI }*)
-  (*| "uitofp"  { UITOFP }*)
-  (*| "sitofp"  { SITOFP }*)
-  (*| "ptrtoint"  { PTRTOINT }*)
-  (*| "inttoptr"  { INTTOPTR }*)
+  (*| "fptoui" { FPTOUI }*)
+  (*| "fptosi" { FPTOSI }*)
+  (*| "uitofp" { UITOFP }*)
+  (*| "sitofp" { SITOFP }*)
+  (*| "ptrtoint" { PTRTOINT }*)
+  (*| "inttoptr" { INTTOPTR }*)
   (*| "bitcast" { BITCAST }*)
   (*| "addrspacecast" { ADDRSPACECAST }*)
-  (*| "to"  { TO }*) (* all conversion operations include this keyword *)
+  (*| "to" { TO }*) (* all conversion operations include this keyword *)
   (* other operations *)
-  (*| "icmp"  { ICMP }*)
-  (*| "fcmp"  { FCMP }*)
+  (*| "icmp" { ICMP }*)
+  (*| "fcmp" { FCMP }*)
   (*| "phi" { PHI }*)
-  (*| "select"  { SELECT }*)
-  (*| "call"  { CALL }*)
-  (*| "va_arg"  { VA_ARG }*)
-  (*| "landingpad"  { LANDINGPAD }*)
+  (*| "select" { SELECT }*)
+  (*| "call" { CALL }*)
+  (*| "va_arg" { VA_ARG }*)
+  (*| "landingpad" { LANDINGPAD }*)
 
-  (* identifiers - make this complete *)
-  | '@'  { AT }
-  | '%'  { PERCENT }
-  | id as str  { IDENT str }
+  (* identifiers *)
+  | '@' (id as str) { GLOBAL str }
+  | '%' (id as str) { LOCAL str }
+  | id as str { IDENT str }
 
-  | eof  { EOF }
+  | eof { EOF }
