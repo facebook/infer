@@ -69,26 +69,26 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
           captured = [];
           loc = Sil.dummy_location
         } in
-      let nodekind_of_instr : LAst.instr -> Cfg.Node.nodekind = function
-        | Ret _ -> Cfg.Node.Stmt_node "method_body"
-        | _ -> raise (Unimplemented "Need to get node type for instruction.") in
-      let add_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (instr : LAst.instr) : unit =
-        let _ = Cfg.Node.create
-            cfg Sil.dummy_location (nodekind_of_instr instr)
-            (trans_instr cfg procdesc instr) procdesc [] in
-        () in
       let procdesc = Cfg.Procdesc.create procdesc_builder in
       let procname = Cfg.Procdesc.get_proc_name procdesc in
       let start_kind = Cfg.Node.Start_node procdesc in
       let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
       let exit_kind = Cfg.Node.Exit_node procdesc in
       let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
-      Cfg.Node.set_succs_exn start_node [exit_node] [exit_node];
+      let nodekind_of_instr : LAst.instr -> Cfg.Node.nodekind = function
+        | Ret _ -> Cfg.Node.Stmt_node "method_body"
+        | _ -> raise (Unimplemented "Need to get node type for instruction.") in
+      let node_of_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (instr : LAst.instr) : Cfg.Node.t =
+        Cfg.Node.create cfg Sil.dummy_location (nodekind_of_instr instr) (trans_instr cfg procdesc instr) procdesc [] in
+      let rec link_nodes (start_node : Cfg.Node.t) : Cfg.Node.t list -> unit = function
+        (* link all nodes in a chain for now *)
+        | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
+        | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
+      let nodes = List.map (node_of_instr cfg procdesc) instrs in
       Cfg.Procdesc.set_start_node procdesc start_node;
       Cfg.Procdesc.set_exit_node procdesc exit_node;
-      (*add_edges context start_node exn_node [exit_node] method_body_nodes impl * false;*)
-      Cg.add_node cg procname;
-      List.iter (fun instr -> add_instr cfg procdesc instr) instrs
+      link_nodes start_node nodes;
+      Cg.add_node cg procname
 
 let trans_prog : LAst.prog -> Cfg.cfg * Cg.t * Sil.tenv = function
     Prog func_defs ->
