@@ -95,7 +95,7 @@
 (*%token INSERTVALUE*)
 (* memory access and addressing operations *)
 (*%token ALLOCA*)
-(*%token LOAD*)
+%token LOAD
 %token STORE
 (*%token FENCE*)
 (*%token CMPXCHG*)
@@ -184,6 +184,7 @@ block:
 instr:
   | term=terminator { term }
   | variable EQUALS binop { Ret None } (* TODO *)
+  | var=variable EQUALS LOAD tp=ptr_typ ptr=variable { Load (var, tp, ptr) }
   | STORE val_tp=typ value=operand COMMA ptr_tp=ptr_typ var=variable { Store (value, val_tp, var) }
     (* don't yet know why val_tp and ptr_tp would be different *)
 

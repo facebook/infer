@@ -34,11 +34,12 @@ type instr =
   | Ret of (typ * operand) option
   | UncondBranch of variable
   | CondBranch of operand * variable * variable
+  | Load of variable * typ * variable
   | Store of operand * typ * variable
 
 type func_def = FuncDef of variable * typ option * (typ * string) list * instr list
 
 type prog = Prog of func_def list
 
-let name_of_variable : variable -> string = function
+let string_of_variable : variable -> string = function
   | Global str | Local str -> str

@@ -120,7 +120,7 @@ rule token = parse
   (*| "insertvalue" { INSERTVALUE }*)
   (* memory access and addressing operations *)
   (*| "alloca" { ALLOCA }*)
-  (*| "load" { LOAD }*)
+  | "load" { LOAD }
   | "store" { STORE }
   (*| "fence" { FENCE }*)
   (*| "cmpxchg" { CMPXCHG }*)

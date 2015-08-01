@@ -11,9 +11,10 @@ open LAst
 exception ImproperTypeError of string
 exception Unimplemented of string
 
-let trans_variable : LAst.variable -> Sil.exp = function (* TODO: use unique stamps *)
-  | Global id -> Sil.Var (Ident.create_normal (Ident.string_to_name id) 0)
-  | Local id -> Sil.Var (Ident.create_normal (Ident.string_to_name id) 0)
+let ident_of_variable (var : LAst.variable) : Ident.t = (* TODO: use unique stamps *)
+  Ident.create_normal (Ident.string_to_name (LAst.string_of_variable var)) 0
+
+let trans_variable (var : LAst.variable) : Sil.exp = Sil.Var (ident_of_variable var)
 
 let trans_constant : LAst.constant -> Sil.exp = function
   | Cint i -> Sil.Const (Sil.Cint (Sil.Int.of_int i))
@@ -37,6 +38,8 @@ let trans_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) : LAst.instr -> Sil.ins
   | Ret (Some (tp, exp)) ->
       let ret_var = Sil.get_ret_pvar (Cfg.Procdesc.get_proc_name pdesc) in
       [Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, Sil.dummy_location)]
+  | Load (var, tp, ptr) ->
+      [Sil.Letderef (ident_of_variable var, trans_variable ptr, trans_typ tp, Sil.dummy_location)]
   | Store (op, tp, var) ->
       [Sil.Set (trans_variable var, trans_typ tp, trans_operand op, Sil.dummy_location)]
   | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
@@ -60,7 +63,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
       let (procdesc_builder : Cfg.Procdesc.proc_desc_builder) =
         let open Cfg.Procdesc in
         { cfg = cfg;
-          name = Procname.from_string_c_fun (LAst.name_of_variable func_name);
+          name = Procname.from_string_c_fun (LAst.string_of_variable func_name);
           is_defined = true; (** is defined and not just declared *)
           proc_attributes = proc_attrs;
           ret_type = (match ret_tp_opt with
@@ -78,7 +81,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
       let exit_kind = Cfg.Node.Exit_node procdesc in
       let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
       let nodekind_of_instr : LAst.instr -> Cfg.Node.nodekind = function
-        | Ret _ | Store _ -> Cfg.Node.Stmt_node "method_body"
+        | Ret _ | Load _ | Store _ -> Cfg.Node.Stmt_node "method_body"
         | _ -> raise (Unimplemented "Need to get node type for instruction.") in
       let node_of_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (instr : LAst.instr) : Cfg.Node.t =
         Cfg.Node.create cfg Sil.dummy_location (nodekind_of_instr instr) (trans_instr cfg procdesc instr) procdesc [] in
