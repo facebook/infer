@@ -335,10 +335,16 @@ public class NullPointerExceptions {
     }
   }
 
+
   void nullableNonNullStringAfterTextUtilsIsEmptyCheckShouldNotCauseNPE(@Nullable String str) {
-    if(!TextUtils.isEmpty(str)) {
+    if (!TextUtils.isEmpty(str)) {
       str.length();
     }
+  }
+
+  void someNPEAfterResourceLeak() {
+    T t = CloseableAsResourceExample.sourceOfNullWithResourceLeak();
+    t.f();
   }
 
 }

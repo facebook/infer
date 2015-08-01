@@ -59,7 +59,8 @@ public class NullPointerExceptionTest {
         "nullableParamNPE",
         "badCheckShouldCauseNPE",
         "nullPointerExceptionArrayLength",
-        "npeWithDollars"
+        "npeWithDollars",
+        "someNPEAfterResourceLeak",
     };
     assertThat(
         "Results should contain " + NULL_DEREFERENCE,

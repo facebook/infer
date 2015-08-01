@@ -1333,8 +1333,8 @@ let check_junk ?original_prop pname tenv prop =
                 list_mem attr_opt_equal alloc_attribute !leaks_reported in
               let ignore_leak =
                 !Config.allowleak || ignore_resource || is_undefined || already_reported () in
-              (* in footprint mode, report leak and continue *)
-              let report_and_continue = !Config.footprint in
+              let report_and_continue =
+                !Sil.curr_language = Sil.Java || !Config.footprint in
               let report_leak () =
                 if not report_and_continue then raise exn
                 else

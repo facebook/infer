@@ -16,23 +16,54 @@ import java.io.IOException;
 import java.io.StringReader;
 
 
+class LocalException extends IOException {
+}
+
+class SomeResource implements Closeable {
+
+  void doSomething() throws LocalException {
+    if (!CloseableAsResourceExample.star()) {
+      throw new LocalException();
+    }
+  }
+
+  public void close() {}
+}
+
+class Resource implements Closeable {
+  public Resource() {
+  }
+  public void close() {}
+}
+
+class Wrapper implements Closeable {
+  Resource mR;
+  public Wrapper(Resource r) {
+    mR = r;
+  }
+  public void close() {
+    mR.close();
+  }
+}
+
+class Sub extends Wrapper {
+  public Sub(Resource r) {
+    super(r);
+  }
+}
+
+class ResourceWithException implements Closeable {
+
+  public void close() throws IOException {
+    if (CloseableAsResourceExample.star()) {
+      throw new IOException();
+    }
+  }
+}
+
 public class CloseableAsResourceExample {
 
-  native boolean star();
-
-  class LocalException extends IOException {
-  }
-
-  class SomeResource implements Closeable {
-
-      void doSomething() throws LocalException {
-        if (!star()) {
-          throw new LocalException();
-        }
-      }
-
-      public void close() {}
-  }
+  native static boolean star();
 
   void closingCloseable() {
     SomeResource res = new SomeResource();
@@ -59,27 +90,6 @@ public class CloseableAsResourceExample {
     res.close();
   } // should report a resource leak
 
-  class Resource implements Closeable {
-    public Resource() {
-    }
-    public void close() {}
-  }
-
-  class Wrapper implements Closeable {
-    Resource mR;
-    public Wrapper(Resource r) {
-      mR = r;
-    }
-    public void close() {
-      mR.close();
-    }
-  }
-
-  class Sub extends Wrapper {
-    public Sub(Resource r) {
-      super(r);
-    }
-  }
 
   void closingWrapper() {
     Resource r = new Resource();
@@ -124,15 +134,6 @@ public class CloseableAsResourceExample {
     }
   }
 
-  class ResourceWithException implements Closeable {
-
-    public void close() throws IOException {
-      if (star()) {
-        throw new IOException();
-      }
-    }
-  }
-
   void noLeakwithExceptionOnClose() throws IOException {
     ResourceWithException res = new ResourceWithException();
     res.close();
@@ -141,6 +142,11 @@ public class CloseableAsResourceExample {
   void noLeakWithCloseQuietlyAndExceptionOnClose() {
     ResourceWithException res = new ResourceWithException();
     Utils.closeQuietly(res);
+  }
+
+  static T sourceOfNullWithResourceLeak() {
+    SomeResource r = new SomeResource();
+    return null;
   }
 
 }
