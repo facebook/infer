@@ -125,8 +125,10 @@
 (*%token VA_ARG*)
 (*%token LANDINGPAD*)
 
-%token <string> GLOBAL
-%token <string> LOCAL
+%token <string> NAMED_GLOBAL
+%token <string> NAMED_LOCAL
+%token <int> NUMBERED_GLOBAL
+%token <int> NUMBERED_LOCAL
 %token <string> IDENT
 
 %token EOF
@@ -140,32 +142,32 @@
 %%
 
 prog:
-  | defs=list(func_def) EOF { Prog defs }
+  | defs = list(func_def) EOF { Prog defs }
 
 func_def:
-  | DEFINE ret_tp=ret_typ name=variable LPAREN params=separated_list(COMMA, pair(typ, IDENT)) RPAREN instrs=block {
+  | DEFINE ret_tp = ret_typ name = variable LPAREN params = separated_list(COMMA, pair(typ, IDENT)) RPAREN instrs = block {
     FuncDef (name, ret_tp, params, instrs) }
 
 ret_typ:
   | VOID { None }
-  | tp=typ { Some tp }
+  | tp = typ { Some tp }
 
 typ:
-  | tp=element_typ { tp }
+  | tp = element_typ { tp }
   (*| X86_MMX { () }*)
-  | tp=vector_typ { tp }
-  | LSQBRACK sz=SIZE X tp=element_typ RSQBRACK { Tarray (sz, tp) } (* array type *)
+  | tp = vector_typ { tp }
+  | LSQBRACK sz = SIZE X tp = element_typ RSQBRACK { Tarray (sz, tp) } (* array type *)
   | LABEL { Tlabel }
   | METADATA { Tmetadata }
   (* TODO structs *)
 
 vector_typ:
-  | LANGLE sz=SIZE X tp=element_typ RANGLE { Tvector (sz, tp) }
+  | LANGLE sz = SIZE X tp = element_typ RANGLE { Tvector (sz, tp) }
 
 element_typ:
-  | width=INT { Tint width }
+  | width = INT { Tint width }
   | floating_typ { Tfloat }
-  | tp=ptr_typ { Tptr tp }
+  | tp = ptr_typ { Tptr tp }
 
 floating_typ:
   | HALF { () }
@@ -176,23 +178,23 @@ floating_typ:
   | PPC_FP128 { () }
 
 ptr_typ:
-  | tp=typ STAR { tp }
+  | tp = typ STAR { tp }
 
 block:
-  | LBRACE instrs=list(instr) RBRACE { instrs }
+  | LBRACE instrs = list(instr) RBRACE { instrs }
 
 instr:
-  | term=terminator { term }
+  | term = terminator { term }
   | variable EQUALS binop { Ret None } (* TODO *)
-  | var=variable EQUALS LOAD tp=ptr_typ ptr=variable { Load (var, tp, ptr) }
-  | STORE val_tp=typ value=operand COMMA ptr_tp=ptr_typ var=variable { Store (value, val_tp, var) }
+  | var = variable EQUALS LOAD tp = ptr_typ ptr = variable { Load (var, tp, ptr) }
+  | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable { Store (value, val_tp, var) }
     (* don't yet know why val_tp and ptr_tp would be different *)
 
 terminator:
-  | RET tp=typ op=operand { Ret (Some (tp, op)) }
+  | RET tp = typ op = operand { Ret (Some (tp, op)) }
   | RET VOID { Ret None }
-  | BR LABEL lbl=variable { UncondBranch lbl }
-  | BR BIT op=operand COMMA LABEL lbl1=variable COMMA LABEL lbl2=variable { CondBranch (op, lbl1, lbl2) }
+  | BR LABEL lbl = variable { UncondBranch lbl }
+  | BR BIT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
   (*
   | switch
   | indirectbr
@@ -237,13 +239,15 @@ binop_args:
 (* below is fuzzy *)
 
 operand:
-  | var=variable { Var var }
-  | const=constant { Const const }
+  | var = variable { Var var }
+  | const = constant { Const const }
 
 variable:
-  | id=GLOBAL { Global id }
-  | id=LOCAL { Local id }
+  | name = NAMED_GLOBAL { Global (Name name) }
+  | name = NAMED_LOCAL { Local (Name name) }
+  | num = NUMBERED_GLOBAL { Global (Number num) }
+  | num = NUMBERED_LOCAL { Local (Number num) }
 
 constant:
-  | i=CONSTINT { Cint i }
+  | i = CONSTINT { Cint i }
   | NULL { Cnull }

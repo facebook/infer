@@ -20,6 +20,7 @@ let comment = ';' [^ '\n']*
 let nonzero_digit = ['1'-'9']
 let digit = ['0'-'9']
 let pos_int = nonzero_digit digit*
+let nonneg_int = '0' | pos_int
 let intlit = '-'? digit+
 
 let lower = ['a'-'z']
@@ -150,9 +151,11 @@ rule token = parse
   (*| "va_arg" { VA_ARG }*)
   (*| "landingpad" { LANDINGPAD }*)
 
-  (* identifiers *)
-  | '@' (id as str) { GLOBAL str }
-  | '%' (id as str) { LOCAL str }
+  (* IDENTIFIERS *)
+  | '@' (id as str) { NAMED_GLOBAL str }
+  | '%' (id as str) { NAMED_LOCAL str }
+  | '@' (nonneg_int as i) { NUMBERED_GLOBAL (int_of_string i) }
+  | '%' (nonneg_int as i) { NUMBERED_LOCAL (int_of_string i) }
   | id as str { IDENT str }
 
   | eof { EOF }

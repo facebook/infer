@@ -9,9 +9,13 @@
 
 (** Representation of LLVM constructs *)
 
+type variable_id =
+  | Name of string
+  | Number of int
+
 type variable =
-  | Global of string
-  | Local of string
+  | Global of variable_id
+  | Local of variable_id
 
 type constant =
   | Cint of int
@@ -42,4 +46,8 @@ type func_def = FuncDef of variable * typ option * (typ * string) list * instr l
 type prog = Prog of func_def list
 
 let string_of_variable : variable -> string = function
-  | Global str | Local str -> str
+  | Global var_id | Local var_id ->
+      begin match var_id with
+      | Name str -> str
+      | Number i -> string_of_int i
+      end
