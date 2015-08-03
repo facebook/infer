@@ -33,15 +33,22 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
-let trans_instr (cfg : Cfg.cfg) (pdesc : Cfg.Procdesc.t) : LAst.instr -> Sil.instr list = function
+let trans_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) : LAst.instr -> Sil.instr list =
+  let procname = Cfg.Procdesc.get_proc_name procdesc in
+  function
   | Ret None -> []
   | Ret (Some (tp, exp)) ->
-      let ret_var = Sil.get_ret_pvar (Cfg.Procdesc.get_proc_name pdesc) in
+      let ret_var = Sil.get_ret_pvar procname in
       [Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, Sil.dummy_location)]
   | Load (var, tp, ptr) ->
       [Sil.Letderef (ident_of_variable var, trans_variable ptr, trans_typ tp, Sil.dummy_location)]
   | Store (op, tp, var) ->
       [Sil.Set (trans_variable var, trans_typ tp, trans_operand op, Sil.dummy_location)]
+  | Alloc (var, tp, num_elems, alignment) ->
+      let mangled_var_name = Mangled.from_string (LAst.string_of_variable var) in
+      let pvar = Sil.mk_pvar mangled_var_name procname in
+      (* currently only declare one variable - num_elems is ignored *)
+      [Sil.Declare_locals ([(pvar, trans_typ (Tptr tp))], Sil.dummy_location)]
   | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
 
 (* Update CFG and call graph with new function definition *)
@@ -80,11 +87,9 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
       let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
       let exit_kind = Cfg.Node.Exit_node procdesc in
       let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
-      let nodekind_of_instr : LAst.instr -> Cfg.Node.nodekind = function
-        | Ret _ | Load _ | Store _ -> Cfg.Node.Stmt_node "method_body"
-        | _ -> raise (Unimplemented "Need to get node type for instruction.") in
       let node_of_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (instr : LAst.instr) : Cfg.Node.t =
-        Cfg.Node.create cfg Sil.dummy_location (nodekind_of_instr instr) (trans_instr cfg procdesc instr) procdesc [] in
+        Cfg.Node.create cfg Sil.dummy_location (Cfg.Node.Stmt_node "method_body")
+            (trans_instr cfg procdesc instr) procdesc [] in
       let rec link_nodes (start_node : Cfg.Node.t) : Cfg.Node.t list -> unit = function
         (* link all nodes in a chain for now *)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]

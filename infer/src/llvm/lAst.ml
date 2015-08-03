@@ -40,6 +40,8 @@ type instr =
   | CondBranch of operand * variable * variable
   | Load of variable * typ * variable
   | Store of operand * typ * variable
+  | Alloc of variable * typ * int * int (* return variable, element type,
+                                           number of elements, alignment *)
 
 type func_def = FuncDef of variable * typ option * (typ * string) list * instr list
 

@@ -120,7 +120,7 @@ rule token = parse
   (*| "extractvalue" { EXTRACTVALUE }*)
   (*| "insertvalue" { INSERTVALUE }*)
   (* memory access and addressing operations *)
-  (*| "alloca" { ALLOCA }*)
+  | "alloca"  { ALLOCA }
   | "load" { LOAD }
   | "store" { STORE }
   (*| "fence" { FENCE }*)
