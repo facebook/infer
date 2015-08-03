@@ -42,6 +42,7 @@ type instr =
   | Store of operand * typ * variable
   | Alloc of variable * typ * int * int (* return variable, element type,
                                            number of elements, alignment *)
+  | Binop
 
 type func_def = FuncDef of variable * typ option * (typ * string) list * instr list
 

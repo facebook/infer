@@ -195,6 +195,7 @@ instr:
   | var = variable EQUALS LOAD tp = ptr_typ ptr = variable { Load (var, tp, ptr) }
   | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable { Store (value, val_tp, var) }
     (* don't yet know why val_tp and ptr_tp would be different *)
+  | variable EQUALS binop { Binop }
 
 binop:
   | ADD arith_options binop_args { () }
