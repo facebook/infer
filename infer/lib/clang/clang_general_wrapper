@@ -129,6 +129,12 @@ then
         if [ -n "$SYNTAX_ONLY" ]; then
             EXTRA_ARGS+=("-fsyntax-only")
         fi
+        if [ -z "$DEBUG_MODE" ]; then
+            # uglify json
+            EXTRA_ARGS+=(
+                "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
+                "-Xclang" "PRETTIFY_JSON=0")
+        fi
         unset IFS
 
         # using always the original clang command for several reasons:
