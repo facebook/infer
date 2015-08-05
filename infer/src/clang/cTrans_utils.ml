@@ -271,11 +271,8 @@ struct
     | For (_, cond, _, _) | While (cond, _) | DoWhile (cond, _) -> cond
 end
 
-let create_alloc_instrs context sil_loc function_type is_cf_non_null_alloc =
-  let fname = if is_cf_non_null_alloc then
-      SymExec.ModelBuiltins.__objc_alloc_no_fail
-    else
-      SymExec.ModelBuiltins.__objc_alloc in
+(** This function handles ObjC new/alloc and C++ new calls *)
+let create_alloc_instrs context sil_loc function_type fname =
   let function_type, function_type_np =
     match function_type with
     | Sil.Tptr (styp, Sil.Pk_pointer)
@@ -291,15 +288,20 @@ let create_alloc_instrs context sil_loc function_type is_cf_non_null_alloc =
   (function_type, ret_id, stmt_call, Sil.Var ret_id)
 
 let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc =
-  let (function_type, ret_id, stmt_call, exp) = create_alloc_instrs trans_state.context loc function_type is_cf_non_null_alloc in
+  let fname = if is_cf_non_null_alloc then
+      SymExec.ModelBuiltins.__objc_alloc_no_fail
+    else
+      SymExec.ModelBuiltins.__objc_alloc in
+  let (function_type, ret_id, stmt_call, exp) = create_alloc_instrs trans_state.context loc function_type fname in
   let res_trans_tmp = { empty_res_trans with ids =[ret_id]; instrs =[stmt_call]} in
   let res_trans =
     PriorityNode.compute_results_to_parent trans_state loc "Call alloc" stmt_info res_trans_tmp in
   { res_trans with exps =[(exp, function_type)]}
 
-let new_trans trans_state loc stmt_info cls_name function_type =
+let objc_new_trans trans_state loc stmt_info cls_name function_type =
+  let fname = SymExec.ModelBuiltins.__objc_alloc_no_fail in
   let (alloc_ret_type, alloc_ret_id, alloc_stmt_call, alloc_exp) =
-    create_alloc_instrs trans_state.context loc function_type true in
+    create_alloc_instrs trans_state.context loc function_type fname in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
   let call_flags = { Sil.cf_virtual = is_instance; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
@@ -311,7 +313,7 @@ let new_trans trans_state loc stmt_info cls_name function_type =
   let ids = [alloc_ret_id; init_ret_id] in
   let res_trans_tmp = { empty_res_trans with ids = ids; instrs = instrs } in
   let res_trans =
-    PriorityNode.compute_results_to_parent trans_state loc "Call new" stmt_info res_trans_tmp in
+    PriorityNode.compute_results_to_parent trans_state loc "Call objC new" stmt_info res_trans_tmp in
   { res_trans with exps = [(Sil.Var init_ret_id, alloc_ret_type)]}
 
 let new_or_alloc_trans trans_state loc stmt_info class_name selector =
@@ -319,8 +321,16 @@ let new_or_alloc_trans trans_state loc stmt_info class_name selector =
   if selector = CFrontend_config.alloc then
     alloc_trans trans_state loc stmt_info function_type true
   else if selector = CFrontend_config.new_str then
-    new_trans trans_state loc stmt_info class_name function_type
+    objc_new_trans trans_state loc stmt_info class_name function_type
   else assert false
+
+let cpp_new_trans trans_state sil_loc stmt_info function_type =
+  let fname = SymExec.ModelBuiltins.__new in
+  let (function_type, ret_id, stmt_call, exp) = create_alloc_instrs trans_state.context sil_loc function_type fname in
+  let res_trans_tmp = { empty_res_trans with ids =[ret_id]; instrs =[stmt_call]} in
+  let res_trans =
+    PriorityNode.compute_results_to_parent trans_state sil_loc "Call C++ new" stmt_info res_trans_tmp in
+  { res_trans with exps = [(exp, function_type)] }
 
 let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in

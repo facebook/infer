@@ -100,6 +100,8 @@ val alloc_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> Sil.ty
 
 val new_or_alloc_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> string -> string -> trans_result
 
+val cpp_new_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> Sil.typ -> trans_result
+
 val cast_trans : CContext.t -> (Sil.exp * Sil.typ) list -> Sil.location -> Procname.t option -> Sil.typ ->
   (Ident.t * Sil.instr * Sil.exp) option
 

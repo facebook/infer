@@ -1645,6 +1645,35 @@ struct
          { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
      | _ -> assert false)
 
+  and cxxNewExpr_trans trans_state stmt_info expr_info =
+    let context = trans_state.context in
+    let typ = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
+    let sil_loc = get_sil_location stmt_info trans_state.parent_line_number context in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    cpp_new_trans trans_state_pri sil_loc stmt_info typ
+  (* TODOs 7912220 - no usable information in json as of right now *)
+  (* 1. Handle __new_array *)
+  (* 2. Handle initialization values *)
+
+  and cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info =
+    let context = trans_state.context in
+    let sil_loc = get_sil_location stmt_info trans_state.parent_line_number context in
+    let fname = SymExec.ModelBuiltins.__delete in
+    let param = match stmt_list with [p] -> p | _ -> assert false in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let trans_state_param = { trans_state_pri with succ_nodes = [] } in
+    let result_trans_param = exec_with_self_exception instruction trans_state_param param in
+    let exp = extract_exp_from_list result_trans_param.exps
+        "WARNING: There should be one expression to delete. \n" in
+    (* function is void *)
+    let call_instr = Sil.Call ([], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
+    let instrs = result_trans_param.instrs @ [call_instr] in
+    let res_trans_tmp = { result_trans_param with instrs = instrs} in
+    let res_trans =
+      PriorityNode.compute_results_to_parent trans_state_pri sil_loc "Call delete" stmt_info res_trans_tmp in
+    { res_trans with exps = [] }
+
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -1845,6 +1874,10 @@ struct
                   "BinaryConditionalOperator not translated %s @."
                   (Ast_utils.string_of_stmt instr);
              assert false)
+    | CXXNewExpr (stmt_info, stmt_list, expr_info) ->
+        cxxNewExpr_trans trans_state stmt_info expr_info
+    | CXXDeleteExpr (stmt_info, stmt_list, expr_info) ->
+        cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);
