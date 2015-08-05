@@ -132,6 +132,8 @@
 %token <int> NUMBERED_LOCAL
 %token <string> IDENT
 
+%token <int> ATTRIBUTE_GROUP
+
 %token EOF
 
 %start prog
@@ -146,8 +148,11 @@ prog:
   | defs = list(func_def) EOF { Prog defs }
 
 func_def:
-  | DEFINE ret_tp = ret_typ name = variable LPAREN params = separated_list(COMMA, pair(typ, IDENT)) RPAREN instrs = block {
-    FuncDef (name, ret_tp, params, instrs) }
+  | DEFINE ret_tp = ret_typ name = variable LPAREN params =
+    separated_list(COMMA, pair(typ, IDENT)) RPAREN list(attribute_group) instrs = block { FuncDef (name, ret_tp, params, instrs) }
+
+attribute_group:
+  | i = ATTRIBUTE_GROUP { i }
 
 ret_typ:
   | VOID { None }
