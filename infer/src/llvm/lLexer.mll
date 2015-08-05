@@ -68,11 +68,11 @@ rule token = parse
   | "label" { LABEL }
   | "metadata" { METADATA }
 
-  | pos_int as size { SIZE (int_of_string size) }
+  | pos_int as size { CONSTANT_INT (int_of_string size) }
   (* CONSTANTS *)
-  | "true" { CONSTINT 1 }
-  | "false" { CONSTINT 0 }
-  | intlit as i { CONSTINT (int_of_string i) }
+  | "true" { CONSTANT_INT 1 }
+  | "false" { CONSTANT_INT 0 }
+  | intlit as i { CONSTANT_INT (int_of_string i) }
   (* floating point constants *)
   | "null" { NULL }
 
