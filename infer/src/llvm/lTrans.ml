@@ -55,7 +55,8 @@ let rec trans_instrs (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t)
           let new_sil_instr =
             Sil.Set (trans_variable var, trans_typ tp, trans_operand op, Sil.dummy_location) in
           (new_sil_instr :: sil_instrs, locals)
-      | Alloc (var, tp, _, _) ->
+      | Alloc (var, tp, num_elems) ->
+          (* num_elems currently ignored *)
           begin match var with
           | Global (Name var_name) | Local (Name var_name) ->
               let new_local = (Mangled.from_string var_name, trans_typ (Tptr tp)) in

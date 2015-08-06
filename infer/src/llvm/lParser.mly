@@ -93,8 +93,8 @@
 (*%token EXTRACTVALUE*)
 (*%token INSERTVALUE*)
 (* memory access and addressing operations *)
+%token ALIGN (* argument for below operations *)
 %token ALLOCA
-%token ALIGN (* argument for alloca *)
 %token LOAD
 %token STORE
 (*%token FENCE*)
@@ -190,16 +190,19 @@ block:
 
 instr:
   (* terminator instructions *)
-  | RET tp=typ op=operand { Ret (Some (tp, op)) }
+  | RET tp = typ op = operand { Ret (Some (tp, op)) }
   | RET VOID { Ret None }
-  | BR LABEL lbl=variable { UncondBranch lbl }
-  | BR BIT op=operand COMMA LABEL lbl1=variable COMMA LABEL lbl2=variable { CondBranch (op, lbl1, lbl2) }
+  | BR LABEL lbl = variable { UncondBranch lbl }
+  | BR BIT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
   (* Memory access operations *)
-  | var=variable EQUALS ALLOCA tp=typ (*COMMA ALIGN sz=CONSTANT_INT*) { Alloc (var, tp, 1, 1) }
-  | var = variable EQUALS LOAD tp = ptr_typ ptr = variable { Load (var, tp, ptr) }
-  | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable { Store (value, val_tp, var) }
+  | var = variable EQUALS ALLOCA tp = typ option(align) { Alloc (var, tp, 1) }
+  | var = variable EQUALS LOAD tp = ptr_typ ptr = variable option(align) { Load (var, tp, ptr) }
+  | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable option(align) { Store (value, val_tp, var) }
     (* don't yet know why val_tp and ptr_tp would be different *)
   | variable EQUALS binop { Binop }
+
+align:
+  | COMMA ALIGN sz = CONSTANT_INT { sz }
 
 binop:
   | ADD arith_options binop_args { () }
