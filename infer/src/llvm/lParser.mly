@@ -131,6 +131,10 @@
 %token <int> NUMBERED_LOCAL
 %token <string> IDENT
 
+%token <string> NAMED_METADATA
+%token <int> NUMBERED_METADATA
+%token METADATA_NODE
+
 %token <int> ATTRIBUTE_GROUP
 
 %token EOF
@@ -144,7 +148,14 @@
 %%
 
 prog:
-  | defs = list(func_def) EOF { Prog defs }
+  | defs = list(func_def) metadata_def* EOF { Prog defs }
+
+metadata_def:
+  | metadata_var EQUALS METADATA? METADATA_NODE { () }
+
+metadata_var:
+  | NAMED_METADATA { () }
+  | NUMBERED_METADATA { () }
 
 func_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN params =

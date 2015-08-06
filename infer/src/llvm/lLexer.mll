@@ -162,6 +162,10 @@ rule token = parse
   | '%' (nonneg_int as i) { NUMBERED_LOCAL (int_of_string i) }
   | id as str { IDENT str }
 
+  | '!' (id as str) { NAMED_METADATA str }
+  | '!' (nonneg_int as i) { NUMBERED_METADATA (int_of_string i) }
+  | '!' '{' [^ '\n']* '}' { METADATA_NODE }
+
   (* attribute groups *)
   | '#' (nonneg_int as i) { ATTRIBUTE_GROUP (int_of_string i) }
   | attribute_junk { token lexbuf }
