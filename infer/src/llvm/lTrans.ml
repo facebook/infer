@@ -33,23 +33,37 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
-let trans_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) : LAst.instr -> Sil.instr list =
-  let procname = Cfg.Procdesc.get_proc_name procdesc in
-  function
-  | Ret None -> []
-  | Ret (Some (tp, exp)) ->
-      let ret_var = Sil.get_ret_pvar procname in
-      [Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, Sil.dummy_location)]
-  | Load (var, tp, ptr) ->
-      [Sil.Letderef (ident_of_variable var, trans_variable ptr, trans_typ tp, Sil.dummy_location)]
-  | Store (op, tp, var) ->
-      [Sil.Set (trans_variable var, trans_typ tp, trans_operand op, Sil.dummy_location)]
-  | Alloc (var, tp, num_elems, alignment) ->
-      let mangled_var_name = Mangled.from_string (LAst.string_of_variable var) in
-      let pvar = Sil.mk_pvar mangled_var_name procname in
-      (* currently only declare one variable - num_elems is ignored *)
-      [Sil.Declare_locals ([(pvar, trans_typ (Tptr tp))], Sil.dummy_location)]
-  | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
+(* Generate list of SIL instructions and list of local variables *)
+let rec trans_instrs (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t)
+    : LAst.instr list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
+  | [] -> ([], [])
+  | h :: t ->
+      let (sil_instrs, locals) = trans_instrs cfg procdesc t in
+      begin match h with
+      | Ret None -> (sil_instrs, locals)
+      | Ret (Some (tp, exp)) ->
+          let procname = Cfg.Procdesc.get_proc_name procdesc in
+          let ret_var = Sil.get_ret_pvar procname in
+          let new_sil_instr =
+            Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, Sil.dummy_location) in
+          (new_sil_instr :: sil_instrs, locals)
+      | Load (var, tp, ptr) ->
+          let new_sil_instr =
+            Sil.Letderef (ident_of_variable var, trans_variable ptr, trans_typ tp, Sil.dummy_location) in
+          (new_sil_instr :: sil_instrs, locals)
+      | Store (op, tp, var) ->
+          let new_sil_instr =
+            Sil.Set (trans_variable var, trans_typ tp, trans_operand op, Sil.dummy_location) in
+          (new_sil_instr :: sil_instrs, locals)
+      | Alloc (var, tp, _, _) ->
+          begin match var with
+          | Global (Name var_name) | Local (Name var_name) ->
+              let new_local = (Mangled.from_string var_name, trans_typ (Tptr tp)) in
+              (sil_instrs, new_local :: locals)
+          | _ -> raise (ImproperTypeError "Not expecting alloca instruction to a numbered variable.")
+          end
+      | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
+      end
 
 (* Update CFG and call graph with new function definition *)
 let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
@@ -87,17 +101,19 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
       let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
       let exit_kind = Cfg.Node.Exit_node procdesc in
       let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
-      let node_of_instr (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (instr : LAst.instr) : Cfg.Node.t =
+      let node_of_sil_instr cfg procdesc sil_instr =
         Cfg.Node.create cfg Sil.dummy_location (Cfg.Node.Stmt_node "method_body")
-            (trans_instr cfg procdesc instr) procdesc [] in
+            [sil_instr] procdesc [] in
       let rec link_nodes (start_node : Cfg.Node.t) : Cfg.Node.t list -> unit = function
         (* link all nodes in a chain for now *)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
         | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
-      let nodes = List.map (node_of_instr cfg procdesc) instrs in
+      let (sil_instrs, locals) = trans_instrs cfg procdesc instrs in
+      let nodes = Utils.list_map (node_of_sil_instr cfg procdesc) sil_instrs in
       Cfg.Procdesc.set_start_node procdesc start_node;
       Cfg.Procdesc.set_exit_node procdesc exit_node;
       link_nodes start_node nodes;
+      Cfg.Node.add_locals_ret_declaration start_node locals;
       Cg.add_node cg procname
 
 let trans_prog : LAst.prog -> Cfg.cfg * Cg.t * Sil.tenv = function
