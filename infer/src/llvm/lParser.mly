@@ -153,7 +153,7 @@
 %%
 
 prog:
-  | targets defs = list(func_def) metadata_def* EOF { Prog defs }
+  | targets defs = func_def* metadata_def* EOF { Prog defs }
 
 targets:
   | { (None, None) }
@@ -177,7 +177,7 @@ metadata_var:
 
 func_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN
-    params = separated_list(COMMA, pair(typ, IDENT)) RPAREN list(attribute_group)
+    params = separated_list(COMMA, pair(typ, IDENT)) RPAREN attribute_group*
     annotated_instrs = block { FuncDef (name, ret_tp, params, annotated_instrs) }
 
 attribute_group:
@@ -216,7 +216,7 @@ ptr_typ:
   | tp = typ STAR { tp }
 
 block:
-  | LBRACE annotated_instrs = list(annotated_instr) RBRACE { annotated_instrs }
+  | LBRACE annotated_instrs = annotated_instr* RBRACE { annotated_instrs }
 
 annotated_instr:
   | instruction=instr anno=annotation? { (instruction, anno) }
@@ -231,9 +231,9 @@ instr:
   | BR LABEL lbl = variable { UncondBranch lbl }
   | BR BIT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
   (* Memory access operations *)
-  | var = variable EQUALS ALLOCA tp = typ option(align) { Alloc (var, tp, 1) }
-  | var = variable EQUALS LOAD tp = ptr_typ ptr = variable option(align) { Load (var, tp, ptr) }
-  | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable option(align) { Store (value, val_tp, var) }
+  | var = variable EQUALS ALLOCA tp = typ align? { Alloc (var, tp, 1) }
+  | var = variable EQUALS LOAD tp = ptr_typ ptr = variable align? { Load (var, tp, ptr) }
+  | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable align? { Store (value, val_tp, var) }
     (* don't yet know why val_tp and ptr_tp would be different *)
   | variable EQUALS binop { Binop }
 
@@ -247,16 +247,16 @@ binop:
   | FSUB fast_math_flags binop_args { () }
   | MUL binop_args { () }
   | FMUL fast_math_flags binop_args { () }
-  | UDIV option(EXACT) binop_args { () }
-  | SDIV option(EXACT) binop_args { () }
+  | UDIV EXACT? binop_args { () }
+  | SDIV EXACT? binop_args { () }
   | FDIV fast_math_flags binop_args { () }
   | UREM binop_args { () }
   | SREM binop_args { () }
   | FREM fast_math_flags binop_args { () }
   (* bitwise *)
   | SHL arith_options binop_args { () }
-  | LSHR option(EXACT) binop_args { () }
-  | ASHR option(EXACT) binop_args { () }
+  | LSHR EXACT? binop_args { () }
+  | ASHR EXACT? binop_args { () }
   | AND binop_args { () }
   | OR binop_args { () }
   | XOR binop_args { () }
@@ -265,10 +265,10 @@ binop:
   | INSERTELEMENT vector_typ operand COMMA typ operand COMMA typ operand { () }
 
 arith_options:
-  | option(NUW) option(NSW) { () }
+  | NUW? NSW? { () }
 
 fast_math_flags:
-  | option(NNAN) option(NINF) option(NSZ) option(ARCP) option(FAST) { () }
+  | NNAN? NINF? NSZ? ARCP? FAST? { () }
 
 binop_args:
   | typ operand COMMA operand { () }
