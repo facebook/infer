@@ -31,12 +31,16 @@ let id = id_char (id_char | digit)*
 
 (* definition of attribute group - not used for now *)
 let attribute_junk = "attributes" [^ '\n']*
+let string_content = [^ '"']*
 
 rule token = parse
   | space | comment { token lexbuf }
   | newline { token lexbuf }
 
   (* keywords *)
+  | "target" { TARGET }
+  | "datalayout" { DATALAYOUT }
+  | "triple" { TRIPLE }
   | "define" { DEFINE }
 
   (* delimiters *)
@@ -68,7 +72,7 @@ rule token = parse
   | "label" { LABEL }
   | "metadata" { METADATA }
 
-  | pos_int as size { CONSTANT_INT (int_of_string size) }
+  | '"' (string_content as str) '"' { CONSTANT_STRING str }
   (* CONSTANTS *)
   | "true" { CONSTANT_INT 1 }
   | "false" { CONSTANT_INT 0 }

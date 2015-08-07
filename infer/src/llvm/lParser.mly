@@ -11,6 +11,9 @@
 %}
 
 (* keywords *)
+%token TARGET
+%token DATALAYOUT
+%token TRIPLE
 %token DEFINE
 
 (* delimiters *)
@@ -42,6 +45,7 @@
 %token LABEL
 %token METADATA
 
+%token <string> CONSTANT_STRING
 (* CONSTANTS *)
 %token <int> CONSTANT_INT
 %token NULL
@@ -148,7 +152,20 @@
 %%
 
 prog:
-  | defs = list(func_def) metadata_def* EOF { Prog defs }
+  | targets defs = list(func_def) metadata_def* EOF { Prog defs }
+
+targets:
+  | { (None, None) }
+  | dl = datalayout { (Some dl, None) }
+  | tt = target_triple { (None, Some tt) }
+  | dl = datalayout tt = target_triple { (Some dl, Some tt) }
+  | tt = target_triple dl = datalayout { (Some dl, Some tt) }
+
+datalayout:
+  | TARGET DATALAYOUT EQUALS str = CONSTANT_STRING { str }
+
+target_triple:
+  | TARGET TRIPLE EQUALS str = CONSTANT_STRING { str }
 
 metadata_def:
   | metadata_var EQUALS METADATA? METADATA_NODE { () }
