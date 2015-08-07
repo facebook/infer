@@ -34,12 +34,12 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
 (* Generate list of SIL instructions and list of local variables *)
-let rec trans_instrs (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t)
-    : LAst.instr list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
+let rec trans_annotated_instrs (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t)
+    : LAst.annotated_instr list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
   | [] -> ([], [])
   | h :: t ->
-      let (sil_instrs, locals) = trans_instrs cfg procdesc t in
-      begin match h with
+      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc t in
+      begin match fst h with
       | Ret None -> (sil_instrs, locals)
       | Ret (Some (tp, exp)) ->
           let procname = Cfg.Procdesc.get_proc_name procdesc in
@@ -68,7 +68,7 @@ let rec trans_instrs (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t)
 
 (* Update CFG and call graph with new function definition *)
 let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
-    FuncDef (func_name, ret_tp_opt, params, instrs) ->
+    FuncDef (func_name, ret_tp_opt, params, annotated_instrs) ->
       let (proc_attrs : Sil.proc_attributes) =
         let open Sil in
         { access = Sil.Default;
@@ -109,7 +109,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
         (* link all nodes in a chain for now *)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
         | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
-      let (sil_instrs, locals) = trans_instrs cfg procdesc instrs in
+      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc annotated_instrs in
       let nodes = Utils.list_map (node_of_sil_instr cfg procdesc) sil_instrs in
       Cfg.Procdesc.set_start_node procdesc start_node;
       Cfg.Procdesc.set_exit_node procdesc exit_node;

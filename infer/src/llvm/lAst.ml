@@ -43,7 +43,11 @@ type instr =
   | Alloc of variable * typ * int (* return variable, element type, number of elements *)
   | Binop
 
-type func_def = FuncDef of variable * typ option * (typ * string) list * instr list
+type annotation = Annotation of int
+
+type annotated_instr = instr * annotation option
+
+type func_def = FuncDef of variable * typ option * (typ * string) list * annotated_instr list
 
 type prog = Prog of func_def list
 

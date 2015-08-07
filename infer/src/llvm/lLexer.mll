@@ -166,6 +166,7 @@ rule token = parse
   | '%' (nonneg_int as i) { NUMBERED_LOCAL (int_of_string i) }
   | id as str { IDENT str }
 
+  | "!dbg" { DEBUG_ANNOTATION }
   | '!' (id as str) { NAMED_METADATA str }
   | '!' (nonneg_int as i) { NUMBERED_METADATA (int_of_string i) }
   | '!' '{' [^ '\n']* '}' { METADATA_NODE }

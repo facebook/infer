@@ -135,6 +135,7 @@
 %token <int> NUMBERED_LOCAL
 %token <string> IDENT
 
+%token DEBUG_ANNOTATION
 %token <string> NAMED_METADATA
 %token <int> NUMBERED_METADATA
 %token METADATA_NODE
@@ -175,8 +176,9 @@ metadata_var:
   | NUMBERED_METADATA { () }
 
 func_def:
-  | DEFINE ret_tp = ret_typ name = variable LPAREN params =
-    separated_list(COMMA, pair(typ, IDENT)) RPAREN list(attribute_group) instrs = block { FuncDef (name, ret_tp, params, instrs) }
+  | DEFINE ret_tp = ret_typ name = variable LPAREN
+    params = separated_list(COMMA, pair(typ, IDENT)) RPAREN list(attribute_group)
+    annotated_instrs = block { FuncDef (name, ret_tp, params, annotated_instrs) }
 
 attribute_group:
   | i = ATTRIBUTE_GROUP { i }
@@ -214,7 +216,13 @@ ptr_typ:
   | tp = typ STAR { tp }
 
 block:
-  | LBRACE instrs = list(instr) RBRACE { instrs }
+  | LBRACE annotated_instrs = list(annotated_instr) RBRACE { annotated_instrs }
+
+annotated_instr:
+  | instruction=instr anno=annotation? { (instruction, anno) }
+
+annotation:
+  | COMMA DEBUG_ANNOTATION i=NUMBERED_METADATA { Annotation i }
 
 instr:
   (* terminator instructions *)
