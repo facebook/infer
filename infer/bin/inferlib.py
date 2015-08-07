@@ -616,9 +616,6 @@ class Infer:
             '-analyzer', self.args.analyzer
         ]
 
-        if self.args.specs_dirs:
-            infer_print_options += self.args.specs_dirs
-
         exit_status = subprocess.check_call(
             infer_print_cmd + infer_print_options
         )
