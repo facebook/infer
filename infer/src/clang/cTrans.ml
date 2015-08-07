@@ -1874,9 +1874,9 @@ struct
                   "BinaryConditionalOperator not translated %s @."
                   (Ast_utils.string_of_stmt instr);
              assert false)
-    | CXXNewExpr (stmt_info, stmt_list, expr_info) ->
+    | CXXNewExpr (stmt_info, stmt_list, expr_info, _) ->
         cxxNewExpr_trans trans_state stmt_info expr_info
-    | CXXDeleteExpr (stmt_info, stmt_list, expr_info) ->
+    | CXXDeleteExpr (stmt_info, stmt_list, expr_info, _) ->
         cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
