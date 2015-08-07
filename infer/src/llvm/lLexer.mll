@@ -166,10 +166,12 @@ rule token = parse
   | '%' (nonneg_int as i) { NUMBERED_LOCAL (int_of_string i) }
   | id as str { IDENT str }
 
+  (* METADATA *)
   | "!dbg" { DEBUG_ANNOTATION }
   | '!' (id as str) { NAMED_METADATA str }
   | '!' (nonneg_int as i) { NUMBERED_METADATA (int_of_string i) }
-  | '!' '{' [^ '\n']* '}' { METADATA_NODE }
+  | '!' '"' ([^ '"']* as str) '"' { METADATA_STRING str }
+  | "!{" { METADATA_NODE_BEGIN }
 
   (* attribute groups *)
   | '#' (nonneg_int as i) { ATTRIBUTE_GROUP (int_of_string i) }

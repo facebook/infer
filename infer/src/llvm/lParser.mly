@@ -138,7 +138,8 @@
 %token DEBUG_ANNOTATION
 %token <string> NAMED_METADATA
 %token <int> NUMBERED_METADATA
-%token METADATA_NODE
+%token <string> METADATA_STRING
+%token METADATA_NODE_BEGIN
 
 %token <int> ATTRIBUTE_GROUP
 
@@ -169,11 +170,22 @@ target_triple:
   | TARGET TRIPLE EQUALS str = CONSTANT_STRING { str }
 
 metadata_def:
-  | metadata_var EQUALS METADATA? METADATA_NODE { () }
+  | metadata_var EQUALS metadata_node { () }
 
 metadata_var:
   | NAMED_METADATA { () }
   | NUMBERED_METADATA { () }
+
+metadata_node:
+  | METADATA? METADATA_NODE_BEGIN separated_list(COMMA, metadata_component) RBRACE { () }
+
+metadata_component:
+  | tp = typ? op = operand { () }
+  | METADATA? metadata_value { () }
+
+metadata_value:
+  | metadata_var { () }
+  | METADATA_STRING { () }
 
 func_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN
