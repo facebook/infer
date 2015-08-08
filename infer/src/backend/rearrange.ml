@@ -939,7 +939,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
     list_exists
       (fun hpred ->
          match hpred with
-         | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (exp, _), _)
+         | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var _ as exp, _), _)
            when Sil.exp_equal exp deref_exp && Annotations.param_is_nullable pvar ann_sig ->
              nullable_obj_str := Sil.pvar_to_string pvar;
              true
