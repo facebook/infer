@@ -179,6 +179,9 @@ let idempotent_getters = ref true
 (** Flag set when running in a child process (thus changes to global state will be lost *)
 let in_child_process = ref false
 
+(** if true, changes to code are checked at the procedure level; if false, at the file level *)
+let incremental_procs = ref false
+
 (** Flag to activate intraprocedural-only analysis *)
 let intraprocedural = ref false
 

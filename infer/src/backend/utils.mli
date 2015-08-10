@@ -39,6 +39,9 @@ val triple_compare : ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('e -> 'f -> int)
 (** Generic comparison of lists given a compare function for the elements of the list *)
 val list_compare : ('a -> 'b -> int) -> 'a list -> 'b list -> int
 
+(** Generic equality of lists given a compare function for the elements of the list *)
+val list_equal : ('a -> 'b -> int) -> 'a list -> 'b list -> bool
+
 (** Comparison for strings *)
 val string_compare : string -> string -> int
 

@@ -76,6 +76,8 @@ let list_sort = List.sort
 let list_stable_sort = List.stable_sort
 let list_tl = List.tl
 
+
+
 (** tail-recursive variant of List.fold_right *)
 let list_fold_right f l a =
   let g x y = f y x in
@@ -133,6 +135,10 @@ let rec list_compare compare l1 l2 =
   | x1:: l1', x2:: l2' ->
       let n = compare x1 x2 in
       if n <> 0 then n else list_compare compare l1' l2'
+
+(** Generic equality of lists given a compare function for the elements of the list *)
+let list_equal compare l1 l2 =
+  list_compare compare l1 l2 = 0
 
 (** Returns (reverse input_list) *)
 let rec list_rev_with_acc acc = function

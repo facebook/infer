@@ -54,6 +54,7 @@ module Node = struct
     mutable pd_loc : Sil.location; (** location of this procedure in the source code *)
     mutable pd_flags : proc_flags; (** flags for the procedure *)
     pd_err_log: Errlog.t; (** error log at translation time *)
+    mutable pd_changed : bool; (** true if proc has changed since last analysis *)
   }
 
   let exn_handler_kind = Stmt_node "exception handler"
@@ -71,6 +72,41 @@ module Node = struct
       node_list = ref [];
       name_pdesc_tbl = Procname.Hash.create 1000;
       priority_set = Procname.Set.empty }
+
+  (** compute the list of procedures added or changed in [cfg_new] over [cfg_old] *)
+  let mark_unchanged_pdescs cfg_new cfg_old =
+    let pdescs_eq pd1 pd2 =
+      (* formals are the same if their types are the same *)
+      let formals_eq formals1 formals2 =
+        list_equal (fun (_, typ1) (_, typ2) -> Sil.typ_compare typ1 typ2) formals1 formals2 in
+      let nodes_eq n1s n2s =
+        (* nodes are the same if they have the same id, instructions, and succs/preds *)
+        let node_eq n1 n2 =
+          let id_compare n1 n2 = Pervasives.compare n1.nd_id n2.nd_id in
+          let instrs_eq instrs1 instrs2 =
+            (* TODO (t7941664) : Sil.instr_compare looks at locs and variable names. we could mark
+               more code as unchanged if we ignored these details. *)
+            list_equal (fun i1 i2 -> Sil.instr_compare i1 i2) instrs1 instrs2 in
+          id_compare n1 n2 = 0 &&
+          list_equal id_compare n1.nd_succs n2.nd_succs &&
+          list_equal id_compare n1.nd_preds n2.nd_preds &&
+          instrs_eq n1.nd_instrs n2.nd_instrs in
+        try
+          list_for_all2 node_eq n1s n2s
+        with Invalid_argument _ -> false in
+      pd1.pd_is_defined = pd2.pd_is_defined &&
+      Sil.typ_equal pd1.pd_ret_type pd2.pd_ret_type &&
+      formals_eq pd1.pd_formals pd2.pd_formals &&
+      nodes_eq pd1.pd_nodes pd2.pd_nodes in
+    let old_procs = cfg_old.name_pdesc_tbl in
+    let new_procs = cfg_new.name_pdesc_tbl in
+    let mark_pdesc_if_unchanged pname new_pdesc =
+      try
+        let old_pdesc = Procname.Hash.find old_procs pname in
+        if pdescs_eq old_pdesc new_pdesc then
+          new_pdesc.pd_changed <- false
+      with Not_found -> () in
+    Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 
   let compute_enabled_verbose = false
 
@@ -112,6 +148,12 @@ module Node = struct
 
   let proc_name_to_proc_desc cfg proc_name =
     pdesc_tbl_find cfg proc_name
+
+  let proc_name_is_changed cfg proc_name =
+    try
+      let pdesc = proc_name_to_proc_desc cfg proc_name in
+      pdesc.pd_changed
+    with Not_found -> true
 
   let iter_proc_desc cfg f =
     Procname.Hash.iter f cfg.name_pdesc_tbl
@@ -621,6 +663,12 @@ let save_source_files cfg =
 (** Save a cfg into a file *)
 let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg: cfg) =
   if save_sources then save_source_files cfg;
+  if !Config.incremental_procs then
+    begin
+      match load_cfg_from_file filename with
+      | Some old_cfg -> Node.mark_unchanged_pdescs cfg old_cfg
+      | None -> ()
+    end;
   Serialization.to_file cfg_serializer filename cfg
 
 (* =============== START of module Procdesc =============== *)
@@ -659,6 +707,7 @@ module Procdesc = struct
         pd_loc = b.loc;
         pd_flags = proc_flags_empty ();
         pd_err_log = Errlog.empty ();
+        pd_changed = true
       } in
     pdesc_tbl_add b.cfg b.name pdesc;
     pdesc
@@ -950,6 +999,10 @@ let get_block_pdesc cfg block =
     let block_pdesc = list_find is_block_pdesc pdescs in
     Some block_pdesc
   with Not_found -> None
+
+(** return true if the pdesc associated with [pname] changed since the last analysis run or did
+    not exist in the last analysis run *)
+let pdesc_is_changed cfg pname = Node.proc_name_is_changed cfg pname
 
 (** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
 let remove_seed_captured_vars_block captured_vars prop =
