@@ -60,7 +60,6 @@ rule token = parse
 
   (* TYPES *)
   | "void" { VOID }
-  | "i1" { BIT (* INT 1 *) }
   | 'i' (pos_int as width) { INT (int_of_string width) }
   | "half" { HALF }
   | "float" { FLOAT }

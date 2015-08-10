@@ -33,7 +33,6 @@
 
 (* TYPES *)
 %token VOID
-%token BIT (* i1 *)
 %token <int> INT
 %token HALF
 %token FLOAT
@@ -241,7 +240,7 @@ instr:
   | RET tp = typ op = operand { Ret (Some (tp, op)) }
   | RET VOID { Ret None }
   | BR LABEL lbl = variable { UncondBranch lbl }
-  | BR BIT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
+  | BR i=INT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
   (* Memory access operations *)
   | var = variable EQUALS ALLOCA tp = typ align? { Alloc (var, tp, 1) }
   | var = variable EQUALS LOAD tp = ptr_typ ptr = variable align? { Load (var, tp, ptr) }
