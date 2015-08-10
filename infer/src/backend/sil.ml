@@ -14,8 +14,6 @@ module L = Logging
 module F = Format
 open Utils
 
-let () = if CheckCopyright.active then CheckCopyright.check ()
-
 (** {2 Programs and Types} *)
 
 (** Type to represent one @Annotation. *)

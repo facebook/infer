@@ -37,6 +37,7 @@ GLOBAL_LIBS = unix str
 BUILDDIR = ../_build-infer
 ANNOTDIR = $(ROOT)/infer/src/_build
 BINDIR = $(ROOT)/infer/bin
+SCRIPTDIR = $(ROOT)/scripts
 
 ifneq ($(wildcard $(BUILDDIR)/sanitize.sh),)
 	SANITIZE_SCRIPT = $(BUILDDIR)/sanitize.sh
@@ -111,6 +112,13 @@ LLVM_SOURCES = llvm
 INFERLLVM_MAIN = $(LLVM_SOURCES)/lMain
 INFERLLVM_BINARY = $(BINDIR)/InferLLVM
 
+#### scripts declarations ####
+
+SCRIPT_SOURCES = scripts
+
+CHECKCOPYRIGHT_BINARY = $(SCRIPTDIR)/checkCopyright
+CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
+
 #### End of declarations ####
 
 # Check whether .facebook file exists in a root directory.
@@ -125,15 +133,17 @@ DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/g
 
 OCAMLBUILD = ocamlbuild -build-dir $(BUILDDIR) -j 0 $(addprefix -I , $(DEPENDENCIES)) $(GLOBAL_OPTIONS) $(ATDGEN_OPTIONS)  $(JAVA_OPTIONS)
 
-.PHONY: all java clang llvm build_java build_clang build_llvm annotations init sanitize version clean
+.PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright annotations init sanitize version clean
 
-all: java clang llvm
+all: java clang llvm checkCopyright
 
 java: build_java annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY)
 
 clang: build_clang annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERCLANG_BINARY)
 
 llvm: build_llvm annotations $(INFERLLVM_BINARY)
+
+checkCopyright: build_checkCopyright annotations $(CHECKCOPYRIGHT_BINARY)
 
 build_java: init $(INFERPRINT_ATDGEN_STUBS)
 	$(OCAMLBUILD) $(TYPEPROP_MAIN).native $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERJAVA_MAIN).native
@@ -144,11 +154,14 @@ build_clang: init $(INFERPRINT_ATDGEN_STUBS) check_clang_plugin $(CLANG_ATDGEN_S
 build_llvm:
 	$(OCAMLBUILD) -use-menhir $(INFERLLVM_MAIN).native
 
+build_checkCopyright:
+	$(OCAMLBUILD) -I $(SCRIPT_SOURCES) $(CHECKCOPYRIGHT_MAIN).native
+
 annotations:
 	rsync -r --delete --exclude=*.ml* --exclude=*.o --exclude=*.cm* --exclude=*.native $(BUILDDIR)/* $(ANNOTDIR)
 
 check_clang_plugin:
-	$(ROOT)/scripts/check_clang_plugin_version.sh $(CLANG_PLUGIN_ROOT)
+	$(SCRIPTDIR)/check_clang_plugin_version.sh $(CLANG_PLUGIN_ROOT)
 
 $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
 	atdgen -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
@@ -214,7 +227,10 @@ $(INFERLLVM_BINARY): $(BUILDDIR)/$(INFERLLVM_MAIN).native
 $(TYPEPROP_BINARY): $(BUILDDIR)/$(TYPEPROP_MAIN).native
 	$(COPY) $(BUILDDIR)/$(TYPEPROP_MAIN).native $(TYPEPROP_BINARY)
 
+$(CHECKCOPYRIGHT_BINARY): $(BUILDDIR)/$(CHECKCOPYRIGHT_MAIN).native
+	$(COPY) $(BUILDDIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BINARY)
+
 clean: $(BUILDDIR)
 	$(OCAMLBUILD) -clean
 	$(REMOVE_DIR) $(ANNOTDIR)
-	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY) $(INFERLLVM_BINARY)
+	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY) $(INFERLLVM_BINARY) $(CHECKCOPYRIGHT_BINARY)

@@ -65,6 +65,7 @@ buck-out/
 /infer/lib/specs/cpp_models
 /infer/lib/specs/objc_models
 /infer/lib/specs/clean_models
+/scripts/checkCopyright
 
 #atdgen stubs
 /infer/src/backend/jsonbug_*

@@ -31,11 +31,8 @@ let lang_of_com_style style =
   else if style = comment_style_shell then "shell"
   else "??unknown??"
 
-(** If active, check copyright messages and exit. *)
-let active = Config.from_env_variable "INFER_CHECK_COPYRIGHT"
-
 (** If true, update the copyright message of the files. *)
-let update_files = true
+let update_files = ref false
 
 let line_contains_copyright line =
   string_contains "opyright " line
@@ -175,61 +172,56 @@ let file_should_have_copyright fname lines =
   list_exists (Filename.check_suffix fname) extensions
 
 
-let get_files_from_git () =
-  let tmpfile = Filename.temp_file "git_ls" "" in
-  let _ = Sys.command ("git ls-files >" ^ tmpfile) in
-  let git_files = match read_file tmpfile with
-    | Some git_files -> git_files
-    | None -> [] in
-  Sys.remove tmpfile;
-  git_files
+let check_copyright fname = match read_file fname with
+  | None -> ()
+  | Some lines ->
+      match find_copyright_line lines 0 with
+      | None ->
+          if file_should_have_copyright fname lines
+          then L.stderr "Copyright not found in %s@." fname
+      | Some n ->
+          let lines_arr = Array.of_list lines in
+          let line = lines_arr.(n) in
+          let len = String.length line in
+          let (cstart, com_style) = find_comment_start_and_style lines_arr n in
+          let cend = find_comment_end lines_arr n com_style in
+          if looks_like_copyright_message cstart cend lines_arr then
+            begin
+              let mono = contains_monoidics cstart cend lines_arr in
+              match get_fb_year cstart cend lines_arr with
+              | None ->
+                  L.stderr "Can't find fb year: %s@." fname
+              | Some fb_year ->
+                  let prefix = if com_style = comment_style_ocaml then " " else "" in
+                  if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
+                    begin
+                      let range = cend - cstart in
+                      let lang = lang_of_com_style com_style in
+                      L.stdout "%s (start:%d n:%d end:%d len:%d range:%d lang:%s mono:%b year:%d)@."
+                        fname cstart n cend len range lang mono fb_year;
+                      for i = cstart to cend do
+                        L.stdout "  %s@." lines_arr.(i)
+                      done;
+                      L.stdout "-----@.";
+                      L.stdout "  @[<v>%a@]" (pp_copyright mono fb_year com_style) prefix;
+                      L.flush_streams ();
+                      if !update_files then
+                        update_file fname mono fb_year com_style prefix cstart cend lines_arr
+                    end
+            end
+          else
+            L.stderr "Copyright not recognized: %s@." fname
 
+let speclist = [
+  ("-i", Arg.Set update_files, "Update copyright notice in-place");
+]
 
-let check_copyright () =
-  let check_file fname =
-    match read_file fname with
-    | None -> ()
-    | Some lines ->
-        begin
-          match find_copyright_line lines 0 with
-          | None ->
-              if file_should_have_copyright fname lines
-              then L.stderr "Copyright not found in %s@." fname
-          | Some n ->
-              let lines_arr = Array.of_list lines in
-              let line = lines_arr.(n) in
-              let len = String.length line in
-              let (cstart, com_style) = find_comment_start_and_style lines_arr n in
-              let cend = find_comment_end lines_arr n com_style in
-              if looks_like_copyright_message cstart cend lines_arr then
-                begin
-                  let mono = contains_monoidics cstart cend lines_arr in
-                  match get_fb_year cstart cend lines_arr with
-                  | None ->
-                      L.stderr "Can't find fb year: %s@." fname
-                  | Some fb_year ->
-                      let prefix = if com_style = comment_style_ocaml then " " else "" in
-                      if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
-                        begin
-                          let range = cend - cstart in
-                          let lang = lang_of_com_style com_style in
-                          L.stdout "%s (start:%d n:%d end:%d len:%d range:%d lang:%s mono:%b year:%d)@."
-                            fname cstart n cend len range lang mono fb_year;
-                          for i = cstart to cend do
-                            L.stdout "  %s@." lines_arr.(i)
-                          done;
-                          L.stdout "-----@.";
-                          L.stdout "  @[<v>%a@]" (pp_copyright mono fb_year com_style) prefix;
-                          L.flush_streams ();
-                          if update_files then
-                            update_file fname mono fb_year com_style prefix cstart cend lines_arr
-                        end
-                end
-              else
-                L.stderr "Copyright not recognized: %s@." fname
-        end in
-  list_iter check_file (get_files_from_git ());
+let usage_msg = "checkCopyright [-i] file1 ..."
+
+let () =
+  let to_check = ref [] in
+  let add_file_to_check fname =
+    to_check := fname :: !to_check in
+  Arg.parse speclist add_file_to_check usage_msg;
+  list_iter check_copyright (list_rev !to_check);
   exit 0
-
-let check () =
-  if active then check_copyright ()
