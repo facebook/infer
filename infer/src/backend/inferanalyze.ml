@@ -672,20 +672,20 @@ let load_cg_files _exe_env check_changed (source_dirs : DB.source_dir list) excl
 (** Create an exe_env from a cluster. *)
 let exe_env_from_cluster cluster =
   let _exe_env = Exe_env.create (Some (cluster_to_active_procs cluster)) in
-  let exclude_fun _ = false in
-  let callees = ref [] in
-  let source_files =
-    let do_cluster_elem ce =
-      let source_map = ce.ce_source_map in
-      let do_callee pn file =
-        callees := (pn, file) :: !callees in
-      Procname.Map.iter do_callee source_map;
-      DB.source_dir_from_source_file ce.ce_file in
-    list_map do_cluster_elem cluster in
-  let _, exe_env = load_cg_files _exe_env false source_files exclude_fun in
+  let source_files, callees =
+    let fold_callees pn file callees =
+      (pn, file) :: callees in
+    let fold_cluster_elem (source_files, callees) ce =
+      let callees = Procname.Map.fold fold_callees ce.ce_source_map callees in
+      let source_files = DB.source_dir_from_source_file ce.ce_file :: source_files in
+      source_files, callees in
+    list_fold_left fold_cluster_elem ([], []) cluster in
+  let sorted_files = list_sort DB.source_dir_compare source_files in
+  list_iter (fun src_dir -> ignore(Exe_env.add_cg _exe_env src_dir)) sorted_files;
+  let exe_env = Exe_env.freeze _exe_env in
   let do_callee (pn, file) =
     Exe_env.add_callee exe_env file pn in
-  list_iter do_callee !callees;
+  list_iter do_callee callees;
   exe_env
 
 (** Analyze a cluster of files *)
