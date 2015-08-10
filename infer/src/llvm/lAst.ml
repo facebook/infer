@@ -31,6 +31,7 @@ type typ =
   | Tptr of typ
   | Tvector of int * typ
   | Tarray of int * typ
+  | Tfunc of typ option * typ list
   | Tlabel
   | Tmetadata
 

@@ -30,6 +30,7 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tptr tp -> Sil.Tptr (trans_typ tp, Sil.Pk_pointer)
   | Tvector (i, tp)
   | Tarray (i, tp) -> Sil.Tarray (trans_typ tp, Sil.Const (Sil.Cint (Sil.Int.of_int i)))
+  | Tfunc _ -> Sil.Tfun false
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 

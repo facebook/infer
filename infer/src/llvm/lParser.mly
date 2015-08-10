@@ -188,7 +188,7 @@ metadata_value:
 
 func_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN
-    params = separated_list(COMMA, pair(typ, IDENT)) RPAREN attribute_group*
+    params = separated_list(COMMA, pair(first_class_typ, IDENT)) RPAREN attribute_group*
     annotated_instrs = block { FuncDef (name, ret_tp, params, annotated_instrs) }
 
 attribute_group:
@@ -196,9 +196,16 @@ attribute_group:
 
 ret_typ:
   | VOID { None }
-  | tp = typ { Some tp }
+  | tp = first_class_typ { Some tp }
 
 typ:
+  | tp = func_typ { tp }
+  | tp = first_class_typ { tp }
+
+func_typ:
+  | ret_tp = ret_typ LPAREN param_tps = separated_list(COMMA, first_class_typ) RPAREN { Tfunc (ret_tp, param_tps) }
+
+first_class_typ:
   | tp = element_typ { tp }
   (*| X86_MMX { () }*)
   | tp = vector_typ { tp }
