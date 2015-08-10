@@ -242,19 +242,21 @@ and decl_process_locs loc_composer decl =
     let decl1 = Clang_ast_proj.update_decl_tuple update decl in
     let decl_list' = list_map (decl_process_locs loc_composer) decl_list in
     decl_set_sub_decls decl1 decl_list' in
+  let get_updated_fun_decl (decl_info', name, qt, fdecl_info) =
+    let fdi_decls_in_prototype_scope' =
+      list_map (decl_process_locs loc_composer) fdecl_info.fdi_decls_in_prototype_scope in
+    let fdi_parameters' =
+      list_map (decl_process_locs loc_composer) fdecl_info.fdi_parameters in
+    let body' = Option.map (stmt_process_locs loc_composer) fdecl_info.fdi_body in
+    let fdecl_info' =
+      { fdecl_info with
+        fdi_body = body';
+        fdi_parameters = fdi_parameters';
+        fdi_decls_in_prototype_scope = fdi_decls_in_prototype_scope'; } in
+    (decl_info', name, qt, fdecl_info') in
   match decl' with
-  | FunctionDecl (decl_info', name, qt, fdecl_info) ->
-      let fdi_decls_in_prototype_scope' =
-        list_map (decl_process_locs loc_composer) fdecl_info.fdi_decls_in_prototype_scope in
-      let fdi_parameters' =
-        list_map (decl_process_locs loc_composer) fdecl_info.fdi_parameters in
-      let body' = Option.map (stmt_process_locs loc_composer) fdecl_info.fdi_body in
-      let fdecl_info' =
-        { fdecl_info with
-          fdi_body = body';
-          fdi_parameters = fdi_parameters';
-          fdi_decls_in_prototype_scope = fdi_decls_in_prototype_scope'; } in
-      FunctionDecl (decl_info', name, qt, fdecl_info')
+  | FunctionDecl fun_info -> FunctionDecl (get_updated_fun_decl fun_info)
+  | CXXMethodDecl fun_info -> CXXMethodDecl (get_updated_fun_decl fun_info)
   | ObjCMethodDecl (decl_info', name, obj_c_method_decl_info) ->
       let body' =
         Option.map (stmt_process_locs loc_composer) obj_c_method_decl_info.omdi_body in

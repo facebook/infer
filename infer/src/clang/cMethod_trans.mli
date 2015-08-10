@@ -27,10 +27,6 @@ val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.t
 
 val captured_vars_from_block_info : CContext.t -> Clang_ast_t.block_captured_variable list -> (Mangled.t * Sil.typ * bool) list
 
-val mk_procname_from_method : string -> string -> Procname.objc_method_kind -> Procname.t
-
-val mk_procname_from_function : string -> string -> Procname.t
-
 val get_class_selector_instance : CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list
   -> (string * string * method_call_type)
 

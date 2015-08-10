@@ -33,6 +33,8 @@ let id_cl = "id"
 
 let self = "self"
 
+let this = "this"
+
 let alloc = "alloc"
 
 let malloc = "malloc"

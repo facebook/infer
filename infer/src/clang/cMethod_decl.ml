@@ -37,7 +37,6 @@ struct
         then None else Some body
     | None -> body
 
-
   let model_exists procname =
     Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
 
@@ -115,7 +114,7 @@ struct
             captured_vars is_anonym_block param_decls attributes
     | None -> CMethod_signature.add ms
 
-  let process_objc_method_decl tenv cg cfg namespace curr_class meth_decl =
+  let process_method_decl tenv cg cfg namespace curr_class meth_decl ~is_objc =
     let ms, body_opt, param_decls =
       CMethod_trans.method_signature_of_decl curr_class meth_decl None in
     CMethod_signature.add ms;
@@ -125,14 +124,16 @@ struct
         let attributes = CMethod_signature.ms_get_attributes ms in
         let procname = CMethod_signature.ms_get_name ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance then
-          add_method tenv cg cfg curr_class procname namespace [body] true is_instance [] false
+          add_method tenv cg cfg curr_class procname namespace [body] is_objc is_instance [] false
             param_decls attributes
     | None -> ()
 
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =
     match dec with
-    | ObjCMethodDecl (decl_info, name_info, method_decl_info) ->
-        process_objc_method_decl tenv cg cfg namespace curr_class dec
+    | CXXMethodDecl _ ->
+        process_method_decl tenv cg cfg namespace curr_class dec ~is_objc:false
+    | ObjCMethodDecl _ ->
+        process_method_decl tenv cg cfg namespace curr_class dec ~is_objc:true
     | ObjCPropertyImplDecl (decl_info, property_impl_decl_info) ->
         let pname = Ast_utils.property_name property_impl_decl_info in
         Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' " pname;

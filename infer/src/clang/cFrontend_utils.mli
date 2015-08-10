@@ -76,6 +76,8 @@ sig
 
   val is_generated : Clang_ast_t.named_decl_info -> bool
 
+  val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
+
 end
 
 module General_utils :
@@ -115,6 +117,12 @@ sig
   val list_range: int -> int -> int list
 
   val replicate: int -> 'a -> 'a list
+
+  val mk_procname_from_method : string -> string -> Procname.objc_method_kind -> Procname.t
+
+  val mk_procname_from_function : string -> string -> Procname.t
+
+  val mk_procname_from_cpp_method : string -> string -> string -> Procname.t
 
   val mk_class_field_name : string -> string -> Ident.fieldname
 

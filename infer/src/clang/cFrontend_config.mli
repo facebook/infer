@@ -49,6 +49,8 @@ val id_cl : string
 
 val self : string
 
+val this : string
+
 val nsstring_cl : string
 
 val nsobject_cl : string

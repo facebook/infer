@@ -1,0 +1,75 @@
+digraph iCFG {
+20 [label="20: Exit test \n  " color=yellow style=filled]
+	
+
+19 [label="19: Start test\nFormals: \nLocals:  a_ptr:struct A * \n   DECLARE_LOCALS(&return,&a_ptr); [line 44]\n  NULLIFY(&a_ptr,false); [line 44]\n " color=yellow style=filled]
+	
+
+	 19 -> 20 ;
+18 [label="18: Exit A_add \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start A_add\nFormals:  this:struct A  other:struct A &\nLocals:  \n   DECLARE_LOCALS(&return); [line 39]\n  NULLIFY(&this,false); [line 39]\n  NULLIFY(&other,false); [line 39]\n " color=yellow style=filled]
+	
+
+	 17 -> 18 ;
+16 [label="16:  Return Stmt \n   n$5=*&a:int  [line 36]\n  n$6=*&b:int  [line 36]\n  *&return:int =(n$5 + n$6) [line 36]\n  REMOVE_TEMPS(n$5,n$6); [line 36]\n  NULLIFY(&a,false); [line 36]\n  NULLIFY(&b,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15: Exit A::AIn_fun \n  " color=yellow style=filled]
+	
+
+14 [label="14: Start A::AIn_fun\nFormals:  this:struct A::AIn  a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n  NULLIFY(&this,false); [line 35]\n " color=yellow style=filled]
+	
+
+	 14 -> 16 ;
+13 [label="13:  DeclStmt \n   n$3=*&a:int  [line 29]\n  n$4=*&b:int  [line 29]\n  *&c:int =((n$3 + n$4) + 1) [line 29]\n  REMOVE_TEMPS(n$3,n$4); [line 29]\n  NULLIFY(&a,false); [line 29]\n  NULLIFY(&b,false); [line 29]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12:  Return Stmt \n   n$1=*&c:int  [line 32]\n  n$2=*&c:int  [line 32]\n  *&return:int =(n$1 * n$2) [line 32]\n  REMOVE_TEMPS(n$1,n$2); [line 32]\n  NULLIFY(&c,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11: Exit A_fun \n  " color=yellow style=filled]
+	
+
+10 [label="10: Start A_fun\nFormals:  this:struct A  a:int  b:int \nLocals:  c:int  \n   DECLARE_LOCALS(&return,&c); [line 28]\n  NULLIFY(&this,false); [line 28]\n  NULLIFY(&c,false); [line 28]\n " color=yellow style=filled]
+	
+
+	 10 -> 13 ;
+9 [label="9: Exit A_fun \n  " color=yellow style=filled]
+	
+
+8 [label="8: Start A_fun\nFormals:  this:struct A  a:int  b:int  c:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n  NULLIFY(&this,false); [line 23]\n  NULLIFY(&a,false); [line 23]\n  NULLIFY(&b,false); [line 23]\n  NULLIFY(&c,false); [line 23]\n " color=yellow style=filled]
+	
+
+	 8 -> 9 ;
+7 [label="7:  DeclStmt \n   *&c:int =10 [line 17]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6:  Return Stmt \n   n$0=*&c:int  [line 17]\n  *&return:int =(n$0 + 1) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&c,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit A_def_in \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start A_def_in\nFormals:  this:struct A \nLocals:  c:int  \n   DECLARE_LOCALS(&return,&c); [line 17]\n  NULLIFY(&this,false); [line 17]\n  NULLIFY(&c,false); [line 17]\n " color=yellow style=filled]
+	
+
+	 4 -> 7 ;
+3 [label="3:  Return Stmt \n   *&return:int =1 [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit A::AIn_fun1 \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start A::AIn_fun1\nFormals:  this:struct A::AIn \nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n  NULLIFY(&this,false); [line 13]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

@@ -45,19 +45,19 @@ struct
     let is_instance = mc_type != CMethod_trans.MCStatic in
     let method_kind = Procname.objc_method_kind_of_bool is_instance in
     match CTrans_models.get_predefined_model_method_signature class_name method_name
-            CMethod_trans.mk_procname_from_method with
+            General_utils.mk_procname_from_method with
     | Some ms ->
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
     | None ->
-        let procname = CMethod_trans.mk_procname_from_method class_name method_name method_kind in
+        let procname = General_utils.mk_procname_from_method class_name method_name method_kind in
         try
           let callee_ms = CMethod_signature.find procname in
           if not (M.process_getter_setter context procname) then
             (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
           procname, mc_type
         with Not_found ->
-          let callee_pn = CMethod_trans.mk_procname_from_method class_name method_name method_kind in
+          let callee_pn = General_utils.mk_procname_from_method class_name method_name method_kind in
           CMethod_trans.create_external_procdesc context.cfg callee_pn is_instance None;
           callee_pn, mc_type
 
@@ -317,7 +317,7 @@ struct
       let pname, type_opt =
         match qt with
         | Some v ->
-            CMethod_trans.mk_procname_from_function name v, CTypes_decl.parse_func_type name v
+            mk_procname_from_function name v, CTypes_decl.parse_func_type name v
         | None -> Procname.from_string_c_fun name, None in
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)

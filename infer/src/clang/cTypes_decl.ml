@@ -132,6 +132,22 @@ let parse_func_type name func_type =
       Printing.log_stats "\nXXXXXXX PARSE ERROR for string '%s'." func_type;
       None)
 
+
+(* We need to take the name out of the type as the struct can be anonymous*)
+let get_record_name opt_type = match opt_type with
+  | `Type n' -> CTypes.cut_struct_union n'
+  | `NoType -> assert false
+
+
+let get_method_decls parent decl_list =
+  let rec traverse_decl parent decl = match decl with
+    | CXXMethodDecl _ -> [(parent, decl)]
+    | CXXRecordDecl (_, _, _, _, decl_list', _, _, _)
+    | RecordDecl (_, _, _, _, decl_list', _, _) -> traverse_decl_list decl decl_list'
+    | _ -> []
+  and traverse_decl_list parent decl_list = list_flatten (list_map (traverse_decl parent) decl_list)  in
+  traverse_decl_list parent decl_list
+
 (*In case of typedef like *)
 (* typedef struct { f1; f2; ... } s; *)
 (* the AST-dump splits the typedef definition from the struct definition. *)
@@ -197,6 +213,17 @@ and get_struct_fields tenv record_name namespace decl_list =
       get_struct_fields tenv record_name namespace decl_list'
   | _ :: decl_list' -> get_struct_fields tenv record_name namespace decl_list'
 
+and get_class_methods tenv class_name namespace decl_list =
+  let process_method_decl = function
+    | CXXMethodDecl (decl_info, name_info, qual_type, function_decl_info) ->
+        let method_name = name_info.ni_name in
+        Printing.log_out "  ...Declaring method '%s'.\n" method_name;
+        let method_proc = mk_procname_from_cpp_method class_name method_name  (CTypes.get_type qual_type) in
+        Some method_proc
+    | _ -> None in
+  (* poor mans list_filter_map *)
+  list_flatten_options (list_map process_method_decl decl_list)
+
 and do_record_declaration tenv namespace decl_info name opt_type decl_list decl_context_info record_decl_info =
   Printing.log_out "ADDING: RecordDecl for '%s'" name;
   Printing.log_out " pointer= '%s'\n" decl_info.Clang_ast_t.di_pointer;
@@ -205,11 +232,6 @@ and do_record_declaration tenv namespace decl_info name opt_type decl_list decl_
   let typ = get_declaration_type tenv namespace decl_info name opt_type decl_list decl_context_info record_decl_info in
   let typ = expand_structured_type tenv typ in
   add_struct_to_tenv tenv typ
-
-(* We need to take the name out of the type as the struct can be anonymous*)
-and get_record_name opt_type = match opt_type with
-  | `Type n' -> CTypes.cut_struct_union n'
-  | `NoType -> assert false
 
 (* For a record declaration it returns/constructs the type *)
 and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_context_info record_decl_info =
@@ -230,8 +252,8 @@ and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_cont
       | Sil.Tvar (Sil.TN_csu (csu, _)) -> csu
       | _ -> Sil.Struct) in
   let name = Some (Mangled.from_string name_str) in
+  let methods_list = get_class_methods tenv name_str namespace decl_list in (* C++ methods only *)
   let superclass_list = [] in (* No super class for structs *)
-  let methods_list = [] in (* No methods list for structs *)
   let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
   Sil.Tstruct
     (non_static_fields, static_fields, csu, name, superclass_list, methods_list, item_annotation)

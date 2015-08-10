@@ -370,7 +370,7 @@ let get_methods curr_class decl_list =
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Adding Method '%s' \n" (class_name^"_"^method_name);
         let _ = check_for_property curr_class method_name d method_decl_info.Clang_ast_t.omdi_body in
-        let meth_name = CMethod_trans.mk_procname_from_method class_name method_name method_kind in
+        let meth_name = General_utils.mk_procname_from_method class_name method_name method_kind in
         meth_name:: list_methods
     | _ -> list_methods in
   list_fold_right get_method decl_list []

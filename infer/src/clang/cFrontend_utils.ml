@@ -258,6 +258,11 @@ struct
     | generated:: rest -> generated = CFrontend_config.generated_suffix
     | _ -> false
 
+  let get_decl decl_ptr =
+    try
+      Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.pointer_decl_index)
+    with Not_found -> Printing.log_stats "decl with pointer %s not found\n" decl_ptr; None
+
 end
 
 (* Global counter for anonymous block*)
@@ -378,6 +383,18 @@ struct
 
   let mk_class_field_name class_name field_name =
     Ident.create_fieldname (Mangled.mangled field_name (class_name^"_"^field_name)) 0
+
+  let mk_procname_from_function name type_name =
+    let type_name_crc = CRC.crc16 type_name in
+    Procname.mangled_c_fun name type_name_crc
+
+  let mk_procname_from_method class_name method_name method_kind =
+    let mangled = Procname.mangled_of_objc_method_kind method_kind in
+    Procname.mangled_c_method class_name method_name mangled
+
+  let mk_procname_from_cpp_method class_name method_name type_name =
+    let type_name_crc = Some (CRC.crc16 type_name) in
+    Procname.mangled_c_method class_name method_name type_name_crc
 
 end
 

@@ -21,7 +21,7 @@ open CGen_trans
 open Clang_ast_t
 
 (* Translate one global declaration *)
-let rec translate_one_declaration tenv cg cfg namespace dec =
+let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   let ns_suffix = Ast_utils.namespace_to_string namespace in
   let info = Clang_ast_proj.get_decl_tuple dec in
   CLocation.update_curr_file info;
@@ -39,7 +39,11 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
   | RecordDecl (decl_info, name_info, opt_type, _, decl_list, decl_context_info, record_decl_info) ->
       let record_name = name_info.Clang_ast_t.ni_name in
       CTypes_decl.do_record_declaration tenv namespace
-        decl_info record_name opt_type decl_list decl_context_info record_decl_info
+        decl_info record_name opt_type decl_list decl_context_info record_decl_info;
+      let method_decls = CTypes_decl.get_method_decls dec decl_list in
+      let tranlate_method (parent, decl) =
+        translate_one_declaration tenv cg cfg namespace parent decl in
+      list_iter tranlate_method method_decls
 
   | VarDecl(decl_info, name_info, t, _) ->
       let name = name_info.Clang_ast_t.ni_name in
@@ -73,6 +77,20 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
       let curr_class =
         ObjcInterface_decl.interface_impl_declaration tenv name decl_list idi in
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
+  | CXXMethodDecl(decl_info, name_info, qual_type, function_decl_info) ->
+      (* di_parent_pointer has pointer to lexical context such as class.*)
+      (* If it's not defined, then it's the same as parent in AST *)
+      let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with
+        | Some ptr -> Ast_utils.get_decl ptr
+        | None -> Some parent_dec in
+      (match class_decl with
+       | Some CXXRecordDecl(_, _, opt_type, _, _, _, _, _) ->
+           let class_name = CTypes_decl.get_record_name opt_type in
+           let curr_class = CContext.ContextCls(class_name, None, []) in
+           if !CFrontend_config.testing_mode then
+             CMethod_declImpl.process_methods tenv cg cfg curr_class namespace [dec]
+       | Some dec -> Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
+       | None -> ())
 
   | EnumDecl(decl_info, name_info, opt_type, _, decl_list, decl_context_info, enum_decl_info)
     when should_translate_enum ->
@@ -81,10 +99,10 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
 
   | LinkageSpecDecl(decl_info, decl_list, decl_context_info) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
-      list_iter (translate_one_declaration tenv cg cfg namespace) decl_list
+      list_iter (translate_one_declaration tenv cg cfg namespace dec) decl_list
   | NamespaceDecl(decl_info, name_info, decl_list, decl_context_info, _) ->
       let name = ns_suffix^name_info.Clang_ast_t.ni_name in
-      list_iter (translate_one_declaration tenv cg cfg (Some name)) decl_list
+      list_iter (translate_one_declaration tenv cg cfg (Some name) dec) decl_list
   | EmptyDecl _ ->
       Printing.log_out "Passing from EmptyDecl. Treated as skip\n";
   | dec ->
@@ -98,7 +116,7 @@ let compute_icfg tenv source_file ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in
-      list_iter (translate_one_declaration tenv cg cfg None) decl_list;
+      list_iter (translate_one_declaration tenv cg cfg None ast) decl_list;
       Printing.log_out "\n Finished creating icfg\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

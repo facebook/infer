@@ -15,6 +15,10 @@ val get_declaration_type : Sil.tenv -> string option -> Clang_ast_t.decl_info ->
 
 val add_struct_to_tenv : Sil.tenv -> Sil.typ -> unit
 
+val get_record_name : Clang_ast_t.opt_type -> string
+
+val get_method_decls : Clang_ast_t.decl -> Clang_ast_t.decl list -> (Clang_ast_t.decl * Clang_ast_t.decl) list
+
 val do_typedef_declaration : Sil.tenv -> string option -> Clang_ast_t.decl_info -> string ->
   Clang_ast_t.opt_type -> Clang_ast_t.typedef_decl_info -> unit
 

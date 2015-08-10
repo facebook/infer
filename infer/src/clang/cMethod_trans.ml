@@ -17,15 +17,6 @@ open Clang_ast_t
 
 module L = Logging
 
-
-let mk_procname_from_function name type_name =
-  let type_name_crc = CRC.crc16 type_name in
-  Procname.mangled_c_fun name type_name_crc
-
-let mk_procname_from_method class_name method_name method_kind =
-  let mangled = Procname.mangled_of_objc_method_kind method_kind in
-  Procname.mangled_c_method class_name method_name mangled
-
 (** When the methoc call is MCStatic, means that it is a class method. *)
 (** When it is MCVirtual, it means that it is an instance method and that *)
 (** the method to be called will be determined at runtime. If it is MCNoVirtual *)
@@ -38,15 +29,32 @@ type method_call_type =
 
 type function_method_decl_info =
   | Func_decl_info of Clang_ast_t.function_decl_info * string
+  | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * string (* class_name *) * string (* ret_type *)
   | Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * string
   | Block_decl_info of Clang_ast_t.block_decl_info * string
 
 let is_instance_method function_method_decl_info is_instance =
   match function_method_decl_info with
   | Func_decl_info (function_decl_info, _) -> false
+  | Cpp_Meth_decl_info _ -> true
   | Meth_decl_info (method_decl_info, _) ->
       method_decl_info.Clang_ast_t.omdi_is_instance_method
   | Block_decl_info (block_decl_info, _) -> is_instance
+
+let get_class_param function_method_decl_info =
+  if (is_instance_method function_method_decl_info false) then
+    match function_method_decl_info with
+    | Cpp_Meth_decl_info (_, class_name, _) -> [(CFrontend_config.this, class_name, None)]
+    | Meth_decl_info (_, class_name) -> [(CFrontend_config.self, class_name, None)]
+    | _ -> []
+  else []
+
+let get_param_decls function_method_decl_info =
+  match function_method_decl_info with
+  | Func_decl_info (function_decl_info, _)
+  | Cpp_Meth_decl_info (function_decl_info, _, _) -> function_decl_info.Clang_ast_t.fdi_parameters
+  | Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_parameters
+  | Block_decl_info (block_decl_info, _) -> block_decl_info.Clang_ast_t.bdi_parameters
 
 let get_parameters function_method_decl_info =
   let par_to_ms_par par =
@@ -57,24 +65,18 @@ let get_parameters function_method_decl_info =
         Printing.log_out "with pointer %s@." decl_info.Clang_ast_t.di_pointer;
         (name, CTypes.get_type qtype, var_decl_info.vdi_init_expr)
     | _ -> assert false in
-  match function_method_decl_info with
-  | Func_decl_info (function_decl_info, _) ->
-      list_map par_to_ms_par function_decl_info.Clang_ast_t.fdi_parameters
-  | Meth_decl_info (method_decl_info, class_name) ->
-      let pars = list_map par_to_ms_par method_decl_info.Clang_ast_t.omdi_parameters in
-      if (is_instance_method function_method_decl_info false) then
-        ("self", class_name, None):: pars
-      else pars
-  | Block_decl_info (block_decl_info, _) ->
-      list_map par_to_ms_par block_decl_info.Clang_ast_t.bdi_parameters
+
+  let pars = list_map par_to_ms_par (get_param_decls function_method_decl_info) in
+  get_class_param function_method_decl_info @ pars
 
 let get_return_type function_method_decl_info =
   match function_method_decl_info with
-  | Func_decl_info (_, qt) -> qt
+  | Func_decl_info (_, typ)
+  | Cpp_Meth_decl_info (_, _, typ)
+  | Block_decl_info (_, typ) -> typ
   | Meth_decl_info (method_decl_info, _) ->
       let qt = method_decl_info.Clang_ast_t.omdi_result_type in
       CTypes.get_type qt
-  | Block_decl_info (_, qt) -> qt
 
 let build_method_signature decl_info procname function_method_decl_info is_instance is_anonym_block is_generated =
   let source_range = decl_info.Clang_ast_t.di_source_range in
@@ -84,21 +86,28 @@ let build_method_signature decl_info procname function_method_decl_info is_insta
   let attributes = decl_info.Clang_ast_t.di_attributes in
   CMethod_signature.make_ms procname parameters qt attributes source_range is_instance_method is_generated
 
-
 let method_signature_of_decl curr_class meth_decl block_data_opt =
   match meth_decl, block_data_opt with
   | FunctionDecl(decl_info, name_info, qt, fdi), _ ->
       let name = name_info.Clang_ast_t.ni_name in
       let func_decl = Func_decl_info (fdi, CTypes.get_type qt) in
-      let procname = mk_procname_from_function name (CTypes.get_type qt) in
+      let procname = General_utils.mk_procname_from_function name (CTypes.get_type qt) in
       let ms = build_method_signature decl_info procname func_decl false false false in
+      ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
+  | CXXMethodDecl(decl_info, name_info, qt, fdi), _ ->
+      let class_name = CContext.get_curr_class_name curr_class in
+      let method_name = name_info.Clang_ast_t.ni_name in
+      let typ = CTypes.get_type qt in
+      let procname = General_utils.mk_procname_from_cpp_method class_name method_name typ in
+      let method_decl = Cpp_Meth_decl_info (fdi, class_name, typ)  in
+      let ms = build_method_signature decl_info procname method_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
   | ObjCMethodDecl(decl_info, name_info, mdi), _ ->
       let class_name = CContext.get_curr_class_name curr_class in
       let method_name = name_info.Clang_ast_t.ni_name in
       let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
       let method_kind = Procname.objc_method_kind_of_bool is_instance in
-      let procname = mk_procname_from_method class_name method_name method_kind in
+      let procname = General_utils.mk_procname_from_method class_name method_name method_kind in
       let method_decl = Meth_decl_info (mdi, class_name) in
       let is_generated = Ast_utils.is_generated name_info in
       let ms = build_method_signature decl_info procname method_decl false false is_generated in
@@ -108,7 +117,6 @@ let method_signature_of_decl curr_class meth_decl block_data_opt =
       let ms = build_method_signature decl_info procname func_decl is_instance true false in
       ms, bdi.Clang_ast_t.bdi_body, bdi.Clang_ast_t.bdi_parameters
   |_ -> assert false
-
 
 let get_superclass_curr_class context =
   let retrive_super cname super_opt =
