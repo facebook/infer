@@ -943,7 +943,8 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
            when Sil.exp_equal exp deref_exp && Annotations.param_is_nullable pvar ann_sig ->
              nullable_obj_str := Sil.pvar_to_string pvar;
              true
-         | Sil.Hpointsto (_, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
+         (* TODO: (t7970552) re-enable checks on @Nullable fields *)
+         (*| Sil.Hpointsto (_, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
              let is_nullable fld =
                match Annotations.get_field_type_and_annotation fld typ with
                | Some (_, annot) -> Annotations.ia_is_nullable annot
@@ -954,7 +955,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                    nullable_obj_str := Ident.fieldname_to_simplified_string fld;
                    true
                | _ -> false in
-             list_exists is_strexp_pt_by_nullable_fld flds
+             list_exists is_strexp_pt_by_nullable_fld flds*)
          | _ -> false)
       (Prop.get_sigma prop) in
   let root = Sil.root_of_lexp lexp in
