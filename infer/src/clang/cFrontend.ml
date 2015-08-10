@@ -29,8 +29,7 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
   let should_translate_enum = CLocation.should_translate_enum source_range in
   match dec with
   | FunctionDecl(di, name_info, qt, fdecl_info) ->
-      let name = name_info.Clang_ast_t.ni_name in
-      CMethod_declImpl.function_decl tenv cfg cg namespace false di name qt fdecl_info [] None CContext.ContextNoCls
+      CMethod_declImpl.function_decl tenv cfg cg namespace dec None CContext.ContextNoCls
   | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
       let name = name_info.Clang_ast_t.ni_name in
       CTypes_decl.do_typedef_declaration tenv namespace
@@ -94,8 +93,8 @@ let rec translate_one_declaration tenv cg cfg namespace dec =
 (* Translates a file by translating the ast into a cfg. *)
 let compute_icfg tenv source_file ast =
   match ast with
-  | TranslationUnitDecl(_, decl_list, _, _) ->
-      CFrontend_config.global_translation_unit_decls:= decl_list;
+  | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
+      CFrontend_config.global_translation_unit_decls := decl_list;
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in

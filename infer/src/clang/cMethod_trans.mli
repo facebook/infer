@@ -35,3 +35,7 @@ val get_class_selector_instance : CContext.t -> Clang_ast_t.obj_c_message_expr_i
   -> (string * string * method_call_type)
 
 val should_create_procdesc : Cfg.cfg -> Procname.t -> bool -> bool -> bool
+
+val method_signature_of_decl : CContext.curr_class -> Clang_ast_t.decl ->
+  (Clang_ast_t.qual_type * bool * Procname.t * 'a list) option ->
+  CMethod_signature.method_signature * Clang_ast_t.stmt option * Clang_ast_t.decl list

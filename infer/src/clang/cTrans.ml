@@ -1617,33 +1617,33 @@ struct
       let id = Ident.create_fresh Ident.knormal in
       let instr = Sil.Letderef (id, Sil.Lvar (Sil.mk_pvar cvar procname), typ, loc) in
       (id, instr) in
-    (match decl with
-     | BlockDecl(decl_info, decl_list, decl_context_info, block_decl_info) ->
-         let qual_type = expr_info.Clang_ast_t.ei_qual_type in
-         let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in
-         let typ = CTypes_decl.qual_type_to_sil_type context.tenv qual_type in
-         (* We need to set the explicit dependency between the newly created block and the *)
-         (* defining procedure. We add an edge in the call graph.*)
-         Cg.add_edge context.cg procname block_pname;
-         let function_decl_info = CFrontend_utils.General_utils.mk_function_decl_info_from_block block_decl_info in
-         let static_locals = list_filter (fun (v, t, s) -> s = true) context.local_vars in
-         (*list_iter (fun (v, _, _) -> L.err "Static Locals %s@." (Mangled.to_string v)) static_locals;*)
-         let static_formals = list_filter (fun (v, t, s) -> s = true) context.captured_vars in
-         (*list_iter (fun (v, _, _) -> L.err "Formal Static %s@." (Mangled.to_string v)) static_formals;*)
-         let static_vars = static_locals @ static_formals in
-         let captured_vars =
-           (CMethod_trans.captured_vars_from_block_info context block_decl_info.Clang_ast_t.bdi_captured_variables) in
-         let all_captured_vars = captured_vars @ static_vars in
-         let ids_instrs = list_map assign_captured_var all_captured_vars in
-         let ids, instrs = list_split ids_instrs in
-         M.function_decl context.tenv context.cfg context.cg context.namespace context.is_instance decl_info
-           (Procname.to_string block_pname) qual_type function_decl_info all_captured_vars (Some block_pname) context.curr_class;
-         Cfg.set_procname_priority context.cfg block_pname;
-         let captured_exps = list_map (fun id -> Sil.Var id) ids in
-         let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)):: captured_exps) in
-         let alloc_block_instr, ids_block = allocate_block trans_state (Procname.to_string block_pname) all_captured_vars loc in
-         { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
-     | _ -> assert false)
+    match decl with
+    | BlockDecl(decl_info, decl_list, decl_context_info, block_decl_info) ->
+        let qual_type = expr_info.Clang_ast_t.ei_qual_type in
+        let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in
+        let typ = CTypes_decl.qual_type_to_sil_type context.tenv qual_type in
+        (* We need to set the explicit dependency between the newly created block and the *)
+        (* defining procedure. We add an edge in the call graph.*)
+        Cg.add_edge context.cg procname block_pname;
+        let static_locals = list_filter (fun (v, t, s) -> s = true) context.local_vars in
+        (*list_iter (fun (v, _, _) -> L.err "Static Locals %s@." (Mangled.to_string v)) static_locals;*)
+        let static_formals = list_filter (fun (v, t, s) -> s = true) context.captured_vars in
+        (*list_iter (fun (v, _, _) -> L.err "Formal Static %s@." (Mangled.to_string v)) static_formals;*)
+        let static_vars = static_locals @ static_formals in
+        let captured_vars =
+          (CMethod_trans.captured_vars_from_block_info context block_decl_info.Clang_ast_t.bdi_captured_variables) in
+        let all_captured_vars = captured_vars @ static_vars in
+        let ids_instrs = list_map assign_captured_var all_captured_vars in
+        let ids, instrs = list_split ids_instrs in
+        let block_data = (qual_type, context.is_instance, block_pname, all_captured_vars) in
+        M.function_decl context.tenv context.cfg context.cg context.namespace decl
+          (Some block_data) context.curr_class;
+        Cfg.set_procname_priority context.cfg block_pname;
+        let captured_exps = list_map (fun id -> Sil.Var id) ids in
+        let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)):: captured_exps) in
+        let alloc_block_instr, ids_block = allocate_block trans_state (Procname.to_string block_pname) all_captured_vars loc in
+        { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
+    | _ -> assert false
 
   and cxxNewExpr_trans trans_state stmt_info expr_info =
     let context = trans_state.context in
