@@ -30,14 +30,14 @@ type method_call_type =
 type function_method_decl_info =
   | Func_decl_info of Clang_ast_t.function_decl_info * string
   | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * string (* class_name *) * string (* ret_type *)
-  | Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * string
+  | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * string
   | Block_decl_info of Clang_ast_t.block_decl_info * string
 
 let is_instance_method function_method_decl_info is_instance =
   match function_method_decl_info with
   | Func_decl_info (function_decl_info, _) -> false
   | Cpp_Meth_decl_info _ -> true
-  | Meth_decl_info (method_decl_info, _) ->
+  | ObjC_Meth_decl_info (method_decl_info, _) ->
       method_decl_info.Clang_ast_t.omdi_is_instance_method
   | Block_decl_info (block_decl_info, _) -> is_instance
 
@@ -45,7 +45,7 @@ let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info false) then
     match function_method_decl_info with
     | Cpp_Meth_decl_info (_, class_name, _) -> [(CFrontend_config.this, class_name, None)]
-    | Meth_decl_info (_, class_name) -> [(CFrontend_config.self, class_name, None)]
+    | ObjC_Meth_decl_info (_, class_name) -> [(CFrontend_config.self, class_name, None)]
     | _ -> []
   else []
 
@@ -53,7 +53,7 @@ let get_param_decls function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info (function_decl_info, _)
   | Cpp_Meth_decl_info (function_decl_info, _, _) -> function_decl_info.Clang_ast_t.fdi_parameters
-  | Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_parameters
+  | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_parameters
   | Block_decl_info (block_decl_info, _) -> block_decl_info.Clang_ast_t.bdi_parameters
 
 let get_parameters function_method_decl_info =
@@ -74,7 +74,7 @@ let get_return_type function_method_decl_info =
   | Func_decl_info (_, typ)
   | Cpp_Meth_decl_info (_, _, typ)
   | Block_decl_info (_, typ) -> typ
-  | Meth_decl_info (method_decl_info, _) ->
+  | ObjC_Meth_decl_info (method_decl_info, _) ->
       let qt = method_decl_info.Clang_ast_t.omdi_result_type in
       CTypes.get_type qt
 
@@ -107,8 +107,8 @@ let method_signature_of_decl curr_class meth_decl block_data_opt =
       let method_name = name_info.Clang_ast_t.ni_name in
       let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
       let method_kind = Procname.objc_method_kind_of_bool is_instance in
-      let procname = General_utils.mk_procname_from_method class_name method_name method_kind in
-      let method_decl = Meth_decl_info (mdi, class_name) in
+      let procname = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
+      let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
       let is_generated = Ast_utils.is_generated name_info in
       let ms = build_method_signature decl_info procname method_decl false false is_generated in
       ms, mdi.Clang_ast_t.omdi_body, mdi.Clang_ast_t.omdi_parameters

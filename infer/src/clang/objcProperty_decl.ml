@@ -364,13 +364,13 @@ let get_methods curr_class decl_list =
   add_properties_to_table curr_class decl_list;
   let get_method decl list_methods =
     match decl with
-      ObjCMethodDecl(decl_info, name_info, method_decl_info) as d ->
+      ObjCMethodDecl(decl_info, name_info, method_decl_info) ->
         let is_instance = method_decl_info.Clang_ast_t.omdi_is_instance_method in
         let method_kind = Procname.objc_method_kind_of_bool is_instance in
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Adding Method '%s' \n" (class_name^"_"^method_name);
-        let _ = check_for_property curr_class method_name d method_decl_info.Clang_ast_t.omdi_body in
-        let meth_name = General_utils.mk_procname_from_method class_name method_name method_kind in
+        let _ = check_for_property curr_class method_name decl method_decl_info.Clang_ast_t.omdi_body in
+        let meth_name = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
         meth_name:: list_methods
     | _ -> list_methods in
   list_fold_right get_method decl_list []

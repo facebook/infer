@@ -118,7 +118,7 @@ sig
 
   val replicate: int -> 'a -> 'a list
 
-  val mk_procname_from_method : string -> string -> Procname.objc_method_kind -> Procname.t
+  val mk_procname_from_objc_method : string -> string -> Procname.objc_method_kind -> Procname.t
 
   val mk_procname_from_function : string -> string -> Procname.t
 

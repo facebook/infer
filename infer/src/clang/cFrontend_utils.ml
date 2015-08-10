@@ -388,7 +388,7 @@ struct
     let type_name_crc = CRC.crc16 type_name in
     Procname.mangled_c_fun name type_name_crc
 
-  let mk_procname_from_method class_name method_name method_kind =
+  let mk_procname_from_objc_method class_name method_name method_kind =
     let mangled = Procname.mangled_of_objc_method_kind method_kind in
     Procname.mangled_c_method class_name method_name mangled
 
