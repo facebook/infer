@@ -678,13 +678,15 @@ let is_dispatch_function stmt_list =
             | _ -> None))
   | _ -> None
 
-let assign_default_params params_stmt callee_pname_opt =
+let assign_default_params params_stmt callee_pname_opt ~is_cxx_method =
   match callee_pname_opt with
   | None -> params_stmt
   | Some callee_pname ->
       try
         let callee_ms = CMethod_signature.find callee_pname in
         let args = CMethod_signature.ms_get_args callee_ms in
+        let args = if is_cxx_method then match args with _::tl -> tl | _ -> assert false
+          else args in
         let params_args = list_combine params_stmt args in
         let replace_default_arg param =
           match param with

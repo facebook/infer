@@ -524,7 +524,8 @@ struct
     let function_type = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let sil_loc = get_sil_location si pln context in
-    let fun_exp_stmt, params_stmt = (match stmt_list with (* First stmt is the function expr and the rest are params*)
+    (* First stmt is the function expr and the rest are params *)
+    let fun_exp_stmt, params_stmt = (match stmt_list with
         | fe:: params -> fe, params
         | _ -> assert false) in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
@@ -554,7 +555,8 @@ struct
           (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
     let params_stmt = if should_translate_args then
-        CTrans_utils.assign_default_params params_stmt callee_pname_opt else [] in
+        CTrans_utils.assign_default_params params_stmt callee_pname_opt ~is_cxx_method:false
+      else [] in
     let res_trans_par =
       let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) params_stmt in
       let rt = collect_res_trans (res_trans_callee :: l) in
@@ -608,6 +610,70 @@ struct
            | [] -> { res_trans_to_parent with exps =[] }
            | [ret_id'] -> { res_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
            | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
+
+  and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
+    let pln = trans_state.parent_line_number in
+    let context = trans_state.context in
+    let function_type = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
+    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let sil_loc = get_sil_location si pln context in
+    (* First stmt is the method+this expr and the rest are params *)
+    let fun_exp_stmt, params_stmt = (match stmt_list with
+        | fe:: params -> fe, params
+        | _ -> assert false) in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+    (* claim priority if no ancestors has claimed priority before *)
+    let line_number = get_line si pln in
+    let trans_state_callee = { trans_state_pri with
+                               parent_line_number = line_number;
+                               succ_nodes = [] } in
+    let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
+
+    (* first for method address, second for 'this' expression *)
+    assert ((list_length result_trans_callee.exps) = 2);
+    let (sil_method, typ_method) = list_hd result_trans_callee.exps in
+    let callee_pname = match sil_method with
+      | Sil.Const (Sil.Cfun pn) -> pn
+      | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
+
+    let params_stmt = CTrans_utils.assign_default_params params_stmt (Some callee_pname) ~is_cxx_method:true in
+    (* As we may have nodes coming from different parameters we need to  *)
+    (* call instruction for each parameter and collect the results       *)
+    (* afterwards. The 'instructions' function does not do that          *)
+    let trans_state_param =
+      { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
+    let result_trans_params =
+      let l = list_map (exec_with_self_exception instruction trans_state_param) params_stmt in
+      (* this function will automatically merge 'this' argument with rest of arguments in 'l'*)
+      let rt = collect_res_trans (result_trans_callee :: l) in
+      { rt with exps = list_tl rt.exps } in
+
+    let actual_params = result_trans_params.exps in
+    let ret_id = if (Sil.typ_equal function_type Sil.Tvoid) then []
+      else [Ident.create_fresh Ident.knormal] in
+    let call_flags = {
+      Sil.cf_virtual = false (* TODO t7725350 *);
+      Sil.cf_noreturn = false;
+      Sil.cf_is_objc_block = false;
+    } in
+    let call_instr = Sil.Call (ret_id, sil_method, actual_params, sil_loc, call_flags) in
+    let ids = result_trans_params.ids @ ret_id in
+    let instrs = result_trans_params.instrs @ [call_instr] in
+    let res_trans_tmp = { result_trans_params with ids = ids; instrs = instrs; exps =[] } in
+
+    let nname = "Call " ^ (Sil.exp_to_string sil_method) in
+    let result_trans_to_parent =
+      PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp in
+    Cg.add_edge context.cg procname callee_pname;
+    (try
+       let callee_ms = CMethod_signature.find callee_pname in
+       ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
+     with Not_found ->
+       CMethod_trans.create_external_procdesc context.cfg callee_pname false None);
+    match ret_id with
+    | [] -> { result_trans_to_parent with exps =[] }
+    | [ret_id'] -> { result_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
+    | _ -> assert false (* by construction of red_id, we cannot be in this case *)
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
     Printing.log_out "  priority node free = '%s'\n@."
@@ -1415,29 +1481,40 @@ struct
     let field_name = match decl_ref.Clang_ast_t.dr_name with
       | Some s -> s.Clang_ast_t.ni_name
       | _ -> assert false in
-    let field_typ = match decl_ref.Clang_ast_t.dr_qual_type with
-      | Some t -> CTypes_decl.qual_type_to_sil_type trans_state.context.tenv t
+    let field_qt = match decl_ref.Clang_ast_t.dr_qual_type with
+      | Some t -> t
       | _ -> assert false in
+    let field_typ = CTypes_decl.qual_type_to_sil_type trans_state.context.tenv field_qt in
     Printing.log_out "!!!!! Dealing with field '%s' @." field_name;
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
-    let res_trans_exp_stmt = instruction trans_state exp_stmt in
-    let (e, class_typ) = extract_exp_from_list res_trans_exp_stmt.exps
+    let result_trans_exp_stmt = instruction trans_state exp_stmt in
+    let (obj_sil, class_typ) = extract_exp_from_list result_trans_exp_stmt.exps
         "WARNING: in MemberExpr we expect the translation of the stmt to return an expression\n" in
     let class_typ =
       (match class_typ with
        | Sil.Tptr (t, _) -> CTypes_decl.expand_structured_type trans_state.context.tenv t
        | t -> t) in
-    let exp =
-      (match class_typ with
-       | Sil.Tvoid -> Sil.exp_minus_one
-       | _ ->
-           Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
-           ( match ObjcInterface_decl.find_field trans_state.context.tenv field_name (Some class_typ) false with
-             | Some (fn, _, _) -> Sil.Lfield (e, fn, class_typ)
-             | None -> assert false)) in
-    { res_trans_exp_stmt with
-      exps = [(exp, field_typ)] }
+    match decl_ref.Clang_ast_t.dr_kind with
+    | `Field | `ObjCIvar ->
+        let exp = match class_typ with
+          | Sil.Tvoid -> Sil.exp_minus_one
+          | _ ->
+              Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
+              (match ObjcInterface_decl.find_field trans_state.context.tenv field_name (Some class_typ) false with
+               | Some (fn, _, _) -> Sil.Lfield (obj_sil, fn, class_typ)
+               | None -> assert false) in
+        { result_trans_exp_stmt with
+          exps = [(exp, field_typ)] }
+    | `CXXMethod ->
+        (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
+        let raw_type = field_qt.Clang_ast_t.qt_raw in
+        let class_name = match class_typ with Sil.Tptr (t, _) | t -> CTypes.classname_of_type t in
+        let pname = mk_procname_from_cpp_method class_name field_name raw_type in
+        let method_exp = (Sil.Const (Sil.Cfun pname), field_typ) in
+        Cfg.set_procname_priority trans_state.context.cfg pname;
+        { result_trans_exp_stmt with exps = [method_exp; (obj_sil, class_typ)] }
+    | _ -> assert false
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
@@ -1701,6 +1778,9 @@ struct
              dispatch_function_trans trans_state stmt_info stmt_list ei block_arg_pos
          | None ->
              callExpr_trans trans_state stmt_info stmt_list ei)
+
+    | CXXMemberCallExpr(stmt_info, stmt_list, ei) ->
+        cxxMemberCallExpr_trans trans_state stmt_info stmt_list ei
 
     | ObjCMessageExpr(stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         if is_block_enumerate_function obj_c_message_expr_info then
