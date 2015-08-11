@@ -169,11 +169,11 @@ target_triple:
   | TARGET TRIPLE EQUALS str = CONSTANT_STRING { str }
 
 metadata_def:
-  | metadata_var EQUALS metadata_node { () }
+  | name = NAMED_METADATA EQUALS numbered_metadata_node { () }
+  | num = NUMBERED_METADATA EQUALS metadata_node { () }
 
-metadata_var:
-  | NAMED_METADATA { () }
-  | NUMBERED_METADATA { () }
+numbered_metadata_node:
+  | METADATA_NODE_BEGIN separated_list(COMMA, NUMBERED_METADATA) RBRACE { () }
 
 metadata_node:
   | METADATA? METADATA_NODE_BEGIN separated_list(COMMA, metadata_component) RBRACE { () }
@@ -183,8 +183,9 @@ metadata_component:
   | METADATA? metadata_value { () }
 
 metadata_value:
-  | metadata_var { () }
+  | NUMBERED_METADATA { () }
   | METADATA_STRING { () }
+  | metadata_node { () }
 
 func_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN
