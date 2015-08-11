@@ -35,6 +35,15 @@ type typ =
   | Tlabel
   | Tmetadata
 
+type metadata =
+  | MetadataVar of int
+  | MetadataString of string
+  | MetadataNode of metadata_component list
+
+and metadata_component =
+  | TypOperand of typ option * operand
+  | Metadata of metadata
+
 type instr =
   | Ret of (typ * operand) option
   | UncondBranch of variable

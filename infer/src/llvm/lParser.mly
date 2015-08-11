@@ -170,22 +170,22 @@ target_triple:
 
 metadata_def:
   | name = NAMED_METADATA EQUALS numbered_metadata_node { () }
-  | num = NUMBERED_METADATA EQUALS metadata_node { () }
+  | metadata_id = NUMBERED_METADATA EQUALS metadata_node { () }
 
 numbered_metadata_node:
-  | METADATA_NODE_BEGIN separated_list(COMMA, NUMBERED_METADATA) RBRACE { () }
+  | METADATA_NODE_BEGIN metadata_ids = separated_list(COMMA, NUMBERED_METADATA) RBRACE { metadata_ids }
 
 metadata_node:
-  | METADATA? METADATA_NODE_BEGIN separated_list(COMMA, metadata_component) RBRACE { () }
+  | METADATA? METADATA_NODE_BEGIN components = separated_list(COMMA, metadata_component) RBRACE { MetadataNode components }
 
 metadata_component:
-  | tp = typ? op = operand { () }
-  | METADATA? metadata_value { () }
+  | tp = typ? op = operand { TypOperand (tp, op) }
+  | METADATA? value = metadata_value { Metadata value }
 
 metadata_value:
-  | NUMBERED_METADATA { () }
-  | METADATA_STRING { () }
-  | metadata_node { () }
+  | i = NUMBERED_METADATA { MetadataVar i }
+  | str = METADATA_STRING { MetadataString str }
+  | node = metadata_node { node }
 
 func_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN
