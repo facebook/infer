@@ -1,5 +1,5 @@
 digraph iCFG {
-6 [label="6:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class Car ):class Car *) [line 13]\n  n$4=_fun_Car_init(n$6:class Car *) virtual [line 13]\n  *&honda:class Car *=n$4 [line 13]\n  REMOVE_TEMPS(n$4,n$6); [line 13]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class Car ):unsigned long ) [line 13]\n  n$4=_fun_Car_init(n$6:class Car *) virtual [line 13]\n  *&honda:class Car *=n$4 [line 13]\n  REMOVE_TEMPS(n$4,n$6); [line 13]\n " shape="box"]
 	
 
 	 6 -> 5 ;

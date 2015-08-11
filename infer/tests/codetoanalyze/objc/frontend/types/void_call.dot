@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 22 -> 21 ;
-21 [label="21:  DeclStmt \n   n$11=_fun___objc_alloc_no_fail(sizeof(class AClass ):class AClass *) [line 48]\n  *&o:class AClass *=n$11 [line 48]\n  REMOVE_TEMPS(n$11); [line 48]\n " shape="box"]
+21 [label="21:  DeclStmt \n   n$11=_fun___objc_alloc_no_fail(sizeof(class AClass ):unsigned long ) [line 48]\n  *&o:class AClass *=n$11 [line 48]\n  REMOVE_TEMPS(n$11); [line 48]\n " shape="box"]
 	
 
 	 21 -> 17 ;

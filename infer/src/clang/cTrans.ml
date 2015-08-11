@@ -181,7 +181,7 @@ struct
     with Self.SelfClassException class_name ->
       let typ = CTypes_decl.type_name_to_sil_type trans_state.context.CContext.tenv class_name in
       { empty_res_trans with
-        exps = [(Sil.Sizeof(typ, Sil.Subtype.exact), typ)]}
+        exps = [(Sil.Sizeof(typ, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
 
   (* Execute translation of e forcing to release priority (if it's not free) and then setting it back.*)
   (* This is used in conditional operators where we need to force the priority to be free for the *)

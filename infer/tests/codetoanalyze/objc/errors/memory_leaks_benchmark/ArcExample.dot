@@ -21,7 +21,7 @@ digraph iCFG {
 	
 
 	 9 -> 11 ;
-8 [label="8:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 29]\n  *&s:class NSString *=n$6 [line 29]\n  REMOVE_TEMPS(n$6); [line 29]\n " shape="box"]
+8 [label="8:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 29]\n  *&s:class NSString *=n$6 [line 29]\n  REMOVE_TEMPS(n$6); [line 29]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -36,7 +36,7 @@ digraph iCFG {
 	
 
 	 5 -> 8 ;
-4 [label="4:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 23]\n  *&s:class NSString *=n$3 [line 23]\n  REMOVE_TEMPS(n$3); [line 23]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 23]\n  *&s:class NSString *=n$3 [line 23]\n  REMOVE_TEMPS(n$3); [line 23]\n " shape="box"]
 	
 
 	 4 -> 3 ;

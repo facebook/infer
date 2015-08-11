@@ -43,7 +43,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class MyClass ):class MyClass *) [line 21]\n  *&myClass:class MyClass *=n$1 [line 21]\n  REMOVE_TEMPS(n$1); [line 21]\n  NULLIFY(&myClass,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class MyClass ):unsigned long ) [line 21]\n  *&myClass:class MyClass *=n$1 [line 21]\n  REMOVE_TEMPS(n$1); [line 21]\n  NULLIFY(&myClass,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 3 -> 2 ;

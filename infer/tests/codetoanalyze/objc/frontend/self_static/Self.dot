@@ -31,7 +31,7 @@ digraph iCFG {
 	
 
 	 44 -> 47 ;
-43 [label="43:  Return Stmt \n   n$22=_fun_NSStringFromClass(sizeof(class A ):class A ) [line 93]\n  *&return:class NSString *=n$22 [line 93]\n  REMOVE_TEMPS(n$22); [line 93]\n  APPLY_ABSTRACTION; [line 93]\n " shape="box"]
+43 [label="43:  Return Stmt \n   n$22=_fun_NSStringFromClass(sizeof(class A ):unsigned long ) [line 93]\n  *&return:class NSString *=n$22 [line 93]\n  REMOVE_TEMPS(n$22); [line 93]\n  APPLY_ABSTRACTION; [line 93]\n " shape="box"]
 	
 
 	 43 -> 42 ;
@@ -64,7 +64,7 @@ digraph iCFG {
 	
 
 	 35 -> 37 ;
-34 [label="34:  Return Stmt \n   n$15=*&object:class B * [line 80]\n  n$14=_fun_B_isC:(n$15:class B *,sizeof(class A ):class A ) virtual [line 80]\n  *&return:signed char =n$14 [line 80]\n  REMOVE_TEMPS(n$14,n$15); [line 80]\n  NULLIFY(&object,false); [line 80]\n  APPLY_ABSTRACTION; [line 80]\n " shape="box"]
+34 [label="34:  Return Stmt \n   n$15=*&object:class B * [line 80]\n  n$14=_fun_B_isC:(n$15:class B *,sizeof(class A ):unsigned long ) virtual [line 80]\n  *&return:signed char =n$14 [line 80]\n  REMOVE_TEMPS(n$14,n$15); [line 80]\n  NULLIFY(&object,false); [line 80]\n  APPLY_ABSTRACTION; [line 80]\n " shape="box"]
 	
 
 	 34 -> 33 ;
@@ -75,7 +75,7 @@ digraph iCFG {
 	
 
 	 32 -> 34 ;
-31 [label="31:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(class B ):class B *) [line 75]\n  n$13=_fun_B_init(n$12:class B *) virtual [line 75]\n  *&b:class B *=n$13 [line 75]\n  REMOVE_TEMPS(n$12,n$13); [line 75]\n  NULLIFY(&b,false); [line 75]\n " shape="box"]
+31 [label="31:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(class B ):unsigned long ) [line 75]\n  n$13=_fun_B_init(n$12:class B *) virtual [line 75]\n  *&b:class B *=n$13 [line 75]\n  REMOVE_TEMPS(n$12,n$13); [line 75]\n  NULLIFY(&b,false); [line 75]\n " shape="box"]
 	
 
 	 31 -> 30 ;
@@ -112,7 +112,7 @@ digraph iCFG {
 	
 
 	 22 -> 24 ;
-21 [label="21:  Call alloc \n   n$6=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 63]\n  REMOVE_TEMPS(n$6); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="box"]
+21 [label="21:  Call alloc \n   n$6=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 63]\n  REMOVE_TEMPS(n$6); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -123,7 +123,7 @@ digraph iCFG {
 	
 
 	 19 -> 21 ;
-18 [label="18:  Call alloc \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 59]\n  REMOVE_TEMPS(n$2); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
+18 [label="18:  Call alloc \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 59]\n  REMOVE_TEMPS(n$2); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
 	
 
 	 18 -> 17 ;

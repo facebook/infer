@@ -23,7 +23,7 @@ digraph iCFG {
 
 	 27 -> 30 ;
 	 27 -> 31 ;
-26 [label="26:  DeclStmt \n   n$21=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 62]\n  n$19=_fun_A_init(n$21:class A *) virtual [line 62]\n  *&a:class A *=n$19 [line 62]\n  REMOVE_TEMPS(n$19,n$21); [line 62]\n " shape="box"]
+26 [label="26:  DeclStmt \n   n$21=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 62]\n  n$19=_fun_A_init(n$21:class A *) virtual [line 62]\n  *&a:class A *=n$19 [line 62]\n  REMOVE_TEMPS(n$19,n$21); [line 62]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -42,7 +42,7 @@ digraph iCFG {
 	
 
 	 22 -> 26 ;
-21 [label="21:  DeclStmt \n   n$15=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 55]\n  n$13=_fun_A_init(n$15:class A *) virtual [line 55]\n  *&a:class A *=n$13 [line 55]\n  REMOVE_TEMPS(n$13,n$15); [line 55]\n " shape="box"]
+21 [label="21:  DeclStmt \n   n$15=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 55]\n  n$13=_fun_A_init(n$15:class A *) virtual [line 55]\n  *&a:class A *=n$13 [line 55]\n  REMOVE_TEMPS(n$13,n$15); [line 55]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -98,7 +98,7 @@ digraph iCFG {
 	
 
 	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 26]\n  n$4=_fun_A_init(n$6:class A *) virtual [line 26]\n  *&a:class A *=n$4 [line 26]\n  REMOVE_TEMPS(n$4,n$6); [line 26]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 26]\n  n$4=_fun_A_init(n$6:class A *) virtual [line 26]\n  *&a:class A *=n$4 [line 26]\n  REMOVE_TEMPS(n$4,n$6); [line 26]\n " shape="box"]
 	
 
 	 6 -> 5 ;

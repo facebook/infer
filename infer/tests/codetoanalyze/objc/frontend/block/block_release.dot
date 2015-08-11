@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_my_mehtod______1); [line 29]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_my_mehtod______1 ):class __objc_anonymous_block_My_manager_my_mehtod______1 *) [line 29]\n  *&__objc_anonymous_block_My_manager_my_mehtod______1:class __objc_anonymous_block_My_manager_my_mehtod______1 =n$8 [line 29]\n  n$9=*&newImage:struct CGImage * [line 29]\n  *n$8.newImage:struct CGImage *=n$9 [line 29]\n  n$5=*&newImage:struct CGImage * [line 29]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_my_mehtod______1,n$5) [line 29]\n  REMOVE_TEMPS(n$8,n$9,n$5); [line 29]\n " shape="box"]
+15 [label="15:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_my_mehtod______1); [line 29]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_my_mehtod______1 ):unsigned long ) [line 29]\n  *&__objc_anonymous_block_My_manager_my_mehtod______1:class __objc_anonymous_block_My_manager_my_mehtod______1 =n$8 [line 29]\n  n$9=*&newImage:struct CGImage * [line 29]\n  *n$8.newImage:struct CGImage *=n$9 [line 29]\n  n$5=*&newImage:struct CGImage * [line 29]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_my_mehtod______1,n$5) [line 29]\n  REMOVE_TEMPS(n$8,n$9,n$5); [line 29]\n " shape="box"]
 	
 
 	 15 -> 8 ;

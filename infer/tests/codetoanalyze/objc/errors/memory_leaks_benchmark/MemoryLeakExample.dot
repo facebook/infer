@@ -156,7 +156,7 @@ digraph iCFG {
 	
 
 	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class UIView ):class UIView *) [line 21]\n  *&attachmentContainerView:class UIView *=n$6 [line 21]\n  REMOVE_TEMPS(n$6); [line 21]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class UIView ):unsigned long ) [line 21]\n  *&attachmentContainerView:class UIView *=n$6 [line 21]\n  REMOVE_TEMPS(n$6); [line 21]\n " shape="box"]
 	
 
 	 6 -> 5 ;

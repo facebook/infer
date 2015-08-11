@@ -1,9 +1,9 @@
 digraph iCFG {
-41 [label="41:  DeclStmt \n   n$30=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool ):class NSAutoreleasePool *) [line 60]\n  n$28=_fun_NSAutoreleasePool_init(n$30:class NSAutoreleasePool *) [line 60]\n  *&pool:class NSAutoreleasePool *=n$28 [line 60]\n  REMOVE_TEMPS(n$28,n$30); [line 60]\n " shape="box"]
+41 [label="41:  DeclStmt \n   n$30=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool ):unsigned long ) [line 60]\n  n$28=_fun_NSAutoreleasePool_init(n$30:class NSAutoreleasePool *) [line 60]\n  *&pool:class NSAutoreleasePool *=n$28 [line 60]\n  REMOVE_TEMPS(n$28,n$30); [line 60]\n " shape="box"]
 	
 
 	 41 -> 40 ;
-40 [label="40:  DeclStmt \n   n$27=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 61]\n  n$25=_fun___set_autorelease_attribute(n$27:class NSString *) [line 61]\n  *&string:class NSString *=n$25 [line 61]\n  REMOVE_TEMPS(n$25,n$27); [line 61]\n " shape="box"]
+40 [label="40:  DeclStmt \n   n$27=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 61]\n  n$25=_fun___set_autorelease_attribute(n$27:class NSString *) [line 61]\n  *&string:class NSString *=n$25 [line 61]\n  REMOVE_TEMPS(n$25,n$27); [line 61]\n " shape="box"]
 	
 
 	 40 -> 39 ;
@@ -104,7 +104,7 @@ digraph iCFG {
 	
 
 	 15 -> 25 ;
-14 [label="14:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(class A ):class A *) [line 30]\n  n$10=_fun_A_init(n$12:class A *) virtual [line 30]\n  *&s1:class A *=n$10 [line 30]\n  REMOVE_TEMPS(n$10,n$12); [line 30]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 30]\n  n$10=_fun_A_init(n$12:class A *) virtual [line 30]\n  *&s1:class A *=n$10 [line 30]\n  REMOVE_TEMPS(n$10,n$12); [line 30]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -141,7 +141,7 @@ digraph iCFG {
 	
 
 	 5 -> 7 ;
-4 [label="4:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 23]\n  *&s:class NSString *=n$3 [line 23]\n  REMOVE_TEMPS(n$3); [line 23]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 23]\n  *&s:class NSString *=n$3 [line 23]\n  REMOVE_TEMPS(n$3); [line 23]\n " shape="box"]
 	
 
 	 4 -> 3 ;

@@ -1,9 +1,9 @@
 digraph iCFG {
-8 [label="8:  DeclStmt \n   n$8=_fun___objc_alloc_no_fail(sizeof(class C ):class C *) [line 22]\n  *&c1:class C *=n$8 [line 22]\n  REMOVE_TEMPS(n$8); [line 22]\n " shape="box"]
+8 [label="8:  DeclStmt \n   n$8=_fun___objc_alloc_no_fail(sizeof(class C ):unsigned long ) [line 22]\n  *&c1:class C *=n$8 [line 22]\n  REMOVE_TEMPS(n$8); [line 22]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class C ):class C *) [line 23]\n  *&c2:class C *=n$6 [line 23]\n  REMOVE_TEMPS(n$6); [line 23]\n " shape="box"]
+7 [label="7:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class C ):unsigned long ) [line 23]\n  *&c2:class C *=n$6 [line 23]\n  REMOVE_TEMPS(n$6); [line 23]\n " shape="box"]
 	
 
 	 7 -> 6 ;

@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_my_mehtod______1); [line 26]\n  n$4=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_my_mehtod______1 ):class __objc_anonymous_block_My_manager_my_mehtod______1 *) [line 26]\n  *&__objc_anonymous_block_My_manager_my_mehtod______1:class __objc_anonymous_block_My_manager_my_mehtod______1 =n$4 [line 26]\n  n$5=*&z:int  [line 26]\n  *n$4.z:int =n$5 [line 26]\n  n$2=*&z:int  [line 26]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_my_mehtod______1,n$2) [line 26]\n  REMOVE_TEMPS(n$4,n$5,n$2); [line 26]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_my_mehtod______1); [line 26]\n  n$4=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_my_mehtod______1 ):unsigned long ) [line 26]\n  *&__objc_anonymous_block_My_manager_my_mehtod______1:class __objc_anonymous_block_My_manager_my_mehtod______1 =n$4 [line 26]\n  n$5=*&z:int  [line 26]\n  *n$4.z:int =n$5 [line 26]\n  n$2=*&z:int  [line 26]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_my_mehtod______1,n$2) [line 26]\n  REMOVE_TEMPS(n$4,n$5,n$2); [line 26]\n " shape="box"]
 	
 
 	 8 -> 4 ;

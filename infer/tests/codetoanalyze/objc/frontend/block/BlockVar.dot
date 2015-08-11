@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 8 -> 12 ;
-7 [label="7:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1); [line 21]\n  n$6=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1 ):class __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1 *) [line 21]\n  *&__objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1:class __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1 =n$6 [line 21]\n  *&addBlock:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1) [line 21]\n  REMOVE_TEMPS(n$6); [line 21]\n " shape="box"]
+7 [label="7:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1); [line 21]\n  n$6=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1 ):unsigned long ) [line 21]\n  *&__objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1:class __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1 =n$6 [line 21]\n  *&addBlock:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1) [line 21]\n  REMOVE_TEMPS(n$6); [line 21]\n " shape="box"]
 	
 
 	 7 -> 6 ;

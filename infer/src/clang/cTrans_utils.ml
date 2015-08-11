@@ -280,7 +280,7 @@ let create_alloc_instrs context sil_loc function_type fname =
         function_type, CTypes_decl.expand_structured_type context.CContext.tenv styp
     | _ -> Sil.Tptr (function_type, Sil.Pk_pointer), function_type in
   let sizeof_exp = Sil.Sizeof (function_type_np, Sil.Subtype.exact) in
-  let exp = (sizeof_exp, function_type) in
+  let exp = (sizeof_exp, Sil.Tint Sil.IULong) in
   let ret_id = Ident.create_fresh Ident.knormal in
   let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
   (function_type, ret_id, stmt_call, Sil.Var ret_id)
@@ -336,7 +336,7 @@ let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
     CTypes_decl.expand_structured_type context.CContext.tenv (CTypes.remove_pointer_to_typ cast_to_typ) in
   let sizeof_exp = Sil.Sizeof (cast_typ_no_pointer, Sil.Subtype.exact) in
   let pname = SymExec.ModelBuiltins.__objc_cast in
-  let args = [(exp, cast_from_typ); (sizeof_exp, Sil.Tvoid)] in
+  let args = [(exp, cast_from_typ); (sizeof_exp, Sil.Tint Sil.IULong)] in
   let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun pname)), args, sil_loc, Sil.cf_default) in
   (ret_id, stmt_call, Sil.Var ret_id)
 

@@ -1,5 +1,5 @@
 digraph iCFG {
-52 [label="52:  DeclStmt \n   n$47=_fun___objc_alloc_no_fail(sizeof(class NSArray ):class NSArray *) [line 30]\n  n$45=_fun_NSArray_init(n$47:class NSArray *) virtual [line 30]\n  *&a:class NSArray *=n$45 [line 30]\n  REMOVE_TEMPS(n$45,n$47); [line 30]\n " shape="box"]
+52 [label="52:  DeclStmt \n   n$47=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 30]\n  n$45=_fun_NSArray_init(n$47:class NSArray *) virtual [line 30]\n  *&a:class NSArray *=n$45 [line 30]\n  REMOVE_TEMPS(n$45,n$47); [line 30]\n " shape="box"]
 	
 
 	 52 -> 51 ;
@@ -31,7 +31,7 @@ digraph iCFG {
 
 	 45 -> 48 ;
 	 45 -> 49 ;
-44 [label="44:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 35]\n  n$43=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array_trans______2 ):class __objc_anonymous_block_MyBlock_array_trans______2 *) [line 35]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:class __objc_anonymous_block_MyBlock_array_trans______2 =n$43 [line 35]\n  *&enumerateObjectsUsingBlock:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 35]\n  REMOVE_TEMPS(n$43); [line 35]\n " shape="box"]
+44 [label="44:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 35]\n  n$43=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array_trans______2 ):unsigned long ) [line 35]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:class __objc_anonymous_block_MyBlock_array_trans______2 =n$43 [line 35]\n  *&enumerateObjectsUsingBlock:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 35]\n  REMOVE_TEMPS(n$43); [line 35]\n " shape="box"]
 	
 
 	 44 -> 43 ;
@@ -104,7 +104,7 @@ digraph iCFG {
 	
 
 	 27 -> 52 ;
-26 [label="26:  DeclStmt \n   n$24=_fun___objc_alloc_no_fail(sizeof(class NSArray ):class NSArray *) [line 14]\n  n$22=_fun_NSArray_init(n$24:class NSArray *) virtual [line 14]\n  *&a:class NSArray *=n$22 [line 14]\n  REMOVE_TEMPS(n$22,n$24); [line 14]\n " shape="box"]
+26 [label="26:  DeclStmt \n   n$24=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 14]\n  n$22=_fun_NSArray_init(n$24:class NSArray *) virtual [line 14]\n  *&a:class NSArray *=n$22 [line 14]\n  REMOVE_TEMPS(n$22,n$24); [line 14]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -136,7 +136,7 @@ digraph iCFG {
 
 	 19 -> 22 ;
 	 19 -> 23 ;
-18 [label="18:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array______1); [line 15]\n  n$20=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array______1 ):class __objc_anonymous_block_MyBlock_array______1 *) [line 15]\n  *&__objc_anonymous_block_MyBlock_array______1:class __objc_anonymous_block_MyBlock_array______1 =n$20 [line 15]\n  *&infer___objc_anonymous_block_MyBlock_array______1:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array______1) [line 15]\n  REMOVE_TEMPS(n$20); [line 15]\n " shape="box"]
+18 [label="18:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array______1); [line 15]\n  n$20=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array______1 ):unsigned long ) [line 15]\n  *&__objc_anonymous_block_MyBlock_array______1:class __objc_anonymous_block_MyBlock_array______1 =n$20 [line 15]\n  *&infer___objc_anonymous_block_MyBlock_array______1:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array______1) [line 15]\n  REMOVE_TEMPS(n$20); [line 15]\n " shape="box"]
 	
 
 	 18 -> 17 ;

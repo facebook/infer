@@ -1,5 +1,5 @@
 digraph iCFG {
-11 [label="11:  DeclStmt \n   n$9=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 31]\n  *&s:class NSString *=n$9 [line 31]\n  REMOVE_TEMPS(n$9); [line 31]\n " shape="box"]
+11 [label="11:  DeclStmt \n   n$9=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 31]\n  *&s:class NSString *=n$9 [line 31]\n  REMOVE_TEMPS(n$9); [line 31]\n " shape="box"]
 	
 
 	 11 -> 8 ;
@@ -27,7 +27,7 @@ digraph iCFG {
 	
 
 	 5 -> 11 ;
-4 [label="4:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class NSString ):class NSString *) [line 21]\n  *&s:class NSString *=n$3 [line 21]\n  REMOVE_TEMPS(n$3); [line 21]\n  NULLIFY(&s,false); [line 21]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 21]\n  *&s:class NSString *=n$3 [line 21]\n  REMOVE_TEMPS(n$3); [line 21]\n  NULLIFY(&s,false); [line 21]\n " shape="box"]
 	
 
 	 4 -> 3 ;
