@@ -218,6 +218,8 @@ let recognize_exception exn =
         (Localise.use_after_free, desc, Some mloc, Exn_user, High, None, Prover)
     | Wrong_argument_number mloc ->
         (Localise.from_string "Wrong_argument_number", Localise.no_desc, Some mloc, Exn_developer, Low, None, Nocat)
+    | Failure _ as f ->
+        raise f
     | exn ->
         let exn_name = Printexc.to_string exn in
         (Localise.from_string exn_name, Localise.no_desc, None, Exn_developer, Low, None, Nocat) in
