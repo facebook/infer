@@ -35,14 +35,18 @@ type typ =
   | Tlabel
   | Tmetadata
 
-type metadata =
+type metadata_value =
   | MetadataVar of int
   | MetadataString of string
   | MetadataNode of metadata_component list
 
 and metadata_component =
   | TypOperand of typ option * operand
-  | Metadata of metadata
+  | MetadataVal of metadata_value
+
+type metadata_mapping =
+  | NameMapping of string * int list
+  | NumberMapping of int * metadata_component list
 
 type instr =
   | Ret of (typ * operand) option

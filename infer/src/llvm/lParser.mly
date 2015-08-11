@@ -153,7 +153,7 @@
 %%
 
 prog:
-  | targets defs = func_def* metadata_def* EOF { Prog defs }
+  | targets defs = func_def* mappings = metadata_def* EOF { Prog defs }
 
 targets:
   | { (None, None) }
@@ -169,23 +169,23 @@ target_triple:
   | TARGET TRIPLE EQUALS str = CONSTANT_STRING { str }
 
 metadata_def:
-  | name = NAMED_METADATA EQUALS numbered_metadata_node { () }
-  | metadata_id = NUMBERED_METADATA EQUALS metadata_node { () }
+  | name = NAMED_METADATA EQUALS metadata_ids = numbered_metadata_node { NameMapping (name, metadata_ids) }
+  | metadata_id = NUMBERED_METADATA EQUALS components = metadata_node { NumberMapping (metadata_id, components) }
 
 numbered_metadata_node:
   | METADATA_NODE_BEGIN metadata_ids = separated_list(COMMA, NUMBERED_METADATA) RBRACE { metadata_ids }
 
 metadata_node:
-  | METADATA? METADATA_NODE_BEGIN components = separated_list(COMMA, metadata_component) RBRACE { MetadataNode components }
+  | METADATA? METADATA_NODE_BEGIN components = separated_list(COMMA, metadata_component) RBRACE { components }
 
 metadata_component:
   | tp = typ? op = operand { TypOperand (tp, op) }
-  | METADATA? value = metadata_value { Metadata value }
+  | METADATA? value = metadata_value { MetadataVal value }
 
 metadata_value:
   | i = NUMBERED_METADATA { MetadataVar i }
   | str = METADATA_STRING { MetadataString str }
-  | node = metadata_node { node }
+  | components = metadata_node { MetadataNode components }
 
 func_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN
