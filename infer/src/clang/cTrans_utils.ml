@@ -11,8 +11,6 @@
 
 open Utils
 open CFrontend_utils
-open CContext
-open Clang_ast_t
 
 module L = Logging
 
@@ -279,7 +277,7 @@ let create_alloc_instrs context sil_loc function_type fname =
     | Sil.Tptr (styp, Sil.Pk_objc_weak)
     | Sil.Tptr (styp, Sil.Pk_objc_unsafe_unretained)
     | Sil.Tptr (styp, Sil.Pk_objc_autoreleasing) ->
-        function_type, CTypes_decl.expand_structured_type context.tenv styp
+        function_type, CTypes_decl.expand_structured_type context.CContext.tenv styp
     | _ -> Sil.Tptr (function_type, Sil.Pk_pointer), function_type in
   let sizeof_exp = Sil.Sizeof (function_type_np, Sil.Subtype.exact) in
   let exp = (sizeof_exp, function_type) in
@@ -306,7 +304,7 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let is_instance = true in
   let call_flags = { Sil.cf_virtual = is_instance; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
   let pname = General_utils.mk_procname_from_objc_method cls_name CFrontend_config.init Procname.Instance_objc_method in
-  CMethod_trans.create_external_procdesc trans_state.context.cfg pname is_instance None;
+  CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname is_instance None;
   let args = [(Sil.Var alloc_ret_id, alloc_ret_type)] in
   let init_stmt_call = Sil.Call([init_ret_id], (Sil.Const (Sil.Cfun pname)), args, loc, call_flags) in
   let instrs = [alloc_stmt_call; init_stmt_call] in
@@ -317,7 +315,7 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
   { res_trans with exps = [(Sil.Var init_ret_id, alloc_ret_type)]}
 
 let new_or_alloc_trans trans_state loc stmt_info class_name selector =
-  let function_type = CTypes_decl.type_name_to_sil_type trans_state.context.tenv class_name in
+  let function_type = CTypes_decl.type_name_to_sil_type trans_state.context.CContext.tenv class_name in
   if selector = CFrontend_config.alloc then
     alloc_trans trans_state loc stmt_info function_type true
   else if selector = CFrontend_config.new_str then
@@ -335,7 +333,7 @@ let cpp_new_trans trans_state sil_loc stmt_info function_type =
 let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
   let cast_typ_no_pointer =
-    CTypes_decl.expand_structured_type context.tenv (CTypes.remove_pointer_to_typ cast_to_typ) in
+    CTypes_decl.expand_structured_type context.CContext.tenv (CTypes.remove_pointer_to_typ cast_to_typ) in
   let sizeof_exp = Sil.Sizeof (cast_typ_no_pointer, Sil.Subtype.exact) in
   let pname = SymExec.ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Sil.Tvoid)] in
@@ -490,12 +488,12 @@ let extract_item_from_option op warning_string =
 
 let is_member_exp stmt =
   match stmt with
-  | MemberExpr _ -> true
+  | Clang_ast_t.MemberExpr _ -> true
   | _ -> false
 
 let is_enumeration_constant stmt =
   match stmt with
-  | DeclRefExpr(_, _, _, drei) ->
+  | Clang_ast_t.DeclRefExpr(_, _, _, drei) ->
       (match drei.Clang_ast_t.drti_decl_ref with
        | Some d -> (match d.Clang_ast_t.dr_kind with
            | `EnumConstant -> true
@@ -505,7 +503,7 @@ let is_enumeration_constant stmt =
 
 let is_null_stmt s =
   match s with
-  | NullStmt _ -> true
+  | Clang_ast_t.NullStmt _ -> true
   | _ -> false
 
 let dummy_id () =
@@ -524,6 +522,7 @@ let rec get_type_from_exp_stmt stmt =
         | Some n -> n
         | _ -> assert false )
     | _ -> assert false in
+  let open Clang_ast_t in
   match stmt with
   | CXXOperatorCallExpr(_, _, ei)
   | CallExpr(_, _, ei) -> ei.Clang_ast_t.ei_qual_type
@@ -551,7 +550,7 @@ struct
     if is_superinstance mei then
       let typ, self_expr, id, ins =
         let t' = CTypes.add_pointer_to_typ
-            (CTypes_decl.get_type_curr_class context.tenv context.curr_class) in
+            (CTypes_decl.get_type_curr_class context.CContext.tenv context.CContext.curr_class) in
         let e = Sil.Lvar (Sil.mk_pvar (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Sil.Var id, [id], [Sil.Letderef (id, e, t', loc)] in
@@ -600,7 +599,7 @@ let is_owning_name n =
 
 let rec is_owning_method s =
   match s with
-  | ObjCMessageExpr(_, _ , _, mei) ->
+  | Clang_ast_t.ObjCMessageExpr(_, _ , _, mei) ->
       is_owning_name mei.Clang_ast_t.omei_selector
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
       | [] -> false
@@ -608,14 +607,14 @@ let rec is_owning_method s =
 
 let rec is_method_call s =
   match s with
-  | ObjCMessageExpr(_, _ , _, mei) -> true
+  | Clang_ast_t.ObjCMessageExpr (_, _ , _, mei) -> true
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
       | [] -> false
       | s'':: _ -> is_method_call s'')
 
 let rec get_decl_ref_info s parent_line_number =
   match s with
-  | DeclRefExpr (stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
+  | Clang_ast_t.DeclRefExpr (stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
       let line_number = CLocation.get_line stmt_info parent_line_number in
       stmt_info.Clang_ast_t.si_pointer, line_number
   | _ -> (match Clang_ast_proj.get_stmt_tuple s with
@@ -626,18 +625,18 @@ let rec get_decl_ref_info s parent_line_number =
 
 let rec contains_opaque_value_expr s =
   match s with
-  | OpaqueValueExpr (_, _, _, _) -> true
-  | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
-      | [] -> false
-      | s'':: _ -> contains_opaque_value_expr s'')
+  | Clang_ast_t.OpaqueValueExpr _ -> true
+  | _ -> match snd (Clang_ast_proj.get_stmt_tuple s) with
+    | [] -> false
+    | s'':: _ -> contains_opaque_value_expr s''
 
 let rec compute_autorelease_pool_vars context stmts =
   match stmts with
   | [] -> []
-  | DeclRefExpr(si, sl, ei, drei):: stmts' ->
+  | Clang_ast_t.DeclRefExpr (si, sl, ei, drei):: stmts' ->
       let name = get_name_decl_ref_exp_info drei si in
-      let procname = Cfg.Procdesc.get_proc_name context.procdesc in
-      let local_vars = Cfg.Procdesc.get_locals context.procdesc in
+      let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+      let local_vars = Cfg.Procdesc.get_locals context.CContext.procdesc in
       let mname = try
           list_filter (fun (m, t) -> Mangled.to_string m = name) local_vars
         with _ -> [] in
@@ -646,9 +645,9 @@ let rec compute_autorelease_pool_vars context stmts =
            CFrontend_utils.General_utils.append_no_duplicated_pvars
              [(Sil.Lvar (Sil.mk_pvar m procname), t)] (compute_autorelease_pool_vars context stmts')
        | _ -> compute_autorelease_pool_vars context stmts')
-  | s:: stmts' ->
+  | s :: stmts' ->
       let sl = snd(Clang_ast_proj.get_stmt_tuple s) in
-      compute_autorelease_pool_vars context (sl@stmts')
+      compute_autorelease_pool_vars context (sl @ stmts')
 
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
@@ -658,6 +657,7 @@ let is_logical_negation_of_int tenv ei uoi =
 
 (* Checks if stmt_list is a call to a special dispatch function *)
 let is_dispatch_function stmt_list =
+  let open Clang_ast_t in
   match stmt_list with
   | ImplicitCastExpr(_,[DeclRefExpr(_, _, _, di)], _, _):: stmts ->
       (match di.Clang_ast_t.drti_decl_ref with
@@ -690,7 +690,7 @@ let assign_default_params params_stmt callee_pname_opt ~is_cxx_method =
         let params_args = list_combine params_stmt args in
         let replace_default_arg param =
           match param with
-          | CXXDefaultArgExpr(_, _, _), (_, _, Some default_instr) -> default_instr
+          | Clang_ast_t.CXXDefaultArgExpr _, (_, _, Some default_instr) -> default_instr
           | instr, _ -> instr in
         list_map replace_default_arg params_args
       with

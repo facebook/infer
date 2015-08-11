@@ -9,7 +9,6 @@
 
 (** Module for utility functions for the whole frontend. Includes functions for printing,  *)
 (** for transformations of ast nodes and general utility functions such as  functions on lists *)
-open Clang_ast_t
 
 module Printing :
 sig
@@ -49,15 +48,15 @@ sig
 
   val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> string
 
-  val property_attribute_compare : property_attribute -> property_attribute -> int
+  val property_attribute_compare : Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> int
 
   val generated_ivar_name : string -> string
 
-  val property_attribute_eq : property_attribute -> property_attribute -> bool
+  val property_attribute_eq : Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> bool
 
-  val getter_attribute_opt : property_attribute list -> string option
+  val getter_attribute_opt : Clang_ast_t.property_attribute list -> string option
 
-  val setter_attribute_opt : property_attribute list -> string option
+  val setter_attribute_opt : Clang_ast_t.property_attribute list -> string option
 
   val get_memory_management_attributes : unit -> Clang_ast_t.property_attribute list
 

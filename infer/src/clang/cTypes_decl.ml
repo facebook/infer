@@ -10,9 +10,7 @@
 (** Processes types and record declarations by adding them to the tenv *)
 
 open Utils
-open Clang_ast_t
 open CFrontend_utils
-open CFrontend_utils.General_utils
 
 module L = Logging
 exception Typename_not_found
@@ -86,10 +84,10 @@ let string_type_to_sil_type tenv s =
     let s = (match Str.split (Str.regexp "[ \t]+") s with
         | "struct"::"(anonymous":: "struct":: s' ->
             (*Printing.log_out "    ...Getting rid of the extra 'struct' word@."; *)
-            string_from_list ("struct"::"(anonymous":: s')
+            General_utils.string_from_list ("struct"::"(anonymous":: s')
         | "union"::"(anonymous":: "union":: s' ->
             (*Printing.log_out "    ...Getting rid of the extra 'union' word@."; *)
-            string_from_list ("union"::"(anonymous":: s')
+            General_utils.string_from_list ("union"::"(anonymous":: s')
         | _ -> s) in
     let lexbuf = Lexing.from_string s in
     let t =
@@ -140,6 +138,7 @@ let get_record_name opt_type = match opt_type with
 
 
 let get_method_decls parent decl_list =
+  let open Clang_ast_t in
   let rec traverse_decl parent decl = match decl with
     | CXXMethodDecl _ -> [(parent, decl)]
     | CXXRecordDecl (_, _, _, _, decl_list', _, _, _)
@@ -195,12 +194,13 @@ and do_typedef_declaration tenv namespace decl_info name opt_type typedef_decl_i
     Sil.tenv_add tenv typename typ
 
 and get_struct_fields tenv record_name namespace decl_list =
+  let open Clang_ast_t in
   match decl_list with
   | [] -> []
   | FieldDecl(decl_info, name_info, qual_type, field_decl_info):: decl_list' ->
       let field_name = name_info.Clang_ast_t.ni_name in
       Printing.log_out "  ...Defining field '%s'.\n" field_name;
-      let id = mk_class_field_name record_name field_name in
+      let id = General_utils.mk_class_field_name record_name field_name in
       let typ = qual_type_to_sil_type tenv qual_type in
       let annotation_items = [] in (* For the moment we don't use them*)
       (id, typ, annotation_items):: get_struct_fields tenv record_name namespace decl_list'
@@ -215,10 +215,10 @@ and get_struct_fields tenv record_name namespace decl_list =
 
 and get_class_methods tenv class_name namespace decl_list =
   let process_method_decl = function
-    | CXXMethodDecl (decl_info, name_info, qual_type, function_decl_info) ->
-        let method_name = name_info.ni_name in
+    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, qual_type, function_decl_info) ->
+        let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Declaring method '%s'.\n" method_name;
-        let method_proc = mk_procname_from_cpp_method class_name method_name  (CTypes.get_type qual_type) in
+        let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name  (CTypes.get_type qual_type) in
         Some method_proc
     | _ -> None in
   (* poor mans list_filter_map *)
@@ -241,7 +241,7 @@ and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_cont
   Printing.log_out "Record Declaration '%s' defined as struct\n" n;
   let non_static_fields = get_struct_fields tenv name_str namespace decl_list in
   let non_static_fields = if CTrans_models.is_objc_memory_model_controlled n then
-      append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
+      General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
     else non_static_fields in
   let non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields in
   let static_fields = [] in (* Warning for the moment we do not treat static field. *)
@@ -264,6 +264,7 @@ and add_late_defined_record tenv namespace typename =
   Printing.log_out "!!!! Calling late-defined record '%s'\n" (Sil.typename_to_string typename) ;
   match typename with
   | Sil.TN_csu(Sil.Struct, name) | Sil.TN_csu(Sil.Union, name) ->
+      let open Clang_ast_t in
       let rec scan decls =
         match decls with
         | [] -> false
@@ -300,6 +301,7 @@ and add_late_defined_typedef tenv namespace typename =
   match typename with
   | Sil.TN_typedef name ->
       let rec scan decls =
+        let open Clang_ast_t in
         match decls with
         | [] -> false
         | TypedefDecl (decl_info, name_info, opt_type, _, tdi) :: decls' ->

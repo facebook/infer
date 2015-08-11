@@ -18,7 +18,6 @@ module L = Logging
 open Utils
 open CFrontend_utils
 open CGen_trans
-open Clang_ast_t
 
 (* Translate one global declaration *)
 let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
@@ -27,6 +26,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   CLocation.update_curr_file info;
   let source_range = info.Clang_ast_t.di_source_range in
   let should_translate_enum = CLocation.should_translate_enum source_range in
+  let open Clang_ast_t in
   match dec with
   | FunctionDecl(di, name_info, qt, fdecl_info) ->
       CMethod_declImpl.function_decl tenv cfg cg namespace dec None CContext.ContextNoCls

@@ -11,7 +11,6 @@
 (** for transformations of ast nodes and general utility functions such as  functions on lists *)
 
 open Utils
-open Clang_ast_t
 
 module L = Logging
 module F = Format
@@ -130,10 +129,11 @@ struct
     "<\"" ^ name ^ "\"> '" ^ info.Clang_ast_t.si_pointer ^ "'"
 
   let get_stmts_from_stmt stmt =
+    let open Clang_ast_t in
     match stmt with
-    | OpaqueValueExpr(_, lstmt, _, opaque_value_expr_info) ->
+    | OpaqueValueExpr (_, lstmt, _, opaque_value_expr_info) ->
         (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
-         | Some stmt -> lstmt@[stmt]
+         | Some stmt -> lstmt @ [stmt]
          | _ -> lstmt)
     (* given that this has not been translated, looking up for variables *)
     (* inside leads to inconsistencies *)
@@ -249,7 +249,7 @@ struct
     CFrontend_config.pointer_prefix^("INVALID")
 
   let type_from_unary_expr_or_type_trait_expr_info info =
-    match info.uttei_qual_type with
+    match info.Clang_ast_t.uttei_qual_type with
     | Some qt -> Some qt
     | None -> None
 

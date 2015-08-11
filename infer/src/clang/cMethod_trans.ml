@@ -12,8 +12,6 @@
 
 open Utils
 open CFrontend_utils
-open CContext
-open Clang_ast_t
 
 module L = Logging
 
@@ -59,11 +57,11 @@ let get_param_decls function_method_decl_info =
 let get_parameters function_method_decl_info =
   let par_to_ms_par par =
     match par with
-    | ParmVarDecl(decl_info, name_info, qtype, var_decl_info) ->
+    | Clang_ast_t.ParmVarDecl (decl_info, name_info, qtype, var_decl_info) ->
         let name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "Adding  param '%s' " name;
         Printing.log_out "with pointer %s@." decl_info.Clang_ast_t.di_pointer;
-        (name, CTypes.get_type qtype, var_decl_info.vdi_init_expr)
+        (name, CTypes.get_type qtype, var_decl_info.Clang_ast_t.vdi_init_expr)
     | _ -> assert false in
 
   let pars = list_map par_to_ms_par (get_param_decls function_method_decl_info) in
@@ -87,14 +85,15 @@ let build_method_signature decl_info procname function_method_decl_info is_insta
   CMethod_signature.make_ms procname parameters qt attributes source_range is_instance_method is_generated
 
 let method_signature_of_decl curr_class meth_decl block_data_opt =
+  let open Clang_ast_t in
   match meth_decl, block_data_opt with
-  | FunctionDecl(decl_info, name_info, qt, fdi), _ ->
-      let name = name_info.Clang_ast_t.ni_name in
+  | FunctionDecl (decl_info, name_info, qt, fdi), _ ->
+      let name = name_info.ni_name in
       let func_decl = Func_decl_info (fdi, CTypes.get_type qt) in
       let procname = General_utils.mk_procname_from_function name (CTypes.get_type qt) in
       let ms = build_method_signature decl_info procname func_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
-  | CXXMethodDecl(decl_info, name_info, qt, fdi), _ ->
+  | CXXMethodDecl (decl_info, name_info, qt, fdi), _ ->
       let class_name = CContext.get_curr_class_name curr_class in
       let method_name = name_info.Clang_ast_t.ni_name in
       let typ = CTypes.get_type qt in
@@ -102,20 +101,21 @@ let method_signature_of_decl curr_class meth_decl block_data_opt =
       let method_decl = Cpp_Meth_decl_info (fdi, class_name, typ)  in
       let ms = build_method_signature decl_info procname method_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
-  | ObjCMethodDecl(decl_info, name_info, mdi), _ ->
+  | ObjCMethodDecl (decl_info, name_info, mdi), _ ->
       let class_name = CContext.get_curr_class_name curr_class in
-      let method_name = name_info.Clang_ast_t.ni_name in
-      let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
+      let method_name = name_info.ni_name in
+      let is_instance = mdi.omdi_is_instance_method in
       let method_kind = Procname.objc_method_kind_of_bool is_instance in
       let procname = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
       let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
       let is_generated = Ast_utils.is_generated name_info in
       let ms = build_method_signature decl_info procname method_decl false false is_generated in
-      ms, mdi.Clang_ast_t.omdi_body, mdi.Clang_ast_t.omdi_parameters
-  | BlockDecl(decl_info, decl_list, decl_context_info, bdi), Some (qt, is_instance, procname, _) ->
+      ms, mdi.omdi_body, mdi.omdi_parameters
+  | BlockDecl (decl_info, decl_list, decl_context_info, bdi),
+    Some (qt, is_instance, procname, _) ->
       let func_decl = Block_decl_info (bdi, CTypes.get_type qt) in
       let ms = build_method_signature decl_info procname func_decl is_instance true false in
-      ms, bdi.Clang_ast_t.bdi_body, bdi.Clang_ast_t.bdi_parameters
+      ms, bdi.bdi_body, bdi.bdi_parameters
   |_ -> assert false
 
 let get_superclass_curr_class context =
@@ -187,12 +187,12 @@ let captured_vars_from_block_info context cvl =
              (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_qual_type with
               | Some name_info, _ ->
                   let n = name_info.Clang_ast_t.ni_name in
-                  if n = CFrontend_config.self && not context.is_instance then []
+                  if n = CFrontend_config.self && not context.CContext.is_instance then []
                   else
-                    (let procdesc_formals = Cfg.Procdesc.get_formals context.procdesc in
+                    (let procdesc_formals = Cfg.Procdesc.get_formals context.CContext.procdesc in
                      (Printing.log_err "formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
                      let formals = list_map formal2captured procdesc_formals in
-                     [find (context.local_vars @ formals) n])
+                     [find (context.CContext.local_vars @ formals) n])
               | _ -> assert false)
          | None -> []) :: f cvl'' in
   list_flatten (f cvl)

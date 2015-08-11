@@ -10,9 +10,7 @@
 (** Utility module for retrieving types *)
 
 open Utils
-open Clang_ast_t
 open CFrontend_utils
-open CFrontend_utils.General_utils
 module L = Logging
 
 let get_function_return_type s =
@@ -66,13 +64,14 @@ let lookup_var_type context pvar =
 (* Extract the type out of a statement. This is useful when the statement  *)
 (* denotes actually an expression                                          *)
 let extract_type_from_stmt s =
+  let open Clang_ast_t in
   match s with
-  | BinaryConditionalOperator(_, _, expr_info) | ConditionalOperator(_, _, expr_info)
-  | AddrLabelExpr(_, _, expr_info, _) | ArraySubscriptExpr(_, _, expr_info)
-  | ArrayTypeTraitExpr(_, _, expr_info) | AsTypeExpr(_, _, expr_info)
-  | AtomicExpr(_, _, expr_info) | BinaryOperator(_, _, expr_info, _)
-  | CompoundAssignOperator(_, _, expr_info, _, _)
-  | BlockExpr(_, _, expr_info, _) | CXXBindTemporaryExpr (_, _ , expr_info, _)
+  | BinaryConditionalOperator (_, _, expr_info) | ConditionalOperator (_, _, expr_info)
+  | AddrLabelExpr (_, _, expr_info, _) | ArraySubscriptExpr (_, _, expr_info)
+  | ArrayTypeTraitExpr (_, _, expr_info) | AsTypeExpr (_, _, expr_info)
+  | AtomicExpr (_, _, expr_info) | BinaryOperator (_, _, expr_info, _)
+  | CompoundAssignOperator (_, _, expr_info, _, _)
+  | BlockExpr (_, _, expr_info, _) | CXXBindTemporaryExpr (_, _ , expr_info, _)
   | CXXBoolLiteralExpr (_, _, expr_info, _) | CXXConstructExpr (_, _, expr_info, _)
   | CXXTemporaryObjectExpr (_, _, expr_info, _) | CXXDefaultArgExpr (_, _, expr_info)
   | CXXDefaultInitExpr (_, _, expr_info) | CXXDeleteExpr (_, _, expr_info, _)
@@ -136,7 +135,7 @@ let cut_struct_union s =
   match buf with
   | "struct":: l (*-> Printing.string_from_list l *)
   | "class":: l
-  | "union":: l -> string_from_list l
+  | "union":: l -> General_utils.string_from_list l
   | _ -> s
 
 let get_name_from_struct s =

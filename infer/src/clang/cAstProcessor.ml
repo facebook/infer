@@ -12,14 +12,15 @@
     w.r.t. the previous one. This module processes the AST and makes locations explicit. *)
 
 open Utils
-open Clang_ast_j
 
 module L = Logging
 module F = Format
 
 
 (** Get the sub-declarations of the current declaration. *)
-let decl_get_sub_decls decl = match decl with
+let decl_get_sub_decls decl =
+  let open Clang_ast_t in
+  match decl with
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
   | RecordDecl (_, _, _, _, decl_list, _, _)
   | ObjCInterfaceDecl (_, _, decl_list, _, _)
@@ -36,7 +37,9 @@ let decl_get_sub_decls decl = match decl with
 
 
 (** Set the sub-declarations of the current declaration. *)
-let decl_set_sub_decls decl decl_list' = match decl with
+let decl_set_sub_decls decl decl_list' =
+  let open Clang_ast_t in
+  match decl with
   | CXXRecordDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, record_decl_info, cxx_record_info) ->
       CXXRecordDecl (decl_info, name, opt_type, type_ptr, decl_list', decl_context_info, record_decl_info, cxx_record_info)
   | RecordDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, record_decl_info) ->
@@ -63,13 +66,13 @@ let decl_set_sub_decls decl decl_list' = match decl with
 
 (** Pretty print a source location. *)
 let pp_source_loc fmt source_loc =
-  let file = match source_loc.sl_file with
+  let file = match source_loc.Clang_ast_t.sl_file with
     | Some file -> file
     | None -> "None" in
-  let line = match source_loc.sl_line with
+  let line = match source_loc.Clang_ast_t.sl_line with
     | Some n -> string_of_int n
     | None -> "None" in
-  let column = match source_loc.sl_column with
+  let column = match source_loc.Clang_ast_t.sl_column with
     | Some n -> string_of_int n
     | None -> "None" in
   if file = "None" && line = "None" && column = "None"
@@ -89,16 +92,17 @@ let pp_ast_decl fmt ast_decl =
     let stmt_str = Clang_ast_proj.get_stmt_kind_string stmt in
     let stmt_info, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
     let decl_list = match stmt with
-      | DeclStmt (_, _, decl_list) -> decl_list
+      | Clang_ast_t.DeclStmt (_, _, decl_list) -> decl_list
       | _ -> [] in
     F.fprintf fmt "%s%s %a@\n"
       prefix
       stmt_str
-      pp_source_range stmt_info.si_source_range;
+      pp_source_range stmt_info.Clang_ast_t.si_source_range;
     list_iter (dump_stmt prefix1) stmt_list;
     list_iter (dump_decl prefix1) decl_list
   and dump_decl prefix decl =
     let prefix1 = prefix ^ "  " in
+    let open Clang_ast_t in
     match decl with
     | FunctionDecl (decl_info, name, qt, fdecl_info) ->
         F.fprintf fmt "%sFunctionDecl %s %a@\n"
@@ -131,7 +135,7 @@ let pp_ast_decl fmt ast_decl =
 
   let decl_str = Clang_ast_proj.get_decl_kind_string ast_decl in
   match ast_decl with
-  | TranslationUnitDecl (_, decl_list, _, _) ->
+  | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _) ->
       F.fprintf fmt "%s (%d declarations)@\n" decl_str (list_length decl_list);
       list_iter (dump_decl "") decl_list
   | _ ->
@@ -147,17 +151,17 @@ module LocComposer : sig
   val create : unit -> status
 
   (** Compose a new source_range to the current one. *)
-  val compose : status -> source_range -> source_range
+  val compose : status -> Clang_ast_t.source_range -> Clang_ast_t.source_range
 
   (** Set the current file if specified in the source_range.
       The composer will not descend into file included from the current one.
       For locations in included files, it will return instead the last known
       location of the current file. *)
-  val set_current_file : status -> source_range -> unit
+  val set_current_file : status -> Clang_ast_t.source_range -> unit
 end = struct
   type status =
     { mutable curr_file: string option;
-      mutable curr_source_range: source_range;
+      mutable curr_source_range: Clang_ast_t.source_range;
       mutable in_curr_file : bool }
 
   let empty_sloc = { Clang_ast_t.sl_file = None; sl_line = None; sl_column = None }
@@ -168,7 +172,7 @@ end = struct
       in_curr_file = true; }
 
   let set_current_file st (sloc1, sloc2) =
-    match sloc1.sl_file, sloc2.sl_file with
+    match sloc1.Clang_ast_t.sl_file, sloc2.Clang_ast_t.sl_file with
     | _, Some fname
     | Some fname, None ->
         st.curr_file <- Some fname;
@@ -176,7 +180,7 @@ end = struct
     | _ ->
         ()
 
-  let sloc_is_current_file st sloc = match st.curr_file, sloc.sl_file with
+  let sloc_is_current_file st sloc = match st.curr_file, sloc.Clang_ast_t.sl_file with
     | Some curr_f, Some f ->
         Some (f = curr_f)
     | None, _ -> None
@@ -195,6 +199,7 @@ end = struct
         then
           let update x_opt y_opt =
             if y_opt <> None then y_opt else x_opt in
+          let open Clang_ast_t in
           { sl_file = update old_sloc.sl_file new_sloc.sl_file;
             sl_line = update old_sloc.sl_line new_sloc.sl_line;
             sl_column = update old_sloc.sl_column new_sloc.sl_column }
@@ -220,11 +225,13 @@ end
 (** Apply a location composer to the locations in a statement. *)
 let rec stmt_process_locs loc_composer stmt =
   let update (stmt_info, stmt_list) =
+    let range' = LocComposer.compose loc_composer stmt_info.Clang_ast_t.si_source_range in
     let stmt_info' =
       { stmt_info with
-        si_source_range = LocComposer.compose loc_composer stmt_info.si_source_range } in
+        Clang_ast_t.si_source_range = range' } in
     let stmt_list' = list_map (stmt_process_locs loc_composer) stmt_list in
     (stmt_info', stmt_list') in
+  let open Clang_ast_t in
   match Clang_ast_proj.update_stmt_tuple update stmt with
   | DeclStmt (stmt_info, stmt_list, decl_list) ->
       let decl_list' = list_map (decl_process_locs loc_composer) decl_list in
@@ -236,12 +243,14 @@ let rec stmt_process_locs loc_composer stmt =
 and decl_process_locs loc_composer decl =
   let decl' =
     let update decl_info =
+      let range' = LocComposer.compose loc_composer decl_info.Clang_ast_t.di_source_range in
       { decl_info with
-        di_source_range = LocComposer.compose loc_composer decl_info.di_source_range } in
+        Clang_ast_t.di_source_range = range' } in
     let decl_list = decl_get_sub_decls decl in
     let decl1 = Clang_ast_proj.update_decl_tuple update decl in
     let decl_list' = list_map (decl_process_locs loc_composer) decl_list in
     decl_set_sub_decls decl1 decl_list' in
+  let open Clang_ast_t in
   let get_updated_fun_decl (decl_info', name, qt, fdecl_info) =
     let fdi_decls_in_prototype_scope' =
       list_map (decl_process_locs loc_composer) fdecl_info.fdi_decls_in_prototype_scope in
@@ -280,13 +289,13 @@ let ast_decl_process_locs loc_composer ast_decl =
 
   let toplevel_decl_process_locs decl =
     let decl_info = Clang_ast_proj.get_decl_tuple decl in
-    LocComposer.set_current_file loc_composer decl_info.di_source_range;
+    LocComposer.set_current_file loc_composer decl_info.Clang_ast_t.di_source_range;
     decl_process_locs loc_composer decl in
 
   match ast_decl with
-  | TranslationUnitDecl (decl_info, decl_list, decl_context_info, type_list) ->
+  | Clang_ast_t.TranslationUnitDecl (decl_info, decl_list, decl_context_info, type_list) ->
       let decl_list' = list_map toplevel_decl_process_locs decl_list in
-      TranslationUnitDecl (decl_info, decl_list', decl_context_info, type_list)
+      Clang_ast_t.TranslationUnitDecl (decl_info, decl_list', decl_context_info, type_list)
   | _ ->
       assert false
 

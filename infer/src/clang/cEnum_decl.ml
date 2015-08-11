@@ -11,7 +11,6 @@
 (** translating the code and adding it to a fake procdesc *)
 
 open CFrontend_utils
-open Clang_ast_t
 
 let create_empty_procdesc () =
   let procname = Procname.from_string_c_fun "__INFER_$GLOBAL_VAR_env" in
@@ -49,7 +48,7 @@ let global_procdesc = ref (create_empty_procdesc ())
 let rec get_enum_constants context decl_list v =
   match decl_list with
   | [] -> []
-  | EnumConstantDecl(decl_info, name_info, qual_type, enum_constant_decl_info) :: decl_list' ->
+  | Clang_ast_t.EnumConstantDecl (decl_info, name_info, qual_type, enum_constant_decl_info) :: decl_list' ->
       let name = name_info.Clang_ast_t.ni_name in
       (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
        | None -> Printing.log_out "%s" ("  ...Defining Enum Constant ("^name^", "^(string_of_int v));

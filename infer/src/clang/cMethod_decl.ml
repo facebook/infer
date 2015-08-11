@@ -11,8 +11,6 @@
 
 open Utils
 open CFrontend_utils
-open Clang_ast_t
-open CContext
 
 module L = Logging
 
@@ -46,7 +44,7 @@ struct
     | decl:: rest ->
         let rest_assume_calls = add_assume_not_null_calls rest attributes in
         (match decl with
-         | ParmVarDecl(decl_info, name_info, qtype, var_decl_info)
+         | Clang_ast_t.ParmVarDecl(decl_info, name_info, qtype, var_decl_info)
            when CFrontend_utils.Ast_utils.is_type_nonnull qtype attributes ->
              let name = name_info.Clang_ast_t.ni_name in
              let assume_call = Ast_expressions.create_assume_not_null_call decl_info name qtype in
@@ -129,6 +127,7 @@ struct
     | None -> ()
 
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =
+    let open Clang_ast_t in
     match dec with
     | CXXMethodDecl _ ->
         process_method_decl tenv cg cfg namespace curr_class dec ~is_objc:false
@@ -150,6 +149,7 @@ struct
 
   let process_getter_setter context procname =
     let class_name = Procname.c_get_class procname in
+    let open CContext in
     let cls = CContext.create_curr_class context.tenv class_name in
     let method_name = Procname.c_get_method procname in
     match ObjcProperty_decl.method_is_property_accesor cls method_name with

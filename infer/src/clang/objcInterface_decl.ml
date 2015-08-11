@@ -16,8 +16,6 @@
 
 open Utils
 open CFrontend_utils
-open CFrontend_utils.General_utils
-open Clang_ast_t
 
 module L = Logging
 
@@ -108,14 +106,14 @@ let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
   let fields, superclasses, methods =
     match Sil.tenv_lookup tenv interface_name with
     | Some Sil.Tstruct(saved_fields, _, _, _, saved_superclasses, saved_methods, _) ->
-        append_no_duplicates_fields fields saved_fields,
-        append_no_duplicates_csu superclasses saved_superclasses,
-        append_no_duplicates_methods methods saved_methods
+        General_utils.append_no_duplicates_fields fields saved_fields,
+        General_utils.append_no_duplicates_csu superclasses saved_superclasses,
+        General_utils.append_no_duplicates_methods methods saved_methods
     | _ -> fields, superclasses, methods in
-  let fields = append_no_duplicates_fields fields fields_sc in
+  let fields = General_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
-  let fields = append_no_duplicates_fields [Sil.objc_ref_counter_field] fields in
-  let fields = CFrontend_utils.General_utils.sort_fields fields in
+  let fields = General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] fields in
+  let fields = General_utils.sort_fields fields in
   Printing.log_out "Class %s field:\n" class_name;
   list_iter (fun (fn, ft, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
@@ -162,13 +160,14 @@ let interface_impl_declaration tenv class_name decl_list idi =
 (* ...Full definition of the interface I *)
 let lookup_late_defined_interface tenv cname =
   let rec scan decls =
+    let open Clang_ast_t in
     match decls with
     | [] -> ()
-    | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
+    | ObjCInterfaceDecl (decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
       :: decls'
       when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
         scan decls'
-    | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
+    | ObjCInterfaceDecl (decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
       :: decls'
       when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
         (* Assumption: here we assume that the first interface declaration with non empty set of fields is the *)

@@ -11,8 +11,6 @@
 
 open Utils
 open CFrontend_utils
-open CFrontend_utils.General_utils
-open Clang_ast_t
 
 module L = Logging
 
@@ -24,7 +22,7 @@ let rec get_fields_super_classes tenv super_class =
   | None -> []
   | Some Sil.Tstruct (fields, _, _, _, (Sil.Class, sc):: _, _, _) ->
       let sc_fields = get_fields_super_classes tenv (Sil.TN_csu (Sil.Class, sc)) in
-      append_no_duplicates_fields fields sc_fields
+      General_utils.append_no_duplicates_fields fields sc_fields
   | Some Sil.Tstruct (fields, _, _, _, _, _, _) -> fields
   | Some _ -> []
 
@@ -55,7 +53,7 @@ let build_sil_field tenv class_name field_name qual_type prop_atts =
     | Sil.Tptr (_, Sil.Pk_objc_weak) -> [Config.weak]
     | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
     | _ -> [] in
-  let fname = mk_class_field_name class_name field_name in
+  let fname = General_utils.mk_class_field_name class_name field_name in
   let typ = CTypes_decl.qual_type_to_sil_type tenv qual_type in
   let item_annotations = match prop_atts with
     | [] ->
@@ -90,28 +88,25 @@ let build_sil_field_property curr_class tenv field_name qual_type prop_attribute
 
 (* Given a list of declarations in an interface returns a list of fields  *)
 let rec get_fields tenv curr_class decl_list =
+  let open Clang_ast_t in
   match decl_list with
   | [] -> []
-  | ObjCIvarDecl(decl_info, name_info, qual_type, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
+  | ObjCIvarDecl (decl_info, name_info, qual_type, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
       let fields = get_fields tenv curr_class decl_list' in
       let field_name = name_info.Clang_ast_t.ni_name in
       (* Doing a post visit here. Adding Ivar after all the declaration have been visited so that *)
       (* ivar names will be added in the property list. *)
       Printing.log_out "  ...Adding Instance Variable '%s' @." field_name;
       let (fname, typ, ia) = build_sil_field_property curr_class tenv field_name qual_type None in
-
       Printing.log_out "  ...Resulting sil field: (%s) with attributes:@." ((Ident.fieldname_to_string fname) ^":"^(Sil.typ_to_string typ));
       list_iter (fun (ia', _) ->
           list_iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;
       (fname, typ, ia):: fields
-
-  | ObjCPropertyImplDecl(decl_info, property_impl_decl_info):: decl_list' ->
+  | ObjCPropertyImplDecl (decl_info, property_impl_decl_info):: decl_list' ->
       let property_fields_decl =
         ObjcProperty_decl.prepare_dynamic_property curr_class decl_info property_impl_decl_info in
       get_fields tenv curr_class (property_fields_decl @ decl_list')
-
-  | (d : Clang_ast_t.decl):: decl_list' ->
-      get_fields tenv curr_class decl_list'
+  | _ :: decl_list' -> get_fields tenv curr_class decl_list'
 
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)
@@ -120,7 +115,7 @@ let add_missing_fields tenv class_name fields =
   let class_tn_name = Sil.TN_csu (Sil.Class, mang_name) in
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct(intf_fields, _, _, _, superclass, methods, annotation) ->
-      let new_fields = append_no_duplicates_fields fields intf_fields in
+      let new_fields = General_utils.append_no_duplicates_fields fields intf_fields in
       let new_fields = CFrontend_utils.General_utils.sort_fields new_fields in
       let class_type_info =
         Sil.Tstruct (

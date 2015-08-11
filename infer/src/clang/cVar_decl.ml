@@ -12,7 +12,6 @@
 
 open Utils
 open CFrontend_utils
-open Clang_ast_t
 
 module L = Logging
 
@@ -43,7 +42,8 @@ let rec lookup_ahead_for_vardecl context pointer var_name kind decl_list =
   match decl_list with
   | [] -> Printing.log_out "     Failing when looking ahead for variable '%s'\n" var_name;
       assert false (* nothing has been found ahead, maybe something bad in the AST *)
-  | VarDecl(decl_info, var_info, t, _) :: rest when var_name = var_info.Clang_ast_t.ni_name ->
+  | Clang_ast_t.VarDecl (decl_info, var_info, t, _) :: rest
+    when var_name = var_info.Clang_ast_t.ni_name ->
       let var_name' = var_info.Clang_ast_t.ni_name in
       if global_to_be_added decl_info then (
         let tenv = CContext.get_tenv context in
@@ -103,11 +103,12 @@ let lookup_var stmt_info context pointer var_name kind =
 (* in the reference instructions, all the variable names are also saved in a map from pointers *)
 (* to variable names to be used in the translation of the method's body.                      *)
 let rec get_variables_stmt context (stmt : Clang_ast_t.stmt) : unit =
+  let open Clang_ast_t in
   match stmt with
-  | DeclStmt(_, lstmt, decl_list) ->
+  | DeclStmt (_, lstmt, decl_list) ->
       get_variables_decls context decl_list;
       get_fun_locals context lstmt;
-  | DeclRefExpr(stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
+  | DeclRefExpr (stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
       (* Notice that DeclRefExpr is the reference to a declared var/function/enum... *)
       (* so no declaration here *)
       Printing.log_out "Collecting variables, passing from DeclRefExpr '%s'\n"
@@ -119,11 +120,11 @@ let rec get_variables_stmt context (stmt : Clang_ast_t.stmt) : unit =
        | _ ->
            let pvar = lookup_var stmt_info context stmt_info.Clang_ast_t.si_pointer var_name kind in
            CContext.LocalVars.add_pointer_var stmt_info.Clang_ast_t.si_pointer pvar context)
-  | CompoundStmt(stmt_info, lstmt) ->
+  | CompoundStmt (stmt_info, lstmt) ->
       Printing.log_out "Collecting variables, passing from CompoundStmt '%s'\n"
         stmt_info.Clang_ast_t.si_pointer;
       CContext.LocalVars.enter_and_leave_scope context get_fun_locals lstmt
-  | ForStmt(stmt_info, lstmt) ->
+  | ForStmt (stmt_info, lstmt) ->
       Printing.log_out "Collecting variables, passing from ForStmt '%s'\n"
         stmt_info.Clang_ast_t.si_pointer;
       CContext.LocalVars.enter_and_leave_scope context get_fun_locals lstmt
@@ -141,6 +142,7 @@ and get_fun_locals context (stmts : Clang_ast_t.stmt list) : unit =
 (* Collects the local of a function. *)
 and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
   let do_one_decl decl =
+    let open Clang_ast_t in
     match decl with
     | VarDecl (decl_info, name_info, qual_type, var_decl_info) ->
         Printing.log_out "Collecting variables, passing from VarDecl '%s'\n" decl_info.Clang_ast_t.di_pointer;
@@ -156,8 +158,8 @@ and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
          | _ ->
              CContext.LocalVars.add_local_var context name typ decl_info.Clang_ast_t.di_pointer
                (CFrontend_utils.General_utils.is_static_var var_decl_info))
-    | CXXRecordDecl(di, n_info, ot, _, dl, dci, rdi, _)
-    | RecordDecl(di, n_info, ot, _, dl, dci, rdi) ->
+    | CXXRecordDecl (di, n_info, ot, _, dl, dci, rdi, _)
+    | RecordDecl (di, n_info, ot, _, dl, dci, rdi) ->
         let typ = CTypes_decl.get_declaration_type context.CContext.tenv context.CContext.namespace
             di n_info.Clang_ast_t.ni_name ot dl dci rdi in
         CTypes_decl.add_struct_to_tenv context.CContext.tenv typ

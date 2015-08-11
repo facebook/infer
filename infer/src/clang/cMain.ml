@@ -13,8 +13,6 @@
 
 module L = Logging
 
-open Clang_ast_j
-open CFrontend_config
 open CFrontend_utils
 
 let arg_desc =
@@ -27,7 +25,7 @@ let arg_desc =
       (filter Utils.base_arg_desc) @
       [
         "-c",
-        Arg.String (fun cfile -> source_file := Some cfile),
+        Arg.String (fun cfile -> CFrontend_config.source_file := Some cfile),
         Some "cfile",
         "C File to translate";
         "-x",
@@ -35,7 +33,7 @@ let arg_desc =
         Some "cfile",
         "Language (c, objective-c, c++, objc-++)";
         "-ast",
-        Arg.String (fun file -> ast_file := Some file),
+        Arg.String (fun file -> CFrontend_config.ast_file := Some file),
         Some "file",
         "AST file for the translation";
         "-dotty_cfg_libs",
@@ -121,11 +119,11 @@ let do_run source_path ast_path =
       raise exc
 
 let _ =
-  Config.print_types:= true;
-  if Option.is_none !source_file then
+  Config.print_types := true;
+  if Option.is_none !CFrontend_config.source_file then
     (Printing.log_err "Incorrect command line arguments\n";
      print_usage_exit ())
   else
-    match !source_file with
-    | Some path -> do_run path !ast_file
+    match !CFrontend_config.source_file with
+    | Some path -> do_run path !CFrontend_config.ast_file
     | None -> assert false
