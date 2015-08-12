@@ -12,6 +12,8 @@ import tempfile
 import subprocess
 import utils
 
+FILELISTS = 'filelists'
+
 # javac options
 parser = argparse.ArgumentParser()
 

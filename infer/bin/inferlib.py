@@ -187,7 +187,7 @@ def create_results_dir(results_dir):
 
 def clean_infer_out(infer_out):
 
-    directories = ['multicore', 'classnames', 'sources', 'filelists']
+    directories = ['multicore', 'classnames', 'sources', jwlib.FILELISTS]
     extensions = ['.cfg', '.cg']
 
     for root, dirs, files in os.walk(infer_out):

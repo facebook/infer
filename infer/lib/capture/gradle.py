@@ -5,10 +5,10 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+import jwlib
+import logging
 import os
 import util
-import logging
-import subprocess
 import tempfile
 
 MODULE_NAME = __name__
@@ -19,7 +19,7 @@ Analysis examples:
 infer -- gradle build
 infer -- ./gradlew build'''
 
-FILELISTS = 'filelists'
+
 
 def gen_instance(*args):
     return GradleCapture(*args)
@@ -37,7 +37,7 @@ class GradleCapture:
         self.build_cmd = [cmd[0], '--debug'] + cmd[1:]
         # That contains javac version as well
         version_str = util.run_cmd_ignore_fail([cmd[0], '--version'])
-        path = os.path.join(self.args.infer_out, FILELISTS)
+        path = os.path.join(self.args.infer_out, jwlib.FILELISTS)
         if not os.path.exists(path):
             os.mkdir(path)
         logging.info("Running with:\n" + version_str)
@@ -60,7 +60,7 @@ class GradleCapture:
                         mode='w',
                         suffix='.txt',
                         prefix='gradle_',
-                        dir=os.path.join(self.args.infer_out, FILELISTS),
+                        dir=os.path.join(self.args.infer_out, jwlib.FILELISTS),
                         delete=False) as sources:
                     sources.write("\n".join(java_files))
                     sources.flush()
