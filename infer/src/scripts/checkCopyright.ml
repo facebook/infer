@@ -21,17 +21,20 @@ type comment_style =
 let comment_style_ocaml = Block ("(*", "*", "*)")
 let comment_style_c = Block ("/*", "*", "*/")
 let comment_style_shell = Line "#"
+let comment_style_llvm = Line ";"
 
 let comment_styles = [
   comment_style_ocaml;
   comment_style_c;
   comment_style_shell;
+  comment_style_llvm;
 ]
 
 let lang_of_com_style style =
   if style = comment_style_ocaml then "ocaml"
   else if style = comment_style_c then "c"
   else if style = comment_style_shell then "shell"
+  else if style = comment_style_llvm then "llvm"
   else "??unknown??"
 
 let default_start_line_of_com_style style = match style with
@@ -184,6 +187,7 @@ let com_style_of_lang = [
   (".cpp", comment_style_c);
   (".m", comment_style_c);
   (".mm", comment_style_c);
+  (".ll", comment_style_llvm);
   (".java", comment_style_c);
   (".sh", comment_style_shell);
   (".py", comment_style_shell);
