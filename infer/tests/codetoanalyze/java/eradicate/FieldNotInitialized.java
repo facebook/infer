@@ -9,6 +9,8 @@
 
 package codetoanalyze.java.eradicate;
 
+import android.support.annotation.NonNull;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -22,6 +24,8 @@ public class FieldNotInitialized {
   @Nonnull String c; // Means: assume it will be initialized to a nonnull value somewhere else.
 
   @Inject String d; // Means: assume it will be initialized via dependency injection
+
+  @NonNull String e;
 
   //  Eradicate should only report one initialization error
   FieldNotInitialized() {}

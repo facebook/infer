@@ -100,6 +100,7 @@ let inject = "Inject"
 let mutable_ = "Mutable"
 let nullable = "Nullable"
 let nonnull = "Nonnull"
+let camel_nonnull = "NonNull"
 let notnull = "NotNull"
 let present = "Present"
 let strict = "com.facebook.infer.annotation.Strict"
@@ -112,7 +113,9 @@ let ia_is_present ia =
   ia_ends_with ia present
 
 let ia_is_nonnull ia =
-  ia_ends_with ia nonnull || ia_ends_with ia notnull
+  ia_ends_with ia nonnull
+  || ia_ends_with ia notnull
+  || ia_ends_with ia camel_nonnull
 
 let ia_is_initializer ia =
   ia_contains ia initializer_
