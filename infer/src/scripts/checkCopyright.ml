@@ -11,13 +11,16 @@ module L = Logging
 module F = Format
 open Utils
 
+let copyright_modified_exit_code = 1
+let copyright_malformed_exit_code = 2
+
 type comment_style =
   | Line of string (** line comments, eg "#" for shell *)
   | Block of string * string * string (** block comments, eg ("(*", "*", "*)") for ocaml *)
 
-let comment_style_ocaml = Block("(*", "*", "*)")
-let comment_style_c = Block("/*", "*", "*/")
-let comment_style_shell = Line("#")
+let comment_style_ocaml = Block ("(*", "*", "*)")
+let comment_style_c = Block ("/*", "*", "*/")
+let comment_style_shell = Line "#"
 
 let comment_styles = [
   comment_style_ocaml;
@@ -30,6 +33,10 @@ let lang_of_com_style style =
   else if style = comment_style_c then "c"
   else if style = comment_style_shell then "shell"
   else "??unknown??"
+
+let default_start_line_of_com_style style = match style with
+  | Line _ -> 2
+  | Block _ -> 0
 
 (** If true, update the copyright message of the files. *)
 let update_files = ref false
@@ -69,8 +76,8 @@ let find_comment_start_and_style lines_arr n =
 
 let find_comment_end lines_arr n com_style =
   let is_end line = match com_style with
-    | Line(s) -> not (string_is_prefix s line)
-    | Block(_, _, s) -> string_contains s line in
+    | Line s -> not (string_is_prefix s line)
+    | Block (_, _, s) -> string_contains s line in
   let i = ref (n + 1) in
   let len = Array.length lines_arr in
   let found = ref (len - 1) in
@@ -78,7 +85,9 @@ let find_comment_end lines_arr n com_style =
     if is_end lines_arr.(!i) then found := !i;
     incr i
   done;
-  !found
+  match com_style with
+  | Line _ -> !found
+  | Block _ -> !found + 1
 
 (** Heuristic to check if this looks like a copyright message. *)
 let looks_like_copyright_message cstart cend lines_arr =
@@ -126,7 +135,7 @@ let pp_copyright mono fb_year com_style fmt _prefix =
     | Block (start, _, _) -> F.fprintf fmt "%s@\n" start in
   let pp_end () = match com_style with
     | Line _ -> F.fprintf fmt "@\n";
-    | Block (_, _, finish) -> F.fprintf fmt "%s%s@\n" _prefix finish in
+    | Block (_, _, finish) -> F.fprintf fmt "%s%s@\n@\n" _prefix finish in
   pp_start ();
   if mono then
     pp_line " Copyright (c) 2009 - 2013 Monoidics ltd.";
@@ -165,20 +174,59 @@ let update_file fname mono fb_year com_style prefix cstart cend lines_arr =
     close_out cout
   with _ -> ()
 
-let file_should_have_copyright fname lines =
-  let extensions =
-    [".ml"; ".mli"; ".ml"; ".mly"; ".java"; ".c";
-     ".h"; ".cpp"; ".m"; ".mm"; ".py"; ".sh"] in
-  list_exists (Filename.check_suffix fname) extensions
+let com_style_of_lang = [
+  (".ml", comment_style_ocaml);
+  (".mli", comment_style_ocaml);
+  (".mly", comment_style_c);
+  (".mll", comment_style_ocaml);
+  (".c", comment_style_c);
+  (".h", comment_style_c);
+  (".cpp", comment_style_c);
+  (".m", comment_style_c);
+  (".mm", comment_style_c);
+  (".java", comment_style_c);
+  (".sh", comment_style_shell);
+  (".py", comment_style_shell);
+]
 
+let file_should_have_copyright fname lines =
+  list_mem_assoc Filename.check_suffix fname com_style_of_lang
+
+let get_filename_extension fname =
+  try
+    let len_without_ext = String.length (Filename.chop_extension fname) in
+    String.sub fname len_without_ext (String.length fname - len_without_ext)
+  with Not_found -> ""
+
+let output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix =
+  let range = cend - cstart in
+  let lang = lang_of_com_style com_style in
+  L.stderr "%s (start:%d n:%d end:%d len:%d range:%d lang:%s mono:%b year:%d)@."
+    fname cstart n cend len range lang mono fb_year;
+  for i = cstart to cend do
+    L.stdout "%s@." lines_arr.(i)
+  done;
+  L.stdout "-----@.";
+  L.stdout "@[<v>%a@]" (pp_copyright mono fb_year com_style) prefix;
+  L.flush_streams ();
+  if !update_files then
+    update_file fname mono fb_year com_style prefix cstart cend lines_arr
 
 let check_copyright fname = match read_file fname with
   | None -> ()
   | Some lines ->
       match find_copyright_line lines 0 with
       | None ->
-          if file_should_have_copyright fname lines
-          then L.stderr "Copyright not found in %s@." fname
+          if file_should_have_copyright fname lines then
+            begin
+              let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
+              let ext = get_filename_extension fname in
+              let com_style = list_assoc string_equal ext com_style_of_lang in
+              let prefix = if com_style = comment_style_ocaml then " " else "" in
+              let start = default_start_line_of_com_style com_style in
+              output_diff fname (Array.of_list []) start (-1) (-1) 0 false year com_style prefix;
+              exit copyright_modified_exit_code
+            end
       | Some n ->
           let lines_arr = Array.of_list lines in
           let line = lines_arr.(n) in
@@ -190,27 +238,22 @@ let check_copyright fname = match read_file fname with
               let mono = contains_monoidics cstart cend lines_arr in
               match get_fb_year cstart cend lines_arr with
               | None ->
-                  L.stderr "Can't find fb year: %s@." fname
+                  L.stderr "Can't find fb year: %s@." fname;
+                  exit copyright_malformed_exit_code
               | Some fb_year ->
                   let prefix = if com_style = comment_style_ocaml then " " else "" in
                   if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
                     begin
-                      let range = cend - cstart in
-                      let lang = lang_of_com_style com_style in
-                      L.stdout "%s (start:%d n:%d end:%d len:%d range:%d lang:%s mono:%b year:%d)@."
-                        fname cstart n cend len range lang mono fb_year;
-                      for i = cstart to cend do
-                        L.stdout "  %s@." lines_arr.(i)
-                      done;
-                      L.stdout "-----@.";
-                      L.stdout "  @[<v>%a@]" (pp_copyright mono fb_year com_style) prefix;
-                      L.flush_streams ();
-                      if !update_files then
-                        update_file fname mono fb_year com_style prefix cstart cend lines_arr
+                      output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix;
+                      exit copyright_modified_exit_code
                     end
             end
           else
-            L.stderr "Copyright not recognized: %s@." fname
+            begin
+              L.stderr "Copyright not recognized: %s@." fname;
+              exit copyright_malformed_exit_code
+            end
+
 
 let speclist = [
   ("-i", Arg.Set update_files, "Update copyright notice in-place");

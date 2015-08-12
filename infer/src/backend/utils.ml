@@ -227,6 +227,14 @@ let list_to_string f l =
     | s:: rest -> (f s)^", "^(aux rest) in
   "["^(aux l)^"]"
 
+(** Like List.mem_assoc but without builtin equality *)
+let list_mem_assoc equal a l =
+  list_exists (fun x -> equal a (fst x)) l
+
+(** Like List.assoc but without builtin equality *)
+let list_assoc equal a l =
+  snd (list_find (fun x -> equal a (fst x)) l)
+
 (** {2 Useful Modules} *)
 
 (** Set of integers *)

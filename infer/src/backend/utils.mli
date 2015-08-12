@@ -123,6 +123,12 @@ val list_merge_sorted_nodup : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
     The compare function is required to sort the lists. *)
 val list_intersect : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
 
+(** Like List.mem_assoc but without builtin equality *)
+val list_mem_assoc : ('a -> 'a -> bool) -> 'a -> ('a * 'b) list -> bool
+
+(** Like List.assoc but without builtin equality *)
+val list_assoc : ('a -> 'a -> bool) -> 'a -> ('a * 'b) list -> 'b
+
 exception Fail
 
 (** Apply [f] to pairs of elements; raise [Fail] if the two lists have different lenghts. *)
