@@ -21,7 +21,7 @@ infer -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld'''
 
 SCRIPT_DIR = os.path.dirname(__file__)
 INFER_ROOT = os.path.join(SCRIPT_DIR, '..', '..', '..')
-FCP_ROOT = os.path.join(INFER_ROOT, '..', 'facebook-clang-plugin')
+FCP_ROOT = os.path.join(INFER_ROOT, 'facebook-clang-plugins')
 CLANG_WRAPPER = os.path.join(
     SCRIPT_DIR, 'clang',
 )

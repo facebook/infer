@@ -91,7 +91,7 @@ CLANG_SOURCES = clang
 INFERCLANG_MAIN = $(CLANG_SOURCES)/cMain
 INFERCLANG_BINARY = $(BINDIR)/InferClang
 
-CLANG_PLUGIN_ROOT ?= $(ROOT)/../facebook-clang-plugin
+CLANG_PLUGIN_ROOT ?= $(ROOT)/facebook-clang-plugins
 CLANG_PLUGIN_BINARIES = $(addprefix $(CLANG_PLUGIN_ROOT)/clang-ocaml/build/, clang_ast_converter clang_ast_named_decl_printer)
 
 CLANG_OCAML_ROOT = $(CLANG_PLUGIN_ROOT)/clang-ocaml
@@ -125,9 +125,9 @@ CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
 # Based on that determine which code should be loaded
 ifeq ($(wildcard $(ROOT)/.facebook),)
 	EXTRA_DEPS = opensource
-else 
+else
 	EXTRA_DEPS = facebook
-endif	
+endif
 
 DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/graphql facebook/scripts harness $(EXTRA_DEPS)
 
@@ -148,7 +148,7 @@ checkCopyright: build_checkCopyright annotations $(CHECKCOPYRIGHT_BINARY)
 build_java: init $(INFERPRINT_ATDGEN_STUBS)
 	$(OCAMLBUILD) $(TYPEPROP_MAIN).native $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERJAVA_MAIN).native
 
-build_clang: init $(INFERPRINT_ATDGEN_STUBS) check_clang_plugin $(CLANG_ATDGEN_STUBS)
+build_clang: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS)
 	$(OCAMLBUILD) $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERCLANG_MAIN).native
 
 build_llvm:
@@ -159,9 +159,6 @@ build_checkCopyright:
 
 annotations:
 	rsync -r --delete --exclude=*.ml* --exclude=*.o --exclude=*.cm* --exclude=*.native $(BUILDDIR)/* $(ANNOTDIR)
-
-check_clang_plugin:
-	$(SCRIPTDIR)/check_clang_plugin_version.sh $(CLANG_PLUGIN_ROOT)
 
 $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
 	atdgen -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)

@@ -15,8 +15,8 @@ CMD_FILE_EXT=".sh"
 # extenion of the file containing the output of the Infer Clang frontend
 INFERCLANG_LOG_FILE_EXT=".astlog"
 # path of the plugin to load in clang
-CLANG_PLUGIN_REL_PATH="facebook-clang-plugin/libtooling/build/FacebookClangPlugin.dylib"
-PLUGIN_PATH="${SCRIPT_DIR}/../../../../${CLANG_PLUGIN_REL_PATH}"
+CLANG_PLUGIN_REL_PATH="facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib"
+PLUGIN_PATH="${SCRIPT_DIR}/../../../${CLANG_PLUGIN_REL_PATH}"
 # name of the plugin to use
 PLUGIN_NAME="YojsonASTExporter"
 # output directory of the plugin

@@ -7,7 +7,7 @@ git clone https://github.com/facebook/infer.git
 ```
 
 To analyse C and Objective-C, Infer requires clang and the
-[facebook-clang-plugin](https://github.com/facebook/facebook-clang-plugins). If
+[facebook-clang-plugins](https://github.com/facebook/facebook-clang-plugins). If
 you wish to analyse only Java/Android code, then you could skip these
 dependencies. Details below.
 
@@ -53,7 +53,9 @@ To compile support for both Java and C/Objective-C, do this instead.
 
 ```bash
 cd infer
-./update-fcp.sh && ../facebook-clang-plugin/clang/setup.sh && ./compile-fcp.sh # go have a coffee :)
+git submodule update --init --recursive
+facebook-clang-plugins/clang/setup.sh # go have a coffee :)
+./compile-fcp.sh
 make -C infer
 export PATH=`pwd`/infer/bin:$PATH
 ```
@@ -112,8 +114,8 @@ Then continue with:
 
 ```bash
 cd infer
-./update-fcp.sh
-../facebook-clang-plugin/clang/setup.sh  # go have a coffee :)
+git submodule update --init --recursive
+facebook-clang-plugins/clang/setup.sh  # go have a coffee :)
 ./compile-fcp.sh
 make -C infer
 export PATH=`pwd`/infer/bin:$PATH

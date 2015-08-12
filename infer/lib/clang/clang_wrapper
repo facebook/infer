@@ -6,7 +6,7 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-CLANG_COMPILER="${SCRIPT_DIR}/../../../../facebook-clang-plugin/clang/bin/clang"
+CLANG_COMPILER="${SCRIPT_DIR}/../../../facebook-clang-plugins/clang/bin/clang"
 
 if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
 
