@@ -119,7 +119,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
       Cg.add_node cg procname
 
 let trans_prog : LAst.prog -> Cfg.cfg * Cg.t * Sil.tenv = function
-    Prog func_defs ->
+    Prog (func_defs, _) ->
       let cfg = Cfg.Node.create_cfg () in
       let cg = Cg.create () in
       let tenv = Sil.create_tenv () in

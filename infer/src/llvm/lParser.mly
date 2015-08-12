@@ -154,7 +154,11 @@
 %%
 
 prog:
-  | targets defs = func_def* mappings = metadata_def* EOF { Prog defs }
+  | targets defs = func_def* opt_mappings = metadata_def* EOF {
+      let mappings = Utils.list_flatten_options opt_mappings in
+      let add_mapping map (metadata_id, components) = MetadataMap.add metadata_id components map in
+      let metadata_map = Utils.list_fold_left add_mapping MetadataMap.empty mappings in
+      Prog (defs, metadata_map) }
 
 targets:
   | { (None, None) }
@@ -170,8 +174,8 @@ target_triple:
   | TARGET TRIPLE EQUALS str = CONSTANT_STRING { str }
 
 metadata_def:
-  | name = NAMED_METADATA EQUALS metadata_ids = numbered_metadata_node { NameMapping (name, metadata_ids) }
-  | metadata_id = NUMBERED_METADATA EQUALS components = metadata_node { NumberMapping (metadata_id, components) }
+  | NAMED_METADATA EQUALS numbered_metadata_node { None }
+  | metadata_id = NUMBERED_METADATA EQUALS components = metadata_node { Some (metadata_id, components) }
 
 numbered_metadata_node:
   | METADATA_NODE_BEGIN metadata_ids = separated_list(COMMA, NUMBERED_METADATA) RBRACE { metadata_ids }

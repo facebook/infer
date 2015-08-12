@@ -147,6 +147,9 @@ module StringSet : Set.S with type elt = string
 (** Pretty print a set of strings *)
 val pp_stringset : Format.formatter -> StringSet.t -> unit
 
+(** Maps from integers *)
+module IntMap : Map.S with type key = int
+
 (** Maps from strings *)
 module StringMap : Map.S with type key = string
 

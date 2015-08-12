@@ -9,6 +9,8 @@
 
 (** Representation of LLVM constructs *)
 
+module MetadataMap = Utils.IntMap;;
+
 type variable_id =
   | Name of string
   | Number of int
@@ -44,10 +46,6 @@ and metadata_component =
   | TypOperand of typ option * operand
   | MetadataVal of metadata_value
 
-type metadata_mapping =
-  | NameMapping of string * int list
-  | NumberMapping of int * metadata_component list
-
 type instr =
   | Ret of (typ * operand) option
   | UncondBranch of variable
@@ -63,7 +61,9 @@ type annotated_instr = instr * annotation option
 
 type func_def = FuncDef of variable * typ option * (typ * string) list * annotated_instr list
 
-type prog = Prog of func_def list
+type metadata_map = metadata_component list MetadataMap.t
+
+type prog = Prog of func_def list * metadata_map
 
 let string_of_variable : variable -> string = function
   | Global var_id | Local var_id ->

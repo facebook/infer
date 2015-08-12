@@ -251,6 +251,12 @@ module StringSet = Set.Make(String)
 let pp_stringset fmt ss =
   StringSet.iter (fun s -> F.fprintf fmt "%s " s) ss
 
+(** Maps from integers *)
+module IntMap = Map.Make (struct
+    type t = int
+    let compare = int_compare
+  end)
+
 (** Maps from strings *)
 module StringMap = Map.Make (struct
     type t = string
