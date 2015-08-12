@@ -195,23 +195,19 @@ and do_typedef_declaration tenv namespace decl_info name opt_type typedef_decl_i
 
 and get_struct_fields tenv record_name namespace decl_list =
   let open Clang_ast_t in
-  match decl_list with
-  | [] -> []
-  | FieldDecl(decl_info, name_info, qual_type, field_decl_info):: decl_list' ->
-      let field_name = name_info.Clang_ast_t.ni_name in
-      Printing.log_out "  ...Defining field '%s'.\n" field_name;
-      let id = General_utils.mk_class_field_name record_name field_name in
-      let typ = qual_type_to_sil_type tenv qual_type in
-      let annotation_items = [] in (* For the moment we don't use them*)
-      (id, typ, annotation_items):: get_struct_fields tenv record_name namespace decl_list'
-  | CXXRecordDecl (decl_info, name, opt_type, _, decl_list, decl_context_info, record_decl_info, _)
-    :: decl_list'
-  (* C++/C Records treated in the same way*)
-  | RecordDecl (decl_info, name, opt_type, _, decl_list, decl_context_info, record_decl_info)
-    :: decl_list'->
-      do_record_declaration tenv namespace decl_info name.Clang_ast_t.ni_name opt_type decl_list decl_context_info record_decl_info;
-      get_struct_fields tenv record_name namespace decl_list'
-  | _ :: decl_list' -> get_struct_fields tenv record_name namespace decl_list'
+  let do_one_decl decl = match decl with
+    | FieldDecl (_, name_info, qual_type, _) ->
+        let field_name = name_info.Clang_ast_t.ni_name in
+        Printing.log_out "  ...Defining field '%s'.\n" field_name;
+        let id = General_utils.mk_class_field_name record_name field_name in
+        let typ = qual_type_to_sil_type tenv qual_type in
+        let annotation_items = [] in (* For the moment we don't use them*)
+        [(id, typ, annotation_items)]
+    | CXXRecordDecl _ | RecordDecl _ ->
+        (* C++/C Records treated in the same way*)
+        add_types_from_decl_to_tenv tenv namespace decl; []
+    | _ -> [] in
+  list_flatten (list_map do_one_decl decl_list)
 
 and get_class_methods tenv class_name namespace decl_list =
   let process_method_decl = function
@@ -224,17 +220,26 @@ and get_class_methods tenv class_name namespace decl_list =
   (* poor mans list_filter_map *)
   list_flatten_options (list_map process_method_decl decl_list)
 
-and do_record_declaration tenv namespace decl_info name opt_type decl_list decl_context_info record_decl_info =
-  Printing.log_out "ADDING: RecordDecl for '%s'" name;
-  Printing.log_out " pointer= '%s'\n" decl_info.Clang_ast_t.di_pointer;
-  if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
-    Printing.log_err "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
-  let typ = get_declaration_type tenv namespace decl_info name opt_type decl_list decl_context_info record_decl_info in
+and add_types_from_decl_to_tenv tenv namespace decl =
+  let typ = get_declaration_type tenv namespace decl in
   let typ = expand_structured_type tenv typ in
   add_struct_to_tenv tenv typ
 
 (* For a record declaration it returns/constructs the type *)
-and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_context_info record_decl_info =
+and get_declaration_type tenv namespace decl =
+  let open Clang_ast_t in
+  let n, opt_type, decl_list = match decl with
+    | CXXRecordDecl (decl_info, name_info, opt_type, _, decl_list, _, record_decl_info, _)
+    | RecordDecl (decl_info, name_info, opt_type, _, decl_list, _, record_decl_info) ->
+        let ptr = decl_info.Clang_ast_t.di_pointer in
+        let name = name_info.Clang_ast_t.ni_name in
+        Printing.log_out "ADDING: RecordDecl for '%s'" name;
+        Printing.log_out " pointer= '%s'\n" ptr;
+        if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
+          Printing.log_err "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
+        name, opt_type, decl_list
+    | _ -> assert false in
+
   let ns_suffix = Ast_utils.namespace_to_string namespace in
   let n = ns_suffix^n in
   let name_str = get_record_name opt_type in
@@ -253,7 +258,7 @@ and get_declaration_type tenv namespace decl_info n opt_type decl_list decl_cont
       | _ -> Sil.Struct) in
   let name = Some (Mangled.from_string name_str) in
   let methods_list = get_class_methods tenv name_str namespace decl_list in (* C++ methods only *)
-  let superclass_list = [] in (* No super class for structs *)
+  let superclass_list = [] in
   let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
   Sil.Tstruct
     (non_static_fields, static_fields, csu, name, superclass_list, methods_list, item_annotation)
@@ -268,12 +273,8 @@ and add_late_defined_record tenv namespace typename =
       let rec scan decls =
         match decls with
         | [] -> false
-        | CXXRecordDecl
-            (decl_info, record_name, opt_type, _, decl_list, decl_context_info, record_decl_info, _)
-          :: decls'
-        | RecordDecl
-            (decl_info, record_name, opt_type, _, decl_list, decl_context_info, record_decl_info)
-          :: decls' ->
+        | (CXXRecordDecl (_, _, opt_type, _, _, _, record_decl_info, _) as d) :: decls'
+        | (RecordDecl (_, _, opt_type, _, _, _, record_decl_info) as d) :: decls' ->
             (match opt_type with
              | `Type t ->
                  (* the string t contains the name of the type preceded by the word struct. *)
@@ -284,8 +285,7 @@ and add_late_defined_record tenv namespace typename =
                      Sil.typename_equal typename pot_union_type) &&
                     record_decl_info.Clang_ast_t.rdi_is_complete_definition then (
                    Printing.log_out "!!!! Adding late-defined record '%s'\n" t;
-                   do_record_declaration tenv namespace decl_info record_name.Clang_ast_t.ni_name opt_type decl_list
-                     decl_context_info record_decl_info;
+                   add_types_from_decl_to_tenv tenv namespace d;
                    true)
                  else scan decls'
              | _ -> scan decls')

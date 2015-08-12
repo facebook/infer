@@ -35,11 +35,9 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
       CTypes_decl.do_typedef_declaration tenv namespace
         decl_info name opt_type typedef_decl_info
   (* Currently C/C++ record decl treated in the same way *)
-  | CXXRecordDecl (decl_info, name_info, opt_type, _, decl_list, decl_context_info, record_decl_info, _)
-  | RecordDecl (decl_info, name_info, opt_type, _, decl_list, decl_context_info, record_decl_info) ->
-      let record_name = name_info.Clang_ast_t.ni_name in
-      CTypes_decl.do_record_declaration tenv namespace
-        decl_info record_name opt_type decl_list decl_context_info record_decl_info;
+  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+  | RecordDecl (_, _, _, _, decl_list, _, _) ->
+      CTypes_decl.add_types_from_decl_to_tenv tenv namespace dec;
       let method_decls = CTypes_decl.get_method_decls dec decl_list in
       let tranlate_method (parent, decl) =
         translate_one_declaration tenv cg cfg namespace parent decl in
