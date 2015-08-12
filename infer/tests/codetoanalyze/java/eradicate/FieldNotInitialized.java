@@ -11,15 +11,19 @@ package codetoanalyze.java.eradicate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 public class FieldNotInitialized {
 
-  @Nullable
-  String x;
-  String y;
-  @Nonnull
-  String z; // Means: assume it's initialized to nonnull value somewhere else.
+  String a;
 
-  FieldNotInitialized() {
-  }
+  @Nullable String b;
+
+  @Nonnull String c; // Means: assume it will be initialized to a nonnull value somewhere else.
+
+  @Inject String d; // Means: assume it will be initialized via dependency injection
+
+  //  Eradicate should only report one initialization error
+  FieldNotInitialized() {}
+
 }

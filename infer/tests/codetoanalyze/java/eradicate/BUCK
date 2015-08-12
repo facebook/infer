@@ -4,6 +4,7 @@ dependencies = [
     '//infer/annotations:annotations',
     '//infer/lib/java/android:android',
     '//dependencies/java/jsr-305:jsr-305',
+    '//dependencies/java/jsr-330:jsr-330',
 ]
 
 java_library(
