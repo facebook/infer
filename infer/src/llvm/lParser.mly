@@ -124,10 +124,11 @@
 (*%token FCMP*)
 (*%token PHI*)
 (*%token SELECT*)
-(*%token CALL*)
+%token CALL
 (*%token VA_ARG*)
 (*%token LANDINGPAD*)
 
+%token DBG_DECLARE
 %token <string> NAMED_GLOBAL
 %token <string> NAMED_LOCAL
 %token <int> NUMBERED_GLOBAL
@@ -235,26 +236,30 @@ ptr_typ:
   | tp = typ STAR { tp }
 
 block:
-  | LBRACE annotated_instrs = annotated_instr* RBRACE { annotated_instrs }
+  | LBRACE annotated_instrs = annotated_instr* RBRACE { Utils.list_flatten_options annotated_instrs }
 
 annotated_instr:
-  | instruction=instr anno=annotation? { (instruction, anno) }
+  | instruction = real_instr anno = annotation? { Some (instruction, anno) }
+  | debug_instr annotation? { None }
 
 annotation:
-  | COMMA DEBUG_ANNOTATION i=NUMBERED_METADATA { Annotation i }
+  | COMMA DEBUG_ANNOTATION i = NUMBERED_METADATA { Annotation i }
 
-instr:
+real_instr:
   (* terminator instructions *)
   | RET tp = typ op = operand { Ret (Some (tp, op)) }
   | RET VOID { Ret None }
   | BR LABEL lbl = variable { UncondBranch lbl }
-  | BR i=INT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
+  | BR i = INT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
   (* Memory access operations *)
   | var = variable EQUALS ALLOCA tp = typ align? { Alloc (var, tp, 1) }
   | var = variable EQUALS LOAD tp = ptr_typ ptr = variable align? { Load (var, tp, ptr) }
   | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable align? { Store (value, val_tp, var) }
     (* don't yet know why val_tp and ptr_tp would be different *)
   | variable EQUALS binop { Binop }
+
+debug_instr:
+  | CALL VOID DBG_DECLARE LPAREN separated_list(COMMA, metadata_component) RPAREN { () }
 
 align:
   | COMMA ALIGN sz = CONSTANT_INT { sz }

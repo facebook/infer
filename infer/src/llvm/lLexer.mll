@@ -156,11 +156,13 @@ rule token = parse
   (*| "fcmp" { FCMP }*)
   (*| "phi" { PHI }*)
   (*| "select" { SELECT }*)
-  (*| "call" { CALL }*)
+  | "call" { CALL }
   (*| "va_arg" { VA_ARG }*)
   (*| "landingpad" { LANDINGPAD }*)
 
+
   (* IDENTIFIERS *)
+  | "@llvm.dbg.declare" { DBG_DECLARE }
   | '@' (id as str) { NAMED_GLOBAL str }
   | '%' (id as str) { NAMED_LOCAL str }
   | '@' (nonneg_int as i) { NUMBERED_GLOBAL (int_of_string i) }
