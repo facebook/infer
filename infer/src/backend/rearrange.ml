@@ -932,37 +932,43 @@ let rec iter_rearrange
 
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
-  let nullable_obj_str = ref "" in
-  (* return true if deref_exp is pointed to by a field or parameter with a @Nullable annotation *)
-  let is_pt_by_nullable_fld_or_param deref_exp =
+  let nullable_obj_str = ref None in
+  (* return true if deref_exp is only pointed to by fields/params with @Nullable annotations *)
+  let is_only_pt_by_nullable_fld_or_param deref_exp =
     let ann_sig = Models.get_annotated_signature pdesc (Cfg.Procdesc.get_proc_name pdesc) in
-    list_exists
+    list_for_all
       (fun hpred ->
          match hpred with
          | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var _ as exp, _), _)
-           when Sil.exp_equal exp deref_exp && Annotations.param_is_nullable pvar ann_sig ->
-             nullable_obj_str := Sil.pvar_to_string pvar;
-             true
+           when Sil.exp_equal exp deref_exp ->
+             let is_nullable = Annotations.param_is_nullable pvar ann_sig in
+             if is_nullable then
+               nullable_obj_str := Some (Sil.pvar_to_string pvar);
+             (* it's ok for a non-nullable local to point to deref_exp *)
+             is_nullable || Sil.pvar_is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
-             let is_nullable fld =
+             let fld_is_nullable fld =
                match Annotations.get_field_type_and_annotation fld typ with
                | Some (_, annot) -> Annotations.ia_is_nullable annot
                | _ -> false in
              let is_strexp_pt_by_nullable_fld (fld, strexp) =
                match strexp with
-               | Sil.Eexp (exp, _) when Sil.exp_equal exp deref_exp && is_nullable fld ->
-                   nullable_obj_str := Ident.fieldname_to_simplified_string fld;
-                   true
-               | _ -> false in
-             list_exists is_strexp_pt_by_nullable_fld flds
-         | _ -> false)
-      (Prop.get_sigma prop) in
+               | Sil.Eexp (exp, _) when Sil.exp_equal exp deref_exp ->
+                   let is_nullable = fld_is_nullable fld in
+                   if is_nullable then
+                     nullable_obj_str := Some (Ident.fieldname_to_simplified_string fld);
+                   is_nullable
+               | _ -> true in
+             list_for_all is_strexp_pt_by_nullable_fld flds
+         | _ -> true)
+      (Prop.get_sigma prop) &&
+    !nullable_obj_str <> None in
   let root = Sil.root_of_lexp lexp in
   let is_deref_of_nullable =
     let is_definitely_non_null exp prop =
       Prover.check_disequal prop exp Sil.exp_zero in
     !Config.report_nullable_inconsistency && !Sil.curr_language = Sil.Java &&
-    not (is_definitely_non_null root prop) && is_pt_by_nullable_fld_or_param root in
+    not (is_definitely_non_null root prop) && is_only_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
     Prop.get_resource_undef_attribute;
   ] in
@@ -983,7 +989,10 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
   if Prover.check_zero (Sil.root_of_lexp root) || is_deref_of_nullable then
     begin
       let deref_str =
-        if is_deref_of_nullable then Localise.deref_str_nullable None !nullable_obj_str
+        if is_deref_of_nullable then
+          match !nullable_obj_str with
+          | Some str -> Localise.deref_str_nullable None str
+          | None -> Localise.deref_str_nullable None ""
         else Localise.deref_str_null None in
       let err_desc =
         Errdesc.explain_dereference ~use_buckets: true ~is_nullable: is_deref_of_nullable

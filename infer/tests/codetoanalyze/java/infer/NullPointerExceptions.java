@@ -347,4 +347,50 @@ public class NullPointerExceptions {
     t.f();
   }
 
+  private Object mOkObj = new Object();
+
+  public void nullableParamReassign1(@Nullable Object o) {
+    if (o == null) {
+      o = mOkObj;
+    }
+    o.toString();
+  }
+
+  public void nullableParamReassign2(@Nullable Object o, Object okObj) {
+    if (o == null) {
+      o = okObj;
+    }
+    o.toString();
+  }
+
+  private @Nullable Object mNullableField;
+
+  public void nullableFieldReassign1() {
+    if (mNullableField == null) {
+      mNullableField = mOkObj;
+    }
+    mNullableField.toString();
+  }
+
+  public void nullableFieldReassign2(Object okObj) {
+    if (mNullableField == null) {
+      mNullableField = okObj;
+    }
+    mNullableField.toString();
+  }
+
+  public void nullableFieldReassign3(Object param) {
+    mNullableField = param;
+    mNullableField.toString();
+  }
+
+  public Object nullableGetter() {
+    return mNullableField;
+  }
+
+  public void derefNullableGetter() {
+    Object o = nullableGetter();
+    o.toString();
+  }
+
 }
