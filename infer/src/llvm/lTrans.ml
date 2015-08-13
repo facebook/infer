@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open Utils
 open LAst
 
 exception ImproperTypeError of string
@@ -114,7 +115,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
           ret_type = (match ret_tp_opt with
               | None -> Sil.Tvoid
               | Some ret_tp -> trans_typ ret_tp);
-          formals = Utils.list_map (fun (tp, name) -> (name, trans_typ tp)) params;
+          formals = list_map (fun (tp, name) -> (name, trans_typ tp)) params;
           locals = []; (* TODO *)
           captured = [];
           loc = Sil.dummy_location
@@ -133,7 +134,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
         | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
       let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc metadata annotated_instrs in
-      let nodes = Utils.list_map (node_of_sil_instr cfg procdesc) sil_instrs in
+      let nodes = list_map (node_of_sil_instr cfg procdesc) sil_instrs in
       Cfg.Procdesc.set_start_node procdesc start_node;
       Cfg.Procdesc.set_exit_node procdesc exit_node;
       link_nodes start_node nodes;
@@ -145,5 +146,5 @@ let trans_prog : LAst.prog -> Cfg.cfg * Cg.t * Sil.tenv = function
       let cfg = Cfg.Node.create_cfg () in
       let cg = Cg.create () in
       let tenv = Sil.create_tenv () in
-      Utils.list_iter (trans_func_def cfg cg metadata) func_defs;
+      list_iter (trans_func_def cfg cg metadata) func_defs;
       (cfg, cg, tenv)

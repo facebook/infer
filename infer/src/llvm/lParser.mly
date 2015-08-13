@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 %{
+  open Utils
   open LAst
 %}
 
@@ -155,9 +156,9 @@
 
 prog:
   | targets defs = func_def* opt_mappings = metadata_def* EOF {
-      let mappings = Utils.list_flatten_options opt_mappings in
+      let mappings = list_flatten_options opt_mappings in
       let add_mapping map (metadata_id, components) = MetadataMap.add metadata_id components map in
-      let metadata_map = Utils.list_fold_left add_mapping MetadataMap.empty mappings in
+      let metadata_map = list_fold_left add_mapping MetadataMap.empty mappings in
       Prog (defs, metadata_map) }
 
 targets:
@@ -240,7 +241,7 @@ ptr_typ:
   | tp = typ STAR { tp }
 
 block:
-  | LBRACE annotated_instrs = annotated_instr* RBRACE { Utils.list_flatten_options annotated_instrs }
+  | LBRACE annotated_instrs = annotated_instr* RBRACE { list_flatten_options annotated_instrs }
 
 annotated_instr:
   | instruction = real_instr anno = annotation? { Some (instruction, anno) }
