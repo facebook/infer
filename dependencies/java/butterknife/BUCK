@@ -1,0 +1,7 @@
+prebuilt_jar(
+    name = 'butterknife',
+    binary_jar = 'butterknife-7.0.1.jar',
+    visibility = [
+        'PUBLIC',
+    ],
+)

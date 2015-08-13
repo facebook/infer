@@ -9,7 +9,11 @@
 
 package codetoanalyze.java.eradicate;
 
+
 import android.support.annotation.NonNull;
+import android.widget.EditText;
+
+import butterknife.Bind;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,6 +30,8 @@ public class FieldNotInitialized {
   @Inject String d; // Means: assume it will be initialized via dependency injection
 
   @NonNull String e;
+
+  @Bind(42) EditText f;
 
   //  Eradicate should only report one initialization error
   FieldNotInitialized() {}

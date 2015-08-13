@@ -97,6 +97,8 @@ let ma_contains ma ann_names =
 
 let initializer_ = "com.facebook.infer.annotation.Initializer"
 let inject = "Inject"
+let inject_view = "InjectView"
+let bind = "Bind"
 let mutable_ = "Mutable"
 let nullable = "Nullable"
 let nonnull = "Nonnull"
@@ -113,15 +115,17 @@ let ia_is_present ia =
   ia_ends_with ia present
 
 let ia_is_nonnull ia =
-  ia_ends_with ia nonnull
-  || ia_ends_with ia notnull
-  || ia_ends_with ia camel_nonnull
+  list_exists
+    (ia_ends_with ia)
+    [nonnull; notnull; camel_nonnull]
 
 let ia_is_initializer ia =
   ia_contains ia initializer_
 
 let ia_is_inject ia =
-  ia_ends_with ia inject
+  list_exists
+    (ia_ends_with ia)
+    [inject; inject_view; bind]
 
 let ia_is_mutable ia =
   ia_ends_with ia mutable_
