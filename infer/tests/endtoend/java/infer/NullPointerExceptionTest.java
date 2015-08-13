@@ -55,8 +55,7 @@ public class NullPointerExceptionTest {
         "cursorFromContentResolverNPE",
         "nullPointerExceptionInArrayLengthLoop",
         "nullPointerExceptionCallArrayReadMethod",
-        // TODO (t7970552): re-enable this test
-        //"nullableFieldNPE",
+        "nullableFieldNPE",
         "nullableParamNPE",
         "badCheckShouldCauseNPE",
         "nullPointerExceptionArrayLength",
