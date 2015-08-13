@@ -6,9 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open LAst
 
 exception ImproperTypeError of string
+exception MalformedMetadata of string
 exception Unimplemented of string
 
 let ident_of_variable (var : LAst.variable) : Ident.t = (* TODO: use unique stamps *)
@@ -34,27 +36,41 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
+let location_of_annotation_option (metadata : LAst.metadata_map)
+  : LAst.annotation option -> Sil.location = function
+  | None -> Sil.dummy_location (* no annotation means no source location *)
+  | Some (Annotation i) ->
+      begin match MetadataMap.find i metadata with
+        | TypOperand (_, Const (Cint line_num)) :: _ -> let open Sil in
+            { line = line_num; col = -1; file = DB.source_file_empty; nLOC = -1 }
+        | [] -> raise (MalformedMetadata "Instruction annotation refers to empty metadata node.")
+        | _ -> raise (MalformedMetadata ("Instruction annotation refers to metadata node " ^
+                                         "without line number as first component."))
+      end
+
 (* Generate list of SIL instructions and list of local variables *)
-let rec trans_annotated_instrs (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t)
-    : LAst.annotated_instr list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
+let rec trans_annotated_instrs
+    (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (metadata : LAst.metadata_map)
+  : LAst.annotated_instr list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
   | [] -> ([], [])
-  | h :: t ->
-      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc t in
-      begin match fst h with
-      | Ret None -> (sil_instrs, locals)
-      | Ret (Some (tp, exp)) ->
-          let procname = Cfg.Procdesc.get_proc_name procdesc in
-          let ret_var = Sil.get_ret_pvar procname in
-          let new_sil_instr =
-            Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, Sil.dummy_location) in
-          (new_sil_instr :: sil_instrs, locals)
-      | Load (var, tp, ptr) ->
-          let new_sil_instr =
-            Sil.Letderef (ident_of_variable var, trans_variable ptr, trans_typ tp, Sil.dummy_location) in
-          (new_sil_instr :: sil_instrs, locals)
-      | Store (op, tp, var) ->
-          let new_sil_instr =
-            Sil.Set (trans_variable var, trans_typ tp, trans_operand op, Sil.dummy_location) in
+  | (instr, anno) :: t ->
+      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc metadata t in
+      let location = location_of_annotation_option metadata anno in
+      begin match instr with
+        | Ret None -> (sil_instrs, locals)
+        | Ret (Some (tp, exp)) ->
+            let procname = Cfg.Procdesc.get_proc_name procdesc in
+            let ret_var = Sil.get_ret_pvar procname in
+            let new_sil_instr =
+              Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, location) in
+            (new_sil_instr :: sil_instrs, locals)
+        | Load (var, tp, ptr) ->
+            let new_sil_instr =
+              Sil.Letderef (ident_of_variable var, trans_variable ptr, trans_typ tp, location) in
+            (new_sil_instr :: sil_instrs, locals)
+        | Store (op, tp, var) ->
+            let new_sil_instr =
+              Sil.Set (trans_variable var, trans_typ tp, trans_operand op, location) in
           (new_sil_instr :: sil_instrs, locals)
       | Alloc (var, tp, num_elems) ->
           (* num_elems currently ignored *)
@@ -68,7 +84,8 @@ let rec trans_annotated_instrs (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t)
       end
 
 (* Update CFG and call graph with new function definition *)
-let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
+let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
+  : LAst.func_def -> unit = function
     FuncDef (func_name, ret_tp_opt, params, annotated_instrs) ->
       let (proc_attrs : Sil.proc_attributes) =
         let open Sil in
@@ -92,7 +109,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
           ret_type = (match ret_tp_opt with
               | None -> Sil.Tvoid
               | Some ret_tp -> trans_typ ret_tp);
-          formals = List.map (fun (tp, name) -> (name, trans_typ tp)) params;
+          formals = Utils.list_map (fun (tp, name) -> (name, trans_typ tp)) params;
           locals = []; (* TODO *)
           captured = [];
           loc = Sil.dummy_location
@@ -110,7 +127,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
         (* link all nodes in a chain for now *)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
         | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
-      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc annotated_instrs in
+      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc metadata annotated_instrs in
       let nodes = Utils.list_map (node_of_sil_instr cfg procdesc) sil_instrs in
       Cfg.Procdesc.set_start_node procdesc start_node;
       Cfg.Procdesc.set_exit_node procdesc exit_node;
@@ -119,9 +136,9 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) : LAst.func_def -> unit = function
       Cg.add_node cg procname
 
 let trans_prog : LAst.prog -> Cfg.cfg * Cg.t * Sil.tenv = function
-    Prog (func_defs, _) ->
+    Prog (func_defs, metadata) ->
       let cfg = Cfg.Node.create_cfg () in
       let cg = Cg.create () in
       let tenv = Sil.create_tenv () in
-      List.iter (trans_func_def cfg cg) func_defs;
+      Utils.list_iter (trans_func_def cfg cg metadata) func_defs;
       (cfg, cg, tenv)
