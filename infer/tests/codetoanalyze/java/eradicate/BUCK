@@ -24,6 +24,7 @@ classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
 env_cmd = ' '.join(['export', 'ERADICATE_RETURN_OVER_ANNOTATED=1'])
 infer_cmd = ' '.join([
     'infer',
+    '--absolute-paths',
     '-o', out,
     '-a', 'eradicate',
     '--',

@@ -67,8 +67,7 @@ def prepare_build(args):
     infer_options = [
         '--buck',
         '--incremental',
-        '--analyzer',
-        args.analyzer,
+        '--analyzer', args.analyzer,
     ]
 
     if args.debug:

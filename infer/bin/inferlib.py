@@ -115,10 +115,15 @@ inferJ_group.add_argument('--infer_cache', metavar='<directory>',
                            help='Select a directory to contain the infer cache')
 
 inferJ_group.add_argument('-pr', '--project_root',
-                           dest='project_root',
-                           default=os.getcwd(),
-                           help='Location of the project root '
-                                '(default is current directory)')
+                          dest='project_root',
+                          default=os.getcwd(),
+                          help='Location of the project root '
+                          '(default is current directory)')
+
+inferJ_group.add_argument('--absolute-paths',
+                          action='store_true',
+                          default=False,
+                          help='Report errors with absolute paths')
 
 inferJ_group.add_argument('--objc_ml_buckets',
                            dest='objc_ml_buckets',
@@ -411,8 +416,8 @@ class Infer:
 
         infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]
 
-        if self.args.buck:
-            infer_cmd += ['-project_root', os.getcwd()]
+        if not self.args.absolute_paths:
+            infer_cmd += ['-project_root', self.args.project_root]
 
         infer_cmd += [
             '-results_dir', self.args.infer_out,
