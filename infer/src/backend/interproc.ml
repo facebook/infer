@@ -591,7 +591,7 @@ let forward_tabulate cfg tenv =
   L.d_strln ".... Work list empty. Stop ...."; L.d_ln ()
 
 (** report an error if any Activity is reachable from a static field *)
-let report_activity_leaks sigma tenv =
+let report_activity_leaks pname sigma tenv =
   (* report an error if an expression in [activity_exps] is reachable from [field_strexp] *)
   let check_reachable_activity_from_fld (fld_name, fld_strexp) activity_exps =
     let _, reachable_exps =
@@ -601,7 +601,7 @@ let report_activity_leaks sigma tenv =
     list_iter
       (fun (activity_exp, typ) ->
          if Sil.ExpSet.mem activity_exp reachable_exps then
-           let err_desc = Errdesc.explain_activity_leak typ fld_name in
+           let err_desc = Errdesc.explain_activity_leak pname typ fld_name in
            raise (Exceptions.Activity_leak (err_desc, try assert false with Assert_failure x -> x)))
       activity_exps in
   (* get the set of pointed-to expressions of type T <: Activity *)
@@ -680,7 +680,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       (* let () = L.out "@.AFTER abs:@.$%a@." (Prop.pp_prop Utils.pe_text) prop'' in *)
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
-      if !Sil.curr_language = Sil.Java then report_activity_leaks (Prop.get_sigma post) tenv;
+      if !Sil.curr_language = Sil.Java then report_activity_leaks pname (Prop.get_sigma post) tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None
         else Some (Prop.normalize (Prop.prop_sub sub post), path) in

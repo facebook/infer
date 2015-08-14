@@ -250,7 +250,8 @@ def should_report(analyzer, row):
         'RESOURCE_LEAK',
         'MEMORY_LEAK',
         'RETAIN_CYCLE',
-        'ASSERTION_FAILURE'
+        'ASSERTION_FAILURE',
+        'ACTIVITY_LEAK'
     ]
 
     if analyzer in [ERADICATE, CHECKERS, TRACING]:
