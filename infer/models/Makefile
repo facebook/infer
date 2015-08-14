@@ -43,10 +43,10 @@ $(CPP_MODELS_FILE): $(CPP_MODELS_SOURCES) $(INFERANALYZE) $(INFERCLANG)
 	make -C $(CPP_MODELS) install
 
 $(OBJC_MODELS_FILE): $(OBJC_MODELS_SOURCES) $(INFERANALYZE) $(INFERCLANG)
-ifeq ($(PLATFORM), Darwin)
+ifneq (, $(shell which xcode-select 2>&-))
 	make -C $(OBJC_MODELS) install
 else
-	@echo "Platform $(PLATFORM) not supported for objc models, skipping."
+	@echo "Xcode not installed or platform $(PLATFORM) not supported for objc models, skipping."
 endif
 
 clean:

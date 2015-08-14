@@ -5,7 +5,7 @@ C_OBJECTS=$(C_SOURCES:.c=.o)
 CC=clang
 XCODE_PATH=$(shell xcode-select -p)
 IPHONE_SIMULATOR_PATH=$(XCODE_PATH)/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
-FLAGS=-x objective-c -c -mios-simulator-version-min=8.2 -isysroot $(IPHONE_SIMULATOR_PATH)
+FLAGS=--target=x86_64-apple-darwin14 -x objective-c -c -mios-simulator-version-min=8.2 -isysroot $(IPHONE_SIMULATOR_PATH)
 
 default: test
 
@@ -23,8 +23,8 @@ clean:
 	rm -rf $(M_OBJECTS)
 	rm -rf $(C_OBJECTS)
 
-.m.o:
+%.o: %.m
 	$(CC) $(FLAGS)  $< -o $@
 
-.c.o:
+%.o: %.c
 	$(CC) $(FLAGS)  $< -o $@

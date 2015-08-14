@@ -1,5 +1,5 @@
 digraph iCFG {
-32 [label="32:  Call _fun___objc_release \n   n$23=*&a:class A * [line 70]\n  n$24=_fun___objc_release(n$23:class A *) [line 70]\n  REMOVE_TEMPS(n$23,n$24); [line 70]\n  NULLIFY(&a,false); [line 70]\n  APPLY_ABSTRACTION; [line 70]\n " shape="box"]
+32 [label="32:  Call _fun___objc_release \n   n$23=*&a:class A * [line 70]\n  _fun___objc_release(n$23:class A *) [line 70]\n  REMOVE_TEMPS(n$23); [line 70]\n  NULLIFY(&a,false); [line 70]\n  APPLY_ABSTRACTION; [line 70]\n " shape="box"]
 	
 
 	 32 -> 29 ;

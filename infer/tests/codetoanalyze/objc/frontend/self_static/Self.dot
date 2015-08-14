@@ -64,7 +64,7 @@ digraph iCFG {
 	
 
 	 35 -> 37 ;
-34 [label="34:  Return Stmt \n   n$15=*&object:class B * [line 80]\n  n$14=_fun_B_isC:(n$15:class B *,sizeof(class A ):unsigned long ) virtual [line 80]\n  *&return:signed char =n$14 [line 80]\n  REMOVE_TEMPS(n$14,n$15); [line 80]\n  NULLIFY(&object,false); [line 80]\n  APPLY_ABSTRACTION; [line 80]\n " shape="box"]
+34 [label="34:  Return Stmt \n   n$15=*&object:class B * [line 80]\n  n$14=_fun_B_isC:(n$15:class B *,sizeof(class A ):unsigned long ) virtual [line 80]\n  *&return:_Bool =n$14 [line 80]\n  REMOVE_TEMPS(n$14,n$15); [line 80]\n  NULLIFY(&object,false); [line 80]\n  APPLY_ABSTRACTION; [line 80]\n " shape="box"]
 	
 
 	 34 -> 33 ;
@@ -170,7 +170,7 @@ digraph iCFG {
 	
 
 	 6 -> 7 ;
-5 [label="5:  Return Stmt \n   *&return:signed char =1 [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+5 [label="5:  Return Stmt \n   *&return:_Bool =1 [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 5 -> 4 ;

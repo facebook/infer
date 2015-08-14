@@ -52,7 +52,7 @@ public class InferRunner {
       "/dependencies/java/jackson/jackson-2.2.3.jar",
   };
 
-  private static final String IOS_ISYSROOT_SUFFIX =
+  private static final String IPHONESIMULATOR_ISYSROOT_SUFFIX =
       "/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk";
 
   private static HashMap<String, InferResults> inferResultsMap =
@@ -200,6 +200,7 @@ public class InferRunner {
     }
     ImmutableList<String> clangCmd = new ImmutableList.Builder<String>()
         .add("clang")
+        .add("--target=x86_64-apple-darwin14")
         .add("-x")
         .add(getClangLangOption(lang))
         .add(getStdParam(lang))
@@ -279,39 +280,39 @@ public class InferRunner {
 
   public static ImmutableList<String> createObjCInferCommandFrontend(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
         Language.ObjC,
         false,
-        null,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false);
   }
 
   public static ImmutableList<String> createObjCInferCommandFrontendArc(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
         Language.ObjC,
         false,
-        null,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         true);
   }
 
   public static ImmutableList<String> createObjCPPInferCommandFrontend(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
         Language.ObjCPP,
         false,
-        null,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false);
   }
@@ -344,13 +345,13 @@ public class InferRunner {
 
   public static ImmutableList<String> createObjCInferCommand(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
         Language.ObjC,
         true,
-        null,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false);
   }
@@ -359,26 +360,26 @@ public class InferRunner {
       TemporaryFolder folder,
       String sourceFile,
       String ml_bucket,
-      boolean arc) {
+      boolean arc) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
         Language.ObjC,
         true,
-        null,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         ml_bucket,
         arc);
   }
 
   public static ImmutableList<String> createObjCPPInferCommand(
       TemporaryFolder folder,
-      String sourceFile) {
+      String sourceFile) throws IOException, InterruptedException {
     return createClangInferCommand(
         folder,
         sourceFile,
         Language.ObjCPP,
         true,
-        null,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false);
   }
@@ -391,7 +392,7 @@ public class InferRunner {
         sourceFile,
         Language.ObjC,
         false,
-        getXcodeRoot() + IOS_ISYSROOT_SUFFIX,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false);
   }
@@ -404,7 +405,7 @@ public class InferRunner {
         sourceFile,
         Language.ObjC,
         true,
-        getXcodeRoot() + IOS_ISYSROOT_SUFFIX,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         null,
         false);
   }
@@ -419,7 +420,7 @@ public class InferRunner {
         sourceFile,
         Language.ObjC,
         true,
-        getXcodeRoot() + IOS_ISYSROOT_SUFFIX,
+        getXcodeRoot() + IPHONESIMULATOR_ISYSROOT_SUFFIX,
         bucket,
         arc);
   }

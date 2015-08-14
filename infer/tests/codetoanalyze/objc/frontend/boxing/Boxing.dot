@@ -14,11 +14,11 @@ digraph iCFG {
 	
 
 	 23 -> 26 ;
-22 [label="22:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:signed char ) [line 37]\n  *&n:class NSNumber *=n$13 [line 37]\n  REMOVE_TEMPS(n$13); [line 37]\n  NULLIFY(&n,false); [line 37]\n " shape="box"]
+22 [label="22:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 37]\n  *&n:class NSNumber *=n$13 [line 37]\n  REMOVE_TEMPS(n$13); [line 37]\n  NULLIFY(&n,false); [line 37]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:signed char ) [line 38]\n  *&return:class NSNumber *=n$12 [line 38]\n  REMOVE_TEMPS(n$12); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+21 [label="21:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 38]\n  *&return:class NSNumber *=n$12 [line 38]\n  REMOVE_TEMPS(n$12); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
 	
 
 	 21 -> 20 ;

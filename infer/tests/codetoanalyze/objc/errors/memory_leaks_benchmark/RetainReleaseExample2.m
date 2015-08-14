@@ -17,7 +17,7 @@
 
 @end
 
-
+void __objc_release(A*); // infer builtin
 A* g;
 
 

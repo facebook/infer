@@ -29,7 +29,7 @@ platform=`uname`
 if [ -e "$INFER_BIN/InferClang" ]; then
     TARGETS_TO_COMPILE+=('clang')
     TARGETS_TO_TEST+=('c' 'cpp')
-    if [ $platform == 'Darwin' ]; then
+    if command -v xcode-select > /dev/null; then
         TARGETS_TO_TEST+=('objc')
     fi
 fi
