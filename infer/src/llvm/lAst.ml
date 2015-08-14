@@ -46,7 +46,7 @@ and metadata_component =
   | TypOperand of typ option * operand
   | MetadataVal of metadata_value
 
-type instr =
+type instruction =
   | Ret of (typ * operand) option
   | UncondBranch of variable
   | CondBranch of operand * variable * variable
@@ -57,13 +57,13 @@ type instr =
 
 type annotation = Annotation of int
 
-type annotated_instr = instr * annotation option
+type annotated_instruction = instruction * annotation option
 
-type func_def = FuncDef of variable * typ option * (typ * string) list * annotated_instr list
+type function_def = FunctionDef of variable * typ option * (typ * string) list * annotated_instruction list
 
 type metadata_map = metadata_component list MetadataMap.t
 
-type prog = Prog of func_def list * metadata_map
+type program = Program of function_def list * metadata_map
 
 let string_of_variable : variable -> string = function
   | Global var_id | Local var_id ->

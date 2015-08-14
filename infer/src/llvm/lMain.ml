@@ -48,9 +48,9 @@ let () = try
       let source_file = DB.abs_source_file_from_path filename in
       let () = init_global_state source_file in
       let lexbuf = Lexing.from_channel (open_in filename) in
-      let prog = LParser.prog LLexer.token lexbuf in
+      let prog = LParser.program LLexer.token lexbuf in
       (* let pretty = LPretty.pretty_prog prog in *)
-      let (cfg, cg, tenv) = LTrans.trans_prog prog in
+      let (cfg, cg, tenv) = LTrans.trans_program prog in
       store_icfg tenv cg cfg source_file; store_tenv tenv
   with
   | UsageError msg -> print_string ("Usage error: " ^ msg ^ "\n")

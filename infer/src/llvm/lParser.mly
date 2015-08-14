@@ -146,20 +146,20 @@
 
 %token EOF
 
-%start prog
-%type <LAst.prog> prog
-%type <LAst.func_def> func_def
+%start program
+%type <LAst.program> program
+%type <LAst.function_def> function_def
 %type <LAst.typ option> ret_typ
 %type <LAst.typ> typ
 
 %%
 
-prog:
-  | targets defs = func_def* opt_mappings = metadata_def* EOF {
+program:
+  | targets func_defs = function_def* opt_mappings = metadata_def* EOF {
       let mappings = list_flatten_options opt_mappings in
       let add_mapping map (metadata_id, components) = MetadataMap.add metadata_id components map in
       let metadata_map = list_fold_left add_mapping MetadataMap.empty mappings in
-      Prog (defs, metadata_map) }
+      Program (func_defs, metadata_map) }
 
 targets:
   | { (None, None) }
@@ -193,10 +193,10 @@ metadata_value:
   | str = METADATA_STRING { MetadataString str }
   | components = metadata_node { MetadataNode components }
 
-func_def:
+function_def:
   | DEFINE ret_tp = ret_typ name = variable LPAREN
     params = separated_list(COMMA, pair(first_class_typ, IDENT)) RPAREN attribute_group*
-    annotated_instrs = block { FuncDef (name, ret_tp, params, annotated_instrs) }
+    annotated_instrs = block { FunctionDef (name, ret_tp, params, annotated_instrs) }
 
 attribute_group:
   | i = ATTRIBUTE_GROUP { i }
@@ -241,16 +241,16 @@ ptr_typ:
   | tp = typ STAR { tp }
 
 block:
-  | LBRACE annotated_instrs = annotated_instr* RBRACE { list_flatten_options annotated_instrs }
+  | LBRACE annotated_instrs = annotated_instruction* RBRACE { list_flatten_options annotated_instrs }
 
-annotated_instr:
-  | instruction = real_instr anno = annotation? { Some (instruction, anno) }
-  | debug_instr annotation? { None }
+annotated_instruction:
+  | instr = real_instruction anno = annotation? { Some (instr, anno) }
+  | debug_instruction annotation? { None }
 
 annotation:
   | COMMA DEBUG_ANNOTATION i = NUMBERED_METADATA { Annotation i }
 
-real_instr:
+real_instruction:
   (* terminator instructions *)
   | RET tp = typ op = operand { Ret (Some (tp, op)) }
   | RET VOID { Ret None }
@@ -263,11 +263,11 @@ real_instr:
     (* don't yet know why val_tp and ptr_tp would be different *)
   | variable EQUALS binop { Binop }
 
-debug_instr:
+debug_instruction:
   | CALL VOID DBG_DECLARE LPAREN separated_list(COMMA, metadata_component) RPAREN { () }
 
 align:
-  | COMMA ALIGN sz = CONSTANT_INT { sz }
+  | COMMA ALIGN width = CONSTANT_INT { width }
 
 binop:
   | ADD arith_options binop_args { () }

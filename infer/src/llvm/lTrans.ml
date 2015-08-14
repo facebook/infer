@@ -55,12 +55,12 @@ let location_of_annotation_option (metadata : LAst.metadata_map)
       end
 
 (* Generate list of SIL instructions and list of local variables *)
-let rec trans_annotated_instrs
+let rec trans_annotated_instructions
     (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (metadata : LAst.metadata_map)
-  : LAst.annotated_instr list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
+  : LAst.annotated_instruction list -> Sil.instr list * (Mangled.t * Sil.typ) list = function
   | [] -> ([], [])
   | (instr, anno) :: t ->
-      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc metadata t in
+      let (sil_instrs, locals) = trans_annotated_instructions cfg procdesc metadata t in
       let location = location_of_annotation_option metadata anno in
       begin match instr with
         | Ret None -> (sil_instrs, locals)
@@ -90,9 +90,9 @@ let rec trans_annotated_instrs
       end
 
 (* Update CFG and call graph with new function definition *)
-let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
-  : LAst.func_def -> unit = function
-    FuncDef (func_name, ret_tp_opt, params, annotated_instrs) ->
+let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
+  : LAst.function_def -> unit = function
+    FunctionDef (func_name, ret_tp_opt, params, annotated_instrs) ->
       let (proc_attrs : Sil.proc_attributes) =
         let open Sil in
         { access = Sil.Default;
@@ -133,7 +133,7 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
         (* link all nodes in a chain for now *)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
         | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
-      let (sil_instrs, locals) = trans_annotated_instrs cfg procdesc metadata annotated_instrs in
+      let (sil_instrs, locals) = trans_annotated_instructions cfg procdesc metadata annotated_instrs in
       let nodes = list_map (node_of_sil_instr cfg procdesc) sil_instrs in
       Cfg.Procdesc.set_start_node procdesc start_node;
       Cfg.Procdesc.set_exit_node procdesc exit_node;
@@ -141,10 +141,10 @@ let trans_func_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       Cfg.Node.add_locals_ret_declaration start_node locals;
       Cg.add_node cg procname
 
-let trans_prog : LAst.prog -> Cfg.cfg * Cg.t * Sil.tenv = function
-    Prog (func_defs, metadata) ->
+let trans_program : LAst.program -> Cfg.cfg * Cg.t * Sil.tenv = function
+    Program (func_defs, metadata) ->
       let cfg = Cfg.Node.create_cfg () in
       let cg = Cg.create () in
       let tenv = Sil.create_tenv () in
-      list_iter (trans_func_def cfg cg metadata) func_defs;
+      list_iter (trans_function_def cfg cg metadata) func_defs;
       (cfg, cg, tenv)
