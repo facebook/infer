@@ -14,7 +14,7 @@
 # [$2] : "keep" or "replace". Keep will keep the temporary folders used in the tests.
 #         Replace will replace the saved dot files with the new created ones.
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 
 cd $SCRIPT_DIR/../../
 
