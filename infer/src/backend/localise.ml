@@ -367,9 +367,12 @@ let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
 let desc_activity_leak pname activity_typ fieldname : error_desc =
   let pname_str = Procname.java_get_class pname ^ "." ^ Procname.java_get_method pname in
   (* intentionally omit space; [typ_to_string] adds an extra space *)
-  let activity_str = Sil.typ_to_string activity_typ ^ "may leak via static field" in
+  let activity_str = Sil.typ_to_string activity_typ ^ "may leak via" in
   let fld_str = Ident.fieldname_to_string fieldname in
-  (["Activity"; activity_str; fld_str; "during call to"; pname_str], None, [])
+  let leak_msg =
+    if fld_str = "android.os.Handler.sFakeHandlerQueue" then "call to Handler.postDelayed"
+    else "assignment to static field " ^ fld_str in
+  (["Activity"; activity_str; leak_msg; "during call to"; pname_str] , None, [])
 
 let desc_assertion_failure loc : error_desc =
   (["could be raised"; at_line (Tags.create ()) loc], None, [])

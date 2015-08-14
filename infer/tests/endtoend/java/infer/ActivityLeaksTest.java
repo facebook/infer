@@ -44,7 +44,8 @@ public class ActivityLeaksTest {
         "indirectLeak",
         "nonStaticInnerClassLeak",
         "leakAfterInstanceFieldWrite",
-        "singletonLeak"
+        "singletonLeak",
+        "handlerLeak"
     };
     assertThat(
         "Results should contain " + ACTIVITY_LEAK,
