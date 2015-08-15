@@ -78,15 +78,15 @@ let rec trans_annotated_instructions
             let new_sil_instr =
               Sil.Set (trans_variable var, trans_typ tp, trans_operand op, location) in
           (new_sil_instr :: sil_instrs, locals)
-      | Alloc (var, tp, num_elems) ->
-          (* num_elems currently ignored *)
-          begin match var with
-          | Global (Name var_name) | Local (Name var_name) ->
-              let new_local = (Mangled.from_string var_name, trans_typ (Tptr tp)) in
-              (sil_instrs, new_local :: locals)
-          | _ -> raise (ImproperTypeError "Not expecting alloca instruction to a numbered variable.")
-          end
-      | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
+        | Alloc (var, tp, num_elems) ->
+            (* num_elems currently ignored *)
+            begin match var with
+              | Global (Name var_name) | Local (Name var_name) ->
+                  let new_local = (Mangled.from_string var_name, trans_typ (Tptr tp)) in
+                  (sil_instrs, new_local :: locals)
+              | _ -> raise (ImproperTypeError "Not expecting alloca instruction to a numbered variable.")
+            end
+        | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
       end
 
 (* Update CFG and call graph with new function definition *)

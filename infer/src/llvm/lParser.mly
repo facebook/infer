@@ -302,8 +302,6 @@ fast_math_flags:
 binop_args:
   | typ operand COMMA operand { () }
 
-(* below is fuzzy *)
-
 operand:
   | var = variable { Var var }
   | const = constant { Const const }
