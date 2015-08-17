@@ -495,6 +495,9 @@ class Infer:
                 # '-notest',
             ]
 
+        if self.args.incremental:
+            infer_options.append('-incremental')
+
         if self.args.specs_dirs:
             infer_options += self.args.specs_dirs
 
