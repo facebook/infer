@@ -54,6 +54,9 @@ let location_of_annotation_option (metadata : LAst.metadata_map)
                                          "without line number as first component."))
       end
 
+let procname_of_function_variable (func_var : LAst.variable) : Procname.t =
+  Procname.from_string_c_fun (LAst.string_of_variable func_var)
+
 (* Generate list of SIL instructions and list of local variables *)
 let rec trans_annotated_instructions
     (cfg : Cfg.cfg) (procdesc : Cfg.Procdesc.t) (metadata : LAst.metadata_map)
@@ -77,7 +80,7 @@ let rec trans_annotated_instructions
         | Store (op, tp, var) ->
             let new_sil_instr =
               Sil.Set (trans_variable var, trans_typ tp, trans_operand op, location) in
-          (new_sil_instr :: sil_instrs, locals)
+            (new_sil_instr :: sil_instrs, locals)
         | Alloc (var, tp, num_elems) ->
             (* num_elems currently ignored *)
             begin match var with
@@ -86,13 +89,30 @@ let rec trans_annotated_instructions
                   (sil_instrs, new_local :: locals)
               | _ -> raise (ImproperTypeError "Not expecting alloca instruction to a numbered variable.")
             end
+        | Call (ret_var, func_var, typed_args) ->
+            let new_sil_instr = Sil.Call ([ident_of_variable ret_var],
+                Sil.Const (Sil.Cfun (procname_of_function_variable func_var)),
+                list_map (fun (tp, arg) -> (trans_operand arg, trans_typ tp)) typed_args,
+                location, Sil.cf_default) in
+            (new_sil_instr :: sil_instrs, locals)
         | _ -> raise (Unimplemented "Need to translate instruction to SIL.")
       end
 
+let callees_of_function_def : LAst.function_def -> Procname.t list = function
+    FunctionDef (_, _, _, annotated_instrs) ->
+      let callee_of_instruction : LAst.instruction -> Procname.t option = begin function
+        | Call (_, func_var, _) -> Some (procname_of_function_variable func_var)
+        | _ -> None
+      end in
+      list_flatten_options (list_map
+          (fun annotated_instr -> callee_of_instruction (fst annotated_instr))
+          annotated_instrs)
+
 (* Update CFG and call graph with new function definition *)
 let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
-  : LAst.function_def -> unit = function
+  (func_def : LAst.function_def) : unit = match func_def with
     FunctionDef (func_name, ret_tp_opt, params, annotated_instrs) ->
+      let procname = procname_of_function_variable func_name in
       let (proc_attrs : Sil.proc_attributes) =
         let open Sil in
         { access = Sil.Default;
@@ -109,7 +129,7 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       let (procdesc_builder : Cfg.Procdesc.proc_desc_builder) =
         let open Cfg.Procdesc in
         { cfg = cfg;
-          name = Procname.from_string_c_fun (LAst.string_of_variable func_name);
+          name = procname;
           is_defined = true; (** is defined and not just declared *)
           proc_attributes = proc_attrs;
           ret_type = (match ret_tp_opt with
@@ -121,7 +141,6 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
           loc = Sil.dummy_location
         } in
       let procdesc = Cfg.Procdesc.create procdesc_builder in
-      let procname = Cfg.Procdesc.get_proc_name procdesc in
       let start_kind = Cfg.Node.Start_node procdesc in
       let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
       let exit_kind = Cfg.Node.Exit_node procdesc in
@@ -139,7 +158,8 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       Cfg.Procdesc.set_exit_node procdesc exit_node;
       link_nodes start_node nodes;
       Cfg.Node.add_locals_ret_declaration start_node locals;
-      Cg.add_node cg procname
+      Cg.add_node cg procname;
+      list_iter (Cg.add_edge cg procname) (callees_of_function_def func_def)
 
 let trans_program : LAst.program -> Cfg.cfg * Cg.t * Sil.tenv = function
     Program (func_defs, metadata) ->

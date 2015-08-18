@@ -53,6 +53,7 @@ type instruction =
   | Load of variable * typ * variable
   | Store of operand * typ * variable
   | Alloc of variable * typ * int (* return variable, element type, number of elements *)
+  | Call of variable * variable * (typ * operand) list (* return variable, function pointer, arguments *)
   | Binop
 
 type annotation = Annotation of int
