@@ -638,22 +638,26 @@ let compute_clusters exe_env files_changed : cluster list =
   print_clusters_stats clusters';
   clusters'
 
-(** Check whether the cg file is changed. It is unchanged if for each defined procedure, the .specs
-    file exists and is more recent than the cg file. *)
-let cg_check_changed exe_env source_dir cg =
-  let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-  let defined_nodes = Cg.get_defined_nodes cg in
-  let changed = ref false in
-  let cg_source_file = Cg.get_source cg in
-  let proc_is_active pname = DB.source_file_equal (Exe_env.get_source exe_env pname) cg_source_file in
-  let check_needs_update pname =
-    let is_active = proc_is_active pname in
+(** compute the set of procedures in [cg] changed since the last analysis *)
+let cg_get_changed_procs exe_env source_dir cg =
+  let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg" in
+  let cfg_opt = Cfg.load_cfg_from_file cfg_fname in
+  let pdesc_changed pname =
+    match cfg_opt with
+    | Some cfg -> Cfg.pdesc_is_changed cfg pname
+    | None -> true in
+  let spec_exists pname =
     let spec_fname = Specs.res_dir_specs_filename pname in
-    if is_active then
-      changed := (!changed || not (Sys.file_exists (DB.filename_to_string spec_fname)) ||
-                  DB.file_modified_time cg_fname > DB.file_modified_time spec_fname) in
-  list_iter check_needs_update defined_nodes;
-  !changed
+    Sys.file_exists (DB.filename_to_string spec_fname) in
+  let cfg_modified_after_specs pname =
+    let spec_fname = Specs.res_dir_specs_filename pname in
+    DB.file_modified_time cfg_fname > DB.file_modified_time spec_fname in
+  let is_changed pname =
+    not (spec_exists pname) || (cfg_modified_after_specs pname && pdesc_changed pname) in
+  let defined_nodes = Cg.get_defined_nodes cg in
+  if !Config.incremental_procs then list_filter is_changed defined_nodes
+  else if list_exists is_changed defined_nodes then defined_nodes
+  else []
 
 (** Load a .c or .cpp file into an execution environment *)
 let load_cg_file (_exe_env: Exe_env.initial) (source_dir : DB.source_dir) exclude_fun =
@@ -666,24 +670,30 @@ let load_cg_file (_exe_env: Exe_env.initial) (source_dir : DB.source_dir) exclud
 (** Return a map of (changed file procname) -> (procs in that file that have changed) *)
 let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclude_fun =
   let sorted_dirs = list_sort DB.source_dir_compare source_dirs in
-  let files_changed = ref Procname.Map.empty in
-  let cg_list = ref [] in
-  let check_cgs_changed exe_env =
-    let check_cg_changed (source_dir, cg) =
-      let is_changed = cg_check_changed exe_env source_dir cg in
-      if is_changed then
+  let cg_list =
+    list_fold_left
+      (fun cg_list source_dir ->
+         match load_cg_file _exe_env source_dir exclude_fun with
+         | None -> cg_list
+         | Some cg -> (source_dir, cg) :: cg_list)
+      []
+      sorted_dirs in
+  let exe_env_get_files_changed files_changed_map exe_env =
+    let cg_get_files_changed files_changed_map (source_dir, cg) =
+      let changed_procs =
+        if !incremental_mode = ANALYZE_ALL then Cg.get_defined_nodes cg
+        else cg_get_changed_procs exe_env source_dir cg in
+      if changed_procs != [] then
         let file_pname = source_file_to_pname (Cg.get_source cg) in
         let defined_procs = Cg.get_defined_nodes cg in
-        files_changed := Procname.Map.add file_pname defined_procs !files_changed in
-    list_iter check_cg_changed !cg_list in
-  list_iter
-    (fun source_dir -> match load_cg_file _exe_env source_dir exclude_fun with
-       | None -> ()
-       | Some cg -> cg_list := (source_dir, cg) :: !cg_list)
-    sorted_dirs;
+        Procname.Map.add file_pname defined_procs files_changed_map
+      else files_changed_map in
+    list_fold_left cg_get_files_changed files_changed_map cg_list in
   let exe_env = Exe_env.freeze _exe_env in
-  if !incremental_mode <> ANALYZE_ALL then check_cgs_changed exe_env;
-  !files_changed, exe_env
+  let files_changed =
+    if !incremental_mode = ANALYZE_ALL then Procname.Map.empty
+    else exe_env_get_files_changed Procname.Map.empty exe_env in
+  files_changed, exe_env
 
 (** Create an exe_env from a cluster. *)
 let exe_env_from_cluster cluster =
