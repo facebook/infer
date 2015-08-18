@@ -1,0 +1,3 @@
+[submodule "facebook-clang-plugins"]
+	path = facebook-clang-plugins
+	url = https://github.com/facebook/facebook-clang-plugins.git
