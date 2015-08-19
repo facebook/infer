@@ -183,7 +183,7 @@ sanitize:
 
 ifneq ($(shell which git),)
 MAJOR = 0
-MINOR = 2
+MINOR = 3
 PATCH = 0
 
 GIT_COMMIT = $(shell git rev-parse HEAD | awk '{print $0; exit}' | xargs echo -n | sed 's/[\/&]/\\&/g')
