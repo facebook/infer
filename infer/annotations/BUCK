@@ -1,7 +1,15 @@
 prebuilt_jar(
-    name = 'annotations',
-    binary_jar = 'annotations.jar',
-    visibility = [
-        'PUBLIC',
-    ]
+  name = 'annotations',
+  binary_jar = 'annotations.jar',
+  visibility = [
+    'PUBLIC',
+  ]
+)
+
+prebuilt_jar(
+  name = 'processor',
+  binary_jar = 'processor.jar',
+  visibility = [
+    'PUBLIC',
+  ]
 )
