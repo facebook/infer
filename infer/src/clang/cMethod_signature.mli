@@ -12,12 +12,6 @@
 
 type method_signature
 
-val add : method_signature -> unit
-
-val find : Procname.t -> method_signature
-
-val reset_map : unit -> unit
-
 val ms_get_name : method_signature -> Procname.t
 
 val ms_get_args : method_signature -> (string * string * Clang_ast_t.stmt option) list

@@ -29,7 +29,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   let open Clang_ast_t in
   match dec with
   | FunctionDecl(di, name_info, qt, fdecl_info) ->
-      CMethod_declImpl.function_decl tenv cfg cg namespace dec None CContext.ContextNoCls
+      CMethod_declImpl.function_decl tenv cfg cg namespace dec None
   | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
       let name = name_info.Clang_ast_t.ni_name in
       CTypes_decl.do_typedef_declaration tenv namespace
@@ -124,7 +124,6 @@ let init_global_state source_file =
   DB.current_source := source_file;
   DB.Results_dir.init ();
   Ident.reset_name_generator ();
-  CMethod_signature.reset_map ();
   CGlobal_vars.reset_map ();
   CFrontend_config.global_translation_unit_decls := [];
   ObjcProperty_decl.reset_property_table ();

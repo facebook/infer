@@ -571,6 +571,11 @@ let get_decl_kind decl_ref_expr_info =
   | Some decl_ref -> decl_ref.Clang_ast_t.dr_kind
   | None -> assert false
 
+let get_decl_pointer decl_ref_expr_info =
+  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+  | Some decl_ref -> decl_ref.Clang_ast_t.dr_decl_pointer
+  | None -> assert false
+
 (* From the manual: A selector is in a certain selector family if, ignoring any leading underscores, *)
 (* the first component of the selector either consists entirely of the name of *)
 (* the method family or it begins with that followed by character other than lower case letter.*)
@@ -678,27 +683,43 @@ let is_dispatch_function stmt_list =
             | _ -> None))
   | _ -> None
 
-let assign_default_params params_stmt callee_pname_opt ~is_cxx_method =
-  match callee_pname_opt with
+let rec pointer_of_call_expr stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | DeclRefExpr(_, _, _, decl_ref_expr_info) ->
+      Some (get_decl_pointer decl_ref_expr_info)
+  | MemberExpr(_, _, _, member_expr_info) ->
+      let decl_ref = member_expr_info.Clang_ast_t.mei_decl_ref in
+      Some decl_ref.Clang_ast_t.dr_decl_pointer
+  | _ ->
+      match snd (Clang_ast_proj.get_stmt_tuple stmt) with
+      | [stmt] -> pointer_of_call_expr stmt
+      | _ -> None
+
+let assign_default_params params_stmt class_name_opt stmt ~is_cxx_method =
+  match pointer_of_call_expr stmt with
+  | Some pointer ->
+      (match CMethod_trans.method_signature_of_pointer class_name_opt pointer with
+       | Some callee_ms ->
+           (let args = CMethod_signature.ms_get_args callee_ms in
+            let args = if is_cxx_method then match args with _::tl -> tl | _ -> assert false
+              else args in
+              let replace_default_arg param =
+                match param with
+                | Clang_ast_t.CXXDefaultArgExpr _, (_, _, Some default_instr) ->
+                    default_instr
+                | instr, _ -> instr in
+            try
+              let params_args = list_combine params_stmt args in
+              list_map replace_default_arg params_args
+            with Invalid_argument _ ->
+              (* list_combine failed because of different list lengths *)
+              Printing.log_err "Param count doesn't match %s\n"
+                (Procname.to_string (CMethod_signature.ms_get_name callee_ms));
+              params_stmt)
+       | None -> params_stmt)
   | None -> params_stmt
-  | Some callee_pname ->
-      try
-        let callee_ms = CMethod_signature.find callee_pname in
-        let args = CMethod_signature.ms_get_args callee_ms in
-        let args = if is_cxx_method then match args with _::tl -> tl | _ -> assert false
-          else args in
-        let params_args = list_combine params_stmt args in
-        let replace_default_arg param =
-          match param with
-          | Clang_ast_t.CXXDefaultArgExpr _, (_, _, Some default_instr) -> default_instr
-          | instr, _ -> instr in
-        list_map replace_default_arg params_args
-      with
-      | Invalid_argument _ ->
-          (* list_combine failed because of different list lengths *)
-          Printing.log_err "Param count doesn't match %s\n" (Procname.to_string callee_pname);
-          params_stmt
-      | Not_found -> params_stmt
+
 
 let is_block_enumerate_function mei =
   mei.Clang_ast_t.omei_selector = CFrontend_config.enumerateObjectsUsingBlock

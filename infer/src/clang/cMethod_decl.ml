@@ -19,8 +19,7 @@ module type CMethod_decl = sig
     Clang_ast_t.decl list -> unit
 
   val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> string option -> Clang_ast_t.decl ->
-    (Clang_ast_t.qual_type * bool * Procname.t * (Mangled.t * Sil.typ * bool) list) option ->
-    CContext.curr_class -> unit
+    CModule_type.block_data option -> unit
 
   val process_getter_setter : CContext.t -> Procname.t -> bool
 end
@@ -90,32 +89,32 @@ struct
         CMethod_trans.create_external_procdesc cfg procname is_objc_method None;
         ()
 
-  let function_decl tenv cfg cg namespace func_decl block_data_opt curr_class =
+  let function_decl tenv cfg cg namespace func_decl block_data_opt =
     Printing.log_out "\nResetting the goto_labels hashmap...\n";
     CTrans_utils.GotoLabel.reset_all_labels (); (* C Language Std 6.8.6.1-1 *)
+    let is_anonym_block, captured_vars, curr_class =
+      match block_data_opt with
+      | Some (_, _, _, captured_vars, curr_class) -> true, captured_vars, curr_class
+      | None -> false, [], CContext.ContextNoCls in
+    let class_name =
+      if curr_class = CContext.ContextNoCls then None else Some (CContext.get_curr_class_name curr_class) in
     let ms, body_opt, param_decls =
-      CMethod_trans.method_signature_of_decl curr_class func_decl block_data_opt in
+      CMethod_trans.method_signature_of_decl class_name func_decl block_data_opt in
     match method_body_to_translate ms body_opt with
     | Some body -> (* Only in the case the function declaration has a defined body we create a procdesc *)
         let procname = CMethod_signature.ms_get_name ms in
-        let is_anonym_block, captured_vars =
-          match block_data_opt with
-          | Some (_, _, _, captured_vars) -> true, captured_vars
-          | None -> false, [] in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
           let is_instance = CMethod_signature.ms_is_instance ms in
           let is_objc_method = is_anonym_block in
-          let curr_class = if is_anonym_block then curr_class else CContext.ContextNoCls in
           let attributes = CMethod_signature.ms_get_attributes ms in
-          CMethod_signature.add ms;
           add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
             captured_vars is_anonym_block param_decls attributes
-    | None -> CMethod_signature.add ms
+    | None -> ()
 
   let process_method_decl tenv cg cfg namespace curr_class meth_decl ~is_objc =
+    let class_name = Some (CContext.get_curr_class_name curr_class) in
     let ms, body_opt, param_decls =
-      CMethod_trans.method_signature_of_decl curr_class meth_decl None in
-    CMethod_signature.add ms;
+      CMethod_trans.method_signature_of_decl class_name meth_decl None in
     match method_body_to_translate ms body_opt with
     | Some body ->
         let is_instance = CMethod_signature.ms_is_instance ms in

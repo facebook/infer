@@ -35,10 +35,11 @@ struct
   (*Returns the procname and whether is instance, according to the selector *)
   (* information and according to the method signature *)
   let get_callee_objc_method context obj_c_message_expr_info act_params =
-    let (class_name, method_name, mc_type) =
+    let (class_name, method_name, method_pointer_opt, mc_type) =
       CMethod_trans.get_class_selector_instance context obj_c_message_expr_info act_params in
     let is_instance = mc_type != CMethod_trans.MCStatic in
     let method_kind = Procname.objc_method_kind_of_bool is_instance in
+    let callee_pn = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
     let open CContext in
     match CTrans_models.get_predefined_model_method_signature class_name method_name
             General_utils.mk_procname_from_objc_method with
@@ -46,16 +47,19 @@ struct
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
     | None ->
-        let procname = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
-        try
-          let callee_ms = CMethod_signature.find procname in
-          if not (M.process_getter_setter context procname) then
-            (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
-          procname, mc_type
-        with Not_found ->
-          let callee_pn = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
+        let found_method =
+          match method_pointer_opt with
+          | Some pointer ->
+              (match CMethod_trans.method_signature_of_pointer (Some class_name) pointer with
+               | Some callee_ms ->
+                   if not (M.process_getter_setter context callee_pn) then
+                     (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
+                   true
+               | None -> false)
+          | None -> false in
+        if not found_method then
           CMethod_trans.create_external_procdesc context.cfg callee_pn is_instance None;
-          callee_pn, mc_type
+        callee_pn, mc_type
 
   let add_autorelease_call context exp typ sil_loc =
     let method_name = Procname.c_get_method (Cfg.Procdesc.get_proc_name context.CContext.procdesc) in
@@ -295,6 +299,7 @@ struct
     let typ = CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
     let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let pointer = CTrans_utils.get_decl_pointer decl_ref_expr_info in
     let is_function =
       match get_decl_kind decl_ref_expr_info with
       | `Function -> true
@@ -320,6 +325,11 @@ struct
         | Some v ->
             (General_utils.mk_procname_from_function name v, CTypes_decl.parse_func_type name v)
         | None -> (Procname.from_string_c_fun name, None) in
+      (match CMethod_trans.method_signature_of_pointer None pointer with
+       | Some callee_ms ->
+           ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
+       | None ->
+           CMethod_trans.create_external_procdesc context.cfg pname false None);
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)
       (* As e.g. in fun_ptr = foo; *)
@@ -557,7 +567,7 @@ struct
           (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
     let params_stmt = if should_translate_args then
-        CTrans_utils.assign_default_params params_stmt callee_pname_opt ~is_cxx_method:false
+        CTrans_utils.assign_default_params params_stmt None fun_exp_stmt ~is_cxx_method:false
       else [] in
     let res_trans_par =
       let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) params_stmt in
@@ -602,11 +612,6 @@ struct
                if not (SymExec.function_is_builtin callee_pname) then
                  begin
                    Cg.add_edge context.cg procname callee_pname;
-                   try
-                     let callee_ms = CMethod_signature.find callee_pname in
-                     ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
-                   with Not_found ->
-                     CMethod_trans.create_external_procdesc context.cfg callee_pname false None
                  end
            | None -> ());
           (match ret_id with
@@ -638,8 +643,8 @@ struct
     let callee_pname = match sil_method with
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
-
-    let params_stmt = CTrans_utils.assign_default_params params_stmt (Some callee_pname) ~is_cxx_method:true in
+    let class_name_opt = Some (Procname.c_get_class callee_pname) in
+    let params_stmt = CTrans_utils.assign_default_params params_stmt class_name_opt fun_exp_stmt ~is_cxx_method:true in
     (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)
     (* afterwards. The 'instructions' function does not do that          *)
@@ -668,12 +673,6 @@ struct
     let result_trans_to_parent =
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp in
     Cg.add_edge context.CContext.cg procname callee_pname;
-    let cfg = context.CContext.cfg in
-    (try
-       let callee_ms = CMethod_signature.find callee_pname in
-       ignore (CMethod_trans.create_local_procdesc cfg context.CContext.tenv callee_ms [] [] false)
-     with Not_found ->
-       CMethod_trans.create_external_procdesc cfg callee_pname false None);
     match ret_id with
     | [] -> { result_trans_to_parent with exps = [] }
     | [ret_id'] -> { result_trans_to_parent with exps = [(Sil.Var ret_id', function_type)] }
@@ -709,7 +708,7 @@ struct
            let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) rest in
            obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
        | [] -> obj_c_message_expr_info, empty_res_trans) in
-    let (class_type, _, _) = CMethod_trans.get_class_selector_instance context obj_c_message_expr_info res_trans_par.exps in
+    let (class_type, _, _, _) = CMethod_trans.get_class_selector_instance context obj_c_message_expr_info res_trans_par.exps in
     if (selector = CFrontend_config.class_method && CTypes.is_class method_type) then
       raise (Self.SelfClassException class_type)
     else if is_alloc_or_new then
@@ -1764,9 +1763,8 @@ struct
         let all_captured_vars = captured_vars @ static_vars in
         let ids_instrs = list_map assign_captured_var all_captured_vars in
         let ids, instrs = list_split ids_instrs in
-        let block_data = (qual_type, context.is_instance, block_pname, all_captured_vars) in
-        M.function_decl context.tenv context.cfg context.cg context.namespace decl
-          (Some block_data) context.curr_class;
+        let block_data = (qual_type, context.is_instance, block_pname, all_captured_vars, context.curr_class) in
+        M.function_decl context.tenv context.cfg context.cg context.namespace decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_exps = list_map (fun id -> Sil.Var id) ids in
         let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)) :: captured_exps) in

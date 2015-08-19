@@ -28,10 +28,11 @@ val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.t
 val captured_vars_from_block_info : CContext.t -> Clang_ast_t.block_captured_variable list -> (Mangled.t * Sil.typ * bool) list
 
 val get_class_selector_instance : CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list
-  -> (string * string * method_call_type)
+  -> (string * string * Clang_ast_t.pointer option * method_call_type)
 
 val should_create_procdesc : Cfg.cfg -> Procname.t -> bool -> bool -> bool
 
-val method_signature_of_decl : CContext.curr_class -> Clang_ast_t.decl ->
-  (Clang_ast_t.qual_type * bool * Procname.t * 'a list) option ->
+val method_signature_of_decl : string option -> Clang_ast_t.decl -> CModule_type.block_data option ->
   CMethod_signature.method_signature * Clang_ast_t.stmt option * Clang_ast_t.decl list
+
+val method_signature_of_pointer : string option -> Clang_ast_t.pointer -> CMethod_signature.method_signature option

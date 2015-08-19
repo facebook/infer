@@ -41,10 +41,6 @@ let ms_is_instance ms =
 let ms_is_generated ms =
   ms._is_generated
 
-type methodMap = method_signature Procname.Map.t
-
-let methodMap = ref Procname.Map.empty
-
 let make_ms procname args ret_type attributes loc is_instance is_generated =
   let meth_signature = {
     _name = procname;
@@ -64,13 +60,3 @@ let ms_to_string ms =
   "Method "^(Procname.to_string ms._name)^gen^" "^
   (Utils.list_to_string (fun (s1, s2, _) -> s1^", "^s2) ms._args)^"->"^ms._ret_type^" "^
   Clang_ast_j.string_of_source_range ms._loc
-
-let find ms =
-  Procname.Map.find ms !methodMap
-
-let add ms =
-  try ignore (find ms._name)
-  with Not_found -> methodMap := Procname.Map.add ms._name ms !methodMap
-
-let reset_map () =
-  methodMap := Procname.Map.empty

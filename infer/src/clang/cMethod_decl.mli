@@ -14,8 +14,7 @@ module CMethod_decl_funct(T: CModule_type.CTranslation) : sig
     Clang_ast_t.decl list -> unit
 
   val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> string option -> Clang_ast_t.decl ->
-    (Clang_ast_t.qual_type * bool * Procname.t * (Mangled.t * Sil.typ * bool) list) option ->
-    CContext.curr_class -> unit
+    CModule_type.block_data option -> unit
 
   val process_getter_setter : CContext.t -> Procname.t -> bool
 
@@ -26,8 +25,7 @@ module type CMethod_decl = sig
     Clang_ast_t.decl list -> unit
 
   val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> string option -> Clang_ast_t.decl ->
-    (Clang_ast_t.qual_type * bool * Procname.t * (Mangled.t * Sil.typ * bool) list) option ->
-    CContext.curr_class -> unit
+    CModule_type.block_data option -> unit
 
   val process_getter_setter : CContext.t -> Procname.t -> bool
 end

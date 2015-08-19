@@ -15,6 +15,8 @@ open CFrontend_utils
 
 module L = Logging
 
+exception Invalid_declaration
+
 (** When the methoc call is MCStatic, means that it is a class method. *)
 (** When it is MCVirtual, it means that it is an instance method and that *)
 (** the method to be called will be determined at runtime. If it is MCNoVirtual *)
@@ -84,25 +86,23 @@ let build_method_signature decl_info procname function_method_decl_info is_insta
   let attributes = decl_info.Clang_ast_t.di_attributes in
   CMethod_signature.make_ms procname parameters qt attributes source_range is_instance_method is_generated
 
-let method_signature_of_decl curr_class meth_decl block_data_opt =
+let method_signature_of_decl class_name_opt meth_decl block_data_opt =
   let open Clang_ast_t in
-  match meth_decl, block_data_opt with
-  | FunctionDecl (decl_info, name_info, qt, fdi), _ ->
+  match meth_decl, block_data_opt, class_name_opt with
+  | FunctionDecl (decl_info, name_info, qt, fdi), _, _ ->
       let name = name_info.ni_name in
       let func_decl = Func_decl_info (fdi, CTypes.get_type qt) in
       let procname = General_utils.mk_procname_from_function name (CTypes.get_type qt) in
       let ms = build_method_signature decl_info procname func_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
-  | CXXMethodDecl (decl_info, name_info, qt, fdi), _ ->
-      let class_name = CContext.get_curr_class_name curr_class in
+  | CXXMethodDecl (decl_info, name_info, qt, fdi), _, Some class_name ->
       let method_name = name_info.Clang_ast_t.ni_name in
       let typ = CTypes.get_type qt in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name typ in
       let method_decl = Cpp_Meth_decl_info (fdi, class_name, typ)  in
       let ms = build_method_signature decl_info procname method_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
-  | ObjCMethodDecl (decl_info, name_info, mdi), _ ->
-      let class_name = CContext.get_curr_class_name curr_class in
+  | ObjCMethodDecl (decl_info, name_info, mdi), _, Some class_name ->
       let method_name = name_info.ni_name in
       let is_instance = mdi.omdi_is_instance_method in
       let method_kind = Procname.objc_method_kind_of_bool is_instance in
@@ -112,11 +112,20 @@ let method_signature_of_decl curr_class meth_decl block_data_opt =
       let ms = build_method_signature decl_info procname method_decl false false is_generated in
       ms, mdi.omdi_body, mdi.omdi_parameters
   | BlockDecl (decl_info, decl_list, decl_context_info, bdi),
-    Some (qt, is_instance, procname, _) ->
+    Some (qt, is_instance, procname, _, _), _ ->
       let func_decl = Block_decl_info (bdi, CTypes.get_type qt) in
       let ms = build_method_signature decl_info procname func_decl is_instance true false in
       ms, bdi.bdi_body, bdi.bdi_parameters
-  |_ -> assert false
+  | _ -> raise Invalid_declaration
+
+let method_signature_of_pointer class_name_opt pointer =
+  try
+    match Ast_utils.get_decl pointer with
+    | Some meth_decl ->
+        let ms, _, _ = method_signature_of_decl class_name_opt meth_decl None in
+        Some ms
+    | None -> None
+  with Invalid_declaration -> None
 
 let get_superclass_curr_class context =
   let retrive_super cname super_opt =
@@ -140,20 +149,21 @@ let get_superclass_curr_class context =
 
 let get_class_selector_instance context obj_c_message_expr_info act_params =
   let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
+  let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
   match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
-  | `Class qt -> (CTypes.get_type qt, selector, MCStatic)
+  | `Class qt -> (CTypes.get_type qt, selector, pointer, MCStatic)
   | `Instance ->
       (match act_params with
        | (instance_obj, Sil.Tptr(t, _)):: _
        | (instance_obj, t):: _ ->
-           (CTypes.classname_of_type t, selector, MCVirtual)
+           (CTypes.classname_of_type t, selector, pointer, MCVirtual)
        | _ -> assert false)
   | `SuperInstance ->
       let superclass = get_superclass_curr_class context in
-      (superclass, selector, MCNoVirtual)
+      (superclass, selector, pointer, MCNoVirtual)
   | `SuperClass ->
       let superclass = get_superclass_curr_class context in
-      (superclass, selector, MCStatic)
+      (superclass, selector, pointer, MCStatic)
 
 let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
