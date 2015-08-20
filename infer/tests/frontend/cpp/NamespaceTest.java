@@ -39,7 +39,7 @@ public class NamespaceTest {
         "infer/tests/codetoanalyze/cpp/frontend/namespace/namespace.dot";
 
     ImmutableList<String> inferCmd =
-        InferRunner.createObjCPPInferCommandFrontend(
+        InferRunner.createCPPInferCommandFrontend(
             folder,
             switch_src);
     File newDotFile = InferRunner.runInferFrontend(inferCmd);
