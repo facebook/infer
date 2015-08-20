@@ -13,6 +13,7 @@
 module L = Logging
 module F = Format
 open Utils
+open Yojson.Basic.Util
 
 (* This module, unused by default, generates random c files with procedure calls *)
 module Codegen = struct
@@ -355,19 +356,29 @@ let file_pname_to_cg file_pname =
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.load_from_file cg_fname
 
+let output_json_file_stats num_files num_lines =
+  let file_stats = `Assoc [ ("files", `Int num_files); ("lines", `Int num_lines) ] in
+  (* write stats file to disk, intentionally overwriting old file if it already exists *)
+  let f = open_out (Filename.concat !Config.results_dir Config.stats_filename) in
+  Yojson.Basic.pretty_to_channel f file_stats
+
 (** create clusters of minimal size in the dependence order, with recursive parts grouped together *)
 let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
   if !trace_clusters then L.err "[create_minimal_clusters]@.";
   let sorted_files = weak_sort_nodes file_cg in
   let seen = ref Procname.Set.empty in
   let clusters = ref [] in
-  let create_cluster_elem (file_pname, changed_procs) = (* create a cluster_elem for the file *)
+  let total_files = ref 0 in
+  let total_LOC = ref 0 in
+  let create_cluster_elem  (file_pname, changed_procs) = (* create a cluster_elem for the file *)
     let source_file = source_file_from_pname file_pname in
     if !trace_clusters then L.err "      [create_cluster_elem] %s@." (DB.source_file_to_string source_file);
     DB.current_source := source_file;
     match file_pname_to_cg file_pname with
     | None -> { ce_file = source_file; ce_naprocs = 0; ce_active_procs = []; ce_source_map = Procname.Map.empty }
     | Some cg ->
+        total_files := !total_files + 1;
+        total_LOC := !total_LOC + (Cg.get_nLOC cg);
         (* decide whether a proc is active using pname_to_fname, i.e. whether this is the file associated to it *)
         let proc_is_selected pname = match !select_proc with
           | None -> true
@@ -427,6 +438,7 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
             end;
           build_clusters list'' in
   build_clusters sorted_files;
+  output_json_file_stats !total_files !total_LOC;
   list_rev !clusters
 
 let cluster_nfiles cluster = list_length cluster

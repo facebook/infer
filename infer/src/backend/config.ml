@@ -35,6 +35,8 @@ let default_in_zip_results_dir = "infer"
 
 let default_buck_out = "buck-out"
 
+let stats_filename = "stats.json"
+
 let global_tenv_filename = "global.tenv"
 
 (** List of paths to the directories containing specs for library functions. *)

@@ -391,7 +391,7 @@ class Infer:
                 if not os.path.isdir(self.args.infer_out):
                     raise e
 
-            self.stats = {'int': {}, 'float': {}}
+            self.stats = {'int': {}}
             self.timing = {}
 
         if self.args.specs_dirs:
@@ -561,43 +561,9 @@ class Infer:
         if self.args.buck and exit_status == os.EX_OK:
             clean_infer_out(self.args.infer_out)
 
-        cfgs = os.path.join(self.args.infer_out, 'captured', '*', '')
-        captured_total = len(glob.glob(cfgs))
-        captured_plural = '' if captured_total <= 1 else 's'
-        print('\n%d file%s analyzed' % (captured_total, captured_plural))
-
-        logging.info('Analyzed file count: %d', captured_total)
-        logging.info('Analysis status: %d', exit_status)
-
         return exit_status
 
-    def file_stats(self, file, stats):
-        if file is not None:
-            stats['files'] += 1
-            try:
-                with open(file, 'r') as f:
-                    stats['lines'] += len(list(f))
-            except IOError:
-                logging.warning('File {} not found'.format(file))
-
-
-    def javac_stats(self):
-        stats = {'files': 0, 'lines': 0}
-
-        for arg in self.javac.original_arguments:
-            file = None
-            if arg.endswith('.java'):
-                file = arg
-                self.file_stats(file, stats)
-            if arg.startswith('@'):
-                with open(arg[1:], 'r') as f:
-                    for line in f:
-                        file = line.strip()
-                        self.file_stats(file, stats)
-
-        return stats
-
-    def update_stats(self, csv_report):
+    def update_stats_with_warnings(self, csv_report):
         with open(csv_report, 'r') as file_in:
             reader = csv.reader(file_in)
             rows = [row for row in reader][1:]
@@ -633,7 +599,7 @@ class Infer:
                           + infer_print_cmd)
         else:
             clean_csv(self.args, csv_report)
-            self.update_stats(csv_report)
+            self.update_stats_with_warnings(csv_report)
             utils.create_json_report(self.args.infer_out)
 
             print('\n')
@@ -646,21 +612,21 @@ class Infer:
         """Print timing information to infer_out/stats.json"""
         stats_path = os.path.join(self.args.infer_out, utils.STATS_FILENAME)
 
-        self.stats['int'].update(self.javac_stats())
-
-        self.stats['float'].update({
-            'capture_time': self.timing.get('capture', 0.0),
-            'analysis_time': self.timing.get('analysis', 0.0),
-            'reporting_time': self.timing.get('reporting', 0.0),
-        })
-
-        # Adding the analyzer and the version of Infer
-        self.stats['normal'] = {}
-        self.stats['normal']['analyzer'] = self.args.analyzer
-        self.stats['normal']['infer_version'] = utils.infer_version()
-
-        with open(stats_path, 'w') as stats_file:
+        with open(stats_path, 'r+') as stats_file:
+            file_stats = json.load(stats_file)
+            self.stats['int'].update(file_stats)
+            self.stats['float'] = {
+                'capture_time': self.timing.get('capture', 0.0),
+                'analysis_time': self.timing.get('analysis', 0.0),
+                'reporting_time': self.timing.get('reporting', 0.0),
+            }
+            self.stats['normal'] = {
+                'analyzer': self.args.analyzer,
+                'infer_version': utils.infer_version()
+            }
+            stats_file.seek(0)
             json.dump(self.stats, stats_file, indent=2)
+            stats_file.truncate()
 
     def close(self):
         if self.args.analyzer != COMPILE:
@@ -693,6 +659,9 @@ class Infer:
                 elapsed = utils.elapsed_time(start_time)
                 self.timing['total'] = elapsed
                 self.save_stats()
+                files_total = self.stats['int']['files']
+                files_plural = '' if files_total <= 1 else 's'
+                print('\n%d file%s analyzed' % (files_total, files_plural))
                 return self.stats
             else:
                 return dict({})
