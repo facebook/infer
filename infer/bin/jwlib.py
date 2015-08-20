@@ -30,14 +30,21 @@ class CompilerCall:
     def __init__(self, arguments):
 
         self.original_arguments = arguments
-        self.args, _ = parser.parse_known_args(arguments)
+        self.args, self.remaining_args = parser.parse_known_args(arguments)
         self.verbose_out = None
 
     def run(self):
         if self.args.version:
             return subprocess.call(['javac'] + self.original_arguments)
         else:
-            javac_cmd = ['javac', '-verbose', '-g'] + self.original_arguments
+            javac_cmd = ['javac', '-verbose', '-g']
+            if self.args.bootclasspath is not None:
+                javac_cmd += ['-bootclasspath', self.args.bootclasspath]
+            if self.args.classpath is not None:
+                javac_cmd += ['-cp', self.args.classpath]
+            if self.args.classes_out is not None:
+                javac_cmd += ['-d', self.args.classes_out]
+            javac_cmd += self.remaining_args
             javac_cmd.append('-J-Duser.language=en')
 
             with tempfile.NamedTemporaryFile(
