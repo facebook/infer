@@ -10,18 +10,17 @@ order: 01
 
 ## Dependencies
 
-To run Infer you will need Python 2.7
+To use infer, first you need to [install the dependencies](https://github.com/facebook/infer/blob/master/INSTALL.md#install-the-dependencies).
 
-## Getting Infer
+## Get the latest Infer release
 
-Clone the latest development version of Infer with the command
+We provide a source release of Infer packaged with pre-build binaries for clang and facebook-clang-plugins for Linux and MacOS. Download the latest release from GitHub [here](https://github.com/facebook/infer/releases/latest/).
 
-```sh
-git clone https://github.com/facebook/infer.git
+## Compile and install Infer
+
+```bash
+tar xf infer-*-v0.3.0.tar.xz
+cd infer-*-v0.3.0.tar.xz
+make -C infer
+export PATH=`pwd`/infer/bin:$PATH
 ```
-
-## Installing Infer
-
-Follow the instructions
-[here](https://github.com/facebook/infer/blob/master/INSTALL.md#install-infer-from-source)
-to compile and install Infer on different platforms.
