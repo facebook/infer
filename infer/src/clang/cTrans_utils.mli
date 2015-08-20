@@ -209,3 +209,5 @@ val assign_default_params : Clang_ast_t.stmt list -> string option -> Clang_ast_
   is_cxx_method:bool -> Clang_ast_t.stmt list
 
 val is_block_enumerate_function : Clang_ast_t.obj_c_message_expr_info -> bool
+
+val pointer_of_call_expr : Clang_ast_t.stmt -> Clang_ast_t.pointer option

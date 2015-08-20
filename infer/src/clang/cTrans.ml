@@ -325,11 +325,7 @@ struct
         | Some v ->
             (General_utils.mk_procname_from_function name v, CTypes_decl.parse_func_type name v)
         | None -> (Procname.from_string_c_fun name, None) in
-      (match CMethod_trans.method_signature_of_pointer None pointer with
-       | Some callee_ms ->
-           ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
-       | None ->
-           CMethod_trans.create_external_procdesc context.cfg pname false None);
+      CMethod_trans.create_procdesc_with_pointer context (Some pointer) pname;
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)
       (* As e.g. in fun_ptr = foo; *)
@@ -620,10 +616,11 @@ struct
            | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
+    let open CContext in
     let pln = trans_state.parent_line_number in
     let context = trans_state.context in
-    let function_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+    let function_type = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
+    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location si pln context in
     (* First stmt is the method+this expr and the rest are params *)
     let fun_exp_stmt, params_stmt = (match stmt_list with
@@ -644,6 +641,8 @@ struct
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
     let class_name_opt = Some (Procname.c_get_class callee_pname) in
+    let pointer_opt = CTrans_utils.pointer_of_call_expr fun_exp_stmt in
+    CMethod_trans.create_procdesc_with_pointer context pointer_opt callee_pname;
     let params_stmt = CTrans_utils.assign_default_params params_stmt class_name_opt fun_exp_stmt ~is_cxx_method:true in
     (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)

@@ -336,6 +336,19 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
         } in
       ()
 
+let create_procdesc_with_pointer context pointer_opt callee_name =
+  let open CContext in
+  let callee_ms_opt =
+    match pointer_opt with
+    | Some pointer ->
+        (match method_signature_of_pointer None pointer with
+         | Some callee_ms -> Some callee_ms
+         | None -> None)
+    | None -> None in
+  match callee_ms_opt with
+  | Some callee_ms -> ignore (create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
+  | None -> create_external_procdesc context.cfg callee_name false None
+
 let instance_to_method_call_type instance =
   if instance then MCVirtual
   else MCStatic
