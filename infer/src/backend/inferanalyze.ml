@@ -697,8 +697,7 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
         else cg_get_changed_procs exe_env source_dir cg in
       if changed_procs != [] then
         let file_pname = source_file_to_pname (Cg.get_source cg) in
-        let defined_procs = Cg.get_defined_nodes cg in
-        Procname.Map.add file_pname defined_procs files_changed_map
+        Procname.Map.add file_pname changed_procs files_changed_map
       else files_changed_map in
     list_fold_left cg_get_files_changed files_changed_map cg_list in
   let exe_env = Exe_env.freeze _exe_env in

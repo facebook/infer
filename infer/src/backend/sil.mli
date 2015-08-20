@@ -739,6 +739,11 @@ val exp_typ_compare : (exp * typ) -> (exp * typ) -> int
 
 val instr_compare : instr -> instr -> int
 
+(** compare instructions from different procedures without considering loc's, ident's, and pvar's.
+    the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
+    used in the procedure of [instr2] *)
+val instr_compare_structural : instr -> instr -> exp ExpMap.t -> (int * exp ExpMap.t)
+
 val exp_list_compare : exp list -> exp list -> int
 
 val exp_list_equal : exp list -> exp list -> bool

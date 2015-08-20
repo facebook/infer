@@ -76,17 +76,35 @@ module Node = struct
   (** compute the list of procedures added or changed in [cfg_new] over [cfg_old] *)
   let mark_unchanged_pdescs cfg_new cfg_old =
     let pdescs_eq pd1 pd2 =
+      (* map of exp names in pd1 -> exp names in pd2 *)
+      let exp_map = ref Sil.ExpMap.empty in
+      (* map of node id's in pd1 -> node id's in pd2 *)
+      let id_map = ref IntMap.empty in
       (* formals are the same if their types are the same *)
       let formals_eq formals1 formals2 =
         list_equal (fun (_, typ1) (_, typ2) -> Sil.typ_compare typ1 typ2) formals1 formals2 in
       let nodes_eq n1s n2s =
-        (* nodes are the same if they have the same id, instructions, and succs/preds *)
+        (* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
+           with [exp_map] and [id_map] *)
         let node_eq n1 n2 =
-          let id_compare n1 n2 = Pervasives.compare n1.nd_id n2.nd_id in
+          let id_compare n1 n2 =
+            let id1, id2 = n1.nd_id, n2.nd_id in
+            try
+              let id1_mapping = IntMap.find id1 !id_map in
+              Pervasives.compare id1_mapping id2
+            with
+              Not_found ->
+                (* assume id's are equal and enforce by adding to [id_map] *)
+                id_map := IntMap.add id1 id2 !id_map;
+                0 in
           let instrs_eq instrs1 instrs2 =
-            (* TODO (t7941664) : Sil.instr_compare looks at locs and variable names. we could mark
-               more code as unchanged if we ignored these details. *)
-            list_equal (fun i1 i2 -> Sil.instr_compare i1 i2) instrs1 instrs2 in
+            list_equal
+              (fun i1 i2 ->
+                 let n, exp_map' = Sil.instr_compare_structural i1 i2 !exp_map in
+                 exp_map := exp_map';
+                 n)
+              instrs1
+              instrs2 in
           id_compare n1 n2 = 0 &&
           list_equal id_compare n1.nd_succs n2.nd_succs &&
           list_equal id_compare n1.nd_preds n2.nd_preds &&

@@ -3564,6 +3564,131 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
       let n = exp_compare e1 e2 in
       if n <> 0 then n else loc_compare loc1 loc2
 
+(** compare expressions from different procedures without considering loc's, ident's, and pvar's.
+    the [exp_map] param gives a mapping of names used in the procedure of [e1] to names used in the
+    procedure of [e2] *)
+let rec exp_compare_structural e1 e2 exp_map =
+  let compare_exps_with_map e1 e2 exp_map =
+    try
+      let e1_mapping = ExpMap.find e1 exp_map in
+      exp_compare e1_mapping e2, exp_map
+    with Not_found ->
+      (* assume e1 and e2 equal, enforce by adding to [exp_map] *)
+      0, ExpMap.add e1 e2 exp_map in
+  match (e1, e2) with
+  | Var id1, Var id2 -> compare_exps_with_map e1 e2 exp_map
+  | UnOp (o1, e1, to1), UnOp (o2, e2, to2) ->
+      let n = unop_compare o1 o2 in
+      if n <> 0 then n, exp_map
+      else
+        let n, exp_map = exp_compare_structural e1 e2  exp_map in
+        (if n <> 0 then n else typ_opt_compare to1 to2), exp_map
+  | BinOp (o1, e1, f1), BinOp (o2, e2, f2) ->
+      let n = binop_compare o1 o2 in
+      if n <> 0 then n, exp_map
+      else
+        let n, exp_map = exp_compare_structural e1 e2 exp_map in
+        if n <> 0 then n, exp_map
+        else exp_compare_structural f1 f2 exp_map
+  | Cast (t1, e1), Cast(t2, e2) ->
+      let n, exp_map = exp_compare_structural e1 e2 exp_map in
+      (if n <> 0 then n else typ_compare t1 t2), exp_map
+  | Lvar i1, Lvar i2 -> compare_exps_with_map e1 e2 exp_map
+  | Lfield (e1, f1, t1), Lfield (e2, f2, t2) ->
+      let n, exp_map = exp_compare_structural e1 e2 exp_map in
+      (if n <> 0 then n
+       else
+         let n = fld_compare f1 f2 in
+         if n <> 0 then n else typ_compare t1 t2), exp_map
+  | Lindex (e1, f1), Lindex (e2, f2) ->
+      let n, exp_map = exp_compare_structural e1 e2 exp_map in
+      if n <> 0 then n, exp_map
+      else exp_compare_structural f1 f2 exp_map
+  | _ -> exp_compare e1 e2, exp_map
+
+let exp_typ_compare_structural (e1, t1) (e2, t2) exp_map =
+  let n, exp_map = exp_compare_structural e1 e2 exp_map in
+  (if n <> 0 then n else typ_compare t1 t2), exp_map
+
+(** compare instructions from different procedures without considering loc's, ident's, and pvar's.
+    the [exp_map] param gives a mapping of names used in the procedure of [instr1] to identifiers
+    used in the procedure of [instr2] *)
+let instr_compare_structural instr1 instr2 exp_map =
+  let id_list_compare_structural ids1 ids2 exp_map =
+    let n = Pervasives.compare (list_length ids1) (list_length ids2) in
+    if n <> 0 then n, exp_map
+    else
+      list_fold_left2
+        (fun (n, exp_map) id1 id2 ->
+           if n <> 0 then (n, exp_map)
+           else exp_compare_structural (Var id1) (Var id2) exp_map)
+        (0, exp_map)
+        ids1
+        ids2 in
+  match instr1, instr2 with
+  | Letderef (id1, e1, t1, loc1), Letderef (id2, e2, t2, loc2) ->
+      let n, exp_map = exp_compare_structural (Var id1) (Var id2) exp_map in
+      if n <> 0 then n, exp_map
+      else
+        let n, exp_map = exp_compare_structural e1 e2 exp_map in
+        (if n <> 0 then n else typ_compare t1 t2), exp_map
+  | Set (e11, t1, e21, loc1), Set (e12, t2, e22, loc2) ->
+      let n, exp_map = exp_compare_structural e11 e12 exp_map in
+      if n <> 0 then n, exp_map
+      else
+        let n = typ_compare t1 t2 in
+        if n <> 0 then n, exp_map
+        else exp_compare_structural e21 e22 exp_map
+  | Prune (cond1, loc1, true_branch1, ik1), Prune (cond2, loc2, true_branch2, ik2) ->
+      let n, exp_map = exp_compare_structural cond1 cond2 exp_map in
+      (if n <> 0 then n
+       else let n = bool_compare true_branch1 true_branch2 in
+         if n <> 0 then n
+         else Pervasives.compare ik1 ik2), exp_map
+  | Call (ret_ids1, e1, arg_ts1, loc1, cf1), Call (ret_ids2, e2, arg_ts2, loc2, cf2) ->
+      let args_compare_structural args1 args2 exp_map =
+        let n = Pervasives.compare (list_length args1) (list_length args2) in
+        if n <> 0 then n, exp_map
+        else
+          list_fold_left2
+            (fun (n, exp_map) arg1 arg2 ->
+               if n <> 0 then (n, exp_map)
+               else exp_typ_compare_structural arg1 arg2 exp_map)
+            (0, exp_map)
+            args1
+            args2 in
+      let n, exp_map = id_list_compare_structural ret_ids1 ret_ids2 exp_map in
+      if n <> 0 then n, exp_map
+      else let n, exp_map = exp_compare_structural e1 e2 exp_map in
+        if n <> 0 then n, exp_map
+        else
+          let n, exp_map = args_compare_structural arg_ts1 arg_ts2 exp_map in
+          (if n <> 0 then n else call_flags_compare cf1 cf2), exp_map
+  | Nullify (pvar1, loc1, deallocate1), Nullify (pvar2, loc2, deallocate2) ->
+      let n, exp_map = exp_compare_structural (Lvar pvar1) (Lvar pvar2) exp_map in
+      (if n <> 0 then n else bool_compare deallocate1 deallocate2), exp_map
+  | Abstract loc1, Abstract loc2 -> 0, exp_map
+  | Remove_temps (temps1, loc1), Remove_temps (temps2, loc2) ->
+      id_list_compare_structural temps1 temps2 exp_map
+  | Stackop (stackop1, loc1), Stackop (stackop2, loc2) ->
+      Pervasives.compare stackop1 stackop2, exp_map
+  | Declare_locals (ptl1, loc1), Declare_locals (ptl2, loc2) ->
+      let n = Pervasives.compare (list_length ptl1) (list_length ptl2) in
+      if n <> 0 then n, exp_map
+      else
+        list_fold_left2
+          (fun (n, exp_map) (pv1, t1) (pv2, t2) ->
+             if n <> 0 then (n, exp_map)
+             else
+               let n, exp_map = exp_compare_structural (Lvar pv1) (Lvar pv2) exp_map in
+               if n <> 0 then n, exp_map else typ_compare t1 t2, exp_map)
+          (0, exp_map)
+          ptl1
+          ptl2
+  | Goto_node (e1, loc1), Goto_node (e2, loc2) ->
+      exp_compare_structural e1 e2 exp_map
+  | _ -> instr_compare instr1 instr2, exp_map
+
 let atom_sub subst =
   atom_expmap (exp_sub subst)
 

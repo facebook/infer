@@ -182,7 +182,7 @@ let idempotent_getters = ref true
 let in_child_process = ref false
 
 (** if true, changes to code are checked at the procedure level; if false, at the file level *)
-let incremental_procs = ref false
+let incremental_procs = ref true
 
 (** Flag to activate intraprocedural-only analysis *)
 let intraprocedural = ref false
