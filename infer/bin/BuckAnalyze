@@ -269,6 +269,7 @@ def get_basic_stats(stats):
 
     to_skip = {
         'files',
+        'procedures',
         'lines',
         'cores',
         'time',

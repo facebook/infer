@@ -663,9 +663,12 @@ class Infer:
                 elapsed = utils.elapsed_time(start_time)
                 self.timing['total'] = elapsed
                 self.save_stats()
+
+                procs_total = self.stats['int']['procedures']
                 files_total = self.stats['int']['files']
-                files_plural = '' if files_total <= 1 else 's'
-                print('\n%d file%s analyzed' % (files_total, files_plural))
+                procs_str = utils.get_plural('procedure', procs_total)
+                files_str = utils.get_plural('file', files_total)
+                print('\nAnalyzed %s in %s' % (procs_str, files_str))
                 return self.stats
             else:
                 return dict({})

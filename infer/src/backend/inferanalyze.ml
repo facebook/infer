@@ -356,8 +356,11 @@ let file_pname_to_cg file_pname =
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.load_from_file cg_fname
 
-let output_json_file_stats num_files num_lines =
-  let file_stats = `Assoc [ ("files", `Int num_files); ("lines", `Int num_lines) ] in
+let output_json_file_stats num_files num_procs num_lines =
+  let file_stats =
+    `Assoc [ ("files", `Int num_files);
+             ("procedures", `Int num_procs);
+             ("lines", `Int num_lines) ] in
   (* write stats file to disk, intentionally overwriting old file if it already exists *)
   let f = open_out (Filename.concat !Config.results_dir Config.stats_filename) in
   Yojson.Basic.pretty_to_channel f file_stats
@@ -369,6 +372,7 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
   let seen = ref Procname.Set.empty in
   let clusters = ref [] in
   let total_files = ref 0 in
+  let total_procs = ref 0 in
   let total_LOC = ref 0 in
   let create_cluster_elem  (file_pname, changed_procs) = (* create a cluster_elem for the file *)
     let source_file = source_file_from_pname file_pname in
@@ -377,8 +381,6 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
     match file_pname_to_cg file_pname with
     | None -> { ce_file = source_file; ce_naprocs = 0; ce_active_procs = []; ce_source_map = Procname.Map.empty }
     | Some cg ->
-        total_files := !total_files + 1;
-        total_LOC := !total_LOC + (Cg.get_nLOC cg);
         (* decide whether a proc is active using pname_to_fname, i.e. whether this is the file associated to it *)
         let proc_is_selected pname = match !select_proc with
           | None -> true
@@ -399,6 +401,9 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
               with Not_found -> () in
           list_iter do_proc all_procs;
           !mapr in
+        total_files := !total_files + 1;
+        total_procs := !total_procs + naprocs;
+        total_LOC := !total_LOC + (Cg.get_nLOC cg);
         { ce_file = source_file; ce_naprocs = naprocs; ce_active_procs = active_procs; ce_source_map = source_map } in
   let choose_next_file list = (* choose next file from the weakly ordered list *)
     let file_has_no_unseen_dependents fname =
@@ -438,7 +443,7 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
             end;
           build_clusters list'' in
   build_clusters sorted_files;
-  output_json_file_stats !total_files !total_LOC;
+  output_json_file_stats !total_files !total_procs !total_LOC;
   list_rev !clusters
 
 let cluster_nfiles cluster = list_length cluster

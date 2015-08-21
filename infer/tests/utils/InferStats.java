@@ -26,6 +26,9 @@ public class InferStats {
     @JsonProperty(value = "files")
     int numFiles;
 
+    @JsonProperty(value = "procedures")
+    int numProcedures;
+
     @JsonProperty(value = "lines")
     int numLines;
   }
@@ -63,6 +66,10 @@ public class InferStats {
 
   public int getNumFiles() {
     return intFields.numFiles;
+  }
+
+  public int getNumProcedures() {
+    return intFields.numProcedures;
   }
 
   public int getNumLines() {

@@ -355,6 +355,11 @@ def create_json_report(out_dir):
         json.dump(issues, file_out, indent=2)
 
 
+def get_plural(_str, count):
+    plural_str = _str if count == 1 else _str + 's'
+    return '%d %s' % (count, plural_str)
+
+
 class AbsolutePathAction(argparse.Action):
     """Convert a path from relative to absolute in the arg parser"""
     def __call__(self, parser, namespace, values, option_string=None):
