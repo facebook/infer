@@ -29,6 +29,9 @@ LIB_DIRECTORY = os.path.join(BIN_DIRECTORY, '..', 'lib', 'java')
 TMP_DIRECTORY = tempfile.gettempdir()
 MODELS_JAR = os.path.join(LIB_DIRECTORY, 'models.jar')
 
+ANNOT_PROCESSOR_JAR = os.path.join(
+    BIN_DIRECTORY, '..', 'annotations', 'processor.jar')
+
 
 DEFAULT_INFER_OUT = os.path.join(os.getcwd(), 'infer-out')
 CSV_PERF_FILENAME = 'performances.csv'

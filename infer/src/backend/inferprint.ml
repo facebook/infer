@@ -112,6 +112,8 @@ let arg_desc =
         "setup the analyzer for the path filtering";
         "-inferconfig_home", Arg.String (fun s -> Inferconfig.inferconfig_home := Some s), Some "dir",
         "Path to the .inferconfig file";
+        "-local_config", Arg.String (fun s -> Inferconfig.local_config := Some s), Some "Path",
+        "Path to local config file";
       ] in
     Arg2.create_options_desc false "Options" desc in
   let reserved_arg =

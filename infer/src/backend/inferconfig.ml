@@ -14,6 +14,8 @@ let inferconfig_file = ".inferconfig"
 
 let inferconfig_home = ref None
 
+let local_config = ref None
+
 (** Look up a key in a json file containing a list of strings *)
 let lookup_string_list key json =
   Yojson.Basic.Util.filter_member key [json]

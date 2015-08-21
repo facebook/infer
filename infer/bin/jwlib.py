@@ -32,16 +32,25 @@ class CompilerCall:
         self.original_arguments = arguments
         self.args, self.remaining_args = parser.parse_known_args(arguments)
         self.verbose_out = None
+        self.annotations_out = None
 
     def run(self):
         if self.args.version:
             return subprocess.call(['javac'] + self.original_arguments)
         else:
             javac_cmd = ['javac', '-verbose', '-g']
+
             if self.args.bootclasspath is not None:
                 javac_cmd += ['-bootclasspath', self.args.bootclasspath]
-            if self.args.classpath is not None:
-                javac_cmd += ['-cp', self.args.classpath]
+
+            if self.args.classpath is None:
+                classpath = utils.ANNOT_PROCESSOR_JAR
+            else:
+                classpath = os.pathsep.join([
+                    utils.ANNOT_PROCESSOR_JAR,
+                    self.args.classpath])
+            javac_cmd += ['-cp', classpath]
+
             if self.args.classes_out is not None:
                 javac_cmd += ['-d', self.args.classes_out]
             javac_cmd += self.remaining_args
@@ -50,9 +59,17 @@ class CompilerCall:
             with tempfile.NamedTemporaryFile(
                     mode='w',
                     suffix='.out',
+                    prefix='annotations_',
+                    delete=False) as annot_out:
+                self.annotations_out = annot_out.name
+
+            with tempfile.NamedTemporaryFile(
+                    mode='w',
+                    suffix='.out',
                     prefix='javac_',
                     delete=False) as file_out:
                 self.verbose_out = file_out.name
+                os.environ['INFER_ANNOTATIONS_OUT'] = self.annotations_out
                 try:
                     subprocess.check_call(javac_cmd, stderr=file_out)
                 except subprocess.CalledProcessError:

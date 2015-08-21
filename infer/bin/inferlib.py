@@ -191,7 +191,7 @@ def create_results_dir(results_dir):
 
 
 def clean_infer_out(infer_out):
-
+    
     directories = ['multicore', 'classnames', 'sources', jwlib.FILELISTS]
     extensions = ['.cfg', '.cg']
 
@@ -590,6 +590,9 @@ class Infer:
             '-procs', procs_report,
             '-analyzer', self.args.analyzer
         ]
+        if self.javac.annotations_out is not None:
+            infer_print_options += [
+                '-local_config', self.javac.annotations_out]
 
         exit_status = subprocess.check_call(
             infer_print_cmd + infer_print_options
@@ -631,6 +634,7 @@ class Infer:
     def close(self):
         if self.args.analyzer != COMPILE:
             os.remove(self.javac.verbose_out)
+            os.remove(self.javac.annotations_out)
 
     def analyze_and_report(self):
         if self.args.analyzer not in [COMPILE, CAPTURE]:

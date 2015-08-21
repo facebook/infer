@@ -12,6 +12,8 @@ type path_filter = DB.source_file -> bool
 
 val inferconfig_home : string option ref
 
+val local_config : string option ref
+
 (** Filter type for an error name. *)
 type error_filter = Localise.t -> bool
 
