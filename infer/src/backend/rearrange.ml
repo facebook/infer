@@ -953,7 +953,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                | _ -> false in
              let is_strexp_pt_by_nullable_fld (fld, strexp) =
                match strexp with
-               | Sil.Eexp (exp, _) when Sil.exp_equal exp deref_exp ->
+               | Sil.Eexp (Sil.Var _ as exp, _) when Sil.exp_equal exp deref_exp ->
                    let is_nullable = fld_is_nullable fld in
                    if is_nullable then
                      nullable_obj_str := Some (Ident.fieldname_to_simplified_string fld);
