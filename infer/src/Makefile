@@ -16,7 +16,7 @@ OCAML_INCLUDE_DIR = $(shell ocamlc -where)
 
 #### ATDGEN declarations ####
 
-ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli _v.ml _v.mli
+ATDGEN = atdgen
 
 ATDGEN_INCLUDE_DIR = $(shell ocamlfind query atdgen)
 BINIOU_INCLUDE_DIR = $(shell ocamlfind query biniou)
@@ -24,8 +24,8 @@ YOJSON_INCLUDE_DIR = $(shell ocamlfind query yojson)
 EASYFORMAT_INCLUDE_DIR = $(shell ocamlfind query easy-format)
 
 ATDGEN_INCLUDES = -I,$(EASYFORMAT_INCLUDE_DIR),-I,$(BINIOU_INCLUDE_DIR),-I,$(YOJSON_INCLUDE_DIR),-I,$(ATDGEN_INCLUDE_DIR)
-ATDGEN_LIBS = biniou atdgen
-ATDGEN_MODS = easy_format yojson ag_oj_run ag_util
+ATDGEN_LIBS = atdgen
+ATDGEN_MODS = easy_format bi_util bi_share bi_outbuf bi_inbuf bi_vint bi_io yojson ag_oj_run ag_ob_run ag_util
 ATDGEN_OPTIONS = -cflags -annot -lflags $(ATDGEN_INCLUDES) -cflags $(ATDGEN_INCLUDES) $(addprefix -lib ,$(ATDGEN_LIBS)) $(addprefix -mod ,$(ATDGEN_MODS))
 
 #### Global declarations ####
@@ -38,6 +38,7 @@ BUILDDIR = ../_build-infer
 ANNOTDIR = $(ROOT)/infer/src/_build
 BINDIR = $(ROOT)/infer/bin
 SCRIPTDIR = $(ROOT)/scripts
+ETC_DIR = $(ROOT)/infer/etc
 
 ifneq ($(wildcard $(BUILDDIR)/sanitize.sh),)
 	SANITIZE_SCRIPT = $(BUILDDIR)/sanitize.sh
@@ -63,7 +64,8 @@ TYPEPROP_BINARY = $(BINDIR)/Typeprop
 
 INFERPRINT_ATDGEN_STUB_BASE = $(BACKEND_SOURCES)/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
-INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
+INFERPRINT_ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli _v.ml _v.mli
+INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(INFERPRINT_ATDGEN_SUFFIXES))
 
 INFERPRINT_MAIN = $(BACKEND_SOURCES)/inferprint
 INFERPRINT_BINARY = $(BINDIR)/InferPrint
@@ -100,11 +102,14 @@ CLANG_OCAML_BUILD = $(CLANG_OCAML_ROOT)/build
 CLANG_AST_BASE_NAME = clang_ast
 CLANG_ATDGEN_STUB_BASE = $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME)
 CLANG_ATDGEN_STUB_ATD = $(CLANG_OCAML_BUILD)/$(CLANG_AST_BASE_NAME).atd
-CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME), $(ATDGEN_SUFFIXES))
+CLANG_ATDGEN_SUFFIXES = _t.ml _t.mli _b.ml _b.mli _j.ml _j.mli _v.ml _v.mli
+CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME), $(CLANG_ATDGEN_SUFFIXES))
 
 INFER_CLANG_AST_PROJ = $(addprefix $(CLANG_SOURCES)/, clang_ast_proj.ml clang_ast_proj.mli)
 FCP_CLANG_AST_PROJ = $(addprefix $(CLANG_OCAML_BUILD)/, clang_ast_proj.ml clang_ast_proj.mli)
 FCP_CLANG_AST_MAIN = $(addprefix $(CLANG_OCAML_ROOT)/, clang_ast_visit.ml clang_ast_main.ml)
+
+CLANG_BINIOU_DICT = $(ETC_DIR)/clang_ast.dict
 
 #### LLVM declarations ####
 
@@ -139,7 +144,7 @@ all: java clang llvm checkCopyright
 
 java: build_java annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY)
 
-clang: build_clang annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERCLANG_BINARY)
+clang: build_clang annotations $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERCLANG_BINARY) $(CLANG_BINIOU_DICT)
 
 llvm: build_llvm annotations $(INFERLLVM_BINARY)
 
@@ -161,20 +166,28 @@ annotations:
 	rsync -r --delete --exclude=*.ml* --exclude=*.o --exclude=*.cm* --exclude=*.native $(BUILDDIR)/* $(ANNOTDIR)
 
 $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
-	atdgen -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
-	atdgen -j $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
+	$(ATDGEN) -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
+	$(ATDGEN) -j $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
 
 $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ): $(CLANG_ATDGEN_STUB_ATD) $(CLANG_PLUGIN_BINARIES) $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
 # rebuild the artifacts of the AST files whenever they're upated in FCP
 # also copy the ast_proj files whenever they are updated
-	atdgen -rec -t $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
-	atdgen -rec -j $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
-	atdgen -rec -v $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
+	$(ATDGEN) -rec -t $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
+	$(ATDGEN) -rec -b $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
+	$(ATDGEN) -rec -j $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
+	$(ATDGEN) -rec -v $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
 	$(COPY) $(CLANG_OCAML_BUILD)/clang_ast_proj.ml $(CLANG_SOURCES)
 	$(COPY) $(CLANG_OCAML_BUILD)/clang_ast_proj.mli $(CLANG_SOURCES)
 	$(COPY) $(CLANG_OCAML_ROOT)/clang_ast_visit.ml $(CLANG_SOURCES)
 	$(COPY) $(CLANG_OCAML_ROOT)/clang_ast_main.ml $(CLANG_SOURCES)
 
+$(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
+# overapproximation of the words we need in the biniou dictionary
+# the long litany of symbols is [:punct:] minus "_-'"
+	tr -s '[*!"#\$%&\(\)\+,\\\.\/:;<=>\?@\[\\\\]^`\{|\}~[:space:]]' '\n' \
+	  < $(CLANG_ATDGEN_STUB_ATD) \
+	  | sort | uniq  \
+	  > $(CLANG_BINIOU_DICT)
 
 init: sanitize version $(BUILDDIR)
 

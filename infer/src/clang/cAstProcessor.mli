@@ -12,7 +12,7 @@
     w.r.t. the previous one. This module processes the AST and makes locations explicit. *)
 
 (** Pretty print an AST. *)
-val pp_ast_decl : Format.formatter -> Clang_ast_j.decl -> unit
+val pp_ast_decl : Format.formatter -> Clang_ast_t.decl -> unit
 
 (** Preprocess the AST to make locations explicit. *)
-val preprocess_ast_decl : Clang_ast_j.decl -> Clang_ast_j.decl
+val preprocess_ast_decl : Clang_ast_t.decl -> Clang_ast_t.decl

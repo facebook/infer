@@ -90,10 +90,10 @@ let () =
 (* This function reads the json file in fname, validates it, and encoded in the AST data structure*)
 (* defined in Clang_ast_t.  *)
 let validate_decl_from_file fname =
-  Ag_util.Json.from_file Clang_ast_j.read_decl fname
+  Ag_util.Biniou.from_file Clang_ast_b.read_decl fname
 
 let validate_decl_from_stdin () =
-  Ag_util.Json.from_channel Clang_ast_j.read_decl stdin
+  Ag_util.Biniou.from_channel Clang_ast_b.read_decl stdin
 
 let do_run source_path ast_path =
   try

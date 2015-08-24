@@ -6,6 +6,7 @@ PARENT=$(dirname "$0")
 SCRIPT_DIR=$(cd "$PARENT" && pwd)
 SCRIPT_DIR="${SCRIPT_DIR%/}"
 BIN_DIR="${SCRIPT_DIR}/../../bin"
+ETC_DIR="${SCRIPT_DIR}/../../etc"
 
 #### Configuration ####
 # path to the wrapped clang compiler to invoke
@@ -18,7 +19,7 @@ INFERCLANG_LOG_FILE_EXT=".astlog"
 CLANG_PLUGIN_REL_PATH="facebook-clang-plugins/libtooling/build/FacebookClangPlugin.dylib"
 PLUGIN_PATH="${SCRIPT_DIR}/../../../${CLANG_PLUGIN_REL_PATH}"
 # name of the plugin to use
-PLUGIN_NAME="YojsonASTExporter"
+PLUGIN_NAME="BiniouASTExporter"
 # output directory of the plugin
 RESULTS_DIR="${FCP_RESULTS_DIR}"
 # space-separated list of source file extensions to compile, where the plugin is needed
@@ -129,12 +130,6 @@ then
         if [ -n "$SYNTAX_ONLY" ]; then
             EXTRA_ARGS+=("-fsyntax-only")
         fi
-        if [ -z "$DEBUG_MODE" ]; then
-            # uglify json
-            EXTRA_ARGS+=(
-                "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
-                "-Xclang" "PRETTIFY_JSON=0")
-        fi
         unset IFS
 
         # using always the original clang command for several reasons:
@@ -163,7 +158,13 @@ if [ -n "$ATTACH_PLUGIN" ]; then
 
     if [ -n "$DEBUG_MODE" ]; then
         # Emit the clang command with the extra args piped to InferClang
-        echo "${CLANG_CMD[@]} | tee ${OBJECT_FILENAME}.yjson | ${INFERCLANG_CMD[@]}" > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+        echo "${CLANG_CMD[@]} " \
+             "| tee ${OBJECT_FILENAME}.biniou " \
+             "| ${INFERCLANG_CMD[@]}" \
+             > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+        echo "bdump -x -d ${ETC_DIR}/clang_ast.dict -w '!!DUMMY!!' ${OBJECT_FILENAME}.biniou " \
+             "> ${OBJECT_FILENAME}.bdump" \
+             >> "${OBJECT_FILENAME}${CMD_FILE_EXT}"
         # Emit the InferClang cmd used to run the frontend
         INFERCLANG_LOG_FILE="${OBJECT_FILENAME}${INFERCLANG_LOG_FILE_EXT}"
         echo "${INFERCLANG_CMD[@]}" > "$INFERCLANG_LOG_FILE"
