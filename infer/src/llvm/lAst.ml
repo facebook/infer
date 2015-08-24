@@ -46,6 +46,12 @@ and metadata_component =
   | TypOperand of typ option * operand
   | MetadataVal of metadata_value
 
+type metadata_location = { line : int; col : int; scope : metadata_value }
+
+type metadata_aggregate =
+  | Components of metadata_component list
+  | Location of metadata_location
+
 type instruction =
   | Ret of (typ * operand) option
   | UncondBranch of variable
@@ -62,7 +68,7 @@ type annotated_instruction = instruction * annotation option
 
 type function_def = FunctionDef of variable * typ option * (typ * string) list * annotated_instruction list
 
-type metadata_map = metadata_component list MetadataMap.t
+type metadata_map = metadata_aggregate MetadataMap.t
 
 type program = Program of function_def list * metadata_map
 

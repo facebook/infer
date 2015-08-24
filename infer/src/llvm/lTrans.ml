@@ -39,17 +39,21 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
 
 let get_source_filename (metadata : LAst.metadata_map) : DB.source_file =
   match MetadataMap.find 1 metadata with
-  | MetadataVal (MetadataString file_str) :: _ -> DB.source_file_from_string file_str
-  | _ -> raise (MalformedMetadata "Source file name was expected at head of metadata variable !1.")
+  | Components (MetadataVal (MetadataString file_str) :: _) ->
+      DB.source_file_from_string file_str
+  | _ -> raise (MalformedMetadata "Source file name was expected in first component of metadata variable !1.")
 
 let location_of_annotation_option (metadata : LAst.metadata_map)
   : LAst.annotation option -> Sil.location = function
   | None -> Sil.dummy_location (* no annotation means no source location *)
   | Some (Annotation i) ->
       begin match MetadataMap.find i metadata with
-        | TypOperand (_, Const (Cint line_num)) :: _ -> let open Sil in
+        | Components (TypOperand (_, Const (Cint line_num)) :: _) ->
+            let open Sil in
             { line = line_num; col = -1; file = get_source_filename metadata; nLOC = -1 }
-        | [] -> raise (MalformedMetadata "Instruction annotation refers to empty metadata node.")
+        | Location loc ->
+            let open Sil in
+            { line = loc.line; col = loc.col; file = get_source_filename metadata; nLOC = -1 }
         | _ -> raise (MalformedMetadata ("Instruction annotation refers to metadata node " ^
                                          "without line number as first component."))
       end

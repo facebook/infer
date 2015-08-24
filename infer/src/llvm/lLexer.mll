@@ -55,6 +55,7 @@ rule token = parse
   | '>' { RANGLE }
   | '[' { LSQBRACK }
   | ']' { RSQBRACK }
+  | ':' { COLON }
   (* symbols *)
   | '=' { EQUALS }
   | '*' { STAR }
@@ -171,6 +172,7 @@ rule token = parse
 
   (* METADATA *)
   | "!dbg" { DEBUG_ANNOTATION }
+  | "!MDLocation" { METADATA_LOCATION }
   | '!' (id as str) { NAMED_METADATA str }
   | '!' (nonneg_int as i) { NUMBERED_METADATA (int_of_string i) }
   | '!' '"' ([^ '"']* as str) '"' { METADATA_STRING str }

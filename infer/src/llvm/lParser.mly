@@ -27,6 +27,7 @@
 %token RANGLE
 %token LSQBRACK
 %token RSQBRACK
+%token COLON
 (* symbols *)
 %token EQUALS
 %token STAR
@@ -141,6 +142,7 @@
 %token <int> NUMBERED_METADATA
 %token <string> METADATA_STRING
 %token METADATA_NODE_BEGIN
+%token METADATA_LOCATION
 
 %token <int> ATTRIBUTE_GROUP
 
@@ -157,7 +159,7 @@
 program:
   | targets func_defs = function_def* opt_mappings = metadata_def* EOF {
       let mappings = list_flatten_options opt_mappings in
-      let add_mapping map (metadata_id, components) = MetadataMap.add metadata_id components map in
+      let add_mapping map (metadata_id, aggregate) = MetadataMap.add metadata_id aggregate map in
       let metadata_map = list_fold_left add_mapping MetadataMap.empty mappings in
       Program (func_defs, metadata_map) }
 
@@ -176,16 +178,27 @@ target_triple:
 
 metadata_def:
   | NAMED_METADATA EQUALS numbered_metadata_node { None }
-  | metadata_id = NUMBERED_METADATA EQUALS components = metadata_node { Some (metadata_id, components) }
+  | metadata_id = NUMBERED_METADATA EQUALS aggregate = metadata_aggregate { Some
+  (metadata_id, aggregate) }
 
 numbered_metadata_node:
   | METADATA_NODE_BEGIN metadata_ids = separated_list(COMMA, NUMBERED_METADATA) RBRACE { metadata_ids }
+
+metadata_aggregate:
+  | components = metadata_node { Components components }
+  | location = metadata_location { Location location }
+
+metadata_location:
+  | METADATA_LOCATION LPAREN IDENT COLON line_num = CONSTANT_INT COMMA
+    IDENT COLON col_num = CONSTANT_INT COMMA
+    IDENT COLON i = NUMBERED_METADATA RPAREN
+    { { line = line_num; col = col_num; scope = MetadataVar i} }
 
 metadata_node:
   | METADATA? METADATA_NODE_BEGIN components = separated_list(COMMA, metadata_component) RBRACE { components }
 
 metadata_component:
-  | tp = typ? op = operand { TypOperand (tp, op) }
+  | METADATA? tp = typ? op = operand { TypOperand (tp, op) }
   | METADATA? value = metadata_value { MetadataVal value }
 
 metadata_value:
