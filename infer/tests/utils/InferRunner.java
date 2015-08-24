@@ -200,7 +200,6 @@ public class InferRunner {
     }
     ImmutableList<String> clangCmd = new ImmutableList.Builder<String>()
         .add("clang")
-        .add("--target=x86_64-apple-darwin14")
         .add("-x")
         .add(getClangLangOption(lang))
         .add(getStdParam(lang))
