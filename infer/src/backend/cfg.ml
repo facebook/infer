@@ -121,8 +121,8 @@ module Node = struct
     let mark_pdesc_if_unchanged pname new_pdesc =
       try
         let old_pdesc = Procname.Hash.find old_procs pname in
-        if pdescs_eq old_pdesc new_pdesc then
-          new_pdesc.pd_changed <- false
+        let changed = not (pdescs_eq old_pdesc new_pdesc) in
+        new_pdesc.pd_changed <- changed
       with Not_found -> () in
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 
