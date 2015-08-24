@@ -18,7 +18,7 @@ processor:
 	cd $(PROCESSOR_CLASSES) && cp -r ../resources/META-INF . && jar cvMf processor.jar com META-INF && cp processor.jar ../
 
 clean:
-	rm -r $(ANNOT_CLASSES)
-	rm annotations.jar
-	rm -r $(PROCESSOR_CLASSES)
-	rm processor.jar
+	rm -rf $(ANNOT_CLASSES)
+	rm -f annotations.jar
+	rm -rf $(PROCESSOR_CLASSES)
+	rm -f processor.jar

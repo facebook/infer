@@ -89,4 +89,7 @@ buck-out/
 /infer/src/clang/clang_ast_visit.ml
 /infer/src/clang/clang_ast_main.ml
 
+/infer/annotations/annot_classes/
 /infer/annotations/annotations.jar
+/infer/annotations/processor_classes/
+/infer/annotations/processor.jar
