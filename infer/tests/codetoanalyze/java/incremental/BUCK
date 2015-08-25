@@ -1,0 +1,11 @@
+java_test(
+    name='incremental',
+    deps=[
+        '//infer/tests/codetoanalyze/java/incremental/file_unchanged:file_unchanged',
+        '//infer/tests/codetoanalyze/java/incremental/parent_changed:parent_changed',
+        '//infer/tests/codetoanalyze/java/incremental/child_changed:child_changed',
+    ],
+    visibility = [
+      'PUBLIC'
+  ]
+)

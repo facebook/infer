@@ -22,6 +22,7 @@ import java.io.Reader;
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class InferStats {
 
+  @JsonIgnoreProperties(ignoreUnknown=true)
   private static class IntFields {
     @JsonProperty(value = "files")
     int numFiles;
