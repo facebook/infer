@@ -388,7 +388,7 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
         let proc_is_active pname =
           proc_is_selected pname &&
           DB.source_file_equal (Exe_env.get_source exe_env pname) source_file in
-        let active_procs = list_filter proc_is_active changed_procs in
+        let active_procs = list_filter proc_is_active (Procname.Set.elements changed_procs) in
         let naprocs = list_length active_procs in
         let source_map =
           let all_procs, _ = Cg.get_nodes_and_edges cg in
@@ -583,6 +583,9 @@ module ClusterMakefile = struct
     exit 0
 end
 
+let proc_list_to_set proc_list =
+  list_fold_left (fun s p -> Procname.Set.add p s) Procname.Set.empty proc_list
+
 (** compute the clusters *)
 let compute_clusters exe_env files_changed : cluster list =
   if !trace_clusters then
@@ -610,33 +613,36 @@ let compute_clusters exe_env files_changed : cluster list =
   let files = Cg.get_defined_nodes file_cg in
   let num_files = list_length files in
   L.err "@.Found %d defined procedures in %d files.@." (list_length defined_procs) num_files;
-  (* get procedures defined in a file *)
-  let get_defined_procs file_pname = match file_pname_to_cg file_pname with
-    | None -> []
-    | Some cg -> Cg.get_defined_nodes cg in
   let to_analyze_map = match !incremental_mode with
     | ANALYZE_ALL ->
+        (* get procedures defined in a file *)
+        let get_defined_procs file_pname = match file_pname_to_cg file_pname with
+          | None -> Procname.Set.empty
+          | Some cg -> proc_list_to_set (Cg.get_defined_nodes cg) in
         list_fold_left
           (fun m file_pname -> Procname.Map.add file_pname (get_defined_procs file_pname) m)
           Procname.Map.empty
           files
     | ANALYZE_CHANGED_ONLY -> files_changed
     | ANALYZE_CHANGED_AND_DEPENDENCIES ->
-        (* get the set of files that depend on [file_pname] *)
-        let get_dependent_files file_pname =
-          try Cg.get_ancestors file_cg file_pname with
-          | Not_found ->
-              let p = Procname.to_string file_pname in
-              L.err "Warning: ignoring modified file %s; functions may be defined elsewhere@." p;
-              Procname.Set.empty in
-        (* add the dependencies of [file_pname] to [files_changed] *)
-        let add_dependent_files file_pname _ files_changed =
-          Procname.Set.fold
-            (fun dep files_changed -> Procname.Map.add dep (get_defined_procs dep) files_changed)
-            (get_dependent_files file_pname)
-            files_changed in
-        (* add files that depend on a changed file to the map along with their defined procedures *)
-        Procname.Map.fold add_dependent_files files_changed files_changed in
+        (* get all callers of changed procedures *)
+        let callers_of_changed =
+          let collect_callers_for_procs _ procs callers =
+            Procname.Set.fold
+              (fun proc callers -> Procname.Set.union callers (Cg.get_ancestors global_cg proc))
+              procs
+              callers in
+          Procname.Map.fold collect_callers_for_procs files_changed Procname.Set.empty in
+        (* add a caller to the file -> (procedures to analyze) map *)
+        let add_caller_to_map caller map =
+          let caller_file_pname = source_file_to_pname (Exe_env.get_source exe_env caller) in
+          let procs_to_analyze =
+            try Procname.Map.find caller_file_pname map
+            with Not_found -> Procname.Set.empty in
+          let procs_to_analyze' = Procname.Set.add caller procs_to_analyze in
+          Procname.Map.add caller_file_pname procs_to_analyze' map in
+        (* add the (transitive) callers of all changed procedures to the [files_changed] map *)
+        Procname.Set.fold add_caller_to_map callers_of_changed files_changed in
   L.err "Analyzing %d files.@.@." (Procname.Map.cardinal to_analyze_map);
   let clusters = create_minimal_clusters file_cg exe_env to_analyze_map in
   L.err "Minimal clusters:@.";
@@ -700,9 +706,9 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
       let changed_procs =
         if !incremental_mode = ANALYZE_ALL then Cg.get_defined_nodes cg
         else cg_get_changed_procs exe_env source_dir cg in
-      if changed_procs != [] then
+      if changed_procs <> [] then
         let file_pname = source_file_to_pname (Cg.get_source cg) in
-        Procname.Map.add file_pname changed_procs files_changed_map
+        Procname.Map.add file_pname (proc_list_to_set changed_procs) files_changed_map
       else files_changed_map in
     list_fold_left cg_get_files_changed files_changed_map cg_list in
   let exe_env = Exe_env.freeze _exe_env in

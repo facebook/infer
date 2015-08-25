@@ -37,12 +37,21 @@ public class ChildChangedTest {
   }
 
   @Test
-  public void unchangedFileNotReanalyzedInIncrementalMode()
+  public void changedFilesReanalyzedInIncrementalMode()
       throws IOException, InterruptedException, InferException {
     assertThat(
         "After changing the child file, parent and grandparent should be re-analyzed",
         inferStats,
         numberOfFilesAnalyzed(3));
+  }
+
+  @Test
+  public void onlyChangedProcsReanalyzedInIncrementalMode()
+      throws IOException, InterruptedException, InferException {
+    assertThat(
+        "After changing a procedure, only the proc and its callers should be re-analyzed",
+        inferStats,
+        numberOfProceduresAnalyzed(3));
   }
 
 }
