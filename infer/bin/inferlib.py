@@ -617,6 +617,11 @@ class Infer:
         """Print timing information to infer_out/stats.json"""
         stats_path = os.path.join(self.args.infer_out, utils.STATS_FILENAME)
 
+        # capture and compile mode do not create stats.json
+        if not os.path.isfile(stats_path):
+            with open(stats_path, 'w') as stats_file:
+                json.dump(self.stats, stats_file, indent=2)
+
         with open(stats_path, 'r+') as stats_file:
             file_stats = json.load(stats_file)
             self.stats['int'].update(file_stats)
@@ -666,11 +671,12 @@ class Infer:
                 self.timing['total'] = elapsed
                 self.save_stats()
 
-                procs_total = self.stats['int']['procedures']
-                files_total = self.stats['int']['files']
-                procs_str = utils.get_plural('procedure', procs_total)
-                files_str = utils.get_plural('file', files_total)
-                print('\nAnalyzed %s in %s' % (procs_str, files_str))
+                if not self.args.analyzer in [COMPILE, CAPTURE]:
+                    procs_total = self.stats['int']['procedures']
+                    files_total = self.stats['int']['files']
+                    procs_str = utils.get_plural('procedure', procs_total)
+                    files_str = utils.get_plural('file', files_total)
+                    print('\nAnalyzed %s in %s' % (procs_str, files_str))
                 return self.stats
             else:
                 return dict({})
