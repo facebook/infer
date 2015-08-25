@@ -41,16 +41,18 @@ let store_tenv tenv =
   Sil.store_tenv_to_file tenv_filename tenv
 
 let () = try
-    if Array.length Sys.argv < 2 then
-      raise (UsageError ("Missing source file as first command line argument."))
-    else
-      let filename = Sys.argv.(1) in
-      let source_file = DB.abs_source_file_from_path filename in
-      let () = init_global_state source_file in
-      let lexbuf = Lexing.from_channel (open_in filename) in
-      let prog = LParser.program LLexer.token lexbuf in
-      (* let pretty = LPretty.pretty_prog prog in *)
-      let (cfg, cg, tenv) = LTrans.trans_program prog in
-      store_icfg tenv cg cfg source_file; store_tenv tenv
+    let (input, filename) =
+      if Array.length Sys.argv < 2 then
+        (stdin, "stdin") (* need a file name for output files *)
+      else
+        let fname = Sys.argv.(1) in
+        (open_in fname, fname)
+      in
+    let source_file = DB.abs_source_file_from_path filename in
+    let () = init_global_state source_file in
+    let lexbuf = Lexing.from_channel input in
+    let prog = LParser.program LLexer.token lexbuf in
+    let (cfg, cg, tenv) = LTrans.trans_program prog in
+    store_icfg tenv cg cfg source_file; store_tenv tenv
   with
   | UsageError msg -> print_string ("Usage error: " ^ msg ^ "\n")

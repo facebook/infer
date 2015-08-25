@@ -140,6 +140,8 @@ def get_clang_frontend_envvars(args):
         env_vars['FCP_DEBUG_MODE'] = '1'
     if args.no_failures_allowed:
         env_vars['FCP_REPORT_FRONTEND_FAILURE'] = '1'
+    if args.llvm:
+        env_vars['LLVM_MODE'] = '1'
 
     # export an env variable with all the arguments to pass to InferClang
     env_vars['FCP_INFER_FRONTEND_ARGS'] = ' '.join(frontend_args)

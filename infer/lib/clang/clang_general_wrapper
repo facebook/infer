@@ -117,20 +117,28 @@ then
         else
             ADD_PLUGIN_FLAG="-add-plugin"
         fi
-        ATTACH_PLUGIN="1"
+        if [ -z "$LLVM_MODE" ]; then
+            ATTACH_PLUGIN="1"
+        fi
         IFS=$'\n'
-        EXTRA_ARGS=("-Xclang" "-load"
-            "-Xclang" "${PLUGIN_PATH}"
-            "-Xclang" "$ADD_PLUGIN_FLAG"
-            "-Xclang" "${PLUGIN_NAME}"
-            "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
-            "-Xclang" "-"
-            "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
-            "-Xclang" "PREPEND_CURRENT_DIR=1")
+        if [ -n "$ATTACH_PLUGIN" ]; then
+            EXTRA_ARGS=("-Xclang" "-load"
+                "-Xclang" "${PLUGIN_PATH}"
+                "-Xclang" "$ADD_PLUGIN_FLAG"
+                "-Xclang" "${PLUGIN_NAME}"
+                "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
+                "-Xclang" "-"
+                "-Xclang" "-plugin-arg-${PLUGIN_NAME}"
+                "-Xclang" "PREPEND_CURRENT_DIR=1")
+        fi
         if [ -n "$SYNTAX_ONLY" ]; then
             EXTRA_ARGS+=("-fsyntax-only")
         fi
         unset IFS
+
+        if [ -n "$LLVM_MODE" ]; then
+            EXTRA_ARGS+=("-o" "-" "-g" "-S" "-emit-llvm")
+        fi
 
         # using always the original clang command for several reasons:
         # - to avoid handling the presence/absence of -Xclang if the standard command is used
@@ -140,7 +148,7 @@ then
     fi
 fi
 
-if [ -n "$ATTACH_PLUGIN" ]; then
+if [ -n "$ATTACH_PLUGIN" ] || [ -n "$LLVM_MODE" ]; then
     FOBJC_ARC_FLAG=$(has_flag "-fobjc-arc" "${INPUT_ARGUMENTS[@]}")
     LANGUAGE=$(get_option_argument "-x" "${INPUT_ARGUMENTS[@]}")
 
@@ -148,37 +156,43 @@ if [ -n "$ATTACH_PLUGIN" ]; then
     if [ "$FOBJC_ARC_FLAG" == 0 ]; then INFER_FRONTEND_ARGS+=("-fobjc-arc"); fi
 
     [[ "$SOURCE_FILE" = /* ]] || { SOURCE_FILE="${CWD}/$SOURCE_FILE"; }
-    INFERCLANG_CMD=(
-        "${BIN_DIR}/InferClang"
-        "-c" "$SOURCE_FILE"
-        "-results_dir" "$RESULTS_DIR"
-        "${INFER_FRONTEND_ARGS[@]}")
 
-    INFERCLANG_LOG_FILE="/dev/null"
+    if [ -n "$LLVM_MODE" ]; then
+        INFER_FRONTEND_CMD=("${BIN_DIR}/InferLLVM")
+        INFER_FRONTEND_LOG_FILE="/dev/stdout"
+    else
+        INFER_FRONTEND_CMD=(
+            "${BIN_DIR}/InferClang"
+            "-c" "$SOURCE_FILE"
+            "-results_dir" "$RESULTS_DIR"
+            "${INFER_FRONTEND_ARGS[@]}")
 
-    if [ -n "$DEBUG_MODE" ]; then
-        # Emit the clang command with the extra args piped to InferClang
-        echo "${CLANG_CMD[@]} " \
-             "| tee ${OBJECT_FILENAME}.biniou " \
-             "| ${INFERCLANG_CMD[@]}" \
-             > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
-        echo "bdump -x -d ${ETC_DIR}/clang_ast.dict -w '!!DUMMY!!' ${OBJECT_FILENAME}.biniou " \
-             "> ${OBJECT_FILENAME}.bdump" \
-             >> "${OBJECT_FILENAME}${CMD_FILE_EXT}"
-        # Emit the InferClang cmd used to run the frontend
-        INFERCLANG_LOG_FILE="${OBJECT_FILENAME}${INFERCLANG_LOG_FILE_EXT}"
-        echo "${INFERCLANG_CMD[@]}" > "$INFERCLANG_LOG_FILE"
+        if [ -n "$DEBUG_MODE" ]; then
+            # Emit the clang command with the extra args piped to InferClang
+            echo "${CLANG_CMD[@]} " \
+                 "| tee ${OBJECT_FILENAME}.biniou " \
+                 "| ${INFER_FRONTEND_CMD[@]}" \
+                 > "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+            echo "bdump -x -d ${ETC_DIR}/clang_ast.dict -w '!!DUMMY!!' ${OBJECT_FILENAME}.biniou " \
+                 "> ${OBJECT_FILENAME}.bdump" \
+                 >> "${OBJECT_FILENAME}${CMD_FILE_EXT}"
+            # Emit the InferClang cmd used to run the frontend
+            INFER_FRONTEND_LOG_FILE="${OBJECT_FILENAME}${INFERCLANG_LOG_FILE_EXT}"
+            echo "${INFER_FRONTEND_CMD[@]}" > "$INFER_FRONTEND_LOG_FILE"
+        else
+            INFER_FRONTEND_LOG_FILE="/dev/null"
+        fi
     fi
 
-    # run clang and pipe its output to InferClang, or flush it in case the latter crashes
-    "${CLANG_CMD[@]}" | ("${INFERCLANG_CMD[@]}" || { EC=$?; cat > /dev/null; exit $EC; }) >> "$INFERCLANG_LOG_FILE" 2>&1
+    # run clang and pipe its output to InferClang/InferLLVM, or flush it in case the latter crashes
+    "${CLANG_CMD[@]}" | ("${INFER_FRONTEND_CMD[@]}" || { EC=$?; cat > /dev/null; exit $EC; }) >> "$INFER_FRONTEND_LOG_FILE" 2>&1
     STATUSES=("${PIPESTATUS[@]}")
     STATUS="${STATUSES[0]}"
-    INFERCLANG_STATUS="${STATUSES[1]}"
+    INFER_STATUS="${STATUSES[1]}"
 
     # if clang fails, then fail, otherwise, fail with the frontend's exitcode if required
     if [ "$STATUS" == 0 ] && [ -n "$REPORT_FRONTEND_FAILURE" ]; then
-        STATUS="$INFERCLANG_STATUS"
+        STATUS="$INFER_STATUS"
     fi
 else
     "${CLANG_CMD[@]}"

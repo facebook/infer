@@ -88,6 +88,8 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
                         alarms''')
+base_group.add_argument('-l', '--llvm', action='store_true',
+                        help='Analyze C or C++ file using LLVM translation')
 
 base_group.add_argument('--log_to_stderr', action='store_true',
                         help='''When set, all logging will go to stderr instead
