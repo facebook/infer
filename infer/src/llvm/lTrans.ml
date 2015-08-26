@@ -14,6 +14,9 @@ exception ImproperTypeError of string
 exception MalformedMetadata of string
 exception Unimplemented of string
 
+let source_only_location () : Sil.location =
+  let open Sil in { line = -1; col = -1; file = !DB.current_source; nLOC = !Config.nLOC }
+
 let ident_of_variable (var : LAst.variable) : Ident.t = (* TODO: use unique stamps *)
   Ident.create_normal (Ident.string_to_name (LAst.string_of_variable var)) 0
 
@@ -37,23 +40,17 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tlabel -> raise (ImproperTypeError "Tried to generate Sil type from LLVM label type.")
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
-let get_source_filename (metadata : LAst.metadata_map) : DB.source_file =
-  match MetadataMap.find 1 metadata with
-  | Components (MetadataVal (MetadataString file_str) :: _) ->
-      DB.source_file_from_string file_str
-  | _ -> raise (MalformedMetadata "Source file name was expected in first component of metadata variable !1.")
-
 let location_of_annotation_option (metadata : LAst.metadata_map)
   : LAst.annotation option -> Sil.location = function
-  | None -> Sil.dummy_location (* no annotation means no source location *)
+  | None -> source_only_location () (* no source line/column numbers *)
   | Some (Annotation i) ->
       begin match MetadataMap.find i metadata with
         | Components (TypOperand (_, Const (Cint line_num)) :: _) ->
             let open Sil in
-            { line = line_num; col = -1; file = get_source_filename metadata; nLOC = -1 }
+            { line = line_num; col = -1; file = !DB.current_source; nLOC = !Config.nLOC }
         | Location loc ->
             let open Sil in
-            { line = loc.line; col = loc.col; file = get_source_filename metadata; nLOC = -1 }
+            { line = loc.line; col = loc.col; file = !DB.current_source; nLOC = !Config.nLOC }
         | _ -> raise (MalformedMetadata ("Instruction annotation refers to metadata node " ^
                                          "without line number as first component."))
       end
@@ -142,15 +139,15 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
           formals = list_map (fun (tp, name) -> (name, trans_typ tp)) params;
           locals = []; (* TODO *)
           captured = [];
-          loc = Sil.dummy_location
+          loc = source_only_location ()
         } in
       let procdesc = Cfg.Procdesc.create procdesc_builder in
       let start_kind = Cfg.Node.Start_node procdesc in
-      let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
+      let start_node = Cfg.Node.create cfg (source_only_location ()) start_kind [] procdesc [] in
       let exit_kind = Cfg.Node.Exit_node procdesc in
-      let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
+      let exit_node = Cfg.Node.create cfg (source_only_location ()) exit_kind [] procdesc [] in
       let node_of_sil_instr cfg procdesc sil_instr =
-        Cfg.Node.create cfg Sil.dummy_location (Cfg.Node.Stmt_node "method_body")
+        Cfg.Node.create cfg (Sil.instr_get_loc sil_instr) (Cfg.Node.Stmt_node "method_body")
             [sil_instr] procdesc [] in
       let rec link_nodes (start_node : Cfg.Node.t) : Cfg.Node.t list -> unit = function
         (* link all nodes in a chain for now *)

@@ -41,16 +41,15 @@ let store_tenv tenv =
   Sil.store_tenv_to_file tenv_filename tenv
 
 let () = try
-    let (input, filename) =
+    let filename =
       if Array.length Sys.argv < 2 then
-        (stdin, "stdin") (* need a file name for output files *)
+        raise (UsageError "First argument should be C/C++ source file.")
       else
-        let fname = Sys.argv.(1) in
-        (open_in fname, fname)
-      in
+        Sys.argv.(1)
+    in
     let source_file = DB.abs_source_file_from_path filename in
     let () = init_global_state source_file in
-    let lexbuf = Lexing.from_channel input in
+    let lexbuf = Lexing.from_channel stdin in
     let prog = LParser.program LLexer.token lexbuf in
     let (cfg, cg, tenv) = LTrans.trans_program prog in
     store_icfg tenv cg cfg source_file; store_tenv tenv
