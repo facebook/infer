@@ -47,6 +47,7 @@ ERROR = 'ERROR'
 WARNING = 'WARNING'
 INFO = 'INFO'
 
+BUG_FOUND_ERROR_CODE = 2
 
 def get_infer_version():
     try:
@@ -102,13 +103,20 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
                         alarms''')
+base_group.add_argument('--fail-on-bug', action='store_true',
+                        help='''Exit with error code %d if Infer found
+                        something to report'''
+                        % BUG_FOUND_ERROR_CODE)
+
 base_group.add_argument('-l', '--llvm', action='store_true',
-                        help='Analyze C or C++ file using LLVM translation')
+                        help='''[experimental] Analyze C or C++ file using the
+                        experimental LLVM frontend''')
 
 base_group.add_argument('--log_to_stderr', action='store_true',
                         help='''When set, all logging will go to stderr instead
-                        of log file''')
-base_parser.add_argument('-v', '--version', help='Get version of the analyzer',
+                        of the log file''')
+base_parser.add_argument('-v', '--version',
+                         help='''Print the version of Infer and exit''',
                          action=VersionAction)
 
 

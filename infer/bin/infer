@@ -4,6 +4,7 @@ import argparse
 import imp
 import utils
 import inferlib
+import json
 import logging
 import os
 import sys
@@ -163,6 +164,17 @@ def main():
         analysis = inferlib.Infer(args, [])
         analysis.analyze_and_report()
         analysis.save_stats()
+
+    if args.fail_on_bug:
+        bugs_filename = os.path.join(args.infer_out,
+                                     utils.JSON_REPORT_FILENAME)
+        try:
+            with open(bugs_filename) as bugs_file:
+                bugs = json.load(bugs_file)
+                if len(bugs) > 0:
+                    sys.exit(inferlib.BUG_FOUND_ERROR_CODE)
+        except OSError:
+            pass
 
 if __name__ == '__main__':
     main()

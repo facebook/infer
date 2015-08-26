@@ -21,7 +21,6 @@ import sys
 import utils
 
 BASE_INDENT = 2
-JSON_REPORT = 'report.json'
 # how many lines of context around each report
 SOURCE_CONTEXT = 2
 
@@ -249,7 +248,8 @@ class Selector(object):
 def main():
     args = base_parser.parse_args()
 
-    with open(os.path.join(args.infer_out, JSON_REPORT)) as report_file:
+    report_filename = os.path.join(args.infer_out, utils.JSON_REPORT_FILENAME)
+    with open(report_filename) as report_file:
         reports = json.load(report_file)
 
     sel = Selector(args, reports)
