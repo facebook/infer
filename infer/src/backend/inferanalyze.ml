@@ -136,7 +136,7 @@ let arg_desc =
       [
         "-err_file", Arg.Set_string err_file_cmdline, Some "file", "use file for the err channel";
         "-exclude", Arg.String exclude, Some "file", "exclude from analysis the files and directories specified in file";
-        "-incremental_ignore_dependencies", Arg.Unit (fun () -> incremental_mode := ANALYZE_CHANGED_ONLY), None, "only analyze files captured since the last analysis";
+        "-incremental_changed_only", Arg.Unit (fun () -> incremental_mode := ANALYZE_CHANGED_ONLY), None, "only analyze files captured since the last analysis";
         "-incremental", Arg.Unit (fun () -> incremental_mode := ANALYZE_CHANGED_AND_DEPENDENCIES), None, "analyze files captured since the last analysis plus any dependencies";
         "-iterations", Arg.Set_int iterations_cmdline, Some "n", "set the max number of operations for each function, expressed as a multiple of symbolic operations (default n=1)";
         "-nonstop", Arg.Set Config.nonstop, None, "activate the nonstop mode: the analysis continues after finding errors. With this option the analysis can become less precise.";

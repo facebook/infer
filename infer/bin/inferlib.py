@@ -69,6 +69,16 @@ class VersionAction(argparse._VersionAction):
                                             option_string)
 
 
+class ConfirmIncrementalAction(argparse._StoreTrueAction):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if not getattr(namespace, 'incremental'):
+            parser.error('-ic/--changed-only should only be used with -i')
+        super(ConfirmIncrementalAction, self).__call__(parser,
+                                                       namespace,
+                                                       values,
+                                                       option_string)
+
+
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
@@ -76,8 +86,12 @@ base_group.add_argument('-o', '--out', metavar='<directory>',
                         action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
 base_group.add_argument('-i', '--incremental', action='store_true',
-                        help='''Do not delete the results directory across
-                        Infer runs''')
+                        help='''Analyze only changed procedures and their
+                        dependencies''')
+base_group.add_argument('-ic', '--changed-only',
+                        action=ConfirmIncrementalAction,
+                        help='''Same as -i, but does not analyze
+                        dependencies of changed procedures.''')
 base_group.add_argument('-g', '--debug', action='store_true',
                         help='Generate extra debugging information')
 base_group.add_argument('-a', '--analyzer',
@@ -498,7 +512,10 @@ class Infer:
             ]
 
         if self.args.incremental:
-            infer_options.append('-incremental')
+            if self.args.changed_only:
+                infer_options.append('-incremental_changed_only')
+            else:
+                infer_options.append('-incremental')
 
         if self.args.specs_dirs:
             infer_options += self.args.specs_dirs
