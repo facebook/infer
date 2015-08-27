@@ -787,6 +787,12 @@ let filename_to_relative root fname =
   remainder
 
 
+(* Type of command-line arguments before processing *)
+type arg_list = (string * Arg.spec * string option * string) list
+
+let arg_desc_filter options_to_keep =
+  list_filter (function (option_name, _, _, _) -> list_mem string_equal option_name options_to_keep)
+
 let base_arg_desc =
   [
     "-results_dir",

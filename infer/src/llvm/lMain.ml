@@ -10,11 +10,8 @@ open Utils
 
 let arg_desc =
   let options_to_keep = ["-results_dir"; "-project_root"] in
-  let filter arg_desc = list_filter
-      (fun desc -> let (option_name, _, _, _) = desc in list_mem string_equal option_name options_to_keep)
-      arg_desc in
   let desc =
-    filter base_arg_desc @
+    arg_desc_filter options_to_keep base_arg_desc @
     [
       "-c",
       Arg.String (fun cfile -> LConfig.source_filename := Some cfile),

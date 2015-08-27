@@ -388,11 +388,17 @@ val do_outf : outfile option ref -> (outfile -> unit) -> unit
 (** close an outfile *)
 val close_outf : outfile -> unit
 
+(* Type of command-line arguments before processing *)
+type arg_list = (string * Arg.spec * string option * string) list
+
+(* Filter arguments by name, i.e. keep those whose name appears in the name list *)
+val arg_desc_filter : string list -> arg_list -> arg_list
+
 (** Basic command-line arguments *)
-val base_arg_desc : (string * Arg.spec * string option * string) list
+val base_arg_desc : arg_list
 
 (** Reserved command-line arguments *)
-val reserved_arg_desc : (string * Arg.spec * string option * string) list
+val reserved_arg_desc : arg_list
 
 (** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
 module Escape : sig
