@@ -149,18 +149,21 @@ then
 fi
 
 if [ -n "$ATTACH_PLUGIN" ] || [ -n "$LLVM_MODE" ]; then
-    FOBJC_ARC_FLAG=$(has_flag "-fobjc-arc" "${INPUT_ARGUMENTS[@]}")
-    LANGUAGE=$(get_option_argument "-x" "${INPUT_ARGUMENTS[@]}")
-
-    if [ -n "$LANGUAGE" ]; then INFER_FRONTEND_ARGS+=("-x" "$LANGUAGE"); fi
-    if [ "$FOBJC_ARC_FLAG" == 0 ]; then INFER_FRONTEND_ARGS+=("-fobjc-arc"); fi
-
     [[ "$SOURCE_FILE" = /* ]] || { SOURCE_FILE="${CWD}/$SOURCE_FILE"; }
 
     if [ -n "$LLVM_MODE" ]; then
-        INFER_FRONTEND_CMD=("${BIN_DIR}/InferLLVM" "$SOURCE_FILE")
+        INFER_FRONTEND_CMD=(
+            "${BIN_DIR}/InferLLVM"
+            "-c" "$SOURCE_FILE"
+            "-results_dir" "$RESULTS_DIR"
+            "${INFER_FRONTEND_ARGS[@]}")
         INFER_FRONTEND_LOG_FILE="/dev/stdout"
     else
+        FOBJC_ARC_FLAG=$(has_flag "-fobjc-arc" "${INPUT_ARGUMENTS[@]}")
+        LANGUAGE=$(get_option_argument "-x" "${INPUT_ARGUMENTS[@]}")
+        if [ -n "$LANGUAGE" ]; then INFER_FRONTEND_ARGS+=("-x" "$LANGUAGE"); fi
+        if [ "$FOBJC_ARC_FLAG" == 0 ]; then INFER_FRONTEND_ARGS+=("-fobjc-arc"); fi
+
         INFER_FRONTEND_CMD=(
             "${BIN_DIR}/InferClang"
             "-c" "$SOURCE_FILE"

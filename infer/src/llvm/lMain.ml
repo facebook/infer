@@ -6,52 +6,77 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
-open Lexing
-open Printf
+open Utils
 
-exception UsageError of string
+let arg_desc =
+  let options_to_keep = ["-results_dir"; "-project_root"] in
+  let filter arg_desc = list_filter
+      (fun desc -> let (option_name, _, _, _) = desc in list_mem string_equal option_name options_to_keep)
+      arg_desc in
+  let desc =
+    filter base_arg_desc @
+    [
+      "-c",
+      Arg.String (fun cfile -> LConfig.source_filename := Some cfile),
+      Some "cfile",
+      "C/C++ file being translated";
+      "-debug",
+      Arg.Unit (fun _ -> LConfig.debug_mode := true),
+      None,
+      "Enables debug mode"
+    ] in
+  Arg2.create_options_desc false "Parsing Options" desc
 
-let init_global_state source_file =
+let usage = "Usage: InferLLVM -c <cfile> [options]\n"
+
+let print_usage_exit () =
+  Utils.Arg2.usage arg_desc usage;
+  exit(1)
+
+let init_global_state source_filename =
   Sil.curr_language := Sil.C_CPP;
-  DB.current_source := source_file;
+  begin match !Config.project_root with
+    | None -> DB.current_source := DB.abs_source_file_from_path source_filename
+    | Some project_root ->
+        DB.current_source := DB.rel_source_file_from_abs_path project_root
+            (filename_to_absolute source_filename)
+  end;
   DB.Results_dir.init ();
   Ident.reset_name_generator ();
-  Utils.SymOp.reset_total ();
-  let nLOC = Utils.FileLOC.file_get_loc (DB.source_file_to_string source_file) in
-  Config.nLOC := nLOC
+  SymOp.reset_total ();
+  Config.nLOC := FileLOC.file_get_loc source_filename
 
-let store_icfg tenv cg cfg source_file =
+let store_icfg tenv cg cfg =
   let source_dir = DB.source_dir_from_source_file !DB.current_source in
-  let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
-  let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
+  let get_internal_file = DB.source_dir_get_internal_file source_dir in
+  let cg_file = get_internal_file ".cg" in
+  let cfg_file = get_internal_file ".cfg" in
   Cfg.add_removetemps_instructions cfg;
   Preanal.doit cfg tenv;
   Cfg.add_abstraction_instructions cfg;
   Cg.store_to_file cg_file cg;
   Cfg.store_cfg_to_file cfg_file true cfg;
-  (* debug *)
-  Config.write_dotty := true;
-  Config.print_types := true;
-  Dotty.print_icfg_dotty cfg [];
-  Cg.save_call_graph_dotty None Specs.get_specs cg
+  if !LConfig.debug_mode then
+    begin
+      Config.write_dotty := true;
+      Config.print_types := true;
+      Dotty.print_icfg_dotty cfg [];
+      Cg.save_call_graph_dotty None Specs.get_specs cg
+    end
 
 let store_tenv tenv =
   let tenv_filename = DB.global_tenv_fname () in
   if DB.file_exists tenv_filename then DB.file_remove tenv_filename;
   Sil.store_tenv_to_file tenv_filename tenv
 
-let () = try
-    let filename =
-      if Array.length Sys.argv < 2 then
-        raise (UsageError "First argument should be C/C++ source file.")
-      else
-        Sys.argv.(1)
-    in
-    let source_file = DB.abs_source_file_from_path filename in
-    let () = init_global_state source_file in
-    let lexbuf = Lexing.from_channel stdin in
-    let prog = LParser.program LLexer.token lexbuf in
-    let (cfg, cg, tenv) = LTrans.trans_program prog in
-    store_icfg tenv cg cfg source_file; store_tenv tenv
-  with
-  | UsageError msg -> print_string ("Usage error: " ^ msg ^ "\n")
+let () =
+  Arg2.parse arg_desc (fun arg -> ()) usage;
+  begin match !LConfig.source_filename with
+    | None -> print_usage_exit ()
+    | Some source_filename -> init_global_state source_filename
+  end;
+  let lexbuf = Lexing.from_channel stdin in
+  let prog = LParser.program LLexer.token lexbuf in
+  let (cfg, cg, tenv) = LTrans.trans_program prog in
+  store_icfg tenv cg cfg;
+  store_tenv tenv
