@@ -586,6 +586,56 @@ end
 let proc_list_to_set proc_list =
   list_fold_left (fun s p -> Procname.Set.add p s) Procname.Set.empty proc_list
 
+(** compute the files to analyze map for incremental mode *)
+let compute_to_analyze_map_incremental files_changed_map global_cg exe_env =
+  let changed_fold_f files_changed_map f =
+    let apply_f _ procs acc =
+      Procname.Set.fold (fun proc acc -> Procname.Set.union acc (f proc)) procs acc in
+    Procname.Map.fold apply_f files_changed_map Procname.Set.empty in
+  (* all callers of changed procedures *)
+  let callers_of_changed =
+    changed_fold_f files_changed_map (fun p -> Cg.get_ancestors global_cg p) in
+  (* all callees of changed procedures *)
+  let callees_of_changed =
+    changed_fold_f files_changed_map (fun p -> Cg.get_heirs global_cg p) in
+  (* add a procedure to the file -> (procedures to analyze) map *)
+  let add_proc_to_map proc map =
+    let proc_file_pname = source_file_to_pname (Exe_env.get_source exe_env proc) in
+    let procs_to_analyze =
+      try Procname.Map.find proc_file_pname map
+      with Not_found -> Procname.Set.empty in
+    let procs_to_analyze' = Procname.Set.add proc procs_to_analyze in
+    Procname.Map.add proc_file_pname procs_to_analyze' map in
+  let get_specs_filename pname =
+    Specs.res_dir_specs_filename pname in
+  let is_stale pname =
+    let specs_file = get_specs_filename pname in
+    match Specs.load_summary specs_file with
+    | Some summary -> summary.Specs.status = Specs.STALE
+    | None -> false in
+  (* add stale callees to the map *)
+  let add_stale_callee_to_map callee map =
+    if is_stale callee then add_proc_to_map callee map
+    else map in
+  let files_changed_map' =
+    Procname.Set.fold add_stale_callee_to_map callees_of_changed files_changed_map in
+  if !incremental_mode = ANALYZE_CHANGED_ONLY then
+    (* mark all caller specs stale. this ensures future runs of the analysis that need to use specs
+       from callers will re-compute them first. we do this instead of deleting the specs because
+       that would force the next analysis run to re-compute them even if it doesn't need them. *)
+    let mark_spec_as_stale pname =
+      let specs_file = get_specs_filename pname in
+      match Specs.load_summary specs_file with
+      | Some summary ->
+          let summary' = { summary with Specs.status = Specs.STALE } in
+          Specs.store_summary pname summary'
+      | None -> ()  in
+    Procname.Set.iter (fun caller -> mark_spec_as_stale caller) callers_of_changed;
+    files_changed_map'
+  else (* !incremental_mode = ANALYZE_CHANGED_AND_DEPENDENTS *)
+    (* add callers of changed procedures to the map of stuff to analyze *)
+    Procname.Set.fold add_proc_to_map callers_of_changed files_changed_map'
+
 (** compute the clusters *)
 let compute_clusters exe_env files_changed : cluster list =
   if !trace_clusters then
@@ -613,36 +663,17 @@ let compute_clusters exe_env files_changed : cluster list =
   let files = Cg.get_defined_nodes file_cg in
   let num_files = list_length files in
   L.err "@.Found %d defined procedures in %d files.@." (list_length defined_procs) num_files;
-  let to_analyze_map = match !incremental_mode with
-    | ANALYZE_ALL ->
-        (* get procedures defined in a file *)
-        let get_defined_procs file_pname = match file_pname_to_cg file_pname with
-          | None -> Procname.Set.empty
-          | Some cg -> proc_list_to_set (Cg.get_defined_nodes cg) in
-        list_fold_left
-          (fun m file_pname -> Procname.Map.add file_pname (get_defined_procs file_pname) m)
-          Procname.Map.empty
-          files
-    | ANALYZE_CHANGED_ONLY -> files_changed
-    | ANALYZE_CHANGED_AND_DEPENDENCIES ->
-        (* get all callers of changed procedures *)
-        let callers_of_changed =
-          let collect_callers_for_procs _ procs callers =
-            Procname.Set.fold
-              (fun proc callers -> Procname.Set.union callers (Cg.get_ancestors global_cg proc))
-              procs
-              callers in
-          Procname.Map.fold collect_callers_for_procs files_changed Procname.Set.empty in
-        (* add a caller to the file -> (procedures to analyze) map *)
-        let add_caller_to_map caller map =
-          let caller_file_pname = source_file_to_pname (Exe_env.get_source exe_env caller) in
-          let procs_to_analyze =
-            try Procname.Map.find caller_file_pname map
-            with Not_found -> Procname.Set.empty in
-          let procs_to_analyze' = Procname.Set.add caller procs_to_analyze in
-          Procname.Map.add caller_file_pname procs_to_analyze' map in
-        (* add the (transitive) callers of all changed procedures to the [files_changed] map *)
-        Procname.Set.fold add_caller_to_map callers_of_changed files_changed in
+  let to_analyze_map =
+    if !incremental_mode = ANALYZE_ALL then
+      (* get all procedures defined in a file *)
+      let get_defined_procs file_pname = match file_pname_to_cg file_pname with
+        | None -> Procname.Set.empty
+        | Some cg -> proc_list_to_set (Cg.get_defined_nodes cg) in
+      list_fold_left
+        (fun m file_pname -> Procname.Map.add file_pname (get_defined_procs file_pname) m)
+        Procname.Map.empty
+        files
+    else compute_to_analyze_map_incremental files_changed global_cg exe_env in
   L.err "Analyzing %d files.@.@." (Procname.Map.cardinal to_analyze_map);
   let clusters = create_minimal_clusters file_cg exe_env to_analyze_map in
   L.err "Minimal clusters:@.";

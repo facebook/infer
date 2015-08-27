@@ -297,7 +297,7 @@ type stats =
     cyclomatic : int;
   }
 
-type status = ACTIVE | INACTIVE
+type status = ACTIVE | INACTIVE | STALE
 
 type phase = FOOTPRINT | RE_EXECUTION
 

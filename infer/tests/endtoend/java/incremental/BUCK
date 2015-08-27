@@ -12,6 +12,7 @@ java_test(
         '//infer/tests/codetoanalyze/java/incremental/parent_changed:analyze',
         '//infer/tests/codetoanalyze/java/incremental/child_changed:analyze',
         '//infer/tests/codetoanalyze/java/incremental/changed_only_mode:analyze',
+        '//infer/tests/codetoanalyze/java/incremental/changed_only_future:analyze',
     ],
     visibility=[
         'PUBLIC',
