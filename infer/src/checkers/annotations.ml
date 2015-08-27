@@ -95,7 +95,7 @@ let ma_contains ma ann_names =
   ma_iter (fun a -> if list_exists (string_equal a.Sil.class_name) ann_names then found := true) ma;
   !found
 
-let initializer_ = "com.facebook.infer.annotation.Initializer"
+let initializer_ = "Initializer"
 let inject = "Inject"
 let inject_view = "InjectView"
 let bind = "Bind"
@@ -120,7 +120,7 @@ let ia_is_nonnull ia =
     [nonnull; notnull; camel_nonnull]
 
 let ia_is_initializer ia =
-  ia_contains ia initializer_
+  ia_ends_with ia initializer_
 
 let ia_is_inject ia =
   list_exists
