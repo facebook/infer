@@ -16,8 +16,6 @@ module L = Logging
 
 (** {2 Source Files} *)
 
-exception Path_not_prefix_root
-
 type source_file =
   | Absolute of string
   | Relative of string
@@ -51,7 +49,7 @@ let rel_source_file_from_abs_path root fname =
   if Utils.string_is_prefix root fname then
     let relative_fname = filename_to_relative root fname in
     Relative relative_fname
-  else raise Path_not_prefix_root
+  else failwith ("The project root " ^ root ^ " is not a prefix of " ^ fname)
 
 (** convert a path to a source file, turning it into an absolute path if necessary *)
 let abs_source_file_from_path fname =

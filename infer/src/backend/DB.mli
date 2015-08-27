@@ -60,8 +60,6 @@ end
 
 type source_file
 
-exception Path_not_prefix_root
-
 (** Maps from source_file *)
 module SourceFileMap : Map.S with type key = source_file
 

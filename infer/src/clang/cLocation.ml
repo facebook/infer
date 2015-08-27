@@ -33,7 +33,9 @@ let source_file_from_path path =
   | Some root ->
       (try
          DB.rel_source_file_from_abs_path root path
-       with DB.Path_not_prefix_root ->
+       with Failure _ ->
+         Logging.out
+           "ERROR: %s should be a prefix of %s.@." root path;
          DB.source_file_from_string path)
   | None -> DB.source_file_from_string path
 
