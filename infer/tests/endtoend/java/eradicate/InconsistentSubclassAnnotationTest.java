@@ -55,7 +55,7 @@ public class InconsistentSubclassAnnotationTest {
         SOURCE_FILE,
         returnMethods);
 
-    String[] parameterMethods = {"deref"};
+    String[] parameterMethods = {"deref", "implementInAnotherFile"};
     errorPatterns.addAll(
         createPatterns(
             ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION,

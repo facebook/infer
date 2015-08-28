@@ -320,3 +320,32 @@ let proc_calls get_proc_desc pname pdesc filter : (Procname.t * Cfg.Procdesc.t) 
   let nodes = Cfg.Procdesc.get_nodes pdesc in
   list_iter do_node nodes;
   list_rev !res
+
+
+(** Iterate over all the methods overridden by the procedure.
+    Only Java supported at the moment. *)
+let proc_iter_overridden_methods f tenv proc_name =
+  let do_super_type tenv super_class_name =
+    let super_proc_name =
+      Procname.java_replace_class proc_name (Mangled.to_string super_class_name) in
+    let type_name = Sil.TN_csu (Sil.Class, super_class_name) in
+    match Sil.tenv_lookup tenv type_name with
+    | Some (Sil.Tstruct (_, _, _, _, _, methods, _)) ->
+        let is_override pname =
+          Procname.equal pname super_proc_name &&
+          not (Procname.is_constructor pname) in
+        list_iter
+          (fun pname ->
+             if is_override pname
+             then f pname)
+          methods
+    | _ -> () in
+
+  if Procname.is_java proc_name then
+    let type_name =
+      let class_name = Procname.java_get_class proc_name in
+      Sil.TN_csu (Sil.Class, Mangled.from_string class_name) in
+    match Sil.tenv_lookup tenv type_name with
+    | Some curr_type ->
+        list_iter (do_super_type tenv) (type_get_direct_supertypes curr_type)
+    | None -> ()

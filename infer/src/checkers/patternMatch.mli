@@ -53,6 +53,10 @@ val proc_calls : (Procname.t -> Cfg.Procdesc.t option) -> Procname.t -> Cfg.Proc
   (Procname.t -> Cfg.Procdesc.t -> bool) ->
   (Procname.t * Cfg.Procdesc.t) list
 
+(** Iterate over all the methods overridden by the procedure.
+    Only Java supported at the moment. *)
+val proc_iter_overridden_methods : (Procname.t -> unit) -> Sil.tenv -> Procname.t -> unit
+
 val type_get_annotation : Sil.typ -> Sil.item_annotation option
 
 (** Get the class name of the type *)

@@ -394,11 +394,18 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
           let all_procs, _ = Cg.get_nodes_and_edges cg in
           let mapr = ref Procname.Map.empty in
           let do_proc (pn, isdefined) =
-            if not isdefined then
+            let extend_map proc_name =
               try
-                let source = Exe_env.get_source exe_env pn in
-                mapr := Procname.Map.add pn source !mapr;
+                let source = Exe_env.get_source exe_env proc_name in
+                mapr := Procname.Map.add proc_name source !mapr;
               with Not_found -> () in
+            if isdefined then
+              let tenv = Exe_env.get_tenv exe_env pn in
+              (* Add the overridden methods, so they can be found by the cluster. *)
+              PatternMatch.proc_iter_overridden_methods extend_map tenv pn
+            else
+              (* Add the procedures that are called but not defined in the current file. *)
+              extend_map pn in
           list_iter do_proc all_procs;
           !mapr in
         total_files := !total_files + 1;
@@ -455,8 +462,23 @@ let clusters_nfiles clusters = list_fold_left (fun n cluster -> cluster_nfiles c
 let clusters_naprocs clusters = list_fold_left (fun n cluster -> cluster_naprocs cluster + n) 0 clusters
 
 let print_clusters_stats clusters =
+  let pp_source_map_ce fmt cluster_elem =
+    let do_map_elem proc_name source_file = F.fprintf fmt "%s " (Procname.to_string proc_name) in
+    Procname.Map.iter do_map_elem cluster_elem.ce_source_map in
+  let pp_source_map fmt cluster =
+    list_iter (pp_source_map_ce fmt) cluster in
+  let pp_cluster num cluster =
+    L.err "cluster #%d files: %d active procedures: %d source_map: %a@."
+      num
+      (cluster_nfiles cluster)
+      (cluster_naprocs cluster)
+      pp_source_map cluster in
   let i = ref 0 in
-  list_iter (fun cluster -> incr i; L.err "cluster #%d files: %d active procedures: %d@." !i (cluster_nfiles cluster) (cluster_naprocs cluster)) clusters
+  list_iter
+    (fun cluster ->
+       incr i;
+       pp_cluster !i cluster)
+    clusters
 
 let cluster_split_prefix (cluster : cluster) size =
   let rec split (cluster_seen : cluster) (cluster_todo : cluster) n =

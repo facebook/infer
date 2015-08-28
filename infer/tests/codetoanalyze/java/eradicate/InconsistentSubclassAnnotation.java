@@ -96,7 +96,7 @@ class ConstructorsAreExcluded {
   }
 }
 
-public class InconsistentSubclassAnnotation {
+public class InconsistentSubclassAnnotation implements InconsistentSubclassAnnotationInterface {
 
   public static void callFromSuperclass(SubclassExample.A a) {
     SubclassExample.T t = a.foo();
@@ -105,6 +105,10 @@ public class InconsistentSubclassAnnotation {
 
   public static void callWithNullableParam(SubclassExample.A a, @Nullable SubclassExample.T t) {
     a.deref(t);
+  }
+
+  public String implementInAnotherFile(String s) {
+    return "";
   }
 
 }

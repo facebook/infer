@@ -539,28 +539,4 @@ let check_overridden_annotations
         check_params overriden_proc_name overriden_signature
     | None -> () in
 
-  let check_overridden_methods super_class_name =
-    let super_proc_name = Procname.java_replace_class proc_name super_class_name in
-    let type_name = Sil.TN_csu (Sil.Class, Mangled.from_string super_class_name) in
-    match Sil.tenv_lookup tenv type_name with
-    | Some (Sil.Tstruct (_, _, _, _, _, methods, _)) ->
-        let is_override pname =
-          Procname.equal pname super_proc_name &&
-          not (Procname.is_constructor pname) in
-        list_iter
-          (fun pname ->
-             if is_override pname
-             then check pname)
-          methods
-    | _ -> () in
-
-  let super_types =
-    let type_name =
-      let class_name = Procname.java_get_class proc_name in
-      Sil.TN_csu (Sil.Class, Mangled.from_string class_name) in
-    match Sil.tenv_lookup tenv type_name with
-    | Some curr_type ->
-        list_map Mangled.to_string (PatternMatch.type_get_direct_supertypes curr_type)
-    | None -> [] in
-
-  list_iter check_overridden_methods super_types
+  PatternMatch.proc_iter_overridden_methods check tenv proc_name
