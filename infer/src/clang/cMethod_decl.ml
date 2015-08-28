@@ -147,23 +147,27 @@ struct
     list_iter (process_one_method_decl tenv cg cfg curr_class namespace) decl_list
 
   let process_getter_setter context procname =
-    let class_name = Procname.c_get_class procname in
-    let open CContext in
-    let cls = CContext.create_curr_class context.tenv class_name in
-    let method_name = Procname.c_get_method procname in
-    match ObjcProperty_decl.method_is_property_accesor cls method_name with
-    | Some (property_name, property_type, is_getter) when
-        CMethod_trans.should_create_procdesc context.cfg procname true true ->
-        (match property_type with qt, atts, decl_info, _, _, ivar_opt ->
-          let ivar_name = ObjcProperty_decl.get_ivar_name property_name ivar_opt in
-          let field = CField_decl.build_sil_field_property cls context.tenv ivar_name qt (Some atts) in
-          ignore (CField_decl.add_missing_fields context.tenv class_name [field]);
-          let accessor =
-            if is_getter then
-              ObjcProperty_decl.make_getter cls property_name property_type
-            else ObjcProperty_decl.make_setter cls property_name property_type in
-          list_iter (process_one_method_decl context.tenv context.cg context.cfg cls context.namespace) accessor;
-          true)
-    | _ -> false
+    (*If there is already a spec for the method we want to generate (in incremental analysis) *)
+    (* we don't need to generate it again. *)
+    if Specs.summary_exists procname then false
+    else
+      let class_name = Procname.c_get_class procname in
+      let open CContext in
+      let cls = CContext.create_curr_class context.tenv class_name in
+      let method_name = Procname.c_get_method procname in
+      match ObjcProperty_decl.method_is_property_accesor cls method_name with
+      | Some (property_name, property_type, is_getter) when
+          CMethod_trans.should_create_procdesc context.cfg procname true true ->
+          (match property_type with qt, atts, decl_info, _, _, ivar_opt ->
+            let ivar_name = ObjcProperty_decl.get_ivar_name property_name ivar_opt in
+            let field = CField_decl.build_sil_field_property cls context.tenv ivar_name qt (Some atts) in
+            ignore (CField_decl.add_missing_fields context.tenv class_name [field]);
+            let accessor =
+              if is_getter then
+                ObjcProperty_decl.make_getter cls property_name property_type
+              else ObjcProperty_decl.make_setter cls property_name property_type in
+            list_iter (process_one_method_decl context.tenv context.cg context.cfg cls context.namespace) accessor;
+            true)
+      | _ -> false
 
 end
