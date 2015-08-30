@@ -20,7 +20,7 @@ val is_visited : Cfg.Node.t -> bool
 val force_delayed_prints : unit -> unit
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-val start_session : Cfg.node -> Sil.location -> Procname.t -> int -> unit
+val start_session : Cfg.node -> Location.t -> Procname.t -> int -> unit
 
 (** Finish a session, and perform delayed print actions if required *)
 val finish_session : Cfg.node -> unit
@@ -43,7 +43,7 @@ module LineReader : sig
   val from_file_linenum : t -> DB.source_file -> int -> string option
 
   (** get the line from a location looking for the copy of the file in the results dir *)
-  val from_loc : t -> Sil.location -> string option
+  val from_loc : t -> Location.t -> string option
 end
 
 (** Create filename.c.html with line numbers and links to nodes for each file in the exe_env *)

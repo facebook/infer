@@ -91,7 +91,7 @@ val handle_exception : exn -> bool
 val print_exception_html : string -> exn -> unit
 
 (** pretty print an error given its (id,key), location, kind, name, description, and optional ml location *)
-val pp_err : int * int -> Sil.location -> err_kind -> Localise.t -> Localise.error_desc ->
+val pp_err : int * int -> Location.t -> err_kind -> Localise.t -> Localise.error_desc ->
   Utils.ml_location option -> Format.formatter -> unit -> unit
 
 (** Turn an exception into an error name, error description,

@@ -33,7 +33,7 @@ end (* Strict *)
 
 type origin_descr =
   string *
-  Sil.location option *
+  Location.t option *
   Annotations.annotated_signature option  (* callee signature *)
 
 type parameter_not_nullable =
@@ -41,7 +41,7 @@ type parameter_not_nullable =
   string * (* description *)
   int * (* parameter number *)
   Procname.t *
-  Sil.location * (* callee location *)
+  Location.t * (* callee location *)
   origin_descr
 
 (** Instance of an error *)
@@ -67,10 +67,10 @@ type st_report_error =
   Procname.t ->
   Cfg.Procdesc.t ->
   string ->
-  Sil.location ->
+  Location.t ->
   ?advice: string option ->
   ?field_name: Ident.fieldname option ->
-  ?origin_loc: Sil.location option ->
+  ?origin_loc: Location.t option ->
   ?exception_kind: (string -> Localise.error_desc -> exn) ->
   ?always_report: bool ->
   string ->
@@ -79,7 +79,7 @@ type st_report_error =
 val report_error :
   st_report_error ->
   (Cfg.Node.t -> Cfg.Node.t) -> Cfg.Node.t ->
-  err_instance -> InstrRef.t option -> Sil.location ->
+  err_instance -> InstrRef.t option -> Location.t ->
   Procname.t -> unit
 
 val report_forall_checks_and_reset : st_report_error -> Procname.t -> unit

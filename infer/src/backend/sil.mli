@@ -12,14 +12,6 @@
 
 open Utils
 
-(** Programming language. *)
-type language = C_CPP | Java
-
-(** current language *)
-val curr_language : language ref (* TODO: move to Config. It is good to have all global variables in the same place *)
-
-val string_of_language : language -> string
-
 (** Class, struct, union, (Obj C) protocol *)
 type csu =
   | Class
@@ -53,24 +45,6 @@ type func_attribute =
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected
 
-(** Attributes of a procedure. *)
-type proc_attributes =
-  {
-    access : access; (** visibility access *)
-    exceptions : string list; (** exceptions thrown by the procedure *)
-    is_abstract : bool; (** the procedure is abstract *)
-    mutable is_bridge_method : bool; (** the procedure is a bridge method *)
-    is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
-    mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
-    language : language;
-    func_attributes : func_attribute list;
-    method_annotation : method_annotation;
-    is_generated : bool;
-  }
-
-(** Create a copy of a proc_attributes *)
-val copy_proc_attributes : proc_attributes -> proc_attributes
-
 (** Type for program variables. There are 4 kinds of variables:
     1) local variables, used for local variables and formal parameters
     2) callee program variables, used to handle recursion ([x | callee] is distinguished from [x])
@@ -78,16 +52,6 @@ val copy_proc_attributes : proc_attributes -> proc_attributes
     4) seed variables, used to store the initial value of formal parameters
 *)
 type pvar
-
-(** Location in the original source file *)
-type location = {
-  line: int; (** The line number. -1 means "do not know" *)
-  col: int; (** The column number. -1 means "do not know" *)
-  file: DB.source_file; (** The name of the source file *)
-  nLOC : int; (** Lines of code in the source file *)
-}
-
-val dummy_location : location
 
 (** Unary operations *)
 type unop =
@@ -260,14 +224,14 @@ type dexp =
   | Dconst of const
   | Dsizeof of typ * Subtype.t
   | Dderef of dexp
-  | Dfcall of dexp * dexp list * location * call_flags
+  | Dfcall of dexp * dexp list * Location.t * call_flags
   | Darrow of dexp * Ident.fieldname
   | Ddot of dexp * Ident.fieldname
   | Dpvar of pvar
   | Dpvaraddr of pvar
   | Dunop of unop * dexp
   | Dunknown
-  | Dretcall of dexp * dexp list * location * call_flags
+  | Dretcall of dexp * dexp list * Location.t * call_flags
 
 (** Value paths: identify an occurrence of a value in a symbolic heap
     each expression represents a path, with Dpvar being the simplest one *)
@@ -279,7 +243,7 @@ and res_action =
   { ra_kind : res_act_kind; (** kind of action *)
     ra_res : resource; (** kind of resource *)
     ra_pname : Procname.t; (** name of the procedure used to acquire/release the resource *)
-    ra_loc : location; (** location of the acquire/release *)
+    ra_loc : Location.t; (** location of the acquire/release *)
     ra_vpath: vpath; (** vpath of the resource value *)
   }
 
@@ -288,12 +252,16 @@ and attribute =
   | Aresource of res_action (** resource acquire/release *)
   | Aautorelease
   | Adangling of dangling_kind (** dangling pointer *)
-  | Aundef of Procname.t * location * path_pos (** undefined value obtained by calling the given procedure *)
+  (** undefined value obtained by calling the given procedure *)
+  | Aundef of Procname.t * Location.t * path_pos
   | Ataint
   | Auntaint
-  | Adiv0 of path_pos (** value appeared in second argument of division at given path position *)
-  | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
-  | Aretval of Procname.t (** value was returned from a call to the given procedure *)
+  (** value appeared in second argument of division at given path position *)
+  | Adiv0 of path_pos
+  (** the exp. is null because of a call to a method with exp as a null receiver *)
+  | Aobjc_null of exp
+  (** value was returned from a call to the given procedure *)
+  | Aretval of Procname.t
 
 (** Categories of attributes *)
 and attribute_category =
@@ -345,6 +313,32 @@ and exp =
   | Lindex of exp * exp (** an array index offset: [exp1\[exp2\]] *)
   | Sizeof of typ * Subtype.t (** a sizeof expression *)
 
+(** Attributes of a procedure. *)
+type proc_attributes =
+  {
+    access : access; (** visibility access *)
+    captured : (Mangled.t * typ) list; (** name and type of variables captured in blocks *)
+    exceptions : string list; (** exceptions thrown by the procedure *)
+    formals : (string * typ) list; (** name and type of formal parameters *)
+    func_attributes : func_attribute list;
+    is_abstract : bool; (** the procedure is abstract *)
+    mutable is_bridge_method : bool; (** the procedure is a bridge method *)
+    is_defined : bool; (** true if the procedure is defined, and not just declared *)
+    is_generated : bool; (** the procedure has been generated *)
+    is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
+    mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
+    language : Config.language; (** language of the procedure *)
+    loc : Location.t; (** location of this procedure in the source code *)
+    mutable locals : (Mangled.t * typ) list; (** name and type of local variables *)
+    method_annotation : method_annotation; (** annotations for java methods *)
+    proc_flags : proc_flags; (** flags of the procedure *)
+    proc_name : Procname.t; (** name of the procedure *)
+    ret_type : typ; (** return type *)
+  }
+
+(** Create a copy of a proc_attributes *)
+val copy_proc_attributes : proc_attributes -> proc_attributes
+
 (** Sets of types. *)
 module TypSet : Set.S with type elt = typ
 
@@ -381,18 +375,25 @@ type stackop =
 
 (** An instruction. *)
 type instr =
-  | Letderef of Ident.t * exp * typ * location (** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] *)
-  | Set of exp * typ * exp * location (** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] *)
-  | Prune of exp * location * bool * if_kind (** prune the state based on [exp=1], the boolean indicates whether true branch *)
-  | Call of Ident.t list * exp * (exp * typ) list * location * call_flags
+  (** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] *)
+  | Letderef of Ident.t * exp * typ * Location.t
+  (** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] *)
+  | Set of exp * typ * exp * Location.t
+  (** prune the state based on [exp=1], the boolean indicates whether true branch *)
+  | Prune of exp * Location.t * bool * if_kind
   (** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
-      [ret_id1..ret_idn = e_fun(arg_ts);] where n = 0 for void return and n > 1 for struct return *)
-  | Nullify of pvar * location * bool (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
-  | Abstract of location (** apply abstraction *)
-  | Remove_temps of Ident.t list * location (** remove temporaries *)
-  | Stackop of stackop * location (** operation on the stack of propsets *)
-  | Declare_locals of (pvar * typ) list * location (** declare local variables *)
-  | Goto_node of exp * location (** jump to a specific cfg node, assuming all the possible target nodes are successors of the current node *)
+      [ret_id1..ret_idn = e_fun(arg_ts);]
+      where n = 0 for void return and n > 1 for struct return *)
+  | Call of Ident.t list * exp * (exp * typ) list * Location.t * call_flags
+  (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
+  | Nullify of pvar * Location.t * bool
+  | Abstract of Location.t (** apply abstraction *)
+  | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
+  | Stackop of stackop * Location.t (** operation on the stack of propsets *)
+  | Declare_locals of (pvar * typ) list * Location.t (** declare local variables *)
+  (** jump to a specific cfg node,
+      assuming all the possible target nodes are successors of the current node *)
+  | Goto_node of exp * Location.t
 
 (** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 val instr_is_auxiliary : instr -> bool
@@ -441,9 +442,10 @@ val inst_initial : inst (** for initial values *)
 val inst_lookup : inst
 val inst_none : inst
 val inst_nullify : inst
-val inst_rearrange : bool -> location -> path_pos -> inst (** the boolean indicates whether the pointer is known nonzero *)
+(** the boolean indicates whether the pointer is known nonzero *)
+val inst_rearrange : bool -> Location.t -> path_pos -> inst
 val inst_taint : inst
-val inst_update : location -> path_pos -> inst
+val inst_update : Location.t -> path_pos -> inst
 
 (** Get the null case flag of the inst. *)
 val inst_get_null_case_flag : inst -> bool option
@@ -452,7 +454,7 @@ val inst_get_null_case_flag : inst -> bool option
 val inst_set_null_case_flag : inst -> inst
 
 (** update the location of the instrumentation *)
-val inst_new_loc : location -> inst -> inst
+val inst_new_loc : Location.t -> inst -> inst
 
 (** Update [inst_old] to [inst_new] preserving the zero flag *)
 val update_inst : inst -> inst -> inst
@@ -589,10 +591,6 @@ val exp_is_null_literal : exp -> bool
 
 (** return true if [exp] is the special this/self expression *)
 val exp_is_this : exp -> bool
-
-val loc_compare : location -> location -> int
-
-val loc_equal : location -> location -> bool
 
 val path_pos_equal : path_pos -> path_pos -> bool
 
@@ -816,14 +814,6 @@ val str_unop : unop -> string
 (** String representation of a binary operator. *)
 val str_binop : printenv -> binop -> string
 
-(** Pretty print a location. *)
-val pp_loc : Format.formatter -> location -> unit
-
-val loc_to_string : location -> string
-
-(** Dump a location. *)
-val d_loc : location -> unit
-
 (** name of the allocation function for the given memory kind *)
 val mem_alloc_pname : mem_kind -> Procname.t
 
@@ -927,7 +917,7 @@ val pp_offset_list : printenv -> Format.formatter -> offset list -> unit
 val d_offset_list : offset list -> unit
 
 (** Get the location of the instruction *)
-val instr_get_loc : instr -> location
+val instr_get_loc : instr -> Location.t
 
 (** get the expressions occurring in the instruction *)
 val instr_get_exps : instr -> exp list
@@ -1321,8 +1311,6 @@ val hpred_replace_exp : (exp * exp) list -> hpred -> hpred
 
 (** {2 Functions for constructing or destructing entities in this module} *)
 
-(** Unknown location *)
-val loc_none : location
 
 (** [mk_pvar name proc_name suffix] creates a program var with the given function name and suffix *)
 val mk_pvar : Mangled.t -> Procname.t -> pvar
@@ -1337,9 +1325,9 @@ val mk_pvar_callee : Mangled.t -> Procname.t -> pvar
 val mk_pvar_global : Mangled.t -> pvar
 
 (** create an abducted return variable for a call to [proc_name] at [loc] *)
-val mk_pvar_abducted_ret : Procname.t -> location -> pvar
+val mk_pvar_abducted_ret : Procname.t -> Location.t -> pvar
 
-val mk_pvar_abducted_ref_param : Procname.t -> pvar -> location -> pvar
+val mk_pvar_abducted_ref_param : Procname.t -> pvar -> Location.t -> pvar
 
 (** Turn an ordinary program variable into a callee program variable *)
 val pvar_to_callee : Procname.t -> pvar -> pvar

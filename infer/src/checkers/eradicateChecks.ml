@@ -142,7 +142,7 @@ let check_condition case_zero find_canonical_duplicate get_proc_desc curr_pname
           throwable_found := true
       | _ -> () in
     let do_node n =
-      if Sil.loc_equal loc (Cfg.Node.get_loc n)
+      if Location.equal loc (Cfg.Node.get_loc n)
       then list_iter do_instr (Cfg.Node.get_instrs n) in
     Cfg.Procdesc.iter_nodes do_node (Cfg.Node.get_proc_desc node);
     !throwable_found in

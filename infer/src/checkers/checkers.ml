@@ -20,18 +20,19 @@ module PP = struct
   (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
       and [nafter] lines after [loc] *)
   let pp_loc_range linereader nbefore nafter fmt loc =
-    let printline n = match Printer.LineReader.from_loc linereader { loc with Sil.line = n } with
-      | Some s -> F.fprintf fmt "%s%s@\n" (if n = loc.Sil.line then "-->" else "   ") s
+    let printline n =
+      match Printer.LineReader.from_loc linereader { loc with Location.line = n } with
+      | Some s -> F.fprintf fmt "%s%s@\n" (if n = loc.Location.line then "-->" else "   ") s
       | _ -> () in
-    F.fprintf fmt "%s:%d@\n" (DB.source_file_to_string loc.Sil.file) loc.Sil.line;
-    for n = loc.Sil.line - nbefore to loc.Sil.line + nafter do printline n done
+    F.fprintf fmt "%s:%d@\n" (DB.source_file_to_string loc.Location.file) loc.Location.line;
+    for n = loc.Location.line - nbefore to loc.Location.line + nafter do printline n done
 end (* PP *)
 
 
 (** State that persists in the .specs files. *)
 module ST = struct
   let add summary key value =
-    proc_flags_add summary.Specs.proc_flags key value
+    proc_flags_add summary.Specs.attributes.Sil.proc_flags key value
 
   let pname_add proc_name key value =
     let summary = Specs.get_summary_unsafe proc_name in
@@ -42,14 +43,14 @@ module ST = struct
   let pname_find proc_name key =
     if Procname.Set.mem proc_name !files_open then
       let summary = Specs.get_summary_unsafe proc_name in
-      proc_flags_find summary.Specs.proc_flags key
+      proc_flags_find summary.Specs.attributes.Sil.proc_flags key
     else begin
       match Specs.get_summary proc_name with
       | None -> raise Not_found
       | Some summary ->
           begin
             files_open := Procname.Set.add proc_name !files_open;
-            proc_flags_find summary.Specs.proc_flags key
+            proc_flags_find summary.Specs.attributes.Sil.proc_flags key
           end
     end
 
@@ -141,7 +142,7 @@ module ST = struct
       begin
         if !verbose then
           begin
-            let file = DB.source_file_to_string loc.Sil.file in
+            let file = DB.source_file_to_string loc.Location.file in
             L.stdout "%s: %s: %s@."
               kind
               file
@@ -312,8 +313,11 @@ let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc
           not (Sil.ExpSet.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
         let missing = list_filter was_not_found formal_names in
         let loc = Cfg.Procdesc.get_loc proc_desc in
-        let pp_file_loc fmt () = F.fprintf fmt "%s:%d" (DB.source_file_to_string loc.Sil.file) loc.Sil.line in
-        L.stdout "Null Checks of Formal Parameters: %d out of %d parameters checked (missing checks on: %a)[%a]@." nchecks nformals (pp_seq Mangled.pp) missing pp_file_loc ();
+        let pp_file_loc fmt () =
+          F.fprintf fmt "%s:%d" (DB.source_file_to_string loc.Location.file) loc.Location.line in
+        L.stdout "Null Checks of Formal Parameters: ";
+        L.stdout "%d out of %d parameters checked (missing checks on: %a)[%a]@."
+          nchecks nformals (pp_seq Mangled.pp) missing pp_file_loc ();
 
         let linereader = Printer.LineReader.create () in
         L.stdout "%a@." (PP.pp_loc_range linereader 10 10) loc

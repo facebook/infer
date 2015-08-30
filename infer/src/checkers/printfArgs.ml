@@ -133,7 +133,7 @@ let callback_printf_args
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
     let instr_name = Procname.to_simplified_string instr_proc_name in
-    let instr_line = Sil.loc_to_string instr_loc in
+    let instr_line = Location.to_string instr_loc in
     match (fmt_type_names, arg_type_names) with
     | ft:: fs, gt:: gs ->
         if not (format_type_matches_given_type ft gt) then

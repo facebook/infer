@@ -14,11 +14,13 @@ exception ARRAY_ACCESS
 
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 val check_dereference_error :
-  Cfg.Procdesc.t -> Prop.normal Prop.t -> Sil.exp -> Sil.location -> unit
+  Cfg.Procdesc.t -> Prop.normal Prop.t -> Sil.exp -> Location.t -> unit
 
-(** Check that an expression representing an objc block can be null and raise a [B1] null exception.*)
+(** Check that an expression representing an objc block
+    can be null and raise a [B1] null exception. *)
 (** It's used to check that we don't call possibly null blocks *)
-val check_call_to_objc_block_error :  Cfg.Procdesc.t -> Prop.normal Prop.t -> Sil.exp -> Sil.location -> unit
+val check_call_to_objc_block_error :
+  Cfg.Procdesc.t -> Prop.normal Prop.t -> Sil.exp -> Location.t -> unit
 
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
     It returns an iterator with [lexp |-> strexp: typ] as current predicate
@@ -26,4 +28,4 @@ val check_call_to_objc_block_error :  Cfg.Procdesc.t -> Prop.normal Prop.t -> Si
 val rearrange :
   Cfg.Procdesc.t -> Sil.tenv -> Sil.exp ->
   Sil.typ -> Prop.normal Prop.t ->
-  Sil.location -> (Sil.offset list) Prop.prop_iter list
+  Location.t -> (Sil.offset list) Prop.prop_iter list

@@ -1137,9 +1137,11 @@ let print_retain_cycle _prop =
   | None -> ()
   | Some (Some _prop) ->
       let loc = State.get_loc () in
-      let source_file = DB.source_file_to_string loc.Sil.file in
+      let source_file = DB.source_file_to_string loc.Location.file in
       let source_file'= Str.global_replace (Str.regexp_string "/") "_" source_file in
-      let dest_file_str = (DB.filename_to_string (DB.Results_dir.specs_dir ()))^"/"^source_file'^"_RETAIN_CYCLE_"^(Sil.loc_to_string loc)^".dot" in
+      let dest_file_str =
+        (DB.filename_to_string (DB.Results_dir.specs_dir ())) ^ "/" ^
+        source_file' ^ "_RETAIN_CYCLE_" ^ (Location.to_string loc) ^ ".dot" in
       L.d_strln ("Printing dotty proposition for retain cycle in :"^dest_file_str);
       Prop.d_prop _prop; L.d_strln "";
       Dotty.dotty_prop_to_dotty_file dest_file_str _prop
@@ -1263,78 +1265,87 @@ let check_junk ?original_prop pname tenv prop =
           let entries = hpred_entries hpred in
           if should_remove_hpred entries then
             begin
-            let part = if fp_part then "footprint" else "normal" in
-            L.d_strln (".... Prop with garbage in " ^ part ^ " part ....");
-            L.d_increase_indent 1;
-            L.d_strln "PROP:";
-            Prop.d_prop prop; L.d_ln ();
-            L.d_strln "PREDICATE:";
-            Prop.d_sigma [hpred];
+              let part = if fp_part then "footprint" else "normal" in
+              L.d_strln (".... Prop with garbage in " ^ part ^ " part ....");
+              L.d_increase_indent 1;
+              L.d_strln "PROP:";
+              Prop.d_prop prop; L.d_ln ();
+              L.d_strln "PREDICATE:";
+              Prop.d_sigma [hpred];
               L.d_ln ();
               let alloc_attribute =
                 (* find the alloc attribute of one of the roots of hpred, if it exists *)
-              let res = ref None in
-              let do_entry e =
-                match Prop.get_resource_undef_attribute prop e with
-                | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire }) as a) ->
-                    L.d_str "ATTRIBUTE: "; Sil.d_exp (Sil.Const (Sil.Cattribute a)); L.d_ln ();
-                    res := Some a
-                | Some (Sil.Aundef _ as a) ->
-                    res := Some a
-                | _ -> () in
-              list_iter do_entry entries;
-              !res in
-            L.d_decrease_indent 1;
-            let is_undefined = match alloc_attribute with
-              | Some (Sil.Aundef _) -> true
-              | _ -> false in
-            let resource = match Errdesc.hpred_is_open_resource prop hpred with
-              | Some res -> res
-              | None -> Sil.Rmemory Sil.Mmalloc in
-            let objc_ml_bucket_opt =
-              match resource with
-              | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak prop hpred
-              | _ -> None in
-            let exn_retain_cycle cycle =
-              print_retain_cycle original_prop;
-              let desc = Errdesc.explain_retain_cycle (remove_opt original_prop) cycle (State.get_loc ()) in
-              Exceptions.Retain_cycle(remove_opt original_prop, hpred, desc, try assert false with Assert_failure x -> x) in
-            let exn_leak =
-              Exceptions.Leak (fp_part, prop, hpred, Errdesc.explain_leak tenv hpred prop alloc_attribute objc_ml_bucket_opt, !Absarray.array_abstraction_performed, resource, try assert false with Assert_failure x -> x) in
-            let ignore_resource, exn =
-              (match alloc_attribute, resource with
-               | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->
-                   (* When there is a cycle in objc we ignore it only if it has weak or unsafe_unretained fields *)
-                   (* Otherwise we report a retain cycle*)
-                   let cycle = get_var_retain_cycle (remove_opt original_prop) in
-                   if cycle_has_weak_or_unretained_or_assign_field cycle then
-                     true, exn_retain_cycle cycle
-                   else false, exn_retain_cycle cycle
-               | Some _, Sil.Rmemory Sil.Mobjc ->
-                   objc_ml_bucket_opt = None, exn_leak
-               | Some _, Sil.Rmemory _ -> !Sil.curr_language = Sil.Java, exn_leak
-               | Some _, Sil.Rignore -> true, exn_leak
-               | Some _, Sil.Rfile -> false, exn_leak
-               | Some _, Sil.Rlock -> false, exn_leak
-               | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter hpred ->
-                   (* When its a cycle and the object has a ref counter then *)
-                   (* we have a retain cycle. Objc object may not have the *)
-                   (* Sil.Mobjc qualifier when added in footprint doing abduction *)
-                   let cycle = get_var_retain_cycle (remove_opt original_prop) in
-                   false, exn_retain_cycle cycle
-               | _ -> !Sil.curr_language = Sil.Java, exn_leak) in
-            let already_reported () =
-              let attr_opt_equal ao1 ao2 = match ao1, ao2 with
-                | None, None -> true
-                | Some a1, Some a2 -> Sil.attribute_equal a1 a2
-                | Some _, None
-                | None, Some _ -> false in
-              (alloc_attribute = None && !leaks_reported <> []) || (* None attribute only reported if it's the first one *)
+                let res = ref None in
+                let do_entry e =
+                  match Prop.get_resource_undef_attribute prop e with
+                  | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire }) as a) ->
+                      L.d_str "ATTRIBUTE: "; Sil.d_exp (Sil.Const (Sil.Cattribute a)); L.d_ln ();
+                      res := Some a
+                  | Some (Sil.Aundef _ as a) ->
+                      res := Some a
+                  | _ -> () in
+                list_iter do_entry entries;
+                !res in
+              L.d_decrease_indent 1;
+              let is_undefined = match alloc_attribute with
+                | Some (Sil.Aundef _) -> true
+                | _ -> false in
+              let resource = match Errdesc.hpred_is_open_resource prop hpred with
+                | Some res -> res
+                | None -> Sil.Rmemory Sil.Mmalloc in
+              let objc_ml_bucket_opt =
+                match resource with
+                | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak prop hpred
+                | _ -> None in
+              let exn_retain_cycle cycle =
+                print_retain_cycle original_prop;
+                let desc = Errdesc.explain_retain_cycle
+                    (remove_opt original_prop) cycle (State.get_loc ()) in
+                Exceptions.Retain_cycle
+                  (remove_opt original_prop, hpred, desc,
+                   try assert false with Assert_failure x -> x) in
+              let exn_leak = Exceptions.Leak
+                  (fp_part, prop, hpred,
+                   Errdesc.explain_leak tenv hpred prop alloc_attribute objc_ml_bucket_opt,
+                   !Absarray.array_abstraction_performed,
+                   resource,
+                   try assert false with Assert_failure x -> x) in
+              let ignore_resource, exn =
+                (match alloc_attribute, resource with
+                 | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->
+                     (* When there is a cycle in objc we ignore it *)
+                     (* only if it has weak or unsafe_unretained fields. *)
+                     (* Otherwise we report a retain cycle. *)
+                     let cycle = get_var_retain_cycle (remove_opt original_prop) in
+                     if cycle_has_weak_or_unretained_or_assign_field cycle then
+                       true, exn_retain_cycle cycle
+                     else false, exn_retain_cycle cycle
+                 | Some _, Sil.Rmemory Sil.Mobjc ->
+                     objc_ml_bucket_opt = None, exn_leak
+                 | Some _, Sil.Rmemory _ -> !Config.curr_language = Config.Java, exn_leak
+                 | Some _, Sil.Rignore -> true, exn_leak
+                 | Some _, Sil.Rfile -> false, exn_leak
+                 | Some _, Sil.Rlock -> false, exn_leak
+                 | _ when hpred_in_cycle hpred && Sil.has_objc_ref_counter hpred ->
+                     (* When its a cycle and the object has a ref counter then *)
+                     (* we have a retain cycle. Objc object may not have the *)
+                     (* Sil.Mobjc qualifier when added in footprint doing abduction *)
+                     let cycle = get_var_retain_cycle (remove_opt original_prop) in
+                     false, exn_retain_cycle cycle
+                 | _ -> !Config.curr_language = Config.Java, exn_leak) in
+              let already_reported () =
+                let attr_opt_equal ao1 ao2 = match ao1, ao2 with
+                  | None, None -> true
+                  | Some a1, Some a2 -> Sil.attribute_equal a1 a2
+                  | Some _, None
+                  | None, Some _ -> false in
+                (alloc_attribute = None && !leaks_reported <> []) ||
+                (* None attribute only reported if it's the first one *)
                 list_mem attr_opt_equal alloc_attribute !leaks_reported in
               let ignore_leak =
                 !Config.allowleak || ignore_resource || is_undefined || already_reported () in
               let report_and_continue =
-                !Sil.curr_language = Sil.Java || !Config.footprint in
+                !Config.curr_language = Config.Java || !Config.footprint in
               let report_leak () =
                 if not report_and_continue then raise exn
                 else

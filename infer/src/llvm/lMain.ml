@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open Utils
 
 let arg_desc =
@@ -31,7 +32,7 @@ let print_usage_exit () =
   exit(1)
 
 let init_global_state source_filename =
-  Sil.curr_language := Sil.C_CPP;
+  Config.curr_language := Config.C_CPP;
   begin match !Config.project_root with
     | None -> DB.current_source := DB.abs_source_file_from_path source_filename
     | Some project_root ->

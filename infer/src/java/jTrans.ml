@@ -23,9 +23,9 @@ type invoke_kind =
 
 exception Frontend_error of string
 
-let constr_loc_map : Sil.location JBasics.ClassMap.t ref = ref JBasics.ClassMap.empty
+let constr_loc_map : Location.t JBasics.ClassMap.t ref = ref JBasics.ClassMap.empty
 
-let init_loc_map : Sil.location JBasics.ClassMap.t ref = ref JBasics.ClassMap.empty
+let init_loc_map : Location.t JBasics.ClassMap.t ref = ref JBasics.ClassMap.empty
 
 (** Fix the line associated to a method definition.
     Since Sawja often reports a method off by a few lines, we search
@@ -38,25 +38,25 @@ let fix_method_definition_line linereader proc_name loc =
     else Procname.java_get_method proc_name in
   let regex = Str.regexp (Str.quote method_name) in
   let method_is_defined_here linenum =
-    match Printer.LineReader.from_file_linenum_original linereader loc.Sil.file linenum with
+    match Printer.LineReader.from_file_linenum_original linereader loc.Location.file linenum with
     | None -> raise Not_found
     | Some line ->
         (try ignore (Str.search_forward regex line 0); true
          with Not_found -> false) in
-  let line = ref loc.Sil.line in
+  let line = ref loc.Location.line in
   try
     while not (method_is_defined_here !line) do
       line := !line -1;
       if !line < 0 then raise Not_found
     done;
-    { loc with Sil.line = !line }
+    { loc with Location.line = !line }
   with Not_found -> loc
 
 let get_location impl pc meth_kind cn =
   if meth_kind = JContext.Init then
     try
       JBasics.ClassMap.find cn !init_loc_map
-    with Not_found -> Sil.dummy_location
+    with Not_found -> Location.dummy
   else
     let line_number =
       let ln =
@@ -65,7 +65,10 @@ let get_location impl pc meth_kind cn =
       match ln with
       | None -> 0
       | Some n -> n in
-    { Sil.line = line_number; Sil.col = -1; Sil.file = !DB.current_source; Sil.nLOC = !Config.nLOC }
+    { Location.line = line_number;
+      col = -1;
+      file = !DB.current_source;
+      nLOC = !Config.nLOC }
 
 let get_undefined_method_call ovt =
   let get_undefined_method ovt =
@@ -270,7 +273,7 @@ let create_local_procdesc program linereader cfg tenv node m =
       meth_kind = JContext.Init &&
       not (JTransStaticField.has_static_final_fields node))
   then
-    let procname = JTransType.get_method_procname cn ms (JTransType.get_method_kind m) in
+    let proc_name = JTransType.get_method_procname cn ms (JTransType.get_method_kind m) in
     let create_new_procdesc () =
       let trans_access = function
         | `Default -> Sil.Default
@@ -287,31 +290,32 @@ let create_local_procdesc program linereader cfg tenv node m =
               let proc_attributes =
                 {
                   Sil.access = trans_access am.Javalib.am_access;
-                  Sil.exceptions = list_map JBasics.cn_name am.Javalib.am_exceptions;
-                  Sil.is_abstract = true;
-                  Sil.is_bridge_method = am.Javalib.am_bridge;
-                  Sil.is_objc_instance_method = false;
-                  Sil.is_synthetic_method = am.Javalib.am_synthetic;
-                  Sil.language = Sil.Java;
-                  Sil.func_attributes = [];
-                  Sil.method_annotation = method_annotation;
-                  Sil.is_generated = false;
+                  captured = [];
+                  exceptions = list_map JBasics.cn_name am.Javalib.am_exceptions;
+                  formals;
+                  func_attributes = [];
+                  is_abstract = true;
+                  is_bridge_method = am.Javalib.am_bridge;
+                  is_defined = true;
+                  is_generated = false;
+                  is_objc_instance_method = false;
+                  is_synthetic_method = am.Javalib.am_synthetic;
+                  language = Config.Java;
+                  loc = Location.dummy;
+                  locals = [];
+                  method_annotation;
+                  proc_flags = proc_flags_empty ();
+                  proc_name;
+                  ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
               create {
                 cfg = cfg;
-                name = procname;
-                is_defined = true;
-                ret_type = JTransType.return_type program tenv ms meth_kind;
-                formals = formals;
-                locals = [];
-                captured = [];
-                loc = Sil.dummy_location;
-                proc_attributes = proc_attributes
+                proc_attributes;
               } in
             let start_kind = Cfg.Node.Start_node procdesc in
-            let start_node = Cfg.Node.create cfg Sil.dummy_location start_kind [] procdesc [] in
+            let start_node = Cfg.Node.create cfg Location.dummy start_kind [] procdesc [] in
             let exit_kind = (Cfg.Node.Exit_node procdesc) in
-            let exit_node = Cfg.Node.create cfg Sil.dummy_location exit_kind [] procdesc [] in
+            let exit_node = Cfg.Node.create cfg Location.dummy exit_kind [] procdesc [] in
             Cfg.Node.set_succs_exn start_node [exit_node] [exit_node];
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node
@@ -323,25 +327,26 @@ let create_local_procdesc program linereader cfg tenv node m =
               let proc_attributes =
                 {
                   Sil.access = trans_access cm.Javalib.cm_access;
-                  Sil.exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
-                  Sil.is_abstract = false;
-                  Sil.is_bridge_method = cm.Javalib.cm_bridge;
-                  Sil.is_objc_instance_method = false;
-                  Sil.is_synthetic_method = cm.Javalib.cm_synthetic;
-                  Sil.language = Sil.Java;
-                  Sil.func_attributes = [];
-                  Sil.method_annotation = method_annotation;
-                  Sil.is_generated = false;
+                  captured = [];
+                  exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
+                  formals;
+                  func_attributes = [];
+                  is_abstract = false;
+                  is_bridge_method = cm.Javalib.cm_bridge;
+                  is_defined = false;
+                  is_generated = false;
+                  is_objc_instance_method = false;
+                  is_synthetic_method = cm.Javalib.cm_synthetic;
+                  language = Config.Java;
+                  loc = Location.dummy;
+                  locals = [];
+                  method_annotation;
+                  proc_flags = proc_flags_empty ();
+                  proc_name;
+                  ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
               create {
                 cfg = cfg;
-                name = procname;
-                is_defined = false;
-                ret_type = JTransType.return_type program tenv ms meth_kind;
-                formals = formals;
-                locals = [];
-                captured = [];
-                loc = Sil.dummy_location;
                 proc_attributes = proc_attributes;
               } in
             ()
@@ -350,7 +355,7 @@ let create_local_procdesc program linereader cfg tenv node m =
             let locals, formals = locals_formals program tenv cn impl meth_kind in
             let loc_start =
               let loc = (get_location impl 0 JContext.Normal cn) in
-              fix_method_definition_line linereader procname loc in
+              fix_method_definition_line linereader proc_name loc in
             let loc_exit = (get_location impl (Array.length (JBir.code impl) - 1) JContext.Normal cn) in
             let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
             update_constr_loc cn ms loc_start;
@@ -360,25 +365,26 @@ let create_local_procdesc program linereader cfg tenv node m =
               let proc_attributes =
                 {
                   Sil.access = trans_access cm.Javalib.cm_access;
-                  Sil.exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
-                  Sil.is_abstract = false;
-                  Sil.is_bridge_method = cm.Javalib.cm_bridge;
-                  Sil.is_objc_instance_method = false;
-                  Sil.is_synthetic_method = cm.Javalib.cm_synthetic;
-                  Sil.language = Sil.Java;
-                  Sil.func_attributes = [];
-                  Sil.method_annotation = method_annotation;
-                  Sil.is_generated = false;
+                  captured = [];
+                  exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
+                  formals;
+                  func_attributes = [];
+                  is_abstract = false;
+                  is_bridge_method = cm.Javalib.cm_bridge;
+                  is_defined = true;
+                  is_generated = false;
+                  is_objc_instance_method = false;
+                  is_synthetic_method = cm.Javalib.cm_synthetic;
+                  language = Config.Java;
+                  loc = loc_start;
+                  locals;
+                  method_annotation;
+                  proc_flags = proc_flags_empty ();
+                  proc_name;
+                  ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
               create {
                 cfg = cfg;
-                name = procname;
-                is_defined = true;
-                ret_type = JTransType.return_type program tenv ms meth_kind;
-                formals = formals;
-                locals = locals;
-                captured = [];
-                loc = loc_start;
                 proc_attributes = proc_attributes;
               } in
             let start_kind = Cfg.Node.Start_node procdesc in
@@ -387,13 +393,13 @@ let create_local_procdesc program linereader cfg tenv node m =
             let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc [] in
             let exn_kind = Cfg.Node.exn_sink_kind in
             let exn_node = Cfg.Node.create cfg loc_exit exn_kind [] procdesc [] in
-            JContext.add_exn_node procname exn_node;
+            JContext.add_exn_node proc_name exn_node;
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node;
             Cfg.Node.add_locals_ret_declaration start_node locals;
       with JBir.Subroutine ->
-        L.err "create_local_procdesc raised JBir.Subroutine on %a@." Procname.pp procname in
-    match lookup_procdesc cfg procname with
+        L.err "create_local_procdesc raised JBir.Subroutine on %a@." Procname.pp proc_name in
+    match lookup_procdesc cfg proc_name with
     | Unknown -> create_new_procdesc ()
     | Created defined_status ->
         begin
@@ -410,31 +416,32 @@ let create_external_procdesc program cfg tenv cn ms method_annotation kind =
     | None -> Sil.Tvoid
     | Some vt -> JTransType.value_type program tenv vt in
   let formals = formals_from_signature program tenv cn ms kind in
-  let procname = JTransType.get_method_procname cn ms kind in
+  let proc_name = JTransType.get_method_procname cn ms kind in
   ignore (
     let open Cfg.Procdesc in
     let proc_attributes =
       {
         Sil.access = Sil.Default;
-        Sil.exceptions = [];
-        Sil.is_abstract = false;
-        Sil.is_bridge_method = false;
-        Sil.is_objc_instance_method = false;
-        Sil.is_synthetic_method = false;
-        Sil.language = Sil.Java;
-        Sil.func_attributes = [];
-        Sil.method_annotation = method_annotation;
-        Sil.is_generated = false;
+        captured = [];
+        exceptions = [];
+        formals;
+        func_attributes = [];
+        is_abstract = false;
+        is_bridge_method = false;
+        is_defined = false;
+        is_generated = false;
+        is_objc_instance_method = false;
+        is_synthetic_method = false;
+        language = Config.Java;
+        loc = Location.dummy;
+        locals = [];
+        method_annotation;
+        proc_flags = proc_flags_empty ();
+        proc_name;
+        ret_type = return_type;
       } in
     create {
       cfg = cfg;
-      name = procname;
-      is_defined = false;
-      ret_type = return_type;
-      formals = formals;
-      locals = [];
-      captured = [];
-      loc = Sil.dummy_location;
       proc_attributes = proc_attributes;
     })
 
@@ -848,7 +855,7 @@ let rec instruction context pc instr : translation =
     Cfg.Node.create
       cfg (get_location (JContext.get_impl context) pc meth_kind cn) node_kind sil_instrs (JContext.get_procdesc context) temps in
   let return_not_null () =
-    (match_never_null loc.Sil.file proc_name
+    (match_never_null loc.Location.file proc_name
      || list_exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
   try
     match instr with

@@ -58,13 +58,13 @@ struct
     let new_summ =
       {
         old_summ with
-        Specs.loc = Cfg.Procdesc.get_loc proc_desc;
         Specs.nodes = nodes;
         Specs.payload = Extension.mkpayload final_typestate_opt;
         Specs.attributes =
           {
             old_summ.Specs.attributes with
-            Sil.method_annotation = method_annotation
+            Sil.loc = Cfg.Procdesc.get_loc proc_desc;
+            method_annotation;
           };
       } in
     Specs.add_summary proc_name new_summ

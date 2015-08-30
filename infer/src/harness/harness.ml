@@ -55,7 +55,7 @@ let extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar callb
              * implements. translation always places interfaces at the end of the supertypes list *)
             Mangled.get_mangled (list_hd (list_rev l))
       else typ_str in
-    Mangled.from_string (pretty_typ_str ^ "[line " ^ Sil.loc_to_string loc ^ "]") in
+    Mangled.from_string (pretty_typ_str ^ "[line " ^ Location.to_string loc ^ "]") in
   let create_instrumentation_fields created_flds node instr = match instr with
     | Sil.Call([], Sil.Const (Sil.Cfun callee), args, loc, _) ->
         begin

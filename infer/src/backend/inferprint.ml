@@ -166,7 +166,7 @@ let begin_latex_file fmt =
 
 (** Write proc summary to latex file *)
 let write_summary_latex fname fmt summary =
-  let proc_name = summary.Specs.proc_name in
+  let proc_name = Specs.get_proc_name summary in
   Latex.pp_section fmt ("Analysis of function " ^ (Latex.convert_string (Procname.to_string proc_name)));
   F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary (pe_latex Black) !whole_seconds) summary
 
@@ -206,8 +206,8 @@ let loc_trace_to_jsonbug_record trace_list ekind =
         list_map (fun tag -> { tag = fst tag; value = snd tag }) tags_list in
       let trace_item_to_record trace_item =
         { level = trace_item.Errlog.lt_level;
-          filename = DB.source_file_to_string trace_item.Errlog.lt_loc.Sil.file;
-          line_number = trace_item.Errlog.lt_loc.Sil.line;
+          filename = DB.source_file_to_string trace_item.Errlog.lt_loc.Location.file;
+          line_number = trace_item.Errlog.lt_loc.Location.line;
           description = trace_item.Errlog.lt_description;
           node_tags = node_tags_to_records trace_item.Errlog.lt_node_tags;
         } in
@@ -245,7 +245,7 @@ type summary_val =
 (** compute values from summary data to export to csv and xml format *)
 let summary_values top_proc_set summary =
   let stats = summary.Specs.stats in
-  let proc_name = summary.Specs.proc_name in
+  let proc_name = Specs.get_proc_name summary in
   let is_top = Procname.Set.mem proc_name top_proc_set in
   let signature = Specs.get_signature summary in
   let nodes_nr = list_length summary.Specs.nodes in
@@ -284,10 +284,10 @@ let summary_values top_proc_set summary =
     verr = Errlog.size
         (fun ekind in_footprint -> ekind = Exceptions.Kerror && in_footprint)
         stats.Specs.err_log;
-    vflags = summary.Specs.proc_flags;
-    vfile = DB.source_file_to_string summary.Specs.loc.Sil.file;
-    vline = summary.Specs.loc.Sil.line;
-    vloc = summary.Specs.loc.Sil.nLOC;
+    vflags = summary.Specs.attributes.Sil.proc_flags;
+    vfile = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file;
+    vline = summary.Specs.attributes.Sil.loc.Location.line;
+    vloc = summary.Specs.attributes.Sil.loc.Location.nLOC;
     vtop = if is_top then "Y" else "N";
     vsignature = signature;
     vweight = nodes_nr;
@@ -414,8 +414,8 @@ module BugsCsv = struct
           Escape.escape_csv s in
         let kind = Exceptions.err_kind_string ekind in
         let type_str = Localise.to_string error_name in
-        let procedure_id = Procname.to_filename summary.Specs.proc_name in
-        let filename = DB.source_file_to_string summary.Specs.loc.Sil.file in
+        let procedure_id = Procname.to_filename (Specs.get_proc_name summary) in
+        let filename = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file in
         let always_report =
           match Localise.error_desc_extract_tag_value error_desc "always_report" with
           | "" -> "false"
@@ -428,8 +428,8 @@ module BugsCsv = struct
         pp "%s," type_str;
         pp "\"%s\"," err_desc_string;
         pp "%s," severity;
-        pp "%d," loc.Sil.line;
-        pp "\"%s\"," (Escape.escape_csv (Procname.to_string summary.Specs.proc_name));
+        pp "%d," loc.Location.line;
+        pp "\"%s\"," (Escape.escape_csv (Procname.to_string (Specs.get_proc_name summary)));
         pp "\"%s\"," (Escape.escape_csv procedure_id);
         pp "%s," filename;
         pp "\"%s\"," (Escape.escape_csv trace);
@@ -455,16 +455,16 @@ module BugsJson = struct
       if in_footprint && error_filter error_desc error_name then
         let kind = Exceptions.err_kind_string ekind in
         let bug_type = Localise.to_string error_name in
-        let procedure_id = Procname.to_filename summary.Specs.proc_name in
-        let file = DB.source_file_to_string summary.Specs.loc.Sil.file in
+        let procedure_id = Procname.to_filename (Specs.get_proc_name summary) in
+        let file = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file in
         let bug = {
           bug_class = Exceptions.err_class_string eclass;
           kind = kind;
           bug_type = bug_type;
           qualifier = error_desc_to_plain_string error_desc;
           severity = severity;
-          line = loc.Sil.line;
-          procedure = Procname.to_string summary.Specs.proc_name;
+          line = loc.Location.line;
+          procedure = Procname.to_string (Specs.get_proc_name summary);
           procedure_id = procedure_id;
           file = file;
           bug_trace = loc_trace_to_jsonbug_record ltr ekind;
@@ -511,8 +511,8 @@ module BugsXml = struct
         | None -> "" in
       Io_infer.Xml.create_tree Io_infer.Xml.tag_loc [("num", string_of_int !num)]
         [(level_to_xml lt.Errlog.lt_level);
-         (file_to_xml (DB.source_file_to_string loc.Sil.file));
-         (line_to_xml loc.Sil.line);
+         (file_to_xml (DB.source_file_to_string loc.Location.file));
+         (line_to_xml loc.Location.line);
          (code_to_xml code);
          (description_to_xml lt.Errlog.lt_description);
          (node_tags_to_xml lt.Errlog.lt_node_tags)] in
@@ -537,10 +537,11 @@ module BugsXml = struct
           incr xml_bugs_id;
           let attributes = [("id", string_of_int !xml_bugs_id) ] in
           let error_class = Exceptions.err_class_string eclass in
-          let error_line = string_of_int loc.Sil.line in
-          let procedure_name = Procname.to_string summary.Specs.proc_name in
-          let procedure_id = Procname.to_filename summary.Specs.proc_name in
-          let filename = DB.source_file_to_string summary.Specs.loc.Sil.file in
+          let error_line = string_of_int loc.Location.line in
+          let proc_name = Specs.get_proc_name summary in
+          let procedure_name = Procname.to_string proc_name in
+          let procedure_id = Procname.to_filename proc_name in
+          let filename = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file in
           let bug_hash = get_bug_hash kind type_str procedure_id filename node_key error_desc in
           let forest =
             [
@@ -582,14 +583,14 @@ module CallsCsv = struct
   let pp_calls fname fmt summary =
     let pp x = F.fprintf fmt x in
     let stats = summary.Specs.stats in
-    let caller_name = summary.Specs.proc_name in
+    let caller_name = Specs.get_proc_name summary in
     let do_call (callee_name, loc) trace =
       pp "\"%s\"," (Escape.escape_csv (Procname.to_string caller_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_filename caller_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_string callee_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_filename callee_name));
-      pp "%s," (DB.source_file_to_string summary.Specs.loc.Sil.file);
-      pp "%d," loc.Sil.line;
+      pp "%s," (DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file);
+      pp "%d," loc.Location.line;
       pp "%a@\n" Specs.CallStats.pp_trace trace in
     Specs.CallStats.iter do_call stats.Specs.call_stats
 end
@@ -604,8 +605,10 @@ module UnitTest = struct
     let fmt = F.std_formatter in
     let do_spec spec =
       incr cnt;
-      let c_file = Filename.basename (DB.source_file_to_string summary.Specs.loc.Sil.file) in
-      let code = Autounit.genunit c_file proc_name !cnt summary.Specs.formals spec in
+      let c_file = Filename.basename
+          (DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file) in
+      let code =
+        Autounit.genunit c_file proc_name !cnt (Specs.get_formals summary) spec in
       F.fprintf fmt "%a@." Autounit.pp_code code in
     let specs = Specs.get_specs_from_payload summary in
     list_iter do_spec specs;
@@ -639,7 +642,7 @@ end = struct
   let top_set x =
     Procname.Set.diff x.possible x.impossible
   let process_summary x (_, summary) =
-    let proc_name = summary.Specs.proc_name in
+    let proc_name = Specs.get_proc_name summary in
     let nspecs = list_length (Specs.get_specs_from_payload summary) in
     if nspecs > 0 then
       begin
@@ -678,10 +681,10 @@ module Stats = struct
   }
 
   let process_loc loc stats =
-    try Hashtbl.find stats.files loc.Sil.file
+    try Hashtbl.find stats.files loc.Location.file
     with Not_found ->
-      stats.nLOC <- stats.nLOC + loc.Sil.nLOC;
-      Hashtbl.add stats.files loc.Sil.file ()
+      stats.nLOC <- stats.nLOC + loc.Location.nLOC;
+      Hashtbl.add stats.files loc.Location.file ()
 
   let loc_trace_to_string_list linereader indent_num ltr =
     let res = ref [] in
@@ -701,7 +704,7 @@ module Stats = struct
       let line =
         let pp fmt () =
           if description <> "" then F.fprintf fmt "%s%04s  // %s@\n" (indent_string (level + indent_num)) " " description;
-          F.fprintf fmt "%s%04d: %s" (indent_string (level + indent_num)) loc.Sil.line code in
+          F.fprintf fmt "%s%04d: %s" (indent_string (level + indent_num)) loc.Location.line code in
         pp_to_string pp () in
       res := line :: "" :: !res in
     list_iter loc_to_string ltr;
@@ -718,7 +721,8 @@ module Stats = struct
             stats.nerrors <- stats.nerrors + 1;
             let error_strs =
               let pp1 fmt () = F.fprintf fmt "%d: %s" stats.nerrors type_str in
-              let pp2 fmt () = F.fprintf fmt "  %s:%d" (DB.source_file_to_string loc.Sil.file) loc.Sil.line in
+              let pp2 fmt () = F.fprintf fmt "  %s:%d"
+                  (DB.source_file_to_string loc.Location.file) loc.Location.line in
               let pp3 fmt () = F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc in
               [pp_to_string pp1 (); pp_to_string pp2 (); pp_to_string pp3 ()] in
             let trace = loc_trace_to_string_list linereader 1 ltr in
@@ -740,7 +744,7 @@ module Stats = struct
     if is_verified then stats.nverified <- stats.nverified + 1;
     if is_checked then stats.nchecked <- stats.nchecked + 1;
     if is_defective then stats.ndefective <- stats.ndefective + 1;
-    process_loc summary.Specs.loc stats
+    process_loc summary.Specs.attributes.Sil.loc stats
 
   let num_files stats =
     Hashtbl.length stats.files
@@ -805,7 +809,7 @@ end
 (** Process a summary *)
 let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fname, summary) =
 
-  let proc_name = summary.Specs.proc_name in
+  let proc_name = Specs.get_proc_name summary in
   let base = DB.chop_extension (DB.filename_from_string fname) in
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true;
@@ -814,7 +818,7 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   let error_filter error_desc error_name =
     let always_report () =
       Localise.error_desc_extract_tag_value error_desc "always_report" = "true" in
-    (filters.Inferconfig.path_filter summary.Specs.loc.Sil.file
+    (filters.Inferconfig.path_filter summary.Specs.attributes.Sil.loc.Location.file
      || always_report ()) &&
     filters.Inferconfig.error_filter error_name in
   do_outf procs_csv (fun outf -> F.fprintf outf.fmt "%a" (ProcsCsv.pp_summary fname top_proc_set) summary);
@@ -851,7 +855,9 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
       begin
         let xml_out = ref (create_outfile (DB.filename_to_string xml_file)) in
         do_outf xml_out (fun outf ->
-            Dotty.print_specs_xml (Specs.get_signature summary) specs summary.Specs.loc outf.fmt;
+            Dotty.print_specs_xml
+              (Specs.get_signature summary)
+              specs summary.Specs.attributes.Sil.loc outf.fmt;
             close_outf outf)
       end
   end
@@ -900,8 +906,14 @@ module AnalysisResults = struct
           summaries := (fname, summary) :: !summaries in
     apply_without_gc (list_iter load_file) spec_files_from_cmdline;
     let summ_cmp (fname1, summ1) (fname2, summ2) =
-      let n = DB.source_file_compare summ1.Specs.loc.Sil.file summ2.Specs.loc.Sil.file in
-      if n <> 0 then n else int_compare summ1.Specs.loc.Sil.line summ2.Specs.loc.Sil.line in
+      let n =
+        DB.source_file_compare
+          summ1.Specs.attributes.Sil.loc.Location.file
+          summ2.Specs.attributes.Sil.loc.Location.file in
+      if n <> 0 then n
+      else int_compare
+          summ1.Specs.attributes.Sil.loc.Location.line
+          summ2.Specs.attributes.Sil.loc.Location.line in
     list_sort summ_cmp !summaries
 
   (** Create an iterator which loads spec files one at a time *)

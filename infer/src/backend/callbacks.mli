@@ -32,10 +32,10 @@ type cluster_callback_t =
   unit
 
 (** register a procedure callback *)
-val register_procedure_callback : Sil.language option -> proc_callback_t -> unit
+val register_procedure_callback : Config.language option -> proc_callback_t -> unit
 
 (** register a cluster callback *)
-val register_cluster_callback : Sil.language option -> cluster_callback_t -> unit
+val register_cluster_callback : Config.language option -> cluster_callback_t -> unit
 
 (** un-register all the procedure callbacks currently registered *)
 val unregister_all_callbacks : unit -> unit

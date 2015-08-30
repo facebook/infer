@@ -28,7 +28,7 @@ type 'a ext =
 (** Typestate extended with elements of type 'a. *)
 type 'a t
 
-type range = Sil.typ * TypeAnnotation.t * (Sil.location list)
+type range = Sil.typ * TypeAnnotation.t * (Location.t list)
 
 val add_id : Ident.t -> range -> 'a t -> 'a t
 val add_pvar : Sil.pvar -> range -> 'a t -> 'a t
@@ -39,6 +39,6 @@ val join : 'a ext -> 'a t -> 'a t -> 'a t
 val lookup_id : Ident.t -> 'a t -> range option
 val lookup_pvar : Sil.pvar -> 'a t -> range option
 val pp : 'a ext -> Format.formatter -> 'a t -> unit
-val range_add_locs : range -> (Sil.location list) -> range
+val range_add_locs : range -> (Location.t list) -> range
 val remove_id : Ident.t -> 'a t -> 'a t
 val set_extension : 'a t -> 'a -> 'a t

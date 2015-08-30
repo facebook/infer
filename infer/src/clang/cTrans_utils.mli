@@ -56,15 +56,18 @@ val fix_param_exps_mismatch : 'a list -> (Sil.exp * Sil.typ) list -> (Sil.exp * 
 
 val get_selector_receiver : Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.receiver_kind
 
-val define_condition_side_effects : CContext.t -> (Sil.exp * Sil.typ) list -> Sil.instr list -> Sil.location ->
+val define_condition_side_effects :
+  CContext.t -> (Sil.exp * Sil.typ) list -> Sil.instr list -> Location.t ->
   (Sil.exp * Sil.typ) list * Sil.instr list
 
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
 
 val is_null_stmt : Clang_ast_t.stmt -> bool
 
-val compute_instr_ids_exp_to_parent : Clang_ast_t.stmt_info -> Sil.instr list -> Ident.t list -> (Sil.exp * Sil.typ) list ->
-  Sil.exp -> Sil.typ -> Sil.location -> priority_node -> Sil.instr list * Ident.t list * (Sil.exp * Sil.typ) list
+val compute_instr_ids_exp_to_parent :
+  Clang_ast_t.stmt_info -> Sil.instr list -> Ident.t list -> (Sil.exp * Sil.typ) list ->
+  Sil.exp -> Sil.typ -> Location.t -> priority_node ->
+  Sil.instr list * Ident.t list * (Sil.exp * Sil.typ) list
 
 val get_name_decl_ref_exp_info : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.stmt_info -> string
 
@@ -78,12 +81,13 @@ val is_member_exp : Clang_ast_t.stmt -> bool
 
 val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.qual_type
 
-val cast_operation : CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Sil.location ->
+val cast_operation :
+  CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
   bool -> Ident.t list * Sil.instr list * Sil.exp
 
-val trans_assertion_failure : Sil.location -> CContext.t -> trans_result
+val trans_assertion_failure : Location.t -> CContext.t -> trans_result
 
-val trans_assume_false : Sil.location -> CContext.t -> Cfg.Node.t list ->  trans_result
+val trans_assume_false : Location.t -> CContext.t -> Cfg.Node.t list ->  trans_result
 
 val is_owning_method : Clang_ast_t.stmt -> bool
 
@@ -95,16 +99,19 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 
 val get_decl_ref_info : Clang_ast_t.stmt -> int -> string * int
 
-val builtin_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info ->
+val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Sil.typ -> Procname.t option -> trans_result option
 
-val alloc_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> Sil.typ -> bool -> trans_result
+val alloc_trans :
+  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Sil.typ -> bool -> trans_result
 
-val new_or_alloc_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> string -> string -> trans_result
+val new_or_alloc_trans :
+  trans_state -> Location.t -> Clang_ast_t.stmt_info -> string -> string -> trans_result
 
-val cpp_new_trans : trans_state -> Sil.location -> Clang_ast_t.stmt_info -> Sil.typ -> trans_result
+val cpp_new_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info -> Sil.typ -> trans_result
 
-val cast_trans : CContext.t -> (Sil.exp * Sil.typ) list -> Sil.location -> Procname.t option -> Sil.typ ->
+val cast_trans :
+  CContext.t -> (Sil.exp * Sil.typ) list -> Location.t -> Procname.t option -> Sil.typ ->
   (Ident.t * Sil.instr * Sil.exp) option
 
 (** Module for creating cfg nodes and other utility functions related to them.  *)
@@ -115,12 +122,13 @@ sig
   val need_unary_op_node : Clang_ast_t.unary_operator_info -> bool
 
   val create_node : Cfg.Node.nodekind -> Ident.t list -> Sil.instr list ->
-    Sil.location -> CContext.t -> Cfg.Node.t
+    Location.t -> CContext.t -> Cfg.Node.t
 
   val is_join_node : Cfg.Node.t -> bool
 
-  val create_prune_node : bool -> (Sil.exp * Sil.typ) list -> Ident.t list -> Sil.instr list -> Sil.location -> Sil.if_kind ->
-    CContext.t -> Cfg.Node.t
+  val create_prune_node :
+    bool -> (Sil.exp * Sil.typ) list -> Ident.t list -> Sil.instr list -> Location.t ->
+    Sil.if_kind -> CContext.t -> Cfg.Node.t
 
   val is_prune_node : Cfg.Node.t -> bool
 
@@ -156,14 +164,15 @@ sig
   (* Used for function call and method call. It deals with creating or not   *)
   (* a cfg node depending of owning the priority_node and the nodes returned *)
   (* by the parameters of the call                                           *)
-  val compute_results_to_parent : trans_state -> Sil.location -> string -> Clang_ast_t.stmt_info -> trans_result -> trans_result
+  val compute_results_to_parent :
+    trans_state -> Location.t -> string -> Clang_ast_t.stmt_info -> trans_result -> trans_result
 
 end
 
 (** Module for translating goto instructions by keeping a map of labels. *)
 module GotoLabel :
 sig
-  val find_goto_label : CContext.t -> string -> Sil.location -> Cfg.Node.t
+  val find_goto_label : CContext.t -> string -> Location.t -> Cfg.Node.t
 
   val reset_all_labels : unit -> unit
 
@@ -193,7 +202,8 @@ sig
 
   exception SelfClassException of string
 
-  val add_self_parameter_for_super_instance : CContext.t -> Procname.t -> Sil.location -> Clang_ast_t.obj_c_message_expr_info ->
+  val add_self_parameter_for_super_instance :
+    CContext.t -> Procname.t -> Location.t -> Clang_ast_t.obj_c_message_expr_info ->
     trans_result -> trans_result
 
   val is_var_self : Sil.pvar -> bool -> bool

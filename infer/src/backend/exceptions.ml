@@ -256,8 +256,8 @@ let pp_err (node_id, node_key) loc ekind ex_name desc mloco fmt () =
   let kind = err_kind_string (if ekind = Kinfo then Kwarning else ekind) (* eclipse does not know about infos: treat as warning *) in
   let pp_key fmt k = if print_key then F.fprintf fmt " key: %d " k else () in
   F.fprintf fmt "%s:%d: %s: %a %a%a%a@\n"
-    (DB.source_file_to_string loc.Sil.file)
-    loc.Sil.line
+    (DB.source_file_to_string loc.Location.file)
+    loc.Location.line
     kind
     Localise.pp ex_name
     Localise.pp_error_desc desc

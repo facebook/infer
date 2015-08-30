@@ -38,7 +38,8 @@ let html_formatter = ref F.std_formatter
 
 (** Print information when starting and finishing the processing of a node *)
 module Log_nodes : sig
-  val start_node : int -> Sil.location -> Procname.t -> Cfg.node list -> Cfg.node list -> Cfg.node list -> bool
+  val start_node :
+    int -> Location.t -> Procname.t -> Cfg.node list -> Cfg.node list -> Cfg.node list -> bool
   val finish_node : int -> unit
 end = struct
   let log_files = Hashtbl.create 11
@@ -56,14 +57,32 @@ end = struct
     html_formatter := fmt;
     Hashtbl.replace log_files (node_fname, !DB.current_source) fd;
     if needs_initialization then
-      (F.fprintf fmt "<center><h1>Cfg Node %a</h1></center>" (Io_infer.Html.pp_line_link ~text: (Some (string_of_int nodeid)) [".."]) loc.Sil.line;
-       F.fprintf fmt "PROC: %a LINE:%a\n" (Io_infer.Html.pp_proc_link [".."] proc_name) (Escape.escape_xml (Procname.to_string proc_name)) (Io_infer.Html.pp_line_link [".."]) loc.Sil.line;
+      (F.fprintf fmt "<center><h1>Cfg Node %a</h1></center>"
+         (Io_infer.Html.pp_line_link ~text: (Some (string_of_int nodeid)) [".."])
+         loc.Location.line;
+       F.fprintf fmt "PROC: %a LINE:%a\n"
+         (Io_infer.Html.pp_proc_link [".."] proc_name)
+         (Escape.escape_xml (Procname.to_string proc_name))
+         (Io_infer.Html.pp_line_link [".."]) loc.Location.line;
        F.fprintf fmt "<br>PREDS:@\n";
-       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) preds;
+       list_iter (fun node ->
+           Io_infer.Html.pp_node_link [".."] ""
+             (list_map Cfg.Node.get_id (Cfg.Node.get_preds node))
+             (list_map Cfg.Node.get_id (Cfg.Node.get_succs node))
+             (list_map Cfg.Node.get_id (Cfg.Node.get_exn node))
+             (is_visited node) false fmt (Cfg.Node.get_id node)) preds;
        F.fprintf fmt "<br>SUCCS: @\n";
-       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) succs;
+       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] ""
+                     (list_map Cfg.Node.get_id (Cfg.Node.get_preds node))
+                     (list_map Cfg.Node.get_id (Cfg.Node.get_succs node))
+                     (list_map Cfg.Node.get_id (Cfg.Node.get_exn node))
+                     (is_visited node) false fmt (Cfg.Node.get_id node)) succs;
        F.fprintf fmt "<br>EXN: @\n";
-       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] "" (list_map Cfg.Node.get_id (Cfg.Node.get_preds node)) (list_map Cfg.Node.get_id (Cfg.Node.get_succs node)) (list_map Cfg.Node.get_id (Cfg.Node.get_exn node)) (is_visited node) false fmt (Cfg.Node.get_id node)) exn;
+       list_iter (fun node -> Io_infer.Html.pp_node_link [".."] ""
+                     (list_map Cfg.Node.get_id (Cfg.Node.get_preds node))
+                     (list_map Cfg.Node.get_id (Cfg.Node.get_succs node))
+                     (list_map Cfg.Node.get_id (Cfg.Node.get_exn node))
+                     (is_visited node) false fmt (Cfg.Node.get_id node)) exn;
        F.fprintf fmt "<br>@\n";
        F.pp_print_flush fmt ();
        true
@@ -117,8 +136,8 @@ let force_delayed_print fmt =
       let (jp: Prop.normal Specs.Jprop.t) = Obj.obj jp in
       Specs.Jprop.pp_short pe_default fmt jp
   | (L.PTloc, loc) ->
-      let (loc: Sil.location) = Obj.obj loc in
-      Sil.pp_loc fmt loc
+      let (loc: Location.t) = Obj.obj loc in
+      Location.pp fmt loc
   | (L.PTnode_instrs, b_n) ->
       let (b: bool), (io: Sil.instr option), (n: Cfg.node) = Obj.obj b_n in
       if !Config.write_html then F.fprintf fmt "%a%a%a" Io_infer.Html.pp_start_color Green (Cfg.Node.pp_instr (pe_html Green) io ~sub_instrs: b) n Io_infer.Html.pp_end_color ()
@@ -217,11 +236,14 @@ let force_delayed_prints () =
   Config.forcing_delayed_prints := false
 
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
-let _start_session node (loc: Sil.location) proc_name session =
+let _start_session node (loc: Location.t) proc_name session =
   let node_id = Cfg.Node.get_id node in
   (if Log_nodes.start_node node_id loc proc_name (Cfg.Node.get_preds node) (Cfg.Node.get_succs node) (Cfg.Node.get_exn node)
    then F.fprintf !html_formatter "%a@[<v>%a@]%a" Io_infer.Html.pp_start_color Green (Cfg.Node.pp_instr (pe_html Green) None ~sub_instrs: true) node Io_infer.Html.pp_end_color ());
-  F.fprintf !html_formatter "%a%a" Io_infer.Html.pp_hline () (Io_infer.Html.pp_session_link ~with_name: true [".."]) (node_id, session, loc.Sil.line);
+  F.fprintf !html_formatter "%a%a"
+    Io_infer.Html.pp_hline ()
+    (Io_infer.Html.pp_session_link ~with_name: true [".."])
+    (node_id, session, loc.Location.line);
   F.fprintf !html_formatter "<LISTING>%a" Io_infer.Html.pp_start_color Black
 
 let start_session node loc proc_name session =
@@ -241,7 +263,7 @@ let _proc_write_log whole_seconds cfg pname =
   match Cfg.Procdesc.find_from_name cfg pname with
   | Some pdesc ->
       let nodes = list_sort Cfg.Node.compare (Cfg.Procdesc.get_nodes pdesc) in
-      let linenum = (Cfg.Node.get_loc (list_hd nodes)).Sil.line in
+      let linenum = (Cfg.Node.get_loc (list_hd nodes)).Location.line in
       let fd, fmt =
         Io_infer.Html.create DB.Results_dir.Abs_source_dir [Procname.to_filename pname] in
       F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
@@ -272,10 +294,10 @@ let create_errors_per_line err_log =
     let err_str = Localise.to_string err_name ^ " " ^ (pp_to_string Localise.pp_error_desc desc) in
     (* if in_footprint then *)
     try
-      let set = Hashtbl.find err_per_line loc.Sil.line in
-      Hashtbl.replace err_per_line loc.Sil.line (StringSet.add err_str set)
+      let set = Hashtbl.find err_per_line loc.Location.line in
+      Hashtbl.replace err_per_line loc.Location.line (StringSet.add err_str set)
     with Not_found ->
-      Hashtbl.add err_per_line loc.Sil.line (StringSet.singleton err_str) in
+      Hashtbl.add err_per_line loc.Location.line (StringSet.singleton err_str) in
   Errlog.iter add_err err_log;
   err_per_line
 
@@ -298,7 +320,7 @@ module LineReader : sig
   val from_file_linenum : t -> DB.source_file -> int -> string option
 
   (** get the line from a location looking for the copy of the file in the results dir *)
-  val from_loc : t -> Sil.location -> string option
+  val from_loc : t -> Location.t -> string option
 end = struct
 
   (* map a file name to an array of string, one for each line in the file *)
@@ -349,7 +371,7 @@ end = struct
     from_file_linenum_original hash sourcefile_in_resdir linenum
 
   let from_loc hash loc =
-    from_file_linenum hash loc.Sil.file loc.Sil.line
+    from_file_linenum hash loc.Location.file loc.Location.line
 end
 
 (** Create filename.c.html with line numbers and links to nodes *)
@@ -357,7 +379,7 @@ let c_file_write_html proc_is_active linereader fname tenv cfg =
   let proof_cover = ref Specs.Visitedset.empty in
   let tbl = Hashtbl.create 11 in
   let process_node n =
-    let lnum = (Cfg.Node.get_loc n).Sil.line in
+    let lnum = (Cfg.Node.get_loc n).Location.line in
     let curr_nodes =
       try Hashtbl.find tbl lnum
       with Not_found -> [] in
@@ -367,7 +389,9 @@ let c_file_write_html proc_is_active linereader fname tenv cfg =
   let global_err_log = Errlog.empty () in
   let do_proc proc_name proc_desc = (* add the err_log of this proc to [global_err_log] *)
     let proc_loc = (Cfg.Procdesc.get_loc proc_desc) in
-    if proc_is_active proc_name && Cfg.Procdesc.is_defined proc_desc && (DB.source_file_equal proc_loc.Sil.file !DB.current_source) then
+    if proc_is_active proc_name &&
+       Cfg.Procdesc.is_defined proc_desc &&
+       (DB.source_file_equal proc_loc.Location.file !DB.current_source) then
       begin
         list_iter process_node (Cfg.Procdesc.get_nodes proc_desc);
         match Specs.get_summary proc_name with

@@ -48,7 +48,7 @@ end (* InstrRef *)
 
 type origin_descr =
   string *
-  Sil.location option *
+  Location.t option *
   Annotations.annotated_signature option  (* callee signature *)
 
 type parameter_not_nullable =
@@ -56,7 +56,7 @@ type parameter_not_nullable =
   string * (* description *)
   int * (* parameter number *)
   Procname.t *
-  Sil.location * (* callee location *)
+  Location.t * (* callee location *)
   origin_descr
 
 (** Instance of an error *)
@@ -122,7 +122,7 @@ module H = Hashtbl.Make(struct
           string_equal s1 s2 &&
           int_equal n1 n2 &&
           Procname.equal pn1 pn2 &&
-          Sil.loc_equal cl1 cl2
+          Location.equal cl1 cl2
       | Parameter_annotation_inconsistent _, _
       | _, Parameter_annotation_inconsistent _ -> false
       | Return_annotation_inconsistent (ann1, pn1, od1),
@@ -190,7 +190,7 @@ module H = Hashtbl.Make(struct
   end (* H *))
 
 type err_state = {
-  loc: Sil.location; (** location of the error *)
+  loc: Location.t; (** location of the error *)
   mutable always: bool; (** always fires on its associated node *)
 }
 
@@ -292,10 +292,10 @@ type st_report_error =
   Procname.t ->
   Cfg.Procdesc.t ->
   string ->
-  Sil.location ->
+  Location.t ->
   ?advice: string option ->
   ?field_name: Ident.fieldname option ->
-  ?origin_loc: Sil.location option ->
+  ?origin_loc: Location.t option ->
   ?exception_kind: (string -> Localise.error_desc -> exn) ->
   ?always_report: bool ->
   string ->
@@ -309,14 +309,14 @@ let report_error_now
   let do_print_base ew_string kind_s s =
     L.stdout "%s %s in %s %s@." ew_string kind_s (Procname.java_get_method proc_name) s in
   let do_print ew_string kind_s s =
-    L.stdout "%s:%d " (DB.source_file_to_string loc.Sil.file) loc.Sil.line;
+    L.stdout "%s:%d " (DB.source_file_to_string loc.Location.file) loc.Location.line;
     do_print_base ew_string kind_s s in
   let do_print_demo ew_string kind_s s = (* demo mode print for Eclipse and ocaml plugin *)
     let process_path s = filename_to_relative (Sys.getcwd ()) s in
     L.stdout
       "File %s, line %d, characters 0-10:\n"
-      (process_path (DB.source_file_to_string loc.Sil.file))
-      loc.Sil.line;
+      (process_path (DB.source_file_to_string loc.Location.file))
+      loc.Location.line;
     do_print_base ew_string kind_s s in
 
   let is_err, kind_s, description, advice, field_name, origin_loc = match err_instance with

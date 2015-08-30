@@ -461,7 +461,8 @@ let sym_eval abs e =
         Sil.Const (Sil.Ctuple (list_map eval el))
     | Sil.Const _ ->
         e
-    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, e), _) when Sil.ikind_is_char ik && !Sil.curr_language <> Sil.Java ->
+    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, e), _)
+      when Sil.ikind_is_char ik && !Config.curr_language <> Config.Java ->
         eval e
     | Sil.Sizeof _ ->
         e
@@ -1099,7 +1100,7 @@ let rec create_strexp_of_type tenvo struct_init_mode typ inst =
       let fresh_id =
         (Ident.create_fresh (if !Config.footprint then Ident.kfootprint else Ident.kprimed)) in
       Sil.Var fresh_id in
-    if !Sil.curr_language = Sil.Java && inst = Sil.Ialloc
+    if !Config.curr_language = Config.Java && inst = Sil.Ialloc
     then
       match typ with
       | Sil.Tfloat _ -> Sil.Const (Sil.Cfloat 0.0)

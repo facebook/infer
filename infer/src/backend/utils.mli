@@ -411,7 +411,7 @@ module Escape : sig
 end
 
 
-(** flags for a procedure, these can be set programmatically by __infer_set_flag: see frontend.ml *)
+(** flags for a procedure *)
 type proc_flags = (string, string) Hashtbl.t
 
 (** keys for proc_flags *)

@@ -9,11 +9,11 @@
 
 
 type proc_origin = (** Case Proc *)
-  Procname.t * Sil.location * Annotations.annotated_signature * bool (* is_library *)
+  Procname.t * Location.t * Annotations.annotated_signature * bool (* is_library *)
 
 type t =
-  | Const of Sil.location (** A constant in the source *)
-  | Field of Ident.fieldname * Sil.location (** A field access *)
+  | Const of Location.t (** A constant in the source *)
+  | Field of Ident.fieldname * Location.t (** A field access *)
   | Formal of string (** A formal parameter *)
   | Proc of proc_origin (** A procedure call *)
   | New (** A new object creation *)

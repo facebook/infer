@@ -51,7 +51,7 @@ type failure_stats = {
   mutable node_fail: int; (* number of node failures (i.e. at least one instruction failure) *)
   mutable node_ok: int; (* number of node successes (i.e. no instruction failures) *)
   mutable first_failure :
-    (Sil.location * (int * int) * int * Errlog.loc_trace *
+    (Location.t * (int * int) * int * Errlog.loc_trace *
      (Prop.normal Prop.t) option * exn) option (* exception at the first failure *)
 }
 
@@ -142,9 +142,9 @@ let instrs_normalize instrs =
 let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
   let module M = (* map from (loc,kind) *)
     Map.Make(struct
-      type t = Sil.location * Cfg.Node.nodekind
+      type t = Location.t * Cfg.Node.nodekind
       let compare (loc1, k1) (loc2, k2) =
-        let n = Sil.loc_compare loc1 loc2 in
+        let n = Location.compare loc1 loc2 in
         if n <> 0 then n else Cfg.Node.kind_compare k1 k2
     end) in
 
@@ -283,7 +283,7 @@ let mark_instr_fail pre_opt exn =
 
 type log_issue =
   Procname.t ->
-  ?loc: Sil.location option ->
+  ?loc: Location.t option ->
   ?node_id: (int * int) option ->
   ?session: int option ->
   ?ltr: Errlog.loc_trace option ->

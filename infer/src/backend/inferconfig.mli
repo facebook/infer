@@ -31,7 +31,7 @@ val create_filters : Utils.analyzer -> filters
 
 module NeverReturnNull : sig
   type matcher = DB.source_file -> Procname.t -> bool
-  val load_matcher : Sil.language -> matcher
+  val load_matcher : Config.language -> matcher
 end
 
 (** Load the config file and list the files to report on *)

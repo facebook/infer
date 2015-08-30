@@ -471,7 +471,7 @@ end = struct
     iter_longest_sequence g pos_opt path;
     let compare lt1 lt2 =
       let n = int_compare lt1.Errlog.lt_level lt2.Errlog.lt_level in
-      if n <> 0 then n else Sil.loc_compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc in
+      if n <> 0 then n else Location.compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
     list_remove_irrelevant_duplicates compare relevant (list_rev !trace)
     (* list_remove_duplicates compare (list_sort compare !trace) *)

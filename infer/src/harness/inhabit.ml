@@ -28,12 +28,12 @@ type env = { instrs : Sil.instr list;
              cache : Sil.exp TypMap.t;
              (* set of types currently being inhabited. consult to prevent infinite recursion *)
              cur_inhabiting : TypSet.t;
-             pc : Sil.location;
+             pc : Location.t;
              harness_name : Procname.t }
 
 (** add an instruction to the env, update tmp_vars, and bump the pc *)
 let env_add_instr instr tmp_vars env =
-  let incr_pc pc = { pc with Sil.line = pc.Sil.line + 1 } in
+  let incr_pc pc = { pc with Location.line = pc.Location.line + 1 } in
   { env with instrs = instr :: env.instrs; tmp_vars = tmp_vars @ env.tmp_vars; pc = incr_pc env.pc }
 
 (** call flags for an allocation or call to a constructor *)
@@ -253,7 +253,7 @@ let write_harness_to_file harness_instrs harness_file =
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
   Cg.add_node cg harness_name;
-  let create_dummy_procdesc procname =
+  let create_dummy_procdesc proc_name =
     (* convert a java type string to a type *)
     let rec lookup_typ typ_str = match typ_str with
       | "" | "void" -> Sil.Tvoid
@@ -274,33 +274,34 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
           match Sil.get_typ (Mangled.from_string typ_str) None tenv with
           | Some typ -> typ
           | None -> failwith ("Failed to look up typ " ^ typ_str) in
-    let return_typ = lookup_typ (Procname.java_get_return_type procname) in
-    let params =
-      let param_strs = Procname.java_get_parameters procname in
+    let ret_type = lookup_typ (Procname.java_get_return_type proc_name) in
+    let formals =
+      let param_strs = Procname.java_get_parameters proc_name in
       list_fold_right (fun typ_str params -> ("", lookup_typ typ_str) :: params) param_strs [] in
     let open Cfg.Procdesc in
     let proc_attributes =
       {
         Sil.access = Sil.Default;
-        Sil.exceptions = [];
-        Sil.is_abstract = false;
-        Sil.is_bridge_method = false;
-        Sil.is_objc_instance_method = false;
-        Sil.is_synthetic_method = false;
-        Sil.language = Sil.Java;
-        Sil.func_attributes = [];
-        Sil.method_annotation = Sil.method_annotation_empty;
-        Sil.is_generated = false;
+        captured = [];
+        exceptions = [];
+        formals;
+        func_attributes = [];
+        is_abstract = false;
+        is_defined = false;
+        is_bridge_method = false;
+        is_generated = false;
+        is_objc_instance_method = false;
+        is_synthetic_method = false;
+        language = Config.Java;
+        loc;
+        locals = [];
+        method_annotation = Sil.method_annotation_empty;
+        proc_flags = proc_flags_empty ();
+        proc_name;
+        ret_type;
       } in
     create {
       cfg = harness_cfg;
-      name = procname;
-      is_defined = false;
-      ret_type = return_typ;
-      formals = params;
-      locals = [];
-      captured = [];
-      loc = loc;
       proc_attributes = proc_attributes;
     } in
   list_iter (fun p ->
@@ -334,26 +335,27 @@ let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
     let proc_attributes =
       {
         Sil.access = Sil.Default;
-        Sil.exceptions = [];
-        Sil.is_abstract = false;
-        Sil.is_bridge_method = false;
-        Sil.is_objc_instance_method = false;
-        Sil.is_synthetic_method = false;
-        Sil.language = Sil.Java;
-        Sil.func_attributes = [];
-        Sil.method_annotation = Sil.method_annotation_empty;
-        Sil.is_generated = false;
+        captured = [];
+        exceptions = [];
+        formals = [];
+        func_attributes = [];
+        is_abstract = false;
+        is_bridge_method = false;
+        is_defined = true;
+        is_generated = false;
+        is_objc_instance_method = false;
+        is_synthetic_method = false;
+        language = Config.Java;
+        loc = env.pc;
+        locals = [];
+        method_annotation = Sil.method_annotation_empty;
+        proc_flags = proc_flags_empty ();
+        proc_name = harness_name;
+        ret_type = Sil.Tvoid;
       } in
     create {
       cfg = harness_cfg;
-      name = harness_name;
-      is_defined = true;
-      ret_type = Sil.Tvoid;
-      formals = [];
-      locals = [];
-      captured = [];
-      loc = env.pc;
-      proc_attributes = proc_attributes;
+      proc_attributes;
     } in
   let harness_node =
     (* important to reverse the list or there will be scoping issues! *)
@@ -383,7 +385,7 @@ let inhabit_trace trace cb_flds harness_name proc_file_map tenv = if list_length
     let harness_cfg = Cfg.Node.create_cfg () in
     let harness_file = create_dummy_harness_file harness_name harness_cfg tenv in
     let empty_env =
-      let pc = { Sil.line = 1; col = 1; file = harness_file; nLOC = 0; } in
+      let pc = { Location.line = 1; col = 1; file = harness_file; nLOC = 0; } in
       { instrs = [];
         tmp_vars = [];
         cache = TypMap.empty;

@@ -16,11 +16,11 @@ open Utils
 
 
 type proc_origin =
-  Procname.t * Sil.location * Annotations.annotated_signature * bool (* is_library *)
+  Procname.t * Location.t * Annotations.annotated_signature * bool (* is_library *)
 
 type t =
-  | Const of Sil.location
-  | Field of Ident.fieldname * Sil.location
+  | Const of Location.t
+  | Field of Ident.fieldname * Location.t
   | Formal of string
   | Proc of proc_origin
   | New
@@ -29,12 +29,12 @@ type t =
 
 let equal o1 o2 = match o1, o2 with
   | Const loc1, Const loc2 ->
-      Sil.loc_equal loc1 loc2
+      Location.equal loc1 loc2
   | Const _, _
   | _, Const _ -> false
   | Field (fn1, loc1), Field (fn2, loc2) ->
       Ident.fieldname_equal fn1 fn2 &&
-      Sil.loc_equal loc1 loc2
+      Location.equal loc1 loc2
   | Field _, _
   | _, Field _ -> false
   | Formal s1, Formal s2 ->
@@ -43,7 +43,7 @@ let equal o1 o2 = match o1, o2 with
   | _, Formal _ -> false
   | Proc (pn1, loc1, as1, b1), Proc (pn2, loc2, as2, b2) ->
       Procname.equal pn1 pn2 &&
-      Sil.loc_equal loc1 loc2 &&
+      Location.equal loc1 loc2 &&
       Annotations.equal as1 as2 &&
       bool_equal b1 b2
   | Proc _, _
@@ -70,7 +70,7 @@ let to_string = function
 
 let get_description origin =
   let atline loc =
-    " at line " ^ (string_of_int loc.Sil.line) in
+    " at line " ^ (string_of_int loc.Location.line) in
   match origin with
   | Const loc ->
       Some ("null constant" ^ atline loc, Some loc, None)

@@ -29,7 +29,8 @@ type deref_error =
   | Deref_freed of Sil.res_action (** dereference a freed pointer *)
   | Deref_minusone (** dereference -1 *)
   | Deref_null of Sil.path_pos (** dereference null *)
-  | Deref_undef of Procname.t * Sil.location * Sil.path_pos (** dereference a value coming from the given undefined function *)
+  (** dereference a value coming from the given undefined function *)
+  | Deref_undef of Procname.t * Location.t * Sil.path_pos
   | Deref_undef_exp (** dereference an undefined expression *)
 
 type invalid_res =
@@ -462,7 +463,7 @@ let hpred_star_typing (hpred1 : Sil.hpred) (e2, te2) : Sil.hpred =
 
 (** Implementation of [*] between predicates and typings *)
 let sigma_star_typ (sigma1 : Sil.hpred list) (typings2 : (Sil.exp * Sil.exp) list) : Sil.hpred list =
-  if !Config.Experiment.activate_subtyping_in_cpp || !Sil.curr_language = Sil.Java then
+  if !Config.Experiment.activate_subtyping_in_cpp || !Config.curr_language = Config.Java then
     begin
       let typing_lhs_compare (e1, _) (e2, _) = Sil.exp_compare e1 e2 in
       let sigma1 = list_stable_sort hpred_lhs_compare sigma1 in
@@ -829,7 +830,7 @@ let exe_spec
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
   let posts =
     match ret_ids with
-    | [ret_id] when !Config.idempotent_getters && !Sil.curr_language = Sil.Java ->
+    | [ret_id] when !Config.idempotent_getters && !Config.curr_language = Config.Java ->
         (* if we have seen a previous call to the same function, only use specs whose return value
            is consistent with constraints on the return value of the previous call w.r.t to nullness.
            meant to eliminate false NPE warnings from the common "if (get() != null) get().something()"
@@ -1076,7 +1077,9 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
       res_with_path_idents in
   let should_add_ret_attr _ =
     let is_likely_getter pn = list_length (Procname.java_get_parameters pn) = 0 in
-    !Config.idempotent_getters && !Sil.curr_language = Sil.Java && is_likely_getter callee_pname in
+    !Config.idempotent_getters &&
+    !Config.curr_language = Config.Java &&
+    is_likely_getter callee_pname in
   match ret_ids with
   | [ret_id] when should_add_ret_attr ()->
       (* add attribute to remember what function call a return id came from *)

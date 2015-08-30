@@ -14,8 +14,8 @@ exception ImproperTypeError of string
 exception MalformedMetadata of string
 exception Unimplemented of string
 
-let source_only_location () : Sil.location =
-  let open Sil in { line = -1; col = -1; file = !DB.current_source; nLOC = !Config.nLOC }
+let source_only_location () : Location.t =
+  let open Location in { line = -1; col = -1; file = !DB.current_source; nLOC = !Config.nLOC }
 
 let ident_of_variable (var : LAst.variable) : Ident.t = (* TODO: use unique stamps *)
   Ident.create_normal (Ident.string_to_name (LAst.string_of_variable var)) 0
@@ -41,15 +41,15 @@ let rec trans_typ : LAst.typ -> Sil.typ = function
   | Tmetadata -> raise (ImproperTypeError "Tried to generate Sil type from LLVM metadata type.")
 
 let location_of_annotation_option (metadata : LAst.metadata_map)
-  : LAst.annotation option -> Sil.location = function
+  : LAst.annotation option -> Location.t = function
   | None -> source_only_location () (* no source line/column numbers *)
   | Some (Annotation i) ->
       begin match MetadataMap.find i metadata with
         | Components (TypOperand (_, Const (Cint line_num)) :: _) ->
-            let open Sil in
+            let open Location in
             { line = line_num; col = -1; file = !DB.current_source; nLOC = !Config.nLOC }
         | Location loc ->
-            let open Sil in
+            let open Location in
             { line = loc.line; col = loc.col; file = !DB.current_source; nLOC = !Config.nLOC }
         | _ -> raise (MalformedMetadata ("Instruction annotation refers to metadata node " ^
                                          "without line number as first component."))
@@ -91,7 +91,8 @@ let rec trans_annotated_instructions
               | _ -> raise (ImproperTypeError "Not expecting alloca instruction to a numbered variable.")
             end
         | Call (ret_var, func_var, typed_args) ->
-            let new_sil_instr = Sil.Call ([ident_of_variable ret_var],
+            let new_sil_instr = Sil.Call (
+                [ident_of_variable ret_var],
                 Sil.Const (Sil.Cfun (procname_of_function_variable func_var)),
                 list_map (fun (tp, arg) -> (trans_operand arg, trans_typ tp)) typed_args,
                 location, Sil.cf_default) in
@@ -105,41 +106,45 @@ let callees_of_function_def : LAst.function_def -> Procname.t list = function
         | Call (_, func_var, _) -> Some (procname_of_function_variable func_var)
         | _ -> None
       end in
-      list_flatten_options (list_map
+      list_flatten_options (
+        list_map
           (fun annotated_instr -> callee_of_instruction (fst annotated_instr))
           annotated_instrs)
 
 (* Update CFG and call graph with new function definition *)
 let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
-  (func_def : LAst.function_def) : unit = match func_def with
+    (func_def : LAst.function_def) : unit = match func_def with
     FunctionDef (func_name, ret_tp_opt, params, annotated_instrs) ->
-      let procname = procname_of_function_variable func_name in
+      let proc_name = procname_of_function_variable func_name in
+      let ret_type =
+        match ret_tp_opt with
+        | None -> Sil.Tvoid
+        | Some ret_tp -> trans_typ ret_tp in
       let (proc_attrs : Sil.proc_attributes) =
         let open Sil in
         { access = Sil.Default;
+          captured = [];
           exceptions = [];
+          formals = list_map (fun (tp, name) -> (name, trans_typ tp)) params;
+          func_attributes = [];
           is_abstract = false;
           is_bridge_method = false;
+          is_defined = true; (** is defined and not just declared *)
+          is_generated = false;
           is_objc_instance_method = false;
           is_synthetic_method = false;
-          language = Sil.C_CPP;
-          func_attributes = [];
+          language = Config.C_CPP;
+          loc = source_only_location ();
+          locals = []; (* TODO *)
           method_annotation = Sil.method_annotation_empty;
-          is_generated = false
+          proc_flags = proc_flags_empty ();
+          proc_name;
+          ret_type;
         } in
       let (procdesc_builder : Cfg.Procdesc.proc_desc_builder) =
         let open Cfg.Procdesc in
         { cfg = cfg;
-          name = procname;
-          is_defined = true; (** is defined and not just declared *)
           proc_attributes = proc_attrs;
-          ret_type = (match ret_tp_opt with
-              | None -> Sil.Tvoid
-              | Some ret_tp -> trans_typ ret_tp);
-          formals = list_map (fun (tp, name) -> (name, trans_typ tp)) params;
-          locals = []; (* TODO *)
-          captured = [];
-          loc = source_only_location ()
         } in
       let procdesc = Cfg.Procdesc.create procdesc_builder in
       let start_kind = Cfg.Node.Start_node procdesc in
@@ -148,7 +153,7 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       let exit_node = Cfg.Node.create cfg (source_only_location ()) exit_kind [] procdesc [] in
       let node_of_sil_instr cfg procdesc sil_instr =
         Cfg.Node.create cfg (Sil.instr_get_loc sil_instr) (Cfg.Node.Stmt_node "method_body")
-            [sil_instr] procdesc [] in
+          [sil_instr] procdesc [] in
       let rec link_nodes (start_node : Cfg.Node.t) : Cfg.Node.t list -> unit = function
         (* link all nodes in a chain for now *)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
@@ -159,8 +164,8 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       Cfg.Procdesc.set_exit_node procdesc exit_node;
       link_nodes start_node nodes;
       Cfg.Node.add_locals_ret_declaration start_node locals;
-      Cg.add_node cg procname;
-      list_iter (Cg.add_edge cg procname) (callees_of_function_def func_def)
+      Cg.add_node cg proc_name;
+      list_iter (Cg.add_edge cg proc_name) (callees_of_function_def func_def)
 
 let trans_program : LAst.program -> Cfg.cfg * Cg.t * Sil.tenv = function
     Program (func_defs, metadata) ->

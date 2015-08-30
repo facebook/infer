@@ -193,7 +193,8 @@ struct
   let try_claim_priority_node trans_state stmt_info =
     match trans_state.priority with
     | Free ->
-        Printing.log_out "Priority is free. Locking priority node in %s\n@." stmt_info.Clang_ast_t.si_pointer;
+        Printing.log_out "Priority is free. Locking priority node in %s\n@."
+          stmt_info.Clang_ast_t.si_pointer;
         { trans_state with priority = Busy stmt_info.Clang_ast_t.si_pointer }
     | _ ->
         Printing.log_out "Priority busy in %s. No claim possible\n@." stmt_info.Clang_ast_t.si_pointer;
@@ -704,11 +705,11 @@ let assign_default_params params_stmt class_name_opt stmt ~is_cxx_method =
            (let args = CMethod_signature.ms_get_args callee_ms in
             let args = if is_cxx_method then match args with _::tl -> tl | _ -> assert false
               else args in
-              let replace_default_arg param =
-                match param with
-                | Clang_ast_t.CXXDefaultArgExpr _, (_, _, Some default_instr) ->
-                    default_instr
-                | instr, _ -> instr in
+            let replace_default_arg param =
+              match param with
+              | Clang_ast_t.CXXDefaultArgExpr _, (_, _, Some default_instr) ->
+                  default_instr
+              | instr, _ -> instr in
             try
               let params_args = list_combine params_stmt args in
               list_map replace_default_arg params_args

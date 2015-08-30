@@ -10,33 +10,35 @@
 (** Translate an enumeration declaration by adding it to the tenv and *)
 (** translating the code and adding it to a fake procdesc *)
 
+open Utils
 open CFrontend_utils
 
 let create_empty_procdesc () =
-  let procname = Procname.from_string_c_fun "__INFER_$GLOBAL_VAR_env" in
+  let proc_name = Procname.from_string_c_fun "__INFER_$GLOBAL_VAR_env" in
   let open Cfg.Procdesc in
   let proc_attributes =
     {
       Sil.access = Sil.Default;
-      Sil.exceptions = [];
-      Sil.is_abstract = false;
-      Sil.is_bridge_method = false;
-      Sil.is_objc_instance_method = false;
-      Sil.is_synthetic_method = false;
-      Sil.language = Sil.C_CPP;
-      Sil.func_attributes = [];
-      Sil.method_annotation = Sil.method_annotation_empty;
-      Sil.is_generated = false;
+      captured = [];
+      exceptions = [];
+      formals = [];
+      func_attributes = [];
+      is_abstract = false;
+      is_bridge_method = false;
+      is_defined = false;
+      is_generated = false;
+      is_objc_instance_method = false;
+      is_synthetic_method = false;
+      language = Config.C_CPP;
+      loc = Location.loc_none;
+      locals = [];
+      method_annotation = Sil.method_annotation_empty;
+      proc_flags = proc_flags_empty ();
+      proc_name;
+      ret_type = Sil.Tvoid;
     } in
   create {
     cfg = Cfg.Node.create_cfg ();
-    name = procname;
-    is_defined = false;
-    ret_type = Sil.Tvoid;
-    formals = [];
-    locals = [];
-    captured = [];
-    loc = Sil.loc_none;
     proc_attributes = proc_attributes;
   }
 

@@ -970,7 +970,7 @@ let pp_cfgnode fmt (n: Cfg.Node.t) =
 let print_icfg fmt cfg =
   let print_node node =
     let loc = Cfg.Node.get_loc node in
-    if (!Config.dotty_cfg_libs || DB.source_file_equal loc.Sil.file !DB.current_source) then
+    if (!Config.dotty_cfg_libs || DB.source_file_equal loc.Location.file !DB.current_source) then
       F.fprintf fmt "%a\n" pp_cfgnode node in
   list_iter print_node (Cfg.Node.get_all_nodes cfg)
 
@@ -1353,5 +1353,8 @@ let print_specs_xml signature specs loc fmt =
       specs in
   let xml_specifications = Io_infer.Xml.create_tree "specifications" [] list_of_specs_xml in
   let xml_signature = Io_infer.Xml.create_tree "signature" [("name", signature)] [] in
-  let proc_summary = Io_infer.Xml.create_tree "procedure" [("file", DB.source_file_to_string loc.Sil.file); ("line", string_of_int loc.Sil.line)] [xml_signature; xml_specifications] in
+  let proc_summary = Io_infer.Xml.create_tree "procedure"
+      [("file", DB.source_file_to_string loc.Location.file);
+       ("line", string_of_int loc.Location.line)]
+      [xml_signature; xml_specifications] in
   Io_infer.Xml.pp_document true fmt proc_summary

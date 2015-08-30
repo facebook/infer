@@ -75,9 +75,9 @@ let clang_to_sil_location clang_loc parent_line_number procdesc_opt =
     match procdesc_opt with
     | Some procdesc ->
         let proc_loc = Cfg.Procdesc.get_loc procdesc in
-        if (DB.source_file_equal proc_loc.Sil.file DB.source_file_empty) then
+        if (DB.source_file_equal proc_loc.Location.file DB.source_file_empty) then
           !curr_file, !Config.nLOC
-        else proc_loc.Sil.file, proc_loc.Sil.nLOC
+        else proc_loc.Location.file, proc_loc.Location.nLOC
     | None ->
         match clang_loc.Clang_ast_t.sl_file with
         | Some f ->
@@ -88,14 +88,14 @@ let clang_to_sil_location clang_loc parent_line_number procdesc_opt =
               else -1 in
             file_db, nloc
         | None -> !curr_file, !Config.nLOC in
-  { Sil.line = line; Sil.col = col; Sil.file = file; Sil.nLOC = nLOC }
+  { Location.line = line; Location.col = col; Location.file = file; Location.nLOC = nLOC }
 
 let should_translate_lib source_range =
   if !CFrontend_config.no_translate_libs then
     match source_range with (loc_start, loc_end) ->
       let loc_start = choose_sloc_to_update_curr_file loc_start loc_end in
       let loc = clang_to_sil_location loc_start (-1) None in
-      DB.source_file_equal loc.Sil.file !DB.current_source
+      DB.source_file_equal loc.Location.file !DB.current_source
   else true
 
 let should_translate_enum source_range =
@@ -103,7 +103,7 @@ let should_translate_enum source_range =
     match source_range with (loc_start, loc_end) ->
       let loc_start = choose_sloc_to_update_curr_file loc_start loc_end in
       let loc = clang_to_sil_location loc_start (-1) None in
-      DB.source_file_equal loc.Sil.file !DB.current_source
+      DB.source_file_equal loc.Location.file !DB.current_source
   else true
 
 let get_sil_location_from_range source_range prefer_first =

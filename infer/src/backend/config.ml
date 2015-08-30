@@ -385,3 +385,13 @@ let unsafe_unret = "<\"Unsafe_unretained\">"
 let weak = "<\"Weak\">"
 
 let assign = "<\"Assign\">"
+
+(** Programming language. *)
+type language = C_CPP | Java
+
+(** current language *)
+let curr_language = ref C_CPP
+
+let string_of_language = function
+  | Java -> "Java"
+  | C_CPP -> "C_CPP"

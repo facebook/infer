@@ -295,7 +295,7 @@ val has_dangling_uninit_attribute : 'a t -> exp -> bool
 val add_or_replace_exp_attribute : (Sil.attribute -> Sil.attribute -> unit) -> normal t -> exp -> attribute -> normal t
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
-val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Sil.location ->
+val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Location.t ->
   Sil.path_pos -> normal t
 
 (** Remove an attribute from all the atoms in the heap *)
@@ -350,11 +350,18 @@ val prop_set_footprint : 'a t -> 'b t -> exposed t
 (** Expand PE listsegs if the flag is on. *)
 val prop_expand : normal t -> normal t list
 
-(** translate a logical and/or operation taking care of the non-strict semantics for side effects *)
-val trans_land_lor : Sil.binop -> (Ident.t list * Sil.instr list) * Sil.exp -> (Ident.t list * Sil.instr list) * Sil.exp -> Sil.location -> (Ident.t list * Sil.instr list) * Sil.exp
+(** translate a logical and/or operation
+    taking care of the non-strict semantics for side effects *)
+val trans_land_lor :
+  Sil.binop -> (Ident.t list * Sil.instr list) * Sil.exp ->
+  (Ident.t list * Sil.instr list) * Sil.exp -> Location.t ->
+  (Ident.t list * Sil.instr list) * Sil.exp
 
 (** translate an if-then-else expression *)
-val trans_if_then_else : (Ident.t list * Sil.instr list) * Sil.exp -> (Ident.t list * Sil.instr list) * Sil.exp -> (Ident.t list * Sil.instr list) * Sil.exp -> Sil.location -> (Ident.t list * Sil.instr list) * Sil.exp
+val trans_if_then_else :
+  (Ident.t list * Sil.instr list) * Sil.exp -> (Ident.t list * Sil.instr list) * Sil.exp ->
+  (Ident.t list * Sil.instr list) * Sil.exp -> Location.t ->
+  (Ident.t list * Sil.instr list) * Sil.exp
 
 (** {2 Functions for existentially quantifying and unquantifying variables} *)
 

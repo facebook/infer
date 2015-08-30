@@ -196,11 +196,11 @@ let error_desc_hash desc =
 let error_desc_equal desc1 desc2 = (desc_get_comparable desc1) = (desc_get_comparable desc2)
 
 let _line_tag tags tag loc =
-  let line_str = string_of_int loc.Sil.line in
+  let line_str = string_of_int loc.Location.line in
   Tags.add tags tag line_str;
   let s = "line " ^ line_str in
-  if (loc.Sil.col != -1) then
-    let col_str = string_of_int loc.Sil.col in
+  if (loc.Location.col != -1) then
+    let col_str = string_of_int loc.Location.col in
     s ^ ", column " ^ col_str
   else s
 
@@ -241,7 +241,7 @@ type deref_str =
     problem_str: string; (** description of the problem *) }
 
 let pointer_or_object () =
-  if !Sil.curr_language = Sil.Java then "object" else "pointer"
+  if !Config.curr_language = Config.Java then "object" else "pointer"
 
 let _deref_str_null proc_name_opt _problem_str tags =
   let problem_str = match proc_name_opt with
@@ -466,7 +466,7 @@ let desc_allocation_mismatch alloc dealloc =
       else Tags.dealloc_function, Tags.dealloc_call, Tags.dealloc_line in
     Tags.add tags tag_fun (Procname.to_simplified_string primitive_pname);
     Tags.add tags tag_call (Procname.to_simplified_string called_pname);
-    Tags.add tags tag_line (string_of_int loc.Sil.line);
+    Tags.add tags tag_line (string_of_int loc.Location.line);
     let by_call =
       if Procname.equal primitive_pname called_pname then ""
       else " by call to " ^ Procname.to_simplified_string called_pname in

@@ -438,10 +438,16 @@ let check_assignement_guard node =
         | Cfg.Node.Prune_node(_) -> true
         | _ -> false) succs in
   let succs_same_loc_as_node () =
-    if verbose then (L.d_str ("LOCATION NODE: line: "^(string_of_int l_node.Sil.line)^" nLOC: "^(string_of_int l_node.Sil.nLOC)); L.d_strln " ");
+    if verbose then
+      (L.d_str ("LOCATION NODE: line: " ^ (string_of_int l_node.Location.line) ^
+                " nLOC: " ^ (string_of_int l_node.Location.nLOC));
+       L.d_strln " ");
     list_for_all (fun l ->
-        if verbose then (L.d_str ("LOCATION l: line: "^(string_of_int l.Sil.line)^" nLOC: "^(string_of_int l.Sil.nLOC)); L.d_strln " ");
-        Sil.loc_equal l l_node) succs_loc in
+        if verbose then
+          (L.d_str ("LOCATION l: line: " ^ (string_of_int l.Location.line) ^
+                    " nLOC: " ^ (string_of_int l.Location.nLOC));
+           L.d_strln " ");
+        Location.equal l l_node) succs_loc in
   let succs_have_simple_guards () = (* check that the guards of the succs are a var or its negation *)
     let check_instr = function
       | Sil.Prune (Sil.Var _, _, _, _) -> true
@@ -451,11 +457,17 @@ let check_assignement_guard node =
     let check_guard n =
       list_for_all check_instr (Cfg.Node.get_instrs n) in
     list_for_all check_guard succs in
-  if !Sil.curr_language = Sil.C_CPP && succs_are_all_prune_nodes () && succs_same_loc_as_node () && succs_have_simple_guards () then
+  if !Config.curr_language = Config.C_CPP &&
+     succs_are_all_prune_nodes () &&
+     succs_same_loc_as_node () &&
+     succs_have_simple_guards () then
     (let instr = Cfg.Node.get_instrs node in
      match succs_loc with
      | loc_succ:: _ -> (* at this point all successors are at the same location, so we can take the first*)
-         let set_instr_at_succs_loc = list_filter (fun i -> (Sil.loc_equal (Sil.instr_get_loc i) loc_succ) && is_set_instr i) instr in
+         let set_instr_at_succs_loc =
+           list_filter
+             (fun i -> (Location.equal (Sil.instr_get_loc i) loc_succ) && is_set_instr i)
+             instr in
          (match set_instr_at_succs_loc with
           | [Sil.Set(e, _, _, _)] -> (* we now check if e is the same expression used to prune*)
               if (is_prune_exp e) && not ((node_contains_call node) && (is_cil_tmp e)) && not (is_edg_tmp e) then (
@@ -657,7 +669,7 @@ let compute_visited vset =
   let node_get_all_lines n =
     let node_loc = Cfg.Node.get_loc n in
     let instrs_loc = list_map Sil.instr_get_loc (Cfg.Node.get_instrs n) in
-    let lines = list_map (fun loc -> loc.Sil.line) (node_loc :: instrs_loc) in
+    let lines = list_map (fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
     list_remove_duplicates int_compare (list_sort int_compare lines) in
   let do_node n = res := Specs.Visitedset.add (Cfg.Node.get_id n, node_get_all_lines n) !res in
   Cfg.NodeSet.iter do_node vset;
@@ -680,7 +692,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       (* let () = L.out "@.AFTER abs:@.$%a@." (Prop.pp_prop Utils.pe_text) prop'' in *)
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
-      if !Sil.curr_language = Sil.Java then report_activity_leaks pname (Prop.get_sigma post) tenv;
+      if !Config.curr_language = Config.Java then
+        report_activity_leaks pname (Prop.get_sigma post) tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None
         else Some (Prop.normalize (Prop.prop_sub sub post), path) in
@@ -750,9 +763,9 @@ let create_seed_vars sigma =
 let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Prop.t =
   let sigma_new_formals =
     let do_formal (pv, typ) =
-      let texp = match !Sil.curr_language with
-        | Sil.C_CPP -> Sil.Sizeof (typ, Sil.Subtype.exact)
-        | Sil.Java -> Sil.Sizeof (typ, Sil.Subtype.subtypes) in
+      let texp = match !Config.curr_language with
+        | Config.C_CPP -> Sil.Sizeof (typ, Sil.Subtype.exact)
+        | Config.Java -> Sil.Sizeof (typ, Sil.Subtype.subtypes) in
       Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     list_map do_formal new_formals in
   let sigma_seed =
@@ -970,7 +983,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
 
 let set_current_language cfg proc_desc =
   let language = (Cfg.Procdesc.get_attributes proc_desc).Sil.language in
-  Sil.curr_language := language
+  Config.curr_language := language
 
 (** reset counters before analysing a procedure *)
 let reset_global_counters cfg proc_name proc_desc =
@@ -994,10 +1007,10 @@ let exception_preconditions tenv pname summary =
     | None -> errors
     | Some e -> (pre, e) :: errors in
   let collect_spec errors spec =
-    match !Sil.curr_language with
-    | Sil.Java ->
+    match !Config.curr_language with
+    | Config.Java ->
         list_fold_left (collect_exceptions spec.Specs.pre) errors spec.Specs.posts
-    | Sil.C_CPP ->
+    | Config.C_CPP ->
         list_fold_left (collect_errors spec.Specs.pre) errors spec.Specs.posts in
   list_fold_left collect_spec [] (Specs.get_specs_from_payload summary)
 
@@ -1096,7 +1109,7 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let prev_summary = Specs.get_summary_unsafe proc_name in
   let updated_summary =
     update_summary prev_summary specs proc_name elapsed res in
-  if (!Sil.curr_language <> Sil.Java && Config.report_assertion_failure)
+  if (!Config.curr_language <> Config.Java && Config.report_assertion_failure)
      || !Config.report_runtime_exceptions then
     report_runtime_exceptions tenv cfg proc_desc updated_summary;
   updated_summary
@@ -1214,9 +1227,6 @@ let do_analysis exe_env =
     let pdesc = match Cfg.Procdesc.find_from_name cfg pname with
       | Some pdesc -> pdesc
       | None -> assert false in
-    let ret_type = Cfg.Procdesc.get_ret_type pdesc in
-    let formals = Cfg.Procdesc.get_formals pdesc in
-    let loc = Cfg.Procdesc.get_loc pdesc in
     let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes pdesc) in
     let proc_flags = Cfg.Procdesc.get_flags pdesc in
     let static_err_log = Cfg.Procdesc.get_err_log pdesc in (** err log from translation *)
@@ -1226,7 +1236,7 @@ let do_analysis exe_env =
 
     Callbacks.proc_inline_synthetic_methods cfg pdesc;
     Specs.init_summary
-      (pname, ret_type, formals, dep, loc, nodes, proc_flags,
+      (dep, nodes, proc_flags,
        static_err_log, calls, cyclomatic, None, attributes) in
   let filter =
     if !Config.only_skips then (filter_skipped_procs cg procs_and_defined_children)

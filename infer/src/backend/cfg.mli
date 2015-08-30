@@ -33,14 +33,7 @@ module Procdesc : sig
 
   type proc_desc_builder =
     { cfg : cfg;
-      name: Procname.t;
-      is_defined : bool; (** is defined and not just declared *)
       proc_attributes : Sil.proc_attributes;
-      ret_type : Sil.typ; (** return type *)
-      formals : (string * Sil.typ) list;
-      locals : (Mangled.t * Sil.typ) list;
-      captured : (Mangled.t * Sil.typ) list; (** variables captured in an ObjC block *)
-      loc : Sil.location;
     }
 
   (** Create a procdesc *)
@@ -70,7 +63,7 @@ module Procdesc : sig
   val get_formals : t -> (string * Sil.typ) list
 
   (** Return loc information for the procedure *)
-  val get_loc : t -> Sil.location
+  val get_loc : t -> Location.t
 
   (** Return name and type of local variables *)
   val get_locals : t -> (Mangled.t * Sil.typ) list
@@ -102,7 +95,7 @@ module Procdesc : sig
   val iter_nodes : (node -> unit) -> t -> unit
 
   (** iterate over the calls from the procedure: (callee,location) pairs *)
-  val iter_calls : ((Procname.t * Sil.location) -> unit) -> t -> unit
+  val iter_calls : ((Procname.t * Location.t) -> unit) -> t -> unit
 
   (** iterate over all nodes and their instructions *)
   val iter_instrs : (node -> Sil.instr -> unit) -> t -> unit
@@ -173,7 +166,7 @@ module Node : sig
   (** [create cfg loc kind instrs proc_desc temps] create a new cfg node
       with the given location, kind, list of instructions,
       procdesc and list of temporary variables *)
-  val create : cfg -> Sil.location -> nodekind -> Sil.instr list -> Procdesc.t -> Ident.t list -> t
+  val create : cfg -> Location.t -> nodekind -> Sil.instr list -> Procdesc.t -> Ident.t list -> t
 
   (** create a new empty cfg *)
   val create_cfg : unit -> cfg
@@ -206,10 +199,10 @@ module Node : sig
   val get_id : t -> int
 
   (** Get the source location of the node *)
-  val get_loc : t -> Sil.location
+  val get_loc : t -> Location.t
 
   (** Get the source location of the last instruction in the node *)
-  val get_last_loc : t -> Sil.location
+  val get_last_loc : t -> Location.t
 
   (** Get the kind of the current node *)
   val get_kind : t -> nodekind
@@ -263,7 +256,7 @@ module Node : sig
   val set_kind : t -> nodekind -> unit
 
   (** Set the source location of the node *)
-  val set_loc : t -> Sil.location -> unit
+  val set_loc : t -> Location.t -> unit
 
   (** Set the proc desc associated to the node *)
   val set_proc_desc : t -> Procdesc.t -> unit
@@ -287,9 +280,6 @@ val pp_node_list : Format.formatter -> Node.t list -> unit
 
 (** Iterate over all the procdesc's *)
 val iter_proc_desc : cfg -> (Procname.t -> Procdesc.t -> unit) -> unit
-
-(** Iterate over all the types (and subtypes) in the CFG *)
-val iter_types : cfg -> (Sil.typ -> unit) -> unit
 
 (** Get all the procedures (defined and declared) *)
 val get_all_procs : cfg -> Procdesc.t list

@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Symbolic Execution *)
 
@@ -116,7 +116,9 @@ let rec apply_offlist
   match offlist, strexp with
   | [], Sil.Eexp (e, inst_curr) ->
       let inst_is_uninitialized = function
-        | Sil.Ialloc -> !Sil.curr_language <> Sil.Java (* java allocation initializes with default values *)
+        | Sil.Ialloc ->
+            (* java allocation initializes with default values *)
+            !Config.curr_language <> Config.Java
         | Sil.Iinitial -> true
         | _ -> false in
       let is_hidden_field () =
@@ -326,7 +328,7 @@ module Builtin = struct
   type ret_typ = (Prop.normal Prop.t * Paths.Path.t) list
   type sym_exe_builtin =
     Cfg.cfg -> Cfg.Procdesc.t -> Sil.instr -> Sil.tenv -> Prop.normal Prop.t -> Paths.Path.t ->
-    Ident.t list -> (Sil.exp * Sil.typ) list -> Procname.t -> Sil.location -> ret_typ
+    Ident.t list -> (Sil.exp * Sil.typ) list -> Procname.t -> Location.t -> ret_typ
 
   (* builtin function names for which we do symbolic execution *)
   let builtin_functions = Procname.Hash.create 4
@@ -644,18 +646,13 @@ let proc_desc_copy cfg pdesc pname pname' =
          let open Cfg.Procdesc in
          create {
            cfg = cfg;
-           name = pname';
-           proc_attributes = Sil.copy_proc_attributes (get_attributes pdesc);
-           is_defined = is_defined pdesc;
-           ret_type = get_ret_type pdesc;
-           formals = get_formals pdesc;
-           locals = get_locals pdesc;
-           captured = get_captured pdesc;
-           loc = get_loc pdesc;
+           proc_attributes =
+             { (Sil.copy_proc_attributes (get_attributes pdesc)) with
+               Sil.proc_name = pname'; };
          })
 
 let method_exists right_proc_name methods =
-  if !Sil.curr_language = Sil.Java then
+  if !Config.curr_language = Config.Java then
     list_exists (fun meth_name -> Procname.equal right_proc_name meth_name) methods
   else (* ObjC case *)
     Specs.summary_exists right_proc_name
@@ -784,9 +781,9 @@ let call_constructor_url_update_args tenv cfg pname actual_params =
 
 (** Handles certain method calls in a special way *)
 let handle_special_cases_call tenv cfg pname actual_params =
-  if (!Sil.curr_language = Sil.Java) then
+  if (!Config.curr_language = Config.Java) then
     pname, (call_constructor_url_update_args tenv cfg pname actual_params)
-  else if (!Sil.curr_language = Sil.C_CPP) then
+  else if (!Config.curr_language = Config.C_CPP) then
     (redirect_shared_ptr tenv cfg pname actual_params), actual_params
   else pname, actual_params
 
@@ -964,7 +961,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
           false cfg pdesc tenv prop path
           ret_ids ret_typ_opt n_actual_params resolved_pname loc in
       let sentinel_result =
-        if !Sil.curr_language = Sil.C_CPP then
+        if !Config.curr_language = Config.C_CPP then
           sym_exe_check_variadic_sentinel_if_present cfg pdesc tenv prop_r path actual_params callee_pname loc
         else [(prop_r, path)] in
       let do_call (prop, path) =
@@ -1206,7 +1203,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
         | _ -> false)
       actual_pars in
   (* in Java, assume that skip functions close resources passed as params *)
-  let pre' = if !Sil.curr_language = Sil.Java then remove_file_attribute pre else pre in
+  let pre' = if !Config.curr_language = Config.Java then remove_file_attribute pre else pre in
   let pre'' = add_constraints_on_retval pdesc pre' ret_ids ret_type_option callee_pname in
   let pre''' = add_constraints_on_actuals_by_ref pre'' actuals_by_ref callee_pname in
   if is_scan (* if scan function, don't mark anything with undef attributes *)
@@ -1294,7 +1291,11 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
       match actual_pars, formal_types with
       | [], [] -> actual_pars
       | (e, t_e):: etl', t:: tl' ->
-          (e, if (!Config.Experiment.activate_subtyping_in_cpp || !Sil.curr_language = Sil.Java) then t_e else t) :: comb etl' tl'
+          (e,
+           if
+             (!Config.Experiment.activate_subtyping_in_cpp ||
+              !Config.curr_language = Config.Java)
+           then t_e else t) :: comb etl' tl'
       | _,[] ->
           if !Config.developer_mode then Errdesc.warning_err (State.get_loc ()) "likely use of variable-arguments function, or function prototype missing@.";
           L.d_warning "likely use of variable-arguments function, or function prototype missing"; L.d_ln();
@@ -1315,7 +1316,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
     check_return_value_ignored ();
     (* In case we call an objc instance method we add and extra spec *)
     (* were the receiver is null and the semantics of the call is nop*)
-    if (!Sil.curr_language <> Sil.Java) && !Config.objc_method_call_semantics &&
+    if (!Config.curr_language <> Config.Java) && !Config.objc_method_call_semantics &&
        (Specs.get_attributes summary).Sil.is_objc_instance_method then
       handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path
     else  (* non-objective-c method call. Standard tabulation *)
@@ -1447,7 +1448,7 @@ module ModelBuiltins = struct
     Sil.Earray (size, [], Sil.inst_none)
 
   let extract_array_type typ =
-    if (!Sil.curr_language = Sil.Java) then
+    if (!Config.curr_language = Config.Java) then
       match typ with
       | Sil.Tptr ( Sil.Tarray (typ', _), _) -> Some typ'
       | _ -> None
@@ -2237,7 +2238,6 @@ module ModelBuiltins = struct
   let __get_array_size = Builtin.register "__get_array_size" execute___get_array_size (* return the size of the array passed as a parameter *)
   let _ = Builtin.register "__get_hidden_field" execute___get_hidden_field   (* return the value of a hidden field in the struct *)
   let __get_type_of = Builtin.register "__get_type_of" execute___get_type_of (* return the get the type of the allocated object passed as a parameter *)
-  let _ = Builtin.register "__infer_set_flag" execute_skip (** NOTE: __infer_set_flag should have been handled in the translation already (see frontend.ml) *)
   let __instanceof = Builtin.register "__instanceof" execute___instanceof (** [__instanceof(val,typ)] implements java's [val instanceof typ] *)
   let __cast = Builtin.register "__cast" execute___cast (** [__cast(val,typ)] implements java's [typ(val)] *)
   let __new = Builtin.register "__new" (execute_alloc Sil.Mnew false) (* like malloc, but always succeeds *)

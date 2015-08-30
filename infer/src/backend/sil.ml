@@ -31,40 +31,8 @@ type method_annotation =
 type func_attribute =
   | FA_sentinel of int * int (** __attribute__((sentinel(int, int))) *)
 
-(** Programming language. *)
-type language = C_CPP | Java
-
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected
-
-(** Attributes of a procedure. *)
-type proc_attributes =
-  {
-    access : access; (** visibility access *)
-    exceptions : string list; (** exceptions thrown by the procedure *)
-    is_abstract : bool; (** the procedure is abstract *)
-    mutable is_bridge_method : bool; (** the procedure is a bridge method *)
-    is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
-    mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
-    language : language;
-    func_attributes : func_attribute list;
-    method_annotation : method_annotation;
-    is_generated : bool;
-  }
-
-let copy_proc_attributes pa =
-  {
-    access = pa.access;
-    exceptions = pa.exceptions;
-    is_abstract = pa.is_abstract;
-    is_bridge_method = pa.is_bridge_method;
-    is_objc_instance_method = pa.is_objc_instance_method;
-    is_synthetic_method = pa.is_synthetic_method;
-    language = pa.language;
-    func_attributes = pa.func_attributes;
-    method_annotation = pa.method_annotation;
-    is_generated = pa.is_generated;
-  }
 
 (** Compare function for annotations. *)
 let annotation_compare a1 a2 =
@@ -120,9 +88,6 @@ let get_sentinel_func_attribute_value attr_list =
     | FA_sentinel (sentinel, null_pos) -> Some (sentinel, null_pos)
   with Not_found -> None
 
-(** current language *)
-let curr_language = ref C_CPP
-
 (** Class, struct, union, (Obj C) protocol *)
 type csu =
   | Class
@@ -136,27 +101,12 @@ type typename =
   | TN_enum of Mangled.t
   | TN_csu of csu * Mangled.t
 
-(** Location in the original source file *)
-type location = {
-  line: int; (** The line number. -1 means "do not know" *)
-  col: int; (** The column number. -1 means "do not know" *)
-  file: DB.source_file; (** The name of the source file *)
-  nLOC : int; (** Lines of code in the source file *)
-}
-
-let dummy_location = {
-  line = -1;
-  col = -1;
-  file = DB.source_file_empty;
-  nLOC = -1
-}
-
 (** Kind of global variables *)
 type pvar_kind =
   | Local_var of Procname.t (** local variable belonging to a function *)
   | Callee_var of Procname.t (** local variable belonging to a callee *)
-  | Abducted_retvar of Procname.t * location (** synthetic variable to represent return value *)
-  | Abducted_ref_param of Procname.t * pvar * location
+  | Abducted_retvar of Procname.t * Location.t (** synthetic variable to represent return value *)
+  | Abducted_ref_param of Procname.t * pvar * Location.t
   (** synthetic variable to represent param passed by reference *)
   | Global_var (** gloval variable *)
   | Seed_var (** variable used to store the initial value of formal parameters *)
@@ -639,14 +589,14 @@ type dexp =
   | Dconst of const
   | Dsizeof of typ * Subtype.t
   | Dderef of dexp
-  | Dfcall of dexp * dexp list * location * call_flags
+  | Dfcall of dexp * dexp list * Location.t * call_flags
   | Darrow of dexp * Ident.fieldname
   | Ddot of dexp * Ident.fieldname
   | Dpvar of pvar
   | Dpvaraddr of pvar
   | Dunop of unop * dexp
   | Dunknown
-  | Dretcall of dexp * dexp list * location * call_flags
+  | Dretcall of dexp * dexp list * Location.t * call_flags
 
 (** Value paths: identify an occurrence of a value in a symbolic heap
     each expression represents a path, with Dpvar being the simplest one *)
@@ -658,7 +608,7 @@ and res_action =
   { ra_kind : res_act_kind; (** kind of action *)
     ra_res : resource; (** kind of resource *)
     ra_pname : Procname.t; (** name of the procedure used to acquire/release the resource *)
-    ra_loc : location; (** location of the acquire/release *)
+    ra_loc : Location.t; (** location of the acquire/release *)
     ra_vpath: vpath; (** vpath of the resource value *)
   }
 
@@ -667,12 +617,16 @@ and attribute =
   | Aresource of res_action (** resource acquire/release *)
   | Aautorelease
   | Adangling of dangling_kind (** dangling pointer *)
-  | Aundef of Procname.t * location * path_pos (** undefined value obtained by calling the given procedure *)
+  (** undefined value obtained by calling the given procedure *)
+  | Aundef of Procname.t * Location.t * path_pos
   | Ataint
   | Auntaint
-  | Adiv0 of path_pos (** value appeared in second argument of division in path position *)
-  | Aobjc_null of exp (** the exp. is null because of a call to a method with exp as a null receiver *)
-  | Aretval of Procname.t (** value was returned from a call to the given procedure *)
+  (** value appeared in second argument of division at given path position *)
+  | Adiv0 of path_pos
+  (** the exp. is null because of a call to a method with exp as a null receiver *)
+  | Aobjc_null of exp
+  (** value was returned from a call to the given procedure *)
+  | Aretval of Procname.t
 
 (** Categories of attributes *)
 and attribute_category =
@@ -724,9 +678,50 @@ and exp =
   | Lindex of exp * exp (** an array index offset: exp1[exp2] *)
   | Sizeof of typ * Subtype.t (** a sizeof expression *)
 
-(** Unknown location *)
-let loc_none =
-  { line = - 1; col = - 1; file = DB.source_file_empty; nLOC = 0 }
+(** Attributes of a procedure. *)
+type proc_attributes =
+  {
+    access : access; (** visibility access *)
+    captured : (Mangled.t * typ) list; (** name and type of variables captured in blocks *)
+    exceptions : string list; (** exceptions thrown by the procedure *)
+    formals : (string * typ) list; (** name and type of formal parameters *)
+    func_attributes : func_attribute list;
+    is_abstract : bool; (** the procedure is abstract *)
+    mutable is_bridge_method : bool; (** the procedure is a bridge method *)
+    is_defined : bool; (** true if the procedure is defined, and not just declared *)
+    is_generated : bool; (** the procedure has been generated *)
+    is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
+    mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
+    language : Config.language; (** language of the procedure *)
+    loc : Location.t; (** location of this procedure in the source code *)
+    mutable locals : (Mangled.t * typ) list; (** name and type of local variables *)
+    method_annotation : method_annotation; (** annotations for java methods *)
+    proc_flags : proc_flags; (** flags of the procedure *)
+    proc_name : Procname.t; (** name of the procedure *)
+    ret_type : typ; (** return type *)
+  }
+
+let copy_proc_attributes pa =
+  {
+    access = pa.access;
+    captured = pa.captured;
+    exceptions = pa.exceptions;
+    formals = pa.formals;
+    func_attributes = pa.func_attributes;
+    is_abstract = pa.is_abstract;
+    is_bridge_method = pa.is_bridge_method;
+    is_defined = pa.is_defined;
+    is_generated = pa.is_generated;
+    is_objc_instance_method = pa.is_objc_instance_method;
+    is_synthetic_method = pa.is_synthetic_method;
+    language = pa.language;
+    loc = pa.loc;
+    locals = pa.locals;
+    method_annotation = pa.method_annotation;
+    proc_flags = pa.proc_flags;
+    proc_name = pa.proc_name;
+    ret_type = pa.ret_type;
+  }
 
 (** Kind of prune instruction *)
 type if_kind =
@@ -746,18 +741,25 @@ type stackop =
 
 (** An instruction. *)
 type instr =
-  | Letderef of Ident.t * exp * typ * location (** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] *)
-  | Set of exp * typ * exp * location (** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] *)
-  | Prune of exp * location * bool * if_kind (** prune the state based on [exp=1], the boolean indicates whether true branch *)
-  | Call of Ident.t list * exp * (exp * typ) list * location * call_flags
+  (** declaration [let x = *lexp:typ] where [typ] is the root type of [lexp] *)
+  | Letderef of Ident.t * exp * typ * Location.t
+  (** assignment [*lexp1:typ = exp2] where [typ] is the root type of [lexp1] *)
+  | Set of exp * typ * exp * Location.t
+  (** prune the state based on [exp=1], the boolean indicates whether true branch *)
+  | Prune of exp * Location.t * bool * if_kind
   (** [Call (ret_id1..ret_idn, e_fun, arg_ts, loc, call_flags)] represents an instructions
-      [ret_id1..ret_idn = e_fun(arg_ts);] where n = 0 for void return and n > 1 for struct return *)
-  | Nullify of pvar * location * bool (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
-  | Abstract of location (** apply abstraction *)
-  | Remove_temps of Ident.t list * location (** remove temporaries *)
-  | Stackop of stackop * location (** operation on the stack of propsets *)
-  | Declare_locals of (pvar * typ) list * location (** declare local variables *)
-  | Goto_node of exp * location (** jump to a specific cfg node, assuming all the possible target nodes are successors of the current node *)
+      [ret_id1..ret_idn = e_fun(arg_ts);]
+      where n = 0 for void return and n > 1 for struct return *)
+  | Call of Ident.t list * exp * (exp * typ) list * Location.t * call_flags
+  (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
+  | Nullify of pvar * Location.t * bool
+  | Abstract of Location.t (** apply abstraction *)
+  | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
+  | Stackop of stackop * Location.t (** operation on the stack of propsets *)
+  | Declare_locals of (pvar * typ) list * Location.t (** declare local variables *)
+  (** jump to a specific cfg node,
+      assuming all the possible target nodes are successors of the current node *)
+  | Goto_node of exp * Location.t
 
 (** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 let instr_is_auxiliary = function
@@ -944,13 +946,6 @@ let is_static_local_name pname pvar = (* local static name is of the form procna
   | [s1; s2] -> true
   | _ -> false
 
-let loc_compare loc1 loc2 =
-  let n = int_compare loc1.line loc2.line in
-  if n <> 0 then n else DB.source_file_compare loc1.file loc2.file
-
-let loc_equal loc1 loc2 =
-  loc_compare loc1 loc2 = 0
-
 let rec pv_kind_compare k1 k2 = match k1, k2 with
   | Local_var n1, Local_var n2 -> Procname.compare n1 n2
   | Local_var _, _ -> - 1
@@ -960,14 +955,14 @@ let rec pv_kind_compare k1 k2 = match k1, k2 with
   | _, Callee_var _ -> 1
   | Abducted_retvar (p1, l1), Abducted_retvar (p2, l2) ->
       let n = Procname.compare p1 p2 in
-      if n <> 0 then n else loc_compare l1 l2
+      if n <> 0 then n else Location.compare l1 l2
   | Abducted_retvar _, _ -> - 1
   | _, Abducted_retvar _ -> 1
   | Abducted_ref_param (p1, pv1, l1), Abducted_ref_param (p2, pv2, l2) ->
       let n = Procname.compare p1 p2 in
       if n <> 0 then n else
         let n = pvar_compare pv1 pv2 in
-        if n <> 0 then n else loc_compare l1 l2
+        if n <> 0 then n else Location.compare l1 l2
   | Abducted_ref_param _, _ -> - 1
   | _, Abducted_ref_param _ -> 1
   | Global_var, Global_var -> 0
@@ -1770,19 +1765,6 @@ let str_binop pe binop =
   | _ ->
       text_binop binop
 
-(** Pretty print a location *)
-let pp_loc f (loc: location) =
-  F.fprintf f "[line %d]" loc.line
-
-let loc_to_string loc =
-  let s = (string_of_int loc.line) in
-  if (loc.col != -1) then
-    s ^":"^(string_of_int loc.col)
-  else s
-
-(** Dump a location *)
-let d_loc (loc: location) = L.add_print_action (L.PTloc, Obj.repr loc)
-
 let rec _pp_pvar f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
@@ -1794,10 +1776,10 @@ let rec _pp_pvar f pv =
       else F.fprintf f "%a$%a|callee" Procname.pp n Mangled.pp name
   | Abducted_retvar (n, l) ->
       if !Config.pp_simple then F.fprintf f "%a|abductedRetvar" Mangled.pp name
-      else F.fprintf f "%a$%a%a|abductedRetvar" Procname.pp n pp_loc l Mangled.pp name
+      else F.fprintf f "%a$%a%a|abductedRetvar" Procname.pp n Location.pp l Mangled.pp name
   | Abducted_ref_param (n, pv, l) ->
       if !Config.pp_simple then F.fprintf f "%a|%a|abductedRefParam" _pp_pvar pv Mangled.pp name
-      else F.fprintf f "%a$%a%a|abductedRefParam" Procname.pp n pp_loc l Mangled.pp name
+      else F.fprintf f "%a$%a%a|abductedRefParam" Procname.pp n Location.pp l Mangled.pp name
   | Global_var -> F.fprintf f "#GB$%a" Mangled.pp name
   | Seed_var -> F.fprintf f "old_%a" Mangled.pp name
 
@@ -1892,7 +1874,7 @@ let ptr_kind_string = function
   | Pk_objc_unsafe_unretained -> "__unsafe_unretained *"
   | Pk_objc_autoreleasing -> "__autoreleasing *"
 
-let java () = !curr_language = Java
+let java () = !Config.curr_language = Config.Java
 let eradicate_java () = !Config.eradicate && java ()
 
 (** convert a dexp to a string *)
@@ -1988,7 +1970,8 @@ and attribute_to_string pe = function
         if !Config.trace_error
         then pp_to_string (pp_vpath pe) ra.ra_vpath
         else "" in
-      name ^ (str_binop pe Lt) ^ Procname.to_string ra.ra_pname ^ ":" ^ (string_of_int ra.ra_loc.line) ^ (str_binop pe Gt) ^ str_vpath
+      name ^ (str_binop pe Lt) ^ Procname.to_string ra.ra_pname ^ ":" ^
+      (string_of_int ra.ra_loc.Location.line) ^ (str_binop pe Gt) ^ str_vpath
   | Aautorelease -> "AUTORELEASE"
   | Adangling dk ->
       let dks = match dk with
@@ -1996,7 +1979,9 @@ and attribute_to_string pe = function
         | DAaddr_stack_var -> "ADDR_STACK"
         | DAminusone -> "MINUS1" in
       "DANGL" ^ (str_binop pe Lt) ^ dks ^ (str_binop pe Gt)
-  | Aundef (pn, loc, _) -> "UND" ^ (str_binop pe Lt) ^ Procname.to_string pn ^ (str_binop pe Gt) ^ ":" ^ (string_of_int loc.line)
+  | Aundef (pn, loc, _) ->
+      "UND" ^ (str_binop pe Lt) ^ Procname.to_string pn ^
+      (str_binop pe Gt) ^ ":" ^ (string_of_int loc.Location.line)
   | Ataint -> "TAINTED"
   | Auntaint -> "UNTAINTED"
   | Adiv0 (pn, nd_id) -> "DIV0"
@@ -2207,33 +2192,47 @@ let pp_call_flags f cf =
 let pp_instr pe0 f instr =
   let pe, changed = color_pre_wrapper pe0 f instr in
   (match instr with
-   | Letderef (id, e, t, loc) -> F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp pe) e (pp_typ pe) t pp_loc loc
-   | Set (e1, t, e2, loc) -> F.fprintf f "*%a:%a=%a %a" (pp_exp pe) e1 (pp_typ pe) t (pp_exp pe) e2 pp_loc loc
+   | Letderef (id, e, t, loc) ->
+       F.fprintf f "%a=*%a:%a %a"
+         (Ident.pp pe) id
+         (pp_exp pe) e
+         (pp_typ pe) t
+         Location.pp loc
+   | Set (e1, t, e2, loc) ->
+       F.fprintf f "*%a:%a=%a %a"
+         (pp_exp pe) e1
+         (pp_typ pe) t
+         (pp_exp pe) e2
+         Location.pp loc
    | Prune (cond, loc, true_branch, ik) ->
-       F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch pp_loc loc
+       F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch Location.pp loc
    | Call (ret_ids, e, arg_ts, loc, cf) ->
        (match ret_ids with
         | [] -> ()
         | _ -> F.fprintf f "%a=" (pp_comma_seq (Ident.pp pe)) ret_ids);
-       F.fprintf f "%a(%a)%a %a" (pp_exp pe) e (pp_comma_seq (pp_exp_typ pe)) (arg_ts) pp_call_flags cf pp_loc loc
+       F.fprintf f "%a(%a)%a %a"
+         (pp_exp pe) e
+         (pp_comma_seq (pp_exp_typ pe)) (arg_ts)
+         pp_call_flags cf
+         Location.pp loc
    | Nullify (pvar, loc, deallocate) ->
-       F.fprintf f "NULLIFY(%a,%b); %a" (pp_pvar pe) pvar deallocate pp_loc loc
+       F.fprintf f "NULLIFY(%a,%b); %a" (pp_pvar pe) pvar deallocate Location.pp loc
    | Abstract loc ->
-       F.fprintf f "APPLY_ABSTRACTION; %a" pp_loc loc
+       F.fprintf f "APPLY_ABSTRACTION; %a" Location.pp loc
    | Remove_temps (temps, loc) ->
-       F.fprintf f "REMOVE_TEMPS(%a); %a" (Ident.pp_list pe) temps pp_loc loc
+       F.fprintf f "REMOVE_TEMPS(%a); %a" (Ident.pp_list pe) temps Location.pp loc
    | Stackop (stackop, loc) ->
        let s = match stackop with
          | Push -> "Push"
          | Swap -> "Swap"
          | Pop -> "Pop" in
-       F.fprintf f "STACKOP.%s; %a" s pp_loc loc
+       F.fprintf f "STACKOP.%s; %a" s Location.pp loc
    | Declare_locals (ptl, loc) ->
        (* let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a:%a" (pp_pvar pe) pvar (pp_typ_full pe) typ in *)
        let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a" (pp_pvar pe) pvar in
-       F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_pvar_typ) ptl pp_loc loc
+       F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_pvar_typ) ptl Location.pp loc
    | Goto_node (e, loc) ->
-       F.fprintf f "Goto_node %a %a" (pp_exp pe) e pp_loc loc
+       F.fprintf f "Goto_node %a %a" (pp_exp pe) e Location.pp loc
   );
   color_post_wrapper changed pe0 f
 
@@ -2516,9 +2515,9 @@ let inst_initial = Iinitial (** for initial values *)
 let inst_lookup = Ilookup
 let inst_none = Inone
 let inst_nullify = Inullify
-let inst_rearrange b loc pos = Irearrange (Some b, false, loc.line, pos)
+let inst_rearrange b loc pos = Irearrange (Some b, false, loc.Location.line, pos)
 let inst_taint = Itaint
-let inst_update loc pos = Iupdate (None, false, loc.line, pos)
+let inst_update loc pos = Iupdate (None, false, loc.Location.line, pos)
 
 (** update the location of the instrumentation *)
 let inst_new_loc loc inst = match inst with
@@ -2530,10 +2529,10 @@ let inst_new_loc loc inst = match inst with
   | Ilookup -> inst
   | Inone -> inst
   | Inullify -> inst
-  | Irearrange (zf, ncf, n, pos) -> Irearrange (zf, ncf, loc.line, pos)
+  | Irearrange (zf, ncf, n, pos) -> Irearrange (zf, ncf, loc.Location.line, pos)
   | Itaint -> inst
-  | Iupdate (zf, ncf, n, pos) -> Iupdate (zf, ncf, loc.line, pos)
-  | Ireturn_from_call n -> Ireturn_from_call loc.line
+  | Iupdate (zf, ncf, n, pos) -> Iupdate (zf, ncf, loc.Location.line, pos)
+  | Ireturn_from_call n -> Ireturn_from_call loc.Location.line
 
 (** return a string representing the inst *)
 let inst_to_string inst =
@@ -2632,10 +2631,6 @@ let update_inst inst_old inst_new =
       let zf' = combine_zero_flags (inst_zero_flag inst_old) zf in
       Iupdate (zf', ncf, n, pos)
   | Ireturn_from_call _ -> inst_new
-
-let string_of_language = function
-  | Java -> "Java"
-  | C_CPP -> "C_CPP"
 
 (** describe an instrumentation with a string *)
 let pp_inst pe f inst =
@@ -3506,19 +3501,19 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
       let n = Ident.compare id1 id2 in
       if n <> 0 then n else let n = exp_compare e1 e2 in
         if n <> 0 then n else let n = typ_compare t1 t2 in
-          if n <> 0 then n else loc_compare loc1 loc2
+          if n <> 0 then n else Location.compare loc1 loc2
   | Letderef _, _ -> -1
   | _, Letderef _ -> 1
   | Set (e11, t1, e21, loc1), Set (e12, t2, e22, loc2) ->
       let n = exp_compare e11 e12 in
       if n <> 0 then n else let n = typ_compare t1 t2 in
         if n <> 0 then n else let n = exp_compare e21 e22 in
-          if n <> 0 then n else loc_compare loc1 loc2
+          if n <> 0 then n else Location.compare loc1 loc2
   | Set _, _ -> -1
   | _, Set _ -> 1
   | Prune (cond1, loc1, true_branch1, ik1), Prune (cond2, loc2, true_branch2, ik2) ->
       let n = exp_compare cond1 cond2 in
-      if n <> 0 then n else let n = loc_compare loc1 loc2 in
+      if n <> 0 then n else let n = Location.compare loc1 loc2 in
         if n <> 0 then n else let n = bool_compare true_branch1 true_branch2 in
           if n <> 0 then n else Pervasives.compare ik1 ik2
   | Prune _, _ -> -1
@@ -3527,28 +3522,28 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
       let n = list_compare Ident.compare ret_ids1 ret_ids2 in
       if n <> 0 then n else let n = exp_compare e1 e2 in
         if n <> 0 then n else let n = list_compare exp_typ_compare arg_ts1 arg_ts2 in
-          if n <> 0 then n else let n = loc_compare loc1 loc2 in
+          if n <> 0 then n else let n = Location.compare loc1 loc2 in
             if n <> 0 then n else call_flags_compare cf1 cf2
   | Call _, _ -> -1
   | _, Call _ -> 1
   | Nullify (pvar1, loc1, deallocate1), Nullify (pvar2, loc2, deallocate2) ->
       let n = pvar_compare pvar1 pvar2 in
-      if n <> 0 then n else let n = loc_compare loc1 loc2 in
+      if n <> 0 then n else let n = Location.compare loc1 loc2 in
         if n <> 0 then n else bool_compare deallocate1 deallocate2
   | Nullify _, _ -> -1
   | _, Nullify _ -> 1
   | Abstract loc1, Abstract loc2 ->
-      loc_compare loc1 loc2
+      Location.compare loc1 loc2
   | Abstract _, _ -> -1
   | _, Abstract _ -> 1
   | Remove_temps (temps1, loc1), Remove_temps (temps2, loc2) ->
       let n = list_compare Ident.compare temps1 temps2 in
-      if n <> 0 then n else loc_compare loc1 loc2
+      if n <> 0 then n else Location.compare loc1 loc2
   | Remove_temps _, _ -> -1
   | _, Remove_temps _ -> 1
   | Stackop (stackop1, loc1), Stackop (stackop2, loc2) ->
       let n = Pervasives.compare stackop1 stackop2 in
-      if n <> 0 then n else loc_compare loc1 loc2
+      if n <> 0 then n else Location.compare loc1 loc2
   | Stackop _, _ -> -1
   | _, Stackop _ -> 1
   | Declare_locals (ptl1, loc1), Declare_locals (ptl2, loc2) ->
@@ -3557,12 +3552,12 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
         if n <> 0 then n else typ_compare t1 t2 in
 
       let n = list_compare pt_compare ptl1 ptl2 in
-      if n <> 0 then n else loc_compare loc1 loc2
+      if n <> 0 then n else Location.compare loc1 loc2
   | Declare_locals _, _ -> -1
   | _, Declare_locals _ -> 1
   | Goto_node (e1, loc1), Goto_node (e2, loc2) ->
       let n = exp_compare e1 e2 in
-      if n <> 0 then n else loc_compare loc1 loc2
+      if n <> 0 then n else Location.compare loc1 loc2
 
 (** compare expressions from different procedures without considering loc's, ident's, and pvar's.
     the [exp_map] param gives a mapping of names used in the procedure of [e1] to names used in the
@@ -3911,11 +3906,11 @@ let mk_pvar_global (name: Mangled.t) : pvar =
   { pv_name = name; pv_kind = Global_var }
 
 (** create an abducted return variable for a call to [proc_name] at [loc] *)
-let mk_pvar_abducted_ret (proc_name : Procname.t) (loc : location) : pvar =
+let mk_pvar_abducted_ret (proc_name : Procname.t) (loc : Location.t) : pvar =
   let name = Mangled.from_string ("$RET_" ^ (Procname.to_unique_id proc_name)) in
   { pv_name = name; pv_kind = Abducted_retvar (proc_name, loc) }
 
-let mk_pvar_abducted_ref_param (proc_name : Procname.t) (pv : pvar) (loc : location) : pvar =
+let mk_pvar_abducted_ref_param (proc_name : Procname.t) (pv : pvar) (loc : Location.t) : pvar =
   let name = Mangled.from_string ("$REF_PARAM_" ^ (Procname.to_unique_id proc_name)) in
   { pv_name = name; pv_kind = Abducted_ref_param (proc_name, pv, loc) }
 

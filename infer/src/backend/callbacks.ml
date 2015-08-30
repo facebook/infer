@@ -125,12 +125,12 @@ let get_procedure_definition exe_env proc_name =
        (idenv, tenv, proc_name, proc_desc, language))
     (Cfg.Procdesc.find_from_name cfg proc_name)
 
-let get_language proc_name = if Procname.is_java proc_name then Sil.Java else Sil.C_CPP
+let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.C_CPP
 
 (** Invoke all registered procedure callbacks on a set of procedures. *)
 let iterate_procedure_callbacks all_procs exe_env proc_name =
   let procedure_language = get_language proc_name in
-  Sil.curr_language := procedure_language;
+  Config.curr_language := procedure_language;
 
   let cfg = Exe_env.get_cfg exe_env proc_name in
   let get_procdesc proc_name =
@@ -195,11 +195,11 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
 (** Invoke all procedure and cluster callbacks on a given environment. *)
 let iterate_callbacks store_summary call_graph exe_env =
   let proc_names = Cg.get_defined_nodes call_graph in
-  let saved_language = !Sil.curr_language in
+  let saved_language = !Config.curr_language in
 
   let cluster_id proc_name =
     match get_language proc_name with
-    | Sil.Java -> Procname.java_get_class proc_name
+    | Config.Java -> Procname.java_get_class proc_name
     | _ -> "unknown" in
   let cluster proc_names =
     let cluster_map =
@@ -224,7 +224,7 @@ let iterate_callbacks store_summary call_graph exe_env =
     let loc = match procdesc_opt with
       | Some proc_desc ->
           Cfg.Procdesc.get_loc proc_desc
-      | None -> Sil.loc_none in
+      | None -> Location.loc_none in
     Specs.reset_summary call_graph proc_name loc in
 
 
@@ -243,4 +243,4 @@ let iterate_callbacks store_summary call_graph exe_env =
 
   list_iter store_summary proc_names;
 
-  Sil.curr_language := saved_language
+  Config.curr_language := saved_language

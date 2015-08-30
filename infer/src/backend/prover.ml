@@ -818,7 +818,7 @@ let check_inconsistency_base prop =
   let inconsistent_this () = (* "this" cannot be null in Java *)
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
-          !Sil.curr_language = Sil.Java &&
+          !Config.curr_language = Config.Java &&
           Sil.pvar_is_this pv &&
           Sil.exp_equal e Sil.exp_zero &&
           Sil.pvar_is_seed pv
@@ -830,7 +830,7 @@ let check_inconsistency_base prop =
     let procedure_attr = Cfg.Procdesc.get_attributes procdesc in
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
-          !Sil.curr_language = Sil.C_CPP &&
+          !Config.curr_language = Config.C_CPP &&
           Sil.exp_equal e Sil.exp_zero &&
           Sil.pvar_is_seed pv &&
           Sil.pvar_get_name pv = Mangled.from_string "self" &&
@@ -1557,7 +1557,7 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
     | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tstruct _, _)
     | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tarray _, _) -> true
     | _ -> false in
-  if !Sil.curr_language = Sil.Java && types_subject_to_cast then
+  if !Config.curr_language = Config.Java && types_subject_to_cast then
     begin
       let pos_type_opt, neg_type_opt = subtype_case_analysis tenv texp1 texp2 in
       let has_changed = match pos_type_opt with
@@ -1630,7 +1630,10 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
           | None -> ()
         end
     | _ -> () in
-  if is_callee && !Config.footprint && (!Config.Experiment.activate_subtyping_in_cpp || !Sil.curr_language = Sil.Java) then add_subtype ()
+  if is_callee &&
+     !Config.footprint &&
+     (!Config.Experiment.activate_subtyping_in_cpp || !Config.curr_language = Config.Java)
+  then add_subtype ()
 
 let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 : subst2 * Prop.normal Prop.t = match hpred2 with
   | Sil.Hpointsto (_e2, se2, texp2) ->
@@ -1836,10 +1839,10 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let root = Sil.Const (Sil.Cstr s) in
     let sexp =
       let index = Sil.exp_int (Sil.Int.of_int (String.length s)) in
-      match !Sil.curr_language with
-      | Sil.C_CPP ->
+      match !Config.curr_language with
+      | Config.C_CPP ->
           Sil.Earray (size, [(index, Sil.Eexp (Sil.exp_zero, Sil.inst_none))], Sil.inst_none)
-      | Sil.Java ->
+      | Config.Java ->
           let mk_fld_sexp s =
             let fld = Ident.create_fieldname (Mangled.from_string s) 0 in
             let se = Sil.Eexp (Sil.Var (Ident.create_fresh Ident.kprimed), Sil.Inone) in
@@ -1847,9 +1850,9 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
           let fields = ["java.lang.String.count"; "java.lang.String.hash"; "java.lang.String.offset"; "java.lang.String.value"] in
           Sil.Estruct (list_map mk_fld_sexp fields, Sil.inst_none) in
     let const_string_texp =
-      match !Sil.curr_language with
-      | Sil.C_CPP -> Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size), Sil.Subtype.exact)
-      | Sil.Java ->
+      match !Config.curr_language with
+      | Config.C_CPP -> Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size), Sil.Subtype.exact)
+      | Config.Java ->
           let object_type = Sil.TN_csu (Sil.Class, Mangled.from_string "java.lang.String") in
           let typ = match Sil.tenv_lookup tenv object_type with
             | Some typ -> typ

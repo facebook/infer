@@ -121,7 +121,7 @@ module ComplexExpressions = struct
 end (* ComplexExpressions *)
 
 type check_return_type =
-  Procname.t -> Cfg.Procdesc.t -> Sil.typ -> Sil.typ option -> Sil.location -> unit
+  Procname.t -> Cfg.Procdesc.t -> Sil.typ -> Sil.typ option -> Location.t -> unit
 
 type find_canonical_duplicate = Cfg.Node.t -> Cfg.Node.t
 

@@ -12,7 +12,7 @@ module L = Logging
 
 type log_issue =
   Procname.t ->
-  ?loc: Sil.location option ->
+  ?loc: Location.t option ->
   ?node_id: (int * int) option ->
   ?session: int option ->
   ?ltr: Errlog.loc_trace option ->

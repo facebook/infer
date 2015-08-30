@@ -12,7 +12,7 @@
 (** Element of a loc trace *)
 type loc_trace_elem = {
   lt_level : int; (** nesting level of procedure calls *)
-  lt_loc : Sil.location; (** source location at the current step in the trace *)
+  lt_loc : Location.t; (** source location at the current step in the trace *)
   lt_description : string; (** description of the current step in the trace *)
   lt_node_tags : (string * string) list (** tags describing the node at the current location *)
 }
@@ -28,7 +28,7 @@ val empty : unit -> t
 
 (** type of the function to be passed to iter *)
 type iter_fun =
-  (int * int) -> Sil.location -> Exceptions.err_kind -> bool -> Localise.t -> Localise.error_desc ->
+  (int * int) -> Location.t -> Exceptions.err_kind -> bool -> Localise.t -> Localise.error_desc ->
   string -> loc_trace -> Prop.normal Prop.t option -> Exceptions.err_class -> unit
 
 (** Apply f to nodes and error names *)
@@ -48,7 +48,7 @@ val update : t -> t -> unit
 
 val log_issue :
   Exceptions.err_kind ->
-  t -> Sil.location -> (int * int) -> int -> loc_trace ->
+  t -> Location.t -> (int * int) -> int -> loc_trace ->
   (Prop.normal Prop.t) option -> exn -> unit
 
 (** {2 Functions for manipulating per-file error tables} *)

@@ -36,7 +36,7 @@ val get_inst_update : Sil.path_pos -> Sil.inst
 val get_instr : unit -> Sil.instr option
 
 (** Get last location seen in symbolic execution *)
-val get_loc : unit -> Sil.location
+val get_loc : unit -> Location.t
 
 (** Get the location trace of the last path seen in symbolic execution *)
 val get_loc_trace : unit -> Errlog.loc_trace
@@ -85,7 +85,7 @@ val mk_find_duplicate_nodes: Cfg.Procdesc.t -> (Cfg.Node.t -> Cfg.NodeSet.t)
 
 type log_issue =
   Procname.t ->
-  ?loc: Sil.location option ->
+  ?loc: Location.t option ->
   ?node_id: (int * int) option ->
   ?session: int option ->
   ?ltr: Errlog.loc_trace option ->

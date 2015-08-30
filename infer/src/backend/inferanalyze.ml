@@ -144,7 +144,7 @@ let arg_desc =
         "-print_builtins", Arg.Unit SymExec.print_builtins, None, "print the builtin functions and exit";
         "-source_path", Arg.String source_path, Some "path", "specify the absolute path to the root of the source files. Used to interpret relative paths when using option -exclude.";
         (* TODO: merge with the -project_root option *)
-        "-java", Arg.Unit (fun () -> Sil.curr_language := Sil.Java), None, "Set language to Java";
+        "-java", Arg.Unit (fun () -> Config.curr_language := Config.Java), None, "Set language to Java";
         "-version", Arg.Unit print_version, None, "print version information and exit";
         "-version_json", Arg.Unit print_version_json, None, "print version json formatted";
         "-objcm", Arg.Set Config.objc_memory_model_on, None, "Use ObjC memory model";
@@ -207,7 +207,7 @@ let () = (* parse command-line arguments *)
 module Simulator = struct (** Simulate the analysis only *)
   let reset_summaries cg =
     list_iter
-      (fun (pname, in_out_calls) -> Specs.reset_summary cg pname Sil.loc_none)
+      (fun (pname, in_out_calls) -> Specs.reset_summary cg pname Location.loc_none)
       (Cg.get_nodes_and_calls cg)
 
   (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
@@ -838,7 +838,7 @@ let () =
   let () =
     match !cluster_cmdline with
     | None ->
-        if !Sil.curr_language = Sil.C_CPP then
+        if !Config.curr_language = Config.C_CPP then
           Objc_preanal.do_objc_preanalysis ();
         L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
     | Some clname -> L.stdout "Cluster %s@." clname in
@@ -858,7 +858,7 @@ let () =
     else !err_file_cmdline in
   let analyzer_out_of = open_output_file Logging.set_out_formatter analyzer_out_file in
   let analyzer_err_of = open_output_file Logging.set_err_formatter analyzer_err_file in
-  if (!Sil.curr_language = Sil.C_CPP) then Mleak_buckets.init_buckets !objc_ml_buckets_arg;
+  if (!Config.curr_language = Config.C_CPP) then Mleak_buckets.init_buckets !objc_ml_buckets_arg;
 
   process_cluster_cmdline_exit ();
   let source_dirs =

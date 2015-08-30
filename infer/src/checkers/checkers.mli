@@ -22,10 +22,10 @@ module ST : sig
     Procname.t ->
     Cfg.Procdesc.t ->
     string ->
-    Sil.location ->
+    Location.t ->
     ?advice: string option ->
     ?field_name: Ident.fieldname option ->
-    ?origin_loc: Sil.location option ->
+    ?origin_loc: Location.t option ->
     ?exception_kind: (string -> Localise.error_desc -> exn) ->
     ?always_report: bool ->
     string ->
@@ -39,7 +39,7 @@ end (* ST *)
 module PP : sig
   (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
       and [nafter] lines after [loc] *)
-  val pp_loc_range : Printer.LineReader.t -> int -> int -> Format.formatter -> Sil.location -> unit
+  val pp_loc_range : Printer.LineReader.t -> int -> int -> Format.formatter -> Location.t -> unit
 end (* PP *)
 
 val callback_check_access : Callbacks.proc_callback_t

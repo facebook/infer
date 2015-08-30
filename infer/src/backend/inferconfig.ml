@@ -168,12 +168,12 @@ module NeverReturnNull = struct
   let default_source_contains = ""
 
   type pattern =
-    | Method_pattern of Sil.language * method_pattern
-    | Source_contains of Sil.language * string
+    | Method_pattern of Config.language * method_pattern
+    | Source_contains of Config.language * string
 
   let language_of_string = function
-    | "Java" -> Sil.Java
-    | "C_CPP" -> Sil.C_CPP
+    | "Java" -> Config.Java
+    | "C_CPP" -> Config.C_CPP
     | _ -> failwith ("Unknown language found in " ^ inferconfig_file)
 
   let pp_pattern fmt pattern =
@@ -197,10 +197,10 @@ module NeverReturnNull = struct
     match pattern with
     | Method_pattern (language, mp) ->
         Format.fprintf fmt "Method pattern (%s) {\n%a}\n"
-          (Sil.string_of_language language) pp_method_pattern mp
+          (Config.string_of_language language) pp_method_pattern mp
     | Source_contains (language, sc) ->
         Format.fprintf fmt "Source contains (%s) {\n%a}\n"
-          (Sil.string_of_language language) pp_source_contains sc
+          (Config.string_of_language language) pp_source_contains sc
 
   let detect_language assoc =
     let rec loop = function
@@ -262,7 +262,7 @@ module NeverReturnNull = struct
     | _ -> assert false
 
   let create_method_matcher language m_patterns =
-    if language <> Sil.Java then assert false
+    if language <> Config.Java then assert false
     else
     if m_patterns = [] then
       default_matcher

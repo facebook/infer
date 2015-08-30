@@ -34,7 +34,7 @@ module Node = struct
     mutable nd_exn : t list; (** exception nodes in the cfg *)
     mutable nd_instrs : Sil.instr list; (** instructions for symbolic execution *)
     mutable nd_kind : nodekind; (** kind of node *)
-    mutable nd_loc : Sil.location; (** location in the source code *)
+    mutable nd_loc : Location.t; (** location in the source code *)
     mutable nd_preds : t list; (** predecessor nodes in the cfg *)
     mutable nd_proc : proc_desc option; (** proc desc from cil *)
     mutable nd_succs : t list; (** successor nodes in the cfg *)
@@ -42,17 +42,9 @@ module Node = struct
   and proc_desc = { (** procedure description *)
     pd_attributes : Sil.proc_attributes; (** attributes of the procedure *)
     pd_id : int; (** unique proc_desc identifier *)
-    pd_name : Procname.t; (** name of the procedure *)
-    pd_is_defined : bool; (** true iff the procedure is defined, and not just declared *)
-    pd_ret_type : Sil.typ; (** return type *)
-    pd_formals : (string * Sil.typ) list; (** name and type of formal parameters *)
-    mutable pd_locals : (Mangled.t * Sil.typ) list; (** name and type of local variables *)
-    pd_captured : (Mangled.t * Sil.typ) list; (** name and type of blocks' captured variables *)
     mutable pd_nodes : t list; (** list of nodes of this procedure *)
     mutable pd_start_node : t; (** start node of this procedure *)
     mutable pd_exit_node : t; (** exit node of ths procedure *)
-    mutable pd_loc : Sil.location; (** location of this procedure in the source code *)
-    mutable pd_flags : proc_flags; (** flags for the procedure *)
     pd_err_log: Errlog.t; (** error log at translation time *)
     mutable pd_changed : bool; (** true if proc has changed since last analysis *)
   }
@@ -112,9 +104,9 @@ module Node = struct
         try
           list_for_all2 node_eq n1s n2s
         with Invalid_argument _ -> false in
-      pd1.pd_is_defined = pd2.pd_is_defined &&
-      Sil.typ_equal pd1.pd_ret_type pd2.pd_ret_type &&
-      formals_eq pd1.pd_formals pd2.pd_formals &&
+      pd1.pd_attributes.Sil.is_defined = pd2.pd_attributes.Sil.is_defined &&
+      Sil.typ_equal pd1.pd_attributes.Sil.ret_type pd2.pd_attributes.Sil.ret_type &&
+      formals_eq pd1.pd_attributes.Sil.formals pd2.pd_attributes.Sil.formals &&
       nodes_eq pd1.pd_nodes pd2.pd_nodes in
     let old_procs = cfg_old.name_pdesc_tbl in
     let new_procs = cfg_new.name_pdesc_tbl in
@@ -139,12 +131,15 @@ module Node = struct
         let node_list' =
           let filter_node node = match node.nd_proc with
             | None -> true
-            | Some pdesc -> is_enabled pdesc.pd_name in
+            | Some pdesc -> is_enabled pdesc.pd_attributes.Sil.proc_name in
           list_filter filter_node !(cfg.node_list) in
         let procs_to_remove =
           let psetr = ref Procname.Set.empty in
           let do_proc pname pdesc =
-            if pdesc.pd_is_defined && not (is_enabled pname) && not (in_address_set pname) then psetr := Procname.Set.add pname !psetr in
+            if pdesc.pd_attributes.Sil.is_defined &&
+               not (is_enabled pname) &&
+               not (in_address_set pname) then
+              psetr := Procname.Set.add pname !psetr in
           Procname.Hash.iter do_proc cfg.name_pdesc_tbl;
           !psetr in
         let remove_proc pname =
@@ -176,16 +171,6 @@ module Node = struct
   let iter_proc_desc cfg f =
     Procname.Hash.iter f cfg.name_pdesc_tbl
 
-  let iter_types cfg f =
-    let node_iter_types node =
-      list_iter (Sil.instr_iter_types f) node.nd_instrs in
-    let pdesc_iter_types pname pdesc =
-      Sil.typ_iter_types f pdesc.pd_ret_type;
-      list_iter (fun (_, t) -> Sil.typ_iter_types f t) pdesc.pd_formals;
-      list_iter (fun (_, t) -> Sil.typ_iter_types f t) pdesc.pd_locals;
-      list_iter node_iter_types pdesc.pd_nodes in
-    iter_proc_desc cfg pdesc_iter_types
-
   let dummy () = {
     nd_id = 0;
     nd_dist_exit = None;
@@ -194,7 +179,7 @@ module Node = struct
     nd_dead_pvars_before = [];
     nd_instrs = [];
     nd_kind = Skip_node "dummy";
-    nd_loc = Sil.loc_none;
+    nd_loc = Location.loc_none;
     nd_proc = None;
     nd_succs = []; nd_preds = []; nd_exn = [];
   }
@@ -399,15 +384,15 @@ module Node = struct
     node.nd_instrs <- instrs
 
   let proc_desc_get_ret_var pdesc =
-    Sil.get_ret_pvar pdesc.pd_name
+    Sil.get_ret_pvar pdesc.pd_attributes.Sil.proc_name
 
   (** Add declarations for local variables and return variable to the node *)
   let add_locals_ret_declaration node locals =
     let loc = get_loc node in
     let pdesc = get_proc_desc node in
-    let proc_name = pdesc.pd_name in
+    let proc_name = pdesc.pd_attributes.Sil.proc_name in
     let ret_var =
-      let ret_type = pdesc.pd_ret_type in
+      let ret_type = pdesc.pd_attributes.Sil.ret_type in
       (proc_desc_get_ret_var pdesc, ret_type) in
     let construct_decl (x, typ) =
       (Sil.mk_pvar x proc_name, typ) in
@@ -477,33 +462,33 @@ module Node = struct
 
   (** Set a flag for the proc desc *)
   let proc_desc_set_flag pdesc key value =
-    proc_flags_add pdesc.pd_flags key value
+    proc_flags_add pdesc.pd_attributes.Sil.proc_flags key value
 
   (** Return the return type of the procedure *)
   let proc_desc_get_ret_type proc_desc =
-    proc_desc.pd_ret_type
+    proc_desc.pd_attributes.Sil.ret_type
 
   let proc_desc_get_proc_name proc_desc =
-    proc_desc.pd_name
+    proc_desc.pd_attributes.Sil.proc_name
 
   (** Return [true] iff the procedure is defined, and not just declared *)
   let proc_desc_is_defined proc_desc =
-    proc_desc.pd_is_defined
+    proc_desc.pd_attributes.Sil.is_defined
 
   let proc_desc_get_loc proc_desc =
-    proc_desc.pd_loc
+    proc_desc.pd_attributes.Sil.loc
 
   (** Return name and type of formal parameters *)
   let proc_desc_get_formals proc_desc =
-    proc_desc.pd_formals
+    proc_desc.pd_attributes.Sil.formals
 
   (** Return name and type of local variables *)
   let proc_desc_get_locals proc_desc =
-    proc_desc.pd_locals
+    proc_desc.pd_attributes.Sil.locals
 
   (** Return name and type of captured variables *)
   let proc_desc_get_captured proc_desc =
-    proc_desc.pd_captured
+    proc_desc.pd_attributes.Sil.captured
 
   let proc_desc_get_nodes proc_desc =
     proc_desc.pd_nodes
@@ -518,11 +503,11 @@ module Node = struct
 
   (** Get flags for the proc desc *)
   let proc_desc_get_flags proc_desc =
-    proc_desc.pd_flags
+    proc_desc.pd_attributes.Sil.proc_flags
 
   (** Append the locals to the list of local variables *)
   let proc_desc_append_locals proc_desc new_locals =
-    proc_desc.pd_locals <- proc_desc.pd_locals @ new_locals
+    proc_desc.pd_attributes.Sil.locals <- proc_desc.pd_attributes.Sil.locals @ new_locals
 
   (** Get the cyclomatic complexity for the procedure *)
   let proc_desc_get_cyclomatic proc_desc =
@@ -543,7 +528,7 @@ module Node = struct
       | None -> pe0
       | Some instr -> pe_extend_colormap pe0 (Obj.repr instr) Red in
     let instrs = get_instrs node in
-    let pp_loc fmt () = F.fprintf fmt " %a " Sil.pp_loc (get_loc node) in
+    let pp_loc fmt () = F.fprintf fmt " %a " Location.pp (get_loc node) in
     let print_sub_instrs () = F.fprintf fmt "%a" (Sil.pp_instr_list pe) instrs in
     match get_kind node with
     | Stmt_node s ->
@@ -663,7 +648,7 @@ let load_cfg_from_file (filename : DB.filename) : cfg option =
 let save_source_files cfg =
   let process_proc pname pdesc =
     let loc = Node.proc_desc_get_loc pdesc in
-    let source_file = loc.Sil.file in
+    let source_file = loc.Location.file in
     let source_file_str = DB.source_file_to_abs_path source_file in
     let dest_file = DB.source_file_in_resdir source_file in
     let dest_file_str = DB.filename_to_string dest_file in
@@ -696,14 +681,7 @@ module Procdesc = struct
 
   type proc_desc_builder =
     { cfg : cfg;
-      name: Procname.t;
-      is_defined : bool; (** is defined and not just declared *)
       proc_attributes : Sil.proc_attributes;
-      ret_type : Sil.typ; (** return type *)
-      formals : (string * Sil.typ) list;
-      locals : (Mangled.t * Sil.typ) list;
-      captured : (Mangled.t * Sil.typ) list; (** variables captured in an ObjC block *)
-      loc : Sil.location;
     }
 
   let create (b : proc_desc_builder) =
@@ -713,21 +691,13 @@ module Procdesc = struct
       {
         pd_attributes = b.proc_attributes;
         pd_id = !proc_desc_id_counter;
-        pd_name = b.name;
-        pd_is_defined = b.is_defined;
-        pd_ret_type = b.ret_type;
-        pd_formals = b.formals;
-        pd_locals = b.locals;
-        pd_captured = b.captured;
-        pd_nodes =[];
+        pd_nodes = [];
         pd_start_node = dummy ();
         pd_exit_node = dummy ();
-        pd_loc = b.loc;
-        pd_flags = proc_flags_empty ();
         pd_err_log = Errlog.empty ();
         pd_changed = true
       } in
-    pdesc_tbl_add b.cfg b.name pdesc;
+    pdesc_tbl_add b.cfg b.proc_attributes.Sil.proc_name pdesc;
     pdesc
 
   let remove = Node.proc_desc_remove
@@ -771,9 +741,6 @@ module NodeHash = Hashtbl.Make(Node)
 module NodeSet = Node.NodeSet
 
 let iter_proc_desc = Node.iter_proc_desc
-
-(** Iterate over all the types (and subtypes) in the CFG *)
-let iter_types = Node.iter_types
 
 let rec pp_node_list f = function
   | [] -> ()
@@ -936,8 +903,8 @@ let remove_abducted_retvars p =
 
 let remove_locals (curr_f : Procdesc.t) p =
   let names_of_locals = list_map (get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
-  let names_of_locals' = match !Sil.curr_language with
-    | Sil.C_CPP -> (* in ObjC to deal with block we need to remove static locals *)
+  let names_of_locals' = match !Config.curr_language with
+    | Config.C_CPP -> (* in ObjC to deal with block we need to remove static locals *)
         let names_of_static_locals = get_name_of_objc_static_locals curr_f p in
         let names_of_block_locals = get_name_of_objc_block_locals p in
         names_of_block_locals @ names_of_locals @ names_of_static_locals

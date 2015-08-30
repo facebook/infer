@@ -58,7 +58,7 @@ let check_access access_opt de_opt =
       let process_formal_letref = function
         | Sil.Letderef (id, Sil.Lvar pvar, _, _) ->
             let is_java_this =
-              !Sil.curr_language = Sil.Java && Sil.pvar_is_this pvar in
+              !Config.curr_language = Config.Java && Sil.pvar_is_this pvar in
             if not is_java_this && is_formal pvar then formal_ids := id :: !formal_ids
         | _ -> () in
       list_iter process_formal_letref node_instrs;
@@ -91,7 +91,7 @@ let check_access access_opt de_opt =
       list_exists filter (Cfg.Node.get_instrs node) in
     let local_access_found = ref false in
     let do_node node =
-      if (Cfg.Node.get_loc node).Sil.line = line_number && has_call_or_sets_null node then
+      if (Cfg.Node.get_loc node).Location.line = line_number && has_call_or_sets_null node then
         begin
           local_access_found := true
         end in

@@ -90,10 +90,10 @@ sig
   type trace = (call_result * bool) list
 
   (** iterate over results of procedure calls *)
-  val iter : (Procname.t * Sil.location -> trace -> unit) -> t -> unit
+  val iter : (Procname.t * Location.t -> trace -> unit) -> t -> unit
 
   (** trace a procedure call *)
-  val trace : t -> Procname.t -> Sil.location -> call_result -> bool -> unit
+  val trace : t -> Procname.t -> Location.t -> call_result -> bool -> unit
 
   (** pretty print a call trace *)
   val pp_trace : Format.formatter -> trace -> unit
@@ -126,13 +126,8 @@ type payload =
 (** Procedure summary *)
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
-    loc: Sil.location; (** original file and line number *)
     nodes: int list; (** ids of cfg nodes of the procedure *)
-    ret_type : Sil.typ; (** type of the return parameter *)
-    formals : (string * Sil.typ) list; (** name and type of the formal parameters of the procedure *)
     phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
-    proc_name : Procname.t; (** name of the procedure *)
-    proc_flags : proc_flags; (** flags of the procedure *)
     payload: payload;  (** payload containing the result of some analysis *)
     sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
     stats: stats;  (** statistics: execution time and list of errors *)
@@ -219,21 +214,17 @@ val is_inactive : Procname.t -> bool
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
     Do nothing if a summary exists already. *)
 val init_summary :
-  (Procname.t * (** proc_name *)
-   Sil.typ * (** ret type *)
-   (string * Sil.typ) list * (** formals *)
-   Procname.t list * (** depend list *)
-   Sil.location * (** loc *)
+  (Procname.t list * (** depend list *)
    int list * (** nodes *)
    proc_flags * (** procedure flags *)
    Errlog.t * (** initial error log *)
-   (Procname.t * Sil.location) list * (** calls *)
+   (Procname.t * Location.t) list * (** calls *)
    int * (** cyclomatic *)
    (Cg.in_out_calls option) * (** in and out calls *)
    Sil.proc_attributes) (** attributes of the procedure *)
   -> unit
 
-val reset_summary : Cg.t -> Procname.t -> Sil.location -> unit
+val reset_summary : Cg.t -> Procname.t -> Location.t -> unit
 
 (** Load procedure summary from the given file *)
 val load_summary : DB.filename -> summary option

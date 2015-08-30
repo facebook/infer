@@ -221,10 +221,10 @@ let normalized_specs_to_specs =
 
 module CallStats = struct (** module for tracing stats of function calls *)
   module PnameLocHash = Hashtbl.Make (struct
-      type t = Procname.t * Sil.location
-      let hash (pname, loc) = Hashtbl.hash (Procname.hash_pname pname, loc.Sil.line)
+      type t = Procname.t * Location.t
+      let hash (pname, loc) = Hashtbl.hash (Procname.hash_pname pname, loc.Location.line)
       let equal (pname1, loc1) (pname2, loc2) =
-        Sil.loc_equal loc1 loc2 && Procname.equal pname1 pname2
+        Location.equal loc1 loc2 && Procname.equal pname1 pname2
     end)
 
   type call_result = (** kind of result of a procedure call *)
@@ -272,12 +272,13 @@ module CallStats = struct (** module for tracing stats of function calls *)
     let sorted_elems =
       let compare ((pname1, loc1), _) ((pname2, loc2), _) =
         let n = Procname.compare pname1 pname2 in
-        if n <> 0 then n else Sil.loc_compare loc1 loc2 in
+        if n <> 0 then n else Location.compare loc1 loc2 in
       list_sort compare !elems in
     list_iter (fun (x, tr) -> f x tr) sorted_elems
 
   let pp fmt t =
-    let do_call (pname, loc) tr = F.fprintf fmt "%a %a: %a@\n" Procname.pp pname Sil.pp_loc loc pp_trace tr in
+    let do_call (pname, loc) tr =
+      F.fprintf fmt "%a %a: %a@\n" Procname.pp pname Location.pp loc pp_trace tr in
     iter do_call t
 end
 
@@ -312,13 +313,8 @@ type payload =
 
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
-    loc: Sil.location; (** original file and line number *)
     nodes: int list; (** ids of cfg nodes of the procedure *)
-    ret_type : Sil.typ; (** type of the return parameter *)
-    formals : (string * Sil.typ) list; (** name and type of the formal parameters of the procedure *)
     phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
-    proc_name : Procname.t; (** name of the procedure *)
-    proc_flags : proc_flags; (** flags of the procedure *)
     payload: payload;  (** payload containing the result of some analysis *)
     sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
     stats: stats;  (** statistics: execution time and list of errors *)
@@ -410,9 +406,11 @@ let get_signature summary =
       let pp_name f () = F.fprintf f "%s" p in
       let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
       let decl = pp_to_string pp () in
-      s := if !s = "" then decl else !s ^ ", " ^ decl) summary.formals;
-  let pp_procname f () = F.fprintf f "%a" Procname.pp summary.proc_name in
-  let pp f () = Sil.pp_type_decl pe_text pp_procname Sil.pp_exp f summary.ret_type in
+      s := if !s = "" then decl else !s ^ ", " ^ decl) summary.attributes.Sil.formals;
+  let pp_procname f () = F.fprintf f "%a"
+      Procname.pp summary.attributes.Sil.proc_name in
+  let pp f () =
+    Sil.pp_type_decl pe_text pp_procname Sil.pp_exp f summary.attributes.Sil.ret_type in
   let decl = pp_to_string pp () in
   decl ^ "(" ^ !s ^ ")"
 
@@ -665,13 +663,13 @@ let get_timestamp summary =
   summary.timestamp
 
 let get_proc_name summary =
-  summary.proc_name
+  summary.attributes.Sil.proc_name
 
 let get_ret_type summary =
-  summary.ret_type
+  summary.attributes.Sil.ret_type
 
 let get_formals summary =
-  summary.formals
+  summary.attributes.Sil.formals
 
 let get_attributes summary =
   summary.attributes
@@ -682,7 +680,7 @@ let get_flag proc_name key =
   match get_summary proc_name with
   | None -> None
   | Some summary ->
-      let proc_flags = summary.proc_flags in
+      let proc_flags = summary.attributes.Sil.proc_flags in
       try
         Some (Hashtbl.find proc_flags key)
       with Not_found -> None
@@ -694,7 +692,7 @@ let get_iterations proc_name =
   | None ->
       raise (Failure ("Specs.get_iterations: " ^ (Procname.to_string proc_name) ^ "Not_found"))
   | Some summary ->
-      let proc_flags = summary.proc_flags in
+      let proc_flags = summary.attributes.Sil.proc_flags in
       try
         let time_str = Hashtbl.find proc_flags proc_flag_iterations in
         Pervasives.int_of_string time_str
@@ -707,7 +705,7 @@ let get_specs_formals proc_name =
       raise (Failure ("Specs.get_specs_formals: " ^ (Procname.to_string proc_name) ^ "Not_found"))
   | Some summary ->
       let specs = get_specs_from_payload summary in
-      let formals = summary.formals in
+      let formals = get_formals summary in
       (specs, formals)
 
 (** Return the specs for the proc in the spec table *)
@@ -748,54 +746,54 @@ let update_dependency_map proc_name =
           summary.dependency_map in
       set_summary_origin proc_name { summary with dependency_map = current_dependency_map } origin
 
-(** [init_summary loc (proc_name, ret_type, formals, depend_list, loc, nodes,
+(** [init_summary (depend_list, nodes,
     proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt, proc_attributes)]
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary
-    (proc_name, ret_type, formals, depend_list, loc,
-     nodes, proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt,
+    (depend_list, nodes,
+     proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt,
      proc_attributes) =
   let dependency_map = mk_initial_dependency_map depend_list in
   let summary =
     {
       dependency_map = dependency_map;
-      loc = loc;
       nodes = nodes;
-      ret_type = ret_type;
-      formals = formals;
       phase = FOOTPRINT;
-      proc_name = proc_name;
-      proc_flags = proc_flags;
       sessions = ref 0;
       payload = PrePosts [];
       stats = empty_stats initial_err_log calls cyclomatic in_out_calls_opt;
       status = INACTIVE;
       timestamp = 0;
-      attributes = proc_attributes;
+      attributes =
+        { proc_attributes with
+          Sil.proc_flags = proc_flags; };
     } in
-  Procname.Hash.replace spec_tbl proc_name (summary, Res_dir)
+  Procname.Hash.replace spec_tbl proc_attributes.Sil.proc_name (summary, Res_dir)
 
 let reset_summary call_graph proc_name loc =
   let dependents = Cg.get_defined_children call_graph proc_name in
   let proc_attributes = {
     Sil.access = Sil.Default;
-    Sil.exceptions = [];
-    Sil.is_abstract = false;
-    Sil.is_bridge_method = false;
-    Sil.is_objc_instance_method = false;
-    Sil.is_synthetic_method = false;
-    Sil.language = !Sil.curr_language;
-    Sil.func_attributes = [];
-    Sil.method_annotation = Sil.method_annotation_empty;
-    Sil.is_generated = false;
+    formals = [];
+    captured = [];
+    exceptions = [];
+    func_attributes = [];
+    is_abstract = false;
+    is_defined = false;
+    is_bridge_method = false;
+    is_generated = false;
+    is_objc_instance_method = false;
+    is_synthetic_method = false;
+    language = !Config.curr_language;
+    loc;
+    locals = [];
+    method_annotation = Sil.method_annotation_empty;
+    proc_flags = proc_flags_empty ();
+    proc_name;
+    ret_type = Sil.Tvoid;
   } in
   init_summary (
-    proc_name,
-    Sil.Tvoid,
-    [],
-    Procname.Set.elements
-      dependents,
-    loc,
+    Procname.Set.elements dependents,
     [],
     proc_flags_empty (),
     Errlog.empty (),

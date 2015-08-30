@@ -240,8 +240,8 @@ let should_create_procdesc cfg procname defined generated =
 (** Creates a procedure description. *)
 let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let defined = not ((list_length fbody) == 0) in
-  let procname = CMethod_signature.ms_get_name ms in
-  let pname = Procname.to_string procname in
+  let proc_name = CMethod_signature.ms_get_name ms in
+  let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let is_generated = CMethod_signature.ms_is_generated ms in
   let create_new_procdesc () =
@@ -262,26 +262,27 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
       let proc_attributes =
         {
           Sil.access = Sil.Default;
-          Sil.exceptions = [];
-          Sil.is_abstract = false;
-          Sil.is_bridge_method = false;
-          Sil.is_objc_instance_method = is_objc_inst_method;
-          Sil.is_synthetic_method = false;
-          Sil.language = Sil.C_CPP;
-          Sil.func_attributes = attributes;
-          Sil.method_annotation = Sil.method_annotation_empty;
-          Sil.is_generated = is_generated;
+          captured = captured';
+          exceptions = [];
+          formals;
+          func_attributes = attributes;
+          is_abstract = false;
+          is_bridge_method = false;
+          is_defined = defined;
+          is_generated;
+          is_objc_instance_method = is_objc_inst_method;
+          is_synthetic_method = false;
+          language = Config.C_CPP;
+          loc = loc_start;
+          locals = [];
+          method_annotation = Sil.method_annotation_empty;
+          proc_flags = proc_flags_empty ();
+          proc_name;
+          ret_type;
         } in
       create {
-        cfg = cfg;
-        name = procname;
-        is_defined = defined;
-        ret_type = ret_type;
-        formals = formals;
-        locals = [];
-        captured = captured';
-        loc = loc_start;
-        proc_attributes = proc_attributes;
+        cfg;
+        proc_attributes;
       } in
     if defined then
       (if !Config.arc_mode then
@@ -293,13 +294,13 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
        Cfg.Procdesc.set_start_node procdesc start_node;
        Cfg.Procdesc.set_exit_node procdesc exit_node) in
   let generated = CMethod_signature.ms_is_generated ms in
-  if should_create_procdesc cfg procname defined generated then
+  if should_create_procdesc cfg proc_name defined generated then
     (create_new_procdesc (); true)
   else false
 
 (** Create a procdesc for objc methods whose signature cannot be found. *)
-let create_external_procdesc cfg procname is_objc_inst_method type_opt =
-  match Cfg.Procdesc.find_from_name cfg procname with
+let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
+  match Cfg.Procdesc.find_from_name cfg proc_name with
   | Some _ -> ()
   | None ->
       let ret_type, formals =
@@ -307,31 +308,32 @@ let create_external_procdesc cfg procname is_objc_inst_method type_opt =
          | Some (ret_type, arg_types) ->
              ret_type, list_map (fun typ -> ("x", typ)) arg_types
          | None -> Sil.Tvoid, []) in
-      let loc = Sil.loc_none in
+      let loc = Location.loc_none in
       let _ =
         let open Cfg.Procdesc in
         let proc_attributes =
           {
             Sil.access = Sil.Default;
-            Sil.exceptions = [];
-            Sil.is_abstract = false;
-            Sil.is_bridge_method = false;
-            Sil.is_objc_instance_method = is_objc_inst_method;
-            Sil.is_synthetic_method = false;
-            Sil.language = Sil.C_CPP;
-            Sil.func_attributes = [];
-            Sil.method_annotation = Sil.method_annotation_empty;
-            Sil.is_generated = false;
+            captured = [];
+            exceptions = [];
+            formals;
+            func_attributes = [];
+            is_abstract = false;
+            is_bridge_method = false;
+            is_defined = false;
+            is_generated = false;
+            is_objc_instance_method = is_objc_inst_method;
+            is_synthetic_method = false;
+            language = Config.C_CPP;
+            loc;
+            locals = [];
+            method_annotation = Sil.method_annotation_empty;
+            proc_flags = proc_flags_empty ();
+            proc_name;
+            ret_type;
           } in
         create {
           cfg = cfg;
-          name = procname;
-          is_defined = false;
-          ret_type = ret_type;
-          formals = formals;
-          locals = [];
-          captured = [];
-          loc = loc;
           proc_attributes = proc_attributes;
         } in
       ()

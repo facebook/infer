@@ -120,7 +120,7 @@ let compute_icfg tenv source_file ast =
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
 
 let init_global_state source_file =
-  Sil.curr_language := Sil.C_CPP;
+  Config.curr_language := Config.C_CPP;
   DB.current_source := source_file;
   DB.Results_dir.init ();
   Ident.reset_name_generator ();

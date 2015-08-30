@@ -63,9 +63,9 @@ struct
   (** Check if the procedure performs an allocation operation.
       If [paths] is AllPaths, check if an allocation happens on all paths.
       If [paths] is SomePath, check if a path with an allocation exists. *)
-  let proc_performs_allocation pdesc paths : Sil.location option =
+  let proc_performs_allocation pdesc paths : Location.t option =
 
-    let node_allocates node : Sil.location option =
+    let node_allocates node : Location.t option =
       let found = ref None in
       let proc_is_new pn =
         Procname.equal pn SymExec.ModelBuiltins.__new ||
@@ -79,8 +79,8 @@ struct
       !found in
 
     let module DFAllocCheck = Dataflow.MakeDF(struct
-        type t = Sil.location option
-        let equal = opt_equal Sil.loc_equal
+        type t = Location.t option
+        let equal = opt_equal Location.equal
         let _join _paths l1o l2o = (* join with left priority *)
           match l1o, l2o with
           | None, None ->
@@ -136,9 +136,9 @@ struct
                     let description =
                       Printf.sprintf "call to %s seen before on line %d (may allocate at %s:%n)"
                         (Procname.to_simplified_string callee_pname)
-                        loc_old.Sil.line
-                        (DB.source_file_to_string alloc_loc.Sil.file)
-                        alloc_loc.Sil.line in
+                        loc_old.Location.line
+                        (DB.source_file_to_string alloc_loc.Location.file)
+                        alloc_loc.Location.line in
                     Checkers.ST.report_error
                       curr_pname curr_pdesc checkers_repeated_calls_name loc description
                 | None -> ()

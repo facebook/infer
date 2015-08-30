@@ -55,4 +55,5 @@ val reset_node_counter : unit -> unit
 val prop_to_xml : Prop.normal Prop.t -> string -> int -> Io_infer.Xml.node
 
 (** Print a list of specs in XML format *)
-val print_specs_xml : string -> Prop.normal Specs.spec list -> Sil.location -> Format.formatter -> unit
+val print_specs_xml :
+  string -> Prop.normal Specs.spec list -> Location.t -> Format.formatter -> unit

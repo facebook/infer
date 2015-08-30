@@ -411,9 +411,9 @@ let mk_ptsto_exp_footprint
       end
   end;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
-  let st = match !Sil.curr_language with
-    | Sil.C_CPP -> Sil.Subtype.exact
-    | Sil.Java -> Sil.Subtype.subtypes in
+  let st = match !Config.curr_language with
+    | Config.C_CPP -> Sil.Subtype.exact
+    | Config.Java -> Sil.Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ with
     | Sil.Lvar pvar, [], Sil.Tfun _ ->
         let fun_name = Procname.from_string_c_fun (Mangled.to_string (Sil.pvar_get_name pvar)) in
@@ -967,7 +967,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
   let is_deref_of_nullable =
     let is_definitely_non_null exp prop =
       Prover.check_disequal prop exp Sil.exp_zero in
-    !Config.report_nullable_inconsistency && !Sil.curr_language = Sil.Java &&
+    !Config.report_nullable_inconsistency && !Config.curr_language = Config.Java &&
     not (is_definitely_non_null root prop) && is_only_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
     Prop.get_resource_undef_attribute;
@@ -1054,28 +1054,38 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
         Some (Sil.Lfield(e'', fn, t)), true (* the block dereferences is a field of an object*)
     | Some (_, e) -> Some e, false
     | _ -> None, false in
-  if (!Sil.curr_language = Sil.C_CPP) && fun_exp_may_be_null () && not (is_fun_exp_captured_var ()) then begin
-    let deref_str = Localise.deref_str_null None in
-    let err_desc_nobuckets = Errdesc.explain_dereference ~is_nullable: true deref_str prop loc in
-    match fun_exp with
-    | Sil.Var id when Ident.is_footprint id ->
-        let e_opt, is_field_deref = is_field_deref () in
-        let err_desc_nobuckets' = (match e_opt with
-            | Some e -> Localise.parameter_field_not_null_checked_desc err_desc_nobuckets e
-            | _ -> err_desc_nobuckets) in
-        let err_desc =
-          Localise.error_desc_set_bucket
-            err_desc_nobuckets' Localise.BucketLevel.b1 !Config.show_buckets in
-        if is_field_deref then
-          raise (Exceptions.Field_not_null_checked (err_desc, try assert false with Assert_failure x -> x))
-        else
-          raise (Exceptions.Parameter_not_null_checked (err_desc, try assert false with Assert_failure x -> x))
-    | _ -> (* HP: fun_exp is not a footprint therefore, either is a local or it's a modified param *)
-        let err_desc =
-          Localise.error_desc_set_bucket
-            err_desc_nobuckets Localise.BucketLevel.b1 !Config.show_buckets in
-        raise (Exceptions.Null_dereference (err_desc, try assert false with Assert_failure x -> x))
-  end
+  if (!Config.curr_language = Config.C_CPP) &&
+     fun_exp_may_be_null () &&
+     not (is_fun_exp_captured_var ()) then
+    begin
+      let deref_str = Localise.deref_str_null None in
+      let err_desc_nobuckets = Errdesc.explain_dereference ~is_nullable: true deref_str prop loc in
+      match fun_exp with
+      | Sil.Var id when Ident.is_footprint id ->
+          let e_opt, is_field_deref = is_field_deref () in
+          let err_desc_nobuckets' = (match e_opt with
+              | Some e -> Localise.parameter_field_not_null_checked_desc err_desc_nobuckets e
+              | _ -> err_desc_nobuckets) in
+          let err_desc =
+            Localise.error_desc_set_bucket
+              err_desc_nobuckets' Localise.BucketLevel.b1 !Config.show_buckets in
+          if is_field_deref then
+            raise
+              (Exceptions.Field_not_null_checked
+                 (err_desc, try assert false with Assert_failure x -> x))
+          else
+            raise
+              (Exceptions.Parameter_not_null_checked
+                 (err_desc, try assert false with Assert_failure x -> x))
+      | _ ->
+          (* HP: fun_exp is not a footprint therefore,
+             either is a local or it's a modified param *)
+          let err_desc =
+            Localise.error_desc_set_bucket
+              err_desc_nobuckets Localise.BucketLevel.b1 !Config.show_buckets in
+          raise (Exceptions.Null_dereference
+                   (err_desc, try assert false with Assert_failure x -> x))
+    end
 
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
     It returns an iterator with [lexp |-> strexp: typ] as current predicate

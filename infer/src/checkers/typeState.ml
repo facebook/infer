@@ -35,7 +35,7 @@ module M = Map.Make (struct
     type t = Sil.exp
     let compare = Sil.exp_compare end)
 
-type range = Sil.typ * TypeAnnotation.t * (Sil.location list)
+type range = Sil.typ * TypeAnnotation.t * (Location.t list)
 
 type 'a t =
   {
@@ -49,7 +49,7 @@ let empty ext =
     extension = ext.empty;
   }
 
-let locs_compare = list_compare Sil.loc_compare
+let locs_compare = list_compare Location.compare
 let locs_equal locs1 locs2 = locs_compare locs1 locs2 = 0
 
 let range_equal (typ1, ta1, locs1) (typ2, ta2, locs2) =
@@ -60,7 +60,7 @@ let equal t1 t2 =
   M.equal range_equal t1.map t2.map
 
 let pp ext fmt typestate =
-  let pp_loc fmt loc = F.fprintf fmt "%d" loc.Sil.line in
+  let pp_loc fmt loc = F.fprintf fmt "%d" loc.Location.line in
   let pp_locs fmt locs = F.fprintf fmt " [%a]" (pp_seq pp_loc) locs in
   let pp_one exp (typ, ta, locs) =
     F.fprintf fmt "  %a -> [%s] %s %a%a@\n"
@@ -78,7 +78,7 @@ exception JoinFail
 let type_join typ1 typ2 =
   if PatternMatch.type_is_object typ1 then typ2 else typ1
 let locs_join locs1 locs2 =
-  list_merge_sorted_nodup Sil.loc_compare [] locs1 locs2
+  list_merge_sorted_nodup Location.compare [] locs1 locs2
 
 (** Add a list of locations to a range. *)
 let range_add_locs (typ, ta, locs1) locs2 =

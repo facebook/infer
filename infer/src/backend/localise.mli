@@ -131,7 +131,7 @@ val deref_str_null : Procname.t option -> deref_str
 val deref_str_nullable : Procname.t option -> string -> deref_str
 
 (** dereference strings for an undefined value coming from the given procedure *)
-val deref_str_undef : Procname.t * Sil.location -> deref_str
+val deref_str_undef : Procname.t * Location.t -> deref_str
 
 (** dereference strings for a freed pointer dereference *)
 val deref_str_freed : Sil.res_action -> deref_str
@@ -158,7 +158,7 @@ type access =
   | Initialized_automatically
   | Returned_from_call of int
 
-val dereference_string : deref_str -> string -> access option -> Sil.location -> error_desc
+val dereference_string : deref_str -> string -> access option -> Location.t -> error_desc
 
 val parameter_field_not_null_checked_desc : error_desc -> Sil.exp -> error_desc
 
@@ -168,56 +168,63 @@ val is_field_not_null_checked_desc : error_desc -> bool
 
 val is_parameter_field_not_null_checked_desc : error_desc -> bool
 
-val desc_allocation_mismatch : Procname.t * Procname.t * Sil.location -> Procname.t * Procname.t * Sil.location -> error_desc
+val desc_allocation_mismatch :
+  Procname.t * Procname.t * Location.t -> Procname.t * Procname.t * Location.t -> error_desc
 
-val desc_class_cast_exception : Procname.t option -> string -> string -> string option -> Sil.location -> error_desc
+val desc_class_cast_exception :
+  Procname.t option -> string -> string -> string option -> Location.t -> error_desc
 
-val desc_comparing_floats_for_equality : Sil.location -> error_desc
+val desc_comparing_floats_for_equality : Location.t -> error_desc
 
-val desc_condition_is_assignment : Sil.location -> error_desc
+val desc_condition_is_assignment : Location.t -> error_desc
 
-val desc_condition_always_true_false : Sil.Int.t -> string option -> Sil.location -> error_desc
+val desc_condition_always_true_false : Sil.Int.t -> string option -> Location.t -> error_desc
 
-val desc_deallocate_stack_variable : string -> Procname.t -> Sil.location -> error_desc
+val desc_deallocate_stack_variable : string -> Procname.t -> Location.t -> error_desc
 
-val desc_deallocate_static_memory : string -> Procname.t -> Sil.location -> error_desc
+val desc_deallocate_static_memory : string -> Procname.t -> Location.t -> error_desc
 
-val desc_divide_by_zero : string -> Sil.location -> error_desc
+val desc_divide_by_zero : string -> Location.t -> error_desc
 
-val desc_leak : string option -> Sil.resource option -> Sil.res_action option -> Sil.location -> string option -> error_desc
+val desc_leak :
+  string option -> Sil.resource option -> Sil.res_action option ->
+  Location.t -> string option -> error_desc
 
-val desc_null_test_after_dereference : string -> int -> Sil.location -> error_desc
+val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 
 val java_unchecked_exn_desc : Procname.t -> Mangled.t -> string -> error_desc
 
 val desc_activity_leak : Procname.t -> Sil.typ -> Ident.fieldname -> error_desc
 
 (* Create human-readable error description for assertion failures *)
-val desc_assertion_failure : Sil.location -> error_desc
+val desc_assertion_failure : Location.t -> error_desc
 
 (** kind of precondition not met *)
 type pnm_kind =
   | Pnm_bounds
   | Pnm_dangling
 
-val desc_precondition_not_met : pnm_kind option -> Procname.t -> Sil.location -> error_desc
+val desc_precondition_not_met : pnm_kind option -> Procname.t -> Location.t -> error_desc
 
-val desc_return_expression_required : string -> Sil.location -> error_desc
+val desc_return_expression_required : string -> Location.t -> error_desc
 
-val desc_retain_cycle : Prop.normal Prop.t -> ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list -> Sil.location -> error_desc
+val desc_retain_cycle :
+  Prop.normal Prop.t -> ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list ->
+  Location.t -> error_desc
 
-val desc_return_statement_missing : Sil.location -> error_desc
+val desc_return_statement_missing : Location.t -> error_desc
 
-val desc_return_value_ignored : Procname.t -> Sil.location -> error_desc
+val desc_return_value_ignored : Procname.t -> Location.t -> error_desc
 
-val desc_stack_variable_address_escape : string -> string option -> Sil.location -> error_desc
+val desc_stack_variable_address_escape : string -> string option -> Location.t -> error_desc
 
 val desc_skip_function : Procname.t -> error_desc
 
 val desc_inherently_dangerous_function : Procname.t -> error_desc
 
-val desc_unary_minus_applied_to_unsigned_expression : string option -> string -> Sil.location -> error_desc
+val desc_unary_minus_applied_to_unsigned_expression :
+  string option -> string -> Location.t -> error_desc
 
-val desc_tainted_value_reaching_sensitive_function : string -> Sil.location -> error_desc
+val desc_tainted_value_reaching_sensitive_function : string -> Location.t -> error_desc
 
-val desc_uninitialized_dangling_pointer_deref : deref_str -> string -> Sil.location -> error_desc
+val desc_uninitialized_dangling_pointer_deref : deref_str -> string -> Location.t -> error_desc

@@ -45,7 +45,7 @@ let () =
 
 
 let init_global_state source_file =
-  Sil.curr_language := Sil.Java;
+  Config.curr_language := Config.Java;
   DB.current_source := source_file;
   DB.Results_dir.init ();
   Ident.reset_name_generator ();
@@ -146,7 +146,7 @@ let do_all_files classpath sources classes =
   let program = JClasspath.load_program classpath classes sources in
   let tenv = load_tenv program in
   let linereader = Printer.LineReader.create () in
-  let never_null_matcher = Inferconfig.NeverReturnNull.load_matcher Sil.Java in
+  let never_null_matcher = Inferconfig.NeverReturnNull.load_matcher Config.Java in
   let proc_file_map =
     StringMap.fold
       (do_source_file never_null_matcher linereader classes program tenv)

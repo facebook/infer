@@ -14,7 +14,7 @@ module F = Format
 (** Element of a loc trace *)
 type loc_trace_elem = {
   lt_level : int; (** nesting level of procedure calls *)
-  lt_loc : Sil.location; (** source location at the current step in the trace *)
+  lt_loc : Location.t; (** source location at the current step in the trace *)
   lt_description : string; (** description of the current step in the trace *)
   lt_node_tags : (string * string) list (** tags describing the node at the current location *)
 }
@@ -24,13 +24,13 @@ type loc_trace = loc_trace_elem list
 
 (** Data associated to a specific error *)
 type err_data =
-  (int * int) * int * Sil.location * ml_location option * loc_trace *
+  (int * int) * int * Location.t * ml_location option * loc_trace *
   Prop.normal Prop.t option * Exceptions.err_class
 
 let err_data_compare
     ((nodeid1, key1), session1, loc1, mloco1, ltr1, po1, ec1)
     ((nodeid2, key2), session2, loc2, mloco2, ltr2, po2, ec2) =
-  Sil.loc_compare loc1 loc2
+  Location.compare loc1 loc2
 
 module ErrDataSet = (* set err_data with no repeated loc *)
   Set.Make(struct
@@ -64,7 +64,7 @@ let empty () = ErrLogHash.create 13
 
 (** type of the function to be passed to iter *)
 type iter_fun =
-  (int * int) -> Sil.location -> Exceptions.err_kind -> bool -> Localise.t -> Localise.error_desc ->
+  (int * int) -> Location.t -> Exceptions.err_kind -> bool -> Localise.t -> Localise.error_desc ->
   string -> loc_trace -> Prop.normal Prop.t option -> Exceptions.err_class -> unit
 
 (** Apply f to nodes and error names *)
@@ -95,7 +95,7 @@ let pp fmt (errlog : t) =
 let pp_html path_to_root fmt (errlog: t) =
   let pp_eds fmt eds =
     let pp_nodeid_session_loc fmt ((nodeid, nodekey), session, loc, mloco, ltr, pre_opt, eclass) =
-      Io_infer.Html.pp_session_link path_to_root fmt (nodeid, session, loc.Sil.line) in
+      Io_infer.Html.pp_session_link path_to_root fmt (nodeid, session, loc.Location.line) in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) eds in
   let f do_fp ek (ekind, infp, err_name, desc, severity) eds =
     if ekind == ek && do_fp == infp
@@ -157,7 +157,9 @@ let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
     | Some ekind -> ekind
     | _ -> _ekind in
   let hide_java_loc_zero = (* hide java errors at location zero unless in -developer_mode *)
-    !Config.developer_mode = false && !Sil.curr_language = Sil.Java && loc.Sil.line = 0 in
+    !Config.developer_mode = false &&
+    !Config.curr_language = Config.Java &&
+    loc.Location.line = 0 in
   let log_it =
     visibility == Exceptions.Exn_user ||
     (!Config.developer_mode && visibility == Exceptions.Exn_developer) in
