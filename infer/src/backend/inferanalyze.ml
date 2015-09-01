@@ -622,12 +622,18 @@ let compute_to_analyze_map_incremental files_changed_map global_cg exe_env =
     changed_fold_f files_changed_map (fun p -> Cg.get_heirs global_cg p) in
   (* add a procedure to the file -> (procedures to analyze) map *)
   let add_proc_to_map proc map =
-    let proc_file_pname = source_file_to_pname (Exe_env.get_source exe_env proc) in
-    let procs_to_analyze =
-      try Procname.Map.find proc_file_pname map
-      with Not_found -> Procname.Set.empty in
-    let procs_to_analyze' = Procname.Set.add proc procs_to_analyze in
-    Procname.Map.add proc_file_pname procs_to_analyze' map in
+    let source_opt =
+      try Some (Exe_env.get_source exe_env proc)
+      with Not_found -> None in
+    match source_opt with
+    | Some source ->
+        let proc_file_pname = source_file_to_pname source in
+        let procs_to_analyze =
+          try Procname.Map.find proc_file_pname map
+          with Not_found -> Procname.Set.empty in
+        let procs_to_analyze' = Procname.Set.add proc procs_to_analyze in
+        Procname.Map.add proc_file_pname procs_to_analyze' map
+    | None -> map in
   let get_specs_filename pname =
     Specs.res_dir_specs_filename pname in
   let is_stale pname =
