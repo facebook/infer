@@ -39,7 +39,8 @@ git clone https://github.com/facebook/infer.git $INFER_SOURCE
 
 # Copy infer source
 mkdir -p $PKG_DIR
-rsync -a $INFER_SOURCE/ $PKG_DIR
+rsync -a --exclude=".git/" --exclude=".gitmodules" --exclude=".gitignore" $INFER_SOURCE/ $PKG_DIR
+touch $PKG_DIR/.release
 
 # Add facebook-clang-plugin binaries
 PKG_PLUGIN_DIR=$PKG_DIR/facebook-clang-plugins

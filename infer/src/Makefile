@@ -5,6 +5,10 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+INFER_VERSION_MAJOR = 0
+INFER_VERSION_MINOR = 3
+INFER_VERSION_PATCH = 0
+
 REMOVE = rm -vf
 REMOVE_DIR = rm -rvf
 COPY = cp -f -p
@@ -194,27 +198,24 @@ init: sanitize version $(BUILDDIR)
 sanitize:
 	$(SANITIZE_SCRIPT)
 
-ifneq ($(shell which git),)
-MAJOR = 0
-MINOR = 3
-PATCH = 0
-
-GIT_COMMIT = $(shell git rev-parse HEAD | awk '{print $0; exit}' | xargs echo -n | sed 's/[\/&]/\\&/g')
-GIT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD | awk '{print $0; exit}' | xargs echo -n | sed 's/[\/&]/\\&/g')
-GIT_TAG = $(shell git tag --points-at $(GIT_COMMIT))
-
 version:
-	sed -e 's/@MAJOR@/$(MAJOR)/g' \
-		-e 's/@MINOR@/$(MINOR)/g' \
-		-e 's/@PATCH@/$(PATCH)/g' \
-		-e 's/@GIT_COMMIT@/$(GIT_COMMIT)/g' \
-		-e 's/@GIT_BRANCH@/$(GIT_BRANCH)/g' \
-		-e 's/@GIT_TAG@/$(GIT_TAG)/g' \
+	GIT_COMMIT=$$(git rev-parse HEAD 2> /dev/null \
+	  || printf "unknown commit"); \
+	GIT_BRANCH=$$(git rev-parse --abbrev-ref HEAD 2> /dev/null \
+	  || printf "unknown branch"); \
+	UNKNOWN="-unknown"; \
+	if [ -e "$(ROOT)/.release" ]; then \
+	  UNKNOWN=""; \
+	fi; \
+	GIT_TAG=$$(git tag --points-at HEAD 2> /dev/null \
+	  || printf "v$(INFER_VERSION_MAJOR).$(INFER_VERSION_MINOR).$(INFER_VERSION_PATCH)$$UNKNOWN"); \
+	sed -e 's/@MAJOR@/$(INFER_VERSION_MAJOR)/g' \
+		-e 's/@MINOR@/$(INFER_VERSION_MINOR)/g' \
+		-e 's/@PATCH@/$(INFER_VERSION_PATCH)/g' \
+		-e "s/@GIT_COMMIT@/$$GIT_COMMIT/g" \
+		-e "s#@GIT_BRANCH@#$$GIT_BRANCH#g" \
+		-e "s/@GIT_TAG@/$$GIT_TAG/g" \
 		$(BACKEND_SOURCES)/version.ml.in > $(BACKEND_SOURCES)/version.ml
-else
-version:
-	$(info Infer is not tracked, not updating $(BACKEND_SOURCES)/version.ml)
-endif
 
 $(BUILDDIR):
 	$(MKDIR) $(BUILDDIR)
@@ -243,4 +244,7 @@ $(CHECKCOPYRIGHT_BINARY): $(BUILDDIR)/$(CHECKCOPYRIGHT_MAIN).native
 clean: $(BUILDDIR)
 	$(OCAMLBUILD) -clean
 	$(REMOVE_DIR) $(ANNOTDIR)
-	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY) $(INFERLLVM_BINARY) $(CHECKCOPYRIGHT_BINARY)
+	$(REMOVE) $(BACKEND_SOURCES)/version.ml
+	$(REMOVE) $(TYPEPROP_BINARY) $(INFERANALYZE_BINARY) $(INFERPRINT_BINARY)
+	$(REMOVE) $(INFERJAVA_BINARY) $(INFERCLANG_BINARY) $(INFERLLVM_BINARY)
+	$(REMOVE) $(CHECKCOPYRIGHT_BINARY)
