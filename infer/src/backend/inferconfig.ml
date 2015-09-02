@@ -24,20 +24,24 @@ let lookup_string_list key json =
 
 type path_filter = DB.source_file -> bool
 type error_filter = Localise.t -> bool
+type proc_filter = Procname.t -> bool
 
 type filters =
   {
     path_filter : path_filter;
-    error_filter: error_filter;
+    error_filter : error_filter;
+    proc_filter : proc_filter;
   }
 
 let default_path_filter : path_filter = function path -> true
 let default_error_filter : error_filter = function error_name -> true
+let default_proc_filter : proc_filter = function proc_name -> true
 
 let do_not_filter : filters =
   {
     path_filter = default_path_filter;
     error_filter = default_error_filter;
+    proc_filter = default_proc_filter;
   }
 
 type filter_config =
@@ -47,24 +51,6 @@ type filter_config =
     blacklist_files_containing : string list;
     suppress_errors: string list;
   }
-
-let load_filters analyzer =
-  try
-    let json =
-      match !inferconfig_home with
-      | Some dir ->
-          Yojson.Basic.from_file (Filename.concat dir inferconfig_file)
-      | None -> Yojson.Basic.from_file inferconfig_file in
-    let inferconfig =
-      {
-        whitelist = lookup_string_list (analyzer ^ "_whitelist") json;
-        blacklist = lookup_string_list (analyzer ^ "_blacklist") json;
-        blacklist_files_containing =
-          lookup_string_list (analyzer ^ "_blacklist_files_containing") json;
-        suppress_errors = lookup_string_list (analyzer ^ "_suppress_errors") json;
-      } in
-    Some inferconfig
-  with Sys_error _ -> None
 
 let is_matching patterns =
   fun source_file ->
@@ -110,43 +96,12 @@ module FileContainsStringMatcher = struct
           with Sys_error _ -> false
 end
 
-let filters_from_inferconfig inferconfig : filters =
-  let path_filter =
-    let whitelist_filter : path_filter =
-      if inferconfig.whitelist = [] then default_path_filter
-      else is_matching (list_map Str.regexp inferconfig.whitelist) in
-    let blacklist_filter : path_filter =
-      is_matching (list_map Str.regexp inferconfig.blacklist) in
-    let blacklist_files_containing_filter : path_filter =
-      FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing in
-    function source_file ->
-      whitelist_filter source_file &&
-      not (blacklist_filter source_file) &&
-      not (blacklist_files_containing_filter source_file) in
-  let error_filter =
-    function error_name ->
-      let error_str = Localise.to_string error_name in
-      not (list_exists (string_equal error_str) inferconfig.suppress_errors) in
-  {
-    path_filter = path_filter;
-    error_filter = error_filter;
-  }
+module type MATCHABLE_JSON = sig
+  val json_key : string
+end
 
-(* Create filters based on .inferconfig.*)
-(* The environment varialble NO_PATH_FILTERING disables path filtering. *)
-let create_filters analyzer =
-  Config.project_root := Some (Sys.getcwd ());
-  if Config.from_env_variable "NO_PATH_FILTERING" then
-    do_not_filter
-  else
-    match load_filters (Utils.string_of_analyzer analyzer) with
-    | None -> do_not_filter
-    | Some inferconfig ->
-        filters_from_inferconfig inferconfig
-
-module NeverReturnNull = struct
-
-  let never_returning_null_key = "never_returning_null"
+module FileOrProcMatcher = functor (M : MATCHABLE_JSON) ->
+struct
 
   type matcher = DB.source_file -> Procname.t -> bool
 
@@ -173,8 +128,7 @@ module NeverReturnNull = struct
 
   let language_of_string = function
     | "Java" -> Config.Java
-    | "C_CPP" -> Config.C_CPP
-    | _ -> failwith ("Unknown language found in " ^ inferconfig_file)
+    | l -> failwith ("Inferconfig JSON key " ^ M.json_key ^ " not supported for language " ^ l)
 
   let pp_pattern fmt pattern =
     let pp_string fmt s =
@@ -206,7 +160,7 @@ module NeverReturnNull = struct
     let rec loop = function
       | [] ->
           failwith
-            ("No language found for " ^ never_returning_null_key ^ " in " ^ inferconfig_file)
+            ("No language found for " ^ M.json_key ^ " in " ^ inferconfig_file)
       | (key, `String s) :: _ when key = "language" ->
           language_of_string s
       | _:: tl -> loop tl in
@@ -218,7 +172,7 @@ module NeverReturnNull = struct
     and is_source_contains key = list_exists (string_equal key) ["source_contains"] in
     let rec loop = function
       | [] ->
-          failwith ("Unknown pattern for " ^ never_returning_null_key ^ " in " ^ inferconfig_file)
+          failwith ("Unknown pattern for " ^ M.json_key ^ " in " ^ inferconfig_file)
       | (key, _) :: _ when is_method_pattern key ->
           Method_pattern (language, default_method_pattern)
       | (key, _) :: _ when is_source_contains key ->
@@ -261,9 +215,7 @@ module NeverReturnNull = struct
     | `List l -> list_fold_left translate accu l
     | _ -> assert false
 
-  let create_method_matcher language m_patterns =
-    if language <> Config.Java then assert false
-    else
+  let create_method_matcher m_patterns =
     if m_patterns = [] then
       default_matcher
     else
@@ -290,34 +242,103 @@ module NeverReturnNull = struct
             class_patterns
         with Not_found -> false
 
-  let create_file_matcher language patterns =
+  let create_file_matcher patterns =
     let s_patterns, m_patterns =
       let collect (s_patterns, m_patterns) = function
-        | Source_contains (lang, s) when lang = language -> (s:: s_patterns, m_patterns)
-        | Method_pattern (lang, mp) when lang = language ->
-            (s_patterns, mp :: m_patterns)
-        | _ -> (s_patterns, m_patterns) in
+        | Source_contains (lang, s) -> (s:: s_patterns, m_patterns)
+        | Method_pattern (lang, mp) -> (s_patterns, mp :: m_patterns) in
       list_fold_left collect ([], []) patterns in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
       fun source_file proc_name -> matcher source_file
-    and m_matcher = create_method_matcher language m_patterns in
+    and m_matcher = create_method_matcher m_patterns in
     fun source_file proc_name ->
       m_matcher source_file proc_name || s_matcher source_file proc_name
 
-  let load_matcher language =
-    try
-      let patterns =
-        let found =
-          Yojson.Basic.Util.filter_member
-            never_returning_null_key
-            [Yojson.Basic.from_file inferconfig_file] in
-        list_fold_left translate [] found in
-      create_file_matcher language patterns
-    with Sys_error _ ->
-      default_matcher
+  let load_matcher inferconfig =
+    if Sys.file_exists inferconfig then
+      try
+        let patterns =
+          let found =
+            Yojson.Basic.Util.filter_member
+              M.json_key
+              [Yojson.Basic.from_file inferconfig] in
+          list_fold_left translate [] found in
+        create_file_matcher patterns
+      with Sys_error _ ->
+        default_matcher
+    else default_matcher
 
-end (* of module NeverReturnNull *)
+end (* of module FileOrProcMatcher *)
+
+module NeverReturnNull = FileOrProcMatcher(struct
+    let json_key = "never_returning_null"
+  end)
+
+module ProcMatcher = FileOrProcMatcher(struct
+    let json_key = "suppress_procedures"
+  end)
+
+let inferconfig () = match !inferconfig_home with
+  | Some dir -> Filename.concat dir inferconfig_file
+  | None -> inferconfig_file
+
+let load_filters analyzer =
+  let inferconfig_file = inferconfig () in
+  if Sys.file_exists inferconfig_file then
+  try
+    let json = Yojson.Basic.from_file inferconfig_file in
+    let inferconfig =
+      {
+        whitelist = lookup_string_list (analyzer ^ "_whitelist") json;
+        blacklist = lookup_string_list (analyzer ^ "_blacklist") json;
+        blacklist_files_containing =
+          lookup_string_list (analyzer ^ "_blacklist_files_containing") json;
+        suppress_errors = lookup_string_list (analyzer ^ "_suppress_errors") json;
+      } in
+    Some inferconfig
+  with Sys_error _ -> None
+    else None
+
+let filters_from_inferconfig inferconfig : filters =
+  let path_filter =
+    let whitelist_filter : path_filter =
+      if inferconfig.whitelist = [] then default_path_filter
+      else is_matching (list_map Str.regexp inferconfig.whitelist) in
+    let blacklist_filter : path_filter =
+      is_matching (list_map Str.regexp inferconfig.blacklist) in
+    let blacklist_files_containing_filter : path_filter =
+      FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing in
+    function source_file ->
+      whitelist_filter source_file &&
+      not (blacklist_filter source_file) &&
+      not (blacklist_files_containing_filter source_file) in
+  let error_filter =
+    function error_name ->
+      let error_str = Localise.to_string error_name in
+      not (list_exists (string_equal error_str) inferconfig.suppress_errors) in
+  let proc_filter =
+    let filter = match !local_config with
+      | Some f -> ProcMatcher.load_matcher f
+      | None -> ProcMatcher.default_matcher in
+    fun pname -> not (filter DB.source_file_empty pname) in
+  {
+    path_filter = path_filter;
+    error_filter = error_filter;
+    proc_filter = proc_filter;
+  }
+
+(* Create filters based on .inferconfig.*)
+(* The environment varialble NO_PATH_FILTERING disables path filtering. *)
+let create_filters analyzer =
+  Config.project_root := Some (Sys.getcwd ());
+  if Config.from_env_variable "NO_PATH_FILTERING" then
+    do_not_filter
+  else
+    match load_filters (Utils.string_of_analyzer analyzer) with
+    | None -> do_not_filter
+    | Some inferconfig ->
+        filters_from_inferconfig inferconfig
 
 (* This function loads and list the path that are being filtered by the analyzer. The results *)
 (* are of the form: path/to/file.java -> {infer, eradicate} meaning that analysis results will *)

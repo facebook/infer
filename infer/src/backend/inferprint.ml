@@ -808,19 +808,18 @@ end
 
 (** Process a summary *)
 let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fname, summary) =
-
   let proc_name = Specs.get_proc_name summary in
   let base = DB.chop_extension (DB.filename_from_string fname) in
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true;
-  if !quiet then () (* L.err "File: %s@." fname *)
+  if !quiet then ()
   else L.out "Procedure: %a@\n%a@." Procname.pp proc_name (Specs.pp_summary pe_text !whole_seconds) summary;
   let error_filter error_desc error_name =
     let always_report () =
       Localise.error_desc_extract_tag_value error_desc "always_report" = "true" in
     (filters.Inferconfig.path_filter summary.Specs.attributes.Sil.loc.Location.file
      || always_report ()) &&
-    filters.Inferconfig.error_filter error_name in
+    filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name in
   do_outf procs_csv (fun outf -> F.fprintf outf.fmt "%a" (ProcsCsv.pp_summary fname top_proc_set) summary);
   do_outf calls_csv (fun outf -> F.fprintf outf.fmt "%a" (CallsCsv.pp_calls fname) summary);
   do_outf procs_xml (fun outf -> ProcsXml.pp_proc top_proc_set outf.fmt summary);

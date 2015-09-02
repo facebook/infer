@@ -146,7 +146,7 @@ let do_all_files classpath sources classes =
   let program = JClasspath.load_program classpath classes sources in
   let tenv = load_tenv program in
   let linereader = Printer.LineReader.create () in
-  let never_null_matcher = Inferconfig.NeverReturnNull.load_matcher Config.Java in
+  let never_null_matcher = Inferconfig.NeverReturnNull.load_matcher (Inferconfig.inferconfig ()) in
   let proc_file_map =
     StringMap.fold
       (do_source_file never_null_matcher linereader classes program tenv)

@@ -7,20 +7,27 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-(** Filter type for a source file *)
-type path_filter = DB.source_file -> bool
-
 val inferconfig_home : string option ref
 
 val local_config : string option ref
 
+(** get the path to the .inferconfig file *)
+val inferconfig : unit -> string
+
+(** Filter type for a source file *)
+type path_filter = DB.source_file -> bool
+
 (** Filter type for an error name. *)
 type error_filter = Localise.t -> bool
+
+(** Filter type for a procedure name *)
+type proc_filter = Procname.t -> bool
 
 type filters =
   {
     path_filter : path_filter;
-    error_filter: error_filter;
+    error_filter : error_filter;
+    proc_filter : proc_filter;
   }
 
 (** Filters that accept everything. *)
@@ -31,7 +38,7 @@ val create_filters : Utils.analyzer -> filters
 
 module NeverReturnNull : sig
   type matcher = DB.source_file -> Procname.t -> bool
-  val load_matcher : Config.language -> matcher
+  val load_matcher : string -> matcher
 end
 
 (** Load the config file and list the files to report on *)
