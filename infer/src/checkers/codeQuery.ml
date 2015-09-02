@@ -49,7 +49,7 @@ module Err = struct
     let new_summ = { old_summ with
                      Specs.attributes =
                        { old_summ.Specs.attributes with
-                         Sil.loc = Cfg.Procdesc.get_loc proc_desc };
+                         ProcAttributes.loc = Cfg.Procdesc.get_loc proc_desc };
                      Specs.nodes = nodes;
                      Specs.payload = Specs.PrePosts specs } in
     Specs.add_summary proc_name new_summ

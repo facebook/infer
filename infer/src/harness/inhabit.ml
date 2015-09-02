@@ -278,30 +278,14 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
     let formals =
       let param_strs = Procname.java_get_parameters proc_name in
       list_fold_right (fun typ_str params -> ("", lookup_typ typ_str) :: params) param_strs [] in
-    let open Cfg.Procdesc in
     let proc_attributes =
-      {
-        Sil.access = Sil.Default;
-        captured = [];
-        exceptions = [];
-        formals;
-        func_attributes = [];
-        is_abstract = false;
-        is_defined = false;
-        is_bridge_method = false;
-        is_generated = false;
-        is_objc_instance_method = false;
-        is_synthetic_method = false;
-        language = Config.Java;
+      { (ProcAttributes.default proc_name Config.Java) with
+        ProcAttributes.formals;
         loc;
-        locals = [];
-        method_annotation = Sil.method_annotation_empty;
-        proc_flags = proc_flags_empty ();
-        proc_name;
         ret_type;
       } in
-    create {
-      cfg = harness_cfg;
+    Cfg.Procdesc.create {
+      Cfg.Procdesc.cfg = harness_cfg;
       proc_attributes = proc_attributes;
     } in
   list_iter (fun p ->
@@ -331,30 +315,13 @@ let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
     | None -> assert false in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   let procdesc =
-    let open Cfg.Procdesc in
     let proc_attributes =
-      {
-        Sil.access = Sil.Default;
-        captured = [];
-        exceptions = [];
-        formals = [];
-        func_attributes = [];
-        is_abstract = false;
-        is_bridge_method = false;
-        is_defined = true;
-        is_generated = false;
-        is_objc_instance_method = false;
-        is_synthetic_method = false;
-        language = Config.Java;
+      { (ProcAttributes.default harness_name Config.Java) with
+        ProcAttributes.is_defined = true;
         loc = env.pc;
-        locals = [];
-        method_annotation = Sil.method_annotation_empty;
-        proc_flags = proc_flags_empty ();
-        proc_name = harness_name;
-        ret_type = Sil.Tvoid;
       } in
-    create {
-      cfg = harness_cfg;
+    Cfg.Procdesc.create {
+      Cfg.Procdesc.cfg = harness_cfg;
       proc_attributes;
     } in
   let harness_node =

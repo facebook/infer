@@ -524,7 +524,7 @@ let call_should_be_skipped callee_pname summary =
   (* check skip flag *)
   || Specs.get_flag callee_pname proc_flag_skip <> None
   (* skip abstract methods *)
-  || summary.Specs.attributes.Sil.is_abstract
+  || summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
   || (!Config.angelic_execution && Specs.get_specs_from_payload summary == [])
 
@@ -643,12 +643,11 @@ let proc_desc_copy cfg pdesc pname pname' =
     (match Cfg.Procdesc.find_from_name cfg pname' with
      | Some pdesc' -> pdesc'
      | None ->
-         let open Cfg.Procdesc in
-         create {
-           cfg = cfg;
+         Cfg.Procdesc.create {
+           Cfg.Procdesc.cfg = cfg;
            proc_attributes =
-             { (Sil.copy_proc_attributes (get_attributes pdesc)) with
-               Sil.proc_name = pname'; };
+             { (ProcAttributes.copy (Cfg.Procdesc.get_attributes pdesc)) with
+               ProcAttributes.proc_name = pname'; };
          })
 
 let method_exists right_proc_name methods =
@@ -1257,7 +1256,8 @@ and sym_exe_check_variadic_sentinel_if_present cfg pdesc tenv prop path actual_p
   | None -> [(prop, path)]
   | Some callee_pdesc ->
       let proc_attributes = Cfg.Procdesc.get_attributes callee_pdesc in
-      match Sil.get_sentinel_func_attribute_value proc_attributes.Sil.func_attributes with
+      match Sil.get_sentinel_func_attribute_value
+              proc_attributes.ProcAttributes.func_attributes with
       | None -> [(prop, path)]
       | Some sentinel_arg ->
           let formals = Cfg.Procdesc.get_formals callee_pdesc in
@@ -1317,7 +1317,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
     (* In case we call an objc instance method we add and extra spec *)
     (* were the receiver is null and the semantics of the call is nop*)
     if (!Config.curr_language <> Config.Java) && !Config.objc_method_call_semantics &&
-       (Specs.get_attributes summary).Sil.is_objc_instance_method then
+       (Specs.get_attributes summary).ProcAttributes.is_objc_instance_method then
       handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path
     else  (* non-objective-c method call. Standard tabulation *)
       Tabulation.exe_function_call tenv cfg ret_ids pdesc callee_pname loc actual_params pre path

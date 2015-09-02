@@ -120,30 +120,17 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
         match ret_tp_opt with
         | None -> Sil.Tvoid
         | Some ret_tp -> trans_typ ret_tp in
-      let (proc_attrs : Sil.proc_attributes) =
+      let (proc_attrs : ProcAttributes.t) =
         let open Sil in
-        { access = Sil.Default;
-          captured = [];
-          exceptions = [];
-          formals = list_map (fun (tp, name) -> (name, trans_typ tp)) params;
-          func_attributes = [];
-          is_abstract = false;
-          is_bridge_method = false;
+        { (ProcAttributes.default proc_name Config.C_CPP) with
+          ProcAttributes.formals = list_map (fun (tp, name) -> (name, trans_typ tp)) params;
           is_defined = true; (** is defined and not just declared *)
-          is_generated = false;
-          is_objc_instance_method = false;
-          is_synthetic_method = false;
-          language = Config.C_CPP;
           loc = source_only_location ();
           locals = []; (* TODO *)
-          method_annotation = Sil.method_annotation_empty;
-          proc_flags = proc_flags_empty ();
-          proc_name;
           ret_type;
         } in
       let (procdesc_builder : Cfg.Procdesc.proc_desc_builder) =
-        let open Cfg.Procdesc in
-        { cfg = cfg;
+        { Cfg.Procdesc.cfg = cfg;
           proc_attributes = proc_attrs;
         } in
       let procdesc = Cfg.Procdesc.create procdesc_builder in

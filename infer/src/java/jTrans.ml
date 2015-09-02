@@ -286,30 +286,20 @@ let create_local_procdesc program linereader cfg tenv node m =
             let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
             let method_annotation = JAnnotation.translate_method am.Javalib.am_annotations in
             let procdesc =
-              let open Cfg.Procdesc in
               let proc_attributes =
-                {
-                  Sil.access = trans_access am.Javalib.am_access;
-                  captured = [];
+                { (ProcAttributes.default proc_name Config.Java) with
+                  ProcAttributes.access = trans_access am.Javalib.am_access;
                   exceptions = list_map JBasics.cn_name am.Javalib.am_exceptions;
                   formals;
-                  func_attributes = [];
                   is_abstract = true;
                   is_bridge_method = am.Javalib.am_bridge;
                   is_defined = true;
-                  is_generated = false;
-                  is_objc_instance_method = false;
                   is_synthetic_method = am.Javalib.am_synthetic;
-                  language = Config.Java;
-                  loc = Location.dummy;
-                  locals = [];
                   method_annotation;
-                  proc_flags = proc_flags_empty ();
-                  proc_name;
                   ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
-              create {
-                cfg = cfg;
+              Cfg.Procdesc.create {
+                Cfg.Procdesc.cfg = cfg;
                 proc_attributes;
               } in
             let start_kind = Cfg.Node.Start_node procdesc in
@@ -323,30 +313,18 @@ let create_local_procdesc program linereader cfg tenv node m =
             let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
             let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
             let _procdesc =
-              let open Cfg.Procdesc in
               let proc_attributes =
-                {
-                  Sil.access = trans_access cm.Javalib.cm_access;
-                  captured = [];
+                { (ProcAttributes.default proc_name Config.Java) with
+                  ProcAttributes.access = trans_access cm.Javalib.cm_access;
                   exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
                   formals;
-                  func_attributes = [];
-                  is_abstract = false;
                   is_bridge_method = cm.Javalib.cm_bridge;
-                  is_defined = false;
-                  is_generated = false;
-                  is_objc_instance_method = false;
                   is_synthetic_method = cm.Javalib.cm_synthetic;
-                  language = Config.Java;
-                  loc = Location.dummy;
-                  locals = [];
                   method_annotation;
-                  proc_flags = proc_flags_empty ();
-                  proc_name;
                   ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
-              create {
-                cfg = cfg;
+              Cfg.Procdesc.create {
+                Cfg.Procdesc.cfg = cfg;
                 proc_attributes = proc_attributes;
               } in
             ()
@@ -361,30 +339,21 @@ let create_local_procdesc program linereader cfg tenv node m =
             update_constr_loc cn ms loc_start;
             update_init_loc cn ms loc_exit;
             let procdesc =
-              let open Cfg.Procdesc in
               let proc_attributes =
-                {
-                  Sil.access = trans_access cm.Javalib.cm_access;
-                  captured = [];
+                { (ProcAttributes.default proc_name Config.Java) with
+                  ProcAttributes.access = trans_access cm.Javalib.cm_access;
                   exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
                   formals;
-                  func_attributes = [];
-                  is_abstract = false;
                   is_bridge_method = cm.Javalib.cm_bridge;
                   is_defined = true;
-                  is_generated = false;
-                  is_objc_instance_method = false;
                   is_synthetic_method = cm.Javalib.cm_synthetic;
-                  language = Config.Java;
                   loc = loc_start;
                   locals;
                   method_annotation;
-                  proc_flags = proc_flags_empty ();
-                  proc_name;
                   ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
-              create {
-                cfg = cfg;
+              Cfg.Procdesc.create {
+                Cfg.Procdesc.cfg = cfg;
                 proc_attributes = proc_attributes;
               } in
             let start_kind = Cfg.Node.Start_node procdesc in
@@ -410,7 +379,7 @@ let create_local_procdesc program linereader cfg tenv node m =
               create_new_procdesc ()
         end
 
-let create_external_procdesc program cfg tenv cn ms method_annotation kind =
+let create_external_procdesc program cfg tenv cn ms kind =
   let return_type =
     match JBasics.ms_rtype ms with
     | None -> Sil.Tvoid
@@ -418,30 +387,13 @@ let create_external_procdesc program cfg tenv cn ms method_annotation kind =
   let formals = formals_from_signature program tenv cn ms kind in
   let proc_name = JTransType.get_method_procname cn ms kind in
   ignore (
-    let open Cfg.Procdesc in
     let proc_attributes =
-      {
-        Sil.access = Sil.Default;
-        captured = [];
-        exceptions = [];
-        formals;
-        func_attributes = [];
-        is_abstract = false;
-        is_bridge_method = false;
-        is_defined = false;
-        is_generated = false;
-        is_objc_instance_method = false;
-        is_synthetic_method = false;
-        language = Config.Java;
-        loc = Location.dummy;
-        locals = [];
-        method_annotation;
-        proc_flags = proc_flags_empty ();
-        proc_name;
+      { (ProcAttributes.default proc_name Config.Java) with
+        ProcAttributes.formals;
         ret_type = return_type;
       } in
-    create {
-      cfg = cfg;
+    Cfg.Procdesc.create {
+      Cfg.Procdesc.cfg = cfg;
       proc_attributes = proc_attributes;
     })
 
@@ -450,7 +402,7 @@ let rec get_method_procdesc program cfg tenv cn ms kind =
   let procname = JTransType.get_method_procname cn ms kind in
   match lookup_procdesc cfg procname with
   | Unknown ->
-      create_external_procdesc program cfg tenv cn ms Sil.method_annotation_empty kind;
+      create_external_procdesc program cfg tenv cn ms kind;
       get_method_procdesc program cfg tenv cn ms kind
   | Created status -> status
 

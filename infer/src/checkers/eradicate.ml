@@ -54,7 +54,7 @@ struct
     let old_summ = Specs.get_summary_unsafe proc_name in
     let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
     let method_annotation =
-      (Specs.proc_get_attributes proc_name proc_desc).Sil.method_annotation in
+      (Specs.proc_get_attributes proc_name proc_desc).ProcAttributes.method_annotation in
     let new_summ =
       {
         old_summ with
@@ -63,7 +63,7 @@ struct
         Specs.attributes =
           {
             old_summ.Specs.attributes with
-            Sil.loc = Cfg.Procdesc.get_loc proc_desc;
+            ProcAttributes.loc = Cfg.Procdesc.get_loc proc_desc;
             method_annotation;
           };
       } in
@@ -177,7 +177,8 @@ struct
           let do_proc (init_pn, init_pd) =
             let filter callee_pn callee_pd =
               let is_private =
-                (Specs.proc_get_attributes callee_pn callee_pd).Sil.access = Sil.Private in
+                let attr = Specs.proc_get_attributes callee_pn callee_pd in
+                attr.ProcAttributes.access = Sil.Private in
               let same_class =
                 let get_class_opt pn =
                   if Procname.is_java pn then Some (Procname.java_get_class pn)
@@ -305,12 +306,12 @@ struct
 
     let filter_special_cases () =
       if Procname.java_is_access_method proc_name ||
-         (Specs.proc_get_attributes proc_name proc_desc).Sil.is_bridge_method
+         (Specs.proc_get_attributes proc_name proc_desc).ProcAttributes.is_bridge_method
       then None
       else
         begin
           let annotated_signature = Models.get_annotated_signature proc_desc proc_name in
-          if (Specs.proc_get_attributes proc_name proc_desc).Sil.is_abstract then
+          if (Specs.proc_get_attributes proc_name proc_desc).ProcAttributes.is_abstract then
             begin
               if Models.infer_library_return &&
                  EradicateChecks.classify_procedure proc_name proc_desc = "L" then

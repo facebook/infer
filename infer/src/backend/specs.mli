@@ -105,7 +105,6 @@ type stats =
     stats_timeout: bool; (** Flag to indicate whether a timeout occurred *)
     stats_calls: Cg.in_out_calls; (** num of procs calling, and called *)
     symops: int; (** Number of SymOp's throughout the whole analysis of the function *)
-    err_log: Errlog.t; (** Error log for the procedure *)
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)
     mutable nodes_visited_re : IntSet.t; (** Nodes visited during the re-execution phase *)
     call_stats : CallStats.t;
@@ -133,7 +132,7 @@ type summary =
     stats: stats;  (** statistics: execution time and list of errors *)
     status: status; (** ACTIVE when the proc is being analyzed *)
     timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
-    attributes : Sil.proc_attributes; (** Attributes of the procedure *)
+    attributes : ProcAttributes.t; (** Attributes of the procedure *)
   }
 
 (** origin of a summary: current results dir, a spec library, or models *)
@@ -161,7 +160,7 @@ val d_spec : 'a spec -> unit
 val get_proc_name : summary -> Procname.t
 
 (** Get the attributes of the procedure. *)
-val get_attributes : summary -> Sil.proc_attributes
+val get_attributes : summary -> ProcAttributes.t
 
 (** Get the return type of the procedure *)
 val get_ret_type : summary -> Sil.typ
@@ -217,11 +216,10 @@ val init_summary :
   (Procname.t list * (** depend list *)
    int list * (** nodes *)
    proc_flags * (** procedure flags *)
-   Errlog.t * (** initial error log *)
    (Procname.t * Location.t) list * (** calls *)
    int * (** cyclomatic *)
    (Cg.in_out_calls option) * (** in and out calls *)
-   Sil.proc_attributes) (** attributes of the procedure *)
+   ProcAttributes.t) (** attributes of the procedure *)
   -> unit
 
 val reset_summary : Cg.t -> Procname.t -> Location.t -> unit
@@ -248,7 +246,7 @@ val pp_specs : printenv -> Format.formatter -> Prop.normal spec list -> unit
 val pp_summary : printenv -> bool -> Format.formatter -> summary -> unit
 
 (** Get the attributes of a procedure, looking first in the procdesc and then in the .specs file. *)
-val proc_get_attributes : Procname.t -> Cfg.Procdesc.t -> Sil.proc_attributes
+val proc_get_attributes : Procname.t -> Cfg.Procdesc.t -> ProcAttributes.t
 
 val proc_get_method_annotation : Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
 

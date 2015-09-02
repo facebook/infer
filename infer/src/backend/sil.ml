@@ -678,51 +678,6 @@ and exp =
   | Lindex of exp * exp (** an array index offset: exp1[exp2] *)
   | Sizeof of typ * Subtype.t (** a sizeof expression *)
 
-(** Attributes of a procedure. *)
-type proc_attributes =
-  {
-    access : access; (** visibility access *)
-    captured : (Mangled.t * typ) list; (** name and type of variables captured in blocks *)
-    exceptions : string list; (** exceptions thrown by the procedure *)
-    formals : (string * typ) list; (** name and type of formal parameters *)
-    func_attributes : func_attribute list;
-    is_abstract : bool; (** the procedure is abstract *)
-    mutable is_bridge_method : bool; (** the procedure is a bridge method *)
-    is_defined : bool; (** true if the procedure is defined, and not just declared *)
-    is_generated : bool; (** the procedure has been generated *)
-    is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
-    mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
-    language : Config.language; (** language of the procedure *)
-    loc : Location.t; (** location of this procedure in the source code *)
-    mutable locals : (Mangled.t * typ) list; (** name and type of local variables *)
-    method_annotation : method_annotation; (** annotations for java methods *)
-    proc_flags : proc_flags; (** flags of the procedure *)
-    proc_name : Procname.t; (** name of the procedure *)
-    ret_type : typ; (** return type *)
-  }
-
-let copy_proc_attributes pa =
-  {
-    access = pa.access;
-    captured = pa.captured;
-    exceptions = pa.exceptions;
-    formals = pa.formals;
-    func_attributes = pa.func_attributes;
-    is_abstract = pa.is_abstract;
-    is_bridge_method = pa.is_bridge_method;
-    is_defined = pa.is_defined;
-    is_generated = pa.is_generated;
-    is_objc_instance_method = pa.is_objc_instance_method;
-    is_synthetic_method = pa.is_synthetic_method;
-    language = pa.language;
-    loc = pa.loc;
-    locals = pa.locals;
-    method_annotation = pa.method_annotation;
-    proc_flags = pa.proc_flags;
-    proc_name = pa.proc_name;
-    ret_type = pa.ret_type;
-  }
-
 (** Kind of prune instruction *)
 type if_kind =
   | Ik_bexp (* boolean expressions, and exp ? exp : exp *)

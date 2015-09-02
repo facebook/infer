@@ -982,7 +982,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       re_execution pname
 
 let set_current_language cfg proc_desc =
-  let language = (Cfg.Procdesc.get_attributes proc_desc).Sil.language in
+  let language = (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.language in
   Config.curr_language := language
 
 (** reset counters before analysing a procedure *)
@@ -1041,7 +1041,7 @@ let remove_this_not_null prop =
 let report_runtime_exceptions tenv cfg pdesc summary =
   let pname = Specs.get_proc_name summary in
   let is_public_method =
-    (Specs.get_attributes summary).Sil.access = Sil.Public in
+    (Specs.get_attributes summary).ProcAttributes.access = Sil.Public in
   let is_main =
     is_public_method
     && Procname.is_java pname
@@ -1232,12 +1232,14 @@ let do_analysis exe_env =
     let static_err_log = Cfg.Procdesc.get_err_log pdesc in (** err log from translation *)
     let calls = get_calls pdesc in
     let cyclomatic = Cfg.Procdesc.get_cyclomatic pdesc in
-    let attributes = Cfg.Procdesc.get_attributes pdesc in
+    let attributes =
+      { (Cfg.Procdesc.get_attributes pdesc) with
+        ProcAttributes.err_log = static_err_log; } in
 
     Callbacks.proc_inline_synthetic_methods cfg pdesc;
     Specs.init_summary
       (dep, nodes, proc_flags,
-       static_err_log, calls, cyclomatic, None, attributes) in
+       calls, cyclomatic, None, attributes) in
   let filter =
     if !Config.only_skips then (filter_skipped_procs cg procs_and_defined_children)
     else if !Config.only_nospecs then filter_nospecs
@@ -1288,6 +1290,7 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
     else
       let summary = Specs.get_summary_unsafe proc_name in
       let stats = summary.Specs.stats in
+      let err_log = summary.Specs.attributes.ProcAttributes.err_log in
       incr num_proc;
       let specs = Specs.get_specs_from_payload summary in
       tot_specs := (list_length specs) + !tot_specs;
@@ -1295,14 +1298,14 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
         match specs,
               Errlog.size
                 (fun ekind in_footprint -> ekind = Exceptions.Kerror && in_footprint)
-                stats.Specs.err_log with
+                err_log with
         | [], 0 -> incr num_nospec_noerror_proc
         | _, 0 -> incr num_spec_noerror_proc
         | [], _ -> incr num_nospec_error_proc
         | _, _ -> incr num_spec_error_proc in
       tot_symops := !tot_symops + stats.Specs.symops;
       if stats.Specs.stats_timeout then incr num_timeout;
-      Errlog.extend_table err_table stats.Specs.err_log in
+      Errlog.extend_table err_table err_log in
   let print_file_stats fmt () =
     let num_errors = Errlog.err_table_size_footprint Exceptions.Kerror err_table in
     let num_warnings = Errlog.err_table_size_footprint Exceptions.Kwarning err_table in

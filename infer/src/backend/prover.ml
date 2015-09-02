@@ -834,7 +834,7 @@ let check_inconsistency_base prop =
           Sil.exp_equal e Sil.exp_zero &&
           Sil.pvar_is_seed pv &&
           Sil.pvar_get_name pv = Mangled.from_string "self" &&
-          procedure_attr.Sil.is_objc_instance_method &&
+          procedure_attr.ProcAttributes.is_objc_instance_method &&
           not (Procname.is_constructor procname)
       | _ -> false in
     list_exists do_hpred sigma in

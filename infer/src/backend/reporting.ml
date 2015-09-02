@@ -31,7 +31,7 @@ let log_issue
     exn =
   match Specs.get_summary proc_name with
   | Some summary ->
-      let err_log = summary.Specs.stats.Specs.err_log in
+      let err_log = summary.Specs.attributes.ProcAttributes.err_log in
       let loc = match loc with
         | None -> State.get_loc ()
         | Some loc -> loc in

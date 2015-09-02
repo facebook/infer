@@ -40,12 +40,11 @@ module Node = struct
     mutable nd_succs : t list; (** successor nodes in the cfg *)
   }
   and proc_desc = { (** procedure description *)
-    pd_attributes : Sil.proc_attributes; (** attributes of the procedure *)
+    pd_attributes : ProcAttributes.t; (** attributes of the procedure *)
     pd_id : int; (** unique proc_desc identifier *)
     mutable pd_nodes : t list; (** list of nodes of this procedure *)
     mutable pd_start_node : t; (** start node of this procedure *)
     mutable pd_exit_node : t; (** exit node of ths procedure *)
-    pd_err_log: Errlog.t; (** error log at translation time *)
     mutable pd_changed : bool; (** true if proc has changed since last analysis *)
   }
 
@@ -104,9 +103,10 @@ module Node = struct
         try
           list_for_all2 node_eq n1s n2s
         with Invalid_argument _ -> false in
-      pd1.pd_attributes.Sil.is_defined = pd2.pd_attributes.Sil.is_defined &&
-      Sil.typ_equal pd1.pd_attributes.Sil.ret_type pd2.pd_attributes.Sil.ret_type &&
-      formals_eq pd1.pd_attributes.Sil.formals pd2.pd_attributes.Sil.formals &&
+      let att1 = pd1.pd_attributes and att2 = pd2.pd_attributes in
+      att1.ProcAttributes.is_defined = att2.ProcAttributes.is_defined &&
+      Sil.typ_equal att1.ProcAttributes.ret_type att2.ProcAttributes.ret_type &&
+      formals_eq att1.ProcAttributes.formals att2.ProcAttributes.formals &&
       nodes_eq pd1.pd_nodes pd2.pd_nodes in
     let old_procs = cfg_old.name_pdesc_tbl in
     let new_procs = cfg_new.name_pdesc_tbl in
@@ -131,12 +131,12 @@ module Node = struct
         let node_list' =
           let filter_node node = match node.nd_proc with
             | None -> true
-            | Some pdesc -> is_enabled pdesc.pd_attributes.Sil.proc_name in
+            | Some pdesc -> is_enabled pdesc.pd_attributes.ProcAttributes.proc_name in
           list_filter filter_node !(cfg.node_list) in
         let procs_to_remove =
           let psetr = ref Procname.Set.empty in
           let do_proc pname pdesc =
-            if pdesc.pd_attributes.Sil.is_defined &&
+            if pdesc.pd_attributes.ProcAttributes.is_defined &&
                not (is_enabled pname) &&
                not (in_address_set pname) then
               psetr := Procname.Set.add pname !psetr in
@@ -179,7 +179,7 @@ module Node = struct
     nd_dead_pvars_before = [];
     nd_instrs = [];
     nd_kind = Skip_node "dummy";
-    nd_loc = Location.loc_none;
+    nd_loc = Location.dummy;
     nd_proc = None;
     nd_succs = []; nd_preds = []; nd_exn = [];
   }
@@ -384,15 +384,15 @@ module Node = struct
     node.nd_instrs <- instrs
 
   let proc_desc_get_ret_var pdesc =
-    Sil.get_ret_pvar pdesc.pd_attributes.Sil.proc_name
+    Sil.get_ret_pvar pdesc.pd_attributes.ProcAttributes.proc_name
 
   (** Add declarations for local variables and return variable to the node *)
   let add_locals_ret_declaration node locals =
     let loc = get_loc node in
     let pdesc = get_proc_desc node in
-    let proc_name = pdesc.pd_attributes.Sil.proc_name in
+    let proc_name = pdesc.pd_attributes.ProcAttributes.proc_name in
     let ret_var =
-      let ret_type = pdesc.pd_attributes.Sil.ret_type in
+      let ret_type = pdesc.pd_attributes.ProcAttributes.ret_type in
       (proc_desc_get_ret_var pdesc, ret_type) in
     let construct_decl (x, typ) =
       (Sil.mk_pvar x proc_name, typ) in
@@ -429,7 +429,7 @@ module Node = struct
     proc_desc.pd_start_node
 
   let proc_desc_get_err_log proc_desc =
-    proc_desc.pd_err_log
+    proc_desc.pd_attributes.ProcAttributes.err_log
 
   let proc_desc_get_attributes proc_desc =
     proc_desc.pd_attributes
@@ -462,33 +462,33 @@ module Node = struct
 
   (** Set a flag for the proc desc *)
   let proc_desc_set_flag pdesc key value =
-    proc_flags_add pdesc.pd_attributes.Sil.proc_flags key value
+    proc_flags_add pdesc.pd_attributes.ProcAttributes.proc_flags key value
 
   (** Return the return type of the procedure *)
   let proc_desc_get_ret_type proc_desc =
-    proc_desc.pd_attributes.Sil.ret_type
+    proc_desc.pd_attributes.ProcAttributes.ret_type
 
   let proc_desc_get_proc_name proc_desc =
-    proc_desc.pd_attributes.Sil.proc_name
+    proc_desc.pd_attributes.ProcAttributes.proc_name
 
   (** Return [true] iff the procedure is defined, and not just declared *)
   let proc_desc_is_defined proc_desc =
-    proc_desc.pd_attributes.Sil.is_defined
+    proc_desc.pd_attributes.ProcAttributes.is_defined
 
   let proc_desc_get_loc proc_desc =
-    proc_desc.pd_attributes.Sil.loc
+    proc_desc.pd_attributes.ProcAttributes.loc
 
   (** Return name and type of formal parameters *)
   let proc_desc_get_formals proc_desc =
-    proc_desc.pd_attributes.Sil.formals
+    proc_desc.pd_attributes.ProcAttributes.formals
 
   (** Return name and type of local variables *)
   let proc_desc_get_locals proc_desc =
-    proc_desc.pd_attributes.Sil.locals
+    proc_desc.pd_attributes.ProcAttributes.locals
 
   (** Return name and type of captured variables *)
   let proc_desc_get_captured proc_desc =
-    proc_desc.pd_attributes.Sil.captured
+    proc_desc.pd_attributes.ProcAttributes.captured
 
   let proc_desc_get_nodes proc_desc =
     proc_desc.pd_nodes
@@ -503,11 +503,12 @@ module Node = struct
 
   (** Get flags for the proc desc *)
   let proc_desc_get_flags proc_desc =
-    proc_desc.pd_attributes.Sil.proc_flags
+    proc_desc.pd_attributes.ProcAttributes.proc_flags
 
   (** Append the locals to the list of local variables *)
   let proc_desc_append_locals proc_desc new_locals =
-    proc_desc.pd_attributes.Sil.locals <- proc_desc.pd_attributes.Sil.locals @ new_locals
+    proc_desc.pd_attributes.ProcAttributes.locals <-
+      proc_desc.pd_attributes.ProcAttributes.locals @ new_locals
 
   (** Get the cyclomatic complexity for the procedure *)
   let proc_desc_get_cyclomatic proc_desc =
@@ -681,7 +682,7 @@ module Procdesc = struct
 
   type proc_desc_builder =
     { cfg : cfg;
-      proc_attributes : Sil.proc_attributes;
+      proc_attributes : ProcAttributes.t;
     }
 
   let create (b : proc_desc_builder) =
@@ -694,10 +695,9 @@ module Procdesc = struct
         pd_nodes = [];
         pd_start_node = dummy ();
         pd_exit_node = dummy ();
-        pd_err_log = Errlog.empty ();
         pd_changed = true
       } in
-    pdesc_tbl_add b.cfg b.proc_attributes.Sil.proc_name pdesc;
+    pdesc_tbl_add b.cfg b.proc_attributes.ProcAttributes.proc_name pdesc;
     pdesc
 
   let remove = Node.proc_desc_remove
@@ -762,7 +762,7 @@ let get_defined_procs cfg =
 let get_objc_generated_procs cfg =
   list_filter (
     fun procdesc ->
-      (Procdesc.get_attributes procdesc).Sil.is_generated) (get_all_procs cfg)
+      (Procdesc.get_attributes procdesc).ProcAttributes.is_generated) (get_all_procs cfg)
 
 (** get the function names which should be analyzed before the other ones *)
 let get_priority_procnames cfg =

@@ -437,7 +437,7 @@ let post_process_procs exe_env procs_done =
   let check_no_specs pn =
     if Specs.get_specs pn = [] then begin
       Errdesc.warning_err
-        (Specs.get_summary_unsafe pn).Specs.attributes.Sil.loc
+        (Specs.get_summary_unsafe pn).Specs.attributes.ProcAttributes.loc
         "No specs found for %a@." Procname.pp pn
     end in
   let cg = Exe_env.get_cg exe_env in
@@ -583,7 +583,7 @@ let parallel_execution exe_env num_processes analyze_proc filter_out process_res
      || not (proc_is_up_to_date call_graph pname)) in
   let process_one_proc pname (calls: Cg.in_out_calls) =
     DB.current_source :=
-      (Specs.get_summary_unsafe pname).Specs.attributes.Sil.loc.Location.file;
+      (Specs.get_summary_unsafe pname).Specs.attributes.ProcAttributes.loc.Location.file;
     if !trace then
       begin
         let whole_seconds = false in
@@ -637,7 +637,7 @@ let parallel_execution exe_env num_processes analyze_proc filter_out process_res
           let (pname, weight) = Process.get_last_input p_str in
           (try
              DB.current_source :=
-               (Specs.get_summary_unsafe pname).Specs.attributes.Sil.loc.Location.file;
+               (Specs.get_summary_unsafe pname).Specs.attributes.ProcAttributes.loc.Location.file;
              process_result exe_env (pname, weight) summ
            with exn -> assert false);
           Timing_log.event_finish (Procname.to_string pname);

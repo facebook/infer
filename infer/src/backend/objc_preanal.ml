@@ -62,7 +62,7 @@ let fill_generated_proc_map generated_proc_map =
 let update_generate_proc_map generated_proc_map =
   let update_generated_pname_to_map cfg source_dir procdesc () =
     let cfg_pname = Cfg.Procdesc.get_proc_name procdesc in
-    if not (Cfg.Procdesc.get_attributes procdesc).Sil.is_generated then
+    if not (Cfg.Procdesc.get_attributes procdesc).ProcAttributes.is_generated then
       try ignore(Procname.Hash.find generated_proc_map cfg_pname);
         Procname.Hash.replace generated_proc_map cfg_pname true
       with Not_found -> () in

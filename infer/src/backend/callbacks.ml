@@ -64,8 +64,8 @@ let proc_inline_synthetic_methods cfg proc_desc : unit =
          | Some pd ->
              let is_access = Procname.java_is_access_method pn in
              let attributes = Cfg.Procdesc.get_attributes pd in
-             let is_synthetic = attributes.Sil.is_synthetic_method in
-             let is_bridge = attributes.Sil.is_bridge_method in
+             let is_synthetic = attributes.ProcAttributes.is_synthetic_method in
+             let is_bridge = attributes.ProcAttributes.is_bridge_method in
              if is_access || is_bridge || is_synthetic
              then inline_synthetic_method ret_ids etl pd pn loc
              else None
@@ -121,7 +121,7 @@ let get_procedure_definition exe_env proc_name =
     (fun proc_desc ->
        proc_inline_synthetic_methods cfg proc_desc;
        let idenv = Idenv.create cfg proc_desc
-       and language = (Cfg.Procdesc.get_attributes proc_desc).Sil.language in
+       and language = (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.language in
        (idenv, tenv, proc_name, proc_desc, language))
     (Cfg.Procdesc.find_from_name cfg proc_name)
 
@@ -224,7 +224,7 @@ let iterate_callbacks store_summary call_graph exe_env =
     let loc = match procdesc_opt with
       | Some proc_desc ->
           Cfg.Procdesc.get_loc proc_desc
-      | None -> Location.loc_none in
+      | None -> Location.dummy in
     Specs.reset_summary call_graph proc_name loc in
 
 

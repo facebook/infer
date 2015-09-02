@@ -229,7 +229,7 @@ let should_create_procdesc cfg procname defined generated =
   | Some prevoius_procdesc ->
       let is_defined_previous = Cfg.Procdesc.is_defined prevoius_procdesc in
       let is_generated_previous =
-        (Cfg.Procdesc.get_attributes prevoius_procdesc).Sil.is_generated in
+        (Cfg.Procdesc.get_attributes prevoius_procdesc).ProcAttributes.is_generated in
       if defined &&
          ((not is_defined_previous) || (generated && is_generated_previous)) then
         (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
@@ -256,32 +256,19 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     let ret_type = get_return_type tenv ms in
     let captured' = list_map (fun (s, t, _) -> (s, t)) captured in
     let procdesc =
-      (* This part below is a boilerplate and the following list of        *)
-      (* instructions should be moved in the Cfg.Procdesc module     *)
-      let open Cfg.Procdesc in
       let proc_attributes =
-        {
-          Sil.access = Sil.Default;
-          captured = captured';
-          exceptions = [];
+        { (ProcAttributes.default proc_name Config.C_CPP) with
+          ProcAttributes.captured = captured';
           formals;
           func_attributes = attributes;
-          is_abstract = false;
-          is_bridge_method = false;
           is_defined = defined;
           is_generated;
           is_objc_instance_method = is_objc_inst_method;
-          is_synthetic_method = false;
-          language = Config.C_CPP;
           loc = loc_start;
-          locals = [];
-          method_annotation = Sil.method_annotation_empty;
-          proc_flags = proc_flags_empty ();
-          proc_name;
           ret_type;
         } in
-      create {
-        cfg;
+      Cfg.Procdesc.create {
+        Cfg.Procdesc.cfg;
         proc_attributes;
       } in
     if defined then
@@ -308,32 +295,17 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
          | Some (ret_type, arg_types) ->
              ret_type, list_map (fun typ -> ("x", typ)) arg_types
          | None -> Sil.Tvoid, []) in
-      let loc = Location.loc_none in
+      let loc = Location.dummy in
       let _ =
-        let open Cfg.Procdesc in
         let proc_attributes =
-          {
-            Sil.access = Sil.Default;
-            captured = [];
-            exceptions = [];
-            formals;
-            func_attributes = [];
-            is_abstract = false;
-            is_bridge_method = false;
-            is_defined = false;
-            is_generated = false;
+          { (ProcAttributes.default proc_name Config.C_CPP) with
+            ProcAttributes.formals;
             is_objc_instance_method = is_objc_inst_method;
-            is_synthetic_method = false;
-            language = Config.C_CPP;
             loc;
-            locals = [];
-            method_annotation = Sil.method_annotation_empty;
-            proc_flags = proc_flags_empty ();
-            proc_name;
             ret_type;
           } in
-        create {
-          cfg = cfg;
+        Cfg.Procdesc.create {
+          Cfg.Procdesc.cfg = cfg;
           proc_attributes = proc_attributes;
         } in
       ()

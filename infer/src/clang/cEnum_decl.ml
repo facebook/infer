@@ -15,30 +15,9 @@ open CFrontend_utils
 
 let create_empty_procdesc () =
   let proc_name = Procname.from_string_c_fun "__INFER_$GLOBAL_VAR_env" in
-  let open Cfg.Procdesc in
-  let proc_attributes =
-    {
-      Sil.access = Sil.Default;
-      captured = [];
-      exceptions = [];
-      formals = [];
-      func_attributes = [];
-      is_abstract = false;
-      is_bridge_method = false;
-      is_defined = false;
-      is_generated = false;
-      is_objc_instance_method = false;
-      is_synthetic_method = false;
-      language = Config.C_CPP;
-      loc = Location.loc_none;
-      locals = [];
-      method_annotation = Sil.method_annotation_empty;
-      proc_flags = proc_flags_empty ();
-      proc_name;
-      ret_type = Sil.Tvoid;
-    } in
-  create {
-    cfg = Cfg.Node.create_cfg ();
+  let proc_attributes = ProcAttributes.default proc_name Config.C_CPP in
+  Cfg.Procdesc.create {
+    Cfg.Procdesc.cfg = Cfg.Node.create_cfg ();
     proc_attributes = proc_attributes;
   }
 

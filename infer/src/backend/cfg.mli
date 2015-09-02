@@ -33,7 +33,7 @@ module Procdesc : sig
 
   type proc_desc_builder =
     { cfg : cfg;
-      proc_attributes : Sil.proc_attributes;
+      proc_attributes : ProcAttributes.t;
     }
 
   (** Create a procdesc *)
@@ -47,7 +47,7 @@ module Procdesc : sig
   val find_from_name : cfg -> Procname.t -> t option
 
   (** Get the attributes of the procedure. *)
-  val get_attributes : t -> Sil.proc_attributes
+  val get_attributes : t -> ProcAttributes.t
 
   (** Get the cyclomatic complexity for the procedure *)
   val get_cyclomatic : t -> int

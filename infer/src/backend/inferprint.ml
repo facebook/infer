@@ -245,6 +245,8 @@ type summary_val =
 (** compute values from summary data to export to csv and xml format *)
 let summary_values top_proc_set summary =
   let stats = summary.Specs.stats in
+  let attributes = summary.Specs.attributes in
+  let err_log = attributes.ProcAttributes.err_log in
   let proc_name = Specs.get_proc_name summary in
   let is_top = Procname.Set.mem proc_name top_proc_set in
   let signature = Specs.get_signature summary in
@@ -283,11 +285,11 @@ let summary_values top_proc_set summary =
     vsymop = stats.Specs.symops;
     verr = Errlog.size
         (fun ekind in_footprint -> ekind = Exceptions.Kerror && in_footprint)
-        stats.Specs.err_log;
-    vflags = summary.Specs.attributes.Sil.proc_flags;
-    vfile = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file;
-    vline = summary.Specs.attributes.Sil.loc.Location.line;
-    vloc = summary.Specs.attributes.Sil.loc.Location.nLOC;
+        err_log;
+    vflags = attributes.ProcAttributes.proc_flags;
+    vfile = DB.source_file_to_string attributes.ProcAttributes.loc.Location.file;
+    vline = attributes.ProcAttributes.loc.Location.line;
+    vloc = attributes.ProcAttributes.loc.Location.nLOC;
     vtop = if is_top then "Y" else "N";
     vsignature = signature;
     vweight = nodes_nr;
@@ -402,7 +404,7 @@ module BugsCsv = struct
   (** Write bug report in csv format *)
   let pp_bugs error_filter fname fmt summary =
     let pp x = F.fprintf fmt x in
-    let err_log = summary.Specs.stats.Specs.err_log in
+    let err_log = summary.Specs.attributes.ProcAttributes.err_log in
     let pp_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         let err_desc_string = error_desc_to_csv_string error_desc in
@@ -415,7 +417,8 @@ module BugsCsv = struct
         let kind = Exceptions.err_kind_string ekind in
         let type_str = Localise.to_string error_name in
         let procedure_id = Procname.to_filename (Specs.get_proc_name summary) in
-        let filename = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file in
+        let filename =
+          DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file in
         let always_report =
           match Localise.error_desc_extract_tag_value error_desc "always_report" with
           | "" -> "false"
@@ -450,13 +453,14 @@ module BugsJson = struct
   (** Write bug report in JSON format *)
   let pp_bugs error_filter fname fmt summary =
     let pp x = F.fprintf fmt x in
-    let err_log = summary.Specs.stats.Specs.err_log in
+    let err_log = summary.Specs.attributes.ProcAttributes.err_log in
     let pp_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         let kind = Exceptions.err_kind_string ekind in
         let bug_type = Localise.to_string error_name in
         let procedure_id = Procname.to_filename (Specs.get_proc_name summary) in
-        let file = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file in
+        let file =
+          DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file in
         let bug = {
           bug_class = Exceptions.err_class_string eclass;
           kind = kind;
@@ -480,7 +484,7 @@ end
 module BugsTxt = struct
   (** Write bug report in text format *)
   let pp_bugs error_filter fname fmt summary =
-    let err_log = summary.Specs.stats.Specs.err_log in
+    let err_log = summary.Specs.attributes.ProcAttributes.err_log in
     let pp_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         Exceptions.pp_err (node_id, node_key) loc ekind error_name error_desc None fmt () in
@@ -520,7 +524,7 @@ module BugsXml = struct
 
   (** print bugs from summary in xml *)
   let pp_bugs error_filter linereader fmt summary =
-    let err_log = summary.Specs.stats.Specs.err_log in
+    let err_log = summary.Specs.attributes.ProcAttributes.err_log in
     let do_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         let err_desc_string = error_desc_to_xml_string error_desc in
@@ -541,7 +545,8 @@ module BugsXml = struct
           let proc_name = Specs.get_proc_name summary in
           let procedure_name = Procname.to_string proc_name in
           let procedure_id = Procname.to_filename proc_name in
-          let filename = DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file in
+          let filename =
+            DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file in
           let bug_hash = get_bug_hash kind type_str procedure_id filename node_key error_desc in
           let forest =
             [
@@ -589,7 +594,7 @@ module CallsCsv = struct
       pp "\"%s\"," (Escape.escape_csv (Procname.to_filename caller_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_string callee_name));
       pp "\"%s\"," (Escape.escape_csv (Procname.to_filename callee_name));
-      pp "%s," (DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file);
+      pp "%s," (DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file);
       pp "%d," loc.Location.line;
       pp "%a@\n" Specs.CallStats.pp_trace trace in
     Specs.CallStats.iter do_call stats.Specs.call_stats
@@ -606,7 +611,7 @@ module UnitTest = struct
     let do_spec spec =
       incr cnt;
       let c_file = Filename.basename
-          (DB.source_file_to_string summary.Specs.attributes.Sil.loc.Location.file) in
+          (DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file) in
       let code =
         Autounit.genunit c_file proc_name !cnt (Specs.get_formals summary) spec in
       F.fprintf fmt "%a@." Autounit.pp_code code in
@@ -734,8 +739,8 @@ module Stats = struct
 
   let process_summary error_filter summary linereader stats =
     let specs = Specs.get_specs_from_payload summary in
-    let found_errors =
-      process_err_log error_filter linereader summary.Specs.stats.Specs.err_log stats in
+    let found_errors = process_err_log
+        error_filter linereader summary.Specs.attributes.ProcAttributes.err_log stats in
     let is_defective = found_errors in
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
@@ -744,7 +749,7 @@ module Stats = struct
     if is_verified then stats.nverified <- stats.nverified + 1;
     if is_checked then stats.nchecked <- stats.nchecked + 1;
     if is_defective then stats.ndefective <- stats.ndefective + 1;
-    process_loc summary.Specs.attributes.Sil.loc stats
+    process_loc summary.Specs.attributes.ProcAttributes.loc stats
 
   let num_files stats =
     Hashtbl.length stats.files
@@ -817,7 +822,7 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   let error_filter error_desc error_name =
     let always_report () =
       Localise.error_desc_extract_tag_value error_desc "always_report" = "true" in
-    (filters.Inferconfig.path_filter summary.Specs.attributes.Sil.loc.Location.file
+    (filters.Inferconfig.path_filter summary.Specs.attributes.ProcAttributes.loc.Location.file
      || always_report ()) &&
     filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name in
   do_outf procs_csv (fun outf -> F.fprintf outf.fmt "%a" (ProcsCsv.pp_summary fname top_proc_set) summary);
@@ -856,7 +861,7 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
         do_outf xml_out (fun outf ->
             Dotty.print_specs_xml
               (Specs.get_signature summary)
-              specs summary.Specs.attributes.Sil.loc outf.fmt;
+              specs summary.Specs.attributes.ProcAttributes.loc outf.fmt;
             close_outf outf)
       end
   end
@@ -907,12 +912,12 @@ module AnalysisResults = struct
     let summ_cmp (fname1, summ1) (fname2, summ2) =
       let n =
         DB.source_file_compare
-          summ1.Specs.attributes.Sil.loc.Location.file
-          summ2.Specs.attributes.Sil.loc.Location.file in
+          summ1.Specs.attributes.ProcAttributes.loc.Location.file
+          summ2.Specs.attributes.ProcAttributes.loc.Location.file in
       if n <> 0 then n
       else int_compare
-          summ1.Specs.attributes.Sil.loc.Location.line
-          summ2.Specs.attributes.Sil.loc.Location.line in
+          summ1.Specs.attributes.ProcAttributes.loc.Location.line
+          summ2.Specs.attributes.ProcAttributes.loc.Location.line in
     list_sort summ_cmp !summaries
 
   (** Create an iterator which loads spec files one at a time *)

@@ -400,7 +400,7 @@ let c_file_write_html proc_is_active linereader fname tenv cfg =
             list_iter
               (fun sp -> proof_cover := Specs.Visitedset.union sp.Specs.visited !proof_cover)
               (Specs.get_specs_from_payload summary);
-            Errlog.update global_err_log summary.Specs.stats.Specs.err_log
+            Errlog.update global_err_log summary.Specs.attributes.ProcAttributes.err_log
       end in
   Cfg.iter_proc_desc cfg do_proc;
   let err_per_line = create_errors_per_line global_err_log in

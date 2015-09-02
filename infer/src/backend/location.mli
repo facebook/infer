@@ -20,12 +20,10 @@ val compare : t -> t -> int
 (** Dump a location. *)
 val d : t -> unit
 
+(** Dummy location *)
 val dummy : t
 
 val equal : t -> t -> bool
-
-(** Unknown location *)
-val loc_none : t
 
 (** Pretty print a location. *)
 val pp : Format.formatter -> t -> unit

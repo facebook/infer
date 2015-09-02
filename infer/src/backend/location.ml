@@ -26,6 +26,7 @@ let compare loc1 loc2 =
 (** Dump a location *)
 let d (loc: t) = L.add_print_action (L.PTloc, Obj.repr loc)
 
+(** Dummy location *)
 let dummy = {
   line = -1;
   col = -1;
@@ -35,14 +36,6 @@ let dummy = {
 
 let equal loc1 loc2 =
   compare loc1 loc2 = 0
-
-(** Unknown location *)
-let loc_none = {
-  line = - 1;
-  col = - 1;
-  file = DB.source_file_empty;
-  nLOC = 0;
-}
 
 (** Pretty print a location *)
 let pp f (loc: t) =

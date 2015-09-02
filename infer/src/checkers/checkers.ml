@@ -32,7 +32,7 @@ end (* PP *)
 (** State that persists in the .specs files. *)
 module ST = struct
   let add summary key value =
-    proc_flags_add summary.Specs.attributes.Sil.proc_flags key value
+    proc_flags_add summary.Specs.attributes.ProcAttributes.proc_flags key value
 
   let pname_add proc_name key value =
     let summary = Specs.get_summary_unsafe proc_name in
@@ -43,14 +43,14 @@ module ST = struct
   let pname_find proc_name key =
     if Procname.Set.mem proc_name !files_open then
       let summary = Specs.get_summary_unsafe proc_name in
-      proc_flags_find summary.Specs.attributes.Sil.proc_flags key
+      proc_flags_find summary.Specs.attributes.ProcAttributes.proc_flags key
     else begin
       match Specs.get_summary proc_name with
       | None -> raise Not_found
       | Some summary ->
           begin
             files_open := Procname.Set.add proc_name !files_open;
-            proc_flags_find summary.Specs.attributes.Sil.proc_flags key
+            proc_flags_find summary.Specs.attributes.ProcAttributes.proc_flags key
           end
     end
 

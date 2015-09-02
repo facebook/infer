@@ -291,7 +291,6 @@ type stats =
     stats_timeout: bool; (** Flag to indicate whether a timeout occurred *)
     stats_calls: Cg.in_out_calls; (** num of procs calling, and called *)
     symops: int; (** Number of SymOp's throughout the whole analysis of the function *)
-    err_log: Errlog.t; (** Error log for the procedure *)
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)
     mutable nodes_visited_re : IntSet.t; (** Nodes visited during the re-execution phase *)
     call_stats : call_stats;
@@ -320,7 +319,7 @@ type summary =
     stats: stats;  (** statistics: execution time and list of errors *)
     status: status; (** ACTIVE when the proc is being analyzed *)
     timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
-    attributes : Sil.proc_attributes; (** Attributes of the procedure *)
+    attributes : ProcAttributes.t; (** Attributes of the procedure *)
   }
 
 (** origin of a summary: current results dir, a spec library, or models *)
@@ -344,9 +343,9 @@ let pp_timeout fmt = function
   | true -> F.fprintf fmt "Y"
   | false -> F.fprintf fmt "N"
 
-let pp_stats whole_seconds fmt stats =
+let pp_stats err_log whole_seconds fmt stats =
   F.fprintf fmt "TIME:%a TIMEOUT:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds) stats.stats_time pp_timeout stats.stats_timeout stats.symops stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls;
-  F.fprintf fmt "ERRORS: @[<h>%a@]" Errlog.pp stats.err_log
+  F.fprintf fmt "ERRORS: @[<h>%a@]" Errlog.pp err_log
 
 (** Print the spec *)
 let pp_spec pe num_opt fmt spec =
@@ -406,11 +405,11 @@ let get_signature summary =
       let pp_name f () = F.fprintf f "%s" p in
       let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
       let decl = pp_to_string pp () in
-      s := if !s = "" then decl else !s ^ ", " ^ decl) summary.attributes.Sil.formals;
+      s := if !s = "" then decl else !s ^ ", " ^ decl) summary.attributes.ProcAttributes.formals;
   let pp_procname f () = F.fprintf f "%a"
-      Procname.pp summary.attributes.Sil.proc_name in
+      Procname.pp summary.attributes.ProcAttributes.proc_name in
   let pp f () =
-    Sil.pp_type_decl pe_text pp_procname Sil.pp_exp f summary.attributes.Sil.ret_type in
+    Sil.pp_type_decl pe_text pp_procname Sil.pp_exp f summary.attributes.ProcAttributes.ret_type in
   let decl = pp_to_string pp () in
   decl ^ "(" ^ !s ^ ")"
 
@@ -422,24 +421,26 @@ let pp_summary_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" pp_pair (describe_phase summary);
   F.fprintf fmt "Dependency_map: @[%a@]@\n" pp_dependency_map summary.dependency_map
 
-let pp_stats_html fmt stats =
-  Errlog.pp_html [] fmt stats.err_log
+let pp_stats_html err_log fmt stats =
+  Errlog.pp_html [] fmt err_log
 
 let get_specs_from_payload summary = match summary.payload with
   | PrePosts specs -> NormSpec.tospecs specs
   | TypeState _ -> []
 
 (** Print the summary *)
-let pp_summary pe whole_seconds fmt summary = match pe.pe_kind with
+let pp_summary pe whole_seconds fmt summary =
+  let err_log = summary.attributes.ProcAttributes.err_log in
+  match pe.pe_kind with
   | PP_TEXT ->
       pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
+      F.fprintf fmt "%a@\n" (pp_stats err_log whole_seconds) summary.stats;
       F.fprintf fmt "%a" (pp_specs pe) (get_specs_from_payload summary)
   | PP_HTML ->
       Io_infer.Html.pp_start_color fmt Black;
       F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
       Io_infer.Html.pp_end_color fmt ();
-      pp_stats_html fmt summary.stats;
+      pp_stats_html err_log fmt summary.stats;
       Io_infer.Html.pp_hline fmt ();
       F.fprintf fmt "<LISTING>@\n";
       pp_specs pe fmt (get_specs_from_payload summary);
@@ -447,7 +448,7 @@ let pp_summary pe whole_seconds fmt summary = match pe.pe_kind with
   | PP_LATEX ->
       F.fprintf fmt "\\begin{verbatim}@\n";
       pp_summary_no_stats_specs fmt summary;
-      F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
+      F.fprintf fmt "%a@\n" (pp_stats err_log whole_seconds) summary.stats;
       F.fprintf fmt "\\end{verbatim}@\n";
       F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
 
@@ -455,7 +456,7 @@ let pp_summary pe whole_seconds fmt summary = match pe.pe_kind with
 let pp_spec_table pe whole_seconds fmt () =
   Procname.Hash.iter (fun proc_name (summ, orig) -> F.fprintf fmt "PROC %a@\n%a@\n" Procname.pp proc_name (pp_summary pe whole_seconds) summ) spec_tbl
 
-let empty_stats err_log calls cyclomatic in_out_calls_opt =
+let empty_stats calls cyclomatic in_out_calls_opt =
   { stats_time = 0.0;
     stats_timeout = false;
     stats_calls =
@@ -463,7 +464,6 @@ let empty_stats err_log calls cyclomatic in_out_calls_opt =
        | Some in_out_calls -> in_out_calls
        | None -> { Cg.in_calls = 0; Cg.out_calls = 0 });
     symops = 0;
-    err_log = err_log;
     nodes_visited_fp = IntSet.empty;
     nodes_visited_re = IntSet.empty;
     call_stats = CallStats.init calls;
@@ -627,7 +627,7 @@ let proc_is_library proc_name proc_desc =
   else false
 
 (** Get the attributes of a procedure, looking first in the procdesc and then in the .specs file. *)
-let proc_get_attributes proc_name proc_desc : Sil.proc_attributes =
+let proc_get_attributes proc_name proc_desc : ProcAttributes.t =
   let from_proc_desc = Cfg.Procdesc.get_attributes proc_desc in
   let defined = Cfg.Procdesc.is_defined proc_desc in
   if not defined then
@@ -638,7 +638,7 @@ let proc_get_attributes proc_name proc_desc : Sil.proc_attributes =
   else from_proc_desc
 
 let proc_get_method_annotation proc_name proc_desc =
-  (proc_get_attributes proc_name proc_desc).Sil.method_annotation
+  (proc_get_attributes proc_name proc_desc).ProcAttributes.method_annotation
 
 let get_origin proc_name =
   match get_summary_origin proc_name with
@@ -663,13 +663,13 @@ let get_timestamp summary =
   summary.timestamp
 
 let get_proc_name summary =
-  summary.attributes.Sil.proc_name
+  summary.attributes.ProcAttributes.proc_name
 
 let get_ret_type summary =
-  summary.attributes.Sil.ret_type
+  summary.attributes.ProcAttributes.ret_type
 
 let get_formals summary =
-  summary.attributes.Sil.formals
+  summary.attributes.ProcAttributes.formals
 
 let get_attributes summary =
   summary.attributes
@@ -680,7 +680,7 @@ let get_flag proc_name key =
   match get_summary proc_name with
   | None -> None
   | Some summary ->
-      let proc_flags = summary.attributes.Sil.proc_flags in
+      let proc_flags = summary.attributes.ProcAttributes.proc_flags in
       try
         Some (Hashtbl.find proc_flags key)
       with Not_found -> None
@@ -692,7 +692,7 @@ let get_iterations proc_name =
   | None ->
       raise (Failure ("Specs.get_iterations: " ^ (Procname.to_string proc_name) ^ "Not_found"))
   | Some summary ->
-      let proc_flags = summary.attributes.Sil.proc_flags in
+      let proc_flags = summary.attributes.ProcAttributes.proc_flags in
       try
         let time_str = Hashtbl.find proc_flags proc_flag_iterations in
         Pervasives.int_of_string time_str
@@ -747,11 +747,11 @@ let update_dependency_map proc_name =
       set_summary_origin proc_name { summary with dependency_map = current_dependency_map } origin
 
 (** [init_summary (depend_list, nodes,
-    proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt, proc_attributes)]
+    proc_flags, calls, cyclomatic, in_out_calls_opt, proc_attributes)]
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary
     (depend_list, nodes,
-     proc_flags, initial_err_log, calls, cyclomatic, in_out_calls_opt,
+     proc_flags, calls, cyclomatic, in_out_calls_opt,
      proc_attributes) =
   let dependency_map = mk_initial_dependency_map depend_list in
   let summary =
@@ -761,42 +761,24 @@ let init_summary
       phase = FOOTPRINT;
       sessions = ref 0;
       payload = PrePosts [];
-      stats = empty_stats initial_err_log calls cyclomatic in_out_calls_opt;
+      stats = empty_stats calls cyclomatic in_out_calls_opt;
       status = INACTIVE;
       timestamp = 0;
       attributes =
         { proc_attributes with
-          Sil.proc_flags = proc_flags; };
+          ProcAttributes.proc_flags = proc_flags; };
     } in
-  Procname.Hash.replace spec_tbl proc_attributes.Sil.proc_name (summary, Res_dir)
+  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, Res_dir)
 
 let reset_summary call_graph proc_name loc =
   let dependents = Cg.get_defined_children call_graph proc_name in
-  let proc_attributes = {
-    Sil.access = Sil.Default;
-    formals = [];
-    captured = [];
-    exceptions = [];
-    func_attributes = [];
-    is_abstract = false;
-    is_defined = false;
-    is_bridge_method = false;
-    is_generated = false;
-    is_objc_instance_method = false;
-    is_synthetic_method = false;
-    language = !Config.curr_language;
-    loc;
-    locals = [];
-    method_annotation = Sil.method_annotation_empty;
-    proc_flags = proc_flags_empty ();
-    proc_name;
-    ret_type = Sil.Tvoid;
-  } in
+  let proc_attributes =
+    { (ProcAttributes.default proc_name !Config.curr_language) with
+      loc; } in
   init_summary (
     Procname.Set.elements dependents,
     [],
     proc_flags_empty (),
-    Errlog.empty (),
     [],
     0,
     Some (Cg.get_calls call_graph proc_name),

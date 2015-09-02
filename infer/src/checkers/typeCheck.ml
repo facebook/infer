@@ -383,7 +383,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
             let visible_params = list_drop_first n params in
 
             (* Drop the trailing hidden parameter if the constructor is synthetic. *)
-            if (Cfg.Procdesc.get_attributes pdesc).Sil.is_synthetic_method then
+            if (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.is_synthetic_method then
               list_drop_last 1 visible_params
             else
               visible_params
@@ -395,7 +395,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
   (* Drop parameters from the signature which we do not check in a call. *)
   let drop_unchecked_signature_params pdesc pname annotated_signature =
     if Procname.is_constructor pname &&
-       (Cfg.Procdesc.get_attributes pdesc).Sil.is_synthetic_method then
+       (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.is_synthetic_method then
       list_drop_last 1 annotated_signature.Annotations.params
     else
       annotated_signature.Annotations.params in
@@ -947,7 +947,7 @@ let typecheck_node
         let exceptions =
           match get_proc_desc callee_pname with
           | Some callee_pdesc ->
-              (Specs.proc_get_attributes callee_pname callee_pdesc).Sil.exceptions
+              (Specs.proc_get_attributes callee_pname callee_pdesc).ProcAttributes.exceptions
           | None -> [] in
         if exceptions <> [] then
           typestates_exn := typestate :: !typestates_exn
