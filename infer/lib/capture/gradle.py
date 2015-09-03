@@ -45,9 +45,17 @@ class GradleCapture:
     def get_inferJ_commands(self, verbose_output):
         argument_start_pattern = ' Compiler arguments: '
         calls = []
+        seen_build_cmds = set([])
         for line in verbose_output:
             if argument_start_pattern in line:
                 content = line.partition(argument_start_pattern)[2].strip()
+                # if we're building both the debug and release configuration
+                # and the build commands are identical up to "release/debug",
+                # only do capture for one set of commands
+                build_agnostic_cmd = content.replace('release', 'debug')
+                if build_agnostic_cmd in seen_build_cmds:
+                    continue
+                seen_build_cmds.add(build_agnostic_cmd)
                 javac_arguments = content.split(' ')
                 java_files = []
                 java_args = []
