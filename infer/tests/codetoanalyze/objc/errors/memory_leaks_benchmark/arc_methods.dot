@@ -1,17 +1,17 @@
 digraph iCFG {
-15 [label="15:  DeclStmt \n   n$12=_fun_A_newA() [line 42]\n  *&a1:class A *=n$12 [line 42]\n  REMOVE_TEMPS(n$12); [line 42]\n " shape="box"]
+15 [label="15:  DeclStmt \n   n$3=_fun_A_newA() [line 42]\n  *&a1:class A *=n$3 [line 42]\n  REMOVE_TEMPS(n$3); [line 42]\n " shape="box"]
 	
 
 	 15 -> 14 ;
-14 [label="14:  DeclStmt \n   n$11=*&a1:class A * [line 43]\n  _fun___objc_retain(n$11:class A *) [line 43]\n  *&aa:class A *=n$11 [line 43]\n  REMOVE_TEMPS(n$11); [line 43]\n  NULLIFY(&a1,false); [line 43]\n  NULLIFY(&aa,false); [line 43]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$2=*&a1:class A * [line 43]\n  _fun___objc_retain(n$2:class A *) [line 43]\n  *&aa:class A *=n$2 [line 43]\n  REMOVE_TEMPS(n$2); [line 43]\n  NULLIFY(&a1,false); [line 43]\n  NULLIFY(&aa,false); [line 43]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  DeclStmt \n   n$10=_fun_A_someA() [line 44]\n  _fun___objc_retain(n$10:class A *) [line 44]\n  *&a2:class A *=n$10 [line 44]\n  REMOVE_TEMPS(n$10); [line 44]\n " shape="box"]
+13 [label="13:  DeclStmt \n   n$1=_fun_A_someA() [line 44]\n  _fun___objc_retain(n$1:class A *) [line 44]\n  *&a2:class A *=n$1 [line 44]\n  REMOVE_TEMPS(n$1); [line 44]\n " shape="box"]
 	
 
 	 13 -> 12 ;
-12 [label="12:  DeclStmt \n   n$9=*&a2:class A * [line 45]\n  _fun___objc_retain(n$9:class A *) [line 45]\n  *&ab:class A *=n$9 [line 45]\n  REMOVE_TEMPS(n$9); [line 45]\n  NULLIFY(&a2,false); [line 45]\n  NULLIFY(&ab,false); [line 45]\n " shape="box"]
+12 [label="12:  DeclStmt \n   n$0=*&a2:class A * [line 45]\n  _fun___objc_retain(n$0:class A *) [line 45]\n  *&ab:class A *=n$0 [line 45]\n  REMOVE_TEMPS(n$0); [line 45]\n  NULLIFY(&a2,false); [line 45]\n  NULLIFY(&ab,false); [line 45]\n " shape="box"]
 	
 
 	 12 -> 11 ;

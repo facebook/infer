@@ -1,9 +1,9 @@
 digraph iCFG {
-12 [label="12:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 45]\n  n$7=_fun_A_init(n$6:class A *) virtual [line 45]\n  *&a:struct objc_object *=n$7 [line 46]\n  REMOVE_TEMPS(n$6,n$7); [line 46]\n  NULLIFY(&a,false); [line 46]\n " shape="box"]
+12 [label="12:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 45]\n  n$3=_fun_A_init(n$2:class A *) virtual [line 45]\n  *&a:struct objc_object *=n$3 [line 46]\n  REMOVE_TEMPS(n$2,n$3); [line 46]\n  NULLIFY(&a,false); [line 46]\n " shape="box"]
 	
 
 	 12 -> 11 ;
-11 [label="11:  Release the autorelease pool \n   n$4=_fun___objc_release_autorelease_pool() [line 44]\n  REMOVE_TEMPS(n$4); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+11 [label="11:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool() [line 44]\n  REMOVE_TEMPS(n$0); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
 	 11 -> 10 ;

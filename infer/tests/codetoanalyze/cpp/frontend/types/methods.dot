@@ -1,9 +1,9 @@
 digraph iCFG {
-29 [label="29:  Call _fun_A_fun_default \n   n$16=*&a_ptr:struct A * [line 59]\n  n$17=_fun_A_fun_default(n$16:struct A ,1:int ,2:int ,20:int ) [line 59]\n  REMOVE_TEMPS(n$16,n$17); [line 59]\n " shape="box"]
+29 [label="29:  Call _fun_A_fun_default \n   n$2=*&a_ptr:struct A * [line 59]\n  n$3=_fun_A_fun_default(n$2:struct A ,1:int ,2:int ,20:int ) [line 59]\n  REMOVE_TEMPS(n$2,n$3); [line 59]\n " shape="box"]
 	
 
 	 29 -> 28 ;
-28 [label="28:  Call _fun_A_fun_default \n   n$14=*&a_ptr:struct A * [line 60]\n  n$15=_fun_A_fun_default(n$14:struct A ,1:int ,10:int ,20:int ) [line 60]\n  REMOVE_TEMPS(n$14,n$15); [line 60]\n  NULLIFY(&a_ptr,false); [line 60]\n  APPLY_ABSTRACTION; [line 60]\n " shape="box"]
+28 [label="28:  Call _fun_A_fun_default \n   n$0=*&a_ptr:struct A * [line 60]\n  n$1=_fun_A_fun_default(n$0:struct A ,1:int ,10:int ,20:int ) [line 60]\n  REMOVE_TEMPS(n$0,n$1); [line 60]\n  NULLIFY(&a_ptr,false); [line 60]\n  APPLY_ABSTRACTION; [line 60]\n " shape="box"]
 	
 
 	 28 -> 27 ;
@@ -14,11 +14,11 @@ digraph iCFG {
 	
 
 	 26 -> 29 ;
-25 [label="25:  Call _fun_A_fun \n   n$12=*&a_ptr:struct A * [line 53]\n  n$13=_fun_A_fun(n$12:struct A ,10:int ,20:int ) [line 53]\n  REMOVE_TEMPS(n$12,n$13); [line 53]\n " shape="box"]
+25 [label="25:  Call _fun_A_fun \n   n$2=*&a_ptr:struct A * [line 53]\n  n$3=_fun_A_fun(n$2:struct A ,10:int ,20:int ) [line 53]\n  REMOVE_TEMPS(n$2,n$3); [line 53]\n " shape="box"]
 	
 
 	 25 -> 24 ;
-24 [label="24:  Call _fun_A_fun_default \n   n$10=*&a_ptr:struct A * [line 54]\n  n$11=_fun_A_fun_default(n$10:struct A ,1:int ,2:int ,3:int ) [line 54]\n  REMOVE_TEMPS(n$10,n$11); [line 54]\n  NULLIFY(&a_ptr,false); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
+24 [label="24:  Call _fun_A_fun_default \n   n$0=*&a_ptr:struct A * [line 54]\n  n$1=_fun_A_fun_default(n$0:struct A ,1:int ,2:int ,3:int ) [line 54]\n  REMOVE_TEMPS(n$0,n$1); [line 54]\n  NULLIFY(&a_ptr,false); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
 	
 
 	 24 -> 23 ;
@@ -36,7 +36,7 @@ digraph iCFG {
 	
 
 	 20 -> 21 ;
-19 [label="19:  Return Stmt \n   n$8=*&a:int  [line 38]\n  n$9=*&b:int  [line 38]\n  *&return:int =(n$8 + n$9) [line 38]\n  REMOVE_TEMPS(n$8,n$9); [line 38]\n  NULLIFY(&a,false); [line 38]\n  NULLIFY(&b,false); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+19 [label="19:  Return Stmt \n   n$0=*&a:int  [line 38]\n  n$1=*&b:int  [line 38]\n  *&return:int =(n$0 + n$1) [line 38]\n  REMOVE_TEMPS(n$0,n$1); [line 38]\n  NULLIFY(&a,false); [line 38]\n  NULLIFY(&b,false); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -47,11 +47,11 @@ digraph iCFG {
 	
 
 	 17 -> 19 ;
-16 [label="16:  DeclStmt \n   n$6=*&a:int  [line 31]\n  n$7=*&b:int  [line 31]\n  *&c:int =((n$6 + n$7) + 1) [line 31]\n  REMOVE_TEMPS(n$6,n$7); [line 31]\n  NULLIFY(&a,false); [line 31]\n  NULLIFY(&b,false); [line 31]\n " shape="box"]
+16 [label="16:  DeclStmt \n   n$2=*&a:int  [line 31]\n  n$3=*&b:int  [line 31]\n  *&c:int =((n$2 + n$3) + 1) [line 31]\n  REMOVE_TEMPS(n$2,n$3); [line 31]\n  NULLIFY(&a,false); [line 31]\n  NULLIFY(&b,false); [line 31]\n " shape="box"]
 	
 
 	 16 -> 15 ;
-15 [label="15:  Return Stmt \n   n$4=*&c:int  [line 34]\n  n$5=*&c:int  [line 34]\n  *&return:int =(n$4 * n$5) [line 34]\n  REMOVE_TEMPS(n$4,n$5); [line 34]\n  NULLIFY(&c,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+15 [label="15:  Return Stmt \n   n$0=*&c:int  [line 34]\n  n$1=*&c:int  [line 34]\n  *&return:int =(n$0 * n$1) [line 34]\n  REMOVE_TEMPS(n$0,n$1); [line 34]\n  NULLIFY(&c,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -69,7 +69,7 @@ digraph iCFG {
 	
 
 	 11 -> 12 ;
-10 [label="10:  Return Stmt \n   n$1=*&a:int  [line 20]\n  n$2=*&b:int  [line 20]\n  n$3=*&c:int  [line 20]\n  *&return:int =((n$1 + n$2) + n$3) [line 20]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 20]\n  NULLIFY(&a,false); [line 20]\n  NULLIFY(&b,false); [line 20]\n  NULLIFY(&c,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+10 [label="10:  Return Stmt \n   n$0=*&a:int  [line 20]\n  n$1=*&b:int  [line 20]\n  n$2=*&c:int  [line 20]\n  *&return:int =((n$0 + n$1) + n$2) [line 20]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 20]\n  NULLIFY(&a,false); [line 20]\n  NULLIFY(&b,false); [line 20]\n  NULLIFY(&c,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 10 -> 9 ;

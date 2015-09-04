@@ -1,13 +1,13 @@
 digraph iCFG {
-30 [label="30:  DeclStmt \n   n$20=_fun_A_sharedInstance() [line 50]\n  *&b:class A *=n$20 [line 50]\n  REMOVE_TEMPS(n$20); [line 50]\n " shape="box"]
+30 [label="30:  DeclStmt \n   n$3=_fun_A_sharedInstance() [line 50]\n  *&b:class A *=n$3 [line 50]\n  REMOVE_TEMPS(n$3); [line 50]\n " shape="box"]
 	
 
 	 30 -> 29 ;
-29 [label="29:  Message Call: setX: \n   n$17=*&b:class A * [line 51]\n  _fun_A_setX:(n$17:class A *,17:int ) virtual [line 51]\n  REMOVE_TEMPS(n$17); [line 51]\n  NULLIFY(&b,false); [line 51]\n " shape="box"]
+29 [label="29:  Message Call: setX: \n   n$0=*&b:class A * [line 51]\n  _fun_A_setX:(n$0:class A *,17:int ) virtual [line 51]\n  REMOVE_TEMPS(n$0); [line 51]\n  NULLIFY(&b,false); [line 51]\n " shape="box"]
 	
 
 	 29 -> 25 ;
-28 [label="28:  BinaryOperatorStmt: Assign \n   n$18=*&self:class A * [line 14]\n  n$19=*&x:int  [line 14]\n  *n$18._x:int =n$19 [line 14]\n  REMOVE_TEMPS(n$18,n$19); [line 14]\n  NULLIFY(&self,false); [line 14]\n  NULLIFY(&x,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+28 [label="28:  BinaryOperatorStmt: Assign \n   n$1=*&self:class A * [line 14]\n  n$2=*&x:int  [line 14]\n  *n$1._x:int =n$2 [line 14]\n  REMOVE_TEMPS(n$1,n$2); [line 14]\n  NULLIFY(&self,false); [line 14]\n  NULLIFY(&x,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 28 -> 27 ;

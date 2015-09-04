@@ -1,13 +1,13 @@
 digraph iCFG {
-39 [label="39:  DeclStmt \n   n$39=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 39]\n  n$37=_fun_A_init(n$39:class A *) virtual [line 39]\n  *&a:class A *=n$37 [line 39]\n  REMOVE_TEMPS(n$37,n$39); [line 39]\n " shape="box"]
+39 [label="39:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 39]\n  n$5=_fun_A_init(n$7:class A *) virtual [line 39]\n  *&a:class A *=n$5 [line 39]\n  REMOVE_TEMPS(n$5,n$7); [line 39]\n " shape="box"]
 	
 
 	 39 -> 38 ;
-38 [label="38:  Message Call: setLast_name: \n   n$33=*&a:class A * [line 40]\n  n$34=*&a2:class A * [line 40]\n  _fun_A_setLast_name:(n$33:class A *,n$34:class A *) virtual [line 40]\n  REMOVE_TEMPS(n$33,n$34); [line 40]\n  NULLIFY(&a2,false); [line 40]\n " shape="box"]
+38 [label="38:  Message Call: setLast_name: \n   n$1=*&a:class A * [line 40]\n  n$2=*&a2:class A * [line 40]\n  _fun_A_setLast_name:(n$1:class A *,n$2:class A *) virtual [line 40]\n  REMOVE_TEMPS(n$1,n$2); [line 40]\n  NULLIFY(&a2,false); [line 40]\n " shape="box"]
 	
 
 	 38 -> 34 ;
-37 [label="37:  BinaryOperatorStmt: Assign \n   n$35=*&self:class A * [line 18]\n  n$36=*&last_name:class A * [line 18]\n  *n$35._last_name:class A *=n$36 [line 18]\n  REMOVE_TEMPS(n$35,n$36); [line 18]\n  NULLIFY(&last_name,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+37 [label="37:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 18]\n  n$4=*&last_name:class A * [line 18]\n  *n$3._last_name:class A *=n$4 [line 18]\n  REMOVE_TEMPS(n$3,n$4); [line 18]\n  NULLIFY(&last_name,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 37 -> 36 ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 35 -> 37 ;
-34 [label="34:  Message Call: release \n   n$32=*&a:class A * [line 41]\n  _fun___objc_release(n$32:class A *) [line 41]\n  REMOVE_TEMPS(n$32); [line 41]\n  NULLIFY(&a,false); [line 41]\n " shape="box"]
+34 [label="34:  Message Call: release \n   n$0=*&a:class A * [line 41]\n  _fun___objc_release(n$0:class A *) [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&a,false); [line 41]\n " shape="box"]
 	
 
 	 34 -> 33 ;

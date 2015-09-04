@@ -21,6 +21,9 @@ open CGen_trans
 
 (* Translate one global declaration *)
 let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
+  (* each procedure has different scope: start names from id 0 *)
+  Ident.reset_name_generator ();
+
   let ns_suffix = Ast_utils.namespace_to_string namespace in
   let info = Clang_ast_proj.get_decl_tuple dec in
   CLocation.update_curr_file info;

@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$1=*&e.ssn:int  [line 42]\n  *&return:int =n$1 [line 42]\n  REMOVE_TEMPS(n$1); [line 42]\n  NULLIFY(&e,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$0=*&e.ssn:int  [line 42]\n  *&return:int =n$0 [line 42]\n  REMOVE_TEMPS(n$0); [line 42]\n  NULLIFY(&e,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 13 -> 12 ;

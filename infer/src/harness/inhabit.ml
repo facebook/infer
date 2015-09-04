@@ -303,6 +303,9 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
  * proc to the cg *)
 let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
+  (* each procedure has different scope: start names from id 0 *)
+  Ident.reset_name_generator ();
+
   (* TMP: pick an arbitrary cg and cfg to piggyback the harness code onto *)
   (* TODO (t4707171): create our own fresh cfg / cg instead *)
   let (source_dir, cg) =
