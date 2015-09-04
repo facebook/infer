@@ -99,12 +99,10 @@ struct
         let proc_throws pn = Dataflow.DontKnow
       end) in
 
-    if Cfg.Procdesc.is_defined pdesc then
-      let transitions = DFAllocCheck.run pdesc None in
-      match transitions (Cfg.Procdesc.get_exit_node pdesc) with
-      | DFAllocCheck.Transition (loc, _, _) -> loc
-      | DFAllocCheck.Dead_state -> None
-    else None
+    let transitions = DFAllocCheck.run pdesc None in
+    match transitions (Cfg.Procdesc.get_exit_node pdesc) with
+    | DFAllocCheck.Transition (loc, _, _) -> loc
+    | DFAllocCheck.Dead_state -> None
 
   (** Check repeated calls to the same procedure. *)
   let check_instr get_proc_desc curr_pname curr_pdesc node extension instr normalized_etl =
@@ -127,11 +125,11 @@ struct
             normalized_etl,
             loc,
             call_flags) in
-        let report callee_pdesc =
+        let report proc_desc =
           match get_old_call instr_normalized_args extension with
           | Some (Sil.Call (_, _, _, loc_old, _)) ->
               begin
-                match proc_performs_allocation callee_pdesc AllPaths with
+                match proc_performs_allocation proc_desc AllPaths with
                 | Some alloc_loc ->
                     let description =
                       Printf.sprintf "call to %s seen before on line %d (may allocate at %s:%n)"
@@ -147,7 +145,9 @@ struct
 
         let () = match get_proc_desc callee_pname with
           | None -> ()
-          | Some callee_pdesc -> report callee_pdesc in
+          | Some proc_desc ->
+              if Cfg.Procdesc.is_defined proc_desc
+              then report proc_desc in
         add_call instr_normalized_args extension
     | _ -> extension
 

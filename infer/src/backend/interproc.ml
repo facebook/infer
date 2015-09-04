@@ -1048,9 +1048,8 @@ let report_runtime_exceptions tenv cfg pdesc summary =
     && Procname.java_is_static pname
     && (Procname.java_get_method pname) = "main" in
   let is_annotated =
-    let annotated_signature =
-      Annotations.get_annotated_signature
-        Specs.proc_get_method_annotation pdesc pname in
+    let proc_attributes = Specs.pdesc_resolve_attributes pdesc in
+    let annotated_signature = Annotations.get_annotated_signature proc_attributes in
     let ret_annotation, _ = annotated_signature.Annotations.ret in
     Annotations.ia_is_verify ret_annotation in
   let is_unavoidable pre =

@@ -54,7 +54,7 @@ struct
     let old_summ = Specs.get_summary_unsafe proc_name in
     let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
     let method_annotation =
-      (Specs.proc_get_attributes proc_name proc_desc).ProcAttributes.method_annotation in
+      (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
     let new_summ =
       {
         old_summ with
@@ -177,7 +177,7 @@ struct
           let do_proc (init_pn, init_pd) =
             let filter callee_pn callee_pd =
               let is_private =
-                let attr = Specs.proc_get_attributes callee_pn callee_pd in
+                let attr = Specs.pdesc_resolve_attributes callee_pd in
                 attr.ProcAttributes.access = Sil.Private in
               let same_class =
                 let get_class_opt pn =
@@ -215,7 +215,8 @@ struct
         (** Get the final typestates of all the initializers. *)
         let final_typestates = ref [] in
         let get_final_typestate (pname, pdesc) =
-          let ann_sig = Models.get_annotated_signature pdesc pname in
+          let ann_sig =
+            Models.get_modelled_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
           let loc = Cfg.Procdesc.get_loc pdesc in
           let idenv_pn = Idenv.create_from_idenv idenv pdesc in
           match typecheck_proc false idenv_pn pname pdesc ann_sig loc with
@@ -238,8 +239,10 @@ struct
       let final_initializer_typestates_lazy = lazy
         begin
           let is_initializer pdesc pname =
-            PatternMatch.method_is_initializer tenv pname pdesc ||
-            let ia, _ = (Models.get_annotated_signature pdesc pname).Annotations.ret in
+            PatternMatch.method_is_initializer tenv (Cfg.Procdesc.get_attributes pdesc) ||
+            let ia, _ =
+              (Models.get_modelled_annotated_signature
+                 (Cfg.Procdesc.get_attributes pdesc)).Annotations.ret in
             Annotations.ia_is_initializer ia in
           let initializers_current_class =
             pname_and_pdescs_with
@@ -306,15 +309,17 @@ struct
 
     let filter_special_cases () =
       if Procname.java_is_access_method proc_name ||
-         (Specs.proc_get_attributes proc_name proc_desc).ProcAttributes.is_bridge_method
+         (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
       then None
       else
         begin
-          let annotated_signature = Models.get_annotated_signature proc_desc proc_name in
-          if (Specs.proc_get_attributes proc_name proc_desc).ProcAttributes.is_abstract then
+          let annotated_signature =
+            Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes proc_desc) in
+          if (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_abstract then
             begin
               if Models.infer_library_return &&
-                 EradicateChecks.classify_procedure proc_name proc_desc = "L" then
+                 EradicateChecks.classify_procedure (Cfg.Procdesc.get_attributes proc_desc) = "L"
+              then
                 (let ret_is_nullable = (* get the existing annotation *)
                    let ia, _ = annotated_signature.Annotations.ret in
                    Annotations.ia_is_nullable ia in

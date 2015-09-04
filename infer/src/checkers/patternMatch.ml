@@ -32,7 +32,7 @@ let is_direct_subtype_of this_type super_type_name =
   | _ -> false
 
 (** The type the method is invoked on *)
-let get_this_type proc_desc = match Cfg.Procdesc.get_formals proc_desc with
+let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals with
   | (n, t):: args -> Some t
   | _ -> None
 
@@ -275,12 +275,11 @@ let type_has_initializer
 (** Check if the method is one of the known initializer methods. *)
 let method_is_initializer
     (tenv: Sil.tenv)
-    (proc_name: Procname.t)
-    (proc_desc: Cfg.Procdesc.t) : bool =
-  match get_this_type proc_desc with
+    (proc_attributes: ProcAttributes.t) : bool =
+  match get_this_type proc_attributes with
   | Some this_type ->
       if type_has_initializer tenv this_type then
-        let mname = Procname.java_get_method proc_name in
+        let mname = Procname.java_get_method (proc_attributes.ProcAttributes.proc_name) in
         list_exists (string_equal mname) initializer_methods
       else
         false

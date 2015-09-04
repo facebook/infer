@@ -935,7 +935,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
   let nullable_obj_str = ref None in
   (* return true if deref_exp is only pointed to by fields/params with @Nullable annotations *)
   let is_only_pt_by_nullable_fld_or_param deref_exp =
-    let ann_sig = Models.get_annotated_signature pdesc (Cfg.Procdesc.get_proc_name pdesc) in
+    let ann_sig = Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes pdesc) in
     list_for_all
       (fun hpred ->
          match hpred with

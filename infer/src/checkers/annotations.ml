@@ -146,22 +146,27 @@ let ia_is ann ia = match ann with
 
 type get_method_annotation = Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
 
-(** Get a method signature with annotations from a proc_name and proc_desc,
-    or search in the .specs file if it is not defined in the proc_desc. *)
-let get_annotated_signature get_method_annotation proc_desc proc_name : annotated_signature =
-  let method_annotation = get_method_annotation proc_name proc_desc in
-  let formals = Cfg.Procdesc.get_formals proc_desc in
-  let ret_type = Cfg.Procdesc.get_ret_type proc_desc in
-  let (ia, ial) = method_annotation in
+
+(** Get a method signature with annotations from a proc_attributes. *)
+let get_annotated_signature proc_attributes : annotated_signature =
+  let method_annotation = proc_attributes.ProcAttributes.method_annotation in
+  let formals = proc_attributes.ProcAttributes.formals in
+  let ret_type = proc_attributes.ProcAttributes.ret_type in
+  let (ia, ial0) = method_annotation in
   let natl =
     let rec extract ial parl = match ial, parl with
-      | ia :: ial', (name, typ) :: parl' -> (name, ia, typ) :: extract ial' parl'
-      | [], (name, typ) :: parl' -> (name, Sil.item_annotation_empty, typ) :: extract [] parl'
-      | [], [] -> []
-      | _ :: _, [] -> assert false in
-    list_rev (extract (list_rev ial) (list_rev formals)) in
+      | ia :: ial', (name, typ) :: parl' ->
+          (name, ia, typ) :: extract ial' parl'
+      | [], (name, typ) :: parl' ->
+          (name, Sil.item_annotation_empty, typ) :: extract [] parl'
+      | [], [] ->
+          []
+      | _ :: _, [] ->
+          assert false in
+    list_rev (extract (list_rev ial0) (list_rev formals)) in
   let annotated_signature = { ret = (ia, ret_type); params = natl } in
   annotated_signature
+
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
     These wrappers have the same name as the original method, every type is Object, and the parameters

@@ -561,8 +561,7 @@ let check_constant_string_dereference lexp =
   | _ -> None
 
 (** Normalize an expression and check for arithmetic problems *)
-let exp_norm_check_arith pdesc prop exp =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+let exp_norm_check_arith pname prop exp =
   match Prop.find_arithmetic_problem (State.get_path_pos ()) prop exp with
   | Some (Prop.Div0 div), prop' ->
       let desc = Errdesc.explain_divide_by_zero div (State.get_node ()) (State.get_loc ()) in
@@ -761,9 +760,11 @@ let redirect_shared_ptr tenv cfg pname actual_params =
           pname'
     else pname
 
-(** recognize calls to the constructor java.net.URL and splits the argument string to be only the protocol.  *)
-let call_constructor_url_update_args tenv cfg pname actual_params =
-  let url_pname = Procname.mangled_java ((Some "java.net"), "URL") None "<init>" [(Some "java.lang"), "String"] Procname.Non_Static in
+(** recognize calls to the constructor java.net.URL and splits the argument string
+    to be only the protocol.  *)
+let call_constructor_url_update_args pname actual_params =
+  let url_pname = Procname.mangled_java
+      ((Some "java.net"), "URL") None "<init>" [(Some "java.lang"), "String"] Procname.Non_Static in
   if (Procname.equal url_pname pname) then
     (match actual_params with
      | [this; (Sil.Const (Sil.Cstr s), atype)] ->
@@ -781,7 +782,7 @@ let call_constructor_url_update_args tenv cfg pname actual_params =
 (** Handles certain method calls in a special way *)
 let handle_special_cases_call tenv cfg pname actual_params =
   if (!Config.curr_language = Config.Java) then
-    pname, (call_constructor_url_update_args tenv cfg pname actual_params)
+    pname, (call_constructor_url_update_args pname actual_params)
   else if (!Config.curr_language = Config.C_CPP) then
     (redirect_shared_ptr tenv cfg pname actual_params), actual_params
   else pname, actual_params
@@ -876,7 +877,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Letderef (id, rhs_exp, typ, loc) ->
       begin
         try
-          let n_rhs_exp, prop = exp_norm_check_arith pdesc _prop rhs_exp in
+          let n_rhs_exp, prop = exp_norm_check_arith pname _prop rhs_exp in
           let n_rhs_exp' = Prop.exp_collapse_consecutive_indices_prop prop typ n_rhs_exp in
           match check_constant_string_dereference n_rhs_exp' with
           | Some value ->
@@ -896,8 +897,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Set (lhs_exp, typ, rhs_exp, loc) ->
       begin
         try
-          let n_lhs_exp, _prop' = exp_norm_check_arith pdesc _prop lhs_exp in
-          let n_rhs_exp, prop = exp_norm_check_arith pdesc _prop' rhs_exp in
+          let n_lhs_exp, _prop' = exp_norm_check_arith pname _prop lhs_exp in
+          let n_rhs_exp, prop = exp_norm_check_arith pname _prop' rhs_exp in
           let prop = Prop.replace_objc_null prop n_lhs_exp n_rhs_exp in
           let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop prop typ n_lhs_exp in
           let iter_list = Rearrange.rearrange pdesc tenv n_lhs_exp' typ prop loc in
@@ -927,14 +928,15 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         | _ -> () in
       check_already_dereferenced pname cond _prop;
       check_condition_always_true_false ();
-      let n_cond, prop = exp_norm_check_arith pdesc _prop cond in
+      let n_cond, prop = exp_norm_check_arith pname _prop cond in
       ret_old_path (Propset.to_proplist (prune_prop tenv n_cond prop))
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun fn), args, loc, call_flags) when function_is_builtin fn ->
-      let sym_exe_builtin = Builtin.get_sym_exe_builtin fn in
-      sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args fn loc
+  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), args, loc, call_flags)
+    when function_is_builtin callee_pname ->
+      let sym_exe_builtin = Builtin.get_sym_exe_builtin callee_pname in
+      sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags) ->
       (** Generic fun call with known name *)
-      let (prop_r, _n_actual_params) = normalize_params pdesc _prop actual_params in
+      let (prop_r, _n_actual_params) = normalize_params pname _prop actual_params in
       let fn, n_actual_params = handle_special_cases_call tenv cfg callee_pname _n_actual_params in
       let resolved_pname =
         if call_flags.Sil.cf_virtual then
@@ -961,7 +963,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
           ret_ids ret_typ_opt n_actual_params resolved_pname loc in
       let sentinel_result =
         if !Config.curr_language = Config.C_CPP then
-          sym_exe_check_variadic_sentinel_if_present cfg pdesc tenv prop_r path actual_params callee_pname loc
+          sym_exe_check_variadic_sentinel_if_present
+            cfg pdesc tenv prop_r path actual_params callee_pname loc
         else [(prop_r, path)] in
       let do_call (prop, path) =
         match Specs.get_summary resolved_pname with
@@ -973,7 +976,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
               cfg pdesc tenv prop path ret_ids n_actual_params summary loc in
       list_flatten (list_map do_call sentinel_result)
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
-      let (prop_r, n_actual_params) = normalize_params pdesc _prop actual_params in
+      let (prop_r, n_actual_params) = normalize_params pname _prop actual_params in
       if call_flags.Sil.cf_is_objc_block then
         Rearrange.check_call_to_objc_block_error pdesc prop_r fun_exp loc;
       Rearrange.check_dereference_error pdesc prop_r fun_exp loc;
@@ -1032,7 +1035,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Stackop _ -> (* this should be handled at the propset level *)
       assert false
   | Sil.Goto_node (node_e, loc) ->
-      let n_node_e, prop = exp_norm_check_arith pdesc _prop node_e in
+      let n_node_e, prop = exp_norm_check_arith pname _prop node_e in
       begin
         match n_node_e with
         | Sil.Const (Sil.Cint i) ->
@@ -1251,17 +1254,21 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop 
   (* error on the first premature nil argument *)
   list_fold_left check_allocated [(prop, path)] non_terminal_argsi
 
-and sym_exe_check_variadic_sentinel_if_present cfg pdesc tenv prop path actual_params callee_pname loc =
-  match Cfg.Procdesc.find_from_name cfg callee_pname with
-  | None -> [(prop, path)]
-  | Some callee_pdesc ->
-      let proc_attributes = Cfg.Procdesc.get_attributes callee_pdesc in
+and sym_exe_check_variadic_sentinel_if_present
+    cfg pdesc tenv prop path actual_params callee_pname loc =
+  match Specs.proc_resolve_attributes (Cfg.Procdesc.find_from_name cfg) callee_pname with
+  | None ->
+      [(prop, path)]
+  | Some callee_attributes ->
       match Sil.get_sentinel_func_attribute_value
-              proc_attributes.ProcAttributes.func_attributes with
+              callee_attributes.ProcAttributes.func_attributes with
       | None -> [(prop, path)]
       | Some sentinel_arg ->
-          let formals = Cfg.Procdesc.get_formals callee_pdesc in
-          sym_exe_check_variadic_sentinel cfg pdesc tenv prop path (list_length formals) actual_params sentinel_arg callee_pname loc
+          let formals = callee_attributes.ProcAttributes.formals in
+          sym_exe_check_variadic_sentinel
+            cfg pdesc tenv prop path (list_length formals)
+            actual_params sentinel_arg callee_pname loc
+
 
 (** Perform symbolic execution for a function call *)
 and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
@@ -1468,8 +1475,9 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(lexp, typ)] when list_length ret_ids <= 1 ->
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
         let return_result_for_array_size e prop ret_ids = return_result e prop ret_ids in
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         begin
           try
             let hpred = list_find (function
@@ -1500,8 +1508,9 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ); (size, _)], [] ->
-        let n_lexp, _prop' = exp_norm_check_arith pdesc _prop lexp in
-        let n_size, prop = exp_norm_check_arith pdesc _prop' size in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, _prop' = exp_norm_check_arith pname _prop lexp in
+        let n_size, prop = exp_norm_check_arith pname _prop' size in
         begin
           try
             let hpred, sigma' = list_partition (function
@@ -1534,8 +1543,9 @@ module ModelBuiltins = struct
   let execute___print_value cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
     L.err "__print_value: ";
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
     let do_arg (lexp, typ) =
-      let n_lexp, _ = exp_norm_check_arith pdesc prop lexp in
+      let n_lexp, _ = exp_norm_check_arith pname prop lexp in
       L.err "%a " (Sil.pp_exp pe_text) n_lexp in
     list_iter do_arg args;
     L.err "@.";
@@ -1598,7 +1608,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(lexp, typ)] when list_length ret_ids <= 1 ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         let props = create_type tenv n_lexp typ prop in
         let aux prop =
           begin
@@ -1636,8 +1647,9 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(_val1, typ1); (_texp2, typ2)] when list_length ret_ids <= 1 ->
-        let val1, __prop = exp_norm_check_arith pdesc _prop _val1 in
-        let texp2, prop = exp_norm_check_arith pdesc __prop _texp2 in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let val1, __prop = exp_norm_check_arith pname _prop _val1 in
+        let texp2, prop = exp_norm_check_arith pname __prop _texp2 in
         let exe_one_prop prop =
           if Sil.exp_equal texp2 Sil.exp_zero then
             [(return_result Sil.exp_zero prop ret_ids, path)]
@@ -1719,7 +1731,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ)], _ ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc Sil.Rfile
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -1728,7 +1741,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ)], _ ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc Sil.Rlock
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -1738,7 +1752,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [_ ; (lexp, typ)], _ ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc Sil.Rignore
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -1747,7 +1762,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ)], _ ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc (Sil.Rmemory Sil.Mnew)
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -1756,7 +1772,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ)], _ ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         let prop' = match Prop.get_taint_attribute prop n_lexp with
           | _ ->
               let check_attr_change att_old att_new = () in
@@ -1770,7 +1787,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ)], _ ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         let prop' = match Prop.get_taint_attribute prop n_lexp with
           | _ ->
               let check_attr_change att_old att_new = () in
@@ -1784,7 +1802,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(lexp, typ)] ->
-        let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         let ret_val = ref None in
         let return_val p = match !ret_val with
           | Some e -> return_result e p ret_ids
@@ -1819,8 +1838,9 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(lexp1, typ1); (lexp2, typ2)] ->
-        let n_lexp1, _prop1 = exp_norm_check_arith pdesc _prop lexp1 in
-        let n_lexp2, prop = exp_norm_check_arith pdesc _prop1 lexp2 in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp1, _prop1 = exp_norm_check_arith pname _prop lexp1 in
+        let n_lexp2, prop = exp_norm_check_arith pname _prop1 lexp2 in
         let foot_var = lazy (Sil.Var (Ident.create_fresh Ident.kfootprint)) in
         let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
         let has_fld_hidden fsel = list_exists filter_fld_hidden fsel in
@@ -1846,9 +1866,10 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(lexp, typ)] when list_length ret_ids <= 1 ->
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
         (match ret_ids with
          | [ret_id] ->
-             let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+             let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
              [(return_result (Sil.BinOp(Sil.Ne, n_lexp, (Sil.Const(Sil.Cattribute((Sil.Auntaint)))))) prop ret_ids, path)]
          | _ -> [(_prop, path)])
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
@@ -1928,9 +1949,10 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ)], _ ->
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
         let prop = return_result lexp _prop ret_ids in
         if !Config.objc_memory_model_on then
-          let n_lexp, prop = exp_norm_check_arith pdesc prop lexp in
+          let n_lexp, prop = exp_norm_check_arith pname prop lexp in
           let check_attr_change att_old att_new = () in
           let prop' = Prop.add_or_replace_exp_attribute check_attr_change prop n_lexp Sil.Aautorelease in
           [(prop', path)]
@@ -1967,8 +1989,9 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(_val1, typ1); (_texp2, typ2)] when list_length ret_ids <= 1 ->
-        let val1, __prop = exp_norm_check_arith pdesc _prop _val1 in
-        let texp2, prop = exp_norm_check_arith pdesc __prop _texp2 in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let val1, __prop = exp_norm_check_arith pname _prop _val1 in
+        let texp2, prop = exp_norm_check_arith pname __prop _texp2 in
         (try
            let hpred = list_find (function
                | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
@@ -2028,7 +2051,8 @@ module ModelBuiltins = struct
     match args with
     | [(lexp, typ)] ->
         begin
-          let n_lexp, prop = exp_norm_check_arith pdesc _prop lexp in
+          let pname = Cfg.Procdesc.get_proc_name pdesc in
+          let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
           let prop_nonzero = (* case n_lexp!=0 *)
             Propset.to_proplist (prune_polarity tenv true n_lexp prop) in
           let prop_zero = (* case n_lexp==0 *)
@@ -2044,6 +2068,7 @@ module ModelBuiltins = struct
 
   let execute_alloc mk can_return_null cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
     let rec evaluate_char_sizeof e = match e with
       | Sil.Var _ -> e
       | Sil.UnOp (uop, e', typ) ->
@@ -2067,7 +2092,7 @@ module ModelBuiltins = struct
       | [ret_id] -> ret_id
       | _ -> Ident.create_fresh Ident.kprimed in
     let size_exp', prop =
-      let n_size_exp, prop = exp_norm_check_arith pdesc _prop size_exp in
+      let n_size_exp, prop = exp_norm_check_arith pname _prop size_exp in
       let n_size_exp' = evaluate_char_sizeof n_size_exp in
       Prop.exp_normalize_prop prop n_size_exp', prop in
     let cnt_te = handle_sizeof_exp size_exp' in
@@ -2128,7 +2153,8 @@ module ModelBuiltins = struct
     match args with
     | [(ret_exn, _)] ->
         begin
-          let n_ret_exn, prop = exp_norm_check_arith pdesc _prop ret_exn in
+          let pname = Cfg.Procdesc.get_proc_name pdesc in
+          let n_ret_exn, prop = exp_norm_check_arith pname _prop ret_exn in
           match n_ret_exn with
           | Sil.Const (Sil.Cexn exp) ->
               let prop_with_exn = return_result exp prop ret_ids in
@@ -2141,7 +2167,8 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | (_arg1, _):: _ ->
-        let arg1, prop = exp_norm_check_arith pdesc _prop _arg1 in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let arg1, prop = exp_norm_check_arith pname _prop _arg1 in
         let prop' = return_result arg1 prop ret_ids in
         [(prop', path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
@@ -2150,9 +2177,10 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(lexp1, _); (lexp2, _); (lexp3, _)] ->
-        let n_lexp1, prop = exp_norm_check_arith pdesc _prop lexp1 in
-        let n_lexp2, prop = exp_norm_check_arith pdesc _prop lexp2 in
-        let n_lexp3, prop = exp_norm_check_arith pdesc _prop lexp3 in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp1, prop = exp_norm_check_arith pname _prop lexp1 in
+        let n_lexp2, prop = exp_norm_check_arith pname _prop lexp2 in
+        let n_lexp3, prop = exp_norm_check_arith pname _prop lexp3 in
         (match n_lexp1, n_lexp2, n_lexp3 with
          | Sil.Const (Sil.Cstr str1), Sil.Const (Sil.Cstr str2), Sil.Const (Sil.Cint n_sil) ->
              (let n = Sil.Int.to_int n_sil in
@@ -2175,8 +2203,9 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args with
     | [(lexp1, _); (lexp2, _)] ->
-        let n_lexp1, _prop' = exp_norm_check_arith pdesc _prop lexp1 in
-        let n_lexp2, prop = exp_norm_check_arith pdesc _prop' lexp2 in
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp1, _prop' = exp_norm_check_arith pname _prop lexp1 in
+        let n_lexp2, prop = exp_norm_check_arith pname _prop' lexp2 in
         (match n_lexp1, n_lexp2 with
          | Sil.Const (Sil.Ctuple el), Sil.Const (Sil.Cint i) ->
              let n = Sil.Int.to_int i in

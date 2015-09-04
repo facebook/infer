@@ -76,6 +76,7 @@ module ST = struct
         (Option.default "" advice)
         [("always_report", string_of_bool always_report)] in
     let exn = exception_kind kind localized_description in
+    let proc_attributes = Specs.pdesc_resolve_attributes proc_desc in
 
     (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
        suppressed with the following annotations:
@@ -101,11 +102,11 @@ module ST = struct
 
       let is_method_suppressed =
         Annotations.ma_has_annotation_with
-          (Specs.proc_get_method_annotation proc_name proc_desc)
+          proc_attributes.ProcAttributes.method_annotation
           annotation_matches in
 
       let is_field_suppressed =
-        match field_name, PatternMatch.get_this_type proc_desc with
+        match field_name, PatternMatch.get_this_type proc_attributes with
         | Some field_name, Some t -> begin
             match (Annotations.get_field_type_and_annotation field_name t) with
             | Some (_, ia) -> Annotations.ia_has_annotation_with ia annotation_matches
@@ -114,7 +115,7 @@ module ST = struct
         | _ -> false in
 
       let is_class_suppressed =
-        match (PatternMatch.get_this_type proc_desc) with
+        match PatternMatch.get_this_type proc_attributes with
         | Some t -> begin
             match (PatternMatch.type_get_annotation t) with
             | Some ia -> Annotations.ia_has_annotation_with ia annotation_matches
@@ -338,7 +339,7 @@ let callback_test_state all_procs get_proc_desc idenv tenv proc_name proc_desc =
 
 (** Check the uses of VisibleForTesting *)
 let callback_checkVisibleForTesting all_procs get_proc_desc idenv tenv proc_name proc_desc =
-  let ma = Specs.proc_get_method_annotation proc_name proc_desc in
+  let ma = (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
   if Annotations.ma_contains ma [Annotations.visibleForTesting] then
     begin
       let loc = Cfg.Procdesc.get_loc proc_desc in

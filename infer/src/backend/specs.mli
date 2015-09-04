@@ -222,7 +222,8 @@ val init_summary :
    ProcAttributes.t) (** attributes of the procedure *)
   -> unit
 
-val reset_summary : Cg.t -> Procname.t -> Location.t -> unit
+(** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
+val reset_summary : Cg.t -> Procname.t -> ProcAttributes.t option -> unit
 
 (** Load procedure summary from the given file *)
 val load_summary : DB.filename -> summary option
@@ -245,14 +246,20 @@ val pp_specs : printenv -> Format.formatter -> Prop.normal spec list -> unit
 (** Print the summary, the bool indicates whether to print whole seconds only *)
 val pp_summary : printenv -> bool -> Format.formatter -> summary -> unit
 
-(** Get the attributes of a procedure, looking first in the procdesc and then in the .specs file. *)
-val proc_get_attributes : Procname.t -> Cfg.Procdesc.t -> ProcAttributes.t
+(** Like proc_resolve_attributes but start from a proc_desc. *)
+val pdesc_resolve_attributes : Cfg.Procdesc.t -> ProcAttributes.t
 
-val proc_get_method_annotation : Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
+(** Try to find the attributes for a defined proc, by first looking at the procdesc
+    then looking at .specs files if required.
+    Return the attributes for an underfined procedure otherwise.
+    If no attributes can be found, return None.
+*)
+val proc_resolve_attributes :
+  (Procname.t -> Cfg.Procdesc.t option) -> Procname.t -> ProcAttributes.t option
 
 (** Check if the procedure is from a library:
-    It's not defined in the current proc desc, and there is no spec file for it. *)
-val proc_is_library : Procname.t -> Cfg.Procdesc.t -> bool
+    It's not defined, and there is no spec file for it. *)
+val proc_is_library : ProcAttributes.t -> bool
 
 (** Re-initialize a dependency map *)
 val re_initialize_dependency_map : dependency_map_t -> dependency_map_t

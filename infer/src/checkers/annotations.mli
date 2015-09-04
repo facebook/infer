@@ -44,9 +44,8 @@ val equal : annotated_signature -> annotated_signature -> bool
 
 type get_method_annotation = Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
 
-(** Get the annotated signature of the procedure *)
-val get_annotated_signature :
-  get_method_annotation -> Cfg.Procdesc.t -> Procname.t -> annotated_signature
+(** Get a method signature with annotations from a proc_attributes. *)
+val get_annotated_signature : ProcAttributes.t -> annotated_signature
 
 (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
 val get_field_type_and_annotation :

@@ -365,9 +365,10 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
     then calls_this := true in
 
   (* Drops hidden and synthetic parameters which we do not check in a call. *)
-  let drop_unchecked_params calls_this pdesc pname params =
+  let drop_unchecked_params calls_this proc_attributes params =
+    let pname = proc_attributes.ProcAttributes.proc_name in
     if Procname.is_constructor pname then
-      match PatternMatch.get_this_type pdesc with
+      match PatternMatch.get_this_type proc_attributes with
       | Some this_type ->
           begin
             constructor_check_calls_this calls_this pname;
@@ -379,11 +380,11 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
             let rec drop_n_args ntl = match ntl with
               | fp:: tail when is_hidden_parameter fp -> 1 + drop_n_args tail
               | _ -> 0 in
-            let n = drop_n_args (Cfg.Procdesc.get_formals pdesc) in
+            let n = drop_n_args proc_attributes.ProcAttributes.formals in
             let visible_params = list_drop_first n params in
 
             (* Drop the trailing hidden parameter if the constructor is synthetic. *)
-            if (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.is_synthetic_method then
+            if proc_attributes.ProcAttributes.is_synthetic_method then
               list_drop_last 1 visible_params
             else
               visible_params
@@ -393,9 +394,9 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
       params in
 
   (* Drop parameters from the signature which we do not check in a call. *)
-  let drop_unchecked_signature_params pdesc pname annotated_signature =
-    if Procname.is_constructor pname &&
-       (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.is_synthetic_method then
+  let drop_unchecked_signature_params proc_attributes annotated_signature =
+    if Procname.is_constructor (proc_attributes.ProcAttributes.proc_name) &&
+       proc_attributes.ProcAttributes.is_synthetic_method then
       list_drop_last 1 annotated_signature.Annotations.params
     else
       annotated_signature.Annotations.params in
@@ -532,12 +533,14 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
       typestate (* skip othe builtins *)
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _etl, loc, cflags)
     when get_proc_desc callee_pname <> None ->
-      let callee_pdesc = match get_proc_desc callee_pname with
-        | Some callee_pdesc -> callee_pdesc
+      let callee_attributes =
+        match get_proc_desc callee_pname with
+        | Some pdesc ->
+            Specs.pdesc_resolve_attributes pdesc
         | None -> assert false in
-      let callee_loc = Cfg.Procdesc.get_loc callee_pdesc in
+      let callee_loc = callee_attributes.ProcAttributes.loc in
 
-      let etl = drop_unchecked_params calls_this callee_pdesc callee_pname _etl in
+      let etl = drop_unchecked_params calls_this callee_attributes _etl in
       let call_params, typestate1 =
         let handle_et (e1, t1) (etl1, typestate1) =
           typecheck_expr_for_errors typestate e1 loc;
@@ -545,11 +548,10 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
           (((e1, e2), t1) :: etl1), typestate2 in
         list_fold_right handle_et etl ([], typestate) in
 
-      let annotated_signature = Models.get_annotated_signature callee_pdesc callee_pname in
-      let signature_params = drop_unchecked_signature_params
-          callee_pdesc
-          callee_pname
-          annotated_signature in
+      let annotated_signature =
+        Models.get_modelled_annotated_signature callee_attributes in
+      let signature_params =
+        drop_unchecked_signature_params callee_attributes annotated_signature in
 
       let is_anonymous_inner_class_constructor =
         Procname.java_is_anonymous_inner_class_constructor callee_pname in
@@ -559,7 +561,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
         | [] -> typestate'
         | [id] ->
             let (ia, ret_typ) = annotated_signature.Annotations.ret in
-            let is_library = Specs.proc_is_library callee_pname callee_pdesc in
+            let is_library = Specs.proc_is_library callee_attributes in
             let origin = TypeOrigin.Proc (callee_pname, loc', annotated_signature, is_library) in
             TypeState.add_id
               id
@@ -692,7 +694,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
               begin
                 let unique_id = Procname.to_unique_id callee_pname in
                 let classification =
-                  EradicateChecks.classify_procedure callee_pname callee_pdesc in
+                  EradicateChecks.classify_procedure callee_attributes in
                 L.stdout "  %s unique id: %s@." classification unique_id
               end;
             if cflags.Sil.cf_virtual && checks.eradicate then
@@ -714,8 +716,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                 curr_pname
                 node
                 typestate1
-                callee_pname
-                callee_pdesc
+                callee_attributes
                 signature_params
                 call_params
                 loc
@@ -943,13 +944,14 @@ let typecheck_node
   let typestates_exn = ref [] in
   let handle_exceptions typestate instr = match instr with
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pname), _, _, _) ->
+        let callee_attributes_opt =
+          Specs.proc_resolve_attributes get_proc_desc callee_pname in
         (* check if the call might throw an exception *)
-        let exceptions =
-          match get_proc_desc callee_pname with
-          | Some callee_pdesc ->
-              (Specs.proc_get_attributes callee_pname callee_pdesc).ProcAttributes.exceptions
-          | None -> [] in
-        if exceptions <> [] then
+        let has_exceptions = match callee_attributes_opt with
+          | Some callee_attributes ->
+              callee_attributes.ProcAttributes.exceptions <> []
+          | None -> false in
+        if has_exceptions then
           typestates_exn := typestate :: !typestates_exn
     | Sil.Set (Sil.Lvar pv, _, _, _) when
         Sil.pvar_is_return pv &&

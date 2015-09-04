@@ -221,11 +221,9 @@ let iterate_callbacks store_summary call_graph exe_env =
       | Some cfg ->
           Cfg.Procdesc.find_from_name cfg proc_name
       | None -> None in
-    let loc = match procdesc_opt with
-      | Some proc_desc ->
-          Cfg.Procdesc.get_loc proc_desc
-      | None -> Location.dummy in
-    Specs.reset_summary call_graph proc_name loc in
+    let attributes_opt =
+      Option.map Cfg.Procdesc.get_attributes procdesc_opt in
+    Specs.reset_summary call_graph proc_name attributes_opt in
 
 
   (* Make sure summaries exists. *)

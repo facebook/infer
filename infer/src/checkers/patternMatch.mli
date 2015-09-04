@@ -18,7 +18,7 @@ val get_java_method_call_formal_signature :
   Sil.instr -> (string * string * string list * string) option
 
 (** Get the this type of a procedure *)
-val get_this_type : Cfg.Procdesc.t -> Sil.typ option
+val get_this_type : ProcAttributes.t -> Sil.typ option
 
 (** Get the name of a type *)
 val get_type_name : Sil.typ -> string
@@ -29,7 +29,7 @@ val get_vararg_type_names : Cfg.Node.t -> Sil.pvar -> string list
 val has_formal_method_argument_type_names : Cfg.Procdesc.t -> Procname.t -> string list -> bool
 
 (** Check if the method is one of the known initializer methods. *)
-val method_is_initializer : Sil.tenv -> Procname.t -> Cfg.Procdesc.t -> bool
+val method_is_initializer : Sil.tenv -> ProcAttributes.t -> bool
 
 (** Is this a getter proc name? *)
 val is_getter : Procname.t -> bool

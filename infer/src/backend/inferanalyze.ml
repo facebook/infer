@@ -207,7 +207,7 @@ let () = (* parse command-line arguments *)
 module Simulator = struct (** Simulate the analysis only *)
   let reset_summaries cg =
     list_iter
-      (fun (pname, in_out_calls) -> Specs.reset_summary cg pname Location.dummy)
+      (fun (pname, in_out_calls) -> Specs.reset_summary cg pname None)
       (Cg.get_nodes_and_calls cg)
 
   (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for

@@ -114,21 +114,21 @@ let ret_library_table : table_t Lazy.t =
 lazy (Marshal.from_string Eradicate_library.marshalled_library_table 0)
 *)
 
+
 (** Return the annotated signature of the procedure, taking into account models. *)
-let get_annotated_signature callee_pdesc callee_pname =
-  let annotated_signature =
-    Annotations.get_annotated_signature
-      Specs.proc_get_method_annotation callee_pdesc callee_pname in
-  let proc_id = Procname.to_unique_id callee_pname in
+let get_modelled_annotated_signature proc_attributes =
+  let proc_name = proc_attributes.ProcAttributes.proc_name in
+  let annotated_signature = Annotations.get_annotated_signature proc_attributes in
+  let proc_id = Procname.to_unique_id proc_name in
   let infer_parameters ann_sig =
     let mark_par =
-      if Inference.enabled then Inference.proc_parameters_marked callee_pname
+      if Inference.enabled then Inference.proc_parameters_marked proc_name
       else None in
     match mark_par with
     | None -> ann_sig
     | Some bs ->
         let mark = (false, bs) in
-        Annotations.annotated_signature_mark callee_pname Annotations.Nullable ann_sig mark in
+        Annotations.annotated_signature_mark proc_name Annotations.Nullable ann_sig mark in
   let infer_return ann_sig =
     let mark_r =
       let from_library =
@@ -137,16 +137,17 @@ let get_annotated_signature callee_pdesc callee_pname =
             Hashtbl.find (Lazy.force ret_library_table) proc_id
           with Not_found -> false
         else false in
-      let from_inference = Inference.enabled && Inference.proc_return_is_marked callee_pname in
+      let from_inference = Inference.enabled &&
+                           Inference.proc_return_is_marked proc_name in
       from_library || from_inference in
     if mark_r
-    then Annotations.annotated_signature_mark_return callee_pname Annotations.Nullable ann_sig
+    then Annotations.annotated_signature_mark_return proc_name Annotations.Nullable ann_sig
     else ann_sig in
   let lookup_models_nullable ann_sig =
     if use_models then
       try
         let mark = Hashtbl.find annotated_table_nullable proc_id in
-        Annotations.annotated_signature_mark callee_pname Annotations.Nullable ann_sig mark
+        Annotations.annotated_signature_mark proc_name Annotations.Nullable ann_sig mark
       with Not_found ->
         ann_sig
     else ann_sig in
@@ -154,7 +155,7 @@ let get_annotated_signature callee_pdesc callee_pname =
     if use_models then
       try
         let mark = Hashtbl.find annotated_table_present proc_id in
-        Annotations.annotated_signature_mark callee_pname Annotations.Present ann_sig mark
+        Annotations.annotated_signature_mark proc_name Annotations.Present ann_sig mark
       with Not_found ->
         ann_sig
     else ann_sig in
@@ -162,7 +163,7 @@ let get_annotated_signature callee_pdesc callee_pname =
     if use_models
        && Hashtbl.mem annotated_table_strict proc_id
     then
-      Annotations.annotated_signature_mark_return_strict callee_pname ann_sig
+      Annotations.annotated_signature_mark_return_strict proc_name ann_sig
     else
       ann_sig in
 
@@ -172,6 +173,7 @@ let get_annotated_signature callee_pdesc callee_pname =
   |> lookup_models_strict
   |> infer_return
   |> infer_parameters
+
 
 (** Return true when the procedure has been modelled for nullable. *)
 let is_modelled_nullable proc_name =

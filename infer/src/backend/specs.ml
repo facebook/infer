@@ -617,28 +617,55 @@ let get_summary_unsafe proc_name =
   | Some summary -> summary
 
 (** Check if the procedure is from a library:
-    It's not defined in the current proc desc, and there is no spec file for it. *)
-let proc_is_library proc_name proc_desc =
-  let defined = Cfg.Procdesc.is_defined proc_desc in
-  if not defined then
-    match get_summary proc_name with
+    It's not defined, and there is no spec file for it. *)
+let proc_is_library proc_attributes =
+  if not proc_attributes.ProcAttributes.is_defined then
+    match get_summary proc_attributes.ProcAttributes.proc_name with
     | None -> true
     | Some _ -> false
   else false
 
-(** Get the attributes of a procedure, looking first in the procdesc and then in the .specs file. *)
-let proc_get_attributes proc_name proc_desc : ProcAttributes.t =
-  let from_proc_desc = Cfg.Procdesc.get_attributes proc_desc in
-  let defined = Cfg.Procdesc.is_defined proc_desc in
-  if not defined then
-    match get_summary proc_name with
-    | None -> from_proc_desc
+(** Try to find the attributes for a defined proc, by first looking at the procdesc
+    then looking at .specs files if required.
+    Return the attributes for an underfined procedure otherwise.
+    If no attributes can be found, return None.
+*)
+let proc_resolve_attributes get_proc_desc proc_name =
+  let from_proc_desc () =  match get_proc_desc proc_name with
+    | Some proc_desc ->
+        Some (Cfg.Procdesc.get_attributes proc_desc)
+    | None ->
+        None in
+  let from_specs () = match get_summary proc_name with
     | Some summary ->
-        summary.attributes (* get attributes from .specs file *)
-  else from_proc_desc
+        Some summary.attributes
+    | None -> None in
+  match from_proc_desc () with
+  | Some attributes ->
+      if attributes.ProcAttributes.is_defined
+      then Some attributes
+      else begin
+        match from_specs () with
+        | Some attributes' ->
+            Some attributes'
+        | None -> Some attributes
+      end
+  | None ->
+      from_specs ()
 
-let proc_get_method_annotation proc_name proc_desc =
-  (proc_get_attributes proc_name proc_desc).ProcAttributes.method_annotation
+(** Like proc_resolve_attributes but start from a proc_desc. *)
+let pdesc_resolve_attributes proc_desc =
+  let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+  let get_proc_desc proc_name' =
+    if Procname.equal proc_name proc_name'
+    then Some proc_desc
+    else None in
+  match proc_resolve_attributes get_proc_desc proc_name with
+  | Some proc_attributes ->
+      proc_attributes
+  | None ->
+      (* this should not happen *)
+      assert false
 
 let get_origin proc_name =
   match get_summary_origin proc_name with
@@ -770,11 +797,14 @@ let init_summary
     } in
   Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, Res_dir)
 
-let reset_summary call_graph proc_name loc =
+(** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
+let reset_summary call_graph proc_name attributes_opt =
   let dependents = Cg.get_defined_children call_graph proc_name in
-  let proc_attributes =
-    { (ProcAttributes.default proc_name !Config.curr_language) with
-      loc; } in
+  let proc_attributes = match attributes_opt with
+    | Some attributes ->
+        attributes
+    | None ->
+        ProcAttributes.default proc_name !Config.curr_language in
   init_summary (
     Procname.Set.elements dependents,
     [],

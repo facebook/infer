@@ -55,13 +55,14 @@ let explain_expr node e =
   | None -> None
 
 (** Classify a procedure. *)
-let classify_procedure pn pd =
+let classify_procedure proc_attributes =
+  let pn = proc_attributes.ProcAttributes.proc_name in
   let unique_id = Procname.to_unique_id pn in
   let classification =
     if Models.is_modelled_nullable pn then "M" (* modelled *)
     else if Models.is_ret_library pn then "R" (* return library *)
-    else if Specs.proc_is_library pn pd then "L" (* library *)
-    else if not (Cfg.Procdesc.is_defined pd) then "S" (* skip *)
+    else if Specs.proc_is_library proc_attributes then "L" (* library *)
+    else if not proc_attributes.ProcAttributes.is_defined then "S" (* skip *)
     else if string_is_prefix "com.facebook" unique_id then "F" (* FB *)
     else "?" in
   classification
@@ -248,7 +249,7 @@ let check_constructor_initialization
   State.set_node start_node;
   if Procname.is_constructor curr_pname
   then begin
-    match PatternMatch.get_this_type curr_pdesc with
+    match PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc) with
     | Some (Sil.Tptr (Sil.Tstruct (ftal, _, _, nameo, _, _, _) as ts, _)) ->
         let do_fta (fn, ft, ia) =
           let annotated_with f = match get_field_annotation fn ts with
@@ -375,7 +376,8 @@ let check_return_annotation
         return_not_nullable
     | _ ->
         false in
-  if Models.infer_library_return && classify_procedure curr_pname curr_pdesc = "L"
+  if Models.infer_library_return &&
+     classify_procedure (Cfg.Procdesc.get_attributes curr_pdesc) = "L"
   then pp_inferred_return_annotation return_not_nullable curr_pname
 
 (** Check the receiver of a virtual call. *)
@@ -418,9 +420,10 @@ let check_call_receiver
 
 (** Check the parameters of a call. *)
 let check_call_parameters
-    find_canonical_duplicate curr_pname node typestate callee_pname
-    callee_pdesc sig_params call_params loc annotated_signature
+    find_canonical_duplicate curr_pname node typestate callee_attributes
+    sig_params call_params loc annotated_signature
     instr_ref typecheck_expr print_current_state : unit =
+  let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let has_this = is_virtual sig_params in
   let tot_param_num = list_length sig_params - (if has_this then 1 else 0) in
   let rec check sparams cparams = match sparams, cparams with
@@ -455,7 +458,7 @@ let check_call_parameters
             let origin_descr = TypeAnnotation.descr_origin ta2 in
 
             let param_num = list_length sparams' + (if has_this then 0 else 1) in
-            let callee_loc = Cfg.Procdesc.get_loc callee_pdesc in
+            let callee_loc = callee_attributes.ProcAttributes.loc in
             report_error
               find_canonical_duplicate
               node
@@ -477,7 +480,7 @@ let check_call_parameters
     if check_library_calls then true
     else
       Models.is_modelled_nullable callee_pname ||
-      Cfg.Procdesc.is_defined callee_pdesc ||
+      callee_attributes.ProcAttributes.is_defined ||
       Specs.get_summary callee_pname <> None in
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
@@ -530,13 +533,12 @@ let check_overridden_annotations
       ignore (list_fold_left2 compare initial_pos current_params overridden_params) in
 
   let check overriden_proc_name =
-    (* TODO (#5280260): investigate why proc_desc may not be found *)
-    match get_proc_desc overriden_proc_name with
-    | Some overriden_proc_desc ->
-        let overriden_signature =
-          Models.get_annotated_signature overriden_proc_desc overriden_proc_name in
-        check_return overriden_proc_name overriden_signature;
-        check_params overriden_proc_name overriden_signature
-    | None -> () in
+    match Specs.proc_resolve_attributes get_proc_desc overriden_proc_name with
+    | Some attributes ->
+        let overridden_signature = Models.get_modelled_annotated_signature attributes in
+        check_return overriden_proc_name overridden_signature;
+        check_params overriden_proc_name overridden_signature
+    | None ->
+        () in
 
   PatternMatch.proc_iter_overridden_methods check tenv proc_name
