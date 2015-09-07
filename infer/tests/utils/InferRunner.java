@@ -191,7 +191,8 @@ public class InferRunner {
       isysrootOption
           .add("-isysroot")
           .add(isysroot)
-          .add("-mios-simulator-version-min=8.2");
+          .add("-mios-simulator-version-min=8.2")
+          .add("--target=x86_64-apple-darwin14");
     }
     ImmutableList.Builder<String> arcOption =
         new ImmutableList.Builder<>();
