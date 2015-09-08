@@ -765,11 +765,11 @@ let create_dereference_desc
     if outermost_dereference is true, stop at the outermost dereference
     (skipping e.g. outermost field access) *)
 let _explain_access
-    ?use_buckets: (use_buckets = false)
-    ?outermost_array: (outermost_array = false)
-    ?outermost_dereference: (outermost_dereference = false)
-    ?is_nullable: (is_nullable = false)
-    ?is_premature_nil: (is_premature_nil = false)
+    ?(use_buckets = false)
+    ?(outermost_array = false)
+    ?(outermost_dereference = false)
+    ?(is_nullable = false)
+    ?(is_premature_nil = false)
     deref_str prop loc =
   let rec find_outermost_dereference node e = match e with
     | Sil.Const c ->
@@ -830,9 +830,9 @@ let _explain_access
 (** Produce a description of which expression is dereferenced in the current instruction, if any.
     The subexpression to focus on is obtained by removing field and index accesses. *)
 let explain_dereference
-    ?use_buckets: (use_buckets = false)
-    ?is_nullable: (is_nullable = false)
-    ?is_premature_nil: (is_premature_nil = false)
+    ?(use_buckets = false)
+    ?(is_nullable = false)
+    ?(is_premature_nil = false)
     deref_str prop loc =
   _explain_access
     ~use_buckets ~outermost_array: false ~outermost_dereference: true ~is_nullable ~is_premature_nil

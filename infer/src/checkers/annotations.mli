@@ -59,6 +59,7 @@ val ia_get_strict : Sil.item_annotation -> Sil.annotation option
 
 val ia_is_initializer : Sil.item_annotation -> bool
 val ia_is_inject : Sil.item_annotation -> bool
+val ia_is_inject_view : Sil.item_annotation -> bool
 val ia_is_mutable : Sil.item_annotation -> bool
 val ia_is_nullable : Sil.item_annotation -> bool
 val ia_is_nonnull : Sil.item_annotation -> bool

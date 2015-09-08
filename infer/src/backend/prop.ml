@@ -1662,7 +1662,7 @@ let rec prop_atom_and ?(footprint = false) (p : normal t) (a : Sil.atom) : norma
             (sub_normalize sub', pi_normalize sub' nsigma' p.pi, nsigma') in
           let (eqs_zero, nsigma'') = sigma_remove_emptylseg nsigma' in
           let p' = { p with sub = nsub'; pi = npi'; sigma = nsigma''} in
-          list_fold_left (prop_atom_and ~footprint: footprint) p' eqs_zero
+          list_fold_left (prop_atom_and ~footprint) p' eqs_zero
       | Sil.Aeq (e1, e2) when (Sil.exp_compare e1 e2 = 0) ->
           p
       | Sil.Aneq (e1, e2) ->
@@ -1697,11 +1697,11 @@ let rec prop_atom_and ?(footprint = false) (p : normal t) (a : Sil.atom) : norma
 
 (** Conjoin [exp1]=[exp2] with a symbolic heap [prop]. *)
 let conjoin_eq ?(footprint = false) exp1 exp2 prop =
-  prop_atom_and ~footprint: footprint prop (Sil.Aeq(exp1, exp2))
+  prop_atom_and ~footprint prop (Sil.Aeq(exp1, exp2))
 
 (** Conjoin [exp1!=exp2] with a symbolic heap [prop]. *)
 let conjoin_neq ?(footprint = false) exp1 exp2 prop =
-  prop_atom_and ~footprint: footprint prop (Sil.Aneq (exp1, exp2))
+  prop_atom_and ~footprint prop (Sil.Aneq (exp1, exp2))
 
 (** Return the spatial part *)
 let get_sigma (p: 'a t) : Sil.hpred list = p.sigma

@@ -1,12 +1,12 @@
 (*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (** Module for Procedure Names *)
 
@@ -257,7 +257,7 @@ let java_is_static = function
   | _ -> assert false
 
 (** Prints a string of a java procname with the given level of verbosity *)
-let java_to_string ?withclass: (wc = false) j verbosity =
+let java_to_string ?(withclass = false) j verbosity =
   match verbosity with
   | VERBOSE | NON_VERBOSE ->
       (* if verbose, then package.class.method(params): rtype,
@@ -276,7 +276,7 @@ let java_to_string ?withclass: (wc = false) j verbosity =
       else return_type ^ separator ^ output
   | SIMPLE -> (* methodname(...) or without ... if there are no parameters *)
       let cls_prefix =
-        if wc then
+        if withclass then
           java_type_to_string j.classname verbosity ^ "."
         else "" in
       let params =
@@ -406,9 +406,9 @@ let to_string p =
   | OBJC_BLOCK name -> name
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
-let to_simplified_string ?withclass: (wc = false) p =
+let to_simplified_string ?(withclass = false) p =
   match p with
-  | JAVA j -> (java_to_string ~withclass: wc j SIMPLE)
+  | JAVA j -> (java_to_string ~withclass j SIMPLE)
   | C_FUNCTION (c1, c2) | STATIC (c1, c2) ->
       to_readable_string (c1, c2) false ^ "()"
   | C_METHOD osig -> c_method_to_string osig SIMPLE

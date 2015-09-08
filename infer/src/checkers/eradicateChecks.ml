@@ -195,10 +195,14 @@ let check_field_assignment
     typecheck_expr node instr_ref curr_pname typestate exp_rhs
       (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, [loc]) loc in
   let should_report_nullable =
+    let field_is_inject_view () = match t_ia_opt with
+      | Some (_, ia) -> Annotations.ia_is_inject_view ia
+      | _ -> false in
     TypeAnnotation.get_value Annotations.Nullable ta_lhs = false &&
     TypeAnnotation.get_value Annotations.Nullable ta_rhs = true &&
     PatternMatch.type_is_class t_lhs &&
-    not (Ident.java_fieldname_is_outer_instance fname) in
+    not (Ident.java_fieldname_is_outer_instance fname) &&
+    not (field_is_inject_view ()) in
   let should_report_absent =
     activate_optional_present &&
     TypeAnnotation.get_value Annotations.Present ta_lhs = true &&
@@ -207,7 +211,7 @@ let check_field_assignment
   let should_report_mutable =
     let field_is_mutable () = match t_ia_opt with
       | Some (_, ia) -> Annotations.ia_is_mutable ia
-      | _ -> true in
+      | _ -> false in
     activate_field_not_mutable &&
     not (Procname.is_constructor curr_pname) &&
     not (Procname.is_class_initializer curr_pname) &&

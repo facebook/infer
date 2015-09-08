@@ -127,6 +127,9 @@ let ia_is_inject ia =
     (ia_ends_with ia)
     [inject; inject_view; bind]
 
+let ia_is_inject_view ia =
+  ia_ends_with ia inject_view
+
 let ia_is_mutable ia =
   ia_ends_with ia mutable_
 

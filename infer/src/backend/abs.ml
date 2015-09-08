@@ -1373,7 +1373,7 @@ let check_junk ?original_prop pname tenv prop =
     If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)
 let abstract_junk ?original_prop pname tenv prop =
   Absarray.array_abstraction_performed := false;
-  check_junk ~original_prop: original_prop pname tenv prop
+  check_junk ~original_prop pname tenv prop
 
 (** Remove redundant elements in an array, and check for junk afterwards *)
 let remove_redundant_array_elements pname tenv prop =
