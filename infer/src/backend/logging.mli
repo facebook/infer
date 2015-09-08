@@ -12,22 +12,6 @@ open Utils
 
 (** log messages at different levels of verbosity *)
 
-type colour
-
-val black : colour
-val red : colour
-val green : colour
-val yellow : colour
-val blue : colour
-val magenta : colour
-val cyan : colour
-
-(** Return the next "coloured" (i.e. not black) colour *)
-val next_colour : unit -> colour
-
-(** Print escape code to change the terminal's colour *)
-val change_terminal_colour : colour -> unit
-
 (** type of printable elements *)
 type print_type =
   | PTatom
@@ -83,9 +67,6 @@ val get_delayed_prints : unit -> print_action list
 
 (** reset the delayed print actions *)
 val reset_delayed_prints : unit -> unit
-
-(** Set the colours of the printer *)
-val set_colour : colour -> unit
 
 (** print to the current out stream *)
 val out : ('a, Format.formatter, unit) format -> 'a

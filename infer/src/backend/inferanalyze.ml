@@ -221,7 +221,9 @@ module Simulator = struct (** Simulate the analysis only *)
 
   let process_result (exe_env: Exe_env.t) ((proc_name: Procname.t), (calls: Cg.in_out_calls)) (_summ: Specs.summary) : unit =
     L.err "in process_result %a@." Procname.pp proc_name;
-    let summ = { _summ with Specs.status = Specs.INACTIVE; Specs.stats = { _summ.Specs.stats with Specs.stats_calls = calls }} in
+    let summ =
+      { _summ with
+        Specs.stats = { _summ.Specs.stats with Specs.stats_calls = calls }} in
     Specs.add_summary proc_name summ;
     perform_transition exe_env proc_name;
     let procs_done = Fork.procs_become_done (Exe_env.get_cg exe_env) proc_name in
@@ -250,7 +252,11 @@ let analyze exe_env =
   else if !simulate then (* simulate the analysis *)
     begin
       Simulator.reset_summaries (Exe_env.get_cg exe_env);
-      Fork.parallel_iter_nodes exe_env (Simulator.analyze_proc exe_env) Simulator.process_result Simulator.filter_out
+      Fork.interprocedural_algorithm
+        exe_env
+        (Simulator.analyze_proc exe_env)
+        Simulator.process_result
+        Simulator.filter_out
     end
   else (* full analysis *)
     begin
@@ -805,8 +811,7 @@ let analyze_cluster cluster_num tot_clusters (cluster : cluster) =
   L.err "@.Processing cluster #%d/%d with %d files and %d procedures@." !cluster_num tot_clusters num_files num_procs;
   Fork.this_cluster_files := num_files;
   analyze exe_env;
-  Fork.tot_files_done := num_files + !Fork.tot_files_done;
-  Fork.print_timing ()
+  Fork.tot_files_done := num_files + !Fork.tot_files_done
 
 let process_cluster_cmdline_exit () =
   match !cluster_cmdline with

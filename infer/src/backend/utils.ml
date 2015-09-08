@@ -836,13 +836,11 @@ let reserved_arg_desc =
     "-html", Arg.Set Config.write_html, None, "produce hmtl output in the results directory";
     "-join_cond", Arg.Set_int Config.join_cond, Some "n", "set the strength of the final information-loss check used by the join (default n=1)";
     "-leak", Arg.Set Config.allowleak, None, "forget leaks during abstraction";
-    "-max_procs", Arg.Set_int Config.max_num_proc, Some "n", "set the maximum number of processes to be used for parallel execution (default n=0)";
     "-monitor_prop_size", Arg.Set Config.monitor_prop_size, None, "monitor size of props";
     "-nelseg", Arg.Set Config.nelseg, None, "use only nonempty lsegs";
     "-noliveness", Arg.Clear Config.liveness, None, "turn the dead program variable elimination off";
     "-noprintdiff", Arg.Clear Config.print_using_diff, None, "turn off highlighting diff w.r.t. previous prop in printing";
     "-notest", Arg.Clear Config.test, None, "turn test mode off";
-    "-num_cores", Arg.Set_int Config.num_cores, Some "n", "set the number of cores used in parallel by the analysis (default n=1)";
     "-only_footprint", Arg.Set Config.only_footprint, None, "skip the re-execution phase";
     "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
     "-set_pp_margin", Arg.Int (fun i -> F.set_margin i), Some "n", "set right margin for the pretty printing functions";

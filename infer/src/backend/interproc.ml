@@ -1153,7 +1153,9 @@ let perform_transition exe_env cg proc_name =
 let process_result (exe_env: Exe_env.t) (proc_name, calls) (_summ: Specs.summary) : unit =
   if !Config.trace_anal then L.err "===process_result@.";
   Ident.reset_name_generator (); (* for consistency with multi-core mode *)
-  let summ = { _summ with Specs.status = Specs.INACTIVE; Specs.stats = { _summ.Specs.stats with Specs.stats_calls = calls }} in
+  let summ =
+    { _summ with
+      Specs.stats = { _summ.Specs.stats with Specs.stats_calls = calls }} in
   Specs.add_summary proc_name summ;
   let call_graph = Exe_env.get_cg exe_env in
   perform_transition exe_env call_graph proc_name;
@@ -1213,7 +1215,6 @@ let filter_nospecs (pname, dep) =
 (** Perform the analysis of an exe_env *)
 let do_analysis exe_env =
   if !Config.trace_anal then L.err "do_analysis@.";
-  let do_parallel = !Config.num_cores > 1 || !Config.max_num_proc > 0 in
   let cg = Exe_env.get_cg exe_env in
   let procs_and_defined_children = get_procs_and_defined_children cg in
   let get_calls caller_pdesc =
@@ -1244,10 +1245,7 @@ let do_analysis exe_env =
     else if !Config.only_nospecs then filter_nospecs
     else (fun _ -> true) in
   list_iter (fun x -> if filter x then init_proc x) procs_and_defined_children;
-  (try Fork.parallel_iter_nodes exe_env analyze_proc process_result filter_out with
-     exe when do_parallel ->
-       L.out "@.@. ERROR exception raised in parallel execution@.";
-       raise exe)
+  Fork.interprocedural_algorithm exe_env analyze_proc process_result filter_out
 
 let visited_and_total_nodes cfg =
   let all_nodes =

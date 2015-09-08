@@ -178,9 +178,6 @@ let forcing_delayed_prints = ref false
 (** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
 let idempotent_getters = ref true
 
-(** Flag set when running in a child process (thus changes to global state will be lost *)
-let in_child_process = ref false
-
 (** if true, changes to code are checked at the procedure level; if false, at the file level *)
 let incremental_procs = ref true
 
@@ -210,9 +207,6 @@ let nLOC = ref 0
 (** max number of procedures in each cluster *)
 let max_cluster_size = ref 2000
 
-(** Maximum number of processes to be used for parallel execution *)
-let max_num_proc = ref 0
-
 (** Maximum level of recursion during the analysis, after which a timeout is generated *)
 let max_recursion = ref 5
 
@@ -228,9 +222,6 @@ let monitor_prop_size = ref false
 
 (** Flag for using the nonempty lseg only **)
 let nelseg = ref false
-
-(** Number of cores to be used for parallel execution *)
-let num_cores = ref 1
 
 (** Flag to activate nonstop mode: the analysis continues after in encounters errors *)
 let nonstop = ref false

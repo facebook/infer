@@ -13,49 +13,6 @@
 module F = Format
 open Utils
 
-type colour =
-    C30 | C31 | C32 | C33 | C34 | C35 | C36
-
-let black = C30
-let red = C31
-let green = C32
-let yellow = C33
-let blue = C34
-let magenta = C35
-let cyan = C36
-
-let next_c = function
-  | C30 -> assert false
-  | C31 -> C32
-  | C32 -> C33
-  | C33 -> C34
-  | C34 -> C35
-  | C35 -> C36
-  | C36 -> C31
-
-let current_thread_colour = ref C31
-
-let next_colour () =
-  let c = !current_thread_colour in
-  current_thread_colour := next_c c;
-  c
-
-let _set_print_colour fmt = function
-  | C30 -> F.fprintf fmt "\027[30m"
-  | C31 -> F.fprintf fmt "\027[31m"
-  | C32 -> F.fprintf fmt "\027[32m"
-  | C33 -> F.fprintf fmt "\027[33m"
-  | C34 -> F.fprintf fmt "\027[34m"
-  | C35 -> F.fprintf fmt "\027[35m"
-  | C36 -> F.fprintf fmt "\027[36m"
-
-let change_terminal_colour c = _set_print_colour F.std_formatter c
-let change_terminal_colour_err c = _set_print_colour F.err_formatter c
-
-(** Can be applied to any number of arguments and throws them all away *)
-let rec throw_away x = Obj.magic throw_away
-
-let use_colours = ref false
 
 (* =============== START of module MyErr =============== *)
 (** type of printable elements *)
@@ -145,23 +102,7 @@ let reset_delayed_prints () =
 let get_delayed_prints () =
   !delayed_actions
 
-let current_colour = ref black
-
-let set_colour c =
-  use_colours := true;
-  current_colour := c
-
 let do_print fmt fmt_string =
-  begin
-    if !Config.num_cores > 1 then
-      begin
-        if !Config.in_child_process
-        then change_terminal_colour !current_thread_colour
-        else change_terminal_colour black
-      end
-    else if !use_colours then
-      change_terminal_colour !current_colour
-  end;
   F.fprintf fmt fmt_string
 
 (** print on the out stream *)
