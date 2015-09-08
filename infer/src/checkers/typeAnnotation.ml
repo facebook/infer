@@ -14,49 +14,71 @@ open Utils
 
 (** Module to represent annotations on types. *)
 
+module AnnotationsMap = Map.Make (
+  struct
+    open Annotations
+    type t = annotation
+    let compare a1 a2 = match a1, a2 with
+      | Nullable, Nullable -> 0
+      | Nullable, _ -> -1
+      | _, Nullable -> 1
+      | Present, Present -> 0
+  end)
+
 type t = {
-  nullable : bool;
-  present : bool;
+  map : bool AnnotationsMap.t;
   origin : TypeOrigin.t;
 }
 
+let get_value ann ta =
+  try
+    AnnotationsMap.find ann ta.map
+  with Not_found -> false
+
+let set_value ann b ta =
+  if get_value ann ta = b then ta
+  else
+    { ta with
+      map = AnnotationsMap.add ann b ta.map; }
+
+let get_nullable =
+  get_value Annotations.Nullable
+
+let get_present =
+  get_value Annotations.Present
+
+let set_nullable b =
+  set_value Annotations.Nullable b
+
+let set_present b =
+  set_value Annotations.Present b
+
+
 let equal ta1 ta2 =
-  bool_equal ta1.nullable ta2.nullable &&
-  bool_equal ta1.present ta2.present &&
+  bool_equal (get_nullable ta1) (get_nullable ta2) &&
+  bool_equal (get_present ta1) (get_present ta2) &&
   TypeOrigin.equal ta1.origin ta2.origin
 
 let to_string ta =
-  let nullable_s = if ta.nullable then " @Nullable" else "" in
-  let present_s = if ta.present then " @Present" else "" in
+  let nullable_s = if get_nullable ta then " @Nullable" else "" in
+  let present_s = if get_present ta then " @Present" else "" in
   nullable_s ^ present_s
 
 let join ta1 ta2 =
-  let present = ta1.present && ta2.present in
-  let ta' = match ta1.nullable, ta2.nullable with
+  let choose_left = match get_nullable ta1, get_nullable ta2 with
     | false, true ->
-        { ta2 with
-          present;
-          origin = TypeOrigin.join ta2.origin ta1.origin;
-        }
-    | true, false ->
-        { ta1 with
-          present;
-          origin = TypeOrigin.join ta1.origin ta2.origin;
-        }
+        false
     | _ ->
-        { ta1 with
-          present;
-          origin = TypeOrigin.join ta1.origin ta2.origin;
-        } in
+        true in
+  let ta_chosen, ta_other =
+    if choose_left then ta1, ta2 else ta2, ta1 in
+  let present = get_present ta1 && get_present ta2 in
+  let origin = TypeOrigin.join ta_chosen.origin ta_other.origin in
+  let ta' =
+    set_present present
+      { ta_chosen with
+        origin; } in
   if ta' = ta1 then None else Some ta'
-
-let get_value annotation ta = match annotation with
-  | Annotations.Nullable -> ta.nullable
-  | Annotations.Present -> ta.present
-
-let set_value annotation ta b = match annotation with
-  | Annotations.Nullable -> { ta with nullable = b }
-  | Annotations.Present -> { ta with present = b }
 
 let get_origin ta = ta.origin
 
@@ -75,11 +97,15 @@ let const annotation b origin =
   let nullable, present = match annotation with
     | Annotations.Nullable -> b, false
     | Annotations.Present -> false, b in
-  { nullable; present; origin; }
+  let ta =
+    { origin;
+      map = AnnotationsMap.empty;
+    } in
+  set_present present (set_nullable nullable ta)
 
 let with_origin ta o =
   { ta with origin = o }
 
 let from_item_annotation ia origin =
-  let ann = const Annotations.Nullable (Annotations.ia_is_nullable ia) origin in
-  set_value Annotations.Present ann (Annotations.ia_is_present ia)
+  let ta = const Annotations.Nullable (Annotations.ia_is_nullable ia) origin in
+  set_value Annotations.Present (Annotations.ia_is_present ia) ta
