@@ -25,7 +25,7 @@ let init_curr_source_file source_file =
 
 let source_file_from_path path =
   if Filename.is_relative path then
-    (Logging.out
+    (Printing.log_err
        "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
        path;
      exit 1);
@@ -34,8 +34,7 @@ let source_file_from_path path =
       (try
          DB.rel_source_file_from_abs_path root path
        with Failure _ ->
-         Logging.out
-           "ERROR: %s should be a prefix of %s.@." root path;
+         Printing.log_err "ERROR: %s should be a prefix of %s.@." root path;
          DB.source_file_from_string path)
   | None -> DB.source_file_from_string path
 
