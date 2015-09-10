@@ -694,6 +694,8 @@ val attribute_category_equal : attribute_category -> attribute_category -> bool
 (**  Return the category to which the attribute belongs. *)
 val attribute_to_category : attribute -> attribute_category
 
+val attr_is_undef : attribute -> bool
+
 val const_compare : const -> const -> int
 
 val const_equal : const -> const -> bool

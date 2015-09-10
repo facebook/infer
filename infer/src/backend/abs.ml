@@ -1287,9 +1287,7 @@ let check_junk ?original_prop pname tenv prop =
                 list_iter do_entry entries;
                 !res in
               L.d_decrease_indent 1;
-              let is_undefined = match alloc_attribute with
-                | Some (Sil.Aundef _) -> true
-                | _ -> false in
+              let is_undefined = Option.map_default Sil.attr_is_undef false alloc_attribute in
               let resource = match Errdesc.hpred_is_open_resource prop hpred with
                 | Some res -> res
                 | None -> Sil.Rmemory Sil.Mmalloc in

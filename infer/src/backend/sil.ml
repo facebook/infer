@@ -1136,6 +1136,10 @@ let attribute_to_category att =
   | Adiv0 _ -> ACdiv0
   | Aobjc_null _ -> ACobjc_null
 
+let attr_is_undef = function
+  | Aundef _ -> true
+  | _ -> false
+
 let cname_opt_compare nameo1 nameo2 = match nameo1, nameo2 with
   | None, None -> 0
   | None, _ -> - 1

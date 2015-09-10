@@ -814,9 +814,8 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
     [(add_objc_null_attribute_or_nullify_result pre, path)]
   else
     let res = Tabulation.exe_function_call tenv cfg ret_ids pdesc callee_pname loc actual_params pre path in
-    let is_undef = match Prop.get_resource_undef_attribute pre receiver with
-      | Some (Sil.Aundef _) -> true
-      | _ -> false in
+    let is_undef =
+      Option.map_default Sil.attr_is_undef false (Prop.get_resource_undef_attribute pre receiver) in
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
         let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
@@ -1536,9 +1535,9 @@ module ModelBuiltins = struct
     [(prop, path)]
 
   let is_undefined_opt prop n_lexp =
-    match Prop.get_resource_undef_attribute prop n_lexp with
-    | Some (Sil.Aundef _) -> !Config.angelic_execution || !Config.optimistic_cast
-    | _ -> false
+    let is_undef =
+      Option.map_default Sil.attr_is_undef false (Prop.get_resource_undef_attribute prop n_lexp) in
+    is_undef && (!Config.angelic_execution || !Config.optimistic_cast)
 
   (** Creates an object in the heap with a given type, when the object is not known to be null or when it doesn't
       appear already in the heap. *)
