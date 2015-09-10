@@ -42,6 +42,7 @@ public class ParameterNotNullableTest {
     String[] methods = {
         "callNull",
         "callNullable",
+        "testSystemGetPropertyArgument",
     };
     assertThat(
         "Results should contain " + PARAMETER_NOT_NULLABLE,

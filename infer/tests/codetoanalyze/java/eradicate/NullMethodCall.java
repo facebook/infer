@@ -11,6 +11,7 @@ package codetoanalyze.java.eradicate;
 
 import com.google.common.base.Preconditions;
 
+import java.lang.System;
 import javax.annotation.Nullable;
 import com.facebook.infer.annotation.Assertions;
 
@@ -232,5 +233,11 @@ public class NullMethodCall {
       s.toString().isEmpty();
     }
   }
+
+  public void testSystemGetPropertyReturn() {
+    String s = System.getProperty("");
+    int n = s.length();
+  }
+
 }
 

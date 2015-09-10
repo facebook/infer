@@ -45,6 +45,7 @@ public class NullMethodCallTest {
         "outerPrivateField",
         "testFieldAssignmentIfThenElse",
         "testExceptionPerInstruction",
+        "testSystemGetPropertyReturn",
     };
     assertThat(
         "Results should contain " + NULL_METHOD_CALL,

@@ -61,7 +61,9 @@ public class NullPointerExceptionTest {
         "nullPointerExceptionArrayLength",
         "npeWithDollars",
         "someNPEAfterResourceLeak",
-        "derefNullableGetter"
+        "derefNullableGetter",
+        "testSystemGetPropertyArgument",
+        "testSystemGetPropertyReturn",
     };
     assertThat(
         "Results should contain " + NULL_DEREFERENCE,

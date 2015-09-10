@@ -9,6 +9,7 @@
 
 package codetoanalyze.java.eradicate;
 
+import java.lang.System;
 import javax.annotation.Nullable;
 
 import android.annotation.SuppressLint;
@@ -64,4 +65,10 @@ public class ParameterNotNullable {
       return new ParameterNotNullable(null);
     }
   }
+
+  public @Nullable String testSystemGetPropertyArgument() {
+    String s = System.getProperty(null);
+    return s;
+  }
+
 }

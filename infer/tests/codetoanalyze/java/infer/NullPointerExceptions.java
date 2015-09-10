@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.System;
 import java.util.HashMap;
 
 public class NullPointerExceptions {
@@ -393,4 +394,13 @@ public class NullPointerExceptions {
     o.toString();
   }
 
+  public @Nullable String testSystemGetPropertyArgument() {
+    String s = System.getProperty(null);
+    return s;
+  }
+
+  public void testSystemGetPropertyReturn() {
+    String s = System.getProperty("");
+    int n = s.length();
+  }
 }

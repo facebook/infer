@@ -10,6 +10,7 @@
 package java.lang;
 
 import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.models.InferUndefined;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,6 +38,14 @@ public final class System {
 
     public static void exit(int status) {
         InferBuiltins._exit();
+    }
+
+    public static String getProperty(String key) {
+      int n = key.length(); // key must not be null
+      if (InferUndefined.boolean_undefined()) {
+        return null;
+      }
+      return InferUndefined.string_undefined();
     }
 
 }
