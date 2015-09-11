@@ -10,6 +10,7 @@
 package utils;
 
 import java.nio.file.Path;
+import java.io.IOException;
 
 public class InferError {
 
@@ -22,7 +23,11 @@ public class InferError {
     this.errorType = errorType;
     this.errorMethod = errorMethod;
     this.errorLine = errorLine;
-    this.errorFile = errorFile;
+    try {
+      this.errorFile = errorFile.toRealPath();
+    } catch (IOException e) {
+      this.errorFile = errorFile;
+    }
   }
 
   public InferError(String errorType, Path errorFile, String errorMethod) {
@@ -75,7 +80,13 @@ public class InferError {
   }
 
   public boolean matchFile(Path file) {
-    return this.errorFile.equals(file);
+    Path realFile;
+    try {
+      realFile = file.toRealPath();
+    } catch (IOException e) {
+      realFile = file;
+    }
+    return this.errorFile.equals(realFile);
   }
 
   public boolean matchMethod(String method) {
