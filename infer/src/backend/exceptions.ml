@@ -38,6 +38,7 @@ exception Array_out_of_bounds_l3 of Localise.error_desc * ml_location
 exception Array_of_pointsto of ml_location
 exception Assertion_failure of string * Localise.error_desc
 exception Bad_footprint of ml_location
+exception Bad_pointer_comparison of Localise.error_desc * ml_location
 exception Class_cast_exception of Localise.error_desc * ml_location
 exception Codequery of Localise.error_desc
 exception Comparing_floats_for_equality of Localise.error_desc * ml_location
@@ -105,6 +106,8 @@ let recognize_exception exn =
         (Localise.from_string "Assert_failure", Localise.no_desc, Some mloc, Exn_developer, High, None, Nocat)
     | Assertion_failure (error_msg, desc) ->
         (Localise.from_string error_msg, desc, None, Exn_user, High, None, Checker)
+    | Bad_pointer_comparison (desc, mloc) ->
+        (Localise.bad_pointer_comparison, desc, Some mloc, Exn_user, High, Some Kerror, Prover)
     | Bad_footprint mloc ->
         (Localise.from_string "Bad_footprint", Localise.no_desc, Some mloc, Exn_developer, Low, None, Nocat)
     | Prop.Cannot_star mloc ->

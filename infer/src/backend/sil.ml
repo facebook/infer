@@ -936,6 +936,10 @@ let fld_compare (fld1 : Ident.fieldname) fld2 = Ident.fieldname_compare fld1 fld
 
 let fld_equal fld1 fld2 = fld_compare fld1 fld2 = 0
 
+let exp_is_zero = function
+  | Const (Cint n) -> Int.iszero n
+  | _ -> false
+
 let exp_is_null_literal = function
   | Const (Cint n) -> Int.isnull n
   | _ -> false

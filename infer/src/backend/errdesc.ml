@@ -415,6 +415,11 @@ let explain_allocation_mismatch ra_alloc ra_dealloc =
     (primitive, called, ra.Sil.ra_loc) in
   Localise.desc_allocation_mismatch (get_primitive_called true ra_alloc) (get_primitive_called false ra_dealloc)
 
+(** Produce a description of a pointer dangerously coerced to a boolean in a comparison *)
+let explain_bad_pointer_comparison exp node loc =
+  let dexp_opt = exp_rv_dexp node exp in
+  Localise.desc_bad_pointer_comparison dexp_opt loc
+
 (** check whether the type of leaked [hpred] appears as a predicate in an inductive predicate in [prop] *)
 let leak_from_list_abstraction hpred prop =
   let hpred_type = function

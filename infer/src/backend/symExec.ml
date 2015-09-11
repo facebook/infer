@@ -901,6 +901,11 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
             | Sil.Ik_land_lor -> true (* skip subpart of a condition obtained from compilation of && and || *)
             | _ -> false in
           true_branch && not skip_loop in
+        (* in comparisons, nil is translated as (void * ) 0 rather than 0 *)
+        let is_comparison_to_nil = function
+          | Sil.Cast ((Sil.Tptr (Sil.Tvoid, _)), exp) ->
+              !Config.curr_language = Config.C_CPP && Sil.exp_is_zero exp
+          | _ -> false in
         match Prop.exp_normalize_prop Prop.prop_emp cond with
         | Sil.Const (Sil.Cint i) when report_condition_always_true_false i ->
             let node = State.get_node () in
@@ -908,6 +913,26 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
             let exn = Exceptions.Condition_always_true_false (desc, not (Sil.Int.iszero i), try assert false with Assert_failure x -> x) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
             Reporting.log_warning pname ~pre: pre_opt exn
+        | Sil.BinOp ((Sil.Eq | Sil.Ne), lhs, rhs)
+          when true_branch && !Config.footprint && not (is_comparison_to_nil rhs) ->
+            (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
+            let lhs_normal = Prop.exp_normalize_prop _prop lhs in
+            let is_nsnumber = function
+              | Sil.Tvar (Sil.TN_csu (Sil.Class, name)) -> Mangled.to_string name = "NSNumber"
+              | _ -> false in
+            let lhs_is_ns_ptr () =
+              list_exists
+                (function
+                  | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Sil.Tptr (typ, _), _)) ->
+                      Sil.exp_equal exp lhs_normal && is_nsnumber typ
+                  | _ -> false)
+                (Prop.get_sigma _prop) in
+            if not (Sil.exp_is_zero lhs_normal) && lhs_is_ns_ptr () then
+              let node = State.get_node () in
+              let desc = Errdesc.explain_bad_pointer_comparison lhs node loc in
+              let fail = try assert false with Assert_failure x -> x in
+              let exn = Exceptions.Bad_pointer_comparison (desc, fail) in
+              Reporting.log_warning pname exn
         | _ -> () in
       check_already_dereferenced pname cond _prop;
       check_condition_always_true_false ();

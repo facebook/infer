@@ -561,6 +561,8 @@ val is_objc_ref_counter_field : (Ident.fieldname * typ * item_annotation) -> boo
 
 val has_objc_ref_counter : hpred -> bool
 
+val exp_is_zero : exp -> bool
+
 val exp_is_null_literal : exp -> bool
 
 (** return true if [exp] is the special this/self expression *)

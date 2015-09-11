@@ -282,7 +282,8 @@ def should_report(analyzer, row):
         'MEMORY_LEAK',
         'RETAIN_CYCLE',
         'ASSERTION_FAILURE',
-        'ACTIVITY_LEAK'
+        'ACTIVITY_LEAK',
+        'BAD_POINTER_COMPARISON'
     ]
 
     if analyzer in [ERADICATE, CHECKERS, TRACING]:

@@ -30,6 +30,7 @@ val analysis_stops : t
 val array_out_of_bounds_l1 : t
 val array_out_of_bounds_l2 : t
 val array_out_of_bounds_l3 : t
+val bad_pointer_comparison : t
 val class_cast_exception : t
 val condition_is_assignment : t
 val condition_always_false : t
@@ -198,6 +199,8 @@ val desc_activity_leak : Procname.t -> Sil.typ -> Ident.fieldname -> error_desc
 
 (* Create human-readable error description for assertion failures *)
 val desc_assertion_failure : Location.t -> error_desc
+
+val desc_bad_pointer_comparison : Sil.dexp option -> Location.t -> error_desc
 
 (** kind of precondition not met *)
 type pnm_kind =

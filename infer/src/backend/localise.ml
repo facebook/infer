@@ -33,6 +33,7 @@ let analysis_stops = "ANALYSIS_STOPS"
 let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"
 let array_out_of_bounds_l2 = "ARRAY_OUT_OF_BOUNDS_L2"
 let array_out_of_bounds_l3 = "ARRAY_OUT_OF_BOUNDS_L3"
+let bad_pointer_comparison = "BAD_POINTER_COMPARISON"
 let class_cast_exception = "CLASS_CAST_EXCEPTION"
 let comparing_floats_for_equality = "COMPARING_FLOAT_FOR_EQUALITY"
 let condition_is_assignment = "CONDITION_IS_ASSIGNMENT"
@@ -376,6 +377,18 @@ let desc_activity_leak pname activity_typ fieldname : error_desc =
 
 let desc_assertion_failure loc : error_desc =
   (["could be raised"; at_line (Tags.create ()) loc], None, [])
+
+let desc_bad_pointer_comparison dexp_opt loc : error_desc =
+  let dexp_str = match dexp_opt with
+    | Some dexp -> (Sil.dexp_to_string dexp) ^ " "
+    | None -> "" in
+  let line_info = at_line (Tags.create ()) loc in
+  let check_msg =
+    "Implicitly checking whether NSNumber pointer " ^ dexp_str ^ "is nil " ^ line_info ^ "." in
+  let concern_msg = "Did you mean to compare against the unboxed value instead?" in
+  let fix_msg_rec1 = "Please either explicitly compare " ^ dexp_str ^ "to nil" in
+  let fix_msg_rec2 = "or use one of the NSNumber accessors before the comparison." in
+  ([check_msg; concern_msg; fix_msg_rec1; fix_msg_rec2], None, [])
 
 (** type of access *)
 type access =
