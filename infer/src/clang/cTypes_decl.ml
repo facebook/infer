@@ -15,25 +15,56 @@ open CFrontend_utils
 module L = Logging
 exception Typename_not_found
 
-(* Adds the predefined types objc_class which is a struct, and Class, *)
-(* which is a pointer to objc_class. *)
-let add_predefined_types tenv =
+let add_predefined_objc_types tenv =
   let objc_class_mangled = Mangled.from_string CFrontend_config.objc_class in
   let objc_class_name = Sil.TN_csu (Sil.Class, objc_class_mangled) in
   let objc_class_type_info =
     Sil.Tstruct ([], [], Sil.Struct,
                  Some (Mangled.from_string CFrontend_config.objc_class), [], [], []) in
   Sil.tenv_add tenv objc_class_name objc_class_type_info;
-  let mn = Mangled.from_string CFrontend_config.class_type in
-  let class_typename = Sil.TN_typedef(mn) in
-  let class_typ = Sil.Tptr ((Sil.Tvar
-                               (Sil.TN_csu (Sil.Struct, objc_class_mangled))), Sil.Pk_pointer) in
+  let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
+  let class_typ = Sil.Tvar (Sil.TN_csu (Sil.Struct, objc_class_mangled)) in
   Sil.tenv_add tenv class_typename class_typ;
   let typename_objc_object =
     Sil.TN_csu (Sil.Struct, Mangled.from_string CFrontend_config.objc_object) in
-  let id_typedef = Sil.Tptr (Sil.Tvar (typename_objc_object), Sil.Pk_pointer) in
-  let id_typename = Sil.TN_typedef (Mangled.from_string CFrontend_config.id_cl) in
+  let id_typedef = Sil.Tvar (typename_objc_object) in
+  let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
   Sil.tenv_add tenv id_typename id_typedef
+
+(* Whenever new type are added manually to the translation in ast_expressions, *)
+(* they should be added here too!! *)
+let add_predefined_basic_types tenv =
+  let open Ast_expressions in
+  let open Clang_ast_t in
+  let add_basic_type qt basic_type_kind =
+    let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
+    Ast_utils.update_sil_types_map qt.Clang_ast_t.qt_type_ptr sil_type in
+  let add_pointer_type qt sil_type =
+    let pointer_type = CTypes.add_pointer_to_typ sil_type in
+    Ast_utils.update_sil_types_map qt.Clang_ast_t.qt_type_ptr pointer_type in
+  let add_function_type qt return_type =
+    (* We translate function types as the return type of the function *)
+    Ast_utils.update_sil_types_map qt.Clang_ast_t.qt_type_ptr return_type in
+  let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
+  let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
+  let sil_nsarray_type = Sil.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl) in
+  let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
+  add_basic_type create_int_type `Int;
+  add_basic_type create_void_type `Void;
+  add_basic_type create_char_star_type `Char_S;
+  add_basic_type create_BOOL_type `SChar;
+  add_basic_type create_unsigned_long_type `ULong;
+  add_pointer_type create_void_star_type sil_void_type;
+  add_pointer_type create_char_star_type sil_char_type;
+  add_pointer_type create_char_star_type sil_char_type;
+  add_pointer_type create_nsarray_star_type sil_nsarray_type;
+  add_pointer_type create_id_type sil_id_type;
+  add_function_type create_void_unsigned_long_type sil_void_type;
+  add_function_type create_void_void_type sil_void_type
+
+let add_predefined_types tenv =
+  add_predefined_objc_types tenv;
+  add_predefined_basic_types tenv
 
 let rec search_for_named_type tenv typ =
   let search typename =

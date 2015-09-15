@@ -23,8 +23,6 @@ val search_enum_type_by_name : Sil.tenv -> string -> Sil.const option
 
 val classname_of_type : Sil.typ -> string
 
-val get_function_return_type : string -> string
-
 val mk_classname : string -> Sil.typename
 
 val mk_structname : string -> Sil.typename

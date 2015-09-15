@@ -58,8 +58,6 @@ val get_curr_class : t -> curr_class
 
 val get_curr_class_name : curr_class -> string
 
-val get_qt_curr_class : curr_class -> string
-
 val curr_class_to_string : curr_class -> string
 
 val curr_class_compare : curr_class -> curr_class -> int

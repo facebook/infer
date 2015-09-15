@@ -270,8 +270,9 @@ let make_getter curr_class prop_name prop_type =
       match getter with
       | Some (ObjCMethodDecl(di, name_info, mdi), _) ->
           let dummy_info = Ast_expressions.dummy_decl_info_in_curr_file di in
+          let class_name = CContext.get_curr_class_name curr_class in
           let deref_self_field = Ast_expressions.make_deref_self_field
-              (CContext.get_qt_curr_class curr_class) dummy_info mdi.Clang_ast_t.omdi_result_type ivar_name in
+              class_name dummy_info mdi.Clang_ast_t.omdi_result_type ivar_name in
           let body = ReturnStmt(Ast_expressions.make_stmt_info dummy_info, [deref_self_field]) in
           let mdi'= Ast_expressions.make_method_decl_info mdi body in
           let generated_name_info = create_generated_method_name name_info in
@@ -302,7 +303,7 @@ let make_setter curr_class prop_name prop_type =
           let stmt_info = Ast_expressions.make_stmt_info dummy_info in
           let rhs_exp = Ast_expressions.make_cast_expr qt_param di decl_ref_expr_info' `ObjCProperty in
           let lhs_exp = Ast_expressions.make_self_field
-              (CContext.get_qt_curr_class curr_class) di qt_param ivar_name in
+              (CContext.get_curr_class_name curr_class) di qt_param ivar_name in
           let boi = { Clang_ast_t.boi_kind = `Assign } in
           let setter = Ast_expressions.make_binary_stmt lhs_exp rhs_exp stmt_info expr_info boi in
           let memory_management_attribute = (get_memory_management_attribute attributes) in

@@ -83,34 +83,78 @@ let create_qual_type s = {
   qt_type_ptr = Ast_utils.get_invalid_pointer ();
 }
 
-let create_pointer_type s =
-  create_qual_type (s^" *")
+let create_qual_type_with_just_pointer pointer =
+  {
+    Clang_ast_t.qt_raw = "";
+    qt_desugared = None;
+    qt_type_ptr = pointer;
+  }
 
-let create_int_type () = create_qual_type "int"
+let get_constant_qual_type s =
+  let pointer = CFrontend_config.type_pointer_prefix ^ s in
+  {
+    Clang_ast_t.qt_raw = s;
+    qt_desugared = None;
+    qt_type_ptr = pointer
+  }
 
-let create_void_type () = create_qual_type "void *"
+(* Whenever new type are added manually to the translation here, *)
+(* they should be added to the map in cTypes_decl too!! *)
+let create_int_type =
+  get_constant_qual_type "int"
 
-let create_id_type () = create_qual_type "id"
+let create_void_type =
+  get_constant_qual_type "void"
 
-let create_char_type () = create_qual_type "char *"
+let create_void_star_type =
+  get_constant_qual_type "void *"
 
-(* pointer needs to be set when we start using these, non trivial to do though *)
-let create_BOOL_type () = {
-  Clang_ast_t.qt_raw = "BOOL";
-  qt_desugared = Some ("signed char");
-  qt_type_ptr = Ast_utils.get_invalid_pointer ();
-}
+let create_id_type =
+  get_constant_qual_type CFrontend_config.id_cl
 
-let create_void_unsigned_long_type () = create_qual_type "void *(unsigned long)"
+let create_nsarray_star_type =
+  get_constant_qual_type (CFrontend_config.nsarray_cl ^ " *")
 
-let create_unsigned_long_type () = create_qual_type "unsigned long"
+let create_char_star_type =
+  get_constant_qual_type "char *"
 
-let create_void_void_type () = create_qual_type "void (void *)"
+let create_BOOL_type =
+  get_constant_qual_type "signed char"
+
+let create_unsigned_long_type =
+  get_constant_qual_type "unsigned long"
+
+let create_void_unsigned_long_type =
+  get_constant_qual_type "void *(unsigned long)"
+
+let create_void_void_type =
+  get_constant_qual_type "void (void *)"
+
+let create_class_type class_name =
+  {
+    Clang_ast_t.qt_raw = "";
+    qt_desugared = None;
+    qt_type_ptr = "custom_class_name*" ^ class_name;
+  }
+
+let create_struct_type struct_name =
+  {
+    Clang_ast_t.qt_raw = "";
+    qt_desugared = None;
+    qt_type_ptr = "custom_struct_name*" ^ struct_name;
+  }
+
+let create_pointer_type class_type =
+  {
+    Clang_ast_t.qt_raw = "";
+    qt_desugared = None;
+    qt_type_ptr = "custom_pointer_"^class_type.Clang_ast_t.qt_type_ptr
+  }
 
 let create_integer_literal stmt_info n =
   let stmt_info = dummy_stmt_info () in
   let expr_info = {
-    Clang_ast_t.ei_qual_type = create_int_type ();
+    Clang_ast_t.ei_qual_type = create_int_type;
     ei_value_kind = `RValue;
     ei_object_kind = `Ordinary;
   } in
@@ -123,7 +167,7 @@ let create_integer_literal stmt_info n =
 
 let create_cstyle_cast_expr stmt_info stmts qt =
   let expr_info = {
-    Clang_ast_t.ei_qual_type = create_void_type ();
+    Clang_ast_t.ei_qual_type = create_void_type;
     ei_value_kind = `RValue;
     ei_object_kind = `Ordinary;
   } in
@@ -135,7 +179,7 @@ let create_cstyle_cast_expr stmt_info stmts qt =
 
 let create_parent_expr stmt_info stmts =
   let expr_info = {
-    Clang_ast_t.ei_qual_type = create_void_type ();
+    Clang_ast_t.ei_qual_type = create_void_type;
     ei_value_kind = `RValue;
     ei_object_kind = `Ordinary;
   } in
@@ -155,10 +199,9 @@ let create_implicit_cast_expr stmt_info stmts typ cast_kind =
 
 let create_nil stmt_info =
   let integer_literal = create_integer_literal stmt_info "0" in
-  let cstyle_cast_expr = create_cstyle_cast_expr stmt_info [integer_literal] (create_int_type ()) in
+  let cstyle_cast_expr = create_cstyle_cast_expr stmt_info [integer_literal] create_int_type in
   let paren_expr = create_parent_expr stmt_info [cstyle_cast_expr] in
-  let implicit_cast_expr = create_implicit_cast_expr stmt_info [paren_expr] (create_id_type ()) `NullToPointer in
-  implicit_cast_expr
+  create_implicit_cast_expr stmt_info [paren_expr] create_id_type `NullToPointer
 
 let dummy_stmt () =
   let pointer = Ast_utils.get_fresh_pointer () in
@@ -201,7 +244,7 @@ let make_obj_c_message_expr_info_instance sel = {
 
 let make_obj_c_message_expr_info_class selector qt = {
   Clang_ast_t.omei_selector = selector;
-  omei_receiver_kind = `Class (create_qual_type qt);
+  omei_receiver_kind = `Class (create_class_type qt);
   omei_is_definition_found = false;
   omei_decl_pointer = None (* TODO look into it *)
 }
@@ -262,7 +305,7 @@ let make_cast_expr qt di decl_ref_expr_info objc_kind =
 
 (* Build AST expression self.field_name as `LValue *)
 let make_self_field class_type di qt field_name =
-  let qt_class = create_qual_type class_type in
+  let qt_class = create_pointer_type (create_class_type class_type) in
   let expr_info = make_expr_info_with_objc_kind qt `ObjCProperty in
   let stmt_info = make_stmt_info di in
   let cast_exp = make_cast_expr qt_class di (make_decl_ref_expr_info (make_decl_ref_self di.Clang_ast_t.di_pointer qt_class)) `ObjCProperty in
@@ -310,7 +353,7 @@ let make_general_expr_info qt vk ok = {
 }
 
 let make_ObjCBoolLiteralExpr stmt_info value =
-  let ei = make_expr_info (create_BOOL_type ()) in
+  let ei = make_expr_info create_BOOL_type in
   Clang_ast_t.ObjCBoolLiteralExpr((fresh_stmt_info stmt_info),[], ei, value)
 
 let make_decl_ref_exp_var (var_name, var_qt, var_ptr) var_kind stmt_info =
@@ -354,7 +397,7 @@ let make_next_object_exp stmt_info item items =
         Clang_ast_t.DeclRefExpr (stmt_info_var, [], expr_info, decl_ref_expr_info),
         var_type
     | _ -> assert false in
-  let message_call = make_message_expr (create_qual_type CFrontend_config.id_cl)
+  let message_call = make_message_expr create_id_type
       CFrontend_config.next_object items stmt_info false in
   let boi = { Clang_ast_t.boi_kind = `Assign } in
   make_binary_stmt var_decl_ref message_call stmt_info (make_expr_info_with_objc_kind var_type `ObjCProperty) boi
@@ -386,7 +429,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
       let block_var_decl = VarDecl(decl_info, block_name_info, ei.ei_qual_type, var_decl_info) in
       let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
 
-      let expr_info_call = make_general_expr_info (create_void_type ()) `XValue `Ordinary in
+      let expr_info_call = make_general_expr_info create_void_type `XValue `Ordinary in
       let expr_info_dre = make_expr_info_with_objc_kind qt `Ordinary in
       let decl_ref = make_decl_ref_qt `Var stmt_info.si_pointer block_name false qt in
       let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
@@ -412,8 +455,7 @@ let build_OpaqueValueExpr si source_expr ei =
   let opaque_value_expr_info = { Clang_ast_t.ovei_source_expr = Some source_expr } in
   Clang_ast_t.OpaqueValueExpr (si, [], ei, opaque_value_expr_info)
 
-let pseudo_object_qt () =
-  create_qual_type CFrontend_config.pseudo_object_type
+let pseudo_object_qt () = create_class_type CFrontend_config.pseudo_object_type
 
 (* Create expression PseudoObjectExpr for 'o.m' *)
 let build_PseudoObjectExpr qt_m o_cast_decl_ref_exp mname =
@@ -436,7 +478,7 @@ let build_PseudoObjectExpr qt_m o_cast_decl_ref_exp mname =
 
 let create_call stmt_info decl_pointer function_name qt parameters =
   let expr_info_call = {
-    Clang_ast_t.ei_qual_type = create_void_type ();
+    Clang_ast_t.ei_qual_type = create_void_type;
     ei_value_kind = `XValue;
     ei_object_kind = `Ordinary
   } in
@@ -502,12 +544,15 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   let build_stop pstop =
     match pstop with
     | Clang_ast_t.ParmVarDecl (di, name, qt, _) ->
-        let qt_fun = create_void_unsigned_long_type () in
+        let qt_fun = create_void_unsigned_long_type in
+        let type_opt = Some create_BOOL_type in
         let parameter = Clang_ast_t.UnaryExprOrTypeTraitExpr
             ((fresh_stmt_info stmt_info), [],
-             make_expr_info (create_unsigned_long_type ()),
-             { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_qual_type = Some (create_BOOL_type ()) }) in
-        let malloc = create_call (fresh_stmt_info stmt_info) di.Clang_ast_t.di_pointer CFrontend_config.malloc qt_fun [parameter] in
+             make_expr_info create_unsigned_long_type,
+             { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_qual_type = type_opt}) in
+        let pointer = di.Clang_ast_t.di_pointer in
+        let stmt_info = fresh_stmt_info stmt_info in
+        let malloc = create_call stmt_info pointer CFrontend_config.malloc qt_fun [parameter] in
         let init_exp = create_implicit_cast_expr (fresh_stmt_info stmt_info) [malloc] qt `BitCast in
         make_DeclStmt (fresh_stmt_info stmt_info) di qt name (Some init_exp)
     | _ -> assert false in
@@ -529,11 +574,11 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   let free_stop pstop =
     match pstop with
     | Clang_ast_t.ParmVarDecl (di, name, qt, _) ->
-        let qt_fun = create_void_void_type () in
+        let qt_fun = create_void_void_type in
         let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name.Clang_ast_t.ni_name false qt in
         let cast = cast_expr decl_ref qt in
         let parameter =
-          create_implicit_cast_expr (fresh_stmt_info stmt_info) [cast] (create_void_type ()) `BitCast in
+          create_implicit_cast_expr (fresh_stmt_info stmt_info) [cast] create_void_type `BitCast in
         create_call (fresh_stmt_info stmt_info) di.Clang_ast_t.di_pointer CFrontend_config.free qt_fun [parameter]
     | _ -> assert false in
 
@@ -542,7 +587,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     let idx_decl_stmt, idx_decl_ref_exp, idx_cast, idx_qt = build_idx_decl pidx in
     let rhs = build_PseudoObjectExpr idx_qt array_decl_ref_exp CFrontend_config.count in
     let lt = { Clang_ast_t.boi_kind = `LT } in
-    Clang_ast_t.BinaryOperator (fresh_stmt_info stmt_info, [idx_cast; rhs], make_expr_info (create_int_type ()), lt) in
+    let exp_info = make_expr_info create_int_type in
+    Clang_ast_t.BinaryOperator (fresh_stmt_info stmt_info, [idx_cast; rhs], exp_info, lt) in
 
   (*  idx++ *)
   let un_op idx_decl_ref_expr qt_idx =
@@ -579,7 +625,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   (* NSArray *objects = a *)
   let objects_array_DeclStmt init =
     let di = { empty_decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () } in
-    let qt = create_qual_type CFrontend_config.ns_array_ptr in
+    let qt = create_pointer_type (create_class_type CFrontend_config.nsarray_cl) in
     (* init should be ImplicitCastExpr of array a *)
     let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (init) } in
     let var_decl = Clang_ast_t.VarDecl (di, make_name_decl CFrontend_config.objects, qt, vdi) in
@@ -611,12 +657,12 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   let make_block_call block_qt object_cast idx_cast stop_cast =
     let decl_ref = make_decl_ref_invalid `Var block_name false block_qt in
     let fun_cast = cast_expr decl_ref block_qt in
-    let ei_call = make_expr_info (create_void_type ()) in
+    let ei_call = make_expr_info create_void_type in
     Clang_ast_t.CallExpr (fresh_stmt_info stmt_info, [fun_cast; object_cast; idx_cast; stop_cast], ei_call) in
 
   (* build statement "if (stop) break;" *)
   let build_if_stop stop_cast =
-    let bool_qt = create_BOOL_type () in
+    let bool_qt = create_BOOL_type in
     let ei = make_expr_info bool_qt in
     let unary_op = Clang_ast_t.UnaryOperator (fresh_stmt_info stmt_info, [stop_cast], ei, { Clang_ast_t.uoi_kind = `Deref; uoi_is_postfix = true }) in
     let cond = create_implicit_cast_expr (fresh_stmt_info stmt_info) [unary_op] bool_qt `LValueToRValue in
@@ -691,4 +737,5 @@ let create_assume_not_null_call decl_info var_name var_type =
   let null_expr = create_integer_literal stmt_info "0" in
   let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info (make_lvalue_obc_prop_expr_info var_type) boi in
   let parameters = [bin_op] in
-  create_call stmt_info var_decl_ptr (Procname.to_string SymExec.ModelBuiltins.__infer_assume) (create_void_type ()) parameters
+  let procname = Procname.to_string SymExec.ModelBuiltins.__infer_assume in
+  create_call stmt_info var_decl_ptr procname create_void_type parameters

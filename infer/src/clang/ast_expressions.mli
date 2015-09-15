@@ -23,7 +23,33 @@ val dummy_stmt_info : unit -> stmt_info
 
 val create_qual_type : string -> qual_type
 
-val create_pointer_type : string -> qual_type
+val create_char_star_type : qual_type
+
+val create_id_type : qual_type
+
+val create_nsarray_star_type : qual_type
+
+val create_void_type : qual_type
+
+val create_int_type : qual_type
+
+val create_void_star_type : qual_type
+
+val create_BOOL_type : qual_type
+
+val create_unsigned_long_type : qual_type
+
+val create_void_unsigned_long_type : qual_type
+
+val create_void_void_type : qual_type
+
+val create_class_type : string -> qual_type
+
+val create_struct_type : string -> qual_type
+
+val create_pointer_type : qual_type -> qual_type
+
+val create_qual_type_with_just_pointer : Clang_ast_t.pointer -> qual_type
 
 val make_objc_ivar_decl : decl_info -> qual_type -> obj_c_property_impl_decl_info -> string -> decl
 
@@ -50,8 +76,6 @@ val make_next_object_exp : stmt_info -> stmt -> Clang_ast_t.stmt -> Clang_ast_t.
 val create_nil : stmt_info -> stmt
 
 val create_implicit_cast_expr : stmt_info -> stmt list -> qual_type -> cast_kind -> stmt
-
-val create_char_type : unit -> qual_type
 
 val make_message_expr : qual_type -> string -> stmt -> stmt_info -> bool -> stmt
 

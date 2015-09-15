@@ -278,8 +278,9 @@ let create_alloc_instrs context sil_loc function_type fname =
     | Sil.Tptr (styp, Sil.Pk_objc_weak)
     | Sil.Tptr (styp, Sil.Pk_objc_unsafe_unretained)
     | Sil.Tptr (styp, Sil.Pk_objc_autoreleasing) ->
-        function_type, CTypes_decl.expand_structured_type context.CContext.tenv styp
+        function_type, styp
     | _ -> Sil.Tptr (function_type, Sil.Pk_pointer), function_type in
+  let function_type_np = CTypes.expand_structured_type context.CContext.tenv function_type_np in
   let sizeof_exp = Sil.Sizeof (function_type_np, Sil.Subtype.exact) in
   let exp = (sizeof_exp, Sil.Tint Sil.IULong) in
   let ret_id = Ident.create_fresh Ident.knormal in
@@ -333,8 +334,8 @@ let cpp_new_trans trans_state sil_loc stmt_info function_type =
 
 let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
-  let cast_typ_no_pointer =
-    CTypes_decl.expand_structured_type context.CContext.tenv (CTypes.remove_pointer_to_typ cast_to_typ) in
+  let typ = CTypes.remove_pointer_to_typ cast_to_typ in
+  let cast_typ_no_pointer = CTypes.expand_structured_type context.CContext.tenv typ in
   let sizeof_exp = Sil.Sizeof (cast_typ_no_pointer, Sil.Subtype.exact) in
   let pname = SymExec.ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Sil.Tint Sil.IULong)] in

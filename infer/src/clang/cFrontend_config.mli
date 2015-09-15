@@ -158,3 +158,7 @@ val strong_attribtue : string
 val unsafe_unretained_attribute : string
 
 val autoreleasing_atribute : string
+
+val type_pointer_prefix : string
+
+val nsarray_cl : string

@@ -12,8 +12,8 @@
 
 type method_signature = {
   _name : Procname.t;
-  _args : (string * string * Clang_ast_t.stmt option) list; (* (name, type, default value) *)
-  _ret_type : string;
+  _args : (string * Clang_ast_t.qual_type * Clang_ast_t.stmt option) list;
+  _ret_type : Clang_ast_t.qual_type;
   _attributes : Clang_ast_t.attribute list;
   _loc : Clang_ast_t.source_range;
   _is_instance : bool;
@@ -57,6 +57,9 @@ let replace_name_ms ms name =
 
 let ms_to_string ms =
   let gen = if ms._is_generated then " (generated)" else "" in
-  "Method "^(Procname.to_string ms._name)^gen^" "^
-  (Utils.list_to_string (fun (s1, s2, _) -> s1^", "^s2) ms._args)^"->"^ms._ret_type^" "^
+  "Method " ^ (Procname.to_string ms._name) ^ gen ^ " " ^
+  Utils.list_to_string
+    (fun (s1, s2, _) -> s1 ^ ", " ^ (Clang_ast_j.string_of_qual_type s2))
+    ms._args
+  ^ "->" ^ (Clang_ast_j.string_of_qual_type ms._ret_type) ^ " " ^
   Clang_ast_j.string_of_source_range ms._loc

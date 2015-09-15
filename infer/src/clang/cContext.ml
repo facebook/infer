@@ -287,9 +287,6 @@ let curr_class_hash curr_class =
   | ContextProtocol name -> Hashtbl.hash name
   | ContextNoCls -> Hashtbl.hash "no class"
 
-let get_qt_curr_class curr_class =
-  (get_curr_class_name curr_class)^" *"
-
 let get_captured_vars context = context.captured_vars
 
 let create_curr_class tenv class_name =

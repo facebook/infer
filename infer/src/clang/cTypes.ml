@@ -13,20 +13,6 @@ open Utils
 open CFrontend_utils
 module L = Logging
 
-let get_function_return_type s =
-  let regexp = Str.regexp_string " (" in
-  let matches = try let _ = Str.search_forward regexp s 0 in true with Not_found -> false in
-  let regexp' =
-    if matches then regexp
-    else Str.regexp_string "(" in (* match e.g. "char *()" *)
-  let buf = Str.split regexp' s in
-  match buf with
-  | ret:: _ ->
-      let ret'= String.trim ret in
-      Printing.log_out "return type ='%s'@." ret';
-      ret'
-  | _ -> assert false
-
 let get_type qt =
   match qt.Clang_ast_t.qt_desugared with
   | Some t -> t

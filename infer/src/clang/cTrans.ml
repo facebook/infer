@@ -184,8 +184,9 @@ struct
       f trans_state stmt
     with Self.SelfClassException class_name ->
       let typ = CTypes_decl.type_name_to_sil_type trans_state.context.CContext.tenv class_name in
+      let expanded_type = CTypes.expand_structured_type trans_state.context.CContext.tenv typ in
       { empty_res_trans with
-        exps = [(Sil.Sizeof(typ, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
+        exps = [(Sil.Sizeof(expanded_type, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
 
   (* Execute translation of e forcing to release priority (if it's not free) and then setting it back.*)
   (* This is used in conditional operators where we need to force the priority to be free for the *)
@@ -320,11 +321,10 @@ struct
         if CTrans_models.is_modeled_builtin name then ("infer" ^ name)
         else name in
       let qt = CTypes.get_raw_qual_type_decl_ref_exp_info decl_ref_expr_info in
-      let pname, type_opt =
+      let pname =
         match qt with
-        | Some v ->
-            (General_utils.mk_procname_from_function name v, CTypes_decl.parse_func_type name v)
-        | None -> (Procname.from_string_c_fun name, None) in
+        | Some v -> General_utils.mk_procname_from_function name v
+        | None -> Procname.from_string_c_fun name in
       CMethod_trans.create_procdesc_with_pointer context (Some pointer) pname;
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)
@@ -1541,7 +1541,7 @@ struct
         "WARNING: in MemberExpr we expect the translation of the stmt to return an expression\n" in
     let class_typ =
       (match class_typ with
-       | Sil.Tptr (t, _) -> CTypes_decl.expand_structured_type trans_state.context.CContext.tenv t
+       | Sil.Tptr (t, _) -> CTypes.expand_structured_type trans_state.context.CContext.tenv t
        | t -> t) in
     match decl_ref.Clang_ast_t.dr_kind with
     | `Field | `ObjCIvar ->
@@ -1552,7 +1552,12 @@ struct
               let tenv = trans_state.context.CContext.tenv in
               (match ObjcInterface_decl.find_field tenv field_name (Some class_typ) false with
                | Some (fn, _, _) -> Sil.Lfield (obj_sil, fn, class_typ)
-               | None -> assert false) in
+               | None ->
+                   let class_name = CTypes.classname_of_type class_typ in
+                   let default_name = (General_utils.mk_class_field_name class_name field_name) in
+                   Printing.log_out "Warning: Field not found %s in class %s " field_name
+                     (Sil.typ_to_string class_typ);
+                   Sil.Lfield (obj_sil, default_name, class_typ)) in
         { result_trans_exp_stmt with
           exps = [(exp, field_typ)] }
     | `CXXMethod ->
@@ -1685,7 +1690,7 @@ struct
 
   and objCStringLiteral_trans trans_state stmt_info stmts info =
     let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts
-                   (Ast_expressions.create_char_type ()) `ArrayToPointerDecay] in
+                   Ast_expressions.create_char_star_type `ArrayToPointerDecay] in
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.string_with_utf8_m typ in

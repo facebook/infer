@@ -161,3 +161,7 @@ let strong_attribtue = "__strong"
 let unsafe_unretained_attribute = "__unsafe_unretained"
 
 let autoreleasing_atribute = "__autoreleasing"
+
+let type_pointer_prefix = "internal_type"
+
+let nsarray_cl = "NSArray"

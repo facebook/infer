@@ -28,10 +28,10 @@ type method_call_type =
   | MCStatic
 
 type function_method_decl_info =
-  | Func_decl_info of Clang_ast_t.function_decl_info * string
-  | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * string (* class_name *) * string (* ret_type *)
+  | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.qual_type
+  | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * string * Clang_ast_t.qual_type
   | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * string
-  | Block_decl_info of Clang_ast_t.block_decl_info * string
+  | Block_decl_info of Clang_ast_t.block_decl_info * Clang_ast_t.qual_type
 
 let is_instance_method function_method_decl_info is_instance =
   match function_method_decl_info with
@@ -44,8 +44,12 @@ let is_instance_method function_method_decl_info is_instance =
 let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info false) then
     match function_method_decl_info with
-    | Cpp_Meth_decl_info (_, class_name, _) -> [(CFrontend_config.this, class_name, None)]
-    | ObjC_Meth_decl_info (_, class_name) -> [(CFrontend_config.self, class_name, None)]
+    | Cpp_Meth_decl_info (_, class_name, _) ->
+        let class_type = Ast_expressions.create_struct_type class_name in
+        [(CFrontend_config.this, class_type, None)]
+    | ObjC_Meth_decl_info (_, class_name) ->
+        let class_type = Ast_expressions.create_class_type class_name in
+        [(CFrontend_config.self, class_type, None)]
     | _ -> []
   else []
 
@@ -61,9 +65,7 @@ let get_parameters function_method_decl_info =
     match par with
     | Clang_ast_t.ParmVarDecl (decl_info, name_info, qtype, var_decl_info) ->
         let name = name_info.Clang_ast_t.ni_name in
-        Printing.log_out "Adding  param '%s' " name;
-        Printing.log_out "with pointer %s@." decl_info.Clang_ast_t.di_pointer;
-        (name, CTypes.get_type qtype, var_decl_info.Clang_ast_t.vdi_init_expr)
+        (name, qtype, var_decl_info.Clang_ast_t.vdi_init_expr)
     | _ -> assert false in
 
   let pars = list_map par_to_ms_par (get_param_decls function_method_decl_info) in
@@ -73,10 +75,9 @@ let get_return_type function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info (_, typ)
   | Cpp_Meth_decl_info (_, _, typ)
-  | Block_decl_info (_, typ) -> typ
-  | ObjC_Meth_decl_info (method_decl_info, _) ->
-      let qt = method_decl_info.Clang_ast_t.omdi_result_type in
-      CTypes.get_type qt
+  | Block_decl_info (_, typ) ->
+      Ast_expressions.create_qual_type_with_just_pointer (CTypes.return_type_of_function_type typ)
+  | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
 
 let build_method_signature decl_info procname function_method_decl_info is_instance is_anonym_block is_generated =
   let source_range = decl_info.Clang_ast_t.di_source_range in
@@ -91,7 +92,7 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
   match meth_decl, block_data_opt, class_name_opt with
   | FunctionDecl (decl_info, name_info, qt, fdi), _, _ ->
       let name = name_info.ni_name in
-      let func_decl = Func_decl_info (fdi, CTypes.get_type qt) in
+      let func_decl = Func_decl_info (fdi, qt) in
       let procname = General_utils.mk_procname_from_function name (CTypes.get_type qt) in
       let ms = build_method_signature decl_info procname func_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
@@ -99,7 +100,7 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       let method_name = name_info.Clang_ast_t.ni_name in
       let typ = CTypes.get_type qt in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name typ in
-      let method_decl = Cpp_Meth_decl_info (fdi, class_name, typ)  in
+      let method_decl = Cpp_Meth_decl_info (fdi, class_name, qt)  in
       let ms = build_method_signature decl_info procname method_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
   | ObjCMethodDecl (decl_info, name_info, mdi), _, Some class_name ->
@@ -113,7 +114,7 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       ms, mdi.omdi_body, mdi.omdi_parameters
   | BlockDecl (decl_info, decl_list, decl_context_info, bdi),
     Some (qt, is_instance, procname, _, _), _ ->
-      let func_decl = Block_decl_info (bdi, CTypes.get_type qt) in
+      let func_decl = Block_decl_info (bdi, qt) in
       let ms = build_method_signature decl_info procname func_decl is_instance true false in
       ms, bdi.bdi_body, bdi.bdi_parameters
   | _ -> raise Invalid_declaration
@@ -151,7 +152,9 @@ let get_class_selector_instance context obj_c_message_expr_info act_params =
   let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
   let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
   match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
-  | `Class qt -> (CTypes.get_type qt, selector, pointer, MCStatic)
+  | `Class qt ->
+      let sil_type = CTypes_decl.qual_type_to_sil_type context.CContext.tenv qt in
+      ((CTypes.classname_of_type sil_type), selector, pointer, MCStatic)
   | `Instance ->
       (match act_params with
        | (instance_obj, Sil.Tptr(t, _)):: _
@@ -173,7 +176,7 @@ let get_formal_parameters tenv ms =
         let qt =
           if (name = CFrontend_config.self && CMethod_signature.ms_is_instance ms) then
             (Ast_expressions.create_pointer_type raw_type)
-          else Ast_expressions.create_qual_type raw_type in
+          else raw_type in
         let typ = CTypes_decl.qual_type_to_sil_type tenv qt in
         (name, typ):: defined_parameters pl' in
   defined_parameters (CMethod_signature.ms_get_args ms)
@@ -208,9 +211,8 @@ let captured_vars_from_block_info context cvl =
   list_flatten (f cvl)
 
 let get_return_type tenv ms =
-  let qt = CMethod_signature.ms_get_ret_type ms in
-  CTypes_decl.qual_type_to_sil_type tenv
-    (Ast_expressions.create_qual_type (CTypes.get_function_return_type qt))
+  let return_type = CMethod_signature.ms_get_ret_type ms in
+  CTypes_decl.qual_type_to_sil_type tenv return_type
 
 let sil_func_attributes_of_attributes attrs =
   let rec do_translation acc al = match al with
