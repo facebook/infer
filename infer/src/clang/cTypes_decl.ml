@@ -66,44 +66,29 @@ let add_predefined_types tenv =
   add_predefined_objc_types tenv;
   add_predefined_basic_types tenv
 
-let rec search_for_named_type tenv typ =
-  let search typename =
-    match typename with
-    | Sil.TN_typedef name ->
-        (match Sil.tenv_lookup tenv typename with
-         | Some _ -> typename
-         | None ->
-             let pot_class_type = Sil.TN_csu (Sil.Class, name) in
-             match Sil.tenv_lookup tenv pot_class_type with
-             | Some _ -> pot_class_type
-             | None ->
-                 let pot_protocol_type = Sil.TN_csu (Sil.Protocol, name) in
-                 match Sil.tenv_lookup tenv pot_protocol_type with
-                 | Some _ -> pot_protocol_type
-                 | None ->
-                     let pot_struct_type = Sil.TN_csu (Sil.Struct, name) in
-                     match Sil.tenv_lookup tenv pot_struct_type with
-                     | Some _ -> pot_struct_type
-                     | None ->
-                         let pot_union_type = Sil.TN_csu (Sil.Union, name) in
-                         match Sil.tenv_lookup tenv pot_union_type with
-                         | Some _ -> pot_union_type
-                         | None -> raise Typename_not_found)
-    | _ -> typename in
-  match typ with
-  | Sil.Tvar typename -> Sil.Tvar (search typename)
-  | Sil.Tptr (typ, p) ->
-      Sil.Tptr (search_for_named_type tenv typ, p)
-  | _ -> typ
-
-let parse_func_type name func_type = None
-
+let create_csu opt_type =
+  match opt_type with
+  | `Type s ->
+      (let buf = Str.split (Str.regexp "[ \t]+") s in
+       match buf with
+       | "struct":: l ->Sil.Struct, General_utils.string_from_list l
+       | "class":: l -> Sil.Class, General_utils.string_from_list l
+       | "union":: l -> Sil.Union, General_utils.string_from_list l
+       | _ -> Sil.Struct, s)
+  | _ -> assert false
 
 (* We need to take the name out of the type as the struct can be anonymous*)
-let get_record_name opt_type = match opt_type with
-  | `Type n' -> CTypes.cut_struct_union n'
-  | `NoType -> assert false
+let get_record_name_csu opt_type name_info =
+  let name_str = name_info.Clang_ast_t.ni_name in
+  let csu, type_name = create_csu opt_type in
+  let prefix = Ast_utils.get_qualifier_string name_info in
+  let name =
+    if (String.length name_str = 0) then prefix ^ type_name else prefix ^ name_str in
+  csu, name
 
+
+let get_record_name opt_type name_info =
+  snd (get_record_name_csu opt_type name_info)
 
 let get_method_decls parent decl_list =
   let open Clang_ast_t in
@@ -115,64 +100,31 @@ let get_method_decls parent decl_list =
   and traverse_decl_list parent decl_list = list_flatten (list_map (traverse_decl parent) decl_list)  in
   traverse_decl_list parent decl_list
 
-(*In case of typedef like *)
-(* typedef struct { f1; f2; ... } s; *)
-(* the AST-dump splits the typedef definition from the struct definition. *)
-(* The type in the typedef "s" will be "s" and this become detached from the struct definition.*)
-(* To avoid circular entry in tenv, we disambiguate this case.*)
-(* We check if in tenv there is a "strucs s" defined and we make the type def "s" *)
-(* point directly to "struct s" *)
-let rec disambiguate_typedef tenv namespace t mn =
-  match t with
-  | Sil.Tvar(Sil.TN_typedef mn') ->
-      if (Mangled.equal mn mn') then
-        (* This will give a circularity in the definition of typedef in the tenv. *)
-        (* Eg. TN_typdef(mn) --> TN_typedef(mn). We need to break it*)
-        let tn = Sil.TN_csu(Sil.Struct, mn) in
-        (match Sil.tenv_lookup tenv tn with
-         | Some _ ->
-             (* There is a struct in tenv, so we make the typedef mn pointing to the struct*)
-             Printing.log_out "   ...Found type TN_typdef('%s') " (Mangled.to_string mn);
-             Printing.log_out "in typedef of '%s'@." (Mangled.to_string mn);
-             Printing.log_out
-               "Avoid circular definition in tenv by pointing the typedef to struc TN_csu('%s')@."
-               (Mangled.to_string mn);
-             Sil.Tvar(tn)
-         | None ->
-             if add_late_defined_record tenv namespace tn then
-               disambiguate_typedef tenv namespace t mn
-             else t)
-      else t
-  | _ -> t
+let get_class_methods tenv class_name namespace decl_list =
+  let process_method_decl = function
+    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, qual_type, function_decl_info) ->
+        let method_name = name_info.Clang_ast_t.ni_name in
+        Printing.log_out "  ...Declaring method '%s'.\n" method_name;
+        let typ = CTypes.get_type qual_type in
+        let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name typ in
+        Some method_proc
+    | _ -> None in
+  (* poor mans list_filter_map *)
+  list_flatten_options (list_map process_method_decl decl_list)
 
-and opt_type_to_sil_type tenv opt_type =
-  match opt_type with
-  | `Type(s) -> qual_type_to_sil_type tenv (Ast_expressions.create_qual_type s)
-  | `NoType -> Sil.Tvoid
+let add_struct_to_tenv tenv typ =
+  let csu = match typ with
+    | Sil.Tstruct(_, _, csu, _, _, _, _) -> csu
+    | _ -> assert false in
+  let mangled = CTypes.get_name_from_struct typ in
+  let typename = Sil.TN_csu(csu, mangled) in
+  Sil.tenv_add tenv typename typ
 
-and do_typedef_declaration tenv namespace decl_info name opt_type typedef_decl_info =
-  if name = CFrontend_config.class_type || name = CFrontend_config.id_cl then ()
-  else
-    let ns_suffix = Ast_utils.namespace_to_string namespace in
-    let name = ns_suffix^name in
-    let mn = Mangled.from_string name in
-    let typename = Sil.TN_typedef(mn) in
-    let t = opt_type_to_sil_type tenv opt_type in
-    (* check for ambiguities in typedef that may create circularities in tenv*)
-    let typ = disambiguate_typedef tenv namespace t mn in
-    Printing.log_out "ADDING: TypedefDecl for '%s'" name;
-    Printing.log_out " with type '%s'\n" (Sil.typ_to_string typ);
-    Printing.log_out "  ...Adding entry to tenv with Typename TN_typedef =  '%s'\n"
-      (Sil.typename_to_string typename);
-    Sil.tenv_add tenv typename typ
-
-and get_struct_fields tenv record_name namespace decl_list =
+let rec get_struct_fields tenv record_name namespace decl_list =
   let open Clang_ast_t in
   let do_one_decl decl = match decl with
     | FieldDecl (_, name_info, qual_type, _) ->
-        let field_name = name_info.Clang_ast_t.ni_name in
-        Printing.log_out "  ...Defining field '%s'.\n" field_name;
-        let id = General_utils.mk_class_field_name record_name field_name in
+        let id = General_utils.mk_class_field_name record_name name_info.Clang_ast_t.ni_name in
         let typ = qual_type_to_sil_type tenv qual_type in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
@@ -182,163 +134,46 @@ and get_struct_fields tenv record_name namespace decl_list =
     | _ -> [] in
   list_flatten (list_map do_one_decl decl_list)
 
-and get_class_methods tenv class_name namespace decl_list =
-  let process_method_decl = function
-    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, qual_type, function_decl_info) ->
-        let method_name = name_info.Clang_ast_t.ni_name in
-        Printing.log_out "  ...Declaring method '%s'.\n" method_name;
-        let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name  (CTypes.get_type qual_type) in
-        Some method_proc
-    | _ -> None in
-  (* poor mans list_filter_map *)
-  list_flatten_options (list_map process_method_decl decl_list)
-
-and add_types_from_decl_to_tenv tenv namespace decl =
-  let typ = get_declaration_type tenv namespace decl in
-  let typ = expand_structured_type tenv typ in
-  add_struct_to_tenv tenv typ;
-  typ
-
 (* For a record declaration it returns/constructs the type *)
 and get_declaration_type tenv namespace decl =
   let open Clang_ast_t in
-  let n, opt_type, decl_list = match decl with
-    | CXXRecordDecl (decl_info, name_info, opt_type, _, decl_list, _, record_decl_info, _)
-    | RecordDecl (decl_info, name_info, opt_type, _, decl_list, _, record_decl_info) ->
-        let ptr = decl_info.Clang_ast_t.di_pointer in
-        let name = name_info.Clang_ast_t.ni_name in
-        Printing.log_out "ADDING: RecordDecl for '%s'" name;
-        Printing.log_out " pointer= '%s'\n" ptr;
-        if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
-          Printing.log_err "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
-        name, opt_type, decl_list
-    | _ -> assert false in
+  match decl with
+  | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
+  | RecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info) ->
+      let csu, name = get_record_name_csu opt_type name_info in
+      let mangled_name = Mangled.from_string name in
+      let sil_typename = Sil.Tvar (Sil.TN_csu (csu, mangled_name)) in
+      (* temporarily saves the type name to avoid infinite loops in recursive types *)
+      Ast_utils.update_sil_types_map type_ptr sil_typename;
+      if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
+        Printing.log_err
+          "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
+      let non_static_fields = get_struct_fields tenv name namespace decl_list in
+      let non_static_fields' = if CTrans_models.is_objc_memory_model_controlled name then
+          General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
+        else non_static_fields in
+      let sorted_non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields' in
+      let static_fields = [] in (* Warning for the moment we do not treat static field. *)
+      let methods = get_class_methods tenv name namespace decl_list in (* C++ methods only *)
+      let superclasses = [] in
+      let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
+      let sil_type = Sil.Tstruct (sorted_non_static_fields, static_fields, csu, Some mangled_name,
+                                  superclasses, methods, item_annotation) in
+      Ast_utils.update_sil_types_map type_ptr sil_type;
+      sil_type
+  | _ -> assert false
 
-  let ns_suffix = Ast_utils.namespace_to_string namespace in
-  let n = ns_suffix^n in
-  let name_str = get_record_name opt_type in
-  Printing.log_out "Record Declaration '%s' defined as struct\n" n;
-  let non_static_fields = get_struct_fields tenv name_str namespace decl_list in
-  let non_static_fields = if CTrans_models.is_objc_memory_model_controlled n then
-      General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
-    else non_static_fields in
-  let non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields in
-  let static_fields = [] in (* Warning for the moment we do not treat static field. *)
-  let typ = (match opt_type with
-      | `Type s -> qual_type_to_sil_type tenv (Ast_expressions.create_qual_type s)
-      | _ -> assert false) in
-  let csu = (match typ with
-      | Sil.Tvar (Sil.TN_csu (csu, _)) -> csu
-      | _ -> Sil.Struct) in
-  let name = Some (Mangled.from_string name_str) in
-  let methods_list = get_class_methods tenv name_str namespace decl_list in (* C++ methods only *)
-  let superclass_list = [] in
-  let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
-  Sil.Tstruct
-    (non_static_fields, static_fields, csu, name, superclass_list, methods_list, item_annotation)
+and add_types_from_decl_to_tenv tenv namespace decl =
+  let typ = get_declaration_type tenv namespace decl in
+  add_struct_to_tenv tenv typ;
+  typ
 
-(* Look for a record definition that is defined after it is dereferenced. *)
-(* It returns true if a new record definition has been added to tenv.*)
-and add_late_defined_record tenv namespace typename =
-  Printing.log_out "!!!! Calling late-defined record '%s'\n" (Sil.typename_to_string typename) ;
-  match typename with
-  | Sil.TN_csu(Sil.Struct, name) | Sil.TN_csu(Sil.Union, name) ->
-      let open Clang_ast_t in
-      let rec scan decls =
-        match decls with
-        | [] -> false
-        | (CXXRecordDecl (_, _, opt_type, _, _, _, record_decl_info, _) as d) :: decls'
-        | (RecordDecl (_, _, opt_type, _, _, _, record_decl_info) as d) :: decls' ->
-            (match opt_type with
-             | `Type t ->
-                 (* the string t contains the name of the type preceded by the word struct. *)
-                 let t_no_struct = CTypes.cut_struct_union t in
-                 let pot_struct_type = Sil.TN_csu (Sil.Struct, (Mangled.from_string t_no_struct)) in
-                 let pot_union_type = Sil.TN_csu (Sil.Union, (Mangled.from_string t_no_struct)) in
-                 if (Sil.typename_equal typename pot_struct_type ||
-                     Sil.typename_equal typename pot_union_type) &&
-                    record_decl_info.Clang_ast_t.rdi_is_complete_definition then (
-                   Printing.log_out "!!!! Adding late-defined record '%s'\n" t;
-                   ignore (add_types_from_decl_to_tenv tenv namespace d);
-                   true)
-                 else scan decls'
-             | _ -> scan decls')
-        | LinkageSpecDecl(_, decl_list', _):: decls' -> scan (decl_list'@decls')
-        | _:: decls' -> scan decls' in
-      scan !CFrontend_config.global_translation_unit_decls
-  | _ -> false
-
-(* Look for a typedef definition that is defined after it is used. *)
-(* It returns true if a new typedef definition has been added to tenv.*)
-and add_late_defined_typedef tenv namespace typename =
-  Printing.log_out "Calling late-defined typedef '%s'\n" (Sil.typename_to_string typename);
-  match typename with
-  | Sil.TN_typedef name ->
-      let rec scan decls =
-        let open Clang_ast_t in
-        match decls with
-        | [] -> false
-        | TypedefDecl (decl_info, name_info, opt_type, _, tdi) :: decls' ->
-            let name' = name_info.Clang_ast_t.ni_name in
-            (match opt_type with
-             | `Type t ->
-                 if (Mangled.to_string name) = name' then (
-                   Printing.log_out "!!!! Adding late-defined typedef '%s'\n" t;
-                   do_typedef_declaration tenv namespace decl_info name' opt_type tdi;
-                   true)
-                 else scan decls'
-             | _ -> scan decls')
-        | LinkageSpecDecl(_, decl_list', _):: decls' -> scan (decl_list'@decls')
-        | _:: decls' -> scan decls' in
-      scan !CFrontend_config.global_translation_unit_decls
-  | _ -> false
-
-(* Expand a named type Tvar if it has a definition in tenv. This is used for Tenum, Tstruct, etc. *)
-and expand_structured_type tenv typ =
-  match typ with
-  | Sil.Tvar tn ->
-      (match Sil.tenv_lookup tenv tn with
-       | Some t ->
-           Printing.log_out
-             "   Type expanded with type '%s' found in tenv@." (Sil.typ_to_string t);
-           if Sil.typ_equal t typ then
-             typ
-           else expand_structured_type tenv t
-       | None -> if (add_late_defined_record tenv None tn ||
-                     add_late_defined_typedef tenv None tn) then
-             expand_structured_type tenv typ
-           else typ)
-  | Sil.Tptr(t, _) -> typ (*do not expand types under pointers *)
-  | _ -> typ
-
-and add_struct_to_tenv tenv typ =
-  let typ = expand_structured_type tenv typ in
-  let csu = match typ with
-    | Sil.Tstruct(_, _, csu, _, _, _, _) -> csu
-    | _ -> assert false in
-  let mangled = CTypes.get_name_from_struct typ in
-  let typename = Sil.TN_csu(csu, mangled) in
-  Printing.log_out "  >>>Adding struct to tenv  mangled='%s'\n" (Mangled.to_string mangled);
-  Printing.log_out "  >>>Adding struct to tenv typ='%s'\n" (Sil.typ_to_string typ);
-  Printing.log_out "  >>>with Key Typename TN_csu('%s')\n" (Sil.typename_to_string typename);
-  Printing.log_out "  >>>Adding entry to tenv ('%s'," (Sil.typename_to_string typename);
-  Printing.log_out "'%s')\n" (Sil.typ_to_string typ);
-  Sil.tenv_add tenv typename typ;
-  Printing.log_out "  >>>Verifying that Typename TN_csu('%s') is in tenv\n"
-    (Sil.typename_to_string typename);
-  (match Sil.tenv_lookup tenv typename with
-   | Some t -> Printing.log_out "  >>>OK. Found typ='%s'\n" (Sil.typ_to_string t)
-   | None -> Printing.log_out "  >>>NOT Found!!\n")
-
-(* Translate a qual_type from clang to sil type. *)
 and qual_type_to_sil_type tenv qt =
   CType_to_sil_type.qual_type_to_sil_type add_types_from_decl_to_tenv tenv qt
 
-and qual_type_to_sil_type_np tenv qt =
-  qual_type_to_sil_type tenv qt
 
-and type_name_to_sil_type tenv name =
-  qual_type_to_sil_type tenv (Ast_expressions.create_qual_type name)
+let type_name_to_sil_type tenv name =
+  qual_type_to_sil_type tenv (Ast_expressions.create_class_type name)
 
 let get_type_from_expr_info ei tenv =
   let qt = ei.Clang_ast_t.ei_qual_type in
@@ -364,4 +199,4 @@ let extract_sil_type_from_stmt tenv s =
 let get_type_curr_class tenv curr_class_opt =
   let name = CContext.get_curr_class_name curr_class_opt in
   let typ = Sil.Tvar (Sil.TN_csu (Sil.Class, (Mangled.from_string name))) in
-  expand_structured_type tenv typ
+  CTypes.expand_structured_type tenv typ

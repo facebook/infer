@@ -25,7 +25,7 @@ digraph iCFG {
 8 [label="8: Exit test \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start test\nFormals:  p:Point *\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n  NULLIFY(&p,false); [line 23]\n " color=yellow style=filled]
+7 [label="7: Start test\nFormals:  p:struct Point *\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n  NULLIFY(&p,false); [line 23]\n " color=yellow style=filled]
 	
 
 	 7 -> 10 ;

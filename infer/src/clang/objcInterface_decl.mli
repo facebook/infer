@@ -11,7 +11,7 @@
 (** is saved in the tenv as a struct with the corresponding fields, potential superclass and *)
 (** list of defined methods *)
 
-val interface_declaration : Sil.tenv -> string -> Clang_ast_t.decl list ->
+val interface_declaration : Sil.tenv -> Clang_ast_t.decl_info -> string -> Clang_ast_t.decl list ->
   Clang_ast_t.obj_c_interface_decl_info -> CContext.curr_class
 
 val find_field : Sil.tenv -> string -> Sil.typ option -> bool ->

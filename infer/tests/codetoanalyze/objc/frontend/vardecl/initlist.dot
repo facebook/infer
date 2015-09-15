@@ -7,14 +7,14 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  InitListExp \n   n$1=*&c1:class C * [line 24]\n  n$0=_fun_C_init(n$1:class C *) virtual [line 24]\n  n$2=*&c1:class C * [line 24]\n  n$3=*&c2:class C * [line 24]\n  *&a[0]:C *=n$0 [line 24]\n  _fun___objc_retain(n$2:C *) [line 24]\n  *&a[1]:C *=n$2 [line 24]\n  _fun___objc_retain(n$3:C *) [line 24]\n  *&a[2]:C *=n$3 [line 24]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 24]\n  NULLIFY(&c1,false); [line 24]\n  NULLIFY(&c2,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+6 [label="6:  InitListExp \n   n$1=*&c1:class C * [line 24]\n  n$0=_fun_C_init(n$1:class C *) virtual [line 24]\n  n$2=*&c1:class C * [line 24]\n  n$3=*&c2:class C * [line 24]\n  *&a[0]:class C *=n$0 [line 24]\n  _fun___objc_retain(n$2:class C *) [line 24]\n  *&a[1]:class C *=n$2 [line 24]\n  _fun___objc_retain(n$3:class C *) [line 24]\n  *&a[2]:class C *=n$3 [line 24]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 24]\n  NULLIFY(&c1,false); [line 24]\n  NULLIFY(&c2,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 6 -> 5 ;
 5 [label="5: Exit test \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start test\nFormals: \nLocals:  c1:class C * c2:class C * a:C *[3] \n   DECLARE_LOCALS(&return,&c1,&c2,&a); [line 21]\n  NULLIFY(&a,false); [line 21]\n  NULLIFY(&c1,false); [line 21]\n  NULLIFY(&c2,false); [line 21]\n " color=yellow style=filled]
+4 [label="4: Start test\nFormals: \nLocals:  c1:class C * c2:class C * a:class C *[3] \n   DECLARE_LOCALS(&return,&c1,&c2,&a); [line 21]\n  NULLIFY(&a,false); [line 21]\n  NULLIFY(&c1,false); [line 21]\n  NULLIFY(&c2,false); [line 21]\n " color=yellow style=filled]
 	
 
 	 4 -> 8 ;

@@ -34,9 +34,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   | FunctionDecl(di, name_info, qt, fdecl_info) ->
       CMethod_declImpl.function_decl tenv cfg cg namespace dec None
   | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
-      let name = name_info.Clang_ast_t.ni_name in
-      CTypes_decl.do_typedef_declaration tenv namespace
-        decl_info name opt_type typedef_decl_info
+      Printing.log_out "%s" "Skipping typedef declaration. Will expand the type in its occurrences."
   (* Currently C/C++ record decl treated in the same way *)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
   | RecordDecl (_, _, _, _, decl_list, _, _) ->
@@ -50,10 +48,10 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
       let name = name_info.Clang_ast_t.ni_name in
       CVar_decl.global_var_decl tenv namespace decl_info name t
 
-  | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info) ->
+  | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info) ->
       let name = name_info.Clang_ast_t.ni_name in
       let curr_class =
-        ObjcInterface_decl.interface_declaration tenv name decl_list obj_c_interface_decl_info in
+        ObjcInterface_decl.interface_declaration tenv decl_info name decl_list oi_decl_info in
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
   | ObjCProtocolDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_protocol_decl_info) ->
@@ -85,18 +83,18 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
         | Some ptr -> Ast_utils.get_decl ptr
         | None -> Some parent_dec in
       (match class_decl with
-       | Some CXXRecordDecl(_, _, opt_type, _, _, _, _, _) ->
-           let class_name = CTypes_decl.get_record_name opt_type in
+       | Some CXXRecordDecl(_, name_info, opt_type, _, _, _, _, _) ->
+           let class_name = CTypes_decl.get_record_name opt_type name_info in
            let curr_class = CContext.ContextCls(class_name, None, []) in
            if !CFrontend_config.testing_mode then
              CMethod_declImpl.process_methods tenv cg cfg curr_class namespace [dec]
        | Some dec -> Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
        | None -> ())
 
-  | EnumDecl(decl_info, name_info, opt_type, _, decl_list, decl_context_info, enum_decl_info)
+  | EnumDecl(decl_info, name_info, opt_type, pointer, decl_list, decl_context_info, enum_decl_info)
     when should_translate_enum ->
       let name = name_info.Clang_ast_t.ni_name in
-      CEnum_decl.enum_decl name tenv cfg cg namespace decl_list opt_type
+      CEnum_decl.enum_decl name tenv cfg cg namespace pointer decl_list opt_type
 
   | LinkageSpecDecl(decl_info, decl_list, decl_context_info) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";

@@ -32,7 +32,7 @@ digraph iCFG {
 21 [label="21: Exit A_add \n  " color=yellow style=filled]
 	
 
-20 [label="20: Start A_add\nFormals:  this:struct A  other:struct A &\nLocals:  \n   DECLARE_LOCALS(&return); [line 41]\n  NULLIFY(&this,false); [line 41]\n  NULLIFY(&other,false); [line 41]\n " color=yellow style=filled]
+20 [label="20: Start A_add\nFormals:  this:struct A  other:struct A &\nLocals:  \n   DECLARE_LOCALS(&return); [line 41]\n  NULLIFY(&other,false); [line 41]\n  NULLIFY(&this,false); [line 41]\n " color=yellow style=filled]
 	
 
 	 20 -> 21 ;
@@ -58,14 +58,14 @@ digraph iCFG {
 14 [label="14: Exit A_fun \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start A_fun\nFormals:  this:struct A  a:int  b:int \nLocals:  c:int  \n   DECLARE_LOCALS(&return,&c); [line 30]\n  NULLIFY(&this,false); [line 30]\n  NULLIFY(&c,false); [line 30]\n " color=yellow style=filled]
+13 [label="13: Start A_fun\nFormals:  this:struct A  a:int  b:int \nLocals:  c:int  \n   DECLARE_LOCALS(&return,&c); [line 30]\n  NULLIFY(&c,false); [line 30]\n  NULLIFY(&this,false); [line 30]\n " color=yellow style=filled]
 	
 
 	 13 -> 16 ;
 12 [label="12: Exit A_fun \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start A_fun\nFormals:  this:struct A  a:int  b:int  c:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n  NULLIFY(&this,false); [line 25]\n  NULLIFY(&a,false); [line 25]\n  NULLIFY(&b,false); [line 25]\n  NULLIFY(&c,false); [line 25]\n " color=yellow style=filled]
+11 [label="11: Start A_fun\nFormals:  this:struct A  a:int  b:int  c:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n  NULLIFY(&a,false); [line 25]\n  NULLIFY(&b,false); [line 25]\n  NULLIFY(&c,false); [line 25]\n  NULLIFY(&this,false); [line 25]\n " color=yellow style=filled]
 	
 
 	 11 -> 12 ;
@@ -91,7 +91,7 @@ digraph iCFG {
 5 [label="5: Exit A_def_in \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start A_def_in\nFormals:  this:struct A \nLocals:  c:int  \n   DECLARE_LOCALS(&return,&c); [line 17]\n  NULLIFY(&this,false); [line 17]\n  NULLIFY(&c,false); [line 17]\n " color=yellow style=filled]
+4 [label="4: Start A_def_in\nFormals:  this:struct A \nLocals:  c:int  \n   DECLARE_LOCALS(&return,&c); [line 17]\n  NULLIFY(&c,false); [line 17]\n  NULLIFY(&this,false); [line 17]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;

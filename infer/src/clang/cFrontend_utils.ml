@@ -147,6 +147,12 @@ struct
     | Some ns when ns ="" -> ""
     | Some ns -> ns^"::"
 
+  let get_qualifier_string name_info =
+    match name_info.Clang_ast_t.ni_qual_name with
+    | [] -> ""
+    | name :: qualifiers ->
+        list_fold_right (fun el res -> res ^ el ^ "::") qualifiers ""
+
   let property_name property_impl_decl_info =
     let no_property_name = "WARNING_NO_PROPERTY_NAME" in
     match property_impl_decl_info.Clang_ast_t.opidi_property_decl with

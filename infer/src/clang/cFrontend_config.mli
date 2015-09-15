@@ -149,6 +149,7 @@ val generated_suffix : string
 
 val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref
 
+(* Map from type pointers or declaration pointers to sil types *)
 val sil_types_map : (Sil.typ Clang_ast_main.PointerMap.t) ref
 
 val weak_attribute : string

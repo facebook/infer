@@ -162,8 +162,7 @@ and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
         let typ = CTypes_decl.get_declaration_type context.CContext.tenv context.CContext.namespace decl in
         CTypes_decl.add_struct_to_tenv context.CContext.tenv typ
     | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
-        CTypes_decl.do_typedef_declaration context.CContext.tenv context.CContext.namespace
-          decl_info name_info.Clang_ast_t.ni_name opt_type typedef_decl_info
+        Printing.log_out "%s" "Skipping typedef. Will expand the type in its occurrences."
     | StaticAssertDecl decl_info -> (* We do not treat Assertions. *)
         Printing.log_out
           "WARNING: When collecting variables, passing from StaticAssertDecl '%s'. Skipped.\n"

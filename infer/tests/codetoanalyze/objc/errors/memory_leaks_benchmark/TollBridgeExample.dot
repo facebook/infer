@@ -1,5 +1,5 @@
 digraph iCFG {
-19 [label="19:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char *) [line 43]\n  n$1=_fun_CTFontCreateWithName(n$0:struct __CFString *,17.000000:double ,0:CGAffineTransform *) [line 43]\n  n$2=_fun___objc_cast(n$1:void *,sizeof(void ):unsigned long ) [line 43]\n  *&return:struct __CTFont *=n$2 [line 43]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+19 [label="19:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char *) [line 43]\n  n$1=_fun_CTFontCreateWithName(n$0:struct __CFString *,17.000000:double ,0:struct CGAffineTransform *) [line 43]\n  n$2=_fun___objc_cast(n$1:void *,sizeof(void ):unsigned long ) [line 43]\n  *&return:struct __CTFont *=n$2 [line 43]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	
 
 	 19 -> 18 ;

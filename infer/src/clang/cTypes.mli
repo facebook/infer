@@ -31,10 +31,6 @@ val mk_enumname : string -> Sil.typename
 
 val get_name_from_struct: Sil.typ -> Mangled.t
 
-(* Remove the work 'struct' from a type name. Used to avoid repetition when typename are constructed*)
-(* E.g. 'struct struct s' *)
-val cut_struct_union : string -> string
-
 val remove_pointer_to_typ : Sil.typ -> Sil.typ
 
 val is_class : Sil.typ -> bool

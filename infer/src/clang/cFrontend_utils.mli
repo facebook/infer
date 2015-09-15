@@ -79,6 +79,9 @@ sig
 
   val update_sil_types_map : Clang_ast_t.pointer -> Sil.typ -> unit
 
+  (** creates a string to append to a name from a list of qualifiers to a name *)
+  val get_qualifier_string : Clang_ast_t.named_decl_info -> string
+
 end
 
 module General_utils :

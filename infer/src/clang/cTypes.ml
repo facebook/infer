@@ -113,17 +113,6 @@ let get_desugared_type t =
   | Some t' -> t'
   | _ -> assert false
 
-(* Remove the work 'struct' from a type name. Used to avoid repetition when typename are constructed*)
-(* E.g. 'struct struct s' *)
-let cut_struct_union s =
-  Printing.log_out "Cutting '%s'@." s;
-  let buf = Str.split (Str.regexp "[ \t]+") s in
-  match buf with
-  | "struct":: l (*-> Printing.string_from_list l *)
-  | "class":: l
-  | "union":: l -> General_utils.string_from_list l
-  | _ -> s
-
 let get_name_from_struct s =
   match s with
   | Sil.Tstruct(_, _, _, Some n, _, _, _) -> n
@@ -155,7 +144,7 @@ let classname_of_type typ =
   | _ ->
       Printing.log_out
         "Classname of type cannot be extracted in type %s" (Sil.typ_to_string typ);
-      assert false
+      "undefined"
 
 let get_raw_qual_type_decl_ref_exp_info decl_ref_expr_info =
   match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with

@@ -90,7 +90,7 @@ let update_curr_class curr_class superclasses =
   | _ -> assert false
 
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
-let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
+let add_class_to_tenv tenv decl_info class_name decl_list obj_c_interface_decl_info =
   Printing.log_out "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
   let interface_name = CTypes.mk_classname class_name in
   let curr_class, superclasses, fields =
@@ -121,6 +121,7 @@ let add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info =
     Sil.Tstruct(fields, [], Sil.Class, Some (Mangled.from_string class_name),
                 superclasses, methods, objc_class_annotation) in
   Sil.tenv_add tenv interface_name interface_type_info;
+  Ast_utils.update_sil_types_map decl_info.Clang_ast_t.di_pointer (Sil.Tvar interface_name);
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Sil.typename_to_string interface_name);
   (match Sil.tenv_lookup tenv interface_name with
@@ -139,8 +140,8 @@ let add_missing_methods tenv class_name decl_list curr_class =
   | _ -> ()
 
 (* Interface_type_info has the name of instance variables and the name of methods. *)
-let interface_declaration tenv class_name decl_list obj_c_interface_decl_info =
-  add_class_to_tenv tenv class_name decl_list obj_c_interface_decl_info
+let interface_declaration tenv decl_info class_name decl_list obj_c_interface_decl_info =
+  add_class_to_tenv tenv decl_info class_name decl_list obj_c_interface_decl_info
 
 (* Translate the methods defined in the implementation.*)
 let interface_impl_declaration tenv class_name decl_list idi =
@@ -167,12 +168,13 @@ let lookup_late_defined_interface tenv cname =
       :: decls'
       when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
         scan decls'
-    | ObjCInterfaceDecl (decl_info, name_info, decl_list, decl_context_info, obj_c_interface_decl_info)
+    | ObjCInterfaceDecl (decl_info, name_info, decl_list, decl_context_info, oi_decl_info)
       :: decls'
       when (Mangled.from_string name_info.Clang_ast_t.ni_name) = cname ->
         (* Assumption: here we assume that the first interface declaration with non empty set of fields is the *)
         (* correct one. So we stop. *)
-        ignore (interface_declaration tenv name_info.Clang_ast_t.ni_name decl_list obj_c_interface_decl_info)
+        let name = name_info.Clang_ast_t.ni_name in
+        ignore (interface_declaration tenv decl_info name decl_list oi_decl_info)
     | _:: decls' -> scan decls' in
   scan !CFrontend_config.global_translation_unit_decls
 

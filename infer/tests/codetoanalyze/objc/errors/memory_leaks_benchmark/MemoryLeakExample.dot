@@ -141,7 +141,7 @@ digraph iCFG {
 	
 
 	 11 -> 13 ;
-10 [label="10:  DeclStmt \n   n$13=*&self:class MemoryLeakExample * [line 31]\n  n$12=_fun_MemoryLeakExample_backgroundCoveringView(n$13:class MemoryLeakExample *) virtual [line 31]\n  n$11=_fun_UIView_bounds(n$12:class UIView *) virtual [line 31]\n  n$14=_fun_CGPathCreateWithRect(n$11:struct CGRect ,0:CGAffineTransform *) [line 31]\n  *&shadowPath:struct CGPath *=n$14 [line 31]\n  REMOVE_TEMPS(n$11,n$12,n$13,n$14); [line 31]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$13=*&self:class MemoryLeakExample * [line 31]\n  n$12=_fun_MemoryLeakExample_backgroundCoveringView(n$13:class MemoryLeakExample *) virtual [line 31]\n  n$11=_fun_UIView_bounds(n$12:class UIView *) virtual [line 31]\n  n$14=_fun_CGPathCreateWithRect(n$11:struct CGRect ,0:struct CGAffineTransform *) [line 31]\n  *&shadowPath:struct CGPath *=n$14 [line 31]\n  REMOVE_TEMPS(n$11,n$12,n$13,n$14); [line 31]\n " shape="box"]
 	
 
 	 10 -> 9 ;
@@ -160,7 +160,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   n$3=*&attachmentContainerView:class UIView * [line 22]\n  n$2=_fun_UIView_bounds(n$3:class UIView *) virtual [line 22]\n  n$4=_fun_CGPathCreateWithRect(n$2:struct CGRect ,0:CGAffineTransform *) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 22]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 22]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$3=*&attachmentContainerView:class UIView * [line 22]\n  n$2=_fun_UIView_bounds(n$3:class UIView *) virtual [line 22]\n  n$4=_fun_CGPathCreateWithRect(n$2:struct CGRect ,0:struct CGAffineTransform *) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 22]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 22]\n " shape="box"]
 	
 
 	 5 -> 4 ;

@@ -47,7 +47,7 @@ let rec get_enum_constants context decl_list v =
            (Mangled.from_string name, const) :: get_enum_constants context decl_list' v)
   | _ -> assert false
 
-let enum_decl name tenv cfg cg namespace decl_list opt_type =
+let enum_decl name tenv cfg cg namespace pointer decl_list opt_type =
   Printing.log_out "ADDING: EnumDecl '%s'\n" name;
   let context' =
     CContext.create_context tenv cg cfg !global_procdesc namespace CContext.ContextNoCls
@@ -57,7 +57,8 @@ let enum_decl name tenv cfg cg namespace decl_list opt_type =
       | `Type s -> s
       | `NoType -> assert false) in
   (* Here we could give "enum "^name but I want to check that this the type is always defined *)
-  let typename = Sil.TN_enum (Mangled.from_string name) in
+  let typename = CTypes.mk_enumname name in
   let typ = Sil.Tenum enum_constants in
+  Ast_utils.update_sil_types_map pointer typ;
   Printing.log_out "  TN_typename('%s')\n" (Sil.typename_to_string typename);
   Sil.tenv_add tenv typename typ
