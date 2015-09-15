@@ -195,8 +195,11 @@ let search_enum_type_by_name tenv name =
   Sil.tenv_iter f tenv;
   !found
 
-let mk_classname n =
-  Sil.TN_csu (Sil.Class, Mangled.from_string n)
+let mk_classname n = Sil.TN_csu (Sil.Class, Mangled.from_string n)
+
+let mk_structname n = Sil.TN_csu (Sil.Struct, Mangled.from_string n)
+
+let mk_enumname n = Sil.TN_enum (Mangled.from_string n)
 
 let is_class typ =
   match typ with
@@ -204,3 +207,58 @@ let is_class typ =
   | Sil.Tptr( Sil.Tvar (Sil.TN_csu (_, name) ), _) ->
       (Mangled.to_string name) = CFrontend_config.objc_class
   | _ -> false
+
+let sil_type_of_attr_pointer_type typ raw_type =
+  let pointer_attribute_of_objc_attribute objc_attribute =
+    if Utils.string_is_suffix CFrontend_config.weak_attribute objc_attribute
+    then Sil.Pk_objc_weak
+    else if Utils.string_is_suffix CFrontend_config.strong_attribtue objc_attribute
+    then Sil.Pk_pointer
+    else if Utils.string_is_suffix CFrontend_config.unsafe_unretained_attribute objc_attribute
+    then Sil.Pk_objc_unsafe_unretained
+    else if Utils.string_is_suffix CFrontend_config.autoreleasing_atribute objc_attribute
+    then Sil.Pk_objc_autoreleasing
+    else Sil.Pk_pointer in
+  Sil.Tptr (typ, (pointer_attribute_of_objc_attribute raw_type))
+
+let rec return_type_of_function_type_ptr type_ptr =
+  let open Clang_ast_t in
+  try
+    let c_type = Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.pointer_type_index in
+    match c_type with
+    | FunctionProtoType (type_info, function_type_info, _)
+    | FunctionNoProtoType (type_info, function_type_info) ->
+        function_type_info.Clang_ast_t.fti_return_type
+    | BlockPointerType (type_info, in_type_ptr) ->
+        return_type_of_function_type_ptr in_type_ptr
+    | _ ->
+        Printing.log_err "Warning: Type pointer %s is not a function type."
+          (Clang_ast_j.string_of_pointer type_ptr);
+        ""
+  with Not_found ->
+    Printing.log_err "Warning: Type pointer %s not found."
+      (Clang_ast_j.string_of_pointer type_ptr);
+    ""
+
+let return_type_of_function_type qt =
+  return_type_of_function_type_ptr qt.Clang_ast_t.qt_type_ptr
+
+(* Expand a named type Tvar if it has a definition in tenv. This is used for Tenum, Tstruct, etc. *)
+let rec expand_structured_type tenv typ =
+  match typ with
+  | Sil.Tvar tn ->
+      (match Sil.tenv_lookup tenv tn with
+       | Some t ->
+           Printing.log_out "   Type expanded with type '%s' found in tenv@." (Sil.typ_to_string t);
+           if Sil.typ_equal t typ then
+             typ
+           else expand_structured_type tenv t
+       | None -> typ)
+  | Sil.Tptr(t, _) -> typ (*do not expand types under pointers *)
+  | _ -> typ
+
+(* To be called with strings of format "<pointer_type_info>*<class_name>" *)
+let get_name_from_type_pointer custom_type_pointer =
+  match Str.split (Str.regexp "*") custom_type_pointer with
+  | [pointer_type_info; class_name] -> pointer_type_info, class_name
+  | _ -> assert false

@@ -149,3 +149,15 @@ let ns_array_ptr = "NSArray *"
 let enumerateObjectsUsingBlock = "enumerateObjectsUsingBlock:"
 
 let generated_suffix = "*generated"
+
+let pointer_type_index = ref Clang_ast_main.PointerMap.empty
+
+let sil_types_map = ref Clang_ast_main.PointerMap.empty
+
+let weak_attribute = "__weak"
+
+let strong_attribtue = "__strong"
+
+let unsafe_unretained_attribute = "__unsafe_unretained"
+
+let autoreleasing_atribute = "__autoreleasing"

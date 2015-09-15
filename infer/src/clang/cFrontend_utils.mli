@@ -77,6 +77,8 @@ sig
 
   val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
+  val update_sil_types_map : Clang_ast_t.pointer -> Sil.typ -> unit
+
 end
 
 module General_utils :

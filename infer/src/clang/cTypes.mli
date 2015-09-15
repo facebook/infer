@@ -27,6 +27,10 @@ val get_function_return_type : string -> string
 
 val mk_classname : string -> Sil.typename
 
+val mk_structname : string -> Sil.typename
+
+val mk_enumname : string -> Sil.typename
+
 val get_name_from_struct: Sil.typ -> Mangled.t
 
 (* Remove the work 'struct' from a type name. Used to avoid repetition when typename are constructed*)
@@ -36,3 +40,11 @@ val cut_struct_union : string -> string
 val remove_pointer_to_typ : Sil.typ -> Sil.typ
 
 val is_class : Sil.typ -> bool
+
+val sil_type_of_attr_pointer_type : Sil.typ -> string -> Sil.typ
+
+val return_type_of_function_type : Clang_ast_t.qual_type -> Clang_ast_t.pointer
+
+val expand_structured_type : Sil.tenv -> Sil.typ -> Sil.typ
+
+val get_name_from_type_pointer : string -> string * string

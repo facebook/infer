@@ -65,70 +65,7 @@ let rec search_for_named_type tenv typ =
       Sil.Tptr (search_for_named_type tenv typ, p)
   | _ -> typ
 
-(* Type representation is string in the clang ast. We use a parser for     *)
-(* parsing and then translating the type The parser is higher-order and    *)
-(* takes a tenv as needs to do look-ups                                    *)
-let string_type_to_sil_type tenv s =
-  Printing.log_out "    ...Trying parsing TYPE from string: '%s'@." s;
-  if s = "" then (
-    Printing.log_stats "\n  Empty string parsed as type Void.\n";
-    Sil.Tvoid)
-  else (
-    (* NOTE sometimes we need to remove an extra occurrence of the word*)
-    (* "struct" or "union" used in RecordDecl raw type but not in VarDecl or other*)
-    (* raw types. This inconsistence gives problems when looking up tenv.*)
-    (* To overcome that we remove consistently this extra "union"/"struct" everytyme *)
-    (* we translate a type.*)
-    (* Example: 'union <anonymous union at union.c:4:1>' will be *)
-    (* 'union <anonymous at union.c:4:1>'*)
-    let s = (match Str.split (Str.regexp "[ \t]+") s with
-        | "struct"::"(anonymous":: "struct":: s' ->
-            (*Printing.log_out "    ...Getting rid of the extra 'struct' word@."; *)
-            General_utils.string_from_list ("struct"::"(anonymous":: s')
-        | "union"::"(anonymous":: "union":: s' ->
-            (*Printing.log_out "    ...Getting rid of the extra 'union' word@."; *)
-            General_utils.string_from_list ("union"::"(anonymous":: s')
-        | _ -> s) in
-    let lexbuf = Lexing.from_string s in
-    let t =
-      try
-        let t = CTypes_parser.parse (Ast_lexer.token) lexbuf in
-        Printing.log_out
-          "    ...Parsed. Translated with sil TYPE '%a'@." (Sil.pp_typ_full pe_text) t;
-        t
-      with Parsing.Parse_error -> (
-          Printing.log_stats
-            "\nXXXXXXX PARSE ERROR for string '%s'. RETURNING Void.TODO@.@." s;
-          Sil.Tvoid) in
-    try
-      search_for_named_type tenv t
-    with Typename_not_found -> Printing.log_stats
-                                 "\nXXXXXX Parsed string '%s' as UNKNOWN type name. RETURNING a type name.TODO@.@." s;
-      t)
-
-let qual_type_to_sil_type_no_expansions tenv qt =
-  string_type_to_sil_type tenv (CTypes.get_type qt)
-
-let opt_type_to_sil_type tenv opt_type =
-  match opt_type with
-  | `Type(s) -> qual_type_to_sil_type_no_expansions tenv (Ast_expressions.create_qual_type s)
-  | `NoType -> Sil.Tvoid
-
-let parse_func_type name func_type =
-  try
-    let lexbuf = Lexing.from_string func_type in
-    let (return_type, arg_types) = CTypes_parser.clang_func_type (Ast_lexer.token) lexbuf in
-    let arg_types =
-      match arg_types with
-      | [Sil.Tvoid] -> []
-      | _ -> arg_types in
-    Printing.log_out
-      "    ...Parsed. Translated with sil return type '%s' @."
-      ((Sil.typ_to_string return_type)^" <- "^(Utils.list_to_string (Sil.typ_to_string) arg_types));
-    Some (return_type, arg_types)
-  with Parsing.Parse_error -> (
-      Printing.log_stats "\nXXXXXXX PARSE ERROR for string '%s'." func_type;
-      None)
+let parse_func_type name func_type = None
 
 
 (* We need to take the name out of the type as the struct can be anonymous*)
@@ -177,6 +114,11 @@ let rec disambiguate_typedef tenv namespace t mn =
       else t
   | _ -> t
 
+and opt_type_to_sil_type tenv opt_type =
+  match opt_type with
+  | `Type(s) -> qual_type_to_sil_type tenv (Ast_expressions.create_qual_type s)
+  | `NoType -> Sil.Tvoid
+
 and do_typedef_declaration tenv namespace decl_info name opt_type typedef_decl_info =
   if name = CFrontend_config.class_type || name = CFrontend_config.id_cl then ()
   else
@@ -205,7 +147,7 @@ and get_struct_fields tenv record_name namespace decl_list =
         [(id, typ, annotation_items)]
     | CXXRecordDecl _ | RecordDecl _ ->
         (* C++/C Records treated in the same way*)
-        add_types_from_decl_to_tenv tenv namespace decl; []
+        ignore (add_types_from_decl_to_tenv tenv namespace decl); []
     | _ -> [] in
   list_flatten (list_map do_one_decl decl_list)
 
@@ -223,7 +165,8 @@ and get_class_methods tenv class_name namespace decl_list =
 and add_types_from_decl_to_tenv tenv namespace decl =
   let typ = get_declaration_type tenv namespace decl in
   let typ = expand_structured_type tenv typ in
-  add_struct_to_tenv tenv typ
+  add_struct_to_tenv tenv typ;
+  typ
 
 (* For a record declaration it returns/constructs the type *)
 and get_declaration_type tenv namespace decl =
@@ -251,7 +194,7 @@ and get_declaration_type tenv namespace decl =
   let non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields in
   let static_fields = [] in (* Warning for the moment we do not treat static field. *)
   let typ = (match opt_type with
-      | `Type s -> qual_type_to_sil_type_no_expansions tenv (Ast_expressions.create_qual_type s)
+      | `Type s -> qual_type_to_sil_type tenv (Ast_expressions.create_qual_type s)
       | _ -> assert false) in
   let csu = (match typ with
       | Sil.Tvar (Sil.TN_csu (csu, _)) -> csu
@@ -285,7 +228,7 @@ and add_late_defined_record tenv namespace typename =
                      Sil.typename_equal typename pot_union_type) &&
                     record_decl_info.Clang_ast_t.rdi_is_complete_definition then (
                    Printing.log_out "!!!! Adding late-defined record '%s'\n" t;
-                   add_types_from_decl_to_tenv tenv namespace d;
+                   ignore (add_types_from_decl_to_tenv tenv namespace d);
                    true)
                  else scan decls'
              | _ -> scan decls')
@@ -356,23 +299,15 @@ and add_struct_to_tenv tenv typ =
    | Some t -> Printing.log_out "  >>>OK. Found typ='%s'\n" (Sil.typ_to_string t)
    | None -> Printing.log_out "  >>>NOT Found!!\n")
 
-and qual_type_to_sil_type_general tenv qt no_pointer =
-  let typ = string_type_to_sil_type tenv (CTypes.get_type qt) in
-  match typ with
-  | Sil.Tptr(np_typ, _) when no_pointer ->
-      expand_structured_type tenv np_typ
-  | _ -> expand_structured_type tenv typ
-
-(* Translate a qual_type from clang to sil type. It uses the raw field     *)
-(* (rather than desugared)                                                 *)
+(* Translate a qual_type from clang to sil type. *)
 and qual_type_to_sil_type tenv qt =
-  qual_type_to_sil_type_general tenv qt false
+  CType_to_sil_type.qual_type_to_sil_type add_types_from_decl_to_tenv tenv qt
 
 and qual_type_to_sil_type_np tenv qt =
-  qual_type_to_sil_type_general tenv qt true
+  qual_type_to_sil_type tenv qt
 
 and type_name_to_sil_type tenv name =
-  qual_type_to_sil_type_general tenv (Ast_expressions.create_qual_type name) false
+  qual_type_to_sil_type tenv (Ast_expressions.create_qual_type name)
 
 let get_type_from_expr_info ei tenv =
   let qt = ei.Clang_ast_t.ei_qual_type in

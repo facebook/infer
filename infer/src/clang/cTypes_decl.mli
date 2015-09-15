@@ -20,7 +20,7 @@ val get_method_decls : Clang_ast_t.decl -> Clang_ast_t.decl list -> (Clang_ast_t
 val do_typedef_declaration : Sil.tenv -> string option -> Clang_ast_t.decl_info -> string ->
   Clang_ast_t.opt_type -> Clang_ast_t.typedef_decl_info -> unit
 
-val add_types_from_decl_to_tenv : Sil.tenv -> string option -> Clang_ast_t.decl -> unit
+val add_types_from_decl_to_tenv : Sil.tenv -> string option -> Clang_ast_t.decl -> Sil.typ
 
 val parse_func_type : string -> string -> (Sil.typ * Sil.typ list) option
 

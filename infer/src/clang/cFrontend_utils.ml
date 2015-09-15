@@ -263,6 +263,10 @@ struct
       Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.pointer_decl_index)
     with Not_found -> Printing.log_stats "decl with pointer %s not found\n" decl_ptr; None
 
+  let update_sil_types_map type_ptr sil_type =
+    CFrontend_config.sil_types_map :=
+      Clang_ast_main.PointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
+
 end
 
 (* Global counter for anonymous block*)

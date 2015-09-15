@@ -146,3 +146,15 @@ val ns_array_ptr : string
 val enumerateObjectsUsingBlock : string
 
 val generated_suffix : string
+
+val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref
+
+val sil_types_map : (Sil.typ Clang_ast_main.PointerMap.t) ref
+
+val weak_attribute : string
+
+val strong_attribtue : string
+
+val unsafe_unretained_attribute : string
+
+val autoreleasing_atribute : string
