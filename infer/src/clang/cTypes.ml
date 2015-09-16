@@ -198,22 +198,20 @@ let sil_type_of_attr_pointer_type typ raw_type =
 
 let rec return_type_of_function_type_ptr type_ptr =
   let open Clang_ast_t in
-  try
-    let c_type = Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.pointer_type_index in
-    match c_type with
-    | FunctionProtoType (type_info, function_type_info, _)
-    | FunctionNoProtoType (type_info, function_type_info) ->
-        function_type_info.Clang_ast_t.fti_return_type
-    | BlockPointerType (type_info, in_type_ptr) ->
-        return_type_of_function_type_ptr in_type_ptr
-    | _ ->
-        Printing.log_err "Warning: Type pointer %s is not a function type."
-          (Clang_ast_j.string_of_pointer type_ptr);
-        ""
-  with Not_found ->
-    Printing.log_err "Warning: Type pointer %s not found."
-      (Clang_ast_j.string_of_pointer type_ptr);
-    ""
+  match Ast_utils.get_type type_ptr with
+  | Some FunctionProtoType (type_info, function_type_info, _)
+  | Some FunctionNoProtoType (type_info, function_type_info) ->
+      function_type_info.Clang_ast_t.fti_return_type
+  | Some BlockPointerType (type_info, in_type_ptr) ->
+      return_type_of_function_type_ptr in_type_ptr
+  | Some _ ->
+      Printing.log_err "Warning: Type pointer %s is not a function type."
+        (Clang_ast_j.string_of_pointer type_ptr);
+      ""
+  | None ->
+      Printing.log_err "Warning: Type pointer %s not found."
+        (Clang_ast_j.string_of_pointer type_ptr);
+      ""
 
 let return_type_of_function_type qt =
   return_type_of_function_type_ptr qt.Clang_ast_t.qt_type_ptr

@@ -82,6 +82,14 @@ sig
   (** creates a string to append to a name from a list of qualifiers to a name *)
   val get_qualifier_string : Clang_ast_t.named_decl_info -> string
 
+  val get_type : Clang_ast_t.pointer -> Clang_ast_t.c_type option
+
+  val get_desugared_type : Clang_ast_t.pointer -> Clang_ast_t.c_type option
+
+  (** returns declaration of the type for certain types and crashes for others
+      NOTE: this function needs extending to handle objC types *)
+  val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl
+
 end
 
 module General_utils :

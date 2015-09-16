@@ -116,8 +116,8 @@ and sil_type_of_c_type translate_decl tenv c_type =
   | AttributedType type_info ->
       (match type_info.Clang_ast_t.ti_desugared_type with
        | Some type_ptr ->
-           (match Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.pointer_type_index with
-            | ObjCObjectPointerType (type_info', type_ptr') ->
+           (match Ast_utils.get_type type_ptr  with
+            | Some ObjCObjectPointerType (type_info', type_ptr') ->
                 let typ = qual_type_ptr_to_sil_type translate_decl tenv type_ptr' in
                 CTypes.sil_type_of_attr_pointer_type typ type_info.Clang_ast_t.ti_raw
             | _ -> qual_type_ptr_to_sil_type translate_decl tenv type_ptr)
@@ -152,15 +152,12 @@ and qual_type_ptr_to_sil_type translate_decl tenv type_ptr =
   try
     Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.sil_types_map
   with Not_found ->
-    try
-      let c_type = Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.pointer_type_index in
-      let sil_type = sil_type_of_c_type translate_decl tenv c_type in
-      Ast_utils.update_sil_types_map type_ptr sil_type;
-      sil_type
-    with Not_found ->
-      Printing.log_err "Warning: Type pointer %s not found."
-        (Clang_ast_j.string_of_pointer type_ptr);
-      Sil.Tvoid
+    match Ast_utils.get_type type_ptr with
+    | Some c_type ->
+        let sil_type = sil_type_of_c_type translate_decl tenv c_type in
+        Ast_utils.update_sil_types_map type_ptr sil_type;
+        sil_type
+    | _ -> Sil.Tvoid
 
 and qual_type_to_sil_type translate_decl tenv qt =
   let type_ptr = qt.Clang_ast_t.qt_type_ptr in

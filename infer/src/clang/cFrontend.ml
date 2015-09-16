@@ -83,8 +83,8 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
         | Some ptr -> Ast_utils.get_decl ptr
         | None -> Some parent_dec in
       (match class_decl with
-       | Some CXXRecordDecl(_, name_info, opt_type, _, _, _, _, _) ->
-           let class_name = CTypes_decl.get_record_name opt_type name_info in
+       | Some (CXXRecordDecl _ as d)->
+           let class_name = CTypes_decl.get_record_name d in
            let curr_class = CContext.ContextCls(class_name, None, []) in
            if !CFrontend_config.testing_mode then
              CMethod_declImpl.process_methods tenv cg cfg curr_class namespace [dec]

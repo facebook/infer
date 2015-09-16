@@ -86,8 +86,11 @@ let get_record_name_csu opt_type name_info =
     if (String.length name_str = 0) then prefix ^ type_name else prefix ^ name_str in
   csu, name
 
-
-let get_record_name opt_type name_info =
+let get_record_name decl =
+  let name_info, opt_type = match decl with
+    | Clang_ast_t.RecordDecl (_, name_info, opt_type, _, _, _, _)
+    | Clang_ast_t.CXXRecordDecl (_, name_info, opt_type, _, _, _, _, _) -> name_info, opt_type
+    | _ -> assert false in
   snd (get_record_name_csu opt_type name_info)
 
 let get_method_decls parent decl_list =
@@ -111,6 +114,18 @@ let get_class_methods tenv class_name namespace decl_list =
     | _ -> None in
   (* poor mans list_filter_map *)
   list_flatten_options (list_map process_method_decl decl_list)
+
+(** fetches list of superclasses for C++ classes *)
+let get_superclass_list decl =
+  match decl with
+  | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info) ->
+      (* there is no concept of virtual inheritance in the backend right now *)
+      let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
+      let base_decls = list_map Ast_utils.get_decl_from_typ_ptr base_ptr in
+      let decl_to_mangled_name decl = Mangled.from_string (get_record_name decl) in
+      let get_super_field super_decl = (Sil.Class, decl_to_mangled_name super_decl) in
+      list_map get_super_field base_decls
+  | _ -> []
 
 let add_struct_to_tenv tenv typ =
   let csu = match typ with
@@ -155,7 +170,7 @@ and get_declaration_type tenv namespace decl =
       let sorted_non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields' in
       let static_fields = [] in (* Warning for the moment we do not treat static field. *)
       let methods = get_class_methods tenv name namespace decl_list in (* C++ methods only *)
-      let superclasses = [] in
+      let superclasses = get_superclass_list decl in
       let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
       let sil_type = Sil.Tstruct (sorted_non_static_fields, static_fields, csu, Some mangled_name,
                                   superclasses, methods, item_annotation) in

@@ -273,6 +273,32 @@ struct
     CFrontend_config.sil_types_map :=
       Clang_ast_main.PointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
 
+  let get_type type_ptr =
+    try
+      Some (Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.pointer_type_index)
+    with Not_found -> Printing.log_stats "type with pointer %s not found\n" type_ptr; None
+
+  let get_desugared_type type_ptr =
+    let typ_opt = get_type type_ptr in
+    match typ_opt with
+    | Some typ ->
+        let type_info = Clang_ast_proj.get_type_tuple typ in
+        (match type_info.Clang_ast_t.ti_desugared_type with
+         | Some ptr -> get_type ptr
+         | _ -> typ_opt)
+    | _ -> typ_opt
+
+  let get_decl_from_typ_ptr typ_ptr =
+    let typ_opt = get_desugared_type typ_ptr in
+    let typ = match typ_opt with Some t -> t | _ -> assert false in
+    let get_decl_or_fail decl_ptr = match get_decl decl_ptr with
+      | Some d -> d
+      | None -> assert false in
+    (* it needs extending to handle objC types *)
+    match typ with
+    | Clang_ast_t.RecordType (ti, decl_ptr) -> get_decl_or_fail decl_ptr
+    | _ -> assert false
+
 end
 
 (* Global counter for anonymous block*)
