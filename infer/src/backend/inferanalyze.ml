@@ -405,7 +405,7 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
                 let source = Exe_env.get_source exe_env proc_name in
                 mapr := Procname.Map.add proc_name source !mapr;
               with Not_found -> () in
-            if isdefined then
+            if isdefined && !Config.curr_language = Config.Java then
               let tenv = Exe_env.get_tenv exe_env pn in
               (* Add the overridden methods, so they can be found by the cluster. *)
               PatternMatch.proc_iter_overridden_methods extend_map tenv pn
