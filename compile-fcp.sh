@@ -17,8 +17,8 @@ PLUGIN_DIR="$INFER_ROOT/facebook-clang-plugins"
 CLANG_EXEC="$PLUGIN_DIR/clang/bin/clang"
 
 # check if clang is available
-if ! $CLANG_EXEC  --version 2>&1 | grep -q '3\.6'; then
-    echo "The required version of clang has not been found in $CLANG_EXEC" && exit 1
+if [ ! -f $CLANG_EXEC ]; then
+    echo "Clang has not been found in $CLANG_EXEC" && exit 1
 fi
 
 # install facebook-clang-plugins
