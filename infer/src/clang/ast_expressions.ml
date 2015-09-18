@@ -167,7 +167,7 @@ let create_integer_literal stmt_info n =
 
 let create_cstyle_cast_expr stmt_info stmts qt =
   let expr_info = {
-    Clang_ast_t.ei_qual_type = create_void_type;
+    Clang_ast_t.ei_qual_type = create_void_star_type;
     ei_value_kind = `RValue;
     ei_object_kind = `Ordinary;
   } in
@@ -179,7 +179,7 @@ let create_cstyle_cast_expr stmt_info stmts qt =
 
 let create_parent_expr stmt_info stmts =
   let expr_info = {
-    Clang_ast_t.ei_qual_type = create_void_type;
+    Clang_ast_t.ei_qual_type = create_void_star_type;
     ei_value_kind = `RValue;
     ei_object_kind = `Ordinary;
   } in
@@ -429,7 +429,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
       let block_var_decl = VarDecl(decl_info, block_name_info, ei.ei_qual_type, var_decl_info) in
       let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
 
-      let expr_info_call = make_general_expr_info create_void_type `XValue `Ordinary in
+      let expr_info_call = make_general_expr_info create_void_star_type `XValue `Ordinary in
       let expr_info_dre = make_expr_info_with_objc_kind qt `Ordinary in
       let decl_ref = make_decl_ref_qt `Var stmt_info.si_pointer block_name false qt in
       let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
@@ -478,7 +478,7 @@ let build_PseudoObjectExpr qt_m o_cast_decl_ref_exp mname =
 
 let create_call stmt_info decl_pointer function_name qt parameters =
   let expr_info_call = {
-    Clang_ast_t.ei_qual_type = create_void_type;
+    Clang_ast_t.ei_qual_type = create_void_star_type;
     ei_value_kind = `XValue;
     ei_object_kind = `Ordinary
   } in
@@ -578,7 +578,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name.Clang_ast_t.ni_name false qt in
         let cast = cast_expr decl_ref qt in
         let parameter =
-          create_implicit_cast_expr (fresh_stmt_info stmt_info) [cast] create_void_type `BitCast in
+          create_implicit_cast_expr (fresh_stmt_info stmt_info) [cast] create_void_star_type `BitCast in
         create_call (fresh_stmt_info stmt_info) di.Clang_ast_t.di_pointer CFrontend_config.free qt_fun [parameter]
     | _ -> assert false in
 
@@ -657,7 +657,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   let make_block_call block_qt object_cast idx_cast stop_cast =
     let decl_ref = make_decl_ref_invalid `Var block_name false block_qt in
     let fun_cast = cast_expr decl_ref block_qt in
-    let ei_call = make_expr_info create_void_type in
+    let ei_call = make_expr_info create_void_star_type in
     Clang_ast_t.CallExpr (fresh_stmt_info stmt_info, [fun_cast; object_cast; idx_cast; stop_cast], ei_call) in
 
   (* build statement "if (stop) break;" *)
@@ -738,4 +738,4 @@ let create_assume_not_null_call decl_info var_name var_type =
   let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info (make_lvalue_obc_prop_expr_info var_type) boi in
   let parameters = [bin_op] in
   let procname = Procname.to_string SymExec.ModelBuiltins.__infer_assume in
-  create_call stmt_info var_decl_ptr procname create_void_type parameters
+  create_call stmt_info var_decl_ptr procname create_void_star_type parameters
