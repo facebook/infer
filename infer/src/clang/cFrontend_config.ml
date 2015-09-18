@@ -136,7 +136,7 @@ let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:descripti
 
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
 
-let nonnull_attribute = "__nonnull"
+let nonnull_attribute = "_Nonnull"
 
 let pseudo_object_type = "<pseudo-object type>"
 

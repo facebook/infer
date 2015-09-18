@@ -113,7 +113,7 @@ and sil_type_of_c_type translate_decl tenv c_type =
   | LValueReferenceType (type_info, type_ptr) ->
       let typ = qual_type_ptr_to_sil_type translate_decl tenv type_ptr in
       Sil.Tptr (typ, Sil.Pk_reference)
-  | AttributedType type_info ->
+  | AttributedType (type_info, _) ->
       (match type_info.Clang_ast_t.ti_desugared_type with
        | Some type_ptr ->
            (match Ast_utils.get_type type_ptr  with

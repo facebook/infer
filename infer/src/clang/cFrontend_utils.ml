@@ -243,7 +243,7 @@ struct
 
   (*TODO: take the attributes into account too. To be done after we get the attribute's arguments. *)
   let is_type_nonnull qt attributes =
-    Utils.string_is_prefix CFrontend_config.nonnull_attribute qt.Clang_ast_t.qt_raw
+    Utils.string_contains CFrontend_config.nonnull_attribute qt.Clang_ast_t.qt_raw
 
   let pointer_counter = ref 0
 
