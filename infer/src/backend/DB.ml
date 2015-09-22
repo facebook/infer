@@ -44,16 +44,19 @@ let source_file_from_string path =
   else
     Absolute path
 
+(** convert a path to a source file, turning it into an absolute path if necessary *)
+let abs_source_file_from_path fname =
+  Absolute (filename_to_absolute fname)
+
 (** convert a project root directory and a full path to a rooted source file *)
 let rel_source_file_from_abs_path root fname =
   if Utils.string_is_prefix root fname then
     let relative_fname = filename_to_relative root fname in
     Relative relative_fname
-  else failwith ("The project root " ^ root ^ " is not a prefix of " ^ fname)
-
-(** convert a path to a source file, turning it into an absolute path if necessary *)
-let abs_source_file_from_path fname =
-  Absolute (filename_to_absolute fname)
+  else begin
+    L.err "The project root %s is not a prefix of %s@." root fname;
+    abs_source_file_from_path fname
+  end
 
 type encoding_type =
     Enc_base | Enc_path_with_underscores | Enc_crc
