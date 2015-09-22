@@ -22,5 +22,6 @@ val get_origin : t -> TypeOrigin.t
 val get_value : Annotations.annotation -> t -> bool
 val join : t -> t -> t option
 val origin_is_fun_library : t -> bool
+val set_value : Annotations.annotation -> bool -> t -> t
 val to_string : t -> string
 val with_origin : t -> TypeOrigin.t -> t

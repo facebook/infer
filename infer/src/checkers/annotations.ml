@@ -99,6 +99,7 @@ let initializer_ = "Initializer"
 let inject = "Inject"
 let inject_view = "InjectView"
 let bind = "Bind"
+let false_on_null = "FalseOnNull"
 let mutable_ = "Mutable"
 let nullable = "Nullable"
 let nonnull = "Nonnull"
@@ -106,6 +107,7 @@ let camel_nonnull = "NonNull"
 let notnull = "NotNull"
 let present = "Present"
 let strict = "com.facebook.infer.annotation.Strict"
+let true_on_null = "TrueOnNull"
 let verify_annotation = "com.facebook.infer.annotation.Verify"
 
 let ia_is_nullable ia =
@@ -118,6 +120,12 @@ let ia_is_nonnull ia =
   list_exists
     (ia_ends_with ia)
     [nonnull; notnull; camel_nonnull]
+
+let ia_is_false_on_null ia =
+  ia_ends_with ia false_on_null
+
+let ia_is_true_on_null ia =
+  ia_ends_with ia true_on_null
 
 let ia_is_initializer ia =
   ia_ends_with ia initializer_

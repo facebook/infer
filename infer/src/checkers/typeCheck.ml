@@ -44,12 +44,40 @@ module ComplexExpressions = struct
 
   let procname_optional_isPresent = Models.is_optional_isPresent
   let procname_instanceof = Procname.equal SymExec.ModelBuiltins.__instanceof
+
+  let procname_is_false_on_null get_proc_desc pn =
+    match get_proc_desc pn with
+    | Some pdesc ->
+        let proc_attributes = Specs.pdesc_resolve_attributes pdesc in
+        let annotated_signature =
+          Models.get_modelled_annotated_signature proc_attributes in
+        let ret_ann, _ = annotated_signature.Annotations.ret in
+        Annotations.ia_is_false_on_null ret_ann
+    | None ->
+        false
+
+  let procname_is_true_on_null get_proc_desc pn =
+    let annotated_true_on_null () =
+      match get_proc_desc pn with
+      | Some pdesc ->
+          let proc_attributes = Specs.pdesc_resolve_attributes pdesc in
+          let annotated_signature =
+            Models.get_modelled_annotated_signature proc_attributes in
+          let ret_ann, _ = annotated_signature.Annotations.ret in
+          Annotations.ia_is_true_on_null ret_ann
+      | None ->
+          false in
+    Models.is_true_on_null pn ||
+    annotated_true_on_null ()
+
   let procname_containsKey = Models.is_containsKey
 
   (** Recognize *all* the procedures treated specially in conditionals *)
-  let procname_used_in_condition pn =
+  let procname_used_in_condition get_proc_desc pn =
     procname_optional_isPresent pn ||
     procname_instanceof pn ||
+    procname_is_false_on_null get_proc_desc pn ||
+    procname_is_true_on_null get_proc_desc pn ||
     procname_containsKey pn ||
     SymExec.function_is_builtin pn
 
@@ -283,7 +311,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
     let handle_function_call call_node id =
       match Errdesc.find_normal_variable_funcall call_node id with
       | Some (Sil.Const (Sil.Cfun pn), _, _, _)
-        when not (ComplexExpressions.procname_used_in_condition pn) ->
+        when not (ComplexExpressions.procname_used_in_condition get_proc_desc pn) ->
           begin
             match ComplexExpressions.exp_to_string node' exp with
             | None -> default
@@ -780,6 +808,14 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
         let from_optional_isPresent e : Sil.exp option =
           from_call ComplexExpressions.procname_optional_isPresent e in
 
+        (* check if the expression is coming from a procedure returning false on null *)
+        let from_is_false_on_null e : Sil.exp option =
+          from_call (ComplexExpressions.procname_is_false_on_null get_proc_desc) e in
+
+        (* check if the expression is coming from a procedure returning true on null *)
+        let from_is_true_on_null e : Sil.exp option =
+          from_call (ComplexExpressions.procname_is_true_on_null get_proc_desc) e in
+
         (* check if the expression is coming from Map.containsKey *)
         let from_containsKey e : Sil.exp option =
           from_call ComplexExpressions.procname_containsKey e in
@@ -812,23 +848,53 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                 typestate, e, EradicateChecks.From_condition
           end in
 
+        let set_flag e' ann b typestate2 = (* add constraint on e' for annotation ann *)
+          let handle_pvar typestate' pvar =
+            match TypeState.lookup_pvar pvar typestate' with
+            | Some (t, ta1, locs) ->
+                if TypeAnnotation.get_value ann ta1 <> b then
+                  let ta2 = TypeAnnotation.set_value ann b ta1 in
+                  TypeState.add_pvar pvar (t, ta2, locs) typestate'
+                else typestate'
+            | None -> typestate' in
+          match e' with
+          | Sil.Lvar pvar ->
+              pvar_apply loc handle_pvar typestate2 pvar
+          | _ -> typestate2 in
 
         match c with
         | Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), e)
         | Sil.BinOp (Sil.Eq, e, Sil.Const (Sil.Cint i)) when Sil.Int.iszero i ->
             typecheck_expr_for_errors typestate e loc;
-            let e', typestate' = convert_complex_exp_to_pvar node' false e typestate loc in
+            let typestate1, e1, from_call = match from_is_true_on_null e with
+              | Some e1 ->
+                  typestate, e1, EradicateChecks.From_is_true_on_null
+              | None ->
+                  typestate, e, EradicateChecks.From_condition in
+            let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let (typ, ta, _) =
-              typecheck_expr_simple typestate' e' Sil.Tvoid TypeOrigin.ONone loc in
+              typecheck_expr_simple typestate2 e' Sil.Tvoid TypeOrigin.ONone loc in
+
             if checks.eradicate then
               EradicateChecks.check_zero
                 find_canonical_duplicate get_proc_desc curr_pname
                 node' e' typ
                 ta true_branch EradicateChecks.From_condition
                 idenv linereader loc instr_ref;
-            typestate'
+            begin
+              match from_call with
+              | EradicateChecks.From_is_true_on_null ->
+                  (* if f returns true on null, then false branch implies != null *)
+                  if TypeAnnotation.get_value Annotations.Nullable ta
+                  then set_flag e' Annotations.Nullable false typestate2
+                  else typestate2
+              | _ ->
+                  typestate2
+            end
+
         | Sil.BinOp (Sil.Ne, Sil.Const (Sil.Cint i), e)
         | Sil.BinOp (Sil.Ne, e, Sil.Const (Sil.Cint i)) when Sil.Int.iszero i ->
+            typecheck_expr_for_errors typestate e loc;
             let typestate1, e1, from_call = match from_instanceof e with
               | Some e1 -> (* (e1 instanceof C) implies (e1 != null) *)
                   typestate, e1, EradicateChecks.From_instanceof
@@ -839,32 +905,22 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                         typestate, e1, EradicateChecks.From_optional_isPresent
                     | None ->
                         begin
-                          match from_containsKey e with
-                          | Some e1 when ComplexExpressions.functions_idempotent () ->
-                              handle_containsKey e
-                          | _ ->
-                              typestate, e, EradicateChecks.From_condition
+                          match from_is_false_on_null e with
+                          | Some e1 ->
+                              typestate, e1, EradicateChecks.From_is_false_on_null
+                          | None ->
+                              begin
+                                match from_containsKey e with
+                                | Some e1 when ComplexExpressions.functions_idempotent () ->
+                                    handle_containsKey e
+                                | _ ->
+                                    typestate, e, EradicateChecks.From_condition
+                              end
                         end
                   end in
-            typecheck_expr_for_errors typestate1 e1 loc;
             let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
             let (typ, ta, _) =
               typecheck_expr_simple typestate2 e' Sil.Tvoid TypeOrigin.ONone loc in
-
-            let set_flag e' ann b = (* add constraint on e' for annotation ann *)
-              let handle_pvar typestate' pvar =
-                match TypeState.lookup_pvar pvar typestate' with
-                | Some (t, ta1, locs) ->
-                    if TypeAnnotation.get_value ann ta1 <> b then
-                      let origin = TypeAnnotation.get_origin ta1 in
-                      let ta2 = TypeAnnotation.const ann b origin in
-                      TypeState.add_pvar pvar (t, ta2, locs) typestate'
-                    else typestate'
-                | None -> typestate' in
-              match e' with
-              | Sil.Lvar pvar ->
-                  pvar_apply loc handle_pvar typestate2 pvar
-              | _ -> typestate2 in
 
             if checks.eradicate then
               EradicateChecks.check_nonzero find_canonical_duplicate get_proc_desc curr_pname
@@ -873,13 +929,16 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
               match from_call with
               | EradicateChecks.From_optional_isPresent ->
                   if TypeAnnotation.get_value Annotations.Present ta = false
-                  then set_flag e' Annotations.Present true
+                  then set_flag e' Annotations.Present true typestate2
                   else typestate2
+              | EradicateChecks.From_is_true_on_null ->
+                  typestate2
               | EradicateChecks.From_condition
+              | EradicateChecks.From_containsKey
               | EradicateChecks.From_instanceof
-              | EradicateChecks.From_containsKey ->
+              | EradicateChecks.From_is_false_on_null ->
                   if TypeAnnotation.get_value Annotations.Nullable ta then
-                    set_flag e' Annotations.Nullable false
+                    set_flag e' Annotations.Nullable false typestate2
                   else typestate2
             end
 

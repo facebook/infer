@@ -217,6 +217,11 @@ let is_optional_get proc_name =
 let is_optional_isPresent proc_name =
   table_has_procedure optional_isPresent_table proc_name
 
+(** Check if the procedure returns true on null. *)
+let is_true_on_null proc_name =
+  table_has_procedure true_on_null_table proc_name
+
+
 (** Check if the procedure is Map.containsKey(). *)
 let is_containsKey proc_name =
   table_has_procedure containsKey_table proc_name

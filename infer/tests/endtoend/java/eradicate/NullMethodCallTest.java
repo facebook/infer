@@ -46,6 +46,9 @@ public class NullMethodCallTest {
         "testFieldAssignmentIfThenElse",
         "testExceptionPerInstruction",
         "testSystemGetPropertyReturn",
+        "textUtilsIsEmpty",
+        "myTextUtilsIsEmpty",
+        "myTextUtilsNotIsNotEmpty",
     };
     assertThat(
         "Results should contain " + NULL_METHOD_CALL,

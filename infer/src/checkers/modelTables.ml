@@ -1,11 +1,11 @@
 (*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*)
+ * Copyright (c) 2015 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
 
 (*
  * This file is a big bunch of tables; they read better with really long lines.
@@ -88,6 +88,13 @@ let optional_isPresent_list : ((_ * bool list) * _) list =
     (o, []), "Optional.isPresent():boolean";
     (o, []), "com.google.common.base.Optional.isPresent():boolean";
   ]
+
+(** Models for boolean functions that return true on null. *)
+let true_on_null_list : ((_ * bool list) * _) list =
+  [
+    n1, "android.text.TextUtils.isEmpty(java.lang.CharSequence):boolean";
+  ]
+
 
 (** Models for Map.containsKey *)
 let containsKey_list =
@@ -226,6 +233,7 @@ let check_not_null_table, check_not_null_parameter_table =
   mk_table check_not_null_list, mk_table check_not_null_parameter_list
 let check_state_table = mk_table check_state_list
 let check_argument_table = mk_table check_argument_list
+let containsKey_table = mk_table containsKey_list
 let optional_get_table = mk_table optional_get_list
 let optional_isPresent_table = mk_table optional_isPresent_list
-let containsKey_table = mk_table containsKey_list
+let true_on_null_table = mk_table true_on_null_list
