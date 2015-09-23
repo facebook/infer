@@ -302,16 +302,10 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
  * proc to the cg *)
-let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
+let setup_harness_cfg harness_name harness_cfg env source_dir cg tenv =
   (* each procedure has different scope: start names from id 0 *)
   Ident.reset_name_generator ();
 
-  (* TMP: pick an arbitrary cg and cfg to piggyback the harness code onto *)
-  (* TODO (t4707171): create our own fresh cfg / cg instead *)
-  let (source_dir, cg) =
-    let (proc_name, _) = Procname.Map.choose proc_file_map in
-    let cg = cg_from_name proc_name proc_file_map in
-    (source_dir_from_name proc_name proc_file_map, cg) in
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let harness_cfg = match Cfg.load_cfg_from_file cfg_file with
     | Some cfg -> cfg
@@ -351,11 +345,19 @@ let setup_harness_cfg harness_name harness_cfg env proc_file_map tenv =
 
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
  * order with the specified receiver and add it to the execution environment *)
-let inhabit_trace trace cb_flds harness_name proc_file_map tenv = if list_length trace > 0 then
+let inhabit_trace trace cb_flds harness_name proc_file_map tenv =
+  if list_length trace > 0 then
+    (* pick an arbitrary cg and cfg to piggyback the harness code onto *)
+    let (source_dir, source_file, cg) =
+      let (proc_name, source_file) = Procname.Map.choose proc_file_map in
+      let cg = cg_from_name proc_name proc_file_map in
+      (source_dir_from_name proc_name proc_file_map, source_file, cg) in
+
     let harness_cfg = Cfg.Node.create_cfg () in
     let harness_file = create_dummy_harness_file harness_name harness_cfg tenv in
+    let start_line = (Cg.get_nLOC cg) + 1 in
     let empty_env =
-      let pc = { Location.line = 1; col = 1; file = harness_file; nLOC = 0; } in
+      let pc = { Location.line = start_line; col = 1; file = source_file; nLOC = 0; } in
       { instrs = [];
         tmp_vars = [];
         cache = TypMap.empty;
@@ -370,6 +372,6 @@ let inhabit_trace trace cb_flds harness_name proc_file_map tenv = if list_length
       (* invoke callbacks *)
       inhabit_fld_trace cb_flds proc_file_map env' in
     try
-      setup_harness_cfg harness_name harness_cfg env'' proc_file_map tenv;
+      setup_harness_cfg harness_name harness_cfg env'' source_dir cg tenv;
       write_harness_to_file (list_rev env''.instrs) harness_file
     with Not_found -> ()
