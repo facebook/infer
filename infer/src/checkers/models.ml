@@ -13,15 +13,8 @@ module L = Logging
 
 (** Module for standard library models. *)
 
-(* use library of inferred return annotations *)
-let use_library = false
-
 (* use model annotations for library functions *)
 let use_models = true
-
-(* libary functions: infer nullable annotation of return type *)
-let infer_library_return = Config.from_env_variable "ERADICATE_LIBRARY"
-
 
 (** Module for inference of parameter and return annotations. *)
 module Inference = struct
@@ -105,16 +98,6 @@ let table_has_procedure table proc_name =
   try ignore (Hashtbl.find table proc_id); true
   with Not_found -> false
 
-type table_t = (string, bool) Hashtbl.t
-
-(* precomputed marshalled table of inferred return annotations. *)
-let ret_library_table : table_t Lazy.t =
-  lazy (Hashtbl.create 1)
-(*
-lazy (Marshal.from_string Eradicate_library.marshalled_library_table 0)
-*)
-
-
 (** Return the annotated signature of the procedure, taking into account models. *)
 let get_modelled_annotated_signature proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
@@ -131,17 +114,10 @@ let get_modelled_annotated_signature proc_attributes =
         Annotations.annotated_signature_mark proc_name Annotations.Nullable ann_sig mark in
   let infer_return ann_sig =
     let mark_r =
-      let from_library =
-        if use_library then
-          try
-            Hashtbl.find (Lazy.force ret_library_table) proc_id
-          with Not_found -> false
-        else false in
-      let from_inference = Inference.enabled &&
-                           Inference.proc_return_is_marked proc_name in
-      from_library || from_inference in
+      Inference.enabled &&
+      Inference.proc_return_is_marked proc_name in
     if mark_r
-    then Annotations.annotated_signature_mark_return proc_name Annotations.Nullable ann_sig
+    then Annotations.annotated_signature_mark_return Annotations.Nullable ann_sig
     else ann_sig in
   let lookup_models_nullable ann_sig =
     if use_models then
@@ -163,7 +139,7 @@ let get_modelled_annotated_signature proc_attributes =
     if use_models
        && Hashtbl.mem annotated_table_strict proc_id
     then
-      Annotations.annotated_signature_mark_return_strict proc_name ann_sig
+      Annotations.annotated_signature_mark_return_strict ann_sig
     else
       ann_sig in
 
@@ -180,14 +156,6 @@ let is_modelled_nullable proc_name =
   if use_models then
     let proc_id = Procname.to_unique_id proc_name in
     try ignore (Hashtbl.find annotated_table_nullable proc_id ); true
-    with Not_found -> false
-  else false
-
-(** Return true when the procedure belongs to the library of inferred return annotations. *)
-let is_ret_library proc_name =
-  if use_library && not infer_library_return then
-    let proc_id = Procname.to_unique_id proc_name in
-    try ignore (Hashtbl.find (Lazy.force ret_library_table) proc_id); true
     with Not_found -> false
   else false
 

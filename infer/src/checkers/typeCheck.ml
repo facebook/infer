@@ -561,6 +561,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
       typestate (* skip othe builtins *)
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _etl, loc, cflags)
     when get_proc_desc callee_pname <> None ->
+      Ondemand.do_analysis get_proc_desc curr_pname callee_pname;
       let callee_attributes =
         match get_proc_desc callee_pname with
         | Some pdesc ->

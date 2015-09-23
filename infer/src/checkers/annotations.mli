@@ -34,15 +34,13 @@ val annotated_signature_mark :
 
 (** Mark the return of the annotated signature with the given annotation. *)
 val annotated_signature_mark_return :
-  Procname.t -> annotation -> annotated_signature -> annotated_signature
+  annotation -> annotated_signature -> annotated_signature
 
 (** Mark the return of the annotated signature @Strict. *)
 val annotated_signature_mark_return_strict :
-  Procname.t -> annotated_signature -> annotated_signature
+  annotated_signature -> annotated_signature
 
 val equal : annotated_signature -> annotated_signature -> bool
-
-type get_method_annotation = Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
 
 (** Get a method signature with annotations from a proc_attributes. *)
 val get_annotated_signature : ProcAttributes.t -> annotated_signature
@@ -75,6 +73,10 @@ val ma_contains : Sil.method_annotation -> string list -> bool
 val ma_has_annotation_with : Sil.method_annotation -> (Sil.annotation -> bool) -> bool
 
 val ma_iter : (Sil.annotation -> unit) -> Sil.method_annotation -> unit
+
+(** Mark the return of the method_annotation with the given annotation. *)
+val method_annotation_mark_return :
+  annotation -> Sil.method_annotation -> Sil.method_annotation
 
 (** Add the annotation to the item_annotation. *)
 val mk_ia : annotation -> Sil.item_annotation -> Sil.item_annotation

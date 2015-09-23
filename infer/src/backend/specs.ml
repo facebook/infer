@@ -640,18 +640,19 @@ let proc_resolve_attributes get_proc_desc proc_name =
     | Some summary ->
         Some summary.attributes
     | None -> None in
-  match from_proc_desc () with
+  match from_specs () with
   | Some attributes ->
       if attributes.ProcAttributes.is_defined
       then Some attributes
       else begin
-        match from_specs () with
+        match from_proc_desc () with
         | Some attributes' ->
             Some attributes'
-        | None -> Some attributes
+        | None ->
+            Some attributes
       end
   | None ->
-      from_specs ()
+      from_proc_desc ()
 
 (** Like proc_resolve_attributes but start from a proc_desc. *)
 let pdesc_resolve_attributes proc_desc =

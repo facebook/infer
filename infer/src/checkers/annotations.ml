@@ -155,8 +155,6 @@ let ia_is ann ia = match ann with
   | Nullable -> ia_is_nullable ia
   | Present -> ia_is_present ia
 
-type get_method_annotation = Procname.t -> Cfg.Procdesc.t -> Sil.method_annotation
-
 
 (** Get a method signature with annotations from a proc_attributes. *)
 let get_annotated_signature proc_attributes : annotated_signature =
@@ -270,13 +268,19 @@ let annotated_signature_mark proc_name ann asig (b, bs) =
   { ret = ret'; params = params'}
 
 (** Mark the return of the annotated signature with the given annotation. *)
-let annotated_signature_mark_return proc_name ann asig =
+let annotated_signature_mark_return ann asig =
   let ia, t = asig.ret in
   let ret' = mark_ia ann ia true, t in
   { asig with ret = ret'}
 
 (** Mark the return of the annotated signature @Strict. *)
-let annotated_signature_mark_return_strict proc_name asig =
+let annotated_signature_mark_return_strict asig =
   let ia, t = asig.ret in
   let ret' = mark_ia_strict ia true, t in
   { asig with ret = ret'}
+
+(** Mark the return of the method_annotation with the given annotation. *)
+let method_annotation_mark_return ann method_annotation =
+  let ia_ret, params = method_annotation in
+  let ia_ret' = mark_ia ann ia_ret true in
+  ia_ret', params

@@ -60,17 +60,11 @@ let classify_procedure proc_attributes =
   let unique_id = Procname.to_unique_id pn in
   let classification =
     if Models.is_modelled_nullable pn then "M" (* modelled *)
-    else if Models.is_ret_library pn then "R" (* return library *)
     else if Specs.proc_is_library proc_attributes then "L" (* library *)
     else if not proc_attributes.ProcAttributes.is_defined then "S" (* skip *)
     else if string_is_prefix "com.facebook" unique_id then "F" (* FB *)
     else "?" in
   classification
-
-let pp_inferred_return_annotation is_nullable proc_name =
-  L.stdout "(*InferredLibraryReturnAnnotation*) %5b, \"%s\";@."
-    is_nullable
-    (Procname.to_unique_id proc_name)
 
 
 let is_virtual = function
@@ -248,7 +242,6 @@ let check_constructor_initialization
     curr_pname
     curr_pdesc
     start_node
-    final_typestate
     final_initializer_typestates
     final_constructor_typestates
     loc: unit =
@@ -339,52 +332,56 @@ let check_return_annotation
   let ret_annotated_nullable = Annotations.ia_is_nullable ret_ia in
   let ret_annotated_present = Annotations.ia_is_present ret_ia in
   let ret_annotated_nonnull = Annotations.ia_is_nonnull ret_ia in
-  let return_not_nullable =
-    match ret_range with
-    | Some (_, final_ta, _) ->
-        let final_nullable = TypeAnnotation.get_value Annotations.Nullable final_ta in
-        let final_present = TypeAnnotation.get_value Annotations.Present final_ta in
-        let origin_descr = TypeAnnotation.descr_origin final_ta in
-        let return_not_nullable =
-          final_nullable &&
-          not ret_annotated_nullable &&
-          not ret_implicitly_nullable &&
-          not (return_nonnull_silent && ret_annotated_nonnull) in
-        let return_value_not_present =
-          activate_optional_present &&
-          not final_present &&
-          ret_annotated_present in
-        let return_over_annotated =
-          not final_nullable &&
-          ret_annotated_nullable &&
-          activate_return_over_annotated in
-        if return_not_nullable || return_value_not_present then
-          begin
-            let ann =
-              if return_not_nullable then Annotations.Nullable else Annotations.Present in
-            if Models.Inference.enabled then Models.Inference.proc_add_return_nullable curr_pname;
-            report_error
-              find_canonical_duplicate
-              exit_node
-              (TypeErr.Return_annotation_inconsistent (ann, curr_pname, origin_descr))
-              None
-              loc curr_pname
-          end;
-        if return_over_annotated then
-          begin
-            report_error
-              find_canonical_duplicate
-              exit_node
-              (TypeErr.Return_over_annotated curr_pname)
-              None
-              loc curr_pname
-          end;
-        return_not_nullable
-    | _ ->
-        false in
-  if Models.infer_library_return &&
-     classify_procedure (Cfg.Procdesc.get_attributes curr_pdesc) = "L"
-  then pp_inferred_return_annotation return_not_nullable curr_pname
+  match ret_range with
+  | Some (_, final_ta, _) ->
+      let final_nullable = TypeAnnotation.get_value Annotations.Nullable final_ta in
+      let final_present = TypeAnnotation.get_value Annotations.Present final_ta in
+      let origin_descr = TypeAnnotation.descr_origin final_ta in
+      let return_not_nullable =
+        final_nullable &&
+        not ret_annotated_nullable &&
+        not ret_implicitly_nullable &&
+        not (return_nonnull_silent && ret_annotated_nonnull) in
+      let return_value_not_present =
+        activate_optional_present &&
+        not final_present &&
+        ret_annotated_present in
+      let return_over_annotated =
+        not final_nullable &&
+        ret_annotated_nullable &&
+        activate_return_over_annotated in
+
+      if return_not_nullable && Models.Inference.enabled then
+        Models.Inference.proc_add_return_nullable curr_pname;
+
+      if return_not_nullable && Ondemand.enabled () then
+        Ondemand.proc_add_return_nullable curr_pname;
+
+      if return_not_nullable || return_value_not_present then
+        begin
+          let ann =
+            if return_not_nullable then Annotations.Nullable else Annotations.Present in
+
+
+          report_error
+            find_canonical_duplicate
+            exit_node
+            (TypeErr.Return_annotation_inconsistent (ann, curr_pname, origin_descr))
+            None
+            loc curr_pname
+        end;
+
+      if return_over_annotated then
+        begin
+          report_error
+            find_canonical_duplicate
+            exit_node
+            (TypeErr.Return_over_annotated curr_pname)
+            None
+            loc curr_pname
+        end
+  | None ->
+      ()
 
 (** Check the receiver of a virtual call. *)
 let check_call_receiver

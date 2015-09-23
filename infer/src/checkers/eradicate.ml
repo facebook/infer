@@ -71,7 +71,8 @@ struct
 
   let callback1
       find_canonical_duplicate calls_this checks get_proc_desc idenv tenv curr_pname
-      curr_pdesc annotated_signature linereader proc_loc : bool * 'a TypeState.t option =
+      curr_pdesc annotated_signature linereader proc_loc
+    : bool * Extension.extension TypeState.t option =
     let mk_pvar s = Sil.mk_pvar (Mangled.from_string s) curr_pname in
     let add_formal typestate (s, ia, typ) =
       let pvar = mk_pvar s in
@@ -154,7 +155,16 @@ struct
       try Cfg.NodeSet.min_elt duplicate_nodes with
       | Not_found -> node in
 
-    let typecheck_proc do_checks idenv_pn pname pdesc ann_sig loc =
+    let typecheck_proc do_checks pname pdesc proc_details_opt =
+      let ann_sig, loc, idenv_pn = match proc_details_opt with
+        | Some (ann_sig, loc, idenv_pn) ->
+            (ann_sig, loc, idenv_pn)
+        | None ->
+            let ann_sig =
+              Models.get_modelled_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
+            let loc = Cfg.Procdesc.get_loc pdesc in
+            let idenv_pn = Idenv.create_from_idenv idenv pdesc in
+            (ann_sig, loc, idenv_pn) in
       let checks', calls_this' =
         if do_checks then checks, calls_this
         else
@@ -215,11 +225,7 @@ struct
         (** Get the final typestates of all the initializers. *)
         let final_typestates = ref [] in
         let get_final_typestate (pname, pdesc) =
-          let ann_sig =
-            Models.get_modelled_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
-          let loc = Cfg.Procdesc.get_loc pdesc in
-          let idenv_pn = Idenv.create_from_idenv idenv pdesc in
-          match typecheck_proc false idenv_pn pname pdesc ann_sig loc with
+          match typecheck_proc false pname pdesc None with
           | _, Some final_typestate ->
               final_typestates := (pname, final_typestate) :: !final_typestates
           | _, None -> () in
@@ -277,7 +283,6 @@ struct
             curr_pname
             curr_pdesc
             start_node
-            typestate
             Initializers.final_initializer_typestates_lazy
             Initializers.final_constructor_typestates_lazy
             proc_loc
@@ -292,7 +297,7 @@ struct
     TypeErr.reset ();
 
     let calls_this, final_typestate_opt =
-      typecheck_proc true idenv curr_pname curr_pdesc annotated_signature proc_loc in
+      typecheck_proc true curr_pname curr_pdesc (Some (annotated_signature, proc_loc, idenv)) in
     do_final_typestate final_typestate_opt calls_this;
     if checks.TypeCheck.eradicate then
       EradicateChecks.check_overridden_annotations
@@ -315,19 +320,7 @@ struct
         begin
           let annotated_signature =
             Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes proc_desc) in
-          if (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_abstract then
-            begin
-              if Models.infer_library_return &&
-                 EradicateChecks.classify_procedure (Cfg.Procdesc.get_attributes proc_desc) = "L"
-              then
-                (let ret_is_nullable = (* get the existing annotation *)
-                   let ia, _ = annotated_signature.Annotations.ret in
-                   Annotations.ia_is_nullable ia in
-                 EradicateChecks.pp_inferred_return_annotation ret_is_nullable proc_name);
-              Some annotated_signature
-            end
-          else
-            Some annotated_signature
+          Some annotated_signature
         end in
     match filter_special_cases () with
     | None -> ()
@@ -375,26 +368,30 @@ module Main =
   Build(EmptyExtension)
 
 (** Eradicate checker for Java @Nullable annotations. *)
-let callback_eradicate all_procs get_proc_desc idenv tenv proc_name1 proc_desc1 =
+let callback_eradicate all_procs get_proc_desc idenv tenv proc_name proc_desc =
   let checks =
     {
       TypeCheck.eradicate = true;
       check_extension = false;
       check_ret_type = [];
     } in
-  Main.callback checks all_procs get_proc_desc idenv tenv proc_name1 proc_desc1
+  let _ondemand pname =
+    match get_proc_desc pname with
+    | None -> ()
+    | Some pdesc ->
+        let idenv_pname = Idenv.create_from_idenv idenv pdesc in
+        Main.callback checks all_procs get_proc_desc idenv_pname tenv pname pdesc in
+  Ondemand.set_analyze_proc _ondemand;
+  Main.callback checks all_procs get_proc_desc idenv tenv proc_name proc_desc;
+  Ondemand.unset_analyze_prop ()
 
 (** Call the given check_return_type at the end of every procedure. *)
 let callback_check_return_type check_return_type all_procs
-    get_proc_desc idenv tenv proc_name1 proc_desc1 =
+    get_proc_desc idenv tenv proc_name proc_desc =
   let checks =
     {
       TypeCheck.eradicate = false;
       check_extension = false;
       check_ret_type = [check_return_type];
     } in
-  Main.callback checks all_procs get_proc_desc idenv tenv proc_name1 proc_desc1
-
-(** Export the ability to add nullable annotations. *)
-let field_add_nullable_annotation fieldname =
-  Models.Inference.field_add_nullable_annotation fieldname
+  Main.callback checks all_procs get_proc_desc idenv tenv proc_name proc_desc
