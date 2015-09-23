@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser()
 current_directory = os.getcwd()
 
 parser.add_argument('-version', action='store_true')
+parser.add_argument('-deprecation', action='store_true')
 parser.add_argument('-cp', '-classpath', type=str, dest='classpath')
 parser.add_argument('-bootclasspath', type=str)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
