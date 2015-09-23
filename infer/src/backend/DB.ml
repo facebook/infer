@@ -53,10 +53,9 @@ let rel_source_file_from_abs_path root fname =
   if Utils.string_is_prefix root fname then
     let relative_fname = filename_to_relative root fname in
     Relative relative_fname
-  else begin
-    L.err "The project root %s is not a prefix of %s@." root fname;
+  else
+    (* The project root is not a prefix of the file name *)
     abs_source_file_from_path fname
-  end
 
 type encoding_type =
     Enc_base | Enc_path_with_underscores | Enc_crc
