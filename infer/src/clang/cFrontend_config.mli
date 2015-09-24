@@ -163,3 +163,5 @@ val autoreleasing_atribute : string
 val type_pointer_prefix : string
 
 val nsarray_cl : string
+
+val infer : string

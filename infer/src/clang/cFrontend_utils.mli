@@ -132,7 +132,8 @@ sig
 
   val mk_procname_from_objc_method : string -> string -> Procname.objc_method_kind -> Procname.t
 
-  val mk_procname_from_function : string -> string -> Procname.t
+  val mk_procname_from_function : string ->
+    (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info) option -> string -> Procname.t
 
   val mk_procname_from_cpp_method : string -> string -> string -> Procname.t
 

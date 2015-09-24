@@ -93,7 +93,9 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
   | FunctionDecl (decl_info, name_info, qt, fdi), _, _ ->
       let name = name_info.ni_name in
       let func_decl = Func_decl_info (fdi, qt) in
-      let procname = General_utils.mk_procname_from_function name (CTypes.get_type qt) in
+      let type_string = CTypes.get_type qt in
+      let function_info = Some (decl_info, fdi) in
+      let procname = General_utils.mk_procname_from_function name function_info type_string in
       let ms = build_method_signature decl_info procname func_decl false false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
   | CXXMethodDecl (decl_info, name_info, qt, fdi), _, Some class_name ->
@@ -312,18 +314,22 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
         } in
       ()
 
-let create_procdesc_with_pointer context pointer_opt callee_name =
+let create_procdesc_with_pointer context pointer class_name_opt name qt =
   let open CContext in
-  let callee_ms_opt =
-    match pointer_opt with
-    | Some pointer ->
-        (match method_signature_of_pointer None pointer with
-         | Some callee_ms -> Some callee_ms
-         | None -> None)
-    | None -> None in
-  match callee_ms_opt with
-  | Some callee_ms -> ignore (create_local_procdesc context.cfg context.tenv callee_ms [] [] false)
-  | None -> create_external_procdesc context.cfg callee_name false None
+  match method_signature_of_pointer class_name_opt pointer with
+  | Some callee_ms ->
+      ignore (create_local_procdesc context.cfg context.tenv callee_ms [] [] false);
+      CMethod_signature.ms_get_name callee_ms
+  | None ->
+      let type_name = qt.Clang_ast_t.qt_raw in
+      let callee_name =
+        match class_name_opt with
+        | Some class_name ->
+            General_utils.mk_procname_from_cpp_method class_name name type_name
+        | None ->
+            General_utils.mk_procname_from_function name None type_name in
+      create_external_procdesc context.cfg callee_name false None;
+      callee_name
 
 let instance_to_method_call_type instance =
   if instance then MCVirtual

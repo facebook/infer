@@ -420,9 +420,28 @@ struct
   let mk_class_field_name class_name field_name =
     Ident.create_fieldname (Mangled.mangled field_name (class_name^"_"^field_name)) 0
 
-  let mk_procname_from_function name type_name =
-    let type_name_crc = CRC.crc16 type_name in
-    Procname.mangled_c_fun name type_name_crc
+  let mk_procname_from_function name function_decl_info_opt type_name =
+    let file =
+      match function_decl_info_opt with
+      | Some (decl_info, function_decl_info) ->
+          (match function_decl_info.Clang_ast_t.fdi_storage_class with
+           | Some "static" ->
+               (match (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file with
+                | Some file -> file
+                | None -> "")
+           | _ -> "")
+      | None -> "" in
+    let type_string =
+      match !CFrontend_config.language with
+      | CFrontend_config.CPP
+      | CFrontend_config.OBJCPP -> type_name
+      | _ -> "" in
+    let mangled = file ^ type_string in
+    if String.length mangled == 0 then
+      Procname.from_string_c_fun name
+    else
+      let crc = CRC.crc16 mangled in
+      Procname.mangled_c_fun name crc
 
   let mk_procname_from_objc_method class_name method_name method_kind =
     let mangled = Procname.mangled_of_objc_method_kind method_kind in

@@ -297,7 +297,8 @@ struct
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
-    let typ = CTypes_decl.qual_type_to_sil_type context.tenv expr_info.Clang_ast_t.ei_qual_type in
+    let qt = expr_info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.qual_type_to_sil_type context.tenv qt in
     let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let pointer = CTrans_utils.get_decl_pointer decl_ref_expr_info in
@@ -317,15 +318,10 @@ struct
               (Sil.Const(Sil.Cint Sil.Int.zero))) in
       { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
     ) else if is_function then (
-      let name =
-        if CTrans_models.is_modeled_builtin name then ("infer" ^ name)
-        else name in
-      let qt = CTypes.get_raw_qual_type_decl_ref_exp_info decl_ref_expr_info in
       let pname =
-        match qt with
-        | Some v -> General_utils.mk_procname_from_function name v
-        | None -> Procname.from_string_c_fun name in
-      CMethod_trans.create_procdesc_with_pointer context (Some pointer) pname;
+        if CTrans_models.is_modeled_builtin name then
+          Procname.from_string_c_fun (CFrontend_config.infer ^ name)
+        else CMethod_trans.create_procdesc_with_pointer context pointer None name qt in
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)
       (* As e.g. in fun_ptr = foo; *)
@@ -641,8 +637,6 @@ struct
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
     let class_name_opt = Some (Procname.c_get_class callee_pname) in
-    let pointer_opt = CTrans_utils.pointer_of_call_expr fun_exp_stmt in
-    CMethod_trans.create_procdesc_with_pointer context pointer_opt callee_pname;
     let params_stmt = CTrans_utils.assign_default_params params_stmt class_name_opt fun_exp_stmt ~is_cxx_method:true in
     (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)
@@ -1526,13 +1520,14 @@ struct
 
   (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
   and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =
+    let context = trans_state.context in
     let field_name = match decl_ref.Clang_ast_t.dr_name with
       | Some s -> s.Clang_ast_t.ni_name
       | _ -> assert false in
     let field_qt = match decl_ref.Clang_ast_t.dr_qual_type with
       | Some t -> t
       | _ -> assert false in
-    let field_typ = CTypes_decl.qual_type_to_sil_type trans_state.context.CContext.tenv field_qt in
+    let field_typ = CTypes_decl.qual_type_to_sil_type context.CContext.tenv field_qt in
     Printing.log_out "!!!!! Dealing with field '%s' @." field_name;
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
@@ -1541,7 +1536,7 @@ struct
         "WARNING: in MemberExpr we expect the translation of the stmt to return an expression\n" in
     let class_typ =
       (match class_typ with
-       | Sil.Tptr (t, _) -> CTypes.expand_structured_type trans_state.context.CContext.tenv t
+       | Sil.Tptr (t, _) -> CTypes.expand_structured_type context.CContext.tenv t
        | t -> t) in
     match decl_ref.Clang_ast_t.dr_kind with
     | `Field | `ObjCIvar ->
@@ -1549,7 +1544,7 @@ struct
           | Sil.Tvoid -> Sil.exp_minus_one
           | _ ->
               Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
-              let tenv = trans_state.context.CContext.tenv in
+              let tenv = context.CContext.tenv in
               (match ObjcInterface_decl.find_field tenv field_name (Some class_typ) false with
                | Some (fn, _, _) -> Sil.Lfield (obj_sil, fn, class_typ)
                | None ->
@@ -1562,11 +1557,12 @@ struct
           exps = [(exp, field_typ)] }
     | `CXXMethod ->
         (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
-        let raw_type = field_qt.Clang_ast_t.qt_raw in
         let class_name = match class_typ with Sil.Tptr (t, _) | t -> CTypes.classname_of_type t in
-        let pname = General_utils.mk_procname_from_cpp_method class_name field_name raw_type in
+        let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
+        let pname = CMethod_trans.create_procdesc_with_pointer context pointer (Some class_name)
+            field_name field_qt in
         let method_exp = (Sil.Const (Sil.Cfun pname), field_typ) in
-        Cfg.set_procname_priority trans_state.context.CContext.cfg pname;
+        Cfg.set_procname_priority context.CContext.cfg pname;
         { result_trans_exp_stmt with exps = [method_exp; (obj_sil, class_typ)] }
     | _ -> assert false
 

@@ -166,3 +166,5 @@ let autoreleasing_atribute = "__autoreleasing"
 let type_pointer_prefix = "internal_type"
 
 let nsarray_cl = "NSArray"
+
+let infer = "infer"
