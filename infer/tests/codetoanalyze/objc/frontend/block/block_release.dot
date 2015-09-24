@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 18 -> 17 ;
-17 [label="17:  DeclStmt \n   n$12=_fun_CGBitmapContextCreate(0:void *,0:unsigned long ,0:unsigned long ,8:unsigned long ,0:unsigned long ,0:struct CGColorSpace *,0:CGBitmapInfo ) [line 27]\n  *&context:struct CGContext *=n$12 [line 27]\n  REMOVE_TEMPS(n$12); [line 27]\n " shape="box"]
+17 [label="17:  DeclStmt \n   n$12=_fun_CGBitmapContextCreate(0:void *,0:unsigned long ,0:unsigned long ,8:unsigned long ,0:unsigned long ,0:struct CGColorSpace *,0:unsigned int ) [line 27]\n  *&context:struct CGContext *=n$12 [line 27]\n  REMOVE_TEMPS(n$12); [line 27]\n " shape="box"]
 	
 
 	 17 -> 16 ;
