@@ -73,11 +73,9 @@ module ComplexExpressions = struct
   let procname_containsKey = Models.is_containsKey
 
   (** Recognize *all* the procedures treated specially in conditionals *)
-  let procname_used_in_condition get_proc_desc pn =
+  let procname_used_in_condition pn =
     procname_optional_isPresent pn ||
     procname_instanceof pn ||
-    procname_is_false_on_null get_proc_desc pn ||
-    procname_is_true_on_null get_proc_desc pn ||
     procname_containsKey pn ||
     SymExec.function_is_builtin pn
 
@@ -311,7 +309,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
     let handle_function_call call_node id =
       match Errdesc.find_normal_variable_funcall call_node id with
       | Some (Sil.Const (Sil.Cfun pn), _, _, _)
-        when not (ComplexExpressions.procname_used_in_condition get_proc_desc pn) ->
+        when not (ComplexExpressions.procname_used_in_condition pn) ->
           begin
             match ComplexExpressions.exp_to_string node' exp with
             | None -> default
