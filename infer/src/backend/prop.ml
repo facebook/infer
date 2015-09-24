@@ -1762,7 +1762,10 @@ let get_attribute prop exp category =
               atts)
   with Not_found -> None
 
-let get_resource_undef_attribute prop exp =
+let get_undef_attribute prop exp =
+  get_attribute prop exp Sil.ACundef
+
+let get_resource_attribute prop exp =
   get_attribute prop exp Sil.ACresource
 
 let get_taint_attribute prop exp =

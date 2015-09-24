@@ -970,7 +970,8 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
     !Config.report_nullable_inconsistency && !Config.curr_language = Config.Java &&
     not (is_definitely_non_null root prop) && is_only_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
-    Prop.get_resource_undef_attribute;
+    Prop.get_resource_attribute;
+    Prop.get_undef_attribute;
   ] in
   let get_relevant_attributes exp =
     let rec fold_getters = function

@@ -271,8 +271,11 @@ val atom_get_exp_attribute : atom -> (Sil.exp * Sil.attribute) option
 (** Get the attributes associated to the expression, if any *)
 val get_exp_attributes : 'a t -> exp -> attribute list
 
-(** Get the resource attribute associated to the expression, if any, or undefined *)
-val get_resource_undef_attribute : 'a t -> exp -> attribute option
+(** Get the undef attribute associated to the expression, if any *)
+val get_undef_attribute : 'a t -> exp -> attribute option
+
+(** Get the resource attribute associated to the expression, if any *)
+val get_resource_attribute : 'a t -> exp -> attribute option
 
 (** Get the taint attribute associated to the expression, if any *)
 val get_taint_attribute : 'a t -> exp -> attribute option

@@ -20,7 +20,7 @@ let pvar_to_string pvar =
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 let hpred_is_open_resource prop = function
   | Sil.Hpointsto(e, _, _) ->
-      (match Prop.get_resource_undef_attribute prop e with
+      (match Prop.get_resource_attribute prop e with
        | Some (Sil.Aresource { Sil.ra_kind = Sil.Racquire; Sil.ra_res = res }) -> Some res
        | _ -> None)
   | _ ->

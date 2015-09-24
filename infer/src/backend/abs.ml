@@ -1277,13 +1277,15 @@ let check_junk ?original_prop pname tenv prop =
                 (* find the alloc attribute of one of the roots of hpred, if it exists *)
                 let res = ref None in
                 let do_entry e =
-                  match Prop.get_resource_undef_attribute prop e with
+                  match Prop.get_resource_attribute prop e with
                   | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire }) as a) ->
                       L.d_str "ATTRIBUTE: "; Sil.d_exp (Sil.Const (Sil.Cattribute a)); L.d_ln ();
                       res := Some a
-                  | Some (Sil.Aundef _ as a) ->
-                      res := Some a
-                  | _ -> () in
+                  | _ ->
+                      (match Prop.get_undef_attribute prop e with
+                       | Some (Sil.Aundef _ as a) ->
+                           res := Some a
+                       | _ -> ()) in
                 list_iter do_entry entries;
                 !res in
               L.d_decrease_indent 1;

@@ -270,6 +270,8 @@ and attribute_category =
   | ACtaint
   | ACdiv0
   | ACobjc_null
+  | ACundef
+  | ACretval
 
 (** Constants *)
 and const =

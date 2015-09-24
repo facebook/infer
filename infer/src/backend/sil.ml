@@ -635,6 +635,8 @@ and attribute_category =
   | ACtaint
   | ACdiv0
   | ACobjc_null
+  | ACundef
+  | ACretval
 
 (** Constants *)
 and const =
@@ -1131,14 +1133,14 @@ let attribute_category_equal att1 att2 =
 let attribute_to_category att =
   match att with
   | Aresource _
-  | Adangling _
-  | Aretval _
-  | Aundef _ -> ACresource
+  | Adangling _ -> ACresource
   | Ataint
   | Auntaint -> ACtaint
   | Aautorelease -> ACautorelease
   | Adiv0 _ -> ACdiv0
   | Aobjc_null _ -> ACobjc_null
+  | Aretval _ -> ACretval
+  | Aundef _ -> ACundef
 
 let attr_is_undef = function
   | Aundef _ -> true

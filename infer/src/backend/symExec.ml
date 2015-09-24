@@ -131,7 +131,7 @@ let rec apply_offlist
             lookup_inst := Some inst_curr;
             let alloc_attribute_opt =
               if inst_curr = Sil.Iinitial then None
-              else Prop.get_resource_undef_attribute p root_lexp in
+              else Prop.get_undef_attribute p root_lexp in
             let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
             let err_desc = Errdesc.explain_memory_access deref_str p (State.get_loc ()) in
             let exn = (Exceptions.Uninitialized_value (err_desc, try assert false with Assert_failure x -> x)) in
@@ -815,7 +815,7 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
   else
     let res = Tabulation.exe_function_call tenv cfg ret_ids pdesc callee_pname loc actual_params pre path in
     let is_undef =
-      Option.map_default Sil.attr_is_undef false (Prop.get_resource_undef_attribute pre receiver) in
+      Option.is_some (Prop.get_undef_attribute pre receiver) in
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
         let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
@@ -1561,7 +1561,7 @@ module ModelBuiltins = struct
 
   let is_undefined_opt prop n_lexp =
     let is_undef =
-      Option.map_default Sil.attr_is_undef false (Prop.get_resource_undef_attribute prop n_lexp) in
+      Option.is_some (Prop.get_undef_attribute prop n_lexp) in
     is_undef && (!Config.angelic_execution || !Config.optimistic_cast)
 
   (** Creates an object in the heap with a given type, when the object is not known to be null or when it doesn't
@@ -1723,7 +1723,7 @@ module ModelBuiltins = struct
     (execute___instanceof_cast cfg pdesc instr tenv _prop path ret_ids args callee_pname loc false)
 
   let set_resource_attribute prop path n_lexp loc ra_res =
-    let prop' = match Prop.get_resource_undef_attribute prop n_lexp with
+    let prop' = match Prop.get_resource_attribute prop n_lexp with
       | Some (Sil.Aresource (_ as ra)) ->
           let check_attr_change att_old att_new = () in
           Prop.add_or_replace_exp_attribute check_attr_change prop n_lexp (Sil.Aresource { ra with Sil.ra_res = ra_res })

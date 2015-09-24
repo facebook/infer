@@ -264,12 +264,14 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
     if Prop.has_dangling_uninit_attribute spec_pre e then
       Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some Sil.DAuninit)) )
     else if Sil.exp_equal e_sub Sil.exp_minus_one then Some (Deref_minusone, desc true (Localise.deref_str_dangling None))
-    else match Prop.get_resource_undef_attribute actual_pre e_sub with
-      | Some (Sil.Aundef (s, loc, pos)) ->
-          Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
+    else match Prop.get_resource_attribute actual_pre e_sub with
       | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra)) ->
           Some (Deref_freed ra, desc true (Localise.deref_str_freed ra))
-      | _ -> None in
+      | _ ->
+          (match Prop.get_undef_attribute actual_pre e_sub with
+           | Some (Sil.Aundef (s, loc, pos)) ->
+               Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
+           | _ -> None) in
   let check_hpred = function
     | Sil.Hpointsto (lexp, se, _) ->
         check_dereference (Sil.root_of_lexp lexp) se
@@ -324,7 +326,7 @@ let check_path_errors_in_post caller_pname post post_path =
     Also, update any Aresource attributes to refer to the caller *)
 let post_process_post
     caller_pname callee_pname loc actual_pre ((post: Prop.exposed Prop.t), post_path) =
-  let actual_pre_has_freed_attribute e = match Prop.get_resource_undef_attribute actual_pre e with
+  let actual_pre_has_freed_attribute e = match Prop.get_resource_attribute actual_pre e with
     | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease })) -> true
     | _ -> false in
   let atom_update_alloc_attribute = function
@@ -1087,7 +1089,7 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
       let mark_id_as_retval (p, path) =
         (* check if the retval already has an important resource that should not be overwritten *)
         let has_important_resource_attr =
-          match Prop.get_resource_undef_attribute p ret_var with
+          match Prop.get_resource_attribute p ret_var with
           | Some (Sil.Aresource ({ Sil.ra_res = Sil.Rfile; })) -> true
           | _ -> false in
         if has_important_resource_attr then p, path
