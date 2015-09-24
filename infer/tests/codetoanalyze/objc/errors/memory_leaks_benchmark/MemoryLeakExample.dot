@@ -1,9 +1,9 @@
 digraph iCFG {
-48 [label="48:  DeclStmt \n   n$34=_fun_FBColorCreateWithGray(0.000000:double ,0.300000:double ) [line 95]\n  *&borderColor:struct CGColor *=n$34 [line 95]\n  REMOVE_TEMPS(n$34); [line 95]\n " shape="box"]
+48 [label="48:  DeclStmt \n   n$36=_fun_FBColorCreateWithGray(0.000000:double ,0.300000:double ) [line 95]\n  *&borderColor:struct CGColor *=n$36 [line 95]\n  REMOVE_TEMPS(n$36); [line 95]\n " shape="box"]
 	
 
 	 48 -> 47 ;
-47 [label="47:  Call _fun_CGColorRelease \n   n$33=*&borderColor:struct CGColor * [line 96]\n  _fun_CGColorRelease(n$33:struct CGColor *) [line 96]\n  REMOVE_TEMPS(n$33); [line 96]\n  NULLIFY(&borderColor,false); [line 96]\n  APPLY_ABSTRACTION; [line 96]\n " shape="box"]
+47 [label="47:  Call _fun_CGColorRelease \n   n$35=*&borderColor:struct CGColor * [line 96]\n  _fun_CGColorRelease(n$35:struct CGColor *) [line 96]\n  REMOVE_TEMPS(n$35); [line 96]\n  NULLIFY(&borderColor,false); [line 96]\n  APPLY_ABSTRACTION; [line 96]\n " shape="box"]
 	
 
 	 47 -> 46 ;
@@ -14,11 +14,11 @@ digraph iCFG {
 	
 
 	 45 -> 48 ;
-44 [label="44:  DeclStmt \n   n$32=_fun_CGBitmapContextCreateImage(0:struct CGContext *) [line 87]\n  *&newImage:struct CGImage *=n$32 [line 87]\n  REMOVE_TEMPS(n$32); [line 87]\n " shape="box"]
+44 [label="44:  DeclStmt \n   n$34=_fun_CGBitmapContextCreateImage(0:struct CGContext *) [line 87]\n  *&newImage:struct CGImage *=n$34 [line 87]\n  REMOVE_TEMPS(n$34); [line 87]\n " shape="box"]
 	
 
 	 44 -> 43 ;
-43 [label="43:  Call _fun_CGImageRelease \n   n$31=*&newImage:struct CGImage * [line 88]\n  _fun_CGImageRelease(n$31:struct CGImage *) [line 88]\n  REMOVE_TEMPS(n$31); [line 88]\n  NULLIFY(&newImage,false); [line 88]\n  APPLY_ABSTRACTION; [line 88]\n " shape="box"]
+43 [label="43:  Call _fun_CGImageRelease \n   n$33=*&newImage:struct CGImage * [line 88]\n  _fun_CGImageRelease(n$33:struct CGImage *) [line 88]\n  REMOVE_TEMPS(n$33); [line 88]\n  NULLIFY(&newImage,false); [line 88]\n  APPLY_ABSTRACTION; [line 88]\n " shape="box"]
 	
 
 	 43 -> 42 ;
@@ -29,11 +29,11 @@ digraph iCFG {
 	
 
 	 41 -> 44 ;
-40 [label="40:  DeclStmt \n   n$30=_fun_SecTrustCopyPublicKey(0:struct __SecTrust *) [line 81]\n  *&allowedPublicKey:struct __SecKey *=n$30 [line 81]\n  REMOVE_TEMPS(n$30); [line 81]\n " shape="box"]
+40 [label="40:  DeclStmt \n   n$32=_fun_SecTrustCopyPublicKey(0:struct __SecTrust *) [line 81]\n  *&allowedPublicKey:struct __SecKey *=n$32 [line 81]\n  REMOVE_TEMPS(n$32); [line 81]\n " shape="box"]
 	
 
 	 40 -> 39 ;
-39 [label="39:  Call _fun___objc_release_cf \n   n$29=*&allowedPublicKey:struct __SecKey * [line 82]\n  _fun___objc_release_cf(1:_Bool ,n$29:void *) [line 82]\n  REMOVE_TEMPS(n$29); [line 82]\n  NULLIFY(&allowedPublicKey,false); [line 82]\n  APPLY_ABSTRACTION; [line 82]\n " shape="box"]
+39 [label="39:  Call _fun___objc_release_cf \n   n$31=*&allowedPublicKey:struct __SecKey * [line 82]\n  _fun___objc_release_cf(1:_Bool ,n$31:void *) [line 82]\n  REMOVE_TEMPS(n$31); [line 82]\n  NULLIFY(&allowedPublicKey,false); [line 82]\n  APPLY_ABSTRACTION; [line 82]\n " shape="box"]
 	
 
 	 39 -> 38 ;
@@ -44,26 +44,26 @@ digraph iCFG {
 	
 
 	 37 -> 40 ;
-36 [label="36:  DeclStmt \n   n$28=_fun_SecTrustCopyPublicKey(0:struct __SecTrust *) [line 76]\n  *&allowedPublicKey:struct __SecKey *=n$28 [line 76]\n  REMOVE_TEMPS(n$28); [line 76]\n  NULLIFY(&allowedPublicKey,false); [line 76]\n  APPLY_ABSTRACTION; [line 76]\n " shape="box"]
+36 [label="36:  DeclStmt \n   n$29=*&trust:struct __SecTrust * [line 76]\n  n$30=_fun_SecTrustCopyPublicKey(n$29:struct __SecTrust *) [line 76]\n  *&allowedPublicKey:struct __SecKey *=n$30 [line 76]\n  REMOVE_TEMPS(n$29,n$30); [line 76]\n  NULLIFY(&allowedPublicKey,false); [line 76]\n  NULLIFY(&trust,false); [line 76]\n  APPLY_ABSTRACTION; [line 76]\n " shape="box"]
 	
 
 	 36 -> 35 ;
-35 [label="35: Exit MemoryLeakExample_test2 \n  " color=yellow style=filled]
+35 [label="35: Exit MemoryLeakExample_test2: \n  " color=yellow style=filled]
 	
 
-34 [label="34: Start MemoryLeakExample_test2\nFormals: \nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 74]\n  NULLIFY(&allowedPublicKey,false); [line 74]\n " color=yellow style=filled]
+34 [label="34: Start MemoryLeakExample_test2:\nFormals:  trust:struct __SecTrust *\nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 74]\n  NULLIFY(&allowedPublicKey,false); [line 74]\n " color=yellow style=filled]
 	
 
 	 34 -> 36 ;
-33 [label="33:  DeclStmt \n   n$26=*&rect:struct CGRect  [line 67]\n  n$27=_fun_CGRectGetHeight(n$26:struct CGRect ) [line 67]\n  *&lineThickness:double =(0.200000 * n$27) [line 67]\n  REMOVE_TEMPS(n$26,n$27); [line 67]\n  NULLIFY(&rect,false); [line 67]\n  NULLIFY(&lineThickness,false); [line 67]\n " shape="box"]
+33 [label="33:  DeclStmt \n   n$27=*&rect:struct CGRect  [line 67]\n  n$28=_fun_CGRectGetHeight(n$27:struct CGRect ) [line 67]\n  *&lineThickness:double =(0.200000 * n$28) [line 67]\n  REMOVE_TEMPS(n$27,n$28); [line 67]\n  NULLIFY(&rect,false); [line 67]\n  NULLIFY(&lineThickness,false); [line 67]\n " shape="box"]
 	
 
 	 33 -> 32 ;
-32 [label="32:  DeclStmt \n   n$25=_fun_CGPathCreateMutable() [line 70]\n  *&path1:struct CGPath *=n$25 [line 70]\n  REMOVE_TEMPS(n$25); [line 70]\n " shape="box"]
+32 [label="32:  DeclStmt \n   n$26=_fun_CGPathCreateMutable() [line 70]\n  *&path1:struct CGPath *=n$26 [line 70]\n  REMOVE_TEMPS(n$26); [line 70]\n " shape="box"]
 	
 
 	 32 -> 31 ;
-31 [label="31:  Call _fun___objc_release_cf \n   n$24=*&path1:struct CGPath * [line 71]\n  _fun___objc_release_cf(1:_Bool ,n$24:void *) [line 71]\n  REMOVE_TEMPS(n$24); [line 71]\n  NULLIFY(&path1,false); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
+31 [label="31:  Call _fun___objc_release_cf \n   n$25=*&path1:struct CGPath * [line 71]\n  _fun___objc_release_cf(1:_Bool ,n$25:void *) [line 71]\n  REMOVE_TEMPS(n$25); [line 71]\n  NULLIFY(&path1,false); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
 	
 
 	 31 -> 30 ;
@@ -74,11 +74,11 @@ digraph iCFG {
 	
 
 	 29 -> 33 ;
-28 [label="28:  DeclStmt \n   n$22=*&rect:struct CGRect  [line 59]\n  n$23=_fun_CGRectGetHeight(n$22:struct CGRect ) [line 59]\n  *&lineThickness:double =(0.200000 * n$23) [line 59]\n  REMOVE_TEMPS(n$22,n$23); [line 59]\n  NULLIFY(&rect,false); [line 59]\n  NULLIFY(&lineThickness,false); [line 59]\n " shape="box"]
+28 [label="28:  DeclStmt \n   n$23=*&rect:struct CGRect  [line 59]\n  n$24=_fun_CGRectGetHeight(n$23:struct CGRect ) [line 59]\n  *&lineThickness:double =(0.200000 * n$24) [line 59]\n  REMOVE_TEMPS(n$23,n$24); [line 59]\n  NULLIFY(&rect,false); [line 59]\n  NULLIFY(&lineThickness,false); [line 59]\n " shape="box"]
 	
 
 	 28 -> 27 ;
-27 [label="27:  DeclStmt \n   n$21=_fun_CGPathCreateMutable() [line 62]\n  *&path1:struct CGPath *=n$21 [line 62]\n  REMOVE_TEMPS(n$21); [line 62]\n  NULLIFY(&path1,false); [line 62]\n  APPLY_ABSTRACTION; [line 62]\n " shape="box"]
+27 [label="27:  DeclStmt \n   n$22=_fun_CGPathCreateMutable() [line 62]\n  *&path1:struct CGPath *=n$22 [line 62]\n  REMOVE_TEMPS(n$22); [line 62]\n  NULLIFY(&path1,false); [line 62]\n  APPLY_ABSTRACTION; [line 62]\n " shape="box"]
 	
 
 	 27 -> 26 ;
@@ -89,11 +89,11 @@ digraph iCFG {
 	
 
 	 25 -> 28 ;
-24 [label="24:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(0:struct __CFAttributedString *) [line 53]\n  *&framesetter:struct __CTFramesetter *=n$20 [line 53]\n  REMOVE_TEMPS(n$20); [line 53]\n " shape="box"]
+24 [label="24:  DeclStmt \n   n$21=_fun_CTFramesetterCreateWithAttributedString(0:struct __CFAttributedString *) [line 53]\n  *&framesetter:struct __CTFramesetter *=n$21 [line 53]\n  REMOVE_TEMPS(n$21); [line 53]\n " shape="box"]
 	
 
 	 24 -> 23 ;
-23 [label="23:  Call _fun___objc_release_cf \n   n$19=*&framesetter:struct __CTFramesetter * [line 54]\n  _fun___objc_release_cf(1:_Bool ,n$19:void *) [line 54]\n  REMOVE_TEMPS(n$19); [line 54]\n  NULLIFY(&framesetter,false); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
+23 [label="23:  Call _fun___objc_release_cf \n   n$20=*&framesetter:struct __CTFramesetter * [line 54]\n  _fun___objc_release_cf(1:_Bool ,n$20:void *) [line 54]\n  REMOVE_TEMPS(n$20); [line 54]\n  NULLIFY(&framesetter,false); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
 	
 
 	 23 -> 22 ;
@@ -104,14 +104,14 @@ digraph iCFG {
 	
 
 	 21 -> 24 ;
-20 [label="20:  DeclStmt \n   n$18=_fun_CTFramesetterCreateWithAttributedString(0:struct __CFAttributedString *) [line 48]\n  *&framesetter:struct __CTFramesetter *=n$18 [line 48]\n  REMOVE_TEMPS(n$18); [line 48]\n  NULLIFY(&framesetter,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+20 [label="20:  DeclStmt \n   n$18=*&str:struct __CFAttributedString * [line 48]\n  n$19=_fun_CTFramesetterCreateWithAttributedString(n$18:struct __CFAttributedString *) [line 48]\n  *&framesetter:struct __CTFramesetter *=n$19 [line 48]\n  REMOVE_TEMPS(n$18,n$19); [line 48]\n  NULLIFY(&framesetter,false); [line 48]\n  NULLIFY(&str,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
 	
 
 	 20 -> 19 ;
-19 [label="19: Exit MemoryLeakExample_test1 \n  " color=yellow style=filled]
+19 [label="19: Exit MemoryLeakExample_test1: \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start MemoryLeakExample_test1\nFormals: \nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 46]\n  NULLIFY(&framesetter,false); [line 46]\n " color=yellow style=filled]
+18 [label="18: Start MemoryLeakExample_test1:\nFormals:  str:struct __CFAttributedString *\nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 46]\n  NULLIFY(&framesetter,false); [line 46]\n " color=yellow style=filled]
 	
 
 	 18 -> 20 ;

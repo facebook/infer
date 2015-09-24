@@ -14,6 +14,7 @@ import static utils.matchers.DotFilesEqual.dotFileEqualTo;
 
 import com.google.common.collect.ImmutableList;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -71,7 +72,7 @@ public class BlockTest {
         newDotFile, dotFileEqualTo(block_dotty));
   }
 
-  @Test
+  @Test @Ignore
   public void whenCaptureRunOnBlockReleaseThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
 

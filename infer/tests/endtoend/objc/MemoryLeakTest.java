@@ -115,7 +115,7 @@ public class MemoryLeakTest {
         contains(
             MEMORY_LEAK,
             memory_leak_file,
-            "test1"
+            "test1:"
         )
     );
   }
@@ -171,7 +171,7 @@ public class MemoryLeakTest {
         contains(
             MEMORY_LEAK,
             memory_leak_file,
-            "test2"
+            "test2:"
         )
     );
   }

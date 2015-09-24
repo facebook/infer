@@ -43,9 +43,9 @@
   CFRelease(maString);
 }
 
-+ (void)test1
++ (void)test1: (CFAttributedStringRef) str
  {
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(nil);
+  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(str);
  }
 
  + (void)test1NoLeak
@@ -71,9 +71,9 @@
     CFRelease(path1);
 }
 
-+ (void) test2
++ (void) test2: (SecTrustRef) trust
 {
-    SecKeyRef allowedPublicKey = SecTrustCopyPublicKey(nil);
+    SecKeyRef allowedPublicKey = SecTrustCopyPublicKey(trust);
 }
 
 + (void) test2NoLeak
