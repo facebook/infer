@@ -15,14 +15,19 @@ COMMAND=("${CLANG_COMPILER}${XX}")
 # Remove command line options not supported by the opensource compiler or the plugins.
 for X in "$@"
 do
-    if [ "$X" != "-fapplication-extension" ]
-    then
+    if [ "$X" == "-fapplication-extension" ]; then
+        continue
+    elif [ "$X" == "-gmodules" ]; then
+        # gmodules is an alias for "-g -fmodule-format=obj -dwarf-ext-refs"
+        # but "-fmodule-format" is not available, so skip it for now.
+        COMMAND+=("-g" "-dwarf-ext-refs")
+    else
         COMMAND+=("$X")
     fi
 done
 
 # Never error on warnings. Clang is often more strict than Apple's version.
 # These arguments are appended to override previous opposite settings.
-COMMAND+=(-Wno-error -Qunused-arguments)
+COMMAND+=("-Wno-error" "-Qunused-arguments")
 
 "${COMMAND[@]}"
