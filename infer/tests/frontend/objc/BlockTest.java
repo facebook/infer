@@ -14,7 +14,7 @@ import static utils.matchers.DotFilesEqual.dotFileEqualTo;
 
 import com.google.common.collect.ImmutableList;
 
-import org.junit.Ignore;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -72,10 +72,11 @@ public class BlockTest {
         newDotFile, dotFileEqualTo(block_dotty));
   }
 
-  @Test @Ignore
+  @Test
   public void whenCaptureRunOnBlockReleaseThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
 
+    Assume.assumeTrue(InferRunner.runsSupportedXCode());
     String block_src =
         "infer/tests/codetoanalyze/objc/frontend/block/block_release.m";
 

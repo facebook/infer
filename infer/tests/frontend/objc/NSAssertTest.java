@@ -14,7 +14,7 @@ import static utils.matchers.DotFilesEqual.dotFileEqualTo;
 
 import com.google.common.collect.ImmutableList;
 
-import org.junit.Ignore;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -32,10 +32,11 @@ public class NSAssertTest {
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
 
 
-  @Test @Ignore
+  @Test
   public void whenCaptureRunOnPropertyThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
 
+    Assume.assumeTrue(InferRunner.runsSupportedXCode());
     String src = "infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m";
 
     String dotty = "infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.dot";

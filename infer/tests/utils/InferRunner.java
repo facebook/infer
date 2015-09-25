@@ -55,6 +55,8 @@ public class InferRunner {
   private static final String IPHONESIMULATOR_ISYSROOT_SUFFIX =
       "/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk";
 
+  private static final String CURRENT_XCODE_VERSION = "Xcode 7.0";
+
   private static HashMap<String, InferResults> inferResultsMap =
       new HashMap<String, InferResults>();
 
@@ -70,6 +72,21 @@ public class InferRunner {
     String line = br.readLine();
     process.waitFor();
     return line;
+  }
+
+  private static String getXCodeVersion() throws IOException, InterruptedException {
+    ProcessBuilder pb = new ProcessBuilder("xcodebuild", "-version");
+    Process process = pb.start();
+    InputStream is = process.getInputStream();
+    InputStreamReader isr = new InputStreamReader(is);
+    BufferedReader br = new BufferedReader(isr);
+    String line = br.readLine();
+    process.waitFor();
+    return line;
+  }
+
+  public static boolean runsSupportedXCode() throws IOException, InterruptedException {
+    return InferRunner.getXCodeVersion().equals(CURRENT_XCODE_VERSION);
   }
 
   private static ImmutableList<String> createInferJavaCommand(
