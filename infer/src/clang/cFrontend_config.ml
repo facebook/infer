@@ -136,15 +136,11 @@ let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:descripti
 
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
 
-let nonnull_attribute = "_Nonnull"
-
 let pseudo_object_type = "<pseudo-object type>"
 
 let count = "count"
 
 let objects = "objects"
-
-let ns_array_ptr = "NSArray *"
 
 let enumerateObjectsUsingBlock = "enumerateObjectsUsingBlock:"
 
@@ -154,14 +150,6 @@ let pointer_type_index = ref Clang_ast_main.PointerMap.empty
 
 (* Map from type pointers or declaration pointers to sil types *)
 let sil_types_map = ref Clang_ast_main.PointerMap.empty
-
-let weak_attribute = "__weak"
-
-let strong_attribtue = "__strong"
-
-let unsafe_unretained_attribute = "__unsafe_unretained"
-
-let autoreleasing_atribute = "__autoreleasing"
 
 let type_pointer_prefix = "internal_type"
 

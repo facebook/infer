@@ -183,19 +183,6 @@ let is_class typ =
       (Mangled.to_string name) = CFrontend_config.objc_class
   | _ -> false
 
-let sil_type_of_attr_pointer_type typ raw_type =
-  let pointer_attribute_of_objc_attribute objc_attribute =
-    if Utils.string_is_suffix CFrontend_config.weak_attribute objc_attribute
-    then Sil.Pk_objc_weak
-    else if Utils.string_is_suffix CFrontend_config.strong_attribtue objc_attribute
-    then Sil.Pk_pointer
-    else if Utils.string_is_suffix CFrontend_config.unsafe_unretained_attribute objc_attribute
-    then Sil.Pk_objc_unsafe_unretained
-    else if Utils.string_is_suffix CFrontend_config.autoreleasing_atribute objc_attribute
-    then Sil.Pk_objc_autoreleasing
-    else Sil.Pk_pointer in
-  Sil.Tptr (typ, (pointer_attribute_of_objc_attribute raw_type))
-
 let rec return_type_of_function_type_ptr type_ptr =
   let open Clang_ast_t in
   match Ast_utils.get_type type_ptr with

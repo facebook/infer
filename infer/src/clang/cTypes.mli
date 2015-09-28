@@ -35,8 +35,6 @@ val remove_pointer_to_typ : Sil.typ -> Sil.typ
 
 val is_class : Sil.typ -> bool
 
-val sil_type_of_attr_pointer_type : Sil.typ -> string -> Sil.typ
-
 val return_type_of_function_type : Clang_ast_t.qual_type -> Clang_ast_t.pointer
 
 val expand_structured_type : Sil.tenv -> Sil.typ -> Sil.typ

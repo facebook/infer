@@ -66,10 +66,27 @@ let sil_type_of_builtin_type_kind builtin_type_kind =
   | `ObjCClass -> get_builtin_objc_type `ObjCClass
   | _ -> Sil.Tvoid
 
+let pointer_attribute_of_objc_attribute attr_info =
+  match attr_info.Clang_ast_t.ati_lifetime with
+  | `OCL_None | `OCL_Strong -> Sil.Pk_pointer
+  | `OCL_ExplicitNone -> Sil.Pk_objc_unsafe_unretained
+  | `OCL_Weak -> Sil.Pk_objc_weak
+  | `OCL_Autoreleasing -> Sil.Pk_objc_autoreleasing
+
 let rec build_array_type translate_decl tenv type_ptr n =
   let array_type = qual_type_ptr_to_sil_type translate_decl tenv type_ptr in
   let exp = Sil.exp_int (Sil.Int.of_int64 (Int64.of_int n)) in
   Sil.Tarray (array_type, exp)
+
+and sil_type_of_attr_type translate_decl tenv type_info attr_info =
+  match type_info.Clang_ast_t.ti_desugared_type with
+  | Some type_ptr ->
+      (match Ast_utils.get_type type_ptr with
+       | Some Clang_ast_t.ObjCObjectPointerType (type_info', type_ptr') ->
+           let typ = qual_type_ptr_to_sil_type translate_decl tenv type_ptr' in
+           Sil.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
+       | _ -> qual_type_ptr_to_sil_type translate_decl tenv type_ptr)
+  | None -> Sil.Tvoid
 
 and sil_type_of_c_type translate_decl tenv c_type =
   let open Clang_ast_t in
@@ -113,15 +130,8 @@ and sil_type_of_c_type translate_decl tenv c_type =
   | LValueReferenceType (type_info, type_ptr) ->
       let typ = qual_type_ptr_to_sil_type translate_decl tenv type_ptr in
       Sil.Tptr (typ, Sil.Pk_reference)
-  | AttributedType (type_info, _) ->
-      (match type_info.Clang_ast_t.ti_desugared_type with
-       | Some type_ptr ->
-           (match Ast_utils.get_type type_ptr  with
-            | Some ObjCObjectPointerType (type_info', type_ptr') ->
-                let typ = qual_type_ptr_to_sil_type translate_decl tenv type_ptr' in
-                CTypes.sil_type_of_attr_pointer_type typ type_info.Clang_ast_t.ti_raw
-            | _ -> qual_type_ptr_to_sil_type translate_decl tenv type_ptr)
-       | None -> Sil.Tvoid)
+  | AttributedType (type_info, attr_info) ->
+      sil_type_of_attr_type translate_decl tenv type_info attr_info
   | _ -> (* TypedefType, etc *)
       let type_info = Clang_ast_proj.get_type_tuple c_type in
       match type_info.Clang_ast_t.ti_desugared_type with
