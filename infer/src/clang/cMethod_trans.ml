@@ -45,7 +45,7 @@ let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info false) then
     match function_method_decl_info with
     | Cpp_Meth_decl_info (_, class_name, _) ->
-        let class_type = Ast_expressions.create_struct_type class_name in
+        let class_type = Ast_expressions.create_class_type class_name in
         [(CFrontend_config.this, class_type, None)]
     | ObjC_Meth_decl_info (_, class_name) ->
         let class_type = Ast_expressions.create_class_type class_name in

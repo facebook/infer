@@ -78,20 +78,24 @@ let create_csu opt_type =
   | _ -> assert false
 
 (* We need to take the name out of the type as the struct can be anonymous*)
-let get_record_name_csu opt_type name_info =
-  let name_str = name_info.Clang_ast_t.ni_name in
+let get_record_name_csu decl =
+  let open Clang_ast_t in
+  let name_info, opt_type, should_be_class = match decl with
+    | RecordDecl (_, name_info, opt_type, _, _, _, _) -> name_info, opt_type, false
+    | CXXRecordDecl (_, name_info, opt_type, _, _, _, _, cxx_record_info) ->
+        (* we use Sil.Class for C++ because we expect Sil.Class csu from *)
+        (* types that have methods. And in C++ struct/class/union can have methods *)
+        name_info, opt_type, not cxx_record_info.xrdi_is_c_like
+    | _-> assert false in
+  let name_str = name_info.ni_name in
   let csu, type_name = create_csu opt_type in
+  let csu' = if should_be_class then Sil.Class else csu in
   let prefix = Ast_utils.get_qualifier_string name_info in
   let name =
     if (String.length name_str = 0) then prefix ^ type_name else prefix ^ name_str in
-  csu, name
+  csu', name
 
-let get_record_name decl =
-  let name_info, opt_type = match decl with
-    | Clang_ast_t.RecordDecl (_, name_info, opt_type, _, _, _, _)
-    | Clang_ast_t.CXXRecordDecl (_, name_info, opt_type, _, _, _, _, _) -> name_info, opt_type
-    | _ -> assert false in
-  snd (get_record_name_csu opt_type name_info)
+let get_record_name decl = snd (get_record_name_csu decl)
 
 let get_method_decls parent decl_list =
   let open Clang_ast_t in
@@ -155,7 +159,7 @@ and get_declaration_type tenv namespace decl =
   match decl with
   | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
   | RecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info) ->
-      let csu, name = get_record_name_csu opt_type name_info in
+      let csu, name = get_record_name_csu decl in
       let mangled_name = Mangled.from_string name in
       let sil_typename = Sil.Tvar (Sil.TN_csu (csu, mangled_name)) in
       (* temporarily saves the type name to avoid infinite loops in recursive types *)
