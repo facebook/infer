@@ -82,13 +82,9 @@ struct
     | _ -> false
 
   let objc_exp_of_type_block fun_exp_stmt =
-    let is_block_qt qt =
-      match Str.split (Str.regexp_string "(^)") qt.Clang_ast_t.qt_raw with
-      | [_; _] -> true
-      | _ -> false in
     match fun_exp_stmt with
     | Clang_ast_t.ImplicitCastExpr(_, _, ei, _)
-      when is_block_qt ei.Clang_ast_t.ei_qual_type -> true
+      when CTypes.is_block_type ei.Clang_ast_t.ei_qual_type -> true
     | _ -> false
 
   (* This function add in tenv a class representing an objc block. *)
@@ -228,7 +224,7 @@ struct
     stringLiteral_trans trans_state stmt_info expr_info selector
 
   let objCEncodeExpr_trans trans_state stmt_info expr_info qual_type =
-    stringLiteral_trans trans_state stmt_info expr_info (CTypes.get_type qual_type)
+    stringLiteral_trans trans_state stmt_info expr_info (Ast_utils.string_of_qual_type qual_type)
 
   let objCProtocolExpr_trans trans_state stmt_info expr_info decl_ref =
     let name = (match decl_ref.Clang_ast_t.dr_name with

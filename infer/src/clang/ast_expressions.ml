@@ -76,13 +76,6 @@ let stmt_info_with_fresh_pointer stmt_info = {
   si_source_range = stmt_info.Clang_ast_t.si_source_range;
 }
 
-let create_qual_type s = {
-  Clang_ast_t.qt_raw = s;
-  qt_desugared = Some s;
-  (* pointer needs to be set when we start using these, non trivial to do though *)
-  qt_type_ptr = Ast_utils.get_invalid_pointer ();
-}
-
 let create_qual_type_with_just_pointer pointer =
   {
     Clang_ast_t.qt_raw = "";
@@ -93,7 +86,7 @@ let create_qual_type_with_just_pointer pointer =
 let get_constant_qual_type s =
   let pointer = CFrontend_config.type_pointer_prefix ^ s in
   {
-    Clang_ast_t.qt_raw = s;
+    Clang_ast_t.qt_raw = "";
     qt_desugared = None;
     qt_type_ptr = pointer
   }

@@ -302,7 +302,12 @@ struct
     | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nonnull
     | _ -> false
 
-end
+  let string_of_qual_type qt =
+    match get_desugared_type qt.Clang_ast_t.qt_type_ptr with
+    | Some typ -> (Clang_ast_proj.get_type_tuple typ).Clang_ast_t.ti_raw
+    | None -> ""
+
+end 
 
 (* Global counter for anonymous block*)
 let block_counter = ref 0
@@ -423,7 +428,7 @@ struct
   let mk_class_field_name class_name field_name =
     Ident.create_fieldname (Mangled.mangled field_name (class_name^"_"^field_name)) 0
 
-  let mk_procname_from_function name function_decl_info_opt type_name =
+  let mk_procname_from_function name function_decl_info_opt qt =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
@@ -437,7 +442,7 @@ struct
     let type_string =
       match !CFrontend_config.language with
       | CFrontend_config.CPP
-      | CFrontend_config.OBJCPP -> type_name
+      | CFrontend_config.OBJCPP -> Ast_utils.string_of_qual_type qt
       | _ -> "" in
     let mangled = file ^ type_string in
     if String.length mangled == 0 then
@@ -450,7 +455,8 @@ struct
     let mangled = Procname.mangled_of_objc_method_kind method_kind in
     Procname.mangled_c_method class_name method_name mangled
 
-  let mk_procname_from_cpp_method class_name method_name type_name =
+  let mk_procname_from_cpp_method class_name method_name qt =
+    let type_name = Ast_utils.string_of_qual_type qt in
     let type_name_crc = Some (CRC.crc16 type_name) in
     Procname.mangled_c_method class_name method_name type_name_crc
 

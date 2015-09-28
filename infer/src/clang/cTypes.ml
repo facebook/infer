@@ -13,11 +13,6 @@ open Utils
 open CFrontend_utils
 module L = Logging
 
-let get_type qt =
-  match qt.Clang_ast_t.qt_desugared with
-  | Some t -> t
-  | _ -> qt.Clang_ast_t.qt_raw
-
 let get_type_from_expr_info ei =
   ei.Clang_ast_t.ei_qual_type
 
@@ -46,67 +41,6 @@ let lookup_var_type context pvar =
           "WARNING: Variable '%s' not found in local+formal when looking for its type. Returning void.\n%!"
           (Sil.pvar_to_string pvar);
         Sil.Tvoid
-
-(* Extract the type out of a statement. This is useful when the statement  *)
-(* denotes actually an expression                                          *)
-let extract_type_from_stmt s =
-  let open Clang_ast_t in
-  match s with
-  | BinaryConditionalOperator (_, _, expr_info) | ConditionalOperator (_, _, expr_info)
-  | AddrLabelExpr (_, _, expr_info, _) | ArraySubscriptExpr (_, _, expr_info)
-  | ArrayTypeTraitExpr (_, _, expr_info) | AsTypeExpr (_, _, expr_info)
-  | AtomicExpr (_, _, expr_info) | BinaryOperator (_, _, expr_info, _)
-  | CompoundAssignOperator (_, _, expr_info, _, _)
-  | BlockExpr (_, _, expr_info, _) | CXXBindTemporaryExpr (_, _ , expr_info, _)
-  | CXXBoolLiteralExpr (_, _, expr_info, _) | CXXConstructExpr (_, _, expr_info, _)
-  | CXXTemporaryObjectExpr (_, _, expr_info, _) | CXXDefaultArgExpr (_, _, expr_info)
-  | CXXDefaultInitExpr (_, _, expr_info) | CXXDeleteExpr (_, _, expr_info, _)
-  | CXXDependentScopeMemberExpr (_, _, expr_info) | CXXNewExpr (_, _, expr_info, _)
-  | CXXNoexceptExpr (_, _, expr_info) | CXXNullPtrLiteralExpr (_, _, expr_info)
-  | CXXPseudoDestructorExpr (_, _, expr_info) | CXXScalarValueInitExpr (_, _, expr_info)
-  | CXXStdInitializerListExpr (_, _, expr_info) | CXXThisExpr (_, _, expr_info)
-  | CXXThrowExpr (_, _, expr_info) | CXXTypeidExpr (_, _, expr_info)
-  | CXXUnresolvedConstructExpr (_, _, expr_info) | CXXUuidofExpr (_, _, expr_info)
-  | CallExpr (_, _, expr_info) | CUDAKernelCallExpr (_, _, expr_info)
-  | CXXMemberCallExpr (_, _, expr_info) | CXXOperatorCallExpr (_, _, expr_info)
-  | UserDefinedLiteral (_, _, expr_info) | CStyleCastExpr (_, _, expr_info, _, _)
-  | CXXFunctionalCastExpr (_, _, expr_info, _, _) | CXXConstCastExpr (_, _, expr_info, _, _, _)
-  | CXXDynamicCastExpr (_, _, expr_info, _, _, _) | CXXReinterpretCastExpr(_, _, expr_info, _, _, _)
-  | CXXStaticCastExpr (_, _, expr_info, _, _, _) | ObjCBridgedCastExpr (_, _, expr_info, _, _)
-  | ImplicitCastExpr (_, _, expr_info, _) | CharacterLiteral (_, _, expr_info, _ )
-  | ChooseExpr (_, _, expr_info) | CompoundLiteralExpr (_, _, expr_info)
-  | ConvertVectorExpr (_, _, expr_info) | DeclRefExpr (_, _, expr_info, _)
-  | DependentScopeDeclRefExpr (_, _, expr_info) | DesignatedInitExpr (_, _, expr_info)
-  | ExprWithCleanups (_, _, expr_info, _) | ExpressionTraitExpr (_, _, expr_info)
-  | ExtVectorElementExpr (_, _, expr_info) | FloatingLiteral (_, _, expr_info, _)
-  | FunctionParmPackExpr (_, _, expr_info) | GNUNullExpr (_, _, expr_info)
-  | GenericSelectionExpr (_, _, expr_info) | ImaginaryLiteral (_, _, expr_info)
-  | ImplicitValueInitExpr (_, _, expr_info)
-  | InitListExpr (_, _, expr_info) | IntegerLiteral(_, _, expr_info, _)
-  | LambdaExpr (_, _, expr_info, _) | MSPropertyRefExpr (_, _, expr_info)
-  | MaterializeTemporaryExpr (_, _, expr_info, _)
-  | MemberExpr (_, _, expr_info, _) | ObjCArrayLiteral (_, _, expr_info)
-  | ObjCBoolLiteralExpr (_, _, expr_info , _) | ObjCBoxedExpr (_, _, expr_info, _)
-  | ObjCDictionaryLiteral (_, _, expr_info) | ObjCEncodeExpr (_, _, expr_info, _)
-  | ObjCIndirectCopyRestoreExpr (_, _, expr_info) | ObjCIsaExpr (_, _, expr_info)
-  | ObjCIvarRefExpr(_, _, expr_info, _) | ObjCMessageExpr(_, _, expr_info, _)
-  | ObjCPropertyRefExpr(_, _, expr_info, _) | ObjCProtocolExpr (_, _, expr_info, _)
-  | ObjCSelectorExpr (_, _, expr_info, _) | ObjCStringLiteral (_, _, expr_info)
-  | ObjCSubscriptRefExpr(_, _, expr_info, _) | OffsetOfExpr (_, _, expr_info)
-  | OpaqueValueExpr(_, _, expr_info, _) | UnresolvedLookupExpr (_, _, expr_info, _, _)
-  | UnresolvedMemberExpr (_, _, expr_info, _) | PackExpansionExpr (_, _, expr_info)
-  | ParenExpr (_, _, expr_info) | ParenListExpr (_, _, expr_info)
-  | PredefinedExpr (_, _, expr_info, _) | PseudoObjectExpr (_, _, expr_info)
-  | ShuffleVectorExpr (_, _, expr_info) | SizeOfPackExpr (_, _, expr_info)
-  | StmtExpr (_, _, expr_info) | StringLiteral (_, _, expr_info, _)
-  | SubstNonTypeTemplateParmExpr (_, _, expr_info)
-  | SubstNonTypeTemplateParmPackExpr (_, _, expr_info)
-  | TypeTraitExpr (_, _, expr_info) | UnaryExprOrTypeTraitExpr (_, _, expr_info, _)
-  | UnaryOperator(_, _, expr_info, _)
-  | VAArgExpr (_, _, expr_info) -> expr_info.Clang_ast_t.ei_qual_type
-  | _ -> (* For the other case we cannot get the type info *)
-      Printing.log_err "WARNING: Could not get type of statement '%s'\n%!" (Clang_ast_j.string_of_stmt s);
-      assert false
 
 let get_desugared_type t =
   match t.Clang_ast_t.qt_desugared with
@@ -145,14 +79,6 @@ let classname_of_type typ =
       Printing.log_out
         "Classname of type cannot be extracted in type %s" (Sil.typ_to_string typ);
       "undefined"
-
-let get_raw_qual_type_decl_ref_exp_info decl_ref_expr_info =
-  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-  | Some d ->
-      (match d.Clang_ast_t.dr_qual_type with
-       | Some qt -> Some qt.Clang_ast_t.qt_raw
-       | None -> None)
-  | None -> None
 
 (* Iterates over the tenv to find the value of the enumeration constant    *)
 (* using its name Here we assume that the enumeration constant have        *)
@@ -202,6 +128,12 @@ let rec return_type_of_function_type_ptr type_ptr =
 
 let return_type_of_function_type qt =
   return_type_of_function_type_ptr qt.Clang_ast_t.qt_type_ptr
+
+let is_block_type qt =
+  let open Clang_ast_t in
+  match Ast_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr with
+  | Some BlockPointerType _ -> true
+  | _ -> false
 
 (* Expand a named type Tvar if it has a definition in tenv. This is used for Tenum, Tstruct, etc. *)
 let rec expand_structured_type tenv typ =

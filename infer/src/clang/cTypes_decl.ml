@@ -109,11 +109,10 @@ let get_method_decls parent decl_list =
 
 let get_class_methods tenv class_name namespace decl_list =
   let process_method_decl = function
-    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, qual_type, function_decl_info) ->
+    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, qt, function_decl_info) ->
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Declaring method '%s'.\n" method_name;
-        let typ = CTypes.get_type qual_type in
-        let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name typ in
+        let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name qt in
         Some method_proc
     | _ -> None in
   (* poor mans list_filter_map *)
@@ -147,9 +146,11 @@ let rec get_struct_fields tenv record_name namespace decl_list =
         let typ = qual_type_to_sil_type tenv qual_type in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
-    | CXXRecordDecl _ | RecordDecl _ ->
+    | CXXRecordDecl (decl_info, _, _, _, _, _, _, _)
+    | RecordDecl (decl_info, _, _, _, _, _, _) ->
         (* C++/C Records treated in the same way*)
-        ignore (add_types_from_decl_to_tenv tenv namespace decl); []
+        if not decl_info.Clang_ast_t.di_is_implicit then
+          ignore (add_types_from_decl_to_tenv tenv namespace decl); []
     | _ -> [] in
   list_flatten (list_map do_one_decl decl_list)
 
@@ -209,10 +210,6 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
     match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
     | `Class qt -> qt
     | _ -> expr_info.Clang_ast_t.ei_qual_type in
-  qual_type_to_sil_type tenv qt
-
-let extract_sil_type_from_stmt tenv s =
-  let qt = CTypes.extract_type_from_stmt s in
   qual_type_to_sil_type tenv qt
 
 let get_type_curr_class tenv curr_class_opt =

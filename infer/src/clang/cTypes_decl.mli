@@ -30,8 +30,6 @@ val class_from_pointer_type : Sil.tenv -> Clang_ast_t.qual_type -> string
 val get_class_type_np : Sil.tenv -> Clang_ast_t.expr_info ->
   Clang_ast_t.obj_c_message_expr_info -> Sil.typ
 
-val extract_sil_type_from_stmt : Sil.tenv -> Clang_ast_t.stmt -> Sil.typ
-
 val get_type_curr_class : Sil.tenv -> CContext.curr_class -> Sil.typ
 
 val get_type_from_expr_info : Clang_ast_t.expr_info -> Sil.tenv -> Sil.typ

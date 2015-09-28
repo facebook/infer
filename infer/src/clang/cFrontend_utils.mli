@@ -90,6 +90,8 @@ sig
       NOTE: this function needs extending to handle objC types *)
   val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl
 
+  val string_of_qual_type : Clang_ast_t.qual_type -> string
+
 end
 
 module General_utils :
@@ -132,10 +134,10 @@ sig
 
   val mk_procname_from_objc_method : string -> string -> Procname.objc_method_kind -> Procname.t
 
-  val mk_procname_from_function : string ->
-    (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info) option -> string -> Procname.t
+  val mk_procname_from_function : string -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info)
+      option -> Clang_ast_t.qual_type -> Procname.t
 
-  val mk_procname_from_cpp_method : string -> string -> string -> Procname.t
+  val mk_procname_from_cpp_method : string -> string -> Clang_ast_t.qual_type -> Procname.t
 
   val mk_class_field_name : string -> string -> Ident.fieldname
 

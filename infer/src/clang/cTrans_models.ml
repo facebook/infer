@@ -99,8 +99,8 @@ let is_toll_free_bridging pn_opt =
 (** If the function is a builtin model, return the model, otherwise return the function *)
 let builtin_predefined_model fun_stmt sil_fe =
   match get_func_type_from_stmt fun_stmt with
-  | Some exp ->
-      let typ = CTypes.get_type exp in
+  | Some typ ->
+      let typ = Ast_utils.string_of_qual_type typ in
       (match sil_fe with
        | Sil.Const (Sil.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
        | Sil.Const (Sil.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->

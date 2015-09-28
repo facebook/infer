@@ -21,8 +21,6 @@ val dummy_source_range : unit -> source_range
 
 val dummy_stmt_info : unit -> stmt_info
 
-val create_qual_type : string -> qual_type
-
 val create_char_star_type : qual_type
 
 val create_id_type : qual_type
