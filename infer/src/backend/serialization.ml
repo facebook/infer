@@ -75,6 +75,7 @@ let create_serializer (key : key) : 'a serializer =
     let timeout = 1.0 in
     let catch_exn = function
       | End_of_file -> true
+      | Failure _ -> true (* handle input_value: truncated object *)
       | _ -> false in
     (* Retry to read for 1 second in case of end of file, *)
     (* which indicates that another process is writing the same file. *)
