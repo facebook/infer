@@ -19,7 +19,10 @@ type 'a serializer = (string -> 'a option) * (DB.filename -> 'a option) * (DB.fi
 type key = int
 
 (** current key for tenv, procedure summary, cfg, error trace, call graph *)
-let tenv_key, summary_key, cfg_key, trace_key, cg_key, analysis_results_key, cluster_key = (425184201, 160179325, 1062389858, 221487792, 477305409, 799050016, 579094948)
+let tenv_key, summary_key, cfg_key, trace_key, cg_key,
+    analysis_results_key, cluster_key, attributes_key =
+  425184201, 160179325, 1062389858, 221487792, 477305409,
+  799050016, 579094948, 972393003
 
 (** version of the binary files, to be incremented for each change *)
 let version = 24

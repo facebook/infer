@@ -138,11 +138,13 @@ let iterate_procedure_callbacks all_procs exe_env proc_name =
     Cfg.Procdesc.find_from_name cfg proc_name in
 
   let update_time proc_name elapsed =
-    let prev_summary = Specs.get_summary_unsafe proc_name in
-    let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
-    let stats = { prev_summary.Specs.stats with Specs.stats_time = stats_time } in
-    let summary = { prev_summary with Specs.stats = stats } in
-    Specs.add_summary proc_name summary in
+    match Specs.get_summary proc_name with
+    | Some prev_summary ->
+        let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
+        let stats = { prev_summary.Specs.stats with Specs.stats_time = stats_time } in
+        let summary = { prev_summary with Specs.stats = stats } in
+        Specs.add_summary proc_name summary
+    | None -> () in
 
   Option.may
     (fun (idenv, tenv, proc_name, proc_desc, language) ->
@@ -213,16 +215,8 @@ let iterate_callbacks store_summary call_graph exe_env =
     (* Return all values of the map *)
     list_map snd (StringMap.bindings cluster_map) in
   let reset_summary proc_name =
-    let cfg_opt =
-      try
-        Some (Exe_env.get_cfg exe_env proc_name) with
-      | Not_found -> None in
-    let procdesc_opt = match cfg_opt with
-      | Some cfg ->
-          Cfg.Procdesc.find_from_name cfg proc_name
-      | None -> None in
     let attributes_opt =
-      Option.map Cfg.Procdesc.get_attributes procdesc_opt in
+      Specs.proc_resolve_attributes proc_name in
     Specs.reset_summary call_graph proc_name attributes_opt in
 
 

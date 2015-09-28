@@ -37,7 +37,7 @@ let query_ast =
 module Err = struct
   (** Update the summary with stats from the checker. *)
   let update_summary proc_name proc_desc =
-    let old_summ = Specs.get_summary_unsafe proc_name in
+    let old_summ = Specs.get_summary_unsafe "codeQuery" proc_name in
     let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
     let specs =
       let spec =

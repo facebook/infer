@@ -24,9 +24,6 @@ val freeze : initial -> t
 (** create a new execution environment, given an optional set restricting the active procedures *)
 val create : Procname.Set.t option -> initial
 
-(** Add a callee to the exe_env, and extend the file_map and proc_map. *)
-val add_callee : t -> DB.source_file -> Procname.t -> unit
-
 (** add call graph from the source dir in the spec db, with relative tenv and cfg, to the execution environment *)
 val add_cg : initial -> DB.source_dir -> Cg.t option
 

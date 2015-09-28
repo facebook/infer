@@ -302,14 +302,15 @@ let java_get_vararg_values node pvar idenv pdesc =
     | None -> () in
   !values
 
-let proc_calls get_proc_desc pname pdesc filter : (Procname.t * Cfg.Procdesc.t) list =
+let proc_calls resolve_attributes pname pdesc filter : (Procname.t * ProcAttributes.t) list =
   let res = ref [] in
   let do_instruction node instr = match instr with
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _) ->
         begin
-          match get_proc_desc callee_pn with
-          | Some callee_pd ->
-              if filter callee_pn callee_pd then res := (callee_pn, callee_pd) :: !res
+          match resolve_attributes callee_pn with
+          | Some callee_attributes ->
+              if filter callee_pn callee_attributes then
+                res := (callee_pn, callee_attributes) :: !res
           | None -> ()
         end
     | _ -> () in

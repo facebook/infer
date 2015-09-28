@@ -27,9 +27,10 @@ let from_env_variable var_name =
     let _ = Sys.getenv var_name in true
   with Not_found -> false
 
-let specs_dir_name = "specs"
+let attributes_dir_name = "attributes"
 let captured_dir_name = "captured"
 let sources_dir_name = "sources"
+let specs_dir_name = "specs"
 
 let default_in_zip_results_dir = "infer"
 

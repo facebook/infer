@@ -58,7 +58,7 @@ let should_perform_transition gr proc_name : Procname.t list =
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
 let transition_footprint_re_exe proc_name joined_pres =
   L.out "Transition %a from footprint to re-exe@." Procname.pp proc_name;
-  let summary = Specs.get_summary_unsafe proc_name in
+  let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
   let summary' =
     if !Config.only_footprint then
       { summary with
@@ -166,7 +166,7 @@ let trace = ref false
 let procs_become_done gr pname : Procname.t list =
   let recursive_dependents = Cg.get_recursive_dependents gr pname in
   let nonrecursive_dependents = Cg.get_nonrecursive_dependents gr pname in
-  let summary = Specs.get_summary_unsafe pname in
+  let summary = Specs.get_summary_unsafe "procs_become_done" pname in
   let is_done = Specs.get_timestamp summary <> 0 &&
                 (!Config.only_footprint || Specs.get_phase pname == Specs.RE_EXECUTION) &&
                 Procname.Set.for_all (proc_is_done gr) nonrecursive_dependents &&
@@ -184,7 +184,7 @@ let post_process_procs exe_env procs_done =
   let check_no_specs pn =
     if Specs.get_specs pn = [] then begin
       Errdesc.warning_err
-        (Specs.get_summary_unsafe pn).Specs.attributes.ProcAttributes.loc
+        (Specs.get_summary_unsafe "post_process_procs" pn).Specs.attributes.ProcAttributes.loc
         "No specs found for %a@." Procname.pp pn
     end in
   let cg = Exe_env.get_cg exe_env in
@@ -305,7 +305,7 @@ end
 let main_algorithm exe_env analyze_proc filter_out process_result : unit =
   let call_graph = Exe_env.get_cg exe_env in
   let filter_initial (pname, w) =
-    let summary = Specs.get_summary_unsafe pname in
+    let summary = Specs.get_summary_unsafe "main_algorithm" pname in
     Specs.get_timestamp summary = 0 in
   wpnames_todo := WeightedPnameSet.filter filter_initial (compute_weighed_pnameset call_graph);
   let wpnames_address_of = (* subset of the procedures whose address is taken *)
@@ -319,16 +319,19 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
     (* Return true if [pname] is not up to date and it can be analyzed right now *)
     Procname.Set.for_all
       (proc_is_done call_graph) (Cg.get_nonrecursive_dependents call_graph pname) &&
-    (Specs.get_timestamp (Specs.get_summary_unsafe pname) = 0
+    (Specs.get_timestamp (Specs.get_summary_unsafe "main_algorithm" pname) = 0
      || not (proc_is_up_to_date call_graph pname)) in
   let process_one_proc pname (calls: Cg.in_out_calls) =
     DB.current_source :=
-      (Specs.get_summary_unsafe pname).Specs.attributes.ProcAttributes.loc.Location.file;
+      (Specs.get_summary_unsafe "main_algorithm" pname)
+      .Specs.attributes.ProcAttributes.loc.Location.file;
     if !trace then
       begin
         let whole_seconds = false in
         L.err "@[<v 3>   *********** Summary of %a ***********@," Procname.pp pname;
-        L.err "%a@]@\n" (Specs.pp_summary pe_text whole_seconds) (Specs.get_summary_unsafe pname)
+        L.err "%a@]@\n"
+          (Specs.pp_summary pe_text whole_seconds)
+          (Specs.get_summary_unsafe "main_algorithm" pname)
       end;
     if filter_out call_graph pname
     then
@@ -376,7 +379,7 @@ let interprocedural_algorithm
     try _analyze_proc exe_env pname with
     | exn ->
         Reporting.log_error pname exn;
-        let prev_summary = Specs.get_summary_unsafe pname in
+        let prev_summary = Specs.get_summary_unsafe "interprocedural_algorithm" pname in
         let timestamp = max 1 (prev_summary.Specs.timestamp) in
         let stats = { prev_summary.Specs.stats with Specs.stats_timeout = true } in
         let summ =

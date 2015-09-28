@@ -292,6 +292,7 @@ module Results_dir = struct
   let init () =
     create_dir !Config.results_dir;
     create_dir (specs_dir ());
+    create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
     create_dir (path_to_filename Abs_root [Config.sources_dir_name]);
     create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
     if not (source_file_equal !current_source source_file_empty) then

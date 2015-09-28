@@ -157,9 +157,6 @@ module Node : sig
   (** Add declarations for local variables and return variable to the node *)
   val add_locals_ret_declaration : t -> (Mangled.t * Sil.typ) list -> unit
 
-  (** restrict the cfg to the given enabled (active and not shadowed) procedures *)
-  val cfg_restrict_enabled : cfg -> DB.source_file -> Procname.Set.t option -> unit
-
   (** Compare two nodes *)
   val compare : t -> t -> int
 

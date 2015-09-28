@@ -51,23 +51,25 @@ module MkCallback
 struct
   (** Update the summary with stats from the checker. *)
   let update_summary proc_name proc_desc final_typestate_opt =
-    let old_summ = Specs.get_summary_unsafe proc_name in
-    let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
-    let method_annotation =
-      (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
-    let new_summ =
-      {
-        old_summ with
-        Specs.nodes = nodes;
-        Specs.payload = Extension.mkpayload final_typestate_opt;
-        Specs.attributes =
+    match Specs.get_summary proc_name with
+    | Some old_summ ->
+        let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
+        let method_annotation =
+          (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
+        let new_summ =
           {
-            old_summ.Specs.attributes with
-            ProcAttributes.loc = Cfg.Procdesc.get_loc proc_desc;
-            method_annotation;
-          };
-      } in
-    Specs.add_summary proc_name new_summ
+            old_summ with
+            Specs.nodes = nodes;
+            Specs.payload = Extension.mkpayload final_typestate_opt;
+            Specs.attributes =
+              {
+                old_summ.Specs.attributes with
+                ProcAttributes.loc = Cfg.Procdesc.get_loc proc_desc;
+                method_annotation;
+              };
+          } in
+        Specs.add_summary proc_name new_summ
+    | None -> ()
 
   let callback1
       find_canonical_duplicate calls_this checks get_proc_desc idenv tenv curr_pname
@@ -185,18 +187,23 @@ struct
         let get_private_called (initializers : init list) : init list =
           let res = ref [] in
           let do_proc (init_pn, init_pd) =
-            let filter callee_pn callee_pd =
+            let filter callee_pn callee_attributes =
               let is_private =
-                let attr = Specs.pdesc_resolve_attributes callee_pd in
-                attr.ProcAttributes.access = Sil.Private in
+                callee_attributes.ProcAttributes.access = Sil.Private in
               let same_class =
                 let get_class_opt pn =
                   if Procname.is_java pn then Some (Procname.java_get_class pn)
                   else None in
                 get_class_opt init_pn = get_class_opt callee_pn in
               is_private && same_class in
-            let private_called = PatternMatch.proc_calls get_proc_desc init_pn init_pd filter in
-            res := private_called @ !res in
+            let private_called = PatternMatch.proc_calls
+                Specs.proc_resolve_attributes init_pn init_pd filter in
+            let do_called (callee_pn, callee_attributes) =
+              match get_proc_desc callee_pn with
+              | Some callee_pd ->
+                  res := (callee_pn, callee_pd) :: !res
+              | None -> () in
+            list_iter do_called private_called in
           list_iter do_proc initializers;
           !res in
 
@@ -233,29 +240,34 @@ struct
         list_rev !final_typestates
 
       let pname_and_pdescs_with f =
-        list_map
-          (fun n -> match get_proc_desc n with
-             | Some d -> [(n, d)]
-             | None -> [])
-          all_procs
-        |> list_flatten
-        |> list_filter f
+        let res = ref [] in
+        let filter pname = match Specs.proc_resolve_attributes pname with
+          | Some proc_attributes -> f (pname, proc_attributes)
+          | None -> false in
+        let do_proc pname =
+          if filter pname then
+            match get_proc_desc pname with
+            | Some pdesc ->
+                res := (pname, pdesc) :: !res
+            | None -> () in
+        list_iter do_proc all_procs;
+        list_rev !res
 
       (** Typestates after the current procedure and all initializer procedures. *)
       let final_initializer_typestates_lazy = lazy
         begin
-          let is_initializer pdesc pname =
-            PatternMatch.method_is_initializer tenv (Cfg.Procdesc.get_attributes pdesc) ||
+          let is_initializer pname proc_attributes =
+            PatternMatch.method_is_initializer tenv proc_attributes ||
             let ia, _ =
-              (Models.get_modelled_annotated_signature
-                 (Cfg.Procdesc.get_attributes pdesc)).Annotations.ret in
+              (Models.get_modelled_annotated_signature proc_attributes).Annotations.ret in
             Annotations.ia_is_initializer ia in
           let initializers_current_class =
             pname_and_pdescs_with
-              (fun (pname, pdesc) ->
-                 is_initializer pdesc pname &&
-                 Procname.java_get_class pname = Procname.java_get_class curr_pname) in
-          final_typestates ((curr_pname, curr_pdesc):: initializers_current_class)
+              (function (pname, proc_attributes) ->
+                is_initializer pname proc_attributes &&
+                Procname.java_get_class pname = Procname.java_get_class curr_pname) in
+          final_typestates
+            ((curr_pname, curr_pdesc) :: initializers_current_class)
         end
 
       (** Typestates after all constructors. *)
@@ -263,9 +275,9 @@ struct
         begin
           let constructors_current_class =
             pname_and_pdescs_with
-              (fun (n, d) ->
-                 Procname.is_constructor n &&
-                 Procname.java_get_class n = Procname.java_get_class curr_pname) in
+              (fun (pname, proc_attributes) ->
+                 Procname.is_constructor pname &&
+                 Procname.java_get_class pname = Procname.java_get_class curr_pname) in
           final_typestates constructors_current_class
         end
 

@@ -118,36 +118,6 @@ module Node = struct
       with Not_found -> () in
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 
-  let compute_enabled_verbose = false
-
-  (** restrict the cfg to the given enabled (active and not shadowed) procedures *)
-  let cfg_restrict_enabled cfg source enabled =
-    match enabled with
-    | None -> ()
-    | Some enabled_procs ->
-        if compute_enabled_verbose then L.err "cfg_restrict_enabled: checking enabled in %s@." (DB.source_file_to_string source);
-        let is_enabled pname = Procname.Set.mem pname enabled_procs in
-        let in_address_set pname = Procname.Set.mem pname cfg.priority_set in
-        let node_list' =
-          let filter_node node = match node.nd_proc with
-            | None -> true
-            | Some pdesc -> is_enabled pdesc.pd_attributes.ProcAttributes.proc_name in
-          list_filter filter_node !(cfg.node_list) in
-        let procs_to_remove =
-          let psetr = ref Procname.Set.empty in
-          let do_proc pname pdesc =
-            if pdesc.pd_attributes.ProcAttributes.is_defined &&
-               not (is_enabled pname) &&
-               not (in_address_set pname) then
-              psetr := Procname.Set.add pname !psetr in
-          Procname.Hash.iter do_proc cfg.name_pdesc_tbl;
-          !psetr in
-        let remove_proc pname =
-          if compute_enabled_verbose then L.err "cfg_restrict_enabled: Removing proc not enabled from the cfg: %s@." (Procname.to_filename pname);
-          Procname.Hash.remove cfg.name_pdesc_tbl pname in
-        cfg.node_list := node_list';
-        Procname.Set.iter remove_proc procs_to_remove
-
   let node_id_gen cfg = incr cfg.node_id; !(cfg.node_id)
 
   let pdesc_tbl_add cfg proc_name proc_desc =
@@ -638,42 +608,6 @@ end
 type node = Node.t
 type cfg = Node.cfg
 
-(** Serializer for control flow graphs *)
-let cfg_serializer : cfg Serialization.serializer = Serialization.create_serializer Serialization.cfg_key
-
-(** Load a cfg from a file *)
-let load_cfg_from_file (filename : DB.filename) : cfg option =
-  Serialization.from_file cfg_serializer filename
-
-(** save a copy in the results dir of the source files of procedures defined in the cfg, unless an updated copy already exists *)
-let save_source_files cfg =
-  let process_proc pname pdesc =
-    let loc = Node.proc_desc_get_loc pdesc in
-    let source_file = loc.Location.file in
-    let source_file_str = DB.source_file_to_abs_path source_file in
-    let dest_file = DB.source_file_in_resdir source_file in
-    let dest_file_str = DB.filename_to_string dest_file in
-    let needs_copy =
-      Node.proc_desc_is_defined pdesc &&
-      Sys.file_exists source_file_str &&
-      (not (Sys.file_exists dest_file_str) ||
-       DB.file_modified_time (DB.filename_from_string source_file_str) > DB.file_modified_time dest_file) in
-    if needs_copy then
-      match Utils.copy_file source_file_str dest_file_str with
-      | Some _ -> ()
-      | None -> L.err "Error cannot create copy of source file %s@." source_file_str in
-  Node.iter_proc_desc cfg process_proc
-
-(** Save a cfg into a file *)
-let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg: cfg) =
-  if save_sources then save_source_files cfg;
-  if !Config.incremental_procs then
-    begin
-      match load_cfg_from_file filename with
-      | Some old_cfg -> Node.mark_unchanged_pdescs cfg old_cfg
-      | None -> ()
-    end;
-  Serialization.to_file cfg_serializer filename cfg
 
 (* =============== START of module Procdesc =============== *)
 module Procdesc = struct
@@ -1000,3 +934,66 @@ let remove_seed_captured_vars_block captured_vars prop =
   let sigma = Prop.get_sigma prop in
   let sigma' = list_filter (fun hpred -> not (hpred_seed_captured hpred)) sigma in
   Prop.normalize (Prop.replace_sigma sigma' prop)
+
+(** Serializer for control flow graphs *)
+let cfg_serializer : cfg Serialization.serializer =
+  Serialization.create_serializer Serialization.cfg_key
+
+(** Load a cfg from a file *)
+let load_cfg_from_file (filename : DB.filename) : cfg option =
+  Serialization.from_file cfg_serializer filename
+
+(** save a copy in the results dir of the source files of procedures defined in the cfg,
+    unless an updated copy already exists *)
+let save_source_files cfg =
+  let process_proc pname pdesc =
+    let loc = Node.proc_desc_get_loc pdesc in
+    let source_file = loc.Location.file in
+    let source_file_str = DB.source_file_to_abs_path source_file in
+    let dest_file = DB.source_file_in_resdir source_file in
+    let dest_file_str = DB.filename_to_string dest_file in
+    let needs_copy =
+      Node.proc_desc_is_defined pdesc &&
+      Sys.file_exists source_file_str &&
+      (not (Sys.file_exists dest_file_str) ||
+       DB.file_modified_time (DB.filename_from_string source_file_str)
+       >
+       DB.file_modified_time dest_file) in
+    if needs_copy then
+      match Utils.copy_file source_file_str dest_file_str with
+      | Some _ -> ()
+      | None -> L.err "Error cannot create copy of source file %s@." source_file_str in
+  Node.iter_proc_desc cfg process_proc
+
+(** Save the .attr files for the procedures in the cfg. *)
+let save_attributes filename cfg =
+  let save_proc proc_desc =
+    let attributes = Procdesc.get_attributes proc_desc in
+    let loc = attributes.ProcAttributes.loc in
+    let attributes' =
+      if Location.equal loc Location.dummy then
+        let loc' = {loc with Location.file = !DB.current_source } in
+        {attributes with ProcAttributes.loc = loc'}
+      else
+        attributes in
+    (*
+    L.stderr "save_proc@.  proc_name:%a@.  filename:%s@.  current_source:%s@.  loc:%s@."
+      Procname.pp (Procdesc.get_proc_name proc_desc)
+      (DB.filename_to_string filename)
+      (DB.source_file_to_string !DB.current_source)
+      (Location.to_string loc);
+    *)
+    AttributesTable.store_attributes attributes' in
+  list_iter save_proc (get_all_procs cfg)
+
+(** Save a cfg into a file *)
+let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg : cfg) =
+  if save_sources then save_source_files cfg;
+  if !Config.incremental_procs then
+    begin
+      match load_cfg_from_file filename with
+      | Some old_cfg -> Node.mark_unchanged_pdescs cfg old_cfg
+      | None -> ()
+    end;
+  save_attributes filename cfg;
+  Serialization.to_file cfg_serializer filename cfg

@@ -46,7 +46,7 @@ let do_analysis (get_proc_desc : get_proc_desc) curr_pname proc_name =
       Specs.set_status proc_name Specs.ACTIVE in
 
     let postprocess () =
-      let summary = Specs.get_summary_unsafe proc_name in
+      let summary = Specs.get_summary_unsafe "ondemand" proc_name in
       let summary' =
         { summary with
           Specs.status = Specs.INACTIVE;
@@ -96,7 +96,7 @@ let do_analysis (get_proc_desc : get_proc_desc) curr_pname proc_name =
 
 (** Mark the return type @Nullable by modifying the spec. *)
 let proc_add_return_nullable curr_pname =
-  let summary = Specs.get_summary_unsafe curr_pname in
+  let summary = Specs.get_summary_unsafe "proc_add_return_nullable" curr_pname in
   let proc_attributes = Specs.get_attributes summary in
   let method_annotation = proc_attributes.ProcAttributes.method_annotation in
   let method_annotation' = Annotations.method_annotation_mark_return

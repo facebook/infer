@@ -1264,7 +1264,7 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop 
 
 and sym_exe_check_variadic_sentinel_if_present
     cfg pdesc tenv prop path actual_params callee_pname loc =
-  match Specs.proc_resolve_attributes (Cfg.Procdesc.find_from_name cfg) callee_pname with
+  match Specs.proc_resolve_attributes callee_pname with
   | None ->
       [(prop, path)]
   | Some callee_attributes ->

@@ -48,10 +48,12 @@ val java_get_vararg_values : Cfg.Node.t -> Sil.pvar -> Idenv.t -> Cfg.Procdesc.t
 
 val java_proc_name_with_class_method : Procname.t -> string -> string -> bool
 
-(** [proc_calls get_proc_desc pn pd filter] returns the callees that satisfy [filter]. *)
-val proc_calls : (Procname.t -> Cfg.Procdesc.t option) -> Procname.t -> Cfg.Procdesc.t ->
-  (Procname.t -> Cfg.Procdesc.t -> bool) ->
-  (Procname.t * Cfg.Procdesc.t) list
+(** Return the callees that satisfy [filter]. *)
+val proc_calls :
+  (Procname.t -> ProcAttributes.t option) ->
+  Procname.t -> Cfg.Procdesc.t ->
+  (Procname.t -> ProcAttributes.t -> bool) ->
+  (Procname.t * ProcAttributes.t) list
 
 (** Iterate over all the methods overridden by the procedure.
     Only Java supported at the moment. *)

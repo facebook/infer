@@ -35,14 +35,14 @@ module ST = struct
     proc_flags_add summary.Specs.attributes.ProcAttributes.proc_flags key value
 
   let pname_add proc_name key value =
-    let summary = Specs.get_summary_unsafe proc_name in
+    let summary = Specs.get_summary_unsafe "ST.pname_add" proc_name in
     add summary key value
 
   let files_open = ref Procname.Set.empty
 
   let pname_find proc_name key =
     if Procname.Set.mem proc_name !files_open then
-      let summary = Specs.get_summary_unsafe proc_name in
+      let summary = Specs.get_summary_unsafe "ST.pname_find" proc_name in
       proc_flags_find summary.Specs.attributes.ProcAttributes.proc_flags key
     else begin
       match Specs.get_summary proc_name with

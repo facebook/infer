@@ -521,7 +521,8 @@ let specs_models_filename pname =
 let summary_exists_in_models pname =
   Sys.file_exists (DB.filename_to_string (specs_models_filename pname))
 
-let summary_serializer : summary Serialization.serializer = Serialization.create_serializer Serialization.summary_key
+let summary_serializer : summary Serialization.serializer =
+  Serialization.create_serializer Serialization.summary_key
 
 (** Save summary for the procedure into the spec database *)
 let store_summary pname (summ: summary) =
@@ -610,10 +611,11 @@ let get_summary proc_name =
   | Some (summary, _) -> Some summary
   | None -> None
 
-let get_summary_unsafe proc_name =
+let get_summary_unsafe s proc_name =
   match get_summary proc_name with
   | None ->
-      raise (Failure ("Specs.get_summary_unsafe: " ^ (Procname.to_string proc_name) ^ "Not_found"))
+      raise (Failure (
+          "[" ^ s ^ "] Specs.get_summary_unsafe: " ^ (Procname.to_string proc_name) ^ "Not_found"))
   | Some summary -> summary
 
 (** Check if the procedure is from a library:
@@ -625,17 +627,14 @@ let proc_is_library proc_attributes =
     | Some _ -> false
   else false
 
-(** Try to find the attributes for a defined proc, by first looking at the procdesc
-    then looking at .specs files if required.
-    Return the attributes for an underfined procedure otherwise.
+(** Try to find the attributes for a defined proc.
+    First look at specs (to get attributes computed by analysis)
+    then look at the attributes table.
     If no attributes can be found, return None.
 *)
-let proc_resolve_attributes get_proc_desc proc_name =
-  let from_proc_desc () =  match get_proc_desc proc_name with
-    | Some proc_desc ->
-        Some (Cfg.Procdesc.get_attributes proc_desc)
-    | None ->
-        None in
+let proc_resolve_attributes proc_name =
+  let from_attributes_table () =
+    AttributesTable.load_attributes proc_name in
   let from_specs () = match get_summary proc_name with
     | Some summary ->
         Some summary.attributes
@@ -645,23 +644,19 @@ let proc_resolve_attributes get_proc_desc proc_name =
       if attributes.ProcAttributes.is_defined
       then Some attributes
       else begin
-        match from_proc_desc () with
+        match from_attributes_table () with
         | Some attributes' ->
             Some attributes'
         | None ->
             Some attributes
       end
   | None ->
-      from_proc_desc ()
+      from_attributes_table ()
 
 (** Like proc_resolve_attributes but start from a proc_desc. *)
 let pdesc_resolve_attributes proc_desc =
   let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
-  let get_proc_desc proc_name' =
-    if Procname.equal proc_name proc_name'
-    then Some proc_desc
-    else None in
-  match proc_resolve_attributes get_proc_desc proc_name with
+  match proc_resolve_attributes proc_name with
   | Some proc_attributes ->
       proc_attributes
   | None ->
@@ -682,10 +677,10 @@ let get_status summary =
   summary.status
 
 let is_active proc_name =
-  get_status (get_summary_unsafe proc_name) = ACTIVE
+  get_status (get_summary_unsafe "is_active" proc_name) = ACTIVE
 
 let is_inactive proc_name =
-  get_status (get_summary_unsafe proc_name) = INACTIVE
+  get_status (get_summary_unsafe "is_active" proc_name) = INACTIVE
 
 let get_timestamp summary =
   summary.timestamp

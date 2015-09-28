@@ -46,9 +46,8 @@ module ComplexExpressions = struct
   let procname_instanceof = Procname.equal SymExec.ModelBuiltins.__instanceof
 
   let procname_is_false_on_null get_proc_desc pn =
-    match get_proc_desc pn with
-    | Some pdesc ->
-        let proc_attributes = Specs.pdesc_resolve_attributes pdesc in
+    match Specs.proc_resolve_attributes pn with
+    | Some proc_attributes ->
         let annotated_signature =
           Models.get_modelled_annotated_signature proc_attributes in
         let ret_ann, _ = annotated_signature.Annotations.ret in
@@ -58,9 +57,8 @@ module ComplexExpressions = struct
 
   let procname_is_true_on_null get_proc_desc pn =
     let annotated_true_on_null () =
-      match get_proc_desc pn with
-      | Some pdesc ->
-          let proc_attributes = Specs.pdesc_resolve_attributes pdesc in
+      match Specs.proc_resolve_attributes pn with
+      | Some proc_attributes ->
           let annotated_signature =
             Models.get_modelled_annotated_signature proc_attributes in
           let ret_ann, _ = annotated_signature.Annotations.ret in
@@ -558,12 +556,12 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
   | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, _, _) when SymExec.function_is_builtin pn ->
       typestate (* skip othe builtins *)
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _etl, loc, cflags)
-    when get_proc_desc callee_pname <> None ->
-      Ondemand.do_analysis get_proc_desc curr_pname callee_pname;
+    when Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname <> None ->
+      if Ondemand.enabled () then
+        Ondemand.do_analysis get_proc_desc curr_pname callee_pname;
       let callee_attributes =
-        match get_proc_desc callee_pname with
-        | Some pdesc ->
-            Specs.pdesc_resolve_attributes pdesc
+        match Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname with
+        | Some proc_attributes -> proc_attributes
         | None -> assert false in
       let callee_loc = callee_attributes.ProcAttributes.loc in
 
@@ -1003,7 +1001,7 @@ let typecheck_node
   let handle_exceptions typestate instr = match instr with
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pname), _, _, _) ->
         let callee_attributes_opt =
-          Specs.proc_resolve_attributes get_proc_desc callee_pname in
+          Specs.proc_resolve_attributes callee_pname in
         (* check if the call might throw an exception *)
         let has_exceptions = match callee_attributes_opt with
           | Some callee_attributes ->

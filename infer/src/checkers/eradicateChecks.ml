@@ -536,7 +536,7 @@ let check_overridden_annotations
       ignore (list_fold_left2 compare initial_pos current_params overridden_params) in
 
   let check overriden_proc_name =
-    match Specs.proc_resolve_attributes get_proc_desc overriden_proc_name with
+    match Specs.proc_resolve_attributes overriden_proc_name with
     | Some attributes ->
         let overridden_signature = Models.get_modelled_annotated_signature attributes in
         check_return overriden_proc_name overridden_signature;

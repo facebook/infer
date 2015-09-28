@@ -52,7 +52,6 @@ type t =
     proc_map: file_data Procname.Hash.t; (** map from procedure name to file data *)
     file_map: (DB.source_file, file_data) Hashtbl.t; (** map from filaname to file data *)
     mutable active_opt : Procname.Set.t option; (** if not None, restrict the active procedures to the given set *)
-    mutable callees : Procname.Set.t; (** callees of active procedures *)
     mutable procs_defined_in_several_files : Procname.Set.t; (** Procedures defined in more than one file *)
   }
 
@@ -68,7 +67,6 @@ let create procset_opt =
     proc_map = Procname.Hash.create 17;
     file_map = Hashtbl.create 17;
     active_opt = procset_opt;
-    callees = Procname.Set.empty;
     procs_defined_in_several_files = Procname.Set.empty;
   }
 
@@ -83,26 +81,6 @@ let add_active_proc exe_env proc_name =
   match exe_env.active_opt with
   | None -> ()
   | Some procset -> exe_env.active_opt <- Some (Procname.Set.add proc_name procset)
-
-(** Add a callee to the exe_env, and extend the file_map and proc_map. *)
-let add_callee (exe_env: t) (source_file : DB.source_file) (pname: Procname.t) =
-  exe_env.callees <- Procname.Set.add pname exe_env.callees;
-  let file_data_opt =
-    try Some (Hashtbl.find exe_env.file_map source_file)
-    with Not_found ->
-      let source_dir = DB.source_dir_from_source_file source_file in
-      let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-      (match Cg.load_from_file cg_fname with
-       | None -> None
-       | Some cg ->
-           let nLOC = Cg.get_nLOC cg in
-           let file_data = new_file_data source_file nLOC cg_fname in
-           Some file_data) in
-  match file_data_opt with
-  | None -> ()
-  | Some file_data ->
-      if (not (Procname.Hash.mem exe_env.proc_map pname))
-      then Procname.Hash.replace exe_env.proc_map pname file_data
 
 (** like add_cg, but use exclude_fun to determine files to be excluded *)
 let add_cg_exclude_fun (exe_env: t) (source_dir : DB.source_dir) exclude_fun =
@@ -160,8 +138,21 @@ let get_file_data exe_env pname =
   try
     Procname.Hash.find exe_env.proc_map pname
   with Not_found ->
-    L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
-    raise Not_found
+    begin
+      match AttributesTable.load_attributes pname with
+      | None ->
+          L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
+          raise Not_found
+      | Some proc_attributes ->
+          let loc = proc_attributes.ProcAttributes.loc in
+          let source_file = loc.Location.file in
+          let nLOC = loc.Location.nLOC in
+          let source_dir = DB.source_dir_from_source_file source_file in
+          let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
+          let file_data = new_file_data source_file nLOC cg_fname in
+          Procname.Hash.replace exe_env.proc_map pname file_data;
+          file_data
+    end
 
 (** return the source file associated to the procedure *)
 let get_source exe_env pname =
@@ -188,7 +179,7 @@ let procs_enabled exe_env source =
           let pset'' = Procname.Set.add proc_name pset' in
           res := Procname.Set.union pset'' !res in
       Procname.Set.iter do_pname pset;
-      Some (Procname.Set.union !res exe_env.callees) (* keep callees in the cfg *)
+      Some !res
   | None -> None
 
 let file_data_to_cfg exe_env file_data =
@@ -199,7 +190,6 @@ let file_data_to_cfg exe_env file_data =
             L.err "Cannot find cfg for %s@." (DB.filename_to_string file_data.tenv_file);
             assert false
         | Some cfg -> cfg in
-      Cfg.Node.cfg_restrict_enabled cfg file_data.source (procs_enabled exe_env file_data.source);
       file_data.cfg <- Some cfg;
       cfg
   | Some cfg -> cfg

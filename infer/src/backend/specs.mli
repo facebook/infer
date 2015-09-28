@@ -196,7 +196,7 @@ val get_specs_from_payload : summary -> Prop.normal spec list
 val get_summary : Procname.t -> summary option
 
 (** @deprecated Return the summary for the procedure name. Raises an exception when not found. *)
-val get_summary_unsafe : Procname.t -> summary
+val get_summary_unsafe : string -> Procname.t -> summary
 
 (** Return the current timestamp for the summary *)
 val get_timestamp : summary -> int
@@ -249,13 +249,12 @@ val pp_summary : printenv -> bool -> Format.formatter -> summary -> unit
 (** Like proc_resolve_attributes but start from a proc_desc. *)
 val pdesc_resolve_attributes : Cfg.Procdesc.t -> ProcAttributes.t
 
-(** Try to find the attributes for a defined proc, by first looking at the procdesc
-    then looking at .specs files if required.
-    Return the attributes for an underfined procedure otherwise.
+(** Try to find the attributes for a defined proc.
+    First look at specs (to get attributes computed by analysis)
+    then look at the attributes table.
     If no attributes can be found, return None.
 *)
-val proc_resolve_attributes :
-  (Procname.t -> Cfg.Procdesc.t option) -> Procname.t -> ProcAttributes.t option
+val proc_resolve_attributes : Procname.t -> ProcAttributes.t option
 
 (** Check if the procedure is from a library:
     It's not defined, and there is no spec file for it. *)

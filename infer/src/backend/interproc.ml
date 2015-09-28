@@ -530,7 +530,7 @@ let forward_tabulate cfg tenv =
     let sid_curr_node = Cfg.Node.get_id curr_node in
     let proc_desc = Cfg.Node.get_proc_desc curr_node in
     let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
-    let summary = Specs.get_summary_unsafe proc_name in
+    let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
     mark_visited summary curr_node; (* mark nodes visited in fp and re phases *)
     let session =
       incr summary.Specs.sessions;
@@ -549,7 +549,7 @@ let forward_tabulate cfg tenv =
       Paths.PathSet.iter exe pathset in
     let log_string proc_name =
       let phase_string = (if Specs.get_phase proc_name == Specs.FOOTPRINT then "FP" else "RE") in
-      let summary = Specs.get_summary_unsafe proc_name in
+      let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
       let timestamp = Specs.get_timestamp summary in
       F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
     let doit () =
@@ -879,7 +879,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
   let start_node = Cfg.Procdesc.get_start_node pdesc in
 
   let check_recursion_level () =
-    let summary = Specs.get_summary_unsafe pname in
+    let summary = Specs.get_summary_unsafe "check_recursion_level" pname in
     let recursion_level = Specs.get_timestamp summary in
     if recursion_level > !Config.max_recursion then
       begin
@@ -1105,7 +1105,7 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let res = Fork.Timeout.exe_timeout (Specs.get_iterations proc_name) go () in
   let specs = get_results () in
   let elapsed = Unix.gettimeofday () -. init_time in
-  let prev_summary = Specs.get_summary_unsafe proc_name in
+  let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
     update_summary prev_summary specs proc_name elapsed res in
   if (!Config.curr_language <> Config.Java && Config.report_assertion_failure)
@@ -1182,7 +1182,8 @@ let check_skipped_procs procs_and_defined_children =
   let skipped_procs = ref Procname.Set.empty in
   let proc_check_skips (pname, dep) =
     let process_skip () =
-      let call_stats = (Specs.get_summary_unsafe pname).Specs.stats.Specs.call_stats in
+      let call_stats =
+        (Specs.get_summary_unsafe "check_skipped_procs" pname).Specs.stats.Specs.call_stats in
       let do_tr_elem pn = function
         | Specs.CallStats.CR_skip, _ ->
             skipped_procs := Procname.Set.add pn !skipped_procs
@@ -1285,7 +1286,7 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
     if proc_shadowed proc_desc then
       L.out "print_stats: ignoring function %a which is also defined in another file@." Procname.pp proc_name
     else
-      let summary = Specs.get_summary_unsafe proc_name in
+      let summary = Specs.get_summary_unsafe "print_stats_cfg" proc_name in
       let stats = summary.Specs.stats in
       let err_log = summary.Specs.attributes.ProcAttributes.err_log in
       incr num_proc;

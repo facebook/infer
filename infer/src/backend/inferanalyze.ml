@@ -232,7 +232,7 @@ module Simulator = struct (** Simulate the analysis only *)
   let analyze_proc exe_env tenv proc_name =
     L.err "in analyze_proc %a@." Procname.pp proc_name;
     (* for i = 1 to Random.int 1000000 do () done; *)
-    let prev_summary = Specs.get_summary_unsafe proc_name in
+    let prev_summary = Specs.get_summary_unsafe "Simulator" proc_name in
     let timestamp = max 1 (prev_summary.Specs.timestamp) in
     { prev_summary with Specs.timestamp = timestamp }
 
@@ -329,7 +329,7 @@ type cluster_elem =
   { ce_file : DB.source_file;
     ce_naprocs : int; (** number of active procedures defined in the file *)
     ce_active_procs : Procname.t list; (** list of active procedures *)
-    ce_source_map : DB.source_file Procname.Map.t; (** map from undefined procedures to the file where they are defined *) }
+  }
 
 (** cluster of files *)
 type cluster =
@@ -385,7 +385,10 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
     if !trace_clusters then L.err "      [create_cluster_elem] %s@." (DB.source_file_to_string source_file);
     DB.current_source := source_file;
     match file_pname_to_cg file_pname with
-    | None -> { ce_file = source_file; ce_naprocs = 0; ce_active_procs = []; ce_source_map = Procname.Map.empty }
+    | None -> {
+        ce_file = source_file;
+        ce_naprocs = 0;
+        ce_active_procs = [];}
     | Some cg ->
         (* decide whether a proc is active using pname_to_fname, i.e. whether this is the file associated to it *)
         let proc_is_selected pname = match !select_proc with
@@ -396,28 +399,14 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
           DB.source_file_equal (Exe_env.get_source exe_env pname) source_file in
         let active_procs = list_filter proc_is_active (Procname.Set.elements changed_procs) in
         let naprocs = list_length active_procs in
-        let source_map =
-          let all_procs, _ = Cg.get_nodes_and_edges cg in
-          let mapr = ref Procname.Map.empty in
-          let do_proc (pn, isdefined) =
-            let extend_map proc_name =
-              try
-                let source = Exe_env.get_source exe_env proc_name in
-                mapr := Procname.Map.add proc_name source !mapr;
-              with Not_found -> () in
-            if isdefined && Procname.is_java pn then
-              let tenv = Exe_env.get_tenv exe_env pn in
-              (* Add the overridden methods, so they can be found by the cluster. *)
-              PatternMatch.proc_iter_overridden_methods extend_map tenv pn
-            else
-              (* Add the procedures that are called but not defined in the current file. *)
-              extend_map pn in
-          list_iter do_proc all_procs;
-          !mapr in
         total_files := !total_files + 1;
         total_procs := !total_procs + naprocs;
         total_LOC := !total_LOC + (Cg.get_nLOC cg);
-        { ce_file = source_file; ce_naprocs = naprocs; ce_active_procs = active_procs; ce_source_map = source_map } in
+        {
+          ce_file = source_file;
+          ce_naprocs = naprocs;
+          ce_active_procs = active_procs;
+        } in
   let choose_next_file list = (* choose next file from the weakly ordered list *)
     let file_has_no_unseen_dependents fname =
       Procname.Set.subset (Cg.get_dependents file_cg fname) !seen in
@@ -468,17 +457,11 @@ let clusters_nfiles clusters = list_fold_left (fun n cluster -> cluster_nfiles c
 let clusters_naprocs clusters = list_fold_left (fun n cluster -> cluster_naprocs cluster + n) 0 clusters
 
 let print_clusters_stats clusters =
-  let pp_source_map_ce fmt cluster_elem =
-    let do_map_elem proc_name source_file = F.fprintf fmt "%s " (Procname.to_string proc_name) in
-    Procname.Map.iter do_map_elem cluster_elem.ce_source_map in
-  let pp_source_map fmt cluster =
-    list_iter (pp_source_map_ce fmt) cluster in
   let pp_cluster num cluster =
-    L.err "cluster #%d files: %d active procedures: %d source_map: %a@."
+    L.err "cluster #%d files: %d active procedures: %d@."
       num
       (cluster_nfiles cluster)
-      (cluster_naprocs cluster)
-      pp_source_map cluster in
+      (cluster_naprocs cluster) in
   let i = ref 0 in
   list_iter
     (fun cluster ->
@@ -786,19 +769,13 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
 let exe_env_from_cluster cluster =
   let _exe_env = Exe_env.create (Some (cluster_to_active_procs cluster)) in
   let source_files, callees =
-    let fold_callees pn file callees =
-      (pn, file) :: callees in
     let fold_cluster_elem (source_files, callees) ce =
-      let callees = Procname.Map.fold fold_callees ce.ce_source_map callees in
       let source_files = DB.source_dir_from_source_file ce.ce_file :: source_files in
       source_files, callees in
     list_fold_left fold_cluster_elem ([], []) cluster in
   let sorted_files = list_sort DB.source_dir_compare source_files in
   list_iter (fun src_dir -> ignore(Exe_env.add_cg _exe_env src_dir)) sorted_files;
   let exe_env = Exe_env.freeze _exe_env in
-  let do_callee (pn, file) =
-    Exe_env.add_callee exe_env file pn in
-  list_iter do_callee callees;
   exe_env
 
 (** Analyze a cluster of files *)
