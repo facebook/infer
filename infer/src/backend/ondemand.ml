@@ -16,6 +16,7 @@ open Utils
 let trace = false
 
 let enabled () = false
+let across_files () = true
 
 type analyze_proc = Procname.t -> unit
 
@@ -29,13 +30,18 @@ let set_analyze_proc (analyze_proc : analyze_proc) =
 let unset_analyze_prop () =
   analyze_proc_fun := None
 
+let nesting = ref 0
+
 let do_analysis (get_proc_desc : get_proc_desc) curr_pname proc_name =
-  if trace then L.stderr "do_analysis %a -> %a@." Procname.pp curr_pname Procname.pp proc_name;
 
   let really_do_analysis analyze_proc proc_desc =
-    L.stderr "really_do_analysis@.";
+    if trace then L.stderr "[%d] really_do_analysis %a -> %a@."
+        !nesting
+        Procname.pp curr_pname
+        Procname.pp proc_name;
 
     let preprocess () =
+      incr nesting;
       let attributes_opt =
         Some (Cfg.Procdesc.get_attributes proc_desc) in
       let call_graph =
@@ -46,6 +52,7 @@ let do_analysis (get_proc_desc : get_proc_desc) curr_pname proc_name =
       Specs.set_status proc_name Specs.ACTIVE in
 
     let postprocess () =
+      decr nesting;
       let summary = Specs.get_summary_unsafe "ondemand" proc_name in
       let summary' =
         { summary with
@@ -74,37 +81,45 @@ let do_analysis (get_proc_desc : get_proc_desc) curr_pname proc_name =
     | None ->
         false in
   (* The procedure to be analyzed is in the same file as the current one. *)
-  let same_file proc_desc =
+  let same_file proc_attributes =
     match get_proc_desc curr_pname with
     | Some curr_pdesc ->
         (Cfg.Procdesc.get_loc curr_pdesc).Location.file
         =
-        (Cfg.Procdesc.get_loc proc_desc).Location.file
+        proc_attributes.ProcAttributes.loc.Location.file
     | None -> false in
 
-  match !analyze_proc_fun, get_proc_desc proc_name with
-  | Some analyze_proc, Some proc_desc
+  match !analyze_proc_fun, AttributesTable.load_attributes proc_name with
+  | Some analyze_proc, Some proc_attributes
     when enabled () &&
-         Cfg.Procdesc.is_defined proc_desc && (* we have the implementation *)
+         proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
          not currently_analyzed && (* avoid infinite loops *)
          not already_analyzed && (* avoid re-analysis of the same procedure *)
-         same_file proc_desc (* clusters don't have enough info for other files *) ->
-      really_do_analysis analyze_proc proc_desc
+         (across_files () (* whether to push the analysis into other files *)
+          || same_file proc_attributes) ->
+      begin
+        match get_proc_desc proc_name with
+        | Some proc_desc ->
+            really_do_analysis analyze_proc proc_desc
+        | None -> ()
+      end
   | _ ->
-      if trace then L.stderr "skipping@."
+      () (* skipping *)
 
 
 (** Mark the return type @Nullable by modifying the spec. *)
 let proc_add_return_nullable curr_pname =
-  let summary = Specs.get_summary_unsafe "proc_add_return_nullable" curr_pname in
-  let proc_attributes = Specs.get_attributes summary in
-  let method_annotation = proc_attributes.ProcAttributes.method_annotation in
-  let method_annotation' = Annotations.method_annotation_mark_return
-      Annotations.Nullable method_annotation in
-  let proc_attributes' =
-    { proc_attributes with
-      ProcAttributes.method_annotation = method_annotation' } in
-  let summary' =
-    { summary with
-      Specs.attributes = proc_attributes' } in
-  Specs.add_summary curr_pname summary'
+  match Specs.get_summary curr_pname with
+  | Some summary ->
+      let proc_attributes = Specs.get_attributes summary in
+      let method_annotation = proc_attributes.ProcAttributes.method_annotation in
+      let method_annotation' = Annotations.method_annotation_mark_return
+          Annotations.Nullable method_annotation in
+      let proc_attributes' =
+        { proc_attributes with
+          ProcAttributes.method_annotation = method_annotation' } in
+      let summary' =
+        { summary with
+          Specs.attributes = proc_attributes' } in
+      Specs.add_summary curr_pname summary'
+  | None -> ()

@@ -149,7 +149,12 @@ let get_file_data exe_env pname =
           let nLOC = loc.Location.nLOC in
           let source_dir = DB.source_dir_from_source_file source_file in
           let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-          let file_data = new_file_data source_file nLOC cg_fname in
+          let file_data =
+            try Hashtbl.find exe_env.file_map source_file with
+            | Not_found ->
+                let file_data = new_file_data source_file nLOC cg_fname in
+                Hashtbl.replace exe_env.file_map source_file file_data;
+                file_data in
           Procname.Hash.replace exe_env.proc_map pname file_data;
           file_data
     end

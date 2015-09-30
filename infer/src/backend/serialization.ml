@@ -84,9 +84,15 @@ let create_serializer (key : key) : 'a serializer =
     (* which indicates that another process is writing the same file. *)
     retry_exception timeout catch_exn read () in
   let to_file (fname : DB.filename) (value : 'a) =
-    let outc = open_out_bin (DB.filename_to_string fname) in
+    let fname_str = DB.filename_to_string fname in
+    (* support nonblocking reads and writes in parallel: *)
+    (* write to a tmp file and use rename which is atomic *)
+    let fname_tmp = Filename.temp_file
+        ~temp_dir:(Filename.dirname fname_str) (Filename.basename fname_str) ".tmp" in
+    let outc = open_out_bin fname_tmp in
     Marshal.to_channel outc (key, version, value) [];
-    close_out outc in
+    close_out outc;
+    Unix.rename fname_tmp fname_str in
   (from_string, from_file, to_file)
 
 
