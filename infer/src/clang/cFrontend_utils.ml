@@ -153,17 +153,33 @@ struct
     | name :: qualifiers ->
         list_fold_right (fun el res -> res ^ el ^ "::") qualifiers ""
 
+  let make_name_decl name = {
+    Clang_ast_t.ni_name = name;
+    ni_qual_name = [name];
+  }
+
+  let make_qual_name_decl class_name name = {
+    Clang_ast_t.ni_name = name;
+    ni_qual_name = [name; class_name];
+  }
+
   let property_name property_impl_decl_info =
-    let no_property_name = "WARNING_NO_PROPERTY_NAME" in
+    let no_property_name = make_name_decl "WARNING_NO_PROPERTY_NAME" in
     match property_impl_decl_info.Clang_ast_t.opidi_property_decl with
     | Some decl_ref ->
         (match decl_ref.Clang_ast_t.dr_name with
-         | Some n -> n.Clang_ast_t.ni_name
+         | Some n -> n
          | _ -> no_property_name)
     | None -> no_property_name
 
   let generated_ivar_name property_name =
-    "_"^property_name
+    match property_name.Clang_ast_t.ni_qual_name with
+    | [name; class_name] ->
+        let ivar_name = "_" ^ name in
+        { Clang_ast_t.ni_name = ivar_name;
+          ni_qual_name = [ivar_name; class_name]
+        }
+    | _ -> make_name_decl property_name.Clang_ast_t.ni_name
 
   let property_attribute_compare att1 att2 =
     match att1, att2 with
@@ -230,7 +246,7 @@ struct
     | [] -> None
     | attr:: rest ->
         match attr with
-        | `Getter getter -> name_opt_of_name_info_opt getter.Clang_ast_t.dr_name
+        | `Getter getter -> getter.Clang_ast_t.dr_name
         | _ -> (getter_attribute_opt rest)
 
   let rec setter_attribute_opt attributes =
@@ -238,7 +254,7 @@ struct
     | [] -> None
     | attr:: rest ->
         match attr with
-        | `Setter setter -> name_opt_of_name_info_opt setter.Clang_ast_t.dr_name
+        | `Setter setter -> setter.Clang_ast_t.dr_name
         | _ -> (setter_attribute_opt rest)
 
   let pointer_counter = ref 0
@@ -425,8 +441,10 @@ struct
 
   let replicate n el = list_map (fun i -> el) (list_range 0 (n -1))
 
-  let mk_class_field_name class_name field_name =
-    Ident.create_fieldname (Mangled.mangled field_name (class_name^"_"^field_name)) 0
+  let mk_class_field_name field_qual_name =
+    let field_name = field_qual_name.Clang_ast_t.ni_name in
+    let prefix = Ast_utils.get_qualifier_string field_qual_name in
+    Ident.create_fieldname (Mangled.mangled field_name prefix) 0
 
   let mk_procname_from_function name function_decl_info_opt qt =
     let file =

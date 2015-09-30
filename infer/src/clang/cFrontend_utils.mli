@@ -46,17 +46,19 @@ sig
 
   val name_opt_of_name_info_opt : Clang_ast_t.named_decl_info option -> string option
 
-  val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> string
+  val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.named_decl_info
 
   val property_attribute_compare : Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> int
 
-  val generated_ivar_name : string -> string
+  val generated_ivar_name : Clang_ast_t.named_decl_info -> Clang_ast_t.named_decl_info
 
   val property_attribute_eq : Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> bool
 
-  val getter_attribute_opt : Clang_ast_t.property_attribute list -> string option
+  val getter_attribute_opt : Clang_ast_t.property_attribute list ->
+    Clang_ast_t.named_decl_info option
 
-  val setter_attribute_opt : Clang_ast_t.property_attribute list -> string option
+  val setter_attribute_opt : Clang_ast_t.property_attribute list ->
+    Clang_ast_t.named_decl_info option
 
   val get_memory_management_attributes : unit -> Clang_ast_t.property_attribute list
 
@@ -91,6 +93,10 @@ sig
   val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl
 
   val string_of_qual_type : Clang_ast_t.qual_type -> string
+
+  val make_name_decl : string -> Clang_ast_t.named_decl_info
+
+  val make_qual_name_decl : string -> string -> Clang_ast_t.named_decl_info
 
 end
 
@@ -139,7 +145,7 @@ sig
 
   val mk_procname_from_cpp_method : string -> string -> Clang_ast_t.qual_type -> Procname.t
 
-  val mk_class_field_name : string -> string -> Ident.fieldname
+  val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
 
 
 end

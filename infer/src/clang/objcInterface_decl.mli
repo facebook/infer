@@ -14,9 +14,6 @@
 val interface_declaration : Sil.tenv -> Clang_ast_t.decl_info -> string -> Clang_ast_t.decl list ->
   Clang_ast_t.obj_c_interface_decl_info -> CContext.curr_class
 
-val find_field : Sil.tenv -> string -> Sil.typ option -> bool ->
-  (Ident.fieldname * Sil.typ * Sil.item_annotation) option
-
 val interface_impl_declaration : Sil.tenv -> string -> Clang_ast_t.decl list ->
   Clang_ast_t.obj_c_implementation_decl_info -> CContext.curr_class
 

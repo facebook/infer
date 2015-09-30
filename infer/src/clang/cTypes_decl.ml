@@ -142,7 +142,7 @@ let rec get_struct_fields tenv record_name namespace decl_list =
   let open Clang_ast_t in
   let do_one_decl decl = match decl with
     | FieldDecl (_, name_info, qual_type, _) ->
-        let id = General_utils.mk_class_field_name record_name name_info.Clang_ast_t.ni_name in
+        let id = General_utils.mk_class_field_name name_info in
         let typ = qual_type_to_sil_type tenv qual_type in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]

@@ -242,15 +242,10 @@ let make_obj_c_message_expr_info_class selector qt = {
   omei_decl_pointer = None (* TODO look into it *)
 }
 
-let make_name_decl name = {
-  Clang_ast_t.ni_name = name;
-  ni_qual_name = [name];
-}
-
 let make_decl_ref k decl_ptr name is_hidden qt_opt = {
   Clang_ast_t.dr_kind = k;
   dr_decl_pointer = decl_ptr;
-  dr_name = Some (make_name_decl name);
+  dr_name = Some name;
   dr_is_hidden = is_hidden ;
   dr_qual_type = qt_opt
 }
@@ -267,7 +262,7 @@ let make_decl_ref_invalid k name is_hidden qt =
 let make_decl_ref_self ptr qt = {
   Clang_ast_t.dr_kind = `ImplicitParam;
   dr_decl_pointer = ptr;
-  dr_name = Some (make_name_decl "self");
+  dr_name = Some (Ast_utils.make_name_decl "self");
   dr_is_hidden = false ;
   dr_qual_type = Some qt
 }
@@ -331,7 +326,7 @@ let make_objc_ivar_decl decl_info qt property_impl_decl_info ivar_name =
     Clang_ast_t.ovdi_is_synthesize = true; (* NOTE: We set true here because we use this definition to synthesize the getter/setter*)
     ovdi_access_control = `Private;
   } in
-  Clang_ast_t.ObjCIvarDecl(decl_info, make_name_decl ivar_name, qt, field_decl_info, obj_c_ivar_decl_info)
+  Clang_ast_t.ObjCIvarDecl(decl_info, ivar_name, qt, field_decl_info, obj_c_ivar_decl_info)
 
 let make_expr_info qt = {
   Clang_ast_t.ei_qual_type = qt;
@@ -378,9 +373,8 @@ let make_next_object_exp stmt_info item items =
   let var_decl_ref, var_type =
     match item with
     | Clang_ast_t.DeclStmt (stmt_info, _, [Clang_ast_t.VarDecl(di, name_info, var_type, _)]) ->
-        let var_name = name_info.Clang_ast_t.ni_name in
         let decl_ptr = di.Clang_ast_t.di_pointer in
-        let decl_ref = make_decl_ref_qt `Var decl_ptr var_name false var_type in
+        let decl_ref = make_decl_ref_qt `Var decl_ptr name_info false var_type in
         let stmt_info_var = {
           Clang_ast_t.si_pointer = di.Clang_ast_t.di_pointer;
           si_source_range = di.Clang_ast_t.di_source_range
@@ -409,7 +403,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
   let block_expr =
     try Utils.list_nth stmt_list (n + 1)
     with Not_found -> assert false in
-  let block_name_info = make_name_decl block_name in
+  let block_name_info = Ast_utils.make_name_decl block_name in
   let open Clang_ast_t in
   match block_expr with
   | BlockExpr (bsi, bsl, bei, bd) ->
@@ -424,7 +418,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
 
       let expr_info_call = make_general_expr_info create_void_star_type `XValue `Ordinary in
       let expr_info_dre = make_expr_info_with_objc_kind qt `Ordinary in
-      let decl_ref = make_decl_ref_qt `Var stmt_info.si_pointer block_name false qt in
+      let decl_ref = make_decl_ref_qt `Var stmt_info.si_pointer block_name_info false qt in
       let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
       let cast_info_call = { cei_cast_kind = `LValueToRValue; cei_base_path =[]} in
       let decl_ref_exp = DeclRefExpr(stmt_info, [], expr_info_dre, decl_ref_expr_info) in
@@ -456,9 +450,11 @@ let build_PseudoObjectExpr qt_m o_cast_decl_ref_exp mname =
   | Clang_ast_t.ImplicitCastExpr (si, stmt_list, ei, cast_expr_info) ->
       let ove = build_OpaqueValueExpr si o_cast_decl_ref_exp ei in
       let ei_opre = make_expr_info (pseudo_object_qt ()) in
+      let count_name = Ast_utils.make_name_decl CFrontend_config.count in
+      let pointer = si.Clang_ast_t.si_pointer in
       let obj_c_property_ref_expr_info = {
         Clang_ast_t.oprei_kind =
-          `PropertyRef (make_decl_ref_no_qt `ObjCProperty si.Clang_ast_t.si_pointer CFrontend_config.count false);
+          `PropertyRef (make_decl_ref_no_qt `ObjCProperty pointer count_name false);
         oprei_is_super_receiver = false;
         oprei_is_messaging_getter = true;
         oprei_is_messaging_setter = false;
@@ -520,7 +516,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         (* qt_idx idx = 0; *)
         let idx_decl_stmt = make_DeclStmt (fresh_stmt_info stmt_info) di_idx qt_idx name_idx (Some zero) in
         let idx_ei = make_expr_info qt_idx in
-        let idx_decl_ref = make_decl_ref_qt `Var di_idx.Clang_ast_t.di_pointer name_idx.Clang_ast_t.ni_name false qt_idx in
+        let pointer = di_idx.Clang_ast_t.di_pointer in
+        let idx_decl_ref = make_decl_ref_qt `Var pointer name_idx false qt_idx in
         let idx_drei = make_decl_ref_expr_info idx_decl_ref in
         let idx_decl_ref_exp = make_decl_ref_exp stmt_info idx_ei idx_drei in
         let idx_cast = create_implicit_cast_expr (fresh_stmt_info stmt_info) [idx_decl_ref_exp] qt_idx `LValueToRValue in
@@ -545,7 +542,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
              { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_qual_type = type_opt}) in
         let pointer = di.Clang_ast_t.di_pointer in
         let stmt_info = fresh_stmt_info stmt_info in
-        let malloc = create_call stmt_info pointer CFrontend_config.malloc qt_fun [parameter] in
+        let malloc_name = Ast_utils.make_name_decl CFrontend_config.malloc in
+        let malloc = create_call stmt_info pointer malloc_name qt_fun [parameter] in
         let init_exp = create_implicit_cast_expr (fresh_stmt_info stmt_info) [malloc] qt `BitCast in
         make_DeclStmt (fresh_stmt_info stmt_info) di qt name (Some init_exp)
     | _ -> assert false in
@@ -554,7 +552,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   let stop_equal_no pstop =
     match pstop with
     | Clang_ast_t.ParmVarDecl (di, name, qt, _) ->
-        let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name.Clang_ast_t.ni_name false qt in
+        let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name false qt in
         let cast = cast_expr decl_ref qt in
         let postfix_deref = { Clang_ast_t.uoi_kind = `Deref; uoi_is_postfix = true } in
         let lhs = Clang_ast_t.UnaryOperator (fresh_stmt_info stmt_info, [cast], ei, postfix_deref) in
@@ -568,11 +566,13 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     match pstop with
     | Clang_ast_t.ParmVarDecl (di, name, qt, _) ->
         let qt_fun = create_void_void_type in
-        let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name.Clang_ast_t.ni_name false qt in
+        let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name false qt in
         let cast = cast_expr decl_ref qt in
+        let free_name = Ast_utils.make_name_decl CFrontend_config.free in
         let parameter =
           create_implicit_cast_expr (fresh_stmt_info stmt_info) [cast] create_void_star_type `BitCast in
-        create_call (fresh_stmt_info stmt_info) di.Clang_ast_t.di_pointer CFrontend_config.free qt_fun [parameter]
+        let pointer = di.Clang_ast_t.di_pointer in
+        create_call (fresh_stmt_info stmt_info) pointer free_name qt_fun [parameter]
     | _ -> assert false in
 
   (* idx<a.count *)
@@ -621,34 +621,38 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     let qt = create_pointer_type (create_class_type CFrontend_config.nsarray_cl) in
     (* init should be ImplicitCastExpr of array a *)
     let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (init) } in
-    let var_decl = Clang_ast_t.VarDecl (di, make_name_decl CFrontend_config.objects, qt, vdi) in
+    let objects_name = Ast_utils.make_name_decl CFrontend_config.objects in
+    let var_decl = Clang_ast_t.VarDecl (di, objects_name, qt, vdi) in
     Clang_ast_t.DeclStmt (fresh_stmt_info stmt_info, [init], [var_decl]), [(CFrontend_config.objects, di.Clang_ast_t.di_pointer, qt)] in
 
   let make_object_cast_decl_ref_expr objects =
     match objects with
     | Clang_ast_t.DeclStmt (si, _, [Clang_ast_t.VarDecl (di, name, qt, vdi)]) ->
-        let decl_ref = make_decl_ref_qt `Var si.Clang_ast_t.si_pointer name.Clang_ast_t.ni_name false qt in
+        let decl_ref = make_decl_ref_qt `Var si.Clang_ast_t.si_pointer name false qt in
         cast_expr decl_ref qt
     | _ -> assert false in
 
   let build_cast_decl_ref_expr_from_parm p =
     match p with
     | Clang_ast_t.ParmVarDecl (di, name, qt, _) ->
-        let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name.Clang_ast_t.ni_name false qt in
+        let decl_ref = make_decl_ref_qt `Var di.Clang_ast_t.di_pointer name false qt in
         cast_expr decl_ref qt
     | _ -> assert false in
+
+  let qual_block_name = Ast_utils.make_name_decl block_name in
 
   let make_block_decl be =
     match be with
     | Clang_ast_t.BlockExpr (bsi, _, bei, _) ->
         let di = { empty_decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () } in
         let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (be) } in
-        let var_decl = Clang_ast_t.VarDecl (di, make_name_decl block_name, bei.Clang_ast_t.ei_qual_type, vdi) in
+        let qt = bei.Clang_ast_t.ei_qual_type in
+        let var_decl = Clang_ast_t.VarDecl (di, qual_block_name, qt, vdi) in
         Clang_ast_t.DeclStmt (bsi, [be], [var_decl]), [(block_name, di.Clang_ast_t.di_pointer, bei.Clang_ast_t.ei_qual_type)]
     | _ -> assert false in
 
   let make_block_call block_qt object_cast idx_cast stop_cast =
-    let decl_ref = make_decl_ref_invalid `Var block_name false block_qt in
+    let decl_ref = make_decl_ref_invalid `Var qual_block_name false block_qt in
     let fun_cast = cast_expr decl_ref block_qt in
     let ei_call = make_expr_info create_void_star_type in
     Clang_ast_t.CallExpr (fresh_stmt_info stmt_info, [fun_cast; object_cast; idx_cast; stop_cast], ei_call) in
@@ -731,4 +735,5 @@ let create_assume_not_null_call decl_info var_name var_type =
   let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info (make_lvalue_obc_prop_expr_info var_type) boi in
   let parameters = [bin_op] in
   let procname = Procname.to_string SymExec.ModelBuiltins.__infer_assume in
-  create_call stmt_info var_decl_ptr procname create_void_star_type parameters
+  let qual_procname = Ast_utils.make_name_decl procname in
+  create_call stmt_info var_decl_ptr qual_procname create_void_star_type parameters

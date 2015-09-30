@@ -47,13 +47,13 @@ let get_field_www name_field fl =
     "WARNING: In MemberExpr there must be only one type defininf for the struct. Returning (NO_FIELD_NAME, Tvoid)\n"
     (Ident.create_fieldname (Mangled.from_string "NO_FIELD_NAME") 0, Sil.Tvoid)
 
-let build_sil_field tenv class_name field_name qual_type prop_atts =
+let build_sil_field tenv field_name qual_type prop_atts =
   let annotation_from_type t =
     match t with
     | Sil.Tptr (_, Sil.Pk_objc_weak) -> [Config.weak]
     | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
     | _ -> [] in
-  let fname = General_utils.mk_class_field_name class_name field_name in
+  let fname = General_utils.mk_class_field_name field_name in
   let typ = CTypes_decl.qual_type_to_sil_type tenv qual_type in
   let item_annotations = match prop_atts with
     | [] ->
@@ -64,27 +64,27 @@ let build_sil_field tenv class_name field_name qual_type prop_atts =
 
 (* From an ivar look for its property and if it finds it returns its attributes *)
 let ivar_property curr_class ivar =
-  Printing.log_out "Checking if a property is defined for the ivar: '%s'@." ivar;
+  Printing.log_out "Checking if a property is defined for the ivar: '%s'@."
+    ivar.Clang_ast_t.ni_name;
   match ObjcProperty_decl.Property.find_property_name_from_ivar curr_class ivar with
   | Some pname' ->
-      (Printing.log_out "Found property name from ivar: '%s'" pname';
+      (Printing.log_out "Found property name from ivar: '%s'" pname'.Clang_ast_t.ni_name;
        try
          let _, atts, _, _, _, _ = ObjcProperty_decl.Property.find_property curr_class pname' in
          atts
        with Not_found ->
-         Printing.log_out "Didn't find property for pname '%s'" pname';
+         Printing.log_out "Didn't find property for pname '%s'" pname'.Clang_ast_t.ni_name;
          [])
-  | None -> Printing.log_out "No property found for ivar '%s'@." ivar;
+  | None -> Printing.log_out "No property found for ivar '%s'@." ivar.Clang_ast_t.ni_name;
       []
 
 let build_sil_field_property curr_class tenv field_name qual_type prop_attributes_opt =
-  let class_name = CContext.get_curr_class_name curr_class in
   let prop_attributes =
     match prop_attributes_opt with
     | Some prop_attributes -> prop_attributes
     | None -> ivar_property curr_class field_name in
   let atts_str = list_map Clang_ast_j.string_of_property_attribute prop_attributes in
-  build_sil_field tenv class_name field_name qual_type atts_str
+  build_sil_field tenv field_name qual_type atts_str
 
 (* Given a list of declarations in an interface returns a list of fields  *)
 let rec get_fields tenv curr_class decl_list =
@@ -93,11 +93,10 @@ let rec get_fields tenv curr_class decl_list =
   | [] -> []
   | ObjCIvarDecl (decl_info, name_info, qual_type, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
       let fields = get_fields tenv curr_class decl_list' in
-      let field_name = name_info.Clang_ast_t.ni_name in
       (* Doing a post visit here. Adding Ivar after all the declaration have been visited so that *)
       (* ivar names will be added in the property list. *)
-      Printing.log_out "  ...Adding Instance Variable '%s' @." field_name;
-      let (fname, typ, ia) = build_sil_field_property curr_class tenv field_name qual_type None in
+      Printing.log_out "  ...Adding Instance Variable '%s' @." name_info.Clang_ast_t.ni_name;
+      let (fname, typ, ia) = build_sil_field_property curr_class tenv name_info qual_type None in
       Printing.log_out "  ...Resulting sil field: (%s) with attributes:@." ((Ident.fieldname_to_string fname) ^":"^(Sil.typ_to_string typ));
       list_iter (fun (ia', _) ->
           list_iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;

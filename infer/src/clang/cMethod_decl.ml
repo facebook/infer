@@ -43,9 +43,8 @@ struct
     | decl:: rest ->
         let rest_assume_calls = add_assume_not_null_calls rest attributes in
         (match decl with
-         | Clang_ast_t.ParmVarDecl(decl_info, name_info, qtype, var_decl_info)
+         | Clang_ast_t.ParmVarDecl (decl_info, name, qtype, var_decl_info)
            when CFrontend_utils.Ast_utils.is_type_nonnull qtype attributes ->
-             let name = name_info.Clang_ast_t.ni_name in
              let assume_call = Ast_expressions.create_assume_not_null_call decl_info name qtype in
              assume_call:: rest_assume_calls
          | _ -> rest_assume_calls)
@@ -134,7 +133,8 @@ struct
         process_method_decl tenv cg cfg namespace curr_class dec ~is_objc:true
     | ObjCPropertyImplDecl (decl_info, property_impl_decl_info) ->
         let pname = Ast_utils.property_name property_impl_decl_info in
-        Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' " pname;
+        Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' "
+          pname.Clang_ast_t.ni_name;
         let getter_setter = ObjcProperty_decl.make_getter_setter curr_class decl_info pname in
         list_iter (process_one_method_decl tenv cg cfg curr_class namespace) getter_setter
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()

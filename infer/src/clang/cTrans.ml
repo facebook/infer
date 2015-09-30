@@ -97,7 +97,8 @@ struct
     let procdesc = trans_state.context.CContext.procdesc in
     let procname = Cfg.Procdesc.get_proc_name procdesc in
     let mk_field_from_captured_var (vname, typ, b) =
-      let fname = General_utils.mk_class_field_name block_name (Mangled.to_string vname) in
+      let qual_name = Ast_utils.make_qual_name_decl block_name (Mangled.to_string vname) in
+      let fname = General_utils.mk_class_field_name qual_name in
       let item_annot = Sil.item_annotation_empty in
       fname, typ, item_annot in
     let fields = list_map mk_field_from_captured_var captured_vars in
@@ -1518,13 +1519,13 @@ struct
   and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =
     let context = trans_state.context in
     let field_name = match decl_ref.Clang_ast_t.dr_name with
-      | Some s -> s.Clang_ast_t.ni_name
+      | Some s -> s
       | _ -> assert false in
     let field_qt = match decl_ref.Clang_ast_t.dr_qual_type with
       | Some t -> t
       | _ -> assert false in
     let field_typ = CTypes_decl.qual_type_to_sil_type context.CContext.tenv field_qt in
-    Printing.log_out "!!!!! Dealing with field '%s' @." field_name;
+    Printing.log_out "!!!!! Dealing with field '%s' @." field_name.Clang_ast_t.ni_name;
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
     let result_trans_exp_stmt = instruction trans_state exp_stmt in
@@ -1536,27 +1537,16 @@ struct
        | t -> t) in
     match decl_ref.Clang_ast_t.dr_kind with
     | `Field | `ObjCIvar ->
-        let exp = match class_typ with
-          | Sil.Tvoid -> Sil.exp_minus_one
-          | _ ->
-              Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
-              let tenv = context.CContext.tenv in
-              (match ObjcInterface_decl.find_field tenv field_name (Some class_typ) false with
-               | Some (fn, _, _) -> Sil.Lfield (obj_sil, fn, class_typ)
-               | None ->
-                   let class_name = CTypes.classname_of_type class_typ in
-                   let default_name = (General_utils.mk_class_field_name class_name field_name) in
-                   Printing.log_out "Warning: Field not found %s in class %s " field_name
-                     (Sil.typ_to_string class_typ);
-                   Sil.Lfield (obj_sil, default_name, class_typ)) in
-        { result_trans_exp_stmt with
-          exps = [(exp, field_typ)] }
+        Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
+        let fn = General_utils.mk_class_field_name field_name in
+        let exp = Sil.Lfield (obj_sil, fn, class_typ) in
+        { result_trans_exp_stmt with exps = [(exp, field_typ)] }
     | `CXXMethod ->
         (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
         let class_name = match class_typ with Sil.Tptr (t, _) | t -> CTypes.classname_of_type t in
         let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
         let pname = CMethod_trans.create_procdesc_with_pointer context pointer (Some class_name)
-            field_name field_qt in
+            field_name.Clang_ast_t.ni_name field_qt in
         let method_exp = (Sil.Const (Sil.Cfun pname), field_typ) in
         Cfg.set_procname_priority context.CContext.cfg pname;
         { result_trans_exp_stmt with exps = [method_exp; (obj_sil, class_typ)] }
