@@ -6,7 +6,7 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 INFER_VERSION_MAJOR = 0
-INFER_VERSION_MINOR = 3
+INFER_VERSION_MINOR = 4
 INFER_VERSION_PATCH = 0
 
 REMOVE = rm -vf
