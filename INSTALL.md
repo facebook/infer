@@ -17,7 +17,7 @@ the dependencies installed and opam configured properly. After that either
 - Python 2.7
 - opam (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Java <= 1.7 (only needed for the Java analysis)
-- Xcode <= 6.3, >= 6.1 (only needed for the C/Objective-C analysis)
+- Xcode <= 7.0, >= 6.1 (only needed for the C/Objective-C analysis)
 - clang in Xcode command line tools. You can install them with the command `xcode-select --install` (only needed for the C/Objective-C analysis)
 
 ### Setup Opam
