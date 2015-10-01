@@ -1087,16 +1087,8 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
       (* add attribute to remember what function call a return id came from *)
       let ret_var = Sil.Var ret_id in
       let mark_id_as_retval (p, path) =
-        (* check if the retval already has an important resource that should not be overwritten *)
-        let has_important_resource_attr =
-          match Prop.get_resource_attribute p ret_var with
-          | Some (Sil.Aresource ({ Sil.ra_res = Sil.Rfile; })) -> true
-          | _ -> false in
-        if has_important_resource_attr then p, path
-        else
-          let check_attr_change att_old att_new = () in
-          let att_retval = Sil.Aretval callee_pname in
-          Prop.add_or_replace_exp_attribute check_attr_change p ret_var att_retval, path in
+        let att_retval = Sil.Aretval callee_pname in
+        Prop.set_exp_attribute p ret_var att_retval, path in
       list_map mark_id_as_retval res
   | _ -> res
 

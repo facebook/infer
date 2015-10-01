@@ -403,4 +403,20 @@ public class NullPointerExceptions {
     String s = System.getProperty("");
     int n = s.length();
   }
+
+  Object retUndefined() {
+    return "".toString(); // toString is a skip function
+  }
+
+  Object derefUndefinedCallee() {
+    // if retUndefined() is handled incorrectly, we get a symexec_memory_error here
+    retUndefined().toString();
+    return null;
+  }
+
+  void derefNull() {
+    // should be NPE, but will not be reported if we handled retUndefined() incorrectly
+    derefUndefinedCallee().toString();
+  }
+
 }

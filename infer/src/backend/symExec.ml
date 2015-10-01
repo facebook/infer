@@ -866,7 +866,20 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
           | Some value ->
               ret_old_path [Prop.conjoin_eq (Sil.Var id) value prop]
           | None ->
-              let iter_list = Rearrange.rearrange pdesc tenv n_rhs_exp' typ prop loc in
+              let exp_get_undef_attr exp =
+                let fold_undef_pname callee_opt attr =
+                  if Option.is_none callee_opt && Sil.attr_is_undef attr then Some attr
+                  else callee_opt in
+                list_fold_left fold_undef_pname None (Prop.get_exp_attributes prop exp) in
+              let prop' =
+                if !Config.angelic_execution then
+                  (* when we try to deref an undefined value, add it to the footprint *)
+                  match exp_get_undef_attr n_rhs_exp' with
+                  | Some (Sil.Aundef (callee_pname, callee_loc, _)) ->
+                      add_constraints_on_retval pdesc prop n_rhs_exp' typ callee_pname callee_loc
+                  | _ -> prop
+                else prop in
+              let iter_list = Rearrange.rearrange pdesc tenv n_rhs_exp' typ prop' loc in
               let prop_list =
                 list_fold_left (execute_letderef pdesc tenv id n_rhs_exp') [] iter_list in
               ret_old_path (list_rev prop_list)
@@ -1082,49 +1095,46 @@ and add_to_footprint abducted_pv typ prop =
   let sigma_fp = Prop.get_sigma_footprint prop in
   (Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop), fresh_fp_var)
 
-and add_constraints_on_retval pdesc prop ret_ids ret_type_option callee_pname =
+and add_constraints_on_retval pdesc prop exp typ callee_pname callee_loc =
   if Procname.is_infer_undefined callee_pname then prop
   else
-    match ret_ids, ret_type_option with
-    | [ret_id], Some ret_typ ->
-        (* To avoid obvious false positives, assume skip functions do not return null pointers *)
-        let add_ret_non_null ret_id ret_typ prop =
-          match ret_typ with
-          | Sil.Tptr _ -> Prop.conjoin_neq (Sil.Var ret_id) Sil.exp_zero prop
-          | _ -> prop in
-        let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
-          Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
-        if !Config.angelic_execution && not (is_rec_call callee_pname) then
-          (* introduce a fresh program variable to allow abduction on the return value *)
-          let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname (State.get_loc ()) in
-          let already_has_abducted_retval p =
-            list_exists
-              (fun hpred -> match hpred with
-                 | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
-                 | _ -> false)
-              (Prop.get_sigma_footprint p) in
-          (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-          if already_has_abducted_retval prop then prop
-          else
-          if !Config.footprint then
-            let (prop', fresh_fp_var) = add_to_footprint abducted_ret_pv ret_typ prop in
-            let prop'' = Prop.conjoin_eq ~footprint: true (Sil.Var ret_id) fresh_fp_var prop' in
-            add_ret_non_null ret_id ret_typ prop''
-          else
-            (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
-            let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
-              let bind_exp prop = function
-                | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
-                  when Sil.pvar_equal pv abducted_pvar ->
-                    Prop.conjoin_eq exp_to_bind rhs prop
-                | _ -> prop in
-              list_fold_left bind_exp prop (Prop.get_sigma prop) in
-            (* bind return id to the abducted value pointed to by the pvar we introduced *)
-            bind_exp_to_abducted_val (Sil.Var ret_id) abducted_ret_pv prop
-        else add_ret_non_null ret_id ret_typ prop
-    | _ -> prop
+    (* To avoid obvious false positives, assume skip functions do not return null pointers *)
+    let add_ret_non_null exp typ prop =
+      match typ with
+      | Sil.Tptr _ -> Prop.conjoin_neq exp Sil.exp_zero prop
+      | _ -> prop in
+    let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
+      Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
+    if !Config.angelic_execution && not (is_rec_call callee_pname) then
+      (* introduce a fresh program variable to allow abduction on the return value *)
+      let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname callee_loc in
+      let already_has_abducted_retval p =
+        list_exists
+          (fun hpred -> match hpred with
+             | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
+             | _ -> false)
+          (Prop.get_sigma_footprint p) in
+      (* prevent introducing multiple abducted retvals for a single call site in a loop *)
+      if already_has_abducted_retval prop then prop
+      else
+      if !Config.footprint then
+        let (prop', fresh_fp_var) = add_to_footprint abducted_ret_pv typ prop in
+        let prop'' = Prop.conjoin_eq ~footprint: true exp fresh_fp_var prop' in
+        add_ret_non_null exp typ prop''
+      else
+        (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
+        let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
+          let bind_exp prop = function
+            | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
+              when Sil.pvar_equal pv abducted_pvar ->
+                Prop.conjoin_eq exp_to_bind rhs prop
+            | _ -> prop in
+          list_fold_left bind_exp prop (Prop.get_sigma prop) in
+        (* bind return id to the abducted value pointed to by the pvar we introduced *)
+        bind_exp_to_abducted_val exp abducted_ret_pv prop
+    else add_ret_non_null exp typ prop
 
-and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
+and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_loc =
   (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
   let replace_actual_hpred actual_var new_hpred prop =
     let sigma' =
@@ -1140,7 +1150,7 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname =
       | Sil.Lvar actual_pv ->
           (* introduce a fresh program variable to allow abduction on the return value *)
           let abducted_ref_pv =
-            Sil.mk_pvar_abducted_ref_param callee_pname actual_pv (State.get_loc ()) in
+            Sil.mk_pvar_abducted_ref_param callee_pname actual_pv callee_loc in
           let already_has_abducted_retval p =
             list_exists
               (fun hpred -> match hpred with
@@ -1214,8 +1224,11 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
       actual_pars in
   (* in Java, assume that skip functions close resources passed as params *)
   let pre' = if !Config.curr_language = Config.Java then remove_file_attribute pre else pre in
-  let pre'' = add_constraints_on_retval pdesc pre' ret_ids ret_type_option callee_pname in
-  let pre''' = add_constraints_on_actuals_by_ref pre'' actuals_by_ref callee_pname in
+  let pre'' = match ret_ids, ret_type_option with
+    | [ret_id], Some ret_typ ->
+        add_constraints_on_retval pdesc pre' (Sil.Var ret_id) ret_typ callee_pname loc
+    | _ -> pre' in
+  let pre''' = add_constraints_on_actuals_by_ref pre'' actuals_by_ref callee_pname loc in
   if is_scan (* if scan function, don't mark anything with undef attributes *)
   then [(Tabulation.remove_constant_string_class pre''', path)]
   else
@@ -1333,9 +1346,11 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
     (* were the receiver is null and the semantics of the call is nop*)
     if (!Config.curr_language <> Config.Java) && !Config.objc_method_call_semantics &&
        (Specs.get_attributes summary).ProcAttributes.is_objc_instance_method then
-      handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path
+      handle_objc_method_call
+        actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path
     else  (* non-objective-c method call. Standard tabulation *)
-      Tabulation.exe_function_call tenv cfg ret_ids pdesc callee_pname loc actual_params pre path
+      Tabulation.exe_function_call
+        tenv cfg ret_ids pdesc callee_pname loc actual_params pre path
   end
 
 (** perform symbolic execution for a single prop, and check for junk *)

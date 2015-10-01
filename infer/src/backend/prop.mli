@@ -294,6 +294,8 @@ val get_all_attributes : 'a t -> (exp * attribute) list
 
 val has_dangling_uninit_attribute : 'a t -> exp -> bool
 
+val set_exp_attribute : normal t -> exp -> attribute -> normal t
+
 (** Replace an attribute associated to the expression *)
 val add_or_replace_exp_attribute : (Sil.attribute -> Sil.attribute -> unit) -> normal t -> exp -> attribute -> normal t
 
