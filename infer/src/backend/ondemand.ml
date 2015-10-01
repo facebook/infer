@@ -16,6 +16,7 @@ open Utils
 let trace = false
 
 let enabled () = false
+
 let across_files () = true
 
 type analyze_proc = Procname.t -> unit

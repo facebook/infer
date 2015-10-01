@@ -326,7 +326,8 @@ let weak_sort_nodes cg =
     A procedure is active if it is defined only in this file, or if it is defined in several files and this
     is the representative file for it (see Exe_env.add_cg) *)
 type cluster_elem =
-  { ce_file : DB.source_file;
+  { ce_dir : DB.source_dir option; (** if ce_dir is present, the other fields are unused *)
+    ce_file : DB.source_file;
     ce_naprocs : int; (** number of active procedures defined in the file *)
     ce_active_procs : Procname.t list; (** list of active procedures *)
   }
@@ -386,6 +387,7 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
     DB.current_source := source_file;
     match file_pname_to_cg file_pname with
     | None -> {
+        ce_dir = None;
         ce_file = source_file;
         ce_naprocs = 0;
         ce_active_procs = [];}
@@ -403,6 +405,7 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
         total_procs := !total_procs + naprocs;
         total_LOC := !total_LOC + (Cg.get_nLOC cg);
         {
+          ce_dir = None;
           ce_file = source_file;
           ce_naprocs = naprocs;
           ce_active_procs = active_procs;
@@ -581,7 +584,15 @@ module ClusterMakefile = struct
         with Not_found -> F.fprintf fmt "#[%a] missing dependency to %s@." pp_cl !cluster_nr (DB.source_file_to_string source_file) in
       let do_file ce =
         let source_file = ce.ce_file in
-        let children = Cg.get_defined_children file_cg (source_file_to_pname source_file) in
+        let () =
+          match ce.ce_dir with
+          | Some source_dir ->
+              (* add comment to makefile to correlate source file and cluster number. *)
+              F.fprintf fmt "#%s@\n" (DB.source_dir_to_string source_dir)
+          | None -> () in
+        let children =
+          try Cg.get_defined_children file_cg (source_file_to_pname source_file) with
+          | Not_found -> Procname.Set.empty in
         Procname.Set.iter add_dependent children;
         () (* L.err "file %s has %d children@." file (StringSet.cardinal children) *) in
       list_iter (fun ce -> file_to_cluster := DB.SourceFileMap.add ce.ce_file !cluster_nr !file_to_cluster) cluster;
@@ -767,14 +778,24 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
 
 (** Create an exe_env from a cluster. *)
 let exe_env_from_cluster cluster =
-  let _exe_env = Exe_env.create (Some (cluster_to_active_procs cluster)) in
-  let source_files, callees =
-    let fold_cluster_elem (source_files, callees) ce =
-      let source_files = DB.source_dir_from_source_file ce.ce_file :: source_files in
-      source_files, callees in
-    list_fold_left fold_cluster_elem ([], []) cluster in
-  let sorted_files = list_sort DB.source_dir_compare source_files in
-  list_iter (fun src_dir -> ignore(Exe_env.add_cg _exe_env src_dir)) sorted_files;
+  let _exe_env =
+    let active_procs_opt =
+      if Ondemand.enabled ()
+      then None
+      else Some (cluster_to_active_procs cluster) in
+    Exe_env.create active_procs_opt in
+  let source_dirs =
+    let fold_cluster_elem source_dirs ce =
+      let source_dir =
+        match ce.ce_dir with
+        | Some source_dir ->
+            source_dir
+        | None ->
+            DB.source_dir_from_source_file ce.ce_file in
+      source_dir :: source_dirs in
+    list_fold_left fold_cluster_elem [] cluster in
+  let sorted_dirs = list_sort DB.source_dir_compare source_dirs in
+  list_iter (fun src_dir -> ignore (Exe_env.add_cg _exe_env src_dir)) sorted_dirs;
   let exe_env = Exe_env.freeze _exe_env in
   exe_env
 
@@ -822,11 +843,35 @@ let log_dir_name = "log"
 let analyzer_out_name = "analyzer_out"
 let analyzer_err_name = "analyzer_err"
 
+(** Compute clusters when on-demand is active.
+    Each cluster will contain only the name of the directory for a file. *)
+let compute_ondemand_clusters source_dirs =
+  let mk_cluster source_dir =
+    let cluster_elem =
+      { ce_dir = Some source_dir;
+        ce_file = DB.source_file_from_string "";
+        ce_naprocs = 0;
+        ce_active_procs = []; } in
+    [cluster_elem] in
+  let clusters = list_map mk_cluster source_dirs in
+  print_clusters_stats clusters;
+  let num_files = list_length clusters in
+  let num_procs = 0 (* can't compute it at this stage *) in
+  let num_lines = 0 in
+  output_json_file_stats num_files num_procs num_lines;
+  if !makefile_cmdline <> "" then
+    begin
+      let file_cg = Cg.create () in
+      ClusterMakefile.create_cluster_makefile_and_exit clusters file_cg !makefile_cmdline false
+    end;
+  clusters
+
 let () =
   let () =
     match !cluster_cmdline with
     | None ->
-        if !Config.curr_language = Config.C_CPP then
+        if !Config.curr_language = Config.C_CPP &&
+           not (Ondemand.enabled ()) then
           Objc_preanal.do_objc_preanalysis ();
         L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
     | Some clname -> L.stdout "Cluster %s@." clname in
@@ -849,6 +894,7 @@ let () =
   if (!Config.curr_language = Config.C_CPP) then Mleak_buckets.init_buckets !objc_ml_buckets_arg;
 
   process_cluster_cmdline_exit ();
+
   let source_dirs =
     if !only_files_cmdline = [] then DB.find_source_dirs ()
     else
@@ -857,11 +903,22 @@ let () =
         list_exists (fun s -> Utils.string_is_prefix s source_dir_base) !only_files_cmdline in
       list_filter filter (DB.find_source_dirs ()) in
   L.err "Found %d source files in %s@." (list_length source_dirs) !Config.results_dir;
-  let _exe_env = Exe_env.create None in
-  let files_changed_map, exe_env =
-    compute_files_changed_map _exe_env source_dirs (compute_exclude_fun ()) in
-  L.err "Procedures defined in more than one file: %a" Procname.pp_set (Exe_env.get_procs_defined_in_several_files exe_env);
-  let clusters = compute_clusters exe_env files_changed_map in
+
+  let clusters =
+    if Ondemand.enabled ()
+    then
+      compute_ondemand_clusters source_dirs
+    else
+      begin
+        let _exe_env = Exe_env.create None in
+        let files_changed_map, exe_env =
+          compute_files_changed_map _exe_env source_dirs (compute_exclude_fun ()) in
+        L.err "Procedures defined in more than one file: %a@."
+          Procname.pp_set (Exe_env.get_procs_defined_in_several_files exe_env);
+        compute_clusters exe_env files_changed_map
+      end in
+
+
   let tot_clusters = list_length clusters in
   Fork.tot_files := list_fold_left (fun n cluster -> n + list_length cluster) 0 clusters;
   list_iter (analyze_cluster (ref 0) tot_clusters) clusters;
