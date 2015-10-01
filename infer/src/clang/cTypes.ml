@@ -14,7 +14,7 @@ open CFrontend_utils
 module L = Logging
 
 let get_type_from_expr_info ei =
-  ei.Clang_ast_t.ei_qual_type
+  ei.Clang_ast_t.ei_type_ptr
 
 let lookup_var_type context pvar =
   let formals = Cfg.Procdesc.get_formals context.CContext.procdesc in
@@ -121,12 +121,12 @@ let rec return_type_of_function_type_ptr type_ptr =
         (Clang_ast_j.string_of_pointer type_ptr);
       ""
 
-let return_type_of_function_type qt =
-  return_type_of_function_type_ptr qt
+let return_type_of_function_type tp =
+  return_type_of_function_type_ptr tp
 
-let is_block_type qt =
+let is_block_type tp =
   let open Clang_ast_t in
-  match Ast_utils.get_desugared_type qt with
+  match Ast_utils.get_desugared_type tp with
   | Some BlockPointerType _ -> true
   | _ -> false
 

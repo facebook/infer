@@ -104,7 +104,7 @@ let pp_ast_decl fmt ast_decl =
     let prefix1 = prefix ^ "  " in
     let open Clang_ast_t in
     match decl with
-    | FunctionDecl (decl_info, name, qt, fdecl_info) ->
+    | FunctionDecl (decl_info, name, tp, fdecl_info) ->
         F.fprintf fmt "%sFunctionDecl %s %a@\n"
           prefix
           name.Clang_ast_t.ni_name
@@ -118,7 +118,7 @@ let pp_ast_decl fmt ast_decl =
           name.Clang_ast_t.ni_name
           pp_source_range decl_info.di_source_range;
         Option.may (dump_stmt prefix1) obj_c_method_decl_info.omdi_body
-    | VarDecl (decl_info, name, qual_type, var_decl_info) ->
+    | VarDecl (decl_info, name, type_ptr, var_decl_info) ->
         F.fprintf fmt "%sVarDecl %a@\n"
           prefix
           pp_source_range decl_info.di_source_range;
@@ -251,7 +251,7 @@ and decl_process_locs loc_composer decl =
     let decl_list' = list_map (decl_process_locs loc_composer) decl_list in
     decl_set_sub_decls decl1 decl_list' in
   let open Clang_ast_t in
-  let get_updated_fun_decl (decl_info', name, qt, fdecl_info) =
+  let get_updated_fun_decl (decl_info', name, tp, fdecl_info) =
     let fdi_decls_in_prototype_scope' =
       list_map (decl_process_locs loc_composer) fdecl_info.fdi_decls_in_prototype_scope in
     let fdi_parameters' =
@@ -262,7 +262,7 @@ and decl_process_locs loc_composer decl =
         fdi_body = body';
         fdi_parameters = fdi_parameters';
         fdi_decls_in_prototype_scope = fdi_decls_in_prototype_scope'; } in
-    (decl_info', name, qt, fdecl_info') in
+    (decl_info', name, tp, fdecl_info') in
   match decl' with
   | FunctionDecl fun_info -> FunctionDecl (get_updated_fun_decl fun_info)
   | CXXMethodDecl fun_info -> CXXMethodDecl (get_updated_fun_decl fun_info)
@@ -271,12 +271,12 @@ and decl_process_locs loc_composer decl =
         Option.map (stmt_process_locs loc_composer) obj_c_method_decl_info.omdi_body in
       let obj_c_method_decl_info' = { obj_c_method_decl_info with omdi_body = body' } in
       ObjCMethodDecl (decl_info', name, obj_c_method_decl_info')
-  | VarDecl (decl_info, string, qual_type, var_decl_info) ->
+  | VarDecl (decl_info, string, type_ptr, var_decl_info) ->
       let vdi_init_expr' =
         Option.map (stmt_process_locs loc_composer) var_decl_info.vdi_init_expr in
       let var_decl_info' =
         { var_decl_info with vdi_init_expr = vdi_init_expr' } in
-      VarDecl (decl_info, string, qual_type, var_decl_info')
+      VarDecl (decl_info, string, type_ptr, var_decl_info')
   | _ ->
       decl'
 

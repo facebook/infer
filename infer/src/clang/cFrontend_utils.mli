@@ -66,14 +66,14 @@ sig
 
   val is_copy : Clang_ast_t.property_attribute option -> bool
 
-  val is_type_nonnull : Clang_ast_t.qual_type -> Clang_ast_t.attribute list -> bool
+  val is_type_nonnull : Clang_ast_t.type_ptr -> Clang_ast_t.attribute list -> bool
 
   val get_fresh_pointer : unit -> string
 
   val get_invalid_pointer : unit -> string
 
   val type_from_unary_expr_or_type_trait_expr_info :
-    Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.qual_type option
+    Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.type_ptr option
 
   val is_generated : Clang_ast_t.named_decl_info -> bool
 
@@ -92,7 +92,7 @@ sig
       NOTE: this function needs extending to handle objC types *)
   val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl
 
-  val string_of_qual_type : Clang_ast_t.qual_type -> string
+  val string_of_type_ptr : Clang_ast_t.type_ptr -> string
 
   val make_name_decl : string -> Clang_ast_t.named_decl_info
 
@@ -141,9 +141,9 @@ sig
   val mk_procname_from_objc_method : string -> string -> Procname.objc_method_kind -> Procname.t
 
   val mk_procname_from_function : string -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info)
-      option -> Clang_ast_t.qual_type -> Procname.t
+      option -> Clang_ast_t.type_ptr -> Procname.t
 
-  val mk_procname_from_cpp_method : string -> string -> Clang_ast_t.qual_type -> Procname.t
+  val mk_procname_from_cpp_method : string -> string -> Clang_ast_t.type_ptr -> Procname.t
 
   val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
 

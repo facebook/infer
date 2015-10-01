@@ -26,8 +26,8 @@ type prop_getter_setter = string * (Clang_ast_t.decl * bool) option
 
 (** For each property, we save the getter and the setter method declarations (no implementation). *)
 (** A property type is a tuple: *)
-(** (qual_type, property attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar name) *)
-type property_type = Clang_ast_t.qual_type * Clang_ast_t.property_attribute list *
+(** (type_ptr, property attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar name) *)
+type property_type = Clang_ast_t.type_ptr * Clang_ast_t.property_attribute list *
                      Clang_ast_t.decl_info * prop_getter_setter * prop_getter_setter *
                      Clang_ast_t.named_decl_info option
 
@@ -54,7 +54,7 @@ sig
 
   val replace_property : property_key -> property_type -> unit
 
-  val add_property : property_key -> Clang_ast_t.qual_type -> Clang_ast_t.property_attribute list ->
+  val add_property : property_key -> Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list ->
     Clang_ast_t.decl_info -> unit
 
   val print_property_table : unit -> unit
@@ -121,7 +121,7 @@ struct
     PropertyTableHash.replace property_table property
 
   let print_property_table () =
-    let print_item key (qt, attributes, decl_info, getter, setter, ivar) =
+    let print_item key (tp, attributes, decl_info, getter, setter, ivar) =
       let getter_str =
         match getter with
         | getter_name, Some (Clang_ast_t.ObjCMethodDecl _, defined1) ->
@@ -153,12 +153,12 @@ struct
     | Some name -> name.Clang_ast_t.ni_name
     | None -> "set" ^ (String.capitalize prop_name.ni_name) ^ ":"
 
-  let add_property (curr_class, property_name) qt attributes decl_info =
+  let add_property (curr_class, property_name) tp attributes decl_info =
     let key = (curr_class, property_name) in
     let getter_name = get_getter_name property_name attributes in
     let setter_name = get_setter_name property_name attributes in
     PropertyTableHash.add property_table key
-      (qt, attributes, decl_info, (getter_name, None), (setter_name, None), None)
+      (tp, attributes, decl_info, (getter_name, None), (setter_name, None), None)
 end
 
 let reset_property_table = Property.reset_property_table
@@ -181,14 +181,14 @@ let upgrade_property_accessor property_key property_type meth_decl new_defined i
     | Some (method_decl, was_defined) -> new_defined || was_defined
     | None -> new_defined in
   match property_type with
-  | qt, attributes, decl_info, (gname, getter), (sname, setter), ivar ->
+  | tp, attributes, decl_info, (gname, getter), (sname, setter), ivar ->
       if is_getter then
         let defined = is_defined getter in
         Property.replace_property property_key
-          (qt, attributes, decl_info, (gname, Some (meth_decl, defined)), (sname, setter), ivar)
+          (tp, attributes, decl_info, (gname, Some (meth_decl, defined)), (sname, setter), ivar)
       else let defined = is_defined setter in
         Property.replace_property property_key
-          (qt, attributes, decl_info, (gname, getter), (sname, Some (meth_decl, defined)), ivar)
+          (tp, attributes, decl_info, (gname, getter), (sname, Some (meth_decl, defined)), ivar)
 
 let check_for_property curr_class method_name meth_decl body =
   let defined = Option.is_some body in
@@ -224,26 +224,26 @@ let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
   let pname = Ast_utils.property_name property_impl_decl_info in
   let prop_name = pname.Clang_ast_t.ni_name in
   let res = (try
-               let qt', atts, di, getter, setter, _ = Property.find_property curr_class pname in
+               let tp', atts, di, getter, setter, _ = Property.find_property curr_class pname in
                let ivar = (match property_impl_decl_info.Clang_ast_t.opidi_ivar_decl with
                    | Some dr -> (match dr.Clang_ast_t.dr_name with
                        | Some name_info -> name_info
                        | None -> assert false)
                    | None -> Ast_utils.generated_ivar_name pname) in
                (* update property info with proper ivar name *)
-               Property.replace_property (curr_class, pname) (qt', atts, di, getter, setter, Some ivar);
+               Property.replace_property (curr_class, pname) (tp', atts, di, getter, setter, Some ivar);
                Printing.log_out "Updated property table by adding ivar name for property '%s'\n"
                  prop_name;
-               Some (qt', ivar)
+               Some (tp', ivar)
              with Not_found ->
                L.err "Property '%s' not found in the table. Ivar not updated.@." prop_name;
                None) in
   match property_impl_decl_info.Clang_ast_t.opidi_implementation, res with
-  | `Dynamic, Some (qt, ivar) ->
+  | `Dynamic, Some (tp, ivar) ->
       (* For Dynamic property we need to create the ObjCIvarDecl which specifies*)
       (* the field of the property. In case of Dynamic this is not in the AST.*)
       (* Once created the ObjCIvarDecl then we treat the property as synthesized *)
-      [Ast_expressions.make_objc_ivar_decl decl_info qt property_impl_decl_info ivar]
+      [Ast_expressions.make_objc_ivar_decl decl_info tp property_impl_decl_info ivar]
   | _ ->
       (* No names of fields/method to collect from ObjCPropertyImplDecl when Synthesized *)
       []
@@ -270,7 +270,7 @@ let get_ivar_name prop_name ivar_opt =
 
 let make_getter curr_class prop_name prop_type =
   match prop_type with
-  | qt, attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar_opt ->
+  | tp, attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar_opt ->
       let ivar_name = get_ivar_name prop_name ivar_opt in
       let open Clang_ast_t in
       match getter with
@@ -284,44 +284,44 @@ let make_getter curr_class prop_name prop_type =
           let generated_name_info = create_generated_method_name name_info in
           Property.replace_property
             (curr_class, prop_name)
-            (qt, attributes, decl_info,
+            (tp, attributes, decl_info,
              (getter_name, Some (ObjCMethodDecl(di, name_info, mdi), true)), (setter_name, setter), Some ivar_name);
           [ObjCMethodDecl(dummy_info, generated_name_info, mdi')]
       | _ -> []
 
 let make_setter curr_class prop_name prop_type =
   match prop_type with
-  | qt, attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar_opt ->
+  | tp, attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar_opt ->
       let ivar_name = get_ivar_name prop_name ivar_opt in
       let open Clang_ast_t in
       match setter with
       | Some (ObjCMethodDecl(di, name, mdi), _) when not (is_property_read_only attributes) ->
           let dummy_info = Ast_expressions.dummy_decl_info_in_curr_file di in
-          let param_name, qt_param = (match mdi.Clang_ast_t.omdi_parameters with
-              | [ParmVarDecl(_, name_info, qt_param, _)] -> name_info, qt_param
+          let param_name, tp_param = (match mdi.Clang_ast_t.omdi_parameters with
+              | [ParmVarDecl(_, name_info, tp_param, _)] -> name_info, tp_param
               | _ -> assert false) in
           let is_hidden = false in
           let decl_ptr = Ast_utils.get_invalid_pointer () in
           let drti_decl_ref' =
-            Ast_expressions.make_decl_ref_qt (`ParmVar) decl_ptr param_name is_hidden qt_param in
+            Ast_expressions.make_decl_ref_tp (`ParmVar) decl_ptr param_name is_hidden tp_param in
           let decl_ref_expr_info' = Ast_expressions.make_decl_ref_expr_info drti_decl_ref' in
-          let expr_info = Ast_expressions.make_expr_info qt_param in
+          let expr_info = Ast_expressions.make_expr_info tp_param in
           let stmt_info = Ast_expressions.make_stmt_info dummy_info in
-          let rhs_exp = Ast_expressions.make_cast_expr qt_param di decl_ref_expr_info' `ObjCProperty in
+          let rhs_exp = Ast_expressions.make_cast_expr tp_param di decl_ref_expr_info' `ObjCProperty in
           let lhs_exp = Ast_expressions.make_self_field
-              (CContext.get_curr_class_name curr_class) di qt_param ivar_name in
+              (CContext.get_curr_class_name curr_class) di tp_param ivar_name in
           let boi = { Clang_ast_t.boi_kind = `Assign } in
           let setter = Ast_expressions.make_binary_stmt lhs_exp rhs_exp stmt_info expr_info boi in
           let memory_management_attribute = (get_memory_management_attribute attributes) in
           let code =
             if Ast_utils.is_retain memory_management_attribute then
-              let param_decl = Ast_expressions.make_decl_ref_exp_var (param_name, qt_param, decl_ptr) `ParmVar stmt_info in
-              let retain_call = Ast_expressions.make_message_expr qt_param CFrontend_config.retain param_decl stmt_info true in
-              let release_call = Ast_expressions.make_message_expr qt_param CFrontend_config.release lhs_exp stmt_info true in
+              let param_decl = Ast_expressions.make_decl_ref_exp_var (param_name, tp_param, decl_ptr) `ParmVar stmt_info in
+              let retain_call = Ast_expressions.make_message_expr tp_param CFrontend_config.retain param_decl stmt_info true in
+              let release_call = Ast_expressions.make_message_expr tp_param CFrontend_config.release lhs_exp stmt_info true in
               [retain_call; release_call; setter]
             else if Ast_utils.is_copy memory_management_attribute then
-              let param_decl = Ast_expressions.make_decl_ref_exp_var (param_name, qt_param, decl_ptr) `ParmVar stmt_info in
-              let copy_call = Ast_expressions.make_message_expr qt_param CFrontend_config.copy param_decl stmt_info true in
+              let param_decl = Ast_expressions.make_decl_ref_exp_var (param_name, tp_param, decl_ptr) `ParmVar stmt_info in
+              let copy_call = Ast_expressions.make_message_expr tp_param CFrontend_config.copy param_decl stmt_info true in
               let setter = Ast_expressions.make_binary_stmt lhs_exp copy_call stmt_info expr_info boi in
               [setter]
             else [setter] in
@@ -330,7 +330,7 @@ let make_setter curr_class prop_name prop_type =
           let name_generated = create_generated_method_name name in
           Property.replace_property
             (curr_class, prop_name)
-            (qt, attributes, decl_info,
+            (tp, attributes, decl_info,
              (getter_name, getter),
              (setter_name, Some (ObjCMethodDecl(di, name, mdi), true)), Some ivar_name);
           [ObjCMethodDecl(dummy_info, name_generated, mdi')]
@@ -362,7 +362,7 @@ let add_properties_to_table curr_class decl_list =
         let pname = name_info.Clang_ast_t.ni_name in
         Printing.log_out "ADDING: ObjCPropertyDecl for property '%s' " pname;
         Printing.log_out "  pointer= '%s' \n" decl_info.Clang_ast_t.di_pointer;
-        Property.add_property (curr_class, name_info) pdi.Clang_ast_t.opdi_qual_type
+        Property.add_property (curr_class, name_info) pdi.Clang_ast_t.opdi_type_ptr
           pdi.Clang_ast_t.opdi_property_attributes decl_info;
     | _ -> () in
   list_iter add_property_to_table decl_list

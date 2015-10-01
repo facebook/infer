@@ -84,7 +84,7 @@ struct
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
     | Clang_ast_t.ImplicitCastExpr(_, _, ei, _)
-      when CTypes.is_block_type ei.Clang_ast_t.ei_qual_type -> true
+      when CTypes.is_block_type ei.Clang_ast_t.ei_type_ptr -> true
     | _ -> false
 
   (* This function add in tenv a class representing an objc block. *)
@@ -224,8 +224,8 @@ struct
   let objCSelectorExpr_trans trans_state stmt_info expr_info selector =
     stringLiteral_trans trans_state stmt_info expr_info selector
 
-  let objCEncodeExpr_trans trans_state stmt_info expr_info qual_type =
-    stringLiteral_trans trans_state stmt_info expr_info (Ast_utils.string_of_qual_type qual_type)
+  let objCEncodeExpr_trans trans_state stmt_info expr_info type_ptr =
+    stringLiteral_trans trans_state stmt_info expr_info (Ast_utils.string_of_type_ptr type_ptr)
 
   let objCProtocolExpr_trans trans_state stmt_info expr_info decl_ref =
     let name = (match decl_ref.Clang_ast_t.dr_name with
@@ -268,13 +268,13 @@ struct
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state stmt_info expr_info unary_expr_or_type_trait_expr_info =
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CTypes_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.type_ptr_to_sil_type tenv expr_info.Clang_ast_t.ei_type_ptr in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
     | `SizeOf ->
-        let qt = Ast_utils.type_from_unary_expr_or_type_trait_expr_info unary_expr_or_type_trait_expr_info in
+        let tp = Ast_utils.type_from_unary_expr_or_type_trait_expr_info unary_expr_or_type_trait_expr_info in
         let sizeof_typ =
-          match qt with
-          | Some qt -> CTypes_decl.qual_type_to_sil_type tenv qt
+          match tp with
+          | Some tp -> CTypes_decl.type_ptr_to_sil_type tenv tp
           | None -> typ in (* Some default type since the type is missing *)
         { empty_res_trans with exps = [(Sil.Sizeof(sizeof_typ, Sil.Subtype.exact), sizeof_typ)]}
     | k -> Printing.log_stats
@@ -294,8 +294,8 @@ struct
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
-    let qt = expr_info.Clang_ast_t.ei_qual_type in
-    let typ = CTypes_decl.qual_type_to_sil_type context.tenv qt in
+    let tp = expr_info.Clang_ast_t.ei_type_ptr in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv tp in
     let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let pointer = CTrans_utils.get_decl_pointer decl_ref_expr_info in
@@ -318,7 +318,7 @@ struct
       let pname =
         if CTrans_models.is_modeled_builtin name then
           Procname.from_string_c_fun (CFrontend_config.infer ^ name)
-        else CMethod_trans.create_procdesc_with_pointer context pointer None name qt in
+        else CMethod_trans.create_procdesc_with_pointer context pointer None name tp in
       let address_of_function = not context.CContext.is_callee_expression in
       (* If we are not translating a callee expression, then the address of the function is being taken.*)
       (* As e.g. in fun_ptr = foo; *)
@@ -419,7 +419,7 @@ struct
     let parent_line_number = trans_state.parent_line_number in
     let succ_nodes = trans_state.succ_nodes in
     let sil_loc = CLocation.get_sil_location stmt_info parent_line_number context in
-    let typ = CTypes_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     (match stmt_list with
      | [s1; ImplicitCastExpr (stmt, [CompoundLiteralExpr (cle_stmt_info, stmts, expr_info)], _, cast_expr_info)] ->
          let di, line_number = get_decl_ref_info s1 parent_line_number in
@@ -737,9 +737,9 @@ struct
     let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
     CContext.LocalVars.add_pointer_var stmt_info.Clang_ast_t.si_pointer pvar trans_state.context;
-    let transformed_stmt, qt =
+    let transformed_stmt, tp =
       Ast_expressions.translate_dispatch_function (Sil.pvar_to_string pvar) stmt_info stmt_list ei n in
-    let typ = CTypes_decl.qual_type_to_sil_type trans_state.context.CContext.tenv qt in
+    let typ = CTypes_decl.type_ptr_to_sil_type trans_state.context.CContext.tenv tp in
     let loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let res_state = instruction trans_state transformed_stmt in
     (* Add declare locals to the first node *)
@@ -761,9 +761,9 @@ struct
     let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
     let transformed_stmt, vars_to_register =
       Ast_expressions.translate_block_enumerate (Sil.pvar_to_string pvar) stmt_info stmt_list ei in
-    let pvars_types = list_map (fun (v, pointer, qt) ->
+    let pvars_types = list_map (fun (v, pointer, tp) ->
         let pvar = Sil.mk_pvar (Mangled.from_string v) procname in
-        let typ = CTypes_decl.qual_type_to_sil_type trans_state.context.CContext.tenv qt in
+        let typ = CTypes_decl.type_ptr_to_sil_type trans_state.context.CContext.tenv tp in
         CContext.LocalVars.add_pointer_var pointer pvar trans_state.context;
         (pvar, typ)) vars_to_register in
     let loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
@@ -843,7 +843,7 @@ struct
     (match stmt_list with
      | [cond; exp1; exp2] ->
          let typ =
-           CTypes_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
+           CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
          let join_node = compute_join_node typ in
          let pvar = mk_temp_var (Cfg.Node.get_id join_node) in
          let continuation' = mk_cond_continuation trans_state.continuation in
@@ -1213,7 +1213,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info pln context in
     let line_number = CLocation.get_line stmt_info pln in
     let sil_typ =
-      CTypes_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
+      CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     (match stmt_list with
      | [s1; s2] ->
          let trans_state' = { trans_state_pri with succ_nodes = []; parent_line_number = line_number } in
@@ -1298,7 +1298,7 @@ struct
           list_map (fun (e, t) -> list_flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
       | _ -> [ [(e, typ)] ] in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-    let var_type = CTypes_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
+    let var_type = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let pvar = CContext.LocalVars.find_var_with_pointer context di_pointer in
     let lh = list_flatten (collect_left_hand_exprs (Sil.Lvar pvar) var_type Utils.StringSet.empty) in
     let rh = list_flatten (list_map (collect_right_hand_exprs trans_state_pri) stmts ) in
@@ -1350,7 +1350,7 @@ struct
     let open Clang_ast_t in
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
-    let do_var_dec (di, var_name, qtype, vdi) next_node =
+    let do_var_dec (di, var_name, type_ptr, vdi) next_node =
       match vdi.Clang_ast_t.vdi_init_expr with
       | None -> { empty_res_trans with root_nodes = next_node } (* Nothing to do if no init expression *)
       | Some (ImplicitValueInitExpr (_, stmt_list, _)) ->
@@ -1416,10 +1416,10 @@ struct
           } in
     match var_decls with
     | [] -> { empty_res_trans with root_nodes = next_nodes }
-    | VarDecl (di, n, qt, vdi) :: var_decls' ->
+    | VarDecl (di, n, tp, vdi) :: var_decls' ->
         (* Var are defined when procdesc is created, here we only take care of initialization*)
         let res_trans_vd = collect_all_decl trans_state var_decls' next_nodes stmt_info in
-        let res_trans_tmp = do_var_dec (di, n, qt, vdi) res_trans_vd.root_nodes in
+        let res_trans_tmp = do_var_dec (di, n, tp, vdi) res_trans_vd.root_nodes in
         { root_nodes = res_trans_tmp.root_nodes; leaf_nodes = [];
           ids = res_trans_tmp.ids @ res_trans_vd.ids;
           instrs = res_trans_tmp.instrs @ res_trans_vd.instrs;
@@ -1505,7 +1505,7 @@ struct
     let line_number = CLocation.get_line stmt_info pln in
     let trans_state' = { trans_state with parent_line_number = line_number } in
     let res_trans_stmt = instruction trans_state' stmt in
-    let typ = CTypes_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     (* This gives the differnece among cast operations kind*)
     let cast_ids, cast_inst, cast_exp = cast_operation context cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged in
@@ -1521,10 +1521,10 @@ struct
     let field_name = match decl_ref.Clang_ast_t.dr_name with
       | Some s -> s
       | _ -> assert false in
-    let field_qt = match decl_ref.Clang_ast_t.dr_qual_type with
+    let field_tp = match decl_ref.Clang_ast_t.dr_type_ptr with
       | Some t -> t
       | _ -> assert false in
-    let field_typ = CTypes_decl.qual_type_to_sil_type context.CContext.tenv field_qt in
+    let field_typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv field_tp in
     Printing.log_out "!!!!! Dealing with field '%s' @." field_name.Clang_ast_t.ni_name;
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
@@ -1546,7 +1546,7 @@ struct
         let class_name = match class_typ with Sil.Tptr (t, _) | t -> CTypes.classname_of_type t in
         let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
         let pname = CMethod_trans.create_procdesc_with_pointer context pointer (Some class_name)
-            field_name.Clang_ast_t.ni_name field_qt in
+            field_name.Clang_ast_t.ni_name field_tp in
         let method_exp = (Sil.Const (Sil.Cfun pname), field_typ) in
         Cfg.set_procname_priority context.CContext.cfg pname;
         { result_trans_exp_stmt with exps = [method_exp; (obj_sil, class_typ)] }
@@ -1572,7 +1572,7 @@ struct
     let res_trans_stmt = instruction trans_state' stmt in
     (* Assumption: the operand does not create a cfg node*)
     let (sil_e', _) = extract_exp_from_list res_trans_stmt.exps "\nWARNING: Missing operand in unary operator. NEED FIXING.\n" in
-    let ret_typ = CTypes_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
+    let ret_typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let ids_op, exp_op, instr_op =
       CArithmetic_trans.unary_operation_instruction unary_operator_info sil_e' ret_typ sil_loc in
     let node_kind = Cfg.Node.Stmt_node "UnaryOperator" in
@@ -1648,13 +1648,13 @@ struct
     instruction trans_state' stmt
 
   and objCBoxedExpr_trans trans_state info sel stmt_info stmts =
-    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class sel typ in
     let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
     instruction trans_state message_stmt
 
   and objCArrayLiteral_trans trans_state info stmt_info stmts =
-    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.array_with_objects_count_m typ in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
@@ -1662,7 +1662,7 @@ struct
     instruction trans_state message_stmt
 
   and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
-    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.dict_with_objects_and_keys_m typ in
     let stmts = General_utils.swap_elements_list stmts in
@@ -1673,7 +1673,7 @@ struct
   and objCStringLiteral_trans trans_state stmt_info stmts info =
     let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts
                    Ast_expressions.create_char_star_type `ArrayToPointerDecay] in
-    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
+    let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.string_with_utf8_m typ in
     let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
@@ -1733,9 +1733,9 @@ struct
     match decl with
     | Clang_ast_t.BlockDecl (decl_info, decl_list, decl_context_info, block_decl_info) ->
         let open CContext in
-        let qual_type = expr_info.Clang_ast_t.ei_qual_type in
+        let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
         let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in
-        let typ = CTypes_decl.qual_type_to_sil_type context.tenv qual_type in
+        let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
         (* We need to set the explicit dependency between the newly created block and the *)
         (* defining procedure. We add an edge in the call graph.*)
         Cg.add_edge context.cg procname block_pname;
@@ -1749,7 +1749,7 @@ struct
         let all_captured_vars = captured_vars @ static_vars in
         let ids_instrs = list_map assign_captured_var all_captured_vars in
         let ids, instrs = list_split ids_instrs in
-        let block_data = (qual_type, context.is_instance, block_pname, all_captured_vars, context.curr_class) in
+        let block_data = (type_ptr, context.is_instance, block_pname, all_captured_vars, context.curr_class) in
         M.function_decl context.tenv context.cfg context.cg context.namespace decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_exps = list_map (fun id -> Sil.Var id) ids in
@@ -1904,8 +1904,8 @@ struct
     | ObjCSelectorExpr(stmt_info, stmt_list, expr_info, selector) ->
         objCSelectorExpr_trans trans_state stmt_info expr_info selector
 
-    | ObjCEncodeExpr(stmt_info, stmt_list, expr_info, qual_type) ->
-        objCEncodeExpr_trans trans_state stmt_info expr_info qual_type
+    | ObjCEncodeExpr(stmt_info, stmt_list, expr_info, type_ptr) ->
+        objCEncodeExpr_trans trans_state stmt_info expr_info type_ptr
 
     | ObjCProtocolExpr(stmt_info, stmt_list, expr_info, decl_ref) ->
         objCProtocolExpr_trans trans_state stmt_info expr_info decl_ref

@@ -79,7 +79,7 @@ val is_enumeration_constant : Clang_ast_t.stmt -> bool
 
 val is_member_exp : Clang_ast_t.stmt -> bool
 
-val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.qual_type
+val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
 
 val cast_operation :
   CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->

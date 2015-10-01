@@ -267,8 +267,8 @@ struct
     CFrontend_config.pointer_prefix^("INVALID")
 
   let type_from_unary_expr_or_type_trait_expr_info info =
-    match info.Clang_ast_t.uttei_qual_type with
-    | Some qt -> Some qt
+    match info.Clang_ast_t.uttei_type_ptr with
+    | Some tp -> Some tp
     | None -> None
 
   let is_generated name_info =
@@ -312,14 +312,14 @@ struct
     | _ -> assert false
 
   (*TODO take the attributes into account too. To be done after we get the attribute's arguments. *)
-  let is_type_nonnull qt attributes =
+  let is_type_nonnull type_ptr attributes =
     let open Clang_ast_t in
-    match get_type qt with
+    match get_type type_ptr with
     | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nonnull
     | _ -> false
 
-  let string_of_qual_type qt =
-    match get_desugared_type qt with
+  let string_of_type_ptr type_ptr =
+    match get_desugared_type type_ptr with
     | Some typ -> (Clang_ast_proj.get_type_tuple typ).Clang_ast_t.ti_raw
     | None -> ""
 
@@ -446,7 +446,7 @@ struct
     let prefix = Ast_utils.get_qualifier_string field_qual_name in
     Ident.create_fieldname (Mangled.mangled field_name prefix) 0
 
-  let mk_procname_from_function name function_decl_info_opt qt =
+  let mk_procname_from_function name function_decl_info_opt tp =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
@@ -460,7 +460,7 @@ struct
     let type_string =
       match !CFrontend_config.language with
       | CFrontend_config.CPP
-      | CFrontend_config.OBJCPP -> Ast_utils.string_of_qual_type qt
+      | CFrontend_config.OBJCPP -> Ast_utils.string_of_type_ptr tp
       | _ -> "" in
     let mangled = file ^ type_string in
     if String.length mangled == 0 then
@@ -473,8 +473,8 @@ struct
     let mangled = Procname.mangled_of_objc_method_kind method_kind in
     Procname.mangled_c_method class_name method_name mangled
 
-  let mk_procname_from_cpp_method class_name method_name qt =
-    let type_name = Ast_utils.string_of_qual_type qt in
+  let mk_procname_from_cpp_method class_name method_name tp =
+    let type_name = Ast_utils.string_of_type_ptr tp in
     let type_name_crc = Some (CRC.crc16 type_name) in
     Procname.mangled_c_method class_name method_name type_name_crc
 

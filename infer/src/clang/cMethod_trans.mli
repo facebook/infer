@@ -38,4 +38,4 @@ val method_signature_of_decl : string option -> Clang_ast_t.decl -> CModule_type
 val method_signature_of_pointer : string option -> Clang_ast_t.pointer -> CMethod_signature.method_signature option
 
 val create_procdesc_with_pointer : CContext.t -> Clang_ast_t.pointer -> string option ->
-  string -> Clang_ast_t.qual_type -> Procname.t
+  string -> Clang_ast_t.type_ptr -> Procname.t

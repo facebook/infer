@@ -13,5 +13,5 @@
 val get_fun_locals : CContext.t -> Clang_ast_t.stmt list -> unit
 
 val global_var_decl : Sil.tenv -> string option -> Clang_ast_t.decl_info -> string ->
-  Clang_ast_t.qual_type -> unit
+  Clang_ast_t.type_ptr -> unit
 

@@ -37,7 +37,7 @@ let is_alloc_model typ funct =
 let rec get_func_type_from_stmt stmt =
   match stmt with
   | Clang_ast_t.DeclRefExpr(stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
-      Some expr_info.Clang_ast_t.ei_qual_type
+      Some expr_info.Clang_ast_t.ei_type_ptr
   | _ ->
       match CFrontend_utils.Ast_utils.get_stmts_from_stmt stmt with
       | stmt:: rest -> get_func_type_from_stmt stmt
@@ -100,7 +100,7 @@ let is_toll_free_bridging pn_opt =
 let builtin_predefined_model fun_stmt sil_fe =
   match get_func_type_from_stmt fun_stmt with
   | Some typ ->
-      let typ = Ast_utils.string_of_qual_type typ in
+      let typ = Ast_utils.string_of_type_ptr typ in
       (match sil_fe with
        | Sil.Const (Sil.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
        | Sil.Const (Sil.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->

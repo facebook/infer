@@ -29,9 +29,9 @@ val remove_pointer_to_typ : Sil.typ -> Sil.typ
 
 val is_class : Sil.typ -> bool
 
-val return_type_of_function_type : Clang_ast_t.qual_type -> Clang_ast_t.pointer
+val return_type_of_function_type : Clang_ast_t.type_ptr -> Clang_ast_t.pointer
 
-val is_block_type : Clang_ast_t.qual_type -> bool
+val is_block_type : Clang_ast_t.type_ptr -> bool
 
 val expand_structured_type : Sil.tenv -> Sil.typ -> Sil.typ
 

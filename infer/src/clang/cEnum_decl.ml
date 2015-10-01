@@ -29,7 +29,7 @@ let global_procdesc = ref (create_empty_procdesc ())
 let rec get_enum_constants context decl_list v =
   match decl_list with
   | [] -> []
-  | Clang_ast_t.EnumConstantDecl (decl_info, name_info, qual_type, enum_constant_decl_info) :: decl_list' ->
+  | Clang_ast_t.EnumConstantDecl (decl_info, name_info, type_ptr, enum_constant_decl_info) :: decl_list' ->
       let name = name_info.Clang_ast_t.ni_name in
       (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
        | None -> Printing.log_out "%s" ("  ...Defining Enum Constant ("^name^", "^(string_of_int v));

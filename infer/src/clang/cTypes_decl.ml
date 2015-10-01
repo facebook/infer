@@ -36,15 +36,15 @@ let add_predefined_objc_types tenv =
 let add_predefined_basic_types tenv =
   let open Ast_expressions in
   let open Clang_ast_t in
-  let add_basic_type qt basic_type_kind =
+  let add_basic_type tp basic_type_kind =
     let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
-    Ast_utils.update_sil_types_map qt sil_type in
-  let add_pointer_type qt sil_type =
+    Ast_utils.update_sil_types_map tp sil_type in
+  let add_pointer_type tp sil_type =
     let pointer_type = CTypes.add_pointer_to_typ sil_type in
-    Ast_utils.update_sil_types_map qt pointer_type in
-  let add_function_type qt return_type =
+    Ast_utils.update_sil_types_map tp pointer_type in
+  let add_function_type tp return_type =
     (* We translate function types as the return type of the function *)
-    Ast_utils.update_sil_types_map qt return_type in
+    Ast_utils.update_sil_types_map tp return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
   let sil_nsarray_type = Sil.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl) in
@@ -109,10 +109,10 @@ let get_method_decls parent decl_list =
 
 let get_class_methods tenv class_name namespace decl_list =
   let process_method_decl = function
-    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, qt, function_decl_info) ->
+    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, tp, function_decl_info) ->
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Declaring method '%s'.\n" method_name;
-        let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name qt in
+        let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name tp in
         Some method_proc
     | _ -> None in
   (* poor mans list_filter_map *)
@@ -141,9 +141,9 @@ let add_struct_to_tenv tenv typ =
 let rec get_struct_fields tenv record_name namespace decl_list =
   let open Clang_ast_t in
   let do_one_decl decl = match decl with
-    | FieldDecl (_, name_info, qual_type, _) ->
+    | FieldDecl (_, name_info, type_ptr, _) ->
         let id = General_utils.mk_class_field_name name_info in
-        let typ = qual_type_to_sil_type tenv qual_type in
+        let typ = type_ptr_to_sil_type tenv type_ptr in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
     | CXXRecordDecl (decl_info, _, _, _, _, _, _, _)
@@ -188,29 +188,29 @@ and add_types_from_decl_to_tenv tenv namespace decl =
   add_struct_to_tenv tenv typ;
   typ
 
-and qual_type_to_sil_type tenv qt =
-  CType_to_sil_type.qual_type_to_sil_type add_types_from_decl_to_tenv tenv qt
+and type_ptr_to_sil_type tenv tp =
+  CType_to_sil_type.type_ptr_to_sil_type add_types_from_decl_to_tenv tenv tp
 
 
 let type_name_to_sil_type tenv name =
-  qual_type_to_sil_type tenv (Ast_expressions.create_class_type name)
+  type_ptr_to_sil_type tenv (Ast_expressions.create_class_type name)
 
 let get_type_from_expr_info ei tenv =
-  let qt = ei.Clang_ast_t.ei_qual_type in
-  qual_type_to_sil_type tenv qt
+  let tp = ei.Clang_ast_t.ei_type_ptr in
+  type_ptr_to_sil_type tenv tp
 
-let class_from_pointer_type tenv qual_type =
-  match qual_type_to_sil_type tenv qual_type with
+let class_from_pointer_type tenv type_ptr =
+  match type_ptr_to_sil_type tenv type_ptr with
   | Sil.Tptr( Sil.Tvar (Sil.TN_typedef name), _) -> Mangled.to_string name
   | Sil.Tptr( Sil.Tvar (Sil.TN_csu (_, name)), _) -> Mangled.to_string name
   | _ -> assert false
 
 let get_class_type_np tenv expr_info obj_c_message_expr_info =
-  let qt =
+  let tp =
     match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
-    | `Class qt -> qt
-    | _ -> expr_info.Clang_ast_t.ei_qual_type in
-  qual_type_to_sil_type tenv qt
+    | `Class tp -> tp
+    | _ -> expr_info.Clang_ast_t.ei_type_ptr in
+  type_ptr_to_sil_type tenv tp
 
 let get_type_curr_class tenv curr_class_opt =
   let name = CContext.get_curr_class_name curr_class_opt in

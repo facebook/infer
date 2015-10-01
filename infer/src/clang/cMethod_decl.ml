@@ -43,9 +43,9 @@ struct
     | decl:: rest ->
         let rest_assume_calls = add_assume_not_null_calls rest attributes in
         (match decl with
-         | Clang_ast_t.ParmVarDecl (decl_info, name, qtype, var_decl_info)
-           when CFrontend_utils.Ast_utils.is_type_nonnull qtype attributes ->
-             let assume_call = Ast_expressions.create_assume_not_null_call decl_info name qtype in
+         | Clang_ast_t.ParmVarDecl (decl_info, name, tp, var_decl_info)
+           when CFrontend_utils.Ast_utils.is_type_nonnull tp attributes ->
+             let assume_call = Ast_expressions.create_assume_not_null_call decl_info name tp in
              assume_call:: rest_assume_calls
          | _ -> rest_assume_calls)
 
@@ -158,9 +158,9 @@ struct
       match ObjcProperty_decl.method_is_property_accesor cls method_name with
       | Some (property_name, property_type, is_getter) when
           CMethod_trans.should_create_procdesc context.cfg procname true true ->
-          (match property_type with qt, atts, decl_info, _, _, ivar_opt ->
+          (match property_type with tp, atts, decl_info, _, _, ivar_opt ->
             let ivar_name = ObjcProperty_decl.get_ivar_name property_name ivar_opt in
-            let field = CField_decl.build_sil_field_property cls context.tenv ivar_name qt (Some atts) in
+            let field = CField_decl.build_sil_field_property cls context.tenv ivar_name tp (Some atts) in
             ignore (CField_decl.add_missing_fields context.tenv class_name [field]);
             let accessor =
               if is_getter then

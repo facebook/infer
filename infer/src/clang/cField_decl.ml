@@ -47,14 +47,14 @@ let get_field_www name_field fl =
     "WARNING: In MemberExpr there must be only one type defininf for the struct. Returning (NO_FIELD_NAME, Tvoid)\n"
     (Ident.create_fieldname (Mangled.from_string "NO_FIELD_NAME") 0, Sil.Tvoid)
 
-let build_sil_field tenv field_name qual_type prop_atts =
+let build_sil_field tenv field_name type_ptr prop_atts =
   let annotation_from_type t =
     match t with
     | Sil.Tptr (_, Sil.Pk_objc_weak) -> [Config.weak]
     | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
     | _ -> [] in
   let fname = General_utils.mk_class_field_name field_name in
-  let typ = CTypes_decl.qual_type_to_sil_type tenv qual_type in
+  let typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
   let item_annotations = match prop_atts with
     | [] ->
         [({ Sil.class_name = Config.ivar_attributes; Sil.parameters = annotation_from_type typ }, true)]
@@ -78,25 +78,25 @@ let ivar_property curr_class ivar =
   | None -> Printing.log_out "No property found for ivar '%s'@." ivar.Clang_ast_t.ni_name;
       []
 
-let build_sil_field_property curr_class tenv field_name qual_type prop_attributes_opt =
+let build_sil_field_property curr_class tenv field_name type_ptr prop_attributes_opt =
   let prop_attributes =
     match prop_attributes_opt with
     | Some prop_attributes -> prop_attributes
     | None -> ivar_property curr_class field_name in
   let atts_str = list_map Clang_ast_j.string_of_property_attribute prop_attributes in
-  build_sil_field tenv field_name qual_type atts_str
+  build_sil_field tenv field_name type_ptr atts_str
 
 (* Given a list of declarations in an interface returns a list of fields  *)
 let rec get_fields tenv curr_class decl_list =
   let open Clang_ast_t in
   match decl_list with
   | [] -> []
-  | ObjCIvarDecl (decl_info, name_info, qual_type, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
+  | ObjCIvarDecl (decl_info, name_info, type_ptr, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
       let fields = get_fields tenv curr_class decl_list' in
       (* Doing a post visit here. Adding Ivar after all the declaration have been visited so that *)
       (* ivar names will be added in the property list. *)
       Printing.log_out "  ...Adding Instance Variable '%s' @." name_info.Clang_ast_t.ni_name;
-      let (fname, typ, ia) = build_sil_field_property curr_class tenv name_info qual_type None in
+      let (fname, typ, ia) = build_sil_field_property curr_class tenv name_info type_ptr None in
       Printing.log_out "  ...Resulting sil field: (%s) with attributes:@." ((Ident.fieldname_to_string fname) ^":"^(Sil.typ_to_string typ));
       list_iter (fun (ia', _) ->
           list_iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;

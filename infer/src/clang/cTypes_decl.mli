@@ -23,9 +23,9 @@ val add_types_from_decl_to_tenv : Sil.tenv -> string option -> Clang_ast_t.decl 
 (* and Class, which is a pointer to objc_class. *)
 val add_predefined_types : Sil.tenv -> unit
 
-val qual_type_to_sil_type : Sil.tenv -> Clang_ast_t.qual_type -> Sil.typ
+val type_ptr_to_sil_type : Sil.tenv -> Clang_ast_t.type_ptr -> Sil.typ
 
-val class_from_pointer_type : Sil.tenv -> Clang_ast_t.qual_type -> string
+val class_from_pointer_type : Sil.tenv -> Clang_ast_t.type_ptr -> string
 
 val get_class_type_np : Sil.tenv -> Clang_ast_t.expr_info ->
   Clang_ast_t.obj_c_message_expr_info -> Sil.typ

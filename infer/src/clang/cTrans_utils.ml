@@ -520,20 +520,20 @@ let extract_id_from_singleton id_list warning_string =
 let rec get_type_from_exp_stmt stmt =
   let do_decl_ref_exp i =
     match i.Clang_ast_t.drti_decl_ref with
-    | Some d -> (match d.Clang_ast_t.dr_qual_type with
+    | Some d -> (match d.Clang_ast_t.dr_type_ptr with
         | Some n -> n
         | _ -> assert false )
     | _ -> assert false in
   let open Clang_ast_t in
   match stmt with
   | CXXOperatorCallExpr(_, _, ei)
-  | CallExpr(_, _, ei) -> ei.Clang_ast_t.ei_qual_type
-  | MemberExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_qual_type
-  | ParenExpr (_, _, ei) -> ei.Clang_ast_t.ei_qual_type
-  | ArraySubscriptExpr(_, _, ei) -> ei.Clang_ast_t.ei_qual_type
-  | ObjCIvarRefExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_qual_type
-  | ObjCMessageExpr (_, _, ei, _ ) -> ei.Clang_ast_t.ei_qual_type
-  | PseudoObjectExpr(_, _, ei) -> ei.Clang_ast_t.ei_qual_type
+  | CallExpr(_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
+  | MemberExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_type_ptr
+  | ParenExpr (_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
+  | ArraySubscriptExpr(_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
+  | ObjCIvarRefExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_type_ptr
+  | ObjCMessageExpr (_, _, ei, _ ) -> ei.Clang_ast_t.ei_type_ptr
+  | PseudoObjectExpr(_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
   | CStyleCastExpr(_, stmt_list, _, _, _)
   | UnaryOperator(_, stmt_list, _, _)
   | ImplicitCastExpr(_, stmt_list, _, _) ->
@@ -658,7 +658,7 @@ let rec compute_autorelease_pool_vars context stmts =
 
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
-  match CTypes_decl.qual_type_to_sil_type tenv ei.Clang_ast_t.ei_qual_type, uoi.Clang_ast_t.uoi_kind with
+  match CTypes_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr, uoi.Clang_ast_t.uoi_kind with
   | Sil.Tint Sil.IInt,`LNot -> true
   | _, _ -> false
 

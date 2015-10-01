@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-type block_data = Clang_ast_t.qual_type * bool * Procname.t * (Mangled.t * Sil.typ * bool) list * CContext.curr_class
+type block_data = Clang_ast_t.type_ptr * bool * Procname.t * (Mangled.t * Sil.typ * bool) list * CContext.curr_class
 
 module type CTranslation =
 sig

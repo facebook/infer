@@ -31,7 +31,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   let should_translate_enum = CLocation.should_translate_enum source_range in
   let open Clang_ast_t in
   match dec with
-  | FunctionDecl(di, name_info, qt, fdecl_info) ->
+  | FunctionDecl(di, name_info, tp, fdecl_info) ->
       CMethod_declImpl.function_decl tenv cfg cg namespace dec None
   | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
       Printing.log_out "%s" "Skipping typedef declaration. Will expand the type in its occurrences."
@@ -76,7 +76,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
       let curr_class =
         ObjcInterface_decl.interface_impl_declaration tenv name decl_list idi in
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
-  | CXXMethodDecl(decl_info, name_info, qual_type, function_decl_info) ->
+  | CXXMethodDecl(decl_info, name_info, type_ptr, function_decl_info) ->
       (* di_parent_pointer has pointer to lexical context such as class.*)
       (* If it's not defined, then it's the same as parent in AST *)
       let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with

@@ -17,7 +17,7 @@ module L = Logging
 
 (* For a variable declaration it return/construct the type *)
 let get_var_type tenv name t =
-  let typ = CTypes_decl.qual_type_to_sil_type tenv t in
+  let typ = CTypes_decl.type_ptr_to_sil_type tenv t in
   Printing.log_out "     Getting/Defining type for variable '%s'" name;
   Printing.log_out " as  sil type '%s'\n" (Sil.typ_to_string typ);
   typ
@@ -144,10 +144,10 @@ and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
   let do_one_decl decl =
     let open Clang_ast_t in
     match decl with
-    | VarDecl (decl_info, name_info, qual_type, var_decl_info) ->
+    | VarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
         Printing.log_out "Collecting variables, passing from VarDecl '%s'\n" decl_info.Clang_ast_t.di_pointer;
         let name = name_info.Clang_ast_t.ni_name in
-        let typ = get_var_type context.CContext.tenv name qual_type in
+        let typ = get_var_type context.CContext.tenv name type_ptr in
         (match var_decl_info.Clang_ast_t.vdi_storage_class with
          | Some "static" ->
              let pname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
