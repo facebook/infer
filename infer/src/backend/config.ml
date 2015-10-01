@@ -281,6 +281,10 @@ let type_size = ref false
 (** if true, compact summaries before saving *)
 let save_compact_summaries = ref true
 
+(** If true, save the execution time in summaries.
+    This makes the analysis nondeterministic. *)
+let save_time_in_summaries = ref false
+
 (** flag: if true enables printing proposition compatible for the SMT project *)
 let smt_output = ref false
 

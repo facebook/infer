@@ -529,11 +529,16 @@ let store_summary pname (summ: summary) =
   let process_payload = function
     | PrePosts specs -> PrePosts (list_map NormSpec.erase_join_info_pre specs)
     | TypeState typestate_opt -> TypeState typestate_opt in
-  let summ' = { summ with payload = process_payload summ.payload } in
-  let summ'' = if !Config.save_compact_summaries
-    then summary_compact (Sil.create_sharing_env ()) summ'
-    else summ' in
-  Serialization.to_file summary_serializer (res_dir_specs_filename pname) summ''
+  let summ1 = { summ with payload = process_payload summ.payload } in
+  let summ2 = if !Config.save_compact_summaries
+    then summary_compact (Sil.create_sharing_env ()) summ1
+    else summ1 in
+  let summ3 = if !Config.save_time_in_summaries
+    then summ2
+    else
+      { summ2 with
+        stats = { summ1.stats with stats_time = 0.0} } in
+  Serialization.to_file summary_serializer (res_dir_specs_filename pname) summ3
 
 (** Load procedure summary from the given file *)
 let load_summary specs_file =
