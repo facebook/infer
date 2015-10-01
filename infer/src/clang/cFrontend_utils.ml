@@ -314,12 +314,12 @@ struct
   (*TODO take the attributes into account too. To be done after we get the attribute's arguments. *)
   let is_type_nonnull qt attributes =
     let open Clang_ast_t in
-    match get_type qt.qt_type_ptr with
+    match get_type qt with
     | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nonnull
     | _ -> false
 
   let string_of_qual_type qt =
-    match get_desugared_type qt.Clang_ast_t.qt_type_ptr with
+    match get_desugared_type qt with
     | Some typ -> (Clang_ast_proj.get_type_tuple typ).Clang_ast_t.ti_raw
     | None -> ""
 

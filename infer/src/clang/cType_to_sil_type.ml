@@ -170,7 +170,7 @@ and qual_type_ptr_to_sil_type translate_decl tenv type_ptr =
     | _ -> Sil.Tvoid
 
 and qual_type_to_sil_type translate_decl tenv qt =
-  let type_ptr = qt.Clang_ast_t.qt_type_ptr in
+  let type_ptr = qt in
   match custom_qual_type_to_sil_type type_ptr with
   | Some typ -> typ
   | None -> qual_type_ptr_to_sil_type translate_decl tenv type_ptr

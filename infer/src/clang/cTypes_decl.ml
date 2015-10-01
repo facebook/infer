@@ -38,13 +38,13 @@ let add_predefined_basic_types tenv =
   let open Clang_ast_t in
   let add_basic_type qt basic_type_kind =
     let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
-    Ast_utils.update_sil_types_map qt.Clang_ast_t.qt_type_ptr sil_type in
+    Ast_utils.update_sil_types_map qt sil_type in
   let add_pointer_type qt sil_type =
     let pointer_type = CTypes.add_pointer_to_typ sil_type in
-    Ast_utils.update_sil_types_map qt.Clang_ast_t.qt_type_ptr pointer_type in
+    Ast_utils.update_sil_types_map qt pointer_type in
   let add_function_type qt return_type =
     (* We translate function types as the return type of the function *)
-    Ast_utils.update_sil_types_map qt.Clang_ast_t.qt_type_ptr return_type in
+    Ast_utils.update_sil_types_map qt return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
   let sil_nsarray_type = Sil.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl) in

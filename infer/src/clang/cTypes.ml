@@ -42,11 +42,6 @@ let lookup_var_type context pvar =
           (Sil.pvar_to_string pvar);
         Sil.Tvoid
 
-let get_desugared_type t =
-  match t.Clang_ast_t.qt_desugared with
-  | Some t' -> t'
-  | _ -> assert false
-
 let get_name_from_struct s =
   match s with
   | Sil.Tstruct(_, _, _, Some n, _, _, _) -> n
@@ -127,11 +122,11 @@ let rec return_type_of_function_type_ptr type_ptr =
       ""
 
 let return_type_of_function_type qt =
-  return_type_of_function_type_ptr qt.Clang_ast_t.qt_type_ptr
+  return_type_of_function_type_ptr qt
 
 let is_block_type qt =
   let open Clang_ast_t in
-  match Ast_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr with
+  match Ast_utils.get_desugared_type qt with
   | Some BlockPointerType _ -> true
   | _ -> false
 

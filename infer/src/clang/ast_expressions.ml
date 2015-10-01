@@ -76,20 +76,11 @@ let stmt_info_with_fresh_pointer stmt_info = {
   si_source_range = stmt_info.Clang_ast_t.si_source_range;
 }
 
-let create_qual_type_with_just_pointer pointer =
-  {
-    Clang_ast_t.qt_raw = "";
-    qt_desugared = None;
-    qt_type_ptr = pointer;
-  }
+let create_qual_type_with_just_pointer pointer = pointer
 
 let get_constant_qual_type s =
   let pointer = CFrontend_config.type_pointer_prefix ^ s in
-  {
-    Clang_ast_t.qt_raw = "";
-    qt_desugared = None;
-    qt_type_ptr = pointer
-  }
+  pointer
 
 (* Whenever new type are added manually to the translation here, *)
 (* they should be added to the map in cTypes_decl too!! *)
@@ -123,26 +114,11 @@ let create_void_unsigned_long_type =
 let create_void_void_type =
   get_constant_qual_type "void (void *)"
 
-let create_class_type class_name =
-  {
-    Clang_ast_t.qt_raw = "";
-    qt_desugared = None;
-    qt_type_ptr = "custom_class_name*" ^ class_name;
-  }
+let create_class_type class_name = "custom_class_name*" ^ class_name
 
-let create_struct_type struct_name =
-  {
-    Clang_ast_t.qt_raw = "";
-    qt_desugared = None;
-    qt_type_ptr = "custom_struct_name*" ^ struct_name;
-  }
+let create_struct_type struct_name = "custom_struct_name*" ^ struct_name
 
-let create_pointer_type class_type =
-  {
-    Clang_ast_t.qt_raw = "";
-    qt_desugared = None;
-    qt_type_ptr = "custom_pointer_"^class_type.Clang_ast_t.qt_type_ptr
-  }
+let create_pointer_type class_type = "custom_pointer_" ^ class_type
 
 let create_integer_literal stmt_info n =
   let stmt_info = dummy_stmt_info () in
