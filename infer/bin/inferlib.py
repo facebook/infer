@@ -543,6 +543,7 @@ class Infer:
             infer_options += ['-project_root', self.args.project_root]
 
         if self.args.multicore == 1:
+            analysis_start_time = time.time()
             analyze_cmd = infer_analyze + infer_options
             exit_status = run_command(
                 analyze_cmd,
@@ -551,6 +552,9 @@ class Infer:
                 'analysis',
                 self.args.analyzer
             )
+            elapsed = utils.elapsed_time(analysis_start_time)
+            self.timing['analysis'] = elapsed
+            self.timing['makefile_generation'] = 0
 
         else:
             if self.args.analyzer in [ERADICATE, CHECKERS]:
@@ -566,6 +570,7 @@ class Infer:
             os.chdir(multicore_dir)
             analyze_cmd = infer_analyze + ['-makefile', 'Makefile']
             analyze_cmd += infer_options
+            makefile_generation_start_time = time.time()
             makefile_status = run_command(
                 analyze_cmd,
                 self.args.debug,
@@ -573,11 +578,14 @@ class Infer:
                 'create_makefile',
                 self.args.analyzer
             )
+            elapsed = utils.elapsed_time(makefile_generation_start_time)
+            self.timing['makefile_generation'] = elapsed
             exit_status += makefile_status
             if makefile_status == os.EX_OK:
                 make_cmd = ['make', '-k', '-j', str(self.args.multicore)]
                 if not self.args.debug:
                     make_cmd += ['-s']
+                analysis_start_time = time.time()
                 make_status = run_command(
                     make_cmd,
                     self.args.debug,
@@ -585,6 +593,8 @@ class Infer:
                     'run_makefile',
                     self.args.analyzer
                 )
+                elapsed = utils.elapsed_time(analysis_start_time)
+                self.timing['analysis'] = elapsed
                 os.chdir(pwd)
                 exit_status += make_status
 
@@ -654,6 +664,8 @@ class Infer:
             self.stats['int'].update(file_stats)
             self.stats['float'] = {
                 'capture_time': self.timing.get('capture', 0.0),
+                'makefile_generation_time': self.timing.get(
+                    'makefile_generation', 0.0),
                 'analysis_time': self.timing.get('analysis', 0.0),
                 'reporting_time': self.timing.get('reporting', 0.0),
             }
@@ -671,10 +683,7 @@ class Infer:
 
     def analyze_and_report(self):
         if self.args.analyzer not in [COMPILE, CAPTURE]:
-            analysis_start_time = time.time()
             if self.analyze() == os.EX_OK:
-                elapsed = utils.elapsed_time(analysis_start_time)
-                self.timing['analysis'] = elapsed
                 reporting_start_time = time.time()
                 self.report_errors()
                 elapsed = utils.elapsed_time(reporting_start_time)

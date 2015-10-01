@@ -43,6 +43,9 @@ public class InferStats {
 
     @JsonProperty(value = "analysis_time")
     float analysisTime;
+
+    @JsonProperty(value = "makefile_generation_time")
+    float makefileGenerationTime;
   }
 
   @JsonProperty(value = "int")
@@ -87,6 +90,10 @@ public class InferStats {
 
   public float getAnalysisTime() {
     return floatFields.analysisTime;
+  }
+
+  public float getMakefileGenerationTime() {
+    return floatFields.makefileGenerationTime;
   }
 
 }
