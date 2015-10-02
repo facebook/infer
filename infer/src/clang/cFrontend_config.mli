@@ -29,6 +29,8 @@ type lang =
 
 val lang_from_string : string -> unit
 
+val lang_to_string : lang -> string
+
 val language : lang ref
 
 val ast_file : string option ref

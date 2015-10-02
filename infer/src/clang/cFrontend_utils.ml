@@ -446,7 +446,7 @@ struct
     let prefix = Ast_utils.get_qualifier_string field_qual_name in
     Ident.create_fieldname (Mangled.mangled field_name prefix) 0
 
-  let mk_procname_from_function name function_decl_info_opt tp =
+  let mk_procname_from_function name function_decl_info_opt tp language =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
@@ -458,7 +458,7 @@ struct
            | _ -> "")
       | None -> "" in
     let type_string =
-      match !CFrontend_config.language with
+      match language with
       | CFrontend_config.CPP
       | CFrontend_config.OBJCPP -> Ast_utils.string_of_type_ptr tp
       | _ -> "" in

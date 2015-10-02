@@ -27,6 +27,6 @@ val is_toll_free_bridging : Procname.t option -> bool
 
 val get_predefined_model_method_signature : string -> string ->
   (string -> string -> Procname.objc_method_kind -> Procname.t) ->
-  CMethod_signature.method_signature option
+  CFrontend_config.lang -> CMethod_signature.method_signature option
 
 val is_dispatch_function_name : string -> (string * int) option

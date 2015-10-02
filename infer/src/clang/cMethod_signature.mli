@@ -25,9 +25,11 @@ val ms_get_loc : method_signature -> Clang_ast_t.source_range
 
 val ms_is_instance : method_signature -> bool
 
+val ms_get_lang : method_signature -> CFrontend_config.lang
+
 val make_ms : Procname.t -> (string * Clang_ast_t.type_ptr * Clang_ast_t.stmt option) list ->
-  Clang_ast_t.type_ptr -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> bool -> bool ->
-  method_signature
+  Clang_ast_t.type_ptr -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> bool ->
+  bool -> CFrontend_config.lang -> method_signature
 
 val replace_name_ms : method_signature -> Procname.t -> method_signature
 

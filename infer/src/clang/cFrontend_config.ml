@@ -74,6 +74,13 @@ let lang_from_string lang_string =
     else assert false in
   language := lang
 
+let lang_to_string lang =
+  match lang with
+  | C -> "c"
+  | OBJC -> "objective-c"
+  | CPP -> "c++"
+  | OBJCPP -> "objective-c++"
+
 let emtpy_name_category ="EMPTY_NAME_CATEGORY_FOR_"
 
 let objc_object = "objc_object"

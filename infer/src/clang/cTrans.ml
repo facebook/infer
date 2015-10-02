@@ -42,7 +42,7 @@ struct
     let callee_pn = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
     let open CContext in
     match CTrans_models.get_predefined_model_method_signature class_name method_name
-            General_utils.mk_procname_from_objc_method with
+            General_utils.mk_procname_from_objc_method CFrontend_config.OBJC with
     | Some ms ->
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual

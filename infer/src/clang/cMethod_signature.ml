@@ -18,6 +18,7 @@ type method_signature = {
   _loc : Clang_ast_t.source_range;
   _is_instance : bool;
   _is_generated : bool;
+  _language : CFrontend_config.lang;
 }
 
 let ms_get_name ms =
@@ -41,7 +42,10 @@ let ms_is_instance ms =
 let ms_is_generated ms =
   ms._is_generated
 
-let make_ms procname args ret_type attributes loc is_instance is_generated =
+let ms_get_lang ms =
+  ms._language
+
+let make_ms procname args ret_type attributes loc is_instance is_generated lang =
   let meth_signature = {
     _name = procname;
     _args = args;
@@ -49,7 +53,9 @@ let make_ms procname args ret_type attributes loc is_instance is_generated =
     _attributes = attributes;
     _loc = loc;
     _is_instance = is_instance;
-    _is_generated =  is_generated} in
+    _is_generated = is_generated;
+    _language = lang;
+  } in
   meth_signature
 
 let replace_name_ms ms name =
