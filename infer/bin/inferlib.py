@@ -215,7 +215,7 @@ def create_results_dir(results_dir):
 
 
 def clean(infer_out, annotations_out):
-    
+
     directories = ['multicore', 'classnames', 'sources', jwlib.FILELISTS]
     extensions = ['.cfg', '.cg']
 
@@ -652,30 +652,32 @@ class Infer:
 
     def save_stats(self):
         """Print timing information to infer_out/stats.json"""
+        proc_stats_path = os.path.join(
+            self.args.infer_out,
+            utils.PROC_STATS_FILENAME)
+
+        # capture and compile mode do not create proc_stats.json
+        if os.path.isfile(proc_stats_path):
+            with open(proc_stats_path, 'r') as proc_stats_file:
+                proc_stats = json.load(proc_stats_file)
+                self.stats['int'].update(proc_stats)
+
+        self.stats['float'] = {
+            'capture_time': self.timing.get('capture', 0.0),
+            'makefile_generation_time': self.timing.get(
+                'makefile_generation', 0.0),
+            'analysis_time': self.timing.get('analysis', 0.0),
+            'reporting_time': self.timing.get('reporting', 0.0),
+        }
+        self.stats['normal'] = {
+            'analyzer': self.args.analyzer,
+            'infer_version': utils.infer_version()
+        }
+
         stats_path = os.path.join(self.args.infer_out, utils.STATS_FILENAME)
-
-        # capture and compile mode do not create stats.json
-        if not os.path.isfile(stats_path):
-            with open(stats_path, 'w') as stats_file:
-                json.dump(self.stats, stats_file, indent=2)
-
-        with open(stats_path, 'r+') as stats_file:
-            file_stats = json.load(stats_file)
-            self.stats['int'].update(file_stats)
-            self.stats['float'] = {
-                'capture_time': self.timing.get('capture', 0.0),
-                'makefile_generation_time': self.timing.get(
-                    'makefile_generation', 0.0),
-                'analysis_time': self.timing.get('analysis', 0.0),
-                'reporting_time': self.timing.get('reporting', 0.0),
-            }
-            self.stats['normal'] = {
-                'analyzer': self.args.analyzer,
-                'infer_version': utils.infer_version()
-            }
-            stats_file.seek(0)
+        with open(stats_path, 'w') as stats_file:
             json.dump(self.stats, stats_file, indent=2)
-            stats_file.truncate()
+
 
     def close(self):
         if self.args.analyzer != COMPILE:

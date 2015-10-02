@@ -36,6 +36,7 @@ ANNOT_PROCESSOR_JAR = os.path.join(
 DEFAULT_INFER_OUT = os.path.join(os.getcwd(), 'infer-out')
 CSV_PERF_FILENAME = 'performances.csv'
 STATS_FILENAME = 'stats.json'
+PROC_STATS_FILENAME = 'proc_stats.json'
 
 CSV_REPORT_FILENAME = 'report.csv'
 JSON_REPORT_FILENAME = 'report.json'

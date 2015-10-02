@@ -36,7 +36,7 @@ let default_in_zip_results_dir = "infer"
 
 let default_buck_out = "buck-out"
 
-let stats_filename = "stats.json"
+let proc_stats_filename = "proc_stats.json"
 
 let global_tenv_filename = "global.tenv"
 

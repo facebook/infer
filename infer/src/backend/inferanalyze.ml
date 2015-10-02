@@ -369,7 +369,7 @@ let output_json_file_stats num_files num_procs num_lines =
              ("procedures", `Int num_procs);
              ("lines", `Int num_lines) ] in
   (* write stats file to disk, intentionally overwriting old file if it already exists *)
-  let f = open_out (Filename.concat !Config.results_dir Config.stats_filename) in
+  let f = open_out (Filename.concat !Config.results_dir Config.proc_stats_filename) in
   Yojson.Basic.pretty_to_channel f file_stats
 
 (** create clusters of minimal size in the dependence order, with recursive parts grouped together *)
