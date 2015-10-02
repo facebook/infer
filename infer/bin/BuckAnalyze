@@ -278,6 +278,7 @@ def get_basic_stats(stats):
         'analysis_time',
         'reporting_time',
         'total_time',
+        'makefile_generation_time'
     }
     bugs_found = 'Errors found:\n\n'
     for key, value in sorted(stats['int'].items()):
