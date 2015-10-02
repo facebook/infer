@@ -446,15 +446,24 @@ struct
     let prefix = Ast_utils.get_qualifier_string field_qual_name in
     Ident.create_fieldname (Mangled.mangled field_name prefix) 0
 
+
+  let get_rel_file_path file_opt =
+    match file_opt with
+    | Some file ->
+        (match !Config.project_root with
+         | Some root ->
+             DB.source_file_to_rel_path (DB.rel_source_file_from_abs_path root file)
+         | None -> file)
+    | None -> ""
+
   let mk_procname_from_function name function_decl_info_opt tp language =
     let file =
       match function_decl_info_opt with
       | Some (decl_info, function_decl_info) ->
           (match function_decl_info.Clang_ast_t.fdi_storage_class with
            | Some "static" ->
-               (match (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file with
-                | Some file -> file
-                | None -> "")
+               let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
+               get_rel_file_path file_opt
            | _ -> "")
       | None -> "" in
     let type_string =
