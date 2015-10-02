@@ -74,7 +74,7 @@ def split_args_to_parse():
 
 def create_argparser(parents=[]):
     parser = argparse.ArgumentParser(
-        parents=[inferlib.inferJ_parser] + parents,
+        parents=[inferlib.infer_parser] + parents,
         add_help=False,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

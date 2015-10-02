@@ -60,7 +60,7 @@ LOCAL_CONFIG = """\
 
 
 def prepare_build(args):
-    """Creates script that redirects javac calls to inferJ and a local buck
+    """Creates script that redirects javac calls to infer and a local buck
     configuration that tells buck to use that script.
     """
 

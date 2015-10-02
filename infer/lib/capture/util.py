@@ -15,13 +15,13 @@ import inferlib
 import traceback
 
 
-def create_inferJ_command(args, javac_arguments):
+def create_infer_command(args, javac_arguments):
     infer_args = ['-o', args.infer_out]
     if args.debug:
         infer_args.append('--debug')
     infer_args += ['--analyzer', 'capture']
 
-    return inferlib.Infer(inferlib.inferJ_parser.parse_args(infer_args),
+    return inferlib.Infer(inferlib.infer_parser.parse_args(infer_args),
                           inferlib.get_javac_args(['javac'] + javac_arguments))
 
 

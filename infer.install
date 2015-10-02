@@ -6,7 +6,6 @@ bin: [
   "?infer/bin/InferClang"
   "infer/bin/InferAnalyze"
   "infer/bin/InferPrint"
-  "infer/bin/inferJ"
   "infer/bin/BuckAnalyze"
   "infer/bin/inferlib.py"
   "infer/bin/utils.py"

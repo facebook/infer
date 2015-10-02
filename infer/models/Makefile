@@ -11,7 +11,7 @@ LIB_SPECS = $(LIBDIR)/specs
 INFERANALYZE = $(BINDIR)/InferAnalyze
 INFERCLANG = $(BINDIR)/InferClang
 INFERJAVA = $(BINDIR)/InferJava
-JAVA_SCRIPTS = $(addprefix $(BINDIR)/, jwlib.py inferlib.py inferJ)
+JAVA_SCRIPTS = $(addprefix $(BINDIR)/, jwlib.py inferlib.py infer)
 CLANG_SCRIPTS = $(addprefix $(BINDIR)/, inferiOS)  # Add more once this part is stable
 
 PLATFORM = $(shell uname)

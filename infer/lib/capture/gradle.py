@@ -42,7 +42,7 @@ class GradleCapture:
             os.mkdir(path)
         logging.info("Running with:\n" + version_str)
 
-    def get_inferJ_commands(self, verbose_output):
+    def get_infer_commands(self, verbose_output):
         argument_start_pattern = ' Compiler arguments: '
         calls = []
         seen_build_cmds = set([])
@@ -73,11 +73,11 @@ class GradleCapture:
                     sources.write("\n".join(java_files))
                     sources.flush()
                     java_args.append("@" + sources.name)
-                    capture = util.create_inferJ_command(self.args,
+                    capture = util.create_infer_command(self.args,
                                                          java_args)
                     calls.append(capture)
         return calls
 
     def capture(self):
-        cmds = self.get_inferJ_commands(util.get_build_output(self.build_cmd))
+        cmds = self.get_infer_commands(util.get_build_output(self.build_cmd))
         return util.run_commands(cmds)

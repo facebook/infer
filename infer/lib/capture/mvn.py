@@ -32,7 +32,7 @@ class MavenCapture:
         # TODO: make the extraction of targets smarter
         self.build_cmd = ['mvn', '-X'] + cmd[1:]
 
-    def get_inferJ_commands(self, verbose_output):
+    def get_infer_commands(self, verbose_output):
         file_pattern = r'\[DEBUG\] Stale source detected: ([^ ]*\.java)'
         options_pattern = '[DEBUG] Command line options:'
 
@@ -43,7 +43,7 @@ class MavenCapture:
             if options_next:
                 #  line has format [Debug] <space separated options>
                 javac_args = line.split(' ')[1:] + files_to_compile
-                capture = util.create_inferJ_command(self.args, javac_args)
+                capture = util.create_infer_command(self.args, javac_args)
                 calls.append(capture)
                 options_next = False
                 files_to_compile = []
@@ -60,5 +60,5 @@ class MavenCapture:
         return calls
 
     def capture(self):
-        cmds = self.get_inferJ_commands(util.get_build_output(self.build_cmd))
+        cmds = self.get_infer_commands(util.get_build_output(self.build_cmd))
         return util.run_commands(cmds)

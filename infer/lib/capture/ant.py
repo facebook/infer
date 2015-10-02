@@ -47,7 +47,7 @@ class AntCapture:
         else:
             return argument
 
-    def get_inferJ_commands(self, verbose_output):
+    def get_infer_commands(self, verbose_output):
         javac_pattern = '[javac]'
         argument_start_pattern = 'Compilation arguments'
         calls = []
@@ -58,7 +58,7 @@ class AntCapture:
                 if argument_start_pattern in line:
                     collect = True
                     if javac_arguments != []:
-                        capture = util.create_inferJ_command(self.args,
+                        capture = util.create_infer_command(self.args,
                                                              javac_arguments)
                         calls.append(capture)
                         javac_arguments = []
@@ -69,11 +69,11 @@ class AntCapture:
                         arg = self.remove_quotes(content)
                         javac_arguments.append(arg)
         if javac_arguments != []:
-            capture = util.create_inferJ_command(self.args, javac_arguments)
+            capture = util.create_infer_command(self.args, javac_arguments)
             calls.append(capture)
             javac_arguments = []
         return calls
 
     def capture(self):
-        cmds = self.get_inferJ_commands(util.get_build_output(self.build_cmd))
+        cmds = self.get_infer_commands(util.get_build_output(self.build_cmd))
         return util.run_commands(cmds)

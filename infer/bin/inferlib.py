@@ -120,47 +120,47 @@ base_parser.add_argument('-v', '--version',
                          action=VersionAction)
 
 
-inferJ_parser = argparse.ArgumentParser(parents=[base_parser])
-inferJ_group = inferJ_parser.add_argument_group('backend arguments')
-inferJ_group.add_argument('-j', '--multicore', metavar='n', type=int,
+infer_parser = argparse.ArgumentParser(parents=[base_parser])
+infer_group = infer_parser.add_argument_group('backend arguments')
+infer_group.add_argument('-j', '--multicore', metavar='n', type=int,
                            default=multiprocessing.cpu_count(),
                            dest='multicore', help='Set the number of cores to '
                            'be used for the analysis (default uses all cores)')
-inferJ_group.add_argument('-x', '--project', metavar='<projectname>',
+infer_group.add_argument('-x', '--project', metavar='<projectname>',
                            help='Project name, for recording purposes only')
 
-inferJ_group.add_argument('-r', '--revision', metavar='<githash>',
+infer_group.add_argument('-r', '--revision', metavar='<githash>',
                            help='The githash, for recording purposes only')
 
-inferJ_group.add_argument('--buck', action='store_true', dest='buck',
+infer_group.add_argument('--buck', action='store_true', dest='buck',
                            help='To use when run with buck')
 
-inferJ_group.add_argument('--infer_cache', metavar='<directory>',
+infer_group.add_argument('--infer_cache', metavar='<directory>',
                            help='Select a directory to contain the infer cache')
 
-inferJ_group.add_argument('-pr', '--project_root',
+infer_group.add_argument('-pr', '--project_root',
                           dest='project_root',
                           default=os.getcwd(),
                           help='Location of the project root '
                           '(default is current directory)')
 
-inferJ_group.add_argument('--absolute-paths',
+infer_group.add_argument('--absolute-paths',
                           action='store_true',
                           default=False,
                           help='Report errors with absolute paths')
 
-inferJ_group.add_argument('--objc_ml_buckets',
+infer_group.add_argument('--objc_ml_buckets',
                            dest='objc_ml_buckets',
                            help='memory leak buckets to be checked, '
                                 'separated by commas. The possible '
                                 'buckets are cf (Core Foundation), '
                                 'arc, narc (No arc)')
 
-inferJ_group.add_argument('-nt', '--notest', action='store_true',
+infer_group.add_argument('-nt', '--notest', action='store_true',
                            dest='notest',
                            help='Prints output of symbolic execution')
 
-inferJ_group.add_argument('--specs-dir',
+infer_group.add_argument('--specs-dir',
                           metavar='<dir>',
                           action='append',
                           dest='specs_dirs',
@@ -174,13 +174,13 @@ def detect_javac(args):
             return index
 
 
-def get_inferJ_args(args):
+def get_infer_args(args):
     index = detect_javac(args)
     if index is None:
         cmd_args = args
     else:
         cmd_args = args[:index]
-    return inferJ_parser.parse_args(cmd_args)
+    return infer_parser.parse_args(cmd_args)
 
 
 def get_javac_args(args):
@@ -235,7 +235,7 @@ def clean(infer_out, annotations_out):
 
 def help_exit(message):
     print(message)
-    inferJ_parser.print_usage()
+    infer_parser.print_usage()
     exit(1)
 
 
@@ -376,8 +376,8 @@ def run_command(cmd, debug_mode, javac_arguments, step, analyzer):
         return subprocess.check_call(cmd)
     except subprocess.CalledProcessError as e:
         error_msg = 'Failure during {0}, original command was\n\n{1}\n\n'
-        inferJ_cmd = ['inferJ', '-g', '-a', analyzer]
-        failing_cmd = inferJ_cmd + ['javac'] + javac_arguments
+        infer_cmd = ['infer', '-g', '-a', analyzer]
+        failing_cmd = infer_cmd + ['--', 'javac'] + javac_arguments
         logging.error(error_msg.format(
             step,
             failing_cmd

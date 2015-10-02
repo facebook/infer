@@ -2,7 +2,7 @@ SHELL := /bin/bash
 CWD = $(shell pwd)
 BINDIR = $(CWD)/../../bin
 
-INFERJ = INFER_ANALYZE_MODELS=1 $(BINDIR)/inferJ --buck --analyzer infer --multicore 1
+INFER = INFER_ANALYZE_MODELS=1 $(BINDIR)/infer --buck --analyzer infer --multicore 1
 
 ANDROID_JAR = ../../lib/java/android/android-19.jar
 JACKSON_JAR = ../../../dependencies/java/jackson/jackson-2.2.3.jar
@@ -29,7 +29,7 @@ clean:
 
 $(CSV_REPORT): $(JAVA_SOURCES)
 	mkdir $(MODELS_OUT)
-	$(INFERJ) javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(JACKSON_JAR) $(JAVA_SOURCES)
+	$(INFER) -- javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(JACKSON_JAR) $(JAVA_SOURCES)
 
 $(MODELS_JAR): $(CSV_REPORT)
 	cd $(MODELS_OUT); jar cf $(MODELS_JAR) *
