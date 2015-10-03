@@ -214,7 +214,7 @@ def create_results_dir(results_dir):
     mkdir_if_not_exists(os.path.join(results_dir, 'sources'))
 
 
-def clean(infer_out, annotations_out):
+def clean(infer_out):
 
     directories = ['multicore', 'classnames', 'sources', jwlib.FILELISTS]
     extensions = ['.cfg', '.cg']
@@ -229,8 +229,6 @@ def clean(infer_out, annotations_out):
                 if f.endswith(ext):
                     path = os.path.join(root, f)
                     os.remove(path)
-
-    os.remove(annotations_out)
 
 
 def help_exit(message):
@@ -599,7 +597,7 @@ class Infer:
                 exit_status += make_status
 
         if self.args.buck and exit_status == os.EX_OK:
-            clean(self.args.infer_out, self.javac.annotations_out)
+            clean(self.args.infer_out)
 
         return exit_status
 
@@ -680,8 +678,8 @@ class Infer:
 
 
     def close(self):
-        if self.args.analyzer != COMPILE:
-            os.remove(self.javac.verbose_out)
+        os.remove(self.javac.verbose_out)
+        os.remove(self.javac.annotations_out)
 
     def analyze_and_report(self):
         if self.args.analyzer not in [COMPILE, CAPTURE]:
