@@ -9,43 +9,43 @@
 
 package frontend.cpp;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.DotFilesEqual.dotFileEqualTo;
-
-import com.google.common.collect.ImmutableList;
-
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 import utils.DebuggableTemporaryFolder;
 import utils.InferException;
-import utils.InferRunner;
+import utils.ClangFrontendUtils;
 
 public class MethodsTest {
+
+  String methodBasePath = "infer/tests/codetoanalyze/cpp/frontend/methods/";
 
   @Rule
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
 
-  @Test
-  public void whenCaptureRunCommaThenDotFilesAreTheSame()
-      throws InterruptedException, IOException, InferException {
-    String literal_src =
-        "infer/tests/codetoanalyze/cpp/frontend/types/methods.cpp";
-
-    String literal_dotty =
-        "infer/tests/codetoanalyze/cpp/frontend/types/methods.dot";
-
-    ImmutableList<String> inferCmd =
-        InferRunner.createCPPInferCommandFrontend(
-            folder,
-            literal_src);
-    File newDotFile = InferRunner.runInferFrontend(inferCmd);
-    assertThat(
-        "In the capture of " + literal_src +
-            " the dotty files should be the same.",
-        newDotFile, dotFileEqualTo(literal_dotty));
+  void frontendTest(String fileRelative) throws InterruptedException, IOException, InferException {
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, methodBasePath + fileRelative);
   }
+
+  @Test
+  public void testInlineMethodDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("inline_method.cpp");
+  }
+
+  @Test
+  public void testDefaultParametersDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("default_parameters.cpp");
+  }
+
+  @Test
+  public void testOverloadingDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("overloading.cpp");
+  }
+
+
 }
