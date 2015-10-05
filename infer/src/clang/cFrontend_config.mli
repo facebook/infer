@@ -145,10 +145,13 @@ val enumerateObjectsUsingBlock : string
 
 val generated_suffix : string
 
+(** Map from clang pointers to types produced by ast exporter.
+    Populated once on InferClang startup *)
 val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref
 
-(* Map from type pointers or declaration pointers to sil types *)
-val sil_types_map : (Sil.typ Clang_ast_main.PointerMap.t) ref
+(** Map from type pointers (clang pointers and types created later by frontend) to sil types
+    Populated during frontend execution when new type is found *)
+val sil_types_map : (Sil.typ Clang_ast_types.TypePointerMap.t) ref
 
 val type_pointer_prefix : string
 

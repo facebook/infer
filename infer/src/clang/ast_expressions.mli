@@ -47,8 +47,6 @@ val create_struct_type : string -> type_ptr
 
 val create_pointer_type : type_ptr -> type_ptr
 
-val create_type_ptr_with_just_pointer : Clang_ast_t.pointer -> type_ptr
-
 val make_objc_ivar_decl : decl_info -> type_ptr -> obj_c_property_impl_decl_info ->
   named_decl_info -> decl
 

@@ -9,20 +9,6 @@
 
 open CFrontend_utils
 
-let custom_type_ptr_to_sil_type type_pointer =
-  if Utils.string_is_prefix "custom" type_pointer then
-    let typ =
-      (match CTypes.get_name_from_type_pointer type_pointer with
-       | "custom_class_name", class_name -> Sil.Tvar (CTypes.mk_classname class_name)
-       | "custom_pointer_custom_class_name", class_name ->
-           Sil.Tptr (Sil.Tvar (CTypes.mk_classname class_name), Sil.Pk_pointer)
-       | "custom_struct_name", struct_name -> Sil.Tvar (CTypes.mk_structname struct_name)
-       | "custom_pointer_custom_struct_name", struct_name ->
-           Sil.Tptr (Sil.Tvar (CTypes.mk_structname struct_name), Sil.Pk_pointer)
-       | _ -> assert false) in
-    Some typ
-  else None
-
 let get_builtin_objc_typename builtin_type =
   match builtin_type with
   | `ObjCId -> Sil.TN_csu (Sil.Struct, (Mangled.from_string CFrontend_config.objc_object))
@@ -74,7 +60,7 @@ let pointer_attribute_of_objc_attribute attr_info =
   | `OCL_Autoreleasing -> Sil.Pk_objc_autoreleasing
 
 let rec build_array_type translate_decl tenv type_ptr n =
-  let array_type = type_ptr_ptr_to_sil_type translate_decl tenv type_ptr in
+  let array_type = type_ptr_to_sil_type translate_decl tenv type_ptr in
   let exp = Sil.exp_int (Sil.Int.of_int64 (Int64.of_int n)) in
   Sil.Tarray (array_type, exp)
 
@@ -83,9 +69,9 @@ and sil_type_of_attr_type translate_decl tenv type_info attr_info =
   | Some type_ptr ->
       (match Ast_utils.get_type type_ptr with
        | Some Clang_ast_t.ObjCObjectPointerType (type_info', type_ptr') ->
-           let typ = type_ptr_ptr_to_sil_type translate_decl tenv type_ptr' in
+           let typ = type_ptr_to_sil_type translate_decl tenv type_ptr' in
            Sil.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
-       | _ -> type_ptr_ptr_to_sil_type translate_decl tenv type_ptr)
+       | _ -> type_ptr_to_sil_type translate_decl tenv type_ptr)
   | None -> Sil.Tvoid
 
 and sil_type_of_c_type translate_decl tenv c_type =
@@ -96,14 +82,14 @@ and sil_type_of_c_type translate_decl tenv c_type =
       sil_type_of_builtin_type_kind builtin_type_kind
   | PointerType (type_info, type_ptr)
   | ObjCObjectPointerType (type_info, type_ptr) ->
-      let typ = type_ptr_ptr_to_sil_type translate_decl tenv type_ptr in
+      let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
       if Sil.typ_equal typ (get_builtin_objc_type `ObjCClass) then
         typ
       else Sil.Tptr (typ, Sil.Pk_pointer)
   | ObjCObjectType (type_info, objc_object_type_info) ->
-      type_ptr_ptr_to_sil_type translate_decl tenv objc_object_type_info.Clang_ast_t.base_type
+      type_ptr_to_sil_type translate_decl tenv objc_object_type_info.Clang_ast_t.base_type
   | BlockPointerType (type_info, type_ptr) ->
-      let typ = type_ptr_ptr_to_sil_type translate_decl tenv type_ptr in
+      let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
       Sil.Tptr (typ, Sil.Pk_pointer)
   | IncompleteArrayType (type_info, type_ptr)
   | DependentSizedArrayType (type_info, type_ptr)
@@ -115,32 +101,33 @@ and sil_type_of_c_type translate_decl tenv c_type =
   | FunctionNoProtoType (type_info, function_type_info) ->
       Sil.Tfun false
   | ParenType (type_info, type_ptr) ->
-      type_ptr_ptr_to_sil_type translate_decl tenv type_ptr
+      type_ptr_to_sil_type translate_decl tenv type_ptr
   | DecayedType (type_info, type_ptr) ->
-      type_ptr_ptr_to_sil_type translate_decl tenv type_ptr
+      type_ptr_to_sil_type translate_decl tenv type_ptr
   | RecordType (type_info, pointer)
   | EnumType (type_info, pointer) ->
       decl_ptr_to_sil_type translate_decl tenv pointer
   | ElaboratedType (type_info) ->
       (match type_info.Clang_ast_t.ti_desugared_type with
-         Some type_ptr -> type_ptr_ptr_to_sil_type translate_decl tenv type_ptr
+         Some type_ptr -> type_ptr_to_sil_type translate_decl tenv type_ptr
        | None -> Sil.Tvoid)
   | ObjCInterfaceType (type_info, pointer) ->
       decl_ptr_to_sil_type translate_decl tenv pointer
   | LValueReferenceType (type_info, type_ptr) ->
-      let typ = type_ptr_ptr_to_sil_type translate_decl tenv type_ptr in
+      let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
       Sil.Tptr (typ, Sil.Pk_reference)
   | AttributedType (type_info, attr_info) ->
       sil_type_of_attr_type translate_decl tenv type_info attr_info
   | _ -> (* TypedefType, etc *)
       let type_info = Clang_ast_proj.get_type_tuple c_type in
       match type_info.Clang_ast_t.ti_desugared_type with
-      | Some typ -> type_ptr_ptr_to_sil_type translate_decl tenv typ
+      | Some typ -> type_ptr_to_sil_type translate_decl tenv typ
       | None -> Sil.Tvoid
 
 and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   let open Clang_ast_t in
-  try Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.sil_types_map
+  let typ = `DeclPtr decl_ptr in
+  try Clang_ast_types.TypePointerMap.find typ !CFrontend_config.sil_types_map
   with Not_found ->
     match Ast_utils.get_decl decl_ptr with
     | Some (ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oidi)) ->
@@ -158,19 +145,33 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
           (Clang_ast_j.string_of_pointer decl_ptr);
         Sil.Tvoid
 
-and type_ptr_ptr_to_sil_type translate_decl tenv type_ptr =
+and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
   try
-    Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.sil_types_map
+    Clang_ast_types.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
   with Not_found ->
-    match Ast_utils.get_type type_ptr with
-    | Some c_type ->
-        let sil_type = sil_type_of_c_type translate_decl tenv c_type in
-        Ast_utils.update_sil_types_map type_ptr sil_type;
-        sil_type
-    | _ -> Sil.Tvoid
+    (match Ast_utils.get_type type_ptr with
+     | Some c_type ->
+         let sil_type = sil_type_of_c_type translate_decl tenv c_type in
+         Ast_utils.update_sil_types_map type_ptr sil_type;
+         sil_type
+     | _ -> Sil.Tvoid)
 
-and type_ptr_to_sil_type translate_decl tenv tp =
-  let type_ptr = tp in
-  match custom_type_ptr_to_sil_type type_ptr with
-  | Some typ -> typ
-  | None -> type_ptr_ptr_to_sil_type translate_decl tenv type_ptr
+and prebuilt_type_to_sil_type type_ptr =
+  try
+    Clang_ast_types.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
+  with Not_found ->
+    Printing.log_stats "Prebuilt type %s not found\n"
+      (Clang_ast_types.type_ptr_to_string type_ptr);
+    assert false
+
+and type_ptr_to_sil_type translate_decl tenv type_ptr =
+  match type_ptr with
+  | `TPtr _ -> clang_type_ptr_to_sil_type translate_decl tenv type_ptr
+  | `Prebuilt _ -> prebuilt_type_to_sil_type type_ptr
+  | `PointerOf typ ->
+      let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
+      Sil.Tptr (sil_typ, Sil.Pk_pointer)
+  | `ClassType name -> Sil.Tvar (CTypes.mk_classname name)
+  | `StructType name -> Sil.Tvar (CTypes.mk_structname name)
+  | `DeclPtr ptr -> decl_ptr_to_sil_type translate_decl tenv ptr
+  | `ErrorType -> Sil.Tvoid

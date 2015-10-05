@@ -82,8 +82,7 @@ let get_return_type function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info (_, typ, _)
   | Cpp_Meth_decl_info (_, _, typ)
-  | Block_decl_info (_, typ) ->
-      Ast_expressions.create_type_ptr_with_just_pointer (CTypes.return_type_of_function_type typ)
+  | Block_decl_info (_, typ) -> CTypes.return_type_of_function_type typ
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
 
 let build_method_signature decl_info procname function_method_decl_info is_instance is_anonym_block is_generated =

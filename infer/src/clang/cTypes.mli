@@ -29,7 +29,7 @@ val remove_pointer_to_typ : Sil.typ -> Sil.typ
 
 val is_class : Sil.typ -> bool
 
-val return_type_of_function_type : Clang_ast_t.type_ptr -> Clang_ast_t.pointer
+val return_type_of_function_type : Clang_ast_t.type_ptr -> Clang_ast_t.type_ptr
 
 val is_block_type : Clang_ast_t.type_ptr -> bool
 

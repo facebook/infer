@@ -79,14 +79,17 @@ sig
 
   val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
-  val update_sil_types_map : Clang_ast_t.pointer -> Sil.typ -> unit
+  val update_sil_types_map : Clang_ast_t.type_ptr -> Sil.typ -> unit
 
   (** creates a string to append to a name from a list of qualifiers to a name *)
   val get_qualifier_string : Clang_ast_t.named_decl_info -> string
 
-  val get_type : Clang_ast_t.pointer -> Clang_ast_t.c_type option
+  (** looks up clang pointer to type and returns c_type. It requires type_ptr to be `TPtr. *)
+  val get_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
 
-  val get_desugared_type : Clang_ast_t.pointer -> Clang_ast_t.c_type option
+  (** looks up clang pointer to type and resolves any sugar around it.
+      See get_type for more info and restrictions *)
+  val get_desugared_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
 
   (** returns declaration of the type for certain types and crashes for others
       NOTE: this function needs extending to handle objC types *)

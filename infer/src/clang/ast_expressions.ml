@@ -76,11 +76,9 @@ let stmt_info_with_fresh_pointer stmt_info = {
   si_source_range = stmt_info.Clang_ast_t.si_source_range;
 }
 
-let create_type_ptr_with_just_pointer pointer = pointer
-
 let get_constant_type_ptr s =
   let pointer = CFrontend_config.type_pointer_prefix ^ s in
-  pointer
+  `Prebuilt pointer
 
 (* Whenever new type are added manually to the translation here, *)
 (* they should be added to the map in cTypes_decl too!! *)
@@ -114,11 +112,11 @@ let create_void_unsigned_long_type =
 let create_void_void_type =
   get_constant_type_ptr "void (void *)"
 
-let create_class_type class_name = "custom_class_name*" ^ class_name
+let create_class_type class_name = `ClassType class_name
 
-let create_struct_type struct_name = "custom_struct_name*" ^ struct_name
+let create_struct_type struct_name = `StructType struct_name
 
-let create_pointer_type class_type = "custom_pointer_" ^ class_type
+let create_pointer_type typ = `PointerOf typ
 
 let create_integer_literal stmt_info n =
   let stmt_info = dummy_stmt_info () in

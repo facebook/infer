@@ -283,12 +283,20 @@ struct
 
   let update_sil_types_map type_ptr sil_type =
     CFrontend_config.sil_types_map :=
-      Clang_ast_main.PointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
+      Clang_ast_types.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
 
   let get_type type_ptr =
     try
-      Some (Clang_ast_main.PointerMap.find type_ptr !CFrontend_config.pointer_type_index)
-    with Not_found -> Printing.log_stats "type with pointer %s not found\n" type_ptr; None
+      (* There is chance for success only if type_ptr is in fact clang pointer *)
+      (let raw_ptr = Clang_ast_types.type_ptr_to_clang_pointer type_ptr in
+       try
+         Some (Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index)
+       with Not_found -> Printing.log_stats "type with pointer %s not found\n" raw_ptr; None)
+    with Clang_ast_types.Not_Clang_Pointer ->
+      (* otherwise, function fails *)
+      let type_str = Clang_ast_types.type_ptr_to_string type_ptr in
+      Printing.log_stats "type %s is not clang pointer\n" type_str;
+      None
 
   let get_desugared_type type_ptr =
     let typ_opt = get_type type_ptr in

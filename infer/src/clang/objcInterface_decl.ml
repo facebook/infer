@@ -121,7 +121,8 @@ let add_class_to_tenv tenv decl_info class_name decl_list obj_c_interface_decl_i
     Sil.Tstruct(fields, [], Sil.Class, Some (Mangled.from_string class_name),
                 superclasses, methods, objc_class_annotation) in
   Sil.tenv_add tenv interface_name interface_type_info;
-  Ast_utils.update_sil_types_map decl_info.Clang_ast_t.di_pointer (Sil.Tvar interface_name);
+  let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
+  Ast_utils.update_sil_types_map decl_key (Sil.Tvar interface_name);
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Sil.typename_to_string interface_name);
   (match Sil.tenv_lookup tenv interface_name with
