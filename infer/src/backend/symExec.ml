@@ -1624,7 +1624,8 @@ module ModelBuiltins = struct
     let non_null_case = Propset.to_proplist (prune_prop tenv sil_is_nonnull prop_type) in
     if ((list_length non_null_case) > 0) && (!Config.footprint) then
       non_null_case
-    else if (is_undefined_opt prop n_lexp) then non_null_case
+    else if ((list_length non_null_case) > 0) && (is_undefined_opt prop n_lexp) then
+      non_null_case
     else null_case@non_null_case
 
   let execute___get_type_of cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
