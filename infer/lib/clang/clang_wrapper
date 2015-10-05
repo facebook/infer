@@ -13,17 +13,24 @@ if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
 COMMAND=("${CLANG_COMPILER}${XX}")
 
 # Remove command line options not supported by the opensource compiler or the plugins.
+PREV=""
 for X in "$@"
 do
-    if [ "$X" == "-fapplication-extension" ]; then
+    if [ "$X" == "-fapplication-extension" ] \
+        || [ "$X" == "-fembed-bitcode-marker" ] \
+        || [[ "$X" =~ "-mwatchos-version-min" ]]; then
         continue
     elif [ "$X" == "-gmodules" ]; then
         # gmodules is an alias for "-g -fmodule-format=obj -dwarf-ext-refs"
         # but "-fmodule-format" is not available, so skip it for now.
         COMMAND+=("-g" "-dwarf-ext-refs")
+    elif [ "$X" == "armv7k" ] && [ "$PREV" == "-arch" ]; then
+        # replace armv7k arch with armv7
+        COMMAND+=("armv7")
     else
         COMMAND+=("$X")
     fi
+    PREV="$X"
 done
 
 # Never error on warnings. Clang is often more strict than Apple's version.
