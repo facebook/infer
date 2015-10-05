@@ -557,8 +557,8 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
       typestate (* skip othe builtins *)
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _etl, loc, cflags)
     when Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname <> None ->
-      if Ondemand.enabled () then
-        Ondemand.do_analysis get_proc_desc curr_pname callee_pname;
+      if !Config.ondemand_enabled then
+        Ondemand.do_analysis get_proc_desc curr_pdesc callee_pname;
       let callee_attributes =
         match Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname with
         | Some proc_attributes -> proc_attributes

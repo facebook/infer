@@ -170,6 +170,9 @@ let eradicate = ref false
 (** should the checkers be run? *)
 let checkers_enabled () = not !eradicate
 
+(** flag to activate ondemand mode. *)
+let ondemand_enabled = ref false
+
 (** Flag for footprint discovery mode *)
 let footprint = ref true
 

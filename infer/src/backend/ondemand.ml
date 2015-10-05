@@ -15,7 +15,7 @@ open Utils
 
 let trace = false
 
-let enabled () = false
+let () = Config.ondemand_enabled := Config.from_env_variable "INFER_ONDEMAND"
 
 let across_files () = true
 
@@ -33,7 +33,34 @@ let unset_analyze_prop () =
 
 let nesting = ref 0
 
-let do_analysis (get_proc_desc : get_proc_desc) curr_pname proc_name =
+let procedure_should_be_analyzed curr_pdesc proc_name =
+  match AttributesTable.load_attributes proc_name with
+  | Some proc_attributes ->
+      let currently_analyzed =
+        Specs.summary_exists proc_name &&
+        Specs.is_active proc_name in
+      let already_analyzed = match Specs.get_summary proc_name with
+        | Some summary ->
+            Specs.get_timestamp summary > 0
+        | None ->
+            false in
+      (* The procedure to be analyzed is in the same file as the current one. *)
+      let same_file proc_attributes =
+        (Cfg.Procdesc.get_loc curr_pdesc).Location.file
+        =
+        proc_attributes.ProcAttributes.loc.Location.file in
+
+      !Config.ondemand_enabled &&
+      proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
+      not currently_analyzed && (* avoid infinite loops *)
+      not already_analyzed && (* avoid re-analysis of the same procedure *)
+      (across_files () (* whether to push the analysis into other files *)
+       || same_file proc_attributes)
+  | None ->
+      false
+
+let do_analysis (get_proc_desc : get_proc_desc) curr_pdesc proc_name =
+  let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
   let really_do_analysis analyze_proc proc_desc =
     if trace then L.stderr "[%d] really_do_analysis %a -> %a@."
@@ -73,31 +100,9 @@ let do_analysis (get_proc_desc : get_proc_desc) curr_pname proc_name =
         (Printexc.get_backtrace ());
       raise e in
 
-  let currently_analyzed =
-    Specs.summary_exists proc_name &&
-    Specs.is_active proc_name in
-  let already_analyzed = match Specs.get_summary proc_name with
-    | Some summary ->
-        Specs.get_timestamp summary > 0
-    | None ->
-        false in
-  (* The procedure to be analyzed is in the same file as the current one. *)
-  let same_file proc_attributes =
-    match get_proc_desc curr_pname with
-    | Some curr_pdesc ->
-        (Cfg.Procdesc.get_loc curr_pdesc).Location.file
-        =
-        proc_attributes.ProcAttributes.loc.Location.file
-    | None -> false in
-
-  match !analyze_proc_fun, AttributesTable.load_attributes proc_name with
-  | Some analyze_proc, Some proc_attributes
-    when enabled () &&
-         proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
-         not currently_analyzed && (* avoid infinite loops *)
-         not already_analyzed && (* avoid re-analysis of the same procedure *)
-         (across_files () (* whether to push the analysis into other files *)
-          || same_file proc_attributes) ->
+  match !analyze_proc_fun with
+  | Some analyze_proc
+    when procedure_should_be_analyzed curr_pdesc proc_name ->
       begin
         match get_proc_desc proc_name with
         | Some proc_desc ->

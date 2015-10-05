@@ -780,7 +780,7 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
 let exe_env_from_cluster cluster =
   let _exe_env =
     let active_procs_opt =
-      if Ondemand.enabled ()
+      if !Config.ondemand_enabled
       then None
       else Some (cluster_to_active_procs cluster) in
     Exe_env.create active_procs_opt in
@@ -871,7 +871,7 @@ let () =
     match !cluster_cmdline with
     | None ->
         if !Config.curr_language = Config.C_CPP &&
-           not (Ondemand.enabled ()) then
+           not !Config.ondemand_enabled then
           Objc_preanal.do_objc_preanalysis ();
         L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
     | Some clname -> L.stdout "Cluster %s@." clname in
@@ -905,7 +905,7 @@ let () =
   L.err "Found %d source files in %s@." (list_length source_dirs) !Config.results_dir;
 
   let clusters =
-    if Ondemand.enabled ()
+    if !Config.ondemand_enabled
     then
       compute_ondemand_clusters source_dirs
     else

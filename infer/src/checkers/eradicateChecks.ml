@@ -354,7 +354,7 @@ let check_return_annotation
       if return_not_nullable && Models.Inference.enabled then
         Models.Inference.proc_add_return_nullable curr_pname;
 
-      if return_not_nullable && Ondemand.enabled () then
+      if return_not_nullable && !Config.ondemand_enabled then
         Ondemand.proc_add_return_nullable curr_pname;
 
       if return_not_nullable || return_value_not_present then

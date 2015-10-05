@@ -13,13 +13,13 @@ type analyze_proc = Procname.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
-(** do_analysis get_proc_desc curr_pname proc_name
+(** do_analysis get_proc_desc curr_descproc_name
     performs an on-demand analysis of proc_name
-    triggered during the analysis of curr_pname. *)
-val do_analysis : get_proc_desc -> Procname.t -> Procname.t -> unit
+    triggered during the analysis of curr_pdesc. *)
+val do_analysis : get_proc_desc -> Cfg.Procdesc.t -> Procname.t -> unit
 
-(** Check if on-demand is currently active. *)
-val enabled : unit -> bool
+(** Check if the procedure called by the current pdesc needs to be analyzed. *)
+val procedure_should_be_analyzed : Cfg.Procdesc.t -> Procname.t -> bool
 
 (** Mark the return type @Nullable by modifying the spec. *)
 val proc_add_return_nullable : Procname.t -> unit

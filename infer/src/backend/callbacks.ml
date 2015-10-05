@@ -217,7 +217,11 @@ let iterate_callbacks store_summary call_graph exe_env =
   let reset_summary proc_name =
     let attributes_opt =
       Specs.proc_resolve_attributes proc_name in
-    Specs.reset_summary call_graph proc_name attributes_opt in
+    let should_reset =
+      not !Config.ondemand_enabled ||
+      Specs.get_summary proc_name = None in
+    if should_reset
+    then Specs.reset_summary call_graph proc_name attributes_opt in
 
 
   (* Make sure summaries exists. *)

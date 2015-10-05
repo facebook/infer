@@ -57,7 +57,10 @@ module ST = struct
   let store_summary proc_name =
     Option.may
       (fun summary ->
-         try Specs.store_summary proc_name summary with Sys_error s -> L.err "%s@." s)
+         let summary' =
+           { summary with
+             Specs.timestamp = summary.Specs.timestamp + 1 } in
+         try Specs.store_summary proc_name summary' with Sys_error s -> L.err "%s@." s)
       (Specs.get_summary proc_name)
 
   let report_error
