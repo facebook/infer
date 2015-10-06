@@ -66,6 +66,7 @@ let empty_decl_info = {
 let empty_var_decl_info = {
   Clang_ast_t.vdi_storage_class = None;
   vdi_tls_kind =`Tls_none;
+  vdi_is_global = false;
   vdi_is_module_private = false;
   vdi_is_nrvo_variable = false;
   vdi_init_expr = None;
