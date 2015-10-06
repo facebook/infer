@@ -363,14 +363,6 @@ let make_next_object_exp stmt_info item items =
   let boi = { Clang_ast_t.boi_kind = `Assign } in
   make_binary_stmt var_decl_ref message_call stmt_info (make_expr_info_with_objc_kind var_type `ObjCProperty) boi
 
-let empty_var_decl = {
-  Clang_ast_t.vdi_storage_class = None;
-  vdi_tls_kind =`Tls_none;
-  vdi_is_module_private = false;
-  vdi_is_nrvo_variable = false;
-  vdi_init_expr = None;
-}
-
 (* dispatch_once(v,block_def) is transformed as: *)
 (* void (^block_var)()=block_def; block_var() *)
 let translate_dispatch_function block_name stmt_info stmt_list ei n =
@@ -386,7 +378,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
       let block_def = ImplicitCastExpr(stmt_info,[block_expr], bei, cast_info) in
       let decl_info = { empty_decl_info
                         with di_pointer = stmt_info.si_pointer; di_source_range = stmt_info.si_source_range } in
-      let var_decl_info = { empty_var_decl with vdi_init_expr = Some block_def } in
+      let var_decl_info = { empty_var_decl_info with vdi_init_expr = Some block_def } in
       let block_var_decl = VarDecl(decl_info, block_name_info, ei.ei_type_ptr, var_decl_info) in
       let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
 
@@ -676,18 +668,6 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
 let trans_negation_with_conditional stmt_info expr_info stmt_list =
   let stmt_list_cond = stmt_list @ [create_integer_literal stmt_info "0"] @ [create_integer_literal stmt_info "1"] in
   Clang_ast_t.ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
-
-let create_call stmt_info decl_pointer function_name tp parameters =
-  let expr_info_call = {
-    Clang_ast_t.ei_type_ptr = tp;
-    ei_value_kind = `XValue;
-    ei_object_kind = `Ordinary
-  } in
-  let expr_info_dre = make_expr_info_with_objc_kind tp `Ordinary in
-  let decl_ref = make_decl_ref_tp `Function decl_pointer function_name false tp in
-  let decl_ref_info = make_decl_ref_expr_info decl_ref in
-  let decl_ref_exp = Clang_ast_t.DeclRefExpr (stmt_info, [], expr_info_dre, decl_ref_info) in
-  Clang_ast_t.CallExpr (stmt_info, decl_ref_exp:: parameters, expr_info_call)
 
 let create_assume_not_null_call decl_info var_name var_type =
   let stmt_info = stmt_info_with_fresh_pointer (make_stmt_info decl_info) in
