@@ -1,0 +1,14 @@
+[
+  {
+    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java",
+    "line": "20",
+    "type": "NULL_DEREFERENCE",
+    "procedure": "void MainActivity.onCreate(Bundle)"
+  },
+  {
+    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java",
+    "line": "37",
+    "type": "RESOURCE_LEAK",
+    "procedure": "void MainActivity.writeToFile()"
+  }
+]

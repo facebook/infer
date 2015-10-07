@@ -48,3 +48,7 @@ buck clean
 rm -rf test.xml
 
 buck test ${TARGETS_TO_TEST[@]} $XML || exit 1
+
+if [ -e "$INFER_BIN/InferJava" ]; then
+    ./scripts/build_integration_tests.py
+fi
