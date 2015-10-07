@@ -97,4 +97,4 @@ buck-out/
 /infer/annotations/annot_classes/
 /infer/annotations/annotations.jar
 /infer/annotations/processor_classes/
-/infer/annotations/processor.jar
+/infer/lib/java/processor.jar

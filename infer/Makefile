@@ -12,8 +12,8 @@ all: clang java llvm checkCopyright
 
 java:
 	make -C $(SRCDIR) java
-	make -C $(MODELS) java
 	make -C $(ANNOTATIONS)
+	make -C $(MODELS) java
 
 clang:
 	make -C $(SRCDIR) clang
@@ -27,5 +27,5 @@ checkCopyright:
 
 clean:
 	make -C $(SRCDIR) clean
-	make -C $(MODELS) clean
 	make -C $(ANNOTATIONS) clean
+	make -C $(MODELS) clean

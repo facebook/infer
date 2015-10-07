@@ -5,11 +5,3 @@ prebuilt_jar(
     'PUBLIC',
   ]
 )
-
-prebuilt_jar(
-  name = 'processor',
-  binary_jar = 'processor.jar',
-  visibility = [
-    'PUBLIC',
-  ]
-)

@@ -26,6 +26,15 @@ parser.add_argument('-bootclasspath', type=str)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
 
 
+class AnnotationProcessorNotFound(Exception):
+
+    def __init__(self, path):
+        self.path = path
+
+    def __str__(self):
+        return repr(self.path + ' not found')
+
+
 class CompilerCall:
 
     def __init__(self, arguments):
@@ -43,6 +52,9 @@ class CompilerCall:
 
             if self.args.bootclasspath is not None:
                 javac_cmd += ['-bootclasspath', self.args.bootclasspath]
+
+            if not os.path.isfile(utils.ANNOT_PROCESSOR_JAR):
+                raise AnnotationProcessorNotFound(utils.ANNOT_PROCESSOR_JAR)
 
             if self.args.classpath is None:
                 classpath = utils.ANNOT_PROCESSOR_JAR
