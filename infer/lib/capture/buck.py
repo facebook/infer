@@ -59,6 +59,8 @@ class BuckAnalyzer:
     def capture(self):
         # BuckAnalyze is a special case, and we run the analysis from here
         capture_cmd = [utils.get_cmd_in_bin_dir('BuckAnalyze')]
+        if self.args.infer_out is not None:
+            capture_cmd += ['--out', self.args.infer_out]
         if self.args.debug:
             capture_cmd.append('-g')
         if self.args.no_filtering:

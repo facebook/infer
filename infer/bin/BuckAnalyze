@@ -76,6 +76,9 @@ def prepare_build(args):
     if args.no_filtering:
         infer_options.append('--no-filtering')
 
+    if args.infer_out is not None:
+        infer_options += ['--out', args.infer_out]
+
     # Create a temporary directory as a cache for jar files.
     infer_cache_dir = os.path.join(args.infer_out, 'cache')
     if not os.path.isdir(infer_cache_dir):
