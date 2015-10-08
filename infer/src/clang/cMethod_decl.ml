@@ -93,7 +93,9 @@ struct
     CTrans_utils.GotoLabel.reset_all_labels (); (* C Language Std 6.8.6.1-1 *)
     let is_anonym_block, captured_vars, curr_class =
       match block_data_opt with
-      | Some (_, _, _, captured_vars, curr_class) -> true, captured_vars, curr_class
+      | Some (context, _, _, captured_vars) ->
+          let curr_class = context.CContext.curr_class in
+          true, captured_vars, curr_class
       | None -> false, [], CContext.ContextNoCls in
     let class_name =
       if curr_class = CContext.ContextNoCls then None else Some (CContext.get_curr_class_name curr_class) in

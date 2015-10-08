@@ -1766,7 +1766,7 @@ struct
         let all_captured_vars = captured_vars @ static_vars in
         let ids_instrs = list_map assign_captured_var all_captured_vars in
         let ids, instrs = list_split ids_instrs in
-        let block_data = (type_ptr, context.is_instance, block_pname, all_captured_vars, context.curr_class) in
+        let block_data = (context, type_ptr, block_pname, all_captured_vars) in
         M.function_decl context.tenv context.cfg context.cg context.namespace decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_exps = list_map (fun id -> Sil.Var id) ids in
