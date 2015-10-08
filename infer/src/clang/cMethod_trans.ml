@@ -106,7 +106,7 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       let procname = General_utils.mk_procname_from_function name function_info tp language in
       let ms = build_method_signature decl_info procname func_decl false false in
       ms, fdi.Clang_ast_t.fdi_body, fdi.Clang_ast_t.fdi_parameters
-  | CXXMethodDecl (decl_info, name_info, tp, fdi), _, Some class_name ->
+  | CXXMethodDecl (decl_info, name_info, tp, fdi, _), _, Some class_name ->
       let method_name = name_info.Clang_ast_t.ni_name in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, class_name, tp)  in

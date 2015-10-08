@@ -76,7 +76,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
       let curr_class =
         ObjcInterface_decl.interface_impl_declaration tenv name decl_list idi in
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
-  | CXXMethodDecl(decl_info, name_info, type_ptr, function_decl_info) ->
+  | CXXMethodDecl(decl_info, name_info, type_ptr, function_decl_info, _) ->
       (* di_parent_pointer has pointer to lexical context such as class.*)
       (* If it's not defined, then it's the same as parent in AST *)
       let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with

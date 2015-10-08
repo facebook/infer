@@ -263,9 +263,12 @@ and decl_process_locs loc_composer decl =
         fdi_parameters = fdi_parameters';
         fdi_decls_in_prototype_scope = fdi_decls_in_prototype_scope'; } in
     (decl_info', name, tp, fdecl_info') in
+  let get_updated_method_decl (decl_info', name, tp, fdecl_info, method_info) =
+    let di', n', tp', fdi' = get_updated_fun_decl (decl_info', name, tp, fdecl_info) in
+    (di', n', tp', fdi', method_info) in
   match decl' with
   | FunctionDecl fun_info -> FunctionDecl (get_updated_fun_decl fun_info)
-  | CXXMethodDecl fun_info -> CXXMethodDecl (get_updated_fun_decl fun_info)
+  | CXXMethodDecl meth_info -> CXXMethodDecl (get_updated_method_decl meth_info)
   | ObjCMethodDecl (decl_info', name, obj_c_method_decl_info) ->
       let body' =
         Option.map (stmt_process_locs loc_composer) obj_c_method_decl_info.omdi_body in

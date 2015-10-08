@@ -426,13 +426,11 @@ struct
     {
       Clang_ast_t.fdi_storage_class = None;
       Clang_ast_t.fdi_is_inline = true; (* This value should not matter as we don't use it*)
-      Clang_ast_t.fdi_is_virtual = false; (* This value should not matter as we don't use it*)
       Clang_ast_t.fdi_is_module_private = true; (* This value should not matter as we don't use it*)
       Clang_ast_t.fdi_is_pure = false; (* This value should not matter as we don't use it*)
       Clang_ast_t.fdi_is_delete_as_written = false; (* This value should not matter as we don't use it*)
       Clang_ast_t.fdi_decls_in_prototype_scope =[];
       Clang_ast_t.fdi_parameters = block_decl_info.Clang_ast_t.bdi_parameters;
-      Clang_ast_t.fdi_cxx_ctor_initializers = [];
       Clang_ast_t.fdi_body = block_decl_info.Clang_ast_t.bdi_body;
     }
 
