@@ -47,5 +47,10 @@ public class MethodsTest {
     frontendTest("overloading.cpp");
   }
 
+  @Test
+  public void testDerefernceThisDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("dereference_this.cpp");
+  }
 
 }

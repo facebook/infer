@@ -182,9 +182,13 @@ let get_formal_parameters tenv ms =
     match pl with
     | [] -> []
     | (name, raw_type, _):: pl' ->
-        let is_objc_self = name = CFrontend_config.self &&
-                           CMethod_signature.ms_get_lang ms = CFrontend_config.OBJC in
-        let tp = if is_objc_self && CMethod_signature.ms_is_instance ms then
+        let should_add_pointer name ms =
+          let is_objc_self = name = CFrontend_config.self &&
+                             CMethod_signature.ms_get_lang ms = CFrontend_config.OBJC in
+          let is_cxx_this = name = CFrontend_config.this &&
+                            CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
+          (is_objc_self && CMethod_signature.ms_is_instance ms) || is_cxx_this in
+        let tp = if should_add_pointer name ms then
             (Ast_expressions.create_pointer_type raw_type)
           else raw_type in
         let typ = CTypes_decl.type_ptr_to_sil_type tenv tp in

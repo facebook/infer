@@ -357,6 +357,23 @@ struct
       { empty_res_trans with exps = exps }
     )
 
+  let cxxThisExpr_trans trans_state stmt_info expr_info =
+    let context = trans_state.context in
+    let pln = trans_state.parent_line_number in
+    let sil_loc = CLocation.get_sil_location stmt_info pln context in
+    let tp = expr_info.Clang_ast_t.ei_type_ptr in
+    let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+    let name = CFrontend_config.this in
+    let pvar = Sil.mk_pvar (Mangled.from_string name) procname in
+    let exp = Sil.Lvar pvar in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv tp in
+    let exps =  [(exp, typ)] in
+    (* there is no cast operation in AST, but backend needs it *)
+    let cast_kind = `LValueToRValue in
+    let cast_ids, cast_inst, cast_exp = cast_operation context cast_kind exps
+      (* unused *) typ sil_loc (* is_objc_bridged *) false in
+    { empty_res_trans with ids = cast_ids; instrs = cast_inst; exps = [(cast_exp, typ)] }
+
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     (* go ahead with the translation *)
     let res_trans = match stmt_list with
@@ -1872,6 +1889,8 @@ struct
 
     | ObjCPropertyRefExpr(stmt_info, stmt_list, expr_info, property_ref_expr_info) ->
         objCPropertyRefExpr_trans trans_state stmt_info stmt_list
+
+    | CXXThisExpr(stmt_info, _, expr_info) -> cxxThisExpr_trans trans_state stmt_info expr_info
 
     | OpaqueValueExpr(stmt_info, stmt_list, expr_info, opaque_value_expr_info) ->
         opaqueValueExpr_trans trans_state stmt_info opaque_value_expr_info
