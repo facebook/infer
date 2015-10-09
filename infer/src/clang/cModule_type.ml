@@ -9,9 +9,12 @@
 
 type block_data = CContext.t * Clang_ast_t.type_ptr * Procname.t * (Mangled.t * Sil.typ * bool) list
 
+type instr_type = [ `ClangStmt of Clang_ast_t.stmt ]
+
 module type CTranslation =
 sig
-  val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> Cfg.Node.t -> Cfg.Node.t list
+  val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> instr_type list ->
+    Cfg.Node.t -> Cfg.Node.t list
 end
 
 module type CMethod_declaration =

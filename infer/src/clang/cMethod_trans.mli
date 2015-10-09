@@ -33,7 +33,7 @@ val get_class_selector_instance : CContext.t -> Clang_ast_t.obj_c_message_expr_i
 val should_create_procdesc : Cfg.cfg -> Procname.t -> bool -> bool -> bool
 
 val method_signature_of_decl : string option -> Clang_ast_t.decl -> CModule_type.block_data option ->
-  CMethod_signature.method_signature * Clang_ast_t.stmt option * Clang_ast_t.decl list
+  CMethod_signature.method_signature * Clang_ast_t.stmt option * CModule_type.instr_type list
 
 val method_signature_of_pointer : string option -> Clang_ast_t.pointer -> CMethod_signature.method_signature option
 
