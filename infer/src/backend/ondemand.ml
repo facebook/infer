@@ -15,21 +15,29 @@ open Utils
 
 let trace = false
 
-let () = Config.ondemand_enabled := Config.from_env_variable "INFER_ONDEMAND"
+let () = Config.ondemand_enabled :=
+    Config.from_env_variable "INFER_ONDEMAND" &&
+    not Config.analyze_models
 
 let across_files () = true
 
-type analyze_proc = Procname.t -> unit
+type analyze_ondemand = Procname.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
-let analyze_proc_fun = ref None
+type callbacks =
+  {
+    analyze_ondemand : analyze_ondemand;
+    get_proc_desc : get_proc_desc;
+  }
 
-let set_analyze_proc (analyze_proc : analyze_proc) =
-  analyze_proc_fun := Some analyze_proc
+let callbacks_ref = ref None
 
-let unset_analyze_prop () =
-  analyze_proc_fun := None
+let set_callbacks  (callbacks : callbacks) =
+  callbacks_ref := Some callbacks
+
+let unset_callbacks () =
+  callbacks_ref := None
 
 let nesting = ref 0
 
@@ -50,16 +58,20 @@ let procedure_should_be_analyzed curr_pdesc proc_name =
         =
         proc_attributes.ProcAttributes.loc.Location.file in
 
+      let is_harness () =
+        string_contains "InferGeneratedHarness" (Procname.to_simplified_string proc_name) in
+
       !Config.ondemand_enabled &&
       proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
       not currently_analyzed && (* avoid infinite loops *)
       not already_analyzed && (* avoid re-analysis of the same procedure *)
-      (across_files () (* whether to push the analysis into other files *)
-       || same_file proc_attributes)
+      (across_files () || (* whether to push the analysis into other files *)
+       same_file proc_attributes) &&
+      not (is_harness ()) (* skip harness procedures *)
   | None ->
       false
 
-let do_analysis (get_proc_desc : get_proc_desc) curr_pdesc proc_name =
+let do_analysis curr_pdesc proc_name =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
   let really_do_analysis analyze_proc proc_desc =
@@ -100,13 +112,14 @@ let do_analysis (get_proc_desc : get_proc_desc) curr_pdesc proc_name =
         (Printexc.get_backtrace ());
       raise e in
 
-  match !analyze_proc_fun with
-  | Some analyze_proc
+  match !callbacks_ref with
+  | Some callbacks
     when procedure_should_be_analyzed curr_pdesc proc_name ->
+
       begin
-        match get_proc_desc proc_name with
+        match callbacks.get_proc_desc proc_name with
         | Some proc_desc ->
-            really_do_analysis analyze_proc proc_desc
+            really_do_analysis callbacks.analyze_ondemand proc_desc
         | None -> ()
       end
   | _ ->

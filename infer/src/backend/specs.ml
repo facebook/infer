@@ -396,7 +396,7 @@ let describe_status summary =
   ("Status", if summary.status == ACTIVE then "ACTIVE" else "INACTIVE")
 
 let describe_phase summary =
-  ("Phase", if summary.phase == FOOTPRINT then "FOOTRPRINT" else "RE_EXECUTION")
+  ("Phase", if summary.phase == FOOTPRINT then "FOOTPRINT" else "RE_EXECUTION")
 
 (** Return the signature of a procedure declaration as a string *)
 let get_signature summary =

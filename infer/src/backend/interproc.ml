@@ -1245,8 +1245,35 @@ let do_analysis exe_env =
     if !Config.only_skips then (filter_skipped_procs cg procs_and_defined_children)
     else if !Config.only_nospecs then filter_nospecs
     else (fun _ -> true) in
-  list_iter (fun x -> if filter x then init_proc x) procs_and_defined_children;
-  Fork.interprocedural_algorithm exe_env analyze_proc process_result filter_out
+  list_iter
+    (fun ((pn, _) as x) ->
+       let should_init () =
+         not !Config.ondemand_enabled ||
+         Specs.get_summary pn = None in
+       if filter x &&
+          should_init ()
+       then init_proc x)
+    procs_and_defined_children;
+
+  let callbacks =
+    let get_proc_desc proc_name =
+      let callee_cfg = Exe_env.get_cfg exe_env proc_name in
+      Cfg.Procdesc.find_from_name callee_cfg proc_name in
+    let analyze_ondemand proc_name =
+      let saved_footprint = !Config.footprint in
+      let _summaryfp = analyze_proc exe_env proc_name in
+      let cg = Cg.create () in
+      Cg.add_node cg proc_name;
+      perform_transition exe_env cg proc_name;
+      let _summaryre = analyze_proc exe_env proc_name in
+      Config.footprint := saved_footprint;
+      () in
+    { Ondemand.analyze_ondemand; get_proc_desc; } in
+
+  Ondemand.set_callbacks callbacks;
+  Fork.interprocedural_algorithm exe_env analyze_proc process_result filter_out;
+  Ondemand.unset_callbacks ()
+
 
 let visited_and_total_nodes cfg =
   let all_nodes =
@@ -1283,7 +1310,8 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
   let num_timeout = ref 0 in
   let compute_stats_proc proc_desc =
     let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
-    if proc_shadowed proc_desc then
+    if proc_shadowed proc_desc ||
+       Specs.get_summary proc_name = None then
       L.out "print_stats: ignoring function %a which is also defined in another file@." Procname.pp proc_name
     else
       let summary = Specs.get_summary_unsafe "print_stats_cfg" proc_name in

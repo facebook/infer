@@ -277,24 +277,42 @@ end = struct
         ignore (Gc.create_alarm SymOp.check_wallclock_alarm)
   end
 
+  let current_timeouts = ref []
+
   let exe_timeout iterations f x =
-    try
-      set_iterations iterations;
-      set_alarm (get_timeout_seconds ());
-      SymOp.set_alarm ();
-      let res = f x in
+    let restore_timeout () =
+      match !current_timeouts with
+      | prev_iterations :: _ ->
+          set_alarm prev_iterations
+      | [] ->
+          () in
+    let unwind () =
+      let pop () = match !current_timeouts with
+        | _ :: l -> current_timeouts := l
+        | [] -> () in
       unset_alarm ();
       SymOp.unset_alarm ();
+      pop () in
+    let before () =
+      current_timeouts := iterations :: !current_timeouts;
+      set_iterations iterations;
+      set_alarm (get_timeout_seconds ());
+      SymOp.set_alarm () in
+    let after () =
+      unwind ();
+      restore_timeout () in
+    try
+      before ();
+      let res = f x in
+      after ();
       Some res
     with
     | Timeout_exe kind ->
-        unset_alarm ();
-        SymOp.unset_alarm ();
+        after ();
         Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." pp_kind kind;
         None
     | exe ->
-        unset_alarm ();
-        SymOp.unset_alarm ();
+        after ();
         raise exe
 end
 
@@ -321,6 +339,18 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
       (proc_is_done call_graph) (Cg.get_nonrecursive_dependents call_graph pname) &&
     (Specs.get_timestamp (Specs.get_summary_unsafe "main_algorithm" pname) = 0
      || not (proc_is_up_to_date call_graph pname)) in
+  let filter_out_ondemand pname =
+    if !Config.ondemand_enabled then
+      try
+        let cfg = Exe_env.get_cfg exe_env pname in
+        match Cfg.Procdesc.find_from_name cfg pname with
+        | Some pdesc ->
+            not (Ondemand.procedure_should_be_analyzed pdesc pname)
+        | None ->
+            false
+      with Not_found -> false
+    else
+      false in
   let process_one_proc pname (calls: Cg.in_out_calls) =
     DB.current_source :=
       (Specs.get_summary_unsafe "main_algorithm" pname)
@@ -333,7 +363,8 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
           (Specs.pp_summary pe_text whole_seconds)
           (Specs.get_summary_unsafe "main_algorithm" pname)
       end;
-    if filter_out call_graph pname
+    if filter_out call_graph pname ||
+       filter_out_ondemand pname
     then
       post_process_procs exe_env [pname]
     else
@@ -357,7 +388,8 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
       with Not_found -> (* no analyzable procs *)
         L.err "Error: can't analyze any procs. Printing current spec table@\n@[<v>%a@]@."
           (Specs.pp_spec_table pe_text false) ();
-        raise (Failure "Stopping")
+        if !Config.ondemand_enabled then wpnames_todo := WeightedPnameSet.empty
+        else raise (Failure "Stopping")
     end
   done
 

@@ -387,19 +387,22 @@ let callback_eradicate all_procs get_proc_desc idenv tenv proc_name proc_desc =
       check_extension = false;
       check_ret_type = [];
     } in
-  let _ondemand pname =
-    match get_proc_desc pname with
-    | None -> ()
-    | Some pdesc ->
-        let idenv_pname = Idenv.create_from_idenv idenv pdesc in
-        Main.callback checks all_procs get_proc_desc idenv_pname tenv pname pdesc in
+  let callbacks =
+    let analyze_ondemand pname =
+      match get_proc_desc pname with
+      | None -> ()
+      | Some pdesc ->
+          let idenv_pname = Idenv.create_from_idenv idenv pdesc in
+          Main.callback checks all_procs get_proc_desc idenv_pname tenv pname pdesc in
+    { Ondemand.analyze_ondemand; get_proc_desc; } in
+
   if not !Config.ondemand_enabled ||
      Ondemand.procedure_should_be_analyzed proc_desc proc_name
   then
     begin
-      Ondemand.set_analyze_proc _ondemand;
+      Ondemand.set_callbacks callbacks;
       Main.callback checks all_procs get_proc_desc idenv tenv proc_name proc_desc;
-      Ondemand.unset_analyze_prop ()
+      Ondemand.unset_callbacks ()
     end
 
 (** Call the given check_return_type at the end of every procedure. *)

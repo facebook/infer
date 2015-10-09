@@ -963,6 +963,10 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         if call_flags.Sil.cf_virtual then
           resolve_virtual_pname cfg tenv prop_r n_actual_params fn
         else fn in
+
+      if !Config.ondemand_enabled then
+        Ondemand.do_analysis pdesc callee_pname;
+
       let ret_typ_opt =
         match Cfg.Procdesc.find_from_name cfg resolved_pname with
         | None -> None

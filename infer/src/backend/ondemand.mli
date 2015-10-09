@@ -9,14 +9,20 @@
 
 (** Module for on-demand analysis. *)
 
-type analyze_proc = Procname.t -> unit
+type analyze_ondemand = Procname.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
-(** do_analysis get_proc_desc curr_descproc_name
+type callbacks =
+  {
+    analyze_ondemand : analyze_ondemand;
+    get_proc_desc : get_proc_desc;
+  }
+
+(** do_analysis curr_pdesc proc_name
     performs an on-demand analysis of proc_name
-    triggered during the analysis of curr_pdesc. *)
-val do_analysis : get_proc_desc -> Cfg.Procdesc.t -> Procname.t -> unit
+    triggered during the analysis of curr_pname. *)
+val do_analysis : Cfg.Procdesc.t -> Procname.t -> unit
 
 (** Check if the procedure called by the current pdesc needs to be analyzed. *)
 val procedure_should_be_analyzed : Cfg.Procdesc.t -> Procname.t -> bool
@@ -24,8 +30,8 @@ val procedure_should_be_analyzed : Cfg.Procdesc.t -> Procname.t -> bool
 (** Mark the return type @Nullable by modifying the spec. *)
 val proc_add_return_nullable : Procname.t -> unit
 
-(** Set the function to be used to perform on-demand analysis. *)
-val set_analyze_proc : analyze_proc -> unit
+(** Set the callbacks used to perform on-demand analysis. *)
+val set_callbacks : callbacks -> unit
 
-(** Unset the function to be used to perform on-demand analysis. *)
-val unset_analyze_prop : unit -> unit
+(** Unset the callbacks used to perform on-demand analysis. *)
+val unset_callbacks : unit -> unit
