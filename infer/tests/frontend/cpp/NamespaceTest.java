@@ -9,20 +9,14 @@
 
 package frontend.cpp;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.DotFilesEqual.dotFileEqualTo;
-
-import com.google.common.collect.ImmutableList;
-
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 import utils.DebuggableTemporaryFolder;
 import utils.InferException;
-import utils.InferRunner;
+import utils.ClangFrontendUtils;
 
 public class NamespaceTest {
 
@@ -32,20 +26,8 @@ public class NamespaceTest {
   @Test
   public void whenCaptureRunCommaThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
-    String switch_src =
+    String src =
         "infer/tests/codetoanalyze/cpp/frontend/namespace/namespace.cpp";
-
-    String switch_dotty =
-        "infer/tests/codetoanalyze/cpp/frontend/namespace/namespace.dot";
-
-    ImmutableList<String> inferCmd =
-        InferRunner.createCPPInferCommandFrontend(
-            folder,
-            switch_src);
-    File newDotFile = InferRunner.runInferFrontend(inferCmd);
-    assertThat(
-        "In the capture of " + switch_src +
-            " the dotty files should be the same.",
-        newDotFile, dotFileEqualTo(switch_dotty));
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
   }
 }

@@ -9,20 +9,14 @@
 
 package frontend.cpp;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.DotFilesEqual.dotFileEqualTo;
-
-import com.google.common.collect.ImmutableList;
-
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 import utils.DebuggableTemporaryFolder;
 import utils.InferException;
-import utils.InferRunner;
+import utils.ClangFrontendUtils;
 
 public class SelfParameterTest {
 
@@ -34,18 +28,6 @@ public class SelfParameterTest {
       throws InterruptedException, IOException, InferException {
     String src =
         "infer/tests/codetoanalyze/cpp/frontend/keywords/self_parameter.cpp";
-
-    String dotty =
-        "infer/tests/codetoanalyze/cpp/frontend/keywords/self_parameter.dot";
-
-    ImmutableList<String> inferCmd =
-        InferRunner.createCPPInferCommandFrontend(
-            folder,
-            src);
-    File newDotFile = InferRunner.runInferFrontend(inferCmd);
-    assertThat(
-        "In the capture of " + src +
-            " the dotty files should be the same.",
-        newDotFile, dotFileEqualTo(dotty));
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
   }
 }
