@@ -9,62 +9,35 @@
 
 package frontend.c;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.DotFilesEqual.dotFileEqualTo;
-
-import com.google.common.collect.ImmutableList;
-
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 import utils.DebuggableTemporaryFolder;
 import utils.InferException;
-import utils.InferRunner;
+import utils.ClangFrontendUtils;
 
 public class InitListExprTest {
+
+  String initListBasePath = "infer/tests/codetoanalyze/c/frontend/initialization/";
+
   @Rule
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
+
+  void frontendTest(String fileRelative) throws InterruptedException, IOException, InferException {
+    ClangFrontendUtils.createAndCompareCDotFiles(folder, initListBasePath + fileRelative);
+  }
 
   @Test
   public void whenCaptureRunOnArrayInitListExprThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
-    String plus_expr =
-        "infer/tests/codetoanalyze/" +
-            "c/frontend/initialization/array_initlistexpr.c";
-
-    String plus_expr_dotty =
-        "infer/tests/codetoanalyze/" +
-            "c/frontend/initialization/array_initlistexpr.dot";
-
-    ImmutableList<String> inferCmd =
-        InferRunner.createCInferCommandFrontend(folder, plus_expr);
-    File newDotFile = InferRunner.runInferFrontend(inferCmd);
-    assertThat(
-        "In the capture of " + plus_expr +
-            " the dotty files should be the same.",
-        newDotFile, dotFileEqualTo(plus_expr_dotty));
+    frontendTest("array_initlistexpr.c");
   }
 
   @Test
   public void whenCaptureRunOnStructInitListExprThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
-    String plus_expr =
-        "infer/tests/codetoanalyze/" +
-            "c/frontend/initialization/struct_initlistexpr.c";
-
-    String plus_expr_dotty =
-        "infer/tests/codetoanalyze/" +
-            "c/frontend/initialization/struct_initlistexpr.dot";
-
-    ImmutableList<String> inferCmd =
-        InferRunner.createCInferCommandFrontend(folder, plus_expr);
-    File newDotFile = InferRunner.runInferFrontend(inferCmd);
-    assertThat(
-        "In the capture of " + plus_expr +
-            " the dotty files should be the same.",
-        newDotFile, dotFileEqualTo(plus_expr_dotty));
+    frontendTest("struct_initlistexpr.c");
   }
 }

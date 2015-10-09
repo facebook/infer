@@ -9,20 +9,14 @@
 
 package frontend.c;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.DotFilesEqual.dotFileEqualTo;
-
-import com.google.common.collect.ImmutableList;
-
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 import utils.DebuggableTemporaryFolder;
 import utils.InferException;
-import utils.InferRunner;
+import utils.ClangFrontendUtils;
 
 public class PrototypeTest {
 
@@ -33,21 +27,10 @@ public class PrototypeTest {
   @Test
   public void whenCaptureRunOnC_prototypeThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
-    String prototype_expr =
+    String src =
         "infer/tests/codetoanalyze/" +
             "c/frontend/c_prototype/prototype.c";
-
-    String prototype_dotty =
-        "infer/tests/codetoanalyze/" +
-            "c/frontend/c_prototype/prototype.dot";
-
-    ImmutableList<String> inferCmd =
-        InferRunner.createCInferCommandFrontend(folder, prototype_expr);
-    File newDotFile = InferRunner.runInferFrontend(inferCmd);
-    assertThat(
-        "In the capture of " + prototype_expr +
-            " the dotty files should be the same. ",
-        newDotFile, dotFileEqualTo(prototype_dotty));
+    ClangFrontendUtils.createAndCompareCDotFiles(folder, src);
   }
 
 }

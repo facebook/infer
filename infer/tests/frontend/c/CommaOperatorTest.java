@@ -9,20 +9,14 @@
 
 package frontend.c;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.DotFilesEqual.dotFileEqualTo;
-
-import com.google.common.collect.ImmutableList;
-
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 
 import utils.DebuggableTemporaryFolder;
 import utils.InferException;
-import utils.InferRunner;
+import utils.ClangFrontendUtils;
 
 public class CommaOperatorTest {
 
@@ -33,20 +27,7 @@ public class CommaOperatorTest {
   @Test
   public void whenCaptureRunCommaThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
-    String switch_src =
-        "infer/tests/codetoanalyze/c/frontend/comma/comma.c";
-
-    String switch_dotty =
-        "infer/tests/codetoanalyze/c/frontend/comma/comma.dot";
-
-    ImmutableList<String> inferCmd =
-        InferRunner.createCInferCommandFrontend(
-            folder,
-            switch_src);
-    File newDotFile = InferRunner.runInferFrontend(inferCmd);
-    assertThat(
-        "In the capture of " + switch_src +
-            " the dotty files should be the same.",
-        newDotFile, dotFileEqualTo(switch_dotty));
+    String src = "infer/tests/codetoanalyze/c/frontend/comma/comma.c";
+    ClangFrontendUtils.createAndCompareCDotFiles(folder, src);
   }
 }

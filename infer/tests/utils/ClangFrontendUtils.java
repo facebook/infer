@@ -38,4 +38,19 @@ public class ClangFrontendUtils {
         newDotFile, dotFileEqualTo(test_dotty));
   }
 
+  public static void createAndCompareCDotFiles(DebuggableTemporaryFolder folder, String pathToSrcFile)
+      throws InterruptedException, IOException, InferException {
+
+    String test_src = pathToSrcFile;
+    String test_dotty = pathToSrcFile + ".dot";
+    ImmutableList<String> inferCmd =
+        InferRunner.createCInferCommandFrontend(
+            folder,
+            test_src);
+    File newDotFile = InferRunner.runInferFrontend(inferCmd);
+    assertThat(
+        "In the capture of " + test_src +
+            " the dotty files should be the same.",
+        newDotFile, dotFileEqualTo(test_dotty));
+  }
 }
