@@ -35,14 +35,15 @@ type t =
     cfg : Cfg.cfg;
     procdesc : Cfg.Procdesc.t;
     is_objc_method : bool;
-    is_instance : bool;
     curr_class: curr_class;
     is_callee_expression : bool;
     namespace: string option; (* contains the name of the namespace if we are in the scope of one*)
     mutable local_vars : (Mangled.t * Sil.typ * bool) list; (* (name, type, is_static flag) *)
     mutable captured_vars : (Mangled.t * Sil.typ * bool) list; (* (name, type, is_static flag) *)
     mutable local_vars_stack : varMap;
-    mutable local_vars_pointer : pointerVarMap
+    mutable local_vars_pointer : pointerVarMap;
+    outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
+    mutable blocks : Procname.t list (* List of blocks defined in this method *)
   }
 
 module LocalVars =
@@ -141,17 +142,17 @@ struct
       try
         Some (fst (lookup_var_locals context procname var_name))
       with Stack.Empty ->
-        try
-          Some (fst (lookup_var_globals context procname var_name))
-        with Not_found ->
-          if is_captured_var context var_name then
-            try (* if it's a captured variable we need to look at the parameters list*)
-              Some (fst (lookup_var_formals context procname var_name))
-            with Not_found ->
-              Printing.log_err "Variable %s not found!!\n%!" var_name;
-              print_locals context;
-              None
-          else None
+      try
+        Some (fst (lookup_var_globals context procname var_name))
+      with Not_found ->
+        if is_captured_var context var_name then
+          try (* if it's a captured variable we need to look at the parameters list*)
+            Some (fst (lookup_var_formals context procname var_name))
+          with Not_found ->
+            Printing.log_err "Variable %s not found!!\n%!" var_name;
+            print_locals context;
+            None
+        else None
     else if (kind = `ParmVar) then
       try
         Some (fst (lookup_var_formals context procname var_name))
@@ -217,7 +218,7 @@ struct
 
 end
 
-let create_context tenv cg cfg procdesc ns curr_class is_objc_method cv is_instance =
+let create_context tenv cg cfg procdesc ns curr_class is_objc_method cv outer_context_opt =
   { tenv = tenv;
     cg = cg;
     cfg = cfg;
@@ -225,12 +226,13 @@ let create_context tenv cg cfg procdesc ns curr_class is_objc_method cv is_insta
     curr_class = curr_class;
     is_callee_expression = false;
     is_objc_method = is_objc_method;
-    is_instance = is_instance;
     namespace = ns;
     local_vars = [];
     captured_vars = cv;
     local_vars_stack = StringMap.empty;
-    local_vars_pointer = StringMap.empty
+    local_vars_pointer = StringMap.empty;
+    outer_context = outer_context_opt;
+    blocks = []
   }
 
 let get_cfg context = context.cfg
@@ -241,9 +243,24 @@ let get_tenv context = context.tenv
 
 let get_procdesc context = context.procdesc
 
-let is_objc_method context = context.is_objc_method
+let rec is_objc_method context =
+  match context.outer_context with
+  | Some outer_context -> is_objc_method outer_context
+  | None -> context.is_objc_method
 
-let get_curr_class context = context.curr_class
+let rec is_objc_instance context =
+  match context.outer_context with
+  | Some outer_context -> is_objc_instance outer_context
+  | None ->
+      let attrs = Cfg.Procdesc.get_attributes context.procdesc in
+      attrs.ProcAttributes.is_objc_instance_method
+
+let rec get_curr_class context =
+  match context.curr_class, context.outer_context with
+  | ContextNoCls, Some outer_context ->
+      get_curr_class outer_context
+  |  _ -> context.curr_class
+
 
 let get_curr_class_name curr_class =
   match curr_class with
@@ -299,3 +316,9 @@ let create_curr_class tenv class_name =
            ContextCls (class_name, Some superclass, protocols)
        | [] -> ContextCls (class_name, None, []))
   | _ -> assert false
+
+let rec add_block context block =
+  context.blocks <- block :: context.blocks;
+  match context.outer_context with
+  | Some outer_context -> add_block outer_context block
+  | None -> ()

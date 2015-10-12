@@ -35,11 +35,10 @@ type function_method_decl_info =
 
 let is_instance_method function_method_decl_info =
   match function_method_decl_info with
-  | Func_decl_info (function_decl_info, _, _) -> false
+  | Func_decl_info _  | Block_decl_info _ -> false
   | Cpp_Meth_decl_info _ -> true
   | ObjC_Meth_decl_info (method_decl_info, _) ->
       method_decl_info.Clang_ast_t.omdi_is_instance_method
-  | Block_decl_info (_, _, context) -> context.CContext.is_instance
 
 let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info) then
@@ -135,8 +134,8 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       let extra_instrs = get_assume_not_null_calls ms mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, decl_list, decl_context_info, bdi),
-    Some (context, tp, procname, _), _ ->
-      let func_decl = Block_decl_info (bdi, tp, context) in
+    Some (outer_context, tp, procname, _), _ ->
+      let func_decl = Block_decl_info (bdi, tp, outer_context) in
       let ms = build_method_signature decl_info procname func_decl true false in
       let extra_instrs = get_assume_not_null_calls ms bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
@@ -228,7 +227,7 @@ let captured_vars_from_block_info context cvl =
              (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_type_ptr with
               | Some name_info, _ ->
                   let n = name_info.Clang_ast_t.ni_name in
-                  if n = CFrontend_config.self && not context.CContext.is_instance then []
+                  if n = CFrontend_config.self && not (CContext.is_objc_instance context) then []
                   else
                     (let procdesc_formals = Cfg.Procdesc.get_formals context.CContext.procdesc in
                      (Printing.log_err "formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));

@@ -348,11 +348,12 @@ struct
       let e = Sil.Lvar pvar in
       let exps =
         if Self.is_var_self pvar (CContext.is_objc_method context) then
+          let curr_class = CContext.get_curr_class context in
           if (CTypes.is_class typ) then
-            raise (Self.SelfClassException (CContext.get_curr_class_name trans_state.context.curr_class))
+            raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
           else
             let typ = CTypes.add_pointer_to_typ
-                (CTypes_decl.get_type_curr_class context.tenv (CContext.get_curr_class context)) in
+                (CTypes_decl.get_type_curr_class context.tenv curr_class) in
             [(e, typ)]
         else [(e, typ)] in
       Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
@@ -1769,6 +1770,7 @@ struct
         let ids_instrs = list_map assign_captured_var all_captured_vars in
         let ids, instrs = list_split ids_instrs in
         let block_data = (context, type_ptr, block_pname, all_captured_vars) in
+        CContext.add_block context block_pname;
         M.function_decl context.tenv context.cfg context.cg context.namespace decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_exps = list_map (fun id -> Sil.Var id) ids in

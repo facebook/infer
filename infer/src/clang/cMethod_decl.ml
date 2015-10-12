@@ -38,8 +38,9 @@ struct
     Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
 
   (* Translates the method/function's body into nodes of the cfg. *)
-  let add_method tenv cg cfg class_decl_opt procname namespace instrs is_objc_method is_instance
-      captured_vars is_anonym_block extra_instrs =
+  let add_method tenv cg cfg class_decl_opt procname namespace instrs is_objc_method
+      captured_vars outer_context_opt extra_instrs =
+
     Printing.log_out
       "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n@." (Procname.to_string procname);
     try
@@ -48,7 +49,7 @@ struct
            if (Cfg.Procdesc.is_defined procdesc && not (model_exists procname)) then
              (let context =
                 CContext.create_context tenv cg cfg procdesc namespace class_decl_opt
-                  is_objc_method captured_vars is_instance in
+                  is_objc_method captured_vars outer_context_opt in
               CVar_decl.get_fun_locals context instrs;
               let local_vars = list_map (fun (n, t, _) -> n, t) context.CContext.local_vars in
               let start_node = Cfg.Procdesc.get_start_node procdesc in
@@ -59,6 +60,7 @@ struct
                 "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
                 (Procname.to_string procname);
               let meth_body_nodes = T.instructions_trans context instrs extra_instrs exit_node in
+              let is_anonym_block = Option.is_some outer_context_opt in
               if (not is_anonym_block) then CContext.LocalVars.reset_block ();
               Cfg.Node.set_succs_exn start_node meth_body_nodes [];
               Cg.add_node (CContext.get_cg context) (Cfg.Procdesc.get_proc_name procdesc))
@@ -77,24 +79,18 @@ struct
   let function_decl tenv cfg cg namespace func_decl block_data_opt =
     Printing.log_out "\nResetting the goto_labels hashmap...\n";
     CTrans_utils.GotoLabel.reset_all_labels (); (* C Language Std 6.8.6.1-1 *)
-    let is_anonym_block, captured_vars, curr_class =
+    let captured_vars, outer_context_opt =
       match block_data_opt with
-      | Some (context, _, _, captured_vars) ->
-          let curr_class = context.CContext.curr_class in
-          true, captured_vars, curr_class
-      | None -> false, [], CContext.ContextNoCls in
-    let class_name =
-      if curr_class = CContext.ContextNoCls then None else Some (CContext.get_curr_class_name curr_class) in
+      | Some (outer_context, _, _, captured_vars) -> captured_vars, Some outer_context
+      | None -> [], None in
     let ms, body_opt, extra_instrs =
-      CMethod_trans.method_signature_of_decl class_name func_decl block_data_opt in
+      CMethod_trans.method_signature_of_decl None func_decl block_data_opt in
     match method_body_to_translate ms body_opt with
     | Some body -> (* Only in the case the function declaration has a defined body we create a procdesc *)
         let procname = CMethod_signature.ms_get_name ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
-          let is_instance = CMethod_signature.ms_is_instance ms in
-          let is_objc_method = is_anonym_block in
-          add_method tenv cg cfg curr_class procname namespace [body] is_objc_method is_instance
-            captured_vars is_anonym_block extra_instrs
+          add_method tenv cg cfg CContext.ContextNoCls procname namespace [body] false
+            captured_vars outer_context_opt extra_instrs
     | None -> ()
 
   let process_method_decl tenv cg cfg namespace curr_class meth_decl ~is_objc =
@@ -106,8 +102,7 @@ struct
         let is_instance = CMethod_signature.ms_is_instance ms in
         let procname = CMethod_signature.ms_get_name ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance then
-          add_method tenv cg cfg curr_class procname namespace [body] is_objc is_instance [] false
-            extra_instrs
+          add_method tenv cg cfg curr_class procname namespace [body] is_objc [] None extra_instrs
     | None -> ()
 
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =

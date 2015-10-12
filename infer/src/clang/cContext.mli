@@ -27,14 +27,15 @@ type t =
     cfg : Cfg.cfg;
     procdesc : Cfg.Procdesc.t;
     is_objc_method : bool;
-    is_instance : bool;
     curr_class: curr_class;
     is_callee_expression : bool;
     namespace: string option; (* contains the name of the namespace if we are in the scope of one*)
     mutable local_vars : (Mangled.t * Sil.typ * bool) list; (* (name, type, is_static flag) *)
     mutable captured_vars : (Mangled.t * Sil.typ * bool) list; (* (name, type, is_static flag) *)
     mutable local_vars_stack : varMap;
-    mutable local_vars_pointer : pointerVarMap
+    mutable local_vars_pointer : pointerVarMap;
+    outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
+    mutable blocks : Procname.t list (* List of blocks defined in this method *)
   }
 
 module LocalVars :
@@ -71,6 +72,10 @@ val is_objc_method : t -> bool
 val get_tenv : t -> Sil.tenv
 
 val create_context : Sil.tenv -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
-  string option -> curr_class -> bool -> (Mangled.t * Sil.typ * bool) list -> bool -> t
+  string option -> curr_class -> bool -> (Mangled.t * Sil.typ * bool) list  -> t option -> t
 
 val create_curr_class : Sil.tenv -> string -> curr_class
+
+val add_block : t -> Procname.t -> unit
+
+val is_objc_instance : t -> bool

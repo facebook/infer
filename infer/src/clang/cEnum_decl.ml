@@ -51,7 +51,7 @@ let enum_decl name tenv cfg cg namespace type_ptr decl_list opt_type =
   Printing.log_out "ADDING: EnumDecl '%s'\n" name;
   let context' =
     CContext.create_context tenv cg cfg !global_procdesc namespace CContext.ContextNoCls
-      false [] false in
+      false [] None in
   let enum_constants = get_enum_constants context' decl_list 0 in
   let name = (match opt_type with (* If the type is defined it's of the kind "enum name" and we take that.*)
       | `Type s -> s
