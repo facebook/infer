@@ -419,4 +419,10 @@ public class NullPointerExceptions {
     derefUndefinedCallee().toString();
   }
 
+  @SuppressWarnings("null") // TODO(#8647398): Add support for @SuppressWarnings with Ant
+  void shouldNotReportNPE() {
+    Object o = null;
+    o.toString();
+  }
+
 }

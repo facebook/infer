@@ -612,5 +612,10 @@
     "type": "RESOURCE_LEAK",
     "procedure": "void WriterLeaks.pipedWriterNotClosedAfterConnect(PipedReader)",
     "file": "codetoanalyze/java/infer/WriterLeaks.java"
+  },
+  {
+    "type": "NULL_DEREFERENCE",
+    "procedure": "void NullPointerExceptions.shouldNotReportNPE()",
+    "file": "codetoanalyze/java/infer/NullPointerExceptions.java"
   }
 ]
