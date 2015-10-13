@@ -16,26 +16,30 @@ CLANG_PLUGIN_DIR="$ROOT_INFER_DIR"/facebook-clang-plugins
 PLATFORM=`uname`
 INFER_SOURCE="$ROOT_INFER_DIR"/infer-source
 
-#Build infer and facebook-clang-plugins
+# Build infer and facebook-clang-plugins
 cd "$ROOT_INFER_DIR"
+# This assumes the current commit is the one with the release bump
 git submodule update --init --recursive
 facebook-clang-plugins/clang/setup.sh
 ./compile-fcp.sh
 make -C infer
 
-VERSION=$("$ROOT_INFER_DIR"/infer/bin/infer --version 2>&1 | head -1 | awk '{print $3}')
+
+# Get a copy of the github repo
+git clone https://github.com/facebook/infer.git "$INFER_SOURCE"
+pushd "$INFER_SOURCE"
+# Name of the release package
+VERSION=`git describe --abbrev=0 --tags`
 if [ "$PLATFORM" == 'Darwin' ]; then
     RELEASE_NAME=infer-osx-"$VERSION"
 else
     RELEASE_NAME=infer-linux64-"$VERSION"
 fi
 RELEASE_TARBALL="$RELEASE_NAME".tar.xz
-
-# Build package.
 PKG_DIR="$ROOT_INFER_DIR"/"$RELEASE_NAME"
 
-#Get a fresh copy of infer source
-git clone https://github.com/facebook/infer.git "$INFER_SOURCE"
+git checkout "$VERSION"
+popd
 
 # Copy infer source
 mkdir -p "$PKG_DIR"
