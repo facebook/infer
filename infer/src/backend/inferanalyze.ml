@@ -87,8 +87,8 @@ let excluded_files : string list ref = ref []
 (** Absolute path to the project source, used for relative paths in the exclude list *)
 let source_path = ref ""
 
-(** List of obj memory leak buckets to be checked in objc *)
-let objc_ml_buckets_arg = ref "cf"
+(** List of obj memory leak buckets to be checked in Objective-C/C++ *)
+let ml_buckets_arg = ref "cf"
 
 (** Whether specs can be cleaned up before starting analysis *)
 let allow_specs_cleanup = ref false
@@ -148,8 +148,8 @@ let arg_desc =
         "-version", Arg.Unit print_version, None, "print version information and exit";
         "-version_json", Arg.Unit print_version_json, None, "print version json formatted";
         "-objcm", Arg.Set Config.objc_memory_model_on, None, "Use ObjC memory model";
-        "-objc_ml_buckets", Arg.Set_string objc_ml_buckets_arg, Some "objc_ml_buckets",
-        "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc)";
+        "-ml_buckets", Arg.Set_string ml_buckets_arg, Some "ml_buckets",
+        "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp";
       ] in
     Arg2.create_options_desc false "Analysis Options" desc in
   let reserved_arg =
@@ -891,7 +891,7 @@ let () =
     else !err_file_cmdline in
   let analyzer_out_of = open_output_file Logging.set_out_formatter analyzer_out_file in
   let analyzer_err_of = open_output_file Logging.set_err_formatter analyzer_err_file in
-  if (!Config.curr_language = Config.C_CPP) then Mleak_buckets.init_buckets !objc_ml_buckets_arg;
+  if (!Config.curr_language = Config.C_CPP) then Mleak_buckets.init_buckets !ml_buckets_arg;
 
   process_cluster_cmdline_exit ();
 

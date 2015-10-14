@@ -253,7 +253,7 @@ public class InferRunner {
     ImmutableList.Builder<String> ml_bucketsOption =
         new ImmutableList.Builder<>();
     ml_bucketsOption
-        .add("--objc_ml_buckets")
+        .add("--ml_buckets")
         .add(ml_buckets == null ? "all" : ml_buckets);
     ImmutableList<String> inferCmd = new ImmutableList.Builder<String>()
         .add("infer")
@@ -357,6 +357,20 @@ public class InferRunner {
         true,
         null,
         null,
+        false);
+  }
+
+  public static ImmutableList<String> createCPPInferCommandWithMLBuckets(
+      TemporaryFolder folder,
+      String sourceFile,
+      String ml_bucket) throws IOException, InterruptedException {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        Language.CPP,
+        true,
+        null,
+        ml_bucket,
         false);
   }
 

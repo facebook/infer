@@ -13,10 +13,12 @@ val objc_arc_flag : string
 
 val init_buckets : string -> unit
 
-(* Returns whether a memory leak should be raised. If objc_ml_buckets is not there, *)
-(* then raise all memory leaks. *)
+(* Returns whether a memory leak should be raised.  *)
 (* If cf is passed, then check leaks from Core Foundation. *)
 (* If arc is passed, check leaks from code that compiles with arc*)
 (* If no arc is passed check the leaks from code that compiles without arc *)
-val should_raise_leak : Sil.typ -> string option
+val should_raise_objc_leak : Sil.typ -> string option
 
+(* Returns whether a memory leak should be raised for a C++ object.*)
+(* If ml_buckets contains cpp, then check leaks from C++ objects. *)
+val should_raise_cpp_leak : unit -> string option

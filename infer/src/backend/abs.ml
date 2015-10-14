@@ -1129,7 +1129,7 @@ let should_raise_objc_leak prop hpred =
   match hpred with
   | Sil.Hpointsto(e, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Sil.Cint i)), _)):: _, _), Sil.Sizeof (typ, _))
     when Ident.fieldname_is_hidden fn && Sil.Int.gt i Sil.Int.zero (* counter > 0 *) ->
-      Mleak_buckets.should_raise_leak typ
+      Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
 
 let print_retain_cycle _prop =
@@ -1293,9 +1293,11 @@ let check_junk ?original_prop pname tenv prop =
               let resource = match Errdesc.hpred_is_open_resource prop hpred with
                 | Some res -> res
                 | None -> Sil.Rmemory Sil.Mmalloc in
-              let objc_ml_bucket_opt =
+              let ml_bucket_opt =
                 match resource with
                 | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak prop hpred
+                | Sil.Rmemory Sil.Mnew when !Config.curr_language = Config.C_CPP ->
+                    Mleak_buckets.should_raise_cpp_leak ()
                 | _ -> None in
               let exn_retain_cycle cycle =
                 print_retain_cycle original_prop;
@@ -1306,7 +1308,7 @@ let check_junk ?original_prop pname tenv prop =
                    try assert false with Assert_failure x -> x) in
               let exn_leak = Exceptions.Leak
                   (fp_part, prop, hpred,
-                   Errdesc.explain_leak tenv hpred prop alloc_attribute objc_ml_bucket_opt,
+                   Errdesc.explain_leak tenv hpred prop alloc_attribute ml_bucket_opt,
                    !Absarray.array_abstraction_performed,
                    resource,
                    try assert false with Assert_failure x -> x) in
@@ -1320,8 +1322,9 @@ let check_junk ?original_prop pname tenv prop =
                      if cycle_has_weak_or_unretained_or_assign_field cycle then
                        true, exn_retain_cycle cycle
                      else false, exn_retain_cycle cycle
-                 | Some _, Sil.Rmemory Sil.Mobjc ->
-                     objc_ml_bucket_opt = None, exn_leak
+                 | Some _, Sil.Rmemory Sil.Mobjc
+                 | Some _, Sil.Rmemory Sil.Mnew when !Config.curr_language = Config.C_CPP ->
+                     ml_bucket_opt = None, exn_leak
                  | Some _, Sil.Rmemory _ -> !Config.curr_language = Config.Java, exn_leak
                  | Some _, Sil.Rignore -> true, exn_leak
                  | Some _, Sil.Rfile -> false, exn_leak

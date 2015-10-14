@@ -7,7 +7,8 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
-(** This module handles buckets of memory leaks in Objective-C *)
+
+(** This module handles buckets of memory leaks in Objective-C/C++ *)
 
 open Utils
 
@@ -19,14 +20,16 @@ type mleak_bucket =
   | MLeak_cf
   | MLeak_arc
   | MLeak_no_arc
+  | MLeak_cpp
 
-let objc_ml_buckets = ref []
+let ml_buckets = ref []
 
 let bucket_from_string bucket_s =
   match bucket_s with
   | "cf" -> MLeak_cf
   | "arc" -> MLeak_arc
   | "narc" -> MLeak_no_arc
+  | "cpp" -> MLeak_cpp
   | _ -> assert false
 
 let bucket_to_string bucket =
@@ -34,12 +37,14 @@ let bucket_to_string bucket =
   | MLeak_cf -> "Core Foundation"
   | MLeak_arc -> "Arc"
   | MLeak_no_arc -> "No arc"
+  | MLeak_cpp -> "Cpp"
 
 let bucket_to_message bucket =
   match bucket with
   | MLeak_cf -> "[CF]"
   | MLeak_arc -> "[ARC]"
   | MLeak_no_arc -> "[NO ARC]"
+  | MLeak_cpp -> "[CPP]"
 
 let mleak_bucket_compare b1 b2 =
   match b1, b2 with
@@ -50,18 +55,21 @@ let mleak_bucket_compare b1 b2 =
   | MLeak_arc, _ -> -1
   | _, MLeak_arc -> 1
   | MLeak_no_arc, MLeak_no_arc -> 0
+  | MLeak_no_arc, _ -> -1
+  | _, MLeak_no_arc -> 1
+  | MLeak_cpp, MLeak_cpp -> 0
 
 let mleak_bucket_eq b1 b2 =
   mleak_bucket_compare b1 b2 = 0
 
-let init_buckets objc_ml_buckets_arg =
+let init_buckets ml_buckets_arg =
   let buckets =
-    Str.split (Str.regexp bucket_delimiter) objc_ml_buckets_arg in
+    Str.split (Str.regexp bucket_delimiter) ml_buckets_arg in
   let buckets =
     match buckets with
     | ["all"] -> []
     | _ -> list_map bucket_from_string buckets in
-  objc_ml_buckets := buckets
+  ml_buckets := buckets
 
 let contains_cf ml_buckets =
   list_mem mleak_bucket_eq MLeak_cf ml_buckets
@@ -72,28 +80,37 @@ let contains_arc ml_buckets =
 let contains_narc ml_buckets =
   list_mem mleak_bucket_eq MLeak_no_arc ml_buckets
 
+let contains_cpp ml_buckets =
+  list_mem mleak_bucket_eq MLeak_cpp ml_buckets
+
 let should_raise_leak_cf typ =
-  if contains_cf !objc_ml_buckets then
+  if contains_cf !ml_buckets then
     Objc_models.is_core_lib_type typ
   else false
 
 let should_raise_leak_arc () =
-  if contains_arc !objc_ml_buckets then
+  if contains_arc !ml_buckets then
     !Config.arc_mode
   else false
 
 let should_raise_leak_no_arc () =
-  if contains_narc !objc_ml_buckets then
+  if contains_narc !ml_buckets then
     not (!Config.arc_mode)
   else false
 
-(* Returns whether a memory leak should be raised. If objc_ml_buckets is not there, *)
-(* then raise all memory leaks. *)
+(* Returns whether a memory leak should be raised for a C++ object.*)
+(* If ml_buckets contains cpp, then check leaks from C++ objects. *)
+let should_raise_cpp_leak () =
+  if contains_cpp !ml_buckets then
+    Some (bucket_to_message MLeak_cpp)
+  else None
+
+(* Returns whether a memory leak should be raised. *)
 (* If cf is passed, then check leaks from Core Foundation. *)
 (* If arc is passed, check leaks from code that compiles with arc*)
 (* If no arc is passed check the leaks from code that compiles without arc *)
-let should_raise_leak typ =
-  if list_length !objc_ml_buckets = 0 then Some ""
+let should_raise_objc_leak typ =
+  if list_length !ml_buckets = 0 then Some ""
   else
   if should_raise_leak_cf typ then Some (bucket_to_message MLeak_cf)
   else if should_raise_leak_arc () then Some (bucket_to_message MLeak_arc)

@@ -149,12 +149,12 @@ infer_group.add_argument('--absolute-paths',
                           default=False,
                           help='Report errors with absolute paths')
 
-infer_group.add_argument('--objc_ml_buckets',
-                           dest='objc_ml_buckets',
-                           help='memory leak buckets to be checked, '
-                                'separated by commas. The possible '
-                                'buckets are cf (Core Foundation), '
-                                'arc, narc (No arc)')
+infer_group.add_argument('--ml_buckets',
+                         dest='ml_buckets',
+                         help='memory leak buckets to be checked, '
+                              'separated by commas. The possible '
+                              'buckets are cf (Core Foundation), '
+                              'arc, narc (No arc), cpp')
 
 infer_group.add_argument('-nt', '--notest', action='store_true',
                            dest='notest',
@@ -503,8 +503,8 @@ class Infer:
         if self.args.infer_cache:
             infer_options += ['-infer_cache', self.args.infer_cache]
 
-        if self.args.objc_ml_buckets:
-            infer_options += ['-objc_ml_buckets', self.args.objc_ml_buckets]
+        if self.args.ml_buckets:
+            infer_options += ['-ml_buckets', self.args.ml_buckets]
 
         if self.args.notest:
             infer_options += ['-notest']
