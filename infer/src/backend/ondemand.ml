@@ -13,7 +13,8 @@ module L = Logging
 module F = Format
 open Utils
 
-let trace = false
+let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
+let one_cluster_per_procedure () = false
 
 let () = Config.ondemand_enabled :=
     Config.from_env_variable "INFER_ONDEMAND" &&
@@ -75,7 +76,7 @@ let do_analysis curr_pdesc proc_name =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
   let really_do_analysis analyze_proc proc_desc =
-    if trace then L.stderr "[%d] really_do_analysis %a -> %a@."
+    if trace () then L.stderr "[%d] really_do_analysis %a -> %a@."
         !nesting
         Procname.pp curr_pname
         Procname.pp proc_name;

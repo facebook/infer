@@ -1261,11 +1261,13 @@ let do_analysis exe_env =
       Cfg.Procdesc.find_from_name callee_cfg proc_name in
     let analyze_ondemand proc_name =
       let saved_footprint = !Config.footprint in
-      let _summaryfp = analyze_proc exe_env proc_name in
+      let summaryfp = analyze_proc exe_env proc_name in
+      Specs.add_summary proc_name summaryfp;
       let cg = Cg.create () in
       Cg.add_node cg proc_name;
       perform_transition exe_env cg proc_name;
-      let _summaryre = analyze_proc exe_env proc_name in
+      let summaryre = analyze_proc exe_env proc_name in
+      Specs.add_summary proc_name summaryre;
       Config.footprint := saved_footprint;
       () in
     { Ondemand.analyze_ondemand; get_proc_desc; } in

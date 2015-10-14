@@ -44,9 +44,6 @@ module Codegen = struct
     exit 0
 end
 
-(** if true, print tracing information for functions that manipulate clusters *)
-let trace_clusters = ref false
-
 (** if true, save file dependency graph to disk *)
 let save_file_dependency = ref false
 
@@ -322,43 +319,8 @@ let weak_sort_nodes cg =
     !res in
   weak_sort cmp nodes
 
-(** cluster element: the file name, the number of procedures defined in it, and the list of active procedures
-    A procedure is active if it is defined only in this file, or if it is defined in several files and this
-    is the representative file for it (see Exe_env.add_cg) *)
-type cluster_elem =
-  { ce_dir : DB.source_dir option; (** if ce_dir is present, the other fields are unused *)
-    ce_file : DB.source_file;
-    ce_naprocs : int; (** number of active procedures defined in the file *)
-    ce_active_procs : Procname.t list; (** list of active procedures *)
-  }
-
-(** cluster of files *)
-type cluster =
-  cluster_elem list
-
-(** .cluster file: (n,m,cl) indicates cl is cluster n out of m *)
-type cluster_serial = int * int * cluster
-
-(** Serializer for clusters *)
-let cluster_serializer : cluster_serial Serialization.serializer = Serialization.create_serializer Serialization.cluster_key
-
-(** Load a cluster from a file *)
-let load_cluster_from_file (filename : DB.filename) : cluster_serial option =
-  Serialization.from_file cluster_serializer filename
-
-(** Save a cluster into a file *)
-let store_cluster_to_file (filename : DB.filename) (cluster_serial: cluster_serial) =
-  Serialization.to_file cluster_serializer filename cluster_serial
-
-(* this relies on the assumption that a source_file can be converted to a string, then pname, then back *)
-let source_file_from_pname pname =
-  DB.source_file_from_string (Procname.to_string pname)
-
-let source_file_to_pname fname =
-  Procname.from_string_c_fun (DB.source_file_to_string fname)
-
 let file_pname_to_cg file_pname =
-  let source_file = source_file_from_pname file_pname in
+  let source_file = ClusterMakefile.source_file_from_pname file_pname in
   let source_dir = DB.source_dir_from_source_file source_file in
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.load_from_file cg_fname
@@ -372,25 +334,24 @@ let output_json_file_stats num_files num_procs num_lines =
   let f = open_out (Filename.concat !Config.results_dir Config.proc_stats_filename) in
   Yojson.Basic.pretty_to_channel f file_stats
 
-(** create clusters of minimal size in the dependence order, with recursive parts grouped together *)
-let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
-  if !trace_clusters then L.err "[create_minimal_clusters]@.";
+(** create clusters of minimal size in the dependence order,
+    with recursive parts grouped together. *)
+let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
+  if !Cluster.trace_clusters then L.err "[create_minimal_clusters]@.";
   let sorted_files = weak_sort_nodes file_cg in
   let seen = ref Procname.Set.empty in
   let clusters = ref [] in
   let total_files = ref 0 in
   let total_procs = ref 0 in
   let total_LOC = ref 0 in
-  let create_cluster_elem  (file_pname, changed_procs) = (* create a cluster_elem for the file *)
-    let source_file = source_file_from_pname file_pname in
-    if !trace_clusters then L.err "      [create_cluster_elem] %s@." (DB.source_file_to_string source_file);
+  let create_cluster_elem  (file_pname, changed_procs) = (* create a Cluster.elem for the file *)
+    let source_file = ClusterMakefile.source_file_from_pname file_pname in
+    if !Cluster.trace_clusters then
+      L.err "      [create_minimal_clusters] %s@." (DB.source_file_to_string source_file);
     DB.current_source := source_file;
     match file_pname_to_cg file_pname with
-    | None -> {
-        ce_dir = None;
-        ce_file = source_file;
-        ce_naprocs = 0;
-        ce_active_procs = [];}
+    | None ->
+        Cluster.create_bottomup source_file 0 []
     | Some cg ->
         (* decide whether a proc is active using pname_to_fname, i.e. whether this is the file associated to it *)
         let proc_is_selected pname = match !select_proc with
@@ -404,31 +365,29 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
         total_files := !total_files + 1;
         total_procs := !total_procs + naprocs;
         total_LOC := !total_LOC + (Cg.get_nLOC cg);
-        {
-          ce_dir = None;
-          ce_file = source_file;
-          ce_naprocs = naprocs;
-          ce_active_procs = active_procs;
-        } in
+        Cluster.create_bottomup source_file naprocs active_procs in
   let choose_next_file list = (* choose next file from the weakly ordered list *)
     let file_has_no_unseen_dependents fname =
       Procname.Set.subset (Cg.get_dependents file_cg fname) !seen in
     match list_partition file_has_no_unseen_dependents list with
     | (fname :: no_deps), deps -> (* if all the dependents of fname have been seen, bypass the order in the list *)
-        if !trace_clusters then L.err "  [choose_next_file] %s (NO dependents)@." (Procname.to_string fname);
+        if !Cluster.trace_clusters then
+          L.err "  [choose_next_file] %s (NO dependents)@." (Procname.to_string fname);
         Some (fname, list_rev_append no_deps deps)
     | [], _ ->
         begin
           match list with
           | fname :: list' ->
-              if !trace_clusters then L.err "  [choose_next_file] %s (HAS dependents)@." (Procname.to_string fname);
+              if !Cluster.trace_clusters then
+                L.err "  [choose_next_file] %s (HAS dependents)@." (Procname.to_string fname);
               Some(fname, list')
           | [] -> None
         end in
   let rec build_clusters list = match choose_next_file list with
     | None -> ()
     | Some (fname, list') ->
-        if !trace_clusters then L.err "    [build_clusters] %s@." (Procname.to_string fname);
+        if !Cluster.trace_clusters then
+          L.err "    [build_clusters] %s@." (Procname.to_string fname);
         if Procname.Set.mem fname !seen then build_clusters list'
         else
           let cluster_set = Procname.Set.add fname (Cg.get_recursive_dependents file_cg fname) in
@@ -450,160 +409,6 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : cluster list =
   build_clusters sorted_files;
   output_json_file_stats !total_files !total_procs !total_LOC;
   list_rev !clusters
-
-let cluster_nfiles cluster = list_length cluster
-
-let cluster_naprocs cluster = list_fold_left (fun n ce -> ce.ce_naprocs + n) 0 cluster
-
-let clusters_nfiles clusters = list_fold_left (fun n cluster -> cluster_nfiles cluster + n) 0 clusters
-
-let clusters_naprocs clusters = list_fold_left (fun n cluster -> cluster_naprocs cluster + n) 0 clusters
-
-let print_clusters_stats clusters =
-  let pp_cluster num cluster =
-    L.err "cluster #%d files: %d active procedures: %d@."
-      num
-      (cluster_nfiles cluster)
-      (cluster_naprocs cluster) in
-  let i = ref 0 in
-  list_iter
-    (fun cluster ->
-       incr i;
-       pp_cluster !i cluster)
-    clusters
-
-let cluster_split_prefix (cluster : cluster) size =
-  let rec split (cluster_seen : cluster) (cluster_todo : cluster) n =
-    if n <= 0 then (list_rev cluster_seen, cluster_todo)
-    else match cluster_todo with
-      | [] -> raise Not_found
-      | ce :: todo' -> split (ce :: cluster_seen) todo' (n - ce.ce_naprocs) in
-  split [] cluster size
-
-let combine_split_clusters (clusters : cluster list) max_size desired_size =
-  if !trace_clusters then L.err "[combine_split_clusters]@.";
-  let old_clusters = ref clusters in
-  let old_size = clusters_naprocs !old_clusters in
-  let new_clusters = ref [] in
-  let current = ref [] in
-  let current_size = ref 0 in
-  while !old_clusters != [] do
-    if old_size != clusters_naprocs !old_clusters + clusters_naprocs !new_clusters + !current_size then begin
-      L.err "mismatch in invariant for cluster size@.";
-      assert (cluster_naprocs !current = !current_size);
-      L.err "old size: %d@." old_size;
-      L.err "old clusters size: %d@." (clusters_naprocs !old_clusters);
-      L.err "new clusters size: %d@." (clusters_naprocs !new_clusters);
-      L.err "current size: %d@." !current_size;
-      assert false
-    end;
-    let next_cluster = list_hd !old_clusters in
-    let next_size = cluster_naprocs next_cluster in
-    let new_size = !current_size + next_size in
-    if (new_size > max_size || new_size > desired_size) && !current_size > 0 then
-      begin
-        new_clusters := !new_clusters @ [!current];
-        current := [];
-        current_size := 0
-      end
-    else if new_size > max_size then
-      begin
-        let next_cluster', next_cluster'' = cluster_split_prefix next_cluster max_size in
-        current := [];
-        current_size := 0;
-        new_clusters := !new_clusters @ [next_cluster'];
-        old_clusters := next_cluster'' :: (list_tl !old_clusters)
-      end
-    else
-      begin
-        current := !current @ next_cluster;
-        current_size := !current_size + next_size;
-        old_clusters := list_tl !old_clusters
-      end
-  done;
-  if !current_size > 0 then new_clusters := !new_clusters @ [!current];
-  !new_clusters
-
-(** return the set of active procedures in a cluster *)
-let cluster_to_active_procs cluster =
-  let procset = ref Procname.Set.empty in
-  let do_cluster_elem cluster_elem =
-    let add proc = if not (Procname.Set.mem proc !procset) then procset := Procname.Set.add proc !procset in
-    list_iter add cluster_elem.ce_active_procs in
-  list_iter do_cluster_elem cluster;
-  !procset
-
-(** Module to create a makefile with dependencies between clusters *)
-module ClusterMakefile = struct
-  let cl_name n = "cl" ^ string_of_int n
-  let cl_file n = "x" ^ (cl_name n) ^ ".cluster"
-
-  let pp_cl fmt n = Format.fprintf fmt "%s" (cl_name n)
-
-  let pp_prolog fmt num_clusters =
-    F.fprintf fmt "INFERANALYZE= %s $(INFER_OPTIONS) -results_dir '%s'\n@."
-      Sys.executable_name
-      (Escape.escape_map (fun c -> if c = '#' then Some "\\#" else None) !Config.results_dir);
-    F.fprintf fmt "OBJECTS=";
-    for i = 1 to num_clusters do F.fprintf fmt "%a " pp_cl i done;
-    F.fprintf fmt "@.@.default: test@.@.all: test@.@.";
-    F.fprintf fmt "test: $(OBJECTS)@.\techo \"Analysis done\"@.@."
-
-  let pp_epilog fmt () =
-    F.fprintf fmt "@.clean:@.\trm -f $(OBJECTS)@."
-
-  let pp_cluster_dependency nr tot_nr cluster print_files fmt dependents =
-    let fname = cl_file nr in
-    store_cluster_to_file (DB.filename_from_string fname) (nr, tot_nr, cluster);
-    let pp_active_procs fmt cluster =
-      let procnames = Procname.Set.elements (cluster_to_active_procs cluster) in
-      let pp_pname fmt pname = Format.fprintf fmt "%s" (Procname.to_string pname) in
-      F.fprintf fmt "procedures: %a" (pp_seq pp_pname) procnames in
-    let pp_file fmt ce = F.fprintf fmt "%s" (DB.source_file_to_string ce.ce_file) in
-    let pp_files fmt cluster = F.fprintf fmt "files: %a" (pp_seq pp_file) cluster in
-    F.fprintf fmt "%a : %a@\n" pp_cl nr (pp_seq pp_cl) dependents;
-    F.fprintf fmt "\t$(INFERANALYZE) -cluster %s >%a@\n" fname pp_cl nr;
-    if print_files then F.fprintf fmt "# %a %a" pp_files cluster pp_active_procs cluster;
-    F.fprintf fmt "@\n"
-
-  let create_cluster_makefile_and_exit (clusters: cluster list) (file_cg: Cg.t) (fname: string) (print_files: bool) =
-    let outc = open_out fname in
-    let fmt = Format.formatter_of_out_channel outc in
-    let file_to_cluster = ref DB.SourceFileMap.empty in
-    let cluster_nr = ref 0 in
-    let tot_clusters_nr = list_length clusters in
-    let do_cluster cluster =
-      incr cluster_nr;
-      let dependent_clusters = ref IntSet.empty in
-      let add_dependent file_as_pname =
-        let source_file = source_file_from_pname file_as_pname in
-        try
-          let num = DB.SourceFileMap.find source_file !file_to_cluster in
-          if num < !cluster_nr then
-            dependent_clusters := IntSet.add num !dependent_clusters
-        with Not_found -> F.fprintf fmt "#[%a] missing dependency to %s@." pp_cl !cluster_nr (DB.source_file_to_string source_file) in
-      let do_file ce =
-        let source_file = ce.ce_file in
-        let () =
-          match ce.ce_dir with
-          | Some source_dir ->
-              (* add comment to makefile to correlate source file and cluster number. *)
-              F.fprintf fmt "#%s@\n" (DB.source_dir_to_string source_dir)
-          | None -> () in
-        let children =
-          try Cg.get_defined_children file_cg (source_file_to_pname source_file) with
-          | Not_found -> Procname.Set.empty in
-        Procname.Set.iter add_dependent children;
-        () (* L.err "file %s has %d children@." file (StringSet.cardinal children) *) in
-      list_iter (fun ce -> file_to_cluster := DB.SourceFileMap.add ce.ce_file !cluster_nr !file_to_cluster) cluster;
-      list_iter do_file cluster;
-      pp_cluster_dependency !cluster_nr tot_clusters_nr cluster print_files fmt (IntSet.elements !dependent_clusters);
-      (* L.err "cluster %d has %d dependencies@." !cluster_nr (IntSet.cardinal !dependent_clusters) *) in
-    pp_prolog fmt tot_clusters_nr;
-    list_iter do_cluster clusters;
-    pp_epilog fmt ();
-    exit 0
-end
 
 let proc_list_to_set proc_list =
   list_fold_left (fun s p -> Procname.Set.add p s) Procname.Set.empty proc_list
@@ -627,7 +432,7 @@ let compute_to_analyze_map_incremental files_changed_map global_cg exe_env =
       with Not_found -> None in
     match source_opt with
     | Some source ->
-        let proc_file_pname = source_file_to_pname source in
+        let proc_file_pname = ClusterMakefile.source_file_to_pname source in
         let procs_to_analyze =
           try Procname.Map.find proc_file_pname map
           with Not_found -> Procname.Set.empty in
@@ -665,23 +470,31 @@ let compute_to_analyze_map_incremental files_changed_map global_cg exe_env =
     Procname.Set.fold add_proc_to_map callers_of_changed files_changed_map'
 
 (** compute the clusters *)
-let compute_clusters exe_env files_changed : cluster list =
-  if !trace_clusters then
+let compute_clusters exe_env files_changed : Cluster.t list =
+  if !Cluster.trace_clusters then
     L.err "[compute_clusters] %d changed files@." (Procname.Map.cardinal files_changed);
   let file_cg = Cg.create () in
   let global_cg = Exe_env.get_cg exe_env in
   let nodes, edges = Cg.get_nodes_and_edges global_cg in
   let defined_procs = Cg.get_defined_nodes global_cg in
   let do_node (n, defined) =
-    if defined then Cg.add_node file_cg (source_file_to_pname (Exe_env.get_source exe_env n)) in
+    if defined then
+      Cg.add_node file_cg
+        (ClusterMakefile.source_file_to_pname (Exe_env.get_source exe_env n)) in
   let do_edge (n1, n2) =
     if Cg.node_defined global_cg n1 && Cg.node_defined global_cg n2 then
       begin
         let src1 = Exe_env.get_source exe_env n1 in
         let src2 = Exe_env.get_source exe_env n2 in
         if not (DB.source_file_equal src1 src2) then begin
-          if !trace_clusters then L.err "file_cg %s -> %s [%a]@." (DB.source_file_to_string src1) (DB.source_file_to_string src2) Procname.pp n2;
-          Cg.add_edge file_cg (source_file_to_pname src1) (source_file_to_pname src2)
+          if !Cluster.trace_clusters then
+            L.err "file_cg %s -> %s [%a]@."
+              (DB.source_file_to_string src1)
+              (DB.source_file_to_string src2)
+              Procname.pp n2;
+          Cg.add_edge file_cg
+            (ClusterMakefile.source_file_to_pname src1)
+            (ClusterMakefile.source_file_to_pname src2)
         end
       end in
   list_iter do_node nodes;
@@ -705,19 +518,22 @@ let compute_clusters exe_env files_changed : cluster list =
   L.err "Analyzing %d files.@.@." (Procname.Map.cardinal to_analyze_map);
   let clusters = create_minimal_clusters file_cg exe_env to_analyze_map in
   L.err "Minimal clusters:@.";
-  print_clusters_stats clusters;
+  Cluster.print_clusters_stats clusters;
   if !makefile_cmdline <> "" then
     begin
       let max_cluster_size = 50 in
       let desired_cluster_size = 1 in
-      let clusters' = combine_split_clusters clusters max_cluster_size desired_cluster_size in
+      let clusters' =
+        Cluster.combine_split_clusters clusters max_cluster_size desired_cluster_size in
       L.err "@.Combined clusters with max size %d@." max_cluster_size;
-      print_clusters_stats clusters';
+      Cluster.print_clusters_stats clusters';
       ClusterMakefile.create_cluster_makefile_and_exit clusters' file_cg !makefile_cmdline false
     end;
-  let clusters' = combine_split_clusters clusters !Config.max_cluster_size !Config.max_cluster_size in
+  let clusters' =
+    Cluster.combine_split_clusters
+      clusters !Config.max_cluster_size !Config.max_cluster_size in
   L.err "@.Combined clusters with max size %d@." !Config.max_cluster_size;
-  print_clusters_stats clusters';
+  Cluster.print_clusters_stats clusters';
   clusters'
 
 (** compute the set of procedures in [cg] changed since the last analysis *)
@@ -766,7 +582,7 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
         if !incremental_mode = ANALYZE_ALL then Cg.get_defined_nodes cg
         else cg_get_changed_procs exe_env source_dir cg in
       if changed_procs <> [] then
-        let file_pname = source_file_to_pname (Cg.get_source cg) in
+        let file_pname = ClusterMakefile.source_file_to_pname (Cg.get_source cg) in
         Procname.Map.add file_pname (proc_list_to_set changed_procs) files_changed_map
       else files_changed_map in
     list_fold_left cg_get_files_changed files_changed_map cg_list in
@@ -779,19 +595,16 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
 (** Create an exe_env from a cluster. *)
 let exe_env_from_cluster cluster =
   let _exe_env =
-    let active_procs_opt =
-      if !Config.ondemand_enabled
-      then None
-      else Some (cluster_to_active_procs cluster) in
+    let active_procs_opt = Cluster.get_active_procs cluster in
     Exe_env.create active_procs_opt in
   let source_dirs =
     let fold_cluster_elem source_dirs ce =
       let source_dir =
-        match ce.ce_dir with
+        match Cluster.get_ondemand_info ce with
         | Some source_dir ->
             source_dir
         | None ->
-            DB.source_dir_from_source_file ce.ce_file in
+            DB.source_dir_from_source_file ce.Cluster.ce_file in
       source_dir :: source_dirs in
     list_fold_left fold_cluster_elem [] cluster in
   let sorted_dirs = list_sort DB.source_dir_compare source_dirs in
@@ -800,7 +613,7 @@ let exe_env_from_cluster cluster =
   exe_env
 
 (** Analyze a cluster of files *)
-let analyze_cluster cluster_num tot_clusters (cluster : cluster) =
+let analyze_cluster cluster_num tot_clusters (cluster : Cluster.t) =
   incr cluster_num;
   let exe_env = exe_env_from_cluster cluster in
   let num_files = list_length cluster in
@@ -815,7 +628,7 @@ let process_cluster_cmdline_exit () =
   match !cluster_cmdline with
   | None -> ()
   | Some fname ->
-      (match load_cluster_from_file (DB.filename_from_string fname) with
+      (match Cluster.load_from_file (DB.filename_from_string fname) with
        | None ->
            L.err "Cannot find cluster file %s@." fname;
            exit 0
@@ -847,14 +660,11 @@ let analyzer_err_name = "analyzer_err"
     Each cluster will contain only the name of the directory for a file. *)
 let compute_ondemand_clusters source_dirs =
   let mk_cluster source_dir =
-    let cluster_elem =
-      { ce_dir = Some source_dir;
-        ce_file = DB.source_file_from_string "";
-        ce_naprocs = 0;
-        ce_active_procs = []; } in
-    [cluster_elem] in
-  let clusters = list_map mk_cluster source_dirs in
-  print_clusters_stats clusters;
+    Cluster.create_ondemand source_dir in
+  let clusters =
+    let do_source_dir acc source_dir = mk_cluster source_dir @ acc in
+    list_fold_left do_source_dir [] source_dirs in
+  Cluster.print_clusters_stats clusters;
   let num_files = list_length clusters in
   let num_procs = 0 (* can't compute it at this stage *) in
   let num_lines = 0 in
