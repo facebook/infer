@@ -59,7 +59,7 @@ digraph iCFG {
 5 [label="5: Exit C_initWithCoder:and: \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start C_initWithCoder:and:\nFormals:  self:class C * aDecoder:class NSString * a:class A *\nLocals:  a1:class A * y:int  \n   DECLARE_LOCALS(&return,&a1,&y); [line 37]\n  NULLIFY(&a1,false); [line 37]\n  NULLIFY(&aDecoder,false); [line 37]\n  NULLIFY(&y,false); [line 37]\n " color=yellow style=filled]
+4 [label="4: Start C_initWithCoder:and:\nFormals:  self:class C * aDecoder:class NSString * a:class A *\nLocals:  y:int  a1:class A * \n   DECLARE_LOCALS(&return,&y,&a1); [line 37]\n  NULLIFY(&a1,false); [line 37]\n  NULLIFY(&aDecoder,false); [line 37]\n  NULLIFY(&y,false); [line 37]\n " color=yellow style=filled]
 	
 
 	 4 -> 9 ;

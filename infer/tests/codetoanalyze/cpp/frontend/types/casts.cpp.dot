@@ -6,7 +6,7 @@ digraph iCFG {
 2 [label="2: Exit stat_cast \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start stat_cast\nFormals: \nLocals:  a:int  la:long long  \n   DECLARE_LOCALS(&return,&a,&la); [line 10]\n  NULLIFY(&la,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start stat_cast\nFormals: \nLocals:  la:long long  a:int  \n   DECLARE_LOCALS(&return,&la,&a); [line 10]\n  NULLIFY(&la,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

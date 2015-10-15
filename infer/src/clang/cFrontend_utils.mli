@@ -105,6 +105,8 @@ end
 
 module General_utils :
 sig
+  type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool
+
   val string_from_list : string list -> string
 
   val append_no_duplicates_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list ->
@@ -150,5 +152,6 @@ sig
 
   val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
 
-
+  val mk_sil_var : Clang_ast_t.named_decl_info -> var_info option -> Procname.t -> Procname.t ->
+    Sil.pvar
 end

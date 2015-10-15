@@ -18,7 +18,7 @@ digraph iCFG {
 37 [label="37: Exit test3 \n  " color=yellow style=filled]
 	
 
-36 [label="36: Start test3\nFormals: \nLocals:  pool:class NSAutoreleasePool * string:class NSString * c:class NSString * \n   DECLARE_LOCALS(&return,&pool,&string,&c); [line 59]\n  NULLIFY(&c,false); [line 59]\n  NULLIFY(&pool,false); [line 59]\n  NULLIFY(&string,false); [line 59]\n " color=yellow style=filled]
+36 [label="36: Start test3\nFormals: \nLocals:  c:class NSString * string:class NSString * pool:class NSAutoreleasePool * \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59]\n  NULLIFY(&c,false); [line 59]\n  NULLIFY(&pool,false); [line 59]\n  NULLIFY(&string,false); [line 59]\n " color=yellow style=filled]
 	
 
 	 36 -> 41 ;
@@ -57,7 +57,7 @@ digraph iCFG {
 27 [label="27: Exit test2 \n  " color=yellow style=filled]
 	
 
-26 [label="26: Start test2\nFormals: \nLocals:  s1:class A * s2:class A * s3:class A * \n   DECLARE_LOCALS(&return,&s1,&s2,&s3); [line 47]\n " color=yellow style=filled]
+26 [label="26: Start test2\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 47]\n " color=yellow style=filled]
 	
 
 	 26 -> 35 ;
@@ -100,7 +100,7 @@ digraph iCFG {
 16 [label="16: Exit test1 \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start test1\nFormals: \nLocals:  s1:class A * s2:class A * s3:class A * \n   DECLARE_LOCALS(&return,&s1,&s2,&s3); [line 34]\n " color=yellow style=filled]
+15 [label="15: Start test1\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34]\n " color=yellow style=filled]
 	
 
 	 15 -> 25 ;

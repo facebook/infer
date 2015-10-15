@@ -344,6 +344,8 @@ let get_fresh_block_index () =
 module General_utils =
 struct
 
+  type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool
+
   let rec swap_elements_list l =
     match l with
     | el1:: el2:: rest ->
@@ -493,6 +495,29 @@ struct
     let type_name_crc = Some (CRC.crc16 type_name) in
     Procname.mangled_c_method class_name method_name type_name_crc
 
+  let mk_sil_var name decl_info_type_ptr_opt procname outer_procname =
+    let name_string = name.Clang_ast_t.ni_name in
+    let simple_name = Mangled.from_string name_string  in
+    match decl_info_type_ptr_opt with
+    | Some (decl_info, type_ptr, var_decl_info, should_be_mangled) ->
+        if var_decl_info.Clang_ast_t.vdi_is_global then
+          let global_mangled_name =
+            if var_decl_info.Clang_ast_t.vdi_is_static_local then
+              Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string)
+            else simple_name in
+          Sil.mk_pvar_global global_mangled_name
+        else if not should_be_mangled then Sil.mk_pvar simple_name procname
+        else
+          let type_name = Ast_utils.string_of_type_ptr type_ptr in
+          let start_location = fst decl_info.Clang_ast_t.di_source_range in
+          let file_opt = start_location.Clang_ast_t.sl_file in
+          let line_opt = start_location.Clang_ast_t.sl_line in
+          let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
+          let rel_path = get_rel_file_path file_opt in
+          let mangled = CRC.crc16 (type_name ^ rel_path ^ line_str) in
+          let mangled_name = Mangled.mangled name.Clang_ast_t.ni_name mangled in
+          Sil.mk_pvar mangled_name procname
+    | None -> Sil.mk_pvar simple_name procname
 end
 
 

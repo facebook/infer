@@ -126,7 +126,7 @@ digraph iCFG {
 93 [label="93: Exit test2 \n  " color=yellow style=filled]
 	
 
-92 [label="92: Start test2\nFormals:  target:class A *\nLocals:  __assert_fn__:class NSString * __assert_file__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_fn__,&__assert_file__); [line 35]\n  NULLIFY(&__assert_file__,false); [line 35]\n  NULLIFY(&__assert_fn__,false); [line 35]\n " color=yellow style=filled]
+92 [label="92: Start test2\nFormals:  target:class A *\nLocals:  __assert_file__:class NSString * __assert_fn__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__,&__assert_fn__); [line 35]\n  NULLIFY(&__assert_file__,false); [line 35]\n  NULLIFY(&__assert_fn__,false); [line 35]\n " color=yellow style=filled]
 	
 
 	 92 -> 98 ;
@@ -250,7 +250,7 @@ digraph iCFG {
 60 [label="60: Exit test1 \n  " color=yellow style=filled]
 	
 
-59 [label="59: Start test1\nFormals:  target:class A *\nLocals:  __assert_fn__:class NSString * __assert_file__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_fn__,&__assert_file__); [line 30]\n  NULLIFY(&__assert_file__,false); [line 30]\n  NULLIFY(&__assert_fn__,false); [line 30]\n " color=yellow style=filled]
+59 [label="59: Start test1\nFormals:  target:class A *\nLocals:  __assert_file__:class NSString * __assert_fn__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__,&__assert_fn__); [line 30]\n  NULLIFY(&__assert_file__,false); [line 30]\n  NULLIFY(&__assert_fn__,false); [line 30]\n " color=yellow style=filled]
 	
 
 	 59 -> 65 ;

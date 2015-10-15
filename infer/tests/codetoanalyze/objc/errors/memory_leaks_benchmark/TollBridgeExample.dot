@@ -36,7 +36,7 @@ digraph iCFG {
 10 [label="10: Exit TollBridgeExample_brideRetained \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start TollBridgeExample_brideRetained\nFormals:  self:class TollBridgeExample *\nLocals:  observer:struct objc_object * a:struct __CFLocale * \n   DECLARE_LOCALS(&return,&observer,&a); [line 31]\n  NULLIFY(&a,false); [line 31]\n  NULLIFY(&observer,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n " color=yellow style=filled]
+9 [label="9: Start TollBridgeExample_brideRetained\nFormals:  self:class TollBridgeExample *\nLocals:  a:struct __CFLocale * observer:struct objc_object * \n   DECLARE_LOCALS(&return,&a,&observer); [line 31]\n  NULLIFY(&a,false); [line 31]\n  NULLIFY(&observer,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n " color=yellow style=filled]
 	
 
 	 9 -> 12 ;
@@ -51,7 +51,7 @@ digraph iCFG {
 6 [label="6: Exit TollBridgeExample_bridge \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start TollBridgeExample_bridge\nFormals:  self:class TollBridgeExample *\nLocals:  nameRef:struct __CFLocale * a:class NSLocale * \n   DECLARE_LOCALS(&return,&nameRef,&a); [line 25]\n  NULLIFY(&a,false); [line 25]\n  NULLIFY(&nameRef,false); [line 25]\n  NULLIFY(&self,false); [line 25]\n " color=yellow style=filled]
+5 [label="5: Start TollBridgeExample_bridge\nFormals:  self:class TollBridgeExample *\nLocals:  a:class NSLocale * nameRef:struct __CFLocale * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 25]\n  NULLIFY(&a,false); [line 25]\n  NULLIFY(&nameRef,false); [line 25]\n  NULLIFY(&self,false); [line 25]\n " color=yellow style=filled]
 	
 
 	 5 -> 8 ;
@@ -66,7 +66,7 @@ digraph iCFG {
 2 [label="2: Exit TollBridgeExample_bridgeTransfer \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:class TollBridgeExample *\nLocals:  nameRef:struct __CFLocale * a:class NSLocale * \n   DECLARE_LOCALS(&return,&nameRef,&a); [line 20]\n  NULLIFY(&a,false); [line 20]\n  NULLIFY(&nameRef,false); [line 20]\n  NULLIFY(&self,false); [line 20]\n " color=yellow style=filled]
+1 [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:class TollBridgeExample *\nLocals:  a:class NSLocale * nameRef:struct __CFLocale * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 20]\n  NULLIFY(&a,false); [line 20]\n  NULLIFY(&nameRef,false); [line 20]\n  NULLIFY(&self,false); [line 20]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

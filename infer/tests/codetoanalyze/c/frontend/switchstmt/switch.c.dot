@@ -211,7 +211,7 @@ digraph iCFG {
 144 [label="144: Exit m8 \n  " color=yellow style=filled]
 	
 
-143 [label="143: Start m8\nFormals: \nLocals:  value:int  something:int  z:int  a:int  \n   DECLARE_LOCALS(&return,&value,&something,&z,&a); [line 176]\n  NULLIFY(&a,false); [line 176]\n  NULLIFY(&something,false); [line 176]\n  NULLIFY(&value,false); [line 176]\n  NULLIFY(&z,false); [line 176]\n " color=yellow style=filled]
+143 [label="143: Start m8\nFormals: \nLocals:  a:int  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&a,&z,&something,&value); [line 176]\n  NULLIFY(&a,false); [line 176]\n  NULLIFY(&something,false); [line 176]\n  NULLIFY(&value,false); [line 176]\n  NULLIFY(&z,false); [line 176]\n " color=yellow style=filled]
 	
 
 	 143 -> 171 ;
@@ -282,7 +282,7 @@ digraph iCFG {
 127 [label="127: Exit m7 \n  " color=yellow style=filled]
 	
 
-126 [label="126: Start m7\nFormals: \nLocals:  value:int  something:int  z:int  \n   DECLARE_LOCALS(&return,&value,&something,&z); [line 156]\n  NULLIFY(&something,false); [line 156]\n  NULLIFY(&value,false); [line 156]\n  NULLIFY(&z,false); [line 156]\n " color=yellow style=filled]
+126 [label="126: Start m7\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 156]\n  NULLIFY(&something,false); [line 156]\n  NULLIFY(&value,false); [line 156]\n  NULLIFY(&z,false); [line 156]\n " color=yellow style=filled]
 	
 
 	 126 -> 142 ;
@@ -389,7 +389,7 @@ digraph iCFG {
 101 [label="101: Exit m6 \n  " color=yellow style=filled]
 	
 
-100 [label="100: Start m6\nFormals: \nLocals:  value:int  something:int  z:int  \n   DECLARE_LOCALS(&return,&value,&something,&z); [line 130]\n  NULLIFY(&something,false); [line 130]\n  NULLIFY(&value,false); [line 130]\n  NULLIFY(&z,false); [line 130]\n " color=yellow style=filled]
+100 [label="100: Start m6\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 130]\n  NULLIFY(&something,false); [line 130]\n  NULLIFY(&value,false); [line 130]\n  NULLIFY(&z,false); [line 130]\n " color=yellow style=filled]
 	
 
 	 100 -> 122 ;
@@ -450,7 +450,7 @@ digraph iCFG {
 86 [label="86: Exit m5 \n  " color=yellow style=filled]
 	
 
-85 [label="85: Start m5\nFormals: \nLocals:  value:int  x:int  \n   DECLARE_LOCALS(&return,&value,&x); [line 112]\n  NULLIFY(&value,false); [line 112]\n  NULLIFY(&x,false); [line 112]\n " color=yellow style=filled]
+85 [label="85: Start m5\nFormals: \nLocals:  x:int  value:int  \n   DECLARE_LOCALS(&return,&x,&value); [line 112]\n  NULLIFY(&value,false); [line 112]\n  NULLIFY(&x,false); [line 112]\n " color=yellow style=filled]
 	
 
 	 85 -> 99 ;
@@ -541,7 +541,7 @@ digraph iCFG {
 64 [label="64: Exit m4 \n  " color=yellow style=filled]
 	
 
-63 [label="63: Start m4\nFormals: \nLocals:  value:int  x:int  z:int  something:int  \n   DECLARE_LOCALS(&return,&value,&x,&z,&something); [line 85]\n  NULLIFY(&something,false); [line 85]\n  NULLIFY(&value,false); [line 85]\n  NULLIFY(&x,false); [line 85]\n  NULLIFY(&z,false); [line 85]\n " color=yellow style=filled]
+63 [label="63: Start m4\nFormals: \nLocals:  something:int  z:int  x:int  value:int  \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 85]\n  NULLIFY(&something,false); [line 85]\n  NULLIFY(&value,false); [line 85]\n  NULLIFY(&x,false); [line 85]\n  NULLIFY(&z,false); [line 85]\n " color=yellow style=filled]
 	
 
 	 63 -> 84 ;
@@ -612,7 +612,7 @@ digraph iCFG {
 47 [label="47: Exit m3 \n  " color=yellow style=filled]
 	
 
-46 [label="46: Start m3\nFormals: \nLocals:  value:int  something:int  z:int  \n   DECLARE_LOCALS(&return,&value,&something,&z); [line 64]\n  NULLIFY(&something,false); [line 64]\n  NULLIFY(&value,false); [line 64]\n  NULLIFY(&z,false); [line 64]\n " color=yellow style=filled]
+46 [label="46: Start m3\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 64]\n  NULLIFY(&something,false); [line 64]\n  NULLIFY(&value,false); [line 64]\n  NULLIFY(&z,false); [line 64]\n " color=yellow style=filled]
 	
 
 	 46 -> 62 ;
@@ -703,7 +703,7 @@ digraph iCFG {
 25 [label="25: Exit m2 \n  " color=yellow style=filled]
 	
 
-24 [label="24: Start m2\nFormals: \nLocals:  value:int  x:int  z:int  something:int  \n   DECLARE_LOCALS(&return,&value,&x,&z,&something); [line 37]\n  NULLIFY(&something,false); [line 37]\n  NULLIFY(&value,false); [line 37]\n  NULLIFY(&x,false); [line 37]\n  NULLIFY(&z,false); [line 37]\n " color=yellow style=filled]
+24 [label="24: Start m2\nFormals: \nLocals:  something:int  z:int  x:int  value:int  \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 37]\n  NULLIFY(&something,false); [line 37]\n  NULLIFY(&value,false); [line 37]\n  NULLIFY(&x,false); [line 37]\n  NULLIFY(&z,false); [line 37]\n " color=yellow style=filled]
 	
 
 	 24 -> 45 ;
@@ -798,7 +798,7 @@ digraph iCFG {
 2 [label="2: Exit m1 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start m1\nFormals: \nLocals:  value:int  x:int  \n   DECLARE_LOCALS(&return,&value,&x); [line 12]\n  NULLIFY(&value,false); [line 12]\n  NULLIFY(&x,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start m1\nFormals: \nLocals:  x:int  value:int  \n   DECLARE_LOCALS(&return,&x,&value); [line 12]\n  NULLIFY(&value,false); [line 12]\n  NULLIFY(&x,false); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 23 ;

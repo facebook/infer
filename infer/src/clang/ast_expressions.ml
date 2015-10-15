@@ -28,6 +28,9 @@ let dummy_stmt_info () = {
 let fresh_stmt_info stmt_info =
   { stmt_info with Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () }
 
+let fresh_decl_info decl_info =
+  { decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () }
+
 let dummy_decl_info decl_info = {
   decl_info with
   Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer ();
@@ -371,7 +374,10 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
   let block_expr =
     try Utils.list_nth stmt_list (n + 1)
     with Not_found -> assert false in
-  let block_name_info = Ast_utils.make_name_decl block_name in
+  let block_name_info = {
+    Clang_ast_t.ni_name = block_name;
+    Clang_ast_t.ni_qual_name = [block_name; CFrontend_config.block]
+  } in
   let open Clang_ast_t in
   match block_expr with
   | BlockExpr (bsi, bsl, bei, bd) ->
@@ -379,8 +385,10 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
       let cast_info = { cei_cast_kind = `BitCast; cei_base_path =[]} in
       let block_def = ImplicitCastExpr(stmt_info,[block_expr], bei, cast_info) in
       let decl_info = { empty_decl_info
-                        with di_pointer = stmt_info.si_pointer; di_source_range = stmt_info.si_source_range } in
-      let var_decl_info = { empty_var_decl_info with vdi_init_expr = Some block_def } in
+                        with di_pointer = Ast_utils.get_fresh_pointer();
+                             di_source_range = stmt_info.si_source_range } in
+      let stmt_info = { stmt_info with si_pointer = Ast_utils.get_fresh_pointer(); } in
+      let var_decl_info = { empty_var_decl_info with vdi_init_expr = Some block_def} in
       let block_var_decl = VarDecl(decl_info, block_name_info, ei.ei_type_ptr, var_decl_info) in
       let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
 
@@ -403,6 +411,7 @@ let make_DeclStmt stmt_info di tp vname iexp =
         Some ie, [ie]
     | None -> None, [] in
   let var_decl_info = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = init_expr_opt } in
+  let di = fresh_decl_info di in
   let var_decl = Clang_ast_t.VarDecl (di, vname, tp, var_decl_info) in
   Clang_ast_t.DeclStmt (stmt_info, init_expr_l, [var_decl])
 

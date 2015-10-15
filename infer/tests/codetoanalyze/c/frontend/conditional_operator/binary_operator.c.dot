@@ -193,7 +193,7 @@ digraph iCFG {
 2 [label="2: Exit binop_with_side_effects \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start binop_with_side_effects\nFormals:  z:int \nLocals:  x1:int  x2:int  x3:int  y1:int  y2:int  y3:int  \n   DECLARE_LOCALS(&return,&x1,&x2,&x3,&y1,&y2,&y3); [line 10]\n  NULLIFY(&x1,false); [line 10]\n  NULLIFY(&x2,false); [line 10]\n  NULLIFY(&x3,false); [line 10]\n  NULLIFY(&y1,false); [line 10]\n  NULLIFY(&y2,false); [line 10]\n  NULLIFY(&y3,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start binop_with_side_effects\nFormals:  z:int \nLocals:  y3:int  y2:int  y1:int  x3:int  x2:int  x1:int  \n   DECLARE_LOCALS(&return,&y3,&y2,&y1,&x3,&x2,&x1); [line 10]\n  NULLIFY(&x1,false); [line 10]\n  NULLIFY(&x2,false); [line 10]\n  NULLIFY(&x3,false); [line 10]\n  NULLIFY(&y1,false); [line 10]\n  NULLIFY(&y2,false); [line 10]\n  NULLIFY(&y3,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 44 ;

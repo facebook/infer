@@ -622,13 +622,16 @@ let rec is_method_call s =
 let rec get_decl_ref_info s parent_line_number =
   match s with
   | Clang_ast_t.DeclRefExpr (stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
-      let line_number = CLocation.get_line stmt_info parent_line_number in
-      stmt_info.Clang_ast_t.si_pointer, line_number
-  | _ -> (match Clang_ast_proj.get_stmt_tuple s with
+      (let line_number = CLocation.get_line stmt_info parent_line_number in
+       match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+       | Some decl_ref -> decl_ref, line_number
+       | None -> assert false)
+  | _ ->
+      match Clang_ast_proj.get_stmt_tuple s with
       | stmt_info, [] -> assert false
       | stmt_info, s'':: _ ->
           let line_number = CLocation.get_line stmt_info parent_line_number in
-          get_decl_ref_info s'' line_number)
+          get_decl_ref_info s'' line_number
 
 let rec contains_opaque_value_expr s =
   match s with
@@ -636,25 +639,6 @@ let rec contains_opaque_value_expr s =
   | _ -> match snd (Clang_ast_proj.get_stmt_tuple s) with
     | [] -> false
     | s'':: _ -> contains_opaque_value_expr s''
-
-let rec compute_autorelease_pool_vars context stmts =
-  match stmts with
-  | [] -> []
-  | Clang_ast_t.DeclRefExpr (si, sl, ei, drei):: stmts' ->
-      let name = get_name_decl_ref_exp_info drei si in
-      let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
-      let local_vars = Cfg.Procdesc.get_locals context.CContext.procdesc in
-      let mname = try
-          list_filter (fun (m, t) -> Mangled.to_string m = name) local_vars
-        with _ -> [] in
-      (match mname with
-       | [(m, t)] ->
-           CFrontend_utils.General_utils.append_no_duplicated_pvars
-             [(Sil.Lvar (Sil.mk_pvar m procname), t)] (compute_autorelease_pool_vars context stmts')
-       | _ -> compute_autorelease_pool_vars context stmts')
-  | s :: stmts' ->
-      let sl = snd(Clang_ast_proj.get_stmt_tuple s) in
-      compute_autorelease_pool_vars context (sl @ stmts')
 
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =

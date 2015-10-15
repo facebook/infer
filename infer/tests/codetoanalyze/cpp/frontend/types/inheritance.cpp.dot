@@ -38,7 +38,7 @@ digraph iCFG {
 11 [label="11: Exit call_static_methods \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start call_static_methods\nFormals: \nLocals:  b:class Base * s1:class Base * s2:class Sub * \n   DECLARE_LOCALS(&return,&b,&s1,&s2); [line 21]\n  NULLIFY(&b,false); [line 21]\n  NULLIFY(&s1,false); [line 21]\n  NULLIFY(&s2,false); [line 21]\n " color=yellow style=filled]
+10 [label="10: Start call_static_methods\nFormals: \nLocals:  s2:class Sub * s1:class Base * b:class Base * \n   DECLARE_LOCALS(&return,&s2,&s1,&b); [line 21]\n  NULLIFY(&b,false); [line 21]\n  NULLIFY(&s1,false); [line 21]\n  NULLIFY(&s2,false); [line 21]\n " color=yellow style=filled]
 	
 
 	 10 -> 20 ;

@@ -25,8 +25,6 @@ val create_local_procdesc : Cfg.cfg -> Sil.tenv -> CMethod_signature.method_sign
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.typ list) option -> unit
 
-val captured_vars_from_block_info : CContext.t -> Clang_ast_t.block_captured_variable list -> (Mangled.t * Sil.typ * bool) list
-
 val get_class_selector_instance : CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list
   -> (string * string * Clang_ast_t.pointer option * method_call_type)
 

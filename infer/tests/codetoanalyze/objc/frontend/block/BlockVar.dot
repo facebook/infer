@@ -14,7 +14,7 @@ digraph iCFG {
 9 [label="9: Exit __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1 \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1\nFormals:  a:int  b:int \nLocals:  error:class NSError * res:int  \n   DECLARE_LOCALS(&return,&error,&res); [line 21]\n  NULLIFY(&error,false); [line 21]\n  NULLIFY(&res,false); [line 21]\n " color=yellow style=filled]
+8 [label="8: Start __objc_anonymous_block_BlockVar_navigateToURLInBackground:resolver:______1\nFormals:  a:int  b:int \nLocals:  res:int  error:class NSError * \n   DECLARE_LOCALS(&return,&res,&error); [line 21]\n  NULLIFY(&error,false); [line 21]\n  NULLIFY(&res,false); [line 21]\n " color=yellow style=filled]
 	
 
 	 8 -> 12 ;

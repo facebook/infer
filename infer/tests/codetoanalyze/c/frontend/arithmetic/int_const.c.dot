@@ -18,7 +18,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  a:int  b:int * c:float * d:long double  large_int:int  overflow_int:int  \n   DECLARE_LOCALS(&return,&a,&b,&c,&d,&large_int,&overflow_int); [line 10]\n  NULLIFY(&a,false); [line 10]\n  NULLIFY(&b,false); [line 10]\n  NULLIFY(&c,false); [line 10]\n  NULLIFY(&d,false); [line 10]\n  NULLIFY(&large_int,false); [line 10]\n  NULLIFY(&overflow_int,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  overflow_int:int  large_int:int  d:long double  c:float * b:int * a:int  \n   DECLARE_LOCALS(&return,&overflow_int,&large_int,&d,&c,&b,&a); [line 10]\n  NULLIFY(&a,false); [line 10]\n  NULLIFY(&b,false); [line 10]\n  NULLIFY(&c,false); [line 10]\n  NULLIFY(&d,false); [line 10]\n  NULLIFY(&large_int,false); [line 10]\n  NULLIFY(&overflow_int,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 6 ;

@@ -45,8 +45,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
       list_iter tranlate_method method_decls
 
   | VarDecl(decl_info, name_info, t, _) ->
-      let name = name_info.Clang_ast_t.ni_name in
-      CVar_decl.global_var_decl tenv namespace decl_info name t
+      Printing.log_out "Nothing to do for global variable %s " name_info.Clang_ast_t.ni_name
 
   | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info) ->
       let name = name_info.Clang_ast_t.ni_name in
@@ -125,7 +124,6 @@ let init_global_state source_file =
   DB.current_source := source_file;
   DB.Results_dir.init ();
   Ident.reset_name_generator ();
-  CGlobal_vars.reset_map ();
   CFrontend_config.global_translation_unit_decls := [];
   ObjcProperty_decl.reset_property_table ();
   CFrontend_utils.General_utils.reset_block_counter ()

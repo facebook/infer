@@ -15,160 +15,89 @@ open CFrontend_utils
 
 module L = Logging
 
-(* For a variable declaration it return/construct the type *)
-let get_var_type tenv name t =
-  let typ = CTypes_decl.type_ptr_to_sil_type tenv t in
-  Printing.log_out "     Getting/Defining type for variable '%s'" name;
-  Printing.log_out " as  sil type '%s'\n" (Sil.typ_to_string typ);
-  typ
+let is_custom_var_pointer pointer =
+  Utils.string_is_prefix CFrontend_config.pointer_prefix pointer
 
-(* NOTE: Currently we use this function to avoid certain C++ global variable definition defined *)
-(* in traits and config files.*)
-(* We recogneze them because these declaration have di_parent_pointer and di_previous_decl defined*)
-let global_to_be_added di =
-  (di.Clang_ast_t.di_parent_pointer = None) && (di.Clang_ast_t.di_previous_decl =`None)
-
-let global_var_decl tenv namespace decl_info name t =
-  Printing.log_out "PASSING: VarDecl for '%s' to global procdesc" name;
-  Printing.log_out "  pointer= '%s'\n" decl_info.Clang_ast_t.di_pointer;
-  if global_to_be_added decl_info then (
-    let typ = get_var_type tenv name t in
-    Printing.log_out "     >>> Adding entry to global procdesc: ('%s', " name;
-    Printing.log_out "'%s')\n" (Sil.typ_to_string typ);
-    CGlobal_vars.add name typ)
-  else Printing.log_out "SKIPPING VarDecl for '%s'\n" name
-
-let rec lookup_ahead_for_vardecl context pointer var_name kind decl_list =
-  match decl_list with
-  | [] -> Printing.log_out "     Failing when looking ahead for variable '%s'\n" var_name;
-      assert false (* nothing has been found ahead, maybe something bad in the AST *)
-  | Clang_ast_t.VarDecl (decl_info, var_info, t, _) :: rest
-    when var_name = var_info.Clang_ast_t.ni_name ->
-      let var_name' = var_info.Clang_ast_t.ni_name in
-      if global_to_be_added decl_info then (
-        let tenv = CContext.get_tenv context in
-        Printing.log_out "ADDING (later-defined): VarDecl '%s' to global procdesc\n" var_name';
-        let typ = get_var_type tenv var_name' t in
-        Printing.log_out "     >>> Adding (later-defined) entry to global procdesc: ('%s', " var_name';
-        Printing.log_out "'%s')\n" (Sil.typ_to_string typ);
-        CGlobal_vars.add var_name' typ;
-        let mangled_var_name = Mangled.from_string var_name' in
-        let global_var = CGlobal_vars.find mangled_var_name in
-        CGlobal_vars.var_get_name global_var)
-      else (Printing.log_out "SKIPPING VarDecl for '%s'\n" var_name;
-            lookup_ahead_for_vardecl context pointer var_name kind rest)
-  | _ :: rest ->
-      lookup_ahead_for_vardecl context pointer var_name kind rest
-
-let lookup_var_static_globals context name =
-  let remove_separator s =
-    match Str.split (Str.regexp_string Config.anonymous_block_num_sep) s with
-    | s'':: _ -> s''
-    | _ -> assert false in
-  let remove_block_prefix s =
-    match Str.split (Str.regexp_string Config.anonymous_block_prefix) s with
-    | [_; s''] -> s''
-    | [s''] -> s''
-    | _ -> assert false in
-  let remove_block_name pname =
-    let s = Procname.to_string pname in
-    let s'= remove_block_prefix s in
-    let s'' = if s'= s then s'
-      else remove_separator s' in
-    s'' in
-  let pname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
-  let str_pname = remove_block_name pname in
-  let static_name = Sil.mk_static_local_name str_pname name in
-  Printing.log_out "   ...Looking for variable '%s' in static globals...\n" static_name;
-  let var_name = Mangled.from_string static_name in
-  let global_var = CGlobal_vars.find var_name in
-  let var = CGlobal_vars.var_get_name global_var in
-  Printing.log_out "   ...Variable '%s' found in static globals!!\n" (Sil.pvar_to_string var);
-  var
-
-let lookup_var stmt_info context pointer var_name kind =
-  let pvar = CContext.LocalVars.lookup_var context stmt_info.Clang_ast_t.si_pointer var_name kind in
-  match pvar with
-  | Some var -> var
-  | None ->
-      try
-        lookup_var_static_globals context var_name
-      with Not_found ->
-        (Printing.log_out "Looking on later-defined decls for '%s' with pointer '%s' \n" var_name stmt_info.Clang_ast_t.si_pointer;
-         let decl_list = !CFrontend_config.global_translation_unit_decls in
-         lookup_ahead_for_vardecl context pointer var_name kind decl_list )
-
-(* Traverses the body of the method top down and collects the                                 *)
-(* variable definitions in a map in the context. To be able to find the right variable name   *)
-(* in the reference instructions, all the variable names are also saved in a map from pointers *)
-(* to variable names to be used in the translation of the method's body.                      *)
-let rec get_variables_stmt context (stmt : Clang_ast_t.stmt) : unit =
+let sil_var_of_decl context var_decl procname =
+  let outer_procname = CContext.get_outer_procname context in
   let open Clang_ast_t in
-  match stmt with
-  | DeclStmt (_, lstmt, decl_list) ->
-      get_variables_decls context decl_list;
-      get_fun_locals context lstmt;
-  | DeclRefExpr (stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
-      (* Notice that DeclRefExpr is the reference to a declared var/function/enum... *)
-      (* so no declaration here *)
-      Printing.log_out "Collecting variables, passing from DeclRefExpr '%s'\n"
-        stmt_info.Clang_ast_t.si_pointer;
-      let var_name = CTrans_utils.get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
-      let kind = CTrans_utils.get_decl_kind decl_ref_expr_info in
-      (match kind with
-       | `EnumConstant | `ObjCIvar | `CXXMethod | `ObjCProperty -> ()
-       | _ ->
-           let pvar = lookup_var stmt_info context stmt_info.Clang_ast_t.si_pointer var_name kind in
-           CContext.LocalVars.add_pointer_var stmt_info.Clang_ast_t.si_pointer pvar context)
-  | CompoundStmt (stmt_info, lstmt) ->
-      Printing.log_out "Collecting variables, passing from CompoundStmt '%s'\n"
-        stmt_info.Clang_ast_t.si_pointer;
-      CContext.LocalVars.enter_and_leave_scope context get_fun_locals lstmt
-  | ForStmt (stmt_info, lstmt) ->
-      Printing.log_out "Collecting variables, passing from ForStmt '%s'\n"
-        stmt_info.Clang_ast_t.si_pointer;
-      CContext.LocalVars.enter_and_leave_scope context get_fun_locals lstmt
+  match var_decl with
+  | VarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
+      let shoud_be_mangled =
+        not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) in
+      let var_decl_details = Some (decl_info, type_ptr, var_decl_info, shoud_be_mangled) in
+      General_utils.mk_sil_var name_info var_decl_details procname outer_procname
+  | ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
+      let var_decl_details = Some (decl_info, type_ptr, var_decl_info, false) in
+      General_utils.mk_sil_var name_info var_decl_details procname outer_procname
+  | _ -> assert false
+
+let sil_var_of_decl_ref context decl_ref procname =
+  let name =
+    match decl_ref.Clang_ast_t.dr_name with
+    | Some name_info -> name_info
+    | None -> assert false in
+  let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
+  match decl_ref.Clang_ast_t.dr_kind with
+  | `ImplicitParam ->
+      let outer_procname = CContext.get_outer_procname context in
+      General_utils.mk_sil_var name None procname outer_procname
   | _ ->
-      let lstmt = Ast_utils.get_stmts_from_stmt stmt in
-      get_fun_locals context lstmt
+      if is_custom_var_pointer pointer then
+        Sil.mk_pvar (Mangled.from_string name.Clang_ast_t.ni_name) procname
+      else match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+        | Some var_decl -> sil_var_of_decl context var_decl procname
+        | None -> assert false
 
-and get_fun_locals context (stmts : Clang_ast_t.stmt list) : unit =
+let add_var_to_locals procdesc var_decl sil_typ pvar =
+  let open Clang_ast_t in
+  match var_decl with
+  | VarDecl (di, var_name, type_ptr, vdi) ->
+      let is_block_var =
+        match var_name.Clang_ast_t.ni_qual_name with
+        | [name; qual_name] -> qual_name = CFrontend_config.block
+        | _ -> false in
+      if not vdi.Clang_ast_t.vdi_is_global && not is_block_var then
+        Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, sil_typ)]
+  | _ -> assert false
+
+let rec compute_autorelease_pool_vars context stmts =
+  let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
   match stmts with
-  | [] -> ()
-  | stmt:: rest ->
-      (get_variables_stmt context stmt);
-      (get_fun_locals context rest)
+  | [] -> []
+  | Clang_ast_t.DeclRefExpr (si, sl, ei, drei):: stmts' ->
+      (let res = compute_autorelease_pool_vars context stmts' in
+       match drei.Clang_ast_t.drti_decl_ref with
+       | Some decl_ref ->
+           (match decl_ref.Clang_ast_t.dr_type_ptr with
+            | Some type_ptr when decl_ref.Clang_ast_t.dr_kind = `Var ->
+                let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+                let pvar = sil_var_of_decl_ref context decl_ref procname in
+                if Sil.pvar_is_local pvar then
+                  General_utils.append_no_duplicated_pvars [(Sil.Lvar pvar, typ)] res
+                else res
+            | _ -> res)
+       | _ -> res)
+  | s :: stmts' ->
+      let sl = snd (Clang_ast_proj.get_stmt_tuple s) in
+      compute_autorelease_pool_vars context (sl @ stmts')
 
-(* Collects the local of a function. *)
-and get_variables_decls context (decl_list : Clang_ast_t.decl list) : unit =
-  let do_one_decl decl =
-    let open Clang_ast_t in
-    match decl with
-    | VarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
-        Printing.log_out "Collecting variables, passing from VarDecl '%s'\n" decl_info.Clang_ast_t.di_pointer;
-        let name = name_info.Clang_ast_t.ni_name in
-        let typ = get_var_type context.CContext.tenv name type_ptr in
-        (match var_decl_info.Clang_ast_t.vdi_storage_class with
-         | Some "static" ->
-             let pname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
-             let static_name = (Procname.to_string pname)^"_"^name in
-             CGlobal_vars.add static_name typ;
-             let var = Sil.mk_pvar_global (Mangled.from_string static_name) in
-             CContext.LocalVars.add_pointer_var decl_info.Clang_ast_t.di_pointer var context
-         | _ ->
-             CContext.LocalVars.add_local_var context name typ decl_info.Clang_ast_t.di_pointer
-               (CFrontend_utils.General_utils.is_static_var var_decl_info))
-    | CXXRecordDecl _ | RecordDecl _ ->
-        let typ = CTypes_decl.get_declaration_type context.CContext.tenv context.CContext.namespace decl in
-        CTypes_decl.add_struct_to_tenv context.CContext.tenv typ
-    | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
-        Printing.log_out "%s" "Skipping typedef. Will expand the type in its occurrences."
-    | StaticAssertDecl decl_info -> (* We do not treat Assertions. *)
-        Printing.log_out
-          "WARNING: When collecting variables, passing from StaticAssertDecl '%s'. Skipped.\n"
-          decl_info.Clang_ast_t.di_pointer
-    | _ -> Printing.log_out
-             "!!! When collecting locals of a function found '%s'. Cannot continue\n\n"
-             (Clang_ast_j.string_of_decl decl);
-        assert false in
-  list_iter do_one_decl decl_list
+
+(* Returns a list of captured variables as sil variables. *)
+let captured_vars_from_block_info context cvl =
+  let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+  let sil_var_of_captured_var cv vars =
+    match cv.Clang_ast_t.bcv_variable with
+    | Some dr ->
+        (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_type_ptr with
+         | Some name_info, Some type_ptr ->
+             let n = name_info.Clang_ast_t.ni_name in
+             if n = CFrontend_config.self && not (CContext.is_objc_instance context) then
+               vars
+             else
+               let pvar = sil_var_of_decl_ref context dr procname in
+               let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+               (Sil.pvar_get_name pvar, typ, false) :: vars
+         | _ -> assert false)
+    | _ -> assert false in
+  list_fold_right sil_var_of_captured_var cvl []

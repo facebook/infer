@@ -301,64 +301,71 @@ struct
     let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let pointer = CTrans_utils.get_decl_pointer decl_ref_expr_info in
-    let is_function =
-      match get_decl_kind decl_ref_expr_info with
-      | `Function -> true
-      | _ -> false in
-    if is_enumeration_constant d then (
-      let const_exp = (match CTypes.search_enum_type_by_name context.tenv name with
-          | Some v ->
-              let ce = Sil.Const v in
-              Printing.log_out "   ....Found enum constant '%s', " name;
-              Printing.log_out "replacing with integer '%s' \n" (Sil.exp_to_string ce); ce
-          | None ->
-              Printing.log_stats
-                "   WARNING: Found enum constant '%s', but its value was not found in the tenv. Returning 0.\n" name;
-              (Sil.Const(Sil.Cint Sil.Int.zero))) in
-      { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
-    ) else if is_function then (
-      let pname =
-        if CTrans_models.is_modeled_builtin name then
-          Procname.from_string_c_fun (CFrontend_config.infer ^ name)
-        else CMethod_trans.create_procdesc_with_pointer context pointer None name tp in
-      let address_of_function = not context.CContext.is_callee_expression in
-      (* If we are not translating a callee expression, then the address of the function is being taken.*)
-      (* As e.g. in fun_ptr = foo; *)
-      let non_mangled_func_name =
-        if name = CFrontend_config.malloc &&
-           (!CFrontend_config.language = CFrontend_config.OBJC ||
-            !CFrontend_config.language = CFrontend_config.OBJCPP) then
-          SymExec.ModelBuiltins.malloc_no_fail
-        else Procname.from_string_c_fun name in
-      let is_builtin = SymExec.function_is_builtin non_mangled_func_name in
-      if is_builtin then (* malloc, free, exit, scanf, ... *)
-        { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)] }
-      else
-        begin
-          if address_of_function then Cfg.set_procname_priority context.cfg pname;
-          { empty_res_trans with exps = [(Sil.Const (Sil.Cfun pname), typ)] }
-        end
-    ) else (
-      let pvar =
-        if not (Utils.string_is_prefix CFrontend_config.pointer_prefix stmt_info.Clang_ast_t.si_pointer) then
-          try
-            CContext.LocalVars.find_var_with_pointer context stmt_info.Clang_ast_t.si_pointer
-          with _ -> assert false
-        else Sil.mk_pvar (Mangled.from_string name) procname in
-      let e = Sil.Lvar pvar in
-      let exps =
-        if Self.is_var_self pvar (CContext.is_objc_method context) then
-          let curr_class = CContext.get_curr_class context in
-          if (CTypes.is_class typ) then
-            raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
-          else
-            let typ = CTypes.add_pointer_to_typ
-                (CTypes_decl.get_type_curr_class context.tenv curr_class) in
-            [(e, typ)]
-        else [(e, typ)] in
-      Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
-      { empty_res_trans with exps = exps }
-    )
+    let decl_kind = get_decl_kind decl_ref_expr_info in
+    match decl_kind with
+    | `EnumConstant ->
+        let const_exp = (match CTypes.search_enum_type_by_name context.tenv name with
+            | Some v ->
+                let ce = Sil.Const v in
+                Printing.log_out "   ....Found enum constant '%s', " name;
+                Printing.log_out "replacing with integer '%s' \n" (Sil.exp_to_string ce); ce
+            | None ->
+                Printing.log_out
+                  "WARNING: Found enum constant '%s', but its value was not found in the tenv.\n"
+                  name;
+                (Sil.Const(Sil.Cint Sil.Int.zero))) in
+        { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
+    | `Function ->
+        let pname =
+          if CTrans_models.is_modeled_builtin name then
+            Procname.from_string_c_fun (CFrontend_config.infer ^ name)
+          else CMethod_trans.create_procdesc_with_pointer context pointer None name tp in
+        let address_of_function = not context.CContext.is_callee_expression in
+        (* If we are not translating a callee expression, *)
+        (* then the address of the function is being taken.*)
+        (* As e.g. in fun_ptr = foo; *)
+        let non_mangled_func_name =
+          if name = CFrontend_config.malloc &&
+             (!CFrontend_config.language = CFrontend_config.OBJC ||
+              !CFrontend_config.language = CFrontend_config.OBJCPP) then
+            SymExec.ModelBuiltins.malloc_no_fail
+          else Procname.from_string_c_fun name in
+        let is_builtin = SymExec.function_is_builtin non_mangled_func_name in
+        if is_builtin then (* malloc, free, exit, scanf, ... *)
+          { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)] }
+        else
+          begin
+            if address_of_function then Cfg.set_procname_priority context.cfg pname;
+            { empty_res_trans with exps = [(Sil.Const (Sil.Cfun pname), typ)] }
+          end
+    | `Var | `ImplicitParam | `ParmVar ->
+        let pvar =
+          match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+          | Some decl_ref -> CVar_decl.sil_var_of_decl_ref context decl_ref procname
+          | None -> assert false in
+        let e = Sil.Lvar pvar in
+        let exps =
+          if Self.is_var_self pvar (CContext.is_objc_method context) then
+            let curr_class = CContext.get_curr_class context in
+            if (CTypes.is_class typ) then
+              raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
+            else
+              let typ = CTypes.add_pointer_to_typ
+                  (CTypes_decl.get_type_curr_class context.tenv curr_class) in
+              [(e, typ)]
+          else [(e, typ)] in
+        Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
+        { empty_res_trans with exps = exps }
+    | _ ->
+        let print_error decl_kind =
+          Printing.log_stats
+            "Warning: Decl ref expression %s with pointer %s still needs to be translated "
+            (Clang_ast_j.string_of_decl_kind decl_kind)
+            pointer in
+        match decl_kind with
+        | `CXXMethod -> print_error decl_kind; assert false
+        | _ -> print_error decl_kind; assert false
+
 
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let context = trans_state.context in
@@ -431,6 +438,7 @@ struct
 
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     let open Clang_ast_t in
+    let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let bok = (Clang_ast_j.string_of_binary_operator_kind binary_operator_info.Clang_ast_t.boi_kind) in
     Printing.log_out "  BinaryOperator '%s' " bok;
     Printing.log_out "  priority node free = '%s'\n@."
@@ -442,10 +450,11 @@ struct
     let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     (match stmt_list with
      | [s1; ImplicitCastExpr (stmt, [CompoundLiteralExpr (cle_stmt_info, stmts, expr_info)], _, cast_expr_info)] ->
-         let di, line_number = get_decl_ref_info s1 parent_line_number in
+         let decl_ref, line_number  = get_decl_ref_info s1 parent_line_number in
          let line_number = CLocation.get_line cle_stmt_info line_number in
          let trans_state' = { trans_state with parent_line_number = line_number } in
-         let res_trans_tmp = initListExpr_trans trans_state' stmt_info expr_info di stmts in
+         let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
+         let res_trans_tmp = initListExpr_trans trans_state' stmt_info expr_info stmts pvar in
          { res_trans_tmp with leaf_nodes =[]}
      | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
          let rhs_owning_method = CTrans_utils.is_owning_method s2 in
@@ -473,7 +482,7 @@ struct
 
          let instrs_after_assign, assign_ids, exp_to_parent =
            if (is_binary_assign_op binary_operator_info)
-              && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
+           && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
              (* We are in this case when an assignment is inside        *)
              (* another operator that creates a node. Eg. another       *)
              (* assignment.  *)
@@ -756,7 +765,6 @@ struct
     Printing.log_out "\n Call to a dispatch function treated as special case...\n";
     let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
-    CContext.LocalVars.add_pointer_var stmt_info.Clang_ast_t.si_pointer pvar trans_state.context;
     let transformed_stmt, tp =
       Ast_expressions.translate_dispatch_function (Sil.pvar_to_string pvar) stmt_info stmt_list ei n in
     let typ = CTypes_decl.type_ptr_to_sil_type trans_state.context.CContext.tenv tp in
@@ -771,8 +779,6 @@ struct
 
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
     let declare_nullify_vars loc res_state roots preds (pvar, typ) =
-      (* Add declare locals to the first node *)
-      list_iter (fun n -> Cfg.Node.prepend_instrs_temps n [Sil.Declare_locals([(pvar, typ)], loc)] []) roots;
       (* Add nullify of the temp block var to the last node (predecessor or the successor nodes)*)
       list_iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds in
 
@@ -784,7 +790,6 @@ struct
     let pvars_types = list_map (fun (v, pointer, tp) ->
         let pvar = Sil.mk_pvar (Mangled.from_string v) procname in
         let typ = CTypes_decl.type_ptr_to_sil_type trans_state.context.CContext.tenv tp in
-        CContext.LocalVars.add_pointer_var pointer pvar trans_state.context;
         (pvar, typ)) vars_to_register in
     let loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let res_state = instruction trans_state transformed_stmt in
@@ -1217,6 +1222,9 @@ struct
     { empty_res_trans with root_nodes = root_nodes; leaf_nodes = leaf_nodes }
 
   and objCForCollectionStmt_trans trans_state item items body stmt_info =
+    let _ = instruction trans_state item in
+    (* Here we do ast transformation, so we don't need the value of the translation of the *)
+    (* variable item but we still need to add the variable to the locals *)
     let bin_op = Ast_expressions.make_next_object_exp stmt_info item items in
     let while_kind = Loops.While (bin_op, body) in
     let root_nodes, leaf_nodes = loop_instruction trans_state while_kind stmt_info in
@@ -1274,7 +1282,7 @@ struct
            exps = exp_to_parent' }
      | _ -> assert false) (* Compound assign statement should have two operands*)
 
-  and initListExpr_trans trans_state stmt_info expr_info di_pointer stmts =
+  and initListExpr_trans trans_state stmt_info expr_info stmts pvar =
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
     let rec collect_right_hand_exprs ts stmt = match stmt with
@@ -1319,7 +1327,6 @@ struct
       | _ -> [ [(e, typ)] ] in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let var_type = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-    let pvar = CContext.LocalVars.find_var_with_pointer context di_pointer in
     let lh = list_flatten (collect_left_hand_exprs (Sil.Lvar pvar) var_type Utils.StringSet.empty) in
     let rh = list_flatten (list_map (collect_right_hand_exprs trans_state_pri) stmts ) in
     if (list_length rh != list_length lh) then (
@@ -1369,8 +1376,14 @@ struct
   and collect_all_decl trans_state var_decls next_nodes stmt_info =
     let open Clang_ast_t in
     let context = trans_state.context in
+    let procdesc = context.CContext.procdesc in
+    let procname = Cfg.Procdesc.get_proc_name procdesc in
     let pln = trans_state.parent_line_number in
     let do_var_dec (di, var_name, type_ptr, vdi) next_node =
+      let var_decl = VarDecl (di, var_name, type_ptr, vdi) in
+      let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
+      let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+      CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
       match vdi.Clang_ast_t.vdi_init_expr with
       | None -> { empty_res_trans with root_nodes = next_node } (* Nothing to do if no init expression *)
       | Some (ImplicitValueInitExpr (_, stmt_list, _)) ->
@@ -1382,7 +1395,7 @@ struct
           { empty_res_trans with root_nodes = next_node }
       | Some (InitListExpr (stmt_info , stmts , expr_info))
       | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
-          initListExpr_trans trans_state stmt_info expr_info di.Clang_ast_t.di_pointer stmts
+          initListExpr_trans trans_state stmt_info expr_info stmts pvar
       | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
           let sil_loc = CLocation.get_sil_location stmt_info pln context in
           let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -1393,7 +1406,6 @@ struct
               Cfg.Node.set_succs_exn node next_node [];
               [node]
             ) else next_node in
-          let pvar = CContext.LocalVars.find_var_with_pointer context di.Clang_ast_t.di_pointer in
           let line_number = CLocation.get_line stmt_info pln in
           (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
           let res_trans_ie =
@@ -1706,7 +1718,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let fname = SymExec.ModelBuiltins.__objc_release_autorelease_pool in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let autorelease_pool_vars = compute_autorelease_pool_vars trans_state.context stmts in
+    let autorelease_pool_vars = CVar_decl.compute_autorelease_pool_vars trans_state.context stmts in
     let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), autorelease_pool_vars, sil_loc, Sil.cf_default) in
     let node_kind = Cfg.Node.Stmt_node ("Release the autorelease pool") in
     let call_node = create_node node_kind ([ret_id]) ([stmt_call]) sil_loc trans_state.context in
@@ -1759,23 +1771,19 @@ struct
         (* We need to set the explicit dependency between the newly created block and the *)
         (* defining procedure. We add an edge in the call graph.*)
         Cg.add_edge context.cg procname block_pname;
-        let static_locals = list_filter (fun (v, t, s) -> s = true) context.local_vars in
-        (*list_iter (fun (v, _, _) -> L.err "Static Locals %s@." (Mangled.to_string v)) static_locals;*)
-        let static_formals = list_filter (fun (v, t, s) -> s = true) context.captured_vars in
-        (*list_iter (fun (v, _, _) -> L.err "Formal Static %s@." (Mangled.to_string v)) static_formals;*)
-        let static_vars = static_locals @ static_formals in
-        let captured_vars =
-          (CMethod_trans.captured_vars_from_block_info context block_decl_info.Clang_ast_t.bdi_captured_variables) in
-        let all_captured_vars = captured_vars @ static_vars in
-        let ids_instrs = list_map assign_captured_var all_captured_vars in
+        let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
+        let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
+        let ids_instrs = list_map assign_captured_var captured_vars in
         let ids, instrs = list_split ids_instrs in
-        let block_data = (context, type_ptr, block_pname, all_captured_vars) in
+        let block_data = (context, type_ptr, block_pname, captured_vars) in
         CContext.add_block context block_pname;
         M.function_decl context.tenv context.cfg context.cg context.namespace decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_exps = list_map (fun id -> Sil.Var id) ids in
         let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)) :: captured_exps) in
-        let alloc_block_instr, ids_block = allocate_block trans_state (Procname.to_string block_pname) all_captured_vars loc in
+        let block_name = Procname.to_string block_pname in
+        let alloc_block_instr, ids_block =
+          allocate_block trans_state block_name captured_vars loc in
         { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
     | _ -> assert false
 

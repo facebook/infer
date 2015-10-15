@@ -18,7 +18,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  person:class EOCPerson * x:int * \n   DECLARE_LOCALS(&return,&person,&x); [line 12]\n  NULLIFY(&person,false); [line 12]\n  NULLIFY(&x,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  x:int * person:class EOCPerson * \n   DECLARE_LOCALS(&return,&x,&person); [line 12]\n  NULLIFY(&person,false); [line 12]\n  NULLIFY(&x,false); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 6 ;

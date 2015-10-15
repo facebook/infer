@@ -163,3 +163,5 @@ let type_pointer_prefix = "internal_type"
 let nsarray_cl = "NSArray"
 
 let infer = "infer"
+
+let block = "block"

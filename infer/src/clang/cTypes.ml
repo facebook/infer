@@ -16,32 +16,6 @@ module L = Logging
 let get_type_from_expr_info ei =
   ei.Clang_ast_t.ei_type_ptr
 
-let lookup_var_type context pvar =
-  let formals = Cfg.Procdesc.get_formals context.CContext.procdesc in
-  let locals = Cfg.Procdesc.get_locals context.CContext.procdesc in
-  try
-    let s, t = list_find (fun (s, t) -> s = (Sil.pvar_to_string pvar)) formals in
-    Printing.log_out "When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
-    Printing.log_out "found '%s' in formals.@." (Sil.typ_to_string t);
-    t
-  with Not_found ->
-    try
-      let s, t = list_find (fun (s, t) -> Mangled.equal (Sil.pvar_get_name pvar) s) locals in
-      Printing.log_out "When looking for type of variable '%s' " (Sil.pvar_to_string pvar);
-      Printing.log_out "found '%s' in locals.@." (Sil.typ_to_string t);
-      t
-    with Not_found ->
-      try
-        let typ = CGlobal_vars.var_get_typ (CGlobal_vars.find (Sil.pvar_get_name pvar)) in
-        Printing.log_out "When looking for type of variable '%s'" (Sil.pvar_to_string pvar);
-        Printing.log_out " found '%s' in globals.@." (Sil.typ_to_string typ);
-        typ
-      with Not_found ->
-        Printing.log_err
-          "WARNING: Variable '%s' not found in local+formal when looking for its type. Returning void.\n%!"
-          (Sil.pvar_to_string pvar);
-        Sil.Tvoid
-
 let get_name_from_struct s =
   match s with
   | Sil.Tstruct(_, _, _, Some n, _, _, _) -> n

@@ -100,7 +100,7 @@ digraph iCFG {
 28 [label="28: Exit MyBlock_array_trans \n  " color=yellow style=filled]
 	
 
-27 [label="27: Start MyBlock_array_trans\nFormals:  self:class MyBlock *\nLocals:  a:class NSArray * objects:class NSArray * enumerateObjectsUsingBlock:_fn_ (*) stop:_Bool * idx:unsigned long  object:struct objc_object * \n   DECLARE_LOCALS(&return,&a,&objects,&enumerateObjectsUsingBlock,&stop,&idx,&object); [line 28]\n  NULLIFY(&a,false); [line 28]\n  NULLIFY(&enumerateObjectsUsingBlock,false); [line 28]\n  NULLIFY(&idx,false); [line 28]\n  NULLIFY(&object,false); [line 28]\n  NULLIFY(&objects,false); [line 28]\n  NULLIFY(&self,false); [line 28]\n  NULLIFY(&stop,false); [line 28]\n " color=yellow style=filled]
+27 [label="27: Start MyBlock_array_trans\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * enumerateObjectsUsingBlock:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&enumerateObjectsUsingBlock,&objects,&a); [line 28]\n  NULLIFY(&a,false); [line 28]\n  NULLIFY(&enumerateObjectsUsingBlock,false); [line 28]\n  NULLIFY(&idx,false); [line 28]\n  NULLIFY(&object,false); [line 28]\n  NULLIFY(&objects,false); [line 28]\n  NULLIFY(&self,false); [line 28]\n  NULLIFY(&stop,false); [line 28]\n " color=yellow style=filled]
 	
 
 	 27 -> 52 ;
@@ -108,7 +108,7 @@ digraph iCFG {
 	
 
 	 26 -> 25 ;
-25 [label="25:  DeclStmt \n   DECLARE_LOCALS(&infer___objc_anonymous_block_MyBlock_array______1); [line 15]\n  DECLARE_LOCALS(&objects); [line 15]\n  DECLARE_LOCALS(&stop); [line 15]\n  DECLARE_LOCALS(&idx); [line 15]\n  DECLARE_LOCALS(&object); [line 15]\n  n$21=*&a:class NSArray * [line 15]\n  *&objects:class NSArray *=n$21 [line 15]\n  REMOVE_TEMPS(n$21); [line 15]\n  NULLIFY(&a,false); [line 15]\n " shape="box"]
+25 [label="25:  DeclStmt \n   n$21=*&a:class NSArray * [line 15]\n  *&objects:class NSArray *=n$21 [line 15]\n  REMOVE_TEMPS(n$21); [line 15]\n  NULLIFY(&a,false); [line 15]\n " shape="box"]
 	
 
 	 25 -> 18 ;
@@ -148,7 +148,7 @@ digraph iCFG {
 	
 
 	 16 -> 5 ;
-15 [label="15:  DeclStmt \n   n$14=*&objects:class NSArray * [line 15]\n  n$15=*&idx:unsigned long  [line 15]\n  n$13=_fun_NSArray_objectAtIndexedSubscript:(n$14:class NSArray *,n$15:unsigned long ) virtual [line 15]\n  *&object:struct objc_object *=n$13 [line 15]\n  REMOVE_TEMPS(n$13,n$14,n$15); [line 15]\n " shape="box"]
+15 [label="15:  DeclStmt \n   n$14=*&objects:class NSArray * [line 15]\n  n$15=*&idx:unsigned long  [line 15]\n  n$13=_fun_NSArray_objectAtIndexedSubscript:(n$14:class NSArray *,n$15:unsigned long ) virtual [line 15]\n  *&object:struct objc_object *=n$13 [line 15]\n  REMOVE_TEMPS(n$13,n$14,n$15); [line 15]\n  NULLIFY(&object,false); [line 15]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -198,14 +198,14 @@ digraph iCFG {
 	
 
 	 4 -> 7 ;
-3 [label="3:  Call _fun_free \n   n$0=*&stop:_Bool * [line 15]\n  n$1=_fun_free(n$0:void *) [line 15]\n  NULLIFY(&object,true); [line 15]\n  NULLIFY(&idx,true); [line 15]\n  NULLIFY(&stop,true); [line 15]\n  NULLIFY(&objects,true); [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  NULLIFY(&__objc_anonymous_block_MyBlock_array______1,true); [line 15]\n  NULLIFY(&infer___objc_anonymous_block_MyBlock_array______1,true); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Call _fun_free \n   NULLIFY(&idx,false); [line 15]\n  NULLIFY(&infer___objc_anonymous_block_MyBlock_array______1,false); [line 15]\n  NULLIFY(&objects,false); [line 15]\n  n$0=*&stop:_Bool * [line 15]\n  n$1=_fun_free(n$0:void *) [line 15]\n  NULLIFY(&object,true); [line 15]\n  NULLIFY(&idx,true); [line 15]\n  NULLIFY(&stop,true); [line 15]\n  NULLIFY(&objects,true); [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  NULLIFY(&__objc_anonymous_block_MyBlock_array______1,true); [line 15]\n  NULLIFY(&infer___objc_anonymous_block_MyBlock_array______1,true); [line 15]\n  NULLIFY(&idx,false); [line 15]\n  NULLIFY(&infer___objc_anonymous_block_MyBlock_array______1,false); [line 15]\n  NULLIFY(&objects,false); [line 15]\n  NULLIFY(&stop,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit MyBlock_array \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MyBlock_array\nFormals:  self:class MyBlock *\nLocals:  a:class NSArray * \n   DECLARE_LOCALS(&return,&a); [line 12]\n  NULLIFY(&a,false); [line 12]\n  NULLIFY(&self,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start MyBlock_array\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * infer___objc_anonymous_block_MyBlock_array______1:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&infer___objc_anonymous_block_MyBlock_array______1,&objects,&a); [line 12]\n  NULLIFY(&a,false); [line 12]\n  NULLIFY(&idx,false); [line 12]\n  NULLIFY(&infer___objc_anonymous_block_MyBlock_array______1,false); [line 12]\n  NULLIFY(&object,false); [line 12]\n  NULLIFY(&objects,false); [line 12]\n  NULLIFY(&self,false); [line 12]\n  NULLIFY(&stop,false); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 26 ;

@@ -137,7 +137,7 @@ digraph iCFG {
 61 [label="61: Exit main \n  " color=yellow style=filled]
 	
 
-60 [label="60: Start main\nFormals: \nLocals:  spec:char * block_size:char * \n   DECLARE_LOCALS(&return,&spec,&block_size); [line 46]\n  NULLIFY(&block_size,false); [line 46]\n  NULLIFY(&spec,false); [line 46]\n " color=yellow style=filled]
+60 [label="60: Start main\nFormals: \nLocals:  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&block_size,&spec); [line 46]\n  NULLIFY(&block_size,false); [line 46]\n  NULLIFY(&spec,false); [line 46]\n " color=yellow style=filled]
 	
 
 	 60 -> 93 ;
@@ -254,7 +254,7 @@ digraph iCFG {
 33 [label="33: Exit test_loop \n  " color=yellow style=filled]
 	
 
-32 [label="32: Start test_loop\nFormals: \nLocals:  spec:char * block_size:char * \n   DECLARE_LOCALS(&return,&spec,&block_size); [line 28]\n  NULLIFY(&block_size,false); [line 28]\n  NULLIFY(&spec,false); [line 28]\n " color=yellow style=filled]
+32 [label="32: Start test_loop\nFormals: \nLocals:  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&block_size,&spec); [line 28]\n  NULLIFY(&block_size,false); [line 28]\n  NULLIFY(&spec,false); [line 28]\n " color=yellow style=filled]
 	
 
 	 32 -> 59 ;

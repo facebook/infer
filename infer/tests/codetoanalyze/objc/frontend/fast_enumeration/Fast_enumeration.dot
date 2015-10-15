@@ -35,7 +35,7 @@ digraph iCFG {
 11 [label="11: Exit A_while_loop: \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start A_while_loop:\nFormals:  self:class A * items:class NSArray *\nLocals:  size:int  item:class NSArray * \n   DECLARE_LOCALS(&return,&size,&item); [line 25]\n  NULLIFY(&item,false); [line 25]\n  NULLIFY(&self,false); [line 25]\n  NULLIFY(&size,false); [line 25]\n " color=yellow style=filled]
+10 [label="10: Start A_while_loop:\nFormals:  self:class A * items:class NSArray *\nLocals:  item:class NSArray * size:int  \n   DECLARE_LOCALS(&return,&item,&size); [line 25]\n  NULLIFY(&item,false); [line 25]\n  NULLIFY(&self,false); [line 25]\n  NULLIFY(&size,false); [line 25]\n " color=yellow style=filled]
 	
 
 	 10 -> 19 ;
@@ -71,7 +71,7 @@ digraph iCFG {
 2 [label="2: Exit A_fast_loop: \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_fast_loop:\nFormals:  self:class A * items:class NSArray *\nLocals:  size:int  item:class NSArray * \n   DECLARE_LOCALS(&return,&size,&item); [line 17]\n  NULLIFY(&item,false); [line 17]\n  NULLIFY(&self,false); [line 17]\n  NULLIFY(&size,false); [line 17]\n " color=yellow style=filled]
+1 [label="1: Start A_fast_loop:\nFormals:  self:class A * items:class NSArray *\nLocals:  item:class NSArray * size:int  \n   DECLARE_LOCALS(&return,&item,&size); [line 17]\n  NULLIFY(&item,false); [line 17]\n  NULLIFY(&self,false); [line 17]\n  NULLIFY(&size,false); [line 17]\n " color=yellow style=filled]
 	
 
 	 1 -> 9 ;

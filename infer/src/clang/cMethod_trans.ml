@@ -208,35 +208,6 @@ let get_formal_parameters tenv ms =
         (name, typ):: defined_parameters pl' in
   defined_parameters (CMethod_signature.ms_get_args ms)
 
-(* Returns a list of captured variables. *)
-(* In order to get the right mangled name we search among *)
-(* the local variables of the defining function and it's formals.*)
-let captured_vars_from_block_info context cvl =
-  let formal2captured (s, t) =
-    (Mangled.from_string s, t, false) in
-  let find lv n =
-    try
-      list_find (fun (n', _, _) -> Mangled.to_string n' = n) lv
-    with Not_found -> Printing.log_err "Trying to find variable %s@." n; assert false in
-  let rec f cvl' =
-    match cvl' with
-    | [] -> []
-    | cv:: cvl'' ->
-        (match cv.Clang_ast_t.bcv_variable with
-         | Some dr ->
-             (match dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_type_ptr with
-              | Some name_info, _ ->
-                  let n = name_info.Clang_ast_t.ni_name in
-                  if n = CFrontend_config.self && not (CContext.is_objc_instance context) then []
-                  else
-                    (let procdesc_formals = Cfg.Procdesc.get_formals context.CContext.procdesc in
-                     (Printing.log_err "formals are %s@." (Utils.list_to_string (fun (x, _) -> x) procdesc_formals));
-                     let formals = list_map formal2captured procdesc_formals in
-                     [find (context.CContext.local_vars @ formals) n])
-              | _ -> assert false)
-         | None -> []) :: f cvl'' in
-  list_flatten (f cvl)
-
 let get_return_type tenv ms =
   let return_type = CMethod_signature.ms_get_ret_type ms in
   CTypes_decl.type_ptr_to_sil_type tenv return_type

@@ -158,3 +158,5 @@ val type_pointer_prefix : string
 val nsarray_cl : string
 
 val infer : string
+
+val block : string

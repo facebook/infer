@@ -70,7 +70,7 @@ digraph iCFG {
 30 [label="30: Exit MemoryLeakExample_createCloseCrossGlyphNoLeak: \n  " color=yellow style=filled]
 	
 
-29 [label="29: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  lineThickness:double  path1:struct CGPath * \n   DECLARE_LOCALS(&return,&lineThickness,&path1); [line 65]\n  NULLIFY(&lineThickness,false); [line 65]\n  NULLIFY(&path1,false); [line 65]\n " color=yellow style=filled]
+29 [label="29: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 65]\n  NULLIFY(&lineThickness,false); [line 65]\n  NULLIFY(&path1,false); [line 65]\n " color=yellow style=filled]
 	
 
 	 29 -> 33 ;
@@ -85,7 +85,7 @@ digraph iCFG {
 26 [label="26: Exit MemoryLeakExample_createCloseCrossGlyph: \n  " color=yellow style=filled]
 	
 
-25 [label="25: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:struct CGRect \nLocals:  lineThickness:double  path1:struct CGPath * \n   DECLARE_LOCALS(&return,&lineThickness,&path1); [line 57]\n  NULLIFY(&lineThickness,false); [line 57]\n  NULLIFY(&path1,false); [line 57]\n " color=yellow style=filled]
+25 [label="25: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 57]\n  NULLIFY(&lineThickness,false); [line 57]\n  NULLIFY(&path1,false); [line 57]\n " color=yellow style=filled]
 	
 
 	 25 -> 28 ;
@@ -175,7 +175,7 @@ digraph iCFG {
 2 [label="2: Exit MemoryLeakExample_layoutSubviews \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MemoryLeakExample_layoutSubviews\nFormals:  self:class MemoryLeakExample *\nLocals:  attachmentContainerView:class UIView * shadowPath:struct CGPath * \n   DECLARE_LOCALS(&return,&attachmentContainerView,&shadowPath); [line 19]\n  NULLIFY(&attachmentContainerView,false); [line 19]\n  NULLIFY(&self,false); [line 19]\n  NULLIFY(&shadowPath,false); [line 19]\n " color=yellow style=filled]
+1 [label="1: Start MemoryLeakExample_layoutSubviews\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * attachmentContainerView:class UIView * \n   DECLARE_LOCALS(&return,&shadowPath,&attachmentContainerView); [line 19]\n  NULLIFY(&attachmentContainerView,false); [line 19]\n  NULLIFY(&self,false); [line 19]\n  NULLIFY(&shadowPath,false); [line 19]\n " color=yellow style=filled]
 	
 
 	 1 -> 6 ;

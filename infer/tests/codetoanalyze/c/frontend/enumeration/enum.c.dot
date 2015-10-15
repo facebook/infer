@@ -26,7 +26,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  today:enum {  (sunday, 0)   (monday, 1)   (tuesday, 2)   (wednesday, 0)   (thursday, 3)   (friday, 4)   (saturday, 5)  } i:int  \n   DECLARE_LOCALS(&return,&today,&i); [line 12]\n  NULLIFY(&i,false); [line 12]\n  NULLIFY(&today,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  i:int  today:enum {  (sunday, 0)   (monday, 1)   (tuesday, 2)   (wednesday, 0)   (thursday, 3)   (friday, 4)   (saturday, 5)  } \n   DECLARE_LOCALS(&return,&i,&today); [line 12]\n  NULLIFY(&i,false); [line 12]\n  NULLIFY(&today,false); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 8 ;

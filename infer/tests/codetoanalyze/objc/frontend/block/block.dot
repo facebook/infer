@@ -52,7 +52,7 @@ digraph iCFG {
 12 [label="12: Exit __objc_anonymous_block_main1______2 \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start __objc_anonymous_block_main1______2\nFormals:  x:int  c:int  d:int \nLocals:  addblock2:_fn_ (*) add2:int  bla:int \nCaptured:  x:int  \n   DECLARE_LOCALS(&return,&addblock2,&add2,&bla); [line 19]\n  NULLIFY(&add2,false); [line 19]\n  NULLIFY(&addblock2,false); [line 19]\n  NULLIFY(&d,false); [line 19]\n " color=yellow style=filled]
+11 [label="11: Start __objc_anonymous_block_main1______2\nFormals:  x:int  c:int  d:int \nLocals:  bla:int  add2:int  addblock2:_fn_ (*)\nCaptured:  x:int  \n   DECLARE_LOCALS(&return,&bla,&add2,&addblock2); [line 19]\n  NULLIFY(&add2,false); [line 19]\n  NULLIFY(&addblock2,false); [line 19]\n  NULLIFY(&d,false); [line 19]\n " color=yellow style=filled]
 	
 
 	 11 -> 19 ;
@@ -90,7 +90,7 @@ digraph iCFG {
 2 [label="2: Exit main1 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main1\nFormals:  y:int \nLocals:  x:int  add1:int  add2:int  addblock:_fn_ (*) \n   DECLARE_LOCALS(&return,&x,&add1,&add2,&addblock); [line 10]\n  NULLIFY(&add1,false); [line 10]\n  NULLIFY(&add2,false); [line 10]\n  NULLIFY(&addblock,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start main1\nFormals:  y:int \nLocals:  addblock:_fn_ (*) add2:int  add1:int  x:int  \n   DECLARE_LOCALS(&return,&addblock,&add2,&add1,&x); [line 10]\n  NULLIFY(&add1,false); [line 10]\n  NULLIFY(&add2,false); [line 10]\n  NULLIFY(&addblock,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 22 ;

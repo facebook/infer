@@ -22,7 +22,7 @@ digraph iCFG {
 10 [label="10: Exit main \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start main\nFormals: \nLocals:  a1:class A * aa:class A * a2:class A * ab:class A * \n   DECLARE_LOCALS(&return,&a1,&aa,&a2,&ab); [line 35]\n  NULLIFY(&a1,false); [line 35]\n  NULLIFY(&a2,false); [line 35]\n  NULLIFY(&aa,false); [line 35]\n  NULLIFY(&ab,false); [line 35]\n " color=yellow style=filled]
+9 [label="9: Start main\nFormals: \nLocals:  ab:class A * a2:class A * aa:class A * a1:class A * \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 35]\n  NULLIFY(&a1,false); [line 35]\n  NULLIFY(&a2,false); [line 35]\n  NULLIFY(&aa,false); [line 35]\n  NULLIFY(&ab,false); [line 35]\n " color=yellow style=filled]
 	
 
 	 9 -> 15 ;

@@ -9,8 +9,6 @@
 
 (** Utility module for retrieving types *)
 
-val lookup_var_type : CContext.t -> Sil.pvar ->  Sil.typ
-
 val add_pointer_to_typ : Sil.typ -> Sil.typ
 
 val search_enum_type_by_name : Sil.tenv -> string -> Sil.const option

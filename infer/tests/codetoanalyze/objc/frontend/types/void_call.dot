@@ -43,7 +43,7 @@ digraph iCFG {
 14 [label="14: Exit main \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start main\nFormals: \nLocals:  x:int  o:class AClass * \n   DECLARE_LOCALS(&return,&x,&o); [line 41]\n  NULLIFY(&o,false); [line 41]\n  NULLIFY(&x,false); [line 41]\n " color=yellow style=filled]
+13 [label="13: Start main\nFormals: \nLocals:  o:class AClass * x:int  \n   DECLARE_LOCALS(&return,&o,&x); [line 41]\n  NULLIFY(&o,false); [line 41]\n  NULLIFY(&x,false); [line 41]\n " color=yellow style=filled]
 	
 
 	 13 -> 24 ;

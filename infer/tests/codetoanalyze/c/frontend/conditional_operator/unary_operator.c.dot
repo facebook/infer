@@ -76,7 +76,7 @@ digraph iCFG {
 2 [label="2: Exit dereference_ifthenelse \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start dereference_ifthenelse\nFormals:  p:int *\nLocals:  x:int  y:int  \n   DECLARE_LOCALS(&return,&x,&y); [line 10]\n  NULLIFY(&x,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start dereference_ifthenelse\nFormals:  p:int *\nLocals:  y:int  x:int  \n   DECLARE_LOCALS(&return,&y,&x); [line 10]\n  NULLIFY(&x,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 16 ;

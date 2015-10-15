@@ -10,9 +10,6 @@
 (** Contains current class and current method to be translated as well as local variables, *)
 (** and the cg, cfg, and tenv corresponding to the current file. *)
 
-type varMap
-type pointerVarMap
-
 type curr_class =
   | ContextCls of string * string option * string list
   (*class name and name of (optional) super class , and a list of protocols *)
@@ -30,24 +27,9 @@ type t =
     curr_class: curr_class;
     is_callee_expression : bool;
     namespace: string option; (* contains the name of the namespace if we are in the scope of one*)
-    mutable local_vars : (Mangled.t * Sil.typ * bool) list; (* (name, type, is_static flag) *)
-    mutable captured_vars : (Mangled.t * Sil.typ * bool) list; (* (name, type, is_static flag) *)
-    mutable local_vars_stack : varMap;
-    mutable local_vars_pointer : pointerVarMap;
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
-    mutable blocks : Procname.t list (* List of blocks defined in this method *)
+    mutable blocks: Procname.t list;  (* List of blocks defined in this method *)
   }
-
-module LocalVars :
-sig
-  val find_var_with_pointer : t -> string -> Sil.pvar
-  val lookup_var: t -> string -> string -> Clang_ast_t.decl_kind -> Sil.pvar option
-  val add_pointer_var : string -> Sil.pvar -> t -> unit
-  val enter_and_leave_scope : t -> (t -> 'a -> 'b) -> 'a -> unit
-  val add_local_var : t -> string -> Sil.typ -> string -> bool -> unit
-  val reset_block : unit -> unit
-  val add_pointer_var : string -> Sil.pvar -> t -> unit
-end
 
 val get_procdesc : t -> Cfg.Procdesc.t
 
@@ -72,10 +54,12 @@ val is_objc_method : t -> bool
 val get_tenv : t -> Sil.tenv
 
 val create_context : Sil.tenv -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
-  string option -> curr_class -> bool -> (Mangled.t * Sil.typ * bool) list  -> t option -> t
+  string option -> curr_class -> bool -> t option -> t
 
 val create_curr_class : Sil.tenv -> string -> curr_class
 
 val add_block : t -> Procname.t -> unit
 
 val is_objc_instance : t -> bool
+
+val get_outer_procname : t -> Procname.t

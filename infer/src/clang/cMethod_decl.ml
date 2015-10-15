@@ -49,19 +49,14 @@ struct
            if (Cfg.Procdesc.is_defined procdesc && not (model_exists procname)) then
              (let context =
                 CContext.create_context tenv cg cfg procdesc namespace class_decl_opt
-                  is_objc_method captured_vars outer_context_opt in
-              CVar_decl.get_fun_locals context instrs;
-              let local_vars = list_map (fun (n, t, _) -> n, t) context.CContext.local_vars in
+                  is_objc_method outer_context_opt in
               let start_node = Cfg.Procdesc.get_start_node procdesc in
               let exit_node = Cfg.Procdesc.get_exit_node procdesc in
-              Cfg.Procdesc.append_locals procdesc local_vars;
-              Cfg.Node.add_locals_ret_declaration start_node local_vars;
               Printing.log_out
                 "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
                 (Procname.to_string procname);
               let meth_body_nodes = T.instructions_trans context instrs extra_instrs exit_node in
-              let is_anonym_block = Option.is_some outer_context_opt in
-              if (not is_anonym_block) then CContext.LocalVars.reset_block ();
+              Cfg.Node.add_locals_ret_declaration start_node (Cfg.Procdesc.get_locals procdesc);
               Cfg.Node.set_succs_exn start_node meth_body_nodes [];
               Cg.add_node (CContext.get_cg context) (Cfg.Procdesc.get_proc_name procdesc))
        | None -> ())

@@ -97,7 +97,7 @@ val is_method_call : Clang_ast_t.stmt -> bool
 
 val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 
-val get_decl_ref_info : Clang_ast_t.stmt -> int -> string * int
+val get_decl_ref_info : Clang_ast_t.stmt -> int -> Clang_ast_t.decl_ref * int
 
 val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Sil.typ -> Procname.t option -> trans_result option
@@ -208,8 +208,6 @@ sig
 
   val is_var_self : Sil.pvar -> bool -> bool
 end
-
-val compute_autorelease_pool_vars : CContext.t -> Clang_ast_t.stmt list -> (Sil.exp * Sil.typ) list
 
 val is_logical_negation_of_int : Sil.tenv -> Clang_ast_t.expr_info -> Clang_ast_t.unary_operator_info -> bool
 
