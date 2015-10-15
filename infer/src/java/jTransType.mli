@@ -87,8 +87,8 @@ val cn_to_java_type : JBasics.class_name -> Procname.java_type
 (** [update_tenv program] update the type environment with all the types found in [program] *)
 val update_tenv : Sil.tenv -> JClasspath.program -> unit
 
-(** Update a type environment with the types found in the classpath *)
-val saturate_tenv_with_classpath : string -> Sil.tenv -> unit
+(** Add the types of the models to the type environment passed as parameter *)
+val add_models_types : Sil.tenv -> unit
 
 (** list of methods that are never returning null *)
 val never_returning_null : Procname.t list

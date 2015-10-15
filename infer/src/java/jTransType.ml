@@ -456,56 +456,28 @@ let update_tenv tenv program =
   JBasics.ClassMap.iter add (JClasspath.get_classmap program)
 
 
-(* Update a type environment with the types found in the classpath *)
-let saturate_tenv_with_classpath classpath tenv =
+let add_models_types tenv =
   let jar_tenv_filename =
     let root = Filename.concat Config.default_in_zip_results_dir Config.captured_dir_name in
     Filename.concat root Config.global_tenv_filename in
   let temp_tenv_filename =
     DB.filename_from_string (Filename.temp_file "tmp_" Config.global_tenv_filename) in
-  let typename_of_classname classname =
-    Sil.TN_csu (Sil.Class, classname) in
-  let rec is_useful_subtype jar_tenv = function
-    | Sil.TN_csu (Sil.Class, classname) when
-        Mangled.equal classname JConfig.java_lang_object_classname -> false
-    | typename when Sil.tenv_mem tenv typename -> true
-    | typename ->
-        begin
-          match Sil.tenv_lookup jar_tenv typename with
-          | None
-          | Some (Sil.Tstruct (_, _, _, _, [], _, _)) -> false
-          | Some (Sil.Tstruct (_, _, _, _, supers, _, _)) ->
-              list_exists
-                (is_useful_subtype jar_tenv)
-                (list_map (fun (_, c) -> typename_of_classname c) supers)
-          | _ -> assert false
-        end in
-  let transfer_type jar_tenv typename typ =
-    if not (Sil.tenv_mem tenv typename) then
-      if is_useful_subtype jar_tenv typename then
-        Sil.tenv_add tenv typename typ in
-  let extract_tenv zip_channel =
+  let add_type t typename typ =
+    if not (Sil.tenv_mem t typename) then
+      Sil.tenv_add tenv typename typ in
+  let models_tenv =
     try
+      let zip_channel = Zip.open_in !JClasspath.models_jar in
       let entry = Zip.find_entry zip_channel jar_tenv_filename in
       let temp_tenv_file = DB.filename_to_string temp_tenv_filename in
       let () = Zip.copy_entry_to_file zip_channel entry temp_tenv_file in
       match Sil.load_tenv_from_file temp_tenv_filename with
-      | None -> None
-      | Some jar_tenv -> Some jar_tenv
-    with Not_found -> None in
-  let update path =
-    if not (Filename.check_suffix path ".jar") then ()
-    else
-      let zip_channel = Zip.open_in path in
-      match extract_tenv zip_channel with
-      | None -> ()
-      | Some jar_tenv -> Sil.tenv_iter (transfer_type jar_tenv) jar_tenv;
-          Zip.close_in zip_channel in
-  let paths =
-    let l = JClasspath.split_classpath classpath in
-    if !JClasspath.models_jar = "" then l
-    else !JClasspath.models_jar :: l in
-  list_iter update paths;
+      | None -> failwith "Models tenv file could not be loaded"
+      | Some tenv -> tenv
+    with
+    | Not_found -> failwith "Models tenv not found in jar file"
+    | Sys_error msg -> failwith ("Models jar could not be opened "^msg) in
+  Sil.tenv_iter (add_type tenv) models_tenv;
   DB.file_remove temp_tenv_filename
 
 

@@ -130,7 +130,7 @@ let load_tenv program =
 
 (* Store to a file the type environment containing all the types required to perform the analysis *)
 let save_tenv classpath tenv =
-  JTransType.saturate_tenv_with_classpath classpath tenv;
+  if not Config.analyze_models then JTransType.add_models_types tenv;
   let tenv_filename = DB.global_tenv_fname () in
   (* TODO: this prevents per compilation step incremental analysis at this stage *)
   if DB.file_exists tenv_filename then DB.file_remove tenv_filename;
