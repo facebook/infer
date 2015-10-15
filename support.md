@@ -35,6 +35,12 @@ Freenode.net.
 
 ## Troubleshooting
 
+### I downloaded the release but I get "Failed to run InferAnalyze binary, exiting" when running `infer`
+
+You need to compile Infer. Follow the instructions [here](http://fbinfer.com/docs/getting-started.html).
+
+The release only contains a pre-compiled clang and clang plugin, not a pre-compiled Infer.
+
 ### Infer cannot analyze my CocoaPods project
 
 In the presence of CocoaPods, you should use xcworkspace and not
