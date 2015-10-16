@@ -17,8 +17,6 @@ let array_with_objects_count_m = "arrayWithObjects:count:"
 
 let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"
 
-let dict_with_objects_and_keys_m = "dictionaryWithObjectsAndKeys:"
-
 let string_with_utf8_m = "stringWithUTF8String:"
 
 let nsstring_cl = "NSString"

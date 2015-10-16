@@ -2380,5 +2380,24 @@ module ModelBuiltins = struct
     Builtin.register_procname
       (Procname.mangled_c_method "NSArray" "arrayWithObjects:" method_kind)
       execute_NSArray_arrayWithObjects
+
+  let execute_objc_NSDictionary_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
+    let nsdictionary_typ = Sil.Tvar (Sil.TN_csu (Sil.Class, Mangled.from_string "NSDictionary")) in
+    let nsdictionary_typ = Sil.expand_type tenv nsdictionary_typ in
+    execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsdictionary_typ loc
+
+  let execute___objc_dictionary_literal cfg pdesc instr tenv prop path ret_ids args callee_pname loc =
+    let n_formals = 1 in
+    let res' =
+      sym_exe_check_variadic_sentinel ~fails_on_nil: true cfg pdesc tenv prop path
+        n_formals args (0,1) callee_pname loc in
+    execute_objc_NSDictionary_alloc_no_fail cfg pdesc tenv res' ret_ids loc
+
+  let __objc_dictionary_literal =
+    let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
+    let pname = Procname.mangled_c_method "NSDictionary" "__objc_dictionary_literal:" method_kind in
+    Builtin.register_procname pname execute___objc_dictionary_literal;
+    pname
+
 end
 (* ============== END of ModelBuiltins ============== *)

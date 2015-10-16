@@ -1697,8 +1697,10 @@ struct
 
   and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
+    let dictionary_literal_pname = SymExec.ModelBuiltins.__objc_dictionary_literal in
+    let dictionary_literal_s = Procname.c_get_method dictionary_literal_pname in
     let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.dict_with_objects_and_keys_m typ in
+      Ast_expressions.make_obj_c_message_expr_info_class dictionary_literal_s typ in
     let stmts = General_utils.swap_elements_list stmts in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
     let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in

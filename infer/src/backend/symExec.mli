@@ -55,5 +55,6 @@ module ModelBuiltins : sig
   val __set_autorelease_attribute : Procname.t
   val __objc_release_autorelease_pool : Procname.t
   val __objc_cast : Procname.t
+  val __objc_dictionary_literal : Procname.t
   val malloc_no_fail : Procname.t
 end

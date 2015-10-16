@@ -75,8 +75,6 @@ val array_with_objects_count_m : string
 
 val object_at_indexed_subscript_m : string
 
-val dict_with_objects_and_keys_m : string
-
 val emtpy_name_category : string
 
 val objc_class : string
