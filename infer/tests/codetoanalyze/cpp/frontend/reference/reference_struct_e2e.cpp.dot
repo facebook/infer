@@ -1,0 +1,447 @@
+digraph iCFG {
+117 [label="117:  Call _fun_X_zero \n   n$3=_fun_get_global_ref() [line 136]\n  _fun_X_zero(n$3:class X ) [line 136]\n  REMOVE_TEMPS(n$3); [line 136]\n " shape="box"]
+	
+
+	 117 -> 116 ;
+116 [label="116:  BinaryOperatorStmt: Assign \n   n$2=_fun_get_global_ref() [line 137]\n  *n$2.f:int =1 [line 137]\n  REMOVE_TEMPS(n$2); [line 137]\n " shape="box"]
+	
+
+	 116 -> 115 ;
+115 [label="115:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 138]\n  n$1=_fun_X_div(n$0:class X ) [line 138]\n  REMOVE_TEMPS(n$0,n$1); [line 138]\n  APPLY_ABSTRACTION; [line 138]\n " shape="box"]
+	
+
+	 115 -> 114 ;
+114 [label="114: Exit get_global_ref_div1_field \n  " color=yellow style=filled]
+	
+
+113 [label="113: Start get_global_ref_div1_field\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 135]\n " color=yellow style=filled]
+	
+
+	 113 -> 117 ;
+112 [label="112:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ref() [line 130]\n  _fun_X_nonzero(n$3:class X ) [line 130]\n  REMOVE_TEMPS(n$3); [line 130]\n " shape="box"]
+	
+
+	 112 -> 111 ;
+111 [label="111:  BinaryOperatorStmt: Assign \n   n$2=_fun_get_global_ref() [line 131]\n  *n$2.f:int =0 [line 131]\n  REMOVE_TEMPS(n$2); [line 131]\n " shape="box"]
+	
+
+	 111 -> 110 ;
+110 [label="110:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 132]\n  n$1=_fun_X_div(n$0:class X ) [line 132]\n  REMOVE_TEMPS(n$0,n$1); [line 132]\n  APPLY_ABSTRACTION; [line 132]\n " shape="box"]
+	
+
+	 110 -> 109 ;
+109 [label="109: Exit get_global_ref_div0_field \n  " color=yellow style=filled]
+	
+
+108 [label="108: Start get_global_ref_div0_field\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 129]\n " color=yellow style=filled]
+	
+
+	 108 -> 112 ;
+107 [label="107:  BinaryOperatorStmt: Assign \n   n$3=_fun_get_global_ref() [line 124]\n  *n$3.f:int =0 [line 124]\n  REMOVE_TEMPS(n$3); [line 124]\n " shape="box"]
+	
+
+	 107 -> 106 ;
+106 [label="106:  Call _fun_X_nonzero \n   n$2=_fun_get_global_ref() [line 125]\n  _fun_X_nonzero(n$2:class X ) [line 125]\n  REMOVE_TEMPS(n$2); [line 125]\n " shape="box"]
+	
+
+	 106 -> 105 ;
+105 [label="105:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 126]\n  n$1=_fun_X_div(n$0:class X ) [line 126]\n  REMOVE_TEMPS(n$0,n$1); [line 126]\n  APPLY_ABSTRACTION; [line 126]\n " shape="box"]
+	
+
+	 105 -> 104 ;
+104 [label="104: Exit get_global_ref_div1_method \n  " color=yellow style=filled]
+	
+
+103 [label="103: Start get_global_ref_div1_method\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 123]\n " color=yellow style=filled]
+	
+
+	 103 -> 107 ;
+102 [label="102:  BinaryOperatorStmt: Assign \n   n$3=_fun_get_global_ref() [line 118]\n  *n$3.f:int =1 [line 118]\n  REMOVE_TEMPS(n$3); [line 118]\n " shape="box"]
+	
+
+	 102 -> 101 ;
+101 [label="101:  Call _fun_X_zero \n   n$2=_fun_get_global_ref() [line 119]\n  _fun_X_zero(n$2:class X ) [line 119]\n  REMOVE_TEMPS(n$2); [line 119]\n " shape="box"]
+	
+
+	 101 -> 100 ;
+100 [label="100:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 120]\n  n$1=_fun_X_div(n$0:class X ) [line 120]\n  REMOVE_TEMPS(n$0,n$1); [line 120]\n  APPLY_ABSTRACTION; [line 120]\n " shape="box"]
+	
+
+	 100 -> 99 ;
+99 [label="99: Exit get_global_ref_div0_method \n  " color=yellow style=filled]
+	
+
+98 [label="98: Start get_global_ref_div0_method\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 117]\n " color=yellow style=filled]
+	
+
+	 98 -> 102 ;
+97 [label="97:  Call _fun_set_field_ref \n   n$2=*&x:class X & [line 113]\n  _fun_set_field_ref(n$2:class X ,1:int ) [line 113]\n  REMOVE_TEMPS(n$2); [line 113]\n " shape="box"]
+	
+
+	 97 -> 96 ;
+96 [label="96:  Return Stmt \n   n$0=*&x:class X & [line 114]\n  n$1=_fun_X_div(n$0:class X ) [line 114]\n  *&return:int =n$1 [line 114]\n  REMOVE_TEMPS(n$0,n$1); [line 114]\n  NULLIFY(&x,false); [line 114]\n  APPLY_ABSTRACTION; [line 114]\n " shape="box"]
+	
+
+	 96 -> 95 ;
+95 [label="95: Exit field_div1_ref \n  " color=yellow style=filled]
+	
+
+94 [label="94: Start field_div1_ref\nFormals:  x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 112]\n " color=yellow style=filled]
+	
+
+	 94 -> 97 ;
+93 [label="93:  Call _fun_set_field_ref \n   n$2=*&x:class X & [line 108]\n  _fun_set_field_ref(n$2:class X ,0:int ) [line 108]\n  REMOVE_TEMPS(n$2); [line 108]\n " shape="box"]
+	
+
+	 93 -> 92 ;
+92 [label="92:  Return Stmt \n   n$0=*&x:class X & [line 109]\n  n$1=_fun_X_div(n$0:class X ) [line 109]\n  *&return:int =n$1 [line 109]\n  REMOVE_TEMPS(n$0,n$1); [line 109]\n  NULLIFY(&x,false); [line 109]\n  APPLY_ABSTRACTION; [line 109]\n " shape="box"]
+	
+
+	 92 -> 91 ;
+91 [label="91: Exit field_div0_ref \n  " color=yellow style=filled]
+	
+
+90 [label="90: Start field_div0_ref\nFormals:  x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 107]\n " color=yellow style=filled]
+	
+
+	 90 -> 93 ;
+89 [label="89:  Call _fun_nonzero_ref \n   n$2=*&x:class X & [line 103]\n  _fun_nonzero_ref(n$2:class X ) [line 103]\n  REMOVE_TEMPS(n$2); [line 103]\n " shape="box"]
+	
+
+	 89 -> 88 ;
+88 [label="88:  Return Stmt \n   n$0=*&x:class X & [line 104]\n  n$1=_fun_X_div(n$0:class X ) [line 104]\n  *&return:int =n$1 [line 104]\n  REMOVE_TEMPS(n$0,n$1); [line 104]\n  NULLIFY(&x,false); [line 104]\n  APPLY_ABSTRACTION; [line 104]\n " shape="box"]
+	
+
+	 88 -> 87 ;
+87 [label="87: Exit method_div1_ref \n  " color=yellow style=filled]
+	
+
+86 [label="86: Start method_div1_ref\nFormals:  x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 102]\n " color=yellow style=filled]
+	
+
+	 86 -> 89 ;
+85 [label="85:  Call _fun_zero_ref \n   n$2=*&x:class X & [line 98]\n  _fun_zero_ref(n$2:class X ) [line 98]\n  REMOVE_TEMPS(n$2); [line 98]\n " shape="box"]
+	
+
+	 85 -> 84 ;
+84 [label="84:  Return Stmt \n   n$0=*&x:class X & [line 99]\n  n$1=_fun_X_div(n$0:class X ) [line 99]\n  *&return:int =n$1 [line 99]\n  REMOVE_TEMPS(n$0,n$1); [line 99]\n  NULLIFY(&x,false); [line 99]\n  APPLY_ABSTRACTION; [line 99]\n " shape="box"]
+	
+
+	 84 -> 83 ;
+83 [label="83: Exit method_div0_ref \n  " color=yellow style=filled]
+	
+
+82 [label="82: Start method_div0_ref\nFormals:  x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 97]\n " color=yellow style=filled]
+	
+
+	 82 -> 85 ;
+81 [label="81:  Call _fun_X_zero \n   n$3=_fun_get_global_ptr() [line 92]\n  _fun_X_zero(n$3:class X ) [line 92]\n  REMOVE_TEMPS(n$3); [line 92]\n " shape="box"]
+	
+
+	 81 -> 80 ;
+80 [label="80:  BinaryOperatorStmt: Assign \n   n$2=_fun_get_global_ptr() [line 93]\n  *n$2.f:int =1 [line 93]\n  REMOVE_TEMPS(n$2); [line 93]\n " shape="box"]
+	
+
+	 80 -> 79 ;
+79 [label="79:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 94]\n  n$1=_fun_X_div(n$0:class X ) [line 94]\n  REMOVE_TEMPS(n$0,n$1); [line 94]\n  APPLY_ABSTRACTION; [line 94]\n " shape="box"]
+	
+
+	 79 -> 78 ;
+78 [label="78: Exit get_global_ptr_div1_field \n  " color=yellow style=filled]
+	
+
+77 [label="77: Start get_global_ptr_div1_field\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 91]\n " color=yellow style=filled]
+	
+
+	 77 -> 81 ;
+76 [label="76:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ptr() [line 86]\n  _fun_X_nonzero(n$3:class X ) [line 86]\n  REMOVE_TEMPS(n$3); [line 86]\n " shape="box"]
+	
+
+	 76 -> 75 ;
+75 [label="75:  BinaryOperatorStmt: Assign \n   n$2=_fun_get_global_ptr() [line 87]\n  *n$2.f:int =0 [line 87]\n  REMOVE_TEMPS(n$2); [line 87]\n " shape="box"]
+	
+
+	 75 -> 74 ;
+74 [label="74:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 88]\n  n$1=_fun_X_div(n$0:class X ) [line 88]\n  REMOVE_TEMPS(n$0,n$1); [line 88]\n  APPLY_ABSTRACTION; [line 88]\n " shape="box"]
+	
+
+	 74 -> 73 ;
+73 [label="73: Exit get_global_ptr_div0_field \n  " color=yellow style=filled]
+	
+
+72 [label="72: Start get_global_ptr_div0_field\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 85]\n " color=yellow style=filled]
+	
+
+	 72 -> 76 ;
+71 [label="71:  BinaryOperatorStmt: Assign \n   n$3=_fun_get_global_ptr() [line 80]\n  *n$3.f:int =0 [line 80]\n  REMOVE_TEMPS(n$3); [line 80]\n " shape="box"]
+	
+
+	 71 -> 70 ;
+70 [label="70:  Call _fun_X_nonzero \n   n$2=_fun_get_global_ptr() [line 81]\n  _fun_X_nonzero(n$2:class X ) [line 81]\n  REMOVE_TEMPS(n$2); [line 81]\n " shape="box"]
+	
+
+	 70 -> 69 ;
+69 [label="69:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 82]\n  n$1=_fun_X_div(n$0:class X ) [line 82]\n  REMOVE_TEMPS(n$0,n$1); [line 82]\n  APPLY_ABSTRACTION; [line 82]\n " shape="box"]
+	
+
+	 69 -> 68 ;
+68 [label="68: Exit get_global_ptr_div1_method \n  " color=yellow style=filled]
+	
+
+67 [label="67: Start get_global_ptr_div1_method\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 79]\n " color=yellow style=filled]
+	
+
+	 67 -> 71 ;
+66 [label="66:  BinaryOperatorStmt: Assign \n   n$3=_fun_get_global_ptr() [line 74]\n  *n$3.f:int =1 [line 74]\n  REMOVE_TEMPS(n$3); [line 74]\n " shape="box"]
+	
+
+	 66 -> 65 ;
+65 [label="65:  Call _fun_X_zero \n   n$2=_fun_get_global_ptr() [line 75]\n  _fun_X_zero(n$2:class X ) [line 75]\n  REMOVE_TEMPS(n$2); [line 75]\n " shape="box"]
+	
+
+	 65 -> 64 ;
+64 [label="64:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 76]\n  n$1=_fun_X_div(n$0:class X ) [line 76]\n  REMOVE_TEMPS(n$0,n$1); [line 76]\n  APPLY_ABSTRACTION; [line 76]\n " shape="box"]
+	
+
+	 64 -> 63 ;
+63 [label="63: Exit get_global_ptr_div0_method \n  " color=yellow style=filled]
+	
+
+62 [label="62: Start get_global_ptr_div0_method\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 73]\n " color=yellow style=filled]
+	
+
+	 62 -> 66 ;
+61 [label="61:  Call _fun_set_field_ptr \n   n$3=*&x:class X * [line 68]\n  _fun_set_field_ptr(n$3:class X *,1:int ) [line 68]\n  REMOVE_TEMPS(n$3); [line 68]\n " shape="box"]
+	
+
+	 61 -> 60 ;
+60 [label="60:  Return Stmt \n   n$1=*&x:class X * [line 69]\n  n$2=_fun_X_div(n$1:class X ) [line 69]\n  *&return:int =n$2 [line 69]\n  REMOVE_TEMPS(n$1,n$2); [line 69]\n  NULLIFY(&x,false); [line 69]\n  APPLY_ABSTRACTION; [line 69]\n " shape="box"]
+	
+
+	 60 -> 56 ;
+59 [label="59: Prune (false branch) \n   n$0=*&x:class X * [line 67]\n  PRUNE((n$0 == 0), false); [line 67]\n  REMOVE_TEMPS(n$0); [line 67]\n " shape="invhouse"]
+	
+
+	 59 -> 57 ;
+58 [label="58: Prune (true branch) \n   n$0=*&x:class X * [line 67]\n  PRUNE((n$0 != 0), true); [line 67]\n  REMOVE_TEMPS(n$0); [line 67]\n " shape="invhouse"]
+	
+
+	 58 -> 61 ;
+57 [label="57: + \n   NULLIFY(&x,false); [line 67]\n " ]
+	
+
+	 57 -> 56 ;
+56 [label="56: Exit field_div1_ptr \n  " color=yellow style=filled]
+	
+
+55 [label="55: Start field_div1_ptr\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 66]\n " color=yellow style=filled]
+	
+
+	 55 -> 58 ;
+	 55 -> 59 ;
+54 [label="54:  Call _fun_set_field_ptr \n   n$3=*&x:class X * [line 61]\n  _fun_set_field_ptr(n$3:class X *,0:int ) [line 61]\n  REMOVE_TEMPS(n$3); [line 61]\n " shape="box"]
+	
+
+	 54 -> 53 ;
+53 [label="53:  Return Stmt \n   n$1=*&x:class X * [line 62]\n  n$2=_fun_X_div(n$1:class X ) [line 62]\n  *&return:int =n$2 [line 62]\n  REMOVE_TEMPS(n$1,n$2); [line 62]\n  NULLIFY(&x,false); [line 62]\n  APPLY_ABSTRACTION; [line 62]\n " shape="box"]
+	
+
+	 53 -> 49 ;
+52 [label="52: Prune (false branch) \n   n$0=*&x:class X * [line 60]\n  PRUNE((n$0 == 0), false); [line 60]\n  REMOVE_TEMPS(n$0); [line 60]\n " shape="invhouse"]
+	
+
+	 52 -> 50 ;
+51 [label="51: Prune (true branch) \n   n$0=*&x:class X * [line 60]\n  PRUNE((n$0 != 0), true); [line 60]\n  REMOVE_TEMPS(n$0); [line 60]\n " shape="invhouse"]
+	
+
+	 51 -> 54 ;
+50 [label="50: + \n   NULLIFY(&x,false); [line 60]\n " ]
+	
+
+	 50 -> 49 ;
+49 [label="49: Exit field_div0_ptr \n  " color=yellow style=filled]
+	
+
+48 [label="48: Start field_div0_ptr\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 59]\n " color=yellow style=filled]
+	
+
+	 48 -> 51 ;
+	 48 -> 52 ;
+47 [label="47:  Call _fun_nonzero_ptr \n   n$3=*&x:class X * [line 54]\n  _fun_nonzero_ptr(n$3:class X *) [line 54]\n  REMOVE_TEMPS(n$3); [line 54]\n " shape="box"]
+	
+
+	 47 -> 46 ;
+46 [label="46:  Return Stmt \n   n$1=*&x:class X * [line 55]\n  n$2=_fun_X_div(n$1:class X ) [line 55]\n  *&return:int =n$2 [line 55]\n  REMOVE_TEMPS(n$1,n$2); [line 55]\n  NULLIFY(&x,false); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
+	
+
+	 46 -> 42 ;
+45 [label="45: Prune (false branch) \n   n$0=*&x:class X * [line 53]\n  PRUNE((n$0 == 0), false); [line 53]\n  REMOVE_TEMPS(n$0); [line 53]\n " shape="invhouse"]
+	
+
+	 45 -> 43 ;
+44 [label="44: Prune (true branch) \n   n$0=*&x:class X * [line 53]\n  PRUNE((n$0 != 0), true); [line 53]\n  REMOVE_TEMPS(n$0); [line 53]\n " shape="invhouse"]
+	
+
+	 44 -> 47 ;
+43 [label="43: + \n   NULLIFY(&x,false); [line 53]\n " ]
+	
+
+	 43 -> 42 ;
+42 [label="42: Exit method_div1_ptr \n  " color=yellow style=filled]
+	
+
+41 [label="41: Start method_div1_ptr\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 52]\n " color=yellow style=filled]
+	
+
+	 41 -> 44 ;
+	 41 -> 45 ;
+40 [label="40:  Call _fun_zero_ptr \n   n$3=*&x:class X * [line 47]\n  _fun_zero_ptr(n$3:class X *) [line 47]\n  REMOVE_TEMPS(n$3); [line 47]\n " shape="box"]
+	
+
+	 40 -> 39 ;
+39 [label="39:  Return Stmt \n   n$1=*&x:class X * [line 48]\n  n$2=_fun_X_div(n$1:class X ) [line 48]\n  *&return:int =n$2 [line 48]\n  REMOVE_TEMPS(n$1,n$2); [line 48]\n  NULLIFY(&x,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+	
+
+	 39 -> 35 ;
+38 [label="38: Prune (false branch) \n   n$0=*&x:class X * [line 46]\n  PRUNE((n$0 == 0), false); [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n " shape="invhouse"]
+	
+
+	 38 -> 36 ;
+37 [label="37: Prune (true branch) \n   n$0=*&x:class X * [line 46]\n  PRUNE((n$0 != 0), true); [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n " shape="invhouse"]
+	
+
+	 37 -> 40 ;
+36 [label="36: + \n   NULLIFY(&x,false); [line 46]\n " ]
+	
+
+	 36 -> 35 ;
+35 [label="35: Exit method_div0_ptr \n  " color=yellow style=filled]
+	
+
+34 [label="34: Start method_div0_ptr\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
+	
+
+	 34 -> 37 ;
+	 34 -> 38 ;
+33 [label="33:  Return Stmt \n   *&return:class X &=&#GB$global [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+	
+
+	 33 -> 32 ;
+32 [label="32: Exit get_global_ref \n  " color=yellow style=filled]
+	
+
+31 [label="31: Start get_global_ref\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
+	
+
+	 31 -> 33 ;
+30 [label="30:  Return Stmt \n   *&return:class X *=&#GB$global [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29: Exit get_global_ptr \n  " color=yellow style=filled]
+	
+
+28 [label="28: Start get_global_ptr\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
+	
+
+	 28 -> 30 ;
+27 [label="27:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X & [line 38]\n  n$1=*&val:int  [line 38]\n  *n$0.f:int =n$1 [line 38]\n  REMOVE_TEMPS(n$0,n$1); [line 38]\n  NULLIFY(&val,false); [line 38]\n  NULLIFY(&x,false); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+	
+
+	 27 -> 26 ;
+26 [label="26: Exit set_field_ref \n  " color=yellow style=filled]
+	
+
+25 [label="25: Start set_field_ref\nFormals:  x:class X & val:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 37]\n " color=yellow style=filled]
+	
+
+	 25 -> 27 ;
+24 [label="24:  Call _fun_X_nonzero \n   n$0=*&x:class X & [line 34]\n  _fun_X_nonzero(n$0:class X ) [line 34]\n  REMOVE_TEMPS(n$0); [line 34]\n  NULLIFY(&x,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+	
+
+	 24 -> 23 ;
+23 [label="23: Exit nonzero_ref \n  " color=yellow style=filled]
+	
+
+22 [label="22: Start nonzero_ref\nFormals:  x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
+	
+
+	 22 -> 24 ;
+21 [label="21:  Call _fun_X_zero \n   n$0=*&x:class X & [line 30]\n  _fun_X_zero(n$0:class X ) [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  NULLIFY(&x,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20: Exit zero_ref \n  " color=yellow style=filled]
+	
+
+19 [label="19: Start zero_ref\nFormals:  x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
+	
+
+	 19 -> 21 ;
+18 [label="18:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X * [line 26]\n  n$1=*&val:int  [line 26]\n  *n$0.f:int =n$1 [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n  NULLIFY(&val,false); [line 26]\n  NULLIFY(&x,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+	
+
+	 18 -> 17 ;
+17 [label="17: Exit set_field_ptr \n  " color=yellow style=filled]
+	
+
+16 [label="16: Start set_field_ptr\nFormals:  x:class X * val:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+	
+
+	 16 -> 18 ;
+15 [label="15:  Call _fun_X_nonzero \n   n$0=*&x:class X * [line 22]\n  _fun_X_nonzero(n$0:class X ) [line 22]\n  REMOVE_TEMPS(n$0); [line 22]\n  NULLIFY(&x,false); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14: Exit nonzero_ptr \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start nonzero_ptr\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+	
+
+	 13 -> 15 ;
+12 [label="12:  Call _fun_X_zero \n   n$0=*&x:class X * [line 18]\n  _fun_X_zero(n$0:class X ) [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&x,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11: Exit zero_ptr \n  " color=yellow style=filled]
+	
+
+10 [label="10: Start zero_ptr\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+	
+
+	 10 -> 12 ;
+9 [label="9:  Return Stmt \n   n$0=*&this:class X * [line 14]\n  n$1=*n$0.f:int  [line 14]\n  *&return:int =(1 / n$1) [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&this,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8: Exit X_div \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start X_div\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 7 -> 9 ;
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 13]\n  *n$0.f:int =0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&this,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit X_zero \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start X_zero\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+	
+
+	 4 -> 6 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 12]\n  *n$0.f:int =1 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit X_nonzero \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X_nonzero\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

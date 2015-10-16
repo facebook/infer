@@ -358,6 +358,24 @@ let builtin_trans trans_state loc stmt_info function_type callee_pname_opt =
     Some (alloc_trans trans_state loc stmt_info function_type false)
   else None
 
+let dereference_var_sil (exp, typ) sil_loc =
+  let id = Ident.create_fresh Ident.knormal in
+  let sil_instr = Sil.Letderef (id, exp, typ, sil_loc) in
+  ([id], [sil_instr], Sil.Var id)
+
+(** Given trans_result with ONE expression, create temporary variable with *)
+(** value of an expression assigned to it *)
+let dereference_value_from_result sil_loc trans_result =
+  let (obj_sil, class_typ) = extract_exp_from_list trans_result.exps "" in
+  let cast_ids, cast_inst, cast_exp = dereference_var_sil (obj_sil, class_typ) sil_loc in
+  let typ_no_ptr = match class_typ with | Sil.Tptr (typ, _) -> typ | _ -> assert false in
+  { trans_result with
+    ids = trans_result.ids @ cast_ids;
+    instrs = trans_result.instrs @ cast_inst;
+    exps = [(cast_exp, typ_no_ptr)]
+  }
+
+
 let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
   let (exp, typ) = extract_exp_from_list exps "" in
   if is_objc_bridged then
@@ -373,9 +391,7 @@ let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
     | `LValueToRValue ->
         (* Takes an LValue and allow it to use it as RValue. *)
         (* So we assign the LValue to a temp and we pass it to the parent.*)
-        let id = Ident.create_fresh Ident.knormal in
-        let sil_instr = [Sil.Letderef (id, exp, typ, sil_loc)] in
-        ([id], sil_instr, Sil.Var id)
+        dereference_var_sil (exp, typ) sil_loc
     | `CPointerToObjCPointerCast ->
         ([], [], Sil.Cast(typ, exp))
     | _ ->
@@ -450,6 +466,13 @@ let get_name_decl_ref_exp_info decl_ref_expr_info si =
   | _ -> L.err "FAILING WITH %s pointer=%s@.@."
            (Clang_ast_j.string_of_decl_ref_expr_info decl_ref_expr_info )
            (Clang_ast_j.string_of_stmt_info si); assert false
+
+let get_type_decl_ref_exp_info decl_ref_expr_info =
+  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+  | Some d -> (match d.Clang_ast_t.dr_type_ptr with
+      | Some ptr -> ptr
+      | _ -> assert false)
+  | _ -> assert false
 
 let is_superinstance mei =
   match mei.Clang_ast_t.omei_receiver_kind with

@@ -296,7 +296,9 @@ struct
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
-    let tp = expr_info.Clang_ast_t.ei_type_ptr in
+    let pln = trans_state.parent_line_number in
+    let sil_loc = CLocation.get_sil_location stmt_info pln context in
+    let tp = get_type_decl_ref_exp_info decl_ref_expr_info in
     let typ = CTypes_decl.type_ptr_to_sil_type context.tenv tp in
     let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
@@ -355,7 +357,11 @@ struct
               [(e, typ)]
           else [(e, typ)] in
         Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
-        { empty_res_trans with exps = exps }
+        let res_trans = { empty_res_trans with exps = exps } in
+        if CTypes.is_reference_type tp then
+        (* dereference pvar due to the behavior of reference types in clang's AST *)
+          dereference_value_from_result sil_loc res_trans
+        else res_trans
     | _ ->
         let print_error decl_kind =
           Printing.log_stats
@@ -365,7 +371,6 @@ struct
         match decl_kind with
         | `CXXMethod -> print_error decl_kind; assert false
         | _ -> print_error decl_kind; assert false
-
 
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let context = trans_state.context in
@@ -379,10 +384,7 @@ struct
     let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv tp in
     let exps =  [(exp, typ)] in
     (* there is no cast operation in AST, but backend needs it *)
-    let cast_kind = `LValueToRValue in
-    let cast_ids, cast_inst, cast_exp = cast_operation context cast_kind exps
-      (* unused *) typ sil_loc (* is_objc_bridged *) false in
-    { empty_res_trans with ids = cast_ids; instrs = cast_inst; exps = [(cast_exp, typ)] }
+    dereference_value_from_result sil_loc { empty_res_trans with exps = exps }
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     (* go ahead with the translation *)

@@ -71,6 +71,8 @@ val compute_instr_ids_exp_to_parent :
 
 val get_name_decl_ref_exp_info : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.stmt_info -> string
 
+val get_type_decl_ref_exp_info : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.type_ptr
+
 val get_decl_kind : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.decl_kind
 
 val get_decl_pointer : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.pointer
@@ -80,6 +82,10 @@ val is_enumeration_constant : Clang_ast_t.stmt -> bool
 val is_member_exp : Clang_ast_t.stmt -> bool
 
 val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
+
+(** Given trans_result with ONE expression, create temporary variable with *)
+(** dereferenced value of an expression assigned to it *)
+val dereference_value_from_result : Location.t -> trans_result -> trans_result
 
 val cast_operation :
   CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->

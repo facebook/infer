@@ -31,6 +31,8 @@ val return_type_of_function_type : Clang_ast_t.type_ptr -> Clang_ast_t.type_ptr
 
 val is_block_type : Clang_ast_t.type_ptr -> bool
 
+val is_reference_type : Clang_ast_t.type_ptr -> bool
+
 val expand_structured_type : Sil.tenv -> Sil.typ -> Sil.typ
 
 val get_name_from_type_pointer : string -> string * string
