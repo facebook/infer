@@ -614,7 +614,9 @@ let report_activity_leaks pname sigma tenv =
       (fun (activity_exp, typ) ->
          if Sil.ExpSet.mem activity_exp reachable_exps then
            let err_desc = Errdesc.explain_activity_leak pname typ fld_name in
-           raise (Exceptions.Activity_leak (err_desc, try assert false with Assert_failure x -> x)))
+           let exn = Exceptions.Activity_leak
+               (err_desc, try assert false with Assert_failure x -> x) in
+           Reporting.log_error pname exn)
       activity_exps in
   (* get the set of pointed-to expressions of type T <: Activity *)
   let activity_exps =
