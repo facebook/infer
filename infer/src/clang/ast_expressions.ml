@@ -389,7 +389,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
                              di_source_range = stmt_info.si_source_range } in
       let stmt_info = { stmt_info with si_pointer = Ast_utils.get_fresh_pointer(); } in
       let var_decl_info = { empty_var_decl_info with vdi_init_expr = Some block_def} in
-      let block_var_decl = VarDecl(decl_info, block_name_info, ei.ei_type_ptr, var_decl_info) in
+      let block_var_decl = VarDecl(decl_info, block_name_info, tp, var_decl_info) in
       let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
 
       let expr_info_call = make_general_expr_info create_void_star_type `XValue `Ordinary in
@@ -515,7 +515,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let type_opt = Some create_BOOL_type in
         let parameter = Clang_ast_t.UnaryExprOrTypeTraitExpr
             ((fresh_stmt_info stmt_info), [],
-             make_expr_info create_unsigned_long_type,
+             make_general_expr_info create_unsigned_long_type `RValue `Ordinary,
              { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_type_ptr = type_opt}) in
         let pointer = di.Clang_ast_t.di_pointer in
         let stmt_info = fresh_stmt_info stmt_info in
@@ -576,7 +576,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     let open Clang_ast_t in
     match pobj with
     | ParmVarDecl(di_obj, name_obj, tp_obj, _) ->
-        let poe_ei = make_general_expr_info tp_obj `LValue `Ordinary in
+        let poe_ei = make_general_expr_info tp_obj `RValue `Ordinary in
         let ei_array = get_ei_from_cast decl_ref_expr_array in
         let ove_array = build_OpaqueValueExpr (fresh_stmt_info stmt_info) decl_ref_expr_array ei_array in
         let ei_idx = get_ei_from_cast decl_ref_expr_idx in
@@ -697,7 +697,8 @@ let create_assume_not_null_call decl_info var_name var_type =
   let cast_info_call = { Clang_ast_t.cei_cast_kind = `LValueToRValue; cei_base_path = [] } in
   let decl_ref_exp_cast = Clang_ast_t.ImplicitCastExpr (stmt_info, [var_decl_ref], expr_info, cast_info_call) in
   let null_expr = create_integer_literal stmt_info "0" in
-  let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info (make_lvalue_obc_prop_expr_info var_type) boi in
+  let bin_op_expr_info = make_general_expr_info create_BOOL_type `RValue `Ordinary in
+  let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info bin_op_expr_info boi in
   let parameters = [bin_op] in
   let procname = Procname.to_string SymExec.ModelBuiltins.__infer_assume in
   let qual_procname = Ast_utils.make_name_decl procname in

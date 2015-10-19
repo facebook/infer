@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 15 -> 14 ;
-14 [label="14:  DeclStmt \n   n$1=*&par:int * [line 24]\n  *&d:int =n$1 [line 24]\n  REMOVE_TEMPS(n$1); [line 24]\n  NULLIFY(&d,false); [line 24]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$1=*&par:int * [line 24]\n  *&d:int &=n$1 [line 24]\n  REMOVE_TEMPS(n$1); [line 24]\n  NULLIFY(&d,false); [line 24]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  DeclStmt \n   *&d:int =&par [line 18]\n  NULLIFY(&d,false); [line 18]\n " shape="box"]
+9 [label="9:  DeclStmt \n   *&d:int &=&par [line 18]\n  NULLIFY(&d,false); [line 18]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -41,7 +41,7 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   n$1=*&par:int & [line 12]\n  *&d:int =n$1 [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&d,false); [line 12]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$1=*&par:int & [line 12]\n  *&d:int &=n$1 [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&d,false); [line 12]\n " shape="box"]
 	
 
 	 4 -> 3 ;

@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   *&r:int =&v [line 12]\n  NULLIFY(&r,false); [line 12]\n " shape="box"]
+4 [label="4:  DeclStmt \n   *&r:int &=&v [line 12]\n  NULLIFY(&r,false); [line 12]\n " shape="box"]
 	
 
 	 4 -> 3 ;

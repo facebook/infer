@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 20 -> 19 ;
-19 [label="19:  Call _fun_fun_r \n   n$0=*&p:int * [line 33]\n  n$1=_fun_fun_r(n$0:int ) [line 33]\n  REMOVE_TEMPS(n$0,n$1); [line 33]\n  NULLIFY(&p,false); [line 33]\n  NULLIFY(&a,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+19 [label="19:  Call _fun_fun_r \n   n$0=*&p:int * [line 33]\n  n$1=_fun_fun_r(n$0:int &) [line 33]\n  REMOVE_TEMPS(n$0,n$1); [line 33]\n  NULLIFY(&p,false); [line 33]\n  NULLIFY(&a,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -30,7 +30,7 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  DeclStmt \n   *&r:int =&a [line 19]\n " shape="box"]
+15 [label="15:  DeclStmt \n   *&r:int &=&a [line 19]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -42,7 +42,7 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12:  Call _fun_fun_r \n   n$0=*&r:int & [line 23]\n  n$1=_fun_fun_r(n$0:int ) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&r,false); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+12 [label="12:  Call _fun_fun_r \n   n$0=*&r:int & [line 23]\n  n$1=_fun_fun_r(n$0:int &) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&r,false); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 12 -> 11 ;

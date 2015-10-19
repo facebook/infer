@@ -187,6 +187,17 @@ struct
       { empty_res_trans with
         exps = [(Sil.Sizeof(expanded_type, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
 
+  let exec_with_lvalue_as_reference f trans_state stmt =
+    let expr_info = match Clang_ast_proj.get_expr_tuple stmt with
+      | Some (_, _, ei) -> ei
+      | None -> assert false in
+    let res_trans = f trans_state stmt in
+    if expr_info.Clang_ast_t.ei_value_kind = `LValue then
+      let (exp, typ) = extract_exp_from_list res_trans.exps
+          "[Warning] Need exactly one expression to add reference type\n" in
+      { res_trans with exps = [(exp, Sil.Tptr (typ, Sil.Pk_reference))] }
+    else res_trans
+
   (* Execute translation of e forcing to release priority (if it's not free) and then setting it back.*)
   (* This is used in conditional operators where we need to force the priority to be free for the *)
   (* computation of the expressions*)
@@ -590,7 +601,8 @@ struct
         CTrans_utils.assign_default_params params_stmt None fun_exp_stmt ~is_cxx_method:false
       else [] in
     let res_trans_par =
-      let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) params_stmt in
+      let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+      let l = list_map (instruction' trans_state_param) params_stmt in
       let rt = collect_res_trans (res_trans_callee :: l) in
       { rt with exps = list_tl rt.exps } in
     let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
@@ -672,7 +684,8 @@ struct
     let trans_state_param =
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
     let result_trans_params =
-      let l = list_map (exec_with_self_exception instruction trans_state_param) params_stmt in
+      let instruction' = exec_with_lvalue_as_reference instruction in
+      let l = list_map (exec_with_self_exception instruction' trans_state_param) params_stmt in
       (* this function will automatically merge 'this' argument with rest of arguments in 'l'*)
       let rt = collect_res_trans (result_trans_callee :: l) in
       { rt with exps = list_tl rt.exps } in
@@ -726,7 +739,9 @@ struct
               with Self.SelfClassException class_name ->
                 let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class selector class_name in
                 obj_c_message_expr_info, empty_res_trans) in
-           let l = list_map (fun i -> exec_with_self_exception instruction trans_state_param i) rest in
+           let instruction' =
+             exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+           let l = list_map (instruction' trans_state_param) rest in
            obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
        | [] -> obj_c_message_expr_info, empty_res_trans) in
     let (class_type, _, _, _) = CMethod_trans.get_class_selector_instance context obj_c_message_expr_info res_trans_par.exps in
@@ -1412,7 +1427,9 @@ struct
           (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
           let res_trans_ie =
             let trans_state' = { trans_state_pri with succ_nodes = next_node; parent_line_number = line_number } in
-            exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state' ie stmt_info in
+            let instruction' =
+              exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+            exec_with_block_priority_exception instruction' trans_state' ie stmt_info in
           let root_nodes = res_trans_ie.root_nodes in
           let leaf_nodes = res_trans_ie.leaf_nodes in
           let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps

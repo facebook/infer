@@ -75,7 +75,7 @@ digraph iCFG {
 	
 
 	 98 -> 102 ;
-97 [label="97:  Call _fun_set_field_ref \n   n$2=*&x:class X & [line 113]\n  _fun_set_field_ref(n$2:class X ,1:int ) [line 113]\n  REMOVE_TEMPS(n$2); [line 113]\n " shape="box"]
+97 [label="97:  Call _fun_set_field_ref \n   n$2=*&x:class X & [line 113]\n  _fun_set_field_ref(n$2:class X &,1:int ) [line 113]\n  REMOVE_TEMPS(n$2); [line 113]\n " shape="box"]
 	
 
 	 97 -> 96 ;
@@ -90,7 +90,7 @@ digraph iCFG {
 	
 
 	 94 -> 97 ;
-93 [label="93:  Call _fun_set_field_ref \n   n$2=*&x:class X & [line 108]\n  _fun_set_field_ref(n$2:class X ,0:int ) [line 108]\n  REMOVE_TEMPS(n$2); [line 108]\n " shape="box"]
+93 [label="93:  Call _fun_set_field_ref \n   n$2=*&x:class X & [line 108]\n  _fun_set_field_ref(n$2:class X &,0:int ) [line 108]\n  REMOVE_TEMPS(n$2); [line 108]\n " shape="box"]
 	
 
 	 93 -> 92 ;
@@ -105,7 +105,7 @@ digraph iCFG {
 	
 
 	 90 -> 93 ;
-89 [label="89:  Call _fun_nonzero_ref \n   n$2=*&x:class X & [line 103]\n  _fun_nonzero_ref(n$2:class X ) [line 103]\n  REMOVE_TEMPS(n$2); [line 103]\n " shape="box"]
+89 [label="89:  Call _fun_nonzero_ref \n   n$2=*&x:class X & [line 103]\n  _fun_nonzero_ref(n$2:class X &) [line 103]\n  REMOVE_TEMPS(n$2); [line 103]\n " shape="box"]
 	
 
 	 89 -> 88 ;
@@ -120,7 +120,7 @@ digraph iCFG {
 	
 
 	 86 -> 89 ;
-85 [label="85:  Call _fun_zero_ref \n   n$2=*&x:class X & [line 98]\n  _fun_zero_ref(n$2:class X ) [line 98]\n  REMOVE_TEMPS(n$2); [line 98]\n " shape="box"]
+85 [label="85:  Call _fun_zero_ref \n   n$2=*&x:class X & [line 98]\n  _fun_zero_ref(n$2:class X &) [line 98]\n  REMOVE_TEMPS(n$2); [line 98]\n " shape="box"]
 	
 
 	 85 -> 84 ;

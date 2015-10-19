@@ -3,11 +3,11 @@ digraph iCFG {
 	
 
 	 40 -> 39 ;
-39 [label="39:  DeclStmt \n   *&r:int =&a [line 48]\n " shape="box"]
+39 [label="39:  DeclStmt \n   *&r:int &=&a [line 48]\n " shape="box"]
 	
 
 	 39 -> 38 ;
-38 [label="38:  Call _fun_zero_ref \n   n$1=*&r:int & [line 49]\n  _fun_zero_ref(n$1:int ) [line 49]\n  REMOVE_TEMPS(n$1); [line 49]\n  NULLIFY(&r,false); [line 49]\n " shape="box"]
+38 [label="38:  Call _fun_zero_ref \n   n$1=*&r:int & [line 49]\n  _fun_zero_ref(n$1:int &) [line 49]\n  REMOVE_TEMPS(n$1); [line 49]\n  NULLIFY(&r,false); [line 49]\n " shape="box"]
 	
 
 	 38 -> 37 ;
@@ -26,7 +26,7 @@ digraph iCFG {
 	
 
 	 34 -> 33 ;
-33 [label="33:  Call _fun_zero_ref \n   _fun_zero_ref(&a:int ) [line 42]\n " shape="box"]
+33 [label="33:  Call _fun_zero_ref \n   _fun_zero_ref(&a:int &) [line 42]\n " shape="box"]
 	
 
 	 33 -> 32 ;
@@ -45,7 +45,7 @@ digraph iCFG {
 	
 
 	 29 -> 28 ;
-28 [label="28:  DeclStmt \n   *&r:int =&a [line 35]\n " shape="box"]
+28 [label="28:  DeclStmt \n   *&r:int &=&a [line 35]\n " shape="box"]
 	
 
 	 28 -> 27 ;
