@@ -510,11 +510,9 @@ struct
         else
           let type_name = Ast_utils.string_of_type_ptr type_ptr in
           let start_location = fst decl_info.Clang_ast_t.di_source_range in
-          let file_opt = start_location.Clang_ast_t.sl_file in
           let line_opt = start_location.Clang_ast_t.sl_line in
           let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
-          let rel_path = get_rel_file_path file_opt in
-          let mangled = CRC.crc16 (type_name ^ rel_path ^ line_str) in
+          let mangled = CRC.crc16 (type_name ^ line_str) in
           let mangled_name = Mangled.mangled name.Clang_ast_t.ni_name mangled in
           Sil.mk_pvar mangled_name procname
     | None -> Sil.mk_pvar simple_name procname
