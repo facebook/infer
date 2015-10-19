@@ -826,6 +826,9 @@ let normalize_params pdesc prop actual_params =
   let prop, args = IList.fold_left norm_arg (prop, []) actual_params in
   (prop, IList.rev args)
 
+let do_error_checks node instr pname pdesc =
+  if !Config.curr_language = Config.Java then PrintfArgs.check_printf_args_ok node instr pname pdesc
+
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   : (Prop.normal Prop.t * Paths.Path.t) list =
@@ -948,6 +951,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       sym_exe_builtin cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags) ->
       (** Generic fun call with known name *)
+      do_error_checks (Paths.Path.curr_node path) instr pname pdesc;
       let (prop_r, _n_actual_params) = normalize_params pname _prop actual_params in
       let fn, n_actual_params = handle_special_cases_call tenv cfg callee_pname _n_actual_params in
       let resolved_pname =

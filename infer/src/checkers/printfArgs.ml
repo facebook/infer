@@ -122,13 +122,11 @@ let rec format_string_type_names
 
 let printf_args_name = "CHECKERS_PRINTF_ARGS"
 
-let callback_printf_args
-    (all_procs : Procname.t list)
-    (get_proc_desc: Procname.t -> Cfg.Procdesc.t option)
-    (idenv: Idenv.t)
-    (tenv: Sil.tenv)
+let check_printf_args_ok
+    (node: Cfg.Node.t)
+    (instr: Sil.instr)
     (proc_name: Procname.t)
-    (proc_desc : Cfg.Procdesc.t) : unit =
+    (proc_desc: Cfg.Procdesc.t): unit =
 
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
@@ -184,44 +182,49 @@ let callback_printf_args
     | Sil.Const c -> PatternMatch.java_get_const_type_name c
     | _ -> raise (Failure "Could not resolve fixed type name") in
 
-  let do_instr
-      (node: Cfg.Node.t)
-      (instr: Sil.instr): unit =
-    match instr with
-    | Sil.Call (_, Sil.Const (Sil.Cfun pn), args, cl, _) -> (
-        match printf_like_function pn with
-        | Some printf -> (
-            try
-              let fmt, fixed_nvars, array_nvar = format_arguments printf args in
-              let instrs = Cfg.Node.get_instrs node in
-              let fixed_nvar_type_names = IList.map (fixed_nvar_type_name instrs) fixed_nvars in
-              let vararg_ivar_type_names = match array_nvar with
-                | Some nvar -> (
-                    let ivar = array_ivar instrs nvar in
-                    PatternMatch.get_vararg_type_names node ivar)
-                | None -> [] in
-              match fmt with
-              | Some fmt ->
-                  check_type_names
-                    cl
-                    (printf.format_pos + 1)
-                    pn
-                    (format_string_type_names fmt 0)
-                    (fixed_nvar_type_names@ vararg_ivar_type_names)
-              | None ->
-                  Checkers.ST.report_error
-                    proc_name
-                    proc_desc
-                    printf_args_name
-                    cl
-                    "Format string must be string literal"
-            with e ->
-              L.stderr
-                "%s Exception when analyzing %s: %s@."
-                printf_args_name
-                (Procname.to_string proc_name)
-                (Printexc.to_string e))
-        | None -> ())
-    | _ -> () in
+  match instr with
+  | Sil.Call (_, Sil.Const (Sil.Cfun pn), args, cl, _) -> (
+      match printf_like_function pn with
+      | Some printf -> (
+          try
+            let fmt, fixed_nvars, array_nvar = format_arguments printf args in
+            let instrs = Cfg.Node.get_instrs node in
+            let fixed_nvar_type_names = IList.map (fixed_nvar_type_name instrs) fixed_nvars in
+            let vararg_ivar_type_names = match array_nvar with
+              | Some nvar -> (
+                  let ivar = array_ivar instrs nvar in
+                  PatternMatch.get_vararg_type_names node ivar)
+              | None -> [] in
+            match fmt with
+            | Some fmt ->
+                check_type_names
+                  cl
+                  (printf.format_pos + 1)
+                  pn
+                  (format_string_type_names fmt 0)
+                  (fixed_nvar_type_names@ vararg_ivar_type_names)
+            | None ->
+                Checkers.ST.report_error
+                  proc_name
+                  proc_desc
+                  printf_args_name
+                  cl
+                  "Format string must be string literal"
+          with e ->
+            L.stderr
+              "%s Exception when analyzing %s: %s@."
+              printf_args_name
+              (Procname.to_string proc_name)
+              (Printexc.to_string e))
+      | None -> ())
+  | _ -> ()
 
-  Cfg.Procdesc.iter_instrs do_instr proc_desc
+let callback_printf_args
+    (all_procs : Procname.t list)
+    (get_proc_desc: Procname.t -> Cfg.Procdesc.t option)
+    (idenv: Idenv.t)
+    (tenv: Sil.tenv)
+    (proc_name: Procname.t)
+    (proc_desc : Cfg.Procdesc.t) : unit =
+  Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok n i proc_name proc_desc) proc_desc
+
