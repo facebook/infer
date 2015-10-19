@@ -62,8 +62,8 @@ module Control_flow =
       let new_set_items' = items @ new_set_items in
       let todo' =
         if (TM.save_items_to_set) then
-          let new_set_items'' = list_map TM.to_t new_set_items' in
-          list_fold_right add_to_todo new_set_items'' todo
+          let new_set_items'' = IList.map TM.to_t new_set_items' in
+          IList.fold_right add_to_todo new_set_items'' todo
         else todo in
       let items =
         if (TM.save_items_to_set) then []
@@ -123,7 +123,7 @@ struct
 
   module TypeSet = Set.Make(struct
       type t = type_signature
-      let compare = Utils.list_compare pair_compare
+      let compare = IList.compare pair_compare
     end)
 
   let map_value_to_string set =
@@ -177,8 +177,8 @@ struct
     | VarBasic
 
   let path_equal p1 p2 =
-    if (list_length p1) != (list_length p2) then false
-    else list_for_all2 (fun el1 el2 -> Ident.fieldname_equal el1 el2) p1 p2
+    if (IList.length p1) != (IList.length p2) then false
+    else IList.for_all2 (fun el1 el2 -> Ident.fieldname_equal el1 el2) p1 p2
 
   let typ_to_var_kind typ =
     match typ with
@@ -279,7 +279,7 @@ struct
       let varname = Mangled.from_string name in
       let pvar = Sil.mk_pvar varname pname in
       add_type pvar typ 0 context in
-    list_fold_left aux context type_signature
+    IList.fold_left aux context type_signature
 
   (* Returns the top type of a variable in the context *)
   let get_type pvar context =
@@ -432,7 +432,7 @@ struct
         match ityp with
         | Sil.Tstruct (fields, sftal, csu, nameo, supers, def_mthds, iann) ->
             let (_, typ, _) =
-              try ((list_find (fun (f, t, _) -> Ident.fieldname_equal f field)) fields)
+              try ((IList.find (fun (f, t, _) -> Ident.fieldname_equal f field)) fields)
               with Not_found -> assert false in
             typ
         | _ -> assert false
@@ -486,16 +486,16 @@ struct
         (* print_endline "backtracking..."; *)
         let preds = Cfg.Node.get_preds old_node in
         let pred =
-          try list_find (fun p -> not (Set.mem p set)) preds
+          try IList.find (fun p -> not (Set.mem p set)) preds
           with Not_found ->
-            try list_hd preds
+            try IList.hd preds
             with Failure "hd" -> Set.min_elt set in
         (aux pred) in
       if (Set.mem old_node set) then backtrack ()
       else
         let succs = Cfg.Node.get_succs old_node in
         let node =
-          try list_find (fun n -> ( Set.mem n set)) succs
+          try IList.find (fun n -> ( Set.mem n set)) succs
           with Not_found -> backtrack () in
         node in
     match el with
@@ -562,7 +562,7 @@ struct
             let formals = Cfg.Procdesc.get_formals pdesc in
             let create_typ_bundle (exp, typ) (name, typ2) =
               (name, (get_type tenv exp id_context context field_context)) in
-            let typ_bundle = list_map2 create_typ_bundle actual_params formals in
+            let typ_bundle = IList.map2 create_typ_bundle actual_params formals in
             let set = Type_map.find_dyn_types callee_pname map in
             if Type_map.TypeSet.mem typ_bundle set
             then id_context, context, field_context, map, list
@@ -594,7 +594,7 @@ struct
       | _ -> id_context, context, field_context, map, list in
     let instrs = Cfg.Node.get_instrs node in
     let id_context, context, field_context, map, items =
-      list_fold_left aux (IdContext.empty, context, field_context, map, []) instrs in
+      IList.fold_left aux (IdContext.empty, context, field_context, map, []) instrs in
     context, field_context, map, items
 
 end
@@ -709,9 +709,9 @@ let arg_desc =
   let base_arg =
     let options_to_keep = ["-results_dir"] in
     let filter arg_desc =
-      list_filter (fun desc ->
+      IList.filter (fun desc ->
           let (option_name, _, _, _) = desc in
-          list_mem string_equal option_name options_to_keep)
+          IList.mem string_equal option_name options_to_keep)
         arg_desc in
     let desc = (filter Utils.base_arg_desc) in
     Utils.Arg2.create_options_desc false "Parsing Options" desc in
@@ -732,7 +732,7 @@ let initialize_map exe_env methods =
     initial_methods := Procname.Set.add pname !initial_methods;
     Type_map.add_to_map pname formals map in
   let meth_list = Procname.Set.elements methods in
-  let map' = (list_fold_right (init_method exe_env) meth_list Type_map.Map.empty) in
+  let map' = (IList.fold_right (init_method exe_env) meth_list Type_map.Map.empty) in
   map'
 
 (* Collects all the methods that are defined in the program. *)
@@ -747,8 +747,8 @@ let collect_methods exe_env =
     if Cg.node_defined global_cg n1 && Cg.node_defined global_cg n2 then
       Procname.Set.add n2 no_main_methods
     else no_main_methods in
-  let defined = list_fold_right do_node nodes Procname.Set.empty in
-  let no_main_methods = list_fold_right do_edge edges Procname.Set.empty in
+  let defined = IList.fold_right do_node nodes Procname.Set.empty in
+  let no_main_methods = IList.fold_right do_edge edges Procname.Set.empty in
   let main_methods = Procname.Set.diff defined no_main_methods in
   defined_methods := defined;
   (* TM.set_to_string main_methods; *)
@@ -772,7 +772,7 @@ let load_cg_files _exe_env (source_dirs : DB.source_dir list) =
     | None -> ()
     | Some cg ->
         (*L.err "loaded %s@." (DB.source_dir_to_string source_dir) *) () in
-  list_iter (fun source_dir -> load_cg_file _exe_env source_dir) source_dirs;
+  IList.iter (fun source_dir -> load_cg_file _exe_env source_dir) source_dirs;
   let exe_env = Exe_env.freeze _exe_env in
   exe_env
 

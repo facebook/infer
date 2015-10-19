@@ -347,7 +347,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
         let is_parameter_field pvar = (* parameter.field *)
           let name = Sil.pvar_to_string pvar in
           let filter (s, ia, typ) = string_equal s name in
-          list_exists filter annotated_signature.Annotations.params in
+          IList.exists filter annotated_signature.Annotations.params in
 
         let is_static_field pvar = (* static field *)
           Sil.pvar_is_global pvar in
@@ -405,11 +405,11 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
               | fp:: tail when is_hidden_parameter fp -> 1 + drop_n_args tail
               | _ -> 0 in
             let n = drop_n_args proc_attributes.ProcAttributes.formals in
-            let visible_params = list_drop_first n params in
+            let visible_params = IList.drop_first n params in
 
             (* Drop the trailing hidden parameter if the constructor is synthetic. *)
             if proc_attributes.ProcAttributes.is_synthetic_method then
-              list_drop_last 1 visible_params
+              IList.drop_last 1 visible_params
             else
               visible_params
           end
@@ -421,7 +421,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
   let drop_unchecked_signature_params proc_attributes annotated_signature =
     if Procname.is_constructor (proc_attributes.ProcAttributes.proc_name) &&
        proc_attributes.ProcAttributes.is_synthetic_method then
-      list_drop_last 1 annotated_signature.Annotations.params
+      IList.drop_last 1 annotated_signature.Annotations.params
     else
       annotated_signature.Annotations.params in
 
@@ -465,7 +465,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
 
   match instr with
   | Sil.Remove_temps (idl, loc) ->
-      if remove_temps then list_fold_right TypeState.remove_id idl typestate
+      if remove_temps then IList.fold_right TypeState.remove_id idl typestate
       else typestate
   | Sil.Declare_locals _
   | Sil.Abstract _
@@ -571,7 +571,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
           typecheck_expr_for_errors typestate e1 loc;
           let e2, typestate2 = convert_complex_exp_to_pvar node false e1 typestate1 loc in
           (((e1, e2), t1) :: etl1), typestate2 in
-        list_fold_right handle_et etl ([], typestate) in
+        IList.fold_right handle_et etl ([], typestate) in
 
       let annotated_signature =
         Models.get_modelled_annotated_signature callee_attributes in
@@ -640,7 +640,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                     pvar_apply loc clear_nullable_flag ts pvar1
                 | _ -> ts in
               let vararg_values = PatternMatch.java_get_vararg_values node pvar idenv curr_pdesc in
-              Utils.list_fold_right do_vararg_value vararg_values typestate'
+              IList.fold_right do_vararg_value vararg_values typestate'
             else
               pvar_apply loc clear_nullable_flag typestate' pvar
         | None -> typestate' in
@@ -676,7 +676,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                   | _ -> ()
                 end
             | _ -> () in
-          list_iter do_instr (Cfg.Node.get_instrs cond_node) in
+          IList.iter do_instr (Cfg.Node.get_instrs cond_node) in
         let handle_optional_isPresent node' e =
           match convert_complex_exp_to_pvar node' false e typestate' loc with
           | Sil.Lvar pvar', _ ->
@@ -692,7 +692,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
               (* In foo(cond1 && cond2), the node that sets the result to false
                  has all the negated conditions as parents. *)
               | Some boolean_assignment_node ->
-                  list_iter handle_negated_condition (Cfg.Node.get_preds boolean_assignment_node);
+                  IList.iter handle_negated_condition (Cfg.Node.get_preds boolean_assignment_node);
                   !res_typestate
               | None ->
                   begin
@@ -751,7 +751,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                 print_current_state;
             let typestate2 =
               if checks.check_extension then
-                let etl' = list_map (fun ((_, e), t) -> (e, t)) call_params in
+                let etl' = IList.map (fun ((_, e), t) -> (e, t)) call_params in
                 let extension = TypeState.get_extension typestate1 in
                 let extension' =
                   ext.TypeState.check_instr
@@ -768,7 +768,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
             if Procname.java_get_method callee_pname = "checkNotNull"
                && Procname.java_is_vararg callee_pname
             then
-              let last_parameter = list_length call_params in
+              let last_parameter = IList.length call_params in
               do_preconditions_check_not_null
                 last_parameter
                 true (* is_vararg *)
@@ -956,7 +956,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                 when Sil.exp_equal (Sil.Lvar pvar) (Idenv.expand_expr idenv e') ->
                   found := Some e
               | _ -> () in
-            list_iter do_instr (Cfg.Node.get_instrs prev_node);
+            IList.iter do_instr (Cfg.Node.get_instrs prev_node);
             !found
         | _ -> None in
 
@@ -1031,7 +1031,7 @@ let typecheck_node
   (* This is used to track if it is set to true for all visit to the node. *)
   TypeErr.node_reset_forall canonical_node;
 
-  let typestate_succ = list_fold_left (do_instruction ext) typestate instrs in
+  let typestate_succ = IList.fold_left (do_instruction ext) typestate instrs in
   if Cfg.Node.get_kind node = Cfg.Node.exn_sink_kind
   then [], [] (* don't propagate exceptions to exit node *)
   else [typestate_succ], !typestates_exn

@@ -55,7 +55,7 @@ type filter_config =
 let is_matching patterns =
   fun source_file ->
     let path = DB.source_file_to_rel_path source_file in
-    Utils.list_exists
+    IList.exists
       (fun pattern ->
          try
            (Str.search_forward pattern path 0) = 0
@@ -168,8 +168,8 @@ struct
 
   let detect_pattern assoc =
     let language = detect_language assoc in
-    let is_method_pattern key = list_exists (string_equal key) ["class"; "method"]
-    and is_source_contains key = list_exists (string_equal key) ["source_contains"] in
+    let is_method_pattern key = IList.exists (string_equal key) ["class"; "method"]
+    and is_source_contains key = IList.exists (string_equal key) ["source_contains"] in
     let rec loop = function
       | [] ->
           failwith ("Unknown pattern for " ^ M.json_key ^ " in " ^ inferconfig_file)
@@ -185,7 +185,7 @@ struct
       let collect accu = function
         | `String s -> s:: accu
         | _ -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      list_rev (list_fold_left collect [] l) in
+      IList.rev (IList.fold_left collect [] l) in
     let create_method_pattern mp assoc =
       let loop mp = function
         | (key, `String s) when key = "class" ->
@@ -196,13 +196,13 @@ struct
             { mp with parameters = Some (collect_params l) }
         | (key, _) when key = "language" -> mp
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      list_fold_left loop default_method_pattern assoc
+      IList.fold_left loop default_method_pattern assoc
     and create_string_contains sc assoc =
       let loop sc = function
         | (key, `String pattern) when key = "source_contains" -> pattern
         | (key, _) when key = "language" -> sc
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      list_fold_left loop default_source_contains assoc in
+      IList.fold_left loop default_source_contains assoc in
     match detect_pattern assoc with
     | Method_pattern (language, mp) ->
         Method_pattern (language, create_method_pattern mp assoc)
@@ -212,7 +212,7 @@ struct
   let rec translate accu (json : Yojson.Basic.json) : pattern list =
     match json with
     | `Assoc l -> (create_pattern l):: accu
-    | `List l -> list_fold_left translate accu l
+    | `List l -> IList.fold_left translate accu l
     | _ -> assert false
 
   let create_method_matcher m_patterns =
@@ -220,7 +220,7 @@ struct
       default_matcher
     else
       let pattern_map =
-        list_fold_left
+        IList.fold_left
           (fun map pattern ->
              let previous =
                try
@@ -234,7 +234,7 @@ struct
         and method_name = Procname.java_get_method proc_name in
         try
           let class_patterns = StringMap.find class_name pattern_map in
-          list_exists
+          IList.exists
             (fun p ->
                match p.method_name with
                | None -> true
@@ -247,7 +247,7 @@ struct
       let collect (s_patterns, m_patterns) = function
         | Source_contains (lang, s) -> (s:: s_patterns, m_patterns)
         | Method_pattern (lang, mp) -> (s_patterns, mp :: m_patterns) in
-      list_fold_left collect ([], []) patterns in
+      IList.fold_left collect ([], []) patterns in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
       fun source_file proc_name -> matcher source_file
@@ -263,7 +263,7 @@ struct
             Yojson.Basic.Util.filter_member
               M.json_key
               [Yojson.Basic.from_file inferconfig] in
-          list_fold_left translate [] found in
+          IList.fold_left translate [] found in
         create_file_matcher patterns
       with Sys_error _ ->
         default_matcher
@@ -315,9 +315,9 @@ let filters_from_inferconfig inferconfig : filters =
   let path_filter =
     let whitelist_filter : path_filter =
       if inferconfig.whitelist = [] then default_path_filter
-      else is_matching (list_map Str.regexp inferconfig.whitelist) in
+      else is_matching (IList.map Str.regexp inferconfig.whitelist) in
     let blacklist_filter : path_filter =
-      is_matching (list_map Str.regexp inferconfig.blacklist) in
+      is_matching (IList.map Str.regexp inferconfig.blacklist) in
     let blacklist_files_containing_filter : path_filter =
       FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing in
     function source_file ->
@@ -327,7 +327,7 @@ let filters_from_inferconfig inferconfig : filters =
   let error_filter =
     function error_name ->
       let error_str = Localise.to_string error_name in
-      not (list_exists (string_equal error_str) inferconfig.suppress_errors) in
+      not (IList.exists (string_equal error_str) inferconfig.suppress_errors) in
   {
     path_filter = path_filter;
     error_filter = error_filter;
@@ -352,9 +352,9 @@ let create_filters analyzer =
 let test () =
   Config.project_root := Some (Sys.getcwd ());
   let filters =
-    Utils.list_map (fun analyzer -> (analyzer, create_filters analyzer)) Utils.analyzers in
+    IList.map (fun analyzer -> (analyzer, create_filters analyzer)) Utils.analyzers in
   let matching_analyzers path =
-    Utils.list_fold_left
+    IList.fold_left
       (fun l (a, f) -> if f.path_filter path then a:: l else l)
       [] filters in
   Utils.directory_iter
@@ -365,7 +365,7 @@ let test () =
          if matching <> [] then
            let matching_s =
              Utils.join_strings ", "
-               (Utils.list_map Utils.string_of_analyzer matching) in
+               (IList.map Utils.string_of_analyzer matching) in
            Logging.stderr "%s -> {%s}@."
              (DB.source_file_to_rel_path source_file)
              matching_s)

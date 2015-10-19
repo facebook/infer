@@ -38,14 +38,14 @@ struct
             (match typ with (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
               (print_endline (
                   (Sil.typename_to_string typname)^"\n"^
-                  "---> superclass and protocols "^(list_to_string (fun (csu, x) ->
+                  "---> superclass and protocols "^(IList.to_string (fun (csu, x) ->
                       let nsu = Sil.TN_csu (csu, x) in
                       "\t"^(Sil.typename_to_string nsu)^"\n") super_classes)^
-                  "---> methods "^(list_to_string (fun x ->"\t"^(Procname.to_string x)^"\n") methods)^"  "^
-                  "\t---> static fields "^(list_to_string (fun (fieldname, typ, _) ->
+                  "---> methods "^(IList.to_string (fun x ->"\t"^(Procname.to_string x)^"\n") methods)^"  "^
+                  "\t---> static fields "^(IList.to_string (fun (fieldname, typ, _) ->
                       "\t "^(Ident.fieldname_to_string fieldname)^" "^
                       (Sil.typ_to_string typ)^"\n") static_fields)^
-                  "\t---> fields "^(list_to_string (fun (fieldname, typ, _) ->
+                  "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
                       "\t "^(Ident.fieldname_to_string fieldname)^" "^
                       (Sil.typ_to_string typ)^"\n") fields
                     )
@@ -63,7 +63,7 @@ struct
              | (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
                  (print_endline (
                      (Sil.typename_to_string typname)^"\n"^
-                     "\t---> fields "^(list_to_string (fun (fieldname, typ, _) ->
+                     "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
                          match typ with
                          | Sil.Tvar tname -> "tvar"^(Sil.typename_to_string tname)
                          | Sil.Tstruct (_, _, _, _, _, _, _) | _ ->
@@ -81,7 +81,7 @@ struct
   let print_procedures cfg =
     let procs = Cfg.get_all_procs cfg in
     print_endline
-      (list_to_string (fun pdesc ->
+      (IList.to_string (fun pdesc ->
            let pname = Cfg.Procdesc.get_proc_name pdesc in
            "name> "^
            (Procname.to_string pname) ^
@@ -92,7 +92,7 @@ struct
     L.err "AST Element> %s IN FILE> %s @.@." pointer !CFrontend_config.json
 
   let print_nodes nodes =
-    list_iter (fun node -> print_endline (Cfg.Node.get_description Utils.pe_text node)) nodes
+    IList.iter (fun node -> print_endline (Cfg.Node.get_description Utils.pe_text node)) nodes
 
   let instrs_to_string instrs =
     let pp fmt () = Format.fprintf fmt "%a" (Sil.pp_instr_list Utils.pe_text) instrs in
@@ -151,7 +151,7 @@ struct
     match name_info.Clang_ast_t.ni_qual_name with
     | [] -> ""
     | name :: qualifiers ->
-        list_fold_right (fun el res -> res ^ el ^ "::") qualifiers ""
+        IList.fold_right (fun el res -> res ^ el ^ "::") qualifiers ""
 
   let make_name_decl name = {
     Clang_ast_t.ni_name = name;
@@ -364,7 +364,7 @@ struct
   let rec append_no_duplicates eq list1 list2 =
     match list2 with
     | el:: rest2 ->
-        if (list_mem eq el list1) then
+        if (IList.mem eq el list1) then
           (append_no_duplicates eq list1 rest2)
         else (append_no_duplicates eq list1 rest2)@[el]
     | [] -> list1
@@ -393,7 +393,7 @@ struct
   let sort_fields fields =
     let compare (name1, _, _) (name2, _, _) =
       Ident.fieldname_compare name1 name2 in
-    list_sort compare fields
+    IList.sort compare fields
 
   let rec collect_list_tuples l (a, a1, b, c, d) =
     match l with
@@ -447,7 +447,7 @@ struct
       if n < i then acc else aux (n -1) (n :: acc)
     in aux j [] ;;
 
-  let replicate n el = list_map (fun i -> el) (list_range 0 (n -1))
+  let replicate n el = IList.map (fun i -> el) (list_range 0 (n -1))
 
   let mk_class_field_name field_qual_name =
     let field_name = field_qual_name.Clang_ast_t.ni_name in

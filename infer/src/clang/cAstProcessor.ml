@@ -98,8 +98,8 @@ let pp_ast_decl fmt ast_decl =
       prefix
       stmt_str
       pp_source_range stmt_info.Clang_ast_t.si_source_range;
-    list_iter (dump_stmt prefix1) stmt_list;
-    list_iter (dump_decl prefix1) decl_list
+    IList.iter (dump_stmt prefix1) stmt_list;
+    IList.iter (dump_decl prefix1) decl_list
   and dump_decl prefix decl =
     let prefix1 = prefix ^ "  " in
     let open Clang_ast_t in
@@ -109,8 +109,8 @@ let pp_ast_decl fmt ast_decl =
           prefix
           name.Clang_ast_t.ni_name
           pp_source_range decl_info.di_source_range;
-        list_iter (dump_decl prefix1) fdecl_info.fdi_decls_in_prototype_scope;
-        list_iter (dump_decl prefix1) fdecl_info.fdi_parameters;
+        IList.iter (dump_decl prefix1) fdecl_info.fdi_decls_in_prototype_scope;
+        IList.iter (dump_decl prefix1) fdecl_info.fdi_parameters;
         Option.may (dump_stmt prefix1) fdecl_info.fdi_body
     | ObjCMethodDecl (decl_info, name, obj_c_method_decl_info) ->
         F.fprintf fmt "%sObjCMethodDecl %s %a@\n"
@@ -131,13 +131,13 @@ let pp_ast_decl fmt ast_decl =
           prefix
           decl_kind_str
           pp_source_range decl_info.di_source_range;
-        list_iter (dump_decl prefix1) decl_list in
+        IList.iter (dump_decl prefix1) decl_list in
 
   let decl_str = Clang_ast_proj.get_decl_kind_string ast_decl in
   match ast_decl with
   | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _) ->
-      F.fprintf fmt "%s (%d declarations)@\n" decl_str (list_length decl_list);
-      list_iter (dump_decl "") decl_list
+      F.fprintf fmt "%s (%d declarations)@\n" decl_str (IList.length decl_list);
+      IList.iter (dump_decl "") decl_list
   | _ ->
       assert false
 
@@ -229,12 +229,12 @@ let rec stmt_process_locs loc_composer stmt =
     let stmt_info' =
       { stmt_info with
         Clang_ast_t.si_source_range = range' } in
-    let stmt_list' = list_map (stmt_process_locs loc_composer) stmt_list in
+    let stmt_list' = IList.map (stmt_process_locs loc_composer) stmt_list in
     (stmt_info', stmt_list') in
   let open Clang_ast_t in
   match Clang_ast_proj.update_stmt_tuple update stmt with
   | DeclStmt (stmt_info, stmt_list, decl_list) ->
-      let decl_list' = list_map (decl_process_locs loc_composer) decl_list in
+      let decl_list' = IList.map (decl_process_locs loc_composer) decl_list in
       DeclStmt (stmt_info, stmt_list, decl_list')
   | stmt' ->
       stmt'
@@ -248,14 +248,14 @@ and decl_process_locs loc_composer decl =
         Clang_ast_t.di_source_range = range' } in
     let decl_list = decl_get_sub_decls decl in
     let decl1 = Clang_ast_proj.update_decl_tuple update decl in
-    let decl_list' = list_map (decl_process_locs loc_composer) decl_list in
+    let decl_list' = IList.map (decl_process_locs loc_composer) decl_list in
     decl_set_sub_decls decl1 decl_list' in
   let open Clang_ast_t in
   let get_updated_fun_decl (decl_info', name, tp, fdecl_info) =
     let fdi_decls_in_prototype_scope' =
-      list_map (decl_process_locs loc_composer) fdecl_info.fdi_decls_in_prototype_scope in
+      IList.map (decl_process_locs loc_composer) fdecl_info.fdi_decls_in_prototype_scope in
     let fdi_parameters' =
-      list_map (decl_process_locs loc_composer) fdecl_info.fdi_parameters in
+      IList.map (decl_process_locs loc_composer) fdecl_info.fdi_parameters in
     let body' = Option.map (stmt_process_locs loc_composer) fdecl_info.fdi_body in
     let fdecl_info' =
       { fdecl_info with
@@ -297,7 +297,7 @@ let ast_decl_process_locs loc_composer ast_decl =
 
   match ast_decl with
   | Clang_ast_t.TranslationUnitDecl (decl_info, decl_list, decl_context_info, type_list) ->
-      let decl_list' = list_map toplevel_decl_process_locs decl_list in
+      let decl_list' = IList.map toplevel_decl_process_locs decl_list in
       Clang_ast_t.TranslationUnitDecl (decl_info, decl_list', decl_context_info, type_list)
   | _ ->
       assert false

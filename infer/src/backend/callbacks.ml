@@ -40,15 +40,15 @@ let inline_synthetic_method ret_ids etl proc_desc proc_name loc_call : Sil.instr
         let instr' = Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , e1, loc_call) in
         found instr instr'
     | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
-      when list_length ret_ids = list_length ret_ids'
-           && list_length etl' = list_length etl ->
+      when IList.length ret_ids = IList.length ret_ids'
+           && IList.length etl' = IList.length etl ->
         let instr' = Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl, loc_call, cf) in
         found instr instr'
     | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
-      when list_length ret_ids = list_length ret_ids'
-           && list_length etl' + 1 = list_length etl ->
-        let etl1 = match list_rev etl with (* remove last element *)
-          | _ :: l -> list_rev l
+      when IList.length ret_ids = IList.length ret_ids'
+           && IList.length etl' + 1 = IList.length etl ->
+        let etl1 = match IList.rev etl with (* remove last element *)
+          | _ :: l -> IList.rev l
           | [] -> assert false in
         let instr' = Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl1, loc_call, cf) in
         found instr instr'
@@ -79,7 +79,7 @@ let proc_inline_synthetic_methods cfg proc_desc : unit =
           modified := true;
           instr' in
     let instrs = Cfg.Node.get_instrs node in
-    let instrs' = list_map do_instr instrs in
+    let instrs' = IList.map do_instr instrs in
     if !modified then Cfg.Node.replace_instrs node instrs' in
   Cfg.Procdesc.iter_nodes node_inline_synthetic_methods proc_desc
 
@@ -148,7 +148,7 @@ let iterate_procedure_callbacks all_procs exe_env proc_name =
 
   Option.may
     (fun (idenv, tenv, proc_name, proc_desc, language) ->
-       list_iter
+       IList.iter
          (fun (language_opt, proc_callback) ->
             let language_matches = match language_opt with
               | Some language -> language = procedure_language
@@ -172,25 +172,25 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
     with Not_found -> None in
 
   let procedure_definitions =
-    list_map (get_procedure_definition exe_env) proc_names
-    |> list_flatten_options in
+    IList.map (get_procedure_definition exe_env) proc_names
+    |> IList.flatten_options in
 
   let environment =
-    list_map
+    IList.map
       (fun (idenv, tenv, proc_name, proc_desc, _) -> (idenv, tenv, proc_name, proc_desc))
       procedure_definitions in
 
   (** Procedures matching the given language or all if no language is specified. *)
   let relevant_procedures language_opt =
     Option.map_default
-      (fun l -> list_filter (fun p -> l = get_language p) proc_names)
+      (fun l -> IList.filter (fun p -> l = get_language p) proc_names)
       proc_names
       language_opt in
 
-  list_iter
+  IList.iter
     (fun (language_opt, cluster_callback) ->
        let proc_names = relevant_procedures language_opt in
-       if list_length proc_names > 0 then
+       if IList.length proc_names > 0 then
          cluster_callback all_procs get_procdesc environment)
     !cluster_callbacks
 
@@ -210,7 +210,7 @@ let iterate_callbacks store_summary call_graph exe_env =
     | _ -> "unknown" in
   let cluster proc_names =
     let cluster_map =
-      list_fold_left
+      IList.fold_left
         (fun map proc_name ->
            let proc_cluster = cluster_id proc_name in
            let bucket = try StringMap.find proc_cluster map with Not_found -> [] in
@@ -218,7 +218,7 @@ let iterate_callbacks store_summary call_graph exe_env =
         StringMap.empty
         proc_names in
     (* Return all values of the map *)
-    list_map snd (StringMap.bindings cluster_map) in
+    IList.map snd (StringMap.bindings cluster_map) in
   let reset_summary proc_name =
     let attributes_opt =
       Specs.proc_resolve_attributes proc_name in
@@ -228,20 +228,18 @@ let iterate_callbacks store_summary call_graph exe_env =
     if should_reset
     then Specs.reset_summary call_graph proc_name attributes_opt in
 
-
   (* Make sure summaries exists. *)
-  list_iter reset_summary procs_to_analyze;
-
+  IList.iter reset_summary procs_to_analyze;
 
   (* Invoke callbacks. *)
-  list_iter
+  IList.iter
     (iterate_procedure_callbacks originally_defined_procs exe_env)
     procs_to_analyze;
 
-  list_iter
+  IList.iter
     (iterate_cluster_callbacks originally_defined_procs exe_env)
     (cluster procs_to_analyze);
 
-  list_iter store_summary procs_to_analyze;
+  IList.iter store_summary procs_to_analyze;
 
   Config.curr_language := saved_language

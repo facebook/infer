@@ -39,7 +39,7 @@ let create_cluster_makefile_and_exit
   let fmt = Format.formatter_of_out_channel outc in
   let file_to_cluster = ref DB.SourceFileMap.empty in
   let cluster_nr = ref 0 in
-  let tot_clusters_nr = list_length clusters in
+  let tot_clusters_nr = IList.length clusters in
   let do_cluster cluster =
     incr cluster_nr;
     let dependent_clusters = ref IntSet.empty in
@@ -69,12 +69,12 @@ let create_cluster_makefile_and_exit
           file_to_cluster :=
             DB.SourceFileMap.add source_file !cluster_nr !file_to_cluster;
           () (* L.err "file %s has %d children@." file (StringSet.cardinal children) *) in
-    list_iter do_file cluster;
+    IList.iter do_file cluster;
     Cluster.pp_cluster_dependency
       !cluster_nr tot_clusters_nr cluster print_files fmt (IntSet.elements !dependent_clusters);
     (* L.err "cluster %d has %d dependencies@."
        !cluster_nr (IntSet.cardinal !dependent_clusters) *) in
   pp_prolog fmt tot_clusters_nr;
-  list_iter do_cluster clusters;
+  IList.iter do_cluster clusters;
   pp_epilog fmt ();
   exit 0

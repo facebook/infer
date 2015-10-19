@@ -167,7 +167,7 @@ let node_map_iter f g =
   let table = ref [] in
   Procname.Hash.iter (fun node info -> table := (node, info) :: !table) g.node_map;
   let cmp ((n1: Procname.t), _) ((n2: Procname.t), _) = Procname.compare n1 n2 in
-  list_iter (fun (n, info) -> f n info) (list_sort cmp !table)
+  IList.iter (fun (n, info) -> f n info) (IList.sort cmp !table)
 
 (** If not None, restrict defined nodes to the given set,
     and mark them as disabled. *)
@@ -191,8 +191,8 @@ let get_nodes (g: t) =
   !nodes
 
 let map_option f l =
-  let lo = list_filter (function | Some _ -> true | None -> false) (list_map f l) in
-  list_map (function Some p -> p | None -> assert false) lo
+  let lo = IList.filter (function | Some _ -> true | None -> false) (IList.map f l) in
+  IList.map (function Some p -> p | None -> assert false) lo
 
 let compute_calls g node =
   { in_calls = Procname.Set.cardinal (get_ancestors g node);
@@ -210,10 +210,10 @@ let get_calls (g: t) node =
 
 let get_all_nodes (g: t) =
   let nodes = Procname.Set.elements (get_nodes g) in
-  list_map (fun node -> (node, get_calls g node)) nodes
+  IList.map (fun node -> (node, get_calls g node)) nodes
 
 let get_nodes_and_calls (g: t) =
-  list_filter (fun (n, calls) -> node_defined g n) (get_all_nodes g)
+  IList.filter (fun (n, calls) -> node_defined g n) (get_all_nodes g)
 
 let node_get_num_ancestors g n =
   (n, Procname.Set.cardinal (get_ancestors g n))
@@ -280,7 +280,7 @@ let get_nodes_and_defined_children (g: t) =
   let nodes = ref Procname.Set.empty in
   node_map_iter (fun n info -> if info.defined then nodes := Procname.Set.add n !nodes) g;
   let nodes_list = Procname.Set.elements !nodes in
-  list_map (fun n -> (n, get_defined_children g n)) nodes_list
+  IList.map (fun n -> (n, get_defined_children g n)) nodes_list
 
 type nodes_and_edges =
   (node * bool * bool) list * (* nodes with defined and disabled flag *)
@@ -302,8 +302,8 @@ let get_nodes_and_edges (g: t) : nodes_and_edges =
 let get_defined_nodes (g: t) =
   let (nodes, _) = get_nodes_and_edges g in
   let get_node (node, _, _) = node in
-  list_map get_node
-    (list_filter (fun (_, defined, _) -> defined)
+  IList.map get_node
+    (IList.filter (fun (_, defined, _) -> defined)
        nodes)
 
 
@@ -312,8 +312,8 @@ let get_defined_nodes (g: t) =
 let get_originally_defined_nodes (g: t) =
   let (nodes, _) = get_nodes_and_edges g in
   let get_node (node, _, _) = node in
-  list_map get_node
-    (list_filter
+  IList.map get_node
+    (IList.filter
        (fun (_, defined, disabled) -> defined || disabled)
        nodes)
 
@@ -328,8 +328,8 @@ let get_nLOC (g: t) =
 (** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2]; undefined nodes become defined if at least one side is. *)
 let extend cg_old cg_new =
   let nodes, edges = get_nodes_and_edges cg_new in
-  list_iter (fun (node, defined, disabled) -> _add_node cg_old node defined disabled) nodes;
-  list_iter (fun (nfrom, nto) -> add_edge cg_old nfrom nto) edges
+  IList.iter (fun (node, defined, disabled) -> _add_node cg_old node defined disabled) nodes;
+  IList.iter (fun (nfrom, nto) -> add_edge cg_old nfrom nto) edges
 
 (** Begin support for serialization *)
 
@@ -341,12 +341,12 @@ let load_from_file (filename : DB.filename) : t option =
   match Serialization.from_file callgraph_serializer filename with
   | None -> None
   | Some (source, nLOC, (nodes, edges)) ->
-      list_iter
+      IList.iter
         (fun (node, defined, disabled) ->
            if defined then add_defined_node g node;
            if disabled then add_disabled_node g node)
         nodes;
-      list_iter (fun (nfrom, nto) -> add_edge g nfrom nto) edges;
+      IList.iter (fun (nfrom, nto) -> add_edge g nfrom nto) edges;
       g.source <- source;
       g.nLOC <- nLOC;
       Some g
@@ -357,7 +357,7 @@ let store_to_file (filename : DB.filename) (call_graph : t) =
 
 let pp_graph_dotty get_specs (g: t) fmt =
   let nodes_with_calls = get_all_nodes g in
-  let num_specs n = try list_length (get_specs n) with exn when exn_not_timeout exn -> - 1 in
+  let num_specs n = try IList.length (get_specs n) with exn when exn_not_timeout exn -> - 1 in
   let get_color (n, calls) =
     if num_specs n != 0 then "green" else "red" in
   let get_shape (n, calls) =
@@ -367,8 +367,8 @@ let pp_graph_dotty get_specs (g: t) fmt =
   let pp_node_label fmt (n, calls) =
     F.fprintf fmt "\"%a | calls=%d %d | specs=%d)\"" Procname.pp n calls.in_calls calls.out_calls (num_specs n) in
   F.fprintf fmt "digraph {@\n";
-  list_iter (fun nc -> F.fprintf fmt "%a [shape=box,label=%a,color=%s,shape=%s]@\n" pp_node nc pp_node_label nc (get_color nc) (get_shape nc)) nodes_with_calls;
-  list_iter (fun (s, d) -> F.fprintf fmt "%a -> %a@\n" pp_node s pp_node d) (get_edges g);
+  IList.iter (fun nc -> F.fprintf fmt "%a [shape=box,label=%a,color=%s,shape=%s]@\n" pp_node nc pp_node_label nc (get_color nc) (get_shape nc)) nodes_with_calls;
+  IList.iter (fun (s, d) -> F.fprintf fmt "%a -> %a@\n" pp_node s pp_node d) (get_edges g);
   F.fprintf fmt "}@."
 
 (** Print the current call graph as a dotty file. If the filename is [None], use the current file dir inside the DB dir. *)

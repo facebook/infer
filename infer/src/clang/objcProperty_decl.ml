@@ -95,7 +95,7 @@ struct
     with Not_found ->
       match curr_class with
       | ContextCls (name, _, protocols) ->
-          let res_opt = list_fold_right
+          let res_opt = IList.fold_right
               (fun protocol found_procname_opt ->
                  match found_procname_opt with
                  | Some found_procname -> Some found_procname
@@ -204,7 +204,7 @@ let check_for_property curr_class method_name meth_decl body =
              (Property.property_key_to_string (curr_class, property_name));
            upgrade_property_accessor
              (curr_class, property_name) property_type meth_decl defined is_getter) in
-    list_iter method_is_getter properties_class in
+    IList.iter method_is_getter properties_class in
   check_property_accessor curr_class method_name true;
   check_property_accessor curr_class method_name false
 
@@ -218,7 +218,7 @@ let method_is_property_accesor cls method_name =
           if method_name = getter_name then Some (property_name, property_type, true)
           else if method_name = setter_name then Some (property_name, property_type, false)
           else None in
-  list_fold_right method_is_getter properties_class None
+  IList.fold_right method_is_getter properties_class None
 
 let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
   let pname = Ast_utils.property_name property_impl_decl_info in
@@ -249,12 +249,12 @@ let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
       []
 
 let is_property_read_only attributes =
-  list_mem (Ast_utils.property_attribute_eq) `Readonly attributes
+  IList.mem (Ast_utils.property_attribute_eq) `Readonly attributes
 
 let get_memory_management_attribute attributes =
   let memory_management_attributes = Ast_utils.get_memory_management_attributes () in
-  try Some (list_find (
-      fun att -> list_mem (Ast_utils.property_attribute_eq)
+  try Some (IList.find (
+      fun att -> IList.mem (Ast_utils.property_attribute_eq)
           att memory_management_attributes) attributes)
   with Not_found -> None
 
@@ -365,7 +365,7 @@ let add_properties_to_table curr_class decl_list =
         Property.add_property (curr_class, name_info) pdi.Clang_ast_t.opdi_type_ptr
           pdi.Clang_ast_t.opdi_property_attributes decl_info;
     | _ -> () in
-  list_iter add_property_to_table decl_list
+  IList.iter add_property_to_table decl_list
 
 (* Given a list of declarations in an interface returns list of methods)*)
 let get_methods curr_class decl_list =
@@ -382,4 +382,4 @@ let get_methods curr_class decl_list =
         let meth_name = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
         meth_name:: list_methods
     | _ -> list_methods in
-  list_fold_right get_method decl_list []
+  IList.fold_right get_method decl_list []

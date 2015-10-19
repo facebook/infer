@@ -100,4 +100,4 @@ let captured_vars_from_block_info context cvl =
                (Sil.pvar_get_name pvar, typ, false) :: vars
          | _ -> assert false)
     | _ -> assert false in
-  list_fold_right sil_var_of_captured_var cvl []
+  IList.fold_right sil_var_of_captured_var cvl []

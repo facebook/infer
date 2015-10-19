@@ -45,7 +45,7 @@ let get_super_interface_decl otdi_super =
   | _ -> None
 
 let get_protocols protocols =
-  let protocol_names = list_map (
+  let protocol_names = IList.map (
       fun decl -> match decl.Clang_ast_t.dr_name with
         | Some name -> name.Clang_ast_t.ni_name
         | None -> assert false
@@ -59,7 +59,7 @@ let get_interface_superclasses super_opt protocols =
     match super_opt with
     | None -> []
     | Some super -> [(Sil.Class, Mangled.from_string super)] in
-  let protocol_names = list_map (
+  let protocol_names = IList.map (
       fun name -> (Sil.Protocol, Mangled.from_string name)
     ) protocols in
   let super_classes = super_class@protocol_names in
@@ -74,7 +74,7 @@ let create_curr_class_and_superclasses_fields tenv decl_list class_name otdi_sup
   curr_class, superclasses, fields
 
 let update_curr_class curr_class superclasses =
-  let get_protocols protocols = list_fold_right (
+  let get_protocols protocols = IList.fold_right (
       fun protocol converted_protocols ->
         match protocol with
         | (Sil.Protocol, name) -> (Mangled.to_string name):: converted_protocols
@@ -99,7 +99,7 @@ let add_class_to_tenv tenv decl_info class_name decl_list obj_c_interface_decl_i
       obj_c_interface_decl_info.Clang_ast_t.otdi_protocols in
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let fields_sc = CField_decl.fields_superclass tenv obj_c_interface_decl_info in
-  list_iter (fun (fn, ft, _) ->
+  IList.iter (fun (fn, ft, _) ->
       Printing.log_out "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
       Printing.log_out "type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
@@ -115,7 +115,7 @@ let add_class_to_tenv tenv decl_info class_name decl_list obj_c_interface_decl_i
   let fields = General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] fields in
   let fields = General_utils.sort_fields fields in
   Printing.log_out "Class %s field:\n" class_name;
-  list_iter (fun (fn, ft, _) ->
+  IList.iter (fun (fn, ft, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
   let interface_type_info =
     Sil.Tstruct(fields, [], Sil.Class, Some (Mangled.from_string class_name),

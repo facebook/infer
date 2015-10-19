@@ -98,10 +98,10 @@ let get_undefined_method_call ovt =
 let retrieve_fieldname fieldname =
   try
     let subs = Str.split (Str.regexp (Str.quote ".")) (Ident.fieldname_to_string fieldname) in
-    if list_length subs = 0 then
+    if IList.length subs = 0 then
       assert false
     else
-      list_hd (list_rev subs)
+      IList.hd (IList.rev subs)
   with hd -> assert false
 
 
@@ -110,7 +110,7 @@ let get_field_name program static tenv cn fs context =
   | Sil.Tstruct (fields, sfields, Sil.Class, _, _, _, _) ->
       let fieldname, _, _ =
         try
-          list_find
+          IList.find
             (fun (fieldname, _, _) -> retrieve_fieldname fieldname = JBasics.fs_name fs)
             (if static then sfields else fields)
         with Not_found ->
@@ -135,14 +135,14 @@ let formals_from_signature program tenv cn ms kind =
   let init_arg_list = match kind with
     | Procname.Static -> []
     | Procname.Non_Static -> [(JConfig.this, JTransType.get_class_type program tenv cn)] in
-  list_rev (list_fold_left collect init_arg_list (JBasics.ms_args ms))
+  IList.rev (IList.fold_left collect init_arg_list (JBasics.ms_args ms))
 
 let formals program tenv cn impl =
   let collect l (vt, var) =
     let name = JBir.var_name_g var in
     let typ = JTransType.param_type program tenv cn var vt in
     (name, typ):: l in
-  list_rev (list_fold_left collect [] (JBir.params impl))
+  IList.rev (IList.fold_left collect [] (JBir.params impl))
 
 (** Creates the local and formal variables from a procedure based on the
     impl argument. If the meth_kind is Init, we add a parameter field to
@@ -155,16 +155,16 @@ let locals_formals program tenv cn impl meth_kind =
     else formals program tenv cn impl in
   let is_formal v =
     let v = Mangled.to_string v in
-    list_exists (fun (v', _) -> Utils.string_equal v v') form_list in
+    IList.exists (fun (v', _) -> Utils.string_equal v v') form_list in
   let collect l var =
     let vname = Mangled.from_string (JBir.var_name_g var) in
-    let names = (fst (list_split l)) in
-    if not (is_formal vname) && (not (list_mem Mangled.equal vname names)) then
+    let names = (fst (IList.split l)) in
+    if not (is_formal vname) && (not (IList.mem Mangled.equal vname names)) then
       (vname, Sil.Tvoid):: l
     else
       l in
   let vars = JBir.vars impl in
-  let loc_list = list_rev (Array.fold_left collect [] vars) in
+  let loc_list = IList.rev (Array.fold_left collect [] vars) in
   (loc_list, form_list)
 
 let get_constant (c : JBir.const) =
@@ -289,7 +289,7 @@ let create_local_procdesc program linereader cfg tenv node m =
               let proc_attributes =
                 { (ProcAttributes.default proc_name Config.Java) with
                   ProcAttributes.access = trans_access am.Javalib.am_access;
-                  exceptions = list_map JBasics.cn_name am.Javalib.am_exceptions;
+                  exceptions = IList.map JBasics.cn_name am.Javalib.am_exceptions;
                   formals;
                   is_abstract = true;
                   is_bridge_method = am.Javalib.am_bridge;
@@ -316,7 +316,7 @@ let create_local_procdesc program linereader cfg tenv node m =
               let proc_attributes =
                 { (ProcAttributes.default proc_name Config.Java) with
                   ProcAttributes.access = trans_access cm.Javalib.cm_access;
-                  exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
+                  exceptions = IList.map JBasics.cn_name cm.Javalib.cm_exceptions;
                   formals;
                   is_bridge_method = cm.Javalib.cm_bridge;
                   is_synthetic_method = cm.Javalib.cm_synthetic;
@@ -342,7 +342,7 @@ let create_local_procdesc program linereader cfg tenv node m =
               let proc_attributes =
                 { (ProcAttributes.default proc_name Config.Java) with
                   ProcAttributes.access = trans_access cm.Javalib.cm_access;
-                  exceptions = list_map JBasics.cn_name cm.Javalib.cm_exceptions;
+                  exceptions = IList.map JBasics.cn_name cm.Javalib.cm_exceptions;
                   formals;
                   is_bridge_method = cm.Javalib.cm_bridge;
                   is_defined = true;
@@ -585,7 +585,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
           | _ -> [], [] in
         (ids, instrs, [(sil_obj_expr, sil_obj_type)]) in
   let (idl, instrs, call_args) =
-    list_fold_left
+    IList.fold_left
       (fun (idl_accu, instrs_accu, args_accu) expr ->
          let (idl, instrs, sil_expr) = expression context pc expr in
          let sil_expr_type = JTransType.expr_type context expr in
@@ -645,10 +645,10 @@ let get_array_size context pc expr_list content_type =
     match other_instrs with
     | (other_idl, other_instrs, other_exprs) ->
         (idl@other_idl, instrs@other_instrs, sil_size_expr:: other_exprs) in
-  let (idl, instrs, sil_size_exprs) = (list_fold_right get_expr_instr expr_list ([],[],[])) in
+  let (idl, instrs, sil_size_exprs) = (IList.fold_right get_expr_instr expr_list ([],[],[])) in
   let get_array_type sil_size_expr content_type =
     Sil.Tarray (content_type, sil_size_expr) in
-  let array_type = (list_fold_right get_array_type sil_size_exprs content_type) in
+  let array_type = (IList.fold_right get_array_type sil_size_exprs content_type) in
   let array_size = Sil.Sizeof (array_type, Sil.Subtype.exact) in
   (idl, instrs, array_size)
 
@@ -722,7 +722,7 @@ let extends context node1 node2 =
   let is_matching cn =
     JBasics.cn_equal cn (Javalib.get_name node2) in
   let rec check cn_list =
-    if list_exists is_matching cn_list then true
+    if IList.exists is_matching cn_list then true
     else
       iterate cn_list
   and iterate cn_list =
@@ -744,7 +744,7 @@ let extends context node1 node2 =
           match super_cn_list with
           | [] -> false
           | l -> check l in
-    list_exists per_classname cn_list in
+    IList.exists per_classname cn_list in
   check [Javalib.get_name node1]
 
 let instruction_array_call ms obj_type obj args var_opt vt =
@@ -808,7 +808,7 @@ let rec instruction context pc instr : translation =
       cfg (get_location (JContext.get_impl context) pc meth_kind cn) node_kind sil_instrs (JContext.get_procdesc context) temps in
   let return_not_null () =
     (match_never_null loc.Location.file proc_name
-     || list_exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
+     || IList.exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
   try
     match instr with
     | JBir.AffectVar (var, expr) ->
@@ -934,7 +934,7 @@ let rec instruction context pc instr : translation =
     | JBir.NewArray (var, vt, expr_list) ->
         let builtin_new_array = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__new_array) in
         let content_type = JTransType.value_type program tenv vt in
-        let array_type = JTransType.create_array_type content_type (list_length expr_list) in
+        let array_type = JTransType.create_array_type content_type (IList.length expr_list) in
         let array_name = JContext.set_pvar context var array_type in
         let (idl, instrs, array_size) = get_array_size context pc expr_list content_type in
         let call_args = [(array_size, array_type)] in

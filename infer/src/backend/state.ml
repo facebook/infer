@@ -111,14 +111,14 @@ let node_simple_key node =
       | Sil.Stackop _ -> add_key 8
       | Sil.Declare_locals _ -> add_key 9
       | Sil.Goto_node _ -> add_key 10 in
-  list_iter do_instr (Cfg.Node.get_instrs node);
+  IList.iter do_instr (Cfg.Node.get_instrs node);
   Hashtbl.hash !key
 
 (** key for a node: look at the current node, successors and predecessors *)
 let node_key node =
   let succs = Cfg.Node.get_succs node in
   let preds = Cfg.Node.get_preds node in
-  let v = (node_simple_key node, list_map node_simple_key succs, list_map node_simple_key preds) in
+  let v = (node_simple_key node, IList.map node_simple_key succs, IList.map node_simple_key preds) in
   Hashtbl.hash v
 
 (** normalize the list of instructions by renaming let-bound ids *)
@@ -127,14 +127,14 @@ let instrs_normalize instrs =
     let do_instr ids = function
       | Sil.Letderef (id, _, _, _) -> id :: ids
       | _ -> ids in
-    list_fold_left do_instr [] instrs in
+    IList.fold_left do_instr [] instrs in
   let subst =
     let count = ref min_int in
     let gensym id =
       incr count;
       Ident.set_stamp id !count in
-    Sil.sub_of_list (list_map (fun id -> (id, Sil.Var (gensym id))) bound_ids) in
-  list_map (Sil.instr_sub subst) instrs
+    Sil.sub_of_list (IList.map (fun id -> (id, Sil.Var (gensym id))) bound_ids) in
+  IList.map (Sil.instr_sub subst) instrs
 
 (** Create a function to find duplicate nodes.
     A node is a duplicate of another one if they have the same kind and location
@@ -179,7 +179,7 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
 
     let nodes = Cfg.Procdesc.get_nodes proc_desc in
     try
-      list_iter do_node nodes;
+      IList.iter do_node nodes;
       !m
     with E.Threshold ->
       M.empty in
@@ -190,14 +190,14 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
       let elements = S.elements s in
       let (_, node_normalized_instrs), others =
         let filter (node', _) = Cfg.Node.equal node node' in
-        match list_partition filter elements with
+        match IList.partition filter elements with
         | [this], others -> this, others
         | _ -> raise Not_found in
       let duplicates =
         let equal_normalized_instrs (_, normalized_instrs') =
-          list_compare Sil.instr_compare node_normalized_instrs normalized_instrs' = 0 in
-        list_filter equal_normalized_instrs elements in
-      list_fold_left
+          IList.compare Sil.instr_compare node_normalized_instrs normalized_instrs' = 0 in
+        IList.filter equal_normalized_instrs elements in
+      IList.fold_left
         (fun nset (node', _) -> Cfg.NodeSet.add node' nset)
         Cfg.NodeSet.empty duplicates
     with Not_found -> Cfg.NodeSet.singleton node in
@@ -231,7 +231,7 @@ let extract_pre p tenv pdesc abstract_fun =
     let fav = Prop.prop_fav p in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    Sil.sub_of_list (list_map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
+    Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
   let _, p' = Cfg.remove_locals_formals pdesc p in
   let pre, _ = Prop.extract_spec p' in
   let pre' = try abstract_fun tenv pre with exn when exn_not_timeout exn -> pre in

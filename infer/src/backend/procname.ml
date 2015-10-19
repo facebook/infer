@@ -217,7 +217,7 @@ let java_get_class_components proc_name =
 
 (** Return the class name of a java procedure name. *)
 let java_get_simple_class proc_name =
-  list_hd (list_rev (java_get_class_components proc_name))
+  IList.hd (IList.rev (java_get_class_components proc_name))
 
 (** Return the method of a java procname. *)
 let java_get_method = function
@@ -248,7 +248,7 @@ let java_get_return_type = function
 
 (** Return the parameters of a java procname. *)
 let java_get_parameters = function
-  | JAVA j -> list_map (fun param -> java_type_to_string param VERBOSE) j.parameters
+  | JAVA j -> IList.map (fun param -> java_type_to_string param VERBOSE) j.parameters
   | _ -> assert false
 
 (** Return true if the java procedure is static *)
@@ -305,10 +305,10 @@ let java_is_anonymous_inner_class = function
     with an extra parameter and calls the normal constructor. *)
 let java_remove_hidden_inner_class_parameter = function
   | JAVA js ->
-      (match list_rev js.parameters with
+      (match IList.rev js.parameters with
        | (so, s) :: par' ->
            if is_anonymous_inner_class_name s
-           then Some (JAVA { js with parameters = list_rev par'})
+           then Some (JAVA { js with parameters = IList.rev par'})
            else None
        | [] -> None)
   | _ -> None
@@ -337,7 +337,7 @@ let java_is_access_method = function
 let java_is_vararg = function
   | JAVA js ->
       begin
-        match (list_rev js.parameters) with
+        match (IList.rev js.parameters) with
         | (_,"java.lang.Object[]") :: _ -> true
         | _ -> false
       end

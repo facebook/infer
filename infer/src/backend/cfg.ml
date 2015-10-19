@@ -73,7 +73,7 @@ module Node = struct
       let id_map = ref IntMap.empty in
       (* formals are the same if their types are the same *)
       let formals_eq formals1 formals2 =
-        list_equal (fun (_, typ1) (_, typ2) -> Sil.typ_compare typ1 typ2) formals1 formals2 in
+        IList.equal (fun (_, typ1) (_, typ2) -> Sil.typ_compare typ1 typ2) formals1 formals2 in
       let nodes_eq n1s n2s =
         (* nodes are the same if they have the same id, instructions, and succs/preds up to renaming
            with [exp_map] and [id_map] *)
@@ -89,7 +89,7 @@ module Node = struct
                 id_map := IntMap.add id1 id2 !id_map;
                 0 in
           let instrs_eq instrs1 instrs2 =
-            list_equal
+            IList.equal
               (fun i1 i2 ->
                  let n, exp_map' = Sil.instr_compare_structural i1 i2 !exp_map in
                  exp_map := exp_map';
@@ -97,11 +97,11 @@ module Node = struct
               instrs1
               instrs2 in
           id_compare n1 n2 = 0 &&
-          list_equal id_compare n1.nd_succs n2.nd_succs &&
-          list_equal id_compare n1.nd_preds n2.nd_preds &&
+          IList.equal id_compare n1.nd_succs n2.nd_succs &&
+          IList.equal id_compare n1.nd_preds n2.nd_preds &&
           instrs_eq n1.nd_instrs n2.nd_instrs in
         try
-          list_for_all2 node_eq n1s n2s
+          IList.for_all2 node_eq n1s n2s
         with Invalid_argument _ -> false in
       let att1 = pd1.pd_attributes and att2 = pd2.pd_attributes in
       att1.ProcAttributes.is_defined = att2.ProcAttributes.is_defined &&
@@ -202,8 +202,8 @@ module Node = struct
       let do_node acc n =
         visited := NodeSet.add n !visited;
         if f n then NodeSet.singleton n
-        else NodeSet.union acc (slice_nodes (list_filter (fun s -> not (NodeSet.mem s !visited)) n.nd_succs)) in
-      list_fold_left do_node NodeSet.empty nodes in
+        else NodeSet.union acc (slice_nodes (IList.filter (fun s -> not (NodeSet.mem s !visited)) n.nd_succs)) in
+      IList.fold_left do_node NodeSet.empty nodes in
     NodeSet.elements (slice_nodes node.nd_succs)
 
   let get_sliced_preds node f =
@@ -212,8 +212,8 @@ module Node = struct
       let do_node acc n =
         visited := NodeSet.add n !visited;
         if f n then NodeSet.singleton n
-        else NodeSet.union acc (slice_nodes (list_filter (fun s -> not (NodeSet.mem s !visited)) n.nd_preds)) in
-      list_fold_left do_node NodeSet.empty nodes in
+        else NodeSet.union acc (slice_nodes (IList.filter (fun s -> not (NodeSet.mem s !visited)) n.nd_preds)) in
+      IList.fold_left do_node NodeSet.empty nodes in
     NodeSet.elements (slice_nodes node.nd_preds)
 
   let get_exn node = node.nd_exn
@@ -224,7 +224,7 @@ module Node = struct
   let set_succs_exn node succs exn =
     node.nd_succs <- succs;
     node.nd_exn <- exn;
-    list_iter (fun n -> n.nd_preds <- (node :: n.nd_preds)) succs
+    IList.iter (fun n -> n.nd_preds <- (node :: n.nd_preds)) succs
 
   (** Get the predecessors of the node *)
   let get_preds node = node.nd_preds
@@ -234,9 +234,9 @@ module Node = struct
     let visited = ref NodeSet.empty in
     let rec nodes n =
       visited := NodeSet.add n !visited;
-      let succs = list_filter (fun n -> not (NodeSet.mem n !visited)) (generator n) in
-      match list_length succs with
-      | 1 -> n:: (nodes (list_hd succs))
+      let succs = IList.filter (fun n -> not (NodeSet.mem n !visited)) (generator n) in
+      match IList.length succs with
+      | 1 -> n:: (nodes (IList.hd succs))
       | _ -> [n] in
     nodes start_node
 
@@ -288,14 +288,14 @@ module Node = struct
             | _ -> callees
           end
       | _ -> callees in
-    list_fold_left collect [] (get_instrs node)
+    IList.fold_left collect [] (get_instrs node)
 
   (** Get the location of the node *)
   let get_loc n = n.nd_loc
 
   (** Get the source location of the last instruction in the node *)
   let get_last_loc n =
-    match list_rev (get_instrs n) with
+    match IList.rev (get_instrs n) with
     | instr :: _ -> Sil.instr_get_loc instr
     | [] -> n.nd_loc
 
@@ -366,7 +366,7 @@ module Node = struct
       (proc_desc_get_ret_var pdesc, ret_type) in
     let construct_decl (x, typ) =
       (Sil.mk_pvar x proc_name, typ) in
-    let ptl = ret_var :: list_map construct_decl locals in
+    let ptl = ret_var :: IList.map construct_decl locals in
     let instr = Sil.Declare_locals (ptl, loc) in
     prepend_instrs_temps node [instr] []
 
@@ -375,7 +375,7 @@ module Node = struct
 
   let remove_node' filter_out_fun cfg node =
     let remove_node_in_cfg nodes =
-      list_filter filter_out_fun nodes in
+      IList.filter filter_out_fun nodes in
     cfg.node_list := remove_node_in_cfg !(cfg.node_list)
 
   let remove_node cfg node =
@@ -390,7 +390,7 @@ module Node = struct
     (if remove_nodes then
        let pdesc = pdesc_tbl_find cfg name in
        let proc_nodes =
-         list_fold_right (fun node set -> NodeSet.add node set)
+         IList.fold_right (fun node set -> NodeSet.add node set)
            pdesc.pd_nodes NodeSet.empty in
        remove_node_set cfg proc_nodes);
     pdesc_tbl_remove cfg name
@@ -418,7 +418,7 @@ module Node = struct
         | None ->
             node.nd_dist_exit <- Some dist;
             next_nodes := node.nd_preds @ !next_nodes in
-      list_iter do_node nodes;
+      IList.iter do_node nodes;
       if !next_nodes != [] then mark_distance (dist + 1) !next_nodes in
     mark_distance 0 [exit_node]
 
@@ -488,8 +488,8 @@ module Node = struct
     let nodes = proc_desc_get_nodes proc_desc in
     let do_node node =
       incr num_nodes;
-      num_edges := !num_edges + list_length (get_succs node) in
-    list_iter do_node nodes;
+      num_edges := !num_edges + IList.length (get_succs node) in
+    IList.iter do_node nodes;
     let cyclo = !num_edges - !num_nodes + 2 * num_connected in (* formula for cyclomatic complexity *)
     cyclo
 
@@ -545,19 +545,19 @@ module Node = struct
     pp_to_string pp ()
 
   let proc_desc_iter_nodes f proc_desc =
-    list_iter f (list_rev (proc_desc_get_nodes proc_desc))
+    IList.iter f (IList.rev (proc_desc_get_nodes proc_desc))
 
   let proc_desc_fold_nodes f acc proc_desc =
-    (*list_fold_left (fun acc node -> f acc node) acc (list_rev (proc_desc_get_nodes proc_desc))*)
-    list_fold_left f acc (list_rev (proc_desc_get_nodes proc_desc))
+    (*list_fold_left (fun acc node -> f acc node) acc (IList.rev (proc_desc_get_nodes proc_desc))*)
+    IList.fold_left f acc (IList.rev (proc_desc_get_nodes proc_desc))
 
   (** iterate over the calls from the procedure: (callee,location) pairs *)
   let proc_desc_iter_calls f pdesc =
     let do_node node =
-      list_iter
+      IList.iter
         (fun callee_pname -> f (callee_pname, get_loc node))
         (get_callees node) in
-    list_iter do_node (proc_desc_get_nodes pdesc)
+    IList.iter do_node (proc_desc_get_nodes pdesc)
 
   let proc_desc_iter_slope f proc_desc =
     let visited = ref NodeSet.empty in
@@ -587,19 +587,19 @@ module Node = struct
 
   let proc_desc_iter_slope_calls f proc_desc =
     let do_node node =
-      list_iter
+      IList.iter
         (fun callee_pname -> f callee_pname)
         (get_callees node) in
     proc_desc_iter_slope do_node proc_desc
 
   let proc_desc_iter_instrs f proc_desc =
     let do_node node =
-      list_iter (fun i -> f node i) (get_instrs node) in
+      IList.iter (fun i -> f node i) (get_instrs node) in
     proc_desc_iter_nodes do_node proc_desc
 
   let proc_desc_fold_instrs f acc proc_desc =
     let fold_node acc node =
-      list_fold_left (fun acc instr -> f acc node instr) acc (get_instrs node) in
+      IList.fold_left (fun acc instr -> f acc node instr) acc (get_instrs node) in
     proc_desc_fold_nodes fold_node acc proc_desc
 
 end
@@ -690,11 +690,11 @@ let get_all_procs cfg =
 
 (** Get the procedures whose body is defined in this cfg *)
 let get_defined_procs cfg =
-  list_filter Procdesc.is_defined (get_all_procs cfg)
+  IList.filter Procdesc.is_defined (get_all_procs cfg)
 
 (** Get the objc procedures whose body is generated *)
 let get_objc_generated_procs cfg =
-  list_filter (
+  IList.filter (
     fun procdesc ->
       (Procdesc.get_attributes procdesc).ProcAttributes.is_generated) (get_all_procs cfg)
 
@@ -713,7 +713,7 @@ let add_removetemps_instructions cfg =
     let loc = Node.get_last_loc node in
     let temps = Node.get_temps node in
     if temps != [] then Node.append_instrs_temps node [Sil.Remove_temps (temps, loc)] [] in
-  list_iter do_node all_nodes
+  IList.iter do_node all_nodes
 
 (** add instructions to perform abstraction *)
 let add_abstraction_instructions cfg =
@@ -722,10 +722,10 @@ let add_abstraction_instructions cfg =
       | Node.Exit_node _ -> true
       | _ -> false in
     let succ_nodes = Node.get_succs node in
-    if list_exists is_exit succ_nodes then true
+    if IList.exists is_exit succ_nodes then true
     else match succ_nodes with
       | [] -> false
-      | [h] -> list_length (Node.get_preds h) > 1
+      | [h] -> IList.length (Node.get_preds h) > 1
       | _ -> false in
   let node_requires_abstraction node =
     match Node.get_kind node with
@@ -741,7 +741,7 @@ let add_abstraction_instructions cfg =
   let do_node node =
     let loc = Node.get_last_loc node in
     if node_requires_abstraction node then Node.append_instrs_temps node [Sil.Abstract loc] [] in
-  list_iter do_node all_nodes
+  IList.iter do_node all_nodes
 
 let get_name_of_parameter (curr_f : Procdesc.t) (x, typ) =
   Sil.mk_pvar (Mangled.from_string x) (Procdesc.get_proc_name curr_f)
@@ -760,8 +760,8 @@ let get_name_of_objc_static_locals (curr_f : Procdesc.t) p =
     match hpred with
     | Sil.Hpointsto(e, _, _) -> [local_static e]
     | _ -> [] in
-  let vars_sigma = list_map hpred_local_static (Prop.get_sigma p) in
-  list_flatten (list_flatten vars_sigma)
+  let vars_sigma = IList.map hpred_local_static (Prop.get_sigma p) in
+  IList.flatten (IList.flatten vars_sigma)
 
 (* returns a list of local variables that points to an objc block in a proposition *)
 let get_name_of_objc_block_locals p =
@@ -774,8 +774,8 @@ let get_name_of_objc_block_locals p =
     match hpred with
     | Sil.Hpointsto(e, _, _) -> [local_blocks e]
     | _ -> [] in
-  let vars_sigma = list_map hpred_local_blocks (Prop.get_sigma p) in
-  list_flatten (list_flatten vars_sigma)
+  let vars_sigma = IList.map hpred_local_blocks (Prop.get_sigma p) in
+  IList.flatten (IList.flatten vars_sigma)
 
 let remove_abducted_retvars p =
   (* compute the hpreds and pure atoms reachable from the set of seed expressions in [exps] *)
@@ -785,10 +785,10 @@ let remove_abducted_retvars p =
       | Sil.Eexp (Sil.Const (Sil.Cexn e), _) -> Sil.ExpSet.add e exps
       | Sil.Eexp (e, _) -> Sil.ExpSet.add e exps
       | Sil.Estruct (flds, _) ->
-          list_fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
+          IList.fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
 
       | Sil.Earray (_, elems, _) ->
-          list_fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
+          IList.fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
     let rec compute_reachable_hpreds_rec sigma (reach, exps) =
       let add_hpred_if_reachable (reach, exps) = function
         | Sil.Hpointsto (lhs, rhs, _) as hpred when Sil.ExpSet.mem lhs exps ->
@@ -796,7 +796,7 @@ let remove_abducted_retvars p =
             let exps' = collect_exps exps rhs in
             (reach', exps')
         | _ -> reach, exps in
-      let reach', exps' = list_fold_left add_hpred_if_reachable (reach, exps) sigma in
+      let reach', exps' = IList.fold_left add_hpred_if_reachable (reach, exps) sigma in
       if (Sil.HpredSet.cardinal reach) = (Sil.HpredSet.cardinal reach') then (reach, exps)
       else compute_reachable_hpreds_rec sigma (reach', exps') in
     let reach_hpreds, reach_exps =
@@ -808,14 +808,14 @@ let remove_abducted_retvars p =
         | Sil.UnOp (_, e, _) | Sil.Cast (_, e) | Sil.Lfield (e, _, _) -> exp_contains e
         | Sil.BinOp (_, e0, e1) | Sil.Lindex (e0, e1) -> exp_contains e0 || exp_contains e1
         | _ -> false in
-      list_filter
+      IList.filter
         (function
           | Sil.Aeq (lhs, rhs) | Sil.Aneq (lhs, rhs) -> exp_contains lhs || exp_contains rhs)
         pi in
     Sil.HpredSet.elements reach_hpreds, reach_pi in
   (* separate the abducted pvars from the normal ones, deallocate the abducted ones*)
   let abducted_pvars, normal_pvars =
-    list_fold_left
+    IList.fold_left
       (fun pvars hpred ->
          match hpred with
          | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
@@ -827,7 +827,7 @@ let remove_abducted_retvars p =
       (Prop.get_sigma p) in
   let _, p' = Prop.deallocate_stack_vars p abducted_pvars in
   let normal_pvar_set =
-    list_fold_left
+    IList.fold_left
       (fun normal_pvar_set pvar -> Sil.ExpSet.add (Sil.Lvar pvar) normal_pvar_set)
       Sil.ExpSet.empty
       normal_pvars in
@@ -836,7 +836,7 @@ let remove_abducted_retvars p =
   Prop.normalize (Prop.replace_pi pi_reach (Prop.replace_sigma sigma_reach p'))
 
 let remove_locals (curr_f : Procdesc.t) p =
-  let names_of_locals = list_map (get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
+  let names_of_locals = IList.map (get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
   let names_of_locals' = match !Config.curr_language with
     | Config.C_CPP -> (* in ObjC to deal with block we need to remove static locals *)
         let names_of_static_locals = get_name_of_objc_static_locals curr_f p in
@@ -847,7 +847,7 @@ let remove_locals (curr_f : Procdesc.t) p =
   (removed, if !Config.angelic_execution then remove_abducted_retvars p' else p')
 
 let remove_formals (curr_f : Procdesc.t) p =
-  let names_of_formals = list_map (get_name_of_parameter curr_f) (Procdesc.get_formals curr_f) in
+  let names_of_formals = IList.map (get_name_of_parameter curr_f) (Procdesc.get_formals curr_f) in
   Prop.deallocate_stack_vars p names_of_formals
 
 (** remove the return variable from the prop *)
@@ -874,7 +874,7 @@ let remove_seed_vars (prop: 'a Prop.t) : Prop.normal Prop.t =
     | Sil.Hpointsto(Sil.Lvar pv, _, _) -> not (Sil.pvar_is_seed pv)
     | _ -> true in
   let sigma = Prop.get_sigma prop in
-  let sigma' = list_filter hpred_not_seed sigma in
+  let sigma' = IList.filter hpred_not_seed sigma in
   Prop.normalize (Prop.replace_sigma sigma' prop)
 
 (** checks whether a cfg is connected or not *)
@@ -887,26 +887,26 @@ let check_cfg_connectedness cfg =
     let succs = Node.get_succs n in
     let preds = Node.get_preds n in
     match Node.get_kind n with
-    | Node.Start_node _ -> (list_length succs = 0) || (list_length preds > 0)
-    | Node.Exit_node _ -> (list_length succs > 0) || (list_length preds = 0)
+    | Node.Start_node _ -> (IList.length succs = 0) || (IList.length preds > 0)
+    | Node.Exit_node _ -> (IList.length succs > 0) || (IList.length preds = 0)
     | Node.Stmt_node _ | Node.Prune_node _
-    | Node.Skip_node _ -> (list_length succs = 0) || (list_length preds = 0)
+    | Node.Skip_node _ -> (IList.length succs = 0) || (IList.length preds = 0)
     | Node.Join_node ->
         (* Join node has the exception that it may be without predecessors and pointing to an exit node *)
         (* if the if brances end with a return *)
         (match succs with
          | [n'] when is_exit_node n' -> false
-         | _ -> (list_length preds = 0)) in
+         | _ -> (IList.length preds = 0)) in
   let do_pdesc pd =
     let pname = Procname.to_string (Procdesc.get_proc_name pd) in
     let nodes = Procdesc.get_nodes pd in
-    let broken = list_exists broken_node nodes in
+    let broken = IList.exists broken_node nodes in
     if broken then
       L.out "\n ***BROKEN CFG: '%s'\n" pname
     else
       L.out "\n ***CONNECTED CFG: '%s'\n" pname in
   let pdescs = get_all_procs cfg in
-  list_iter do_pdesc pdescs
+  IList.iter do_pdesc pdescs
 
 (** Given a mangled name of a block return its procdesc if exists*)
 let get_block_pdesc cfg block =
@@ -915,7 +915,7 @@ let get_block_pdesc cfg block =
     let name = Procdesc.get_proc_name pd in
     (Procname.to_string name) = (Mangled.to_string block) in
   try
-    let block_pdesc = list_find is_block_pdesc pdescs in
+    let block_pdesc = IList.find is_block_pdesc pdescs in
     Some block_pdesc
   with Not_found -> None
 
@@ -929,10 +929,10 @@ let remove_seed_captured_vars_block captured_vars prop =
   let hpred_seed_captured = function
     | Sil.Hpointsto(Sil.Lvar pv, _, _) ->
         let pname = Sil.pvar_get_name pv in
-        (Sil.pvar_is_seed pv) && (list_mem is_captured pname captured_vars)
+        (Sil.pvar_is_seed pv) && (IList.mem is_captured pname captured_vars)
     | _ -> false in
   let sigma = Prop.get_sigma prop in
-  let sigma' = list_filter (fun hpred -> not (hpred_seed_captured hpred)) sigma in
+  let sigma' = IList.filter (fun hpred -> not (hpred_seed_captured hpred)) sigma in
   Prop.normalize (Prop.replace_sigma sigma' prop)
 
 (** Serializer for control flow graphs *)
@@ -984,7 +984,7 @@ let save_attributes filename cfg =
       (Location.to_string loc);
     *)
     AttributesTable.store_attributes attributes' in
-  list_iter save_proc (get_all_procs cfg)
+  IList.iter save_proc (get_all_procs cfg)
 
 (** Save a cfg into a file *)
 let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg : cfg) =

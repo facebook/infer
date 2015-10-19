@@ -104,7 +104,7 @@ let get_method_decls parent decl_list =
     | CXXRecordDecl (_, _, _, _, decl_list', _, _, _)
     | RecordDecl (_, _, _, _, decl_list', _, _) -> traverse_decl_list decl decl_list'
     | _ -> []
-  and traverse_decl_list parent decl_list = list_flatten (list_map (traverse_decl parent) decl_list)  in
+  and traverse_decl_list parent decl_list = IList.flatten (IList.map (traverse_decl parent) decl_list)  in
   traverse_decl_list parent decl_list
 
 let get_class_methods tenv class_name namespace decl_list =
@@ -116,7 +116,7 @@ let get_class_methods tenv class_name namespace decl_list =
         Some method_proc
     | _ -> None in
   (* poor mans list_filter_map *)
-  list_flatten_options (list_map process_method_decl decl_list)
+  IList.flatten_options (IList.map process_method_decl decl_list)
 
 (** fetches list of superclasses for C++ classes *)
 let get_superclass_list decl =
@@ -124,10 +124,10 @@ let get_superclass_list decl =
   | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
-      let base_decls = list_map Ast_utils.get_decl_from_typ_ptr base_ptr in
+      let base_decls = IList.map Ast_utils.get_decl_from_typ_ptr base_ptr in
       let decl_to_mangled_name decl = Mangled.from_string (get_record_name decl) in
       let get_super_field super_decl = (Sil.Class, decl_to_mangled_name super_decl) in
-      list_map get_super_field base_decls
+      IList.map get_super_field base_decls
   | _ -> []
 
 let add_struct_to_tenv tenv typ =
@@ -152,7 +152,7 @@ let rec get_struct_fields tenv record_name namespace decl_list =
         if not decl_info.Clang_ast_t.di_is_implicit then
           ignore (add_types_from_decl_to_tenv tenv namespace decl); []
     | _ -> [] in
-  list_flatten (list_map do_one_decl decl_list)
+  IList.flatten (IList.map do_one_decl decl_list)
 
 (* For a record declaration it returns/constructs the type *)
 and get_declaration_type tenv namespace decl =

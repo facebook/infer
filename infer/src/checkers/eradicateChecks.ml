@@ -140,7 +140,7 @@ let check_condition case_zero find_canonical_duplicate get_proc_desc curr_pname
       | _ -> () in
     let do_node n =
       if Location.equal loc (Cfg.Node.get_loc n)
-      then list_iter do_instr (Cfg.Node.get_instrs n) in
+      then IList.iter do_instr (Cfg.Node.get_instrs n) in
     Cfg.Procdesc.iter_nodes do_node (Cfg.Node.get_proc_desc node);
     !throwable_found in
 
@@ -262,7 +262,7 @@ let check_constructor_initialization
             let filter_range_opt = function
               | Some (_, ta, _) -> f ta
               | None -> unknown in
-            list_exists
+            IList.exists
               (function pname, typestate ->
                 let pvar = Sil.mk_pvar
                     (Mangled.from_string (Ident.fieldname_to_string fn))
@@ -321,7 +321,7 @@ let check_constructor_initialization
                   curr_pname;
             end in
 
-        list_iter do_fta ftal
+        IList.iter do_fta ftal
     | _ -> ()
   end
 
@@ -428,7 +428,7 @@ let check_call_parameters
     instr_ref typecheck_expr print_current_state : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let has_this = is_virtual sig_params in
-  let tot_param_num = list_length sig_params - (if has_this then 1 else 0) in
+  let tot_param_num = IList.length sig_params - (if has_this then 1 else 0) in
   let rec check sparams cparams = match sparams, cparams with
     | (s1, ia1, t1) :: sparams', ((orig_e2, e2), t2) :: cparams' ->
         let param_is_this = s1 = "this" in
@@ -460,7 +460,7 @@ let check_call_parameters
               | None -> "formal parameter " ^ s1 in
             let origin_descr = TypeAnnotation.descr_origin ta2 in
 
-            let param_num = list_length sparams' + (if has_this then 0 else 1) in
+            let param_num = IList.length sparams' + (if has_this then 0 else 1) in
             let callee_loc = callee_attributes.ProcAttributes.loc in
             report_error
               find_canonical_duplicate
@@ -487,7 +487,7 @@ let check_call_parameters
       Specs.get_summary callee_pname <> None in
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
-    check (list_rev sig_params) (list_rev call_params)
+    check (IList.rev sig_params) (IList.rev call_params)
 
 (** Checks if the annotations are consistent with the inherited class or with the
     implemented interfaces *)
@@ -532,8 +532,8 @@ let check_overridden_annotations
     let current_params = annotated_signature.Annotations.params
     and overridden_params = overriden_signature.Annotations.params in
     let initial_pos = if is_virtual current_params then 0 else 1 in
-    if (list_length current_params) = (list_length overridden_params) then
-      ignore (list_fold_left2 compare initial_pos current_params overridden_params) in
+    if (IList.length current_params) = (IList.length overridden_params) then
+      ignore (IList.fold_left2 compare initial_pos current_params overridden_params) in
 
   let check overriden_proc_name =
     match Specs.proc_resolve_attributes overriden_proc_name with

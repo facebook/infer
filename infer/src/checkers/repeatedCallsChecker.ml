@@ -27,7 +27,7 @@ struct
         | Sil.Call (ret1, e1, etl1, loc1, cf1), Sil.Call (ret2, e2, etl2, loc2, cf2) ->
             (* ignore return ids and call flags *)
             let n = Sil.exp_compare e1 e2 in
-            if n <> 0 then n else let n = list_compare Sil.exp_typ_compare etl1 etl2 in
+            if n <> 0 then n else let n = IList.compare Sil.exp_typ_compare etl1 etl2 in
               if n <> 0 then n else Sil.call_flags_compare cf1 cf2
         | _ -> Sil.instr_compare i1 i2
     end)
@@ -75,7 +75,7 @@ struct
         | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _) when proc_is_new pn ->
             found := Some loc
         | _ -> () in
-      list_iter do_instr (Cfg.Node.get_instrs node);
+      IList.iter do_instr (Cfg.Node.get_instrs node);
       !found in
 
     let module DFAllocCheck = Dataflow.MakeDF(struct
@@ -114,7 +114,7 @@ struct
             (* same temporary variable does not imply same value *)
             not (Errdesc.pvar_is_frontend_tmp pvar)
         | _ -> true in
-      list_for_all filter_arg args in
+      IList.for_all filter_arg args in
 
     match instr with
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _, loc, call_flags)

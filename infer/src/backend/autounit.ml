@@ -57,7 +57,7 @@ end = struct
     let ev = ref IdMap.empty in
     let add_var id =
       ev := IdMap.add id (new_range ()) !ev in
-    list_iter add_var vars;
+    IList.iter add_var vars;
     !ev
 
   let gt_bottom i r =
@@ -82,20 +82,20 @@ end = struct
 
   (** normalize [r]: the excluded elements must be strictly between bottom and top *)
   let normalize r =
-    r.excluded <- list_filter (fun i -> geq_bottom i r && leq_top i r) r.excluded;
+    r.excluded <- IList.filter (fun i -> geq_bottom i r && leq_top i r) r.excluded;
     let rec normalize_bottom () = match r.bottom with
       | None -> ()
       | Some i ->
-          if list_mem Sil.Int.eq i r.excluded then begin
-            r.excluded <- list_filter (Sil.Int.neq i) r.excluded;
+          if IList.mem Sil.Int.eq i r.excluded then begin
+            r.excluded <- IList.filter (Sil.Int.neq i) r.excluded;
             r.bottom <- Some (i ++ Sil.Int.one);
             normalize_bottom ()
           end in
     let rec normalize_top () = match r.top with
       | None -> ()
       | Some i ->
-          if list_mem Sil.Int.eq i r.excluded then begin
-            r.excluded <- list_filter (Sil.Int.neq i) r.excluded;
+          if IList.mem Sil.Int.eq i r.excluded then begin
+            r.excluded <- IList.filter (Sil.Int.neq i) r.excluded;
             r.top <- Some (i -- Sil.Int.one);
             normalize_top ()
           end in
@@ -111,7 +111,7 @@ end = struct
 
   (** exclude one element from the range *)
   let add_excluded r id i =
-    if geq_bottom i r && leq_top i r && not (list_mem Sil.Int.eq i r.excluded)
+    if geq_bottom i r && leq_top i r && not (IList.mem Sil.Int.eq i r.excluded)
     then begin
       r.excluded <- i :: r.excluded;
       normalize r;
@@ -140,9 +140,9 @@ end = struct
   let choose id rng =
     if debug then F.fprintf F.std_formatter "choosing %a@." (pp_range id) rng;
     let found = ref None in
-    let num_iter = list_length rng.excluded in
+    let num_iter = IList.length rng.excluded in
     let try_candidate candidate =
-      if geq_bottom candidate rng && leq_top candidate rng && not (list_mem Sil.Int.eq candidate rng.excluded)
+      if geq_bottom candidate rng && leq_top candidate rng && not (IList.mem Sil.Int.eq candidate rng.excluded)
       then (found := Some candidate; rng.bottom <- Some candidate; rng.top <- Some candidate; rng.excluded <- []) in
     let search_up () =
       let base = match rng.bottom with None -> Sil.Int.zero | Some n -> n in
@@ -183,7 +183,7 @@ end = struct
       | Sil.Aneq (e1, e2) ->
           do_neq e1 e2 in
     changed := false;
-    list_iter do_atom pi;
+    IList.iter do_atom pi;
     if !changed then pi_iter do_le do_lt do_neq pi
 
   (** Collect constraints on [vars] from [pi], and return a satisfying instantiation *)
@@ -193,7 +193,7 @@ end = struct
     let atom_is_relevant a =
       let fav = Sil.atom_fav a in
       Sil.fav_for_all fav (fun id -> Sil.fav_mem vars_fav id) in
-    let pi_relevant = list_filter atom_is_relevant pi in
+    let pi_relevant = IList.filter atom_is_relevant pi in
     let ev = new_eval vars in
     let update_top rng id n_op = match rng.top, n_op with
       | Some _, Some n -> add_top rng id n
@@ -259,7 +259,7 @@ end = struct
       let rng = IdMap.find id ev in
       pi_iter do_le do_lt do_neq pi_relevant;
       choose id rng in
-    list_iter do_ident vars;
+    IList.iter do_ident vars;
     if debug then F.fprintf F.std_formatter "solution to pure constraints:@.%a@." pp_eval ev;
     let solution = IdMap.map (function { bottom = Some n } -> n | _ -> assert false) ev in
     solution
@@ -337,10 +337,10 @@ let create_idmap sigma : idmap =
     | Sil.Hlseg (k, hpar, e, f, el) ->
         do_lhs_e e (Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer));
         do_se (Sil.Eexp (f, Sil.inst_none)) (Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer));
-        list_iter (fun e -> do_se (Sil.Eexp (e, Sil.inst_none)) Sil.Tvoid) el
+        IList.iter (fun e -> do_se (Sil.Eexp (e, Sil.inst_none)) Sil.Tvoid) el
     | hpred ->
         L.err "do_hpred not implemented %a@." (Sil.pp_hpred pe) hpred in
-  list_iter do_hpred sigma;
+  IList.iter do_hpred sigma;
   !idmap
 
 module Code : sig
@@ -356,10 +356,10 @@ end = struct
   type t = string list ref
   let indent = ref ""
   let to_list code =
-    list_rev !code
+    IList.rev !code
   let pp fmt code =
     let doit line = F.fprintf fmt "%s@\n" line in
-    list_iter doit (to_list code);
+    IList.iter doit (to_list code);
     F.fprintf fmt "@."
   let empty () = ref []
   let add_line code l =
@@ -420,7 +420,7 @@ let pp_texp_for_malloc fmt =
     | Sil.Tptr (t, pk) ->
         Sil.Tptr (handle_arr_size t, pk)
     | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
-        Sil.Tstruct (list_map (fun (f, t, a) -> (f, handle_arr_size t, a)) ftal, sftal, csu, nameo, supers, def_mthds, iann)
+        Sil.Tstruct (IList.map (fun (f, t, a) -> (f, handle_arr_size t, a)) ftal, sftal, csu, nameo, supers, def_mthds, iann)
     | Sil.Tarray (t, e) ->
         Sil.Tarray (handle_arr_size t, e) in
   function
@@ -439,9 +439,9 @@ let gen_sigma code proc_name spec_num env idmap sigma =
         Code.add_from_pp code' pp
     | Sil.Estruct (fsel, _) ->
         let accessor = if need_deref then "->" else "." in
-        list_iter (fun (f, se) -> do_strexp code' (base ^ accessor ^ Ident.fieldname_to_string f) false se) fsel
+        IList.iter (fun (f, se) -> do_strexp code' (base ^ accessor ^ Ident.fieldname_to_string f) false se) fsel
     | Sil.Earray (size, esel, _) ->
-        list_iter (fun (e, se) ->
+        IList.iter (fun (e, se) ->
             let pp f () = F.fprintf f "%a" (pp_exp_c pe) e in
             let index = pp_to_string pp () in
             do_strexp code' (base ^ "[" ^ index ^ "]") false se) esel in
@@ -474,7 +474,7 @@ let gen_sigma code proc_name spec_num env idmap sigma =
         Code.add_from_pp code pp2
     | hpred ->
         L.err "gen_hpred not implemented: %a@." (Sil.pp_hpred pe) hpred in
-  list_iter gen_hpred sigma;
+  IList.iter gen_hpred sigma;
   Code.append code post_code
 
 (* generate code corresponding to equalities in the pure part *)
@@ -484,7 +484,7 @@ let gen_init_equalities code pure =
         let pp f () = F.fprintf f "%a = %a;" (pp_id_c pe) id (pp_exp_c pe) e in
         Code.add_from_pp code pp
     | _ -> () in
-  list_iter do_atom pure
+  IList.iter do_atom pure
 
 (** generate variable declarations *)
 let gen_var_decl code idmap parameters =
@@ -496,7 +496,7 @@ let gen_var_decl code idmap parameters =
     let pp_var f () = pp_id_c pe f id in
     let pp f () = F.fprintf f "%a;" (Sil.pp_type_decl pe pp_var pp_exp_c) typ in
     Code.add_from_pp code pp in
-  list_iter do_parameter parameters;
+  IList.iter do_parameter parameters;
   IdMap.iter do_vinfo idmap
 
 (** initialize variables not requiring allocation *)
@@ -544,7 +544,7 @@ let gen_hpara code proc_name spec_num env id hpara =
   let idmap = create_idmap hpara.Sil.body in
   let idmap_ex =
     let filter i =
-      list_exists (Ident.equal i) hpara.Sil.evars in
+      IList.exists (Ident.equal i) hpara.Sil.evars in
     filter_idmap filter idmap in
   let idmap_no_next =
     let filter i =
@@ -637,7 +637,7 @@ let genmain proc_numspecs_list =
       Code.add_line code line done in
   Code.add_line code "int main() {";
   Code.set_indent "  ";
-  list_iter do_one_proc proc_numspecs_list;
+  IList.iter do_one_proc proc_numspecs_list;
   Code.add_line code "printf(\"unit test terminated\\n\");";
   Code.add_line code "return 0;";
   Code.set_indent "";

@@ -39,7 +39,7 @@ let collect_specs_filenames jar_filename =
     else
       let proc_filename = (Filename.chop_extension (Filename.basename filename)) in
       StringSet.add proc_filename set in
-  models_specs_filenames := list_fold_left collect !models_specs_filenames (Zip.entries file_in);
+  models_specs_filenames := IList.fold_left collect !models_specs_filenames (Zip.entries file_in);
   Zip.close_in file_in
 
 
@@ -102,7 +102,7 @@ let load_sources_and_classes () =
           let cn, root_info = Javalib.extract_class_name_from_file fname in
           let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
           let updated_roots =
-            if list_exists (fun p -> p = root_dir) roots then roots
+            if IList.exists (fun p -> p = root_dir) roots then roots
             else root_dir:: roots in
           loop paths updated_roots sources (JBasics.ClassSet.add cn classes)
       | JVerbose.Classpath parsed_paths ->
@@ -114,7 +114,7 @@ let load_sources_and_classes () =
     | Failure "lexing: empty token" -> loop paths roots sources classes
     | End_of_file ->
         close_in file_in;
-        let classpath = list_fold_left append_path "" (roots @ (add_android_jar paths)) in
+        let classpath = IList.fold_left append_path "" (roots @ (add_android_jar paths)) in
         (classpath, sources, classes) in
   loop [] [] StringMap.empty JBasics.ClassSet.empty
 
@@ -162,10 +162,10 @@ let lookup_node cn (program: program) =
 let classname_of_class_filename class_filename =
   let parts = Str.split (Str.regexp "/") class_filename in
   let classname_str =
-    if list_length parts > 1 then
-      list_fold_left (fun s p -> s^"."^p) (list_hd parts) (list_tl parts)
+    if IList.length parts > 1 then
+      IList.fold_left (fun s p -> s^"."^p) (IList.hd parts) (IList.tl parts)
     else
-      list_hd parts in
+      IList.hd parts in
   JBasics.make_cn classname_str
 
 
@@ -177,7 +177,7 @@ let extract_classnames classnames jar_filename =
       let () = ignore (Str.search_forward (Str.regexp "class") class_filename 0) in
       (classname_of_class_filename (Filename.chop_extension class_filename):: classes)
     with Not_found -> classes in
-  let classnames_after = list_fold_left collect classnames (Zip.entries file_in) in
+  let classnames_after = IList.fold_left collect classnames (Zip.entries file_in) in
   Zip.close_in file_in;
   classnames_after
 
@@ -186,13 +186,13 @@ let collect_classes classmap jar_filename =
   let classpath = Javalib.class_path jar_filename in
   let collect classmap cn =
     JBasics.ClassMap.add cn (Javalib.get_class classpath cn) classmap in
-  list_fold_left collect classmap (extract_classnames [] jar_filename)
+  IList.fold_left collect classmap (extract_classnames [] jar_filename)
 
 
 let classmap_of_classpath classpath =
   let jar_filenames =
-    list_filter (fun p -> not (Sys.is_directory p)) (split_classpath classpath) in
-  list_fold_left collect_classes JBasics.ClassMap.empty jar_filenames
+    IList.filter (fun p -> not (Sys.is_directory p)) (split_classpath classpath) in
+  IList.fold_left collect_classes JBasics.ClassMap.empty jar_filenames
 
 
 let load_program classpath classes arg_source_files =

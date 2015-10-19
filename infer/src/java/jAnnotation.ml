@@ -23,7 +23,7 @@ let translate a : Sil.annotation =
     | _ -> "?" in
   let element_value_pairs = a.JBasics.element_value_pairs in
   { Sil.class_name = class_name;
-    Sil.parameters = list_map translate_value_pair element_value_pairs }
+    Sil.parameters = IList.map translate_value_pair element_value_pairs }
 
 
 (** Translate an item annotation. *)
@@ -32,7 +32,7 @@ let translate_item avlist : Sil.item_annotation =
     | Javalib.RTVisible -> true
     | Javalib.RTInvisible -> false in
   let trans (a, v) = translate a, trans_vis v in
-  list_map trans avlist
+  IList.map trans avlist
 
 
 (** Translate a method annotation. *)
@@ -40,5 +40,5 @@ let translate_method ann : Sil.method_annotation =
   let global_ann = ann.Javalib.ma_global in
   let param_ann = ann.Javalib.ma_parameters in
   let ret_item = translate_item global_ann in
-  let param_items = list_map translate_item param_ann in
+  let param_items = IList.map translate_item param_ann in
   ret_item, param_items

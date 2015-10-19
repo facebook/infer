@@ -35,7 +35,7 @@ let append_list_op list_op1 list_op2 =
 let reverse_list_op list_op =
   match list_op with
   | None -> None
-  | Some list -> Some (list_rev list)
+  | Some list -> Some (IList.rev list)
 
 let rec unroll_type tenv typ off =
   match (typ, off) with
@@ -61,18 +61,9 @@ let rec unroll_type tenv typ off =
       L.d_str "Type : "; Sil.d_typ_full typ; L.d_ln ();
       assert false
 
-(* This function has the same name the standard list_split in Utils.*)
-(* Maybe it's better to change name as we open Utils.  *)
-let list_split equal x xys =
-  let (xy, xys') = list_partition (fun (x', _) -> equal x x') xys in
-  match xy with
-  | [] -> (xys', None)
-  | [(x', y')] -> (xys', Some y')
-  | _ -> assert false
-
 (* Given a node, returns a list of pvar of blocks that have been nullified in the block *)
 let get_nullified_block node =
-  let null_blocks = list_flatten(list_map (fun i -> match i with
+  let null_blocks = IList.flatten(IList.map (fun i -> match i with
       | Sil.Nullify(pvar, _, true) when Sil.is_block_pvar pvar -> [pvar]
       | _ -> []) (Cfg.Node.get_instrs node)) in
   null_blocks
@@ -82,7 +73,7 @@ let get_nullified_block node =
 let check_block_retain_cycle cfg tenv pname _prop block_nullified =
   let mblock = Sil.pvar_get_name block_nullified in
   let block_captured = (match Cfg.get_block_pdesc cfg mblock with
-      | Some pd -> fst (Utils.list_split (Cfg.Procdesc.get_captured pd))
+      | Some pd -> fst (IList.split (Cfg.Procdesc.get_captured pd))
       | None -> []) in
   let _prop' = Cfg.remove_seed_captured_vars_block block_captured _prop in
   let _prop'' = Prop.prop_rename_fav_with_existentials _prop' in
@@ -168,15 +159,15 @@ let rec apply_offlist
         let ftal, sftal, csu, nameo, supers, def_mthds, iann = match typ' with Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) -> ftal, sftal, csu, nameo, supers, def_mthds, iann | _ -> assert false in
         let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
         try
-          let _, se' = list_find (fun fse -> Ident.fieldname_equal fld (fst fse)) fsel in
+          let _, se' = IList.find (fun fse -> Ident.fieldname_equal fld (fst fse)) fsel in
           let res_e', res_se', res_t', res_pred_insts_op' =
             apply_offlist
               footprint_part pdesc tenv p fp_root nullify_struct
               (root_lexp, se', t') offlist' f inst lookup_inst in
           let replace_fse fse = if Sil.fld_equal fld (fst fse) then (fld, res_se') else fse in
-          let res_se = Sil.Estruct (list_map replace_fse fsel, inst') in
+          let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
           let replace_fta (f, t, a) = if Sil.fld_equal fld f then (fld, res_t', a) else (f, t, a) in
-          let res_t = Sil.Tstruct (list_map replace_fta ftal, sftal, csu, nameo, supers, def_mthds, iann) in
+          let res_t = Sil.Tstruct (IList.map replace_fta ftal, sftal, csu, nameo, supers, def_mthds, iann) in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           pp_error();
@@ -194,13 +185,13 @@ let rec apply_offlist
         let typ' = Sil.expand_type tenv typ in
         let t', size' = match typ' with Sil.Tarray (t', size') -> (t', size') | _ -> assert false in
         try
-          let idx_ese', se' = list_find (fun ese -> Prover.check_equal p nidx (fst ese)) esel in
+          let idx_ese', se' = IList.find (fun ese -> Prover.check_equal p nidx (fst ese)) esel in
           let res_e', res_se', res_t', res_pred_insts_op' =
             apply_offlist
               footprint_part pdesc tenv p fp_root nullify_struct
               (root_lexp, se', t') offlist' f inst lookup_inst in
           let replace_ese ese = if Sil.exp_equal idx_ese' (fst ese) then (idx_ese', res_se') else ese in
-          let res_se = Sil.Earray(size, list_map replace_ese esel, inst1) in
+          let res_se = Sil.Earray(size, IList.map replace_ese esel, inst1) in
           let res_t = Sil.Tarray(res_t', size') in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found -> (* return a nondeterministic value if the index is not found after rearrangement *)
@@ -269,7 +260,7 @@ let ptsto_update footprint_part pdesc tenv p (lexp, se, typ, st) offlist exp =
 
 let update_iter iter pi sigma =
   let iter' = Prop.prop_iter_update_current_by_list iter sigma in
-  list_fold_left (Prop.prop_iter_add_atom false) iter' pi
+  IList.fold_left (Prop.prop_iter_add_atom false) iter' pi
 
 let execute_letderef pdesc tenv id rhs_exp acc_in iter =
   let iter_ren = Prop.prop_iter_make_id_primed id iter in
@@ -293,7 +284,7 @@ let execute_letderef pdesc tenv id rhs_exp acc_in iter =
       begin
         match pred_insts_op with
         | None -> update acc_in ([],[])
-        | Some pred_insts -> list_rev (list_fold_left update acc_in pred_insts)
+        | Some pred_insts -> IList.rev (IList.fold_left update acc_in pred_insts)
       end
 
   | (Sil.Hpointsto _, _) ->
@@ -321,7 +312,7 @@ let execute_set pdesc tenv rhs_exp acc_in iter =
     prop' :: acc in
   match pred_insts_op with
   | None -> update acc_in ([],[])
-  | Some pred_insts -> list_fold_left update acc_in pred_insts
+  | Some pred_insts -> IList.fold_left update acc_in pred_insts
 
 (** Module for builtin functions with their symbolic execution handler *)
 module Builtin = struct
@@ -372,10 +363,10 @@ module Builtin = struct
   let pp_registered fmt () =
     let builtin_names = ref [] in
     Procname.Hash.iter (fun name _ -> builtin_names := name :: !builtin_names) builtin_functions;
-    builtin_names := list_sort Procname.compare !builtin_names;
+    builtin_names := IList.sort Procname.compare !builtin_names;
     let pp pname = Format.fprintf fmt "%a@\n" Procname.pp pname in
     Format.fprintf fmt "Registered builtins:@\n  @[";
-    list_iter pp !builtin_names;
+    IList.iter pp !builtin_names;
     Format.fprintf fmt "@]@."
 end
 
@@ -393,10 +384,10 @@ let rec execute_nullify_se = function
   | Sil.Eexp _ ->
       Sil.Eexp (Sil.exp_zero, Sil.inst_nullify)
   | Sil.Estruct (fsel, _) ->
-      let fsel' = list_map (fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
+      let fsel' = IList.map (fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
       Sil.Estruct (fsel', Sil.inst_nullify)
   | Sil.Earray (size, esel, inst) ->
-      let esel' = list_map (fun (idx, se) -> (idx, execute_nullify_se se)) esel in
+      let esel' = IList.map (fun (idx, se) -> (idx, execute_nullify_se se)) esel in
       Sil.Earray (size, esel', Sil.inst_nullify)
 
 (** Do pruning for conditional [if (e1 != e2) ] if [positive] is true
@@ -505,10 +496,10 @@ let prune_prop tenv condition prop =
 
 let dangerous_functions =
   let dangerous_list = ["gets"] in
-  ref ((list_map Procname.from_string_c_fun) dangerous_list)
+  ref ((IList.map Procname.from_string_c_fun) dangerous_list)
 
 let check_inherently_dangerous_function caller_pname callee_pname =
-  if list_exists (Procname.equal callee_pname) !dangerous_functions then
+  if IList.exists (Procname.equal callee_pname) !dangerous_functions then
     let exn = Exceptions.Inherently_dangerous_function (Localise.desc_inherently_dangerous_function callee_pname) in
     let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
     Reporting.log_warning caller_pname ~pre: pre_opt exn
@@ -580,7 +571,7 @@ let exp_norm_check_arith pname prop exp =
 (** Check if [cond] is testing for NULL a pointer already dereferenced *)
 let check_already_dereferenced pname cond prop =
   let find_hpred lhs =
-    try Some (list_find (function
+    try Some (IList.find (function
         | Sil.Hpointsto (e, _, _) -> Sil.exp_equal e lhs
         | _ -> false) (Prop.get_sigma prop))
     with Not_found -> None in
@@ -632,7 +623,7 @@ let check_deallocate_static_memory prop_after =
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ -> () in
   let exp_att_list = Prop.get_all_attributes prop_after in
-  list_iter check_deallocated_attribute exp_att_list;
+  IList.iter check_deallocated_attribute exp_att_list;
   prop_after
 
 (** create a copy of a procdesc with a new proc name *)
@@ -651,7 +642,7 @@ let proc_desc_copy cfg pdesc pname pname' =
 
 let method_exists right_proc_name methods =
   if !Config.curr_language = Config.Java then
-    list_exists (fun meth_name -> Procname.equal right_proc_name meth_name) methods
+    IList.exists (fun meth_name -> Procname.equal right_proc_name meth_name) methods
   else (* ObjC case *)
     Specs.summary_exists right_proc_name
 
@@ -822,7 +813,7 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
         let propset = prune_ne tenv false receiver Sil.exp_zero pre_with_attr_or_null in
         if Propset.is_empty propset then []
         else
-          let prop = list_hd (Propset.to_proplist propset) in
+          let prop = IList.hd (Propset.to_proplist propset) in
           let path = Paths.Path.add_description path path_description in
           [(prop, path)] in
       res_null @ res
@@ -832,8 +823,8 @@ let normalize_params pdesc prop actual_params =
   let norm_arg (p, args) (e, t) =
     let e', p' = exp_norm_check_arith pdesc p e in
     (p', (e', t) :: args) in
-  let prop, args = list_fold_left norm_arg (prop, []) actual_params in
-  (prop, list_rev args)
+  let prop, args = IList.fold_left norm_arg (prop, []) actual_params in
+  (prop, IList.rev args)
 
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
@@ -843,14 +834,14 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   State.set_prop_tenv_pdesc _prop tenv pdesc; (* mark prop,tenv,pdesc last seen *)
   SymOp.pay(); (* pay one symop *)
   let ret_old_path pl = (* return the old path unchanged *)
-    list_map (fun p -> (p, path)) pl in
+    IList.map (fun p -> (p, path)) pl in
   let instr = match _instr with
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop _prop exp in
         let instr' = match exp' with
           | Sil.Const (Sil.Ctuple (e1 :: el)) -> (* closure: combine arguments to call *)
               let e1' = Prop.exp_normalize_prop _prop e1 in
-              let par' = list_map (fun e -> (e, Sil.Tvoid)) el in
+              let par' = IList.map (fun e -> (e, Sil.Tvoid)) el in
               Sil.Call (ret, e1', par' @ par, loc, call_flags)
           | _ ->
               Sil.Call (ret, exp', par, loc, call_flags) in
@@ -870,7 +861,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
                 let fold_undef_pname callee_opt attr =
                   if Option.is_none callee_opt && Sil.attr_is_undef attr then Some attr
                   else callee_opt in
-                list_fold_left fold_undef_pname None (Prop.get_exp_attributes prop exp) in
+                IList.fold_left fold_undef_pname None (Prop.get_exp_attributes prop exp) in
               let prop' =
                 if !Config.angelic_execution then
                   (* when we try to deref an undefined value, add it to the footprint *)
@@ -881,8 +872,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
                 else prop in
               let iter_list = Rearrange.rearrange pdesc tenv n_rhs_exp' typ prop' loc in
               let prop_list =
-                list_fold_left (execute_letderef pdesc tenv id n_rhs_exp') [] iter_list in
-              ret_old_path (list_rev prop_list)
+                IList.fold_left (execute_letderef pdesc tenv id n_rhs_exp') [] iter_list in
+              ret_old_path (IList.rev prop_list)
         with
         | Rearrange.ARRAY_ACCESS ->
             if (!Config.array_level = 0) then assert false
@@ -898,8 +889,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
           let prop = Prop.replace_objc_null prop n_lhs_exp n_rhs_exp in
           let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop prop typ n_lhs_exp in
           let iter_list = Rearrange.rearrange pdesc tenv n_lhs_exp' typ prop loc in
-          let prop_list = list_fold_left (execute_set pdesc tenv n_rhs_exp) [] iter_list in
-          ret_old_path (list_rev prop_list)
+          let prop_list = IList.fold_left (execute_set pdesc tenv n_rhs_exp) [] iter_list in
+          ret_old_path (IList.rev prop_list)
         with
         | Rearrange.ARRAY_ACCESS ->
             if (!Config.array_level = 0) then assert false
@@ -934,7 +925,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
               | Sil.Tvar (Sil.TN_csu (Sil.Class, name)) -> Mangled.to_string name = "NSNumber"
               | _ -> false in
             let lhs_is_ns_ptr () =
-              list_exists
+              IList.exists
                 (function
                   | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Sil.Tptr (typ, _), _)) ->
                       Sil.exp_equal exp lhs_normal && is_nsnumber typ
@@ -999,7 +990,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         | Some summary ->
             sym_exec_call
               cfg pdesc tenv prop path ret_ids n_actual_params summary loc in
-      list_flatten (list_map do_call sentinel_result)
+      IList.flatten (IList.map do_call sentinel_result)
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params pname _prop actual_params in
       if call_flags.Sil.cf_is_objc_block then
@@ -1017,7 +1008,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Nullify (pvar, loc, deallocate) ->
       begin
         let eprop = Prop.expose _prop in
-        match list_partition
+        match IList.partition
                 (function
                   | Sil.Hpointsto (Sil.Lvar pvar', _, _) -> Sil.pvar_equal pvar pvar'
                   | _ -> false) (Prop.get_sigma eprop) with
@@ -1034,7 +1025,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Abstract loc ->
       let node = State.get_node () in
       let blocks_nullified = get_nullified_block node in
-      list_iter (check_block_retain_cycle cfg tenv pname _prop) blocks_nullified;
+      IList.iter (check_block_retain_cycle cfg tenv pname _prop) blocks_nullified;
       if Prover.check_inconsistency _prop
       then
         ret_old_path []
@@ -1049,9 +1040,9 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         let fp_mode = !Config.footprint in
         Config.footprint := false; (* no footprint vars for locals *)
         let sigma_locals =
-          list_map
+          IList.map
             (Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_initial)
-            (list_map add_None ptl) in
+            (IList.map add_None ptl) in
         Config.footprint := fp_mode;
         sigma_locals in
       let sigma' = Prop.get_sigma _prop @ sigma_locals in
@@ -1087,8 +1078,8 @@ and sym_exec_generated mask_errors cfg tenv pdesc instrs ppl =
           | None -> "") in
       L.d_warning ("Generated Instruction Failed with: " ^ (Localise.to_string err_name)^loc ); L.d_ln();
       [(p, path)] in
-  let f plist instr = list_flatten (list_map (exe_instr instr) plist) in
-  list_fold_left f ppl instrs
+  let f plist instr = IList.flatten (IList.map (exe_instr instr) plist) in
+  IList.fold_left f ppl instrs
 
 and add_to_footprint abducted_pv typ prop =
   let abducted_lvar = Sil.Lvar abducted_pv in
@@ -1113,7 +1104,7 @@ and add_constraints_on_retval pdesc prop exp typ callee_pname callee_loc =
       (* introduce a fresh program variable to allow abduction on the return value *)
       let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname callee_loc in
       let already_has_abducted_retval p =
-        list_exists
+        IList.exists
           (fun hpred -> match hpred with
              | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
              | _ -> false)
@@ -1133,7 +1124,7 @@ and add_constraints_on_retval pdesc prop exp typ callee_pname callee_loc =
               when Sil.pvar_equal pv abducted_pvar ->
                 Prop.conjoin_eq exp_to_bind rhs prop
             | _ -> prop in
-          list_fold_left bind_exp prop (Prop.get_sigma prop) in
+          IList.fold_left bind_exp prop (Prop.get_sigma prop) in
         (* bind return id to the abducted value pointed to by the pvar we introduced *)
         bind_exp_to_abducted_val exp abducted_ret_pv prop
     else add_ret_non_null exp typ prop
@@ -1142,7 +1133,7 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
   (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
   let replace_actual_hpred actual_var new_hpred prop =
     let sigma' =
-      list_map
+      IList.map
         (function
           | Sil.Hpointsto (lhs, _, _) when Sil.exp_equal lhs actual_var -> new_hpred
           | hpred -> hpred)
@@ -1156,7 +1147,7 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
           let abducted_ref_pv =
             Sil.mk_pvar_abducted_ref_param callee_pname actual_pv callee_loc in
           let already_has_abducted_retval p =
-            list_exists
+            IList.exists
               (fun hpred -> match hpred with
                  | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ref_pv
                  | _ -> false)
@@ -1169,7 +1160,7 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
               add_to_footprint abducted_ref_pv (Sil.typ_strip_ptr actual_typ) prop in
             (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
             let filtered_sigma =
-              list_map
+              IList.map
                 (function
                   | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
                       Sil.Hpointsto (lhs, Sil.Eexp (fresh_fp_var, Sil.Inone), typ_exp)
@@ -1180,14 +1171,14 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
             (* bind actual passed by ref to the abducted value pointed to by the synthetic pvar *)
             let prop' =
               let filtered_sigma =
-                list_filter
+                IList.filter
                   (function
                     | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
                         false
                     | _ -> true)
                   (Prop.get_sigma prop) in
               Prop.normalize (Prop.replace_sigma filtered_sigma prop) in
-            list_fold_left
+            IList.fold_left
               (fun p hpred ->
                  match hpred with
                  | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Sil.pvar_equal pv abducted_ref_pv ->
@@ -1197,7 +1188,7 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
               prop'
               (Prop.get_sigma prop')
       | _ -> assert false in
-    list_fold_left add_actual_by_ref_to_footprint prop actuals_by_ref
+    IList.fold_left add_actual_by_ref_to_footprint prop actuals_by_ref
   else
     (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
     let havoc_actual_by_ref (actual, actual_typ) prop =
@@ -1206,7 +1197,7 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
         let sizeof_exp = Sil.Sizeof (Sil.typ_strip_ptr actual_typ, Sil.Subtype.subtypes) in
         Prop.mk_ptsto actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
       replace_actual_hpred actual actual_pt_havocd_var prop in
-    list_fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
+    IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
 
 (** execute a call for an unknown or scan function *)
 and call_unknown_or_scan is_scan cfg pdesc tenv pre path
@@ -1218,10 +1209,10 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
           when res_action.Sil.ra_res = Sil.Rfile ->
             Prop.remove_attribute res q
         | _ -> q in
-      list_fold_left do_attribute p (Prop.get_exp_attributes p e) in
-    list_fold_left do_exp prop actual_pars in
+      IList.fold_left do_attribute p (Prop.get_exp_attributes p e) in
+    IList.fold_left do_exp prop actual_pars in
   let actuals_by_ref =
-    list_filter
+    IList.filter
       (function
         | Sil.Lvar _, _ -> true
         | _ -> false)
@@ -1238,8 +1229,8 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
   else
     (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
     let exps_to_mark =
-      let ret_exps = list_map (fun ret_id -> Sil.Var ret_id) ret_ids in
-      list_fold_left
+      let ret_exps = IList.map (fun ret_id -> Sil.Var ret_id) ret_ids in
+      IList.fold_left
         (fun exps_to_mark (exp, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
     let path_pos = State.get_path_pos () in
     [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
@@ -1251,14 +1242,14 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop 
   (* useful if you would prefer to not have *any* formal parameters, *)
   (* but the language forces you to have at least one. *)
   let first_var_arg_pos = if null_pos > n_formals then 0 else n_formals - null_pos in
-  let nargs = list_length actual_params in
+  let nargs = IList.length actual_params in
   (* sentinels start counting from the last argument to the function *)
   let sentinel_pos = nargs - sentinel - 1 in
   let mk_non_terminal_argsi (acc, i) a =
     if i < first_var_arg_pos || i >= sentinel_pos then (acc, i +1)
     else ((a, i):: acc, i +1) in
-  (* list_fold_left reverses the arguments *)
-  let non_terminal_argsi = fst (list_fold_left mk_non_terminal_argsi ([], 0) actual_params) in
+  (* IList.fold_left reverses the arguments *)
+  let non_terminal_argsi = fst (IList.fold_left mk_non_terminal_argsi ([], 0) actual_params) in
   let check_allocated result ((lexp, typ), i) =
     (* simulate a Letderef for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
@@ -1275,9 +1266,9 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop 
                  (err_desc, try assert false with Assert_failure x -> x))
       else
         raise e in
-  (* list_fold_left reverses the arguments back so that we report an *)
+  (* IList.fold_left reverses the arguments back so that we report an *)
   (* error on the first premature nil argument *)
-  list_fold_left check_allocated [(prop, path)] non_terminal_argsi
+  IList.fold_left check_allocated [(prop, path)] non_terminal_argsi
 
 and sym_exe_check_variadic_sentinel_if_present
     cfg pdesc tenv prop path actual_params callee_pname loc =
@@ -1291,7 +1282,7 @@ and sym_exe_check_variadic_sentinel_if_present
       | Some sentinel_arg ->
           let formals = callee_attributes.ProcAttributes.formals in
           sym_exe_check_variadic_sentinel
-            cfg pdesc tenv prop path (list_length formals)
+            cfg pdesc tenv prop path (IList.length formals)
             actual_params sentinel_arg callee_pname loc
 
 
@@ -1318,7 +1309,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
       Reporting.log_warning caller_pname ~pre: pre_opt exn in
   check_inherently_dangerous_function caller_pname callee_pname;
   begin
-    let formal_types = list_map (fun (_, typ) -> typ) (Specs.get_formals summary) in
+    let formal_types = IList.map (fun (_, typ) -> typ) (Specs.get_formals summary) in
     let rec comb actual_pars formal_types =
       match actual_pars, formal_types with
       | [], [] -> actual_pars
@@ -1331,13 +1322,13 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
       | _,[] ->
           if !Config.developer_mode then Errdesc.warning_err (State.get_loc ()) "likely use of variable-arguments function, or function prototype missing@.";
           L.d_warning "likely use of variable-arguments function, or function prototype missing"; L.d_ln();
-          L.d_str "actual parameters: "; Sil.d_exp_list (list_map fst actual_pars); L.d_ln ();
+          L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
           L.d_str "formal parameters: "; Sil.d_typ_list formal_types; L.d_ln ();
           actual_pars
       | [], _ ->
           L.d_str ("**** ERROR: Procedure " ^ Procname.to_string callee_pname);
           L.d_strln (" mismatch in the number of parameters ****");
-          L.d_str "actual parameters: "; Sil.d_exp_list (list_map fst actual_pars); L.d_ln ();
+          L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
           L.d_str "formal parameters: "; Sil.d_typ_list formal_types; L.d_ln ();
           raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
     let actual_params = comb actual_pars formal_types in
@@ -1366,10 +1357,10 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
     Sil.fav_filter_ident fav Ident.is_primed;
     let ids_primed = Sil.fav_to_list fav in
     let ids_primed_normal =
-      list_map (fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed in
-    let ren_sub = Sil.sub_of_list (list_map (fun (id1, id2) -> (id1, Sil.Var id2)) ids_primed_normal) in
+      IList.map (fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed in
+    let ren_sub = Sil.sub_of_list (IList.map (fun (id1, id2) -> (id1, Sil.Var id2)) ids_primed_normal) in
     let p' = Prop.normalize (Prop.prop_sub ren_sub p) in
-    let fav_normal = Sil.fav_from_list (list_map snd ids_primed_normal) in
+    let fav_normal = Sil.fav_from_list (IList.map snd ids_primed_normal) in
     p', fav_normal in
   let prop_normal_to_primed fav_normal p = (* rename given normal vars to fresh primed *)
     if Sil.fav_to_list fav_normal = [] then p
@@ -1393,7 +1384,7 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
         let instr_is_abstraction = function
           | Sil.Abstract _ -> true
           | _ -> false in
-        list_exists instr_is_abstraction (Cfg.Node.get_instrs node) in
+        IList.exists instr_is_abstraction (Cfg.Node.get_instrs node) in
       let curr_node = State.get_node () in
       match Cfg.Node.get_kind curr_node with
       | Cfg.Node.Prune_node _ when not (node_has_abstraction curr_node) ->
@@ -1406,10 +1397,10 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
     let res_list = run_with_abs_val_eq_zero (* no exp abstraction during sym exe *)
         (fun () ->
            sym_exec cfg tenv pdesc instr prop' path) in
-    let res_list_nojunk = list_map (fun (p, path) -> (post_process_result fav_normal p path, path)) res_list in
-    let results = list_map (fun (p, path) -> (Prop.prop_rename_primed_footprint_vars p, path)) res_list_nojunk in
+    let res_list_nojunk = IList.map (fun (p, path) -> (post_process_result fav_normal p path, path)) res_list in
+    let results = IList.map (fun (p, path) -> (Prop.prop_rename_primed_footprint_vars p, path)) res_list_nojunk in
     L.d_strln "Instruction Returns";
-    Propgraph.d_proplist prop (list_map fst results); L.d_ln ();
+    Propgraph.d_proplist prop (IList.map fst results); L.d_ln ();
     State.mark_instr_ok ();
     Paths.PathSet.from_renamed_list results
   with exn when Exceptions.handle_exception exn && !Config.footprint ->
@@ -1458,7 +1449,7 @@ let lifted_sym_exec
         let pset' = Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty in
         (pset', stack) in
   let stack = [] in
-  let pset', stack' = list_fold_left exe_instr_pset (pset, stack) instrs in
+  let pset', stack' = IList.fold_left exe_instr_pset (pset, stack) instrs in
   if stack' != [] then assert false; (* final stack must be empty *)
   pset'
 
@@ -1501,13 +1492,13 @@ module ModelBuiltins = struct
   let execute___get_array_size cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
     match args with
-    | [(lexp, typ)] when list_length ret_ids <= 1 ->
+    | [(lexp, typ)] when IList.length ret_ids <= 1 ->
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let return_result_for_array_size e prop ret_ids = return_result e prop ret_ids in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         begin
           try
-            let hpred = list_find (function
+            let hpred = IList.find (function
                 | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
                 | _ -> false) (Prop.get_sigma prop) in
             match hpred with
@@ -1540,7 +1531,7 @@ module ModelBuiltins = struct
         let n_size, prop = exp_norm_check_arith pname _prop' size in
         begin
           try
-            let hpred, sigma' = list_partition (function
+            let hpred, sigma' = IList.partition (function
                 | Sil.Hpointsto(e, _, t) -> Sil.exp_equal e n_lexp
                 | _ -> false) (Prop.get_sigma prop) in
             match hpred with
@@ -1574,7 +1565,7 @@ module ModelBuiltins = struct
     let do_arg (lexp, typ) =
       let n_lexp, _ = exp_norm_check_arith pname prop lexp in
       L.err "%a " (Sil.pp_exp pe_text) n_lexp in
-    list_iter do_arg args;
+    IList.iter do_arg args;
     L.err "@.";
     [(prop, path)]
 
@@ -1588,7 +1579,7 @@ module ModelBuiltins = struct
   let create_type tenv n_lexp typ prop =
     let prop_type =
       try
-        let _ = list_find (function
+        let _ = IList.find (function
             | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
             | _ -> false) (Prop.get_sigma prop) in
         prop
@@ -1626,23 +1617,23 @@ module ModelBuiltins = struct
     let sil_is_nonnull = Sil.UnOp(Sil.LNot, sil_is_null, None) in
     let null_case = Propset.to_proplist (prune_prop tenv sil_is_null prop) in
     let non_null_case = Propset.to_proplist (prune_prop tenv sil_is_nonnull prop_type) in
-    if ((list_length non_null_case) > 0) && (!Config.footprint) then
+    if ((IList.length non_null_case) > 0) && (!Config.footprint) then
       non_null_case
-    else if ((list_length non_null_case) > 0) && (is_undefined_opt prop n_lexp) then
+    else if ((IList.length non_null_case) > 0) && (is_undefined_opt prop n_lexp) then
       non_null_case
     else null_case@non_null_case
 
   let execute___get_type_of cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
     match args with
-    | [(lexp, typ)] when list_length ret_ids <= 1 ->
+    | [(lexp, typ)] when IList.length ret_ids <= 1 ->
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         let props = create_type tenv n_lexp typ prop in
         let aux prop =
           begin
             try
-              let hpred = list_find (function
+              let hpred = IList.find (function
                   | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
                   | _ -> false) (Prop.get_sigma prop) in
               match hpred with
@@ -1651,14 +1642,14 @@ module ModelBuiltins = struct
               | _ -> assert false
             with Not_found -> (return_result Sil.exp_zero prop ret_ids), path
           end in
-        (list_map aux props)
+        (IList.map aux props)
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (** replace the type of the ptsto rooted at [root_e] with [texp] in [prop] *)
   let replace_ptsto_texp prop root_e texp =
     let process_sigma sigma =
       let sigma1, sigma2 =
-        list_partition (function
+        IList.partition (function
             | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e root_e
             | _ -> false) sigma in
       match sigma1 with
@@ -1674,7 +1665,7 @@ module ModelBuiltins = struct
       cfg pdesc instr tenv _prop path ret_ids args callee_pname loc instof
     : Builtin.ret_typ =
     match args with
-    | [(_val1, typ1); (_texp2, typ2)] when list_length ret_ids <= 1 ->
+    | [(_val1, typ1); (_texp2, typ2)] when IList.length ret_ids <= 1 ->
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let val1, __prop = exp_norm_check_arith pname _prop _val1 in
         let texp2, prop = exp_norm_check_arith pname __prop _texp2 in
@@ -1684,7 +1675,7 @@ module ModelBuiltins = struct
           else
             begin
               try
-                let hpred = list_find (function
+                let hpred = IList.find (function
                     | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
                     | _ -> false) (Prop.get_sigma prop) in
                 match hpred with
@@ -1731,7 +1722,7 @@ module ModelBuiltins = struct
                 [(return_result val1 prop ret_ids, path)]
             end in
         let props = create_type tenv val1 typ1 prop in
-        list_flatten (list_map exe_one_prop props)
+        IList.flatten (IList.map exe_one_prop props)
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   let execute___instanceof cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
@@ -1838,7 +1829,7 @@ module ModelBuiltins = struct
           | None -> p in
         let foot_var = lazy (Sil.Var (Ident.create_fresh Ident.kfootprint)) in
         let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
-        let has_fld_hidden fsel = list_exists filter_fld_hidden fsel in
+        let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
         let do_hpred in_foot hpred = match hpred with
           | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp) when Sil.exp_equal e n_lexp && (not (has_fld_hidden fsel)) ->
               let foot_e = Lazy.force foot_var in
@@ -1848,14 +1839,14 @@ module ModelBuiltins = struct
               Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
           | Sil.Hpointsto(e, Sil.Estruct (fsel, _), texp) when Sil.exp_equal e n_lexp && not in_foot && has_fld_hidden fsel ->
               let set_ret_val () =
-                match list_find filter_fld_hidden fsel with
+                match IList.find filter_fld_hidden fsel with
                 | _, Sil.Eexp(e, _) -> ret_val := Some e
                 | _ -> () in
               set_ret_val();
               hpred
           | _ -> hpred in
-        let sigma' = list_map (do_hpred false) (Prop.get_sigma prop) in
-        let sigma_fp' = list_map (do_hpred true) (Prop.get_sigma_footprint prop) in
+        let sigma' = IList.map (do_hpred false) (Prop.get_sigma prop) in
+        let sigma_fp' = IList.map (do_hpred true) (Prop.get_sigma_footprint prop) in
         let prop' = Prop.replace_sigma_footprint sigma_fp' (Prop.replace_sigma sigma' prop) in
         let prop'' = return_val (Prop.normalize prop') in
         [(prop'', path)]
@@ -1871,11 +1862,11 @@ module ModelBuiltins = struct
         let n_lexp2, prop = exp_norm_check_arith pname _prop1 lexp2 in
         let foot_var = lazy (Sil.Var (Ident.create_fresh Ident.kfootprint)) in
         let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
-        let has_fld_hidden fsel = list_exists filter_fld_hidden fsel in
+        let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
         let do_hpred in_foot hpred = match hpred with
           | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp) when Sil.exp_equal e n_lexp1 && not in_foot ->
               let se = Sil.Eexp(n_lexp2, Sil.inst_none) in
-              let fsel' = (Ident.fieldname_hidden, se) :: (list_filter (fun x -> not (filter_fld_hidden x)) fsel) in
+              let fsel' = (Ident.fieldname_hidden, se) :: (IList.filter (fun x -> not (filter_fld_hidden x)) fsel) in
               Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
           | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp) when Sil.exp_equal e n_lexp1 && in_foot && not (has_fld_hidden fsel) ->
               let foot_e = Lazy.force foot_var in
@@ -1883,8 +1874,8 @@ module ModelBuiltins = struct
               let fsel' = (Ident.fieldname_hidden, se) :: fsel in
               Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
           | _ -> hpred in
-        let sigma' = list_map (do_hpred false) (Prop.get_sigma prop) in
-        let sigma_fp' = list_map (do_hpred true) (Prop.get_sigma_footprint prop) in
+        let sigma' = IList.map (do_hpred false) (Prop.get_sigma prop) in
+        let sigma_fp' = IList.map (do_hpred true) (Prop.get_sigma_footprint prop) in
         let prop' = Prop.replace_sigma_footprint sigma_fp' (Prop.replace_sigma sigma' prop) in
         let prop'' = Prop.normalize prop' in
         [(prop'', path)]
@@ -1893,7 +1884,7 @@ module ModelBuiltins = struct
   let execute___state_untainted cfg pdesc instr tenv _prop path ret_ids args callee_name loc
     : Builtin.ret_typ =
     match args with
-    | [(lexp, typ)] when list_length ret_ids <= 1 ->
+    | [(lexp, typ)] when IList.length ret_ids <= 1 ->
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         (match ret_ids with
          | [ret_id] ->
@@ -1998,7 +1989,7 @@ module ModelBuiltins = struct
         match res with
         | (prop, path):: _ ->
             (try
-               let hpred = list_find (function
+               let hpred = IList.find (function
                    | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 exp
                    | _ -> false) (Prop.get_sigma _prop) in
                match hpred with
@@ -2010,18 +2001,18 @@ module ModelBuiltins = struct
                | _ -> res
              with Not_found -> res)
         | [] -> res in
-      list_fold_left call_release [(prop, path)] autoreleased_objects
+      IList.fold_left call_release [(prop, path)] autoreleased_objects
     else execute___no_op _prop path
 
   let execute___objc_cast cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
     match args with
-    | [(_val1, typ1); (_texp2, typ2)] when list_length ret_ids <= 1 ->
+    | [(_val1, typ1); (_texp2, typ2)] when IList.length ret_ids <= 1 ->
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let val1, __prop = exp_norm_check_arith pname _prop _val1 in
         let texp2, prop = exp_norm_check_arith pname __prop _texp2 in
         (try
-           let hpred = list_find (function
+           let hpred = IList.find (function
                | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
                | _ -> false) (Prop.get_sigma prop) in
            match hpred, texp2 with
@@ -2061,9 +2052,9 @@ module ModelBuiltins = struct
             assert false
         | Some _ ->
             let prop_list =
-              list_fold_left (_execute_free tenv mk loc) []
+              IList.fold_left (_execute_free tenv mk loc) []
                 (Rearrange.rearrange pdesc tenv lexp typ prop loc) in
-            list_rev prop_list
+            IList.rev prop_list
       end
     with Rearrange.ARRAY_ACCESS ->
       if (!Config.array_level = 0) then assert false
@@ -2087,10 +2078,10 @@ module ModelBuiltins = struct
             Propset.to_proplist (prune_polarity tenv false n_lexp prop) in
           let plist =
             prop_zero @ (* model: if 0 then skip else _execute_free_nonzero *)
-            list_flatten (list_map (fun p ->
+            IList.flatten (IList.map (fun p ->
                 _execute_free_nonzero mk pdesc tenv instr p path
                   (Prop.exp_normalize_prop p lexp) typ loc) prop_nonzero) in
-          list_map (fun p -> (p, path)) plist
+          IList.map (fun p -> (p, path)) plist
         end
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -2170,9 +2161,9 @@ module ModelBuiltins = struct
       skip_n_arguments cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
     match args with
-    | _ when list_length args >= skip_n_arguments ->
+    | _ when IList.length args >= skip_n_arguments ->
         let varargs = ref args in
-        for i = 1 to skip_n_arguments do varargs := list_tl !varargs done;
+        for i = 1 to skip_n_arguments do varargs := IList.tl !varargs done;
         call_unknown_or_scan true cfg pdesc tenv prop path ret_ids None !varargs callee_pname loc
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -2214,7 +2205,7 @@ module ModelBuiltins = struct
              (let n = Sil.Int.to_int n_sil in
               try
                 let parts = Str.split (Str.regexp_string str2) str1 in
-                let n_part = list_nth parts n in
+                let n_part = IList.nth parts n in
                 let res = Sil.Const (Sil.Cstr n_part) in
                 [(return_result res prop ret_ids, path)]
               with Not_found -> assert false)
@@ -2223,7 +2214,7 @@ module ModelBuiltins = struct
 
   let execute___create_tuple cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
-    let el = list_map fst args in
+    let el = IList.map fst args in
     let res = Sil.Const (Sil.Ctuple el) in
     [(return_result res prop ret_ids, path)]
 
@@ -2237,7 +2228,7 @@ module ModelBuiltins = struct
         (match n_lexp1, n_lexp2 with
          | Sil.Const (Sil.Ctuple el), Sil.Const (Sil.Cint i) ->
              let n = Sil.Int.to_int i in
-             let en = list_nth el n in
+             let en = IList.nth el n in
              [(return_result en prop ret_ids, path)]
          | _ -> [(prop, path)])
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
@@ -2275,7 +2266,7 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     let error_str =
       match args with
-      | l when list_length l = 4 ->
+      | l when IList.length l = 4 ->
           Config.default_failure_name
       | _ ->
           raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in

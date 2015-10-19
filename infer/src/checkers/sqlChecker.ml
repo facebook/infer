@@ -24,7 +24,7 @@ let callback_sql all_procs get_proc_desc idenv tenv proc_name proc_desc =
       "update .* set.*";
       "delete .* from.*";
     ] in
-    list_map Str.regexp_case_fold _sql_start in
+    IList.map Str.regexp_case_fold _sql_start in
 
   (* Check for SQL string concatenations *)
   let do_instr const_map node = function
@@ -37,7 +37,7 @@ let callback_sql all_procs get_proc_desc idenv tenv proc_name proc_desc =
           let matches s r = Str.string_match r s 0 in
           match const_map node rvar1, const_map node rvar2 with
           | Some (Sil.Cstr ""), Some (Sil.Cstr s2) ->
-              if list_exists (matches s2) sql_start then
+              if IList.exists (matches s2) sql_start then
                 begin
                   L.stdout
                     "%s%s@."

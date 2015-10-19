@@ -69,9 +69,9 @@ let get_subl footprint_part g =
 let edge_from_source g n footprint_part is_hpred =
   let edges =
     if is_hpred
-    then list_map (fun hpred -> Ehpred hpred ) (get_sigma footprint_part g)
-    else list_map (fun a -> Eatom a) (get_pi footprint_part g) @ list_map (fun entry -> Esub_entry entry) (get_subl footprint_part g) in
-  match list_filter (fun hpred -> Sil.exp_equal n (edge_get_source hpred)) edges with
+    then IList.map (fun hpred -> Ehpred hpred ) (get_sigma footprint_part g)
+    else IList.map (fun a -> Eatom a) (get_pi footprint_part g) @ IList.map (fun entry -> Esub_entry entry) (get_subl footprint_part g) in
+  match IList.filter (fun hpred -> Sil.exp_equal n (edge_get_source hpred)) edges with
   | [] -> None
   | edge:: _ -> Some edge
 
@@ -87,7 +87,7 @@ let get_edges footprint_part g =
   let hpreds = get_sigma footprint_part g in
   let atoms = get_pi footprint_part g in
   let subst_entries = get_subl footprint_part g in
-  list_map (fun hpred -> Ehpred hpred) hpreds @ list_map (fun a -> Eatom a) atoms @ list_map (fun entry -> Esub_entry entry) subst_entries
+  IList.map (fun hpred -> Ehpred hpred) hpreds @ IList.map (fun a -> Eatom a) atoms @ IList.map (fun entry -> Esub_entry entry) subst_entries
 
 let edge_equal e1 e2 = match e1, e2 with
   | Ehpred hp1, Ehpred hp2 -> Sil.hpred_equal hp1 hp2
@@ -98,13 +98,13 @@ let edge_equal e1 e2 = match e1, e2 with
 (** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e],
     searching the footprint part if [footprint_part] is true. *)
 let contains_edge (footprint_part: bool) (g: t) (e: edge) =
-  try ignore (list_find (fun e' -> edge_equal e e') (get_edges footprint_part g)); true
+  try ignore (IList.find (fun e' -> edge_equal e e') (get_edges footprint_part g)); true
   with Not_found -> false
 
 (** [iter_edges footprint_part f g] iterates function [f] on the edges in [g] in the same order as returned by [get_edges];
     if [footprint_part] is true the edges are taken from the footprint part. *)
 let iter_edges footprint_part f g =
-  list_iter f (get_edges footprint_part g)  (* For now simple iterator; later might use a specific traversal *)
+  IList.iter f (get_edges footprint_part g)  (* For now simple iterator; later might use a specific traversal *)
 
 (** Graph annotated with the differences w.r.t. a previous graph *)
 type diff =
@@ -176,9 +176,9 @@ let compute_diff default_color oldgraph newgraph : diff =
             changed := changed_obj :: !changed
         | Some oldedge -> changed := compute_edge_diff oldedge edge @ !changed
       end in
-    list_iter build_changed newedges;
+    IList.iter build_changed newedges;
     let colormap (o: Obj.t) =
-      if list_exists (fun x -> x == o) !changed then Red
+      if IList.exists (fun x -> x == o) !changed then Red
       else default_color in
     !changed, colormap in
   let changed_norm, colormap_norm = compute_changed false in
@@ -198,7 +198,7 @@ let diff_get_colormap footprint_part diff =
     If !Config.pring_using_diff is true, print the diff w.r.t. the given prop,
     extracting its local stack vars if the boolean is true. *)
 let pp_proplist pe0 s (base_prop, extract_stack) f plist =
-  let num = list_length plist in
+  let num = IList.length plist in
   let base_stack = fst (Prop.sigma_get_stack_nonstack true (Prop.get_sigma base_prop)) in
   let add_base_stack prop =
     if extract_stack then Prop.replace_sigma (base_stack @ Prop.get_sigma prop) prop

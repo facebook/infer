@@ -12,6 +12,10 @@
 
 module F = Format
 
+(** List police: don't use the list module to avoid non-tail recursive
+    functions and builtin equality. Use IList instead. *)
+module List = struct end
+
 (** initial time of the analysis, i.e. when this module is loaded, gotten from Unix.time *)
 let initial_analysis_time = Unix.time ()
 
@@ -55,185 +59,6 @@ let triple_compare compare compare' compare'' (x1, y1, z1) (x2, y2, z2) =
   let n = compare x1 x2 in
   if n <> 0 then n else let n = compare' y1 y2 in
     if n <> 0 then n else compare'' z1 z2
-
-let list_exists = List.exists
-let list_filter = List.filter
-let list_find = List.find
-let list_fold_left = List.fold_left
-let list_fold_left2 = List.fold_left2
-let list_for_all = List.for_all
-let list_for_all2 = List.for_all2
-let list_hd = List.hd
-let list_iter = List.iter
-let list_iter2 = List.iter2
-let list_length = List.length
-let list_nth = List.nth
-let list_partition = List.partition
-let list_rev = List.rev
-let list_rev_append = List.rev_append
-let list_rev_map = List.rev_map
-let list_sort = List.sort
-let list_stable_sort = List.stable_sort
-let list_tl = List.tl
-
-
-
-(** tail-recursive variant of List.fold_right *)
-let list_fold_right f l a =
-  let g x y = f y x in
-  list_fold_left g a (list_rev l)
-
-(** tail-recursive variant of List.combine *)
-let list_combine =
-  let rec combine acc l1 l2 = match l1, l2 with
-    | [], [] -> acc
-    | x1:: l1, x2:: l2 -> combine ((x1, x2):: acc) l1 l2
-    | [], _:: _
-    | _:: _, [] -> raise (Invalid_argument "list_combine") in
-  fun l1 l2 -> list_rev (combine [] l1 l2)
-
-(** tail-recursive variant of List.split *)
-let list_split =
-  let rec split acc1 acc2 = function
-    | [] -> (acc1, acc2)
-    | (x, y):: l -> split (x:: acc1) (y:: acc2) l in
-  fun l ->
-    let acc1, acc2 = split [] [] l in
-    list_rev acc1, list_rev acc2
-
-(** Like List.mem but without builtin equality *)
-let list_mem equal x l = list_exists (equal x) l
-
-(** tail-recursive variant of List.flatten *)
-let list_flatten =
-  let rec flatten acc l = match l with
-    | [] -> acc
-    | x:: l' -> flatten (list_rev_append x acc) l' in
-  fun l -> list_rev (flatten [] l)
-
-let list_flatten_options list =
-  list_fold_left (fun list -> function | Some x -> x:: list | None -> list) [] list
-  |> list_rev
-
-let rec list_drop_first n = function
-  | xs when n == 0 -> xs
-  | x:: xs -> list_drop_first (n - 1) xs
-  | [] -> []
-
-let list_drop_last n list =
-  list_rev (list_drop_first n (list_rev list))
-
-(** List police: don't use the list module to avoid non-tail recursive functions and builtin equality *)
-module List = struct end
-
-(** Generic comparison of lists given a compare function for the elements of the list *)
-let rec list_compare compare l1 l2 =
-  match l1, l2 with
-  | [],[] -> 0
-  | [], _ -> - 1
-  | _, [] -> 1
-  | x1:: l1', x2:: l2' ->
-      let n = compare x1 x2 in
-      if n <> 0 then n else list_compare compare l1' l2'
-
-(** Generic equality of lists given a compare function for the elements of the list *)
-let list_equal compare l1 l2 =
-  list_compare compare l1 l2 = 0
-
-(** Returns (reverse input_list) *)
-let rec list_rev_with_acc acc = function
-  | [] -> acc
-  | x :: xs -> list_rev_with_acc (x:: acc) xs
-
-(** tail-recursive variant of List.append *)
-let list_append l1 l2 =
-  list_rev_append (list_rev l1) l2
-
-(** tail-recursive variant of List.map *)
-let list_map f l =
-  list_rev (list_rev_map f l)
-
-(** Remove consecutive equal elements from a list (according to the given comparison functions) *)
-let list_remove_duplicates compare l =
-  let rec remove compare acc = function
-    | [] -> list_rev acc
-    | [x] -> list_rev (x:: acc)
-    | x:: ((y:: l'') as l') ->
-        if compare x y = 0 then remove compare acc (x:: l'')
-        else remove compare (x:: acc) l' in
-  remove compare [] l
-
-(** Remove consecutive equal irrelevant elements from a list (according to the given comparison and relevance functions) *)
-let list_remove_irrelevant_duplicates compare relevant l =
-  let rec remove compare acc = function
-    | [] -> list_rev acc
-    | [x] -> list_rev (x:: acc)
-    | x:: ((y:: l'') as l') ->
-        if compare x y = 0 then begin
-          match relevant x, relevant y with
-          | false, _ -> remove compare acc l'
-          | true, false -> remove compare acc (x:: l'')
-          | true, true -> remove compare (x:: acc) l'
-        end
-        else remove compare (x:: acc) l' in
-  remove compare [] l
-
-(** The function works on sorted lists without duplicates *)
-let rec list_merge_sorted_nodup compare res xs1 xs2 =
-  match xs1, xs2 with
-  | [], _ ->
-      list_rev_with_acc xs2 res
-  | _, [] ->
-      list_rev_with_acc xs1 res
-  | x1 :: xs1', x2 :: xs2' ->
-      let n = compare x1 x2 in
-      if n = 0 then
-        list_merge_sorted_nodup compare (x1 :: res) xs1' xs2'
-      else if n < 0 then
-        list_merge_sorted_nodup compare (x1 :: res) xs1' xs2
-      else
-        list_merge_sorted_nodup compare (x2 :: res) xs1 xs2'
-
-let list_intersect compare l1 l2 =
-  let l1_sorted = list_sort compare l1 in
-  let l2_sorted = list_sort compare l2 in
-  let rec f l1 l2 = match l1, l2 with
-    | ([], _) | (_,[]) -> false
-    | (x1:: l1', x2:: l2') ->
-        let x_comparison = compare x1 x2 in
-        if x_comparison = 0 then true
-        else if x_comparison < 0 then f l1' l2
-        else f l1 l2' in
-  f l1_sorted l2_sorted
-
-exception Fail
-
-(** Apply [f] to pairs of elements; raise [Fail] if the two lists have different lenghts. *)
-let list_map2 f l1 l2 =
-  let rec go l1 l2 acc =
-    match l1, l2 with
-    | [],[] -> list_rev acc
-    | x1 :: l1', x2 :: l2' ->
-        let x' = f x1 x2 in
-        go l1' l2' (x':: acc)
-    | _ -> raise Fail in
-  go l1 l2 []
-
-let list_to_string f l =
-  let rec aux l =
-    match l with
-    | [] -> ""
-    | s:: [] -> (f s)
-    | s:: rest -> (f s)^", "^(aux rest) in
-  "["^(aux l)^"]"
-
-(** Like List.mem_assoc but without builtin equality *)
-let list_mem_assoc equal a l =
-  list_exists (fun x -> equal a (fst x)) l
-
-(** Like List.assoc but without builtin equality *)
-let list_assoc equal a l =
-  snd (list_find (fun x -> equal a (fst x)) l)
 
 (** {2 Useful Modules} *)
 
@@ -614,7 +439,7 @@ let read_file fname =
   with
   | End_of_file ->
       cleanup ();
-      Some (list_rev !res)
+      Some (IList.rev !res)
   | Sys_error _ ->
       cleanup ();
       None
@@ -663,7 +488,7 @@ struct
     try Hashtbl.find include_loc_hash fname with Not_found ->
       let loc = match read_file fname with
         | None -> 0
-        | Some l -> list_length l in
+        | Some l -> IList.length l in
       Hashtbl.add include_loc_hash fname loc;
       loc
 end
@@ -708,7 +533,7 @@ module FileNormalize = struct
 
   (* split a file name into a list of strings representing it as a path *)
   let fname_to_list fname =
-    list_rev (fname_to_list_rev fname)
+    IList.rev (fname_to_list_rev fname)
 
   (* concatenate a list of strings representing a path into a filename *)
   let rec list_to_fname base path = match path with
@@ -725,12 +550,12 @@ module FileNormalize = struct
     | x :: dl, y :: tl when y = Filename.parent_dir_name -> (* path/x/.. --> path *)
         normalize dl tl
     | _, y :: tl -> normalize (y :: done_l) tl
-    | _, [] -> list_rev done_l
+    | _, [] -> IList.rev done_l
 
   (* check if the filename contains "." or ".." *)
   let fname_contains_current_parent fname =
     let l = fname_to_list fname in
-    list_exists (fun x -> x = Filename.current_dir_name || x = Filename.parent_dir_name) l
+    IList.exists (fun x -> x = Filename.current_dir_name || x = Filename.parent_dir_name) l
 
   (* convert a filename to absolute path, if necessary, and normalize "." and ".." *)
   let fname_to_absolute_normalize fname =
@@ -791,7 +616,7 @@ let filename_to_relative root fname =
 type arg_list = (string * Arg.spec * string option * string) list
 
 let arg_desc_filter options_to_keep =
-  list_filter (function (option_name, _, _, _) -> list_mem string_equal option_name options_to_keep)
+  IList.filter (function (option_name, _, _, _) -> IList.mem string_equal option_name options_to_keep)
 
 let base_arg_desc =
   [
@@ -883,7 +708,7 @@ module Arg2 = struct
   let make_symlist prefix sep suffix l =
     match l with
     | [] -> "<none>"
-    | h:: t -> (list_fold_left (fun x y -> x ^ sep ^ y) (prefix ^ h) t) ^ suffix
+    | h:: t -> (IList.fold_left (fun x y -> x ^ sep ^ y) (prefix ^ h) t) ^ suffix
 
   let print_spec buf (key, spec, doc) =
     match spec with
@@ -909,7 +734,7 @@ module Arg2 = struct
 
   let usage_b buf speclist errmsg =
     bprintf buf "%s\n" errmsg;
-    list_iter (print_spec buf) (add_help speclist)
+    IList.iter (print_spec buf) (add_help speclist)
 
   let usage speclist errmsg =
     let b = Buffer.create 200 in
@@ -966,7 +791,7 @@ module Arg2 = struct
                   incr current;
               | Arg.Symbol (symb, f) when !current + 1 < l ->
                   let arg = argv.(!current + 1) in
-                  if list_mem string_equal arg symb then begin
+                  if IList.mem string_equal arg symb then begin
                     f argv.(!current + 1);
                     incr current;
                   end else begin
@@ -1005,7 +830,7 @@ module Arg2 = struct
                   end;
                   incr current;
               | Arg.Tuple specs ->
-                  list_iter treat_action specs;
+                  IList.iter treat_action specs;
               | Arg.Rest f ->
                   while !current < l - 1 do
                     f argv.(!current + 1);
@@ -1044,7 +869,7 @@ module Arg2 = struct
       let doc2 = String.sub doc first_space (len - first_space) in
       if len = 0 then (key, spec, doc)
       else (key, spec, doc1 ^ "\n     " ^ doc2) in
-    list_map do_arg arg_desc
+    IList.map do_arg arg_desc
 
   type aligned = (key * spec * doc)
 
@@ -1060,10 +885,10 @@ module Arg2 = struct
       | Some param ->
           if double_minus then ("-"^opname, spec, "=" ^ param ^ " " ^ text)
           else (opname, spec, param ^ " " ^ text) in
-    let unsorted_desc' = list_map handle_double_minus unsorted_desc in
+    let unsorted_desc' = IList.map handle_double_minus unsorted_desc in
     let dlist =
       ("", Arg.Unit (fun () -> ()), " \n  " ^ title ^ "\n") ::
-      list_sort (fun (x, _, _) (y, _, _) -> Pervasives.compare x y) unsorted_desc' in
+      IList.sort (fun (x, _, _) (y, _, _) -> Pervasives.compare x y) unsorted_desc' in
     align dlist
 end
 (********** END OF MODULE Arg2 **********)
@@ -1137,7 +962,7 @@ let proc_flags_find proc_flags key =
 let join_strings sep = function
   | [] -> ""
   | hd:: tl ->
-      list_fold_left (fun str p -> str ^ sep ^ p) hd tl
+      IList.fold_left (fun str p -> str ^ sep ^ p) hd tl
 
 let next compare =
   fun x y n ->

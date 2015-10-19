@@ -105,12 +105,12 @@ module ConstantFlow = Dataflow.MakeDF(struct
         begin
           L.stdout "Node %i:" (Cfg.Node.get_id node);
           L.stdout "%a" pp constants;
-          list_iter
+          IList.iter
             (fun instr -> L.stdout "%a@." (Sil.pp_instr pe_text) instr)
             (Cfg.Node.get_instrs node)
         end;
       let constants =
-        list_fold_left
+        IList.fold_left
           do_instr
           constants
           (Cfg.Node.get_instrs node) in

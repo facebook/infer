@@ -97,7 +97,7 @@ let add_cg_exclude_fun (exe_env: t) (source_dir : DB.source_dir) exclude_fun =
     Cg.extend exe_env.cg cg;
     let file_data = new_file_data source nLOC cg_fname in
     let defined_procs = Cg.get_defined_nodes cg in
-    list_iter (fun pname ->
+    IList.iter (fun pname ->
         let should_update =
           if Procname.Hash.mem exe_env.proc_map pname then
             let old_source = (Procname.Hash.find exe_env.proc_map pname).source in

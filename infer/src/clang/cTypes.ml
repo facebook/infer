@@ -60,7 +60,7 @@ let search_enum_type_by_name tenv name =
   let f tn typ =
     match typ with
     | Sil.Tenum enum_constants ->
-        list_iter (fun (c, v) -> if Mangled.equal c mname then found:= Some v else ()) enum_constants
+        IList.iter (fun (c, v) -> if Mangled.equal c mname then found:= Some v else ()) enum_constants
     | _ -> () in
   Sil.tenv_iter f tenv;
   !found

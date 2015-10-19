@@ -126,11 +126,11 @@ module Tags = struct
   let create () = ref []
   let add tags tag value = tags := (tag, value) :: !tags
   let update tags tag value =
-    let tags' = list_filter (fun (t, v) -> t <> tag) tags in
+    let tags' = IList.filter (fun (t, v) -> t <> tag) tags in
     (tag, value) :: tags'
   let get tags tag =
     try
-      let (_, v) = list_find (fun (t, _) -> t = tag) tags in
+      let (_, v) = IList.find (fun (t, _) -> t = tag) tags in
       Some v
     with Not_found -> None
 end
@@ -151,7 +151,7 @@ let error_desc_extract_tag_value (_, _, tags) tag_to_extract =
     | (t, _) when t = tag -> true
     | _ -> false in
   try
-    let _, s = list_find (find_value tag_to_extract) tags in
+    let _, s = IList.find (find_value tag_to_extract) tags in
     s
   with Not_found -> ""
 
@@ -178,8 +178,8 @@ let error_desc_set_bucket (l, advice, tags) bucket show_in_message =
 (** get the value tag, if any *)
 let get_value_line_tag tags =
   try
-    let value = snd (list_find (fun (_tag, value) -> _tag = Tags.value) tags) in
-    let line = snd (list_find (fun (_tag, value) -> _tag = Tags.line) tags) in
+    let value = snd (IList.find (fun (_tag, value) -> _tag = Tags.value) tags) in
+    let line = snd (IList.find (fun (_tag, value) -> _tag = Tags.line) tags) in
     Some [value; line]
   with Not_found -> None
 
@@ -461,7 +461,7 @@ let parameter_field_not_null_checked_desc desc exp =
 let has_tag desc tag =
   match desc with
   | descriptions, advice, tags ->
-      list_exists (fun (tag', value) -> tag = tag') tags
+      IList.exists (fun (tag', value) -> tag = tag') tags
 
 let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
 
@@ -658,7 +658,7 @@ let desc_retain_cycle prop cycle loc =
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") an object of "^(Sil.typ_to_string typ)^" retaining another object via instance variable "^(Ident.fieldname_to_string f)^", ";
         ct:=!ct +1
     | _ -> () in
-  list_iter do_edge cycle;
+  IList.iter do_edge cycle;
   let desc = Format.sprintf "Retain cycle involving the following objects: %s  %s"
       !str_cycle (at_line tags loc) in
   [desc], None, !tags

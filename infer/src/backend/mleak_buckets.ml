@@ -68,20 +68,20 @@ let init_buckets ml_buckets_arg =
   let buckets =
     match buckets with
     | ["all"] -> []
-    | _ -> list_map bucket_from_string buckets in
+    | _ -> IList.map bucket_from_string buckets in
   ml_buckets := buckets
 
 let contains_cf ml_buckets =
-  list_mem mleak_bucket_eq MLeak_cf ml_buckets
+  IList.mem mleak_bucket_eq MLeak_cf ml_buckets
 
 let contains_arc ml_buckets =
-  list_mem mleak_bucket_eq MLeak_arc ml_buckets
+  IList.mem mleak_bucket_eq MLeak_arc ml_buckets
 
 let contains_narc ml_buckets =
-  list_mem mleak_bucket_eq MLeak_no_arc ml_buckets
+  IList.mem mleak_bucket_eq MLeak_no_arc ml_buckets
 
 let contains_cpp ml_buckets =
-  list_mem mleak_bucket_eq MLeak_cpp ml_buckets
+  IList.mem mleak_bucket_eq MLeak_cpp ml_buckets
 
 let should_raise_leak_cf typ =
   if contains_cf !ml_buckets then
@@ -110,7 +110,7 @@ let should_raise_cpp_leak () =
 (* If arc is passed, check leaks from code that compiles with arc*)
 (* If no arc is passed check the leaks from code that compiles without arc *)
 let should_raise_objc_leak typ =
-  if list_length !ml_buckets = 0 then Some ""
+  if IList.length !ml_buckets = 0 then Some ""
   else
   if should_raise_leak_cf typ then Some (bucket_to_message MLeak_cf)
   else if should_raise_leak_arc () then Some (bucket_to_message MLeak_arc)

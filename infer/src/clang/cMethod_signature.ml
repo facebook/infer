@@ -64,7 +64,7 @@ let replace_name_ms ms name =
 let ms_to_string ms =
   let gen = if ms._is_generated then " (generated)" else "" in
   "Method " ^ (Procname.to_string ms._name) ^ gen ^ " " ^
-  Utils.list_to_string
+  IList.to_string
     (fun (s1, s2, _) -> s1 ^ ", " ^ (Clang_ast_j.string_of_type_ptr s2))
     ms._args
   ^ "->" ^ (Clang_ast_j.string_of_type_ptr ms._ret_type) ^ " " ^

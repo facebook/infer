@@ -201,8 +201,8 @@ struct
     | Core_graphics -> core_graphics_types
 
   let is_objc_memory_model_controlled o =
-    list_mem (string_equal) o core_foundation_types ||
-    list_mem (string_equal) o core_graphics_types
+    IList.mem (string_equal) o core_foundation_types ||
+    IList.mem (string_equal) o core_graphics_types
 
   let rec is_core_lib lib typ =
     match typ with
@@ -211,7 +211,7 @@ struct
     | Sil.Tvar (Sil.TN_csu (_, name) )
     | Sil.Tstruct(_, _, _, (Some name), _, _, _) ->
         let core_lib_types = core_lib_to_type_list lib in
-        list_mem (=) (Mangled.to_string name) core_lib_types
+        IList.mem (=) (Mangled.to_string name) core_lib_types
     | _ -> false
 
   let is_core_foundation_type typ =
@@ -244,7 +244,7 @@ struct
 
   let is_core_graphics_release typ funct =
     try
-      let cg_typ = list_find
+      let cg_typ = IList.find
           (fun lib -> (funct = (lib^upper_release))) core_graphics_types in
       (string_contains (cg_typ^ref) typ)
     with Not_found -> false

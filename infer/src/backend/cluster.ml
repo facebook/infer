@@ -75,7 +75,7 @@ let create_ondemand source_dir =
     | None ->
         [[ce]]
     | Some defined_procs ->
-        list_map mk_cluster defined_procs in
+        IList.map mk_cluster defined_procs in
   clusters
 
 let create_bottomup source_file naprocs active_procs =
@@ -86,16 +86,16 @@ let create_bottomup source_file naprocs active_procs =
     ce_ondemand = None;
   }
 
-let cluster_nfiles cluster = list_length cluster
+let cluster_nfiles cluster = IList.length cluster
 
 let cluster_naprocs cluster =
-  list_fold_left (fun n ce -> ce.ce_naprocs + n) 0 cluster
+  IList.fold_left (fun n ce -> ce.ce_naprocs + n) 0 cluster
 
 let clusters_nfiles clusters =
-  list_fold_left (fun n cluster -> cluster_nfiles cluster + n) 0 clusters
+  IList.fold_left (fun n cluster -> cluster_nfiles cluster + n) 0 clusters
 
 let clusters_naprocs clusters =
-  list_fold_left (fun n cluster -> cluster_naprocs cluster + n) 0 clusters
+  IList.fold_left (fun n cluster -> cluster_naprocs cluster + n) 0 clusters
 
 let print_clusters_stats clusters =
   let pp_cluster num cluster =
@@ -104,7 +104,7 @@ let print_clusters_stats clusters =
       (cluster_nfiles cluster)
       (cluster_naprocs cluster) in
   let i = ref 0 in
-  list_iter
+  IList.iter
     (fun cluster ->
        incr i;
        pp_cluster !i cluster)
@@ -112,7 +112,7 @@ let print_clusters_stats clusters =
 
 let cluster_split_prefix (cluster : t) size =
   let rec split (cluster_seen : t) (cluster_todo : t) n =
-    if n <= 0 then (list_rev cluster_seen, cluster_todo)
+    if n <= 0 then (IList.rev cluster_seen, cluster_todo)
     else match cluster_todo with
       | [] -> raise Not_found
       | ce :: todo' -> split (ce :: cluster_seen) todo' (n - ce.ce_naprocs) in
@@ -137,7 +137,7 @@ let combine_split_clusters (clusters : t list) max_size desired_size =
       L.err "current size: %d@." !current_size;
       assert false
     end;
-    let next_cluster = list_hd !old_clusters in
+    let next_cluster = IList.hd !old_clusters in
     let next_size = cluster_naprocs next_cluster in
     let new_size = !current_size + next_size in
     if (new_size > max_size || new_size > desired_size) && !current_size > 0 then
@@ -152,13 +152,13 @@ let combine_split_clusters (clusters : t list) max_size desired_size =
         current := [];
         current_size := 0;
         new_clusters := !new_clusters @ [next_cluster'];
-        old_clusters := next_cluster'' :: (list_tl !old_clusters)
+        old_clusters := next_cluster'' :: (IList.tl !old_clusters)
       end
     else
       begin
         current := !current @ next_cluster;
         current_size := !current_size + next_size;
-        old_clusters := list_tl !old_clusters
+        old_clusters := IList.tl !old_clusters
       end
   done;
   if !current_size > 0 then new_clusters := !new_clusters @ [!current];
@@ -175,8 +175,8 @@ let get_active_procs cluster =
         let add proc =
           if not (Procname.Set.mem proc !procset) then
             procset := Procname.Set.add proc !procset in
-        list_iter add cluster_elem.ce_active_procs in
-      list_iter do_cluster_elem cluster;
+        IList.iter add cluster_elem.ce_active_procs in
+      IList.iter do_cluster_elem cluster;
       Some !procset
 
 let cl_name n = "cl" ^ string_of_int n

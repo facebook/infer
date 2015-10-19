@@ -35,10 +35,10 @@ module Html : sig
   val pp_start_color : Format.formatter -> color -> unit (** Print start color *)
 end = struct
   let create pk path =
-    let fname, dir_path = match list_rev path with
+    let fname, dir_path = match IList.rev path with
       | fname:: dir_path -> fname, dir_path
       | [] -> raise (Failure "Html.create") in
-    let fd = DB.Results_dir.create_file pk (list_rev ((fname ^ ".html") :: dir_path)) in
+    let fd = DB.Results_dir.create_file pk (IList.rev ((fname ^ ".html") :: dir_path)) in
     let outc = Unix.out_channel_of_descr fd in
     let fmt = F.formatter_of_out_channel outc in
     let (++) x y = x ^ "\n" ^ y in
@@ -103,10 +103,10 @@ end = struct
 
   (** get the full html filename from a path *)
   let get_full_fname path =
-    let fname, dir_path = match list_rev path with
+    let fname, dir_path = match IList.rev path with
       | fname:: dir_path -> fname, dir_path
       | [] -> raise (Failure "Html.open_out") in
-    DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir (list_rev ((fname ^ ".html") :: dir_path))
+    DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir (IList.rev ((fname ^ ".html") :: dir_path))
 
   let open_out path =
     let full_fname = get_full_fname path in
@@ -261,7 +261,7 @@ module Xml = struct
     | String s ->
         F.fprintf fmt "%s%s%s" indent s newline
   and pp_forest newline indent fmt forest =
-    list_iter (pp_node newline indent fmt) forest
+    IList.iter (pp_node newline indent fmt) forest
 
   let pp_prelude fmt = pp fmt "%s" "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 

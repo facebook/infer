@@ -164,7 +164,7 @@ let collect_res_trans l =
           if rt'.leaf_nodes <> [] then rt'.leaf_nodes
           else rt.leaf_nodes in
         if rt'.root_nodes <> [] then
-          list_iter (fun n -> Cfg.Node.set_succs_exn n rt'.root_nodes []) rt.leaf_nodes;
+          IList.iter (fun n -> Cfg.Node.set_succs_exn n rt'.root_nodes []) rt.leaf_nodes;
         collect l'
           { root_nodes = root_nodes;
             leaf_nodes = leaf_nodes;
@@ -237,7 +237,7 @@ struct
         let node' = mk_node () in
         Cfg.Node.set_succs_exn node' trans_state.succ_nodes [];
         let ids_parent = ids_to_parent trans_state.continuation res_state_param.ids in
-        list_iter (fun n' -> Cfg.Node.set_succs_exn n' [node'] []) res_state_param.leaf_nodes;
+        IList.iter (fun n' -> Cfg.Node.set_succs_exn n' [node'] []) res_state_param.leaf_nodes;
         { root_nodes = res_state_param.root_nodes;
           leaf_nodes = [node'];
           ids = ids_parent;
@@ -455,7 +455,7 @@ let compute_instr_ids_exp_to_parent stmt_info instr ids e lhs typ loc pri =
     instr@res_instr, ids @ [id], [(Sil.Var id, typ)])
 
 let fix_param_exps_mismatch params_stmt exps_param =
-  let diff = list_length params_stmt - list_length exps_param in
+  let diff = IList.length params_stmt - IList.length exps_param in
   let args = if diff >0 then Array.make diff dummy_exp
     else assert false in
   let exps'= exps_param @ (Array.to_list args) in
@@ -497,7 +497,7 @@ let get_value_enum_constant tenv enum_type stmt =
   | Some (Sil.Tenum enum_constants) ->
       Printing.log_out ">>>Found enum with typename TN_typename('%s')\n" (Sil.typename_to_string typename);
       let _, v = try
-          list_find (fun (c, _) -> Mangled.equal c (Mangled.from_string constant)) enum_constants
+          IList.find (fun (c, _) -> Mangled.equal c (Mangled.from_string constant)) enum_constants
         with _ -> (Printing.log_err
                      "Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
       v
@@ -687,7 +687,7 @@ let is_dispatch_function stmt_list =
                  | None -> None
                  | Some (dispatch_function, block_arg_pos) ->
                      try
-                       (match list_nth stmts block_arg_pos with
+                       (match IList.nth stmts block_arg_pos with
                         | BlockExpr _ -> Some block_arg_pos
                         | _ -> None)
                      with Not_found -> None
@@ -722,10 +722,10 @@ let assign_default_params params_stmt class_name_opt stmt ~is_cxx_method =
                   default_instr
               | instr, _ -> instr in
             try
-              let params_args = list_combine params_stmt args in
-              list_map replace_default_arg params_args
+              let params_args = IList.combine params_stmt args in
+              IList.map replace_default_arg params_args
             with Invalid_argument _ ->
-              (* list_combine failed because of different list lengths *)
+              (* IList.combine failed because of different list lengths *)
               Printing.log_err "Param count doesn't match %s\n"
                 (Procname.to_string (CMethod_signature.ms_get_name callee_ms));
               params_stmt)

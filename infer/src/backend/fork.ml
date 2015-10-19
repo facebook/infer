@@ -30,7 +30,7 @@ let compute_weighed_pnameset gr =
   let pnameset = ref WeightedPnameSet.empty in
   let add_pname_calls (pn, calls) =
     pnameset := WeightedPnameSet.add (pn, calls) !pnameset in
-  list_iter add_pname_calls (Cg.get_nodes_and_calls gr);
+  IList.iter add_pname_calls (Cg.get_nodes_and_calls gr);
   !pnameset
 
 (* Return true if there are no children of [pname] whose specs
@@ -71,7 +71,7 @@ let transition_footprint_re_exe proc_name joined_pres =
         Specs.dependency_map = Specs.re_initialize_dependency_map summary.Specs.dependency_map;
         Specs.payload =
           let specs =
-            list_map
+            IList.map
               (fun jp ->
                  Specs.spec_normalize
                    { Specs.pre = jp;
@@ -95,7 +95,7 @@ let update_specs proc_name (new_specs : Specs.NormSpec.t list) : Specs.NormSpec.
   let changed = ref false in
   let current_specs =
     ref
-      (list_fold_left
+      (IList.fold_left
          (fun map spec ->
             SpecMap.add
               spec.Specs.pre
@@ -103,7 +103,7 @@ let update_specs proc_name (new_specs : Specs.NormSpec.t list) : Specs.NormSpec.
          SpecMap.empty old_specs) in
   let re_exe_filter old_spec = (* filter out pres which failed re-exe *)
     if phase == Specs.RE_EXECUTION &&
-       not (list_exists
+       not (IList.exists
               (fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
               new_specs)
     then begin
@@ -143,8 +143,8 @@ let update_specs proc_name (new_specs : Specs.NormSpec.t list) : Specs.NormSpec.
         { Specs.pre = pre;
           Specs.posts = Paths.PathSet.elements post_set;
           Specs.visited = visited }:: !res in
-  list_iter re_exe_filter old_specs; (* filter out pre's which failed re-exe *)
-  list_iter add_spec new_specs; (* add new specs *)
+  IList.iter re_exe_filter old_specs; (* filter out pre's which failed re-exe *)
+  IList.iter add_spec new_specs; (* add new specs *)
   SpecMap.iter convert !current_specs;
   !res,!changed
 
@@ -188,7 +188,7 @@ let post_process_procs exe_env procs_done =
         "No specs found for %a@." Procname.pp pn
     end in
   let cg = Exe_env.get_cg exe_env in
-  list_iter (fun pn ->
+  IList.iter (fun pn ->
       let elem = (pn, Cg.get_calls cg pn) in
       if WeightedPnameSet.mem elem !wpnames_todo then
         begin

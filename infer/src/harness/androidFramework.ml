@@ -18,7 +18,7 @@ open Utils
 (** work-in-progress list of known callback-registering method names *)
 let callback_register_methods =
   let method_list = ["addCallback"; "register"; "setOnClickListener"] in
-  list_fold_left (fun set str -> StringSet.add str set) StringSet.empty method_list
+  IList.fold_left (fun set str -> StringSet.add str set) StringSet.empty method_list
 
 let is_known_callback_register_method proc_str = StringSet.mem proc_str callback_register_methods
 
@@ -245,7 +245,7 @@ let android_callbacks =
     ("android.widget", "TimePicker$OnTimeChangedListener");
     ("android.widget", "ZoomButtonsController$OnZoomListener");
   ] in
-  list_fold_left (fun cbSet (pkg, clazz) ->
+  IList.fold_left (fun cbSet (pkg, clazz) ->
       let qualified_name = Mangled.from_string (pkg ^ "." ^ clazz) in
       Mangled.MangledSet.add qualified_name cbSet) Mangled.MangledSet.empty cb_strs
 
@@ -260,7 +260,7 @@ let get_all_supertypes typ tenv =
     | None -> typs
   and get_supers_rec typ tenv all_supers =
     let direct_supers = get_direct_supers typ in
-    list_fold_left (fun typs (_, name) -> add_typ name typs) all_supers direct_supers in
+    IList.fold_left (fun typs (_, name) -> add_typ name typs) all_supers direct_supers in
   get_supers_rec typ tenv TypSet.empty
 
 (** return true if [typ0] <: [typ1] *)
@@ -303,7 +303,7 @@ let get_callback_registered_by procname args tenv =
   (* for now, we assume a method is a callback registration method if it is a setter and has a
    * callback class as a non - receiver argument *)
   let is_callback_register_like =
-    let has_non_this_callback_arg args = list_length args > 1 in
+    let has_non_this_callback_arg args = IList.length args > 1 in
     let has_registery_name procname =
       Procname.is_java procname && (PatternMatch.is_setter procname ||
                                     is_known_callback_register_method (Procname.java_get_method procname)) in
@@ -314,9 +314,9 @@ let get_callback_registered_by procname args tenv =
   if is_callback_register_like then
     (* we don't want to check if the receiver is a callback class; it's one of the method arguments
      * that's being registered as a callback *)
-    let get_non_this_args args = list_tl args in
+    let get_non_this_args args = IList.tl args in
     try
-      Some (list_find (fun (_, typ) -> is_ptr_to_callback_class typ tenv) (get_non_this_args args))
+      Some (IList.find (fun (_, typ) -> is_ptr_to_callback_class typ tenv) (get_non_this_args args))
     with Not_found -> None
   else None
 
@@ -345,12 +345,12 @@ let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
   | Some (Sil.Tstruct(_, _, Sil.Class, Some class_name, _, decl_procs, _) as lifecycle_typ) ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
-        list_find (fun decl_proc ->
+        IList.find (fun decl_proc ->
             Procname.is_java decl_proc && lifecycle_proc = Procname.java_get_method decl_proc
           ) decl_procs in
       (* convert each of the framework lifecycle proc strings to a lifecycle method procname *)
       let lifecycle_procs =
-        list_fold_left (fun lifecycle_procs lifecycle_proc_str ->
+        IList.fold_left (fun lifecycle_procs lifecycle_proc_str ->
             try (lookup_proc lifecycle_proc_str) :: lifecycle_procs
             with Not_found -> lifecycle_procs)
           [] lifecycle_proc_strs in
@@ -380,4 +380,4 @@ let is_runtime_exception tenv exn =
 
 let non_stub_android_jar () =
   let root_dir = Filename.dirname (Filename.dirname Sys.executable_name) in
-  list_fold_left Filename.concat root_dir ["lib"; "java"; "android"; "android-19.jar"]
+  IList.fold_left Filename.concat root_dir ["lib"; "java"; "android"; "android-19.jar"]

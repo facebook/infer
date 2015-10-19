@@ -98,9 +98,9 @@ let compute_exclude_fun () : DB.source_file -> bool =
   let prepend_source_path s =
     if Filename.is_relative s then Filename.concat !source_path s
     else s in
-  let excluded_list = list_map (fun file_path -> prepend_source_path file_path) !excluded_files in
+  let excluded_list = IList.map (fun file_path -> prepend_source_path file_path) !excluded_files in
   let exclude_fun (source_file : DB.source_file) =
-    list_exists (fun excluded_path -> string_is_prefix excluded_path (DB.source_file_to_string source_file)) excluded_list in
+    IList.exists (fun excluded_path -> string_is_prefix excluded_path (DB.source_file_to_string source_file)) excluded_list in
   exclude_fun
 
 let version_string () =
@@ -203,7 +203,7 @@ let () = (* parse command-line arguments *)
 
 module Simulator = struct (** Simulate the analysis only *)
   let reset_summaries cg =
-    list_iter
+    IList.iter
       (fun (pname, in_out_calls) -> Specs.reset_summary cg pname None)
       (Cg.get_nodes_and_calls cg)
 
@@ -214,7 +214,7 @@ module Simulator = struct (** Simulate the analysis only *)
     let f proc_name =
       let joined_pres = [] in
       Fork.transition_footprint_re_exe proc_name joined_pres in
-    list_iter f proc_names
+    IList.iter f proc_names
 
   let process_result (exe_env: Exe_env.t) ((proc_name: Procname.t), (calls: Cg.in_out_calls)) (_summ: Specs.summary) : unit =
     L.err "in process_result %a@." Procname.pp proc_name;
@@ -267,7 +267,7 @@ let analyze exe_env =
 (** add [x] to list [l] at position [nth] *)
 let list_add_nth x l nth =
   let rec add acc todo nth =
-    if nth = 0 then list_rev_append acc (x:: todo)
+    if nth = 0 then IList.rev_append acc (x:: todo)
     else match todo with
       | [] -> raise Not_found
       | y:: todo' -> add (y:: acc) todo' (nth - 1) in
@@ -277,13 +277,13 @@ let list_add_nth x l nth =
     the number returned by [compare x y] indicates 'how strongly' x should come before y *)
 let weak_sort compare list =
   let weak_add l x =
-    let length = list_length l in
+    let length = IList.length l in
     let fitness = Array.make (length + 1) 0 in
-    list_iter (fun y -> fitness.(0) <- fitness.(0) + compare x y) l;
+    IList.iter (fun y -> fitness.(0) <- fitness.(0) + compare x y) l;
     let best_position = ref 0 in
     let best_value = ref (fitness.(0)) in
     let i = ref 0 in
-    list_iter (fun y ->
+    IList.iter (fun y ->
         incr i;
         let new_value = fitness.(!i - 1) - (compare x y) + (compare y x) in
         fitness.(!i) <- new_value;
@@ -294,10 +294,10 @@ let weak_sort compare list =
           end)
       l;
     list_add_nth x l !best_position in
-  list_fold_left weak_add [] list
+  IList.fold_left weak_add [] list
 
 let pp_stringlist fmt slist =
-  list_iter (fun pname -> F.fprintf fmt "%s " pname) slist
+  IList.iter (fun pname -> F.fprintf fmt "%s " pname) slist
 
 let weak_sort_nodes cg =
   let nodes = Cg.get_defined_nodes cg in
@@ -360,8 +360,8 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
         let proc_is_active pname =
           proc_is_selected pname &&
           DB.source_file_equal (Exe_env.get_source exe_env pname) source_file in
-        let active_procs = list_filter proc_is_active (Procname.Set.elements changed_procs) in
-        let naprocs = list_length active_procs in
+        let active_procs = IList.filter proc_is_active (Procname.Set.elements changed_procs) in
+        let naprocs = IList.length active_procs in
         total_files := !total_files + 1;
         total_procs := !total_procs + naprocs;
         total_LOC := !total_LOC + (Cg.get_nLOC cg);
@@ -369,11 +369,11 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
   let choose_next_file list = (* choose next file from the weakly ordered list *)
     let file_has_no_unseen_dependents fname =
       Procname.Set.subset (Cg.get_dependents file_cg fname) !seen in
-    match list_partition file_has_no_unseen_dependents list with
+    match IList.partition file_has_no_unseen_dependents list with
     | (fname :: no_deps), deps -> (* if all the dependents of fname have been seen, bypass the order in the list *)
         if !Cluster.trace_clusters then
           L.err "  [choose_next_file] %s (NO dependents)@." (Procname.to_string fname);
-        Some (fname, list_rev_append no_deps deps)
+        Some (fname, IList.rev_append no_deps deps)
     | [], _ ->
         begin
           match list with
@@ -391,10 +391,10 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
         if Procname.Set.mem fname !seen then build_clusters list'
         else
           let cluster_set = Procname.Set.add fname (Cg.get_recursive_dependents file_cg fname) in
-          let cluster, list'' = list_partition (fun node -> Procname.Set.mem node cluster_set) list in
+          let cluster, list'' = IList.partition (fun node -> Procname.Set.mem node cluster_set) list in
           seen := Procname.Set.union !seen cluster_set;
           let to_analyze =
-            list_fold_right
+            IList.fold_right
               (fun file_pname l ->
                  try (file_pname, Procname.Map.find file_pname to_analyze_map) :: l
                  with Not_found -> l)
@@ -402,16 +402,16 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
               [] in
           if to_analyze <> [] then
             begin
-              let cluster = list_map create_cluster_elem to_analyze in
+              let cluster = IList.map create_cluster_elem to_analyze in
               clusters := cluster :: !clusters;
             end;
           build_clusters list'' in
   build_clusters sorted_files;
   output_json_file_stats !total_files !total_procs !total_LOC;
-  list_rev !clusters
+  IList.rev !clusters
 
 let proc_list_to_set proc_list =
-  list_fold_left (fun s p -> Procname.Set.add p s) Procname.Set.empty proc_list
+  IList.fold_left (fun s p -> Procname.Set.add p s) Procname.Set.empty proc_list
 
 (** compute the files to analyze map for incremental mode *)
 let compute_to_analyze_map_incremental files_changed_map global_cg exe_env =
@@ -497,20 +497,20 @@ let compute_clusters exe_env files_changed : Cluster.t list =
             (ClusterMakefile.source_file_to_pname src2)
         end
       end in
-  list_iter do_node nodes;
-  if not !Config.intraprocedural then list_iter do_edge edges;
+  IList.iter do_node nodes;
+  if not !Config.intraprocedural then IList.iter do_edge edges;
   if !save_file_dependency then
     Cg.save_call_graph_dotty (Some (DB.filename_from_string "file_dependency.dot")) Specs.get_specs file_cg;
   let files = Cg.get_defined_nodes file_cg in
-  let num_files = list_length files in
-  L.err "@.Found %d defined procedures in %d files.@." (list_length defined_procs) num_files;
+  let num_files = IList.length files in
+  L.err "@.Found %d defined procedures in %d files.@." (IList.length defined_procs) num_files;
   let to_analyze_map =
     if !incremental_mode = ANALYZE_ALL then
       (* get all procedures defined in a file *)
       let get_defined_procs file_pname = match file_pname_to_cg file_pname with
         | None -> Procname.Set.empty
         | Some cg -> proc_list_to_set (Cg.get_defined_nodes cg) in
-      list_fold_left
+      IList.fold_left
         (fun m file_pname -> Procname.Map.add file_pname (get_defined_procs file_pname) m)
         Procname.Map.empty
         files
@@ -553,8 +553,8 @@ let cg_get_changed_procs exe_env source_dir cg =
   let is_changed pname =
     not (spec_exists pname) || (cfg_modified_after_specs pname && pdesc_changed pname) in
   let defined_nodes = Cg.get_defined_nodes cg in
-  if !Config.incremental_procs then list_filter is_changed defined_nodes
-  else if list_exists is_changed defined_nodes then defined_nodes
+  if !Config.incremental_procs then IList.filter is_changed defined_nodes
+  else if IList.exists is_changed defined_nodes then defined_nodes
   else []
 
 (** Load a .c or .cpp file into an execution environment *)
@@ -567,9 +567,9 @@ let load_cg_file (_exe_env: Exe_env.initial) (source_dir : DB.source_dir) exclud
 
 (** Return a map of (changed file procname) -> (procs in that file that have changed) *)
 let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclude_fun =
-  let sorted_dirs = list_sort DB.source_dir_compare source_dirs in
+  let sorted_dirs = IList.sort DB.source_dir_compare source_dirs in
   let cg_list =
-    list_fold_left
+    IList.fold_left
       (fun cg_list source_dir ->
          match load_cg_file _exe_env source_dir exclude_fun with
          | None -> cg_list
@@ -585,7 +585,7 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
         let file_pname = ClusterMakefile.source_file_to_pname (Cg.get_source cg) in
         Procname.Map.add file_pname (proc_list_to_set changed_procs) files_changed_map
       else files_changed_map in
-    list_fold_left cg_get_files_changed files_changed_map cg_list in
+    IList.fold_left cg_get_files_changed files_changed_map cg_list in
   let exe_env = Exe_env.freeze _exe_env in
   let files_changed =
     if !incremental_mode = ANALYZE_ALL then Procname.Map.empty
@@ -606,9 +606,9 @@ let exe_env_from_cluster cluster =
         | None ->
             DB.source_dir_from_source_file ce.Cluster.ce_file in
       source_dir :: source_dirs in
-    list_fold_left fold_cluster_elem [] cluster in
-  let sorted_dirs = list_sort DB.source_dir_compare source_dirs in
-  list_iter (fun src_dir -> ignore (Exe_env.add_cg _exe_env src_dir)) sorted_dirs;
+    IList.fold_left fold_cluster_elem [] cluster in
+  let sorted_dirs = IList.sort DB.source_dir_compare source_dirs in
+  IList.iter (fun src_dir -> ignore (Exe_env.add_cg _exe_env src_dir)) sorted_dirs;
   let exe_env = Exe_env.freeze _exe_env in
   exe_env
 
@@ -616,9 +616,9 @@ let exe_env_from_cluster cluster =
 let analyze_cluster cluster_num tot_clusters (cluster : Cluster.t) =
   incr cluster_num;
   let exe_env = exe_env_from_cluster cluster in
-  let num_files = list_length cluster in
+  let num_files = IList.length cluster in
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env) in
-  let num_procs = list_length defined_procs in
+  let num_procs = IList.length defined_procs in
   L.err "@.Processing cluster #%d/%d with %d files and %d procedures@." !cluster_num tot_clusters num_files num_procs;
   Fork.this_cluster_files := num_files;
   analyze exe_env;
@@ -633,8 +633,8 @@ let process_cluster_cmdline_exit () =
            L.err "Cannot find cluster file %s@." fname;
            exit 0
        | Some (nr, tot_nr, cluster) ->
-           Fork.tot_files_done := (nr - 1) * list_length cluster;
-           Fork.tot_files := tot_nr * list_length cluster;
+           Fork.tot_files_done := (nr - 1) * IList.length cluster;
+           Fork.tot_files := tot_nr * IList.length cluster;
            analyze_cluster (ref (nr -1)) tot_nr cluster;
            exit 0)
 
@@ -663,9 +663,9 @@ let compute_ondemand_clusters source_dirs =
     Cluster.create_ondemand source_dir in
   let clusters =
     let do_source_dir acc source_dir = mk_cluster source_dir @ acc in
-    list_fold_left do_source_dir [] source_dirs in
+    IList.fold_left do_source_dir [] source_dirs in
   Cluster.print_clusters_stats clusters;
-  let num_files = list_length clusters in
+  let num_files = IList.length clusters in
   let num_procs = 0 (* can't compute it at this stage *) in
   let num_lines = 0 in
   output_json_file_stats num_files num_procs num_lines;
@@ -710,9 +710,9 @@ let () =
     else
       let filter source_dir =
         let source_dir_base = Filename.basename (DB.source_dir_to_string source_dir) in
-        list_exists (fun s -> Utils.string_is_prefix s source_dir_base) !only_files_cmdline in
-      list_filter filter (DB.find_source_dirs ()) in
-  L.err "Found %d source files in %s@." (list_length source_dirs) !Config.results_dir;
+        IList.exists (fun s -> Utils.string_is_prefix s source_dir_base) !only_files_cmdline in
+      IList.filter filter (DB.find_source_dirs ()) in
+  L.err "Found %d source files in %s@." (IList.length source_dirs) !Config.results_dir;
 
   let clusters =
     if !Config.ondemand_enabled
@@ -729,9 +729,9 @@ let () =
       end in
 
 
-  let tot_clusters = list_length clusters in
-  Fork.tot_files := list_fold_left (fun n cluster -> n + list_length cluster) 0 clusters;
-  list_iter (analyze_cluster (ref 0) tot_clusters) clusters;
+  let tot_clusters = IList.length clusters in
+  Fork.tot_files := IList.fold_left (fun n cluster -> n + IList.length cluster) 0 clusters;
+  IList.iter (analyze_cluster (ref 0) tot_clusters) clusters;
   L.flush_streams ();
   close_output_file analyzer_out_of;
   close_output_file analyzer_err_of;

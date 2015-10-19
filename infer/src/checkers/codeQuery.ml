@@ -38,7 +38,7 @@ module Err = struct
   (** Update the summary with stats from the checker. *)
   let update_summary proc_name proc_desc =
     let old_summ = Specs.get_summary_unsafe "codeQuery" proc_name in
-    let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
+    let nodes = IList.map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
     let specs =
       let spec =
         { Specs.pre = Specs.Jprop.Prop (1, Prop.prop_emp);
@@ -134,7 +134,7 @@ module Match = struct
     match Cfg.Node.get_succs node with
     | [node'] ->
         let instrs = Cfg.Node.get_instrs node in
-        list_iter (fun instr -> iter (node', instr)) instrs;
+        IList.iter (fun instr -> iter (node', instr)) instrs;
         iter_succ_nodes node' iter
     | [] -> ()
     | _:: _ -> ()
@@ -167,7 +167,7 @@ module Match = struct
     | CodeQueryAst.Call _, _ -> false
     | CodeQueryAst.MethodCall (ae1, ae2, ael_opt), Sil.Call (_, Sil.Const (Sil.Cfun pn), (_e1, t1):: params, loc, { Sil.cf_virtual = true }) ->
         let e1 = Idenv.expand_expr idenv _e1 in
-        let vl = list_map (function _e, t -> Vval (Idenv.expand_expr idenv _e)) params in
+        let vl = IList.map (function _e, t -> Vval (Idenv.expand_expr idenv _e)) params in
         if exp_match env ae1 (Vval e1) && exp_match env ae2 (Vfun pn) && opt_match exp_list_match env ael_opt vl then
           begin
             if show then print_action env action proc_name node loc;

@@ -87,7 +87,7 @@ let do_source_file
       never_null_matcher linereader classes program tenv source_basename source_file in
   store_icfg tenv call_graph cfg source_file;
   if JConfig.create_harness then
-    list_fold_left
+    IList.fold_left
       (fun proc_file_map pdesc ->
          Procname.Map.add (Cfg.Procdesc.get_proc_name pdesc) source_file proc_file_map)
       proc_file_map (Cfg.get_all_procs cfg)

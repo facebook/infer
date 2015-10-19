@@ -50,7 +50,7 @@ let check_not_null_parameter_list, check_not_null_list =
       1, (o, [n]), "com.facebook.infer.annotation.Assertions.assumeNotNull(java.lang.Object):java.lang.Object";
       1, (o, [n; o]), "com.facebook.infer.annotation.Assertions.assumeNotNull(java.lang.Object,java.lang.String):java.lang.Object";
     ] in
-  list_map (fun (x, y, z) -> (x, z)) list, list_map (fun (x, y, z) -> (y, z)) list
+  IList.map (fun (x, y, z) -> (x, z)) list, IList.map (fun (x, y, z) -> (y, z)) list
 
 let check_state_list =
   [
@@ -223,7 +223,7 @@ type model_table_t = (string, bool * bool list) Hashtbl.t
 
 let mk_table list =
   let map = Hashtbl.create 1 in
-  list_iter (function (v, pn_id) -> Hashtbl.replace map pn_id v) list;
+  IList.iter (function (v, pn_id) -> Hashtbl.replace map pn_id v) list;
   map
 
 let annotated_table_nullable = mk_table annotated_list_nullable

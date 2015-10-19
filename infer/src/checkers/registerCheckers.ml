@@ -36,14 +36,14 @@ let active_procedure_checkers () =
         RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
         PrintfArgs.callback_printf_args, checkers_enabled;
       ] in
-    list_map (fun (x, y) -> (x, y, Some Config.Java)) l in
+    IList.map (fun (x, y) -> (x, y, Some Config.Java)) l in
   let c_cpp_checkers =
     let l =
       [
         Checkers.callback_print_c_method_calls, false;
         CheckDeadCode.callback_check_dead_code, checkers_enabled;
       ] in
-    list_map (fun (x, y) -> (x, y, Some Config.C_CPP)) l in
+    IList.map (fun (x, y) -> (x, y, Some Config.C_CPP)) l in
 
   java_checkers @ c_cpp_checkers
 
@@ -53,5 +53,5 @@ let active_cluster_checkers () =
 let register () =
   let register registry (callback, active, language_opt) =
     if active then registry language_opt callback in
-  list_iter (register Callbacks.register_procedure_callback) (active_procedure_checkers ());
-  list_iter (register Callbacks.register_cluster_callback) (active_cluster_checkers ())
+  IList.iter (register Callbacks.register_procedure_callback) (active_procedure_checkers ());
+  IList.iter (register Callbacks.register_cluster_callback) (active_cluster_checkers ())

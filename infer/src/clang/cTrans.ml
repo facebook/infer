@@ -103,10 +103,10 @@ struct
       let fname = General_utils.mk_class_field_name qual_name in
       let item_annot = Sil.item_annotation_empty in
       fname, typ, item_annot in
-    let fields = list_map mk_field_from_captured_var captured_vars in
+    let fields = IList.map mk_field_from_captured_var captured_vars in
     let fields = CFrontend_utils.General_utils.sort_fields fields in
     Printing.log_out "Block %s field:\n" block_name;
-    list_iter (fun (fn, ft, _) ->
+    IList.iter (fun (fn, ft, _) ->
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
     let block_type = Sil.Tstruct(fields, [], Sil.Class, Some mblock, [], [], []) in
@@ -124,16 +124,16 @@ struct
     let block_nullify_instr =
       if pred_exit = [] then
         [Sil.Nullify(block_var, loc, true)]
-      else (list_iter (fun n -> let loc = Cfg.Node.get_loc n in
+      else (IList.iter (fun n -> let loc = Cfg.Node.get_loc n in
                         Cfg.Node.append_instrs_temps n [Sil.Nullify(block_var, loc, true)] []) pred_exit;
             []) in
     let set_instr = Sil.Set(Sil.Lvar block_var, block_type, Sil.Var id_block, loc) in
-    let ids, captured_instrs = list_split (list_map (fun (vname, typ, _) ->
+    let ids, captured_instrs = IList.split (IList.map (fun (vname, typ, _) ->
         let id = Ident.create_fresh Ident.knormal in
         id, Sil.Letderef(id, Sil.Lvar (Sil.mk_pvar vname procname), typ, loc)
       ) captured_vars) in
-    let fields_ids = list_combine fields ids in
-    let set_fields = list_map (fun ((f, t, _), id) ->
+    let fields_ids = IList.combine fields ids in
+    let set_fields = IList.map (fun ((f, t, _), id) ->
         Sil.Set(Sil.Lfield(Sil.Var id_block, f, block_type), t, Sil.Var id, loc)) fields_ids in
     (declare_block_local :: trans_res.instrs) @ [set_instr] @ captured_instrs @ set_fields @ block_nullify_instr,
     id_block :: ids
@@ -154,7 +154,7 @@ struct
           insts := Sil.Letderef (id, block, t, loc) :: !insts;
           [(Sil.Var id, t)]
       | _ -> [(e, t)] in
-    let get_function_name t el = list_flatten(list_map (is_function_name t) el) in
+    let get_function_name t el = IList.flatten(IList.map (is_function_name t) el) in
     let rec f es =
       match es with
       | [] -> []
@@ -436,7 +436,7 @@ struct
 
     if res_trans_idx.root_nodes <> []
     then
-      list_iter
+      IList.iter
         (fun n -> Cfg.Node.set_succs_exn n res_trans_idx.root_nodes [])
         res_trans_a.leaf_nodes;
 
@@ -491,7 +491,7 @@ struct
          (* Create a node if the priority if free and there are instructions *)
          let creating_node =
            (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
-           (list_length instrs >0) in
+           (IList.length instrs >0) in
 
          let instrs_after_assign, assign_ids, exp_to_parent =
            if (is_binary_assign_op binary_operator_info)
@@ -524,7 +524,7 @@ struct
              (* if we are translating a condition or not *)
              let ids_parent = ids_to_parent trans_state.continuation assign_ids in
              let ids_node = ids_to_node trans_state.continuation assign_ids in
-             list_iter (fun n -> Cfg.Node.append_instrs_temps n instrs_after_assign ids_node) succ_nodes'';
+             IList.iter (fun n -> Cfg.Node.append_instrs_temps n instrs_after_assign ids_node) succ_nodes'';
              [], ids_parent, succ_nodes''
            ) else (
              instrs_after_assign, assign_ids, succ_nodes) in
@@ -534,8 +534,8 @@ struct
 
          let e1_succ_nodes =
            if e2_has_nodes then res_trans_e2.root_nodes else succ_nodes' in
-         list_iter (fun n -> Cfg.Node.set_succs_exn n e1_succ_nodes []) res_trans_e1.leaf_nodes;
-         list_iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes' []) res_trans_e2.leaf_nodes;
+         IList.iter (fun n -> Cfg.Node.set_succs_exn n e1_succ_nodes []) res_trans_e1.leaf_nodes;
+         IList.iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes' []) res_trans_e2.leaf_nodes;
 
          let root_nodes_to_ancestor = match e1_has_nodes, e2_has_nodes with
            | false, false -> succ_nodes'
@@ -549,12 +549,12 @@ struct
 
          Printing.log_out "....BinaryOperator '%s' " bok;
          Printing.log_out "has ids_to_ancestor |ids_to_ancestor|=%s "
-           (string_of_int (list_length ids_to_ancestor));
+           (string_of_int (IList.length ids_to_ancestor));
          Printing.log_out " |nodes_e1|=%s .\n"
-           (string_of_int (list_length res_trans_e1.root_nodes));
+           (string_of_int (IList.length res_trans_e1.root_nodes));
          Printing.log_out " |nodes_e2|=%s .\n"
-           (string_of_int (list_length res_trans_e2.root_nodes));
-         list_iter (fun id -> Printing.log_out "     ... '%s'\n"
+           (string_of_int (IList.length res_trans_e2.root_nodes));
+         IList.iter (fun id -> Printing.log_out "     ... '%s'\n"
                        (Ident.to_string id)) ids_to_ancestor;
          { root_nodes = root_nodes_to_ancestor;
            leaf_nodes = leaf_nodes_to_ancestor;
@@ -604,9 +604,9 @@ struct
       else [] in
     let res_trans_par =
       let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
-      let l = list_map (instruction' trans_state_param) params_stmt in
+      let l = IList.map (instruction' trans_state_param) params_stmt in
       let rt = collect_res_trans (res_trans_callee :: l) in
-      { rt with exps = list_tl rt.exps } in
+      { rt with exps = IList.tl rt.exps } in
     let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
     if CTrans_models.is_assert_log sil_fe then
       if Config.report_assertion_failure then
@@ -614,7 +614,7 @@ struct
       else
         CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes
     else
-      let act_params = if list_length res_trans_par.exps = list_length params_stmt then
+      let act_params = if IList.length res_trans_par.exps = IList.length params_stmt then
           res_trans_par.exps
         else (Printing.log_err
                 "WARNING: stmt_list and res_trans_par.exps must have same size. NEED TO BE FIXED\n\n";
@@ -673,8 +673,8 @@ struct
     let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
 
     (* first for method address, second for 'this' expression *)
-    assert ((list_length result_trans_callee.exps) = 2);
-    let (sil_method, typ_method) = list_hd result_trans_callee.exps in
+    assert ((IList.length result_trans_callee.exps) = 2);
+    let (sil_method, typ_method) = IList.hd result_trans_callee.exps in
     let callee_pname = match sil_method with
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
@@ -687,10 +687,10 @@ struct
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
     let result_trans_params =
       let instruction' = exec_with_lvalue_as_reference instruction in
-      let l = list_map (exec_with_self_exception instruction' trans_state_param) params_stmt in
+      let l = IList.map (exec_with_self_exception instruction' trans_state_param) params_stmt in
       (* this function will automatically merge 'this' argument with rest of arguments in 'l'*)
       let rt = collect_res_trans (result_trans_callee :: l) in
-      { rt with exps = list_tl rt.exps } in
+      { rt with exps = IList.tl rt.exps } in
 
     let actual_params = result_trans_params.exps in
     let ret_id = if (Sil.typ_equal function_type Sil.Tvoid) then []
@@ -743,7 +743,7 @@ struct
                 obj_c_message_expr_info, empty_res_trans) in
            let instruction' =
              exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
-           let l = list_map (instruction' trans_state_param) rest in
+           let l = IList.map (instruction' trans_state_param) rest in
            obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
        | [] -> obj_c_message_expr_info, empty_res_trans) in
     let (class_type, _, _, _) = CMethod_trans.get_class_selector_instance context obj_c_message_expr_info res_trans_par.exps in
@@ -790,36 +790,36 @@ struct
     let loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let res_state = instruction trans_state transformed_stmt in
     (* Add declare locals to the first node *)
-    list_iter (fun n -> Cfg.Node.prepend_instrs_temps n [Sil.Declare_locals([(pvar, typ)], loc)] []) res_state.root_nodes;
-    let preds = list_flatten (list_map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
+    IList.iter (fun n -> Cfg.Node.prepend_instrs_temps n [Sil.Declare_locals([(pvar, typ)], loc)] []) res_state.root_nodes;
+    let preds = IList.flatten (IList.map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
     (* Add nullify of the temp block var to the last node (predecessor or the successor nodes)*)
-    list_iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds;
+    IList.iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds;
     res_state
 
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
     let declare_nullify_vars loc res_state roots preds (pvar, typ) =
       (* Add nullify of the temp block var to the last node (predecessor or the successor nodes)*)
-      list_iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds in
+      IList.iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds in
 
     Printing.log_out "\n Call to a block enumeration function treated as special case...\n@.";
     let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
     let transformed_stmt, vars_to_register =
       Ast_expressions.translate_block_enumerate (Sil.pvar_to_string pvar) stmt_info stmt_list ei in
-    let pvars_types = list_map (fun (v, pointer, tp) ->
+    let pvars_types = IList.map (fun (v, pointer, tp) ->
         let pvar = Sil.mk_pvar (Mangled.from_string v) procname in
         let typ = CTypes_decl.type_ptr_to_sil_type trans_state.context.CContext.tenv tp in
         (pvar, typ)) vars_to_register in
     let loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let res_state = instruction trans_state transformed_stmt in
-    let preds = list_flatten (list_map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
-    list_iter (declare_nullify_vars loc res_state res_state.root_nodes preds) pvars_types;
+    let preds = IList.flatten (IList.map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
+    IList.iter (declare_nullify_vars loc res_state res_state.root_nodes preds) pvars_types;
     res_state
 
   and compoundStmt_trans trans_state stmt_info stmt_list =
     let line_number = CLocation.get_line stmt_info trans_state.parent_line_number in
     let trans_state' = { trans_state with parent_line_number = line_number } in
-    instructions trans_state' (list_rev stmt_list)
+    instructions trans_state' (IList.rev stmt_list)
 
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
@@ -870,7 +870,7 @@ struct
               Cfg.Node.set_succs_exn n [join_node] [];
               [n]
           | _, true ->
-              list_iter
+              IList.iter
                 (fun n' ->
                    (* If there is a node with instructions we need to only *)
                    (* add the set of the temp variable *)
@@ -881,9 +881,9 @@ struct
                 ) node_b;
               node_b
           | _, false -> node_b) in
-      let prune_nodes_t, prune_nodes_f = list_partition is_true_prune_node prune_nodes in
+      let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      list_iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes' in
+      IList.iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes' in
     (match stmt_list with
      | [cond; exp1; exp2] ->
          let typ =
@@ -932,8 +932,8 @@ struct
       let e', instrs' = define_condition_side_effects context res_trans_cond.exps res_trans_cond.instrs sil_loc in
       let prune_t = mk_prune_node true e' res_trans_cond.ids instrs' in
       let prune_f = mk_prune_node false e' res_trans_cond.ids instrs' in
-      list_iter (fun n' -> Cfg.Node.set_succs_exn n' [prune_t; prune_f] []) res_trans_cond.leaf_nodes;
-      let rnodes = if (list_length res_trans_cond.root_nodes) = 0 then
+      IList.iter (fun n' -> Cfg.Node.set_succs_exn n' [prune_t; prune_f] []) res_trans_cond.leaf_nodes;
+      let rnodes = if (IList.length res_trans_cond.root_nodes) = 0 then
           [prune_t; prune_f]
         else res_trans_cond.root_nodes in
       { root_nodes = rnodes; leaf_nodes =[prune_t; prune_f]; ids = res_trans_cond.ids; instrs = instrs'; exps = e' } in
@@ -947,7 +947,7 @@ struct
     (* the condition to decide its truth value). *)
     let short_circuit binop s1 s2 =
       let res_trans_s1 = cond_trans trans_state s1 in
-      let prune_nodes_t, prune_nodes_f = list_partition is_true_prune_node res_trans_s1.leaf_nodes in
+      let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node res_trans_s1.leaf_nodes in
       let res_trans_s2 = cond_trans trans_state s2 in
       (* prune_to_s2 is the prune node that is connected with the root node of the *)
       (* translation of s2.*)
@@ -957,9 +957,9 @@ struct
           | Sil.LAnd -> prune_nodes_t, prune_nodes_f
           | Sil.LOr -> prune_nodes_f, prune_nodes_t
           | _ -> assert false) in
-      list_iter (fun n -> Cfg.Node.set_succs_exn n res_trans_s2.root_nodes []) prune_to_s2;
+      IList.iter (fun n -> Cfg.Node.set_succs_exn n res_trans_s2.root_nodes []) prune_to_s2;
       let root_nodes_to_parent =
-        if (list_length res_trans_s1.root_nodes) = 0 then res_trans_s1.leaf_nodes else res_trans_s1.root_nodes in
+        if (IList.length res_trans_s1.root_nodes) = 0 then res_trans_s1.leaf_nodes else res_trans_s1.root_nodes in
       let (exp1, typ1) = extract_exp res_trans_s1.exps in
       let (exp2, typ2) = extract_exp res_trans_s2.exps in
       let e_cond = Sil.BinOp (binop, exp1, exp2) in
@@ -995,9 +995,9 @@ struct
       let nodes_branch = (match res_trans_b.root_nodes with
           | [] -> [create_node (Cfg.Node.Stmt_node "IfStmt Branch" ) res_trans_b.ids res_trans_b.instrs sil_loc context]
           | _ -> res_trans_b.root_nodes) in
-      let prune_nodes_t, prune_nodes_f = list_partition is_true_prune_node prune_nodes in
+      let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      list_iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes';
+      IList.iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes';
       res_trans_b.ids in
     (match stmt_list with
      | [null_stmt; cond; stmt1; stmt2] -> (* Note: for the moment we don't do anything with the null_stmt/decl*)
@@ -1065,7 +1065,7 @@ struct
                  aux rest (x :: acc) cases
              | [] ->
                  cases, acc) in
-          aux (list_rev stmt_list) [] [] in
+          aux (IList.rev stmt_list) [] [] in
         let list_of_cases, pre_case_stmts = merge_into_cases stmt_list in
         let rec connected_instruction rev_instr_list successor_nodes =
           (* returns the entry point of the translated set of instr *)
@@ -1104,7 +1104,7 @@ struct
           | [] -> next_nodes, next_prune_nodes
           | CaseStmt(stmt_info, _ :: _ :: case_content) as case :: rest ->
               let last_nodes, last_prune_nodes = translate_and_connect_cases rest next_nodes next_prune_nodes in
-              let case_entry_point = connected_instruction (list_rev case_content) last_nodes in
+              let case_entry_point = connected_instruction (IList.rev case_content) last_nodes in
               (* connects between cases, then continuation has priority about breaks *)
               let prune_node_t, prune_node_f = create_prune_nodes_for_case case in
               Cfg.Node.set_succs_exn prune_node_t case_entry_point [];
@@ -1115,21 +1115,21 @@ struct
               let placeholder_entry_point =
                 create_node (Cfg.Node.Stmt_node "DefaultStmt_placeholder") [] [] sil_loc context in
               let last_nodes, last_prune_nodes = translate_and_connect_cases rest next_nodes [placeholder_entry_point] in
-              let default_entry_point = connected_instruction (list_rev default_content) last_nodes in
+              let default_entry_point = connected_instruction (IList.rev default_content) last_nodes in
               Cfg.Node.set_succs_exn placeholder_entry_point default_entry_point [];
               default_entry_point, last_prune_nodes
           | _ -> assert false in
         let top_entry_point, top_prune_nodes = translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
-        let _ = connected_instruction (list_rev pre_case_stmts) top_entry_point in
+        let _ = connected_instruction (IList.rev pre_case_stmts) top_entry_point in
         Cfg.Node.set_succs_exn switch_special_cond_node top_prune_nodes [];
         let top_nodes =
           match res_trans_cond.root_nodes with
           | [] -> (* here if no root or if the translation of cond needed priority *)
               [switch_special_cond_node]
           | _ ->
-              list_iter (fun n' -> Cfg.Node.set_succs_exn n' [switch_special_cond_node] []) res_trans_cond.leaf_nodes;
+              IList.iter (fun n' -> Cfg.Node.set_succs_exn n' [switch_special_cond_node] []) res_trans_cond.leaf_nodes;
               res_trans_cond.root_nodes in
-        list_iter (fun n' -> Cfg.Node.append_instrs_temps n' [] res_trans_cond.ids) succ_nodes; (* succ_nodes will remove the temps *)
+        IList.iter (fun n' -> Cfg.Node.append_instrs_temps n' [] res_trans_cond.ids) succ_nodes; (* succ_nodes will remove the temps *)
         { root_nodes = top_nodes; leaf_nodes = succ_nodes; ids = []; instrs = []; exps =[]}
     | _ -> assert false
 
@@ -1138,7 +1138,7 @@ struct
     let stmt = extract_stmt_from_singleton stmt_list "ERROR: StmtExpr should have only one statement.\n" in
     let res_trans_stmt = instruction trans_state stmt in
     let idl = res_trans_stmt.ids in
-    let exps' = list_rev res_trans_stmt.exps in
+    let exps' = IList.rev res_trans_stmt.exps in
     match exps' with
     | (last, typ) :: _ ->
         (* The StmtExpr contains a single CompoundStmt node, which it evaluates and *)
@@ -1210,14 +1210,14 @@ struct
       | Loops.For _ | Loops.While _ -> res_trans_cond.root_nodes
       | Loops.DoWhile _ -> res_trans_body.root_nodes in
     (* Note: prune nodes are by contruction the res_trans_cond.leaf_nodes *)
-    let prune_nodes_t, prune_nodes_f = list_partition is_true_prune_node res_trans_cond.leaf_nodes in
+    let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node res_trans_cond.leaf_nodes in
     let prune_t_succ_nodes =
       match loop_kind with
       | Loops.For _ | Loops.While _ -> res_trans_body.root_nodes
       | Loops.DoWhile _ -> [join_node] in
     Cfg.Node.set_succs_exn join_node join_succ_nodes [];
-    list_iter (fun n -> Cfg.Node.set_succs_exn n prune_t_succ_nodes []) prune_nodes_t;
-    list_iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes []) prune_nodes_f;
+    IList.iter (fun n -> Cfg.Node.set_succs_exn n prune_t_succ_nodes []) prune_nodes_t;
+    IList.iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes []) prune_nodes_f;
     let root_nodes =
       match loop_kind with
       | Loops.For _ ->
@@ -1282,7 +1282,7 @@ struct
            if res_trans_to_parent.root_nodes <> []
            then res_trans_to_parent.root_nodes
            else trans_state_pri.succ_nodes in
-         list_iter
+         IList.iter
            (fun n -> Cfg.Node.set_succs_exn n trans_s1_succs [])
            res_trans_s1.leaf_nodes;
 
@@ -1306,7 +1306,7 @@ struct
     let succ_nodes = trans_state.succ_nodes in
     let rec collect_right_hand_exprs ts stmt = match stmt with
       | Clang_ast_t.InitListExpr (_ , stmts , _) ->
-          list_flatten (list_map (collect_right_hand_exprs ts) stmts)
+          IList.flatten (IList.map (collect_right_hand_exprs ts) stmts)
       | _ ->
           let trans_state' = { ts with succ_nodes = []} in
           let res_trans_stmt = instruction trans_state' stmt in
@@ -1326,35 +1326,35 @@ struct
                else (collect_left_hand_exprs e tvar (StringSet.add (Sil.typename_to_string typename) tns));
            | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
       | Sil.Tstruct (struct_fields, _, _, _, _, _, _) as type_struct ->
-          let lh_exprs = list_map ( fun (fieldname, fieldtype, _) ->
+          let lh_exprs = IList.map ( fun (fieldname, fieldtype, _) ->
               Sil.Lfield (e, fieldname, type_struct) )
               struct_fields in
-          let lh_types = list_map ( fun (fieldname, fieldtype, _) -> fieldtype)
+          let lh_types = IList.map ( fun (fieldname, fieldtype, _) -> fieldtype)
               struct_fields in
-          list_map (fun (e, t) -> list_flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
+          IList.map (fun (e, t) -> IList.flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
       | Sil.Tarray (arrtyp, Sil.Const(Sil.Cint(n))) ->
           let size = Sil.Int.to_int n in
           let indices = list_range 0 (size - 1) in
-          let index_constants = list_map
+          let index_constants = IList.map
               (fun i -> (Sil.Const (Sil.Cint (Sil.Int.of_int i))))
               indices in
-          let lh_exprs = list_map
+          let lh_exprs = IList.map
               (fun index_expr -> Sil.Lindex (e, index_expr))
               index_constants in
           let lh_types = replicate size arrtyp in
-          list_map (fun (e, t) -> list_flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
+          IList.map (fun (e, t) -> IList.flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
       | _ -> [ [(e, typ)] ] in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let var_type = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-    let lh = list_flatten (collect_left_hand_exprs (Sil.Lvar pvar) var_type Utils.StringSet.empty) in
-    let rh = list_flatten (list_map (collect_right_hand_exprs trans_state_pri) stmts ) in
-    if (list_length rh != list_length lh) then (
+    let lh = IList.flatten (collect_left_hand_exprs (Sil.Lvar pvar) var_type Utils.StringSet.empty) in
+    let rh = IList.flatten (IList.map (collect_right_hand_exprs trans_state_pri) stmts ) in
+    if (IList.length rh != IList.length lh) then (
       (* If the right hand expressions are not as many as the left hand expressions something's wrong *)
       { empty_res_trans with root_nodes = succ_nodes }
     ) else (
       (* Creating new instructions by assigning right hand side to left hand side expressions *)
       let sil_loc = CLocation.get_sil_location stmt_info trans_state_pri.parent_line_number context in
-      let big_zip = list_map
+      let big_zip = IList.map
           (fun ( (lh_exp, lh_t), (_, _, rh_exp, is_method_call, rhs_owning_method, rh_t) ) ->
              let is_pointer_object = ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv rh_t in
              if !Config.arc_mode && (is_method_call || is_pointer_object) then
@@ -1366,12 +1366,12 @@ struct
              else
                ([], [Sil.Set (lh_exp, lh_t, rh_exp, sil_loc)], []))
           (General_utils.zip lh rh) in
-      let rh_instrs = list_flatten ( list_map (fun (_, instrs, _, _, _, _) -> instrs) rh) in
-      let assign_instrs = list_flatten(list_map (fun (_, instrs, _) -> instrs) big_zip) in
-      let assign_ids = list_flatten(list_map (fun (_, _, ids) -> ids) big_zip) in
-      let instructions = list_append (rh_instrs) assign_instrs in
-      let rh_ids = list_flatten ( list_map (fun (ids, _, _, _, _, _) -> ids) rh) in
-      let ids = list_append (rh_ids) assign_ids in
+      let rh_instrs = IList.flatten ( IList.map (fun (_, instrs, _, _, _, _) -> instrs) rh) in
+      let assign_instrs = IList.flatten(IList.map (fun (_, instrs, _) -> instrs) big_zip) in
+      let assign_ids = IList.flatten(IList.map (fun (_, _, ids) -> ids) big_zip) in
+      let instructions = IList.append (rh_instrs) assign_instrs in
+      let rh_ids = IList.flatten ( IList.map (fun (ids, _, _, _, _, _) -> ids) rh) in
+      let ids = IList.append (rh_ids) assign_ids in
       if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
         let node_kind = Cfg.Node.Stmt_node "InitListExp" in
         let node = create_node node_kind (ids) (instructions) sil_loc context in
@@ -1449,10 +1449,10 @@ struct
           let ids = res_trans_ie.ids@ids_assign in
           let instrs = res_trans_ie.instrs@instrs_assign in
           if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
-            let node = list_hd next_node in
+            let node = IList.hd next_node in
             Cfg.Node.append_instrs_temps node instrs ids;
-            list_iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
-            let root_nodes = if (list_length root_nodes) = 0 then next_node else root_nodes in
+            IList.iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
+            let root_nodes = if (IList.length root_nodes) = 0 then next_node else root_nodes in
             {
               root_nodes = root_nodes;
               leaf_nodes = [];
@@ -1639,7 +1639,7 @@ struct
         let node = create_node node_kind ids_node instrs sil_loc context in
 
         Cfg.Node.set_succs_exn node trans_state_pri.succ_nodes [];
-        list_iter (fun n -> Cfg.Node.set_succs_exn n [node] []) res_trans_stmt.leaf_nodes;
+        IList.iter (fun n -> Cfg.Node.set_succs_exn n [node] []) res_trans_stmt.leaf_nodes;
 
         let root_nodes =
           if res_trans_stmt.root_nodes <> [] then res_trans_stmt.root_nodes
@@ -1678,9 +1678,9 @@ struct
             let instrs = res_trans_stmt.instrs @ [ret_instr] @ autorelease_instrs in
             let ids = res_trans_stmt.ids@autorelease_ids in
             Cfg.Node.append_instrs_temps ret_node instrs ids;
-            list_iter (fun n -> Cfg.Node.set_succs_exn n [ret_node] []) res_trans_stmt.leaf_nodes;
+            IList.iter (fun n -> Cfg.Node.set_succs_exn n [ret_node] []) res_trans_stmt.leaf_nodes;
             let root_nodes_to_parent =
-              if list_length res_trans_stmt.root_nodes >0 then res_trans_stmt.root_nodes else [ret_node] in
+              if IList.length res_trans_stmt.root_nodes >0 then res_trans_stmt.root_nodes else [ret_node] in
             { root_nodes = root_nodes_to_parent; leaf_nodes =[ret_node]; ids = ids; instrs = instrs; exps =[]}
         | [] -> (* return; *)
             { empty_res_trans with root_nodes =[ret_node]; leaf_nodes =[ret_node]}
@@ -1779,7 +1779,7 @@ struct
               (* otherwise it's a static variable defined among the locals *)
               (* and therefore we need the full mangled name *)
               let cvar''=
-                if (list_exists(fun (s, t) -> Mangled.from_string s = cvar') formals) then cvar'
+                if (IList.exists(fun (s, t) -> Mangled.from_string s = cvar') formals) then cvar'
                 else cvar in
               (cvar'', typ)) in
       let id = Ident.create_fresh Ident.knormal in
@@ -1796,13 +1796,13 @@ struct
         Cg.add_edge context.cg procname block_pname;
         let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
         let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
-        let ids_instrs = list_map assign_captured_var captured_vars in
-        let ids, instrs = list_split ids_instrs in
+        let ids_instrs = IList.map assign_captured_var captured_vars in
+        let ids, instrs = IList.split ids_instrs in
         let block_data = (context, type_ptr, block_pname, captured_vars) in
         CContext.add_block context block_pname;
         M.function_decl context.tenv context.cfg context.cg context.namespace decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
-        let captured_exps = list_map (fun id -> Sil.Var id) ids in
+        let captured_exps = IList.map (fun id -> Sil.Var id) ids in
         let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)) :: captured_exps) in
         let block_name = Procname.to_string block_pname in
         let alloc_block_instr, ids_block =
@@ -2073,12 +2073,12 @@ struct
 
   and get_clang_stmt_trans stmt_list =
     let instruction' = fun stmt -> fun trans_state -> instruction trans_state stmt in
-    list_map instruction' stmt_list
+    IList.map instruction' stmt_list
 
   and get_custom_stmt_trans custom_stmts =
     let do_one_stmt stmt = match stmt with
       | `ClangStmt stmt -> get_clang_stmt_trans [stmt] in
-    list_flatten (list_map do_one_stmt custom_stmts)
+    IList.flatten (IList.map do_one_stmt custom_stmts)
 
   (** Given a translation state, this function translates a list of clang statements. *)
   and instructions trans_state stmt_list =

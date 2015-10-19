@@ -28,7 +28,7 @@ let java_proc_name_with_class_method pn class_with_path method_name =
 let is_direct_subtype_of this_type super_type_name =
   match this_type with
   | Sil.Tptr (Sil.Tstruct (_, _, _, _, supertypes, _, _), _) ->
-      list_exists (fun (x, y) -> super_type_name = Mangled.to_string y) supertypes
+      IList.exists (fun (x, y) -> super_type_name = Mangled.to_string y) supertypes
   | _ -> false
 
 (** The type the method is invoked on *)
@@ -39,7 +39,7 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
 let type_get_direct_supertypes = function
   | Sil.Tptr (Sil.Tstruct (_, _, _, _, supertypes, _, _), _)
   | Sil.Tstruct (_, _, _, _, supertypes, _, _) ->
-      list_map (fun (_, m) -> m) supertypes
+      IList.map (fun (_, m) -> m) supertypes
   | _ -> []
 
 let type_get_class_name t = match t with
@@ -60,7 +60,7 @@ let type_has_class_name t name =
   type_get_class_name t = Some name
 
 let type_has_direct_supertype (t : Sil.typ) (s : Mangled.t) =
-  list_exists (fun c -> c = s) (type_get_direct_supertypes t)
+  IList.exists (fun c -> c = s) (type_get_direct_supertypes t)
 
 let type_find_supertype
     (tenv: Sil.tenv)
@@ -86,7 +86,7 @@ let type_find_supertype
                 | None -> false in
               (match_csu () && match_name () (* only and always visit name with expected csu *))
               || has_indirect_supertype () in
-            list_exists match_supertype supertypes
+            IList.exists match_supertype supertypes
         | _ -> false
       end in
   has_supertype typ Sil.TypSet.empty
@@ -108,7 +108,7 @@ let type_get_supertypes
     res := m :: !res;
     false in
   let _ = type_find_supertype tenv typ csu_option filter in
-  list_rev !res
+  IList.rev !res
 
 let type_is_nested_in_type t n = match t with
   | Sil.Tptr (Sil.Tstruct (_, _, _, Some m, _, _, _), _) ->
@@ -117,11 +117,11 @@ let type_is_nested_in_type t n = match t with
 
 let type_is_nested_in_direct_supertype t n =
   let is_nested_in m2 m1 = string_is_prefix (Mangled.to_string m2 ^ "$") (Mangled.to_string m1) in
-  list_exists (is_nested_in n) (type_get_direct_supertypes t)
+  IList.exists (is_nested_in n) (type_get_direct_supertypes t)
 
 let type_is_nested_in_supertype tenv t csu_option n =
   let is_nested_in m2 m1 = string_is_prefix (Mangled.to_string m2 ^ "$") (Mangled.to_string m1) in
-  list_exists (is_nested_in n) (type_get_supertypes tenv t csu_option)
+  IList.exists (is_nested_in n) (type_get_supertypes tenv t csu_option)
 
 let rec get_type_name = function
   | Sil.Tstruct (_, _, _, Some mangled, _, _, _) -> Mangled.to_string mangled
@@ -136,7 +136,7 @@ let get_field_type_name
   | Sil.Tstruct (fields, _, _, _, _, _, _)
   | Sil.Tptr (Sil.Tstruct (fields, _, _, _, _, _, _), _) -> (
       try
-        let _, ft, _ = list_find
+        let _, ft, _ = IList.find
             (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname)
             fields in
         Some (get_type_name ft)
@@ -204,7 +204,7 @@ let get_vararg_type_names
           | None -> type_names n)
       | _ -> raise Not_found in
 
-  list_rev (type_names call_node)
+  IList.rev (type_names call_node)
 
 let has_type_name typ type_name =
   get_type_name typ = type_name
@@ -212,8 +212,8 @@ let has_type_name typ type_name =
 let has_formal_proc_argument_type_names proc_desc proc_name argument_type_names =
   let formals = Cfg.Procdesc.get_formals proc_desc in
   let equal_formal_arg (_, typ) arg_type_name = get_type_name typ = arg_type_name in
-  list_length formals = list_length argument_type_names
-  && list_for_all2 equal_formal_arg formals argument_type_names
+  IList.length formals = IList.length argument_type_names
+  && IList.for_all2 equal_formal_arg formals argument_type_names
 
 let has_formal_method_argument_type_names cfg proc_name argument_type_names =
   has_formal_proc_argument_type_names
@@ -236,7 +236,7 @@ let get_java_field_access_signature = function
 let get_java_method_call_formal_signature = function
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) ->
       (try
-         let arg_names = list_map (function | e, t -> get_type_name t) args in
+         let arg_names = IList.map (function | e, t -> get_type_name t) args in
          let rt_name = Procname.java_get_return_type pn in
          let m_name = Procname.java_get_method pn in
          Some (get_type_name tt, m_name, arg_names, rt_name)
@@ -251,7 +251,7 @@ let type_is_class = function
   | Sil.Tstruct _ -> true
   | _ -> false
 
-let initializer_classes = list_map Mangled.from_string [
+let initializer_classes = IList.map Mangled.from_string [
     "android.app.Activity";
     "android.app.Application";
     "android.app.Fragment";
@@ -270,7 +270,7 @@ let type_has_initializer
     (tenv: Sil.tenv)
     (t: Sil.typ): bool =
   let check_candidate cname = type_has_supertype tenv t (Some Sil.Class) cname in
-  list_exists check_candidate initializer_classes
+  IList.exists check_candidate initializer_classes
 
 (** Check if the method is one of the known initializer methods. *)
 let method_is_initializer
@@ -280,7 +280,7 @@ let method_is_initializer
   | Some this_type ->
       if type_has_initializer tenv this_type then
         let mname = Procname.java_get_method (proc_attributes.ProcAttributes.proc_name) in
-        list_exists (string_equal mname) initializer_methods
+        IList.exists (string_equal mname) initializer_methods
       else
         false
   | None -> false
@@ -295,7 +295,7 @@ let java_get_vararg_values node pvar idenv pdesc =
         values := content_exp :: !values
     | _ -> () in
   let do_node n =
-    list_iter do_instr (Cfg.Node.get_instrs n) in
+    IList.iter do_instr (Cfg.Node.get_instrs n) in
   let () = match Errdesc.find_program_variable_assignment node pvar with
     | Some (node', _) ->
         Cfg.Procdesc.iter_slope_range do_node pdesc node' node
@@ -316,10 +316,10 @@ let proc_calls resolve_attributes pname pdesc filter : (Procname.t * ProcAttribu
     | _ -> () in
   let do_node node =
     let instrs = Cfg.Node.get_instrs node in
-    list_iter (do_instruction node) instrs in
+    IList.iter (do_instruction node) instrs in
   let nodes = Cfg.Procdesc.get_nodes pdesc in
-  list_iter do_node nodes;
-  list_rev !res
+  IList.iter do_node nodes;
+  IList.rev !res
 
 
 (** Iterate over all the methods overridden by the procedure.
@@ -334,7 +334,7 @@ let proc_iter_overridden_methods f tenv proc_name =
         let is_override pname =
           Procname.equal pname super_proc_name &&
           not (Procname.is_constructor pname) in
-        list_iter
+        IList.iter
           (fun pname ->
              if is_override pname
              then f pname)
@@ -347,5 +347,5 @@ let proc_iter_overridden_methods f tenv proc_name =
       Sil.TN_csu (Sil.Class, Mangled.from_string class_name) in
     match Sil.tenv_lookup tenv type_name with
     | Some curr_type ->
-        list_iter (do_super_type tenv) (type_get_direct_supertypes curr_type)
+        IList.iter (do_super_type tenv) (type_get_direct_supertypes curr_type)
     | None -> ()

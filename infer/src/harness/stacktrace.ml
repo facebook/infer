@@ -45,13 +45,13 @@ let try_resolve_frame str_frame exe_env tenv =
     match Sil.tenv_lookup tenv (Sil.TN_csu (Sil.Class, class_name)) with
     | Some Sil.Tstruct (_, _, Sil.Class, _, _, decl_procs, _) ->
         let possible_calls =
-          list_filter
+          IList.filter
             (fun proc -> Procname.java_get_method proc = str_frame.method_str)
             decl_procs in
-        if list_length possible_calls > 0 then
-          (* using list_hd here assumes that all of the possible calls are declared in the
+        if IList.length possible_calls > 0 then
+          (* using IList.hd here assumes that all of the possible calls are declared in the
            * same file, which will be true in Java but not necessarily in other languages *)
-          let file_name = Exe_env.get_source exe_env (list_hd possible_calls) in
+          let file_name = Exe_env.get_source exe_env (IList.hd possible_calls) in
           Resolved
             { possible_calls = possible_calls; file_name = file_name; line_num = str_frame.line_num; }
         else Unresolved str_frame
@@ -79,9 +79,9 @@ let parse_frame frame_str exe_env tenv =
 
 (** create an Infer-readable representation of a stack trace given its raw text *)
 let parse_stack_trace trace_str exe_env =
-  let tenv = Exe_env.get_tenv exe_env (list_hd (Cg.get_defined_nodes (Exe_env.get_cg exe_env))) in
+  let tenv = Exe_env.get_tenv exe_env (IList.hd (Cg.get_defined_nodes (Exe_env.get_cg exe_env))) in
   let trace_list = Str.split (Str.regexp "\n") trace_str in
-  list_map (fun frame_str -> parse_frame frame_str exe_env tenv) trace_list
+  IList.map (fun frame_str -> parse_frame frame_str exe_env tenv) trace_list
 
 let pp_str_frame fmt = function
   | Resolved f ->

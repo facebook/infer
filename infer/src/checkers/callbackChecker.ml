@@ -43,7 +43,7 @@ let android_lifecycle_typs = ref []
 (** resolve the list of android lifecycle type strings in [tenv] *)
 let get_or_create_lifecycle_typs tenv = match !android_lifecycle_typs with
   | [] ->
-      let lifecycle_typs = list_fold_left (fun typs (pkg, clazz, methods) ->
+      let lifecycle_typs = IList.fold_left (fun typs (pkg, clazz, methods) ->
           let qualified_name = Mangled.from_package_class pkg clazz in
           match AndroidFramework.get_lifecycle_for_framework_typ_opt
                   qualified_name methods tenv with
@@ -83,7 +83,7 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
   match Sil.get_typ (Mangled.from_string (Procname.java_get_class proc_name)) None tenv with
   | Some (Sil.Tstruct(_, _, csu, Some class_name, _, methods, _) as typ) ->
       let lifecycle_typs = get_or_create_lifecycle_typs tenv in
-      let proc_belongs_to_lifecycle_typ = list_exists
+      let proc_belongs_to_lifecycle_typ = IList.exists
           (fun lifecycle_typ -> AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv)
           lifecycle_typs in
       if proc_belongs_to_lifecycle_typ then
@@ -91,11 +91,11 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
         let registered_callback_typs =
           AndroidFramework.get_callbacks_registered_by_proc proc_desc tenv in
         (* find the callbacks registered by this procedure and update the list *)
-        let registered_callback_procs' = list_fold_left
+        let registered_callback_procs' = IList.fold_left
             (fun callback_procs callback_typ ->
                match callback_typ with
                | Sil.Tptr (Sil.Tstruct(_, _, Sil.Class, Some class_name, _, methods, _), _) ->
-                   list_fold_left
+                   IList.fold_left
                      (fun callback_procs callback_proc ->
                         if Procname.is_constructor callback_proc then callback_procs
                         else Procname.Set.add callback_proc callback_procs)
@@ -109,6 +109,6 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
             (* compute the set of fields nullified by this procedure *)
             (* TODO (t4959422): get fields that are nullified in callees of the destroy method *)
             fields_nullified := FldSet.union (get_fields_nullified proc_desc) !fields_nullified in
-        if done_checking (list_length methods) then
+        if done_checking (IList.length methods) then
           do_eradicate_check all_procs get_procdesc idenv tenv
   | _ -> ()

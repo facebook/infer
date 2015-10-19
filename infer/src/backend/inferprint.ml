@@ -147,15 +147,15 @@ let load_specfiles () =
   let specs_files_in_dir dir =
     let is_specs_file fname = not (Sys.is_directory fname) && Filename.check_suffix fname ".specs" in
     let all_filenames = Array.to_list (Sys.readdir dir) in
-    let all_filepaths = list_map (fun fname -> Filename.concat dir fname) all_filenames in
-    list_filter is_specs_file all_filepaths in
+    let all_filepaths = IList.map (fun fname -> Filename.concat dir fname) all_filenames in
+    IList.filter is_specs_file all_filepaths in
   let specs_dirs =
     if !results_dir_cmdline then
       let result_specs_dir = DB.filename_to_string (DB.Results_dir.specs_dir ()) in
       result_specs_dir :: !Config.specs_library
     else
       !Config.specs_library in
-  list_flatten (list_map specs_files_in_dir specs_dirs)
+  IList.flatten (IList.map specs_files_in_dir specs_dirs)
 
 (** Create and initialize latex file *)
 let begin_latex_file fmt =
@@ -190,7 +190,7 @@ let error_desc_to_xml_tags error_desc =
   let tags = Localise.error_desc_get_tags error_desc in
   let subtree label contents =
     Io_infer.Xml.create_tree label [] [(Io_infer.Xml.String contents)] in
-  list_map (fun (tag, value) -> subtree tag (Escape.escape_xml value)) tags
+  IList.map (fun (tag, value) -> subtree tag (Escape.escape_xml value)) tags
 
 let get_bug_hash (kind: string) (type_str: string) (procedure_id: string) (filename: string) (node_key: int) (error_desc: Localise.error_desc) =
   let qualifier_tag_call_procedure = Localise.error_desc_get_tag_call_procedure error_desc in
@@ -203,7 +203,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =
   | _ ->
       (* writes a trace as a record for atdgen conversion *)
       let node_tags_to_records tags_list =
-        list_map (fun tag -> { tag = fst tag; value = snd tag }) tags_list in
+        IList.map (fun tag -> { tag = fst tag; value = snd tag }) tags_list in
       let trace_item_to_record trace_item =
         { level = trace_item.Errlog.lt_level;
           filename = DB.source_file_to_string trace_item.Errlog.lt_loc.Location.file;
@@ -211,14 +211,14 @@ let loc_trace_to_jsonbug_record trace_list ekind =
           description = trace_item.Errlog.lt_description;
           node_tags = node_tags_to_records trace_item.Errlog.lt_node_tags;
         } in
-      let record_list = list_rev (list_rev_map trace_item_to_record trace_list) in
+      let record_list = IList.rev (IList.rev_map trace_item_to_record trace_list) in
       record_list
 
 let error_desc_to_qualifier_tags_records error_desc =
   let tag_value_pairs = Localise.error_desc_to_tag_value_pairs error_desc in
   let tag_value_to_record (tag, value) =
     { tag = tag; value = value } in
-  list_map (fun tag_value -> tag_value_to_record tag_value) tag_value_pairs
+  IList.map (fun tag_value -> tag_value_to_record tag_value) tag_value_pairs
 
 type summary_val =
   { vname : string;
@@ -250,15 +250,15 @@ let summary_values top_proc_set summary =
   let proc_name = Specs.get_proc_name summary in
   let is_top = Procname.Set.mem proc_name top_proc_set in
   let signature = Specs.get_signature summary in
-  let nodes_nr = list_length summary.Specs.nodes in
+  let nodes_nr = IList.length summary.Specs.nodes in
   let specs = Specs.get_specs_from_payload summary in
   let nr_nodes_visited, lines_visited =
     let visited = ref Specs.Visitedset.empty in
     let do_spec spec = visited := Specs.Visitedset.union spec.Specs.visited !visited in
-    list_iter do_spec specs;
+    IList.iter do_spec specs;
     let visited_lines = ref IntSet.empty in
     Specs.Visitedset.iter (fun (n, ls) ->
-        list_iter (fun l -> visited_lines := IntSet.add l !visited_lines) ls)
+        IList.iter (fun l -> visited_lines := IntSet.add l !visited_lines) ls)
       !visited;
     Specs.Visitedset.cardinal !visited, IntSet.elements !visited_lines in
   let proof_trace =
@@ -279,7 +279,7 @@ let summary_values top_proc_set summary =
   let cyclomatic = stats.Specs.cyclomatic in
   { vname = Procname.to_string proc_name;
     vname_id = Procname.to_filename proc_name;
-    vspecs = list_length specs;
+    vspecs = IList.length specs;
     vtime = Printf.sprintf "%.0f" stats.Specs.stats_time;
     vto = if stats.Specs.stats_timeout then "TO" else "  ";
     vsymop = stats.Specs.symops;
@@ -504,7 +504,7 @@ module BugsXml = struct
     let code_to_xml code = subtree Io_infer.Xml.tag_code code in
     let description_to_xml descr = subtree Io_infer.Xml.tag_description (Escape.escape_xml descr) in
     let node_tags_to_xml node_tags =
-      let escaped_tags = list_map (fun (tag, value) -> (tag, Escape.escape_xml value)) node_tags in
+      let escaped_tags = IList.map (fun (tag, value) -> (tag, Escape.escape_xml value)) node_tags in
       Io_infer.Xml.create_tree Io_infer.Xml.tag_node escaped_tags [] in
     let num = ref 0 in
     let loc_to_xml lt =
@@ -520,7 +520,7 @@ module BugsXml = struct
          (code_to_xml code);
          (description_to_xml lt.Errlog.lt_description);
          (node_tags_to_xml lt.Errlog.lt_node_tags)] in
-    list_rev (list_rev_map loc_to_xml ltr)
+    IList.rev (IList.rev_map loc_to_xml ltr)
 
   (** print bugs from summary in xml *)
   let pp_bugs error_filter linereader fmt summary =
@@ -616,8 +616,8 @@ module UnitTest = struct
         Autounit.genunit c_file proc_name !cnt (Specs.get_formals summary) spec in
       F.fprintf fmt "%a@." Autounit.pp_code code in
     let specs = Specs.get_specs_from_payload summary in
-    list_iter do_spec specs;
-    procs_done := (proc_name, list_length specs) :: !procs_done
+    IList.iter do_spec specs;
+    procs_done := (proc_name, IList.length specs) :: !procs_done
 
   (** Print main function which calls all the unit test functions generated *)
   let print_unit_test_main () =
@@ -648,7 +648,7 @@ end = struct
     Procname.Set.diff x.possible x.impossible
   let process_summary x (_, summary) =
     let proc_name = Specs.get_proc_name summary in
-    let nspecs = list_length (Specs.get_specs_from_payload summary) in
+    let nspecs = IList.length (Specs.get_specs_from_payload summary) in
     if nspecs > 0 then
       begin
         mark_possible x proc_name;
@@ -712,8 +712,8 @@ module Stats = struct
           F.fprintf fmt "%s%04d: %s" (indent_string (level + indent_num)) loc.Location.line code in
         pp_to_string pp () in
       res := line :: "" :: !res in
-    list_iter loc_to_string ltr;
-    list_rev !res
+    IList.iter loc_to_string ltr;
+    IList.rev !res
 
   let process_err_log error_filter linereader err_log stats =
     let found_errors = ref false in
@@ -731,7 +731,7 @@ module Stats = struct
               let pp3 fmt () = F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc in
               [pp_to_string pp1 (); pp_to_string pp2 (); pp_to_string pp3 ()] in
             let trace = loc_trace_to_string_list linereader 1 ltr in
-            stats.saved_errors <- list_rev_append (error_strs @ trace @ [""]) stats.saved_errors
+            stats.saved_errors <- IList.rev_append (error_strs @ trace @ [""]) stats.saved_errors
         | Exceptions.Kwarning -> stats.nwarnings <- stats.nwarnings + 1
         | Exceptions.Kinfo -> stats.ninfos <- stats.ninfos + 1 in
     Errlog.iter process_row err_log;
@@ -745,7 +745,7 @@ module Stats = struct
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
     stats.nprocs <- stats.nprocs + 1;
-    stats.nspecs <- stats.nspecs + (list_length specs);
+    stats.nspecs <- stats.nspecs + (IList.length specs);
     if is_verified then stats.nverified <- stats.nverified + 1;
     if is_checked then stats.nchecked <- stats.nchecked + 1;
     if is_defective then stats.ndefective <- stats.ndefective + 1;
@@ -767,7 +767,7 @@ module Stats = struct
     F.fprintf fmt "Infos: %d@\n" stats.ninfos;
     F.fprintf fmt "@\n -------------------@\n";
     F.fprintf fmt "@\nDetailed Errors@\n@\n";
-    list_iter (fun s -> F.fprintf fmt "%s@\n" s) (list_rev stats.saved_errors);
+    IList.iter (fun s -> F.fprintf fmt "%s@\n" s) (IList.rev stats.saved_errors);
 end
 
 module Report = struct
@@ -788,7 +788,7 @@ module PreconditionStats = struct
 
   let do_summary proc_name summary =
     let specs = Specs.get_specs_from_payload summary in
-    let preconditions = list_map (fun spec -> Specs.Jprop.to_prop spec.Specs.pre) specs in
+    let preconditions = IList.map (fun spec -> Specs.Jprop.to_prop spec.Specs.pre) specs in
     match Prop.CategorizePreconditions.categorize preconditions with
     | Prop.CategorizePreconditions.Empty ->
         incr nr_empty;
@@ -882,10 +882,10 @@ module AnalysisResults = struct
         Inferconfig.test ();
         exit(0)
       end;
-    list_append (if !args = ["."] then begin
+    IList.append (if !args = ["."] then begin
         let arr = Sys.readdir "." in
         let all_files = Array.to_list arr in
-        list_filter (fun fname -> (Filename.check_suffix fname ".specs")) all_files
+        IList.filter (fun fname -> (Filename.check_suffix fname ".specs")) all_files
       end
        else !args) (load_specfiles ())
 
@@ -908,7 +908,7 @@ module AnalysisResults = struct
           exit 0
       | Some summary ->
           summaries := (fname, summary) :: !summaries in
-    apply_without_gc (list_iter load_file) spec_files_from_cmdline;
+    apply_without_gc (IList.iter load_file) spec_files_from_cmdline;
     let summ_cmp (fname1, summ1) (fname2, summ2) =
       let n =
         DB.source_file_compare
@@ -918,11 +918,11 @@ module AnalysisResults = struct
       else int_compare
           summ1.Specs.attributes.ProcAttributes.loc.Location.line
           summ2.Specs.attributes.ProcAttributes.loc.Location.line in
-    list_sort summ_cmp !summaries
+    IList.sort summ_cmp !summaries
 
   (** Create an iterator which loads spec files one at a time *)
   let iterator_of_spec_files () =
-    let sorted_spec_files = list_sort string_compare spec_files_from_cmdline in
+    let sorted_spec_files = IList.sort string_compare spec_files_from_cmdline in
     let do_spec f fname =
       match Specs.load_summary (DB.filename_from_string fname) with
       | None ->
@@ -931,7 +931,7 @@ module AnalysisResults = struct
       | Some summary ->
           f (fname, summary) in
     let iterate f =
-      list_iter (do_spec f) sorted_spec_files in
+      IList.iter (do_spec f) sorted_spec_files in
     iterate
 
   (** Serializer for analysis results *)
@@ -949,7 +949,7 @@ module AnalysisResults = struct
       If options - load_results or - save_results are used, all the summaries are loaded in memory *)
   let get_summary_iterator () =
     let iterator_of_summary_list r =
-      fun f -> list_iter f r in
+      fun f -> IList.iter f r in
     match !load_analysis_results with
     | None ->
         begin

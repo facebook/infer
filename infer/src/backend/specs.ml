@@ -147,13 +147,13 @@ let visited_str vis =
   let s = ref "" in
   let lines = ref IntSet.empty in
   let do_one (node, ns) =
-    (* if list_length ns > 1 then
+    (* if IList.length ns > 1 then
        begin
        let ss = ref "" in
-       list_iter (fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
+       IList.iter (fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
        L.err "Node %d has lines %s@." node !ss
        end; *)
-    list_iter (fun n -> lines := IntSet.add n !lines) ns in
+    IList.iter (fun n -> lines := IntSet.add n !lines) ns in
   Visitedset.iter do_one vis;
   IntSet.iter (fun n -> s := !s ^ " " ^ string_of_int n) !lines;
   !s
@@ -181,12 +181,12 @@ end = struct
   let spec_fav (spec: Prop.normal spec) : Sil.fav =
     let fav = Sil.fav_new () in
     Jprop.fav_add_dfs fav spec.pre;
-    list_iter (fun (p, path) -> Prop.prop_fav_add_dfs fav p) spec.posts;
+    IList.iter (fun (p, path) -> Prop.prop_fav_add_dfs fav p) spec.posts;
     fav
 
   let spec_sub sub spec =
     { pre = Jprop.normalize (Jprop.jprop_sub sub spec.pre);
-      posts = list_map (fun (p, path) -> (Prop.normalize (Prop.prop_sub sub p), path)) spec.posts;
+      posts = IList.map (fun (p, path) -> (Prop.normalize (Prop.prop_sub sub p), path)) spec.posts;
       visited = spec.visited }
 
   (** Convert spec into normal form w.r.t. variable renaming *)
@@ -194,13 +194,13 @@ end = struct
     let fav = spec_fav spec in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    let sub = Sil.sub_of_list (list_map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
+    let sub = Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
     spec_sub sub spec
 
   (** Return a compact representation of the spec *)
   let compact sh spec =
     let pre = Jprop.compact sh spec.pre in
-    let posts = list_map (fun (p, path) -> (Prop.prop_compact sh p, path)) spec.posts in
+    let posts = IList.map (fun (p, path) -> (Prop.prop_compact sh p, path)) spec.posts in
     { pre = pre; posts = posts; visited = spec.visited }
 
   (** Erase join info from pre of spec *)
@@ -244,7 +244,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
   let init calls =
     let hash = PnameLocHash.create 1 in
     let do_call pn_loc = PnameLocHash.add hash pn_loc empty_trace in
-    list_iter do_call calls;
+    IList.iter do_call calls;
     hash
 
   let trace t proc_name loc res in_footprint =
@@ -264,7 +264,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
     let s2 = if in_footprint then "FP" else "RE" in
     s1 ^ ":" ^ s2
 
-  let pp_trace fmt tr = Utils.pp_seq (fun fmt x -> F.fprintf fmt "%s" (tr_elem_str x)) fmt (list_rev tr)
+  let pp_trace fmt tr = Utils.pp_seq (fun fmt x -> F.fprintf fmt "%s" (tr_elem_str x)) fmt (IList.rev tr)
 
   let iter f t =
     let elems = ref [] in
@@ -273,8 +273,8 @@ module CallStats = struct (** module for tracing stats of function calls *)
       let compare ((pname1, loc1), _) ((pname2, loc2), _) =
         let n = Procname.compare pname1 pname2 in
         if n <> 0 then n else Location.compare loc1 loc2 in
-      list_sort compare !elems in
-    list_iter (fun (x, tr) -> f x tr) sorted_elems
+      IList.sort compare !elems in
+    IList.iter (fun (x, tr) -> f x tr) sorted_elems
 
   let pp fmt t =
     let do_call (pname, loc) tr =
@@ -354,7 +354,7 @@ let pp_spec pe num_opt fmt spec =
     | Some (n, tot) -> Format.sprintf "%d of %d [nvisited:%s]" n tot (visited_str spec.visited) in
   let pre = Jprop.to_prop spec.pre in
   let pe_post = Prop.prop_update_obj_sub pe pre in
-  let post_list = list_map fst spec.posts in
+  let post_list = IList.map fst spec.posts in
   match pe.pe_kind with
   | PP_TEXT ->
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str;
@@ -374,15 +374,15 @@ let pp_spec pe num_opt fmt spec =
 let d_spec (spec: 'a spec) = L.add_print_action (L.PTspec, Obj.repr spec)
 
 let pp_specs pe fmt specs =
-  let total = list_length specs in
+  let total = IList.length specs in
   let cnt = ref 0 in
   match pe.pe_kind with
   | PP_TEXT ->
-      list_iter (fun spec -> incr cnt; F.fprintf fmt "%a@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
+      IList.iter (fun spec -> incr cnt; F.fprintf fmt "%a@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
   | PP_HTML ->
-      list_iter (fun spec -> incr cnt; F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
+      IList.iter (fun spec -> incr cnt; F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
   | PP_LATEX ->
-      list_iter (fun spec -> incr cnt; F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n" !cnt total (pp_spec pe None) spec) specs
+      IList.iter (fun spec -> incr cnt; F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n" !cnt total (pp_spec pe None) spec) specs
 
 (** Print the decpendency map *)
 let pp_dependency_map fmt dependency_map =
@@ -401,7 +401,7 @@ let describe_phase summary =
 (** Return the signature of a procedure declaration as a string *)
 let get_signature summary =
   let s = ref "" in
-  list_iter (fun (p, typ) ->
+  IList.iter (fun (p, typ) ->
       let pp_name f () = F.fprintf f "%s" p in
       let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
       let decl = pp_to_string pp () in
@@ -479,7 +479,7 @@ let rec post_equal pl1 pl2 = match pl1, pl2 with
       else false
 
 let payload_compact sh payload = match payload with
-  | PrePosts specs -> PrePosts (list_map (NormSpec.compact sh) specs)
+  | PrePosts specs -> PrePosts (IList.map (NormSpec.compact sh) specs)
   | TypeState _ -> payload
 
 (** Return a compact representation of the summary *)
@@ -510,7 +510,7 @@ let summary_exists pname =
 
 (** paths to the .specs file for the given procedure in the current spec libraries *)
 let specs_library_filenames pname =
-  list_map
+  IList.map
     (fun specs_dir -> DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
     !Config.specs_library
 
@@ -527,7 +527,7 @@ let summary_serializer : summary Serialization.serializer =
 (** Save summary for the procedure into the spec database *)
 let store_summary pname (summ: summary) =
   let process_payload = function
-    | PrePosts specs -> PrePosts (list_map NormSpec.erase_join_info_pre specs)
+    | PrePosts specs -> PrePosts (IList.map NormSpec.erase_join_info_pre specs)
     | TypeState typestate_opt -> TypeState typestate_opt in
   let summ1 = { summ with payload = process_payload summ.payload } in
   let summ2 = if !Config.save_compact_summaries
@@ -754,7 +754,7 @@ let set_status proc_name status =
 
 (** Create the initial dependency map with the given list of dependencies *)
 let mk_initial_dependency_map proc_list : dependency_map_t =
-  list_fold_left (fun map pname -> Procname.Map.add pname (- 1) map) Procname.Map.empty proc_list
+  IList.fold_left (fun map pname -> Procname.Map.add pname (- 1) map) Procname.Map.empty proc_list
 
 (** Re-initialize a dependency map *)
 let re_initialize_dependency_map dependency_map =

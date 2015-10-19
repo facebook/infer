@@ -321,12 +321,12 @@ end = struct
       if !position_seen then
         let rec remove_until_seen = function
           | ((level, p, session, exn_opt) as x):: l ->
-              if path_pos_at_path p then list_rev (x :: l)
+              if path_pos_at_path p then IList.rev (x :: l)
               else remove_until_seen l
           | [] -> [] in
         remove_until_seen inverse_sequence
-      else list_rev inverse_sequence in
-    list_iter (fun (level, p, session, exn_opt) -> f level p session exn_opt) sequence_up_to_last_seen
+      else IList.rev inverse_sequence in
+    IList.iter (fun (level, p, session, exn_opt) -> f level p session exn_opt) sequence_up_to_last_seen
 
   module NodeMap = Map.Make (Cfg.Node)
 
@@ -473,8 +473,8 @@ end = struct
       let n = int_compare lt1.Errlog.lt_level lt2.Errlog.lt_level in
       if n <> 0 then n else Location.compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
-    list_remove_irrelevant_duplicates compare relevant (list_rev !trace)
-    (* list_remove_duplicates compare (list_sort compare !trace) *)
+    IList.remove_irrelevant_duplicates compare relevant (IList.rev !trace)
+    (* IList.remove_duplicates compare (IList.sort compare !trace) *)
 
 end
 (* =============== END of the Path module ===============*)
@@ -561,7 +561,7 @@ end = struct
     !plist
 
   let to_proplist ps =
-    list_map fst (elements ps)
+    IList.map fst (elements ps)
 
   let to_propset ps =
     Propset.from_proplist (to_proplist ps)
@@ -569,16 +569,16 @@ end = struct
   let filter f ps =
     let elements = ref [] in
     PropMap.iter (fun p _ -> elements := p :: !elements) ps;
-    elements := list_filter (fun p -> not (f p)) !elements;
+    elements := IList.filter (fun p -> not (f p)) !elements;
     let filtered_map = ref ps in
-    list_iter (fun p -> filtered_map := PropMap.remove p !filtered_map) !elements;
+    IList.iter (fun p -> filtered_map := PropMap.remove p !filtered_map) !elements;
     !filtered_map
 
   let partition f ps =
     let elements = ref [] in
     PropMap.iter (fun p _ -> elements := p :: !elements) ps;
     let el1, el2 = ref ps, ref ps in
-    list_iter (fun p -> if f p then el2 := PropMap.remove p !el2 else el1 := PropMap.remove p !el1) !elements;
+    IList.iter (fun p -> if f p then el2 := PropMap.remove p !el2 else el1 := PropMap.remove p !el1) !elements;
     !el1, !el2
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the prop *)
@@ -658,7 +658,7 @@ end = struct
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
   let from_renamed_list (pl : ('a Prop.t * Path.t) list) : t =
-    list_fold_left (fun ps (p, pa) -> add_renamed_prop p pa ps) empty pl
+    IList.fold_left (fun ps (p, pa) -> add_renamed_prop p pa ps) empty pl
 end
 (* =============== END of the PathSet module ===============*)
 

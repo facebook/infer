@@ -74,7 +74,7 @@ let get_parameters function_method_decl_info =
         (name, type_ptr, var_decl_info.Clang_ast_t.vdi_init_expr)
     | _ -> assert false in
 
-  let pars = list_map par_to_ms_par (get_param_decls function_method_decl_info) in
+  let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
   get_class_param function_method_decl_info @ pars
 
 let get_return_type function_method_decl_info =
@@ -102,7 +102,7 @@ let get_assume_not_null_calls ms param_decls =
         let assume_call = Ast_expressions.create_assume_not_null_call decl_info name tp in
         [(`ClangStmt assume_call)]
     | _ -> [] in
-  list_flatten (list_map do_one_param param_decls)
+  IList.flatten (IList.map do_one_param param_decls)
 
 let method_signature_of_decl class_name_opt meth_decl block_data_opt =
   let open Clang_ast_t in
@@ -214,7 +214,7 @@ let get_return_type tenv ms =
 
 let sil_func_attributes_of_attributes attrs =
   let rec do_translation acc al = match al with
-    | [] -> list_rev acc
+    | [] -> IList.rev acc
     | Clang_ast_t.SentinelAttr attribute_info:: tl ->
         let (sentinel, null_pos) = match attribute_info.Clang_ast_t.ai_parameters with
           | a:: b::[] -> (int_of_string a, int_of_string b)
@@ -239,14 +239,14 @@ let should_create_procdesc cfg procname defined generated =
 
 (** Creates a procedure description. *)
 let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
-  let defined = not ((list_length fbody) == 0) in
+  let defined = not ((IList.length fbody) == 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let is_generated = CMethod_signature.ms_is_generated ms in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
-    let captured_str = list_map (fun (s, t, _) -> (Mangled.to_string s, t)) captured in
+    let captured_str = IList.map (fun (s, t, _) -> (Mangled.to_string s, t)) captured in
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_str @formals in
     let source_range = CMethod_signature.ms_get_loc ms in
@@ -254,7 +254,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     let loc_start = CLocation.get_sil_location_from_range source_range true in
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
     let ret_type = get_return_type tenv ms in
-    let captured' = list_map (fun (s, t, _) -> (s, t)) captured in
+    let captured' = IList.map (fun (s, t, _) -> (s, t)) captured in
     let procdesc =
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.C_CPP) with
@@ -293,7 +293,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
       let ret_type, formals =
         (match type_opt with
          | Some (ret_type, arg_types) ->
-             ret_type, list_map (fun typ -> ("x", typ)) arg_types
+             ret_type, IList.map (fun typ -> ("x", typ)) arg_types
          | None -> Sil.Tvoid, []) in
       let loc = Location.dummy in
       let _ =

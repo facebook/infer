@@ -158,9 +158,9 @@
 
 program:
   | targets func_defs = function_def* opt_mappings = metadata_def* EOF {
-      let mappings = list_flatten_options opt_mappings in
+      let mappings = IList.flatten_options opt_mappings in
       let add_mapping map (metadata_id, aggregate) = MetadataMap.add metadata_id aggregate map in
-      let metadata_map = list_fold_left add_mapping MetadataMap.empty mappings in
+      let metadata_map = IList.fold_left add_mapping MetadataMap.empty mappings in
       Program (func_defs, metadata_map) }
 
 targets:
@@ -254,7 +254,7 @@ ptr_typ:
   | tp = typ STAR { tp }
 
 block:
-  | LBRACE annotated_instrs = annotated_instruction* RBRACE { list_flatten_options annotated_instrs }
+  | LBRACE annotated_instrs = annotated_instruction* RBRACE { IList.flatten_options annotated_instrs }
 
 annotated_instruction:
   | instr = real_instruction anno = annotation? { Some (instr, anno) }

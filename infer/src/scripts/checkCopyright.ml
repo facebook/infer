@@ -56,14 +56,14 @@ let rec find_copyright_line lines n = match lines with
 let find_comment_start_and_style lines_arr n =
   (* are we in a line comment? *)
   let cur_line_comment = try
-      Some (list_find (function
+      Some (IList.find (function
           | Line (s) when string_is_prefix s lines_arr.(n) -> true
           | _ -> false) comment_styles)
     with Not_found -> None in
   let is_start line = match cur_line_comment with
     | Some (Line (s)) -> if string_is_prefix s line then None else Some (Line (s))
     | _ -> try
-          Some (list_find (function
+          Some (IList.find (function
               | Block(s, _, _) -> string_contains s line
               | _ -> false) comment_styles)
         with Not_found -> None in
@@ -194,7 +194,7 @@ let com_style_of_lang = [
 ]
 
 let file_should_have_copyright fname lines =
-  list_mem_assoc Filename.check_suffix fname com_style_of_lang
+  IList.mem_assoc Filename.check_suffix fname com_style_of_lang
 
 let get_filename_extension fname =
   try
@@ -225,7 +225,7 @@ let check_copyright fname = match read_file fname with
             begin
               let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
               let ext = get_filename_extension fname in
-              let com_style = list_assoc string_equal ext com_style_of_lang in
+              let com_style = IList.assoc string_equal ext com_style_of_lang in
               let prefix = if com_style = comment_style_ocaml then " " else "" in
               let start = default_start_line_of_com_style com_style in
               output_diff fname (Array.of_list []) start (-1) (-1) 0 false year com_style prefix;
@@ -270,5 +270,5 @@ let () =
   let add_file_to_check fname =
     to_check := fname :: !to_check in
   Arg.parse speclist add_file_to_check usage_msg;
-  list_iter check_copyright (list_rev !to_check);
+  IList.iter check_copyright (IList.rev !to_check);
   exit 0

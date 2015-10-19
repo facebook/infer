@@ -372,7 +372,7 @@ let make_next_object_exp stmt_info item items =
 (* void (^block_var)()=block_def; block_var() *)
 let translate_dispatch_function block_name stmt_info stmt_list ei n =
   let block_expr =
-    try Utils.list_nth stmt_list (n + 1)
+    try IList.nth stmt_list (n + 1)
     with Not_found -> assert false in
   let block_name_info = {
     Clang_ast_t.ni_name = block_name;

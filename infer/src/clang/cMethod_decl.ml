@@ -112,7 +112,7 @@ struct
         Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' "
           pname.Clang_ast_t.ni_name;
         let getter_setter = ObjcProperty_decl.make_getter_setter curr_class decl_info pname in
-        list_iter (process_one_method_decl tenv cg cfg curr_class namespace) getter_setter
+        IList.iter (process_one_method_decl tenv cg cfg curr_class namespace) getter_setter
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
         Printing.log_stats
@@ -120,7 +120,7 @@ struct
         ()
 
   let process_methods tenv cg cfg curr_class namespace decl_list =
-    list_iter (process_one_method_decl tenv cg cfg curr_class namespace) decl_list
+    IList.iter (process_one_method_decl tenv cg cfg curr_class namespace) decl_list
 
   let process_getter_setter context procname =
     (*If there is already a spec for the method we want to generate (in incremental analysis) *)
@@ -142,7 +142,7 @@ struct
               if is_getter then
                 ObjcProperty_decl.make_getter cls property_name property_type
               else ObjcProperty_decl.make_setter cls property_name property_type in
-            list_iter (process_one_method_decl context.tenv context.cg context.cfg cls context.namespace) accessor;
+            IList.iter (process_one_method_decl context.tenv context.cg context.cfg cls context.namespace) accessor;
             true)
       | _ -> false
 

@@ -83,7 +83,7 @@ let build_sil_field_property curr_class tenv field_name type_ptr prop_attributes
     match prop_attributes_opt with
     | Some prop_attributes -> prop_attributes
     | None -> ivar_property curr_class field_name in
-  let atts_str = list_map Clang_ast_j.string_of_property_attribute prop_attributes in
+  let atts_str = IList.map Clang_ast_j.string_of_property_attribute prop_attributes in
   build_sil_field tenv field_name type_ptr atts_str
 
 (* Given a list of declarations in an interface returns a list of fields  *)
@@ -98,8 +98,8 @@ let rec get_fields tenv curr_class decl_list =
       Printing.log_out "  ...Adding Instance Variable '%s' @." name_info.Clang_ast_t.ni_name;
       let (fname, typ, ia) = build_sil_field_property curr_class tenv name_info type_ptr None in
       Printing.log_out "  ...Resulting sil field: (%s) with attributes:@." ((Ident.fieldname_to_string fname) ^":"^(Sil.typ_to_string typ));
-      list_iter (fun (ia', _) ->
-          list_iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;
+      IList.iter (fun (ia', _) ->
+          IList.iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;
       (fname, typ, ia):: fields
   | ObjCPropertyImplDecl (decl_info, property_impl_decl_info):: decl_list' ->
       let property_fields_decl =

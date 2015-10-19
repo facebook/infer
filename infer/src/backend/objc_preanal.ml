@@ -28,7 +28,7 @@ let process_all_cfgs process_function default_value =
     match cfg_opt with
     | None -> value
     | Some cfg -> process_function cfg source_dir in
-  list_fold_right process_dir source_dirs default_value
+  IList.fold_right process_dir source_dirs default_value
 
 let process_procedures process_function default_value procedure_type =
   let process_cfg_procedures cfg source_dir =
@@ -37,7 +37,7 @@ let process_procedures process_function default_value procedure_type =
       | DEFINED -> Cfg.get_defined_procs cfg
       | ALL -> Cfg.get_all_procs cfg
       | OBJC_GENERATED -> Cfg.get_objc_generated_procs cfg in
-    list_fold_right (process_function cfg source_dir) procdescs default_value in
+    IList.fold_right (process_function cfg source_dir) procdescs default_value in
   process_all_cfgs process_cfg_procedures default_value
 
 let process_all_procedures process_function default_value =
@@ -89,7 +89,7 @@ let update_cfgs generated_proc_map =
              Cg.node_set_defined cg pname false;
              true)
           else need_updating in
-        let need_updating = list_fold_right update_cfg_procdesc generated_procs false in
+        let need_updating = IList.fold_right update_cfg_procdesc generated_procs false in
         if need_updating then
           (Cfg.store_cfg_to_file cfg_name false cfg;
            Cg.store_to_file cg_name cg) in

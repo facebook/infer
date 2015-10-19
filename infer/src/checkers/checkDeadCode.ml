@@ -68,13 +68,13 @@ let report_error description pn pd loc =
 (** Check the final state at the end of the analysis. *)
 let check_final_state proc_name proc_desc exit_node final_s =
   let proc_nodes = Cfg.Procdesc.get_nodes proc_desc in
-  let tot_nodes = list_length proc_nodes in
+  let tot_nodes = IList.length proc_nodes in
   let tot_visited = State.num_visited final_s in
   if verbose then L.stderr "TOT nodes: %d (visited: %n)@." tot_nodes tot_visited;
   if tot_nodes <> tot_visited then
     begin
       let not_visited =
-        list_filter (fun n -> not (Cfg.NodeSet.mem n (State.get_visited final_s))) proc_nodes in
+        IList.filter (fun n -> not (Cfg.NodeSet.mem n (State.get_visited final_s))) proc_nodes in
       let do_node n =
         let loc = Cfg.Node.get_loc n in
         let description = Format.sprintf "Node not visited: %d" (Cfg.Node.get_id n) in
@@ -84,7 +84,7 @@ let check_final_state proc_name proc_desc exit_node final_s =
           | _ -> true in
         if report
         then report_error description proc_name proc_desc loc in
-      list_iter do_node not_visited
+      IList.iter do_node not_visited
     end
 
 (** Simple check for dead code. *)

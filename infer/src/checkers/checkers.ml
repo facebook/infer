@@ -96,8 +96,8 @@ module ST = struct
           string_equal (normalize s1) (normalize s2) in
 
         let is_parameter_suppressed =
-          list_mem string_equal a.Sil.class_name [Annotations.suppressLint] &&
-          list_mem normalized_equal kind a.Sil.parameters in
+          IList.mem string_equal a.Sil.class_name [Annotations.suppressLint] &&
+          IList.mem normalized_equal kind a.Sil.parameters in
         let is_annotation_suppressed =
           string_is_suffix (normalize (drop_prefix kind)) (normalize a.Sil.class_name) in
 
@@ -186,9 +186,9 @@ let callback_check_access all_procs get_proc_desc idenv tenv proc_name proc_desc
 
 (** Report all field accesses and method calls of a class. *)
 let callback_check_cluster_access all_procs get_proc_desc proc_definitions =
-  list_iter
+  IList.iter
     (Option.may (fun d -> Cfg.Procdesc.iter_instrs (report_calls_and_accesses "CLUSTER") d))
-    (list_map get_proc_desc all_procs)
+    (IList.map get_proc_desc all_procs)
 
 (** Looks for writeToParcel methods and checks whether read is in reverse *)
 let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name proc_desc =
@@ -206,7 +206,7 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
 
   let parcel_constructors = function
     | Sil.Tptr (Sil.Tstruct (_, _, _, _, _, methods, _), _) ->
-        list_filter is_parcel_constructor methods
+        IList.filter is_parcel_constructor methods
     | _ -> [] in
 
   let check r_name r_desc w_name w_desc =
@@ -235,8 +235,8 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
       | [desc] -> desc
       | _ -> assert false in
 
-    let r_call_descs = list_map node_to_call_desc (list_filter is_serialization_node (Cfg.Procdesc.get_sliced_slope r_desc is_serialization_node)) in
-    let w_call_descs = list_map node_to_call_desc (list_filter is_serialization_node (Cfg.Procdesc.get_sliced_slope w_desc is_serialization_node)) in
+    let r_call_descs = IList.map node_to_call_desc (IList.filter is_serialization_node (Cfg.Procdesc.get_sliced_slope r_desc is_serialization_node)) in
+    let w_call_descs = IList.map node_to_call_desc (IList.filter is_serialization_node (Cfg.Procdesc.get_sliced_slope w_desc is_serialization_node)) in
 
     let rec check_match = function
       | rc:: rcs, wc:: wcs ->
@@ -282,8 +282,8 @@ let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc
         | _, Sil.Tstruct _ -> true
         | _, Sil.Tptr (Sil.Tstruct _, _) -> true
         | _ -> false in
-      list_filter is_class_type formals in
-    list_map (fun (s, _) -> Mangled.from_string s) class_formals) in
+      IList.filter is_class_type formals in
+    IList.map (fun (s, _) -> Mangled.from_string s) class_formals) in
   let equal_formal_param exp formal_name = match exp with
     | Sil.Lvar pvar ->
         let name = Sil.pvar_get_name pvar in
@@ -291,7 +291,7 @@ let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc
     | _ -> false in
 
   let is_formal_param exp =
-    list_exists (equal_formal_param exp) (Lazy.force class_formal_names) in
+    IList.exists (equal_formal_param exp) (Lazy.force class_formal_names) in
 
   let is_nullcheck pn =
     PatternMatch.java_proc_name_with_class_method
@@ -310,12 +310,12 @@ let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc
   let summary_checks_of_formals () =
     let formal_names = Lazy.force class_formal_names in
     let nchecks = Sil.ExpSet.cardinal !checks_to_formals in
-    let nformals = list_length formal_names in
+    let nformals = IList.length formal_names in
     if (nchecks > 0 && nchecks < nformals) then
       begin
         let was_not_found formal_name =
           not (Sil.ExpSet.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
-        let missing = list_filter was_not_found formal_names in
+        let missing = IList.filter was_not_found formal_names in
         let loc = Cfg.Procdesc.get_loc proc_desc in
         let pp_file_loc fmt () =
           F.fprintf fmt "%s:%d" (DB.source_file_to_string loc.Location.file) loc.Location.line in
@@ -359,12 +359,12 @@ let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name p
   let reverse_find_instr f node =
     (** this is not really sound but for the moment a sufficient approximation *)
     let has_instr node =
-      try ignore(list_find f (Cfg.Node.get_instrs node)); true
+      try ignore(IList.find f (Cfg.Node.get_instrs node)); true
       with Not_found -> false in
     let preds = Cfg.Node.get_generated_slope node (fun n -> Cfg.Node.get_sliced_preds n has_instr) in
-    let instrs = list_flatten (list_map (fun n -> list_rev (Cfg.Node.get_instrs n)) preds) in
+    let instrs = IList.flatten (IList.map (fun n -> IList.rev (Cfg.Node.get_instrs n)) preds) in
     try
-      Some (list_find f instrs)
+      Some (IList.find f instrs)
     with Not_found -> None in
 
   let get_return_const proc_name' =
@@ -403,7 +403,7 @@ let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name p
                                                                                         | _ -> "?")
                                                                                     | _ -> "?" in
                                                                                   let arg_name (exp, typ) = find_const exp typ in
-                                                                                  Some (list_map arg_name args)
+                                                                                  Some (IList.map arg_name args)
                                                                                 with _ -> None)
     | _ -> None in
 
@@ -472,7 +472,7 @@ let callback_check_field_access all_procs get_proc_desc idenv tenv proc_name pro
         do_read_exp e
     | Sil.Call (_, e, etl, _, _) ->
         do_read_exp e;
-        list_iter (fun (e, _) -> do_read_exp e) etl
+        IList.iter (fun (e, _) -> do_read_exp e) etl
     | Sil.Nullify _
     | Sil.Abstract _
     | Sil.Remove_temps _

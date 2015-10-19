@@ -96,7 +96,7 @@ module FieldMap = Map.Make(struct
   end)
 
 let idlist_to_idset ids =
-  list_fold_left (fun set id -> IdentSet.add id set) IdentSet.empty ids
+  IList.fold_left (fun set id -> IdentSet.add id set) IdentSet.empty ids
 
 (** {2 Conversion between Names and Strings} *)
 
@@ -280,7 +280,7 @@ let reset_name_generator () =
 (** Update the name generator so that the given id's are not generated again *)
 let update_name_generator ids =
   let upd id = ignore (create_with_stamp id.kind id.name id.stamp) in
-  list_iter upd ids
+  IList.iter upd ids
 
 (** Create a fresh identifier with the given kind and name. *)
 let create_fresh_ident kind name =

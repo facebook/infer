@@ -12,6 +12,10 @@
 
 (** {2 Generic Utility Functions} *)
 
+(** List police: don't use the list module to avoid non-tail recursive
+    functions and builtin equality. Use IList instead. *)
+module List : sig end
+
 (** Compare police: generic compare disabled. *)
 val compare : unit
 
@@ -36,12 +40,6 @@ val pair_compare : ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('a * 'c) -> ('b * 
 (** Generic comparison of pairs given a compare function for each element of the triple. *)
 val triple_compare : ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('e -> 'f -> int) -> ('a * 'c * 'e) -> ('b * 'd * 'f) -> int
 
-(** Generic comparison of lists given a compare function for the elements of the list *)
-val list_compare : ('a -> 'b -> int) -> 'a list -> 'b list -> int
-
-(** Generic equality of lists given a compare function for the elements of the list *)
-val list_equal : ('a -> 'b -> int) -> 'a list -> 'b list -> bool
-
 (** Comparison for strings *)
 val string_compare : string -> string -> int
 
@@ -50,91 +48,6 @@ val string_equal : string -> string -> bool
 
 (** Comparison for floats *)
 val float_compare : float -> float -> int
-
-(** tail-recursive variant of List.append *)
-val list_append : 'a list -> 'a list -> 'a list
-
-(** tail-recursive variant of List.combine *)
-val list_combine : 'a list -> 'b list -> ('a * 'b) list
-
-val list_exists : ('a -> bool) -> 'a list -> bool
-val list_filter : ('a -> bool) -> 'a list -> 'a list
-
-(** tail-recursive variant of List.flatten *)
-val list_flatten : 'a list list -> 'a list
-
-(** Remove all None elements from the list. *)
-val list_flatten_options : ('a option) list -> 'a list
-
-val list_find : ('a -> bool) -> 'a list -> 'a
-val list_fold_left : ('a -> 'b -> 'a) -> 'a -> 'b list -> 'a
-val list_fold_left2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
-val list_for_all : ('a -> bool) -> 'a list -> bool
-val list_for_all2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
-val list_hd : 'a list -> 'a
-val list_iter : ('a -> unit) -> 'a list -> unit
-val list_iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
-val list_length : 'a list -> int
-
-(** tail-recursive variant of List.fold_right *)
-val list_fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
-
-(** tail-recursive variant of List.map *)
-val list_map : ('a -> 'b) -> 'a list -> 'b list
-
-(** Like List.mem but without builtin equality *)
-val list_mem : ('a -> 'b -> bool) -> 'a -> 'b list -> bool
-
-val list_nth : 'a list -> int -> 'a
-val list_partition : ('a -> bool) -> 'a list -> 'a list * 'a list
-val list_rev : 'a list -> 'a list
-val list_rev_append : 'a list -> 'a list -> 'a list
-val list_rev_map : ('a -> 'b) -> 'a list -> 'b list
-val list_sort : ('a -> 'a -> int) -> 'a list -> 'a list
-
-(** tail-recursive variant of List.split *)
-val list_split : ('a * 'b) list -> 'a list * 'b list
-
-val list_stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
-val list_tl : 'a list -> 'a list
-
-(* Drops the first n elements from a list. *)
-val list_drop_first : int -> 'a list -> 'a list
-
-(* Drops the last n elements from a list. *)
-val list_drop_last : int -> 'a list -> 'a list
-
-(** List police: don't use the list module to avoid non-tail-recursive functions and builtin equality *)
-module List : sig end
-
-(** Returns (reverse input_list)[@]acc *)
-val list_rev_with_acc : 'a list -> 'a list -> 'a list
-
-(** Remove consecutive equal elements from a list (according to the given comparison functions) *)
-val list_remove_duplicates : ('a -> 'a -> int) -> 'a list -> 'a list
-
-(** Remove consecutive equal irrelevant elements from a list (according to the given comparison and relevance functions) *)
-val list_remove_irrelevant_duplicates : ('a -> 'a -> int) -> ('a -> bool) -> 'a list -> 'a list
-
-(** The function works on sorted lists without duplicates *)
-val list_merge_sorted_nodup : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list -> 'a list
-
-(** Returns whether there is an intersection in the elements of the two lists.
-    The compare function is required to sort the lists. *)
-val list_intersect : ('a -> 'a -> int) -> 'a list -> 'a list -> bool
-
-(** Like List.mem_assoc but without builtin equality *)
-val list_mem_assoc : ('a -> 'a -> bool) -> 'a -> ('a * 'b) list -> bool
-
-(** Like List.assoc but without builtin equality *)
-val list_assoc : ('a -> 'a -> bool) -> 'a -> ('a * 'b) list -> 'b
-
-exception Fail
-
-(** Apply [f] to pairs of elements; raise [Fail] if the two lists have different lenghts. *)
-val list_map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
-
-val list_to_string : ('a -> string) -> 'a list -> string
 
 (** {2 Useful Modules} *)
 

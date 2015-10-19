@@ -74,8 +74,8 @@ let create_fresh_local_name () =
   incr local_name_cntr;
   "dummy_local" ^ string_of_int !local_name_cntr
 
-(** more forgiving variation of list_tl that won't raise an exception on the empty list *)
-let tl_or_empty l = if l = [] then l else list_tl l
+(** more forgiving variation of IList.tl that won't raise an exception on the empty list *)
+let tl_or_empty l = if l = [] then l else IList.tl l
 
 let get_non_receiver_formals formals = tl_or_empty formals
 
@@ -113,9 +113,9 @@ let rec inhabit_typ typ proc_file_map env =
                   let try_get_non_receiver_formals p =
                     try get_non_receiver_formals (formals_from_name p proc_file_map)
                     with Not_found -> [] in
-                  Procname.is_constructor p && list_for_all (fun (_, typ) ->
+                  Procname.is_constructor p && IList.for_all (fun (_, typ) ->
                       not (TypSet.mem typ env.cur_inhabiting)) (try_get_non_receiver_formals p) in
-                list_filter (fun p -> is_suitable_constructor p) methods
+                IList.filter (fun p -> is_suitable_constructor p) methods
             | _ -> [] in
           let (env, typ_class_name) = match get_all_suitable_constructors typ with
             | constructor :: _ ->
@@ -155,7 +155,7 @@ and inhabit_args formals proc_file_map env =
   let inhabit_arg (formal_name, formal_typ) (args, env) =
     let (exp, env) = inhabit_typ formal_typ proc_file_map env in
     ((exp, formal_typ) :: args, env) in
-  list_fold_right inhabit_arg formals ([], env)
+  IList.fold_right inhabit_arg formals ([], env)
 
 (** create Sil that calls the constructor in constr_name on allocated_obj and inhabits the
  * remaining arguments *)
@@ -219,12 +219,12 @@ let inhabit_fld_trace flds proc_file_map env =
           with Not_found ->
             (* TODO (t4645631): investigate why this failure occurs *)
             env in
-        list_fold_left (fun env procname ->
+        IList.fold_left (fun env procname ->
             if not (Procname.is_constructor procname) &&
                not (Procname.java_is_access_method procname) then inhabit_cb_call procname env
             else env) env procs
     | _ -> assert false in
-  list_fold_left (fun env fld -> invoke_cb fld env) env flds
+  IList.fold_left (fun env fld -> invoke_cb fld env) env flds
 
 (** create a dummy file for the harness and associate them in the exe_env *)
 let create_dummy_harness_file harness_name harness_cfg tenv =
@@ -244,7 +244,7 @@ let write_harness_to_file harness_instrs harness_file =
   let harness_file =
     let harness_file_name = DB.source_file_to_string harness_file in
     ref (create_outfile harness_file_name) in
-  let pp_harness fmt = list_iter (fun instr ->
+  let pp_harness fmt = IList.iter (fun instr ->
       Format.fprintf fmt "%a\n" (Sil.pp_instr pe_text) instr) harness_instrs in
   do_outf harness_file (fun outf ->
       pp_harness outf.fmt;
@@ -277,7 +277,7 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
     let ret_type = lookup_typ (Procname.java_get_return_type proc_name) in
     let formals =
       let param_strs = Procname.java_get_parameters proc_name in
-      list_fold_right (fun typ_str params -> ("", lookup_typ typ_str) :: params) param_strs [] in
+      IList.fold_right (fun typ_str params -> ("", lookup_typ typ_str) :: params) param_strs [] in
     let proc_attributes =
       { (ProcAttributes.default proc_name Config.Java) with
         ProcAttributes.formals;
@@ -288,7 +288,7 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
       Cfg.Procdesc.cfg = harness_cfg;
       proc_attributes = proc_attributes;
     } in
-  list_iter (fun p ->
+  IList.iter (fun p ->
       (* add harness -> callee edge to the call graph *)
       Cg.add_edge cg harness_name p;
       (* create dummy procdescs for callees not in the module. hopefully t4583729 will remove the
@@ -323,7 +323,7 @@ let setup_harness_cfg harness_name harness_cfg env source_dir cg tenv =
     } in
   let harness_node =
     (* important to reverse the list or there will be scoping issues! *)
-    let instrs = (list_rev env.instrs) in
+    let instrs = (IList.rev env.instrs) in
     let nodekind = Cfg.Node.Stmt_node "method_body" in
     Cfg.Node.create harness_cfg env.pc nodekind instrs procdesc env.tmp_vars in
   let (start_node, exit_node) =
@@ -346,7 +346,7 @@ let setup_harness_cfg harness_name harness_cfg env source_dir cg tenv =
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
  * order with the specified receiver and add it to the execution environment *)
 let inhabit_trace trace cb_flds harness_name proc_file_map tenv =
-  if list_length trace > 0 then
+  if IList.length trace > 0 then
     (* pick an arbitrary cg and cfg to piggyback the harness code onto *)
     let (source_dir, source_file, cg) =
       let (proc_name, source_file) = Procname.Map.choose proc_file_map in
@@ -368,10 +368,10 @@ let inhabit_trace trace cb_flds harness_name proc_file_map tenv =
     let env'' =
       (* invoke lifecycle methods *)
       let env' =
-        list_fold_left (fun env to_call -> inhabit_call to_call proc_file_map env) empty_env trace in
+        IList.fold_left (fun env to_call -> inhabit_call to_call proc_file_map env) empty_env trace in
       (* invoke callbacks *)
       inhabit_fld_trace cb_flds proc_file_map env' in
     try
       setup_harness_cfg harness_name harness_cfg env'' source_dir cg tenv;
-      write_harness_to_file (list_rev env''.instrs) harness_file
+      write_harness_to_file (IList.rev env''.instrs) harness_file
     with Not_found -> ()

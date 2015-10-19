@@ -50,10 +50,10 @@ let check_access access_opt de_opt =
     let find_formal_ids node = (* find ids obtained by a letref on a formal parameter *)
       let node_instrs = Cfg.Node.get_instrs node in
       let formals = Cfg.Procdesc.get_formals (Cfg.Node.get_proc_desc node) in
-      let formal_names = list_map (fun (s, _) -> Mangled.from_string s) formals in
+      let formal_names = IList.map (fun (s, _) -> Mangled.from_string s) formals in
       let is_formal pvar =
         let name = Sil.pvar_get_name pvar in
-        list_exists (Mangled.equal name) formal_names in
+        IList.exists (Mangled.equal name) formal_names in
       let formal_ids = ref [] in
       let process_formal_letref = function
         | Sil.Letderef (id, Sil.Lvar pvar, _, _) ->
@@ -61,7 +61,7 @@ let check_access access_opt de_opt =
               !Config.curr_language = Config.Java && Sil.pvar_is_this pvar in
             if not is_java_this && is_formal pvar then formal_ids := id :: !formal_ids
         | _ -> () in
-      list_iter process_formal_letref node_instrs;
+      IList.iter process_formal_letref node_instrs;
       !formal_ids in
     let formal_param_used_in_call = ref false in
     let has_call_or_sets_null node =
@@ -81,14 +81,14 @@ let check_access access_opt de_opt =
         | Sil.Call (_, _, etl, _, _) ->
             let formal_ids = find_formal_ids node in
             let arg_is_formal_param (e, t) = match e with
-              | Sil.Var id -> list_exists (Ident.equal id) formal_ids
+              | Sil.Var id -> IList.exists (Ident.equal id) formal_ids
               | _ -> false in
-            if list_exists arg_is_formal_param etl then formal_param_used_in_call := true;
+            if IList.exists arg_is_formal_param etl then formal_param_used_in_call := true;
             true
         | Sil.Set (_, _, e, _) ->
             exp_is_null e
         | _ -> false in
-      list_exists filter (Cfg.Node.get_instrs node) in
+      IList.exists filter (Cfg.Node.get_instrs node) in
     let local_access_found = ref false in
     let do_node node =
       if (Cfg.Node.get_loc node).Location.line = line_number && has_call_or_sets_null node then

@@ -141,15 +141,15 @@ let find_source_dirs () =
   let files_in_results_dir = Array.to_list (Sys.readdir capt_dir) in
   let add_cg_files_from_dir dir =
     let files = Array.to_list (Sys.readdir dir) in
-    list_iter (fun fname ->
+    IList.iter (fun fname ->
         let path = Filename.concat dir fname in
         if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs)
       files in
-  list_iter (fun fname ->
+  IList.iter (fun fname ->
       let dir = Filename.concat capt_dir fname in
       if Sys.is_directory dir then add_cg_files_from_dir dir)
     files_in_results_dir;
-  list_rev !source_dirs
+  IList.rev !source_dirs
 
 (** {2 Filename} *)
 
@@ -273,7 +273,7 @@ module Results_dir = struct
       | [] -> base
       | name:: names ->
           Filename.concat (f names) (if name ==".." then Filename.parent_dir_name else name) in
-    f (list_rev path)
+    f (IList.rev path)
 
   (** convert a path to a filename *)
   let path_to_filename pk path =
@@ -315,7 +315,7 @@ module Results_dir = struct
           let new_path = Filename.concat (create names) name in
           create_dir new_path;
           new_path in
-    let filename, dir_path = match list_rev path with
+    let filename, dir_path = match IList.rev path with
       | filename:: dir_path -> filename, dir_path
       | [] -> raise (Failure "create_path") in
     let full_fname = Filename.concat (create dir_path) filename in
@@ -327,6 +327,6 @@ let global_tenv_fname () =
   filename_concat (captured_dir ()) basename
 
 let is_source_file path =
-  list_exists
+  IList.exists
     (fun ext -> Filename.check_suffix path ext)
     Config.source_file_extentions

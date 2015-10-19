@@ -24,7 +24,7 @@ let printf_signature_to_string
     "{%s; %d [%s] %s}"
     printf.unique_id
     printf.format_pos
-    (String.concat "," (list_map string_of_int printf.fixed_pos))
+    (String.concat "," (IList.map string_of_int printf.fixed_pos))
     (match printf.vararg_pos with | Some i -> string_of_int i | _ -> "-")
 
 let printf_like_functions =
@@ -56,7 +56,7 @@ let printf_like_function
     (proc_name: Procname.t): printf_signature option =
   try
     Some (
-      list_find
+      IList.find
         (fun printf -> string_equal printf.unique_id (Procname.to_unique_id proc_name))
         !printf_like_functions)
   with Not_found -> None
@@ -77,12 +77,12 @@ let format_type_matches_given_type
     (given_type: string): bool =
   match format_type with
   | "d" | "i" | "u" | "x" | "X" | "o" ->
-      list_mem
+      IList.mem
         string_equal
         given_type
         ["java.lang.Integer"; "java.lang.Long"; "java.lang.Short"; "java.lang.Byte"]
   | "a" | "A" | "f" | "F" | "g" | "G" | "e" | "E" ->
-      list_mem
+      IList.mem
         string_equal
         given_type
         ["java.lang.Double"; "java.lang.Float"]
@@ -95,15 +95,15 @@ let format_arguments
     (printf: printf_signature)
     (args: (Sil.exp * Sil.typ) list): (string option * (Sil.exp list) * (Sil.exp option)) =
 
-  let format_string = match list_nth args printf.format_pos with
+  let format_string = match IList.nth args printf.format_pos with
     | Sil.Const (Sil.Cstr fmt), _ -> Some fmt
     | _ -> None in
 
-  let fixed_nvars = list_map
-      (fun i -> fst (list_nth args i))
+  let fixed_nvars = IList.map
+      (fun i -> fst (IList.nth args i))
       printf.fixed_pos in
   let varargs_nvar = match printf.vararg_pos with
-    | Some pos -> Some (fst (list_nth args pos))
+    | Some pos -> Some (fst (IList.nth args pos))
     | None -> None in
 
   format_string, fixed_nvars, varargs_nvar
@@ -194,7 +194,7 @@ let callback_printf_args
             try
               let fmt, fixed_nvars, array_nvar = format_arguments printf args in
               let instrs = Cfg.Node.get_instrs node in
-              let fixed_nvar_type_names = list_map (fixed_nvar_type_name instrs) fixed_nvars in
+              let fixed_nvar_type_names = IList.map (fixed_nvar_type_name instrs) fixed_nvars in
               let vararg_ivar_type_names = match array_nvar with
                 | Some nvar -> (
                     let ivar = array_ivar instrs nvar in

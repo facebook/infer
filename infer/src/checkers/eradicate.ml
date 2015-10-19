@@ -53,7 +53,7 @@ struct
   let update_summary proc_name proc_desc final_typestate_opt =
     match Specs.get_summary proc_name with
     | Some old_summ ->
-        let nodes = list_map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
+        let nodes = IList.map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes proc_desc) in
         let method_annotation =
           (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
         let new_summ =
@@ -84,7 +84,7 @@ struct
       TypeState.add_pvar pvar (typ, ta, []) typestate in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty Extension.ext in
-      list_fold_left add_formal typestate_empty annotated_signature.Annotations.params in
+      IList.fold_left add_formal typestate_empty annotated_signature.Annotations.params in
 
     (** Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate ret_ia ret_type loc : unit =
@@ -98,7 +98,7 @@ struct
       State.set_node exit_node;
 
       if checks.TypeCheck.check_ret_type <> [] then
-        list_iter
+        IList.iter
           (fun f -> f curr_pname curr_pdesc ret_type typ_found_opt loc)
           checks.TypeCheck.check_ret_type;
       if checks.TypeCheck.eradicate then
@@ -128,7 +128,7 @@ struct
               Extension.ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
               find_canonical_duplicate annotated_signature typestate node linereader in
           if trace then
-            list_iter (fun typestate_succ ->
+            IList.iter (fun typestate_succ ->
                 L.stdout
                   "Typestate After Node %a@\n%a@."
                   Cfg.Node.pp node
@@ -203,8 +203,8 @@ struct
               | Some callee_pd ->
                   res := (callee_pn, callee_pd) :: !res
               | None -> () in
-            list_iter do_called private_called in
-          list_iter do_proc initializers;
+            IList.iter do_called private_called in
+          IList.iter do_proc initializers;
           !res in
 
         (** Get the initializers recursively called by computing a fixpoint.
@@ -215,13 +215,13 @@ struct
           let res = ref [] in
           let seen = ref Procname.Set.empty in
           let mark_seen (initializers : init list) : unit =
-            list_iter (fun (pn, _) -> seen := Procname.Set.add pn !seen) initializers;
+            IList.iter (fun (pn, _) -> seen := Procname.Set.add pn !seen) initializers;
             res := !res @ initializers in
 
           let rec fixpoint initializers_old =
             let initializers_new = get_private_called initializers_old in
             let initializers_new' =
-              list_filter (fun (pn, _) -> not (Procname.Set.mem pn !seen)) initializers_new in
+              IList.filter (fun (pn, _) -> not (Procname.Set.mem pn !seen)) initializers_new in
             mark_seen initializers_new';
             if initializers_new' <> [] then fixpoint initializers_new' in
 
@@ -236,8 +236,8 @@ struct
           | _, Some final_typestate ->
               final_typestates := (pname, final_typestate) :: !final_typestates
           | _, None -> () in
-        list_iter get_final_typestate initializers_recursive;
-        list_rev !final_typestates
+        IList.iter get_final_typestate initializers_recursive;
+        IList.rev !final_typestates
 
       let pname_and_pdescs_with f =
         let res = ref [] in
@@ -250,8 +250,8 @@ struct
             | Some pdesc ->
                 res := (pname, pdesc) :: !res
             | None -> () in
-        list_iter do_proc all_procs;
-        list_rev !res
+        IList.iter do_proc all_procs;
+        IList.rev !res
 
       (** Typestates after the current procedure and all initializer procedures. *)
       let final_initializer_typestates_lazy = lazy

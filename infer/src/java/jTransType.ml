@@ -246,11 +246,11 @@ let get_all_fields program static cn =
           | Some super_classname -> loop super_classname in
         let current_fields =
           Javalib.cf_fold (collect_class_field static classname) (Javalib.JClass jclass) [] in
-        (list_sort compare current_fields) @ super_fields
+        (IList.sort compare current_fields) @ super_fields
     | Some (Javalib.JInterface jinterface) when static ->
         let current_fields =
           Javalib.if_fold (collect_interface_field classname) (Javalib.JInterface jinterface) [] in
-        list_sort compare current_fields
+        IList.sort compare current_fields
     | _ -> [] in
   loop cn
 
@@ -279,7 +279,7 @@ let collect_models_class_fields classpath_field_map static cn cf l =
 
 let add_model_fields program (static_fields, nonstatic_fields) cn =
   let collect_fields =
-    list_fold_left (fun map (fn, ft, _) -> Ident.FieldMap.add fn ft map) Ident.FieldMap.empty in
+    IList.fold_left (fun map (fn, ft, _) -> Ident.FieldMap.add fn ft map) Ident.FieldMap.empty in
   try
     match JBasics.ClassMap.find cn (JClasspath.get_models program) with
     | Javalib.JClass _ as jclass ->
@@ -303,12 +303,12 @@ let rec create_sil_type program tenv cn =
   | None -> dummy_type cn
   | Some node ->
       let create_super_list interface_names =
-        (list_map (fun i -> Mangled.from_string (JBasics.cn_name i)) interface_names) in
+        (IList.map (fun i -> Mangled.from_string (JBasics.cn_name i)) interface_names) in
       let (super_list, nonstatic_fields, static_fields, item_annotation) =
         match node with
         | Javalib.JInterface jinterface ->
             let static_fields = get_all_fields program true cn in
-            let sil_interface_list = list_map (fun c -> (Sil.Class, c)) (create_super_list jinterface.Javalib.i_interfaces) in
+            let sil_interface_list = IList.map (fun c -> (Sil.Class, c)) (create_super_list jinterface.Javalib.i_interfaces) in
             let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
             (sil_interface_list, [], static_fields, item_annotation)
         | Javalib.JClass jclass ->
@@ -329,7 +329,7 @@ let rec create_sil_type program tenv cn =
                     | _ -> assert false in
                   super_classname :: interface_list in
             let super_sil_classname_list =
-              list_map (fun c -> (Sil.Class, c)) super_classname_list in
+              IList.map (fun c -> (Sil.Class, c)) super_classname_list in
             (super_sil_classname_list, nonstatic_fields, static_fields, item_annotation) in
       let classname = Mangled.from_string (JBasics.cn_name cn) in
       let method_procnames = get_class_procnames cn node in
@@ -400,7 +400,7 @@ let get_var_type_from_sig context var =
   try
     let tenv = JContext.get_tenv context in
     let vt', var' =
-      list_find
+      IList.find
         (fun (vt', var') -> JBir.var_equal var var')
         (JBir.params (JContext.get_impl context)) in
     Some (param_type program tenv (JContext.get_cn context) var' vt')
@@ -498,4 +498,4 @@ let never_returning_null =
           JBasics.make_ms
             method_name arg_types (Some (JBasics.TObject (JBasics.TClass return_cn))) in
         get_method_procname cn ms kind in
-  list_map make_procname never_null_method_sigs
+  IList.map make_procname never_null_method_sigs

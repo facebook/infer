@@ -121,7 +121,7 @@ let add_amethod program icfg node am is_static =
 
 let path_of_cached_classname cn =
   let root_path = Filename.concat !Config.results_dir "classnames" in
-  let package_path = list_fold_left Filename.concat root_path (JBasics.cn_package cn) in
+  let package_path = IList.fold_left Filename.concat root_path (JBasics.cn_package cn) in
   Filename.concat package_path ((JBasics.cn_simple_name cn)^".java")
 
 
@@ -186,7 +186,7 @@ let should_capture classes source_basename node =
   let classname = Javalib.get_name node in
   let temporary_skip =
     (* TODO (#6341744): remove this *)
-    list_exists
+    IList.exists
       (fun part -> part = "graphschema")
       (JBasics.cn_package classname) in
   if JBasics.ClassSet.mem classname classes && not temporary_skip then

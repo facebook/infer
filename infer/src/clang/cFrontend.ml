@@ -42,7 +42,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
       let method_decls = CTypes_decl.get_method_decls dec decl_list in
       let tranlate_method (parent, decl) =
         translate_one_declaration tenv cg cfg namespace parent decl in
-      list_iter tranlate_method method_decls
+      IList.iter tranlate_method method_decls
 
   | VarDecl(decl_info, name_info, t, _) ->
       Printing.log_out "Nothing to do for global variable %s " name_info.Clang_ast_t.ni_name
@@ -97,10 +97,10 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
 
   | LinkageSpecDecl(decl_info, decl_list, decl_context_info) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
-      list_iter (translate_one_declaration tenv cg cfg namespace dec) decl_list
+      IList.iter (translate_one_declaration tenv cg cfg namespace dec) decl_list
   | NamespaceDecl(decl_info, name_info, decl_list, decl_context_info, _) ->
       let name = ns_suffix^name_info.Clang_ast_t.ni_name in
-      list_iter (translate_one_declaration tenv cg cfg (Some name) dec) decl_list
+      IList.iter (translate_one_declaration tenv cg cfg (Some name) dec) decl_list
   | EmptyDecl _ ->
       Printing.log_out "Passing from EmptyDecl. Treated as skip\n";
   | dec ->
@@ -114,7 +114,7 @@ let compute_icfg tenv source_file ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in
-      list_iter (translate_one_declaration tenv cg cfg None ast) decl_list;
+      IList.iter (translate_one_declaration tenv cg cfg None ast) decl_list;
       Printing.log_out "\n Finished creating icfg\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

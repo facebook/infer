@@ -22,7 +22,7 @@ let insert_after lst test to_insert =
     | instr :: to_process ->
         let processed' = instr :: processed in
         if test instr then
-          list_append (list_rev processed') (list_append to_insert to_process)
+          IList.append (IList.rev processed') (IList.append to_insert to_process)
         else
           insert_rec to_process processed'
     | [] -> lst in
@@ -53,7 +53,7 @@ let extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar callb
         | l ->
             (* choose to describe this anonymous inner class with one of the interfaces that it
              * implements. translation always places interfaces at the end of the supertypes list *)
-            Mangled.get_mangled (list_hd (list_rev l))
+            Mangled.get_mangled (IList.hd (IList.rev l))
       else typ_str in
     Mangled.from_string (pretty_typ_str ^ "[line " ^ Location.to_string loc ^ "]") in
   let create_instrumentation_fields created_flds node instr = match instr with
@@ -98,7 +98,7 @@ let find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv =
   (* TODO (t4793988): do something more principled here *)
   let harness_lvar = Sil.Lvar (Sil.mk_pvar_global harness_name) in
   let lifecycle_cfg_files =
-    list_fold_left (fun lifecycle_files (lifecycle_proc, _) ->
+    IList.fold_left (fun lifecycle_files (lifecycle_proc, _) ->
         try
           let cfg_fname =
             let source_dir = Inhabit.source_dir_from_name lifecycle_proc proc_file_map in
@@ -109,7 +109,7 @@ let find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv =
   DB.FilenameSet.fold (fun cfg_file registered_callbacks ->
       match Cfg.load_cfg_from_file cfg_file with
       | Some cfg ->
-          list_fold_left (fun registered_callbacks procdesc ->
+          IList.fold_left (fun registered_callbacks procdesc ->
               extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar registered_callbacks
             ) registered_callbacks (Cfg.get_all_procs cfg)
       | None -> registered_callbacks
@@ -122,7 +122,7 @@ let try_create_lifecycle_trace typ lifecycle_typ lifecycle_procs proc_file_map t
     when AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv &&
          not (AndroidFramework.is_android_lib_class class_name) ->
       let ptr_to_typ = Some (Sil.Tptr (typ, Sil.Pk_pointer)) in
-      list_fold_left (fun trace lifecycle_proc ->
+      IList.fold_left (fun trace lifecycle_proc ->
           (* given a lifecycle subclass T, resolve the call T.lifecycle_proc() to the procname
            * that will actually be called at runtime *)
           let resolved_proc = SymExec.resolve_method tenv class_name lifecycle_proc in
@@ -137,7 +137,7 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
   let harness_name = Mangled.from_string (Procname.to_string harness_procname) in
   let registered_cbs =
     find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv in
-  let fields = list_map (fun (fld, typ, _) -> (fld, typ, [])) registered_cbs in
+  let fields = IList.map (fun (fld, typ, _) -> (fld, typ, [])) registered_cbs in
   (* create a new typ for the harness containing all of the cb extraction vars as static fields *)
   let harness_typ =
     Sil.Tstruct (fields, [], Sil.Class, Some harness_name, [], [harness_procname], []) in
@@ -146,7 +146,7 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
   let harness_class = Sil.TN_csu (Sil.Class, harness_name) in
   Sil.tenv_add tenv harness_class harness_typ;
   let cfgs_to_save =
-    list_fold_left (fun cfgs_to_save (_, _, instrument_sil_f) ->
+    IList.fold_left (fun cfgs_to_save (_, _, instrument_sil_f) ->
         (* instrument the cfg's with callback extraction code *)
         let (cfg_file, cfg) = instrument_sil_f harness_typ in
         DB.FilenameMap.add cfg_file cfg cfgs_to_save
@@ -156,11 +156,11 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
     (fun cfg_file cfg -> Cfg.store_cfg_to_file cfg_file false cfg) cfgs_to_save;
   (* these are all the static fields holding callbacks that should be invoked by the harness *)
   let harness_global = Sil.Lvar (Sil.mk_pvar_global harness_name) in
-  list_map (fun (fld, typ, _) -> (Sil.Lfield (harness_global, fld, harness_typ), typ)) fields
+  IList.map (fun (fld, typ, _) -> (Sil.Lfield (harness_global, fld, harness_typ), typ)) fields
 
 (** generate a harness for each lifecycle type in an Android application *)
 let create_android_harness proc_file_map tenv =
-  list_iter (fun (pkg, clazz, lifecycle_methods) ->
+  IList.iter (fun (pkg, clazz, lifecycle_methods) ->
       let typ_name = Mangled.from_package_class pkg clazz in
       match AndroidFramework.get_lifecycle_for_framework_typ_opt typ_name lifecycle_methods tenv with
       | Some (framework_typ, framework_procs) ->

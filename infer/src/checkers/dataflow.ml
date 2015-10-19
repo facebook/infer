@@ -70,7 +70,7 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
     | t, DoesNotThrow -> res := t in
   let do_instr instr = update_res (instr_throws instr) in
 
-  list_iter do_instr (Cfg.Node.get_instrs node);
+  IList.iter do_instr (Cfg.Node.get_instrs node);
   !res
 
 (** Create an instance of the dataflow algorithm given a state parameter. *)
@@ -95,7 +95,7 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
     | Transition of state * state list * state list
 
   let join states initial_state =
-    list_fold_left
+    IList.fold_left
       St.join
       initial_state
       states
@@ -116,12 +116,12 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
     let succ_nodes = Cfg.Node.get_succs node in
     let exn_nodes = Cfg.Node.get_exn node in
     if throws <> Throws then
-      list_iter
-        (fun s -> list_iter (propagate_to_dest s) succ_nodes)
+      IList.iter
+        (fun s -> IList.iter (propagate_to_dest s) succ_nodes)
         states_succ;
     if throws <> DoesNotThrow then
-      list_iter
-        (fun s -> list_iter (propagate_to_dest s) exn_nodes)
+      IList.iter
+        (fun s -> IList.iter (propagate_to_dest s) exn_nodes)
         states_exn;
 
     H.replace t.post_states node states_succ;
@@ -182,4 +182,4 @@ let callback_test_dataflow all_procs get_proc_desc idenv tenv proc_name proc_des
     match transitions node with
     | DFCount.Transition (pre_state, _, _) -> ()
     | DFCount.Dead_state -> () in
-  list_iter do_node (Cfg.Procdesc.get_nodes proc_desc)
+  IList.iter do_node (Cfg.Procdesc.get_nodes proc_desc)

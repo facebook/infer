@@ -28,7 +28,7 @@ let equal as1 as2 =
   and ia2, t2 = as2.ret in
   Sil.item_annotation_compare ia1 ia2 = 0 &&
   Sil.typ_equal t1 t2 &&
-  list_for_all2 param_equal as1.params as2.params
+  IList.for_all2 param_equal as1.params as2.params
 
 let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
 let javaxNullable = "javax.annotation.Nullable"
@@ -40,17 +40,17 @@ let get_field_type_and_annotation fn = function
   | Sil.Tptr (Sil.Tstruct (ftal, sftal, _, _, _, _, _), _)
   | Sil.Tstruct (ftal, sftal, _, _, _, _, _) ->
       (try
-         let (_, t, a) = list_find (fun (f, t, a) -> Sil.fld_equal f fn) (ftal @ sftal) in
+         let (_, t, a) = IList.find (fun (f, t, a) -> Sil.fld_equal f fn) (ftal @ sftal) in
          Some (t, a)
        with Not_found -> None)
   | _ -> None
 
 let ia_iter f =
   let ann_iter (a, b) = f a in
-  list_iter ann_iter
+  IList.iter ann_iter
 
 let ma_iter f ((ia, ial) : Sil.method_annotation) =
-  list_iter (ia_iter f) (ia:: ial)
+  IList.iter (ia_iter f) (ia:: ial)
 
 let ma_has_annotation_with
     (ma: Sil.method_annotation)
@@ -92,7 +92,7 @@ let ia_get ia ann_name =
 
 let ma_contains ma ann_names =
   let found = ref false in
-  ma_iter (fun a -> if list_exists (string_equal a.Sil.class_name) ann_names then found := true) ma;
+  ma_iter (fun a -> if IList.exists (string_equal a.Sil.class_name) ann_names then found := true) ma;
   !found
 
 let initializer_ = "Initializer"
@@ -117,7 +117,7 @@ let ia_is_present ia =
   ia_ends_with ia present
 
 let ia_is_nonnull ia =
-  list_exists
+  IList.exists
     (ia_ends_with ia)
     [nonnull; notnull; camel_nonnull]
 
@@ -131,7 +131,7 @@ let ia_is_initializer ia =
   ia_ends_with ia initializer_
 
 let ia_is_inject ia =
-  list_exists
+  IList.exists
     (ia_ends_with ia)
     [inject; inject_view; bind]
 
@@ -172,7 +172,7 @@ let get_annotated_signature proc_attributes : annotated_signature =
           []
       | _ :: _, [] ->
           assert false in
-    list_rev (extract (list_rev ial0) (list_rev formals)) in
+    IList.rev (extract (IList.rev ial0) (IList.rev formals)) in
   let annotated_signature = { ret = (ia, ret_type); params = natl } in
   annotated_signature
 
@@ -204,13 +204,13 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
       PatternMatch.type_is_object t in
   Procname.java_is_anonymous_inner_class proc_name
   && check_ret ann_sig.ret
-  && list_for_all check_param ann_sig.params
+  && IList.for_all check_param ann_sig.params
   && !x_param_found
 
 (** Check if the given parameter has a Nullable annotation in the given signature *)
 let param_is_nullable pvar ann_sig =
   let pvar_str = Mangled.to_string (Sil.pvar_get_name pvar) in
-  list_exists
+  IList.exists
     (fun (param_str, annot, _) -> param_str = pvar_str && ia_is_nullable annot)
     ann_sig.params
 
