@@ -58,6 +58,12 @@ public class ReferenceTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("member_access_from_return.cpp");
   }
+
+  @Test
+  public void testNestedAssignmentDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("nested_assignment.cpp");
+  }
   
   @Test
   public void testReferenceTypeE2EDotFilesMatch()

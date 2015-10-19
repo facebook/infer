@@ -443,6 +443,9 @@ let compute_instr_ids_exp_to_parent stmt_info instr ids e lhs typ loc pri =
     (* The current AST element has created a node then instr and ids have  *)
     (* been already included in the node.                                  *)
     [], [], e
+  ) else if General_utils.is_cpp_translation !CFrontend_config.language then (
+    (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
+    instr, ids, e
   ) else (
     (* The node will be created by the parent. We pass the instr and ids.  *)
     (* For the expression we need to save the constend of the lhs in a new *)

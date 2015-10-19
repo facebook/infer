@@ -518,6 +518,9 @@ struct
           let mangled_name = Mangled.mangled name.Clang_ast_t.ni_name mangled in
           Sil.mk_pvar mangled_name procname
     | None -> Sil.mk_pvar simple_name procname
+
+  let is_cpp_translation language =
+    language = CFrontend_config.CPP || language = CFrontend_config.OBJCPP
 end
 
 

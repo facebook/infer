@@ -154,4 +154,6 @@ sig
 
   val mk_sil_var : Clang_ast_t.named_decl_info -> var_info option -> Procname.t -> Procname.t ->
     Sil.pvar
+
+  val is_cpp_translation : CFrontend_config.lang -> bool
 end

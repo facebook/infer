@@ -1,4 +1,66 @@
 digraph iCFG {
+56 [label="56:  DeclStmt \n   *&a:int =2 [line 63]\n " shape="box"]
+	
+
+	 56 -> 55 ;
+55 [label="55:  DeclStmt \n   *&b:int =3 [line 64]\n  NULLIFY(&b,false); [line 64]\n " shape="box"]
+	
+
+	 55 -> 54 ;
+54 [label="54:  DeclStmt \n   *&r1:int =&a [line 65]\n " shape="box"]
+	
+
+	 54 -> 53 ;
+53 [label="53:  DeclStmt \n   n$2=*&r1:int & [line 66]\n  *&b:int =1 [line 66]\n  n$3=*&b:int  [line 66]\n  *n$2:int =n$3 [line 66]\n  *&r2:int =n$2 [line 66]\n  REMOVE_TEMPS(n$2,n$3); [line 66]\n  NULLIFY(&r1,false); [line 66]\n " shape="box"]
+	
+
+	 53 -> 52 ;
+52 [label="52:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int & [line 67]\n  *n$1:int =0 [line 67]\n  REMOVE_TEMPS(n$1); [line 67]\n  NULLIFY(&r2,false); [line 67]\n " shape="box"]
+	
+
+	 52 -> 51 ;
+51 [label="51:  Return Stmt \n   n$0=*&b:int  [line 68]\n  *&return:int =(1 / n$0) [line 68]\n  REMOVE_TEMPS(n$0); [line 68]\n  NULLIFY(&b,false); [line 68]\n  NULLIFY(&a,false); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
+	
+
+	 51 -> 50 ;
+50 [label="50: Exit ref_div1_nested_assignment \n  " color=yellow style=filled]
+	
+
+49 [label="49: Start ref_div1_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 62]\n  NULLIFY(&b,false); [line 62]\n  NULLIFY(&r1,false); [line 62]\n  NULLIFY(&r2,false); [line 62]\n " color=yellow style=filled]
+	
+
+	 49 -> 56 ;
+48 [label="48:  DeclStmt \n   *&a:int =2 [line 54]\n " shape="box"]
+	
+
+	 48 -> 47 ;
+47 [label="47:  DeclStmt \n   *&b:int =3 [line 55]\n  NULLIFY(&b,false); [line 55]\n " shape="box"]
+	
+
+	 47 -> 46 ;
+46 [label="46:  DeclStmt \n   *&r1:int =&a [line 56]\n " shape="box"]
+	
+
+	 46 -> 45 ;
+45 [label="45:  DeclStmt \n   n$2=*&r1:int & [line 57]\n  *&b:int =1 [line 57]\n  n$3=*&b:int  [line 57]\n  *n$2:int =n$3 [line 57]\n  *&r2:int =n$2 [line 57]\n  REMOVE_TEMPS(n$2,n$3); [line 57]\n  NULLIFY(&b,false); [line 57]\n  NULLIFY(&r1,false); [line 57]\n " shape="box"]
+	
+
+	 45 -> 44 ;
+44 [label="44:  BinaryOperatorStmt: Assign \n   n$1=*&r2:int & [line 58]\n  *n$1:int =0 [line 58]\n  REMOVE_TEMPS(n$1); [line 58]\n  NULLIFY(&r2,false); [line 58]\n " shape="box"]
+	
+
+	 44 -> 43 ;
+43 [label="43:  Return Stmt \n   n$0=*&a:int  [line 59]\n  *&return:int =(1 / n$0) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  NULLIFY(&a,false); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
+	
+
+	 43 -> 42 ;
+42 [label="42: Exit ref_div0_nested_assignment \n  " color=yellow style=filled]
+	
+
+41 [label="41: Start ref_div0_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 53]\n  NULLIFY(&b,false); [line 53]\n  NULLIFY(&r1,false); [line 53]\n  NULLIFY(&r2,false); [line 53]\n " color=yellow style=filled]
+	
+
+	 41 -> 48 ;
 40 [label="40:  DeclStmt \n   *&a:int =2 [line 47]\n " shape="box"]
 	
 

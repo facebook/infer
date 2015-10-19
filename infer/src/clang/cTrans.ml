@@ -495,7 +495,9 @@ struct
 
          let instrs_after_assign, assign_ids, exp_to_parent =
            if (is_binary_assign_op binary_operator_info)
-           && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
+              (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
+              && (not (General_utils.is_cpp_translation !CFrontend_config.language))
+              && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
              (* We are in this case when an assignment is inside        *)
              (* another operator that creates a node. Eg. another       *)
              (* assignment.  *)

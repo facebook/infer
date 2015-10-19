@@ -49,3 +49,21 @@ int ref_div0_function_temp_var() {
   zero_ref(r);
   return 1/a;
 }
+
+int ref_div0_nested_assignment() {
+  int a = 2;
+  int b = 3;
+  int &r1 = a;
+  int &r2 = r1 = b = 1;
+  r2 = 0;
+  return 1/a;
+}
+
+int ref_div1_nested_assignment() {
+  int a = 2;
+  int b = 3;
+  int &r1 = a;
+  int &r2 = r1 = b = 1;
+  r2 = 0;
+  return 1/b;
+}

@@ -53,7 +53,8 @@ public class ReferenceTypeTest {
         "ptr_div0_function_temp_var",
         "ref_div0",
         "ref_div0_function",
-        "ref_div0_function_temp_var"
+        "ref_div0_function_temp_var",
+        "ref_div0_nested_assignment"
     };
     assertThat(
         "Results should contain the expected divide by zero",
