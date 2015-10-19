@@ -156,7 +156,7 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       Cfg.Procdesc.set_exit_node procdesc exit_node;
       link_nodes start_node nodes;
       Cfg.Node.add_locals_ret_declaration start_node locals;
-      Cg.add_node cg proc_name;
+      Cg.add_defined_node cg proc_name;
       list_iter (Cg.add_edge cg proc_name) (callees_of_function_def func_def)
 
 let trans_program : LAst.program -> Cfg.cfg * Cg.t * Sil.tenv = function

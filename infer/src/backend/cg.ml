@@ -26,7 +26,8 @@ type in_out_calls =
   }
 
 type node_info =
-  { mutable defined : bool;
+  { mutable defined : bool; (** defined procedure as opposed to just declared *)
+    mutable disabled : bool; (** originally defined procedures disabled by restrict_defined *)
     mutable parents: Procname.Set.t;
     mutable children: Procname.Set.t;
     mutable ancestors : Procname.Set.t option ; (** ancestors are computed lazily *)
@@ -48,13 +49,17 @@ let create () =
     nLOC = !Config.nLOC;
     node_map = Procname.Hash.create 3 }
 
-let _add_node g n defined =
+let _add_node g n defined disabled =
   try
     let info = Procname.Hash.find g.node_map n in
-    if defined then info.defined <- true
+    (* defined and disabled only go from false to true
+       to avoid accidental overwrite to false by calling add_edge *)
+    if defined then info.defined <- true;
+    if disabled then info.disabled <- true;
   with Not_found ->
     let info =
       { defined = defined;
+        disabled = disabled;
         parents = Procname.Set.empty;
         children = Procname.Set.empty;
         ancestors = None;
@@ -63,8 +68,11 @@ let _add_node g n defined =
         in_out_calls = None } in
     Procname.Hash.add g.node_map n info
 
-let add_node g n =
-  _add_node g n true
+let add_defined_node g n =
+  _add_node g n true false
+
+let add_disabled_node g n =
+  _add_node g n false true
 
 (** Compute the ancestors of the node, if not already computed *)
 let compute_ancestors g node =
@@ -147,8 +155,8 @@ let node_set_defined (g: t) n defined =
   with Not_found -> ()
 
 let add_edge g nfrom nto =
-  _add_node g nfrom false;
-  _add_node g nto false;
+  _add_node g nfrom false false;
+  _add_node g nto false false;
   let info_from = Procname.Hash.find g.node_map nfrom in
   let info_to = Procname.Hash.find g.node_map nto in
   info_from.children <- Procname.Set.add nto info_from.children;
@@ -161,13 +169,18 @@ let node_map_iter f g =
   let cmp ((n1: Procname.t), _) ((n2: Procname.t), _) = Procname.compare n1 n2 in
   list_iter (fun (n, info) -> f n info) (list_sort cmp !table)
 
-(** if not None, restrict defined nodes to the given set *)
+(** If not None, restrict defined nodes to the given set,
+    and mark them as disabled. *)
 let restrict_defined (g: t) (nodeset_opt: Procname.Set.t option) =
   match nodeset_opt with
   | None -> ()
   | Some nodeset ->
       let f node info =
-        if not (Procname.Set.mem node nodeset) then info.defined <- false in
+        if info.defined && not (Procname.Set.mem node nodeset) then
+          begin
+            info.defined <- false;
+            info.disabled <- true
+          end in
       node_map_iter f g
 
 let get_nodes (g: t) =
@@ -269,16 +282,18 @@ let get_nodes_and_defined_children (g: t) =
   let nodes_list = Procname.Set.elements !nodes in
   list_map (fun n -> (n, get_defined_children g n)) nodes_list
 
-type nodes_and_edges = (node * bool) list * (node * node) list
+type nodes_and_edges =
+  (node * bool * bool) list * (* nodes with defined and disabled flag *)
+  (node * node) list (* edges *)
 
-(** Return the list of nodes, with defined flag, and the list of edges *)
+(** Return the list of nodes, with defined+disabled flags, and the list of edges *)
 let get_nodes_and_edges (g: t) : nodes_and_edges =
   let nodes = ref [] in
   let edges = ref [] in
   let do_children node info nto =
     edges := (node, nto) :: !edges in
   let f node info =
-    nodes := (node, info.defined) :: !nodes;
+    nodes := (node, info.defined, info.disabled) :: !nodes;
     Procname.Set.iter (do_children node info) info.children in
   node_map_iter f g;
   (!nodes, !edges)
@@ -286,7 +301,21 @@ let get_nodes_and_edges (g: t) : nodes_and_edges =
 (** Return the list of nodes which are defined *)
 let get_defined_nodes (g: t) =
   let (nodes, _) = get_nodes_and_edges g in
-  list_map fst (list_filter (fun pair -> snd pair) nodes)
+  let get_node (node, _, _) = node in
+  list_map get_node
+    (list_filter (fun (_, defined, _) -> defined)
+       nodes)
+
+
+(** Return the list of nodes which were originally defined,
+    i.e. the nodes that were defined before calling restrict_defined.  *)
+let get_originally_defined_nodes (g: t) =
+  let (nodes, _) = get_nodes_and_edges g in
+  let get_node (node, _, _) = node in
+  list_map get_node
+    (list_filter
+       (fun (_, defined, disabled) -> defined || disabled)
+       nodes)
 
 (** Return the path of the source file *)
 let get_source (g: t) =
@@ -299,7 +328,7 @@ let get_nLOC (g: t) =
 (** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2]; undefined nodes become defined if at least one side is. *)
 let extend cg_old cg_new =
   let nodes, edges = get_nodes_and_edges cg_new in
-  list_iter (fun (node, defined) -> _add_node cg_old node defined) nodes;
+  list_iter (fun (node, defined, disabled) -> _add_node cg_old node defined disabled) nodes;
   list_iter (fun (nfrom, nto) -> add_edge cg_old nfrom nto) edges
 
 (** Begin support for serialization *)
@@ -312,7 +341,11 @@ let load_from_file (filename : DB.filename) : t option =
   match Serialization.from_file callgraph_serializer filename with
   | None -> None
   | Some (source, nLOC, (nodes, edges)) ->
-      list_iter (fun (node, defined) -> if defined then add_node g node) nodes;
+      list_iter
+        (fun (node, defined, disabled) ->
+           if defined then add_defined_node g node;
+           if disabled then add_disabled_node g node)
+        nodes;
       list_iter (fun (nfrom, nto) -> add_edge g nfrom nto) edges;
       g.source <- source;
       g.nLOC <- nLOC;

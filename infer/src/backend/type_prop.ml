@@ -739,7 +739,7 @@ let initialize_map exe_env methods =
 let collect_methods exe_env =
   let global_cg = Exe_env.get_cg exe_env in
   let nodes, edges = Cg.get_nodes_and_edges global_cg in
-  let do_node (n, defined) defined_methods =
+  let do_node (n, defined, restricted) defined_methods =
     if defined then
       Procname.Set.add n defined_methods
     else defined_methods in

@@ -196,7 +196,12 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
 let iterate_callbacks store_summary call_graph exe_env =
-  let proc_names = Cg.get_defined_nodes call_graph in
+  let procs_to_analyze =
+    (* analyze all the currently defined procedures *)
+    Cg.get_defined_nodes call_graph in
+  let originally_defined_procs =
+    (* all the defined procedures, even if we are analyzing a restricted subset *)
+    Cg.get_originally_defined_nodes call_graph in
   let saved_language = !Config.curr_language in
 
   let cluster_id proc_name =
@@ -225,18 +230,18 @@ let iterate_callbacks store_summary call_graph exe_env =
 
 
   (* Make sure summaries exists. *)
-  list_iter reset_summary proc_names;
+  list_iter reset_summary procs_to_analyze;
 
 
   (* Invoke callbacks. *)
   list_iter
-    (iterate_procedure_callbacks proc_names exe_env)
-    proc_names;
+    (iterate_procedure_callbacks originally_defined_procs exe_env)
+    procs_to_analyze;
 
   list_iter
-    (iterate_cluster_callbacks proc_names exe_env)
-    (cluster proc_names);
+    (iterate_cluster_callbacks originally_defined_procs exe_env)
+    (cluster procs_to_analyze);
 
-  list_iter store_summary proc_names;
+  list_iter store_summary procs_to_analyze;
 
   Config.curr_language := saved_language

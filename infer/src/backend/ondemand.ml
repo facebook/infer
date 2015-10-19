@@ -87,7 +87,7 @@ let do_analysis curr_pdesc proc_name =
         Some (Cfg.Procdesc.get_attributes proc_desc) in
       let call_graph =
         let cg = Cg.create () in
-        Cg.add_node cg proc_name;
+        Cg.add_defined_node cg proc_name;
         cg in
       Specs.reset_summary call_graph proc_name attributes_opt;
       Specs.set_status proc_name Specs.ACTIVE in

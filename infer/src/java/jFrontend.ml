@@ -100,7 +100,7 @@ let add_cmethod never_null_matcher program icfg node cm is_static =
         let method_body_nodes = Array.mapi (JTrans.instruction context) instrs in
         let procname = Cfg.Procdesc.get_proc_name procdesc in
         add_edges context start_node exn_node [exit_node] method_body_nodes impl false;
-        Cg.add_node icfg.JContext.cg procname;
+        Cg.add_defined_node icfg.JContext.cg procname;
         if Procname.is_constructor procname then Cfg.set_procname_priority cfg procname
     | JTrans.Called _ -> ()
 
@@ -115,7 +115,7 @@ let add_amethod program icfg node am is_static =
       (* do not capture the method if there is a model for it *)
       JUtils.log "Skipping method with a model: %s@." (Procname.to_string (Cfg.Procdesc.get_proc_name procdesc));
   | JTrans.Defined procdesc ->
-      Cg.add_node icfg.JContext.cg (Cfg.Procdesc.get_proc_name procdesc)
+      Cg.add_defined_node icfg.JContext.cg (Cfg.Procdesc.get_proc_name procdesc)
   | JTrans.Called _ -> ()
 
 

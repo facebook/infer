@@ -477,9 +477,9 @@ let compute_clusters exe_env files_changed : Cluster.t list =
   let global_cg = Exe_env.get_cg exe_env in
   let nodes, edges = Cg.get_nodes_and_edges global_cg in
   let defined_procs = Cg.get_defined_nodes global_cg in
-  let do_node (n, defined) =
+  let do_node (n, defined, restricted) =
     if defined then
-      Cg.add_node file_cg
+      Cg.add_defined_node file_cg
         (ClusterMakefile.source_file_to_pname (Exe_env.get_source exe_env n)) in
   let do_edge (n1, n2) =
     if Cg.node_defined global_cg n1 && Cg.node_defined global_cg n2 then

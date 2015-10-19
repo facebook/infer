@@ -252,7 +252,7 @@ let write_harness_to_file harness_instrs harness_file =
 
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
-  Cg.add_node cg harness_name;
+  Cg.add_defined_node cg harness_name;
   let create_dummy_procdesc proc_name =
     (* convert a java type string to a type *)
     let rec lookup_typ typ_str = match typ_str with

@@ -1266,7 +1266,7 @@ let do_analysis exe_env =
       let summaryfp = analyze_proc exe_env proc_name in
       Specs.add_summary proc_name summaryfp;
       let cg = Cg.create () in
-      Cg.add_node cg proc_name;
+      Cg.add_defined_node cg proc_name;
       perform_transition exe_env cg proc_name;
       let summaryre = analyze_proc exe_env proc_name in
       Specs.add_summary proc_name summaryre;
