@@ -7,11 +7,11 @@ digraph iCFG {
 	
 
 	 15 -> 14 ;
-14 [label="14:  DeclStmt \n   *&b:int =4 [line 28]\n  n$2=*&b:int  [line 28]\n  *&a:int =n$2 [line 28]\n  *&ref_from_val:int =&a [line 28]\n  REMOVE_TEMPS(n$2); [line 28]\n  NULLIFY(&b,false); [line 28]\n " shape="box"]
+14 [label="14:  DeclStmt \n   *&b:int =4 [line 28]\n  n$2=*&b:int  [line 28]\n  *&a:int =n$2 [line 28]\n  *&ref_from_val:int &=&a [line 28]\n  REMOVE_TEMPS(n$2); [line 28]\n  NULLIFY(&b,false); [line 28]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  DeclStmt \n   n$0=*&ref_from_val:int & [line 29]\n  *&b:int =5 [line 29]\n  n$1=*&b:int  [line 29]\n  *n$0:int =n$1 [line 29]\n  *&ref_from_ref:int =n$0 [line 29]\n  REMOVE_TEMPS(n$0,n$1); [line 29]\n  NULLIFY(&b,false); [line 29]\n  NULLIFY(&ref_from_ref,false); [line 29]\n  NULLIFY(&ref_from_val,false); [line 29]\n  NULLIFY(&a,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+13 [label="13:  DeclStmt \n   n$0=*&ref_from_val:int & [line 29]\n  *&b:int =5 [line 29]\n  n$1=*&b:int  [line 29]\n  *n$0:int =n$1 [line 29]\n  *&ref_from_ref:int &=n$0 [line 29]\n  REMOVE_TEMPS(n$0,n$1); [line 29]\n  NULLIFY(&b,false); [line 29]\n  NULLIFY(&ref_from_ref,false); [line 29]\n  NULLIFY(&ref_from_val,false); [line 29]\n  NULLIFY(&a,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -26,11 +26,11 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  DeclStmt \n   *&a:int =4 [line 18]\n  *&ref_from_val:int =&a [line 18]\n " shape="box"]
+9 [label="9:  DeclStmt \n   *&a:int =4 [line 18]\n  *&ref_from_val:int &=&a [line 18]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8:  DeclStmt \n   n$0=*&ref_from_val:int & [line 19]\n  *n$0:int =6 [line 19]\n  *&ref_from_ref:int =n$0 [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&ref_from_ref,false); [line 19]\n  NULLIFY(&ref_from_val,false); [line 19]\n  NULLIFY(&a,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+8 [label="8:  DeclStmt \n   n$0=*&ref_from_val:int & [line 19]\n  *n$0:int =6 [line 19]\n  *&ref_from_ref:int &=n$0 [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&ref_from_ref,false); [line 19]\n  NULLIFY(&ref_from_val,false); [line 19]\n  NULLIFY(&a,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -45,11 +45,11 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   *&ref_from_val:int =&a [line 12]\n " shape="box"]
+4 [label="4:  DeclStmt \n   *&ref_from_val:int &=&a [line 12]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  DeclStmt \n   n$0=*&ref_from_val:int & [line 13]\n  *&ref_from_ref:int =n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&ref_from_ref,false); [line 13]\n  NULLIFY(&ref_from_val,false); [line 13]\n  NULLIFY(&a,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=*&ref_from_val:int & [line 13]\n  *&ref_from_ref:int &=n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&ref_from_ref,false); [line 13]\n  NULLIFY(&ref_from_val,false); [line 13]\n  NULLIFY(&a,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 3 -> 2 ;

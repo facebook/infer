@@ -7,11 +7,11 @@ digraph iCFG {
 	
 
 	 55 -> 54 ;
-54 [label="54:  DeclStmt \n   *&r1:int =&a [line 65]\n " shape="box"]
+54 [label="54:  DeclStmt \n   *&r1:int &=&a [line 65]\n " shape="box"]
 	
 
 	 54 -> 53 ;
-53 [label="53:  DeclStmt \n   n$2=*&r1:int & [line 66]\n  *&b:int =1 [line 66]\n  n$3=*&b:int  [line 66]\n  *n$2:int =n$3 [line 66]\n  *&r2:int =n$2 [line 66]\n  REMOVE_TEMPS(n$2,n$3); [line 66]\n  NULLIFY(&r1,false); [line 66]\n " shape="box"]
+53 [label="53:  DeclStmt \n   n$2=*&r1:int & [line 66]\n  *&b:int =1 [line 66]\n  n$3=*&b:int  [line 66]\n  *n$2:int =n$3 [line 66]\n  *&r2:int &=n$2 [line 66]\n  REMOVE_TEMPS(n$2,n$3); [line 66]\n  NULLIFY(&r1,false); [line 66]\n " shape="box"]
 	
 
 	 53 -> 52 ;
@@ -38,11 +38,11 @@ digraph iCFG {
 	
 
 	 47 -> 46 ;
-46 [label="46:  DeclStmt \n   *&r1:int =&a [line 56]\n " shape="box"]
+46 [label="46:  DeclStmt \n   *&r1:int &=&a [line 56]\n " shape="box"]
 	
 
 	 46 -> 45 ;
-45 [label="45:  DeclStmt \n   n$2=*&r1:int & [line 57]\n  *&b:int =1 [line 57]\n  n$3=*&b:int  [line 57]\n  *n$2:int =n$3 [line 57]\n  *&r2:int =n$2 [line 57]\n  REMOVE_TEMPS(n$2,n$3); [line 57]\n  NULLIFY(&b,false); [line 57]\n  NULLIFY(&r1,false); [line 57]\n " shape="box"]
+45 [label="45:  DeclStmt \n   n$2=*&r1:int & [line 57]\n  *&b:int =1 [line 57]\n  n$3=*&b:int  [line 57]\n  *n$2:int =n$3 [line 57]\n  *&r2:int &=n$2 [line 57]\n  REMOVE_TEMPS(n$2,n$3); [line 57]\n  NULLIFY(&b,false); [line 57]\n  NULLIFY(&r1,false); [line 57]\n " shape="box"]
 	
 
 	 45 -> 44 ;
