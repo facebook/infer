@@ -1,0 +1,47 @@
+digraph iCFG {
+12 [label="12:  DeclStmt \n   n$3=*&a:int  [line 23]\n  n$4=*&b:int  [line 23]\n  *&c:int =(n$3 + n$4) [line 23]\n  REMOVE_TEMPS(n$3,n$4); [line 23]\n  NULLIFY(&a,false); [line 23]\n  NULLIFY(&b,false); [line 23]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11:  Call _fun_X_init \n   n$2=*&this:class X * [line 24]\n  _fun_X_init(n$2:class X ) [line 24]\n  REMOVE_TEMPS(n$2); [line 24]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 25]\n  n$1=*&c:int  [line 25]\n  *n$0.f:int =n$1 [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n  NULLIFY(&c,false); [line 25]\n  NULLIFY(&this,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9: Exit X_X \n  " color=yellow style=filled]
+	
+
+8 [label="8: Start X_X\nFormals:  this:class X * a:int  b:int \nLocals:  c:int  \n   DECLARE_LOCALS(&return,&c); [line 22]\n  NULLIFY(&c,false); [line 22]\n " color=yellow style=filled]
+	
+
+	 8 -> 12 ;
+7 [label="7:  Call _fun_X_init \n   n$1=*&this:class X * [line 15]\n  _fun_X_init(n$1:class X ) [line 15]\n  REMOVE_TEMPS(n$1); [line 15]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 16]\n  *n$0.f:int =3 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&this,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+	
+
+	 6 -> 5 ;
+5 [label="5: Exit X_X \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 4 -> 7 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 12]\n  *n$0.f:int =0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit X_init \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X_init\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

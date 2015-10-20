@@ -103,7 +103,7 @@ struct
   let rec process_one_method_decl tenv cg cfg curr_class namespace dec =
     let open Clang_ast_t in
     match dec with
-    | CXXMethodDecl _ ->
+    | CXXMethodDecl _ | CXXConstructorDecl _ ->
         process_method_decl tenv cg cfg namespace curr_class dec ~is_objc:false
     | ObjCMethodDecl _ ->
         process_method_decl tenv cg cfg namespace curr_class dec ~is_objc:true

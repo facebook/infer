@@ -2076,8 +2076,10 @@ struct
     IList.map instruction' stmt_list
 
   and get_custom_stmt_trans custom_stmts =
+    (* TODO write translate function for cxx constructor exprs *)
     let do_one_stmt stmt = match stmt with
-      | `ClangStmt stmt -> get_clang_stmt_trans [stmt] in
+      | `ClangStmt stmt -> get_clang_stmt_trans [stmt]
+      | `CXXConstructorInit instr -> [] in
     IList.flatten (IList.map do_one_stmt custom_stmts)
 
   (** Given a translation state, this function translates a list of clang statements. *)

@@ -269,6 +269,7 @@ and decl_process_locs loc_composer decl =
   match decl' with
   | FunctionDecl fun_info -> FunctionDecl (get_updated_fun_decl fun_info)
   | CXXMethodDecl meth_info -> CXXMethodDecl (get_updated_method_decl meth_info)
+  | CXXConstructorDecl meth_info -> CXXConstructorDecl (get_updated_method_decl meth_info)
   | ObjCMethodDecl (decl_info', name, obj_c_method_decl_info) ->
       let body' =
         Option.map (stmt_process_locs loc_composer) obj_c_method_decl_info.omdi_body in

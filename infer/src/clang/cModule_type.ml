@@ -9,7 +9,10 @@
 
 type block_data = CContext.t * Clang_ast_t.type_ptr * Procname.t * (Mangled.t * Sil.typ * bool) list
 
-type instr_type = [ `ClangStmt of Clang_ast_t.stmt ]
+type instr_type = [
+  | `ClangStmt of Clang_ast_t.stmt
+  | `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer
+]
 
 module type CTranslation =
 sig

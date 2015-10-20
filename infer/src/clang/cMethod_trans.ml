@@ -104,6 +104,10 @@ let get_assume_not_null_calls ms param_decls =
     | _ -> [] in
   IList.flatten (IList.map do_one_param param_decls)
 
+let get_init_list_instrs method_decl_info =
+  let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
+  IList.map create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
+
 let method_signature_of_decl class_name_opt meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt, class_name_opt with
@@ -116,13 +120,15 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       let ms = build_method_signature decl_info procname func_decl false false in
       let extra_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
-  | CXXMethodDecl (decl_info, name_info, tp, fdi, _), _, Some class_name ->
+  | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _, Some class_name
+  | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _, Some class_name ->
       let method_name = name_info.Clang_ast_t.ni_name in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, class_name, tp)  in
       let ms = build_method_signature decl_info procname method_decl false false in
-      let extra_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
-      ms, fdi.Clang_ast_t.fdi_body, extra_instrs
+      let non_null_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
+      let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
+      ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
   | ObjCMethodDecl (decl_info, name_info, mdi), _, Some class_name ->
       let method_name = name_info.ni_name in
       let is_instance = mdi.omdi_is_instance_method in
