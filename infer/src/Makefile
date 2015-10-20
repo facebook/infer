@@ -15,28 +15,13 @@ COPY = cp -f -p
 COPY_DIR = cp -rf
 MKDIR = mkdir -p
 LINK = ln -sf
-
-OCAML_INCLUDE_DIR = $(shell ocamlc -where)
-
-#### ATDGEN declarations ####
-
 ATDGEN = atdgen
 
-ATDGEN_INCLUDE_DIR = $(shell ocamlfind query atdgen)
-BINIOU_INCLUDE_DIR = $(shell ocamlfind query biniou)
-YOJSON_INCLUDE_DIR = $(shell ocamlfind query yojson)
-EASYFORMAT_INCLUDE_DIR = $(shell ocamlfind query easy-format)
-
-ATDGEN_INCLUDES = -I,$(EASYFORMAT_INCLUDE_DIR),-I,$(BINIOU_INCLUDE_DIR),-I,$(YOJSON_INCLUDE_DIR),-I,$(ATDGEN_INCLUDE_DIR)
-ATDGEN_LIBS = atdgen
-ATDGEN_MODS = easy_format bi_util bi_share bi_outbuf bi_inbuf bi_vint bi_io yojson ag_oj_run ag_ob_run ag_util
-ATDGEN_OPTIONS = -cflags -annot -lflags $(ATDGEN_INCLUDES) -cflags $(ATDGEN_INCLUDES) $(addprefix -lib ,$(ATDGEN_LIBS)) $(addprefix -mod ,$(ATDGEN_MODS))
+OCAML_INCLUDE_DIR = $(shell ocamlc -where)
 
 #### Global declarations ####
 
 ROOT = $(shell cd ../.. && pwd)
-
-GLOBAL_LIBS = unix str
 
 BUILDDIR = ../_build-infer
 ANNOTDIR = $(ROOT)/infer/src/_build
@@ -48,9 +33,22 @@ ifneq ($(wildcard $(BUILDDIR)/sanitize.sh),)
 	SANITIZE_SCRIPT = $(BUILDDIR)/sanitize.sh
 endif
 
-GLOBAL_LFLAGS =  -annot
-GLOBAL_CFLAGS = "-bin-annot -warn-error @5@8@10..12@20@26@39"
-GLOBAL_OPTIONS = -lflags $(GLOBAL_LFLAGS) -cflags $(GLOBAL_CFLAGS) $(addprefix -lib ,$(GLOBAL_LIBS))
+#### Infer includes declarations ####
+
+ATDGEN_INCLUDE_DIR = $(shell ocamlfind query atdgen)
+BINIOU_INCLUDE_DIR = $(shell ocamlfind query biniou)
+YOJSON_INCLUDE_DIR = $(shell ocamlfind query yojson)
+EASYFORMAT_INCLUDE_DIR = $(shell ocamlfind query easy-format)
+
+OCAML_INCLUDES = -I,$(EASYFORMAT_INCLUDE_DIR),-I,$(BINIOU_INCLUDE_DIR),-I,$(YOJSON_INCLUDE_DIR),-I,$(ATDGEN_INCLUDE_DIR)
+OCAML_LIBS = unix str atdgen
+OCAML_MODS = easy_format bi_util bi_share bi_outbuf bi_inbuf bi_vint bi_io yojson ag_oj_run ag_ob_run ag_util
+OCAMLBUILD_OPTIONS = -lflags -annot \
+                     -cflags -annot,-bin-annot,-warn-error,@5@8@10..12@20@26@39 \
+                     -lflags $(OCAML_INCLUDES) \
+                     -cflags $(OCAML_INCLUDES) \
+                     $(addprefix -lib ,$(OCAML_LIBS)) \
+                     $(addprefix -mod ,$(OCAML_MODS))
 
 #### Backend declarations ####
 
@@ -141,7 +139,7 @@ endif
 
 DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/graphql facebook/scripts harness $(EXTRA_DEPS)
 
-OCAMLBUILD = ocamlbuild -build-dir $(BUILDDIR) -j 0 $(addprefix -I , $(DEPENDENCIES)) $(GLOBAL_OPTIONS) $(ATDGEN_OPTIONS)  $(JAVA_OPTIONS)
+OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -build-dir $(BUILDDIR) -j 0 $(addprefix -I , $(DEPENDENCIES)) $(JAVA_OPTIONS)
 
 .PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright annotations init sanitize version clean
 
