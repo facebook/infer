@@ -69,7 +69,8 @@ let add_predefined_types tenv =
 let create_csu opt_type =
   match opt_type with
   | `Type s ->
-      (let buf = Str.split (Str.regexp "[ \t]+") s in
+      (let no_slash = Str.global_replace (Str.regexp "/") "_" s in
+       let buf = Str.split (Str.regexp "[ \t]+") no_slash in
        match buf with
        | "struct":: l ->Sil.Struct, General_utils.string_from_list l
        | "class":: l -> Sil.Class, General_utils.string_from_list l
