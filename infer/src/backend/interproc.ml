@@ -989,7 +989,7 @@ let set_current_language cfg proc_desc =
 
 (** reset counters before analysing a procedure *)
 let reset_global_counters cfg proc_name proc_desc =
-  Ident.reset_name_generator ();
+  Ident.NameGenerator.reset ();
   SymOp.reset_total ();
   reset_prop_metrics ();
   Abs.abs_rules_reset ();
@@ -1154,7 +1154,7 @@ let perform_transition exe_env cg proc_name =
     parent process as soon as a child process returns a result. *)
 let process_result (exe_env: Exe_env.t) (proc_name, calls) (_summ: Specs.summary) : unit =
   if !Config.trace_anal then L.err "===process_result@.";
-  Ident.reset_name_generator (); (* for consistency with multi-core mode *)
+  Ident.NameGenerator.reset (); (* for consistency with multi-core mode *)
   let summ =
     { _summ with
       Specs.stats = { _summ.Specs.stats with Specs.stats_calls = calls }} in
@@ -1263,11 +1263,13 @@ let do_analysis exe_env =
       Cfg.Procdesc.find_from_name callee_cfg proc_name in
     let analyze_ondemand proc_name =
       let saved_footprint = !Config.footprint in
+      Config.footprint := true;
       let summaryfp = analyze_proc exe_env proc_name in
       Specs.add_summary proc_name summaryfp;
       let cg = Cg.create () in
       Cg.add_defined_node cg proc_name;
       perform_transition exe_env cg proc_name;
+      Config.footprint := false;
       let summaryre = analyze_proc exe_env proc_name in
       Specs.add_summary proc_name summaryre;
       Config.footprint := saved_footprint;

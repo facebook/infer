@@ -72,6 +72,11 @@ let procedure_should_be_analyzed curr_pdesc proc_name =
   | None ->
       false
 
+type global_state =
+  {
+    name_generator : Ident.NameGenerator.t;
+  }
+
 let do_analysis curr_pdesc proc_name =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
@@ -90,7 +95,15 @@ let do_analysis curr_pdesc proc_name =
         Cg.add_defined_node cg proc_name;
         cg in
       Specs.reset_summary call_graph proc_name attributes_opt;
-      Specs.set_status proc_name Specs.ACTIVE in
+      Specs.set_status proc_name Specs.ACTIVE;
+      let old_state =
+        {
+          name_generator = Ident.NameGenerator.get_current ();
+        } in
+      old_state in
+
+    let restore old_state =
+      Ident.NameGenerator.set_current old_state.name_generator in
 
     let postprocess () =
       decr nesting;
@@ -102,15 +115,17 @@ let do_analysis curr_pdesc proc_name =
       Specs.add_summary proc_name summary';
       Checkers.ST.store_summary proc_name in
 
+    let old_state = preprocess () in
     try
-      preprocess ();
       analyze_proc proc_name;
-      postprocess ()
+      postprocess ();
+      restore old_state;
     with e ->
       L.stderr "ONDEMAND EXCEPTION %a %s %s@."
         Procname.pp proc_name
         (Printexc.to_string e)
         (Printexc.get_backtrace ());
+      restore old_state;
       raise e in
 
   match !callbacks_ref with

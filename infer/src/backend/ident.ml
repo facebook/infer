@@ -189,8 +189,45 @@ let set_stamp i stamp =
 let get_stamp i =
   i.stamp
 
-(** Map from names to stamps. *)
-let name_map = NameHash.create 1000
+module NameGenerator = struct
+  type t = int NameHash.t
+
+  let create () : t = NameHash.create 17
+
+  (** Map from names to stamps. *)
+  let name_map = ref (create ())
+
+  let get_current () =
+    !name_map
+
+  let set_current map =
+    name_map := map
+
+  (** Reset the name generator *)
+  let reset () =
+    name_map := create ()
+
+  (** Create a fresh identifier with the given kind and name. *)
+  let create_fresh_ident kind name =
+    let stamp =
+      try
+        let stamp = NameHash.find !name_map name in
+        NameHash.replace !name_map name (stamp + 1);
+        stamp + 1
+      with Not_found ->
+        NameHash.add !name_map name 0;
+        0 in
+    { kind = kind; name = name; stamp = stamp }
+
+  (** Make sure that fresh ids after whis one will be with different stamps *)
+  let update_name_hash name stamp =
+    try
+      let curr_stamp = NameHash.find !name_map name in
+      let new_stamp = max curr_stamp stamp in
+      NameHash.replace !name_map name new_stamp
+    with Not_found ->
+      NameHash.add !name_map name stamp
+end
 
 (** Name used for primed tmp variables *)
 let name_primed = string_to_name "t"
@@ -215,15 +252,8 @@ let standard_name kind =
 
 (** Every identifier with a given stamp should unltimately be created using this function *)
 let create_with_stamp kind name stamp =
-  let update_name_hash () = (* make sure that fresh ids after whis one will be with different stamps *)
-    try
-      let curr_stamp = NameHash.find name_map name in
-      let new_stamp = max curr_stamp stamp in
-      NameHash.replace name_map name new_stamp
-    with Not_found ->
-      NameHash.add name_map name stamp in
-  update_name_hash ();
-  { kind = kind; name = name; stamp = stamp }
+  NameGenerator.update_name_hash name stamp;
+  { kind = kind; name = name; stamp = stamp; }
 
 (** Create an identifier with default name for the given kind *)
 let create kind stamp =
@@ -273,30 +303,14 @@ let make_unprimed id =
   if id.kind <> kprimed then assert false
   else { id with kind = knormal }
 
-(** Reset the name generator *)
-let reset_name_generator () =
-  NameHash.clear name_map
-
 (** Update the name generator so that the given id's are not generated again *)
 let update_name_generator ids =
   let upd id = ignore (create_with_stamp id.kind id.name id.stamp) in
   IList.iter upd ids
 
-(** Create a fresh identifier with the given kind and name. *)
-let create_fresh_ident kind name =
-  let stamp =
-    try
-      let stamp = NameHash.find name_map name in
-      NameHash.replace name_map name (stamp + 1);
-      stamp + 1
-    with Not_found ->
-      NameHash.add name_map name 0;
-      0 in
-  { kind = kind; name = name; stamp = stamp }
-
 (** Create a fresh identifier with default name for the given kind. *)
 let create_fresh kind =
-  create_fresh_ident kind (standard_name kind)
+  NameGenerator.create_fresh_ident kind (standard_name kind)
 
 (** Generate a normal identifier whose name encodes a path given as a string. *)
 let create_path pathstring =

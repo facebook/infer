@@ -36,6 +36,19 @@ module FieldSet : Set.S with type elt = fieldname
 (** Map for fieldnames *)
 module FieldMap : Map.S with type key = fieldname
 
+module NameGenerator : sig
+  type t
+
+  (** Get the current name generator. *)
+  val get_current : unit -> t
+
+  (** Reset the name generator. *)
+  val reset : unit -> unit
+
+  (** Set the current name generator. *)
+  val set_current : t -> unit
+end
+
 (** Convert an identfier list to an identifier set *)
 val idlist_to_idset : t list -> IdentSet.t
 
@@ -108,9 +121,6 @@ val create_primed : name -> int -> t
 
 (** Generate a footprint identifier with the given name and stamp. *)
 val create_footprint : name -> int -> t
-
-(** Reset the name generator *)
-val reset_name_generator : unit -> unit
 
 (** Update the name generator so that the given id's are not generated again *)
 val update_name_generator : t list -> unit

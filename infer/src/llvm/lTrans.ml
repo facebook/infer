@@ -116,7 +116,7 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
     (func_def : LAst.function_def) : unit =
 
   (* each procedure has different scope: start names from id 0 *)
-  Ident.reset_name_generator ();
+  Ident.NameGenerator.reset ();
 
   match func_def with
     FunctionDef (func_name, ret_tp_opt, params, annotated_instrs) ->

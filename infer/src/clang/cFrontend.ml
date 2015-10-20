@@ -22,7 +22,7 @@ open CGen_trans
 (* Translate one global declaration *)
 let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   (* each procedure has different scope: start names from id 0 *)
-  Ident.reset_name_generator ();
+  Ident.NameGenerator.reset ();
 
   let ns_suffix = Ast_utils.namespace_to_string namespace in
   let info = Clang_ast_proj.get_decl_tuple dec in
@@ -124,7 +124,7 @@ let init_global_state source_file =
   Config.curr_language := Config.C_CPP;
   DB.current_source := source_file;
   DB.Results_dir.init ();
-  Ident.reset_name_generator ();
+  Ident.NameGenerator.reset ();
   CFrontend_config.global_translation_unit_decls := [];
   ObjcProperty_decl.reset_property_table ();
   CFrontend_utils.General_utils.reset_block_counter ()

@@ -304,7 +304,7 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
  * proc to the cg *)
 let setup_harness_cfg harness_name harness_cfg env source_dir cg tenv =
   (* each procedure has different scope: start names from id 0 *)
-  Ident.reset_name_generator ();
+  Ident.NameGenerator.reset ();
 
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let harness_cfg = match Cfg.load_cfg_from_file cfg_file with

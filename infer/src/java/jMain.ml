@@ -48,7 +48,7 @@ let init_global_state source_file =
   Config.curr_language := Config.Java;
   DB.current_source := source_file;
   DB.Results_dir.init ();
-  Ident.reset_name_generator ();
+  Ident.NameGenerator.reset ();
   SymOp.reset_total ();
   JContext.reset_exn_node_table ();
   let nLOC = FileLOC.file_get_loc (DB.source_file_to_string source_file) in

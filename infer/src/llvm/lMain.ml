@@ -40,7 +40,7 @@ let init_global_state source_filename =
             (filename_to_absolute source_filename)
   end;
   DB.Results_dir.init ();
-  Ident.reset_name_generator ();
+  Ident.NameGenerator.reset ();
   SymOp.reset_total ();
   Config.nLOC := FileLOC.file_get_loc source_filename
 
