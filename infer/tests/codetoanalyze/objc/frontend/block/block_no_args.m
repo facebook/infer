@@ -12,24 +12,23 @@
 int g;
 
 @interface My_manager :NSObject
-- (int) my_mehtod;
+- (int) m;
 
 @end
 
 @implementation My_manager
 
-- (int) my_mehtod
+- (int) m
 {
-    g=7;
+    g = 7;
     void (^b)();
-    int z=3;
-    b=^( ){
-        g=z+3;
+    int z = 3;
+    b = ^( ){
+        g = z + 3;
     };
     b();
-    return z;
+    int *p = 0;
+    if (g == 6) return *p;
+    else return z;
 }
-
-
-
 @end
