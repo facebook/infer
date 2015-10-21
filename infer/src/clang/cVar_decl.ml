@@ -18,13 +18,20 @@ module L = Logging
 let is_custom_var_pointer pointer =
   Utils.string_is_prefix CFrontend_config.pointer_prefix pointer
 
+let is_captured procdesc vname =
+  IList.exists
+    (fun (name, _) -> (Mangled.to_string name) = vname)
+    (Cfg.Procdesc.get_captured procdesc)
+
 let sil_var_of_decl context var_decl procname =
   let outer_procname = CContext.get_outer_procname context in
+  let procdesc = context.CContext.procdesc in
   let open Clang_ast_t in
   match var_decl with
   | VarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
       let shoud_be_mangled =
-        not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) in
+        not (is_custom_var_pointer decl_info.Clang_ast_t.di_pointer) &&
+        not (is_captured procdesc name_info.Clang_ast_t.ni_name) in
       let var_decl_details = Some (decl_info, type_ptr, var_decl_info, shoud_be_mangled) in
       General_utils.mk_sil_var name_info var_decl_details procname outer_procname
   | ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
