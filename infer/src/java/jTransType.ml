@@ -220,9 +220,12 @@ let create_sil_class_field cn cf =
 
 
 (** Collect static field if static is true, otherwise non-static ones. *)
-let collect_class_field static cn cf l =
-  if Javalib.is_static_field (Javalib.ClassField cf) <> static then l
-  else (create_sil_class_field cn cf) :: l
+let collect_class_field cn cf (static_fields, nonstatic_fields) =
+  let field = create_sil_class_field cn cf in
+  if Javalib.is_static_field (Javalib.ClassField cf) then
+    (field :: static_fields, nonstatic_fields)
+  else
+    (static_fields, field :: nonstatic_fields)
 
 
 (** Collect an interface field. *)
@@ -234,24 +237,20 @@ let collect_interface_field cn inf l =
   (field_name, field_type, annotation) :: l
 
 
-let get_all_fields program static cn =
-  let compare (name1, _, _) (name2, _, _) =
-    Ident.fieldname_compare name1 name2 in
+let get_all_fields program cn =
   let rec loop classname =
     match JClasspath.lookup_node classname program with
     | Some (Javalib.JClass jclass) ->
         let super_fields =
           match jclass.Javalib.c_super_class with
-          | None -> []
+          | None -> ([], [])
           | Some super_classname -> loop super_classname in
-        let current_fields =
-          Javalib.cf_fold (collect_class_field static classname) (Javalib.JClass jclass) [] in
-        (IList.sort compare current_fields) @ super_fields
-    | Some (Javalib.JInterface jinterface) when static ->
-        let current_fields =
+        Javalib.cf_fold (collect_class_field classname) (Javalib.JClass jclass) super_fields
+    | Some (Javalib.JInterface jinterface) ->
+        let interface_fields =
           Javalib.if_fold (collect_interface_field classname) (Javalib.JInterface jinterface) [] in
-        IList.sort compare current_fields
-    | _ -> [] in
+        (interface_fields, [])
+    | _ -> ([], []) in
   loop cn
 
 
@@ -260,42 +259,42 @@ let dummy_type cn =
   Sil.Tstruct ([], [], Sil.Class, Some classname, [], [], Sil.item_annotation_empty)
 
 
-let collect_models_class_fields classpath_field_map static cn cf l =
-  if Javalib.is_static_field (Javalib.ClassField cf) <> static then l
-  else
-    let (field_name, field_type, annotation) = create_sil_class_field cn cf in
-    try
-      let classpath_ft = Ident.FieldMap.find field_name classpath_field_map in
-      if Sil.typ_equal classpath_ft field_type then l
-      else
-        (* TODO (#6711750): fix type equality for arrays before failing here *)
-        let () = Logging.stderr "Found inconsistent types for %s\n\tclasspath: %a\n\tmodels: %a\n@."
-            (Ident.fieldname_to_string field_name)
-            (Sil.pp_typ_full pe_text) classpath_ft
-            (Sil.pp_typ_full pe_text) field_type in l
-    with Not_found ->
-      (field_name, field_type, annotation):: l
+let collect_models_class_fields classpath_field_map cn cf fields =
+  let static, nonstatic = fields in
+  let field_name, field_type, annotation = create_sil_class_field cn cf in
+  try
+    let classpath_ft = Ident.FieldMap.find field_name classpath_field_map in
+    if Sil.typ_equal classpath_ft field_type then fields
+    else
+      (* TODO (#6711750): fix type equality for arrays before failing here *)
+      let () = Logging.stderr "Found inconsistent types for %s\n\tclasspath: %a\n\tmodels: %a\n@."
+          (Ident.fieldname_to_string field_name)
+          (Sil.pp_typ_full pe_text) classpath_ft
+          (Sil.pp_typ_full pe_text) field_type in fields
+  with Not_found ->
+    if Javalib.is_static_field (Javalib.ClassField cf) then
+      ((field_name, field_type, annotation):: static, nonstatic)
+    else
+      (static, (field_name, field_type, annotation):: nonstatic)
 
 
-let add_model_fields program (static_fields, nonstatic_fields) cn =
-  let collect_fields =
-    IList.fold_left (fun map (fn, ft, _) -> Ident.FieldMap.add fn ft map) Ident.FieldMap.empty in
+let add_model_fields program classpath_fields cn =
+  let static_fields, nonstatic_fields = classpath_fields in
+  let classpath_field_map =
+    let collect_fields map =
+      IList.fold_left
+        (fun map (fn, ft, _) -> Ident.FieldMap.add fn ft map) map in
+    collect_fields (collect_fields Ident.FieldMap.empty static_fields) nonstatic_fields in
   try
     match JBasics.ClassMap.find cn (JClasspath.get_models program) with
     | Javalib.JClass _ as jclass ->
-        let updated_static_fields =
-          Javalib.cf_fold
-            (collect_models_class_fields (collect_fields static_fields) true cn)
-            jclass
-            static_fields
-        and updated_nonstatic_fields =
-          Javalib.cf_fold
-            (collect_models_class_fields (collect_fields nonstatic_fields) false cn)
-            jclass
-            nonstatic_fields in
-        (updated_static_fields, updated_nonstatic_fields)
-    | _ -> (static_fields, nonstatic_fields)
-  with Not_found -> (static_fields, nonstatic_fields)
+        Javalib.cf_fold
+          (collect_models_class_fields classpath_field_map cn)
+          jclass
+          classpath_fields
+
+    | _ -> classpath_fields
+  with Not_found -> classpath_fields
 
 
 let rec create_sil_type program tenv cn =
@@ -307,16 +306,14 @@ let rec create_sil_type program tenv cn =
       let (super_list, nonstatic_fields, static_fields, item_annotation) =
         match node with
         | Javalib.JInterface jinterface ->
-            let static_fields = get_all_fields program true cn in
+            let static_fields, _ = get_all_fields program cn in
             let sil_interface_list = IList.map (fun c -> (Sil.Class, c)) (create_super_list jinterface.Javalib.i_interfaces) in
             let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
             (sil_interface_list, [], static_fields, item_annotation)
         | Javalib.JClass jclass ->
-            (* TODO: create two functions to get static fields and non-static ones *)
             let static_fields, nonstatic_fields =
-              let classpath_static_fields = get_all_fields program true cn
-              and classpath_nonstatic_fields = get_all_fields program false cn in
-              add_model_fields program (classpath_static_fields, classpath_nonstatic_fields) cn in
+              let classpath_static, classpath_nonstatic = get_all_fields program cn in
+              add_model_fields program (classpath_static, classpath_nonstatic) cn in
             let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
             let interface_list = create_super_list jclass.Javalib.c_interfaces in
             let super_classname_list =
