@@ -600,7 +600,7 @@ struct
           (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
     let params_stmt = if should_translate_args then
-        CTrans_utils.assign_default_params params_stmt None fun_exp_stmt ~is_cxx_method:false
+        CTrans_utils.assign_default_params params_stmt fun_exp_stmt
       else [] in
     let res_trans_par =
       let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
@@ -678,8 +678,7 @@ struct
     let callee_pname = match sil_method with
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
-    let class_name_opt = Some (Procname.c_get_class callee_pname) in
-    let params_stmt = CTrans_utils.assign_default_params params_stmt class_name_opt fun_exp_stmt ~is_cxx_method:true in
+    let params_stmt = CTrans_utils.assign_default_params params_stmt fun_exp_stmt in
     (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)
     (* afterwards. The 'instructions' function does not do that          *)

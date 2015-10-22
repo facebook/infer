@@ -45,10 +45,10 @@ let get_class_param function_method_decl_info =
     match function_method_decl_info with
     | Cpp_Meth_decl_info (_, class_name, _) ->
         let class_type = Ast_expressions.create_class_type class_name in
-        [(CFrontend_config.this, class_type, None)]
+        [(CFrontend_config.this, class_type)]
     | ObjC_Meth_decl_info (_, class_name) ->
         let class_type = Ast_expressions.create_class_type class_name in
-        [(CFrontend_config.self, class_type, None)]
+        [(CFrontend_config.self, class_type)]
     | _ -> []
   else []
 
@@ -71,7 +71,7 @@ let get_parameters function_method_decl_info =
     match par with
     | Clang_ast_t.ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
         let name = name_info.Clang_ast_t.ni_name in
-        (name, type_ptr, var_decl_info.Clang_ast_t.vdi_init_expr)
+        (name, type_ptr)
     | _ -> assert false in
 
   let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
@@ -200,7 +200,7 @@ let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
     match pl with
     | [] -> []
-    | (name, raw_type, _):: pl' ->
+    | (name, raw_type):: pl' ->
         let should_add_pointer name ms =
           let is_objc_self = name = CFrontend_config.self &&
                              CMethod_signature.ms_get_lang ms = CFrontend_config.OBJC in

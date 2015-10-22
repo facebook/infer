@@ -708,28 +708,34 @@ let rec pointer_of_call_expr stmt =
       | [stmt] -> pointer_of_call_expr stmt
       | _ -> None
 
-let assign_default_params params_stmt class_name_opt stmt ~is_cxx_method =
+let get_decl_from_call_expr stmt =
   match pointer_of_call_expr stmt with
-  | Some pointer ->
-      (match CMethod_trans.method_signature_of_pointer class_name_opt pointer with
-       | Some callee_ms ->
-           (let args = CMethod_signature.ms_get_args callee_ms in
-            let args = if is_cxx_method then match args with _::tl -> tl | _ -> assert false
-              else args in
-            let replace_default_arg param =
-              match param with
-              | Clang_ast_t.CXXDefaultArgExpr _, (_, _, Some default_instr) ->
-                  default_instr
-              | instr, _ -> instr in
-            try
-              let params_args = IList.combine params_stmt args in
-              IList.map replace_default_arg params_args
-            with Invalid_argument _ ->
-              (* IList.combine failed because of different list lengths *)
-              Printing.log_err "Param count doesn't match %s\n"
-                (Procname.to_string (CMethod_signature.ms_get_name callee_ms));
-              params_stmt)
-       | None -> params_stmt)
+  | Some pointer -> Ast_utils.get_decl pointer
+  | _ -> None
+
+
+let assign_default_params params_stmt call_stmt =
+  let open Clang_ast_t in
+  match get_decl_from_call_expr call_stmt with
+  | Some FunctionDecl (_, name_info, _, fdecl_info)
+  | Some CXXMethodDecl (_, name_info, _, fdecl_info, _)
+  | Some CXXConstructorDecl (_, name_info, _, fdecl_info, _) ->
+      (let get_param_default_val param_decl = match param_decl with
+          | ParmVarDecl (_, _, _, var_decl_info) -> var_decl_info.vdi_init_expr
+          | _ -> None in
+       let replace_default_arg param = match param with
+         | CXXDefaultArgExpr _, Some default_expr -> default_expr
+         | instr, _ -> instr in
+       let default_params = IList.map get_param_default_val fdecl_info.Clang_ast_t.fdi_parameters in
+       try
+         let param_args = IList.combine params_stmt default_params in
+         IList.map replace_default_arg param_args
+       with Invalid_argument _ ->
+         let name = name_info.ni_name in
+         (* IList.combine failed because of different list lengths *)
+         Printing.log_err "Param count doesn't match %s\n" name;
+         params_stmt)
+  | Some _ -> params_stmt
   | None -> params_stmt
 
 

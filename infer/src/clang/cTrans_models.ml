@@ -137,7 +137,7 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname la
     && method_name = CFrontend_config.string_with_utf8_m in
   let id_type = Ast_expressions.create_id_type in
   get_predefined_ms_method condition class_name method_name Procname.Class_objc_method
-    mk_procname lang [("x", Ast_expressions.create_char_star_type, None)] id_type [] None
+    mk_procname lang [("x", Ast_expressions.create_char_star_type)] id_type [] None
 
 let get_predefined_ms_retain_release class_name method_name mk_procname lang =
   let condition = is_retain_or_release method_name in
@@ -146,7 +146,7 @@ let get_predefined_ms_retain_release class_name method_name mk_procname lang =
     then Ast_expressions.create_id_type else Ast_expressions.create_void_type in
   let class_name = CFrontend_config.nsobject_cl in
   let class_type = Ast_expressions.create_class_type class_name in
-  let args = [(CFrontend_config.self, class_type, None)] in
+  let args = [(CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
     mk_procname lang args return_type [] (get_builtinname method_name)
 
@@ -156,7 +156,7 @@ let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname la
     && class_name = CFrontend_config.nsautorelease_pool_cl in
   let class_type = Ast_expressions.create_class_type class_name in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
-    mk_procname lang [(CFrontend_config.self, class_type, None)]
+    mk_procname lang [(CFrontend_config.self, class_type)]
     Ast_expressions.create_void_type [] None
 
 let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang =
@@ -165,7 +165,7 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
     && class_name = CFrontend_config.nsautorelease_pool_cl in
   let class_type = Ast_expressions.create_class_type class_name in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
-    mk_procname lang [(CFrontend_config.self, class_type, None)] Ast_expressions.create_void_type
+    mk_procname lang [(CFrontend_config.self, class_type)] Ast_expressions.create_void_type
     [] (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
 
 let get_predefined_model_method_signature class_name method_name mk_procname lang =
