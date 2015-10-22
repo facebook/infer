@@ -84,9 +84,6 @@ val vt_to_java_type : JBasics.value_type -> Procname.java_type
 
 val cn_to_java_type : JBasics.class_name -> Procname.java_type
 
-(** [update_tenv program] update the type environment with all the types found in [program] *)
-val update_tenv : Sil.tenv -> JClasspath.program -> unit
-
 (** Add the types of the models to the type environment passed as parameter *)
 val add_models_types : Sil.tenv -> unit
 

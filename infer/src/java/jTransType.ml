@@ -237,23 +237,6 @@ let collect_interface_field cn inf l =
   (field_name, field_type, annotation) :: l
 
 
-let get_all_fields program cn =
-  let rec loop classname =
-    match JClasspath.lookup_node classname program with
-    | Some (Javalib.JClass jclass) ->
-        let super_fields =
-          match jclass.Javalib.c_super_class with
-          | None -> ([], [])
-          | Some super_classname -> loop super_classname in
-        Javalib.cf_fold (collect_class_field classname) (Javalib.JClass jclass) super_fields
-    | Some (Javalib.JInterface jinterface) ->
-        let interface_fields =
-          Javalib.if_fold (collect_interface_field classname) (Javalib.JInterface jinterface) [] in
-        (interface_fields, [])
-    | _ -> ([], []) in
-  loop cn
-
-
 let dummy_type cn =
   let classname = Mangled.from_string (JBasics.cn_name cn) in
   Sil.Tstruct ([], [], Sil.Class, Some classname, [], [], Sil.item_annotation_empty)
@@ -297,7 +280,28 @@ let add_model_fields program classpath_fields cn =
   with Not_found -> classpath_fields
 
 
-let rec create_sil_type program tenv cn =
+let rec get_all_fields program tenv cn =
+  let extract_class_fields classname =
+    match get_class_type_no_pointer program tenv classname with
+    | Sil.Tstruct (nonstatic, static, _, _, _, _, _) -> (static, nonstatic)
+    | _ -> assert false in
+  let trans_fields classname =
+    match JClasspath.lookup_node classname program with
+    | Some (Javalib.JClass jclass) ->
+        let super_fields =
+          match jclass.Javalib.c_super_class with
+          | None -> ([], [])
+          | Some super_classname -> extract_class_fields super_classname in
+        Javalib.cf_fold (collect_class_field classname) (Javalib.JClass jclass) super_fields
+    | Some (Javalib.JInterface jinterface) ->
+        let interface_fields =
+          Javalib.if_fold (collect_interface_field classname) (Javalib.JInterface jinterface) [] in
+        (interface_fields, [])
+    | _ -> ([], []) in
+  trans_fields cn
+
+
+and create_sil_type program tenv cn =
   match JClasspath.lookup_node cn program with
   | None -> dummy_type cn
   | Some node ->
@@ -306,13 +310,13 @@ let rec create_sil_type program tenv cn =
       let (super_list, nonstatic_fields, static_fields, item_annotation) =
         match node with
         | Javalib.JInterface jinterface ->
-            let static_fields, _ = get_all_fields program cn in
+            let static_fields, _ = get_all_fields program tenv cn in
             let sil_interface_list = IList.map (fun c -> (Sil.Class, c)) (create_super_list jinterface.Javalib.i_interfaces) in
             let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
             (sil_interface_list, [], static_fields, item_annotation)
         | Javalib.JClass jclass ->
             let static_fields, nonstatic_fields =
-              let classpath_static, classpath_nonstatic = get_all_fields program cn in
+              let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
               add_model_fields program (classpath_static, classpath_nonstatic) cn in
             let item_annotation = JAnnotation.translate_item jclass.Javalib.c_annotations in
             let interface_list = create_super_list jclass.Javalib.c_interfaces in
@@ -331,6 +335,7 @@ let rec create_sil_type program tenv cn =
       let classname = Mangled.from_string (JBasics.cn_name cn) in
       let method_procnames = get_class_procnames cn node in
       Sil.Tstruct (nonstatic_fields, static_fields, Sil.Class, Some classname, super_list, method_procnames, item_annotation)
+
 
 and get_class_type_no_pointer program tenv cn =
   let named_type = typename_of_classname cn in
@@ -444,13 +449,6 @@ let return_type program tenv ms meth_kind =
     match JBasics.ms_rtype ms with
     | None -> Sil.Tvoid
     | Some vt -> value_type program tenv vt
-
-
-let update_tenv tenv program =
-  let add cn _ =
-    let class_typename = typename_of_classname cn in
-    Sil.tenv_add tenv class_typename (create_sil_type program tenv cn) in
-  JBasics.ClassMap.iter add (JClasspath.get_classmap program)
 
 
 let add_models_types tenv =

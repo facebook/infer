@@ -124,7 +124,6 @@ let load_tenv program =
       end
     else
       Sil.create_tenv () in
-  JTransType.update_tenv tenv program;
   tenv
 
 

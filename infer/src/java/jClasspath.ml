@@ -145,7 +145,7 @@ let add_class cn jclass program =
   program.classmap <- JBasics.ClassMap.add cn jclass program.classmap
 
 
-let lookup_node cn (program: program) =
+let lookup_node cn program =
   try
     Some (JBasics.ClassMap.find cn (get_classmap program))
   with Not_found ->
