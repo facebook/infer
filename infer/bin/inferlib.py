@@ -471,13 +471,6 @@ class Infer:
     def compile(self):
         return self.javac.run()
 
-    def capture(self):
-        javac_status = self.compile()
-        if javac_status == os.EX_OK:
-            return self.run_infer_frontend()
-        else:
-            return javac_status
-
     def analyze(self):
         logging.info('Starting analysis')
         infer_analyze = [
@@ -699,22 +692,27 @@ class Infer:
                 return self.javac.run()
         else:
             start_time = time.time()
-            if self.capture() == os.EX_OK:
-                self.timing['capture'] = utils.elapsed_time(start_time)
-                self.analyze_and_report()
-                self.close()
-                elapsed = utils.elapsed_time(start_time)
-                self.timing['total'] = elapsed
-                self.save_stats()
 
-                if not self.args.analyzer in [COMPILE, CAPTURE]:
-                    procs_total = self.stats['int']['procedures']
-                    files_total = self.stats['int']['files']
-                    procs_str = utils.get_plural('procedure', procs_total)
-                    files_str = utils.get_plural('file', files_total)
-                    print('\nAnalyzed %s in %s' % (procs_str, files_str))
-                return self.stats
-            else:
-                return dict({})
+            self.compile()
+            if self.args.analyzer == COMPILE:
+                return os.EX_OK
+
+            self.run_infer_frontend()
+            self.timing['capture'] = utils.elapsed_time(start_time)
+            if self.args.analyzer == CAPTURE:
+                return os.EX_OK
+
+            self.analyze_and_report()
+            self.close()
+            self.timing['total'] = utils.elapsed_time(start_time)
+            self.save_stats()
+
+            procs_total = self.stats['int']['procedures']
+            files_total = self.stats['int']['files']
+            procs_str = utils.get_plural('procedure', procs_total)
+            files_str = utils.get_plural('file', files_total)
+            print('\nAnalyzed %s in %s' % (procs_str, files_str))
+
+            return self.stats
 
 # vim: set sw=4 ts=4 et:

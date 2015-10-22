@@ -37,7 +37,7 @@ def run_commands(cmds):
     if len(cmds) == 0:
         return os.EX_NOINPUT
     for cmd in cmds:
-        if not cmd.start():
+        if cmd.start() != os.EX_OK:
             return os.EX_SOFTWARE
     return os.EX_OK
 
