@@ -13,7 +13,6 @@
 
 + (int)test;
 
-+ (int)navigateToURLInBackground:(NSURL *)destination
-                         resolver:(id)resolver;
++ (int)navigateToURLInBackground;
 
 @end

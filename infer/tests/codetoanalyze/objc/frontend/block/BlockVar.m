@@ -15,15 +15,16 @@
     return 5;
 }
 
-+ (int)navigateToURLInBackground:(NSURL *)destination
-                             resolver:(id)resolver {
-
++ (int)navigateToURLInBackground {
     int (^addBlock)(int a, int b) = ^(int a, int b){
         NSError *error = nil;
         int res = [self test];
         return a + b + res;
     };
-    return addBlock(1, 2);
+    int x = addBlock(1, 2);
+    int *p = 0;
+    if (x == 8) return *p;
+    else return x;
 }
-
 @end
+
