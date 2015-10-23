@@ -302,86 +302,147 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  let declRefExpr_trans trans_state stmt_info expr_info decl_ref_expr_info d =
+  let enum_constant_trans trans_state decl_ref =
+    let open CContext in
+    let context = trans_state.context in
+    let name_info, _ , type_ptr = get_info_from_decl_ref decl_ref in
+    let name = name_info.Clang_ast_t.ni_name in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let const_exp = match CTypes.search_enum_type_by_name context.tenv name with
+      | Some v ->
+          let ce = Sil.Const v in
+          Printing.log_out "   ....Found enum constant '%s', " name;
+          Printing.log_out "replacing with integer '%s' \n" (Sil.exp_to_string ce); ce
+      | None ->
+          Printing.log_out
+            "WARNING: Found enum constant '%s', but its value was not found in the tenv.\n"
+            name;
+          (Sil.Const(Sil.Cint Sil.Int.zero)) in
+    { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
+
+  let function_deref_trans trans_state decl_ref =
+    let open CContext in
+    let context = trans_state.context in
+    let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
+    let name = name_info.Clang_ast_t.ni_name in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let pname =
+      if CTrans_models.is_modeled_builtin name then
+        Procname.from_string_c_fun (CFrontend_config.infer ^ name)
+      else CMethod_trans.create_procdesc_with_pointer context decl_ptr None name type_ptr in
+    let address_of_function = not context.CContext.is_callee_expression in
+    (* If we are not translating a callee expression, *)
+    (* then the address of the function is being taken.*)
+    (* As e.g. in fun_ptr = foo; *)
+    let non_mangled_func_name =
+      if name = CFrontend_config.malloc &&
+         (!CFrontend_config.language = CFrontend_config.OBJC ||
+          !CFrontend_config.language = CFrontend_config.OBJCPP) then
+        SymExec.ModelBuiltins.malloc_no_fail
+      else Procname.from_string_c_fun name in
+    let is_builtin = SymExec.function_is_builtin non_mangled_func_name in
+    if is_builtin then (* malloc, free, exit, scanf, ... *)
+      { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)] }
+    else
+      begin
+        if address_of_function then Cfg.set_procname_priority context.cfg pname;
+        { empty_res_trans with exps = [(Sil.Const (Sil.Cfun pname), typ)] }
+      end
+
+  let var_deref_trans trans_state stmt_info decl_ref =
+    let open CContext in
+    let context = trans_state.context in
+    let _, _, type_ptr = get_info_from_decl_ref decl_ref in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let pln = trans_state.parent_line_number in
+    let sil_loc = CLocation.get_sil_location stmt_info pln context in
+    let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
+    let e = Sil.Lvar pvar in
+    let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
+        let curr_class = CContext.get_curr_class context in
+        if (CTypes.is_class typ) then
+          raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
+        else
+          let typ = CTypes.add_pointer_to_typ
+              (CTypes_decl.get_type_curr_class context.tenv curr_class) in
+          [(e, typ)]
+      else [(e, typ)] in
+    Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
+    let res_trans = { empty_res_trans with exps = exps } in
+    if CTypes.is_reference_type type_ptr then
+      (* dereference pvar due to the behavior of reference types in clang's AST *)
+      dereference_value_from_result sil_loc res_trans
+    else res_trans
+
+  let field_deref_trans trans_state pre_trans_result decl_ref =
+    let open CContext in
+    let context = trans_state.context in
+    let name_info, _, type_ptr = get_info_from_decl_ref decl_ref in
+    Printing.log_out "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
+    let field_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
+        "WARNING: in Field dereference we expect to know the object\n" in
+    let class_typ =
+      match class_typ with
+      | Sil.Tptr (t, _) -> CTypes.expand_structured_type context.CContext.tenv t
+      | t -> t in
+    Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
+    let field_name = General_utils.mk_class_field_name name_info in
+    let exp = Sil.Lfield (obj_sil, field_name, class_typ) in
+    { pre_trans_result with exps = [(exp, field_typ)] }
+
+  let method_deref_trans trans_state pre_trans_result decl_ref =
+    let open CContext in
+    let context = trans_state.context in
+    let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
+    let method_name = name_info.Clang_ast_t.ni_name in
+    Printing.log_out "!!!!! Dealing with method '%s' @." method_name;
+    let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    (* we don't handle C++ static methods yet - when they are called, this might cause a crash *)
+    assert (IList.length pre_trans_result.exps = 1);
+    let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
+        "WARNING: in Method call we expect to know the object\n" in
+    let class_typ =
+      match class_typ with
+      | Sil.Tptr (t, _) -> CTypes.expand_structured_type context.CContext.tenv t
+      | t -> t in
+    (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
+    let class_name = CTypes.classname_of_type class_typ in
+    let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
+        method_name type_ptr in
+    let method_exp = (Sil.Const (Sil.Cfun pname), method_typ) in
+    Cfg.set_procname_priority context.CContext.cfg pname;
+    (* TODO for static methods we shouldn't return (obj_sil, class_typ) *)
+    { pre_trans_result with exps = [method_exp; (obj_sil, class_typ)] }
+
+  let decl_ref_trans trans_state pre_trans_result stmt_info expr_info decl_ref =
     let open CContext in
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
-    let context = trans_state.context in
-    let pln = trans_state.parent_line_number in
-    let sil_loc = CLocation.get_sil_location stmt_info pln context in
-    let tp = get_type_decl_ref_exp_info decl_ref_expr_info in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv tp in
-    let name = get_name_decl_ref_exp_info decl_ref_expr_info stmt_info in
-    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
-    let pointer = CTrans_utils.get_decl_pointer decl_ref_expr_info in
-    let decl_kind = get_decl_kind decl_ref_expr_info in
+    let decl_kind = decl_ref.Clang_ast_t.dr_kind in
     match decl_kind with
-    | `EnumConstant ->
-        let const_exp = (match CTypes.search_enum_type_by_name context.tenv name with
-            | Some v ->
-                let ce = Sil.Const v in
-                Printing.log_out "   ....Found enum constant '%s', " name;
-                Printing.log_out "replacing with integer '%s' \n" (Sil.exp_to_string ce); ce
-            | None ->
-                Printing.log_out
-                  "WARNING: Found enum constant '%s', but its value was not found in the tenv.\n"
-                  name;
-                (Sil.Const(Sil.Cint Sil.Int.zero))) in
-        { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
-    | `Function ->
-        let pname =
-          if CTrans_models.is_modeled_builtin name then
-            Procname.from_string_c_fun (CFrontend_config.infer ^ name)
-          else CMethod_trans.create_procdesc_with_pointer context pointer None name tp in
-        let address_of_function = not context.CContext.is_callee_expression in
-        (* If we are not translating a callee expression, *)
-        (* then the address of the function is being taken.*)
-        (* As e.g. in fun_ptr = foo; *)
-        let non_mangled_func_name =
-          if name = CFrontend_config.malloc &&
-             (!CFrontend_config.language = CFrontend_config.OBJC ||
-              !CFrontend_config.language = CFrontend_config.OBJCPP) then
-            SymExec.ModelBuiltins.malloc_no_fail
-          else Procname.from_string_c_fun name in
-        let is_builtin = SymExec.function_is_builtin non_mangled_func_name in
-        if is_builtin then (* malloc, free, exit, scanf, ... *)
-          { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)] }
-        else
-          begin
-            if address_of_function then Cfg.set_procname_priority context.cfg pname;
-            { empty_res_trans with exps = [(Sil.Const (Sil.Cfun pname), typ)] }
-          end
-    | `Var | `ImplicitParam | `ParmVar ->
-        let pvar =
-          match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-          | Some decl_ref -> CVar_decl.sil_var_of_decl_ref context decl_ref procname
-          | None -> assert false in
-        let e = Sil.Lvar pvar in
-        let exps =
-          if Self.is_var_self pvar (CContext.is_objc_method context) then
-            let curr_class = CContext.get_curr_class context in
-            if (CTypes.is_class typ) then
-              raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
-            else
-              let typ = CTypes.add_pointer_to_typ
-                  (CTypes_decl.get_type_curr_class context.tenv curr_class) in
-              [(e, typ)]
-          else [(e, typ)] in
-        Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
-        let res_trans = { empty_res_trans with exps = exps } in
-        if CTypes.is_reference_type tp then
-        (* dereference pvar due to the behavior of reference types in clang's AST *)
-          dereference_value_from_result sil_loc res_trans
-        else res_trans
+    | `EnumConstant -> enum_constant_trans trans_state decl_ref
+    | `Function -> function_deref_trans trans_state decl_ref
+    | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
+    | `Field | `ObjCIvar -> field_deref_trans trans_state pre_trans_result decl_ref
+    | `CXXMethod -> method_deref_trans trans_state pre_trans_result decl_ref
     | _ ->
         let print_error decl_kind =
           Printing.log_stats
             "Warning: Decl ref expression %s with pointer %s still needs to be translated "
             (Clang_ast_j.string_of_decl_kind decl_kind)
-            pointer in
-        match decl_kind with
-        | `CXXMethod -> print_error decl_kind; assert false
-        | _ -> print_error decl_kind; assert false
+            decl_ref.Clang_ast_t.dr_decl_pointer in
+        print_error decl_kind; assert false
+
+  let declRefExpr_trans trans_state stmt_info expr_info decl_ref_expr_info e =
+    let open CContext in
+    Printing.log_out "  priority node free = '%s'\n@."
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
+    let decl_ref = match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+      | Some dr -> dr
+      | None -> assert false in
+    decl_ref_trans trans_state empty_res_trans stmt_info expr_info decl_ref
 
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let context = trans_state.context in
@@ -1569,40 +1630,10 @@ struct
 
   (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
   and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =
-    let context = trans_state.context in
-    let field_name = match decl_ref.Clang_ast_t.dr_name with
-      | Some s -> s
-      | _ -> assert false in
-    let field_tp = match decl_ref.Clang_ast_t.dr_type_ptr with
-      | Some t -> t
-      | _ -> assert false in
-    let field_typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv field_tp in
-    Printing.log_out "!!!!! Dealing with field '%s' @." field_name.Clang_ast_t.ni_name;
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
     let result_trans_exp_stmt = instruction trans_state exp_stmt in
-    let (obj_sil, class_typ) = extract_exp_from_list result_trans_exp_stmt.exps
-        "WARNING: in MemberExpr we expect the translation of the stmt to return an expression\n" in
-    let class_typ =
-      (match class_typ with
-       | Sil.Tptr (t, _) -> CTypes.expand_structured_type context.CContext.tenv t
-       | t -> t) in
-    match decl_ref.Clang_ast_t.dr_kind with
-    | `Field | `ObjCIvar ->
-        Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
-        let fn = General_utils.mk_class_field_name field_name in
-        let exp = Sil.Lfield (obj_sil, fn, class_typ) in
-        { result_trans_exp_stmt with exps = [(exp, field_typ)] }
-    | `CXXMethod ->
-        (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
-        let class_name = match class_typ with Sil.Tptr (t, _) | t -> CTypes.classname_of_type t in
-        let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
-        let pname = CMethod_trans.create_procdesc_with_pointer context pointer (Some class_name)
-            field_name.Clang_ast_t.ni_name field_tp in
-        let method_exp = (Sil.Const (Sil.Cfun pname), field_typ) in
-        Cfg.set_procname_priority context.CContext.cfg pname;
-        { result_trans_exp_stmt with exps = [method_exp; (obj_sil, class_typ)] }
-    | _ -> assert false
+    decl_ref_trans trans_state result_trans_exp_stmt stmt_info expr_info decl_ref
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in

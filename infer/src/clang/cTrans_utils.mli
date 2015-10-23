@@ -69,14 +69,6 @@ val compute_instr_ids_exp_to_parent :
   Sil.exp -> Sil.typ -> Location.t -> priority_node ->
   Sil.instr list * Ident.t list * (Sil.exp * Sil.typ) list
 
-val get_name_decl_ref_exp_info : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.stmt_info -> string
-
-val get_type_decl_ref_exp_info : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.type_ptr
-
-val get_decl_kind : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.decl_kind
-
-val get_decl_pointer : Clang_ast_t.decl_ref_expr_info -> Clang_ast_t.pointer
-
 val is_enumeration_constant : Clang_ast_t.stmt -> bool
 
 val is_member_exp : Clang_ast_t.stmt -> bool
@@ -102,6 +94,9 @@ val is_owning_name : string -> bool
 val is_method_call : Clang_ast_t.stmt -> bool
 
 val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
+
+val get_info_from_decl_ref : Clang_ast_t.decl_ref ->
+  Clang_ast_t.named_decl_info * Clang_ast_t.pointer * Clang_ast_t.type_ptr
 
 val get_decl_ref_info : Clang_ast_t.stmt -> int -> Clang_ast_t.decl_ref * int
 

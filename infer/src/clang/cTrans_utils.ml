@@ -461,49 +461,10 @@ let fix_param_exps_mismatch params_stmt exps_param =
   let exps'= exps_param @ (Array.to_list args) in
   exps'
 
-let get_name_decl_ref_exp_info decl_ref_expr_info si =
-  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-  | Some d -> (match d.Clang_ast_t.dr_name with
-      | Some n -> n.Clang_ast_t.ni_name
-      | _ -> assert false)
-  | _ -> L.err "FAILING WITH %s pointer=%s@.@."
-           (Clang_ast_j.string_of_decl_ref_expr_info decl_ref_expr_info )
-           (Clang_ast_j.string_of_stmt_info si); assert false
-
-let get_type_decl_ref_exp_info decl_ref_expr_info =
-  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-  | Some d -> (match d.Clang_ast_t.dr_type_ptr with
-      | Some ptr -> ptr
-      | _ -> assert false)
-  | _ -> assert false
-
 let is_superinstance mei =
   match mei.Clang_ast_t.omei_receiver_kind with
   | `SuperInstance -> true
   | _ -> false
-
-let get_name_decl_ref_exp stmt =
-  match stmt with
-  | `DeclRefExpr(si, _, _, drei) ->
-      get_name_decl_ref_exp_info drei si
-  | _ -> assert false
-
-(* given the type of the enumeration and an enumeration constant (defined  *)
-(* by stmt), returns the associated value                                  *)
-let get_value_enum_constant tenv enum_type stmt =
-  let constant = get_name_decl_ref_exp stmt in
-  let typename = Sil.TN_enum(Mangled.from_string enum_type) in
-  match Sil.tenv_lookup tenv typename with
-  | Some (Sil.Tenum enum_constants) ->
-      Printing.log_out ">>>Found enum with typename TN_typename('%s')\n" (Sil.typename_to_string typename);
-      let _, v = try
-          IList.find (fun (c, _) -> Mangled.equal c (Mangled.from_string constant)) enum_constants
-        with _ -> (Printing.log_err
-                     "Enumeration constant '%s' not found. Cannot continue...\n" constant; assert false) in
-      v
-  | _ -> Printing.log_err
-           "Enum type '%s' not found in tenv. Cannot continue...\n" (Sil.typename_to_string typename);
-      assert false
 
 let get_selector_receiver obj_c_message_expr_info =
   obj_c_message_expr_info.Clang_ast_t.omei_selector, obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind
@@ -594,16 +555,6 @@ struct
 
 end
 
-let get_decl_kind decl_ref_expr_info =
-  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-  | Some decl_ref -> decl_ref.Clang_ast_t.dr_kind
-  | None -> assert false
-
-let get_decl_pointer decl_ref_expr_info =
-  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-  | Some decl_ref -> decl_ref.Clang_ast_t.dr_decl_pointer
-  | None -> assert false
-
 (* From the manual: A selector is in a certain selector family if, ignoring any leading underscores, *)
 (* the first component of the selector either consists entirely of the name of *)
 (* the method family or it begins with that followed by character other than lower case letter.*)
@@ -644,6 +595,12 @@ let rec is_method_call s =
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
       | [] -> false
       | s'':: _ -> is_method_call s'')
+
+let get_info_from_decl_ref decl_ref =
+  let name_info = match decl_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
+  let decl_ptr = decl_ref.Clang_ast_t.dr_decl_pointer in
+  let type_ptr = match decl_ref.Clang_ast_t.dr_type_ptr with Some tp -> tp | _ -> assert false in
+  name_info, decl_ptr, type_ptr
 
 let rec get_decl_ref_info s parent_line_number =
   match s with
@@ -694,6 +651,11 @@ let is_dispatch_function stmt_list =
                 )
             | _ -> None))
   | _ -> None
+
+let get_decl_pointer decl_ref_expr_info =
+  match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+  | Some decl_ref -> decl_ref.Clang_ast_t.dr_decl_pointer
+  | None -> assert false
 
 let rec pointer_of_call_expr stmt =
   let open Clang_ast_t in
