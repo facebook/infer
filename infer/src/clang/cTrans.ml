@@ -714,32 +714,22 @@ struct
            | [ret_id'] -> { res_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
            | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
-  and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
+  and cxx_method_construct_call_trans trans_state_pri result_trans_callee fun_stmt params_stmt
+      si expr_info =
     let open CContext in
-    let pln = trans_state.parent_line_number in
-    let context = trans_state.context in
+    let pln = trans_state_pri.parent_line_number in
+    let line_number = CLocation.get_line si pln in
+    let context = trans_state_pri.context in
     let function_type = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location si pln context in
-    (* First stmt is the method+this expr and the rest are params *)
-    let fun_exp_stmt, params_stmt = (match stmt_list with
-        | fe :: params -> fe, params
-        | _ -> assert false) in
-    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-    (* claim priority if no ancestors has claimed priority before *)
-    let line_number = CLocation.get_line si pln in
-    let trans_state_callee = { trans_state_pri with
-                               parent_line_number = line_number;
-                               succ_nodes = [] } in
-    let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
-
     (* first for method address, second for 'this' expression *)
     assert ((IList.length result_trans_callee.exps) = 2);
     let (sil_method, typ_method) = IList.hd result_trans_callee.exps in
     let callee_pname = match sil_method with
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
-    let params_stmt = CTrans_utils.assign_default_params params_stmt fun_exp_stmt in
+    let params_stmt = CTrans_utils.assign_default_params params_stmt fun_stmt in
     (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)
     (* afterwards. The 'instructions' function does not do that          *)
@@ -764,7 +754,6 @@ struct
     let ids = result_trans_params.ids @ ret_id in
     let instrs = result_trans_params.instrs @ [call_instr] in
     let res_trans_tmp = { result_trans_params with ids = ids; instrs = instrs; exps =[] } in
-
     let nname = "Call " ^ (Sil.exp_to_string sil_method) in
     let result_trans_to_parent =
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp in
@@ -773,6 +762,22 @@ struct
     | [] -> { result_trans_to_parent with exps = [] }
     | [ret_id'] -> { result_trans_to_parent with exps = [(Sil.Var ret_id', function_type)] }
     | _ -> assert false (* by construction of red_id, we cannot be in this case *)
+
+  and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
+    let pln = trans_state.parent_line_number in
+    (* First stmt is the method+this expr and the rest are params *)
+    let fun_exp_stmt, params_stmt = (match stmt_list with
+        | fe :: params -> fe, params
+        | _ -> assert false) in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+    (* claim priority if no ancestors has claimed priority before *)
+    let line_number = CLocation.get_line si pln in
+    let trans_state_callee = { trans_state_pri with
+                               parent_line_number = line_number;
+                               succ_nodes = [] } in
+    let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
+    cxx_method_construct_call_trans trans_state_pri result_trans_callee fun_exp_stmt params_stmt
+      si expr_info
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
     Printing.log_out "  priority node free = '%s'\n@."
