@@ -1821,7 +1821,7 @@ struct
       let instr = Sil.Letderef (id, Sil.Lvar (Sil.mk_pvar cvar procname), typ, loc) in
       (id, instr) in
     match decl with
-    | Clang_ast_t.BlockDecl (decl_info, decl_list, decl_context_info, block_decl_info) ->
+    | Clang_ast_t.BlockDecl (decl_info, block_decl_info) ->
         let open CContext in
         let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
         let block_pname = CFrontend_utils.General_utils.mk_fresh_block_procname procname in

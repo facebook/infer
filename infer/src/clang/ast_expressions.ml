@@ -665,7 +665,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     | _ -> assert false in
   let open Clang_ast_t in
   match stmt_list with
-  | [s; BlockExpr (_, _, bei, BlockDecl (_, _, _, bdi)) as be] ->
+  | [s; BlockExpr (_, _, bei, BlockDecl (_, bdi)) as be] ->
       let block_decl, bv = make_block_decl be in
       let vars_to_register = get_name_pointers bdi.bdi_parameters in
       let translated_stmt, op = translate bdi.bdi_parameters s block_decl bei.ei_type_ptr in

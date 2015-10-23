@@ -222,6 +222,10 @@ end = struct
 end
 
 
+let ctor_initializer_process_locs loc_composer ctor_init =
+  let range' = LocComposer.compose loc_composer ctor_init.Clang_ast_t.xci_source_range in
+  { ctor_init with Clang_ast_t.xci_source_range = range'}
+
 (** Apply a location composer to the locations in a statement. *)
 let rec stmt_process_locs loc_composer stmt =
   let update (stmt_info, stmt_list) =
@@ -265,7 +269,10 @@ and decl_process_locs loc_composer decl =
     (decl_info', name, tp, fdecl_info') in
   let get_updated_method_decl (decl_info', name, tp, fdecl_info, method_info) =
     let di', n', tp', fdi' = get_updated_fun_decl (decl_info', name, tp, fdecl_info) in
-    (di', n', tp', fdi', method_info) in
+    let ctor_init = method_info.xmdi_cxx_ctor_initializers in
+    let ctor_init' = IList.map (ctor_initializer_process_locs loc_composer) ctor_init in
+    let method_info' = { method_info with xmdi_cxx_ctor_initializers = ctor_init'} in
+    (di', n', tp', fdi', method_info') in
   match decl' with
   | FunctionDecl fun_info -> FunctionDecl (get_updated_fun_decl fun_info)
   | CXXMethodDecl meth_info -> CXXMethodDecl (get_updated_method_decl meth_info)

@@ -139,7 +139,7 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       let ms = build_method_signature decl_info procname method_decl false is_generated in
       let extra_instrs = get_assume_not_null_calls ms mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
-  | BlockDecl (decl_info, decl_list, decl_context_info, bdi),
+  | BlockDecl (decl_info, bdi),
     Some (outer_context, tp, procname, _), _ ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
       let ms = build_method_signature decl_info procname func_decl true false in
