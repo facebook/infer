@@ -10,8 +10,6 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-int g;
-
 @interface My_manager :NSObject
 - (int) my_mehtod;
 
@@ -19,14 +17,13 @@ int g;
 
 @implementation My_manager
 
-- (int) my_mehtod
+- (int) m
 {
-    g=7;
     void (^b)(int a);
-    int z=3;
-    CGContextRef context = CGBitmapContextCreate(NULL,0, 0, 8, 0, 0, 0);
+    int z = 3;
+    CGContextRef context = CGBitmapContextCreate(NULL, 0, 0, 8, 0, 0, 0);
     CGImageRef newImage = CGBitmapContextCreateImage(context);
-    b=^(int a){
+    b = ^(int a) {
         if (newImage) CGImageRelease(newImage);
     };
     b(z);
