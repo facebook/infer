@@ -56,4 +56,11 @@ public class NestedOperatorsTest {
     frontendTest("assign_in_condition.cpp");
   }
 
+  @Test
+  public void whenCaptureRunAssignWithIncrementThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+    // .dot file differs, but it's semantically equivalent to one produced by
+    // C compiler
+    frontendTest("assign_with_increment.cpp");
+  }
 }

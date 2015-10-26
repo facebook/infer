@@ -64,6 +64,12 @@ public class ReferenceTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("nested_assignment.cpp");
   }
+
+  @Test
+  public void testIncrementDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("increment.cpp");
+  }
   
   @Test
   public void testReferenceTypeE2EDotFilesMatch()
