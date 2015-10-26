@@ -29,7 +29,11 @@ let add_predefined_objc_types tenv =
     Sil.TN_csu (Sil.Struct, Mangled.from_string CFrontend_config.objc_object) in
   let id_typedef = Sil.Tvar (typename_objc_object) in
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
-  Sil.tenv_add tenv id_typename id_typedef
+  Sil.tenv_add tenv id_typename id_typedef;
+  let objc_object_type_info =
+    Sil.Tstruct ([], [], Sil.Struct,
+                 Some (Mangled.from_string CFrontend_config.objc_object), [], [], []) in
+  Sil.tenv_add tenv typename_objc_object objc_object_type_info
 
 (* Whenever new type are added manually to the translation in ast_expressions, *)
 (* they should be added here too!! *)

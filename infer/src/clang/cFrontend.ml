@@ -38,7 +38,6 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   (* Currently C/C++ record decl treated in the same way *)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
   | RecordDecl (_, _, _, _, decl_list, _, _) ->
-      ignore (CTypes_decl.add_types_from_decl_to_tenv tenv namespace dec);
       let method_decls = CTypes_decl.get_method_decls dec decl_list in
       let tranlate_method (parent, decl) =
         translate_one_declaration tenv cg cfg namespace parent decl in
