@@ -17,7 +17,7 @@ platform=`uname`
 
 # Build Infer
 cd $INFER_DIR && make
-
+     请问v
 VERSION=$($INFER_DIR/bin/infer --version 2>&1 | head -1 | awk '{print $3}')
 if [ $platform == 'Darwin' ]; then
     BINARY_DIR=infer-osx-$VERSION
