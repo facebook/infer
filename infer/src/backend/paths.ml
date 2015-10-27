@@ -35,7 +35,7 @@ module Path : sig
   val create_loc_trace : t -> Sil.path_pos option -> Errlog.loc_trace
 
   (** return the current node of the path *)
-  val curr_node : t -> Cfg.node
+  val curr_node : t -> Cfg.node option
 
   (** dump a path *)
   val d : t -> unit
@@ -115,10 +115,11 @@ end = struct
     stats.linear_num <- - 1.0
 
   let rec curr_node = function
-    | Pstart (node, _) -> node
-    | Pnode (node, _, _, _, _, _) -> node
+    | Pstart (node, _) -> Some node
+    | Pnode (node, _, _, _, _, _) -> Some node
     | Pcall(p1, _, _, _) -> curr_node p1
-    | Pjoin _ -> assert false
+    | Pjoin _ ->
+        None
 
   let exname_opt_compare eo1 eo2 = match eo1, eo2 with
     | None, None -> 0
@@ -306,8 +307,10 @@ end = struct
       | Some pos -> Sil.path_pos_equal (get_path_pos node) pos in
     let path_pos_at_path p =
       try
-        let node = curr_node p in
-        pos_opt <> None && filter node
+        match curr_node p with
+        | Some node ->
+            pos_opt <> None && filter node
+        | None -> false
       with exn when exn_not_timeout exn -> false in
     let position_seen = ref false in
     let inverse_sequence =
@@ -333,12 +336,17 @@ end = struct
   (** return the node visited most, and number of visits, in the longest linear sequence *)
   let repetitions path =
     let map = ref NodeMap.empty in
-    let add_node node =
-      try
-        let n = NodeMap.find node !map in
-        map := NodeMap.add node (n + 1) !map
-      with Not_found ->
-        map := NodeMap.add node 1 !map in
+    let add_node = function
+      | Some node ->
+          begin
+            try
+              let n = NodeMap.find node !map in
+              map := NodeMap.add node (n + 1) !map
+            with Not_found ->
+              map := NodeMap.add node 1 !map
+          end
+      | None ->
+          () in
     iter_longest_sequence (fun level p s exn_opt -> add_node (curr_node p)) None path;
     let max_rep_node = ref (Cfg.Node.dummy ()) in
     let max_rep_num = ref 0 in
@@ -423,51 +431,69 @@ end = struct
         Errlog.lt_description = descr;
         Errlog.lt_node_tags = node_tags } in
     let g level path session exn_opt =
-      let curr_node = curr_node path in
-      let curr_loc = Cfg.Node.get_loc curr_node in
-      match Cfg.Node.get_kind curr_node with
-      | Cfg.Node.Join_node -> () (* omit join nodes from error traces *)
-      | Cfg.Node.Start_node pdesc ->
-          let pname = Cfg.Procdesc.get_proc_name pdesc in
-          let name = Procname.to_string pname in
-          let name_id = Procname.to_filename pname in
-          let descr = "start of procedure " ^ (Procname.to_simplified_string pname) in
-          let node_tags = [(Io_infer.Xml.tag_kind,"procedure_start"); (Io_infer.Xml.tag_name, name); (Io_infer.Xml.tag_name_id, name_id)] in
-          trace := mk_trace_elem level curr_loc descr node_tags :: !trace
-      | Cfg.Node.Prune_node (is_true_branch, if_kind, _) ->
-          let descr = match is_true_branch, if_kind with
-            | true, Sil.Ik_if -> "Taking true branch"
-            | false, Sil.Ik_if -> "Taking false branch"
-            | true, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) -> "Loop condition is true. Entering loop body"
-            | false, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) -> "Loop condition is false. Leaving loop"
-            | true, Sil.Ik_switch -> "Switch condition is true. Entering switch case"
-            | false, Sil.Ik_switch -> "Switch condition is false. Skipping switch case"
-            | true, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is true"
-            | false, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is false" in
-          let node_tags = [(Io_infer.Xml.tag_kind,"condition"); (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
-          trace := mk_trace_elem level curr_loc descr node_tags :: !trace
-      | Cfg.Node.Exit_node pdesc ->
-          let pname = Cfg.Procdesc.get_proc_name pdesc in
-          let descr = "return from a call to " ^ (Procname.to_string pname) in
-          let name = Procname.to_string pname in
-          let name_id = Procname.to_filename pname in
-          let node_tags = [(Io_infer.Xml.tag_kind,"procedure_end"); (Io_infer.Xml.tag_name, name); (Io_infer.Xml.tag_name_id, name_id)] in
-          trace := mk_trace_elem level curr_loc descr node_tags :: !trace
-      | _ ->
-          let descr, node_tags =
-            match exn_opt with
-            | None -> "", []
-            | Some exn_name ->
-                let exn_str = Mangled.to_string exn_name in
-                if exn_str = ""
-                then "exception", [(Io_infer.Xml.tag_kind,"exception")]
-                else "exception " ^ exn_str, [(Io_infer.Xml.tag_kind,"exception"); (Io_infer.Xml.tag_name, exn_str)] in
-          let descr =
-            match get_description path with
-            | Some path_descr ->
-                if String.length descr > 0 then descr^" "^path_descr else path_descr
-            | None -> descr in
-          trace := mk_trace_elem level curr_loc descr node_tags :: !trace in
+      match curr_node path with
+      | Some curr_node ->
+          begin
+            let curr_loc = Cfg.Node.get_loc curr_node in
+            match Cfg.Node.get_kind curr_node with
+            | Cfg.Node.Join_node -> () (* omit join nodes from error traces *)
+            | Cfg.Node.Start_node pdesc ->
+                let pname = Cfg.Procdesc.get_proc_name pdesc in
+                let name = Procname.to_string pname in
+                let name_id = Procname.to_filename pname in
+                let descr = "start of procedure " ^ (Procname.to_simplified_string pname) in
+                let node_tags =
+                  [(Io_infer.Xml.tag_kind,"procedure_start");
+                   (Io_infer.Xml.tag_name, name);
+                   (Io_infer.Xml.tag_name_id, name_id)] in
+                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+            | Cfg.Node.Prune_node (is_true_branch, if_kind, _) ->
+                let descr = match is_true_branch, if_kind with
+                  | true, Sil.Ik_if -> "Taking true branch"
+                  | false, Sil.Ik_if -> "Taking false branch"
+                  | true, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) ->
+                      "Loop condition is true. Entering loop body"
+                  | false, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) ->
+                      "Loop condition is false. Leaving loop"
+                  | true, Sil.Ik_switch -> "Switch condition is true. Entering switch case"
+                  | false, Sil.Ik_switch -> "Switch condition is false. Skipping switch case"
+                  | true, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is true"
+                  | false, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is false" in
+                let node_tags =
+                  [(Io_infer.Xml.tag_kind,"condition");
+                   (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
+                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+            | Cfg.Node.Exit_node pdesc ->
+                let pname = Cfg.Procdesc.get_proc_name pdesc in
+                let descr = "return from a call to " ^ (Procname.to_string pname) in
+                let name = Procname.to_string pname in
+                let name_id = Procname.to_filename pname in
+                let node_tags =
+                  [(Io_infer.Xml.tag_kind,"procedure_end");
+                   (Io_infer.Xml.tag_name, name);
+                   (Io_infer.Xml.tag_name_id, name_id)] in
+                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+            | _ ->
+                let descr, node_tags =
+                  match exn_opt with
+                  | None -> "", []
+                  | Some exn_name ->
+                      let exn_str = Mangled.to_string exn_name in
+                      if exn_str = ""
+                      then "exception", [(Io_infer.Xml.tag_kind,"exception")]
+                      else
+                        "exception " ^ exn_str,
+                        [(Io_infer.Xml.tag_kind,"exception");
+                         (Io_infer.Xml.tag_name, exn_str)] in
+                let descr =
+                  match get_description path with
+                  | Some path_descr ->
+                      if String.length descr > 0 then descr^" "^path_descr else path_descr
+                  | None -> descr in
+                trace := mk_trace_elem level curr_loc descr node_tags :: !trace
+          end
+      | None ->
+          () in
     iter_longest_sequence g pos_opt path;
     let compare lt1 lt2 =
       let n = int_compare lt1.Errlog.lt_level lt2.Errlog.lt_level in

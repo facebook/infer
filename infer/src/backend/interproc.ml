@@ -138,22 +138,26 @@ let path_set_checkout_todo (node: Cfg.node) : Paths.PathSet.t =
 (* =============== START: Print a complete path in a dotty file =============== *)
 
 let pp_path_dotty f path =
-  let get_node_id_from_path p =
-    let node = Paths.Path.curr_node p in
-    Cfg.Node.get_id node in
   let count = ref 0 in
   let prev_n_id = ref 0 in
   let curr_n_id = ref 0 in
   prev_n_id:=- 1;
-  let g level p session exn_opt =
-    let curr_node = Paths.Path.curr_node p in
-    let curr_path_set = htable_retrieve path_set_visited (Cfg.Node.get_id curr_node) in
-    let plist = Paths.PathSet.filter_path p curr_path_set in
-    incr count;
-    curr_n_id:= (get_node_id_from_path p);
-    Dotty.pp_dotty_prop_list_in_path f plist !prev_n_id !curr_n_id;
-    L.out "@.Path #%d: %a@." !count Paths.Path.pp p;
-    prev_n_id:=!curr_n_id in
+  let get_node_id_from_path p = match Paths.Path.curr_node p with
+    | Some node ->
+        Cfg.Node.get_id node
+    | None ->
+        !curr_n_id in
+  let g level p session exn_opt = match Paths.Path.curr_node p with
+    | Some curr_node ->
+        let curr_path_set = htable_retrieve path_set_visited (Cfg.Node.get_id curr_node) in
+        let plist = Paths.PathSet.filter_path p curr_path_set in
+        incr count;
+        curr_n_id := get_node_id_from_path p;
+        Dotty.pp_dotty_prop_list_in_path f plist !prev_n_id !curr_n_id;
+        L.out "@.Path #%d: %a@." !count Paths.Path.pp p;
+        prev_n_id:=!curr_n_id
+    | None ->
+        () in
   L.out "@.@.Printing Path: %a to file error_path.dot@." Paths.Path.pp path;
   Dotty.reset_proposition_counter ();
   Dotty.reset_dotty_spec_counter ();
@@ -335,18 +339,20 @@ let reset_prop_metrics () =
 let d_path (path, pos_opt) =
   let step = ref 0 in
   let prop_last_step = ref Prop.prop_emp in (* if the last step had a singleton prop, store it here *)
-  let f level p session exn_opt =
-    let curr_node = Paths.Path.curr_node p in
-    let curr_path_set = htable_retrieve path_set_visited (Cfg.Node.get_id curr_node) in
-    let plist = Paths.PathSet.filter_path p curr_path_set in
-    incr step;
-    (* Propset.pp_proplist_dotty_file ("path" ^ (string_of_int !count) ^ ".dot") plist; *)
-    L.d_strln ("Path Step #" ^ string_of_int !step ^
-               " node " ^ string_of_int (Cfg.Node.get_id curr_node) ^
-               " session " ^ string_of_int session ^ ":");
-    Propset.d !prop_last_step (Propset.from_proplist plist); L.d_ln ();
-    Cfg.Node.d_instrs true None curr_node; L.d_ln (); L.d_ln ();
-    prop_last_step := (match plist with | [prop] -> prop | _ -> Prop.prop_emp) in
+  let f level p session exn_opt = match Paths.Path.curr_node p with
+    | Some curr_node ->
+        let curr_path_set = htable_retrieve path_set_visited (Cfg.Node.get_id curr_node) in
+        let plist = Paths.PathSet.filter_path p curr_path_set in
+        incr step;
+        (* Propset.pp_proplist_dotty_file ("path" ^ (string_of_int !count) ^ ".dot") plist; *)
+        L.d_strln ("Path Step #" ^ string_of_int !step ^
+                   " node " ^ string_of_int (Cfg.Node.get_id curr_node) ^
+                   " session " ^ string_of_int session ^ ":");
+        Propset.d !prop_last_step (Propset.from_proplist plist); L.d_ln ();
+        Cfg.Node.d_instrs true None curr_node; L.d_ln (); L.d_ln ();
+        prop_last_step := (match plist with | [prop] -> prop | _ -> Prop.prop_emp)
+    | None ->
+        () in
   L.d_str "Path: "; Paths.Path.d_stats path; L.d_ln ();
   Paths.Path.d path; L.d_ln ();
   (* pp_complete_path_dotty_file path; *)

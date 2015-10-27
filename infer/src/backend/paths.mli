@@ -31,7 +31,7 @@ module Path : sig
   val create_loc_trace : t -> Sil.path_pos option -> Errlog.loc_trace
 
   (** return the current node of the path *)
-  val curr_node : t -> Cfg.node
+  val curr_node : t -> Cfg.node option
 
   (** dump a path *)
   val d : t -> unit

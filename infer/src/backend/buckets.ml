@@ -35,11 +35,12 @@ let check_nested_loop path pos_opt =
     incr trace_length;
     (* L.d_strln ("level " ^ string_of_int level ^ " (Cfg.Node.get_id node) " ^ string_of_int nid); *)
     () in
-  let f level p session exn_opt =
-    let node = Paths.Path.curr_node p in
-    do_any_node level node;
-    if level = 0 then do_node_caller node;
-    () in
+  let f level p session exn_opt = match Paths.Path.curr_node p  with
+    | Some node ->
+        do_any_node level node;
+        if level = 0 then do_node_caller node
+    | None ->
+        () in
   Paths.Path.iter_longest_sequence f pos_opt path;
   in_nested_loop ()
 

@@ -826,8 +826,12 @@ let normalize_params pdesc prop actual_params =
   let prop, args = IList.fold_left norm_arg (prop, []) actual_params in
   (prop, IList.rev args)
 
-let do_error_checks node instr pname pdesc =
-  if !Config.curr_language = Config.Java then PrintfArgs.check_printf_args_ok node instr pname pdesc
+let do_error_checks node_opt instr pname pdesc = match node_opt with
+  | Some node ->
+      if !Config.curr_language = Config.Java then
+        PrintfArgs.check_printf_args_ok node instr pname pdesc
+  | None ->
+      ()
 
 (** Execute [instr] with a symbolic heap [prop].*)
 let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
