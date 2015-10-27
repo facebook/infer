@@ -71,6 +71,9 @@ module StringMap : Map.S with type key = string
 (** Type of location in ml source: file,line,column *)
 type ml_location = string * int * int
 
+(** String describing the file of an ml location *)
+val ml_location_file_string : ml_location -> string
+
 (** Turn an ml location into a string *)
 val ml_location_string : ml_location -> string
 

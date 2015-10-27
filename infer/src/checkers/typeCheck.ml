@@ -587,7 +587,13 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
         | [id] ->
             let (ia, ret_typ) = annotated_signature.Annotations.ret in
             let is_library = Specs.proc_is_library callee_attributes in
-            let origin = TypeOrigin.Proc (callee_pname, loc', annotated_signature, is_library) in
+            let origin = TypeOrigin.Proc
+                {
+                  TypeOrigin.pname = callee_pname;
+                  loc = loc';
+                  annotated_signature;
+                  is_library;
+                } in
             TypeState.add_id
               id
               (

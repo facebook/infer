@@ -16,7 +16,12 @@ open Utils
 
 
 type proc_origin =
-  Procname.t * Location.t * Annotations.annotated_signature * bool (* is_library *)
+  {
+    pname : Procname.t;
+    loc: Location.t;
+    annotated_signature : Annotations.annotated_signature;
+    is_library : bool;
+  }
 
 type t =
   | Const of Location.t
@@ -26,6 +31,12 @@ type t =
   | New
   | ONone
   | Undef
+
+let proc_origin_equal po1 po2 =
+  Procname.equal po1.pname po2.pname &&
+  Location.equal po1.loc po2.loc &&
+  Annotations.equal po1.annotated_signature po2.annotated_signature &&
+  bool_equal po1.is_library po2.is_library
 
 let equal o1 o2 = match o1, o2 with
   | Const loc1, Const loc2 ->
@@ -41,11 +52,8 @@ let equal o1 o2 = match o1, o2 with
       string_equal s1 s2
   | Formal _, _
   | _, Formal _ -> false
-  | Proc (pn1, loc1, as1, b1), Proc (pn2, loc2, as2, b2) ->
-      Procname.equal pn1 pn2 &&
-      Location.equal loc1 loc2 &&
-      Annotations.equal as1 as2 &&
-      bool_equal b1 b2
+  | Proc po1 , Proc po2 ->
+      proc_origin_equal po1 po2
   | Proc _, _
   | _, Proc _ -> false
   | New, New -> true
@@ -60,10 +68,10 @@ let to_string = function
   | Const loc -> "Const"
   | Field (fn, loc) -> "Field " ^ Ident.fieldname_to_simplified_string fn
   | Formal s -> "Formal " ^ s
-  | Proc (pname, _, _, _) ->
+  | Proc po ->
       Printf.sprintf
         "Fun %s"
-        (Procname.to_simplified_string pname)
+        (Procname.to_simplified_string po.pname)
   | New -> "New"
   | ONone -> "ONone"
   | Undef -> "Undef"
@@ -78,20 +86,25 @@ let get_description origin =
       Some ("field " ^ Ident.fieldname_to_simplified_string fn ^ atline loc, Some loc, None)
   | Formal s ->
       Some ("method parameter " ^ s, None, None)
-  | Proc (pname, loc, signature, is_library) ->
-      let strict = match TypeErr.Strict.signature_get_strict signature with
+  | Proc po ->
+      let strict = match TypeErr.Strict.signature_get_strict po.annotated_signature with
         | Some ann ->
             let str = "@Strict" in
             (match ann.Sil.parameters with
              | par1 :: _ -> Printf.sprintf "%s(%s) " str par1
              | [] -> Printf.sprintf "%s " str)
         | None -> "" in
+      let modelled_in =
+        if Models.is_modelled_nullable po.pname
+        then " modelled in " ^ (Utils.ml_location_file_string ModelTables.ml_location)
+        else "" in
       let description = Printf.sprintf
-          "call to %s%s %s"
+          "call to %s%s%s%s"
           strict
-          (Procname.to_simplified_string pname)
-          (atline loc) in
-      Some (description, Some loc, Some signature)
+          (Procname.to_simplified_string po.pname)
+          modelled_in
+          (atline po.loc) in
+      Some (description, Some po.loc, Some po.annotated_signature)
   | New
   | ONone
   | Undef -> None

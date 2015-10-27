@@ -83,8 +83,8 @@ let join ta1 ta2 =
 let get_origin ta = ta.origin
 
 let origin_is_fun_library ta = match get_origin ta with
-  | TypeOrigin.Proc (pname, _, _, is_library) ->
-      is_library
+  | TypeOrigin.Proc proc_origin ->
+      proc_origin.TypeOrigin.is_library
   | _ -> false
 
 let descr_origin ta : TypeErr.origin_descr =

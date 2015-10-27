@@ -240,9 +240,13 @@ let pp_elapsed_time fmt () =
 (** Type of location in ml source: file,line,column *)
 type ml_location = string * int * int
 
+(** String describing the file of an ml location *)
+let ml_location_file_string ((file: string), (line: int), (column: int)) =
+  "file " ^ file
+
 (** Turn an ml location into a string *)
 let ml_location_string ((file: string), (line: int), (column: int)) =
-  "File " ^ file ^ " Line " ^ string_of_int line ^ " Column " ^ string_of_int column
+  "file " ^ file ^ " line " ^ string_of_int line ^ " column " ^ string_of_int column
 
 (** Pretty print a location of ml source *)
 let pp_ml_location fmt mloc =

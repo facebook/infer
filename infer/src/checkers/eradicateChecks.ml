@@ -118,8 +118,8 @@ type from_call =
 let check_condition case_zero find_canonical_duplicate get_proc_desc curr_pname
     node e typ ta true_branch from_call idenv linereader loc instr_ref : unit =
   let is_fun_nonnull ta = match TypeAnnotation.get_origin ta with
-    | TypeOrigin.Proc (_, _, signature, _) ->
-        let (ia, _) = signature.Annotations.ret in
+    | TypeOrigin.Proc proc_origin ->
+        let (ia, _) = proc_origin.TypeOrigin.annotated_signature.Annotations.ret in
         Annotations.ia_is_nonnull ia
     | _ -> false in
 

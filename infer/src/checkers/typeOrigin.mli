@@ -7,9 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-
-type proc_origin = (** Case Proc *)
-  Procname.t * Location.t * Annotations.annotated_signature * bool (* is_library *)
+(** Case Proc *)
+type proc_origin =
+  {
+    pname : Procname.t;
+    loc: Location.t;
+    annotated_signature : Annotations.annotated_signature;
+    is_library : bool;
+  }
 
 type t =
   | Const of Location.t (** A constant in the source *)

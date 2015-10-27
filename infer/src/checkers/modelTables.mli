@@ -7,7 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open Utils
+
 type model_table_t = (string, bool * bool list) Hashtbl.t
+
+(** Location of this file. *)
+val ml_location : ml_location
 
 val annotated_table_nullable : model_table_t
 val annotated_table_present : model_table_t
