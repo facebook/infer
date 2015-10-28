@@ -282,7 +282,8 @@ def should_report(analyzer, row):
         'ASSERTION_FAILURE',
         'ACTIVITY_LEAK',
         'BAD_POINTER_COMPARISON',
-        'CHECKERS_PRINTF_ARGS'
+        # 'CHECKERS_PRINTF_ARGS'
+        # TODO (#8030397): revert this once all the checkers are moved to Infer
     ]
 
     if analyzer in [ERADICATE, CHECKERS, TRACING]:
