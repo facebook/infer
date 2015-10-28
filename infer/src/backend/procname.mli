@@ -25,6 +25,8 @@ type objc_method_kind =
   | Instance_objc_method (* for instance methods in ObjC *)
   | Class_objc_method (* for class methods in ObjC *)
 
+val empty : t
+
 (** Mangled string for method types  *)
 val mangled_of_objc_method_kind : objc_method_kind -> string option
 

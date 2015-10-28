@@ -12,5 +12,11 @@
   ],
   "infer_blacklist_files_containing": [
     "@generated"
+  ],
+  "skip_translation": [
+    {
+      "language": "Java",
+      "source_contains": "_SHOULD_BE_SKIPPED_"
+    }
   ]
 }

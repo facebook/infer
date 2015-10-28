@@ -271,6 +271,7 @@ struct
 
 end (* of module FileOrProcMatcher *)
 
+
 module NeverReturnNull = FileOrProcMatcher(struct
     let json_key = "never_returning_null"
   end)
@@ -278,6 +279,11 @@ module NeverReturnNull = FileOrProcMatcher(struct
 module ProcMatcher = FileOrProcMatcher(struct
     let json_key = "suppress_procedures"
   end)
+
+module SkipTranslationMatcher = FileOrProcMatcher(struct
+    let json_key = "skip_translation"
+  end)
+
 
 let inferconfig () = match !inferconfig_home with
   | Some dir -> Filename.concat dir inferconfig_file
@@ -310,6 +316,7 @@ let make_proc_filter_from_local_config () =
          with Yojson.Json_error _ -> ProcMatcher.default_matcher)
     | None -> ProcMatcher.default_matcher in
   fun pname -> not (filter DB.source_file_empty pname)
+
 
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =

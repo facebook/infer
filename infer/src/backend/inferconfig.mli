@@ -41,5 +41,10 @@ module NeverReturnNull : sig
   val load_matcher : string -> matcher
 end
 
+module SkipTranslationMatcher : sig
+  type matcher = DB.source_file -> Procname.t -> bool
+  val load_matcher : string -> matcher
+end
+
 (** Load the config file and list the files to report on *)
 val test: unit -> unit

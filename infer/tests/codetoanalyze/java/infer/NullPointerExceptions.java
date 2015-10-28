@@ -425,4 +425,9 @@ public class NullPointerExceptions {
     o.toString();
   }
 
+  void shouldNotReportOnSkippedSource() {
+    Object o = SkippedSourceFile.createdBySkippedFile();
+    o.toString();
+  }
+
 }

@@ -63,6 +63,10 @@ type detail_level =
   | NON_VERBOSE
   | SIMPLE
 
+
+let empty = OBJC_BLOCK ""
+
+
 let is_verbose v =
   match v with
   | VERBOSE -> true

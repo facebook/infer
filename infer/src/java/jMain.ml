@@ -81,7 +81,6 @@ let do_source_file
     never_null_matcher linereader classes program tenv source_basename source_file proc_file_map =
   JUtils.log "\nfilename: %s (%s)@."
     (DB.source_file_to_string source_file) source_basename;
-  init_global_state source_file;
   let call_graph, cfg =
     JFrontend.compute_source_icfg
       never_null_matcher linereader classes program tenv source_basename source_file in
@@ -145,10 +144,19 @@ let do_all_files classpath sources classes =
   let program = JClasspath.load_program classpath classes sources in
   let tenv = load_tenv program in
   let linereader = Printer.LineReader.create () in
-  let never_null_matcher = Inferconfig.NeverReturnNull.load_matcher (Inferconfig.inferconfig ()) in
+  let skip_translation_matcher =
+    Inferconfig.SkipTranslationMatcher.load_matcher (Inferconfig.inferconfig ()) in
+  let never_null_matcher =
+    Inferconfig.NeverReturnNull.load_matcher (Inferconfig.inferconfig ()) in
   let proc_file_map =
+    let skip filename =
+      skip_translation_matcher filename Procname.empty in
     StringMap.fold
-      (do_source_file never_null_matcher linereader classes program tenv)
+      (fun basename source_file map ->
+         init_global_state source_file;
+         if skip source_file then map
+         else do_source_file
+             never_null_matcher linereader classes program tenv basename source_file map)
       sources
       Procname.Map.empty in
   if !JConfig.dependency_mode then
