@@ -195,7 +195,8 @@ val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 
 val java_unchecked_exn_desc : Procname.t -> Mangled.t -> string -> error_desc
 
-val desc_activity_leak : Procname.t -> Sil.typ -> Ident.fieldname -> error_desc
+val desc_activity_leak : Procname.t -> Sil.typ -> Ident.fieldname ->
+  (Ident.fieldname option * Sil.typ) list -> error_desc
 
 (* Create human-readable error description for assertion failures *)
 val desc_assertion_failure : Location.t -> error_desc

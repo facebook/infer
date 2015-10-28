@@ -41,7 +41,8 @@ val find_boolean_assignment : Cfg.Node.t -> Sil.pvar -> bool -> Cfg.Node.t optio
 val exp_rv_dexp : Cfg.Node.t -> Sil.exp -> Sil.dexp option
 
 (** Produce a description of a persistent reference to an Android Activity *)
-val explain_activity_leak : Procname.t -> Sil.typ -> Ident.fieldname -> Localise.error_desc
+val explain_activity_leak : Procname.t -> Sil.typ -> Ident.fieldname ->
+  (Ident.fieldname option * Sil.typ) list -> Localise.error_desc
 
 (** Produce a description of a pointer dangerously coerced to a boolean in a comparison *)
 val explain_bad_pointer_comparison : Sil.exp -> Cfg.Node.t -> Location.t -> Localise.error_desc

@@ -483,6 +483,10 @@ val hpred_get_targets : Sil.hpred -> Sil.ExpSet.t
     [exps] *)
 val compute_reachable_hpreds : hpred list -> Sil.ExpSet.t -> Sil.HpredSet.t * Sil.ExpSet.t
 
+(** produce a (fieldname, typ) from one of the [src_exps] to [snk_exp] using [reachable_hpreds] *)
+val get_fld_typ_path : Sil.ExpSet.t -> Sil.exp -> Sil.HpredSet.t ->
+  (Ident.fieldname option * Sil.typ) list
+
 (** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
 val compute_reachable_atoms : Sil.atom list -> Sil.ExpSet.t -> Sil.atom list
 

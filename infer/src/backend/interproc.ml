@@ -612,14 +612,15 @@ let forward_tabulate cfg tenv =
 let report_activity_leaks pname sigma tenv =
   (* report an error if an expression in [activity_exps] is reachable from [field_strexp] *)
   let check_reachable_activity_from_fld (fld_name, fld_strexp) activity_exps =
-    let _, reachable_exps =
-      let fld_exps = Prop.strexp_get_exps fld_strexp in
+    let fld_exps = Prop.strexp_get_exps fld_strexp in
+    let reachable_hpreds, reachable_exps =
       Prop.compute_reachable_hpreds sigma fld_exps in
     (* raise an error if any Activity expression is in [reachable_exps] *)
     IList.iter
       (fun (activity_exp, typ) ->
          if Sil.ExpSet.mem activity_exp reachable_exps then
-           let err_desc = Errdesc.explain_activity_leak pname typ fld_name in
+           let leak_path = Prop.get_fld_typ_path fld_exps activity_exp reachable_hpreds in
+           let err_desc = Errdesc.explain_activity_leak pname typ fld_name leak_path in
            let exn = Exceptions.Activity_leak
                (err_desc, try assert false with Assert_failure x -> x) in
            Reporting.log_error pname exn)

@@ -1553,6 +1553,35 @@ let compute_reachable_hpreds sigma exps =
     else compute_reachable_hpreds_rec sigma (reach', exps') in
   compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, exps)
 
+(** produce a (fieldname, typ) from one of the [src_exps] to [snk_exp] using [reachable_hpreds] *)
+let rec get_fld_typ_path src_exps snk_exp reachable_hpreds =
+  let strexp_matches target_exp = function
+    | (_, Sil.Eexp (e, _)) -> Sil.exp_equal target_exp e
+    | _ -> false in
+  let (snk_exp, path) =
+    Sil.HpredSet.fold
+      (fun hpred (snk_exp, path) -> match hpred with
+         | Sil.Hpointsto (lhs, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
+             (match
+                IList.fold_left
+                  (fun acc fld -> if strexp_matches snk_exp fld then Some fld else acc)
+                  None
+                  flds with
+             | Some (fld, _) -> (lhs, (Some fld, typ) :: path)
+             | None -> (snk_exp, path))
+         | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Sil.Sizeof (typ, _)) ->
+             if IList.exists (fun pair -> strexp_matches snk_exp pair) elems
+             then
+               (* None means "no field name" ~=~ nameless array index *)
+               (lhs, (None, typ) :: path)
+             else (snk_exp, path)
+         | _ -> (snk_exp, path))
+      reachable_hpreds
+      (snk_exp, []) in
+  if Sil.ExpSet.mem snk_exp src_exps then path
+  else get_fld_typ_path src_exps snk_exp reachable_hpreds
+
+
 (** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
 let compute_reachable_atoms pi exps =
   let rec exp_contains = function
