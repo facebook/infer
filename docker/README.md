@@ -1,6 +1,7 @@
 # docker images for Infer
 
-This directory contains a docker file to install Infer within a
+This directory, 'docker/' inside the Infer repo,
+contains a docker file to install Infer within a
 [docker](https://www.docker.com/) container. This can be used to
 quickly try Infer or to deploy Infer.
 
@@ -17,15 +18,16 @@ installation. See the instructions for
 
 This docker file will use the latest
 [released](https://github.com/facebook/infer/releases) version of
-Infer. Simply type "./run.sh" to get a shell inside the docker
-container. It will have built and installed Infer. You can then try
-out Infer on the introductory examples:
+Infer. 
+1. Get docker running, e.g. using Docker Quickstart Terminal.
+2. cd to the directory `docker/`,
+3. Build Infer in docker container and try on an example:
 
 ```sh
-# compiles Infer; this takes a few minutes
+# Build Infer; 20min or so; to be executed from docker/ in the Infer repo
 ./run.sh
 # you should now be inside the docker container with a shell prompt, e.g.
 # "root@5c3b9af90d59:/# "
-cd /infer/examples/android_hello/
+cd infer/examples/android_hello/
 infer -- gradle build
 ```
