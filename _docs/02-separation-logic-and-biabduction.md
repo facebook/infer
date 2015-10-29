@@ -162,7 +162,7 @@ $$
 where the solution picks
 \\(antiframe = r2 \mapsto open\\) and \\(frame = r1 \mapsto closed\\).
 Note that the antiframe is precisely the information missing from the precondition in order for \\(closeResource(r2)\\) to proceed. On the other hand, the frame \\(r1 \mapsto closed\\) is the portion of state not changed by \\(closeResource(r2)\\);
-we can thread that trough to the overall postconditon 
+we can thread that through to the overall postconditon 
 ( as justified by the frame rule), giving us
 <center>
 \\( \lbrace r1 \mapsto open * r2 \mapsto open  \rbrace \\)  
