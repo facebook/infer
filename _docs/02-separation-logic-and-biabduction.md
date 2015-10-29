@@ -155,7 +155,7 @@ putting \\(r2 \mapsto open\\) in the pre. While we are at it we can thread this 
 \\( \lbrace r1 \mapsto closed * r2 \mapsto open\rbrace \\)  
 \\( closeResource(r2) \\)
 </center>
-This information on what to threat backwards can be obtained as the antiframe part of the bi-abduction question
+This information on what to thread backwards can be obtained as the antiframe part of the bi-abduction question
 $$
 r1 \mapsto closed * ?antiframe \vdash r2 \mapsto open * ?frame
 $$
