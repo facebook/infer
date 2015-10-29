@@ -608,29 +608,30 @@ let forward_tabulate cfg tenv =
   done;
   L.d_strln ".... Work list empty. Stop ...."; L.d_ln ()
 
-(** report an error if any Activity is reachable from a static field *)
-let report_activity_leaks pname sigma tenv =
-  (* report an error if an expression in [activity_exps] is reachable from [field_strexp] *)
-  let check_reachable_activity_from_fld (fld_name, fld_strexp) activity_exps =
+
+(** report an error if any Context is reachable from a static field *)
+let report_context_leaks pname sigma tenv =
+  (* report an error if an expression in [context_exps] is reachable from [field_strexp] *)
+  let check_reachable_context_from_fld (fld_name, fld_strexp) context_exps =
     let fld_exps = Prop.strexp_get_exps fld_strexp in
     let reachable_hpreds, reachable_exps =
       Prop.compute_reachable_hpreds sigma fld_exps in
-    (* raise an error if any Activity expression is in [reachable_exps] *)
+    (* raise an error if any Context expression is in [reachable_exps] *)
     IList.iter
-      (fun (activity_exp, typ) ->
-         if Sil.ExpSet.mem activity_exp reachable_exps then
-           let leak_path = Prop.get_fld_typ_path fld_exps activity_exp reachable_hpreds in
-           let err_desc = Errdesc.explain_activity_leak pname typ fld_name leak_path in
-           let exn = Exceptions.Activity_leak
+      (fun (context_exp, typ) ->
+         if Sil.ExpSet.mem context_exp reachable_exps then
+           let leak_path = Prop.get_fld_typ_path fld_exps context_exp reachable_hpreds in
+           let err_desc = Errdesc.explain_context_leak pname typ fld_name leak_path in
+           let exn = Exceptions.Context_leak
                (err_desc, try assert false with Assert_failure x -> x) in
            Reporting.log_error pname exn)
-      activity_exps in
-  (* get the set of pointed-to expressions of type T <: Activity *)
-  let activity_exps =
+      context_exps in
+  (* get the set of pointed-to expressions of type T <: Context *)
+  let context_exps =
     IList.fold_left
       (fun exps hpred -> match hpred with
          | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Sil.Tptr (typ, _), _))
-           when AndroidFramework.is_activity typ tenv ->
+           when AndroidFramework.is_context typ tenv ->
              (exp, typ) :: exps
          | _ -> exps)
       []
@@ -641,7 +642,7 @@ let report_activity_leaks pname sigma tenv =
           IList.iter
             (fun (f_name, f_strexp) ->
                if not (Harness.is_generated_field f_name) then
-                 check_reachable_activity_from_fld (f_name, f_strexp) activity_exps) static_flds
+                 check_reachable_context_from_fld (f_name, f_strexp) context_exps) static_flds
       | _ -> ())
     sigma
 
@@ -702,7 +703,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
       if !Config.curr_language = Config.Java then
-        report_activity_leaks pname (Prop.get_sigma post) tenv;
+        report_context_leaks pname (Prop.get_sigma post) tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None
         else Some (Prop.normalize (Prop.prop_sub sub post), path) in

@@ -30,7 +30,6 @@ type err_kind =
     Kwarning | Kerror | Kinfo
 
 exception Abduction_case_not_implemented of ml_location
-exception Activity_leak of Localise.error_desc * ml_location
 exception Analysis_stops of Localise.error_desc * ml_location option
 exception Array_out_of_bounds_l1 of Localise.error_desc * ml_location
 exception Array_out_of_bounds_l2 of Localise.error_desc * ml_location
@@ -44,6 +43,7 @@ exception Codequery of Localise.error_desc
 exception Comparing_floats_for_equality of Localise.error_desc * ml_location
 exception Condition_is_assignment of Localise.error_desc * ml_location
 exception Condition_always_true_false of Localise.error_desc * bool * ml_location
+exception Context_leak of Localise.error_desc * ml_location
 exception Dangling_pointer_dereference of Sil.dangling_kind option * Localise.error_desc * ml_location
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc
@@ -89,8 +89,8 @@ let recognize_exception exn =
   let err_name, desc, mloco, visibility, severity, force_kind, eclass = match exn with (* all the names of Exn_user errors must be defined in Localise *)
     | Abduction_case_not_implemented mloc ->
         (Localise.from_string "Abduction_case_not_implemented", Localise.no_desc, Some mloc, Exn_developer, Low, None, Nocat)
-    | Activity_leak (desc, _) ->
-        (Localise.activity_leak, desc, None, Exn_user, High, None, Nocat)
+    | Context_leak (desc, _) ->
+        (Localise.context_leak, desc, None, Exn_user, High, None, Nocat)
     | Analysis_stops (desc, mloco) ->
         let visibility = if !Config.analysis_stops then Exn_user else Exn_developer in
         (Localise.analysis_stops, desc, mloco, visibility, Medium, None, Nocat)

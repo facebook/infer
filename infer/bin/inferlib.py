@@ -284,7 +284,7 @@ def should_report(analyzer, row):
         'MEMORY_LEAK',
         'RETAIN_CYCLE',
         'ASSERTION_FAILURE',
-        'ACTIVITY_LEAK',
+        'CONTEXT_LEAK',
         'BAD_POINTER_COMPARISON',
         # 'CHECKERS_PRINTF_ARGS'
         # TODO (#8030397): revert this once all the checkers are moved to Infer

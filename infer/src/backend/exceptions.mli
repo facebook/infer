@@ -30,7 +30,6 @@ type err_kind =
 type err_class = Checker | Prover | Nocat
 
 exception Abduction_case_not_implemented of ml_location
-exception Activity_leak of Localise.error_desc * ml_location
 exception Analysis_stops of Localise.error_desc * ml_location option
 exception Array_of_pointsto of ml_location
 exception Array_out_of_bounds_l1 of Localise.error_desc * ml_location
@@ -44,6 +43,7 @@ exception Codequery of Localise.error_desc
 exception Comparing_floats_for_equality of Localise.error_desc * ml_location
 exception Condition_always_true_false of Localise.error_desc * bool * ml_location
 exception Condition_is_assignment of Localise.error_desc * ml_location
+exception Context_leak of Localise.error_desc * ml_location
 exception Dangling_pointer_dereference of Sil.dangling_kind option * Localise.error_desc * ml_location
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc

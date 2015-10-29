@@ -28,7 +28,7 @@ let to_string s = s
 (** compare two localised strings *)
 let compare (s1: string) (s2: string) = Pervasives.compare s1 s2
 
-let activity_leak = "ACTIVITY_LEAK"
+let context_leak = "CONTEXT_LEAK"
 let analysis_stops = "ANALYSIS_STOPS"
 let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"
 let array_out_of_bounds_l2 = "ARRAY_OUT_OF_BOUNDS_L2"
@@ -365,7 +365,7 @@ let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
     "can throw "^(Mangled.to_string exn_name);
     "whenever "^pre_str], None, [])
 
-let desc_activity_leak pname activity_typ fieldname leak_path : error_desc =
+let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let fld_str = Ident.fieldname_to_string fieldname in
   let leak_root =
     if fld_str = "android.os.Handler.sFakeHandlerQueue"
@@ -377,15 +377,15 @@ let desc_activity_leak pname activity_typ fieldname leak_path : error_desc =
       | (None, typ) -> Sil.typ_to_string typ in
     (* intentionally omit space; [typ_to_string] adds an extra space *)
     acc ^ entry_str ^ " |->\n " in
-  let activity_str = Sil.typ_to_string activity_typ in
+  let context_str = Sil.typ_to_string context_typ in
   let path_str =
     let path_prefix =
       if leak_path = [] then "leaked "
       else (IList.fold_left leak_path_entry_to_str "" leak_path) ^ " leaked " in
-    path_prefix ^ activity_str in
+    path_prefix ^ context_str in
   let preamble =
     let pname_str = Procname.java_get_class pname ^ "." ^ Procname.java_get_method pname in
-    "Activity " ^ activity_str ^ "may leak during method" ^ pname_str ^ ":\n" in
+    "Context " ^ context_str ^ "may leak during method" ^ pname_str ^ ":\n" in
   ([preamble; leak_root; path_str], None, [])
 
 let desc_assertion_failure loc : error_desc =

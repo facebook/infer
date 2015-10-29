@@ -20,19 +20,19 @@ import java.io.IOException;
 import utils.InferException;
 import utils.InferResults;
 
-public class ActivityLeaksTest {
+public class ContextLeaksTest {
 
   public static final String SOURCE_FILE =
-      "infer/tests/codetoanalyze/java/infer/ActivityLeaks.java";
+      "infer/tests/codetoanalyze/java/infer/ContextLeaks.java";
 
-  public static final String ACTIVITY_LEAK = "ACTIVITY_LEAK";
+  public static final String CONTEXT_LEAK = "CONTEXT_LEAK";
 
   private static InferResults inferResults;
 
   @BeforeClass
   public static void loadResults() throws InterruptedException, IOException {
     inferResults = InferResults.loadInferResults(
-        ActivityLeaksTest.class,
+        ContextLeaksTest.class,
         SOURCE_FILE);
   }
 
@@ -48,10 +48,10 @@ public class ActivityLeaksTest {
         "handlerLeak"
     };
     assertThat(
-        "Results should contain " + ACTIVITY_LEAK,
+        "Results should contain " + CONTEXT_LEAK,
         inferResults,
         containsExactly(
-            ACTIVITY_LEAK,
+            CONTEXT_LEAK,
             SOURCE_FILE,
             methods
         )

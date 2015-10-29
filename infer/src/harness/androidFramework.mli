@@ -20,8 +20,8 @@ val typ_is_lifecycle_typ : Sil.typ -> Sil.typ -> Sil.tenv -> bool
 (** return true if [typ] is a known callback class, false otherwise *)
 val is_callback_class : Sil.typ -> Sil.tenv -> bool
 
-(** return true if [typ] <: android.app.Activity *)
-val is_activity : Sil.typ -> Sil.tenv -> bool
+(** return true if [typ] <: android.content.Context *)
+val is_context : Sil.typ -> Sil.tenv -> bool
 
 (** return true if [procname] is a special lifecycle cleanup method *)
 val is_destroy_method : Procname.t -> bool

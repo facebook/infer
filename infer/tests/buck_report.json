@@ -1,33 +1,33 @@
 [
   {
-    "type": "ACTIVITY_LEAK",
-    "procedure": "void ActivityLeaks.directLeak()",
-    "file": "infer/tests/codetoanalyze/java/infer/ActivityLeaks.java"
+    "type": "CONTEXT_LEAK",
+    "procedure": "void ContextLeaks.directLeak()",
+    "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java"
   },
   {
-    "type": "ACTIVITY_LEAK",
-    "procedure": "void ActivityLeaks.indirectLeak()",
-    "file": "infer/tests/codetoanalyze/java/infer/ActivityLeaks.java"
+    "type": "CONTEXT_LEAK",
+    "procedure": "void ContextLeaks.indirectLeak()",
+    "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java"
   },
   {
-    "type": "ACTIVITY_LEAK",
-    "procedure": "void ActivityLeaks.nonStaticInnerClassLeak()",
-    "file": "infer/tests/codetoanalyze/java/infer/ActivityLeaks.java"
+    "type": "CONTEXT_LEAK",
+    "procedure": "void ContextLeaks.nonStaticInnerClassLeak()",
+    "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java"
   },
   {
-    "type": "ACTIVITY_LEAK",
-    "procedure": "void ActivityLeaks.leakAfterInstanceFieldWrite()",
-    "file": "infer/tests/codetoanalyze/java/infer/ActivityLeaks.java"
+    "type": "CONTEXT_LEAK",
+    "procedure": "void ContextLeaks.leakAfterInstanceFieldWrite()",
+    "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java"
   },
   {
-    "type": "ACTIVITY_LEAK",
-    "procedure": "ActivityLeaks$Singleton ActivityLeaks.singletonLeak()",
-    "file": "infer/tests/codetoanalyze/java/infer/ActivityLeaks.java"
+    "type": "CONTEXT_LEAK",
+    "procedure": "ContextLeaks$Singleton ContextLeaks.singletonLeak()",
+    "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java"
   },
   {
-    "type": "ACTIVITY_LEAK",
-    "procedure": "void ActivityLeaks.handlerLeak()",
-    "file": "infer/tests/codetoanalyze/java/infer/ActivityLeaks.java"
+    "type": "CONTEXT_LEAK",
+    "procedure": "void ContextLeaks.handlerLeak()",
+    "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java"
   },
   {
     "type": "NULL_DEREFERENCE",

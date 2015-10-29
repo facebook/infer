@@ -9,11 +9,12 @@
 
 package codetoanalyze.java.infer;
 
-import android.app.Activity;
 import android.content.Context;
+import android.app.Activity;
 import android.os.Handler;
 
-public class ActivityLeaks extends Activity {
+
+public class ContextLeaks extends Activity {
 
     static Object sFld;
 
