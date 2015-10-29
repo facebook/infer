@@ -141,4 +141,4 @@ let normalize_string s =
 let translate_checks = ref false
 
 (* Generate harness for Android code *)
-let create_harness = true
+let create_harness = ref false

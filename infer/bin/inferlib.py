@@ -108,6 +108,10 @@ base_group.add_argument('--fail-on-bug', action='store_true',
                         something to report'''
                         % BUG_FOUND_ERROR_CODE)
 
+base_group.add_argument('--android-harness', action='store_true',
+                        help='''[experimental] Create harness to detect bugs
+                        involving the Android lifecycle''')
+
 base_group.add_argument('-l', '--llvm', action='store_true',
                         help='''[experimental] Analyze C or C++ file using the
                         experimental LLVM frontend''')
@@ -460,6 +464,8 @@ class Infer:
             infer_cmd.append('-debug')
         if self.args.analyzer == TRACING:
             infer_cmd.append('-tracing')
+        if self.args.android_harness:
+            infer_cmd.append('-harness')
 
         return run_command(
             infer_cmd,

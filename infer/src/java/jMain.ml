@@ -24,6 +24,8 @@ let arg_desc =
       "-no-static_final", Arg.Unit (fun () -> JTrans.no_static_final := true), None, "no special treatment for static final fields";
       "-tracing", Arg.Unit (fun () -> JConfig.translate_checks := true), None,
       "Translate JVM checks";
+      "-harness", Arg.Unit (fun () -> JConfig.create_harness := true), None,
+      "Create Android lifecycle harness";
       "-verbose_out", Arg.String (fun path -> JClasspath.set_verbose_out path), None,
       "Set the path to the javac verbose output"
     ] in
@@ -85,7 +87,7 @@ let do_source_file
     JFrontend.compute_source_icfg
       never_null_matcher linereader classes program tenv source_basename source_file in
   store_icfg tenv call_graph cfg source_file;
-  if JConfig.create_harness then
+  if !JConfig.create_harness then
     IList.fold_left
       (fun proc_file_map pdesc ->
          Procname.Map.add (Cfg.Procdesc.get_proc_name pdesc) source_file proc_file_map)
@@ -161,7 +163,7 @@ let do_all_files classpath sources classes =
       Procname.Map.empty in
   if !JConfig.dependency_mode then
     capture_libs never_null_matcher linereader program tenv;
-  if JConfig.create_harness then Harness.create_harness proc_file_map tenv;
+  if !JConfig.create_harness then Harness.create_harness proc_file_map tenv;
   save_tenv classpath tenv;
   JUtils.log "done @."
 

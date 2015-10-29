@@ -143,7 +143,9 @@ public class InferRunner {
   public static ImmutableList<String> createJavaInferHarnessCommand(
       TemporaryFolder folder,
       ImmutableList<String> sourceFiles) {
-    ImmutableList<String> args = new ImmutableList.Builder<String>().build();
+    ImmutableList<String> args = new ImmutableList.Builder<String>()
+      .add("--android-harness")
+      .build();
     return createInferJavaCommand(folder, sourceFiles, "infer", args);
   }
 
@@ -156,7 +158,9 @@ public class InferRunner {
   public static ImmutableList<String> createJavaInferAngelicHarnessCommand(
       TemporaryFolder folder,
       ImmutableList<String> sourceFiles) {
-    ImmutableList<String> args = (new ImmutableList.Builder<String>()).build();
+    ImmutableList<String> args = (new ImmutableList.Builder<String>())
+      .add("--android-harness")
+      .build();
     return createInferJavaCommand(folder, sourceFiles, "infer", args);
   }
 
