@@ -23,7 +23,7 @@ OCAML_INCLUDE_DIR = $(shell ocamlc -where)
 
 ROOT = $(shell cd ../.. && pwd)
 
-BUILDDIR = ../_build-infer
+BUILDDIR = $(ROOT)/infer/_build-infer
 ANNOTDIR = $(ROOT)/infer/src/_build
 BINDIR = $(ROOT)/infer/bin
 SCRIPTDIR = $(ROOT)/scripts
