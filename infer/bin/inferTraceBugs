@@ -15,14 +15,24 @@ from __future__ import unicode_literals
 import argparse
 import json
 import os
+import re
+import shutil
+import subprocess
 import sys
 
 # Infer imports
 import utils
+import inferlib
 
 BASE_INDENT = 2
 # how many lines of context around each report
 SOURCE_CONTEXT = 2
+HTML_REPORT_DIR = 'report.html'
+TRACES_REPORT_DIR = 'traces'
+SOURCE_REMOTE_GITHUB_URL_TEMPLATE = ('https://github.com/{project}/blob/'
+                                     '{hash}/{relative-path}/'
+                                     '{file-name}#L{line-number}')
+SOURCE_REMOTE_GITHUB_RE = re.compile('.*github.com[:/](?P<project>.*)')
 
 
 base_parser = argparse.ArgumentParser(
@@ -48,6 +58,9 @@ base_parser.add_argument('--max-level',
                          help='Level of nested procedure calls to show. '
                          'Can be "max", in which case all levels are shown. '
                          'If omitted, prompts you for input.')
+base_parser.add_argument('--html',
+                         action='store_true',
+                         help='Generate HTML report.')
 
 
 def describe_report(report, indent=0):
@@ -153,9 +166,6 @@ class Tracer(object):
             self.build_node(node)
 
     def build_report(self, report):
-        self.add(describe_report(report))
-        self.newline()
-
         traces = json.loads(report['trace'])
         self.build_trace(traces['trace'])
 
@@ -244,6 +254,149 @@ class Selector(object):
     def __len__(self):
         return len(self.reports)
 
+    def __iter__(self):
+        return self.reports.__iter__()
+
+    def __next__(self):
+        return self.reports.__next__()
+
+
+def path_of_bug_number(traces_dir, i):
+    return os.path.join(traces_dir, 'bug_%d.txt' % (i+1))
+
+
+def url_of_bug_number(i):
+    return '%s/bug_%d.txt' % (TRACES_REPORT_DIR, i+1)
+
+
+def get_remote_source_template():
+    """Return a template that given 'file-name' and 'line-number' entries
+    gives a remote url to that source location. Return the empty
+    template if no remote source has been detected. Currently only
+    detects GitHub projects.
+    """
+    # see if we are in a GitHub project clone
+    try:
+        git_remote = subprocess.check_output(
+            ['git',
+             'config',
+             '--get',
+             'remote.origin.url']).decode().strip()
+        m = SOURCE_REMOTE_GITHUB_RE.match(git_remote)
+        if m is not None:
+            project = m.group('project')
+            # some remotes end in .git, but the http urls don't have
+            # these
+            if project.endswith('.git'):
+                project = project[:-len('.git')]
+            print('Detected GitHub project %s' % project)
+            hash = subprocess.check_output(
+                ['git',
+                 'rev-parse',
+                 'HEAD']).decode().strip()
+            root = subprocess.check_output(
+                ['git',
+                 'rev-parse',
+                 '--show-toplevel']).decode().strip()
+            # FIXME(t8921813): we should have a way to get absolute
+            # paths in traces. In the meantime, trust that we run from
+            # the same directory from which infer was run.
+            relative_path = os.path.relpath(os.getcwd(), root)
+            d = {
+                'project': project,
+                'hash': hash,
+                'relative-path': relative_path,
+                'file-name': '{file-name}',
+                'line-number': '{line-number}',
+            }
+            return SOURCE_REMOTE_GITHUB_URL_TEMPLATE.format(**d)
+    except subprocess.CalledProcessError:
+        pass
+
+    return None
+
+
+def html_bug_trace(args, report, bug_id):
+    bug_trace = ''
+    bug_trace += '%s\n' % describe_report(report)
+    tracer = Tracer(args)
+    tracer.build_report(report)
+    bug_trace += str(tracer)
+    return bug_trace
+
+
+def html_list_of_bugs(args, remote_source_template, selector):
+    template = '\n'.join([
+        '<html>',
+        '<head>',
+        '<title>Infer found {num-bugs} bugs</title>',
+        '</head>',
+        '<body>',
+        '<h2>List of bugs found</h2>',
+        '{list-of-bugs}',
+        '</body>',
+        '</html>',
+    ])
+
+    report_template = '\n'.join([
+        '<li>',
+        '{description}',
+        '({source-uri}<a href="{trace-url}">trace</a>)',
+        '</li>',
+    ])
+
+    def source_uri(report):
+        d = {
+            'file-name': report['file'],
+            'line-number': report['line'],
+        }
+        if remote_source_template is not None:
+            link = remote_source_template.format(**d)
+            return '<a href="%s">source</a> | ' % link
+        return ''
+
+    i = 0
+    list_of_bugs = '<ol>'
+    for report in selector:
+        d = {
+            'description': describe_report(report, 2),
+            'trace-url': url_of_bug_number(i),
+            'source-uri': source_uri(report),
+        }
+        list_of_bugs += report_template.format(**d)
+        i += 1
+    list_of_bugs += '</ol>'
+
+    d = {
+        'num-bugs': len(selector),
+        'list-of-bugs': list_of_bugs,
+    }
+    return template.format(**d)
+
+
+def generate_html_report(args, reports):
+    html_dir = os.path.join(args.infer_out, HTML_REPORT_DIR)
+    shutil.rmtree(html_dir, True)
+    inferlib.mkdir_if_not_exists(html_dir)
+
+    traces_dir = os.path.join(html_dir, TRACES_REPORT_DIR)
+    inferlib.mkdir_if_not_exists(traces_dir)
+
+    sel = Selector(args, reports)
+
+    i = 0
+    for bug in sel:
+        bug_trace_path = path_of_bug_number(traces_dir, i)
+        with open(bug_trace_path, 'w') as bug_trace_file:
+            bug_trace_file.write(html_bug_trace(args, bug, i))
+        i += 1
+
+    remote_source_template = get_remote_source_template()
+    with open(os.path.join(html_dir, 'index.html'), 'w') as bug_list_file:
+        bug_list_file.write(html_list_of_bugs(args,
+                                              remote_source_template,
+                                              sel))
+
 
 def main():
     args = base_parser.parse_args()
@@ -251,6 +404,10 @@ def main():
     report_filename = os.path.join(args.infer_out, utils.JSON_REPORT_FILENAME)
     with open(report_filename) as report_file:
         reports = json.load(report_file)
+
+    if args.html:
+        generate_html_report(args, reports)
+        exit(0)
 
     sel = Selector(args, reports)
 
@@ -264,6 +421,8 @@ def main():
 
     report = sel.prompt_report()
     max_level = sel.prompt_level()
+
+    print(describe_report(report))
 
     tracer = Tracer(args, max_level)
     tracer.build_report(report)
