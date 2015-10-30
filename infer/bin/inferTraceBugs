@@ -392,10 +392,13 @@ def generate_html_report(args, reports):
         i += 1
 
     remote_source_template = get_remote_source_template()
-    with open(os.path.join(html_dir, 'index.html'), 'w') as bug_list_file:
+    bug_list_path = os.path.join(html_dir, 'index.html')
+    with open(bug_list_path, 'w') as bug_list_file:
         bug_list_file.write(html_list_of_bugs(args,
                                               remote_source_template,
                                               sel))
+
+    print('Saved html report in:\n%s' % bug_list_path)
 
 
 def main():
