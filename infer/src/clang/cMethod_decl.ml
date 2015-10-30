@@ -27,13 +27,6 @@ end
 module CMethod_decl_funct(T: CModule_type.CTranslation) : CMethod_decl =
 struct
 
-  let method_body_to_translate ms body =
-    match body with
-    | Some body ->
-        if not (CLocation.should_translate_lib (CMethod_signature.ms_get_loc ms))
-        then None else Some body
-    | None -> body
-
   let model_exists procname =
     Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
 
@@ -80,7 +73,7 @@ struct
       | None -> [], None in
     let ms, body_opt, extra_instrs =
       CMethod_trans.method_signature_of_decl None func_decl block_data_opt in
-    match method_body_to_translate ms body_opt with
+    match body_opt with
     | Some body -> (* Only in the case the function declaration has a defined body we create a procdesc *)
         let procname = CMethod_signature.ms_get_name ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
@@ -92,7 +85,7 @@ struct
     let class_name = Some (CContext.get_curr_class_name curr_class) in
     let ms, body_opt, extra_instrs =
       CMethod_trans.method_signature_of_decl class_name meth_decl None in
-    match method_body_to_translate ms body_opt with
+    match body_opt with
     | Some body ->
         let is_instance = CMethod_signature.ms_is_instance ms in
         let procname = CMethod_signature.ms_get_name ms in
@@ -128,22 +121,33 @@ struct
     if Specs.summary_exists procname then false
     else
       let class_name = Procname.c_get_class procname in
-      let open CContext in
-      let cls = CContext.create_curr_class context.tenv class_name in
+      let tenv = context.CContext.tenv in
+      let cg = context.CContext.cg in
+      let cfg = context.CContext.cfg in
+      let namespace = context.CContext.namespace in
+      let cls = CContext.create_curr_class tenv class_name in
       let method_name = Procname.c_get_method procname in
       match ObjcProperty_decl.method_is_property_accesor cls method_name with
       | Some (property_name, property_type, is_getter) when
-          CMethod_trans.should_create_procdesc context.cfg procname true true ->
+          CMethod_trans.should_create_procdesc cfg procname true true ->
           (match property_type with tp, atts, decl_info, _, _, ivar_opt ->
             let ivar_name = ObjcProperty_decl.get_ivar_name property_name ivar_opt in
-            let field = CField_decl.build_sil_field_property cls context.tenv ivar_name tp (Some atts) in
-            ignore (CField_decl.add_missing_fields context.tenv class_name [field]);
-            let accessor =
+            let field =
+              CField_decl.build_sil_field_property CTypes_decl.type_ptr_to_sil_type cls tenv
+                ivar_name tp (Some atts) in
+            ignore (CField_decl.add_missing_fields tenv class_name [field]);
+            let accessor_opt =
               if is_getter then
                 ObjcProperty_decl.make_getter cls property_name property_type
               else ObjcProperty_decl.make_setter cls property_name property_type in
-            IList.iter (process_one_method_decl context.tenv context.cg context.cfg cls context.namespace) accessor;
-            true)
+            match accessor_opt with
+            | [accessor] ->
+                let decl_info = Clang_ast_proj.get_decl_tuple accessor in
+                if CLocation.should_translate_lib decl_info.Clang_ast_t.di_source_range then
+                  (process_one_method_decl tenv cg cfg cls namespace accessor;
+                   true)
+                else false
+            | _ -> false)
       | _ -> false
 
 end

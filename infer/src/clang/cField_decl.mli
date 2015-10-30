@@ -8,18 +8,20 @@
  *)
 
 (** Utility module to retrieve fields of structs of classes *)
-
+open CFrontend_utils
 
 val fields_superclass : Sil.tenv -> Clang_ast_t.obj_c_interface_decl_info ->
   (Ident.fieldname * Sil.typ * Sil.item_annotation) list
 
 type field_type = Ident.fieldname * Sil.typ * (Sil.annotation * bool) list
 
-val get_fields : Sil.tenv -> CContext.curr_class -> Clang_ast_t.decl list -> field_type list
+val get_fields : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> CContext.curr_class ->
+  Clang_ast_t.decl list -> field_type list
 
 val fields_superclass : Sil.tenv -> Clang_ast_t.obj_c_interface_decl_info -> field_type list
 
-val build_sil_field_property : CContext.curr_class -> Sil.tenv -> Clang_ast_t.named_decl_info ->
-  Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list option -> field_type
+val build_sil_field_property : Ast_utils.type_ptr_to_sil_type -> CContext.curr_class -> Sil.tenv ->
+  Clang_ast_t.named_decl_info -> Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list option
+  -> field_type
 
 val add_missing_fields : Sil.tenv -> string -> field_type list -> unit

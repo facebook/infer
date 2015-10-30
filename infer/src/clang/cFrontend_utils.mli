@@ -101,6 +101,14 @@ sig
 
   val make_qual_name_decl : string -> string -> Clang_ast_t.named_decl_info
 
+  type type_ptr_to_sil_type =  Sil.tenv -> Clang_ast_t.type_ptr -> Sil.typ
+
+  val add_type_from_decl_ref : type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl_ref option ->
+    bool -> unit
+
+  val add_type_from_decl_ref_list : type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl_ref list ->
+    unit
+
 end
 
 module General_utils :

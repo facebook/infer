@@ -12,16 +12,29 @@ open CFrontend_utils
 
 module L = Logging
 
-let protocol_decl tenv name decl_list =
-  (* Adds pairs (protocol name, protocol_type_info) to the global environment. *)
-  (* Protocol_type_info contains the methods composing the protocol. *)
-  (* Here we are giving a similar treatment as interfaces (see above)*)
-  (* It may turn out that we need a more specific treatment for protocols*)
-  Printing.log_out "ADDING: ObjCProtocolDecl for '%s'\n" name;
-  let mang_name = Mangled.from_string name in
-  let curr_class = CContext.ContextProtocol name in
-  let protocol_name = Sil.TN_csu(Sil.Protocol, mang_name) in
-  let methods = ObjcProperty_decl.get_methods curr_class decl_list in
-  let protocol_type_info = Sil.Tstruct([], [], Sil.Protocol, Some mang_name, [], methods, []) in
-  Sil.tenv_add tenv protocol_name protocol_type_info;
-  curr_class
+let add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info =
+  let protocols = obj_c_protocol_decl_info.Clang_ast_t.opcdi_protocols in
+  Ast_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv protocols
+
+let protocol_decl type_ptr_to_sil_type tenv decl =
+  let open Clang_ast_t in
+  match decl with
+  | ObjCProtocolDecl(decl_info, name_info, decl_list, _, obj_c_protocol_decl_info) ->
+      let name = name_info.Clang_ast_t.ni_name in
+      let curr_class = CContext.ContextProtocol name in
+      (* Adds pairs (protocol name, protocol_type_info) to the global environment. *)
+      (* Protocol_type_info contains the methods composing the protocol. *)
+      (* Here we are giving a similar treatment as interfaces (see above)*)
+      (* It may turn out that we need a more specific treatment for protocols*)
+      Printing.log_out "ADDING: ObjCProtocolDecl for '%s'\n" name;
+      let mang_name = Mangled.from_string name in
+      let protocol_name = Sil.TN_csu (Sil.Protocol, mang_name) in
+      let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
+      Ast_utils.update_sil_types_map decl_key (Sil.Tvar protocol_name);
+      let methods = ObjcProperty_decl.get_methods curr_class decl_list in
+      let protocol_type_info =
+        Sil.Tstruct ([], [], Sil.Protocol, Some mang_name, [], methods, []) in
+      Sil.tenv_add tenv protocol_name protocol_type_info;
+      add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
+      Sil.Tvar protocol_name
+  | _ -> assert false

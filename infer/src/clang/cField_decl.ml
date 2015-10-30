@@ -34,27 +34,14 @@ let fields_superclass tenv interface_decl_info =
        | _ -> [])
   | _ -> []
 
-let get_field_www name_field fl =
-  let rec scan_fields nn ll =
-    match ll with
-    | [] -> []
-    | (n, t, _):: ll' -> Printing.log_out ">>>>>Searching for field '%s'." (Ident.fieldname_to_string n);
-        Printing.log_out " Seen '%s'.\n" nn;
-        if (Ident.fieldname_to_string n) = nn then
-          [(n, t)]
-        else scan_fields nn ll' in
-  CTrans_utils.extract_item_from_singleton (scan_fields name_field fl)
-    "WARNING: In MemberExpr there must be only one type defininf for the struct. Returning (NO_FIELD_NAME, Tvoid)\n"
-    (Ident.create_fieldname (Mangled.from_string "NO_FIELD_NAME") 0, Sil.Tvoid)
-
-let build_sil_field tenv field_name type_ptr prop_atts =
+let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_atts =
   let annotation_from_type t =
     match t with
     | Sil.Tptr (_, Sil.Pk_objc_weak) -> [Config.weak]
     | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
     | _ -> [] in
   let fname = General_utils.mk_class_field_name field_name in
-  let typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
+  let typ = type_ptr_to_sil_type tenv type_ptr in
   let item_annotations = match prop_atts with
     | [] ->
         [({ Sil.class_name = Config.ivar_attributes; Sil.parameters = annotation_from_type typ }, true)]
@@ -78,25 +65,26 @@ let ivar_property curr_class ivar =
   | None -> Printing.log_out "No property found for ivar '%s'@." ivar.Clang_ast_t.ni_name;
       []
 
-let build_sil_field_property curr_class tenv field_name type_ptr prop_attributes_opt =
+let build_sil_field_property type_ptr_to_sil_type curr_class tenv field_name type_ptr att_opt =
   let prop_attributes =
-    match prop_attributes_opt with
+    match att_opt with
     | Some prop_attributes -> prop_attributes
     | None -> ivar_property curr_class field_name in
   let atts_str = IList.map Clang_ast_j.string_of_property_attribute prop_attributes in
-  build_sil_field tenv field_name type_ptr atts_str
+  build_sil_field type_ptr_to_sil_type tenv field_name type_ptr atts_str
 
 (* Given a list of declarations in an interface returns a list of fields  *)
-let rec get_fields tenv curr_class decl_list =
+let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
   let open Clang_ast_t in
   match decl_list with
   | [] -> []
   | ObjCIvarDecl (decl_info, name_info, type_ptr, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
-      let fields = get_fields tenv curr_class decl_list' in
+      let fields = get_fields type_ptr_to_sil_type tenv curr_class decl_list' in
       (* Doing a post visit here. Adding Ivar after all the declaration have been visited so that *)
       (* ivar names will be added in the property list. *)
       Printing.log_out "  ...Adding Instance Variable '%s' @." name_info.Clang_ast_t.ni_name;
-      let (fname, typ, ia) = build_sil_field_property curr_class tenv name_info type_ptr None in
+      let (fname, typ, ia) =
+        build_sil_field_property type_ptr_to_sil_type curr_class tenv name_info type_ptr None in
       Printing.log_out "  ...Resulting sil field: (%s) with attributes:@." ((Ident.fieldname_to_string fname) ^":"^(Sil.typ_to_string typ));
       IList.iter (fun (ia', _) ->
           IList.iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;
@@ -104,8 +92,8 @@ let rec get_fields tenv curr_class decl_list =
   | ObjCPropertyImplDecl (decl_info, property_impl_decl_info):: decl_list' ->
       let property_fields_decl =
         ObjcProperty_decl.prepare_dynamic_property curr_class decl_info property_impl_decl_info in
-      get_fields tenv curr_class (property_fields_decl @ decl_list')
-  | _ :: decl_list' -> get_fields tenv curr_class decl_list'
+      get_fields type_ptr_to_sil_type tenv curr_class (property_fields_decl @ decl_list')
+  | _ :: decl_list' -> get_fields type_ptr_to_sil_type tenv curr_class decl_list'
 
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)

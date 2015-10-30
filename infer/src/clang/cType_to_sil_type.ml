@@ -129,11 +129,14 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   let typ = `DeclPtr decl_ptr in
   try Clang_ast_types.TypePointerMap.find typ !CFrontend_config.sil_types_map
   with Not_found ->
-    match Ast_utils.get_decl decl_ptr with
-    | Some (ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oidi)) ->
-        Sil.Tvar (CTypes.mk_classname name_info.Clang_ast_t.ni_name)
-    | Some (CXXRecordDecl _ as d)
-    | Some (RecordDecl _ as d) -> translate_decl tenv None d
+  match Ast_utils.get_decl decl_ptr with
+  | Some (CXXRecordDecl _ as d)
+  | Some (RecordDecl _ as d)
+  | Some (ObjCInterfaceDecl _ as d)
+  | Some (ObjCImplementationDecl _ as d)
+  | Some (ObjCProtocolDecl _ as d)
+  | Some (ObjCCategoryDecl _ as d)
+  | Some (ObjCCategoryImplDecl _ as d) -> translate_decl tenv None d
     | Some (EnumDecl(_, name_info, _, _, _, _, _) ) ->
         Sil.Tvar (CTypes.mk_enumname name_info.Clang_ast_t.ni_name)
     | Some _ ->

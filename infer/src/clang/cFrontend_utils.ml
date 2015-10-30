@@ -102,6 +102,7 @@ end
 
 module Ast_utils =
 struct
+  type type_ptr_to_sil_type = Sil.tenv -> Clang_ast_t.type_ptr -> Sil.typ
 
   let string_of_decl decl =
     let name = Clang_ast_proj.get_decl_kind_string decl in
@@ -330,6 +331,17 @@ struct
     match get_desugared_type type_ptr with
     | Some typ -> (Clang_ast_proj.get_type_tuple typ).Clang_ast_t.ti_raw
     | None -> ""
+
+  let add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt fail_if_not_found =
+    match decl_ref_opt with (* translate interface first if found *)
+    | Some dr ->
+        ignore (type_ptr_to_sil_type tenv (`DeclPtr dr.Clang_ast_t.dr_decl_pointer));
+    | _ -> if fail_if_not_found then assert false else ()
+
+  let add_type_from_decl_ref_list type_ptr_to_sil_type tenv decl_ref_list =
+    let add_elem dr =
+      ignore (type_ptr_to_sil_type tenv (`DeclPtr dr.Clang_ast_t.dr_decl_pointer)) in
+    IList.iter add_elem decl_ref_list
 
 end 
 

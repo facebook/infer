@@ -93,18 +93,18 @@ struct
   let rec find_property curr_class property_name =
     try PropertyTableHash.find property_table (curr_class, property_name)
     with Not_found ->
-      match curr_class with
-      | ContextCls (name, _, protocols) ->
-          let res_opt = IList.fold_right
-              (fun protocol found_procname_opt ->
-                 match found_procname_opt with
-                 | Some found_procname -> Some found_procname
-                 | None ->
-                     Some (find_property (ContextProtocol protocol) property_name)) protocols None in
-          (match res_opt with
-           | Some res -> res
-           | None -> raise Not_found)
-      | _ -> raise Not_found
+    match curr_class with
+    | ContextCls (name, _, protocols) ->
+        let res_opt = IList.fold_right
+            (fun protocol found_procname_opt ->
+               match found_procname_opt with
+               | Some found_procname -> Some found_procname
+               | None ->
+                   Some (find_property (ContextProtocol protocol) property_name)) protocols None in
+        (match res_opt with
+         | Some res -> res
+         | None -> raise Not_found)
+    | _ -> raise Not_found
 
   let find_property_name_from_ivar curr_class ivar =
     let res = ref None in
@@ -346,13 +346,12 @@ let make_setter curr_class prop_name prop_type =
 (* [self->_field = [param copy] *)
 let make_getter_setter curr_class decl_info prop_name =
   Printing.log_out "pointer = '%s'\n" decl_info.Clang_ast_t.di_pointer;
-  let prop_type =
-    try
-      Property.find_property curr_class prop_name
-    with _ ->
-      Printing.log_out "Property %s not found@." prop_name.Clang_ast_t.ni_name;
-      assert false in
-  (make_getter curr_class prop_name prop_type)@ (make_setter curr_class prop_name prop_type)
+  try
+    let prop_type = Property.find_property curr_class prop_name in
+    (make_getter curr_class prop_name prop_type)@ (make_setter curr_class prop_name prop_type)
+  with _ ->
+    Printing.log_out "Property %s not found@." prop_name.Clang_ast_t.ni_name;
+    []
 
 let add_properties_to_table curr_class decl_list =
   let add_property_to_table dec =

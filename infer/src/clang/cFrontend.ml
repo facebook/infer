@@ -28,16 +28,18 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   let info = Clang_ast_proj.get_decl_tuple dec in
   CLocation.update_curr_file info;
   let source_range = info.Clang_ast_t.di_source_range in
+  let should_translate_decl = CLocation.should_translate_lib source_range in
   let should_translate_enum = CLocation.should_translate_enum source_range in
   let open Clang_ast_t in
   match dec with
-  | FunctionDecl(di, name_info, tp, fdecl_info) ->
+  | FunctionDecl(di, name_info, tp, fdecl_info) when should_translate_decl ->
       CMethod_declImpl.function_decl tenv cfg cg namespace dec None
   | TypedefDecl (decl_info, name_info, opt_type, _, typedef_decl_info) ->
       Printing.log_out "%s" "Skipping typedef declaration. Will expand the type in its occurrences."
   (* Currently C/C++ record decl treated in the same way *)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
-  | RecordDecl (_, _, _, _, decl_list, _, _) ->
+  | RecordDecl (_, _, _, _, decl_list, _, _) when should_translate_decl ->
+      ignore (CTypes_decl.add_types_from_decl_to_tenv tenv namespace dec);
       let method_decls = CTypes_decl.get_method_decls dec decl_list in
       let tranlate_method (parent, decl) =
         translate_one_declaration tenv cg cfg namespace parent decl in
@@ -46,36 +48,42 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   | VarDecl(decl_info, name_info, t, _) ->
       Printing.log_out "Nothing to do for global variable %s " name_info.Clang_ast_t.ni_name
 
-  | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info) ->
+  | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info)
+    when should_translate_decl ->
       let name = name_info.Clang_ast_t.ni_name in
-      let curr_class =
-        ObjcInterface_decl.interface_declaration tenv decl_info name decl_list oi_decl_info in
+      let curr_class = ObjcInterface_decl.get_curr_class name oi_decl_info in
+      ignore (ObjcInterface_decl.interface_declaration CTypes_decl.type_ptr_to_sil_type tenv dec);
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
-  | ObjCProtocolDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_protocol_decl_info) ->
+  | ObjCProtocolDecl(decl_info, name_info, decl_list, decl_context_info, obj_c_protocol_decl_info)
+    when should_translate_decl ->
       let name = name_info.Clang_ast_t.ni_name in
-      let curr_class = ObjcProtocol_decl.protocol_decl tenv name decl_list in
+      let curr_class = CContext.ContextProtocol name in
+      ignore (ObjcProtocol_decl.protocol_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
-  | ObjCCategoryDecl(decl_info, name_info, decl_list, decl_context_info, category_decl_info) ->
+  | ObjCCategoryDecl(decl_info, name_info, decl_list, decl_context_info, ocdi) ->
       let name = name_info.Clang_ast_t.ni_name in
-      let curr_class =
-        ObjcCategory_decl.category_decl tenv name category_decl_info decl_list in
+      let curr_class = ObjcCategory_decl.get_curr_class_from_category_decl name ocdi in
+      ignore (ObjcCategory_decl.category_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
-  | ObjCCategoryImplDecl(decl_info, name_info, decl_list, decl_context_info, category_impl_info) ->
+  | ObjCCategoryImplDecl(decl_info, name_info, decl_list, decl_context_info, ocidi) ->
       let name = name_info.Clang_ast_t.ni_name in
-      let curr_class =
-        ObjcCategory_decl.category_impl_decl tenv name decl_info category_impl_info decl_list in
+      let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
+      ignore (ObjcCategory_decl.category_impl_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
-  | ObjCImplementationDecl(decl_info, name_info, decl_list, decl_context_info, idi) ->
-      let name = name_info.Clang_ast_t.ni_name in
-      let curr_class =
-        ObjcInterface_decl.interface_impl_declaration tenv name decl_list idi in
+  | ObjCImplementationDecl(decl_info, name_info, decl_list, decl_context_info, idi)
+    when should_translate_decl ->
+      let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
+      let type_ptr_to_sil_type = CTypes_decl.type_ptr_to_sil_type in
+      ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
       CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
+
   | CXXMethodDecl (decl_info, name_info, type_ptr, function_decl_info, _)
-  | CXXConstructorDecl (decl_info, name_info, type_ptr, function_decl_info, _) ->
+  | CXXConstructorDecl (decl_info, name_info, type_ptr, function_decl_info, _)
+    when should_translate_decl ->
       (* di_parent_pointer has pointer to lexical context such as class.*)
       (* If it's not defined, then it's the same as parent in AST *)
       let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with

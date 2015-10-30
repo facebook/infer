@@ -10,8 +10,16 @@
 (** In this module an ObjC category declaration or implementation is processed. The category    *)
 (** is saved in the tenv as a struct with the corresponding fields and methods , and the class it belongs to *)
 
-val category_decl : Sil.tenv -> string -> Clang_ast_t.obj_c_category_decl_info -> Clang_ast_t.decl list
-  -> CContext.curr_class
+open CFrontend_utils
 
-val category_impl_decl : Sil.tenv -> string -> Clang_ast_t.decl_info ->
-  Clang_ast_t.obj_c_category_impl_decl_info -> Clang_ast_t.decl list -> CContext.curr_class
+val category_decl : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl -> Sil.typ
+
+val category_impl_decl : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl -> Sil.typ
+
+val noname_category : string -> string
+
+val get_curr_class_from_category_decl : string -> Clang_ast_t.obj_c_category_decl_info ->
+  CContext.curr_class
+
+val get_curr_class_from_category_impl : string -> Clang_ast_t.obj_c_category_impl_decl_info ->
+  CContext.curr_class

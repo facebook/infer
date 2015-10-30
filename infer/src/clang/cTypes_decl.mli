@@ -9,8 +9,6 @@
 
 (** Processes types and record declarations by adding them to the tenv *)
 
-val get_declaration_type : Sil.tenv -> string option -> Clang_ast_t.decl -> Sil.typ
-
 val add_struct_to_tenv : Sil.tenv -> Sil.typ -> unit
 
 val get_record_name : Clang_ast_t.decl -> string

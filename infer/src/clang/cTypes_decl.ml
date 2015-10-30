@@ -161,7 +161,7 @@ let rec get_struct_fields tenv record_name namespace decl_list =
   IList.flatten (IList.map do_one_decl decl_list)
 
 (* For a record declaration it returns/constructs the type *)
-and get_declaration_type tenv namespace decl =
+and get_strct_cpp_class_declaration_type tenv namespace decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
@@ -186,13 +186,23 @@ and get_declaration_type tenv namespace decl =
       let sil_type = Sil.Tstruct (sorted_non_static_fields, static_fields, csu, Some mangled_name,
                                   superclasses, methods, item_annotation) in
       Ast_utils.update_sil_types_map type_ptr sil_type;
+      add_struct_to_tenv tenv sil_type;
       sil_type
   | _ -> assert false
 
 and add_types_from_decl_to_tenv tenv namespace decl =
-  let typ = get_declaration_type tenv namespace decl in
-  add_struct_to_tenv tenv typ;
-  typ
+  let open Clang_ast_t in
+  match decl with
+  | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
+  | RecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info) ->
+      get_strct_cpp_class_declaration_type tenv namespace decl
+  | ObjCInterfaceDecl _ -> ObjcInterface_decl.interface_declaration type_ptr_to_sil_type tenv decl
+  | ObjCImplementationDecl _ ->
+      ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv decl
+  | ObjCProtocolDecl _ -> ObjcProtocol_decl.protocol_decl type_ptr_to_sil_type tenv decl
+  | ObjCCategoryDecl _ -> ObjcCategory_decl.category_decl type_ptr_to_sil_type tenv decl
+  | ObjCCategoryImplDecl _ -> ObjcCategory_decl.category_impl_decl type_ptr_to_sil_type tenv decl
+  | _ -> assert false
 
 and type_ptr_to_sil_type tenv tp =
   CType_to_sil_type.type_ptr_to_sil_type add_types_from_decl_to_tenv tenv tp
