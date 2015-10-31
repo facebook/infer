@@ -57,6 +57,10 @@ BUCK_INFER_OUT = 'infer'
 FORMAT = '[%(levelname)s] %(message)s'
 DEBUG_FORMAT = '[%(levelname)s:%(filename)s:%(lineno)03d] %(message)s'
 
+BASE_INDENT = 2
+# how many lines of context around each report
+SOURCE_CONTEXT = 2
+
 
 # Monkey patching subprocess (I'm so sorry!).
 if "check_output" not in dir(subprocess):
@@ -362,5 +366,56 @@ class AbsolutePathAction(argparse.Action):
     """Convert a path from relative to absolute in the arg parser"""
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, os.path.abspath(values))
+
+
+class Indenter(str):
+    def __init__(self):
+        super(Indenter, self).__init__()
+        self.text = ''
+        self.indent = []
+
+    def indent_get(self):
+        indent = ''
+        for i in self.indent:
+            indent += i
+        return indent
+
+    def indent_push(self, n=1):
+        self.indent.append(n * BASE_INDENT * ' ')
+
+    def indent_pop(self):
+        return self.indent.pop()
+
+    def newline(self):
+        self.text += '\n'
+
+    def add(self, x):
+        lines = x.splitlines()
+        indent = self.indent_get()
+        lines = [indent + l for l in lines]
+        self.text += '\n'.join(lines)
+
+    def __str__(self):
+        return self.text
+
+
+def build_source_context(source_name, report_line):
+    start_line = max(1, report_line - SOURCE_CONTEXT)
+    # could go beyond last line, checked in the loop
+    end_line = report_line + SOURCE_CONTEXT
+
+    n_length = len(str(end_line))
+    line_number = 1
+    s = ''
+    with open(source_name) as source_file:
+        for line in source_file:
+            if start_line <= line_number <= end_line:
+                num = str(line_number).zfill(n_length)
+                caret = '  '
+                if line_number == report_line:
+                    caret = '> '
+                s += num + '. ' + caret + line
+            line_number += 1
+    return s
 
 # vim: set sw=4 ts=4 et:

@@ -24,9 +24,6 @@ import sys
 import utils
 import inferlib
 
-BASE_INDENT = 2
-# how many lines of context around each report
-SOURCE_CONTEXT = 2
 HTML_REPORT_DIR = 'report.html'
 TRACES_REPORT_DIR = 'traces'
 SOURCE_REMOTE_GITHUB_URL_TEMPLATE = ('https://github.com/{project}/blob/'
@@ -91,47 +88,10 @@ class Tracer(object):
     def __init__(self, args, level=sys.maxsize):
         self.args = args
         self.max_level = level
-
-        self.text = ''
-        self.indent = []
-
-    def indent_get(self):
-        indent = ''
-        for i in self.indent:
-            indent += i
-        return indent
-
-    def indent_push(self, n=1):
-        self.indent.append(n * BASE_INDENT * ' ')
-
-    def indent_pop(self):
-        return self.indent.pop()
-
-    def add(self, s):
-        self.text += self.indent_get() + s
-
-    def newline(self):
-        self.text += '\n'
+        self.indenter = utils.Indenter()
 
     def build_node_tags(self, node):
         pass
-
-    def build_source_context(self, source_name, report_line):
-        start_line = max(1, report_line - SOURCE_CONTEXT)
-        # could go beyond last line, checked in the loop
-        end_line = report_line + SOURCE_CONTEXT
-
-        n_length = len(str(end_line))
-        line_number = 1
-        with open(source_name) as source_file:
-            for line in source_file:
-                if start_line <= line_number <= end_line:
-                    num = str(line_number).zfill(n_length)
-                    caret = '  '
-                    if line_number == report_line:
-                        caret = '> '
-                    self.add(num + ' ' + caret + line)
-                line_number += 1
 
     def build_node(self, node):
         if node['level'] > self.max_level:
@@ -140,15 +100,17 @@ class Tracer(object):
         report_line = node['line_number']
         fname = node['filename']
 
-        self.add('%s:%d: %s\n' % (fname,
-                                  report_line,
-                                  node['description']))
+        self.indenter.newline()
+        self.indenter.add('%s:%d: %s' % (fname,
+                                         report_line,
+                                         node['description']))
+        self.indenter.newline()
 
         if not self.args.no_source:
-            self.indent_push(node['level'])
-            self.build_source_context(fname, report_line)
-            self.indent_pop()
-            self.newline()
+            self.indenter.indent_push(node['level'])
+            self.indenter.add(utils.build_source_context(fname, report_line))
+            self.indenter.indent_pop()
+            self.indenter.newline()
 
     def build_trace(self, trace):
         total_nodes = len(trace)
@@ -159,8 +121,9 @@ class Tracer(object):
         if hidden_nodes > 0:
             hidden_str = ' (%d steps too deeply nested)' % hidden_nodes
             all_str = ''
-        self.add('Showing %s%d steps of the trace%s\n\n'
-                 % (all_str, shown_nodes, hidden_str))
+        self.indenter.add('Showing %s%d steps of the trace%s\n\n'
+                          % (all_str, shown_nodes, hidden_str))
+        self.indenter.newline()
 
         for node in trace:
             self.build_node(node)
@@ -170,7 +133,7 @@ class Tracer(object):
         self.build_trace(traces['trace'])
 
     def __str__(self):
-        return self.text
+        return str(self.indenter)
 
 
 class Selector(object):
