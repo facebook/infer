@@ -352,8 +352,7 @@ def print_errors(csv_report, bugs_out):
         )
 
         with open(bugs_out, 'w') as file_out:
-            if not errors:
-                print_and_write(file_out, 'No issues found')
+            text_errors_list = []
             for row in errors:
                 filename = row[utils.CSV_INDEX_FILENAME]
                 if os.path.isfile(filename):
@@ -361,16 +360,26 @@ def print_errors(csv_report, bugs_out):
                     line = row[utils.CSV_INDEX_LINE]
                     error_type = row[utils.CSV_INDEX_TYPE]
                     msg = row[utils.CSV_INDEX_QUALIFIER]
-                    print_and_write(
-                        file_out,
-                        '{0}:{1}: {2}: {3}\n  {4}\n'.format(
+                    indenter = utils.Indenter()
+                    indenter.indent_push()
+                    indenter.add(utils.build_source_context(filename,
+                                                            int(line)))
+                    source_context = str(indenter)
+                    text_errors_list.append(
+                        '{0}:{1}: {2}: {3}\n  {4}\n{5}'.format(
                             filename,
                             line,
                             kind.lower(),
                             error_type,
                             msg,
+                            source_context,
                         )
                     )
+            if len(text_errors_list) == 0:
+                print_and_write(file_out, 'No issues found')
+            else:
+                text_errors = '\n\n'.join(text_errors_list)
+                print_and_write(file_out, text_errors)
 
 
 def run_command(cmd, debug_mode, javac_arguments, step, analyzer):
