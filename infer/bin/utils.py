@@ -109,11 +109,17 @@ def error(msg):
     print(msg, file=sys.stderr)
 
 
-def get_cmd_in_bin_dir(binary_name):
+def get_infer_bin():
     # this relies on the fact that utils.py is located in infer/bin
-    return os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        binary_name)
+    return BIN_DIRECTORY
+
+
+def get_cmd_in_bin_dir(binary_name):
+    return os.path.join(get_infer_bin(), binary_name)
+
+
+def get_infer_root():
+    return os.path.join(get_infer_bin(), '..', '..')
 
 
 def write_cmd_streams_to_file(logfile, cmd=None, out=None, err=None):
@@ -344,6 +350,20 @@ def invoke_function_with_callbacks(
         raise
 
 
+def save_as_json(data, filename):
+    with open(filename, 'w') as file_out:
+        json.dump(data, file_out, indent=2)
+
+
+def merge_json_reports(report_paths, merged_report_path):
+    # TODO: use streams instead of loading the entire json in memory
+    json_data = []
+    for json_path in report_paths:
+        with open(json_path, 'r') as fd:
+            json_data = json_data + json.loads(fd.read())
+    save_as_json(json_data, merged_report_path)
+
+
 def create_json_report(out_dir):
     csv_report_filename = os.path.join(out_dir, CSV_REPORT_FILENAME)
     json_report_filename = os.path.join(out_dir, JSON_REPORT_FILENAME)
@@ -351,10 +371,9 @@ def create_json_report(out_dir):
     with open(csv_report_filename, 'r') as file_in:
         reader = csv.reader(file_in)
         rows = [row for row in reader]
-    with open(json_report_filename, 'w') as file_out:
-        headers = rows[0]
-        issues = [dict(zip(headers, row)) for row in rows[1:]]
-        json.dump(issues, file_out, indent=2)
+    headers = rows[0]
+    issues = [dict(zip(headers, row)) for row in rows[1:]]
+    save_as_json(issues, json_report_filename)
 
 
 def get_plural(_str, count):

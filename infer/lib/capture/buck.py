@@ -44,19 +44,110 @@ def create_argparser(group_name=MODULE_NAME):
                        help='Do not use buck distributed cache')
     group.add_argument('--print-harness', action='store_true',
                        help='Print generated harness code (Android only)')
+    group.add_argument('--use-flavors', action='store_true',
+                       help='Run Infer analysis through the use of flavors. '
+                            'Currently this is supported only for the cxx_* '
+                            'targets of Buck - e.g. cxx_library, cxx_binary - '
+                            'and not for Java. Note: this flag should be used '
+                            'in combination with passing the #infer flavor '
+                            'to the Buck target.')
+    group.add_argument('--xcode-developer-dir',
+                       help='Specify the path to Xcode developer directory '
+                            '(requires --use-flavors to work)')
     return parser
-
 
 
 class BuckAnalyzer:
     def __init__(self, args, cmd):
         self.args = args
+        self.cmd = cmd
         util.log_java_version()
         logging.info(util.run_cmd_ignore_fail(['buck', '--version']))
 
-        self.cmd = cmd[2:]  # TODO: make the extraction of targets smarter
-
     def capture(self):
+        try:
+            if self.args.use_flavors:
+                return self.capture_with_flavors()
+            else:
+                return self.capture_without_flavors()
+        except subprocess.CalledProcessError as exc:
+            if self.args.debug:
+                traceback.print_exc()
+            return exc.returncode
+
+    def create_cxx_buck_configuration_args(self):
+        # return a string that can be passed in input to buck
+        # and configures the paths to infer/clang/plugin/xcode
+        facebook_clang_plugins_root = os.path.join(
+            utils.get_infer_root(),
+            'facebook-clang-plugins',
+        )
+        clang_path = os.path.join(
+            facebook_clang_plugins_root,
+            'clang',
+            'bin',
+            'clang',
+        )
+        plugin_path = os.path.join(
+            facebook_clang_plugins_root,
+            'libtooling',
+            'build',
+            'FacebookClangPlugin.dylib',
+        )
+        args = [
+            '--config',
+            'infer.infer_bin={bin}'.format(bin=utils.get_infer_bin()),
+            '--config',
+            'infer.clang_compiler={clang}'.format(clang=clang_path),
+            '--config',
+            'infer.clang_plugin={plugin}'.format(plugin=plugin_path),
+        ]
+        if self.args.xcode_developer_dir is not None:
+            args.append('--config')
+            args.append('apple.xcode_developer_dir={devdir}'.format(
+                devdir=self.args.xcode_developer_dir))
+        return args
+
+    def _get_analysis_result_files(self):
+        # TODO(8610738): Make targets extraction smarter
+        buck_results_cmd = [
+            self.cmd[0],
+            'targets',
+            '--show-output'
+        ] + self.cmd[2:] + self.create_cxx_buck_configuration_args()
+        proc = subprocess.Popen(buck_results_cmd, stdout=subprocess.PIPE)
+        (buck_output, _) = proc.communicate()
+        # remove target name prefixes from each line and split them into a list
+        out = [x.split(None, 1)[1] for x in buck_output.strip().split('\n')]
+        # from the resulting list, get only what ends in json
+        return [x for x in out if x.endswith('.json')]
+
+    def _run_buck_with_flavors(self):
+        # TODO: Use buck to identify the project's root folder
+        if not os.path.isfile('.buckconfig'):
+            print('Please run this command from the folder where .buckconfig '
+                  'is located')
+            return os.EX_USAGE
+        subprocess.check_call(
+            self.cmd + self.create_cxx_buck_configuration_args())
+        return os.EX_OK
+
+    def capture_with_flavors(self):
+        ret = self._run_buck_with_flavors()
+        if not ret == os.EX_OK:
+            return ret
+        result_files = self._get_analysis_result_files()
+        merged_results_path = \
+            os.path.join(self.args.infer_out, utils.JSON_REPORT_FILENAME)
+        utils.merge_json_reports(
+            result_files,
+            merged_results_path)
+        # TODO: adapt inferlib.print_errors to support json and print on screen
+        print('Results saved in {results_path}'.format(
+            results_path=merged_results_path))
+        return os.EX_OK
+
+    def capture_without_flavors(self):
         # BuckAnalyze is a special case, and we run the analysis from here
         capture_cmd = [utils.get_cmd_in_bin_dir('BuckAnalyze')]
         if self.args.infer_out is not None:
@@ -71,13 +162,7 @@ class BuckAnalyzer:
             capture_cmd.append('--no-cache')
         if self.args.print_harness:
             capture_cmd.append('--print-harness')
-
-        capture_cmd += self.cmd
+        capture_cmd += self.cmd[2:]  # TODO: make extraction of targets smarter
         capture_cmd += ['--analyzer', self.args.analyzer]
-        try:
-            subprocess.check_call(capture_cmd)
-            return os.EX_OK
-        except subprocess.CalledProcessError as exc:
-            if self.args.debug:
-                traceback.print_exc()
-            return exc.returncode
+        subprocess.check_call(capture_cmd)
+        return os.EX_OK

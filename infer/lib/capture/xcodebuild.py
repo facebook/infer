@@ -19,15 +19,9 @@ Analysis examples:
 infer -- xcodebuild -target HelloWorldApp -sdk iphonesimulator
 infer -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld'''
 
-SCRIPT_DIR = os.path.dirname(__file__)
-INFER_ROOT = os.path.join(SCRIPT_DIR, '..', '..', '..')
-FCP_ROOT = os.path.join(INFER_ROOT, 'facebook-clang-plugins')
-CLANG_WRAPPER = os.path.join(
-    SCRIPT_DIR, 'clang',
-)
-CLANGPLUSPLUS_WRAPPER = os.path.join(
-    SCRIPT_DIR, 'clang++',
-)
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+CLANG_WRAPPER = os.path.join(SCRIPT_DIR, 'clang')
+CLANGPLUSPLUS_WRAPPER = os.path.join(SCRIPT_DIR, 'clang++')
 
 
 def gen_instance(*args):
