@@ -28,7 +28,7 @@
   },
   {
     "type": "CONTEXT_LEAK",
-    "procedure": "void ContextLeaks.handlerLeak()",
+    "procedure": "void ContextLeaks.indirectHandlerLeak()",
     "file": "codetoanalyze/java/infer/ContextLeaks.java"
   },
   {

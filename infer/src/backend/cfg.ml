@@ -460,6 +460,10 @@ module Node = struct
   let proc_desc_get_captured proc_desc =
     proc_desc.pd_attributes.ProcAttributes.captured
 
+  (** Return the visibility attribute *)
+  let proc_desc_get_access proc_desc =
+    proc_desc.pd_attributes.ProcAttributes.access
+
   let proc_desc_get_nodes proc_desc =
     proc_desc.pd_nodes
 
@@ -645,6 +649,7 @@ module Procdesc = struct
   let get_loc = Node.proc_desc_get_loc
   let get_locals = Node.proc_desc_get_locals
   let get_captured = Node.proc_desc_get_captured
+  let get_access = Node.proc_desc_get_access
   let get_nodes = Node.proc_desc_get_nodes
   let get_slope = Node.proc_desc_get_slope
   let get_sliced_slope = Node.proc_desc_get_sliced_slope

@@ -702,7 +702,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       (* let () = L.out "@.AFTER abs:@.$%a@." (Prop.pp_prop Utils.pe_text) prop'' in *)
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
-      if !Config.curr_language = Config.Java then
+      if !Config.curr_language = Config.Java && Cfg.Procdesc.get_access pdesc <> Sil.Private then
         report_context_leaks pname (Prop.get_sigma post) tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None

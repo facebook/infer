@@ -71,6 +71,9 @@ module Procdesc : sig
   (** Return name and type of block's captured variables *)
   val get_captured : t -> (Mangled.t * Sil.typ) list
 
+  (** Return the visibility attribute *)
+  val get_access : t -> Sil.access
+
   val get_nodes : t -> node list
 
   (** Get the procedure's nodes up until the first branching *)
