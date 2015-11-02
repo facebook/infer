@@ -59,16 +59,12 @@ let procedure_should_be_analyzed curr_pdesc proc_name =
         =
         proc_attributes.ProcAttributes.loc.Location.file in
 
-      let is_harness () =
-        string_contains "InferGeneratedHarness" (Procname.to_simplified_string proc_name) in
-
       !Config.ondemand_enabled &&
       proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
       not currently_analyzed && (* avoid infinite loops *)
       not already_analyzed && (* avoid re-analysis of the same procedure *)
       (across_files () || (* whether to push the analysis into other files *)
-       same_file proc_attributes) &&
-      not (is_harness ()) (* skip harness procedures *)
+       same_file proc_attributes)
   | None ->
       false
 
