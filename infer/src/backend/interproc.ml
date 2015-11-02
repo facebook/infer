@@ -1380,8 +1380,7 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
   L.out "%a" print_file_stats ();
   save_file_stats ()
 
-(** Print the stats for all the files in the exe_env *)
-let print_stats exe_env =
+let _print_stats exe_env =
   let proc_is_active proc_desc =
     Exe_env.proc_is_active exe_env (Cfg.Procdesc.get_proc_name proc_desc) in
   Exe_env.iter_files (fun fname tenv cfg ->
@@ -1390,3 +1389,7 @@ let print_stats exe_env =
         let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
         Exe_env.get_source exe_env proc_name <> fname in
       print_stats_cfg proc_shadowed proc_is_active cfg) exe_env
+
+(** Print the stats for all the files in the exe_env *)
+let print_stats exe_env =
+  if !Config.developer_mode then _print_stats exe_env
