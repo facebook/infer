@@ -1,14 +1,14 @@
 [
   {
-    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java",
-    "line": "29",
     "type": "NULL_DEREFERENCE",
-    "procedure": "void MainActivity.onCreate(Bundle)"
+    "hash": "978769084",
+    "procedure": "void MainActivity.onCreate(Bundle)",
+    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java"
   },
   {
-    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java",
-    "line": "46",
     "type": "RESOURCE_LEAK",
-    "procedure": "void MainActivity.writeToFile()"
+    "hash": "1002287542",
+    "procedure": "void MainActivity.writeToFile()",
+    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java"
   }
 ]

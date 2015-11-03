@@ -71,6 +71,9 @@ public class MainActivity extends ActionBarActivity {
     }
 
   private void inferShouldNotReport() {
+    // Generated.java is supposed to be skipped by infer, thus even though
+    // Generated.returnsNull() returns null, infer is not supposed to know
+    // about it hence should not report an NPE here
     Object o = Generated.returnsNull();
     o.toString();
   }
