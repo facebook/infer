@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 19 -> 18 ;
-18 [label="18:  DeclStmt \n   n$0=_fun_get_ptr() [line 26]\n  n$1=_fun_X_call(n$0:class X ) [line 26]\n  *&c:int =n$1 [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n  NULLIFY(&c,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+18 [label="18:  DeclStmt \n   n$0=_fun_get_ptr() [line 26]\n  n$1=_fun_X_call(n$0:class X *) [line 26]\n  *&c:int =n$1 [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n  NULLIFY(&c,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
 	 18 -> 17 ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 15 -> 14 ;
-14 [label="14:  DeclStmt \n   n$0=_fun_get_ref() [line 21]\n  n$1=_fun_X_call(n$0:class X ) [line 21]\n  *&c:int =n$1 [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&c,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$0=_fun_get_ref() [line 21]\n  n$1=_fun_X_call(n$0:class X &) [line 21]\n  *&c:int =n$1 [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&c,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 14 -> 13 ;

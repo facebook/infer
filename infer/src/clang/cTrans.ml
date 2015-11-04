@@ -403,12 +403,9 @@ struct
     assert (IList.length pre_trans_result.exps = 1);
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
         "WARNING: in Method call we expect to know the object\n" in
-    let class_typ =
-      match class_typ with
-      | Sil.Tptr (t, _) -> CTypes.expand_structured_type context.CContext.tenv t
-      | t -> t in
     (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
-    let class_name = CTypes.classname_of_type class_typ in
+    (* unlike field access, for method calls there is no need to expand class type *)
+    let class_name = match class_typ with Sil.Tptr (t, _) | t -> CTypes.classname_of_type t in
     let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
         method_name type_ptr in
     let method_exp = (Sil.Const (Sil.Cfun pname), method_typ) in
@@ -1637,7 +1634,7 @@ struct
   and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
-    let result_trans_exp_stmt = instruction trans_state exp_stmt in
+    let result_trans_exp_stmt = exec_with_lvalue_as_reference instruction trans_state exp_stmt in
     decl_ref_trans trans_state result_trans_exp_stmt stmt_info expr_info decl_ref
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =

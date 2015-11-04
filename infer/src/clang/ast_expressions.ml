@@ -259,7 +259,7 @@ let make_obj_c_ivar_ref_expr_info k ptr n tp = {
 
 (* Build an AST cast expression of a decl_ref_expr *)
 let make_cast_expr tp di decl_ref_expr_info objc_kind =
-  let expr_info = make_expr_info_with_objc_kind tp objc_kind in
+  let expr_info = make_expr_info tp `RValue objc_kind in
   let stmt_info = make_stmt_info di in
   let decl_ref_exp = make_decl_ref_exp stmt_info expr_info decl_ref_expr_info in
   let cast_expr = {
@@ -285,7 +285,7 @@ let make_self_field class_type di tp field_name =
 let make_deref_self_field class_decl_opt di tp field_name =
   let stmt_info = make_stmt_info di in
   let ivar_ref_exp = make_self_field class_decl_opt di tp field_name in
-  let expr_info' = make_expr_info_with_objc_kind tp `ObjCProperty in
+  let expr_info' = make_expr_info tp `RValue `ObjCProperty in
   let cast_exp_info = {
     Clang_ast_t.cei_cast_kind = `LValueToRValue;
     cei_base_path = [];

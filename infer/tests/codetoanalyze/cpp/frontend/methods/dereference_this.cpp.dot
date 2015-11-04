@@ -1,5 +1,5 @@
 digraph iCFG {
-10 [label="10:  Call _fun_A_method \n   n$0=*&a_ptr:class A * [line 24]\n  n$1=_fun_A_method(n$0:class A ) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&a_ptr,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+10 [label="10:  Call _fun_A_method \n   n$0=*&a_ptr:class A * [line 24]\n  n$1=_fun_A_method(n$0:class A *) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&a_ptr,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 10 -> 9 ;
