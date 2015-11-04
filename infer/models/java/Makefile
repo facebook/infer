@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-CWD = $(shell pwd)
+CWD = $(shell printf "%q\n" "$(shell pwd)")
 BINDIR = $(CWD)/../../bin
 
 INFER = INFER_ANALYZE_MODELS=1 $(BINDIR)/infer --buck --analyzer infer --multicore 1
@@ -10,7 +10,7 @@ JACKSON_JAR = ../../../dependencies/java/jackson/jackson-2.2.3.jar
 REMOVE = rm -rf
 MAKE = mkdir
 
-CURRENT_DIR = $(shell pwd)
+CURRENT_DIR = $(shell printf "%q\n" "$(shell pwd)")
 
 MODELS_OUT = $(CURRENT_DIR)/models
 CSV_REPORT = $(MODELS_OUT)/infer/report.csv

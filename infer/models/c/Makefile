@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-CWD = $(shell pwd)
+CWD = $(shell printf "%q\n" "$(shell pwd)")
 BINDIR = $(CWD)/../../bin
 LIBDIR = $(CWD)/../../lib
 LIB_SPECS = $(LIBDIR)/specs
