@@ -1,13 +1,11 @@
 [
   {
     "type": "NULL_DEREFERENCE",
-    "hash": "978769084",
     "procedure": "void MainActivity.onCreate(Bundle)",
     "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java"
   },
   {
     "type": "RESOURCE_LEAK",
-    "hash": "1002287542",
     "procedure": "void MainActivity.writeToFile()",
     "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java"
   }
