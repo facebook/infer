@@ -113,6 +113,14 @@ end
 
 module General_utils :
 sig
+
+  type warning_desc = {
+    name : string;
+    description : string;
+    suggestion : string; (* an optional suggestion or correction *)
+    loc : string;
+  }
+
   type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool
 
   val string_from_list : string list -> string

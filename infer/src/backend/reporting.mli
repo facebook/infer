@@ -8,8 +8,8 @@
  *)
 
 (** Type of functions to report issues to the error_log in a spec. *)
-type log_issue =
-  Procname.t ->
+
+type log_t =
   ?loc: Location.t option ->
   ?node_id: (int * int) option ->
   ?session: int option ->
@@ -17,6 +17,10 @@ type log_issue =
   ?pre: Prop.normal Prop.t option ->
   exn ->
   unit
+
+type log_issue = Procname.t -> log_t
+
+type log_issue_from_errlog = Errlog.t -> log_t
 
 (** Report an error in the given procedure. *)
 val log_error : log_issue
@@ -26,3 +30,12 @@ val log_warning : log_issue
 
 (** Report an info in the given procedure. *)
 val log_info : log_issue
+
+(** Report an error in the given error log. *)
+val log_error_from_errlog : log_issue_from_errlog
+
+(** Report a warning in the given error log. *)
+val log_warning_from_errlog : log_issue_from_errlog
+
+(** Report an info in the given error log. *)
+val log_info_from_errlog : log_issue_from_errlog

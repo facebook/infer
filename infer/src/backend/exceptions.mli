@@ -52,6 +52,7 @@ exception Divide_by_zero of Localise.error_desc * ml_location
 exception Field_not_null_checked of Localise.error_desc * ml_location
 exception Eradicate of string * Localise.error_desc
 exception Checkers of string * Localise.error_desc
+exception Frontend_warning of string * Localise.error_desc * ml_location
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Mangled.t * string * Localise.error_desc

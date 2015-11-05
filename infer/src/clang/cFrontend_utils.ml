@@ -343,7 +343,7 @@ struct
       ignore (type_ptr_to_sil_type tenv (`DeclPtr dr.Clang_ast_t.dr_decl_pointer)) in
     IList.iter add_elem decl_ref_list
 
-end 
+end
 
 (* Global counter for anonymous block*)
 let block_counter = ref 0
@@ -355,6 +355,13 @@ let get_fresh_block_index () =
 
 module General_utils =
 struct
+
+  type warning_desc = {
+    name : string;
+    description : string;
+    suggestion : string; (* an optional suggestion or correction *)
+    loc : string;
+  }
 
   type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool
 

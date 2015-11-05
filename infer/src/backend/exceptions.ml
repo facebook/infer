@@ -51,6 +51,7 @@ exception Deallocation_mismatch of Localise.error_desc * ml_location
 exception Divide_by_zero of Localise.error_desc * ml_location
 exception Eradicate of string * Localise.error_desc
 exception Field_not_null_checked of Localise.error_desc * ml_location
+exception Frontend_warning of string * Localise.error_desc * ml_location
 exception Checkers of string * Localise.error_desc
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
@@ -64,7 +65,7 @@ exception Parameter_not_null_checked of Localise.error_desc * ml_location
 exception Pointer_size_mismatch of Localise.error_desc * ml_location
 exception Precondition_not_found of Localise.error_desc * ml_location
 exception Precondition_not_met of Localise.error_desc * ml_location
-exception Retain_cycle of Prop.normal Prop.t * Sil.hpred *Localise.error_desc * ml_location
+exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * ml_location
 exception Return_expression_required of Localise.error_desc * ml_location
 exception Return_statement_missing of Localise.error_desc * ml_location
 exception Return_value_ignored of Localise.error_desc * ml_location
@@ -140,6 +141,8 @@ let recognize_exception exn =
         (Localise.from_string kind_s, desc, None, Exn_user, High, None, Prover)
     | Field_not_null_checked (desc, mloc) ->
         (Localise.field_not_null_checked, desc, Some mloc, Exn_user, Medium, Some Kwarning, Nocat)
+    | Frontend_warning (name, desc, mloc) ->
+        (Localise.from_string name, desc, Some mloc, Exn_user, Medium, None, Nocat)
     | Checkers (kind_s, desc) ->
         (Localise.from_string kind_s, desc, None, Exn_user, High, None, Prover)
     | Null_dereference (desc, mloc) ->

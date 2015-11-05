@@ -187,6 +187,8 @@ val desc_deallocate_static_memory : string -> Procname.t -> Location.t -> error_
 
 val desc_divide_by_zero : string -> Location.t -> error_desc
 
+val desc_frontend_warning : string -> string -> string -> error_desc
+
 val desc_leak :
   string option -> Sil.resource option -> Sil.res_action option ->
   Location.t -> string option -> error_desc

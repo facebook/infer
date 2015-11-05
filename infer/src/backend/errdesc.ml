@@ -981,6 +981,10 @@ let explain_tainted_value_reaching_sensitive_function e loc =
 let explain_return_statement_missing loc =
   Localise.desc_return_statement_missing loc
 
+(** explain a fronend warning *)
+let explain_frontend_warning loc =
+  Localise.desc_frontend_warning loc
+
 (** explain a comparing floats for equality *)
 let explain_comparing_floats_for_equality loc =
   Localise.desc_comparing_floats_for_equality loc

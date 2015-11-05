@@ -220,6 +220,19 @@ let method_is_property_accesor cls method_name =
           else None in
   IList.fold_right method_is_getter properties_class None
 
+let is_strong_property property_type =
+  let _, attrs, _, _, _, _ = property_type in
+  IList.exists (fun a -> match a with
+      | `Strong -> true
+      | _ -> false) attrs
+
+let property_line property_type =
+  let _, attrs, decl_info, _, _, _ = property_type in
+  let src_range = fst decl_info.Clang_ast_t.di_source_range in
+  match src_range.Clang_ast_t.sl_line with
+  | Some l -> l
+  | _ -> -1
+
 let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
   let pname = Ast_utils.property_name property_impl_decl_info in
   let prop_name = pname.Clang_ast_t.ni_name in
@@ -366,7 +379,7 @@ let add_properties_to_table curr_class decl_list =
     | _ -> () in
   IList.iter add_property_to_table decl_list
 
-(* Given a list of declarations in an interface returns list of methods)*)
+(* Given a list of declarations in an interface returns list of methods *)
 let get_methods curr_class decl_list =
   let class_name = CContext.get_curr_class_name curr_class in
   add_properties_to_table curr_class decl_list;

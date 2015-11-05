@@ -79,3 +79,9 @@ val method_is_property_accesor : CContext.curr_class -> string ->
 
 val get_ivar_name : Clang_ast_t.named_decl_info -> Clang_ast_t.named_decl_info option ->
   Clang_ast_t.named_decl_info
+
+(* Given a property type returns whether the property is strong *)
+val is_strong_property : property_type -> bool
+
+(* Given a property type returns whether the property line *)
+val property_line : property_type -> int

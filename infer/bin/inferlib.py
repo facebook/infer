@@ -286,7 +286,8 @@ def should_report(analyzer, row):
         'ASSERTION_FAILURE',
         'CONTEXT_LEAK',
         'BAD_POINTER_COMPARISON',
-        # 'CHECKERS_PRINTF_ARGS'
+        'STRONG_DELEGATE_WARNING'
+        #'CHECKERS_PRINTF_ARGS'
         # TODO (#8030397): revert this once all the checkers are moved to Infer
     ]
 

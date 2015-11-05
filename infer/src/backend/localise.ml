@@ -573,6 +573,10 @@ let desc_divide_by_zero expr_str loc =
       (at_line tags loc) in
   [description], None, !tags
 
+let desc_frontend_warning desc sugg loc =
+  let tags = Tags.create () in
+  [desc ^" at line "^ loc ^". "^ sugg], None, !tags
+
 let desc_leak value_str_opt resource_opt resource_action_opt loc bucket_opt =
   let tags = Tags.create () in
   let () = match bucket_opt with
@@ -655,7 +659,7 @@ let desc_retain_cycle prop cycle loc =
     match Str.split_delim (Str.regexp_string "&old_") s with
     | [_; s'] -> s'
     | _ -> s in
-  let do_edge ((se,_), f, se') =
+  let do_edge ((se, _), f, se') =
     match se with
     | Sil.Eexp(Sil.Lvar pvar, _) when Sil.pvar_equal pvar Sil.block_pvar ->
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing "^(Ident.fieldname_to_string f)^"; ";
