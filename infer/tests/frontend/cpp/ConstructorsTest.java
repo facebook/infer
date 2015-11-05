@@ -30,9 +30,14 @@ public class ConstructorsTest {
   }
 
   @Test
-  public void testInlineMethodDotFilesMatch()
+  public void testConstructorWithBodyDotFilesMatch()
       throws InterruptedException, IOException, InferException {
     frontendTest("constructor_with_body.cpp");
   }
 
+  @Test
+  public void testConstructorDefaultArgDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("constructor_default_arg.cpp");
+  }
 }

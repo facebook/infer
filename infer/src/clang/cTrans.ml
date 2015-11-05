@@ -423,7 +423,7 @@ struct
     | `Function -> function_deref_trans trans_state decl_ref
     | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
     | `Field | `ObjCIvar -> field_deref_trans trans_state pre_trans_result decl_ref
-    | `CXXMethod -> method_deref_trans trans_state pre_trans_result decl_ref
+    | `CXXMethod | `CXXConstructor -> method_deref_trans trans_state pre_trans_result decl_ref
     | _ ->
         let print_error decl_kind =
           Printing.log_stats
@@ -712,12 +712,11 @@ struct
            | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee fun_stmt params_stmt
-      si expr_info =
+      si function_type =
     let open CContext in
     let pln = trans_state_pri.parent_line_number in
     let line_number = CLocation.get_line si pln in
     let context = trans_state_pri.context in
-    let function_type = CTypes_decl.get_type_from_expr_info expr_info context.tenv in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location si pln context in
     (* first for method address, second for 'this' expression *)
@@ -762,6 +761,7 @@ struct
 
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
     let pln = trans_state.parent_line_number in
+    let context = trans_state.context in
     (* First stmt is the method+this expr and the rest are params *)
     let fun_exp_stmt, params_stmt = (match stmt_list with
         | fe :: params -> fe, params
@@ -773,8 +773,19 @@ struct
                                parent_line_number = line_number;
                                succ_nodes = [] } in
     let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
+    let function_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee fun_exp_stmt params_stmt
-      si expr_info
+      si function_type
+
+  and cxxConstructExpr_trans trans_state this_res_trans expr =
+    match expr with
+    | Clang_ast_t.CXXConstructExpr (si, params_stmt, ei, cxx_constr_info) ->
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+        let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
+        let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
+        cxx_method_construct_call_trans trans_state_pri res_trans_callee expr params_stmt si
+          Sil.Tvoid
+    | _ -> assert false
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
     Printing.log_out "  priority node free = '%s'\n@."
@@ -1477,6 +1488,11 @@ struct
       | Some (InitListExpr (stmt_info , stmts , expr_info))
       | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
           initListExpr_trans trans_state stmt_info expr_info stmts pvar
+      | Some (CXXConstructExpr _ as expr) ->
+          let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
+          let this_exp = (Sil.Lvar pvar, typ_ptr) in
+          let this_res_trans = { empty_res_trans with exps = [this_exp] } in
+          cxxConstructExpr_trans trans_state this_res_trans expr
       | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
           let sil_loc = CLocation.get_sil_location stmt_info pln context in
           let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
