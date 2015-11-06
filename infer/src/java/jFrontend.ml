@@ -162,7 +162,6 @@ let create_icfg never_null_matcher linereader program icfg source_file cn node =
     Javalib.m_iter (fun m ->
         (* each procedure has different scope: start names from id 0 *)
         Ident.NameGenerator.reset ();
-
         let method_kind = JTransType.get_method_kind m in
         match m with
         | Javalib.ConcreteMethod cm ->

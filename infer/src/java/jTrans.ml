@@ -552,18 +552,17 @@ let rec expression context pc expr =
         let lderef_instr = Sil.Letderef (tmp_id, sil_expr, sil_type, loc) in
         (idl @ [tmp_id], instrs @ [lderef_instr], Sil.Var tmp_id)
 
-let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_code is_static =
+let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_code method_kind =
   let cfg = JContext.get_cfg context in
   let tenv = JContext.get_tenv context in
   let program = JContext.get_program context in
+  if JConfig.create_callee_procdesc then
+    ignore (get_method_procdesc program cfg tenv cn ms method_kind);
   let cf_virtual = match invoke_code with
     | I_Virtual -> true
     | _ -> false in
   let call_flags =
     { Sil.cf_virtual = cf_virtual; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
-  let callee_procdesc =
-    match get_method_procdesc program cfg tenv cn ms is_static with
-    | Called p | Defined p -> p in
   let init =
     match sil_obj_opt with
     | None -> ([], [], [])
@@ -595,10 +594,13 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
   let callee_procname =
     let proc = Procname.from_string_c_fun (JBasics.ms_name ms) in
     if JBasics.cn_equal cn JConfig.infer_builtins_cl && SymExec.function_is_builtin proc then proc
-    else Cfg.Procdesc.get_proc_name callee_procdesc in
+    else JTransType.get_method_procname cn ms method_kind in
   let call_idl, call_instrs =
     let callee_fun = Sil.Const (Sil.Cfun callee_procname) in
-    let return_type = Cfg.Procdesc.get_ret_type callee_procdesc in
+    let return_type =
+      match JBasics.ms_rtype ms with
+      | None -> Sil.Tvoid
+      | Some vt -> JTransType.value_type program tenv vt in
     let call_ret_instrs sil_var =
       let ret_id = Ident.create_fresh Ident.knormal in
       let call_instr = Sil.Call ([ret_id], callee_fun, call_args, loc, call_flags) in
@@ -637,7 +639,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
 
     | _ -> call_instrs in
 
-  (callee_procdesc, callee_procname, call_idl, instrs)
+  (callee_procname, call_idl, instrs)
 
 let get_array_size context pc expr_list content_type =
   let get_expr_instr expr other_instrs =
@@ -918,7 +920,7 @@ let rec instruction context pc instr : translation =
         let ret_id = Ident.create_fresh Ident.knormal in
         let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
         let constr_ms = JBasics.make_ms JConfig.constructor_name constr_type_list None in
-        let (constr_procdesc, constr_procname, call_ids, call_instrs) =
+        let constr_procname, call_ids, call_instrs =
           let ret_opt = Some (Sil.Var ret_id, class_type) in
           method_invocation
             context loc pc None cn constr_ms ret_opt constr_arg_list I_Special Procname.Non_Static in
@@ -955,7 +957,7 @@ let rec instruction context pc instr : translation =
               let arg_typ = JTransType.expr_type context arg in
               Some (sil_arg_expr, arg_typ), [], ids, instrs
           | _ -> None, args, [], [] in
-        let (callee_procdesc, callee_procname, call_idl, call_instrs) =
+        let callee_procname, call_idl, call_instrs =
           method_invocation context loc pc var_opt cn ms sil_obj_opt args I_Static Procname.Static in
         let node_kind = Cfg.Node.Stmt_node ("Call "^(Procname.to_string callee_procname)) in
         let call_node = create_node node_kind (ids @ call_idl) (instrs @ call_instrs) in
@@ -967,7 +969,7 @@ let rec instruction context pc instr : translation =
         let sil_obj_type = JTransType.expr_type context obj in
         let create_call_node cn =
           let (ids, instrs, sil_obj_expr) = expression context pc obj in
-          let (callee_procdesc, callee_procname, call_ids, call_instrs) =
+          let callee_procname, call_ids, call_instrs =
             let ret_opt = Some (sil_obj_expr, sil_obj_type) in
             method_invocation context loc pc var_opt cn ms ret_opt args I_Virtual Procname.Non_Static in
           let node_kind = Cfg.Node.Stmt_node ("Call "^(Procname.to_string callee_procname)) in
@@ -1000,7 +1002,7 @@ let rec instruction context pc instr : translation =
         let cn = (resolve_method context cn ms) in
         let (ids, instrs, sil_obj_expr) = expression context pc obj in
         let sil_obj_type = JTransType.expr_type context obj in
-        let (callee_procdesc, callee_procname, call_ids, call_instrs) =
+        let callee_procname, call_ids, call_instrs =
           method_invocation context loc pc var_opt cn ms (Some (sil_obj_expr, sil_obj_type)) args I_Special Procname.Non_Static in
         let node_kind = Cfg.Node.Stmt_node ("Call "^(Procname.to_string callee_procname)) in
         let call_node = create_node node_kind (ids @ call_ids) (instrs @ call_instrs) in
@@ -1036,7 +1038,7 @@ let rec instruction context pc instr : translation =
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let (constr_procdesc, constr_procname, call_ids, call_instrs) =
+          let constr_procname, call_ids, call_instrs =
             let ret_opt = Some (Sil.Var ret_id, class_type) in
             method_invocation context loc pc None npe_cn constr_ms ret_opt [] I_Special Procname.Static in
           let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
@@ -1090,7 +1092,7 @@ let rec instruction context pc instr : translation =
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let (constr_procdesc, constr_procname, call_ids, call_instrs) =
+          let constr_procname, call_ids, call_instrs =
             method_invocation
               context loc pc None out_of_bound_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
@@ -1129,7 +1131,7 @@ let rec instruction context pc instr : translation =
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let (constr_procdesc, constr_procname, call_ids, call_instrs) =
+          let constr_procname, call_ids, call_instrs =
             method_invocation context loc pc None cce_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
           let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in

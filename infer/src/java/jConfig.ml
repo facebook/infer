@@ -142,3 +142,6 @@ let translate_checks = ref false
 
 (* Generate harness for Android code *)
 let create_harness = ref false
+
+(* Create a procedure description of callees *)
+let create_callee_procdesc = true
