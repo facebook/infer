@@ -575,6 +575,106 @@
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java"
   },
   {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetHostEquals(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetHostCompareTo(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetHostEndsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetHostStartsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetAuthoriyEquals(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetAuthorityCompareTo(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetAuthorityEndsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetAuthorityStartsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetProtocolEquals(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetProtocolCompareTo(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetProtocolEndsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintGetProtocolStartsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToExternalFormEquals(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToExternalFormCompareTo(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToExternalFormEndsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToExternalFormStartsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToStringEquals(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToStringCompareTo(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToStringEndsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
+    "type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "procedure": "String TaintExample.taintToStringStartsWith(String)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java"
+  },
+  {
     "type": "RESOURCE_LEAK",
     "procedure": "void WriterLeaks.writerNotClosedAfterWrite()",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java"

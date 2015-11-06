@@ -210,7 +210,8 @@ let recognize_exception exn =
         let desc = Localise.verbatim_desc s in
         (Localise.from_string "Sys_error", desc, None, Exn_system, Low, None, Nocat)
     | Tainted_value_reaching_sensitive_function (desc, mloc) ->
-        (Localise.tainted_value_reaching_sensitive_function, desc, Some mloc, Exn_developer, Medium, None, Nocat)
+        (Localise.tainted_value_reaching_sensitive_function, desc, Some mloc,
+         Exn_user, Medium, Some Kerror, Nocat)
     | Unix.Unix_error (_, s1, s2) ->
         let desc = Localise.verbatim_desc (s1 ^ s2) in
         (Localise.from_string "Unix_error", desc, None, Exn_system, Low, None, Nocat)

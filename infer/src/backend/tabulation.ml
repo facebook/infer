@@ -761,39 +761,47 @@ let inconsistent_actualpre_missing actual_pre split_opt =
       Prover.check_inconsistency prop''
   | None -> false
 
-(* get the taint/untaint info from the pure part*)
+(* Collect the taint/untain info on the pi part *)
 let rec get_taint_untaint pi =
+  let get_att_exp p e (t,u) =
+    match Prop.get_taint_attribute p e with
+    | Some(Sil.Ataint) ->
+        L.d_str "   ---->Found TAINTED exp: "; Sil.d_exp e; L.d_ln ();
+        (e::t, u)
+    | Some(Sil.Auntaint) ->
+        L.d_str "   ---->Found UNTAINTED exp: "; Sil.d_exp e; L.d_ln ();
+        (t, e::u)
+    | _ -> (t,u) in
   match pi with
   | [] -> ([],[])
   | Sil.Aneq (e1, e2):: pi' ->
-      let p = Prop.replace_pi pi Prop.prop_emp in
-      (match Prop.get_taint_attribute p e1, Prop.get_taint_attribute p e2 with
-       | Some(Sil.Ataint), _ -> let (t', u') = get_taint_untaint pi' in (e1:: t', u')
-       | Some(Sil.Auntaint), _ -> let (t', u') = get_taint_untaint pi' in (t', e1:: u')
-       | _, Some(Sil.Ataint) -> let (t', u') = get_taint_untaint pi' in (e2:: t', u')
-       | _ , Some(Sil.Auntaint) -> let (t', u') = get_taint_untaint pi' in (t', e2:: u')
-       | _, _ -> get_taint_untaint pi')
+      let (t, u) = get_taint_untaint pi' in
+      let p = Prop.replace_pi [Sil.Aneq (e1, e2)] Prop.prop_emp in
+      let (t',u') = get_att_exp p e1 (t,u) in
+      get_att_exp p e2 (t',u')
   | _ :: pi' -> get_taint_untaint pi'
 
-(* perform the taint analysis check *)
-let do_taint_check caller_pname actual_pre missing_pi missing_sigma sub1 sub2 =
-  let rec intersection_taint_untaint taint untaint = (* note: return the first element in the intersection*)
+(* perform the taint analysis check by comparing in a function call the
+   actual calling state and the missing pi computed by abduction *)
+let do_taint_check caller_pname calling_prop missing_pi sub prop =
+  (* Note: returns only the first element in the intersection*)
+  let rec intersection_taint_untaint taint untaint =
     match taint with
     | [] -> None
     | e:: taint' -> if (IList.exists (fun e' -> Sil.exp_equal e e') untaint) then (Some e)
         else intersection_taint_untaint taint' untaint in
-  let augmented_actual_pre = Prop.replace_pi ((Prop.get_pi actual_pre) @ missing_pi) actual_pre in
-  let augmented_actual_pre = Prop.replace_sigma ((Prop.get_sigma actual_pre) @ missing_sigma) augmented_actual_pre in
-  let sub2_augmented_actual_pre = Prop.prop_sub sub2 augmented_actual_pre in
-  let taint2, untaint2 = get_taint_untaint (Prop.get_pi sub2_augmented_actual_pre) in
-  L.d_str "^^^^AUGMENTED ACTUAL PRE2: "; Prop.d_prop sub2_augmented_actual_pre; L.d_ln();
-  L.d_str "^^^^TAINT2: "; Sil.d_exp_list taint2; L.d_ln ();
-  L.d_str "^^^^UNTAINT2: "; Sil.d_exp_list untaint2; L.d_ln ();
-  match intersection_taint_untaint taint2 untaint2 with
-  | None -> L.d_str "^^^^^^NO TAINT ERROR"
+  let combined_calling_prop =
+    Prop.replace_pi ((Prop.get_pi calling_prop) @ missing_pi) calling_prop in
+  let sub_combined_calling_prop = Prop.prop_sub sub combined_calling_prop in
+  let taint_set, untaint_set = get_taint_untaint (Prop.get_pi sub_combined_calling_prop) in
+  L.d_str "Actual pre combined with missing pi: "; Prop.d_prop sub_combined_calling_prop; L.d_ln();
+  L.d_str "Taint set: "; Sil.d_exp_list taint_set; L.d_ln ();
+  L.d_str "Untaint set: "; Sil.d_exp_list untaint_set; L.d_ln ();
+  match intersection_taint_untaint taint_set untaint_set with
+  | None -> L.d_str "NO taint error detected"; L.d_ln();
   | Some e -> begin
-      L.d_str "^^^^^ERROR in TAINT ANALYSIS: ";
-      let e' = match Errdesc.find_pvar_with_exp sub2_augmented_actual_pre e with
+      L.d_str "Taint error detected!"; L.d_ln();
+      let e' = match Errdesc.find_pvar_with_exp prop e with
         | Some (pv, _) -> Sil.Lvar pv
         | None -> e in
       let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e' (State.get_loc ()) in
@@ -895,8 +903,8 @@ let exe_spec
                         vr_incons_res = inconsistent_results } in
       begin
         IList.iter log_check_exn checks;
-        if (!Config.taint_analysis && !Config.developer_mode) then
-          do_taint_check caller_pname actual_pre missing_pi missing_sigma sub1 sub2;
+        if !Config.taint_analysis then
+          do_taint_check caller_pname actual_pre missing_pi sub2 prop;
         let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
         match check_dereferences callee_pname subbed_pre sub2 spec_pre formal_params with
         | Some (Deref_undef _, _) when !Config.angelic_execution ->

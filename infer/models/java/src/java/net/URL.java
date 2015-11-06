@@ -11,6 +11,7 @@ package java.net;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.util.Hashtable;
+import com.facebook.infer.models.InferBuiltins;
 
 public final class URL implements java.io.Serializable {
 
@@ -65,4 +66,29 @@ public final class URL implements java.io.Serializable {
         return openConnection(null);
     }
 
+    String tainted_string() {
+        String res = new String();
+        InferBuiltins.__set_taint_attribute(res);
+        return res;
+    }
+
+    public String getHost() {
+        return tainted_string();
+    }
+
+    public String getAuthority() {
+        return tainted_string();
+    }
+
+    public String getProtocol() {
+        return tainted_string();
+    }
+
+    public String toExternalForm() {
+        return tainted_string();
+    }
+
+    public String toString() {
+        return tainted_string();
+    }
 }

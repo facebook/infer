@@ -10,6 +10,7 @@
 package java.lang;
 
 import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.models.InferBuiltins;
 
 public final class String {
 
@@ -55,7 +56,22 @@ public final class String {
 
 
     public boolean equals(Object anObject) {
+        InferBuiltins.assume(!InferBuiltins.__state_untainted(anObject));
         return this == anObject;
     }
 
+    public int compareTo(String aString) {
+        InferBuiltins.assume(!InferBuiltins.__state_untainted(aString));
+        return InferUndefined.nonneg_int();
+    }
+
+    public boolean endsWith(String aString) {
+        InferBuiltins.assume(!InferBuiltins.__state_untainted(aString));
+        return InferUndefined.boolean_undefined();
+    }
+
+    public boolean startsWith(String aString) {
+        InferBuiltins.assume(!InferBuiltins.__state_untainted(aString));
+        return InferUndefined.boolean_undefined();
+    }
 }

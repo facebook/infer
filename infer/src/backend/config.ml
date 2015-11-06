@@ -292,7 +292,7 @@ let save_time_in_summaries = ref false
 let smt_output = ref false
 
 (** flag: if true performs taint analysis *)
-let taint_analysis = ref false
+let taint_analysis = ref true
 
 (** set to true to printing tracing information for the analysis *)
 let trace_anal = ref false
