@@ -9,6 +9,11 @@
 
 (** Module for on-demand analysis. *)
 
+open Utils
+
+(** Optional set of source dirs to analyze in on-demand mode. *)
+val read_dirs_to_analyze : unit -> StringSet.t option
+
 type analyze_ondemand = Procname.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option

@@ -21,12 +21,31 @@ let source_file_from_pname pname =
 let source_file_to_pname fname =
   Procname.from_string_c_fun (DB.source_file_to_string fname)
 
-let pp_prolog fmt num_clusters =
+let pp_prolog fmt clusters =
   F.fprintf fmt "INFERANALYZE= %s $(INFER_OPTIONS) -results_dir '%s'\n@."
     Sys.executable_name
     (Escape.escape_map (fun c -> if c = '#' then Some "\\#" else None) !Config.results_dir);
   F.fprintf fmt "OBJECTS=";
-  for i = 1 to num_clusters do F.fprintf fmt "%a " Cluster.pp_cl i done;
+  let filter cl = match cl with
+      [ce] ->
+        begin
+          match Cluster.get_ondemand_info ce with
+          | Some source_dir ->
+              let in_ondemand_config = match Ondemand.read_dirs_to_analyze () with
+                | None ->
+                    true
+                | Some set ->
+                    StringSet.mem (DB.source_dir_to_string source_dir) set in
+              in_ondemand_config
+          | None ->
+              true
+        end
+    | _ ->
+        true in
+  IList.iteri
+    (fun i cl ->
+       if filter cl then F.fprintf fmt "%a " Cluster.pp_cl (i+1))
+    clusters;
   F.fprintf fmt "@.@.default: test@.@.all: test@.@.";
   F.fprintf fmt "test: $(OBJECTS)@.\techo \"Analysis done\"@.@."
 
@@ -74,7 +93,7 @@ let create_cluster_makefile_and_exit
       !cluster_nr tot_clusters_nr cluster print_files fmt (IntSet.elements !dependent_clusters);
     (* L.err "cluster %d has %d dependencies@."
        !cluster_nr (IntSet.cardinal !dependent_clusters) *) in
-  pp_prolog fmt tot_clusters_nr;
+  pp_prolog fmt clusters;
   IList.iter do_cluster clusters;
   pp_epilog fmt ();
   exit 0

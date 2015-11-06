@@ -36,6 +36,7 @@ val for_all2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
 val hd : 'a list -> 'a
 val iter : ('a -> unit) -> 'a list -> unit
 val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
+val iteri : (int -> 'a -> unit) -> 'a list -> unit
 val length : 'a list -> int
 
 (** tail-recursive variant of List.fold_right *)

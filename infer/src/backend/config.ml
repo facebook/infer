@@ -27,6 +27,12 @@ let from_env_variable var_name =
     let _ = Sys.getenv var_name in true
   with Not_found -> false
 
+let get_env_variable var_name =
+  try
+    let v = Sys.getenv var_name in
+    if v = "" then None else Some v
+  with Not_found -> None
+
 let attributes_dir_name = "attributes"
 let captured_dir_name = "captured"
 let sources_dir_name = "sources"

@@ -22,6 +22,25 @@ let () = Config.ondemand_enabled :=
 
 let across_files () = true
 
+(** Name of the ondemand file *)
+let ondemand_file () = Config.get_env_variable "INFER_ONDEMAND_FILE"
+
+(** Read the directories to analyze from the ondemand file. *)
+let read_dirs_to_analyze () =
+  let lines_opt = match ondemand_file () with
+    | None -> None
+    | Some fname -> Utils.read_file fname in
+  match lines_opt with
+  | None ->
+      None
+  | Some lines ->
+      let res = ref StringSet.empty in
+      let do_line line =
+        let source_dir = DB.source_dir_from_source_file (DB.source_file_from_string line) in
+        res := StringSet.add (DB.source_dir_to_string source_dir) !res in
+      IList.iter do_line lines;
+      Some !res
+
 type analyze_ondemand = Procname.t -> unit
 
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
