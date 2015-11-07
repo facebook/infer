@@ -14,6 +14,7 @@ Alternatively, we also provide a docker image in the docker/
 directory. Simply go to that directory and run `./run.sh` to get
 started with a working installation of Infer.
 
+
 ## Infer dependencies for MacOSX
 
 Here are the prerequisites to be able to compile Infer on MacOSX. This
@@ -48,6 +49,7 @@ opam install -y \
   javalib.2.3.1 \
   sawja.1.5.1
 ```
+
 
 ## Infer dependencies for Linux
 
