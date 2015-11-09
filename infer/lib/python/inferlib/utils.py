@@ -33,9 +33,9 @@ import time
 # this assumes that this file lives in infer/lib/python/infer/ and the binaries
 # are in infer/bin/
 INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
-INFER_ROOT_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
-                                    os.pardir, os.pardir, os.pardir, os.pardir)
-INFER_INFER_DIRECTORY = os.path.join(INFER_ROOT_DIRECTORY, 'infer')
+INFER_INFER_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
+                                     os.pardir, os.pardir, os.pardir)
+INFER_ROOT_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, os.pardir)
 FCP_DIRECTORY = os.path.join(INFER_ROOT_DIRECTORY, 'facebook-clang-plugins')
 LIB_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'lib')
 BIN_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'bin')
