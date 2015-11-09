@@ -11,8 +11,9 @@ import argparse
 import os
 import logging
 import subprocess
-import inferlib
 import traceback
+
+from inferlib import infer
 
 
 def create_infer_command(args, javac_arguments):
@@ -21,8 +22,8 @@ def create_infer_command(args, javac_arguments):
         infer_args.append('--debug')
     infer_args += ['--analyzer', 'capture']
 
-    return inferlib.Infer(inferlib.infer_parser.parse_args(infer_args),
-                          inferlib.get_javac_args(['javac'] + javac_arguments))
+    return infer.Infer(infer.infer_parser.parse_args(infer_args),
+                       infer.get_javac_args(['javac'] + javac_arguments))
 
 
 def get_build_output(build_cmd):

@@ -7,8 +7,5 @@ bin: [
   "infer/bin/InferAnalyze"
   "infer/bin/InferPrint"
   "infer/bin/BuckAnalyze"
-  "infer/bin/inferlib.py"
-  "infer/bin/utils.py"
-  "infer/bin/jwlib.py"
 ]
 

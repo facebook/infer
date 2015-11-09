@@ -12,7 +12,7 @@ import traceback
 import util
 import logging
 
-import utils  # this is module located in ../utils.py
+from inferlib import utils
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -78,10 +78,7 @@ class BuckAnalyzer:
     def create_cxx_buck_configuration_args(self):
         # return a string that can be passed in input to buck
         # and configures the paths to infer/clang/plugin/xcode
-        facebook_clang_plugins_root = os.path.join(
-            utils.get_infer_root(),
-            'facebook-clang-plugins',
-        )
+        facebook_clang_plugins_root = utils.FCP_DIRECTORY
         clang_path = os.path.join(
             facebook_clang_plugins_root,
             'clang',
@@ -142,7 +139,7 @@ class BuckAnalyzer:
         utils.merge_json_reports(
             result_files,
             merged_results_path)
-        # TODO: adapt inferlib.print_errors to support json and print on screen
+        # TODO: adapt infer.print_errors to support json and print on screen
         print('Results saved in {results_path}'.format(
             results_path=merged_results_path))
         return os.EX_OK

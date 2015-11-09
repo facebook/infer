@@ -10,8 +10,10 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
+
 
 CURRENT_DIR = os.getcwd()
 REPORT_JSON = 'report.json'

@@ -11,8 +11,8 @@ fi
 
 # invoke the right compiler looking at the final plusplus (e.g. gcc/g++ clang/clang++)
 if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
-FRONTEND_COMMAND=("$SCRIPT_DIR/../clang/clang_general_wrapper$XX" "$@")
-HOST_COMPILER_COMMAND=("$SCRIPT_DIR/../clang/clang_wrapper$XX" "$@")
+FRONTEND_COMMAND=("$SCRIPT_DIR/../clang_wrappers/clang_general_wrapper$XX" "$@")
+HOST_COMPILER_COMMAND=("$SCRIPT_DIR/../clang_wrappers/clang_wrapper$XX" "$@")
 
 if [ -n "$INFER_COMPILER_WRAPPER_IN_RECURSION" ]; then
     if [ -z "$INFER_LISTENER" ]; then

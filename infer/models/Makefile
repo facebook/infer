@@ -6,13 +6,17 @@ OBJC_MODELS = objc
 CWD = $(shell pwd)
 BINDIR = $(CWD)/../bin
 LIBDIR = $(CWD)/../lib
+PYTHONLIBDIR = $(LIBDIR)/python/inferlib
+CAPTURELIBDIR = $(PYTHONLIBDIR)/capture
 LIB_SPECS = $(LIBDIR)/specs
 
 INFERANALYZE = $(BINDIR)/InferAnalyze
 INFERCLANG = $(BINDIR)/InferClang
 INFERJAVA = $(BINDIR)/InferJava
-JAVA_SCRIPTS = $(addprefix $(BINDIR)/, jwlib.py inferlib.py infer)
-CLANG_SCRIPTS = $(addprefix $(BINDIR)/, inferiOS)  # Add more once this part is stable
+JAVA_SCRIPTS = $(addprefix $(PYTHONLIBDIR)/, jwlib.py infer.py) \
+               $(BINDIR)/infer
+CLANG_SCRIPTS = $(addprefix $(CAPTURELIBDIR)/, make.py) \
+                $(BINDIR)/infer
 
 PLATFORM = $(shell uname)
 

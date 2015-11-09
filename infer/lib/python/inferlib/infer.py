@@ -24,12 +24,10 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
+from . import jwlib, utils
+
 # Increase the limit of the CSV parser to sys.maxlimit
 csv.field_size_limit(sys.maxsize)
-
-# Infer imports
-import jwlib
-import utils
 
 # list of analysis options
 INFER = 'infer'

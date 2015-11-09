@@ -24,11 +24,21 @@ import tempfile
 import time
 
 
-BIN_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
-LIB_DIRECTORY = os.path.join(BIN_DIRECTORY, '..', 'lib', 'java')
+# this assumes that this file lives in infer/lib/python/infer/ and the binaries
+# are in infer/bin/
+INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+INFER_ROOT_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
+                                    os.pardir, os.pardir, os.pardir, os.pardir)
+INFER_INFER_DIRECTORY = os.path.join(INFER_ROOT_DIRECTORY, 'infer')
+FCP_DIRECTORY = os.path.join(INFER_ROOT_DIRECTORY, 'facebook-clang-plugins')
+LIB_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'lib')
+BIN_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'bin')
 TMP_DIRECTORY = tempfile.gettempdir()
-MODELS_JAR = os.path.join(LIB_DIRECTORY, 'models.jar')
-ANNOT_PROCESSOR_JAR = os.path.join(LIB_DIRECTORY, 'processor.jar')
+JAVA_LIB_DIRECTORY = os.path.join(LIB_DIRECTORY, 'java')
+MODELS_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'models.jar')
+ANNOT_PROCESSOR_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'processor.jar')
+WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
+XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
 
 DEFAULT_INFER_OUT = os.path.join(os.getcwd(), 'infer-out')
 CSV_PERF_FILENAME = 'performances.csv'
@@ -109,17 +119,8 @@ def error(msg):
     print(msg, file=sys.stderr)
 
 
-def get_infer_bin():
-    # this relies on the fact that utils.py is located in infer/bin
-    return BIN_DIRECTORY
-
-
 def get_cmd_in_bin_dir(binary_name):
-    return os.path.join(get_infer_bin(), binary_name)
-
-
-def get_infer_root():
-    return os.path.join(get_infer_bin(), '..', '..')
+    return os.path.join(BIN_DIRECTORY, binary_name)
 
 
 def write_cmd_streams_to_file(logfile, cmd=None, out=None, err=None):

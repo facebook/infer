@@ -5,11 +5,13 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+import logging
 import os
 import subprocess
 import traceback
 
 import util
+from inferlib import utils
 
 MODULE_NAME = 'make/cc/clang/gcc'
 MODULE_DESCRIPTION = '''Run analysis of code built with commands like:
@@ -39,9 +41,7 @@ class MakeCapture:
 
     def get_envvars(self):
         env_vars = dict(os.environ)
-        wrappers_path = os.path.join(
-            os.path.dirname(
-                os.path.realpath(__file__)), os.path.pardir, 'wrappers')
+        wrappers_path = utils.WRAPPERS_DIRECTORY
         env_vars['INFER_OLD_PATH'] = env_vars['PATH']
         env_vars['PATH'] = '{wrappers}{sep}{path}'.format(
             wrappers=wrappers_path,
@@ -55,7 +55,9 @@ class MakeCapture:
 
     def capture(self):
         try:
-            subprocess.check_call(self.cmd, env=self.get_envvars())
+            env = self.get_envvars()
+            logging.info('Running command %s with env:\n%s' % (self.cmd, env))
+            subprocess.check_call(self.cmd, env=env)
             return os.EX_OK
         except subprocess.CalledProcessError as exc:
             if self.args.debug:

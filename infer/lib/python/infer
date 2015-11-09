@@ -1,0 +1,179 @@
+#!/usr/bin/env python2.7
+
+import argparse
+import imp
+import json
+import logging
+import os
+import platform
+import sys
+
+import inferlib
+from inferlib import infer, utils
+
+
+CAPTURE_PACKAGE = 'capture'
+
+# token that identifies the end of the options for infer and the beginning
+# of the compilation command
+CMD_MARKER = '--'
+
+# insert here the correspondence between module name and the list of
+# compiler/build-systems it handles.
+# All supported commands should be listed here
+MODULE_TO_COMMAND = {
+    'ant': ['ant'],
+    'analyze': ['analyze'],
+    'buck': ['buck'],
+    'gradle': ['gradle', 'gradlew'],
+    'javac': ['javac'],
+    'make': ['make', 'clang', 'clang++', 'cc', 'gcc', 'g++'],
+    'xcodebuild': ['xcodebuild'],
+    'mvn': ['mvn']
+}
+
+FORMAT = '[%(levelname)s] %(message)s'
+LOG_FILE = 'toplevel.log'
+
+def get_commands():
+    """Return all commands that are supported."""
+    #flatten and dedup the list of commands
+    return set(sum(MODULE_TO_COMMAND.values(), []))
+
+
+def get_module_name(command):
+    """ Return module that is able to handle the command. None if
+    there is no such module."""
+    for module, commands in MODULE_TO_COMMAND.iteritems():
+        if command in commands:
+            return module
+    return None
+
+
+def load_module(mod_name):
+    pkg_info = imp.find_module(CAPTURE_PACKAGE, inferlib.__path__)
+    imported_pkg = imp.load_module(CAPTURE_PACKAGE, *pkg_info)
+    # load the requested module (e.g. make)
+    mod_file, mod_path, mod_descr = \
+        imp.find_module(mod_name, imported_pkg.__path__)
+    try:
+        return imp.load_module(
+            '{pkg}.{mod}'.format(pkg=imported_pkg.__name__, mod=mod_name),
+            mod_file, mod_path, mod_descr)
+    finally:
+        if mod_file:
+            mod_file.close()
+
+
+def split_args_to_parse():
+    dd_index = \
+        sys.argv.index(CMD_MARKER) if CMD_MARKER in sys.argv else len(sys.argv)
+    return sys.argv[1:dd_index], sys.argv[dd_index + 1:]
+
+
+def create_argparser(parents=[]):
+    parser = argparse.ArgumentParser(
+        parents=[infer.infer_parser] + parents,
+        add_help=False,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    group = parser.add_argument_group(
+        'supported compiler/build-system commands')
+
+    supported_commands = ', '.join(get_commands())
+    group.add_argument(
+        CMD_MARKER,
+        metavar='<cmd>',
+        dest='nullarg',
+        default=None,
+        help=('Command to run the compiler/build-system. '
+              'Supported build commands (run `infer --help -- <cmd_name>` for '
+              'extra help, e.g. `infer --help -- javac`): ' + supported_commands),
+    )
+    return parser
+
+
+def configure_logging(infer_dir, log_to_stderr):
+    if log_to_stderr:
+        logging.basicConfig(level=logging.INFO, format=FORMAT)
+    else:
+        logging.basicConfig(level=logging.INFO,
+                            format=FORMAT,
+                            filename=os.path.join(infer_dir, LOG_FILE),
+                            filemode='w')
+
+
+def main():
+    to_parse, cmd = split_args_to_parse()
+    # get the module name (if any), then load it
+    capture_module_name = os.path.basename(cmd[0]) if len(cmd) > 0 else None
+    mod_name = get_module_name(capture_module_name)
+    imported_module = None
+    if mod_name:
+        # There is module that supports the command
+        imported_module = load_module(mod_name)
+
+    # get the module's argparser and merge it with the global argparser
+    module_argparser = []
+    if imported_module:
+        module_argparser.append(
+            imported_module.create_argparser(capture_module_name)
+        )
+    global_argparser = create_argparser(module_argparser)
+
+    args = global_argparser.parse_args(to_parse)
+
+    if (imported_module and not args.incremental and
+            capture_module_name != 'analyze'):
+        infer.remove_infer_out(args.infer_out)
+
+    infer.create_results_dir(args.infer_out)
+
+    configure_logging(args.infer_out, args.log_to_stderr)
+    logging.info('Running command %s', ' '.join(sys.argv))
+    logging.info('Path to infer script %s (%s)', __file__,
+                 os.path.realpath(__file__))
+    logging.info(infer.get_infer_version())
+    logging.info('Platform: %s', platform.platform())
+    logging.info('PATH=%s', os.getenv('PATH'))
+    logging.info('SHELL=%s', os.getenv('SHELL'))
+    logging.info('PWD=%s', os.getenv('PWD'))
+
+    if imported_module:
+        capture_exitcode = imported_module.gen_instance(args, cmd).capture()
+        if capture_exitcode != os.EX_OK:
+            logging.error('Error during capture phase, exiting')
+            exit(capture_exitcode)
+        logging.info('Capture phase was successful')
+    elif capture_module_name is not None:
+        # There was a command, but it's not supported
+        print('Command "{cmd}" not recognised'.format(
+            cmd='' if capture_module_name is None else capture_module_name))
+        global_argparser.print_help()
+        sys.exit(1)
+    else:
+        global_argparser.print_help()
+        sys.exit(os.EX_OK)
+
+    if not (mod_name == 'buck' or mod_name == 'javac'):
+        # Something should be already captured, otherwise analysis would fail
+        if not os.path.exists(os.path.join(args.infer_out, 'captured')):
+            print('There was nothing to analyze, exiting')
+            exit(os.EX_USAGE)
+        analysis = infer.Infer(args, [])
+        analysis.analyze_and_report()
+        analysis.save_stats()
+
+    if args.fail_on_bug:
+        bugs_filename = os.path.join(args.infer_out,
+                                     utils.JSON_REPORT_FILENAME)
+        try:
+            with open(bugs_filename) as bugs_file:
+                bugs = json.load(bugs_file)
+                if len(bugs) > 0:
+                    sys.exit(infer.BUG_FOUND_ERROR_CODE)
+        except OSError:
+            pass
+
+if __name__ == '__main__':
+    main()

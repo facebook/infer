@@ -5,11 +5,14 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+import logging
 import os
 import subprocess
 import traceback
-import logging
+
 import util
+from inferlib import utils
+
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -19,9 +22,8 @@ Analysis examples:
 infer -- xcodebuild -target HelloWorldApp -sdk iphonesimulator
 infer -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld'''
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-CLANG_WRAPPER = os.path.join(SCRIPT_DIR, 'clang')
-CLANGPLUSPLUS_WRAPPER = os.path.join(SCRIPT_DIR, 'clang++')
+CLANG_WRAPPER = os.path.join(utils.XCODE_WRAPPERS_DIRECTORY, 'clang')
+CLANGPLUSPLUS_WRAPPER = os.path.join(utils.XCODE_WRAPPERS_DIRECTORY, 'clang++')
 
 
 def gen_instance(*args):

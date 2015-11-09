@@ -22,9 +22,3 @@ The rest of the commands in infer/bin/ are not meant to be called directly, but 
 *InferPrint* : Binary that prints reports about the analysis such as the specs of methods and a list of bugs found.
 
 *BuckAnalyze* : Command for running the analysis of Java projects compiled with Buck.
-
-*inferlib.py* : Python libraries for the other scripts.
-
-*utils.py* : Python libraries for the other scripts.
-
-*jwlib.py* : Python libraries for the other scripts.
