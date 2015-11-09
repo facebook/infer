@@ -9,7 +9,9 @@
 
 package java.nio.channels;
 
+import com.facebook.infer.models.InferBuiltins;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
+import java.nio.channels.FileLock;
 
 public abstract class FileChannel extends AbstractInterruptibleChannel {
 
@@ -22,5 +24,13 @@ public abstract class FileChannel extends AbstractInterruptibleChannel {
         public static MapMode READ_WRITE;
 
         private String displayName;
+    }
+
+    private native FileLock getFileLock();
+
+    FileLock lock() {
+        FileLock f = getFileLock();
+        InferBuiltins.assume(f != null);
+        return f;
     }
 }
