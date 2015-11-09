@@ -145,6 +145,7 @@ let arg_desc =
         "-version", Arg.Unit print_version, None, "print version information and exit";
         "-version_json", Arg.Unit print_version_json, None, "print version json formatted";
         "-objcm", Arg.Set Config.objc_memory_model_on, None, "Use ObjC memory model";
+        "-no_progress_bar", Arg.Unit (fun () -> Config.show_progress_bar := false), None, "Do not show a progress bar";
         "-ml_buckets", Arg.Set_string ml_buckets_arg, Some "ml_buckets",
         "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp";
       ] in
@@ -238,6 +239,7 @@ end
 
 let analyze exe_env =
   let init_time = Unix.gettimeofday () in
+  L.log_progress_simple ".";
   Specs.clear_spec_tbl ();
   Random.self_init ();
   let line_reader = Printer.LineReader.create () in
@@ -344,7 +346,10 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
   let total_files = ref 0 in
   let total_procs = ref 0 in
   let total_LOC = ref 0 in
+  let total = Procname.Map.cardinal to_analyze_map in
+  let analyzed_map_done = ref 0 in
   let create_cluster_elem  (file_pname, changed_procs) = (* create a Cluster.elem for the file *)
+    L.log_progress "Creating clusters..." analyzed_map_done total;
     let source_file = ClusterMakefile.source_file_from_pname file_pname in
     if !Cluster.trace_clusters then
       L.err "      [create_minimal_clusters] %s@." (DB.source_file_to_string source_file);
@@ -477,7 +482,10 @@ let compute_clusters exe_env files_changed : Cluster.t list =
   let global_cg = Exe_env.get_cg exe_env in
   let nodes, edges = Cg.get_nodes_and_edges global_cg in
   let defined_procs = Cg.get_defined_nodes global_cg in
+  let total_nodes = IList.length nodes in
+  let computed_nodes = ref 0 in
   let do_node (n, defined, restricted) =
+    L.log_progress "Computing dependencies..." computed_nodes total_nodes;
     if defined then
       Cg.add_defined_node file_cg
         (ClusterMakefile.source_file_to_pname (Exe_env.get_source exe_env n)) in
@@ -498,6 +506,7 @@ let compute_clusters exe_env files_changed : Cluster.t list =
         end
       end in
   IList.iter do_node nodes;
+  L.log_progress_simple "\n";
   if not !Config.intraprocedural then IList.iter do_edge edges;
   if !save_file_dependency then
     Cg.save_call_graph_dotty (Some (DB.filename_from_string "file_dependency.dot")) Specs.get_specs file_cg;
@@ -527,6 +536,8 @@ let compute_clusters exe_env files_changed : Cluster.t list =
         Cluster.combine_split_clusters clusters max_cluster_size desired_cluster_size in
       L.err "@.Combined clusters with max size %d@." max_cluster_size;
       Cluster.print_clusters_stats clusters';
+      let number_of_clusters = IList.length clusters' in
+      L.log_progress_simple ("\nAnalyzing "^(string_of_int number_of_clusters)^" clusters");
       ClusterMakefile.create_cluster_makefile_and_exit clusters' file_cg !makefile_cmdline false
     end;
   let clusters' =
@@ -534,6 +545,8 @@ let compute_clusters exe_env files_changed : Cluster.t list =
       clusters !Config.max_cluster_size !Config.max_cluster_size in
   L.err "@.Combined clusters with max size %d@." !Config.max_cluster_size;
   Cluster.print_clusters_stats clusters';
+  let number_of_clusters = IList.length clusters' in
+  L.log_progress_simple ("\nAnalyzing "^(string_of_int number_of_clusters)^" clusters");
   clusters'
 
 (** compute the set of procedures in [cg] changed since the last analysis *)

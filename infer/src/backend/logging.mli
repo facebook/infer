@@ -131,3 +131,7 @@ val d_increase_indent : int -> unit
 
 (** dump command to decrease the indentation level *)
 val d_decrease_indent : int -> unit
+
+val log_progress : string -> int ref -> int -> unit
+
+val log_progress_simple : string -> unit

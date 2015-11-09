@@ -163,3 +163,14 @@ let d_increase_indent (indent: int) =
 (** dump command to decrease the indentation level *)
 let d_decrease_indent (indent: int) =
   add_print_action (PTdecrease_indent, Obj.repr indent)
+
+let log_progress text counter total =
+  if !Config.show_progress_bar then
+    (counter := !counter + 1;
+     let percentage = (100 * !counter) / total in
+     F.fprintf Format.err_formatter "%s %d%s" text percentage "%\r";
+     F.fprintf Format.err_formatter "@?")
+
+let log_progress_simple text =
+  if !Config.show_progress_bar then
+    F.fprintf Format.err_formatter "%s@?" text

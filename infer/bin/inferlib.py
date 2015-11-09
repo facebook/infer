@@ -164,6 +164,9 @@ infer_group.add_argument('-nt', '--notest', action='store_true',
                            dest='notest',
                            help='Prints output of symbolic execution')
 
+infer_group.add_argument('-npb', '--no-progress-bar', action='store_true',
+                         help='Do not show a progress bar in the analysis')
+
 infer_group.add_argument('--specs-dir',
                           metavar='<dir>',
                           action='append',
@@ -520,6 +523,9 @@ class Infer:
 
         if self.args.notest:
             infer_options += ['-notest']
+
+        if self.args.no_progress_bar:
+            infer_options += ['-no_progress_bar']
 
         if self.args.debug:
             infer_options += [

@@ -47,7 +47,9 @@ let pp_prolog fmt clusters =
        if filter cl then F.fprintf fmt "%a " Cluster.pp_cl (i+1))
     clusters;
   F.fprintf fmt "@.@.default: test@.@.all: test@.@.";
-  F.fprintf fmt "test: $(OBJECTS)@.\techo \"Analysis done\"@.@."
+  F.fprintf fmt "test: $(OBJECTS)@.";
+  if !Config.show_progress_bar then F.fprintf fmt "\techo \"\\n\"@.";
+  F.fprintf fmt "\techo \"Analysis done\"@.@."
 
 let pp_epilog fmt () =
   F.fprintf fmt "@.clean:@.\trm -f $(OBJECTS)@."

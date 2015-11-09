@@ -400,3 +400,5 @@ let curr_language = ref C_CPP
 let string_of_language = function
   | Java -> "Java"
   | C_CPP -> "C_CPP"
+
+let show_progress_bar = ref true
