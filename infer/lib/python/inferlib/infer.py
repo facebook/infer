@@ -365,8 +365,10 @@ def print_errors(csv_report, bugs_out):
                     msg = row[utils.CSV_INDEX_QUALIFIER]
                     indenter = utils.Indenter()
                     indenter.indent_push()
-                    indenter.add(utils.build_source_context(filename,
-                                                            int(line)))
+                    indenter.add(
+                        utils.build_source_context(filename,
+                                                   utils.TERMINAL_FORMATTER,
+                                                   int(line)))
                     source_context = str(indenter)
                     text_errors_list.append(
                         '{0}:{1}: {2}: {3}\n  {4}\n{5}'.format(

@@ -108,7 +108,12 @@ class Tracer(object):
 
         if not self.args.no_source:
             self.indenter.indent_push(node[utils.JSON_INDEX_TRACE_LEVEL])
-            self.indenter.add(utils.build_source_context(fname, report_line))
+            mode = utils.TERMINAL_FORMATTER
+            if self.args.html:
+                mode = utils.PLAIN_FORMATTER
+            self.indenter.add(utils.build_source_context(fname,
+                                                         mode,
+                                                         report_line))
             self.indenter.indent_pop()
             self.indenter.newline()
 
