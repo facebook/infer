@@ -86,9 +86,9 @@ class CompilerCall:
                 try:
                     subprocess.check_call(javac_cmd, stderr=file_out)
                 except subprocess.CalledProcessError:
-                    error_msg = 'Javac compilation error with: \n\n{}\n'
-                    failing_cmd = [arg for arg in javac_cmd
-                                   if arg != '-verbose']
+                    error_msg = 'ERROR: Failed to run the following compilation command:\n\n  {}\n'
+                    failing_cmd = ' '.join(['"%s"' % arg for arg in javac_cmd
+                                            if arg != '-verbose'])
                     utils.error(error_msg.format(failing_cmd))
                     subprocess.check_call(failing_cmd)
 
