@@ -1296,22 +1296,19 @@ struct
       | Loops.For _ ->
           (match init_incr_nodes with | Some (nodes_init, nodes_incr) -> nodes_init | None -> assert false)
       | Loops.While _ | Loops.DoWhile _ -> [join_node] in
-    root_nodes, prune_nodes_f
+    { empty_res_trans with root_nodes = root_nodes; leaf_nodes = prune_nodes_f }
 
   and forStmt_trans trans_state init cond incr body stmt_info =
     let for_kind = Loops.For (init, cond, incr, body) in
-    let root_nodes, leaf_nodes = loop_instruction trans_state for_kind stmt_info in
-    { empty_res_trans with root_nodes = root_nodes; leaf_nodes = leaf_nodes }
+    loop_instruction trans_state for_kind stmt_info
 
   and whileStmt_trans trans_state cond body stmt_info =
     let while_kind = Loops.While (cond, body) in
-    let root_nodes, leaf_nodes = loop_instruction trans_state while_kind stmt_info in
-    { empty_res_trans with root_nodes = root_nodes; leaf_nodes = leaf_nodes }
+    loop_instruction trans_state while_kind stmt_info
 
   and doStmt_trans trans_state stmt_info cond body =
     let dowhile_kind = Loops.DoWhile (cond, body) in
-    let root_nodes, leaf_nodes = loop_instruction trans_state dowhile_kind stmt_info in
-    { empty_res_trans with root_nodes = root_nodes; leaf_nodes = leaf_nodes }
+    loop_instruction trans_state dowhile_kind stmt_info
 
   and objCForCollectionStmt_trans trans_state item items body stmt_info =
     let _ = instruction trans_state item in
@@ -1319,8 +1316,7 @@ struct
     (* variable item but we still need to add the variable to the locals *)
     let bin_op = Ast_expressions.make_next_object_exp stmt_info item items in
     let while_kind = Loops.While (bin_op, body) in
-    let root_nodes, leaf_nodes = loop_instruction trans_state while_kind stmt_info in
-    { empty_res_trans with root_nodes = root_nodes; leaf_nodes = leaf_nodes }
+    loop_instruction trans_state while_kind stmt_info
 
   (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands. *)
   and compoundAssignOperator trans_state stmt_info binary_operator_info expr_info stmt_list =
