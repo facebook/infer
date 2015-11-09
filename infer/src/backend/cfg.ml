@@ -552,16 +552,18 @@ module Node = struct
     IList.iter f (IList.rev (proc_desc_get_nodes proc_desc))
 
   let proc_desc_fold_nodes f acc proc_desc =
-    (*list_fold_left (fun acc node -> f acc node) acc (IList.rev (proc_desc_get_nodes proc_desc))*)
     IList.fold_left f acc (IList.rev (proc_desc_get_nodes proc_desc))
+
+  let proc_desc_fold_calls f acc pdesc =
+    let do_node a node =
+      IList.fold_left
+        (fun b callee_pname -> f b (callee_pname, get_loc node))
+        a (get_callees node) in
+    IList.fold_left do_node acc (proc_desc_get_nodes pdesc)
 
   (** iterate over the calls from the procedure: (callee,location) pairs *)
   let proc_desc_iter_calls f pdesc =
-    let do_node node =
-      IList.iter
-        (fun callee_pname -> f (callee_pname, get_loc node))
-        (get_callees node) in
-    IList.iter do_node (proc_desc_get_nodes pdesc)
+    proc_desc_fold_calls (fun _ call -> f call) () pdesc
 
   let proc_desc_iter_slope f proc_desc =
     let visited = ref NodeSet.empty in
@@ -659,6 +661,7 @@ module Procdesc = struct
   let get_start_node = Node.proc_desc_get_start_node
   let is_defined = Node.proc_desc_is_defined
   let iter_nodes = Node.proc_desc_iter_nodes
+  let fold_calls = Node.proc_desc_fold_calls
   let iter_calls = Node.proc_desc_iter_calls
   let iter_instrs = Node.proc_desc_iter_instrs
   let fold_instrs = Node.proc_desc_fold_instrs

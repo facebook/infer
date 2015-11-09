@@ -97,8 +97,11 @@ module Procdesc : sig
   (** iterate over all the nodes of a procedure *)
   val iter_nodes : (node -> unit) -> t -> unit
 
-  (** iterate over the calls from the procedure: (callee,location) pairs *)
-  val iter_calls : ((Procname.t * Location.t) -> unit) -> t -> unit
+  (** fold over the calls from the procedure: (callee, location) pairs *)
+  val fold_calls : ('a -> Procname.t * Location.t -> 'a) -> 'a -> t -> 'a
+
+  (** iterate over the calls from the procedure: (callee, location) pairs *)
+  val iter_calls : (Procname.t * Location.t -> unit) -> t -> unit
 
   (** iterate over all nodes and their instructions *)
   val iter_instrs : (node -> Sil.instr -> unit) -> t -> unit

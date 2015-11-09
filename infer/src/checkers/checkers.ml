@@ -383,28 +383,32 @@ let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name p
       | None -> "?" in
 
   let get_actual_arguments node instr = match instr with
-    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) -> (try
-                                                                                  let find_const exp typ =
-                                                                                    let expanded = Idenv.expand_expr idenv exp in
-                                                                                    match expanded with
-                                                                                    | Sil.Const (Sil.Cclass n) -> Ident.name_to_string n
-                                                                                    | Sil.Lvar p -> (
-                                                                                        let is_call_instr set call = match set, call with
-                                                                                          | Sil.Set (_, _, Sil.Var (i1), _), Sil.Call (i2::[], _, _, _, _) when Ident.equal i1 i2 -> true
-                                                                                          | _ -> false in
-                                                                                        let is_set_instr = function
-                                                                                          | Sil.Set (e1, t, e2, l) when Sil.exp_equal expanded e1 -> true
-                                                                                          | _ -> false in
-                                                                                        match reverse_find_instr is_set_instr node with                  (** Look for ivar := tmp *)
-                                                                                        | Some s -> (
-                                                                                            match reverse_find_instr (is_call_instr s) node with           (** Look for tmp := foo() *)
-                                                                                            | Some (Sil.Call (_, Sil.Const (Sil.Cfun pn), _, l, _)) -> get_return_const pn
-                                                                                            | _ -> "?")
-                                                                                        | _ -> "?")
-                                                                                    | _ -> "?" in
-                                                                                  let arg_name (exp, typ) = find_const exp typ in
-                                                                                  Some (IList.map arg_name args)
-                                                                                with _ -> None)
+    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) ->
+        (try
+           let find_const exp typ =
+             let expanded = Idenv.expand_expr idenv exp in
+             match expanded with
+             | Sil.Const (Sil.Cclass n) -> Ident.name_to_string n
+             | Sil.Lvar p -> (
+                 let is_call_instr set call = match set, call with
+                   | Sil.Set (_, _, Sil.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
+                     when Ident.equal i1 i2 -> true
+                   | _ -> false in
+                 let is_set_instr = function
+                   | Sil.Set (e1, t, e2, l) when Sil.exp_equal expanded e1 -> true
+                   | _ -> false in
+                 match reverse_find_instr is_set_instr node with
+                 (** Look for ivar := tmp *)
+                 | Some s -> (
+                     match reverse_find_instr (is_call_instr s) node with
+                     (** Look for tmp := foo() *)
+                     | Some (Sil.Call (_, Sil.Const (Sil.Cfun pn), _, l, _)) -> get_return_const pn
+                     | _ -> "?")
+                 | _ -> "?")
+             | _ -> "?" in
+           let arg_name (exp, typ) = find_const exp typ in
+           Some (IList.map arg_name args)
+         with _ -> None)
     | _ -> None in
 
   let process_result instr result =

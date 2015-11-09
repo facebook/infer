@@ -109,6 +109,8 @@ let present = "Present"
 let strict = "com.facebook.infer.annotation.Strict"
 let true_on_null = "TrueOnNull"
 let verify_annotation = "com.facebook.infer.annotation.Verify"
+let expensive = "Expensive"
+let performance_critical = "PerformanceCritical"
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
@@ -146,6 +148,12 @@ let ia_get_strict ia =
 
 let ia_is_verify ia =
   ia_contains ia verify_annotation
+
+let ia_is_expensive ia =
+  ia_ends_with ia expensive
+
+let ia_is_performance_critical ia =
+  ia_ends_with ia performance_critical
 
 type annotation =
   | Nullable
