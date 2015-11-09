@@ -24,14 +24,19 @@ let property_checkers_list = [CFrontend_checkers.checker_strong_delegate_warning
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_warning pdesc warn_desc =
+  let loc = {
+    Location.line = int_of_string warn_desc.loc;
+    Location.col = -1;
+    Location.file = DB.source_file_empty;
+    Location.nLOC = -1;
+  } in
   let errlog = Cfg.Procdesc.get_err_log pdesc in
   let err_desc =
-    Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion
-      warn_desc.loc in
-  let exn = (Exceptions.Frontend_warning
-               (warn_desc.name, err_desc,
-                try assert false with Assert_failure x -> x)) in
-  Reporting.log_error_from_errlog errlog exn
+    Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion loc in
+  let exn = Exceptions.Frontend_warning
+      (warn_desc.name, err_desc,
+       try assert false with Assert_failure x -> x) in
+  Reporting.log_error_from_errlog errlog exn ~loc:(Some loc)
 
 (* Call all checkers on properties of class c *)
 let check_for_property_errors cfg c =

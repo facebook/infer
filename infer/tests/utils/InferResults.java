@@ -58,6 +58,7 @@ public class InferResults {
       String errorType = items[2].trim();
       if (errorKind.equals("ERROR") ||
           errorType.equals("RETURN_VALUE_IGNORED") ||
+          errorType.equals("STRONG_DELEGATE_WARNING") ||
           errorType.equals("IMMUTABLE_CAST") ||
           errorType.equals("PARAMETER_NOT_NULL_CHECKED") ||
           errorType.equals("DANGLING_POINTER_DEREFERENCE") ||

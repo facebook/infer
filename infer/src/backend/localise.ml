@@ -575,7 +575,12 @@ let desc_divide_by_zero expr_str loc =
 
 let desc_frontend_warning desc sugg loc =
   let tags = Tags.create () in
-  [desc ^" at line "^ loc ^". "^ sugg], None, !tags
+  let description = Format.sprintf
+      "%s %s. %s"
+      desc
+      (at_line tags loc)
+      sugg in
+  [description], None, !tags
 
 let desc_leak value_str_opt resource_opt resource_action_opt loc bucket_opt =
   let tags = Tags.create () in
