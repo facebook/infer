@@ -14,6 +14,13 @@ import sys
 import tempfile
 import unittest
 
+SCRIPTS_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0,
+                os.path.join(SCRIPTS_DIRECTORY,
+                             os.pardir, 'infer', 'lib', 'python'))
+
+from inferlib import utils
+
 
 CURRENT_DIR = os.getcwd()
 REPORT_JSON = 'report.json'
@@ -22,15 +29,10 @@ INFER = 'infer'
 
 RECORD_ENV = 'INFER_RECORD_INTEGRATION_TESTS'
 
-FILE = 'file'
-HASH = 'hash'
-LINE = 'line'
-PROCEDURE = 'procedure'
-TYPE = 'type'
 REPORT_FIELDS = [
-    FILE,
-    PROCEDURE,
-    TYPE,
+    utils.JSON_INDEX_FILENAME,
+    utils.JSON_INDEX_PROCEDURE,
+    utils.JSON_INDEX_TYPE,
 ]
 
 
@@ -39,14 +41,18 @@ def should_record_tests():
 
 
 def quote(s):
-    return '\"{}\"'.format(s)
+    return '\"%s\"' % s
 
 
 def string_of_error(e):
-    msg = e[TYPE] + ' in file ' + quote(e[FILE])
-    msg += ', procedure ' + quote(e[PROCEDURE])
-    if LINE in e:
-        msg += ' on line ' + e[LINE]
+    if utils.JSON_INDEX_LINE in e:
+        line = ' on line %s ' % e[utils.JSON_INDEX_LINE]
+    msg = '%s in file %s, procedure %s%s' % (
+        e[utils.JSON_INDEX_TYPE],
+        quote(e[utils.JSON_INDEX_FILE]),
+        quote(e[utils.JSON_INDEX_PROCEDURE]),
+        line,
+    )
     return msg
 
 

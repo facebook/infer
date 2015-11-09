@@ -59,11 +59,11 @@ base_parser.add_argument('--html',
 
 
 def describe_report(report, indent=0):
-    filename = report['file']
-    kind = report['kind']
-    line = report['line']
-    error_type = report['type']
-    msg = report['qualifier']
+    filename = report[utils.JSON_INDEX_FILENAME]
+    kind = report[utils.JSON_INDEX_KIND]
+    line = report[utils.JSON_INDEX_LINE]
+    error_type = report[utils.JSON_INDEX_TYPE]
+    msg = report[utils.JSON_INDEX_QUALIFIER]
     return '{0}:{1}: {2}: {3}\n  {4}{5}\n'.format(
         filename,
         line,
@@ -92,27 +92,31 @@ class Tracer(object):
         pass
 
     def build_node(self, node):
-        if node['level'] > self.max_level:
+        if node[utils.JSON_INDEX_TRACE_LEVEL] > self.max_level:
             return
 
-        report_line = node['line_number']
-        fname = node['filename']
+        report_line = node[utils.JSON_INDEX_TRACE_LINE]
+        fname = node[utils.JSON_INDEX_TRACE_FILENAME]
 
         self.indenter.newline()
-        self.indenter.add('%s:%d: %s' % (fname,
-                                         report_line,
-                                         node['description']))
+        self.indenter.add('%s:%d: %s' % (
+            fname,
+            report_line,
+            node[utils.JSON_INDEX_TRACE_DESCRIPTION],
+        ))
         self.indenter.newline()
 
         if not self.args.no_source:
-            self.indenter.indent_push(node['level'])
+            self.indenter.indent_push(node[utils.JSON_INDEX_TRACE_LEVEL])
             self.indenter.add(utils.build_source_context(fname, report_line))
             self.indenter.indent_pop()
             self.indenter.newline()
 
     def build_trace(self, trace):
         total_nodes = len(trace)
-        hidden_nodes = len([None for n in trace if n['level'] > self.max_level])
+        hidden_nodes = len(
+            filter(lambda n: n[utils.JSON_INDEX_TRACE_LEVEL] > self.max_level,
+                   trace))
         shown_nodes = total_nodes - hidden_nodes
         hidden_str = ''
         all_str = 'all '
@@ -127,8 +131,8 @@ class Tracer(object):
             self.build_node(node)
 
     def build_report(self, report):
-        traces = json.loads(report['trace'])
-        self.build_trace(traces['trace'])
+        traces = json.loads(report[utils.JSON_INDEX_TRACE])
+        self.build_trace(traces[utils.JSON_INDEX_TRACE])
 
     def __str__(self):
         return str(self.indenter)
@@ -139,8 +143,8 @@ class Selector(object):
         self.args = args
 
         def has_trace(report):
-            trace = json.loads(report['trace'])
-            return len(trace['trace']) > 0
+            trace = json.loads(report[utils.JSON_INDEX_TRACE])
+            return len(trace[utils.JSON_INDEX_TRACE]) > 0
         self.reports = [report for report in reports if has_trace(report)]
 
     def show_choices(self):
@@ -308,8 +312,8 @@ def html_list_of_bugs(args, remote_source_template, selector):
 
     def source_uri(report):
         d = {
-            'file-name': report['file'],
-            'line-number': report['line'],
+            'file-name': report[utils.JSON_INDEX_FILENAME],
+            'line-number': report[utils.JSON_INDEX_LINE],
         }
         if remote_source_template is not None:
             link = remote_source_template.format(**d)
