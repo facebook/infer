@@ -250,9 +250,10 @@ module Loops =
 struct
 
   type loop_kind =
-    | For of Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt
-    (* init, condition, increment and body *)
-    | While of Clang_ast_t.stmt * Clang_ast_t.stmt  (* condition and body *)
+    | For of Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt
+    (* init, decl_stmt, condition, increment and body *)
+    | While of Clang_ast_t.stmt option * Clang_ast_t.stmt * Clang_ast_t.stmt
+    (* decl_stmt, condition and body *)
     | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt  (* condition and body *)
 
   let loop_kind_to_if_kind loop_kind =
@@ -263,11 +264,11 @@ struct
 
   let get_body loop_kind =
     match loop_kind with
-    | For (_, _, _, body) | While (_, body) | DoWhile (_, body) -> body
+    | For (_, _, _, _, body) | While (_, _, body) | DoWhile (_, body) -> body
 
   let get_cond loop_kind =
     match loop_kind with
-    | For (_, cond, _, _) | While (cond, _) | DoWhile (cond, _) -> cond
+    | For (_, _, cond, _, _) | While (_, cond, _) | DoWhile (cond, _) -> cond
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)

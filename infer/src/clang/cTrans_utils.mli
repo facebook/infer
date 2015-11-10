@@ -183,9 +183,10 @@ end
 module Loops :
 sig
   type loop_kind =
-    | For of Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt
-    (* init, condition, increment and body *)
-    | While of Clang_ast_t.stmt * Clang_ast_t.stmt  (* condition and body *)
+    | For of Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt * Clang_ast_t.stmt
+    (* init, decl_stmt, condition, increment and body *)
+    | While of Clang_ast_t.stmt option * Clang_ast_t.stmt * Clang_ast_t.stmt
+    (* decl_stmt, condition and body *)
     | DoWhile of Clang_ast_t.stmt * Clang_ast_t.stmt  (* condition and body *)
 
   val loop_kind_to_if_kind : loop_kind -> Sil.if_kind

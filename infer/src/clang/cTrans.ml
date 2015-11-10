@@ -1053,6 +1053,15 @@ struct
         cond_trans trans_state s
     | _ -> no_short_circuit_cond ()
 
+  and declStmt_in_condition_trans trans_state decl_stmt res_trans_cond =
+    match decl_stmt with
+    | Clang_ast_t.DeclStmt(stmt_info, stmt_list, decl_list) ->
+        let trans_state_decl = { trans_state with
+                                 succ_nodes = res_trans_cond.root_nodes
+                               } in
+        declStmt_trans trans_state_decl decl_list stmt_info
+    | _ -> res_trans_cond
+
   and ifStmt_trans trans_state stmt_info stmt_list =
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
@@ -1073,15 +1082,26 @@ struct
       IList.iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes';
       res_trans_b.ids in
     (match stmt_list with
-     | [null_stmt; cond; stmt1; stmt2] -> (* Note: for the moment we don't do anything with the null_stmt/decl*)
+     | [decl_stmt; cond; stmt1; stmt2] ->
          (* set the flat to inform that we are translating a condition of a if *)
          let continuation' = mk_cond_continuation trans_state.continuation in
-         let trans_state'' = { trans_state with continuation = continuation'; succ_nodes = []; parent_line_number = line_number } in
+         let trans_state'' = { trans_state with
+                               continuation = continuation';
+                               succ_nodes = [];
+                               parent_line_number = line_number
+                             } in
          let res_trans_cond = cond_trans trans_state'' cond in
+         let res_trans_decl = declStmt_in_condition_trans trans_state decl_stmt res_trans_cond in
          (* Note: by contruction prune nodes are leafs_nodes_cond *)
          let ids_t = do_branch true stmt1 res_trans_cond.leaf_nodes in
          let ids_f = do_branch false stmt2 res_trans_cond.leaf_nodes in
-         { root_nodes = res_trans_cond.root_nodes; leaf_nodes =[join_node]; ids = res_trans_cond.ids@ids_t@ids_f; instrs =[]; exps =[] }
+         {
+           root_nodes = res_trans_decl.root_nodes;
+           leaf_nodes = [join_node];
+           ids = res_trans_decl.ids @ res_trans_cond.ids @ ids_t @ ids_f;
+           instrs = [];
+           exps = []
+         }
      | _ -> assert false)
 
   (* Assumption: the CompoundStmt can be made of different stmts, not just CaseStmts *)
@@ -1240,7 +1260,7 @@ struct
     let continuation_cond = mk_cond_continuation outer_continuation in
     let init_incr_nodes =
       match loop_kind with
-      | Loops.For (init, cond, incr, body) ->
+      | Loops.For (init, decl_stmt, cond, incr, body) ->
           let trans_state' = {
             trans_state with
             succ_nodes = [join_node];
@@ -1260,6 +1280,13 @@ struct
       succ_nodes = [];
     } in
     let res_trans_cond = cond_trans trans_state_cond cond_stmt in
+    let decl_stmt_opt = match loop_kind with
+      | Loops.For (_, decl_stmt, _, _, _) -> Some decl_stmt
+      | Loops.While (decl_stmt_opt, _, _) -> decl_stmt_opt
+      | _ -> None in
+    let res_trans_decl = match decl_stmt_opt with
+      | Some decl_stmt -> declStmt_in_condition_trans trans_state_cond decl_stmt res_trans_cond
+      | _ -> res_trans_cond in
     let body_succ_nodes =
       match loop_kind with
       | Loops.For _ -> (match init_incr_nodes with
@@ -1280,7 +1307,7 @@ struct
       instruction trans_state_body (Loops.get_body loop_kind) in
     let join_succ_nodes =
       match loop_kind with
-      | Loops.For _ | Loops.While _ -> res_trans_cond.root_nodes
+      | Loops.For _ | Loops.While _ -> res_trans_decl.root_nodes
       | Loops.DoWhile _ -> res_trans_body.root_nodes in
     (* Note: prune nodes are by contruction the res_trans_cond.leaf_nodes *)
     let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node res_trans_cond.leaf_nodes in
@@ -1298,12 +1325,12 @@ struct
       | Loops.While _ | Loops.DoWhile _ -> [join_node] in
     { empty_res_trans with root_nodes = root_nodes; leaf_nodes = prune_nodes_f }
 
-  and forStmt_trans trans_state init cond incr body stmt_info =
-    let for_kind = Loops.For (init, cond, incr, body) in
+  and forStmt_trans trans_state init decl_stmt cond incr body stmt_info =
+    let for_kind = Loops.For (init, decl_stmt, cond, incr, body) in
     loop_instruction trans_state for_kind stmt_info
 
-  and whileStmt_trans trans_state cond body stmt_info =
-    let while_kind = Loops.While (cond, body) in
+  and whileStmt_trans trans_state decl_stmt cond body stmt_info =
+    let while_kind = Loops.While (Some decl_stmt, cond, body) in
     loop_instruction trans_state while_kind stmt_info
 
   and doStmt_trans trans_state stmt_info cond body =
@@ -1315,7 +1342,7 @@ struct
     (* Here we do ast transformation, so we don't need the value of the translation of the *)
     (* variable item but we still need to add the variable to the locals *)
     let bin_op = Ast_expressions.make_next_object_exp stmt_info item items in
-    let while_kind = Loops.While (bin_op, body) in
+    let while_kind = Loops.While (None, bin_op, body) in
     loop_instruction trans_state while_kind stmt_info
 
   (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands. *)
@@ -1941,12 +1968,12 @@ struct
     | StmtExpr(stmt_info, stmt_list, expr_info) ->
         stmtExpr_trans trans_state stmt_info stmt_list expr_info
 
-    | ForStmt(stmt_info, [init; null_stmt; cond; incr; body]) ->
+    | ForStmt(stmt_info, [init; decl_stmt; cond; incr; body]) ->
         (* Note: we ignore null_stmt at the moment.*)
-        forStmt_trans trans_state init cond incr body stmt_info
+        forStmt_trans trans_state init decl_stmt cond incr body stmt_info
 
-    | WhileStmt(stmt_info, [_; cond; body]) ->  (* Note: we ignore null_stmt at the moment.*)
-        whileStmt_trans trans_state cond body stmt_info
+    | WhileStmt(stmt_info, [decl_stmt; cond; body]) ->
+        whileStmt_trans trans_state decl_stmt cond body stmt_info
 
     | DoStmt(stmt_info, [body; cond]) ->
         doStmt_trans trans_state stmt_info cond body
