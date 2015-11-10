@@ -58,6 +58,15 @@ class MakeCapture:
             env = self.get_envvars()
             logging.info('Running command %s with env:\n%s' % (self.cmd, env))
             subprocess.check_call(self.cmd, env=env)
+            capture_dir = os.path.join(self.args.infer_out, 'captured')
+            if len(os.listdir(capture_dir)) < 1:
+                # Don't return with a failure code unless we're
+                # running make. It could be normal to have captured
+                # nothing (eg, empty source file). Further output will
+                # alert the user that there was nothing to analyze.
+                if self.cmd[0] == 'make':
+                    # reuse code from gradle, etc. integration
+                    return util.run_compilation_commands([], 'make clean')
             return os.EX_OK
         except subprocess.CalledProcessError as exc:
             if self.args.debug:

@@ -77,4 +77,5 @@ class AntCapture:
 
     def capture(self):
         cmds = self.get_infer_commands(util.get_build_output(self.build_cmd))
-        return util.run_commands(cmds)
+        clean_cmd = '%s clean' % self.build_cmd[0]
+        return util.run_compilation_commands(cmds, clean_cmd)

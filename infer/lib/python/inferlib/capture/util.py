@@ -33,9 +33,13 @@ def get_build_output(build_cmd):
     return verbose_out_chars.split('\n')
 
 
-def run_commands(cmds):
+def run_compilation_commands(cmds, clean_cmd):
+    """runs compilation commands, and suggests a project cleaning command
+    in case there is nothing to compile.
+    """
     #  TODO call it in parallel
     if len(cmds) == 0:
+        print('Nothing to compile. Try running `%s` first.' % clean_cmd)
         return os.EX_NOINPUT
     for cmd in cmds:
         if cmd.start() != os.EX_OK:
