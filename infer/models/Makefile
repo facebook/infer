@@ -13,7 +13,7 @@ LIB_SPECS = $(LIBDIR)/specs
 INFERANALYZE = $(BINDIR)/InferAnalyze
 INFERCLANG = $(BINDIR)/InferClang
 INFERJAVA = $(BINDIR)/InferJava
-JAVA_SCRIPTS = $(addprefix $(PYTHONLIBDIR)/, jwlib.py infer.py) \
+JAVA_SCRIPTS = $(addprefix $(PYTHONLIBDIR)/, jwlib.py analyze.py) \
                $(BINDIR)/infer
 CLANG_SCRIPTS = $(addprefix $(CAPTURELIBDIR)/, make.py) \
                 $(BINDIR)/infer

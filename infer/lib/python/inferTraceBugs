@@ -20,7 +20,7 @@ import shutil
 import subprocess
 import sys
 
-from inferlib import infer, utils
+from inferlib import analyze, utils
 
 HTML_REPORT_DIR = 'report.html'
 TRACES_REPORT_DIR = 'traces'
@@ -345,10 +345,10 @@ def html_list_of_bugs(args, remote_source_template, selector):
 def generate_html_report(args, reports):
     html_dir = os.path.join(args.infer_out, HTML_REPORT_DIR)
     shutil.rmtree(html_dir, True)
-    infer.mkdir_if_not_exists(html_dir)
+    analyze.mkdir_if_not_exists(html_dir)
 
     traces_dir = os.path.join(html_dir, TRACES_REPORT_DIR)
-    infer.mkdir_if_not_exists(traces_dir)
+    analyze.mkdir_if_not_exists(traces_dir)
 
     sel = Selector(args, reports)
 

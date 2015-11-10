@@ -10,7 +10,7 @@ import subprocess
 import traceback
 import util
 
-from inferlib import infer
+from inferlib import analyze
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -30,7 +30,7 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 class JavacCapture:
     def __init__(self, args, cmd):
-        self.analysis = infer.Infer(args, cmd[1:])
+        self.analysis = analyze.Infer(args, cmd[1:])
 
     def capture(self):
         try:

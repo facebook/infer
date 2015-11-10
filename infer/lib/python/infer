@@ -9,7 +9,7 @@ import platform
 import sys
 
 import inferlib
-from inferlib import infer, utils
+from inferlib import analyze, utils
 
 
 CAPTURE_PACKAGE = 'capture'
@@ -73,7 +73,7 @@ def split_args_to_parse():
 
 def create_argparser(parents=[]):
     parser = argparse.ArgumentParser(
-        parents=[infer.infer_parser] + parents,
+        parents=[analyze.infer_parser] + parents,
         add_help=False,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -125,15 +125,15 @@ def main():
 
     if (imported_module and not args.incremental and
             capture_module_name != 'analyze'):
-        infer.remove_infer_out(args.infer_out)
+        analyze.remove_infer_out(args.infer_out)
 
-    infer.create_results_dir(args.infer_out)
+    analyze.create_results_dir(args.infer_out)
 
     configure_logging(args.infer_out, args.log_to_stderr)
     logging.info('Running command %s', ' '.join(sys.argv))
     logging.info('Path to infer script %s (%s)', __file__,
                  os.path.realpath(__file__))
-    logging.info(infer.get_infer_version())
+    logging.info(analyze.get_infer_version())
     logging.info('Platform: %s', platform.platform())
     logging.info('PATH=%s', os.getenv('PATH'))
     logging.info('SHELL=%s', os.getenv('SHELL'))
@@ -160,7 +160,7 @@ def main():
         if not os.path.exists(os.path.join(args.infer_out, 'captured')):
             print('There was nothing to analyze, exiting')
             exit(os.EX_USAGE)
-        analysis = infer.Infer(args, [])
+        analysis = analyze.Infer(args, [])
         analysis.analyze_and_report()
         analysis.save_stats()
 
@@ -171,7 +171,7 @@ def main():
             with open(bugs_filename) as bugs_file:
                 bugs = json.load(bugs_file)
                 if len(bugs) > 0:
-                    sys.exit(infer.BUG_FOUND_ERROR_CODE)
+                    sys.exit(analyze.BUG_FOUND_ERROR_CODE)
         except OSError:
             pass
 
