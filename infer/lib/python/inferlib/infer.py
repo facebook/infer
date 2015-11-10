@@ -242,7 +242,7 @@ def help_exit(message):
     exit(1)
 
 
-def compare_rows(row_1, row_2):
+def compare_csv_rows(row_1, row_2):
     filename_1 = row_1[utils.CSV_INDEX_FILENAME]
     filename_2 = row_2[utils.CSV_INDEX_FILENAME]
     if filename_1 < filename_2:
@@ -255,20 +255,20 @@ def compare_rows(row_1, row_2):
         return line_1 - line_2
 
 
-def should_report(analyzer, row):
-    error_kind = row[utils.CSV_INDEX_KIND]
-    error_type = row[utils.CSV_INDEX_TYPE]
-    error_bucket = ''  # can be updated later once we extract it from qualifier
+def compare_json_rows(row_1, row_2):
+    filename_1 = row_1[utils.JSON_INDEX_FILENAME]
+    filename_2 = row_2[utils.JSON_INDEX_FILENAME]
+    if filename_1 < filename_2:
+        return -1
+    elif filename_1 > filename_2:
+        return 1
+    else:
+        line_1 = int(row_1[utils.JSON_INDEX_LINE])
+        line_2 = int(row_2[utils.JSON_INDEX_LINE])
+        return line_1 - line_2
 
-    try:
-        qualifier_xml = ET.fromstring(row[utils.CSV_INDEX_QUALIFIER_TAGS])
-        if qualifier_xml.tag == utils.QUALIFIER_TAGS:
-            bucket = qualifier_xml.find(utils.BUCKET_TAGS)
-            if bucket is not None:
-                error_bucket = bucket.text
-    except ET.ParseError:
-        pass  # this will skip any invalid xmls
 
+def should_report(analyzer, error_kind, error_type, error_bucket):
     # config what to print is listed below
     error_kinds = [ERROR, WARNING]
 
@@ -314,6 +314,55 @@ def should_report(analyzer, row):
         return False
 
 
+def should_report_csv(analyzer, row):
+    error_kind = row[utils.CSV_INDEX_KIND]
+    error_type = row[utils.CSV_INDEX_TYPE]
+    error_bucket = ''  # can be updated later once we extract it from qualifier
+
+    try:
+        qualifier_xml = ET.fromstring(row[utils.CSV_INDEX_QUALIFIER_TAGS])
+        if qualifier_xml.tag == utils.QUALIFIER_TAGS:
+            bucket = qualifier_xml.find(utils.BUCKET_TAGS)
+            if bucket is not None:
+                error_bucket = bucket.text
+    except ET.ParseError:
+        pass  # this will skip any invalid xmls
+
+    return should_report(analyzer, error_kind, error_type, error_bucket)
+
+
+def should_report_json(analyzer, row):
+    error_kind = row[utils.JSON_INDEX_KIND]
+    error_type = row[utils.JSON_INDEX_TYPE]
+    error_bucket = ''  # can be updated later once we extract it from qualifier
+
+    for qual_tag in row[utils.QUALIFIER_TAGS]:
+        if qual_tag['tag'] == utils.BUCKET_TAGS:
+            error_bucket = qual_tag['value']
+            break
+
+    return should_report(analyzer, error_kind, error_type, error_bucket)
+
+
+def clean_json(args, json_report):
+    collected_rows = []
+    with open(json_report, 'r') as file_in:
+        rows = json.load(file_in)
+        for row in rows:
+            filename = row[utils.JSON_INDEX_FILENAME]
+            if os.path.isfile(filename):
+                if args.no_filtering or should_report_json(args.analyzer, row):
+                    collected_rows.append(row)
+        collected_rows = sorted(
+            collected_rows,
+            cmp=compare_json_rows)
+    temporary_file = tempfile.mktemp()
+    with open(temporary_file, 'w') as file_out:
+        json.dump(collected_rows, file_out)
+        file_out.flush()
+        shutil.move(temporary_file, json_report)
+
+
 def clean_csv(args, csv_report):
     collected_rows = []
     with open(csv_report, 'r') as file_in:
@@ -325,11 +374,12 @@ def clean_csv(args, csv_report):
             for row in rows[1:]:
                 filename = row[utils.CSV_INDEX_FILENAME]
                 if os.path.isfile(filename):
-                    if args.no_filtering or should_report(args.analyzer, row):
+                    if args.no_filtering \
+                       or should_report_csv(args.analyzer, row):
                         collected_rows.append(row)
             collected_rows = sorted(
                 collected_rows,
-                cmp=compare_rows)
+                cmp=compare_csv_rows)
             collected_rows = [rows[0]] + collected_rows
     temporary_file = tempfile.mktemp()
     with open(temporary_file, 'w') as file_out:
@@ -632,10 +682,10 @@ class Infer:
         """Report statistics about the computation and create a CSV file
         containing the list or errors found during the analysis"""
 
-        csv_report = os.path.join(self.args.infer_out,
-                                  utils.CSV_REPORT_FILENAME)
-        bugs_out = os.path.join(self.args.infer_out,
-                                utils.BUGS_FILENAME)
+        out_dir = self.args.infer_out
+        csv_report = os.path.join(out_dir, utils.CSV_REPORT_FILENAME)
+        json_report = os.path.join(out_dir, utils.JSON_REPORT_FILENAME)
+        bugs_out = os.path.join(out_dir, utils.BUGS_FILENAME)
         procs_report = os.path.join(self.args.infer_out, 'procs.csv')
 
         infer_print_cmd = [utils.get_cmd_in_bin_dir('InferPrint')]
@@ -643,6 +693,7 @@ class Infer:
             '-q',
             '-results_dir', self.args.infer_out,
             '-bugs', csv_report,
+            '-bugs_json', json_report,
             '-procs', procs_report,
             '-analyzer', self.args.analyzer
         ]
@@ -657,8 +708,8 @@ class Infer:
                           + infer_print_cmd)
         else:
             clean_csv(self.args, csv_report)
+            clean_json(self.args, json_report)
             self.update_stats_with_warnings(csv_report)
-            utils.create_json_report(self.args.infer_out)
 
             print('\n')
             if not self.args.buck:

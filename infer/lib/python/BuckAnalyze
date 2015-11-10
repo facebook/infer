@@ -40,7 +40,10 @@ BUCK_CONFIG_BACKUP = '.buckconfig.local.backup_generated_by_infer'
 DEFAULT_BUCK_OUT = os.path.join(os.getcwd(), 'buck-out')
 DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
-INFER_REPORT = os.path.join(utils.BUCK_INFER_OUT, utils.CSV_REPORT_FILENAME)
+INFER_CSV_REPORT = os.path.join(utils.BUCK_INFER_OUT,
+                                utils.CSV_REPORT_FILENAME)
+INFER_JSON_REPORT = os.path.join(utils.BUCK_INFER_OUT,
+                                 utils.JSON_REPORT_FILENAME)
 INFER_STATS = os.path.join(utils.BUCK_INFER_OUT, utils.STATS_FILENAME)
 
 INFER_SCRIPT = """\
@@ -332,24 +335,19 @@ def load_stats(opened_jar):
         raise NotFoundInJar
 
 
-def load_report(opened_jar):
+def load_csv_report(opened_jar):
     try:
-        sio = io.StringIO(opened_jar.read(INFER_REPORT).decode())
+        sio = io.StringIO(opened_jar.read(INFER_CSV_REPORT).decode())
         return list(csv.reader(sio))
     except KeyError as e:
         raise NotFoundInJar
 
 
-def rows_remove_duplicates(rows):
-    seen = {}
-    result = []
-    for row in rows:
-        t = tuple(row)
-        if t in seen:
-            continue
-        seen[t] = 1
-        result.append(row)
-    return result
+def load_json_report(opened_jar):
+    try:
+        return json.loads(opened_jar.read(INFER_JSON_REPORT).decode())
+    except KeyError as e:
+        raise NotFoundInJar
 
 
 def collect_results(args, start_time):
@@ -361,7 +359,8 @@ def collect_results(args, start_time):
     with open(os.path.join(args.infer_out, ANALYSIS_SUMMARY_OUTPUT), 'w') as f:
         f.write(buck_stats)
 
-    all_rows = []
+    all_csv_rows = set()
+    all_json_rows = set()
     headers = []
     stats = init_stats(args, start_time)
 
@@ -398,10 +397,15 @@ def collect_results(args, start_time):
                                     old_value = stats[type_k].get(key, 0)
                                     stats[type_k][key] = old_value + value
 
-                    rows = load_report(jar)
-                    if len(rows) > 0:
-                        headers.append(rows[0])
-                        all_rows.extend(rows[1:])
+                    csv_rows = load_csv_report(jar)
+                    if len(csv_rows) > 0:
+                        headers.append(csv_rows[0])
+                        for row in csv_rows[1:]:
+                            all_csv_rows.add(tuple(row))
+
+                    json_rows = load_json_report(jar)
+                    for row in json_rows:
+                        all_json_rows.add(json.dumps(row))
 
                     # Override normals
                     stats['normal'].update(target_stats.get('normal', {}))
@@ -411,6 +415,7 @@ def collect_results(args, start_time):
                 logging.warn('Bad zip file %s', path)
 
     csv_report = os.path.join(args.infer_out, utils.CSV_REPORT_FILENAME)
+    json_report = os.path.join(args.infer_out, utils.JSON_REPORT_FILENAME)
     bugs_out = os.path.join(args.infer_out, utils.BUGS_FILENAME)
 
     if len(headers) == 0:
@@ -431,11 +436,16 @@ def collect_results(args, start_time):
 
     with open(csv_report, 'w') as report:
         writer = csv.writer(report)
-        writer.writerows([headers[0]] + rows_remove_duplicates(all_rows))
+        all_csv_rows = [list(row) for row in all_csv_rows]
+        writer.writerows([headers[0]] + all_csv_rows)
         report.flush()
 
-    # export the CSV rows to JSON
-    utils.create_json_report(args.infer_out)
+    with open(json_report, 'w') as report:
+        json_string = '['
+        json_string += ','.join(all_json_rows)
+        json_string += ']'
+        report.write(json_string)
+        report.flush()
 
     print('\n')
     infer.print_errors(csv_report, bugs_out)

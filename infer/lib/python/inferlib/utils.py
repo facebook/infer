@@ -82,8 +82,8 @@ JSON_INDEX_PROCEDURE = 'procedure'
 JSON_INDEX_QUALIFIER = 'qualifier'
 JSON_INDEX_QUALIFIER_TAGS = 'qualifier_tags'
 JSON_INDEX_SEVERITY = 'file'
-JSON_INDEX_TYPE = 'type'
-JSON_INDEX_TRACE = 'trace'
+JSON_INDEX_TYPE = 'bug_type'
+JSON_INDEX_TRACE = 'bug_trace'
 JSON_INDEX_TRACE_LEVEL = 'level'
 JSON_INDEX_TRACE_FILENAME = 'filename'
 JSON_INDEX_TRACE_LINE = 'line_number'
@@ -389,32 +389,6 @@ def invoke_function_with_callbacks(
         if on_exception:
             return on_exception(exc)
         raise
-
-
-def save_as_json(data, filename):
-    with open(filename, 'w') as file_out:
-        json.dump(data, file_out, indent=2)
-
-
-def merge_json_reports(report_paths, merged_report_path):
-    # TODO: use streams instead of loading the entire json in memory
-    json_data = []
-    for json_path in report_paths:
-        with open(json_path, 'r') as fd:
-            json_data = json_data + json.loads(fd.read())
-    save_as_json(json_data, merged_report_path)
-
-
-def create_json_report(out_dir):
-    csv_report_filename = os.path.join(out_dir, CSV_REPORT_FILENAME)
-    json_report_filename = os.path.join(out_dir, JSON_REPORT_FILENAME)
-    rows = []
-    with open(csv_report_filename, 'r') as file_in:
-        reader = csv.reader(file_in)
-        rows = [row for row in reader]
-    headers = rows[0]
-    issues = [dict(zip(headers, row)) for row in rows[1:]]
-    save_as_json(issues, json_report_filename)
 
 
 def get_plural(_str, count):
