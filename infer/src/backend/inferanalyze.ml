@@ -506,7 +506,7 @@ let compute_clusters exe_env files_changed : Cluster.t list =
         end
       end in
   IList.iter do_node nodes;
-  L.log_progress_simple "\n";
+  if IList.length nodes > 0 then L.log_progress_simple "\n";
   if not !Config.intraprocedural then IList.iter do_edge edges;
   if !save_file_dependency then
     Cg.save_call_graph_dotty (Some (DB.filename_from_string "file_dependency.dot")) Specs.get_specs file_cg;
@@ -537,7 +537,9 @@ let compute_clusters exe_env files_changed : Cluster.t list =
       L.err "@.Combined clusters with max size %d@." max_cluster_size;
       Cluster.print_clusters_stats clusters';
       let number_of_clusters = IList.length clusters' in
-      L.log_progress_simple ("\nAnalyzing "^(string_of_int number_of_clusters)^" clusters");
+      let plural_of_cluster = if number_of_clusters != 1 then "s" else "" in
+      L.log_progress_simple
+        (Printf.sprintf "Analyzing %d cluster%s" number_of_clusters plural_of_cluster);
       ClusterMakefile.create_cluster_makefile_and_exit clusters' file_cg !makefile_cmdline false
     end;
   let clusters' =

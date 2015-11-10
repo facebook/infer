@@ -430,9 +430,12 @@ def print_errors(csv_report, bugs_out):
                             source_context,
                         )
                     )
-            if len(text_errors_list) == 0:
+            n_issues = len(text_errors_list)
+            if n_issues == 0:
                 print_and_write(file_out, 'No issues found')
             else:
+                msg = '\nFound %s\n' % utils.get_plural('issue', n_issues)
+                print_and_write(file_out, msg)
                 text_errors = '\n\n'.join(text_errors_list)
                 print_and_write(file_out, text_errors)
 
@@ -711,7 +714,6 @@ class Infer:
             clean_json(self.args, json_report)
             self.update_stats_with_warnings(csv_report)
 
-            print('\n')
             if not self.args.buck:
                 print_errors(csv_report, bugs_out)
 
