@@ -681,14 +681,13 @@ class Infer:
                 previous_value = self.stats['int'].get(key, 0)
                 self.stats['int'][key] = previous_value + 1
 
-    def report_errors(self):
+    def create_report(self):
         """Report statistics about the computation and create a CSV file
         containing the list or errors found during the analysis"""
 
         out_dir = self.args.infer_out
         csv_report = os.path.join(out_dir, utils.CSV_REPORT_FILENAME)
         json_report = os.path.join(out_dir, utils.JSON_REPORT_FILENAME)
-        bugs_out = os.path.join(out_dir, utils.BUGS_FILENAME)
         procs_report = os.path.join(self.args.infer_out, 'procs.csv')
 
         infer_print_cmd = [utils.get_cmd_in_bin_dir('InferPrint')]
@@ -714,13 +713,9 @@ class Infer:
             clean_json(self.args, json_report)
             self.update_stats_with_warnings(csv_report)
 
-            if not self.args.buck:
-                print_errors(csv_report, bugs_out)
-
         return exit_status
 
-    def save_stats(self):
-        """Print timing information to infer_out/stats.json"""
+    def read_proc_stats(self):
         proc_stats_path = os.path.join(
             self.args.infer_out,
             utils.PROC_STATS_FILENAME)
@@ -731,6 +726,8 @@ class Infer:
                 proc_stats = json.load(proc_stats_file)
                 self.stats['int'].update(proc_stats)
 
+    def save_stats(self):
+        """Print timing information to infer_out/stats.json"""
         self.stats['float'] = {
             'capture_time': self.timing.get('capture', 0.0),
             'makefile_generation_time': self.timing.get(
@@ -753,12 +750,28 @@ class Infer:
         os.remove(self.javac.annotations_out)
 
     def analyze_and_report(self):
+        should_print_errors = False
         if self.args.analyzer not in [COMPILE, CAPTURE]:
             if self.analyze() == os.EX_OK:
                 reporting_start_time = time.time()
-                self.report_errors()
+                report_status = self.create_report()
                 elapsed = utils.elapsed_time(reporting_start_time)
                 self.timing['reporting'] = elapsed
+                self.read_proc_stats()
+                self.print_analysis_stats()
+                if report_status == os.EX_OK and not self.args.buck:
+                    csv_report = os.path.join(self.args.infer_out,
+                                              utils.CSV_REPORT_FILENAME)
+                    bugs_out = os.path.join(self.args.infer_out,
+                                            utils.BUGS_FILENAME)
+                    print_errors(csv_report, bugs_out)
+
+    def print_analysis_stats(self):
+        procs_total = self.stats['int']['procedures']
+        files_total = self.stats['int']['files']
+        procs_str = utils.get_plural('procedure', procs_total)
+        files_str = utils.get_plural('file', files_total)
+        print('Analyzed %s in %s' % (procs_str, files_str))
 
     def start(self):
         if self.javac.args.version:
@@ -783,12 +796,6 @@ class Infer:
             self.close()
             self.timing['total'] = utils.elapsed_time(start_time)
             self.save_stats()
-
-            procs_total = self.stats['int']['procedures']
-            files_total = self.stats['int']['files']
-            procs_str = utils.get_plural('procedure', procs_total)
-            files_str = utils.get_plural('file', files_total)
-            print('\nAnalyzed %s in %s' % (procs_str, files_str))
 
             return self.stats
 
