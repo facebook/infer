@@ -16,14 +16,30 @@ public class ExpensiveCallExample {
 
   Object mObject;
 
+  void nonExpensiveMethod() {}
+
   @Expensive
   void expensiveMethod() {
     mObject = new Object();
   }
 
-  @PerformanceCritical
-  void shouldReportExpensiveCallWarning() {
+  void methodWrapper() {
     expensiveMethod();
+  }
+
+  @PerformanceCritical
+  void notCallingExpensiveMethod() {
+    nonExpensiveMethod();
+  }
+
+  @PerformanceCritical
+  void directlyCallingExpensiveMethod() {
+    expensiveMethod();
+  }
+
+  @PerformanceCritical
+  void indirectlyCallingExpensiveMethod() {
+    methodWrapper();
   }
 
 }

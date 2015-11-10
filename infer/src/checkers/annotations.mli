@@ -14,6 +14,8 @@ val suppressLint : string
 val expensive : string
 val performance_critical : string
 
+val expensive_annotation : Sil.annotation
+
 type annotation =
   | Nullable
   | Present

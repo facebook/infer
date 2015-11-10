@@ -39,7 +39,8 @@ public class ExpensiveCallTest {
   public void matchErrors()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "shouldReportExpensiveCallWarning",
+        "directlyCallingExpensiveMethod",
+        "indirectlyCallingExpensiveMethod"
     };
     assertThat(
         "Results should contain " + CALLS_EXPENSIVE_METHOD,

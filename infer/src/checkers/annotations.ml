@@ -112,6 +112,11 @@ let verify_annotation = "com.facebook.infer.annotation.Verify"
 let expensive = "Expensive"
 let performance_critical = "PerformanceCritical"
 
+let expensive_annotation = {
+  Sil.class_name = expensive;
+  Sil.parameters = []
+}
+
 let ia_is_nullable ia =
   ia_ends_with ia nullable
 
@@ -162,7 +167,6 @@ type annotation =
 let ia_is ann ia = match ann with
   | Nullable -> ia_is_nullable ia
   | Present -> ia_is_present ia
-
 
 (** Get a method signature with annotations from a proc_attributes. *)
 let get_annotated_signature proc_attributes : annotated_signature =

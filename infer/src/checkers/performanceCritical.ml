@@ -33,10 +33,18 @@ let search_expensive_call checked_pnames expensive_callee (pname, _) =
         end
 
 
-let is_performance_critical attributes =
+let check_attributes check attributes =
   let annotated_signature = Annotations.get_annotated_signature attributes in
   let ret_annotation, _ = annotated_signature.Annotations.ret in
-  Annotations.ia_is_performance_critical ret_annotation
+  check ret_annotation
+
+
+let is_performance_critical attributes =
+  check_attributes Annotations.ia_is_performance_critical attributes
+
+
+let is_expensive attributes =
+  check_attributes Annotations.ia_is_expensive attributes
 
 
 let callback_performance_checker _ _ _ tenv pname pdesc : unit =
@@ -58,4 +66,11 @@ let callback_performance_checker _ _ _ tenv pname pdesc : unit =
           Annotations.expensive in
       Checkers.ST.report_error
         pname pdesc calls_expensive_method (Cfg.Procdesc.get_loc pdesc) description
-  | Some _ -> ()
+  | Some _ when not (is_expensive attributes) ->
+      let ret_annot, param_annot = attributes.ProcAttributes.method_annotation in
+      let updated_method_annot =
+        (Annotations.expensive_annotation, true) :: ret_annot, param_annot in
+      let updated_attributes =
+        { attributes with ProcAttributes.method_annotation = updated_method_annot } in
+      AttributesTable.store_attributes updated_attributes
+  | Some _ -> () (* Nothing to do if method already annotated with @Expensive *)
