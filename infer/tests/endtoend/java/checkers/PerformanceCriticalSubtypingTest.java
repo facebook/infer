@@ -20,37 +20,35 @@ import java.io.IOException;
 import utils.InferException;
 import utils.InferResults;
 
-public class ExpensiveCallTest {
+public class PerformanceCriticalSubtypingTest {
 
   public static final String SOURCE_FILE =
-    "infer/tests/codetoanalyze/java/checkers/ExpensiveCallExample.java";
+    "infer/tests/codetoanalyze/java/checkers/PerformanceCriticalSubtypingExample.java";
 
-  public static final String CALLS_EXPENSIVE_METHOD =
-    "CHECKERS_CALLS_EXPENSIVE_METHOD";
+  public static final String UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL =
+    "CHECKERS_UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL";
 
   private static InferResults inferResults;
 
   @BeforeClass
   public static void loadResults() throws InterruptedException, IOException {
     inferResults =
-      InferResults.loadCheckersResults(ImmutableCastTest.class, SOURCE_FILE);
+      InferResults.loadCheckersResults(PerformanceCriticalSubtypingTest.class, SOURCE_FILE);
   }
 
   @Test
   public void matchErrors()
-      throws IOException, InterruptedException, InferException {
+    throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "directlyCallingExpensiveMethod",
-        "indirectlyCallingExpensiveMethod",
-        "callingExpensiveMethodFromInterface",
+      "m1",
     };
     assertThat(
-        "Results should contain " + CALLS_EXPENSIVE_METHOD,
+        "Results should contain " + UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL,
         inferResults,
         containsExactly(
-            CALLS_EXPENSIVE_METHOD,
+            UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL,
             SOURCE_FILE,
             methods));
-  }
+    }
 
 }

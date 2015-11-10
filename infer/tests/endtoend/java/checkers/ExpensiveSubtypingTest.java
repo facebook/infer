@@ -20,37 +20,35 @@ import java.io.IOException;
 import utils.InferException;
 import utils.InferResults;
 
-public class ExpensiveCallTest {
+public class ExpensiveSubtypingTest {
 
   public static final String SOURCE_FILE =
-    "infer/tests/codetoanalyze/java/checkers/ExpensiveCallExample.java";
+    "infer/tests/codetoanalyze/java/checkers/ExpensiveSubtypingExample.java";
 
-  public static final String CALLS_EXPENSIVE_METHOD =
-    "CHECKERS_CALLS_EXPENSIVE_METHOD";
+  public static final String EXPENSIVE_OVERRIDES_UNANNOTATED =
+    "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED";
 
   private static InferResults inferResults;
 
   @BeforeClass
   public static void loadResults() throws InterruptedException, IOException {
     inferResults =
-      InferResults.loadCheckersResults(ImmutableCastTest.class, SOURCE_FILE);
+      InferResults.loadCheckersResults(ExpensiveSubtypingTest.class, SOURCE_FILE);
   }
 
   @Test
   public void matchErrors()
-      throws IOException, InterruptedException, InferException {
+    throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "directlyCallingExpensiveMethod",
-        "indirectlyCallingExpensiveMethod",
-        "callingExpensiveMethodFromInterface",
+      "m3",
     };
     assertThat(
-        "Results should contain " + CALLS_EXPENSIVE_METHOD,
+        "Results should contain " + EXPENSIVE_OVERRIDES_UNANNOTATED,
         inferResults,
         containsExactly(
-            CALLS_EXPENSIVE_METHOD,
+            EXPENSIVE_OVERRIDES_UNANNOTATED,
             SOURCE_FILE,
             methods));
-  }
+    }
 
 }

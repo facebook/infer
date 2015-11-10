@@ -42,4 +42,9 @@ public class ExpensiveCallExample {
     methodWrapper();
   }
 
+  @PerformanceCritical
+  void callingExpensiveMethodFromInterface(ExpensiveInterfaceExample object) {
+    object.m5();
+  }
+
 }
