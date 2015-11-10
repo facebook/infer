@@ -31,16 +31,42 @@ let set_verbose_out path =
 let models_jar = ref ""
 
 
+let models_tenv = ref (Sil.create_tenv ())
+
+
+let load_models_tenv zip_channel =
+  let models_tenv_filename_in_jar =
+    let root = Filename.concat Config.default_in_zip_results_dir Config.captured_dir_name in
+    Filename.concat root Config.global_tenv_filename in
+  let temp_tenv_filename =
+    DB.filename_from_string (Filename.temp_file "tmp_" Config.global_tenv_filename) in
+  let entry = Zip.find_entry zip_channel models_tenv_filename_in_jar in
+  let temp_tenv_file = DB.filename_to_string temp_tenv_filename in
+  let models_tenv =
+    try
+      Zip.copy_entry_to_file zip_channel entry temp_tenv_file;
+      match Sil.load_tenv_from_file temp_tenv_filename with
+      | None -> failwith "Models tenv file could not be loaded"
+      | Some tenv -> tenv
+    with
+    | Not_found -> failwith "Models tenv not found in jar file"
+    | Sys_error msg -> failwith ("Models jar could not be opened "^msg) in
+  DB.file_remove temp_tenv_filename;
+  models_tenv
+
+
 let collect_specs_filenames jar_filename =
-  let file_in = Zip.open_in jar_filename in
+  let zip_channel = Zip.open_in jar_filename in
   let collect set e =
     let filename = e.Zip.filename in
     if not (Filename.check_suffix filename ".specs") then set
     else
       let proc_filename = (Filename.chop_extension (Filename.basename filename)) in
       StringSet.add proc_filename set in
-  models_specs_filenames := IList.fold_left collect !models_specs_filenames (Zip.entries file_in);
-  Zip.close_in file_in
+  models_specs_filenames :=
+    IList.fold_left collect !models_specs_filenames (Zip.entries zip_channel);
+  models_tenv := load_models_tenv zip_channel;
+  Zip.close_in zip_channel
 
 
 let add_models jar_filename =

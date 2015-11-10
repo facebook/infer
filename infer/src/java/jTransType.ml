@@ -452,28 +452,10 @@ let return_type program tenv ms meth_kind =
 
 
 let add_models_types tenv =
-  let jar_tenv_filename =
-    let root = Filename.concat Config.default_in_zip_results_dir Config.captured_dir_name in
-    Filename.concat root Config.global_tenv_filename in
-  let temp_tenv_filename =
-    DB.filename_from_string (Filename.temp_file "tmp_" Config.global_tenv_filename) in
   let add_type t typename typ =
     if not (Sil.tenv_mem t typename) then
       Sil.tenv_add tenv typename typ in
-  let models_tenv =
-    try
-      let zip_channel = Zip.open_in !JClasspath.models_jar in
-      let entry = Zip.find_entry zip_channel jar_tenv_filename in
-      let temp_tenv_file = DB.filename_to_string temp_tenv_filename in
-      let () = Zip.copy_entry_to_file zip_channel entry temp_tenv_file in
-      match Sil.load_tenv_from_file temp_tenv_filename with
-      | None -> failwith "Models tenv file could not be loaded"
-      | Some tenv -> tenv
-    with
-    | Not_found -> failwith "Models tenv not found in jar file"
-    | Sys_error msg -> failwith ("Models jar could not be opened "^msg) in
-  Sil.tenv_iter (add_type tenv) models_tenv;
-  DB.file_remove temp_tenv_filename
+  Sil.tenv_iter (add_type tenv) !JClasspath.models_tenv
 
 
 (* TODO #6604630: remove *)

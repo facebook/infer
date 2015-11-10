@@ -14,6 +14,9 @@ open Sawja_pack
 (** Jar file containing the models *)
 val models_jar : string ref
 
+(** Type environment of the models *)
+val models_tenv : Sil.tenv ref
+
 (**  Adds the set of procnames for the models of Java libraries so that methods with similar names are skipped during the capture *)
 val add_models : string -> unit
 
