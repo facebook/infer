@@ -105,6 +105,7 @@ public class InferRunner {
 
       return new ImmutableList.Builder<String>()
           .add("infer")
+          .add("--no-progress-bar")
           .add("--no-filtering")
           .addAll(args)
           .add("-o")
@@ -261,6 +262,7 @@ public class InferRunner {
         .add(ml_buckets == null ? "all" : ml_buckets);
     ImmutableList<String> inferCmd = new ImmutableList.Builder<String>()
         .add("infer")
+        .add("--no-progress-bar")
         .add("--no-filtering")
         .add("--out")
         .add(resultsDirName)

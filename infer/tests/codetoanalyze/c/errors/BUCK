@@ -7,6 +7,7 @@ clean_cmd = ' '.join(['rm', '-rf', out])
 env_cmd = ' '.join(['export', 'INFER_REPORT_ASSERTION_FAILURE=1'])
 infer_cmd = ' '.join([
     'infer',
+    '--no-progress-bar',
     '--no-filtering',
     '-o', 'out',
     '--testing_mode',

@@ -20,6 +20,7 @@ classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
 env_cmd = ' '.join(['export', 'INFER_REPORT_EXPENSIVE_CALLS=1'])
 infer_cmd = ' '.join([
     'infer',
+    '--no-progress-bar',
     '--absolute-paths',
     '-o', out,
     '-a', 'checkers',

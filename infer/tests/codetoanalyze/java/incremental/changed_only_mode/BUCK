@@ -21,6 +21,7 @@ stripped_suffix_files = map(lambda f: f.replace('.v1', ''), v1_files)
 to_compile = ' '.join(set(normal_files + stripped_suffix_files))
 infer_cmd = ' '.join([
     'infer',
+    '--no-progress-bar',
     '-i',
     '--changed-only',
     '--absolute-paths',

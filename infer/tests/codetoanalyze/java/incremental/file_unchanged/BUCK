@@ -12,6 +12,7 @@ out = 'out'
 clean_cmd = ' '.join(['rm', '-rf', out])
 infer_cmd = ' '.join([
     'infer',
+    '--no-progress-bar',
     '-i',
     '--absolute-paths',
     '-o', out,
