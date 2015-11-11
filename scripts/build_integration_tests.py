@@ -49,7 +49,7 @@ def string_of_error(e):
         line = ' on line %s ' % e[utils.JSON_INDEX_LINE]
     msg = '%s in file %s, procedure %s%s' % (
         e[utils.JSON_INDEX_TYPE],
-        quote(e[utils.JSON_INDEX_FILE]),
+        quote(e[utils.JSON_INDEX_FILENAME]),
         quote(e[utils.JSON_INDEX_PROCEDURE]),
         line,
     )
