@@ -11,6 +11,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
+import codecs
 import csv
 import glob
 import json
@@ -220,7 +221,6 @@ def create_results_dir(results_dir):
 
 
 def clean(infer_out):
-
     directories = ['multicore', 'classnames', 'sources', jwlib.FILELISTS]
     extensions = ['.cfg', '.cg']
 
@@ -346,7 +346,7 @@ def should_report_json(analyzer, row):
 
 def clean_json(args, json_report):
     collected_rows = []
-    with open(json_report, 'r') as file_in:
+    with codecs.open(json_report, 'r', encoding=utils.LOCALE) as file_in:
         rows = json.load(file_in)
         for row in rows:
             filename = row[utils.JSON_INDEX_FILENAME]
@@ -357,7 +357,7 @@ def clean_json(args, json_report):
             collected_rows,
             cmp=compare_json_rows)
     temporary_file = tempfile.mktemp()
-    with open(temporary_file, 'w') as file_out:
+    with codecs.open(temporary_file, 'w', encoding=utils.LOCALE) as file_out:
         json.dump(collected_rows, file_out)
         file_out.flush()
         shutil.move(temporary_file, json_report)
@@ -366,7 +366,7 @@ def clean_json(args, json_report):
 def clean_csv(args, csv_report):
     collected_rows = []
     with open(csv_report, 'r') as file_in:
-        reader = csv.reader(file_in)
+        reader = utils.locale_csv_reader(file_in)
         rows = [row for row in reader]
         if len(rows) <= 1:
             return rows
@@ -395,8 +395,8 @@ def print_and_write(file_out, message):
 
 
 def print_errors(csv_report, bugs_out):
-    with open(csv_report, 'r') as file_in:
-        reader = csv.reader(file_in)
+    with codecs.open(csv_report, 'r', encoding=utils.LOCALE) as file_in:
+        reader = utils.locale_csv_reader(file_in)
         reader.next()  # first line is header, skip it
 
         errors = filter(
@@ -404,7 +404,7 @@ def print_errors(csv_report, bugs_out):
             reader
         )
 
-        with open(bugs_out, 'w') as file_out:
+        with codecs.open(bugs_out, 'w', encoding=utils.LOCALE) as file_out:
             text_errors_list = []
             for row in errors:
                 filename = row[utils.CSV_INDEX_FILENAME]
@@ -419,9 +419,9 @@ def print_errors(csv_report, bugs_out):
                         utils.build_source_context(filename,
                                                    utils.TERMINAL_FORMATTER,
                                                    int(line)))
-                    source_context = str(indenter)
+                    source_context = unicode(indenter)
                     text_errors_list.append(
-                        '{0}:{1}: {2}: {3}\n  {4}\n{5}'.format(
+                        u'{0}:{1}: {2}: {3}\n  {4}\n{5}'.format(
                             filename,
                             line,
                             kind.lower(),
@@ -674,7 +674,7 @@ class Infer:
 
     def update_stats_with_warnings(self, csv_report):
         with open(csv_report, 'r') as file_in:
-            reader = csv.reader(file_in)
+            reader = utils.locale_csv_reader(file_in)
             rows = [row for row in reader][1:]
             for row in rows:
                 key = row[utils.CSV_INDEX_TYPE]
@@ -722,7 +722,8 @@ class Infer:
 
         # capture and compile mode do not create proc_stats.json
         if os.path.isfile(proc_stats_path):
-            with open(proc_stats_path, 'r') as proc_stats_file:
+            with codecs.open(proc_stats_path, 'r',
+                             encoding=utils.LOCALE) as proc_stats_file:
                 proc_stats = json.load(proc_stats_file)
                 self.stats['int'].update(proc_stats)
 
@@ -741,7 +742,7 @@ class Infer:
         }
 
         stats_path = os.path.join(self.args.infer_out, utils.STATS_FILENAME)
-        with open(stats_path, 'w') as stats_file:
+        with codecs.open(stats_path, 'w', encoding=utils.LOCALE) as stats_file:
             json.dump(self.stats, stats_file, indent=2)
 
 

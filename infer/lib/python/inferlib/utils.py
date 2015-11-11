@@ -11,10 +11,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
+import codecs
 import csv
 import fnmatch
 import gzip
 import json
+import locale
 import logging
 import os
 import re
@@ -30,9 +32,12 @@ import tempfile
 import time
 
 
+LOCALE = locale.getpreferredencoding()
+
 # this assumes that this file lives in infer/lib/python/infer/ and the binaries
 # are in infer/bin/
-INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__)
+                                         .decode(LOCALE))
 INFER_INFER_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
                                      os.pardir, os.pardir, os.pardir)
 INFER_ROOT_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, os.pardir)
@@ -46,7 +51,7 @@ ANNOT_PROCESSOR_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'processor.jar')
 WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
 XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
 
-DEFAULT_INFER_OUT = os.path.join(os.getcwd(), 'infer-out')
+DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(LOCALE), 'infer-out')
 CSV_PERF_FILENAME = 'performances.csv'
 STATS_FILENAME = 'stats.json'
 PROC_STATS_FILENAME = 'proc_stats.json'
@@ -132,6 +137,14 @@ if "check_output" not in dir(subprocess):
     subprocess.check_output = f
 
 
+# csv.reader() doesn't support utf-8. Do not use csv.reader(). Use
+# this instead.
+def locale_csv_reader(iterable, dialect='excel', **kwargs):
+    rows = csv.reader(iterable, dialect=dialect, **kwargs)
+    for row in rows:
+        yield [unicode(cell, LOCALE) for cell in row]
+
+
 def configure_logging(debug, quiet=False):
     """Configures the default logger. This can be called only once and has to
     be called before any logging is done.
@@ -164,7 +177,7 @@ def get_cmd_in_bin_dir(binary_name):
 
 
 def write_cmd_streams_to_file(logfile, cmd=None, out=None, err=None):
-    with open(logfile, 'w') as log_filedesc:
+    with codecs.open(logfile, 'w', encoding=LOCALE) as log_filedesc:
         if cmd:
             log_filedesc.write(' '.join(cmd) + '\n')
         if err is not None:
@@ -424,13 +437,18 @@ class Indenter(str):
         self.text += '\n'
 
     def add(self, x):
+        if type(x) != unicode:
+            x = x.decode(LOCALE)
         lines = x.splitlines()
         indent = self.indent_get()
         lines = [indent + l for l in lines]
         self.text += '\n'.join(lines)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.text
+
+    def __str__(self):
+        return unicode(self).encode(LOCALE)
 
 
 def syntax_highlighting(source_name, mode, s):
@@ -454,14 +472,14 @@ def build_source_context(source_name, mode, report_line):
     n_length = len(str(end_line))
     line_number = 1
     s = ''
-    with open(source_name) as source_file:
+    with codecs.open(source_name, 'r', encoding=LOCALE) as source_file:
         for line in source_file:
             if start_line <= line_number <= end_line:
                 num = str(line_number).zfill(n_length)
                 caret = '  '
                 if line_number == report_line:
                     caret = '> '
-                s += num + '. ' + caret + line
+                s += u'%s. %s%s' % (num, caret, line)
             line_number += 1
     return syntax_highlighting(source_name, mode, s)
 

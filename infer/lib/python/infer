@@ -68,7 +68,9 @@ def load_module(mod_name):
 def split_args_to_parse():
     dd_index = \
         sys.argv.index(CMD_MARKER) if CMD_MARKER in sys.argv else len(sys.argv)
-    return sys.argv[1:dd_index], sys.argv[dd_index + 1:]
+    cmd_raw = sys.argv[dd_index + 1:]
+    return (sys.argv[1:dd_index],
+            [arg.decode(utils.LOCALE) for arg in cmd_raw])
 
 
 def create_argparser(parents=[]):
@@ -168,7 +170,8 @@ def main():
         bugs_filename = os.path.join(args.infer_out,
                                      utils.JSON_REPORT_FILENAME)
         try:
-            with open(bugs_filename) as bugs_file:
+            with codecs.open(bugs_filename, 'r',
+                             encoding=utils.LOCALE) as bugs_file:
                 bugs = json.load(bugs_file)
                 if len(bugs) > 0:
                     sys.exit(analyze.BUG_FOUND_ERROR_CODE)

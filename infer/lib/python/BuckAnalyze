@@ -338,7 +338,7 @@ def load_stats(opened_jar):
 def load_csv_report(opened_jar):
     try:
         sio = io.StringIO(opened_jar.read(INFER_CSV_REPORT).decode())
-        return list(csv.reader(sio))
+        return list(utils.locale_csv_reader(sio))
     except KeyError as e:
         raise NotFoundInJar
 
