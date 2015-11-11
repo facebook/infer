@@ -32,7 +32,7 @@ let search_expensive_call checked_pnames expensive_callee (pname, _) =
           | Some attributes ->
               let annotated_signature = Annotations.get_annotated_signature attributes in
               let ret_annotation, _ = annotated_signature.Annotations.ret in
-              if Annotations.ia_is_expensive ret_annotation then
+              if Annotations.ia_calls_expensive ret_annotation then
                 Some pname
               else
                 None
@@ -121,7 +121,7 @@ let callback_performance_checker _ _ _ tenv pname pdesc =
   | Some _ when not expensive ->
       let ret_annot, param_annot = attributes.ProcAttributes.method_annotation in
       let updated_method_annot =
-        (Annotations.expensive_annotation, true) :: ret_annot, param_annot in
+        (Annotations.calls_expensive_annotation, true) :: ret_annot, param_annot in
       let updated_attributes =
         { attributes with ProcAttributes.method_annotation = updated_method_annot } in
       AttributesTable.store_attributes updated_attributes

@@ -110,10 +110,11 @@ let strict = "com.facebook.infer.annotation.Strict"
 let true_on_null = "TrueOnNull"
 let verify_annotation = "com.facebook.infer.annotation.Verify"
 let expensive = "Expensive"
+let calls_expensive = "CallsExpensive"
 let performance_critical = "PerformanceCritical"
 
-let expensive_annotation = {
-  Sil.class_name = expensive;
+let calls_expensive_annotation = {
+  Sil.class_name = calls_expensive;
   Sil.parameters = []
 }
 
@@ -156,6 +157,9 @@ let ia_is_verify ia =
 
 let ia_is_expensive ia =
   ia_ends_with ia expensive
+
+let ia_calls_expensive ia =
+  ia_is_expensive ia || ia_ends_with ia calls_expensive
 
 let ia_is_performance_critical ia =
   ia_ends_with ia performance_critical
