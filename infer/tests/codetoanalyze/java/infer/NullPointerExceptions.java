@@ -435,5 +435,21 @@ public class NullPointerExceptions {
     File[] files = dir.listFiles();
     return files.length; // expect possible NullPointerException as files == null is possible
   }
+  
+  native Object unknownFunc();
+
+  Object callUnknownFunc() {
+    return unknownFunc();
+  }
+
+  void dontReportOnNullableDirectReassignmentToUnknown(@Nullable Object o) {
+    o = unknownFunc();
+    o.toString();
+  }
+
+  void dontReportOnNullableIndirectReassignmentToUnknown(@Nullable Object o) {
+    o = callUnknownFunc();
+    o.toString();
+  }
 
 }

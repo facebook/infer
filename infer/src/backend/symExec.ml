@@ -1135,6 +1135,7 @@ and add_constraints_on_retval pdesc prop exp typ callee_pname callee_loc =
           IList.fold_left bind_exp prop (Prop.get_sigma prop) in
         (* bind return id to the abducted value pointed to by the pvar we introduced *)
         bind_exp_to_abducted_val exp abducted_ret_pv prop
+        |> add_ret_non_null exp typ
     else add_ret_non_null exp typ prop
 
 and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_loc =
