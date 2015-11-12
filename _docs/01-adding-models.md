@@ -58,7 +58,7 @@ Here, Infer will start with the analysis of `create` but will not find the sourc
 
 At this point, it is important to note that missing source code and missing models do not make the analysis fail. Missing functions are treated as having no effect. However, even though skipping these missing functions is fine in most cases, there can be cases where it affects the quality of the analysis. For example, missing models can lead to incorrect bug reports.
 
-Consider the case of a function `lib_exit` having the same semantic as `exit` but defined in an pre-compiled library not part of the project being analyzed:
+Consider the case of a function `lib_exit` having the same semantics as `exit` but defined in an pre-compiled library not part of the project being analyzed:
 
 ```C
 void lib_exit(int);
@@ -140,7 +140,7 @@ The models for Java are following the same approach and the list of helper funct
   [`infer/models/java/src/com/facebook/infer/models/InferBuiltins.java`](https://github.com/facebook/infer/blob/master/infer/models/java/src/com/facebook/infer/models/InferBuiltins.java)
   [`infer/models/java/src/com/facebook/infer/models/InferUndefined.java`](https://github.com/facebook/infer/blob/master/infer/models/java/src/com/facebook/infer/models/InferUndefined.java)
 
-For example, Infer treats Java hash maps using a recency abstraction model: Infer remembers the last two keys being added by `put` and checked by `containsKey`, which can be used to make sure that no null pointer exceptions are coming from the fact that `get(key)` returns null when `key` is not not in the map. This behavior can just be implemented via a model written in Java with the help of few helper functions understood by Infer. These models can be found in:
+For example, Infer treats Java hash maps using a recency abstraction model: Infer remembers the last two keys being added by `put` and checked by `containsKey`, which can be used to make sure that no null pointer exceptions are coming from the fact that `get(key)` returns null when `key` is not in the map. This behavior can just be implemented via a model written in Java with the help of few helper functions understood by Infer. These models can be found in:
 
   [`infer/models/java/src/java/util/HashMap.java`](https://github.com/facebook/infer/blob/master/infer/models/java/src/java/util/HashMap.java)
 
