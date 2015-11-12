@@ -30,16 +30,6 @@ from . import config, jwlib, utils
 # Increase the limit of the CSV parser to sys.maxlimit
 csv.field_size_limit(sys.maxsize)
 
-# list of analysis options
-INFER = 'infer'
-ERADICATE = 'eradicate'
-CHECKERS = 'checkers'
-CAPTURE = 'capture'
-COMPILE = 'compile'
-TRACING = 'tracing'
-
-MODES = [COMPILE, CAPTURE, INFER, ERADICATE, CHECKERS, TRACING]
-
 INFER_ANALYZE_BINARY = "InferAnalyze"
 
 ERROR = 'ERROR'
@@ -94,8 +84,8 @@ base_group.add_argument('-g', '--debug', action='store_true',
                         help='Generate extra debugging information')
 base_group.add_argument('-a', '--analyzer',
                         help='Select the analyzer within: {0}'.format(
-                            ', '.join(MODES)),
-                        default=INFER)
+                            ', '.join(config.ANALYZERS)),
+                        default=config.ANALYZER_INFER)
 base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
@@ -267,7 +257,11 @@ def compare_json_rows(row_1, row_2):
 
 
 def should_report(analyzer, error_kind, error_type, error_bucket):
-    # config what to print is listed below
+    analyzers_whitelist = [
+        config.ANALYZER_ERADICATE,
+        config.ANALYZER_CHECKERS,
+        config.ANALYZER_TRACING,
+    ]
     error_kinds = [ERROR, WARNING]
 
     null_style_bugs = [
@@ -291,7 +285,7 @@ def should_report(analyzer, error_kind, error_type, error_bucket):
         # TODO (#8030397): revert this once all the checkers are moved to Infer
     ]
 
-    if analyzer in [ERADICATE, CHECKERS, TRACING]:
+    if analyzer in analyzers_whitelist:
         # report all issues for eradicate and checkers
         return True
 
@@ -455,12 +449,10 @@ def run_command(cmd, debug_mode, javac_arguments, step, analyzer):
 class Infer:
 
     def __init__(self, args, javac_args):
-
         self.args = args
-        if self.args.analyzer not in MODES:
-            help_exit(
-                'Unknown analysis mode \"{0}\"'.format(self.args.analyzer)
-            )
+        if self.args.analyzer not in config.ANALYZERS:
+            help_exit('Unknown analysis mode \"{0}\"'
+                      .format(self.args.analyzer))
 
         utils.configure_logging(self.args.debug)
 
@@ -499,7 +491,6 @@ class Infer:
                                      self.args.specs_dirs)
                                     for item in argument]
 
-
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
             print('removing', self.args.infer_out)
@@ -525,7 +516,7 @@ class Infer:
 
         if self.args.debug:
             infer_cmd.append('-debug')
-        if self.args.analyzer == TRACING:
+        if self.args.analyzer == config.ANALYZER_TRACING:
             infer_cmd.append('-tracing')
         if self.args.android_harness:
             infer_cmd.append('-harness')
@@ -554,12 +545,12 @@ class Infer:
         # to be reported
         infer_options += ['-allow_specs_cleanup']
 
-        if self.args.analyzer == ERADICATE:
+        if self.args.analyzer == config.ANALYZER_ERADICATE:
             infer_options += ['-checkers', '-eradicate']
-        elif self.args.analyzer == CHECKERS:
+        elif self.args.analyzer == config.ANALYZER_CHECKERS:
             infer_options += ['-checkers']
         else:
-            if self.args.analyzer == TRACING:
+            if self.args.analyzer == config.ANALYZER_TRACING:
                 infer_options.append('-tracing')
             if os.path.isfile(utils.MODELS_JAR):
                 infer_options += ['-models', utils.MODELS_JAR]
@@ -622,7 +613,8 @@ class Infer:
             self.timing['makefile_generation'] = 0
 
         else:
-            if self.args.analyzer in [ERADICATE, CHECKERS]:
+            if self.args.analyzer in [config.ANALYZER_ERADICATE,
+                                      config.ANALYZER_CHECKERS]:
                 infer_analyze.append('-intraprocedural')
 
             os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
@@ -748,7 +740,8 @@ class Infer:
 
     def analyze_and_report(self):
         should_print_errors = False
-        if self.args.analyzer not in [COMPILE, CAPTURE]:
+        if self.args.analyzer not in [config.ANALYZER_COMPILE,
+                                      config.ANALYZER_CAPTURE]:
             if self.analyze() == os.EX_OK:
                 reporting_start_time = time.time()
                 report_status = self.create_report()
@@ -781,12 +774,12 @@ class Infer:
             start_time = time.time()
 
             self.compile()
-            if self.args.analyzer == COMPILE:
+            if self.args.analyzer == config.ANALYZER_COMPILE:
                 return os.EX_OK
 
             self.run_infer_frontend()
             self.timing['capture'] = utils.elapsed_time(start_time)
-            if self.args.analyzer == CAPTURE:
+            if self.args.analyzer == config.ANALYZER_CAPTURE:
                 return os.EX_OK
 
             self.analyze_and_report()

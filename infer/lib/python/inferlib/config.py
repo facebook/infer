@@ -12,3 +12,20 @@ from __future__ import unicode_literals
 
 # exit value when infer finds something to report
 BUG_FOUND_ERROR_CODE = 2
+
+# list of possible analyzers
+ANALYZER_INFER = 'infer'
+ANALYZER_ERADICATE = 'eradicate'
+ANALYZER_CHECKERS = 'checkers'
+ANALYZER_CAPTURE = 'capture'
+ANALYZER_COMPILE = 'compile'
+ANALYZER_TRACING = 'tracing'
+
+ANALYZERS = [
+    ANALYZER_CAPTURE,
+    ANALYZER_CHECKERS,
+    ANALYZER_COMPILE,
+    ANALYZER_ERADICATE,
+    ANALYZER_INFER,
+    ANALYZER_TRACING,
+]
