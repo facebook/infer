@@ -25,16 +25,13 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
-from . import config, jwlib, utils
+from . import config, issues, jwlib, utils
 
 # Increase the limit of the CSV parser to sys.maxlimit
 csv.field_size_limit(sys.maxsize)
 
 INFER_ANALYZE_BINARY = "InferAnalyze"
 
-ERROR = 'ERROR'
-WARNING = 'WARNING'
-INFO = 'INFO'
 
 def get_infer_version():
     try:
@@ -262,31 +259,10 @@ def should_report(analyzer, error_kind, error_type, error_bucket):
         config.ANALYZER_CHECKERS,
         config.ANALYZER_TRACING,
     ]
-    error_kinds = [ERROR, WARNING]
-
-    null_style_bugs = [
-        'NULL_DEREFERENCE',
-        'PARAMETER_NOT_NULL_CHECKED',
-        'IVAR_NOT_NULL_CHECKED',
-        'PREMATURE_NIL_TERMINATION_ARGUMENT',
-    ]
+    error_kinds = [issues.ISSUE_KIND_ERROR, issues.ISSUE_KIND_WARNING]
     null_style_buckets = ['B1', 'B2']
 
-    other_bugs = [
-        'RESOURCE_LEAK',
-        'MEMORY_LEAK',
-        'RETAIN_CYCLE',
-        'ASSERTION_FAILURE',
-        'CONTEXT_LEAK',
-        'BAD_POINTER_COMPARISON',
-        'TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION',
-        'STRONG_DELEGATE_WARNING',
-        # 'CHECKERS_PRINTF_ARGS'
-        # TODO (#8030397): revert this once all the checkers are moved to Infer
-    ]
-
     if analyzer in analyzers_whitelist:
-        # report all issues for eradicate and checkers
         return True
 
     if error_kind not in error_kinds:
@@ -295,15 +271,10 @@ def should_report(analyzer, error_kind, error_type, error_bucket):
     if not error_type:
         return False
 
-    if error_type in null_style_bugs:
-        if error_bucket and error_bucket in null_style_buckets:
-            return True
-        else:
-            return False
-    elif error_type in other_bugs:
-        return True
-    else:
-        return False
+    if error_type in issues.NULL_STYLE_ISSUE_TYPES:
+        return error_bucket in null_style_buckets
+
+    return error_type in issues.ISSUE_TYPES
 
 
 def should_report_csv(analyzer, row):
@@ -390,9 +361,9 @@ def print_errors(json_report, bugs_out):
     with codecs.open(json_report, 'r', encoding=utils.LOCALE) as file_in:
         errors = json.load(file_in)
 
-        errors = filter(
-            lambda row: row[utils.JSON_INDEX_KIND] in [ERROR, WARNING],
-            errors)
+        errors = filter(lambda row: row[utils.JSON_INDEX_KIND] in
+                        [issues.ISSUE_KIND_ERROR, issues.ISSUE_KIND_WARNING],
+                        errors)
 
         with codecs.open(bugs_out, 'w', encoding=utils.LOCALE) as file_out:
             text_errors_list = []
