@@ -25,7 +25,7 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
-from . import jwlib, utils
+from . import config, jwlib, utils
 
 # Increase the limit of the CSV parser to sys.maxlimit
 csv.field_size_limit(sys.maxsize)
@@ -45,8 +45,6 @@ INFER_ANALYZE_BINARY = "InferAnalyze"
 ERROR = 'ERROR'
 WARNING = 'WARNING'
 INFO = 'INFO'
-
-BUG_FOUND_ERROR_CODE = 2
 
 def get_infer_version():
     try:
@@ -105,7 +103,7 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
 base_group.add_argument('--fail-on-bug', action='store_true',
                         help='''Exit with error code %d if Infer found
                         something to report'''
-                        % BUG_FOUND_ERROR_CODE)
+                        % config.BUG_FOUND_ERROR_CODE)
 
 base_group.add_argument('--android-harness', action='store_true',
                         help='''[experimental] Create harness to detect bugs

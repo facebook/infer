@@ -9,7 +9,7 @@ import platform
 import sys
 
 import inferlib
-from inferlib import analyze, utils
+from inferlib import analyze, config, utils
 
 
 CAPTURE_PACKAGE = 'capture'
@@ -174,7 +174,7 @@ def main():
                              encoding=utils.LOCALE) as bugs_file:
                 bugs = json.load(bugs_file)
                 if len(bugs) > 0:
-                    sys.exit(analyze.BUG_FOUND_ERROR_CODE)
+                    sys.exit(config.BUG_FOUND_ERROR_CODE)
         except OSError:
             pass
 
