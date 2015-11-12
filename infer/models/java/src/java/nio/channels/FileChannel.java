@@ -28,9 +28,4 @@ public abstract class FileChannel extends AbstractInterruptibleChannel {
 
     private native FileLock getFileLock();
 
-    FileLock lock() {
-        FileLock f = getFileLock();
-        InferBuiltins.assume(f != null);
-        return f;
-    }
 }
