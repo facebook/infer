@@ -430,4 +430,10 @@ public class NullPointerExceptions {
     o.toString();
   }
 
+  int nullListFiles(String pathname) {
+    File dir = new File(pathname);
+    File[] files = dir.listFiles();
+    return files.length; // expect possible NullPointerException as files == null is possible
+  }
+
 }
