@@ -201,9 +201,13 @@ def run_command(cmd, debug_mode, infer_out, message, env=os.environ):
         raise e
 
 
-def print_exit(s):
-    print(s)
-    exit(os.EX_OK)
+def merge_json_arrays_from_files(report_paths):
+    # TODO: use streams instead of loading the entire json in memory
+    json_data = []
+    for json_path in report_paths:
+        with codecs.open(json_path, 'r', encoding=config.LOCALE) as fd:
+            json_data = json_data + json.loads(fd.read())
+    return json_data
 
 
 def infer_version():

@@ -6,11 +6,12 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 import argparse
+import json
+import logging
 import os
 import subprocess
 import traceback
 import util
-import logging
 
 from inferlib import utils
 
@@ -93,7 +94,8 @@ class BuckAnalyzer:
         )
         args = [
             '--config',
-            'infer.infer_bin={bin}'.format(bin=utils.get_infer_bin()),
+            'infer.infer_bin={bin}'
+            .format(bin=utils.BIN_DIRECTORY),
             '--config',
             'infer.clang_compiler={clang}'.format(clang=clang_path),
             '--config',
@@ -134,11 +136,11 @@ class BuckAnalyzer:
         if not ret == os.EX_OK:
             return ret
         result_files = self._get_analysis_result_files()
-        merged_results_path = \
-            os.path.join(self.args.infer_out, utils.JSON_REPORT_FILENAME)
-        utils.merge_json_reports(
-            result_files,
-            merged_results_path)
+        all_results = utils.merge_json_arrays_from_files(result_files)
+        merged_results_path = os.path.join(self.args.infer_out,
+                                           utils.JSON_REPORT_FILENAME)
+        with open(merged_results_path, 'w') as file_out:
+            json.dump(all_results, file_out, indent=2)
         # TODO: adapt issues.print_errors to support json and print on screen
         print('Results saved in {results_path}'.format(
             results_path=merged_results_path))

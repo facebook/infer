@@ -95,7 +95,7 @@ def clean_json(args, json_report):
             cmp=_compare_json_rows)
     temporary_file = tempfile.mktemp()
     with open(temporary_file, 'w') as file_out:
-        json.dump(collected_rows, file_out)
+        json.dump(collected_rows, file_out, indent=2)
         file_out.flush()
         shutil.move(temporary_file, json_report)
 
