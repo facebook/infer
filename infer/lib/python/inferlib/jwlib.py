@@ -86,9 +86,17 @@ class CompilerCall:
                 try:
                     subprocess.check_call(javac_cmd, stderr=file_out)
                 except subprocess.CalledProcessError:
-                    error_msg = 'ERROR: Failed to run the following compilation command:\n\n  {}\n'
-                    failing_cmd = ' '.join(['"%s"' % arg for arg in javac_cmd
-                                            if arg != '-verbose'])
+                    error_msg = 'ERROR: failure during compilation command.' \
+                                + '\nYou can run the failing compilation ' \
+                                + 'command again by copy-pasting the\nlines ' \
+                                + 'below in your terminal:\n\n"""\n' \
+                                + 'python <<EOF\n' \
+                                + 'import subprocess\n' \
+                                + 'cmd = {}\n' \
+                                + 'subprocess.check_call(cmd)\n' \
+                                + 'EOF\n"""\n'
+                    failing_cmd = filter(lambda arg: arg != '-verbose',
+                                         javac_cmd)
                     utils.error(error_msg.format(failing_cmd))
                     subprocess.check_call(failing_cmd)
 
