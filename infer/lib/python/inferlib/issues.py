@@ -19,7 +19,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from . import config, utils
+from . import config, source, utils
 
 
 # Increase the limit of the CSV parser to sys.maxlimit
@@ -117,12 +117,12 @@ def print_errors(json_report, bugs_out):
                     line = row[utils.JSON_INDEX_LINE]
                     error_type = row[utils.JSON_INDEX_TYPE]
                     msg = row[utils.JSON_INDEX_QUALIFIER]
-                    indenter = utils.Indenter()
+                    indenter = source.Indenter()
                     indenter.indent_push()
                     indenter.add(
-                        utils.build_source_context(filename,
-                                                   utils.TERMINAL_FORMATTER,
-                                                   int(line)))
+                        source.build_source_context(filename,
+                                                    source.TERMINAL_FORMATTER,
+                                                    int(line)))
                     source_context = unicode(indenter)
                     text_errors_list.append(
                         u'{0}:{1}: {2}: {3}\n  {4}\n{5}'.format(
