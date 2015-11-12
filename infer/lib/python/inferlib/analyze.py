@@ -797,5 +797,3 @@ class Infer:
             self.save_stats()
 
             return self.stats
-
-# vim: set sw=4 ts=4 et:

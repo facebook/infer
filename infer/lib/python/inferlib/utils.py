@@ -482,5 +482,3 @@ def build_source_context(source_name, mode, report_line):
                 s += u'%s. %s%s' % (num, caret, line)
             line_number += 1
     return syntax_highlighting(source_name, mode, s)
-
-# vim: set sw=4 ts=4 et:

@@ -546,6 +546,3 @@ if __name__ == '__main__':
         sys.exit(1)
     finally:
         cleanup(temp_files)
-
-
-# vim: set sw=4 ts=4 et:
