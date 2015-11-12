@@ -202,6 +202,7 @@ and add_types_from_decl_to_tenv tenv namespace decl =
   | ObjCProtocolDecl _ -> ObjcProtocol_decl.protocol_decl type_ptr_to_sil_type tenv decl
   | ObjCCategoryDecl _ -> ObjcCategory_decl.category_decl type_ptr_to_sil_type tenv decl
   | ObjCCategoryImplDecl _ -> ObjcCategory_decl.category_impl_decl type_ptr_to_sil_type tenv decl
+  | EnumDecl _ -> CEnum_decl.enum_decl decl
   | _ -> assert false
 
 and type_ptr_to_sil_type tenv tp =

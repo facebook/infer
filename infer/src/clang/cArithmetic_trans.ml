@@ -217,3 +217,9 @@ let bin_op_to_string boi =
   | `XorAssign -> "XorAssign"
   | `OrAssign -> "OrAssign"
   | `Comma -> "Comma"
+
+let sil_const_plus_one const =
+  match const with
+  | Sil.Const (Sil.Cint n) ->
+      Sil.Const (Sil.Cint (Sil.Int.add n Sil.Int.one))
+  | _ -> Sil.BinOp (Sil.PlusA, const, Sil.Const (Sil.Cint (Sil.Int.one)))

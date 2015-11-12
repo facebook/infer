@@ -25,10 +25,6 @@ module type CTrans = sig
   val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> CModule_type.instr_type list ->
     Cfg.Node.t -> Cfg.Node.t list
 
-  (** It receives the context and a statement and a warning string and returns the translated sil expression *)
-  (** that represents the translation of the stmts into sil. *)
-  val expression_trans : CContext.t -> Clang_ast_t.stmt -> string -> Sil.exp
-
 end
 
 module CTrans_funct(M: CModule_type.CMethod_declaration) : CTrans =
@@ -125,7 +121,7 @@ struct
       if pred_exit = [] then
         [Sil.Nullify(block_var, loc, true)]
       else (IList.iter (fun n -> let loc = Cfg.Node.get_loc n in
-                        Cfg.Node.append_instrs_temps n [Sil.Nullify(block_var, loc, true)] []) pred_exit;
+                         Cfg.Node.append_instrs_temps n [Sil.Nullify(block_var, loc, true)] []) pred_exit;
             []) in
     let set_instr = Sil.Set(Sil.Lvar block_var, block_type, Sil.Var id_block, loc) in
     let ids, captured_instrs = IList.split (IList.map (fun (vname, typ, _) ->
@@ -302,24 +298,6 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  let enum_constant_trans trans_state decl_ref =
-    let open CContext in
-    let context = trans_state.context in
-    let name_info, _ , type_ptr = get_info_from_decl_ref decl_ref in
-    let name = name_info.Clang_ast_t.ni_name in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let const_exp = match CTypes.search_enum_type_by_name context.tenv name with
-      | Some v ->
-          let ce = Sil.Const v in
-          Printing.log_out "   ....Found enum constant '%s', " name;
-          Printing.log_out "replacing with integer '%s' \n" (Sil.exp_to_string ce); ce
-      | None ->
-          Printing.log_out
-            "WARNING: Found enum constant '%s', but its value was not found in the tenv.\n"
-            name;
-          (Sil.Const(Sil.Cint Sil.Int.zero)) in
-    { root_nodes = []; leaf_nodes = []; ids = []; instrs = []; exps = [(const_exp, typ)]}
-
   let function_deref_trans trans_state decl_ref =
     let open CContext in
     let context = trans_state.context in
@@ -413,34 +391,6 @@ struct
     (* TODO for static methods we shouldn't return (obj_sil, class_typ) *)
     { pre_trans_result with exps = [method_exp; (obj_sil, class_typ)] }
 
-  let decl_ref_trans trans_state pre_trans_result stmt_info expr_info decl_ref =
-    let open CContext in
-    Printing.log_out "  priority node free = '%s'\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state));
-    let decl_kind = decl_ref.Clang_ast_t.dr_kind in
-    match decl_kind with
-    | `EnumConstant -> enum_constant_trans trans_state decl_ref
-    | `Function -> function_deref_trans trans_state decl_ref
-    | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
-    | `Field | `ObjCIvar -> field_deref_trans trans_state pre_trans_result decl_ref
-    | `CXXMethod | `CXXConstructor -> method_deref_trans trans_state pre_trans_result decl_ref
-    | _ ->
-        let print_error decl_kind =
-          Printing.log_stats
-            "Warning: Decl ref expression %s with pointer %s still needs to be translated "
-            (Clang_ast_j.string_of_decl_kind decl_kind)
-            decl_ref.Clang_ast_t.dr_decl_pointer in
-        print_error decl_kind; assert false
-
-  let declRefExpr_trans trans_state stmt_info expr_info decl_ref_expr_info e =
-    let open CContext in
-    Printing.log_out "  priority node free = '%s'\n@."
-      (string_of_bool (PriorityNode.is_priority_free trans_state));
-    let decl_ref = match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-      | Some dr -> dr
-      | None -> assert false in
-    decl_ref_trans trans_state empty_res_trans stmt_info expr_info decl_ref
-
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let context = trans_state.context in
     let pln = trans_state.parent_line_number in
@@ -462,10 +412,76 @@ struct
           instruction trans_state stmt
       | _ -> assert false (* expected a stmt or at most a compoundstmt *) in
     (* create the label root node into the hashtbl *)
-    let sil_loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
+    let sil_loc =
+      CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     Cfg.Node.set_succs_exn root_node' res_trans.root_nodes [];
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
+
+  and decl_ref_trans trans_state pre_trans_result stmt_info expr_info decl_ref =
+    let open CContext in
+    Printing.log_out "  priority node free = '%s'\n@."
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
+    let decl_kind = decl_ref.Clang_ast_t.dr_kind in
+    match decl_kind with
+    | `EnumConstant -> enum_constant_trans trans_state decl_ref
+    | `Function -> function_deref_trans trans_state decl_ref
+    | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
+    | `Field | `ObjCIvar -> field_deref_trans trans_state pre_trans_result decl_ref
+    | `CXXMethod | `CXXConstructor -> method_deref_trans trans_state pre_trans_result decl_ref
+    | _ ->
+        let print_error decl_kind =
+          Printing.log_stats
+            "Warning: Decl ref expression %s with pointer %s still needs to be translated "
+            (Clang_ast_j.string_of_decl_kind decl_kind)
+            decl_ref.Clang_ast_t.dr_decl_pointer in
+        print_error decl_kind; assert false
+
+  and declRefExpr_trans trans_state stmt_info expr_info decl_ref_expr_info e =
+    let open CContext in
+    Printing.log_out "  priority node free = '%s'\n@."
+      (string_of_bool (PriorityNode.is_priority_free trans_state));
+    let decl_ref = match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+      | Some dr -> dr
+      | None -> assert false in
+    decl_ref_trans trans_state empty_res_trans stmt_info expr_info decl_ref
+
+  (* evaluates an enum constant *)
+  and enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero =
+    match Ast_utils.get_decl enum_constant_pointer with
+    | Some Clang_ast_t.EnumConstantDecl (_, _, _, enum_constant_decl_info) ->
+        (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
+         | Some stmt ->
+             expression_trans context stmt
+               "WARNING: Expression in Enumeration constant not found\n"
+         | None ->
+             match prev_enum_constant_opt with
+             | Some prev_constant_pointer ->
+                 let previous_exp = get_enum_constant_expr context prev_constant_pointer in
+                 CArithmetic_trans.sil_const_plus_one previous_exp
+             | None -> zero)
+    | _ -> zero
+
+  (* get the sil value of the enum constant from the map or by evaluating it *)
+  and get_enum_constant_expr context enum_constant_pointer =
+    let zero = Sil.Const (Sil.Cint Sil.Int.zero) in
+    try
+      let (prev_enum_constant_opt, sil_exp_opt) =
+        Ast_utils.get_enum_constant_exp enum_constant_pointer in
+      match sil_exp_opt with
+      | Some exp -> exp
+      | None ->
+          let exp = enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero in
+          Ast_utils.update_enum_map enum_constant_pointer exp;
+          exp
+    with Not_found -> zero
+
+  and enum_constant_trans trans_state decl_ref =
+    let context = trans_state.context in
+    let _, _, type_ptr = get_info_from_decl_ref decl_ref in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+    let const_exp = get_enum_constant_expr context decl_ref.Clang_ast_t.dr_decl_pointer in
+    { empty_res_trans with exps = [(const_exp, typ)] }
 
   and arraySubscriptExpr_trans trans_state stmt_info expr_info stmt_list =
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
@@ -553,9 +569,9 @@ struct
 
          let instrs_after_assign, assign_ids, exp_to_parent =
            if (is_binary_assign_op binary_operator_info)
-              (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
-              && (not (General_utils.is_cpp_translation !CFrontend_config.language))
-              && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
+           (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
+           && (not (General_utils.is_cpp_translation !CFrontend_config.language))
+           && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
              (* We are in this case when an assignment is inside        *)
              (* another operator that creates a node. Eg. another       *)
              (* assignment.  *)
@@ -613,7 +629,7 @@ struct
          Printing.log_out " |nodes_e2|=%s .\n"
            (string_of_int (IList.length res_trans_e2.root_nodes));
          IList.iter (fun id -> Printing.log_out "     ... '%s'\n"
-                       (Ident.to_string id)) ids_to_ancestor;
+                        (Ident.to_string id)) ids_to_ancestor;
          { root_nodes = root_nodes_to_ancestor;
            leaf_nodes = leaf_nodes_to_ancestor;
            ids = ids_to_ancestor;
@@ -2157,7 +2173,7 @@ struct
   and instructions trans_state stmt_list =
     exec_trans_instrs trans_state (get_clang_stmt_trans stmt_list)
 
-  let expression_trans context stmt warning =
+  and expression_trans context stmt warning =
     let trans_state = { context = context; succ_nodes =[]; continuation = None; parent_line_number = -1; priority = Free } in
     let res_trans_stmt = instruction trans_state stmt in
     fst (CTrans_utils.extract_exp_from_list res_trans_stmt.exps warning)

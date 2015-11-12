@@ -286,6 +286,23 @@ struct
     CFrontend_config.sil_types_map :=
       Clang_ast_types.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
 
+  let update_enum_map enum_constant_pointer sil_exp =
+    let open Clang_ast_main in
+    let (predecessor_pointer_opt, sil_exp_opt) =
+      try PointerMap.find enum_constant_pointer !CFrontend_config.enum_map
+      with Not_found -> assert false in
+    let enum_map_value = (predecessor_pointer_opt, Some sil_exp) in
+    CFrontend_config.enum_map :=
+      PointerMap.add enum_constant_pointer enum_map_value !CFrontend_config.enum_map
+
+  let add_enum_constant enum_constant_pointer predecessor_pointer_opt =
+    let enum_map_value = (predecessor_pointer_opt, None) in
+    CFrontend_config.enum_map :=
+      Clang_ast_main.PointerMap.add enum_constant_pointer enum_map_value !CFrontend_config.enum_map
+
+  let get_enum_constant_exp enum_constant_pointer =
+    Clang_ast_main.PointerMap.find enum_constant_pointer !CFrontend_config.enum_map
+
   let get_type type_ptr =
     try
       (* There is chance for success only if type_ptr is in fact clang pointer *)

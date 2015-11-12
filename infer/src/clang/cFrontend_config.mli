@@ -151,6 +151,9 @@ val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref
     Populated during frontend execution when new type is found *)
 val sil_types_map : (Sil.typ Clang_ast_types.TypePointerMap.t) ref
 
+(** Map from enum constants pointers to their predecesor and their sil value *)
+val enum_map : (Clang_ast_t.pointer option * Sil.exp option) Clang_ast_main.PointerMap.t ref
+
 val type_pointer_prefix : string
 
 val nsarray_cl : string

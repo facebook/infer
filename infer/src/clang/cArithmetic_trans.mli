@@ -25,3 +25,5 @@ val compound_assignment_binary_operation_instruction : Clang_ast_t.binary_operat
 val assignment_arc_mode :
   CContext.t -> Sil.exp -> Sil.typ -> Sil.exp -> Location.t -> bool -> bool ->
   Sil.exp * Sil.instr list * Ident.t list
+
+val sil_const_plus_one : Sil.exp -> Sil.exp

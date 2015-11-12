@@ -13,52 +13,40 @@
 open Utils
 open CFrontend_utils
 
-let create_empty_procdesc () =
-  let proc_name = Procname.from_string_c_fun "__INFER_$GLOBAL_VAR_env" in
-  let proc_attributes = ProcAttributes.default proc_name Config.C_CPP in
-  Cfg.Procdesc.create {
-    Cfg.Procdesc.cfg = Cfg.Node.create_cfg ();
-    proc_attributes = proc_attributes;
-  }
+(*Check if the constant is in the map, in which case that means that all the *)
+(* contants of this enum are in the map, by invariant. Otherwise, add the constant *)
+(* to the map. *)
+let add_enum_constant_to_map_if_needed decl_pointer pred_decl_opt =
+  try
+    ignore (Ast_utils.get_enum_constant_exp decl_pointer);
+    true
+  with Not_found ->
+    Ast_utils.add_enum_constant decl_pointer pred_decl_opt;
+    false
 
-(* We will use global_procdesc for storing global variables. *)
-(* Globals will be stored as locals in global_procdesc and they are added*)
-(* when traversing the AST. *)
-let global_procdesc = ref (create_empty_procdesc ())
+(* Add the constants of this enum to the map if they are not in the map yet *)
+let enum_decl decl =
+  let open Clang_ast_t in
+  let get_constant_decl_ptr decl =
+    match decl with
+    |  EnumConstantDecl (decl_info, _, _, _) -> decl_info.di_pointer
+    | _ -> assert false in
+  let rec add_enum_constants_to_map decl_list =
+    match decl_list with
+    | decl :: pred_decl :: rest ->
+        let decl_pointer = get_constant_decl_ptr decl in
+        let pred_decl_pointer = get_constant_decl_ptr pred_decl in
+        if not (add_enum_constant_to_map_if_needed decl_pointer (Some pred_decl_pointer)) then
+          add_enum_constants_to_map (pred_decl::rest)
+    | [decl] ->
+        let decl_pointer = get_constant_decl_ptr decl in
+        ignore (add_enum_constant_to_map_if_needed decl_pointer None)
+    | _ -> () in
+  match decl with
+  | EnumDecl (decl_info, _, _, type_ptr, decl_list, _, _) ->
+      add_enum_constants_to_map (IList.rev decl_list);
+      let sil_type = Sil.Tint Sil.IInt in
+      Ast_utils.update_sil_types_map type_ptr sil_type;
+      sil_type
 
-let rec get_enum_constants context decl_list v =
-  match decl_list with
-  | [] -> []
-  | Clang_ast_t.EnumConstantDecl (decl_info, name_info, type_ptr, enum_constant_decl_info) :: decl_list' ->
-      let name = name_info.Clang_ast_t.ni_name in
-      (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
-       | None -> Printing.log_out "%s" ("  ...Defining Enum Constant ("^name^", "^(string_of_int v));
-           (Mangled.from_string name, Sil.Cint (Sil.Int.of_int v))
-           :: get_enum_constants context decl_list' (v + 1)
-       | Some stmt ->
-           let e = CGen_trans.CTransImpl.expression_trans context stmt
-               "WARNING: Expression in Enumeration constant not found\n" in
-           let const = (match Prop.exp_normalize_prop Prop.prop_emp e with
-               | Sil.Const c -> c
-               | _ -> (* This is a hack to avoid failing in some strange definition of Enum *)
-                   Sil.Cint Sil.Int.zero) in
-           Printing.log_out "  ...Defining Enum Constant ('%s', " name;
-           Printing.log_out "'%s')\n" (Sil.exp_to_string (Sil.Const const));
-           (Mangled.from_string name, const) :: get_enum_constants context decl_list' v)
   | _ -> assert false
-
-let enum_decl name tenv cfg cg namespace type_ptr decl_list opt_type =
-  Printing.log_out "ADDING: EnumDecl '%s'\n" name;
-  let context' =
-    CContext.create_context tenv cg cfg !global_procdesc namespace CContext.ContextNoCls
-      false None in
-  let enum_constants = get_enum_constants context' decl_list 0 in
-  let name = (match opt_type with (* If the type is defined it's of the kind "enum name" and we take that.*)
-      | `Type s -> s
-      | `NoType -> assert false) in
-  (* Here we could give "enum "^name but I want to check that this the type is always defined *)
-  let typename = CTypes.mk_enumname name in
-  let typ = Sil.Tenum enum_constants in
-  Ast_utils.update_sil_types_map type_ptr typ;
-  Printing.log_out "  TN_typename('%s')\n" (Sil.typename_to_string typename);
-  Sil.tenv_add tenv typename typ

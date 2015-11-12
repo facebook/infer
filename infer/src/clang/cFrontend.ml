@@ -29,7 +29,6 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   CLocation.update_curr_file info;
   let source_range = info.Clang_ast_t.di_source_range in
   let should_translate_decl = CLocation.should_translate_lib source_range in
-  let should_translate_enum = CLocation.should_translate_enum source_range in
   let open Clang_ast_t in
   match dec with
   | FunctionDecl(di, name_info, tp, fdecl_info) when should_translate_decl ->
@@ -99,10 +98,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
        | Some dec -> Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
        | None -> ())
 
-  | EnumDecl(decl_info, name_info, opt_type, pointer, decl_list, decl_context_info, enum_decl_info)
-    when should_translate_enum ->
-      let name = name_info.Clang_ast_t.ni_name in
-      CEnum_decl.enum_decl name tenv cfg cg namespace pointer decl_list opt_type
+  | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
 
   | LinkageSpecDecl(decl_info, decl_list, decl_context_info) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
@@ -112,8 +108,7 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
       IList.iter (translate_one_declaration tenv cg cfg (Some name) dec) decl_list
   | EmptyDecl _ ->
       Printing.log_out "Passing from EmptyDecl. Treated as skip\n";
-  | dec ->
-      Printing.log_stats "\nWARNING: found Declaration %s skipped\n" (Ast_utils.string_of_decl dec)
+  | dec -> ()
 
 (* Translates a file by translating the ast into a cfg. *)
 let compute_icfg tenv source_file ast =

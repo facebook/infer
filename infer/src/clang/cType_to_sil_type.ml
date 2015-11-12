@@ -136,17 +136,16 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   | Some (ObjCImplementationDecl _ as d)
   | Some (ObjCProtocolDecl _ as d)
   | Some (ObjCCategoryDecl _ as d)
-  | Some (ObjCCategoryImplDecl _ as d) -> translate_decl tenv None d
-    | Some (EnumDecl(_, name_info, _, _, _, _, _) ) ->
-        Sil.Tvar (CTypes.mk_enumname name_info.Clang_ast_t.ni_name)
-    | Some _ ->
-        Printing.log_err "Warning: Wrong decl found for  pointer %s "
-          (Clang_ast_j.string_of_pointer decl_ptr);
-        Sil.Tvoid
-    | None ->
-        Printing.log_err "Warning: Decl pointer %s not found."
-          (Clang_ast_j.string_of_pointer decl_ptr);
-        Sil.Tvoid
+  | Some (ObjCCategoryImplDecl _ as d)
+  | Some (EnumDecl _ as d) -> translate_decl tenv None d
+  | Some _ ->
+      Printing.log_err "Warning: Wrong decl found for  pointer %s "
+        (Clang_ast_j.string_of_pointer decl_ptr);
+      Sil.Tvoid
+  | None ->
+      Printing.log_err "Warning: Decl pointer %s not found."
+        (Clang_ast_j.string_of_pointer decl_ptr);
+      Sil.Tvoid
 
 and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
   try

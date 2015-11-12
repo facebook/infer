@@ -156,6 +156,9 @@ let pointer_type_index = ref Clang_ast_main.PointerMap.empty
 (* Map from type pointers or declaration pointers to sil types *)
 let sil_types_map = ref Clang_ast_types.TypePointerMap.empty
 
+(* Map from enum constants pointers to their predecesor and their sil value *)
+let enum_map = ref Clang_ast_main.PointerMap.empty
+
 let type_pointer_prefix = "internal_type"
 
 let nsarray_cl = "NSArray"

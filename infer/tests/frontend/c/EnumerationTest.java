@@ -31,4 +31,18 @@ public class EnumerationTest {
     ClangFrontendUtils.createAndCompareCDotFiles(folder, src);
   }
 
+  @Test
+  public void whenCaptureRunOnOtherEnumThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+    String src = "infer/tests/codetoanalyze/c/frontend/enumeration/other_enum.c";
+    ClangFrontendUtils.createAndCompareCDotFiles(folder, src);
+  }
+
+  @Test
+  public void whenCaptureRunOnEnumBitmaskThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+    String src = "infer/tests/codetoanalyze/c/frontend/enumeration/enum_bitmask.c";
+    ClangFrontendUtils.createAndCompareCDotFiles(folder, src);
+  }
+
 }

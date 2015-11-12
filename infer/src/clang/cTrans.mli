@@ -16,10 +16,6 @@ module type CTrans = sig
   val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> CModule_type.instr_type list ->
     Cfg.Node.t -> Cfg.Node.t list
 
-  (** It receives the context and a statement and a warning string and returns the translated sil expression *)
-  (** that represents the translation of the stmts into sil. *)
-  val expression_trans : CContext.t -> Clang_ast_t.stmt -> string -> Sil.exp
-
 end
 
 

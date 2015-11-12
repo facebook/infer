@@ -81,6 +81,12 @@ sig
 
   val update_sil_types_map : Clang_ast_t.type_ptr -> Sil.typ -> unit
 
+  val update_enum_map : Clang_ast_t.pointer -> Sil.exp -> unit
+
+  val add_enum_constant : Clang_ast_t.pointer -> Clang_ast_t.pointer option -> unit
+
+  val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Sil.exp option
+
   (** creates a string to append to a name from a list of qualifiers to a name *)
   val get_qualifier_string : Clang_ast_t.named_decl_info -> string
 
