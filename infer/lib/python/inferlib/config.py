@@ -10,8 +10,15 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import locale
+
+
+LOCALE = locale.getpreferredencoding()
+
+
 # exit value when infer finds something to report
 BUG_FOUND_ERROR_CODE = 2
+
 
 # list of possible analyzers
 ANALYZER_INFER = 'infer'

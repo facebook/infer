@@ -16,7 +16,6 @@ import csv
 import fnmatch
 import gzip
 import json
-import locale
 import logging
 import os
 import re
@@ -25,13 +24,13 @@ import sys
 import tempfile
 import time
 
+from . import config
 
-LOCALE = locale.getpreferredencoding()
 
 # this assumes that this file lives in infer/lib/python/infer/ and the binaries
 # are in infer/bin/
 INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__)
-                                         .decode(LOCALE))
+                                         .decode(config.LOCALE))
 INFER_INFER_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
                                      os.pardir, os.pardir, os.pardir)
 INFER_ROOT_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, os.pardir)
@@ -45,7 +44,8 @@ ANNOT_PROCESSOR_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'processor.jar')
 WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
 XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
 
-DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(LOCALE), 'infer-out')
+DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(config.LOCALE),
+                                 'infer-out')
 CSV_PERF_FILENAME = 'performances.csv'
 STATS_FILENAME = 'stats.json'
 PROC_STATS_FILENAME = 'proc_stats.json'
@@ -128,7 +128,7 @@ if "check_output" not in dir(subprocess):
 def locale_csv_reader(iterable, dialect='excel', **kwargs):
     rows = csv.reader(iterable, dialect=dialect, **kwargs)
     for row in rows:
-        yield [unicode(cell, LOCALE) for cell in row]
+        yield [unicode(cell, config.LOCALE) for cell in row]
 
 
 def configure_logging(debug, quiet=False):
@@ -163,7 +163,7 @@ def get_cmd_in_bin_dir(binary_name):
 
 
 def write_cmd_streams_to_file(logfile, cmd=None, out=None, err=None):
-    with codecs.open(logfile, 'w', encoding=LOCALE) as log_filedesc:
+    with codecs.open(logfile, 'w', encoding=config.LOCALE) as log_filedesc:
         if cmd:
             log_filedesc.write(' '.join(cmd) + '\n')
         if err is not None:

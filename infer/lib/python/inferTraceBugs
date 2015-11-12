@@ -21,7 +21,7 @@ import shutil
 import subprocess
 import sys
 
-from inferlib import analyze, source, utils
+from inferlib import analyze, config, source, utils
 
 HTML_REPORT_DIR = 'report.html'
 TRACES_REPORT_DIR = 'traces'
@@ -357,14 +357,14 @@ def generate_html_report(args, reports):
     for bug in sel:
         bug_trace_path = path_of_bug_number(traces_dir, i)
         with codecs.open(bug_trace_path, 'w',
-                         encoding=utils.LOCALE) as bug_trace_file:
+                         encoding=config.LOCALE) as bug_trace_file:
             bug_trace_file.write(html_bug_trace(args, bug, i))
         i += 1
 
     remote_source_template = get_remote_source_template()
     bug_list_path = os.path.join(html_dir, 'index.html')
     with codecs.open(bug_list_path, 'w',
-                     encoding=utils.LOCALE) as bug_list_file:
+                     encoding=config.LOCALE) as bug_list_file:
         bug_list_file.write(html_list_of_bugs(args,
                                               remote_source_template,
                                               sel))
@@ -377,7 +377,7 @@ def main():
 
     report_filename = os.path.join(args.infer_out, utils.JSON_REPORT_FILENAME)
     with codecs.open(report_filename, 'r',
-                     encoding=utils.LOCALE) as report_file:
+                     encoding=config.LOCALE) as report_file:
         reports = json.load(report_file)
 
     if args.html:

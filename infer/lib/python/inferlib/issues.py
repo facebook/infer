@@ -101,14 +101,14 @@ def clean_json(args, json_report):
 
 
 def print_errors(json_report, bugs_out):
-    with codecs.open(json_report, 'r', encoding=utils.LOCALE) as file_in:
+    with codecs.open(json_report, 'r', encoding=config.LOCALE) as file_in:
         errors = json.load(file_in)
 
         errors = filter(lambda row: row[utils.JSON_INDEX_KIND] in
                         [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING],
                         errors)
 
-        with codecs.open(bugs_out, 'w', encoding=utils.LOCALE) as file_out:
+        with codecs.open(bugs_out, 'w', encoding=config.LOCALE) as file_out:
             text_errors_list = []
             for row in errors:
                 filename = row[utils.JSON_INDEX_FILENAME]

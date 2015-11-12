@@ -10,6 +10,8 @@ import argparse
 import os
 import tempfile
 import subprocess
+
+import config
 import utils
 
 FILELISTS = 'filelists'

@@ -506,7 +506,7 @@ class Infer:
         # capture and compile mode do not create proc_stats.json
         if os.path.isfile(proc_stats_path):
             with codecs.open(proc_stats_path, 'r',
-                             encoding=utils.LOCALE) as proc_stats_file:
+                             encoding=config.LOCALE) as proc_stats_file:
                 proc_stats = json.load(proc_stats_file)
                 self.stats['int'].update(proc_stats)
 
@@ -525,7 +525,8 @@ class Infer:
         }
 
         stats_path = os.path.join(self.args.infer_out, utils.STATS_FILENAME)
-        with codecs.open(stats_path, 'w', encoding=utils.LOCALE) as stats_file:
+        with codecs.open(stats_path, 'w',
+                         encoding=config.LOCALE) as stats_file:
             json.dump(self.stats, stats_file, indent=2)
 
 
