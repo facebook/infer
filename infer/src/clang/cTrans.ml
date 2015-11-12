@@ -1768,9 +1768,9 @@ struct
             IList.iter (fun n -> Cfg.Node.set_succs_exn n [ret_node] []) res_trans_stmt.leaf_nodes;
             let root_nodes_to_parent =
               if IList.length res_trans_stmt.root_nodes >0 then res_trans_stmt.root_nodes else [ret_node] in
-            { root_nodes = root_nodes_to_parent; leaf_nodes =[ret_node]; ids = ids; instrs = instrs; exps =[]}
+            { empty_res_trans with root_nodes = root_nodes_to_parent; leaf_nodes = [ret_node]}
         | [] -> (* return; *)
-            { empty_res_trans with root_nodes =[ret_node]; leaf_nodes =[ret_node]}
+            { empty_res_trans with root_nodes = [ret_node]; leaf_nodes = [ret_node]}
         | _ -> Printing.log_out
                  "\nWARNING: Missing translation of Return Expression. Return Statement ignored. Need fixing!\n";
             { empty_res_trans with root_nodes = succ_nodes }) in (* We expect a return with only one expression *)
