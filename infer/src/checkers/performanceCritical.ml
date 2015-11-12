@@ -19,6 +19,7 @@ let expensive_overrides_unexpensive =
 let unannotated_overrides_performance_critical =
   "CHECKERS_UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL"
 
+
 let search_expensive_call checked_pnames expensive_callee (pname, _) =
   match expensive_callee with
   | Some callee_pname -> Some callee_pname
@@ -27,9 +28,10 @@ let search_expensive_call checked_pnames expensive_callee (pname, _) =
       else
         begin
           checked_pnames := Procname.Set.add pname !checked_pnames;
-          match AttributesTable.load_attributes pname with
+          match Specs.get_summary pname with
           | None -> None
-          | Some attributes ->
+          | Some summary ->
+              let attributes = Specs.get_attributes summary in
               let annotated_signature = Annotations.get_annotated_signature attributes in
               let ret_annotation, _ = annotated_signature.Annotations.ret in
               if Annotations.ia_calls_expensive ret_annotation then
@@ -65,6 +67,23 @@ let method_is_performance_critical pname =
 
 let method_is_expensive pname =
   check_method Annotations.ia_is_expensive pname
+
+
+let update_summary_attributes pname =
+  match Specs.get_summary pname with
+  | None ->
+      let pname_str = Procname.to_string pname in
+      failwith ("The summary should have been created before running the checker on "^pname_str)
+  | Some summary ->
+      let attributes = Specs.get_attributes summary in
+      let ret_annot, param_annot = attributes.ProcAttributes.method_annotation in
+      let updated_method_annot =
+        (Annotations.calls_expensive_annotation, true) :: ret_annot, param_annot in
+      let updated_attributes =
+        { attributes with ProcAttributes.method_annotation = updated_method_annot } in
+      let updated_summary =
+        { summary with Specs.attributes = updated_attributes } in
+      Specs.add_summary pname updated_summary
 
 
 let callback_performance_checker _ _ _ tenv pname pdesc =
@@ -119,10 +138,6 @@ let callback_performance_checker _ _ _ tenv pname pdesc =
       Checkers.ST.report_error
         pname pdesc calls_expensive_method loc description
   | Some _ when not expensive ->
-      let ret_annot, param_annot = attributes.ProcAttributes.method_annotation in
-      let updated_method_annot =
-        (Annotations.calls_expensive_annotation, true) :: ret_annot, param_annot in
-      let updated_attributes =
-        { attributes with ProcAttributes.method_annotation = updated_method_annot } in
-      AttributesTable.store_attributes updated_attributes
+      update_summary_attributes pname
+
   | Some _ -> () (* Nothing to do if method already annotated with @Expensive *)
