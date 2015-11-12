@@ -30,7 +30,7 @@ import time
 import traceback
 import zipfile
 
-from inferlib import analyze, utils
+from inferlib import analyze, issues, utils
 
 
 ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
@@ -448,7 +448,7 @@ def collect_results(args, start_time):
         report.flush()
 
     print('\n')
-    analyze.print_errors(json_report, bugs_out)
+    issues.print_errors(json_report, bugs_out)
 
     stats['int']['total_time'] = int(round(utils.elapsed_time(start_time)))
 

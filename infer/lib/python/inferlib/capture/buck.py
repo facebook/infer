@@ -139,7 +139,7 @@ class BuckAnalyzer:
         utils.merge_json_reports(
             result_files,
             merged_results_path)
-        # TODO: adapt analyze.print_errors to support json and print on screen
+        # TODO: adapt issues.print_errors to support json and print on screen
         print('Results saved in {results_path}'.format(
             results_path=merged_results_path))
         return os.EX_OK
