@@ -190,17 +190,11 @@ def remove_infer_out(infer_out):
     shutil.rmtree(infer_out, True)
 
 
-def mkdir_if_not_exists(path):
-    try:
-        os.mkdir(path)
-    except OSError:
-        pass
-
 def create_results_dir(results_dir):
-    mkdir_if_not_exists(results_dir)
-    mkdir_if_not_exists(os.path.join(results_dir, 'specs'))
-    mkdir_if_not_exists(os.path.join(results_dir, 'captured'))
-    mkdir_if_not_exists(os.path.join(results_dir, 'sources'))
+    utils.mkdir_if_not_exists(results_dir)
+    utils.mkdir_if_not_exists(os.path.join(results_dir, 'specs'))
+    utils.mkdir_if_not_exists(os.path.join(results_dir, 'captured'))
+    utils.mkdir_if_not_exists(os.path.join(results_dir, 'sources'))
 
 
 def clean(infer_out):

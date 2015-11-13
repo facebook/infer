@@ -278,6 +278,13 @@ def interact():
     code.interact(local=locals())
 
 
+def mkdir_if_not_exists(path):
+    try:
+        os.mkdir(path)
+    except OSError:
+        pass
+
+
 def search_files(root_dir, extension):
     # Input:
     #   - root directory where to start a recursive search of yjson files
