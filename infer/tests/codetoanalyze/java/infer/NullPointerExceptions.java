@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.lang.System;
 import java.util.HashMap;
 
@@ -450,6 +452,11 @@ public class NullPointerExceptions {
   void dontReportOnNullableIndirectReassignmentToUnknown(@Nullable Object o) {
     o = callUnknownFunc();
     o.toString();
+  }
+
+  String nullTryLock(FileChannel chan) throws IOException {
+    FileLock lock = chan.tryLock();
+    return lock.toString(); // expect possible NullPointerException as lock == null is possible
   }
 
 }

@@ -560,6 +560,11 @@
     "bug_type": "NULL_DEREFERENCE"
   },
   {
+    "procedure": "String NullPointerExceptions.nullTryLock(FileChannel)",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "bug_type": "NULL_DEREFERENCE"
+  },
+  {
     "procedure": "void ContextLeaks.directLeak()",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
     "bug_type": "CONTEXT_LEAK"

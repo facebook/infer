@@ -65,7 +65,8 @@ public class NullPointerExceptionTest {
         "testSystemGetPropertyArgument",
         "testSystemGetPropertyReturn",
         "derefNull",
-        "nullListFiles"
+        "nullListFiles",
+        "nullTryLock"
     };
     assertThat(
         "Results should contain " + NULL_DEREFERENCE,
