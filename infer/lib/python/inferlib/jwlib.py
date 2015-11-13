@@ -55,14 +55,14 @@ class CompilerCall:
             if self.args.bootclasspath is not None:
                 javac_cmd += ['-bootclasspath', self.args.bootclasspath]
 
-            if not os.path.isfile(utils.ANNOT_PROCESSOR_JAR):
-                raise AnnotationProcessorNotFound(utils.ANNOT_PROCESSOR_JAR)
+            if not os.path.isfile(config.ANNOT_PROCESSOR_JAR):
+                raise AnnotationProcessorNotFound(config.ANNOT_PROCESSOR_JAR)
 
             if self.args.classpath is None:
-                classpath = utils.ANNOT_PROCESSOR_JAR
+                classpath = config.ANNOT_PROCESSOR_JAR
             else:
                 classpath = os.pathsep.join([
-                    utils.ANNOT_PROCESSOR_JAR,
+                    config.ANNOT_PROCESSOR_JAR,
                     self.args.classpath])
             javac_cmd += ['-cp', classpath]
 

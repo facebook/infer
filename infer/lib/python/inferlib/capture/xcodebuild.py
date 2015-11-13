@@ -11,7 +11,7 @@ import subprocess
 import traceback
 
 import util
-from inferlib import utils
+from inferlib import config, utils
 
 
 MODULE_NAME = __name__
@@ -22,8 +22,9 @@ Analysis examples:
 infer -- xcodebuild -target HelloWorldApp -sdk iphonesimulator
 infer -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld'''
 
-CLANG_WRAPPER = os.path.join(utils.XCODE_WRAPPERS_DIRECTORY, 'clang')
-CLANGPLUSPLUS_WRAPPER = os.path.join(utils.XCODE_WRAPPERS_DIRECTORY, 'clang++')
+CLANG_WRAPPER = os.path.join(config.XCODE_WRAPPERS_DIRECTORY, 'clang')
+CLANGPLUSPLUS_WRAPPER = os.path.join(config.XCODE_WRAPPERS_DIRECTORY,
+                                     'clang++')
 
 
 def gen_instance(*args):

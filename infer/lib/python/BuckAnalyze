@@ -30,7 +30,7 @@ import time
 import traceback
 import zipfile
 
-from inferlib import analyze, issues, utils
+from inferlib import analyze, config, issues, utils
 
 
 ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
@@ -40,11 +40,11 @@ BUCK_CONFIG_BACKUP = '.buckconfig.local.backup_generated_by_infer'
 DEFAULT_BUCK_OUT = os.path.join(os.getcwd(), 'buck-out')
 DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
-INFER_CSV_REPORT = os.path.join(utils.BUCK_INFER_OUT,
-                                utils.CSV_REPORT_FILENAME)
-INFER_JSON_REPORT = os.path.join(utils.BUCK_INFER_OUT,
-                                 utils.JSON_REPORT_FILENAME)
-INFER_STATS = os.path.join(utils.BUCK_INFER_OUT, utils.STATS_FILENAME)
+INFER_CSV_REPORT = os.path.join(config.BUCK_INFER_OUT,
+                                config.CSV_REPORT_FILENAME)
+INFER_JSON_REPORT = os.path.join(config.BUCK_INFER_OUT,
+                                 config.JSON_REPORT_FILENAME)
+INFER_STATS = os.path.join(config.BUCK_INFER_OUT, config.STATS_FILENAME)
 
 INFER_SCRIPT = """\
 #!/usr/bin/env {0}
@@ -233,7 +233,7 @@ def init_stats(args, start_time):
 def store_performances_csv(infer_out, stats):
     """Stores the statistics about perfromances into a CSV file to be exported
         to a database"""
-    perf_filename = os.path.join(infer_out, utils.CSV_PERF_FILENAME)
+    perf_filename = os.path.join(infer_out, config.CSV_PERF_FILENAME)
     with open(perf_filename, 'w') as csv_file_out:
         csv_writer = csv.writer(csv_file_out)
         keys = ['infer_version', 'project', 'revision', 'files', 'lines',
@@ -414,9 +414,9 @@ def collect_results(args, start_time):
             except zipfile.BadZipfile:
                 logging.warn('Bad zip file %s', path)
 
-    csv_report = os.path.join(args.infer_out, utils.CSV_REPORT_FILENAME)
-    json_report = os.path.join(args.infer_out, utils.JSON_REPORT_FILENAME)
-    bugs_out = os.path.join(args.infer_out, utils.BUGS_FILENAME)
+    csv_report = os.path.join(args.infer_out, config.CSV_REPORT_FILENAME)
+    json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
+    bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
 
     if len(headers) == 0:
         with open(csv_report, 'w'):
@@ -454,7 +454,7 @@ def collect_results(args, start_time):
 
     store_performances_csv(args.infer_out, stats)
 
-    stats_filename = os.path.join(args.infer_out, utils.STATS_FILENAME)
+    stats_filename = os.path.join(args.infer_out, config.STATS_FILENAME)
     with open(stats_filename, 'w') as stats_out:
         json.dump(stats, stats_out, indent=2)
 

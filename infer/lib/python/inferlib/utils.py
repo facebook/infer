@@ -27,33 +27,6 @@ import time
 from . import config
 
 
-# this assumes that this file lives in infer/lib/python/infer/ and the binaries
-# are in infer/bin/
-INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__)
-                                         .decode(config.LOCALE))
-INFER_INFER_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
-                                     os.pardir, os.pardir, os.pardir)
-INFER_ROOT_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, os.pardir)
-FCP_DIRECTORY = os.path.join(INFER_ROOT_DIRECTORY, 'facebook-clang-plugins')
-LIB_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'lib')
-BIN_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'bin')
-TMP_DIRECTORY = tempfile.gettempdir()
-JAVA_LIB_DIRECTORY = os.path.join(LIB_DIRECTORY, 'java')
-MODELS_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'models.jar')
-ANNOT_PROCESSOR_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'processor.jar')
-WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
-XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
-
-DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(config.LOCALE),
-                                 'infer-out')
-CSV_PERF_FILENAME = 'performances.csv'
-STATS_FILENAME = 'stats.json'
-PROC_STATS_FILENAME = 'proc_stats.json'
-
-CSV_REPORT_FILENAME = 'report.csv'
-JSON_REPORT_FILENAME = 'report.json'
-BUGS_FILENAME = 'bugs.txt'
-
 # indices in rows of csv reports
 CSV_INDEX_CLASS = 0
 CSV_INDEX_KIND = 1
@@ -93,11 +66,6 @@ JSON_INDEX_TRACE_NODE_TAGS_VALUE = 'value'
 
 QUALIFIER_TAGS = 'qualifier_tags'
 BUCKET_TAGS = 'bucket'
-
-IOS_CAPTURE_ERRORS = 'errors'
-IOS_BUILD_OUTPUT = 'build_output'
-
-BUCK_INFER_OUT = 'infer'
 
 FORMAT = '[%(levelname)s] %(message)s'
 DEBUG_FORMAT = '[%(levelname)s:%(filename)s:%(lineno)03d] %(message)s'
@@ -159,7 +127,7 @@ def error(msg):
 
 
 def get_cmd_in_bin_dir(binary_name):
-    return os.path.join(BIN_DIRECTORY, binary_name)
+    return os.path.join(config.BIN_DIRECTORY, binary_name)
 
 
 def write_cmd_streams_to_file(logfile, cmd=None, out=None, err=None):

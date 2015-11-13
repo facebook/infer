@@ -8,8 +8,8 @@
 import os
 import subprocess
 import traceback
-import util
 
+import util
 from inferlib import analyze
 
 MODULE_NAME = __name__

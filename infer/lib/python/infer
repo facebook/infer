@@ -168,7 +168,7 @@ def main():
 
     if args.fail_on_bug:
         bugs_filename = os.path.join(args.infer_out,
-                                     utils.JSON_REPORT_FILENAME)
+                                     config.JSON_REPORT_FILENAME)
         try:
             with codecs.open(bugs_filename, 'r',
                              encoding=config.LOCALE) as bugs_file:

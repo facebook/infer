@@ -65,7 +65,7 @@ class ConfirmIncrementalAction(argparse._StoreTrueAction):
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
-                        default=utils.DEFAULT_INFER_OUT, dest='infer_out',
+                        default=config.DEFAULT_INFER_OUT, dest='infer_out',
                         action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
 base_group.add_argument('-i', '--incremental', action='store_true',
@@ -263,7 +263,7 @@ class Infer:
             if self.args.buck:
                 self.args.infer_out = os.path.join(
                     self.javac.args.classes_out,
-                    utils.BUCK_INFER_OUT)
+                    config.BUCK_INFER_OUT)
                 self.args.infer_out = os.path.abspath(self.args.infer_out)
 
             try:
@@ -304,8 +304,8 @@ class Infer:
             '-verbose_out', self.javac.verbose_out,
         ]
 
-        if os.path.isfile(utils.MODELS_JAR):
-            infer_cmd += ['-models', utils.MODELS_JAR]
+        if os.path.isfile(config.MODELS_JAR):
+            infer_cmd += ['-models', config.MODELS_JAR]
 
         infer_cmd.append('-no-static_final')
 
@@ -347,8 +347,8 @@ class Infer:
         else:
             if self.args.analyzer == config.ANALYZER_TRACING:
                 infer_options.append('-tracing')
-            if os.path.isfile(utils.MODELS_JAR):
-                infer_options += ['-models', utils.MODELS_JAR]
+            if os.path.isfile(config.MODELS_JAR):
+                infer_options += ['-models', config.MODELS_JAR]
 
         if self.args.infer_cache:
             infer_options += ['-infer_cache', self.args.infer_cache]
@@ -469,8 +469,8 @@ class Infer:
         containing the list or errors found during the analysis"""
 
         out_dir = self.args.infer_out
-        csv_report = os.path.join(out_dir, utils.CSV_REPORT_FILENAME)
-        json_report = os.path.join(out_dir, utils.JSON_REPORT_FILENAME)
+        csv_report = os.path.join(out_dir, config.CSV_REPORT_FILENAME)
+        json_report = os.path.join(out_dir, config.JSON_REPORT_FILENAME)
         procs_report = os.path.join(self.args.infer_out, 'procs.csv')
 
         infer_print_cmd = [utils.get_cmd_in_bin_dir('InferPrint')]
@@ -501,7 +501,7 @@ class Infer:
     def read_proc_stats(self):
         proc_stats_path = os.path.join(
             self.args.infer_out,
-            utils.PROC_STATS_FILENAME)
+            config.PROC_STATS_FILENAME)
 
         # capture and compile mode do not create proc_stats.json
         if os.path.isfile(proc_stats_path):
@@ -524,7 +524,7 @@ class Infer:
             'infer_version': utils.infer_version()
         }
 
-        stats_path = os.path.join(self.args.infer_out, utils.STATS_FILENAME)
+        stats_path = os.path.join(self.args.infer_out, config.STATS_FILENAME)
         with codecs.open(stats_path, 'w',
                          encoding=config.LOCALE) as stats_file:
             json.dump(self.stats, stats_file, indent=2)
@@ -547,9 +547,9 @@ class Infer:
                 self.print_analysis_stats()
                 if report_status == os.EX_OK and not self.args.buck:
                     json_report = os.path.join(self.args.infer_out,
-                                               utils.JSON_REPORT_FILENAME)
+                                               config.JSON_REPORT_FILENAME)
                     bugs_out = os.path.join(self.args.infer_out,
-                                            utils.BUGS_FILENAME)
+                                            config.BUGS_FILENAME)
                     issues.print_errors(json_report, bugs_out)
 
     def print_analysis_stats(self):

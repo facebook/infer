@@ -34,7 +34,7 @@ SOURCE_REMOTE_GITHUB_RE = re.compile('.*github.com[:/](?P<project>.*)')
 base_parser = argparse.ArgumentParser(
     description='Explore the error traces in Infer reports.')
 base_parser.add_argument('-o', '--out', metavar='<directory>',
-                         default=utils.DEFAULT_INFER_OUT, dest='infer_out',
+                         default=config.DEFAULT_INFER_OUT, dest='infer_out',
                          action=utils.AbsolutePathAction,
                          help='Set the Infer results directory')
 base_parser.add_argument('--only-show',
@@ -375,7 +375,7 @@ def generate_html_report(args, reports):
 def main():
     args = base_parser.parse_args()
 
-    report_filename = os.path.join(args.infer_out, utils.JSON_REPORT_FILENAME)
+    report_filename = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
     with codecs.open(report_filename, 'r',
                      encoding=config.LOCALE) as report_file:
         reports = json.load(report_file)

@@ -11,9 +11,40 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import locale
+import os
 
 
 LOCALE = locale.getpreferredencoding()
+
+# this assumes that this file lives in infer/lib/python/infer/ and the binaries
+# are in infer/bin/
+INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__)
+                                         .decode(LOCALE))
+INFER_INFER_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
+                                     os.pardir, os.pardir, os.pardir)
+INFER_ROOT_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, os.pardir)
+FCP_DIRECTORY = os.path.join(INFER_ROOT_DIRECTORY, 'facebook-clang-plugins')
+LIB_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'lib')
+BIN_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'bin')
+JAVA_LIB_DIRECTORY = os.path.join(LIB_DIRECTORY, 'java')
+MODELS_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'models.jar')
+ANNOT_PROCESSOR_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'processor.jar')
+WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
+XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
+
+DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(LOCALE), 'infer-out')
+CSV_PERF_FILENAME = 'performances.csv'
+STATS_FILENAME = 'stats.json'
+PROC_STATS_FILENAME = 'proc_stats.json'
+
+CSV_REPORT_FILENAME = 'report.csv'
+JSON_REPORT_FILENAME = 'report.json'
+BUGS_FILENAME = 'bugs.txt'
+
+IOS_CAPTURE_ERRORS = 'errors'
+IOS_BUILD_OUTPUT = 'build_output'
+
+BUCK_INFER_OUT = 'infer'
 
 
 # exit value when infer finds something to report

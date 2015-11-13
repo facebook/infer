@@ -11,7 +11,7 @@ import subprocess
 import traceback
 
 import util
-from inferlib import utils
+from inferlib import config, utils
 
 MODULE_NAME = 'make/cc/clang/gcc'
 MODULE_DESCRIPTION = '''Run analysis of code built with commands like:
@@ -41,7 +41,7 @@ class MakeCapture:
 
     def get_envvars(self):
         env_vars = dict(os.environ)
-        wrappers_path = utils.WRAPPERS_DIRECTORY
+        wrappers_path = config.WRAPPERS_DIRECTORY
         env_vars['INFER_OLD_PATH'] = env_vars['PATH']
         env_vars['PATH'] = '{wrappers}{sep}{path}'.format(
             wrappers=wrappers_path,

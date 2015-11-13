@@ -19,7 +19,7 @@ sys.path.insert(0,
                 os.path.join(SCRIPTS_DIRECTORY,
                              os.pardir, 'infer', 'lib', 'python'))
 
-from inferlib import utils
+from inferlib import config, utils
 
 
 CURRENT_DIR = os.getcwd()

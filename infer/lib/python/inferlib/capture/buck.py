@@ -13,7 +13,7 @@ import subprocess
 import traceback
 import util
 
-from inferlib import utils
+from inferlib import config, utils
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -79,7 +79,7 @@ class BuckAnalyzer:
     def create_cxx_buck_configuration_args(self):
         # return a string that can be passed in input to buck
         # and configures the paths to infer/clang/plugin/xcode
-        facebook_clang_plugins_root = utils.FCP_DIRECTORY
+        facebook_clang_plugins_root = config.FCP_DIRECTORY
         clang_path = os.path.join(
             facebook_clang_plugins_root,
             'clang',
@@ -138,7 +138,7 @@ class BuckAnalyzer:
         result_files = self._get_analysis_result_files()
         all_results = utils.merge_json_arrays_from_files(result_files)
         merged_results_path = os.path.join(self.args.infer_out,
-                                           utils.JSON_REPORT_FILENAME)
+                                           config.JSON_REPORT_FILENAME)
         with open(merged_results_path, 'w') as file_out:
             json.dump(all_results, file_out, indent=2)
         # TODO: adapt issues.print_errors to support json and print on screen
