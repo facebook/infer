@@ -18,7 +18,6 @@ import gzip
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -26,46 +25,6 @@ import time
 
 from . import config
 
-
-# indices in rows of csv reports
-CSV_INDEX_CLASS = 0
-CSV_INDEX_KIND = 1
-CSV_INDEX_TYPE = 2
-CSV_INDEX_QUALIFIER = 3
-CSV_INDEX_SEVERITY = 4
-CSV_INDEX_LINE = 5
-CSV_INDEX_PROCEDURE = 6
-CSV_INDEX_PROCEDURE_ID = 7
-CSV_INDEX_FILENAME = 8
-CSV_INDEX_TRACE = 9
-CSV_INDEX_KEY = 10
-CSV_INDEX_QUALIFIER_TAGS = 11
-CSV_INDEX_HASH = 12
-CSV_INDEX_BUG_ID = 13
-CSV_INDEX_ALWAYS_REPORT = 14
-CSV_INDEX_ADVICE = 15
-
-# field names in rows of json reports
-JSON_INDEX_FILENAME = 'file'
-JSON_INDEX_HASH = 'hash'
-JSON_INDEX_KIND = 'kind'
-JSON_INDEX_LINE = 'line'
-JSON_INDEX_PROCEDURE = 'procedure'
-JSON_INDEX_QUALIFIER = 'qualifier'
-JSON_INDEX_QUALIFIER_TAGS = 'qualifier_tags'
-JSON_INDEX_SEVERITY = 'file'
-JSON_INDEX_TYPE = 'bug_type'
-JSON_INDEX_TRACE = 'bug_trace'
-JSON_INDEX_TRACE_LEVEL = 'level'
-JSON_INDEX_TRACE_FILENAME = 'filename'
-JSON_INDEX_TRACE_LINE = 'line_number'
-JSON_INDEX_TRACE_DESCRIPTION = 'description'
-JSON_INDEX_TRACE_NODE_TAGS = 'node_tags'
-JSON_INDEX_TRACE_NODE_TAGS_TAG = 'tags'
-JSON_INDEX_TRACE_NODE_TAGS_VALUE = 'value'
-
-QUALIFIER_TAGS = 'qualifier_tags'
-BUCKET_TAGS = 'bucket'
 
 FORMAT = '[%(levelname)s] %(message)s'
 DEBUG_FORMAT = '[%(levelname)s:%(filename)s:%(lineno)03d] %(message)s'

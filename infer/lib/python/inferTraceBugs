@@ -21,7 +21,7 @@ import shutil
 import subprocess
 import sys
 
-from inferlib import config, source, utils
+from inferlib import config, issues, source, utils
 
 HTML_REPORT_DIR = 'report.html'
 TRACES_REPORT_DIR = 'traces'
@@ -60,11 +60,11 @@ base_parser.add_argument('--html',
 
 
 def describe_report(report, indent=0):
-    filename = report[utils.JSON_INDEX_FILENAME]
-    kind = report[utils.JSON_INDEX_KIND]
-    line = report[utils.JSON_INDEX_LINE]
-    error_type = report[utils.JSON_INDEX_TYPE]
-    msg = report[utils.JSON_INDEX_QUALIFIER]
+    filename = report[issues.JSON_INDEX_FILENAME]
+    kind = report[issues.JSON_INDEX_KIND]
+    line = report[issues.JSON_INDEX_LINE]
+    error_type = report[issues.JSON_INDEX_TYPE]
+    msg = report[issues.JSON_INDEX_QUALIFIER]
     return '{0}:{1}: {2}: {3}\n  {4}{5}\n'.format(
         filename,
         line,
@@ -93,22 +93,22 @@ class Tracer(object):
         pass
 
     def build_node(self, node):
-        if node[utils.JSON_INDEX_TRACE_LEVEL] > self.max_level:
+        if node[issues.JSON_INDEX_TRACE_LEVEL] > self.max_level:
             return
 
-        report_line = node[utils.JSON_INDEX_TRACE_LINE]
-        fname = node[utils.JSON_INDEX_TRACE_FILENAME]
+        report_line = node[issues.JSON_INDEX_TRACE_LINE]
+        fname = node[issues.JSON_INDEX_TRACE_FILENAME]
 
         self.indenter.newline()
         self.indenter.add('%s:%d: %s' % (
             fname,
             report_line,
-            node[utils.JSON_INDEX_TRACE_DESCRIPTION],
+            node[issues.JSON_INDEX_TRACE_DESCRIPTION],
         ))
         self.indenter.newline()
 
         if not self.args.no_source:
-            self.indenter.indent_push(node[utils.JSON_INDEX_TRACE_LEVEL])
+            self.indenter.indent_push(node[issues.JSON_INDEX_TRACE_LEVEL])
             mode = source.TERMINAL_FORMATTER
             if self.args.html:
                 mode = source.PLAIN_FORMATTER
@@ -121,7 +121,7 @@ class Tracer(object):
     def build_trace(self, trace):
         total_nodes = len(trace)
         hidden_nodes = len(
-            filter(lambda n: n[utils.JSON_INDEX_TRACE_LEVEL] > self.max_level,
+            filter(lambda n: n[issues.JSON_INDEX_TRACE_LEVEL] > self.max_level,
                    trace))
         shown_nodes = total_nodes - hidden_nodes
         hidden_str = ''
@@ -137,7 +137,7 @@ class Tracer(object):
             self.build_node(node)
 
     def build_report(self, report):
-        self.build_trace(report[utils.JSON_INDEX_TRACE])
+        self.build_trace(report[issues.JSON_INDEX_TRACE])
 
     def __str__(self):
         return str(self.indenter)
@@ -148,7 +148,7 @@ class Selector(object):
         self.args = args
 
         def has_trace(report):
-            return len(report[utils.JSON_INDEX_TRACE]) > 0
+            return len(report[issues.JSON_INDEX_TRACE]) > 0
         self.reports = [report for report in reports if has_trace(report)]
 
     def show_choices(self):
@@ -316,8 +316,8 @@ def html_list_of_bugs(args, remote_source_template, selector):
 
     def source_uri(report):
         d = {
-            'file-name': report[utils.JSON_INDEX_FILENAME],
-            'line-number': report[utils.JSON_INDEX_LINE],
+            'file-name': report[issues.JSON_INDEX_FILENAME],
+            'line-number': report[issues.JSON_INDEX_LINE],
         }
         if remote_source_template is not None:
             link = remote_source_template.format(**d)

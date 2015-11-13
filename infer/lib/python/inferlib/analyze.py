@@ -454,7 +454,7 @@ class Infer:
             reader = utils.locale_csv_reader(file_in)
             rows = [row for row in reader][1:]
             for row in rows:
-                key = row[utils.CSV_INDEX_TYPE]
+                key = row[issues.CSV_INDEX_TYPE]
                 previous_value = self.stats['int'].get(key, 0)
                 self.stats['int'][key] = previous_value + 1
 

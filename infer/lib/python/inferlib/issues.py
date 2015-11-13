@@ -53,6 +53,46 @@ NULL_STYLE_ISSUE_TYPES = [
     'PREMATURE_NIL_TERMINATION_ARGUMENT',
 ]
 
+# indices in rows of csv reports
+CSV_INDEX_CLASS = 0
+CSV_INDEX_KIND = 1
+CSV_INDEX_TYPE = 2
+CSV_INDEX_QUALIFIER = 3
+CSV_INDEX_SEVERITY = 4
+CSV_INDEX_LINE = 5
+CSV_INDEX_PROCEDURE = 6
+CSV_INDEX_PROCEDURE_ID = 7
+CSV_INDEX_FILENAME = 8
+CSV_INDEX_TRACE = 9
+CSV_INDEX_KEY = 10
+CSV_INDEX_QUALIFIER_TAGS = 11
+CSV_INDEX_HASH = 12
+CSV_INDEX_BUG_ID = 13
+CSV_INDEX_ALWAYS_REPORT = 14
+CSV_INDEX_ADVICE = 15
+
+# field names in rows of json reports
+JSON_INDEX_FILENAME = 'file'
+JSON_INDEX_HASH = 'hash'
+JSON_INDEX_KIND = 'kind'
+JSON_INDEX_LINE = 'line'
+JSON_INDEX_PROCEDURE = 'procedure'
+JSON_INDEX_QUALIFIER = 'qualifier'
+JSON_INDEX_QUALIFIER_TAGS = 'qualifier_tags'
+JSON_INDEX_SEVERITY = 'file'
+JSON_INDEX_TYPE = 'bug_type'
+JSON_INDEX_TRACE = 'bug_trace'
+JSON_INDEX_TRACE_LEVEL = 'level'
+JSON_INDEX_TRACE_FILENAME = 'filename'
+JSON_INDEX_TRACE_LINE = 'line_number'
+JSON_INDEX_TRACE_DESCRIPTION = 'description'
+JSON_INDEX_TRACE_NODE_TAGS = 'node_tags'
+JSON_INDEX_TRACE_NODE_TAGS_TAG = 'tags'
+JSON_INDEX_TRACE_NODE_TAGS_VALUE = 'value'
+
+QUALIFIER_TAGS = 'qualifier_tags'
+BUCKET_TAGS = 'bucket'
+
 
 def clean_csv(args, csv_report):
     collected_rows = []
@@ -63,7 +103,7 @@ def clean_csv(args, csv_report):
             return rows
         else:
             for row in rows[1:]:
-                filename = row[utils.CSV_INDEX_FILENAME]
+                filename = row[CSV_INDEX_FILENAME]
                 if os.path.isfile(filename):
                     if args.no_filtering \
                        or _should_report_csv(args.analyzer, row):
@@ -85,7 +125,7 @@ def clean_json(args, json_report):
     with open(json_report, 'r') as file_in:
         rows = json.load(file_in)
         for row in rows:
-            filename = row[utils.JSON_INDEX_FILENAME]
+            filename = row[JSON_INDEX_FILENAME]
             if os.path.isfile(filename):
                 if args.no_filtering \
                    or _should_report_json(args.analyzer, row):
@@ -104,19 +144,19 @@ def print_errors(json_report, bugs_out):
     with codecs.open(json_report, 'r', encoding=config.LOCALE) as file_in:
         errors = json.load(file_in)
 
-        errors = filter(lambda row: row[utils.JSON_INDEX_KIND] in
+        errors = filter(lambda row: row[JSON_INDEX_KIND] in
                         [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING],
                         errors)
 
         with codecs.open(bugs_out, 'w', encoding=config.LOCALE) as file_out:
             text_errors_list = []
             for row in errors:
-                filename = row[utils.JSON_INDEX_FILENAME]
+                filename = row[JSON_INDEX_FILENAME]
                 if os.path.isfile(filename):
-                    kind = row[utils.JSON_INDEX_KIND]
-                    line = row[utils.JSON_INDEX_LINE]
-                    error_type = row[utils.JSON_INDEX_TYPE]
-                    msg = row[utils.JSON_INDEX_QUALIFIER]
+                    kind = row[JSON_INDEX_KIND]
+                    line = row[JSON_INDEX_LINE]
+                    error_type = row[JSON_INDEX_TYPE]
+                    msg = row[JSON_INDEX_QUALIFIER]
                     indenter = source.Indenter()
                     indenter.indent_push()
                     indenter.add(
@@ -154,18 +194,18 @@ def _compare_issues(filename_1, line_1, filename_2, line_2):
 
 
 def _compare_csv_rows(row_1, row_2):
-    filename_1 = row_1[utils.CSV_INDEX_FILENAME]
-    filename_2 = row_2[utils.CSV_INDEX_FILENAME]
-    line_1 = int(row_1[utils.CSV_INDEX_LINE])
-    line_2 = int(row_2[utils.CSV_INDEX_LINE])
+    filename_1 = row_1[CSV_INDEX_FILENAME]
+    filename_2 = row_2[CSV_INDEX_FILENAME]
+    line_1 = int(row_1[CSV_INDEX_LINE])
+    line_2 = int(row_2[CSV_INDEX_LINE])
     return _compare_issues(filename_1, line_1, filename_2, line_2)
 
 
 def _compare_json_rows(row_1, row_2):
-    filename_1 = row_1[utils.JSON_INDEX_FILENAME]
-    filename_2 = row_2[utils.JSON_INDEX_FILENAME]
-    line_1 = row_1[utils.JSON_INDEX_LINE]
-    line_2 = row_2[utils.JSON_INDEX_LINE]
+    filename_1 = row_1[JSON_INDEX_FILENAME]
+    filename_2 = row_2[JSON_INDEX_FILENAME]
+    line_1 = row_1[JSON_INDEX_LINE]
+    line_2 = row_2[JSON_INDEX_LINE]
     return _compare_issues(filename_1, line_1, filename_2, line_2)
 
 
@@ -194,14 +234,14 @@ def _should_report(analyzer, error_kind, error_type, error_bucket):
 
 
 def _should_report_csv(analyzer, row):
-    error_kind = row[utils.CSV_INDEX_KIND]
-    error_type = row[utils.CSV_INDEX_TYPE]
+    error_kind = row[CSV_INDEX_KIND]
+    error_type = row[CSV_INDEX_TYPE]
     error_bucket = ''  # can be updated later once we extract it from qualifier
 
     try:
-        qualifier_xml = ET.fromstring(row[utils.CSV_INDEX_QUALIFIER_TAGS])
-        if qualifier_xml.tag == utils.QUALIFIER_TAGS:
-            bucket = qualifier_xml.find(utils.BUCKET_TAGS)
+        qualifier_xml = ET.fromstring(row[CSV_INDEX_QUALIFIER_TAGS])
+        if qualifier_xml.tag == QUALIFIER_TAGS:
+            bucket = qualifier_xml.find(BUCKET_TAGS)
             if bucket is not None:
                 error_bucket = bucket.text
     except ET.ParseError:
@@ -211,12 +251,12 @@ def _should_report_csv(analyzer, row):
 
 
 def _should_report_json(analyzer, row):
-    error_kind = row[utils.JSON_INDEX_KIND]
-    error_type = row[utils.JSON_INDEX_TYPE]
+    error_kind = row[JSON_INDEX_KIND]
+    error_type = row[JSON_INDEX_TYPE]
     error_bucket = ''  # can be updated later once we extract it from qualifier
 
-    for qual_tag in row[utils.QUALIFIER_TAGS]:
-        if qual_tag['tag'] == utils.BUCKET_TAGS:
+    for qual_tag in row[QUALIFIER_TAGS]:
+        if qual_tag['tag'] == BUCKET_TAGS:
             error_bucket = qual_tag['value']
             break
 
