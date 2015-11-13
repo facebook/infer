@@ -48,7 +48,7 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  Call _fun_X_init \n   n$2=*&this:class X * [line 25]\n  _fun_X_init(n$2:class X ) [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n " shape="box"]
+13 [label="13:  Call _fun_X_init \n   n$2=*&this:class X * [line 25]\n  _fun_X_init(n$2:class X *) [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -74,7 +74,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  Call _fun_X_init \n   n$0=*&this:class X * [line 15]\n  _fun_X_init(n$0:class X ) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&this,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+6 [label="6:  Call _fun_X_init \n   n$0=*&this:class X * [line 15]\n  _fun_X_init(n$0:class X *) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&this,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 6 -> 5 ;

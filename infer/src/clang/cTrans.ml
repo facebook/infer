@@ -350,7 +350,7 @@ struct
     let res_trans = { empty_res_trans with exps = exps } in
     if CTypes.is_reference_type type_ptr then
       (* dereference pvar due to the behavior of reference types in clang's AST *)
-      dereference_value_from_result sil_loc res_trans
+      dereference_value_from_result sil_loc res_trans ~strip_pointer:true
     else res_trans
 
   let field_deref_trans trans_state pre_trans_result decl_ref =
@@ -403,7 +403,7 @@ struct
     let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv tp in
     let exps =  [(exp, typ)] in
     (* there is no cast operation in AST, but backend needs it *)
-    dereference_value_from_result sil_loc { empty_res_trans with exps = exps }
+    dereference_value_from_result sil_loc { empty_res_trans with exps = exps } ~strip_pointer:false
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     (* go ahead with the translation *)

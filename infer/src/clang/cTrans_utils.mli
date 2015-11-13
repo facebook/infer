@@ -77,7 +77,7 @@ val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
 
 (** Given trans_result with ONE expression, create temporary variable with *)
 (** dereferenced value of an expression assigned to it *)
-val dereference_value_from_result : Location.t -> trans_result -> trans_result
+val dereference_value_from_result : Location.t -> trans_result -> strip_pointer:bool -> trans_result
 
 val cast_operation :
   CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->

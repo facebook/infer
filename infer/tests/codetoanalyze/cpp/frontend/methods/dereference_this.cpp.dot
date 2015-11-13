@@ -10,7 +10,7 @@ digraph iCFG {
 	
 
 	 8 -> 10 ;
-7 [label="7:  Call _fun_A_init \n   n$2=*&this:class A * [line 18]\n  _fun_A_init(n$2:class A ,10:int ) [line 18]\n  REMOVE_TEMPS(n$2); [line 18]\n " shape="box"]
+7 [label="7:  Call _fun_A_init \n   n$2=*&this:class A * [line 18]\n  _fun_A_init(n$2:class A *,10:int ) [line 18]\n  REMOVE_TEMPS(n$2); [line 18]\n " shape="box"]
 	
 
 	 7 -> 6 ;

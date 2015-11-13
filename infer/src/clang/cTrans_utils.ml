@@ -366,14 +366,15 @@ let dereference_var_sil (exp, typ) sil_loc =
 
 (** Given trans_result with ONE expression, create temporary variable with *)
 (** value of an expression assigned to it *)
-let dereference_value_from_result sil_loc trans_result =
+let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let (obj_sil, class_typ) = extract_exp_from_list trans_result.exps "" in
   let cast_ids, cast_inst, cast_exp = dereference_var_sil (obj_sil, class_typ) sil_loc in
   let typ_no_ptr = match class_typ with | Sil.Tptr (typ, _) -> typ | _ -> assert false in
+  let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
   { trans_result with
     ids = trans_result.ids @ cast_ids;
     instrs = trans_result.instrs @ cast_inst;
-    exps = [(cast_exp, typ_no_ptr)]
+    exps = [(cast_exp, cast_typ)]
   }
 
 
