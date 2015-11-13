@@ -18,7 +18,7 @@ public class File {
         if (InferUndefined.boolean_undefined()) {
             return null;
         } else {
-            return new File[InferUndefined.int_undefined()];
+            return (File[])InferUndefined.object_undefined();
         }
     }
 
