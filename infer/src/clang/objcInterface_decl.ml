@@ -79,6 +79,9 @@ let add_super_class_decl type_ptr_to_sil_type tenv ocdi =
 let add_protocols_decl type_ptr_to_sil_type tenv protocols =
   Ast_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv protocols
 
+let add_categories_decl type_ptr_to_sil_type tenv categories =
+  Ast_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv categories
+
 let add_class_implementation type_ptr_to_sil_type tenv idi =
   let decl_ref_opt = idi.Clang_ast_t.otdi_implementation  in
   Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
@@ -170,6 +173,8 @@ let interface_declaration type_ptr_to_sil_type tenv decl =
       let _ = add_class_implementation type_ptr_to_sil_type tenv ocidi in
       let _ = add_super_class_decl type_ptr_to_sil_type tenv ocidi in
       let _ = add_protocols_decl type_ptr_to_sil_type tenv ocidi.Clang_ast_t.otdi_protocols in
+      let known_categories = ocidi.Clang_ast_t.otdi_known_categories in
+      let _ = add_categories_decl type_ptr_to_sil_type tenv known_categories in
       typ
   | _ -> assert false
 
