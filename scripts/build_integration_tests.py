@@ -25,7 +25,7 @@ from inferlib import utils
 CURRENT_DIR = os.getcwd()
 REPORT_JSON = 'report.json'
 
-INFER = 'infer'
+INFER_EXECUTABLE = 'infer'
 
 RECORD_ENV = 'INFER_RECORD_INTEGRATION_TESTS'
 
@@ -170,7 +170,7 @@ class BuildIntegrationTest(unittest.TestCase):
                 root,
                 ['ant', 'clean'],
                 ['ant', 'compile'],
-                INFER)
+                INFER_EXECUTABLE)
             do_test(errors, os.path.join(root, 'ant_report.json'))
         else:
             print('\nSkipping Ant integration test')
@@ -184,7 +184,7 @@ class BuildIntegrationTest(unittest.TestCase):
                 root,
                 ['gradle', 'clean'],
                 ['gradle', 'build'],
-                INFER)
+                INFER_EXECUTABLE)
             do_test(errors, os.path.join(root, 'gradle_report.json'))
         else:
             print('\nSkipping Gradle integration test')
@@ -198,7 +198,7 @@ class BuildIntegrationTest(unittest.TestCase):
                 root,
                 ['buck', 'clean'],
                 ['buck', 'build', 'infer'],
-                INFER)
+                INFER_EXECUTABLE)
             report_path = os.path.join(
                 CURRENT_DIR, 'infer', 'tests', 'buck_report.json')
             do_test(errors, report_path)
