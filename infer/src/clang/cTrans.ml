@@ -541,7 +541,8 @@ struct
          let line_number = CLocation.get_line cle_stmt_info line_number in
          let trans_state' = { trans_state with parent_line_number = line_number } in
          let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
-         let res_trans_tmp = initListExpr_trans trans_state' stmt_info expr_info stmts pvar in
+         let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ)] } in
+         let res_trans_tmp = initListExpr_trans trans_state' var_res_trans stmt_info expr_info stmts in
          { res_trans_tmp with leaf_nodes =[]}
      | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
          let rhs_owning_method = CTrans_utils.is_owning_method s2 in
@@ -1413,7 +1414,9 @@ struct
            exps = exp_to_parent' }
      | _ -> assert false) (* Compound assign statement should have two operands*)
 
-  and initListExpr_trans trans_state stmt_info expr_info stmts pvar =
+  and initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts =
+    let var_exp, _ = extract_exp_from_list var_res_trans.exps
+        "WARNING: InitListExpr expects one variable expression" in
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
     let rec collect_right_hand_exprs ts stmt = match stmt with
@@ -1458,7 +1461,7 @@ struct
       | _ -> [ [(e, typ)] ] in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let var_type = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-    let lh = IList.flatten (collect_left_hand_exprs (Sil.Lvar pvar) var_type Utils.StringSet.empty) in
+    let lh = IList.flatten (collect_left_hand_exprs var_exp var_type Utils.StringSet.empty) in
     let rh = IList.flatten (IList.map (collect_right_hand_exprs trans_state_pri) stmts ) in
     if (IList.length rh != IList.length lh) then (
       (* If the right hand expressions are not as many as the left hand expressions something's wrong *)
@@ -1493,97 +1496,106 @@ struct
           leaf_nodes = [];
           ids = rh_ids;
           instrs = instructions;
-          exps = [(Sil.Lvar pvar, var_type)];
+          exps = [(var_exp, var_type)];
         }
       ) else {
         root_nodes = [];
         leaf_nodes = [];
         ids = rh_ids;
         instrs = instructions;
-        exps = [(Sil.Lvar pvar, var_type)];
+        exps = [(var_exp, var_type)];
       }
     )
+
+  and init_expr_trans trans_state var_res_trans var_stmt_info init_expr_opt =
+    let open Clang_ast_t in
+    match init_expr_opt with
+    | None -> { empty_res_trans with root_nodes = trans_state.succ_nodes } (* Nothing to do if no init expression *)
+    | Some (ImplicitValueInitExpr (_, stmt_list, _)) ->
+        (* Seems unclear what it does, so let's keep an eye on the stmts *)
+        (* and report a warning if it finds a non empty list of stmts *)
+        (match stmt_list with
+         | [] -> ()
+         | _ -> Printing.log_stats "\n!!!!WARNING: found statement <\"ImplicitValueInitExpr\"> with non-empty stmt_list.\n");
+        { empty_res_trans with root_nodes = trans_state.succ_nodes }
+    | Some (InitListExpr (stmt_info , stmts , expr_info))
+    | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
+        initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts
+    | Some (CXXConstructExpr _ as expr) ->
+        cxxConstructExpr_trans trans_state var_res_trans expr
+    | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
+        let stmt_info, _ = Clang_ast_proj.get_stmt_tuple ie in
+        let context = trans_state.context in
+        let pln = trans_state.parent_line_number in
+        let sil_loc = CLocation.get_sil_location stmt_info pln context in
+        let var_exp, var_typ = extract_exp_from_list var_res_trans.exps
+            "WARNING: init_expr_trans expects one variable expression" in
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state var_stmt_info in
+        let next_node =
+          if PriorityNode.own_priority_node trans_state_pri.priority var_stmt_info then (
+            let node_kind = Cfg.Node.Stmt_node "DeclStmt" in
+            let node = create_node node_kind [] [] sil_loc context in
+            Cfg.Node.set_succs_exn node trans_state.succ_nodes [];
+            [node]
+          ) else trans_state.succ_nodes in
+        let line_number = CLocation.get_line stmt_info pln in
+        (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
+        let res_trans_ie =
+          let trans_state' = { trans_state_pri with succ_nodes = next_node; parent_line_number = line_number } in
+          let instruction' =
+            exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+          exec_with_block_priority_exception instruction' trans_state' ie var_stmt_info in
+        let root_nodes = res_trans_ie.root_nodes in
+        let leaf_nodes = res_trans_ie.leaf_nodes in
+        let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps
+            "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
+        let rhs_owning_method = CTrans_utils.is_owning_method ie in
+        let _, instrs_assign, ids_assign =
+          if !Config.arc_mode &&
+             (CTrans_utils.is_method_call ie || ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ) then
+            (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
+            (* we need to add retain/release *)
+            let (e, instrs, ids) =
+              CArithmetic_trans.assignment_arc_mode context var_exp ie_typ sil_e1' sil_loc rhs_owning_method true in
+            ([(e, ie_typ)], instrs, ids)
+          else ([], [Sil.Set (var_exp, ie_typ, sil_e1', sil_loc)], []) in
+        let ids = res_trans_ie.ids@ids_assign in
+        let instrs = res_trans_ie.instrs@instrs_assign in
+        if PriorityNode.own_priority_node trans_state_pri.priority var_stmt_info then (
+          let node = IList.hd next_node in
+          Cfg.Node.append_instrs_temps node instrs ids;
+          IList.iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
+          let root_nodes = if (IList.length root_nodes) = 0 then next_node else root_nodes in
+          {
+            root_nodes = root_nodes;
+            leaf_nodes = [];
+            ids = ids;
+            instrs = instrs;
+            exps = [(var_exp, ie_typ)];
+          }
+        ) else {
+          root_nodes = root_nodes;
+          leaf_nodes = [];
+          ids = ids;
+          instrs = instrs;
+          exps = [(var_exp, ie_typ)]
+        }
 
   and collect_all_decl trans_state var_decls next_nodes stmt_info =
     let open Clang_ast_t in
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
     let procname = Cfg.Procdesc.get_proc_name procdesc in
-    let pln = trans_state.parent_line_number in
     let do_var_dec (di, var_name, type_ptr, vdi) next_node =
       let var_decl = VarDecl (di, var_name, type_ptr, vdi) in
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
       let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+      let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
-      match vdi.Clang_ast_t.vdi_init_expr with
-      | None -> { empty_res_trans with root_nodes = next_node } (* Nothing to do if no init expression *)
-      | Some (ImplicitValueInitExpr (_, stmt_list, _)) ->
-          (* Seems unclear what it does, so let's keep an eye on the stmts *)
-          (* and report a warning if it finds a non empty list of stmts *)
-          (match stmt_list with
-           | [] -> ()
-           | _ -> Printing.log_stats "\n!!!!WARNING: found statement <\"ImplicitValueInitExpr\"> with non-empty stmt_list.\n");
-          { empty_res_trans with root_nodes = next_node }
-      | Some (InitListExpr (stmt_info , stmts , expr_info))
-      | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
-          initListExpr_trans trans_state stmt_info expr_info stmts pvar
-      | Some (CXXConstructExpr _ as expr) ->
-          let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
-          let this_exp = (Sil.Lvar pvar, typ_ptr) in
-          let this_res_trans = { empty_res_trans with exps = [this_exp] } in
-          cxxConstructExpr_trans trans_state this_res_trans expr
-      | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
-          let sil_loc = CLocation.get_sil_location stmt_info pln context in
-          let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-          let next_node =
-            if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
-              let node_kind = Cfg.Node.Stmt_node "DeclStmt" in
-              let node = create_node node_kind [] [] sil_loc context in
-              Cfg.Node.set_succs_exn node next_node [];
-              [node]
-            ) else next_node in
-          let line_number = CLocation.get_line stmt_info pln in
-          (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
-          let res_trans_ie =
-            let trans_state' = { trans_state_pri with succ_nodes = next_node; parent_line_number = line_number } in
-            let instruction' =
-              exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
-            exec_with_block_priority_exception instruction' trans_state' ie stmt_info in
-          let root_nodes = res_trans_ie.root_nodes in
-          let leaf_nodes = res_trans_ie.leaf_nodes in
-          let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps
-              "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
-          let rhs_owning_method = CTrans_utils.is_owning_method ie in
-          let _, instrs_assign, ids_assign =
-            if !Config.arc_mode &&
-               (CTrans_utils.is_method_call ie || ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ) then
-              (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
-              (* we need to add retain/release *)
-              let (e, instrs, ids) =
-                CArithmetic_trans.assignment_arc_mode context (Sil.Lvar pvar) ie_typ sil_e1' sil_loc rhs_owning_method true in
-              ([(e, ie_typ)], instrs, ids)
-            else ([], [Sil.Set (Sil.Lvar pvar, ie_typ, sil_e1', sil_loc)], []) in
-          let ids = res_trans_ie.ids@ids_assign in
-          let instrs = res_trans_ie.instrs@instrs_assign in
-          if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
-            let node = IList.hd next_node in
-            Cfg.Node.append_instrs_temps node instrs ids;
-            IList.iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
-            let root_nodes = if (IList.length root_nodes) = 0 then next_node else root_nodes in
-            {
-              root_nodes = root_nodes;
-              leaf_nodes = [];
-              ids = ids;
-              instrs = instrs;
-              exps = [(Sil.Lvar pvar, ie_typ)];
-            }
-          ) else {
-            root_nodes = root_nodes;
-            leaf_nodes = [];
-            ids = ids;
-            instrs = instrs;
-            exps = [(Sil.Lvar pvar, ie_typ)]
-          } in
+      let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
+      let trans_state' = { trans_state with succ_nodes = next_node } in
+      init_expr_trans trans_state' var_res_trans stmt_info vdi.Clang_ast_t.vdi_init_expr in
+
     match var_decls with
     | [] -> { empty_res_trans with root_nodes = next_nodes }
     | VarDecl (di, n, tp, vdi) :: var_decls' ->
