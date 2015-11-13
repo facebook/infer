@@ -147,7 +147,7 @@ let arg_desc =
         "-objcm", Arg.Set Config.objc_memory_model_on, None, "Use ObjC memory model";
         "-no_progress_bar", Arg.Unit (fun () -> Config.show_progress_bar := false), None, "Do not show a progress bar";
         "-ml_buckets", Arg.Set_string ml_buckets_arg, Some "ml_buckets",
-        "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp";
+        "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp, unknown_origin";
       ] in
     Arg2.create_options_desc false "Analysis Options" desc in
   let reserved_arg =

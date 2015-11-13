@@ -21,6 +21,7 @@ type mleak_bucket =
   | MLeak_arc
   | MLeak_no_arc
   | MLeak_cpp
+  | MLeak_unknown
 
 let ml_buckets = ref []
 
@@ -30,6 +31,7 @@ let bucket_from_string bucket_s =
   | "arc" -> MLeak_arc
   | "narc" -> MLeak_no_arc
   | "cpp" -> MLeak_cpp
+  | "unknown_origin" -> MLeak_unknown
   | _ -> assert false
 
 let bucket_to_string bucket =
@@ -38,6 +40,7 @@ let bucket_to_string bucket =
   | MLeak_arc -> "Arc"
   | MLeak_no_arc -> "No arc"
   | MLeak_cpp -> "Cpp"
+  | MLeak_unknown -> "Unknown origin"
 
 let bucket_to_message bucket =
   match bucket with
@@ -45,6 +48,7 @@ let bucket_to_message bucket =
   | MLeak_arc -> "[ARC]"
   | MLeak_no_arc -> "[NO ARC]"
   | MLeak_cpp -> "[CPP]"
+  | MLeak_unknown -> "[UNKNOWN ORIGIN]"
 
 let mleak_bucket_compare b1 b2 =
   match b1, b2 with
@@ -57,6 +61,9 @@ let mleak_bucket_compare b1 b2 =
   | MLeak_no_arc, MLeak_no_arc -> 0
   | MLeak_no_arc, _ -> -1
   | _, MLeak_no_arc -> 1
+  | MLeak_unknown, MLeak_unknown -> 0
+  | MLeak_unknown, _ -> -1
+  | _, MLeak_unknown -> 1
   | MLeak_cpp, MLeak_cpp -> 0
 
 let mleak_bucket_eq b1 b2 =
@@ -83,6 +90,9 @@ let contains_narc ml_buckets =
 let contains_cpp ml_buckets =
   IList.mem mleak_bucket_eq MLeak_cpp ml_buckets
 
+let contains_unknown_origin ml_buckets =
+  IList.mem mleak_bucket_eq MLeak_unknown ml_buckets
+
 let should_raise_leak_cf typ =
   if contains_cf !ml_buckets then
     Objc_models.is_core_lib_type typ
@@ -97,6 +107,12 @@ let should_raise_leak_no_arc () =
   if contains_narc !ml_buckets then
     not (!Config.arc_mode)
   else false
+
+let should_raise_leak_unknown_origin () =
+  contains_unknown_origin !ml_buckets
+
+let ml_bucket_unknown_origin () =
+  bucket_to_message MLeak_unknown
 
 (* Returns whether a memory leak should be raised for a C++ object.*)
 (* If ml_buckets contains cpp, then check leaks from C++ objects. *)

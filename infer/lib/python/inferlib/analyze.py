@@ -140,7 +140,7 @@ infer_group.add_argument('--ml_buckets',
                          help='memory leak buckets to be checked, '
                               'separated by commas. The possible '
                               'buckets are cf (Core Foundation), '
-                              'arc, narc (No arc), cpp')
+                              'arc, narc (No arc), cpp, unknown_origin')
 
 infer_group.add_argument('-nt', '--notest', action='store_true',
                            dest='notest',

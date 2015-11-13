@@ -22,3 +22,7 @@ val should_raise_objc_leak : Sil.typ -> string option
 (* Returns whether a memory leak should be raised for a C++ object.*)
 (* If ml_buckets contains cpp, then check leaks from C++ objects. *)
 val should_raise_cpp_leak : unit -> string option
+
+val should_raise_leak_unknown_origin : unit -> bool
+
+val ml_bucket_unknown_origin : unit -> string

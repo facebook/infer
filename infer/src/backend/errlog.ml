@@ -160,10 +160,15 @@ let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
     !Config.developer_mode = false &&
     !Config.curr_language = Config.Java &&
     loc.Location.line = 0 in
+  let hide_memory_error =
+    match Localise.error_desc_get_bucket desc with
+    | Some bucket when bucket = (Mleak_buckets.ml_bucket_unknown_origin ()) ->
+        not (Mleak_buckets.should_raise_leak_unknown_origin ())
+    | _ -> false in
   let log_it =
     visibility == Exceptions.Exn_user ||
     (!Config.developer_mode && visibility == Exceptions.Exn_developer) in
-  if log_it && not hide_java_loc_zero then begin
+  if log_it && not hide_java_loc_zero && not hide_memory_error then begin
     let added =
       add_issue err_log
         (ekind, !Config.footprint, err_name, desc, severity_to_str severity)
