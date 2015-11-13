@@ -32,6 +32,9 @@ struct delicious *skip_function_with_no_spec(void) {
 }
 
 extern struct delicious *bakery(struct delicious **cake);
+extern struct delicious *bakery2(struct delicious **cake,
+                                 struct delicious **pie);
+extern struct delicious *returnPassByRef();
 
 struct delicious *skip_external_function(void) {
   struct delicious *cake = NULL;
