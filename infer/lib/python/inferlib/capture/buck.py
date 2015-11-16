@@ -141,7 +141,6 @@ class BuckAnalyzer:
                                            config.JSON_REPORT_FILENAME)
         with open(merged_results_path, 'w') as file_out:
             json.dump(all_results, file_out, indent=2)
-        # TODO: adapt issues.print_errors to support json and print on screen
         print('Results saved in {results_path}'.format(
             results_path=merged_results_path))
         return os.EX_OK

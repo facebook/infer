@@ -448,7 +448,7 @@ def collect_results(args, start_time):
         report.flush()
 
     print('\n')
-    issues.print_errors(json_report, bugs_out)
+    issues.print_and_save_errors(json_report, bugs_out)
 
     stats['int']['total_time'] = int(round(utils.elapsed_time(start_time)))
 

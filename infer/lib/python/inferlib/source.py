@@ -44,12 +44,15 @@ class Indenter(str):
 
     def indent_push(self, n=1):
         self.indent.append(n * BASE_INDENT * ' ')
+        return self
 
     def indent_pop(self):
         return self.indent.pop()
+        return self
 
     def newline(self):
         self.text += '\n'
+        return self
 
     def add(self, x):
         if type(x) != unicode:
@@ -58,6 +61,7 @@ class Indenter(str):
         indent = self.indent_get()
         lines = [indent + l for l in lines]
         self.text += '\n'.join(lines)
+        return self
 
     def __unicode__(self):
         return self.text

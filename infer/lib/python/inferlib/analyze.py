@@ -544,7 +544,7 @@ class Infer:
                                                config.JSON_REPORT_FILENAME)
                     bugs_out = os.path.join(self.args.infer_out,
                                             config.BUGS_FILENAME)
-                    issues.print_errors(json_report, bugs_out)
+                    issues.print_and_save_errors(json_report, bugs_out)
 
     def print_analysis_stats(self):
         procs_total = self.stats['int']['procedures']

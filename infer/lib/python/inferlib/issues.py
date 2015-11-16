@@ -140,48 +140,48 @@ def clean_json(args, json_report):
         shutil.move(temporary_file, json_report)
 
 
-def print_errors(json_report, bugs_out):
+def print_and_save_errors(json_report, bugs_out):
+    errors = []
     with codecs.open(json_report, 'r', encoding=config.LOCALE) as file_in:
-        errors = json.load(file_in)
-
         errors = filter(lambda row: row[JSON_INDEX_KIND] in
                         [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING],
-                        errors)
+                        json.load(file_in))
 
-        with codecs.open(bugs_out, 'w', encoding=config.LOCALE) as file_out:
-            text_errors_list = []
-            for row in errors:
-                filename = row[JSON_INDEX_FILENAME]
-                if os.path.isfile(filename):
-                    kind = row[JSON_INDEX_KIND]
-                    line = row[JSON_INDEX_LINE]
-                    error_type = row[JSON_INDEX_TYPE]
-                    msg = row[JSON_INDEX_QUALIFIER]
-                    indenter = source.Indenter()
-                    indenter.indent_push()
-                    indenter.add(
-                        source.build_source_context(filename,
-                                                    source.TERMINAL_FORMATTER,
-                                                    int(line)))
-                    source_context = unicode(indenter)
-                    text_errors_list.append(
-                        u'{0}:{1}: {2}: {3}\n  {4}\n{5}'.format(
-                            filename,
-                            line,
-                            kind.lower(),
-                            error_type,
-                            msg,
-                            source_context,
-                        )
-                    )
-            n_issues = len(text_errors_list)
-            if n_issues == 0:
-                _print_and_write(file_out, 'No issues found')
-            else:
-                msg = '\nFound %s\n' % utils.get_plural('issue', n_issues)
-                _print_and_write(file_out, msg)
-                text_errors = '\n\n'.join(text_errors_list)
-                _print_and_write(file_out, text_errors)
+    text_errors_list = []
+    for row in errors:
+        filename = row[JSON_INDEX_FILENAME]
+        if not os.path.isfile(filename):
+            continue
+
+        kind = row[JSON_INDEX_KIND]
+        line = row[JSON_INDEX_LINE]
+        error_type = row[JSON_INDEX_TYPE]
+        msg = row[JSON_INDEX_QUALIFIER]
+        source_context = source.build_source_context(filename,
+                                                     source.TERMINAL_FORMATTER,
+                                                     int(line))
+        indenter = source.Indenter() \
+                         .indent_push() \
+                         .add(source_context)
+        source_context = unicode(indenter)
+        text_errors_list.append(u'%s:%d: %s: %s\n  %s\n%s' % (
+            filename,
+            line,
+            kind.lower(),
+            error_type,
+            msg,
+            source_context,
+        ))
+
+    n_issues = len(text_errors_list)
+    with codecs.open(bugs_out, 'w', encoding=config.LOCALE) as file_out:
+        if n_issues == 0:
+            _print_and_write(file_out, 'No issues found')
+        else:
+            msg = '\nFound %s\n' % utils.get_plural('issue', n_issues)
+            _print_and_write(file_out, msg)
+            text_errors = '\n\n'.join(text_errors_list)
+            _print_and_write(file_out, text_errors)
 
 
 def _compare_issues(filename_1, line_1, filename_2, line_2):
