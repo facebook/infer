@@ -20,14 +20,25 @@ import utils.ClangFrontendUtils;
 
 public class InheritanceTest {
 
+
+  String basePath = "infer/tests/codetoanalyze/cpp/frontend/types/";
+
   @Rule
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
 
+  void frontendTest(String fileRelative) throws InterruptedException, IOException, InferException {
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, basePath + fileRelative);
+  }
+
   @Test
-  public void whenCaptureRunCommaThenDotFilesAreTheSame()
+  public void testInheritanceDotFilesMatch()
       throws InterruptedException, IOException, InferException {
-    String src =
-        "infer/tests/codetoanalyze/cpp/frontend/types/inheritance.cpp";
-    ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
+    frontendTest("inheritance.cpp");
+  }
+
+  @Test
+  public void testInheritanceFieldDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("inheritance_field.cpp");
   }
 }

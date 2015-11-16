@@ -124,17 +124,20 @@ let get_class_methods tenv class_name namespace decl_list =
   (* poor mans list_filter_map *)
   IList.flatten_options (IList.map process_method_decl decl_list)
 
-(** fetches list of superclasses for C++ classes *)
-let get_superclass_list decl =
+let get_superclass_decls decl =
   match decl with
   | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
-      let base_decls = IList.map Ast_utils.get_decl_from_typ_ptr base_ptr in
-      let decl_to_mangled_name decl = Mangled.from_string (get_record_name decl) in
-      let get_super_field super_decl = (Sil.Class, decl_to_mangled_name super_decl) in
-      IList.map get_super_field base_decls
+      IList.map Ast_utils.get_decl_from_typ_ptr base_ptr
   | _ -> []
+
+(** fetches list of superclasses for C++ classes *)
+let get_superclass_list decl =
+  let base_decls = get_superclass_decls decl in
+  let decl_to_mangled_name decl = Mangled.from_string (get_record_name decl) in
+  let get_super_field super_decl = (Sil.Class, decl_to_mangled_name super_decl) in
+  IList.map get_super_field base_decls
 
 let add_struct_to_tenv tenv typ =
   let csu = match typ with
@@ -144,8 +147,12 @@ let add_struct_to_tenv tenv typ =
   let typename = Sil.TN_csu(csu, mangled) in
   Sil.tenv_add tenv typename typ
 
-let rec get_struct_fields tenv record_name namespace decl_list =
+let rec get_struct_fields tenv namespace decl =
   let open Clang_ast_t in
+  let decl_list = match decl with
+    | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+    | RecordDecl (_, _, _, _, decl_list, _, _) -> decl_list
+    | _ -> [] in
   let do_one_decl decl = match decl with
     | FieldDecl (_, name_info, type_ptr, _) ->
         let id = General_utils.mk_class_field_name name_info in
@@ -158,7 +165,9 @@ let rec get_struct_fields tenv record_name namespace decl_list =
         if not decl_info.Clang_ast_t.di_is_implicit then
           ignore (add_types_from_decl_to_tenv tenv namespace decl); []
     | _ -> [] in
-  IList.flatten (IList.map do_one_decl decl_list)
+  let base_decls = get_superclass_decls decl in
+  let base_class_fields = IList.map (get_struct_fields tenv namespace) base_decls in
+  IList.flatten (base_class_fields @ (IList.map do_one_decl decl_list))
 
 (* For a record declaration it returns/constructs the type *)
 and get_strct_cpp_class_declaration_type tenv namespace decl =
@@ -174,7 +183,7 @@ and get_strct_cpp_class_declaration_type tenv namespace decl =
       if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
         Printing.log_err
           "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
-      let non_static_fields = get_struct_fields tenv name namespace decl_list in
+      let non_static_fields = get_struct_fields tenv namespace decl in
       let non_static_fields' = if CTrans_models.is_objc_memory_model_controlled name then
           General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
         else non_static_fields in
