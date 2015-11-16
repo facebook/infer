@@ -459,4 +459,14 @@ public class NullPointerExceptions {
     return lock.toString(); // expect possible NullPointerException as lock == null is possible
   }
 
+  String tryLockThrows(FileChannel chan) {
+    try {
+      FileLock lock = chan.tryLock();
+      return (lock != null ? lock.toString() : "");
+    } catch (IOException _) {
+      Object o = null;
+      return o.toString(); // expect NullPointerException as tryLock can throw
+    }
+  }
+
 }

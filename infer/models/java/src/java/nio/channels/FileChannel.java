@@ -11,6 +11,7 @@ package java.nio.channels;
 
 import com.facebook.infer.models.InferUndefined;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.channels.FileLock;
 
@@ -27,7 +28,8 @@ public abstract class FileChannel extends AbstractInterruptibleChannel {
         private String displayName;
     }
 
-    public @Nullable FileLock tryLock() {
+    @Nullable FileLock tryLock() throws IOException {
+        InferUndefined.can_throw_ioexception_object();
         if (InferUndefined.boolean_undefined()) {
             return null;
         } else {
@@ -35,7 +37,7 @@ public abstract class FileChannel extends AbstractInterruptibleChannel {
         }
     }
 
-    public final @Nullable FileLock tryLock(long position, long size, boolean shared) {
+    @Nullable FileLock tryLock(long position, long size, boolean shared) throws IOException {
         return tryLock();
     }
 

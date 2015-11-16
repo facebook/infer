@@ -365,6 +365,11 @@
     "bug_type": "NULL_DEREFERENCE"
   },
   {
+    "procedure": "String NullPointerExceptions.tryLockThrows(FileChannel)",
+    "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
+    "bug_type": "NULL_DEREFERENCE"
+  },
+  {
     "procedure": "void ReaderLeaks.readerNotClosedAfterRead()",
     "file": "codetoanalyze/java/infer/ReaderLeaks.java",
     "bug_type": "RESOURCE_LEAK"

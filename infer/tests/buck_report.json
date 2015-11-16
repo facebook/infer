@@ -723,5 +723,10 @@
     "procedure": "void ResourceLeaks.jarInputStreamLeak()",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
     "bug_type": "RESOURCE_LEAK"
+  },
+  {
+    "procedure": "String NullPointerExceptions.tryLockThrows(FileChannel)",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "bug_type": "NULL_DEREFERENCE"
   }
 ]
