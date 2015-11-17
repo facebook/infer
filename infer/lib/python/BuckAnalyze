@@ -135,74 +135,27 @@ def prepare_build(args):
     return temp_files
 
 
-def java_targets():
-    target_types = [
-        'android_library',
-        'java_library',
-    ]
+def get_normalized_targets(targets):
+    """ Use buck to convert a list of input targets/aliases
+        into a set of the (transitive) target deps for all inputs"""
+
+    # this expands the targets passed on the command line, then filters away
+    # targets that are not Java/Android. you need to change this if you
+    # care about something other than Java/Android
+    TARGET_TYPES = "kind('android_library|java_library', deps('%s'))"
+    BUCK_GET_JAVA_TARGETS = ['buck', 'query', TARGET_TYPES]
+    buck_cmd = BUCK_GET_JAVA_TARGETS + targets
+
     try:
-        targets = subprocess.check_output([
-            'buck',
-            'targets',
-            '--type',
-        ] + target_types).decode().strip().split('\n')
-    except subprocess.CalledProcessError as e:
-        logging.error('Could not compute java library targets')
-        raise e
-    return set(targets)
-
-
-def is_alias(target):
-    return ':' not in target
-
-
-def expand_target(target, java_targets):
-    if not is_alias(target):
-        return [target]
-    else:
-        try:
-            buck_audit_cmd = ['buck', 'audit', 'classpath', '--dot', target]
-            output = subprocess.check_output(buck_audit_cmd)
-            dotty = output.decode().split('\n')
-        except subprocess.CalledProcessError as e:
-            logging.error('Could not expand target {0}'.format(target))
-            raise e
-        targets = set()
-        edge_re = re.compile('.*"(.*)".*"(.*)".*')
-        for line in dotty:
-            match = re.match(edge_re, line)
-            if match:
-                for t in match.groups():
-                    if t in java_targets:
-                        targets.add(t)
+        targets = subprocess.check_output(buck_cmd).decode().strip().split('\n')
+        if args.verbose:
+            logging.debug('Targets to analyze:')
+            for target in args.targets:
+                logging.debug(target)
         return targets
-
-
-def normalize_target(target):
-    if is_alias(target) or target.startswith('//'):
-        return target
-    else:
-        return '//' + target
-
-
-def determine_library_targets(args):
-    """ Uses git and buck audit to expand aliases into the list of java or
-        android library targets that are parts of these aliases.
-        Buck targets directly passed as argument are not expanded """
-
-    args.targets = [normalize_target(t) for t in args.targets]
-
-    if any(map(is_alias, args.targets)):
-        all_java_targets = java_targets()
-        targets = set()
-        for t in args.targets:
-            targets.update(expand_target(t, all_java_targets))
-        args.targets = list(targets)
-
-    if args.verbose:
-        logging.debug('Targets to analyze:')
-        for target in args.targets:
-            logging.debug(target)
+    except subprocess.CalledProcessError as e:
+        logging.error('Error while expanding targets with {0}'.format(buck_cmd))
+        raise e
 
 
 def init_stats(args, start_time):
@@ -520,8 +473,8 @@ if __name__ == '__main__':
         # TODO(t3786463) Start buckd.
 
         timer.start('Computing library targets')
-        determine_library_targets(args)
-        timer.stop('%d targets computed', len(args.targets))
+        normalized_targets = get_normalized_targets(args.targets)
+        timer.stop('%d targets computed', len(normalized_targets))
 
         timer.start('Running buck...')
         buck_cmd = ['buck', 'build']
@@ -529,7 +482,8 @@ if __name__ == '__main__':
             buck_cmd += ['--no-cache']
         if args.verbose:
             buck_cmd += ['-v', '2']
-        subprocess.check_call(buck_cmd + args.targets)
+        compile_cmd = buck_cmd + normalized_targets
+        subprocess.check_call(compile_cmd)
         timer.stop('Buck finished')
 
         timer.start('Collecting results...')
