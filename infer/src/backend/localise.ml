@@ -369,8 +369,8 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let fld_str = Ident.fieldname_to_string fieldname in
   let leak_root =
     if fld_str = "android.os.Handler.sFakeHandlerQueue"
-    then " runnable passed to Handler.postDelayed |->\n "
-    else " static field " ^ fld_str ^ " |->\n " in
+    then " Runnable passed to Handler.postDelayed |->\n "
+    else " Static field " ^ fld_str ^ " |->\n " in
   let leak_path_entry_to_str acc entry =
     let entry_str = match entry with
       | (Some fld, _) -> Ident.fieldname_to_string fld
@@ -380,12 +380,12 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let context_str = Sil.typ_to_string context_typ in
   let path_str =
     let path_prefix =
-      if leak_path = [] then "leaked "
-      else (IList.fold_left leak_path_entry_to_str "" leak_path) ^ " leaked " in
+      if leak_path = [] then "Leaked "
+      else (IList.fold_left leak_path_entry_to_str "" leak_path) ^ " Leaked " in
     path_prefix ^ context_str in
   let preamble =
     let pname_str = Procname.java_get_class pname ^ "." ^ Procname.java_get_method pname in
-    "Context " ^ context_str ^ "may leak during method" ^ pname_str ^ ":\n" in
+    "Context " ^ context_str ^ "may leak during method " ^ pname_str ^ ":\n" in
   ([preamble; leak_root; path_str], None, [])
 
 let desc_assertion_failure loc : error_desc =
