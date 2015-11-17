@@ -230,6 +230,11 @@
     "bug_type": "RESOURCE_LEAK"
   },
   {
+    "procedure": "void ResourceLeaks.deflaterLeak()",
+    "file": "codetoanalyze/java/infer/ResourceLeaks.java",
+    "bug_type": "RESOURCE_LEAK"
+  },
+  {
     "procedure": "void FilterOutputStreamLeaks.deflaterOutputStreamNotClosedAfterWrite()",
     "file": "codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
     "bug_type": "RESOURCE_LEAK"
@@ -362,6 +367,11 @@
   {
     "procedure": "void FilterInputStreamLeaks.inflaterInputStreamNotClosedAfterRead()",
     "file": "codetoanalyze/java/infer/FilterInputStreamLeaks.java",
+    "bug_type": "RESOURCE_LEAK"
+  },
+  {
+    "procedure": "void ResourceLeaks.inflaterLeak()",
+    "file": "codetoanalyze/java/infer/ResourceLeaks.java",
     "bug_type": "RESOURCE_LEAK"
   },
   {

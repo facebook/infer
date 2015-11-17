@@ -42,8 +42,10 @@ import java.util.Scanner;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.Inflater;
 import java.util.zip.ZipFile;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -910,6 +912,24 @@ public class ResourceLeaks {
     InputStream s = f.getInputStream(f.getEntry("there"));
     if (s != null) s.toString();
     f.close();
+  }
+
+  public void deflaterLeak() {
+    Deflater comp = new Deflater();
+  }
+
+  public void deflaternoLeak() {
+    Deflater comp = new Deflater();
+    comp.end();
+  }
+
+  public void inflaterLeak() {
+    Inflater decomp = new Inflater();
+  }
+
+  public void inflaterNoLeak() {
+    Inflater decomp = new Inflater();
+    decomp.end();
   }
 
 }

@@ -74,6 +74,8 @@ public class ResourceLeaksTest {
         "copyFileLeak",
         "copyFileLeak",
         "scannerNotClosed",
+        "deflaterLeak",
+        "inflaterLeak",
     };
     assertThat(
         "Results should contain the following resource leak errors",
