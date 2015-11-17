@@ -64,7 +64,7 @@ def load_report(filename):
 def save_report(reports, filename):
     with open(filename, 'w') as file_out:
         filtered = []
-        for report in reports:
+        for report in sorted(reports):
             r = {}
             for key in REPORT_FIELDS:
                 if key in report:
