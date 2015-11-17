@@ -95,7 +95,7 @@ class BuckAnalyzer:
         args = [
             '--config',
             'infer.infer_bin={bin}'
-            .format(bin=utils.BIN_DIRECTORY),
+            .format(bin=config.BIN_DIRECTORY),
             '--config',
             'infer.clang_compiler={clang}'.format(clang=clang_path),
             '--config',
