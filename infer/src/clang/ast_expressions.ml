@@ -366,7 +366,13 @@ let make_next_object_exp stmt_info item items =
   let message_call = make_message_expr create_id_type
       CFrontend_config.next_object items stmt_info false in
   let boi = { Clang_ast_t.boi_kind = `Assign } in
-  make_binary_stmt var_decl_ref message_call stmt_info (make_expr_info_with_objc_kind var_type `ObjCProperty) boi
+  let expr_info = make_expr_info_with_objc_kind var_type `ObjCProperty in
+  let assignment = make_binary_stmt var_decl_ref message_call stmt_info expr_info boi in
+  let boi' = { Clang_ast_t.boi_kind = `NE } in
+  let cast = create_implicit_cast_expr stmt_info [var_decl_ref] var_type `LValueToRValue in
+  let nil_exp = create_nil stmt_info in
+  let loop_cond = make_binary_stmt cast nil_exp stmt_info expr_info boi' in
+  assignment, loop_cond
 
 (* dispatch_once(v,block_def) is transformed as: *)
 (* void (^block_var)()=block_def; block_var() *)

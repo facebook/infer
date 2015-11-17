@@ -1354,13 +1354,23 @@ struct
     let dowhile_kind = Loops.DoWhile (cond, body) in
     loop_instruction trans_state dowhile_kind stmt_info
 
+  (* Fast iteration for colection
+     for (type_it i in collection) { body }
+     is translate as
+     {
+      i = type_next_object();
+      while(i != nil) { body; i = type_next_object();}
+     }
+  *)
   and objCForCollectionStmt_trans trans_state item items body stmt_info =
     let _ = instruction trans_state item in
     (* Here we do ast transformation, so we don't need the value of the translation of the *)
     (* variable item but we still need to add the variable to the locals *)
-    let bin_op = Ast_expressions.make_next_object_exp stmt_info item items in
-    let while_kind = Loops.While (None, bin_op, body) in
-    loop_instruction trans_state while_kind stmt_info
+    let assign_next_object, cond = Ast_expressions.make_next_object_exp stmt_info item items in
+    let body' = Clang_ast_t.CompoundStmt (stmt_info, [body; assign_next_object]) in
+    let null_stmt = Clang_ast_t.NullStmt (stmt_info,[]) in
+    let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
+    instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
   (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands. *)
   and compoundAssignOperator trans_state stmt_info binary_operator_info expr_info stmt_list =

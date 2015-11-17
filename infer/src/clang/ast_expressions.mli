@@ -68,7 +68,8 @@ val make_cast_expr : type_ptr -> decl_info -> decl_ref_expr_info -> object_kind 
 
 val make_self_field : string -> decl_info -> type_ptr -> named_decl_info -> stmt
 
-val make_next_object_exp : stmt_info -> stmt -> Clang_ast_t.stmt -> Clang_ast_t.stmt
+val make_next_object_exp : stmt_info -> stmt -> Clang_ast_t.stmt ->
+  Clang_ast_t.stmt * Clang_ast_t.stmt
 
 val create_nil : stmt_info -> stmt
 
