@@ -254,7 +254,7 @@ and attribute =
   | Adangling of dangling_kind (** dangling pointer *)
   (** undefined value obtained by calling the given procedure *)
   | Aundef of Procname.t * Location.t * path_pos
-  | Ataint
+  | Ataint of Procname.t (** Procname is the source of the taint *)
   | Auntaint
   (** value appeared in second argument of division at given path position *)
   | Adiv0 of path_pos

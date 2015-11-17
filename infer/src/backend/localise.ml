@@ -734,13 +734,18 @@ let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
       (at_line tags loc) in
   [description], None, !tags
 
-let desc_tainted_value_reaching_sensitive_function expr_str loc =
+let desc_tainted_value_reaching_sensitive_function expr_str tainting_fun sensitive_fun loc =
   let tags = Tags.create () in
   Tags.add tags Tags.value expr_str;
   let description = Format.sprintf
-      "Value %s can be tainted and is reaching sensitive function %s"
+      "Value %s could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
       expr_str
-      (at_line tags loc) in
+      tainting_fun
+      "and is reaching sensitive function"
+      sensitive_fun
+      (at_line tags loc)
+      sensitive_fun
+      "requires its input to be verified or sanitized." in
   [description], None, !tags
 
 let desc_uninitialized_dangling_pointer_deref deref expr_str loc =

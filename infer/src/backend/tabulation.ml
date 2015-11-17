@@ -765,7 +765,7 @@ let inconsistent_actualpre_missing actual_pre split_opt =
 let rec get_taint_untaint pi =
   let get_att_exp p e (t,u) =
     match Prop.get_taint_attribute p e with
-    | Some(Sil.Ataint) ->
+    | Some(Sil.Ataint _) ->
         L.d_str "   ---->Found TAINTED exp: "; Sil.d_exp e; L.d_ln ();
         (e::t, u)
     | Some(Sil.Auntaint) ->
@@ -783,7 +783,7 @@ let rec get_taint_untaint pi =
 
 (* perform the taint analysis check by comparing in a function call the
    actual calling state and the missing pi computed by abduction *)
-let do_taint_check caller_pname calling_prop missing_pi sub prop =
+let do_taint_check caller_pname callee_pname calling_prop missing_pi sub prop =
   (* Note: returns only the first element in the intersection*)
   let rec intersection_taint_untaint taint untaint =
     match taint with
@@ -804,7 +804,11 @@ let do_taint_check caller_pname calling_prop missing_pi sub prop =
       let e' = match Errdesc.find_pvar_with_exp prop e with
         | Some (pv, _) -> Sil.Lvar pv
         | None -> e in
-      let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e' (State.get_loc ()) in
+      let tainting_fun = match Prop.get_taint_attribute prop e with
+        | Some (Sil.Ataint tf) -> tf
+        | _ -> Procname.empty  (* by definition of e, we should not get to this case *) in
+      let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e' tainting_fun
+          callee_pname (State.get_loc ()) in
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, try assert false with Assert_failure x -> x) in
@@ -904,7 +908,7 @@ let exe_spec
       begin
         IList.iter log_check_exn checks;
         if !Config.taint_analysis then
-          do_taint_check caller_pname actual_pre missing_pi sub2 prop;
+          do_taint_check caller_pname callee_pname actual_pre missing_pi sub2 prop;
         let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
         match check_dereferences callee_pname subbed_pre sub2 spec_pre formal_params with
         | Some (Deref_undef _, _) when !Config.angelic_execution ->

@@ -1805,7 +1805,8 @@ module ModelBuiltins = struct
         let prop' = match Prop.get_taint_attribute prop n_lexp with
           | _ ->
               let check_attr_change att_old att_new = () in
-              let p'= Prop.add_or_replace_exp_attribute check_attr_change prop n_lexp (Sil.Ataint) in
+              let p'= Prop.add_or_replace_exp_attribute check_attr_change
+                  prop n_lexp (Sil.Ataint pname) in
               p' in
         [(prop', path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))

@@ -614,7 +614,7 @@ and attribute =
   | Adangling of dangling_kind (** dangling pointer *)
   (** undefined value obtained by calling the given procedure *)
   | Aundef of Procname.t * Location.t * path_pos
-  | Ataint
+  | Ataint of Procname.t (** Procname is the source of the taint *)
   | Auntaint
   (** value appeared in second argument of division at given path position *)
   | Adiv0 of path_pos
@@ -1129,7 +1129,7 @@ let attribute_to_category att =
   match att with
   | Aresource _
   | Adangling _ -> ACresource
-  | Ataint
+  | Ataint _
   | Auntaint -> ACtaint
   | Aautorelease -> ACautorelease
   | Adiv0 _ -> ACdiv0
@@ -1358,9 +1358,9 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
   | Adangling _, _ -> - 1
   | _, Adangling _ -> 1
   | Aundef (pn1, _, _), Aundef (pn2, _, _) -> Procname.compare pn1 pn2
-  | Ataint, Ataint -> 0
-  | Ataint, _ -> -1
-  | _, Ataint -> 1
+  | Ataint pn1, Ataint pn2 -> Procname.compare pn1 pn2
+  | Ataint _, _ -> -1
+  | _, Ataint _ -> 1
   | Auntaint, Auntaint -> 0
   | Auntaint, _ -> -1
   | _, Auntaint -> 1
@@ -1942,7 +1942,7 @@ and attribute_to_string pe = function
   | Aundef (pn, loc, _) ->
       "UND" ^ (str_binop pe Lt) ^ Procname.to_string pn ^
       (str_binop pe Gt) ^ ":" ^ (string_of_int loc.Location.line)
-  | Ataint -> "TAINTED"
+  | Ataint pn -> "TAINTED[" ^ (Procname.to_string pn) ^ "]"
   | Auntaint -> "UNTAINTED"
   | Adiv0 (pn, nd_id) -> "DIV0"
   | Aobjc_null exp ->
