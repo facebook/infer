@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______2); [line 19]\n  n$25=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_main1______2 ):unsigned long ) [line 19]\n  *&__objc_anonymous_block_main1______2:class __objc_anonymous_block_main1______2 =n$25 [line 19]\n  n$26=*&x:int  [line 19]\n  *n$25.x:int =n$26 [line 19]\n  n$10=*&x:int  [line 19]\n  *&addblock:_fn_ (*)=(_fun___objc_anonymous_block_main1______2,n$10) [line 19]\n  REMOVE_TEMPS(n$25,n$26,n$10); [line 19]\n " shape="box"]
+20 [label="20:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______2); [line 19]\n  n$27=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_main1______2 ):unsigned long ) [line 19]\n  *&__objc_anonymous_block_main1______2:class __objc_anonymous_block_main1______2 =n$27 [line 19]\n  n$28=*&x:int  [line 19]\n  *n$27.x:int =n$28 [line 19]\n  n$11=*&x:int  [line 19]\n  *&addblock:_fn_ (*)=(_fun___objc_anonymous_block_main1______2,n$11) [line 19]\n  REMOVE_TEMPS(n$27,n$28,n$11); [line 19]\n " shape="box"]
 	
 
 	 20 -> 10 ;
@@ -26,11 +26,11 @@ digraph iCFG {
 	
 
 	 19 -> 18 ;
-18 [label="18:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block___objc_anonymous_block_main1______2______3); [line 25]\n  n$22=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block___objc_anonymous_block_main1______2______3 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block___objc_anonymous_block_main1______2______3:class __objc_anonymous_block___objc_anonymous_block_main1______2______3 =n$22 [line 25]\n  n$23=*&x:int  [line 25]\n  n$24=*&bla:int  [line 25]\n  *n$22.bla:int =n$23 [line 25]\n  *n$22.x:int =n$24 [line 25]\n  n$16=*&x:int  [line 25]\n  n$17=*&bla:int  [line 25]\n  *&addblock2:_fn_ (*)=(_fun___objc_anonymous_block___objc_anonymous_block_main1______2______3,n$16,n$17) [line 25]\n  REMOVE_TEMPS(n$22,n$23,n$24,n$16,n$17); [line 25]\n " shape="box"]
+18 [label="18:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block___objc_anonymous_block_main1______2______3); [line 25]\n  n$23=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block___objc_anonymous_block_main1______2______3 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block___objc_anonymous_block_main1______2______3:class __objc_anonymous_block___objc_anonymous_block_main1______2______3 =n$23 [line 25]\n  n$24=*&x:int  [line 25]\n  n$25=*&bla:int  [line 25]\n  n$26=*&#GB$main1_s:int  [line 25]\n  *n$23.bla:int =n$24 [line 25]\n  *n$23.main1_s:int =n$25 [line 25]\n  *n$23.x:int =n$26 [line 25]\n  n$17=*&x:int  [line 25]\n  n$18=*&bla:int  [line 25]\n  *&addblock2:_fn_ (*)=(_fun___objc_anonymous_block___objc_anonymous_block_main1______2______3,n$17,n$18) [line 25]\n  REMOVE_TEMPS(n$23,n$24,n$25,n$26,n$17,n$18); [line 25]\n " shape="box"]
 	
 
 	 18 -> 14 ;
-17 [label="17:  Return Stmt \n   n$18=*&z:int  [line 26]\n  n$19=*&#GB$main1_s:int  [line 26]\n  n$20=*&x:int  [line 26]\n  n$21=*&bla:int  [line 26]\n  *&return:int =(((n$18 + n$19) + n$20) + n$21) [line 26]\n  REMOVE_TEMPS(n$18,n$19,n$20,n$21); [line 26]\n  NULLIFY(&z,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+17 [label="17:  Return Stmt \n   n$19=*&z:int  [line 26]\n  n$20=*&#GB$main1_s:int  [line 26]\n  n$21=*&x:int  [line 26]\n  n$22=*&bla:int  [line 26]\n  *&return:int =(((n$19 + n$20) + n$21) + n$22) [line 26]\n  REMOVE_TEMPS(n$19,n$20,n$21,n$22); [line 26]\n  NULLIFY(&z,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -41,11 +41,11 @@ digraph iCFG {
 	
 
 	 15 -> 17 ;
-14 [label="14:  BinaryOperatorStmt: Assign \n   n$14=*&addblock2:_fn_ (*) [line 29]\n  n$15=n$14(1:int ) [line 29]\n  *&add2:int =n$15 [line 29]\n  REMOVE_TEMPS(n$14,n$15); [line 29]\n  NULLIFY(&addblock2,false); [line 29]\n " shape="box"]
+14 [label="14:  BinaryOperatorStmt: Assign \n   n$15=*&addblock2:_fn_ (*) [line 29]\n  n$16=n$15(1:int ) [line 29]\n  *&add2:int =n$16 [line 29]\n  REMOVE_TEMPS(n$15,n$16); [line 29]\n  NULLIFY(&addblock2,false); [line 29]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$11=*&c:int  [line 30]\n  n$12=*&add2:int  [line 30]\n  n$13=*&bla:int  [line 30]\n  *&return:int =((n$11 + n$12) + n$13) [line 30]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line 30]\n  NULLIFY(&__objc_anonymous_block___objc_anonymous_block_main1______2______3,true); [line 30]\n  NULLIFY(&add2,false); [line 30]\n  NULLIFY(&c,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$12=*&c:int  [line 30]\n  n$13=*&add2:int  [line 30]\n  n$14=*&bla:int  [line 30]\n  *&return:int =((n$12 + n$13) + n$14) [line 30]\n  REMOVE_TEMPS(n$12,n$13,n$14); [line 30]\n  NULLIFY(&__objc_anonymous_block___objc_anonymous_block_main1______2______3,true); [line 30]\n  NULLIFY(&add2,false); [line 30]\n  NULLIFY(&c,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -56,11 +56,11 @@ digraph iCFG {
 	
 
 	 11 -> 19 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$8=*&addblock:_fn_ (*) [line 33]\n  n$9=n$8(1:int ,2:int ) [line 33]\n  *&add1:int =n$9 [line 33]\n  REMOVE_TEMPS(n$8,n$9); [line 33]\n  NULLIFY(&addblock,false); [line 33]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$9=*&addblock:_fn_ (*) [line 33]\n  n$10=n$9(1:int ,2:int ) [line 33]\n  *&add1:int =n$10 [line 33]\n  REMOVE_TEMPS(n$9,n$10); [line 33]\n  NULLIFY(&addblock,false); [line 33]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______1); [line 36]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_main1______1 ):unsigned long ) [line 36]\n  *&__objc_anonymous_block_main1______1:class __objc_anonymous_block_main1______1 =n$7 [line 36]\n  *&addblock:_fn_ (*)=(_fun___objc_anonymous_block_main1______1) [line 36]\n  REMOVE_TEMPS(n$7); [line 36]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______1); [line 36]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_main1______1 ):unsigned long ) [line 36]\n  *&__objc_anonymous_block_main1______1:class __objc_anonymous_block_main1______1 =n$7 [line 36]\n  n$8=*&#GB$main1_s:int  [line 36]\n  *n$7.main1_s:int =n$8 [line 36]\n  *&addblock:_fn_ (*)=(_fun___objc_anonymous_block_main1______1) [line 36]\n  REMOVE_TEMPS(n$7,n$8); [line 36]\n " shape="box"]
 	
 
 	 9 -> 5 ;

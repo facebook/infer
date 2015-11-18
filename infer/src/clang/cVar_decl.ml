@@ -104,7 +104,7 @@ let captured_vars_from_block_info context cvl =
              else
                let pvar = sil_var_of_decl_ref context dr procname in
                let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
-               (Sil.pvar_get_name pvar, typ, false) :: vars
+               (pvar, typ) :: vars
          | _ -> assert false)
     | _ -> assert false in
   IList.fold_right sil_var_of_captured_var cvl []

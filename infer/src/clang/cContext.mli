@@ -28,7 +28,7 @@ type t =
     is_callee_expression : bool;
     namespace: string option; (* contains the name of the namespace if we are in the scope of one*)
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
-    mutable blocks: Procname.t list;  (* List of blocks defined in this method *)
+    mutable blocks_static_vars : ((Sil.pvar * Sil.typ) list) Procname.Map.t;
   }
 
 val get_procdesc : t -> Cfg.Procdesc.t
@@ -58,7 +58,9 @@ val create_context : Sil.tenv -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
 
 val create_curr_class : Sil.tenv -> string -> curr_class
 
-val add_block : t -> Procname.t -> unit
+val add_block_static_var : t -> Procname.t -> (Sil.pvar * Sil.typ) -> unit
+
+val static_vars_for_block : t -> Procname.t -> (Sil.pvar * Sil.typ) list
 
 val is_objc_instance : t -> bool
 

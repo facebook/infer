@@ -94,7 +94,8 @@ struct
     let tenv = trans_state.context.CContext.tenv in
     let procdesc = trans_state.context.CContext.procdesc in
     let procname = Cfg.Procdesc.get_proc_name procdesc in
-    let mk_field_from_captured_var (vname, typ, b) =
+    let mk_field_from_captured_var (var, typ) =
+      let vname = Sil.pvar_get_name var in
       let qual_name = Ast_utils.make_qual_name_decl block_name (Mangled.to_string vname) in
       let fname = General_utils.mk_class_field_name qual_name in
       let item_annot = Sil.item_annotation_empty in
@@ -105,8 +106,8 @@ struct
     IList.iter (fun (fn, ft, _) ->
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
-    let block_type = Sil.Tstruct(fields, [], Sil.Class, Some mblock, [], [], []) in
-    let block_name = Sil.TN_csu(Sil.Class, mblock) in
+    let block_type = Sil.Tstruct (fields, [], Sil.Class, Some mblock, [], [], []) in
+    let block_name = Sil.TN_csu (Sil.Class, mblock) in
     Sil.tenv_add tenv block_name block_type;
     let trans_res = CTrans_utils.alloc_trans trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true in
     let id_block = match trans_res.exps with
@@ -114,23 +115,23 @@ struct
       | _ -> assert false in
     let block_var = Sil.mk_pvar mblock procname in
     let declare_block_local =
-      Sil.Declare_locals([(block_var, Sil.Tptr(block_type, Sil.Pk_pointer))], loc) in
+      Sil.Declare_locals ([(block_var, Sil.Tptr (block_type, Sil.Pk_pointer))], loc) in
     (* Adds Nullify of the temp block variable in the predecessors of the exit node. *)
     let pred_exit = Cfg.Node.get_preds (Cfg.Procdesc.get_exit_node procdesc) in
     let block_nullify_instr =
       if pred_exit = [] then
-        [Sil.Nullify(block_var, loc, true)]
+        [Sil.Nullify (block_var, loc, true)]
       else (IList.iter (fun n -> let loc = Cfg.Node.get_loc n in
                          Cfg.Node.append_instrs_temps n [Sil.Nullify(block_var, loc, true)] []) pred_exit;
             []) in
-    let set_instr = Sil.Set(Sil.Lvar block_var, block_type, Sil.Var id_block, loc) in
-    let ids, captured_instrs = IList.split (IList.map (fun (vname, typ, _) ->
-        let id = Ident.create_fresh Ident.knormal in
-        id, Sil.Letderef(id, Sil.Lvar (Sil.mk_pvar vname procname), typ, loc)
-      ) captured_vars) in
+    let set_instr = Sil.Set (Sil.Lvar block_var, block_type, Sil.Var id_block, loc) in
+    let create_field_exp (var, typ) =
+      let id = Ident.create_fresh Ident.knormal in
+      id, Sil.Letderef (id, Sil.Lvar var, typ, loc) in
+    let ids, captured_instrs = IList.split (IList.map create_field_exp captured_vars) in
     let fields_ids = IList.combine fields ids in
     let set_fields = IList.map (fun ((f, t, _), id) ->
-        Sil.Set(Sil.Lfield(Sil.Var id_block, f, block_type), t, Sil.Var id, loc)) fields_ids in
+        Sil.Set (Sil.Lfield (Sil.Var id_block, f, block_type), t, Sil.Var id, loc)) fields_ids in
     (declare_block_local :: trans_res.instrs) @ [set_instr] @ captured_instrs @ set_fields @ block_nullify_instr,
     id_block :: ids
 
@@ -336,6 +337,7 @@ struct
     let pln = trans_state.parent_line_number in
     let sil_loc = CLocation.get_sil_location stmt_info pln context in
     let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
+    CContext.add_block_static_var context procname (pvar, typ);
     let e = Sil.Lvar pvar in
     let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
         let curr_class = CContext.get_curr_class context in
@@ -1874,25 +1876,10 @@ struct
     let loc =
       (match stmt_info.Clang_ast_t.si_source_range with (l1, l2) ->
         CLocation.clang_to_sil_location l1 pln (Some context.CContext.procdesc)) in
-    (* Given a mangled name (possibly full) returns a plain mangled name *)
-    let ensure_plain_mangling m =
-      Mangled.from_string (Mangled.to_string m) in
     (* Given a captured var, return the instruction to assign it to a temp *)
-    let assign_captured_var cv =
-      let cvar, typ = (match cv with
-          | (cvar, typ, false) -> cvar, typ
-          | (cvar, typ, true) -> (* static case *)
-              let formals = Cfg.Procdesc.get_formals context.CContext.procdesc in
-              let cvar' = ensure_plain_mangling cvar in
-              (* we check if cvar' is a formal. In that case we need this plain mangled name *)
-              (* otherwise it's a static variable defined among the locals *)
-              (* and therefore we need the full mangled name *)
-              let cvar''=
-                if (IList.exists(fun (s, t) -> Mangled.from_string s = cvar') formals) then cvar'
-                else cvar in
-              (cvar'', typ)) in
+    let assign_captured_var (cvar, typ) =
       let id = Ident.create_fresh Ident.knormal in
-      let instr = Sil.Letderef (id, Sil.Lvar (Sil.mk_pvar cvar procname), typ, loc) in
+      let instr = Sil.Letderef (id, (Sil.Lvar cvar), typ, loc) in
       (id, instr) in
     match decl with
     | Clang_ast_t.BlockDecl (decl_info, block_decl_info) ->
@@ -1908,14 +1895,15 @@ struct
         let ids_instrs = IList.map assign_captured_var captured_vars in
         let ids, instrs = IList.split ids_instrs in
         let block_data = (context, type_ptr, block_pname, captured_vars) in
-        CContext.add_block context block_pname;
         M.function_decl context.tenv context.cfg context.cg context.namespace decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_exps = IList.map (fun id -> Sil.Var id) ids in
         let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)) :: captured_exps) in
         let block_name = Procname.to_string block_pname in
+        let static_vars = CContext.static_vars_for_block context block_pname in
+        let captured_static_vars = captured_vars @ static_vars in
         let alloc_block_instr, ids_block =
-          allocate_block trans_state block_name captured_vars loc in
+          allocate_block trans_state block_name captured_static_vars loc in
         { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
     | _ -> assert false
 

@@ -19,4 +19,4 @@ val add_var_to_locals : Cfg.Procdesc.t -> Clang_ast_t.decl -> Sil.typ -> Sil.pva
 val compute_autorelease_pool_vars : CContext.t -> Clang_ast_t.stmt list -> (Sil.exp * Sil.typ) list
 
 val captured_vars_from_block_info : CContext.t -> Clang_ast_t.block_captured_variable list ->
-  (Mangled.t * Sil.typ * bool) list
+  (Sil.pvar * Sil.typ) list

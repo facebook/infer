@@ -147,7 +147,7 @@ let do_source_file source_file ast =
   Cg.store_to_file cg_file call_graph;
   Cfg.store_cfg_to_file cfg_file true cfg;
   (*Logging.out "Tenv %a@." Sil.pp_tenv tenv;*)
-  (*Printing.print_tenv tenv;*)
+  (* Printing.print_tenv tenv; *)
   (*Printing.print_procedures cfg; *)
   Sil.store_tenv_to_file tenv_file tenv;
   if !CFrontend_config.stats_mode then Cfg.check_cfg_connectedness cfg;

@@ -33,7 +33,7 @@ type t =
     is_callee_expression : bool;
     namespace: string option; (* contains the name of the namespace if we are in the scope of one*)
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
-    mutable blocks : Procname.t list (* List of blocks defined in this method *)
+    mutable blocks_static_vars : ((Sil.pvar * Sil.typ) list) Procname.Map.t;
   }
 
 let create_context tenv cg cfg procdesc ns curr_class is_objc_method context_opt =
@@ -46,7 +46,7 @@ let create_context tenv cg cfg procdesc ns curr_class is_objc_method context_opt
     is_objc_method = is_objc_method;
     namespace = ns;
     outer_context = context_opt;
-    blocks = []
+    blocks_static_vars = Procname.Map.empty
   }
 
 let get_cfg context = context.cfg
@@ -128,11 +128,29 @@ let create_curr_class tenv class_name =
        | [] -> ContextCls (class_name, None, []))
   | _ -> assert false
 
-let rec add_block context block =
-  context.blocks <- block :: context.blocks;
-  match context.outer_context with
-  | Some outer_context -> add_block outer_context block
-  | None -> ()
+let add_block_static_var context block_name static_var_typ =
+  match context.outer_context, static_var_typ with
+  | Some outer_context, (static_var, typ) when Sil.pvar_is_global static_var ->
+      (let new_static_vars, duplicate =
+         try
+           let static_vars = Procname.Map.find block_name outer_context.blocks_static_vars in
+           if IList.mem (
+               fun (var1, typ1) (var2, typ2) -> Sil.pvar_equal var1 var2
+             ) static_var_typ static_vars then
+             static_vars, true
+           else
+             static_var_typ :: static_vars, false
+         with Not_found -> [static_var_typ], false in
+       if not duplicate then
+         let blocks_static_vars =
+           Procname.Map.add block_name new_static_vars outer_context.blocks_static_vars in
+         outer_context.blocks_static_vars <- blocks_static_vars)
+  | _ -> ()
+
+let static_vars_for_block context block_name =
+  try Procname.Map.find block_name context.blocks_static_vars
+  with Not_found -> []
+
 
 let rec get_outer_procname context =
   match context.outer_context with

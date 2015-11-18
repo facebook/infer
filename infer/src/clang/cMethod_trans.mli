@@ -21,7 +21,7 @@ type method_call_type =
   | MCStatic
 
 val create_local_procdesc : Cfg.cfg -> Sil.tenv -> CMethod_signature.method_signature ->
-  Clang_ast_t.stmt list -> (Mangled.t * Sil.typ * bool) list -> bool -> bool
+  Clang_ast_t.stmt list -> (Sil.pvar * Sil.typ) list -> bool -> bool
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.typ list) option -> unit
 
