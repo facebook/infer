@@ -22,7 +22,7 @@ end
 
 module type CMethod_declaration =
 sig
-  val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> string option -> Clang_ast_t.decl ->
+  val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
     block_data option -> unit
 
   val process_getter_setter : CContext.t ->  Procname.t -> bool

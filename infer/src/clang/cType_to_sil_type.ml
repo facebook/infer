@@ -129,23 +129,23 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   let typ = `DeclPtr decl_ptr in
   try Clang_ast_types.TypePointerMap.find typ !CFrontend_config.sil_types_map
   with Not_found ->
-  match Ast_utils.get_decl decl_ptr with
-  | Some (CXXRecordDecl _ as d)
-  | Some (RecordDecl _ as d)
-  | Some (ObjCInterfaceDecl _ as d)
-  | Some (ObjCImplementationDecl _ as d)
-  | Some (ObjCProtocolDecl _ as d)
-  | Some (ObjCCategoryDecl _ as d)
-  | Some (ObjCCategoryImplDecl _ as d)
-  | Some (EnumDecl _ as d) -> translate_decl tenv None d
-  | Some _ ->
-      Printing.log_err "Warning: Wrong decl found for  pointer %s "
-        (Clang_ast_j.string_of_pointer decl_ptr);
-      Sil.Tvoid
-  | None ->
-      Printing.log_err "Warning: Decl pointer %s not found."
-        (Clang_ast_j.string_of_pointer decl_ptr);
-      Sil.Tvoid
+    match Ast_utils.get_decl decl_ptr with
+    | Some (CXXRecordDecl _ as d)
+    | Some (RecordDecl _ as d)
+    | Some (ObjCInterfaceDecl _ as d)
+    | Some (ObjCImplementationDecl _ as d)
+    | Some (ObjCProtocolDecl _ as d)
+    | Some (ObjCCategoryDecl _ as d)
+    | Some (ObjCCategoryImplDecl _ as d)
+    | Some (EnumDecl _ as d) -> translate_decl tenv d
+    | Some _ ->
+        Printing.log_err "Warning: Wrong decl found for  pointer %s "
+          (Clang_ast_j.string_of_pointer decl_ptr);
+        Sil.Tvoid
+    | None ->
+        Printing.log_err "Warning: Decl pointer %s not found."
+          (Clang_ast_j.string_of_pointer decl_ptr);
+        Sil.Tvoid
 
 and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
   try

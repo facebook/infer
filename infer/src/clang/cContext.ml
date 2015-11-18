@@ -31,12 +31,11 @@ type t =
     is_objc_method : bool;
     curr_class: curr_class;
     is_callee_expression : bool;
-    namespace: string option; (* contains the name of the namespace if we are in the scope of one*)
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
     mutable blocks_static_vars : ((Sil.pvar * Sil.typ) list) Procname.Map.t;
   }
 
-let create_context tenv cg cfg procdesc ns curr_class is_objc_method context_opt =
+let create_context tenv cg cfg procdesc curr_class is_objc_method context_opt =
   { tenv = tenv;
     cg = cg;
     cfg = cfg;
@@ -44,7 +43,6 @@ let create_context tenv cg cfg procdesc ns curr_class is_objc_method context_opt
     curr_class = curr_class;
     is_callee_expression = false;
     is_objc_method = is_objc_method;
-    namespace = ns;
     outer_context = context_opt;
     blocks_static_vars = Procname.Map.empty
   }

@@ -34,8 +34,6 @@ end
 
 module Ast_utils :
 sig
-  val namespace_to_string : string option -> string
-
   val string_of_stmt : Clang_ast_t.stmt -> string
 
   val get_stmts_from_stmt : Clang_ast_t.stmt -> Clang_ast_t.stmt list

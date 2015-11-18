@@ -26,7 +26,6 @@ type t =
     is_objc_method : bool;
     curr_class: curr_class;
     is_callee_expression : bool;
-    namespace: string option; (* contains the name of the namespace if we are in the scope of one*)
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
     mutable blocks_static_vars : ((Sil.pvar * Sil.typ) list) Procname.Map.t;
   }
@@ -54,7 +53,7 @@ val is_objc_method : t -> bool
 val get_tenv : t -> Sil.tenv
 
 val create_context : Sil.tenv -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
-  string option -> curr_class -> bool -> t option -> t
+  curr_class -> bool -> t option -> t
 
 val create_curr_class : Sil.tenv -> string -> curr_class
 

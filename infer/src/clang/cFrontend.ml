@@ -20,12 +20,10 @@ open CFrontend_utils
 open CGen_trans
 
 (* Translate one global declaration *)
-let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
+let rec translate_one_declaration tenv cg cfg parent_dec dec =
   let open Clang_ast_t in
   (* each procedure has different scope: start names from id 0 *)
   Ident.NameGenerator.reset ();
-
-  let ns_suffix = Ast_utils.namespace_to_string namespace in
   let info = Clang_ast_proj.get_decl_tuple dec in
   CLocation.update_curr_file info;
   let source_range = info.Clang_ast_t.di_source_range in
@@ -33,14 +31,14 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
   (if should_translate_decl then
      match dec with
      | FunctionDecl(di, name_info, tp, fdecl_info) ->
-         CMethod_declImpl.function_decl tenv cfg cg namespace dec None
+         CMethod_declImpl.function_decl tenv cfg cg dec None
 
      (* Currently C/C++ record decl treated in the same way *)
      | CXXRecordDecl (_, _, _, _, decl_list, _, _, _) | RecordDecl (_, _, _, _, decl_list, _, _) ->
-         ignore (CTypes_decl.add_types_from_decl_to_tenv tenv namespace dec);
+         ignore (CTypes_decl.add_types_from_decl_to_tenv tenv dec);
          let method_decls = CTypes_decl.get_method_decls dec decl_list in
          let tranlate_method (parent, decl) =
-           translate_one_declaration tenv cg cfg namespace parent decl in
+           translate_one_declaration tenv cg cfg parent decl in
          IList.iter tranlate_method method_decls
 
      | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info) ->
@@ -48,31 +46,31 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
          let curr_class = ObjcInterface_decl.get_curr_class name oi_decl_info in
          ignore
            (ObjcInterface_decl.interface_declaration CTypes_decl.type_ptr_to_sil_type tenv dec);
-         CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
+         CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list
 
      | ObjCProtocolDecl(decl_info, name_info, decl_list, decl_context_info, _) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = CContext.ContextProtocol name in
          ignore (ObjcProtocol_decl.protocol_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
-         CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
+         CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list
 
      | ObjCCategoryDecl(decl_info, name_info, decl_list, decl_context_info, ocdi) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcCategory_decl.get_curr_class_from_category_decl name ocdi in
          ignore (ObjcCategory_decl.category_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
-         CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
+         CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list
 
      | ObjCCategoryImplDecl(decl_info, name_info, decl_list, decl_context_info, ocidi) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
          ignore (ObjcCategory_decl.category_impl_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
-         CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
+         CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list
 
      | ObjCImplementationDecl(decl_info, name_info, decl_list, decl_context_info, idi) ->
          let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
          let type_ptr_to_sil_type = CTypes_decl.type_ptr_to_sil_type in
          ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
-         CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list;
+         CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list;
          CFrontend_errors.check_for_property_errors cfg curr_class
 
      | CXXMethodDecl (decl_info, name_info, type_ptr, function_decl_info, _)
@@ -87,19 +85,17 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
               let class_name = CTypes_decl.get_record_name d in
               let curr_class = CContext.ContextCls(class_name, None, []) in
               if !CFrontend_config.testing_mode then
-                CMethod_declImpl.process_methods tenv cg cfg curr_class namespace [dec]
+                CMethod_declImpl.process_methods tenv cg cfg curr_class [dec]
           | Some dec -> Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
           | None -> ())
      | dec -> ());
   match dec with
   | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
-
   | LinkageSpecDecl (decl_info, decl_list, decl_context_info) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
-      IList.iter (translate_one_declaration tenv cg cfg namespace dec) decl_list
+      IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
   | NamespaceDecl (decl_info, name_info, decl_list, decl_context_info, _) ->
-      let name = ns_suffix^name_info.Clang_ast_t.ni_name in
-      IList.iter (translate_one_declaration tenv cg cfg (Some name) dec) decl_list
+      IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
   | dec -> ()
 
 (* Translates a file by translating the ast into a cfg. *)
@@ -110,7 +106,7 @@ let compute_icfg tenv source_file ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in
-      IList.iter (translate_one_declaration tenv cg cfg None ast) decl_list;
+      IList.iter (translate_one_declaration tenv cg cfg ast) decl_list;
       Printing.log_out "\n Finished creating icfg\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

@@ -142,12 +142,6 @@ struct
         []
     | _ -> snd (Clang_ast_proj.get_stmt_tuple stmt)
 
-  let namespace_to_string namespace =
-    match namespace with
-    | None -> ""
-    | Some ns when ns ="" -> ""
-    | Some ns -> ns^"::"
-
   let fold_qual_name qual_name_list =
     match qual_name_list with
     | [] -> ""

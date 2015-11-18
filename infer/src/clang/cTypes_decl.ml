@@ -108,7 +108,7 @@ let get_method_decls parent decl_list =
   and traverse_decl_list parent decl_list = IList.flatten (IList.map (traverse_decl parent) decl_list)  in
   traverse_decl_list parent decl_list
 
-let get_class_methods tenv class_name namespace decl_list =
+let get_class_methods tenv class_name decl_list =
   let process_method_decl = function
     | Clang_ast_t.CXXMethodDecl (decl_info, name_info, tp, function_decl_info, _)
     | Clang_ast_t.CXXConstructorDecl (decl_info, name_info, tp, function_decl_info, _) ->
@@ -143,7 +143,7 @@ let add_struct_to_tenv tenv typ =
   let typename = Sil.TN_csu(csu, mangled) in
   Sil.tenv_add tenv typename typ
 
-let rec get_struct_fields tenv namespace decl =
+let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
   let decl_list = match decl with
     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
@@ -159,14 +159,14 @@ let rec get_struct_fields tenv namespace decl =
     | RecordDecl (decl_info, _, _, _, _, _, _) ->
         (* C++/C Records treated in the same way*)
         if not decl_info.Clang_ast_t.di_is_implicit then
-          ignore (add_types_from_decl_to_tenv tenv namespace decl); []
+          ignore (add_types_from_decl_to_tenv tenv decl); []
     | _ -> [] in
   let base_decls = get_superclass_decls decl in
-  let base_class_fields = IList.map (get_struct_fields tenv namespace) base_decls in
+  let base_class_fields = IList.map (get_struct_fields tenv) base_decls in
   IList.flatten (base_class_fields @ (IList.map do_one_decl decl_list))
 
 (* For a record declaration it returns/constructs the type *)
-and get_strct_cpp_class_declaration_type tenv namespace decl =
+and get_strct_cpp_class_declaration_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
@@ -179,13 +179,13 @@ and get_strct_cpp_class_declaration_type tenv namespace decl =
       if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
         Printing.log_err
           "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
-      let non_static_fields = get_struct_fields tenv namespace decl in
+      let non_static_fields = get_struct_fields tenv decl in
       let non_static_fields' = if CTrans_models.is_objc_memory_model_controlled name then
           General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
         else non_static_fields in
       let sorted_non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields' in
       let static_fields = [] in (* Warning for the moment we do not treat static field. *)
-      let methods = get_class_methods tenv name namespace decl_list in (* C++ methods only *)
+      let methods = get_class_methods tenv name decl_list in (* C++ methods only *)
       let superclasses = get_superclass_list decl in
       let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
       let sil_type = Sil.Tstruct (sorted_non_static_fields, static_fields, csu, Some mangled_name,
@@ -195,12 +195,12 @@ and get_strct_cpp_class_declaration_type tenv namespace decl =
       sil_type
   | _ -> assert false
 
-and add_types_from_decl_to_tenv tenv namespace decl =
+and add_types_from_decl_to_tenv tenv decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
   | RecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info) ->
-      get_strct_cpp_class_declaration_type tenv namespace decl
+      get_strct_cpp_class_declaration_type tenv decl
   | ObjCInterfaceDecl _ -> ObjcInterface_decl.interface_declaration type_ptr_to_sil_type tenv decl
   | ObjCImplementationDecl _ ->
       ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv decl
