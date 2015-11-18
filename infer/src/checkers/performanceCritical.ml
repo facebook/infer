@@ -28,10 +28,9 @@ let search_expensive_call checked_pnames expensive_callee (pname, _) =
       else
         begin
           checked_pnames := Procname.Set.add pname !checked_pnames;
-          match Specs.get_summary pname with
+          match Specs.proc_resolve_attributes pname with
           | None -> None
-          | Some summary ->
-              let attributes = Specs.get_attributes summary in
+          | Some attributes ->
               let annotated_signature = Annotations.get_annotated_signature attributes in
               let ret_annotation, _ = annotated_signature.Annotations.ret in
               if Annotations.ia_calls_expensive ret_annotation then
@@ -56,9 +55,10 @@ let is_expensive attributes =
 
 
 let check_method check pname =
-  match AttributesTable.load_attributes pname with
+  match Specs.proc_resolve_attributes pname with
   | None -> false
-  | Some attributes -> check_attributes check attributes
+  | Some attributes ->
+      check_attributes check attributes
 
 
 let method_is_performance_critical pname =
@@ -71,9 +71,7 @@ let method_is_expensive pname =
 
 let update_summary_attributes pname =
   match Specs.get_summary pname with
-  | None ->
-      let pname_str = Procname.to_string pname in
-      failwith ("The summary should have been created before running the checker on "^pname_str)
+  | None -> ()
   | Some summary ->
       let attributes = Specs.get_attributes summary in
       let ret_annot, param_annot = attributes.ProcAttributes.method_annotation in
