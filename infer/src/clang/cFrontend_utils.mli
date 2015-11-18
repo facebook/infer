@@ -87,8 +87,11 @@ sig
 
   val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Sil.exp option
 
-  (** creates a string to append to a name from a list of qualifiers to a name *)
-  val get_qualifier_string : Clang_ast_t.named_decl_info -> string
+  (** returns fully qualified name given name info *)
+  val get_qualified_name : Clang_ast_t.named_decl_info -> string
+
+  (** returns qualified class name given member name info *)
+  val get_class_name_from_member : Clang_ast_t.named_decl_info -> string
 
   (** looks up clang pointer to type and returns c_type. It requires type_ptr to be `TPtr. *)
   val get_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
@@ -105,7 +108,7 @@ sig
 
   val make_name_decl : string -> Clang_ast_t.named_decl_info
 
-  val make_qual_name_decl : string -> string -> Clang_ast_t.named_decl_info
+  val make_qual_name_decl : string list -> string -> Clang_ast_t.named_decl_info
 
   type type_ptr_to_sil_type =  Sil.tenv -> Clang_ast_t.type_ptr -> Sil.typ
 

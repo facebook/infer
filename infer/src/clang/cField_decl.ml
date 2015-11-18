@@ -30,7 +30,9 @@ let fields_superclass tenv interface_decl_info =
   match interface_decl_info.Clang_ast_t.otdi_super with
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
-       | Some sc -> get_fields_super_classes tenv (CTypes.mk_classname sc.Clang_ast_t.ni_name)
+       | Some sc ->
+           let classname = CTypes.mk_classname (Ast_utils.get_qualified_name sc) in
+           get_fields_super_classes tenv classname
        | _ -> [])
   | _ -> []
 

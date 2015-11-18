@@ -44,26 +44,26 @@ let rec translate_one_declaration tenv cg cfg namespace parent_dec dec =
          IList.iter tranlate_method method_decls
 
      | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info) ->
-         let name = name_info.Clang_ast_t.ni_name in
+         let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcInterface_decl.get_curr_class name oi_decl_info in
          ignore
            (ObjcInterface_decl.interface_declaration CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
      | ObjCProtocolDecl(decl_info, name_info, decl_list, decl_context_info, _) ->
-         let name = name_info.Clang_ast_t.ni_name in
+         let name = Ast_utils.get_qualified_name name_info in
          let curr_class = CContext.ContextProtocol name in
          ignore (ObjcProtocol_decl.protocol_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
      | ObjCCategoryDecl(decl_info, name_info, decl_list, decl_context_info, ocdi) ->
-         let name = name_info.Clang_ast_t.ni_name in
+         let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcCategory_decl.get_curr_class_from_category_decl name ocdi in
          ignore (ObjcCategory_decl.category_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list
 
      | ObjCCategoryImplDecl(decl_info, name_info, decl_list, decl_context_info, ocidi) ->
-         let name = name_info.Clang_ast_t.ni_name in
+         let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
          ignore (ObjcCategory_decl.category_impl_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class namespace decl_list

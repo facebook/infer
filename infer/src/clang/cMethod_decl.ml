@@ -72,7 +72,7 @@ struct
       | Some (outer_context, _, _, captured_vars) -> captured_vars, Some outer_context
       | None -> [], None in
     let ms, body_opt, extra_instrs =
-      CMethod_trans.method_signature_of_decl None func_decl block_data_opt in
+      CMethod_trans.method_signature_of_decl func_decl block_data_opt in
     match body_opt with
     | Some body -> (* Only in the case the function declaration has a defined body we create a procdesc *)
         let procname = CMethod_signature.ms_get_name ms in
@@ -82,9 +82,8 @@ struct
     | None -> ()
 
   let process_method_decl tenv cg cfg namespace curr_class meth_decl ~is_objc =
-    let class_name = Some (CContext.get_curr_class_name curr_class) in
     let ms, body_opt, extra_instrs =
-      CMethod_trans.method_signature_of_decl class_name meth_decl None in
+      CMethod_trans.method_signature_of_decl meth_decl None in
     match body_opt with
     | Some body ->
         let is_instance = CMethod_signature.ms_is_instance ms in

@@ -108,10 +108,10 @@ let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
   IList.map create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
 
-let method_signature_of_decl class_name_opt meth_decl block_data_opt =
+let method_signature_of_decl meth_decl block_data_opt =
   let open Clang_ast_t in
-  match meth_decl, block_data_opt, class_name_opt with
-  | FunctionDecl (decl_info, name_info, tp, fdi), _, _ ->
+  match meth_decl, block_data_opt with
+  | FunctionDecl (decl_info, name_info, tp, fdi), _ ->
       let name = name_info.ni_name in
       let language = !CFrontend_config.language in
       let func_decl = Func_decl_info (fdi, tp, language) in
@@ -120,17 +120,19 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       let ms = build_method_signature decl_info procname func_decl false false in
       let extra_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
-  | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _, Some class_name
-  | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _, Some class_name ->
+  | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
+  | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
       let method_name = name_info.Clang_ast_t.ni_name in
+      let class_name = Ast_utils.get_class_name_from_member name_info in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, class_name, tp)  in
       let ms = build_method_signature decl_info procname method_decl false false in
       let non_null_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
-  | ObjCMethodDecl (decl_info, name_info, mdi), _, Some class_name ->
+  | ObjCMethodDecl (decl_info, name_info, mdi), _ ->
       let method_name = name_info.ni_name in
+      let class_name = Ast_utils.get_class_name_from_member name_info in
       let is_instance = mdi.omdi_is_instance_method in
       let method_kind = Procname.objc_method_kind_of_bool is_instance in
       let procname = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
@@ -139,19 +141,18 @@ let method_signature_of_decl class_name_opt meth_decl block_data_opt =
       let ms = build_method_signature decl_info procname method_decl false is_generated in
       let extra_instrs = get_assume_not_null_calls ms mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
-  | BlockDecl (decl_info, bdi),
-    Some (outer_context, tp, procname, _), _ ->
+  | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
       let ms = build_method_signature decl_info procname func_decl true false in
       let extra_instrs = get_assume_not_null_calls ms bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
 
-let method_signature_of_pointer class_name_opt pointer =
+let method_signature_of_pointer pointer =
   try
     match Ast_utils.get_decl pointer with
     | Some meth_decl ->
-        let ms, _, _ = method_signature_of_decl class_name_opt meth_decl None in
+        let ms, _, _ = method_signature_of_decl meth_decl None in
         Some ms
     | None -> None
   with Invalid_declaration -> None
@@ -320,7 +321,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
 
 let create_procdesc_with_pointer context pointer class_name_opt name tp =
   let open CContext in
-  match method_signature_of_pointer class_name_opt pointer with
+  match method_signature_of_pointer pointer with
   | Some callee_ms ->
       ignore (create_local_procdesc context.cfg context.tenv callee_ms [] [] false);
       CMethod_signature.ms_get_name callee_ms

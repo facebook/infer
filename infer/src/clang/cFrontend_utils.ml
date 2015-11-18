@@ -148,20 +148,30 @@ struct
     | Some ns when ns ="" -> ""
     | Some ns -> ns^"::"
 
-  let get_qualifier_string name_info =
-    match name_info.Clang_ast_t.ni_qual_name with
+  let fold_qual_name qual_name_list =
+    match qual_name_list with
     | [] -> ""
-    | name :: qualifiers ->
-        IList.fold_right (fun el res -> res ^ el ^ "::") qualifiers ""
+    | name :: quals ->
+        let s = (IList.fold_right (fun el res -> res ^ el ^ "::") quals "") ^ name in
+        let no_slash = Str.global_replace (Str.regexp "/") "_" s in
+        no_slash
+
+  let get_qualified_name name_info =
+    fold_qual_name name_info.Clang_ast_t.ni_qual_name
+
+  let get_class_name_from_member member_name_info =
+    match member_name_info.Clang_ast_t.ni_qual_name with
+    | _ :: class_qual_list -> fold_qual_name class_qual_list
+    | [] -> assert false
 
   let make_name_decl name = {
     Clang_ast_t.ni_name = name;
     ni_qual_name = [name];
   }
 
-  let make_qual_name_decl class_name name = {
+  let make_qual_name_decl class_name_quals name = {
     Clang_ast_t.ni_name = name;
-    ni_qual_name = [name; class_name];
+    ni_qual_name = name :: class_name_quals;
   }
 
   let property_name property_impl_decl_info =
@@ -239,7 +249,7 @@ struct
 
   let name_opt_of_name_info_opt name_info_opt =
     match name_info_opt with
-    | Some name_info -> Some name_info.Clang_ast_t.ni_name
+    | Some name_info -> Some (get_qualified_name name_info)
     | None -> None
 
   let rec getter_attribute_opt attributes =
@@ -274,7 +284,12 @@ struct
 
   let is_generated name_info =
     match name_info.Clang_ast_t.ni_qual_name with
-    | generated:: rest -> generated = CFrontend_config.generated_suffix
+    | name :: quals ->
+        (try
+           let rexp = Str.regexp CFrontend_config.generated_suffix in
+           let _ = Str.search_forward rexp name 0 in
+           true
+         with Not_found -> false)
     | _ -> false
 
   let get_decl decl_ptr =
@@ -487,9 +502,8 @@ struct
 
   let mk_class_field_name field_qual_name =
     let field_name = field_qual_name.Clang_ast_t.ni_name in
-    let prefix = Ast_utils.get_qualifier_string field_qual_name in
-    Ident.create_fieldname (Mangled.mangled field_name prefix) 0
-
+    let class_name = Ast_utils.get_class_name_from_member field_qual_name in
+    Ident.create_fieldname (Mangled.mangled field_name class_name) 0
 
   let get_rel_file_path file_opt =
     match file_opt with

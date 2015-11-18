@@ -20,7 +20,7 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCProtocolDecl(decl_info, name_info, decl_list, _, obj_c_protocol_decl_info) ->
-      let name = name_info.Clang_ast_t.ni_name in
+      let name = Ast_utils.get_qualified_name name_info in
       let curr_class = CContext.ContextProtocol name in
       (* Adds pairs (protocol name, protocol_type_info) to the global environment. *)
       (* Protocol_type_info contains the methods composing the protocol. *)

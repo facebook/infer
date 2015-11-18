@@ -272,8 +272,11 @@ let get_memory_management_attribute attributes =
   with Not_found -> None
 
 let create_generated_method_name name_info =
+  let qual_name = match name_info.Clang_ast_t.ni_qual_name with
+    | [] -> []
+    | name :: quals -> (name ^ CFrontend_config.generated_suffix) :: quals in
   { Clang_ast_t.ni_name = name_info.Clang_ast_t.ni_name;
-    ni_qual_name = CFrontend_config.generated_suffix:: name_info.Clang_ast_t.ni_qual_name;
+    ni_qual_name = qual_name;
   }
 
 let get_ivar_name prop_name ivar_opt =

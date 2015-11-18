@@ -21,7 +21,7 @@ let noname_category class_name =
 
 let cat_class_decl dr =
   match dr.Clang_ast_t.dr_name with
-  | Some n -> n.Clang_ast_t.ni_name
+  | Some n -> Ast_utils.get_qualified_name n
   | _ -> assert false
 
 let get_curr_class_from_category name decl_ref_opt =
@@ -77,7 +77,7 @@ let category_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCCategoryDecl (decl_info, name_info, decl_list, decl_context_info, cdi) ->
-      let name = name_info.Clang_ast_t.ni_name in
+      let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_decl name cdi in
       Printing.log_out "ADDING: ObjCCategoryDecl for '%s'\n" name;
       let _ = add_class_decl type_ptr_to_sil_type tenv cdi in
@@ -90,7 +90,7 @@ let category_impl_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCCategoryImplDecl (decl_info, name_info, decl_list, decl_context_info, cii) ->
-      let name = name_info.Clang_ast_t.ni_name in
+      let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_impl name cii in
       Printing.log_out "ADDING: ObjCCategoryImplDecl for '%s'\n" name;
       let _ = add_category_decl type_ptr_to_sil_type tenv cii in

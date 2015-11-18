@@ -47,7 +47,7 @@ let get_super_interface_decl otdi_super =
 let get_protocols protocols =
   let protocol_names = IList.map (
       fun decl -> match decl.Clang_ast_t.dr_name with
-        | Some name -> name.Clang_ast_t.ni_name
+        | Some name_info -> Ast_utils.get_qualified_name name_info
         | None -> assert false
     ) protocols in
   protocol_names
@@ -63,7 +63,7 @@ let get_curr_class_impl oi =
   | Some decl_ref ->
       (match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
        | Some ObjCInterfaceDecl (_, name_info, _, _, obj_c_interface_decl_info) ->
-           let class_name = name_info.Clang_ast_t.ni_name in
+           let class_name = Ast_utils.get_qualified_name name_info in
            get_curr_class class_name obj_c_interface_decl_info
        | _ -> assert false)
   | _ -> assert false
@@ -166,7 +166,7 @@ let interface_declaration type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
-      let name = name_info.Clang_ast_t.ni_name in
+      let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class name ocidi in
       let typ =
         add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name decl_list ocidi in
@@ -183,7 +183,7 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCImplementationDecl (decl_info, name_info, decl_list, decl_context_info, idi) ->
-      let class_name = name_info.Clang_ast_t.ni_name in
+      let class_name = Ast_utils.get_qualified_name name_info in
       Printing.log_out "ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
       let _ = add_class_decl type_ptr_to_sil_type tenv idi in
       let curr_class = get_curr_class_impl idi in

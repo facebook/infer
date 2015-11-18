@@ -73,13 +73,12 @@ let add_predefined_types tenv =
 let create_csu opt_type =
   match opt_type with
   | `Type s ->
-      (let no_slash = Str.global_replace (Str.regexp "/") "_" s in
-       let buf = Str.split (Str.regexp "[ \t]+") no_slash in
+      (let buf = Str.split (Str.regexp "[ \t]+") s in
        match buf with
-       | "struct":: l ->Sil.Struct, General_utils.string_from_list l
-       | "class":: l -> Sil.Class, General_utils.string_from_list l
-       | "union":: l -> Sil.Union, General_utils.string_from_list l
-       | _ -> Sil.Struct, s)
+       | "struct":: l ->Sil.Struct
+       | "class":: l -> Sil.Class
+       | "union":: l -> Sil.Union
+       | _ -> Sil.Struct)
   | _ -> assert false
 
 (* We need to take the name out of the type as the struct can be anonymous*)
@@ -92,12 +91,9 @@ let get_record_name_csu decl =
         (* types that have methods. And in C++ struct/class/union can have methods *)
         name_info, opt_type, not cxx_record_info.xrdi_is_c_like
     | _-> assert false in
-  let name_str = name_info.ni_name in
-  let csu, type_name = create_csu opt_type in
+  let csu  = create_csu opt_type in
   let csu' = if should_be_class then Sil.Class else csu in
-  let prefix = Ast_utils.get_qualifier_string name_info in
-  let name =
-    if (String.length name_str = 0) then prefix ^ type_name else prefix ^ name_str in
+  let name = Ast_utils.get_qualified_name name_info in
   csu', name
 
 let get_record_name decl = snd (get_record_name_csu decl)

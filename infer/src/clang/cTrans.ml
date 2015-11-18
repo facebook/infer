@@ -48,7 +48,7 @@ struct
         let found_method =
           match method_pointer_opt with
           | Some pointer ->
-              (match CMethod_trans.method_signature_of_pointer (Some class_name) pointer with
+              (match CMethod_trans.method_signature_of_pointer pointer with
                | Some callee_ms ->
                    if not (M.process_getter_setter context callee_pn) then
                      (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
@@ -96,7 +96,7 @@ struct
     let procname = Cfg.Procdesc.get_proc_name procdesc in
     let mk_field_from_captured_var (var, typ) =
       let vname = Sil.pvar_get_name var in
-      let qual_name = Ast_utils.make_qual_name_decl block_name (Mangled.to_string vname) in
+      let qual_name = Ast_utils.make_qual_name_decl [block_name] (Mangled.to_string vname) in
       let fname = General_utils.mk_class_field_name qual_name in
       let item_annot = Sil.item_annotation_empty in
       fname, typ, item_annot in
@@ -377,6 +377,7 @@ struct
     let context = trans_state.context in
     let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
     let method_name = name_info.Clang_ast_t.ni_name in
+    let class_name = Ast_utils.get_class_name_from_member name_info in
     Printing.log_out "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     (* we don't handle C++ static methods yet - when they are called, this might cause a crash *)
@@ -385,7 +386,6 @@ struct
         "WARNING: in Method call we expect to know the object\n" in
     (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
     (* unlike field access, for method calls there is no need to expand class type *)
-    let class_name = match class_typ with Sil.Tptr (t, _) | t -> CTypes.classname_of_type t in
     let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
         method_name type_ptr in
     let method_exp = (Sil.Const (Sil.Cfun pname), method_typ) in
