@@ -26,6 +26,12 @@ public class InferBuiltins {
       __infer_assume(condition);
     }
 
+    // use this instead of "assume o != null". being non-null and allocated are different to Infer
+    public static void assume_allocated(Object o) {
+      assume(o != null);
+      o.hashCode();
+    }
+
     public native static String __split_get_nth(String s, String sep, int n);
 
     public native static void __set_taint_attribute(Object o);

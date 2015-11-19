@@ -57,7 +57,10 @@ public class TaintTest {
         "taintToStringEquals",
         "taintToStringCompareTo",
         "taintToStringEndsWith",
-        "taintToStringStartsWith"
+        "taintToStringStartsWith",
+        "socketNotVerifiedSimple",
+        "socketVerifiedForgotToCheckRetval",
+        "socketIgnoreExceptionNoVerify"
     };
 
     assertThat(

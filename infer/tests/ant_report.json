@@ -30,6 +30,21 @@
     "bug_type": "CONTEXT_LEAK"
   },
   {
+    "procedure": "InputStream TaintExample.socketIgnoreExceptionNoVerify(SSLSocketFactory)",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+  },
+  {
+    "procedure": "InputStream TaintExample.socketNotVerifiedSimple(SSLSocketFactory)",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+  },
+  {
+    "procedure": "InputStream TaintExample.socketVerifiedForgotToCheckRetval(SSLSocketFactory,HostnameVerifier,SSLSession)",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+  },
+  {
     "procedure": "String TaintExample.taintGetAuthorityCompareTo(String)",
     "file": "codetoanalyze/java/infer/TaintExample.java",
     "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"

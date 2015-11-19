@@ -19,4 +19,7 @@ public class Object {
         return c;
     }
 
+    public int hashCode() {
+      return InferUndefined.int_undefined();
+    }
 }

@@ -9,9 +9,17 @@
 
 package codetoanalyze.java.infer;
 
-
+import java.io.InputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.net.URL;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 public class TaintExample {
 
@@ -252,5 +260,64 @@ public class TaintExample {
         res = test_startsWith(s1);
         return res;
     }
+
+  public InputStream socketNotVerifiedSimple(SSLSocketFactory f)
+    throws IOException {
+    Socket socket = f.createSocket();
+    return socket.getInputStream();
+  }
+
+  public InputStream socketVerifiedForgotToCheckRetval(SSLSocketFactory f,
+                                                       HostnameVerifier v,
+                                                       SSLSession session)
+    throws IOException {
+
+    Socket socket = f.createSocket();
+    v.verify("hostname", session);
+    return socket.getInputStream();
+  }
+
+  public InputStream socketVerifiedOk1(SSLSocketFactory f,
+                                       HostnameVerifier v,
+                                       SSLSession session)
+    throws IOException {
+
+    Socket socket = f.createSocket();
+    if (v.verify("hostname", session)) {
+      return socket.getInputStream();
+    } else {
+      return null;
+    }
+  }
+
+
+  HostnameVerifier mHostnameVerifier;
+
+  public void throwExceptionIfNoVerify(SSLSocket sslSocket, String host)
+    throws IOException {
+
+    if (!mHostnameVerifier.verify(host, sslSocket.getSession())) {
+      throw new SSLException("Couldn't verify!");
+    }
+  }
+
+  public InputStream socketVerifiedOk2(SSLSocketFactory f) throws IOException {
+    SSLSocket s = (SSLSocket) f.createSocket();
+    throwExceptionIfNoVerify(s, "hostname");
+    return s.getInputStream();
+  }
+
+  public InputStream socketIgnoreExceptionNoVerify(SSLSocketFactory f)
+    throws IOException {
+
+    SSLSocket s = (SSLSocket) f.createSocket();
+    try {
+      throwExceptionIfNoVerify(s, "hostname");
+    } catch (SSLException e) {
+      // ignore the fact that verifying the socket failed
+    }
+    return s.getInputStream();
+  }
+
 
 }

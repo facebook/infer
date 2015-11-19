@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.facebook.infer.models.InferBuiltins;
+
 public class Socket {
 
     SocketImpl impl;
@@ -65,14 +67,17 @@ public class Socket {
     }
 
     public InputStream getInputStream() throws IOException {
-        return ((PlainSocketImpl) impl).getInputStream();
+      InferBuiltins.assume(!InferBuiltins.__state_untainted(this));
+      return ((PlainSocketImpl) impl).getInputStream();
     }
 
     public OutputStream getOutputStream() throws IOException {
-        return ((PlainSocketImpl) impl).getOutputStream();
+      InferBuiltins.assume(!InferBuiltins.__state_untainted(this));
+      return ((PlainSocketImpl) impl).getOutputStream();
     }
 
     public synchronized void close() throws IOException {
         ((PlainSocketImpl) impl).close();
     }
+
 }
