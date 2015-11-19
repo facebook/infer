@@ -29,21 +29,22 @@ type method_call_type =
 
 type function_method_decl_info =
   | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.type_ptr * CFrontend_config.lang
-  | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * string * Clang_ast_t.type_ptr
+  | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.cxx_method_decl_info * string * Clang_ast_t.type_ptr
   | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * string
   | Block_decl_info of Clang_ast_t.block_decl_info * Clang_ast_t.type_ptr * CContext.t
 
 let is_instance_method function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info _  | Block_decl_info _ -> false
-  | Cpp_Meth_decl_info _ -> true
+  | Cpp_Meth_decl_info (_, method_decl_info, _, _) ->
+      not method_decl_info.Clang_ast_t.xmdi_is_static
   | ObjC_Meth_decl_info (method_decl_info, _) ->
       method_decl_info.Clang_ast_t.omdi_is_instance_method
 
 let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info) then
     match function_method_decl_info with
-    | Cpp_Meth_decl_info (_, class_name, _) ->
+    | Cpp_Meth_decl_info (_, _, class_name, _) ->
         let class_type = Ast_expressions.create_class_type class_name in
         [(CFrontend_config.this, class_type)]
     | ObjC_Meth_decl_info (_, class_name) ->
@@ -55,7 +56,8 @@ let get_class_param function_method_decl_info =
 let get_param_decls function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info (function_decl_info, _, _)
-  | Cpp_Meth_decl_info (function_decl_info, _, _) -> function_decl_info.Clang_ast_t.fdi_parameters
+  | Cpp_Meth_decl_info (function_decl_info, _, _, _) ->
+      function_decl_info.Clang_ast_t.fdi_parameters
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_parameters
   | Block_decl_info (block_decl_info, _, _) -> block_decl_info.Clang_ast_t.bdi_parameters
 
@@ -80,7 +82,7 @@ let get_parameters function_method_decl_info =
 let get_return_type function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info (_, typ, _)
-  | Cpp_Meth_decl_info (_, _, typ)
+  | Cpp_Meth_decl_info (_, _, _, typ)
   | Block_decl_info (_, typ, _) -> CTypes.return_type_of_function_type typ
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
 
@@ -125,7 +127,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let method_name = name_info.Clang_ast_t.ni_name in
       let class_name = Ast_utils.get_class_name_from_member name_info in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
-      let method_decl = Cpp_Meth_decl_info (fdi, class_name, tp)  in
+      let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
       let ms = build_method_signature decl_info procname method_decl false false in
       let non_null_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)

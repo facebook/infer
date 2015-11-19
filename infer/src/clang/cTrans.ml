@@ -380,18 +380,25 @@ struct
     let class_name = Ast_utils.get_class_name_from_member name_info in
     Printing.log_out "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    (* we don't handle C++ static methods yet - when they are called, this might cause a crash *)
-    assert (IList.length pre_trans_result.exps = 1);
-    let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
-        "WARNING: in Method call we expect to know the object\n" in
+    let is_instance_method =
+      match CMethod_trans.method_signature_of_pointer decl_ptr with
+      | Some ms -> CMethod_signature.ms_is_instance ms
+      | _ -> assert false in (* will happen for generated methods, shouldn't happen right now *)
+    let extra_exps = if is_instance_method then
+        (assert (IList.length pre_trans_result.exps = 1);
+         let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
+             "WARNING: in Method call we expect to know the object\n" in
+         [(obj_sil, class_typ)])
+      else
+        (* don't add (obj_sil, class_typ) for static methods *)
+        [] in
     (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
     (* unlike field access, for method calls there is no need to expand class type *)
     let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
         method_name type_ptr in
     let method_exp = (Sil.Const (Sil.Cfun pname), method_typ) in
     Cfg.set_procname_priority context.CContext.cfg pname;
-    (* TODO for static methods we shouldn't return (obj_sil, class_typ) *)
-    { pre_trans_result with exps = [method_exp; (obj_sil, class_typ)] }
+    { pre_trans_result with exps = [method_exp] @ extra_exps }
 
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let context = trans_state.context in

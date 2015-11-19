@@ -53,4 +53,9 @@ public class MethodsTest {
     frontendTest("dereference_this.cpp");
   }
 
+  @Test
+  public void testStaticDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("static.cpp");
+  }
 }
