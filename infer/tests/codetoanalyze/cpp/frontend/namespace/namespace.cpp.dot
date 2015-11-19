@@ -23,11 +23,11 @@ digraph iCFG {
 	
 
 	 19 -> 18 ;
-18 [label="18:  BinaryOperatorStmt: Assign \n   n$2=_fun_value() [line 55]\n  *&i:int =n$2 [line 55]\n  REMOVE_TEMPS(n$2); [line 55]\n  NULLIFY(&i,false); [line 55]\n " shape="box"]
+18 [label="18:  BinaryOperatorStmt: Assign \n   n$2=_fun_foo::value() [line 55]\n  *&i:int =n$2 [line 55]\n  REMOVE_TEMPS(n$2); [line 55]\n  NULLIFY(&i,false); [line 55]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  BinaryOperatorStmt: Assign \n   n$1=_fun_value() [line 56]\n  *&i:int =n$1 [line 56]\n  REMOVE_TEMPS(n$1); [line 56]\n  NULLIFY(&i,false); [line 56]\n " shape="box"]
+17 [label="17:  BinaryOperatorStmt: Assign \n   n$1=_fun_bar::value() [line 56]\n  *&i:int =n$1 [line 56]\n  REMOVE_TEMPS(n$1); [line 56]\n  NULLIFY(&i,false); [line 56]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -57,10 +57,10 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9: Exit value \n  " color=yellow style=filled]
+9 [label="9: Exit bar::value \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
+8 [label="8: Start bar::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
 	
 
 	 8 -> 10 ;
@@ -75,10 +75,10 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4: Exit value \n  " color=yellow style=filled]
+4 [label="4: Exit foo::value \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+3 [label="3: Start foo::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 3 -> 5 ;

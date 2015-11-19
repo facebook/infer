@@ -19,15 +19,24 @@ import utils.InferException;
 import utils.ClangFrontendUtils;
 
 public class NamespaceTest {
+  String basePath = "infer/tests/codetoanalyze/cpp/frontend/namespace/";
 
   @Rule
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
 
+  void frontendTest(String fileRelative) throws InterruptedException, IOException, InferException {
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, basePath + fileRelative);
+  }
+
   @Test
-  public void whenCaptureRunCommaThenDotFilesAreTheSame()
+  public void testNamespaceDotFilesMatch()
       throws InterruptedException, IOException, InferException {
-    String src =
-        "infer/tests/codetoanalyze/cpp/frontend/namespace/namespace.cpp";
-    ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
+    frontendTest("namespace.cpp");
+  }
+
+  @Test
+  public void testFunctionDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("function.cpp");
   }
 }

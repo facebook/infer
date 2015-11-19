@@ -303,7 +303,7 @@ struct
     let open CContext in
     let context = trans_state.context in
     let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
-    let name = name_info.Clang_ast_t.ni_name in
+    let name = Ast_utils.get_qualified_name name_info in
     let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let pname =
       if CTrans_models.is_modeled_builtin name then

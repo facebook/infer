@@ -114,7 +114,7 @@ let method_signature_of_decl meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, name_info, tp, fdi), _ ->
-      let name = name_info.ni_name in
+      let name = Ast_utils.get_qualified_name name_info in
       let language = !CFrontend_config.language in
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
