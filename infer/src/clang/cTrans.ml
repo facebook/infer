@@ -384,13 +384,14 @@ struct
       match CMethod_trans.method_signature_of_pointer decl_ptr with
       | Some ms -> CMethod_signature.ms_is_instance ms
       | _ -> assert false in (* will happen for generated methods, shouldn't happen right now *)
-    let extra_exps = if is_instance_method then
-        (assert (IList.length pre_trans_result.exps = 1);
-         let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
-             "WARNING: in Method call we expect to know the object\n" in
-         [(obj_sil, class_typ)])
+    let extra_exps = if is_instance_method then (
+        (* pre_trans_result.exps may contain expr for 'this' parameter:*)
+        (* if it comes from CXXMemberCallExpr it will be there *)
+        (* if it comes from CXXOperatorCallExpr it won't be there and will be added later *)
+        assert (IList.length pre_trans_result.exps <= 1);
+        pre_trans_result.exps)
       else
-        (* don't add (obj_sil, class_typ) for static methods *)
+        (* don't add 'this' expression for static methods *)
         [] in
     (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
     (* unlike field access, for method calls there is no need to expand class type *)
@@ -788,7 +789,10 @@ struct
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
     let pln = trans_state.parent_line_number in
     let context = trans_state.context in
-    (* First stmt is the method+this expr and the rest are params *)
+    (* Structure is the following: *)
+    (* CXXMemberCallExpr: first stmt is method+this expr and the rest are normal params *)
+    (* CXXOperatorCallExpr: First stmt is method/function deref without this expr and the *)
+    (*                      rest are params, possibly including 'this' *)
     let fun_exp_stmt, params_stmt = (match stmt_list with
         | fe :: params -> fe, params
         | _ -> assert false) in
@@ -1974,6 +1978,9 @@ struct
 
     | CXXMemberCallExpr(stmt_info, stmt_list, ei) ->
         cxxMemberCallExpr_trans trans_state stmt_info stmt_list ei
+
+    | CXXOperatorCallExpr(stmt_info, stmt_list, ei) ->
+        callExpr_trans trans_state stmt_info stmt_list ei
 
     | ObjCMessageExpr(stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         if is_block_enumerate_function obj_c_message_expr_info then

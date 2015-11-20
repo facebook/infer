@@ -20,14 +20,25 @@ import utils.ClangFrontendUtils;
 
 public class FunctionsTest {
 
+  String basePath = "infer/tests/codetoanalyze/cpp/frontend/types/";
+
   @Rule
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
+
+  void frontendTest(String fileRelative) throws InterruptedException, IOException, InferException {
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, basePath + fileRelative);
+  }
 
   @Test
   public void whenCaptureRunCommaThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
-    String src =
-        "infer/tests/codetoanalyze/cpp/frontend/types/functions.cpp";
-    ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
+    frontendTest("functions.cpp");
+  }
+
+
+  @Test
+  public void testOperatorDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("operator_overload.cpp");
   }
 }
