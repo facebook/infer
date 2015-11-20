@@ -249,6 +249,11 @@ let rec stmt_process_locs loc_composer stmt =
   | BlockExpr (stmt_info, stmt_list, expr_info, block_decl) ->
       let block_decl' = decl_process_locs loc_composer block_decl in
       BlockExpr (stmt_info, stmt_list, expr_info, block_decl')
+  | OpaqueValueExpr (stmt_info, stmt_list, expr_info, opaque_value_ei) ->
+      let source_expr = opaque_value_ei.ovei_source_expr in
+      let ovei_source_expr' = Option.map (stmt_process_locs loc_composer) source_expr in
+      let opaque_value_ei' = { ovei_source_expr = ovei_source_expr' } in
+      OpaqueValueExpr (stmt_info, stmt_list, expr_info, opaque_value_ei')
   | stmt' ->
       stmt'
 
