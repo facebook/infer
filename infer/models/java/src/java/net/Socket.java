@@ -67,12 +67,12 @@ public class Socket {
     }
 
     public InputStream getInputStream() throws IOException {
-      InferBuiltins.assume(!InferBuiltins.__state_untainted(this));
+      InferBuiltins.__check_untainted(this);
       return ((PlainSocketImpl) impl).getInputStream();
     }
 
     public OutputStream getOutputStream() throws IOException {
-      InferBuiltins.assume(!InferBuiltins.__state_untainted(this));
+      InferBuiltins.__check_untainted(this);
       return ((PlainSocketImpl) impl).getOutputStream();
     }
 

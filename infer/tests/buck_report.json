@@ -145,6 +145,11 @@
     "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
   },
   {
+    "procedure": "InputStream TaintExample.taintingShouldNotPreventInference(SSLSocketFactory)",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+  },
+  {
     "procedure": "int NullPointerExceptions.NPEvalueOfFromHashmapBad(HashMap,int)",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
     "bug_type": "NULL_DEREFERENCE"

@@ -1826,6 +1826,27 @@ module ModelBuiltins = struct
         [(prop', path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
+  (** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
+  let execute___check_untainted cfg pdesc instr tenv prop path ret_ids args callee_pname loc
+    : Builtin.ret_typ =
+    match args, ret_ids with
+    | [(lexp, typ)], _ ->
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname prop lexp in
+        (match Prop.get_taint_attribute prop n_lexp with
+         | Some (Sil.Ataint source_pname) ->
+             (* since set_taint_attribute and assert_untained are only used in the models, we should
+                never encounter this case (unless someone is silly enough to write
+                set_taint_attribute(o); check_untainted(o) in a model.) *)
+             failwith "Don't write set_taint_attribute(o); ...check_untainted(o) in the same method"
+         | _ ->
+             if !Config.footprint then
+               let untaint_attr = Sil.Const (Sil.Cattribute (Sil.Auntaint)) in
+               (** add untained(n_lexp) to the footprint *)
+               [(Prop.conjoin_neq ~footprint:true n_lexp untaint_attr prop, path)]
+             else [(prop, path)])
+    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+
   (** take a pointer to a struct, and return the value of a hidden field in the struct *)
   let execute___get_hidden_field cfg pdesc instr tenv _prop path ret_ids args callee_name loc
     : Builtin.ret_typ =
@@ -1889,18 +1910,6 @@ module ModelBuiltins = struct
         let prop' = Prop.replace_sigma_footprint sigma_fp' (Prop.replace_sigma sigma' prop) in
         let prop'' = Prop.normalize prop' in
         [(prop'', path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
-
-  let execute___state_untainted cfg pdesc instr tenv _prop path ret_ids args callee_name loc
-    : Builtin.ret_typ =
-    match args with
-    | [(lexp, typ)] when IList.length ret_ids <= 1 ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        (match ret_ids with
-         | [ret_id] ->
-             let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-             [(return_result (Sil.BinOp(Sil.Ne, n_lexp, (Sil.Const(Sil.Cattribute((Sil.Auntaint)))))) prop ret_ids, path)]
-         | _ -> [(_prop, path)])
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (* Update the objective-c hidden counter by applying the operation op and the operand delta.*)
@@ -2250,7 +2259,7 @@ module ModelBuiltins = struct
     match args with
     | [(lexp, typ)] ->
         let prop_assume = Prop.conjoin_eq lexp (Sil.exp_bool true) prop in
-        if Prover.check_inconsistency prop_assume then execute_diverge prop_assume path
+        if Prover.check_inconsistency prop_assume then  execute_diverge prop_assume path
         else [(prop_assume, path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -2320,7 +2329,7 @@ module ModelBuiltins = struct
   let _ = Builtin.register "__set_hidden_field" execute___set_hidden_field  (* set a hidden field in the struct to the given value *)
   let _ = Builtin.register "__set_taint_attribute" execute___set_taint_attribute (* set the attribute of the parameter as tainted *)
   let _ = Builtin.register "__set_untaint_attribute" execute___set_untaint_attribute (* set the attribute of the parameter as tainted *)
-  let _ = Builtin.register "__state_untainted" execute___state_untainted (* check if the parameter is tainted *)
+  let _ = Builtin.register "__check_untainted" execute___check_untainted (* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
   let __objc_retain = Builtin.register "__objc_retain" execute___objc_retain (* objective-c "retain" *)
   let __objc_release = Builtin.register "__objc_release" execute___objc_release (* objective-c "release" *)
   let __objc_retain_cf = Builtin.register "__objc_retain_cf" execute___objc_retain_cf (* objective-c "retain" *)

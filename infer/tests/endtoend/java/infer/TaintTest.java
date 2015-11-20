@@ -60,7 +60,8 @@ public class TaintTest {
         "taintToStringStartsWith",
         "socketNotVerifiedSimple",
         "socketVerifiedForgotToCheckRetval",
-        "socketIgnoreExceptionNoVerify"
+        "socketIgnoreExceptionNoVerify",
+        "taintingShouldNotPreventInference"
     };
 
     assertThat(

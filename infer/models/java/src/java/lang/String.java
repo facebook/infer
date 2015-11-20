@@ -56,22 +56,22 @@ public final class String {
 
 
     public boolean equals(Object anObject) {
-        InferBuiltins.assume(!InferBuiltins.__state_untainted(anObject));
+        InferBuiltins.__check_untainted(anObject);
         return this == anObject;
     }
 
     public int compareTo(String aString) {
-        InferBuiltins.assume(!InferBuiltins.__state_untainted(aString));
+        InferBuiltins.__check_untainted(aString);
         return InferUndefined.nonneg_int();
     }
 
     public boolean endsWith(String aString) {
-        InferBuiltins.assume(!InferBuiltins.__state_untainted(aString));
+        InferBuiltins.__check_untainted(aString);
         return InferUndefined.boolean_undefined();
     }
 
     public boolean startsWith(String aString) {
-        InferBuiltins.assume(!InferBuiltins.__state_untainted(aString));
+        InferBuiltins.__check_untainted(aString);
         return InferUndefined.boolean_undefined();
     }
 }

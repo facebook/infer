@@ -267,6 +267,15 @@ public class TaintExample {
     return socket.getInputStream();
   }
 
+  public InputStream taintingShouldNotPreventInference(SSLSocketFactory f)
+    throws IOException {
+
+    socketNotVerifiedSimple(f).toString();
+    // failing to infer a post for socketNotVerifiedSimple will hide this error
+    Socket socket = f.createSocket();
+    return socket.getInputStream();
+  }
+
   public InputStream socketVerifiedForgotToCheckRetval(SSLSocketFactory f,
                                                        HostnameVerifier v,
                                                        SSLSession session)
