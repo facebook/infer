@@ -93,6 +93,7 @@ let pp_ast_decl fmt ast_decl =
     let stmt_info, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
     let decl_list = match stmt with
       | Clang_ast_t.DeclStmt (_, _, decl_list) -> decl_list
+      | Clang_ast_t.BlockExpr (_, _, _, decl) -> [decl]
       | _ -> [] in
     F.fprintf fmt "%s%s %a@\n"
       prefix
@@ -104,6 +105,11 @@ let pp_ast_decl fmt ast_decl =
     let prefix1 = prefix ^ "  " in
     let open Clang_ast_t in
     match decl with
+    | BlockDecl (decl_info, block_decl_info) ->
+        F.fprintf fmt "%sBlockDecl %a@\n"
+          prefix
+          pp_source_range decl_info.di_source_range;
+        Option.may (dump_stmt prefix1) block_decl_info.bdi_body
     | FunctionDecl (decl_info, name, tp, fdecl_info) ->
         F.fprintf fmt "%sFunctionDecl %s %a@\n"
           prefix
@@ -240,6 +246,9 @@ let rec stmt_process_locs loc_composer stmt =
   | DeclStmt (stmt_info, stmt_list, decl_list) ->
       let decl_list' = IList.map (decl_process_locs loc_composer) decl_list in
       DeclStmt (stmt_info, stmt_list, decl_list')
+  | BlockExpr (stmt_info, stmt_list, expr_info, block_decl) ->
+      let block_decl' = decl_process_locs loc_composer block_decl in
+      BlockExpr (stmt_info, stmt_list, expr_info, block_decl')
   | stmt' ->
       stmt'
 
@@ -274,6 +283,15 @@ and decl_process_locs loc_composer decl =
     let method_info' = { method_info with xmdi_cxx_ctor_initializers = ctor_init'} in
     (di', n', tp', fdi', method_info') in
   match decl' with
+  | BlockDecl (decl_info', block_decl_info) ->
+      let parameters' = IList.map (decl_process_locs loc_composer) block_decl_info.bdi_parameters in
+      let body' =
+        Option.map (stmt_process_locs loc_composer) block_decl_info.bdi_body in
+      let block_decl_info' =
+        { block_decl_info with
+          bdi_body = body';
+          bdi_parameters = parameters'; } in
+      BlockDecl (decl_info', block_decl_info')
   | FunctionDecl fun_info -> FunctionDecl (get_updated_fun_decl fun_info)
   | CXXMethodDecl meth_info -> CXXMethodDecl (get_updated_method_decl meth_info)
   | CXXConstructorDecl meth_info -> CXXConstructorDecl (get_updated_method_decl meth_info)
