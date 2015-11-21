@@ -16,6 +16,7 @@ import os
 
 LOCALE = locale.getpreferredencoding()
 
+
 # this assumes that this file lives in infer/lib/python/infer/ and the binaries
 # are in infer/bin/
 INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__)
