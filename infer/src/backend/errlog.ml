@@ -85,10 +85,18 @@ let size filter (err_log: t) =
       if filter ekind in_footprint then count := !count + (ErrDataSet.cardinal eds)) err_log;
   !count
 
-(** Print an error log *)
-let pp fmt (errlog : t) =
-  let f (ekind, infp, ename, desc, severity) locs =
-    if ekind == Exceptions.Kerror then F.fprintf fmt "%a@ " Localise.pp ename in
+(** Print errors from error log *)
+let pp_errors fmt (errlog : t) =
+  let f (ekind, _, ename, _, _) locs =
+    if ekind == Exceptions.Kerror then
+      F.fprintf fmt "%a@ " Localise.pp ename in
+  ErrLogHash.iter f errlog
+
+(** Print warnings from error log *)
+let pp_warnings fmt (errlog : t) =
+  let f (ekind, _, ename, desc, _) locs =
+    if ekind == Exceptions.Kwarning then
+      F.fprintf fmt "%a %a@ " Localise.pp ename Localise.pp_error_desc desc in
   ErrLogHash.iter f errlog
 
 (** Print an error log in html format *)

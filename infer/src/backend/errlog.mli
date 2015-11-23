@@ -34,8 +34,11 @@ type iter_fun =
 (** Apply f to nodes and error names *)
 val iter : iter_fun -> t -> unit
 
-(** Print an error log *)
-val pp : Format.formatter -> t -> unit
+(** Print errors from error log *)
+val pp_errors : Format.formatter -> t -> unit
+
+(** Print warnings from error log *)
+val pp_warnings : Format.formatter -> t -> unit
 
 (** Print an error log in html format *)
 val pp_html : DB.Results_dir.path -> Format.formatter -> t -> unit

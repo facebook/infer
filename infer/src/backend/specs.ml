@@ -345,7 +345,8 @@ let pp_timeout fmt = function
 
 let pp_stats err_log whole_seconds fmt stats =
   F.fprintf fmt "TIME:%a TIMEOUT:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds) stats.stats_time pp_timeout stats.stats_timeout stats.symops stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls;
-  F.fprintf fmt "ERRORS: @[<h>%a@]" Errlog.pp err_log
+  F.fprintf fmt "ERRORS: @[<h>%a@]@." Errlog.pp_errors err_log;
+  F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
 
 (** Print the spec *)
 let pp_spec pe num_opt fmt spec =
