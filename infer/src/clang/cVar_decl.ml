@@ -60,11 +60,7 @@ let add_var_to_locals procdesc var_decl sil_typ pvar =
   let open Clang_ast_t in
   match var_decl with
   | VarDecl (di, var_name, type_ptr, vdi) ->
-      let is_block_var =
-        match var_name.Clang_ast_t.ni_qual_name with
-        | [name; qual_name] -> qual_name = CFrontend_config.block
-        | _ -> false in
-      if not vdi.Clang_ast_t.vdi_is_global && not is_block_var then
+      if not vdi.Clang_ast_t.vdi_is_global then
         Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, sil_typ)]
   | _ -> assert false
 

@@ -889,15 +889,7 @@ struct
     let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
     let transformed_stmt, tp =
       Ast_expressions.translate_dispatch_function (Sil.pvar_to_string pvar) stmt_info stmt_list ei n in
-    let typ = CTypes_decl.type_ptr_to_sil_type trans_state.context.CContext.tenv tp in
-    let loc = CLocation.get_sil_location stmt_info trans_state.parent_line_number trans_state.context in
-    let res_state = instruction trans_state transformed_stmt in
-    (* Add declare locals to the first node *)
-    IList.iter (fun n -> Cfg.Node.prepend_instrs_temps n [Sil.Declare_locals([(pvar, typ)], loc)] []) res_state.root_nodes;
-    let preds = IList.flatten (IList.map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
-    (* Add nullify of the temp block var to the last node (predecessor or the successor nodes)*)
-    IList.iter (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] []) preds;
-    res_state
+    instruction trans_state transformed_stmt
 
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
     let declare_nullify_vars loc res_state roots preds (pvar, typ) =

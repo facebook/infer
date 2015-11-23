@@ -382,7 +382,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
     with Not_found -> assert false in
   let block_name_info = {
     Clang_ast_t.ni_name = block_name;
-    Clang_ast_t.ni_qual_name = [block_name; CFrontend_config.block]
+    Clang_ast_t.ni_qual_name = [block_name]
   } in
   let open Clang_ast_t in
   match block_expr with

@@ -102,11 +102,11 @@ digraph iCFG {
 	
 
 	 6 -> 8 ;
-5 [label="5:  DeclStmt \n   DECLARE_LOCALS(&infer___objc_anonymous_block_A_sharedInstance______1); [line 29]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_sharedInstance______1); [line 27]\n  n$6=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_sharedInstance______1 ):unsigned long ) [line 27]\n  *&__objc_anonymous_block_A_sharedInstance______1:class __objc_anonymous_block_A_sharedInstance______1 =n$6 [line 27]\n  n$7=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 27]\n  *n$6.A_sharedInstance_sharedInstance:struct objc_object *=n$7 [line 27]\n  *&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*)=(_fun___objc_anonymous_block_A_sharedInstance______1) [line 29]\n  REMOVE_TEMPS(n$6,n$7); [line 29]\n " shape="box"]
+5 [label="5:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_sharedInstance______1); [line 27]\n  n$6=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_sharedInstance______1 ):unsigned long ) [line 27]\n  *&__objc_anonymous_block_A_sharedInstance______1:class __objc_anonymous_block_A_sharedInstance______1 =n$6 [line 27]\n  n$7=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 27]\n  *n$6.A_sharedInstance_sharedInstance:struct objc_object *=n$7 [line 27]\n  *&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*)=(_fun___objc_anonymous_block_A_sharedInstance______1) [line 29]\n  REMOVE_TEMPS(n$6,n$7); [line 29]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  Call n$1 \n   n$1=*&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) [line 29]\n  n$2=n$1() [line 29]\n  REMOVE_TEMPS(n$1,n$2); [line 29]\n  NULLIFY(&infer___objc_anonymous_block_A_sharedInstance______1,true); [line 29]\n " shape="box"]
+4 [label="4:  Call n$1 \n   n$1=*&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) [line 29]\n  n$2=n$1() [line 29]\n  REMOVE_TEMPS(n$1,n$2); [line 29]\n  NULLIFY(&infer___objc_anonymous_block_A_sharedInstance______1,false); [line 29]\n " shape="box"]
 	
 
 	 4 -> 3 ;
@@ -117,7 +117,7 @@ digraph iCFG {
 2 [label="2: Exit A_sharedInstance \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_sharedInstance\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+1 [label="1: Start A_sharedInstance\nFormals: \nLocals:  infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_sharedInstance______1); [line 23]\n  NULLIFY(&infer___objc_anonymous_block_A_sharedInstance______1,false); [line 23]\n " color=yellow style=filled]
 	
 
 	 1 -> 5 ;
