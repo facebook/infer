@@ -309,6 +309,7 @@ type is_library = Source | Library
 type payload =
   | PrePosts of NormSpec.t list (** list of specs *)
   | TypeState of unit TypeState.t option (** final typestate *)
+  | Calls of CallTree.t list
 
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
@@ -427,7 +428,7 @@ let pp_stats_html err_log fmt stats =
 
 let get_specs_from_payload summary = match summary.payload with
   | PrePosts specs -> NormSpec.tospecs specs
-  | TypeState _ -> []
+  | TypeState _ | Calls _ -> []
 
 (** Print the summary *)
 let pp_summary pe whole_seconds fmt summary =
@@ -481,7 +482,8 @@ let rec post_equal pl1 pl2 = match pl1, pl2 with
 
 let payload_compact sh payload = match payload with
   | PrePosts specs -> PrePosts (IList.map (NormSpec.compact sh) specs)
-  | TypeState _ -> payload
+  | TypeState _ as p -> p
+  | Calls _ as p -> p
 
 (** Return a compact representation of the summary *)
 let summary_compact sh summary =
@@ -529,7 +531,8 @@ let summary_serializer : summary Serialization.serializer =
 let store_summary pname (summ: summary) =
   let process_payload = function
     | PrePosts specs -> PrePosts (IList.map NormSpec.erase_join_info_pre specs)
-    | TypeState typestate_opt -> TypeState typestate_opt in
+    | TypeState _ as p -> p
+    | Calls _ as p -> p in
   let summ1 = { summ with payload = process_payload summ.payload } in
   let summ2 = if !Config.save_compact_summaries
     then summary_compact (Sil.create_sharing_env ()) summ1

@@ -20,26 +20,6 @@ let unannotated_overrides_performance_critical =
   "CHECKERS_UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL"
 
 
-let search_expensive_call checked_pnames expensive_callee (pname, _) =
-  match expensive_callee with
-  | Some callee_pname -> Some callee_pname
-  | None ->
-      if Procname.Set.mem pname !checked_pnames then None
-      else
-        begin
-          checked_pnames := Procname.Set.add pname !checked_pnames;
-          match Specs.proc_resolve_attributes pname with
-          | None -> None
-          | Some attributes ->
-              let annotated_signature = Annotations.get_annotated_signature attributes in
-              let ret_annotation, _ = annotated_signature.Annotations.ret in
-              if Annotations.ia_calls_expensive ret_annotation then
-                Some pname
-              else
-                None
-        end
-
-
 let check_attributes check attributes =
   let annotated_signature = Annotations.get_annotated_signature attributes in
   let ret_annotation, _ = annotated_signature.Annotations.ret in
@@ -69,39 +49,77 @@ let method_is_expensive pname =
   check_method Annotations.ia_is_expensive pname
 
 
-let update_summary_attributes pname =
+let lookup_call_trees pname =
+  match Specs.get_summary pname with
+  | None -> []
+  | Some summary ->
+      begin
+        match summary.Specs.payload with
+        | Specs.Calls tree -> tree
+        | _ -> []
+      end
+
+
+let collect_expensive_call caller_pdesc checked_pnames call_trees (pname, _) =
+  if Procname.Set.mem pname !checked_pnames then call_trees
+  else
+    begin
+      Ondemand.do_analysis caller_pdesc pname;
+      checked_pnames := Procname.Set.add pname !checked_pnames;
+      if method_is_expensive pname then
+        (CallTree.Direct pname) :: call_trees
+      else
+        match lookup_call_trees pname with
+        | [] -> call_trees
+        | calls -> (CallTree.Indirect (pname, calls)) :: call_trees
+    end
+
+
+let update_summary call_trees pname =
   match Specs.get_summary pname with
   | None -> ()
   | Some summary ->
-      let attributes = Specs.get_attributes summary in
-      let ret_annot, param_annot = attributes.ProcAttributes.method_annotation in
-      let updated_method_annot =
-        (Annotations.calls_expensive_annotation, true) :: ret_annot, param_annot in
-      let updated_attributes =
-        { attributes with ProcAttributes.method_annotation = updated_method_annot } in
       let updated_summary =
-        { summary with Specs.attributes = updated_attributes } in
+        { summary with Specs.payload = Specs.Calls call_trees } in
       Specs.add_summary pname updated_summary
 
 
-let callback_performance_checker _ _ _ tenv pname pdesc =
+let report_expensive_calls pname pdesc loc call_trees =
+  let string_of_pname = Procname.to_simplified_string ~withclass:true in
+  let rec report_call_tree stack_str call_tree =
+    match call_tree with
+    | CallTree.Direct expensive_pname ->
+        let exp_pname_str = string_of_pname expensive_pname in
+        let description =
+          Printf.sprintf
+            "Method `%s` annotated with `@%s` calls `%s%s` where `%s` is annotated with `@%s`"
+            (Procname.to_simplified_string pname)
+            Annotations.performance_critical
+            stack_str
+            exp_pname_str
+            exp_pname_str
+            Annotations.expensive in
+        Checkers.ST.report_error
+          pname pdesc calls_expensive_method loc description
+    | CallTree.Indirect (callee_pname, sub_trees) ->
+        let callee_pname_str = string_of_pname callee_pname in
+        let new_stack_str = stack_str ^ callee_pname_str ^ " -> " in
+        IList.iter (report_call_tree new_stack_str) sub_trees in
+  IList.iter (report_call_tree "") call_trees
+
+
+let check_one_procedure tenv pname pdesc =
 
   let loc = Cfg.Procdesc.get_loc pdesc in
   let attributes = Cfg.Procdesc.get_attributes pdesc in
   let expensive = is_expensive attributes
   and performance_critical = is_performance_critical attributes in
-  let expensive_call_found =
-    let checked_pnames = ref Procname.Set.empty in
-    Cfg.Procdesc.fold_calls
-      (search_expensive_call checked_pnames)
-      None
-      pdesc in
 
   let check_expensive_subtyping_rules overridden_pname =
     if not (method_is_expensive overridden_pname) then
       let description =
         Printf.sprintf
-          "Method %s overrides unannotated method %s and cannot be annotated with @%s"
+          "Method `%s` overrides unannotated method `%s` and cannot be annotated with `@%s`"
           (Procname.to_string pname)
           (Procname.to_string overridden_pname)
           Annotations.expensive in
@@ -112,7 +130,7 @@ let callback_performance_checker _ _ _ tenv pname pdesc =
     if method_is_performance_critical overridden_pname then
       let description =
         Printf.sprintf
-          "Method %s overrides method %s annotated with %s and should also be annotated"
+          "Method `%s` overrides method `%s` annotated with `%s` and should also be annotated"
           (Procname.to_string pname)
           (Procname.to_string overridden_pname)
           Annotations.performance_critical in
@@ -120,22 +138,36 @@ let callback_performance_checker _ _ _ tenv pname pdesc =
         pname pdesc unannotated_overrides_performance_critical loc description in
 
   if expensive then
-    PatternMatch.proc_iter_overridden_methods check_expensive_subtyping_rules tenv pname;
+    PatternMatch.proc_iter_overridden_methods
+      check_expensive_subtyping_rules tenv pname;
   if not performance_critical then
-    PatternMatch.proc_iter_overridden_methods check_performance_critical_subtyping_rules tenv pname;
+    PatternMatch.proc_iter_overridden_methods
+      check_performance_critical_subtyping_rules tenv pname;
 
-  match expensive_call_found with
-  | None -> ()
-  | Some callee_pname when performance_critical ->
-      let description =
-        Printf.sprintf "Method %s annotated with @%s calls method %s annotated with @%s"
-          (Procname.to_simplified_string pname)
-          Annotations.performance_critical
-          (Procname.to_string callee_pname)
-          Annotations.expensive in
-      Checkers.ST.report_error
-        pname pdesc calls_expensive_method loc description
-  | Some _ when not expensive ->
-      update_summary_attributes pname
+  let expensive_call_trees =
+    let checked_pnames = ref Procname.Set.empty in
+    Cfg.Procdesc.fold_calls
+      (collect_expensive_call pdesc checked_pnames) [] pdesc in
+  match expensive_call_trees with
+  | [] -> ()
+  | call_trees when performance_critical ->
+      report_expensive_calls pname pdesc loc call_trees
+  | call_trees ->
+      update_summary call_trees pname
 
-  | Some _ -> () (* Nothing to do if method already annotated with @Expensive *)
+
+let callback_performance_checker _ get_proc_desc _ tenv pname proc_desc =
+  let callbacks =
+    let analyze_ondemand pn =
+      match get_proc_desc pn with
+      | None -> ()
+      | Some pd -> check_one_procedure tenv pn pd in
+    { Ondemand.analyze_ondemand; get_proc_desc; } in
+  if !Config.ondemand_enabled
+     || Ondemand.procedure_should_be_analyzed proc_desc pname
+  then
+    begin
+      Ondemand.set_callbacks callbacks;
+      check_one_procedure tenv pname proc_desc;
+      Ondemand.unset_callbacks ()
+    end
