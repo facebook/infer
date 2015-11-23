@@ -156,6 +156,11 @@ infer_group.add_argument('--specs-dir',
                           help='add dir to the list of directories to be '
                                'searched for spec files. Repeat the argument '
                                'in case multiple folders are needed')
+infer_group.add_argument('--specs-dir-list-file',
+                         metavar='<file>',
+                         help='add the newline-separated directories listed '
+                              'in <file> to the list of directories to be '
+                              'searched for spec files')
 
 def detect_javac(args):
     for index, arg in enumerate(args):
@@ -279,6 +284,14 @@ class Infer:
                                     (['-lib', os.path.abspath(path)] for path in
                                      self.args.specs_dirs)
                                     for item in argument]
+        if self.args.specs_dir_list_file:
+            # Convert the path to the file list to an absolute path, because
+            # the analyzer will run from different paths and may not find the
+            # file otherwise.
+            self.args.specs_dir_list_file = \
+                ['-specs-dir-list-file',
+                 os.path.abspath(self.args.specs_dir_list_file)]
+
 
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
@@ -375,6 +388,9 @@ class Infer:
 
         if self.args.specs_dirs:
             infer_options += self.args.specs_dirs
+
+        if self.args.specs_dir_list_file:
+            infer_options += self.args.specs_dir_list_file
 
         exit_status = os.EX_OK
 

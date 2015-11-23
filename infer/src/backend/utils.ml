@@ -622,6 +622,17 @@ type arg_list = (string * Arg.spec * string option * string) list
 let arg_desc_filter options_to_keep =
   IList.filter (function (option_name, _, _, _) -> IList.mem string_equal option_name options_to_keep)
 
+(* Given a filename with a list of paths, convert it into a list of string iff they are absolute *)
+let read_specs_dir_list_file fname =
+  let validate_path path =
+    if Filename.is_relative path then
+      failwith ("Failing because path " ^ path ^ " is not absolute") in
+  match read_file fname with
+  | Some pathlist ->
+      IList.iter validate_path pathlist;
+      pathlist
+  | None -> failwith ("cannot read file " ^ fname)
+
 let base_arg_desc =
   [
     "-results_dir",
@@ -636,6 +647,11 @@ let base_arg_desc =
     Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library),
     Some "dir",
     "add dir to the list of directories to be searched for spec files";
+    "-specs-dir-list-file",
+    Arg.String (fun s -> Config.specs_library := (read_specs_dir_list_file s) @ !Config.specs_library),
+    Some "file",
+    "add the newline-separated directories listed in <file> to the list of directories to \
+     be searched for spec files";
     "-models",
     Arg.String (fun s -> Config.add_models (filename_to_absolute s)),
     Some "zip file",
