@@ -258,13 +258,12 @@ def get_buck_stats():
     SUCCESS_STATUS = 'success_type'
     buck_stats = {}
     try:
-        with open(trace_filename, 'r') as file_in:
-            trace = json.load(file_in)
-            for t in trace:
-                if SUCCESS_STATUS in t[ARGS]:
-                    status = t[ARGS][SUCCESS_STATUS]
-                    count = buck_stats.get(status, 0)
-                    buck_stats[status] = count + 1
+        trace = utils.load_json_from_path(trace_filename)
+        for t in trace:
+            if SUCCESS_STATUS in t[ARGS]:
+                status = t[ARGS][SUCCESS_STATUS]
+                count = buck_stats.get(status, 0)
+                buck_stats[status] = count + 1
 
         buck_stats_message = 'Buck build statistics:\n\n'
         for key, value in sorted(buck_stats.items()):

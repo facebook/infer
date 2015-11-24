@@ -19,7 +19,7 @@ sys.path.insert(0,
                 os.path.join(SCRIPTS_DIRECTORY,
                              os.pardir, 'infer', 'lib', 'python'))
 
-from inferlib import issues
+from inferlib import issues, utils
 
 
 CURRENT_DIR = os.getcwd()
@@ -56,26 +56,22 @@ def string_of_error(e):
     return msg
 
 
-def load_report(filename):
-    with open(filename, 'r') as file_in:
-        return json.load(file_in)
-
-
 def save_report(reports, filename):
-    with open(filename, 'w') as file_out:
-        filtered = []
-        for report in sorted(reports):
-            r = {}
-            for key in REPORT_FIELDS:
-                if key in report:
-                    r[key] = report[key]
-            if len(r) > 0:
-                filtered.append(r)
-        return json.dump(filtered, file_out, indent=2, separators=(',', ': '))
+    # sorting to avoid spurious differences between two lists of reports
+    reports.sort()
+
+    def filter_report(report):
+        return dict((k, v) for (k, v) in report.items() if k in REPORT_FIELDS)
+
+    def should_report(report):
+        return len(report) > 0
+
+    filtered = filter(should_report, map(filter_report, reports))
+    utils.dump_json_to_path(filtered, filename,
+                            separators=(',', ': '), sort_keys=True)
 
 
 def run_analysis(root, clean_cmd, build_cmd, analyzer):
-
     os.chdir(root)
 
     subprocess.check_call(clean_cmd)
@@ -89,7 +85,8 @@ def run_analysis(root, clean_cmd, build_cmd, analyzer):
             prefix='analysis_') as analysis_output:
         subprocess.check_call(infer_cmd, stdout=analysis_output)
 
-    found_errors = load_report(os.path.join(temp_out_dir, REPORT_JSON))
+    json_path = os.path.join(temp_out_dir, REPORT_JSON)
+    found_errors = utils.load_json_from_path(json_path)
     shutil.rmtree(temp_out_dir)
     os.chdir(CURRENT_DIR)
 
@@ -156,7 +153,7 @@ def do_test(errors, expected_errors_filename):
         save_report(errors, expected_errors_filename)
         return
     else:
-        patterns = load_report(expected_errors_filename)
+        patterns = utils.load_json_from_path(expected_errors_filename)
         check_results(errors, patterns)
 
 

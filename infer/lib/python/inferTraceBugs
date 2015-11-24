@@ -376,9 +376,7 @@ def main():
     args = base_parser.parse_args()
 
     report_filename = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
-    with codecs.open(report_filename, 'r',
-                     encoding=config.LOCALE) as report_file:
-        reports = json.load(report_file)
+    reports = utils.load_json_from_path(report_filename)
 
     if args.html:
         generate_html_report(args, reports)

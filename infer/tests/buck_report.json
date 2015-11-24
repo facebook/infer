@@ -1,662 +1,662 @@
 [
   {
-    "procedure": "void ContextLeaks.directLeak()",
+    "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
-    "bug_type": "CONTEXT_LEAK"
+    "procedure": "void ContextLeaks.directLeak()"
   },
   {
-    "procedure": "void ContextLeaks.indirectHandlerLeak()",
+    "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
-    "bug_type": "CONTEXT_LEAK"
+    "procedure": "void ContextLeaks.indirectHandlerLeak()"
   },
   {
-    "procedure": "void ContextLeaks.indirectLeak()",
+    "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
-    "bug_type": "CONTEXT_LEAK"
+    "procedure": "void ContextLeaks.indirectLeak()"
   },
   {
-    "procedure": "void ContextLeaks.leakAfterInstanceFieldWrite()",
+    "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
-    "bug_type": "CONTEXT_LEAK"
+    "procedure": "void ContextLeaks.leakAfterInstanceFieldWrite()"
   },
   {
-    "procedure": "void ContextLeaks.nonStaticInnerClassLeak()",
+    "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
-    "bug_type": "CONTEXT_LEAK"
+    "procedure": "void ContextLeaks.nonStaticInnerClassLeak()"
   },
   {
-    "procedure": "ContextLeaks$Singleton ContextLeaks.singletonLeak()",
+    "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
-    "bug_type": "CONTEXT_LEAK"
+    "procedure": "ContextLeaks$Singleton ContextLeaks.singletonLeak()"
   },
   {
-    "procedure": "InputStream TaintExample.socketIgnoreExceptionNoVerify(SSLSocketFactory)",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
     "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
-    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+    "procedure": "InputStream TaintExample.socketIgnoreExceptionNoVerify(SSLSocketFactory)"
   },
   {
-    "procedure": "InputStream TaintExample.socketNotVerifiedSimple(SSLSocketFactory)",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
     "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
-    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+    "procedure": "InputStream TaintExample.socketNotVerifiedSimple(SSLSocketFactory)"
   },
   {
-    "procedure": "InputStream TaintExample.socketVerifiedForgotToCheckRetval(SSLSocketFactory,HostnameVerifier,SSLSession)",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
     "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
-    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+    "procedure": "InputStream TaintExample.socketVerifiedForgotToCheckRetval(SSLSocketFactory,HostnameVerifier,SSLSession)"
   },
   {
-    "procedure": "InputStream TaintExample.taintingShouldNotPreventInference(SSLSocketFactory)",
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
     "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
-    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+    "procedure": "InputStream TaintExample.taintingShouldNotPreventInference(SSLSocketFactory)"
   },
   {
-    "procedure": "int NullPointerExceptions.NPEvalueOfFromHashmapBad(HashMap,int)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "int NullPointerExceptions.NPEvalueOfFromHashmapBad(HashMap,int)"
   },
   {
-    "procedure": "void ResourceLeaks.activityObtainTypedArrayAndLeak(Activity)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.activityObtainTypedArrayAndLeak(Activity)"
   },
   {
-    "procedure": "void NullPointerExceptions.badCheckShouldCauseNPE()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.badCheckShouldCauseNPE()"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.bufferedInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.bufferedInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.bufferedOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.bufferedOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void ReaderLeaks.bufferedReaderNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.bufferedReaderNotClosedAfterRead()"
   },
   {
-    "procedure": "void WriterLeaks.bufferedWriterNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void WriterLeaks.bufferedWriterNotClosedAfterWrite()"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.checkedInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.checkedInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.checkedOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.checkedOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.cipherInputStreamNotClosedAfterSkip()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.cipherInputStreamNotClosedAfterSkip()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.cipherOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.cipherOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "int CursorLeaks.completeDownloadNotClosed(DownloadManager)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CursorLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "int CursorLeaks.completeDownloadNotClosed(DownloadManager)"
   },
   {
-    "procedure": "void ResourceLeaks.contextObtainTypedArrayAndLeak(Context)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.contextObtainTypedArrayAndLeak(Context)"
   },
   {
-    "procedure": "void ResourceLeaks.copyFileLeak(File,File)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.copyFileLeak(File,File)"
   },
   {
-    "procedure": "void ResourceLeaks.copyFileLeak(File,File)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.copyFileLeak(File,File)"
   },
   {
-    "procedure": "void NullPointerExceptions.cursorFromContentResolverNPE(String)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.cursorFromContentResolverNPE(String)"
   },
   {
-    "procedure": "int CursorLeaks.cursorNotClosed(SQLiteDatabase)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CursorLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "int CursorLeaks.cursorNotClosed(SQLiteDatabase)"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.dataInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.dataInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.dataOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.dataOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.deflaterInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.deflaterInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void ResourceLeaks.deflaterLeak()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.deflaterLeak()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.deflaterOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.deflaterOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void NullPointerExceptions.derefNull()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.derefNull()"
   },
   {
-    "procedure": "void NullPointerExceptions.derefNullableGetter()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.derefNullableGetter()"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.digestInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.digestInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.digestOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.digestOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void Builtins.doNotBlockError(Object)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/Builtins.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void Builtins.doNotBlockError(Object)"
   },
   {
-    "procedure": "void CloseableAsResourceExample.failToCloseWithCloseQuietly()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void CloseableAsResourceExample.failToCloseWithCloseQuietly()"
   },
   {
-    "procedure": "void AnalysisStops.fieldReadInCalleeMayCauseFalseNegative()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/AnalysisStops.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void AnalysisStops.fieldReadInCalleeMayCauseFalseNegative()"
   },
   {
-    "procedure": "void AnalysisStops.fieldReadInCalleeWithAngelicObjFieldMayCauseFalseNegative()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/AnalysisStops.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void AnalysisStops.fieldReadInCalleeWithAngelicObjFieldMayCauseFalseNegative()"
   },
   {
-    "procedure": "void ResourceLeaks.fileInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.fileInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void ResourceLeaks.fileOutputStreamNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.fileOutputStreamNotClosed()"
   },
   {
-    "procedure": "void ResourceLeaks.fileOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.fileOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)"
   },
   {
-    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)"
   },
   {
-    "procedure": "void ReaderLeaks.fileReaderNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.fileReaderNotClosedAfterRead()"
   },
   {
-    "procedure": "void WriterLeaks.fileWriterNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void WriterLeaks.fileWriterNotClosedAfterWrite()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.filterOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.filterOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "int CursorLeaks.getBucketCountNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CursorLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "int CursorLeaks.getBucketCountNotClosed()"
   },
   {
-    "procedure": "int CursorLeaks.getImageCountHelperNotClosed(String)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CursorLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "int CursorLeaks.getImageCountHelperNotClosed(String)"
   },
   {
-    "procedure": "int HashMapExample.getOneIntegerWithoutCheck()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/HashMapExample.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "int HashMapExample.getOneIntegerWithoutCheck()"
   },
   {
-    "procedure": "void HashMapExample.getTwoIntegersWithOneCheck(Integer,Integer)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/HashMapExample.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void HashMapExample.getTwoIntegersWithOneCheck(Integer,Integer)"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.gzipInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.gzipInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.gzipInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.gzipInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.gzipOutputStreamNotClosedAfterFlush()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.gzipOutputStreamNotClosedAfterFlush()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.gzipOutputStreamNotClosedAfterFlush()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.gzipOutputStreamNotClosedAfterFlush()"
   },
   {
-    "procedure": "String NullPointerExceptions.hashmapNPE(HashMap,Object)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "String NullPointerExceptions.hashmapNPE(HashMap,Object)"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.inflaterInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.inflaterInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void ResourceLeaks.inflaterLeak()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.inflaterLeak()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.inflaterOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.inflaterOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void ReaderLeaks.inputStreamReaderNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.inputStreamReaderNotClosedAfterRead()"
   },
   {
-    "procedure": "boolean ResourceLeaks.jarFileNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "boolean ResourceLeaks.jarFileNotClosed()"
   },
   {
-    "procedure": "void ResourceLeaks.jarInputStreamLeak()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.jarInputStreamLeak()"
   },
   {
-    "procedure": "void ResourceLeaks.jarOutputStreamLeak()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.jarOutputStreamLeak()"
   },
   {
-    "procedure": "void CursorLeaks.loadPrefsFromContentProviderNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CursorLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void CursorLeaks.loadPrefsFromContentProviderNotClosed()"
   },
   {
-    "procedure": "boolean DotFilesEqual.matches(Object)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/utils/matchers/DotFilesEqual.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "boolean DotFilesEqual.matches(Object)"
   },
   {
-    "procedure": "void ResourceLeaks.nestedBad1()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.nestedBad1()"
   },
   {
-    "procedure": "void ResourceLeaks.nestedBad2()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.nestedBad2()"
   },
   {
-    "procedure": "void ResourceLeaks.nestedBadJarInputStream(File)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.nestedBadJarInputStream(File)"
   },
   {
-    "procedure": "void ResourceLeaks.nestedBadJarOutputStream()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.nestedBadJarOutputStream()"
   },
   {
-    "procedure": "void CloseableAsResourceExample.notClosingCloseable()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void CloseableAsResourceExample.notClosingCloseable()"
   },
   {
-    "procedure": "void CloseableAsResourceExample.notClosingWrapper()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void CloseableAsResourceExample.notClosingWrapper()"
   },
   {
-    "procedure": "void AutoGenerated.npe()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/AutoGenerated.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void AutoGenerated.npe()"
   },
   {
-    "procedure": "void NullPointerExceptions$$$Class$Name$With$Dollars.npeWithDollars()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions$$$Class$Name$With$Dollars.npeWithDollars()"
   },
   {
-    "procedure": "int NullPointerExceptions.nullListFiles(String)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "int NullPointerExceptions.nullListFiles(String)"
   },
   {
-    "procedure": "int NullPointerExceptions.nullPointerException()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "int NullPointerExceptions.nullPointerException()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionArrayLength()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionArrayLength()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionCallArrayReadMethod()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionCallArrayReadMethod()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionFromFailingFileOutputStreamConstructor()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionFromFailingFileOutputStreamConstructor()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionFromFaillingResourceConstructor()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionFromFaillingResourceConstructor()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionInArrayLengthLoop(java.lang.Object[])",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionInArrayLengthLoop(java.lang.Object[])"
   },
   {
-    "procedure": "int NullPointerExceptions.nullPointerExceptionInterProc()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "int NullPointerExceptions.nullPointerExceptionInterProc()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionUnlessFrameFails()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionUnlessFrameFails()"
   },
   {
-    "procedure": "int NullPointerExceptions.nullPointerExceptionWithExceptionHandling(boolean)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "int NullPointerExceptions.nullPointerExceptionWithExceptionHandling(boolean)"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionWithNullArrayParameter()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionWithNullArrayParameter()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullPointerExceptionWithNullObjectParameter()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullPointerExceptionWithNullObjectParameter()"
   },
   {
-    "procedure": "String NullPointerExceptions.nullTryLock(FileChannel)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "String NullPointerExceptions.nullTryLock(FileChannel)"
   },
   {
-    "procedure": "void NullPointerExceptions.nullableFieldNPE()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullableFieldNPE()"
   },
   {
-    "procedure": "void NullPointerExceptions.nullableParamNPE(Object)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.nullableParamNPE(Object)"
   },
   {
-    "procedure": "void ResourceLeaks.objectInputStreamClosedNestedBad()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.objectInputStreamClosedNestedBad()"
   },
   {
-    "procedure": "void ResourceLeaks.objectInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.objectInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void ResourceLeaks.objectInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.objectInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void ResourceLeaks.objectOutputStreamClosedNestedBad()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.objectOutputStreamClosedNestedBad()"
   },
   {
-    "procedure": "void ResourceLeaks.objectOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.objectOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void ResourceLeaks.objectOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.objectOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void ResourceLeaks.openHttpURLConnectionNotDisconnected()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.openHttpURLConnectionNotDisconnected()"
   },
   {
-    "procedure": "void ResourceLeaks.openHttpsURLConnectionNotDisconnected()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.openHttpsURLConnectionNotDisconnected()"
   },
   {
-    "procedure": "void NullPointerExceptions.otherSinkWithNeverNullSource()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.otherSinkWithNeverNullSource()"
   },
   {
-    "procedure": "void WriterLeaks.outputStreamWriterNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void WriterLeaks.outputStreamWriterNotClosedAfterWrite()"
   },
   {
-    "procedure": "void ResourceLeaks.parseFromInputStreamAndLeak(JsonFactory)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.parseFromInputStreamAndLeak(JsonFactory)"
   },
   {
-    "procedure": "void ResourceLeaks.pipedInputStreamNotClosedAfterRead(PipedOutputStream)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.pipedInputStreamNotClosedAfterRead(PipedOutputStream)"
   },
   {
-    "procedure": "void ResourceLeaks.pipedOutputStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.pipedOutputStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void ReaderLeaks.pipedReaderFalsePositive()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.pipedReaderFalsePositive()"
   },
   {
-    "procedure": "void ReaderLeaks.pipedReaderNotClosedAfterConnect(PipedWriter)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.pipedReaderNotClosedAfterConnect(PipedWriter)"
   },
   {
-    "procedure": "void ReaderLeaks.pipedReaderNotClosedAfterConstructedWithWriter()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.pipedReaderNotClosedAfterConstructedWithWriter()"
   },
   {
-    "procedure": "void WriterLeaks.pipedWriterNotClosedAfterConnect(PipedReader)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void WriterLeaks.pipedWriterNotClosedAfterConnect(PipedReader)"
   },
   {
-    "procedure": "void WriterLeaks.pipedWriterNotClosedAfterConstructedWithReader()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void WriterLeaks.pipedWriterNotClosedAfterConstructedWithReader()"
   },
   {
-    "procedure": "void FilterOutputStreamLeaks.printStreamNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterOutputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterOutputStreamLeaks.printStreamNotClosedAfterWrite()"
   },
   {
-    "procedure": "void WriterLeaks.printWriterNotClosedAfterAppend()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void WriterLeaks.printWriterNotClosedAfterAppend()"
   },
   {
-    "procedure": "void FilterInputStreamLeaks.pushbackInputStreamNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void FilterInputStreamLeaks.pushbackInputStreamNotClosedAfterRead()"
   },
   {
-    "procedure": "void ReaderLeaks.pushbackReaderNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.pushbackReaderNotClosedAfterRead()"
   },
   {
-    "procedure": "void CursorLeaks.queryUVMLegacyDbNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CursorLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void CursorLeaks.queryUVMLegacyDbNotClosed()"
   },
   {
-    "procedure": "int ResourceLeaks.readConfigNotCloseStream(String)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "int ResourceLeaks.readConfigNotCloseStream(String)"
   },
   {
-    "procedure": "String ResourceLeaks.readInstallationFileBad(File)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "String ResourceLeaks.readInstallationFileBad(File)"
   },
   {
-    "procedure": "void ReaderLeaks.readerNotClosedAfterRead()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ReaderLeaks.readerNotClosedAfterRead()"
   },
   {
-    "procedure": "void ResourceLeaks.scannerNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.scannerNotClosed()"
   },
   {
-    "procedure": "void ResourceLeaks.serverSocketNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.serverSocketNotClosed()"
   },
   {
-    "procedure": "void NullPointerExceptions.sinkWithNeverNullSource()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.sinkWithNeverNullSource()"
   },
   {
-    "procedure": "void AnalysisStops.skipFunctionInLoopMayCauseFalseNegative()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/AnalysisStops.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void AnalysisStops.skipFunctionInLoopMayCauseFalseNegative()"
   },
   {
-    "procedure": "void ResourceLeaks.socketNotClosed()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.socketNotClosed()"
   },
   {
-    "procedure": "void NullPointerExceptions.someNPEAfterResourceLeak()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.someNPEAfterResourceLeak()"
   },
   {
-    "procedure": "T CloseableAsResourceExample.sourceOfNullWithResourceLeak()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "T CloseableAsResourceExample.sourceOfNullWithResourceLeak()"
   },
   {
-    "procedure": "String NullPointerExceptions.testSystemGetPropertyArgument()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "String NullPointerExceptions.testSystemGetPropertyArgument()"
   },
   {
-    "procedure": "void NullPointerExceptions.testSystemGetPropertyReturn()",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "void NullPointerExceptions.testSystemGetPropertyReturn()"
   },
   {
-    "procedure": "void ResourceLeaks.themeObtainTypedArrayAndLeak(Resources$Theme)",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.themeObtainTypedArrayAndLeak(Resources$Theme)"
   },
   {
-    "procedure": "String NullPointerExceptions.tryLockThrows(FileChannel)",
+    "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
-    "bug_type": "NULL_DEREFERENCE"
+    "procedure": "String NullPointerExceptions.tryLockThrows(FileChannel)"
   },
   {
-    "procedure": "void ResourceLeaks.twoResources()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.twoResources()"
   },
   {
-    "procedure": "void ResourceLeaks.twoResourcesRandomAccessFile()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.twoResourcesRandomAccessFile()"
   },
   {
-    "procedure": "void ResourceLeaks.twoResourcesServerSocket()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.twoResourcesServerSocket()"
   },
   {
-    "procedure": "void CloseableAsResourceExample.withException()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void CloseableAsResourceExample.withException()"
   },
   {
-    "procedure": "void WriterLeaks.writerNotClosedAfterWrite()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/WriterLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void WriterLeaks.writerNotClosedAfterWrite()"
   },
   {
-    "procedure": "void ResourceLeaks.zipFileLeakExceptionalBranch()",
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
-    "bug_type": "RESOURCE_LEAK"
+    "procedure": "void ResourceLeaks.zipFileLeakExceptionalBranch()"
   }
 ]

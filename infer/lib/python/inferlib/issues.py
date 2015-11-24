@@ -121,20 +121,18 @@ def clean_csv(args, csv_report):
 
 
 def clean_json(args, json_report):
-    collected_rows = []
-    with open(json_report, 'r') as file_in:
-        rows = json.load(file_in)
-        for row in rows:
-            filename = row[JSON_INDEX_FILENAME]
-            if os.path.isfile(filename):
-                if args.no_filtering \
-                   or _should_report_json(args.analyzer, row):
-                    collected_rows.append(row)
-        collected_rows = sorted(
-            collected_rows,
-            cmp=_compare_json_rows)
+    rows = utils.load_json_from_path(json_report)
+
+    def is_clean(row):
+        filename = row[JSON_INDEX_FILENAME]
+        return (os.path.isfile(filename) and
+                (args.no_filtering or
+                 _should_report_json(args.analyzer, row)))
+
+    rows = filter(is_clean, rows)
+    rows.sort(cmp=_compare_json_rows)
     temporary_file = tempfile.mktemp()
-    utils.dump_json_to_path(collected_rows, temporary_file)
+    utils.dump_json_to_path(rows, temporary_file)
     shutil.move(temporary_file, json_report)
 
 

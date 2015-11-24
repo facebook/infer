@@ -515,10 +515,8 @@ class Infer:
 
         # capture and compile mode do not create proc_stats.json
         if os.path.isfile(proc_stats_path):
-            with codecs.open(proc_stats_path, 'r',
-                             encoding=config.LOCALE) as proc_stats_file:
-                proc_stats = json.load(proc_stats_file)
-                self.stats['int'].update(proc_stats)
+            proc_stats = utils.load_json_from_path(proc_stats_path)
+            self.stats['int'].update(proc_stats)
 
     def save_stats(self):
         """Print timing information to infer_out/stats.json"""
