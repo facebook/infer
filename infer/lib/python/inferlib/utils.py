@@ -128,6 +128,20 @@ def run_command(cmd, debug_mode, infer_out, message, env=os.environ):
         raise e
 
 
+def dump_json_to_path(
+        data, path,
+        skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True,
+        cls=None,
+        indent=2,  # customized
+        separators=None,
+        encoding=config.LOCALE,  # customized
+        default=None, sort_keys=False, **kw):
+    with codecs.open(path, 'w', encoding=config.LOCALE) as file_out:
+        json.dump(data, file_out,
+                  skipkeys, ensure_ascii, check_circular, allow_nan, cls,
+                  indent, separators, encoding, default, sort_keys, **kw)
+
+
 def merge_json_arrays_from_files(report_paths):
     # TODO: use streams instead of loading the entire json in memory
     json_data = []

@@ -134,10 +134,8 @@ def clean_json(args, json_report):
             collected_rows,
             cmp=_compare_json_rows)
     temporary_file = tempfile.mktemp()
-    with open(temporary_file, 'w') as file_out:
-        json.dump(collected_rows, file_out, indent=2)
-        file_out.flush()
-        shutil.move(temporary_file, json_report)
+    utils.dump_json_to_path(collected_rows, temporary_file)
+    shutil.move(temporary_file, json_report)
 
 
 def print_and_save_errors(json_report, bugs_out):

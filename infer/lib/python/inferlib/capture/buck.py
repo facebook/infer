@@ -139,8 +139,7 @@ class BuckAnalyzer:
         all_results = utils.merge_json_arrays_from_files(result_files)
         merged_results_path = os.path.join(self.args.infer_out,
                                            config.JSON_REPORT_FILENAME)
-        with open(merged_results_path, 'w') as file_out:
-            json.dump(all_results, file_out, indent=2)
+        utils.dump_json_to_path(all_results, merged_results_path)
         print('Results saved in {results_path}'.format(
             results_path=merged_results_path))
         return os.EX_OK

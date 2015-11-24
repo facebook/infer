@@ -535,9 +535,7 @@ class Infer:
         }
 
         stats_path = os.path.join(self.args.infer_out, config.STATS_FILENAME)
-        with codecs.open(stats_path, 'w',
-                         encoding=config.LOCALE) as stats_file:
-            json.dump(self.stats, stats_file, indent=2)
+        utils.dump_json_to_path(self.stats, stats_path)
 
 
     def close(self):

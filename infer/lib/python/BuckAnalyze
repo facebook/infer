@@ -408,8 +408,7 @@ def collect_results(args, start_time):
     store_performances_csv(args.infer_out, stats)
 
     stats_filename = os.path.join(args.infer_out, config.STATS_FILENAME)
-    with open(stats_filename, 'w') as stats_out:
-        json.dump(stats, stats_out, indent=2)
+    utils.dump_json_to_path(stats, stats_filename)
 
     basic_stats = get_basic_stats(stats)
 
