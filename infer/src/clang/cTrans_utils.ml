@@ -79,7 +79,7 @@ struct
   let need_unary_op_node uoi =
     match uoi.Clang_ast_t.uoi_kind with
     | `PostInc | `PostDec | `PreInc | `PreDec | `AddrOf | `Deref | `Plus -> true
-    | `Minus | `Not | `LNot | `Real | `Imag | `Extension -> false
+    | `Minus | `Not | `LNot | `Real | `Imag | `Extension | `Coawait -> false
 
 end
 

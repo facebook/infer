@@ -8,7 +8,7 @@
 */
 
 #include "MethodCall.h"
-
+#include <stdlib.h>
 
 int main() {
     MethodCall *call = [MethodCall alloc];

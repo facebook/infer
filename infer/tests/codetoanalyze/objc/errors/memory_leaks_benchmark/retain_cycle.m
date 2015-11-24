@@ -36,7 +36,7 @@
 
 @interface BBAssign : NSObject
 
-@property (nonatomic) AA* a;
+@property (nonatomic, assign) AA* a;
 @end
 
 int strongcycle() {

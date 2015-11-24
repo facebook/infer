@@ -1,4 +1,12 @@
 digraph iCFG {
+16 [label="16:  Message Call: retain \n   n$17=*&son:class A * [line 16]\n  n$16=_fun___objc_retain(n$17:class A *) [line 16]\n  REMOVE_TEMPS(n$16,n$17); [line 16]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  Message Call: release \n   n$14=*&self:class A * [line 16]\n  n$15=*n$14._son:class A * [line 16]\n  n$13=_fun___objc_release(n$15:class A *) [line 16]\n  REMOVE_TEMPS(n$13,n$14,n$15); [line 16]\n " shape="box"]
+	
+
+	 15 -> 14 ;
 14 [label="14:  BinaryOperatorStmt: Assign \n   n$10=*&self:class A * [line 16]\n  n$11=*&son:class A * [line 16]\n  _fun___objc_retain(n$11:class A *) [line 16]\n  n$12=*n$10._son:class A * [line 16]\n  *n$10._son:class A *=n$11 [line 16]\n  _fun___objc_release(n$12:class A *) [line 16]\n  REMOVE_TEMPS(n$10,n$11,n$12); [line 16]\n  NULLIFY(&self,false); [line 16]\n  NULLIFY(&son,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
@@ -9,7 +17,7 @@ digraph iCFG {
 12 [label="12: Start A_setSon: (generated)\nFormals:  self:class A * son:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
-	 12 -> 14 ;
+	 12 -> 16 ;
 11 [label="11:  Return Stmt \n   n$7=*&self:class A * [line 16]\n  n$8=*n$7._son:class A * [line 16]\n  *&return:class A *=n$8 [line 16]\n  n$9=_fun___set_autorelease_attribute(n$8:class A *) [line 16]\n  REMOVE_TEMPS(n$7,n$8,n$9); [line 16]\n  NULLIFY(&self,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 

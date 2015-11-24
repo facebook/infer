@@ -8,6 +8,7 @@
 */
 
 #include "IvarExample.h"
+#include <stdlib.h>
 
 int main() {
     IvarExample *i = [IvarExample alloc];

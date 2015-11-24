@@ -1,5 +1,5 @@
 digraph iCFG {
-7 [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&#GB$x:struct anonymous_record_in_infer_tests_codetoanalyze_c_frontend_nestedoperators_union.c:12:1 * [line 27]\n  *n$3.a:int =1 [line 27]\n  REMOVE_TEMPS(n$3); [line 27]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&#GB$x:struct (anonymous struct at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.c:12:1) * [line 27]\n  *n$3.a:int =1 [line 27]\n  REMOVE_TEMPS(n$3); [line 27]\n " shape="box"]
 	
 
 	 7 -> 6 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&#GB$x:struct anonymous_record_in_infer_tests_codetoanalyze_c_frontend_nestedoperators_union.c:12:1 * [line 31]\n  n$1=*n$0.b:int  [line 31]\n  *&#GB$y.g.w:int =n$1 [line 31]\n  REMOVE_TEMPS(n$0,n$1); [line 31]\n " shape="box"]
+4 [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&#GB$x:struct (anonymous struct at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.c:12:1) * [line 31]\n  n$1=*n$0.b:int  [line 31]\n  *&#GB$y.g.w:int =n$1 [line 31]\n  REMOVE_TEMPS(n$0,n$1); [line 31]\n " shape="box"]
 	
 
 	 4 -> 3 ;

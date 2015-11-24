@@ -8,6 +8,7 @@
 */
 
 #import "EOCPerson.h"
+#include <stdlib.h>
 
 int main() {
     EOCPerson *person = [[EOCPerson alloc] init];

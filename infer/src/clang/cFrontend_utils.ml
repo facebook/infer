@@ -123,6 +123,7 @@ struct
     | `Real -> "Real"
     | `Imag -> "Imag"
     | `Extension -> "Extension"
+    | `Coawait -> "Coawait"
 
   let string_of_stmt stmt =
     let name = Clang_ast_proj.get_stmt_kind_string stmt in

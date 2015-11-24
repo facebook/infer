@@ -178,7 +178,7 @@ let unary_operation_instruction uoi e typ loc =
       (* Actual dereferencing is handled by implicit cast from rvalue to lvalue *)
       ([], e, [])
   | `AddrOf -> ([], e, [])
-  | `Real | `Imag | `Extension ->
+  | `Real | `Imag | `Extension | `Coawait ->
       Printing.log_stats
         "\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...\n" uok;
       ([], e, [])
