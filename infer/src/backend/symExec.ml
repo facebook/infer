@@ -277,8 +277,7 @@ let execute_letderef pdesc tenv id rhs_exp acc_in iter =
         let prop'' =
           if lookup_uninitialized
           then
-            let check_attr_change att_old att_new = () in
-            Prop.add_or_replace_exp_attribute check_attr_change prop' (Sil.Var id) (Sil.Adangling Sil.DAuninit)
+            Prop.add_or_replace_exp_attribute prop' (Sil.Var id) (Sil.Adangling Sil.DAuninit)
           else prop' in
         prop'' :: acc in
       begin
@@ -793,8 +792,7 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
     | [ret_id] ->
         (match Prop.find_equal_formal_path receiver prop with
          | Some info ->
-             Prop.add_or_replace_exp_attribute (fun a1 a2 -> ()) prop (Sil.Var ret_id)
-               (Sil.Aobjc_null info)
+             Prop.add_or_replace_exp_attribute prop (Sil.Var ret_id) (Sil.Aobjc_null info)
          | None -> Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop)
     | _ -> prop in
   if is_receiver_null then  (* objective-c instance method with a null receiver just return objc_null(res) *)
@@ -1745,13 +1743,14 @@ module ModelBuiltins = struct
   let set_resource_attribute prop path n_lexp loc ra_res =
     let prop' = match Prop.get_resource_attribute prop n_lexp with
       | Some (Sil.Aresource (_ as ra)) ->
-          let check_attr_change att_old att_new = () in
-          Prop.add_or_replace_exp_attribute check_attr_change prop n_lexp (Sil.Aresource { ra with Sil.ra_res = ra_res })
+          Prop.add_or_replace_exp_attribute
+            prop
+            n_lexp
+            (Sil.Aresource { ra with Sil.ra_res = ra_res })
       | _ ->
           ( let pname = Sil.mem_alloc_pname Sil.Mnew in
             let ra = { Sil.ra_kind = Sil.Racquire; Sil.ra_res = ra_res; Sil.ra_pname = pname; Sil.ra_loc = loc; Sil.ra_vpath = None } in
-            let check_attr_change att_old att_new = () in
-            Prop.add_or_replace_exp_attribute check_attr_change prop n_lexp (Sil.Aresource ra)) in
+            Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Aresource ra)) in
     [(prop', path)]
 
   (** Set the attibute of the value as file *)
@@ -1803,11 +1802,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         let prop' = match Prop.get_taint_attribute prop n_lexp with
-          | _ ->
-              let check_attr_change att_old att_new = () in
-              let p'= Prop.add_or_replace_exp_attribute check_attr_change
-                  prop n_lexp (Sil.Ataint pname) in
-              p' in
+          | _ -> Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Ataint pname) in
         [(prop', path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -1820,9 +1815,7 @@ module ModelBuiltins = struct
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         let prop' = match Prop.get_taint_attribute prop n_lexp with
           | _ ->
-              let check_attr_change att_old att_new = () in
-              let p'= Prop.add_or_replace_exp_attribute check_attr_change prop n_lexp (Sil.Auntaint) in
-              p' in
+              Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Auntaint) in
         [(prop', path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
@@ -1991,8 +1984,7 @@ module ModelBuiltins = struct
         let prop = return_result lexp _prop ret_ids in
         if !Config.objc_memory_model_on then
           let n_lexp, prop = exp_norm_check_arith pname prop lexp in
-          let check_attr_change att_old att_new = () in
-          let prop' = Prop.add_or_replace_exp_attribute check_attr_change prop n_lexp Sil.Aautorelease in
+          let prop' = Prop.add_or_replace_exp_attribute prop n_lexp Sil.Aautorelease in
           [(prop', path)]
         else execute___no_op prop path
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
@@ -2056,8 +2048,13 @@ module ModelBuiltins = struct
         let prop = Prop.prop_iter_remove_curr_then_to_prop iter in
         let pname = Sil.mem_dealloc_pname mk in
         let ra = { Sil.ra_kind = Sil.Rrelease; Sil.ra_res = Sil.Rmemory mk; Sil.ra_pname = pname; Sil.ra_loc = loc; Sil.ra_vpath = None } in
+        (* mark value as freed *)
         let p_res =
-          Prop.add_or_replace_exp_attribute Tabulation.check_attr_dealloc_mismatch prop lexp (Sil.Aresource ra) in (* mark value as freed *)
+          Prop.add_or_replace_exp_attribute_check_changed
+            Tabulation.check_attr_dealloc_mismatch
+            prop
+            lexp
+            (Sil.Aresource ra) in
         p_res :: acc
     | (Sil.Hpointsto _, o :: os) -> assert false (* alignment error *)
     | _ -> assert false (* should not happen *)
@@ -2142,8 +2139,8 @@ module ModelBuiltins = struct
       let pname = Sil.mem_alloc_pname mk in
       let prop' = Prop.normalize (Prop.prop_sigma_star prop [ptsto_new]) in
       let ra = { Sil.ra_kind = Sil.Racquire; Sil.ra_res = Sil.Rmemory mk; Sil.ra_pname = pname; Sil.ra_loc = loc; Sil.ra_vpath = None } in
-      let check_attr_change att_old att_new = () in
-      Prop.add_or_replace_exp_attribute check_attr_change prop' exp_new (Sil.Aresource ra) in (* mark value as allocated *)
+      (* mark value as allocated *)
+      Prop.add_or_replace_exp_attribute prop' exp_new (Sil.Aresource ra) in
     let prop_alloc = Prop.conjoin_eq (Sil.Var ret_id) exp_new prop_plus_ptsto in
     if can_return_null then
       let prop_null = Prop.conjoin_eq (Sil.Var ret_id) Sil.exp_zero prop in

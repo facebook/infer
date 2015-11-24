@@ -1828,7 +1828,7 @@ let set_exp_attribute prop exp att =
   conjoin_neq exp exp_att prop
 
 (** Replace an attribute associated to the expression *)
-let add_or_replace_exp_attribute check_attribute_change prop exp att =
+let add_or_replace_exp_attribute_check_changed check_attribute_change prop exp att =
   let nexp = exp_normalize_prop prop exp in
   let found = ref false in
   let atom_map a = match a with
@@ -1838,7 +1838,6 @@ let add_or_replace_exp_attribute check_attribute_change prop exp att =
           begin
             found := true;
             check_attribute_change att_old att;
-
             let e1, e2 = exp_reorder e (Sil.Const (Sil.Cattribute att)) in
             Sil.Aneq (e1, e2)
           end
@@ -1848,13 +1847,17 @@ let add_or_replace_exp_attribute check_attribute_change prop exp att =
   if !found then replace_pi pi' prop
   else set_exp_attribute prop nexp att
 
+let add_or_replace_exp_attribute prop exp att =
+  (* wrapper for the most common case: do nothing *)
+  let check_attr_changed = (fun _ _ -> ()) in
+  add_or_replace_exp_attribute_check_changed check_attr_changed prop exp att
+
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
 let mark_vars_as_undefined prop vars_to_mark callee_pname loc path_pos =
   let att_undef = Sil.Aundef (callee_pname, loc, path_pos) in
   let mark_var_as_undefined exp prop =
-    let do_nothing _ _ = () in
     match exp with
-    | Sil.Var _ | Sil.Lvar _ -> add_or_replace_exp_attribute do_nothing prop exp att_undef
+    | Sil.Var _ | Sil.Lvar _ -> add_or_replace_exp_attribute prop exp att_undef
     | _ -> prop in
   IList.fold_left (fun prop id -> mark_var_as_undefined id prop) prop vars_to_mark
 
@@ -1888,7 +1891,7 @@ let replace_objc_null prop lhs_exp rhs_exp =
   | Some att, Sil.Var var ->
       let prop = remove_attribute_from_exp att prop rhs_exp in
       let prop = conjoin_eq rhs_exp Sil.exp_zero prop in
-      add_or_replace_exp_attribute (fun a1 a2 -> ()) prop lhs_exp att
+      add_or_replace_exp_attribute prop lhs_exp att
   | _ -> prop
 
 (** Get all the attributes of the prop *)
@@ -1919,12 +1922,6 @@ let attribute_map_resource prop f =
   let pi' = IList.map atom_map pi in
   replace_pi pi' prop
 
-(** if [atom] represents an attribute [att], add the attribure to [prop] *)
-let replace_atom_attribute check_attribute_change prop atom =
-  match atom_get_exp_attribute atom with
-  | None -> prop
-  | Some (exp, att) -> add_or_replace_exp_attribute check_attribute_change prop exp att
-
 (** type for arithmetic problems *)
 type arith_problem =
   | Div0 of Sil.exp (* division by zero *)
@@ -1939,8 +1936,7 @@ let find_arithmetic_problem proc_node_session prop exp =
     match exp_normalize_prop prop e with
     | Sil.Const c when iszero_int_float c -> true
     | _ ->
-        let check_attr_change att_old att_new = () in
-        res := add_or_replace_exp_attribute check_attr_change !res e (Sil.Adiv0 proc_node_session);
+        res := add_or_replace_exp_attribute !res e (Sil.Adiv0 proc_node_session);
         false in
   let rec walk = function
     | Sil.Var _ -> ()
@@ -1989,8 +1985,8 @@ let deallocate_stack_vars p pvars =
       if Sil.fav_mem p'_fav freshv then (* the address of a de-allocated stack var in in the post *)
         begin
           stack_vars_address_in_post := v :: !stack_vars_address_in_post;
-          let check_attribute_change att_old att_new = () in
-          res := add_or_replace_exp_attribute check_attribute_change !res (Sil.Var freshv) (Sil.Adangling Sil.DAaddr_stack_var)
+          res :=
+            add_or_replace_exp_attribute !res (Sil.Var freshv) (Sil.Adangling Sil.DAaddr_stack_var)
         end in
     IList.iter do_var !fresh_address_vars;
     !res in

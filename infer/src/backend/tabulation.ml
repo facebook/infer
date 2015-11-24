@@ -541,7 +541,11 @@ let prop_copy_footprint_pure p1 p2 =
   let pi2_attr, pi2_noattr = IList.partition Prop.atom_is_attribute pi2 in
   let res_noattr = Prop.replace_pi (Prop.get_pure p1 @ pi2_noattr) p2' in
   let replace_attr prop atom = (* call replace_atom_attribute which deals with existing attibutes *)
-    Prop.replace_atom_attribute check_attr_dealloc_mismatch prop atom in
+    (** if [atom] represents an attribute [att], add the attribure to [prop] *)
+    match Prop.atom_get_exp_attribute atom with
+    | None -> prop
+    | Some (exp, att) ->
+        Prop.add_or_replace_exp_attribute_check_changed check_attr_dealloc_mismatch prop exp att in
   IList.fold_left replace_attr (Prop.normalize res_noattr) pi2_attr
 
 (** check if an expression is an exception *)

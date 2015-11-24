@@ -296,8 +296,11 @@ val has_dangling_uninit_attribute : 'a t -> exp -> bool
 
 val set_exp_attribute : normal t -> exp -> attribute -> normal t
 
+val add_or_replace_exp_attribute_check_changed : (Sil.attribute -> Sil.attribute -> unit) ->
+  normal t -> exp -> attribute -> normal t
+
 (** Replace an attribute associated to the expression *)
-val add_or_replace_exp_attribute : (Sil.attribute -> Sil.attribute -> unit) -> normal t -> exp -> attribute -> normal t
+val add_or_replace_exp_attribute : normal t -> exp -> attribute -> normal t
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
 val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Location.t ->
@@ -314,9 +317,6 @@ val remove_attribute_from_exp : Sil.attribute -> 'a t -> exp -> normal t
 
 (** Retireve all the atoms in the heap that contain a specific attribute *)
 val get_atoms_with_attribute : Sil.attribute -> 'a t -> Sil.exp list
-
-(** if [atom] represents an attribute [att], add the attribure to [prop] *)
-val replace_atom_attribute : (Sil.attribute -> Sil.attribute -> unit) -> normal t -> atom -> normal t
 
 (** Return the sub part of [prop]. *)
 val get_sub : 'a t -> subst
