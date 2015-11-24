@@ -70,6 +70,12 @@ public class ReferenceTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("increment.cpp");
   }
+
+  @Test
+  public void testTemporaryLValueDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("temporary_lvalue.cpp");
+  }
   
   @Test
   public void testReferenceTypeE2EDotFilesMatch()

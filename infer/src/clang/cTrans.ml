@@ -1574,8 +1574,8 @@ struct
               CArithmetic_trans.assignment_arc_mode context var_exp ie_typ sil_e1' sil_loc rhs_owning_method true in
             ([(e, ie_typ)], instrs, ids)
           else ([], [Sil.Set (var_exp, ie_typ, sil_e1', sil_loc)], []) in
-        let ids = res_trans_ie.ids@ids_assign in
-        let instrs = res_trans_ie.instrs@instrs_assign in
+        let ids = var_res_trans.ids @ res_trans_ie.ids @ ids_assign in
+        let instrs = var_res_trans.instrs @ res_trans_ie.instrs @ instrs_assign in
         if PriorityNode.own_priority_node trans_state_pri.priority var_stmt_info then (
           let node = IList.hd next_node in
           Cfg.Node.append_instrs_temps node instrs ids;
@@ -1938,6 +1938,22 @@ struct
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc "Call delete" stmt_info res_trans_tmp in
     { res_trans with exps = [] }
 
+  and materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info =
+    let context = trans_state.context in
+    let procdesc = context.CContext.procdesc in
+    let procname = Cfg.Procdesc.get_proc_name procdesc in
+    let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
+    (* use id to create unique variable name within a function *)
+    let id = Ident.create_fresh Ident.knormal in
+    let pvar_mangled = Mangled.from_string ("SIL_materialize_temp__" ^ (Ident.to_string id)) in
+    let pvar = Sil.mk_pvar pvar_mangled procname in
+    let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+    let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
+    let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
+    Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
+    let res_trans = init_expr_trans trans_state var_res_trans stmt_info (Some temp_exp) in
+    { res_trans with exps = [(Sil.Lvar pvar, typ)] }
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
@@ -2152,6 +2168,8 @@ struct
         cxxNewExpr_trans trans_state stmt_info expr_info
     | CXXDeleteExpr (stmt_info, stmt_list, expr_info, _) ->
         cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info
+    | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
+        materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);
