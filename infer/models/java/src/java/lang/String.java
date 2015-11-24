@@ -54,24 +54,4 @@ public final class String {
             throw new StringIndexOutOfBoundsException(offset + length);
     }
 
-
-    public boolean equals(Object anObject) {
-        InferBuiltins.__check_untainted(anObject);
-        return this == anObject;
-    }
-
-    public int compareTo(String aString) {
-        InferBuiltins.__check_untainted(aString);
-        return InferUndefined.nonneg_int();
-    }
-
-    public boolean endsWith(String aString) {
-        InferBuiltins.__check_untainted(aString);
-        return InferUndefined.boolean_undefined();
-    }
-
-    public boolean startsWith(String aString) {
-        InferBuiltins.__check_untainted(aString);
-        return InferUndefined.boolean_undefined();
-    }
 }
