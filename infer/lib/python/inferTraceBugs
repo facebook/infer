@@ -59,22 +59,6 @@ base_parser.add_argument('--html',
                          help='Generate HTML report.')
 
 
-def describe_report(report, indent=0):
-    filename = report[issues.JSON_INDEX_FILENAME]
-    kind = report[issues.JSON_INDEX_KIND]
-    line = report[issues.JSON_INDEX_LINE]
-    error_type = report[issues.JSON_INDEX_TYPE]
-    msg = report[issues.JSON_INDEX_QUALIFIER]
-    return '{0}:{1}: {2}: {3}\n  {4}{5}\n'.format(
-        filename,
-        line,
-        kind.lower(),
-        error_type,
-        ' ' * indent,
-        msg,
-    )
-
-
 def show_error_and_exit(err, show_help):
     print(err)
     if show_help:
@@ -155,8 +139,12 @@ class Selector(object):
         n = 0
         n_length = len(str(len(self)))
         for report in self.reports:
-            print(str(n).rjust(n_length) + '. ' +
-                  describe_report(report, n_length + 2))
+            # the goal is to get the following output for each report:
+            # 1234. <first line of report #1234 goes here>
+            #       <second line of report goes here>
+            msg = issues.text_of_report(report) \
+                        .replace('\n', '\n%s' % ((n_length + 2) * ' '))
+            print('%s. %s\n' % (str(n).rjust(n_length), msg))
             n += 1
 
     def prompt_report(self):
@@ -287,7 +275,7 @@ def get_remote_source_template():
 
 def html_bug_trace(args, report, bug_id):
     bug_trace = ''
-    bug_trace += '%s\n' % describe_report(report)
+    bug_trace += '%s\n' % issues.text_of_report(report)
     tracer = Tracer(args)
     tracer.build_report(report)
     bug_trace += str(tracer)
@@ -328,7 +316,7 @@ def html_list_of_bugs(args, remote_source_template, selector):
     list_of_bugs = '<ol>'
     for report in selector:
         d = {
-            'description': describe_report(report, 2),
+            'description': issues.text_of_report(report),
             'trace-url': url_of_bug_number(i),
             'source-uri': source_uri(report),
         }
@@ -395,7 +383,7 @@ def main():
     report = sel.prompt_report()
     max_level = sel.prompt_level()
 
-    print(describe_report(report))
+    print(issues.text_of_report(report))
 
     tracer = Tracer(args, max_level)
     tracer.build_report(report)
