@@ -35,6 +35,8 @@ done
 
 # Never error on warnings. Clang is often more strict than Apple's version.
 # These arguments are appended to override previous opposite settings.
-COMMAND+=("-Wno-error" "-Qunused-arguments")
+# How it's done: surpress all the warnings, since there are no warnings,
+# compiler can't elevate them to error level.
+COMMAND+=("-Wno-everything")
 
 "${COMMAND[@]}"
