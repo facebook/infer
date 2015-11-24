@@ -1,5 +1,10 @@
 [
   {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "Socket TaintExample.callReadInputStreamCauseTaintError(SSLSocketFactory)"
+  },
+  {
     "bug_type": "CONTEXT_LEAK",
     "file": "codetoanalyze/java/infer/ContextLeaks.java",
     "procedure": "void ContextLeaks.directLeak()"
@@ -47,7 +52,12 @@
   {
     "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
     "file": "codetoanalyze/java/infer/TaintExample.java",
-    "procedure": "InputStream TaintExample.taintingShouldNotPreventInference(SSLSocketFactory)"
+    "procedure": "InputStream TaintExample.taintingShouldNotPreventInference1(SSLSocketFactory)"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "InputStream TaintExample.taintingShouldNotPreventInference2(SSLSocketFactory)"
   },
   {
     "bug_type": "NULL_DEREFERENCE",

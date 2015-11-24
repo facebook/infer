@@ -766,58 +766,83 @@ let inconsistent_actualpre_missing actual_pre split_opt =
   | None -> false
 
 (* Collect the taint/untain info on the pi part *)
+(* TODO (t9199155): this be done with a single traversal of the list of atoms/combined with
+   intersection_taint_untaint to be much more efficient *)
 let rec get_taint_untaint pi =
-  let get_att_exp p e (t,u) =
+  let get_att_exp p e (t,u) atom =
     match Prop.get_taint_attribute p e with
     | Some(Sil.Ataint _) ->
         L.d_str "   ---->Found TAINTED exp: "; Sil.d_exp e; L.d_ln ();
-        (e::t, u)
+        ((e, atom)::t, u)
     | Some(Sil.Auntaint) ->
         L.d_str "   ---->Found UNTAINTED exp: "; Sil.d_exp e; L.d_ln ();
-        (t, e::u)
+        (t, (e, atom)::u)
     | _ -> (t,u) in
   match pi with
   | [] -> ([],[])
-  | Sil.Aneq (e1, e2):: pi' ->
+  | (Sil.Aneq (e1, e2) as atom) :: pi' ->
       let (t, u) = get_taint_untaint pi' in
-      let p = Prop.replace_pi [Sil.Aneq (e1, e2)] Prop.prop_emp in
-      let (t',u') = get_att_exp p e1 (t,u) in
-      get_att_exp p e2 (t',u')
+      let p = Prop.replace_pi [atom] Prop.prop_emp in
+      let (t',u') = get_att_exp p e1 (t,u) atom in
+      get_att_exp p e2 (t',u') atom
   | _ :: pi' -> get_taint_untaint pi'
 
 (* perform the taint analysis check by comparing in a function call the
    actual calling state and the missing pi computed by abduction *)
 let do_taint_check caller_pname callee_pname calling_prop missing_pi sub prop =
-  (* Note: returns only the first element in the intersection*)
-  let rec intersection_taint_untaint taint untaint =
+  let rec intersection_taint_untaint taint untaint acc =
     match taint with
-    | [] -> None
-    | e:: taint' -> if (IList.exists (fun e' -> Sil.exp_equal e e') untaint) then (Some e)
-        else intersection_taint_untaint taint' untaint in
+    | [] -> acc
+    | (e1, atom_taint) :: taint' ->
+        let acc' =
+          try
+            let (e2, atom_untaint) =
+              IList.find (fun (e2, _) -> Sil.exp_equal e1 e2) untaint in
+            (e1, atom_taint, atom_untaint) :: acc
+          with Not_found -> acc in
+        intersection_taint_untaint taint' untaint acc' in
   let combined_calling_prop =
     Prop.replace_pi ((Prop.get_pi calling_prop) @ missing_pi) calling_prop in
   let sub_combined_calling_prop = Prop.prop_sub sub combined_calling_prop in
   let taint_set, untaint_set = get_taint_untaint (Prop.get_pi sub_combined_calling_prop) in
   L.d_str "Actual pre combined with missing pi: "; Prop.d_prop sub_combined_calling_prop; L.d_ln();
-  L.d_str "Taint set: "; Sil.d_exp_list taint_set; L.d_ln ();
-  L.d_str "Untaint set: "; Sil.d_exp_list untaint_set; L.d_ln ();
-  match intersection_taint_untaint taint_set untaint_set with
-  | None -> L.d_str "NO taint error detected"; L.d_ln();
-  | Some e -> begin
-      L.d_str "Taint error detected!"; L.d_ln();
-      let e' = match Errdesc.find_pvar_with_exp prop e with
-        | Some (pv, _) -> Sil.Lvar pv
-        | None -> e in
-      let tainting_fun = match Prop.get_taint_attribute prop e with
-        | Some (Sil.Ataint tf) -> tf
-        | _ -> Procname.empty  (* by definition of e, we should not get to this case *) in
-      let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e' tainting_fun
-          callee_pname (State.get_loc ()) in
-      let exn =
-        Exceptions.Tainted_value_reaching_sensitive_function
-          (err_desc, try assert false with Assert_failure x -> x) in
-      Reporting.log_warning caller_pname exn
-    end
+  L.d_str "Taint set: "; Sil.d_exp_list (fst (IList.split taint_set)); L.d_ln ();
+  L.d_str "Untaint set: "; Sil.d_exp_list (fst (IList.split untaint_set)); L.d_ln ();
+  let report_taint_error (e, _, _) =
+    L.d_str "Taint error detected!"; L.d_ln();
+    let e' = match Errdesc.find_pvar_with_exp prop e with
+      | Some (pv, _) -> Sil.Lvar pv
+      | None -> e in
+    let tainting_fun = match Prop.get_taint_attribute prop e with
+      | Some (Sil.Ataint tf) -> tf
+      | _ -> Procname.empty  (* by definition of e, we should not get to this case *) in
+    let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e' tainting_fun
+        callee_pname (State.get_loc ()) in
+    let exn =
+      Exceptions.Tainted_value_reaching_sensitive_function
+        (err_desc, try assert false with Assert_failure x -> x) in
+    Reporting.log_warning caller_pname exn in
+  match intersection_taint_untaint taint_set untaint_set [] with
+  | [] ->
+      L.d_str "NO taint error detected"; L.d_ln();
+      missing_pi
+  | taint_errors ->
+      IList.iter report_taint_error taint_errors;
+      (* get a version of [missing_pi] whose var names match names in taint_errors *)
+      let missing_pi_sub =
+        Prop.get_pi (Prop.prop_sub sub (Prop.replace_pi missing_pi Prop.prop_emp)) in
+      (* filter out UNTAINT(e) atoms from [missing_pi] such that we have already reported a taint
+         error on e. without doing this, we will get PRECONDITION_NOT_MET (and failed spec
+         inference), which is bad. instead, what this does is effectively assume that the UNTAINT(e)
+         precondition was met, and contine with the analysis under this assumption. this makes sense
+         because we are reporting the taint error, but propagating a *safe* postcondition w.r.t to
+         tainting. *)
+      IList.filter
+        (fun atom -> not
+            (IList.exists
+               (fun (_, _, atom_untaint) -> Sil.atom_equal atom atom_untaint)
+               taint_errors))
+        missing_pi_sub
 
 let class_cast_exn pname_opt texp1 texp2 exp ml_location =
   let desc = Errdesc.explain_class_cast_exception pname_opt texp1 texp2 exp (State.get_node ()) (State.get_loc ()) in
@@ -887,7 +912,11 @@ let exe_spec
         let exn = get_check_exn check callee_pname loc (try assert false with Assert_failure x -> x) in
         Reporting.log_warning caller_pname exn in
       let do_split () =
-        let split = process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld frame_typ missing_typ in
+        let missing_pi' =
+          if !Config.taint_analysis then
+            do_taint_check caller_pname callee_pname actual_pre missing_pi sub2 prop
+          else missing_pi in
+        let split = process_splitting actual_pre sub1 sub2 frame missing_pi' missing_sigma frame_fld missing_fld frame_typ missing_typ in
         d_splitting split; L.d_ln ();
         let norm_missing_pi = Prop.pi_sub split.sub split.missing_pi in
         let norm_missing_sigma = Prop.sigma_sub split.sub split.missing_sigma in
@@ -911,8 +940,6 @@ let exe_spec
                         vr_incons_res = inconsistent_results } in
       begin
         IList.iter log_check_exn checks;
-        if !Config.taint_analysis then
-          do_taint_check caller_pname callee_pname actual_pre missing_pi sub2 prop;
         let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
         match check_dereferences callee_pname subbed_pre sub2 spec_pre formal_params with
         | Some (Deref_undef _, _) when !Config.angelic_execution ->

@@ -27,6 +27,8 @@ public class TaintTest {
 
   public static final String TAINTED_VALUE = "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION";
 
+  public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
+
   private static InferResults inferResults;
 
   @BeforeClass
@@ -41,7 +43,9 @@ public class TaintTest {
         "socketNotVerifiedSimple",
         "socketVerifiedForgotToCheckRetval",
         "socketIgnoreExceptionNoVerify",
-        "taintingShouldNotPreventInference"
+        "callReadInputStreamCauseTaintError",
+        "taintingShouldNotPreventInference1",
+        "taintingShouldNotPreventInference2",
     };
 
     assertThat(
@@ -53,8 +57,6 @@ public class TaintTest {
             methods
         )
     );
-
-
   }
 
 }

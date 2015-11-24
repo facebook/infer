@@ -29,15 +29,6 @@ public class TaintExample {
     return socket.getInputStream();
   }
 
-  public InputStream taintingShouldNotPreventInference(SSLSocketFactory f)
-    throws IOException {
-
-    socketNotVerifiedSimple(f).toString();
-    // failing to infer a post for socketNotVerifiedSimple will hide this error
-    Socket socket = f.createSocket();
-    return socket.getInputStream();
-  }
-
   public InputStream socketVerifiedForgotToCheckRetval(SSLSocketFactory f,
                                                        HostnameVerifier v,
                                                        SSLSession session)
@@ -60,7 +51,6 @@ public class TaintExample {
       return null;
     }
   }
-
 
   HostnameVerifier mHostnameVerifier;
 
@@ -90,5 +80,30 @@ public class TaintExample {
     return s.getInputStream();
   }
 
+  public InputStream taintingShouldNotPreventInference1(SSLSocketFactory f) throws IOException {
+    socketNotVerifiedSimple(f).toString();
+    // failing to infer a post for socketNotVerifiedSimple will hide this error
+    Socket s = f.createSocket();
+    return s.getInputStream();
+  }
+
+  public InputStream readInputStream(Socket socket) throws IOException {
+    return socket.getInputStream();
+  }
+
+  // if we're not careful, postcondition inference will fail for this function
+  Socket callReadInputStreamCauseTaintError(SSLSocketFactory f)
+    throws IOException {
+    Socket socket = f.createSocket();
+    InputStream s = readInputStream(socket);
+    s.toString(); // to avoid RETURN_VALUE_IGNORED warning
+    return f.createSocket();
+  }
+
+  InputStream taintingShouldNotPreventInference2(SSLSocketFactory f) throws IOException {
+    // if inference fails for this callee, we won't report an error here
+    Socket s = callReadInputStreamCauseTaintError(f);
+    return s.getInputStream();
+  }
 
 }
