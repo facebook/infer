@@ -122,6 +122,8 @@ val is_class_initializer : t -> bool
 (** [is_infer_undefined pn] returns true if [pn] is a special Infer undefined proc *)
 val is_infer_undefined : t -> bool
 
+val split_classname : string -> string option * string
+
 (** Check if the procedure belongs to an anonymous inner class. *)
 val java_is_anonymous_inner_class : t -> bool
 

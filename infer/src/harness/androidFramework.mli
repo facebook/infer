@@ -11,6 +11,16 @@
 
 open Utils
 
+type java_method_str = {
+  classname : string;
+  method_name : string;
+  ret_type : string;
+  params : string list;
+  is_static : bool
+}
+
+val java_method_to_procname : java_method_str -> Procname.t
+
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 val get_lifecycles : (string * string * string list) list
 

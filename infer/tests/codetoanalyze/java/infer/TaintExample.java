@@ -21,6 +21,8 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import com.facebook.infer.models.InferTaint;
+
 public class TaintExample {
 
   public InputStream socketNotVerifiedSimple(SSLSocketFactory f)
@@ -104,6 +106,31 @@ public class TaintExample {
     // if inference fails for this callee, we won't report an error here
     Socket s = callReadInputStreamCauseTaintError(f);
     return s.getInputStream();
+  }
+
+  public void simpleTaintErrorWithModelMethods() {
+    Object o = InferTaint.inferSecretSource();
+    InferTaint.inferSensitiveSink(o);
+  }
+
+  public Object returnTaintedSourceModelMethods() {
+    return InferTaint.inferSecretSource();
+  }
+
+  public void callSinkMethodModelMethods(Object o) {
+    InferTaint.inferSensitiveSink(o);
+  }
+
+  public void interprocTaintErrorWithModelMethods1() {
+    InferTaint.inferSensitiveSink(returnTaintedSourceModelMethods());
+  }
+
+  public void interprocTaintErrorWithModelMethods2() {
+    callSinkMethodModelMethods(InferTaint.inferSecretSource());
+  }
+
+  public void interprocTaintErrorWithModelMethods3() {
+    callSinkMethodModelMethods(returnTaintedSourceModelMethods());
   }
 
 }

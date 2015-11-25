@@ -20,6 +20,21 @@
     "procedure": "void ContextLeaks.indirectLeak()"
   },
   {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.interprocTaintErrorWithModelMethods1()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.interprocTaintErrorWithModelMethods2()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.interprocTaintErrorWithModelMethods3()"
+  },
+  {
     "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
     "procedure": "void ContextLeaks.leakAfterInstanceFieldWrite()"
@@ -28,6 +43,11 @@
     "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
     "procedure": "void ContextLeaks.nonStaticInnerClassLeak()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.simpleTaintErrorWithModelMethods()"
   },
   {
     "bug_type": "CONTEXT_LEAK",

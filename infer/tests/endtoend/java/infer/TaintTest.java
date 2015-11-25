@@ -46,6 +46,10 @@ public class TaintTest {
         "callReadInputStreamCauseTaintError",
         "taintingShouldNotPreventInference1",
         "taintingShouldNotPreventInference2",
+        "simpleTaintErrorWithModelMethods",
+        "interprocTaintErrorWithModelMethods1",
+        "interprocTaintErrorWithModelMethods2",
+        "interprocTaintErrorWithModelMethods3"
     };
 
     assertThat(

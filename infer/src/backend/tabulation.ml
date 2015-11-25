@@ -746,6 +746,35 @@ let combine
     print_results actual_pre (IList.map fst results);
     Some results
 
+let mk_pre pre formal_params callee_pname =
+  if !Config.taint_analysis then
+    match Taint.accepts_sensitive_params callee_pname with
+    | [] -> pre
+    | param_nums ->
+        let add_param_untaint prop param =
+          (* TODO: we should be able to add the taint attribute directly to the pvar. fix the taint
+             analysis so that it uses Prover.check_equal and gets the right answer here *)
+          IList.fold_left
+            (fun prop_acc hpred -> match hpred with
+               | Sil.Hpointsto (Sil.Lvar pvar, (Sil.Eexp (rhs, _)), _)
+                 when Sil.pvar_equal pvar param ->
+                   Prop.add_or_replace_exp_attribute prop_acc rhs Sil.Auntaint
+               | _ -> prop_acc)
+            prop
+            (Prop.get_sigma prop) in
+        let add_param_untaint_if_nums_match prop param_num param =
+          if IList.exists (fun num -> num = param_num) param_nums then
+            add_param_untaint prop param
+          else prop in
+        let pre', _ =
+          IList.fold_left
+            (fun (prop_acc, param_num) param ->
+               (add_param_untaint_if_nums_match prop_acc param_num param, param_num + 1))
+            (Prop.normalize pre, 0)
+            formal_params in
+        (Prop.expose pre')
+  else pre
+
 (** Construct the actual precondition: add to the current state a copy
     of the (callee's) formal parameters instantiated with the actual
     parameters. *)
@@ -765,6 +794,52 @@ let mk_actual_precondition prop actual_params formal_params =
   let instantiated_formals = IList.map mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize actual_pre
+
+let mk_posts ret_ids prop callee_pname posts =
+  match ret_ids with
+  | [ret_id] ->
+      let mk_getter_idempotent posts =
+        (* if we have seen a previous call to the same function, only use specs whose return value
+           is consistent with constraints on the return value of the previous call w.r.t to
+           nullness. meant to eliminate false NPE warnings from the common
+           "if (get() != null) get().something()" pattern *)
+        let last_call_ret_non_null =
+          IList.exists
+            (fun (exp, attr) ->
+               match attr with
+               | Sil.Aretval pname when Procname.equal callee_pname pname ->
+                   Prover.check_disequal prop exp Sil.exp_zero
+               | _ -> false)
+            (Prop.get_all_attributes prop) in
+        if last_call_ret_non_null then
+          let returns_null prop =
+            IList.exists
+              (function
+                | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (e, _), _) when Sil.pvar_is_return pvar ->
+                    Prover.check_equal (Prop.normalize prop) e Sil.exp_zero
+                | _ -> false)
+              (Prop.get_sigma prop) in
+          IList.filter (fun (prop, _) -> not (returns_null prop)) posts
+        else posts in
+      let mk_retval_tainted posts =
+        if Taint.returns_secret callee_pname then
+          let taint_retval (prop, path) =
+            let prop_normal = Prop.normalize prop in
+            let prop' =
+              Prop.add_or_replace_exp_attribute prop_normal
+                (Sil.Var ret_id)
+                (Sil.Ataint callee_pname)
+              |> Prop.expose in
+            (prop', path) in
+          IList.map taint_retval posts
+        else posts in
+      let posts' =
+        if !Config.idempotent_getters && !Config.curr_language = Config.Java
+        then mk_getter_idempotent posts
+        else posts in
+      if !Config.taint_analysis then mk_retval_tainted posts' else posts'
+  | _ -> posts
+
 
 (** Check if actual_pre * missing_footprint |- false *)
 let inconsistent_actualpre_missing actual_pre split_opt =
@@ -881,34 +956,9 @@ let exe_spec
     tenv cfg ret_ids (n, nspecs) caller_pdesc callee_pname loc prop path_pre
     (spec : Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
-  let posts =
-    match ret_ids with
-    | [ret_id] when !Config.idempotent_getters && !Config.curr_language = Config.Java ->
-        (* if we have seen a previous call to the same function, only use specs whose return value
-           is consistent with constraints on the return value of the previous call w.r.t to nullness.
-           meant to eliminate false NPE warnings from the common "if (get() != null) get().something()"
-           pattern *)
-        let last_call_ret_non_null =
-          IList.exists
-            (fun (exp, attr) ->
-               match attr with
-               | Sil.Aretval pname when Procname.equal callee_pname pname ->
-                   Prover.check_disequal prop exp Sil.exp_zero
-               | _ -> false)
-            (Prop.get_all_attributes prop) in
-        if last_call_ret_non_null then
-          let returns_null prop =
-            IList.exists
-              (function
-                | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (e, _), _) when Sil.pvar_is_return pvar ->
-                    Prover.check_equal (Prop.normalize prop) e Sil.exp_zero
-                | _ -> false)
-              (Prop.get_sigma prop) in
-          IList.filter (fun (prop, _) -> not (returns_null prop)) spec.Specs.posts
-        else spec.Specs.posts
-    | _ -> spec.Specs.posts in
+  let posts = mk_posts ret_ids prop callee_pname spec.Specs.posts in
   let actual_pre = mk_actual_precondition prop actual_params formal_params in
-  let spec_pre = Specs.Jprop.to_prop spec.Specs.pre in
+  let spec_pre = mk_pre (Specs.Jprop.to_prop spec.Specs.pre) formal_params callee_pname in
   L.d_strln ("EXECUTING SPEC " ^ string_of_int n ^ "/" ^ string_of_int nspecs);
   L.d_strln "ACTUAL PRECONDITION =";
   L.d_increase_indent 1; Prop.d_prop actual_pre; L.d_decrease_indent 1; L.d_ln ();
