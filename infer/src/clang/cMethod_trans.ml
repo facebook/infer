@@ -86,7 +86,8 @@ let get_return_type function_method_decl_info =
   | Block_decl_info (_, typ, _) -> CTypes.return_type_of_function_type typ
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
 
-let build_method_signature decl_info procname function_method_decl_info is_anonym_block is_generated =
+let build_method_signature decl_info procname function_method_decl_info is_anonym_block is_generated
+    parent_pointer =
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp = get_return_type function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
@@ -94,7 +95,7 @@ let build_method_signature decl_info procname function_method_decl_info is_anony
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language function_method_decl_info in
   CMethod_signature.make_ms procname parameters tp attributes source_range is_instance_method
-    is_generated lang
+    is_generated lang parent_pointer
 
 let get_assume_not_null_calls ms param_decls =
   let attributes = CMethod_signature.ms_get_attributes ms in
@@ -119,7 +120,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
       let procname = General_utils.mk_procname_from_function name function_info tp language in
-      let ms = build_method_signature decl_info procname func_decl false false in
+      let ms = build_method_signature decl_info procname func_decl false false None in
       let extra_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
@@ -128,7 +129,8 @@ let method_signature_of_decl meth_decl block_data_opt =
       let class_name = Ast_utils.get_class_name_from_member name_info in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
-      let ms = build_method_signature decl_info procname method_decl false false in
+      let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
+      let ms = build_method_signature decl_info procname method_decl false false parent_pointer in
       let non_null_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
@@ -140,12 +142,14 @@ let method_signature_of_decl meth_decl block_data_opt =
       let procname = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
       let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
       let is_generated = Ast_utils.is_generated name_info in
-      let ms = build_method_signature decl_info procname method_decl false is_generated in
+      let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
+      let ms = build_method_signature decl_info procname method_decl false is_generated
+          parent_pointer in
       let extra_instrs = get_assume_not_null_calls ms mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
-      let ms = build_method_signature decl_info procname func_decl true false in
+      let ms = build_method_signature decl_info procname func_decl true false None in
       let extra_instrs = get_assume_not_null_calls ms bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
@@ -158,6 +162,24 @@ let method_signature_of_pointer pointer =
         Some ms
     | None -> None
   with Invalid_declaration -> None
+
+let get_method_name_from_clang tenv ms_opt =
+  match ms_opt with
+  | Some ms ->
+      (match Ast_utils.get_decl_opt (CMethod_signature.ms_get_pointer_to_parent ms) with
+       | Some decl ->
+           if ObjcProtocol_decl.is_protocol decl then None
+           else
+             (ignore (CTypes_decl.add_types_from_decl_to_tenv tenv decl);
+              match ObjcCategory_decl.get_base_class_name_from_category decl with
+              | Some class_name ->
+                  let procname = CMethod_signature.ms_get_name ms in
+                  let new_procname = Procname.c_method_replace_class procname class_name in
+                  CMethod_signature.ms_set_name ms new_procname;
+                  Some ms
+              | None -> Some ms)
+       | None -> Some ms)
+  | None -> None
 
 let get_superclass_curr_class context =
   let retrive_super cname super_opt =
@@ -179,25 +201,39 @@ let get_superclass_curr_class context =
   | CContext.ContextNoCls
   | CContext.ContextProtocol _ -> assert false
 
-let get_class_selector_instance context obj_c_message_expr_info act_params =
-  let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
-  let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
+(* Gets the class name from a method signature found by clang, if search is successful *)
+let get_class_name_method_call_from_clang obj_c_message_expr_info =
+  match obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
+  | Some pointer ->
+      (match method_signature_of_pointer pointer with
+       | Some ms ->
+           let class_name = Procname.c_get_class (CMethod_signature.ms_get_name ms) in
+           Some class_name
+       | None -> None)
+  | None -> None
+
+(* Get class name from a method call accorsing to the info given by the receiver kind  *)
+let get_class_name_method_call_from_receiver_kind context obj_c_message_expr_info act_params =
   match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
   | `Class tp ->
       let sil_type = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv tp in
-      ((CTypes.classname_of_type sil_type), selector, pointer, MCStatic)
+      (CTypes.classname_of_type sil_type)
   | `Instance ->
       (match act_params with
        | (instance_obj, Sil.Tptr(t, _)):: _
-       | (instance_obj, t):: _ ->
-           (CTypes.classname_of_type t, selector, pointer, MCVirtual)
+       | (instance_obj, t):: _ -> CTypes.classname_of_type t
        | _ -> assert false)
-  | `SuperInstance ->
-      let superclass = get_superclass_curr_class context in
-      (superclass, selector, pointer, MCNoVirtual)
-  | `SuperClass ->
-      let superclass = get_superclass_curr_class context in
-      (superclass, selector, pointer, MCStatic)
+  | `SuperInstance ->get_superclass_curr_class context
+  | `SuperClass -> get_superclass_curr_class context
+
+let get_objc_method_data obj_c_message_expr_info =
+  let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
+  let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
+  match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
+  | `Instance -> (selector, pointer, MCVirtual)
+  | `SuperInstance -> (selector, pointer, MCNoVirtual)
+  | `Class _
+  | `SuperClass -> (selector, pointer, MCStatic)
 
 let get_formal_parameters tenv ms =
   let rec defined_parameters pl =

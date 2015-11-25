@@ -1,5 +1,5 @@
 digraph iCFG {
-4 [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 13]\n  n$0=_fun_A_init(n$2:class A *) virtual [line 13]\n  *&a:class A *=n$0 [line 13]\n  REMOVE_TEMPS(n$0,n$2); [line 13]\n  NULLIFY(&a,false); [line 13]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 13]\n  n$0=_fun_NSObject_init(n$2:class A *) virtual [line 13]\n  *&a:class A *=n$0 [line 13]\n  REMOVE_TEMPS(n$0,n$2); [line 13]\n  NULLIFY(&a,false); [line 13]\n " shape="box"]
 	
 
 	 4 -> 3 ;

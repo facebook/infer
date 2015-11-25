@@ -77,6 +77,8 @@ sig
 
   val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
+  val get_decl_opt : Clang_ast_t.pointer option -> Clang_ast_t.decl option
+
   val update_sil_types_map : Clang_ast_t.type_ptr -> Sil.typ -> unit
 
   val update_enum_map : Clang_ast_t.pointer -> Sil.exp -> unit

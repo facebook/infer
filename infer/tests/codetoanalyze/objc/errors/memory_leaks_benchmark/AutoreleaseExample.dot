@@ -1,5 +1,5 @@
 digraph iCFG {
-41 [label="41:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool ):unsigned long ) [line 60]\n  n$5=_fun_NSAutoreleasePool_init(n$7:class NSAutoreleasePool *) [line 60]\n  *&pool:class NSAutoreleasePool *=n$5 [line 60]\n  REMOVE_TEMPS(n$5,n$7); [line 60]\n " shape="box"]
+41 [label="41:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool ):unsigned long ) [line 60]\n  n$5=_fun_NSObject_init(n$7:class NSAutoreleasePool *) virtual [line 60]\n  *&pool:class NSAutoreleasePool *=n$5 [line 60]\n  REMOVE_TEMPS(n$5,n$7); [line 60]\n " shape="box"]
 	
 
 	 41 -> 40 ;
@@ -104,7 +104,7 @@ digraph iCFG {
 	
 
 	 15 -> 25 ;
-14 [label="14:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 30]\n  n$2=_fun_A_init(n$4:class A *) virtual [line 30]\n  *&s1:class A *=n$2 [line 30]\n  REMOVE_TEMPS(n$2,n$4); [line 30]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 30]\n  n$2=_fun_NSObject_init(n$4:class A *) virtual [line 30]\n  *&s1:class A *=n$2 [line 30]\n  REMOVE_TEMPS(n$2,n$4); [line 30]\n " shape="box"]
 	
 
 	 14 -> 13 ;

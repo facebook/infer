@@ -13,3 +13,5 @@
 open CFrontend_utils
 
 val protocol_decl : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl -> Sil.typ
+
+val is_protocol : Clang_ast_t.decl -> bool

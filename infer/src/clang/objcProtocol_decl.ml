@@ -38,3 +38,9 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
       Sil.Tvar protocol_name
   | _ -> assert false
+
+let is_protocol decl =
+  let open Clang_ast_t in
+  match decl with
+  | ObjCProtocolDecl(decl_info, name_info, decl_list, _, obj_c_protocol_decl_info) -> true
+  | _ -> false

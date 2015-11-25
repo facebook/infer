@@ -49,6 +49,23 @@ let add_category_implementation type_ptr_to_sil_type tenv category_decl_info =
   let decl_ref_opt = category_decl_info.Clang_ast_t.odi_implementation in
   Ast_utils.add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt false
 
+let get_base_class_name_from_category decl =
+  let open Clang_ast_t in
+  let base_class_pointer_opt =
+    match decl with
+    | ObjCCategoryDecl (decl_info, name_info, decl_list, decl_context_info, cdi) ->
+        cdi.Clang_ast_t.odi_class_interface
+    | ObjCCategoryImplDecl (decl_info, name_info, decl_list, decl_context_info, cii) ->
+        cii.Clang_ast_t.ocidi_class_interface
+    | _ -> None in
+  match base_class_pointer_opt with
+  | Some decl_ref ->
+      (match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+       | Some ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
+           Some (Ast_utils.get_qualified_name name_info)
+       | _ -> None)
+  | None -> None
+
 (* Add potential extra fields defined only in the category *)
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =

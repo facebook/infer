@@ -25,8 +25,13 @@ val create_local_procdesc : Cfg.cfg -> Sil.tenv -> CMethod_signature.method_sign
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.typ list) option -> unit
 
-val get_class_selector_instance : CContext.t -> Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list
-  -> (string * string * Clang_ast_t.pointer option * method_call_type)
+val get_objc_method_data : Clang_ast_t.obj_c_message_expr_info ->
+  (string * Clang_ast_t.pointer option * method_call_type)
+
+val get_class_name_method_call_from_receiver_kind : CContext.t ->
+  Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list -> string
+
+val get_class_name_method_call_from_clang : Clang_ast_t.obj_c_message_expr_info -> string option
 
 val should_create_procdesc : Cfg.cfg -> Procname.t -> bool -> bool -> bool
 
@@ -34,6 +39,9 @@ val method_signature_of_decl : Clang_ast_t.decl -> CModule_type.block_data optio
   CMethod_signature.method_signature * Clang_ast_t.stmt option * CModule_type.instr_type list
 
 val method_signature_of_pointer : Clang_ast_t.pointer -> CMethod_signature.method_signature option
+
+val get_method_name_from_clang : Sil.tenv -> CMethod_signature.method_signature option ->
+  CMethod_signature.method_signature option
 
 val create_procdesc_with_pointer : CContext.t -> Clang_ast_t.pointer -> string option ->
   string -> Clang_ast_t.type_ptr -> Procname.t

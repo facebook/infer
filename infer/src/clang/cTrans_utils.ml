@@ -317,8 +317,13 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
     PriorityNode.compute_results_to_parent trans_state loc "Call objC new" stmt_info res_trans_tmp in
   { res_trans with exps = [(Sil.Var init_ret_id, alloc_ret_type)]}
 
-let new_or_alloc_trans trans_state loc stmt_info class_name selector =
-  let function_type = CTypes_decl.type_name_to_sil_type trans_state.context.CContext.tenv class_name in
+let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selector =
+  let tenv = trans_state.context.CContext.tenv in
+  let function_type = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
+  let class_name =
+    match class_name_opt with
+    | Some class_name -> class_name
+    | None -> CTypes.classname_of_type function_type in
   if selector = CFrontend_config.alloc then
     alloc_trans trans_state loc stmt_info function_type true
   else if selector = CFrontend_config.new_str then

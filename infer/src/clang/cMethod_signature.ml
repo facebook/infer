@@ -11,7 +11,7 @@
 (** return type, location and whether its an instance method.  *)
 
 type method_signature = {
-  _name : Procname.t;
+  mutable _name : Procname.t;
   _args : (string * Clang_ast_t.type_ptr) list;
   _ret_type : Clang_ast_t.type_ptr;
   _attributes : Clang_ast_t.attribute list;
@@ -19,10 +19,14 @@ type method_signature = {
   _is_instance : bool;
   _is_generated : bool;
   _language : CFrontend_config.lang;
+  _pointer_to_parent : Clang_ast_t.pointer option
 }
 
 let ms_get_name ms =
   ms._name
+
+let ms_set_name ms name =
+  ms._name <- name
 
 let ms_get_args ms =
   ms._args
@@ -45,7 +49,10 @@ let ms_is_generated ms =
 let ms_get_lang ms =
   ms._language
 
-let make_ms procname args ret_type attributes loc is_instance is_generated lang =
+let ms_get_pointer_to_parent ms =
+  ms._pointer_to_parent
+
+let make_ms procname args ret_type attributes loc is_instance is_generated lang pointer_to_parent =
   let meth_signature = {
     _name = procname;
     _args = args;
@@ -55,6 +62,7 @@ let make_ms procname args ret_type attributes loc is_instance is_generated lang 
     _is_instance = is_instance;
     _is_generated = is_generated;
     _language = lang;
+    _pointer_to_parent = pointer_to_parent;
   } in
   meth_signature
 

@@ -31,33 +31,44 @@ module CTrans_funct(M: CModule_type.CMethod_declaration) : CTrans =
 struct
 
   (*Returns the procname and whether is instance, according to the selector *)
-  (* information and according to the method signature *)
+  (* information and according to the method signature with the following priority: *)
+  (* 1. method is a predefined model *)
+  (* 2. method is found by clang's resolution*)
+  (* 3. Method is found by our resolution *)
   let get_callee_objc_method context obj_c_message_expr_info act_params =
-    let (class_name, method_name, method_pointer_opt, mc_type) =
-      CMethod_trans.get_class_selector_instance context obj_c_message_expr_info act_params in
+    let open CContext in
+    let (selector, method_pointer_opt, mc_type) =
+      CMethod_trans.get_objc_method_data obj_c_message_expr_info in
     let is_instance = mc_type != CMethod_trans.MCStatic in
     let method_kind = Procname.objc_method_kind_of_bool is_instance in
-    let callee_pn = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
-    let open CContext in
-    match CTrans_models.get_predefined_model_method_signature class_name method_name
-            General_utils.mk_procname_from_objc_method CFrontend_config.OBJC with
-    | Some ms ->
+    let ms_opt =
+      match method_pointer_opt with
+      | Some pointer -> CMethod_trans.method_signature_of_pointer pointer
+      | None -> None in
+    let procname =
+      match CMethod_trans.get_method_name_from_clang context.tenv ms_opt with
+      | Some ms -> CMethod_signature.ms_get_name ms
+      | None ->  (* fall back to our method resolution if clang's fails *)
+          let class_name = CMethod_trans.get_class_name_method_call_from_receiver_kind context
+              obj_c_message_expr_info act_params in
+          General_utils.mk_procname_from_objc_method class_name selector method_kind in
+    let class_name = Procname.c_get_class procname in
+    let predefined_ms_opt =
+      CTrans_models.get_predefined_model_method_signature class_name selector
+        General_utils.mk_procname_from_objc_method CFrontend_config.OBJC in
+    match predefined_ms_opt, ms_opt with
+    | Some ms, _ ->
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
-    | None ->
-        let found_method =
-          match method_pointer_opt with
-          | Some pointer ->
-              (match CMethod_trans.method_signature_of_pointer pointer with
-               | Some callee_ms ->
-                   if not (M.process_getter_setter context callee_pn) then
-                     (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv callee_ms [] [] is_instance));
-                   true
-               | None -> false)
-          | None -> false in
-        if not found_method then
-          CMethod_trans.create_external_procdesc context.cfg callee_pn is_instance None;
-        callee_pn, mc_type
+    | None, Some ms ->
+        if not (M.process_getter_setter context procname) then
+          (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv
+                     ms [] [] is_instance));
+        procname, mc_type
+    | _ ->
+        CMethod_trans.create_external_procdesc context.cfg procname is_instance None;
+        procname, mc_type
+
 
   let add_autorelease_call context exp typ sil_loc =
     let method_name = Procname.c_get_method (Cfg.Procdesc.get_proc_name context.CContext.procdesc) in
@@ -817,71 +828,101 @@ struct
           Sil.Tvoid
     | _ -> assert false
 
+  and objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info stmt_list
+      expr_info method_type trans_state_pri sil_loc act_params =
+    let context = trans_state.context in
+    let receiver_kind = obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind in
+    let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
+    (* class method *)
+    if selector = CFrontend_config.class_method && CTypes.is_class method_type then
+      let class_name = CMethod_trans.get_class_name_method_call_from_receiver_kind context
+          obj_c_message_expr_info act_params in
+      raise (Self.SelfClassException class_name)
+      (* alloc or new *)
+    else if (selector = CFrontend_config.alloc) || (selector = CFrontend_config.new_str) then
+      match receiver_kind with
+      | `Class type_ptr ->
+          let class_opt =
+            CMethod_trans.get_class_name_method_call_from_clang obj_c_message_expr_info in
+          Some (new_or_alloc_trans trans_state_pri sil_loc si type_ptr class_opt selector)
+      | _ -> None
+      (* assertions *)
+    else if CTrans_models.is_handleFailureInMethod selector then
+      if Config.report_assertion_failure then
+        Some (CTrans_utils.trans_assertion_failure sil_loc context)
+      else Some (CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes)
+    else None
+
+  (* If the first argument of the call is self in a static context, remove it as an argument *)
+  (* and change the call from instance to static *)
+  and objCMessageExpr_deal_with_static_self trans_state_param stmt_list obj_c_message_expr_info =
+    match stmt_list with
+    | stmt :: rest ->
+        let obj_c_message_expr_info, fst_res_trans =
+          try
+            let fst_res_trans = instruction trans_state_param stmt in
+            obj_c_message_expr_info, fst_res_trans
+          with Self.SelfClassException class_name ->
+            let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
+            let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
+            let obj_c_message_expr_info =
+              Ast_expressions.make_obj_c_message_expr_info_class selector class_name pointer in
+            obj_c_message_expr_info, empty_res_trans in
+        let instruction' =
+          exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+        let l = IList.map (instruction' trans_state_param) rest in
+        obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
+    | [] -> obj_c_message_expr_info, empty_res_trans
+
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let parent_line_number = trans_state.parent_line_number in
+    let line_number = CLocation.get_line si parent_line_number in
     let sil_loc = CLocation.get_sil_location si parent_line_number context in
-    let selector, receiver_kind = get_selector_receiver obj_c_message_expr_info in
-    let is_alloc_or_new = (selector = CFrontend_config.alloc) || (selector = CFrontend_config.new_str) in
-    Printing.log_out "\n!!!!!!! Calling with selector = '%s' " selector;
-    Printing.log_out "    receiver_kind= '%s'\n\n" (Clang_ast_j.string_of_receiver_kind receiver_kind);
     let method_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    let ret_id = if Sil.typ_equal method_type Sil.Tvoid then []
+    let ret_id =
+      if Sil.typ_equal method_type Sil.Tvoid then []
       else [Ident.create_fresh Ident.knormal] in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-    let line_number = CLocation.get_line si parent_line_number in
     let trans_state_param =
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
     let obj_c_message_expr_info, res_trans_par =
-      (match stmt_list with
-       | stmt :: rest ->
-           let obj_c_message_expr_info, fst_res_trans =
-             (try
-                let fst_res_trans = instruction trans_state_param stmt in
-                obj_c_message_expr_info, fst_res_trans
-              with Self.SelfClassException class_name ->
-                let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class selector class_name in
-                obj_c_message_expr_info, empty_res_trans) in
-           let instruction' =
-             exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
-           let l = IList.map (instruction' trans_state_param) rest in
-           obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
-       | [] -> obj_c_message_expr_info, empty_res_trans) in
-    let (class_type, _, _, _) = CMethod_trans.get_class_selector_instance context obj_c_message_expr_info res_trans_par.exps in
-    if (selector = CFrontend_config.class_method && CTypes.is_class method_type) then
-      raise (Self.SelfClassException class_type)
-    else if is_alloc_or_new then
-      new_or_alloc_trans trans_state_pri sil_loc si class_type selector
-    else if (CTrans_models.is_handleFailureInMethod selector) then
-      if Config.report_assertion_failure then
-        CTrans_utils.trans_assertion_failure sil_loc context
-      else
-        CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes
-    else
-      let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
-      let callee_name, method_call_type = get_callee_objc_method context obj_c_message_expr_info res_trans_par.exps in
-      let res_trans_par = Self.add_self_parameter_for_super_instance context procname sil_loc
-          obj_c_message_expr_info res_trans_par in
-      let is_virtual = method_call_type = CMethod_trans.MCVirtual in
-      Cg.add_edge context.CContext.cg procname callee_name;
-      let call_flags = { Sil.cf_virtual = is_virtual; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
-      let param_exps, instr_block_param, ids_block_param = extract_block_from_tuple procname res_trans_par.exps sil_loc in
-      let stmt_call = Sil.Call(ret_id, (Sil.Const (Sil.Cfun callee_name)), param_exps, sil_loc, call_flags) in
-      let nname = "Message Call: "^selector in
-      let res_trans_tmp = {
-        res_trans_par with
-        ids = ret_id @ res_trans_par.ids @ids_block_param ;
-        instrs = res_trans_par.instrs@instr_block_param@[stmt_call];
-        exps =[]
-      } in
-      let res_trans_to_parent = (
-        PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp) in
-      (match ret_id with
-       | [] -> { res_trans_to_parent with exps = [] }
-       | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
-       | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
+      objCMessageExpr_deal_with_static_self trans_state_param stmt_list obj_c_message_expr_info in
+    match objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info stmt_list
+            expr_info method_type trans_state_pri sil_loc res_trans_par.exps with
+    | Some res -> res
+    | None ->
+        let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
+        let callee_name, method_call_type =
+          get_callee_objc_method context obj_c_message_expr_info res_trans_par.exps in
+        let res_trans_par = Self.add_self_parameter_for_super_instance context procname sil_loc
+            obj_c_message_expr_info res_trans_par in
+        let is_virtual = method_call_type = CMethod_trans.MCVirtual in
+        Cg.add_edge context.CContext.cg procname callee_name;
+        let call_flags = {
+          Sil.cf_virtual = is_virtual;
+          Sil.cf_noreturn = false;
+          Sil.cf_is_objc_block = false; } in
+        let param_exps, instr_block_param, ids_block_param =
+          extract_block_from_tuple procname res_trans_par.exps sil_loc in
+        let stmt_call =
+          Sil.Call (ret_id, (Sil.Const (Sil.Cfun callee_name)), param_exps, sil_loc, call_flags) in
+        let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
+        let nname = "Message Call: "^selector in
+        let res_trans_tmp = {
+          res_trans_par with
+          ids = ret_id @ res_trans_par.ids @ids_block_param ;
+          instrs = res_trans_par.instrs @ instr_block_param @ [stmt_call];
+          exps = []
+        } in
+        let res_trans_to_parent = (
+          PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp) in
+        match ret_id with
+        | [] -> { res_trans_to_parent with exps = [] }
+        | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
+        | _ -> assert false (* by construction of red_id, we cannot be in this case *)
 
   and dispatch_function_trans trans_state stmt_info stmt_list ei n =
     Printing.log_out "\n Call to a dispatch function treated as special case...\n";
@@ -1816,16 +1857,16 @@ struct
 
   and objCBoxedExpr_trans trans_state info sel stmt_info stmts =
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
-    let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class sel typ in
+    let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class sel typ None in
     let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
     instruction trans_state message_stmt
 
   and objCArrayLiteral_trans trans_state info stmt_info stmts =
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
-    let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.array_with_objects_count_m typ in
+    let meth = CFrontend_config.array_with_objects_count_m in
+    let obj_c_mes_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
-    let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
+    let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_mes_expr_info) in
     instruction trans_state message_stmt
 
   and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
@@ -1833,7 +1874,7 @@ struct
     let dictionary_literal_pname = SymExec.ModelBuiltins.__objc_dictionary_literal in
     let dictionary_literal_s = Procname.c_get_method dictionary_literal_pname in
     let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info_class dictionary_literal_s typ in
+      Ast_expressions.make_obj_c_message_expr_info_class dictionary_literal_s typ None in
     let stmts = General_utils.swap_elements_list stmts in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
     let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
@@ -1843,9 +1884,9 @@ struct
     let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts
                    Ast_expressions.create_char_star_type `ArrayToPointerDecay] in
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
-    let obj_c_message_expr_info =
-      Ast_expressions.make_obj_c_message_expr_info_class CFrontend_config.string_with_utf8_m typ in
-    let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
+    let meth = CFrontend_config.string_with_utf8_m in
+    let obj_c_mess_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
+    let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_mess_expr_info) in
     instruction trans_state message_stmt
 
   (** When objects are autoreleased, they get added a flag AUTORELEASE. All these objects will be

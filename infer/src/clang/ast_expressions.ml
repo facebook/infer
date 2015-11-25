@@ -214,11 +214,11 @@ let make_obj_c_message_expr_info_instance sel = {
   omei_decl_pointer = None; (* TODO look into it *)
 }
 
-let make_obj_c_message_expr_info_class selector tp = {
+let make_obj_c_message_expr_info_class selector tp pointer = {
   Clang_ast_t.omei_selector = selector;
   omei_receiver_kind = `Class (create_class_type tp);
   omei_is_definition_found = false;
-  omei_decl_pointer = None (* TODO look into it *)
+  omei_decl_pointer = pointer
 }
 
 let make_decl_ref k decl_ptr name is_hidden tp_opt = {

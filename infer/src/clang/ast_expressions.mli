@@ -83,7 +83,8 @@ val make_decl_ref_exp_var : named_decl_info * type_ptr * pointer -> decl_kind ->
 
 val make_binary_stmt : stmt -> stmt -> stmt_info -> expr_info -> binary_operator_info -> stmt
 
-val make_obj_c_message_expr_info_class : string -> string -> obj_c_message_expr_info
+val make_obj_c_message_expr_info_class : string -> string -> pointer option ->
+  obj_c_message_expr_info
 
 val make_obj_c_message_expr_info_instance : string -> obj_c_message_expr_info
 
