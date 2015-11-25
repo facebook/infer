@@ -34,7 +34,9 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
          CMethod_declImpl.function_decl tenv cfg cg dec None
 
      (* Currently C/C++ record decl treated in the same way *)
-     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _) | RecordDecl (_, _, _, _, decl_list, _, _) ->
+     | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
+     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+     | RecordDecl (_, _, _, _, decl_list, _, _) ->
          ignore (CTypes_decl.add_types_from_decl_to_tenv tenv dec);
          let method_decls = CTypes_decl.get_method_decls dec decl_list in
          let tranlate_method (parent, decl) =
@@ -81,7 +83,8 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
            | Some ptr -> Ast_utils.get_decl ptr
            | None -> Some parent_dec in
          (match class_decl with
-          | Some (CXXRecordDecl _ as d) ->
+          | Some (CXXRecordDecl _ as d)
+          | Some (ClassTemplateSpecializationDecl _ as d) ->
               let class_name = CTypes_decl.get_record_name d in
               let curr_class = CContext.ContextCls(class_name, None, []) in
               if !CFrontend_config.testing_mode then
@@ -95,6 +98,9 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
   | NamespaceDecl (decl_info, name_info, decl_list, decl_context_info, _) ->
+      IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
+  | ClassTemplateDecl (decl_info, named_decl_info, class_template_decl_info) ->
+      let decl_list = class_template_decl_info.Clang_ast_t.ctdi_specializations in
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
   | dec -> ()
 

@@ -86,7 +86,8 @@ let get_record_name_csu decl =
   let open Clang_ast_t in
   let name_info, opt_type, should_be_class = match decl with
     | RecordDecl (_, name_info, opt_type, _, _, _, _) -> name_info, opt_type, false
-    | CXXRecordDecl (_, name_info, opt_type, _, _, _, _, cxx_record_info) ->
+    | CXXRecordDecl (_, name_info, opt_type, _, _, _, _, cxx_record_info)
+    | ClassTemplateSpecializationDecl (_, name_info, opt_type, _, _, _, _, cxx_record_info) ->
         (* we use Sil.Class for C++ because we expect Sil.Class csu from *)
         (* types that have methods. And in C++ struct/class/union can have methods *)
         name_info, opt_type, not cxx_record_info.xrdi_is_c_like
@@ -102,6 +103,7 @@ let get_method_decls parent decl_list =
   let open Clang_ast_t in
   let rec traverse_decl parent decl = match decl with
     | CXXMethodDecl _ | CXXConstructorDecl _ -> [(parent, decl)]
+    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list', _, _, _)
     | CXXRecordDecl (_, _, _, _, decl_list', _, _, _)
     | RecordDecl (_, _, _, _, decl_list', _, _) -> traverse_decl_list decl decl_list'
     | _ -> []
@@ -121,8 +123,10 @@ let get_class_methods tenv class_name decl_list =
   IList.flatten_options (IList.map process_method_decl decl_list)
 
 let get_superclass_decls decl =
+  let open Clang_ast_t in
   match decl with
-  | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info) ->
+  | CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info)
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
       IList.map Ast_utils.get_decl_from_typ_ptr base_ptr
@@ -146,6 +150,7 @@ let add_struct_to_tenv tenv typ =
 let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
   let decl_list = match decl with
+    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
     | RecordDecl (_, _, _, _, decl_list, _, _) -> decl_list
     | _ -> [] in
@@ -155,6 +160,7 @@ let rec get_struct_fields tenv decl =
         let typ = type_ptr_to_sil_type tenv type_ptr in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
+    | ClassTemplateSpecializationDecl (decl_info, _, _, _, _, _, _, _)
     | CXXRecordDecl (decl_info, _, _, _, _, _, _, _)
     | RecordDecl (decl_info, _, _, _, _, _, _) ->
         (* C++/C Records treated in the same way*)
@@ -166,11 +172,12 @@ let rec get_struct_fields tenv decl =
   IList.flatten (base_class_fields @ (IList.map do_one_decl decl_list))
 
 (* For a record declaration it returns/constructs the type *)
-and get_strct_cpp_class_declaration_type tenv decl =
+and get_struct_cpp_class_declaration_type tenv decl =
   let open Clang_ast_t in
   match decl with
-  | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
-  | RecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info) ->
+  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _)
+  | CXXRecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _)
+  | RecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info) ->
       let csu, name = get_record_name_csu decl in
       let mangled_name = Mangled.from_string name in
       let sil_typename = Sil.Tvar (Sil.TN_csu (csu, mangled_name)) in
@@ -198,9 +205,8 @@ and get_strct_cpp_class_declaration_type tenv decl =
 and add_types_from_decl_to_tenv tenv decl =
   let open Clang_ast_t in
   match decl with
-  | CXXRecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info, _)
-  | RecordDecl (decl_info, name_info, opt_type, type_ptr, decl_list, _, record_decl_info) ->
-      get_strct_cpp_class_declaration_type tenv decl
+  | ClassTemplateSpecializationDecl _ | CXXRecordDecl _ | RecordDecl _ ->
+      get_struct_cpp_class_declaration_type tenv decl
   | ObjCInterfaceDecl _ -> ObjcInterface_decl.interface_declaration type_ptr_to_sil_type tenv decl
   | ObjCImplementationDecl _ ->
       ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv decl

@@ -22,6 +22,7 @@ let decl_get_sub_decls decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
   | RecordDecl (_, _, _, _, decl_list, _, _)
   | ObjCInterfaceDecl (_, _, decl_list, _, _)
   | ObjCProtocolDecl (_, _, decl_list, _, _)
@@ -32,6 +33,8 @@ let decl_get_sub_decls decl =
   | LinkageSpecDecl (_, decl_list, _)
   | NamespaceDecl (_, _, decl_list, _, _) ->
       decl_list
+  | ClassTemplateDecl (_, _, class_template_decl_info) ->
+      class_template_decl_info.ctdi_specializations
   | _ ->
       []
 
@@ -42,6 +45,8 @@ let decl_set_sub_decls decl decl_list' =
   match decl with
   | CXXRecordDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, record_decl_info, cxx_record_info) ->
       CXXRecordDecl (decl_info, name, opt_type, type_ptr, decl_list', decl_context_info, record_decl_info, cxx_record_info)
+  | ClassTemplateSpecializationDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, record_decl_info, cxx_record_info) ->
+      ClassTemplateSpecializationDecl (decl_info, name, opt_type, type_ptr, decl_list', decl_context_info, record_decl_info, cxx_record_info)
   | RecordDecl (decl_info, name, opt_type, type_ptr, decl_list, decl_context_info, record_decl_info) ->
       RecordDecl (decl_info, name, opt_type, type_ptr, decl_list', decl_context_info, record_decl_info)
   | ObjCInterfaceDecl (decl_info, name, decl_list, decl_context_info, obj_c_interface_decl_info) ->
@@ -60,6 +65,9 @@ let decl_set_sub_decls decl decl_list' =
       LinkageSpecDecl (decl_info, decl_list', decl_context_info)
   | NamespaceDecl (decl_info, name, decl_list, decl_context_info, namespace_decl_info) ->
       NamespaceDecl (decl_info, name, decl_list', decl_context_info, namespace_decl_info)
+  | ClassTemplateDecl (decl_info, name, class_template_decl_info) ->
+      let class_template_decl_info' = { ctdi_specializations = decl_list' } in
+      ClassTemplateDecl (decl_info, name, class_template_decl_info')
   | _ ->
       decl
 
