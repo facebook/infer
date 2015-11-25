@@ -147,13 +147,6 @@ def dump_json_to_path(
                   indent, separators, encoding, default, sort_keys, **kw)
 
 
-def merge_json_arrays_from_files(report_paths):
-    json_data = []
-    for json_path in report_paths:
-        json_data.extend(load_json_from_path(json_path))
-    return json_data
-
-
 def infer_version():
     version = json.loads(subprocess.check_output([
         get_cmd_in_bin_dir('InferAnalyze'),

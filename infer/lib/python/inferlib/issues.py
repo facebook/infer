@@ -12,7 +12,9 @@ from __future__ import unicode_literals
 
 import codecs
 import csv
+import itertools
 import json
+import operator
 import os
 import shutil
 import sys
@@ -108,9 +110,8 @@ def clean_csv(args, csv_report):
                     if args.no_filtering \
                        or _should_report_csv(args.analyzer, row):
                         collected_rows.append(row)
-            collected_rows = sorted(
-                collected_rows,
-                cmp=_compare_csv_rows)
+            collected_rows.sort(key=operator.itemgetter(CSV_INDEX_FILENAME,
+                                                        CSV_INDEX_LINE))
             collected_rows = [rows[0]] + collected_rows
     temporary_file = tempfile.mktemp()
     with open(temporary_file, 'w') as file_out:
@@ -130,7 +131,8 @@ def clean_json(args, json_report):
                  _should_report_json(args.analyzer, row)))
 
     rows = filter(is_clean, rows)
-    rows.sort(cmp=_compare_json_rows)
+    rows.sort(key=operator.itemgetter(JSON_INDEX_FILENAME,
+                                      JSON_INDEX_LINE))
     temporary_file = tempfile.mktemp()
     utils.dump_json_to_path(rows, temporary_file)
     shutil.move(temporary_file, json_report)
@@ -193,29 +195,22 @@ def print_and_save_errors(json_report, bugs_out):
         file_out.write(text)
 
 
-def _compare_issues(filename_1, line_1, filename_2, line_2):
-    if filename_1 < filename_2:
-        return -1
-    elif filename_1 > filename_2:
-        return 1
-    else:
-        return line_1 - line_2
+def merge_reports_from_paths(report_paths):
+    json_data = []
+    for json_path in report_paths:
+        json_data.extend(utils.load_json_from_path(json_path))
+    return _sort_and_uniq_rows(json_data)
 
 
-def _compare_csv_rows(row_1, row_2):
-    filename_1 = row_1[CSV_INDEX_FILENAME]
-    filename_2 = row_2[CSV_INDEX_FILENAME]
-    line_1 = int(row_1[CSV_INDEX_LINE])
-    line_2 = int(row_2[CSV_INDEX_LINE])
-    return _compare_issues(filename_1, line_1, filename_2, line_2)
-
-
-def _compare_json_rows(row_1, row_2):
-    filename_1 = row_1[JSON_INDEX_FILENAME]
-    filename_2 = row_2[JSON_INDEX_FILENAME]
-    line_1 = row_1[JSON_INDEX_LINE]
-    line_2 = row_2[JSON_INDEX_LINE]
-    return _compare_issues(filename_1, line_1, filename_2, line_2)
+def _sort_and_uniq_rows(l):
+    key = operator.itemgetter(JSON_INDEX_FILENAME,
+                              JSON_INDEX_LINE,
+                              JSON_INDEX_HASH,
+                              JSON_INDEX_QUALIFIER)
+    l.sort(key=key)
+    groups = itertools.groupby(l, key)
+    # guaranteed to be at least one element in each group
+    return map(lambda (keys, dups): dups.next(), groups)
 
 
 def _should_report(analyzer, error_kind, error_type, error_bucket):

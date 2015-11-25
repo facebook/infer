@@ -13,7 +13,7 @@ import subprocess
 import traceback
 import util
 
-from inferlib import config, utils
+from inferlib import config, issues, utils
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -136,7 +136,7 @@ class BuckAnalyzer:
         if not ret == os.EX_OK:
             return ret
         result_files = self._get_analysis_result_files()
-        all_results = utils.merge_json_arrays_from_files(result_files)
+        all_results = issues.merge_reports_from_paths(result_files)
         merged_results_path = os.path.join(self.args.infer_out,
                                            config.JSON_REPORT_FILENAME)
         utils.dump_json_to_path(all_results, merged_results_path)
