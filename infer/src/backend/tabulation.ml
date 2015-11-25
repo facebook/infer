@@ -119,29 +119,31 @@ let spec_find_rename trace_call (proc_name : Procname.t) : (int * Prop.exposed S
       raise (Exceptions.Precondition_not_found (Localise.verbatim_desc (Procname.to_string proc_name), try assert false with Assert_failure x -> x))
     end
 
-(** Process a splitting coming straight from a call to the prover:
-    change the instantiating substitution so that it returns primed vars,
-    except for vars occurring in the missing part, where it returns
-    footprint vars. *)
-let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld frame_typ missing_typ =
-  (*
-  let check_precondition () =
+let check_splitting_precondition sub1 sub2 =
   let dom1 = Sil.sub_domain sub1 in
   let rng1 = Sil.sub_range sub1 in
   let dom2 = Sil.sub_domain sub2 in
   let rng2 = Sil.sub_range sub2 in
   let overlap = IList.exists (fun id -> IList.exists (Ident.equal id) dom1) dom2 in
   if overlap then begin
-  L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom1); L.d_ln ();
-  L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
-  L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom2); L.d_ln ();
-  L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
-  assert false
-  end in
-  check_precondition ();
-  *)
-  let sub = Sil.sub_join sub1 sub2 in
+    L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom1); L.d_ln ();
+    L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
+    L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom2); L.d_ln ();
+    L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
+    assert false
+  end
 
+(** Process a splitting coming straight from a call to the prover:
+    change the instantiating substitution so that it returns primed vars,
+    except for vars occurring in the missing part, where it returns
+    footprint vars. *)
+let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld frame_typ missing_typ =
+
+  let hpred_has_only_footprint_vars hpred =
+    let fav = Sil.fav_new () in
+    Sil.hpred_fav_add fav hpred;
+    Sil.fav_for_all fav Ident.is_footprint in
+  let sub = Sil.sub_join sub1 sub2 in
   let sub1_inverse =
     let sub1_list = Sil.sub_to_list sub1 in
     let sub1_list' = IList.filter (function (_, Sil.Var _) -> true | _ -> false) sub1_list in
@@ -205,7 +207,38 @@ let process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_
   let sub_list' =
     IList.map (fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
   let sub' = Sil.sub_of_list (sub2_list @ sub_list') in
-  { sub = sub'; frame = frame; missing_pi = missing_pi; missing_sigma = missing_sigma; frame_fld = frame_fld; missing_fld = missing_fld; frame_typ = frame_typ; missing_typ = missing_typ }
+  (* normalize everything w.r.t sub' *)
+  let norm_missing_pi = Prop.pi_sub sub' missing_pi in
+  let norm_missing_sigma = Prop.sigma_sub sub' missing_sigma in
+  let norm_frame_fld = Prop.sigma_sub sub' frame_fld in
+  let norm_frame_typ =
+    IList.map (fun (e, te) -> Sil.exp_sub sub' e, Sil.exp_sub sub' te) frame_typ in
+  let norm_missing_typ =
+    IList.map (fun (e, te) -> Sil.exp_sub sub' e, Sil.exp_sub sub' te) missing_typ in
+  let norm_missing_fld =
+    let sigma = Prop.sigma_sub sub' missing_fld in
+    let filter hpred =
+      if not (hpred_has_only_footprint_vars hpred) then
+        begin
+          L.d_warning "Missing fields hpred has non-footprint vars: "; Sil.d_hpred hpred; L.d_ln ();
+          false
+        end
+      else match hpred with
+        | Sil.Hpointsto(Sil.Var id, _, _) -> true
+        | Sil.Hpointsto(Sil.Lvar pvar, _, _) -> Sil.pvar_is_global pvar
+        | _ ->
+            L.d_warning "Missing fields in complex pred: "; Sil.d_hpred hpred; L.d_ln ();
+            false in
+    IList.filter filter sigma in
+  let norm_frame = Prop.sigma_sub sub' frame in
+  { sub =           sub';
+    frame =         norm_frame;
+    missing_pi =    norm_missing_pi;
+    missing_sigma = norm_missing_sigma;
+    frame_fld =     norm_frame_fld;
+    missing_fld =   norm_missing_fld;
+    frame_typ =     norm_frame_typ;
+    missing_typ =   norm_missing_typ; }
 
 (** Check whether an inst represents a dereference without null check, and return the line number and path position *)
 let find_dereference_without_null_check_in_inst = function
@@ -343,11 +376,6 @@ let post_process_post
   let post' = Prop.replace_pi pi' prop' in
   check_path_errors_in_post caller_pname post' post_path;
   post', post_path
-
-let hpred_has_only_footprint_vars hpred =
-  let fav = Sil.fav_new () in
-  Sil.hpred_fav_add fav hpred;
-  Sil.fav_for_all fav Ident.is_footprint
 
 let hpred_lhs_compare hpred1 hpred2 = match hpred1, hpred2 with
   | Sil.Hpointsto(e1, _, _), Sil.Hpointsto(e2, _, _) -> Sil.exp_compare e1 e2
@@ -610,27 +638,6 @@ let combine
     actual_pre path_pre split
     caller_pdesc callee_pname loc =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
-  let new_footprint_pi = Prop.pi_sub split.sub split.missing_pi in
-  let new_footprint_sigma = Prop.sigma_sub split.sub split.missing_sigma in
-  let new_frame_fld = Prop.sigma_sub split.sub split.frame_fld in
-  let new_frame_typ = IList.map (fun (e, te) -> Sil.exp_sub split.sub e, Sil.exp_sub split.sub te) split.frame_typ in
-  let new_missing_typ = IList.map (fun (e, te) -> Sil.exp_sub split.sub e, Sil.exp_sub split.sub te) split.missing_typ in
-  let new_missing_fld =
-    let sigma = Prop.sigma_sub split.sub split.missing_fld in
-    let filter hpred =
-      if not (hpred_has_only_footprint_vars hpred) then
-        begin
-          L.d_warning "Missing fields hpred has non-footprint vars: "; Sil.d_hpred hpred; L.d_ln ();
-          false
-        end
-      else match hpred with
-        | Sil.Hpointsto(Sil.Var id, _, _) -> true
-        | Sil.Hpointsto(Sil.Lvar pvar, _, _) -> Sil.pvar_is_global pvar
-        | _ ->
-            L.d_warning "Missing fields in complex pred: "; Sil.d_hpred hpred; L.d_ln ();
-            false in
-    IList.filter filter sigma in
-  let instantiated_frame = Prop.sigma_sub split.sub split.frame in
   let instantiated_post =
     let posts' =
       if !Config.footprint && posts = []
@@ -653,20 +660,20 @@ let combine
             caller_pname callee_pname loc actual_pre (Prop.prop_sub split.sub p, path)))
       posts' in
   L.d_increase_indent 1;
-  L.d_strln "New footprint:"; Prop.d_pi_sigma new_footprint_pi new_footprint_sigma; L.d_ln ();
-  L.d_strln "Frame fld:"; Prop.d_sigma new_frame_fld; L.d_ln ();
-  if new_frame_typ <> [] then L.d_strln "Frame typ:"; Prover.d_typings new_frame_typ; L.d_ln ();
-  L.d_strln "Missing fld:"; Prop.d_sigma new_missing_fld; L.d_ln ();
-  if new_frame_typ <> [] then L.d_strln "Missing typ:"; Prover.d_typings new_missing_typ; L.d_ln ();
-  L.d_strln "Instantiated frame:"; Prop.d_sigma instantiated_frame; L.d_ln ();
+  L.d_strln "New footprint:"; Prop.d_pi_sigma split.missing_pi split.missing_sigma; L.d_ln ();
+  L.d_strln "Frame fld:"; Prop.d_sigma split.frame_fld; L.d_ln ();
+  if split.frame_typ <> [] then begin L.d_strln "Frame typ:"; Prover.d_typings split.frame_typ; L.d_ln () end;
+  L.d_strln "Missing fld:"; Prop.d_sigma split.missing_fld; L.d_ln ();
+  if split.missing_typ <> [] then begin L.d_strln "Missing typ:"; Prover.d_typings split.missing_typ; L.d_ln (); end;
+  L.d_strln "Instantiated frame:"; Prop.d_sigma split.frame; L.d_ln ();
   L.d_strln "Instantiated post:"; Propgraph.d_proplist Prop.prop_emp (IList.map fst instantiated_post);
   L.d_decrease_indent 1; L.d_ln ();
   let compute_result post_p =
     let post_p' =
-      let post_sigma = sigma_star_fld (Prop.get_sigma post_p) new_frame_fld in
-      let post_sigma' = sigma_star_typ post_sigma new_frame_typ in
+      let post_sigma = sigma_star_fld (Prop.get_sigma post_p) split.frame_fld in
+      let post_sigma' = sigma_star_typ post_sigma split.frame_typ in
       Prop.replace_sigma post_sigma' post_p in
-    let post_p1 = Prop.prop_sigma_star (prop_copy_footprint_pure actual_pre post_p') instantiated_frame in
+    let post_p1 = Prop.prop_sigma_star (prop_copy_footprint_pure actual_pre post_p') split.frame in
 
     let handle_null_case_analysis sigma =
       let id_assigned_to_null id =
@@ -674,7 +681,7 @@ let combine
           | Sil.Aeq (Sil.Var id', Sil.Const (Sil.Cint i)) ->
               Ident.equal id id' && Sil.Int.isnull i
           | _ -> false in
-        IList.exists filter new_footprint_pi in
+        IList.exists filter split.missing_pi in
       let f (e, inst_opt) = match e, inst_opt with
         | Sil.Var id, Some inst when id_assigned_to_null id ->
             let inst' = Sil.inst_set_null_case_flag inst in
@@ -686,7 +693,7 @@ let combine
       let post_p1_sigma = Prop.get_sigma post_p1 in
       let post_p1_sigma' = handle_null_case_analysis post_p1_sigma in
       let post_p1' = Prop.replace_sigma post_p1_sigma' post_p1 in
-      Prop.normalize (Prop.replace_pi (Prop.get_pi post_p1 @ new_footprint_pi) post_p1') in
+      Prop.normalize (Prop.replace_pi (Prop.get_pi post_p1 @ split.missing_pi) post_p1') in
 
     let post_p3 = (** replace [result|callee] with an aux variable dedicated to this proc *)
       let callee_ret_pvar =
@@ -723,7 +730,12 @@ let combine
     let post_p4 =
       if !Config.footprint
       then
-        prop_footprint_add_pi_sigma_starfld_sigma post_p3 new_footprint_pi new_footprint_sigma new_missing_fld new_missing_typ
+        prop_footprint_add_pi_sigma_starfld_sigma
+          post_p3
+          split.missing_pi
+          split.missing_sigma
+          split.missing_fld
+          split.missing_typ
       else Some post_p3 in
     post_p4 in
   let _results = IList.map (fun (p, path) -> (compute_result p, path)) instantiated_post in
@@ -758,10 +770,8 @@ let mk_actual_precondition prop actual_params formal_params =
 let inconsistent_actualpre_missing actual_pre split_opt =
   match split_opt with
   | Some split ->
-      let norm_missing_pi = Prop.pi_sub split.sub split.missing_pi in
-      let norm_missing_sigma = Prop.sigma_sub split.sub split.missing_sigma in
-      let prop'= Prop.normalize (Prop.prop_sigma_star actual_pre norm_missing_sigma) in
-      let prop''= IList.fold_left Prop.prop_atom_and prop' norm_missing_pi in
+      let prop'= Prop.normalize (Prop.prop_sigma_star actual_pre split.missing_sigma) in
+      let prop''= IList.fold_left Prop.prop_atom_and prop' split.missing_pi in
       Prover.check_inconsistency prop''
   | None -> false
 
@@ -916,12 +926,8 @@ let exe_spec
           if !Config.taint_analysis then
             do_taint_check caller_pname callee_pname actual_pre missing_pi sub2 prop
           else missing_pi in
-        let split = process_splitting actual_pre sub1 sub2 frame missing_pi' missing_sigma frame_fld missing_fld frame_typ missing_typ in
-        d_splitting split; L.d_ln ();
-        let norm_missing_pi = Prop.pi_sub split.sub split.missing_pi in
-        let norm_missing_sigma = Prop.sigma_sub split.sub split.missing_sigma in
-        (split, norm_missing_pi, norm_missing_sigma) in
-      let report_valid_res split norm_missing_pi norm_missing_sigma =
+        process_splitting actual_pre sub1 sub2 frame missing_pi' missing_sigma frame_fld missing_fld frame_typ missing_typ in
+      let report_valid_res split =
         match combine
                 cfg ret_ids posts
                 actual_pre path_pre split
@@ -934,8 +940,8 @@ let exe_spec
               IList.partition (fun (p, _) -> Prover.check_inconsistency p) results in
             let incons_pre_missing = inconsistent_actualpre_missing actual_pre (Some split) in
             Valid_res { incons_pre_missing = incons_pre_missing;
-                        vr_pi = norm_missing_pi;
-                        vr_sigma = norm_missing_sigma;
+                        vr_pi = split.missing_pi;
+                        vr_sigma = split.missing_sigma;
                         vr_cons_res = consistent_results;
                         vr_incons_res = inconsistent_results } in
       begin
@@ -943,8 +949,8 @@ let exe_spec
         let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
         match check_dereferences callee_pname subbed_pre sub2 spec_pre formal_params with
         | Some (Deref_undef _, _) when !Config.angelic_execution ->
-            let (split, norm_missing_pi, norm_missing_sigma) = do_split () in
-            report_valid_res split norm_missing_pi norm_missing_sigma
+            let split = do_split () in
+            report_valid_res split
         | Some (deref_error, desc) ->
             let rec join_paths = function
               | [] -> None
@@ -955,7 +961,7 @@ let exe_spec
             let pjoin = join_paths posts in (* join the paths from the posts *)
             Invalid_res (Dereference_error (deref_error, desc, pjoin))
         | None ->
-            let (split, norm_missing_pi, norm_missing_sigma) = do_split () in
+            let split = do_split () in
             (* check if a missing_fld hpred is about a hidden field *)
             let hpred_missing_hidden = function
               | Sil.Hpointsto (_, Sil.Estruct ([(fld, _)], _), _) -> Ident.fieldname_is_hidden fld
@@ -963,7 +969,7 @@ let exe_spec
             (* missing fields minus hidden fields *)
             let missing_fld_nohidden =
               IList.filter (fun hp -> not (hpred_missing_hidden hp)) missing_fld in
-            if !Config.footprint = false && norm_missing_sigma != [] then
+            if !Config.footprint = false && split.missing_sigma != [] then
               begin
                 L.d_strln "Implication error: missing_sigma not empty in re-execution";
                 Invalid_res Missing_sigma_not_empty
@@ -973,7 +979,7 @@ let exe_spec
                 L.d_strln "Implication error: missing_fld not empty in re-execution";
                 Invalid_res Missing_fld_not_empty
               end
-            else report_valid_res split norm_missing_pi norm_missing_sigma
+            else report_valid_res split
       end
 
 let remove_constant_string_class prop =
