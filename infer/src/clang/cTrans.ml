@@ -394,7 +394,7 @@ struct
     let is_instance_method =
       match CMethod_trans.method_signature_of_pointer decl_ptr with
       | Some ms -> CMethod_signature.ms_is_instance ms
-      | _ -> assert false in (* will happen for generated methods, shouldn't happen right now *)
+      | _ -> true in (* might happen for methods that are not exported yet (some templates). *)
     let extra_exps = if is_instance_method then (
         (* pre_trans_result.exps may contain expr for 'this' parameter:*)
         (* if it comes from CXXMemberCallExpr it will be there *)
