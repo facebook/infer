@@ -307,9 +307,11 @@ type is_library = Source | Library
 
 (** Payload: results of some analysis *)
 type payload =
-  | PrePosts of NormSpec.t list (** list of specs *)
-  | TypeState of unit TypeState.t option (** final typestate *)
-  | Calls of CallTree.t list
+  {
+    preposts : NormSpec.t list option; (** list of specs *)
+    typestate : unit TypeState.t option; (** final typestate *)
+    calls:  CallTree.t list option;
+  }
 
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
@@ -426,9 +428,10 @@ let pp_summary_no_stats_specs fmt summary =
 let pp_stats_html err_log fmt stats =
   Errlog.pp_html [] fmt err_log
 
-let get_specs_from_payload summary = match summary.payload with
-  | PrePosts specs -> NormSpec.tospecs specs
-  | TypeState _ | Calls _ -> []
+let get_specs_from_payload summary =
+  match summary.payload.preposts with
+  | Some specs -> NormSpec.tospecs specs
+  | None -> []
 
 (** Print the summary *)
 let pp_summary pe whole_seconds fmt summary =
@@ -480,10 +483,14 @@ let rec post_equal pl1 pl2 = match pl1, pl2 with
       if Prop.prop_equal p1 p2 then post_equal pl1' pl2'
       else false
 
-let payload_compact sh payload = match payload with
-  | PrePosts specs -> PrePosts (IList.map (NormSpec.compact sh) specs)
-  | TypeState _ as p -> p
-  | Calls _ as p -> p
+let payload_compact sh payload =
+  match payload.preposts with
+  | Some specs ->
+      { payload with
+        preposts = Some (IList.map (NormSpec.compact sh) specs);
+      }
+  | None ->
+      payload
 
 (** Return a compact representation of the summary *)
 let summary_compact sh summary =
@@ -529,10 +536,12 @@ let summary_serializer : summary Serialization.serializer =
 
 (** Save summary for the procedure into the spec database *)
 let store_summary pname (summ: summary) =
-  let process_payload = function
-    | PrePosts specs -> PrePosts (IList.map NormSpec.erase_join_info_pre specs)
-    | TypeState _ as p -> p
-    | Calls _ as p -> p in
+  let process_payload payload = match payload.preposts with
+    | Some specs ->
+        { payload with
+          preposts = Some (IList.map NormSpec.erase_join_info_pre specs);
+        }
+    | None -> payload in
   let summ1 = { summ with payload = process_payload summ.payload } in
   let summ2 = if !Config.save_compact_summaries
     then summary_compact (Sil.create_sharing_env ()) summ1
@@ -778,6 +787,13 @@ let update_dependency_map proc_name =
           summary.dependency_map in
       set_summary_origin proc_name { summary with dependency_map = current_dependency_map } origin
 
+let empty_payload =
+  {
+    preposts = None;
+    typestate = None;
+    calls = None;
+  }
+
 (** [init_summary (depend_list, nodes,
     proc_flags, calls, cyclomatic, in_out_calls_opt, proc_attributes)]
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
@@ -792,7 +808,7 @@ let init_summary
       nodes = nodes;
       phase = FOOTPRINT;
       sessions = ref 0;
-      payload = PrePosts [];
+      payload = empty_payload;
       stats = empty_stats calls cyclomatic in_out_calls_opt;
       status = INACTIVE;
       timestamp = 0;

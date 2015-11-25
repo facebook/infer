@@ -119,9 +119,11 @@ type dependency_map_t = int Procname.Map.t
 
 (** Payload: results of some analysis *)
 type payload =
-  | PrePosts of NormSpec.t list (** list of specs *)
-  | TypeState of unit TypeState.t option (** final typestate *)
-  | Calls of CallTree.t list (** list of call tree *)
+  {
+    preposts : NormSpec.t list option; (** list of specs *)
+    typestate : unit TypeState.t option; (** final typestate *)
+    calls:  CallTree.t list option; (** list of call tree *)
+  }
 
 (** Procedure summary *)
 type summary =

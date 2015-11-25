@@ -1093,10 +1093,14 @@ let update_summary prev_summary specs proc_name elapsed res =
       Specs.stats_time = stats_time;
       Specs.symops = symops;
       Specs.stats_timeout = timeout } in
+  let payload =
+    { prev_summary.Specs.payload with
+      Specs.preposts = Some new_specs; } in
   { prev_summary with
-    Specs.stats = stats;
-    Specs.payload = Specs.PrePosts new_specs;
-    Specs.timestamp = timestamp }
+    Specs.stats;
+    payload;
+    timestamp;
+  }
 
 
 (** Analyze [proc_name] and return the updated summary. Use module
@@ -1119,7 +1123,7 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let updated_summary =
     update_summary prev_summary specs proc_name elapsed res in
   if (!Config.curr_language <> Config.Java && Config.report_assertion_failure)
-     || !Config.report_runtime_exceptions then
+  || !Config.report_runtime_exceptions then
     report_runtime_exceptions tenv cfg proc_desc updated_summary;
   updated_summary
 

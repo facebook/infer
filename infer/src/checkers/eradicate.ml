@@ -41,7 +41,7 @@ end (* CallBackT *)
 module type ExtensionT = sig
   type extension
   val ext : extension TypeState.ext
-  val mkpayload : extension TypeState.t option -> Specs.payload
+  val update_payload : extension TypeState.t option -> Specs.payload -> Specs.payload
 end
 
 (** Create a module with the toplevel callback. *)
@@ -60,7 +60,8 @@ struct
           {
             old_summ with
             Specs.nodes = nodes;
-            Specs.payload = Extension.mkpayload final_typestate_opt;
+            Specs.payload =
+              Extension.update_payload final_typestate_opt old_summ.Specs.payload;
             Specs.attributes =
               {
                 old_summ.Specs.attributes with
@@ -373,7 +374,9 @@ struct
       join = join;
       pp = pp;
     }
-  let mkpayload typestate_opt = Specs.TypeState typestate_opt
+  let update_payload typestate_opt payload =
+    { payload with
+      Specs.typestate = typestate_opt; }
 end
 
 module Main =

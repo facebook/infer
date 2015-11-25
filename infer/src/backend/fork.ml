@@ -65,20 +65,24 @@ let transition_footprint_re_exe proc_name joined_pres =
         Specs.phase = Specs.RE_EXECUTION;
       }
     else
+      let specs =
+        IList.map
+          (fun jp ->
+             Specs.spec_normalize
+               { Specs.pre = jp;
+                 posts = [];
+                 visited = Specs.Visitedset.empty })
+          joined_pres in
+      let payload =
+        { summary.Specs.payload with
+          Specs.preposts = Some specs; } in
+      let dependency_map =
+        Specs.re_initialize_dependency_map summary.Specs.dependency_map in
       { summary with
         Specs.timestamp = 0;
-        Specs.phase = Specs.RE_EXECUTION;
-        Specs.dependency_map = Specs.re_initialize_dependency_map summary.Specs.dependency_map;
-        Specs.payload =
-          let specs =
-            IList.map
-              (fun jp ->
-                 Specs.spec_normalize
-                   { Specs.pre = jp;
-                     Specs.posts = [];
-                     Specs.visited = Specs.Visitedset.empty })
-              joined_pres in
-          Specs.PrePosts specs
+        phase = Specs.RE_EXECUTION;
+        dependency_map;
+        payload;
       } in
   Specs.add_summary proc_name summary'
 
@@ -414,11 +418,14 @@ let interprocedural_algorithm
         let prev_summary = Specs.get_summary_unsafe "interprocedural_algorithm" pname in
         let timestamp = max 1 (prev_summary.Specs.timestamp) in
         let stats = { prev_summary.Specs.stats with Specs.stats_timeout = true } in
+        let payload =
+          { prev_summary.Specs.payload with
+            Specs.preposts = Some []; } in
         let summ =
           { prev_summary with
-            Specs.stats = stats;
-            Specs.payload = Specs.PrePosts [];
-            Specs.timestamp = timestamp } in
+            Specs.stats;
+            payload;
+            timestamp; } in
         summ in
   let process_result exe_env (pname, calls) summary =
     (* wrap _process_result and handle exceptions *)

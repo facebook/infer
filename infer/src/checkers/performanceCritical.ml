@@ -54,9 +54,9 @@ let lookup_call_trees pname =
   | None -> []
   | Some summary ->
       begin
-        match summary.Specs.payload with
-        | Specs.Calls tree -> tree
-        | _ -> []
+        match summary.Specs.payload.Specs.calls with
+        | Some tree -> tree
+        | None -> []
       end
 
 
@@ -80,7 +80,11 @@ let update_summary call_trees pname =
   | None -> ()
   | Some summary ->
       let updated_summary =
-        { summary with Specs.payload = Specs.Calls call_trees } in
+        { summary with
+          Specs.payload =
+            { summary.Specs.payload with
+              Specs.calls = Some call_trees; }
+        } in
       Specs.add_summary pname updated_summary
 
 
@@ -164,7 +168,7 @@ let callback_performance_checker _ get_proc_desc _ tenv pname proc_desc =
       | Some pd -> check_one_procedure tenv pn pd in
     { Ondemand.analyze_ondemand; get_proc_desc; } in
   if !Config.ondemand_enabled
-     || Ondemand.procedure_should_be_analyzed proc_desc pname
+  || Ondemand.procedure_should_be_analyzed proc_desc pname
   then
     begin
       Ondemand.set_callbacks callbacks;

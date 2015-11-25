@@ -42,16 +42,19 @@ module Err = struct
     let specs =
       let spec =
         { Specs.pre = Specs.Jprop.Prop (1, Prop.prop_emp);
-          Specs.posts = [];
-          Specs.visited = Specs.Visitedset.empty
+          posts = [];
+          visited = Specs.Visitedset.empty
         } in
       [(Specs.spec_normalize spec)] in
     let new_summ = { old_summ with
                      Specs.attributes =
                        { old_summ.Specs.attributes with
                          ProcAttributes.loc = Cfg.Procdesc.get_loc proc_desc };
-                     Specs.nodes = nodes;
-                     Specs.payload = Specs.PrePosts specs } in
+                     nodes = nodes;
+                     payload =
+                       { old_summ.Specs.payload with
+                         Specs.preposts = Some specs; }
+                   } in
     Specs.add_summary proc_name new_summ
 
   let add_error_to_spec proc_name s node loc =

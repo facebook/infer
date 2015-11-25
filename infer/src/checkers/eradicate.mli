@@ -32,7 +32,7 @@ end (* CallBackT *)
 module type ExtensionT = sig
   type extension
   val ext : extension TypeState.ext
-  val mkpayload : extension TypeState.t option -> Specs.payload
+  val update_payload : extension TypeState.t option -> Specs.payload -> Specs.payload
 end
 
 (** Given an extension to the typestate with a check, call the check on each instruction. *)

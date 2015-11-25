@@ -159,7 +159,7 @@ struct
       pp = pp;
     }
 
-  let mkpayload typestate = Specs.TypeState None
+  let update_payload typestate payload = payload
 end (* CheckRepeatedCalls *)
 
 module MainRepeatedCalls =
