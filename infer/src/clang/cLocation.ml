@@ -113,7 +113,7 @@ let get_sil_location_from_range source_range prefer_first =
 let get_sil_location stmt_info parent_line_number context =
   match stmt_info.Clang_ast_t.si_source_range with (sloc1, sloc2) ->
     let sloc = choose_sloc sloc1 sloc2 true in
-    clang_to_sil_location sloc parent_line_number (Some (CContext.get_procdesc context))
+    clang_to_sil_location sloc (-1) (Some (CContext.get_procdesc context))
 
 let get_line stmt_info line_number =
   match stmt_info.Clang_ast_t.si_source_range with
