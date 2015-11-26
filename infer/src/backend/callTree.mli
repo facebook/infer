@@ -11,3 +11,6 @@
 type t =
   | Direct of Procname.t
   | Indirect of Procname.t * t list
+
+(** print the list of call stacks in the tree *)
+val pp : Format.formatter -> t -> unit

@@ -10,6 +10,9 @@
 module L = Logging
 
 
+let infer_performance_critical_methods = true
+
+
 let calls_expensive_method =
   "CHECKERS_CALLS_EXPENSIVE_METHOD"
 
@@ -43,6 +46,17 @@ let check_method check pname =
 
 let method_is_performance_critical pname =
   check_method Annotations.ia_is_performance_critical pname
+
+
+let method_overrides_performance_critical tenv pname =
+  let overrides () =
+    let found = ref false in
+    PatternMatch.proc_iter_overridden_methods
+      (fun pn -> found := method_is_performance_critical pn)
+      tenv pname;
+    !found in
+  method_is_performance_critical pname
+  || overrides ()
 
 
 let method_is_expensive pname =
@@ -152,12 +166,17 @@ let check_one_procedure tenv pname pdesc =
     let checked_pnames = ref Procname.Set.empty in
     Cfg.Procdesc.fold_calls
       (collect_expensive_call pdesc checked_pnames) [] pdesc in
+
+  update_summary expensive_call_trees pname;
+
   match expensive_call_trees with
   | [] -> ()
+  | call_trees when infer_performance_critical_methods ->
+      if method_overrides_performance_critical tenv pname then
+        report_expensive_calls pname pdesc loc call_trees
   | call_trees when performance_critical ->
       report_expensive_calls pname pdesc loc call_trees
-  | call_trees ->
-      update_summary call_trees pname
+  | _ -> ()
 
 
 let callback_performance_checker _ get_proc_desc _ tenv pname proc_desc =

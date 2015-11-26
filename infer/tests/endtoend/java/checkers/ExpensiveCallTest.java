@@ -33,7 +33,7 @@ public class ExpensiveCallTest {
   @BeforeClass
   public static void loadResults() throws InterruptedException, IOException {
     inferResults =
-      InferResults.loadCheckersResults(ImmutableCastTest.class, SOURCE_FILE);
+      InferResults.loadCheckersResults(ExpensiveCallTest.class, SOURCE_FILE);
   }
 
   @Test
@@ -43,6 +43,7 @@ public class ExpensiveCallTest {
         "directlyCallingExpensiveMethod",
         "indirectlyCallingExpensiveMethod",
         "callingExpensiveMethodFromInterface",
+        "longerCallStackToExpensive",
     };
     assertThat(
         "Results should contain " + CALLS_EXPENSIVE_METHOD,

@@ -8,6 +8,19 @@
  *)
 
 
+module F = Format
+
+
 type t =
   | Direct of Procname.t
   | Indirect of Procname.t * t list
+
+
+let pp fmt tree =
+  let rec loop stack = function
+    | Direct pname ->
+        F.fprintf fmt "%s -> %s" stack (Procname.to_string pname)
+    | Indirect (pname, l) ->
+        let stack' = stack ^ " -> " ^ (Procname.to_string pname) in
+        IList.iter (loop stack') l in
+  loop "@" tree

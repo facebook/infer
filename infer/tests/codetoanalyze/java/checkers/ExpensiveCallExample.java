@@ -12,15 +12,29 @@ package codetoanalyze.java.checkers;
 import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
 
+
+class Other {
+
+  @Expensive
+  void expensive() {
+  }
+
+  void callsExpensive1() {
+    expensive();
+  }
+
+}
+
+
 public class ExpensiveCallExample {
 
-  Object mObject;
+  Other mOther;
 
   void nonExpensiveMethod() {}
 
   @Expensive
   void expensiveMethod() {
-    mObject = new Object();
+    mOther = new Other();
   }
 
   void methodWrapper() {
@@ -45,6 +59,15 @@ public class ExpensiveCallExample {
   @PerformanceCritical
   void callingExpensiveMethodFromInterface(ExpensiveInterfaceExample object) {
     object.m5();
+  }
+
+  void callsExpensive2() {
+    mOther.callsExpensive1();
+  }
+
+  @PerformanceCritical
+  void longerCallStackToExpensive() {
+    callsExpensive2();
   }
 
 }
