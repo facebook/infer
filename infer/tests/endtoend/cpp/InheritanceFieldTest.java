@@ -53,6 +53,8 @@ public class InheritanceFieldTest {
         "div0_s",
         "div0_cast",
         "div0_cast_ref",
+        "div0_b1_s",
+        "div0_s_b1",
     };
     assertThat(
         "Results should contain the expected divide by zero",

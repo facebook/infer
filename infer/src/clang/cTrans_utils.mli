@@ -81,7 +81,7 @@ val dereference_value_from_result : Location.t -> trans_result -> strip_pointer:
 
 val cast_operation :
   CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
-  bool -> Ident.t list * Sil.instr list * Sil.exp
+  bool -> Ident.t list * Sil.instr list * (Sil.exp * Sil.typ)
 
 val trans_assertion_failure : Location.t -> CContext.t -> trans_result
 

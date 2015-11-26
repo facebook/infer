@@ -10,7 +10,7 @@ digraph iCFG {
 	
 
 	 25 -> 27 ;
-24 [label="24:  Return Stmt \n   n$0=*&y:class Y & [line 48]\n  n$1=_fun_X_operator[](n$0:class X &,0:int ) [line 48]\n  *&return:int =(1 / n$1) [line 48]\n  REMOVE_TEMPS(n$0,n$1); [line 48]\n  NULLIFY(&y,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+24 [label="24:  Return Stmt \n   n$0=*&y:class Y & [line 48]\n  n$1=_fun_X_operator[](n$0:class Y &,0:int ) [line 48]\n  *&return:int =(1 / n$1) [line 48]\n  REMOVE_TEMPS(n$0,n$1); [line 48]\n  NULLIFY(&y,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
 	
 
 	 24 -> 23 ;

@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 20 -> 19 ;
-19 [label="19:  Call _fun_Base_fun \n   n$6=*&s2:class Sub * [line 28]\n  n$7=_fun_Base_fun(n$6:class Base *) [line 28]\n  REMOVE_TEMPS(n$6,n$7); [line 28]\n " shape="box"]
+19 [label="19:  Call _fun_Base_fun \n   n$6=*&s2:class Sub * [line 28]\n  n$7=_fun_Base_fun(n$6:class Sub *) [line 28]\n  REMOVE_TEMPS(n$6,n$7); [line 28]\n " shape="box"]
 	
 
 	 19 -> 18 ;

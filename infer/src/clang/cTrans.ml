@@ -1751,7 +1751,7 @@ struct
       leaf_nodes = res_trans_stmt.leaf_nodes;
       ids = res_trans_stmt.ids @ cast_ids;
       instrs = res_trans_stmt.instrs @ cast_inst;
-      exps = [(cast_exp, typ)] }
+      exps = [cast_exp] }
 
   (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
   and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =

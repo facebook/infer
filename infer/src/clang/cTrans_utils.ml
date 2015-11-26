@@ -385,27 +385,33 @@ let dereference_value_from_result sil_loc trans_result ~strip_pointer =
 
 let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
   let (exp, typ) = extract_exp_from_list exps "" in
+  let exp_typ = match cast_kind with
+    | `UncheckedDerivedToBase -> typ  (* This cast ignores change of type *)
+    | _ -> cast_typ (* by default use the return type of cast expr *) in 
   if is_objc_bridged then
     let id, instr, exp = create_cast_instrs context exp typ cast_typ sil_loc in
-    [id], [instr], exp
+    [id], [instr], (exp, exp_typ)
   else
     match cast_kind with
     | `NoOp
     | `BitCast
     | `IntegralCast
+    | `DerivedToBase
+    | `UncheckedDerivedToBase
     | `IntegralToBoolean -> (* This is treated as a nop by returning the same expressions exps*)
-        ([],[], exp)
+        ([], [], (exp, exp_typ))
     | `LValueToRValue ->
         (* Takes an LValue and allow it to use it as RValue. *)
         (* So we assign the LValue to a temp and we pass it to the parent.*)
-        dereference_var_sil (exp, typ) sil_loc
+        let ids, instrs, deref_exp = dereference_var_sil (exp, typ) sil_loc in
+        ids, instrs, (deref_exp, exp_typ)
     | `CPointerToObjCPointerCast ->
-        ([], [], Sil.Cast(typ, exp))
+        [], [], (Sil.Cast(typ, exp), exp_typ)
     | _ ->
         Printing.log_err
           "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
           (Clang_ast_j.string_of_cast_kind cast_kind);
-        ([],[], exp)
+        ([],[], (exp, exp_typ))
 
 let trans_assertion_failure sil_loc context =
   let assert_fail_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__infer_fail) in
