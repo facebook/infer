@@ -278,7 +278,7 @@ let get_all_supertypes typ tenv =
   and get_supers_rec typ tenv all_supers =
     let direct_supers = get_direct_supers typ in
     IList.fold_left (fun typs (_, name) -> add_typ name typs) all_supers direct_supers in
-  get_supers_rec typ tenv TypSet.empty
+  get_supers_rec typ tenv (TypSet.add typ TypSet.empty)
 
 (** return true if [typ0] <: [typ1] *)
 let is_subtype (typ0 : Sil.typ) (typ1 : Sil.typ) tenv =
