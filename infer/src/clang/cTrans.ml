@@ -1597,7 +1597,9 @@ struct
         let line_number = CLocation.get_line stmt_info pln in
         (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
         let res_trans_ie =
-          let trans_state' = { trans_state_pri with succ_nodes = next_node; parent_line_number = line_number } in
+          let trans_state' = { trans_state_pri with
+                               succ_nodes = [];
+                               parent_line_number = line_number } in
           let instruction' =
             exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
           exec_with_block_priority_exception instruction' trans_state' ie var_stmt_info in
@@ -1822,7 +1824,9 @@ struct
     Cfg.Node.set_succs_exn ret_node [(Cfg.Procdesc.get_exit_node context.CContext.procdesc)] [];
     let trans_result = (match stmt_list with
         | [stmt] -> (* return exp; *)
-            let trans_state' = { trans_state_pri with succ_nodes = [ret_node]; parent_line_number = line_number } in
+            let trans_state' = { trans_state_pri with
+                                 succ_nodes = [];
+                                 parent_line_number = line_number } in
             let res_trans_stmt = exec_with_self_exception instruction trans_state' stmt in
             let (sil_expr, sil_typ) = extract_exp_from_list res_trans_stmt.exps
                 "WARNING: There should be only one return expression.\n" in
