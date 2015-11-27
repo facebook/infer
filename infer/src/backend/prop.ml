@@ -38,11 +38,13 @@ type exposed = Exposed (** kind for exposed props *)
     and normalized, and does not contain x = e. [sigma] is sorted and
     normalized. *)
 type 'a t =
-  { sigma: Sil.hpred list;
-    sub: Sil.subst;
-    pi: Sil.atom list;
-    foot_sigma : Sil.hpred list;
-    foot_pi: Sil.atom list }
+  {
+    sigma: Sil.hpred list;  (** spatial part *)
+    sub: Sil.subst;  (** substitution *)
+    pi: Sil.atom list;  (** pure part *)
+    foot_sigma : Sil.hpred list;  (** abduced spatial part *)
+    foot_pi: Sil.atom list;  (** abduced pure part *)
+  }
 
 exception Cannot_star of ml_location
 
@@ -85,18 +87,15 @@ let sigma_equal sigma1 sigma2 =
 
 (** Comparison between propositions. Lexicographical order. *)
 let prop_compare p1 p2 =
-  let n = sigma_compare p1.sigma p2.sigma in
-  if n <> 0 then n else
-    let n = Sil.sub_compare p1.sub p2.sub in
-    if n <> 0 then n else
-      let n = pi_compare p1.pi p2.pi in
-      if n <> 0 then n else
-        let n = sigma_compare p1.foot_sigma p2.foot_sigma in
-        if n <> 0 then n else pi_compare p1.foot_pi p2.foot_pi
+  sigma_compare p1.sigma p2.sigma
+  |> next Sil.sub_compare p1.sub p2.sub
+  |> next pi_compare p1.pi p2.pi
+  |> next sigma_compare p1.foot_sigma p2.foot_sigma
+  |> next pi_compare p1.foot_pi p2.foot_pi
 
 (** Check the equality of two propositions *)
 let prop_equal p1 p2 =
-  (prop_compare p1 p2 = 0)
+  prop_compare p1 p2 = 0
 
 (** {1 Functions for Pretty Printing} *)
 
@@ -208,9 +207,12 @@ let get_sub (p: 'a t) : Sil.subst = p.sub
 (** Return the pi part of [prop]. *)
 let get_pi (p: 'a t) : Sil.atom list = p.pi
 
+let pi_of_subst sub =
+  IList.map (fun (id1, e2) -> Sil.Aeq (Sil.Var id1, e2)) (Sil.sub_to_list sub)
+
 (** Return the pure part of [prop]. *)
 let get_pure (p: 'a t) : Sil.atom list =
-  IList.map (fun (id1, e2) -> Sil.Aeq (Sil.Var id1, e2)) (Sil.sub_to_list p.sub) @ p.pi
+  pi_of_subst p.sub @ p.pi
 
 (** Print existential quantification *)
 let pp_evars pe f evars =
@@ -1507,7 +1509,14 @@ let mk_dll_hpara iF oB oF svars evars body =
   hpara_dll_normalize Sil.sub_empty para
 
 (** Proposition [true /\ emp]. *)
-let prop_emp : normal t = { sub = Sil.sub_empty; pi =[]; sigma =[]; foot_pi =[]; foot_sigma =[] }
+let prop_emp : normal t =
+  {
+    sub = Sil.sub_empty;
+    pi = [];
+    sigma = [];
+    foot_pi = [];
+    foot_sigma = [];
+  }
 
 (** Conjoin a heap predicate by separating conjunction. *)
 let prop_hpred_star (p : 'a t) (h : Sil.hpred) : exposed t =
@@ -1674,7 +1683,7 @@ let normalize_and_strengthen_atom (p : normal t) (a : Sil.atom) : Sil.atom =
   | _ -> a'
 
 (** Conjoin a pure atomic predicate by normal conjunction. *)
-let rec prop_atom_and ?(footprint = false) (p : normal t) (a : Sil.atom) : normal t =
+let rec prop_atom_and ?(footprint=false) (p : normal t) a : normal t =
   let a' = normalize_and_strengthen_atom p a in
   if IList.mem Sil.atom_equal a' p.pi then p
   else begin
@@ -1742,12 +1751,6 @@ let get_pi_footprint p =
 (** Return the spatial part of the footprint *)
 let get_sigma_footprint p =
   p.foot_sigma
-
-(** Create a [prop] without any normalization *)
-let from_pi_sigma pi sigma =
-  { prop_emp with
-    pi = pi;
-    sigma = sigma }
 
 (** Reset every inst in the prop using the given map *)
 let prop_reset_inst inst_map prop =
@@ -2356,18 +2359,16 @@ let prop_rename_primed_footprint_vars p =
   let nsub' = sub_normalize sub' in
   let nsigma' = sigma_normalize sub_for_normalize sigma' in
   let npi' = pi_normalize sub_for_normalize nsigma' pi' in
-  let p' = footprint_normalize { sub = nsub'; pi = npi'; sigma = nsigma'; foot_pi = foot_pi'; foot_sigma = foot_sigma'} in
-  (*
-  L.out "@[<2>BEFORE RENAMING:@\n";
-  L.out "%a@\n@." pp_prop p;
-  L.out "@[<2>AFTER RENAMING:@\n";
-  L.out "%a@\n@." pp_prop p';
-  L.out "@[<2>RENAMING:@\n";
-  L.out "%a@\n@." pp_ren ren;
-  *)
+  let p' = footprint_normalize {
+      sub = nsub';
+      pi = npi';
+      sigma = nsigma';
+      foot_pi = foot_pi';
+      foot_sigma = foot_sigma';
+    } in
   p'
 
-(** {2 Functionss for changing and generating propositions} *)
+(** {2 Functions for changing and generating propositions} *)
 
 let mem_idlist i l =
   IList.exists (fun id -> Ident.equal i id) l
@@ -2387,18 +2388,18 @@ let normalize (eprop : 'a t) : normal t =
 
 (** Apply subsitution to prop. *)
 let prop_sub subst (prop: 'a t) : exposed t =
-  let pi = pi_sub subst (prop.pi @ IList.map (fun (x, e) -> Sil.Aeq (Sil.Var x, e)) (Sil.sub_to_list prop.sub)) in
+  let pi = pi_sub subst (prop.pi @ pi_of_subst prop.sub) in
   let sigma = sigma_sub subst prop.sigma in
-  let fp_pi = pi_sub subst prop.foot_pi in
-  let fp_sigma = sigma_sub subst prop.foot_sigma in
-  { prop_emp with pi = pi; sigma = sigma; foot_pi = fp_pi; foot_sigma = fp_sigma }
+  let foot_pi = pi_sub subst prop.foot_pi in
+  let foot_sigma = sigma_sub subst prop.foot_sigma in
+  { prop_emp with pi; sigma; foot_pi; foot_sigma; }
 
 (** Apply renaming substitution to a proposition. *)
 let prop_ren_sub (ren_sub: Sil.subst) (prop: normal t) : normal t =
   normalize (prop_sub ren_sub prop)
 
-(** Existentially quantify the [ids] in [prop].
-    [ids] should not contain any primed variables. *)
+(** Existentially quantify the [fav] in [prop].
+    [fav] should not contain any primed variables. *)
 let exist_quantify fav prop =
   let ids = Sil.fav_to_list fav in
   if IList.exists Ident.is_primed ids then assert false; (* sanity check *)
@@ -2406,7 +2407,8 @@ let exist_quantify fav prop =
     let gen_fresh_id_sub id = (id, Sil.Var (Ident.create_fresh Ident.kprimed)) in
     let ren_sub = Sil.sub_of_list (IList.map gen_fresh_id_sub ids) in
     let prop' =
-      let sub = Sil.sub_filter (fun i -> not (mem_idlist i ids)) prop.sub in (** throw away x=E if x becomes _x *)
+      (* throw away x=E if x becomes _x *)
+      let sub = Sil.sub_filter (fun i -> not (mem_idlist i ids)) prop.sub in
       if Sil.sub_equal sub prop.sub then prop
       else { prop with sub = sub } in
     (*
@@ -2424,7 +2426,7 @@ let prop_expmap (fe: Sil.exp -> Sil.exp) prop =
   let sigma = IList.map (Sil.hpred_expmap f) prop.sigma in
   let foot_pi = IList.map (Sil.atom_expmap fe) prop.foot_pi in
   let foot_sigma = IList.map (Sil.hpred_expmap f) prop.foot_sigma in
-  { prop with pi = pi; sigma = sigma; foot_pi = foot_pi; foot_sigma = foot_sigma }
+  { prop with pi; sigma; foot_pi; foot_sigma; }
 
 (** convert identifiers in fav to kind [k] *)
 let vars_make_unprimed fav prop =

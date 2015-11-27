@@ -388,9 +388,6 @@ val from_pi : Sil.atom list -> exposed t
 (** Build an exposed prop from sigma *)
 val from_sigma : Sil.hpred list -> exposed t
 
-(** Build an exposed prop from pi and sigma *)
-val from_pi_sigma : atom list -> hpred list -> exposed t
-
 (** Replace the substitution part of a prop *)
 val replace_sub : Sil.subst -> 'a t -> exposed t
 
