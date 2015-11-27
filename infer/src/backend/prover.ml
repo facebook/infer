@@ -815,25 +815,20 @@ let check_inconsistency_base prop =
   let sigma = Prop.get_sigma prop in
   let inconsistent_ptsto _ =
     check_allocatedness prop Sil.exp_zero in
-  let inconsistent_this () = (* "this" cannot be null in Java *)
-    let do_hpred = function
-      | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
-          !Config.curr_language = Config.Java &&
-          Sil.pvar_is_this pv &&
-          Sil.exp_equal e Sil.exp_zero &&
-          Sil.pvar_is_seed pv
-      | _ -> false in
-    IList.exists do_hpred sigma in
-  let inconsistent_self () = (* "self" cannot be null in ObjC *)
+  let inconsistent_this_self_var () =
     let procdesc = Cfg.Node.get_proc_desc (State.get_node ()) in
     let procedure_attr = Cfg.Procdesc.get_attributes procdesc in
+    let is_java_this pvar = !Config.curr_language = Config.Java && Sil.pvar_is_this pvar in
+    let is_objc_instance_self pvar = !Config.curr_language = Config.C_CPP &&
+                                     Sil.pvar_get_name pvar = Mangled.from_string "self" &&
+                                     procedure_attr.ProcAttributes.is_objc_instance_method in
+    let is_cpp_this pvar = !Config.curr_language = Config.C_CPP && Sil.pvar_is_this pvar &&
+                           procedure_attr.ProcAttributes.is_cpp_instance_method in
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
-          !Config.curr_language = Config.C_CPP &&
           Sil.exp_equal e Sil.exp_zero &&
           Sil.pvar_is_seed pv &&
-          Sil.pvar_get_name pv = Mangled.from_string "self" &&
-          procedure_attr.ProcAttributes.is_objc_instance_method
+          (is_java_this pv || is_cpp_this pv || is_objc_instance_self pv)
       | _ -> false in
     IList.exists do_hpred sigma in
   let inconsistent_atom = function
@@ -859,8 +854,7 @@ let check_inconsistency_base prop =
   || check_inconsistency_two_hpreds prop
   || IList.exists inconsistent_atom pi
   || inconsistent_inequalities ()
-  || inconsistent_this ()
-  || inconsistent_self ()
+  || inconsistent_this_self_var ()
 
 (** Inconsistency checking. *)
 let check_inconsistency prop =

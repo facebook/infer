@@ -289,6 +289,8 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let is_generated = CMethod_signature.ms_is_generated ms in
+  let is_cpp_inst_method = CMethod_signature.ms_is_instance ms
+                           && CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_str = IList.map (
@@ -311,6 +313,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           is_defined = defined;
           is_generated;
           is_objc_instance_method = is_objc_inst_method;
+          is_cpp_instance_method = is_cpp_inst_method;
           loc = loc_start;
           ret_type;
         } in
