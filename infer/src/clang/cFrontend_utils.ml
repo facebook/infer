@@ -546,7 +546,7 @@ struct
     Procname.mangled_c_method class_name method_name type_name_crc
 
   let mk_sil_var name decl_info_type_ptr_opt procname outer_procname =
-    let name_string = name.Clang_ast_t.ni_name in
+    let name_string = Ast_utils.get_qualified_name name in
     let simple_name = Mangled.from_string name_string  in
     match decl_info_type_ptr_opt with
     | Some (decl_info, type_ptr, var_decl_info, should_be_mangled) ->
@@ -563,7 +563,7 @@ struct
           let line_opt = start_location.Clang_ast_t.sl_line in
           let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
           let mangled = CRC.crc16 (type_name ^ line_str) in
-          let mangled_name = Mangled.mangled name.Clang_ast_t.ni_name mangled in
+          let mangled_name = Mangled.mangled name_string mangled in
           Sil.mk_pvar mangled_name procname
     | None -> Sil.mk_pvar simple_name procname
 

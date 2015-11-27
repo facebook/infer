@@ -1,0 +1,59 @@
+digraph iCFG {
+15 [label="15:  BinaryOperatorStmt: Assign \n   *&#GB$f1::A::v:int =1 [line 42]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14:  BinaryOperatorStmt: Assign \n   *&#GB$B::v:int =-2 [line 43]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 44]\n  n$1=*&#GB$B::v:int  [line 44]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 44]\n  REMOVE_TEMPS(n$0,n$1); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12: Exit div0_static_field_member_access \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start div0_static_field_member_access\nFormals:  a:class f1::A * b:class C *\nLocals:  \n   DECLARE_LOCALS(&return); [line 41]\n  NULLIFY(&a,false); [line 41]\n  NULLIFY(&b,false); [line 41]\n " color=yellow style=filled]
+	
+
+	 11 -> 15 ;
+10 [label="10:  BinaryOperatorStmt: Assign \n   *&#GB$B::v:int =1 [line 36]\n " shape="box"]
+	
+
+	 10 -> 9 ;
+9 [label="9:  BinaryOperatorStmt: Assign \n   *&#GB$f1::A::v:int =-2 [line 37]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 38]\n  n$1=*&#GB$B::v:int  [line 38]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 38]\n  REMOVE_TEMPS(n$0,n$1); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit div0_static_field \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start div0_static_field\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
+	
+
+	 6 -> 10 ;
+5 [label="5:  BinaryOperatorStmt: Assign \n   *&#GB$f1::val:int =1 [line 30]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  BinaryOperatorStmt: Assign \n   *&#GB$f2::val:int =-2 [line 31]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&#GB$f1::val:int  [line 32]\n  n$1=*&#GB$f2::val:int  [line 32]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 32]\n  REMOVE_TEMPS(n$0,n$1); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit div0_namepace_res \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start div0_namepace_res\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
+	
+
+	 1 -> 5 ;
+}

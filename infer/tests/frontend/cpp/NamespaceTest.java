@@ -39,4 +39,10 @@ public class NamespaceTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("function.cpp");
   }
+
+  @Test
+  public void testGlobalVariableDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("global_variable.cpp");
+  }
 }

@@ -31,7 +31,7 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  BinaryOperatorStmt: Assign \n   n$0=*&#GB$pi:double  [line 57]\n  *&j:double =n$0 [line 57]\n  REMOVE_TEMPS(n$0); [line 57]\n  NULLIFY(&j,false); [line 57]\n " shape="box"]
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$0=*&#GB$bar::pi:double  [line 57]\n  *&j:double =n$0 [line 57]\n  REMOVE_TEMPS(n$0); [line 57]\n  NULLIFY(&j,false); [line 57]\n " shape="box"]
 	
 
 	 16 -> 15 ;
@@ -53,7 +53,7 @@ digraph iCFG {
 	
 
 	 11 -> 12 ;
-10 [label="10:  Return Stmt \n   n$0=*&#GB$pi:double  [line 29]\n  *&return:double =(2 * n$0) [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+10 [label="10:  Return Stmt \n   n$0=*&#GB$bar::pi:double  [line 29]\n  *&return:double =(2 * n$0) [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 10 -> 9 ;
