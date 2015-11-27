@@ -2,26 +2,26 @@ digraph iCFG {
 60 [label="60:  DeclStmt \n   *&#GB$A_dispatch_barrier_example_a:class A *=0 [line 69]\n " shape="box"]
 	
 
-	 60 -> 55 ;
-59 [label="59:  BinaryOperatorStmt: Assign \n   n$57=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 71]\n  n$55=_fun_NSObject_init(n$57:class A *) virtual [line 71]\n  *&#GB$A_dispatch_barrier_example_a:class A *=n$55 [line 71]\n  REMOVE_TEMPS(n$55,n$57); [line 71]\n " shape="box"]
+	 60 -> 59 ;
+59 [label="59:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_barrier_example______6); [line 70]\n  n$58=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_barrier_example______6 ):unsigned long ) [line 70]\n  *&__objc_anonymous_block_A_dispatch_barrier_example______6:class __objc_anonymous_block_A_dispatch_barrier_example______6 =n$58 [line 70]\n  n$59=*&#GB$A_dispatch_barrier_example_a:class A * [line 70]\n  *n$58.A_dispatch_barrier_example_a:class A *=n$59 [line 70]\n  *&infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_barrier_example______6) [line 70]\n  REMOVE_TEMPS(n$58,n$59); [line 70]\n " shape="box"]
 	
 
-	 59 -> 58 ;
-58 [label="58:  BinaryOperatorStmt: Assign \n   n$54=*&#GB$A_dispatch_barrier_example_a:class A * [line 72]\n  *n$54.x:int =10 [line 72]\n  REMOVE_TEMPS(n$54); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
+	 59 -> 54 ;
+58 [label="58:  BinaryOperatorStmt: Assign \n   n$57=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 71]\n  n$55=_fun_NSObject_init(n$57:class A *) virtual [line 71]\n  *&#GB$A_dispatch_barrier_example_a:class A *=n$55 [line 71]\n  REMOVE_TEMPS(n$55,n$57); [line 71]\n " shape="box"]
 	
 
 	 58 -> 57 ;
-57 [label="57: Exit __objc_anonymous_block_A_dispatch_barrier_example______6 \n  " color=yellow style=filled]
+57 [label="57:  BinaryOperatorStmt: Assign \n   n$54=*&#GB$A_dispatch_barrier_example_a:class A * [line 72]\n  *n$54.x:int =10 [line 72]\n  REMOVE_TEMPS(n$54); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
 	
 
-56 [label="56: Start __objc_anonymous_block_A_dispatch_barrier_example______6\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 70]\n " color=yellow style=filled]
+	 57 -> 56 ;
+56 [label="56: Exit __objc_anonymous_block_A_dispatch_barrier_example______6 \n  " color=yellow style=filled]
 	
 
-	 56 -> 59 ;
-55 [label="55:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_barrier_example______6); [line 70]\n  n$58=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_barrier_example______6 ):unsigned long ) [line 70]\n  *&__objc_anonymous_block_A_dispatch_barrier_example______6:class __objc_anonymous_block_A_dispatch_barrier_example______6 =n$58 [line 70]\n  n$59=*&#GB$A_dispatch_barrier_example_a:class A * [line 70]\n  *n$58.A_dispatch_barrier_example_a:class A *=n$59 [line 70]\n  *&infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_barrier_example______6) [line 70]\n  REMOVE_TEMPS(n$58,n$59); [line 70]\n " shape="box"]
+55 [label="55: Start __objc_anonymous_block_A_dispatch_barrier_example______6\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 70]\n " color=yellow style=filled]
 	
 
-	 55 -> 54 ;
+	 55 -> 58 ;
 54 [label="54:  Call n$52 \n   n$52=*&infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*) [line 70]\n  n$53=n$52() [line 70]\n  REMOVE_TEMPS(n$52,n$53); [line 70]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_barrier_example______6,false); [line 70]\n " shape="box"]
 	
 
@@ -40,26 +40,26 @@ digraph iCFG {
 50 [label="50:  DeclStmt \n   *&#GB$A_dispatch_group_notify_example_a:class A *=0 [line 60]\n " shape="box"]
 	
 
-	 50 -> 45 ;
-49 [label="49:  BinaryOperatorStmt: Assign \n   n$47=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 62]\n  n$45=_fun_NSObject_init(n$47:class A *) virtual [line 62]\n  *&#GB$A_dispatch_group_notify_example_a:class A *=n$45 [line 62]\n  REMOVE_TEMPS(n$45,n$47); [line 62]\n " shape="box"]
+	 50 -> 49 ;
+49 [label="49:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_notify_example______5); [line 61]\n  n$48=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_notify_example______5 ):unsigned long ) [line 61]\n  *&__objc_anonymous_block_A_dispatch_group_notify_example______5:class __objc_anonymous_block_A_dispatch_group_notify_example______5 =n$48 [line 61]\n  n$49=*&#GB$A_dispatch_group_notify_example_a:class A * [line 61]\n  *n$48.A_dispatch_group_notify_example_a:class A *=n$49 [line 61]\n  *&infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_notify_example______5) [line 61]\n  REMOVE_TEMPS(n$48,n$49); [line 61]\n " shape="box"]
 	
 
-	 49 -> 48 ;
-48 [label="48:  BinaryOperatorStmt: Assign \n   n$44=*&#GB$A_dispatch_group_notify_example_a:class A * [line 63]\n  *n$44.x:int =10 [line 63]\n  REMOVE_TEMPS(n$44); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="box"]
+	 49 -> 44 ;
+48 [label="48:  BinaryOperatorStmt: Assign \n   n$47=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 62]\n  n$45=_fun_NSObject_init(n$47:class A *) virtual [line 62]\n  *&#GB$A_dispatch_group_notify_example_a:class A *=n$45 [line 62]\n  REMOVE_TEMPS(n$45,n$47); [line 62]\n " shape="box"]
 	
 
 	 48 -> 47 ;
-47 [label="47: Exit __objc_anonymous_block_A_dispatch_group_notify_example______5 \n  " color=yellow style=filled]
+47 [label="47:  BinaryOperatorStmt: Assign \n   n$44=*&#GB$A_dispatch_group_notify_example_a:class A * [line 63]\n  *n$44.x:int =10 [line 63]\n  REMOVE_TEMPS(n$44); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="box"]
 	
 
-46 [label="46: Start __objc_anonymous_block_A_dispatch_group_notify_example______5\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 61]\n " color=yellow style=filled]
+	 47 -> 46 ;
+46 [label="46: Exit __objc_anonymous_block_A_dispatch_group_notify_example______5 \n  " color=yellow style=filled]
 	
 
-	 46 -> 49 ;
-45 [label="45:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_notify_example______5); [line 61]\n  n$48=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_notify_example______5 ):unsigned long ) [line 61]\n  *&__objc_anonymous_block_A_dispatch_group_notify_example______5:class __objc_anonymous_block_A_dispatch_group_notify_example______5 =n$48 [line 61]\n  n$49=*&#GB$A_dispatch_group_notify_example_a:class A * [line 61]\n  *n$48.A_dispatch_group_notify_example_a:class A *=n$49 [line 61]\n  *&infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_notify_example______5) [line 61]\n  REMOVE_TEMPS(n$48,n$49); [line 61]\n " shape="box"]
+45 [label="45: Start __objc_anonymous_block_A_dispatch_group_notify_example______5\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 61]\n " color=yellow style=filled]
 	
 
-	 45 -> 44 ;
+	 45 -> 48 ;
 44 [label="44:  Call n$42 \n   n$42=*&infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*) [line 61]\n  n$43=n$42() [line 61]\n  REMOVE_TEMPS(n$42,n$43); [line 61]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_notify_example______5,false); [line 61]\n " shape="box"]
 	
 
@@ -78,26 +78,26 @@ digraph iCFG {
 40 [label="40:  DeclStmt \n   *&#GB$A_dispatch_group_example_a:class A *=0 [line 51]\n " shape="box"]
 	
 
-	 40 -> 35 ;
-39 [label="39:  BinaryOperatorStmt: Assign \n   n$37=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 53]\n  n$35=_fun_NSObject_init(n$37:class A *) virtual [line 53]\n  *&#GB$A_dispatch_group_example_a:class A *=n$35 [line 53]\n  REMOVE_TEMPS(n$35,n$37); [line 53]\n " shape="box"]
+	 40 -> 39 ;
+39 [label="39:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_example______4); [line 52]\n  n$38=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_example______4 ):unsigned long ) [line 52]\n  *&__objc_anonymous_block_A_dispatch_group_example______4:class __objc_anonymous_block_A_dispatch_group_example______4 =n$38 [line 52]\n  n$39=*&#GB$A_dispatch_group_example_a:class A * [line 52]\n  *n$38.A_dispatch_group_example_a:class A *=n$39 [line 52]\n  *&infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_example______4) [line 52]\n  REMOVE_TEMPS(n$38,n$39); [line 52]\n " shape="box"]
 	
 
-	 39 -> 38 ;
-38 [label="38:  BinaryOperatorStmt: Assign \n   n$34=*&#GB$A_dispatch_group_example_a:class A * [line 54]\n  *n$34.x:int =10 [line 54]\n  REMOVE_TEMPS(n$34); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
+	 39 -> 34 ;
+38 [label="38:  BinaryOperatorStmt: Assign \n   n$37=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 53]\n  n$35=_fun_NSObject_init(n$37:class A *) virtual [line 53]\n  *&#GB$A_dispatch_group_example_a:class A *=n$35 [line 53]\n  REMOVE_TEMPS(n$35,n$37); [line 53]\n " shape="box"]
 	
 
 	 38 -> 37 ;
-37 [label="37: Exit __objc_anonymous_block_A_dispatch_group_example______4 \n  " color=yellow style=filled]
+37 [label="37:  BinaryOperatorStmt: Assign \n   n$34=*&#GB$A_dispatch_group_example_a:class A * [line 54]\n  *n$34.x:int =10 [line 54]\n  REMOVE_TEMPS(n$34); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
 	
 
-36 [label="36: Start __objc_anonymous_block_A_dispatch_group_example______4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 52]\n " color=yellow style=filled]
+	 37 -> 36 ;
+36 [label="36: Exit __objc_anonymous_block_A_dispatch_group_example______4 \n  " color=yellow style=filled]
 	
 
-	 36 -> 39 ;
-35 [label="35:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_example______4); [line 52]\n  n$38=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_example______4 ):unsigned long ) [line 52]\n  *&__objc_anonymous_block_A_dispatch_group_example______4:class __objc_anonymous_block_A_dispatch_group_example______4 =n$38 [line 52]\n  n$39=*&#GB$A_dispatch_group_example_a:class A * [line 52]\n  *n$38.A_dispatch_group_example_a:class A *=n$39 [line 52]\n  *&infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_example______4) [line 52]\n  REMOVE_TEMPS(n$38,n$39); [line 52]\n " shape="box"]
+35 [label="35: Start __objc_anonymous_block_A_dispatch_group_example______4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 52]\n " color=yellow style=filled]
 	
 
-	 35 -> 34 ;
+	 35 -> 38 ;
 34 [label="34:  Call n$32 \n   n$32=*&infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*) [line 52]\n  n$33=n$32() [line 52]\n  REMOVE_TEMPS(n$32,n$33); [line 52]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_example______4,false); [line 52]\n " shape="box"]
 	
 
@@ -116,26 +116,26 @@ digraph iCFG {
 30 [label="30:  DeclStmt \n   *&#GB$A_dispatch_after_example_a:class A *=0 [line 41]\n " shape="box"]
 	
 
-	 30 -> 25 ;
-29 [label="29:  BinaryOperatorStmt: Assign \n   n$27=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 44]\n  n$25=_fun_NSObject_init(n$27:class A *) virtual [line 44]\n  *&#GB$A_dispatch_after_example_a:class A *=n$25 [line 44]\n  REMOVE_TEMPS(n$25,n$27); [line 44]\n " shape="box"]
+	 30 -> 29 ;
+29 [label="29:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_after_example______3); [line 43]\n  n$28=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_after_example______3 ):unsigned long ) [line 43]\n  *&__objc_anonymous_block_A_dispatch_after_example______3:class __objc_anonymous_block_A_dispatch_after_example______3 =n$28 [line 43]\n  n$29=*&#GB$A_dispatch_after_example_a:class A * [line 43]\n  *n$28.A_dispatch_after_example_a:class A *=n$29 [line 43]\n  *&infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_after_example______3) [line 42]\n  REMOVE_TEMPS(n$28,n$29); [line 42]\n " shape="box"]
 	
 
-	 29 -> 28 ;
-28 [label="28:  BinaryOperatorStmt: Assign \n   n$24=*&#GB$A_dispatch_after_example_a:class A * [line 45]\n  *n$24.x:int =10 [line 45]\n  REMOVE_TEMPS(n$24); [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
+	 29 -> 24 ;
+28 [label="28:  BinaryOperatorStmt: Assign \n   n$27=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 44]\n  n$25=_fun_NSObject_init(n$27:class A *) virtual [line 44]\n  *&#GB$A_dispatch_after_example_a:class A *=n$25 [line 44]\n  REMOVE_TEMPS(n$25,n$27); [line 44]\n " shape="box"]
 	
 
 	 28 -> 27 ;
-27 [label="27: Exit __objc_anonymous_block_A_dispatch_after_example______3 \n  " color=yellow style=filled]
+27 [label="27:  BinaryOperatorStmt: Assign \n   n$24=*&#GB$A_dispatch_after_example_a:class A * [line 45]\n  *n$24.x:int =10 [line 45]\n  REMOVE_TEMPS(n$24); [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
 	
 
-26 [label="26: Start __objc_anonymous_block_A_dispatch_after_example______3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
+	 27 -> 26 ;
+26 [label="26: Exit __objc_anonymous_block_A_dispatch_after_example______3 \n  " color=yellow style=filled]
 	
 
-	 26 -> 29 ;
-25 [label="25:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_after_example______3); [line 43]\n  n$28=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_after_example______3 ):unsigned long ) [line 43]\n  *&__objc_anonymous_block_A_dispatch_after_example______3:class __objc_anonymous_block_A_dispatch_after_example______3 =n$28 [line 43]\n  n$29=*&#GB$A_dispatch_after_example_a:class A * [line 43]\n  *n$28.A_dispatch_after_example_a:class A *=n$29 [line 43]\n  *&infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_after_example______3) [line 42]\n  REMOVE_TEMPS(n$28,n$29); [line 42]\n " shape="box"]
+25 [label="25: Start __objc_anonymous_block_A_dispatch_after_example______3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
 	
 
-	 25 -> 24 ;
+	 25 -> 28 ;
 24 [label="24:  Call n$22 \n   n$22=*&infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*) [line 42]\n  n$23=n$22() [line 42]\n  REMOVE_TEMPS(n$22,n$23); [line 42]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_after_example______3,false); [line 42]\n " shape="box"]
 	
 
@@ -154,26 +154,26 @@ digraph iCFG {
 20 [label="20:  DeclStmt \n   *&#GB$A_dispatch_async_example_a:class A *=0 [line 32]\n " shape="box"]
 	
 
-	 20 -> 15 ;
-19 [label="19:  BinaryOperatorStmt: Assign \n   n$17=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 34]\n  n$15=_fun_NSObject_init(n$17:class A *) virtual [line 34]\n  *&#GB$A_dispatch_async_example_a:class A *=n$15 [line 34]\n  REMOVE_TEMPS(n$15,n$17); [line 34]\n " shape="box"]
+	 20 -> 19 ;
+19 [label="19:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_async_example______2); [line 33]\n  n$18=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_async_example______2 ):unsigned long ) [line 33]\n  *&__objc_anonymous_block_A_dispatch_async_example______2:class __objc_anonymous_block_A_dispatch_async_example______2 =n$18 [line 33]\n  n$19=*&#GB$A_dispatch_async_example_a:class A * [line 33]\n  *n$18.A_dispatch_async_example_a:class A *=n$19 [line 33]\n  *&infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_async_example______2) [line 33]\n  REMOVE_TEMPS(n$18,n$19); [line 33]\n " shape="box"]
 	
 
-	 19 -> 18 ;
-18 [label="18:  BinaryOperatorStmt: Assign \n   n$14=*&#GB$A_dispatch_async_example_a:class A * [line 35]\n  *n$14.x:int =10 [line 35]\n  REMOVE_TEMPS(n$14); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+	 19 -> 14 ;
+18 [label="18:  BinaryOperatorStmt: Assign \n   n$17=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 34]\n  n$15=_fun_NSObject_init(n$17:class A *) virtual [line 34]\n  *&#GB$A_dispatch_async_example_a:class A *=n$15 [line 34]\n  REMOVE_TEMPS(n$15,n$17); [line 34]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17: Exit __objc_anonymous_block_A_dispatch_async_example______2 \n  " color=yellow style=filled]
+17 [label="17:  BinaryOperatorStmt: Assign \n   n$14=*&#GB$A_dispatch_async_example_a:class A * [line 35]\n  *n$14.x:int =10 [line 35]\n  REMOVE_TEMPS(n$14); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
 	
 
-16 [label="16: Start __objc_anonymous_block_A_dispatch_async_example______2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
+	 17 -> 16 ;
+16 [label="16: Exit __objc_anonymous_block_A_dispatch_async_example______2 \n  " color=yellow style=filled]
 	
 
-	 16 -> 19 ;
-15 [label="15:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_async_example______2); [line 33]\n  n$18=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_async_example______2 ):unsigned long ) [line 33]\n  *&__objc_anonymous_block_A_dispatch_async_example______2:class __objc_anonymous_block_A_dispatch_async_example______2 =n$18 [line 33]\n  n$19=*&#GB$A_dispatch_async_example_a:class A * [line 33]\n  *n$18.A_dispatch_async_example_a:class A *=n$19 [line 33]\n  *&infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_async_example______2) [line 33]\n  REMOVE_TEMPS(n$18,n$19); [line 33]\n " shape="box"]
+15 [label="15: Start __objc_anonymous_block_A_dispatch_async_example______2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
 	
 
-	 15 -> 14 ;
+	 15 -> 18 ;
 14 [label="14:  Call n$12 \n   n$12=*&infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*) [line 33]\n  n$13=n$12() [line 33]\n  REMOVE_TEMPS(n$12,n$13); [line 33]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_async_example______2,false); [line 33]\n " shape="box"]
 	
 
@@ -192,26 +192,26 @@ digraph iCFG {
 10 [label="10:  DeclStmt \n   *&#GB$A_dispatch_once_example_a:class A *=0 [line 21]\n " shape="box"]
 	
 
-	 10 -> 5 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$7=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 25]\n  n$5=_fun_NSObject_init(n$7:class A *) virtual [line 25]\n  *&#GB$A_dispatch_once_example_a:class A *=n$5 [line 25]\n  REMOVE_TEMPS(n$5,n$7); [line 25]\n " shape="box"]
+	 10 -> 9 ;
+9 [label="9:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_once_example______1); [line 24]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_once_example______1 ):unsigned long ) [line 24]\n  *&__objc_anonymous_block_A_dispatch_once_example______1:class __objc_anonymous_block_A_dispatch_once_example______1 =n$8 [line 24]\n  n$9=*&#GB$A_dispatch_once_example_a:class A * [line 24]\n  *n$8.A_dispatch_once_example_a:class A *=n$9 [line 24]\n  *&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_once_example______1) [line 23]\n  REMOVE_TEMPS(n$8,n$9); [line 23]\n " shape="box"]
 	
 
-	 9 -> 8 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   n$4=*&#GB$A_dispatch_once_example_a:class A * [line 26]\n  *n$4.x:int =10 [line 26]\n  REMOVE_TEMPS(n$4); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+	 9 -> 4 ;
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$7=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 25]\n  n$5=_fun_NSObject_init(n$7:class A *) virtual [line 25]\n  *&#GB$A_dispatch_once_example_a:class A *=n$5 [line 25]\n  REMOVE_TEMPS(n$5,n$7); [line 25]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7: Exit __objc_anonymous_block_A_dispatch_once_example______1 \n  " color=yellow style=filled]
+7 [label="7:  BinaryOperatorStmt: Assign \n   n$4=*&#GB$A_dispatch_once_example_a:class A * [line 26]\n  *n$4.x:int =10 [line 26]\n  REMOVE_TEMPS(n$4); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
-6 [label="6: Start __objc_anonymous_block_A_dispatch_once_example______1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	 7 -> 6 ;
+6 [label="6: Exit __objc_anonymous_block_A_dispatch_once_example______1 \n  " color=yellow style=filled]
 	
 
-	 6 -> 9 ;
-5 [label="5:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_once_example______1); [line 24]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_once_example______1 ):unsigned long ) [line 24]\n  *&__objc_anonymous_block_A_dispatch_once_example______1:class __objc_anonymous_block_A_dispatch_once_example______1 =n$8 [line 24]\n  n$9=*&#GB$A_dispatch_once_example_a:class A * [line 24]\n  *n$8.A_dispatch_once_example_a:class A *=n$9 [line 24]\n  *&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_once_example______1) [line 23]\n  REMOVE_TEMPS(n$8,n$9); [line 23]\n " shape="box"]
+5 [label="5: Start __objc_anonymous_block_A_dispatch_once_example______1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
-	 5 -> 4 ;
+	 5 -> 8 ;
 4 [label="4:  Call n$2 \n   n$2=*&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*) [line 23]\n  n$3=n$2() [line 23]\n  REMOVE_TEMPS(n$2,n$3); [line 23]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_once_example______1,false); [line 23]\n " shape="box"]
 	
 

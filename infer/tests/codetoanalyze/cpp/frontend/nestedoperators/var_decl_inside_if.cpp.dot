@@ -71,31 +71,31 @@ digraph iCFG {
 	
 
 	 50 -> 40 ;
-49 [label="49:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___45); [line 45]\n  *&SIL_temp_conditional___45:int =0 [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
+49 [label="49:  DeclStmt \n   n$1=*&SIL_temp_conditional___44:int  [line 45]\n  NULLIFY(&SIL_temp_conditional___44,true); [line 45]\n  *&a:int =n$1 [line 45]\n  REMOVE_TEMPS(n$1); [line 45]\n " shape="box"]
 	
 
-	 49 -> 45 ;
-48 [label="48:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___45); [line 45]\n  *&SIL_temp_conditional___45:int =1 [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
+	 49 -> 42 ;
+	 49 -> 43 ;
+48 [label="48:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___44); [line 45]\n  *&SIL_temp_conditional___44:int =0 [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
 	
 
-	 48 -> 45 ;
-47 [label="47: Prune (false branch) \n   PRUNE((1 == 0), false); [line 45]\n " shape="invhouse"]
+	 48 -> 44 ;
+47 [label="47:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___44); [line 45]\n  *&SIL_temp_conditional___44:int =1 [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
 	
 
-	 47 -> 49 ;
-46 [label="46: Prune (true branch) \n   PRUNE((1 != 0), true); [line 45]\n " shape="invhouse"]
+	 47 -> 44 ;
+46 [label="46: Prune (false branch) \n   PRUNE((1 == 0), false); [line 45]\n " shape="invhouse"]
 	
 
 	 46 -> 48 ;
-45 [label="45: + \n  " ]
+45 [label="45: Prune (true branch) \n   PRUNE((1 != 0), true); [line 45]\n " shape="invhouse"]
 	
 
-	 45 -> 44 ;
-44 [label="44:  DeclStmt \n   n$1=*&SIL_temp_conditional___45:int  [line 45]\n  NULLIFY(&SIL_temp_conditional___45,true); [line 45]\n  *&a:int =n$1 [line 45]\n  REMOVE_TEMPS(n$1); [line 45]\n " shape="box"]
+	 45 -> 47 ;
+44 [label="44: + \n  " ]
 	
 
-	 44 -> 42 ;
-	 44 -> 43 ;
+	 44 -> 49 ;
 43 [label="43: Prune (false branch) \n   n$0=*&a:int  [line 45]\n  PRUNE((n$0 == 0), false); [line 45]\n  REMOVE_TEMPS(n$0); [line 45]\n " shape="invhouse"]
 	
 
@@ -114,8 +114,8 @@ digraph iCFG {
 39 [label="39: Start conditional_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 44]\n  NULLIFY(&a,false); [line 44]\n " color=yellow style=filled]
 	
 
+	 39 -> 45 ;
 	 39 -> 46 ;
-	 39 -> 47 ;
 38 [label="38:  Return Stmt \n   n$2=*&a:int  [line 40]\n  *&return:int =(1 / (n$2 - 1)) [line 40]\n  REMOVE_TEMPS(n$2); [line 40]\n  NULLIFY(&a,false); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
 	
 

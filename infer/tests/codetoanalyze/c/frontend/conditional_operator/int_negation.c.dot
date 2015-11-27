@@ -1,36 +1,36 @@
 digraph iCFG {
-32 [label="32:  ConditinalStmt Branch \n   NULLIFY(&x,false); [line 33]\n  DECLARE_LOCALS(&SIL_temp_conditional___28); [line 33]\n  *&SIL_temp_conditional___28:int =1 [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+32 [label="32:  Return Stmt \n   n$1=*&SIL_temp_conditional___27:int  [line 33]\n  NULLIFY(&SIL_temp_conditional___27,true); [line 33]\n  *&return:int =n$1 [line 33]\n  REMOVE_TEMPS(n$1); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
-	 32 -> 28 ;
-31 [label="31:  ConditinalStmt Branch \n   NULLIFY(&x,false); [line 33]\n  DECLARE_LOCALS(&SIL_temp_conditional___28); [line 33]\n  *&SIL_temp_conditional___28:int =0 [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+	 32 -> 26 ;
+31 [label="31:  ConditinalStmt Branch \n   NULLIFY(&x,false); [line 33]\n  DECLARE_LOCALS(&SIL_temp_conditional___27); [line 33]\n  *&SIL_temp_conditional___27:int =1 [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
-	 31 -> 28 ;
-30 [label="30: Prune (false branch) \n   n$0=*&x:int  [line 33]\n  PRUNE((n$0 == 0), false); [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n " shape="invhouse"]
+	 31 -> 27 ;
+30 [label="30:  ConditinalStmt Branch \n   NULLIFY(&x,false); [line 33]\n  DECLARE_LOCALS(&SIL_temp_conditional___27); [line 33]\n  *&SIL_temp_conditional___27:int =0 [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
-	 30 -> 32 ;
-29 [label="29: Prune (true branch) \n   n$0=*&x:int  [line 33]\n  PRUNE((n$0 != 0), true); [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n " shape="invhouse"]
+	 30 -> 27 ;
+29 [label="29: Prune (false branch) \n   n$0=*&x:int  [line 33]\n  PRUNE((n$0 == 0), false); [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n " shape="invhouse"]
 	
 
 	 29 -> 31 ;
-28 [label="28: + \n  " ]
+28 [label="28: Prune (true branch) \n   n$0=*&x:int  [line 33]\n  PRUNE((n$0 != 0), true); [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n " shape="invhouse"]
 	
 
-	 28 -> 27 ;
-27 [label="27:  Return Stmt \n   n$1=*&SIL_temp_conditional___28:int  [line 33]\n  NULLIFY(&SIL_temp_conditional___28,true); [line 33]\n  *&return:int =n$1 [line 33]\n  REMOVE_TEMPS(n$1); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+	 28 -> 30 ;
+27 [label="27: + \n  " ]
 	
 
-	 27 -> 26 ;
+	 27 -> 32 ;
 26 [label="26: Exit neg \n  " color=yellow style=filled]
 	
 
 25 [label="25: Start neg\nFormals:  x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
+	 25 -> 28 ;
 	 25 -> 29 ;
-	 25 -> 30 ;
 24 [label="24:  Return Stmt \n   *&return:int =0 [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
 	
 

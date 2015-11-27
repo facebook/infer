@@ -98,7 +98,7 @@ digraph iCFG {
 100 [label="100: Prune (false branch) \n   PRUNE((0 == 0), false); [line 36]\n " shape="invhouse"]
 	
 
-	 100 -> 94 ;
+	 100 -> 97 ;
 99 [label="99: Prune (true branch) \n   PRUNE((0 != 0), true); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="invhouse"]
 	
 
@@ -108,21 +108,21 @@ digraph iCFG {
 
 	 98 -> 103 ;
 	 98 -> 104 ;
-97 [label="97:  Return Stmt \n   n$2=*&self:class A * [line 13]\n  n$3=*n$2._x:int  [line 13]\n  *&return:int =n$3 [line 13]\n  REMOVE_TEMPS(n$2,n$3); [line 13]\n  NULLIFY(&self,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+97 [label="97:  Return Stmt \n   n$1=*&target:class A * [line 37]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 37]\n  *&return:int =n$0 [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&target,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
-	 97 -> 96 ;
-96 [label="96: Exit A_x \n  " color=yellow style=filled]
+	 97 -> 93 ;
+96 [label="96:  Return Stmt \n   n$2=*&self:class A * [line 13]\n  n$3=*n$2._x:int  [line 13]\n  *&return:int =n$3 [line 13]\n  REMOVE_TEMPS(n$2,n$3); [line 13]\n  NULLIFY(&self,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
-95 [label="95: Start A_x (generated)\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+	 96 -> 95 ;
+95 [label="95: Exit A_x \n  " color=yellow style=filled]
 	
 
-	 95 -> 97 ;
-94 [label="94:  Return Stmt \n   n$1=*&target:class A * [line 37]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 37]\n  *&return:int =n$0 [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&target,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+94 [label="94: Start A_x (generated)\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
-	 94 -> 93 ;
+	 94 -> 96 ;
 93 [label="93: Exit test2 \n  " color=yellow style=filled]
 	
 
@@ -234,7 +234,7 @@ digraph iCFG {
 67 [label="67: Prune (false branch) \n   PRUNE((0 == 0), false); [line 31]\n " shape="invhouse"]
 	
 
-	 67 -> 61 ;
+	 67 -> 64 ;
 66 [label="66: Prune (true branch) \n   PRUNE((0 != 0), true); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="invhouse"]
 	
 
@@ -243,10 +243,10 @@ digraph iCFG {
 	
 
 	 65 -> 70 ;
-61 [label="61:  Return Stmt \n   n$1=*&target:class A * [line 32]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 32]\n  *&return:int =n$0 [line 32]\n  REMOVE_TEMPS(n$0,n$1); [line 32]\n  NULLIFY(&target,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+64 [label="64:  Return Stmt \n   n$1=*&target:class A * [line 32]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 32]\n  *&return:int =n$0 [line 32]\n  REMOVE_TEMPS(n$0,n$1); [line 32]\n  NULLIFY(&target,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
-	 61 -> 60 ;
+	 64 -> 60 ;
 60 [label="60: Exit test1 \n  " color=yellow style=filled]
 	
 
@@ -340,7 +340,7 @@ digraph iCFG {
 35 [label="35: Prune (false branch) \n   PRUNE((0 == 0), false); [line 24]\n " shape="invhouse"]
 	
 
-	 35 -> 29 ;
+	 35 -> 32 ;
 34 [label="34: Prune (true branch) \n   PRUNE((0 != 0), true); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="invhouse"]
 	
 
@@ -349,10 +349,10 @@ digraph iCFG {
 	
 
 	 33 -> 38 ;
-29 [label="29:  Return Stmt \n   n$18=*&a:class A * [line 25]\n  n$17=_fun_A_x(n$18:class A *) virtual [line 25]\n  *&return:int =n$17 [line 25]\n  REMOVE_TEMPS(n$17,n$18); [line 25]\n  NULLIFY(&a,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+32 [label="32:  Return Stmt \n   n$18=*&a:class A * [line 25]\n  n$17=_fun_A_x(n$18:class A *) virtual [line 25]\n  *&return:int =n$17 [line 25]\n  REMOVE_TEMPS(n$17,n$18); [line 25]\n  NULLIFY(&a,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
-	 29 -> 28 ;
+	 32 -> 28 ;
 28 [label="28: Exit A_initWithRequest: \n  " color=yellow style=filled]
 	
 
@@ -435,7 +435,7 @@ digraph iCFG {
 9 [label="9: Prune (false branch) \n   PRUNE((0 == 0), false); [line 19]\n " shape="invhouse"]
 	
 
-	 9 -> 3 ;
+	 9 -> 6 ;
 8 [label="8: Prune (true branch) \n   PRUNE((0 != 0), true); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
 	
 
@@ -444,10 +444,10 @@ digraph iCFG {
 	
 
 	 7 -> 12 ;
-3 [label="3:  Return Stmt \n   n$1=*&target:class A * [line 20]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 20]\n  *&return:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&target,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$1=*&target:class A * [line 20]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 20]\n  *&return:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&target,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
-	 3 -> 2 ;
+	 6 -> 2 ;
 2 [label="2: Exit A_addTarget: \n  " color=yellow style=filled]
 	
 

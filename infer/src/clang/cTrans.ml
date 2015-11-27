@@ -1587,13 +1587,6 @@ struct
         let var_exp, var_typ = extract_exp_from_list var_res_trans.exps
             "WARNING: init_expr_trans expects one variable expression" in
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state var_stmt_info in
-        let next_node =
-          if PriorityNode.own_priority_node trans_state_pri.priority var_stmt_info then (
-            let node_kind = Cfg.Node.Stmt_node "DeclStmt" in
-            let node = create_node node_kind [] [] sil_loc context in
-            Cfg.Node.set_succs_exn node trans_state.succ_nodes [];
-            [node]
-          ) else trans_state.succ_nodes in
         let line_number = CLocation.get_line stmt_info pln in
         (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
         let res_trans_ie =
@@ -1620,10 +1613,11 @@ struct
         let ids = var_res_trans.ids @ res_trans_ie.ids @ ids_assign in
         let instrs = var_res_trans.instrs @ res_trans_ie.instrs @ instrs_assign in
         if PriorityNode.own_priority_node trans_state_pri.priority var_stmt_info then (
-          let node = IList.hd next_node in
-          Cfg.Node.append_instrs_temps node instrs ids;
+          let node_kind = Cfg.Node.Stmt_node "DeclStmt" in
+          let node = create_node node_kind ids instrs sil_loc context in
+          Cfg.Node.set_succs_exn node trans_state.succ_nodes [];
           IList.iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
-          let root_nodes = if (IList.length root_nodes) = 0 then next_node else root_nodes in
+          let root_nodes = if (IList.length root_nodes) = 0 then [node] else root_nodes in
           {
             root_nodes = root_nodes;
             leaf_nodes = [];
@@ -1820,8 +1814,10 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info pln context in
     let line_number = CLocation.get_line stmt_info pln in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-    let ret_node = create_node (Cfg.Node.Stmt_node "Return Stmt") [] [] sil_loc context in
-    Cfg.Node.set_succs_exn ret_node [(Cfg.Procdesc.get_exit_node context.CContext.procdesc)] [];
+    let mk_ret_node ids instrs =
+      let ret_node = create_node (Cfg.Node.Stmt_node "Return Stmt") ids instrs sil_loc context in
+      Cfg.Node.set_succs_exn ret_node [(Cfg.Procdesc.get_exit_node context.CContext.procdesc)] [];
+      ret_node in
     let trans_result = (match stmt_list with
         | [stmt] -> (* return exp; *)
             let trans_state' = { trans_state_pri with
@@ -1836,12 +1832,13 @@ struct
             let autorelease_ids, autorelease_instrs = add_autorelease_call context sil_expr ret_type sil_loc in
             let instrs = res_trans_stmt.instrs @ [ret_instr] @ autorelease_instrs in
             let ids = res_trans_stmt.ids@autorelease_ids in
-            Cfg.Node.append_instrs_temps ret_node instrs ids;
+            let ret_node = mk_ret_node ids instrs in
             IList.iter (fun n -> Cfg.Node.set_succs_exn n [ret_node] []) res_trans_stmt.leaf_nodes;
             let root_nodes_to_parent =
               if IList.length res_trans_stmt.root_nodes >0 then res_trans_stmt.root_nodes else [ret_node] in
             { empty_res_trans with root_nodes = root_nodes_to_parent; leaf_nodes = [ret_node]}
         | [] -> (* return; *)
+            let ret_node = mk_ret_node [] [] in
             { empty_res_trans with root_nodes = [ret_node]; leaf_nodes = [ret_node]}
         | _ -> Printing.log_out
                  "\nWARNING: Missing translation of Return Expression. Return Statement ignored. Need fixing!\n";
