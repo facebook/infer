@@ -395,14 +395,44 @@ let prune_ne tenv positive e1 e2 prop =
   let is_inconsistent =
     if positive then Prover.check_equal prop e1 e2
     else Prover.check_disequal prop e1 e2 in
-  if is_inconsistent then Propset.empty else
-    let new_prop =
-      if positive then Prop.conjoin_neq ~footprint: (!Config.footprint) e1 e2 prop
-      else Prop.conjoin_eq ~footprint: (!Config.footprint) e1 e2 prop
-    in if Prover.check_inconsistency new_prop then Propset.empty
+  if is_inconsistent then Propset.empty
+  else
+    let conjoin = if positive then Prop.conjoin_neq else Prop.conjoin_eq in
+    let new_prop = conjoin ~footprint: (!Config.footprint) e1 e2 prop in
+    if Prover.check_inconsistency new_prop then Propset.empty
     else Propset.singleton new_prop
 
-let rec prune_polarity tenv positive (condition : Sil.exp) (prop : Prop.normal Prop.t) = match condition with
+(** Do pruning for conditional "if ([e1] CMP [e2])" if [positive] is
+    true and "if (!([e1] CMP [e2]))" if [positive] is false, where CMP
+    is "<" if [is_strict] is true and "<=" if [is_strict] is false.
+*)
+let prune_ineq ~is_strict positive prop e1 e2 =
+  if Sil.exp_equal e1 e2 then
+    if (positive && not is_strict) || (not positive && is_strict) then
+      Propset.singleton prop
+    else Propset.empty
+  else
+    (* build the pruning condition and its negation, as explained in
+       the comment above *)
+    (* build [e1] CMP [e2] *)
+    let cmp = if is_strict then Sil.Lt else Sil.Le in
+    let e1_cmp_e2 = Sil.BinOp (cmp, e1, e2) in
+    (* build !([e1] CMP [e2]) *)
+    let dual_cmp = if is_strict then Sil.Le else Sil.Lt in
+    let not_e1_cmp_e2 = Sil.BinOp (dual_cmp, e2, e1) in
+    (* take polarity into account *)
+    let (prune_cond, not_prune_cond) =
+      if positive then (e1_cmp_e2, not_e1_cmp_e2)
+      else (not_e1_cmp_e2, e1_cmp_e2) in
+    let is_inconsistent = Prover.check_atom prop (Prop.mk_inequality not_prune_cond) in
+    if is_inconsistent then Propset.empty
+    else
+      let footprint = !Config.footprint in
+      let prop_with_ineq = Prop.conjoin_eq ~footprint prune_cond Sil.exp_one prop in
+      Propset.singleton prop_with_ineq
+
+let rec prune_polarity tenv positive condition prop =
+  match condition with
   | Sil.Var _ | Sil.Lvar _ ->
       prune_ne tenv positive condition Sil.exp_zero prop
   | Sil.Const (Sil.Cint i) when Sil.Int.iszero i ->
@@ -428,49 +458,15 @@ let rec prune_polarity tenv positive (condition : Sil.exp) (prop : Prop.normal P
   | Sil.BinOp (Sil.Ne, e1, e2) ->
       prune_ne tenv positive e1 e2 prop
   | Sil.BinOp (Sil.Ge, e2, e1) | Sil.BinOp (Sil.Le, e1, e2) ->
-      (* e1<=e2 Case. Encode it as (e1<=e2)=1  *)
-      if Sil.exp_equal e1 e2 then
-        if positive then Propset.singleton prop else Propset.empty
-      else
-        let e2_lt_e1 = Sil.BinOp (Sil.Lt, e2, e1) in (* e2 < e1 *)
-        let e1_le_e2 = Sil.BinOp (Sil.Le, e1, e2) in (* e1 <= e2 *)
-        let is_inconsistent =
-          if positive then Prover.check_atom prop (Prop.mk_inequality e2_lt_e1) (* e2 < e1 *)
-          else Prover.check_atom prop (Prop.mk_inequality e1_le_e2) (* e1 <= e2 *) in
-        begin
-          if is_inconsistent then
-            Propset.empty
-          else if positive then
-            Propset.singleton
-              (Prop.conjoin_eq ~footprint: (!Config.footprint) e1_le_e2 Sil.exp_one prop)
-          else
-            Propset.singleton
-              (Prop.conjoin_eq ~footprint: (!Config.footprint) e2_lt_e1 Sil.exp_one prop)
-        end
+      prune_ineq ~is_strict:false positive prop e1 e2
   | Sil.BinOp (Sil.Gt, e2, e1) | Sil.BinOp (Sil.Lt, e1, e2) ->
-      (* e1 < e2 Case. Encode it as (e1<e2)=1  *)
-      if Sil.exp_equal e1 e2 then
-        if positive then Propset.empty else Propset.singleton prop
-      else
-        let e1_lt_e2 = Sil.BinOp(Sil.Lt, e1, e2) in (* e1 < e2 *)
-        let e2_le_e1 = Sil.BinOp(Sil.Le, e2, e1) in (* e2 <= e1 *)
-        let is_inconsistent =
-          if positive then Prover.check_atom prop (Prop.mk_inequality e2_le_e1) (* e2 <= e1 *)
-          else Prover.check_atom prop (Prop.mk_inequality e1_lt_e2) (* e1 < e2 *) in
-        begin
-          if is_inconsistent then
-            Propset.empty
-          else if positive then
-            Propset.singleton
-              (Prop.conjoin_eq ~footprint: (!Config.footprint) e1_lt_e2 Sil.exp_one prop)
-          else
-            Propset.singleton
-              (Prop.conjoin_eq ~footprint: (!Config.footprint) e2_le_e1 Sil.exp_one prop)
-        end
+      prune_ineq ~is_strict:true positive prop e1 e2
   | Sil.BinOp (Sil.LAnd, condition1, condition2) ->
-      (if positive then prune_polarity_inter else prune_polarity_union) tenv positive condition1 condition2 prop
+      let pruner = if positive then prune_polarity_inter else prune_polarity_union in
+      pruner tenv positive condition1 condition2 prop
   | Sil.BinOp (Sil.LOr, condition1, condition2) ->
-      (if positive then prune_polarity_union else prune_polarity_inter) tenv positive condition1 condition2 prop
+      let pruner = if positive then prune_polarity_union else prune_polarity_inter in
+      pruner tenv positive condition1 condition2 prop
   | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ ->
       prune_ne tenv positive condition Sil.exp_zero prop
 
@@ -1620,8 +1616,8 @@ module ModelBuiltins = struct
             let prop''= Prop.normalize prop'' in
             prop''
         | None -> prop in
-    let sil_is_null = Sil.BinOp (Sil.Eq, n_lexp, (Sil.exp_zero)) in
-    let sil_is_nonnull = Sil.UnOp(Sil.LNot, sil_is_null, None) in
+    let sil_is_null = Sil.BinOp (Sil.Eq, n_lexp, Sil.exp_zero) in
+    let sil_is_nonnull = Sil.UnOp (Sil.LNot, sil_is_null, None) in
     let null_case = Propset.to_proplist (prune_prop tenv sil_is_null prop) in
     let non_null_case = Propset.to_proplist (prune_prop tenv sil_is_nonnull prop_type) in
     if ((IList.length non_null_case) > 0) && (!Config.footprint) then
