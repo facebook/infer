@@ -1,5 +1,5 @@
 digraph iCFG {
-19 [label="19:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 68]\n  *&a:class A *=n$3 [line 68]\n  REMOVE_TEMPS(n$3); [line 68]\n " shape="box"]
+19 [label="19:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 68]\n  *&a:class A *=n$2 [line 68]\n  REMOVE_TEMPS(n$2); [line 68]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 	
 
 	 11 -> 14 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$8=*&self:class A * [line 50]\n  n$10=_fun___objc_alloc_no_fail(sizeof(class B ):unsigned long ) [line 50]\n  *n$8._b:class B *=n$10 [line 50]\n  REMOVE_TEMPS(n$8,n$10); [line 50]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$8=*&self:class A * [line 50]\n  n$9=_fun___objc_alloc_no_fail(sizeof(class B ):unsigned long ) [line 50]\n  *n$8._b:class B *=n$9 [line 50]\n  REMOVE_TEMPS(n$8,n$9); [line 50]\n " shape="box"]
 	
 
 	 10 -> 9 ;

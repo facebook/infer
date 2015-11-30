@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$10=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 29]\n  *&aStrongRef:class A *=n$10 [line 29]\n  REMOVE_TEMPS(n$10); [line 29]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$9=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 29]\n  *&aStrongRef:class A *=n$9 [line 29]\n  REMOVE_TEMPS(n$9); [line 29]\n " shape="box"]
 	
 
 	 9 -> 8 ;

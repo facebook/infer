@@ -21,7 +21,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  Return Stmt \n   n$1=*&target:class A * [line 19]\n  n$0=_fun_A_x(n$1:class A *) virtual [line 19]\n  *&return:int =n$0 [line 19]\n  REMOVE_TEMPS(n$0,n$1); [line 19]\n  NULLIFY(&target,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&target:class A * [line 19]\n  n$3=_fun_A_x(n$0:class A *) virtual [line 19]\n  *&return:int =n$3 [line 19]\n  REMOVE_TEMPS(n$0,n$3); [line 19]\n  NULLIFY(&target,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
 	 6 -> 2 ;

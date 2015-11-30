@@ -1,5 +1,5 @@
 digraph iCFG {
-5 [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class Bicycle ):unsigned long ) [line 15]\n  *&bike:class Bicycle *=n$2 [line 15]\n  REMOVE_TEMPS(n$2); [line 15]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class Bicycle ):unsigned long ) [line 15]\n  *&bike:class Bicycle *=n$1 [line 15]\n  REMOVE_TEMPS(n$1); [line 15]\n " shape="box"]
 	
 
 	 5 -> 4 ;

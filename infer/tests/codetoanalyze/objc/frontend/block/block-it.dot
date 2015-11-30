@@ -1,25 +1,25 @@
 digraph iCFG {
-52 [label="52:  DeclStmt \n   n$47=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 30]\n  n$45=_fun_NSArray_init(n$47:class NSArray *) virtual [line 30]\n  *&a:class NSArray *=n$45 [line 30]\n  REMOVE_TEMPS(n$45,n$47); [line 30]\n " shape="box"]
+52 [label="52:  DeclStmt \n   n$44=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 30]\n  n$45=_fun_NSArray_init(n$44:class NSArray *) virtual [line 30]\n  *&a:class NSArray *=n$45 [line 30]\n  REMOVE_TEMPS(n$44,n$45); [line 30]\n " shape="box"]
 	
 
 	 52 -> 51 ;
-51 [label="51:  DeclStmt \n   n$44=*&a:class NSArray * [line 32]\n  *&objects:class NSArray *=n$44 [line 32]\n  REMOVE_TEMPS(n$44); [line 32]\n  NULLIFY(&a,false); [line 32]\n " shape="box"]
+51 [label="51:  DeclStmt \n   n$43=*&a:class NSArray * [line 32]\n  *&objects:class NSArray *=n$43 [line 32]\n  REMOVE_TEMPS(n$43); [line 32]\n  NULLIFY(&a,false); [line 32]\n " shape="box"]
 	
 
 	 51 -> 50 ;
-50 [label="50:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 35]\n  n$43=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array_trans______2 ):unsigned long ) [line 35]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:class __objc_anonymous_block_MyBlock_array_trans______2 =n$43 [line 35]\n  *&enumerateObjectsUsingBlock:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 35]\n  REMOVE_TEMPS(n$43); [line 35]\n " shape="box"]
+50 [label="50:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 35]\n  n$42=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array_trans______2 ):unsigned long ) [line 35]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:class __objc_anonymous_block_MyBlock_array_trans______2 =n$42 [line 35]\n  *&enumerateObjectsUsingBlock:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 35]\n  REMOVE_TEMPS(n$42); [line 35]\n " shape="box"]
 	
 
 	 50 -> 43 ;
-49 [label="49:  BinaryOperatorStmt: Assign \n   NULLIFY(&ShouldStop,false); [line 40]\n  n$42=*&stop:_Bool * [line 40]\n  *n$42:_Bool =1 [line 40]\n  REMOVE_TEMPS(n$42); [line 40]\n  NULLIFY(&stop,false); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
+49 [label="49:  BinaryOperatorStmt: Assign \n   NULLIFY(&ShouldStop,false); [line 40]\n  n$41=*&stop:_Bool * [line 40]\n  *n$41:_Bool =1 [line 40]\n  REMOVE_TEMPS(n$41); [line 40]\n  NULLIFY(&stop,false); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
 	
 
 	 49 -> 46 ;
-48 [label="48: Prune (false branch) \n   n$41=*&ShouldStop:int  [line 39]\n  PRUNE((n$41 == 0), false); [line 39]\n  REMOVE_TEMPS(n$41); [line 39]\n  APPLY_ABSTRACTION; [line 39]\n " shape="invhouse"]
+48 [label="48: Prune (false branch) \n   n$40=*&ShouldStop:int  [line 39]\n  PRUNE((n$40 == 0), false); [line 39]\n  REMOVE_TEMPS(n$40); [line 39]\n  APPLY_ABSTRACTION; [line 39]\n " shape="invhouse"]
 	
 
 	 48 -> 46 ;
-47 [label="47: Prune (true branch) \n   n$41=*&ShouldStop:int  [line 39]\n  PRUNE((n$41 != 0), true); [line 39]\n  REMOVE_TEMPS(n$41); [line 39]\n " shape="invhouse"]
+47 [label="47: Prune (true branch) \n   n$40=*&ShouldStop:int  [line 39]\n  PRUNE((n$40 != 0), true); [line 39]\n  REMOVE_TEMPS(n$40); [line 39]\n " shape="invhouse"]
 	
 
 	 47 -> 49 ;
@@ -35,31 +35,31 @@ digraph iCFG {
 
 	 44 -> 47 ;
 	 44 -> 48 ;
-43 [label="43:  DeclStmt \n   n$40=_fun_malloc_no_fail(sizeof(_Bool ):_Bool ) [line 43]\n  *&stop:_Bool *=n$40 [line 43]\n  REMOVE_TEMPS(n$40); [line 43]\n " shape="box"]
+43 [label="43:  DeclStmt \n   n$39=_fun_malloc_no_fail(sizeof(_Bool ):_Bool ) [line 43]\n  *&stop:_Bool *=n$39 [line 43]\n  REMOVE_TEMPS(n$39); [line 43]\n " shape="box"]
 	
 
 	 43 -> 42 ;
-42 [label="42:  BinaryOperatorStmt: Assign \n   n$39=*&stop:_Bool * [line 44]\n  *n$39:_Bool =0 [line 44]\n  REMOVE_TEMPS(n$39); [line 44]\n " shape="box"]
+42 [label="42:  BinaryOperatorStmt: Assign \n   n$38=*&stop:_Bool * [line 44]\n  *n$38:_Bool =0 [line 44]\n  REMOVE_TEMPS(n$38); [line 44]\n " shape="box"]
 	
 
 	 42 -> 31 ;
-41 [label="41:  DeclStmt \n   n$37=*&objects:class NSArray * [line 49]\n  n$38=*&idx:unsigned long  [line 49]\n  n$36=_fun_NSArray_objectAtIndexedSubscript:(n$37:class NSArray *,n$38:unsigned long ) virtual [line 49]\n  *&object:struct objc_object *=n$36 [line 49]\n  REMOVE_TEMPS(n$36,n$37,n$38); [line 49]\n " shape="box"]
+41 [label="41:  DeclStmt \n   n$35=*&objects:class NSArray * [line 49]\n  n$36=*&idx:unsigned long  [line 49]\n  n$37=_fun_NSArray_objectAtIndexedSubscript:(n$35:class NSArray *,n$36:unsigned long ) virtual [line 49]\n  *&object:struct objc_object *=n$37 [line 49]\n  REMOVE_TEMPS(n$35,n$36,n$37); [line 49]\n " shape="box"]
 	
 
 	 41 -> 40 ;
-40 [label="40:  Call n$32 \n   n$32=*&enumerateObjectsUsingBlock:_fn_ (*) [line 50]\n  n$33=*&object:struct objc_object * [line 50]\n  n$34=*&idx:unsigned long  [line 50]\n  n$35=*&stop:_Bool * [line 50]\n  n$32(n$33:struct objc_object *,n$34:unsigned long ,n$35:_Bool *) [line 50]\n  REMOVE_TEMPS(n$32,n$33,n$34,n$35); [line 50]\n  NULLIFY(&object,false); [line 50]\n " shape="box"]
+40 [label="40:  Call n$31 \n   n$31=*&enumerateObjectsUsingBlock:_fn_ (*) [line 50]\n  n$32=*&object:struct objc_object * [line 50]\n  n$33=*&idx:unsigned long  [line 50]\n  n$34=*&stop:_Bool * [line 50]\n  n$31(n$32:struct objc_object *,n$33:unsigned long ,n$34:_Bool *) [line 50]\n  REMOVE_TEMPS(n$31,n$32,n$33,n$34); [line 50]\n  NULLIFY(&object,false); [line 50]\n " shape="box"]
 	
 
 	 40 -> 37 ;
-39 [label="39: Prune (false branch) \n   PRUNE(((n$31 == 1) == 0), false); [line 51]\n  REMOVE_TEMPS(n$30,n$31); [line 51]\n " shape="invhouse"]
+39 [label="39: Prune (false branch) \n   PRUNE(((n$30 == 1) == 0), false); [line 51]\n  REMOVE_TEMPS(n$29,n$30); [line 51]\n " shape="invhouse"]
 	
 
 	 39 -> 36 ;
-38 [label="38: Prune (true branch) \n   PRUNE(((n$31 == 1) != 0), true); [line 51]\n  REMOVE_TEMPS(n$30,n$31); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="invhouse"]
+38 [label="38: Prune (true branch) \n   PRUNE(((n$30 == 1) != 0), true); [line 51]\n  REMOVE_TEMPS(n$29,n$30); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="invhouse"]
 	
 
 	 38 -> 29 ;
-37 [label="37:  BinaryOperatorStmt: EQ \n   n$30=*&stop:_Bool * [line 51]\n  n$31=*n$30:_Bool  [line 51]\n " shape="box"]
+37 [label="37:  BinaryOperatorStmt: EQ \n   n$29=*&stop:_Bool * [line 51]\n  n$30=*n$29:_Bool  [line 51]\n " shape="box"]
 	
 
 	 37 -> 38 ;
@@ -68,20 +68,20 @@ digraph iCFG {
 	
 
 	 36 -> 32 ;
-35 [label="35: Prune (false branch) \n   PRUNE(((n$27 < n$28) == 0), false); [line 46]\n  REMOVE_TEMPS(n$27,n$28,n$29); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="invhouse"]
+35 [label="35: Prune (false branch) \n   PRUNE(((n$26 < n$28) == 0), false); [line 46]\n  REMOVE_TEMPS(n$26,n$27,n$28); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="invhouse"]
 	
 
 	 35 -> 29 ;
-34 [label="34: Prune (true branch) \n   PRUNE(((n$27 < n$28) != 0), true); [line 46]\n  REMOVE_TEMPS(n$27,n$28,n$29); [line 46]\n " shape="invhouse"]
+34 [label="34: Prune (true branch) \n   PRUNE(((n$26 < n$28) != 0), true); [line 46]\n  REMOVE_TEMPS(n$26,n$27,n$28); [line 46]\n " shape="invhouse"]
 	
 
 	 34 -> 41 ;
-33 [label="33:  BinaryOperatorStmt: LT \n   n$27=*&idx:unsigned long  [line 46]\n  n$29=*&objects:class NSArray * [line 46]\n  n$28=_fun_NSArray_count(n$29:class NSArray *) virtual [line 46]\n " shape="box"]
+33 [label="33:  BinaryOperatorStmt: LT \n   n$26=*&idx:unsigned long  [line 46]\n  n$27=*&objects:class NSArray * [line 46]\n  n$28=_fun_NSArray_count(n$27:class NSArray *) virtual [line 46]\n " shape="box"]
 	
 
 	 33 -> 34 ;
 	 33 -> 35 ;
-32 [label="32:  UnaryOperator \n   n$26=*&idx:unsigned long  [line 46]\n  *&idx:unsigned long =(n$26 + 1) [line 46]\n  REMOVE_TEMPS(n$26); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+32 [label="32:  UnaryOperator \n   n$25=*&idx:unsigned long  [line 46]\n  *&idx:unsigned long =(n$25 + 1) [line 46]\n  REMOVE_TEMPS(n$25); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	
 
 	 32 -> 30 ;
@@ -93,7 +93,7 @@ digraph iCFG {
 	
 
 	 30 -> 33 ;
-29 [label="29:  Call _fun_free \n   NULLIFY(&enumerateObjectsUsingBlock,false); [line 53]\n  NULLIFY(&idx,false); [line 53]\n  NULLIFY(&objects,false); [line 53]\n  n$25=*&stop:_Bool * [line 53]\n  _fun_free(n$25:void *) [line 53]\n  REMOVE_TEMPS(n$25); [line 53]\n  NULLIFY(&__objc_anonymous_block_MyBlock_array_trans______2,true); [line 53]\n  NULLIFY(&stop,false); [line 53]\n  APPLY_ABSTRACTION; [line 53]\n " shape="box"]
+29 [label="29:  Call _fun_free \n   NULLIFY(&enumerateObjectsUsingBlock,false); [line 53]\n  NULLIFY(&idx,false); [line 53]\n  NULLIFY(&objects,false); [line 53]\n  n$24=*&stop:_Bool * [line 53]\n  _fun_free(n$24:void *) [line 53]\n  REMOVE_TEMPS(n$24); [line 53]\n  NULLIFY(&__objc_anonymous_block_MyBlock_array_trans______2,true); [line 53]\n  NULLIFY(&stop,false); [line 53]\n  APPLY_ABSTRACTION; [line 53]\n " shape="box"]
 	
 
 	 29 -> 28 ;
@@ -104,7 +104,7 @@ digraph iCFG {
 	
 
 	 27 -> 52 ;
-26 [label="26:  DeclStmt \n   n$24=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 14]\n  n$22=_fun_NSArray_init(n$24:class NSArray *) virtual [line 14]\n  *&a:class NSArray *=n$22 [line 14]\n  REMOVE_TEMPS(n$22,n$24); [line 14]\n " shape="box"]
+26 [label="26:  DeclStmt \n   n$22=_fun___objc_alloc_no_fail(sizeof(class NSArray ):unsigned long ) [line 14]\n  n$23=_fun_NSArray_init(n$22:class NSArray *) virtual [line 14]\n  *&a:class NSArray *=n$23 [line 14]\n  REMOVE_TEMPS(n$22,n$23); [line 14]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -148,7 +148,7 @@ digraph iCFG {
 	
 
 	 16 -> 5 ;
-15 [label="15:  DeclStmt \n   n$14=*&objects:class NSArray * [line 15]\n  n$15=*&idx:unsigned long  [line 15]\n  n$13=_fun_NSArray_objectAtIndexedSubscript:(n$14:class NSArray *,n$15:unsigned long ) virtual [line 15]\n  *&object:struct objc_object *=n$13 [line 15]\n  REMOVE_TEMPS(n$13,n$14,n$15); [line 15]\n  NULLIFY(&object,false); [line 15]\n " shape="box"]
+15 [label="15:  DeclStmt \n   n$13=*&objects:class NSArray * [line 15]\n  n$14=*&idx:unsigned long  [line 15]\n  n$15=_fun_NSArray_objectAtIndexedSubscript:(n$13:class NSArray *,n$14:unsigned long ) virtual [line 15]\n  *&object:struct objc_object *=n$15 [line 15]\n  REMOVE_TEMPS(n$13,n$14,n$15); [line 15]\n  NULLIFY(&object,false); [line 15]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -173,15 +173,15 @@ digraph iCFG {
 	
 
 	 10 -> 6 ;
-9 [label="9: Prune (false branch) \n   PRUNE(((n$3 < n$4) == 0), false); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
+9 [label="9: Prune (false branch) \n   PRUNE(((n$3 < n$5) == 0), false); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
 	
 
 	 9 -> 3 ;
-8 [label="8: Prune (true branch) \n   PRUNE(((n$3 < n$4) != 0), true); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n " shape="invhouse"]
+8 [label="8: Prune (true branch) \n   PRUNE(((n$3 < n$5) != 0), true); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n " shape="invhouse"]
 	
 
 	 8 -> 15 ;
-7 [label="7:  BinaryOperatorStmt: LT \n   n$3=*&idx:unsigned long  [line 15]\n  n$5=*&objects:class NSArray * [line 15]\n  n$4=_fun_NSArray_count(n$5:class NSArray *) virtual [line 15]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: LT \n   n$3=*&idx:unsigned long  [line 15]\n  n$4=*&objects:class NSArray * [line 15]\n  n$5=_fun_NSArray_count(n$4:class NSArray *) virtual [line 15]\n " shape="box"]
 	
 
 	 7 -> 8 ;

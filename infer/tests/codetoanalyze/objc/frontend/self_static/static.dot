@@ -1,5 +1,5 @@
 digraph iCFG {
-15 [label="15:  Message Call: getX \n   n$3=*&self:class MyClass * [line 37]\n  n$2=_fun_MyClass_getX(n$3:class MyClass *) virtual [line 37]\n  REMOVE_TEMPS(n$2,n$3); [line 37]\n  NULLIFY(&self,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+15 [label="15:  Message Call: getX \n   n$1=*&self:class MyClass * [line 37]\n  n$2=_fun_MyClass_getX(n$1:class MyClass *) virtual [line 37]\n  REMOVE_TEMPS(n$1,n$2); [line 37]\n  NULLIFY(&self,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -43,7 +43,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class MyClass ):unsigned long ) [line 21]\n  *&myClass:class MyClass *=n$1 [line 21]\n  REMOVE_TEMPS(n$1); [line 21]\n  NULLIFY(&myClass,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(class MyClass ):unsigned long ) [line 21]\n  *&myClass:class MyClass *=n$0 [line 21]\n  REMOVE_TEMPS(n$0); [line 21]\n  NULLIFY(&myClass,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 3 -> 2 ;

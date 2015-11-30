@@ -3,15 +3,15 @@ digraph iCFG {
 	
 
 	 7 -> 2 ;
-6 [label="6: Prune (false branch) \n   PRUNE((n$0 == 0), false); [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n " shape="invhouse"]
+6 [label="6: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n " shape="invhouse"]
 	
 
 	 6 -> 3 ;
-5 [label="5: Prune (true branch) \n   PRUNE((n$0 != 0), true); [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n " shape="invhouse"]
+5 [label="5: Prune (true branch) \n   PRUNE((n$1 != 0), true); [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n " shape="invhouse"]
 	
 
 	 5 -> 7 ;
-4 [label="4:  Message Call: conformsToProtocol: \n   n$1=*&self:class Bla * [line 26]\n  n$0=_fun_Bla_conformsToProtocol:(n$1:class Bla *,\"Foo\":class Protocol *) virtual [line 26]\n  NULLIFY(&self,false); [line 26]\n " shape="box"]
+4 [label="4:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla * [line 26]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla *,\"Foo\":class Protocol *) virtual [line 26]\n  NULLIFY(&self,false); [line 26]\n " shape="box"]
 	
 
 	 4 -> 5 ;

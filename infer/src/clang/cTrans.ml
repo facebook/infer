@@ -882,9 +882,7 @@ struct
     let line_number = CLocation.get_line si parent_line_number in
     let sil_loc = CLocation.get_sil_location si parent_line_number context in
     let method_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    let ret_id =
-      if Sil.typ_equal method_type Sil.Tvoid then []
-      else [Ident.create_fresh Ident.knormal] in
+
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let trans_state_param =
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
@@ -901,19 +899,25 @@ struct
             obj_c_message_expr_info res_trans_par in
         let is_virtual = method_call_type = CMethod_trans.MCVirtual in
         Cg.add_edge context.CContext.cg procname callee_name;
+
+        let param_exps, instr_block_param, ids_block_param =
+          extract_block_from_tuple procname res_trans_par.exps sil_loc in
+
+        let ret_id =
+          if Sil.typ_equal method_type Sil.Tvoid then []
+          else [Ident.create_fresh Ident.knormal] in
         let call_flags = {
           Sil.cf_virtual = is_virtual;
           Sil.cf_noreturn = false;
           Sil.cf_is_objc_block = false; } in
-        let param_exps, instr_block_param, ids_block_param =
-          extract_block_from_tuple procname res_trans_par.exps sil_loc in
+
         let stmt_call =
           Sil.Call (ret_id, (Sil.Const (Sil.Cfun callee_name)), param_exps, sil_loc, call_flags) in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let nname = "Message Call: "^selector in
         let res_trans_tmp = {
           res_trans_par with
-          ids = ret_id @ res_trans_par.ids @ids_block_param ;
+          ids = res_trans_par.ids @ ids_block_param @ ret_id;
           instrs = res_trans_par.instrs @ instr_block_param @ [stmt_call];
           exps = []
         } in

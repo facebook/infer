@@ -1,5 +1,5 @@
 digraph iCFG {
-39 [label="39:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 39]\n  n$5=_fun_NSObject_init(n$7:class A *) virtual [line 39]\n  *&a:class A *=n$5 [line 39]\n  REMOVE_TEMPS(n$5,n$7); [line 39]\n " shape="box"]
+39 [label="39:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 39]\n  n$6=_fun_NSObject_init(n$5:class A *) virtual [line 39]\n  *&a:class A *=n$6 [line 39]\n  REMOVE_TEMPS(n$5,n$6); [line 39]\n " shape="box"]
 	
 
 	 39 -> 38 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 	
 
 	 31 -> 39 ;
-27 [label="27:  Return Stmt \n   n$28=*&self:class A * [line 18]\n  n$29=*n$28._last_name:class A * [line 18]\n  *&return:class A *=n$29 [line 18]\n  REMOVE_TEMPS(n$28,n$29); [line 18]\n  NULLIFY(&self,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+27 [label="27:  Return Stmt \n   n$27=*&self:class A * [line 18]\n  n$28=*n$27._last_name:class A * [line 18]\n  *&return:class A *=n$28 [line 18]\n  REMOVE_TEMPS(n$27,n$28); [line 18]\n  NULLIFY(&self,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 27 -> 26 ;
@@ -44,15 +44,15 @@ digraph iCFG {
 	
 
 	 25 -> 27 ;
-24 [label="24:  Message Call: retain \n   n$27=*&name:class A * [line 16]\n  n$26=_fun___objc_retain(n$27:class A *) [line 16]\n  REMOVE_TEMPS(n$26,n$27); [line 16]\n " shape="box"]
+24 [label="24:  Message Call: retain \n   n$25=*&name:class A * [line 16]\n  n$26=_fun___objc_retain(n$25:class A *) [line 16]\n  REMOVE_TEMPS(n$25,n$26); [line 16]\n " shape="box"]
 	
 
 	 24 -> 23 ;
-23 [label="23:  Message Call: release \n   n$24=*&self:class A * [line 16]\n  n$25=*n$24._name:class A * [line 16]\n  n$23=_fun___objc_release(n$25:class A *) [line 16]\n  REMOVE_TEMPS(n$23,n$24,n$25); [line 16]\n " shape="box"]
+23 [label="23:  Message Call: release \n   n$22=*&self:class A * [line 16]\n  n$23=*n$22._name:class A * [line 16]\n  n$24=_fun___objc_release(n$23:class A *) [line 16]\n  REMOVE_TEMPS(n$22,n$23,n$24); [line 16]\n " shape="box"]
 	
 
 	 23 -> 22 ;
-22 [label="22:  BinaryOperatorStmt: Assign \n   n$21=*&self:class A * [line 16]\n  n$22=*&name:class A * [line 16]\n  *n$21._name:class A *=n$22 [line 16]\n  REMOVE_TEMPS(n$21,n$22); [line 16]\n  NULLIFY(&name,false); [line 16]\n  NULLIFY(&self,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+22 [label="22:  BinaryOperatorStmt: Assign \n   n$20=*&self:class A * [line 16]\n  n$21=*&name:class A * [line 16]\n  *n$20._name:class A *=n$21 [line 16]\n  REMOVE_TEMPS(n$20,n$21); [line 16]\n  NULLIFY(&name,false); [line 16]\n  NULLIFY(&self,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
 	 22 -> 21 ;
@@ -63,7 +63,7 @@ digraph iCFG {
 	
 
 	 20 -> 24 ;
-19 [label="19:  Return Stmt \n   n$19=*&self:class A * [line 16]\n  n$20=*n$19._name:class A * [line 16]\n  *&return:class A *=n$20 [line 16]\n  REMOVE_TEMPS(n$19,n$20); [line 16]\n  NULLIFY(&self,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+19 [label="19:  Return Stmt \n   n$18=*&self:class A * [line 16]\n  n$19=*n$18._name:class A * [line 16]\n  *&return:class A *=n$19 [line 16]\n  REMOVE_TEMPS(n$18,n$19); [line 16]\n  NULLIFY(&self,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -74,7 +74,7 @@ digraph iCFG {
 	
 
 	 17 -> 19 ;
-16 [label="16:  BinaryOperatorStmt: Assign \n   n$16=*&self:class A * [line 14]\n  n$18=*&child:class A * [line 14]\n  n$17=_fun_A_copy(n$18:class A *) virtual [line 14]\n  *n$16._child:class A *=n$17 [line 14]\n  REMOVE_TEMPS(n$16,n$17,n$18); [line 14]\n  NULLIFY(&child,false); [line 14]\n  NULLIFY(&self,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$15=*&self:class A * [line 14]\n  n$16=*&child:class A * [line 14]\n  n$17=_fun_A_copy(n$16:class A *) virtual [line 14]\n  *n$15._child:class A *=n$17 [line 14]\n  REMOVE_TEMPS(n$15,n$16,n$17); [line 14]\n  NULLIFY(&child,false); [line 14]\n  NULLIFY(&self,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 16 -> 15 ;
@@ -85,7 +85,7 @@ digraph iCFG {
 	
 
 	 14 -> 16 ;
-13 [label="13:  Return Stmt \n   n$14=*&self:class A * [line 14]\n  n$15=*n$14._child:class A * [line 14]\n  *&return:class A *=n$15 [line 14]\n  REMOVE_TEMPS(n$14,n$15); [line 14]\n  NULLIFY(&self,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$13=*&self:class A * [line 14]\n  n$14=*n$13._child:class A * [line 14]\n  *&return:class A *=n$14 [line 14]\n  REMOVE_TEMPS(n$13,n$14); [line 14]\n  NULLIFY(&self,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -96,7 +96,7 @@ digraph iCFG {
 	
 
 	 11 -> 13 ;
-10 [label="10:  DeclStmt \n   n$13=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 27]\n  n$11=_fun_NSObject_init(n$13:class A *) virtual [line 27]\n  *&other:class A *=n$11 [line 27]\n  REMOVE_TEMPS(n$11,n$13); [line 27]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$11=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 27]\n  n$12=_fun_NSObject_init(n$11:class A *) virtual [line 27]\n  *&other:class A *=n$12 [line 27]\n  REMOVE_TEMPS(n$11,n$12); [line 27]\n " shape="box"]
 	
 
 	 10 -> 5 ;

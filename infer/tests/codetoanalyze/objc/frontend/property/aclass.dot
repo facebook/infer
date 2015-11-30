@@ -1,9 +1,9 @@
 digraph iCFG {
-8 [label="8:  Message Call: retain \n   n$8=*&aDynValue:class NSObject * [line 13]\n  n$7=_fun___objc_retain(n$8:class NSObject *) [line 13]\n  REMOVE_TEMPS(n$7,n$8); [line 13]\n " shape="box"]
+8 [label="8:  Message Call: retain \n   n$7=*&aDynValue:class NSObject * [line 13]\n  n$8=_fun___objc_retain(n$7:class NSObject *) [line 13]\n  REMOVE_TEMPS(n$7,n$8); [line 13]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  Message Call: release \n   n$5=*&self:class AClass * [line 13]\n  n$6=*n$5._aDynValue:class NSObject * [line 13]\n  n$4=_fun___objc_release(n$6:class NSObject *) [line 13]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 13]\n " shape="box"]
+7 [label="7:  Message Call: release \n   n$4=*&self:class AClass * [line 13]\n  n$5=*n$4._aDynValue:class NSObject * [line 13]\n  n$6=_fun___objc_release(n$5:class NSObject *) [line 13]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 13]\n " shape="box"]
 	
 
 	 7 -> 6 ;
