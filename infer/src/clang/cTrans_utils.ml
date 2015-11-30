@@ -221,7 +221,8 @@ struct
       Nodes.create_node node_kind ids_node res_state.instrs loc trans_state.context in
     (* Invariant: if leaf_nodes is empty then the params have not created a node.*)
     let res_state_param = collect_res_trans res_states_children in
-    match res_state_param.leaf_nodes, own_priority_node trans_state.priority stmt_info with
+    let create_node = own_priority_node trans_state.priority stmt_info && res_state_param.instrs <> [] in
+    match res_state_param.leaf_nodes, create_node with
     | _, false -> (* The node is created by the parent. We just pass back nodes/leafs params *)
         { res_state_param with exps = []}
     | [], true -> (* We need to create a node and params did not create a node.*)

@@ -556,7 +556,6 @@ struct
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let parent_line_number = trans_state.parent_line_number in
-    let succ_nodes = trans_state.succ_nodes in
     let sil_loc = CLocation.get_sil_location stmt_info parent_line_number context in
     let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     (match stmt_list with
@@ -582,17 +581,16 @@ struct
            exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state'' s2 stmt_info in
          let (sil_e1, sil_typ1) = extract_exp_from_list res_trans_e1.exps "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
          let (sil_e2, sil_typ2) = extract_exp_from_list res_trans_e2.exps "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
-         let exp_op, instr, ids_bin =
+         let exp_op, instr_bin, ids_bin =
            CArithmetic_trans.binary_operation_instruction context binary_operator_info sil_e1 typ sil_e2 sil_loc rhs_owning_method in
-         let instrs = res_trans_e1.instrs@res_trans_e2.instrs@instr in
-         let ids = res_trans_e1.ids@res_trans_e2.ids@ids_bin in
+
 
          (* Create a node if the priority if free and there are instructions *)
          let creating_node =
            (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
-           (IList.length instrs >0) in
+           (IList.length instr_bin >0) in
 
-         let instrs_after_assign, assign_ids, exp_to_parent =
+         let extra_instrs, extra_ids, exp_to_parent =
            if (is_binary_assign_op binary_operator_info)
            (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
            && (not (General_utils.is_cpp_translation !CFrontend_config.language))
@@ -602,64 +600,19 @@ struct
              (* assignment.  *)
              (* As no node is created here ids are passed to the parent *)
              let id = Ident.create_fresh Ident.knormal in
-             let res_instr = [Sil.Letderef (id, sil_e1, sil_typ1, sil_loc)] in
-             instrs@res_instr, ids@[id], Sil.Var id
+             let res_instr = Sil.Letderef (id, sil_e1, sil_typ1, sil_loc) in
+             [res_instr], [id], Sil.Var id
            ) else (
-             instrs, ids, exp_op) in
+             [], [], exp_op) in
 
-         let instruction_to_ancestor, ids_to_ancestor, succ_nodes' =
-           if creating_node then (
-             let node_kind =
-               Cfg.Node.Stmt_node ("BinaryOperatorStmt: "^
-                                   (CArithmetic_trans.bin_op_to_string binary_operator_info)) in
-             let node_bin_op = create_node node_kind [] [] sil_loc context in
-             Cfg.Node.set_succs_exn node_bin_op succ_nodes [];
-             let succ_nodes'' = [node_bin_op] in
-             (* If a node was created, ids are passed to the parent*)
-             (* if the binop is in the translation of a condition.*)
-             (* Otherwise ids are added to the node. *)
-             (* ids_parent/ids_nodes are the list of ids for the parent/node respectively.*)
-             (* They are computed with continuation which tells us *)
-             (* if we are translating a condition or not *)
-             let ids_parent = ids_to_parent trans_state.continuation assign_ids in
-             let ids_node = ids_to_node trans_state.continuation assign_ids in
-             IList.iter (fun n -> Cfg.Node.append_instrs_temps n instrs_after_assign ids_node) succ_nodes'';
-             [], ids_parent, succ_nodes''
-           ) else (
-             instrs_after_assign, assign_ids, succ_nodes) in
-
-         let e1_has_nodes = res_trans_e1.root_nodes <> []
-         and e2_has_nodes = res_trans_e2.root_nodes <> [] in
-
-         let e1_succ_nodes =
-           if e2_has_nodes then res_trans_e2.root_nodes else succ_nodes' in
-         IList.iter (fun n -> Cfg.Node.set_succs_exn n e1_succ_nodes []) res_trans_e1.leaf_nodes;
-         IList.iter (fun n -> Cfg.Node.set_succs_exn n succ_nodes' []) res_trans_e2.leaf_nodes;
-
-         let root_nodes_to_ancestor = match e1_has_nodes, e2_has_nodes with
-           | false, false -> succ_nodes'
-           | true, _ -> res_trans_e1.root_nodes
-           | false, true -> res_trans_e2.root_nodes in
-
-         let leaf_nodes_to_ancestor =
-           if creating_node then succ_nodes'
-           else if e2_has_nodes then res_trans_e2.leaf_nodes
-           else res_trans_e1.leaf_nodes in
-
-         Printing.log_out "....BinaryOperator '%s' " bok;
-         Printing.log_out "has ids_to_ancestor |ids_to_ancestor|=%s "
-           (string_of_int (IList.length ids_to_ancestor));
-         Printing.log_out " |nodes_e1|=%s .\n"
-           (string_of_int (IList.length res_trans_e1.root_nodes));
-         Printing.log_out " |nodes_e2|=%s .\n"
-           (string_of_int (IList.length res_trans_e2.root_nodes));
-         IList.iter (fun id -> Printing.log_out "     ... '%s'\n"
-                        (Ident.to_string id)) ids_to_ancestor;
-         { root_nodes = root_nodes_to_ancestor;
-           leaf_nodes = leaf_nodes_to_ancestor;
-           ids = ids_to_ancestor;
-           instrs = instruction_to_ancestor;
-           exps = [(exp_to_parent, sil_typ1)] }
+         let binop_res_trans = { empty_res_trans with
+                                 ids = ids_bin @ extra_ids;
+                                 instrs = instr_bin @ extra_instrs
+                               } in
+         let all_res_trans = [res_trans_e1; res_trans_e2; binop_res_trans] in
+         let nname = "BinaryOperatorStmt: "^ (CArithmetic_trans.bin_op_to_string binary_operator_info) in
+         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname stmt_info all_res_trans in
+         { res_trans_to_parent with exps = [(exp_to_parent, sil_typ1)] }
      | _ -> assert false) (* Binary operator should have two operands*)
 
   and callExpr_trans trans_state si stmt_list expr_info =
