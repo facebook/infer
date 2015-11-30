@@ -37,9 +37,6 @@ type trans_result = {
 
 val empty_res_trans: trans_result
 
-(** Collect the results of translating a list of instructions, and link up the nodes created. *)
-val collect_res_trans: trans_result list -> trans_result
-
 val is_return_temp: continuation option -> bool
 
 val ids_to_parent: continuation option -> Ident.t list -> Ident.t list
@@ -63,11 +60,6 @@ val define_condition_side_effects :
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt
 
 val is_null_stmt : Clang_ast_t.stmt -> bool
-
-val compute_instr_ids_exp_to_parent :
-  Clang_ast_t.stmt_info -> Sil.instr list -> Ident.t list -> (Sil.exp * Sil.typ) list ->
-  Sil.exp -> Sil.typ -> Location.t -> priority_node ->
-  Sil.instr list * Ident.t list * (Sil.exp * Sil.typ) list
 
 val is_enumeration_constant : Clang_ast_t.stmt -> bool
 
@@ -162,11 +154,12 @@ sig
 
   val own_priority_node : t -> Clang_ast_t.stmt_info -> bool
 
-  (* Used for function call and method call. It deals with creating or not   *)
-  (* a cfg node depending of owning the priority_node and the nodes returned *)
-  (* by the parameters of the call                                           *)
-  val compute_results_to_parent :
-    trans_state -> Location.t -> string -> Clang_ast_t.stmt_info -> trans_result -> trans_result
+  (* Used by translation functions to handle potenatial cfg nodes. *)
+  (* It connects nodes returned by translation of stmt children and *)
+  (* deals with creating or not a cfg node depending of owning the *)
+  (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
+  val compute_results_to_parent : trans_state -> Location.t -> string -> Clang_ast_t.stmt_info ->
+    trans_result list -> trans_result
 
 end
 
@@ -206,7 +199,7 @@ sig
 
   val add_self_parameter_for_super_instance :
     CContext.t -> Procname.t -> Location.t -> Clang_ast_t.obj_c_message_expr_info ->
-    trans_result -> trans_result
+    trans_result
 
   val is_var_self : Sil.pvar -> bool -> bool
 end

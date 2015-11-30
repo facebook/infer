@@ -171,6 +171,9 @@ struct
       | e :: es' -> e :: f es' in
     (f exps, !insts, !ids)
 
+  let collect_exprs res_trans_list =
+    IList.flatten (IList.map (fun res_trans -> res_trans.exps) res_trans_list)
+
   (* If e is a block and the calling node has the priority then *)
   (* we need to release the priority to allow*)
   (* creation of nodes inside the block.*)
@@ -698,11 +701,10 @@ struct
     let params_stmt = if should_translate_args then
         CTrans_utils.assign_default_params params_stmt fun_exp_stmt
       else [] in
-    let res_trans_par =
+    let result_trans_subexprs =
       let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
-      let l = IList.map (instruction' trans_state_param) params_stmt in
-      let rt = collect_res_trans (res_trans_callee :: l) in
-      { rt with exps = IList.tl rt.exps } in
+      let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
+      res_trans_callee :: res_trans_p in
     let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
     if CTrans_models.is_assert_log sil_fe then
       if Config.report_assertion_failure then
@@ -710,11 +712,13 @@ struct
       else
         CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes
     else
-      let act_params = if IList.length res_trans_par.exps = IList.length params_stmt then
-          res_trans_par.exps
+      let act_params =
+        let params = IList.tl (collect_exprs result_trans_subexprs) in
+        if IList.length params = IList.length params_stmt then
+          params
         else (Printing.log_err
                 "WARNING: stmt_list and res_trans_par.exps must have same size. NEED TO BE FIXED\n\n";
-              fix_param_exps_mismatch params_stmt res_trans_par.exps) in
+              fix_param_exps_mismatch params_stmt params) in
       let act_params = if is_cf_retain_release then
           (Sil.Const (Sil.Cint Sil.Int.one), Sil.Tint Sil.IBool) :: act_params
         else act_params in
@@ -730,12 +734,12 @@ struct
                 let call_flags = { Sil.cf_virtual = false; Sil.cf_noreturn = false; Sil.cf_is_objc_block = is_call_to_block; } in
                 let call_instr = Sil.Call(ret_id, sil_fe, act_params, sil_loc, call_flags) in
                 ret_id, call_instr in
-          let ids = res_trans_par.ids@ret_id in
-          let instrs = res_trans_par.instrs @ [call_instr] in
+
+          let res_trans_call = { empty_res_trans with ids = ret_id; instrs = [call_instr] } in
           let nname = "Call "^(Sil.exp_to_string sil_fe) in
-          let res_trans_tmp = { res_trans_par with ids = ids; instrs = instrs; exps =[]} in
+          let all_res_trans = result_trans_subexprs @ [res_trans_call] in
           let res_trans_to_parent =
-            PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp in
+            PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
           (match callee_pname_opt with
            | Some callee_pname ->
                let open CContext in
@@ -769,14 +773,12 @@ struct
     (* afterwards. The 'instructions' function does not do that          *)
     let trans_state_param =
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
-    let result_trans_params =
-      let instruction' = exec_with_lvalue_as_reference instruction in
-      let l = IList.map (exec_with_self_exception instruction' trans_state_param) params_stmt in
-      (* this function will automatically merge 'this' argument with rest of arguments in 'l'*)
-      let rt = collect_res_trans (result_trans_callee :: l) in
-      { rt with exps = IList.tl rt.exps } in
-
-    let actual_params = result_trans_params.exps in
+    let result_trans_subexprs =
+      let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+      let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
+      result_trans_callee :: res_trans_p in
+    (* first expr is method address, rest are params including 'this' parameter *)
+    let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
     let ret_id = if (Sil.typ_equal function_type Sil.Tvoid) then []
       else [Ident.create_fresh Ident.knormal] in
     let call_flags = {
@@ -785,12 +787,11 @@ struct
       Sil.cf_is_objc_block = false;
     } in
     let call_instr = Sil.Call (ret_id, sil_method, actual_params, sil_loc, call_flags) in
-    let ids = result_trans_params.ids @ ret_id in
-    let instrs = result_trans_params.instrs @ [call_instr] in
-    let res_trans_tmp = { result_trans_params with ids = ids; instrs = instrs; exps =[] } in
+    let res_trans_call = { empty_res_trans with ids = ret_id; instrs = [call_instr] } in
     let nname = "Call " ^ (Sil.exp_to_string sil_method) in
+    let all_res_trans = result_trans_subexprs @ [res_trans_call] in
     let result_trans_to_parent =
-      PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp in
+      PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
     Cg.add_edge context.CContext.cg procname callee_pname;
     match ret_id with
     | [] -> { result_trans_to_parent with exps = [] }
@@ -871,8 +872,8 @@ struct
         let instruction' =
           exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
         let l = IList.map (instruction' trans_state_param) rest in
-        obj_c_message_expr_info, collect_res_trans (fst_res_trans :: l)
-    | [] -> obj_c_message_expr_info, empty_res_trans
+        obj_c_message_expr_info, fst_res_trans :: l
+    | [] -> obj_c_message_expr_info, [empty_res_trans]
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
     Printing.log_out "  priority node free = '%s'\n@."
@@ -886,22 +887,25 @@ struct
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let trans_state_param =
       { trans_state_pri with parent_line_number = line_number; succ_nodes = [] } in
-    let obj_c_message_expr_info, res_trans_par =
+    let obj_c_message_expr_info, res_trans_subexpr_list =
       objCMessageExpr_deal_with_static_self trans_state_param stmt_list obj_c_message_expr_info in
+    let subexpr_exprs = collect_exprs res_trans_subexpr_list in
     match objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info stmt_list
-            expr_info method_type trans_state_pri sil_loc res_trans_par.exps with
+            expr_info method_type trans_state_pri sil_loc subexpr_exprs with
     | Some res -> res
     | None ->
         let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
         let callee_name, method_call_type =
-          get_callee_objc_method context obj_c_message_expr_info res_trans_par.exps in
-        let res_trans_par = Self.add_self_parameter_for_super_instance context procname sil_loc
-            obj_c_message_expr_info res_trans_par in
+          get_callee_objc_method context obj_c_message_expr_info subexpr_exprs in
+        let res_trans_add_self = Self.add_self_parameter_for_super_instance context procname sil_loc
+            obj_c_message_expr_info in
+        let res_trans_subexpr_list = res_trans_add_self :: res_trans_subexpr_list in
+        let subexpr_exprs = collect_exprs res_trans_subexpr_list in
         let is_virtual = method_call_type = CMethod_trans.MCVirtual in
         Cg.add_edge context.CContext.cg procname callee_name;
 
         let param_exps, instr_block_param, ids_block_param =
-          extract_block_from_tuple procname res_trans_par.exps sil_loc in
+          extract_block_from_tuple procname subexpr_exprs sil_loc in
 
         let ret_id =
           if Sil.typ_equal method_type Sil.Tvoid then []
@@ -910,19 +914,17 @@ struct
           Sil.cf_virtual = is_virtual;
           Sil.cf_noreturn = false;
           Sil.cf_is_objc_block = false; } in
-
         let stmt_call =
           Sil.Call (ret_id, (Sil.Const (Sil.Cfun callee_name)), param_exps, sil_loc, call_flags) in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let nname = "Message Call: "^selector in
-        let res_trans_tmp = {
-          res_trans_par with
-          ids = res_trans_par.ids @ ids_block_param @ ret_id;
-          instrs = res_trans_par.instrs @ instr_block_param @ [stmt_call];
-          exps = []
-        } in
-        let res_trans_to_parent = (
-          PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si res_trans_tmp) in
+        let res_trans_call = { empty_res_trans with
+                               ids = ids_block_param @ ret_id;
+                               instrs = instr_block_param @ [stmt_call];
+                             } in
+        let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
+        let res_trans_to_parent =
+          PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
         match ret_id with
         | [] -> { res_trans_to_parent with exps = [] }
         | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
@@ -1445,33 +1447,21 @@ struct
              "\nWARNING: Missing RHS operand in Compount Assign operator. Need Fixing.\n" in
          let id_op, exp_op, instr_op = CArithmetic_trans.compound_assignment_binary_operation_instruction
              binary_operator_info lhs_e sil_typ sil_e2 sil_loc in
-         let ids = res_trans_s1.ids@res_trans_s2.ids@id_op in
-         let instrs = res_trans_s1.instrs@res_trans_s2.instrs@instr_op in
-         let res_trans_tmp = { res_trans_s2 with ids = ids; instrs = instrs; exps =[]} in
-         let res_trans_to_parent =
-           PriorityNode.compute_results_to_parent trans_state_pri sil_loc "ComppoundAssignStmt" stmt_info res_trans_tmp in
-
-         let trans_s1_succs =
-           if res_trans_to_parent.root_nodes <> []
-           then res_trans_to_parent.root_nodes
-           else trans_state_pri.succ_nodes in
-         IList.iter
-           (fun n -> Cfg.Node.set_succs_exn n trans_s1_succs [])
-           res_trans_s1.leaf_nodes;
-
-         let instrs_to_parent', ids_to_parent', exp_to_parent' =
-           compute_instr_ids_exp_to_parent stmt_info res_trans_to_parent.instrs res_trans_to_parent.ids
-             [(exp_op, sil_typ)] lhs_e sil_typ sil_loc trans_state_pri.priority in
-
-         let root_nodes =
-           if res_trans_s1.root_nodes <> []
-           then res_trans_s1.root_nodes
-           else res_trans_to_parent.root_nodes in
-         { root_nodes = root_nodes;
-           leaf_nodes = res_trans_to_parent.leaf_nodes;
-           ids = ids_to_parent';
-           instrs = instrs_to_parent';
-           exps = exp_to_parent' }
+         let extra_deref_instrs, extra_deref_ids, exp_to_parent =
+           if not (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
+              (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
+              not (General_utils.is_cpp_translation !CFrontend_config.language) then
+             let id = Ident.create_fresh Ident.knormal in
+             let instr = Sil.Letderef (id, lhs_e, sil_typ, sil_loc) in
+             [instr], [id], (Sil.Var id, sil_typ)
+           else [], [], (exp_op, sil_typ) in
+         let op_res_trans = { empty_res_trans with
+                              ids = id_op @ extra_deref_ids;
+                              instrs = instr_op @ extra_deref_instrs } in
+         let all_res_trans = [res_trans_s1; res_trans_s2; op_res_trans] in
+         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
+             sil_loc "ComppoundAssignStmt" stmt_info all_res_trans in
+         { res_trans_to_parent with exps = [exp_to_parent] }
      | _ -> assert false) (* Compound assign statement should have two operands*)
 
   and initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts =
@@ -1978,10 +1968,10 @@ struct
         "WARNING: There should be one expression to delete. \n" in
     (* function is void *)
     let call_instr = Sil.Call ([], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
-    let instrs = result_trans_param.instrs @ [call_instr] in
-    let res_trans_tmp = { result_trans_param with instrs = instrs} in
-    let res_trans =
-      PriorityNode.compute_results_to_parent trans_state_pri sil_loc "Call delete" stmt_info res_trans_tmp in
+    let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
+    let all_res_trans = [ result_trans_param; call_res_trans] in
+    let res_trans = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+        "Call delete" stmt_info all_res_trans in
     { res_trans with exps = [] }
 
   and materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info =
