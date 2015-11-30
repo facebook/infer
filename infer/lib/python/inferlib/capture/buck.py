@@ -55,6 +55,9 @@ def create_argparser(group_name=MODULE_NAME):
     group.add_argument('--xcode-developer-dir',
                        help='Specify the path to Xcode developer directory '
                             '(requires --use-flavors to work)')
+    group.add_argument('--blacklist-regex',
+                       help='Specify the regex for files to skip during '
+                            'the analysis (requires --use-flavors to work)')
     return parser
 
 
@@ -105,6 +108,10 @@ class BuckAnalyzer:
             args.append('--config')
             args.append('apple.xcode_developer_dir={devdir}'.format(
                 devdir=self.args.xcode_developer_dir))
+        if self.args.blacklist_regex:
+            args.append('--config')
+            args.append('infer.blacklist_regex={regex}'.format(
+                regex=self.args.blacklist_regex))
         return args
 
     def _get_analysis_result_files(self):
