@@ -1,143 +1,132 @@
 digraph iCFG {
-41 [label="41:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool ):unsigned long ) [line 60]\n  n$5=_fun_NSObject_init(n$4:class NSAutoreleasePool *) virtual [line 60]\n  *&pool:class NSAutoreleasePool *=n$5 [line 60]\n  REMOVE_TEMPS(n$4,n$5); [line 60]\n " shape="box"]
-	
-
-	 41 -> 40 ;
-40 [label="40:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 61]\n  n$3=_fun___set_autorelease_attribute(n$2:class NSString *) [line 61]\n  *&string:class NSString *=n$3 [line 61]\n  REMOVE_TEMPS(n$2,n$3); [line 61]\n " shape="box"]
-	
-
-	 40 -> 39 ;
-39 [label="39:  Message Call: release \n   n$1=*&pool:class NSAutoreleasePool * [line 63]\n  _fun___objc_release_autorelease_pool(n$1:class NSAutoreleasePool *) [line 63]\n  REMOVE_TEMPS(n$1); [line 63]\n  NULLIFY(&pool,false); [line 63]\n " shape="box"]
-	
-
-	 39 -> 38 ;
-38 [label="38:  DeclStmt \n   n$0=*&string:class NSString * [line 64]\n  *&c:class NSString *=n$0 [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  NULLIFY(&c,false); [line 64]\n  NULLIFY(&string,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+38 [label="38:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSAutoreleasePool ):unsigned long ) [line 60]\n  n$5=_fun_NSObject_init(n$4:class NSAutoreleasePool *) virtual [line 60]\n  *&pool:class NSAutoreleasePool *=n$5 [line 60]\n  REMOVE_TEMPS(n$4,n$5); [line 60]\n " shape="box"]
 	
 
 	 38 -> 37 ;
-37 [label="37: Exit test3 \n  " color=yellow style=filled]
+37 [label="37:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 61]\n  n$3=_fun___set_autorelease_attribute(n$2:class NSString *) [line 61]\n  *&string:class NSString *=n$3 [line 61]\n  REMOVE_TEMPS(n$2,n$3); [line 61]\n " shape="box"]
 	
 
-36 [label="36: Start test3\nFormals: \nLocals:  c:class NSString * string:class NSString * pool:class NSAutoreleasePool * \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59]\n  NULLIFY(&c,false); [line 59]\n  NULLIFY(&pool,false); [line 59]\n  NULLIFY(&string,false); [line 59]\n " color=yellow style=filled]
+	 37 -> 36 ;
+36 [label="36:  Message Call: release \n   n$1=*&pool:class NSAutoreleasePool * [line 63]\n  _fun___objc_release_autorelease_pool(n$1:class NSAutoreleasePool *) [line 63]\n  REMOVE_TEMPS(n$1); [line 63]\n  NULLIFY(&pool,false); [line 63]\n " shape="box"]
 	
 
-	 36 -> 41 ;
-35 [label="35:  DeclStmt \n   *&s1:class A *=0 [line 48]\n " shape="box"]
+	 36 -> 35 ;
+35 [label="35:  DeclStmt \n   n$0=*&string:class NSString * [line 64]\n  *&c:class NSString *=n$0 [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  NULLIFY(&c,false); [line 64]\n  NULLIFY(&string,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
 	
 
 	 35 -> 34 ;
-34 [label="34:  DeclStmt \n   *&s2:class A *=0 [line 49]\n " shape="box"]
+34 [label="34: Exit test3 \n  " color=yellow style=filled]
 	
 
-	 34 -> 33 ;
-33 [label="33:  DeclStmt \n   *&s3:class A *=0 [line 50]\n " shape="box"]
+33 [label="33: Start test3\nFormals: \nLocals:  c:class NSString * string:class NSString * pool:class NSAutoreleasePool * \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59]\n  NULLIFY(&c,false); [line 59]\n  NULLIFY(&pool,false); [line 59]\n  NULLIFY(&string,false); [line 59]\n " color=yellow style=filled]
 	
 
-	 33 -> 32 ;
-32 [label="32:  BinaryOperatorStmt: Assign \n   n$3=_fun_createA() [line 52]\n  *&s1:class A *=n$3 [line 52]\n  REMOVE_TEMPS(n$3); [line 52]\n " shape="box"]
+	 33 -> 38 ;
+32 [label="32:  DeclStmt \n   *&s1:class A *=0 [line 48]\n " shape="box"]
 	
 
 	 32 -> 31 ;
-31 [label="31:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 53]\n  *&s2:class A *=n$2 [line 53]\n  REMOVE_TEMPS(n$2); [line 53]\n " shape="box"]
+31 [label="31:  DeclStmt \n   *&s2:class A *=0 [line 49]\n " shape="box"]
 	
 
 	 31 -> 30 ;
-30 [label="30:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 54]\n  *&s3:class A *=n$1 [line 54]\n  REMOVE_TEMPS(n$1); [line 54]\n " shape="box"]
+30 [label="30:  DeclStmt \n   *&s3:class A *=0 [line 50]\n " shape="box"]
 	
 
 	 30 -> 29 ;
-29 [label="29:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class A *,&s3:class A *,&s2:class A *) [line 51]\n  REMOVE_TEMPS(n$0); [line 51]\n " shape="box"]
+29 [label="29:  BinaryOperatorStmt: Assign \n   n$3=_fun_createA() [line 52]\n  *&s1:class A *=n$3 [line 52]\n  REMOVE_TEMPS(n$3); [line 52]\n " shape="box"]
 	
 
 	 29 -> 28 ;
-28 [label="28:  Return Stmt \n   *&return:int =0 [line 56]\n  NULLIFY(&s1,false); [line 56]\n  NULLIFY(&s2,false); [line 56]\n  NULLIFY(&s3,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
+28 [label="28:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 53]\n  *&s2:class A *=n$2 [line 53]\n  REMOVE_TEMPS(n$2); [line 53]\n " shape="box"]
 	
 
 	 28 -> 27 ;
-27 [label="27: Exit test2 \n  " color=yellow style=filled]
+27 [label="27:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 54]\n  *&s3:class A *=n$1 [line 54]\n  REMOVE_TEMPS(n$1); [line 54]\n " shape="box"]
 	
 
-26 [label="26: Start test2\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 47]\n " color=yellow style=filled]
+	 27 -> 26 ;
+26 [label="26:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class A *,&s3:class A *,&s2:class A *) [line 51]\n  REMOVE_TEMPS(n$0); [line 51]\n " shape="box"]
 	
 
-	 26 -> 35 ;
-25 [label="25:  DeclStmt \n   *&s1:class A *=0 [line 35]\n " shape="box"]
+	 26 -> 25 ;
+25 [label="25:  Return Stmt \n   *&return:int =0 [line 56]\n  NULLIFY(&s1,false); [line 56]\n  NULLIFY(&s2,false); [line 56]\n  NULLIFY(&s3,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
 	
 
 	 25 -> 24 ;
-24 [label="24:  DeclStmt \n   *&s2:class A *=0 [line 36]\n " shape="box"]
+24 [label="24: Exit test2 \n  " color=yellow style=filled]
 	
 
-	 24 -> 23 ;
-23 [label="23:  DeclStmt \n   *&s3:class A *=0 [line 37]\n " shape="box"]
+23 [label="23: Start test2\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 47]\n " color=yellow style=filled]
 	
 
-	 23 -> 22 ;
-22 [label="22:  BinaryOperatorStmt: Assign \n   n$5=_fun_createA() [line 39]\n  *&s1:class A *=n$5 [line 39]\n  REMOVE_TEMPS(n$5); [line 39]\n " shape="box"]
+	 23 -> 32 ;
+22 [label="22:  DeclStmt \n   *&s1:class A *=0 [line 35]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21:  Message Call: retain \n   n$3=*&s1:class A * [line 40]\n  n$4=_fun___objc_retain(n$3:class A *) [line 40]\n  REMOVE_TEMPS(n$3,n$4); [line 40]\n " shape="box"]
+21 [label="21:  DeclStmt \n   *&s2:class A *=0 [line 36]\n " shape="box"]
 	
 
 	 21 -> 20 ;
-20 [label="20:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 41]\n  *&s2:class A *=n$2 [line 41]\n  REMOVE_TEMPS(n$2); [line 41]\n " shape="box"]
+20 [label="20:  DeclStmt \n   *&s3:class A *=0 [line 37]\n " shape="box"]
 	
 
 	 20 -> 19 ;
-19 [label="19:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 42]\n  *&s3:class A *=n$1 [line 42]\n  REMOVE_TEMPS(n$1); [line 42]\n " shape="box"]
+19 [label="19:  BinaryOperatorStmt: Assign \n   n$5=_fun_createA() [line 39]\n  *&s1:class A *=n$5 [line 39]\n  REMOVE_TEMPS(n$5); [line 39]\n " shape="box"]
 	
 
 	 19 -> 18 ;
-18 [label="18:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class A *,&s2:class A *,&s3:class A *) [line 38]\n  REMOVE_TEMPS(n$0); [line 38]\n " shape="box"]
+18 [label="18:  Message Call: retain \n   n$3=*&s1:class A * [line 40]\n  n$4=_fun___objc_retain(n$3:class A *) [line 40]\n  REMOVE_TEMPS(n$3,n$4); [line 40]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  Return Stmt \n   *&return:int =0 [line 44]\n  NULLIFY(&s1,false); [line 44]\n  NULLIFY(&s2,false); [line 44]\n  NULLIFY(&s3,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+17 [label="17:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 41]\n  *&s2:class A *=n$2 [line 41]\n  REMOVE_TEMPS(n$2); [line 41]\n " shape="box"]
 	
 
 	 17 -> 16 ;
-16 [label="16: Exit test1 \n  " color=yellow style=filled]
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 42]\n  *&s3:class A *=n$1 [line 42]\n  REMOVE_TEMPS(n$1); [line 42]\n " shape="box"]
 	
 
-15 [label="15: Start test1\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34]\n " color=yellow style=filled]
+	 16 -> 15 ;
+15 [label="15:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s1:class A *,&s2:class A *,&s3:class A *) [line 38]\n  REMOVE_TEMPS(n$0); [line 38]\n " shape="box"]
 	
 
-	 15 -> 25 ;
-14 [label="14:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 30]\n  n$3=_fun_NSObject_init(n$2:class A *) virtual [line 30]\n  *&s1:class A *=n$3 [line 30]\n  REMOVE_TEMPS(n$2,n$3); [line 30]\n " shape="box"]
+	 15 -> 14 ;
+14 [label="14:  Return Stmt \n   *&return:int =0 [line 44]\n  NULLIFY(&s1,false); [line 44]\n  NULLIFY(&s2,false); [line 44]\n  NULLIFY(&s3,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$0=*&s1:class A * [line 31]\n  n$1=_fun___set_autorelease_attribute(n$0:class A *) [line 31]\n  *&return:class A *=n$1 [line 31]\n  REMOVE_TEMPS(n$0,n$1); [line 31]\n  NULLIFY(&s1,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+13 [label="13: Exit test1 \n  " color=yellow style=filled]
 	
 
-	 13 -> 12 ;
-12 [label="12: Exit createA \n  " color=yellow style=filled]
+12 [label="12: Start test1\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34]\n " color=yellow style=filled]
 	
 
-11 [label="11: Start createA\nFormals: \nLocals:  s1:class A * \n   DECLARE_LOCALS(&return,&s1); [line 29]\n  NULLIFY(&s1,false); [line 29]\n " color=yellow style=filled]
+	 12 -> 22 ;
+11 [label="11:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 30]\n  n$3=_fun_NSObject_init(n$2:class A *) virtual [line 30]\n  *&s1:class A *=n$3 [line 30]\n  REMOVE_TEMPS(n$2,n$3); [line 30]\n " shape="box"]
 	
 
-	 11 -> 14 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$5=*&self:class A * [line 17]\n  n$6=*&son:class A * [line 17]\n  *n$5._son:class A *=n$6 [line 17]\n  REMOVE_TEMPS(n$5,n$6); [line 17]\n  NULLIFY(&self,false); [line 17]\n  NULLIFY(&son,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+	 11 -> 10 ;
+10 [label="10:  Return Stmt \n   n$0=*&s1:class A * [line 31]\n  n$1=_fun___set_autorelease_attribute(n$0:class A *) [line 31]\n  *&return:class A *=n$1 [line 31]\n  REMOVE_TEMPS(n$0,n$1); [line 31]\n  NULLIFY(&s1,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9: Exit A_setSon: \n  " color=yellow style=filled]
+9 [label="9: Exit createA \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start A_setSon: (generated)\nFormals:  self:class A * son:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+8 [label="8: Start createA\nFormals: \nLocals:  s1:class A * \n   DECLARE_LOCALS(&return,&s1); [line 29]\n  NULLIFY(&s1,false); [line 29]\n " color=yellow style=filled]
 	
 
-	 8 -> 10 ;
-7 [label="7:  Return Stmt \n   n$3=*&self:class A * [line 17]\n  n$4=*n$3._son:class A * [line 17]\n  *&return:class A *=n$4 [line 17]\n  REMOVE_TEMPS(n$3,n$4); [line 17]\n  NULLIFY(&self,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+	 8 -> 11 ;
+7 [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 17]\n  n$4=*&son:class A * [line 17]\n  *n$3._son:class A *=n$4 [line 17]\n  REMOVE_TEMPS(n$3,n$4); [line 17]\n  NULLIFY(&self,false); [line 17]\n  NULLIFY(&son,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6: Exit A_son \n  " color=yellow style=filled]
+6 [label="6: Exit A_setSon: \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start A_son (generated)\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+5 [label="5: Start A_setSon: (generated)\nFormals:  self:class A * son:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 5 -> 7 ;

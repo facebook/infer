@@ -76,7 +76,7 @@ digraph iCFG {
 	
 
 	 34 -> 41 ;
-33 [label="33:  BinaryOperatorStmt: LT \n   n$26=*&idx:unsigned long  [line 46]\n  n$27=*&objects:class NSArray * [line 46]\n  n$28=_fun_NSArray_count(n$27:class NSArray *) virtual [line 46]\n " shape="box"]
+33 [label="33:  BinaryOperatorStmt: LT \n   n$26=*&idx:unsigned long  [line 46]\n  n$27=*&objects:class NSArray * [line 46]\n  n$28=_fun_NSArray_count(n$27:class NSArray *) [line 46]\n " shape="box"]
 	
 
 	 33 -> 34 ;

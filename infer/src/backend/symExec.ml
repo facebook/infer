@@ -335,8 +335,8 @@ module Builtin = struct
   let get_sym_exe_builtin name : sym_exe_builtin =
     try Procname.Hash.find builtin_functions name
     with Not_found ->
-      try Hashtbl.find builtin_plain_functions (Procname.to_string name)
-      with Not_found -> assert false
+    try Hashtbl.find builtin_plain_functions (Procname.to_string name)
+    with Not_found -> assert false
 
   (* register a builtin function name and symbolic execution handler *)
   let register proc_name_str (sym_exe_fun: sym_exe_builtin) =
@@ -773,7 +773,11 @@ let handle_special_cases_call tenv cfg pname actual_params =
     (redirect_shared_ptr tenv cfg pname actual_params), actual_params
   else pname, actual_params
 
-let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path =
+(* This method handles ObjC method calls, in particular the fact that calling a method with nil *)
+(* returns nil. The exec_call function is either standard call execution or execution of ObjC *)
+(* getters and setters using a builtin. *)
+let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc
+    path exec_call =
   let path_description = "Message "^(Procname.to_simplified_string callee_pname)^" with receiver nil returns nil." in
   let receiver = (match actual_pars with
       | (e, _):: _ -> e
@@ -798,7 +802,7 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
     (* can keep track of how this object became null, so that in a NPE we can separate it into a different error type *)
     [(add_objc_null_attribute_or_nullify_result pre, path)]
   else
-    let res = Tabulation.exe_function_call tenv cfg ret_ids pdesc callee_pname loc actual_params pre path in
+    let res = exec_call tenv cfg ret_ids pdesc callee_pname loc actual_params pre path in
     let is_undef =
       Option.is_some (Prop.get_undef_attribute pre receiver) in
     if !Config.footprint && not is_undef then
@@ -960,10 +964,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       if !Config.ondemand_enabled then
         Ondemand.do_analysis pdesc callee_pname;
 
-      let ret_typ_opt =
-        match Cfg.Procdesc.find_from_name cfg resolved_pname with
-        | None -> None
-        | Some pd -> Some (Cfg.Procdesc.get_ret_type pd) in
+      let callee_pdesc_opt = Cfg.Procdesc.find_from_name cfg resolved_pname in
+      let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
       let skip_call prop path =
         let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
         Reporting.log_info pname exn;
@@ -985,13 +987,26 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
             cfg pdesc tenv prop_r path actual_params callee_pname loc
         else [(prop_r, path)] in
       let do_call (prop, path) =
-        match Specs.get_summary resolved_pname with
-        | None -> skip_call prop path
-        | Some summary when call_should_be_skipped resolved_pname summary ->
-            skip_call prop path
-        | Some summary ->
-            sym_exec_call
-              cfg pdesc tenv prop path ret_ids n_actual_params summary loc in
+        let attrs_opt = Option.map Cfg.Procdesc.get_attributes callee_pdesc_opt in
+        let objc_property_accessor =
+          match attrs_opt with
+          | Some attrs -> attrs.ProcAttributes.objc_accessor
+          | None -> None in
+        let summary = Specs.get_summary resolved_pname in
+        let should_skip resolved_pname summary =
+          match summary with
+          | None -> true
+          | Some summary -> call_should_be_skipped resolved_pname summary in
+        if should_skip resolved_pname summary then
+          (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
+          match objc_property_accessor with
+          | Some objc_property_accessor ->
+              handle_objc_method_call
+                n_actual_params n_actual_params prop tenv cfg ret_ids pdesc callee_pname loc path
+                (sym_exec_objc_accessor objc_property_accessor ret_typ_opt)
+          | None -> skip_call prop path
+        else
+          sym_exec_call cfg pdesc tenv prop path ret_ids n_actual_params (Option.get summary) loc in
       IList.flatten (IList.map do_call sentinel_result)
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params pname _prop actual_params in
@@ -1288,6 +1303,35 @@ and sym_exe_check_variadic_sentinel_if_present
             cfg pdesc tenv prop path (IList.length formals)
             actual_params sentinel_arg callee_pname loc
 
+and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
+    path : Builtin.ret_typ =
+  let ret_id =
+    match ret_ids with
+    | [ret_id] -> ret_id
+    | _ -> assert false in
+  let ret_typ =
+    match ret_typ_opt with
+    | Some ret_typ -> ret_typ
+    | None -> assert false in
+  match args with
+  | [(lexp, typ)] ->
+      let typ' = (match Sil.expand_type tenv typ with
+          | Sil.Tstruct _ as s -> s
+          | Sil.Tptr (t, _) -> Sil.expand_type tenv t
+          | _ -> assert false) in
+      let field_access_exp = Sil.Lfield (lexp, field_name, typ') in
+      let ret_instr = Sil.Letderef (ret_id, field_access_exp, ret_typ, loc) in
+      sym_exec_generated true cfg tenv pdesc [ret_instr] [(_prop, path)]
+  | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+
+and sym_exec_objc_accessor property_accesor ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args
+    _prop path : Builtin.ret_typ =
+  match property_accesor with
+  | ProcAttributes.Objc_getter field_name ->
+      sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
+        path
+  | ProcAttributes.Objc_setter field_name ->
+      assert false (* TODO*)
 
 (** Perform symbolic execution for a function call *)
 and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
@@ -1305,7 +1349,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
       | _, [id] -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id
       | _ -> false in
     if is_ignored
-       && Specs.get_flag callee_pname proc_flag_ignore_return = None then
+    && Specs.get_flag callee_pname proc_flag_ignore_return = None then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, try assert false with Assert_failure x -> x)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
@@ -1344,8 +1388,8 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
     (* were the receiver is null and the semantics of the call is nop*)
     if (!Config.curr_language <> Config.Java) && !Config.objc_method_call_semantics &&
        (Specs.get_attributes summary).ProcAttributes.is_objc_instance_method then
-      handle_objc_method_call
-        actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc path
+      handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc callee_pname loc
+        path Tabulation.exe_function_call
     else  (* non-objective-c method call. Standard tabulation *)
       Tabulation.exe_function_call
         tenv cfg ret_ids pdesc callee_pname loc actual_params pre path
@@ -1544,20 +1588,20 @@ module ModelBuiltins = struct
                 [(Prop.normalize prop', path)]
             | _ -> raise Not_found
           with Not_found ->
-            match typ with
-            | Sil.Tptr (typ', _) ->
-                let size_fp = Sil.Var(Ident.create_fresh Ident.kfootprint) in
-                let se = mk_empty_array n_size in
-                let se_fp = mk_empty_array size_fp in
-                let hpred = Prop.mk_ptsto n_lexp se (Sil.Sizeof(Sil.Tarray(typ', size), Sil.Subtype.exact)) in
-                let hpred_fp = Prop.mk_ptsto n_lexp se_fp (Sil.Sizeof(Sil.Tarray(typ', size_fp), Sil.Subtype.exact)) in
-                let sigma = Prop.get_sigma prop in
-                let sigma_fp = Prop.get_sigma_footprint prop in
-                let prop'= Prop.replace_sigma (hpred:: sigma) prop in
-                let prop''= Prop.replace_sigma_footprint (hpred_fp:: sigma_fp) prop' in
-                let prop''= Prop.normalize prop'' in
-                [(prop'', path)]
-            | _ -> []
+          match typ with
+          | Sil.Tptr (typ', _) ->
+              let size_fp = Sil.Var(Ident.create_fresh Ident.kfootprint) in
+              let se = mk_empty_array n_size in
+              let se_fp = mk_empty_array size_fp in
+              let hpred = Prop.mk_ptsto n_lexp se (Sil.Sizeof(Sil.Tarray(typ', size), Sil.Subtype.exact)) in
+              let hpred_fp = Prop.mk_ptsto n_lexp se_fp (Sil.Sizeof(Sil.Tarray(typ', size_fp), Sil.Subtype.exact)) in
+              let sigma = Prop.get_sigma prop in
+              let sigma_fp = Prop.get_sigma_footprint prop in
+              let prop'= Prop.replace_sigma (hpred:: sigma) prop in
+              let prop''= Prop.replace_sigma_footprint (hpred_fp:: sigma_fp) prop' in
+              let prop''= Prop.normalize prop'' in
+              [(prop'', path)]
+          | _ -> []
         end
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 

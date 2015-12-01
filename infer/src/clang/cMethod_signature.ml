@@ -19,7 +19,8 @@ type method_signature = {
   _is_instance : bool;
   _is_generated : bool;
   _language : CFrontend_config.lang;
-  _pointer_to_parent : Clang_ast_t.pointer option
+  _pointer_to_parent : Clang_ast_t.pointer option;
+  mutable _objc_accessor : ProcAttributes.objc_accessor_type option;
 }
 
 let ms_get_name ms =
@@ -52,6 +53,12 @@ let ms_get_lang ms =
 let ms_get_pointer_to_parent ms =
   ms._pointer_to_parent
 
+let ms_objc_accessor ms =
+  ms._objc_accessor
+
+let ms_set_objc_accessor ms objc_accessor =
+  ms._objc_accessor <- objc_accessor
+
 let make_ms procname args ret_type attributes loc is_instance is_generated lang pointer_to_parent =
   let meth_signature = {
     _name = procname;
@@ -63,6 +70,7 @@ let make_ms procname args ret_type attributes loc is_instance is_generated lang 
     _is_generated = is_generated;
     _language = lang;
     _pointer_to_parent = pointer_to_parent;
+    _objc_accessor = None
   } in
   meth_signature
 

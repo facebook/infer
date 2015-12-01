@@ -103,8 +103,8 @@ struct
         let pname = Ast_utils.property_name property_impl_decl_info in
         Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' "
           pname.Clang_ast_t.ni_name;
-        let getter_setter = ObjcProperty_decl.make_getter_setter curr_class decl_info pname in
-        IList.iter (process_one_method_decl tenv cg cfg curr_class) getter_setter
+        let setter = ObjcProperty_decl.make_setter' curr_class decl_info pname in
+        IList.iter (process_one_method_decl tenv cg cfg curr_class) setter
     | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
         Printing.log_stats
@@ -135,8 +135,7 @@ struct
                 ivar_name tp (Some atts) in
             ignore (CField_decl.add_missing_fields tenv class_name [field]);
             let accessor_opt =
-              if is_getter then
-                ObjcProperty_decl.make_getter cls property_name property_type
+              if is_getter then []
               else ObjcProperty_decl.make_setter cls property_name property_type in
             match accessor_opt with
             | [accessor] ->

@@ -141,11 +141,11 @@ digraph iCFG {
 	
 
 	 11 -> 13 ;
-10 [label="10:  DeclStmt \n   n$10=*&self:class MemoryLeakExample * [line 31]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:class MemoryLeakExample *) virtual [line 31]\n  n$12=_fun_UIView_bounds(n$11:class UIView *) virtual [line 31]\n  n$13=_fun_CGPathCreateWithRect(n$12:struct CGRect ,0:struct CGAffineTransform *) [line 31]\n  *&shadowPath:struct CGPath *=n$13 [line 31]\n  REMOVE_TEMPS(n$10,n$11,n$12,n$13); [line 31]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$10=*&self:class MemoryLeakExample * [line 31]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:class MemoryLeakExample *) [line 31]\n  n$12=_fun_UIView_bounds(n$11:class UIView *) [line 31]\n  n$13=_fun_CGPathCreateWithRect(n$12:struct CGRect ,0:struct CGAffineTransform *) [line 31]\n  *&shadowPath:struct CGPath *=n$13 [line 31]\n  REMOVE_TEMPS(n$10,n$11,n$12,n$13); [line 31]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 32]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) virtual [line 32]\n  n$8=_fun_UIView_layer(n$7:class UIView *) virtual [line 32]\n  n$9=*&shadowPath:struct CGPath * [line 32]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) virtual [line 32]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 32]\n  NULLIFY(&self,false); [line 32]\n  NULLIFY(&shadowPath,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+9 [label="9:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 32]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) [line 32]\n  n$8=_fun_UIView_layer(n$7:class UIView *) [line 32]\n  n$9=*&shadowPath:struct CGPath * [line 32]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) virtual [line 32]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 32]\n  NULLIFY(&self,false); [line 32]\n  NULLIFY(&shadowPath,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -160,7 +160,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   n$2=*&attachmentContainerView:class UIView * [line 22]\n  n$3=_fun_UIView_bounds(n$2:class UIView *) virtual [line 22]\n  n$4=_fun_CGPathCreateWithRect(n$3:struct CGRect ,0:struct CGAffineTransform *) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 22]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 22]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$2=*&attachmentContainerView:class UIView * [line 22]\n  n$3=_fun_UIView_bounds(n$2:class UIView *) [line 22]\n  n$4=_fun_CGPathCreateWithRect(n$3:struct CGRect ,0:struct CGAffineTransform *) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 22]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 22]\n " shape="box"]
 	
 
 	 5 -> 4 ;

@@ -65,13 +65,10 @@ val is_property_read_only : Clang_ast_t.property_attribute list -> bool
 val find_properties_class : CContext.curr_class ->
   (Clang_ast_t.named_decl_info * property_type) list
 
-val make_getter : CContext.curr_class -> Clang_ast_t.named_decl_info -> property_type ->
-  Clang_ast_t.decl list
-
 val make_setter : CContext.curr_class -> Clang_ast_t.named_decl_info -> property_type ->
   Clang_ast_t.decl list
 
-val make_getter_setter : CContext.curr_class -> Clang_ast_t.decl_info ->
+val make_setter' : CContext.curr_class -> Clang_ast_t.decl_info ->
   Clang_ast_t.named_decl_info -> Clang_ast_t.decl list
 
 val method_is_property_accesor : CContext.curr_class -> string ->

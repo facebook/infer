@@ -13,6 +13,11 @@ module L = Logging
 module F = Format
 open Utils
 
+(** Type for ObjC accessors *)
+type objc_accessor_type =
+  | Objc_getter of Ident.fieldname
+  | Objc_setter of Ident.fieldname
+
 type t =
   {
     access : Sil.access; (** visibility access *)
@@ -27,6 +32,7 @@ type t =
     is_generated : bool; (** the procedure has been generated *)
     is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
     is_cpp_instance_method : bool; (** the procedure is an C++ instance method *)
+    objc_accessor : objc_accessor_type option; (** the proc is ObjC accessor *)
     mutable is_synthetic_method : bool; (** the procedure is a synthetic method *)
     language : Config.language; (** language of the procedure *)
     loc : Location.t; (** location of this procedure in the source code *)
@@ -51,6 +57,7 @@ let copy pa =
     is_generated = pa.is_generated;
     is_objc_instance_method = pa.is_objc_instance_method;
     is_cpp_instance_method = pa.is_cpp_instance_method;
+    objc_accessor = pa.objc_accessor;
     is_synthetic_method = pa.is_synthetic_method;
     language = pa.language;
     loc = pa.loc;
@@ -74,6 +81,7 @@ let default proc_name language = {
   is_generated = false;
   is_objc_instance_method = false;
   is_cpp_instance_method = false;
+  objc_accessor = None;
   is_synthetic_method = false;
   language;
   loc = Location.dummy;

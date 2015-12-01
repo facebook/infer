@@ -1,45 +1,34 @@
 digraph iCFG {
-20 [label="20:  Call _fun___infer_assume \n   n$1=*&callback:_fn_ (*) [line 46]\n  n$2=_fun___infer_assume((n$1 != 0):_fn_ (*)) [line 46]\n  REMOVE_TEMPS(n$1,n$2); [line 46]\n " shape="box"]
+17 [label="17:  Call _fun___infer_assume \n   n$1=*&callback:_fn_ (*) [line 46]\n  n$2=_fun___infer_assume((n$1 != 0):_fn_ (*)) [line 46]\n  REMOVE_TEMPS(n$1,n$2); [line 46]\n " shape="box"]
 	
 
-	 20 -> 19 ;
-19 [label="19:  Call n$0 \n   n$0=*&callback:_fn_ (*) [line 47]\n  n$0(0:class NSError *,0:struct objc_object *) [line 47]\n  REMOVE_TEMPS(n$0); [line 47]\n  NULLIFY(&callback,false); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
-	
-
-	 19 -> 18 ;
-18 [label="18: Exit test \n  " color=yellow style=filled]
-	
-
-17 [label="17: Start test\nFormals:  callback:_fn_ (*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 46]\n " color=yellow style=filled]
-	
-
-	 17 -> 20 ;
-16 [label="16:  Call _fun___infer_assume \n   n$13=*&name:class NSString * [line -1]\n  n$14=_fun___infer_assume((n$13 != 0):class NSString *) [line -1]\n  REMOVE_TEMPS(n$13,n$14); [line -1]\n " shape="box"]
+	 17 -> 16 ;
+16 [label="16:  Call n$0 \n   n$0=*&callback:_fn_ (*) [line 47]\n  n$0(0:class NSError *,0:struct objc_object *) [line 47]\n  REMOVE_TEMPS(n$0); [line 47]\n  NULLIFY(&callback,false); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
 	
 
 	 16 -> 15 ;
-15 [label="15:  BinaryOperatorStmt: Assign \n   n$10=*&self:class C * [line 31]\n  n$11=*&name:class NSString * [line 31]\n  n$12=_fun_NSString_copy(n$11:class NSString *) virtual [line 31]\n  *n$10._name:class NSString *=n$12 [line 31]\n  REMOVE_TEMPS(n$10,n$11,n$12); [line 31]\n  NULLIFY(&name,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+15 [label="15: Exit test \n  " color=yellow style=filled]
 	
 
-	 15 -> 14 ;
-14 [label="14: Exit C_setName: \n  " color=yellow style=filled]
+14 [label="14: Start test\nFormals:  callback:_fn_ (*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 46]\n " color=yellow style=filled]
 	
 
-13 [label="13: Start C_setName: (generated)\nFormals:  self:class C * name:class NSString *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
+	 14 -> 17 ;
+13 [label="13:  Call _fun___infer_assume \n   n$10=*&name:class NSString * [line -1]\n  n$11=_fun___infer_assume((n$10 != 0):class NSString *) [line -1]\n  REMOVE_TEMPS(n$10,n$11); [line -1]\n " shape="box"]
 	
 
-	 13 -> 16 ;
-12 [label="12:  Return Stmt \n   n$7=*&self:class C * [line 31]\n  n$8=*n$7._name:class NSString * [line 31]\n  *&return:class NSString *=n$8 [line 31]\n  n$9=_fun___set_autorelease_attribute(n$8:class NSString *) [line 31]\n  REMOVE_TEMPS(n$7,n$8,n$9); [line 31]\n  NULLIFY(&self,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+	 13 -> 12 ;
+12 [label="12:  BinaryOperatorStmt: Assign \n   n$7=*&self:class C * [line 31]\n  n$8=*&name:class NSString * [line 31]\n  n$9=_fun_NSString_copy(n$8:class NSString *) virtual [line 31]\n  *n$7._name:class NSString *=n$9 [line 31]\n  REMOVE_TEMPS(n$7,n$8,n$9); [line 31]\n  NULLIFY(&name,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 12 -> 11 ;
-11 [label="11: Exit C_name \n  " color=yellow style=filled]
+11 [label="11: Exit C_setName: \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start C_name (generated)\nFormals:  self:class C *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
+10 [label="10: Start C_setName: (generated)\nFormals:  self:class C * name:class NSString *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
-	 10 -> 12 ;
+	 10 -> 13 ;
 9 [label="9:  Call _fun___infer_assume \n   n$5=*&a:class A * [line -1]\n  n$6=_fun___infer_assume((n$5 != 0):class A *) [line -1]\n  REMOVE_TEMPS(n$5,n$6); [line -1]\n " shape="box"]
 	
 

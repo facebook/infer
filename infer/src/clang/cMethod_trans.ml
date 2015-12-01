@@ -308,6 +308,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.C_CPP) with
           ProcAttributes.captured = captured';
+          ProcAttributes.objc_accessor = CMethod_signature.ms_objc_accessor ms;
           formals;
           func_attributes = attributes;
           is_defined = defined;

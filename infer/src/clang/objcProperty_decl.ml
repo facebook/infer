@@ -284,27 +284,6 @@ let get_ivar_name prop_name ivar_opt =
   | Some ivar_name -> ivar_name
   | None -> Ast_utils.generated_ivar_name prop_name
 
-let make_getter curr_class prop_name prop_type =
-  match prop_type with
-  | tp, attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar_opt ->
-      let ivar_name = get_ivar_name prop_name ivar_opt in
-      let open Clang_ast_t in
-      match getter with
-      | Some (ObjCMethodDecl(di, name_info, mdi), _) ->
-          let dummy_info = Ast_expressions.dummy_decl_info_in_curr_file di in
-          let class_name = CContext.get_curr_class_name curr_class in
-          let deref_self_field = Ast_expressions.make_deref_self_field
-              class_name dummy_info mdi.Clang_ast_t.omdi_result_type ivar_name in
-          let body = ReturnStmt(Ast_expressions.make_stmt_info dummy_info, [deref_self_field]) in
-          let mdi'= Ast_expressions.make_method_decl_info mdi body in
-          let generated_name_info = create_generated_method_name name_info in
-          Property.replace_property
-            (curr_class, prop_name)
-            (tp, attributes, decl_info,
-             (getter_name, Some (ObjCMethodDecl(di, name_info, mdi), true)), (setter_name, setter), Some ivar_name);
-          [ObjCMethodDecl(dummy_info, generated_name_info, mdi')]
-      | _ -> []
-
 let make_setter curr_class prop_name prop_type =
   match prop_type with
   | tp, attributes, decl_info, (getter_name, getter), (setter_name, setter), ivar_opt ->
@@ -360,11 +339,11 @@ let make_setter curr_class prop_name prop_type =
 (* [self->_field = param] *)
 (* - If copy is available then write the following code: *)
 (* [self->_field = [param copy] *)
-let make_getter_setter curr_class decl_info prop_name =
+let make_setter' curr_class decl_info prop_name =
   Printing.log_out "pointer = '%s'\n" decl_info.Clang_ast_t.di_pointer;
   try
     let prop_type = Property.find_property curr_class prop_name in
-    (make_getter curr_class prop_name prop_type)@ (make_setter curr_class prop_name prop_type)
+    (make_setter curr_class prop_name prop_type)
   with _ ->
     Printing.log_out "Property %s not found@." prop_name.Clang_ast_t.ni_name;
     []

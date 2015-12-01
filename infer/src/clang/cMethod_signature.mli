@@ -40,3 +40,7 @@ val replace_name_ms : method_signature -> Procname.t -> method_signature
 val ms_to_string : method_signature -> string
 
 val ms_is_generated : method_signature -> bool
+
+val ms_objc_accessor : method_signature -> ProcAttributes.objc_accessor_type option
+
+val ms_set_objc_accessor : method_signature -> ProcAttributes.objc_accessor_type option -> unit
