@@ -52,6 +52,8 @@ val get_annotated_signature : ProcAttributes.t -> annotated_signature
 val get_field_type_and_annotation :
   Ident.fieldname -> Sil.typ -> (Sil.typ * Sil.item_annotation) option
 
+val nullable : string
+
 val ia_contains : Sil.item_annotation -> string -> bool
 
 val ia_has_annotation_with : Sil.item_annotation -> (Sil.annotation -> bool) -> bool

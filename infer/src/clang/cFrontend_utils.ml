@@ -353,10 +353,16 @@ struct
     | _ -> assert false
 
   (*TODO take the attributes into account too. To be done after we get the attribute's arguments. *)
-  let is_type_nonnull type_ptr attributes =
+  let is_type_nonnull type_ptr =
     let open Clang_ast_t in
     match get_type type_ptr with
     | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nonnull
+    | _ -> false
+
+  let is_type_nullable type_ptr =
+    let open Clang_ast_t in
+    match get_type type_ptr with
+    | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nullable
     | _ -> false
 
   let string_of_type_ptr type_ptr =

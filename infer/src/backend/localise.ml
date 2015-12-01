@@ -437,11 +437,12 @@ let dereference_string deref_str value_str access_opt loc =
     | Some Initialized_automatically ->
         ["initialized automatically"] in
   let problem_desc =
+    let nullable_text = if !Config.curr_language = Config.Java then "@Nullable" else "__nullable" in
     let problem_str =
       match Tags.get !tags Tags.nullable_src with
       | Some nullable_src ->
-          if nullable_src = value_str then "is annotated with @Nullable and is dereferenced without a null check"
-          else "is indirectly marked @Nullable (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
+          if nullable_src = value_str then "is annotated with " ^ nullable_text ^ " and is dereferenced without a null check"
+          else "is indirectly marked " ^ nullable_text ^ " (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
       | None -> deref_str.problem_str in
     [(problem_str ^ " " ^ at_line tags loc)] in
   value_desc:: access_desc @ problem_desc, None, !tags

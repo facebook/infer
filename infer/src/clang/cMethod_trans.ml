@@ -86,22 +86,22 @@ let get_return_type function_method_decl_info =
   | Block_decl_info (_, typ, _) -> CTypes.return_type_of_function_type typ
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
 
-let build_method_signature decl_info procname function_method_decl_info is_anonym_block is_generated
-    parent_pointer =
+let build_method_signature decl_info procname function_method_decl_info is_anonym_block
+    is_generated parent_pointer =
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp = get_return_type function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
   let parameters = get_parameters function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language function_method_decl_info in
-  CMethod_signature.make_ms procname parameters tp attributes source_range is_instance_method
-    is_generated lang parent_pointer
+  CMethod_signature.make_ms
+    procname parameters tp attributes source_range is_instance_method is_generated
+    lang parent_pointer
 
-let get_assume_not_null_calls ms param_decls =
-  let attributes = CMethod_signature.ms_get_attributes ms in
+let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
     | Clang_ast_t.ParmVarDecl (decl_info, name, tp, var_decl_info)
-      when CFrontend_utils.Ast_utils.is_type_nonnull tp attributes ->
+      when CFrontend_utils.Ast_utils.is_type_nonnull tp ->
         let assume_call = Ast_expressions.create_assume_not_null_call decl_info name tp in
         [(`ClangStmt assume_call)]
     | _ -> [] in
@@ -121,7 +121,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let function_info = Some (decl_info, fdi) in
       let procname = General_utils.mk_procname_from_function name function_info tp language in
       let ms = build_method_signature decl_info procname func_decl false false None in
-      let extra_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
+      let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
   | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
@@ -131,7 +131,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let ms = build_method_signature decl_info procname method_decl false false parent_pointer in
-      let non_null_instrs = get_assume_not_null_calls ms fdi.Clang_ast_t.fdi_parameters in
+      let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
   | ObjCMethodDecl (decl_info, name_info, mdi), _ ->
@@ -143,14 +143,14 @@ let method_signature_of_decl meth_decl block_data_opt =
       let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
       let is_generated = Ast_utils.is_generated name_info in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms = build_method_signature decl_info procname method_decl false is_generated
-          parent_pointer in
-      let extra_instrs = get_assume_not_null_calls ms mdi.omdi_parameters in
+      let ms =
+        build_method_signature decl_info procname method_decl false is_generated parent_pointer in
+      let extra_instrs = get_assume_not_null_calls mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
       let ms = build_method_signature decl_info procname func_decl true false None in
-      let extra_instrs = get_assume_not_null_calls ms bdi.bdi_parameters in
+      let extra_instrs = get_assume_not_null_calls bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
 
@@ -282,12 +282,28 @@ let should_create_procdesc cfg procname defined generated =
       else false
   | None -> true
 
+let sil_method_annotation_of_args args : Sil.method_annotation =
+  let default_visibility = true in
+  let mk_annot param_name annot_name =
+    let annot = { Sil.class_name = annot_name; Sil.parameters = [param_name]; } in
+    annot, default_visibility in
+  let arg_to_sil_annot acc (arg_name, type_ptr) =
+    if CFrontend_utils.Ast_utils.is_type_nullable type_ptr then
+      [mk_annot arg_name Annotations.nullable] :: acc
+    else acc in
+  let param_annots = IList.fold_left arg_to_sil_annot [] args in
+  (* TODO: parse annotations on return value *)
+  let retval_annot = [] in
+  retval_annot, param_annots
+
 (** Creates a procedure description. *)
 let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let defined = not ((IList.length fbody) == 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
+  let method_annotation =
+    sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) in
   let is_generated = CMethod_signature.ms_is_generated ms in
   let is_cpp_inst_method = CMethod_signature.ms_is_instance ms
                            && CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
@@ -316,6 +332,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           is_objc_instance_method = is_objc_inst_method;
           is_cpp_instance_method = is_cpp_inst_method;
           loc = loc_start;
+          method_annotation;
           ret_type;
         } in
       Cfg.Procdesc.create {

@@ -967,8 +967,8 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
   let is_deref_of_nullable =
     let is_definitely_non_null exp prop =
       Prover.check_disequal prop exp Sil.exp_zero in
-    !Config.report_nullable_inconsistency && !Config.curr_language = Config.Java &&
-    not (is_definitely_non_null root prop) && is_only_pt_by_nullable_fld_or_param root in
+    !Config.report_nullable_inconsistency && not (is_definitely_non_null root prop)
+    && is_only_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
     Prop.get_resource_attribute;
     Prop.get_undef_attribute;

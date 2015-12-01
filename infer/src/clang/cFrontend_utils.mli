@@ -64,7 +64,9 @@ sig
 
   val is_copy : Clang_ast_t.property_attribute option -> bool
 
-  val is_type_nonnull : Clang_ast_t.type_ptr -> Clang_ast_t.attribute list -> bool
+  val is_type_nonnull : Clang_ast_t.type_ptr -> bool
+
+  val is_type_nullable : Clang_ast_t.type_ptr -> bool
 
   val get_fresh_pointer : unit -> string
 
