@@ -14,3 +14,9 @@
 val checker_strong_delegate_warning : Clang_ast_t.named_decl_info ->
   ObjcProperty_decl.property_type ->
   (bool * CFrontend_utils.General_utils.warning_desc)
+
+(* Direct Atomic Property access:
+   a property declared atomic should not be accesses directly via its iva *)
+val direct_atomic_property_access :
+  CContext.t -> Clang_ast_t.stmt_info -> Clang_ast_t.named_decl_info option ->
+  (bool * CFrontend_utils.General_utils.warning_desc option)

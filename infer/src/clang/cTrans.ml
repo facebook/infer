@@ -1725,6 +1725,7 @@ struct
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
+    CFrontend_errors.check_for_ivar_errors trans_state.context stmt_info obj_c_ivar_ref_expr_info;
     do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref
 
   and memberExpr_trans trans_state stmt_info expr_info stmt_list member_expr_info =

@@ -166,3 +166,5 @@ let nsarray_cl = "NSArray"
 let infer = "infer"
 
 let block = "block"
+
+let atomic_att = "<\"Atomic\">"

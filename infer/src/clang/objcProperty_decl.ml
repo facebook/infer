@@ -377,3 +377,15 @@ let get_methods curr_class decl_list =
         meth_name:: list_methods
     | _ -> list_methods in
   IList.fold_right get_method decl_list []
+
+(* checks whether mname is a getter or setter of the ivar given in dr_name *)
+let is_getter_setter curr_class mname dr_name =
+  match dr_name with
+  | Some ndi ->
+      (match Property.find_property_name_from_ivar curr_class ndi with
+       | Some pname ->
+           let _, _, _, (gn, _), (sn, _), _ = Property.find_property curr_class pname in
+           let m = Procname.to_simplified_string mname in
+           (m = gn) || (m = sn)
+       | None -> false)
+  | _ -> false

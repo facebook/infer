@@ -13,3 +13,7 @@
 
 (* Checks for warnings on properties of class c *)
 val check_for_property_errors : Cfg.cfg -> CContext.curr_class -> unit
+
+(* Call checkers on a specific access of an ivar *)
+val check_for_ivar_errors :
+  CContext.t -> Clang_ast_t.stmt_info -> Clang_ast_t.obj_c_ivar_ref_expr_info -> unit

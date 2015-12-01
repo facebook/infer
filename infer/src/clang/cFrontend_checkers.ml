@@ -28,3 +28,36 @@ let checker_strong_delegate_warning pname ptype =
                      loc = string_of_int (ObjcProperty_decl.property_line ptype);
                     } in
   (condition, warning_desc)
+
+(* Direct Atomic Property access:
+   a property declared atomic should not be accessed directly via its ivar *)
+let direct_atomic_property_access context stmt_info ivar_name =
+  let tenv = CContext.get_tenv context in
+  let curr_class = CContext.get_curr_class context in
+  let mname = Cfg.Procdesc.get_proc_name (CContext.get_procdesc context) in
+  let ivar, cname = match ivar_name with
+    | Some n ->
+        General_utils.mk_class_field_name n,
+        Ast_utils.get_class_name_from_member n
+    | _ -> Ident.create_fieldname (Mangled.from_string "") 0, "" in
+  let tname = Sil.TN_csu (Sil.Class, Mangled.from_string cname) in
+  let line = match (fst stmt_info.Clang_ast_t.si_source_range).Clang_ast_t.sl_line with
+    | Some l -> string_of_int l
+    | _ -> "-1" in
+  match Sil.tenv_lookup tenv tname with
+  | Some Sil.Tstruct (flds1, flds2, _, _, _, _, _) ->
+      (* We give the warning when:
+         (1) the property has the atomic attribute and
+         (2) the access of the ivar is not in a getter or setter method. This condition
+             avoids false positives *)
+      let condition = (CField_decl.is_ivar_atomic ivar (flds1 @ flds2))
+                      && not (ObjcProperty_decl.is_getter_setter curr_class mname ivar_name) in
+      let warning_desc = {
+        name = "DIRECT_ATOMIC_PROPERTY_ACCESS";
+        description = "Direct access to ivar " ^ (Ident.fieldname_to_string ivar) ^
+                      " of an atomic property";
+        suggestion = "Accessing an ivar of an atomic property makes the property nonatomic";
+        loc = line;
+      } in
+      (condition, Some warning_desc)
+  | _ -> (false, None) (* No warning *)

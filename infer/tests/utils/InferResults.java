@@ -59,6 +59,7 @@ public class InferResults {
       if (errorKind.equals("ERROR") ||
           errorType.equals("RETURN_VALUE_IGNORED") ||
           errorType.equals("STRONG_DELEGATE_WARNING") ||
+          errorType.equals("DIRECT_ATOMIC_PROPERTY_ACCESS") ||
           errorType.equals("IMMUTABLE_CAST") ||
           errorType.equals("PARAMETER_NOT_NULL_CHECKED") ||
           errorType.equals("DANGLING_POINTER_DEREFERENCE") ||

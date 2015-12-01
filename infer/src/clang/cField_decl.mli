@@ -25,3 +25,5 @@ val build_sil_field_property : Ast_utils.type_ptr_to_sil_type -> CContext.curr_c
   -> field_type
 
 val add_missing_fields : Sil.tenv -> string -> field_type list -> unit
+
+val is_ivar_atomic : Ident.fieldname -> Sil.struct_fields -> bool

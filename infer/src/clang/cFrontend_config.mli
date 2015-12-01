@@ -161,3 +161,5 @@ val nsarray_cl : string
 val infer : string
 
 val block : string
+
+val atomic_att : string

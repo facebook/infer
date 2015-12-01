@@ -1,0 +1,84 @@
+/*
+* Copyright (c) 2015 - present Facebook, Inc.
+* All rights reserved.
+*
+* This source code is licensed under the BSD style license found in the
+* LICENSE file in the root directory of this source tree. An additional grant
+* of patent rights can be found in the PATENTS file in the same directory.
+*/
+
+#import <Foundation/NSObject.h>
+
+@interface B  : NSObject
+
+- (void) foo;
+
+@end
+
+@implementation B
+
+-(void) foo {
+};
+
+@end
+
+
+@interface A  : NSObject
+
+@property (nonatomic) int *p;
+@property int *q; // atomic by default
+@property (atomic, assign) float f;
+
+@property B *b;
+
+- (void) write_p: (int)i;
+- (int) read_p;
+- (void) write_q: (int)i;
+- (int) read_q;
+- (void) write_f: (int)i;
+- (int) read_f;
+@end
+
+
+@implementation A
+
+@synthesize b;
+
+- (void) writeP: (int)i
+{
+    _p = i; // Good access
+}
+
+- (int) readP
+{
+    return _p; // Good access
+}
+
+- (void) writeQ: (int)i
+{
+    _q = i; // Bad access
+}
+
+- (int) readQ
+{
+    return _q; // Bad access
+}
+
+- (void) writeF: (float) j
+{
+    self.f = j; // Good access
+}
+
+- (int) readF
+{
+    return self.f; // Good access
+}
+
+- (void) bla
+{
+    if (b) { // bad access
+        [b foo]; //bad access
+    }
+}
+
+@end

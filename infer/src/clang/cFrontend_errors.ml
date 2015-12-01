@@ -18,9 +18,11 @@ open Utils
 open CFrontend_utils
 open General_utils
 
-(* === Warnings on properties === *)
-
+(* List of checkers on properties *)
 let property_checkers_list = [CFrontend_checkers.checker_strong_delegate_warning]
+
+(* List of checkers on ivar access *)
+let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access]
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_warning pdesc warn_desc =
@@ -58,3 +60,12 @@ let check_for_property_errors cfg c =
   let properties = ObjcProperty_decl.find_properties_class c in
   Printing.log_out "Retrieved all properties of the class...\n";
   IList.iter do_one_property properties
+
+(* Call checkers on a specific access of an ivar *)
+let check_for_ivar_errors context stmt_info obj_c_ivar_ref_expr_info =
+  let dr_name = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref.Clang_ast_t.dr_name in
+  let pdesc = CContext.get_procdesc context in
+  IList.iter (fun checker ->
+      match checker context stmt_info dr_name with
+      | true, Some warning_desc -> log_frontend_warning pdesc warning_desc
+      | _, _ -> ()) ivar_access_checker_list
