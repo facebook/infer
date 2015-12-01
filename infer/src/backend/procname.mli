@@ -84,6 +84,9 @@ val java_get_class : t -> string
 (** Return the simple class name of a java procedure name. *)
 val java_get_simple_class : t -> string
 
+(** Return the package name of a java procedure name. *)
+val java_get_package : t -> string option
+
 (** Return the method name of a java procedure name. *)
 val java_get_method : t -> string
 

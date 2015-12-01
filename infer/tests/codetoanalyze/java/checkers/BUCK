@@ -1,6 +1,7 @@
 sources = glob(['**/*.java'])
 
 dependencies = [
+    '//dependencies/java/android/support/v4:android-support-v4',
     '//infer/annotations:annotations',
     '//infer/lib/java/android:android',
 ]

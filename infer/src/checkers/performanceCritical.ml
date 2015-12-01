@@ -59,8 +59,26 @@ let method_overrides_performance_critical tenv pname =
   || overrides ()
 
 
-let method_is_expensive pname =
-  check_method Annotations.ia_is_expensive pname
+let is_modeled_expensive tenv pname =
+  if SymExec.function_is_builtin pname then false
+  else if Procname.java_get_method pname <> "findViewById" then false
+  else
+    let package =
+      match Procname.java_get_package pname with
+      | None -> ""
+      | Some p -> p in
+    let classname =
+      Mangled.from_package_class package (Procname.java_get_simple_class pname) in
+    match Sil.get_typ classname (Some Sil.Class) tenv with
+    | None -> false
+    | Some typ ->
+        AndroidFramework.is_view typ tenv
+        || AndroidFramework.is_activity typ tenv
+
+
+let method_is_expensive tenv pname =
+  is_modeled_expensive tenv pname
+  || check_method Annotations.ia_is_expensive pname
 
 
 let lookup_call_trees pname =
@@ -74,13 +92,13 @@ let lookup_call_trees pname =
       end
 
 
-let collect_expensive_call caller_pdesc checked_pnames call_trees (pname, _) =
+let collect_expensive_call tenv caller_pdesc checked_pnames call_trees (pname, _) =
   if Procname.Set.mem pname !checked_pnames then call_trees
   else
     begin
       Ondemand.do_analysis caller_pdesc pname;
       checked_pnames := Procname.Set.add pname !checked_pnames;
-      if method_is_expensive pname then
+      if method_is_expensive tenv pname then
         (CallTree.Direct pname) :: call_trees
       else
         match lookup_call_trees pname with
@@ -134,7 +152,7 @@ let check_one_procedure tenv pname pdesc =
   and performance_critical = is_performance_critical attributes in
 
   let check_expensive_subtyping_rules overridden_pname =
-    if not (method_is_expensive overridden_pname) then
+    if not (method_is_expensive tenv overridden_pname) then
       let description =
         Printf.sprintf
           "Method `%s` overrides unannotated method `%s` and cannot be annotated with `@%s`"
@@ -165,21 +183,21 @@ let check_one_procedure tenv pname pdesc =
   let expensive_call_trees =
     let checked_pnames = ref Procname.Set.empty in
     Cfg.Procdesc.fold_calls
-      (collect_expensive_call pdesc checked_pnames) [] pdesc in
+      (collect_expensive_call tenv pdesc checked_pnames) [] pdesc in
 
   update_summary expensive_call_trees pname;
 
   match expensive_call_trees with
   | [] -> ()
+  | call_trees when performance_critical ->
+      report_expensive_calls pname pdesc loc call_trees
   | call_trees when infer_performance_critical_methods ->
       if method_overrides_performance_critical tenv pname then
         report_expensive_calls pname pdesc loc call_trees
-  | call_trees when performance_critical ->
-      report_expensive_calls pname pdesc loc call_trees
   | _ -> ()
 
 
-let callback_performance_checker _ get_proc_desc _ tenv pname proc_desc =
+let callback_performance_checker _ get_proc_desc _ tenv pname pdesc =
   let callbacks =
     let analyze_ondemand pn =
       match get_proc_desc pn with
@@ -187,10 +205,10 @@ let callback_performance_checker _ get_proc_desc _ tenv pname proc_desc =
       | Some pd -> check_one_procedure tenv pn pd in
     { Ondemand.analyze_ondemand; get_proc_desc; } in
   if !Config.ondemand_enabled
-  || Ondemand.procedure_should_be_analyzed proc_desc pname
+     || Ondemand.procedure_should_be_analyzed pdesc pname
   then
     begin
       Ondemand.set_callbacks callbacks;
-      check_one_procedure tenv pname proc_desc;
+      check_one_procedure tenv pname pdesc;
       Ondemand.unset_callbacks ()
     end

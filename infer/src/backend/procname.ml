@@ -220,8 +220,14 @@ let java_get_class_components proc_name =
   Str.split (Str.regexp (Str.quote ".")) (java_get_class proc_name)
 
 (** Return the class name of a java procedure name. *)
-let java_get_simple_class proc_name =
-  IList.hd (IList.rev (java_get_class_components proc_name))
+let java_get_simple_class = function
+  | JAVA j -> snd j.classname
+  | _ -> assert false
+
+(** Return the package of a java procname. *)
+let java_get_package = function
+  | JAVA j -> fst j.classname
+  | _ -> assert false
 
 (** Return the method of a java procname. *)
 let java_get_method = function

@@ -57,7 +57,8 @@ let get_mangled pn = match pn.mangled with
 
 (** Create a mangled type name from a package name and a class name *)
 let from_package_class package_name class_name =
-  from_string (package_name ^ "." ^ class_name)
+  if package_name = "" then from_string class_name
+  else from_string (package_name ^ "." ^ class_name)
 
 (** Pretty print a mangled name *)
 let pp f pn =

@@ -631,7 +631,8 @@ let report_context_leaks pname sigma tenv =
     IList.fold_left
       (fun exps hpred -> match hpred with
          | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Sil.Tptr (typ, _), _))
-           when AndroidFramework.is_context typ tenv ->
+           when AndroidFramework.is_context typ tenv
+                && not (AndroidFramework.is_application typ tenv) ->
              (exp, typ) :: exps
          | _ -> exps)
       []

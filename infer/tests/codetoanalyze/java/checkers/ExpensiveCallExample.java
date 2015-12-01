@@ -9,6 +9,10 @@
 
 package codetoanalyze.java.checkers;
 
+import android.support.v4.app.FragmentActivity;
+import android.widget.ImageView;
+import android.view.View;
+
 import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
 
@@ -68,6 +72,16 @@ public class ExpensiveCallExample {
   @PerformanceCritical
   void longerCallStackToExpensive() {
     callsExpensive2();
+  }
+
+  @PerformanceCritical
+  View callsFindViewByIdFromView(ImageView view, int id) {
+    return view.findViewById(id);
+  }
+
+  @PerformanceCritical
+  View callsFindViewByIdFromActivity(FragmentActivity activity, int id) {
+    return activity.findViewById(id);
   }
 
 }

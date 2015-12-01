@@ -44,6 +44,8 @@ public class ExpensiveCallTest {
         "indirectlyCallingExpensiveMethod",
         "callingExpensiveMethodFromInterface",
         "longerCallStackToExpensive",
+        "callsFindViewByIdFromView",
+        "callsFindViewByIdFromActivity",
     };
     assertThat(
         "Results should contain " + CALLS_EXPENSIVE_METHOD,
