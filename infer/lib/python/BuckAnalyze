@@ -147,10 +147,12 @@ def get_normalized_targets(targets):
     buck_cmd = BUCK_GET_JAVA_TARGETS + targets
 
     try:
-        targets = subprocess.check_output(buck_cmd).decode().strip().split('\n')
-        if args.verbose:
+        targets = filter(
+            lambda line: len(line) > 0,
+            subprocess.check_output(buck_cmd).decode().strip().split('\n'))
+        if len(targets) > 0 and args.verbose:
             logging.debug('Targets to analyze:')
-            for target in args.targets:
+            for target in targets:
                 logging.debug(target)
         return targets
     except subprocess.CalledProcessError as e:
@@ -474,19 +476,22 @@ if __name__ == '__main__':
         normalized_targets = get_normalized_targets(args.targets)
         timer.stop('%d targets computed', len(normalized_targets))
 
-        timer.start('Running buck...')
-        buck_cmd = ['buck', 'build']
-        if args.no_cache:
-            buck_cmd += ['--no-cache']
-        if args.verbose:
-            buck_cmd += ['-v', '2']
-        compile_cmd = buck_cmd + normalized_targets
-        subprocess.check_call(compile_cmd)
-        timer.stop('Buck finished')
+        if len(normalized_targets) == 0:
+            logging.info('Nothing to analyze')
+        else:
+            timer.start('Running buck...')
+            buck_cmd = ['buck', 'build']
+            if args.no_cache:
+                buck_cmd += ['--no-cache']
+            if args.verbose:
+                buck_cmd += ['-v', '2']
+            compile_cmd = buck_cmd + normalized_targets
+            subprocess.check_call(compile_cmd)
+            timer.stop('Buck finished')
 
-        timer.start('Collecting results...')
-        collect_results(args, start_time)
-        timer.stop('Done')
+            timer.start('Collecting results...')
+            collect_results(args, start_time)
+            timer.stop('Done')
 
     except KeyboardInterrupt as e:
         timer.stop('Exiting')
