@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 9 -> 5 ;
-8 [label="8:  ComppoundAssignStmt \n   n$0=*&j:int  [line 13]\n  n$1=*&j:int  [line 13]\n  *&j:int =(n$1 + n$0) [line 13]\n  REMOVE_TEMPS(n$0,n$1); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: AddAssign \n   n$0=*&j:int  [line 13]\n  n$1=*&j:int  [line 13]\n  *&j:int =(n$1 + n$0) [line 13]\n  REMOVE_TEMPS(n$0,n$1); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 8 -> 4 ;

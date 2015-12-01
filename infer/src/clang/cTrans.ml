@@ -1382,46 +1382,6 @@ struct
     let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
-  (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands. *)
-  and compoundAssignOperator trans_state stmt_info binary_operator_info expr_info stmt_list =
-    let context = trans_state.context in
-    let pln = trans_state.parent_line_number in
-    Printing.log_out "  CompoundAssignOperator '%s' .\n"
-      (Clang_ast_j.string_of_binary_operator_kind binary_operator_info.Clang_ast_t.boi_kind);
-    (* claim priority if no ancestors has claimed priority before *)
-    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-    let sil_loc = CLocation.get_sil_location stmt_info pln context in
-    let line_number = CLocation.get_line stmt_info pln in
-    let sil_typ =
-      CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-    (match stmt_list with
-     | [s1; s2] ->
-         let trans_state' = { trans_state_pri with succ_nodes = []; parent_line_number = line_number } in
-         let res_trans_s1 = instruction trans_state' s1 in
-         let res_trans_s2 = instruction trans_state' s2 in
-         let (lhs_e, lhs_typ) = extract_exp_from_list res_trans_s1.exps
-             "\nWARNING: Missing LHS operand in Compount Assign operator. Need Fixing.\n" in
-         let (sil_e2, sil_typ2) = extract_exp_from_list res_trans_s2.exps
-             "\nWARNING: Missing RHS operand in Compount Assign operator. Need Fixing.\n" in
-         let id_op, exp_op, instr_op = CArithmetic_trans.compound_assignment_binary_operation_instruction
-             binary_operator_info lhs_e sil_typ sil_e2 sil_loc in
-         let extra_deref_instrs, extra_deref_ids, exp_to_parent =
-           if not (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
-              (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
-              not (General_utils.is_cpp_translation !CFrontend_config.language) then
-             let id = Ident.create_fresh Ident.knormal in
-             let instr = Sil.Letderef (id, lhs_e, sil_typ, sil_loc) in
-             [instr], [id], (Sil.Var id, sil_typ)
-           else [], [], (exp_op, sil_typ) in
-         let op_res_trans = { empty_res_trans with
-                              ids = id_op @ extra_deref_ids;
-                              instrs = instr_op @ extra_deref_instrs } in
-         let all_res_trans = [res_trans_s1; res_trans_s2; op_res_trans] in
-         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
-             sil_loc "ComppoundAssignStmt" stmt_info all_res_trans in
-         { res_trans_to_parent with exps = [exp_to_parent] }
-     | _ -> assert false) (* Compound assign statement should have two operands*)
-
   and initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts =
     let var_exp, _ = extract_exp_from_list var_res_trans.exps
         "WARNING: InitListExpr expects one variable expression" in
@@ -2044,7 +2004,7 @@ struct
         nullStmt_trans trans_state.succ_nodes stmt_info
 
     | CompoundAssignOperator(stmt_info, stmt_list, expr_info, binary_operator_info, caoi) ->
-        compoundAssignOperator trans_state stmt_info binary_operator_info expr_info stmt_list
+        binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
 
     | DeclStmt(stmt_info, stmt_list, decl_list) ->
         declStmt_trans trans_state decl_list stmt_info

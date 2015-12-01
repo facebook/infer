@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 20 -> 14 ;
-19 [label="19:  ComppoundAssignStmt \n   n$3=*&x:int  [line 20]\n  n$4=*&result:int  [line 20]\n  *&result:int =(n$4 + n$3) [line 20]\n  REMOVE_TEMPS(n$3,n$4); [line 20]\n  NULLIFY(&x,false); [line 20]\n " shape="box"]
+19 [label="19:  BinaryOperatorStmt: AddAssign \n   n$3=*&x:int  [line 20]\n  n$4=*&result:int  [line 20]\n  *&result:int =(n$4 + n$3) [line 20]\n  REMOVE_TEMPS(n$3,n$4); [line 20]\n  NULLIFY(&x,false); [line 20]\n " shape="box"]
 	
 
 	 19 -> 15 ;
@@ -43,7 +43,7 @@ digraph iCFG {
 	
 
 	 10 -> 4 ;
-9 [label="9:  ComppoundAssignStmt \n   n$2=*&x:int  [line 13]\n  n$3=*&result:int  [line 13]\n  *&result:int =(n$3 + n$2) [line 13]\n  REMOVE_TEMPS(n$2,n$3); [line 13]\n  NULLIFY(&x,false); [line 13]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int  [line 13]\n  n$3=*&result:int  [line 13]\n  *&result:int =(n$3 + n$2) [line 13]\n  REMOVE_TEMPS(n$2,n$3); [line 13]\n  NULLIFY(&x,false); [line 13]\n " shape="box"]
 	
 
 	 9 -> 5 ;

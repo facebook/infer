@@ -51,51 +51,10 @@ let assignment_arc_mode context e1 typ e2 loc rhs_owning_method is_e1_decl =
       (e1, [retain; autorelease; assign], [])
   | _ -> (e1, [assign], [])
 
-(* Returns a pair ([binary_expression], instructions). "binary_expression" *)
-(* is returned when we are calculating an expression "instructions" is not *)
-(* empty when the binary operator is actually a statement like an          *)
-(* assignment.                                                             *)
-let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
-  let binop_exp op = Sil.BinOp(op, e1, e2) in
-  match boi.Clang_ast_t.boi_kind with
-  | `Add -> (binop_exp (Sil.PlusA), [], [])
-  | `Mul -> (binop_exp (Sil.Mult), [], [])
-  | `Div -> (binop_exp (Sil.Div), [], [])
-  | `Rem -> (binop_exp (Sil.Mod), [], [])
-  | `Sub -> (binop_exp (Sil.MinusA), [], [])
-  | `Shl -> (binop_exp (Sil.Shiftlt), [], [])
-  | `Shr -> (binop_exp(Sil.Shiftrt), [], [])
-  | `Or -> (binop_exp (Sil.BOr), [], [])
-  | `And -> (binop_exp (Sil.BAnd), [], [])
-  | `Xor -> (binop_exp (Sil.BXor), [], [])
-  | `LT -> (binop_exp (Sil.Lt), [], [])
-  | `GT -> (binop_exp (Sil.Gt), [], [])
-  | `LE -> (binop_exp (Sil.Le), [], [])
-  | `GE -> (binop_exp (Sil.Ge), [], [])
-  | `NE -> (binop_exp (Sil.Ne), [], [])
-  | `EQ -> (binop_exp (Sil.Eq), [], [])
-  | `LAnd -> (binop_exp (Sil.LAnd), [], [])
-  | `LOr -> (binop_exp (Sil.LOr), [], [])
-  | `Assign ->
-      if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
-        assignment_arc_mode context e1 typ e2 loc rhs_owning_method false
-      else
-        (e1, [Sil.Set (e1, typ, e2, loc)], [])
-  | `Comma -> (e2, [], []) (* C99 6.5.17-2 *)
-  | `MulAssign | `DivAssign | `RemAssign | `AddAssign | `SubAssign
-  | `ShlAssign | `ShrAssign | `AndAssign | `XorAssign | `OrAssign ->
-      assert false
-  (* We should not get here.  *)
-  (* These should be treated by compound_assignment_binary_operation_instruction*)
-  | bok ->
-      Printing.log_stats
-        "\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
-        (Clang_ast_j.string_of_binary_operator_kind bok);
-      (Sil.exp_minus_one, [], [])
-
-(* Returns a pair ([binary_expression], instructions) for binary operator representing a CompoundAssignment. *)
-(* "binary_expression" is returned when we are calculating an expression*)
-(* "instructions" is not empty when the binary operator is actually a statement like an assignment. *)
+(* Returns a pair ([binary_expression], instructions) for binary operator representing a *)
+(* CompoundAssignment. "binary_expression" is returned when we are calculating an expression*)
+(* "instructions" is not empty when the binary operator is actually a statement like an *)
+(* assignment. *)
 let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
   let id = Ident.create_fresh Ident.knormal in
   let instr1 = Sil.Letderef (id, e1, typ, loc) in
@@ -130,12 +89,50 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
     | `XorAssign ->
         let e1_xor_e2 = Sil.BinOp(Sil.BXor, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_xor_e2, loc)])
-    | bok ->
-        Printing.log_stats
-          "\nWARNING: Missing translation for CompoundAssignment Binary Operator Kind %s. Construct ignored...\n"
-          (Clang_ast_j.string_of_binary_operator_kind bok);
-        (Sil.exp_minus_one, []) in
-  ([id], e_res, instr1:: instr_op)
+    | bok -> assert false in
+  (e_res, instr1:: instr_op, [id])
+
+(* Returns a pair ([binary_expression], instructions). "binary_expression" *)
+(* is returned when we are calculating an expression "instructions" is not *)
+(* empty when the binary operator is actually a statement like an          *)
+(* assignment.                                                             *)
+let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
+  let binop_exp op = Sil.BinOp(op, e1, e2) in
+  match boi.Clang_ast_t.boi_kind with
+  | `Add -> (binop_exp (Sil.PlusA), [], [])
+  | `Mul -> (binop_exp (Sil.Mult), [], [])
+  | `Div -> (binop_exp (Sil.Div), [], [])
+  | `Rem -> (binop_exp (Sil.Mod), [], [])
+  | `Sub -> (binop_exp (Sil.MinusA), [], [])
+  | `Shl -> (binop_exp (Sil.Shiftlt), [], [])
+  | `Shr -> (binop_exp(Sil.Shiftrt), [], [])
+  | `Or -> (binop_exp (Sil.BOr), [], [])
+  | `And -> (binop_exp (Sil.BAnd), [], [])
+  | `Xor -> (binop_exp (Sil.BXor), [], [])
+  | `LT -> (binop_exp (Sil.Lt), [], [])
+  | `GT -> (binop_exp (Sil.Gt), [], [])
+  | `LE -> (binop_exp (Sil.Le), [], [])
+  | `GE -> (binop_exp (Sil.Ge), [], [])
+  | `NE -> (binop_exp (Sil.Ne), [], [])
+  | `EQ -> (binop_exp (Sil.Eq), [], [])
+  | `LAnd -> (binop_exp (Sil.LAnd), [], [])
+  | `LOr -> (binop_exp (Sil.LOr), [], [])
+  | `Assign ->
+      if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
+        assignment_arc_mode context e1 typ e2 loc rhs_owning_method false
+      else
+        (e1, [Sil.Set (e1, typ, e2, loc)], [])
+  | `Comma -> (e2, [], []) (* C99 6.5.17-2 *)
+  | `MulAssign | `DivAssign | `RemAssign | `AddAssign | `SubAssign
+  | `ShlAssign | `ShrAssign | `AndAssign | `XorAssign | `OrAssign ->
+      compound_assignment_binary_operation_instruction boi e1 typ e2 loc
+  (* We should not get here.  *)
+  (* These should be treated by compound_assignment_binary_operation_instruction*)
+  | bok ->
+      Printing.log_stats
+        "\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
+        (Clang_ast_j.string_of_binary_operator_kind bok);
+      (Sil.exp_minus_one, [], [])
 
 let unary_operation_instruction uoi e typ loc =
   let uok = Clang_ast_j.string_of_unary_operator_kind (uoi.Clang_ast_t.uoi_kind) in

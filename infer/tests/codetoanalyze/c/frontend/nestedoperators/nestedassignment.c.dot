@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  ComppoundAssignStmt \n   n$9=*&x:double  [line 15]\n  *&x:double =(n$9 + 7) [line 15]\n  REMOVE_TEMPS(n$9); [line 15]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: AddAssign \n   n$9=*&x:double  [line 15]\n  *&x:double =(n$9 + 7) [line 15]\n  REMOVE_TEMPS(n$9); [line 15]\n " shape="box"]
 	
 
 	 6 -> 5 ;

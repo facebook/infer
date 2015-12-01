@@ -3,19 +3,19 @@ digraph iCFG {
 	
 
 	 15 -> 14 ;
-14 [label="14:  ComppoundAssignStmt \n   n$9=*&x:double  [line 12]\n  *&x:double =(n$9 + 1.000000) [line 12]\n  REMOVE_TEMPS(n$9); [line 12]\n " shape="box"]
+14 [label="14:  BinaryOperatorStmt: AddAssign \n   n$9=*&x:double  [line 12]\n  *&x:double =(n$9 + 1.000000) [line 12]\n  REMOVE_TEMPS(n$9); [line 12]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  ComppoundAssignStmt \n   n$8=*&x:double  [line 13]\n  *&x:double =(n$8 - 1.000000) [line 13]\n  REMOVE_TEMPS(n$8); [line 13]\n " shape="box"]
+13 [label="13:  BinaryOperatorStmt: SubAssign \n   n$8=*&x:double  [line 13]\n  *&x:double =(n$8 - 1.000000) [line 13]\n  REMOVE_TEMPS(n$8); [line 13]\n " shape="box"]
 	
 
 	 13 -> 12 ;
-12 [label="12:  ComppoundAssignStmt \n   n$7=*&x:double  [line 14]\n  *&x:double =(n$7 / 1.000000) [line 14]\n  REMOVE_TEMPS(n$7); [line 14]\n " shape="box"]
+12 [label="12:  BinaryOperatorStmt: DivAssign \n   n$7=*&x:double  [line 14]\n  *&x:double =(n$7 / 1.000000) [line 14]\n  REMOVE_TEMPS(n$7); [line 14]\n " shape="box"]
 	
 
 	 12 -> 11 ;
-11 [label="11:  ComppoundAssignStmt \n   n$6=*&x:double  [line 15]\n  *&x:double =(n$6 * 1.000000) [line 15]\n  REMOVE_TEMPS(n$6); [line 15]\n  NULLIFY(&x,false); [line 15]\n " shape="box"]
+11 [label="11:  BinaryOperatorStmt: MulAssign \n   n$6=*&x:double  [line 15]\n  *&x:double =(n$6 * 1.000000) [line 15]\n  REMOVE_TEMPS(n$6); [line 15]\n  NULLIFY(&x,false); [line 15]\n " shape="box"]
 	
 
 	 11 -> 10 ;
@@ -23,27 +23,27 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  ComppoundAssignStmt \n   n$5=*&b:int  [line 17]\n  *&b:int =(n$5 << 1) [line 17]\n  REMOVE_TEMPS(n$5); [line 17]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: ShlAssign \n   n$5=*&b:int  [line 17]\n  *&b:int =(n$5 << 1) [line 17]\n  REMOVE_TEMPS(n$5); [line 17]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8:  ComppoundAssignStmt \n   n$4=*&b:int  [line 18]\n  *&b:int =(n$4 >> 1) [line 18]\n  REMOVE_TEMPS(n$4); [line 18]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: ShrAssign \n   n$4=*&b:int  [line 18]\n  *&b:int =(n$4 >> 1) [line 18]\n  REMOVE_TEMPS(n$4); [line 18]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  ComppoundAssignStmt \n   n$3=*&b:int  [line 19]\n  *&b:int =(n$3 % 1) [line 19]\n  REMOVE_TEMPS(n$3); [line 19]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: RemAssing \n   n$3=*&b:int  [line 19]\n  *&b:int =(n$3 % 1) [line 19]\n  REMOVE_TEMPS(n$3); [line 19]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  ComppoundAssignStmt \n   n$2=*&b:int  [line 20]\n  *&b:int =(n$2 & 1) [line 20]\n  REMOVE_TEMPS(n$2); [line 20]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: AndAssign \n   n$2=*&b:int  [line 20]\n  *&b:int =(n$2 & 1) [line 20]\n  REMOVE_TEMPS(n$2); [line 20]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5:  ComppoundAssignStmt \n   n$1=*&b:int  [line 21]\n  *&b:int =(n$1 | 1) [line 21]\n  REMOVE_TEMPS(n$1); [line 21]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: OrAssign \n   n$1=*&b:int  [line 21]\n  *&b:int =(n$1 | 1) [line 21]\n  REMOVE_TEMPS(n$1); [line 21]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  ComppoundAssignStmt \n   n$0=*&b:int  [line 22]\n  *&b:int =(n$0 ^ 1) [line 22]\n  REMOVE_TEMPS(n$0); [line 22]\n  NULLIFY(&b,false); [line 22]\n " shape="box"]
+4 [label="4:  BinaryOperatorStmt: XorAssign \n   n$0=*&b:int  [line 22]\n  *&b:int =(n$0 ^ 1) [line 22]\n  REMOVE_TEMPS(n$0); [line 22]\n  NULLIFY(&b,false); [line 22]\n " shape="box"]
 	
 
 	 4 -> 3 ;
