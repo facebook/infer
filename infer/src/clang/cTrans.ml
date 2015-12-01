@@ -1707,33 +1707,12 @@ struct
     let ret_typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let ids_op, exp_op, instr_op =
       CArithmetic_trans.unary_operation_instruction unary_operator_info sil_e' ret_typ sil_loc in
-    let node_kind = Cfg.Node.Stmt_node "UnaryOperator" in
-    let ids' = res_trans_stmt.ids@ids_op in
-    let instrs = res_trans_stmt.instrs @ instr_op in
-    let root_nodes_to_parent, leaf_nodes_to_parent, ids_to_parent, instr_to_parent, exp_to_parent =
-      if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
-        (* Create a node. *)
-        let ids_parent = ids_to_parent trans_state_pri.continuation ids' in
-        let ids_node = ids_to_node trans_state_pri.continuation ids' in
-        let node = create_node node_kind ids_node instrs sil_loc context in
-
-        Cfg.Node.set_succs_exn node trans_state_pri.succ_nodes [];
-        IList.iter (fun n -> Cfg.Node.set_succs_exn n [node] []) res_trans_stmt.leaf_nodes;
-
-        let root_nodes =
-          if res_trans_stmt.root_nodes <> [] then res_trans_stmt.root_nodes
-          else [node] in
-        let leaf_nodes = [node] in
-
-        root_nodes, leaf_nodes, ids_parent, [], exp_op
-      else
-        res_trans_stmt.root_nodes, res_trans_stmt.leaf_nodes, ids', instrs, exp_op in
-    { root_nodes = root_nodes_to_parent;
-      leaf_nodes = leaf_nodes_to_parent;
-      ids = ids_to_parent;
-      instrs = instr_to_parent;
-      exps = [(exp_to_parent, ret_typ)]
-    }
+    let unary_op_res_trans = { empty_res_trans with ids = ids_op; instrs = instr_op } in
+    let all_res_trans = [ res_trans_stmt; unary_op_res_trans ] in
+    let nname = "UnaryOperator" in
+    let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname
+        stmt_info all_res_trans in
+    { res_trans_to_parent with exps = [(exp_op, ret_typ)] }
 
   and returnStmt_trans trans_state stmt_info stmt_list =
     let context = trans_state.context in
