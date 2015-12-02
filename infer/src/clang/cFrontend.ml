@@ -99,8 +99,9 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
   | NamespaceDecl (decl_info, name_info, decl_list, decl_context_info, _) ->
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
-  | ClassTemplateDecl (decl_info, named_decl_info, class_template_decl_info) ->
-      let decl_list = class_template_decl_info.Clang_ast_t.tdi_specializations in
+  | ClassTemplateDecl (decl_info, named_decl_info, template_decl_info)
+  | FunctionTemplateDecl (decl_info, named_decl_info, template_decl_info) ->
+      let decl_list = template_decl_info.Clang_ast_t.tdi_specializations in
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
   | dec -> ()
 

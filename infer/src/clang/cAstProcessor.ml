@@ -33,8 +33,9 @@ let decl_get_sub_decls decl =
   | LinkageSpecDecl (_, decl_list, _)
   | NamespaceDecl (_, _, decl_list, _, _) ->
       decl_list
-  | ClassTemplateDecl (_, _, class_template_decl_info) ->
-      class_template_decl_info.tdi_specializations
+  | ClassTemplateDecl (_, _, template_decl_info)
+  | FunctionTemplateDecl (_, _, template_decl_info) ->
+      template_decl_info.tdi_specializations
   | _ ->
       []
 
@@ -65,9 +66,12 @@ let decl_set_sub_decls decl decl_list' =
       LinkageSpecDecl (decl_info, decl_list', decl_context_info)
   | NamespaceDecl (decl_info, name, decl_list, decl_context_info, namespace_decl_info) ->
       NamespaceDecl (decl_info, name, decl_list', decl_context_info, namespace_decl_info)
-  | ClassTemplateDecl (decl_info, name, class_template_decl_info) ->
-      let class_template_decl_info' = { tdi_specializations = decl_list' } in
-      ClassTemplateDecl (decl_info, name, class_template_decl_info')
+  | ClassTemplateDecl (decl_info, name, template_decl_info) ->
+      let template_decl_info' = { tdi_specializations = decl_list' } in
+      ClassTemplateDecl (decl_info, name, template_decl_info')
+  | FunctionTemplateDecl (decl_info, name, template_decl_info) ->
+      let template_decl_info' = { tdi_specializations = decl_list' } in
+      FunctionTemplateDecl (decl_info, name, template_decl_info')
   | _ ->
       decl
 

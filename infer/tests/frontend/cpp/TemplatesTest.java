@@ -41,4 +41,9 @@ public class TemplatesTest {
     frontendTest("class_template_instantiate.cpp");
   }
 
+  @Test
+  public void testFunctionDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("function.cpp");
+  }
 }
