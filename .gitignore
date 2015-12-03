@@ -29,6 +29,7 @@ _build
 /infer/models/cpp/Makefile
 /infer/models/java/Makefile
 /infer/models/objc/Makefile
+/infer/src/Makefile
 
 # IntelliJ files
 /scripts/.idea/

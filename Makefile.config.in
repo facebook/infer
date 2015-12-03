@@ -11,6 +11,10 @@ ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 
 INFER_DIR = $(ABSOLUTE_ROOT_DIR)/infer
 DEPENDENCIES_DIR = $(ABSOLUTE_ROOT_DIR)/dependencies
+FCP_DIR = $(ABSOLUTE_ROOT_DIR)/facebook-clang-plugins
+SCRIPT_DIR = $(ABSOLUTE_ROOT_DIR)/scripts
+
+FCP_CLANG_OCAML_DIR = $(FCP_DIR)/clang-ocaml
 
 ANNOTATIONS_DIR = $(INFER_DIR)/annotations
 BIN_DIR = $(INFER_DIR)/bin

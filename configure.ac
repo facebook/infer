@@ -66,5 +66,6 @@ AC_CONFIG_FILES([
   infer/models/cpp/Makefile
   infer/models/objc/Makefile
   infer/models/java/Makefile
+  infer/src/Makefile
 ])
 AC_OUTPUT
