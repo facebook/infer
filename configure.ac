@@ -30,6 +30,9 @@ AC_PROG_OBJC
 AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
 AC_ASSERT_PROG([python2.7], [$PYTHON27])
 
+AC_CHECK_TOOL([JAVAC], [javac], [no])
+AC_ASSERT_PROG([javac], [$JAVAC])
+
 # OCaml dependencies
 AC_PROG_OCAML
 AC_ASSERT_PROG([ocamlc], [$OCAMLC])

@@ -24,7 +24,7 @@ compile everything from source (see the end of this document).
 
 - opam (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
-- Java >= 1.7 (only needed for the Java analysis)
+- Java (only needed for the Java analysis)
 - clang in Xcode command line tools. You can install them with the command
   `xcode-select --install` (only needed for the C/Objective-C analysis)
 - Xcode >= 6.1 (only needed for the C/Objective-C analysis)
@@ -61,7 +61,7 @@ compile everything from source (see the end of this document).
 - gcc >= 4.7.2
 - opam
 - Python 2.7
-- Java >= 1.7 (only needed for the Java analysis)
+- Java (only needed for the Java analysis)
 
 ### How to install the dependencies on Ubuntu 12.04.4 LTS
 
