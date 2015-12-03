@@ -21,7 +21,7 @@ OCAML_INCLUDE_DIR = $(shell ocamlc -where)
 
 #### Global declarations ####
 
-ROOT = $(shell cd ../.. && pwd)
+ROOT = $(shell printf "%q\n" "$(shell cd ../.. && pwd)")
 
 BUILDDIR = $(ROOT)/infer/_build-infer
 ANNOTDIR = $(ROOT)/infer/src/_build

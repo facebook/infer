@@ -1,4 +1,4 @@
-CWD = $(shell pwd)
+CWD = $(shell printf "%q\n" "$(shell pwd)")
 DEPENDENCIES = $(CWD)/../../dependencies
 LIB = $(CWD)/../lib/java
 JSR_JAR = $(DEPENDENCIES)/java/jsr-305/jsr305.jar
