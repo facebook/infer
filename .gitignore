@@ -23,6 +23,7 @@ _build
 /configure
 /Makefile.config
 /Makefile
+/infer/Makefile
 
 # IntelliJ files
 /scripts/.idea/

@@ -52,5 +52,6 @@ AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.
 AC_CONFIG_FILES([
   Makefile.config
   Makefile
+  infer/Makefile
 ])
 AC_OUTPUT

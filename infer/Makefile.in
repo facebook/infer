@@ -1,0 +1,35 @@
+# Copyright (c) 2015 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+@SET_MAKE@
+ROOT_DIR = ..
+
+include $(ROOT_DIR)/Makefile.config
+
+all: clang java llvm checkCopyright
+
+java:
+	$(MAKE) -C $(SRC_DIR) java
+	$(MAKE) -C $(ANNOTATIONS_DIR)
+	$(MAKE) -C $(MODELS_DIR) java
+
+clang:
+	$(MAKE) -C $(SRC_DIR) clang
+	$(MAKE) -C $(MODELS_DIR) clang
+
+llvm:
+	$(MAKE) -C $(SRC_DIR) llvm
+
+checkCopyright:
+	$(MAKE) -C $(SRC_DIR) checkCopyright
+
+clean:
+	$(MAKE) -C $(SRC_DIR) clean
+	$(MAKE) -C $(ANNOTATIONS_DIR) clean
+	$(MAKE) -C $(MODELS_DIR) clean
+
+.PHONY: all checkCopyright clang clean java llvm models

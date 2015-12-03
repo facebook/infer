@@ -10,6 +10,9 @@ ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 INFER_DIR = $(ABSOLUTE_ROOT_DIR)/infer
 DEPENDENCIES_DIR = $(ABSOLUTE_ROOT_DIR)/dependencies
 
+ANNOTATIONS_DIR = $(INFER_DIR)/annotations
 LIB_DIR = $(INFER_DIR)/lib
+MODELS_DIR = $(INFER_DIR)/models
+SRC_DIR = $(INFER_DIR)/src
 
 JAVA_LIB_DIR = $(LIB_DIR)/java
