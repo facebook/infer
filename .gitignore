@@ -21,6 +21,7 @@ _build
 /autom4te.cache
 /config.status
 /configure
+/Makefile.config
 
 # IntelliJ files
 /scripts/.idea/

@@ -1,14 +1,22 @@
+# Copyright (c) 2015 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+ROOT_DIR = ../..
+include $(ROOT_DIR)/Makefile.config
+
 CWD = $(shell pwd)
-DEPENDENCIES = $(CWD)/../../dependencies
-LIB = $(CWD)/../lib/java
-JSR_JAR = $(DEPENDENCIES)/java/jsr-305/jsr305.jar
+JSR_JAR = $(DEPENDENCIES_DIR)/java/jsr-305/jsr305.jar
 ANNOT_SOURCES = $(shell find com/facebook/infer/annotation -name "*.java")
 PROCESSOR_SOURCES = $(shell find com/facebook/infer/annotprocess -name "*.java")
 ANNOT_CLASSES = 'annot_classes'
 PROCESSOR_CLASSES = 'processor_classes'
 
 ANNOTATIONS_JAR = $(CWD)/annotations.jar
-PROCESSOR_JAR = $(LIB)/processor.jar
+PROCESSOR_JAR = $(JAVA_LIB_DIR)/processor.jar
 
 all: $(ANNOTATIONS_JAR) $(PROCESSOR_JAR)
 
