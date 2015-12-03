@@ -19,17 +19,18 @@ AC_DEFUN([AC_ASSERT_OCAML_PKG],
   has_pkg=$AS_TR_SH[OCAML_PKG_$1]
   AS_IF([test "$has_pkg" = "no"],
   [dnl
-    unset version
-    unset version_msg
+   unset opam_command
+   unset version
+    opam_command="opam pin add $1 $3"
     version=".$3"
-    AS_IF([test "x$3" = "x"], [version=""])
-    version_msg=""
-    AS_IF([test "x$3" != "x"], [version_msg=" version $3"])
-    AC_MSG_ERROR([missing dependency: $1$version_msg.
+    AS_IF([test "x$3" = "x"],
+      [opam_command="opam install $1"
+      version=""])
+    AC_MSG_ERROR([missing dependency: $1$version.
 
 If you are using opam, please run
 
-  opam install $1$version])
+  $opam_command])
   ])
 ])
 
