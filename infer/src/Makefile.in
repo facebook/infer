@@ -170,8 +170,9 @@ $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
 
 $(INFER_CLANG_AST_PROJ) $(INFER_CLANG_AST_MAIN): $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
 # copy the ast_proj files whenever they are updated
-	@INSTALL@ -m 644 -C -t $(CLANG_SOURCES) \
-	  $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
+	@INSTALL@ -m 644 -C \
+	  $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN) \
+	  $(CLANG_SOURCES)
 
 $(CLANG_ATDGEN_STUBS): $(CLANG_ATDGEN_STUB_ATD)
 # rebuild the artifacts of the AST files whenever they're upated in FCP
