@@ -1,22 +1,14 @@
 SOURCES=$(wildcard *.cpp)
 OBJECTS=$(SOURCES:.cpp=.o)
 CXX=g++
-FLAGS=-c -w
+CXXFLAGS=-c -w
 
-default: test
-
-all: test
-
-.PHONY: test
-test: $(OBJECTS)
-	echo "test called\n"
-
-.PHONY: configure
-configure:
-	echo "no configure required\n"
+all: $(OBJECTS)
 
 clean:
-	rm -rf *.o
+	rm -rf $(OBJECTS)
 
 .c.o:
-	$(CXX) $(FLAGS)  $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@
+
+.PHONY: all clean

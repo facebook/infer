@@ -5,14 +5,44 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+PLATFORM = $(shell uname)
+
 ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 
 INFER_DIR = $(ABSOLUTE_ROOT_DIR)/infer
 DEPENDENCIES_DIR = $(ABSOLUTE_ROOT_DIR)/dependencies
 
 ANNOTATIONS_DIR = $(INFER_DIR)/annotations
+BIN_DIR = $(INFER_DIR)/bin
 LIB_DIR = $(INFER_DIR)/lib
 MODELS_DIR = $(INFER_DIR)/models
 SRC_DIR = $(INFER_DIR)/src
 
 JAVA_LIB_DIR = $(LIB_DIR)/java
+PYTHON_LIB_DIR = $(LIB_DIR)/python/inferlib
+SPECS_LIB_DIR = $(LIB_DIR)/specs
+
+CAPTURE_LIB_DIR = $(PYTHON_LIB_DIR)/capture
+
+INFERANALYZE_BIN = $(BIN_DIR)/InferAnalyze
+INFERCLANG_BIN = $(BIN_DIR)/InferClang
+INFERJAVA_BIN = $(BIN_DIR)/InferJava
+INFERPRINT_BIN = $(BIN_DIR)/InferPrint
+
+JAVA_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
+              analyze.py config.py issues.py jwlib.py source.py utils.py) \
+            $(addprefix $(CAPTURE_LIB_DIR)/, javac.py util.py) \
+            $(BIN_DIR)/infer \
+            $(INFERANALYZE_BIN) \
+            $(INFERJAVA_BIN) \
+            $(INFERPRINT_BIN)
+
+CLANG_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
+               analyze.py config.py issues.py source.py utils.py) \
+             $(addprefix $(CAPTURE_LIB_DIR)/, make.py util.py) \
+             $(BIN_DIR)/infer \
+             $(INFERANALYZE_BIN) \
+             $(INFERCLANG_BIN) \
+             $(INFERPRINT_BIN)
+
+JAVA_MODELS_JAR = $(LIB_DIR)/java/models.jar

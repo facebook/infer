@@ -24,6 +24,11 @@ _build
 /Makefile.config
 /Makefile
 /infer/Makefile
+/infer/models/Makefile
+/infer/models/c/Makefile
+/infer/models/cpp/Makefile
+/infer/models/java/Makefile
+/infer/models/objc/Makefile
 
 # IntelliJ files
 /scripts/.idea/
@@ -70,8 +75,12 @@ buck-out/
 /infer/bin/Typeprop
 /infer/src/backend/version.ml
 /infer/models/java/models/
+/infer/models/java/models.jar
 /infer/lib/java/models.jar
 /infer/models/java/bootclasspath
+/infer/models/c/out/
+/infer/models/cpp/out/
+/infer/models/objc/out/
 /infer/lib/specs/c_models
 /infer/lib/specs/cpp_models
 /infer/lib/specs/objc_models

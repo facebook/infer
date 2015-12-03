@@ -22,6 +22,7 @@ AC_PROG_CXX
 AC_PROG_AWK
 AC_PROG_CC
 AC_PROG_CPP
+AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_OBJC
@@ -46,6 +47,13 @@ AC_ASSERT_OCAML_PKG([easy-format])
 AC_ASSERT_OCAML_PKG([ptrees])
 AC_ASSERT_OCAML_PKG([yojson])
 
+AC_CHECK_TOOL([ATDGEN], [atdgen], [no])
+AC_ASSERT_PROG([atdgen], [$ATDGEN])
+AC_SUBST([ATDGEN])
+
+AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
+AC_SUBST([XCODE_SELECT])
+
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.h stdlib.h string.h sys/mount.h sys/param.h sys/socket.h sys/statfs.h sys/time.h unistd.h wchar.h wctype.h])
 
@@ -53,5 +61,10 @@ AC_CONFIG_FILES([
   Makefile.config
   Makefile
   infer/Makefile
+  infer/models/Makefile
+  infer/models/c/Makefile
+  infer/models/cpp/Makefile
+  infer/models/objc/Makefile
+  infer/models/java/Makefile
 ])
 AC_OUTPUT

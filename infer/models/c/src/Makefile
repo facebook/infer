@@ -1,23 +1,14 @@
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
 CC=gcc
-FLAGS=-c -w
+CFLAGS=-c -w
 
-default: test
-
-all: test
-
-.PHONY: test
-test: $(OBJECTS) $(OBJECTSXX)
-	echo "test called\n"
-
-.PHONY: configure
-configure:
-	echo "no configure required\n"
+all: $(OBJECTS) $(OBJECTSXX)
 
 clean:
-	rm -rf *.o
+	rm -rf $(OBJECTS)
 
 .c.o:
-	$(CC) $(FLAGS)  $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
+.PHONY: all clean
