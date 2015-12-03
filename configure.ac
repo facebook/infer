@@ -27,6 +27,10 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_OBJC
 
+AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
+AC_ASSERT_PROG([python2.7], [$PYTHON27])
+
+# OCaml dependencies
 AC_PROG_OCAML
 AC_ASSERT_PROG([ocamlc], [$OCAMLC])
 AC_ASSERT_PROG([ocamlopt], [$OCAMLOPT])
