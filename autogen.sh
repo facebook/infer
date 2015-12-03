@@ -36,6 +36,6 @@ echo ""
 echo "you may now run the following commands to build Infer:"
 echo ""
 echo "  ./configure"
-echo "  make -C infer clang java"
+echo "  make"
 echo ""
 echo 'run `./configure --help` for more options'

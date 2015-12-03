@@ -49,5 +49,8 @@ AC_ASSERT_OCAML_PKG([yojson])
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.h stdlib.h string.h sys/mount.h sys/param.h sys/socket.h sys/statfs.h sys/time.h unistd.h wchar.h wctype.h])
 
-AC_CONFIG_FILES([Makefile.config])
+AC_CONFIG_FILES([
+  Makefile.config
+  Makefile
+])
 AC_OUTPUT

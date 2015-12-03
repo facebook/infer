@@ -36,13 +36,13 @@ fi
 
 # We must collect at least one target, or Infer must be recompiled
 ([ -z "$TARGETS_TO_TEST" ] || [ -z "$TARGETS_TO_COMPILE" ]) \
-  && echo 'Infer is not compiled properly. Run make -C infer clean && make -C infer' \
+  && echo 'Infer is not compiled properly. Run make clean all' \
   && exit 1
 
 cd $SCRIPT_DIR/..
 ./autogen.sh
 ./configure
-make -C infer ${TARGETS_TO_COMPILE[@]}
+make ${TARGETS_TO_COMPILE[@]}
 
 # Must clean in order to force running the tests with the latest version
 # of infer. There is no dependency between buck targets and infer.

@@ -1,0 +1,23 @@
+# Copyright (c) 2015 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+@SET_MAKE@
+ROOT_DIR = .
+include $(ROOT_DIR)/Makefile.config
+
+all: clang java
+
+java:
+	$(MAKE) -C $(INFER_DIR) java
+
+clang:
+	$(MAKE) -C $(INFER_DIR) clang
+
+clean:
+	$(MAKE) -C $(INFER_DIR) clean
+
+.PHONY: all clean clang java
