@@ -1132,7 +1132,7 @@ let should_raise_objc_leak prop hpred =
       Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
 
-let print_retain_cycle _prop =
+let print_retain_cycle _prop cycle =
   match _prop with
   | None -> ()
   | Some (Some _prop) ->
@@ -1144,7 +1144,7 @@ let print_retain_cycle _prop =
         source_file' ^ "_RETAIN_CYCLE_" ^ (Location.to_string loc) ^ ".dot" in
       L.d_strln ("Printing dotty proposition for retain cycle in :"^dest_file_str);
       Prop.d_prop _prop; L.d_strln "";
-      Dotty.dotty_prop_to_dotty_file dest_file_str _prop
+      Dotty.dotty_prop_to_dotty_file dest_file_str _prop cycle
   | _ -> ()
 
 let get_var_retain_cycle _prop =
@@ -1300,7 +1300,7 @@ let check_junk ?original_prop pname tenv prop =
                     Mleak_buckets.should_raise_cpp_leak ()
                 | _ -> None in
               let exn_retain_cycle cycle =
-                print_retain_cycle original_prop;
+                print_retain_cycle original_prop cycle;
                 let desc = Errdesc.explain_retain_cycle
                     (remove_opt original_prop) cycle (State.get_loc ()) in
                 Exceptions.Retain_cycle
