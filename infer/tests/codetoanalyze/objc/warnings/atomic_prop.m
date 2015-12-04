@@ -44,6 +44,34 @@
 
 @synthesize b;
 
+- (A*) init
+{
+    _p = 0; // Good access
+    _q = 0; // Good access
+    _f = 0; // Good access
+}
+
+- (A*) new
+{
+    _p = 0; // Good access
+    _q = 0; // Good access
+    _f = 0; // Good access
+}
+
+- (A*) initWithBla: (int) d
+{
+    _p = d; // Good access
+    _q = d; // Good access
+    _f = d; // Good access
+}
+
+- (A*) initWith: (int) e
+{
+    _p = e; // Good access
+    _q = e; // Good access
+    _f = e; // Good access
+}
+
 - (void) writeP: (int)i
 {
     _p = i; // Good access

@@ -47,10 +47,12 @@ let direct_atomic_property_access context stmt_info ivar_name =
   | Some Sil.Tstruct (flds1, flds2, _, _, _, _, _) ->
       (* We give the warning when:
          (1) the property has the atomic attribute and
-         (2) the access of the ivar is not in a getter or setter method. This condition
-             avoids false positives *)
+         (2) the access of the ivar is not in a getter or setter method.
+         (3) the access of the ivar is not in the init method
+         Last two conditions avoids false positives *)
       let condition = (CField_decl.is_ivar_atomic ivar (flds1 @ flds2))
-                      && not (ObjcProperty_decl.is_getter_setter curr_class mname ivar_name) in
+                      && not (ObjcProperty_decl.is_getter_setter curr_class mname ivar_name)
+                      && not (Procname.is_constructor mname) in
       let warning_desc = {
         name = "DIRECT_ATOMIC_PROPERTY_ACCESS";
         description = "Direct access to ivar " ^ (Ident.fieldname_to_string ivar) ^
