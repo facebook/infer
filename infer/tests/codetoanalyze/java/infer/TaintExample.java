@@ -133,4 +133,29 @@ public class TaintExample {
     callSinkMethodModelMethods(returnTaintedSourceModelMethods());
   }
 
+  public void simpleTaintErrorWithModelMethodsUndefined() {
+    Object o = InferTaint.inferSecretSourceUndefined();
+    InferTaint.inferSensitiveSinkUndefined(o);
+  }
+
+  public Object returnTaintedSourceModelMethodsUndefined() {
+    return InferTaint.inferSecretSourceUndefined();
+  }
+
+  public void callSinkMethodModelMethodsUndefined(Object o) {
+    InferTaint.inferSensitiveSinkUndefined(o);
+  }
+
+  public void interprocTaintErrorWithModelMethodsUndefined1() {
+    InferTaint.inferSensitiveSinkUndefined(returnTaintedSourceModelMethodsUndefined());
+  }
+
+  public void interprocTaintErrorWithModelMethodsUndefined2() {
+    callSinkMethodModelMethodsUndefined(InferTaint.inferSecretSourceUndefined());
+  }
+
+  public void interprocTaintErrorWithModelMethodsUndefined3() {
+    callSinkMethodModelMethodsUndefined(returnTaintedSourceModelMethodsUndefined());
+  }
+
 }

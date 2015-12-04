@@ -1107,45 +1107,51 @@ and add_to_footprint abducted_pv typ prop =
   let sigma_fp = Prop.get_sigma_footprint prop in
   (Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop), fresh_fp_var)
 
-and add_constraints_on_retval pdesc prop exp typ callee_pname callee_loc =
+and add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
   if Procname.is_infer_undefined callee_pname then prop
   else
+    let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
+      Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
+    let already_has_abducted_retval p abducted_ret_pv =
+      IList.exists
+        (fun hpred -> match hpred with
+           | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
+           | _ -> false)
+        (Prop.get_sigma_footprint p) in
+    (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
+    let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
+      let bind_exp prop = function
+        | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
+          when Sil.pvar_equal pv abducted_pvar ->
+            Prop.conjoin_eq exp_to_bind rhs prop
+        | _ -> prop in
+      IList.fold_left bind_exp prop (Prop.get_sigma prop) in
     (* To avoid obvious false positives, assume skip functions do not return null pointers *)
     let add_ret_non_null exp typ prop =
       match typ with
       | Sil.Tptr _ -> Prop.conjoin_neq exp Sil.exp_zero prop
       | _ -> prop in
-    let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
-      Procname.equal pname (Cfg.Procdesc.get_proc_name pdesc) in
+    let add_tainted_post ret_exp callee_pname prop =
+      Prop.add_or_replace_exp_attribute prop ret_exp (Sil.Ataint callee_pname) in
+
     if !Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
       let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname callee_loc in
-      let already_has_abducted_retval p =
-        IList.exists
-          (fun hpred -> match hpred with
-             | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
-             | _ -> false)
-          (Prop.get_sigma_footprint p) in
       (* prevent introducing multiple abducted retvals for a single call site in a loop *)
-      if already_has_abducted_retval prop then prop
+      if already_has_abducted_retval prop abducted_ret_pv then prop
       else
-      if !Config.footprint then
-        let (prop', fresh_fp_var) = add_to_footprint abducted_ret_pv typ prop in
-        let prop'' = Prop.conjoin_eq ~footprint: true exp fresh_fp_var prop' in
-        add_ret_non_null exp typ prop''
-      else
-        (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
-        let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
-          let bind_exp prop = function
-            | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
-              when Sil.pvar_equal pv abducted_pvar ->
-                Prop.conjoin_eq exp_to_bind rhs prop
-            | _ -> prop in
-          IList.fold_left bind_exp prop (Prop.get_sigma prop) in
-        (* bind return id to the abducted value pointed to by the pvar we introduced *)
-        bind_exp_to_abducted_val exp abducted_ret_pv prop
-        |> add_ret_non_null exp typ
-    else add_ret_non_null exp typ prop
+        let prop' =
+          if !Config.footprint then
+            let (prop', fresh_fp_var) = add_to_footprint abducted_ret_pv typ prop in
+            Prop.conjoin_eq ~footprint: true ret_exp fresh_fp_var prop'
+          else
+            (* bind return id to the abducted value pointed to by the pvar we introduced *)
+            bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
+        let prop'' = add_ret_non_null ret_exp typ prop' in
+        if !Config.taint_analysis && Taint.returns_secret callee_pname then
+          add_tainted_post ret_exp callee_pname prop''
+        else prop''
+    else add_ret_non_null ret_exp typ prop
 
 and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_loc =
   (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
@@ -1217,6 +1223,24 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
       replace_actual_hpred actual actual_pt_havocd_var prop in
     IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
 
+and check_untainted exp caller_pname callee_pname prop =
+  match Prop.get_taint_attribute prop exp with
+  | Some (Sil.Ataint source_pname) ->
+      let err_desc =
+        Errdesc.explain_tainted_value_reaching_sensitive_function exp source_pname
+          callee_pname (State.get_loc ()) in
+      let exn =
+        Exceptions.Tainted_value_reaching_sensitive_function
+          (err_desc, try assert false with Assert_failure x -> x) in
+      Reporting.log_warning caller_pname exn;
+      Prop.add_or_replace_exp_attribute prop exp (Sil.Auntaint)
+  | _ ->
+      if !Config.footprint then
+        let untaint_attr = Sil.Const (Sil.Cattribute (Sil.Auntaint)) in
+        (* add untained(n_lexp) to the footprint *)
+        Prop.conjoin_neq ~footprint:true exp untaint_attr prop
+      else prop
+
 (** execute a call for an unknown or scan function *)
 and call_unknown_or_scan is_scan cfg pdesc tenv pre path
     ret_ids ret_type_option actual_pars callee_pname loc =
@@ -1229,21 +1253,41 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
         | _ -> q in
       IList.fold_left do_attribute p (Prop.get_exp_attributes p e) in
     IList.fold_left do_exp prop actual_pars in
+  let add_tainted_pre prop actuals caller_pname callee_pname =
+    if !Config.taint_analysis then
+      match Taint.accepts_sensitive_params callee_pname with
+      | [] -> prop
+      | param_nums ->
+          let check_taint_if_nums_match (prop_acc, param_num) (actual_exp, _actual_typ) =
+            let prop_acc' =
+              if IList.exists (fun num -> num = param_num) param_nums
+              then check_untainted actual_exp caller_pname callee_pname prop_acc
+              else prop_acc in
+            prop_acc', param_num + 1 in
+          IList.fold_left
+            check_taint_if_nums_match
+            (prop, 0)
+            actuals
+          |> fst
+    else prop in
   let actuals_by_ref =
     IList.filter
       (function
         | Sil.Lvar _, _ -> true
         | _ -> false)
       actual_pars in
-  (* in Java, assume that skip functions close resources passed as params *)
-  let pre' = if !Config.curr_language = Config.Java then remove_file_attribute pre else pre in
-  let pre'' = match ret_ids, ret_type_option with
-    | [ret_id], Some ret_typ ->
-        add_constraints_on_retval pdesc pre' (Sil.Var ret_id) ret_typ callee_pname loc
-    | _ -> pre' in
-  let pre''' = add_constraints_on_actuals_by_ref pre'' actuals_by_ref callee_pname loc in
+  let pre_final =
+    (* in Java, assume that skip functions close resources passed as params *)
+    let pre_1 = if !Config.curr_language = Config.Java then remove_file_attribute pre else pre in
+    let pre_2 = match ret_ids, ret_type_option with
+      | [ret_id], Some ret_typ ->
+          add_constraints_on_retval pdesc pre_1 (Sil.Var ret_id) ret_typ callee_pname loc
+      | _ -> pre_1 in
+    let pre_3 = add_constraints_on_actuals_by_ref pre_2 actuals_by_ref callee_pname loc in
+    let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+    add_tainted_pre pre_3 actual_pars caller_pname callee_pname in
   if is_scan (* if scan function, don't mark anything with undef attributes *)
-  then [(Tabulation.remove_constant_string_class pre''', path)]
+  then [(Tabulation.remove_constant_string_class pre_final, path)]
   else
     (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
     let exps_to_mark =
@@ -1251,7 +1295,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
       IList.fold_left
         (fun exps_to_mark (exp, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
     let path_pos = State.get_path_pos () in
-    [(Prop.mark_vars_as_undefined pre''' exps_to_mark callee_pname loc path_pos, path)]
+    [(Prop.mark_vars_as_undefined pre_final exps_to_mark callee_pname loc path_pos, path)]
 
 and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop path n_formals actual_params (sentinel, null_pos) callee_pname loc =
   (* from clang's lib/Sema/SemaExpr.cpp: *)
@@ -1841,9 +1885,7 @@ module ModelBuiltins = struct
     | [(lexp, typ)], _ ->
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-        let prop' = match Prop.get_taint_attribute prop n_lexp with
-          | _ -> Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Ataint pname) in
-        [(prop', path)]
+        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Ataint pname), path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (** Set the attibute of the value as untainted *)
@@ -1853,10 +1895,7 @@ module ModelBuiltins = struct
     | [(lexp, typ)], _ ->
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-        let prop' = match Prop.get_taint_attribute prop n_lexp with
-          | _ ->
-              Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Auntaint) in
-        [(prop', path)]
+        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Auntaint), path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
@@ -1864,20 +1903,9 @@ module ModelBuiltins = struct
     : Builtin.ret_typ =
     match args, ret_ids with
     | [(lexp, typ)], _ ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = exp_norm_check_arith pname prop lexp in
-        (match Prop.get_taint_attribute prop n_lexp with
-         | Some (Sil.Ataint source_pname) ->
-             (* since set_taint_attribute and assert_untained are only used in the models, we should
-                never encounter this case (unless someone is silly enough to write
-                set_taint_attribute(o); check_untainted(o) in a model.) *)
-             failwith "Don't write set_taint_attribute(o); ...check_untainted(o) in the same method"
-         | _ ->
-             if !Config.footprint then
-               let untaint_attr = Sil.Const (Sil.Cattribute (Sil.Auntaint)) in
-               (** add untained(n_lexp) to the footprint *)
-               [(Prop.conjoin_neq ~footprint:true n_lexp untaint_attr prop, path)]
-             else [(prop, path)])
+        let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith caller_pname prop lexp in
+        [(check_untainted n_lexp caller_pname callee_pname prop, path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
   (** take a pointer to a struct, and return the value of a hidden field in the struct *)
