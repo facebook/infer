@@ -33,16 +33,6 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
      | FunctionDecl(di, name_info, tp, fdecl_info) ->
          CMethod_declImpl.function_decl tenv cfg cg dec None
 
-     (* Currently C/C++ record decl treated in the same way *)
-     | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
-     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
-     | RecordDecl (_, _, _, _, decl_list, _, _) ->
-         ignore (CTypes_decl.add_types_from_decl_to_tenv tenv dec);
-         let method_decls = CTypes_decl.get_method_decls dec decl_list in
-         let tranlate_method (parent, decl) =
-           translate_one_declaration tenv cg cfg parent decl in
-         IList.iter tranlate_method method_decls
-
      | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcInterface_decl.get_curr_class name oi_decl_info in
@@ -93,6 +83,15 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
           | None -> ())
      | dec -> ());
   match dec with
+  (* Currently C/C++ record decl treated in the same way *)
+  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
+  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+  | RecordDecl (_, _, _, _, decl_list, _, _) ->
+      ignore (CTypes_decl.add_types_from_decl_to_tenv tenv dec);
+      let method_decls = CTypes_decl.get_method_decls dec decl_list in
+      let tranlate_method (parent, decl) =
+        translate_one_declaration tenv cg cfg parent decl in
+      IList.iter tranlate_method method_decls
   | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
   | LinkageSpecDecl (decl_info, decl_list, decl_context_info) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
