@@ -152,6 +152,8 @@ sig
 
   val try_claim_priority_node : trans_state -> Clang_ast_t.stmt_info -> trans_state
 
+  val force_claim_priority_node : trans_state -> Clang_ast_t.stmt_info -> trans_state
+
   val own_priority_node : t -> Clang_ast_t.stmt_info -> bool
 
   (* Used by translation functions to handle potenatial cfg nodes. *)

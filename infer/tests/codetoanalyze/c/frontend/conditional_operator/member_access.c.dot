@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 23 -> 19 ;
-22 [label="22:  Call _fun_ret_ptr \n   n$0=_fun_ret_ptr(4:int ) [line 25]\n  n$1=*n$0.field:int  [line 25]\n  DECLARE_LOCALS(&SIL_temp_conditional___19); [line 25]\n  *&SIL_temp_conditional___19:int =n$1 [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+22 [label="22:  ConditinalStmt Branch \n   n$0=_fun_ret_ptr(4:int ) [line 25]\n  n$1=*n$0.field:int  [line 25]\n  DECLARE_LOCALS(&SIL_temp_conditional___19); [line 25]\n  *&SIL_temp_conditional___19:int =n$1 [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 22 -> 19 ;

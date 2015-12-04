@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 53 -> 49 ;
-52 [label="52:  UnaryOperator \n   n$1=*&p:int * [line 42]\n  n$2=*n$1:int  [line 42]\n  DECLARE_LOCALS(&SIL_temp_conditional___49); [line 42]\n  *&SIL_temp_conditional___49:int =n$2 [line 42]\n  REMOVE_TEMPS(n$1,n$2); [line 42]\n  NULLIFY(&p,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+52 [label="52:  ConditinalStmt Branch \n   n$1=*&p:int * [line 42]\n  n$2=*n$1:int  [line 42]\n  DECLARE_LOCALS(&SIL_temp_conditional___49); [line 42]\n  *&SIL_temp_conditional___49:int =n$2 [line 42]\n  REMOVE_TEMPS(n$1,n$2); [line 42]\n  NULLIFY(&p,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 52 -> 49 ;

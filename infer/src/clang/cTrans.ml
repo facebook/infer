@@ -930,65 +930,32 @@ struct
       Sil.mk_pvar (Mangled.from_string ("SIL_temp_conditional___"^(string_of_int id))) procname in
     let sil_loc = CLocation.get_sil_location stmt_info parent_line_number context in
     let line_number = CLocation.get_line stmt_info parent_line_number in
-    (* We have two different kind of join type for conditional operator. *)
-    (* If it's a simple conditional operator then we use a standard join *)
-    (* node. If it's a nested conditional operator then we need to       *)
-    (* assign the temp variable of the inner conditional to the outer    *)
-    (* conditional. In that case we use a statement node for join. This   *)
-    (* node make the assignment of the temp variables.                   *)
-    let compute_join_node typ =
-      let join_node' = match succ_nodes with
-        | [n] when is_join_node n ->
-            let n'= create_node (Cfg.Node.Stmt_node "Temp Join Node") [] [] sil_loc context in
-            let id = Ident.create_fresh Ident.knormal in
-            let pvar = mk_temp_var (Cfg.Node.get_id n) in
-            let pvar' = mk_temp_var (Cfg.Node.get_id n') in
-            let ilist =[Sil.Letderef (id, Sil.Lvar pvar', typ, sil_loc);
-                        Sil.Declare_locals([(pvar, typ)], sil_loc);
-                        Sil.Set (Sil.Lvar pvar, typ, Sil.Var id, sil_loc);
-                        Sil.Nullify(pvar', sil_loc, true)] in
-            Cfg.Node.append_instrs_temps n' ilist [id]; n'
-        | _ -> create_node (Cfg.Node.Join_node) [] [] sil_loc context in
-      Cfg.Node.set_succs_exn join_node' succ_nodes [];
-      join_node' in
     let do_branch branch stmt typ prune_nodes join_node pvar =
-      let trans_state' = { trans_state with succ_nodes = [join_node]; parent_line_number = line_number } in
-      let res_trans_b =
-        exec_with_priority_exception trans_state' stmt instruction in
-      let node_b = res_trans_b.root_nodes in
+      let trans_state_pri = PriorityNode.force_claim_priority_node trans_state stmt_info in
+      let trans_state' = { trans_state_pri with
+                           succ_nodes = [];
+                           parent_line_number = line_number } in
+      let res_trans_b = instruction trans_state' stmt in
       let (e', e'_typ) = extract_exp_from_list res_trans_b.exps
           "\nWARNING: Missing branch expression for Conditional operator. Need to be fixed\n" in
-      (* If e' is the address of a prog var, we need to get its value in a temp before assign it to temp_var*)
-      let e'', instr_e'', id_e'' = match e' with
-        | Sil.Lvar _ ->
-            let id = Ident.create_fresh Ident.knormal in
-            Sil.Var id,[Sil.Letderef (id, e', typ, sil_loc)], [id]
-        | _ -> e', [], [] in
-      let set_temp_var = [Sil.Declare_locals([(pvar, typ)], sil_loc); Sil.Set (Sil.Lvar pvar, typ, e'', sil_loc)] in
-      let nodes_branch = (match node_b, is_join_node join_node with
-          | [], _ -> let n = create_node (Cfg.Node.Stmt_node "ConditinalStmt Branch" ) (res_trans_b.ids@id_e'') (res_trans_b.instrs @ instr_e'' @ set_temp_var) sil_loc context in
-              Cfg.Node.set_succs_exn n [join_node] [];
-              [n]
-          | _, true ->
-              IList.iter
-                (fun n' ->
-                   (* If there is a node with instructions we need to only *)
-                   (* add the set of the temp variable *)
-                   if not (is_prune_node n') then
-                     Cfg.Node.append_instrs_temps n'
-                       (res_trans_b.instrs @ instr_e''@ set_temp_var)
-                       (res_trans_b.ids @ id_e'')
-                ) node_b;
-              node_b
-          | _, false -> node_b) in
+      let set_temp_var = [
+        Sil.Declare_locals([(pvar, typ)], sil_loc);
+        Sil.Set (Sil.Lvar pvar, typ, e', sil_loc)
+      ] in
+      let tmp_var_res_trans = { empty_res_trans with instrs = set_temp_var } in
+      let trans_state'' = { trans_state' with succ_nodes = [join_node] } in
+      let all_res_trans = [res_trans_b; tmp_var_res_trans] in
+      let res_trans = PriorityNode.compute_results_to_parent trans_state'' sil_loc
+          "ConditinalStmt Branch" stmt_info all_res_trans in
       let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      IList.iter (fun n -> Cfg.Node.set_succs_exn n nodes_branch []) prune_nodes' in
+      IList.iter (fun n -> Cfg.Node.set_succs_exn n res_trans.root_nodes []) prune_nodes' in
     (match stmt_list with
      | [cond; exp1; exp2] ->
          let typ =
            CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-         let join_node = compute_join_node typ in
+         let join_node = create_node (Cfg.Node.Join_node) [] [] sil_loc context in
+         Cfg.Node.set_succs_exn join_node succ_nodes [];
          let pvar = mk_temp_var (Cfg.Node.get_id join_node) in
          let continuation' = mk_cond_continuation trans_state.continuation in
          let trans_state' = { trans_state with continuation = continuation'; parent_line_number = line_number; succ_nodes =[]} in
@@ -1312,7 +1279,7 @@ struct
       | Loops.While (decl_stmt_opt, _, _) -> decl_stmt_opt
       | _ -> None in
     let res_trans_decl = match decl_stmt_opt with
-      | Some decl_stmt -> declStmt_in_condition_trans trans_state_cond decl_stmt res_trans_cond
+      | Some decl_stmt -> declStmt_in_condition_trans trans_state decl_stmt res_trans_cond
       | _ -> res_trans_cond in
     let body_succ_nodes =
       match loop_kind with

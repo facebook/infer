@@ -200,6 +200,10 @@ struct
         Printing.log_out "Priority busy in %s. No claim possible\n@." stmt_info.Clang_ast_t.si_pointer;
         trans_state
 
+  let force_claim_priority_node trans_state stmt_info =
+    { trans_state with priority = Busy stmt_info.Clang_ast_t.si_pointer }
+
+
   let is_priority_free trans_state =
     match trans_state.priority with
     | Free -> true
@@ -222,7 +226,7 @@ struct
     (* Invariant: if leaf_nodes is empty then the params have not created a node.*)
     let res_state_param = collect_res_trans res_states_children in
     let create_node = own_priority_node trans_state.priority stmt_info && res_state_param.instrs <> [] in
-    match res_state_param.leaf_nodes, create_node with
+    match res_state_param.root_nodes, create_node with
     | _, false -> (* The node is created by the parent. We just pass back nodes/leafs params *)
         { res_state_param with exps = []}
     | [], true -> (* We need to create a node and params did not create a node.*)
@@ -428,7 +432,7 @@ let trans_assertion_failure sil_loc context =
     Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [] [call_instr] sil_loc context in
   Cfg.Node.set_succs_exn failure_node [exit_node] [];
   { root_nodes = [failure_node];
-    leaf_nodes = [failure_node];
+    leaf_nodes = [];
     ids = [];
     instrs =[];
     exps = [] }

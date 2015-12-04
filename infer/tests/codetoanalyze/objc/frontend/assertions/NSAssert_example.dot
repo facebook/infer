@@ -8,7 +8,7 @@ digraph iCFG {
 	
 
 	 107 -> 101 ;
-106 [label="106:  Message Call: stringWithUTF8String: \n   n$17=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___102); [line 36]\n  *&SIL_temp_conditional___102:class NSString *=n$17 [line 36]\n  REMOVE_TEMPS(n$17); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+106 [label="106:  ConditinalStmt Branch \n   n$17=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___102); [line 36]\n  *&SIL_temp_conditional___102:class NSString *=n$17 [line 36]\n  REMOVE_TEMPS(n$17); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 106 -> 102 ;
@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 100 -> 94 ;
-99 [label="99:  Message Call: stringWithUTF8String: \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___95); [line 36]\n  *&SIL_temp_conditional___95:class NSString *=n$11 [line 36]\n  REMOVE_TEMPS(n$11); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+99 [label="99:  ConditinalStmt Branch \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___95); [line 36]\n  *&SIL_temp_conditional___95:class NSString *=n$11 [line 36]\n  REMOVE_TEMPS(n$11); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 99 -> 95 ;
@@ -128,7 +128,7 @@ digraph iCFG {
 	
 
 	 78 -> 72 ;
-77 [label="77:  Message Call: stringWithUTF8String: \n   n$16=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___73); [line 31]\n  *&SIL_temp_conditional___73:class NSString *=n$16 [line 31]\n  REMOVE_TEMPS(n$16); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+77 [label="77:  ConditinalStmt Branch \n   n$16=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___73); [line 31]\n  *&SIL_temp_conditional___73:class NSString *=n$16 [line 31]\n  REMOVE_TEMPS(n$16); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 77 -> 73 ;
@@ -157,7 +157,7 @@ digraph iCFG {
 	
 
 	 71 -> 65 ;
-70 [label="70:  Message Call: stringWithUTF8String: \n   n$10=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___66); [line 31]\n  *&SIL_temp_conditional___66:class NSString *=n$10 [line 31]\n  REMOVE_TEMPS(n$10); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+70 [label="70:  ConditinalStmt Branch \n   n$10=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___66); [line 31]\n  *&SIL_temp_conditional___66:class NSString *=n$10 [line 31]\n  REMOVE_TEMPS(n$10); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 70 -> 66 ;
@@ -263,7 +263,7 @@ digraph iCFG {
 	
 
 	 45 -> 39 ;
-44 [label="44:  Message Call: stringWithUTF8String: \n   n$26=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___40); [line 24]\n  *&SIL_temp_conditional___40:class NSString *=n$26 [line 24]\n  REMOVE_TEMPS(n$26); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+44 [label="44:  ConditinalStmt Branch \n   n$26=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___40); [line 24]\n  *&SIL_temp_conditional___40:class NSString *=n$26 [line 24]\n  REMOVE_TEMPS(n$26); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 44 -> 40 ;
@@ -358,7 +358,7 @@ digraph iCFG {
 	
 
 	 22 -> 16 ;
-21 [label="21:  Message Call: stringWithUTF8String: \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 19]\n  DECLARE_LOCALS(&SIL_temp_conditional___17); [line 19]\n  *&SIL_temp_conditional___17:class NSString *=n$11 [line 19]\n  REMOVE_TEMPS(n$11); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+21 [label="21:  ConditinalStmt Branch \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 19]\n  DECLARE_LOCALS(&SIL_temp_conditional___17); [line 19]\n  *&SIL_temp_conditional___17:class NSString *=n$11 [line 19]\n  REMOVE_TEMPS(n$11); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
 	 21 -> 17 ;
