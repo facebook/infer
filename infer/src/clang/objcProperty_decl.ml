@@ -226,12 +226,10 @@ let is_strong_property property_type =
       | `Strong -> true
       | _ -> false) attrs
 
-let property_line property_type =
+let property_loc property_type =
   let _, attrs, decl_info, _, _, _ = property_type in
-  let src_range = fst decl_info.Clang_ast_t.di_source_range in
-  match src_range.Clang_ast_t.sl_line with
-  | Some l -> l
-  | _ -> -1
+  let src_range = decl_info.Clang_ast_t.di_source_range in
+  CLocation.get_sil_location_from_range src_range true
 
 let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
   let pname = Ast_utils.property_name property_impl_decl_info in

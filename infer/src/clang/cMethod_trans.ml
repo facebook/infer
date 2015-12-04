@@ -397,3 +397,22 @@ let create_procdesc_with_pointer context pointer class_name_opt name tp =
 let instance_to_method_call_type instance =
   if instance then MCVirtual
   else MCStatic
+
+let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
+  let stmt_info = Ast_expressions.make_stmt_info decl_info in
+  let source_range = decl_info.Clang_ast_t.di_source_range in
+  let proc_name = General_utils.mk_procname_from_objc_method class_name "frontendChecks"
+      Procname.Class_objc_method in
+  match Cfg.Procdesc.find_from_name cfg proc_name with
+  | Some pdesc -> pdesc
+  | None ->
+      let ms = CMethod_signature.make_ms proc_name [] (Clang_ast_types.pointer_to_type_ptr "-1")
+          [] source_range false false CFrontend_config.OBJC None in
+      let body = [Clang_ast_t.CompoundStmt (stmt_info, [])] in
+      ignore (create_local_procdesc cfg tenv ms body [] false);
+      let pdesc = Option.get (Cfg.Procdesc.find_from_name cfg proc_name) in
+      let start_node = Cfg.Procdesc.get_start_node pdesc in
+      let end_node = Cfg.Procdesc.get_exit_node pdesc in
+      Cfg.Node.set_succs_exn start_node [end_node] [];
+      Cg.add_defined_node cg proc_name;
+      pdesc

@@ -398,7 +398,7 @@ struct
     name : string;
     description : string;
     suggestion : string; (* an optional suggestion or correction *)
-    loc : string;
+    loc : Location.t;
   }
 
   type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool

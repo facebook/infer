@@ -45,3 +45,6 @@ val get_method_name_from_clang : Sil.tenv -> CMethod_signature.method_signature 
 
 val create_procdesc_with_pointer : CContext.t -> Clang_ast_t.pointer -> string option ->
   string -> Clang_ast_t.type_ptr -> Procname.t
+
+val get_method_for_frontend_checks : Cfg.cfg -> Cg.t -> Sil.tenv -> string ->
+  Clang_ast_t.decl_info -> Cfg.Procdesc.t

@@ -26,12 +26,7 @@ let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_acces
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_warning pdesc warn_desc =
-  let loc = {
-    Location.line = int_of_string warn_desc.loc;
-    Location.col = -1;
-    Location.file = DB.source_file_empty;
-    Location.nLOC = -1;
-  } in
+  let loc = warn_desc.loc in
   let errlog = Cfg.Procdesc.get_err_log pdesc in
   let err_desc =
     Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion loc in
@@ -41,22 +36,15 @@ let log_frontend_warning pdesc warn_desc =
   Reporting.log_error_from_errlog errlog exn ~loc:(Some loc)
 
 (* Call all checkers on properties of class c *)
-let check_for_property_errors cfg c =
-  let qual_setter setter_name =
-    let cname = CContext.get_curr_class_name c in
-    mk_procname_from_objc_method cname setter_name Procname.Instance_objc_method in
+let check_for_property_errors cfg cg tenv c decl_info =
+  let class_name = CContext.get_curr_class_name c in
   let do_one_property (pname, property) =
-    let (_, _, _, _, (setter_name, _), ndi) = property in
-    let qual_setter = qual_setter setter_name in
-    match Cfg.Procdesc.find_from_name cfg qual_setter with
-    | Some pdesc_setter -> (* Property warning will be added to the proc desc of the setter *)
-        Printing.log_out "Found setter for property   %s\n" pname.Clang_ast_t.ni_name;
-        IList.iter (fun checker ->
-            let (condition, warning_desc) = checker pname property in
-            if condition then log_frontend_warning pdesc_setter warning_desc) property_checkers_list
-    | None ->
-        Printing.log_out "NO Setter Found for property %s\n" pname.Clang_ast_t.ni_name;
-        () in
+    IList.iter (fun checker ->
+        let (condition, warning_desc) = checker decl_info pname property in
+        if condition then
+          let proc_desc =
+            CMethod_trans.get_method_for_frontend_checks cfg cg tenv class_name decl_info in
+          log_frontend_warning proc_desc warning_desc) property_checkers_list in
   let properties = ObjcProperty_decl.find_properties_class c in
   Printing.log_out "Retrieved all properties of the class...\n";
   IList.iter do_one_property properties

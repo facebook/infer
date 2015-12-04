@@ -56,11 +56,7 @@ public class StrongDelegateTest {
             STRONG_DELEGATE_WARNING,
             FILE,
             new String[]{
-                "setDelegate:",
-                "setDelegateFile:",
-                "setDelegated:",
-                "setFileDelegate:",
-                "setOneDelegateFile:"
+                "frontendChecks",
             }
         )
     );

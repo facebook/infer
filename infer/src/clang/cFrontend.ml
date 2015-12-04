@@ -63,7 +63,7 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
          let type_ptr_to_sil_type = CTypes_decl.type_ptr_to_sil_type in
          ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list;
-         CFrontend_errors.check_for_property_errors cfg curr_class
+         CFrontend_errors.check_for_property_errors cfg cg tenv curr_class decl_info
 
      | CXXMethodDecl (decl_info, name_info, type_ptr, function_decl_info, _)
      | CXXConstructorDecl (decl_info, name_info, type_ptr, function_decl_info, _) ->

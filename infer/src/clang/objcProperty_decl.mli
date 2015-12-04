@@ -81,7 +81,7 @@ val get_ivar_name : Clang_ast_t.named_decl_info -> Clang_ast_t.named_decl_info o
 val is_strong_property : property_type -> bool
 
 (* Given a property type returns whether the property line *)
-val property_line : property_type -> int
+val property_loc : property_type -> Location.t
 
 (* Checks whether mname is a getter or setter of the ivar given in dr_name *)
 val is_getter_setter :
