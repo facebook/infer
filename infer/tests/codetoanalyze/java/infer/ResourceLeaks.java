@@ -932,4 +932,10 @@ public class ResourceLeaks {
     decomp.end();
   }
 
+  void NoResourceLeakWarningAfterCheckState(File f, int x) throws IOException {
+    InputStream stream = new FileInputStream(f);
+    Preconditions.checkState(x > 0);
+    stream.close();
+  }
+
 }

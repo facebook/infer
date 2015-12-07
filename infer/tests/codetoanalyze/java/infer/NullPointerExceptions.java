@@ -463,7 +463,7 @@ public class NullPointerExceptions {
     try {
       FileLock lock = chan.tryLock();
       return (lock != null ? lock.toString() : "");
-    } catch (IOException _) {
+    } catch (IOException e) {
       Object o = null;
       return o.toString(); // expect NullPointerException as tryLock can throw
     }
