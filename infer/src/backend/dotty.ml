@@ -112,7 +112,7 @@ let strip_special_chars s =
     if String.contains st c then begin
       let idx = String.index st c in
       try
-        String.set st idx c';
+        Bytes.set st idx c';
         st
       with Invalid_argument _ -> L.out "@\n@\n Invalid argument!!! @\n @.@.@."; assert false
     end else st in

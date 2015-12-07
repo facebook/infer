@@ -49,7 +49,7 @@ module Inference = struct
 
   let update_boolvec_str _s size index bval =
     let s = if _s = "" then String.make size '0' else _s in
-    String.set s index (if bval then '1' else '0');
+    Bytes.set s index (if bval then '1' else '0');
     s
 
   let mark_file update_str dir fname =

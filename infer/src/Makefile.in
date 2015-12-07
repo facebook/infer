@@ -42,6 +42,13 @@ EASYFORMAT_INCLUDE_DIR = @OCAML_PKG_PATH_easy_format@
 OCAML_INCLUDES = -I,$(EASYFORMAT_INCLUDE_DIR),-I,$(BINIOU_INCLUDE_DIR),-I,$(YOJSON_INCLUDE_DIR),-I,$(ATDGEN_INCLUDE_DIR)
 OCAML_LIBS = unix str atdgen
 OCAML_MODS = easy_format bi_util bi_share bi_outbuf bi_inbuf bi_vint bi_io yojson ag_oj_run ag_ob_run ag_util
+
+# backwards compatibility with OCaml version < 4.02.0
+ifneq (@OCAML_PKG_bytes@,no)
+BYTES_INCLUDE_DIR = @OCAML_PKG_PATH_bytes@
+OCAML_INCLUDES := $(OCAML_INCLUDES),-I,$(BYTES_INCLUDE_DIR)
+endif
+
 OCAMLBUILD_OPTIONS = -lflags -annot \
                      -cflags -annot,-bin-annot,-warn-error,@5@8@10..12@20@26@39 \
                      -lflags $(OCAML_INCLUDES) \

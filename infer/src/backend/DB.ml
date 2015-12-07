@@ -206,7 +206,7 @@ let create_dir dir =
 let read_whole_file fd =
   let stats = Unix.fstat fd in
   let size = stats.Unix.st_size in
-  let buf = String.create size in
+  let buf = Bytes.create size in
   let nread = Unix.read fd buf 0 size in
   if nread != size then
     begin

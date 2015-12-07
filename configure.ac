@@ -54,6 +54,15 @@ AC_ASSERT_OCAML_PKG([easy-format])
 AC_ASSERT_OCAML_PKG([ptrees])
 AC_ASSERT_OCAML_PKG([yojson])
 
+OCAMLVERSION_MAJOR=$(printf $OCAMLVERSION | cut -d . -f 1)
+OCAMLVERSION_MINOR=$(printf $OCAMLVERSION | cut -d . -f 2)
+
+OCAML_PKG_bytes=no
+# need the bytes package for OCaml version < 4.02.0
+if test "$OCAMLVERSION_MAJOR" -le 4 && test "$OCAMLVERSION_MINOR" -lt 2; then
+AC_ASSERT_OCAML_PKG([bytes])
+fi
+
 AC_CHECK_TOOL([ATDGEN], [atdgen], [no])
 AC_ASSERT_PROG([atdgen], [$ATDGEN])
 AC_SUBST([ATDGEN])
