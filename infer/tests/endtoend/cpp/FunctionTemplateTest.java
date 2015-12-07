@@ -50,7 +50,7 @@ public class FunctionTemplateTest {
     String[] procedures = {
         "div0_get_val",
         "div0_create_and_get_val",
-        "createAndDiv<struct X3>",
+        "createAndDiv<X3>",
     };
     InferResults inferResults = InferRunner.runInferCPP(inferCmd);
     assertThat(

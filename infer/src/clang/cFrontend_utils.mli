@@ -52,12 +52,6 @@ sig
 
   val property_attribute_eq : Clang_ast_t.property_attribute -> Clang_ast_t.property_attribute -> bool
 
-  val getter_attribute_opt : Clang_ast_t.property_attribute list ->
-    Clang_ast_t.named_decl_info option
-
-  val setter_attribute_opt : Clang_ast_t.property_attribute list ->
-    Clang_ast_t.named_decl_info option
-
   val get_memory_management_attributes : unit -> Clang_ast_t.property_attribute list
 
   val is_retain : Clang_ast_t.property_attribute option -> bool
@@ -80,6 +74,8 @@ sig
   val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
   val get_decl_opt : Clang_ast_t.pointer option -> Clang_ast_t.decl option
+
+  val get_decl_opt_with_decl_ref : Clang_ast_t.decl_ref option -> Clang_ast_t.decl option
 
   val update_sil_types_map : Clang_ast_t.type_ptr -> Sil.typ -> unit
 

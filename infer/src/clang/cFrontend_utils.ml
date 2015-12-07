@@ -219,10 +219,10 @@ struct
     | `Unsafe_unretained, `Unsafe_unretained -> 0
     | `Unsafe_unretained, _ -> -1
     | _, `Unsafe_unretained -> 1
-    | `Getter _, `Getter _ -> 0
-    | `Getter _, _ -> -1
-    | _, `Getter _ -> 1
-    | `Setter _, `Setter _ -> 0
+    | `ExplicitGetter, `ExplicitGetter -> 0
+    | `ExplicitGetter, _ -> -1
+    | _, `ExplicitGetter -> 1
+    | `ExplicitSetter, `ExplicitSetter -> 0
 
   let property_attribute_eq att1 att2 =
     property_attribute_compare att1 att2 = 0
@@ -295,6 +295,11 @@ struct
   let get_decl_opt decl_ptr_opt =
     match decl_ptr_opt with
     | Some decl_ptr -> get_decl decl_ptr
+    | None -> None
+
+  let get_decl_opt_with_decl_ref decl_ref_opt =
+    match decl_ref_opt with
+    | Some decl_ref -> get_decl decl_ref.Clang_ast_t.dr_decl_pointer
     | None -> None
 
   let update_sil_types_map type_ptr sil_type =

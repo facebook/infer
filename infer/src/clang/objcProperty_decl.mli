@@ -36,7 +36,7 @@ sig
 
   val replace_property : property_key -> property_type -> unit
 
-  val add_property : property_key -> Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list ->
+  val add_property : property_key -> Clang_ast_t.type_ptr -> Clang_ast_t.obj_c_property_decl_info ->
     Clang_ast_t.decl_info -> unit
 
   val print_property_table : unit -> unit

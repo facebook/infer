@@ -1,5 +1,5 @@
 digraph iCFG {
-49 [label="49:  Return Stmt \n   n$0=_fun_createAndGetVal<struct X3>() [line 72]\n  n$1=_fun_createAndGetVal<struct X1>() [line 72]\n  *&return:int =(n$0 / n$1) [line 72]\n  REMOVE_TEMPS(n$0,n$1); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
+49 [label="49:  Return Stmt \n   n$0=_fun_createAndGetVal<X3>() [line 72]\n  n$1=_fun_createAndGetVal<X1>() [line 72]\n  *&return:int =(n$0 / n$1) [line 72]\n  REMOVE_TEMPS(n$0,n$1); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
 	
 
 	 49 -> 48 ;
@@ -10,7 +10,7 @@ digraph iCFG {
 	
 
 	 47 -> 49 ;
-46 [label="46:  Return Stmt \n   n$0=_fun_createAndGetVal<struct X1>() [line 68]\n  n$1=_fun_createAndGetVal<struct X3>() [line 68]\n  *&return:int =(n$0 / n$1) [line 68]\n  REMOVE_TEMPS(n$0,n$1); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
+46 [label="46:  Return Stmt \n   n$0=_fun_createAndGetVal<X1>() [line 68]\n  n$1=_fun_createAndGetVal<X3>() [line 68]\n  *&return:int =(n$0 / n$1) [line 68]\n  REMOVE_TEMPS(n$0,n$1); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
 	
 
 	 46 -> 45 ;
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 42 -> 41 ;
-41 [label="41:  Return Stmt \n   n$0=_fun_getVal<struct X3>(&x3:class X3 &) [line 64]\n  n$1=_fun_getVal<struct X1>(&x1:class X1 &) [line 64]\n  *&return:int =(n$0 / n$1) [line 64]\n  REMOVE_TEMPS(n$0,n$1); [line 64]\n  NULLIFY(&x1,false); [line 64]\n  NULLIFY(&x3,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+41 [label="41:  Return Stmt \n   n$0=_fun_getVal<X3>(&x3:class X3 &) [line 64]\n  n$1=_fun_getVal<X1>(&x1:class X1 &) [line 64]\n  *&return:int =(n$0 / n$1) [line 64]\n  REMOVE_TEMPS(n$0,n$1); [line 64]\n  NULLIFY(&x1,false); [line 64]\n  NULLIFY(&x3,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
 	
 
 	 41 -> 40 ;
@@ -48,7 +48,7 @@ digraph iCFG {
 	
 
 	 37 -> 36 ;
-36 [label="36:  Return Stmt \n   n$0=_fun_getVal<struct X1>(&x1:class X1 &) [line 58]\n  n$1=_fun_getVal<struct X3>(&x3:class X3 &) [line 58]\n  *&return:int =(n$0 / n$1) [line 58]\n  REMOVE_TEMPS(n$0,n$1); [line 58]\n  NULLIFY(&x1,false); [line 58]\n  NULLIFY(&x3,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
+36 [label="36:  Return Stmt \n   n$0=_fun_getVal<X1>(&x1:class X1 &) [line 58]\n  n$1=_fun_getVal<X3>(&x3:class X3 &) [line 58]\n  *&return:int =(n$0 / n$1) [line 58]\n  REMOVE_TEMPS(n$0,n$1); [line 58]\n  NULLIFY(&x1,false); [line 58]\n  NULLIFY(&x3,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
 	
 
 	 36 -> 35 ;
@@ -59,25 +59,25 @@ digraph iCFG {
 	
 
 	 34 -> 38 ;
-33 [label="33:  Return Stmt \n   n$0=_fun_createAndGetVal<struct X1>() [line 41]\n  *&return:int =(1 / n$0) [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
+33 [label="33:  Return Stmt \n   n$0=_fun_createAndGetVal<X1>() [line 41]\n  *&return:int =(1 / n$0) [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
 	
 
 	 33 -> 32 ;
-32 [label="32: Exit createAndDiv<struct X1> \n  " color=yellow style=filled]
+32 [label="32: Exit createAndDiv<X1> \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start createAndDiv<struct X1>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
+31 [label="31: Start createAndDiv<X1>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
 	
 
 	 31 -> 33 ;
-30 [label="30:  Return Stmt \n   n$0=_fun_createAndGetVal<struct X3>() [line 41]\n  *&return:int =(1 / n$0) [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
+30 [label="30:  Return Stmt \n   n$0=_fun_createAndGetVal<X3>() [line 41]\n  *&return:int =(1 / n$0) [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
 	
 
 	 30 -> 29 ;
-29 [label="29: Exit createAndDiv<struct X3> \n  " color=yellow style=filled]
+29 [label="29: Exit createAndDiv<X3> \n  " color=yellow style=filled]
 	
 
-28 [label="28: Start createAndDiv<struct X3>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
+28 [label="28: Start createAndDiv<X3>\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
 	
 
 	 28 -> 30 ;
@@ -85,14 +85,14 @@ digraph iCFG {
 	
 
 	 27 -> 26 ;
-26 [label="26:  Return Stmt \n   n$0=_fun_getVal<struct X1>(&x:class X1 &) [line 36]\n  *&return:int =n$0 [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&x,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+26 [label="26:  Return Stmt \n   n$0=_fun_getVal<X1>(&x:class X1 &) [line 36]\n  *&return:int =n$0 [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&x,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 26 -> 25 ;
-25 [label="25: Exit createAndGetVal<struct X1> \n  " color=yellow style=filled]
+25 [label="25: Exit createAndGetVal<X1> \n  " color=yellow style=filled]
 	
 
-24 [label="24: Start createAndGetVal<struct X1>\nFormals: \nLocals:  x:class X1  \n   DECLARE_LOCALS(&return,&x); [line 34]\n " color=yellow style=filled]
+24 [label="24: Start createAndGetVal<X1>\nFormals: \nLocals:  x:class X1  \n   DECLARE_LOCALS(&return,&x); [line 34]\n " color=yellow style=filled]
 	
 
 	 24 -> 27 ;
@@ -100,14 +100,14 @@ digraph iCFG {
 	
 
 	 23 -> 22 ;
-22 [label="22:  Return Stmt \n   n$0=_fun_getVal<struct X3>(&x:class X3 &) [line 36]\n  *&return:int =n$0 [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&x,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+22 [label="22:  Return Stmt \n   n$0=_fun_getVal<X3>(&x:class X3 &) [line 36]\n  *&return:int =n$0 [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&x,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21: Exit createAndGetVal<struct X3> \n  " color=yellow style=filled]
+21 [label="21: Exit createAndGetVal<X3> \n  " color=yellow style=filled]
 	
 
-20 [label="20: Start createAndGetVal<struct X3>\nFormals: \nLocals:  x:class X3  \n   DECLARE_LOCALS(&return,&x); [line 34]\n " color=yellow style=filled]
+20 [label="20: Start createAndGetVal<X3>\nFormals: \nLocals:  x:class X3  \n   DECLARE_LOCALS(&return,&x); [line 34]\n " color=yellow style=filled]
 	
 
 	 20 -> 23 ;
@@ -115,10 +115,10 @@ digraph iCFG {
 	
 
 	 19 -> 18 ;
-18 [label="18: Exit getVal<struct X3> \n  " color=yellow style=filled]
+18 [label="18: Exit getVal<X3> \n  " color=yellow style=filled]
 	
 
-17 [label="17: Start getVal<struct X3>\nFormals:  x:class X3 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
+17 [label="17: Start getVal<X3>\nFormals:  x:class X3 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
 	
 
 	 17 -> 19 ;
@@ -126,10 +126,10 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15: Exit getVal<struct X1> \n  " color=yellow style=filled]
+15 [label="15: Exit getVal<X1> \n  " color=yellow style=filled]
 	
 
-14 [label="14: Start getVal<struct X1>\nFormals:  x:class X1 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+14 [label="14: Start getVal<X1>\nFormals:  x:class X1 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
 	 14 -> 16 ;

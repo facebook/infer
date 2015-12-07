@@ -54,7 +54,7 @@ sig
 
   val replace_property : property_key -> property_type -> unit
 
-  val add_property : property_key -> Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list ->
+  val add_property : property_key -> Clang_ast_t.type_ptr -> Clang_ast_t.obj_c_property_decl_info ->
     Clang_ast_t.decl_info -> unit
 
   val print_property_table : unit -> unit
@@ -142,23 +142,23 @@ struct
       else properties in
     PropertyTableHash.fold find_properties property_table []
 
-  let get_getter_name prop_name attributes =
-    match Ast_utils.getter_attribute_opt attributes with
-    | Some name -> name.Clang_ast_t.ni_name
-    | None -> prop_name.Clang_ast_t.ni_name
-
-  let get_setter_name prop_name attributes =
-    let open Clang_ast_t in
-    match Ast_utils.setter_attribute_opt attributes with
-    | Some name -> name.Clang_ast_t.ni_name
-    | None -> "set" ^ (String.capitalize prop_name.ni_name) ^ ":"
-
-  let add_property (curr_class, property_name) tp attributes decl_info =
+  let add_property (curr_class, property_name) tp ocpdi decl_info =
     let key = (curr_class, property_name) in
-    let getter_name = get_getter_name property_name attributes in
-    let setter_name = get_setter_name property_name attributes in
+    let attributes = ocpdi.Clang_ast_t.opdi_property_attributes in
+    let getter = Ast_utils.get_decl_opt_with_decl_ref ocpdi.Clang_ast_t.opdi_getter_method in
+    let setter = Ast_utils.get_decl_opt_with_decl_ref ocpdi.Clang_ast_t.opdi_setter_method in
+    let getter_decl =
+      match getter with
+      | Some (Clang_ast_t.ObjCMethodDecl (_, getter_name, getter_ocmdi) as getter_d) ->
+          getter_name.Clang_ast_t.ni_name, Some (getter_d, false)
+      | _ -> "", None in (* TODO refactor property map so that this is not needed t9330897 *)
+    let setter_decl =
+      match setter with
+      | Some (Clang_ast_t.ObjCMethodDecl (_, setter_name, setter_ocmdi) as setter_d) ->
+          setter_name.Clang_ast_t.ni_name, Some (setter_d, false)
+      | _ -> "", None in (* TODO refactor property map so that this is not needed t9330897 *)
     PropertyTableHash.add property_table key
-      (tp, attributes, decl_info, (getter_name, None), (setter_name, None), None)
+      (tp, attributes, decl_info, getter_decl, setter_decl, None)
 end
 
 let reset_property_table = Property.reset_property_table
@@ -355,7 +355,7 @@ let add_properties_to_table curr_class decl_list =
         Printing.log_out "ADDING: ObjCPropertyDecl for property '%s' " pname;
         Printing.log_out "  pointer= '%s' \n" decl_info.Clang_ast_t.di_pointer;
         Property.add_property (curr_class, name_info) pdi.Clang_ast_t.opdi_type_ptr
-          pdi.Clang_ast_t.opdi_property_attributes decl_info;
+          pdi decl_info;
     | _ -> () in
   IList.iter add_property_to_table decl_list
 
