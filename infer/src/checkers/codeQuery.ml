@@ -28,7 +28,8 @@ let parse_query s =
         query
   with
   | Parsing.Parse_error ->
-      L.stdout "@.parsing stops on line %d: \n\n%s@." !CodequeryLexer.line_number buf.Lexing.lex_buffer;
+      let lexbuf = Bytes.to_string buf.Lexing.lex_buffer in
+      L.stdout "@.parsing stops on line %d: \n\n%s@." !CodequeryLexer.line_number lexbuf;
       assert false
 
 let query_ast =

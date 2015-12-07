@@ -40,22 +40,22 @@ module Inference = struct
 
   let update_count_str s_old =
     let n =
-      if s_old = "" then 0
-      else try int_of_string s_old with
+      if s_old = Bytes.empty then 0
+      else try int_of_string (Bytes.to_string s_old) with
         | Failure _ ->
-            L.stderr "int_of_string %s@." s_old;
+            L.stderr "int_of_string %s@." (Bytes.to_string s_old);
             assert false in
-    string_of_int (n + 1)
+    Bytes.of_string (string_of_int (n + 1))
 
   let update_boolvec_str _s size index bval =
-    let s = if _s = "" then String.make size '0' else _s in
+    let s = if _s = Bytes.empty then Bytes.make size '0' else _s in
     Bytes.set s index (if bval then '1' else '0');
     s
 
   let mark_file update_str dir fname =
     DB.update_file_with_lock dir fname update_str;
     match DB.read_file_with_lock dir fname with
-    | Some buf -> L.stderr "Read %s: %s@." fname buf
+    | Some buf -> L.stderr "Read %s: %s@." fname (Bytes.to_string buf)
     | None -> L.stderr "Read %s: None@." fname
 
   let mark_file_count = mark_file update_count_str
@@ -88,7 +88,7 @@ module Inference = struct
     | None -> None
     | Some buf ->
         let boolvec = ref [] in
-        String.iter (fun c -> boolvec := (c = '1') :: !boolvec) buf;
+        Bytes.iter (fun c -> boolvec := (c = '1') :: !boolvec) buf;
         Some (IList.rev !boolvec)
 end (* Inference *)
 

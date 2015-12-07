@@ -133,13 +133,13 @@ val find_source_dirs : unit -> source_dir list
 val create_dir : string -> unit
 
 (** Read a file using a lock to allow write attempts in parallel. *)
-val read_file_with_lock : string -> string -> string option
+val read_file_with_lock : string -> string -> Bytes.t option
 
 (** Update the file contents with the update function provided.
     If the directory does not exist, it is created.
     If the file does not exist, it is created, and update is given the empty string.
     A lock is used to allow write attempts in parallel. *)
-val update_file_with_lock : string -> string -> (string -> string) -> unit
+val update_file_with_lock : string -> string -> (Bytes.t -> Bytes.t) -> unit
 
 (** get the path of the global type environment (only used in Java) *)
 val global_tenv_fname : unit -> filename
