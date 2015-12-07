@@ -13,24 +13,24 @@ set -e
 # might fail if git is not installed (how did you even checkout the
 # repo in the first place?)
 if test -d '.git'; then
-  echo -n 'git repository detected, updating submodule... '
+  printf 'git repository detected, updating submodule... '
   if git submodule update --init > /dev/null; then
-    echo 'done'
+    printf 'done\n'
   else
-    echo 'error running git command'
+    printf 'error running git command\n'
   fi
 else
-  echo 'no git repository detected; not updating facebook-clang-plugins/'
+  echo 'no git repository detected; not updating git submodules'
 fi
 
 ACINCLUDE="acinclude.m4"
-echo -n "generating $ACINCLUDE..."
+printf "generating $ACINCLUDE..."
 cat m4/*.m4 > "$ACINCLUDE"
-echo " done"
+printf " done\n"
 
-echo -n "generating ./configure script..."
+printf "generating ./configure script..."
 autoreconf -fi
-echo " done"
+printf " done\n"
 
 echo ""
 echo "you may now run the following commands to build Infer:"
