@@ -229,7 +229,6 @@ let by_call_to_ra tags ra =
   "by " ^ call_to_at_line tags ra.Sil.ra_pname ra.Sil.ra_loc
 
 let mem_dyn_allocated = "memory dynamically allocated"
-let res_acquired = "resource acquired"
 let lock_acquired = "lock acquired"
 let released = "released"
 let reachable = "reachable"
@@ -583,24 +582,29 @@ let desc_frontend_warning desc sugg loc =
       sugg in
   [description], None, !tags
 
-let desc_leak value_str_opt resource_opt resource_action_opt loc bucket_opt =
+let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc bucket_opt =
   let tags = Tags.create () in
   let () = match bucket_opt with
     | Some bucket ->
         Tags.add tags Tags.bucket bucket;
     | None -> () in
-  let value_str = match value_str_opt with
-    | None -> ""
-    | Some s ->
-        Tags.add tags Tags.value s;
-        s in
   let xxx_allocated_to =
+    let value_str, _to, _on =
+      match value_str_opt with
+      | None -> "", "", ""
+      | Some s ->
+          Tags.add tags Tags.value s;
+          s, " to ", " on " in
+    let typ_str =
+      match hpred_type_opt with
+      | Some (Sil.Sizeof (Sil.Tstruct (_, _, Sil.Class, Some classname, _, _, _), _))
+        when !Config.curr_language = Config.Java ->
+          " of type " ^ Mangled.to_string classname ^ " "
+      | _ -> " " in
     let desc_str =
-      let _to = if value_str_opt = None then "" else " to " in
-      let _on = if value_str_opt = None then "" else " on " in
       match resource_opt with
       | Some Sil.Rmemory _ -> mem_dyn_allocated ^ _to ^ value_str
-      | Some Sil.Rfile -> res_acquired ^ _to ^ value_str
+      | Some Sil.Rfile -> "resource" ^ typ_str ^ "aquired" ^ _to ^ value_str
       | Some Sil.Rlock -> lock_acquired ^ _on ^ value_str
       | Some Sil.Rignore
       | None -> if value_str_opt = None then "memory" else value_str in

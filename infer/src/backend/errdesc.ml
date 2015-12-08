@@ -529,7 +529,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         if leak_from_list_abstraction hpred prop && value_str != None
         then Exceptions.Exn_user, bucket (* we don't know it's been allocated, but it's coming from list abstraction and we have a name *)
         else Exceptions.Exn_developer, Some (Mleak_buckets.ml_bucket_unknown_origin ()) in
-  exn_cat, Localise.desc_leak value_str resource_opt res_action_opt loc bucket
+  exn_cat, Localise.desc_leak hpred_typ_opt value_str resource_opt res_action_opt loc bucket
 
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)

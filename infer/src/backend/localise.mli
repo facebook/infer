@@ -190,7 +190,7 @@ val desc_divide_by_zero : string -> Location.t -> error_desc
 val desc_frontend_warning : string -> string -> Location.t -> error_desc
 
 val desc_leak :
-  string option -> Sil.resource option -> Sil.res_action option ->
+  Sil.exp option -> string option -> Sil.resource option -> Sil.res_action option ->
   Location.t -> string option -> error_desc
 
 val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
