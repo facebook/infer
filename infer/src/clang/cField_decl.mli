@@ -20,6 +20,9 @@ val get_fields : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> CContext.curr_cla
 
 val fields_superclass : Sil.tenv -> Clang_ast_t.obj_c_interface_decl_info -> field_type list
 
+val build_sil_field : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.named_decl_info ->
+  Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list -> field_type
+
 val build_sil_field_property : Ast_utils.type_ptr_to_sil_type -> CContext.curr_class -> Sil.tenv ->
   Clang_ast_t.named_decl_info -> Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list option
   -> field_type
@@ -27,3 +30,6 @@ val build_sil_field_property : Ast_utils.type_ptr_to_sil_type -> CContext.curr_c
 val add_missing_fields : Sil.tenv -> string -> field_type list -> unit
 
 val is_ivar_atomic : Ident.fieldname -> Sil.struct_fields -> bool
+
+val get_property_corresponding_ivar : Sil.tenv -> Ast_utils.type_ptr_to_sil_type -> string ->
+  Clang_ast_t.decl -> Ident.fieldname

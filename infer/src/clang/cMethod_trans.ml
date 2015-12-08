@@ -240,13 +240,14 @@ let get_objc_method_data obj_c_message_expr_info =
   | `Class _
   | `SuperClass -> (selector, pointer, MCStatic)
 
-let get_objc_property_accessor ms =
+let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   let pointer_to_property_opt = CMethod_signature.ms_get_pointer_to_property_opt ms in
   match Ast_utils.get_decl_opt pointer_to_property_opt with
-  | Some ObjCPropertyDecl (decl_info, named_decl_info, obj_c_property_decl_info) ->
-      let field_name_str = Ast_utils.generated_ivar_name named_decl_info in
-      let field_name = General_utils.mk_class_field_name field_name_str in
+  | Some (ObjCPropertyDecl (decl_info, named_decl_info, obj_c_property_decl_info) as d) ->
+      let class_name = Procname.c_get_class (CMethod_signature.ms_get_name ms) in
+      let field_name = CField_decl.get_property_corresponding_ivar tenv
+          CTypes_decl.type_ptr_to_sil_type class_name d in
       if CMethod_signature.ms_is_getter ms then
         Some (ProcAttributes.Objc_getter field_name)
       else None  (* Setter TODO *)
@@ -341,7 +342,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.C_CPP) with
           ProcAttributes.captured = captured';
-          ProcAttributes.objc_accessor = get_objc_property_accessor ms;
+          ProcAttributes.objc_accessor = get_objc_property_accessor tenv ms;
           formals;
           func_attributes = attributes;
           is_defined = defined;

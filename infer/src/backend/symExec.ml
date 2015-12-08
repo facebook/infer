@@ -1365,7 +1365,7 @@ and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_na
           | _ -> assert false) in
       let field_access_exp = Sil.Lfield (lexp, field_name, typ') in
       let ret_instr = Sil.Letderef (ret_id, field_access_exp, ret_typ, loc) in
-      sym_exec_generated true cfg tenv pdesc [ret_instr] [(_prop, path)]
+      sym_exec_generated false cfg tenv pdesc [ret_instr] [(_prop, path)]
   | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
 and sym_exec_objc_accessor property_accesor ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args
