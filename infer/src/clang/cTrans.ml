@@ -201,16 +201,22 @@ struct
       { empty_res_trans with
         exps = [(Sil.Sizeof(expanded_type, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
 
+  let add_reference_if_lvalue typ expr_info =
+    if expr_info.Clang_ast_t.ei_value_kind = `LValue then
+      Sil.Tptr (typ, Sil.Pk_reference)
+    else typ
+
+  (** Execute translation and then possibly adjust the type of the result of translation:
+      In C++, when expression returns reference to type T, it will be lvalue to T, not T&, but
+      infer needs it to be T& *)
   let exec_with_lvalue_as_reference f trans_state stmt =
     let expr_info = match Clang_ast_proj.get_expr_tuple stmt with
       | Some (_, _, ei) -> ei
       | None -> assert false in
     let res_trans = f trans_state stmt in
-    if expr_info.Clang_ast_t.ei_value_kind = `LValue then
-      let (exp, typ) = extract_exp_from_list res_trans.exps
-          "[Warning] Need exactly one expression to add reference type\n" in
-      { res_trans with exps = [(exp, Sil.Tptr (typ, Sil.Pk_reference))] }
-    else res_trans
+    let (exp, typ) = extract_exp_from_list res_trans.exps
+        "[Warning] Need exactly one expression to add reference type\n" in
+    { res_trans with exps = [(exp, add_reference_if_lvalue typ expr_info)] }
 
   (* Execute translation of e forcing to release priority (if it's not free) and then setting it back.*)
   (* This is used in conditional operators where we need to force the priority to be free for the *)
@@ -928,7 +934,7 @@ struct
       Sil.mk_pvar (Mangled.from_string ("SIL_temp_conditional___"^(string_of_int id))) procname in
     let sil_loc = CLocation.get_sil_location stmt_info parent_line_number context in
     let line_number = CLocation.get_line stmt_info parent_line_number in
-    let do_branch branch stmt typ prune_nodes join_node pvar =
+    let do_branch branch stmt var_typ prune_nodes join_node pvar =
       let trans_state_pri = PriorityNode.force_claim_priority_node trans_state stmt_info in
       let trans_state' = { trans_state_pri with
                            succ_nodes = [];
@@ -937,8 +943,8 @@ struct
       let (e', e'_typ) = extract_exp_from_list res_trans_b.exps
           "\nWARNING: Missing branch expression for Conditional operator. Need to be fixed\n" in
       let set_temp_var = [
-        Sil.Declare_locals([(pvar, typ)], sil_loc);
-        Sil.Set (Sil.Lvar pvar, typ, e', sil_loc)
+        Sil.Declare_locals([(pvar, var_typ)], sil_loc);
+        Sil.Set (Sil.Lvar pvar, var_typ, e', sil_loc)
       ] in
       let tmp_var_res_trans = { empty_res_trans with instrs = set_temp_var } in
       let trans_state'' = { trans_state' with succ_nodes = [join_node] } in
@@ -952,6 +958,7 @@ struct
      | [cond; exp1; exp2] ->
          let typ =
            CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+         let var_typ = add_reference_if_lvalue typ expr_info in
          let join_node = create_node (Cfg.Node.Join_node) [] [] sil_loc context in
          Cfg.Node.set_succs_exn join_node succ_nodes [];
          let pvar = mk_temp_var (Cfg.Node.get_id join_node) in
@@ -959,10 +966,13 @@ struct
          let trans_state' = { trans_state with continuation = continuation'; parent_line_number = line_number; succ_nodes =[]} in
          let res_trans_cond = exec_with_priority_exception trans_state' cond cond_trans in
          (* Note: by contruction prune nodes are leafs_nodes_cond *)
-         do_branch true exp1 typ res_trans_cond.leaf_nodes join_node pvar;
-         do_branch false exp2 typ res_trans_cond.leaf_nodes join_node pvar;
+         do_branch true exp1 var_typ res_trans_cond.leaf_nodes join_node pvar;
+         do_branch false exp2 var_typ res_trans_cond.leaf_nodes join_node pvar;
          let id = Ident.create_fresh Ident.knormal in
-         let instrs =[Sil.Letderef (id, Sil.Lvar pvar, typ, sil_loc); Sil.Nullify (pvar, sil_loc, true)] in
+         let instrs = [
+           Sil.Letderef (id, Sil.Lvar pvar, var_typ, sil_loc);
+           Sil.Nullify (pvar, sil_loc, true)
+         ] in
          { root_nodes = res_trans_cond.root_nodes;
            leaf_nodes = [join_node];
            ids = [id];
@@ -1497,14 +1507,14 @@ struct
           let root_nodes = if (IList.length root_nodes) = 0 then [node] else root_nodes in
           {
             root_nodes = root_nodes;
-            leaf_nodes = [];
+            leaf_nodes = [node];
             ids = ids;
             instrs = instrs;
             exps = [(var_exp, ie_typ)];
           }
         ) else {
           root_nodes = root_nodes;
-          leaf_nodes = [];
+          leaf_nodes = leaf_nodes;
           ids = ids;
           instrs = instrs;
           exps = [(var_exp, ie_typ)]
