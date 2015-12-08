@@ -20,7 +20,7 @@ type method_signature = {
   _is_generated : bool;
   _language : CFrontend_config.lang;
   _pointer_to_parent : Clang_ast_t.pointer option;
-  mutable _objc_accessor : ProcAttributes.objc_accessor_type option;
+  _pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
 }
 
 let ms_get_name ms =
@@ -53,13 +53,17 @@ let ms_get_lang ms =
 let ms_get_pointer_to_parent ms =
   ms._pointer_to_parent
 
-let ms_objc_accessor ms =
-  ms._objc_accessor
+let ms_get_pointer_to_property_opt ms =
+  ms._pointer_to_property_opt
 
-let ms_set_objc_accessor ms objc_accessor =
-  ms._objc_accessor <- objc_accessor
+(* A method is a getter if it has a link to a property and *)
+(* it has 1 argument (this includes self) *)
+let ms_is_getter ms =
+  Option.is_some ms._pointer_to_property_opt &&
+  IList.length ms._args == 1
 
-let make_ms procname args ret_type attributes loc is_instance is_generated lang pointer_to_parent =
+let make_ms procname args ret_type attributes loc is_instance is_generated lang pointer_to_parent
+    pointer_to_property_opt =
   let meth_signature = {
     _name = procname;
     _args = args;
@@ -70,7 +74,7 @@ let make_ms procname args ret_type attributes loc is_instance is_generated lang 
     _is_generated = is_generated;
     _language = lang;
     _pointer_to_parent = pointer_to_parent;
-    _objc_accessor = None
+    _pointer_to_property_opt = pointer_to_property_opt;
   } in
   meth_signature
 

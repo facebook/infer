@@ -87,7 +87,7 @@ let get_return_type function_method_decl_info =
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
 
 let build_method_signature decl_info procname function_method_decl_info is_anonym_block
-    is_generated parent_pointer =
+    is_generated parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp = get_return_type function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
@@ -96,7 +96,7 @@ let build_method_signature decl_info procname function_method_decl_info is_anony
   let lang = get_language function_method_decl_info in
   CMethod_signature.make_ms
     procname parameters tp attributes source_range is_instance_method is_generated
-    lang parent_pointer
+    lang parent_pointer pointer_to_property_opt
 
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
@@ -120,7 +120,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
       let procname = General_utils.mk_procname_from_function name function_info tp language in
-      let ms = build_method_signature decl_info procname func_decl false false None in
+      let ms = build_method_signature decl_info procname func_decl false false None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
@@ -130,7 +130,8 @@ let method_signature_of_decl meth_decl block_data_opt =
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms = build_method_signature decl_info procname method_decl false false parent_pointer in
+      let ms = build_method_signature decl_info procname method_decl false false parent_pointer
+          None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
@@ -143,13 +144,17 @@ let method_signature_of_decl meth_decl block_data_opt =
       let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
       let is_generated = Ast_utils.is_generated name_info in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms =
-        build_method_signature decl_info procname method_decl false is_generated parent_pointer in
+      let pointer_to_property_opt =
+        match mdi.Clang_ast_t.omdi_property_decl with
+        | Some decl_ref -> Some decl_ref.Clang_ast_t.dr_decl_pointer
+        | None -> None in
+      let ms = build_method_signature decl_info procname method_decl false is_generated
+          parent_pointer pointer_to_property_opt in
       let extra_instrs = get_assume_not_null_calls mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
-      let ms = build_method_signature decl_info procname func_decl true false None in
+      let ms = build_method_signature decl_info procname func_decl true false None None in
       let extra_instrs = get_assume_not_null_calls bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
@@ -234,6 +239,18 @@ let get_objc_method_data obj_c_message_expr_info =
   | `SuperInstance -> (selector, pointer, MCNoVirtual)
   | `Class _
   | `SuperClass -> (selector, pointer, MCStatic)
+
+let get_objc_property_accessor ms =
+  let open Clang_ast_t in
+  let pointer_to_property_opt = CMethod_signature.ms_get_pointer_to_property_opt ms in
+  match Ast_utils.get_decl_opt pointer_to_property_opt with
+  | Some ObjCPropertyDecl (decl_info, named_decl_info, obj_c_property_decl_info) ->
+      let field_name_str = Ast_utils.generated_ivar_name named_decl_info in
+      let field_name = General_utils.mk_class_field_name field_name_str in
+      if CMethod_signature.ms_is_getter ms then
+        Some (ProcAttributes.Objc_getter field_name)
+      else None  (* Setter TODO *)
+  | _ -> None
 
 let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
@@ -324,7 +341,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.C_CPP) with
           ProcAttributes.captured = captured';
-          ProcAttributes.objc_accessor = CMethod_signature.ms_objc_accessor ms;
+          ProcAttributes.objc_accessor = get_objc_property_accessor ms;
           formals;
           func_attributes = attributes;
           is_defined = defined;
@@ -407,7 +424,7 @@ let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
   | Some pdesc -> pdesc
   | None ->
       let ms = CMethod_signature.make_ms proc_name [] (Clang_ast_types.pointer_to_type_ptr "-1")
-          [] source_range false false CFrontend_config.OBJC None in
+          [] source_range false false CFrontend_config.OBJC None None in
       let body = [Clang_ast_t.CompoundStmt (stmt_info, [])] in
       ignore (create_local_procdesc cfg tenv ms body [] false);
       let pdesc = Option.get (Cfg.Procdesc.find_from_name cfg proc_name) in

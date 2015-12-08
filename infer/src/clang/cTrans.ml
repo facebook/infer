@@ -35,7 +35,7 @@ struct
   (* 1. method is a predefined model *)
   (* 2. method is found by clang's resolution*)
   (* 3. Method is found by our resolution *)
-  let get_callee_objc_method context obj_c_message_expr_info act_params property_accessor_opt =
+  let get_callee_objc_method context obj_c_message_expr_info act_params =
     let open CContext in
     let (selector, method_pointer_opt, mc_type) =
       CMethod_trans.get_objc_method_data obj_c_message_expr_info in
@@ -62,10 +62,9 @@ struct
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
     | None, Some ms ->
         if not (M.process_getter_setter context procname) then
-          (CMethod_signature.ms_set_objc_accessor ms property_accessor_opt;
-           ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv
+          (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv
                      ms [] [] is_instance));
-        if Option.is_some property_accessor_opt then
+        if CMethod_signature.ms_is_getter ms then
           procname, CMethod_trans.MCNoVirtual
         else
           procname, mc_type
@@ -833,8 +832,7 @@ struct
         obj_c_message_expr_info, fst_res_trans :: l
     | [] -> obj_c_message_expr_info, [empty_res_trans]
 
-  and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info
-      property_accessor_opt =
+  and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
@@ -854,7 +852,7 @@ struct
     | None ->
         let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
         let callee_name, method_call_type = get_callee_objc_method context obj_c_message_expr_info
-            subexpr_exprs property_accessor_opt in
+            subexpr_exprs in
         let res_trans_add_self = Self.add_self_parameter_for_super_instance context procname sil_loc
             obj_c_message_expr_info in
         let res_trans_subexpr_list = res_trans_add_self :: res_trans_subexpr_list in
@@ -1603,20 +1601,6 @@ struct
       | stmt :: _ -> instruction trans_state' stmt
       | _ -> assert false in
     match stmt_list with
-    | [ObjCPropertyRefExpr (_, _, _, oprei); _;
-       ObjCMessageExpr (si, stmts, info, ocmei)] ->
-        let property_accessor_opt =
-          match oprei.Clang_ast_t.oprei_kind with
-          | `PropertyRef decl_ref ->
-              (let create_field_name property_name =
-                 General_utils.mk_class_field_name (Ast_utils.generated_ivar_name property_name) in
-               let field_name_opt = Option.map create_field_name decl_ref.Clang_ast_t.dr_name in
-               match field_name_opt with
-               | Some field_name when oprei.Clang_ast_t.oprei_is_messaging_getter ->
-                   Some (ProcAttributes.Objc_getter field_name)
-               | _ -> None)
-          | _ -> None in
-        objCMessageExpr_trans trans_state si ocmei stmts info property_accessor_opt
     | syntactic_form :: semantic_form ->
         do_semantic_elements semantic_form
     | _ -> assert false
@@ -1911,7 +1895,6 @@ struct
           block_enumeration_trans trans_state stmt_info stmt_list expr_info
         else
           objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
-            None
 
     | CompoundStmt (stmt_info, stmt_list) ->
         (* No node for this statement. We just collect its statement list*)

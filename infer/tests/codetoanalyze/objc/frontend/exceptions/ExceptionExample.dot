@@ -31,7 +31,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Message Call: description \n   n$0=*&self:class ExceptionExample * [line 26]\n  n$1=_fun_ExceptionExample_description(n$0:class ExceptionExample *) virtual [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n  NULLIFY(&self,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+3 [label="3:  Message Call: description \n   n$0=*&self:class ExceptionExample * [line 26]\n  n$1=_fun_ExceptionExample_description(n$0:class ExceptionExample *) [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n  NULLIFY(&self,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
 	 3 -> 2 ;

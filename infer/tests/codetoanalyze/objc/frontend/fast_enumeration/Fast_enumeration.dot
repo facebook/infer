@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 20 -> 15 ;
-19 [label="19:  BinaryOperatorStmt: AddAssign \n   n$13=*&item:class NSArray * [line 29]\n  n$14=_fun_NSArray_count(n$13:class NSArray *) virtual [line 29]\n  n$15=*&size:int  [line 29]\n  *&size:int =(n$15 + n$14) [line 29]\n  REMOVE_TEMPS(n$13,n$14,n$15); [line 29]\n  NULLIFY(&item,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+19 [label="19:  BinaryOperatorStmt: AddAssign \n   n$13=*&item:class NSArray * [line 29]\n  n$14=_fun_NSArray_count(n$13:class NSArray *) [line 29]\n  n$15=*&size:int  [line 29]\n  *&size:int =(n$15 + n$14) [line 29]\n  REMOVE_TEMPS(n$13,n$14,n$15); [line 29]\n  NULLIFY(&item,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 19 -> 15 ;
@@ -47,7 +47,7 @@ digraph iCFG {
 	
 
 	 10 -> 4 ;
-9 [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&item:class NSArray * [line 20]\n  n$5=_fun_NSArray_count(n$4:class NSArray *) virtual [line 20]\n  n$6=*&size:int  [line 20]\n  *&size:int =(n$6 + n$5) [line 20]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 20]\n  NULLIFY(&item,false); [line 20]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: AddAssign \n   n$4=*&item:class NSArray * [line 20]\n  n$5=_fun_NSArray_count(n$4:class NSArray *) [line 20]\n  n$6=*&size:int  [line 20]\n  *&size:int =(n$6 + n$5) [line 20]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 20]\n  NULLIFY(&item,false); [line 20]\n " shape="box"]
 	
 
 	 9 -> 8 ;
