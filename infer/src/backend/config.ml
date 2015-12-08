@@ -360,9 +360,6 @@ let default_failure_name = "ASSERTION_FAILURE"
 
 let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
 
-(** report expensive calls warnings *)
-let report_expensive_calls = from_env_variable "INFER_REPORT_EXPENSIVE_CALLS"
-
 
 module Experiment = struct
 

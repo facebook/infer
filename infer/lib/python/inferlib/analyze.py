@@ -418,9 +418,10 @@ class Infer:
             self.timing['makefile_generation'] = 0
 
         else:
-            if self.args.analyzer in [config.ANALYZER_ERADICATE,
-                                      config.ANALYZER_CHECKERS]:
+            if self.args.analyzer == config.ANALYZER_ERADICATE:
                 infer_analyze.append('-intraprocedural')
+            if self.args.analyzer == config.ANALYZER_CHECKERS:
+                os.environ['INFER_ONDEMAND'] = 'Y'
 
             os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
 

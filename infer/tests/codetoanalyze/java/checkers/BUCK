@@ -18,8 +18,6 @@ java_library(
 out = 'out'
 clean_cmd = ' '.join(['rm', '-rf', out])
 classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
-env_cmd = ' '.join(['export', 'INFER_REPORT_EXPENSIVE_CALLS=1'])
-ondemand_mode = ' '.join(['export', 'INFER_ONDEMAND=1'])
 infer_cmd = ' '.join([
     'infer',
     '--no-progress-bar',
@@ -32,7 +30,7 @@ infer_cmd = ' '.join([
     '$SRCS',
 ])
 copy_cmd = ' '.join(['cp', out + '/report.csv', '$OUT'])
-command = ' && '.join([clean_cmd, ondemand_mode, env_cmd, infer_cmd, copy_cmd])
+command = ' && '.join([clean_cmd, infer_cmd, copy_cmd])
 
 genrule(
     name = 'analyze',
