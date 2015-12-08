@@ -14,7 +14,7 @@ digraph iCFG {
 	
 
 	 14 -> 17 ;
-13 [label="13:  Call _fun___infer_assume \n   n$10=*&name:class NSString * [line -1]\n  n$11=_fun___infer_assume((n$10 != 0):class NSString *) [line -1]\n  REMOVE_TEMPS(n$10,n$11); [line -1]\n " shape="box"]
+13 [label="13:  Call _fun___infer_assume \n   n$10=*&name:class NSString * [line 31]\n  n$11=_fun___infer_assume((n$10 != 0):class NSString *) [line 31]\n  REMOVE_TEMPS(n$10,n$11); [line 31]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 10 -> 13 ;
-9 [label="9:  Call _fun___infer_assume \n   n$5=*&a:class A * [line -1]\n  n$6=_fun___infer_assume((n$5 != 0):class A *) [line -1]\n  REMOVE_TEMPS(n$5,n$6); [line -1]\n " shape="box"]
+9 [label="9:  Call _fun___infer_assume \n   n$5=*&a:class A * [line 37]\n  n$6=_fun___infer_assume((n$5 != 0):class A *) [line 37]\n  REMOVE_TEMPS(n$5,n$6); [line 37]\n " shape="box"]
 	
 
 	 9 -> 8 ;
