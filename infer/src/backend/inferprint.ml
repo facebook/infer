@@ -666,6 +666,7 @@ module Stats = struct
     mutable nLOC : int;
     mutable nprocs : int;
     mutable nspecs : int;
+    mutable ntimeouts : int;
     mutable nverified : int;
     mutable nwarnings : int;
     mutable saved_errors : string list;
@@ -680,6 +681,7 @@ module Stats = struct
     nLOC = 0;
     nprocs = 0;
     nspecs = 0;
+    ntimeouts = 0;
     nverified = 0;
     nwarnings = 0;
     saved_errors = [];
@@ -744,10 +746,12 @@ module Stats = struct
     let is_defective = found_errors in
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
+    let is_timeout = Specs.(summary.stats.stats_timeout) in
     stats.nprocs <- stats.nprocs + 1;
     stats.nspecs <- stats.nspecs + (IList.length specs);
     if is_verified then stats.nverified <- stats.nverified + 1;
     if is_checked then stats.nchecked <- stats.nchecked + 1;
+    if is_timeout then stats.ntimeouts <- stats.ntimeouts + 1;
     if is_defective then stats.ndefective <- stats.ndefective + 1;
     process_loc summary.Specs.attributes.ProcAttributes.loc stats
 
@@ -758,6 +762,7 @@ module Stats = struct
     F.fprintf fmt "Files: %d@\n" (num_files stats);
     F.fprintf fmt "LOC: %d@\n" stats.nLOC;
     F.fprintf fmt "Specs: %d@\n" stats.nspecs;
+    F.fprintf fmt "Timeouts: %d@\n" stats.ntimeouts;
     F.fprintf fmt "Procedures: %d@\n" stats.nprocs;
     F.fprintf fmt "  Verified: %d@\n" stats.nverified;
     F.fprintf fmt "  Checked: %d@\n" stats.nchecked;
