@@ -193,7 +193,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_once_example______1); [line 24]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_once_example______1 ):unsigned long ) [line 24]\n  *&__objc_anonymous_block_A_dispatch_once_example______1:class __objc_anonymous_block_A_dispatch_once_example______1 =n$7 [line 24]\n  n$8=*&#GB$A_dispatch_once_example_a:class A * [line 24]\n  *n$7.A_dispatch_once_example_a:class A *=n$8 [line 24]\n  *&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_once_example______1) [line 23]\n  REMOVE_TEMPS(n$7,n$8); [line 23]\n " shape="box"]
+9 [label="9:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_once_example______1); [line 24]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_once_example______1 ):unsigned long ) [line 24]\n  *&__objc_anonymous_block_A_dispatch_once_example______1:class __objc_anonymous_block_A_dispatch_once_example______1 =n$7 [line 24]\n  n$8=*&#GB$A_dispatch_once_example_a:class A * [line 24]\n  *n$7.A_dispatch_once_example_a:class A *=n$8 [line 24]\n  *&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_once_example______1) [line 24]\n  REMOVE_TEMPS(n$7,n$8); [line 24]\n " shape="box"]
 	
 
 	 9 -> 4 ;
@@ -212,7 +212,7 @@ digraph iCFG {
 	
 
 	 5 -> 8 ;
-4 [label="4:  Call n$2 \n   n$2=*&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*) [line 23]\n  n$3=n$2() [line 23]\n  REMOVE_TEMPS(n$2,n$3); [line 23]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_once_example______1,false); [line 23]\n " shape="box"]
+4 [label="4:  Call n$2 \n   n$2=*&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*) [line 24]\n  n$3=n$2() [line 24]\n  REMOVE_TEMPS(n$2,n$3); [line 24]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_once_example______1,false); [line 24]\n " shape="box"]
 	
 
 	 4 -> 3 ;

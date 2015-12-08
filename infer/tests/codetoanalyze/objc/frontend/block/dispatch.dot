@@ -80,7 +80,7 @@ digraph iCFG {
 	
 
 	 9 -> 16 ;
-8 [label="8:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_sharedInstance______1); [line 27]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_sharedInstance______1 ):unsigned long ) [line 27]\n  *&__objc_anonymous_block_A_sharedInstance______1:class __objc_anonymous_block_A_sharedInstance______1 =n$5 [line 27]\n  n$6=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 27]\n  *n$5.A_sharedInstance_sharedInstance:struct objc_object *=n$6 [line 27]\n  *&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*)=(_fun___objc_anonymous_block_A_sharedInstance______1) [line 29]\n  REMOVE_TEMPS(n$5,n$6); [line 29]\n " shape="box"]
+8 [label="8:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_sharedInstance______1); [line 27]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_sharedInstance______1 ):unsigned long ) [line 27]\n  *&__objc_anonymous_block_A_sharedInstance______1:class __objc_anonymous_block_A_sharedInstance______1 =n$5 [line 27]\n  n$6=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 27]\n  *n$5.A_sharedInstance_sharedInstance:struct objc_object *=n$6 [line 27]\n  *&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*)=(_fun___objc_anonymous_block_A_sharedInstance______1) [line 27]\n  REMOVE_TEMPS(n$5,n$6); [line 27]\n " shape="box"]
 	
 
 	 8 -> 4 ;
@@ -95,7 +95,7 @@ digraph iCFG {
 	
 
 	 5 -> 7 ;
-4 [label="4:  Call n$1 \n   n$1=*&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) [line 29]\n  n$2=n$1() [line 29]\n  REMOVE_TEMPS(n$1,n$2); [line 29]\n  NULLIFY(&infer___objc_anonymous_block_A_sharedInstance______1,false); [line 29]\n " shape="box"]
+4 [label="4:  Call n$1 \n   n$1=*&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) [line 27]\n  n$2=n$1() [line 27]\n  REMOVE_TEMPS(n$1,n$2); [line 27]\n  NULLIFY(&infer___objc_anonymous_block_A_sharedInstance______1,false); [line 27]\n " shape="box"]
 	
 
 	 4 -> 3 ;
