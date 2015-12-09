@@ -1487,8 +1487,6 @@ struct
           let instruction' =
             exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
           exec_with_block_priority_exception instruction' trans_state' ie var_stmt_info in
-        let root_nodes = res_trans_ie.root_nodes in
-        let leaf_nodes = res_trans_ie.leaf_nodes in
         let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps
             "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
         let rhs_owning_method = CTrans_utils.is_owning_method ie in
@@ -1501,28 +1499,13 @@ struct
               CArithmetic_trans.assignment_arc_mode context var_exp ie_typ sil_e1' sil_loc rhs_owning_method true in
             ([(e, ie_typ)], instrs, ids)
           else ([], [Sil.Set (var_exp, ie_typ, sil_e1', sil_loc)], []) in
-        let ids = var_res_trans.ids @ res_trans_ie.ids @ ids_assign in
-        let instrs = var_res_trans.instrs @ res_trans_ie.instrs @ instrs_assign in
-        if PriorityNode.own_priority_node trans_state_pri.priority var_stmt_info then (
-          let node_kind = Cfg.Node.Stmt_node "DeclStmt" in
-          let node = create_node node_kind ids instrs sil_loc context in
-          Cfg.Node.set_succs_exn node trans_state.succ_nodes [];
-          IList.iter (fun n -> Cfg.Node.set_succs_exn n [node] []) leaf_nodes;
-          let root_nodes = if (IList.length root_nodes) = 0 then [node] else root_nodes in
-          {
-            root_nodes = root_nodes;
-            leaf_nodes = [node];
-            ids = ids;
-            instrs = instrs;
-            exps = [(var_exp, ie_typ)];
-          }
-        ) else {
-          root_nodes = root_nodes;
-          leaf_nodes = leaf_nodes;
-          ids = ids;
-          instrs = instrs;
-          exps = [(var_exp, ie_typ)]
-        }
+        let res_trans_assign = { empty_res_trans with
+                                 ids = ids_assign;
+                                 instrs = instrs_assign } in
+        let all_res_trans = [var_res_trans; res_trans_ie; res_trans_assign] in
+        let res_trans = PriorityNode.compute_results_to_parent trans_state_pri sil_loc "DeclStmt"
+            var_stmt_info all_res_trans in
+        { res_trans with exps =  [(var_exp, ie_typ)] }
 
   and collect_all_decl trans_state var_decls next_nodes stmt_info =
     let open Clang_ast_t in
