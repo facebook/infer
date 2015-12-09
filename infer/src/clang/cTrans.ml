@@ -1118,15 +1118,24 @@ struct
     | [_; cond; CompoundStmt(stmt_info, stmt_list)] ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' ={ trans_state_pri with succ_nodes = []} in
-        let res_trans_cond = instruction trans_state' cond in
+        let res_trans_cond_tmp = instruction trans_state' cond in
         let switch_special_cond_node =
-          create_node (Cfg.Node.Stmt_node "Switch_stmt") [] res_trans_cond.instrs sil_loc context in
+          let node_kind = Cfg.Node.Stmt_node "Switch_stmt" in
+          create_node node_kind [] res_trans_cond_tmp.instrs sil_loc context in
+        IList.iter (fun n' -> Cfg.Node.set_succs_exn n' [switch_special_cond_node] []) res_trans_cond_tmp.leaf_nodes;
+        let root_nodes =
+          if res_trans_cond_tmp.root_nodes <> [] then res_trans_cond_tmp.root_nodes
+          else [switch_special_cond_node] in
+        let (switch_e_cond', switch_e_cond'_typ) =
+          extract_exp_from_list res_trans_cond_tmp.exps
+            "\nWARNING: The condition of the SwitchStmt is not singleton. Need to be fixed\n" in
+        let res_trans_cond = { res_trans_cond_tmp with
+                               root_nodes = root_nodes;
+                               leaf_nodes = [switch_special_cond_node]
+                             } in
         let trans_state_no_pri = if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
             { trans_state_pri with priority = Free }
           else trans_state_pri in
-        let (switch_e_cond', switch_e_cond'_typ) =
-          extract_exp_from_list res_trans_cond.exps
-            "\nWARNING: The condition of the SwitchStmt is not singleton. Need to be fixed\n" in
         let switch_exit_point = succ_nodes in
         let continuation' =
           match continuation with
@@ -1217,13 +1226,7 @@ struct
         let top_entry_point, top_prune_nodes = translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
         let _ = connected_instruction (IList.rev pre_case_stmts) top_entry_point in
         Cfg.Node.set_succs_exn switch_special_cond_node top_prune_nodes [];
-        let top_nodes =
-          match res_trans_cond.root_nodes with
-          | [] -> (* here if no root or if the translation of cond needed priority *)
-              [switch_special_cond_node]
-          | _ ->
-              IList.iter (fun n' -> Cfg.Node.set_succs_exn n' [switch_special_cond_node] []) res_trans_cond.leaf_nodes;
-              res_trans_cond.root_nodes in
+        let top_nodes = res_trans_cond.root_nodes in
         IList.iter (fun n' -> Cfg.Node.append_instrs_temps n' [] res_trans_cond.ids) succ_nodes; (* succ_nodes will remove the temps *)
         { root_nodes = top_nodes; leaf_nodes = succ_nodes; ids = []; instrs = []; exps =[]}
     | _ -> assert false
