@@ -61,41 +61,41 @@ let stmt_info_with_fresh_pointer stmt_info = {
   si_source_range = stmt_info.Clang_ast_t.si_source_range;
 }
 
-let get_constant_type_ptr s =
-  let pointer = CFrontend_config.type_pointer_prefix ^ s in
+let new_constant_type_ptr () =
+  let pointer = Ast_utils.get_fresh_pointer () in
   `Prebuilt pointer
 
 (* Whenever new type are added manually to the translation here, *)
 (* they should be added to the map in cTypes_decl too!! *)
 let create_int_type =
-  get_constant_type_ptr "int"
+  new_constant_type_ptr ()
 
 let create_void_type =
-  get_constant_type_ptr "void"
+  new_constant_type_ptr ()
 
 let create_void_star_type =
-  get_constant_type_ptr "void *"
+  new_constant_type_ptr ()
 
 let create_id_type =
-  get_constant_type_ptr CFrontend_config.id_cl
+  new_constant_type_ptr ()
 
 let create_nsarray_star_type =
-  get_constant_type_ptr (CFrontend_config.nsarray_cl ^ " *")
+  new_constant_type_ptr ()
 
 let create_char_star_type =
-  get_constant_type_ptr "char *"
+  new_constant_type_ptr ()
 
 let create_BOOL_type =
-  get_constant_type_ptr "signed char"
+  new_constant_type_ptr ()
 
 let create_unsigned_long_type =
-  get_constant_type_ptr "unsigned long"
+  new_constant_type_ptr ()
 
 let create_void_unsigned_long_type =
-  get_constant_type_ptr "void *(unsigned long)"
+  new_constant_type_ptr ()
 
 let create_void_void_type =
-  get_constant_type_ptr "void (void *)"
+  new_constant_type_ptr ()
 
 let create_class_type class_name = `ClassType class_name
 

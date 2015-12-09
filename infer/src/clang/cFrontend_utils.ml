@@ -267,10 +267,11 @@ struct
 
   let get_fresh_pointer () =
     pointer_counter := !pointer_counter + 1;
-    CFrontend_config.pointer_prefix^(string_of_int (!pointer_counter))
+    let internal_pointer = -(!pointer_counter) in
+    string_of_int internal_pointer
 
   let get_invalid_pointer () =
-    CFrontend_config.pointer_prefix^("INVALID")
+    string_of_int CFrontend_config.invalid_pointer
 
   let type_from_unary_expr_or_type_trait_expr_info info =
     match info.Clang_ast_t.uttei_type_ptr with
