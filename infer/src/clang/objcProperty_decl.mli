@@ -60,22 +60,11 @@ val reset_property_table : unit -> unit
 
 val print_property_table : unit -> unit
 
-val is_property_read_only : Clang_ast_t.property_attribute list -> bool
-
 val find_properties_class : CContext.curr_class ->
   (Clang_ast_t.named_decl_info * property_type) list
 
-val method_is_property_accesor : CContext.curr_class -> string ->
-  (Clang_ast_t.named_decl_info * property_type * bool) option
-
-val get_ivar_name : Clang_ast_t.named_decl_info -> Clang_ast_t.named_decl_info option ->
-  Clang_ast_t.named_decl_info
-
 (* Given a property type returns whether the property is strong *)
 val is_strong_property : property_type -> bool
-
-(* Given a property type returns whether the property line *)
-val property_loc : property_type -> Location.t
 
 (* Checks whether mname is a getter or setter of the ivar given in dr_name *)
 val is_getter_setter :

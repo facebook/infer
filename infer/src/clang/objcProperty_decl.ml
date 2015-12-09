@@ -167,14 +167,6 @@ let print_property_table () = Property.print_property_table ()
 
 let find_properties_class = Property.find_properties_class
 
-let get_ivarname_property pidi =
-  match pidi.Clang_ast_t.opidi_ivar_decl with
-  | Some dr -> (match dr.Clang_ast_t.dr_name with
-      | Some n -> n
-      | _ -> assert false)
-  | _ -> (* If ivar is not defined than we need to take the name of the property to define ivar*)
-      Ast_utils.property_name pidi
-
 let upgrade_property_accessor property_key property_type meth_decl new_defined is_getter =
   let is_defined meth_decl =
     match meth_decl with
@@ -208,28 +200,11 @@ let check_for_property curr_class method_name meth_decl body =
   check_property_accessor curr_class method_name true;
   check_property_accessor curr_class method_name false
 
-let method_is_property_accesor cls method_name =
-  let properties_class = find_properties_class cls in
-  let method_is_getter (property_name, property_type) res_opt =
-    match res_opt with
-    | Some res -> res_opt
-    | None ->
-        match property_type with (_, _, _, (getter_name, _), (setter_name, _), _) ->
-          if method_name = getter_name then Some (property_name, property_type, true)
-          else if method_name = setter_name then Some (property_name, property_type, false)
-          else None in
-  IList.fold_right method_is_getter properties_class None
-
 let is_strong_property property_type =
   let _, attrs, _, _, _, _ = property_type in
   IList.exists (fun a -> match a with
       | `Strong -> true
       | _ -> false) attrs
-
-let property_loc property_type =
-  let _, attrs, decl_info, _, _, _ = property_type in
-  let src_range = decl_info.Clang_ast_t.di_source_range in
-  CLocation.get_sil_location_from_range src_range true
 
 let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
   let pname = Ast_utils.property_name property_impl_decl_info in
@@ -258,21 +233,6 @@ let prepare_dynamic_property curr_class decl_info property_impl_decl_info =
   | _ ->
       (* No names of fields/method to collect from ObjCPropertyImplDecl when Synthesized *)
       []
-
-let is_property_read_only attributes =
-  IList.mem (Ast_utils.property_attribute_eq) `Readonly attributes
-
-let get_memory_management_attribute attributes =
-  let memory_management_attributes = Ast_utils.get_memory_management_attributes () in
-  try Some (IList.find (
-      fun att -> IList.mem (Ast_utils.property_attribute_eq)
-          att memory_management_attributes) attributes)
-  with Not_found -> None
-
-let get_ivar_name prop_name ivar_opt =
-  match ivar_opt with
-  | Some ivar_name -> ivar_name
-  | None -> Ast_utils.generated_ivar_name prop_name
 
 let add_properties_to_table curr_class decl_list =
   let add_property_to_table dec =
