@@ -46,4 +46,10 @@ public class TemplatesTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("function.cpp");
   }
+
+  @Test
+  public void testMethodDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("method.cpp");
+  }
 }

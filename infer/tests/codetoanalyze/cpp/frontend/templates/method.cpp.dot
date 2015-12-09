@@ -1,0 +1,272 @@
+digraph iCFG {
+73 [label="73:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 66]\n " shape="box"]
+	
+
+	 73 -> 72 ;
+72 [label="72:  Call _fun_GetterTempl<X1>_GetterTempl \n   _fun_GetterTempl<X1>_GetterTempl(&g:class GetterTempl<X1> *) [line 67]\n " shape="box"]
+	
+
+	 72 -> 71 ;
+71 [label="71:  Return Stmt \n   n$0=_fun_GetterTempl<X1>_get<X1>(&g:class GetterTempl<X1> &,&x1:class X1 &,&x1:class X1 &) [line 68]\n  *&return:int =(1 / n$0) [line 68]\n  REMOVE_TEMPS(n$0); [line 68]\n  NULLIFY(&g,false); [line 68]\n  NULLIFY(&x1,false); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
+	
+
+	 71 -> 70 ;
+70 [label="70: Exit div1_getter_templ2 \n  " color=yellow style=filled]
+	
+
+69 [label="69: Start div1_getter_templ2\nFormals: \nLocals:  g:class GetterTempl<X1>  x1:class X1  \n   DECLARE_LOCALS(&return,&g,&x1); [line 65]\n " color=yellow style=filled]
+	
+
+	 69 -> 73 ;
+68 [label="68:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 59]\n " shape="box"]
+	
+
+	 68 -> 67 ;
+67 [label="67:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 60]\n " shape="box"]
+	
+
+	 67 -> 66 ;
+66 [label="66:  Call _fun_GetterTempl<X2>_GetterTempl \n   _fun_GetterTempl<X2>_GetterTempl(&g:class GetterTempl<X2> *) [line 61]\n " shape="box"]
+	
+
+	 66 -> 65 ;
+65 [label="65:  Return Stmt \n   n$0=_fun_GetterTempl<X2>_get<X1>(&g:class GetterTempl<X2> &,&x2:class X2 &,&x1:class X1 &) [line 62]\n  *&return:int =(1 / n$0) [line 62]\n  REMOVE_TEMPS(n$0); [line 62]\n  NULLIFY(&g,false); [line 62]\n  NULLIFY(&x1,false); [line 62]\n  NULLIFY(&x2,false); [line 62]\n  APPLY_ABSTRACTION; [line 62]\n " shape="box"]
+	
+
+	 65 -> 64 ;
+64 [label="64: Exit div1_getter_templ \n  " color=yellow style=filled]
+	
+
+63 [label="63: Start div1_getter_templ\nFormals: \nLocals:  g:class GetterTempl<X2>  x2:class X2  x1:class X1  \n   DECLARE_LOCALS(&return,&g,&x2,&x1); [line 58]\n " color=yellow style=filled]
+	
+
+	 63 -> 68 ;
+62 [label="62:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 53]\n " shape="box"]
+	
+
+	 62 -> 61 ;
+61 [label="61:  Call _fun_GetterTempl<X2>_GetterTempl \n   _fun_GetterTempl<X2>_GetterTempl(&g:class GetterTempl<X2> *) [line 54]\n " shape="box"]
+	
+
+	 61 -> 60 ;
+60 [label="60:  Return Stmt \n   n$0=_fun_GetterTempl<X2>_get<X2>(&g:class GetterTempl<X2> &,&x2:class X2 &,&x2:class X2 &) [line 55]\n  *&return:int =(1 / n$0) [line 55]\n  REMOVE_TEMPS(n$0); [line 55]\n  NULLIFY(&g,false); [line 55]\n  NULLIFY(&x2,false); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
+	
+
+	 60 -> 59 ;
+59 [label="59: Exit div0_getter_templ2 \n  " color=yellow style=filled]
+	
+
+58 [label="58: Start div0_getter_templ2\nFormals: \nLocals:  g:class GetterTempl<X2>  x2:class X2  \n   DECLARE_LOCALS(&return,&g,&x2); [line 52]\n " color=yellow style=filled]
+	
+
+	 58 -> 62 ;
+57 [label="57:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 46]\n " shape="box"]
+	
+
+	 57 -> 56 ;
+56 [label="56:  Call _fun_X3_X3 \n   _fun_X3_X3(&x3:class X3 *) [line 47]\n " shape="box"]
+	
+
+	 56 -> 55 ;
+55 [label="55:  Call _fun_GetterTempl<X3>_GetterTempl \n   _fun_GetterTempl<X3>_GetterTempl(&g:class GetterTempl<X3> *) [line 48]\n " shape="box"]
+	
+
+	 55 -> 54 ;
+54 [label="54:  Return Stmt \n   n$0=_fun_GetterTempl<X3>_get<X2>(&g:class GetterTempl<X3> &,&x3:class X3 &,&x2:class X2 &) [line 49]\n  *&return:int =(1 / n$0) [line 49]\n  REMOVE_TEMPS(n$0); [line 49]\n  NULLIFY(&g,false); [line 49]\n  NULLIFY(&x2,false); [line 49]\n  NULLIFY(&x3,false); [line 49]\n  APPLY_ABSTRACTION; [line 49]\n " shape="box"]
+	
+
+	 54 -> 53 ;
+53 [label="53: Exit div0_getter_templ \n  " color=yellow style=filled]
+	
+
+52 [label="52: Start div0_getter_templ\nFormals: \nLocals:  g:class GetterTempl<X3>  x3:class X3  x2:class X2  \n   DECLARE_LOCALS(&return,&g,&x3,&x2); [line 45]\n " color=yellow style=filled]
+	
+
+	 52 -> 57 ;
+51 [label="51:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 40]\n " shape="box"]
+	
+
+	 51 -> 50 ;
+50 [label="50:  Call _fun_Getter_Getter \n   _fun_Getter_Getter(&g:class Getter *) [line 41]\n " shape="box"]
+	
+
+	 50 -> 49 ;
+49 [label="49:  Return Stmt \n   n$0=_fun_Getter_get<X1>(&g:class Getter &,&x1:class X1 &) [line 42]\n  *&return:int =(1 / n$0) [line 42]\n  REMOVE_TEMPS(n$0); [line 42]\n  NULLIFY(&g,false); [line 42]\n  NULLIFY(&x1,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+	
+
+	 49 -> 48 ;
+48 [label="48: Exit div1_getter \n  " color=yellow style=filled]
+	
+
+47 [label="47: Start div1_getter\nFormals: \nLocals:  g:class Getter  x1:class X1  \n   DECLARE_LOCALS(&return,&g,&x1); [line 39]\n " color=yellow style=filled]
+	
+
+	 47 -> 51 ;
+46 [label="46:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 34]\n " shape="box"]
+	
+
+	 46 -> 45 ;
+45 [label="45:  Call _fun_Getter_Getter \n   _fun_Getter_Getter(&g:class Getter *) [line 35]\n " shape="box"]
+	
+
+	 45 -> 44 ;
+44 [label="44:  Return Stmt \n   n$0=_fun_Getter_get<X2>(&g:class Getter &,&x2:class X2 &) [line 36]\n  *&return:int =(1 / n$0) [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&g,false); [line 36]\n  NULLIFY(&x2,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+	
+
+	 44 -> 43 ;
+43 [label="43: Exit div0_getter \n  " color=yellow style=filled]
+	
+
+42 [label="42: Start div0_getter\nFormals: \nLocals:  g:class Getter  x2:class X2  \n   DECLARE_LOCALS(&return,&g,&x2); [line 33]\n " color=yellow style=filled]
+	
+
+	 42 -> 46 ;
+41 [label="41: Exit GetterTempl<X1>_GetterTempl \n  " color=yellow style=filled]
+	
+
+40 [label="40: Start GetterTempl<X1>_GetterTempl\nFormals:  this:class GetterTempl<X1> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n  NULLIFY(&this,false); [line 28]\n " color=yellow style=filled]
+	
+
+	 40 -> 41 ;
+39 [label="39:  Return Stmt \n   n$0=*&t:class X1 & [line 30]\n  n$1=_fun_X1_get(n$0:class X1 &) [line 30]\n  n$2=*&s:class X1 & [line 30]\n  n$3=_fun_X1_get(n$2:class X1 &) [line 30]\n  *&return:int =(n$1 + n$3) [line 30]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  NULLIFY(&t,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	
+
+	 39 -> 38 ;
+38 [label="38: Exit GetterTempl<X1>_get<X1> \n  " color=yellow style=filled]
+	
+
+37 [label="37: Start GetterTempl<X1>_get<X1>\nFormals:  this:class GetterTempl<X1> * t:class X1 & s:class X1 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n  NULLIFY(&this,false); [line 30]\n " color=yellow style=filled]
+	
+
+	 37 -> 39 ;
+36 [label="36: Exit GetterTempl<X2>_GetterTempl \n  " color=yellow style=filled]
+	
+
+35 [label="35: Start GetterTempl<X2>_GetterTempl\nFormals:  this:class GetterTempl<X2> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n  NULLIFY(&this,false); [line 28]\n " color=yellow style=filled]
+	
+
+	 35 -> 36 ;
+34 [label="34:  Return Stmt \n   n$0=*&t:class X2 & [line 30]\n  n$1=_fun_X2_get(n$0:class X2 &) [line 30]\n  n$2=*&s:class X1 & [line 30]\n  n$3=_fun_X1_get(n$2:class X1 &) [line 30]\n  *&return:int =(n$1 + n$3) [line 30]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  NULLIFY(&t,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	
+
+	 34 -> 33 ;
+33 [label="33: Exit GetterTempl<X2>_get<X1> \n  " color=yellow style=filled]
+	
+
+32 [label="32: Start GetterTempl<X2>_get<X1>\nFormals:  this:class GetterTempl<X2> * t:class X2 & s:class X1 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n  NULLIFY(&this,false); [line 30]\n " color=yellow style=filled]
+	
+
+	 32 -> 34 ;
+31 [label="31:  Return Stmt \n   n$0=*&t:class X2 & [line 30]\n  n$1=_fun_X2_get(n$0:class X2 &) [line 30]\n  n$2=*&s:class X2 & [line 30]\n  n$3=_fun_X2_get(n$2:class X2 &) [line 30]\n  *&return:int =(n$1 + n$3) [line 30]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  NULLIFY(&t,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	
+
+	 31 -> 30 ;
+30 [label="30: Exit GetterTempl<X2>_get<X2> \n  " color=yellow style=filled]
+	
+
+29 [label="29: Start GetterTempl<X2>_get<X2>\nFormals:  this:class GetterTempl<X2> * t:class X2 & s:class X2 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n  NULLIFY(&this,false); [line 30]\n " color=yellow style=filled]
+	
+
+	 29 -> 31 ;
+28 [label="28: Exit GetterTempl<X3>_GetterTempl \n  " color=yellow style=filled]
+	
+
+27 [label="27: Start GetterTempl<X3>_GetterTempl\nFormals:  this:class GetterTempl<X3> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n  NULLIFY(&this,false); [line 28]\n " color=yellow style=filled]
+	
+
+	 27 -> 28 ;
+26 [label="26:  Return Stmt \n   n$0=*&t:class X3 & [line 30]\n  n$1=_fun_X3_get(n$0:class X3 &) [line 30]\n  n$2=*&s:class X2 & [line 30]\n  n$3=_fun_X2_get(n$2:class X2 &) [line 30]\n  *&return:int =(n$1 + n$3) [line 30]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  NULLIFY(&t,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	
+
+	 26 -> 25 ;
+25 [label="25: Exit GetterTempl<X3>_get<X2> \n  " color=yellow style=filled]
+	
+
+24 [label="24: Start GetterTempl<X3>_get<X2>\nFormals:  this:class GetterTempl<X3> * t:class X3 & s:class X2 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n  NULLIFY(&this,false); [line 30]\n " color=yellow style=filled]
+	
+
+	 24 -> 26 ;
+23 [label="23: Exit Getter_Getter \n  " color=yellow style=filled]
+	
+
+22 [label="22: Start Getter_Getter\nFormals:  this:class Getter *\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n  NULLIFY(&this,false); [line 22]\n " color=yellow style=filled]
+	
+
+	 22 -> 23 ;
+21 [label="21:  Return Stmt \n   n$0=*&s:class X1 & [line 24]\n  n$1=_fun_X1_get(n$0:class X1 &) [line 24]\n  *&return:int =n$1 [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20: Exit Getter_get<X1> \n  " color=yellow style=filled]
+	
+
+19 [label="19: Start Getter_get<X1>\nFormals:  this:class Getter * s:class X1 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n  NULLIFY(&this,false); [line 24]\n " color=yellow style=filled]
+	
+
+	 19 -> 21 ;
+18 [label="18:  Return Stmt \n   n$0=*&s:class X2 & [line 24]\n  n$1=_fun_X2_get(n$0:class X2 &) [line 24]\n  *&return:int =n$1 [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	
+
+	 18 -> 17 ;
+17 [label="17: Exit Getter_get<X2> \n  " color=yellow style=filled]
+	
+
+16 [label="16: Start Getter_get<X2>\nFormals:  this:class Getter * s:class X2 &\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n  NULLIFY(&this,false); [line 24]\n " color=yellow style=filled]
+	
+
+	 16 -> 18 ;
+15 [label="15: Exit X3_X3 \n  " color=yellow style=filled]
+	
+
+14 [label="14: Start X3_X3\nFormals:  this:class X3 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&this,false); [line 18]\n " color=yellow style=filled]
+	
+
+	 14 -> 15 ;
+13 [label="13:  Return Stmt \n   *&return:int =0 [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12: Exit X3_get \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start X3_get\nFormals:  this:class X3 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n  NULLIFY(&this,false); [line 19]\n " color=yellow style=filled]
+	
+
+	 11 -> 13 ;
+10 [label="10: Exit X2_X2 \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start X2_X2\nFormals:  this:class X2 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n  NULLIFY(&this,false); [line 14]\n " color=yellow style=filled]
+	
+
+	 9 -> 10 ;
+8 [label="8:  Return Stmt \n   *&return:int =0 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit X2_get \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start X2_get\nFormals:  this:class X2 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n  NULLIFY(&this,false); [line 15]\n " color=yellow style=filled]
+	
+
+	 6 -> 8 ;
+5 [label="5: Exit X1_X1 \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start X1_X1\nFormals:  this:class X1 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+	
+
+	 4 -> 5 ;
+3 [label="3:  Return Stmt \n   *&return:int =1 [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit X1_get \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X1_get\nFormals:  this:class X1 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

@@ -125,7 +125,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
   | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
-      let method_name = name_info.Clang_ast_t.ni_name in
+      let method_name = IList.hd name_info.Clang_ast_t.ni_qual_name in
       let class_name = Ast_utils.get_class_name_from_member name_info in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in

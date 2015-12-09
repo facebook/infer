@@ -103,6 +103,9 @@ let get_method_decls parent decl_list =
   let open Clang_ast_t in
   let rec traverse_decl parent decl = match decl with
     | CXXMethodDecl _ | CXXConstructorDecl _ -> [(parent, decl)]
+    | FunctionTemplateDecl (_, _, template_decl_info) ->
+        let decl_list' = template_decl_info.Clang_ast_t.tdi_specializations in
+        traverse_decl_list parent decl_list'
     | ClassTemplateSpecializationDecl (_, _, _, _, decl_list', _, _, _)
     | CXXRecordDecl (_, _, _, _, decl_list', _, _, _)
     | RecordDecl (_, _, _, _, decl_list', _, _) -> traverse_decl_list decl decl_list'
