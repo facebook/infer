@@ -277,16 +277,6 @@ struct
     | Some tp -> Some tp
     | None -> None
 
-  let is_generated name_info =
-    match name_info.Clang_ast_t.ni_qual_name with
-    | name :: quals ->
-        (try
-           let rexp = Str.regexp CFrontend_config.generated_suffix in
-           let _ = Str.search_forward rexp name 0 in
-           true
-         with Not_found -> false)
-    | _ -> false
-
   let get_decl decl_ptr =
     try
       Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.pointer_decl_index)

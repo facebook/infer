@@ -26,7 +26,6 @@ type t =
     is_abstract : bool; (** the procedure is abstract *)
     mutable is_bridge_method : bool; (** the procedure is a bridge method *)
     is_defined : bool; (** true if the procedure is defined, and not just declared *)
-    is_generated : bool; (** the procedure has been generated *)
     is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
     is_cpp_instance_method : bool; (** the procedure is an C++ instance method *)
     objc_accessor : objc_accessor_type option; (** the proc is ObjC accessor *)

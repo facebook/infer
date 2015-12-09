@@ -33,8 +33,6 @@ val get_class_name_method_call_from_receiver_kind : CContext.t ->
 
 val get_class_name_method_call_from_clang : Clang_ast_t.obj_c_message_expr_info -> string option
 
-val should_create_procdesc : Cfg.cfg -> Procname.t -> bool -> bool -> bool
-
 val method_signature_of_decl : Clang_ast_t.decl -> CModule_type.block_data option ->
   CMethod_signature.method_signature * Clang_ast_t.stmt option * CModule_type.instr_type list
 

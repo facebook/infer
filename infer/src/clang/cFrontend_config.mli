@@ -141,8 +141,6 @@ val objects : string
 
 val enumerateObjectsUsingBlock : string
 
-val generated_suffix : string
-
 (** Map from clang pointers to types produced by ast exporter.
     Populated once on InferClang startup *)
 val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref

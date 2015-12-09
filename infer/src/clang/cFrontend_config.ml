@@ -149,8 +149,6 @@ let objects = "objects"
 
 let enumerateObjectsUsingBlock = "enumerateObjectsUsingBlock:"
 
-let generated_suffix = "*generated"
-
 let pointer_type_index = ref Clang_ast_main.PointerMap.empty
 
 (* Map from type pointers or declaration pointers to sil types *)

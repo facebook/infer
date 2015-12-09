@@ -69,8 +69,6 @@ sig
   val type_from_unary_expr_or_type_trait_expr_info :
     Clang_ast_t.unary_expr_or_type_trait_expr_info -> Clang_ast_t.type_ptr option
 
-  val is_generated : Clang_ast_t.named_decl_info -> bool
-
   val get_decl : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
   val get_decl_opt : Clang_ast_t.pointer option -> Clang_ast_t.decl option

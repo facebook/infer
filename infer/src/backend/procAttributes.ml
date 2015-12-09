@@ -29,7 +29,6 @@ type t =
     is_abstract : bool; (** the procedure is abstract *)
     mutable is_bridge_method : bool; (** the procedure is a bridge method *)
     is_defined : bool; (** true if the procedure is defined, and not just declared *)
-    is_generated : bool; (** the procedure has been generated *)
     is_objc_instance_method : bool; (** the procedure is an objective-C instance method *)
     is_cpp_instance_method : bool; (** the procedure is an C++ instance method *)
     objc_accessor : objc_accessor_type option; (** the proc is ObjC accessor *)
@@ -54,7 +53,6 @@ let copy pa =
     is_abstract = pa.is_abstract;
     is_bridge_method = pa.is_bridge_method;
     is_defined = pa.is_defined;
-    is_generated = pa.is_generated;
     is_objc_instance_method = pa.is_objc_instance_method;
     is_cpp_instance_method = pa.is_cpp_instance_method;
     objc_accessor = pa.objc_accessor;
@@ -78,7 +76,6 @@ let default proc_name language = {
   is_abstract = false;
   is_defined = false;
   is_bridge_method = false;
-  is_generated = false;
   is_objc_instance_method = false;
   is_cpp_instance_method = false;
   objc_accessor = None;

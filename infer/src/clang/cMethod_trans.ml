@@ -87,7 +87,7 @@ let get_return_type function_method_decl_info =
   | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
 
 let build_method_signature decl_info procname function_method_decl_info is_anonym_block
-    is_generated parent_pointer pointer_to_property_opt =
+    parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp = get_return_type function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
@@ -95,8 +95,8 @@ let build_method_signature decl_info procname function_method_decl_info is_anony
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language function_method_decl_info in
   CMethod_signature.make_ms
-    procname parameters tp attributes source_range is_instance_method is_generated
-    lang parent_pointer pointer_to_property_opt
+    procname parameters tp attributes source_range is_instance_method lang parent_pointer
+    pointer_to_property_opt
 
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
@@ -120,7 +120,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
       let procname = General_utils.mk_procname_from_function name function_info tp language in
-      let ms = build_method_signature decl_info procname func_decl false false None None in
+      let ms = build_method_signature decl_info procname func_decl false None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
@@ -130,7 +130,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms = build_method_signature decl_info procname method_decl false false parent_pointer
+      let ms = build_method_signature decl_info procname method_decl false parent_pointer
           None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
@@ -142,19 +142,18 @@ let method_signature_of_decl meth_decl block_data_opt =
       let method_kind = Procname.objc_method_kind_of_bool is_instance in
       let procname = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
       let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
-      let is_generated = Ast_utils.is_generated name_info in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let pointer_to_property_opt =
         match mdi.Clang_ast_t.omdi_property_decl with
         | Some decl_ref -> Some decl_ref.Clang_ast_t.dr_decl_pointer
         | None -> None in
-      let ms = build_method_signature decl_info procname method_decl false is_generated
+      let ms = build_method_signature decl_info procname method_decl false
           parent_pointer pointer_to_property_opt in
       let extra_instrs = get_assume_not_null_calls mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
-      let ms = build_method_signature decl_info procname func_decl true false None None in
+      let ms = build_method_signature decl_info procname func_decl true None None in
       let extra_instrs = get_assume_not_null_calls bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
@@ -289,14 +288,11 @@ let sil_func_attributes_of_attributes attrs =
     | _:: tl -> do_translation acc tl in
   do_translation [] attrs
 
-let should_create_procdesc cfg procname defined generated =
+let should_create_procdesc cfg procname defined =
   match Cfg.Procdesc.find_from_name cfg procname with
   | Some prevoius_procdesc ->
       let is_defined_previous = Cfg.Procdesc.is_defined prevoius_procdesc in
-      let is_generated_previous =
-        (Cfg.Procdesc.get_attributes prevoius_procdesc).ProcAttributes.is_generated in
-      if defined &&
-         ((not is_defined_previous) || (generated && is_generated_previous)) then
+      if defined && (not is_defined_previous) then
         (Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name prevoius_procdesc) true;
          true)
       else false
@@ -324,7 +320,6 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let method_annotation =
     sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) in
-  let is_generated = CMethod_signature.ms_is_generated ms in
   let is_cpp_inst_method = CMethod_signature.ms_is_instance ms
                            && CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
   let create_new_procdesc () =
@@ -348,7 +343,6 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           formals;
           func_attributes = attributes;
           is_defined = defined;
-          is_generated;
           is_objc_instance_method = is_objc_inst_method;
           is_cpp_instance_method = is_cpp_inst_method;
           loc = loc_start;
@@ -368,8 +362,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
        let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc [] in
        Cfg.Procdesc.set_start_node procdesc start_node;
        Cfg.Procdesc.set_exit_node procdesc exit_node) in
-  let generated = CMethod_signature.ms_is_generated ms in
-  if should_create_procdesc cfg proc_name defined generated then
+  if should_create_procdesc cfg proc_name defined then
     (create_new_procdesc (); true)
   else false
 
@@ -427,7 +420,7 @@ let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
   | Some pdesc -> pdesc
   | None ->
       let ms = CMethod_signature.make_ms proc_name [] (Clang_ast_types.pointer_to_type_ptr "-1")
-          [] source_range false false CFrontend_config.OBJC None None in
+          [] source_range false CFrontend_config.OBJC None None in
       let body = [Clang_ast_t.CompoundStmt (stmt_info, [])] in
       ignore (create_local_procdesc cfg tenv ms body [] false);
       let pdesc = Option.get (Cfg.Procdesc.find_from_name cfg proc_name) in

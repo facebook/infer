@@ -38,11 +38,9 @@ val ms_is_getter : method_signature -> bool
 val ms_is_setter : method_signature -> bool
 
 val make_ms : Procname.t -> (string * Clang_ast_t.type_ptr) list -> Clang_ast_t.type_ptr
-  -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> bool -> bool -> CFrontend_config.lang
+  -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> bool -> CFrontend_config.lang
   -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option -> method_signature
 
 val replace_name_ms : method_signature -> Procname.t -> method_signature
 
 val ms_to_string : method_signature -> string
-
-val ms_is_generated : method_signature -> bool

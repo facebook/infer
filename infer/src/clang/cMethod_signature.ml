@@ -17,7 +17,6 @@ type method_signature = {
   _attributes : Clang_ast_t.attribute list;
   _loc : Clang_ast_t.source_range;
   _is_instance : bool;
-  _is_generated : bool;
   _language : CFrontend_config.lang;
   _pointer_to_parent : Clang_ast_t.pointer option;
   _pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
@@ -44,9 +43,6 @@ let ms_get_loc ms =
 let ms_is_instance ms =
   ms._is_instance
 
-let ms_is_generated ms =
-  ms._is_generated
-
 let ms_get_lang ms =
   ms._language
 
@@ -68,7 +64,7 @@ let ms_is_setter ms =
   Option.is_some ms._pointer_to_property_opt &&
   IList.length ms._args == 2
 
-let make_ms procname args ret_type attributes loc is_instance is_generated lang pointer_to_parent
+let make_ms procname args ret_type attributes loc is_instance lang pointer_to_parent
     pointer_to_property_opt =
   let meth_signature = {
     _name = procname;
@@ -77,7 +73,6 @@ let make_ms procname args ret_type attributes loc is_instance is_generated lang 
     _attributes = attributes;
     _loc = loc;
     _is_instance = is_instance;
-    _is_generated = is_generated;
     _language = lang;
     _pointer_to_parent = pointer_to_parent;
     _pointer_to_property_opt = pointer_to_property_opt;
@@ -88,8 +83,7 @@ let replace_name_ms ms name =
   { ms with _name = name }
 
 let ms_to_string ms =
-  let gen = if ms._is_generated then " (generated)" else "" in
-  "Method " ^ (Procname.to_string ms._name) ^ gen ^ " " ^
+  "Method " ^ (Procname.to_string ms._name) ^ " " ^
   IList.to_string
     (fun (s1, s2) -> s1 ^ ", " ^ (Clang_ast_j.string_of_type_ptr s2))
     ms._args
