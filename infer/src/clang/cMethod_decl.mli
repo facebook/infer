@@ -16,8 +16,6 @@ module CMethod_decl_funct(T: CModule_type.CTranslation) : sig
   val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
     CModule_type.block_data option -> unit
 
-  val process_getter_setter : CContext.t -> Procname.t -> bool
-
 end
 
 module type CMethod_decl = sig
@@ -26,6 +24,4 @@ module type CMethod_decl = sig
 
   val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
     CModule_type.block_data option -> unit
-
-  val process_getter_setter : CContext.t -> Procname.t -> bool
 end

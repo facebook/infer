@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  Message Call: setRunning: \n   n$3=*&honda:class Car * [line 14]\n  _fun_Car_setRunning:(n$3:class Car *,1:_Bool ) virtual [line 14]\n  REMOVE_TEMPS(n$3); [line 14]\n " shape="box"]
+5 [label="5:  Message Call: setRunning: \n   n$3=*&honda:class Car * [line 14]\n  _fun_Car_setRunning:(n$3:class Car *,1:_Bool ) [line 14]\n  REMOVE_TEMPS(n$3); [line 14]\n " shape="box"]
 	
 
 	 5 -> 4 ;

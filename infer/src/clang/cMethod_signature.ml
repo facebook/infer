@@ -62,6 +62,12 @@ let ms_is_getter ms =
   Option.is_some ms._pointer_to_property_opt &&
   IList.length ms._args == 1
 
+(* A method is a setter if it has a link to a property and *)
+(* it has 2 argument (this includes self) *)
+let ms_is_setter ms =
+  Option.is_some ms._pointer_to_property_opt &&
+  IList.length ms._args == 2
+
 let make_ms procname args ret_type attributes loc is_instance is_generated lang pointer_to_parent
     pointer_to_property_opt =
   let meth_signature = {

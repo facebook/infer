@@ -145,7 +145,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 32]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) [line 32]\n  n$8=_fun_UIView_layer(n$7:class UIView *) [line 32]\n  n$9=*&shadowPath:struct CGPath * [line 32]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) virtual [line 32]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 32]\n  NULLIFY(&self,false); [line 32]\n  NULLIFY(&shadowPath,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+9 [label="9:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 32]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) [line 32]\n  n$8=_fun_UIView_layer(n$7:class UIView *) [line 32]\n  n$9=*&shadowPath:struct CGPath * [line 32]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) [line 32]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 32]\n  NULLIFY(&self,false); [line 32]\n  NULLIFY(&shadowPath,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 9 -> 8 ;

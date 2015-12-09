@@ -1349,6 +1349,8 @@ and sym_exe_check_variadic_sentinel_if_present
 
 and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
     path : Builtin.ret_typ =
+  L.d_strln ("No custom getter found. Executing the ObjC builtin getter with ivar "^
+             (Ident.fieldname_to_string field_name)^".");
   let ret_id =
     match ret_ids with
     | [ret_id] -> ret_id
@@ -1368,6 +1370,21 @@ and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_na
       sym_exec_generated false cfg tenv pdesc [ret_instr] [(_prop, path)]
   | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
+and sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
+    path : Builtin.ret_typ =
+  L.d_strln ("No custom setter found. Executing the ObjC builtin setter with ivar "^
+             (Ident.fieldname_to_string field_name)^".");
+  match args with
+  | (lexp1, typ1) :: (lexp2, typ2)::_ ->
+      let typ1' = (match Sil.expand_type tenv typ1 with
+          | Sil.Tstruct _ as s -> s
+          | Sil.Tptr (t, _) -> Sil.expand_type tenv t
+          | _ -> assert false) in
+      let field_access_exp = Sil.Lfield (lexp1, field_name, typ1') in
+      let set_instr = Sil.Set (field_access_exp, typ2, lexp2, loc) in
+      sym_exec_generated false cfg tenv pdesc [set_instr] [(_prop, path)]
+  | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+
 and sym_exec_objc_accessor property_accesor ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args
     _prop path : Builtin.ret_typ =
   match property_accesor with
@@ -1375,7 +1392,8 @@ and sym_exec_objc_accessor property_accesor ret_typ_opt tenv cfg ret_ids pdesc c
       sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
         path
   | ProcAttributes.Objc_setter field_name ->
-      assert false (* TODO*)
+      sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
+        path
 
 (** Perform symbolic execution for a function call *)
 and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =

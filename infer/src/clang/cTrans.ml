@@ -61,10 +61,8 @@ struct
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
         CMethod_signature.ms_get_name ms, CMethod_trans.MCNoVirtual
     | None, Some ms ->
-        if not (M.process_getter_setter context procname) then
-          (ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv
-                     ms [] [] is_instance));
-        if CMethod_signature.ms_is_getter ms then
+        ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
+        if CMethod_signature.ms_is_getter ms || CMethod_signature.ms_is_setter ms then
           procname, CMethod_trans.MCNoVirtual
         else
           procname, mc_type

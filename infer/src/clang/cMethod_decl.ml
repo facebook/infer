@@ -21,7 +21,6 @@ module type CMethod_decl = sig
   val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
     CModule_type.block_data option -> unit
 
-  val process_getter_setter : CContext.t -> Procname.t -> bool
 end
 
 module CMethod_decl_funct(T: CModule_type.CTranslation) : CMethod_decl =
@@ -92,20 +91,15 @@ struct
           add_method tenv cg cfg curr_class procname [body] is_objc [] None extra_instrs
     | None -> ()
 
-  let rec process_one_method_decl tenv cg cfg curr_class dec =
+  let process_one_method_decl tenv cg cfg curr_class dec =
     let open Clang_ast_t in
     match dec with
     | CXXMethodDecl _ | CXXConstructorDecl _ ->
         process_method_decl tenv cg cfg curr_class dec ~is_objc:false
     | ObjCMethodDecl _ ->
         process_method_decl tenv cg cfg curr_class dec ~is_objc:true
-    | ObjCPropertyImplDecl (decl_info, property_impl_decl_info) ->
-        let pname = Ast_utils.property_name property_impl_decl_info in
-        Printing.log_out "ADDING: ObjCPropertyImplDecl for property '%s' "
-          pname.Clang_ast_t.ni_name;
-        let setter = ObjcProperty_decl.make_setter' curr_class decl_info pname in
-        IList.iter (process_one_method_decl tenv cg cfg curr_class) setter
-    | EmptyDecl _ | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
+    | ObjCPropertyImplDecl _ | EmptyDecl _
+    | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
         Printing.log_stats
           "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n" (Ast_utils.string_of_decl dec);
@@ -113,38 +107,5 @@ struct
 
   let process_methods tenv cg cfg curr_class decl_list =
     IList.iter (process_one_method_decl tenv cg cfg curr_class) decl_list
-
-  let process_getter_setter context procname =
-    (*If there is already a spec for the method we want to generate (in incremental analysis) *)
-    (* we don't need to generate it again. *)
-    if Specs.summary_exists procname then false
-    else
-      let class_name = Procname.c_get_class procname in
-      let tenv = context.CContext.tenv in
-      let cg = context.CContext.cg in
-      let cfg = context.CContext.cfg in
-      let cls = CContext.create_curr_class tenv class_name in
-      let method_name = Procname.c_get_method procname in
-      match ObjcProperty_decl.method_is_property_accesor cls method_name with
-      | Some (property_name, property_type, is_getter) when
-          CMethod_trans.should_create_procdesc cfg procname true true ->
-          (match property_type with tp, atts, decl_info, _, _, ivar_opt ->
-            let ivar_name = ObjcProperty_decl.get_ivar_name property_name ivar_opt in
-            let field =
-              CField_decl.build_sil_field_property CTypes_decl.type_ptr_to_sil_type cls tenv
-                ivar_name tp (Some atts) in
-            ignore (CField_decl.add_missing_fields tenv class_name [field]);
-            let accessor_opt =
-              if is_getter then []
-              else ObjcProperty_decl.make_setter cls property_name property_type in
-            match accessor_opt with
-            | [accessor] ->
-                let decl_info = Clang_ast_proj.get_decl_tuple accessor in
-                if CLocation.should_translate_lib decl_info.Clang_ast_t.di_source_range then
-                  (process_one_method_decl tenv cg cfg cls accessor;
-                   true)
-                else false
-            | _ -> false)
-      | _ -> false
 
 end

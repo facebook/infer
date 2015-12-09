@@ -250,7 +250,9 @@ let get_objc_property_accessor tenv ms =
           CTypes_decl.type_ptr_to_sil_type class_name d in
       if CMethod_signature.ms_is_getter ms then
         Some (ProcAttributes.Objc_getter field_name)
-      else None  (* Setter TODO *)
+      else if CMethod_signature.ms_is_setter ms then
+        Some (ProcAttributes.Objc_setter field_name)
+      else None
   | _ -> None
 
 let get_formal_parameters tenv ms =

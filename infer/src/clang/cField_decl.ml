@@ -112,7 +112,7 @@ let add_missing_fields tenv class_name fields =
         ) in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Sil.tenv_add tenv class_tn_name class_type_info
-  | _ -> assert false
+  | _ -> ()
 
 (* checks if ivar is defined among a set of fields and if it is atomic *)
 let is_ivar_atomic ivar fields =

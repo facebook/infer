@@ -695,9 +695,6 @@ let () =
   let () =
     match !cluster_cmdline with
     | None ->
-        if !Config.curr_language = Config.C_CPP &&
-           not !Config.ondemand_enabled then
-          Objc_preanal.do_objc_preanalysis ();
         L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
     | Some clname -> L.stdout "Cluster %s@." clname in
   RegisterCheckers.register ();

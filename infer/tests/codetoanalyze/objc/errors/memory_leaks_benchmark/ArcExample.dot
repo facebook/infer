@@ -1,23 +1,4 @@
 digraph iCFG {
-13 [label="13:  Message Call: retain \n   n$11=*&son:class A * [line 16]\n  n$12=_fun___objc_retain(n$11:class A *) [line 16]\n  REMOVE_TEMPS(n$11,n$12); [line 16]\n " shape="box"]
-	
-
-	 13 -> 12 ;
-12 [label="12:  Message Call: release \n   n$8=*&self:class A * [line 16]\n  n$9=*n$8._son:class A * [line 16]\n  n$10=_fun___objc_release(n$9:class A *) [line 16]\n  REMOVE_TEMPS(n$8,n$9,n$10); [line 16]\n " shape="box"]
-	
-
-	 12 -> 11 ;
-11 [label="11:  BinaryOperatorStmt: Assign \n   n$5=*&self:class A * [line 16]\n  n$6=*&son:class A * [line 16]\n  _fun___objc_retain(n$6:class A *) [line 16]\n  n$7=*n$5._son:class A * [line 16]\n  *n$5._son:class A *=n$6 [line 16]\n  _fun___objc_release(n$7:class A *) [line 16]\n  REMOVE_TEMPS(n$5,n$6,n$7); [line 16]\n  NULLIFY(&self,false); [line 16]\n  NULLIFY(&son,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
-	
-
-	 11 -> 10 ;
-10 [label="10: Exit A_setSon: \n  " color=yellow style=filled]
-	
-
-9 [label="9: Start A_setSon: (generated)\nFormals:  self:class A * son:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
-	
-
-	 9 -> 13 ;
 8 [label="8:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 29]\n  *&s:class NSString *=n$4 [line 29]\n  REMOVE_TEMPS(n$4); [line 29]\n " shape="box"]
 	
 
