@@ -219,37 +219,27 @@ struct
   (* deals with creating or not a cfg node depending of owning the *)
   (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
   let compute_results_to_parent trans_state loc nd_name stmt_info res_states_children =
-    let mk_node res_state =
+    let res_state = collect_res_trans res_states_children in
+    let create_node = own_priority_node trans_state.priority stmt_info && res_state.instrs <> [] in
+    if create_node then
+      (* We need to create a node *)
       let ids_node = ids_to_node trans_state.continuation res_state.ids in
+      let ids_parent = ids_to_parent trans_state.continuation res_state.ids in
       let node_kind = Cfg.Node.Stmt_node (nd_name) in
-      Nodes.create_node node_kind ids_node res_state.instrs loc trans_state.context in
-    (* Invariant: if leaf_nodes is empty then the params have not created a node.*)
-    let res_state_param = collect_res_trans res_states_children in
-    let create_node = own_priority_node trans_state.priority stmt_info && res_state_param.instrs <> [] in
-    match res_state_param.root_nodes, create_node with
-    | _, false -> (* The node is created by the parent. We just pass back nodes/leafs params *)
-        { res_state_param with exps = []}
-    | [], true -> (* We need to create a node and params did not create a node.*)
-        let node' = mk_node res_state_param in
-        let ids_parent = ids_to_parent trans_state.continuation res_state_param.ids in
-        Cfg.Node.set_succs_exn node' trans_state.succ_nodes [];
-        { root_nodes =[node'];
-          leaf_nodes =[node'];
-          ids = ids_parent;
-          instrs =[];
-          exps = []}
-    | _, true ->
-        (* We need to create a node but params also created some,*)
-        (* so we need to pass back the nodes/leafs params*)
-        let node' = mk_node res_state_param in
-        Cfg.Node.set_succs_exn node' trans_state.succ_nodes [];
-        let ids_parent = ids_to_parent trans_state.continuation res_state_param.ids in
-        IList.iter (fun n' -> Cfg.Node.set_succs_exn n' [node'] []) res_state_param.leaf_nodes;
-        { root_nodes = res_state_param.root_nodes;
-          leaf_nodes = [node'];
-          ids = ids_parent;
-          instrs =[];
-          exps =[]}
+      let node = Nodes.create_node node_kind ids_node res_state.instrs loc trans_state.context in
+      Cfg.Node.set_succs_exn node trans_state.succ_nodes [];
+      IList.iter (fun leaf -> Cfg.Node.set_succs_exn leaf [node] []) res_state.leaf_nodes;
+      (* Invariant: if root_nodes is empty then the params have not created a node.*)
+      let root_nodes = (if res_state.root_nodes <> [] then res_state.root_nodes
+                        else [node]) in
+      { root_nodes = root_nodes;
+        leaf_nodes = [node];
+        ids = ids_parent;
+        instrs = [];
+        exps = []}
+    else
+      (* The node is created by the parent. We just pass back nodes/leafs params *)
+      { res_state with exps = []}
 
 end
 
