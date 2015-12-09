@@ -1115,7 +1115,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info pln context in
     let open Clang_ast_t in
     match switch_stmt_list with
-    | [_; cond; CompoundStmt(stmt_info, stmt_list)] ->
+    | [decl_stmt; cond; CompoundStmt(stmt_info, stmt_list)] ->
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
         let trans_state' ={ trans_state_pri with succ_nodes = []} in
         let res_trans_cond_tmp = instruction trans_state' cond in
@@ -1133,6 +1133,7 @@ struct
                                root_nodes = root_nodes;
                                leaf_nodes = [switch_special_cond_node]
                              } in
+        let res_trans_decl = declStmt_in_condition_trans trans_state decl_stmt res_trans_cond in
         let trans_state_no_pri = if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then
             { trans_state_pri with priority = Free }
           else trans_state_pri in
@@ -1226,7 +1227,7 @@ struct
         let top_entry_point, top_prune_nodes = translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
         let _ = connected_instruction (IList.rev pre_case_stmts) top_entry_point in
         Cfg.Node.set_succs_exn switch_special_cond_node top_prune_nodes [];
-        let top_nodes = res_trans_cond.root_nodes in
+        let top_nodes = res_trans_decl.root_nodes in
         IList.iter (fun n' -> Cfg.Node.append_instrs_temps n' [] res_trans_cond.ids) succ_nodes; (* succ_nodes will remove the temps *)
         { root_nodes = top_nodes; leaf_nodes = succ_nodes; ids = []; instrs = []; exps =[]}
     | _ -> assert false

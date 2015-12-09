@@ -48,4 +48,9 @@ public class NestedCPPOperatorsTest {
     frontendTest("var_decl_inside_for.cpp");
   }
 
+  @Test
+  public void testVarDeclInsideSwitchDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("var_decl_inside_switch.cpp");
+  }
 }
