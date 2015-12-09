@@ -40,7 +40,7 @@ Once you have all the dependencies above installed, configure opam as
 follows:
 
 ```sh
-opam init -y --comp=4.01.0
+opam init -y
 eval $(opam config env)
 opam update
 opam install -y \
@@ -121,7 +121,7 @@ webpage](https://opam.ocaml.org/doc/Install.html).
 Once opam is installed, run the following commands:
 
 ```sh
-./opam init -y --comp=4.01.0
+./opam init -y
 eval $(./opam config env)
 ./opam update
 ./opam install -y \
@@ -142,7 +142,9 @@ these steps to get Infer up and running:
 git clone https://github.com/facebook/infer.git
 cd infer
 # Compile Infer
-make -C infer java
+./autogen.sh
+./configure
+make java
 # Install Infer into your PATH
 export PATH=`pwd`/infer/bin:$PATH
 ```
@@ -162,13 +164,14 @@ Infer.
 # Checkout Infer
 git clone https://github.com/facebook/infer.git
 cd infer
-git submodule update --init --recursive
+./autogen.sh
 # Compile clang
 facebook-clang-plugins/clang/setup.sh # go have a coffee :)
 # Compile the clang plugin
 ./compile-fcp.sh
 # Compile Infer
-make -C infer
+./configure
+make
 # Install Infer into your PATH
 export PATH=`pwd`/infer/bin:$PATH
 ```

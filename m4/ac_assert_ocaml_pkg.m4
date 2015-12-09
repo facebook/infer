@@ -17,21 +17,14 @@ AC_DEFUN([AC_ASSERT_OCAML_PKG],
   unset pkg
 
   has_pkg=$AS_TR_SH[OCAML_PKG_$1]
-  AS_IF([test "$has_pkg" = "no"],
-  [dnl
-   unset opam_command
-   unset version
-    opam_command="opam pin add $1 $3"
-    version=".$3"
-    AS_IF([test "x$3" = "x"],
-      [opam_command="opam install $1"
-      version=""])
+  AS_IF([test "$has_pkg" = "no"], [dnl
     AC_MSG_ERROR([missing dependency: $1$version.
 
 If you are using opam, please run
 
-  $opam_command])
+  \# create an "infer" opam package
+  opam pin add --no-action --yes -k path .
+  \# install dependencies
+  opam install --deps-only infer])
   ])
 ])
-
-
