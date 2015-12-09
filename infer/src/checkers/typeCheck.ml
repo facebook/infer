@@ -313,9 +313,14 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
             | None -> default
             | Some exp_str ->
                 let pvar = Sil.mk_pvar (Mangled.from_string exp_str) curr_pname in
-                let already_in_typestate = TypeState.lookup_pvar pvar typestate <> None in
+                let already_defined_in_typestate =
+                  match TypeState.lookup_pvar pvar typestate with
+                  | Some (_, ta, _) ->
+                      not (TypeOrigin.equal TypeOrigin.Undef (TypeAnnotation.get_origin ta))
+                  | None ->
+                      false in
 
-                if is_assignment && already_in_typestate
+                if is_assignment && already_defined_in_typestate
                 then default (* Don't overwrite pvar representing result of function call. *)
                 else Sil.Lvar pvar, typestate
           end
