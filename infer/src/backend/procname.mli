@@ -45,9 +45,6 @@ val from_string_c_fun : string -> t
 (** Create a C++ procedure name from plain and mangled name *)
 val mangled_c_fun : string -> string -> t
 
-(** Create a static procedure name from a plain name and source file *)
-val mangled_static : string -> DB.source_file -> t
-
 (** Create a Java procedure name from its class_name method_name args_type_name return_type_name method_kind *)
 val mangled_java : java_type -> java_type option -> string -> java_type list -> method_kind -> t
 

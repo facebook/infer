@@ -23,9 +23,9 @@ type method_kind =
 
 (* java_signature extends base_signature with a classname and a package *)
 type java_signature = {
-  classname: java_type;
-  returntype: java_type option; (* option because constructors have no return type *)
-  methodname: string;
+  class_name: java_type;
+  return_type: java_type option; (* option because constructors have no return type *)
+  method_name: string;
   parameters: java_type list;
   kind: method_kind
 }
@@ -51,25 +51,29 @@ type c_method_signature = {
 }
 
 type t =
-  | JAVA of java_signature
-  | C_FUNCTION of string * (string option) (* it is a pair (plain, mangled optional) *)
-  | STATIC of string * (string option) (* it is a pair (plain name, filename optional) *)
-  | C_METHOD of c_method_signature
-  | OBJC_BLOCK of string
+  | Java_method of java_signature
+
+  (* a pair (plain, mangled optional) for standard C function *)
+  | C_function of string * (string option)
+
+  (* structure with class name and method name for methods in Objective C and C++ *)
+  | ObjC_Cpp_method of c_method_signature
+
+  | ObjC_block of string
 
 (* Defines the level of verbosity of some to_string functions *)
 type detail_level =
-  | VERBOSE
-  | NON_VERBOSE
-  | SIMPLE
+  | Verbose
+  | Non_verbose
+  | Simple
 
 
-let empty = OBJC_BLOCK ""
+let empty = ObjC_block ""
 
 
 let is_verbose v =
   match v with
-  | VERBOSE -> true
+  | Verbose -> true
   | _ -> false
 
 type proc_name = t
@@ -103,7 +107,7 @@ let rec java_param_list_to_string inputList verbosity =
 
 (** It is the same as java_type_to_string, but Java return types are optional because of constructors without type *)
 let java_return_type_to_string j verbosity =
-  match j.returntype with
+  match j.return_type with
   | None -> ""
   | Some typ ->
       java_type_to_string typ verbosity
@@ -127,11 +131,11 @@ let java_return_type_compare jr1 jr2 =
   | Some jt1 , Some jt2 -> java_type_compare jt1 jt2
 
 (** Compare java signatures. *)
-let java_sig_compare js1 js2 =
-  string_compare js1.methodname js2.methodname
+let java_sig_compare (js1: java_signature) (js2 : java_signature) =
+  string_compare js1.method_name js2.method_name
   |> next java_type_list_compare js1.parameters js2.parameters
-  |> next java_type_compare js1.classname js2.classname
-  |> next java_return_type_compare js1.returntype js2.returntype
+  |> next java_type_compare js1.class_name js2.class_name
+  |> next java_return_type_compare js1.return_type js2.return_type
   |> next method_kind_compare js1.kind js2.kind
 
 let c_function_mangled_compare mangled1 mangled2 =
@@ -148,33 +152,28 @@ let c_meth_sig_compare osig1 osig2 =
   |> next string_compare osig1.class_name osig2.class_name
   |> next c_function_mangled_compare osig1.mangled osig2.mangled
 
-(** Given a package.classname string, it looks for the latest dot and split the string in two (package, classname) *)
+(** Given a package.class_name string, it looks for the latest dot and split the string
+    in two (package, class_name) *)
 let split_classname package_classname =
   string_split_character package_classname '.'
 
-let from_string_c_fun (s: string) = C_FUNCTION (s, None)
+let from_string_c_fun (s: string) = C_function (s, None)
 
-let mangled_c_fun (plain: string) (mangled: string) = C_FUNCTION (plain, Some mangled)
-
-(** Create a static procedure name from a plain name and source file *)
-let mangled_static (plain: string) (source_file: DB.source_file) =
-  let mangled =
-    if !Config.long_static_proc_names then Some (DB.source_file_encoding source_file)
-    else None in STATIC (plain, mangled)
+let mangled_c_fun (plain: string) (mangled: string) = C_function (plain, Some mangled)
 
 (** Creates a java procname, given classname, return type, method name and its parameters *)
 let mangled_java class_name ret_type method_name params _kind =
-  JAVA {
-    classname = class_name;
-    returntype = ret_type;
-    methodname = method_name;
+  Java_method {
+    class_name = class_name;
+    return_type = ret_type;
+    method_name = method_name;
     parameters = params;
     kind = _kind
   }
 
 (** Create an objc procedure name from a class_name and method_name. *)
 let mangled_c_method class_name method_name mangled =
-  C_METHOD {
+  ObjC_Cpp_method {
     class_name = class_name;
     method_name = method_name;
     mangled = mangled;
@@ -182,37 +181,37 @@ let mangled_c_method class_name method_name mangled =
 
 (** Create an objc procedure name from a class_name and method_name. *)
 let mangled_objc_block name =
-  OBJC_BLOCK name
+  ObjC_block name
 
 let is_java = function
-  | JAVA _ -> true
+  | Java_method _ -> true
   | _ -> false
 
 let is_c_method = function
-  | C_METHOD _ -> true
+  | ObjC_Cpp_method _ -> true
   | _ -> false
 
 (** Replace package and classname of a java procname. *)
 let java_replace_class p package_classname =
   match p with
-  | JAVA j -> JAVA { j with classname = (split_classname package_classname) }
+  | Java_method j -> Java_method { j with class_name = (split_classname package_classname) }
   | _ -> assert false
 
 (** Replace the class name of an objc procedure name. *)
 let c_method_replace_class t class_name =
   match t with
-  | C_METHOD osig -> C_METHOD { osig with class_name = class_name }
+  | ObjC_Cpp_method osig -> ObjC_Cpp_method { osig with class_name = class_name }
   | _ -> assert false
 
 (** Get the class name of a Objective-C/C++ procedure name. *)
 let c_get_class t =
   match t with
-  | C_METHOD osig -> osig.class_name
+  | ObjC_Cpp_method osig -> osig.class_name
   | _ -> assert false
 
 (** Return the package.classname of a java procname. *)
 let java_get_class = function
-  | JAVA j -> java_type_to_string j.classname VERBOSE
+  | Java_method j -> java_type_to_string j.class_name Verbose
   | _ -> assert false
 
 (** Return path components of a java class name *)
@@ -221,80 +220,82 @@ let java_get_class_components proc_name =
 
 (** Return the class name of a java procedure name. *)
 let java_get_simple_class = function
-  | JAVA j -> snd j.classname
+  | Java_method j -> snd j.class_name
   | _ -> assert false
 
 (** Return the package of a java procname. *)
 let java_get_package = function
-  | JAVA j -> fst j.classname
+  | Java_method j -> fst j.class_name
   | _ -> assert false
 
 (** Return the method of a java procname. *)
 let java_get_method = function
-  | JAVA j -> j.methodname
+  | Java_method j -> j.method_name
   | _ -> assert false
 
 (** Replace the method of a java procname. *)
 let java_replace_method p mname = match p with
-  | JAVA p -> JAVA { p with methodname = mname }
+  | Java_method p -> Java_method { p with method_name = mname }
   | _ -> assert false
 
 (** Replace the return type of a java procname. *)
 let java_replace_return_type p ret_type = match p with
-  | JAVA p -> JAVA { p with returntype = Some ret_type }
+  | Java_method p -> Java_method { p with return_type = Some ret_type }
   | _ -> assert false
 
 (** Return the method of a objc/c++ procname. *)
 let c_get_method = function
-  | C_METHOD name -> name.method_name
-  | C_FUNCTION (name, _) -> name
-  | OBJC_BLOCK name -> name
+  | ObjC_Cpp_method name -> name.method_name
+  | C_function (name, _) -> name
+  | ObjC_block name -> name
   | _ -> assert false
 
 (** Return the return type of a java procname. *)
 let java_get_return_type = function
-  | JAVA j -> java_return_type_to_string j VERBOSE
+  | Java_method j -> java_return_type_to_string j Verbose
   | _ -> assert false
 
 (** Return the parameters of a java procname. *)
 let java_get_parameters = function
-  | JAVA j -> IList.map (fun param -> java_type_to_string param VERBOSE) j.parameters
+  | Java_method j -> IList.map (fun param -> java_type_to_string param Verbose) j.parameters
   | _ -> assert false
 
 (** Return true if the java procedure is static *)
 let java_is_static = function
-  | JAVA j -> j.kind = Static
+  | Java_method j -> j.kind = Static
   | _ -> assert false
 
 (** Prints a string of a java procname with the given level of verbosity *)
 let java_to_string ?(withclass = false) j verbosity =
   match verbosity with
-  | VERBOSE | NON_VERBOSE ->
+  | Verbose | Non_verbose ->
       (* if verbose, then package.class.method(params): rtype,
          else rtype package.class.method(params)
          verbose is used for example to create unique filenames, non_verbose to create reports *)
       let return_type = java_return_type_to_string j verbosity in
       let params = java_param_list_to_string j.parameters verbosity in
-      let classname = java_type_to_string j.classname verbosity in
+      let class_name = java_type_to_string j.class_name verbosity in
       let separator =
-        match j.returntype, verbosity with
+        match j.return_type, verbosity with
         | (None, _) -> ""
-        | (Some _, VERBOSE) -> ":"
+        | (Some _, Verbose) -> ":"
         | _ -> " " in
-      let output = classname ^ "." ^ j.methodname ^ "(" ^ params ^ ")" in
-      if verbosity = VERBOSE then output ^ separator ^ return_type
+      let output = class_name ^ "." ^ j.method_name ^ "(" ^ params ^ ")" in
+      if verbosity = Verbose then output ^ separator ^ return_type
       else return_type ^ separator ^ output
-  | SIMPLE -> (* methodname(...) or without ... if there are no parameters *)
+  | Simple -> (* methodname(...) or without ... if there are no parameters *)
       let cls_prefix =
         if withclass then
-          java_type_to_string j.classname verbosity ^ "."
+          java_type_to_string j.class_name verbosity ^ "."
         else "" in
       let params =
         match j.parameters with
         | [] -> ""
         | _ -> "..." in
-      let methodname = if j.methodname = "<init>" then java_get_simple_class (JAVA j) else j.methodname in
-      cls_prefix ^ methodname ^ "(" ^ params ^ ")"
+      let method_name =
+        if j.method_name = "<init>" then java_get_simple_class (Java_method j)
+        else j.method_name in
+      cls_prefix ^ method_name ^ "(" ^ params ^ ")"
 
 (** Check if the class name is for an anonymous inner class. *)
 let is_anonymous_inner_class_name class_name =
@@ -307,34 +308,34 @@ let is_anonymous_inner_class_name class_name =
 
 (** Check if the procedure belongs to an anonymous inner class. *)
 let java_is_anonymous_inner_class = function
-  | JAVA j -> is_anonymous_inner_class_name (snd j.classname)
+  | Java_method j -> is_anonymous_inner_class_name (snd j.class_name)
   | _ -> false
 
 (** Check if the last parameter is a hidden inner class, and remove it if present.
     This is used in private constructors, where a proxy constructor is generated
     with an extra parameter and calls the normal constructor. *)
 let java_remove_hidden_inner_class_parameter = function
-  | JAVA js ->
+  | Java_method js ->
       (match IList.rev js.parameters with
        | (so, s) :: par' ->
            if is_anonymous_inner_class_name s
-           then Some (JAVA { js with parameters = IList.rev par'})
+           then Some (Java_method { js with parameters = IList.rev par'})
            else None
        | [] -> None)
   | _ -> None
 
 (** Check if the procedure name is an anonymous inner class constructor. *)
 let java_is_anonymous_inner_class_constructor = function
-  | JAVA js ->
-      let _, name = js.classname in
+  | Java_method js ->
+      let _, name = js.class_name in
       is_anonymous_inner_class_name name
   | _ -> false
 
 (** Check if the procedure name is an acess method (e.g. access$100 used to
     access private members from a nested class. *)
 let java_is_access_method = function
-  | JAVA js ->
-      (match string_split_character js.methodname '$' with
+  | Java_method js ->
+      (match string_split_character js.method_name '$' with
        | Some "access", s ->
            let is_int =
              try ignore (int_of_string s); true with Failure _ -> false in
@@ -345,7 +346,7 @@ let java_is_access_method = function
 (** Check if the proc name has the type of a java vararg.
     Note: currently only checks that the last argument has type Object[]. *)
 let java_is_vararg = function
-  | JAVA js ->
+  | Java_method js ->
       begin
         match (IList.rev js.parameters) with
         | (_,"java.lang.Object[]") :: _ -> true
@@ -355,30 +356,30 @@ let java_is_vararg = function
 
 (** [is_constructor pname] returns true if [pname] is a constructor *)
 let is_constructor = function
-  | JAVA js -> js.methodname = "<init>"
-  | C_METHOD name ->
+  | Java_method js -> js.method_name = "<init>"
+  | ObjC_Cpp_method name ->
       (name.method_name = "new") || Utils.string_is_prefix "init" name.method_name
   | _ -> false
 
 let java_is_close = function
-  | JAVA js -> js.methodname = "close"
+  | Java_method js -> js.method_name = "close"
   | _ -> false
 
 (** [is_class_initializer pname] returns true if [pname] is a class initializer *)
 let is_class_initializer = function
-  | JAVA js -> js.methodname = "<clinit>"
+  | Java_method js -> js.method_name = "<clinit>"
   | _ -> false
 
 (** [is_infer_undefined pn] returns true if [pn] is a special Infer undefined proc *)
 let is_infer_undefined pn = match pn with
-  | JAVA j ->
+  | Java_method j ->
       let regexp = Str.regexp "com.facebook.infer.models.InferUndefined" in
       Str.string_match regexp (java_get_class pn) 0
   | _ ->
       (* TODO: add cases for obj-c, c, c++ *)
       false
 
-(** to_string for C_FUNCTION and STATIC types *)
+(** to_string for C_function type *)
 let to_readable_string (c1, c2) verbose =
   let plain = c1 in
   if verbose then
@@ -390,9 +391,9 @@ let to_readable_string (c1, c2) verbose =
 
 let c_method_to_string osig detail_level =
   match detail_level with
-  | SIMPLE -> osig.method_name
-  | NON_VERBOSE -> osig.class_name ^ "_" ^ osig.method_name
-  | VERBOSE ->
+  | Simple -> osig.method_name
+  | Non_verbose -> osig.class_name ^ "_" ^ osig.method_name
+  | Verbose ->
       let m_str = match osig.mangled with
         | None -> ""
         | Some s -> "{" ^ s ^ "}" in
@@ -401,29 +402,28 @@ let c_method_to_string osig detail_level =
 (** Very verbose representation of an existing Procname.t *)
 let to_unique_id pn =
   match pn with
-  | JAVA j -> java_to_string j VERBOSE
-  | C_FUNCTION (c1, c2) -> to_readable_string (c1, c2) true
-  | STATIC (s1, s2) -> to_readable_string (s1, s2) true
-  | C_METHOD osig -> c_method_to_string osig VERBOSE
-  | OBJC_BLOCK name -> name
+  | Java_method j -> java_to_string j Verbose
+  | C_function (c1, c2) -> to_readable_string (c1, c2) true
+  | ObjC_Cpp_method osig -> c_method_to_string osig Verbose
+  | ObjC_block name -> name
 
 (** Convert a proc name to a string for the user to see *)
 let to_string p =
   match p with
-  | JAVA j -> (java_to_string j NON_VERBOSE)
-  | C_FUNCTION (c1, c2) | STATIC (c1, c2) ->
+  | Java_method j -> (java_to_string j Non_verbose)
+  | C_function (c1, c2) ->
       to_readable_string (c1, c2) false
-  | C_METHOD osig -> c_method_to_string osig NON_VERBOSE
-  | OBJC_BLOCK name -> name
+  | ObjC_Cpp_method osig -> c_method_to_string osig Non_verbose
+  | ObjC_block name -> name
 
 (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
 let to_simplified_string ?(withclass = false) p =
   match p with
-  | JAVA j -> (java_to_string ~withclass j SIMPLE)
-  | C_FUNCTION (c1, c2) | STATIC (c1, c2) ->
+  | Java_method j -> (java_to_string ~withclass j Simple)
+  | C_function (c1, c2) ->
       to_readable_string (c1, c2) false ^ "()"
-  | C_METHOD osig -> c_method_to_string osig SIMPLE
-  | OBJC_BLOCK name -> "block"
+  | ObjC_Cpp_method osig -> c_method_to_string osig Simple
+  | ObjC_block name -> "block"
 
 (** Convert a proc name to a filename *)
 let to_filename (pn : proc_name) =
@@ -441,26 +441,20 @@ let pp f pn =
 
 (** Compare function for Procname.t types *)
 (* These rules create an ordered set of procnames grouped with the following priority (lowest to highest): *)
-(* JAVA, C_FUNCTION, STATIC, OBJC *)
 let compare pn1 pn2 = match pn1, pn2 with
-  | JAVA j1, JAVA j2 -> java_sig_compare j1 j2
-  | JAVA _, _ -> -1
-  | _, JAVA _ -> 1
-  | C_FUNCTION (c1, c2), C_FUNCTION (c3, c4) -> (* Compare C_FUNCTION types *)
-      let n = string_compare c1 c3 in
-      if n <> 0 then n else mangled_compare c2 c4
-  | C_FUNCTION _, _ -> -1
-  | _, C_FUNCTION _ -> 1
-  | STATIC (c1, c2), STATIC (c3, c4) -> (* Compare STATIC types *)
-      let n = string_compare c1 c3 in
-      if n <> 0 then n else mangled_compare c2 c4
-  | STATIC _, _ -> -1
-  | _, STATIC _ -> 1
-  | OBJC_BLOCK s1, OBJC_BLOCK s2 -> (* Compare OBJC_BLOCK types *)
+  | Java_method j1, Java_method j2 -> java_sig_compare j1 j2
+  | Java_method _, _ -> -1
+  | _, Java_method _ -> 1
+  | C_function (c1, c2), C_function (c3, c4) -> (* Compare C_function types *)
+      string_compare c1 c3
+      |> next mangled_compare c2 c4
+  | C_function _, _ -> -1
+  | _, C_function _ -> 1
+  | ObjC_block s1, ObjC_block s2 -> (* Compare ObjC_block types *)
       string_compare s1 s2
-  | OBJC_BLOCK _, _ -> -1
-  | _, OBJC_BLOCK _ -> 1
-  | C_METHOD osig1, C_METHOD osig2 -> c_meth_sig_compare osig1 osig2
+  | ObjC_block _, _ -> -1
+  | _, ObjC_block _ -> 1
+  | ObjC_Cpp_method osig1, ObjC_Cpp_method osig2 -> c_meth_sig_compare osig1 osig2
 
 let equal pn1 pn2 =
   compare pn1 pn2 = 0
