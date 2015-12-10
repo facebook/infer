@@ -536,6 +536,7 @@ let forward_tabulate cfg tenv =
     let sid_curr_node = Cfg.Node.get_id curr_node in
     let proc_desc = Cfg.Node.get_proc_desc curr_node in
     let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+    let formal_params = Cfg.Procdesc.get_formals proc_desc in
     let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
     mark_visited summary curr_node; (* mark nodes visited in fp and re phases *)
     let session =
@@ -582,6 +583,10 @@ let forward_tabulate cfg tenv =
           exe_iter
             (fun prop path cnt num_paths ->
                try
+                 let prop = if !Config.taint_analysis then
+                     let tainted_params = Taint.tainted_params proc_name in
+                     Tabulation.add_param_taint proc_name formal_params prop tainted_params
+                   else prop in
                  L.d_strln ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths);
                  L.d_increase_indent 1;
                  State.reset_diverging_states_goto_node ();

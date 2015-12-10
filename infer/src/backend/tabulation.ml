@@ -746,34 +746,44 @@ let combine
     print_results actual_pre (IList.map fst results);
     Some results
 
+(* add tainting attribute to a pvar in a prop *)
+let add_tainting_attribute att pvar_param prop =
+  IList.fold_left
+    (fun prop_acc hpred ->
+       match hpred with
+       | Sil.Hpointsto (Sil.Lvar pvar, (Sil.Eexp (rhs, _)), _)
+         when Sil.pvar_equal pvar pvar_param ->
+           L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
+                      (Sil.pvar_to_string pvar));
+           Prop.add_or_replace_exp_attribute prop_acc rhs att
+       | _ -> prop_acc)
+    prop (Prop.get_sigma prop)
+
+(* add tainting attributes to a list of paramenters *)
+let add_tainting_att_param_list prop param_nums formal_params att =
+  try
+    IList.map (fun n -> IList.nth formal_params n) param_nums
+    |> IList.fold_left (fun prop param -> add_tainting_attribute att param prop) prop
+  with Failure _ | Invalid_argument _  ->
+    L.d_strln ("TAINT ANALYSIS: WARNING, tainting framework " ^
+               "specifies incorrect parameter number " ^
+               " to be set as tainted/untainted ");
+    prop
+
+(* Set Ataint attribute to list of parameteres in a prop *)
+let add_param_taint proc_name formal_params prop param_nums =
+  let formal_params' = IList.map
+      (fun (p, _) -> Sil.mk_pvar (Mangled.from_string p) proc_name) formal_params in
+  add_tainting_att_param_list prop param_nums formal_params' (Sil.Ataint proc_name)
+
+(* add Auntaint attribute to a callee_pname precondition *)
 let mk_pre pre formal_params callee_pname =
   if !Config.taint_analysis then
-    match Taint.accepts_sensitive_params callee_pname with
-    | [] -> pre
-    | param_nums ->
-        let add_param_untaint prop param =
-          (* TODO: we should be able to add the taint attribute directly to the pvar. fix the taint
-             analysis so that it uses Prover.check_equal and gets the right answer here *)
-          IList.fold_left
-            (fun prop_acc hpred -> match hpred with
-               | Sil.Hpointsto (Sil.Lvar pvar, (Sil.Eexp (rhs, _)), _)
-                 when Sil.pvar_equal pvar param ->
-                   Prop.add_or_replace_exp_attribute prop_acc rhs Sil.Auntaint
-               | _ -> prop_acc)
-            prop
-            (Prop.get_sigma prop) in
-        let add_param_untaint_if_nums_match prop param_num param =
-          if IList.exists (fun num -> num = param_num) param_nums then
-            add_param_untaint prop param
-          else prop in
-        let pre', _ =
-          IList.fold_left
-            (fun (prop_acc, param_num) param ->
-               (add_param_untaint_if_nums_match prop_acc param_num param, param_num + 1))
-            (Prop.normalize pre, 0)
-            formal_params in
-        (Prop.expose pre')
+    let pre' = add_tainting_att_param_list (Prop.normalize pre)
+        (Taint.accepts_sensitive_params callee_pname) formal_params (Sil.Auntaint) in
+    (Prop.expose pre')
   else pre
+
 
 (** Construct the actual precondition: add to the current state a copy
     of the (callee's) formal parameters instantiated with the actual

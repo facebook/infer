@@ -43,3 +43,8 @@ val exe_function_call:
   Sil.tenv -> Cfg.cfg -> Ident.t list -> Cfg.Procdesc.t -> Procname.t -> Location.t ->
   (Sil.exp * Sil.typ) list -> Prop.normal Prop.t -> Paths.Path.t ->
   (Prop.normal Prop.t * Paths.Path.t) list
+
+(* Set Ataint attribute to list of parameteres in a prop *)
+val add_param_taint :
+  Procname.t -> (string * Sil.typ) list -> Prop.normal Prop.t ->
+  int list -> Prop.normal Prop.t

@@ -13,23 +13,6 @@ module TypSet = Sil.TypSet
 
 open Utils
 
-type java_method_str = {
-  classname : string;
-  method_name : string;
-  ret_type : string;
-  params : string list;
-  is_static : bool
-}
-
-(* turn string specificiation of Java method into a procname *)
-let java_method_to_procname java_method =
-  Procname.mangled_java
-    (Procname.split_classname java_method.classname)
-    (Some (Procname.split_classname java_method.ret_type))
-    java_method.method_name
-    (IList.map Procname.split_classname java_method.params)
-    (if java_method.is_static then Procname.Static else Procname.Non_Static)
-
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
 (** work-in-progress list of known callback-registering method names *)
