@@ -35,14 +35,14 @@ AC_DEFUN([AC_CHECK_OCAML_PKG_PATH],
       unset minor_inst
       unset patch_inst
 
-      major_req=$(printf $3 | cut -d . -f 1)
-      minor_req=$(printf $3 | cut -d . -f 2)
-      patch_req=$(printf $3 | cut -d . -f 3)
+      major_req=$(printf "$3" | cut -d . -f 1)
+      minor_req=$(printf "$3" | cut -d . -f 2)
+      patch_req=$(printf "$3" | cut -d . -f 3)
 
-      major_inst=$(printf $version | cut -d . -f 1)
-      minor_inst=$(printf $version | cut -d . -f 2)
+      major_inst=$(printf "$version" | cut -d . -f 1)
+      minor_inst=$(printf "$version" | cut -d . -f 2)
       # discard trailing characters after patch number, eg 1.2.3+4~5 -> 3
-      patch_inst=$(printf $version | cut -d . -f 3 | grep -o -e '^[[:digit:]]*')
+      patch_inst=$(printf "$version" | cut -d . -f 3 | grep -o -e '^[[[:digit:]]]*')
       if test $major_inst -gt $major_req || \
          (test $major_inst -eq $major_req && \
           (test $minor_inst -gt $minor_req || \

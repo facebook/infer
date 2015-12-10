@@ -22,9 +22,8 @@ AC_DEFUN([AC_ASSERT_OCAML_PKG],
 
 If you are using opam, please run
 
-  \# create an "infer" opam package
-  opam pin add --no-action --yes -k path .
-  \# install dependencies
+  opam update
+  opam pin add --yes --no-action .
   opam install --deps-only infer])
   ])
 ])

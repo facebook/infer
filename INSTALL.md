@@ -22,7 +22,8 @@ is required to be able to [use the
 release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
-- opam (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
+- autoconf >= 2.63 and automake >= 1.11.1
+- opam >= 1.2.0 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
 - Java (only needed for the Java analysis)
 - clang in Xcode command line tools. You can install them with the command
@@ -33,21 +34,8 @@ You can install some of these dependencies using
 [Homebrew](http://brew.sh/):
 
 ```sh
-brew install opam
-```
-
-Once you have all the dependencies above installed, configure opam as
-follows:
-
-```sh
-opam init -y
-eval $(opam config env)
-opam update
-opam install -y \
-  atdgen.1.6.0 \
-  extlib.1.5.4 \
-  javalib.2.3.1 \
-  sawja.1.5.1
+brew install autoconf automake opam caskroom/cask/brew-cask && \
+brew cask install caskroom/versions/java7
 ```
 
 
@@ -58,12 +46,79 @@ is required to be able to [use the
 release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
-- gcc >= 4.7.2
-- opam
+- autoconf >= 2.63 and automake >= 1.11.1
+- gcc >= 4.7.2 or clang >= 3.1 (only needed for the C/Objective-C analysis)
+- opam >= 1.2.0
 - Python 2.7
 - Java (only needed for the Java analysis)
 
-### How to install the dependencies on Ubuntu 12.04.4 LTS
+See also the distro-specific instructions for Ubuntu and Debian below.
+
+
+## Install Infer from source
+
+Run the following commands to get Infer up and running:
+
+```sh
+# Checkout Infer
+git clone https://github.com/facebook/infer.git
+cd infer
+# Compile Infer
+./build-infer.sh java
+# Install Infer into your PATH
+export PATH=`pwd`/infer/bin:$PATH
+```
+
+Replace `./build-infer.sh java` with `./build-infer.sh clang` to build
+the C and Objective-C analyzer from source. Beware that this command
+may take a really long time because it will compile a custom version
+of clang. This custom version is used by Infer to parse C and
+Objective-C source code. We encourage you to use [a
+release](https://github.com/facebook/infer/releases/) instead, which
+ship with clang already compiled.
+
+See `./build-infer.sh --help` for more options, eg `./build-infer.sh`
+on its own will build the analyzers for both Java and C/ObjC.
+
+
+## Install Infer from source without opam
+
+If for some reason you prefer to install Infer's OCaml dependencies by
+some means other than opam, you can still compile Infer by running:
+
+```sh
+./autogen.sh
+./configure
+make # or make java
+# Install Infer into your PATH
+export PATH=`pwd`/infer/bin:$PATH
+```
+
+
+## How to install the dependencies on Linux
+
+Here are instructions on how to install the dependencies needed to
+compile Infer on a few Linux distributions.
+
+### Debian 7 and Ubuntu 14.04 LTS
+
+```sh
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install -y \
+  build-essential \
+  git \
+  libgmp-dev \
+  libmpc-dev \
+  libmpfr-dev \
+  m4 \
+  openjdk-7-jdk \
+  python-software-properties \
+  unzip \
+  zlib1g-dev
+```
+
+### Ubuntu 12.04.4 LTS
 
 ```sh
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -87,25 +142,7 @@ sudo update-alternatives \
   --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
 ```
 
-### How to install the dependencies on Debian 7 / Ubuntu 14.04
-
-```sh
-sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install -y \
-  build-essential \
-  git \
-  libgmp-dev \
-  libmpc-dev \
-  libmpfr-dev \
-  m4 \
-  openjdk-7-jdk \
-  python-software-properties \
-  unzip \
-  zlib1g-dev
-```
-
-### Setting up Opam
+### Setting up opam
 
 Unfortunately, the version of opam that ships with some Linux
 distributions is broken, so you'll have to get it from the web:
@@ -117,61 +154,3 @@ chmod +x opam
 
 Alternatively, follow the instructions [from the opam
 webpage](https://opam.ocaml.org/doc/Install.html).
-
-Once opam is installed, run the following commands:
-
-```sh
-./opam init -y
-eval $(./opam config env)
-./opam update
-./opam install -y \
-  atdgen.1.6.0 \
-  extlib.1.5.4 \
-  javalib.2.3.1 \
-  sawja.1.5.1
-```
-
-
-## Compile Infer from source for the Java analysis
-
-If you use Infer to analyze Java programs only, you can simple use
-these steps to get Infer up and running:
-
-```sh
-# Checkout Infer
-git clone https://github.com/facebook/infer.git
-cd infer
-# Compile Infer
-./autogen.sh
-./configure
-make java
-# Install Infer into your PATH
-export PATH=`pwd`/infer/bin:$PATH
-```
-
-
-## Compile Infer from source with clang enabled
-
-You do not need to follow the instructions below if you are using a
-[release of Infer](http://fbinfer.com/docs/getting-started.html) or if
-you only need to run Infer on Java programs.
-
-Infer uses a special version of clang along with a clang
-plugin. Follow these steps to compile them from source and install
-Infer.
-
-```sh
-# Checkout Infer
-git clone https://github.com/facebook/infer.git
-cd infer
-./autogen.sh
-# Compile clang
-facebook-clang-plugins/clang/setup.sh # go have a coffee :)
-# Compile the clang plugin
-./compile-fcp.sh
-# Compile Infer
-./configure
-make
-# Install Infer into your PATH
-export PATH=`pwd`/infer/bin:$PATH
-```
