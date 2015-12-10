@@ -374,19 +374,15 @@ let get_lifecycles = android_lifecycles
 
 (** Checks if the exception is an uncheched exception *)
 let is_runtime_exception tenv exn =
-  let runtime_exception_opt =
+  let lookup = Sil.tenv_lookup tenv in
+  let runtime_exception_typename =
     let name = Mangled.from_package_class "java.lang" "RuntimeException" in
-    let typename = Sil.TN_csu (Sil.Class, name) in
-    Sil.tenv_lookup tenv typename in
-  match Sil.tenv_lookup tenv (Sil.TN_csu (Sil.Class, exn)) with
-  | None -> assert false
-  | Some exn_type ->
-      begin
-        match runtime_exception_opt with
-        | None -> false
-        | Some runtime_exception_type ->
-            is_subtype exn_type runtime_exception_type tenv
-      end
+    Sil.TN_csu (Sil.Class, name)
+  and exn_typename = Sil.TN_csu (Sil.Class, exn) in
+  match lookup runtime_exception_typename, lookup exn_typename with
+  | Some runtime_exception_type, Some exn_type ->
+      is_subtype exn_type runtime_exception_type tenv
+  | _ -> false
 
 
 let non_stub_android_jar () =
