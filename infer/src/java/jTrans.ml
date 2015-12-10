@@ -558,11 +558,12 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
   let program = JContext.get_program context in
   if JConfig.create_callee_procdesc then
     ignore (get_method_procdesc program cfg tenv cn ms method_kind);
-  let cf_virtual = match invoke_code with
-    | I_Virtual -> true
-    | _ -> false in
+  let cf_virtual, cf_interface = match invoke_code with
+    | I_Virtual -> (true, false)
+    | I_Interface -> (true, true)
+    | _ -> (false, false) in
   let call_flags =
-    { Sil.cf_virtual = cf_virtual; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
+    { Sil.cf_default with Sil.cf_virtual = cf_virtual; Sil.cf_interface = cf_interface; } in
   let init =
     match sil_obj_opt with
     | None -> ([], [], [])
@@ -788,7 +789,7 @@ let assume_not_null loc sil_expr =
   let builtin_infer_assume = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__infer_assume) in
   let not_null_expr =
     Sil.BinOp (Sil.Ne, sil_expr, Sil.exp_null) in
-  let assume_call_flag = { Sil.cf_virtual = false; Sil.cf_noreturn = true; Sil.cf_is_objc_block = false; } in
+  let assume_call_flag = { Sil.cf_default with Sil.cf_noreturn = true; } in
   let call_args = [(not_null_expr, Sil.Tint Sil.IBool)] in
   Sil.Call ([], builtin_infer_assume, call_args, loc, assume_call_flag)
 
@@ -996,7 +997,8 @@ let rec instruction context pc instr : translation =
                     let instr = instruction_array_call ms obj_type obj args var_opt vt in
                     instruction context pc instr
               end
-          | JBir.InterfaceCall cn -> trans_virtual_call cn
+          | JBir.InterfaceCall cn ->
+              trans_virtual_call cn
         end
     | JBir.InvokeNonVirtual (var_opt, obj, cn, ms, args) ->
         let cn = (resolve_method context cn ms) in

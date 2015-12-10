@@ -209,7 +209,8 @@ end
 
 (** Flags for a procedure call *)
 type call_flags = {
-  cf_virtual: bool;
+  cf_virtual : bool;
+  cf_interface : bool;
   cf_noreturn : bool;
   cf_is_objc_block : bool;
 }

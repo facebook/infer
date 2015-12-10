@@ -303,7 +303,7 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
     create_alloc_instrs trans_state.context loc function_type fname in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
-  let call_flags = { Sil.cf_virtual = is_instance; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
+  let call_flags = { Sil.cf_default with Sil.cf_virtual = is_instance; } in
   let pname = General_utils.mk_procname_from_objc_method cls_name CFrontend_config.init Procname.Instance_objc_method in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname is_instance None;
   let args = [(Sil.Var alloc_ret_id, alloc_ret_type)] in

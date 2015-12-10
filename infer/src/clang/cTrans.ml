@@ -691,7 +691,7 @@ struct
             | None ->
                 let ret_id = if (Sil.typ_equal function_type Sil.Tvoid) then []
                   else [Ident.create_fresh Ident.knormal] in
-                let call_flags = { Sil.cf_virtual = false; Sil.cf_noreturn = false; Sil.cf_is_objc_block = is_call_to_block; } in
+                let call_flags = { Sil.cf_default with Sil.cf_is_objc_block = is_call_to_block; } in
                 let call_instr = Sil.Call(ret_id, sil_fe, act_params, sil_loc, call_flags) in
                 ret_id, call_instr in
 
@@ -743,6 +743,7 @@ struct
       else [Ident.create_fresh Ident.knormal] in
     let call_flags = {
       Sil.cf_virtual = false (* TODO t7725350 *);
+      Sil.cf_interface = false;
       Sil.cf_noreturn = false;
       Sil.cf_is_objc_block = false;
     } in
@@ -870,10 +871,7 @@ struct
         let ret_id =
           if Sil.typ_equal method_type Sil.Tvoid then []
           else [Ident.create_fresh Ident.knormal] in
-        let call_flags = {
-          Sil.cf_virtual = is_virtual;
-          Sil.cf_noreturn = false;
-          Sil.cf_is_objc_block = false; } in
+        let call_flags = { Sil.cf_default with Sil.cf_virtual = is_virtual; } in
         let stmt_call =
           Sil.Call (ret_id, (Sil.Const (Sil.Cfun callee_name)), param_exps, sil_loc, call_flags) in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in

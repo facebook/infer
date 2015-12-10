@@ -178,9 +178,7 @@ let inhabit_call_with_args procname procdesc args env =
     if is_void then [] else [Ident.create_fresh Ident.knormal] in
   let call_instr =
     let fun_exp = fun_exp_from_name procname in
-    let flags =
-      let cf_virtual = not (Procname.java_is_static procname) in
-      { Sil.cf_virtual = cf_virtual; Sil.cf_noreturn = false; Sil.cf_is_objc_block = false; } in
+    let flags = { Sil.cf_default with Sil.cf_virtual = not (Procname.java_is_static procname); } in
     Sil.Call (retval, fun_exp, args, env.pc, flags) in
   env_add_instr call_instr retval env
 

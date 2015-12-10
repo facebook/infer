@@ -571,11 +571,17 @@ end
 (** Flags for a procedure call *)
 type call_flags = {
   cf_virtual : bool;
+  cf_interface : bool;
   cf_noreturn : bool;
   cf_is_objc_block : bool;
 }
 
-let cf_default = { cf_virtual = false; cf_noreturn = false; cf_is_objc_block = false; }
+let cf_default =
+  { cf_virtual = false;
+    cf_interface = false;
+    cf_noreturn = false;
+    cf_is_objc_block = false;
+  }
 
 (** expression representing the result of decompilation *)
 type dexp =
@@ -3449,8 +3455,10 @@ let instr_sub (subst: subst) instr =
       Goto_node (exp_s e, loc)
 
 let call_flags_compare cflag1 cflag2 =
-  let n = bool_compare cflag1.cf_virtual cflag2.cf_virtual in
-  if n <> 0 then n else bool_compare cflag1.cf_noreturn cflag2.cf_noreturn
+  bool_compare cflag1.cf_virtual cflag2.cf_virtual
+  |> next bool_compare cflag1.cf_interface cflag2.cf_interface
+  |> next bool_compare cflag1.cf_noreturn cflag2.cf_noreturn
+  |> next bool_compare cflag1.cf_is_objc_block cflag2.cf_is_objc_block
 
 let exp_typ_compare (exp1, typ1) (exp2, typ2) =
   let n = exp_compare exp1 exp2 in
