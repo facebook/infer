@@ -1,3 +1,12 @@
+(*
+ * Copyright (c) 2015 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
+
 {
   open JVerboseParser
 }
@@ -13,6 +22,8 @@ let minus = '-'
 let dot = '.'
 let hash = '#'
 let dollar = '$'
+let equal = '='
+let tilde = '~'
 
 let digit = ['0'-'9']
 let number = digit* | digit+ '.' digit* | digit* '.' digit+
@@ -22,7 +33,7 @@ let dir_sep = '/'
 
 let dot_java = dot "java"
 let dot_class = dot "class"
-let path = (char | dir_sep | underscore | minus | dot | hash | dollar)+
+let path = (char | dir_sep | underscore | minus | dot | hash | dollar | equal | tilde)+
 let source_basename = path dot_java
 let class_basename = path dot_class
 let source_filename = (dir_sep path | path)* source_basename
