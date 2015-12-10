@@ -21,6 +21,9 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import android.content.ContentValues;
+import android.content.SharedPreferences;
+
 import com.facebook.infer.models.InferTaint;
 
 public class TaintExample {
@@ -156,6 +159,15 @@ public class TaintExample {
 
   public void interprocTaintErrorWithModelMethodsUndefined3() {
     callSinkMethodModelMethodsUndefined(returnTaintedSourceModelMethodsUndefined());
+  }
+
+  public void contentValuesPutWithTaintedString(ContentValues values, SharedPreferences prefs,
+                                                String key, String value) {
+    values.put(key, prefs.getString(key, value));
+  }
+
+  public void contentValuesPutOk(ContentValues values, String key, String value) {
+    values.put(key, value);
   }
 
 }

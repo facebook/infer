@@ -5,6 +5,11 @@
     "procedure": "Socket TaintExample.callReadInputStreamCauseTaintError(SSLSocketFactory)"
   },
   {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "infer/tests/codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.contentValuesPutWithTaintedString(ContentValues,SharedPreferences,String,String)"
+  },
+  {
     "bug_type": "CONTEXT_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ContextLeaks.java",
     "procedure": "void ContextLeaks.directLeak()"
