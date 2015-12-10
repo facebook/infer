@@ -23,12 +23,14 @@ Contents
   Make sure that you have the Android SDK 22 installed and up to date, and in
   particular the "Android SDK Build-tools" and "Android Support Repository".
 
-- ios_hello/: a sample iOS app. Try this example by running
-  infer -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
-
 - c_hello/: a sample make-based C project. Try this example by running
   infer -- make
 
+- ios_hello/: a sample iOS app. Try this example by running
+  infer -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
+
+- java_hello/: a sample Java project. Try this example by running
+  infer -- javac Pointers.java Resources.java Hello.java
 
 Note
 ----
