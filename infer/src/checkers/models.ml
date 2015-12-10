@@ -193,3 +193,7 @@ let is_true_on_null proc_name =
 (** Check if the procedure is Map.containsKey(). *)
 let is_containsKey proc_name =
   table_has_procedure containsKey_table proc_name
+
+(** Check if the procedure is Map.put(). *)
+let is_mapPut proc_name =
+  table_has_procedure mapPut_table proc_name

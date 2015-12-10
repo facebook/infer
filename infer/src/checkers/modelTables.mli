@@ -22,6 +22,7 @@ val check_not_null_parameter_table : (string, int) Hashtbl.t
 val check_state_table : model_table_t
 val check_argument_table : model_table_t
 val containsKey_table : model_table_t
+val mapPut_table : model_table_t
 val optional_get_table : model_table_t
 val optional_isPresent_table : model_table_t
 val true_on_null_table : model_table_t

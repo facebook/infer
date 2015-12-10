@@ -722,6 +722,45 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
             end
         | _ -> typestate' in
 
+      (** Handle m.put(k,v) as assignment pvar = v for the pvar associated to m.get(k) *)
+      let do_map_put typestate' =
+        (* Get the proc name for map.get() from map.put() *)
+        let pname_get_from_pname_put pname_put =
+          let object_t = (Some "java.lang", "Object") in
+          let parameters = [object_t] in
+          Procname.java_replace_parameters
+            (Procname.java_replace_return_type
+               (Procname.java_replace_method pname_put "get")
+               object_t)
+            parameters in
+        match call_params with
+        | ((_, Sil.Lvar pv_map), typ_map) ::
+          ((_, exp_key), typ_key) ::
+          ((_, exp_value), typ_value) :: _ ->
+            (* Convert the dexp for k to the dexp for m.get(k) *)
+            let convert_dexp_key_to_dexp_get = function
+              | Some dexp_key ->
+                  let pname_get = pname_get_from_pname_put callee_pname in
+                  let dexp_get = Sil.Dconst (Sil.Cfun pname_get) in
+                  let dexp_map = Sil.Dpvar pv_map in
+                  let args = [dexp_map; dexp_key] in
+                  let call_flags = { Sil.cf_default with Sil.cf_virtual = true } in
+                  Some (Sil.Dretcall (dexp_get, args, loc, call_flags))
+              | _ -> None in
+            begin
+              match ComplexExpressions.exp_to_string_map_dexp
+                      convert_dexp_key_to_dexp_get node exp_key with
+              | Some map_get_str ->
+                  let pvar_map_get = Sil.mk_pvar (Mangled.from_string map_get_str) curr_pname in
+                  TypeState.add_pvar
+                    pvar_map_get
+                    (typecheck_expr_simple typestate' exp_value typ_value TypeOrigin.Undef loc)
+                    typestate'
+              | None ->
+                  typestate'
+            end
+        | _ ->
+            typestate' in
 
       let typestate2 =
         if not is_anonymous_inner_class_constructor then
@@ -777,7 +816,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                 typestate2
             else
             if Procname.java_get_method callee_pname = "checkNotNull"
-               && Procname.java_is_vararg callee_pname
+            && Procname.java_is_vararg callee_pname
             then
               let last_parameter = IList.length call_params in
               do_preconditions_check_not_null
@@ -787,6 +826,8 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
             else if Models.is_check_state callee_pname ||
                     Models.is_check_argument callee_pname then
               do_preconditions_check_state typestate2
+            else if Models.is_mapPut callee_pname then
+              do_map_put typestate2
             else typestate2
           end
         else typestate1 in

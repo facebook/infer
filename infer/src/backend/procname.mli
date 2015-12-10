@@ -66,6 +66,9 @@ val java_replace_class : t -> string -> t
 (** Replace the method of a java procname. *)
 val java_replace_method : t -> string -> t
 
+(** Replace the parameters of a java procname. *)
+val java_replace_parameters : t -> java_type list -> t
+
 (** Replace the method of a java procname. *)
 val java_replace_return_type : t -> java_type -> t
 
@@ -97,7 +100,10 @@ val java_replace_method : t -> string -> t
 val java_get_return_type : t -> string
 
 (** Return the parameters of a java procedure name. *)
-val java_get_parameters : t -> string list
+val java_get_parameters : t -> java_type list
+
+(** Return the parameters of a java procname as strings. *)
+val java_get_parameters_as_strings : t -> string list
 
 (** Return true if the java procedure is static *)
 val java_is_static : t -> bool

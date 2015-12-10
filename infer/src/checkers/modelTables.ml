@@ -103,6 +103,13 @@ let containsKey_list =
     n1, "java.util.Map.containsKey(java.lang.Object):boolean";
   ]
 
+(** Models for Map.put *)
+let mapPut_list =
+  [
+    cp, "com.google.common.collect.ImmutableMap.put(java.lang.Object,java.lang.Object):java.lang.Object";
+    cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object";
+  ]
+
 (** Models for @Strict annotations *)
 let annotated_list_strict =
   [
@@ -237,6 +244,7 @@ let check_not_null_table, check_not_null_parameter_table =
 let check_state_table = mk_table check_state_list
 let check_argument_table = mk_table check_argument_list
 let containsKey_table = mk_table containsKey_list
+let mapPut_table = mk_table mapPut_list
 let optional_get_table = mk_table optional_get_list
 let optional_isPresent_table = mk_table optional_isPresent_list
 let true_on_null_table = mk_table true_on_null_list

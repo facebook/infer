@@ -274,7 +274,7 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
           | None -> failwith ("Failed to look up typ " ^ typ_str) in
     let ret_type = lookup_typ (Procname.java_get_return_type proc_name) in
     let formals =
-      let param_strs = Procname.java_get_parameters proc_name in
+      let param_strs = Procname.java_get_parameters_as_strings proc_name in
       IList.fold_right (fun typ_str params -> ("", lookup_typ typ_str) :: params) param_strs [] in
     let proc_attributes =
       { (ProcAttributes.default proc_name Config.Java) with

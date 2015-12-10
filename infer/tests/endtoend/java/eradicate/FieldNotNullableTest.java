@@ -48,6 +48,7 @@ public class FieldNotNullableTest {
         "NestedBAD1",
         "NestedBAD2",
         "NestedBAD3",
+        "putNull",
     };
     assertThat(
         "Results should contain " + FIELD_NOT_NULLABLE,

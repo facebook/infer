@@ -234,13 +234,18 @@ let java_get_method = function
   | _ -> assert false
 
 (** Replace the method of a java procname. *)
-let java_replace_method p mname = match p with
-  | Java_method p -> Java_method { p with method_name = mname }
+let java_replace_method j mname = match j with
+  | Java_method j -> Java_method { j with method_name = mname }
   | _ -> assert false
 
 (** Replace the return type of a java procname. *)
 let java_replace_return_type p ret_type = match p with
-  | Java_method p -> Java_method { p with return_type = Some ret_type }
+  | Java_method j -> Java_method { j with return_type = Some ret_type }
+  | _ -> assert false
+
+(** Replace the parameters of a java procname. *)
+let java_replace_parameters p parameters = match p with
+  | Java_method j -> Java_method { j with parameters }
   | _ -> assert false
 
 (** Return the method of a objc/c++ procname. *)
@@ -257,6 +262,11 @@ let java_get_return_type = function
 
 (** Return the parameters of a java procname. *)
 let java_get_parameters = function
+  | Java_method j -> j.parameters
+  | _ -> assert false
+
+(** Return the parameters of a java procname as strings. *)
+let java_get_parameters_as_strings = function
   | Java_method j -> IList.map (fun param -> java_type_to_string param Verbose) j.parameters
   | _ -> assert false
 
