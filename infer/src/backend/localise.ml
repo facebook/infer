@@ -604,7 +604,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     let desc_str =
       match resource_opt with
       | Some Sil.Rmemory _ -> mem_dyn_allocated ^ _to ^ value_str
-      | Some Sil.Rfile -> "resource" ^ typ_str ^ "aquired" ^ _to ^ value_str
+      | Some Sil.Rfile -> "resource" ^ typ_str ^ "acquired" ^ _to ^ value_str
       | Some Sil.Rlock -> lock_acquired ^ _on ^ value_str
       | Some Sil.Rignore
       | None -> if value_str_opt = None then "memory" else value_str in
