@@ -16,3 +16,7 @@ let returns_secret callee_pname = false
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
 let accepts_sensitive_params callee_pname = []
+
+(** returns list of zero-indexed parameter numbers of [callee_pname] that should be
+    considered tainted during symbolic execution *)
+let tainted_params callee_pname = []

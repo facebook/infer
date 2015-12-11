@@ -12,3 +12,7 @@ val returns_secret : Procname.t -> bool
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
 val accepts_sensitive_params : Procname.t -> int list
+
+(** returns list of zero-indexed parameter numbers of [callee_pname] that should be
+    considered tainted during symbolic execution *)
+val tainted_params : Procname.t -> int list
