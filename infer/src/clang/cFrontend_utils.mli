@@ -83,8 +83,11 @@ sig
 
   val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Sil.exp option
 
-  (** returns fully qualified name given name info *)
+  (** returns sanitized, fully qualified name given name info *)
   val get_qualified_name : Clang_ast_t.named_decl_info -> string
+
+  (** returns sanitized unqualified name given name info *)
+  val get_unqualified_name : Clang_ast_t.named_decl_info -> string
 
   (** returns qualified class name given member name info *)
   val get_class_name_from_member : Clang_ast_t.named_decl_info -> string

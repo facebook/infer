@@ -192,7 +192,7 @@ let file_data_to_cfg exe_env file_data =
   | None ->
       let cfg = match Cfg.load_cfg_from_file file_data.cfg_file with
         | None ->
-            L.err "Cannot find cfg for %s@." (DB.filename_to_string file_data.tenv_file);
+            L.err "Cannot find cfg for %s@." (DB.filename_to_string file_data.cfg_file);
             assert false
         | Some cfg -> cfg in
       file_data.cfg <- Some cfg;

@@ -397,7 +397,7 @@ struct
     let open CContext in
     let context = trans_state.context in
     let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
-    let method_name = name_info.Clang_ast_t.ni_name in
+    let method_name = Ast_utils.get_unqualified_name name_info in
     let class_name = Ast_utils.get_class_name_from_member name_info in
     Printing.log_out "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in

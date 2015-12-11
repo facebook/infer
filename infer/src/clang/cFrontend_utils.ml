@@ -154,6 +154,12 @@ struct
   let get_qualified_name name_info =
     fold_qual_name name_info.Clang_ast_t.ni_qual_name
 
+  let get_unqualified_name name_info =
+    let name = match name_info.Clang_ast_t.ni_qual_name with
+      | name :: quals -> name
+      | [] -> name_info.Clang_ast_t.ni_name in
+    fold_qual_name [name]
+
   let get_class_name_from_member member_name_info =
     match member_name_info.Clang_ast_t.ni_qual_name with
     | _ :: class_qual_list -> fold_qual_name class_qual_list
