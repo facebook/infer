@@ -149,8 +149,21 @@ let static_vars_for_block context block_name =
   try Procname.Map.find block_name context.blocks_static_vars
   with Not_found -> []
 
-
 let rec get_outer_procname context =
   match context.outer_context with
   | Some outer_context -> get_outer_procname outer_context
   | None -> Cfg.Procdesc.get_proc_name context.procdesc
+
+let is_curr_proc_objc_getter context field_name =
+  let attrs = Cfg.Procdesc.get_attributes context.procdesc in
+  match attrs.ProcAttributes.objc_accessor with
+  | Some ProcAttributes.Objc_getter field ->
+      Ident.fieldname_equal field field_name
+  | _ -> false
+
+let is_curr_proc_objc_setter context field_name =
+  let attrs = Cfg.Procdesc.get_attributes context.procdesc in
+  match attrs.ProcAttributes.objc_accessor with
+  | Some ProcAttributes.Objc_setter field ->
+      Ident.fieldname_equal field field_name
+  | _ -> false

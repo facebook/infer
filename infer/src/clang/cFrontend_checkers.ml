@@ -34,7 +34,6 @@ let checker_strong_delegate_warning class_decl_info pname ptype =
    a property declared atomic should not be accessed directly via its ivar *)
 let direct_atomic_property_access context stmt_info ivar_name =
   let tenv = CContext.get_tenv context in
-  let curr_class = CContext.get_curr_class context in
   let mname = Cfg.Procdesc.get_proc_name (CContext.get_procdesc context) in
   let ivar, cname = match ivar_name with
     | Some n ->
@@ -51,7 +50,8 @@ let direct_atomic_property_access context stmt_info ivar_name =
          (3) the access of the ivar is not in the init method
          Last two conditions avoids false positives *)
       let condition = (CField_decl.is_ivar_atomic ivar (flds1 @ flds2))
-                      && not (ObjcProperty_decl.is_getter_setter curr_class mname ivar_name)
+                      && not (CContext.is_curr_proc_objc_getter context ivar)
+                      && not (CContext.is_curr_proc_objc_setter context ivar)
                       && not (Procname.is_constructor mname) in
       let warning_desc = {
         name = "DIRECT_ATOMIC_PROPERTY_ACCESS";

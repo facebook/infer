@@ -65,7 +65,3 @@ val find_properties_class : CContext.curr_class ->
 
 (* Given a property type returns whether the property is strong *)
 val is_strong_property : property_type -> bool
-
-(* Checks whether mname is a getter or setter of the ivar given in dr_name *)
-val is_getter_setter :
-  CContext.curr_class -> Procname.t -> Clang_ast_t.named_decl_info option -> bool

@@ -64,3 +64,7 @@ val static_vars_for_block : t -> Procname.t -> (Sil.pvar * Sil.typ) list
 val is_objc_instance : t -> bool
 
 val get_outer_procname : t -> Procname.t
+
+val is_curr_proc_objc_getter : t -> Ident.fieldname -> bool
+
+val is_curr_proc_objc_setter : t -> Ident.fieldname -> bool
