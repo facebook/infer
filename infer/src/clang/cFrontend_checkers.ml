@@ -14,14 +14,14 @@ open General_utils
 (* === Warnings on properties === *)
 
 (* Strong Delegate Warning: a property with name delegate should not be declared strong *)
-let checker_strong_delegate_warning class_decl_info pname ptype =
+let checker_strong_delegate_warning class_decl_info pname obj_c_property_decl_info =
   Printing.log_out "Checking for STRONG_DELEGATE property warning\n";
   let delegate_regexp = Str.regexp_string_case_fold "delegate" in
   let pname_contains_delegate = try
       Str.search_forward delegate_regexp pname.Clang_ast_t.ni_name 0 >= 0
     with Not_found -> false in
   let condition = pname_contains_delegate
-                  && ObjcProperty_decl.is_strong_property ptype in
+                  && ObjcProperty_decl.is_strong_property obj_c_property_decl_info in
   let warning_desc =
     { name = "STRONG_DELEGATE_WARNING";
       description = "Property or ivar "^pname.Clang_ast_t.ni_name^" declared strong";

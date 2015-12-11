@@ -200,8 +200,8 @@ let check_for_property curr_class method_name meth_decl body =
   check_property_accessor curr_class method_name true;
   check_property_accessor curr_class method_name false
 
-let is_strong_property property_type =
-  let _, attrs, _, _, _, _ = property_type in
+let is_strong_property obj_c_property_decl_info =
+  let attrs = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
   IList.exists (fun a -> match a with
       | `Strong -> true
       | _ -> false) attrs

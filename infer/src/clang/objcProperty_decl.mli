@@ -64,4 +64,4 @@ val find_properties_class : CContext.curr_class ->
   (Clang_ast_t.named_decl_info * property_type) list
 
 (* Given a property type returns whether the property is strong *)
-val is_strong_property : property_type -> bool
+val is_strong_property : Clang_ast_t.obj_c_property_decl_info -> bool

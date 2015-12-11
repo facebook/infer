@@ -12,8 +12,7 @@
 
 (* Strong Delegate Warning: a property with name delegate should not be declared strong *)
 val checker_strong_delegate_warning : Clang_ast_t.decl_info -> Clang_ast_t.named_decl_info ->
-  ObjcProperty_decl.property_type ->
-  (bool * CFrontend_utils.General_utils.warning_desc)
+  Clang_ast_t.obj_c_property_decl_info -> (bool * CFrontend_utils.General_utils.warning_desc)
 
 (* Direct Atomic Property access:
    a property declared atomic should not be accesses directly via its iva *)
