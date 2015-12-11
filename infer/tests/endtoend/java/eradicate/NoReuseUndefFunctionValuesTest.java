@@ -10,7 +10,7 @@
 package endtoend.java.eradicate;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsExactly.containsExactly;
+import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -23,10 +23,10 @@ import utils.InferResults;
 public class NoReuseUndefFunctionValuesTest {
 
   public static final String SOURCE_FILE =
-      "infer/tests/codetoanalyze/java/eradicate/NoReuseUndefFunctionValues.java";
+    "infer/tests/codetoanalyze/java/eradicate/NoReuseUndefFunctionValues.java";
 
   public static final String FIELD_NOT_INITIALIZED =
-      "ERADICATE_FIELD_NOT_INITIALIZED";
+    "ERADICATE_FIELD_NOT_INITIALIZED";
 
   private static InferResults inferResults;
 
@@ -37,16 +37,14 @@ public class NoReuseUndefFunctionValuesTest {
   }
 
   @Test
-  public void matchErrors()
-      throws IOException, InterruptedException, InferException {
-    String[] noMethods = {};
+  public void matchErrors() throws IOException, InterruptedException, InferException {
     assertThat(
-        "Results should contain " + FIELD_NOT_INITIALIZED,
-        inferResults,
-        containsExactly(
-            FIELD_NOT_INITIALIZED,
-            SOURCE_FILE,
-            noMethods));
+      "Results should not contain " + FIELD_NOT_INITIALIZED,
+      inferResults,
+      doesNotContain(
+        FIELD_NOT_INITIALIZED,
+        SOURCE_FILE,
+        "<init>"));
   }
 
 }
