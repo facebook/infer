@@ -32,7 +32,7 @@ $(PROCESSOR_JAR): $(PROCESSOR_SOURCES)
 	mv processor.jar $(PROCESSOR_JAR)
 
 clean:
-	rm -rf $(ANNOT_CLASSES)
-	rm -f $(ANNOTATIONS_JAR)
-	rm -rf $(PROCESSOR_CLASSES)
-	rm -f $(PROCESSOR_JAR)
+	@rm -rf $(ANNOT_CLASSES)
+	@rm -f $(ANNOTATIONS_JAR)
+	@rm -rf $(PROCESSOR_CLASSES)
+	@rm -f $(PROCESSOR_JAR)

@@ -26,7 +26,7 @@ install: $(CPP_MODELS_FILE)
 	@INSTALL@ -m 644 -C out/specs/*.specs $(SPECS_LIB_DIR)
 
 clean:
-	rm -f $(CPP_MODELS_FILE)
+	@rm -f $(CPP_MODELS_FILE)
 	$(MAKE) -C src clean
 
 .PHONY: all clean install

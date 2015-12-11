@@ -6,7 +6,7 @@ CXXFLAGS=-c -w
 all: $(OBJECTS)
 
 clean:
-	rm -rf $(OBJECTS)
+	@rm -rf $(OBJECTS)
 
 .c.o:
 	$(CXX) $(CXXFLAGS) $< -o $@

@@ -27,7 +27,7 @@ $(CLANG_SUBDIRS) $(JAVA_MODELS_DIR):
 	$(MAKE) -C $@ install
 
 clean:
-	rm -f $(SPECS_LIB_DIR)/*.specs
+	@rm -f $(SPECS_LIB_DIR)/*.specs
 	$(MAKE) -C $(JAVA_MODELS_DIR) clean
 	$(MAKE) -C $(C_MODELS_DIR) clean
 	$(MAKE) -C $(CPP_MODELS_DIR) clean

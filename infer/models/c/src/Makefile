@@ -6,7 +6,7 @@ CFLAGS=-c -w
 all: $(OBJECTS) $(OBJECTSXX)
 
 clean:
-	rm -rf $(OBJECTS)
+	@rm -rf $(OBJECTS)
 
 .c.o:
 	$(CC) $(CFLAGS) $< -o $@
