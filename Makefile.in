@@ -14,10 +14,35 @@ all: clang java
 java:
 	$(MAKE) -C $(INFER_DIR) java
 
-clang:
+clang_setup:
+	export CC="@CC@" CFLAGS="@CFLAGS@"; \
+	export CXX="@CXX@" CXXFLAGS="@CXXFLAGS@"; \
+	export CPP="@CPP@" LDFLAGS="@LDFLAGS@" LIBS="@LIBS@"; \
+	$(FCP_DIR)/clang/setup.sh
+
+clang_plugin: clang_setup
+	$(MAKE) -C $(FCP_DIR)/libtooling all \
+	  CC=@CC@ CXX=@CXX@ \
+	  CXX="@CXX@" CXXFLAGS="@CXXFLAGS@" \
+	  CPP="@CPP@" LDFLAGS="@LDFLAGS@" LIBS="@LIBS@" \
+	  LOCAL_CLANG=@CLANG_PREFIX@/bin/clang \
+	  CLANG_PREFIX=@CLANG_PREFIX@ \
+	  CLANG_INCLUDES=@CLANG_INCLUDES@
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
+          build/clang_ast_proj.ml build/clang_ast_proj.mli \
+	  CC=@CC@ CXX=@CXX@ \
+	  CXX="@CXX@" CXXFLAGS="@CXXFLAGS@" \
+	  CPP="@CPP@" LDFLAGS="@LDFLAGS@" LIBS="@LIBS@" \
+	  LOCAL_CLANG=@CLANG_PREFIX@/bin/clang \
+	  CLANG_PREFIX=@CLANG_PREFIX@ \
+	  CLANG_INCLUDES=@CLANG_INCLUDES@
+
+clang: clang_plugin
 	$(MAKE) -C $(INFER_DIR) clang
 
 clean:
+	$(MAKE) -C $(FCP_DIR) clean
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
 	$(MAKE) -C $(INFER_DIR) clean
 
-.PHONY: all clean clang java
+.PHONY: all clean clang clang_plugin clang_setup java

@@ -15,12 +15,12 @@ AC_PREREQ([2.63])
 AC_INIT([Infer],[0.4.0],[https://github.com/facebook/infer/issues/])
 
 AC_CONFIG_SRCDIR([infer/src/backend/sil.ml])
-#AC_CONFIG_HEADERS([config.h])
 
-# Checks for programs.
-AC_PROG_CXX
+# prefer clang over gcc because the plugins makes use of
+# clang-specific #pragma's
+AC_PROG_CC(clang gcc)
+AC_PROG_CXX(clang++ g++)
 AC_PROG_AWK
-AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -67,6 +67,17 @@ AC_SUBST([ATDGEN])
 
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AC_SUBST([XCODE_SELECT])
+
+# to compile the facebook-clang-plugins
+AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang)])
+AS_IF([test "x$CLANG_PREFIX" = "x"], [
+  CLANG_PREFIX="$(pwd)/facebook-clang-plugins/clang"
+])
+
+AC_ARG_VAR([CLANG_INCLUDES], [clang headers directories (defaults=$CLANG_PREFIX/include)])
+AS_IF([test "x$CLANG_INCLUDES" = "x"], [
+  CLANG_INCLUDES="$CLANG_PREFIX/include"
+])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.h stdlib.h string.h sys/mount.h sys/param.h sys/socket.h sys/statfs.h sys/time.h unistd.h wchar.h wctype.h])

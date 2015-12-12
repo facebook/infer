@@ -113,40 +113,35 @@ if [ "$BUILD_JAVA" = "1" ]; then
 fi
 if [ "$BUILD_CLANG" = "1" ]; then
   TARGETS+=" clang"
-  if [ ! -f .release ]; then
-    if ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
-      echo ""
-      echo "  Warning: you are not using a release of Infer. The C and"
-      echo "  Objective-C analyses require a custom clang to be compiled"
-      echo "  now. This step takes ~30-60 minutes, possibly more."
-      echo ""
-      echo "  To speed this along, you are encouraged to use a release of"
-      echo "  Infer instead:"
-      echo ""
-      echo "  http://fbinfer.com/docs/getting-started.html"
-      echo ""
-      echo "  If you are only interested in analyzing Java programs, simply"
-      echo "  run this script with only the \"java\" argument:"
-      echo ""
-      echo "  $0 java"
-      echo ""
+  if ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
+    echo ""
+    echo "  Warning: you are not using a release of Infer. The C and"
+    echo "  Objective-C analyses require a custom clang to be compiled"
+    echo "  now. This step takes ~30-60 minutes, possibly more."
+    echo ""
+    echo "  To speed this along, you are encouraged to use a release of"
+    echo "  Infer instead:"
+    echo ""
+    echo "  http://fbinfer.com/docs/getting-started.html"
+    echo ""
+    echo "  If you are only interested in analyzing Java programs, simply"
+    echo "  run this script with only the \"java\" argument:"
+    echo ""
+    echo "  $0 java"
+    echo ""
 
-      confirm="n"
-      printf "Are you sure you want to compile clang? (y/N) "
-      if [ "$INTERACTIVE" = "no" ]; then
-          confirm="y"
-          echo "$confirm"
-      else
-          read confirm
-      fi
-
-      if [ "x$confirm" != "xy" ]; then
-          exit 0
-      fi
-
-      ./facebook-clang-plugins/clang/setup.sh
+    confirm="n"
+    printf "Are you sure you want to compile clang? (y/N) "
+    if [ "$INTERACTIVE" = "no" ]; then
+        confirm="y"
+        echo "$confirm"
+    else
+        read confirm
     fi
-    ./compile-fcp.sh
+
+    if [ "x$confirm" != "xy" ]; then
+        exit 0
+    fi
   fi
 fi
 

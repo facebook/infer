@@ -9,6 +9,7 @@ PLATFORM = $(shell uname)
 
 ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 
+FCP_DIR = $(ABSOLUTE_ROOT_DIR)/facebook-clang-plugins
 INFER_DIR = $(ABSOLUTE_ROOT_DIR)/infer
 DEPENDENCIES_DIR = $(ABSOLUTE_ROOT_DIR)/dependencies
 FCP_DIR = $(ABSOLUTE_ROOT_DIR)/facebook-clang-plugins
