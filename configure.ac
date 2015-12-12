@@ -64,6 +64,9 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
       AC_MSG_ERROR([invalid value for --without-fcp-clang; use "yes" or "no"])
     ;;
   esac
+
+  AC_CHECK_TOOL([SHASUM], [shasum], [no])
+  AC_ASSERT_PROG([shasum], [$SHASUM])
 ])
 # end if($enable_c_analyzers)
 
