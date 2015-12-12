@@ -40,8 +40,6 @@ fi
   && exit 1
 
 cd $SCRIPT_DIR/..
-./autogen.sh
-./configure
 make ${TARGETS_TO_COMPILE[@]}
 
 # Must clean in order to force running the tests with the latest version

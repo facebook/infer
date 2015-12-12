@@ -16,6 +16,46 @@ AC_INIT([Infer],[0.4.0],[https://github.com/facebook/infer/issues/])
 
 AC_CONFIG_SRCDIR([infer/src/backend/sil.ml])
 
+# record if we are in a release of Infer
+is_infer_release=no
+AS_IF([test -f ".release"], [is_infer_release=yes])
+
+
+# to compile the facebook-clang-plugins
+AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang)])
+AS_IF([test "x$CLANG_PREFIX" = "x"], [
+  CLANG_PREFIX="$(pwd)/facebook-clang-plugins/clang"
+])
+
+AC_ARG_VAR([CLANG_INCLUDES], [clang headers directories (defaults=$CLANG_PREFIX/include)])
+AS_IF([test "x$CLANG_INCLUDES" = "x"], [
+  CLANG_INCLUDES="$CLANG_PREFIX/include"
+])
+
+
+AC_ARG_WITH(fcp-clang,
+  AS_HELP_STRING([--without-fcp-clang],
+    [do not use $CLANG_PREFIX/bin/clang to override the default compiler (default is to override if in an infer release)]),
+  ,
+  with_fcp_clang=$is_infer_release)
+
+AC_MSG_CHECKING([checking whether to use the compilers in $CLANG_PREFIX/bin])
+case "$with_fcp_clang" in
+  no)
+    AC_MSG_RESULT([no])
+  ;;
+  yes)
+    CC=$CLANG_PREFIX/bin/clang
+    CXX=$CLANG_PREFIX/bin/clang++
+    OBJC=$CLANG_PREFIX/bin/clang
+    AC_MSG_RESULT([yes])
+  ;;
+  *)
+    AC_MSG_ERROR([invalid value for --without-fcp-clang; use "yes" or "no"])
+  ;;
+esac
+
+
 # prefer clang over gcc because the plugins makes use of
 # clang-specific #pragma's
 AC_PROG_CC(clang gcc)
@@ -32,6 +72,42 @@ AC_ASSERT_PROG([python2.7], [$PYTHON27])
 
 AC_CHECK_TOOL([JAVAC], [javac], [no])
 AC_ASSERT_PROG([javac], [$JAVAC])
+
+AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
+AC_SUBST([XCODE_SELECT])
+
+
+dnl clang wants either clang version >= 3.1 or gcc version >= 4.7.2 to
+dnl compile itself
+AC_MSG_CHECKING([checking if the C/C++ compiler is recent enough])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#ifdef __clang__
+#if __clang_major__ < 3 || (__clang_major__ == 3 && __clang_minor__ < 1)
+#error compiler is too old
+#endif // version check
+#elif defined __GNUC__ // __clang__
+#if __GNUC__ < 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ < 7 || (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ < 2)))
+#error compiler is too old
+#endif // version check
+#endif // __GNUC__
+]])],
+  [AC_MSG_RESULT([yes])],
+  [dnl
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([
+Your C/C++ compiler seems to be too old to build clang, which is
+required by the facebook-clang-plugins. Please install either
+gcc version >= 4.7.2 or clang version >= 3.1.
+
+See the output of `./configure --help` to force the use of a different
+C compiler.
+
+Alternatively, you can checkout a release of infer with clang
+pre-compiled here:
+
+  https://github.com/facebook/infer/releases/])
+ ]
+)
 
 # OCaml dependencies
 AC_PROG_OCAML
@@ -65,19 +141,6 @@ AC_CHECK_TOOL([ATDGEN], [atdgen], [no])
 AC_ASSERT_PROG([atdgen], [$ATDGEN])
 AC_SUBST([ATDGEN])
 
-AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
-AC_SUBST([XCODE_SELECT])
-
-# to compile the facebook-clang-plugins
-AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang)])
-AS_IF([test "x$CLANG_PREFIX" = "x"], [
-  CLANG_PREFIX="$(pwd)/facebook-clang-plugins/clang"
-])
-
-AC_ARG_VAR([CLANG_INCLUDES], [clang headers directories (defaults=$CLANG_PREFIX/include)])
-AS_IF([test "x$CLANG_INCLUDES" = "x"], [
-  CLANG_INCLUDES="$CLANG_PREFIX/include"
-])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.h stdlib.h string.h sys/mount.h sys/param.h sys/socket.h sys/statfs.h sys/time.h unistd.h wchar.h wctype.h])
