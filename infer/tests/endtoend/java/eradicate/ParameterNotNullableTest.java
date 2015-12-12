@@ -43,6 +43,7 @@ public class ParameterNotNullableTest {
         "callNull",
         "callNullable",
         "testSystemGetPropertyArgument",
+        "testClassGetResourceArgument",
     };
     assertThat(
         "Results should contain " + PARAMETER_NOT_NULLABLE,

@@ -140,6 +140,7 @@ let annotated_list_nullable =
     o1, "com.google.common.util.concurrent.SettableFuture.setException(java.lang.Throwable):boolean";
     o1, "java.io.File.<init>(java.lang.String)";
     n1, "java.io.PrintStream.print(java.lang.String):void";
+    (n, [o]), "java.lang.Class.getResource(java.lang.String):java.net.URL";
     o1, "java.lang.Class.isAssignableFrom(java.lang.Class):boolean";
     n1, "java.lang.Integer.equals(java.lang.Object):boolean";
     n2, "java.lang.RuntimeException.<init>(java.lang.String,java.lang.Throwable)";

@@ -11,6 +11,7 @@ package codetoanalyze.java.eradicate;
 
 import com.google.common.base.Optional;
 
+import java.net.URL;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -115,4 +116,9 @@ public class ReturnNotNullable {
       return null;
     }
   }
+
+  URL getResourceNullable(Class cls, String name) {
+    return cls.getResource(name);
+  }
+
 }
