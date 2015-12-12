@@ -34,26 +34,26 @@ function usage() {
 }
 
 # arguments
-BUILD_CLANG=0
-BUILD_JAVA=0
+BUILD_CLANG=no
+BUILD_JAVA=no
 INTERACTIVE=yes
 
 while [[ $# > 0 ]]; do
   opt_key="$1"
   case $opt_key in
     all)
-      BUILD_CLANG=1
-      BUILD_JAVA=1
+      BUILD_CLANG=yes
+      BUILD_JAVA=yes
       shift
       continue
       ;;
     clang)
-      BUILD_CLANG=1
+      BUILD_CLANG=yes
       shift
       continue
       ;;
     java)
-      BUILD_JAVA=1
+      BUILD_JAVA=yes
       shift
       continue
       ;;
@@ -74,9 +74,9 @@ while [[ $# > 0 ]]; do
 done
 
 # if no arguments then build both clang and Java
-if [ "$BUILD_CLANG" = "0" ] && [ "$BUILD_JAVA" = "0" ]; then
-  BUILD_CLANG=1
-  BUILD_JAVA=1
+if [ "$BUILD_CLANG" = "no" ] && [ "$BUILD_JAVA" = "no" ]; then
+  BUILD_CLANG=yes
+  BUILD_JAVA=yes
 fi
 
 # enable --yes option for some commands in non-interactive mode
@@ -108,10 +108,10 @@ elif [ ! -d .git ] && [ ! -f .release ]; then
 fi
 
 TARGETS=""
-if [ "$BUILD_JAVA" = "1" ]; then
+if [ "$BUILD_JAVA" = "yes" ]; then
   TARGETS+=" java"
 fi
-if [ "$BUILD_CLANG" = "1" ]; then
+if [ "$BUILD_CLANG" = "yes" ]; then
   TARGETS+=" clang"
   if ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
     echo ""
@@ -145,6 +145,11 @@ if [ "$BUILD_CLANG" = "1" ]; then
   fi
 fi
 
+CONFIGURE_ARGS=
+if [ "$BUILD_CLANG" = "no" ]; then
+  CONFIGURE_ARGS+=" --disable-c-analyzers"
+fi
+
 echo
 echo "  *************************"
 echo "  **                     **"
@@ -153,5 +158,5 @@ echo "  **                     **"
 echo "  *************************"
 echo
 
-./configure
+./configure $CONFIGURE_ARGS
 make $TARGETS || (echo "compilation failure; try running `make clean`"; exit 1)

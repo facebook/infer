@@ -33,39 +33,40 @@ AS_IF([test "x$CLANG_INCLUDES" = "x"], [
 ])
 
 
+AC_ARG_ENABLE(c-analyzers,
+  AS_HELP_STRING([--disable-c-analyzers],
+    [do not build the C/C++/ObjC analyzers (default is to build them)]),
+  ,
+  enable_c_analyzers=yes)
+BUILD_C_ANALYZERS=$enable_c_analyzers
+AC_SUBST([BUILD_C_ANALYZERS])
+
+
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--without-fcp-clang],
     [do not use $CLANG_PREFIX/bin/clang to override the default compiler (default is to override if in an infer release)]),
   ,
   with_fcp_clang=$is_infer_release)
 
-AC_MSG_CHECKING([checking whether to use the compilers in $CLANG_PREFIX/bin])
-case "$with_fcp_clang" in
-  no)
-    AC_MSG_RESULT([no])
-  ;;
-  yes)
-    CC=$CLANG_PREFIX/bin/clang
-    CXX=$CLANG_PREFIX/bin/clang++
-    OBJC=$CLANG_PREFIX/bin/clang
-    AC_MSG_RESULT([yes])
-  ;;
-  *)
-    AC_MSG_ERROR([invalid value for --without-fcp-clang; use "yes" or "no"])
-  ;;
-esac
+AS_IF([test "x$enable_c_analyzers" = "xyes"], [
+  AC_MSG_CHECKING([checking whether to use the compilers in $CLANG_PREFIX/bin])
+  case "$with_fcp_clang" in
+    no)
+      AC_MSG_RESULT([no])
+    ;;
+    yes)
+      CC=$CLANG_PREFIX/bin/clang
+      CXX=$CLANG_PREFIX/bin/clang++
+      OBJC=$CLANG_PREFIX/bin/clang
+      AC_MSG_RESULT([yes])
+    ;;
+    *)
+      AC_MSG_ERROR([invalid value for --without-fcp-clang; use "yes" or "no"])
+    ;;
+  esac
+])
+# end if($enable_c_analyzers)
 
-
-# prefer clang over gcc because the plugins makes use of
-# clang-specific #pragma's
-AC_PROG_CC(clang gcc)
-AC_PROG_CXX(clang++ g++)
-AC_PROG_AWK
-AC_PROG_CPP
-AC_PROG_INSTALL
-AC_PROG_LN_S
-AC_PROG_MAKE_SET
-AC_PROG_OBJC
 
 AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
 AC_ASSERT_PROG([python2.7], [$PYTHON27])
@@ -77,10 +78,22 @@ AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AC_SUBST([XCODE_SELECT])
 
 
-dnl clang wants either clang version >= 3.1 or gcc version >= 4.7.2 to
-dnl compile itself
-AC_MSG_CHECKING([checking if the C/C++ compiler is recent enough])
-AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+# prefer clang over gcc because the plugins makes use of
+# clang-specific #pragma's
+AC_PROG_CC(clang gcc)
+AC_PROG_AWK
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+
+if test "x$enable_c_analyzers" = "xyes"; then
+  AC_PROG_CPP
+  AC_PROG_CXX(clang++ g++)
+
+  dnl clang wants either clang version >= 3.1 or gcc version >= 4.7.2 to
+  dnl compile itself
+  AC_MSG_CHECKING([checking if the C/C++ compiler is recent enough])
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #ifdef __clang__
 #if __clang_major__ < 3 || (__clang_major__ == 3 && __clang_minor__ < 1)
 #error compiler is too old
@@ -91,10 +104,10 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #endif // version check
 #endif // __GNUC__
 ]])],
-  [AC_MSG_RESULT([yes])],
-  [dnl
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([
+    [AC_MSG_RESULT([yes])],
+    [dnl
+      AC_MSG_RESULT([no])
+      AC_MSG_ERROR([
 Your C/C++ compiler seems to be too old to build clang, which is
 required by the facebook-clang-plugins. Please install either
 gcc version >= 4.7.2 or clang version >= 3.1.
@@ -106,8 +119,13 @@ Alternatively, you can checkout a release of infer with clang
 pre-compiled here:
 
   https://github.com/facebook/infer/releases/])
- ]
-)
+   ]
+  )
+
+  AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.h stdlib.h string.h sys/mount.h sys/param.h sys/socket.h sys/statfs.h sys/time.h unistd.h wchar.h wctype.h])
+fi
+# end if($enable_c_analyzers)
+
 
 # OCaml dependencies
 AC_PROG_OCAML
@@ -142,9 +160,6 @@ AC_ASSERT_PROG([atdgen], [$ATDGEN])
 AC_SUBST([ATDGEN])
 
 
-# Checks for header files.
-AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h locale.h malloc.h stddef.h stdint.h stdlib.h string.h sys/mount.h sys/param.h sys/socket.h sys/statfs.h sys/time.h unistd.h wchar.h wctype.h])
-
 AC_CONFIG_FILES([
   Makefile.config
   Makefile
@@ -156,4 +171,5 @@ AC_CONFIG_FILES([
   infer/models/java/Makefile
   infer/src/Makefile
 ])
+
 AC_OUTPUT

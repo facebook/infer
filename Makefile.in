@@ -9,7 +9,11 @@
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
-all: clang java
+all: java
+
+ifeq (@BUILD_C_ANALYZERS@,yes)
+all: clang
+endif
 
 java:
 	$(MAKE) -C $(INFER_DIR) java
@@ -37,8 +41,19 @@ clang_plugin: clang_setup
 	  CLANG_PREFIX=@CLANG_PREFIX@ \
 	  CLANG_INCLUDES=@CLANG_INCLUDES@
 
+ifneq (@BUILD_C_ANALYZERS@,yes)
+clang:
+	@echo
+	@echo "  error: clang analyzers disabled by ./configure"
+	@echo "  to enable them again, see"
+	@echo
+	@echo "  ./configure --help"
+	@echo
+	@exit 1
+else
 clang: clang_plugin
 	$(MAKE) -C $(INFER_DIR) clang
+endif
 
 clean:
 	$(MAKE) -C $(FCP_DIR) clean
