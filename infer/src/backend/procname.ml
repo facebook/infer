@@ -303,9 +303,11 @@ let java_to_string ?(withclass = false) j verbosity =
         | [] -> ""
         | _ -> "..." in
       let method_name =
-        if j.method_name = "<init>" then java_get_simple_class (Java_method j)
-        else j.method_name in
-      cls_prefix ^ method_name ^ "(" ^ params ^ ")"
+        if j.method_name = "<init>" then
+          java_get_simple_class (Java_method j)
+        else
+          cls_prefix ^ j.method_name in
+      method_name ^ "(" ^ params ^ ")"
 
 (** Check if the class name is for an anonymous inner class. *)
 let is_anonymous_inner_class_name class_name =
