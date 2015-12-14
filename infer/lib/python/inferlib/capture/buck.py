@@ -158,6 +158,8 @@ class BuckAnalyzer:
             capture_cmd += ['--out', self.args.infer_out]
         if self.args.debug:
             capture_cmd.append('-g')
+        if self.args.debug_exceptions:
+            capture_cmd.append('--debug-exceptions')
         if self.args.no_filtering:
             capture_cmd.append('--no-filtering')
         if self.args.verbose:

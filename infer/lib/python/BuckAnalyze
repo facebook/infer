@@ -78,6 +78,9 @@ def prepare_build(args):
     if args.no_filtering:
         infer_options.append('--no-filtering')
 
+    if args.debug_exceptions:
+        infer_options += ['--debug-exceptions', '--no-filtering']
+
     if args.infer_out is not None:
         infer_options += ['--out', args.infer_out]
 

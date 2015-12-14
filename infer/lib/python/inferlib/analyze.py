@@ -75,8 +75,11 @@ base_group.add_argument('-ic', '--changed-only',
                         action=ConfirmIncrementalAction,
                         help='''Same as -i, but does not analyze
                         dependencies of changed procedures.''')
+base_group.add_argument('--debug-exceptions', action='store_true',
+                        help='''Generate lightweight debugging information:
+                        just print the internal exceptions during analysis''')
 base_group.add_argument('-g', '--debug', action='store_true',
-                        help='Generate extra debugging information')
+                        help='Generate all debugging information')
 base_group.add_argument('-a', '--analyzer',
                         help='Select the analyzer within: {0}'.format(
                             ', '.join(config.ANALYZERS)),
@@ -141,10 +144,6 @@ infer_group.add_argument('--ml_buckets',
                               'separated by commas. The possible '
                               'buckets are cf (Core Foundation), '
                               'arc, narc (No arc), cpp, unknown_origin')
-
-infer_group.add_argument('-nt', '--notest', action='store_true',
-                           dest='notest',
-                           help='Prints output of symbolic execution')
 
 infer_group.add_argument('-npb', '--no-progress-bar', action='store_true',
                          help='Do not show a progress bar in the analysis')
@@ -363,9 +362,6 @@ class Infer:
         if self.args.ml_buckets:
             infer_options += ['-ml_buckets', self.args.ml_buckets]
 
-        if self.args.notest:
-            infer_options += ['-notest']
-
         if self.args.no_progress_bar:
             infer_options += ['-no_progress_bar']
 
@@ -377,8 +373,13 @@ class Infer:
                 '-print_types',
                 '-trace_error',
                 '-print_buckets',
-                # '-notest',
+                '-notest'
             ]
+            self.args.no_filtering = True
+
+        elif self.args.debug_exceptions:
+            infer_options.append('-developer_mode')
+            self.args.no_filtering = True
 
         if self.args.incremental:
             if self.args.changed_only:
