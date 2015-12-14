@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 {
 
 open CodequeryParser
@@ -47,7 +48,7 @@ rule token = parse
   | ';'                { log lexbuf; SEMICOLON }
   | ':'                { log lexbuf; COLON }
   | ','                { log lexbuf; COMMA }
-	| '`'                { log lexbuf; REV_QUOTE }
+  | '`'                { log lexbuf; REV_QUOTE }
   | '\''               { log lexbuf; SINGLE_QUOTE }
   | '\"'               { log lexbuf; DOUBLE_QUOTE }
   | '%'                { log lexbuf; PERCENT }

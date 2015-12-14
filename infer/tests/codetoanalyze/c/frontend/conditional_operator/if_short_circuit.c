@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 #include<stdlib.h>
 
@@ -26,10 +26,10 @@ void shortcircuit_and(int *x) {
 
 
 void test_loop () {
-    
+
     char* spec;
     char* block_size;
-    
+
     spec= getenv ("BLOCK");
 
 while((! spec
@@ -38,19 +38,19 @@ while((! spec
  block_size =0;
 
  }
- 
+
 
 }
 
 
 int main() {
- 
+
     char* spec;
     char* block_size;
-    
+
     spec= getenv ("BLOCK");
-    
-    
+
+
 
     if (! spec
        && ! (spec = getenv ("BLOCK_SIZE"))
@@ -60,7 +60,7 @@ int main() {
     {
         if (*spec == '\'')
             block_size=0; }
-    
-    
+
+
     return 0;
 }

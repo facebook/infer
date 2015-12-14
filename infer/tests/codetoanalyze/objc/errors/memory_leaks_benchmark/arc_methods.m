@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 #import <Foundation/NSObject.h>
 
@@ -26,14 +26,14 @@
 
 + (A*) someA {
     A *a = [[A alloc] init];
-    
+
     return a;
 }
 
 @end
 
 int main () {
-    
+
  //   A * __weak aWeakRef =0;
 //    A * __strong a1 =0;
 //    A * __unsafe_unretained anUnsafeUnretRef =0;

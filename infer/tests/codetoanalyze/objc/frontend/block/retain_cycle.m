@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2015 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2015 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 #import <Foundation/NSObject.h>
 
@@ -28,7 +28,7 @@ typedef void (^MyHandler)(D* data);
 }
 
 - (void)sHandler:(MyHandler)h {
-    
+
     self->_h=h;
 }
 
@@ -56,18 +56,18 @@ typedef void (^MyHandler)(D* data);
 @end
 
 A* foo(A* a) {
-    
+
     [a capture];
-    
+
     return a;
 };
 
 
 int main(int argc, const char * argv[]) {
-    
+
     A* a = [A alloc];
-    
+
     a=foo(a);
-    
+
     return 0;
 }

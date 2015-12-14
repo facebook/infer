@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 package frontend.objc;
 
@@ -51,19 +51,19 @@ public class TypesTest {
             " the dotty files should be the same.",
         newDotFile, dotFileEqualTo(block_dotty));
   }
-    
+
     @Test
     public void whenCaptureRunOnAttributesThenDotFilesAreTheSame()
     throws InterruptedException, IOException, InferException {
-        
+
         String block_src =
         "infer/tests/codetoanalyze/objc/frontend/" +
         "types/attributes.m";
-        
+
         String block_dotty =
         "infer/tests/codetoanalyze/objc/frontend/" +
         "types/attributes.dot";
-        
+
         ImmutableList<String> inferCmd =
         InferRunner.createObjCInferCommandFrontendArc(folder, block_src);
         File newDotFile = InferRunner.runInferFrontend(inferCmd);

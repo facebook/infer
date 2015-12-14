@@ -1,12 +1,12 @@
 /*
-* Copyright (c) 2009 - 2013 Monoidics ltd.
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2009 - 2013 Monoidics ltd.
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 // Basic modelling of some libc functions
 
@@ -677,7 +677,7 @@ char *fgets( char *str, int num, FILE *stream ) {
   int n;
   int size1;
   FILE tmp;
-    
+
   tmp = *stream;
   n = __infer_nondet_int();
 
@@ -739,7 +739,7 @@ int ungetc(int c, FILE *stream) {
   int n;
   FILE tmp;
   tmp = *stream;
-    
+
   n = __infer_nondet_int();
   if (n) return c;
   else return EOF;
@@ -1234,7 +1234,7 @@ int vfprintf(FILE *stream, const char *format, va_list arg)
 {
   int res;
   FILE tmp;
-    
+
   tmp= *stream;
   res = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(res < 0);
@@ -1415,7 +1415,7 @@ long random(void) {
 int putc(int c, FILE *stream){
   int rand;
   FILE tmp;
-    
+
   tmp = *stream;
   rand = __infer_nondet_int();
   if (rand > 0)
@@ -1702,7 +1702,7 @@ void clearerr(FILE *stream) {
 // return a nondeterministic value
 // stream required to be allocated
 int ferror(FILE *stream) {
-    
+
   FILE tmp;
   tmp = *stream;
   return __infer_nondet_int();
@@ -1711,7 +1711,7 @@ int ferror(FILE *stream) {
 // return a nondeterministic value
 // stream required to be allocated
 int feof(FILE *stream) {
-    
+
   FILE tmp;
   tmp = *stream;
   return __infer_nondet_int();
@@ -1720,7 +1720,7 @@ int feof(FILE *stream) {
 // write to *pos and return either 0 or -1
 // stream is required to be allocated
 int fgetpos(FILE *__restrict stream, fpos_t *__restrict pos) {
-    
+
   int success;
   FILE tmp;
   tmp = *stream;
@@ -1737,7 +1737,7 @@ int fgetpos(FILE *__restrict stream, fpos_t *__restrict pos) {
 // read from *pos and return either 0 or -1
 // stream is required to be allocated
 int fsetpos(FILE *stream, const fpos_t *pos) {
-    
+
   int success;
   FILE tmp;
   tmp = *stream;

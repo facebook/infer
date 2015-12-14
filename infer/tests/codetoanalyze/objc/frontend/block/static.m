@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2014 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2014 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 #import <Foundation/Foundation.h>
 
@@ -22,7 +22,7 @@
         sharedInstance = [[self alloc] init];
          //return sharedInstance;
     }();
-    
+
     return sharedInstance;
 }
 
@@ -33,7 +33,7 @@
         sharedInstance = [[self alloc] init];
         //return sharedInstance;
     }();
-    
+
 }
 
 
@@ -45,7 +45,7 @@
         //NSLog(@"Passing from block...\n");
         id p = sharedInstance;
     }();
-    
+
     return sharedInstance;
 }
 
@@ -55,12 +55,12 @@
 + (int)test3
 {
     static int i;
-    
+
     ^{
        // NSLog(@"Passing from block...\n");
         i++;
     }();
-    
+
     return i;
 }
 
@@ -69,6 +69,6 @@
 
 
 int main(int argc, const char * argv[]) {
- 
+
     return 0;
 }

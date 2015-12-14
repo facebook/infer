@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2013 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2013 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 package frontend.objc;
 
@@ -151,13 +151,13 @@ public class BlockTest {
     @Test
     public void whenCaptureRunOnDispatchThenDotFilesAreTheSame()
     throws InterruptedException, IOException, InferException {
-        
+
         String block_src =
         "infer/tests/codetoanalyze/objc/frontend/block/dispatch.m";
-        
+
         String block_dotty =
         "infer/tests/codetoanalyze/objc/frontend/block/dispatch.dot";
-        
+
         ImmutableList<String> inferCmd =
         InferRunner.createiOSInferCommandFrontend(folder, block_src);
         File newDotFile = InferRunner.runInferFrontend(inferCmd);

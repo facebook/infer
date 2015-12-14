@@ -41,6 +41,10 @@ let default_start_line_of_com_style style = match style with
   | Line _ -> 2
   | Block _ -> 0
 
+let prefix_of_comment_style = function
+  | Line _ -> ""
+  | Block (_, inter, _) -> String.make (String.length inter) ' '
+
 (** If true, update the copyright message of the files. *)
 let update_files = ref false
 
@@ -226,7 +230,7 @@ let check_copyright fname = match read_file fname with
               let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
               let ext = get_filename_extension fname in
               let com_style = IList.assoc string_equal ext com_style_of_lang in
-              let prefix = if com_style = comment_style_ocaml then " " else "" in
+              let prefix = prefix_of_comment_style com_style in
               let start = default_start_line_of_com_style com_style in
               output_diff fname (Array.of_list []) start (-1) (-1) 0 false year com_style prefix;
               exit copyright_modified_exit_code
@@ -245,7 +249,7 @@ let check_copyright fname = match read_file fname with
                   L.stderr "Can't find fb year: %s@." fname;
                   exit copyright_malformed_exit_code
               | Some fb_year ->
-                  let prefix = if com_style = comment_style_ocaml then " " else "" in
+                  let prefix = prefix_of_comment_style com_style in
                   if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
                     begin
                       output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix;

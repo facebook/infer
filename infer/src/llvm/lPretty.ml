@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open LAst
 
 let concatmap (sep : string) (f : 'a -> string) (l : 'a list) : string =

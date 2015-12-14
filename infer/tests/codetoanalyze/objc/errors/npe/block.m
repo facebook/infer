@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2014 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2014 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 #import <Foundation/NSObject.h>
 
@@ -28,11 +28,11 @@
 
 
 - (void) foo {
-    
+
     void (^my_block)(void)=^() {};
     my_block = NULL;
     my_block(); // Null deref
-    
+
 }
 
 
@@ -46,48 +46,48 @@
 
 
 - (void) foo3: ( void(^)(void) ) my_block {
-    
+
     my_block = NULL;
     my_block(); //Null deref
-    
+
 }
 
 - (void) foo4: ( void(^)(void) ) my_block_param {
-    
+
     void (^my_block)(void)=^() {};
     my_block = NULL;
     my_block_param = my_block;
     my_block_param(); //Null deref
-    
+
 }
 
 - (void) foo5: ( void(^)(void) ) my_block_param {
-    
+
     void (^my_block)(void)=^() {};
     my_block_param = my_block;
     my_block_param(); //No error here
-    
+
 }
 
 
 - (void) foo6: (BOOL)a block_param: ( void (^)(void)) block_param {
-    
+
     void (^my_block)(void)=^() {
         if (block_param)
             block_param(); //No error here
-        
+
     };
-    
+
     if (a){
         [self foo2: ^() {
             my_block(); // No error here
         }];
     }
-    
+
 }
 
 - (void) foo7 {
-    
+
         _block_field(); // Ivar not nullable
 
 }

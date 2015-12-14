@@ -1,20 +1,20 @@
 /*
-* Copyright (c) 2014 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2014 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 int main1 (int y) {
-    
+
     static int s = 3;
     int x =7;
-   
+
     int add1, add2;
     int (^addblock)(int a, int b);
-    
+
 
     addblock=^(int c,int d){
 
@@ -29,20 +29,20 @@ int main1 (int y) {
         add2 = addblock2(1);
         return c+add2+bla;
     };
-    
+
     add1 = addblock(1,2);
 
- 
+
     addblock=^(int e,int f){
         return e-s;
     };
-     
+
 
     add2 = addblock(3,2);
-    
+
     // Here we should get a division by zero
     y=add1/add2;
-   
+
     return y;
 }
 
@@ -50,4 +50,3 @@ int main1 (int y) {
 int main () {
     return main1(4);
 }
-

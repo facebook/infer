@@ -1,11 +1,11 @@
 /*
-* Copyright (c) 2014 - present Facebook, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD style license found in the
-* LICENSE file in the root directory of this source tree. An additional grant
-* of patent rights can be found in the PATENTS file in the same directory.
-*/
+ * Copyright (c) 2014 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
 
 #import <Foundation/NSObject.h>
 
@@ -32,20 +32,20 @@ A* test() {
 
 // no leak
 void test2() {
-    
+
     A* b=test();
     g=b;
 }
 
 // leak
 void test3() {
-    
+
     A* b=test();
 }
 
 // no leak
 void test4() {
-    
+
     A* b=test();
     [b release];
 }
@@ -54,7 +54,7 @@ void test4() {
 void test5() {
     A *a = [[A alloc] init];
     [a release];
-    
+
 }
 
 // leak
@@ -64,9 +64,8 @@ void test6() {
     [a release];
 }
 
-// Creates specs 
+// Creates specs
 void test7 (A *a) {
     if (a)
         __objc_release(a);
 }
-
