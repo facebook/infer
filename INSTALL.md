@@ -106,6 +106,8 @@ compile Infer on a few Linux distributions.
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install -y \
+  autoconf \
+  automake \
   build-essential \
   git \
   libgmp-dev \
@@ -125,6 +127,8 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install -y \
+  autoconf \
+  automake \
   build-essential \
   g++-4.8 \
   gcc-4.8 \
@@ -148,8 +152,10 @@ Unfortunately, the version of opam that ships with some Linux
 distributions is broken, so you'll have to get it from the web:
 
 ```sh
-wget -O opam https://github.com/ocaml/opam/releases/download/1.2.2/opam-1.2.2-x86_64-Linux
-chmod +x opam
+wget https://github.com/ocaml/opam/releases/download/1.2.2/opam-1.2.2-x86_64-Linux
+chmod +x opam-1.2.2-x86_64-Linux
+sudo cp opam-1.2.2-x86_64-Linux /usr/local/bin/opam
+opam init --comp=4.02.3
 ```
 
 Alternatively, follow the instructions [from the opam

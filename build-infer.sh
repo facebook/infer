@@ -96,15 +96,19 @@ check_installed () {
 echo "initializing opam... "
 check_installed opam
 
-# opam is noisy
-opam init --no-setup --yes > /dev/null
+# if the first command doesn't succeed it means that ocaml is not even
+# installed on the system, so we have to pick a compiler version ourselves
+#
+# opam is noisy, so we silence the first invocation which typically would be a
+# no-op
+opam init --no-setup --yes > /dev/null || \
+  opam init --no-setup --yes --comp=4.02.3
+
 eval $(opam config env)
 
 echo "preparing build... "
 if [ ! -f .release ]; then
   ./autogen.sh > /dev/null
-elif [ ! -d .git ] && [ ! -f .release ]; then
-  git submodule update --init --recursive
 fi
 
 TARGETS=""
