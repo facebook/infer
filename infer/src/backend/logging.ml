@@ -106,6 +106,9 @@ let get_delayed_prints () =
   !delayed_actions
 
 let do_print fmt fmt_string =
+  F.fprintf fmt fmt_string
+
+let do_print_in_developer_mode fmt fmt_string =
   if !Config.developer_mode then
     F.fprintf fmt fmt_string
   else
@@ -113,17 +116,17 @@ let do_print fmt fmt_string =
 
 (** print to the current out stream (note: only prints in developer mode) *)
 let out fmt_string =
-  do_print !current_out_formatter fmt_string
+  do_print_in_developer_mode !current_out_formatter fmt_string
 
 (** print to the current err stream (note: only prints in developer mode) *)
 let err fmt_string =
-  do_print !current_err_formatter fmt_string
+  do_print_in_developer_mode !current_err_formatter fmt_string
 
-(** print immediately to standard error (note: only prints in developer mode) *)
+(** print immediately to standard error *)
 let stderr fmt_string =
   do_print F.err_formatter fmt_string
 
-(** print immediately to standard output (note: only prints in developer mode) *)
+(** print immediately to standard output *)
 let stdout fmt_string =
   do_print F.std_formatter fmt_string
 

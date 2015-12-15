@@ -74,10 +74,10 @@ val out : ('a, Format.formatter, unit) format -> 'a
 (** print to the current err stream (note: only prints in developer mode) *)
 val err : ('a, Format.formatter, unit) format -> 'a
 
-(** print immediately to standard error (note: only prints in developer mode) *)
+(** print immediately to standard error *)
 val stderr : ('a, Format.formatter, unit) format -> 'a
 
-(** print immediately to standard output (note: only prints in developer mode) *)
+(** print immediately to standard output *)
 val stdout : ('a, Format.formatter, unit) format -> 'a
 
 (** Get the current out formatter *)

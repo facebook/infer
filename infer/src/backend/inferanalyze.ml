@@ -676,7 +676,7 @@ let setup_logging () =
     DB.create_dir log_dir;
     let analyzer_out_file =
       if !out_file_cmdline = "" then Filename.concat log_dir analyzer_out_name
-    else !out_file_cmdline in
+      else !out_file_cmdline in
     let analyzer_err_file =
       if !err_file_cmdline = "" then Filename.concat log_dir analyzer_err_name
       else !err_file_cmdline in
