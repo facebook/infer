@@ -52,50 +52,26 @@ let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attribute
         [({ Sil.class_name = Config.property_attributes; Sil.parameters = prop_atts }, true)] in
   fname, typ, item_annotations
 
-(* From an ivar look for its property and if it finds it returns its attributes *)
-let ivar_property curr_class ivar =
-  Printing.log_out "Checking if a property is defined for the ivar: '%s'@."
-    ivar.Clang_ast_t.ni_name;
-  match ObjcProperty_decl.Property.find_property_name_from_ivar curr_class ivar with
-  | Some pname' ->
-      (Printing.log_out "Found property name from ivar: '%s'" pname'.Clang_ast_t.ni_name;
-       try
-         let _, atts, _, _, _, _ = ObjcProperty_decl.Property.find_property curr_class pname' in
-         atts
-       with Not_found ->
-         Printing.log_out "Didn't find property for pname '%s'" pname'.Clang_ast_t.ni_name;
-         [])
-  | None -> Printing.log_out "No property found for ivar '%s'@." ivar.Clang_ast_t.ni_name;
-      []
-
-let build_sil_field_property type_ptr_to_sil_type curr_class tenv field_name type_ptr att_opt =
-  let prop_attributes =
-    match att_opt with
-    | Some prop_attributes -> prop_attributes
-    | None -> ivar_property curr_class field_name in
-  build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attributes
-
 (* Given a list of declarations in an interface returns a list of fields  *)
 let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
   let open Clang_ast_t in
+  let add_field name_info type_ptr attributes decl_list' =
+    let fields = get_fields type_ptr_to_sil_type tenv curr_class decl_list' in
+    let field_tuple = build_sil_field type_ptr_to_sil_type tenv name_info type_ptr attributes in
+    General_utils.append_no_duplicates_fields [field_tuple] fields in
   match decl_list with
   | [] -> []
-  | ObjCIvarDecl (decl_info, name_info, type_ptr, field_decl_info, obj_c_ivar_decl_info) :: decl_list' ->
-      let fields = get_fields type_ptr_to_sil_type tenv curr_class decl_list' in
-      (* Doing a post visit here. Adding Ivar after all the declaration have been visited so that *)
-      (* ivar names will be added in the property list. *)
-      Printing.log_out "  ...Adding Instance Variable '%s' @." name_info.Clang_ast_t.ni_name;
-      let (fname, typ, ia) =
-        build_sil_field_property type_ptr_to_sil_type curr_class tenv name_info type_ptr None in
-      Printing.log_out "  ...Resulting sil field: (%s) with attributes:@." ((Ident.fieldname_to_string fname) ^":"^(Sil.typ_to_string typ));
-      IList.iter (fun (ia', _) ->
-          IList.iter (fun a -> Printing.log_out "         '%s'@." a) ia'.Sil.parameters) ia;
-      (fname, typ, ia):: fields
-  | ObjCPropertyImplDecl (decl_info, property_impl_decl_info):: decl_list' ->
-      let property_fields_decl =
-        ObjcProperty_decl.prepare_dynamic_property curr_class decl_info property_impl_decl_info in
-      get_fields type_ptr_to_sil_type tenv curr_class (property_fields_decl @ decl_list')
-  | _ :: decl_list' -> get_fields type_ptr_to_sil_type tenv curr_class decl_list'
+  | ObjCPropertyDecl (_, named_decl_info, obj_c_property_decl_info) :: decl_list' ->
+      (let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
+       match Ast_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
+       | Some (ObjCIvarDecl (_, name_info, type_ptr, _, _)) ->
+           let attributes = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
+           add_field name_info type_ptr attributes decl_list'
+       | _ -> get_fields type_ptr_to_sil_type tenv curr_class decl_list')
+  | ObjCIvarDecl (_, name_info, type_ptr, _, _) :: decl_list' ->
+      add_field name_info type_ptr [] decl_list'
+  | decl :: decl_list' ->
+      get_fields type_ptr_to_sil_type tenv curr_class decl_list'
 
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)

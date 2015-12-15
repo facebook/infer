@@ -30,6 +30,8 @@ sig
   val print_nodes : Cfg.Node.t list -> unit
 
   val instrs_to_string : Sil.instr list -> string
+
+  val field_to_string : Ident.fieldname * Sil.typ * Sil.item_annotation -> string
 end
 
 module Ast_utils :

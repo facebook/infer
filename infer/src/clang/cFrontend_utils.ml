@@ -25,6 +25,15 @@ struct
     let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
     pp Format.err_formatter fmt
 
+
+  let annotation_to_string (annotation, _) =
+    "< " ^ annotation.Sil.class_name ^ " : " ^
+    (IList.to_string (fun x -> x) annotation.Sil.parameters) ^ " >"
+
+  let field_to_string (fieldname, typ, annotation) =
+    (Ident.fieldname_to_string fieldname) ^ " " ^
+    (Sil.typ_to_string typ) ^  (IList.to_string annotation_to_string annotation)
+
   let log_stats fmt =
     let pp =
       if !CFrontend_config.stats_mode || !CFrontend_config.debug_mode
@@ -35,23 +44,18 @@ struct
     Sil.tenv_iter (fun typname typ ->
         match typname with
         | Sil.TN_csu (Sil.Class, _) | Sil.TN_csu (Sil.Protocol, _) ->
-            (match typ with (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
-              (print_endline (
-                  (Sil.typename_to_string typname)^"\n"^
-                  "---> superclass and protocols "^(IList.to_string (fun (csu, x) ->
-                      let nsu = Sil.TN_csu (csu, x) in
-                      "\t"^(Sil.typename_to_string nsu)^"\n") super_classes)^
-                  "---> methods "^(IList.to_string (fun x ->"\t"^(Procname.to_string x)^"\n") methods)^"  "^
-                  "\t---> static fields "^(IList.to_string (fun (fieldname, typ, _) ->
-                      "\t "^(Ident.fieldname_to_string fieldname)^" "^
-                      (Sil.typ_to_string typ)^"\n") static_fields)^
-                  "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
-                      "\t "^(Ident.fieldname_to_string fieldname)^" "^
-                      (Sil.typ_to_string typ)^"\n") fields
-                    )
-                )
-              )
-                          | _ -> ())
+            (match typ with
+             | Sil.Tstruct (fields, _, _, cls, super_classes, methods, iann) ->
+                 print_endline (
+                   (Sil.typename_to_string typname) ^ "\n"^
+                   "---> superclass and protocols " ^ (IList.to_string (fun (csu, x) ->
+                       let nsu = Sil.TN_csu (csu, x) in
+                       "\t" ^ (Sil.typename_to_string nsu) ^ "\n") super_classes) ^
+                   "---> methods " ^
+                   (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") methods)
+                   ^ "  " ^
+                   "\t---> fields " ^ (IList.to_string field_to_string fields) ^ "\n")
+             | _ -> ())
         | _ -> ()
       ) tenv
 
@@ -442,12 +446,31 @@ struct
     let eq (e1, t1) (e2, t2) = (Sil.exp_equal e1 e2) && (Sil.typ_equal t1 t2) in
     append_no_duplicates eq list1 list2
 
-  let append_no_duplicates_fields list1 list2 =
-    let field_eq (n1, t1, a1) (n2, t2, a2) =
-      match Ident.fieldname_equal n1 n2, Sil.typ_equal t1 t2, Sil.item_annotation_compare a1 a2 with
-      | true, true, _ -> true
-      | _, _, _ -> false in
-    append_no_duplicates field_eq list1 list2
+
+  let append_no_duplicates_annotations list1 list2 =
+    let eq (annot1, _) (annot2, _) = annot1.Sil.class_name = annot2.Sil.class_name in
+    append_no_duplicates eq list1 list2
+
+  let add_no_duplicates_fields field_tuple l =
+    let rec replace_field field_tuple l found =
+      match field_tuple, l with
+      | (field, typ, annot), ((old_field, old_typ, old_annot) as old_field_tuple :: rest) ->
+          let ret_list, ret_found = replace_field field_tuple rest found in
+          if Ident.fieldname_equal field old_field && Sil.typ_equal typ old_typ then
+            let annotations = append_no_duplicates_annotations annot old_annot in
+            (field, typ, annotations) :: ret_list, true
+          else old_field_tuple :: ret_list, ret_found
+      | _, [] -> [], found in
+    let new_list, found = replace_field field_tuple l false in
+    if found then new_list
+    else field_tuple :: l
+
+  let rec append_no_duplicates_fields list1 list2 =
+    match list1 with
+    | field_tuple :: rest ->
+        let updated_list2 = append_no_duplicates_fields rest list2 in
+        add_no_duplicates_fields field_tuple updated_list2
+    | [] -> list2
 
   let sort_fields fields =
     let compare (name1, _, _) (name2, _, _) =

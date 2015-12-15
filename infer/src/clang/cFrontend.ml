@@ -134,7 +134,6 @@ let init_global_state source_file =
   DB.Results_dir.init ();
   Ident.NameGenerator.reset ();
   CFrontend_config.global_translation_unit_decls := [];
-  ObjcProperty_decl.reset_property_table ();
   CFrontend_utils.General_utils.reset_block_counter ()
 
 let do_source_file source_file ast =
