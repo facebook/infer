@@ -63,10 +63,10 @@ let update_curr_file di =
      | Some f -> curr_file := source_file_from_path f
      | None -> ())
 
-let clang_to_sil_location clang_loc parent_line_number procdesc_opt =
+let clang_to_sil_location clang_loc procdesc_opt =
   let line = match clang_loc.Clang_ast_t.sl_line with
     | Some l -> l
-    | None -> parent_line_number in
+    | None -> -1 in
   let col = match clang_loc.Clang_ast_t.sl_column with
     | Some c -> c
     | None -> -1 in
@@ -93,7 +93,7 @@ let should_translate_lib source_range =
   if !CFrontend_config.no_translate_libs then
     match source_range with (loc_start, loc_end) ->
       let loc_start = choose_sloc_to_update_curr_file loc_start loc_end in
-      let loc = clang_to_sil_location loc_start (-1) None in
+      let loc = clang_to_sil_location loc_start None in
       DB.source_file_equal loc.Location.file !DB.current_source
   else true
 
@@ -101,27 +101,19 @@ let should_translate_enum source_range =
   if !CFrontend_config.testing_mode then
     match source_range with (loc_start, loc_end) ->
       let loc_start = choose_sloc_to_update_curr_file loc_start loc_end in
-      let loc = clang_to_sil_location loc_start (-1) None in
+      let loc = clang_to_sil_location loc_start None in
       DB.source_file_equal loc.Location.file !DB.current_source
   else true
 
 let get_sil_location_from_range source_range prefer_first =
   match source_range with (sloc1, sloc2) ->
     let sloc = choose_sloc sloc1 sloc2 prefer_first in
-    clang_to_sil_location sloc (-1) None
+    clang_to_sil_location sloc None
 
-let get_sil_location stmt_info parent_line_number context =
+let get_sil_location stmt_info context =
   match stmt_info.Clang_ast_t.si_source_range with (sloc1, sloc2) ->
     let sloc = choose_sloc sloc1 sloc2 true in
-    clang_to_sil_location sloc (-1) (Some (CContext.get_procdesc context))
-
-let get_line stmt_info line_number =
-  match stmt_info.Clang_ast_t.si_source_range with
-  | (sloc1, sloc2) ->
-      let sloc = choose_sloc sloc1 sloc2 true in
-      (match sloc.Clang_ast_t.sl_line with
-       | Some l -> l
-       | None -> line_number)
+    clang_to_sil_location sloc (Some (CContext.get_procdesc context))
 
 let check_source_file source_file =
   let extensions_allowed = [".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"] in

@@ -135,7 +135,6 @@ type trans_state = {
   context: CContext.t; (* current context of the translation *)
   succ_nodes: Cfg.Node.t list; (* successor nodes in the cfg *)
   continuation: continuation option; (* current continuation *)
-  parent_line_number: int; (* line numbeer of the parent element in the AST *)
   priority: priority_node;
 }
 
@@ -594,19 +593,17 @@ let get_info_from_decl_ref decl_ref =
   let type_ptr = match decl_ref.Clang_ast_t.dr_type_ptr with Some tp -> tp | _ -> assert false in
   name_info, decl_ptr, type_ptr
 
-let rec get_decl_ref_info s parent_line_number =
+let rec get_decl_ref_info s =
   match s with
   | Clang_ast_t.DeclRefExpr (stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
-      (let line_number = CLocation.get_line stmt_info parent_line_number in
-       match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-       | Some decl_ref -> decl_ref, line_number
+      (match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
+       | Some decl_ref -> decl_ref
        | None -> assert false)
   | _ ->
       match Clang_ast_proj.get_stmt_tuple s with
       | stmt_info, [] -> assert false
       | stmt_info, s'':: _ ->
-          let line_number = CLocation.get_line stmt_info parent_line_number in
-          get_decl_ref_info s'' line_number
+          get_decl_ref_info s''
 
 let rec contains_opaque_value_expr s =
   match s with

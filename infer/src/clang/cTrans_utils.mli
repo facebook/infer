@@ -23,7 +23,6 @@ type trans_state = {
   context: CContext.t;
   succ_nodes: Cfg.Node.t list;
   continuation: continuation option;
-  parent_line_number: int;
   priority: priority_node;
 }
 
@@ -90,7 +89,7 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 val get_info_from_decl_ref : Clang_ast_t.decl_ref ->
   Clang_ast_t.named_decl_info * Clang_ast_t.pointer * Clang_ast_t.type_ptr
 
-val get_decl_ref_info : Clang_ast_t.stmt -> int -> Clang_ast_t.decl_ref * int
+val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 
 val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Sil.typ -> Procname.t option -> trans_result option

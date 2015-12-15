@@ -17,12 +17,10 @@ val current_source_file : DB.source_file ref
 (* in this variable. *)
 val curr_file : DB.source_file ref
 
-val clang_to_sil_location : Clang_ast_t.source_location -> int -> Cfg.Procdesc.t option ->
+val clang_to_sil_location : Clang_ast_t.source_location -> Cfg.Procdesc.t option ->
   Location.t
 
-val get_sil_location : Clang_ast_t.stmt_info -> int -> CContext.t -> Location.t
-
-val get_line : Clang_ast_t.stmt_info -> int -> int
+val get_sil_location : Clang_ast_t.stmt_info -> CContext.t -> Location.t
 
 val should_translate_lib : Clang_ast_t.source_range -> bool
 
