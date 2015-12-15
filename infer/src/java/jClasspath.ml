@@ -170,6 +170,8 @@ let get_models program =
 let add_class cn jclass program =
   program.classmap <- JBasics.ClassMap.add cn jclass program.classmap
 
+let cleanup program =
+  Javalib.close_class_path program.classpath
 
 let lookup_node cn program =
   try
@@ -212,7 +214,9 @@ let collect_classes classmap jar_filename =
   let classpath = Javalib.class_path jar_filename in
   let collect classmap cn =
     JBasics.ClassMap.add cn (Javalib.get_class classpath cn) classmap in
-  IList.fold_left collect classmap (extract_classnames [] jar_filename)
+  let classes = IList.fold_left collect classmap (extract_classnames [] jar_filename) in
+  Javalib.close_class_path classpath;
+  classes
 
 
 let classmap_of_classpath classpath =

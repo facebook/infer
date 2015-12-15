@@ -42,6 +42,8 @@ val get_classmap : program -> classmap
 
 val get_models : program -> classmap
 
+val cleanup : program -> unit
+
 (** load a java program *)
 val load_program : string -> JBasics.ClassSet.t -> DB.source_file Utils.StringMap.t -> program
 

@@ -165,6 +165,7 @@ let do_all_files classpath sources classes =
     capture_libs never_null_matcher linereader program tenv;
   if !JConfig.create_harness then Harness.create_harness proc_file_map tenv;
   save_tenv classpath tenv;
+  JClasspath.cleanup program;
   JUtils.log "done @."
 
 
