@@ -37,11 +37,13 @@ endif
 
 ATDGEN_INCLUDE_DIR = @OCAML_PKG_PATH_atdgen@
 BINIOU_INCLUDE_DIR = @OCAML_PKG_PATH_biniou@
-YOJSON_INCLUDE_DIR = @OCAML_PKG_PATH_yojson@
 EASYFORMAT_INCLUDE_DIR = @OCAML_PKG_PATH_easy_format@
+EXTLIB_INCLUDE_DIR = @OCAML_PKG_PATH_extlib@
+YOJSON_INCLUDE_DIR = @OCAML_PKG_PATH_yojson@
+ZIP_INCLUDE_DIR = @OCAML_PKG_PATH_camlzip@
 
-OCAML_INCLUDES = -I,$(EASYFORMAT_INCLUDE_DIR),-I,$(BINIOU_INCLUDE_DIR),-I,$(YOJSON_INCLUDE_DIR),-I,$(ATDGEN_INCLUDE_DIR)
-OCAML_LIBS = unix str atdgen
+OCAML_INCLUDES = -I,$(EASYFORMAT_INCLUDE_DIR),-I,$(BINIOU_INCLUDE_DIR),-I,$(YOJSON_INCLUDE_DIR),-I,$(ATDGEN_INCLUDE_DIR),-I,$(EXTLIB_INCLUDE_DIR),-I,$(ZIP_INCLUDE_DIR)
+OCAML_LIBS = unix str atdgen extLib zip
 OCAML_MODS = easy_format bi_util bi_share bi_outbuf bi_inbuf bi_vint bi_io yojson ag_oj_run ag_ob_run ag_util
 
 # backwards compatibility with OCaml version < 4.02.0
@@ -83,15 +85,13 @@ INFERPRINT_MAIN = $(BACKEND_SOURCES)/inferprint
 
 #### Java declarations ####
 
-EXTLIB_INCLUDE_DIR = @OCAML_PKG_PATH_extlib@
 PTREES_INCLUDE_DIR = @OCAML_PKG_PATH_ptrees@
 JAVALIB_INCLUDE_DIR = @OCAML_PKG_PATH_javalib@
 SAWJA_INCLUDE_DIR = @OCAML_PKG_PATH_sawja@
-ZIP_INCLUDE_DIR = @OCAML_PKG_PATH_camlzip@
 
-JAVA_INCLUDES = -I,$(EXTLIB_INCLUDE_DIR),-I,$(ZIP_INCLUDE_DIR),-I,$(PTREES_INCLUDE_DIR),-I,$(JAVALIB_INCLUDE_DIR),-I,$(SAWJA_INCLUDE_DIR)
-JAVA_LIBS = zip extLib ptrees javalib sawja
-JAVA_OPTIONS = -cflags -annot -lflags $(JAVA_INCLUDES) -cflags $(JAVA_INCLUDES) $(addprefix -lib ,$(JAVA_LIBS))
+JAVA_INCLUDES = -I,$(PTREES_INCLUDE_DIR),-I,$(JAVALIB_INCLUDE_DIR),-I,$(SAWJA_INCLUDE_DIR)
+JAVA_LIBS = ptrees javalib sawja
+JAVA_OCAMLBUID_OPTIONS = -cflags -annot -lflags $(JAVA_INCLUDES) -cflags $(JAVA_INCLUDES) $(addprefix -lib ,$(JAVA_LIBS))
 
 JAVA_SOURCES = java
 
@@ -147,7 +147,7 @@ endif
 
 DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/graphql facebook/scripts harness $(EXTRA_DEPS)
 
-OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -build-dir $(BUILD_DIR) -j 0 $(addprefix -I , $(DEPENDENCIES)) $(JAVA_OPTIONS)
+OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -build-dir $(BUILD_DIR) -j 0 $(addprefix -I , $(DEPENDENCIES))
 
 .PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright annotations init sanitize clean
 
@@ -162,7 +162,7 @@ llvm: build_llvm annotations $(INFERLLVM_BIN)
 checkCopyright: build_checkCopyright annotations $(CHECKCOPYRIGHT_BIN)
 
 build_java: init $(INFERPRINT_ATDGEN_STUBS)
-	$(OCAMLBUILD) $(TYPEPROP_MAIN).native $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERJAVA_MAIN).native
+	$(OCAMLBUILD) $(JAVA_OCAMLBUID_OPTIONS) $(TYPEPROP_MAIN).native $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERJAVA_MAIN).native
 
 build_clang: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ) $(INFER_CLANG_AST_MAIN)
 	$(OCAMLBUILD) $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERCLANG_MAIN).native

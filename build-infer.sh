@@ -153,6 +153,9 @@ CONFIGURE_ARGS=
 if [ "$BUILD_CLANG" = "no" ]; then
   CONFIGURE_ARGS+=" --disable-c-analyzers"
 fi
+if [ "$BUILD_JAVA" = "no" ]; then
+  CONFIGURE_ARGS+=" --disable-java-analyzers"
+fi
 
 echo
 echo "  *************************"

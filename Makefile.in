@@ -9,14 +9,29 @@
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
+all:
+
+ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 all: java
+endif
 
 ifeq (@BUILD_C_ANALYZERS@,yes)
 all: clang
 endif
 
+ifneq (@BUILD_JAVA_ANALYZERS@,yes)
+java:
+	@echo
+	@echo "  error: java analyzers disabled by ./configure"
+	@echo "  to enable them again, see"
+	@echo
+	@echo "  ./configure --help"
+	@echo
+	@exit 1
+else
 java:
 	$(MAKE) -C $(INFER_DIR) java
+endif
 
 clang_setup:
 	export CC="@CC@" CFLAGS="@CFLAGS@"; \

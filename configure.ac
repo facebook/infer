@@ -54,6 +54,15 @@ AC_ARG_ENABLE(c-analyzers,
 BUILD_C_ANALYZERS=$enable_c_analyzers
 AC_SUBST([BUILD_C_ANALYZERS])
 
+AC_ARG_ENABLE(java-analyzers,
+  AS_HELP_STRING([--disable-java-analyzers],
+    [do not build the Java analyzers (default is to build them)]),
+  ,
+  enable_java_analyzers=yes)
+
+BUILD_JAVA_ANALYZERS=$enable_java_analyzers
+AC_SUBST([BUILD_JAVA_ANALYZERS])
+
 
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--without-fcp-clang],
@@ -154,21 +163,25 @@ AC_ASSERT_PROG([ocamllex], [$OCAMLLEX])
 AC_PROG_OCAMLYACC
 AC_ASSERT_PROG([ocamlyacc], [$OCAMLYACC])
 AC_ASSERT_OCAML_PKG([atdgen], [], [1.6.0])
-AC_ASSERT_OCAML_PKG([extlib], [], [1.5.4])
-AC_ASSERT_OCAML_PKG([javalib], [], [2.3.1])
-AC_ASSERT_OCAML_PKG([sawja], [], [1.5.1])
 AC_ASSERT_OCAML_PKG([biniou])
 AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])
-AC_ASSERT_OCAML_PKG([ptrees])
+AC_ASSERT_OCAML_PKG([extlib], [], [1.5.4])
 AC_ASSERT_OCAML_PKG([yojson])
+
+if [test "x$enable_java_analyzers" = "xyes"]; then
+  AC_ASSERT_OCAML_PKG([javalib], [], [2.3.1])
+  AC_ASSERT_OCAML_PKG([sawja], [], [1.5.1])
+  AC_ASSERT_OCAML_PKG([ptrees])
+fi
+
 
 AC_OCAML_CHECK_NATIVE_BYTES
 AC_OCAMLC_CHECK_SAFE_STRING
-
 if test "$OCAML_HAS_NATIVE_BYTES" = "no"; then
   AC_ASSERT_OCAML_PKG([bytes])
 fi
+
 
 AC_CHECK_TOOL([ATDGEN], [atdgen], [no])
 AC_ASSERT_PROG([atdgen], [$ATDGEN])
