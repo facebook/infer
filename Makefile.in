@@ -9,15 +9,19 @@
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
-all:
-
-ifeq (@BUILD_JAVA_ANALYZERS@,yes)
-all: java
-endif
-
+TARGETS_TO_TEST=
 ifeq (@BUILD_C_ANALYZERS@,yes)
-all: clang
+TARGETS_TO_TEST += c cpp
 endif
+ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+TARGETS_TO_TEST += java
+endif
+ifneq (@XCODE_SELECT@,no)
+TARGETS_TO_TEST += objc
+endif
+TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
+
+all: $(INFER_ANALYZERS)
 
 ifneq (@BUILD_JAVA_ANALYZERS@,yes)
 java:
@@ -70,9 +74,30 @@ clang: clang_plugin
 	$(MAKE) -C $(INFER_DIR) clang
 endif
 
+buck_test: $(INFER_ANALYZERS)
+	NO_BUCKD=1 buck clean
+	NO_BUCKD=1 buck test $(TARGETS_TO_TEST)
+
+buck_test_xml: $(INFER_ANALYZERS)
+	NO_BUCKD=1 buck clean
+	NO_BUCKD=1 buck test --xml test.xml $(TARGETS_TO_TEST)
+
+build_integration_tests: $(INFER_ANALYZERS)
+	./scripts/build_integration_tests.py
+
+test: buck_test
+
+test_xml: buck_test_xml
+
+ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+test: build_integration_tests
+test_xml: build_integration_tests
+endif
+
 clean:
+	@rm -fv test.xml
 	$(MAKE) -C $(FCP_DIR) clean
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
 	$(MAKE) -C $(INFER_DIR) clean
 
-.PHONY: all clean clang clang_plugin clang_setup java
+.PHONY: all build_integration_tests clean clang clang_plugin clang_setup java test test_xml
