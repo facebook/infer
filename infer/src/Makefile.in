@@ -8,9 +8,10 @@
 ROOT_DIR = ../..
 include $(ROOT_DIR)/Makefile.config
 
-INFER_VERSION_MAJOR = 0
-INFER_VERSION_MINOR = 4
-INFER_VERSION_PATCH = 0
+INFER_MAJOR = @INFER_MAJOR@
+INFER_MINOR = @INFER_MINOR@
+INFER_PATCH = @INFER_PATCH@
+INFER_IS_RELEASE = @INFER_IS_RELEASE@
 
 REMOVE = @rm -vf
 REMOVE_DIR = @rm -rvf
@@ -148,7 +149,7 @@ DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/g
 
 OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -build-dir $(BUILD_DIR) -j 0 $(addprefix -I , $(DEPENDENCIES)) $(JAVA_OPTIONS)
 
-.PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright annotations init sanitize version clean
+.PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright annotations init sanitize clean
 
 all: java clang llvm checkCopyright
 
@@ -200,29 +201,22 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $(CLANG_BINIOU_DICT)
 
-init: sanitize version $(BUILD_DIR)
+init: sanitize $(BACKEND_SOURCES)/version.ml $(BUILD_DIR)
 
 sanitize:
 	$(SANITIZE_SCRIPT)
 
-version:
-	GIT_COMMIT=$$(git rev-parse HEAD 2> /dev/null \
-	  || printf "unknown commit"); \
-	GIT_BRANCH=$$(git rev-parse --abbrev-ref HEAD 2> /dev/null \
-	  || printf "unknown branch"); \
-	UNKNOWN="-unknown"; \
-	if [ -e "$(ROOT_DIR)/.release" ]; then \
-	  UNKNOWN=""; \
-	fi; \
-	GIT_TAG=$$(git tag --points-at HEAD 2> /dev/null \
-	  || printf "v$(INFER_VERSION_MAJOR).$(INFER_VERSION_MINOR).$(INFER_VERSION_PATCH)$$UNKNOWN"); \
-	sed -e 's/@MAJOR@/$(INFER_VERSION_MAJOR)/g' \
-		-e 's/@MINOR@/$(INFER_VERSION_MINOR)/g' \
-		-e 's/@PATCH@/$(INFER_VERSION_PATCH)/g' \
-		-e "s/@GIT_COMMIT@/$$GIT_COMMIT/g" \
-		-e "s#@GIT_BRANCH@#$$GIT_BRANCH#g" \
-		-e "s/@GIT_TAG@/$$GIT_TAG/g" \
-		$(BACKEND_SOURCES)/version.ml.in > $(BACKEND_SOURCES)/version.ml
+$(BACKEND_SOURCES)/version.ml: Makefile $(BACKEND_SOURCES)/version.ml.in
+	INFER_GIT_COMMIT=$$(git rev-parse --short HEAD || printf "unknown"); \
+	INFER_GIT_BRANCH=$$(git rev-parse --abbrev-ref HEAD || printf "unknown"); \
+	sed \
+	  -e 's|@INFER_MAJOR[@]|$(INFER_MAJOR)|g' \
+	  -e 's|@INFER_MINOR[@]|$(INFER_MINOR)|g' \
+	  -e 's|@INFER_PATCH[@]|$(INFER_PATCH)|g' \
+	  -e 's|@INFER_IS_RELEASE[@]|$(INFER_IS_RELEASE)|g' \
+	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
+	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
+	  $@.in > $@
 
 $(BUILD_DIR):
 	$(MKDIR) $(BUILD_DIR)

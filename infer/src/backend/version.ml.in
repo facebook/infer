@@ -8,16 +8,18 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-let major = @MAJOR@
-let minor = @MINOR@
-let patch = @PATCH@
-let commit = "@GIT_COMMIT@"
-let branch = "@GIT_BRANCH@"
-let tag = "@GIT_TAG@"
+let major = @INFER_MAJOR@
+let minor = @INFER_MINOR@
+let patch = @INFER_PATCH@
+
+let commit = "@INFER_GIT_COMMIT@"
+let branch = "@INFER_GIT_BRANCH@"
+let is_release = Utils.string_equal "@INFER_IS_RELEASE@" "yes"
+let tag = Printf.sprintf "v%d.%d.%d" major minor patch
 
 let versionString =
-  if tag = "" then "git-" ^ commit
-  else tag
+  if is_release then tag
+  else Printf.sprintf "%s-%s" tag commit
 
 let versionJson = String.concat "\n" [
     "{"; "\"major\": " ^ (string_of_int major) ^ ", ";

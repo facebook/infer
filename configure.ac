@@ -10,16 +10,29 @@ dnl of patent rights can be found in the PATENTS file in the same directory.
 
 AC_PREREQ([2.63])
 
-# TODO: use the stuff in infer/src/Makefile and version.ml.in instead
-# of 0.4.0
-AC_INIT([Infer],[0.4.0],[https://github.com/facebook/infer/issues/])
-
+# WARNING: AC_INIT only accepts string literals so the version number
+# has to be kept in sync with below
+AC_INIT([Infer],
+        [0.4.0],
+        [https://github.com/facebook/infer/issues/])
 AC_CONFIG_SRCDIR([infer/src/backend/sil.ml])
 
+# WARNING: keep in sync with above
+INFER_MAJOR=0
+INFER_MINOR=4
+INFER_PATCH=0
+
+AC_SUBST([INFER_MAJOR])
+AC_SUBST([INFER_MINOR])
+AC_SUBST([INFER_PATCH])
+
 # record if we are in a release of Infer
+AC_MSG_CHECKING([if we are in an Infer release build])
 is_infer_release=no
 AS_IF([test -f ".release"], [is_infer_release=yes])
-
+INFER_IS_RELEASE=$is_infer_release
+AC_SUBST([INFER_IS_RELEASE])
+AC_MSG_RESULT([$is_infer_release])
 
 # to compile the facebook-clang-plugins
 AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang)])
@@ -49,7 +62,7 @@ AC_ARG_WITH(fcp-clang,
   with_fcp_clang=$is_infer_release)
 
 AS_IF([test "x$enable_c_analyzers" = "xyes"], [
-  AC_MSG_CHECKING([checking whether to use the compilers in $CLANG_PREFIX/bin])
+  AC_MSG_CHECKING([whether to use the compilers in $CLANG_PREFIX/bin])
   case "$with_fcp_clang" in
     no)
       AC_MSG_RESULT([no])
@@ -95,7 +108,7 @@ if test "x$enable_c_analyzers" = "xyes"; then
 
   dnl clang wants either clang version >= 3.1 or gcc version >= 4.7.2 to
   dnl compile itself
-  AC_MSG_CHECKING([checking if the C/C++ compiler is recent enough])
+  AC_MSG_CHECKING([if the C/C++ compiler is recent enough])
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #ifdef __clang__
 #if __clang_major__ < 3 || (__clang_major__ == 3 && __clang_minor__ < 1)
