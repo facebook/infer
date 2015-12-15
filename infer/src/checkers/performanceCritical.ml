@@ -9,18 +9,28 @@
 
 module L = Logging
 
-
+(* Automatically detect if a method is considered as performance critical
+   by looking for the annotation in the super-types *)
 let infer_performance_critical_methods = true
 
 
+(* Warning name when a performance critical method directly or indirectly
+   calls a method annotatd as expensive *)
 let calls_expensive_method =
   "CHECKERS_CALLS_EXPENSIVE_METHOD"
 
+(* Warning name for the subtyping rule: method not annotated as expensive cannot be overridden
+   by a method annotated as expensive *)
 let expensive_overrides_unexpensive =
   "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
 
+(* Warning name for the subtyping rule: methods overriding methods annotated as performance critical
+   should also be annotated as performance critical *)
 let unannotated_overrides_performance_critical =
   "CHECKERS_UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL"
+
+(* Triggers report on violation of the sybtyping rule for the performance critical annotation *)
+let enforce_performance_critical_subtyping_rule = false
 
 
 let check_attributes check attributes =
@@ -176,7 +186,7 @@ let check_one_procedure tenv pname pdesc =
   if expensive then
     PatternMatch.proc_iter_overridden_methods
       check_expensive_subtyping_rules tenv pname;
-  if not performance_critical then
+  if enforce_performance_critical_subtyping_rule && not performance_critical then
     PatternMatch.proc_iter_overridden_methods
       check_performance_critical_subtyping_rules tenv pname;
 
