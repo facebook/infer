@@ -180,9 +180,8 @@ installed and up to date, as well as the "Android SDK Build-tools" and
 
 Go to the sample Android app in
 [`infer/examples/android_hello`](https://github.com/facebook/infer/tree/master/examples/android_hello/)
-and edit the `local.properties` file to point to the location of your
-Android SDK. This sample Android app uses
-[gradle](https://gradle.org/) as its build system. You do not need to
+and create a `local.properties` file with a single line `sdk.dir=<location of your Android SDK>`. This
+sample Android app uses [gradle](https://gradle.org/) as its build system. You do not need to
 install gradle to try it out though, thanks to the
 [`gradlew`](https://docs.gradle.org/current/userguide/gradle_wrapper.html)
 script in the project that will download gradle and the project's
