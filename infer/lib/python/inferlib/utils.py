@@ -142,9 +142,10 @@ def dump_json_to_path(
         encoding=config.LOCALE,  # customized
         default=None, sort_keys=False, **kw):
     with codecs.open(path, 'w', encoding=config.LOCALE) as file_out:
-        json.dump(data, file_out,
-                  skipkeys, ensure_ascii, check_circular, allow_nan, cls,
-                  indent, separators, encoding, default, sort_keys, **kw)
+        json.dump(data, file_out, skipkeys=skipkeys, ensure_ascii=ensure_ascii,
+                  check_circular=check_circular, allow_nan=allow_nan, cls=cls,
+                  indent=indent, separators=separators, encoding=encoding,
+                  default=default, sort_keys=sort_keys, **kw)
 
 
 def infer_version():
