@@ -279,7 +279,7 @@ let propagate_nodes_divergence
     | None -> _succ_nodes in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then
     begin
-      if !Config.developer_mode then Errdesc.warning_err (State.get_loc ()) "Propagating Divergence@.";
+      Errdesc.warning_err (State.get_loc ()) "Propagating Divergence@.";
       let exit_node = Cfg.Procdesc.get_exit_node pdesc in
       let diverging_states = State.get_diverging_states_node () in
       let prop_incons =

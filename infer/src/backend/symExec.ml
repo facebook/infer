@@ -1429,7 +1429,9 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
               !Config.curr_language = Config.Java)
            then t_e else t) :: comb etl' tl'
       | _,[] ->
-          if !Config.developer_mode then Errdesc.warning_err (State.get_loc ()) "likely use of variable-arguments function, or function prototype missing@.";
+          Errdesc.warning_err
+            (State.get_loc ())
+            "likely use of variable-arguments function, or function prototype missing@.";
           L.d_warning "likely use of variable-arguments function, or function prototype missing"; L.d_ln();
           L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
           L.d_str "formal parameters: "; Sil.d_typ_list formal_types; L.d_ln ();

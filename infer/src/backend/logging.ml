@@ -70,9 +70,6 @@ let current_out_formatter = ref F.std_formatter
 (** Current formatter for the err stream *)
 let current_err_formatter = ref F.err_formatter
 
-(** Get the current out formatter *)
-let get_out_formatter () = !current_out_formatter
-
 (** Get the current err formatter *)
 let get_err_formatter fmt = !current_err_formatter
 

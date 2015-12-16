@@ -80,9 +80,6 @@ val stderr : ('a, Format.formatter, unit) format -> 'a
 (** print immediately to standard output *)
 val stdout : ('a, Format.formatter, unit) format -> 'a
 
-(** Get the current out formatter *)
-val get_out_formatter : unit -> Format.formatter
-
 (** Get the current err formatter *)
 val get_err_formatter : unit -> Format.formatter
 
