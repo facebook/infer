@@ -312,6 +312,8 @@ val remove_attribute : Sil.attribute -> 'a t -> normal t
 (** [replace_objc_null lhs rhs]. If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
 val replace_objc_null : normal t -> exp -> exp -> normal t
 
+val nullify_exp_with_objc_null : normal t -> exp -> normal t
+
 (** Remove an attribute from an exp in the heap *)
 val remove_attribute_from_exp : Sil.attribute -> 'a t -> exp -> normal t
 

@@ -953,6 +953,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       execute_set pname pdesc tenv lhs_exp typ rhs_exp loc _prop
       |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
+      let _prop = Prop.nullify_exp_with_objc_null _prop cond in
       let check_condition_always_true_false () =
         let report_condition_always_true_false i =
           let skip_loop = match ik with

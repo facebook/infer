@@ -1897,6 +1897,21 @@ let replace_objc_null prop lhs_exp rhs_exp =
       add_or_replace_exp_attribute prop lhs_exp att
   | _ -> prop
 
+let rec nullify_exp_with_objc_null prop exp =
+  match exp with
+  | Sil.BinOp (op, exp1, exp2) ->
+      let prop' = nullify_exp_with_objc_null prop exp1 in
+      nullify_exp_with_objc_null prop' exp2
+  | Sil.UnOp (op, exp, _) ->
+      nullify_exp_with_objc_null prop exp
+  | Sil.Var name ->
+      (match get_objc_null_attribute prop exp with
+       | Some att ->
+           let prop' = remove_attribute_from_exp att prop exp in
+           conjoin_eq exp Sil.exp_zero prop'
+       | _ -> prop)
+  | _ -> prop
+
 (** Get all the attributes of the prop *)
 let get_atoms_with_attribute att prop =
   let atom_remove atom autoreleased_atoms = match atom with
