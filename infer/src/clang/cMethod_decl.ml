@@ -87,7 +87,8 @@ struct
     | Some body ->
         let is_instance = CMethod_signature.ms_is_instance ms in
         let procname = CMethod_signature.ms_get_name ms in
-        if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_instance then
+        let is_objc_inst_method = is_instance && is_objc in
+        if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_objc_inst_method then
           add_method tenv cg cfg curr_class procname [body] is_objc [] None extra_instrs
     | None -> ()
 
