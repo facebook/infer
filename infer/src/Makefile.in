@@ -29,10 +29,6 @@ BUILD_DIR = $(INFER_DIR)/_build-infer
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 
-ifneq ($(wildcard $(BUILD_DIR)/sanitize.sh),)
-	SANITIZE_SCRIPT = $(BUILD_DIR)/sanitize.sh
-endif
-
 #### Infer includes declarations ####
 
 ATDGEN_INCLUDE_DIR = @OCAML_PKG_PATH_atdgen@
@@ -52,8 +48,20 @@ OCAML_INCLUDES := $(OCAML_INCLUDES),-I,@OCAML_PKG_PATH_bytes@
 OCAML_LIBS += bytes
 endif
 
-OCAMLBUILD_OPTIONS = -lflags -annot \
-                     -cflags -annot,-bin-annot,-warn-error,@5@8@10..12@20@26@39 \
+OCAMLBUILD_ANNOT_OPTIONS =
+ifeq (@ENABLE_OCAML_ANNOT@,yes)
+OCAMLBUILD_ANNOT_OPTIONS = -cflags -annot
+endif
+
+OCAMLBUILD_BINANNOT_OPTIONS =
+ifeq (@ENABLE_OCAML_BINANNOT@,yes)
+OCAMLBUILD_BINANNOT_OPTIONS = -cflags -bin-annot
+endif
+
+OCAMLBUILD_OPTIONS = \
+                     $(OCAMLBUILD_ANNOT_OPTIONS) \
+                     $(OCAMLBUILD_BINANNOT_OPTIONS) \
+                     -cflags -warn-error,@5@8@10..12@20@26@39 \
                      -lflags $(OCAML_INCLUDES) \
                      -cflags $(OCAML_INCLUDES) \
                      $(addprefix -lib ,$(OCAML_LIBS)) \
@@ -91,7 +99,7 @@ SAWJA_INCLUDE_DIR = @OCAML_PKG_PATH_sawja@
 
 JAVA_INCLUDES = -I,$(PTREES_INCLUDE_DIR),-I,$(JAVALIB_INCLUDE_DIR),-I,$(SAWJA_INCLUDE_DIR)
 JAVA_LIBS = ptrees javalib sawja
-JAVA_OCAMLBUID_OPTIONS = -cflags -annot -lflags $(JAVA_INCLUDES) -cflags $(JAVA_INCLUDES) $(addprefix -lib ,$(JAVA_LIBS))
+JAVA_OCAMLBUID_OPTIONS = -lflags $(JAVA_INCLUDES) -cflags $(JAVA_INCLUDES) $(addprefix -lib ,$(JAVA_LIBS))
 
 JAVA_SOURCES = java
 
@@ -174,7 +182,9 @@ build_checkCopyright:
 	$(OCAMLBUILD) -I $(SCRIPT_SOURCES) $(CHECKCOPYRIGHT_MAIN).native
 
 annotations:
-	rsync -r --delete --exclude=*.ml* --exclude=*.o --exclude=*.cm* --exclude=*.native $(BUILD_DIR)/* $(ANNOT_DIR)
+ifeq (@ENABLE_OCAML_ANNOT@,yes)
+	rsync -a --delete --exclude '*' --include '*/' --include '*.annot' $(BUILD_DIR)/ $(ANNOT_DIR)/
+endif
 
 $(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
 	$(ATDGEN) -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
@@ -204,7 +214,9 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 init: sanitize $(BACKEND_SOURCES)/version.ml $(BUILD_DIR)
 
 sanitize:
-	$(SANITIZE_SCRIPT)
+ifneq ($(wildcard $(BUILD_DIR)/sanitize.sh),)
+	$(BUILD_DIR)/sanitize.sh
+endif
 
 $(BACKEND_SOURCES)/version.ml: Makefile $(BACKEND_SOURCES)/version.ml.in
 	INFER_GIT_COMMIT=$$(git rev-parse --short HEAD || printf "unknown"); \
