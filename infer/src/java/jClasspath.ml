@@ -109,23 +109,74 @@ let append_path classpath path =
     classpath
 
 
+type file_entry =
+  | Singleton of DB.source_file
+  | Duplicate of (string * DB.source_file) list
+
+
+(* Open the source file and search for the package declaration.
+   Only the case where the package is declared in a single line is supported *)
+let read_package_declaration source_file =
+  let path = DB.source_file_to_string source_file in
+  let file_in = open_in path in
+  let remove_trailing_semicolon =
+    Str.replace_first (Str.regexp ";") "" in
+  let empty_package = "" in
+  let rec loop () =
+    try
+      let line = remove_trailing_semicolon (input_line file_in) in
+      match Str.split (Str.regexp "[ \t]+") line with
+      | [] -> loop ()
+      | hd::package::[] when hd = "package" -> package
+      | _ -> loop ()
+    with End_of_file ->
+      close_in file_in;
+      empty_package in
+  loop ()
+
+
+let add_source_file path map =
+  let convert_to_absolute p =
+    if Filename.is_relative p then
+      Filename.concat (Sys.getcwd ()) p
+    else
+      p in
+  let basename = Filename.basename path in
+  let entry =
+    let current_source_file =
+      java_source_file_from_path (convert_to_absolute path) in
+    try
+      match StringMap.find basename map with
+      | Singleton previous_source_file ->
+          (* Another source file with the same base name has been found.
+             Reading the package from the source file to resolve the ambiguity
+             only happens in this case *)
+          let previous_package = read_package_declaration previous_source_file
+          and current_package = read_package_declaration current_source_file in
+          let source_list = [
+            (current_package, current_source_file);
+            (previous_package, previous_source_file)] in
+          Duplicate source_list
+      | Duplicate previous_source_files ->
+          (* Two or more source file with the same base name have been found *)
+          let current_package = read_package_declaration current_source_file in
+          Duplicate ((current_package, current_source_file) :: previous_source_files)
+    with Not_found ->
+      (* Most common case: there is no conflict with the base name of the source file *)
+      Singleton current_source_file in
+  StringMap.add basename entry map
+
+
 let load_sources_and_classes () =
   let file_in = open_in !javac_verbose_out in
-  let cwd = Sys.getcwd () in
-  let convert_filename fname =
-    if Filename.is_relative fname then
-      Filename.concat cwd fname
-    else
-      fname in
   let rec loop paths roots sources classes =
     try
       let lexbuf = Lexing.from_string (input_line file_in) in
       match JVerboseParser.line JVerboseLexer.token lexbuf with
-      | JVerbose.Source fname ->
-          let source_file = java_source_file_from_path (convert_filename fname) in
-          loop paths roots (StringMap.add (Filename.basename fname) source_file sources) classes
-      | JVerbose.Class fname ->
-          let cn, root_info = Javalib.extract_class_name_from_file fname in
+      | JVerbose.Source path ->
+          loop paths roots (add_source_file path sources) classes
+      | JVerbose.Class path ->
+          let cn, root_info = Javalib.extract_class_name_from_file path in
           let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
           let updated_roots =
             if IList.exists (fun p -> p = root_dir) roots then roots
@@ -225,7 +276,7 @@ let classmap_of_classpath classpath =
   IList.fold_left collect_classes JBasics.ClassMap.empty jar_filenames
 
 
-let load_program classpath classes arg_source_files =
+let load_program classpath classes =
   JUtils.log "loading program ... %!";
   let models =
     if !models_jar = "" then JBasics.ClassMap.empty

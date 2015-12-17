@@ -28,7 +28,7 @@ val compute_source_icfg :
   JClasspath.program ->
   Sil.tenv ->
   string ->
-  DB.source_file ->
+  string option ->
   Cg.t * Cfg.cfg
 
 (** Compute the CFG for a class *)

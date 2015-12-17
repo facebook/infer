@@ -152,7 +152,7 @@ let is_classname_cached cn =
 (* Given a source file and a class, translates the code of this class.
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
-let create_icfg never_null_matcher linereader program icfg source_file cn node =
+let create_icfg never_null_matcher linereader program icfg cn node =
   JUtils.log "\tclassname: %s@." (JBasics.cn_name cn);
   cache_classname cn;
   let cfg = icfg.JContext.cfg in
@@ -181,18 +181,29 @@ type capture_status =
   | Unknown
 
 (* returns true for the set of classes that are selected to be translated *)
-let should_capture classes source_basename node =
+let should_capture classes package_opt source_basename node =
   let classname = Javalib.get_name node in
   let temporary_skip =
     (* TODO (#6341744): remove this *)
     IList.exists
       (fun part -> part = "graphschema")
       (JBasics.cn_package classname) in
+  let match_package pkg cn =
+    match JTransType.package_to_string (JBasics.cn_package cn) with
+    | None -> pkg = ""
+    | Some found_pkg -> found_pkg = pkg in
   if JBasics.ClassSet.mem classname classes && not temporary_skip then
     begin
       match Javalib.get_sourcefile node with
       | None -> false
-      | Some source -> source = source_basename
+      | Some found_basename ->
+          begin
+            match package_opt with
+            | None -> found_basename = source_basename
+            | Some pkg ->
+                match_package pkg classname
+                && found_basename = source_basename
+          end
     end
   else false
 
@@ -201,13 +212,13 @@ let should_capture classes source_basename node =
    In the standard - mode, it translated all the classes that correspond to this
    source file. *)
 let compute_source_icfg
-    never_null_matcher linereader classes program tenv source_basename source_file =
+    never_null_matcher linereader classes program tenv
+    source_basename package_opt =
   let icfg =
     { JContext.cg = Cg.create ();
       JContext.cfg = Cfg.Node.create_cfg ();
       JContext.tenv = tenv } in
   let select test procedure cn node =
-    (* let () = JUtils.log "translating: %s@." (JBasics.cn_name (JProgram.get_name node)) in *)
     if test node then
       try
         procedure cn node
@@ -217,8 +228,8 @@ let compute_source_icfg
   let () =
     JBasics.ClassMap.iter
       (select
-         (should_capture classes source_basename)
-         (create_icfg never_null_matcher linereader program icfg source_file))
+         (should_capture classes package_opt source_basename)
+         (create_icfg never_null_matcher linereader program icfg))
       (JClasspath.get_classmap program) in
   (icfg.JContext.cg, icfg.JContext.cfg)
 
@@ -230,7 +241,7 @@ let compute_class_icfg never_null_matcher linereader program tenv node fake_sour
   begin
     try
       create_icfg
-        never_null_matcher linereader program icfg fake_source_file (Javalib.get_name node) node
+        never_null_matcher linereader program icfg (Javalib.get_name node) node
     with
     | Bir.Subroutine -> ()
     | e -> raise e

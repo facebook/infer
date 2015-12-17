@@ -30,9 +30,14 @@ val java_source_file_from_path : string -> DB.source_file
 
 val split_classpath : string -> string list
 
+(** map entry for source files with potential basname collision within the same compiler call *)
+type file_entry =
+  | Singleton of DB.source_file
+  | Duplicate of (string * DB.source_file) list
+
 (** load the list of source files and the list of classes from the javac verbose file *)
 val load_sources_and_classes : unit ->
-  string * DB.source_file Utils.StringMap.t * JBasics.ClassSet.t
+  string * file_entry Utils.StringMap.t * JBasics.ClassSet.t
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 
@@ -45,7 +50,7 @@ val get_models : program -> classmap
 val cleanup : program -> unit
 
 (** load a java program *)
-val load_program : string -> JBasics.ClassSet.t -> DB.source_file Utils.StringMap.t -> program
+val load_program : string -> JBasics.ClassSet.t -> program
 
 (** retrive a Java node from the classname *)
 val lookup_node : JBasics.class_name -> program -> JCode.jcode Javalib.interface_or_class option
