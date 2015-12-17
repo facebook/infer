@@ -23,8 +23,8 @@ TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
 all: $(INFER_ANALYZERS)
 
-ifneq (@BUILD_JAVA_ANALYZERS@,yes)
 java:
+ifneq (@BUILD_JAVA_ANALYZERS@,yes)
 	@echo
 	@echo "  error: java analyzers disabled by ./configure"
 	@echo "  to enable them again, see"
@@ -33,7 +33,6 @@ java:
 	@echo
 	@exit 1
 else
-java:
 	$(MAKE) -C $(INFER_DIR) java
 endif
 
@@ -60,8 +59,8 @@ clang_plugin: clang_setup
 	  CLANG_PREFIX=@CLANG_PREFIX@ \
 	  CLANG_INCLUDES=@CLANG_INCLUDES@
 
-ifneq (@BUILD_C_ANALYZERS@,yes)
 clang:
+ifneq (@BUILD_C_ANALYZERS@,yes)
 	@echo
 	@echo "  error: clang analyzers disabled by ./configure"
 	@echo "  to enable them again, see"
@@ -70,7 +69,6 @@ clang:
 	@echo
 	@exit 1
 else
-clang: clang_plugin
 	$(MAKE) -C $(INFER_DIR) clang
 endif
 
@@ -96,8 +94,10 @@ endif
 
 clean:
 	@rm -fv test.xml
+ifneq (@BUILD_C_ANALYZERS@,yes)
 	$(MAKE) -C $(FCP_DIR) clean
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
+endif
 	$(MAKE) -C $(INFER_DIR) clean
 
 .PHONY: all build_integration_tests clean clang clang_plugin clang_setup java test test_xml

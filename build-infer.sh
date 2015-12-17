@@ -166,4 +166,4 @@ echo "  *************************"
 echo
 
 ./configure $CONFIGURE_ARGS
-make $TARGETS || (echo "compilation failure; try running `make clean`"; exit 1)
+make -j $TARGETS || (echo 'compilation failure; try running "make clean"'; exit 1)

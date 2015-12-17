@@ -26,6 +26,10 @@ OCAML_INCLUDE_DIR = $(shell ocamlc -where)
 #### Global declarations ####
 
 BUILD_DIR = $(INFER_DIR)/_build-infer
+JAVA_BUILD_DIR = $(BUILD_DIR)/java
+CLANG_BUILD_DIR = $(BUILD_DIR)/clang
+LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
+SCRIPTS_BUILD_DIR = $(BUILD_DIR)/scripts
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 
@@ -61,6 +65,7 @@ endif
 OCAMLBUILD_OPTIONS = \
                      $(OCAMLBUILD_ANNOT_OPTIONS) \
                      $(OCAMLBUILD_BINANNOT_OPTIONS) \
+                     -classic-display \
                      -cflags -warn-error,@5@8@10..12@20@26@39 \
                      -lflags $(OCAML_INCLUDES) \
                      -cflags $(OCAML_INCLUDES) \
@@ -119,14 +124,14 @@ CLANG_AST_BASE_NAME = clang_ast
 CLANG_ATDGEN_STUB_BASE = $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME)
 CLANG_ATDGEN_STUB_ATD = $(FCP_CLANG_OCAML_BUILD_DIR)/$(CLANG_AST_BASE_NAME).atd
 CLANG_ATDGEN_SUFFIXES = _t.ml _t.mli _b.ml _b.mli _j.ml _j.mli _v.ml _v.mli
-CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME), $(CLANG_ATDGEN_SUFFIXES))
+CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_ATDGEN_STUB_BASE), $(CLANG_ATDGEN_SUFFIXES))
 
-INFER_CLANG_AST_PROJ = $(addprefix $(CLANG_SOURCES)/, clang_ast_proj.ml clang_ast_proj.mli)
-INFER_CLANG_AST_MAIN = $(addprefix $(CLANG_SOURCES)/, clang_ast_visit.ml clang_ast_main.ml)
 FCP_CLANG_AST_PROJ = $(addprefix $(FCP_CLANG_OCAML_BUILD_DIR)/, \
                        clang_ast_proj.ml clang_ast_proj.mli)
 FCP_CLANG_AST_MAIN = $(addprefix $(FCP_CLANG_OCAML_DIR)/, \
                        clang_ast_visit.ml clang_ast_main.ml)
+FCP_FILES_TO_MIRROR = $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
+INFER_CLANG_FCP_MIRRORED_FILES = $(addprefix $(CLANG_SOURCES)/, $(notdir $(FCP_FILES_TO_MIRROR)))
 
 CLANG_BINIOU_DICT = $(ETC_DIR)/clang_ast.dict
 
@@ -155,70 +160,111 @@ endif
 
 DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/graphql facebook/scripts harness $(EXTRA_DEPS)
 
-OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -build-dir $(BUILD_DIR) -j 0 $(addprefix -I , $(DEPENDENCIES))
+OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -j 0 $(addprefix -I , $(DEPENDENCIES))
 
-.PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright annotations init sanitize clean
+.PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright \
+        java_annotations clang_annotations llvm_annotations scripts_annotations \
+        init version sanitize clean
 
 all: java clang llvm checkCopyright
 
-java: build_java annotations $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(INFERJAVA_BIN)
+java: $(INFERJAVA_BIN)
 
-clang: build_clang annotations $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(INFERCLANG_BIN) $(CLANG_BINIOU_DICT)
+clang: $(INFERCLANG_BIN) $(CLANG_BINIOU_DICT)
 
-llvm: build_llvm annotations $(INFERLLVM_BIN)
+llvm: $(INFERLLVM_BIN)
 
-checkCopyright: build_checkCopyright annotations $(CHECKCOPYRIGHT_BIN)
+checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
 build_java: init $(INFERPRINT_ATDGEN_STUBS)
-	$(OCAMLBUILD) $(JAVA_OCAMLBUID_OPTIONS) $(TYPEPROP_MAIN).native $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERJAVA_MAIN).native
+	$(OCAMLBUILD) -build-dir $(JAVA_BUILD_DIR) $(JAVA_OCAMLBUID_OPTIONS) \
+	  $(TYPEPROP_MAIN).native \
+	  $(INFERANALYZE_MAIN).native \
+	  $(INFERPRINT_MAIN).native \
+	  $(INFERJAVA_MAIN).native
 
-build_clang: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_AST_PROJ) $(INFER_CLANG_AST_MAIN)
-	$(OCAMLBUILD) $(INFERANALYZE_MAIN).native $(INFERPRINT_MAIN).native $(INFERCLANG_MAIN).native
+build_clang: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+	$(OCAMLBUILD) -build-dir $(CLANG_BUILD_DIR) \
+	  $(INFERANALYZE_MAIN).native \
+	  $(INFERPRINT_MAIN).native \
+	  $(INFERCLANG_MAIN).native
 
 build_llvm:
-	$(OCAMLBUILD) -use-menhir $(INFERLLVM_MAIN).native
+	$(OCAMLBUILD) -build-dir $(LLVM_BUILD_DIR) -use-menhir $(INFERLLVM_MAIN).native
 
 build_checkCopyright:
-	$(OCAMLBUILD) -I $(SCRIPT_SOURCES) $(CHECKCOPYRIGHT_MAIN).native
+	$(OCAMLBUILD) -build-dir $(SCRIPTS_BUILD_DIR) -I $(SCRIPT_SOURCES) \
+	  $(CHECKCOPYRIGHT_MAIN).native
 
-annotations:
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
-	rsync -a --delete --exclude '*' --include '*/' --include '*.annot' $(BUILD_DIR)/ $(ANNOT_DIR)/
+java_annotations: build_java
+	rsync -a --delete --include '*/' --include '*.annot' --exclude '*' $(JAVA_BUILD_DIR)/ $(ANNOT_DIR)/
+
+clang_annotations: build_clang
+	rsync -a --delete --include '*/' --include '*.annot' --exclude '*' $(CLANG_BUILD_DIR)/ $(ANNOT_DIR)/
+
+llvm_annotations: build_llvm
+	rsync -a --delete --include '*/' --include '*.annot' --exclude '*' $(LLVM_BUILD_DIR)/ $(ANNOT_DIR)/
+
+scripts_annotations: build_checkCopyright
+	rsync -a --delete --include '*/' --include '*.annot' --exclude '*' $(SCRIPTS_BUILD_DIR)/ $(ANNOT_DIR)/
+
+java: java_annotations
+clang: clang_annotations
+llvm: llvm_annotations
+checkCopyright: scripts_annotations
 endif
 
-$(INFERPRINT_ATDGEN_STUBS): $(INFERPRINT_ATDGEN_STUB_ATD)
-	$(ATDGEN) -t $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
-	$(ATDGEN) -j $(INFERPRINT_ATDGEN_STUB_ATD) -o $(INFERPRINT_ATDGEN_STUB_BASE)
+define gen_atdgen_rules
+# generate files using atdgen
+# parameters:
+#   1. the .atd file to generate .ml{,i} files from
+#   2. the base name of .ml{,i} files
+#   3. the type of files to generate: b, j, t, or v
 
-$(INFER_CLANG_AST_PROJ) $(INFER_CLANG_AST_MAIN): $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
-# copy the ast_proj files whenever they are updated
-	@INSTALL@ -m 644 -C \
-	  $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN) \
-	  $(CLANG_SOURCES)
+$(2)_$(3).ml $(2)_$(3).mli: $(1)
+	$(ATDGEN) -$(3) $$< -o $(2)
 
-$(CLANG_ATDGEN_STUBS): $(CLANG_ATDGEN_STUB_ATD)
+# the .ml depends on the corresponding .mli to avoid running atdgen
+# twice during parallel builds
+$(2)_$(3).ml: $(2)_$(3).mli
+endef
+
+$(foreach atd_type,j t,\
+    $(eval \
+        $(call gen_atdgen_rules,$(INFERPRINT_ATDGEN_STUB_ATD),$(INFERPRINT_ATDGEN_STUB_BASE),$(atd_type))))
+
 # rebuild the artifacts of the AST files whenever they're upated in FCP
-	$(ATDGEN) -t $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
-	$(ATDGEN) -b $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
-	$(ATDGEN) -j $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
-	$(ATDGEN) -v $(CLANG_ATDGEN_STUB_ATD) -o $(CLANG_ATDGEN_STUB_BASE)
+$(foreach atd_type,b j t v,\
+    $(eval \
+        $(call gen_atdgen_rules,$(CLANG_ATDGEN_STUB_ATD),$(CLANG_ATDGEN_STUB_BASE),$(atd_type))))
+
+
+define mirror_fcp_file
+$(CLANG_SOURCES)/$(notdir $(1)): $(1)
+	@INSTALL@ -m 644 -C $$< $$@
+endef
+
+$(foreach file, $(FCP_FILES_TO_MIRROR), $(eval $(call mirror_fcp_file,$(file))))
+
 
 $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 # overapproximation of the words we need in the biniou dictionary
 # the long litany of symbols is [:punct:] minus "_-'"
 	tr -s '[*!"#\$%&\(\)\+,\\\.\/:;<=>\?@\[\\\\]^`\{|\}~[:space:]]' '\n' \
-	  < $(CLANG_ATDGEN_STUB_ATD) \
+	  < $< \
 	  | sort | uniq  \
-	  > $(CLANG_BINIOU_DICT)
+	  > $@
 
-init: sanitize $(BACKEND_SOURCES)/version.ml $(BUILD_DIR)
+init: sanitize version $(BUILD_DIR)
 
 sanitize:
 ifneq ($(wildcard $(BUILD_DIR)/sanitize.sh),)
 	$(BUILD_DIR)/sanitize.sh
 endif
 
-$(BACKEND_SOURCES)/version.ml: Makefile $(BACKEND_SOURCES)/version.ml.in
+version: $(BACKEND_SOURCES)/version.ml.in Makefile
+	TMPFILE=$$(mktemp $(BACKEND_SOURCES)/version.ml.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git rev-parse --abbrev-ref HEAD || printf "unknown"); \
 	sed \
@@ -228,39 +274,39 @@ $(BACKEND_SOURCES)/version.ml: Makefile $(BACKEND_SOURCES)/version.ml.in
 	  -e 's|@INFER_IS_RELEASE[@]|$(INFER_IS_RELEASE)|g' \
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
-	  $@.in > $@
+	  $< > "$$TMPFILE"; \
+	@INSTALL@ -m 644 -C $$TMPFILE $(BACKEND_SOURCES)/version.ml; \
+	rm -f $$TMPFILE
 
 $(BUILD_DIR):
 	$(MKDIR) $(BUILD_DIR)
 
-$(INFERANALYZE_BIN): $(BUILD_DIR)/$(INFERANALYZE_MAIN).native
-	$(COPY) $(BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
+$(INFERJAVA_BIN): build_java
+	$(COPY) $(JAVA_BUILD_DIR)/$(TYPEPROP_MAIN).native $(TYPEPROP_BIN)
+	$(COPY) $(JAVA_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
+	$(COPY) $(JAVA_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
+	$(COPY) $(JAVA_BUILD_DIR)/$(INFERJAVA_MAIN).native $(INFERJAVA_BIN)
 
-$(INFERPRINT_BIN): $(BUILD_DIR)/$(INFERPRINT_MAIN).native
-	$(COPY) $(BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
+$(INFERCLANG_BIN): build_clang
+	$(COPY) $(CLANG_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
+	$(COPY) $(CLANG_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
+	$(COPY) $(CLANG_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
 
-$(INFERJAVA_BIN): $(BUILD_DIR)/$(INFERJAVA_MAIN).native
-	$(COPY) $(BUILD_DIR)/$(INFERJAVA_MAIN).native $(INFERJAVA_BIN)
+$(INFERLLVM_BIN): build_llvm
+	$(COPY) $(LLVM_BUILD_DIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BIN)
 
-$(INFERCLANG_BIN): $(BUILD_DIR)/$(INFERCLANG_MAIN).native
-	$(COPY) $(BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
-
-$(INFERLLVM_BIN): $(BUILD_DIR)/$(INFERLLVM_MAIN).native
-	$(COPY) $(BUILD_DIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BIN)
-
-$(TYPEPROP_BIN): $(BUILD_DIR)/$(TYPEPROP_MAIN).native
-	$(COPY) $(BUILD_DIR)/$(TYPEPROP_MAIN).native $(TYPEPROP_BIN)
-
-$(CHECKCOPYRIGHT_BIN): $(BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native
-	$(COPY) $(BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
+$(CHECKCOPYRIGHT_BIN): build_checkCopyright
+	$(COPY) $(SCRIPTS_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 
 clean:
 	$(REMOVE_DIR) $(BUILD_DIR)
+ifeq (@ENABLE_OCAML_ANNOT@,yes)
 	$(REMOVE_DIR) $(ANNOT_DIR)
+endif
 	$(REMOVE) $(BACKEND_SOURCES)/version.ml
+	$(REMOVE) $(BACKEND_SOURCES)/version.ml.tmp.*
 	$(REMOVE) $(TYPEPROP_BIN) $(INFERANALYZE_BIN) $(INFERPRINT_BIN)
 	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN)
 	$(REMOVE) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
-	$(REMOVE) $(INFER_CLANG_AST_PROJ)
-	$(REMOVE) $(INFER_CLANG_AST_MAIN)
+	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
