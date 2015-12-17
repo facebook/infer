@@ -1091,7 +1091,9 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
     It returns an iterator with [lexp |-> strexp: typ] as current predicate
     and the path (an [offsetlist]) which leads to [lexp] as the iterator state. *)
-let rearrange pdesc tenv lexp typ prop loc : (Sil.offset list) Prop.prop_iter list =
+let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
+  : (Sil.offset list) Prop.prop_iter list =
+
   let nlexp = match Prop.exp_normalize_prop prop lexp with
     | Sil.BinOp(Sil.PlusPI, ep, e) -> (* array access with pointer arithmetic *)
         Sil.Lindex(ep, e)
@@ -1102,7 +1104,7 @@ let rearrange pdesc tenv lexp typ prop loc : (Sil.offset list) Prop.prop_iter li
   L.d_strln ".... Rearrangement Start ....";
   L.d_str "Exp: "; Sil.d_exp nlexp; L.d_ln ();
   L.d_str "Prop: "; L.d_ln(); Prop.d_prop prop; L.d_ln (); L.d_ln ();
-  check_dereference_error pdesc prop nlexp (State.get_loc ());
+  if report_deref_errors then check_dereference_error pdesc prop nlexp (State.get_loc ());
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   match Prop.prop_iter_create prop with
   | None ->

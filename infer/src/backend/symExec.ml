@@ -835,7 +835,7 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
         else prop''
     else add_ret_non_null ret_exp typ prop
 
-let execute_letderef pname pdesc tenv id rhs_exp typ loc prop_ =
+let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc prop_ =
   let execute_letderef_ pdesc tenv id rhs_exp loc acc_in iter =
     let iter_ren = Prop.prop_iter_make_id_primed id iter in
     let prop_ren = Prop.prop_iter_to_prop iter_ren in
@@ -887,7 +887,8 @@ let execute_letderef pname pdesc tenv id rhs_exp typ loc prop_ =
                 add_constraints_on_retval pdesc prop n_rhs_exp' typ callee_pname callee_loc
             | _ -> prop
           else prop in
-        let iter_list = Rearrange.rearrange pdesc tenv n_rhs_exp' typ prop' loc in
+        let iter_list =
+          Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop' loc in
         IList.rev (IList.fold_left (execute_letderef_ pdesc tenv id n_rhs_exp' loc) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if (!Config.array_level = 0) then assert false
@@ -895,7 +896,7 @@ let execute_letderef pname pdesc tenv id rhs_exp typ loc prop_ =
       let undef = Sil.exp_get_undefined false in
       [Prop.conjoin_eq (Sil.Var id) undef prop_]
 
-let execute_set pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
+let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
   let execute_set_ pdesc tenv rhs_exp acc_in iter =
     let (lexp, strexp, typ, st, offlist) =
       match Prop.prop_iter_current iter with
@@ -918,7 +919,7 @@ let execute_set pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
     let n_rhs_exp, prop = exp_norm_check_arith pname _prop' rhs_exp in
     let prop = Prop.replace_objc_null prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop prop typ n_lhs_exp in
-    let iter_list = Rearrange.rearrange pdesc tenv n_lhs_exp' typ prop loc in
+    let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
     IList.rev (IList.fold_left (execute_set_ pdesc tenv n_rhs_exp) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if (!Config.array_level = 0) then assert false
@@ -1344,8 +1345,7 @@ and sym_exe_check_variadic_sentinel_if_present
             cfg pdesc tenv prop path (IList.length formals)
             actual_params sentinel_arg callee_pname loc
 
-and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
-    path : Builtin.ret_typ =
+and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc pname loc args prop =
   L.d_strln ("No custom getter found. Executing the ObjC builtin getter with ivar "^
              (Ident.fieldname_to_string field_name)^".");
   let ret_id =
@@ -1363,12 +1363,11 @@ and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_na
           | Sil.Tptr (t, _) -> Sil.expand_type tenv t
           | _ -> assert false) in
       let field_access_exp = Sil.Lfield (lexp, field_name, typ') in
-      let ret_instr = Sil.Letderef (ret_id, field_access_exp, ret_typ, loc) in
-      sym_exec_generated false cfg tenv pdesc [ret_instr] [(_prop, path)]
+      execute_letderef
+        ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc prop
   | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
-and sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
-    path : Builtin.ret_typ =
+and sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc pname loc args prop =
   L.d_strln ("No custom setter found. Executing the ObjC builtin setter with ivar "^
              (Ident.fieldname_to_string field_name)^".");
   match args with
@@ -1378,19 +1377,20 @@ and sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_na
           | Sil.Tptr (t, _) -> Sil.expand_type tenv t
           | _ -> assert false) in
       let field_access_exp = Sil.Lfield (lexp1, field_name, typ1') in
-      let set_instr = Sil.Set (field_access_exp, typ2, lexp2, loc) in
-      sym_exec_generated false cfg tenv pdesc [set_instr] [(_prop, path)]
+      execute_set ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
   | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
-and sym_exec_objc_accessor property_accesor ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args
-    _prop path : Builtin.ret_typ =
-  match property_accesor with
-  | ProcAttributes.Objc_getter field_name ->
-      sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
-        path
-  | ProcAttributes.Objc_setter field_name ->
-      sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc callee_name loc args _prop
-        path
+and sym_exec_objc_accessor property_accesor ret_typ_opt tenv cfg ret_ids pdesc callee_pname loc args
+    prop path : Builtin.ret_typ =
+  let f_accessor =
+    match property_accesor with
+    | ProcAttributes.Objc_getter field_name -> sym_exec_objc_getter field_name
+    | ProcAttributes.Objc_setter field_name -> sym_exec_objc_setter field_name in
+  (* we want to execute in the context of the current procedure, not in the context of callee_pname,
+     since this is the procname of the setter/getter method *)
+  let cur_pname = Cfg.Procdesc.get_proc_name pdesc in
+  f_accessor ret_typ_opt tenv cfg ret_ids pdesc cur_pname loc args prop
+  |> IList.map (fun p -> (p, path))
 
 (** Perform symbolic execution for a function call *)
 and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
