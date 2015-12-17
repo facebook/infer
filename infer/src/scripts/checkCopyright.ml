@@ -273,6 +273,6 @@ let () =
   let to_check = ref [] in
   let add_file_to_check fname =
     to_check := fname :: !to_check in
-  Arg.parse speclist add_file_to_check usage_msg;
+  Arg.parse (Arg.align speclist) add_file_to_check usage_msg;
   IList.iter check_copyright (IList.rev !to_check);
   exit 0

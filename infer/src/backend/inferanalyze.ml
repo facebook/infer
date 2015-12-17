@@ -149,7 +149,7 @@ let arg_desc =
         "-ml_buckets", Arg.Set_string ml_buckets_arg, Some "ml_buckets",
         "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp, unknown_origin";
       ] in
-    Arg2.create_options_desc false "Analysis Options" desc in
+    Arg.create_options_desc false "Analysis Options" desc in
   let reserved_arg =
     let desc =
       reserved_arg_desc @
@@ -180,7 +180,8 @@ let arg_desc =
         "-print_buckets", Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true), None,
         "Add buckets to issue descriptions, useful when developing infer"
       ] in
-    Arg2.create_options_desc false "Reserved Options: Experimental features, use with caution!" desc in
+    Arg.create_options_desc false
+      "Reserved Options: Experimental features, use with caution!" desc in
   base_arg @ reserved_arg
 
 let usage =
@@ -189,13 +190,13 @@ let usage =
   " Analyze the files captured in the project results directory, which can be specified with the -results_dir option."
 
 let print_usage_exit () =
-  Arg2.usage arg_desc usage;
+  Arg.usage arg_desc usage;
   exit(1)
 
 let () = (* parse command-line arguments *)
   let f arg =
     () (* ignore anonymous arguments *) in
-  Arg2.parse arg_desc f usage;
+  Arg.parse arg_desc f usage;
   if not (Sys.file_exists !Config.results_dir) then
     begin
       L.err "ERROR: results directory %s does not exist@.@." !Config.results_dir;

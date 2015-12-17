@@ -222,27 +222,17 @@ module SymOp : sig
 end
 
 (** Modified version of Arg module from the ocaml distribution *)
-module Arg2 : sig
-  type spec = Arg.spec
-
-  type key = string
-  type doc = string
-  type usage_msg = string
-  type anon_fun = (string -> unit)
-
-  val current : int ref
+module Arg : sig
+  include module type of Arg with type spec = Arg.spec
 
   (** type of aligned commend-line options *)
-  type aligned
+  type aligned = private (key * spec * doc)
 
   val align : (key * spec * doc) list -> aligned list
 
   val parse : aligned list -> anon_fun -> usage_msg -> unit
 
   val usage : aligned list -> usage_msg -> unit
-
-  val to_arg_desc : aligned -> (key * spec * doc)
-  val from_arg_desc : (key * spec * doc) -> aligned
 
   (** [create_options_desc double_minus unsorted_desc title] creates a group of sorted command-line arguments.
       [double_minus] is a booleand indicating whether the [-- option = nn] format or [- option n] format is to be used.

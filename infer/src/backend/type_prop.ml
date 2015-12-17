@@ -714,14 +714,14 @@ let arg_desc =
           IList.mem string_equal option_name options_to_keep)
         arg_desc in
     let desc = (filter Utils.base_arg_desc) in
-    Utils.Arg2.create_options_desc false "Parsing Options" desc in
+    Utils.Arg.create_options_desc false "Parsing Options" desc in
   base_arg
 
 let usage =
   "Usage: Typeprop -results_dir out \n"
 
 let () =
-  Utils.Arg2.parse arg_desc (fun arg -> ()) usage
+  Utils.Arg.parse arg_desc (fun arg -> ()) usage
 
 (* Initialises the map of types of the methods that are never called with  *)
 (* the static types.                                                       *)

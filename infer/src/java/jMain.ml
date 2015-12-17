@@ -29,17 +29,17 @@ let arg_desc =
       "-verbose_out", Arg.String (fun path -> JClasspath.set_verbose_out path), None,
       "Set the path to the javac verbose output"
     ] in
-  Arg2.create_options_desc false "Parsing Options" desc
+  Arg.create_options_desc false "Parsing Options" desc
 
 let usage =
   "Usage: InferJava -d compilation_dir -sources filename\n"
 
 let print_usage_exit () =
-  Arg2.usage arg_desc usage;
+  Arg.usage arg_desc usage;
   exit(1)
 
 let () =
-  Arg2.parse arg_desc (fun arg -> ()) usage;
+  Arg.parse arg_desc (fun arg -> ()) usage;
   if Config.analyze_models && !JClasspath.models_jar <> "" then
     failwith "Not expecting model file when analyzing the models";
   if not Config.analyze_models && !JClasspath.models_jar = "" then

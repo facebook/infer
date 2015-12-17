@@ -23,12 +23,12 @@ let arg_desc =
       None,
       "Enables debug mode"
     ] in
-  Arg2.create_options_desc false "Parsing Options" desc
+  Arg.create_options_desc false "Parsing Options" desc
 
 let usage = "Usage: InferLLVM -c <cfile> [options]\n"
 
 let print_usage_exit () =
-  Utils.Arg2.usage arg_desc usage;
+  Utils.Arg.usage arg_desc usage;
   exit(1)
 
 let init_global_state source_filename =
@@ -68,7 +68,7 @@ let store_tenv tenv =
   Sil.store_tenv_to_file tenv_filename tenv
 
 let () =
-  Arg2.parse arg_desc (fun arg -> ()) usage;
+  Arg.parse arg_desc (fun arg -> ()) usage;
   begin match !LConfig.source_filename with
     | None -> print_usage_exit ()
     | Some source_filename -> init_global_state source_filename

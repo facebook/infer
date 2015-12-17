@@ -698,183 +698,9 @@ let reserved_arg_desc =
   ]
 
 (**************** START MODULE Arg2 -- modified from Arg in the ocaml distribution ***************)
-module Arg2 = struct
-  type key = string
-  type doc = string
-  type usage_msg = string
-  type anon_fun = (string -> unit)
+module Arg = struct
 
-  type spec = Arg.spec
-
-  exception Bad of string
-  exception Help of string
-
-  type error =
-    | Unknown of string
-    | Wrong of string * string * string  (* option, actual, expected *)
-    | Missing of string
-    | Message of string
-
-  exception Stop of error (* used internally *)
-
-  open Printf
-
-  let rec assoc3 x l =
-    match l with
-    | [] -> raise Not_found
-    | (y1, y2, y3) :: t when y1 = x -> y2
-    | _ :: t -> assoc3 x t
-
-  let make_symlist prefix sep suffix l =
-    match l with
-    | [] -> "<none>"
-    | h:: t -> (IList.fold_left (fun x y -> x ^ sep ^ y) (prefix ^ h) t) ^ suffix
-
-  let print_spec buf (key, spec, doc) =
-    match spec with
-    | Arg.Symbol (l, _) -> bprintf buf "  %s %s%s\n" key (make_symlist "{" "|" "}" l)
-                             doc
-    | _ ->
-        let sep = if String.length doc != 0 && String.get doc 0 = '=' then "" else " " in
-        bprintf buf "  %s%s%s\n" key sep doc
-
-  let help_action () = raise (Stop (Unknown "-help"))
-
-  let add_help speclist =
-    let add1 =
-      try ignore (assoc3 "-help" speclist); []
-      with Not_found ->
-        ["-help", Arg.Unit help_action, " Display this list of options"]
-    and add2 =
-      try ignore (assoc3 "--help" speclist); []
-      with Not_found ->
-        ["--help", Arg.Unit help_action, " Display this list of options"]
-    in
-    speclist @ (add1 @ add2)
-
-  let usage_b buf speclist errmsg =
-    bprintf buf "%s\n" errmsg;
-    IList.iter (print_spec buf) (add_help speclist)
-
-  let usage speclist errmsg =
-    let b = Buffer.create 200 in
-    usage_b b speclist errmsg;
-    eprintf "%s" (Buffer.contents b)
-  let current = ref 0;;
-
-  let parse_argv ?(current = current) argv speclist anonfun errmsg =
-    let l = Array.length argv in
-    let b = Buffer.create 200 in
-    let initpos = !current in
-    let stop error =
-      let progname = if initpos < l then argv.(initpos) else "(?)" in
-      begin match error with
-        | Unknown "-help" -> ()
-        | Unknown "--help" -> ()
-        | Unknown s ->
-            bprintf b "%s: unknown option `%s'.\n" progname s
-        | Missing s ->
-            bprintf b "%s: option `%s' needs an argument.\n" progname s
-        | Wrong (opt, arg, expected) ->
-            bprintf b "%s: wrong argument `%s'; option `%s' expects %s.\n"
-              progname arg opt expected
-        | Message s ->
-            bprintf b "%s: %s.\n" progname s
-      end;
-      usage_b b speclist errmsg;
-      if error = Unknown "-help" || error = Unknown "--help"
-      then raise (Help (Buffer.contents b))
-      else raise (Bad (Buffer.contents b))
-    in
-    incr current;
-    while !current < l do
-      let s = argv.(!current) in
-      if String.length s >= 1 && String.get s 0 = '-' then begin
-        let action =
-          try assoc3 s speclist
-          with Not_found -> stop (Unknown s)
-        in
-        begin try
-            let rec treat_action = function
-              | Arg.Unit f -> f ();
-              | Arg.Bool f when !current + 1 < l ->
-                  let arg = argv.(!current + 1) in
-                  begin try f (bool_of_string arg)
-                    with Invalid_argument "bool_of_string" ->
-                      raise (Stop (Wrong (s, arg, "a boolean")))
-                  end;
-                  incr current;
-              | Arg.Set r -> r := true;
-              | Arg.Clear r -> r := false;
-              | Arg.String f when !current + 1 < l ->
-                  f argv.(!current + 1);
-                  incr current;
-              | Arg.Symbol (symb, f) when !current + 1 < l ->
-                  let arg = argv.(!current + 1) in
-                  if IList.mem string_equal arg symb then begin
-                    f argv.(!current + 1);
-                    incr current;
-                  end else begin
-                    raise (Stop (Wrong (s, arg, "one of: "
-                                                ^ (make_symlist "" " " "" symb))))
-                  end
-              | Arg.Set_string r when !current + 1 < l ->
-                  r := argv.(!current + 1);
-                  incr current;
-              | Arg.Int f when !current + 1 < l ->
-                  let arg = argv.(!current + 1) in
-                  begin try f (int_of_string arg)
-                    with Failure "int_of_string" ->
-                      raise (Stop (Wrong (s, arg, "an integer")))
-                  end;
-                  incr current;
-              | Arg.Set_int r when !current + 1 < l ->
-                  let arg = argv.(!current + 1) in
-                  begin try r := (int_of_string arg)
-                    with Failure "int_of_string" ->
-                      raise (Stop (Wrong (s, arg, "an integer")))
-                  end;
-                  incr current;
-              | Arg.Float f when !current + 1 < l ->
-                  let arg = argv.(!current + 1) in
-                  begin try f (float_of_string arg);
-                    with Failure "float_of_string" ->
-                      raise (Stop (Wrong (s, arg, "a float")))
-                  end;
-                  incr current;
-              | Arg.Set_float r when !current + 1 < l ->
-                  let arg = argv.(!current + 1) in
-                  begin try r := (float_of_string arg);
-                    with Failure "float_of_string" ->
-                      raise (Stop (Wrong (s, arg, "a float")))
-                  end;
-                  incr current;
-              | Arg.Tuple specs ->
-                  IList.iter treat_action specs;
-              | Arg.Rest f ->
-                  while !current < l - 1 do
-                    f argv.(!current + 1);
-                    incr current;
-                  done;
-              | _ -> raise (Stop (Missing s))
-            in
-            treat_action action
-          with Bad m -> stop (Message m);
-             | Stop e -> stop e;
-        end;
-        incr current;
-      end else begin
-        (try anonfun s with Bad m -> stop (Message m));
-        incr current;
-      end;
-    done
-
-  let parse l f msg =
-    try
-      parse_argv Sys.argv l f msg;
-    with
-    | Bad msg -> eprintf "%s" msg; exit 2;
-    | Help msg -> printf "%s" msg; exit 0
+  include Arg
 
   (** Custom version of Arg.aling so that keywords are on one line and documentation is on the next *)
   let align arg_desc =
@@ -893,9 +719,6 @@ module Arg2 = struct
 
   type aligned = (key * spec * doc)
 
-  let to_arg_desc x = x
-  let from_arg_desc x = x
-
   (** Create a group of sorted command-line arguments *)
   let create_options_desc double_minus title unsorted_desc =
     let handle_double_minus (opname, spec, param_opt, text) = match param_opt with
@@ -911,7 +734,7 @@ module Arg2 = struct
       IList.sort (fun (x, _, _) (y, _, _) -> Pervasives.compare x y) unsorted_desc' in
     align dlist
 end
-(********** END OF MODULE Arg2 **********)
+(********** END OF MODULE Arg **********)
 
 (** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
 module Escape = struct

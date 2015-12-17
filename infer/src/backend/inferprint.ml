@@ -115,7 +115,7 @@ let arg_desc =
         "-local_config", Arg.String (fun s -> Inferconfig.local_config := Some s), Some "Path",
         "Path to local config file";
       ] in
-    Arg2.create_options_desc false "Options" desc in
+    Arg.create_options_desc false "Options" desc in
   let reserved_arg =
     let desc =
       [
@@ -127,7 +127,7 @@ let arg_desc =
         "-svg", Arg.Set svg, None, "generate .dot and .svg";
         "-whole_seconds", Arg.Set whole_seconds, None, "print whole seconds only";
       ] in
-    Arg2.create_options_desc false "Reserved Options" desc in
+    Arg.create_options_desc false "Reserved Options" desc in
   base_arg @ reserved_arg
 
 let usage =
@@ -139,7 +139,7 @@ let usage =
 
 let print_usage_exit err_s =
   L.err "Load Error: %s@.@." err_s;
-  Arg2.usage arg_desc usage;
+  Arg.usage arg_desc usage;
   exit(1)
 
 (** return the list of the .specs files in the results dir and libs, if they're defined *)
@@ -881,7 +881,7 @@ module AnalysisResults = struct
       if not (Filename.check_suffix arg ".specs") && arg <> "."
       then print_usage_exit "arguments must be .specs files"
       else args := arg::!args in
-    Arg2.parse arg_desc f usage;
+    Arg.parse arg_desc f usage;
     if !test_filtering then
       begin
         Inferconfig.test ();
