@@ -133,7 +133,10 @@ let get_superclass_decls decl =
   | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info) ->
       (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
-      IList.map Ast_utils.get_decl_from_typ_ptr base_ptr
+      let get_decl_or_fail typ_ptr = match Ast_utils.get_decl_from_typ_ptr typ_ptr with
+        | Some decl -> decl
+        | None -> assert false in
+      IList.map get_decl_or_fail base_ptr
   | _ -> []
 
 (** fetches list of superclasses for C++ classes *)

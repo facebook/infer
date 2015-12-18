@@ -103,7 +103,7 @@ sig
 
   (** returns declaration of the type for certain types and crashes for others
       NOTE: this function needs extending to handle objC types *)
-  val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl
+  val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
 
   val string_of_type_ptr : Clang_ast_t.type_ptr -> string
 
