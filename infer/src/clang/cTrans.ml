@@ -703,7 +703,7 @@ struct
            | [ret_id'] -> { res_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
            | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
 
-  and cxx_method_construct_call_trans trans_state_pri result_trans_callee fun_stmt params_stmt
+  and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type =
     let open CContext in
     let context = trans_state_pri.context in
@@ -715,7 +715,6 @@ struct
     let callee_pname = match sil_method with
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
-    let params_stmt = CTrans_utils.assign_default_params params_stmt fun_stmt in
     (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)
     (* afterwards. The 'instructions' function does not do that          *)
@@ -754,14 +753,14 @@ struct
     (* CXXOperatorCallExpr: First stmt is method/function deref without this expr and the *)
     (*                      rest are params, possibly including 'this' *)
     let fun_exp_stmt, params_stmt = (match stmt_list with
-        | fe :: params -> fe, params
+        | fe :: params -> fe, assign_default_params params fe
         | _ -> assert false) in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     (* claim priority if no ancestors has claimed priority before *)
     let trans_state_callee = { trans_state_pri with succ_nodes = [] } in
     let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
     let function_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    cxx_method_construct_call_trans trans_state_pri result_trans_callee fun_exp_stmt params_stmt
+    cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type
 
   and cxxConstructExpr_trans trans_state this_res_trans expr =
@@ -770,7 +769,8 @@ struct
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
         let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
         let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
-        cxx_method_construct_call_trans trans_state_pri res_trans_callee expr params_stmt si
+        let params_stmt' = assign_default_params params_stmt expr in
+        cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt' si
           Sil.Tvoid
     | _ -> assert false
 
