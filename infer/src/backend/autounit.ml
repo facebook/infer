@@ -420,7 +420,8 @@ let pp_texp_for_malloc fmt =
     | Sil.Tptr (t, pk) ->
         Sil.Tptr (handle_arr_size t, pk)
     | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
-        Sil.Tstruct (IList.map (fun (f, t, a) -> (f, handle_arr_size t, a)) ftal, sftal, csu, nameo, supers, def_mthds, iann)
+        Sil.Tstruct (IList.map (fun (f, t, a) ->
+            (f, handle_arr_size t, a)) ftal, sftal, csu, nameo, supers, def_mthds, iann)
     | Sil.Tarray (t, e) ->
         Sil.Tarray (handle_arr_size t, e) in
   function

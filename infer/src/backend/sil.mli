@@ -12,18 +12,11 @@
 
 open Utils
 
-(** Class, struct, union, (Obj C) protocol *)
-type csu =
-  | Class
-  | Struct
-  | Union
-  | Protocol
-
 (** Named types. *)
 type typename =
   | TN_typedef of Mangled.t
   | TN_enum of Mangled.t
-  | TN_csu of csu * Mangled.t
+  | TN_csu of Csu.t * Mangled.t
 
 (** {2 Programs and Types} *)
 
@@ -84,7 +77,8 @@ type binop =
 
   | LAnd    (** logical and. Does not always evaluate both operands. *)
   | LOr     (** logical or. Does not always evaluate both operands. *)
-  | PtrFld  (** field offset via pointer to field: takes the address of a csu and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) *)
+  | PtrFld  (** field offset via pointer to field: takes the address of a
+                Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) *)
 
 (** Kinds of integers *)
 type ikind =
@@ -283,7 +277,8 @@ and const =
   | Cattribute of attribute (** attribute used in disequalities to annotate a value *)
   | Cexn of exp (** exception *)
   | Cclass of Ident.name (** class constant *)
-  | Cptr_to_fld of Ident.fieldname * typ (** pointer to field constant, and type of the surrounding csu type *)
+  | Cptr_to_fld of Ident.fieldname * typ (** pointer to field constant,
+                                             and type of the surrounding Csu.t type *)
   | Ctuple of exp list (** tuple of values *)
 
 and struct_fields = (Ident.fieldname * typ * item_annotation) list
@@ -296,7 +291,8 @@ and typ =
   | Tvoid (** void type *)
   | Tfun of bool (** function type with noreturn attribute *)
   | Tptr of typ * ptr_kind (** pointer type *)
-  | Tstruct of struct_fields * struct_fields * csu * Mangled.t option * (csu * Mangled.t) list * Procname.t list * item_annotation
+  | Tstruct of struct_fields * struct_fields * Csu.t * Mangled.t option *
+               (Csu.t * Mangled.t) list * Procname.t list * item_annotation
   (** Structure type with nonstatic and static fields, class/struct/union flag, name, list of superclasses,
       methods defined, and annotations.
       The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts
@@ -524,7 +520,7 @@ val tenv_lookup : tenv -> typename -> typ option
 val tenv_add : tenv -> typename -> typ -> unit
 
 (** look up the type for a mangled name in the current type environment *)
-val get_typ : Mangled.t -> csu option -> tenv -> typ option
+val get_typ : Mangled.t -> Csu.t option -> tenv -> typ option
 
 (** expand a type if it is a typename by looking it up in the type environment *)
 val expand_type : tenv -> typ -> typ
@@ -645,9 +641,6 @@ val typename_compare : typename -> typename -> int
 
 (** Equality for typenames *)
 val typename_equal : typename -> typename -> bool
-
-(** Equality for typenames *)
-val csu_name_equal : (csu * Mangled.t) -> (csu * Mangled.t) -> bool
 
 (** Comparision for ptr_kind *)
 val ptr_kind_compare : ptr_kind -> ptr_kind -> int

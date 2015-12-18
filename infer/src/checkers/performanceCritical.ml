@@ -79,7 +79,7 @@ let is_modeled_expensive tenv pname =
       | Some p -> p in
     let classname =
       Mangled.from_package_class package (Procname.java_get_simple_class pname) in
-    match Sil.get_typ classname (Some Sil.Class) tenv with
+    match Sil.get_typ classname (Some Csu.Class) tenv with
     | None -> false
     | Some typ ->
         AndroidFramework.is_view typ tenv

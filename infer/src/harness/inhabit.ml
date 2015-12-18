@@ -108,7 +108,7 @@ let rec inhabit_typ typ proc_file_map env =
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors typ = match typ with
-            | Sil.Tstruct (_, _, Sil.Class, _, superclasses, methods, _) ->
+            | Sil.Tstruct (_, _, Csu.Class, _, superclasses, methods, _) ->
                 let is_suitable_constructor p =
                   let try_get_non_receiver_formals p =
                     try get_non_receiver_formals (formals_from_name p proc_file_map)
@@ -205,7 +205,7 @@ let inhabit_fld_trace flds proc_file_map env =
       Sil.Letderef (lhs, fld_exp, fld_typ, env.pc) in
     let env = env_add_instr fld_read_instr [lhs] env in
     match fld_typ with
-    | Sil.Tptr (Sil.Tstruct (_, _, Sil.Class, _, _, procs, _), _) ->
+    | Sil.Tptr (Sil.Tstruct (_, _, Csu.Class, _, _, procs, _), _) ->
         let inhabit_cb_call procname env =
           try
             let procdesc = procdesc_from_name procname proc_file_map in

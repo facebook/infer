@@ -596,16 +596,23 @@ let sym_eval abs e =
         (* progress: convert inner +I to +A *)
         let e2' = Sil.BinOp (Sil.PlusA, e12, e2) in
         eval (Sil.BinOp (Sil.PlusPI, e11, e2'))
-    | Sil.BinOp (Sil.PlusA, (Sil.Sizeof (Sil.Tstruct (ftal, sftal, csu, name_opt, supers, def_mthds, iann), st) as e1), e2) -> (* pattern for extensible structs
-                                                                                                                                  given a struct declatead as struct s { ... t arr[n] ... }, allocation pattern malloc(sizeof(struct s) + k * siezof(t))
-                                                                                                                                  turn it into struct s { ... t arr[n + k] ... } *)
+    | Sil.BinOp
+        (Sil.PlusA,
+         (Sil.Sizeof
+            (Sil.Tstruct (ftal, sftal, csu, name_opt, supers, def_mthds, iann), st) as e1),
+         e2) ->
+        (* pattern for extensible structs given a struct declatead as struct s { ... t arr[n] ... },
+           allocation pattern malloc(sizeof(struct s) + k * siezof(t)) turn it into
+           struct s { ... t arr[n + k] ... } *)
         let e1' = eval e1 in
         let e2' = eval e2 in
         (match IList.rev ftal, e2' with
            (fname, Sil.Tarray(typ, size), _):: ltfa, Sil.BinOp(Sil.Mult, num_elem, Sil.Sizeof (texp, st)) when ftal != [] && Sil.typ_equal typ texp ->
              let size' = Sil.BinOp(Sil.PlusA, size, num_elem) in
              let ltfa' = (fname, Sil.Tarray(typ, size'), Sil.item_annotation_empty) :: ltfa in
-             Sil.Sizeof(Sil.Tstruct (IList.rev ltfa', sftal, csu, name_opt, supers, def_mthds, iann), st)
+             Sil.Sizeof
+               (Sil.Tstruct
+                  (IList.rev ltfa', sftal, csu, name_opt, supers, def_mthds, iann), st)
          | _ -> Sil.BinOp(Sil.PlusA, e1', e2'))
     | Sil.BinOp (Sil.PlusA as oplus, e1, e2)
     | Sil.BinOp (Sil.PlusPI as oplus, e1, e2) ->

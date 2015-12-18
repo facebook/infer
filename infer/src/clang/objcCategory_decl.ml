@@ -73,7 +73,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let class_name = CContext.get_curr_class_name curr_class in
   let mang_name = Mangled.from_string class_name in
-  let class_tn_name = Sil.TN_csu (Sil.Class, mang_name) in
+  let class_tn_name = Sil.TN_csu (Csu.Class, mang_name) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
   (match Sil.tenv_lookup tenv class_tn_name with
@@ -83,7 +83,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
        let new_methods = General_utils.append_no_duplicates_methods methods intf_methods in
        let class_type_info =
          Sil.Tstruct (
-           new_fields, [], Sil.Class, Some mang_name, superclass, new_methods, annotation
+           new_fields, [], Csu.Class, Some mang_name, superclass, new_methods, annotation
          ) in
        Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
        Sil.tenv_add tenv class_tn_name class_type_info

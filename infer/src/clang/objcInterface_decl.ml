@@ -31,11 +31,11 @@ let is_objc_class_annotation a =
 
 let is_pointer_to_objc_class tenv typ =
   match typ with
-  | Sil.Tptr (Sil.Tvar (Sil.TN_csu (Sil.Class, cname)), _) ->
-      (match Sil.tenv_lookup tenv (Sil.TN_csu (Sil.Class, cname)) with
-       | Some Sil.Tstruct(_, _, Sil.Class, _, _, _, a) when is_objc_class_annotation a -> true
+  | Sil.Tptr (Sil.Tvar (Sil.TN_csu (Csu.Class, cname)), _) ->
+      (match Sil.tenv_lookup tenv (Sil.TN_csu (Csu.Class, cname)) with
+       | Some Sil.Tstruct(_, _, Csu.Class, _, _, _, a) when is_objc_class_annotation a -> true
        | _ -> false)
-  | Sil.Tptr (Sil.Tstruct(_, _, Sil.Class, _, _, _, a), _) when
+  | Sil.Tptr (Sil.Tstruct(_, _, Csu.Class, _, _, _, a), _) when
       is_objc_class_annotation a -> true
   | _ -> false
 
@@ -92,9 +92,9 @@ let get_interface_superclasses super_opt protocols =
   let super_class =
     match super_opt with
     | None -> []
-    | Some super -> [(Sil.Class, Mangled.from_string super)] in
+    | Some super -> [(Csu.Class, Mangled.from_string super)] in
   let protocol_names = IList.map (
-      fun name -> (Sil.Protocol, Mangled.from_string name)
+      fun name -> (Csu.Protocol, Mangled.from_string name)
     ) protocols in
   let super_classes = super_class@protocol_names in
   super_classes
@@ -138,7 +138,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
   IList.iter (fun (fn, ft, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
   let interface_type_info =
-    Sil.Tstruct(fields, [], Sil.Class, Some (Mangled.from_string class_name),
+    Sil.Tstruct(fields, [], Csu.Class, Some (Mangled.from_string class_name),
                 superclasses, methods, objc_class_annotation) in
   Sil.tenv_add tenv interface_name interface_type_info;
   Printing.log_out
@@ -150,13 +150,15 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
 
 let add_missing_methods tenv class_name decl_info decl_list curr_class =
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
-  let class_tn_name = Sil.TN_csu (Sil.Class, (Mangled.from_string class_name)) in
+  let class_tn_name = Sil.TN_csu (Csu.Class, (Mangled.from_string class_name)) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
   (match Sil.tenv_lookup tenv class_tn_name with
-   | Some Sil.Tstruct(fields, [], Sil.Class, Some name, superclass, existing_methods, annotation) ->
+   | Some Sil.Tstruct (fields, [], Csu.Class, Some name,
+                       superclass, existing_methods, annotation) ->
        let methods = General_utils.append_no_duplicates_methods existing_methods methods in
-       let typ = Sil.Tstruct(fields, [], Sil.Class, Some name, superclass, methods, annotation) in
+       let typ =
+         Sil.Tstruct (fields, [], Csu.Class, Some name, superclass, methods, annotation) in
        Sil.tenv_add tenv class_tn_name typ
    | _ -> ());
   Sil.Tvar class_tn_name

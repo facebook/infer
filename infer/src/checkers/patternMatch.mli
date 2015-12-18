@@ -66,21 +66,21 @@ val type_get_class_name : Sil.typ -> Mangled.t option
 
 val type_get_direct_supertypes : Sil.typ -> Mangled.t list
 
-val type_get_supertypes : Sil.tenv -> Sil.typ -> Sil.csu option -> Mangled.t list
+val type_get_supertypes : Sil.tenv -> Sil.typ -> Csu.t option -> Mangled.t list
 
 (** Is the type a class with the given name *)
 val type_has_class_name : Sil.typ -> Mangled.t -> bool
 
 val type_has_direct_supertype : Sil.typ -> Mangled.t -> bool
 
-val type_has_supertype : Sil.tenv -> Sil.typ -> Sil.csu option -> Mangled.t -> bool
+val type_has_supertype : Sil.tenv -> Sil.typ -> Csu.t option -> Mangled.t -> bool
 
 (** Is the type a class type *)
 val type_is_class : Sil.typ -> bool
 
 val type_is_nested_in_direct_supertype : Sil.typ -> Mangled.t -> bool
 
-val type_is_nested_in_supertype : Sil.tenv -> Sil.typ -> Sil.csu option -> Mangled.t -> bool
+val type_is_nested_in_supertype : Sil.tenv -> Sil.typ -> Csu.t option -> Mangled.t -> bool
 
 val type_is_nested_in_type : Sil.typ -> Mangled.t -> bool
 

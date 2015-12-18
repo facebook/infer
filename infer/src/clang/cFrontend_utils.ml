@@ -43,7 +43,7 @@ struct
   let print_tenv tenv =
     Sil.tenv_iter (fun typname typ ->
         match typname with
-        | Sil.TN_csu (Sil.Class, _) | Sil.TN_csu (Sil.Protocol, _) ->
+        | Sil.TN_csu (Csu.Class, _) | Sil.TN_csu (Csu.Protocol, _) ->
             (match typ with
              | Sil.Tstruct (fields, _, _, cls, super_classes, methods, iann) ->
                  print_endline (
@@ -62,7 +62,7 @@ struct
   let print_tenv_struct_unions tenv =
     Sil.tenv_iter (fun typname typ ->
         match typname with
-        | Sil.TN_csu (Sil.Struct, _) | Sil.TN_csu (Sil.Union, _) ->
+        | Sil.TN_csu (Csu.Struct, _) | Sil.TN_csu (Csu.Union, _) ->
             (match typ with
              | (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
                  (print_endline (
@@ -430,7 +430,10 @@ struct
     | [] -> list1
 
   let append_no_duplicates_csu list1 list2 =
-    append_no_duplicates Sil.csu_name_equal list1 list2
+    append_no_duplicates
+      (fun (ds1, n1) (ds2, n2) ->
+         Csu.equal ds1 ds2 && Mangled.equal n1 n2)
+      list1 list2
 
   let append_no_duplicates_methods list1 list2 =
     append_no_duplicates Procname.equal list1 list2

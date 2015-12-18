@@ -443,7 +443,8 @@ let texp_star texp1 texp2 =
           | 0 -> ftal_sub ftal1' ftal2'
           | _ -> ftal_sub ftal1 ftal2' end in
   let typ_star t1 t2 = match t1, t2 with
-    | Sil.Tstruct (ftal1, sftal1, csu1, _, _, _, _), Sil.Tstruct (ftal2, sftal2, csu2, _, _, _, _) when csu1 = csu2 ->
+    | Sil.Tstruct (ftal1, sftal1, csu1, _, _, _, _),
+      Sil.Tstruct (ftal2, sftal2, csu2, _, _, _, _) when csu1 = csu2 ->
         if ftal_sub ftal1 ftal2 then t2 else t1
     | _ -> t1 in
   match texp1, texp2 with

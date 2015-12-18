@@ -94,7 +94,7 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
         let registered_callback_procs' = IList.fold_left
             (fun callback_procs callback_typ ->
                match callback_typ with
-               | Sil.Tptr (Sil.Tstruct(_, _, Sil.Class, Some class_name, _, methods, _), _) ->
+               | Sil.Tptr (Sil.Tstruct(_, _, Csu.Class, Some class_name, _, methods, _), _) ->
                    IList.fold_left
                      (fun callback_procs callback_proc ->
                         if Procname.is_constructor callback_proc then callback_procs

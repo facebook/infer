@@ -253,7 +253,7 @@ let android_callbacks =
 (* TODO (t4644852): factor out subtyping functions into some sort of JavaUtil module *)
 let get_all_supertypes typ tenv =
   let get_direct_supers = function
-    | Sil.Tstruct (_, _, Sil.Class, _, supers, _, _) -> supers
+    | Sil.Tstruct (_, _, Csu.Class, _, supers, _, _) -> supers
     | _ -> [] in
   let rec add_typ name typs = match Sil.get_typ name None tenv with
     | Some typ -> get_supers_rec typ tenv (TypSet.add typ typs)
@@ -269,7 +269,7 @@ let is_subtype (typ0 : Sil.typ) (typ1 : Sil.typ) tenv =
 
 let is_subtype_package_class typ package classname tenv =
   let classname = Mangled.from_package_class package classname in
-  match Sil.get_typ classname (Some Sil.Class) tenv with
+  match Sil.get_typ classname (Some Csu.Class) tenv with
   | Some found_typ -> is_subtype typ found_typ tenv
   | _ -> false
 
@@ -292,7 +292,7 @@ let is_callback_class_name class_name = Mangled.MangledSet.mem class_name androi
 let is_callback_class typ tenv =
   let supertyps = get_all_supertypes typ tenv in
   TypSet.exists (fun typ -> match typ with
-      | Sil.Tstruct (_, _, Sil.Class, Some classname, _, _, _) ->
+      | Sil.Tstruct (_, _, Csu.Class, Some classname, _, _, _) ->
           is_callback_class_name classname
       | _ -> false) supertyps
 
@@ -353,7 +353,7 @@ let is_callback_register_method procname args tenv =
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
   match Sil.get_typ lifecycle_typ None tenv with
-  | Some (Sil.Tstruct(_, _, Sil.Class, Some class_name, _, decl_procs, _) as lifecycle_typ) ->
+  | Some (Sil.Tstruct(_, _, Csu.Class, Some class_name, _, decl_procs, _) as lifecycle_typ) ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         IList.find (fun decl_proc ->
@@ -377,8 +377,8 @@ let is_runtime_exception tenv exn =
   let lookup = Sil.tenv_lookup tenv in
   let runtime_exception_typename =
     let name = Mangled.from_package_class "java.lang" "RuntimeException" in
-    Sil.TN_csu (Sil.Class, name)
-  and exn_typename = Sil.TN_csu (Sil.Class, exn) in
+    Sil.TN_csu (Csu.Class, name)
+  and exn_typename = Sil.TN_csu (Csu.Class, exn) in
   match lookup runtime_exception_typename, lookup exn_typename with
   | Some runtime_exception_type, Some exn_type ->
       is_subtype exn_type runtime_exception_type tenv

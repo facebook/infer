@@ -118,8 +118,8 @@ struct
     IList.iter (fun (fn, ft, _) ->
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
-    let block_type = Sil.Tstruct (fields, [], Sil.Class, Some mblock, [], [], []) in
-    let block_name = Sil.TN_csu (Sil.Class, mblock) in
+    let block_type = Sil.Tstruct (fields, [], Csu.Class, Some mblock, [], [], []) in
+    let block_name = Sil.TN_csu (Csu.Class, mblock) in
     Sil.tenv_add tenv block_name block_type;
     let trans_res = CTrans_utils.alloc_trans trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true in
     let id_block = match trans_res.exps with

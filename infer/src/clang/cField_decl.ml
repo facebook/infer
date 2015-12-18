@@ -20,8 +20,8 @@ let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Sil.typename_to_string super_class);
   match Sil.tenv_lookup tenv super_class with
   | None -> []
-  | Some Sil.Tstruct (fields, _, _, _, (Sil.Class, sc):: _, _, _) ->
-      let sc_fields = get_fields_super_classes tenv (Sil.TN_csu (Sil.Class, sc)) in
+  | Some Sil.Tstruct (fields, _, _, _, (Csu.Class, sc):: _, _, _) ->
+      let sc_fields = get_fields_super_classes tenv (Sil.TN_csu (Csu.Class, sc)) in
       General_utils.append_no_duplicates_fields fields sc_fields
   | Some Sil.Tstruct (fields, _, _, _, _, _, _) -> fields
   | Some _ -> []
@@ -77,14 +77,14 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
 (* to the info given in the interface. Update the tenv accordingly. *)
 let add_missing_fields tenv class_name fields =
   let mang_name = Mangled.from_string class_name in
-  let class_tn_name = Sil.TN_csu (Sil.Class, mang_name) in
+  let class_tn_name = Sil.TN_csu (Csu.Class, mang_name) in
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct(intf_fields, _, _, _, superclass, methods, annotation) ->
       let new_fields = General_utils.append_no_duplicates_fields fields intf_fields in
       let new_fields = CFrontend_utils.General_utils.sort_fields new_fields in
       let class_type_info =
         Sil.Tstruct (
-          new_fields, [], Sil.Class, Some mang_name, superclass, methods, annotation
+          new_fields, [], Csu.Class, Some mang_name, superclass, methods, annotation
         ) in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Sil.tenv_add tenv class_tn_name class_type_info

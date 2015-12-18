@@ -118,7 +118,7 @@ let find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv =
 (** if [typ] is a lifecycle type, generate a list of (method call, receiver) pairs constituting a
     lifecycle trace *)
 let try_create_lifecycle_trace typ lifecycle_typ lifecycle_procs proc_file_map tenv = match typ with
-  | Sil.Tstruct(_, _, Sil.Class, Some class_name, _, methods, _)
+  | Sil.Tstruct(_, _, Csu.Class, Some class_name, _, methods, _)
     when AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv &&
          not (AndroidFramework.is_android_lib_class class_name) ->
       let ptr_to_typ = Some (Sil.Tptr (typ, Sil.Pk_pointer)) in
@@ -140,10 +140,10 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
   let fields = IList.map (fun (fld, typ, _) -> (fld, typ, [])) registered_cbs in
   (* create a new typ for the harness containing all of the cb extraction vars as static fields *)
   let harness_typ =
-    Sil.Tstruct (fields, [], Sil.Class, Some harness_name, [], [harness_procname], []) in
+    Sil.Tstruct (fields, [], Csu.Class, Some harness_name, [], [harness_procname], []) in
   (* update the tenv with our created harness typ. we don't have to save the tenv to disk here
    * because this is done immediately after harness generation runs in jMain.ml *)
-  let harness_class = Sil.TN_csu (Sil.Class, harness_name) in
+  let harness_class = Sil.TN_csu (Csu.Class, harness_name) in
   Sil.tenv_add tenv harness_class harness_typ;
   let cfgs_to_save =
     IList.fold_left (fun cfgs_to_save (_, _, instrument_sil_f) ->

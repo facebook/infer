@@ -156,7 +156,11 @@ let rec apply_offlist
   | (Sil.Off_fld (fld, fld_typ)):: offlist', Sil.Estruct (fsel, inst') ->
       begin
         let typ' = Sil.expand_type tenv typ in
-        let ftal, sftal, csu, nameo, supers, def_mthds, iann = match typ' with Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) -> ftal, sftal, csu, nameo, supers, def_mthds, iann | _ -> assert false in
+        let ftal, sftal, csu, nameo, supers, def_mthds, iann =
+          match typ' with
+          | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
+              ftal, sftal, csu, nameo, supers, def_mthds, iann
+          | _ -> assert false in
         let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
         try
           let _, se' = IList.find (fun fse -> Ident.fieldname_equal fld (fst fse)) fsel in
@@ -167,7 +171,9 @@ let rec apply_offlist
           let replace_fse fse = if Sil.fld_equal fld (fst fse) then (fld, res_se') else fse in
           let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
           let replace_fta (f, t, a) = if Sil.fld_equal fld f then (fld, res_t', a) else (f, t, a) in
-          let res_t = Sil.Tstruct (IList.map replace_fta ftal, sftal, csu, nameo, supers, def_mthds, iann) in
+          let res_t =
+            Sil.Tstruct
+              (IList.map replace_fta ftal, sftal, csu, nameo, supers, def_mthds, iann) in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           pp_error();
@@ -599,14 +605,14 @@ let resolve_method tenv class_name proc_name =
         if Procname.is_java proc_name then
           Procname.java_replace_class proc_name (Mangled.to_string class_name)
         else Procname.c_method_replace_class proc_name (Mangled.to_string class_name) in
-      let type_name = Sil.TN_csu (Sil.Class, class_name) in
+      let type_name = Sil.TN_csu (Csu.Class, class_name) in
       match Sil.tenv_lookup tenv type_name with
-      | Some (Sil.Tstruct (_, _, Sil.Class, cls, super_classes, methods, iann)) ->
+      | Some (Sil.Tstruct (_, _, Csu.Class, cls, super_classes, methods, iann)) ->
           if method_exists right_proc_name methods then
             Some right_proc_name
           else
             (match super_classes with
-             | (Sil.Class, super_class):: interfaces ->
+             | (Csu.Class, super_class):: interfaces ->
                  if not (Mangled.MangledSet.mem super_class !visited)
                  then resolve super_class
                  else None
@@ -629,7 +635,8 @@ let resolve_typename prop arg =
       | _ :: hpreds -> loop hpreds in
     loop (Prop.get_sigma prop) in
   match typexp_opt with
-  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Sil.Class, class_name_opt, _, _, _), _)) -> class_name_opt
+  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Csu.Class, class_name_opt, _, _, _), _)) ->
+      class_name_opt
   | _ -> None
 
 (** If the dynamic type of the object calling a method is known, the method from the dynamic type
@@ -650,7 +657,7 @@ let resolve_virtual_pname cfg tenv prop args pname : Procname.t =
 let redirect_shared_ptr tenv cfg pname actual_params =
   let class_shared_ptr typ =
     try match Sil.expand_type tenv typ with
-      | Sil.Tstruct (_, _, Sil.Class, Some cl_name, _, _, _) ->
+      | Sil.Tstruct (_, _, Csu.Class, Some cl_name, _, _, _) ->
           let name = Mangled.to_string cl_name in
           name = "shared_ptr" || name = "__shared_ptr"
       | t -> false
@@ -980,7 +987,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
             (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
             let lhs_normal = Prop.exp_normalize_prop _prop lhs in
             let is_nsnumber = function
-              | Sil.Tvar (Sil.TN_csu (Sil.Class, name)) -> Mangled.to_string name = "NSNumber"
+              | Sil.Tvar (Sil.TN_csu (Csu.Class, name)) ->
+                  Mangled.to_string name = "NSNumber"
               | _ -> false in
             let lhs_is_ns_ptr () =
               IList.exists
@@ -2448,7 +2456,7 @@ module ModelBuiltins = struct
     sym_exec_generated false cfg tenv pdesc [alloc_instr] symb_state
 
   let execute_objc_NSArray_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
-    let nsarray_typ = Sil.Tvar (Sil.TN_csu (Sil.Class, Mangled.from_string "NSArray")) in
+    let nsarray_typ = Sil.Tvar (Sil.TN_csu (Csu.Class, Mangled.from_string "NSArray")) in
     let nsarray_typ = Sil.expand_type tenv nsarray_typ in
     execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsarray_typ loc
 
@@ -2474,8 +2482,10 @@ module ModelBuiltins = struct
       execute_NSArray_arrayWithObjects
 
   let execute_objc_NSDictionary_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
-    let nsdictionary_typ = Sil.Tvar (Sil.TN_csu (Sil.Class, Mangled.from_string "NSDictionary")) in
-    let nsdictionary_typ = Sil.expand_type tenv nsdictionary_typ in
+    let nsdictionary_typ =
+      Sil.Tvar (Sil.TN_csu (Csu.Class, Mangled.from_string "NSDictionary")) in
+    let nsdictionary_typ =
+      Sil.expand_type tenv nsdictionary_typ in
     execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsdictionary_typ loc
 
   let execute___objc_dictionary_literal cfg pdesc instr tenv prop path ret_ids args callee_pname loc =

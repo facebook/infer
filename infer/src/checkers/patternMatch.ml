@@ -45,7 +45,7 @@ let type_get_direct_supertypes = function
 let type_get_class_name t = match t with
   | Sil.Tptr (Sil.Tstruct (_, _, _, Some cn, _, _, _), _) ->
       Some cn
-  | Sil.Tptr (Sil.Tvar (Sil.TN_csu (Sil.Class, cn)), _) ->
+  | Sil.Tptr (Sil.Tvar (Sil.TN_csu (Csu.Class, cn)), _) ->
       Some cn
   | _ -> None
 
@@ -65,7 +65,7 @@ let type_has_direct_supertype (t : Sil.typ) (s : Mangled.t) =
 let type_find_supertype
     (tenv: Sil.tenv)
     (typ: Sil.typ)
-    (csu_option: Sil.csu option)
+    (csu_opt: Csu.t option)
     (filter: Mangled.t -> bool): bool =
   let rec has_supertype typ visited =
     if Sil.TypSet.mem typ visited then
@@ -77,14 +77,15 @@ let type_find_supertype
         | Sil.Tstruct (_, _, _, _, supertypes, _, _) ->
             let match_supertype (csu, m) =
               let match_name () = filter m in
-              let match_csu () = match csu_option with
+              let match_csu () = match csu_opt with
                 | Some c -> c = csu
                 | None -> true in
               let has_indirect_supertype () =
-                match Sil.get_typ m csu_option tenv with
+                match Sil.get_typ m csu_opt tenv with
                 | Some supertype -> has_supertype supertype (Sil.TypSet.add typ visited)
                 | None -> false in
-              (match_csu () && match_name () (* only and always visit name with expected csu *))
+              (match_csu () && match_name ()
+              (* only and always visit name with expected csu *))
               || has_indirect_supertype () in
             IList.exists match_supertype supertypes
         | _ -> false
@@ -94,20 +95,20 @@ let type_find_supertype
 let type_has_supertype
     (tenv: Sil.tenv)
     (typ: Sil.typ)
-    (csu_option: Sil.csu option)
+    (csu_opt: Csu.t option)
     (name: Mangled.t): bool =
   let filter m = Mangled.equal m name in
-  type_find_supertype tenv typ csu_option filter
+  type_find_supertype tenv typ csu_opt filter
 
 let type_get_supertypes
     (tenv: Sil.tenv)
     (typ: Sil.typ)
-    (csu_option: Sil.csu option) : Mangled.t list =
+    (csu_opt: Csu.t option) : Mangled.t list =
   let res = ref [] in
   let filter m =
     res := m :: !res;
     false in
-  let _ = type_find_supertype tenv typ csu_option filter in
+  let _ = type_find_supertype tenv typ csu_opt filter in
   IList.rev !res
 
 let type_is_nested_in_type t n = match t with
@@ -269,7 +270,7 @@ let initializer_methods = [
 let type_has_initializer
     (tenv: Sil.tenv)
     (t: Sil.typ): bool =
-  let check_candidate cname = type_has_supertype tenv t (Some Sil.Class) cname in
+  let check_candidate cname = type_has_supertype tenv t (Some Csu.Class) cname in
   IList.exists check_candidate initializer_classes
 
 (** Check if the method is one of the known initializer methods. *)
@@ -328,7 +329,7 @@ let proc_iter_overridden_methods f tenv proc_name =
   let do_super_type tenv super_class_name =
     let super_proc_name =
       Procname.java_replace_class proc_name (Mangled.to_string super_class_name) in
-    let type_name = Sil.TN_csu (Sil.Class, super_class_name) in
+    let type_name = Sil.TN_csu (Csu.Class, super_class_name) in
     match Sil.tenv_lookup tenv type_name with
     | Some (Sil.Tstruct (_, _, _, _, _, methods, _)) ->
         let is_override pname =
@@ -344,7 +345,7 @@ let proc_iter_overridden_methods f tenv proc_name =
   if Procname.is_java proc_name then
     let type_name =
       let class_name = Procname.java_get_class proc_name in
-      Sil.TN_csu (Sil.Class, Mangled.from_string class_name) in
+      Sil.TN_csu (Csu.Class, Mangled.from_string class_name) in
     match Sil.tenv_lookup tenv type_name with
     | Some curr_type ->
         IList.iter (do_super_type tenv) (type_get_direct_supertypes curr_type)

@@ -40,7 +40,7 @@ let direct_atomic_property_access context stmt_info ivar_name =
         General_utils.mk_class_field_name n,
         Ast_utils.get_class_name_from_member n
     | _ -> Ident.create_fieldname (Mangled.from_string "") 0, "" in
-  let tname = Sil.TN_csu (Sil.Class, Mangled.from_string cname) in
+  let tname = Sil.TN_csu (Csu.Class, Mangled.from_string cname) in
   let loc = CLocation.get_sil_location_from_range stmt_info.Clang_ast_t.si_source_range true in
   match Sil.tenv_lookup tenv tname with
   | Some Sil.Tstruct (flds1, flds2, _, _, _, _, _) ->

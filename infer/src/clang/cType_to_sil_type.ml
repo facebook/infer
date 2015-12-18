@@ -11,8 +11,8 @@ open CFrontend_utils
 
 let get_builtin_objc_typename builtin_type =
   match builtin_type with
-  | `ObjCId -> Sil.TN_csu (Sil.Struct, (Mangled.from_string CFrontend_config.objc_object))
-  | `ObjCClass -> Sil.TN_csu (Sil.Struct, (Mangled.from_string CFrontend_config.objc_class))
+  | `ObjCId -> Sil.TN_csu (Csu.Struct, (Mangled.from_string CFrontend_config.objc_object))
+  | `ObjCClass -> Sil.TN_csu (Csu.Struct, (Mangled.from_string CFrontend_config.objc_class))
 
 let get_builtin_objc_type builtin_type =
   let typ = Sil.Tvar (get_builtin_objc_typename builtin_type) in

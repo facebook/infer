@@ -88,18 +88,11 @@ let get_sentinel_func_attribute_value attr_list =
     | FA_sentinel (sentinel, null_pos) -> Some (sentinel, null_pos)
   with Not_found -> None
 
-(** Class, struct, union, (Obj C) protocol *)
-type csu =
-  | Class
-  | Struct
-  | Union
-  | Protocol
-
 (** Named types. *)
 type typename =
   | TN_typedef of Mangled.t
   | TN_enum of Mangled.t
-  | TN_csu of csu * Mangled.t
+  | TN_csu of Csu.t * Mangled.t
 
 (** Kind of global variables *)
 type pvar_kind =
@@ -145,7 +138,8 @@ type binop =
 
   | LAnd    (** logical and. Does not always evaluate both operands. *)
   | LOr     (** logical or. Does not always evaluate both operands. *)
-  | PtrFld  (** field offset via pointer to field: takes the address of a csu and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) *)
+  | PtrFld  (** field offset via pointer to field: takes the address of a
+                Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) *)
 
 (** Kinds of integers *)
 type ikind =
@@ -648,7 +642,8 @@ and const =
   | Cattribute of attribute (** attribute used in disequalities to annotate a value *)
   | Cexn of exp (** exception *)
   | Cclass of Ident.name (** class constant *)
-  | Cptr_to_fld of Ident.fieldname * typ (** pointer to field constant, and type of the surrounding csu type *)
+  | Cptr_to_fld of Ident.fieldname * typ (** pointer to field constant,
+                                             and type of the surrounding Csu.t type *)
   | Ctuple of exp list (** tuple of values *)
 
 and struct_fields = (Ident.fieldname * typ * item_annotation) list
@@ -661,9 +656,10 @@ and typ =
   | Tvoid (** void type *)
   | Tfun of bool (** function type with noreturn attribute *)
   | Tptr of typ * ptr_kind (** pointer type *)
-  | Tstruct of struct_fields * struct_fields * csu * Mangled.t option * (csu * Mangled.t) list * Procname.t list * item_annotation (** structure type with class/struct/union flag and name and list of superclasses *)
-  (** Structure type with nonstatic and static fields, class/struct/union flag, name, list of superclasses,
-      methods defined, and annotations.
+  | Tstruct of struct_fields * struct_fields * Csu.t * Mangled.t option *
+               (Csu.t * Mangled.t) list * Procname.t list * item_annotation
+  (** Structure type with nonstatic and static fields, class/struct/union flag, name,
+      list of superclasses, methods defined, and annotations.
       The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts
       of C structs. *)
   | Tarray of typ * exp (** array type with fixed size *)
@@ -1206,18 +1202,6 @@ let fkind_compare k1 k2 = match k1, k2 with
   | _, FDouble -> 1
   | FLongDouble, FLongDouble -> 0
 
-let csu_compare csu1 csu2 = match csu1, csu2 with
-  | Class, Class -> 0
-  | Class, _ -> -1
-  | _, Class -> 1
-  | Struct, Struct -> 0
-  | Struct, _ -> -1
-  | _, Struct -> 1
-  | Union, Union -> 0
-  | Union, _ -> -1
-  | _, Union -> 1
-  | Protocol, Protocol -> 0
-
 let typename_compare tn1 tn2 = match tn1, tn2 with
   | TN_typedef n1, TN_typedef n2 -> Mangled.compare n1 n2
   | TN_typedef _, _ -> - 1
@@ -1226,16 +1210,8 @@ let typename_compare tn1 tn2 = match tn1, tn2 with
   | TN_enum _, _ -> -1
   | _, TN_enum _ -> 1
   | TN_csu (csu1, n1), TN_csu (csu2, n2) ->
-      let n = csu_compare csu1 csu2 in
+      let n = Csu.compare csu1 csu2 in
       if n <> 0 then n else Mangled.compare n1 n2
-
-let csu_name_compare tn1 tn2 = match tn1, tn2 with
-  | (csu1, n1), (csu2, n2) ->
-      let n = csu_compare csu1 csu2 in
-      if n <> 0 then n else Mangled.compare n1 n2
-
-let csu_name_equal tn1 tn2 =
-  csu_name_compare tn1 tn2 = 0
 
 let typename_equal tn1 tn2 =
   typename_compare tn1 tn2 = 0
@@ -1321,10 +1297,11 @@ and typ_compare t1 t2 =
         if n <> 0 then n else ptr_kind_compare pk1 pk2
     | Tptr _, _ -> - 1
     | _, Tptr _ -> 1
-    | Tstruct (ntal1, sntal1, csu1, nameo1, _, _, _), Tstruct (ntal2, sntal2, csu2, nameo2, _, _, _) ->
+    | Tstruct (ntal1, sntal1, csu1, nameo1, _, _, _),
+      Tstruct (ntal2, sntal2, csu2, nameo2, _, _, _) ->
         let n = fld_typ_ann_list_compare ntal1 ntal2 in
         if n <> 0 then n else let n = fld_typ_ann_list_compare sntal1 sntal2 in
-          if n <> 0 then n else let n = csu_compare csu1 csu2 in
+          if n <> 0 then n else let n = Csu.compare csu1 csu2 in
             if n <> 0 then n else cname_opt_compare nameo1 nameo2
     | Tstruct _, _ -> - 1
     | _, Tstruct _ -> 1
@@ -1817,16 +1794,10 @@ let fkind_to_string = function
   | FDouble -> "double"
   | FLongDouble -> "long double"
 
-let csu_name = function
-  | Class -> "class"
-  | Struct -> "struct"
-  | Union -> "union"
-  | Protocol -> "protocol"
-
 let typename_to_string = function
   | TN_enum name
   | TN_typedef name -> Mangled.to_string name
-  | TN_csu (csu, name) -> csu_name csu ^ " " ^ Mangled.to_string name
+  | TN_csu (csu, name) -> Csu.name csu ^ " " ^ Mangled.to_string name
 
 let typename_name = function
   | TN_enum name
@@ -1994,15 +1965,16 @@ and pp_type_decl pe pp_base pp_size f = function
   | Tptr (typ, pk) ->
       let pp_base' fmt () = F.fprintf fmt "%s%a" (ptr_kind_string pk) pp_base () in
       pp_type_decl pe pp_base' pp_size f typ
-  | Tstruct (ftal, sftal, csu, Some name, _, _, _) when false -> (* remove "when false" to print the details of struct *)
-      F.fprintf f "%s %a {%a} %a" (csu_name csu) Mangled.pp name
+  | Tstruct (ftal, sftal, csu, Some name, _, _, _) when false ->
+      (* remove "when false" to print the details of struct *)
+      F.fprintf f "%s %a {%a} %a" (Csu.name csu) Mangled.pp name
         (pp_seq (fun f (fld, t, ann) ->
              F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld))
         ftal pp_base ()
   | Tstruct (ftal, sftal, csu, Some name, _, _, _) ->
-      F.fprintf f "%s %a %a" (csu_name csu) Mangled.pp name pp_base ()
+      F.fprintf f "%s %a %a" (Csu.name csu) Mangled.pp name pp_base ()
   | Tstruct (ftal, sftal, csu, None, _, _, _) ->
-      F.fprintf f "%s {%a} %a" (csu_name csu)
+      F.fprintf f "%s {%a} %a" (Csu.name csu)
         (pp_seq (fun f (fld, t, ann) -> F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld)) ftal pp_base ()
   | Tarray (typ, size) ->
       let pp_base' fmt () = F.fprintf fmt "%a[%a]" pp_base () (pp_size pe) size in
@@ -3808,7 +3780,7 @@ let tenv_add tenv name typ =
 let get_typ name csu_option tenv =
   let csu = match csu_option with
     | Some t -> t
-    | None -> Class in
+    | None -> Csu.Class in
   tenv_lookup tenv (TN_csu (csu, name))
 
 (** expand a type if it is a typename by looking it up in the type environment *)
