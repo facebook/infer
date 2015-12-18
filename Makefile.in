@@ -98,7 +98,7 @@ endif
 
 clean:
 	@rm -fv test.xml
-ifneq (@BUILD_C_ANALYZERS@,yes)
+ifeq (@BUILD_C_ANALYZERS@,yes)
 	$(MAKE) -C $(FCP_DIR) clean
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
 endif
