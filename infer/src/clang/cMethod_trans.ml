@@ -188,13 +188,13 @@ let get_method_name_from_clang tenv ms_opt =
 
 let get_superclass_curr_class context =
   let retrive_super cname super_opt =
-    let iname = Sil.TN_csu (Csu.Class, Mangled.from_string cname) in
-    Printing.log_out "Checking for superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
+    let iname = Typename.TN_csu (Csu.Class, Mangled.from_string cname) in
+    Printing.log_out "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
     match Sil.tenv_lookup (CContext.get_tenv context) iname with
     | Some Sil.Tstruct(_, _, _, _, (_, super_name):: _, _, _) ->
         Mangled.to_string super_name
     | _ ->
-        Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Sil.typename_to_string iname);
+        Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Typename.to_string iname);
         (match super_opt with
          | Some super -> super
          | _ -> assert false) in

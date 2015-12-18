@@ -605,7 +605,7 @@ let resolve_method tenv class_name proc_name =
         if Procname.is_java proc_name then
           Procname.java_replace_class proc_name (Mangled.to_string class_name)
         else Procname.c_method_replace_class proc_name (Mangled.to_string class_name) in
-      let type_name = Sil.TN_csu (Csu.Class, class_name) in
+      let type_name = Typename.TN_csu (Csu.Class, class_name) in
       match Sil.tenv_lookup tenv type_name with
       | Some (Sil.Tstruct (_, _, Csu.Class, cls, super_classes, methods, iann)) ->
           if method_exists right_proc_name methods then
@@ -987,7 +987,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
             (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
             let lhs_normal = Prop.exp_normalize_prop _prop lhs in
             let is_nsnumber = function
-              | Sil.Tvar (Sil.TN_csu (Csu.Class, name)) ->
+              | Sil.Tvar (Typename.TN_csu (Csu.Class, name)) ->
                   Mangled.to_string name = "NSNumber"
               | _ -> false in
             let lhs_is_ns_ptr () =
@@ -2456,7 +2456,7 @@ module ModelBuiltins = struct
     sym_exec_generated false cfg tenv pdesc [alloc_instr] symb_state
 
   let execute_objc_NSArray_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
-    let nsarray_typ = Sil.Tvar (Sil.TN_csu (Csu.Class, Mangled.from_string "NSArray")) in
+    let nsarray_typ = Sil.Tvar (Typename.TN_csu (Csu.Class, Mangled.from_string "NSArray")) in
     let nsarray_typ = Sil.expand_type tenv nsarray_typ in
     execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsarray_typ loc
 
@@ -2483,7 +2483,7 @@ module ModelBuiltins = struct
 
   let execute_objc_NSDictionary_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
     let nsdictionary_typ =
-      Sil.Tvar (Sil.TN_csu (Csu.Class, Mangled.from_string "NSDictionary")) in
+      Sil.Tvar (Typename.TN_csu (Csu.Class, Mangled.from_string "NSDictionary")) in
     let nsdictionary_typ =
       Sil.expand_type tenv nsdictionary_typ in
     execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsdictionary_typ loc

@@ -208,8 +208,8 @@ struct
     match typ with
     | Sil.Tptr (styp, _ ) ->
         is_core_lib lib styp
-    | Sil.Tvar (Sil.TN_csu (_, name) )
-    | Sil.Tstruct(_, _, _, (Some name), _, _, _) ->
+    | Sil.Tvar (Typename.TN_csu (_, name) )
+    | Sil.Tstruct (_, _, _, (Some name), _, _, _) ->
         let core_lib_types = core_lib_to_type_list lib in
         IList.mem (=) (Mangled.to_string name) core_lib_types
     | _ -> false

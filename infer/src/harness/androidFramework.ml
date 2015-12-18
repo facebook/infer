@@ -377,8 +377,8 @@ let is_runtime_exception tenv exn =
   let lookup = Sil.tenv_lookup tenv in
   let runtime_exception_typename =
     let name = Mangled.from_package_class "java.lang" "RuntimeException" in
-    Sil.TN_csu (Csu.Class, name)
-  and exn_typename = Sil.TN_csu (Csu.Class, exn) in
+    Typename.TN_csu (Csu.Class, name)
+  and exn_typename = Typename.TN_csu (Csu.Class, exn) in
   match lookup runtime_exception_typename, lookup exn_typename with
   | Some runtime_exception_type, Some exn_type ->
       is_subtype exn_type runtime_exception_type tenv

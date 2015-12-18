@@ -11,7 +11,7 @@
 (** Implementation of Abstraction Functions *)
 
 (** Create abstraction rules from the definition of a type *)
-val create_absrules_from_tdecl : Sil.tenv -> Sil.typename -> unit
+val create_absrules_from_tdecl : Sil.tenv -> Typename.t -> unit
 
 (** Check whether the prop contains junk.
     If it does, and [Config.allowleak] is true, remove the junk, otherwise raise a Leak exception. *)

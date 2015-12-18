@@ -12,12 +12,6 @@
 
 open Utils
 
-(** Named types. *)
-type typename =
-  | TN_typedef of Mangled.t
-  | TN_enum of Mangled.t
-  | TN_csu of Csu.t * Mangled.t
-
 (** {2 Programs and Types} *)
 
 (** Type to represent one @Annotation. *)
@@ -285,7 +279,7 @@ and struct_fields = (Ident.fieldname * typ * item_annotation) list
 
 (** Types for sil (structured) expressions. *)
 and typ =
-  | Tvar of typename (** named type *)
+  | Tvar of Typename.t (** named type *)
   | Tint of ikind (** integer type *)
   | Tfloat of fkind (** float type *)
   | Tvoid (** void type *)
@@ -511,13 +505,13 @@ type tenv (** Type for type environment. *)
 val create_tenv : unit -> tenv
 
 (** Check if typename is found in tenv *)
-val tenv_mem : tenv -> typename -> bool
+val tenv_mem : tenv -> Typename.t -> bool
 
 (** Look up a name in the global type environment. *)
-val tenv_lookup : tenv -> typename -> typ option
+val tenv_lookup : tenv -> Typename.t -> typ option
 
 (** Add a (name,typ) pair to the global type environment. *)
-val tenv_add : tenv -> typename -> typ -> unit
+val tenv_add : tenv -> Typename.t -> typ -> unit
 
 (** look up the type for a mangled name in the current type environment *)
 val get_typ : Mangled.t -> Csu.t option -> tenv -> typ option
@@ -534,16 +528,10 @@ val load_tenv_from_file : DB.filename -> tenv option
 (** Save a type environment into a file *)
 val store_tenv_to_file : DB.filename -> tenv -> unit
 
-(** convert the typename to a string *)
-val typename_to_string : typename -> string
-
-(** name of the typename without qualifier *)
-val typename_name : typename -> string
-
 (** iterate over a type environment *)
-val tenv_iter : (typename -> typ -> unit) -> tenv -> unit
+val tenv_iter : (Typename.t -> typ -> unit) -> tenv -> unit
 
-val tenv_fold : (typename -> typ -> 'a -> 'a) -> tenv -> 'a -> 'a
+val tenv_fold : (Typename.t -> typ -> 'a -> 'a) -> tenv -> 'a -> 'a
 
 (** print a type environment *)
 val pp_tenv : Format.formatter -> tenv -> unit
@@ -635,12 +623,6 @@ val ikind_is_unsigned : ikind -> bool
 
 (** Convert an int64 into an Int.t given the kind: the int64 is interpreted as unsigned according to the kind *)
 val int_of_int64_kind : int64 -> ikind -> Int.t
-
-(** Comparison for typenames *)
-val typename_compare : typename -> typename -> int
-
-(** Equality for typenames *)
-val typename_equal : typename -> typename -> bool
 
 (** Comparision for ptr_kind *)
 val ptr_kind_compare : ptr_kind -> ptr_kind -> int

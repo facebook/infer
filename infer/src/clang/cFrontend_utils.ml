@@ -43,14 +43,14 @@ struct
   let print_tenv tenv =
     Sil.tenv_iter (fun typname typ ->
         match typname with
-        | Sil.TN_csu (Csu.Class, _) | Sil.TN_csu (Csu.Protocol, _) ->
+        | Typename.TN_csu (Csu.Class, _) | Typename.TN_csu (Csu.Protocol, _) ->
             (match typ with
              | Sil.Tstruct (fields, _, _, cls, super_classes, methods, iann) ->
                  print_endline (
-                   (Sil.typename_to_string typname) ^ "\n"^
+                   (Typename.to_string typname) ^ "\n"^
                    "---> superclass and protocols " ^ (IList.to_string (fun (csu, x) ->
-                       let nsu = Sil.TN_csu (csu, x) in
-                       "\t" ^ (Sil.typename_to_string nsu) ^ "\n") super_classes) ^
+                       let nsu = Typename.TN_csu (csu, x) in
+                       "\t" ^ (Typename.to_string nsu) ^ "\n") super_classes) ^
                    "---> methods " ^
                    (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") methods)
                    ^ "  " ^
@@ -62,14 +62,14 @@ struct
   let print_tenv_struct_unions tenv =
     Sil.tenv_iter (fun typname typ ->
         match typname with
-        | Sil.TN_csu (Csu.Struct, _) | Sil.TN_csu (Csu.Union, _) ->
+        | Typename.TN_csu (Csu.Struct, _) | Typename.TN_csu (Csu.Union, _) ->
             (match typ with
              | (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
                  (print_endline (
-                     (Sil.typename_to_string typname)^"\n"^
+                     (Typename.to_string typname)^"\n"^
                      "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
                          match typ with
-                         | Sil.Tvar tname -> "tvar"^(Sil.typename_to_string tname)
+                         | Sil.Tvar tname -> "tvar"^(Typename.to_string tname)
                          | Sil.Tstruct (_, _, _, _, _, _, _) | _ ->
                              "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
                              (Sil.typ_to_string typ)^"\n") fields
@@ -77,7 +77,7 @@ struct
                    )
                  )
              | _ -> ())
-        | Sil.TN_typedef typname ->
+        | Typename.TN_typedef typname ->
             print_endline ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string typ))
         | _ -> ()
       ) tenv

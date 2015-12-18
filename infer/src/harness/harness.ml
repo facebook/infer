@@ -143,7 +143,7 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
     Sil.Tstruct (fields, [], Csu.Class, Some harness_name, [], [harness_procname], []) in
   (* update the tenv with our created harness typ. we don't have to save the tenv to disk here
    * because this is done immediately after harness generation runs in jMain.ml *)
-  let harness_class = Sil.TN_csu (Csu.Class, harness_name) in
+  let harness_class = Typename.TN_csu (Csu.Class, harness_name) in
   Sil.tenv_add tenv harness_class harness_typ;
   let cfgs_to_save =
     IList.fold_left (fun cfgs_to_save (_, _, instrument_sil_f) ->

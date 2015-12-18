@@ -100,7 +100,7 @@ struct
     match typ with
     | Sil.Tptr (typ , _) -> type_to_string typ
     | Sil.Tstruct (_, _, Csu.Class, Some mangled, _, _, _)
-    | Sil.Tvar ( Sil.TN_csu (Csu.Class, (mangled))) -> Mangled.to_string mangled
+    | Sil.Tvar (Typename.TN_csu (Csu.Class, (mangled))) -> Mangled.to_string mangled
     | _ -> Sil.typ_to_string typ
 
   let string_typ_to_string (s, typ) =
@@ -312,7 +312,7 @@ let initial_node = ref (Cfg.Node.dummy ())
 let rec super tenv t =
   match t with
   | Sil.Tstruct (_, _, Csu.Class, Some c2, (Csu.Class, super):: rest, _, _) ->
-      Sil.tenv_lookup tenv (Sil.TN_csu (Csu.Class, super))
+      Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, super))
   | Sil.Tarray (dom_type, _) -> None
   | Sil.Tptr (dom_type, p) ->
       let super_dom_type = super tenv dom_type in
@@ -412,7 +412,7 @@ struct
     | Sil.Cfun fn -> assert false
     | Sil.Cstr str ->
         Sil.Tptr (
-          Sil.Tvar ( Sil.TN_csu (Csu.Class, (Mangled.from_string ( "java.lang.String")))),
+          Sil.Tvar ( Typename.TN_csu (Csu.Class, (Mangled.from_string ( "java.lang.String")))),
           Sil.Pk_pointer)
     | Sil.Cattribute atr -> assert false
     | Sil.Cexn e -> assert false

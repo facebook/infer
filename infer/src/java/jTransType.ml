@@ -59,7 +59,7 @@ let const_type const =
 
 
 let typename_of_classname cn =
-  Sil.TN_csu (Csu.Class, (Mangled.from_string (JBasics.cn_name cn)))
+  Typename.TN_csu (Csu.Class, (Mangled.from_string (JBasics.cn_name cn)))
 
 
 let rec get_named_type vt =

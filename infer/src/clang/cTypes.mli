@@ -15,11 +15,11 @@ val search_enum_type_by_name : Sil.tenv -> string -> Sil.const option
 
 val classname_of_type : Sil.typ -> string
 
-val mk_classname : string -> Sil.typename
+val mk_classname : string -> Typename.t
 
-val mk_structname : string -> Sil.typename
+val mk_structname : string -> Typename.t
 
-val mk_enumname : string -> Sil.typename
+val mk_enumname : string -> Typename.t
 
 val get_name_from_struct: Sil.typ -> Mangled.t
 

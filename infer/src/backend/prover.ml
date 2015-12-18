@@ -1447,7 +1447,7 @@ let serializable_type = Mangled.from_string "java.io.Serializable"
 let cloneable_type = Mangled.from_string "java.lang.Cloneable"
 
 let is_interface tenv c =
-  match Sil.tenv_lookup tenv (Sil.TN_csu (Csu.Class, c)) with
+  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, c)) with
   | Some (Sil.Tstruct (fields, sfields, Csu.Class, Some c1', supers1, methods, iann)) ->
       (IList.length fields = 0) && (IList.length methods = 0)
   | _ -> false
@@ -1456,7 +1456,7 @@ let is_interface tenv c =
 let check_subclass_tenv tenv c1 c2 =
   let rec check (_, c) =
     Mangled.equal c c2 || (Mangled.equal c2 object_type) ||
-    match Sil.tenv_lookup tenv (Sil.TN_csu (Csu.Class, c)) with
+    match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, c)) with
     | Some (Sil.Tstruct (_, _, Csu.Class, Some c1', supers1, _, _)) ->
         IList.exists check supers1
     | _ -> false in
@@ -1852,7 +1852,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
       | Config.C_CPP -> Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size), Sil.Subtype.exact)
       | Config.Java ->
           let object_type =
-            Sil.TN_csu (Csu.Class, Mangled.from_string "java.lang.String") in
+            Typename.TN_csu (Csu.Class, Mangled.from_string "java.lang.String") in
           let typ = match Sil.tenv_lookup tenv object_type with
             | Some typ -> typ
             | None -> assert false in
@@ -1863,7 +1863,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let sexp = (* TODO: add appropriate fields *)
       Sil.Estruct ([(Ident.create_fieldname (Mangled.from_string "java.lang.Class.name") 0, Sil.Eexp ((Sil.Const (Sil.Cstr s), Sil.Inone)))], Sil.inst_none) in
     let class_texp =
-      let class_type = Sil.TN_csu (Csu.Class, Mangled.from_string "java.lang.Class") in
+      let class_type = Typename.TN_csu (Csu.Class, Mangled.from_string "java.lang.Class") in
       let typ = match Sil.tenv_lookup tenv class_type with
         | Some typ -> typ
         | None -> assert false in

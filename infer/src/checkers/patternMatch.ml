@@ -45,7 +45,7 @@ let type_get_direct_supertypes = function
 let type_get_class_name t = match t with
   | Sil.Tptr (Sil.Tstruct (_, _, _, Some cn, _, _, _), _) ->
       Some cn
-  | Sil.Tptr (Sil.Tvar (Sil.TN_csu (Csu.Class, cn)), _) ->
+  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class, cn)), _) ->
       Some cn
   | _ -> None
 
@@ -127,7 +127,7 @@ let type_is_nested_in_supertype tenv t csu_option n =
 let rec get_type_name = function
   | Sil.Tstruct (_, _, _, Some mangled, _, _, _) -> Mangled.to_string mangled
   | Sil.Tptr (t, _) -> get_type_name t
-  | Sil.Tvar tn -> Sil.typename_name tn
+  | Sil.Tvar tn -> Typename.name tn
   | _ -> "_"
 
 let get_field_type_name
@@ -329,7 +329,7 @@ let proc_iter_overridden_methods f tenv proc_name =
   let do_super_type tenv super_class_name =
     let super_proc_name =
       Procname.java_replace_class proc_name (Mangled.to_string super_class_name) in
-    let type_name = Sil.TN_csu (Csu.Class, super_class_name) in
+    let type_name = Typename.TN_csu (Csu.Class, super_class_name) in
     match Sil.tenv_lookup tenv type_name with
     | Some (Sil.Tstruct (_, _, _, _, _, methods, _)) ->
         let is_override pname =
@@ -345,7 +345,7 @@ let proc_iter_overridden_methods f tenv proc_name =
   if Procname.is_java proc_name then
     let type_name =
       let class_name = Procname.java_get_class proc_name in
-      Sil.TN_csu (Csu.Class, Mangled.from_string class_name) in
+      Typename.TN_csu (Csu.Class, Mangled.from_string class_name) in
     match Sil.tenv_lookup tenv type_name with
     | Some curr_type ->
         IList.iter (do_super_type tenv) (type_get_direct_supertypes curr_type)

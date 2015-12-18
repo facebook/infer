@@ -119,7 +119,7 @@ struct
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
     let block_type = Sil.Tstruct (fields, [], Csu.Class, Some mblock, [], [], []) in
-    let block_name = Sil.TN_csu (Csu.Class, mblock) in
+    let block_name = Typename.TN_csu (Csu.Class, mblock) in
     Sil.tenv_add tenv block_name block_type;
     let trans_res = CTrans_utils.alloc_trans trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true in
     let id_block = match trans_res.exps with
@@ -1344,8 +1344,10 @@ struct
           (match Sil.tenv_lookup context.CContext.tenv tn with
            | Some (Sil.Tstruct _ as str) -> collect_left_hand_exprs e str tns
            | Some ((Sil.Tvar typename) as tvar) ->
-               if (StringSet.mem (Sil.typename_to_string typename) tns) then ([[(e, typ)]])
-               else (collect_left_hand_exprs e tvar (StringSet.add (Sil.typename_to_string typename) tns));
+               if (StringSet.mem (Typename.to_string typename) tns) then
+                 [[(e, typ)]]
+               else
+                 collect_left_hand_exprs e tvar (StringSet.add (Typename.to_string typename) tns)
            | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
       | Sil.Tstruct (struct_fields, _, _, _, _, _, _) as type_struct ->
           let lh_exprs = IList.map ( fun (fieldname, fieldtype, _) ->
@@ -1354,7 +1356,7 @@ struct
           let lh_types = IList.map ( fun (fieldname, fieldtype, _) -> fieldtype)
               struct_fields in
           IList.map (fun (e, t) -> IList.flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
-      | Sil.Tarray (arrtyp, Sil.Const(Sil.Cint(n))) ->
+      | Sil.Tarray (arrtyp, Sil.Const (Sil.Cint n)) ->
           let size = Sil.Int.to_int n in
           let indices = list_range 0 (size - 1) in
           let index_constants = IList.map

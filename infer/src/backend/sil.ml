@@ -88,12 +88,6 @@ let get_sentinel_func_attribute_value attr_list =
     | FA_sentinel (sentinel, null_pos) -> Some (sentinel, null_pos)
   with Not_found -> None
 
-(** Named types. *)
-type typename =
-  | TN_typedef of Mangled.t
-  | TN_enum of Mangled.t
-  | TN_csu of Csu.t * Mangled.t
-
 (** Kind of global variables *)
 type pvar_kind =
   | Local_var of Procname.t (** local variable belonging to a function *)
@@ -650,7 +644,7 @@ and struct_fields = (Ident.fieldname * typ * item_annotation) list
 
 (** types for sil (structured) expressions *)
 and typ =
-  | Tvar of typename  (** named type *)
+  | Tvar of Typename.t  (** named type *)
   | Tint of ikind (** integer type *)
   | Tfloat of fkind (** float type *)
   | Tvoid (** void type *)
@@ -1202,20 +1196,6 @@ let fkind_compare k1 k2 = match k1, k2 with
   | _, FDouble -> 1
   | FLongDouble, FLongDouble -> 0
 
-let typename_compare tn1 tn2 = match tn1, tn2 with
-  | TN_typedef n1, TN_typedef n2 -> Mangled.compare n1 n2
-  | TN_typedef _, _ -> - 1
-  | _, TN_typedef _ -> 1
-  | TN_enum n1, TN_enum n2 -> Mangled.compare n1 n2
-  | TN_enum _, _ -> -1
-  | _, TN_enum _ -> 1
-  | TN_csu (csu1, n1), TN_csu (csu2, n2) ->
-      let n = Csu.compare csu1 csu2 in
-      if n <> 0 then n else Mangled.compare n1 n2
-
-let typename_equal tn1 tn2 =
-  typename_compare tn1 tn2 = 0
-
 let ptr_kind_compare pk1 pk2 = match pk1, pk2 with
   | Pk_pointer, Pk_pointer -> 0
   | Pk_pointer, _ -> -1
@@ -1277,7 +1257,7 @@ let rec const_compare (c1 : const) (c2 : const) : int =
 (** Comparision for types. *)
 and typ_compare t1 t2 =
   if t1 == t2 then 0 else match t1, t2 with
-    | Tvar tn1, Tvar tn2 -> typename_compare tn1 tn2
+    | Tvar tn1, Tvar tn2 -> Typename.compare tn1 tn2
     | Tvar _, _ -> - 1
     | _, Tvar _ -> 1
     | Tint ik1, Tint ik2 -> ikind_compare ik1 ik2
@@ -1794,16 +1774,6 @@ let fkind_to_string = function
   | FDouble -> "double"
   | FLongDouble -> "long double"
 
-let typename_to_string = function
-  | TN_enum name
-  | TN_typedef name -> Mangled.to_string name
-  | TN_csu (csu, name) -> Csu.name csu ^ " " ^ Mangled.to_string name
-
-let typename_name = function
-  | TN_enum name
-  | TN_typedef name
-  | TN_csu (_, name) -> Mangled.to_string name
-
 let ptr_kind_string = function
   | Pk_reference -> "&"
   | Pk_pointer -> "*"
@@ -1953,7 +1923,7 @@ and pp_typ pe f te =
     pp_base prints the variable for a declaration, or can be skip to print only the type
     pp_size prints the expression for the array size *)
 and pp_type_decl pe pp_base pp_size f = function
-  | Tvar tname -> F.fprintf f "%s %a" (typename_to_string tname) pp_base ()
+  | Tvar tname -> F.fprintf f "%s %a" (Typename.to_string tname) pp_base ()
   | Tint ik -> F.fprintf f "%s %a" (ikind_to_string ik) pp_base ()
   | Tfloat fk -> F.fprintf f "%s %a" (fkind_to_string fk) pp_base ()
   | Tvoid -> F.fprintf f "void %a" pp_base ()
@@ -3752,8 +3722,8 @@ let hpred_compact sh hpred =
 
 module TypenameHash =
   Hashtbl.Make(struct
-    type t = typename
-    let equal tn1 tn2 = typename_equal tn1 tn2
+    type t = Typename.t
+    let equal tn1 tn2 = Typename.equal tn1 tn2
     let hash = Hashtbl.hash
   end)
 
@@ -3781,7 +3751,7 @@ let get_typ name csu_option tenv =
   let csu = match csu_option with
     | Some t -> t
     | None -> Csu.Class in
-  tenv_lookup tenv (TN_csu (csu, name))
+  tenv_lookup tenv (Typename.TN_csu (csu, name))
 
 (** expand a type if it is a typename by looking it up in the type environment *)
 let rec expand_type tenv typ =
@@ -3823,7 +3793,7 @@ let tenv_fold f tenv =
 let pp_tenv f (tenv : tenv) =
   TypenameHash.iter
     (fun name typ ->
-       Format.fprintf f "@[<6>NAME: %s@." (typename_to_string name);
+       Format.fprintf f "@[<6>NAME: %s@." (Typename.to_string name);
        Format.fprintf f "@[<6>TYPE: %a@." (pp_typ_full pe_text) typ)
     tenv
 

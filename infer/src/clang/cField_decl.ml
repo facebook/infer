@@ -17,11 +17,11 @@ module L = Logging
 type field_type = Ident.fieldname * Sil.typ * (Sil.annotation * bool) list
 
 let rec get_fields_super_classes tenv super_class =
-  Printing.log_out "   ... Getting fields of superclass '%s'\n" (Sil.typename_to_string super_class);
+  Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
   match Sil.tenv_lookup tenv super_class with
   | None -> []
   | Some Sil.Tstruct (fields, _, _, _, (Csu.Class, sc):: _, _, _) ->
-      let sc_fields = get_fields_super_classes tenv (Sil.TN_csu (Csu.Class, sc)) in
+      let sc_fields = get_fields_super_classes tenv (Typename.TN_csu (Csu.Class, sc)) in
       General_utils.append_no_duplicates_fields fields sc_fields
   | Some Sil.Tstruct (fields, _, _, _, _, _, _) -> fields
   | Some _ -> []
@@ -77,7 +77,7 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
 (* to the info given in the interface. Update the tenv accordingly. *)
 let add_missing_fields tenv class_name fields =
   let mang_name = Mangled.from_string class_name in
-  let class_tn_name = Sil.TN_csu (Csu.Class, mang_name) in
+  let class_tn_name = Typename.TN_csu (Csu.Class, mang_name) in
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct(intf_fields, _, _, _, superclass, methods, annotation) ->
       let new_fields = General_utils.append_no_duplicates_fields fields intf_fields in

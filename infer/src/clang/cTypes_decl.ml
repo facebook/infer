@@ -17,16 +17,16 @@ exception Typename_not_found
 
 let add_predefined_objc_types tenv =
   let objc_class_mangled = Mangled.from_string CFrontend_config.objc_class in
-  let objc_class_name = Sil.TN_csu (Csu.Class, objc_class_mangled) in
+  let objc_class_name = Typename.TN_csu (Csu.Class, objc_class_mangled) in
   let objc_class_type_info =
     Sil.Tstruct ([], [], Csu.Struct,
                  Some (Mangled.from_string CFrontend_config.objc_class), [], [], []) in
   Sil.tenv_add tenv objc_class_name objc_class_type_info;
   let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
-  let class_typ = Sil.Tvar (Sil.TN_csu (Csu.Struct, objc_class_mangled)) in
+  let class_typ = Sil.Tvar (Typename.TN_csu (Csu.Struct, objc_class_mangled)) in
   Sil.tenv_add tenv class_typename class_typ;
   let typename_objc_object =
-    Sil.TN_csu (Csu.Struct, Mangled.from_string CFrontend_config.objc_object) in
+    Typename.TN_csu (Csu.Struct, Mangled.from_string CFrontend_config.objc_object) in
   let id_typedef = Sil.Tvar (typename_objc_object) in
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
   Sil.tenv_add tenv id_typename id_typedef;
@@ -151,7 +151,7 @@ let add_struct_to_tenv tenv typ =
     | Sil.Tstruct(_, _, csu, _, _, _, _) -> csu
     | _ -> assert false in
   let mangled = CTypes.get_name_from_struct typ in
-  let typename = Sil.TN_csu(csu, mangled) in
+  let typename = Typename.TN_csu(csu, mangled) in
   Sil.tenv_add tenv typename typ
 
 let rec get_struct_fields tenv decl =
@@ -187,7 +187,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
   | RecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info) ->
       let csu, name = get_record_name_csu decl in
       let mangled_name = Mangled.from_string name in
-      let sil_typename = Sil.Tvar (Sil.TN_csu (csu, mangled_name)) in
+      let sil_typename = Sil.Tvar (Typename.TN_csu (csu, mangled_name)) in
       (* temporarily saves the type name to avoid infinite loops in recursive types *)
       Ast_utils.update_sil_types_map type_ptr sil_typename;
       if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
@@ -236,8 +236,8 @@ let get_type_from_expr_info ei tenv =
 
 let class_from_pointer_type tenv type_ptr =
   match type_ptr_to_sil_type tenv type_ptr with
-  | Sil.Tptr( Sil.Tvar (Sil.TN_typedef name), _) -> Mangled.to_string name
-  | Sil.Tptr( Sil.Tvar (Sil.TN_csu (_, name)), _) -> Mangled.to_string name
+  | Sil.Tptr( Sil.Tvar (Typename.TN_typedef name), _) -> Mangled.to_string name
+  | Sil.Tptr( Sil.Tvar (Typename.TN_csu (_, name)), _) -> Mangled.to_string name
   | _ -> assert false
 
 let get_class_type_np tenv expr_info obj_c_message_expr_info =
@@ -249,5 +249,5 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
 
 let get_type_curr_class tenv curr_class_opt =
   let name = CContext.get_curr_class_name curr_class_opt in
-  let typ = Sil.Tvar (Sil.TN_csu (Csu.Class, (Mangled.from_string name))) in
+  let typ = Sil.Tvar (Typename.TN_csu (Csu.Class, (Mangled.from_string name))) in
   CTypes.expand_structured_type tenv typ

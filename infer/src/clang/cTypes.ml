@@ -40,9 +40,9 @@ let remove_pointer_to_typ typ =
 
 let classname_of_type typ =
   match typ with
-  | Sil.Tvar (Sil.TN_csu (_, name) )
+  | Sil.Tvar (Typename.TN_csu (_, name) )
   | Sil.Tstruct(_, _, _, (Some name), _, _, _)
-  | Sil.Tvar (Sil.TN_typedef name) -> Mangled.to_string name
+  | Sil.Tvar (Typename.TN_typedef name) -> Mangled.to_string name
   | Sil.Tfun _ -> CFrontend_config.objc_object
   | _ ->
       Printing.log_out
@@ -65,16 +65,16 @@ let search_enum_type_by_name tenv name =
   Sil.tenv_iter f tenv;
   !found
 
-let mk_classname n = Sil.TN_csu (Csu.Class, Mangled.from_string n)
+let mk_classname n = Typename.TN_csu (Csu.Class, Mangled.from_string n)
 
-let mk_structname n = Sil.TN_csu (Csu.Struct, Mangled.from_string n)
+let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
 
-let mk_enumname n = Sil.TN_enum (Mangled.from_string n)
+let mk_enumname n = Typename.TN_enum (Mangled.from_string n)
 
 let is_class typ =
   match typ with
   | Sil.Tptr( Sil.Tstruct(_, _, _, (Some name), _, _, _), _)
-  | Sil.Tptr( Sil.Tvar (Sil.TN_csu (_, name) ), _) ->
+  | Sil.Tptr( Sil.Tvar (Typename.TN_csu (_, name) ), _) ->
       (Mangled.to_string name) = CFrontend_config.objc_class
   | _ -> false
 
