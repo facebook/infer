@@ -102,7 +102,7 @@ let get_record_name decl = snd (get_record_name_csu decl)
 let get_method_decls parent decl_list =
   let open Clang_ast_t in
   let rec traverse_decl parent decl = match decl with
-    | CXXMethodDecl _ | CXXConstructorDecl _ -> [(parent, decl)]
+    | CXXMethodDecl _ | CXXConstructorDecl _ | CXXDestructorDecl _ -> [(parent, decl)]
     | FunctionTemplateDecl (_, _, template_decl_info) ->
         let decl_list' = template_decl_info.Clang_ast_t.tdi_specializations in
         traverse_decl_list parent decl_list'
@@ -116,7 +116,8 @@ let get_method_decls parent decl_list =
 let get_class_methods tenv class_name decl_list =
   let process_method_decl = function
     | Clang_ast_t.CXXMethodDecl (decl_info, name_info, tp, function_decl_info, _)
-    | Clang_ast_t.CXXConstructorDecl (decl_info, name_info, tp, function_decl_info, _) ->
+    | Clang_ast_t.CXXConstructorDecl (decl_info, name_info, tp, function_decl_info, _)
+    | Clang_ast_t.CXXDestructorDecl (decl_info, name_info, tp, function_decl_info, _) ->
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Declaring method '%s'.\n" method_name;
         let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name tp in

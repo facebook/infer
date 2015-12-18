@@ -124,7 +124,8 @@ let method_signature_of_decl meth_decl block_data_opt =
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
-  | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
+  | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _
+  | CXXDestructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
       let method_name = Ast_utils.get_unqualified_name name_info in
       let class_name = Ast_utils.get_class_name_from_member name_info in
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in

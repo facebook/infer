@@ -77,7 +77,8 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
           | _ -> ())
 
      | CXXMethodDecl (decl_info, name_info, type_ptr, function_decl_info, _)
-     | CXXConstructorDecl (decl_info, name_info, type_ptr, function_decl_info, _) ->
+     | CXXConstructorDecl (decl_info, name_info, type_ptr, function_decl_info, _)
+     | CXXDestructorDecl (decl_info, name_info, type_ptr, function_decl_info, _) ->
          (* di_parent_pointer has pointer to lexical context such as class.*)
          (* If it's not defined, then it's the same as parent in AST *)
          let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with
