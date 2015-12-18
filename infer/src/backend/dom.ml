@@ -895,16 +895,12 @@ let ident_partial_meet (id1: Ident.t) (id2: Ident.t) =
 (** {2 Join and Meet for Exps} *)
 
 let const_partial_join c1 c2 =
-  if (Sil.const_equal c1 c2) then Sil.Const c1
-  else match c1, c2 with
-    | Sil.Cfun _, Sil.Cfun _
-    | Sil.Cstr _, Sil.Cstr _
-    | Sil.Cclass _, Sil.Cclass _
-    | Sil.Cattribute _, Sil.Cattribute _ ->
-        (L.d_strln "failure reason 18"; raise IList.Fail)
-    | _ ->
-        if (!Config.abs_val >= 2) then FreshVarExp.get_fresh_exp (Sil.Const c1) (Sil.Const c2)
-        else (L.d_strln "failure reason 19"; raise IList.Fail)
+  if Sil.const_equal c1 c2 then Sil.Const c1
+  else if Sil.const_kind_equal c1 c2 then
+    (L.d_strln "failure reason 18"; raise IList.Fail)
+  else if !Config.abs_val >= 2 then
+    FreshVarExp.get_fresh_exp (Sil.Const c1) (Sil.Const c2)
+  else (L.d_strln "failure reason 19"; raise IList.Fail)
 
 let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
   (* L.d_str "exp_partial_join "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln (); *)

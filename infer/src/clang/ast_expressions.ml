@@ -374,28 +374,29 @@ let create_call stmt_info decl_pointer function_name tp parameters =
   let cast = create_implicit_cast_expr (fresh_stmt_info stmt_info) [decl_ref_exp] tp `FunctionToPointerDecay in
   Clang_ast_t.CallExpr (stmt_info, cast:: parameters, expr_info_call)
 
-(* For a of type NSArray* Translate                                                                                              *)
-(* [a enumerateObjectsUsingBlock:^(id object, NSUInteger idx, BOOL * stop) {                                 *)
-(*      body_block                                                                                           *)
-(*     };                                                                                                    *)
-(*  ];                                                                                                       *)
+(* For a of type NSArray* Translate
+   [a enumerateObjectsUsingBlock:^(id object, NSUInteger idx, BOOL * stop) {
+      body_block
+     };
+   ];
 
-(* as follows:                                                                                               *)
+   as follows:
 
-(*     NSArray *objects = a;                                                                                 *)
-(*    void (^enumerateObjectsUsingBlock)(id, NSUInteger, BOOL* )= ^(id object, NSUInteger idx, BOOL* stop) { *)
-(*         body_block                                                                                        *)
-(*     };                                                                                                    *)
-(*     BOOL *stop = malloc(sizeof(BOOL));                                                                    *)
-(*     *stop = NO;                                                                                           *)
+    NSArray *objects = a;
+    void (^enumerateObjectsUsingBlock)(id, NSUInteger, BOOL* ) =
+      ^(id object, NSUInteger idx, BOOL* stop) {
+         body_block
+     };
+     BOOL *stop = malloc(sizeof(BOOL));
+     *stop = NO;
 
-(*     for (NSUInteger idx=0; idx<objects.count; idx++) {                                                    *)
-(*     id object= objects[idx];                                                                              *)
-(*         enumerateObjectsUsingBlock(object, idx, stop);                                                    *)
-(*         if ( *stop ==YES) break;                                                                           *)
-(*     }                                                                                                     *)
-(*     free(stop);                                                                                           *)
-(*                                                                                                         *)
+     for (NSUInteger idx=0; idx<objects.count; idx++) {
+         id object= objects[idx];
+         enumerateObjectsUsingBlock(object, idx, stop);
+         if ( *stop ==YES) break;
+     }
+     free(stop);
+*)
 let translate_block_enumerate block_name stmt_info stmt_list ei =
 
   let rec get_name_pointers lp =
@@ -490,7 +491,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     | Clang_ast_t.ImplicitCastExpr (_, _, ei, _) -> ei
     | _ -> assert false in
 
-  (* id object= objects[idx]; *)
+  (* id object = objects[idx]; *)
   let build_object_DeclStmt pobj decl_ref_expr_array decl_ref_expr_idx tp_idx =
     let open Clang_ast_t in
     match pobj with
