@@ -20,7 +20,7 @@
 
 - (instancetype)initWithFileDescriptor:(int)fd;
 
-@property (readonly) int fileDescriptor;
+@property (nonatomic, readonly) int fileDescriptor;
 
 @end
 

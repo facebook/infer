@@ -14,7 +14,7 @@ NSData* __objc_alloc(NSData*);
 
 @interface NSData : NSObject
 
-@property (readonly) const void *bytes;
+@property (nonatomic, readonly) const void *bytes;
 
 + (instancetype)dataWithBytesNoCopy:(void *)bytes length:(NSUInteger)length;
 + (instancetype)dataWithBytesNoCopy:(void *)bytes length:(NSUInteger)length freeWhenDone:(BOOL)b;
