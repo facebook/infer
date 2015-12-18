@@ -242,7 +242,7 @@ let filter_max exe_env cg filter set priority_set =
 (** Handle timeout events *)
 module Timeout : sig
   (** execute the function up to a given timeout given by the parameter *)
-  val exe_timeout : int -> ('a -> 'b) -> 'a -> 'b option
+  val exe_timeout : int -> ('a -> unit) -> 'a -> failure_kind option
 end = struct
   let set_alarm nsecs =
     match Config.os_type with
@@ -258,17 +258,9 @@ end = struct
     | Config.Unix | Config.Cygwin -> set_alarm 0
     | Config.Win32 -> SymOp.unset_wallclock_alarm ()
 
-  let pp_kind f = function
-    | TOtime ->
-        F.fprintf f "time"
-    | TOrecursion n ->
-        F.fprintf f "recursion %d" n
-    | TOsymops n ->
-        F.fprintf f "SymOps %d" n
-
   let timeout_action _ =
     unset_alarm ();
-    raise (Timeout_exe (TOtime))
+    raise (Analysis_failure_exe (FKtimeout))
 
   let () = begin
     match Config.os_type with
@@ -307,14 +299,14 @@ end = struct
       restore_timeout () in
     try
       before ();
-      let res = f x in
+      f x;
       after ();
-      Some res
+      None
     with
-    | Timeout_exe kind ->
+    | Analysis_failure_exe kind ->
         after ();
-        Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." pp_kind kind;
-        None
+        Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." pp_failure_kind kind;
+        Some kind
     | exe ->
         after ();
         raise exe
@@ -412,21 +404,27 @@ let interprocedural_algorithm
     (_process_result: process_result)
     (filter_out: filter_out) : unit =
   let analyze_proc exe_env pname = (* wrap _analyze_proc and handle exceptions *)
+    let log_error_and_continue exn kind =
+      Reporting.log_error pname exn;
+      let prev_summary = Specs.get_summary_unsafe "interprocedural_algorithm" pname in
+      let timestamp = max 1 (prev_summary.Specs.timestamp) in
+      let stats = { prev_summary.Specs.stats with Specs.stats_failure = Some kind } in
+      let payload =
+        { prev_summary.Specs.payload with Specs.preposts = Some []; } in
+      { prev_summary with Specs.stats; payload; timestamp; } in
+
     try _analyze_proc exe_env pname with
+    | exn when !Config.developer_mode ->
+        (* in developer mode, fail hard on crashes/timeout *)
+        raise exn
+    | Analysis_failure_exe kind as exn ->
+        (* in production mode, log the timeout/crash and continue with the summary we had before
+           the failure occurred *)
+        log_error_and_continue exn kind
     | exn ->
-        Reporting.log_error pname exn;
-        let prev_summary = Specs.get_summary_unsafe "interprocedural_algorithm" pname in
-        let timestamp = max 1 (prev_summary.Specs.timestamp) in
-        let stats = { prev_summary.Specs.stats with Specs.stats_timeout = true } in
-        let payload =
-          { prev_summary.Specs.payload with
-            Specs.preposts = Some []; } in
-        let summ =
-          { prev_summary with
-            Specs.stats;
-            payload;
-            timestamp; } in
-        summ in
+        (* this happens due to exceptions from assert false or some other unrecognized exception *)
+        log_error_and_continue exn (FKcrash (Printexc.to_string exn)) in
+
   let process_result exe_env (pname, calls) summary =
     (* wrap _process_result and handle exceptions *)
     try _process_result exe_env (pname, calls) summary with

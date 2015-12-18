@@ -102,7 +102,7 @@ end
 (** Execution statistics *)
 type stats =
   { stats_time: float; (** Analysis time for the procedure *)
-    stats_timeout: bool; (** Flag to indicate whether a timeout occurred *)
+    stats_failure: failure_kind option; (** what type of failure stopped the analysis (if any) *)
     stats_calls: Cg.in_out_calls; (** num of procs calling, and called *)
     symops: int; (** Number of SymOp's throughout the whole analysis of the function *)
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)

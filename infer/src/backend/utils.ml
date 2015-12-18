@@ -257,19 +257,26 @@ let pp_ml_location_opt fmt mloco =
     | None -> ()
     | Some mloc -> F.fprintf fmt "(%a)" pp_ml_location mloc
 
-(** {2 SymOp and Timeouts: units of symbolic execution} *)
+(** {2 SymOp and Failures: units of symbolic execution} *)
 
-type timeout_kind =
-  | TOtime (* max time exceeded *)
-  | TOsymops of int (* max symop's exceeded *)
-  | TOrecursion of int (* max recursion level exceeded *)
+type failure_kind =
+  | FKtimeout (* max time exceeded *)
+  | FKsymops_timeout of int (* max symop's exceeded *)
+  | FKrecursion_timeout of int (* max recursion level exceeded *)
+  | FKcrash of string (* uncaught exception or failed assertion *)
 
-(** Timeout exception *)
-exception Timeout_exe of timeout_kind
+(** failure that prevented analysis from finishing *)
+exception Analysis_failure_exe of failure_kind
 
-let exn_not_timeout = function
-  | Timeout_exe _ -> false
+let exn_not_failure = function
+  | Analysis_failure_exe _ -> false
   | _ -> true
+
+let pp_failure_kind fmt = function
+  | FKtimeout -> F.fprintf fmt "TIMEOUT"
+  | FKsymops_timeout symops -> F.fprintf fmt "SYMOPS TIMEOUT (%d)" symops
+  | FKrecursion_timeout level -> F.fprintf fmt "RECURSION TIMEOUT(%d)" level
+  | FKcrash msg -> F.fprintf fmt "CRASH (%s)" msg
 
 let symops_timeout, seconds_timeout =
   (* default timeout and long timeout are the same for now, but this will change shortly *)
@@ -358,7 +365,7 @@ module SymOp = struct
   let pay () =
     incr symop_count; incr symop_total;
     if !symop_count > !timeout_symops && !alarm_active
-    then raise (Timeout_exe (TOsymops !symop_count));
+    then raise (Analysis_failure_exe (FKsymops_timeout !symop_count));
     check_wallclock_alarm ()
 
   (** Reset the counters *)

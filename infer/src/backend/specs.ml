@@ -288,7 +288,7 @@ type call_stats = CallStats.t
 (** Execution statistics *)
 type stats =
   { stats_time: float; (** Analysis time for the procedure *)
-    stats_timeout: bool; (** Flag to indicate whether a timeout occurred *)
+    stats_failure: failure_kind option; (** what type of failure stopped the analysis (if any) *)
     stats_calls: Cg.in_out_calls; (** num of procs calling, and called *)
     symops: int; (** Number of SymOp's throughout the whole analysis of the function *)
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)
@@ -342,12 +342,14 @@ let pp_time whole_seconds fmt t =
   if whole_seconds then F.fprintf fmt "%3.0f s" t
   else F.fprintf fmt "%f s" t
 
-let pp_timeout fmt = function
-  | true -> F.fprintf fmt "Y"
-  | false -> F.fprintf fmt "N"
+let pp_failure_kind_opt fmt failure_kind_opt = match failure_kind_opt with
+  | Some failure_kind -> pp_failure_kind fmt failure_kind
+  | None -> F.fprintf fmt "NONE"
 
 let pp_stats err_log whole_seconds fmt stats =
-  F.fprintf fmt "TIME:%a TIMEOUT:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds) stats.stats_time pp_timeout stats.stats_timeout stats.symops stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls;
+  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds)
+    stats.stats_time pp_failure_kind_opt stats.stats_failure stats.symops
+    stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls;
   F.fprintf fmt "ERRORS: @[<h>%a@]@." Errlog.pp_errors err_log;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
 
@@ -463,7 +465,7 @@ let pp_spec_table pe whole_seconds fmt () =
 
 let empty_stats calls cyclomatic in_out_calls_opt =
   { stats_time = 0.0;
-    stats_timeout = false;
+    stats_failure = None;
     stats_calls =
       (match in_out_calls_opt with
        | Some in_out_calls -> in_out_calls
@@ -737,7 +739,7 @@ let get_iterations proc_name =
       try
         let time_str = Hashtbl.find proc_flags proc_flag_iterations in
         Pervasives.int_of_string time_str
-      with exn when exn_not_timeout exn -> !iterations_cmdline
+      with exn when exn_not_failure exn -> !iterations_cmdline
 
 (** Return the specs and parameters for the proc in the spec table *)
 let get_specs_formals proc_name =

@@ -654,7 +654,7 @@ let redirect_shared_ptr tenv cfg pname actual_params =
           let name = Mangled.to_string cl_name in
           name = "shared_ptr" || name = "__shared_ptr"
       | t -> false
-    with exn when exn_not_timeout exn -> false in
+    with exn when exn_not_failure exn -> false in
   (* We pattern match over some specific library function, *)
   (* so we make precise matching to distinghuis between *)
   (* references and pointers in C++ *)
@@ -1141,7 +1141,7 @@ and sym_exec_generated mask_errors cfg tenv pdesc instrs ppl =
   let exe_instr instr (p, path) =
     L.d_str "Executing Generated Instruction "; Sil.d_instr instr; L.d_ln ();
     try sym_exec cfg tenv pdesc instr p path
-    with exn when exn_not_timeout exn && mask_errors ->
+    with exn when exn_not_failure exn && mask_errors ->
       let err_name, _, ml_source, _ , _, _, _ = Exceptions.recognize_exception exn in
       let loc = (match ml_source with
           | Some (src, l, c) -> "at "^(src^" "^(string_of_int l))
@@ -1316,7 +1316,7 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop 
     let letderef = Sil.Letderef (tmp_id_deref, lexp, typ, loc) in
     try
       sym_exec_generated false cfg tenv pdesc [letderef] result
-    with e when exn_not_timeout e ->
+    with e when exn_not_failure e ->
       if not fails_on_nil then
         let deref_str = Localise.deref_str_nil_argument_in_variadic_method callee_pname nargs i in
         let err_desc =

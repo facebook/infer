@@ -276,12 +276,17 @@ let summary_values top_proc_set summary =
   let call_rank =
     let c1 = 1 and c2 = 1 in
     logscale (c1 * in_calls + c2 * out_calls) in
+
+  let pp_failure failure =
+    pp_to_string pp_failure_kind failure in
+
+
   let cyclomatic = stats.Specs.cyclomatic in
   { vname = Procname.to_string proc_name;
     vname_id = Procname.to_filename proc_name;
     vspecs = IList.length specs;
     vtime = Printf.sprintf "%.0f" stats.Specs.stats_time;
-    vto = if stats.Specs.stats_timeout then "TO" else "  ";
+    vto = Option.map_default pp_failure "NONE" stats.Specs.stats_failure;
     vsymop = stats.Specs.symops;
     verr = Errlog.size
         (fun ekind in_footprint -> ekind = Exceptions.Kerror && in_footprint)
@@ -746,7 +751,9 @@ module Stats = struct
     let is_defective = found_errors in
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
-    let is_timeout = Specs.(summary.stats.stats_timeout) in
+    let is_timeout = match Specs.(summary.stats.stats_failure) with
+      | None | Some (FKcrash _) -> false
+      | _ -> true in
     stats.nprocs <- stats.nprocs + 1;
     stats.nspecs <- stats.nspecs + (IList.length specs);
     if is_verified then stats.nverified <- stats.nverified + 1;

@@ -13,7 +13,7 @@
 (** Handle timeout events *)
 module Timeout : sig
   (** execute the function up to a given timeout given by the iterations parameter *)
-  val exe_timeout : int -> ('a -> 'b) -> 'a -> 'b option
+  val exe_timeout : int -> ('a -> unit) -> 'a -> Utils.failure_kind option
 end
 
 val this_cluster_files : int ref (** Number of files in the current cluster *)

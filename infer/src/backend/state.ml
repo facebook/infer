@@ -234,7 +234,7 @@ let extract_pre p tenv pdesc abstract_fun =
     Sil.sub_of_list (IList.map (fun id -> incr count; (id, Sil.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
   let _, p' = Cfg.remove_locals_formals pdesc p in
   let pre, _ = Prop.extract_spec p' in
-  let pre' = try abstract_fun tenv pre with exn when exn_not_timeout exn -> pre in
+  let pre' = try abstract_fun tenv pre with exn when exn_not_failure exn -> pre in
   Prop.normalize (Prop.prop_sub sub pre')
 
 (** return the normalized precondition extracted form the last prop seen, if any

@@ -559,7 +559,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
            let nodes_e = select_nodes_exp_lambda dotnodes e lambda in
            let address_struct_id =
              try get_coordinate_id (IList.hd (IList.filter (is_source_node_of_exp e) nodes_e))
-             with exn when exn_not_timeout exn -> (* L.out "@\n@\n PROBLEMS!!!!!!!!!!@.@.@."; *) assert false in
+             with exn when exn_not_failure exn -> assert false in
            (* we need to exclude the address node from the sorce of fields. no fields should start from there*)
            let nl'= IList.filter (fun id -> address_struct_id != id) nl in
            let links_from_fields = IList.flatten (IList.map ff nl') in
@@ -923,7 +923,7 @@ let pp_dotty_prop_list_in_path f plist prev_n curr_n =
                  pp_dotty f (Generic_proposition) po None) plist;
     if prev_n <> - 1 then F.fprintf f "\n state%iN ->state%iN\n" prev_n curr_n;
     F.fprintf f "\n } \n"
-  with exn when exn_not_timeout exn ->
+  with exn when exn_not_failure exn ->
     ()
 
 (* create a dotty file with a single proposition *)
@@ -937,7 +937,7 @@ let dotty_prop_to_dotty_file fname prop cycle =
     pp_dotty fmt_dot Generic_proposition prop (Some cycle);
     Format.fprintf fmt_dot "@\n}";
     close_out out_dot
-  with exn when exn_not_timeout exn ->
+  with exn when exn_not_failure exn ->
     ()
 
 (* this is used only to print a list of prop parsed with the external parser. Basically deprecated.*)
@@ -954,7 +954,7 @@ let pp_proplist_parsed2dotty_file filename plist =
     let fmt = F.formatter_of_out_channel outc in
     F.fprintf fmt "#### Dotty version:  ####@.%a@.@." pp_list plist;
     close_out outc
-  with exn when exn_not_timeout exn ->
+  with exn when exn_not_failure exn ->
     ()
 
 (********** START of Print interprocedural cfgs in dotty format  *)
@@ -1095,7 +1095,7 @@ let pp_speclist_to_file (filename : DB.filename) spec_list =
 
 let pp_speclist_dotty_file (filename : DB.filename) spec_list =
   try pp_speclist_to_file filename spec_list
-  with exn when exn_not_timeout exn ->
+  with exn when exn_not_failure exn ->
     ()
 
 (**********************************************************************)

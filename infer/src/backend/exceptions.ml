@@ -198,8 +198,8 @@ let recognize_exception exn =
         (Localise.return_statement_missing, desc, Some mloc, Exn_user, Medium, None, Nocat)
     | Return_value_ignored (desc, mloc) ->
         (Localise.return_value_ignored, desc, Some mloc, Exn_user, Medium, None, Nocat)
-    | Timeout_exe _ ->
-        (Localise.from_string "Timeout_exe", Localise.no_desc, None, Exn_system, Low, None, Nocat)
+    | Analysis_failure_exe _ ->
+        (Localise.from_string "Failure_exe", Localise.no_desc, None, Exn_system, Low, None, Nocat)
     | Skip_function desc ->
         (Localise.skip_function, desc, None, Exn_developer, Low, None, Nocat)
     | Skip_pointer_dereference (desc, mloc) ->

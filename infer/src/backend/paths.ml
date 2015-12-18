@@ -311,7 +311,7 @@ end = struct
         | Some node ->
             pos_opt <> None && filter node
         | None -> false
-      with exn when exn_not_timeout exn -> false in
+      with exn when exn_not_failure exn -> false in
     let position_seen = ref false in
     let inverse_sequence =
       let log = ref [] in

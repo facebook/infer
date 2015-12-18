@@ -357,7 +357,7 @@ let store_to_file (filename : DB.filename) (call_graph : t) =
 
 let pp_graph_dotty get_specs (g: t) fmt =
   let nodes_with_calls = get_all_nodes g in
-  let num_specs n = try IList.length (get_specs n) with exn when exn_not_timeout exn -> - 1 in
+  let num_specs n = try IList.length (get_specs n) with exn when exn_not_failure exn -> - 1 in
   let get_color (n, calls) =
     if num_specs n != 0 then "green" else "red" in
   let get_shape (n, calls) =

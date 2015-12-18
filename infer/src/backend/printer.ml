@@ -351,11 +351,11 @@ end = struct
     try
       Some (Hashtbl.find hash fname)
     with Not_found ->
-      try
-        let lines_arr = read_file (DB.source_file_to_string fname) in
-        Hashtbl.add hash fname lines_arr;
-        Some lines_arr
-      with exn when exn_not_timeout exn -> None
+    try
+      let lines_arr = read_file (DB.source_file_to_string fname) in
+      Hashtbl.add hash fname lines_arr;
+      Some lines_arr
+    with exn when exn_not_failure exn -> None
 
   let from_file_linenum_original hash fname linenum =
     match file_data hash fname with

@@ -900,7 +900,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
     if recursion_level > !Config.max_recursion then
       begin
         L.err "Reached maximum level of recursion, raising a Timeout@.";
-        raise (Timeout_exe (TOrecursion recursion_level))
+        raise (Analysis_failure_exe (FKrecursion_timeout recursion_level))
       end in
 
   let compute_footprint : (unit -> unit) * (unit -> Prop.normal Specs.spec list) =
@@ -1093,12 +1093,14 @@ let update_summary prev_summary specs proc_name elapsed res =
   let timestamp = max 1 (prev_summary.Specs.timestamp + if changed then 1 else 0) in
   let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
-  let timeout = res == None || prev_summary.Specs.stats.Specs.stats_timeout in
+  let failure = match res with
+    | None -> prev_summary.Specs.stats.Specs.stats_failure
+    | Some failure_kind -> res in
   let stats =
     { prev_summary.Specs.stats with
       Specs.stats_time = stats_time;
       Specs.symops = symops;
-      Specs.stats_timeout = timeout } in
+      Specs.stats_failure = failure; } in
   let payload =
     { prev_summary.Specs.payload with
       Specs.preposts = Some new_specs; } in
@@ -1148,7 +1150,7 @@ let perform_transition exe_env cg proc_name =
               let start_node = Cfg.Procdesc.get_start_node pdesc in
               f start_node
           | None -> ()
-        with exn when exn_not_timeout exn -> () in
+        with exn when exn_not_failure exn -> () in
       apply_start_node (do_before_node 0);
       try
         Config.allowleak := true;
@@ -1156,7 +1158,7 @@ let perform_transition exe_env cg proc_name =
         Config.allowleak := allowleak;
         apply_start_node do_after_node;
         res
-      with exn when exn_not_timeout exn ->
+      with exn when exn_not_failure exn ->
         apply_start_node do_after_node;
         Config.allowleak := allowleak;
         L.err "Error in collect_preconditions for %a@." Procname.pp proc_name;
@@ -1354,7 +1356,7 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
         | [], _ -> incr num_nospec_error_proc
         | _, _ -> incr num_spec_error_proc in
       tot_symops := !tot_symops + stats.Specs.symops;
-      if stats.Specs.stats_timeout then incr num_timeout;
+      if Option.is_some stats.Specs.stats_failure then incr num_timeout;
       Errlog.extend_table err_table err_log in
   let print_file_stats fmt () =
     let num_errors = Errlog.err_table_size_footprint Exceptions.Kerror err_table in
