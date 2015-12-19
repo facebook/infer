@@ -22,7 +22,7 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Parameter not null checked](/docs/infer-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
   - [Ivar not null checked](/docs/infer-bug-types.html#IVAR_NOT_NULL_CHECKED)
   - [Premature nil termination argument](/docs/infer-bug-types.html#PREMATURE_NIL_TERMINATION_ARGUMENT)
-  - [Bad pointer comparison](/docs/infer-bug-types#BAD_POINTER_COMPARISON)
+  - [Bad pointer comparison](/docs/infer-bug-types.html#BAD_POINTER_COMPARISON)
 
 - Bugs reported only in Objective-C
   - [Retain cycle](/docs/infer-bug-types.html#RETAIN_CYCLE)
