@@ -13,7 +13,7 @@ Here is an overview of the types of bugs currently reported by Infer.
 - Bugs reported in Java
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
-  - [Context leak](/docs/infer-bug-types.htm#CONTEXT_LEAK)
+  - [Context leak](/docs/infer-bug-types.html#CONTEXT_LEAK)
 
 - Bugs reported in C and Objective-C
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
