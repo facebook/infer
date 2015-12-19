@@ -13,6 +13,7 @@ Here is an overview of the types of bugs currently reported by Infer.
 - Bugs reported in Java
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
+  - [Context leak](/docs/infer-bug-types.htm#CONTEXT_LEAK)
 
 - Bugs reported in C and Objective-C
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
@@ -21,6 +22,7 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Parameter not null checked](/docs/infer-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
   - [Ivar not null checked](/docs/infer-bug-types.html#IVAR_NOT_NULL_CHECKED)
   - [Premature nil termination argument](/docs/infer-bug-types.html#PREMATURE_NIL_TERMINATION_ARGUMENT)
+  - [Bad pointer comparison](/docs/infer-bug-types#BAD_POINTER_COMPARISON)
 
 - Bugs reported only in Objective-C
   - [Retain cycle](/docs/infer-bug-types.html#RETAIN_CYCLE)
@@ -236,7 +238,7 @@ if stream.write(7) throws an exception, then no one will have a hold of stream, 
 
 ###  Java 7's try-with-resources
 
-**(For use only if you have are using Java 7)**
+**(For use with Java 7 only)**
 
 Clearly, accounting for the ramifications of all the exceptional cases is complicated, and there is a better way in Java 7.
 
@@ -458,3 +460,19 @@ An example of such variadic methods is [arrayWithObjects](https://developer.appl
 
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
+##<a name="CONTEXT_LEAK"></a> `Context` leak
+
+This error type is specific to Android. In Android applications, subtypes of `Context` (other than `Application`, which is a special case) are ephemeral components that can be created and destroyed at the discretion of the Android framework. Once the framework decides to destroy a `Context`, it cannot be used again and should be freed by the garbage collector. However, the programmer can create a memory leak by retaining a reference to the `Context` after it has been destroyed (thereby preventing collection).
+
+Infer decides to report a `Context` leak when it determines that a chain of references between a static field and a `Context` may exist at the end of a `public` method of a non-`Application` `Context` subtype.
+
+##<a name="BAD_POINTER_COMPARISON"></a> Bad pointer comparison
+
+Infer reports these warnings in Objective-C when a boxed primitive type such as `NSNumber *` is coerced to a boolean in a comparison. For example, consider the code
+
+```objc
+void foo(NSNumber * n) {
+  if (n) ...
+```
+
+The branch in the above code will be taken when the pointer `n` is non-`nil`, but the programmer might have actually wanted the branch to be taken when the integer pointed to by `n` is nonzero (e.g., she may have meant to call an accessor like `[n intValue]` instead). Infer will ask the programmer explicitly compare `n` to `nil` or call an accessor to clarify her intention.
