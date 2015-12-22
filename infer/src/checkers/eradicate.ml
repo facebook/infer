@@ -76,7 +76,7 @@ struct
       find_canonical_duplicate calls_this checks get_proc_desc idenv tenv curr_pname
       curr_pdesc annotated_signature linereader proc_loc
     : bool * Extension.extension TypeState.t option =
-    let mk_pvar s = Sil.mk_pvar (Mangled.from_string s) curr_pname in
+    let mk_pvar s = Sil.mk_pvar s curr_pname in
     let add_formal typestate (s, ia, typ) =
       let pvar = mk_pvar s in
       let ta =

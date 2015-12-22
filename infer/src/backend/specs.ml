@@ -407,11 +407,13 @@ let describe_phase summary =
 (** Return the signature of a procedure declaration as a string *)
 let get_signature summary =
   let s = ref "" in
-  IList.iter (fun (p, typ) ->
-      let pp_name f () = F.fprintf f "%s" p in
-      let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
-      let decl = pp_to_string pp () in
-      s := if !s = "" then decl else !s ^ ", " ^ decl) summary.attributes.ProcAttributes.formals;
+  IList.iter
+    (fun (p, typ) ->
+       let pp_name f () = F.fprintf f "%a" Mangled.pp p in
+       let pp f () = Sil.pp_type_decl pe_text pp_name Sil.pp_exp f typ in
+       let decl = pp_to_string pp () in
+       s := if !s = "" then decl else !s ^ ", " ^ decl)
+    summary.attributes.ProcAttributes.formals;
   let pp_procname f () = F.fprintf f "%a"
       Procname.pp summary.attributes.ProcAttributes.proc_name in
   let pp f () =

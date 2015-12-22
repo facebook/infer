@@ -966,7 +966,7 @@ let pp_cfgnodename fmt (n : Cfg.Node.t) =
 
 let pp_etlist fmt etl =
   IList.iter (fun (id, ty) ->
-      Format.fprintf fmt " %s:%a" id (Sil.pp_typ_full pe_text) ty) etl
+      Format.fprintf fmt " %a:%a" Mangled.pp id (Sil.pp_typ_full pe_text) ty) etl
 
 let pp_local_list fmt etl =
   IList.iter (fun (id, ty) ->

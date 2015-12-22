@@ -77,8 +77,8 @@ let get_formals cfg procname =
   let pdesc = match Cfg.Procdesc.find_from_name cfg procname with
     | Some pdesc -> pdesc
     | None -> assert false in
-  let formals = Cfg.Procdesc.get_formals pdesc in
-  formals
+  Cfg.Procdesc.get_formals pdesc
+  |> IList.map (fun (p, t) -> (Mangled.to_string p, t))
 
 (* Module for defining the map to be updated: in this case it is a map     *)
 (* from procedure names to a set of types for each of the procedure's      *)
@@ -104,7 +104,7 @@ struct
     | _ -> Sil.typ_to_string typ
 
   let string_typ_to_string (s, typ) =
-    if (s = "this") then None
+    if s = "this" then None
     else Some (s^" -> "^(type_to_string typ))
 
   let rec type_signature_to_string list =
@@ -561,7 +561,7 @@ struct
           if (Procname.Set.mem callee_pname !defined_methods) then
             let formals = Cfg.Procdesc.get_formals pdesc in
             let create_typ_bundle (exp, typ) (name, typ2) =
-              (name, (get_type tenv exp id_context context field_context)) in
+              (Mangled.to_string name, (get_type tenv exp id_context context field_context)) in
             let typ_bundle = IList.map2 create_typ_bundle actual_params formals in
             let set = Type_map.find_dyn_types callee_pname map in
             if Type_map.TypeSet.mem typ_bundle set

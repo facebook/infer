@@ -68,7 +68,7 @@ let classify_procedure proc_attributes =
 
 
 let is_virtual = function
-  | ("this", _, _):: _ -> true
+  | (p, _, _):: _ when Mangled.to_string p = "this" -> true
   | _ -> false
 
 
@@ -431,7 +431,7 @@ let check_call_parameters
   let tot_param_num = IList.length sig_params - (if has_this then 1 else 0) in
   let rec check sparams cparams = match sparams, cparams with
     | (s1, ia1, t1) :: sparams', ((orig_e2, e2), t2) :: cparams' ->
-        let param_is_this = s1 = "this" in
+        let param_is_this = Mangled.to_string s1 = "this" in
         let formal_is_nullable = Annotations.ia_is_nullable ia1 in
         let formal_is_present = Annotations.ia_is_present ia1 in
         let (_, ta2, _) =
@@ -457,7 +457,7 @@ let check_call_parameters
             let description =
               match explain_expr node orig_e2 with
               | Some descr -> descr
-              | None -> "formal parameter " ^ s1 in
+              | None -> "formal parameter " ^ (Mangled.to_string s1) in
             let origin_descr = TypeAnnotation.descr_origin ta2 in
 
             let param_num = IList.length sparams' + (if has_this then 0 else 1) in
@@ -523,7 +523,7 @@ let check_overridden_annotations
             find_canonical_duplicate
             start_node
             (TypeErr.Inconsistent_subclass_parameter_annotation
-               (current_name, pos, proc_name, overriden_proc_name))
+               (Mangled.to_string current_name, pos, proc_name, overriden_proc_name))
             None
             loc proc_name in
       (pos + 1) in

@@ -112,7 +112,7 @@ let spec_find_rename trace_call (proc_name : Procname.t) : (int * Prop.exposed S
         raise (Exceptions.Precondition_not_found (Localise.verbatim_desc (Procname.to_string proc_name), try assert false with Assert_failure x -> x))
       end;
     let formal_parameters =
-      IList.map (fun (x, _) -> Sil.mk_pvar_callee (Mangled.from_string x) proc_name) formals in
+      IList.map (fun (x, _) -> Sil.mk_pvar_callee x proc_name) formals in
     IList.map f specs, formal_parameters
   with Not_found -> begin
       L.d_strln ("ERROR: found no entry for procedure " ^ Procname.to_string proc_name ^ ". Give up...");
@@ -774,7 +774,7 @@ let add_tainting_att_param_list prop param_nums formal_params att =
 (* Set Ataint attribute to list of parameteres in a prop *)
 let add_param_taint proc_name formal_params prop param_nums =
   let formal_params' = IList.map
-      (fun (p, _) -> Sil.mk_pvar (Mangled.from_string p) proc_name) formal_params in
+      (fun (p, _) -> Sil.mk_pvar p proc_name) formal_params in
   add_tainting_att_param_list prop param_nums formal_params' (Sil.Ataint proc_name)
 
 (* add Auntaint attribute to a callee_pname precondition *)

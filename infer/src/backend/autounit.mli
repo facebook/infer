@@ -17,7 +17,8 @@ type code
 val pp_code : Format.formatter -> code -> unit
 
 (** generate a unit test form a spec *)
-val genunit : string -> Procname.t -> int -> (string * Sil.typ) list -> Prop.normal Specs.spec -> code
+val genunit : string -> Procname.t -> int -> (Mangled.t * Sil.typ) list
+  -> Prop.normal Specs.spec -> code
 
 (** generate code for a main calling all the unit test functions passed as argument *)
 val genmain : (Procname.t * int) list -> code

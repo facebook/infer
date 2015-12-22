@@ -21,7 +21,7 @@ type annotation =
 (** Method signature with annotations. *)
 type annotated_signature =
   { ret : Sil.item_annotation * Sil.typ; (** Annotated return type. *)
-    params: (string * Sil.item_annotation * Sil.typ) list } (** Annotated parameters. *)
+    params: (Mangled.t * Sil.item_annotation * Sil.typ) list } (** Annotated parameters. *)
 
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
     These wrappers have the same name as the original method, every type is Object, and the parameters

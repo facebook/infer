@@ -226,7 +226,7 @@ let compute_candidates procdesc : Vset.t * (Vset.t -> Vset.elt list) =
       candidates := Vset.add pv !candidates;
       if typ_is_struct_array typ then struct_array_cand := Vset.add pv !struct_array_cand
     ) in
-  IList.iter add_vi (IList.map (fun (var, typ) -> Mangled.from_string var, typ) (Cfg.Procdesc.get_formals procdesc));
+  IList.iter add_vi (Cfg.Procdesc.get_formals procdesc);
   IList.iter add_vi (Cfg.Procdesc.get_locals procdesc);
   let get_sorted_candidates vs =
     let priority, no_pri = IList.partition (fun pv -> Vset.mem pv !struct_array_cand) (Vset.elements vs) in

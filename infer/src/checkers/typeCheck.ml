@@ -263,7 +263,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
           begin
             match pvar_get_origin pvar with
             | Some (TypeOrigin.Formal s) ->
-                let pvar' = Sil.mk_pvar (Mangled.from_string s) curr_pname in
+                let pvar' = Sil.mk_pvar s curr_pname in
                 Some (Sil.Lvar pvar')
             | _ -> None
           end
@@ -350,8 +350,8 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
         let exp' = Idenv.expand_expr_temps idenv node _exp in
 
         let is_parameter_field pvar = (* parameter.field *)
-          let name = Sil.pvar_to_string pvar in
-          let filter (s, ia, typ) = string_equal s name in
+          let name = Sil.pvar_get_name pvar in
+          let filter (s, ia, typ) = Mangled.equal s name in
           IList.exists filter annotated_signature.Annotations.params in
 
         let is_static_field pvar = (* static field *)
@@ -404,8 +404,9 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
 
             (* Drop reference parameters to this and outer objects. *)
             let is_hidden_parameter (n, t) =
-              string_equal n "this" ||
-              Str.string_match (Str.regexp "$bcvar[0-9]+") n 0 in
+              let n_str = Mangled.to_string n in
+              n_str = "this" ||
+              Str.string_match (Str.regexp "$bcvar[0-9]+") n_str 0 in
             let rec drop_n_args ntl = match ntl with
               | fp:: tail when is_hidden_parameter fp -> 1 + drop_n_args tail
               | _ -> 0 in

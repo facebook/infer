@@ -396,7 +396,7 @@ let sizeof_of_object_type program tenv ot subtypes =
 
 (** return the name and type of a formal parameter, looking up the class name in case of "this" *)
 let param_type program tenv cn name vt =
-  if (JBir.var_name_g name) = JConfig.this
+  if (JBir.var_name_g name) = Mangled.to_string JConfig.this
   then get_class_type program tenv cn
   else value_type program tenv vt
 

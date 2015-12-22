@@ -21,7 +21,7 @@ type t =
     captured : (Mangled.t * Sil.typ) list; (** name and type of variables captured in blocks *)
     err_log: Errlog.t; (** Error log for the procedure *)
     exceptions : string list; (** exceptions thrown by the procedure *)
-    formals : (string * Sil.typ) list; (** name and type of formal parameters *)
+    formals : (Mangled.t * Sil.typ) list; (** name and type of formal parameters *)
     func_attributes : Sil.func_attribute list;
     is_abstract : bool; (** the procedure is abstract *)
     mutable is_bridge_method : bool; (** the procedure is a bridge method *)

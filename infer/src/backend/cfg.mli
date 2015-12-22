@@ -60,7 +60,7 @@ module Procdesc : sig
   val get_flags : t -> proc_flags
 
   (** Return name and type of formal parameters *)
-  val get_formals : t -> (string * Sil.typ) list
+  val get_formals : t -> (Mangled.t * Sil.typ) list
 
   (** Return loc information for the procedure *)
   val get_loc : t -> Location.t

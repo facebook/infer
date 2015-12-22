@@ -270,7 +270,7 @@ let get_formal_parameters tenv ms =
             (Ast_expressions.create_pointer_type raw_type)
           else raw_type in
         let typ = CTypes_decl.type_ptr_to_sil_type tenv tp in
-        (name, typ):: defined_parameters pl' in
+        (Mangled.from_string name, typ):: defined_parameters pl' in
   defined_parameters (CMethod_signature.ms_get_args ms)
 
 let get_return_type tenv ms =
@@ -325,11 +325,10 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
                            && CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
-    let captured_str = IList.map (
-        fun (var, t) -> (Mangled.to_string (Sil.pvar_get_name var), t)
-      ) captured in
+    let captured_str =
+      IList.map (fun (var, t) -> (Mangled.from_string (Sil.pvar_to_string var), t)) captured in
     (* Captured variables for blocks are treated as parameters *)
-    let formals = captured_str @formals in
+    let formals = captured_str @ formals in
     let source_range = CMethod_signature.ms_get_loc ms in
     Printing.log_out "\nCreating a new procdesc for function: '%s'\n@." pname;
     let loc_start = CLocation.get_sil_location_from_range source_range true in
@@ -375,7 +374,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
       let ret_type, formals =
         (match type_opt with
          | Some (ret_type, arg_types) ->
-             ret_type, IList.map (fun typ -> ("x", typ)) arg_types
+             ret_type, IList.map (fun typ -> (Mangled.from_string "x", typ)) arg_types
          | None -> Sil.Tvoid, []) in
       let loc = Location.dummy in
       let _ =

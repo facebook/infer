@@ -127,7 +127,7 @@ let formals_from_signature program tenv cn ms kind =
   let get_arg_name () =
     let arg = method_name^"_arg_"^(string_of_int !counter) in
     incr counter;
-    arg in
+    Mangled.from_string arg in
   let collect l vt =
     let arg_name = get_arg_name () in
     let arg_type = JTransType.value_type program tenv vt in
@@ -139,7 +139,7 @@ let formals_from_signature program tenv cn ms kind =
 
 let formals program tenv cn impl =
   let collect l (vt, var) =
-    let name = JBir.var_name_g var in
+    let name = Mangled.from_string (JBir.var_name_g var) in
     let typ = JTransType.param_type program tenv cn var vt in
     (name, typ):: l in
   IList.rev (IList.fold_left collect [] (JBir.params impl))
@@ -153,9 +153,8 @@ let locals_formals program tenv cn impl meth_kind =
       let string_type = (JTransType.get_class_type program tenv (JBasics.make_cn JConfig.string_cl)) in
       [(JConfig.field_st, string_type) ]
     else formals program tenv cn impl in
-  let is_formal v =
-    let v = Mangled.to_string v in
-    IList.exists (fun (v', _) -> Utils.string_equal v v') form_list in
+  let is_formal p =
+    IList.exists (fun (p', _) -> Mangled.equal p p') form_list in
   let collect l var =
     let vname = Mangled.from_string (JBir.var_name_g var) in
     let names = (fst (IList.split l)) in
@@ -440,7 +439,7 @@ let rec expression context pc expr =
       begin
         match c with (* We use the constant <field> internally to mean a variable. *)
         | `String s when (JBasics.jstr_pp s) = JConfig.field_cst ->
-            let varname = Mangled.from_string JConfig.field_st in
+            let varname = JConfig.field_st in
             let string_type = (JTransType.get_class_type program tenv (JBasics.make_cn JConfig.string_cl)) in
             let procname = (Cfg.Procdesc.get_proc_name (JContext.get_procdesc context)) in
             let pvar = Sil.mk_pvar varname procname in
@@ -781,7 +780,12 @@ let instruction_thread_start context cn ms obj args var_opt =
 
 let is_this expr =
   match expr with
-  | JBir.Var (_, var) -> JBir.var_name_debug var = Some JConfig.this
+  | JBir.Var (_, var) ->
+      begin
+        match JBir.var_name_debug var with
+        | None -> false
+        | Some name_opt -> Mangled.to_string JConfig.this = name_opt
+      end
   | _ -> false
 
 

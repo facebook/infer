@@ -63,13 +63,13 @@ let run_method = "run"
 
 (** {2 Names of special variables, constants and method names} *)
 
-let this = "this"
+let this = Mangled.from_string "this"
 
 let constructor_name = "<init>"
 
 let clone_name = "clone"
 
-let field_st = "field"
+let field_st = Mangled.from_string "field"
 
 let field_cst = "<field>"
 

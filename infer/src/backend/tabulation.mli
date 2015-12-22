@@ -46,5 +46,5 @@ val exe_function_call:
 
 (* Set Ataint attribute to list of parameteres in a prop *)
 val add_param_taint :
-  Procname.t -> (string * Sil.typ) list -> Prop.normal Prop.t ->
+  Procname.t -> (Mangled.t * Sil.typ) list -> Prop.normal Prop.t ->
   int list -> Prop.normal Prop.t

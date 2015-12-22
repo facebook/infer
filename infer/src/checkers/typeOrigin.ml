@@ -26,7 +26,7 @@ type proc_origin =
 type t =
   | Const of Location.t
   | Field of Ident.fieldname * Location.t
-  | Formal of string
+  | Formal of Mangled.t
   | Proc of proc_origin
   | New
   | ONone
@@ -49,7 +49,7 @@ let equal o1 o2 = match o1, o2 with
   | Field _, _
   | _, Field _ -> false
   | Formal s1, Formal s2 ->
-      string_equal s1 s2
+      Mangled.equal s1 s2
   | Formal _, _
   | _, Formal _ -> false
   | Proc po1 , Proc po2 ->
@@ -67,7 +67,7 @@ let equal o1 o2 = match o1, o2 with
 let to_string = function
   | Const loc -> "Const"
   | Field (fn, loc) -> "Field " ^ Ident.fieldname_to_simplified_string fn
-  | Formal s -> "Formal " ^ s
+  | Formal s -> "Formal " ^ Mangled.to_string s
   | Proc po ->
       Printf.sprintf
         "Fun %s"
@@ -85,7 +85,7 @@ let get_description origin =
   | Field (fn, loc) ->
       Some ("field " ^ Ident.fieldname_to_simplified_string fn ^ atline loc, Some loc, None)
   | Formal s ->
-      Some ("method parameter " ^ s, None, None)
+      Some ("method parameter " ^ Mangled.to_string s, None, None)
   | Proc po ->
       let strict = match TypeErr.Strict.signature_get_strict po.annotated_signature with
         | Some ann ->

@@ -490,7 +490,7 @@ let gen_init_equalities code pure =
 (** generate variable declarations *)
 let gen_var_decl code idmap parameters =
   let do_parameter (name, typ) =
-    let pp_name f () = Format.fprintf f "%s" name in
+    let pp_name f () = Mangled.pp f name in
     let pp f () = F.fprintf f "%a;" (Sil.pp_type_decl pe pp_name pp_exp_c) typ in
     Code.add_from_pp code pp in
   let do_vinfo id { typ = typ; alloc = alloc } =
@@ -579,9 +579,8 @@ let gen_hpara code proc_name spec_num env id hpara =
 let gen_hpara_dll code proc_name spec_num env id hpara_dll = assert false
 
 (** Generate epilog for the test case *)
-let gen_epilog code proc_name parameters =
-  let pp_parameter fmt (name, typ) =
-    F.fprintf fmt "%s" name in
+let gen_epilog code proc_name (parameters : (Mangled.t * Sil.typ) list) =
+  let pp_parameter fmt (name, _) = Mangled.pp fmt name in
   let pp f () = F.fprintf f "%a(%a);" Procname.pp proc_name (pp_comma_seq pp_parameter) parameters in
   let line1 = pp_to_string pp () in
   let line2 = "}" in

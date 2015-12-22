@@ -51,7 +51,7 @@ let check_access access_opt de_opt =
     let find_formal_ids node = (* find ids obtained by a letref on a formal parameter *)
       let node_instrs = Cfg.Node.get_instrs node in
       let formals = Cfg.Procdesc.get_formals (Cfg.Node.get_proc_desc node) in
-      let formal_names = IList.map (fun (s, _) -> Mangled.from_string s) formals in
+      let formal_names = IList.map fst formals in
       let is_formal pvar =
         let name = Sil.pvar_get_name pvar in
         IList.exists (Mangled.equal name) formal_names in

@@ -803,7 +803,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
     as well as seed variables *)
 let initial_prop tenv (curr_f: Cfg.Procdesc.t) (prop : 'a Prop.t) add_formals : Prop.normal Prop.t =
   let construct_decl (x, typ) =
-    (Sil.mk_pvar (Mangled.from_string x) (Cfg.Procdesc.get_proc_name curr_f), typ) in
+    (Sil.mk_pvar x (Cfg.Procdesc.get_proc_name curr_f), typ) in
   let new_formals =
     if add_formals
     then IList.map construct_decl (Cfg.Procdesc.get_formals curr_f)

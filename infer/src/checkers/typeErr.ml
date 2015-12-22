@@ -254,11 +254,12 @@ module Strict = struct
 
   let this_type_get_strict signature =
     match signature.Annotations.params with
-    | ("this", _, this_type):: _ -> begin
-        match PatternMatch.type_get_annotation this_type with
-        | Some ia -> Annotations.ia_get_strict ia
-        | None -> None
-      end
+    | (p, _, this_type):: _ when Mangled.to_string p = "this" ->
+        begin
+          match PatternMatch.type_get_annotation this_type with
+          | Some ia -> Annotations.ia_get_strict ia
+          | None -> None
+        end
     | _ -> None
 
   let signature_get_strict signature =

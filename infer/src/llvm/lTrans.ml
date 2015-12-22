@@ -128,7 +128,8 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       let (proc_attrs : ProcAttributes.t) =
         let open Sil in
         { (ProcAttributes.default proc_name Config.C_CPP) with
-          ProcAttributes.formals = IList.map (fun (tp, name) -> (name, trans_typ tp)) params;
+          ProcAttributes.formals =
+            IList.map (fun (tp, name) -> (Mangled.from_string name, trans_typ tp)) params;
           is_defined = true; (** is defined and not just declared *)
           loc = source_only_location ();
           locals = []; (* TODO *)

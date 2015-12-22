@@ -278,12 +278,13 @@ let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc
     let formals = Cfg.Procdesc.get_formals proc_desc in
     let class_formals =
       let is_class_type = function
-        | "this", Sil.Tptr _ -> false (* no need to null check 'this' *)
+        | p, Sil.Tptr _ when Mangled.to_string p = "this" ->
+            false (* no need to null check 'this' *)
         | _, Sil.Tstruct _ -> true
         | _, Sil.Tptr (Sil.Tstruct _, _) -> true
         | _ -> false in
       IList.filter is_class_type formals in
-    IList.map (fun (s, _) -> Mangled.from_string s) class_formals) in
+    IList.map fst class_formals) in
   let equal_formal_param exp formal_name = match exp with
     | Sil.Lvar pvar ->
         let name = Sil.pvar_get_name pvar in

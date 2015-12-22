@@ -745,9 +745,6 @@ let add_abstraction_instructions cfg =
     if node_requires_abstraction node then Node.append_instrs_temps node [Sil.Abstract loc] [] in
   IList.iter do_node all_nodes
 
-let get_name_of_parameter (curr_f : Procdesc.t) (x, typ) =
-  Sil.mk_pvar (Mangled.from_string x) (Procdesc.get_proc_name curr_f)
-
 let get_name_of_local (curr_f : Procdesc.t) (x, typ) =
   Sil.mk_pvar x (Procdesc.get_proc_name curr_f)
 
@@ -849,8 +846,9 @@ let remove_locals (curr_f : Procdesc.t) p =
   (removed, if !Config.angelic_execution then remove_abducted_retvars p' else p')
 
 let remove_formals (curr_f : Procdesc.t) p =
-  let names_of_formals = IList.map (get_name_of_parameter curr_f) (Procdesc.get_formals curr_f) in
-  Prop.deallocate_stack_vars p names_of_formals
+  let pname = Procdesc.get_proc_name curr_f in
+  let formal_vars = IList.map (fun (n, _) -> Sil.mk_pvar n pname) (Procdesc.get_formals curr_f) in
+  Prop.deallocate_stack_vars p formal_vars
 
 (** remove the return variable from the prop *)
 let remove_ret (curr_f : Procdesc.t) (p: Prop.normal Prop.t) =

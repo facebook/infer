@@ -16,10 +16,10 @@ open Utils
 (** Method signature with annotations. *)
 type annotated_signature =
   { ret : Sil.item_annotation * Sil.typ; (** Annotated return type. *)
-    params: (string * Sil.item_annotation * Sil.typ) list } (** Annotated parameters. *)
+    params: (Mangled.t * Sil.item_annotation * Sil.typ) list } (** Annotated parameters. *)
 
 let param_equal (s1, ia1, t1) (s2, ia2, t2) =
-  string_equal s1 s2 &&
+  Mangled.equal s1 s2 &&
   Sil.item_annotation_compare ia1 ia2 = 0 &&
   Sil.typ_equal t1 t2
 
@@ -192,10 +192,11 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
     Sil.item_annotation_is_empty ia && PatternMatch.type_is_object t in
   let x_param_found = ref false in
   let name_is_x_number name =
-    let len = String.length name in
+    let name_str = Mangled.to_string name in
+    let len = String.length name_str in
     len >= 2 &&
-    String.sub name 0 1 = "x" &&
-    let s = String.sub name 1 (len - 1) in
+    String.sub name_str 0 1 = "x" &&
+    let s = String.sub name_str 1 (len - 1) in
     let is_int =
       try
         ignore (int_of_string s);
@@ -204,7 +205,7 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
       with Failure _ -> false in
     is_int in
   let check_param (name, ia, t) =
-    if name = "this" then true
+    if Mangled.to_string name = "this" then true
     else
       name_is_x_number name &&
       Sil.item_annotation_is_empty ia &&
@@ -216,16 +217,16 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
 
 (** Check if the given parameter has a Nullable annotation in the given signature *)
 let param_is_nullable pvar ann_sig =
-  let pvar_str = Mangled.to_string (Sil.pvar_get_name pvar) in
   IList.exists
-    (fun (param_str, annot, _) -> param_str = pvar_str && ia_is_nullable annot)
+    (fun (param, annot, _) ->
+       Mangled.equal param (Sil.pvar_get_name pvar) && ia_is_nullable annot)
     ann_sig.params
 
 (** Pretty print a method signature with annotations. *)
 let pp_annotated_signature proc_name fmt annotated_signature =
   let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Sil.pp_item_annotation ia in
-  let pp_annotated_param fmt (s, ia, t) =
-    F.fprintf fmt " %a%a %s" pp_ia ia (Sil.pp_typ_full pe_text) t s in
+  let pp_annotated_param fmt (p, ia, t) =
+    F.fprintf fmt " %a%a %a" pp_ia ia (Sil.pp_typ_full pe_text) t Mangled.pp p in
   let ia, ret_type = annotated_signature.ret in
   F.fprintf fmt "%a%a %s (%a )"
     pp_ia ia
@@ -264,8 +265,8 @@ let annotated_signature_mark proc_name ann asig (b, bs) =
       L.stdout "  ANNOTATED SIGNATURE: %a@." (pp_annotated_signature proc_name) asig;
       assert false in
     let rec combine l1 l2 = match l1, l2 with
-      | ("this", ia, t):: l1', l2' ->
-          ("this", ia, t) :: combine l1' l2'
+      | (p, ia, t):: l1', l2' when Mangled.to_string p = "this" ->
+          (p, ia, t) :: combine l1' l2'
       | (s, ia, t):: l1', x:: l2' ->
           mark_param (s, ia, t) x :: combine l1' l2'
       | [], _:: _ -> fail ()
