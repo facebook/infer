@@ -414,9 +414,6 @@ let interprocedural_algorithm
       { prev_summary with Specs.stats; payload; timestamp; } in
 
     try _analyze_proc exe_env pname with
-    | exn when !Config.developer_mode ->
-        (* in developer mode, fail hard on crashes/timeout *)
-        raise exn
     | Analysis_failure_exe kind as exn ->
         (* in production mode, log the timeout/crash and continue with the summary we had before
            the failure occurred *)
