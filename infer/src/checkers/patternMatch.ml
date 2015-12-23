@@ -62,11 +62,10 @@ let type_has_class_name t name =
 let type_has_direct_supertype (t : Sil.typ) (s : Mangled.t) =
   IList.exists (fun c -> c = s) (type_get_direct_supertypes t)
 
-let type_find_supertype
+let type_has_supertype
     (tenv: Sil.tenv)
     (typ: Sil.typ)
-    (csu_opt: Csu.t option)
-    (filter: Mangled.t -> bool): bool =
+    (name: Mangled.t): bool =
   let rec has_supertype typ visited =
     if Sil.TypSet.mem typ visited then
       false
@@ -76,40 +75,17 @@ let type_find_supertype
         | Sil.Tptr (Sil.Tstruct (_, _, _, _, supertypes, _, _), _)
         | Sil.Tstruct (_, _, _, _, supertypes, _, _) ->
             let match_supertype (csu, m) =
-              let match_name () = filter m in
-              let match_csu () = match csu_opt with
-                | Some c -> c = csu
-                | None -> true in
+              let match_name () = Mangled.equal m name in
               let has_indirect_supertype () =
                 match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, m)) with
                 | Some supertype -> has_supertype supertype (Sil.TypSet.add typ visited)
                 | None -> false in
-              (match_csu () && match_name ()
-              (* only and always visit name with expected csu *))
-              || has_indirect_supertype () in
+              (match_name () || has_indirect_supertype ()) in
             IList.exists match_supertype supertypes
         | _ -> false
       end in
   has_supertype typ Sil.TypSet.empty
 
-let type_has_supertype
-    (tenv: Sil.tenv)
-    (typ: Sil.typ)
-    (csu_opt: Csu.t option)
-    (name: Mangled.t): bool =
-  let filter m = Mangled.equal m name in
-  type_find_supertype tenv typ csu_opt filter
-
-let type_get_supertypes
-    (tenv: Sil.tenv)
-    (typ: Sil.typ)
-    (csu_opt: Csu.t option) : Mangled.t list =
-  let res = ref [] in
-  let filter m =
-    res := m :: !res;
-    false in
-  let _ = type_find_supertype tenv typ csu_opt filter in
-  IList.rev !res
 
 let type_is_nested_in_type t n = match t with
   | Sil.Tptr (Sil.Tstruct (_, _, _, Some m, _, _, _), _) ->
@@ -119,10 +95,6 @@ let type_is_nested_in_type t n = match t with
 let type_is_nested_in_direct_supertype t n =
   let is_nested_in m2 m1 = string_is_prefix (Mangled.to_string m2 ^ "$") (Mangled.to_string m1) in
   IList.exists (is_nested_in n) (type_get_direct_supertypes t)
-
-let type_is_nested_in_supertype tenv t csu_option n =
-  let is_nested_in m2 m1 = string_is_prefix (Mangled.to_string m2 ^ "$") (Mangled.to_string m1) in
-  IList.exists (is_nested_in n) (type_get_supertypes tenv t csu_option)
 
 let rec get_type_name = function
   | Sil.Tstruct (_, _, _, Some mangled, _, _, _) -> Mangled.to_string mangled
@@ -270,7 +242,7 @@ let initializer_methods = [
 let type_has_initializer
     (tenv: Sil.tenv)
     (t: Sil.typ): bool =
-  let check_candidate cname = type_has_supertype tenv t (Some Csu.Class) cname in
+  let check_candidate cname = type_has_supertype tenv t cname in
   IList.exists check_candidate initializer_classes
 
 (** Check if the method is one of the known initializer methods. *)
