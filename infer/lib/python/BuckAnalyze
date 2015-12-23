@@ -35,8 +35,6 @@ from inferlib import analyze, config, issues, utils
 
 ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
 
-BUCK_CONFIG = '.buckconfig.local'
-BUCK_CONFIG_BACKUP = '.buckconfig.local.backup_generated_by_infer'
 DEFAULT_BUCK_OUT = os.path.join(os.getcwd(), 'buck-out')
 DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
@@ -119,23 +117,8 @@ def prepare_build(args):
     st = os.stat(infer_script.name)
     os.chmod(infer_script.name, st.st_mode | stat.S_IEXEC)
 
-    # Backup and patch local buck config
-    patched_config = ''
-    if os.path.isfile(BUCK_CONFIG):
-        logging.info('Backing up %s to %s', BUCK_CONFIG, BUCK_CONFIG_BACKUP)
-        shutil.move(BUCK_CONFIG, BUCK_CONFIG_BACKUP)
-        with open(BUCK_CONFIG_BACKUP) as buckconfig:
-            patched_config = '\n'.join(buckconfig)
-
-    javac_section = '[tools]\n{0}javac = {1}'.format(
-        ' ' * 4,
-        infer_script.name)
-    patched_config += javac_section
-    with open(BUCK_CONFIG, 'w') as buckconfig:
-        buckconfig.write(patched_config)
-
     temp_files += [infer_script.name]
-    return temp_files
+    return temp_files, infer_script.name
 
 
 def get_normalized_targets(targets):
@@ -429,7 +412,7 @@ def collect_results(args, start_time):
 def cleanup(temp_files):
     """Removes the generated .buckconfig.local and the temporary infer script.
     """
-    for file in [BUCK_CONFIG] + temp_files:
+    for file in temp_files:
         try:
             logging.info('Removing %s' % file)
             if os.path.isdir(file):
@@ -438,10 +421,6 @@ def cleanup(temp_files):
               os.unlink(file)
         except IOError:
             logging.error('Could not remove %s' % file)
-
-    if os.path.isfile(BUCK_CONFIG_BACKUP):
-        logging.info('Restoring %s', BUCK_CONFIG)
-        shutil.move(BUCK_CONFIG_BACKUP, BUCK_CONFIG)
 
 
 if __name__ == '__main__':
@@ -470,7 +449,8 @@ if __name__ == '__main__':
             os.mkdir(args.infer_out)
 
         timer.start('Preparing build...')
-        temp_files += prepare_build(args)
+        temp_files2, infer_script = prepare_build(args)
+        temp_files += temp_files2
         timer.stop('Build prepared')
 
         # TODO(t3786463) Start buckd.
@@ -483,7 +463,8 @@ if __name__ == '__main__':
             logging.info('Nothing to analyze')
         else:
             timer.start('Running buck...')
-            buck_cmd = ['buck', 'build']
+            buck_cmd = [
+                'buck', 'build', '--config', 'tools.javac=' + infer_script]
             if args.no_cache:
                 buck_cmd += ['--no-cache']
             if args.verbose:
