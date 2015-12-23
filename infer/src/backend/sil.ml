@@ -3746,13 +3746,6 @@ let tenv_lookup tenv name =
 let tenv_add tenv name typ =
   TypenameHash.replace tenv name typ
 
-(** look up the type for a mangled name in the current type environment *)
-let get_typ name csu_option tenv =
-  let csu = match csu_option with
-    | Some t -> t
-    | None -> Csu.Class in
-  tenv_lookup tenv (Typename.TN_csu (csu, name))
-
 (** expand a type if it is a typename by looking it up in the type environment *)
 let rec expand_type tenv typ =
   match typ with

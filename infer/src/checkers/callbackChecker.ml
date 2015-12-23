@@ -80,7 +80,9 @@ let do_eradicate_check all_procs get_procdesc idenv tenv =
  * [procname]. in addition, if [procname] is a special "destroy" /"cleanup" method, save the set of
  * fields that are nullified *)
 let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc =
-  match Sil.get_typ (Mangled.from_string (Procname.java_get_class proc_name)) None tenv with
+  let typename =
+    Typename.TN_csu (Csu.Class, Mangled.from_string (Procname.java_get_class proc_name)) in
+  match Sil.tenv_lookup tenv typename with
   | Some (Sil.Tstruct(_, _, csu, Some class_name, _, methods, _) as typ) ->
       let lifecycle_typs = get_or_create_lifecycle_typs tenv in
       let proc_belongs_to_lifecycle_typ = IList.exists

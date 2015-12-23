@@ -269,7 +269,8 @@ let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
           Sil.Tptr (Sil.Tarray (lookup_typ stripped_typ, array_typ_size), Sil.Pk_pointer)
       | _ ->
           (* non-primitive/non-array type--resolve it in the tenv *)
-          match Sil.get_typ (Mangled.from_string typ_str) None tenv with
+          let typename = Typename.TN_csu (Csu.Class, (Mangled.from_string typ_str)) in
+          match Sil.tenv_lookup tenv typename with
           | Some typ -> typ
           | None -> failwith ("Failed to look up typ " ^ typ_str) in
     let ret_type = lookup_typ (Procname.java_get_return_type proc_name) in

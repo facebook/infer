@@ -513,9 +513,6 @@ val tenv_lookup : tenv -> Typename.t -> typ option
 (** Add a (name,typ) pair to the global type environment. *)
 val tenv_add : tenv -> Typename.t -> typ -> unit
 
-(** look up the type for a mangled name in the current type environment *)
-val get_typ : Mangled.t -> Csu.t option -> tenv -> typ option
-
 (** expand a type if it is a typename by looking it up in the type environment *)
 val expand_type : tenv -> typ -> typ
 

@@ -81,7 +81,7 @@ let type_find_supertype
                 | Some c -> c = csu
                 | None -> true in
               let has_indirect_supertype () =
-                match Sil.get_typ m csu_opt tenv with
+                match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, m)) with
                 | Some supertype -> has_supertype supertype (Sil.TypSet.add typ visited)
                 | None -> false in
               (match_csu () && match_name ()
