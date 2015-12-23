@@ -987,6 +987,7 @@ end
 let compute_top_procedures = ref false (* warning: computing top procedures iterates over summaries twice *)
 
 let () =
+  Config.developer_mode := true;
   Config.print_using_diff := true;
   handle_source_file_copy_option ();
   let iterate_summaries = AnalysisResults.get_summary_iterator () in
