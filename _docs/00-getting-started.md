@@ -14,7 +14,7 @@ To use infer, first you need to [install the dependencies](https://github.com/fa
 
 ## Get the latest Infer release
 
-We provide a source release of Infer packaged with pre-build binaries for clang and facebook-clang-plugins for Linux and MacOS. Download the latest release from GitHub [here](https://github.com/facebook/infer/releases/latest/).
+We provide a source release of Infer packaged with pre-built binaries for clang and facebook-clang-plugins for Linux and MacOS. Download the latest release from GitHub [here](https://github.com/facebook/infer/releases/latest/).
 
 ## Compile and install Infer
 
