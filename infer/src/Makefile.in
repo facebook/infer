@@ -158,7 +158,7 @@ else
 	EXTRA_DEPS = facebook
 endif
 
-DEPENDENCIES = $(BACKEND_SOURCES) checkers facebook/checkers facebook/checkers/graphql facebook/scripts harness $(EXTRA_DEPS)
+DEPENDENCIES = $(BACKEND_SOURCES) checkers eradicate facebook/checkers facebook/checkers/graphql facebook/scripts harness $(EXTRA_DEPS)
 
 OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -j 0 $(addprefix -I , $(DEPENDENCIES))
 
