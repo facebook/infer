@@ -3906,8 +3906,8 @@ let rec strexp_get_target_exps = function
       (* We ignore size and indices since they are not quite outgoing arrows. *)
       IList.flatten (IList.map (fun (_, se) -> strexp_get_target_exps se) esel)
 
-let global_error =
-  mk_pvar_global (Mangled.from_string "INFER_ERROR")
+let custom_error =
+  mk_pvar_global (Mangled.from_string "INFER_CUSTOM_ERROR")
 
 (* A block pvar used to explain retain cycles *)
 let block_pvar =

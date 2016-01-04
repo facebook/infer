@@ -33,7 +33,7 @@ val prop_is_exn : Procname.t -> 'a Prop.t -> bool
 val prop_get_exn_name : Procname.t -> 'a Prop.t -> Mangled.t
 
 (** search in prop contains an error state *)
-val lookup_global_errors : 'a Prop.t -> Mangled.t option
+val lookup_custom_errors : 'a Prop.t -> string option
 
 (** Dump a splitting *)
 val d_splitting : splitting -> unit

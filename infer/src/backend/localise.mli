@@ -201,10 +201,9 @@ val desc_context_leak :
   Procname.t -> Sil.typ -> Ident.fieldname -> (Ident.fieldname option * Sil.typ) list -> error_desc
 
 (* Create human-readable error description for assertion failures *)
-val desc_assertion_failure : Location.t -> error_desc
+val desc_custom_error : Location.t -> error_desc
 
 val desc_bad_pointer_comparison : Sil.dexp option -> Location.t -> error_desc
-
 (** kind of precondition not met *)
 type pnm_kind =
   | Pnm_bounds

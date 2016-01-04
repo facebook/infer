@@ -2367,7 +2367,7 @@ module ModelBuiltins = struct
       | _ ->
           raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
     let set_instr =
-      Sil.Set (Sil.Lvar Sil.global_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
+      Sil.Set (Sil.Lvar Sil.custom_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
     sym_exec_generated true cfg tenv pdesc [set_instr] [(prop, path)]
 
   (* translate builtin assertion failure *)
@@ -2380,7 +2380,7 @@ module ModelBuiltins = struct
       | _ ->
           raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
     let set_instr =
-      Sil.Set (Sil.Lvar Sil.global_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
+      Sil.Set (Sil.Lvar Sil.custom_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
     sym_exec_generated true cfg tenv pdesc [set_instr] [(prop, path)]
 
   let _ = Builtin.register "__method_set_ignore_attribute" execute___method_set_ignore_attribute

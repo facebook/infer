@@ -657,7 +657,7 @@ struct
       res_trans_callee :: res_trans_p in
     let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
     if CTrans_models.is_assert_log sil_fe then
-      if Config.report_assertion_failure then
+      if Config.report_custom_error then
         CTrans_utils.trans_assertion_failure sil_loc context
       else
         CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes
@@ -794,7 +794,7 @@ struct
       | _ -> None
       (* assertions *)
     else if CTrans_models.is_handleFailureInMethod selector then
-      if Config.report_assertion_failure then
+      if Config.report_custom_error then
         Some (CTrans_utils.trans_assertion_failure sil_loc context)
       else Some (CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes)
     else None

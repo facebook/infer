@@ -35,7 +35,6 @@ exception Array_out_of_bounds_l1 of Localise.error_desc * ml_location
 exception Array_out_of_bounds_l2 of Localise.error_desc * ml_location
 exception Array_out_of_bounds_l3 of Localise.error_desc * ml_location
 exception Array_of_pointsto of ml_location
-exception Assertion_failure of string * Localise.error_desc
 exception Bad_footprint of ml_location
 exception Bad_pointer_comparison of Localise.error_desc * ml_location
 exception Class_cast_exception of Localise.error_desc * ml_location
@@ -44,6 +43,7 @@ exception Comparing_floats_for_equality of Localise.error_desc * ml_location
 exception Condition_is_assignment of Localise.error_desc * ml_location
 exception Condition_always_true_false of Localise.error_desc * bool * ml_location
 exception Context_leak of Localise.error_desc * ml_location
+exception Custom_error of string * Localise.error_desc
 exception Dangling_pointer_dereference of Sil.dangling_kind option * Localise.error_desc * ml_location
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc
@@ -105,8 +105,6 @@ let recognize_exception exn =
         (Localise.array_out_of_bounds_l3, desc, Some mloc, Exn_developer, Medium, None, Nocat)
     | Assert_failure mloc ->
         (Localise.from_string "Assert_failure", Localise.no_desc, Some mloc, Exn_developer, High, None, Nocat)
-    | Assertion_failure (error_msg, desc) ->
-        (Localise.from_string error_msg, desc, None, Exn_user, High, None, Checker)
     | Bad_pointer_comparison (desc, mloc) ->
         (Localise.bad_pointer_comparison, desc, Some mloc, Exn_user, High, Some Kerror, Prover)
     | Bad_footprint mloc ->
@@ -122,6 +120,8 @@ let recognize_exception exn =
     | Condition_always_true_false (desc, b, mloc) ->
         let name = if b then Localise.condition_always_true else Localise.condition_always_false in
         (name, desc, Some mloc, Exn_user, Medium, None, Nocat)
+    | Custom_error (error_msg, desc) ->
+        (Localise.from_string error_msg, desc, None, Exn_user, High, None, Checker)
     | Condition_is_assignment(desc, mloc) ->
         (Localise.condition_is_assignment, desc, Some mloc, Exn_user, Medium, None, Nocat)
     | Dangling_pointer_dereference (dko, desc, mloc) ->

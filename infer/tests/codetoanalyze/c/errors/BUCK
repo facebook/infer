@@ -4,7 +4,7 @@ sources += glob(['**/Makefile'])
 out = 'out'
 
 clean_cmd = ' '.join(['rm', '-rf', out])
-env_cmd = ' '.join(['export', 'INFER_REPORT_ASSERTION_FAILURE=1'])
+env_cmd = ' '.join(['export', 'INFER_REPORT_CUSTOM_ERROR=1'])
 infer_cmd = ' '.join([
     'infer',
     '--no-progress-bar',

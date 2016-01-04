@@ -355,7 +355,7 @@ let arc_mode = ref false
 
 let objc_memory_model_on = ref false
 
-let report_assertion_failure = from_env_variable "INFER_REPORT_ASSERTION_FAILURE"
+let report_custom_error = from_env_variable "INFER_REPORT_CUSTOM_ERROR"
 let default_failure_name = "ASSERTION_FAILURE"
 
 let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"

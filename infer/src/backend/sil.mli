@@ -1312,4 +1312,4 @@ val exp_iter_types : (typ -> unit) -> exp -> unit
 (** Iterate over all the types (and subtypes) in the instruction *)
 val instr_iter_types : (typ -> unit) -> instr -> unit
 
-val global_error : pvar
+val custom_error : pvar

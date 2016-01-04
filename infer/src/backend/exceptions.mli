@@ -35,7 +35,6 @@ exception Array_of_pointsto of ml_location
 exception Array_out_of_bounds_l1 of Localise.error_desc * ml_location
 exception Array_out_of_bounds_l2 of Localise.error_desc * ml_location
 exception Array_out_of_bounds_l3 of Localise.error_desc * ml_location
-exception Assertion_failure of string * Localise.error_desc
 exception Bad_footprint of ml_location
 exception Bad_pointer_comparison of Localise.error_desc * ml_location
 exception Class_cast_exception of Localise.error_desc * ml_location
@@ -44,6 +43,7 @@ exception Comparing_floats_for_equality of Localise.error_desc * ml_location
 exception Condition_always_true_false of Localise.error_desc * bool * ml_location
 exception Condition_is_assignment of Localise.error_desc * ml_location
 exception Context_leak of Localise.error_desc * ml_location
+exception Custom_error of string * Localise.error_desc
 exception Dangling_pointer_dereference of Sil.dangling_kind option * Localise.error_desc * ml_location
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc

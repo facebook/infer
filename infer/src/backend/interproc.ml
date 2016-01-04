@@ -1012,32 +1012,35 @@ let reset_global_counters cfg proc_name proc_desc =
   Abs.abs_rules_reset ();
   set_current_language cfg proc_desc
 
-(* Collect all pairs of the kind (precondition, exception) from a summary *)
+(* Collect all pairs of the kind (precondition, runtime exception) from a summary *)
 let exception_preconditions tenv pname summary =
-  let collect_exceptions pre exns (prop, path) =
+  let collect_exceptions pre exns (prop, _) =
     if Tabulation.prop_is_exn pname prop then
       let exn_name = Tabulation.prop_get_exn_name pname prop in
       if AndroidFramework.is_runtime_exception tenv exn_name then
         (pre, exn_name):: exns
       else exns
-    else exns
-  and collect_errors pre errors (prop, path) =
-    match Tabulation.lookup_global_errors prop with
+    else exns in
+  let collect_spec errors spec =
+    IList.fold_left (collect_exceptions spec.Specs.pre) errors spec.Specs.posts in
+  IList.fold_left collect_spec [] (Specs.get_specs_from_payload summary)
+
+(* Collect all pairs of the kind (precondition, custom error) from a summary *)
+let custom_error_preconditions tenv pname summary =
+  let collect_errors pre errors (prop, _) =
+    match Tabulation.lookup_custom_errors prop with
     | None -> errors
     | Some e -> (pre, e) :: errors in
   let collect_spec errors spec =
-    match !Config.curr_language with
-    | Config.Java ->
-        IList.fold_left (collect_exceptions spec.Specs.pre) errors spec.Specs.posts
-    | Config.C_CPP ->
-        IList.fold_left (collect_errors spec.Specs.pre) errors spec.Specs.posts in
+    IList.fold_left (collect_errors spec.Specs.pre) errors spec.Specs.posts in
   IList.fold_left collect_spec [] (Specs.get_specs_from_payload summary)
 
 
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
 let remove_this_not_null prop =
   let collect_hpred (var_option, hpreds) = function
-    | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var var, _), _) when Sil.pvar_is_this pvar ->
+    | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var var, _), _)
+      when !Config.curr_language = Config.Java && Sil.pvar_is_this pvar ->
         (Some var, hpreds)
     | hpred -> (var_option, hpred:: hpreds) in
   let collect_atom var atoms = function
@@ -1052,6 +1055,17 @@ let remove_this_not_null prop =
       let prop' = Prop.replace_pi filtered_atoms Prop.prop_emp in
       let prop'' = Prop.replace_sigma filtered_hpreds prop' in
       Prop.normalize prop''
+
+
+(** Is true when the precondition does not contain constrains that can be false at call site.
+    This means that the post-conditions associated with this precondition cannot be prevented
+    by the calling context. *)
+let is_unavoidable pre =
+  let prop = remove_this_not_null (Specs.Jprop.to_prop pre) in
+  match Prop.CategorizePreconditions.categorize [prop] with
+  | Prop.CategorizePreconditions.NoPres
+  | Prop.CategorizePreconditions.Empty -> true
+  | _ -> false
 
 
 (** Detects if there are specs of the form {precondition} proc {runtime exception} and report
@@ -1071,12 +1085,6 @@ let report_runtime_exceptions tenv cfg pdesc summary =
     let annotated_signature = Annotations.get_annotated_signature proc_attributes in
     let ret_annotation, _ = annotated_signature.Annotations.ret in
     Annotations.ia_is_verify ret_annotation in
-  let is_unavoidable pre =
-    let prop = remove_this_not_null (Specs.Jprop.to_prop pre) in
-    match Prop.CategorizePreconditions.categorize [prop] with
-    | Prop.CategorizePreconditions.NoPres
-    | Prop.CategorizePreconditions.Empty -> true
-    | _ -> false in
   let should_report pre =
     is_main || is_annotated || is_unavoidable pre in
   let report (pre, runtime_exception) =
@@ -1087,6 +1095,17 @@ let report_runtime_exceptions tenv cfg pdesc summary =
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
       Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
   IList.iter report (exception_preconditions tenv pname summary)
+
+
+let report_custom_errors tenv cfg pdesc summary =
+  let pname = Specs.get_proc_name summary in
+  let report (pre, custom_error) =
+    if is_unavoidable pre then
+      let loc = summary.Specs.attributes.ProcAttributes.loc in
+      let err_desc = Localise.desc_custom_error loc in
+      let exn = Exceptions.Custom_error (custom_error, err_desc) in
+      Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
+  IList.iter report (custom_error_preconditions tenv pname summary)
 
 
 (** update a summary after analysing a procedure *)
@@ -1133,8 +1152,9 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
     update_summary prev_summary specs proc_name elapsed res in
-  if (!Config.curr_language <> Config.Java && Config.report_assertion_failure)
-  || !Config.report_runtime_exceptions then
+  if !Config.curr_language == Config.C_CPP && Config.report_custom_error then
+    report_custom_errors tenv cfg proc_desc updated_summary;
+  if !Config.curr_language == Config.Java && !Config.report_runtime_exceptions then
     report_runtime_exceptions tenv cfg proc_desc updated_summary;
   updated_summary
 

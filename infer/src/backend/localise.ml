@@ -387,8 +387,8 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
     "Context " ^ context_str ^ "may leak during method " ^ pname_str ^ ":\n" in
   ([preamble; leak_root; path_str], None, [])
 
-let desc_assertion_failure loc : error_desc =
-  (["could be raised"; at_line (Tags.create ()) loc], None, [])
+let desc_custom_error loc : error_desc =
+  (["detected"; at_line (Tags.create ()) loc], None, [])
 
 let desc_bad_pointer_comparison dexp_opt loc : error_desc =
   let dexp_str = match dexp_opt with

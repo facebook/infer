@@ -611,11 +611,11 @@ let prop_get_exn_name pname prop =
   !exn_name
 
 (** search in prop for some assignment of global errors *)
-let lookup_global_errors prop =
+let lookup_custom_errors prop =
   let rec search_error = function
     | [] -> None
-    | Sil.Hpointsto (Sil.Lvar var, Sil.Eexp (Sil.Const (Sil.Cstr str), _), _) :: tl
-      when Sil.pvar_equal var Sil.global_error -> Some (Mangled.from_string str)
+    | Sil.Hpointsto (Sil.Lvar var, Sil.Eexp (Sil.Const (Sil.Cstr error_str), _), _) :: _
+      when Sil.pvar_equal var Sil.custom_error -> Some error_str
     | _ :: tl -> search_error tl in
   search_error (Prop.get_sigma prop)
 
