@@ -1569,34 +1569,38 @@ let compute_reachable_hpreds sigma exps =
     else compute_reachable_hpreds_rec sigma (reach', exps') in
   compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, exps)
 
-(** produce a (fieldname, typ) from one of the [src_exps] to [snk_exp] using [reachable_hpreds] *)
-let rec get_fld_typ_path src_exps snk_exp reachable_hpreds =
+(** if possible, produce a (fieldname, typ) path from one of the [src_exps] to [snk_exp] using
+    [reachable_hpreds]. *)
+let get_fld_typ_path_opt src_exps snk_exp_ reachable_hpreds_ =
   let strexp_matches target_exp = function
     | (_, Sil.Eexp (e, _)) -> Sil.exp_equal target_exp e
     | _ -> false in
-  let (snk_exp, path) =
-    Sil.HpredSet.fold
-      (fun hpred (snk_exp, path) -> match hpred with
-         | Sil.Hpointsto (lhs, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
-             (match
-                IList.fold_left
-                  (fun acc fld -> if strexp_matches snk_exp fld then Some fld else acc)
-                  None
-                  flds with
-             | Some (fld, _) -> (lhs, (Some fld, typ) :: path)
-             | None -> (snk_exp, path))
-         | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Sil.Sizeof (typ, _)) ->
-             if IList.exists (fun pair -> strexp_matches snk_exp pair) elems
-             then
-               (* None means "no field name" ~=~ nameless array index *)
-               (lhs, (None, typ) :: path)
-             else (snk_exp, path)
-         | _ -> (snk_exp, path))
-      reachable_hpreds
-      (snk_exp, []) in
-  if Sil.ExpSet.mem snk_exp src_exps then path
-  else get_fld_typ_path src_exps snk_exp reachable_hpreds
-
+  let extend_path hpred (snk_exp, path, reachable_hpreds) = match hpred with
+    | Sil.Hpointsto (lhs, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
+        (try
+           let fld, _ = IList.find (fun fld -> strexp_matches snk_exp fld) flds in
+           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
+           (lhs, (Some fld, typ) :: path, reachable_hpreds')
+         with Not_found -> (snk_exp, path, reachable_hpreds))
+    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Sil.Sizeof (typ, _)) ->
+        if IList.exists (fun pair -> strexp_matches snk_exp pair) elems
+        then
+          let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
+          (* None means "no field name" ~=~ nameless array index *)
+          (lhs, (None, typ) :: path, reachable_hpreds')
+        else (snk_exp, path, reachable_hpreds)
+    | _ -> (snk_exp, path, reachable_hpreds) in
+  (* terminates because [reachable_hpreds] is shrinking on each recursive call *)
+  let rec get_fld_typ_path snk_exp path reachable_hpreds =
+    let (snk_exp', path', reachable_hpreds') =
+      Sil.HpredSet.fold extend_path reachable_hpreds (snk_exp, path, reachable_hpreds) in
+    if Sil.ExpSet.mem snk_exp' src_exps
+    then Some path'
+    else
+    if Sil.HpredSet.cardinal reachable_hpreds' >= Sil.HpredSet.cardinal reachable_hpreds
+    then None (* can't find a path from [src_exps] to [snk_exp] *)
+    else get_fld_typ_path snk_exp' path' reachable_hpreds' in
+  get_fld_typ_path snk_exp_ [] reachable_hpreds_
 
 (** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
 let compute_reachable_atoms pi exps =

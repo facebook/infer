@@ -625,7 +625,10 @@ let report_context_leaks pname sigma tenv =
     IList.iter
       (fun (context_exp, typ) ->
          if Sil.ExpSet.mem context_exp reachable_exps then
-           let leak_path = Prop.get_fld_typ_path fld_exps context_exp reachable_hpreds in
+           let leak_path =
+             match Prop.get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
+             | Some path -> path
+             | None -> assert false in (* a path must exist in order for a leak to be reported *)
            let err_desc = Errdesc.explain_context_leak pname typ fld_name leak_path in
            let exn = Exceptions.Context_leak
                (err_desc, try assert false with Assert_failure x -> x) in
