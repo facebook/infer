@@ -895,8 +895,9 @@ let ident_partial_meet (id1: Ident.t) (id2: Ident.t) =
 (** {2 Join and Meet for Exps} *)
 
 let const_partial_join c1 c2 =
+  let is_int = function Sil.Cint _ -> true | _ -> false in
   if Sil.const_equal c1 c2 then Sil.Const c1
-  else if Sil.const_kind_equal c1 c2 then
+  else if Sil.const_kind_equal c1 c2 && not (is_int c1) then
     (L.d_strln "failure reason 18"; raise IList.Fail)
   else if !Config.abs_val >= 2 then
     FreshVarExp.get_fresh_exp (Sil.Const c1) (Sil.Const c2)
