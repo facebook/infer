@@ -7,6 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open Utils
+module F = Format
+
 (** Named types. *)
 type t =
   | TN_typedef of Mangled.t
@@ -18,6 +21,9 @@ let to_string = function
   | TN_typedef name -> Mangled.to_string name
   | TN_csu (csu, name) ->
       Csu.name csu ^ " " ^ Mangled.to_string name
+
+let pp f typename =
+  F.fprintf f "%s" (to_string typename)
 
 let name = function
   | TN_enum name
@@ -37,3 +43,18 @@ let compare tn1 tn2 = match tn1, tn2 with
 
 let equal tn1 tn2 =
   compare tn1 tn2 = 0
+
+module Java =
+struct
+
+  let from_string class_name_str =
+    TN_csu (Csu.Class, Mangled.from_string class_name_str)
+
+end
+
+type typename_t = t
+module Set = Set.Make(
+  struct
+    type t = typename_t
+    let compare = compare
+  end)

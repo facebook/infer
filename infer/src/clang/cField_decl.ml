@@ -20,8 +20,8 @@ let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
   match Sil.tenv_lookup tenv super_class with
   | None -> []
-  | Some Sil.Tstruct (fields, _, _, _, (Csu.Class, sc):: _, _, _) ->
-      let sc_fields = get_fields_super_classes tenv (Typename.TN_csu (Csu.Class, sc)) in
+  | Some Sil.Tstruct (fields, _, _, _, super_class :: _, _, _) ->
+      let sc_fields = get_fields_super_classes tenv super_class in
       General_utils.append_no_duplicates_fields fields sc_fields
   | Some Sil.Tstruct (fields, _, _, _, _, _, _) -> fields
   | Some _ -> []

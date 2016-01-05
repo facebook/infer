@@ -38,7 +38,7 @@ val is_getter : Procname.t -> bool
 val is_setter : Procname.t -> bool
 
 (** Is the type a direct subtype of *)
-val is_direct_subtype_of : Sil.typ -> string -> bool
+val is_direct_subtype_of : Sil.typ -> Typename.t -> bool
 
 (** Get the name of the type of a constant *)
 val java_get_const_type_name : Sil.const -> string
@@ -64,17 +64,17 @@ val type_get_annotation : Sil.typ -> Sil.item_annotation option
 (** Get the class name of the type *)
 val type_get_class_name : Sil.typ -> Mangled.t option
 
-val type_get_direct_supertypes : Sil.typ -> Mangled.t list
+val type_get_direct_supertypes : Sil.typ -> Typename.t list
 
 (** Is the type a class with the given name *)
 val type_has_class_name : Sil.typ -> Mangled.t -> bool
 
-val type_has_direct_supertype : Sil.typ -> Mangled.t -> bool
+val type_has_direct_supertype : Sil.typ -> Typename.t -> bool
 
 (** Is the type a class type *)
 val type_is_class : Sil.typ -> bool
 
-val type_is_nested_in_direct_supertype : Sil.typ -> Mangled.t -> bool
+val type_is_nested_in_direct_supertype : Sil.typ -> Typename.t -> bool
 
 val type_is_nested_in_type : Sil.typ -> Mangled.t -> bool
 

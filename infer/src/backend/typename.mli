@@ -16,6 +16,8 @@ type t =
 (** convert the typename to a string *)
 val to_string : t -> string
 
+val pp : Format.formatter -> t -> unit
+
 (** name of the typename without qualifier *)
 val name : t -> string
 
@@ -24,3 +26,12 @@ val compare : t -> t -> int
 
 (** Equality for typenames *)
 val equal : t -> t -> bool
+
+module Java : sig
+
+  (** Create a typename from a Java classname in the form "package.class" *)
+  val from_string : string -> t
+
+end
+
+module Set : Set.S with type elt = t

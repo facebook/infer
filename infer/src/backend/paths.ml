@@ -47,7 +47,7 @@ module Path : sig
   val equal : t -> t -> bool
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
-  val extend : Cfg.node -> Mangled.t option -> session -> t -> t
+  val extend : Cfg.node -> Typename.t option -> session -> t -> t
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
   val add_description : t -> string -> t
@@ -60,7 +60,8 @@ module Path : sig
   (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
       Do not iterate past the given position.
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] *)
-  val iter_longest_sequence : (int -> t -> int -> Mangled.t option -> unit) -> Sil.path_pos option -> t -> unit
+  val iter_longest_sequence :
+    (int -> t -> int -> Typename.t option -> unit) -> Sil.path_pos option -> t -> unit
 
   (** join two paths *)
   val join : t -> t -> t
@@ -83,7 +84,9 @@ end = struct
     (* INVARIANT: stats are always set to dummy_stats unless we are in the middle of a traversal *)
     (* in particular: a new traversal cannot be initiated during an existing traversal *)
     | Pstart of Cfg.node * stats (** start node *)
-    | Pnode of Cfg.node * Mangled.t option * session * path * stats * string option (** we got to [node] from last [session] perhaps propagating exception [exn_opt], and continue with [path].  *)
+    | Pnode of Cfg.node * Typename.t option * session * path * stats * string option
+    (** we got to [node] from last [session] perhaps propagating exception [exn_opt],
+        and continue with [path].  *)
     | Pjoin of path * path * stats (** join of two paths *)
     | Pcall of path * Procname.t * path * stats (** add a sub-path originating from a call *)
 
@@ -125,7 +128,7 @@ end = struct
     | None, None -> 0
     | None, _ -> -1
     | _, None -> 1
-    | Some n1, Some n2 -> Mangled.compare n1 n2
+    | Some n1, Some n2 -> Typename.compare n1 n2
 
   let rec compare p1 p2 : int =
     if p1 == p2 then 0 else match p1, p2 with
@@ -281,7 +284,9 @@ end = struct
 
   (** iterate over the longest sequence belonging to the path, restricting to those where [filter] holds of some element.
       if a node is reached via an exception, pass the exception information to [f] on the previous node *)
-  let iter_longest_sequence_filter (f : int -> t -> int -> Mangled.t option -> unit) (filter: Cfg.Node.t -> bool) (path: t) : unit =
+  let iter_longest_sequence_filter
+      (f : int -> t -> int -> Typename.t option -> unit)
+      (filter: Cfg.Node.t -> bool) (path: t) : unit =
     let rec doit level session path prev_exn_opt = match path with
       | Pstart _ -> f level path session prev_exn_opt
       | Pnode (node, exn_opt, session', p, _, _) ->
@@ -301,7 +306,9 @@ end = struct
   (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
       Do not iterate past the last occurrence of the given position.
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
-  let iter_longest_sequence (f : int -> t -> int -> Mangled.t option -> unit) (pos_opt : Sil.path_pos option) (path: t) : unit =
+  let iter_longest_sequence
+      (f : int -> t -> int -> Typename.t option -> unit)
+      (pos_opt : Sil.path_pos option) (path: t) : unit =
     let filter node = match pos_opt with
       | None -> true
       | Some pos -> Sil.path_pos_equal (get_path_pos node) pos in
@@ -478,7 +485,7 @@ end = struct
                   match exn_opt with
                   | None -> "", []
                   | Some exn_name ->
-                      let exn_str = Mangled.to_string exn_name in
+                      let exn_str = Typename.name exn_name in
                       if exn_str = ""
                       then "exception", [(Io_infer.Xml.tag_kind,"exception")]
                       else

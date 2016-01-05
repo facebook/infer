@@ -119,7 +119,7 @@ let create_curr_class tenv class_name =
   let class_tn_name = Typename.TN_csu (Csu.Class, (Mangled.from_string class_name)) in
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct(intf_fields, _, _, _, superclasses, methods, annotation) ->
-      (let superclasses_names = IList.map (fun (_, name) -> Mangled.to_string name) superclasses in
+      (let superclasses_names = IList.map Typename.name superclasses in
        match superclasses_names with
        | superclass:: protocols ->
            ContextCls (class_name, Some superclass, protocols)

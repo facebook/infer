@@ -139,7 +139,7 @@ sig
     (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
 
   val append_no_duplicates_csu :
-    (Csu.t * Mangled.t) list -> (Csu.t * Mangled.t) list -> (Csu.t * Mangled.t) list
+    Typename.t list -> Typename.t list -> Typename.t list
 
   val append_no_duplicates_methods : Procname.t list -> Procname.t list -> Procname.t list
 

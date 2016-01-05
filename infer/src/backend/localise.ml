@@ -361,7 +361,7 @@ let deref_str_uninitialized alloc_att_opt =
 (** Java unchecked exceptions errors *)
 let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
   ([Procname.to_string proc_name;
-    "can throw "^(Mangled.to_string exn_name);
+    "can throw "^(Typename.name exn_name);
     "whenever "^pre_str], None, [])
 
 let desc_context_leak pname context_typ fieldname leak_path : error_desc =

@@ -47,10 +47,10 @@ val get_callbacks_registered_by_proc : Cfg.Procdesc.t -> Sil.tenv -> Sil.typ lis
 val get_lifecycle_for_framework_typ_opt : Mangled.t -> string list -> Sil.tenv -> (Sil.typ * Procname.t list) option
 
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
-val is_android_lib_class : Mangled.t -> bool
+val is_android_lib_class : Typename.t -> bool
 
 (** Path to the android.jar file containing real code, not just the method stubs as in the SDK *)
 val non_stub_android_jar : unit -> string
 
 (** [is_runtime_exception tenv exn] checks if exn is an unchecked exception *)
-val is_runtime_exception : Sil.tenv -> Mangled.t -> bool
+val is_runtime_exception : Sil.tenv -> Typename.t -> bool

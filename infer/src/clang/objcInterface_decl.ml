@@ -92,9 +92,9 @@ let get_interface_superclasses super_opt protocols =
   let super_class =
     match super_opt with
     | None -> []
-    | Some super -> [(Csu.Class, Mangled.from_string super)] in
+    | Some super -> [Typename.TN_csu (Csu.Class, Mangled.from_string super)] in
   let protocol_names = IList.map (
-      fun name -> (Csu.Protocol, Mangled.from_string name)
+      fun name -> Typename.TN_csu (Csu.Protocol, Mangled.from_string name)
     ) protocols in
   let super_classes = super_class@protocol_names in
   super_classes
@@ -123,9 +123,9 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
       Printing.log_out "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
       Printing.log_out "type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
-  let fields, superclasses, methods =
+  let fields, (superclasses : Typename.t list), methods =
     match Sil.tenv_lookup tenv interface_name with
-    | Some Sil.Tstruct(saved_fields, _, _, _, saved_superclasses, saved_methods, _) ->
+    | Some (Sil.Tstruct (saved_fields, _, _, _, saved_superclasses, saved_methods, _)) ->
         General_utils.append_no_duplicates_fields fields saved_fields,
         General_utils.append_no_duplicates_csu superclasses saved_superclasses,
         General_utils.append_no_duplicates_methods methods saved_methods

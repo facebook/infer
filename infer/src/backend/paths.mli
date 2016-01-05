@@ -40,7 +40,7 @@ module Path : sig
   val d_stats : t -> unit
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
-  val extend : Cfg.node -> Mangled.t option -> session -> t -> t
+  val extend : Cfg.node -> Typename.t option -> session -> t -> t
 
   val add_description : t -> string -> t
 
@@ -50,7 +50,8 @@ module Path : sig
   (** iterate over the longest sequence belonging to the path, restricting to those containing the given position if given.
       Do not iterate past the given position.
       [f level path session exn_opt] is passed the current nesting [level] and [path] and previous [session] and possible exception [exn_opt] *)
-  val iter_longest_sequence : (int -> t -> int -> Mangled.t option -> unit) -> Sil.path_pos option -> t -> unit
+  val iter_longest_sequence :
+    (int -> t -> int -> Typename.t option -> unit) -> Sil.path_pos option -> t -> unit
 
   (** join two paths *)
   val join : t -> t -> t

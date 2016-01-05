@@ -53,7 +53,7 @@ let extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar callb
         | l ->
             (* choose to describe this anonymous inner class with one of the interfaces that it
              * implements. translation always places interfaces at the end of the supertypes list *)
-            Mangled.get_mangled (IList.hd (IList.rev l))
+            Typename.name (IList.hd (IList.rev l))
       else typ_str in
     Mangled.from_string (pretty_typ_str ^ "[line " ^ Location.to_string loc ^ "]") in
   let create_instrumentation_fields created_flds node instr = match instr with
@@ -118,16 +118,19 @@ let find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv =
 (** if [typ] is a lifecycle type, generate a list of (method call, receiver) pairs constituting a
     lifecycle trace *)
 let try_create_lifecycle_trace typ lifecycle_typ lifecycle_procs proc_file_map tenv = match typ with
-  | Sil.Tstruct(_, _, Csu.Class, Some class_name, _, methods, _)
-    when AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv &&
-         not (AndroidFramework.is_android_lib_class class_name) ->
-      let ptr_to_typ = Some (Sil.Tptr (typ, Sil.Pk_pointer)) in
-      IList.fold_left (fun trace lifecycle_proc ->
-          (* given a lifecycle subclass T, resolve the call T.lifecycle_proc() to the procname
-           * that will actually be called at runtime *)
-          let resolved_proc = SymExec.resolve_method tenv class_name lifecycle_proc in
-          (resolved_proc, ptr_to_typ) :: trace
-        ) [] lifecycle_procs
+  | Sil.Tstruct(_, _, Csu.Class, Some name, _, methods, _) ->
+      let class_name = Typename.TN_csu (Csu.Class, name) in
+      if AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv &&
+         not (AndroidFramework.is_android_lib_class class_name) then
+        let ptr_to_typ = Some (Sil.Tptr (typ, Sil.Pk_pointer)) in
+        IList.fold_left
+          (fun trace lifecycle_proc ->
+             (* given a lifecycle subclass T, resolve the call T.lifecycle_proc() to the procname
+              * that will actually be called at runtime *)
+             let resolved_proc = SymExec.resolve_method tenv class_name lifecycle_proc in
+             (resolved_proc, ptr_to_typ) :: trace)
+          [] lifecycle_procs
+      else []
   | _ -> []
 
 (** get all the callbacks registered in [lifecycle_trace], transform the SIL to "extract" them into

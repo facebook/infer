@@ -306,15 +306,12 @@ and create_sil_type program tenv cn =
   | None -> dummy_type cn
   | Some node ->
       let create_super_list interface_names =
-        (IList.map (fun i -> Mangled.from_string (JBasics.cn_name i)) interface_names) in
+        IList.map typename_of_classname interface_names in
       let (super_list, nonstatic_fields, static_fields, item_annotation) =
         match node with
         | Javalib.JInterface jinterface ->
             let static_fields, _ = get_all_fields program tenv cn in
-            let sil_interface_list =
-              IList.map
-                (fun c -> (Csu.Class, c))
-                (create_super_list jinterface.Javalib.i_interfaces) in
+            let sil_interface_list = create_super_list jinterface.Javalib.i_interfaces in
             let item_annotation = JAnnotation.translate_item jinterface.Javalib.i_annotations in
             (sil_interface_list, [], static_fields, item_annotation)
         | Javalib.JClass jclass ->
@@ -329,12 +326,11 @@ and create_sil_type program tenv cn =
               | Some super_cn ->
                   let super_classname =
                     match get_class_type_no_pointer program tenv super_cn with
-                    | Sil.Tstruct (_, _, _, Some classname, _, _, _) -> classname
+                    | Sil.Tstruct (_, _, _, Some classname, _, _, _) ->
+                        Typename.TN_csu (Csu.Class, classname)
                     | _ -> assert false in
                   super_classname :: interface_list in
-            let super_sil_classname_list =
-              IList.map (fun c -> (Csu.Class, c)) super_classname_list in
-            (super_sil_classname_list, nonstatic_fields, static_fields, item_annotation) in
+            (super_classname_list, nonstatic_fields, static_fields, item_annotation) in
       let classname = Mangled.from_string (JBasics.cn_name cn) in
       let method_procnames = get_class_procnames cn node in
       Sil.Tstruct (nonstatic_fields, static_fields, Csu.Class,

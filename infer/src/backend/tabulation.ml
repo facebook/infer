@@ -594,11 +594,12 @@ let prop_is_exn pname prop =
 (** when prop is an exception, return the exception name *)
 let prop_get_exn_name pname prop =
   let ret_pvar = Sil.Lvar (Sil.get_ret_pvar pname) in
-  let exn_name = ref (Mangled.from_string "") in
+  let exn_name = ref (Typename.Java.from_string "") in
   let find_exn_name e =
     let do_hpred = function
       | Sil.Hpointsto (e1, _, Sil.Sizeof(Sil.Tstruct (_, _, _, Some name, _, _, _), _)) when Sil.exp_equal e1 e ->
-          exn_name := name
+          let found_exn_name = Typename.TN_csu (Csu.Class, name) in
+          exn_name := found_exn_name
       | _ -> () in
     IList.iter do_hpred (Prop.get_sigma prop) in
   let find_ret () =

@@ -311,8 +311,8 @@ let initial_node = ref (Cfg.Node.dummy ())
 
 let rec super tenv t =
   match t with
-  | Sil.Tstruct (_, _, Csu.Class, Some c2, (Csu.Class, super):: rest, _, _) ->
-      Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, super))
+  | Sil.Tstruct (_, _, Csu.Class, Some c2, class_name :: rest, _, _) ->
+      Sil.tenv_lookup tenv class_name
   | Sil.Tarray (dom_type, _) -> None
   | Sil.Tptr (dom_type, p) ->
       let super_dom_type = super tenv dom_type in

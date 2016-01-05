@@ -140,13 +140,15 @@ module Subtype : sig
   val subtypes_cast : t
   val subtypes_instof : t
   val join : t -> t -> t
-  (** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2] according to [st1] and [st2]
-      where f c1 c2 is true if c1 is a subtype of c2.
+  (** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2] according
+      to [st1] and [st2] where f c1 c2 is true if c1 is a subtype of c2.
       get_subtypes returning a pair:
       - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
-      - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return the updated subtype [st1] *)
-  val case_analysis : (Mangled.t * t) -> (Mangled.t * t) -> (Mangled.t -> Mangled.t -> bool) -> (Mangled.t -> bool) -> t option * t option
-  val check_subtype : (Mangled.t -> Mangled.t -> bool) -> Mangled.t -> Mangled.t -> bool
+      - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return
+      the updated subtype [st1] *)
+  val case_analysis : (Typename.t * t) -> (Typename.t * t) ->
+    (Typename.t -> Typename.t -> bool) -> (Typename.t -> bool) -> t option * t option
+  val check_subtype : (Typename.t -> Typename.t -> bool) -> Typename.t -> Typename.t -> bool
   val subtypes_to_string : t -> string
   val is_cast : t -> bool
   val is_instof : t -> bool
@@ -286,7 +288,7 @@ and typ =
   | Tfun of bool (** function type with noreturn attribute *)
   | Tptr of typ * ptr_kind (** pointer type *)
   | Tstruct of struct_fields * struct_fields * Csu.t * Mangled.t option *
-               (Csu.t * Mangled.t) list * Procname.t list * item_annotation
+               Typename.t list * Procname.t list * item_annotation
   (** Structure type with nonstatic and static fields, class/struct/union flag, name, list of superclasses,
       methods defined, and annotations.
       The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts

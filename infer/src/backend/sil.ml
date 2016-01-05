@@ -202,14 +202,15 @@ module Subtype = struct
       | [] -> ""
       | el:: rest ->
           let s = (aux rest) in
-          if (s = "") then (Mangled.to_string el)
-          else (Mangled.to_string el)^", "^s in
+          if (s = "") then (Typename.name el)
+          else (Typename.name el)^", "^s in
     if (IList.length list = 0) then "( sub )"
     else ("- {"^(aux list)^"}")
 
   type t' =
     | Exact (** denotes the current type only *)
-    | Subtypes of Mangled.t list(** denotes the current type and a list of types that are not their subtypes  *)
+    | Subtypes of Typename.t list
+    (** denotes the current type and a list of types that are not their subtypes  *)
 
   type kind =
     | CAST
@@ -219,10 +220,10 @@ module Subtype = struct
   type t = t' * kind
 
   module SubtypesPair = struct
-    type t = (Mangled.t * Mangled.t)
+    type t = (Typename.t * Typename.t)
 
     let compare (e1 : t)(e2 : t) : int =
-      pair_compare Mangled.compare Mangled.compare e1 e2
+      pair_compare Typename.compare Typename.compare e1 e2
   end
 
   module SubtypesMap = Map.Make (SubtypesPair)
@@ -246,9 +247,12 @@ module Subtype = struct
     | NORMAL -> ""
 
   let pp f (t, flag) =
-    match t with
-    | Exact -> if !Config.print_types then F.fprintf f "%s" (flag_to_string flag)
-    | Subtypes list -> if !Config.print_types then F.fprintf f "%s" ((list_to_string list)^(flag_to_string flag))
+    if !Config.print_types then
+      match t with
+      | Exact ->
+          F.fprintf f "%s" (flag_to_string flag)
+      | Subtypes list ->
+          F.fprintf f "%s" ((list_to_string list)^(flag_to_string flag))
 
   let exact = Exact, NORMAL
   let all_subtypes = Subtypes []
@@ -275,12 +279,12 @@ module Subtype = struct
       match s1, s2 with
       | Exact, _ -> s2
       | _, Exact -> s1
-      | Subtypes l1, Subtypes l2 -> Subtypes (list_intersect Mangled.equal l1 l2) in
+      | Subtypes l1, Subtypes l2 -> Subtypes (list_intersect Typename.equal l1 l2) in
     let flag = join_flag flag1 flag2 in
     s, flag
 
   let subtypes_compare l1 l2 =
-    IList.compare Mangled.compare l1 l2
+    IList.compare Typename.compare l1 l2
 
   let compare_flag flag1 flag2 =
     match flag1, flag2 with
@@ -309,7 +313,7 @@ module Subtype = struct
   let update_flag c1 c2 flag flag' =
     match flag with
     | INSTOF ->
-        if (Mangled.equal c1 c2) then flag else flag'
+        if (Typename.equal c1 c2) then flag else flag'
     | _ -> flag'
 
   let change_flag st_opt c1 c2 flag' =
@@ -331,7 +335,7 @@ module Subtype = struct
         (match t with
          | Exact -> Some (t, new_flag)
          | Subtypes l ->
-             Some (Subtypes (IList.sort Mangled.compare l), new_flag))
+             Some (Subtypes (IList.sort Typename.compare l), new_flag))
     | None -> None
 
   let subtypes_to_string t =
@@ -345,7 +349,7 @@ module Subtype = struct
     with Not_found -> true
 
   let is_strict_subtype f c1 c2 =
-    f c1 c2 && not (Mangled.equal c1 c2)
+    f c1 c2 && not (Typename.equal c1 c2)
 
   (* checks for redundancies when adding c to l
      Xi in A - { X1,..., Xn } is redundant in two cases:
@@ -381,8 +385,6 @@ module Subtype = struct
 
   let get_subtypes (c1, (st1, flag1)) (c2, (st2, flag2)) f is_interface =
     let is_sub = f c1 c2 in
-    (* L.d_strln_color Orange ((Mangled.to_string c1)^(subtypes_to_string (st1, flag1))^" <: "^ *)
-    (* (Mangled.to_string c2)^(subtypes_to_string (st2, flag2))^" ?"^(string_of_bool is_sub)); *)
     let pos_st, neg_st = match st1, st2 with
       | Exact, Exact ->
           if (is_sub) then (Some st1, None)
@@ -414,11 +416,11 @@ module Subtype = struct
       else if f c2 c1 then
         match st with
         | Exact, flag ->
-            if Mangled.equal c1 c2
+            if Typename.equal c1 c2
             then (Some st, None)
             else (None, Some st)
         | Subtypes _ , flag ->
-            if Mangled.equal c1 c2
+            if Typename.equal c1 c2
             then (Some st, None)
             else (Some st, Some st)
       else (None, Some st) in
@@ -651,7 +653,7 @@ and typ =
   | Tfun of bool (** function type with noreturn attribute *)
   | Tptr of typ * ptr_kind (** pointer type *)
   | Tstruct of struct_fields * struct_fields * Csu.t * Mangled.t option *
-               (Csu.t * Mangled.t) list * Procname.t list * item_annotation
+               Typename.t list * Procname.t list * item_annotation
   (** Structure type with nonstatic and static fields, class/struct/union flag, name,
       list of superclasses, methods defined, and annotations.
       The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts

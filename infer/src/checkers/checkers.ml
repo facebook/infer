@@ -197,7 +197,9 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
   let is_write_to_parcel this_expr this_type =
     let method_match () = Procname.java_get_method proc_name = "writeToParcel" in
     let expr_match () = Sil.exp_is_this this_expr in
-    let type_match () = PatternMatch.is_direct_subtype_of this_type "android.os.Parcelable" in
+    let type_match () =
+      let class_name = Typename.TN_csu (Csu.Class, Mangled.from_string "android.os.Parcelable") in
+      PatternMatch.is_direct_subtype_of this_type class_name in
     method_match () && expr_match () && type_match () in
 
   let is_parcel_constructor proc_name =

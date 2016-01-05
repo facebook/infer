@@ -48,9 +48,8 @@ struct
              | Sil.Tstruct (fields, _, _, cls, super_classes, methods, iann) ->
                  print_endline (
                    (Typename.to_string typname) ^ "\n"^
-                   "---> superclass and protocols " ^ (IList.to_string (fun (csu, x) ->
-                       let nsu = Typename.TN_csu (csu, x) in
-                       "\t" ^ (Typename.to_string nsu) ^ "\n") super_classes) ^
+                   "---> superclass and protocols " ^ (IList.to_string (fun tn ->
+                       "\t" ^ (Typename.to_string tn) ^ "\n") super_classes) ^
                    "---> methods " ^
                    (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") methods)
                    ^ "  " ^
@@ -430,10 +429,7 @@ struct
     | [] -> list1
 
   let append_no_duplicates_csu list1 list2 =
-    append_no_duplicates
-      (fun (ds1, n1) (ds2, n2) ->
-         Csu.equal ds1 ds2 && Mangled.equal n1 n2)
-      list1 list2
+    append_no_duplicates Typename.equal list1 list2
 
   let append_no_duplicates_methods list1 list2 =
     append_no_duplicates Procname.equal list1 list2

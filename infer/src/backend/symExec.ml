@@ -598,23 +598,22 @@ let method_exists right_proc_name methods =
 
 let resolve_method tenv class_name proc_name =
   let found_class =
-    let visited = ref Mangled.MangledSet.empty in
+    let visited = ref Typename.Set.empty in
     let rec resolve class_name =
-      visited := Mangled.MangledSet.add class_name !visited;
+      visited := Typename.Set.add class_name !visited;
       let right_proc_name =
         if Procname.is_java proc_name then
-          Procname.java_replace_class proc_name (Mangled.to_string class_name)
-        else Procname.c_method_replace_class proc_name (Mangled.to_string class_name) in
-      let type_name = Typename.TN_csu (Csu.Class, class_name) in
-      match Sil.tenv_lookup tenv type_name with
+          Procname.java_replace_class proc_name (Typename.name class_name)
+        else Procname.c_method_replace_class proc_name (Typename.name class_name) in
+      match Sil.tenv_lookup tenv class_name with
       | Some (Sil.Tstruct (_, _, Csu.Class, cls, super_classes, methods, iann)) ->
           if method_exists right_proc_name methods then
             Some right_proc_name
           else
             (match super_classes with
-             | (Csu.Class, super_class):: interfaces ->
-                 if not (Mangled.MangledSet.mem super_class !visited)
-                 then resolve super_class
+             | super_classname:: interfaces ->
+                 if not (Typename.Set.mem super_classname !visited)
+                 then resolve super_classname
                  else None
              | _ -> None)
       | _ -> None in
@@ -622,7 +621,7 @@ let resolve_method tenv class_name proc_name =
   match found_class with
   | None ->
       Logging.d_strln
-        ("Couldn't find method in the hierarchy of type "^(Mangled.to_string class_name));
+        ("Couldn't find method in the hierarchy of type "^(Typename.name class_name));
       proc_name
   | Some proc_name -> proc_name
 
@@ -635,8 +634,9 @@ let resolve_typename prop arg =
       | _ :: hpreds -> loop hpreds in
     loop (Prop.get_sigma prop) in
   match typexp_opt with
-  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Csu.Class, class_name_opt, _, _, _), _)) ->
-      class_name_opt
+  | Some (Sil.Sizeof (Sil.Tstruct (_, _, _, None, _, _, _), _)) -> None
+  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Csu.Class, Some name, _, _, _), _)) ->
+      Some (Typename.TN_csu (Csu.Class, name))
   | _ -> None
 
 (** If the dynamic type of the object calling a method is known, the method from the dynamic type
@@ -648,7 +648,7 @@ let resolve_virtual_pname cfg tenv prop args pname : Procname.t =
       begin
         match resolve_typename prop obj_exp with
         | Some class_name -> resolve_method tenv class_name pname
-        | _ -> pname
+        | None -> pname
       end
 
 (* let resolve_procname cfg tenv prop args pname : Procname.t = *)

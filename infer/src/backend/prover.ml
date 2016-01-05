@@ -1440,27 +1440,27 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
     | _ -> changed, calc_index_frame, hpred in
   expand false calc_index_frame hpred
 
-let object_type = Mangled.from_string "java.lang.Object"
+let object_type = Typename.Java.from_string "java.lang.Object"
 
-let serializable_type = Mangled.from_string "java.io.Serializable"
+let serializable_type = Typename.Java.from_string "java.io.Serializable"
 
-let cloneable_type = Mangled.from_string "java.lang.Cloneable"
+let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
 
-let is_interface tenv c =
-  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, c)) with
+let is_interface tenv class_name =
+  match Sil.tenv_lookup tenv class_name with
   | Some (Sil.Tstruct (fields, sfields, Csu.Class, Some c1', supers1, methods, iann)) ->
       (IList.length fields = 0) && (IList.length methods = 0)
   | _ -> false
 
 (** check if c1 is a subclass of c2 *)
 let check_subclass_tenv tenv c1 c2 =
-  let rec check (_, c) =
-    Mangled.equal c c2 || (Mangled.equal c2 object_type) ||
-    match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, c)) with
+  let rec check cn =
+    Typename.equal cn c2 || Typename.equal c2 object_type ||
+    match Sil.tenv_lookup tenv cn with
     | Some (Sil.Tstruct (_, _, Csu.Class, Some c1', supers1, _, _)) ->
         IList.exists check supers1
     | _ -> false in
-  (check (Csu.Class, c1))
+  check c1
 
 let check_subclass tenv c1 c2 =
   let f = check_subclass_tenv tenv in
@@ -1480,7 +1480,9 @@ let rec check_subtype tenv t1 t2 =
   match t1, t2 with
   | Sil.Tstruct (_, _, Csu.Class, Some c1, _, _, _),
     Sil.Tstruct (_, _, Csu.Class, Some c2, _, _, _) ->
-      (check_subclass tenv c1 c2)
+      let cn1 = Typename.TN_csu (Csu.Class, c1)
+      and cn2 = Typename.TN_csu (Csu.Class, c2) in
+      (check_subclass tenv cn1 cn2)
 
   | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
       check_subtype tenv dom_type1 dom_type2
@@ -1489,7 +1491,10 @@ let rec check_subtype tenv t1 t2 =
       check_subtype tenv dom_type1 dom_type2
 
   | Sil.Tarray _, Sil.Tstruct (_, _, Csu.Class, Some c2, _, _, _) ->
-      (Mangled.equal c2 serializable_type) || (Mangled.equal c2 cloneable_type) || (Mangled.equal c2 object_type)
+      let cn2 = Typename.TN_csu (Csu.Class, c2) in
+      Typename.equal cn2 serializable_type
+      || Typename.equal cn2 cloneable_type
+      || Typename.equal cn2 object_type
 
   | _ -> (check_subtype_basic_type t1 t2)
 
@@ -1497,7 +1502,9 @@ let rec case_analysis_type tenv (t1, st1) (t2, st2) =
   match t1, t2 with
   | Sil.Tstruct (_, _, Csu.Class, Some c1, _, _, _),
     Sil.Tstruct (_, _, Csu.Class, Some c2, _, _, _) ->
-      (Sil.Subtype.case_analysis (c1, st1) (c2, st2) (check_subclass tenv) (is_interface tenv))
+      let cn1 = Typename.TN_csu (Csu.Class, c1)
+      and cn2 = Typename.TN_csu (Csu.Class, c2) in
+      (Sil.Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv))
 
   | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
       (case_analysis_type tenv (dom_type1, st1) (dom_type2, st2))
@@ -1506,7 +1513,10 @@ let rec case_analysis_type tenv (t1, st1) (t2, st2) =
       (case_analysis_type tenv (dom_type1, st1) (dom_type2, st2))
 
   | Sil.Tstruct (_, _, Csu.Class, Some c1, _, _, _), Sil.Tarray _ ->
-      if ((Mangled.equal c1 serializable_type) || (Mangled.equal c1 cloneable_type) || (Mangled.equal c1 object_type)) &&
+      let cn1 = Typename.TN_csu (Csu.Class, c1) in
+      if (Typename.equal cn1 serializable_type
+          || Typename.equal cn1 cloneable_type
+          || Typename.equal cn1 object_type) &&
          (st1 <> Sil.Subtype.exact) then (Some st1, None)
       else (None, Some st1)
 

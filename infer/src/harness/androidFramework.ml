@@ -255,14 +255,15 @@ let get_all_supertypes typ tenv =
   let get_direct_supers = function
     | Sil.Tstruct (_, _, Csu.Class, _, supers, _, _) -> supers
     | _ -> [] in
-  let rec add_typ name typs =
-    let typename = Typename.TN_csu (Csu.Class, name) in
-    match Sil.tenv_lookup tenv typename with
+  let rec add_typ class_name typs =
+    match Sil.tenv_lookup tenv class_name with
     | Some typ -> get_supers_rec typ tenv (TypSet.add typ typs)
     | None -> typs
   and get_supers_rec typ tenv all_supers =
     let direct_supers = get_direct_supers typ in
-    IList.fold_left (fun typs (_, name) -> add_typ name typs) all_supers direct_supers in
+    IList.fold_left
+      (fun typs class_name -> add_typ class_name typs)
+      all_supers direct_supers in
   get_supers_rec typ tenv (TypSet.add typ TypSet.empty)
 
 (** return true if [typ0] <: [typ1] *)
@@ -305,7 +306,7 @@ let typ_is_lifecycle_typ typ lifecycle_typ tenv =
 
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 let is_android_lib_class class_name =
-  let class_str = Mangled.to_string class_name in
+  let class_str = Typename.name class_name in
   string_is_prefix "android" class_str || string_is_prefix "com.android" class_str
 
 (** returns an option containing the var name and type of a callback registered by [procname], None
@@ -378,10 +379,8 @@ let get_lifecycles = android_lifecycles
 let is_runtime_exception tenv exn =
   let lookup = Sil.tenv_lookup tenv in
   let runtime_exception_typename =
-    let name = Mangled.from_package_class "java.lang" "RuntimeException" in
-    Typename.TN_csu (Csu.Class, name)
-  and exn_typename = Typename.TN_csu (Csu.Class, exn) in
-  match lookup runtime_exception_typename, lookup exn_typename with
+    Typename.Java.from_string "java.lang.RuntimeException" in
+  match lookup runtime_exception_typename, lookup exn with
   | Some runtime_exception_type, Some exn_type ->
       is_subtype exn_type runtime_exception_type tenv
   | _ -> false

@@ -143,7 +143,7 @@ let get_superclass_decls decl =
 let get_superclass_list decl =
   let base_decls = get_superclass_decls decl in
   let decl_to_mangled_name decl = Mangled.from_string (get_record_name decl) in
-  let get_super_field super_decl = (Csu.Class, decl_to_mangled_name super_decl) in
+  let get_super_field super_decl = Typename.TN_csu (Csu.Class, decl_to_mangled_name super_decl) in
   IList.map get_super_field base_decls
 
 let add_struct_to_tenv tenv typ =

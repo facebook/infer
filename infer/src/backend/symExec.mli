@@ -24,7 +24,7 @@ val lifted_sym_exec : (exn -> unit) -> Cfg.cfg -> Sil.tenv -> Cfg.Procdesc.t ->
  * the procname that the method name will actually resolve to at runtime. For example, if we have
  * a procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
  * toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)
-val resolve_method : Sil.tenv -> Mangled.t -> Procname.t -> Procname.t
+val resolve_method : Sil.tenv -> Typename.t -> Procname.t -> Procname.t
 (** {2 Functions for handling builtins } *)
 
 module ModelBuiltins : sig

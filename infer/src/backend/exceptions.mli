@@ -55,7 +55,7 @@ exception Checkers of string * Localise.error_desc
 exception Frontend_warning of string * Localise.error_desc * ml_location
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
-exception Java_runtime_exception of Mangled.t * string * Localise.error_desc
+exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of bool * Prop.normal Prop.t * Sil.hpred * (exception_visibility * Localise.error_desc) * bool * Sil.resource * ml_location
 exception Missing_fld of Ident.fieldname * ml_location
 exception Premature_nil_termination of Localise.error_desc * ml_location
