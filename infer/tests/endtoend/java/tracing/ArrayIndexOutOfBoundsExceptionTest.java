@@ -39,7 +39,7 @@ public class ArrayIndexOutOfBoundsExceptionTest {
   }
 
   @Test
-  public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
+  public void matchErrors()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
 //        TODO (#7651424): re-enable these tests once the translation of arrays is fixed

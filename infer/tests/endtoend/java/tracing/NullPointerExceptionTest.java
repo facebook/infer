@@ -39,7 +39,7 @@ public class NullPointerExceptionTest {
   }
 
   @Test
-  public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
+  public void matchErrors()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
         "callDeref"

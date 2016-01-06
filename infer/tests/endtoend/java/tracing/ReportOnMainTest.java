@@ -38,7 +38,7 @@ public class ReportOnMainTest {
   }
 
   @Test
-  public void whenEradicateRunsOnConstructorThenFieldNotInitializedIsFound()
+  public void matchErrors()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
         "main"
