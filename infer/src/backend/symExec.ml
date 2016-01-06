@@ -44,7 +44,7 @@ let rec unroll_type tenv typ off =
       unroll_type tenv typ' off
   | Sil.Tstruct (ftal, sftal, _, _, _, _, _), Sil.Off_fld (fld, _) ->
       begin
-        try fldlist_assoc fld ftal
+        try fldlist_assoc fld (ftal @ sftal)
         with Not_found ->
           L.d_strln ".... Invalid Field Access ....";
           L.d_strln ("Fld : " ^ Ident.fieldname_to_string fld);

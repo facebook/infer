@@ -507,10 +507,7 @@ let rec expression context pc expr =
   | JBir.Field (ex, cn, fs) ->
       let (idl, instrs, sil_expr) = expression context pc ex in
       let field_name = get_field_name program false tenv cn fs context in
-      let sil_type =
-        try
-          JTransType.get_class_type_no_pointer program tenv cn
-        with Frontend_error msg -> assert false in
+      let sil_type = JTransType.get_class_type_no_pointer program tenv cn in
       let sil_expr = Sil.Lfield (sil_expr, field_name, sil_type) in
       let tmp_id = Ident.create_fresh Ident.knormal in
       let lderef_instr = Sil.Letderef (tmp_id, sil_expr, sil_type, loc) in
@@ -522,13 +519,7 @@ let rec expression context pc expr =
         Sil.Lvar var_name in
       let (idl, instrs, sil_expr) = [], [], class_exp in
       let field_name = get_field_name program true tenv cn fs context in
-      let sil_type =
-        try
-          match JTransType.get_class_type_no_pointer program tenv cn with
-          | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
-              Sil.Tstruct (sftal, sftal, csu, nameo, supers, def_mthds, iann)
-          | t -> t
-        with Frontend_error msg -> assert false in
+      let sil_type = JTransType.get_class_type_no_pointer program tenv cn in
       if JTransStaticField.is_static_final_field context cn fs && use_static_final_fields context
       then
         (* when accessing a static final field, we call the initialiser method. *)
@@ -874,11 +865,7 @@ let rec instruction context pc instr : translation =
         let (idl1, stml1, sil_expr_lhs) = [], [], class_exp in
         let (idl2, stml2, sil_expr_rhs) = expression context pc e_rhs in
         let field_name = get_field_name program true tenv cn fs context in
-        let type_of_the_surrounding_class =
-          match JTransType.get_class_type_no_pointer program tenv cn with
-          | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
-              Sil.Tstruct (sftal, sftal, csu, nameo, supers, def_mthds, iann)
-          | t -> t in
+        let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
         let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Sil.Lfield(sil_expr_lhs, field_name, type_of_the_surrounding_class) in
         let sil_instr = Sil.Set (expr_off, type_of_the_root_of_e_lhs, sil_expr_rhs, loc) in

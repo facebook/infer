@@ -107,8 +107,10 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann),
       (Sil.Off_fld (f, _)):: off' ->
         let _, t', _ =
-          try IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') ftal
-          with Not_found -> raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x)) in
+          try
+            IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') (ftal @ sftal)
+          with Not_found ->
+            raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x)) in
         let atoms', se', res_t' =
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
@@ -200,9 +202,11 @@ let rec _strexp_extend_values
   | (Sil.Off_fld (f, _)):: off', Sil.Estruct (fsel, inst'),
     Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
       let replace_fv new_v fv = if Ident.fieldname_equal (fst fv) f then (f, new_v) else fv in
-      let typ' =
-        try (fun (x, y, z) -> y) (IList.find (fun (f', t', a') -> Ident.fieldname_equal f f') ftal)
-        with Not_found -> raise (Exceptions.Missing_fld (f, try assert false with Assert_failure x -> x)) in
+      let _, typ', _ =
+        try
+          IList.find (fun (f', t', a') -> Ident.fieldname_equal f f') (ftal @ sftal)
+        with Not_found ->
+          raise (Exceptions.Missing_fld (f, try assert false with Assert_failure x -> x)) in
       begin
         try
           let _, se' = IList.find (fun (f', _) -> Ident.fieldname_equal f f') fsel in
