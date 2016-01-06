@@ -265,8 +265,8 @@ endif
 
 version: $(BACKEND_SOURCES)/version.ml.in Makefile
 	TMPFILE=$$(mktemp $(BACKEND_SOURCES)/version.ml.tmp.XXXX); \
-	INFER_GIT_COMMIT=$$(git rev-parse --short HEAD || printf "unknown"); \
-	INFER_GIT_BRANCH=$$(git rev-parse --abbrev-ref HEAD || printf "unknown"); \
+	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
+	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
 	sed \
 	  -e 's|@INFER_MAJOR[@]|$(INFER_MAJOR)|g' \
 	  -e 's|@INFER_MINOR[@]|$(INFER_MINOR)|g' \
@@ -275,8 +275,8 @@ version: $(BACKEND_SOURCES)/version.ml.in Makefile
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
 	  $< > "$$TMPFILE"; \
-	@INSTALL@ -m 644 -C $$TMPFILE $(BACKEND_SOURCES)/version.ml; \
-	rm -f $$TMPFILE
+	@INSTALL@ -m 644 -C "$$TMPFILE" $(BACKEND_SOURCES)/version.ml; \
+	rm -f "$$TMPFILE"
 
 $(BUILD_DIR):
 	$(MKDIR) $(BUILD_DIR)
