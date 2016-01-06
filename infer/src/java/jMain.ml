@@ -123,6 +123,12 @@ let load_tenv program =
       begin
         match Sil.load_tenv_from_file tenv_filename with
         | None -> Sil.create_tenv ()
+        | Some _ when Config.analyze_models ->
+            let error_msg =
+              "Unexpected tenv file "
+              ^ (DB.filename_to_string tenv_filename)
+              ^ " found while generating the models" in
+            failwith error_msg
         | Some tenv -> tenv
       end
     else
