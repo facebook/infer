@@ -224,7 +224,6 @@ module SymOp : sig
   val report_total : Format.formatter -> unit -> unit
 end
 
-(** Modified version of Arg module from the ocaml distribution *)
 module Arg : sig
   include module type of Arg with type spec = Arg.spec
 

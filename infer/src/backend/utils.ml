@@ -704,7 +704,7 @@ let reserved_arg_desc =
     "-visits_bias", Arg.Unit (fun () -> Config.worklist_mode:= 2), None, "nodes visited fewer times are analyzed first";
   ]
 
-(**************** START MODULE Arg2 -- modified from Arg in the ocaml distribution ***************)
+
 module Arg = struct
 
   include Arg
@@ -741,7 +741,7 @@ module Arg = struct
       IList.sort (fun (x, _, _) (y, _, _) -> Pervasives.compare x y) unsorted_desc' in
     align dlist
 end
-(********** END OF MODULE Arg **********)
+
 
 (** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
 module Escape = struct
