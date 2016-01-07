@@ -182,6 +182,10 @@ let error_desc_to_plain_string error_desc =
   let pp fmt () = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in
   pp_to_string pp ()
 
+let error_desc_to_dotty_string error_desc =
+  let dotty_opt = Localise.error_desc_get_dotty error_desc in
+  match dotty_opt with Some s -> s | None -> ""
+
 let error_desc_to_xml_string error_desc =
   let pp fmt () = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in
   Escape.escape_xml (pp_to_string pp ())
@@ -480,6 +484,7 @@ module BugsJson = struct
           key = node_key;
           qualifier_tags = error_desc_to_qualifier_tags_records error_desc;
           hash = get_bug_hash kind bug_type procedure_id file node_key error_desc;
+          dotty = error_desc_to_dotty_string error_desc;
         } in
         if not !is_first_item then pp "," else is_first_item := false;
         pp "%s@?" (string_of_jsonbug bug) in

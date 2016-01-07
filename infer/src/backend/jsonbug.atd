@@ -25,6 +25,7 @@ type jsonbug = {
 	key : int;
 	qualifier_tags : tag_value_record list;
 	hash : int;
+	dotty : string;
 }
 
 type json_trace = {
