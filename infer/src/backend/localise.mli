@@ -222,7 +222,7 @@ val desc_return_expression_required : string -> Location.t -> error_desc
 
 val desc_retain_cycle :
   Prop.normal Prop.t -> ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list ->
-  Location.t -> error_desc
+  Location.t -> string option -> error_desc
 
 val desc_return_statement_missing : Location.t -> error_desc
 

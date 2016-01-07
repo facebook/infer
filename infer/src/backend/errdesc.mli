@@ -105,7 +105,7 @@ val explain_return_statement_missing : Location.t -> Localise.error_desc
 (** explain a retain cycle *)
 val explain_retain_cycle :
   Prop.normal Prop.t -> ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list ->
-  Location.t -> Localise.error_desc
+  Location.t -> string option -> Localise.error_desc
 
 (** explain unary minus applied to unsigned expression *)
 val explain_unary_minus_applied_to_unsigned_expression :

@@ -1132,20 +1132,12 @@ let should_raise_objc_leak prop hpred =
       Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
 
-let print_retain_cycle _prop cycle =
+let get_retain_cycle_dotty _prop cycle =
   match _prop with
-  | None -> ()
+  | None -> None
   | Some (Some _prop) ->
-      let loc = State.get_loc () in
-      let source_file = DB.source_file_to_string loc.Location.file in
-      let source_file'= Str.global_replace (Str.regexp_string "/") "_" source_file in
-      let dest_file_str =
-        (DB.filename_to_string (DB.Results_dir.specs_dir ())) ^ "/" ^
-        source_file' ^ "_RETAIN_CYCLE_" ^ (Location.to_string loc) ^ ".dot" in
-      L.d_strln ("Printing dotty proposition for retain cycle in :"^dest_file_str);
-      Prop.d_prop _prop; L.d_strln "";
-      Dotty.dotty_prop_to_dotty_file dest_file_str _prop cycle
-  | _ -> ()
+      Dotty.dotty_prop_to_str _prop cycle
+  | _ -> None
 
 let get_var_retain_cycle _prop =
   let sigma = Prop.get_sigma _prop in
@@ -1300,9 +1292,9 @@ let check_junk ?original_prop pname tenv prop =
                     Mleak_buckets.should_raise_cpp_leak ()
                 | _ -> None in
               let exn_retain_cycle cycle =
-                print_retain_cycle original_prop cycle;
+                let cycle_dotty = get_retain_cycle_dotty original_prop cycle in
                 let desc = Errdesc.explain_retain_cycle
-                    (remove_opt original_prop) cycle (State.get_loc ()) in
+                    (remove_opt original_prop) cycle (State.get_loc ()) cycle_dotty in
                 Exceptions.Retain_cycle
                   (remove_opt original_prop, hpred, desc,
                    try assert false with Assert_failure x -> x) in

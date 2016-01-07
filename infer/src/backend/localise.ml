@@ -668,7 +668,7 @@ let desc_return_expression_required typ_str loc =
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
 
-let desc_retain_cycle prop cycle loc =
+let desc_retain_cycle prop cycle loc cycle_dotty =
   Logging.d_strln "Proposition with retain cycle:";
   Prop.d_prop prop; Logging.d_strln "";
   let ct = ref 1 in
@@ -697,7 +697,7 @@ let desc_retain_cycle prop cycle loc =
   IList.iter do_edge cycle;
   let desc = Format.sprintf "Retain cycle involving the following objects: %s  %s"
       !str_cycle (at_line tags loc) in
-  { no_desc with descriptions = [desc]; tags = !tags }
+  { no_desc with descriptions = [desc]; tags = !tags; dotty = cycle_dotty }
 
 let desc_return_statement_missing loc =
   let tags = Tags.create () in

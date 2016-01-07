@@ -926,16 +926,24 @@ let pp_dotty_prop_list_in_path f plist prev_n curr_n =
   with exn when exn_not_failure exn ->
     ()
 
+let pp_dotty_prop fmt (prop, cycle) =
+  reset_proposition_counter ();
+  Format.fprintf fmt "@\n@\n@\ndigraph main { \nnode [shape=box]; @\n";
+  Format.fprintf fmt "@\n compound = true; rankdir =LR; @\n";
+  pp_dotty fmt Generic_proposition prop (Some cycle);
+  Format.fprintf fmt "@\n}"
+
+let dotty_prop_to_str prop cycle =
+  try
+    Some (pp_to_string pp_dotty_prop (prop, cycle))
+  with exn when exn_not_failure exn -> None
+
 (* create a dotty file with a single proposition *)
 let dotty_prop_to_dotty_file fname prop cycle =
   try
     let out_dot = open_out fname in
     let fmt_dot = Format.formatter_of_out_channel out_dot in
-    reset_proposition_counter ();
-    Format.fprintf fmt_dot "@\n@\n@\ndigraph main { \nnode [shape=box]; @\n";
-    Format.fprintf fmt_dot "@\n compound = true; rankdir =LR; @\n";
-    pp_dotty fmt_dot Generic_proposition prop (Some cycle);
-    Format.fprintf fmt_dot "@\n}";
+    pp_dotty_prop fmt_dot (prop, cycle);
     close_out out_dot
   with exn when exn_not_failure exn ->
     ()

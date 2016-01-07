@@ -47,6 +47,9 @@ val pp_speclist_dotty_file : DB.filename -> Prop.normal Specs.spec list -> unit
 val dotty_prop_to_dotty_file : string -> Prop.normal Prop.t ->
   ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list -> unit
 
+val dotty_prop_to_str : Prop.normal Prop.t ->
+  ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list -> string option
+
 (** reset the counter used for node and heap identifiers *)
 val reset_node_counter : unit -> unit
 

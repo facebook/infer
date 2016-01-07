@@ -963,8 +963,8 @@ let explain_return_expression_required loc typ =
   Localise.desc_return_expression_required typ_str loc
 
 (** Explain retain cycle value error *)
-let explain_retain_cycle prop cycle loc =
-  Localise.desc_retain_cycle prop cycle loc
+let explain_retain_cycle prop cycle loc dotty_str =
+  Localise.desc_retain_cycle prop cycle loc dotty_str
 
 (** Explain a tainted value error *)
 let explain_tainted_value_reaching_sensitive_function e taint_fun sensitive_fun loc =
