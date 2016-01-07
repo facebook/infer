@@ -65,7 +65,12 @@ val skip_pointer_dereference : t
 val tainted_value_reaching_sensitive_function : t
 
 (** description field of error messages *)
-type error_desc
+type error_desc = {
+  descriptions : string list;
+  advice : string option;
+  tags : (string * string) list;
+  dotty : string option;
+}
 
 (** empty error description *)
 val no_desc: error_desc
@@ -119,6 +124,8 @@ val pp_error_advice : Format.formatter -> error_desc -> unit
 
 (** get tags of error description *)
 val error_desc_get_tags : error_desc -> (string * string) list
+
+val error_desc_get_dotty : error_desc -> string option
 
 (** Description functions for error messages *)
 

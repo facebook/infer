@@ -67,38 +67,44 @@ let unary_minus_applied_to_unsigned_expression = "UNARY_MINUS_APPLIED_TO_UNSIGNE
 let uninitialized_value = "UNINITIALIZED_VALUE"
 let use_after_free = "USE_AFTER_FREE"
 
-(** description field of error messages: descriptions, advice and tags *)
-type error_desc = string list * string option * (string * string) list
+type error_desc = {
+  descriptions : string list;
+  advice : string option;
+  tags : (string * string) list;
+  dotty : string option;
+}
 
 (** empty error description *)
-let no_desc: error_desc = [], None, []
+let no_desc: error_desc = {
+  descriptions = [];
+  advice = None;
+  tags = [];
+  dotty = None;
+}
 
 (** verbatim desc from a string, not to be used for user-visible descs *)
-let verbatim_desc s = [s], None, []
+let verbatim_desc s = { no_desc with descriptions = [s] }
 
-let custom_desc s tags = [s], None, tags
+let custom_desc s tags = { no_desc with descriptions = [s]; tags = tags }
 
 let custom_desc_with_advice description advice tags =
-  [description], Some advice, tags
+  { no_desc with descriptions = [description]; advice = Some advice; tags = tags }
 
 (** pretty print an error description *)
-let pp_error_desc fmt (l, _, s) =
+let pp_error_desc fmt err_desc =
   let pp_item fmt s = F.fprintf fmt "%s" s in
-  pp_seq pp_item fmt l
+  pp_seq pp_item fmt err_desc.descriptions
 
 (** pretty print an error advice *)
-let pp_error_advice fmt (_, advice, _) =
-  match advice with
+let pp_error_advice fmt err_desc =
+  match err_desc.advice with
   | Some advice -> F.fprintf fmt "%s" advice
   | None -> ()
 
-(** pretty print an error description *)
-let pp_error_desc fmt (l, _, _) =
-  let pp_item fmt s = F.fprintf fmt "%s" s in
-  pp_seq pp_item fmt l
-
 (** get tags of error description *)
-let error_desc_get_tags (_, _, tags) = tags
+let error_desc_get_tags err_desc = err_desc.tags
+
+let error_desc_get_dotty err_desc = err_desc.dotty
 
 module Tags = struct
   let accessed_line = "accessed_line" (* line where value was last accessed *)
@@ -145,17 +151,17 @@ end
 
 (** takes in input a tag to extract from the given error_desc
     and returns its value *)
-let error_desc_extract_tag_value (_, _, tags) tag_to_extract =
+let error_desc_extract_tag_value err_desc tag_to_extract =
   let find_value tag v =
     match v with
     | (t, _) when t = tag -> true
     | _ -> false in
   try
-    let _, s = IList.find (find_value tag_to_extract) tags in
+    let _, s = IList.find (find_value tag_to_extract) err_desc.tags in
     s
   with Not_found -> ""
 
-let error_desc_to_tag_value_pairs (_, _, tags) = tags
+let error_desc_to_tag_value_pairs err_desc = err_desc.tags
 
 (** returns the content of the value tag of the error_desc *)
 let error_desc_get_tag_value error_desc = error_desc_extract_tag_value error_desc Tags.value
@@ -164,16 +170,17 @@ let error_desc_get_tag_value error_desc = error_desc_extract_tag_value error_des
 let error_desc_get_tag_call_procedure error_desc = error_desc_extract_tag_value error_desc Tags.call_procedure
 
 (** get the bucket value of an error_desc, if any *)
-let error_desc_get_bucket (_, _, tags) =
-  Tags.get tags Tags.bucket
+let error_desc_get_bucket err_desc =
+  Tags.get err_desc.tags Tags.bucket
 
 (** set the bucket value of an error_desc; the boolean indicates where the bucket should be shown in the message *)
-let error_desc_set_bucket (l, advice, tags) bucket show_in_message =
-  let tags' = Tags.update tags Tags.bucket bucket in
+let error_desc_set_bucket err_desc bucket show_in_message =
+  let tags' = Tags.update err_desc.tags Tags.bucket bucket in
+  let l = err_desc.descriptions in
   let l' =
     if show_in_message = false then l
     else ("[" ^ bucket ^ "]") :: l in
-  (l', advice, tags')
+  { err_desc with descriptions = l'; tags = tags' }
 
 (** get the value tag, if any *)
 let get_value_line_tag tags =
@@ -184,10 +191,10 @@ let get_value_line_tag tags =
   with Not_found -> None
 
 (** extract from desc a value on which to apply polymorphic hash and equality *)
-let desc_get_comparable (sl, advice, tags) =
-  match get_value_line_tag tags with
+let desc_get_comparable err_desc =
+  match get_value_line_tag err_desc.tags with
   | Some sl' -> sl'
-  | None -> sl
+  | None -> err_desc.descriptions
 
 (** hash function for error_desc *)
 let error_desc_hash desc =
@@ -360,9 +367,11 @@ let deref_str_uninitialized alloc_att_opt =
 
 (** Java unchecked exceptions errors *)
 let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
-  ([Procname.to_string proc_name;
-    "can throw "^(Typename.name exn_name);
-    "whenever "^pre_str], None, [])
+  { no_desc with descriptions = [
+        Procname.to_string proc_name;
+        "can throw " ^ (Typename.name exn_name);
+        "whenever " ^ pre_str];
+  }
 
 let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let fld_str = Ident.fieldname_to_string fieldname in
@@ -385,10 +394,10 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let preamble =
     let pname_str = Procname.java_get_class pname ^ "." ^ Procname.java_get_method pname in
     "Context " ^ context_str ^ "may leak during method " ^ pname_str ^ ":\n" in
-  ([preamble; leak_root; path_str], None, [])
+  { no_desc with descriptions = [preamble; leak_root; path_str] }
 
 let desc_custom_error loc : error_desc =
-  (["detected"; at_line (Tags.create ()) loc], None, [])
+  { no_desc with descriptions = ["detected"; at_line (Tags.create ()) loc] }
 
 let desc_bad_pointer_comparison dexp_opt loc : error_desc =
   let dexp_str = match dexp_opt with
@@ -400,7 +409,7 @@ let desc_bad_pointer_comparison dexp_opt loc : error_desc =
   let concern_msg = "Did you mean to compare against the unboxed value instead?" in
   let fix_msg_rec1 = "Please either explicitly compare " ^ dexp_str ^ "to nil" in
   let fix_msg_rec2 = "or use one of the NSNumber accessors before the comparison." in
-  ([check_msg; concern_msg; fix_msg_rec1; fix_msg_rec2], None, [])
+  { no_desc with descriptions = [check_msg; concern_msg; fix_msg_rec1; fix_msg_rec2] }
 
 (** type of access *)
 type access =
@@ -444,16 +453,15 @@ let dereference_string deref_str value_str access_opt loc =
           else "is indirectly marked " ^ nullable_text ^ " (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
       | None -> deref_str.problem_str in
     [(problem_str ^ " " ^ at_line tags loc)] in
-  value_desc:: access_desc @ problem_desc, None, !tags
+  { no_desc with descriptions = value_desc:: access_desc @ problem_desc; tags = !tags }
 
 let parameter_field_not_null_checked_desc desc exp =
   let parameter_not_nullable_desc var =
     let var_s = Sil.pvar_to_string var in
     let param_not_null_desc =
       "Parameter "^var_s^" is not checked for null, there could be a null pointer dereference:" in
-    match desc with
-    | descriptions, advice, tags ->
-        param_not_null_desc:: descriptions, advice, (Tags.parameter_not_null_checked, var_s):: tags in
+    { desc with descriptions = param_not_null_desc :: desc.descriptions;
+                tags = (Tags.parameter_not_null_checked, var_s) :: desc.tags; } in
   let field_not_nullable_desc exp =
     let rec exp_to_string exp =
       match exp with
@@ -463,18 +471,15 @@ let parameter_field_not_null_checked_desc desc exp =
     let var_s = exp_to_string exp in
     let field_not_null_desc =
       "Instance variable "^var_s^" is not checked for null, there could be a null pointer dereference:" in
-    match desc with
-    | descriptions, advice, tags ->
-        field_not_null_desc:: descriptions, advice, (Tags.field_not_null_checked, var_s):: tags in
+    { desc with descriptions = field_not_null_desc :: desc.descriptions;
+                tags = (Tags.field_not_null_checked, var_s) :: desc.tags; } in
   match exp with
   | Sil.Lvar var -> parameter_not_nullable_desc var
   | Sil.Lfield _ -> field_not_nullable_desc exp
   | _ -> desc
 
-let has_tag desc tag =
-  match desc with
-  | descriptions, advice, tags ->
-      IList.exists (fun (tag', value) -> tag = tag') tags
+let has_tag (desc : error_desc) tag =
+  IList.exists (fun (tag', value) -> tag = tag') desc.tags
 
 let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
 
@@ -502,15 +507,17 @@ let desc_allocation_mismatch alloc dealloc =
       mem_dyn_allocated
       (using true alloc)
       (using false dealloc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_comparing_floats_for_equality loc =
   let tags = Tags.create () in
-  ["Comparing floats for equality " ^ at_line tags loc], None, !tags
+  { no_desc with descriptions = ["Comparing floats for equality " ^ at_line tags loc];
+                 tags = !tags }
 
 let desc_condition_is_assignment loc =
   let tags = Tags.create () in
-  ["Boolean condition is an assignment " ^ at_line tags loc], None, !tags
+  { no_desc with descriptions = ["Boolean condition is an assignment " ^ at_line tags loc];
+                 tags = !tags }
 
 let desc_condition_always_true_false i cond_str_opt loc =
   let tags = Tags.create () in
@@ -524,7 +531,7 @@ let desc_condition_always_true_false i cond_str_opt loc =
       (if value = "" then "" else " " ^ value)
       tt_ff
       (at_line tags loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_deallocate_stack_variable var_str proc_name loc =
   let tags = Tags.create () in
@@ -533,7 +540,7 @@ let desc_deallocate_stack_variable var_str proc_name loc =
       "Stack variable %s is freed by a %s"
       var_str
       (call_to_at_line tags proc_name loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_deallocate_static_memory const_str proc_name loc =
   let tags = Tags.create () in
@@ -542,7 +549,7 @@ let desc_deallocate_static_memory const_str proc_name loc =
       "Constant string %s is freed by a %s"
       const_str
       (call_to_at_line tags proc_name loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_class_cast_exception pname_opt typ_str1 typ_str2 exp_str_opt loc =
   let tags = Tags.create () in
@@ -562,7 +569,7 @@ let desc_class_cast_exception pname_opt typ_str1 typ_str2 exp_str_opt loc =
       typ_str2
       in_expression
       (at_line' ()) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_divide_by_zero expr_str loc =
   let tags = Tags.create () in
@@ -571,7 +578,7 @@ let desc_divide_by_zero expr_str loc =
       "Expression %s could be zero %s"
       expr_str
       (at_line tags loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_frontend_warning desc sugg loc =
   let tags = Tags.create () in
@@ -580,7 +587,7 @@ let desc_frontend_warning desc sugg loc =
       desc
       (at_line tags loc)
       sugg in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc bucket_opt =
   let tags = Tags.create () in
@@ -624,7 +631,8 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     match bucket_opt with
     | Some bucket when !Config.show_ml_buckets -> bucket
     | _ -> "" in
-  bucket_str :: xxx_allocated_to @ by_call_to @ is_not_rxxx_after, None, !tags
+  { no_desc with descriptions = bucket_str :: xxx_allocated_to @ by_call_to @ is_not_rxxx_after;
+                 tags = !tags }
 
 (** kind of precondition not met *)
 type pnm_kind =
@@ -637,7 +645,8 @@ let desc_precondition_not_met kind proc_name loc =
     | None -> []
     | Some Pnm_bounds -> ["possible array out of bounds"]
     | Some Pnm_dangling -> ["possible dangling pointer dereference"] in
-  kind_str @ ["in " ^ call_to_at_line tags proc_name loc], None, !tags
+  { no_desc with descriptions = kind_str @ ["in " ^ call_to_at_line tags proc_name loc];
+                 tags = !tags }
 
 let desc_null_test_after_dereference expr_str line loc =
   let tags = Tags.create () in
@@ -648,7 +657,7 @@ let desc_null_test_after_dereference expr_str line loc =
       expr_str
       line
       (at_line tags loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_return_expression_required typ_str loc =
   let tags = Tags.create () in
@@ -657,7 +666,7 @@ let desc_return_expression_required typ_str loc =
       "Return statement requires an expression of type %s %s"
       typ_str
       (at_line tags loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_retain_cycle prop cycle loc =
   Logging.d_strln "Proposition with retain cycle:";
@@ -688,15 +697,15 @@ let desc_retain_cycle prop cycle loc =
   IList.iter do_edge cycle;
   let desc = Format.sprintf "Retain cycle involving the following objects: %s  %s"
       !str_cycle (at_line tags loc) in
-  [desc], None, !tags
+  { no_desc with descriptions = [desc]; tags = !tags }
 
 let desc_return_statement_missing loc =
   let tags = Tags.create () in
-  ["Return statement missing " ^ at_line tags loc], None, !tags
+  { no_desc with descriptions = ["Return statement missing " ^ at_line tags loc]; tags = !tags }
 
 let desc_return_value_ignored proc_name loc =
   let tags = Tags.create () in
-  ["after " ^ call_to_at_line tags proc_name loc], None, !tags
+  { no_desc with descriptions = ["after " ^ call_to_at_line tags proc_name loc]; tags = !tags }
 
 let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
   let tags = Tags.create () in
@@ -710,19 +719,19 @@ let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
       expression
       typ_str
       (at_line tags loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_skip_function proc_name =
   let tags = Tags.create () in
   let proc_name_str = Procname.to_string proc_name in
   Tags.add tags Tags.value proc_name_str;
-  [proc_name_str], None, !tags
+  { no_desc with descriptions = [proc_name_str]; tags = !tags }
 
 let desc_inherently_dangerous_function proc_name =
   let proc_name_str = Procname.to_string proc_name in
   let tags = Tags.create () in
   Tags.add tags Tags.value proc_name_str;
-  [proc_name_str], None, !tags
+  { no_desc with descriptions = [proc_name_str]; tags = !tags }
 
 let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
   let tags = Tags.create () in
@@ -737,7 +746,7 @@ let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
       expr_str
       escape_to_str
       (at_line tags loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_tainted_value_reaching_sensitive_function expr_str tainting_fun sensitive_fun loc =
   let tags = Tags.create () in
@@ -751,7 +760,7 @@ let desc_tainted_value_reaching_sensitive_function expr_str tainting_fun sensiti
       (at_line tags loc)
       sensitive_fun
       "requires its input to be verified or sanitized." in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_uninitialized_dangling_pointer_deref deref expr_str loc =
   let tags = Tags.create () in
@@ -766,4 +775,4 @@ let desc_uninitialized_dangling_pointer_deref deref expr_str loc =
       expr_str
       deref.problem_str
       (at_line tags loc) in
-  [description], None, !tags
+  { no_desc with descriptions = [description]; tags = !tags }
