@@ -29,7 +29,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
 @SupportedAnnotationTypes({ "java.lang.SuppressWarnings" })
-public class AnnotationProcessor extends AbstractProcessor {
+public class CollectSuppressWarnings extends AbstractProcessor {
 
   private static final String ANNOTATION_ENV_VAR = "INFER_ANNOTATIONS_OUT";
 
@@ -41,43 +41,6 @@ public class AnnotationProcessor extends AbstractProcessor {
 
   // total number of classes/methods with a SuppressWarnings annotation
   private int mNumToSuppress = 0;
-
-  // print a comma between all objects except for the last one
-  private void outputCommaIfNotLast(PrintWriter out, int elemCount) {
-      if (elemCount == mNumToSuppress) {
-        out.println("");
-      } else {
-        out.println(",");
-    }
-  }
-
-  // output a method to suppress in JSON format
-  // clearly, we should be using an existing JSON output library like Jackson here. however, we
-  // can't do this because we do not want to add Jackson (or another JSON library) to the classpath
-  // of the Java program we are building (along with the JAR for this processor). the reason is that
-  // if there is a different version of the JSON parser library somewhere in the classpath for the
-  // project, it could cause *very* strange problems. instead, we rolled our own library to avoid
-  // introducing additional dependencies
-  private void outputMethod(PrintWriter out, String clazz, String method, int elemCount) {
-    String TAB1 = "  ";
-    String TAB2 = TAB1 + TAB1;
-    out.println(TAB1 + "{");
-    out.println(TAB2 +"\"language\": \"Java\",");
-    out.print(TAB2 + "\"class\": \"" + clazz + "\"");
-    if (method != null) {
-      out.println(",");
-      out.println(TAB2 + "\"method\": \"" + method + "\"");
-    } else {
-      out.println();
-    }
-    out.print(TAB1 + "}");
-    outputCommaIfNotLast(out, elemCount);
-  }
-
-  // output a class to suppress in JSON format
-  private void outputClass(PrintWriter out, String clazz, int elemCount) {
-    outputMethod(out, clazz, null, elemCount);
-  }
 
   // write the methods/classes to suppress to .inferconfig-style JSON
   private void exportSuppressMap() throws FileNotFoundException, IOException {
@@ -96,10 +59,10 @@ public class AnnotationProcessor extends AbstractProcessor {
         String clazz = entry.getKey();
         Set<String> methods = entry.getValue();
         if (methods.isEmpty()) { // empty set of methods means annotation is on class
-          outputClass(out, clazz, ++elemCount);
+          JSONOutputUtils.outputClass(out, clazz, ++elemCount, mNumToSuppress);
         } else {
           for (String method : methods) {
-            outputMethod(out, clazz, method, ++elemCount);
+            JSONOutputUtils.outputMethod(out, clazz, method, ++elemCount, mNumToSuppress);
           }
         }
       }
