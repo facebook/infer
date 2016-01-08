@@ -1,0 +1,31 @@
+digraph iCFG {
+8 [label="8:  Call delete \n   n$0=*&x:int * [line 19]\n  _fun___delete(n$0:int *) [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&x,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit deleteInt \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start deleteInt\nFormals:  x:int *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 6 -> 8 ;
+5 [label="5:  Call delete \n   n$0=*&x:class X * [line 15]\n  _fun_X_~X(n$0:class X *) [line 15]\n  _fun___delete(n$0:class X *) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&x,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4: Exit deleteX \n  " color=yellow style=filled]
+	
+
+3 [label="3: Start deleteX\nFormals:  x:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 3 -> 5 ;
+2 [label="2: Exit X_~X \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X_~X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+	
+
+	 1 -> 2 ;
+}

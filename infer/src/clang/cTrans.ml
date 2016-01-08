@@ -421,6 +421,18 @@ struct
     Cfg.set_procname_priority context.CContext.cfg pname;
     { pre_trans_result with exps = [method_exp] @ extra_exps }
 
+  let destructor_deref_trans trans_state pvar_trans_result class_type_ptr =
+    let open Clang_ast_t in
+    let destruct_decl_ref_opt = match Ast_utils.get_decl_from_typ_ptr class_type_ptr with
+      | Some CXXRecordDecl (_, _, _ , _, _, _, _, cxx_record_info)
+      | Some ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info) ->
+          cxx_record_info.xrdi_destructor
+      | _ -> None in
+    match destruct_decl_ref_opt with
+    | Some decl_ref -> method_deref_trans trans_state pvar_trans_result decl_ref
+    | None -> empty_res_trans
+
+
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -773,6 +785,13 @@ struct
         cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt' si
           Sil.Tvoid
     | _ -> assert false
+
+  and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+    let res_trans_callee = destructor_deref_trans trans_state this_res_trans class_type_ptr in
+    if res_trans_callee.exps <> [] then
+      cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si Sil.Tvoid
+    else empty_res_trans
 
   and objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info stmt_list
       expr_info method_type trans_state_pri sil_loc act_params =
@@ -1759,7 +1778,7 @@ struct
   (* 1. Handle __new_array *)
   (* 2. Handle initialization values *)
 
-  and cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info =
+  and cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info delete_expr_info =
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let fname = SymExec.ModelBuiltins.__delete in
@@ -1769,10 +1788,19 @@ struct
     let result_trans_param = exec_with_self_exception instruction trans_state_param param in
     let exp = extract_exp_from_list result_trans_param.exps
         "WARNING: There should be one expression to delete. \n" in
+    let deleted_type = delete_expr_info.Clang_ast_t.xdei_destroyed_type in
+    (* create stmt_info with new pointer so that destructor call doesn't create a node *)
+    let destruct_stmt_info = { stmt_info with
+                               Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+    (* use empty_res_trans to avoid ending up with same instruction twice *)
+    (* otherwise it would happen due to structutre of all_res_trans *)
+    let this_res_trans_destruct = { empty_res_trans with exps = result_trans_param.exps } in
+    let destruct_res_trans = cxx_destructor_call_trans trans_state_pri destruct_stmt_info
+        this_res_trans_destruct deleted_type in
     (* function is void *)
     let call_instr = Sil.Call ([], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
     let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
-    let all_res_trans = [ result_trans_param; call_res_trans] in
+    let all_res_trans = [ result_trans_param; destruct_res_trans; call_res_trans] in
     let res_trans = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
         "Call delete" stmt_info all_res_trans in
     { res_trans with exps = [] }
@@ -2005,8 +2033,8 @@ struct
              assert false)
     | CXXNewExpr (stmt_info, stmt_list, expr_info, _) ->
         cxxNewExpr_trans trans_state stmt_info expr_info
-    | CXXDeleteExpr (stmt_info, stmt_list, expr_info, _) ->
-        cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info
+    | CXXDeleteExpr (stmt_info, stmt_list, expr_info, delete_expr_info) ->
+        cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
     | s -> (Printing.log_stats

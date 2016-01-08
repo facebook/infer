@@ -35,4 +35,10 @@ public class DestructorsTest {
     frontendTest("simple_decl.cpp");
   }
 
+  @Test
+  public void testCallOnDeleteDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("call_on_delete.cpp");
+  }
+
 }
