@@ -1089,7 +1089,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       let resolved_pname =
         resolve_virtual_pname cfg tenv prop_r n_actual_params fn call_flags in
       if !Config.ondemand_enabled then
-        Ondemand.do_analysis pdesc callee_pname;
+        Ondemand.do_analysis pdesc resolved_pname;
 
       let callee_pdesc_opt = Cfg.Procdesc.find_from_name cfg resolved_pname in
       let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
