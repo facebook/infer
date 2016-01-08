@@ -251,55 +251,7 @@ let write_harness_to_file harness_instrs harness_file =
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
   Cg.add_defined_node cg harness_name;
-  let create_dummy_procdesc proc_name =
-    (* convert a java type string to a type *)
-    let rec lookup_typ typ_str = match typ_str with
-      | "" | "void" -> Sil.Tvoid
-      | "int" -> Sil.Tint Sil.IInt
-      | "byte" -> Sil.Tint Sil.IShort
-      | "short" -> Sil.Tint Sil.IShort
-      | "boolean" -> Sil.Tint Sil.IBool
-      | "char" -> Sil.Tint Sil.IChar
-      | "long" -> Sil.Tint Sil.ILong
-      | "float" -> Sil.Tfloat Sil.FFloat
-      | "double" -> Sil.Tfloat Sil.FDouble
-      | typ_str when String.contains typ_str '[' ->
-          let stripped_typ = String.sub typ_str 0 ((String.length typ_str) - 2) in
-          let array_typ_size = Sil.exp_get_undefined false in
-          Sil.Tptr (Sil.Tarray (lookup_typ stripped_typ, array_typ_size), Sil.Pk_pointer)
-      | _ ->
-          (* non-primitive/non-array type--resolve it in the tenv *)
-          let typename = Typename.TN_csu (Csu.Class, (Mangled.from_string typ_str)) in
-          match Sil.tenv_lookup tenv typename with
-          | Some typ -> typ
-          | None -> failwith ("Failed to look up typ " ^ typ_str) in
-    let ret_type = lookup_typ (Procname.java_get_return_type proc_name) in
-    let formals =
-      let param_strs = Procname.java_get_parameters_as_strings proc_name in
-      IList.fold_right
-        (fun typ_str params -> (Mangled.from_string "", lookup_typ typ_str) :: params)
-        param_strs [] in
-    let proc_attributes =
-      { (ProcAttributes.default proc_name Config.Java) with
-        ProcAttributes.formals;
-        loc;
-        ret_type;
-      } in
-    Cfg.Procdesc.create {
-      Cfg.Procdesc.cfg = harness_cfg;
-      proc_attributes = proc_attributes;
-    } in
-  IList.iter (fun p ->
-      (* add harness -> callee edge to the call graph *)
-      Cg.add_edge cg harness_name p;
-      (* create dummy procdescs for callees not in the module. hopefully t4583729 will remove the
-       * need to do this in the future *)
-      if not (SymExec.function_is_builtin p) then
-        (* simulate symbolic execution's lookup of a procedure *)
-        match Cfg.Procdesc.find_from_name harness_cfg p with
-        | Some _ -> ()
-        | None -> ignore (create_dummy_procdesc p)
-    ) (Cfg.Node.get_callees harness_node)
+  IList.iter (fun p -> Cg.add_edge cg harness_name p) (Cfg.Node.get_callees harness_node)
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
  * proc to the cg *)

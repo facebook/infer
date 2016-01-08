@@ -322,6 +322,11 @@ class Infer:
         if self.args.android_harness:
             infer_cmd.append('-harness')
 
+        if (self.args.android_harness
+            or self.args.analyzer in [config.ANALYZER_CHECKERS,
+                                      config.ANALYZER_ERADICATE]):
+                os.environ['INFER_CREATE_CALLEE_PDESC'] = 'Y'
+
         return run_command(
             infer_cmd,
             self.args.debug,
