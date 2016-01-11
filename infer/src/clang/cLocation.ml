@@ -32,30 +32,22 @@ let source_file_from_path path =
          DB.source_file_from_string path)
   | None -> DB.source_file_from_string path
 
-let choose_sloc sloc1 sloc2 prefer_first =
-  let sloc_bad sloc =
-    match sloc.Clang_ast_t.sl_file with
-    | Some f when not (DB.source_file_equal (source_file_from_path f) !curr_file) ->
-        true
-    | _ -> false in
-  if sloc_bad sloc1 then sloc2
-  else if prefer_first then sloc1 else sloc2
+let choose_sloc sloc1 sloc2 =
+  match sloc1.Clang_ast_t.sl_file with
+  | Some f when not (DB.source_file_equal (source_file_from_path f) !curr_file) -> sloc2
+  | _ -> sloc1
 
 let choose_sloc_to_update_curr_file sloc1 sloc2 =
-  let sloc_curr_file sloc =
-    match sloc.Clang_ast_t.sl_file with
-    | Some f when DB.source_file_equal (source_file_from_path f) !DB.current_source ->
-        true
-    | _ -> false in
-  if sloc_curr_file sloc2 then sloc2
-  else sloc1
+  match sloc2.Clang_ast_t.sl_file with
+  | Some f when DB.source_file_equal (source_file_from_path f) !DB.current_source -> sloc2
+  | _ -> sloc1
 
 let update_curr_file di =
-  match di.Clang_ast_t.di_source_range with (loc_start, loc_end) ->
-    let loc = choose_sloc_to_update_curr_file loc_start loc_end in
-    (match loc.Clang_ast_t.sl_file with
-     | Some f -> curr_file := source_file_from_path f
-     | None -> ())
+  let loc_start, loc_end = di.Clang_ast_t.di_source_range in
+  let loc = choose_sloc_to_update_curr_file loc_start loc_end in
+  match loc.Clang_ast_t.sl_file with
+  | Some f -> curr_file := source_file_from_path f
+  | None -> ()
 
 let clang_to_sil_location clang_loc procdesc_opt =
   let line = match clang_loc.Clang_ast_t.sl_line with
@@ -81,33 +73,38 @@ let clang_to_sil_location clang_loc procdesc_opt =
               else -1 in
             file_db, nloc
         | None -> !curr_file, !Config.nLOC in
-  { Location.line = line; Location.col = col; Location.file = file; Location.nLOC = nLOC }
+  Location.{line; col; file; nLOC}
+
+let should_translate (loc_start, loc_end) =
+  let map_file_of pred loc =
+    match loc.Clang_ast_t.sl_file with
+    | Some f -> pred (source_file_from_path f)
+    | None -> false
+  in
+  let equal_current_source file =
+    DB.source_file_equal file !DB.current_source
+  in
+  equal_current_source !curr_file
+  || map_file_of equal_current_source loc_end
+  || map_file_of equal_current_source loc_start
 
 let should_translate_lib source_range =
-  if !CFrontend_config.no_translate_libs then
-    match source_range with (loc_start, loc_end) ->
-      let loc_start = choose_sloc_to_update_curr_file loc_start loc_end in
-      let loc = clang_to_sil_location loc_start None in
-      DB.source_file_equal loc.Location.file !DB.current_source
-  else true
+  not !CFrontend_config.no_translate_libs
+  || should_translate source_range
 
 let should_translate_enum source_range =
-  if !CFrontend_config.testing_mode then
-    match source_range with (loc_start, loc_end) ->
-      let loc_start = choose_sloc_to_update_curr_file loc_start loc_end in
-      let loc = clang_to_sil_location loc_start None in
-      DB.source_file_equal loc.Location.file !DB.current_source
-  else true
+  not !CFrontend_config.testing_mode
+  || should_translate source_range
 
 let get_sil_location_from_range source_range prefer_first =
-  match source_range with (sloc1, sloc2) ->
-    let sloc = choose_sloc sloc1 sloc2 prefer_first in
-    clang_to_sil_location sloc None
+  let sloc1, sloc2 = source_range in
+  let sloc = if not prefer_first then sloc2 else choose_sloc sloc1 sloc2 in
+  clang_to_sil_location sloc None
 
 let get_sil_location stmt_info context =
-  match stmt_info.Clang_ast_t.si_source_range with (sloc1, sloc2) ->
-    let sloc = choose_sloc sloc1 sloc2 true in
-    clang_to_sil_location sloc (Some (CContext.get_procdesc context))
+  let sloc1, sloc2 = stmt_info.Clang_ast_t.si_source_range in
+  let sloc = choose_sloc sloc1 sloc2 in
+  clang_to_sil_location sloc (Some (CContext.get_procdesc context))
 
 let check_source_file source_file =
   let extensions_allowed = [".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"] in
