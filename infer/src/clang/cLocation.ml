@@ -12,17 +12,12 @@
 open CFrontend_utils
 open Utils
 
-(* The file passed as an argument to InferClang *)
-let current_source_file = ref DB.source_file_empty
-
 (* Inside the json there may be code or type definitions from other files *)
 (* than the one passed as an argument. That current file in the translation is saved*)
 (* in this variable. *)
 let curr_file = ref DB.source_file_empty
 
-let init_curr_source_file source_file =
-  assert( DB.source_file_equal source_file !DB.current_source );
-  current_source_file := source_file
+let init_curr_source_file _ = ()
 
 let source_file_from_path path =
   if Filename.is_relative path then
@@ -49,10 +44,9 @@ let choose_sloc sloc1 sloc2 prefer_first =
   else if prefer_first then sloc1 else sloc2
 
 let choose_sloc_to_update_curr_file sloc1 sloc2 =
-  assert( DB.source_file_equal !current_source_file !DB.current_source );
   let sloc_curr_file sloc =
     match sloc.Clang_ast_t.sl_file with
-    | Some f when DB.source_file_equal (source_file_from_path f) !current_source_file ->
+    | Some f when DB.source_file_equal (source_file_from_path f) !DB.current_source ->
         true
     | _ -> false in
   if sloc_curr_file sloc2 then sloc2
@@ -66,7 +60,6 @@ let update_curr_file di =
      | None -> ())
 
 let clang_to_sil_location clang_loc procdesc_opt =
-  assert( DB.source_file_equal !current_source_file !DB.current_source );
   let line = match clang_loc.Clang_ast_t.sl_line with
     | Some l -> l
     | None -> -1 in
@@ -85,7 +78,7 @@ let clang_to_sil_location clang_loc procdesc_opt =
         | Some f ->
             let file_db = source_file_from_path f in
             let nloc =
-              if (DB.source_file_equal file_db !current_source_file) then
+              if (DB.source_file_equal file_db !DB.current_source) then
                 !Config.nLOC
               else -1 in
             file_db, nloc

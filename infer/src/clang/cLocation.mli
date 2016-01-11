@@ -9,9 +9,6 @@
 
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
-(* The file passed as an argument to InferClang *)
-val current_source_file : DB.source_file ref
-
 (* Inside the json there may be code or type definitions from other files *)
 (* than the one passed as an argument. That current file in the translation is saved*)
 (* in this variable. *)
