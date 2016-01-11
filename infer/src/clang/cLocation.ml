@@ -21,6 +21,7 @@ let current_source_file = ref DB.source_file_empty
 let curr_file = ref DB.source_file_empty
 
 let init_curr_source_file source_file =
+  assert( DB.source_file_equal source_file !DB.current_source );
   current_source_file := source_file
 
 let source_file_from_path path =
@@ -48,6 +49,7 @@ let choose_sloc sloc1 sloc2 prefer_first =
   else if prefer_first then sloc1 else sloc2
 
 let choose_sloc_to_update_curr_file sloc1 sloc2 =
+  assert( DB.source_file_equal !current_source_file !DB.current_source );
   let sloc_curr_file sloc =
     match sloc.Clang_ast_t.sl_file with
     | Some f when DB.source_file_equal (source_file_from_path f) !current_source_file ->
@@ -64,6 +66,7 @@ let update_curr_file di =
      | None -> ())
 
 let clang_to_sil_location clang_loc procdesc_opt =
+  assert( DB.source_file_equal !current_source_file !DB.current_source );
   let line = match clang_loc.Clang_ast_t.sl_line with
     | Some l -> l
     | None -> -1 in
