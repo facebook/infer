@@ -17,8 +17,6 @@ open Utils
 (* in this variable. *)
 let curr_file = ref DB.source_file_empty
 
-let init_curr_source_file _ = ()
-
 let source_file_from_path path =
   if Filename.is_relative path then
     (Printing.log_err

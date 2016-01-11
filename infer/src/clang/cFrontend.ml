@@ -141,7 +141,6 @@ let do_source_file source_file ast =
   let tenv = Sil.create_tenv () in
   CTypes_decl.add_predefined_types tenv;
   init_global_state source_file;
-  CLocation.init_curr_source_file source_file;
   Config.nLOC := FileLOC.file_get_loc (DB.source_file_to_string source_file);
   Printing.log_out "\n Start building call/cfg graph for '%s'....\n"
     (DB.source_file_to_string source_file);

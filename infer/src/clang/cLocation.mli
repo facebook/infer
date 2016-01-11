@@ -25,8 +25,6 @@ val should_translate_enum : Clang_ast_t.source_range -> bool
 
 val update_curr_file : Clang_ast_t.decl_info -> unit
 
-val init_curr_source_file : DB.source_file -> unit
-
 val check_source_file : string -> unit
 
 val source_file_from_path : string -> DB.source_file
