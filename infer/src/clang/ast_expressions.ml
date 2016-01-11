@@ -32,7 +32,7 @@ let fresh_decl_info decl_info =
   { decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () }
 
 let empty_decl_info = {
-  Clang_ast_t.di_pointer = "";
+  Clang_ast_t.di_pointer = Ast_utils.get_invalid_pointer ();
   di_parent_pointer = None;
   di_previous_decl = `None;
   di_source_range = dummy_source_range ();

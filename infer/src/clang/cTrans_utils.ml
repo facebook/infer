@@ -127,7 +127,7 @@ let mk_cond_continuation cont =
 
 type priority_node =
   | Free
-  | Busy of string
+  | Busy of Clang_ast_t.pointer
 
 (* A translation state. It provides the translation function with the info*)
 (* it need to carry on the tranlsation. *)
@@ -192,11 +192,12 @@ struct
   let try_claim_priority_node trans_state stmt_info =
     match trans_state.priority with
     | Free ->
-        Printing.log_out "Priority is free. Locking priority node in %s\n@."
+        Printing.log_out "Priority is free. Locking priority node in %d\n@."
           stmt_info.Clang_ast_t.si_pointer;
         { trans_state with priority = Busy stmt_info.Clang_ast_t.si_pointer }
     | _ ->
-        Printing.log_out "Priority busy in %s. No claim possible\n@." stmt_info.Clang_ast_t.si_pointer;
+        Printing.log_out "Priority busy in %d. No claim possible\n@."
+          stmt_info.Clang_ast_t.si_pointer;
         trans_state
 
   let force_claim_priority_node trans_state stmt_info =

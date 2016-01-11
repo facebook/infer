@@ -17,7 +17,7 @@ type continuation = {
 
 type priority_node =
   | Free
-  | Busy of string
+  | Busy of Clang_ast_t.pointer
 
 type trans_state = {
   context: CContext.t;

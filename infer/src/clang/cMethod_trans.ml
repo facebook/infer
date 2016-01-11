@@ -419,8 +419,9 @@ let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
   match Cfg.Procdesc.find_from_name cfg proc_name with
   | Some pdesc -> pdesc
   | None ->
-      let ms = CMethod_signature.make_ms proc_name [] (Clang_ast_types.pointer_to_type_ptr "-1")
-          [] source_range false CFrontend_config.OBJC None None in
+      let ms_type_ptr = Clang_ast_types.pointer_to_type_ptr (Ast_utils.get_invalid_pointer ()) in
+      let ms = CMethod_signature.make_ms proc_name [] ms_type_ptr [] source_range false
+          CFrontend_config.OBJC None None in
       let body = [Clang_ast_t.CompoundStmt (stmt_info, [])] in
       ignore (create_local_procdesc cfg tenv ms body [] false);
       let pdesc = Option.get (Cfg.Procdesc.find_from_name cfg proc_name) in

@@ -472,7 +472,7 @@ struct
     | _ ->
         let print_error decl_kind =
           Printing.log_stats
-            "Warning: Decl ref expression %s with pointer %s still needs to be translated "
+            "Warning: Decl ref expression %s with pointer %d still needs to be translated "
             (Clang_ast_j.string_of_decl_kind decl_kind)
             decl_ref.Clang_ast_t.dr_decl_pointer in
         print_error decl_kind; assert false
@@ -1829,7 +1829,7 @@ struct
     let stmt_kind = Clang_ast_proj.get_stmt_kind_string instr in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple instr in
     let stmt_pointer = stmt_info.Clang_ast_t.si_pointer in
-    Printing.log_out "\nPassing from %s '%s' \n" stmt_kind stmt_pointer;
+    Printing.log_out "\nPassing from %s '%d' \n" stmt_kind stmt_pointer;
     let open Clang_ast_t in
     match instr with
     | GotoStmt(stmt_info, _, { Clang_ast_t.gsi_label = label_name; _ }) ->

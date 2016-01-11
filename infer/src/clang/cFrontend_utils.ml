@@ -110,7 +110,7 @@ struct
   let string_of_decl decl =
     let name = Clang_ast_proj.get_decl_kind_string decl in
     let info = Clang_ast_proj.get_decl_tuple decl in
-    "<\"" ^ name ^ "\"> '" ^ info.Clang_ast_t.di_pointer ^ "'"
+    Printf.sprintf "<\"%s\"> '%d'" name info.Clang_ast_t.di_pointer
 
   let string_of_unary_operator_kind = function
     | `PostInc -> "PostInc"
@@ -131,7 +131,7 @@ struct
   let string_of_stmt stmt =
     let name = Clang_ast_proj.get_stmt_kind_string stmt in
     let info, _ = Clang_ast_proj.get_stmt_tuple stmt in
-    "<\"" ^ name ^ "\"> '" ^ info.Clang_ast_t.si_pointer ^ "'"
+    Printf.sprintf "<\"%s\"> '%d'" name info.Clang_ast_t.si_pointer
 
   let get_stmts_from_stmt stmt =
     let open Clang_ast_t in
@@ -277,10 +277,10 @@ struct
   let get_fresh_pointer () =
     pointer_counter := !pointer_counter + 1;
     let internal_pointer = -(!pointer_counter) in
-    string_of_int internal_pointer
+    internal_pointer
 
   let get_invalid_pointer () =
-    string_of_int CFrontend_config.invalid_pointer
+    CFrontend_config.invalid_pointer
 
   let type_from_unary_expr_or_type_trait_expr_info info =
     match info.Clang_ast_t.uttei_type_ptr with
@@ -290,7 +290,7 @@ struct
   let get_decl decl_ptr =
     try
       Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.pointer_decl_index)
-    with Not_found -> Printing.log_stats "decl with pointer %s not found\n" decl_ptr; None
+    with Not_found -> Printing.log_stats "decl with pointer %d not found\n" decl_ptr; None
 
   let get_decl_opt decl_ptr_opt =
     match decl_ptr_opt with
@@ -329,7 +329,7 @@ struct
       (let raw_ptr = Clang_ast_types.type_ptr_to_clang_pointer type_ptr in
        try
          Some (Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index)
-       with Not_found -> Printing.log_stats "type with pointer %s not found\n" raw_ptr; None)
+       with Not_found -> Printing.log_stats "type with pointer %d not found\n" raw_ptr; None)
     with Clang_ast_types.Not_Clang_Pointer ->
       (* otherwise, function fails *)
       let type_str = Clang_ast_types.type_ptr_to_string type_ptr in

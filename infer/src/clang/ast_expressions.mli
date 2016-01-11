@@ -74,7 +74,8 @@ val make_obj_c_message_expr_info_instance : string -> obj_c_message_expr_info
 
 val translate_dispatch_function : string -> stmt_info -> stmt list -> expr_info -> int -> stmt * type_ptr
 
-val translate_block_enumerate : string ->  stmt_info  -> stmt list -> expr_info -> stmt * (string * string* type_ptr) list
+val translate_block_enumerate : string ->  stmt_info  -> stmt list -> expr_info ->
+  stmt * (string * Clang_ast_t.pointer * type_ptr) list
 
 (* We translate the logical negation of an integer with a conditional*)
 (* !x <=> x?0:1 *)

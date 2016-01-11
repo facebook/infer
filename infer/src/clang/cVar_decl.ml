@@ -16,8 +16,7 @@ open CFrontend_utils
 module L = Logging
 
 let is_custom_var_pointer pointer =
-  let pointer_int = int_of_string pointer in
-  pointer_int <= 0
+  pointer <= 0
 
 let is_captured procdesc vname =
   IList.exists
