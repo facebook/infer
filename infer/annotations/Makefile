@@ -27,7 +27,7 @@ $(ANNOTATIONS_JAR): $(ANNOT_SOURCES)
 
 $(PROCESSOR_JAR): $(PROCESSOR_SOURCES)
 	mkdir -p $(PROCESSOR_CLASSES)
-	javac $(PROCESSOR_SOURCES) -d $(PROCESSOR_CLASSES)
+	javac $(PROCESSOR_SOURCES) -cp .:$(JAVA_HOME)/lib/tools.jar -d $(PROCESSOR_CLASSES)
 	jar cvMf processor.jar -C resources META-INF -C $(PROCESSOR_CLASSES) com
 	mv processor.jar $(PROCESSOR_JAR)
 

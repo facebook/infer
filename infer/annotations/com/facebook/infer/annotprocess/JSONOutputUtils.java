@@ -54,14 +54,8 @@ public class JSONOutputUtils {
 
   public static void outputClassSourcePair(PrintWriter out, String clazz, String source,
                                            int elemCount, int elemMax) {
-    String TAB1 = "  ";
-    String TAB2 = TAB1 + TAB1;
-    out.println(TAB1 + "{");
-    out.print(TAB2 + "\"class\": \"" + clazz + "\"");
-    out.println(",");
-    out.println(TAB2 + "\"source\": \"" + source + "\"");
-
-    out.print(TAB1 + "}");
+    String TAB = "  ";
+    out.print(TAB + "\"" + clazz + "\": \"" + source + "\"");
     outputCommaIfNotLast(out, elemCount, elemMax);
   }
 
