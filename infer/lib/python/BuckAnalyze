@@ -79,9 +79,6 @@ def prepare_build(args):
     if args.debug_exceptions:
         infer_options += ['--debug-exceptions', '--no-filtering']
 
-    if args.infer_out is not None:
-        infer_options += ['--out', args.infer_out]
-
     # Create a temporary directory as a cache for jar files.
     infer_cache_dir = os.path.join(args.infer_out, 'cache')
     if not os.path.isdir(infer_cache_dir):
@@ -112,7 +109,7 @@ def prepare_build(args):
                                      dir='.') as infer_script:
         logging.info('Creating %s' % infer_script.name)
         infer_script.file.write(
-            (INFER_SCRIPT.format(sys.executable, infer)).encode())
+            INFER_SCRIPT.format(sys.executable, infer).encode())
 
     st = os.stat(infer_script.name)
     os.chmod(infer_script.name, st.st_mode | stat.S_IEXEC)
