@@ -47,6 +47,8 @@ IOS_BUILD_OUTPUT = 'build_output'
 
 BUCK_INFER_OUT = 'infer'
 
+CLASS_SOURCE_MAP_OUTPUT_FILENAME_OPTION = 'classSourceMapOutputFilename'
+
 
 # exit value when infer finds something to report
 BUG_FOUND_ERROR_CODE = 2

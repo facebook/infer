@@ -18,6 +18,8 @@ let arg_desc =
   let desc =
     (arg_desc_filter options_to_keep base_arg_desc) @
     [
+      "-classpath", Arg.String (fun classpath -> JConfig.classpath := Some classpath), None, "set the classpath";
+      "-class_source_map", Arg.String (fun filename -> JConfig.class_source_map := Some filename), None, "path to class -> source map in JSON format";
       "-models", Arg.String (fun filename -> JClasspath.add_models filename), Some "paths", "set the path to the jar containing the models";
       "-debug", Arg.Unit (fun () -> JConfig.debug_mode := true), None, "write extra translation information";
       "-dependencies", Arg.Unit (fun _ -> JConfig.dependency_mode := true), None, "translate all the dependencies during the capture";

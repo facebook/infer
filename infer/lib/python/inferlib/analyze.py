@@ -298,9 +298,35 @@ class Infer:
             shutil.rmtree(self.args.infer_out)
         exit(os.EX_OK)
 
+    # create a classpath to pass to the frontend
+    def create_frontend_classpath(self):
+        classes_out = '.'
+        if self.javac.args.classes_out is not None:
+            classes_out = self.javac.args.classes_out
+        classes_out = os.path.abspath(classes_out)
+        original_classpath = []
+        if self.javac.args.bootclasspath is not None:
+            original_classpath = self.javac.args.bootclasspath.split(':')
+        if self.javac.args.classpath is not None:
+            original_classpath += self.javac.args.classpath.split(':')
+        if len(original_classpath) > 0:
+            # add classes_out, unless it's already in the classpath
+            classpath = [os.path.abspath(p) for p in original_classpath]
+            if not classes_out in classpath:
+                classpath = [classes_out] + classpath
+                # remove models.jar; it's added by the frontend
+                models_jar = os.path.abspath(config.MODELS_JAR)
+                if models_jar in classpath:
+                    classpath.remove(models_jar)
+            return ':'.join(classpath)
+        return classes_out
+
+
     def run_infer_frontend(self):
 
         infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]
+        infer_cmd += ['-classpath', self.create_frontend_classpath()]
+        infer_cmd += ['-class_source_map', self.javac.class_source_map]
 
         if not self.args.absolute_paths:
             infer_cmd += ['-project_root', self.args.project_root]

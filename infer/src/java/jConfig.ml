@@ -116,6 +116,10 @@ let class_code cl = "L"^cl
 let errors_db_file = "errors.db"
 let main_errors_file = "Java_frontend.errors"
 
+let classpath : string option ref = ref None
+
+let class_source_map : string option ref = ref None
+
 (** {2 Flags } *)
 
 (* the Sawja representation of the Java Bytecode will be printed *)
