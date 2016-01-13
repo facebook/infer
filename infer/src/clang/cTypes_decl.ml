@@ -99,20 +99,6 @@ let get_record_name_csu decl =
 
 let get_record_name decl = snd (get_record_name_csu decl)
 
-let get_method_decls parent decl_list =
-  let open Clang_ast_t in
-  let rec traverse_decl parent decl = match decl with
-    | CXXMethodDecl _ | CXXConstructorDecl _ | CXXDestructorDecl _ -> [(parent, decl)]
-    | FunctionTemplateDecl (_, _, template_decl_info) ->
-        let decl_list' = template_decl_info.Clang_ast_t.tdi_specializations in
-        traverse_decl_list parent decl_list'
-    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list', _, _, _)
-    | CXXRecordDecl (_, _, _, _, decl_list', _, _, _)
-    | RecordDecl (_, _, _, _, decl_list', _, _) -> traverse_decl_list decl decl_list'
-    | _ -> []
-  and traverse_decl_list parent decl_list = IList.flatten (IList.map (traverse_decl parent) decl_list)  in
-  traverse_decl_list parent decl_list
-
 let get_class_methods tenv class_name decl_list =
   let process_method_decl = function
     | Clang_ast_t.CXXMethodDecl (decl_info, name_info, tp, function_decl_info, _)
@@ -167,12 +153,6 @@ let rec get_struct_fields tenv decl =
         let typ = type_ptr_to_sil_type tenv type_ptr in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
-    | ClassTemplateSpecializationDecl (decl_info, _, _, _, _, _, _, _)
-    | CXXRecordDecl (decl_info, _, _, _, _, _, _, _)
-    | RecordDecl (decl_info, _, _, _, _, _, _) ->
-        (* C++/C Records treated in the same way*)
-        if not decl_info.Clang_ast_t.di_is_implicit then
-          ignore (add_types_from_decl_to_tenv tenv decl); []
     | _ -> [] in
   let base_decls = get_superclass_decls decl in
   let base_class_fields = IList.map (get_struct_fields tenv) base_decls in

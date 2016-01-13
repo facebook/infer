@@ -13,8 +13,6 @@ val add_struct_to_tenv : Sil.tenv -> Sil.typ -> unit
 
 val get_record_name : Clang_ast_t.decl -> string
 
-val get_method_decls : Clang_ast_t.decl -> Clang_ast_t.decl list -> (Clang_ast_t.decl * Clang_ast_t.decl) list
-
 val add_types_from_decl_to_tenv : Sil.tenv -> Clang_ast_t.decl -> Sil.typ
 
 (* Adds the predefined types objc_class which is a struct, *)

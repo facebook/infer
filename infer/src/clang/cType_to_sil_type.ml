@@ -132,6 +132,7 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
     match Ast_utils.get_decl decl_ptr with
     | Some (CXXRecordDecl _ as d)
     | Some (RecordDecl _ as d)
+    | Some (ClassTemplateSpecializationDecl _ as d)
     | Some (ObjCInterfaceDecl _ as d)
     | Some (ObjCImplementationDecl _ as d)
     | Some (ObjCProtocolDecl _ as d)

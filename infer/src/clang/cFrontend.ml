@@ -96,14 +96,17 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
      | dec -> ());
   match dec with
   (* Currently C/C++ record decl treated in the same way *)
-  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
-  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
-  | RecordDecl (_, _, _, _, decl_list, _, _) ->
+  | ClassTemplateSpecializationDecl (decl_info, _, _, _, decl_list, _, _, _)
+  | CXXRecordDecl (decl_info, _, _, _, decl_list, _, _, _)
+  | RecordDecl (decl_info, _, _, _, decl_list, _, _) when not decl_info.di_is_implicit ->
+      let is_method_decl decl = match decl with
+        | CXXMethodDecl _ | CXXConstructorDecl _ | CXXDestructorDecl _ | FunctionTemplateDecl _ ->
+            true
+        | _ -> false in
+      let method_decls, no_method_decls = IList.partition is_method_decl decl_list in
+      IList.iter (translate_one_declaration tenv cg cfg dec) no_method_decls;
       ignore (CTypes_decl.add_types_from_decl_to_tenv tenv dec);
-      let method_decls = CTypes_decl.get_method_decls dec decl_list in
-      let tranlate_method (parent, decl) =
-        translate_one_declaration tenv cg cfg parent decl in
-      IList.iter tranlate_method method_decls
+      IList.iter (translate_one_declaration tenv cg cfg dec) method_decls
   | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
   | LinkageSpecDecl (decl_info, decl_list, decl_context_info) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
