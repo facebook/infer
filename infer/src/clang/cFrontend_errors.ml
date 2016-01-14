@@ -39,7 +39,7 @@ let log_frontend_warning pdesc warn_desc =
   Reporting.log_error_from_errlog errlog exn ~loc:(Some loc)
 
 (* Call all checkers on properties of class c *)
-let rec check_for_property_errors cfg cg tenv class_name class_decl_info decl_list =
+let rec check_for_property_errors cfg cg tenv class_name decl_list =
   let open Clang_ast_t in
   let do_one_property decl_info pname_info pdi =
     IList.iter (fun checker ->
@@ -52,9 +52,9 @@ let rec check_for_property_errors cfg cg tenv class_name class_decl_info decl_li
   | [] -> ()
   | ObjCPropertyDecl (decl_info, pname_info, pdi) :: rest ->
       do_one_property decl_info pname_info pdi;
-      check_for_property_errors cfg cg tenv class_name class_decl_info rest
+      check_for_property_errors cfg cg tenv class_name rest
   | _ :: rest  ->
-      check_for_property_errors cfg cg tenv class_name class_decl_info rest
+      check_for_property_errors cfg cg tenv class_name rest
 
 (* Call checkers on a specific access of an ivar *)
 let check_for_ivar_errors context stmt_info obj_c_ivar_ref_expr_info =

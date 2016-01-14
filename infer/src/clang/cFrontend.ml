@@ -61,7 +61,7 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
           | Some ObjCCategoryDecl(_, _, cat_decl_list, _, _) ->
               let name = CContext.get_curr_class_name curr_class in
               let decls = cat_decl_list @ decl_list in
-              CFrontend_errors.check_for_property_errors cfg cg tenv name decl_info decls
+              CFrontend_errors.check_for_property_errors cfg cg tenv name decls
           | _ -> ())
 
      | ObjCImplementationDecl(decl_info, name_info, decl_list, decl_context_info, idi) ->
@@ -73,7 +73,7 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
           | Some ObjCInterfaceDecl(_, _, cl_decl_list, _, _) ->
               let name = CContext.get_curr_class_name curr_class in
               let decls = cl_decl_list @ decl_list in
-              CFrontend_errors.check_for_property_errors cfg cg tenv name decl_info decls
+              CFrontend_errors.check_for_property_errors cfg cg tenv name decls
           | _ -> ())
 
      | CXXMethodDecl (decl_info, name_info, type_ptr, function_decl_info, _)
