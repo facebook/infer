@@ -1753,6 +1753,7 @@ struct
         Cg.add_edge context.cg procname block_pname;
         let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
         let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
+        CFrontend_errors.check_for_captured_vars context stmt_info captured_vars;
         let ids_instrs = IList.map assign_captured_var captured_vars in
         let ids, instrs = IList.split ids_instrs in
         let block_data = (context, type_ptr, block_pname, captured_vars) in

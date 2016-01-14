@@ -19,3 +19,8 @@ val checker_strong_delegate_warning : Clang_ast_t.decl_info -> Clang_ast_t.named
 val direct_atomic_property_access :
   CContext.t -> Clang_ast_t.stmt_info -> Clang_ast_t.named_decl_info option ->
   (bool * CFrontend_utils.General_utils.warning_desc option)
+
+(* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references
+   should not be captured in blocks.  *)
+val captured_cxx_ref_in_objc_block : Clang_ast_t.stmt_info -> (Sil.pvar * Sil.typ) list ->
+  (bool * CFrontend_utils.General_utils.warning_desc option)

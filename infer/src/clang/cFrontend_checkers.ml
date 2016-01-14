@@ -62,3 +62,27 @@ let direct_atomic_property_access context stmt_info ivar_name =
       } in
       (condition, Some warning_desc)
   | _ -> (false, None) (* No warning *)
+
+(* CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK: C++ references
+   should not be captured in blocks.  *)
+let captured_cxx_ref_in_objc_block stmt_info captured_vars =
+  let is_cxx_ref (_, typ) =
+    match typ with
+    | Sil.Tptr(_, Sil.Pk_reference) -> true
+    | _ -> false in
+  let capt_refs = IList.filter is_cxx_ref captured_vars in
+  match capt_refs with
+  | [] -> (false, None) (* No warning *)
+  | _ ->
+      let pvar_descs =
+        IList.fold_left (fun s (v, _)  -> s ^ " '" ^ (Sil.pvar_to_string v) ^ "' ") "" capt_refs in
+      let loc = CLocation.get_sil_location_from_range stmt_info.Clang_ast_t.si_source_range true in
+      let warning_desc = {
+        name = "CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK";
+        description = "C++ Reference variable(s) " ^ pvar_descs ^
+                      " captured by Objective-C block";
+        suggestion = "C++ References are unmanaged and may be invalid " ^
+                     "by the time the block executes.";
+        loc = loc;
+      } in
+      (true, Some warning_desc)

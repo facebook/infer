@@ -24,6 +24,9 @@ let property_checkers_list = [CFrontend_checkers.checker_strong_delegate_warning
 (* List of checkers on ivar access *)
 let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access]
 
+(* List of checkers for captured vars in objc blocks *)
+let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_block]
+
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_warning pdesc warn_desc =
   let loc = warn_desc.loc in
@@ -61,3 +64,10 @@ let check_for_ivar_errors context stmt_info obj_c_ivar_ref_expr_info =
       match checker context stmt_info dr_name with
       | true, Some warning_desc -> log_frontend_warning pdesc warning_desc
       | _, _ -> ()) ivar_access_checker_list
+
+let check_for_captured_vars context stmt_info captured_vars =
+  let pdesc = CContext.get_procdesc context in
+  IList.iter (fun checker ->
+      match checker stmt_info captured_vars with
+      | true, Some warning_desc -> log_frontend_warning pdesc warning_desc
+      | _, _ -> ()) captured_vars_checker_list
