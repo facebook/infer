@@ -129,19 +129,19 @@ def main():
             capture_module_name != 'analyze'):
         analyze.remove_infer_out(args.infer_out)
 
-    analyze.create_results_dir(args.infer_out)
-
-    configure_logging(args.infer_out, args.log_to_stderr)
-    logging.info('Running command %s', ' '.join(sys.argv))
-    logging.info('Path to infer script %s (%s)', __file__,
-                 os.path.realpath(__file__))
-    logging.info(analyze.get_infer_version())
-    logging.info('Platform: %s', platform.platform())
-    logging.info('PATH=%s', os.getenv('PATH'))
-    logging.info('SHELL=%s', os.getenv('SHELL'))
-    logging.info('PWD=%s', os.getenv('PWD'))
-
     if imported_module:
+        analyze.create_results_dir(args.infer_out)
+
+        configure_logging(args.infer_out, args.log_to_stderr)
+        logging.info('Running command %s', ' '.join(sys.argv))
+        logging.info('Path to infer script %s (%s)', __file__,
+                 os.path.realpath(__file__))
+        logging.info(analyze.get_infer_version())
+        logging.info('Platform: %s', platform.platform())
+        logging.info('PATH=%s', os.getenv('PATH'))
+        logging.info('SHELL=%s', os.getenv('SHELL'))
+        logging.info('PWD=%s', os.getenv('PWD'))
+
         capture_exitcode = imported_module.gen_instance(args, cmd).capture()
         if capture_exitcode != os.EX_OK:
             logging.error('Error during capture phase, exiting')
