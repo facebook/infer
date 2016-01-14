@@ -40,7 +40,7 @@ let rec check_for_property_errors cfg cg tenv class_name class_decl_info decl_li
   let open Clang_ast_t in
   let do_one_property decl_info pname_info pdi =
     IList.iter (fun checker ->
-        let (condition, warning_desc) = checker class_decl_info pname_info pdi in
+        let (condition, warning_desc) = checker decl_info pname_info pdi in
         if condition then
           let proc_desc =
             CMethod_trans.get_method_for_frontend_checks cfg cg tenv class_name decl_info in
