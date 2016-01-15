@@ -40,6 +40,7 @@ INFER_ANALYZERS+=clang
 endif
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 INFER_ANALYZERS+=java
+JAVA_HOME=@USER_JAVA_HOME@
 endif
 
 

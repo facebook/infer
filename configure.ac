@@ -63,7 +63,6 @@ AC_ARG_ENABLE(java-analyzers,
 BUILD_JAVA_ANALYZERS=$enable_java_analyzers
 AC_SUBST([BUILD_JAVA_ANALYZERS])
 
-
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--without-fcp-clang],
     [do not use $CLANG_PREFIX/bin/clang to override the default compiler (default is to override if in an infer release)]),
@@ -95,9 +94,6 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 
 AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
 AC_ASSERT_PROG([python2.7], [$PYTHON27])
-
-AC_CHECK_TOOL([JAVAC], [javac], [no])
-AC_ASSERT_PROG([javac], [$JAVAC])
 
 AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 AC_SUBST([XCODE_SELECT])
@@ -169,10 +165,38 @@ AC_ASSERT_OCAML_PKG([easy-format])
 AC_ASSERT_OCAML_PKG([extlib], [], [1.5.4])
 AC_ASSERT_OCAML_PKG([yojson])
 
-if [test "x$enable_java_analyzers" = "xyes"]; then
+if test "x$enable_java_analyzers" = "xyes"; then
+  AC_CHECK_TOOL([JAVA], [java], [no])
+  AC_CHECK_TOOL([JAVAC], [javac], [no])
+  AC_ASSERT_PROG([javac], [$JAVAC])
+  AC_ASSERT_PROG([java], [$JAVA])
   AC_ASSERT_OCAML_PKG([javalib], [], [2.3.1])
   AC_ASSERT_OCAML_PKG([sawja], [], [1.5.1])
   AC_ASSERT_OCAML_PKG([ptrees])
+
+  AC_MSG_CHECKING([for JAVA_HOME])
+  cat - <<_ACEOF >conftest.java
+public class conftest {
+  public static void main(String[[]] args) {
+    System.out.println(System.getProperty("java.home"));
+  }
+}
+_ACEOF
+  rm -f conftest.class
+  if $JAVAC conftest.java; then
+    rm -f conftest.java
+    _USER_JAVA_HOME=$($JAVA -cp . conftest)
+    if rm -f conftest.class; then
+       USER_JAVA_HOME=$_USER_JAVA_HOME/..
+    else
+      AC_MSG_ERROR([Could not run test program with $JAVA])
+    fi
+  else
+    rm -f conftest.java
+    AC_MSG_ERROR([Could not compile test program with $JAVAC])
+  fi
+  AC_MSG_RESULT([$USER_JAVA_HOME])
+  AC_SUBST([USER_JAVA_HOME])
 fi
 
 
