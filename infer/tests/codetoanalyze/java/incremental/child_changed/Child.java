@@ -12,7 +12,7 @@ package codetoanalyze.java.incremental.child_changed;
 class Child {
 
   Object bar() {
-    return new Object();
+    return null;
   }
 
   Object dontReanalyze(Object o) {
