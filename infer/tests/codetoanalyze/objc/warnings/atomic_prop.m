@@ -72,6 +72,11 @@
     _f = e; // Good access
 }
 
+- (void) dealloc
+{
+     _q = 0; // Good access
+}
+
 - (void) writeP: (int)i
 {
     _p = i; // Good access

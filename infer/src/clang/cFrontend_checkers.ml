@@ -52,7 +52,8 @@ let direct_atomic_property_access context stmt_info ivar_name =
       let condition = (CField_decl.is_ivar_atomic ivar (flds1 @ flds2))
                       && not (CContext.is_curr_proc_objc_getter context ivar)
                       && not (CContext.is_curr_proc_objc_setter context ivar)
-                      && not (Procname.is_constructor mname) in
+                      && not (Procname.is_constructor mname)
+                      && not (Procname.is_objc_dealloc mname) in
       let warning_desc = {
         name = "DIRECT_ATOMIC_PROPERTY_ACCESS";
         description = "Direct access to ivar " ^ (Ident.fieldname_to_string ivar) ^

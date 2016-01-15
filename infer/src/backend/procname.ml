@@ -373,6 +373,11 @@ let is_constructor = function
       (name.method_name = "new") || Utils.string_is_prefix "init" name.method_name
   | _ -> false
 
+(** [is_objc_dealloc pname] returns true if [pname] is the dealloc method in Objective-C *)
+let is_objc_dealloc = function
+  | ObjC_Cpp_method name -> name.method_name = "dealloc"
+  | _ -> false
+
 let java_is_close = function
   | Java_method js -> js.method_name = "close"
   | _ -> false

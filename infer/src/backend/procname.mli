@@ -119,6 +119,9 @@ val is_anonymous_inner_class_name : string -> bool
 (** [is_constructor pname] returns true if [pname] is a constructor *)
 val is_constructor : t -> bool
 
+(** [is_objc_dealloc pname] returns true if [pname] is the dealloc method in Objective-C *)
+val is_objc_dealloc : t -> bool
+
 (** [java_is_close pname] returns true if the method name is "close" *)
 val java_is_close : t -> bool
 
