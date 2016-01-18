@@ -26,6 +26,8 @@ Here is an overview of the types of bugs currently reported by Infer.
 - Bugs reported only in Objective-C
   - [Retain cycle](/docs/infer-bug-types.html#RETAIN_CYCLE)
   - [Bad pointer comparison](/docs/infer-bug-types.html#BAD_POINTER_COMPARISON)
+  - [Direct atomic property access](/docs/infer-bug-types.html#DIRECT_ATOMIC_PROPERTY_ACCESS)
+  - [Strong delegate warning](/docs/infer-bug-types.html#STRONG_DELEGATE_WARNING)
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
@@ -476,3 +478,15 @@ void foo(NSNumber * n) {
 ```
 
 The branch in the above code will be taken when the pointer `n` is non-`nil`, but the programmer might have actually wanted the branch to be taken when the integer pointed to by `n` is nonzero (e.g., she may have meant to call an accessor like `[n intValue]` instead). Infer will ask the programmer explicitly compare `n` to `nil` or call an accessor to clarify her intention.
+
+##<a name="DIRECT_ATOMIC_PROPERTY_ACCESS"></a> Direct atomic property access
+
+This check warns you when you are accessing an atomic property directly with an ivar. 
+This makes the atomic property not atomic anymore. So potentially you may get a race condition.
+
+To fix the problem you need to access properties with their getter or setter.
+
+##<a name="STRONG_DELEGATE_WARNING"></a> Strong delegate warning
+
+This check warns you when you have a property called delegate or variations thereof which is declared strong. The idea is that 
+delegates should generally be weak, otherwise this may cause retain cycles.
