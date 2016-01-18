@@ -7,10 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+type call = Procname.t * Location.t
+
 (** data-structure to represent call stacks in a compact tree form *)
 type t =
-  | Direct of Procname.t
-  | Indirect of Procname.t * t list
+  | Direct of call
+  | Indirect of call * t list
 
 (** print the list of call stacks in the tree *)
 val pp : Format.formatter -> t -> unit

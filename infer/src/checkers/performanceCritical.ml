@@ -102,20 +102,26 @@ let lookup_call_trees pname =
       end
 
 
+let lookup_location pname =
+  match Specs.get_summary pname with
+  | None -> Location.dummy
+  | Some summary -> summary.Specs.attributes.ProcAttributes.loc
+
+
 let collect_expensive_call tenv caller_pdesc checked_pnames call_trees (pname, _) =
   if Procname.Set.mem pname !checked_pnames then call_trees
   else
     begin
       Ondemand.do_analysis caller_pdesc pname;
       checked_pnames := Procname.Set.add pname !checked_pnames;
+      let call_loc = lookup_location pname in
       if method_is_expensive tenv pname then
-        (CallTree.Direct pname) :: call_trees
+        (CallTree.Direct (pname, call_loc)) :: call_trees
       else
         match lookup_call_trees pname with
         | [] -> call_trees
-        | calls -> (CallTree.Indirect (pname, calls)) :: call_trees
+        | calls -> (CallTree.Indirect ((pname, call_loc), calls)) :: call_trees
     end
-
 
 let update_summary call_trees pname =
   match Specs.get_summary pname with
@@ -132,9 +138,20 @@ let update_summary call_trees pname =
 
 let report_expensive_calls pname pdesc loc call_trees =
   let string_of_pname = Procname.to_simplified_string ~withclass:true in
-  let rec report_call_tree stack_str call_tree =
+  let update_trace trace loc =
+    if Location.equal loc Location.dummy then trace
+    else
+      let trace_elem = {
+        Errlog.lt_level = 0;
+        lt_loc = loc;
+        lt_description = "";
+        lt_node_tags = [];
+      } in
+      trace_elem :: trace in
+  let rec report_call_tree (trace, stack_str) call_tree =
     match call_tree with
-    | CallTree.Direct expensive_pname ->
+    | CallTree.Direct (expensive_pname, callee_loc) ->
+        let final_trace = IList.rev (update_trace trace callee_loc) in
         let exp_pname_str = string_of_pname expensive_pname in
         let description =
           Printf.sprintf
@@ -145,13 +162,16 @@ let report_expensive_calls pname pdesc loc call_trees =
             exp_pname_str
             exp_pname_str
             Annotations.expensive in
-        Checkers.ST.report_error
-          pname pdesc calls_expensive_method loc description
-    | CallTree.Indirect (callee_pname, sub_trees) ->
+        let exn =
+          Exceptions.Checkers (calls_expensive_method, Localise.verbatim_desc description) in
+        Reporting.log_error pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
+    | CallTree.Indirect ((callee_pname, callee_loc), sub_trees) ->
         let callee_pname_str = string_of_pname callee_pname in
         let new_stack_str = stack_str ^ callee_pname_str ^ " -> " in
-        IList.iter (report_call_tree new_stack_str) sub_trees in
-  IList.iter (report_call_tree "") call_trees
+        let new_trace = update_trace trace callee_loc in
+        IList.iter (report_call_tree (new_trace, new_stack_str)) sub_trees in
+  let start_trace = update_trace [] (Cfg.Procdesc.get_loc pdesc) in
+  IList.iter (report_call_tree (start_trace, "")) call_trees
 
 
 let check_one_procedure tenv pname pdesc =
