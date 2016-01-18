@@ -28,6 +28,7 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Bad pointer comparison](/docs/infer-bug-types.html#BAD_POINTER_COMPARISON)
   - [Direct atomic property access](/docs/infer-bug-types.html#DIRECT_ATOMIC_PROPERTY_ACCESS)
   - [Strong delegate warning](/docs/infer-bug-types.html#STRONG_DELEGATE_WARNING)
+  - [C++ reference captured in Objective-C block](/docs/infer-bug-types.html#CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK)
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
@@ -491,7 +492,7 @@ To fix the problem you need to access properties with their getter or setter.
 This check warns you when you have a property called delegate or variations thereof which is declared strong. The idea is that 
 delegates should generally be weak, otherwise this may cause retain cycles.
 
-##<a name="CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"></a> C++ Reference captured in ObjC block
+##<a name="CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"></a> C++ reference captured in Objective-C block
 
 With this check, Infer detects C++ references captured in a block. Doing this is almost always wrong. 
 The reason is that C++ references are not managed pointers (like ARC pointers) and so the referent is 
