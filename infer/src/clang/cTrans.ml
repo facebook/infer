@@ -917,7 +917,7 @@ struct
     res_state
 
   and compoundStmt_trans trans_state stmt_info stmt_list =
-    instructions trans_state (IList.rev stmt_list)
+    instructions trans_state stmt_list
 
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
@@ -2057,8 +2057,8 @@ struct
         { root_nodes = res_trans_tail.root_nodes;
           leaf_nodes = [];
           ids = res_trans_s.ids @ res_trans_tail.ids;
-          instrs = res_trans_s.instrs @ res_trans_tail.instrs;
-          exps = res_trans_s.exps @ res_trans_tail.exps }
+          instrs = res_trans_tail.instrs @ res_trans_s.instrs;
+          exps = res_trans_tail.exps @ res_trans_s.exps }
 
   and get_clang_stmt_trans stmt_list =
     let instruction' = fun stmt -> fun trans_state -> instruction trans_state stmt in
@@ -2073,7 +2073,8 @@ struct
 
   (** Given a translation state, this function translates a list of clang statements. *)
   and instructions trans_state stmt_list =
-    exec_trans_instrs trans_state (get_clang_stmt_trans stmt_list)
+    let rev_stmt_list = IList.rev stmt_list in
+    exec_trans_instrs trans_state (get_clang_stmt_trans rev_stmt_list)
 
   and expression_trans context stmt warning =
     let trans_state = {

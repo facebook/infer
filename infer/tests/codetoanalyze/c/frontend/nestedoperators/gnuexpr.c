@@ -13,3 +13,11 @@ int main() {
     y = ({int X = 4; X;});
     return 0;
 }
+
+int test(int* p) {
+    return ({
+        int x = *p;
+        int y = 1;
+        x + y;
+    });
+}
