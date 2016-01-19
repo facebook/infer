@@ -19,8 +19,8 @@ We provide a source release of Infer packaged with pre-built binaries for clang 
 ## Compile and install Infer
 
 ```bash
-tar xf infer-*-v0.5.0.tar.xz
-cd infer-*-v0.5.0
+tar xf infer-*-v0.6.0.tar.xz
+cd infer-*-v0.6.0
 ./build-infer.sh
 export PATH=`pwd`/infer/bin:$PATH
 ```
