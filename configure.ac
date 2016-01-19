@@ -13,13 +13,13 @@ AC_PREREQ([2.63])
 # WARNING: AC_INIT only accepts string literals so the version number
 # has to be kept in sync with below
 AC_INIT([Infer],
-        [0.5.0],
+        [0.6.0],
         [https://github.com/facebook/infer/issues/])
 AC_CONFIG_SRCDIR([infer/src/backend/sil.ml])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=0
-INFER_MINOR=5
+INFER_MINOR=6
 INFER_PATCH=0
 
 AC_SUBST([INFER_MAJOR])
