@@ -224,6 +224,15 @@ struct
       f trans_state e
     else f { trans_state with priority = Free } e
 
+  let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
+    let procname = Cfg.Procdesc.get_proc_name procdesc in
+    let id = Ident.create_fresh Ident.knormal in
+    let pvar_mangled = Mangled.from_string (var_name_prefix ^ Ident.to_string id) in
+    let pvar = Sil.mk_pvar pvar_mangled procname in
+    let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
+    let typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
+    (pvar, typ)
+
   let breakStmt_trans trans_state =
     match trans_state.continuation with
     | Some bn -> { empty_res_trans with root_nodes = bn.break }
@@ -1447,6 +1456,7 @@ struct
          | _ -> Printing.log_stats "\n!!!!WARNING: found statement <\"ImplicitValueInitExpr\"> with non-empty stmt_list.\n");
         { empty_res_trans with root_nodes = trans_state.succ_nodes }
     | Some (InitListExpr (stmt_info , stmts , expr_info))
+    | Some (ImplicitCastExpr (_, [CompoundLiteralExpr (_, [InitListExpr (stmt_info , stmts , expr_info)], _)], _, _))
     | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
         initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts
     | Some (CXXConstructExpr _ as expr) ->
@@ -1809,19 +1819,23 @@ struct
   and materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
-    let procname = Cfg.Procdesc.get_proc_name procdesc in
-    let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
-    (* use id to create unique variable name within a function *)
-    let id = Ident.create_fresh Ident.knormal in
-    let pvar_mangled = Mangled.from_string ("SIL_materialize_temp__" ^ (Ident.to_string id)) in
-    let pvar = Sil.mk_pvar pvar_mangled procname in
-    let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+    let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
+        "SIL_materialize_temp__" expr_info in
     let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
     let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
+    let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
     Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
     let res_trans = init_expr_trans trans_state var_res_trans stmt_info (Some temp_exp) in
     { res_trans with exps = [(Sil.Lvar pvar, typ)] }
+
+  and compoundLiteralExpr_trans trans_state stmt_info stmt_list expr_info =
+    let context = trans_state.context in
+    let procdesc = context.CContext.procdesc in
+    let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
+        "SIL_compound_literal__" expr_info in
+    let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
+    let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
+    initListExpr_trans trans_state var_res_trans stmt_info expr_info stmt_list
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
@@ -2038,6 +2052,8 @@ struct
         cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
+    | CompoundLiteralExpr (_, [InitListExpr (stmt_info , stmt_list , expr_info)], _) ->
+        compoundLiteralExpr_trans trans_state stmt_info stmt_list expr_info
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);

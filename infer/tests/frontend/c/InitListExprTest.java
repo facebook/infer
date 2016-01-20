@@ -40,4 +40,11 @@ public class InitListExprTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("struct_initlistexpr.c");
   }
+
+  @Test
+  public void whenCaptureRunOnCompoundLiteralExprThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("compound_literal.c");
+  }
+
 }
