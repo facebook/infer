@@ -13,7 +13,7 @@ import subprocess
 import traceback
 import util
 
-from inferlib import config, issues, utils
+from inferlib import config, issues, utils, bucklib
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -153,22 +153,5 @@ class BuckAnalyzer:
 
     def capture_without_flavors(self):
         # BuckAnalyze is a special case, and we run the analysis from here
-        capture_cmd = [utils.get_cmd_in_bin_dir('BuckAnalyze')]
-        if self.args.infer_out is not None:
-            capture_cmd += ['--out', self.args.infer_out]
-        if self.args.debug:
-            capture_cmd.append('-g')
-        if self.args.debug_exceptions:
-            capture_cmd.append('--debug-exceptions')
-        if self.args.no_filtering:
-            capture_cmd.append('--no-filtering')
-        if self.args.verbose:
-            capture_cmd.append('--verbose')
-        if self.args.no_cache:
-            capture_cmd.append('--no-cache')
-        if self.args.print_harness:
-            capture_cmd.append('--print-harness')
-        capture_cmd += self.cmd[2:]  # TODO: make extraction of targets smarter
-        capture_cmd += ['--analyzer', self.args.analyzer]
-        subprocess.check_call(capture_cmd)
-        return os.EX_OK
+        buck_wrapper = bucklib.Wrapper(self.args, self.cmd)
+        return buck_wrapper.run()

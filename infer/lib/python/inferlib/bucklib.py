@@ -118,7 +118,7 @@ def prepare_build(args):
     return temp_files, infer_script.name
 
 
-def get_normalized_targets(targets):
+def get_normalized_targets(targets, verbose):
     """ Use buck to convert a list of input targets/aliases
         into a set of the (transitive) target deps for all inputs"""
 
@@ -133,7 +133,7 @@ def get_normalized_targets(targets):
         targets = filter(
             lambda line: len(line) > 0,
             subprocess.check_output(buck_cmd).decode().strip().split('\n'))
-        if len(targets) > 0 and args.verbose:
+        if len(targets) > 0 and verbose:
             logging.debug('Targets to analyze:')
             for target in targets:
                 logging.debug(target)
@@ -420,67 +420,78 @@ def cleanup(temp_files):
             logging.error('Could not remove %s' % file)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(parents=[analyze.base_parser])
-    parser.add_argument('--verbose', action='store_true',
-                        help='Print buck compilation steps')
-    parser.add_argument('--no-cache', action='store_true',
-                        help='Do not use buck distributed cache')
-    parser.add_argument('--print-harness', action='store_true',
-                        help='Print generated harness code (Android only)')
-    parser.add_argument('targets', nargs='*', metavar='target',
-                        help='Build targets to analyze')
-    args = parser.parse_args()
+parser = argparse.ArgumentParser()
+parser.add_argument('--build-report', metavar='PATH', type=str)
+parser.add_argument('--deep', action='store_true')
+parser.add_argument('--keep-going', action='store_true')
+parser.add_argument('--load-limit', '-L')
+parser.add_argument('--no-cache', action='store_true')
+parser.add_argument('--profile', action='store_true')
+parser.add_argument('--shallow', action='store_true')
+parser.add_argument('--num-threads', '-j', metavar='N')
+parser.add_argument('--verbose', '-v', metavar='N', type=int)
+parser.add_argument('targets', nargs='*', metavar='target',
+                    help='Build targets to analyze')
 
-    utils.configure_logging(args)
-    timer = utils.Timer(logging.info)
-    temp_files = []
 
-    try:
-        start_time = time.time()
-        logging.info('Starting the analysis')
-        subprocess.check_call(
-            [utils.get_cmd_in_bin_dir('InferAnalyze'), '-version'])
+class UnsuportedBuckCommand(Exception):
+    pass
 
-        if not os.path.isdir(args.infer_out):
-            os.mkdir(args.infer_out)
 
-        timer.start('Preparing build...')
-        temp_files2, infer_script = prepare_build(args)
-        temp_files += temp_files2
-        timer.stop('Build prepared')
+def parse_buck_command(args):
+    build_keyword = 'build'
+    if build_keyword in args and len(args[args.index(build_keyword):]) > 1:
+        next_index = args.index(build_keyword) + 1
+        buck_args = parser.parse_args(args[next_index:])
+        return buck_args
+    else:
+        raise UnsuportedBuckCommand(args)
 
-        # TODO(t3786463) Start buckd.
 
-        timer.start('Computing library targets')
-        normalized_targets = get_normalized_targets(args.targets)
-        timer.stop('%d targets computed', len(normalized_targets))
+class Wrapper:
 
-        if len(normalized_targets) == 0:
-            logging.info('Nothing to analyze')
-        else:
-            timer.start('Running buck...')
-            buck_cmd = [
-                'buck', 'build', '--config', 'tools.javac=' + infer_script]
-            if args.no_cache:
-                buck_cmd += ['--no-cache']
-            if args.verbose:
-                buck_cmd += ['-v', '2']
-            compile_cmd = buck_cmd + normalized_targets
-            subprocess.check_call(compile_cmd)
-            timer.stop('Buck finished')
+    def __init__(self, infer_args, buck_cmd):
+        self.timer = utils.Timer(logging.info)
+        self.infer_args = infer_args
+        self.buck_args = parse_buck_command(buck_cmd)
+        self.timer.start('Computing library targets')
+        self.targets = get_normalized_targets(
+            self.buck_args.targets,
+            self.infer_args.verbose)
+        self.timer.stop('%d targets computed', len(self.targets))
 
-            timer.start('Collecting results...')
-            collect_results(args, start_time)
-            timer.stop('Done')
+    def run(self):
+        temp_files = []
+        try:
+            start_time = time.time()
+            logging.info('Starting the analysis')
 
-    except KeyboardInterrupt as e:
-        timer.stop('Exiting')
-        sys.exit(0)
-    except Exception as e:
-        timer.stop('Failed')
-        logging.error('Caught %s: %s' % (e.__class__.__name__, str(e)))
-        logging.error(traceback.format_exc())
-        sys.exit(1)
-    finally:
-        cleanup(temp_files)
+            if not os.path.isdir(self.infer_args.infer_out):
+                os.mkdir(self.infer_args.infer_out)
+
+            self.timer.start('Preparing build...')
+            temp_files2, infer_script = prepare_build(self.infer_args)
+            temp_files += temp_files2
+            self.timer.stop('Build prepared')
+
+            if len(self.targets) == 0:
+                logging.info('Nothing to analyze')
+            else:
+                self.timer.start('Running buck...')
+                buck_cmd = ['buck', 'build']
+                if self.buck_args.verbose is not None:
+                    buck_cmd += ['--verbose', str(self.buck_args.verbose)]
+                buck_cmd += ['--config', 'tools.javac=' + infer_script]
+                buck_cmd += self.targets
+                subprocess.check_call(buck_cmd)
+                self.timer.stop('Buck finished')
+
+                self.timer.start('Collecting results...')
+                collect_results(self.infer_args, start_time)
+                self.timer.stop('Done')
+            return os.EX_OK
+        except KeyboardInterrupt as e:
+            self.timer.stop('Exiting')
+            sys.exit(0)
+        finally:
+            cleanup(temp_files)

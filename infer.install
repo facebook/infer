@@ -6,6 +6,5 @@ bin: [
   "?infer/bin/InferClang"
   "infer/bin/InferAnalyze"
   "infer/bin/InferPrint"
-  "infer/bin/BuckAnalyze"
 ]
 

@@ -20,5 +20,3 @@ The rest of the commands in infer/bin/ are not meant to be called directly, but 
 *InferAnalyze* : Binary containing the backend of Infer that performs the analysis.
 
 *InferPrint* : Binary that prints reports about the analysis such as the specs of methods and a list of bugs found.
-
-*BuckAnalyze* : Command for running the analysis of Java projects compiled with Buck.
