@@ -1834,6 +1834,7 @@ struct
     let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
         "SIL_compound_literal__" expr_info in
     let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
+    Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
     let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
     initListExpr_trans trans_state var_res_trans stmt_info expr_info stmt_list
 
