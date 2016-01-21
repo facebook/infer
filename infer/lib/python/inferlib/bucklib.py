@@ -453,12 +453,15 @@ class Wrapper:
     def __init__(self, infer_args, buck_cmd):
         self.timer = utils.Timer(logging.info)
         self.infer_args = infer_args
-        self.buck_args = parse_buck_command(buck_cmd)
+        buck_args = parse_buck_command(buck_cmd)
         self.timer.start('Computing library targets')
-        self.targets = get_normalized_targets(
-            self.buck_args.targets,
+        buck_cmd_without_targets = [p for p in buck_cmd
+                                    if p not in buck_args.targets]
+        self.normalized_targets = get_normalized_targets(
+            buck_args.targets,
             self.infer_args.verbose)
-        self.timer.stop('%d targets computed', len(self.targets))
+        self.buck_cmd = buck_cmd_without_targets + self.normalized_targets
+        self.timer.stop('%d targets computed', len(self.normalized_targets))
 
     def run(self):
         temp_files = []
@@ -474,18 +477,14 @@ class Wrapper:
             temp_files += temp_files2
             self.timer.stop('Build prepared')
 
-            if len(self.targets) == 0:
+            if len(self.normalized_targets) == 0:
                 logging.info('Nothing to analyze')
             else:
                 self.timer.start('Running buck...')
-                buck_cmd = ['buck', 'build']
-                if self.buck_args.verbose is not None:
-                    buck_cmd += ['--verbose', str(self.buck_args.verbose)]
-                buck_cmd += ['--config', 'tools.javac=' + infer_script]
-                buck_cmd += self.targets
+                javac_config = ['--config', 'tools.javac=' + infer_script]
+                buck_cmd = self.buck_cmd + javac_config
                 subprocess.check_call(buck_cmd)
                 self.timer.stop('Buck finished')
-
                 self.timer.start('Collecting results...')
                 collect_results(self.infer_args, start_time)
                 self.timer.stop('Done')
