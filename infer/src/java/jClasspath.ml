@@ -185,7 +185,6 @@ let load_sources_and_classes () =
       | JVerbose.Classpath parsed_paths ->
           loop parsed_paths roots sources classes
     with
-    | JBasics.Class_structure_error _
     | Parsing.Parse_error
     | Invalid_argument _
     | Failure "lexing: empty token" -> loop paths roots sources classes
