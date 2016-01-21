@@ -346,7 +346,7 @@ let rec execute_nullify_se = function
 
 (** Do pruning for conditional [if (e1 != e2) ] if [positive] is true
     and [(if (e1 == e2)] if [positive] is false *)
-let prune_ne tenv positive e1 e2 prop =
+let prune_ne positive e1 e2 prop =
   let is_inconsistent =
     if positive then Prover.check_equal prop e1 e2
     else Prover.check_disequal prop e1 e2 in
@@ -386,10 +386,10 @@ let prune_ineq ~is_strict positive prop e1 e2 =
       let prop_with_ineq = Prop.conjoin_eq ~footprint prune_cond Sil.exp_one prop in
       Propset.singleton prop_with_ineq
 
-let rec prune_polarity tenv positive condition prop =
+let rec prune_polarity positive condition prop =
   match condition with
   | Sil.Var _ | Sil.Lvar _ ->
-      prune_ne tenv positive condition Sil.exp_zero prop
+      prune_ne positive condition Sil.exp_zero prop
   | Sil.Const (Sil.Cint i) when Sil.Int.iszero i ->
       if positive then Propset.empty else Propset.singleton prop
   | Sil.Const (Sil.Cint _) | Sil.Sizeof _ | Sil.Const (Sil.Cstr _) | Sil.Const (Sil.Cclass _) ->
@@ -397,52 +397,52 @@ let rec prune_polarity tenv positive condition prop =
   | Sil.Const _ ->
       assert false
   | Sil.Cast (_, condition') ->
-      prune_polarity tenv positive condition' prop
+      prune_polarity positive condition' prop
   | Sil.UnOp (Sil.LNot, condition', _) ->
-      prune_polarity tenv (not positive) condition' prop
+      prune_polarity (not positive) condition' prop
   | Sil.UnOp _ ->
       assert false
   | Sil.BinOp (Sil.Eq, e, Sil.Const (Sil.Cint i))
   | Sil.BinOp (Sil.Eq, Sil.Const (Sil.Cint i), e) when Sil.Int.iszero i && not (Sil.Int.isnull i) ->
-      prune_polarity tenv (not positive) e prop
+      prune_polarity (not positive) e prop
   | Sil.BinOp (Sil.Eq, e1, e2) ->
-      prune_ne tenv (not positive) e1 e2 prop
+      prune_ne (not positive) e1 e2 prop
   | Sil.BinOp (Sil.Ne, e, Sil.Const (Sil.Cint i))
   | Sil.BinOp (Sil.Ne, Sil.Const (Sil.Cint i), e) when Sil.Int.iszero i && not (Sil.Int.isnull i) ->
-      prune_polarity tenv positive e prop
+      prune_polarity positive e prop
   | Sil.BinOp (Sil.Ne, e1, e2) ->
-      prune_ne tenv positive e1 e2 prop
+      prune_ne positive e1 e2 prop
   | Sil.BinOp (Sil.Ge, e2, e1) | Sil.BinOp (Sil.Le, e1, e2) ->
       prune_ineq ~is_strict:false positive prop e1 e2
   | Sil.BinOp (Sil.Gt, e2, e1) | Sil.BinOp (Sil.Lt, e1, e2) ->
       prune_ineq ~is_strict:true positive prop e1 e2
   | Sil.BinOp (Sil.LAnd, condition1, condition2) ->
       let pruner = if positive then prune_polarity_inter else prune_polarity_union in
-      pruner tenv positive condition1 condition2 prop
+      pruner positive condition1 condition2 prop
   | Sil.BinOp (Sil.LOr, condition1, condition2) ->
       let pruner = if positive then prune_polarity_union else prune_polarity_inter in
-      pruner tenv positive condition1 condition2 prop
+      pruner positive condition1 condition2 prop
   | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ ->
-      prune_ne tenv positive condition Sil.exp_zero prop
+      prune_ne positive condition Sil.exp_zero prop
 
-and prune_polarity_inter tenv positive condition1 condition2 prop =
+and prune_polarity_inter positive condition1 condition2 prop =
   let res = ref Propset.empty in
-  let pset1 = prune_polarity tenv positive condition1 prop in
+  let pset1 = prune_polarity positive condition1 prop in
   let do_p p =
-    res := Propset.union (prune_polarity tenv positive condition2 p) !res in
+    res := Propset.union (prune_polarity positive condition2 p) !res in
   Propset.iter do_p pset1;
   !res
 
-and prune_polarity_union tenv positive condition1 condition2 prop =
-  let pset1 = prune_polarity tenv positive condition1 prop in
-  let pset2 = prune_polarity tenv positive condition2 prop in
+and prune_polarity_union positive condition1 condition2 prop =
+  let pset1 = prune_polarity positive condition1 prop in
+  let pset2 = prune_polarity positive condition2 prop in
   Propset.union pset1 pset2
 
-let prune_prop tenv condition prop =
+let prune_prop condition prop =
   match condition with
   | Sil.Const (Sil.Cint i) when Sil.Int.iszero i -> Propset.empty
   | Sil.Const (Sil.Cint _) -> Propset.singleton prop
-  | _ -> prune_polarity tenv true condition prop
+  | _ -> prune_polarity true condition prop
 
 let dangerous_functions =
   let dangerous_list = ["gets"] in
@@ -792,7 +792,7 @@ let handle_objc_method_call actual_pars actual_params pre tenv cfg ret_ids pdesc
     if !Config.footprint && not is_undef then
       let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
         let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
-        let propset = prune_ne tenv false receiver Sil.exp_zero pre_with_attr_or_null in
+        let propset = prune_ne false receiver Sil.exp_zero pre_with_attr_or_null in
         if Propset.is_empty propset then []
         else
           let prop = IList.hd (Propset.to_proplist propset) in
@@ -1050,7 +1050,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       check_already_dereferenced pname cond _prop;
       check_condition_always_true_false ();
       let n_cond, prop = exp_norm_check_arith pname _prop cond in
-      ret_old_path (Propset.to_proplist (prune_prop tenv n_cond prop))
+      ret_old_path (Propset.to_proplist (prune_prop n_cond prop))
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), args, loc, call_flags)
     when function_is_builtin callee_pname ->
       let sym_exe_builtin = Builtin.get_sym_exe_builtin callee_pname in
@@ -1783,8 +1783,8 @@ module ModelBuiltins = struct
         | None -> prop in
     let sil_is_null = Sil.BinOp (Sil.Eq, n_lexp, Sil.exp_zero) in
     let sil_is_nonnull = Sil.UnOp (Sil.LNot, sil_is_null, None) in
-    let null_case = Propset.to_proplist (prune_prop tenv sil_is_null prop) in
-    let non_null_case = Propset.to_proplist (prune_prop tenv sil_is_nonnull prop_type) in
+    let null_case = Propset.to_proplist (prune_prop sil_is_null prop) in
+    let non_null_case = Propset.to_proplist (prune_prop sil_is_nonnull prop_type) in
     if ((IList.length non_null_case) > 0) && (!Config.footprint) then
       non_null_case
     else if ((IList.length non_null_case) > 0) && (is_undefined_opt prop n_lexp) then
@@ -2234,9 +2234,9 @@ module ModelBuiltins = struct
           let pname = Cfg.Procdesc.get_proc_name pdesc in
           let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
           let prop_nonzero = (* case n_lexp!=0 *)
-            Propset.to_proplist (prune_polarity tenv true n_lexp prop) in
+            Propset.to_proplist (prune_polarity true n_lexp prop) in
           let prop_zero = (* case n_lexp==0 *)
-            Propset.to_proplist (prune_polarity tenv false n_lexp prop) in
+            Propset.to_proplist (prune_polarity false n_lexp prop) in
           let plist =
             prop_zero @ (* model: if 0 then skip else _execute_free_nonzero *)
             IList.flatten (IList.map (fun p ->
