@@ -101,9 +101,6 @@ base_group.add_argument('-l', '--llvm', action='store_true',
                         help='''[experimental] Analyze C or C++ file using the
                         experimental LLVM frontend''')
 
-base_group.add_argument('--log_to_stderr', action='store_true',
-                        help='''When set, all logging will go to stderr instead
-                        of the log file''')
 base_parser.add_argument('-v', '--version',
                          help='''Print the version of Infer and exit''',
                          action=VersionAction)
@@ -246,8 +243,6 @@ class Infer:
         if self.args.analyzer not in config.ANALYZERS:
             help_exit('Unknown analysis mode \"{0}\"'
                       .format(self.args.analyzer))
-
-        utils.configure_logging(self.args.debug)
 
         self.javac = jwlib.CompilerCall(javac_args)
 

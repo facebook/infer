@@ -58,7 +58,7 @@ def locale_csv_reader(iterable, dialect='excel', **kwargs):
         yield [unicode(cell, config.LOCALE) for cell in row]
 
 
-def configure_logging(debug, quiet=False):
+def configure_logging(args):
     """Configures the default logger. This can be called only once and has to
     be called before any logging is done.
     """
@@ -69,12 +69,14 @@ def configure_logging(debug, quiet=False):
         logging.log(logging.TIMING, msg, *args, **kwargs)
 
     logging.timing = timing
-    if quiet:
-        logging.basicConfig(level=logging.TIMING, format=FORMAT)
-    elif not debug:
-        logging.basicConfig(level=logging.INFO, format=FORMAT)
-    else:
+    if args.debug:
         logging.basicConfig(level=logging.DEBUG, format=DEBUG_FORMAT)
+    else:
+        logging.basicConfig(level=logging.INFO,
+                            format=FORMAT,
+                            filename=os.path.join(args.infer_out,
+                                                  config.LOG_FILE),
+                            filemode='w')
 
 
 def elapsed_time(start_time):

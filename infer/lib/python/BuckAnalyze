@@ -432,7 +432,7 @@ if __name__ == '__main__':
                         help='Build targets to analyze')
     args = parser.parse_args()
 
-    utils.configure_logging(args.verbose)
+    utils.configure_logging(args)
     timer = utils.Timer(logging.info)
     temp_files = []
 

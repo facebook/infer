@@ -32,9 +32,6 @@ MODULE_TO_COMMAND = {
     'mvn': ['mvn']
 }
 
-FORMAT = '[%(levelname)s] %(message)s'
-LOG_FILE = 'toplevel.log'
-
 def get_commands():
     """Return all commands that are supported."""
     #flatten and dedup the list of commands
@@ -95,16 +92,6 @@ def create_argparser(parents=[]):
     return parser
 
 
-def configure_logging(infer_dir, log_to_stderr):
-    if log_to_stderr:
-        logging.basicConfig(level=logging.INFO, format=FORMAT)
-    else:
-        logging.basicConfig(level=logging.INFO,
-                            format=FORMAT,
-                            filename=os.path.join(infer_dir, LOG_FILE),
-                            filemode='w')
-
-
 def main():
     to_parse, cmd = split_args_to_parse()
     # get the module name (if any), then load it
@@ -132,7 +119,7 @@ def main():
     if imported_module:
         analyze.create_results_dir(args.infer_out)
 
-        configure_logging(args.infer_out, args.log_to_stderr)
+        utils.configure_logging(args)
         logging.info('Running command %s', ' '.join(sys.argv))
         logging.info('Path to infer script %s (%s)', __file__,
                  os.path.realpath(__file__))

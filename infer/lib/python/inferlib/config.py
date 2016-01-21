@@ -45,6 +45,8 @@ BUGS_FILENAME = 'bugs.txt'
 IOS_CAPTURE_ERRORS = 'errors'
 IOS_BUILD_OUTPUT = 'build_output'
 
+LOG_FILE = 'toplevel.log'
+
 BUCK_INFER_OUT = 'infer'
 
 CLASS_SOURCE_MAP_OUTPUT_FILENAME_OPTION = 'classSourceMapOutputFilename'
