@@ -26,6 +26,8 @@ parser.add_argument('-deprecation', action='store_true')
 parser.add_argument('-cp', '-classpath', type=str, dest='classpath')
 parser.add_argument('-bootclasspath', type=str)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
+parser.add_argument('-processorpath', type=str, dest='processorpath')
+parser.add_argument('-processor', type=str, dest='processor')
 
 
 class AnnotationProcessorNotFound(Exception):
@@ -57,19 +59,37 @@ class CompilerCall:
 
             if not os.path.isfile(config.ANNOT_PROCESSOR_JAR):
                 raise AnnotationProcessorNotFound(config.ANNOT_PROCESSOR_JAR)
-
-            if self.args.classpath is None:
-                classpath = config.ANNOT_PROCESSOR_JAR
-            else:
-                classpath = os.pathsep.join([
-                    config.ANNOT_PROCESSOR_JAR,
-                    self.args.classpath])
-            javac_cmd += ['-cp', classpath]
-
             if self.args.classes_out is not None:
                 javac_cmd += ['-d', self.args.classes_out]
             javac_cmd += self.remaining_args
+
             javac_cmd.append('-J-Duser.language=en')
+
+            classpath = self.args.classpath
+            # the -processorpath option precludes searching the classpath for
+            # annotation processors, so we don't want to use it unless the
+            # javac command does
+            if self.args.processorpath is not None:
+                processorpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
+                                                 self.args.processorpath])
+                javac_cmd += ['-processorpath', processorpath]
+            else:
+                if classpath is not None:
+                    classpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
+                                                 classpath])
+                else:
+                    classpath = config.ANNOT_PROCESSOR_JAR
+
+            if classpath is not None:
+                javac_cmd += ['-classpath', classpath]
+
+            # this overrides the default mechanism for discovering annotation
+            # processors (checking the manifest of the annotation processor
+            # JAR), so we don't want to use it unless the javac command does
+            if self.args.processor is not None:
+                processor = '%s,%s' % (config.ANNOT_PROCESSOR_NAMES,
+                                       self.args.processor)
+                javac_cmd += ['-processor', processor]
 
             with tempfile.NamedTemporaryFile(
                     mode='w',
