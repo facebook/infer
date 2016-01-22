@@ -146,7 +146,6 @@ let do_analysis curr_pdesc proc_name =
   match !callbacks_ref with
   | Some callbacks
     when procedure_should_be_analyzed curr_pdesc proc_name ->
-
       begin
         match callbacks.get_proc_desc proc_name with
         | Some proc_desc ->

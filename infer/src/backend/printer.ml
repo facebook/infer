@@ -92,7 +92,8 @@ end = struct
   let finish_node nodeid =
     let fname = id_to_fname nodeid in
     let fd = Hashtbl.find log_files (fname, !DB.current_source) in
-    Unix.close fd;
+    if not !Config.ondemand_enabled (* TODO: close all file descriptors at the end in on-demand *)
+    then Unix.close fd;
     html_formatter := F.std_formatter
 end
 (* =============== END of module Log_nodes =============== *)

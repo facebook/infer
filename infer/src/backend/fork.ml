@@ -40,14 +40,19 @@ let proc_is_up_to_date gr pname =
   | None -> false
   | Some summary ->
       let filter dependent_proc =
-        Specs.get_timestamp summary =
-        Procname.Map.find dependent_proc summary.Specs.dependency_map in
+        try
+          Specs.get_timestamp summary =
+          Procname.Map.find dependent_proc summary.Specs.dependency_map
+        with Not_found -> (* can happen in on-demand *)
+          true in
       Procname.Set.for_all filter (Cg.get_defined_children gr pname)
 
 (** Return the list of procedures which should perform a phase
     transition from [FOOTPRINT] to [RE_EXECUTION] *)
 let should_perform_transition gr proc_name : Procname.t list =
-  let recursive_dependents = Cg.get_recursive_dependents gr proc_name in
+  let recursive_dependents =
+    if !Config.ondemand_enabled then Procname.Set.empty
+    else Cg.get_recursive_dependents gr proc_name in
   let recursive_dependents_plus_self = Procname.Set.add proc_name recursive_dependents in
   let should_transition =
     Specs.get_phase proc_name == Specs.FOOTPRINT &&
