@@ -640,7 +640,7 @@ let report_context_leaks pname sigma tenv =
       (fun exps hpred -> match hpred with
          | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Sil.Tptr (typ, _), _))
            when AndroidFramework.is_context typ tenv
-                && not (AndroidFramework.is_application typ tenv) ->
+             && not (AndroidFramework.is_application typ tenv) ->
              (exp, typ) :: exps
          | _ -> exps)
       []
@@ -894,7 +894,7 @@ let pp_intra_stats cfg proc_desc fmt proc_name =
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
 let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
-  : (unit -> unit) * (unit -> Prop.normal Specs.spec list) =
+  : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
   let start_node = Cfg.Procdesc.get_start_node pdesc in
 
   let check_recursion_level () =
@@ -906,7 +906,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
         raise (Analysis_failure_exe (FKrecursion_timeout recursion_level))
       end in
 
-  let compute_footprint : (unit -> unit) * (unit -> Prop.normal Specs.spec list) =
+  let compute_footprint : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
     let go () =
       let init_prop = initial_prop_from_emp tenv pdesc in
       let init_props_from_pres = (* use existing pre's (in recursion some might exist) as starting points *)
@@ -949,10 +949,11 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
             Reporting.log_error pname ~pre: pre_opt exn;
             [] (* retuning no specs *) in
-      specs in
+      specs, Specs.FOOTPRINT in
     go, get_results in
 
-  let re_execution proc_name : (unit -> unit) * (unit -> Prop.normal Specs.spec list) =
+  let re_execution proc_name
+    : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
     let candidate_preconditions = IList.map (fun spec -> spec.Specs.pre) (Specs.get_specs proc_name) in
     let valid_specs = ref [] in
     let go () =
@@ -991,7 +992,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       L.out "@. *** VALID PRECONDITIONS FOR %a: " Procname.pp proc_name;
       L.out "@.================================================@.";
       L.out "@.%a @.@." (Specs.Jprop.pp_list pe_text true) valid_preconditions;
-      specs in
+      specs, Specs.RE_EXECUTION in
     go, get_results in
 
   match Specs.get_phase pname with
@@ -1109,25 +1110,28 @@ let report_custom_errors tenv cfg pdesc summary =
 
 
 (** update a summary after analysing a procedure *)
-let update_summary prev_summary specs proc_name elapsed res =
+let update_summary prev_summary specs phase proc_name elapsed res =
   let normal_specs = IList.map Specs.spec_normalize specs in
-  let new_specs, changed = Fork.update_specs proc_name normal_specs in
+  let new_specs, changed = Fork.update_specs proc_name phase normal_specs in
   let timestamp = max 1 (prev_summary.Specs.timestamp + if changed then 1 else 0) in
   let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
-  let failure = match res with
+  let stats_failure = match res with
     | None -> prev_summary.Specs.stats.Specs.stats_failure
     | Some failure_kind -> res in
   let stats =
     { prev_summary.Specs.stats with
-      Specs.stats_time = stats_time;
-      Specs.symops = symops;
-      Specs.stats_failure = failure; } in
+      Specs.stats_time;
+      symops;
+      stats_failure;
+    } in
   let payload =
     { prev_summary.Specs.payload with
-      Specs.preposts = Some new_specs; } in
+      Specs.preposts = Some new_specs;
+    } in
   { prev_summary with
-    Specs.stats;
+    Specs.phase;
+    stats;
     payload;
     timestamp;
   }
@@ -1147,11 +1151,11 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   reset_global_counters cfg proc_name proc_desc;
   let go, get_results = perform_analysis_phase cfg tenv proc_name proc_desc in
   let res = Fork.Timeout.exe_timeout (Specs.get_iterations proc_name) go () in
-  let specs = get_results () in
+  let specs, phase = get_results () in
   let elapsed = Unix.gettimeofday () -. init_time in
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
-    update_summary prev_summary specs proc_name elapsed res in
+    update_summary prev_summary specs phase proc_name elapsed res in
   if !Config.curr_language == Config.C_CPP && Config.report_custom_error then
     report_custom_errors tenv cfg proc_desc updated_summary;
   if !Config.curr_language == Config.Java && !Config.report_runtime_exceptions then

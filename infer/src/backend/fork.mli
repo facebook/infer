@@ -34,7 +34,8 @@ val should_perform_transition : Cg.t -> Procname.t -> Procname.t list
 val transition_footprint_re_exe : Procname.t -> Prop.normal Specs.Jprop.t list -> unit
 
 (** Update the specs of the current proc after the execution of one phase *)
-val update_specs : Procname.t -> Specs.NormSpec.t list -> Specs.NormSpec.t list * bool
+val update_specs :
+  Procname.t -> Specs.phase -> Specs.NormSpec.t list -> Specs.NormSpec.t list * bool
 
 type analyze_proc = Exe_env.t -> Procname.t -> Specs.summary
 

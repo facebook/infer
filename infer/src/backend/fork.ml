@@ -97,9 +97,9 @@ module SpecMap = Map.Make (struct
   end)
 
 (** Update the specs of the current proc after the execution of one phase *)
-let update_specs proc_name (new_specs : Specs.NormSpec.t list) : Specs.NormSpec.t list * bool =
+let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
+  : Specs.NormSpec.t list * bool =
   let new_specs = Specs.normalized_specs_to_specs new_specs in
-  let phase = Specs.get_phase proc_name in
   let old_specs = Specs.get_specs proc_name in
   let changed = ref false in
   let current_specs =
