@@ -27,6 +27,10 @@ let activate_field_over_annotated = Config.from_env_variable "ERADICATE_FIELD_OV
 (* activate the return over annotated warning *)
 let activate_return_over_annotated = Config.from_env_variable "ERADICATE_RETURN_OVER_ANNOTATED"
 
+(* activate the propagation of nullable to the return value *)
+let activate_propagate_return_nullable =
+  Config.from_env_variable "ERADICATE_PROPAGATE_RETURN_NULLABLE"
+
 (* do not report RETURN_NOT_NULLABLE if the return is annotated @Nonnull *)
 let return_nonnull_silent = true
 
@@ -42,7 +46,7 @@ let get_field_annotation fn typ =
         (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
         (* outside of Eradicate in some other way *)
         if (Models.Inference.enabled || not !Config.eradicate)
-           && Models.Inference.field_is_marked fn
+        && Models.Inference.field_is_marked fn
         then Annotations.mk_ia Annotations.Nullable ia
         else ia in
       Some (t, ia')
@@ -325,6 +329,23 @@ let check_constructor_initialization
     | _ -> ()
   end
 
+(** Make the return type @Nullable by modifying the spec. *)
+let spec_make_return_nullable curr_pname =
+  match Specs.get_summary curr_pname with
+  | Some summary ->
+      let proc_attributes = Specs.get_attributes summary in
+      let method_annotation = proc_attributes.ProcAttributes.method_annotation in
+      let method_annotation' = Annotations.method_annotation_mark_return
+          Annotations.Nullable method_annotation in
+      let proc_attributes' =
+        { proc_attributes with
+          ProcAttributes.method_annotation = method_annotation' } in
+      let summary' =
+        { summary with
+          Specs.attributes = proc_attributes' } in
+      Specs.add_summary curr_pname summary'
+  | None -> ()
+
 (** Check the annotations when returning from a method. *)
 let check_return_annotation
     find_canonical_duplicate curr_pname curr_pdesc exit_node ret_range
@@ -352,10 +373,13 @@ let check_return_annotation
         activate_return_over_annotated in
 
       if return_not_nullable && Models.Inference.enabled then
-        Models.Inference.proc_add_return_nullable curr_pname;
+        Models.Inference.proc_mark_return_nullable curr_pname;
 
-      if return_not_nullable && !Config.ondemand_enabled then
-        Ondemand.proc_add_return_nullable curr_pname;
+      if return_not_nullable &&
+         !Config.ondemand_enabled &&
+         activate_propagate_return_nullable
+      then
+        spec_make_return_nullable curr_pname;
 
       if return_not_nullable || return_value_not_present then
         begin
@@ -518,7 +542,7 @@ let check_overridden_annotations
       let _, overriden_ia, overriden_type = overriden_param in
       let () =
         if not (Annotations.ia_is_nullable current_ia)
-           && Annotations.ia_is_nullable overriden_ia then
+        && Annotations.ia_is_nullable overriden_ia then
           report_error
             find_canonical_duplicate
             start_node

@@ -66,7 +66,7 @@ module Inference = struct
     mark_file_count dir fname
 
   (** Mark the return type @Nullable indirectly by writing to a global file. *)
-  let proc_add_return_nullable pn =
+  let proc_mark_return_nullable pn =
     let dir, fname = proc_get_ret_dir_fname pn in
     mark_file_count dir fname
 

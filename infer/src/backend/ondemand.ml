@@ -154,21 +154,3 @@ let do_analysis curr_pdesc proc_name =
       end
   | _ ->
       () (* skipping *)
-
-
-(** Mark the return type @Nullable by modifying the spec. *)
-let proc_add_return_nullable curr_pname =
-  match Specs.get_summary curr_pname with
-  | Some summary ->
-      let proc_attributes = Specs.get_attributes summary in
-      let method_annotation = proc_attributes.ProcAttributes.method_annotation in
-      let method_annotation' = Annotations.method_annotation_mark_return
-          Annotations.Nullable method_annotation in
-      let proc_attributes' =
-        { proc_attributes with
-          ProcAttributes.method_annotation = method_annotation' } in
-      let summary' =
-        { summary with
-          Specs.attributes = proc_attributes' } in
-      Specs.add_summary curr_pname summary'
-  | None -> ()
