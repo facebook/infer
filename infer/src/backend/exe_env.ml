@@ -85,29 +85,32 @@ let add_active_proc exe_env proc_name =
 (** like add_cg, but use exclude_fun to determine files to be excluded *)
 let add_cg_exclude_fun (exe_env: t) (source_dir : DB.source_dir) exclude_fun =
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-  let cg = match Cg.load_from_file cg_fname with
-    | None -> (L.err "cannot load %s@." (DB.filename_to_string cg_fname); assert false)
+  let cg_opt = match Cg.load_from_file cg_fname with
+    | None -> (L.stderr "cannot load %s@." (DB.filename_to_string cg_fname); None)
     | Some cg ->
         Cg.restrict_defined cg exe_env.active_opt;
-        cg in
-  let source = Cg.get_source cg in
-  if exclude_fun source then None
-  else
-    let nLOC = Cg.get_nLOC cg in
-    Cg.extend exe_env.cg cg;
-    let file_data = new_file_data source nLOC cg_fname in
-    let defined_procs = Cg.get_defined_nodes cg in
-    IList.iter (fun pname ->
-        let should_update =
-          if Procname.Hash.mem exe_env.proc_map pname then
-            let old_source = (Procname.Hash.find exe_env.proc_map pname).source in
-            exe_env.procs_defined_in_several_files <- Procname.Set.add pname exe_env.procs_defined_in_several_files;
-            (* L.err "Warning: procedure %a is defined in both %s and %s@." Procname.pp pname (DB.source_file_to_string source) (DB.source_file_to_string old_source); *)
-            source < old_source (* when a procedure is defined in several files, map to the first alphabetically *)
-          else true in
-        if should_update then Procname.Hash.replace exe_env.proc_map pname file_data) defined_procs;
-    Hashtbl.add exe_env.file_map source file_data;
-    Some cg
+        Some cg in
+  match cg_opt with
+  | None -> None
+  | Some cg ->
+      let source = Cg.get_source cg in
+      if exclude_fun source then None
+      else
+        let nLOC = Cg.get_nLOC cg in
+        Cg.extend exe_env.cg cg;
+        let file_data = new_file_data source nLOC cg_fname in
+        let defined_procs = Cg.get_defined_nodes cg in
+        IList.iter (fun pname ->
+            let should_update =
+              if Procname.Hash.mem exe_env.proc_map pname then
+                let old_source = (Procname.Hash.find exe_env.proc_map pname).source in
+                exe_env.procs_defined_in_several_files <- Procname.Set.add pname exe_env.procs_defined_in_several_files;
+                (* L.err "Warning: procedure %a is defined in both %s and %s@." Procname.pp pname (DB.source_file_to_string source) (DB.source_file_to_string old_source); *)
+                source < old_source (* when a procedure is defined in several files, map to the first alphabetically *)
+              else true in
+            if should_update then Procname.Hash.replace exe_env.proc_map pname file_data) defined_procs;
+        Hashtbl.add exe_env.file_map source file_data;
+        Some cg
 
 (** add call graph from fname in the spec db, with relative tenv and cfg, to the execution environment *)
 let add_cg exe_env (source_dir : DB.source_dir) =
