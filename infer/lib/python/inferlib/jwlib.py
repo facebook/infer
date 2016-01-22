@@ -23,7 +23,8 @@ current_directory = os.getcwd()
 
 parser.add_argument('-version', action='store_true')
 parser.add_argument('-deprecation', action='store_true')
-parser.add_argument('-cp', '-classpath', type=str, dest='classpath')
+parser.add_argument('-cp', '-classpath', type=str,
+                    dest='classpath', default=os.getcwd())
 parser.add_argument('-bootclasspath', type=str)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
 parser.add_argument('-processorpath', type=str, dest='processorpath')
@@ -74,14 +75,10 @@ class CompilerCall:
                                                  self.args.processorpath])
                 javac_cmd += ['-processorpath', processorpath]
             else:
-                if classpath is not None:
-                    classpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
-                                                 classpath])
-                else:
-                    classpath = config.ANNOT_PROCESSOR_JAR
+                classpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
+                                             classpath])
 
-            if classpath is not None:
-                javac_cmd += ['-classpath', classpath]
+            javac_cmd += ['-classpath', classpath]
 
             # this overrides the default mechanism for discovering annotation
             # processors (checking the manifest of the annotation processor
