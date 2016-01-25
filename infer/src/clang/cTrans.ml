@@ -584,9 +584,8 @@ struct
      | [s1; ImplicitCastExpr (stmt, [CompoundLiteralExpr (cle_stmt_info, stmts, expr_info)], _, cast_expr_info)] ->
          let decl_ref  = get_decl_ref_info s1 in
          let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
-         let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ)] } in
          let res_trans_tmp =
-           initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts in
+           initListExpr_trans trans_state (Sil.Lvar pvar) stmt_info expr_info stmts in
          { res_trans_tmp with leaf_nodes =[]}
      | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
          let rhs_owning_method = CTrans_utils.is_owning_method s2 in
@@ -784,11 +783,15 @@ struct
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type
 
-  and cxxConstructExpr_trans trans_state this_res_trans expr =
+  and cxxConstructExpr_trans trans_state var_exp expr =
     match expr with
     | Clang_ast_t.CXXConstructExpr (si, params_stmt, ei, cxx_constr_info) ->
+        let context = trans_state.context in
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
         let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
+        let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
+        let this_type = Sil.Tptr (class_type, Sil.Pk_pointer) in
+        let this_res_trans = { empty_res_trans with exps = [(var_exp, this_type)]} in
         let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
         let params_stmt' = assign_default_params params_stmt expr in
         cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt' si
@@ -1349,9 +1352,7 @@ struct
     let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
-  and initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts =
-    let var_exp, _ = extract_exp_from_list var_res_trans.exps
-        "WARNING: InitListExpr expects one variable expression" in
+  and initListExpr_trans trans_state var_exp stmt_info expr_info stmts =
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
     let rec collect_right_hand_exprs ts stmt = match stmt with
@@ -1444,7 +1445,7 @@ struct
       }
     )
 
-  and init_expr_trans trans_state var_res_trans var_stmt_info init_expr_opt =
+  and init_expr_trans trans_state var_exp var_stmt_info init_expr_opt =
     let open Clang_ast_t in
     match init_expr_opt with
     | None -> { empty_res_trans with root_nodes = trans_state.succ_nodes } (* Nothing to do if no init expression *)
@@ -1458,15 +1459,13 @@ struct
     | Some (InitListExpr (stmt_info , stmts , expr_info))
     | Some (ImplicitCastExpr (_, [CompoundLiteralExpr (_, [InitListExpr (stmt_info , stmts , expr_info)], _)], _, _))
     | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
-        initListExpr_trans trans_state var_res_trans stmt_info expr_info stmts
+        initListExpr_trans trans_state var_exp stmt_info expr_info stmts
     | Some (CXXConstructExpr _ as expr) ->
-        cxxConstructExpr_trans trans_state var_res_trans expr
+        cxxConstructExpr_trans trans_state var_exp expr
     | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
         let stmt_info, _ = Clang_ast_proj.get_stmt_tuple ie in
         let context = trans_state.context in
         let sil_loc = CLocation.get_sil_location stmt_info context in
-        let var_exp, var_typ = extract_exp_from_list var_res_trans.exps
-            "WARNING: init_expr_trans expects one variable expression" in
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state var_stmt_info in
         (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
         let res_trans_ie =
@@ -1489,7 +1488,7 @@ struct
         let res_trans_assign = { empty_res_trans with
                                  ids = ids_assign;
                                  instrs = instrs_assign } in
-        let all_res_trans = [var_res_trans; res_trans_ie; res_trans_assign] in
+        let all_res_trans = [res_trans_ie; res_trans_assign] in
         let res_trans = PriorityNode.compute_results_to_parent trans_state_pri sil_loc "DeclStmt"
             var_stmt_info all_res_trans in
         { res_trans with exps =  [(var_exp, ie_typ)] }
@@ -1503,11 +1502,9 @@ struct
       let var_decl = VarDecl (di, var_name, type_ptr, vdi) in
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
       let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
-      let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
-      let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
       let trans_state' = { trans_state with succ_nodes = next_node } in
-      init_expr_trans trans_state' var_res_trans stmt_info vdi.Clang_ast_t.vdi_init_expr in
+      init_expr_trans trans_state' (Sil.Lvar pvar) stmt_info vdi.Clang_ast_t.vdi_init_expr in
 
     match var_decls with
     | [] -> { empty_res_trans with root_nodes = next_nodes }
@@ -1821,22 +1818,19 @@ struct
     let procdesc = context.CContext.procdesc in
     let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
         "SIL_materialize_temp__" expr_info in
-    let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
-    let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
     let temp_exp = match stmt_list with [p] -> p | _ -> assert false in
     Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
-    let res_trans = init_expr_trans trans_state var_res_trans stmt_info (Some temp_exp) in
-    { res_trans with exps = [(Sil.Lvar pvar, typ)] }
+    let var_exp = Sil.Lvar pvar in
+    let res_trans = init_expr_trans trans_state var_exp stmt_info (Some temp_exp) in
+    { res_trans with exps = [(var_exp, typ)] }
 
   and compoundLiteralExpr_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
     let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
         "SIL_compound_literal__" expr_info in
-    let typ_ptr = Sil.Tptr (typ, Sil.Pk_pointer) in
     Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
-    let var_res_trans = { empty_res_trans with exps = [(Sil.Lvar pvar, typ_ptr)] } in
-    initListExpr_trans trans_state var_res_trans stmt_info expr_info stmt_list
+    initListExpr_trans trans_state (Sil.Lvar pvar) stmt_info expr_info stmt_list
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
