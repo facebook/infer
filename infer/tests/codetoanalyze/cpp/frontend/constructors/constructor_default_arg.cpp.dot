@@ -1,13 +1,13 @@
 digraph iCFG {
-11 [label="11:  Call _fun_X_X \n   _fun_X_X(&x1:class X *,0:int ,0:int ) [line 22]\n " shape="box"]
+11 [label="11:  DeclStmt \n   _fun_X_X(&x1:class X *,0:int ,0:int ) [line 22]\n " shape="box"]
 	
 
 	 11 -> 10 ;
-10 [label="10:  Call _fun_X_X \n   _fun_X_X(&x2:class X *,1:int ,0:int ) [line 23]\n " shape="box"]
+10 [label="10:  DeclStmt \n   _fun_X_X(&x2:class X *,1:int ,0:int ) [line 23]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  Call _fun_X_X \n   _fun_X_X(&x3:class X *,0:int ,1:int ) [line 24]\n  NULLIFY(&x1,false); [line 24]\n  NULLIFY(&x2,false); [line 24]\n  NULLIFY(&x3,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+9 [label="9:  DeclStmt \n   _fun_X_X(&x3:class X *,0:int ,1:int ) [line 24]\n  NULLIFY(&x1,false); [line 24]\n  NULLIFY(&x2,false); [line 24]\n  NULLIFY(&x3,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 9 -> 8 ;

@@ -1,9 +1,9 @@
 digraph iCFG {
-73 [label="73:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 66]\n " shape="box"]
+73 [label="73:  DeclStmt \n   _fun_X1_X1(&x1:class X1 *) [line 66]\n " shape="box"]
 	
 
 	 73 -> 72 ;
-72 [label="72:  Call _fun_GetterTempl<X1>_GetterTempl \n   _fun_GetterTempl<X1>_GetterTempl(&g:class GetterTempl<X1> *) [line 67]\n " shape="box"]
+72 [label="72:  DeclStmt \n   _fun_GetterTempl<X1>_GetterTempl(&g:class GetterTempl<X1> *) [line 67]\n " shape="box"]
 	
 
 	 72 -> 71 ;
@@ -18,15 +18,15 @@ digraph iCFG {
 	
 
 	 69 -> 73 ;
-68 [label="68:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 59]\n " shape="box"]
+68 [label="68:  DeclStmt \n   _fun_X1_X1(&x1:class X1 *) [line 59]\n " shape="box"]
 	
 
 	 68 -> 67 ;
-67 [label="67:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 60]\n " shape="box"]
+67 [label="67:  DeclStmt \n   _fun_X2_X2(&x2:class X2 *) [line 60]\n " shape="box"]
 	
 
 	 67 -> 66 ;
-66 [label="66:  Call _fun_GetterTempl<X2>_GetterTempl \n   _fun_GetterTempl<X2>_GetterTempl(&g:class GetterTempl<X2> *) [line 61]\n " shape="box"]
+66 [label="66:  DeclStmt \n   _fun_GetterTempl<X2>_GetterTempl(&g:class GetterTempl<X2> *) [line 61]\n " shape="box"]
 	
 
 	 66 -> 65 ;
@@ -41,11 +41,11 @@ digraph iCFG {
 	
 
 	 63 -> 68 ;
-62 [label="62:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 53]\n " shape="box"]
+62 [label="62:  DeclStmt \n   _fun_X2_X2(&x2:class X2 *) [line 53]\n " shape="box"]
 	
 
 	 62 -> 61 ;
-61 [label="61:  Call _fun_GetterTempl<X2>_GetterTempl \n   _fun_GetterTempl<X2>_GetterTempl(&g:class GetterTempl<X2> *) [line 54]\n " shape="box"]
+61 [label="61:  DeclStmt \n   _fun_GetterTempl<X2>_GetterTempl(&g:class GetterTempl<X2> *) [line 54]\n " shape="box"]
 	
 
 	 61 -> 60 ;
@@ -60,15 +60,15 @@ digraph iCFG {
 	
 
 	 58 -> 62 ;
-57 [label="57:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 46]\n " shape="box"]
+57 [label="57:  DeclStmt \n   _fun_X2_X2(&x2:class X2 *) [line 46]\n " shape="box"]
 	
 
 	 57 -> 56 ;
-56 [label="56:  Call _fun_X3_X3 \n   _fun_X3_X3(&x3:class X3 *) [line 47]\n " shape="box"]
+56 [label="56:  DeclStmt \n   _fun_X3_X3(&x3:class X3 *) [line 47]\n " shape="box"]
 	
 
 	 56 -> 55 ;
-55 [label="55:  Call _fun_GetterTempl<X3>_GetterTempl \n   _fun_GetterTempl<X3>_GetterTempl(&g:class GetterTempl<X3> *) [line 48]\n " shape="box"]
+55 [label="55:  DeclStmt \n   _fun_GetterTempl<X3>_GetterTempl(&g:class GetterTempl<X3> *) [line 48]\n " shape="box"]
 	
 
 	 55 -> 54 ;
@@ -83,11 +83,11 @@ digraph iCFG {
 	
 
 	 52 -> 57 ;
-51 [label="51:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 40]\n " shape="box"]
+51 [label="51:  DeclStmt \n   _fun_X1_X1(&x1:class X1 *) [line 40]\n " shape="box"]
 	
 
 	 51 -> 50 ;
-50 [label="50:  Call _fun_Getter_Getter \n   _fun_Getter_Getter(&g:class Getter *) [line 41]\n " shape="box"]
+50 [label="50:  DeclStmt \n   _fun_Getter_Getter(&g:class Getter *) [line 41]\n " shape="box"]
 	
 
 	 50 -> 49 ;
@@ -102,11 +102,11 @@ digraph iCFG {
 	
 
 	 47 -> 51 ;
-46 [label="46:  Call _fun_X2_X2 \n   _fun_X2_X2(&x2:class X2 *) [line 34]\n " shape="box"]
+46 [label="46:  DeclStmt \n   _fun_X2_X2(&x2:class X2 *) [line 34]\n " shape="box"]
 	
 
 	 46 -> 45 ;
-45 [label="45:  Call _fun_Getter_Getter \n   _fun_Getter_Getter(&g:class Getter *) [line 35]\n " shape="box"]
+45 [label="45:  DeclStmt \n   _fun_Getter_Getter(&g:class Getter *) [line 35]\n " shape="box"]
 	
 
 	 45 -> 44 ;

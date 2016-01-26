@@ -136,6 +136,7 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list; (* successor nodes in the cfg *)
   continuation: continuation option; (* current continuation *)
   priority: priority_node;
+  var_exp: Sil.exp option;
 }
 
 (* A translation result. It is returned by the translation function. *)
@@ -145,10 +146,18 @@ type trans_result = {
   ids: Ident.t list; (* list of temp identifiers created that need to be removed by the caller *)
   instrs: Sil.instr list; (* list of SIL instruction that need to be placed in cfg nodes of the parent*)
   exps: (Sil.exp * Sil.typ) list; (* SIL expressions resulting from the translation of the clang stmt *)
+  initd_exps: Sil.exp list;
 }
 
 (* Empty result translation *)
-let empty_res_trans = { root_nodes =[]; leaf_nodes =[]; ids =[]; instrs =[]; exps =[]}
+let empty_res_trans = {
+  root_nodes = [];
+  leaf_nodes = [];
+  ids = [];
+  instrs = [];
+  exps = [];
+  initd_exps = [];
+}
 
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
 let collect_res_trans l =
@@ -169,7 +178,8 @@ let collect_res_trans l =
             leaf_nodes = leaf_nodes;
             ids = rt.ids@rt'.ids;
             instrs = rt.instrs@rt'.instrs;
-            exps = rt.exps@rt'.exps } in
+            exps = rt.exps@rt'.exps;
+            initd_exps = rt.initd_exps@rt'.initd_exps; } in
   collect l empty_res_trans
 
 (* priority_node is used to enforce some kind of policy for creating nodes *)
@@ -232,11 +242,13 @@ struct
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
       let root_nodes = (if res_state.root_nodes <> [] then res_state.root_nodes
                         else [node]) in
-      { root_nodes = root_nodes;
+      { res_state with
+        root_nodes = root_nodes;
         leaf_nodes = [node];
         ids = ids_parent;
         instrs = [];
-        exps = []}
+        exps = [];
+      }
     else
       (* The node is created by the parent. We just pass back nodes/leafs params *)
       { res_state with exps = []}
@@ -421,21 +433,13 @@ let trans_assertion_failure sil_loc context =
   and failure_node =
     Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [] [call_instr] sil_loc context in
   Cfg.Node.set_succs_exn failure_node [exit_node] [];
-  { root_nodes = [failure_node];
-    leaf_nodes = [];
-    ids = [];
-    instrs =[];
-    exps = [] }
+  { empty_res_trans with root_nodes = [failure_node]; }
 
 let trans_assume_false sil_loc context succ_nodes =
   let instrs_cond = [Sil.Prune (Sil.exp_zero, sil_loc, true, Sil.Ik_land_lor)] in
   let prune_node = Nodes.create_node (Nodes.prune_kind true) [] instrs_cond sil_loc context in
   Cfg.Node.set_succs_exn prune_node succ_nodes [];
-  { root_nodes = [prune_node];
-    leaf_nodes = [prune_node];
-    ids = [];
-    instrs = [];
-    exps = [] }
+  { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }
 
 let define_condition_side_effects context e_cond instrs_cond sil_loc =
   let (e', typ) = extract_exp_from_list e_cond "\nWARNING: Missing expression in IfStmt. Need to be fixed\n" in

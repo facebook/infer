@@ -21,11 +21,11 @@ digraph iCFG {
 	
 
 	 44 -> 46 ;
-43 [label="43:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 62]\n " shape="box"]
+43 [label="43:  DeclStmt \n   _fun_X1_X1(&x1:class X1 *) [line 62]\n " shape="box"]
 	
 
 	 43 -> 42 ;
-42 [label="42:  Call _fun_X3_X3 \n   _fun_X3_X3(&x3:class X3 *) [line 63]\n " shape="box"]
+42 [label="42:  DeclStmt \n   _fun_X3_X3(&x3:class X3 *) [line 63]\n " shape="box"]
 	
 
 	 42 -> 41 ;
@@ -40,11 +40,11 @@ digraph iCFG {
 	
 
 	 39 -> 43 ;
-38 [label="38:  Call _fun_X1_X1 \n   _fun_X1_X1(&x1:class X1 *) [line 56]\n " shape="box"]
+38 [label="38:  DeclStmt \n   _fun_X1_X1(&x1:class X1 *) [line 56]\n " shape="box"]
 	
 
 	 38 -> 37 ;
-37 [label="37:  Call _fun_X3_X3 \n   _fun_X3_X3(&x3:class X3 *) [line 57]\n " shape="box"]
+37 [label="37:  DeclStmt \n   _fun_X3_X3(&x3:class X3 *) [line 57]\n " shape="box"]
 	
 
 	 37 -> 36 ;
@@ -81,7 +81,7 @@ digraph iCFG {
 	
 
 	 28 -> 30 ;
-27 [label="27:  Call _fun_X1_X1 \n   _fun_X1_X1(&x:class X1 *) [line 35]\n " shape="box"]
+27 [label="27:  DeclStmt \n   _fun_X1_X1(&x:class X1 *) [line 35]\n " shape="box"]
 	
 
 	 27 -> 26 ;
@@ -96,7 +96,7 @@ digraph iCFG {
 	
 
 	 24 -> 27 ;
-23 [label="23:  Call _fun_X3_X3 \n   _fun_X3_X3(&x:class X3 *) [line 35]\n " shape="box"]
+23 [label="23:  DeclStmt \n   _fun_X3_X3(&x:class X3 *) [line 35]\n " shape="box"]
 	
 
 	 23 -> 22 ;

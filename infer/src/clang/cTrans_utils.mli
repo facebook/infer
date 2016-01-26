@@ -24,6 +24,7 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list;
   continuation: continuation option;
   priority: priority_node;
+  var_exp: Sil.exp option;
 }
 
 type trans_result = {
@@ -32,6 +33,7 @@ type trans_result = {
   ids: Ident.t list;
   instrs: Sil.instr list;
   exps: (Sil.exp * Sil.typ) list;
+  initd_exps: Sil.exp list;
 }
 
 val empty_res_trans: trans_result

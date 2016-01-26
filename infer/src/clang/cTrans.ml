@@ -568,7 +568,8 @@ struct
       leaf_nodes = leaf_nodes;
       ids = res_trans_idx.ids @ res_trans_a.ids;
       instrs = res_trans_a.instrs @ res_trans_idx.instrs;
-      exps = [(array_exp, typ)]}
+      exps = [(array_exp, typ)];
+      initd_exps = res_trans_idx.initd_exps @ res_trans_a.initd_exps; }
 
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     let open Clang_ast_t in
@@ -783,7 +784,7 @@ struct
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type
 
-  and cxxConstructExpr_trans trans_state var_exp expr =
+  and cxxConstructExpr_trans trans_state expr =
     match expr with
     | Clang_ast_t.CXXConstructExpr (si, params_stmt, ei, cxx_constr_info) ->
         let context = trans_state.context in
@@ -791,7 +792,11 @@ struct
         let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
         let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
         let this_type = Sil.Tptr (class_type, Sil.Pk_pointer) in
-        let this_res_trans = { empty_res_trans with exps = [(var_exp, this_type)]} in
+        let var_exp = match trans_state.var_exp with Some e -> e | None -> assert false in
+        let this_res_trans = { empty_res_trans with
+                               exps = [(var_exp, this_type)];
+                               initd_exps = [var_exp];
+                             } in
         let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
         let params_stmt' = assign_default_params params_stmt expr in
         cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt' si
@@ -979,7 +984,8 @@ struct
            leaf_nodes = [join_node];
            ids = [id];
            instrs = instrs;
-           exps = [(Sil.Var id, typ)]
+           exps = [(Sil.Var id, typ)];
+           initd_exps = []; (* TODO we should get exps from branches+cond *)
          }
      | _ -> assert false)
 
@@ -1012,7 +1018,13 @@ struct
       let rnodes = if (IList.length res_trans_cond.root_nodes) = 0 then
           [prune_t; prune_f]
         else res_trans_cond.root_nodes in
-      { root_nodes = rnodes; leaf_nodes =[prune_t; prune_f]; ids = res_trans_cond.ids; instrs = instrs'; exps = e' } in
+      { root_nodes = rnodes;
+        leaf_nodes = [prune_t; prune_f];
+        ids = res_trans_cond.ids;
+        instrs = instrs';
+        exps = e';
+        initd_exps = [];
+      } in
 
     (* This function translate (s1 binop s2) doing shortcircuit for '&&' and '||' *)
     (* At the high level it does cond_trans s1; cond_trans s2; glue_nodes *)
@@ -1043,7 +1055,9 @@ struct
         leaf_nodes = prune_to_short_c@res_trans_s2.leaf_nodes;
         ids = res_trans_s1.ids@res_trans_s2.ids;
         instrs = res_trans_s1.instrs@res_trans_s2.instrs;
-        exps = [(e_cond, typ1)] } in
+        exps = [(e_cond, typ1)];
+        initd_exps = [];
+      } in
     Printing.log_out "Translating Condition for Conditional/Loop \n";
     let open Clang_ast_t in
     match cond with
@@ -1100,7 +1114,8 @@ struct
            leaf_nodes = [join_node];
            ids = res_trans_decl.ids @ res_trans_cond.ids @ ids_t @ ids_f;
            instrs = [];
-           exps = []
+           exps = [];
+           initd_exps = [];
          }
      | _ -> assert false)
 
@@ -1226,7 +1241,7 @@ struct
         Cfg.Node.set_succs_exn switch_special_cond_node top_prune_nodes [];
         let top_nodes = res_trans_decl.root_nodes in
         IList.iter (fun n' -> Cfg.Node.append_instrs_temps n' [] res_trans_cond.ids) succ_nodes; (* succ_nodes will remove the temps *)
-        { root_nodes = top_nodes; leaf_nodes = succ_nodes; ids = []; instrs = []; exps =[]}
+        { empty_res_trans with root_nodes = top_nodes; leaf_nodes = succ_nodes }
     | _ -> assert false
 
   and stmtExpr_trans trans_state stmt_info stmt_list expr_info =
@@ -1243,11 +1258,11 @@ struct
         let id = Ident.create_fresh Ident.knormal in
         let loc = CLocation.get_sil_location stmt_info context in
         let instr' = Sil.Letderef (id, last, typ, loc) in
-        { root_nodes = res_trans_stmt.root_nodes;
-          leaf_nodes = res_trans_stmt.leaf_nodes;
+        { res_trans_stmt with
           ids = id :: idl;
           instrs = res_trans_stmt.instrs @ [instr'];
-          exps = [(Sil.Var id, typ)]}
+          exps = [(Sil.Var id, typ)];
+        }
     | _ -> assert false
 
   and loop_instruction trans_state loop_kind stmt_info =
@@ -1435,6 +1450,7 @@ struct
           ids = rh_ids;
           instrs = instructions;
           exps = [(var_exp, var_type)];
+          initd_exps = [var_exp];
         }
       ) else {
         root_nodes = [];
@@ -1442,6 +1458,7 @@ struct
         ids = rh_ids;
         instrs = instructions;
         exps = [(var_exp, var_type)];
+        initd_exps = [var_exp];
       }
     )
 
@@ -1460,8 +1477,6 @@ struct
     | Some (ImplicitCastExpr (_, [CompoundLiteralExpr (_, [InitListExpr (stmt_info , stmts , expr_info)], _)], _, _))
     | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
         initListExpr_trans trans_state var_exp stmt_info expr_info stmts
-    | Some (CXXConstructExpr _ as expr) ->
-        cxxConstructExpr_trans trans_state var_exp expr
     | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
         let stmt_info, _ = Clang_ast_proj.get_stmt_tuple ie in
         let context = trans_state.context in
@@ -1469,7 +1484,7 @@ struct
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state var_stmt_info in
         (* if ie is a block the translation need to be done with the block special cases by exec_with_block_priority*)
         let res_trans_ie =
-          let trans_state' = { trans_state_pri with succ_nodes = [] } in
+          let trans_state' = { trans_state_pri with succ_nodes = []; var_exp = Some var_exp } in
           let instruction' =
             exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
           exec_with_block_priority_exception instruction' trans_state' ie var_stmt_info in
@@ -1477,7 +1492,9 @@ struct
             "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
         let rhs_owning_method = CTrans_utils.is_owning_method ie in
         let _, instrs_assign, ids_assign =
-          if !Config.arc_mode &&
+          (* variable might be initialized already - do nothing in that case*)
+          if IList.exists (Sil.exp_equal var_exp) res_trans_ie.initd_exps then ([], [], [])
+          else if !Config.arc_mode &&
              (CTrans_utils.is_method_call ie || ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ) then
             (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
             (* we need to add retain/release *)
@@ -1515,7 +1532,8 @@ struct
         { root_nodes = res_trans_tmp.root_nodes; leaf_nodes = [];
           ids = res_trans_tmp.ids @ res_trans_vd.ids;
           instrs = res_trans_tmp.instrs @ res_trans_vd.instrs;
-          exps = res_trans_tmp.exps @ res_trans_vd.exps }
+          exps = res_trans_tmp.exps @ res_trans_vd.exps;
+          initd_exps = res_trans_tmp.initd_exps @ res_trans_vd.initd_exps; }
     | CXXRecordDecl _ :: var_decls' (*C++/C record decl treated in the same way *)
     | RecordDecl _ :: var_decls' ->
         (* Record declaration is done in the beginning when procdesc is defined.*)
@@ -1595,11 +1613,11 @@ struct
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     (* This gives the differnece among cast operations kind*)
     let cast_ids, cast_inst, cast_exp = cast_operation context cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged in
-    { root_nodes = res_trans_stmt.root_nodes;
-      leaf_nodes = res_trans_stmt.leaf_nodes;
+    { res_trans_stmt with
       ids = res_trans_stmt.ids @ cast_ids;
       instrs = res_trans_stmt.instrs @ cast_inst;
-      exps = [cast_exp] }
+      exps = [cast_exp];
+    }
 
   (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
   and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =
@@ -1867,6 +1885,9 @@ struct
     | CXXOperatorCallExpr(stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
 
+    | CXXConstructExpr _ ->
+        cxxConstructExpr_trans trans_state instr
+
     | ObjCMessageExpr(stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         if is_block_enumerate_function obj_c_message_expr_info then
           block_enumeration_trans trans_state stmt_info stmt_list expr_info
@@ -2069,7 +2090,8 @@ struct
           leaf_nodes = [];
           ids = res_trans_s.ids @ res_trans_tail.ids;
           instrs = res_trans_tail.instrs @ res_trans_s.instrs;
-          exps = res_trans_tail.exps @ res_trans_s.exps }
+          exps = res_trans_tail.exps @ res_trans_s.exps;
+          initd_exps = res_trans_tail.initd_exps @ res_trans_s.initd_exps; }
 
   and get_clang_stmt_trans stmt_list =
     let instruction' = fun stmt -> fun trans_state -> instruction trans_state stmt in
@@ -2093,6 +2115,7 @@ struct
       succ_nodes = [];
       continuation = None;
       priority = Free;
+      var_exp = None;
     } in
     let res_trans_stmt = instruction trans_state stmt in
     fst (CTrans_utils.extract_exp_from_list res_trans_stmt.exps warning)
@@ -2103,6 +2126,7 @@ struct
       succ_nodes = [exit_node];
       continuation = None;
       priority = Free;
+      var_exp = None;
     } in
     let clang_ast_trans = get_clang_stmt_trans clang_stmt_list in
     let extra_stmt_trans = get_custom_stmt_trans extra_instrs in

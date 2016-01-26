@@ -1,5 +1,5 @@
 digraph iCFG {
-26 [label="26:  Call _fun_X_X \n   _fun_X_X(&x:class X *,0:int ,1:int ) [line 40]\n " shape="box"]
+26 [label="26:  DeclStmt \n   _fun_X_X(&x:class X *,0:int ,1:int ) [line 40]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -14,7 +14,7 @@ digraph iCFG {
 	
 
 	 23 -> 26 ;
-22 [label="22:  Call _fun_X_X \n   _fun_X_X(&x:class X *) [line 35]\n " shape="box"]
+22 [label="22:  DeclStmt \n   _fun_X_X(&x:class X *) [line 35]\n " shape="box"]
 	
 
 	 22 -> 21 ;
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 19 -> 22 ;
-18 [label="18:  Call _fun_X_X \n   _fun_X_X(&x:class X *,-2:int ,2:int ) [line 30]\n " shape="box"]
+18 [label="18:  DeclStmt \n   _fun_X_X(&x:class X *,-2:int ,2:int ) [line 30]\n " shape="box"]
 	
 
 	 18 -> 17 ;
