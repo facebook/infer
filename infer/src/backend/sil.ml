@@ -648,6 +648,17 @@ and const =
 
 and struct_fields = (Ident.fieldname * typ * item_annotation) list
 
+(** Type for a structured value. *)
+and struct_typ = {
+  instance_fields : struct_fields; (** non-static fields *)
+  static_fields : struct_fields; (** static fields *)
+  csu : Csu.t; (** class/struct/union *)
+  struct_name : Mangled.t option; (** name *)
+  superclasses : Typename.t list; (** list of superclasses *)
+  def_methods : Procname.t list; (** methods defined *)
+  struct_annotations : item_annotation; (** annotations *)
+}
+
 (** types for sil (structured) expressions *)
 and typ =
   | Tvar of Typename.t  (** named type *)
@@ -656,12 +667,7 @@ and typ =
   | Tvoid (** void type *)
   | Tfun of bool (** function type with noreturn attribute *)
   | Tptr of typ * ptr_kind (** pointer type *)
-  | Tstruct of struct_fields * struct_fields * Csu.t * Mangled.t option *
-               Typename.t list * Procname.t list * item_annotation
-  (** Structure type with nonstatic and static fields, class/struct/union flag, name,
-      list of superclasses, methods defined, and annotations.
-      The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts
-      of C structs. *)
+  | Tstruct of struct_typ (** Type for a structured value *)
   | Tarray of typ * exp (** array type with fixed size *)
   | Tenum of (Mangled.t * const) list
 
@@ -828,8 +834,8 @@ let is_objc_ref_counter_field (fld, t, a) =
 
 let has_objc_ref_counter hpred =
   match hpred with
-  | Hpointsto(_, _, Sizeof(Tstruct(fl, _, _, _, _, _, _), _)) ->
-      IList.exists is_objc_ref_counter_field fl
+  | Hpointsto(_, _, Sizeof(Tstruct struct_typ, _)) ->
+      IList.exists is_objc_ref_counter_field struct_typ.instance_fields
   | _ -> false
 
 let objc_class_str = "ObjC-Class"
@@ -847,8 +853,8 @@ let cpp_class_annotation =
 
 let is_class_of_language typ class_string =
   match typ with
-  | Tstruct(_, _, Csu.Class, _, _, _, a) ->
-      (match a with
+  | Tstruct { csu = Csu.Class; struct_annotations } ->
+      (match struct_annotations with
        | [({ class_name = n; parameters = []}, true)]
          when n = class_string -> true
        | _ -> false)
@@ -1288,6 +1294,13 @@ let rec const_compare (c1 : const) (c2 : const) : int =
   | _, Cptr_to_fld _ -> 1
   | Ctuple el1, Ctuple el2 -> IList.compare exp_compare el1 el2
 
+and struct_typ_compare struct_typ1 struct_typ2 =
+  let n = fld_typ_ann_list_compare struct_typ1.instance_fields struct_typ2.instance_fields in
+  if n <> 0 then n else
+    let n = fld_typ_ann_list_compare struct_typ1.static_fields struct_typ2.static_fields in
+    if n <> 0 then n else let n = Csu.compare struct_typ1.csu struct_typ2.csu in
+      if n <> 0 then n else cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
+
 (** Comparision for types. *)
 and typ_compare t1 t2 =
   if t1 == t2 then 0 else match t1, t2 with
@@ -1311,12 +1324,8 @@ and typ_compare t1 t2 =
         if n <> 0 then n else ptr_kind_compare pk1 pk2
     | Tptr _, _ -> - 1
     | _, Tptr _ -> 1
-    | Tstruct (ntal1, sntal1, csu1, nameo1, _, _, _),
-      Tstruct (ntal2, sntal2, csu2, nameo2, _, _, _) ->
-        let n = fld_typ_ann_list_compare ntal1 ntal2 in
-        if n <> 0 then n else let n = fld_typ_ann_list_compare sntal1 sntal2 in
-          if n <> 0 then n else let n = Csu.compare csu1 csu2 in
-            if n <> 0 then n else cname_opt_compare nameo1 nameo2
+    | Tstruct struct_typ1, Tstruct struct_typ2 ->
+        struct_typ_compare struct_typ1 struct_typ2
     | Tstruct _, _ -> - 1
     | _, Tstruct _ -> 1
     | Tarray (t1, _), Tarray (t2, _) -> typ_compare t1 t2
@@ -1969,17 +1978,29 @@ and pp_type_decl pe pp_base pp_size f = function
   | Tptr (typ, pk) ->
       let pp_base' fmt () = F.fprintf fmt "%s%a" (ptr_kind_string pk) pp_base () in
       pp_type_decl pe pp_base' pp_size f typ
-  | Tstruct (ftal, sftal, csu, Some name, _, _, _) when false ->
+  | Tstruct ({struct_name = Some name} as struct_typ) when false ->
       (* remove "when false" to print the details of struct *)
-      F.fprintf f "%s %a {%a} %a" (Csu.name csu) Mangled.pp name
+      F.fprintf f "%s %a {%a} %a"
+        (Csu.name struct_typ.csu)
+        Mangled.pp name
         (pp_seq (fun f (fld, t, ann) ->
-             F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld))
-        ftal pp_base ()
-  | Tstruct (ftal, sftal, csu, Some name, _, _, _) ->
-      F.fprintf f "%s %a %a" (Csu.name csu) Mangled.pp name pp_base ()
-  | Tstruct (ftal, sftal, csu, None, _, _, _) ->
-      F.fprintf f "%s {%a} %a" (Csu.name csu)
-        (pp_seq (fun f (fld, t, ann) -> F.fprintf f "%a %a" (pp_typ_full pe) t Ident.pp_fieldname fld)) ftal pp_base ()
+             F.fprintf f "%a %a"
+               (pp_typ_full pe) t
+               Ident.pp_fieldname fld)) struct_typ.instance_fields
+        pp_base ()
+  | Tstruct ({struct_name = Some name} as struct_typ) ->
+      F.fprintf f "%s %a %a"
+        (Csu.name struct_typ.csu)
+        Mangled.pp name
+        pp_base ()
+  | Tstruct ({struct_name = None} as struct_typ) ->
+      F.fprintf f "%s {%a} %a"
+        (Csu.name struct_typ.csu)
+        (pp_seq (fun f (fld, t, ann) ->
+             F.fprintf f "%a %a"
+               (pp_typ_full pe) t
+               Ident.pp_fieldname fld)) struct_typ.instance_fields
+        pp_base ()
   | Tarray (typ, size) ->
       let pp_base' fmt () = F.fprintf fmt "%a[%a]" pp_base () (pp_size pe) size in
       pp_type_decl pe pp_base' pp_size f typ
@@ -2203,8 +2224,8 @@ let rec typ_iter_types (f : typ -> unit) typ =
       ()
   | Tptr (t', pk) ->
       typ_iter_types f t'
-  | Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
-      IList.iter (fun (_, t, _) -> typ_iter_types f t) ftal
+  | Tstruct struct_typ ->
+      IList.iter (fun (_, t, _) -> typ_iter_types f t) struct_typ.instance_fields
   | Tarray (t, e) ->
       typ_iter_types f t;
       exp_iter_types f e
@@ -2814,8 +2835,10 @@ let texp_to_typ default_opt = function
 let struct_typ_fld default_opt f =
   let def () = unsome_typ "struct_typ_fld" default_opt in
   function
-  | Tstruct (ftal, sftal, _, _, _, _, _) ->
-      (try (fun (x, y, z) -> y) (IList.find (fun (_f, t, ann) -> Ident.fieldname_equal _f f) ftal)
+  | Tstruct struct_typ ->
+      (try (fun (x, y, z) -> y)
+             (IList.find (fun (_f, t, ann) ->
+                  Ident.fieldname_equal _f f) struct_typ.instance_fields)
        with Not_found -> def ())
   | _ -> def ()
 

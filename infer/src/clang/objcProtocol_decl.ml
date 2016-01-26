@@ -31,9 +31,17 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       let protocol_name = Typename.TN_csu (Csu.Protocol, mang_name) in
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
       Ast_utils.update_sil_types_map decl_key (Sil.Tvar protocol_name);
-      let methods = ObjcProperty_decl.get_methods curr_class decl_list in
+      let def_methods = ObjcProperty_decl.get_methods curr_class decl_list in
       let protocol_type_info =
-        Sil.Tstruct ([], [], Csu.Protocol, Some mang_name, [], methods, []) in
+        Sil.Tstruct {
+          Sil.instance_fields = [];
+          static_fields = [];
+          csu = Csu.Protocol;
+          struct_name = Some mang_name;
+          superclasses = [];
+          def_methods;
+          struct_annotations = [];
+        } in
       Sil.tenv_add tenv protocol_name protocol_type_info;
       add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
       Sil.Tvar protocol_name

@@ -66,9 +66,11 @@ end = struct
   let rec get_strexp_at_syn_offsets se t syn_offs =
     match se, t, syn_offs with
     | _, _, [] -> (se, t)
-    | Sil.Estruct (fsel, _), Sil.Tstruct (ftal, sftal, _, _, _, _, _), Field (fld, _) :: syn_offs' ->
+    | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields }, Field (fld, _) :: syn_offs' ->
         let se' = snd (IList.find (fun (f', se') -> Sil.fld_equal f' fld) fsel) in
-        let t' = (fun (x,y,z) -> y) (IList.find (fun (f', t', a') -> Sil.fld_equal f' fld) ftal) in
+        let t' = (fun (x,y,z) -> y)
+            (IList.find (fun (f', t', a') ->
+                 Sil.fld_equal f' fld) instance_fields) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | Sil.Earray (size, esel, _), Sil.Tarray(t', _), Index ind :: syn_offs' ->
         let se' = snd (IList.find (fun (i', se') -> Sil.exp_equal i' ind) esel) in
@@ -84,9 +86,11 @@ end = struct
     match se, t, syn_offs with
     | _, _, [] ->
         update se t
-    | Sil.Estruct (fsel, inst), Sil.Tstruct (ftal, sftal, _, _, _, _, _), Field (fld, _) :: syn_offs' ->
+    | Sil.Estruct (fsel, inst), Sil.Tstruct { Sil.instance_fields }, Field (fld, _) :: syn_offs' ->
         let se' = snd (IList.find (fun (f', _) -> Sil.fld_equal f' fld) fsel) in
-        let t' = (fun (x,y,z) -> y) (IList.find (fun (f', _, _) -> Sil.fld_equal f' fld) ftal) in
+        let t' = (fun (x,y,z) -> y)
+            (IList.find (fun (f', _, _) ->
+                 Sil.fld_equal f' fld) instance_fields) in
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
         let fsel' = IList.map (fun (f'', se'') -> if Sil.fld_equal f'' fld then (fld, se_mod) else (f'', se'')) fsel in
         Sil.Estruct (fsel', inst)
@@ -142,8 +146,8 @@ end = struct
       if pred sigma_other (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
         match se, typ with
-        | Sil.Estruct (fsel, _), Sil.Tstruct (ftal, sftal, _, _, _, _, _) ->
-            find_offset_fsel sigma_other hpred root offs fsel ftal typ
+        | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields } ->
+            find_offset_fsel sigma_other hpred root offs fsel instance_fields typ
         | Sil.Earray (size, esel, _), Sil.Tarray (t, _) ->
             find_offset_esel sigma_other hpred root offs esel t
         | _ -> ()

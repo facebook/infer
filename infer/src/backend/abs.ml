@@ -423,7 +423,8 @@ let typ_get_recursive_flds tenv te =
       (match typ with
        | Sil.Tvar _ -> assert false (* there should be no indirection *)
        | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ | Sil.Tenum _ -> []
-       | Sil.Tstruct (fld_typ_ann_list, _, _, _, _, _, _) -> IList.map (fun (x, y, z) -> x) (IList.filter filter fld_typ_ann_list)
+       | Sil.Tstruct { Sil.instance_fields } ->
+           IList.map (fun (x, y, z) -> x) (IList.filter filter instance_fields)
        | Sil.Tarray _ -> [])
   | Sil.Var _ -> [] (* type of |-> not known yet *)
   | Sil.Const _ -> []
@@ -769,9 +770,9 @@ let is_simply_recursive tenv tname =
       assert false (* there should be no indirection *)
   | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tenum _ ->
       None
-  | Sil.Tstruct (fld_typ_ann_list, _, _, _, _, _, _) ->
+  | Sil.Tstruct { Sil.instance_fields } ->
       begin
-        match (IList.filter filter fld_typ_ann_list) with
+        match (IList.filter filter instance_fields) with
         | [(fld, _, _)] -> Some fld
         | _ -> None
       end
@@ -1192,10 +1193,11 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation t fn =
     match t with
-    | Sil.Tstruct(nsf, sf, _, _, _, _, _) ->
+    | Sil.Tstruct { Sil.instance_fields; static_fields } ->
         let ia = ref [] in
         IList.iter (fun (fn', t', ia') ->
-            if Ident.fieldname_equal fn fn' then ia := ia') (nsf@sf);
+            if Ident.fieldname_equal fn fn' then ia := ia')
+          (instance_fields @ static_fields);
         !ia
     | _ -> [] in
   let rec has_weak_or_unretained_or_assign params =

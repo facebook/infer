@@ -118,7 +118,15 @@ struct
     IList.iter (fun (fn, ft, _) ->
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
-    let block_type = Sil.Tstruct (fields, [], Csu.Class, Some mblock, [], [], []) in
+    let block_type = Sil.Tstruct
+        { Sil.instance_fields = fields;
+          static_fields = [];
+          csu = Csu.Class;
+          struct_name = Some mblock;
+          superclasses = [];
+          def_methods = [];
+          struct_annotations = [];
+        } in
     let block_name = Typename.TN_csu (Csu.Class, mblock) in
     Sil.tenv_add tenv block_name block_type;
     let trans_res = CTrans_utils.alloc_trans trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true in
@@ -1395,12 +1403,12 @@ struct
                else
                  collect_left_hand_exprs e tvar (StringSet.add (Typename.to_string typename) tns)
            | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
-      | Sil.Tstruct (struct_fields, _, _, _, _, _, _) as type_struct ->
+      | Sil.Tstruct { Sil.instance_fields } as type_struct ->
           let lh_exprs = IList.map ( fun (fieldname, fieldtype, _) ->
               Sil.Lfield (e, fieldname, type_struct) )
-              struct_fields in
+              instance_fields in
           let lh_types = IList.map ( fun (fieldname, fieldtype, _) -> fieldtype)
-              struct_fields in
+              instance_fields in
           IList.map (fun (e, t) -> IList.flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
       | Sil.Tarray (arrtyp, Sil.Const (Sil.Cint n)) ->
           let size = Sil.Int.to_int n in

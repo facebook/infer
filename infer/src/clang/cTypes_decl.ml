@@ -19,8 +19,15 @@ let add_predefined_objc_types tenv =
   let objc_class_mangled = Mangled.from_string CFrontend_config.objc_class in
   let objc_class_name = Typename.TN_csu (Csu.Class, objc_class_mangled) in
   let objc_class_type_info =
-    Sil.Tstruct ([], [], Csu.Struct,
-                 Some (Mangled.from_string CFrontend_config.objc_class), [], [], []) in
+    Sil.Tstruct {
+      Sil.instance_fields = [];
+      static_fields = [];
+      csu = Csu.Struct;
+      struct_name = Some (Mangled.from_string CFrontend_config.objc_class);
+      superclasses = [];
+      def_methods = [];
+      struct_annotations = [];
+    } in
   Sil.tenv_add tenv objc_class_name objc_class_type_info;
   let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
   let class_typ = Sil.Tvar (Typename.TN_csu (Csu.Struct, objc_class_mangled)) in
@@ -31,8 +38,15 @@ let add_predefined_objc_types tenv =
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
   Sil.tenv_add tenv id_typename id_typedef;
   let objc_object_type_info =
-    Sil.Tstruct ([], [], Csu.Struct,
-                 Some (Mangled.from_string CFrontend_config.objc_object), [], [], []) in
+    Sil.Tstruct {
+      Sil.instance_fields = [];
+      static_fields = [];
+      csu = Csu.Struct;
+      struct_name = Some (Mangled.from_string CFrontend_config.objc_object);
+      superclasses = [];
+      def_methods = [];
+      struct_annotations = [];
+    } in
   Sil.tenv_add tenv typename_objc_object objc_object_type_info
 
 (* Whenever new type are added manually to the translation in ast_expressions, *)
@@ -134,7 +148,7 @@ let get_superclass_list decl =
 
 let add_struct_to_tenv tenv typ =
   let csu = match typ with
-    | Sil.Tstruct(_, _, csu, _, _, _, _) -> csu
+    | Sil.Tstruct { Sil.csu } -> csu
     | _ -> assert false in
   let mangled = CTypes.get_name_from_struct typ in
   let typename = Typename.TN_csu(csu, mangled) in
@@ -179,13 +193,20 @@ and get_struct_cpp_class_declaration_type tenv decl =
         else non_static_fields in
       let sorted_non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields' in
       let static_fields = [] in (* Warning for the moment we do not treat static field. *)
-      let methods = get_class_methods tenv name decl_list in (* C++ methods only *)
+      let def_methods = get_class_methods tenv name decl_list in (* C++ methods only *)
       let superclasses = get_superclass_list decl in
-      let item_annotation =
+      let struct_annotations =
         if csu = Csu.Class then Sil.cpp_class_annotation
         else Sil.item_annotation_empty in  (* No annotations for structs *)
-      let sil_type = Sil.Tstruct (sorted_non_static_fields, static_fields, csu,
-                                  Some mangled_name, superclasses, methods, item_annotation) in
+      let sil_type = Sil.Tstruct
+          { Sil.instance_fields = sorted_non_static_fields;
+            static_fields;
+            csu;
+            struct_name = Some mangled_name;
+            superclasses;
+            def_methods;
+            struct_annotations;
+          } in
       Ast_utils.update_sil_types_map type_ptr sil_type;
       add_struct_to_tenv tenv sil_type;
       sil_type

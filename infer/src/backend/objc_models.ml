@@ -209,7 +209,7 @@ struct
     | Sil.Tptr (styp, _ ) ->
         is_core_lib lib styp
     | Sil.Tvar (Typename.TN_csu (_, name) )
-    | Sil.Tstruct (_, _, _, (Some name), _, _, _) ->
+    | Sil.Tstruct { Sil.struct_name = Some name } ->
         let core_lib_types = core_lib_to_type_list lib in
         IList.mem (=) (Mangled.to_string name) core_lib_types
     | _ -> false

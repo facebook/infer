@@ -542,9 +542,12 @@ let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
           (match lexp with
            | Sil.Lvar pv ->
                let typo = match texp with
-                 | Sil.Sizeof (Sil.Tstruct (ftl, ftal, _, _, _, _, _), _) ->
+                 | Sil.Sizeof (Sil.Tstruct struct_typ, _) ->
                      (try
-                        let _, t, _ = IList.find (fun (_f, _t, _) -> Ident.fieldname_equal _f f) ftl in
+                        let _, t, _ =
+                          IList.find (fun (f', _, _) ->
+                              Ident.fieldname_equal f' f)
+                            struct_typ.Sil.instance_fields in
                         Some t
                       with Not_found -> None)
                  | _ -> None in

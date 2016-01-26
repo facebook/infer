@@ -16,7 +16,8 @@ open Utils
 let object_name = Mangled.from_string "java.lang.Object"
 
 let type_is_object = function
-  | Sil.Tptr (Sil.Tstruct (_, _, _, Some name, _, _, _), _) -> Mangled.equal name object_name
+  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some name }, _) ->
+      Mangled.equal name object_name
   | _ -> false
 
 let java_proc_name_with_class_method pn class_with_path method_name =
@@ -27,8 +28,8 @@ let java_proc_name_with_class_method pn class_with_path method_name =
 
 let is_direct_subtype_of this_type super_type_name =
   match this_type with
-  | Sil.Tptr (Sil.Tstruct (_, _, _, _, supertypes, _, _), _) ->
-      IList.exists (fun cn -> Typename.equal cn super_type_name) supertypes
+  | Sil.Tptr (Sil.Tstruct { Sil.superclasses }, _) ->
+      IList.exists (fun cn -> Typename.equal cn super_type_name) superclasses
   | _ -> false
 
 (** The type the method is invoked on *)
@@ -37,12 +38,13 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
   | _ -> None
 
 let type_get_direct_supertypes = function
-  | Sil.Tptr (Sil.Tstruct (_, _, _, _, supertypes, _, _), _)
-  | Sil.Tstruct (_, _, _, _, supertypes, _, _) -> supertypes
+  | Sil.Tptr (Sil.Tstruct { Sil.superclasses }, _)
+  | Sil.Tstruct { Sil.superclasses } ->
+      superclasses
   | _ -> []
 
 let type_get_class_name t = match t with
-  | Sil.Tptr (Sil.Tstruct (_, _, _, Some cn, _, _, _), _) ->
+  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some cn }, _) ->
       Some cn
   | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class, cn)), _) ->
       Some cn
@@ -51,8 +53,9 @@ let type_get_class_name t = match t with
 let type_get_annotation
     (t: Sil.typ): Sil.item_annotation option =
   match t with
-  | Sil.Tptr (Sil.Tstruct (_, _, _, _, _, _, ia), _)
-  | Sil.Tstruct (_, _, _, _, _, _, ia) -> Some ia
+  | Sil.Tptr (Sil.Tstruct { Sil.struct_annotations }, _)
+  | Sil.Tstruct { Sil.struct_annotations } ->
+      Some struct_annotations
   | _ -> None
 
 let type_has_class_name t name =
@@ -71,8 +74,8 @@ let type_has_supertype
     else
       begin
         match Sil.expand_type tenv typ with
-        | Sil.Tptr (Sil.Tstruct (_, _, _, _, supertypes, _, _), _)
-        | Sil.Tstruct (_, _, _, _, supertypes, _, _) ->
+        | Sil.Tptr (Sil.Tstruct { Sil.superclasses }, _)
+        | Sil.Tstruct { Sil.superclasses } ->
             let match_supertype cn =
               let match_name () = Typename.equal cn class_name in
               let has_indirect_supertype () =
@@ -80,15 +83,15 @@ let type_has_supertype
                 | Some supertype -> has_supertype supertype (Sil.TypSet.add typ visited)
                 | None -> false in
               (match_name () || has_indirect_supertype ()) in
-            IList.exists match_supertype supertypes
+            IList.exists match_supertype superclasses
         | _ -> false
       end in
   has_supertype typ Sil.TypSet.empty
 
 
 let type_is_nested_in_type t n = match t with
-  | Sil.Tptr (Sil.Tstruct (_, _, _, Some m, _, _, _), _) ->
-      string_is_prefix (Mangled.to_string n ^ "$") (Mangled.to_string m)
+  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some name }, _) ->
+      string_is_prefix (Mangled.to_string n ^ "$") (Mangled.to_string name)
   | _ -> false
 
 let type_is_nested_in_direct_supertype t n =
@@ -96,7 +99,8 @@ let type_is_nested_in_direct_supertype t n =
   IList.exists (is_nested_in n) (type_get_direct_supertypes t)
 
 let rec get_type_name = function
-  | Sil.Tstruct (_, _, _, Some mangled, _, _, _) -> Mangled.to_string mangled
+  | Sil.Tstruct { Sil.struct_name = Some name } ->
+      Mangled.to_string name
   | Sil.Tptr (t, _) -> get_type_name t
   | Sil.Tvar tn -> Typename.name tn
   | _ -> "_"
@@ -105,12 +109,12 @@ let get_field_type_name
     (typ: Sil.typ)
     (fieldname: Ident.fieldname): string option =
   match typ with
-  | Sil.Tstruct (fields, _, _, _, _, _, _)
-  | Sil.Tptr (Sil.Tstruct (fields, _, _, _, _, _, _), _) -> (
+  | Sil.Tstruct { Sil.instance_fields }
+  | Sil.Tptr (Sil.Tstruct { Sil.instance_fields }, _) -> (
       try
         let _, ft, _ = IList.find
             (function | (fn, _, _) -> Ident.fieldname_equal fn fieldname)
-            fields in
+            instance_fields in
         Some (get_type_name ft)
       with Not_found -> None)
   | _ -> None
@@ -304,7 +308,7 @@ let proc_iter_overridden_methods f tenv proc_name =
     let super_proc_name =
       Procname.java_replace_class proc_name (Typename.name super_class_name) in
     match Sil.tenv_lookup tenv super_class_name with
-    | Some (Sil.Tstruct (_, _, _, _, _, methods, _)) ->
+    | Some (Sil.Tstruct { Sil.def_methods }) ->
         let is_override pname =
           Procname.equal pname super_proc_name &&
           not (Procname.is_constructor pname) in
@@ -312,7 +316,7 @@ let proc_iter_overridden_methods f tenv proc_name =
           (fun pname ->
              if is_override pname
              then f pname)
-          methods
+          def_methods
     | _ -> () in
 
   if Procname.is_java proc_name then

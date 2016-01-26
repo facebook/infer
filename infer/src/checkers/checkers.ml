@@ -207,8 +207,8 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
     PatternMatch.has_formal_method_argument_type_names proc_desc proc_name ["android.os.Parcel"] in
 
   let parcel_constructors = function
-    | Sil.Tptr (Sil.Tstruct (_, _, _, _, _, methods, _), _) ->
-        IList.filter is_parcel_constructor methods
+    | Sil.Tptr (Sil.Tstruct { Sil.def_methods }, _) ->
+        IList.filter is_parcel_constructor def_methods
     | _ -> [] in
 
   let check r_name r_desc w_name w_desc =

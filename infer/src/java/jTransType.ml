@@ -91,7 +91,8 @@ let rec create_array_type typ dim =
 
 let extract_cn_no_obj typ =
   match typ with
-  | Sil.Tptr (Sil.Tstruct (_, _, Csu.Class, Some classname, _, _, _), Sil.Pk_pointer) ->
+  | Sil.Tptr (Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some classname },
+              Sil.Pk_pointer) ->
       let class_name = (Mangled.to_string classname) in
       if class_name = JConfig.object_cl then None
       else
@@ -239,7 +240,15 @@ let collect_interface_field cn inf l =
 
 let dummy_type cn =
   let classname = Mangled.from_string (JBasics.cn_name cn) in
-  Sil.Tstruct ([], [], Csu.Class, Some classname, [], [], Sil.item_annotation_empty)
+  Sil.Tstruct {
+    Sil.instance_fields = [];
+    static_fields = [];
+    csu = Csu.Class;
+    struct_name = Some classname;
+    superclasses = [];
+    def_methods = [];
+    struct_annotations = Sil.item_annotation_empty;
+  }
 
 
 let collect_models_class_fields classpath_field_map cn cf fields =
@@ -283,7 +292,7 @@ let add_model_fields program classpath_fields cn =
 let rec get_all_fields program tenv cn =
   let extract_class_fields classname =
     match get_class_type_no_pointer program tenv classname with
-    | Sil.Tstruct (nonstatic, static, _, _, _, _, _) -> (static, nonstatic)
+    | Sil.Tstruct { Sil.instance_fields; static_fields } -> (static_fields, instance_fields)
     | _ -> assert false in
   let trans_fields classname =
     match JClasspath.lookup_node classname program with
@@ -307,7 +316,7 @@ and create_sil_type program tenv cn =
   | Some node ->
       let create_super_list interface_names =
         IList.map typename_of_classname interface_names in
-      let (super_list, nonstatic_fields, static_fields, item_annotation) =
+      let superclasses, instance_fields, static_fields, struct_annotations =
         match node with
         | Javalib.JInterface jinterface ->
             let static_fields, _ = get_all_fields program tenv cn in
@@ -326,15 +335,22 @@ and create_sil_type program tenv cn =
               | Some super_cn ->
                   let super_classname =
                     match get_class_type_no_pointer program tenv super_cn with
-                    | Sil.Tstruct (_, _, _, Some classname, _, _, _) ->
+                    | Sil.Tstruct { Sil.struct_name =  Some classname } ->
                         Typename.TN_csu (Csu.Class, classname)
                     | _ -> assert false in
                   super_classname :: interface_list in
             (super_classname_list, nonstatic_fields, static_fields, item_annotation) in
       let classname = Mangled.from_string (JBasics.cn_name cn) in
-      let method_procnames = get_class_procnames cn node in
-      Sil.Tstruct (nonstatic_fields, static_fields, Csu.Class,
-                   Some classname, super_list, method_procnames, item_annotation)
+      let def_methods = get_class_procnames cn node in
+      Sil.Tstruct {
+        Sil.instance_fields;
+        static_fields;
+        csu = Csu.Class;
+        struct_name = Some classname;
+        superclasses;
+        def_methods;
+        struct_annotations;
+      }
 
 
 and get_class_type_no_pointer program tenv cn =

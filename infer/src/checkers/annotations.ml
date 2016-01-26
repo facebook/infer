@@ -37,10 +37,12 @@ let suppressLint = "android.annotation.SuppressLint"
 
 
 let get_field_type_and_annotation fn = function
-  | Sil.Tptr (Sil.Tstruct (ftal, sftal, _, _, _, _, _), _)
-  | Sil.Tstruct (ftal, sftal, _, _, _, _, _) ->
+  | Sil.Tptr (Sil.Tstruct struct_typ, _)
+  | Sil.Tstruct struct_typ ->
       (try
-         let (_, t, a) = IList.find (fun (f, t, a) -> Sil.fld_equal f fn) (ftal @ sftal) in
+         let (_, t, a) = IList.find (fun (f, t, a) ->
+             Sil.fld_equal f fn)
+             (struct_typ.Sil.instance_fields @ struct_typ.Sil.static_fields) in
          Some (t, a)
        with Not_found -> None)
   | _ -> None

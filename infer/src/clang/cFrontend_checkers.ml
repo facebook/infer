@@ -43,13 +43,13 @@ let direct_atomic_property_access context stmt_info ivar_name =
   let tname = Typename.TN_csu (Csu.Class, Mangled.from_string cname) in
   let loc = CLocation.get_sil_location_from_range stmt_info.Clang_ast_t.si_source_range true in
   match Sil.tenv_lookup tenv tname with
-  | Some Sil.Tstruct (flds1, flds2, _, _, _, _, _) ->
+  | Some Sil.Tstruct { Sil.instance_fields; static_fields } ->
       (* We give the warning when:
          (1) the property has the atomic attribute and
          (2) the access of the ivar is not in a getter or setter method.
          (3) the access of the ivar is not in the init method
          Last two conditions avoids false positives *)
-      let condition = (CField_decl.is_ivar_atomic ivar (flds1 @ flds2))
+      let condition = (CField_decl.is_ivar_atomic ivar (instance_fields @ static_fields))
                       && not (CContext.is_curr_proc_objc_getter context ivar)
                       && not (CContext.is_curr_proc_objc_setter context ivar)
                       && not (Procname.is_constructor mname)

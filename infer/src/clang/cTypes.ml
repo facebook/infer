@@ -18,7 +18,7 @@ let get_type_from_expr_info ei =
 
 let get_name_from_struct s =
   match s with
-  | Sil.Tstruct(_, _, _, Some n, _, _, _) -> n
+  | Sil.Tstruct { Sil.struct_name = Some n } -> n
   | _ -> assert false
 
 let rec get_type_list nn ll =
@@ -41,7 +41,7 @@ let remove_pointer_to_typ typ =
 let classname_of_type typ =
   match typ with
   | Sil.Tvar (Typename.TN_csu (_, name) )
-  | Sil.Tstruct(_, _, _, (Some name), _, _, _)
+  | Sil.Tstruct { Sil.struct_name =  Some name }
   | Sil.Tvar (Typename.TN_typedef name) -> Mangled.to_string name
   | Sil.Tfun _ -> CFrontend_config.objc_object
   | _ ->
@@ -73,8 +73,8 @@ let mk_enumname n = Typename.TN_enum (Mangled.from_string n)
 
 let is_class typ =
   match typ with
-  | Sil.Tptr( Sil.Tstruct(_, _, _, (Some name), _, _, _), _)
-  | Sil.Tptr( Sil.Tvar (Typename.TN_csu (_, name) ), _) ->
+  | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some name }, _)
+  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (_, name) ), _) ->
       (Mangled.to_string name) = CFrontend_config.objc_class
   | _ -> false
 

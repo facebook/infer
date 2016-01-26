@@ -107,12 +107,12 @@ let retrieve_fieldname fieldname =
 
 let get_field_name program static tenv cn fs context =
   match JTransType.get_class_type_no_pointer program tenv cn with
-  | Sil.Tstruct (fields, sfields, Csu.Class, _, _, _, _) ->
+  | Sil.Tstruct { Sil.instance_fields; static_fields; csu = Csu.Class } ->
       let fieldname, _, _ =
         try
           IList.find
             (fun (fieldname, _, _) -> retrieve_fieldname fieldname = JBasics.fs_name fs)
-            (if static then sfields else fields)
+            (if static then static_fields else instance_fields)
         with Not_found ->
           (* TODO: understand why fields cannot be found here *)
           JUtils.log "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);

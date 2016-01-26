@@ -42,9 +42,9 @@ let rec unroll_type tenv typ off =
   | Sil.Tvar _, _ ->
       let typ' = Sil.expand_type tenv typ in
       unroll_type tenv typ' off
-  | Sil.Tstruct (ftal, sftal, _, _, _, _, _), Sil.Off_fld (fld, _) ->
+  | Sil.Tstruct { Sil.instance_fields; static_fields }, Sil.Off_fld (fld, _) ->
       begin
-        try fldlist_assoc fld (ftal @ sftal)
+        try fldlist_assoc fld (instance_fields @ static_fields)
         with Not_found ->
           L.d_strln ".... Invalid Field Access ....";
           L.d_strln ("Fld : " ^ Ident.fieldname_to_string fld);
@@ -156,10 +156,10 @@ let rec apply_offlist
   | (Sil.Off_fld (fld, fld_typ)):: offlist', Sil.Estruct (fsel, inst') ->
       begin
         let typ' = Sil.expand_type tenv typ in
-        let ftal, sftal, csu, nameo, supers, def_mthds, iann =
+        let struct_typ =
           match typ' with
-          | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
-              ftal, sftal, csu, nameo, supers, def_mthds, iann
+          | Sil.Tstruct struct_typ ->
+              struct_typ
           | _ -> assert false in
         let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
         try
@@ -171,9 +171,9 @@ let rec apply_offlist
           let replace_fse fse = if Sil.fld_equal fld (fst fse) then (fld, res_se') else fse in
           let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
           let replace_fta (f, t, a) = if Sil.fld_equal fld f then (fld, res_t', a) else (f, t, a) in
+          let instance_fields' = IList.map replace_fta struct_typ.Sil.instance_fields in
           let res_t =
-            Sil.Tstruct
-              (IList.map replace_fta ftal, sftal, csu, nameo, supers, def_mthds, iann) in
+            Sil.Tstruct { struct_typ with Sil.instance_fields = instance_fields' } in
           (res_e', res_se, res_t, res_pred_insts_op')
         with Not_found ->
           pp_error();
@@ -606,11 +606,11 @@ let resolve_method tenv class_name proc_name =
           Procname.java_replace_class proc_name (Typename.name class_name)
         else Procname.c_method_replace_class proc_name (Typename.name class_name) in
       match Sil.tenv_lookup tenv class_name with
-      | Some (Sil.Tstruct (_, _, Csu.Class, cls, super_classes, methods, iann)) ->
-          if method_exists right_proc_name methods then
+      | Some (Sil.Tstruct { Sil.csu = Csu.Class; def_methods; superclasses }) ->
+          if method_exists right_proc_name def_methods then
             Some right_proc_name
           else
-            (match super_classes with
+            (match superclasses with
              | super_classname:: interfaces ->
                  if not (Typename.Set.mem super_classname !visited)
                  then resolve super_classname
@@ -634,8 +634,8 @@ let resolve_typename prop arg =
       | _ :: hpreds -> loop hpreds in
     loop (Prop.get_sigma prop) in
   match typexp_opt with
-  | Some (Sil.Sizeof (Sil.Tstruct (_, _, _, None, _, _, _), _)) -> None
-  | Some (Sil.Sizeof (Sil.Tstruct (_, _, Csu.Class, Some name, _, _, _), _)) ->
+  | Some (Sil.Sizeof (Sil.Tstruct { Sil.struct_name = None }, _)) -> None
+  | Some (Sil.Sizeof (Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some name }, _)) ->
       Some (Typename.TN_csu (Csu.Class, name))
   | _ -> None
 
@@ -659,7 +659,7 @@ let resolve_virtual_pname cfg tenv prop args pname call_flags : Procname.t =
 let redirect_shared_ptr tenv cfg pname actual_params =
   let class_shared_ptr typ =
     try match Sil.expand_type tenv typ with
-      | Sil.Tstruct (_, _, Csu.Class, Some cl_name, _, _, _) ->
+      | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some cl_name } ->
           let name = Mangled.to_string cl_name in
           name = "shared_ptr" || name = "__shared_ptr"
       | t -> false
@@ -1468,7 +1468,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
       | _, [id] -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id
       | _ -> false in
     if is_ignored
-       && Specs.get_flag callee_pname proc_flag_ignore_return = None then
+    && Specs.get_flag callee_pname proc_flag_ignore_return = None then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, try assert false with Assert_failure x -> x)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in

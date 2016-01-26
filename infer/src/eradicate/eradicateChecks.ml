@@ -134,7 +134,7 @@ let check_condition case_zero find_canonical_duplicate get_proc_desc curr_pname
     let throwable_found = ref false in
     let throwable_class = Mangled.from_string "java.lang.Throwable" in
     let typ_is_throwable = function
-      | Sil.Tstruct (_, _, Csu.Class, Some c, _, _, _) ->
+      | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c } ->
           Mangled.equal c throwable_class
       | _ -> false in
     let do_instr = function
@@ -253,8 +253,8 @@ let check_constructor_initialization
   if Procname.is_constructor curr_pname
   then begin
     match PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc) with
-    | Some (Sil.Tptr (Sil.Tstruct (ftal, _, _, nameo, _, _, _) as ts, _)) ->
-        let do_fta (fn, ft, ia) =
+    | Some (Sil.Tptr (Sil.Tstruct { Sil.instance_fields; struct_name } as ts, _)) ->
+        let do_field (fn, ft, ia) =
           let annotated_with f = match get_field_annotation fn ts with
             | None -> false
             | Some (_, ia) -> f ia in
@@ -289,7 +289,7 @@ let check_constructor_initialization
           let should_check_field =
             let in_current_class =
               let fld_cname = Ident.java_fieldname_get_class fn in
-              match nameo with
+              match struct_name with
               | None -> false
               | Some name -> Mangled.equal name (Mangled.from_string fld_cname) in
             not inject_annotated &&
@@ -325,7 +325,7 @@ let check_constructor_initialization
                   curr_pname;
             end in
 
-        IList.iter do_fta ftal
+        IList.iter do_field instance_fields
     | _ -> ()
   end
 

@@ -118,7 +118,7 @@ let find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv =
 (** if [typ] is a lifecycle type, generate a list of (method call, receiver) pairs constituting a
     lifecycle trace *)
 let try_create_lifecycle_trace typ lifecycle_typ lifecycle_procs proc_file_map tenv = match typ with
-  | Sil.Tstruct(_, _, Csu.Class, Some name, _, methods, _) ->
+  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some name } ->
       let class_name = Typename.TN_csu (Csu.Class, name) in
       if AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv &&
          not (AndroidFramework.is_android_lib_class class_name) then
@@ -143,7 +143,15 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
   let fields = IList.map (fun (fld, typ, _) -> (fld, typ, [])) registered_cbs in
   (* create a new typ for the harness containing all of the cb extraction vars as static fields *)
   let harness_typ =
-    Sil.Tstruct (fields, [], Csu.Class, Some harness_name, [], [harness_procname], []) in
+    Sil.Tstruct {
+      Sil.instance_fields = fields;
+      static_fields = [];
+      csu = Csu.Class;
+      struct_name = Some harness_name;
+      superclasses = [];
+      def_methods = [harness_procname];
+      struct_annotations = [];
+    } in
   (* update the tenv with our created harness typ. we don't have to save the tenv to disk here
    * because this is done immediately after harness generation runs in jMain.ml *)
   let harness_class = Typename.TN_csu (Csu.Class, harness_name) in

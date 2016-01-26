@@ -304,8 +304,8 @@ let create_idmap sigma : idmap =
   let rec do_se se typ = match se, typ with
     | Sil.Eexp (e, inst), _ ->
         do_exp e typ
-    | Sil.Estruct (fsel, _), Sil.Tstruct (ftal, sftal, _, _, _, _, _) ->
-        do_struct fsel ftal
+    | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields } ->
+        do_struct fsel instance_fields
     | Sil.Earray (size, esel, _), Sil.Tarray (typ, size') ->
         do_se (Sil.Eexp (size, Sil.inst_none)) (Sil.Tint Sil.IULong);
         do_array esel typ
@@ -419,9 +419,10 @@ let pp_texp_for_malloc fmt =
         typ
     | Sil.Tptr (t, pk) ->
         Sil.Tptr (handle_arr_size t, pk)
-    | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
-        Sil.Tstruct (IList.map (fun (f, t, a) ->
-            (f, handle_arr_size t, a)) ftal, sftal, csu, nameo, supers, def_mthds, iann)
+    | Sil.Tstruct struct_typ ->
+        let instance_fields =
+          IList.map (fun (f, t, a) -> (f, handle_arr_size t, a)) struct_typ.Sil.instance_fields in
+        Sil.Tstruct { struct_typ with Sil.instance_fields }
     | Sil.Tarray (t, e) ->
         Sil.Tarray (handle_arr_size t, e) in
   function

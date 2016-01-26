@@ -1120,7 +1120,7 @@ let exp_imply calc_missing subs e1_in e2_in : subst2 =
     | e1, Sil.Var v2 ->
         let occurs_check v e = (* check whether [v] occurs in normalized [e] *)
           if Sil.fav_mem (Sil.exp_fav e) v
-             && Sil.fav_mem (Sil.exp_fav (Prop.exp_normalize_prop Prop.prop_emp e)) v
+          && Sil.fav_mem (Sil.exp_fav (Prop.exp_normalize_prop Prop.prop_emp e)) v
           then raise (IMPL_EXC ("occurs check", subs, (EXC_FALSE_EXPS (e1, e2)))) in
         if Ident.is_primed v2 then
           let () = occurs_check v2 e1 in
@@ -1414,11 +1414,17 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
         let t' = match t, typ_fld with
           | _, Sil.Tstruct _ -> (* the struct type of fld is known *)
               Sil.Sizeof (typ_fld, Sil.Subtype.exact)
-          | Sil.Sizeof (_t, st), _ -> (* the struct type of fld is not known -- typically Tvoid *)
+          | Sil.Sizeof (t1, st), _ -> (* the struct type of fld is not known -- typically Tvoid *)
               Sil.Sizeof
                 (Sil.Tstruct
-                   ([(fld, _t, Sil.item_annotation_empty)],
-                    [], Csu.Struct, None, [], [], Sil.item_annotation_empty), st)
+                   { Sil.instance_fields = [(fld, t1, Sil.item_annotation_empty)];
+                     static_fields = [];
+                     csu = Csu.Struct;
+                     struct_name = None;
+                     Sil.superclasses = [];
+                     Sil.def_methods = [];
+                     Sil.struct_annotations = Sil.item_annotation_empty;
+                   }, st)
           (* None as we don't know the stuct name *)
           | _ -> raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lfield") in
         let hpred' = Sil.Hpointsto (e, Sil.Estruct ([(fld, se)], Sil.inst_none), t') in
@@ -1448,8 +1454,9 @@ let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
 
 let is_interface tenv class_name =
   match Sil.tenv_lookup tenv class_name with
-  | Some (Sil.Tstruct (fields, sfields, Csu.Class, Some c1', supers1, methods, iann)) ->
-      (IList.length fields = 0) && (IList.length methods = 0)
+  | Some (Sil.Tstruct ( { Sil.csu = Csu.Class; struct_name = Some _ } as struct_typ )) ->
+      (IList.length struct_typ.Sil.instance_fields = 0) &&
+      (IList.length struct_typ.Sil.def_methods = 0)
   | _ -> false
 
 (** check if c1 is a subclass of c2 *)
@@ -1457,8 +1464,8 @@ let check_subclass_tenv tenv c1 c2 =
   let rec check cn =
     Typename.equal cn c2 || Typename.equal c2 object_type ||
     match Sil.tenv_lookup tenv cn with
-    | Some (Sil.Tstruct (_, _, Csu.Class, Some c1', supers1, _, _)) ->
-        IList.exists check supers1
+    | Some (Sil.Tstruct { Sil.struct_name = Some _; csu = Csu.Class; superclasses }) ->
+        IList.exists check superclasses
     | _ -> false in
   check c1
 
@@ -1478,8 +1485,8 @@ let check_subtype_basic_type t1 t2 =
 (** check if t1 is a subtype of t2 *)
 let rec check_subtype tenv t1 t2 =
   match t1, t2 with
-  | Sil.Tstruct (_, _, Csu.Class, Some c1, _, _, _),
-    Sil.Tstruct (_, _, Csu.Class, Some c2, _, _, _) ->
+  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c1 },
+    Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c2 } ->
       let cn1 = Typename.TN_csu (Csu.Class, c1)
       and cn2 = Typename.TN_csu (Csu.Class, c2) in
       (check_subclass tenv cn1 cn2)
@@ -1490,7 +1497,7 @@ let rec check_subtype tenv t1 t2 =
   | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
       check_subtype tenv dom_type1 dom_type2
 
-  | Sil.Tarray _, Sil.Tstruct (_, _, Csu.Class, Some c2, _, _, _) ->
+  | Sil.Tarray _, Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c2 } ->
       let cn2 = Typename.TN_csu (Csu.Class, c2) in
       Typename.equal cn2 serializable_type
       || Typename.equal cn2 cloneable_type
@@ -1500,8 +1507,8 @@ let rec check_subtype tenv t1 t2 =
 
 let rec case_analysis_type tenv (t1, st1) (t2, st2) =
   match t1, t2 with
-  | Sil.Tstruct (_, _, Csu.Class, Some c1, _, _, _),
-    Sil.Tstruct (_, _, Csu.Class, Some c2, _, _, _) ->
+  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c1 },
+    Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c2 } ->
       let cn1 = Typename.TN_csu (Csu.Class, c1)
       and cn2 = Typename.TN_csu (Csu.Class, c2) in
       (Sil.Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv))
@@ -1512,7 +1519,7 @@ let rec case_analysis_type tenv (t1, st1) (t2, st2) =
   | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
       (case_analysis_type tenv (dom_type1, st1) (dom_type2, st2))
 
-  | Sil.Tstruct (_, _, Csu.Class, Some c1, _, _, _), Sil.Tarray _ ->
+  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c1 }, Sil.Tarray _ ->
       let cn1 = Typename.TN_csu (Csu.Class, c1) in
       if (Typename.equal cn1 serializable_type
           || Typename.equal cn1 cloneable_type

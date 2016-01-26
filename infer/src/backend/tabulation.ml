@@ -443,9 +443,9 @@ let texp_star texp1 texp2 =
           | 0 -> ftal_sub ftal1' ftal2'
           | _ -> ftal_sub ftal1 ftal2' end in
   let typ_star t1 t2 = match t1, t2 with
-    | Sil.Tstruct (ftal1, sftal1, csu1, _, _, _, _),
-      Sil.Tstruct (ftal2, sftal2, csu2, _, _, _, _) when csu1 = csu2 ->
-        if ftal_sub ftal1 ftal2 then t2 else t1
+    | Sil.Tstruct { Sil.instance_fields = instance_fields1; csu = csu1 },
+      Sil.Tstruct { Sil.instance_fields = instance_fields2; csu = csu2 } when csu1 = csu2 ->
+        if ftal_sub instance_fields1 instance_fields2 then t2 else t1
     | _ -> t1 in
   match texp1, texp2 with
   | Sil.Sizeof (t1, st1), Sil.Sizeof (t2, st2) -> Sil.Sizeof (typ_star t1 t2, Sil.Subtype.join st1 st2)
@@ -597,7 +597,8 @@ let prop_get_exn_name pname prop =
   let exn_name = ref (Typename.Java.from_string "") in
   let find_exn_name e =
     let do_hpred = function
-      | Sil.Hpointsto (e1, _, Sil.Sizeof(Sil.Tstruct (_, _, _, Some name, _, _, _), _)) when Sil.exp_equal e1 e ->
+      | Sil.Hpointsto (e1, _, Sil.Sizeof (Sil.Tstruct  { Sil.struct_name = Some name }, _))
+        when Sil.exp_equal e1 e ->
           let found_exn_name = Typename.TN_csu (Csu.Class, name) in
           exn_name := found_exn_name
       | _ -> () in

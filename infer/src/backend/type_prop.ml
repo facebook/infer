@@ -99,8 +99,8 @@ struct
   let rec type_to_string typ =
     match typ with
     | Sil.Tptr (typ , _) -> type_to_string typ
-    | Sil.Tstruct (_, _, Csu.Class, Some mangled, _, _, _)
-    | Sil.Tvar (Typename.TN_csu (Csu.Class, (mangled))) -> Mangled.to_string mangled
+    | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some mangled }
+    | Sil.Tvar (Typename.TN_csu (Csu.Class, mangled)) -> Mangled.to_string mangled
     | _ -> Sil.typ_to_string typ
 
   let string_typ_to_string (s, typ) =
@@ -311,7 +311,7 @@ let initial_node = ref (Cfg.Node.dummy ())
 
 let rec super tenv t =
   match t with
-  | Sil.Tstruct (_, _, Csu.Class, Some c2, class_name :: rest, _, _) ->
+  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some _; superclasses = class_name :: _ } ->
       Sil.tenv_lookup tenv class_name
   | Sil.Tarray (dom_type, _) -> None
   | Sil.Tptr (dom_type, p) ->
@@ -430,9 +430,9 @@ struct
     | _ ->
         let ityp = Sil.expand_type tenv typ in
         match ityp with
-        | Sil.Tstruct (fields, sftal, csu, nameo, supers, def_mthds, iann) ->
+        | Sil.Tstruct { Sil.instance_fields } ->
             let (_, typ, _) =
-              try ((IList.find (fun (f, t, _) -> Ident.fieldname_equal f field)) fields)
+              try ((IList.find (fun (f, t, _) -> Ident.fieldname_equal f field)) instance_fields)
               with Not_found -> assert false in
             typ
         | _ -> assert false
@@ -488,8 +488,8 @@ struct
         let pred =
           try IList.find (fun p -> not (Set.mem p set)) preds
           with Not_found ->
-            try IList.hd preds
-            with Failure "hd" -> Set.min_elt set in
+          try IList.hd preds
+          with Failure "hd" -> Set.min_elt set in
         (aux pred) in
       if (Set.mem old_node set) then backtrack ()
       else

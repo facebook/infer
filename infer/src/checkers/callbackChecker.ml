@@ -83,7 +83,7 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
   let typename =
     Typename.TN_csu (Csu.Class, Mangled.from_string (Procname.java_get_class proc_name)) in
   match Sil.tenv_lookup tenv typename with
-  | Some (Sil.Tstruct(_, _, csu, Some class_name, _, methods, _) as typ) ->
+  | Some (Sil.Tstruct { Sil.csu; struct_name = Some class_name; def_methods } as typ) ->
       let lifecycle_typs = get_or_create_lifecycle_typs tenv in
       let proc_belongs_to_lifecycle_typ = IList.exists
           (fun lifecycle_typ -> AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv)
@@ -96,13 +96,14 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
         let registered_callback_procs' = IList.fold_left
             (fun callback_procs callback_typ ->
                match callback_typ with
-               | Sil.Tptr (Sil.Tstruct(_, _, Csu.Class, Some class_name, _, methods, _), _) ->
+               | Sil.Tptr (Sil.Tstruct
+                             { Sil.struct_name = Some _; def_methods = def_methods'}, _) ->
                    IList.fold_left
                      (fun callback_procs callback_proc ->
                         if Procname.is_constructor callback_proc then callback_procs
                         else Procname.Set.add callback_proc callback_procs)
                      callback_procs
-                     methods
+                     def_methods'
                | typ -> callback_procs)
             !registered_callback_procs
             registered_callback_typs in
@@ -111,6 +112,6 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
             (* compute the set of fields nullified by this procedure *)
             (* TODO (t4959422): get fields that are nullified in callees of the destroy method *)
             fields_nullified := FldSet.union (get_fields_nullified proc_desc) !fields_nullified in
-        if done_checking (IList.length methods) then
+        if done_checking (IList.length def_methods) then
           do_eradicate_check all_procs get_procdesc idenv tenv
   | _ -> ()

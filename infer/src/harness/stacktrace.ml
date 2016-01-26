@@ -43,11 +43,11 @@ let try_resolve_frame str_frame exe_env tenv =
      * in the stack trace. Note that the stack trace does not have any type or argument information;
      * the name is all that we have to go on *)
     match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, class_name)) with
-    | Some Sil.Tstruct (_, _, Csu.Class, _, _, decl_procs, _) ->
+    | Some Sil.Tstruct { Sil.csu = Csu.Class; def_methods } ->
         let possible_calls =
           IList.filter
             (fun proc -> Procname.java_get_method proc = str_frame.method_str)
-            decl_procs in
+            def_methods in
         if IList.length possible_calls > 0 then
           (* using IList.hd here assumes that all of the possible calls are declared in the
            * same file, which will be true in Java but not necessarily in other languages *)

@@ -108,14 +108,14 @@ let rec inhabit_typ typ proc_file_map env =
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors typ = match typ with
-            | Sil.Tstruct (_, _, Csu.Class, _, superclasses, methods, _) ->
+            | Sil.Tstruct { Sil.csu = Csu.Class; def_methods } ->
                 let is_suitable_constructor p =
                   let try_get_non_receiver_formals p =
                     try get_non_receiver_formals (formals_from_name p proc_file_map)
                     with Not_found -> [] in
                   Procname.is_constructor p && IList.for_all (fun (_, typ) ->
                       not (TypSet.mem typ env.cur_inhabiting)) (try_get_non_receiver_formals p) in
-                IList.filter (fun p -> is_suitable_constructor p) methods
+                IList.filter (fun p -> is_suitable_constructor p) def_methods
             | _ -> [] in
           let (env, typ_class_name) = match get_all_suitable_constructors typ with
             | constructor :: _ ->
@@ -205,7 +205,7 @@ let inhabit_fld_trace flds proc_file_map env =
       Sil.Letderef (lhs, fld_exp, fld_typ, env.pc) in
     let env = env_add_instr fld_read_instr [lhs] env in
     match fld_typ with
-    | Sil.Tptr (Sil.Tstruct (_, _, Csu.Class, _, _, procs, _), _) ->
+    | Sil.Tptr (Sil.Tstruct { Sil.csu = Csu.Class; def_methods }, _) ->
         let inhabit_cb_call procname env =
           try
             let procdesc = procdesc_from_name procname proc_file_map in
@@ -220,7 +220,7 @@ let inhabit_fld_trace flds proc_file_map env =
         IList.fold_left (fun env procname ->
             if not (Procname.is_constructor procname) &&
                not (Procname.java_is_access_method procname) then inhabit_cb_call procname env
-            else env) env procs
+            else env) env def_methods
     | _ -> assert false in
   IList.fold_left (fun env fld -> invoke_cb fld env) env flds
 

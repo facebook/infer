@@ -114,10 +114,10 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (superclasses : Typename.t list), methods =
     match Sil.tenv_lookup tenv interface_name with
-    | Some (Sil.Tstruct (saved_fields, _, _, _, saved_superclasses, saved_methods, _)) ->
-        General_utils.append_no_duplicates_fields fields saved_fields,
-        General_utils.append_no_duplicates_csu superclasses saved_superclasses,
-        General_utils.append_no_duplicates_methods methods saved_methods
+    | Some (Sil.Tstruct { Sil.instance_fields; superclasses; def_methods }) ->
+        General_utils.append_no_duplicates_fields fields instance_fields,
+        General_utils.append_no_duplicates_csu superclasses superclasses,
+        General_utils.append_no_duplicates_methods methods def_methods
     | _ -> fields, superclasses, methods in
   let fields = General_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
@@ -127,8 +127,15 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
   IList.iter (fun (fn, ft, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
   let interface_type_info =
-    Sil.Tstruct(fields, [], Csu.Class, Some (Mangled.from_string class_name),
-                superclasses, methods, Sil.objc_class_annotation) in
+    Sil.Tstruct {
+      Sil.instance_fields = fields;
+      static_fields = [];
+      csu = Csu.Class;
+      struct_name = Some (Mangled.from_string class_name);
+      superclasses;
+      def_methods = methods;
+      struct_annotations = Sil.objc_class_annotation;
+    } in
   Sil.tenv_add tenv interface_name interface_type_info;
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
@@ -143,11 +150,17 @@ let add_missing_methods tenv class_name decl_info decl_list curr_class =
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
   (match Sil.tenv_lookup tenv class_tn_name with
-   | Some Sil.Tstruct (fields, [], Csu.Class, Some name,
-                       superclass, existing_methods, annotation) ->
-       let methods = General_utils.append_no_duplicates_methods existing_methods methods in
+   | Some Sil.Tstruct
+       ({ Sil.static_fields = [];
+          csu = Csu.Class;
+          struct_name = Some name;
+          def_methods;
+        } as struct_typ) ->
+       let methods = General_utils.append_no_duplicates_methods def_methods methods in
        let typ =
-         Sil.Tstruct (fields, [], Csu.Class, Some name, superclass, methods, annotation) in
+         Sil.Tstruct
+           { struct_typ with
+             Sil.def_methods = methods; } in
        Sil.tenv_add tenv class_tn_name typ
    | _ -> ());
   Sil.Tvar class_tn_name

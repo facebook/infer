@@ -279,6 +279,17 @@ and const =
 
 and struct_fields = (Ident.fieldname * typ * item_annotation) list
 
+(** Type for a structured value. *)
+and struct_typ = {
+  instance_fields : struct_fields; (** non-static fields *)
+  static_fields : struct_fields; (** static fields *)
+  csu : Csu.t; (** class/struct/union *)
+  struct_name : Mangled.t option; (** name *)
+  superclasses : Typename.t list; (** list of superclasses *)
+  def_methods : Procname.t list; (** methods defined *)
+  struct_annotations : item_annotation; (** annotations *)
+}
+
 (** Types for sil (structured) expressions. *)
 and typ =
   | Tvar of Typename.t (** named type *)
@@ -287,12 +298,7 @@ and typ =
   | Tvoid (** void type *)
   | Tfun of bool (** function type with noreturn attribute *)
   | Tptr of typ * ptr_kind (** pointer type *)
-  | Tstruct of struct_fields * struct_fields * Csu.t * Mangled.t option *
-               Typename.t list * Procname.t list * item_annotation
-  (** Structure type with nonstatic and static fields, class/struct/union flag, name, list of superclasses,
-      methods defined, and annotations.
-      The fld - typ pairs are always sorted. This means that we don't support programs that exploit specific layouts
-      of C structs. *)
+  | Tstruct of struct_typ (** Type for a structured value *)
   | Tarray of typ * exp (** array type with fixed size *)
   | Tenum of (Mangled.t * const) list
 

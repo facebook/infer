@@ -191,7 +191,7 @@ let get_superclass_curr_class context =
     let iname = Typename.TN_csu (Csu.Class, Mangled.from_string cname) in
     Printing.log_out "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
     match Sil.tenv_lookup (CContext.get_tenv context) iname with
-    | Some Sil.Tstruct(_, _, _, _, super_name :: _, _, _) ->
+    | Some Sil.Tstruct { Sil.superclasses =  super_name :: _ } ->
         Typename.name super_name
     | _ ->
         Printing.log_err "NOT FOUND superclass = '%s'\n\n%!" (Typename.to_string iname);

@@ -598,21 +598,23 @@ let sym_eval abs e =
         eval (Sil.BinOp (Sil.PlusPI, e11, e2'))
     | Sil.BinOp
         (Sil.PlusA,
-         (Sil.Sizeof
-            (Sil.Tstruct (ftal, sftal, csu, name_opt, supers, def_mthds, iann), st) as e1),
+         (Sil.Sizeof (Sil.Tstruct struct_typ, st) as e1),
          e2) ->
         (* pattern for extensible structs given a struct declatead as struct s { ... t arr[n] ... },
            allocation pattern malloc(sizeof(struct s) + k * siezof(t)) turn it into
            struct s { ... t arr[n + k] ... } *)
         let e1' = eval e1 in
         let e2' = eval e2 in
-        (match IList.rev ftal, e2' with
-           (fname, Sil.Tarray(typ, size), _):: ltfa, Sil.BinOp(Sil.Mult, num_elem, Sil.Sizeof (texp, st)) when ftal != [] && Sil.typ_equal typ texp ->
+        let instance_fields = struct_typ.Sil.instance_fields in
+        (match IList.rev instance_fields, e2' with
+           (fname, Sil.Tarray (typ, size), _) :: ltfa,
+           Sil.BinOp(Sil.Mult, num_elem, Sil.Sizeof (texp, st))
+           when instance_fields != [] && Sil.typ_equal typ texp ->
              let size' = Sil.BinOp(Sil.PlusA, size, num_elem) in
              let ltfa' = (fname, Sil.Tarray(typ, size'), Sil.item_annotation_empty) :: ltfa in
-             Sil.Sizeof
-               (Sil.Tstruct
-                  (IList.rev ltfa', sftal, csu, name_opt, supers, def_mthds, iann), st)
+             let struct_typ' =
+               { struct_typ with Sil.instance_fields = ltfa' } in
+             Sil.Sizeof (Sil.Tstruct struct_typ', st)
          | _ -> Sil.BinOp(Sil.PlusA, e1', e2'))
     | Sil.BinOp (Sil.PlusA as oplus, e1, e2)
     | Sil.BinOp (Sil.PlusPI as oplus, e1, e2) ->
@@ -853,9 +855,15 @@ and typ_normalize sub typ = match typ with
       typ
   | Sil.Tptr (t', pk) ->
       Sil.Tptr (typ_normalize sub t', pk)
-  | Sil.Tstruct (ftal, sftal, csu, nameo, supers, def_mthds, iann) ->
+  | Sil.Tstruct struct_typ ->
       let fld_norm = IList.map (fun (f, t, a) -> (f, typ_normalize sub t, a)) in
-      Sil.Tstruct (fld_norm ftal, fld_norm sftal, csu, nameo, supers, def_mthds, iann)
+      let instance_fields = fld_norm struct_typ.Sil.instance_fields in
+      let static_fields = fld_norm struct_typ.Sil.static_fields in
+      Sil.Tstruct
+        { struct_typ with
+          Sil.instance_fields;
+          static_fields;
+        }
   | Sil.Tarray (t, e) ->
       Sil.Tarray (typ_normalize sub t, exp_normalize sub e)
   | Sil.Tenum econsts ->
@@ -1119,7 +1127,7 @@ let rec create_strexp_of_type tenvo struct_init_mode typ inst =
   match typ with
   | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tenum _ ->
       Sil.Eexp (init_value (), inst)
-  | Sil.Tstruct (ftal, sftal, _, _, _, _, _) ->
+  | Sil.Tstruct { Sil.instance_fields } ->
       begin
         match struct_init_mode with
         | No_init -> Sil.Estruct ([], inst)
@@ -1129,7 +1137,7 @@ let rec create_strexp_of_type tenvo struct_init_mode typ inst =
                 (fld, Sil.Eexp (Sil.exp_one, inst))
               else
                 (fld, create_strexp_of_type tenvo struct_init_mode t inst) in
-            Sil.Estruct (IList.map f ftal, inst)
+            Sil.Estruct (IList.map f instance_fields, inst)
       end
   | Sil.Tarray (_, size) ->
       Sil.Earray (size, [], inst)
@@ -1661,15 +1669,15 @@ let sigma_intro_nonemptylseg e1 e2 sigma =
         f (hpred :: sigma_passed) sigma'
     | Sil.Hlseg (Sil.Lseg_PE, para, f1, f2, shared) :: sigma'
       when (Sil.exp_equal e1 f1 && Sil.exp_equal e2 f2)
-           || (Sil.exp_equal e2 f1 && Sil.exp_equal e1 f2) ->
+        || (Sil.exp_equal e2 f1 && Sil.exp_equal e1 f2) ->
         f (Sil.Hlseg (Sil.Lseg_NE, para, f1, f2, shared) :: sigma_passed) sigma'
     | Sil.Hlseg _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'
     | Sil.Hdllseg (Sil.Lseg_PE, para, iF, oB, oF, iB, shared) :: sigma'
       when (Sil.exp_equal e1 iF && Sil.exp_equal e2 oF)
-           || (Sil.exp_equal e2 iF && Sil.exp_equal e1 oF)
-           || (Sil.exp_equal e1 iB && Sil.exp_equal e2 oB)
-           || (Sil.exp_equal e2 iB && Sil.exp_equal e1 oB) ->
+        || (Sil.exp_equal e2 iF && Sil.exp_equal e1 oF)
+        || (Sil.exp_equal e1 iB && Sil.exp_equal e2 oB)
+        || (Sil.exp_equal e2 iB && Sil.exp_equal e1 oB) ->
         f (Sil.Hdllseg (Sil.Lseg_NE, para, iF, oB, oF, iB, shared) :: sigma_passed) sigma'
     | Sil.Hdllseg _ as hpred :: sigma' ->
         f (hpred :: sigma_passed) sigma'

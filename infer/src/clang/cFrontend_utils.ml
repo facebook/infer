@@ -45,15 +45,16 @@ struct
         match typname with
         | Typename.TN_csu (Csu.Class, _) | Typename.TN_csu (Csu.Protocol, _) ->
             (match typ with
-             | Sil.Tstruct (fields, _, _, cls, super_classes, methods, iann) ->
+             | Sil.Tstruct { Sil.instance_fields; superclasses; def_methods; struct_annotations } ->
                  print_endline (
-                   (Typename.to_string typname) ^ " " ^ (Sil.item_annotation_to_string iann) ^ "\n" ^
+                   (Typename.to_string typname) ^ " " ^
+                   (Sil.item_annotation_to_string struct_annotations) ^ "\n" ^
                    "---> superclass and protocols " ^ (IList.to_string (fun tn ->
-                       "\t" ^ (Typename.to_string tn) ^ "\n") super_classes) ^
+                       "\t" ^ (Typename.to_string tn) ^ "\n") superclasses) ^
                    "---> methods " ^
-                   (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") methods)
+                   (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") def_methods)
                    ^ "  " ^
-                   "\t---> fields " ^ (IList.to_string field_to_string fields) ^ "\n")
+                   "\t---> fields " ^ (IList.to_string field_to_string instance_fields) ^ "\n")
              | _ -> ())
         | _ -> ()
       ) tenv
@@ -63,19 +64,19 @@ struct
         match typname with
         | Typename.TN_csu (Csu.Struct, _) | Typename.TN_csu (Csu.Union, _) ->
             (match typ with
-             | (Sil.Tstruct (fields, static_fields, _, cls, super_classes, methods, iann)) ->
-                 (print_endline (
-                     (Typename.to_string typname)^"\n"^
-                     "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
-                         match typ with
-                         | Sil.Tvar tname -> "tvar"^(Typename.to_string tname)
-                         | Sil.Tstruct (_, _, _, _, _, _, _) | _ ->
-                             "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
-                             (Sil.typ_to_string typ)^"\n") fields
-                       )
-                   )
+             | Sil.Tstruct { Sil.instance_fields } ->
+                 print_endline (
+                   (Typename.to_string typname)^"\n"^
+                   "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
+                       match typ with
+                       | Sil.Tvar tname -> "tvar"^(Typename.to_string tname)
+                       | Sil.Tstruct _ | _ ->
+                           "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
+                           (Sil.typ_to_string typ)^"\n") instance_fields
+                     )
                  )
-             | _ -> ())
+             | _ -> ()
+            )
         | Typename.TN_typedef typname ->
             print_endline ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string typ))
         | _ -> ()
