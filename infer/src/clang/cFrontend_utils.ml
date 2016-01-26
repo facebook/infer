@@ -47,7 +47,7 @@ struct
             (match typ with
              | Sil.Tstruct (fields, _, _, cls, super_classes, methods, iann) ->
                  print_endline (
-                   (Typename.to_string typname) ^ "\n"^
+                   (Typename.to_string typname) ^ " " ^ (Sil.item_annotation_to_string iann) ^ "\n" ^
                    "---> superclass and protocols " ^ (IList.to_string (fun tn ->
                        "\t" ^ (Typename.to_string tn) ^ "\n") super_classes) ^
                    "---> methods " ^

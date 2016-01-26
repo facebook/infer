@@ -547,6 +547,14 @@ val is_objc_ref_counter_field : (Ident.fieldname * typ * item_annotation) -> boo
 
 val has_objc_ref_counter : hpred -> bool
 
+val objc_class_annotation : (annotation * bool) list
+
+val cpp_class_annotation : (annotation * bool) list
+
+val is_objc_class : typ -> bool
+
+val is_cpp_class : typ -> bool
+
 val exp_is_zero : exp -> bool
 
 val exp_is_null_literal : exp -> bool
@@ -783,6 +791,8 @@ val pp_const: printenv -> Format.formatter -> const -> unit
 
 (** Pretty print an item annotation. *)
 val pp_item_annotation : Format.formatter -> item_annotation -> unit
+
+val item_annotation_to_string : item_annotation -> string 
 
 (** Pretty print a method annotation. *)
 val pp_method_annotation : string -> Format.formatter -> method_annotation -> unit

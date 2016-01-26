@@ -181,7 +181,9 @@ and get_struct_cpp_class_declaration_type tenv decl =
       let static_fields = [] in (* Warning for the moment we do not treat static field. *)
       let methods = get_class_methods tenv name decl_list in (* C++ methods only *)
       let superclasses = get_superclass_list decl in
-      let item_annotation = Sil.item_annotation_empty in  (* No annotations for struts *)
+      let item_annotation =
+        if csu = Csu.Class then Sil.cpp_class_annotation
+        else Sil.item_annotation_empty in  (* No annotations for structs *)
       let sil_type = Sil.Tstruct (sorted_non_static_fields, static_fields, csu,
                                   Some mangled_name, superclasses, methods, item_annotation) in
       Ast_utils.update_sil_types_map type_ptr sil_type;

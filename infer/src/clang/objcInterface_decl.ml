@@ -19,24 +19,13 @@ open CFrontend_utils
 
 module L = Logging
 
-let objc_class_str = "ObjC-Class"
-
-let objc_class_annotation =
-  [({ Sil.class_name = objc_class_str; Sil.parameters =[]}, true)]
-
-let is_objc_class_annotation a =
-  match a with
-  | [({ Sil.class_name = n; Sil.parameters =[]}, true)] when n = objc_class_str -> true
-  | _ -> false
-
 let is_pointer_to_objc_class tenv typ =
   match typ with
   | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class, cname)), _) ->
       (match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, cname)) with
-       | Some Sil.Tstruct(_, _, Csu.Class, _, _, _, a) when is_objc_class_annotation a -> true
+       | Some typ when Sil.is_objc_class typ -> true
        | _ -> false)
-  | Sil.Tptr (Sil.Tstruct(_, _, Csu.Class, _, _, _, a), _) when
-      is_objc_class_annotation a -> true
+  | Sil.Tptr (typ, _) when Sil.is_objc_class typ -> true
   | _ -> false
 
 let get_super_interface_decl otdi_super =
@@ -139,7 +128,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
   let interface_type_info =
     Sil.Tstruct(fields, [], Csu.Class, Some (Mangled.from_string class_name),
-                superclasses, methods, objc_class_annotation) in
+                superclasses, methods, Sil.objc_class_annotation) in
   Sil.tenv_add tenv interface_name interface_type_info;
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);

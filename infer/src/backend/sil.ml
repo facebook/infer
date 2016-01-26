@@ -75,6 +75,10 @@ let pp_item_annotation fmt item_annotation =
   let pp fmt (a, v) = pp_annotation fmt a in
   F.fprintf fmt "<%a>" (pp_seq pp) item_annotation
 
+let item_annotation_to_string ann =
+  let pp fmt () = pp_item_annotation fmt ann in
+  Utils.pp_to_string pp ()
+
 (** Pretty print a method annotation. *)
 let pp_method_annotation s fmt (ia, ial) =
   F.fprintf fmt "%a %s(%a)" pp_item_annotation ia s (pp_seq pp_item_annotation) ial
@@ -827,6 +831,34 @@ let has_objc_ref_counter hpred =
   | Hpointsto(_, _, Sizeof(Tstruct(fl, _, _, _, _, _, _), _)) ->
       IList.exists is_objc_ref_counter_field fl
   | _ -> false
+
+let objc_class_str = "ObjC-Class"
+
+let cpp_class_str = "Cpp-Class"
+
+let class_annotation class_string =
+  [({ class_name = class_string; parameters =[]}, true)]
+
+let objc_class_annotation =
+  class_annotation objc_class_str
+
+let cpp_class_annotation =
+  class_annotation cpp_class_str
+
+let is_class_of_language typ class_string =
+  match typ with
+  | Tstruct(_, _, Csu.Class, _, _, _, a) ->
+      (match a with
+       | [({ class_name = n; parameters = []}, true)]
+         when n = class_string -> true
+       | _ -> false)
+  | _ -> false
+
+let is_objc_class typ =
+  is_class_of_language typ objc_class_str
+
+let is_cpp_class typ =
+  is_class_of_language typ cpp_class_str
 
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let typ_strip_ptr = function
