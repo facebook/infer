@@ -92,25 +92,32 @@ type global_state =
     name_generator : Ident.NameGenerator.t;
   }
 
-let do_analysis curr_pdesc proc_name =
+let do_analysis curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
   let really_do_analysis analyze_proc proc_desc =
     if trace () then L.stderr "[%d] really_do_analysis %a -> %a@."
         !nesting
         Procname.pp curr_pname
-        Procname.pp proc_name;
+        Procname.pp callee_pname;
 
     let preprocess () =
       incr nesting;
       let attributes_opt =
-        Some (Cfg.Procdesc.get_attributes proc_desc) in
+        Specs.proc_resolve_attributes callee_pname in
+      Option.may
+        (fun attribute ->
+           let attribute_pname = attribute.ProcAttributes.proc_name in
+           if not (Procname.equal callee_pname attribute_pname) then
+             failwith ("ERROR: "^(Procname.to_string callee_pname)
+                       ^" not equal to "^(Procname.to_string attribute_pname)))
+        attributes_opt;
       let call_graph =
         let cg = Cg.create () in
-        Cg.add_defined_node cg proc_name;
+        Cg.add_defined_node cg callee_pname;
         cg in
-      Specs.reset_summary call_graph proc_name attributes_opt;
-      Specs.set_status proc_name Specs.ACTIVE;
+      Specs.reset_summary call_graph callee_pname attributes_opt;
+      Specs.set_status callee_pname Specs.ACTIVE;
       let old_state =
         {
           name_generator = Ident.NameGenerator.get_current ();
@@ -122,22 +129,22 @@ let do_analysis curr_pdesc proc_name =
 
     let postprocess () =
       decr nesting;
-      let summary = Specs.get_summary_unsafe "ondemand" proc_name in
+      let summary = Specs.get_summary_unsafe "ondemand" callee_pname in
       let summary' =
         { summary with
           Specs.status = Specs.INACTIVE;
           timestamp = summary.Specs.timestamp + 1 } in
-      Specs.add_summary proc_name summary';
-      Checkers.ST.store_summary proc_name in
+      Specs.add_summary callee_pname summary';
+      Checkers.ST.store_summary callee_pname in
 
     let old_state = preprocess () in
     try
-      analyze_proc proc_name;
+      analyze_proc callee_pname;
       postprocess ();
       restore old_state;
     with e ->
       L.stderr "ONDEMAND EXCEPTION %a %s %s@."
-        Procname.pp proc_name
+        Procname.pp callee_pname
         (Printexc.to_string e)
         (Printexc.get_backtrace ());
       restore old_state;
@@ -145,9 +152,9 @@ let do_analysis curr_pdesc proc_name =
 
   match !callbacks_ref with
   | Some callbacks
-    when procedure_should_be_analyzed curr_pdesc proc_name ->
+    when procedure_should_be_analyzed curr_pdesc callee_pname ->
       begin
-        match callbacks.get_proc_desc proc_name with
+        match callbacks.get_proc_desc callee_pname with
         | Some proc_desc ->
             really_do_analysis callbacks.analyze_ondemand proc_desc
         | None -> ()
