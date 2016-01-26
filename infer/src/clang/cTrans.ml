@@ -585,8 +585,9 @@ struct
      | [s1; ImplicitCastExpr (stmt, [CompoundLiteralExpr (cle_stmt_info, stmts, expr_info)], _, cast_expr_info)] ->
          let decl_ref  = get_decl_ref_info s1 in
          let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
+         let trans_state' = { trans_state with var_exp = Some (Sil.Lvar pvar) } in
          let res_trans_tmp =
-           initListExpr_trans trans_state (Sil.Lvar pvar) stmt_info expr_info stmts in
+           initListExpr_trans trans_state' stmt_info expr_info stmts in
          { res_trans_tmp with leaf_nodes =[]}
      | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
          let rhs_owning_method = CTrans_utils.is_owning_method s2 in
@@ -1367,7 +1368,8 @@ struct
     let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
-  and initListExpr_trans trans_state var_exp stmt_info expr_info stmts =
+  and initListExpr_trans trans_state stmt_info expr_info stmts =
+    let var_exp = match trans_state.var_exp with Some e -> e | _ -> assert false in
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
     let rec collect_right_hand_exprs ts stmt = match stmt with
@@ -1473,10 +1475,6 @@ struct
          | [] -> ()
          | _ -> Printing.log_stats "\n!!!!WARNING: found statement <\"ImplicitValueInitExpr\"> with non-empty stmt_list.\n");
         { empty_res_trans with root_nodes = trans_state.succ_nodes }
-    | Some (InitListExpr (stmt_info , stmts , expr_info))
-    | Some (ImplicitCastExpr (_, [CompoundLiteralExpr (_, [InitListExpr (stmt_info , stmts , expr_info)], _)], _, _))
-    | Some (ExprWithCleanups (_, [InitListExpr (stmt_info , stmts , expr_info)], _, _)) ->
-        initListExpr_trans trans_state var_exp stmt_info expr_info stmts
     | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
         let stmt_info, _ = Clang_ast_proj.get_stmt_tuple ie in
         let context = trans_state.context in
@@ -1848,7 +1846,9 @@ struct
     let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
         "SIL_compound_literal__" expr_info in
     Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
-    initListExpr_trans trans_state (Sil.Lvar pvar) stmt_info expr_info stmt_list
+    let trans_state' = { trans_state with var_exp = Some (Sil.Lvar pvar) } in
+    let stmt = match stmt_list with [stmt] -> stmt | _ -> assert false in
+    instruction trans_state' stmt
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
@@ -2068,8 +2068,10 @@ struct
         cxxDeleteExpr_trans trans_state stmt_info stmt_list expr_info delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
-    | CompoundLiteralExpr (_, [InitListExpr (stmt_info , stmt_list , expr_info)], _) ->
+    | CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
         compoundLiteralExpr_trans trans_state stmt_info stmt_list expr_info
+    | InitListExpr (stmt_info, stmts, expr_info) ->
+        initListExpr_trans trans_state stmt_info expr_info stmts
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);

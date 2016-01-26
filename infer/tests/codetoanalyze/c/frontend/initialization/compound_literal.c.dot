@@ -1,5 +1,5 @@
 digraph iCFG {
-7 [label="7:  InitListExp \n   *&p.x:int =32 [line 20]\n  *&p.y:int =52 [line 20]\n " shape="box"]
+7 [label="7:  DeclStmt \n   *&SIL_compound_literal__n$1.x:int =32 [line 20]\n  *&SIL_compound_literal__n$1.y:int =52 [line 20]\n  n$2=*&SIL_compound_literal__n$1:struct point  [line 20]\n  *&p:struct point =n$2 [line 20]\n  REMOVE_TEMPS(n$2); [line 20]\n  NULLIFY(&SIL_compound_literal__n$1,false); [line 20]\n " shape="box"]
 	
 
 	 7 -> 6 ;
@@ -10,7 +10,7 @@ digraph iCFG {
 5 [label="5: Exit init_with_compound_literal \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start init_with_compound_literal\nFormals: \nLocals:  p:struct point  \n   DECLARE_LOCALS(&return,&p); [line 19]\n " color=yellow style=filled]
+4 [label="4: Start init_with_compound_literal\nFormals: \nLocals:  p:struct point  SIL_compound_literal__n$1:struct point  \n   DECLARE_LOCALS(&return,&p,&SIL_compound_literal__n$1); [line 19]\n  NULLIFY(&p,false); [line 19]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;

@@ -1,5 +1,5 @@
 digraph iCFG {
-14 [label="14:  InitListExp \n   *&e.doj.date:int =12 [line 41]\n  *&e.doj.month:int =3000.500000 [line 41]\n  *&e.doj.year:int =12 [line 41]\n  *&e.salary:float =12 [line 41]\n  *&e.ssn:int =2010 [line 41]\n " shape="box"]
+14 [label="14:  DeclStmt \n   *&e.doj.date:int =12 [line 41]\n  *&e.doj.month:int =3000.500000 [line 41]\n  *&e.doj.year:int =12 [line 41]\n  *&e.salary:float =12 [line 41]\n  *&e.ssn:int =2010 [line 41]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 7 -> 10 ;
-6 [label="6:  InitListExp \n   n$0=_fun_foo() [line 20]\n  *&p.x:int =1 [line 20]\n  *&p.y:int =(n$0 + 3) [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$0=_fun_foo() [line 20]\n  *&p.x:int =1 [line 20]\n  *&p.y:int =(n$0 + 3) [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 6 -> 5 ;

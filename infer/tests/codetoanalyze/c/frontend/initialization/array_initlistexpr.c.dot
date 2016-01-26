@@ -1,5 +1,5 @@
 digraph iCFG {
-3 [label="3:  InitListExp \n   n$0=*&z:int  [line 12]\n  *&a[0][0]:int =(n$0 + 1) [line 12]\n  *&a[0][1]:int =2 [line 12]\n  *&a[0][2]:int =3 [line 12]\n  *&a[1][0]:int =5 [line 12]\n  *&a[1][1]:int =6 [line 12]\n  *&a[1][2]:int =7 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&z,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=*&z:int  [line 12]\n  *&a[0][0]:int =(n$0 + 1) [line 12]\n  *&a[0][1]:int =2 [line 12]\n  *&a[0][2]:int =3 [line 12]\n  *&a[1][0]:int =5 [line 12]\n  *&a[1][1]:int =6 [line 12]\n  *&a[1][2]:int =7 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&z,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;
