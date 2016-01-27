@@ -37,6 +37,7 @@ function usage() {
 BUILD_CLANG=no
 BUILD_JAVA=no
 INTERACTIVE=yes
+ORIG_ARGS="$*"
 
 while [[ $# > 0 ]]; do
   opt_key="$1"
@@ -166,4 +167,11 @@ echo "  *************************"
 echo
 
 ./configure $CONFIGURE_ARGS
-make -j $TARGETS || (echo 'compilation failure; try running "make clean"'; exit 1)
+make -j $TARGETS || (
+  echo
+  echo '  compilation failure; you can try running'
+  echo
+  echo '    make clean'
+  echo "    $0 $ORIG_ARGS"
+  echo
+  exit 1)

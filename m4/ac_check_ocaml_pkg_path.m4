@@ -28,28 +28,10 @@ AC_DEFUN([AC_CHECK_OCAML_PKG_PATH],
     path=`$OCAMLFIND query $pkg 2>/dev/null`
     if test "x$3" != "x"; then
       version=`$OCAMLFIND query -format '%v' $pkg 2>/dev/null`
-      unset major_req
-      unset minor_req
-      unset patch_req
-      unset major_inst
-      unset minor_inst
-      unset patch_inst
-
-      major_req=$(printf "$3" | cut -d . -f 1)
-      minor_req=$(printf "$3" | cut -d . -f 2)
-      patch_req=$(printf "$3" | cut -d . -f 3)
-
-      major_inst=$(printf "$version" | cut -d . -f 1)
-      minor_inst=$(printf "$version" | cut -d . -f 2)
-      # discard trailing characters after patch number, eg 1.2.3+4~5 -> 3
-      patch_inst=$(printf "$version" | cut -d . -f 3 | grep -o -e '^[[[:digit:]]]*')
-      if test $major_inst -gt $major_req || \
-         (test $major_inst -eq $major_req && \
-          (test $minor_inst -gt $minor_req || \
-           (test $minor_inst -eq $minor_req && \
-            test $path_inst -ge $path_req))); then
-        found=yes
-      fi
+      AC_COMPARE_VERSION_STRINGS([$3], [$version],
+        [found=yes],
+        [],
+      )
     else
       found=yes
     fi
