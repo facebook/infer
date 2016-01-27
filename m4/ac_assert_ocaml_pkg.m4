@@ -40,7 +40,7 @@ AC_DEFUN([AC_ASSERT_OCAML_PKG],
 If you are using opam, please run
 
   opam update
-  opam pin add --yes --no-action .
+  opam pin add --yes --no-action infer .
   opam install --deps-only infer])
   ])
 ])
