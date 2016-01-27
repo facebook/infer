@@ -30,11 +30,6 @@ val add_cg : initial -> DB.source_dir -> Cg.t option
 (** like add_cg, but use exclude_fun to determine files to be excluded *)
 val add_cg_exclude_fun : initial -> DB.source_dir -> (DB.source_file -> bool) -> Cg.t option
 
-(** add a new source file -> file data mapping. arguments are the components of the file_data
-  * record *)
-val add_file_mapping : t -> DB.source_file -> int -> DB.filename -> Sil.tenv option -> DB.filename
-  -> Cfg.cfg option -> unit
-
 (** get the global call graph *)
 val get_cg : t -> Cg.t
 
@@ -52,9 +47,6 @@ val get_cfg : t -> Procname.t -> Cfg.cfg
 
 (** [iter_files f exe_env] applies [f] to the source file and tenv and cfg for each file in [exe_env] *)
 val iter_files : (DB.source_file -> Sil.tenv -> Cfg.cfg -> unit) -> t -> unit
-
-(** [fold_files f exe_env] folds f through the source file, tenv, and cfg for each file in [exe_env] *)
-val fold_files : (DB.source_file -> Sil.tenv -> Cfg.cfg -> 'a -> 'a) -> 'a -> t -> 'a
 
 (** check if a procedure is marked as active *)
 val proc_is_active : t -> Procname.t -> bool

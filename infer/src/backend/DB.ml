@@ -38,6 +38,8 @@ end
 
 module SourceFileMap = Map.Make(OrderedSourceFile)
 
+module SourceFileSet = Set.Make(OrderedSourceFile)
+
 let source_file_from_string path =
   if Filename.is_relative path then
     Relative path

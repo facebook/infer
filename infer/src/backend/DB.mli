@@ -63,6 +63,9 @@ type source_file
 (** Maps from source_file *)
 module SourceFileMap : Map.S with type key = source_file
 
+(** Set of source files *)
+module SourceFileSet : Set.S with type elt = source_file
+
 (** current source file *)
 val current_source : source_file ref
 

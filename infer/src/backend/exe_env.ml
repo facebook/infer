@@ -50,7 +50,6 @@ let new_file_data source nLOC cg_fname =
 type t =
   { cg: Cg.t; (** global call graph *)
     proc_map: file_data Procname.Hash.t; (** map from procedure name to file data *)
-    file_map: (DB.source_file, file_data) Hashtbl.t; (** map from filaname to file data *)
     mutable active_opt : Procname.Set.t option; (** if not None, restrict the active procedures to the given set *)
     mutable procs_defined_in_several_files : Procname.Set.t; (** Procedures defined in more than one file *)
   }
@@ -65,7 +64,6 @@ let freeze exe_env = exe_env (* TODO: unclear what this function is used for *)
 let create procset_opt =
   { cg = Cg.create ();
     proc_map = Procname.Hash.create 17;
-    file_map = Hashtbl.create 17;
     active_opt = procset_opt;
     procs_defined_in_several_files = Procname.Set.empty;
   }
@@ -109,25 +107,11 @@ let add_cg_exclude_fun (exe_env: t) (source_dir : DB.source_dir) exclude_fun =
                 source < old_source (* when a procedure is defined in several files, map to the first alphabetically *)
               else true in
             if should_update then Procname.Hash.replace exe_env.proc_map pname file_data) defined_procs;
-        Hashtbl.add exe_env.file_map source file_data;
         Some cg
 
 (** add call graph from fname in the spec db, with relative tenv and cfg, to the execution environment *)
 let add_cg exe_env (source_dir : DB.source_dir) =
   add_cg_exclude_fun exe_env source_dir (fun _ -> false)
-
-(** add a new source file -> file data mapping. arguments are the components of the file_data
-  * record *)
-let add_file_mapping exe_env source nLOC tenv_file tenv cfg_file cfg =
-  let file_data =
-    { source = source;
-      nLOC = nLOC;
-      tenv_file = tenv_file;
-      tenv = tenv;
-      cfg_file = cfg_file;
-      cfg = cfg;
-    } in
-  Hashtbl.add exe_env.file_map source file_data
 
 (** get the procedures defined in more than one file *)
 let get_procs_defined_in_several_files exe_env =
@@ -152,12 +136,7 @@ let get_file_data exe_env pname =
           let nLOC = loc.Location.nLOC in
           let source_dir = DB.source_dir_from_source_file source_file in
           let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-          let file_data =
-            try Hashtbl.find exe_env.file_map source_file with
-            | Not_found ->
-                let file_data = new_file_data source_file nLOC cg_fname in
-                Hashtbl.replace exe_env.file_map source_file file_data;
-                file_data in
+          let file_data = new_file_data source_file nLOC cg_fname in
           Procname.Hash.replace exe_env.proc_map pname file_data;
           file_data
     end
@@ -214,16 +193,15 @@ let get_cfg exe_env pname =
 
 (** [iter_files f exe_env] applies [f] to the filename and tenv and cfg for each file in [exe_env] *)
 let iter_files f exe_env =
-  let do_file fname file_data =
-    DB.current_source := fname;
-    Config.nLOC := file_data.nLOC;
-    f fname (file_data_to_tenv file_data) (file_data_to_cfg exe_env file_data) in
-  Hashtbl.iter do_file exe_env.file_map
-
-(** [fold_files f exe_env] folds f through the source file, tenv, and cfg for each file in [exe_env] *)
-let fold_files f acc exe_env =
-  let fold_file fname file_data acc =
-    DB.current_source := fname;
-    Config.nLOC := file_data.nLOC;
-    f fname (file_data_to_tenv file_data) (file_data_to_cfg exe_env file_data) acc in
-  Hashtbl.fold fold_file exe_env.file_map acc
+  let do_file _ file_data seen_files_acc =
+    let fname = file_data.source in
+    if DB.SourceFileSet.mem fname seen_files_acc
+    then seen_files_acc
+    else
+      begin
+        DB.current_source := fname;
+        Config.nLOC := file_data.nLOC;
+        f fname (file_data_to_tenv file_data) (file_data_to_cfg exe_env file_data);
+        DB.SourceFileSet.add fname seen_files_acc
+      end in
+  ignore (Procname.Hash.fold do_file exe_env.proc_map DB.SourceFileSet.empty)
