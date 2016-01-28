@@ -13,7 +13,7 @@ module type CTrans = sig
   (** It receives the context, a list of statements from clang ast, list of custom statments *)
   (** to be added before clang statements and the exit node and it returns a list of cfg nodes *)
   (** that reporesent the translation of the stmts into sil. *)
-  val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> CModule_type.instr_type list ->
+  val instructions_trans : CContext.t -> Clang_ast_t.stmt -> CModule_type.instr_type list ->
     Cfg.Node.t -> Cfg.Node.t list
 
 end

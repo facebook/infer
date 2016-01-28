@@ -30,7 +30,7 @@ struct
     Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
 
   (* Translates the method/function's body into nodes of the cfg. *)
-  let add_method tenv cg cfg class_decl_opt procname instrs has_return_param is_objc_method
+  let add_method tenv cg cfg class_decl_opt procname body has_return_param is_objc_method
       captured_vars outer_context_opt extra_instrs =
 
     Printing.log_out
@@ -47,7 +47,7 @@ struct
               Printing.log_out
                 "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
                 (Procname.to_string procname);
-              let meth_body_nodes = T.instructions_trans context instrs extra_instrs exit_node in
+              let meth_body_nodes = T.instructions_trans context body extra_instrs exit_node in
               Cfg.Node.add_locals_ret_declaration start_node (Cfg.Procdesc.get_locals procdesc);
               Cfg.Node.set_succs_exn start_node meth_body_nodes [];
               Cg.add_defined_node (CContext.get_cg context) (Cfg.Procdesc.get_proc_name procdesc))
@@ -77,7 +77,7 @@ struct
         let procname = CMethod_signature.ms_get_name ms in
         let has_return_param = CMethod_signature.ms_has_return_param ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
-          add_method tenv cg cfg CContext.ContextNoCls procname [body] has_return_param false
+          add_method tenv cg cfg CContext.ContextNoCls procname body has_return_param false
             captured_vars outer_context_opt extra_instrs
     | None -> ()
 
@@ -91,7 +91,7 @@ struct
         let is_objc_inst_method = is_instance && is_objc in
         let has_return_param = CMethod_signature.ms_has_return_param ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_objc_inst_method then
-          add_method tenv cg cfg curr_class procname [body] has_return_param is_objc []
+          add_method tenv cg cfg curr_class procname body has_return_param is_objc []
             None extra_instrs
     | None -> ()
 

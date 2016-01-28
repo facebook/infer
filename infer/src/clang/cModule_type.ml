@@ -16,7 +16,7 @@ type instr_type = [
 
 module type CTranslation =
 sig
-  val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> instr_type list ->
+  val instructions_trans : CContext.t -> Clang_ast_t.stmt -> instr_type list ->
     Cfg.Node.t -> Cfg.Node.t list
 end
 

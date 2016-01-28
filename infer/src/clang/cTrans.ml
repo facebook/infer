@@ -22,7 +22,7 @@ module type CTrans = sig
   (** It receives the context, a list of statements from clang ast, list of custom statments *)
   (** to be added before clang statements and the exit node and it returns a list of cfg nodes *)
   (** that reporesent the translation of the stmts into sil. *)
-  val instructions_trans : CContext.t -> Clang_ast_t.stmt list -> CModule_type.instr_type list ->
+  val instructions_trans : CContext.t -> Clang_ast_t.stmt -> CModule_type.instr_type list ->
     Cfg.Node.t -> Cfg.Node.t list
 
 end
@@ -2126,37 +2126,36 @@ struct
 
   (** Given a translation state and list of translation functions it executes translation *)
   and exec_trans_instrs trans_state trans_stmt_fun_list =
-    match trans_stmt_fun_list with
-    | [] -> { empty_res_trans with root_nodes = trans_state.succ_nodes }
-    | trans_stmt_fun :: trans_stmt_fun_list' ->
-        let res_trans_s = trans_stmt_fun trans_state in
-        let trans_state' =
-          if res_trans_s.root_nodes <> []
-          then { trans_state with succ_nodes = res_trans_s.root_nodes }
-          else trans_state in
-        let res_trans_tail = exec_trans_instrs trans_state' trans_stmt_fun_list' in
-        { root_nodes = res_trans_tail.root_nodes;
-          leaf_nodes = [];
-          ids = res_trans_s.ids @ res_trans_tail.ids;
-          instrs = res_trans_tail.instrs @ res_trans_s.instrs;
-          exps = res_trans_tail.exps @ res_trans_s.exps;
-          initd_exps = res_trans_tail.initd_exps @ res_trans_s.initd_exps; }
+    let rec exec_trans_instrs_no_rev trans_state rev_trans_fun_list = match rev_trans_fun_list with
+      | [] -> { empty_res_trans with root_nodes = trans_state.succ_nodes }
+      | trans_stmt_fun :: trans_stmt_fun_list' ->
+          let res_trans_s = trans_stmt_fun trans_state in
+          let trans_state' =
+            if res_trans_s.root_nodes <> []
+            then { trans_state with succ_nodes = res_trans_s.root_nodes }
+            else trans_state in
+          let res_trans_tail = exec_trans_instrs_no_rev trans_state' trans_stmt_fun_list' in
+          { root_nodes = res_trans_tail.root_nodes;
+            leaf_nodes = [];
+            ids = res_trans_s.ids @ res_trans_tail.ids;
+            instrs = res_trans_tail.instrs @ res_trans_s.instrs;
+            exps = res_trans_tail.exps @ res_trans_s.exps;
+            initd_exps = res_trans_tail.initd_exps @ res_trans_s.initd_exps; } in
+    exec_trans_instrs_no_rev trans_state (IList.rev trans_stmt_fun_list)
 
-  and get_clang_stmt_trans stmt_list =
-    let instruction' = fun stmt -> fun trans_state -> instruction trans_state stmt in
-    IList.map instruction' stmt_list
+  and get_clang_stmt_trans stmt = fun trans_state -> instruction trans_state stmt
 
-  and get_custom_stmt_trans custom_stmts =
-    (* TODO write translate function for cxx constructor exprs *)
-    let do_one_stmt stmt = match stmt with
-      | `ClangStmt stmt -> get_clang_stmt_trans [stmt]
-      | `CXXConstructorInit instr -> [] in
-    IList.flatten (IList.map do_one_stmt custom_stmts)
+  and empty_trans_fun trans_state = empty_res_trans
+
+  (* TODO write translate function for cxx constructor exprs *)
+  and get_custom_stmt_trans stmt = match stmt with
+    | `ClangStmt stmt -> get_clang_stmt_trans stmt
+    | `CXXConstructorInit instr -> empty_trans_fun
 
   (** Given a translation state, this function translates a list of clang statements. *)
   and instructions trans_state stmt_list =
-    let rev_stmt_list = IList.rev stmt_list in
-    exec_trans_instrs trans_state (get_clang_stmt_trans rev_stmt_list)
+    let stmt_trans_fun = IList.map get_clang_stmt_trans stmt_list in
+    exec_trans_instrs trans_state stmt_trans_fun
 
   and expression_trans context stmt warning =
     let trans_state = {
@@ -2169,7 +2168,7 @@ struct
     let res_trans_stmt = instruction trans_state stmt in
     fst (CTrans_utils.extract_exp_from_list res_trans_stmt.exps warning)
 
-  let instructions_trans context clang_stmt_list extra_instrs exit_node =
+  let instructions_trans context body extra_instrs exit_node =
     let trans_state = {
       context = context;
       succ_nodes = [exit_node];
@@ -2177,9 +2176,9 @@ struct
       priority = Free;
       var_exp = None;
     } in
-    let clang_ast_trans = get_clang_stmt_trans clang_stmt_list in
-    let extra_stmt_trans = get_custom_stmt_trans extra_instrs in
-    let res_trans = exec_trans_instrs trans_state (clang_ast_trans @ extra_stmt_trans) in
+    let instrs = extra_instrs @ [`ClangStmt body] in
+    let instrs_trans = IList.map get_custom_stmt_trans instrs in
+    let res_trans = exec_trans_instrs trans_state instrs_trans in
     res_trans.root_nodes
 
 end
