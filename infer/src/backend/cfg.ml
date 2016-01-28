@@ -373,6 +373,20 @@ module Node = struct
   (** Counter for identifiers of procdescs *)
   let proc_desc_id_counter = ref 0
 
+  let proc_desc_create cfg proc_attributes =
+    incr proc_desc_id_counter;
+    let pdesc =
+      {
+        pd_attributes = proc_attributes;
+        pd_id = !proc_desc_id_counter;
+        pd_nodes = [];
+        pd_start_node = dummy ();
+        pd_exit_node = dummy ();
+        pd_changed = true
+      } in
+    pdesc_tbl_add cfg proc_attributes.ProcAttributes.proc_name pdesc;
+    pdesc
+
   let remove_node' filter_out_fun cfg node =
     let remove_node_in_cfg nodes =
       IList.filter filter_out_fun nodes in
@@ -620,26 +634,7 @@ module Procdesc = struct
   type t = Node.proc_desc
   let compute_distance_to_exit_node = Node.proc_desc_compute_distance_to_exit_node
 
-  type proc_desc_builder =
-    { cfg : cfg;
-      proc_attributes : ProcAttributes.t;
-    }
-
-  let create (b : proc_desc_builder) =
-    let open Node in
-    incr proc_desc_id_counter;
-    let pdesc =
-      {
-        pd_attributes = b.proc_attributes;
-        pd_id = !proc_desc_id_counter;
-        pd_nodes = [];
-        pd_start_node = dummy ();
-        pd_exit_node = dummy ();
-        pd_changed = true
-      } in
-    pdesc_tbl_add b.cfg b.proc_attributes.ProcAttributes.proc_name pdesc;
-    pdesc
-
+  let create = Node.proc_desc_create
   let remove = Node.proc_desc_remove
   let find_from_name = Node.proc_desc_from_name
   let get_attributes = Node.proc_desc_get_attributes

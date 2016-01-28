@@ -349,10 +349,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
           method_annotation;
           ret_type;
         } in
-      Cfg.Procdesc.create {
-        Cfg.Procdesc.cfg;
-        proc_attributes;
-      } in
+      Cfg.Procdesc.create cfg proc_attributes in
     if defined then
       (if !Config.arc_mode then
          Cfg.Procdesc.set_flag procdesc Mleak_buckets.objc_arc_flag "true";
@@ -377,19 +374,14 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
              ret_type, IList.map (fun typ -> (Mangled.from_string "x", typ)) arg_types
          | None -> Sil.Tvoid, []) in
       let loc = Location.dummy in
-      let _ =
-        let proc_attributes =
-          { (ProcAttributes.default proc_name Config.C_CPP) with
-            ProcAttributes.formals;
-            is_objc_instance_method = is_objc_inst_method;
-            loc;
-            ret_type;
-          } in
-        Cfg.Procdesc.create {
-          Cfg.Procdesc.cfg = cfg;
-          proc_attributes = proc_attributes;
+      let proc_attributes =
+        { (ProcAttributes.default proc_name Config.C_CPP) with
+          ProcAttributes.formals;
+          is_objc_instance_method = is_objc_inst_method;
+          loc;
+          ret_type;
         } in
-      ()
+      ignore (Cfg.Procdesc.create cfg proc_attributes)
 
 let create_procdesc_with_pointer context pointer class_name_opt name tp =
   let open CContext in

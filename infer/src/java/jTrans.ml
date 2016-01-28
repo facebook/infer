@@ -297,10 +297,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   method_annotation;
                   ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
-              Cfg.Procdesc.create {
-                Cfg.Procdesc.cfg = cfg;
-                proc_attributes;
-              } in
+              Cfg.Procdesc.create cfg proc_attributes in
             let start_kind = Cfg.Node.Start_node procdesc in
             let start_node = Cfg.Node.create cfg Location.dummy start_kind [] procdesc [] in
             let exit_kind = (Cfg.Node.Exit_node procdesc) in
@@ -311,22 +308,17 @@ let create_local_procdesc program linereader cfg tenv node m =
         | Javalib.ConcreteMethod cm when is_java_native cm ->
             let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
             let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
-            let _procdesc =
-              let proc_attributes =
-                { (ProcAttributes.default proc_name Config.Java) with
-                  ProcAttributes.access = trans_access cm.Javalib.cm_access;
-                  exceptions = IList.map JBasics.cn_name cm.Javalib.cm_exceptions;
-                  formals;
-                  is_bridge_method = cm.Javalib.cm_bridge;
-                  is_synthetic_method = cm.Javalib.cm_synthetic;
-                  method_annotation;
-                  ret_type = JTransType.return_type program tenv ms meth_kind;
-                } in
-              Cfg.Procdesc.create {
-                Cfg.Procdesc.cfg = cfg;
-                proc_attributes = proc_attributes;
+            let proc_attributes =
+              { (ProcAttributes.default proc_name Config.Java) with
+                ProcAttributes.access = trans_access cm.Javalib.cm_access;
+                exceptions = IList.map JBasics.cn_name cm.Javalib.cm_exceptions;
+                formals;
+                is_bridge_method = cm.Javalib.cm_bridge;
+                is_synthetic_method = cm.Javalib.cm_synthetic;
+                method_annotation;
+                ret_type = JTransType.return_type program tenv ms meth_kind;
               } in
-            ()
+            ignore (Cfg.Procdesc.create cfg proc_attributes)
         | Javalib.ConcreteMethod cm ->
             let impl = get_implementation cm in
             let locals, formals = locals_formals program tenv cn impl meth_kind in
@@ -351,10 +343,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   method_annotation;
                   ret_type = JTransType.return_type program tenv ms meth_kind;
                 } in
-              Cfg.Procdesc.create {
-                Cfg.Procdesc.cfg = cfg;
-                proc_attributes = proc_attributes;
-              } in
+              Cfg.Procdesc.create cfg proc_attributes in
             let start_kind = Cfg.Node.Start_node procdesc in
             let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc [] in
             let exit_kind = (Cfg.Node.Exit_node procdesc) in
@@ -391,10 +380,7 @@ let create_external_procdesc program cfg tenv cn ms kind =
         ProcAttributes.formals;
         ret_type = return_type;
       } in
-    Cfg.Procdesc.create {
-      Cfg.Procdesc.cfg = cfg;
-      proc_attributes = proc_attributes;
-    })
+    Cfg.Procdesc.create cfg proc_attributes)
 
 (** returns the procedure description of the given method and creates it if it hasn't been created before *)
 let rec get_method_procdesc program cfg tenv cn ms kind =

@@ -31,13 +31,8 @@ module Procdesc : sig
   (** Compute the distance of each node to the exit node, if not computed already *)
   val compute_distance_to_exit_node : t -> unit
 
-  type proc_desc_builder =
-    { cfg : cfg;
-      proc_attributes : ProcAttributes.t;
-    }
-
   (** Create a procdesc *)
-  val create : proc_desc_builder -> t
+  val create : cfg -> ProcAttributes.t -> t
 
   (** [remove cfg name remove_nodes] remove the procdesc [name] from the control flow graph [cfg]. *)
   (** It also removes all the nodes from the procedure from the cfg if remove_nodes is true *)

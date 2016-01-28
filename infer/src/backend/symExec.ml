@@ -580,15 +580,15 @@ let check_deallocate_static_memory prop_after =
 let proc_desc_copy cfg pdesc pname pname' =
   if (Procname.equal pname pname') then pdesc
   else
-    (match Cfg.Procdesc.find_from_name cfg pname' with
-     | Some pdesc' -> pdesc'
-     | None ->
-         Cfg.Procdesc.create {
-           Cfg.Procdesc.cfg = cfg;
-           proc_attributes =
-             { (ProcAttributes.copy (Cfg.Procdesc.get_attributes pdesc)) with
-               ProcAttributes.proc_name = pname'; };
-         })
+    begin
+      match Cfg.Procdesc.find_from_name cfg pname' with
+      | Some pdesc' -> pdesc'
+      | None ->
+          let proc_attributes =
+            { (ProcAttributes.copy (Cfg.Procdesc.get_attributes pdesc)) with
+              ProcAttributes.proc_name = pname'; } in
+          Cfg.Procdesc.create cfg proc_attributes
+    end
 
 let method_exists right_proc_name methods =
   if !Config.curr_language = Config.Java then

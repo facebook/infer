@@ -270,10 +270,7 @@ let setup_harness_cfg harness_name harness_cfg env source_dir cg tenv =
         ProcAttributes.is_defined = true;
         loc = env.pc;
       } in
-    Cfg.Procdesc.create {
-      Cfg.Procdesc.cfg = harness_cfg;
-      proc_attributes;
-    } in
+    Cfg.Procdesc.create harness_cfg proc_attributes in
   let harness_node =
     (* important to reverse the list or there will be scoping issues! *)
     let instrs = (IList.rev env.instrs) in
