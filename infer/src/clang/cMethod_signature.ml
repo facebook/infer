@@ -20,6 +20,7 @@ type method_signature = {
   _language : CFrontend_config.lang;
   _pointer_to_parent : Clang_ast_t.pointer option;
   _pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
+  _has_return_param : bool;
 }
 
 let ms_get_name ms =
@@ -52,6 +53,9 @@ let ms_get_pointer_to_parent ms =
 let ms_get_pointer_to_property_opt ms =
   ms._pointer_to_property_opt
 
+let ms_has_return_param ms =
+  ms._has_return_param
+
 (* A method is a getter if it has a link to a property and *)
 (* it has 1 argument (this includes self) *)
 let ms_is_getter ms =
@@ -65,7 +69,7 @@ let ms_is_setter ms =
   IList.length ms._args == 2
 
 let make_ms procname args ret_type attributes loc is_instance lang pointer_to_parent
-    pointer_to_property_opt =
+    pointer_to_property_opt ~has_return_param =
   let meth_signature = {
     _name = procname;
     _args = args;
@@ -76,6 +80,7 @@ let make_ms procname args ret_type attributes loc is_instance lang pointer_to_pa
     _language = lang;
     _pointer_to_parent = pointer_to_parent;
     _pointer_to_property_opt = pointer_to_property_opt;
+    _has_return_param = has_return_param;
   } in
   meth_signature
 

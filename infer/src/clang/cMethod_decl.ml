@@ -30,7 +30,7 @@ struct
     Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
 
   (* Translates the method/function's body into nodes of the cfg. *)
-  let add_method tenv cg cfg class_decl_opt procname instrs is_objc_method
+  let add_method tenv cg cfg class_decl_opt procname instrs has_return_param is_objc_method
       captured_vars outer_context_opt extra_instrs =
 
     Printing.log_out
@@ -41,7 +41,7 @@ struct
            if (Cfg.Procdesc.is_defined procdesc && not (model_exists procname)) then
              (let context =
                 CContext.create_context tenv cg cfg procdesc class_decl_opt
-                  is_objc_method outer_context_opt in
+                  has_return_param is_objc_method outer_context_opt in
               let start_node = Cfg.Procdesc.get_start_node procdesc in
               let exit_node = Cfg.Procdesc.get_exit_node procdesc in
               Printing.log_out
@@ -75,8 +75,9 @@ struct
     match body_opt with
     | Some body -> (* Only in the case the function declaration has a defined body we create a procdesc *)
         let procname = CMethod_signature.ms_get_name ms in
+        let has_return_param = CMethod_signature.ms_has_return_param ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
-          add_method tenv cg cfg CContext.ContextNoCls procname [body] false
+          add_method tenv cg cfg CContext.ContextNoCls procname [body] has_return_param false
             captured_vars outer_context_opt extra_instrs
     | None -> ()
 
@@ -88,8 +89,10 @@ struct
         let is_instance = CMethod_signature.ms_is_instance ms in
         let procname = CMethod_signature.ms_get_name ms in
         let is_objc_inst_method = is_instance && is_objc in
+        let has_return_param = CMethod_signature.ms_has_return_param ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_objc_inst_method then
-          add_method tenv cg cfg curr_class procname [body] is_objc [] None extra_instrs
+          add_method tenv cg cfg curr_class procname [body] has_return_param is_objc []
+            None extra_instrs
     | None -> ()
 
   let process_one_method_decl tenv cg cfg curr_class dec =

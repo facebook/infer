@@ -33,13 +33,16 @@ val ms_get_pointer_to_parent : method_signature -> Clang_ast_t.pointer option
 
 val ms_get_pointer_to_property_opt : method_signature -> Clang_ast_t.pointer option
 
+val ms_has_return_param : method_signature -> bool
+
 val ms_is_getter : method_signature -> bool
 
 val ms_is_setter : method_signature -> bool
 
 val make_ms : Procname.t -> (string * Clang_ast_t.type_ptr) list -> Clang_ast_t.type_ptr
   -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> bool -> CFrontend_config.lang
-  -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option -> method_signature
+  -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option -> has_return_param : bool
+  -> method_signature
 
 val replace_name_ms : method_signature -> Procname.t -> method_signature
 
