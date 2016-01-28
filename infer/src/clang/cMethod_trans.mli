@@ -20,7 +20,7 @@ type method_call_type =
   | MCNoVirtual
   | MCStatic
 
-val should_add_return_param : Sil.typ -> bool
+val should_add_return_param : Sil.typ -> is_objc_method:bool -> bool
 
 val create_local_procdesc : Cfg.cfg -> Sil.tenv -> CMethod_signature.method_signature ->
   Clang_ast_t.stmt list -> (Sil.pvar * Sil.typ) list -> bool -> bool

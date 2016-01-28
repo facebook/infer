@@ -41,4 +41,10 @@ public class FunctionsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("operator_overload.cpp");
   }
+
+  @Test
+  public void testReturnStructDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("return_struct.cpp");
+  }
 }

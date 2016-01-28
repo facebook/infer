@@ -60,15 +60,22 @@ let get_class_param function_method_decl_info =
     | _ -> []
   else []
 
-let should_add_return_param return_type =
+
+let should_add_return_param return_type ~is_objc_method =
   match return_type with
-  | Sil.Tstruct _ -> false (* will return true once everything is in place *)
+  | Sil.Tstruct _ -> not is_objc_method
+  | _ -> false
+
+let is_objc_method function_method_decl_info =
+  match function_method_decl_info with
+  | ObjC_Meth_decl_info _ -> true
   | _ -> false
 
 let get_return_param tenv function_method_decl_info =
+  let is_objc_method = is_objc_method function_method_decl_info in
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
-  if should_add_return_param return_typ then
+  if should_add_return_param return_typ is_objc_method then
     [(CFrontend_config.return_param, Ast_expressions.create_pointer_type return_type_ptr)]
   else
     []
@@ -106,7 +113,8 @@ let get_parameters tenv function_method_decl_info =
 let get_return_type tenv function_method_decl_info =
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
-  if should_add_return_param return_typ then
+  let is_objc_method = is_objc_method function_method_decl_info in
+  if should_add_return_param return_typ is_objc_method then
     Ast_expressions.create_void_type, true
   else return_type_ptr, false
 

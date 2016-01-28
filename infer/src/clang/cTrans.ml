@@ -248,11 +248,12 @@ struct
     let typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
     (mk_temp_sil_var tenv procdesc var_name_prefix, typ)
 
-  let create_call_instr trans_state return_type function_sil params_sil sil_loc call_flags =
+  let create_call_instr trans_state return_type function_sil params_sil sil_loc
+      call_flags ~is_objc_method =
     let ret_id = if (Sil.typ_equal return_type Sil.Tvoid) then []
       else [Ident.create_fresh Ident.knormal] in
     let ret_id_call, params, instrs_after_call, initd_exps =
-      if CMethod_trans.should_add_return_param return_type then
+      if CMethod_trans.should_add_return_param return_type is_objc_method then
         let param_type = Sil.Tptr (return_type, Sil.Pk_pointer) in
         let var_exp = match trans_state.var_exp with
           | Some e -> e
@@ -696,7 +697,7 @@ struct
     (* call instruction for each parameter and collect the results       *)
     (* afterwards. The 'instructions' function does not do that          *)
     let trans_state_param =
-      { trans_state_pri with succ_nodes = [] } in
+      { trans_state_pri with succ_nodes = []; var_exp = None  } in
     let (sil_fe, typ_fe) = extract_exp_from_list res_trans_callee.exps
         "WARNING: The translation of fun_exp did not return an expression. Returning -1. NEED TO BE FIXED" in
     let callee_pname_opt =
@@ -743,7 +744,8 @@ struct
             | Some (id, instr, _) -> { empty_res_trans with ids = [id]; instrs = [instr] }
             | None ->
                 let call_flags = { Sil.cf_default with Sil.cf_is_objc_block = is_call_to_block; } in
-                create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags in
+                create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
+                  ~is_objc_method:false in
           let nname = "Call "^(Sil.exp_to_string sil_fe) in
           let all_res_trans = result_trans_subexprs @ [res_trans_call] in
           let res_trans_to_parent =
@@ -777,7 +779,7 @@ struct
     (* call instruction for each parameter and collect the results       *)
     (* afterwards. The 'instructions' function does not do that          *)
     let trans_state_param =
-      { trans_state_pri with succ_nodes = [] } in
+      { trans_state_pri with succ_nodes = []; var_exp = None } in
     let result_trans_subexprs =
       let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
       let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
@@ -791,7 +793,7 @@ struct
       Sil.cf_is_objc_block = false;
     } in
     let res_trans_call = create_call_instr trans_state_pri function_type sil_method actual_params
-        sil_loc call_flags in
+        sil_loc call_flags ~is_objc_method:false in
     let nname = "Call " ^ (Sil.exp_to_string sil_method) in
     let all_res_trans = result_trans_subexprs @ [res_trans_call] in
     let result_trans_to_parent =
@@ -901,7 +903,7 @@ struct
     let method_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let method_type = add_reference_if_lvalue method_type_no_ref expr_info in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-    let trans_state_param = { trans_state_pri with succ_nodes = [] } in
+    let trans_state_param = { trans_state_pri with succ_nodes = []; var_exp = None } in
     let obj_c_message_expr_info, res_trans_subexpr_list =
       objCMessageExpr_deal_with_static_self trans_state_param stmt_list obj_c_message_expr_info in
     let subexpr_exprs = collect_exprs res_trans_subexpr_list in
@@ -928,7 +930,7 @@ struct
         let call_flags = { Sil.cf_default with Sil.cf_virtual = is_virtual; } in
         let method_sil = Sil.Const (Sil.Cfun callee_name) in
         let res_trans_call = create_call_instr trans_state method_type method_sil param_exps
-            sil_loc call_flags in
+            sil_loc call_flags ~is_objc_method:true in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let nname = "Message Call: "^selector in
         let all_res_trans = res_trans_subexpr_list @ [res_trans_block; res_trans_call] in
@@ -1697,16 +1699,28 @@ struct
       ret_node in
     let trans_result = (match stmt_list with
         | [stmt] -> (* return exp; *)
-            let trans_state' = { trans_state_pri with succ_nodes = [] } in
+            let procdesc = context.CContext.procdesc in
+            let ret_exp, var_instrs, var_ids = if context.CContext.has_return_param then
+                let name = CFrontend_config.return_param in
+                let procname = Cfg.Procdesc.get_proc_name procdesc in
+                let pvar = Sil.mk_pvar (Mangled.from_string name) procname in
+                let id = Ident.create_fresh Ident.knormal in
+                let ret_type_ptr = Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer) in
+                let instr = Sil.Letderef (id, Sil.Lvar pvar, ret_type_ptr, sil_loc) in
+                Sil.Var id, [instr], [id]
+              else
+                Sil.Lvar (Cfg.Procdesc.get_ret_var procdesc), [], [] in
+            let ret_type = Cfg.Procdesc.get_ret_type procdesc in
+            let trans_state' = { trans_state_pri with succ_nodes = []; var_exp = Some ret_exp} in
             let res_trans_stmt = exec_with_self_exception instruction trans_state' stmt in
             let (sil_expr, sil_typ) = extract_exp_from_list res_trans_stmt.exps
                 "WARNING: There should be only one return expression.\n" in
-            let ret_var = Cfg.Procdesc.get_ret_var context.CContext.procdesc in
-            let ret_type = Cfg.Procdesc.get_ret_type context.CContext.procdesc in
-            let ret_instr = Sil.Set (Sil.Lvar ret_var, ret_type, sil_expr, sil_loc) in
+            let ret_instrs = if IList.exists (Sil.exp_equal ret_exp) res_trans_stmt.initd_exps
+              then []
+              else [Sil.Set (ret_exp, ret_type, sil_expr, sil_loc)] in
             let autorelease_ids, autorelease_instrs = add_autorelease_call context sil_expr ret_type sil_loc in
-            let instrs = res_trans_stmt.instrs @ [ret_instr] @ autorelease_instrs in
-            let ids = res_trans_stmt.ids@autorelease_ids in
+            let instrs = var_instrs @ res_trans_stmt.instrs @ ret_instrs @ autorelease_instrs in
+            let ids = var_ids @ res_trans_stmt.ids @ autorelease_ids in
             let ret_node = mk_ret_node ids instrs in
             IList.iter (fun n -> Cfg.Node.set_succs_exn n [ret_node] []) res_trans_stmt.leaf_nodes;
             let root_nodes_to_parent =
