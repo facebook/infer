@@ -135,11 +135,7 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
           locals = []; (* TODO *)
           ret_type;
         } in
-      let (procdesc_builder : Cfg.Procdesc.proc_desc_builder) =
-        { Cfg.Procdesc.cfg = cfg;
-          proc_attributes = proc_attrs;
-        } in
-      let procdesc = Cfg.Procdesc.create procdesc_builder in
+      let procdesc = Cfg.Procdesc.create cfg proc_attrs in
       let start_kind = Cfg.Node.Start_node procdesc in
       let start_node = Cfg.Node.create cfg (source_only_location ()) start_kind [] procdesc [] in
       let exit_kind = Cfg.Node.Exit_node procdesc in
