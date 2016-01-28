@@ -2119,6 +2119,9 @@ struct
         compoundLiteralExpr_trans trans_state stmt_info stmt_list expr_info
     | InitListExpr (stmt_info, stmts, expr_info) ->
         initListExpr_trans trans_state stmt_info expr_info stmts
+    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, cxx_bind_temp_expr_info) ->
+        (* right now we ignore this expression and try to translate the child node *)
+        parenExpr_trans trans_state stmt_info stmt_list
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);
