@@ -208,9 +208,14 @@ struct
         exps = [(Sil.Sizeof(expanded_type, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
 
   let add_reference_if_lvalue typ expr_info =
-    if expr_info.Clang_ast_t.ei_value_kind = `LValue then
-      Sil.Tptr (typ, Sil.Pk_reference)
-    else typ
+    match expr_info.Clang_ast_t.ei_value_kind, typ with
+    | `LValue, Sil.Tptr (_, Sil.Pk_reference) ->
+        (* reference of reference is not allowed in C++ - it's most likely frontend *)
+        (* trying to add same reference to same type twice*)
+        (* this is hacky and should be fixed (t9838691) *)
+        typ
+    | `LValue, _ -> Sil.Tptr (typ, Sil.Pk_reference)
+    | _ -> typ
 
   (** Execute translation and then possibly adjust the type of the result of translation:
       In C++, when expression returns reference to type T, it will be lvalue to T, not T&, but
@@ -232,14 +237,41 @@ struct
       f trans_state e
     else f { trans_state with priority = Free } e
 
-  let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
+  let mk_temp_sil_var tenv procdesc var_name_prefix =
     let procname = Cfg.Procdesc.get_proc_name procdesc in
     let id = Ident.create_fresh Ident.knormal in
     let pvar_mangled = Mangled.from_string (var_name_prefix ^ Ident.to_string id) in
-    let pvar = Sil.mk_pvar pvar_mangled procname in
+    Sil.mk_pvar pvar_mangled procname
+
+  let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
     let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
     let typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
-    (pvar, typ)
+    (mk_temp_sil_var tenv procdesc var_name_prefix, typ)
+
+  let create_call_instr trans_state return_type function_sil params_sil sil_loc call_flags =
+    let ret_id = if (Sil.typ_equal return_type Sil.Tvoid) then []
+      else [Ident.create_fresh Ident.knormal] in
+    let ret_id_call, params, instrs_after_call, initd_exps =
+      if CMethod_trans.should_add_return_param return_type then
+        let param_type = Sil.Tptr (return_type, Sil.Pk_pointer) in
+        let var_exp = match trans_state.var_exp with
+          | Some e -> e
+          | _ ->
+              let tenv = trans_state.context.CContext.tenv in
+              let procdesc = trans_state.context.CContext.procdesc in
+              let pvar = mk_temp_sil_var tenv procdesc "__temp_return_" in
+              Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, param_type)];
+              Sil.Lvar pvar in
+        let ret_param = (var_exp, param_type) in
+        let ret_id' = match ret_id with [x] -> x | _ -> assert false in
+        let deref_instr = Sil.Letderef (ret_id', var_exp, return_type, sil_loc) in
+        [], params_sil @ [ret_param], [deref_instr], [var_exp]
+      else ret_id, params_sil, [], [] in
+    let call_instr = Sil.Call (ret_id_call, function_sil, params, sil_loc, call_flags) in
+    { empty_res_trans with
+      ids = ret_id;
+      instrs = call_instr :: instrs_after_call;
+      initd_exps = initd_exps }
 
   let breakStmt_trans trans_state =
     match trans_state.continuation with
@@ -646,7 +678,8 @@ struct
 
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
-    let function_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let function_type = add_reference_if_lvalue fn_type_no_ref expr_info in
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
     (* First stmt is the function expr and the rest are params *)
@@ -705,17 +738,12 @@ struct
       match CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type callee_pname_opt with
       | Some builtin -> builtin
       | None ->
-          let ret_id, call_instr =
+          let res_trans_call =
             match cast_trans context act_params sil_loc callee_pname_opt function_type with
-            | Some (id, instr, _) -> [id], instr
+            | Some (id, instr, _) -> { empty_res_trans with ids = [id]; instrs = [instr] }
             | None ->
-                let ret_id = if (Sil.typ_equal function_type Sil.Tvoid) then []
-                  else [Ident.create_fresh Ident.knormal] in
                 let call_flags = { Sil.cf_default with Sil.cf_is_objc_block = is_call_to_block; } in
-                let call_instr = Sil.Call(ret_id, sil_fe, act_params, sil_loc, call_flags) in
-                ret_id, call_instr in
-
-          let res_trans_call = { empty_res_trans with ids = ret_id; instrs = [call_instr] } in
+                create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags in
           let nname = "Call "^(Sil.exp_to_string sil_fe) in
           let all_res_trans = result_trans_subexprs @ [res_trans_call] in
           let res_trans_to_parent =
@@ -728,7 +756,7 @@ struct
                    Cg.add_edge context.cg procname callee_pname;
                  end
            | None -> ());
-          (match ret_id with
+          (match res_trans_call.ids with
            | [] -> { res_trans_to_parent with exps =[] }
            | [ret_id'] -> { res_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
            | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
@@ -756,22 +784,20 @@ struct
       result_trans_callee :: res_trans_p in
     (* first expr is method address, rest are params including 'this' parameter *)
     let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
-    let ret_id = if (Sil.typ_equal function_type Sil.Tvoid) then []
-      else [Ident.create_fresh Ident.knormal] in
     let call_flags = {
       Sil.cf_virtual = false (* TODO t7725350 *);
       Sil.cf_interface = false;
       Sil.cf_noreturn = false;
       Sil.cf_is_objc_block = false;
     } in
-    let call_instr = Sil.Call (ret_id, sil_method, actual_params, sil_loc, call_flags) in
-    let res_trans_call = { empty_res_trans with ids = ret_id; instrs = [call_instr] } in
+    let res_trans_call = create_call_instr trans_state_pri function_type sil_method actual_params
+        sil_loc call_flags in
     let nname = "Call " ^ (Sil.exp_to_string sil_method) in
     let all_res_trans = result_trans_subexprs @ [res_trans_call] in
     let result_trans_to_parent =
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
     Cg.add_edge context.CContext.cg procname callee_pname;
-    match ret_id with
+    match res_trans_call.ids with
     | [] -> { result_trans_to_parent with exps = [] }
     | [ret_id'] -> { result_trans_to_parent with exps = [(Sil.Var ret_id', function_type)] }
     | _ -> assert false (* by construction of red_id, we cannot be in this case *)
@@ -789,7 +815,8 @@ struct
     (* claim priority if no ancestors has claimed priority before *)
     let trans_state_callee = { trans_state_pri with succ_nodes = [] } in
     let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
-    let function_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let function_type = add_reference_if_lvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type
 
@@ -871,7 +898,8 @@ struct
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location si context in
-    let method_type = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let method_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
+    let method_type = add_reference_if_lvalue method_type_no_ref expr_info in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
     let obj_c_message_expr_info, res_trans_subexpr_list =
@@ -893,23 +921,20 @@ struct
 
         let param_exps, instr_block_param, ids_block_param =
           extract_block_from_tuple procname subexpr_exprs sil_loc in
-
-        let ret_id =
-          if Sil.typ_equal method_type Sil.Tvoid then []
-          else [Ident.create_fresh Ident.knormal] in
+        let res_trans_block = { empty_res_trans with
+                                ids = ids_block_param;
+                                instrs = instr_block_param;
+                              } in
         let call_flags = { Sil.cf_default with Sil.cf_virtual = is_virtual; } in
-        let stmt_call =
-          Sil.Call (ret_id, (Sil.Const (Sil.Cfun callee_name)), param_exps, sil_loc, call_flags) in
+        let method_sil = Sil.Const (Sil.Cfun callee_name) in
+        let res_trans_call = create_call_instr trans_state method_type method_sil param_exps
+            sil_loc call_flags in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let nname = "Message Call: "^selector in
-        let res_trans_call = { empty_res_trans with
-                               ids = ids_block_param @ ret_id;
-                               instrs = instr_block_param @ [stmt_call];
-                             } in
-        let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
+        let all_res_trans = res_trans_subexpr_list @ [res_trans_block; res_trans_call] in
         let res_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
-        match ret_id with
+        match res_trans_call.ids with
         | [] -> { res_trans_to_parent with exps = [] }
         | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
         | _ -> assert false (* by construction of red_id, we cannot be in this case *)
