@@ -33,6 +33,8 @@ let self = "self"
 
 let this = "this"
 
+let return_param = "__return_param"
+
 let alloc = "alloc"
 
 let malloc = "malloc"

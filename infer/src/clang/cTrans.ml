@@ -43,7 +43,7 @@ struct
     let method_kind = Procname.objc_method_kind_of_bool is_instance in
     let ms_opt =
       match method_pointer_opt with
-      | Some pointer -> CMethod_trans.method_signature_of_pointer pointer
+      | Some pointer -> CMethod_trans.method_signature_of_pointer context.tenv pointer
       | None -> None in
     let procname =
       match CMethod_trans.get_method_name_from_clang context.tenv ms_opt with
@@ -418,7 +418,7 @@ struct
     Printing.log_out "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let is_instance_method =
-      match CMethod_trans.method_signature_of_pointer decl_ptr with
+      match CMethod_trans.method_signature_of_pointer context.tenv decl_ptr with
       | Some ms -> CMethod_signature.ms_is_instance ms
       | _ -> true in (* might happen for methods that are not exported yet (some templates). *)
     let extra_exps = if is_instance_method then (
@@ -833,8 +833,8 @@ struct
     else if (selector = CFrontend_config.alloc) || (selector = CFrontend_config.new_str) then
       match receiver_kind with
       | `Class type_ptr ->
-          let class_opt =
-            CMethod_trans.get_class_name_method_call_from_clang obj_c_message_expr_info in
+          let class_opt = CMethod_trans.get_class_name_method_call_from_clang context.tenv
+              obj_c_message_expr_info in
           Some (new_or_alloc_trans trans_state_pri sil_loc si type_ptr class_opt selector)
       | _ -> None
       (* assertions *)

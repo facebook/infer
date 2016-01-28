@@ -53,6 +53,8 @@ val self : string
 
 val this : string
 
+val return_param : string
+
 val nsstring_cl : string
 
 val nsobject_cl : string

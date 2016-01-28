@@ -41,6 +41,13 @@ let is_instance_method function_method_decl_info =
   | ObjC_Meth_decl_info (method_decl_info, _) ->
       method_decl_info.Clang_ast_t.omdi_is_instance_method
 
+let get_original_return_type function_method_decl_info =
+  match function_method_decl_info with
+  | Func_decl_info (_, typ, _)
+  | Cpp_Meth_decl_info (_, _, _, typ)
+  | Block_decl_info (_, typ, _) -> CTypes.return_type_of_function_type typ
+  | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
+
 let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info) then
     match function_method_decl_info with
@@ -52,6 +59,19 @@ let get_class_param function_method_decl_info =
         [(CFrontend_config.self, class_type)]
     | _ -> []
   else []
+
+let should_add_return_param return_type =
+  match return_type with
+  | Sil.Tstruct _ -> false (* will return true once everything is in place *)
+  | _ -> false
+
+let get_return_param tenv function_method_decl_info =
+  let return_type_ptr = get_original_return_type function_method_decl_info in
+  let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
+  if should_add_return_param return_typ then
+    [(CFrontend_config.return_param, Ast_expressions.create_pointer_type return_type_ptr)]
+  else
+    []
 
 let get_param_decls function_method_decl_info =
   match function_method_decl_info with
@@ -68,30 +88,33 @@ let get_language function_method_decl_info =
   | ObjC_Meth_decl_info _ -> CFrontend_config.OBJC
   | Block_decl_info _ -> CFrontend_config.OBJC
 
-let get_parameters function_method_decl_info =
+(** Returns parameters of a function/method. They will have following order:
+    1. self/this parameter (optional, only for methods)
+    2. normal parameters
+    3. return parameter (optional) *)
+let get_parameters tenv function_method_decl_info =
   let par_to_ms_par par =
     match par with
     | Clang_ast_t.ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
         let name = name_info.Clang_ast_t.ni_name in
         (name, type_ptr)
     | _ -> assert false in
-
   let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
-  get_class_param function_method_decl_info @ pars
+  get_class_param function_method_decl_info @ pars @ get_return_param tenv function_method_decl_info
 
-let get_return_type function_method_decl_info =
-  match function_method_decl_info with
-  | Func_decl_info (_, typ, _)
-  | Cpp_Meth_decl_info (_, _, _, typ)
-  | Block_decl_info (_, typ, _) -> CTypes.return_type_of_function_type typ
-  | ObjC_Meth_decl_info (method_decl_info, _) -> method_decl_info.Clang_ast_t.omdi_result_type
+let get_return_type tenv function_method_decl_info =
+  let return_type_ptr = get_original_return_type function_method_decl_info in
+  let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
+  if should_add_return_param return_typ then
+    Ast_expressions.create_void_type
+  else return_type_ptr
 
-let build_method_signature decl_info procname function_method_decl_info is_anonym_block
+let build_method_signature tenv decl_info procname function_method_decl_info is_anonym_block
     parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
-  let tp = get_return_type function_method_decl_info in
+  let tp = get_return_type tenv function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
-  let parameters = get_parameters function_method_decl_info in
+  let parameters = get_parameters tenv function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language function_method_decl_info in
   CMethod_signature.make_ms
@@ -111,7 +134,7 @@ let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
   IList.map create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
 
-let method_signature_of_decl meth_decl block_data_opt =
+let method_signature_of_decl tenv meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, name_info, tp, fdi), _ ->
@@ -120,7 +143,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
       let procname = General_utils.mk_procname_from_function name function_info tp language in
-      let ms = build_method_signature decl_info procname func_decl false None None in
+      let ms = build_method_signature tenv decl_info procname func_decl false None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
@@ -131,7 +154,7 @@ let method_signature_of_decl meth_decl block_data_opt =
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms = build_method_signature decl_info procname method_decl false parent_pointer
+      let ms = build_method_signature tenv decl_info procname method_decl false parent_pointer
           None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
@@ -148,22 +171,22 @@ let method_signature_of_decl meth_decl block_data_opt =
         match mdi.Clang_ast_t.omdi_property_decl with
         | Some decl_ref -> Some decl_ref.Clang_ast_t.dr_decl_pointer
         | None -> None in
-      let ms = build_method_signature decl_info procname method_decl false
+      let ms = build_method_signature tenv decl_info procname method_decl false
           parent_pointer pointer_to_property_opt in
       let extra_instrs = get_assume_not_null_calls mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
-      let ms = build_method_signature decl_info procname func_decl true None None in
+      let ms = build_method_signature tenv decl_info procname func_decl true None None in
       let extra_instrs = get_assume_not_null_calls bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
 
-let method_signature_of_pointer pointer =
+let method_signature_of_pointer tenv pointer =
   try
     match Ast_utils.get_decl pointer with
     | Some meth_decl ->
-        let ms, _, _ = method_signature_of_decl meth_decl None in
+        let ms, _, _ = method_signature_of_decl tenv meth_decl None in
         Some ms
     | None -> None
   with Invalid_declaration -> None
@@ -207,10 +230,10 @@ let get_superclass_curr_class context =
   | CContext.ContextProtocol _ -> assert false
 
 (* Gets the class name from a method signature found by clang, if search is successful *)
-let get_class_name_method_call_from_clang obj_c_message_expr_info =
+let get_class_name_method_call_from_clang tenv obj_c_message_expr_info =
   match obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
   | Some pointer ->
-      (match method_signature_of_pointer pointer with
+      (match method_signature_of_pointer tenv pointer with
        | Some ms ->
            let class_name = Procname.c_get_class (CMethod_signature.ms_get_name ms) in
            Some class_name
@@ -385,7 +408,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
 
 let create_procdesc_with_pointer context pointer class_name_opt name tp =
   let open CContext in
-  match method_signature_of_pointer pointer with
+  match method_signature_of_pointer context.tenv pointer with
   | Some callee_ms ->
       ignore (create_local_procdesc context.cfg context.tenv callee_ms [] [] false);
       CMethod_signature.ms_get_name callee_ms
