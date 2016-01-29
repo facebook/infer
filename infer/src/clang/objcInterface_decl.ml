@@ -21,8 +21,8 @@ module L = Logging
 
 let is_pointer_to_objc_class tenv typ =
   match typ with
-  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class, cname)), _) ->
-      (match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, cname)) with
+  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, cname)), _) ->
+      (match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Objc, cname)) with
        | Some typ when Sil.is_objc_class typ -> true
        | _ -> false)
   | Sil.Tptr (typ, _) when Sil.is_objc_class typ -> true
@@ -81,7 +81,7 @@ let get_interface_superclasses super_opt protocols =
   let super_class =
     match super_opt with
     | None -> []
-    | Some super -> [Typename.TN_csu (Csu.Class, Mangled.from_string super)] in
+    | Some super -> [Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string super)] in
   let protocol_names = IList.map (
       fun name -> Typename.TN_csu (Csu.Protocol, Mangled.from_string name)
     ) protocols in
@@ -99,7 +99,7 @@ let create_superclasses_fields type_ptr_to_sil_type tenv curr_class decl_list cl
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name decl_list ocidi =
   Printing.log_out "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
-  let interface_name = CTypes.mk_classname class_name in
+  let interface_name = CTypes.mk_classname class_name Csu.Objc in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar interface_name);
   let superclasses, fields =
@@ -107,7 +107,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
       ocidi.Clang_ast_t.otdi_super
       ocidi.Clang_ast_t.otdi_protocols in
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
-  let fields_sc = CField_decl.fields_superclass tenv ocidi in
+  let fields_sc = CField_decl.fields_superclass tenv ocidi Csu.Objc in
   IList.iter (fun (fn, ft, _) ->
       Printing.log_out "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
       Printing.log_out "type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
@@ -130,7 +130,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
     Sil.Tstruct {
       Sil.instance_fields = fields;
       static_fields = [];
-      csu = Csu.Class;
+      csu = Csu.Class Csu.Objc;
       struct_name = Some (Mangled.from_string class_name);
       superclasses;
       def_methods = methods;
@@ -144,15 +144,15 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
    | None -> Printing.log_out "  >>>NOT Found!!\n");
   Sil.Tvar interface_name
 
-let add_missing_methods tenv class_name decl_info decl_list curr_class =
+let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
-  let class_tn_name = Typename.TN_csu (Csu.Class, (Mangled.from_string class_name)) in
+  let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
   (match Sil.tenv_lookup tenv class_tn_name with
    | Some Sil.Tstruct
        ({ Sil.static_fields = [];
-          csu = Csu.Class;
+          csu = Csu.Class ck;
           struct_name = Some name;
           def_methods;
         } as struct_typ) ->
@@ -192,7 +192,7 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
       let _ = add_class_decl type_ptr_to_sil_type tenv idi in
       let curr_class = get_curr_class_impl idi in
       let fields = CField_decl.get_fields type_ptr_to_sil_type tenv curr_class decl_list in
-      CField_decl.add_missing_fields tenv class_name fields;
-      let typ = add_missing_methods tenv class_name decl_info decl_list curr_class in
+      CField_decl.add_missing_fields tenv class_name Csu.Objc fields;
+      let typ = add_missing_methods tenv class_name Csu.Objc decl_info decl_list curr_class in
       typ
   | _ -> assert false

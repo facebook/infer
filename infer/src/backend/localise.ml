@@ -605,10 +605,9 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     let typ_str =
       match hpred_type_opt with
       | Some (Sil.Sizeof (Sil.Tstruct
-                            { Sil.csu = Csu.Class;
+                            { Sil.csu = Csu.Class _;
                               Sil.struct_name = Some classname;
-                            }, _))
-        when !Config.curr_language = Config.Java ->
+                            }, _)) ->
           " of type " ^ Mangled.to_string classname ^ " "
       | _ -> " " in
     let desc_str =

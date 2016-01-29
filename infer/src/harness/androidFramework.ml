@@ -253,7 +253,7 @@ let android_callbacks =
 (* TODO (t4644852): factor out subtyping functions into some sort of JavaUtil module *)
 let get_all_supertypes typ tenv =
   let get_direct_supers = function
-    | Sil.Tstruct { Sil.csu = Csu.Class; superclasses } ->
+    | Sil.Tstruct { Sil.csu = Csu.Class _; superclasses } ->
         superclasses
     | _ -> [] in
   let rec add_typ class_name typs =
@@ -273,7 +273,7 @@ let is_subtype (typ0 : Sil.typ) (typ1 : Sil.typ) tenv =
 
 let is_subtype_package_class typ package classname tenv =
   let classname = Mangled.from_package_class package classname in
-  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, classname)) with
+  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, classname)) with
   | Some found_typ -> is_subtype typ found_typ tenv
   | _ -> false
 
@@ -296,7 +296,7 @@ let is_callback_class_name class_name = Mangled.MangledSet.mem class_name androi
 let is_callback_class typ tenv =
   let supertyps = get_all_supertypes typ tenv in
   TypSet.exists (fun typ -> match typ with
-      | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some classname } ->
+      | Sil.Tstruct { Sil.csu = Csu.Class _; struct_name = Some classname } ->
           is_callback_class_name classname
       | _ -> false) supertyps
 
@@ -356,9 +356,9 @@ let is_callback_register_method procname args tenv =
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
-  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, lifecycle_typ)) with
+  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, lifecycle_typ)) with
   | Some (Sil.Tstruct
-            { Sil.csu = Csu.Class; struct_name = Some _; def_methods } as lifecycle_typ) ->
+            { Sil.csu = Csu.Class _; struct_name = Some _; def_methods } as lifecycle_typ) ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         IList.find (fun decl_proc ->

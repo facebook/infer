@@ -59,7 +59,7 @@ let const_type const =
 
 
 let typename_of_classname cn =
-  Typename.TN_csu (Csu.Class, (Mangled.from_string (JBasics.cn_name cn)))
+  Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string (JBasics.cn_name cn)))
 
 
 let rec get_named_type vt =
@@ -91,7 +91,7 @@ let rec create_array_type typ dim =
 
 let extract_cn_no_obj typ =
   match typ with
-  | Sil.Tptr (Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some classname },
+  | Sil.Tptr (Sil.Tstruct { Sil.csu = Csu.Class _; struct_name = Some classname },
               Sil.Pk_pointer) ->
       let class_name = (Mangled.to_string classname) in
       if class_name = JConfig.object_cl then None
@@ -243,7 +243,7 @@ let dummy_type cn =
   Sil.Tstruct {
     Sil.instance_fields = [];
     static_fields = [];
-    csu = Csu.Class;
+    csu = Csu.Class Csu.Java;
     struct_name = Some classname;
     superclasses = [];
     def_methods = [];
@@ -336,7 +336,7 @@ and create_sil_type program tenv cn =
                   let super_classname =
                     match get_class_type_no_pointer program tenv super_cn with
                     | Sil.Tstruct { Sil.struct_name =  Some classname } ->
-                        Typename.TN_csu (Csu.Class, classname)
+                        Typename.TN_csu (Csu.Class Csu.Java, classname)
                     | _ -> assert false in
                   super_classname :: interface_list in
             (super_classname_list, nonstatic_fields, static_fields, item_annotation) in
@@ -345,7 +345,7 @@ and create_sil_type program tenv cn =
       Sil.Tstruct {
         Sil.instance_fields;
         static_fields;
-        csu = Csu.Class;
+        csu = Csu.Class Csu.Java;
         struct_name = Some classname;
         superclasses;
         def_methods;

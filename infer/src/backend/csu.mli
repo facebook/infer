@@ -11,8 +11,13 @@
     C-style structs struct and union,
     And Objective C protocol *)
 
+type class_kind =
+  | CPP
+  | Java
+  | Objc
+
 type t =
-  | Class
+  | Class of class_kind
   | Struct
   | Union
   | Protocol

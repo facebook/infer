@@ -48,7 +48,7 @@ module Java =
 struct
 
   let from_string class_name_str =
-    TN_csu (Csu.Class, Mangled.from_string class_name_str)
+    TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name_str)
 
 end
 

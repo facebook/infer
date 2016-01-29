@@ -851,20 +851,21 @@ let objc_class_annotation =
 let cpp_class_annotation =
   class_annotation cpp_class_str
 
-let is_class_of_language typ class_string =
+let is_class_of_kind typ ck =
   match typ with
-  | Tstruct { csu = Csu.Class; struct_annotations } ->
-      (match struct_annotations with
-       | [({ class_name = n; parameters = []}, true)]
-         when n = class_string -> true
-       | _ -> false)
-  | _ -> false
+  | Tstruct { csu = Csu.Class ck' } ->
+      ck = ck'
+  | _ ->
+      false
 
 let is_objc_class typ =
-  is_class_of_language typ objc_class_str
+  is_class_of_kind typ Csu.Objc
 
 let is_cpp_class typ =
-  is_class_of_language typ cpp_class_str
+  is_class_of_kind typ Csu.CPP
+
+let is_java_class typ =
+  is_class_of_kind typ Csu.Java
 
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let typ_strip_ptr = function

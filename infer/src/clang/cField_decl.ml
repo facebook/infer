@@ -26,12 +26,12 @@ let rec get_fields_super_classes tenv super_class =
   | Some Sil.Tstruct { Sil.instance_fields } -> instance_fields
   | Some _ -> []
 
-let fields_superclass tenv interface_decl_info =
+let fields_superclass tenv interface_decl_info ck =
   match interface_decl_info.Clang_ast_t.otdi_super with
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
        | Some sc ->
-           let classname = CTypes.mk_classname (Ast_utils.get_qualified_name sc) in
+           let classname = CTypes.mk_classname (Ast_utils.get_qualified_name sc) ck in
            get_fields_super_classes tenv classname
        | _ -> [])
   | _ -> []
@@ -75,9 +75,9 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
 
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)
-let add_missing_fields tenv class_name fields =
+let add_missing_fields tenv class_name ck fields =
   let mang_name = Mangled.from_string class_name in
-  let class_tn_name = Typename.TN_csu (Csu.Class, mang_name) in
+  let class_tn_name = Typename.TN_csu (Csu.Class ck, mang_name) in
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct ({ Sil.instance_fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields fields instance_fields in
@@ -87,7 +87,7 @@ let add_missing_fields tenv class_name fields =
           { struct_typ with
             Sil.instance_fields = new_fields;
             static_fields = [];
-            csu = Csu.Class;
+            csu = Csu.Class ck;
             struct_name = Some mang_name;
           } in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
@@ -122,6 +122,6 @@ let get_property_corresponding_ivar tenv type_ptr_to_sil_type class_name propert
            let prop_attributes = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
            let field_name, typ, attr = build_sil_field type_ptr_to_sil_type tenv
                field_name_str type_ptr prop_attributes in
-           ignore (add_missing_fields tenv class_name [(field_name, typ, attr)]);
+           ignore (add_missing_fields tenv class_name Csu.Objc [(field_name, typ, attr)]);
            field_name)
   | _ -> assert false

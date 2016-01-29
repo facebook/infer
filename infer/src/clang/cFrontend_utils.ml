@@ -43,7 +43,7 @@ struct
   let print_tenv tenv =
     Sil.tenv_iter (fun typname typ ->
         match typname with
-        | Typename.TN_csu (Csu.Class, _) | Typename.TN_csu (Csu.Protocol, _) ->
+        | Typename.TN_csu (Csu.Class _, _) | Typename.TN_csu (Csu.Protocol, _) ->
             (match typ with
              | Sil.Tstruct { Sil.instance_fields; superclasses; def_methods; struct_annotations } ->
                  print_endline (

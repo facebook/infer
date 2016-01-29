@@ -46,7 +46,7 @@ let type_get_direct_supertypes = function
 let type_get_class_name t = match t with
   | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some cn }, _) ->
       Some cn
-  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class, cn)), _) ->
+  | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class _, cn)), _) ->
       Some cn
   | _ -> None
 
@@ -229,7 +229,7 @@ let type_is_class = function
 
 let initializer_classes =
   IList.map
-    (fun name -> Typename.TN_csu (Csu.Class, Mangled.from_string name))
+    (fun name -> Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string name))
     [
       "android.app.Activity";
       "android.app.Application";
@@ -322,7 +322,7 @@ let proc_iter_overridden_methods f tenv proc_name =
   if Procname.is_java proc_name then
     let type_name =
       let class_name = Procname.java_get_class proc_name in
-      Typename.TN_csu (Csu.Class, Mangled.from_string class_name) in
+      Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name) in
     match Sil.tenv_lookup tenv type_name with
     | Some curr_type ->
         IList.iter (do_super_type tenv) (type_get_direct_supertypes curr_type)

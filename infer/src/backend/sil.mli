@@ -561,6 +561,8 @@ val is_objc_class : typ -> bool
 
 val is_cpp_class : typ -> bool
 
+val is_java_class : typ -> bool
+
 val exp_is_zero : exp -> bool
 
 val exp_is_null_literal : exp -> bool

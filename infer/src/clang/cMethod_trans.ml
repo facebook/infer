@@ -218,9 +218,9 @@ let get_method_name_from_clang tenv ms_opt =
        | None -> Some ms)
   | None -> None
 
-let get_superclass_curr_class context =
+let get_superclass_curr_class_objc context =
   let retrive_super cname super_opt =
-    let iname = Typename.TN_csu (Csu.Class, Mangled.from_string cname) in
+    let iname = Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string cname) in
     Printing.log_out "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
     match Sil.tenv_lookup (CContext.get_tenv context) iname with
     | Some Sil.Tstruct { Sil.superclasses =  super_name :: _ } ->
@@ -260,8 +260,8 @@ let get_class_name_method_call_from_receiver_kind context obj_c_message_expr_inf
        | (instance_obj, Sil.Tptr(t, _)):: _
        | (instance_obj, t):: _ -> CTypes.classname_of_type t
        | _ -> assert false)
-  | `SuperInstance ->get_superclass_curr_class context
-  | `SuperClass -> get_superclass_curr_class context
+  | `SuperInstance ->get_superclass_curr_class_objc context
+  | `SuperClass -> get_superclass_curr_class_objc context
 
 let get_objc_method_data obj_c_message_expr_info =
   let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in

@@ -198,7 +198,8 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
     let method_match () = Procname.java_get_method proc_name = "writeToParcel" in
     let expr_match () = Sil.exp_is_this this_expr in
     let type_match () =
-      let class_name = Typename.TN_csu (Csu.Class, Mangled.from_string "android.os.Parcelable") in
+      let class_name =
+        Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in
       PatternMatch.is_direct_subtype_of this_type class_name in
     method_match () && expr_match () && type_match () in
 
@@ -374,16 +375,16 @@ let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name p
     try
       ST.pname_find proc_name' ret_const_key
     with Not_found ->
-      match get_proc_desc proc_name' with
-        Some proc_desc' ->
-          let is_return_instr = function
-            | Sil.Set (Sil.Lvar p, _, _, _)
-              when Sil.pvar_equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
-            | _ -> false in
-          (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
-           | Some (Sil.Set (_, _, Sil.Const (Sil.Cclass n), _)) -> Ident.name_to_string n
-           | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
-      | None -> "?" in
+    match get_proc_desc proc_name' with
+      Some proc_desc' ->
+        let is_return_instr = function
+          | Sil.Set (Sil.Lvar p, _, _, _)
+            when Sil.pvar_equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
+          | _ -> false in
+        (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
+         | Some (Sil.Set (_, _, Sil.Const (Sil.Cclass n), _)) -> Ident.name_to_string n
+         | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
+    | None -> "?" in
 
   let get_actual_arguments node instr = match instr with
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) ->

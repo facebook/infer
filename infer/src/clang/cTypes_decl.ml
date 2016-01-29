@@ -17,7 +17,7 @@ exception Typename_not_found
 
 let add_predefined_objc_types tenv =
   let objc_class_mangled = Mangled.from_string CFrontend_config.objc_class in
-  let objc_class_name = Typename.TN_csu (Csu.Class, objc_class_mangled) in
+  let objc_class_name = Typename.TN_csu (Csu.Class Csu.Objc, objc_class_mangled) in
   let objc_class_type_info =
     Sil.Tstruct {
       Sil.instance_fields = [];
@@ -65,7 +65,7 @@ let add_predefined_basic_types tenv =
     Ast_utils.update_sil_types_map tp return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
-  let sil_nsarray_type = Sil.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl) in
+  let sil_nsarray_type = Sil.Tvar (CTypes.mk_classname CFrontend_config.nsarray_cl Csu.Objc) in
   let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
   add_basic_type create_int_type `Int;
   add_basic_type create_void_type `Void;
@@ -90,7 +90,7 @@ let create_csu opt_type =
       (let buf = Str.split (Str.regexp "[ \t]+") s in
        match buf with
        | "struct":: l ->Csu.Struct
-       | "class":: l -> Csu.Class
+       | "class":: l -> Csu.Class Csu.CPP
        | "union":: l -> Csu.Union
        | _ -> Csu.Struct)
   | _ -> assert false
@@ -107,7 +107,7 @@ let get_record_name_csu decl =
         name_info, opt_type, not cxx_record_info.xrdi_is_c_like
     | _-> assert false in
   let csu  = create_csu opt_type in
-  let csu' = if should_be_class then Csu.Class else csu in
+  let csu' = if should_be_class then Csu.Class Csu.CPP else csu in
   let name = Ast_utils.get_qualified_name name_info in
   csu', name
 
@@ -140,10 +140,11 @@ let get_superclass_decls decl =
   | _ -> []
 
 (** fetches list of superclasses for C++ classes *)
-let get_superclass_list decl =
+let get_superclass_list_cpp decl =
   let base_decls = get_superclass_decls decl in
   let decl_to_mangled_name decl = Mangled.from_string (get_record_name decl) in
-  let get_super_field super_decl = Typename.TN_csu (Csu.Class, decl_to_mangled_name super_decl) in
+  let get_super_field super_decl =
+    Typename.TN_csu (Csu.Class Csu.CPP, decl_to_mangled_name super_decl) in
   IList.map get_super_field base_decls
 
 let add_struct_to_tenv tenv typ =
@@ -194,9 +195,9 @@ and get_struct_cpp_class_declaration_type tenv decl =
       let sorted_non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields' in
       let static_fields = [] in (* Warning for the moment we do not treat static field. *)
       let def_methods = get_class_methods tenv name decl_list in (* C++ methods only *)
-      let superclasses = get_superclass_list decl in
+      let superclasses = get_superclass_list_cpp decl in
       let struct_annotations =
-        if csu = Csu.Class then Sil.cpp_class_annotation
+        if csu = Csu.Class Csu.CPP then Sil.cpp_class_annotation
         else Sil.item_annotation_empty in  (* No annotations for structs *)
       let sil_type = Sil.Tstruct
           { Sil.instance_fields = sorted_non_static_fields;
@@ -250,7 +251,7 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
     | _ -> expr_info.Clang_ast_t.ei_type_ptr in
   type_ptr_to_sil_type tenv tp
 
-let get_type_curr_class tenv curr_class_opt =
+let get_type_curr_class_objc tenv curr_class_opt =
   let name = CContext.get_curr_class_name curr_class_opt in
-  let typ = Sil.Tvar (Typename.TN_csu (Csu.Class, (Mangled.from_string name))) in
+  let typ = Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, (Mangled.from_string name))) in
   CTypes.expand_structured_type tenv typ

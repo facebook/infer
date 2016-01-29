@@ -73,7 +73,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
   let methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let class_name = CContext.get_curr_class_name curr_class in
   let mang_name = Mangled.from_string class_name in
-  let class_tn_name = Typename.TN_csu (Csu.Class, mang_name) in
+  let class_tn_name = Typename.TN_csu (Csu.Class Csu.Objc, mang_name) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
   (match Sil.tenv_lookup tenv class_tn_name with
@@ -87,7 +87,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
          Sil.Tstruct { struct_typ with
                        Sil.instance_fields = new_fields;
                        static_fields = [];
-                       csu = Csu.Class;
+                       csu = Csu.Class Csu.Objc;
                        struct_name = Some mang_name;
                        def_methods = new_methods;
                      } in

@@ -599,7 +599,7 @@ let prop_get_exn_name pname prop =
     let do_hpred = function
       | Sil.Hpointsto (e1, _, Sil.Sizeof (Sil.Tstruct  { Sil.struct_name = Some name }, _))
         when Sil.exp_equal e1 e ->
-          let found_exn_name = Typename.TN_csu (Csu.Class, name) in
+          let found_exn_name = Typename.TN_csu (Csu.Class Csu.Java, name) in
           exn_name := found_exn_name
       | _ -> () in
     IList.iter do_hpred (Prop.get_sigma prop) in

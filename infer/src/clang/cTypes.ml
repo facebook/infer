@@ -65,7 +65,7 @@ let search_enum_type_by_name tenv name =
   Sil.tenv_iter f tenv;
   !found
 
-let mk_classname n = Typename.TN_csu (Csu.Class, Mangled.from_string n)
+let mk_classname n ck = Typename.TN_csu (Csu.Class ck, Mangled.from_string n)
 
 let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
 

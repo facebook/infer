@@ -535,7 +535,8 @@ struct
     if is_superinstance mei then
       let typ, self_expr, id, ins =
         let t' = CTypes.add_pointer_to_typ
-            (CTypes_decl.get_type_curr_class context.CContext.tenv context.CContext.curr_class) in
+            (CTypes_decl.get_type_curr_class_objc
+               context.CContext.tenv context.CContext.curr_class) in
         let e = Sil.Lvar (Sil.mk_pvar (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Sil.Var id, [id], [Sil.Letderef (id, e, t', loc)] in

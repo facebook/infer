@@ -1454,7 +1454,7 @@ let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
 
 let is_interface tenv class_name =
   match Sil.tenv_lookup tenv class_name with
-  | Some (Sil.Tstruct ( { Sil.csu = Csu.Class; struct_name = Some _ } as struct_typ )) ->
+  | Some (Sil.Tstruct ( { Sil.csu = Csu.Class _; struct_name = Some _ } as struct_typ )) ->
       (IList.length struct_typ.Sil.instance_fields = 0) &&
       (IList.length struct_typ.Sil.def_methods = 0)
   | _ -> false
@@ -1464,7 +1464,7 @@ let check_subclass_tenv tenv c1 c2 =
   let rec check cn =
     Typename.equal cn c2 || Typename.equal c2 object_type ||
     match Sil.tenv_lookup tenv cn with
-    | Some (Sil.Tstruct { Sil.struct_name = Some _; csu = Csu.Class; superclasses }) ->
+    | Some (Sil.Tstruct { Sil.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
         IList.exists check superclasses
     | _ -> false in
   check c1
@@ -1485,10 +1485,10 @@ let check_subtype_basic_type t1 t2 =
 (** check if t1 is a subtype of t2 *)
 let rec check_subtype tenv t1 t2 =
   match t1, t2 with
-  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c1 },
-    Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c2 } ->
-      let cn1 = Typename.TN_csu (Csu.Class, c1)
-      and cn2 = Typename.TN_csu (Csu.Class, c2) in
+  | Sil.Tstruct { Sil.csu = Csu.Class ck1; struct_name = Some c1 },
+    Sil.Tstruct { Sil.csu = Csu.Class ck2; struct_name = Some c2 } ->
+      let cn1 = Typename.TN_csu (Csu.Class ck1, c1)
+      and cn2 = Typename.TN_csu (Csu.Class ck2, c2) in
       (check_subclass tenv cn1 cn2)
 
   | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
@@ -1497,8 +1497,8 @@ let rec check_subtype tenv t1 t2 =
   | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
       check_subtype tenv dom_type1 dom_type2
 
-  | Sil.Tarray _, Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c2 } ->
-      let cn2 = Typename.TN_csu (Csu.Class, c2) in
+  | Sil.Tarray _, Sil.Tstruct { Sil.csu = Csu.Class ck2; struct_name = Some c2 } ->
+      let cn2 = Typename.TN_csu (Csu.Class ck2, c2) in
       Typename.equal cn2 serializable_type
       || Typename.equal cn2 cloneable_type
       || Typename.equal cn2 object_type
@@ -1507,10 +1507,10 @@ let rec check_subtype tenv t1 t2 =
 
 let rec case_analysis_type tenv (t1, st1) (t2, st2) =
   match t1, t2 with
-  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c1 },
-    Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c2 } ->
-      let cn1 = Typename.TN_csu (Csu.Class, c1)
-      and cn2 = Typename.TN_csu (Csu.Class, c2) in
+  | Sil.Tstruct { Sil.csu = Csu.Class ck1; struct_name = Some c1 },
+    Sil.Tstruct { Sil.csu = Csu.Class ck2; struct_name = Some c2 } ->
+      let cn1 = Typename.TN_csu (Csu.Class ck1, c1)
+      and cn2 = Typename.TN_csu (Csu.Class ck2, c2) in
       (Sil.Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv))
 
   | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
@@ -1519,8 +1519,8 @@ let rec case_analysis_type tenv (t1, st1) (t2, st2) =
   | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
       (case_analysis_type tenv (dom_type1, st1) (dom_type2, st2))
 
-  | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c1 }, Sil.Tarray _ ->
-      let cn1 = Typename.TN_csu (Csu.Class, c1) in
+  | Sil.Tstruct { Sil.csu = Csu.Class ck1; struct_name = Some c1 }, Sil.Tarray _ ->
+      let cn1 = Typename.TN_csu (Csu.Class ck1, c1) in
       if (Typename.equal cn1 serializable_type
           || Typename.equal cn1 cloneable_type
           || Typename.equal cn1 object_type) &&
@@ -1869,7 +1869,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
       | Config.C_CPP -> Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size), Sil.Subtype.exact)
       | Config.Java ->
           let object_type =
-            Typename.TN_csu (Csu.Class, Mangled.from_string "java.lang.String") in
+            Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.String") in
           let typ = match Sil.tenv_lookup tenv object_type with
             | Some typ -> typ
             | None -> assert false in
@@ -1880,7 +1880,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let sexp = (* TODO: add appropriate fields *)
       Sil.Estruct ([(Ident.create_fieldname (Mangled.from_string "java.lang.Class.name") 0, Sil.Eexp ((Sil.Const (Sil.Cstr s), Sil.Inone)))], Sil.inst_none) in
     let class_texp =
-      let class_type = Typename.TN_csu (Csu.Class, Mangled.from_string "java.lang.Class") in
+      let class_type =
+        Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.Class") in
       let typ = match Sil.tenv_lookup tenv class_type with
         | Some typ -> typ
         | None -> assert false in

@@ -42,8 +42,8 @@ let try_resolve_frame str_frame exe_env tenv =
     (* find the class name in the tenv and get the procedure(s) whose names match the procedure name
      * in the stack trace. Note that the stack trace does not have any type or argument information;
      * the name is all that we have to go on *)
-    match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class, class_name)) with
-    | Some Sil.Tstruct { Sil.csu = Csu.Class; def_methods } ->
+    match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, class_name)) with
+    | Some Sil.Tstruct { Sil.csu = Csu.Class _; def_methods } ->
         let possible_calls =
           IList.filter
             (fun proc -> Procname.java_get_method proc = str_frame.method_str)

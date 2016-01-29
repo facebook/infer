@@ -606,7 +606,7 @@ let resolve_method tenv class_name proc_name =
           Procname.java_replace_class proc_name (Typename.name class_name)
         else Procname.c_method_replace_class proc_name (Typename.name class_name) in
       match Sil.tenv_lookup tenv class_name with
-      | Some (Sil.Tstruct { Sil.csu = Csu.Class; def_methods; superclasses }) ->
+      | Some (Sil.Tstruct { Sil.csu = Csu.Class _; def_methods; superclasses }) ->
           if method_exists right_proc_name def_methods then
             Some right_proc_name
           else
@@ -635,8 +635,8 @@ let resolve_typename prop arg =
     loop (Prop.get_sigma prop) in
   match typexp_opt with
   | Some (Sil.Sizeof (Sil.Tstruct { Sil.struct_name = None }, _)) -> None
-  | Some (Sil.Sizeof (Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some name }, _)) ->
-      Some (Typename.TN_csu (Csu.Class, name))
+  | Some (Sil.Sizeof (Sil.Tstruct { Sil.csu = Csu.Class ck; struct_name = Some name }, _)) ->
+      Some (Typename.TN_csu (Csu.Class ck, name))
   | _ -> None
 
 (** If the dynamic type of the object calling a method is known, the method from the dynamic type
@@ -659,7 +659,7 @@ let resolve_virtual_pname cfg tenv prop args pname call_flags : Procname.t =
 let redirect_shared_ptr tenv cfg pname actual_params =
   let class_shared_ptr typ =
     try match Sil.expand_type tenv typ with
-      | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some cl_name } ->
+      | Sil.Tstruct { Sil.csu = Csu.Class _; struct_name = Some cl_name } ->
           let name = Mangled.to_string cl_name in
           name = "shared_ptr" || name = "__shared_ptr"
       | t -> false
@@ -723,7 +723,7 @@ let lookup_java_typ_from_string tenv typ_str =
         Sil.Tptr (Sil.Tarray (loop stripped_typ, array_typ_size), Sil.Pk_pointer)
     | typ_str ->
         (* non-primitive/non-array type--resolve it in the tenv *)
-        let typename = Typename.TN_csu (Csu.Class, (Mangled.from_string typ_str)) in
+        let typename = Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string typ_str)) in
         match Sil.tenv_lookup tenv typename with
         | Some (Sil.Tstruct _ as typ) -> typ
         | _ -> failwith ("Failed to look up typ " ^ typ_str) in
@@ -1030,7 +1030,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
             (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
             let lhs_normal = Prop.exp_normalize_prop _prop lhs in
             let is_nsnumber = function
-              | Sil.Tvar (Typename.TN_csu (Csu.Class, name)) ->
+              | Sil.Tvar (Typename.TN_csu (Csu.Class _, name)) ->
                   Mangled.to_string name = "NSNumber"
               | _ -> false in
             let lhs_is_ns_ptr () =
@@ -2508,7 +2508,8 @@ module ModelBuiltins = struct
     sym_exec_generated false cfg tenv pdesc [alloc_instr] symb_state
 
   let execute_objc_NSArray_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
-    let nsarray_typ = Sil.Tvar (Typename.TN_csu (Csu.Class, Mangled.from_string "NSArray")) in
+    let nsarray_typ =
+      Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string "NSArray")) in
     let nsarray_typ = Sil.expand_type tenv nsarray_typ in
     execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsarray_typ loc
 
@@ -2535,7 +2536,7 @@ module ModelBuiltins = struct
 
   let execute_objc_NSDictionary_alloc_no_fail cfg pdesc tenv symb_state ret_ids loc =
     let nsdictionary_typ =
-      Sil.Tvar (Typename.TN_csu (Csu.Class, Mangled.from_string "NSDictionary")) in
+      Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string "NSDictionary")) in
     let nsdictionary_typ =
       Sil.expand_type tenv nsdictionary_typ in
     execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids nsdictionary_typ loc

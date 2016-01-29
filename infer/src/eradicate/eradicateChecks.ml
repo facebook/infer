@@ -134,7 +134,7 @@ let check_condition case_zero find_canonical_duplicate get_proc_desc curr_pname
     let throwable_found = ref false in
     let throwable_class = Mangled.from_string "java.lang.Throwable" in
     let typ_is_throwable = function
-      | Sil.Tstruct { Sil.csu = Csu.Class; struct_name = Some c } ->
+      | Sil.Tstruct { Sil.csu = Csu.Class _; struct_name = Some c } ->
           Mangled.equal c throwable_class
       | _ -> false in
     let do_instr = function

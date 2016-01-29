@@ -56,7 +56,7 @@ val get_tenv : t -> Sil.tenv
 val create_context : Sil.tenv -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
   curr_class -> has_return_param : bool -> bool -> t option -> t
 
-val create_curr_class : Sil.tenv -> string -> curr_class
+val create_curr_class : Sil.tenv -> string -> Csu.class_kind -> curr_class
 
 val add_block_static_var : t -> Procname.t -> (Sil.pvar * Sil.typ) -> unit
 

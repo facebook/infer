@@ -121,13 +121,13 @@ struct
     let block_type = Sil.Tstruct
         { Sil.instance_fields = fields;
           static_fields = [];
-          csu = Csu.Class;
+          csu = Csu.Class Csu.Objc;
           struct_name = Some mblock;
           superclasses = [];
           def_methods = [];
           struct_annotations = [];
         } in
-    let block_name = Typename.TN_csu (Csu.Class, mblock) in
+    let block_name = Typename.TN_csu (Csu.Class Csu.Objc, mblock) in
     Sil.tenv_add tenv block_name block_type;
     let trans_res = CTrans_utils.alloc_trans trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true in
     let id_block = match trans_res.exps with
@@ -430,7 +430,7 @@ struct
           raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
         else
           let typ = CTypes.add_pointer_to_typ
-              (CTypes_decl.get_type_curr_class context.tenv curr_class) in
+              (CTypes_decl.get_type_curr_class_objc context.tenv curr_class) in
           [(e, typ)]
       else [(e, typ)] in
     Printing.log_out "\n\n PVAR ='%s'\n\n" (Sil.pvar_to_string pvar);
@@ -904,8 +904,9 @@ struct
     else if (selector = CFrontend_config.alloc) || (selector = CFrontend_config.new_str) then
       match receiver_kind with
       | `Class type_ptr ->
-          let class_opt = CMethod_trans.get_class_name_method_call_from_clang context.tenv
-              obj_c_message_expr_info in
+          let class_opt =
+            CMethod_trans.get_class_name_method_call_from_clang
+              context.CContext.tenv obj_c_message_expr_info in
           Some (new_or_alloc_trans trans_state_pri sil_loc si type_ptr class_opt selector)
       | _ -> None
       (* assertions *)
@@ -1568,13 +1569,17 @@ struct
           (* variable might be initialized already - do nothing in that case*)
           if IList.exists (Sil.exp_equal var_exp) res_trans_ie.initd_exps then ([], [], [])
           else if !Config.arc_mode &&
-             (CTrans_utils.is_method_call ie || ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ) then
+                  (CTrans_utils.is_method_call ie ||
+                   ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv ie_typ)
+          then
             (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
             (* we need to add retain/release *)
             let (e, instrs, ids) =
-              CArithmetic_trans.assignment_arc_mode context var_exp ie_typ sil_e1' sil_loc rhs_owning_method true in
+              CArithmetic_trans.assignment_arc_mode
+                context var_exp ie_typ sil_e1' sil_loc rhs_owning_method true in
             ([(e, ie_typ)], instrs, ids)
-          else ([], [Sil.Set (var_exp, ie_typ, sil_e1', sil_loc)], []) in
+          else
+            ([], [Sil.Set (var_exp, ie_typ, sil_e1', sil_loc)], []) in
         let res_trans_assign = { empty_res_trans with
                                  ids = ids_assign;
                                  instrs = instrs_assign } in

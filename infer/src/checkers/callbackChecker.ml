@@ -81,7 +81,8 @@ let do_eradicate_check all_procs get_procdesc idenv tenv =
  * fields that are nullified *)
 let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc =
   let typename =
-    Typename.TN_csu (Csu.Class, Mangled.from_string (Procname.java_get_class proc_name)) in
+    Typename.TN_csu
+      (Csu.Class Csu.Java, Mangled.from_string (Procname.java_get_class proc_name)) in
   match Sil.tenv_lookup tenv typename with
   | Some (Sil.Tstruct { Sil.csu; struct_name = Some class_name; def_methods } as typ) ->
       let lifecycle_typs = get_or_create_lifecycle_typs tenv in
