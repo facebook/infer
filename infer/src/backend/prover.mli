@@ -102,6 +102,7 @@ val check_subtype : Sil.tenv -> Sil.typ -> Sil.typ -> bool
     and returns the updated types in the true and false case, if they are possible *)
 val subtype_case_analysis : Sil.tenv -> Sil.exp -> Sil.exp -> Sil.exp option * Sil.exp option
 
+val get_overrides_of : Sil.tenv -> Sil.typ -> Procname.t -> (typ * Procname.t) list
 
 
 

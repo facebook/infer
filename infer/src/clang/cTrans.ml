@@ -826,6 +826,7 @@ struct
       Sil.cf_interface = false;
       Sil.cf_noreturn = false;
       Sil.cf_is_objc_block = false;
+      Sil.cf_targets = [];
     } in
     let res_trans_call = create_call_instr trans_state_pri function_type sil_method actual_params
         sil_loc call_flags ~is_objc_method:false in

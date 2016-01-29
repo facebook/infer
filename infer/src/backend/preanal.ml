@@ -373,13 +373,46 @@ let analyze_and_annotate_proc cfg tenv pname pdesc =
     (Cfg.Procdesc.get_nodes pdesc);
   Table.reset ()
 
-let time = ref 0.0
-let doit cfg tenv =
-  let init = Unix.gettimeofday () in
-  (* L.out "#### Dead variable nullification ####"; *)
+(** mutate the cfg/cg to add dynamic dispatch handling *)
+let add_dispatch_calls cfg cg tenv =
+  let node_add_dispatch_calls caller_pname node =
+    (* TODO: handle dynamic dispatch for virtual calls as well *)
+    let call_flags_is_dispatch call_flags = call_flags.Sil.cf_interface in
+    let instr_is_dispatch_call = function
+      | Sil.Call (_, _, _, _, call_flags) -> call_flags_is_dispatch call_flags
+      | _ -> false in
+    let has_dispatch_call instrs =
+      IList.exists instr_is_dispatch_call instrs in
+    let replace_dispatch_calls = function
+      | Sil.Call (ret_ids, (Sil.Const (Sil.Cfun callee_pname) as call_exp),
+                  (((receiver_exp, receiver_typ) :: _) as args), loc, call_flags) as instr
+        when call_flags_is_dispatch call_flags ->
+          (* the frontend should not populate the list of targets *)
+          assert (call_flags.Sil.cf_targets = []);
+          let receiver_typ_no_ptr = Sil.typ_strip_ptr receiver_typ in
+          let sorted_overrides =
+            let overrides = Prover.get_overrides_of tenv receiver_typ_no_ptr callee_pname in
+            IList.sort (fun (_, p1) (_, p2) -> Procname.compare p1 p2) overrides in
+          (match sorted_overrides with
+           | [] -> instr
+           | (_, target_pname) :: _ ->
+               (* TODO: do this with all possible targets. for now, it is too slow to do this, so we
+                  just pick one target *)
+               Cg.add_edge cg caller_pname target_pname;
+               let call_flags' = { call_flags with Sil.cf_targets = [target_pname]; } in
+               Sil.Call (ret_ids, call_exp, args, loc, call_flags'))
+      | instr -> instr in
+    let instrs = Cfg.Node.get_instrs node in
+    if has_dispatch_call instrs then
+      IList.map replace_dispatch_calls instrs
+      |> Cfg.Node.replace_instrs node in
+  let proc_add_dispach_calls pname pdesc =
+    Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc in
+  Cfg.iter_proc_desc cfg proc_add_dispach_calls
+
+let doit cfg cg tenv =
   AllPreds.mk_table cfg;
   Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
   AllPreds.clear_table ();
-  time := !time +. (Unix.gettimeofday () -. init)
+  if !Config.sound_dynamic_dispatch then add_dispatch_calls cfg cg tenv;
 
-let gettime () = !time

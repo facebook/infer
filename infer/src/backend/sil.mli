@@ -203,6 +203,7 @@ type call_flags = {
   cf_interface : bool;
   cf_noreturn : bool;
   cf_is_objc_block : bool;
+  cf_targets : Procname.t list;
 }
 
 (** Default value for call_flags where all fields are set to false *)

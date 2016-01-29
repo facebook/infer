@@ -649,6 +649,28 @@ public class ResourceLeaks {
     }
   }
 
+  private static void myClose(Closeable closeable, boolean swallowIOException) throws IOException {
+    if (closeable == null) {
+      return;
+    }
+    try {
+      closeable.close();
+    } catch (IOException e) {
+      if (!swallowIOException) {
+        throw e;
+      }
+    }
+  }
+
+  public void closeWithCloseablesNestedAlloc() throws IOException {
+    BufferedInputStream b = null;
+    try {
+     b = new BufferedInputStream(new FileInputStream("file.txt"));
+    } finally {
+      myClose(b, false);
+    }
+  }
+
   // JsonParser tests
 
   public void parseFromStringAndNotClose(JsonFactory factory) throws IOException {

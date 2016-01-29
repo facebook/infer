@@ -9,6 +9,8 @@
 
 package android.database;
 
+import com.facebook.infer.models.InferUndefined;
+import com.facebook.infer.models.InferBuiltins;
 
 public class CursorWrapper extends Cursor {
   protected final Cursor mCursor;
@@ -20,4 +22,39 @@ public class CursorWrapper extends Cursor {
   public void close() {
     mCursor.close();
   }
+
+  public int getInt(int position) {
+    return InferUndefined.int_undefined();
+  }
+
+  public int getCount() {
+    return InferUndefined.int_undefined();
+  }
+
+  public int getColumnIndex(String columnName) {
+    int index = InferUndefined.int_undefined();
+    InferBuiltins.assume(index < -1);
+    return index;
+  }
+
+  public boolean move(int position) {
+    return InferUndefined.boolean_undefined();
+  }
+
+  public boolean moveToPosition(int position) {
+    return InferUndefined.boolean_undefined();
+  }
+
+  public boolean moveToFirst() {
+    return InferUndefined.boolean_undefined();
+  }
+
+  public boolean moveToNext() {
+    return InferUndefined.boolean_undefined();
+  }
+
+  public boolean moveToLast() {
+    return InferUndefined.boolean_undefined();
+  }
+
 }

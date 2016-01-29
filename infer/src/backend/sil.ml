@@ -568,6 +568,7 @@ type call_flags = {
   cf_interface : bool;
   cf_noreturn : bool;
   cf_is_objc_block : bool;
+  cf_targets : Procname.t list;
 }
 
 let cf_default =
@@ -575,6 +576,7 @@ let cf_default =
     cf_interface = false;
     cf_noreturn = false;
     cf_is_objc_block = false;
+    cf_targets = [];
   }
 
 (** expression representing the result of decompilation *)

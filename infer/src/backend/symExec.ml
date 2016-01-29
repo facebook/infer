@@ -625,12 +625,11 @@ let resolve_method tenv class_name proc_name =
       proc_name
   | Some proc_name -> proc_name
 
-let resolve_typename prop arg =
-  let (arg_exp, _) = arg in
+let resolve_typename prop receiver_exp =
   let typexp_opt =
     let rec loop = function
       | [] -> None
-      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e arg_exp -> Some typexp
+      | Sil.Hpointsto(e, _, typexp) :: _ when Sil.exp_equal e receiver_exp -> Some typexp
       | _ :: hpreds -> loop hpreds in
     loop (Prop.get_sigma prop) in
   match typexp_opt with
@@ -639,21 +638,62 @@ let resolve_typename prop arg =
       Some (Typename.TN_csu (Csu.Class ck, name))
   | _ -> None
 
-(** If the dynamic type of the object calling a method is known, the method from the dynamic type
-    is called *)
-let resolve_virtual_pname cfg tenv prop args pname call_flags : Procname.t =
-  if not call_flags.Sil.cf_virtual then pname
-  else
-    match args with
-    | [] -> failwith "Expecting the first parameter to be the object expression"
-    | obj_exp :: _ ->
-        begin
-          match resolve_typename prop obj_exp with
-          | Some class_name -> resolve_method tenv class_name pname
-          | None -> pname
-        end
+exception Cannot_convert_string_to_typ of string
 
-(* let resolve_procname cfg tenv prop args pname : Procname.t = *)
+(** Lookup Java types by name *)
+let lookup_java_typ_from_string tenv typ_str =
+  let rec loop = function
+    | "" | "void" -> Sil.Tvoid
+    | "int" -> Sil.Tint Sil.IInt
+    | "byte" -> Sil.Tint Sil.IShort
+    | "short" -> Sil.Tint Sil.IShort
+    | "boolean" -> Sil.Tint Sil.IBool
+    | "char" -> Sil.Tint Sil.IChar
+    | "long" -> Sil.Tint Sil.ILong
+    | "float" -> Sil.Tfloat Sil.FFloat
+    | "double" -> Sil.Tfloat Sil.FDouble
+    | typ_str when String.contains typ_str '[' ->
+        let stripped_typ = String.sub typ_str 0 ((String.length typ_str) - 2) in
+        let array_typ_size = Sil.exp_get_undefined false in
+        Sil.Tptr (Sil.Tarray (loop stripped_typ, array_typ_size), Sil.Pk_pointer)
+    | typ_str ->
+        (* non-primitive/non-array type--resolve it in the tenv *)
+        let typename = Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string typ_str)) in
+        match Sil.tenv_lookup tenv typename with
+        | Some (Sil.Tstruct _ as typ) -> typ
+        | _ -> raise (Cannot_convert_string_to_typ typ_str) in
+  loop typ_str
+
+(** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
+    in the signature of [pname], resolve [pname] to T_actual.[pname]. *)
+let resolve_virtual_pname cfg tenv prop actuals pname call_flags : Procname.t =
+  let resolve receiver_exp pname prop = match resolve_typename prop receiver_exp with
+    | Some class_name -> resolve_method tenv class_name pname
+    | None -> pname in
+  let receiver_types_equal pname actual_receiver_typ =
+    try
+      let formal_receiver_typ =
+        let receiver_typ_str = Procname.java_get_class pname in
+        Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer) in
+      Sil.typ_equal formal_receiver_typ actual_receiver_typ
+    with Cannot_convert_string_to_typ _ -> false in
+  match actuals with
+  | _ when not (call_flags.Sil.cf_virtual || call_flags.Sil.cf_interface) ->
+      (* if this is not a virtual or interface call, there's no need for resolution *)
+      pname
+  | (receiver_exp, actual_receiver_typ) :: _ ->
+      if !Config.curr_language = Config.Java && call_flags.Sil.cf_interface &&
+         !Config.sound_dynamic_dispatch && receiver_types_equal pname actual_receiver_typ then
+        (* pick one implementation of the interface method and call it *)
+        (* TODO: consider all implementations of the interface method *)
+        (* TODO: do this for virtual calls as well *)
+        match call_flags.Sil.cf_targets with
+        | target :: _ -> target
+        | _ -> pname
+      else
+        (* [actual_receiver_typ] <: the formal receiver_type, do resolution *)
+        resolve receiver_exp pname prop
+  | _ -> failwith "A virtual call must have a receiver"
 
 (** recognize calls to shared_ptr procedures and re-direct them to infer procedures for modelling *)
 let redirect_shared_ptr tenv cfg pname actual_params =
@@ -704,7 +744,6 @@ let redirect_shared_ptr tenv cfg pname actual_params =
           pname'
     else pname
 
-
 (** Lookup Java types by name *)
 let lookup_java_typ_from_string tenv typ_str =
   let rec loop = function
@@ -728,7 +767,6 @@ let lookup_java_typ_from_string tenv typ_str =
         | Some (Sil.Tstruct _ as typ) -> typ
         | _ -> failwith ("Failed to look up typ " ^ typ_str) in
   loop typ_str
-
 
 (** recognize calls to the constructor java.net.URL and splits the argument string
     to be only the protocol.  *)
@@ -1090,7 +1128,6 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         resolve_virtual_pname cfg tenv prop_r n_actual_params fn call_flags in
       if !Config.ondemand_enabled then
         Ondemand.do_analysis pdesc resolved_pname;
-
       let callee_pdesc_opt = Cfg.Procdesc.find_from_name cfg resolved_pname in
       let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
       let sentinel_result =

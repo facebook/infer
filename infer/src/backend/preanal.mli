@@ -11,7 +11,4 @@
 (** Preanalysis for eliminating dead local variables *)
 
 (** Perform liveness analysis *)
-val doit : Cfg.cfg -> Sil.tenv -> unit
-
-(** Return the time for the last execution of the analysis *)
-val gettime : unit -> float
+val doit : Cfg.cfg -> Cg.t -> Sil.tenv -> unit

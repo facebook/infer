@@ -945,16 +945,17 @@ let rec instruction context pc instr : translation =
     | JBir.InvokeVirtual (var_opt, obj, call_kind, ms, args) ->
         let caller_procname = (Cfg.Procdesc.get_proc_name (JContext.get_procdesc context)) in
         let sil_obj_type = JTransType.expr_type context obj in
-        let create_call_node cn =
+        let create_call_node cn invoke_kind =
           let (ids, instrs, sil_obj_expr) = expression context pc obj in
           let callee_procname, call_ids, call_instrs =
             let ret_opt = Some (sil_obj_expr, sil_obj_type) in
-            method_invocation context loc pc var_opt cn ms ret_opt args I_Virtual Procname.Non_Static in
+            method_invocation
+              context loc pc var_opt cn ms ret_opt args invoke_kind Procname.Non_Static in
           let node_kind = Cfg.Node.Stmt_node ("Call "^(Procname.to_string callee_procname)) in
           let call_node = create_node node_kind (ids @ call_ids) (instrs @ call_instrs) in
           Cg.add_edge cg caller_procname callee_procname;
           call_node in
-        let trans_virtual_call cn =
+        let trans_virtual_call cn invoke_kind =
           match instruction_thread_start context cn ms obj args var_opt with
           | Some start_call -> instruction context pc start_call
           | None ->
@@ -962,20 +963,20 @@ let rec instruction context pc instr : translation =
                 | Some cn -> cn
                 | None -> cn in
               let cn = (resolve_method context cn ms) in
-              let call_node = create_call_node cn in
+              let call_node = create_call_node cn invoke_kind in
               Instr call_node in
         begin
           match call_kind with
           | JBir.VirtualCall obj_type ->
               begin
                 match obj_type with
-                | JBasics.TClass cn -> trans_virtual_call cn
+                | JBasics.TClass cn -> trans_virtual_call cn I_Virtual
                 | JBasics.TArray vt ->
                     let instr = instruction_array_call ms obj_type obj args var_opt vt in
                     instruction context pc instr
               end
           | JBir.InterfaceCall cn ->
-              trans_virtual_call cn
+              trans_virtual_call cn I_Interface
         end
     | JBir.InvokeNonVirtual (var_opt, obj, cn, ms, args) ->
         let cn = (resolve_method context cn ms) in

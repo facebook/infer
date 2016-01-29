@@ -245,6 +245,11 @@
     "procedure": "void Builtins.doNotBlockError(Object)"
   },
   {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/DynamicDispatch.java",
+    "procedure": "void DynamicDispatch.dynamicDispatchShouldNotCauseFalseNegativeEasy()"
+  },
+  {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
     "procedure": "void CloseableAsResourceExample.failToCloseWithCloseQuietly()"
@@ -363,6 +368,16 @@
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ReaderLeaks.java",
     "procedure": "void ReaderLeaks.inputStreamReaderNotClosedAfterRead()"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/DynamicDispatch.java",
+    "procedure": "void DynamicDispatch.interfaceShouldNotCauseFalseNegativeEasy()"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/DynamicDispatch.java",
+    "procedure": "void DynamicDispatch.interfaceShouldNotCauseFalseNegativeHard(DynamicDispatch$Interface)"
   },
   {
     "bug_type": "RESOURCE_LEAK",

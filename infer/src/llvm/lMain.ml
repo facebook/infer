@@ -50,7 +50,7 @@ let store_icfg tenv cg cfg =
   let cg_file = get_internal_file ".cg" in
   let cfg_file = get_internal_file ".cfg" in
   Cfg.add_removetemps_instructions cfg;
-  Preanal.doit cfg tenv;
+  Preanal.doit cfg cg tenv;
   Cfg.add_abstraction_instructions cfg;
   Cg.store_to_file cg_file cg;
   Cfg.store_cfg_to_file cfg_file true cfg;

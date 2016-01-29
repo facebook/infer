@@ -1557,6 +1557,24 @@ let cast_exception tenv texp1 texp2 e1 subs =
     | _ -> () in
   raise (IMPL_EXC ("class cast exception", subs, EXC_FALSE))
 
+(** get all methods that override [supertype].[pname] in [tenv].
+    Note: supertype should be a type T rather than a pointer to type T
+    Note: [pname] wil never be included in the returned result *)
+let get_overrides_of tenv supertype pname =
+  let typ_has_method pname = function
+    | Sil.Tstruct { Sil.def_methods } ->
+        IList.exists (fun m -> Procname.equal pname m) def_methods
+    | _ -> false in
+  let gather_overrides tname typ overrides_acc =
+    (* get all types in the type environment that are non-reflexive subtypes of [supertype] *)
+    if not (Sil.typ_equal typ supertype) && check_subtype tenv typ supertype then
+      (* only select the ones that implement [pname] as overrides *)
+      let resolved_pname = Procname.java_replace_class pname (Typename.name tname) in
+      if typ_has_method resolved_pname typ then (typ, resolved_pname) :: overrides_acc
+      else overrides_acc
+    else overrides_acc in
+  Sil.tenv_fold gather_overrides tenv []
+
 (** Check the equality of two types ignoring flags in the subtyping components *)
 let texp_equal_modulo_subtype_flag texp1 texp2 = match texp1, texp2 with
   | Sil.Sizeof(t1, st1), Sil.Sizeof (t2, st2) ->
