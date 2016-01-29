@@ -1,50 +1,132 @@
 digraph iCFG {
-13 [label="13:  DeclStmt \n   _fun_get(0:int ,&SIL_materialize_temp__n$1:struct X *) [line 22]\n  n$2=*&SIL_materialize_temp__n$1:struct X  [line 22]\n  _fun_X_X(&x:struct X *,&SIL_materialize_temp__n$1:struct X ) [line 22]\n  REMOVE_TEMPS(n$2); [line 22]\n " shape="box"]
+35 [label="35:  Return Stmt \n   _fun_get(1:int ,&__temp_return_n$1:class X *) [line 50]\n  n$2=_fun_X_div(&__temp_return_n$1:class X &) [line 50]\n  *&return:int =n$2 [line 50]\n  REMOVE_TEMPS(n$2); [line 50]\n  NULLIFY(&__temp_return_n$1,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
+	
+
+	 35 -> 34 ;
+34 [label="34: Exit get_method_div1 \n  " color=yellow style=filled]
+	
+
+33 [label="33: Start get_method_div1\nFormals: \nLocals:  __temp_return_n$1:class X  \n   DECLARE_LOCALS(&return,&__temp_return_n$1); [line 49]\n " color=yellow style=filled]
+	
+
+	 33 -> 35 ;
+32 [label="32:  Return Stmt \n   _fun_get(1:int ,&__temp_return_n$1:class X *) [line 46]\n  n$2=*&__temp_return_n$1.f:int  [line 46]\n  *&return:int =(1 / n$2) [line 46]\n  REMOVE_TEMPS(n$2); [line 46]\n  NULLIFY(&__temp_return_n$1,false); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+	
+
+	 32 -> 31 ;
+31 [label="31: Exit get_field_div1 \n  " color=yellow style=filled]
+	
+
+30 [label="30: Start get_field_div1\nFormals: \nLocals:  __temp_return_n$1:class X  \n   DECLARE_LOCALS(&return,&__temp_return_n$1); [line 45]\n " color=yellow style=filled]
+	
+
+	 30 -> 32 ;
+29 [label="29:  DeclStmt \n   _fun_get(1:int ,&SIL_materialize_temp__n$1:class X *) [line 41]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$1:class X &) [line 41]\n " shape="box"]
+	
+
+	 29 -> 28 ;
+28 [label="28:  Return Stmt \n   n$0=*&x.f:int  [line 42]\n  *&return:int =(1 / n$0) [line 42]\n  REMOVE_TEMPS(n$0); [line 42]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 42]\n  NULLIFY(&x,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+	
+
+	 28 -> 27 ;
+27 [label="27: Exit get_div1 \n  " color=yellow style=filled]
+	
+
+26 [label="26: Start get_div1\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$1:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$1); [line 40]\n " color=yellow style=filled]
+	
+
+	 26 -> 29 ;
+25 [label="25:  Return Stmt \n   _fun_get(0:int ,&__temp_return_n$1:class X *) [line 37]\n  n$2=_fun_X_div(&__temp_return_n$1:class X &) [line 37]\n  *&return:int =n$2 [line 37]\n  REMOVE_TEMPS(n$2); [line 37]\n  NULLIFY(&__temp_return_n$1,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+	
+
+	 25 -> 24 ;
+24 [label="24: Exit get_method_div0 \n  " color=yellow style=filled]
+	
+
+23 [label="23: Start get_method_div0\nFormals: \nLocals:  __temp_return_n$1:class X  \n   DECLARE_LOCALS(&return,&__temp_return_n$1); [line 36]\n " color=yellow style=filled]
+	
+
+	 23 -> 25 ;
+22 [label="22:  Call _fun_X_skip \n   _fun_get(0:int ,&__temp_return_n$4:class X *) [line 32]\n  n$5=_fun_X_skip(&__temp_return_n$4:class X &) [line 32]\n  REMOVE_TEMPS(n$5); [line 32]\n " shape="box"]
+	
+
+	 22 -> 21 ;
+21 [label="21:  Return Stmt \n   _fun_get(0:int ,&__temp_return_n$1:class X *) [line 33]\n  n$2=*&__temp_return_n$1.f:int  [line 33]\n  *&return:int =(1 / n$2) [line 33]\n  REMOVE_TEMPS(n$2); [line 33]\n  NULLIFY(&__temp_return_n$1,false); [line 33]\n  NULLIFY(&__temp_return_n$4,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20: Exit get_field_div0 \n  " color=yellow style=filled]
+	
+
+19 [label="19: Start get_field_div0\nFormals: \nLocals:  __temp_return_n$1:class X  __temp_return_n$4:class X  \n   DECLARE_LOCALS(&return,&__temp_return_n$1,&__temp_return_n$4); [line 31]\n " color=yellow style=filled]
+	
+
+	 19 -> 22 ;
+18 [label="18:  DeclStmt \n   _fun_get(0:int ,&SIL_materialize_temp__n$1:class X *) [line 27]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$1:class X &) [line 27]\n " shape="box"]
+	
+
+	 18 -> 17 ;
+17 [label="17:  Return Stmt \n   n$0=*&x.f:int  [line 28]\n  *&return:int =(1 / n$0) [line 28]\n  REMOVE_TEMPS(n$0); [line 28]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 28]\n  NULLIFY(&x,false); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16: Exit get_div0 \n  " color=yellow style=filled]
+	
+
+15 [label="15: Start get_div0\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$1:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$1); [line 26]\n " color=yellow style=filled]
+	
+
+	 15 -> 18 ;
+14 [label="14:  DeclStmt \n   _fun_X_X(&x:class X *) [line 21]\n " shape="box"]
+	
+
+	 14 -> 13 ;
+13 [label="13:  BinaryOperatorStmt: Assign \n   n$1=*&a:int  [line 22]\n  *&x.f:int =n$1 [line 22]\n  REMOVE_TEMPS(n$1); [line 22]\n  NULLIFY(&a,false); [line 22]\n " shape="box"]
 	
 
 	 13 -> 12 ;
-12 [label="12:  Return Stmt \n   n$0=*&x.f:int  [line 23]\n  *&return:int =(1 / n$0) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 23]\n  NULLIFY(&x,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+12 [label="12:  Return Stmt \n   n$0=*&__return_param:void * [line 23]\n  _fun_X_X(n$0:class X *,&x:class X &) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&__return_param,false); [line 23]\n  NULLIFY(&x,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 12 -> 11 ;
-11 [label="11: Exit test \n  " color=yellow style=filled]
+11 [label="11: Exit get \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start test\nFormals: \nLocals:  x:struct X  SIL_materialize_temp__n$1:struct X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$1); [line 21]\n " color=yellow style=filled]
+10 [label="10: Start get\nFormals:  a:int  __return_param:class X *\nLocals:  x:class X  \n   DECLARE_LOCALS(&return,&x); [line 20]\n " color=yellow style=filled]
 	
 
-	 10 -> 13 ;
-9 [label="9:  DeclStmt \n   _fun_X_X(&x:struct X *) [line 16]\n " shape="box"]
+	 10 -> 14 ;
+9 [label="9:  Return Stmt \n   n$0=*&this:class X * [line 15]\n  n$1=*n$0.f:int  [line 15]\n  *&return:int =(1 / n$1) [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  NULLIFY(&this,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   n$1=*&a:int  [line 17]\n  *&x.f:int =n$1 [line 17]\n  REMOVE_TEMPS(n$1); [line 17]\n  NULLIFY(&a,false); [line 17]\n " shape="box"]
+8 [label="8: Exit X_div \n  " color=yellow style=filled]
 	
 
-	 8 -> 7 ;
-7 [label="7:  Return Stmt \n   n$0=*&__return_param:void * [line 18]\n  _fun_X_X(n$0:struct X *,&x:struct X ) [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&__return_param,false); [line 18]\n  NULLIFY(&x,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+7 [label="7: Start X_div\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 7 -> 6 ;
-6 [label="6: Exit get \n  " color=yellow style=filled]
+	 7 -> 9 ;
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 14]\n  *n$0.f:int =1 [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&this,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
-5 [label="5: Start get\nFormals:  a:int  __return_param:struct X *\nLocals:  x:struct X  \n   DECLARE_LOCALS(&return,&x); [line 15]\n " color=yellow style=filled]
+	 6 -> 5 ;
+5 [label="5: Exit X_X \n  " color=yellow style=filled]
 	
 
-	 5 -> 9 ;
-4 [label="4: Exit X_X \n  " color=yellow style=filled]
+4 [label="4: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
-3 [label="3: Start X_X\nFormals:  this:class X * :void \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+	 4 -> 6 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 13]\n  n$1=*&x:class X & [line 13]\n  n$2=*n$1.f:int  [line 13]\n  *n$0.f:int =n$2 [line 13]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 13]\n  NULLIFY(&this,false); [line 13]\n  NULLIFY(&x,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
-	 3 -> 4 ;
+	 3 -> 2 ;
 2 [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start X_X\nFormals:  this:class X * x:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
-	 1 -> 2 ;
+	 1 -> 3 ;
 }

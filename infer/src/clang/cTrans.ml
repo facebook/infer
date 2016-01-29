@@ -252,7 +252,8 @@ struct
       call_flags ~is_objc_method =
     let ret_id = if (Sil.typ_equal return_type Sil.Tvoid) then []
       else [Ident.create_fresh Ident.knormal] in
-    let ret_id_call, params, instrs_after_call, initd_exps =
+    let ret_id', params, initd_exps, ret_exps =
+      (* Assumption: should_add_return_param will return true only for struct types *)
       if CMethod_trans.should_add_return_param return_type is_objc_method then
         let param_type = Sil.Tptr (return_type, Sil.Pk_pointer) in
         let var_exp = match trans_state.var_exp with
@@ -261,18 +262,32 @@ struct
               let tenv = trans_state.context.CContext.tenv in
               let procdesc = trans_state.context.CContext.procdesc in
               let pvar = mk_temp_sil_var tenv procdesc "__temp_return_" in
-              Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, param_type)];
+              Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, return_type)];
               Sil.Lvar pvar in
+        (* It is very confusing - same expression has two different types in two contexts:*)
+        (* 1. if passed as parameter it's RETURN_TYPE* since we are passing it as rvalue *)
+        (* 2. for return expression it's RETURN_TYPE since backend allows to treat it as lvalue*)
+        (*    of RETURN_TYPE *)
+        (* Implications: *)
+        (* Fields: field_deref_trans relies on it - if exp has RETURN_TYPE then *)
+        (*         it means that it's not lvalue in clang's AST (it'd be reference otherwise) *)
+        (* Methods: method_deref_trans actually wants a pointer to the object, which is*)
+        (*          equivalent of value of ret_param. Since ret_exp has type RETURN_TYPE,*)
+        (*          we optionally add pointer there to avoid backend confusion. *)
+        (*          It works either way *)
+        (* Passing by value: may cause problems - there needs to be extra Sil.Letderef, but*)
+        (*                   doing so would create problems with methods. Passing structs by*)
+        (*                   value doesn't work good anyway. This may need to be revisited later*)
         let ret_param = (var_exp, param_type) in
-        let ret_id' = match ret_id with [x] -> x | _ -> assert false in
-        let deref_instr = Sil.Letderef (ret_id', var_exp, return_type, sil_loc) in
-        [], params_sil @ [ret_param], [deref_instr], [var_exp]
-      else ret_id, params_sil, [], [] in
-    let call_instr = Sil.Call (ret_id_call, function_sil, params, sil_loc, call_flags) in
+        let ret_exp = (var_exp, return_type) in
+        [], params_sil @ [ret_param], [var_exp], [ret_exp]
+      else ret_id, params_sil, [], match ret_id with [x] -> [(Sil.Var x, return_type)] | _ -> [] in
+    let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
     { empty_res_trans with
-      ids = ret_id;
-      instrs = call_instr :: instrs_after_call;
-      initd_exps = initd_exps }
+      ids = ret_id';
+      instrs = [call_instr];
+      exps = ret_exps;
+      initd_exps = initd_exps;}
 
   let breakStmt_trans trans_state =
     match trans_state.continuation with
@@ -425,22 +440,35 @@ struct
       dereference_value_from_result sil_loc res_trans ~strip_pointer:true
     else res_trans
 
-  let field_deref_trans trans_state pre_trans_result decl_ref =
+  let field_deref_trans trans_state stmt_info pre_trans_result decl_ref =
     let open CContext in
     let context = trans_state.context in
+    let sil_loc = CLocation.get_sil_location stmt_info context in
     let name_info, _, type_ptr = get_info_from_decl_ref decl_ref in
     Printing.log_out "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
     let field_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
         "WARNING: in Field dereference we expect to know the object\n" in
+    let is_pointer_typ = match class_typ with
+      | Sil.Tptr _ -> true
+      | _ -> false in
     let class_typ =
       match class_typ with
       | Sil.Tptr (t, _) -> CTypes.expand_structured_type context.CContext.tenv t
       | t -> t in
     Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
     let field_name = General_utils.mk_class_field_name name_info in
-    let exp = Sil.Lfield (obj_sil, field_name, class_typ) in
-    { pre_trans_result with exps = [(exp, field_typ)] }
+    let field_exp = Sil.Lfield (obj_sil, field_name, class_typ) in
+    let exp, deref_ids, deref_instrs = if not is_pointer_typ then
+        (* There will be no LValueToRValue cast, but backend needs dereference there either way *)
+        let id = Ident.create_fresh Ident.knormal in
+        let deref_instr = Sil.Letderef (id, field_exp, field_typ, sil_loc) in
+        Sil.Var id, [id], [deref_instr]
+      else
+        field_exp, [], [] in
+    let instrs = pre_trans_result.instrs @ deref_instrs in
+    let ids = pre_trans_result.ids @ deref_ids in
+    { pre_trans_result with ids; instrs; exps = [(exp, field_typ)] }
 
   let method_deref_trans trans_state pre_trans_result decl_ref =
     let open CContext in
@@ -458,8 +486,14 @@ struct
         (* pre_trans_result.exps may contain expr for 'this' parameter:*)
         (* if it comes from CXXMemberCallExpr it will be there *)
         (* if it comes from CXXOperatorCallExpr it won't be there and will be added later *)
-        assert (IList.length pre_trans_result.exps <= 1);
-        pre_trans_result.exps)
+        (* In case of CXXMemberCallExpr it's possible that type of 'this' parameter *)
+        (* won't have a pointer - if that happens add a pointer to type of the object *)
+        match pre_trans_result.exps with
+        | [] -> []
+        | [(_, Sil.Tptr _ )] -> pre_trans_result.exps
+        | [(sil, typ)] -> [(sil, Sil.Tptr (typ, Sil.Pk_reference))]
+        | _ -> assert false
+      )
       else
         (* don't add 'this' expression for static methods *)
         [] in
@@ -517,7 +551,7 @@ struct
     | `EnumConstant -> enum_constant_trans trans_state decl_ref
     | `Function -> function_deref_trans trans_state decl_ref
     | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
-    | `Field | `ObjCIvar -> field_deref_trans trans_state pre_trans_result decl_ref
+    | `Field | `ObjCIvar -> field_deref_trans trans_state stmt_info pre_trans_result decl_ref
     | `CXXMethod | `CXXConstructor -> method_deref_trans trans_state pre_trans_result decl_ref
     | _ ->
         let print_error decl_kind =
@@ -741,7 +775,11 @@ struct
       | None ->
           let res_trans_call =
             match cast_trans context act_params sil_loc callee_pname_opt function_type with
-            | Some (id, instr, _) -> { empty_res_trans with ids = [id]; instrs = [instr] }
+            | Some (id, instr, _) ->
+                { empty_res_trans with
+                  ids = [id];
+                  instrs = [instr];
+                  exps = [(Sil.Var id, function_type)]; }
             | None ->
                 let call_flags = { Sil.cf_default with Sil.cf_is_objc_block = is_call_to_block; } in
                 create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
@@ -758,10 +796,7 @@ struct
                    Cg.add_edge context.cg procname callee_pname;
                  end
            | None -> ());
-          (match res_trans_call.ids with
-           | [] -> { res_trans_to_parent with exps =[] }
-           | [ret_id'] -> { res_trans_to_parent with exps =[(Sil.Var ret_id', function_type)] }
-           | _ -> assert false) (* by construction of red_id, we cannot be in this case *)
+          { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type =
@@ -799,10 +834,8 @@ struct
     let result_trans_to_parent =
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
     Cg.add_edge context.CContext.cg procname callee_pname;
-    match res_trans_call.ids with
-    | [] -> { result_trans_to_parent with exps = [] }
-    | [ret_id'] -> { result_trans_to_parent with exps = [(Sil.Var ret_id', function_type)] }
-    | _ -> assert false (* by construction of red_id, we cannot be in this case *)
+    { result_trans_to_parent with exps = res_trans_call.exps }
+
 
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
@@ -936,10 +969,8 @@ struct
         let all_res_trans = res_trans_subexpr_list @ [res_trans_block; res_trans_call] in
         let res_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
-        match res_trans_call.ids with
-        | [] -> { res_trans_to_parent with exps = [] }
-        | [ret_id'] -> { res_trans_to_parent with exps = [(Sil.Var ret_id', method_type)] }
-        | _ -> assert false (* by construction of red_id, we cannot be in this case *)
+        { res_trans_to_parent with exps = res_trans_call.exps }
+
 
   and dispatch_function_trans trans_state stmt_info stmt_list ei n =
     Printing.log_out "\n Call to a dispatch function treated as special case...\n";
@@ -1656,7 +1687,11 @@ struct
   and do_memb_ivar_ref_exp trans_state expr_info stmt_info stmt_list decl_ref  =
     let exp_stmt = extract_stmt_from_singleton stmt_list
         "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
-    let result_trans_exp_stmt = exec_with_lvalue_as_reference instruction trans_state exp_stmt in
+    (* Don't pass var_exp to child of MemberExpr - this may lead to initializing variable *)
+    (* with wrong value. For example, we don't want p to be initialized with X(1) for:*)
+    (* int p = X(1).field; *)
+    let trans_state' = { trans_state with var_exp = None } in
+    let result_trans_exp_stmt = exec_with_lvalue_as_reference instruction trans_state' exp_stmt in
     decl_ref_trans trans_state result_trans_exp_stmt stmt_info expr_info decl_ref
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
