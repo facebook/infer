@@ -91,26 +91,30 @@ let method_kind_compare k0 k1 =
   | Non_Static, _ -> -1
 
 (** A type is a pair (package, type_name) that is translated in a string package.type_name *)
-let java_type_to_string p verbosity =
+let java_type_to_string_verbosity p verbosity =
   match p with
   | (None, typ) -> typ
   | (Some p, cls) ->
       if is_verbose verbosity then p ^ "." ^ cls
       else cls
 
+let java_type_to_string p =
+  java_type_to_string_verbosity p Verbose
+
 (** Given a list of types, it creates a unique string of types separated by commas *)
 let rec java_param_list_to_string inputList verbosity =
   match inputList with
   | [] -> ""
-  | [head] -> java_type_to_string head verbosity
-  | head :: rest -> (java_type_to_string head verbosity) ^ "," ^ (java_param_list_to_string rest verbosity)
+  | [head] -> java_type_to_string_verbosity head verbosity
+  | head :: rest ->
+      (java_type_to_string_verbosity head verbosity) ^ "," ^ (java_param_list_to_string rest verbosity)
 
 (** It is the same as java_type_to_string, but Java return types are optional because of constructors without type *)
 let java_return_type_to_string j verbosity =
   match j.return_type with
   | None -> ""
   | Some typ ->
-      java_type_to_string typ verbosity
+      java_type_to_string_verbosity typ verbosity
 
 let java_type_compare (p1, c1) (p2, c2) =
   string_compare c1 c2 |> next mangled_compare p1 p2
@@ -211,7 +215,7 @@ let c_get_class t =
 
 (** Return the package.classname of a java procname. *)
 let java_get_class = function
-  | Java_method j -> java_type_to_string j.class_name Verbose
+  | Java_method j -> java_type_to_string j.class_name
   | _ -> assert false
 
 (** Return path components of a java class name *)
@@ -267,7 +271,8 @@ let java_get_parameters = function
 
 (** Return the parameters of a java procname as strings. *)
 let java_get_parameters_as_strings = function
-  | Java_method j -> IList.map (fun param -> java_type_to_string param Verbose) j.parameters
+  | Java_method j ->
+      IList.map (fun param -> java_type_to_string param) j.parameters
   | _ -> assert false
 
 (** Return true if the java procedure is static *)
@@ -284,7 +289,7 @@ let java_to_string ?(withclass = false) j verbosity =
          verbose is used for example to create unique filenames, non_verbose to create reports *)
       let return_type = java_return_type_to_string j verbosity in
       let params = java_param_list_to_string j.parameters verbosity in
-      let class_name = java_type_to_string j.class_name verbosity in
+      let class_name = java_type_to_string_verbosity j.class_name verbosity in
       let separator =
         match j.return_type, verbosity with
         | (None, _) -> ""
@@ -296,7 +301,7 @@ let java_to_string ?(withclass = false) j verbosity =
   | Simple -> (* methodname(...) or without ... if there are no parameters *)
       let cls_prefix =
         if withclass then
-          java_type_to_string j.class_name verbosity ^ "."
+          java_type_to_string_verbosity j.class_name verbosity ^ "."
         else "" in
       let params =
         match j.parameters with

@@ -156,6 +156,8 @@ val to_simplified_string : ?withclass: bool -> t -> string
 (** Convert a proc name into a unique identifier *)
 val to_unique_id : t -> string
 
+val java_type_to_string : java_type -> string
+
 (** Convert a proc name to a filename *)
 val to_filename : t -> string
 
