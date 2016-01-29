@@ -52,6 +52,7 @@ type t =
     proc_map: file_data Procname.Hash.t; (** map from procedure name to file data *)
     mutable active_opt : Procname.Set.t option; (** if not None, restrict the active procedures to the given set *)
     mutable procs_defined_in_several_files : Procname.Set.t; (** Procedures defined in more than one file *)
+    mutable source_files : DB.SourceFileSet.t; (** Source files in the execution environment *)
   }
 
 (** initial state, used to add cg's *)
@@ -66,6 +67,7 @@ let create procset_opt =
     proc_map = Procname.Hash.create 17;
     active_opt = procset_opt;
     procs_defined_in_several_files = Procname.Set.empty;
+    source_files = DB.SourceFileSet.empty;
   }
 
 (** check if a procedure is marked as active *)
@@ -92,6 +94,7 @@ let add_cg_exclude_fun (exe_env: t) (source_dir : DB.source_dir) exclude_fun =
   | None -> None
   | Some cg ->
       let source = Cg.get_source cg in
+      exe_env.source_files <- DB.SourceFileSet.add source exe_env.source_files;
       if exclude_fun source then None
       else
         let nLOC = Cg.get_nLOC cg in
@@ -195,7 +198,9 @@ let get_cfg exe_env pname =
 let iter_files f exe_env =
   let do_file _ file_data seen_files_acc =
     let fname = file_data.source in
-    if DB.SourceFileSet.mem fname seen_files_acc
+    if DB.SourceFileSet.mem fname seen_files_acc ||
+       (* only files added with add_cg* functions *)
+       not (DB.SourceFileSet.mem fname exe_env.source_files)
     then seen_files_acc
     else
       begin

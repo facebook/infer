@@ -65,6 +65,9 @@ val add_print_action : print_action -> unit
 (** return the delayed print actions *)
 val get_delayed_prints : unit -> print_action list
 
+(** set the delayed print actions *)
+val set_delayed_prints : print_action list -> unit
+
 (** reset the delayed print actions *)
 val reset_delayed_prints : unit -> unit
 

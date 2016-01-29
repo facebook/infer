@@ -90,6 +90,9 @@ let procedure_should_be_analyzed curr_pdesc proc_name =
 type global_state =
   {
     name_generator : Ident.NameGenerator.t;
+    current_source : DB.source_file;
+    html_formatter : F.formatter;
+    delayed_prints : L.print_action list;
   }
 
 let do_analysis curr_pdesc callee_pname =
@@ -102,11 +105,19 @@ let do_analysis curr_pdesc callee_pname =
         Procname.pp callee_pname;
 
     let preprocess () =
+      let old_state =
+        {
+          name_generator = Ident.NameGenerator.get_current ();
+          current_source = !DB.current_source;
+          html_formatter = !Printer.html_formatter;
+          delayed_prints = L.get_delayed_prints ();
+        } in
       incr nesting;
       let attributes_opt =
         Specs.proc_resolve_attributes callee_pname in
       Option.may
         (fun attribute ->
+           DB.current_source := attribute.ProcAttributes.loc.Location.file;
            let attribute_pname = attribute.ProcAttributes.proc_name in
            if not (Procname.equal callee_pname attribute_pname) then
              failwith ("ERROR: "^(Procname.to_string callee_pname)
@@ -118,14 +129,14 @@ let do_analysis curr_pdesc callee_pname =
         cg in
       Specs.reset_summary call_graph callee_pname attributes_opt;
       Specs.set_status callee_pname Specs.ACTIVE;
-      let old_state =
-        {
-          name_generator = Ident.NameGenerator.get_current ();
-        } in
+
       old_state in
 
     let restore old_state =
-      Ident.NameGenerator.set_current old_state.name_generator in
+      Ident.NameGenerator.set_current old_state.name_generator;
+      DB.current_source := old_state.current_source;
+      Printer.html_formatter := old_state.html_formatter;
+      L.set_delayed_prints old_state.delayed_prints in
 
     let postprocess () =
       decr nesting;

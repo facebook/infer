@@ -102,6 +102,10 @@ let reset_delayed_prints () =
 let get_delayed_prints () =
   !delayed_actions
 
+(** set the delayed print actions *)
+let set_delayed_prints new_delayed_actions =
+  delayed_actions := new_delayed_actions
+
 let do_print fmt fmt_string =
   F.fprintf fmt fmt_string
 

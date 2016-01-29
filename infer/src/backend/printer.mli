@@ -10,6 +10,9 @@
 
 (** Printers for the analysis results *)
 
+(** Current html formatter *)
+val html_formatter : Format.formatter ref
+
 (** return true if the node was visited during footprint and during re-execution*)
 val is_visited_phase : Cfg.Node.t -> bool * bool
 
