@@ -40,4 +40,10 @@ public class ConstructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("constructor_default_arg.cpp");
   }
+
+  @Test
+  public void testTempObjectDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("temp_object.cpp");
+  }
 }

@@ -659,7 +659,8 @@ let rec pointer_of_call_expr stmt =
   | MemberExpr(_, _, _, member_expr_info) ->
       let decl_ref = member_expr_info.Clang_ast_t.mei_decl_ref in
       Some decl_ref.Clang_ast_t.dr_decl_pointer
-  | CXXConstructExpr (_, _, _, cxx_construct_expr_info) ->
+  | CXXConstructExpr (_, _, _, cxx_construct_expr_info)
+  | CXXTemporaryObjectExpr (_, _, _, cxx_construct_expr_info) ->
       let decl_ref = cxx_construct_expr_info.xcei_decl_ref in
       Some decl_ref.Clang_ast_t.dr_decl_pointer
   | _ ->

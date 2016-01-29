@@ -11,3 +11,7 @@ void stat_cast() {
   int a;
   long long la = static_cast<long long>(a);
 }
+
+void functional_cast() {
+  int a = int(2 + 3.4);
+}

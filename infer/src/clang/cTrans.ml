@@ -857,21 +857,30 @@ struct
 
   and cxxConstructExpr_trans trans_state expr =
     match expr with
-    | Clang_ast_t.CXXConstructExpr (si, params_stmt, ei, cxx_constr_info) ->
+    | Clang_ast_t.CXXConstructExpr (si, params_stmt, ei, cxx_constr_info)
+    | Clang_ast_t.CXXTemporaryObjectExpr (si, params_stmt, ei, cxx_constr_info) ->
         let context = trans_state.context in
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
         let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
         let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
         let this_type = Sil.Tptr (class_type, Sil.Pk_pointer) in
-        let var_exp = match trans_state.var_exp with Some e -> e | None -> assert false in
+        let var_exp = match trans_state.var_exp with
+          | Some e -> e
+          | None ->
+              let tenv = trans_state.context.CContext.tenv in
+              let procdesc = trans_state.context.CContext.procdesc in
+              let pvar = mk_temp_sil_var tenv procdesc "__temp_construct_" in
+              Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, class_type)];
+              Sil.Lvar pvar in
         let this_res_trans = { empty_res_trans with
                                exps = [(var_exp, this_type)];
                                initd_exps = [var_exp];
                              } in
         let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
         let params_stmt' = assign_default_params params_stmt expr in
-        cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt' si
-          Sil.Tvoid
+        let res_trans = cxx_method_construct_call_trans trans_state_pri res_trans_callee
+            params_stmt' si Sil.Tvoid in
+        { res_trans with exps = [(var_exp, class_type)] }
     | _ -> assert false
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
@@ -1967,7 +1976,7 @@ struct
     | CXXOperatorCallExpr(stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
 
-    | CXXConstructExpr _ ->
+    | CXXConstructExpr _ | CXXTemporaryObjectExpr _ ->
         cxxConstructExpr_trans trans_state instr
 
     | ObjCMessageExpr(stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
@@ -2039,7 +2048,8 @@ struct
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind true
     | ImplicitCastExpr(stmt_info, stmt_list, expr_info, cast_kind)
     | CStyleCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _)
-    | CXXStaticCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _) ->
+    | CXXStaticCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _)
+    | CXXFunctionalCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _)->
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind false
 
     | IntegerLiteral(stmt_info, _, expr_info, integer_literal_info) ->
@@ -2154,7 +2164,7 @@ struct
         compoundLiteralExpr_trans trans_state stmt_info stmt_list expr_info
     | InitListExpr (stmt_info, stmts, expr_info) ->
         initListExpr_trans trans_state stmt_info expr_info stmts
-    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, cxx_bind_temp_expr_info) ->
+    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, cxx_bind_temp_expr_info)->
         (* right now we ignore this expression and try to translate the child node *)
         parenExpr_trans trans_state stmt_info stmt_list
     | s -> (Printing.log_stats
