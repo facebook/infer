@@ -2053,6 +2053,8 @@ struct
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind true
     | ImplicitCastExpr(stmt_info, stmt_list, expr_info, cast_kind)
     | CStyleCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _)
+    | CXXReinterpretCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _)
+    | CXXConstCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXStaticCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXFunctionalCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _)->
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind false
