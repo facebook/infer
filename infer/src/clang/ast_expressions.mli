@@ -37,7 +37,7 @@ val create_void_unsigned_long_type : type_ptr
 
 val create_void_void_type : type_ptr
 
-val create_class_type : string -> type_ptr
+val create_class_type : Clang_ast_types.class_info -> type_ptr
 
 val create_struct_type : string -> type_ptr
 

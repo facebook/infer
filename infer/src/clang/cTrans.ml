@@ -202,7 +202,7 @@ struct
     try
       f trans_state stmt
     with Self.SelfClassException class_name ->
-      let typ = CTypes_decl.type_name_to_sil_type trans_state.context.CContext.tenv class_name in
+      let typ = CTypes_decl.objc_class_name_to_sil_type trans_state.context.CContext.tenv class_name in
       let expanded_type = CTypes.expand_structured_type trans_state.context.CContext.tenv typ in
       { empty_res_trans with
         exps = [(Sil.Sizeof(expanded_type, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }

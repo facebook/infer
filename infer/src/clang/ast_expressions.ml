@@ -97,7 +97,7 @@ let create_void_unsigned_long_type =
 let create_void_void_type =
   new_constant_type_ptr ()
 
-let create_class_type class_name = `ClassType class_name
+let create_class_type class_info = `ClassType class_info
 
 let create_struct_type struct_name = `StructType struct_name
 
@@ -190,7 +190,7 @@ let make_obj_c_message_expr_info_instance sel = {
 
 let make_obj_c_message_expr_info_class selector tp pointer = {
   Clang_ast_t.omei_selector = selector;
-  omei_receiver_kind = `Class (create_class_type tp);
+  omei_receiver_kind = `Class (create_class_type (tp, `OBJC));
   omei_is_definition_found = false;
   omei_decl_pointer = pointer
 }
@@ -338,7 +338,7 @@ let build_OpaqueValueExpr si source_expr ei =
   let opaque_value_expr_info = { Clang_ast_t.ovei_source_expr = Some source_expr } in
   Clang_ast_t.OpaqueValueExpr (si, [], ei, opaque_value_expr_info)
 
-let pseudo_object_tp () = create_class_type CFrontend_config.pseudo_object_type
+let pseudo_object_tp () = create_class_type (CFrontend_config.pseudo_object_type, `OBJC)
 
 (* Create expression PseudoObjectExpr for 'o.m' *)
 let build_PseudoObjectExpr tp_m o_cast_decl_ref_exp mname =
@@ -515,7 +515,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   (* NSArray *objects = a *)
   let objects_array_DeclStmt init =
     let di = { empty_decl_info with Clang_ast_t.di_pointer = Ast_utils.get_fresh_pointer () } in
-    let tp = create_pointer_type (create_class_type CFrontend_config.nsarray_cl) in
+    let tp = create_pointer_type (create_class_type (CFrontend_config.nsarray_cl, `OBJC)) in
     (* init should be ImplicitCastExpr of array a *)
     let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (init) } in
     let objects_name = Ast_utils.make_name_decl CFrontend_config.objects in

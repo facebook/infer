@@ -145,7 +145,7 @@ let get_predefined_ms_retain_release class_name method_name mk_procname lang =
     if is_retain_method method_name || is_autorelease_method method_name
     then Ast_expressions.create_id_type else Ast_expressions.create_void_type in
   let class_name = CFrontend_config.nsobject_cl in
-  let class_type = Ast_expressions.create_class_type class_name in
+  let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
   let args = [(CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
     mk_procname lang args return_type [] (get_builtinname method_name)
@@ -154,7 +154,7 @@ let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname la
   let condition =
     method_name = CFrontend_config.init
     && class_name = CFrontend_config.nsautorelease_pool_cl in
-  let class_type = Ast_expressions.create_class_type class_name in
+  let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
     mk_procname lang [(CFrontend_config.self, class_type)]
     Ast_expressions.create_void_type [] None
@@ -163,7 +163,7 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
   let condition =
     (method_name = CFrontend_config.release || method_name = CFrontend_config.drain)
     && class_name = CFrontend_config.nsautorelease_pool_cl in
-  let class_type = Ast_expressions.create_class_type class_name in
+  let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
     mk_procname lang [(CFrontend_config.self, class_type)] Ast_expressions.create_void_type
     [] (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
@@ -172,7 +172,7 @@ let get_predefined_model_method_signature class_name method_name mk_procname lan
   match get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang with
   | Some ms -> Some ms
   | None ->
-      let class_type = Ast_expressions.create_class_type class_name in
+      let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
       match get_predefined_ms_retain_release class_type method_name mk_procname lang with
       | Some ms -> Some ms
       | None ->

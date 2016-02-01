@@ -15,12 +15,13 @@
 (* Type pointers *)
 
 exception Not_Clang_Pointer
+type class_info = string * [`CPP | `OBJC]
 
 type t_ptr = [
   | `TPtr of int
   | `Prebuilt of int
   | `PointerOf of t_ptr
-  | `ClassType of string
+  | `ClassType of class_info
   | `StructType of string
   | `DeclPtr of int
   | `ErrorType]
@@ -36,7 +37,7 @@ let rec type_ptr_to_string type_ptr = match type_ptr with
   | `TPtr raw -> "clang_ptr_" ^ (string_of_int raw)
   | `Prebuilt raw -> "prebuilt_" ^ (string_of_int raw)
   | `PointerOf typ -> "pointer_of_" ^ type_ptr_to_string typ
-  | `ClassType name -> "class_name_" ^ name
+  | `ClassType (name, _) -> "class_name_" ^ name
   | `StructType name -> "struct_name_" ^ name
   | `DeclPtr raw -> "decl_ptr_" ^ (string_of_int raw)
   | `ErrorType -> "error_type"

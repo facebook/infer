@@ -30,4 +30,4 @@ val get_type_curr_class_objc : Sil.tenv -> CContext.curr_class -> Sil.typ
 
 val get_type_from_expr_info : Clang_ast_t.expr_info -> Sil.tenv -> Sil.typ
 
-val type_name_to_sil_type : Sil.tenv -> string -> Sil.typ
+val objc_class_name_to_sil_type : Sil.tenv -> string -> Sil.typ

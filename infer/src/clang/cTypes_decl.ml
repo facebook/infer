@@ -231,9 +231,8 @@ and add_types_from_decl_to_tenv tenv decl =
 and type_ptr_to_sil_type tenv tp =
   CType_to_sil_type.type_ptr_to_sil_type add_types_from_decl_to_tenv tenv tp
 
-
-let type_name_to_sil_type tenv name =
-  type_ptr_to_sil_type tenv (Ast_expressions.create_class_type name)
+let objc_class_name_to_sil_type tenv name =
+  type_ptr_to_sil_type tenv (Ast_expressions.create_class_type (name, `OBJC))
 
 let get_type_from_expr_info ei tenv =
   let tp = ei.Clang_ast_t.ei_type_ptr in
