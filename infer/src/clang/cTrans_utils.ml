@@ -674,12 +674,12 @@ let get_decl_from_call_expr stmt =
   | Some pointer -> Ast_utils.get_decl pointer
   | _ -> None
 
-
 let assign_default_params params_stmt call_stmt =
   let open Clang_ast_t in
   match get_decl_from_call_expr call_stmt with
   | Some FunctionDecl (_, name_info, _, fdecl_info)
   | Some CXXMethodDecl (_, name_info, _, fdecl_info, _)
+  | Some CXXConversionDecl (_, name_info, _, fdecl_info, _)
   | Some CXXConstructorDecl (_, name_info, _, fdecl_info, _) ->
       (let get_param_default_val param_decl = match param_decl with
           | ParmVarDecl (_, _, _, var_decl_info) -> var_decl_info.vdi_init_expr

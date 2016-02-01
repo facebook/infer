@@ -78,6 +78,7 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
 
      | CXXMethodDecl (decl_info, name_info, type_ptr, function_decl_info, _)
      | CXXConstructorDecl (decl_info, name_info, type_ptr, function_decl_info, _)
+     | CXXConversionDecl (decl_info, name_info, type_ptr, function_decl_info, _)
      | CXXDestructorDecl (decl_info, name_info, type_ptr, function_decl_info, _) ->
          (* di_parent_pointer has pointer to lexical context such as class.*)
          (* If it's not defined, then it's the same as parent in AST *)
@@ -100,7 +101,8 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
   | CXXRecordDecl (decl_info, _, _, _, decl_list, _, _, _)
   | RecordDecl (decl_info, _, _, _, decl_list, _, _) when not decl_info.di_is_implicit ->
       let is_method_decl decl = match decl with
-        | CXXMethodDecl _ | CXXConstructorDecl _ | CXXDestructorDecl _ | FunctionTemplateDecl _ ->
+        | CXXMethodDecl _ | CXXConstructorDecl _ | CXXConversionDecl _
+        | CXXDestructorDecl _ | FunctionTemplateDecl _ ->
             true
         | _ -> false in
       let method_decls, no_method_decls = IList.partition is_method_decl decl_list in

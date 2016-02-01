@@ -157,6 +157,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
   | CXXConstructorDecl (decl_info, name_info, tp, fdi, mdi), _
+  | CXXConversionDecl (decl_info, name_info, tp, fdi, mdi), _
   | CXXDestructorDecl (decl_info, name_info, tp, fdi, mdi), _ ->
       let method_name = Ast_utils.get_unqualified_name name_info in
       let class_name = Ast_utils.get_class_name_from_member name_info in

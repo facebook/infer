@@ -552,7 +552,8 @@ struct
     | `Function -> function_deref_trans trans_state decl_ref
     | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
     | `Field | `ObjCIvar -> field_deref_trans trans_state stmt_info pre_trans_result decl_ref
-    | `CXXMethod | `CXXConstructor -> method_deref_trans trans_state pre_trans_result decl_ref
+    | `CXXMethod | `CXXConstructor | `CXXConversion ->
+        method_deref_trans trans_state pre_trans_result decl_ref
     | _ ->
         let print_error decl_kind =
           Printing.log_stats
