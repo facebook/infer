@@ -76,7 +76,8 @@ let get_or_set_pvar_type context var typ =
   try
     let (pvar, otyp, _) = (JBir.VarMap.find var var_map) in
     let tenv = get_tenv context in
-    if Prover.check_subtype tenv typ otyp || (Prover.check_subtype tenv otyp typ) then
+    if Prover.Subtyping_check.check_subtype tenv typ otyp ||
+       Prover.Subtyping_check.check_subtype tenv otyp typ then
       set_var_map context (JBir.VarMap.add var (pvar, otyp, typ) var_map)
     else set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
     (pvar, typ)

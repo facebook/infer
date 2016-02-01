@@ -325,8 +325,8 @@ let rec lub tenv t1 t2 =
   let t1 = Sil.expand_type tenv t1 in
   let t2 = Sil.expand_type tenv t2 in
   if (Sil.typ_equal t1 t2) then t1
-  else if (Prover.check_subtype tenv t1 t2) then t2
-  else if (Prover.check_subtype tenv t2 t1) then t1
+  else if (Prover.Subtyping_check.check_subtype tenv t1 t2) then t2
+  else if (Prover.Subtyping_check.check_subtype tenv t2 t1) then t1
   else
     let st1 = (super tenv t1) in
     let st2 = (super tenv t2) in

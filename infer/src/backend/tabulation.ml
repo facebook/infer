@@ -494,30 +494,26 @@ let hpred_star_typing (hpred1 : Sil.hpred) (e2, te2) : Sil.hpred =
 
 (** Implementation of [*] between predicates and typings *)
 let sigma_star_typ (sigma1 : Sil.hpred list) (typings2 : (Sil.exp * Sil.exp) list) : Sil.hpred list =
-  if !Config.Experiment.activate_subtyping_in_cpp || !Config.curr_language = Config.Java then
-    begin
-      let typing_lhs_compare (e1, _) (e2, _) = Sil.exp_compare e1 e2 in
-      let sigma1 = IList.stable_sort hpred_lhs_compare sigma1 in
-      let typings2 = IList.stable_sort typing_lhs_compare typings2 in
-      let rec star sg1 typ2 : Sil.hpred list =
-        match sg1, typ2 with
-        | [], _ -> []
-        | sigma1,[] -> sigma1
-        | hpred1:: sigma1', typing2:: typings2' ->
-            begin
-              match hpred_typing_lhs_compare hpred1 typing2 with
-              | 0 -> hpred_star_typing hpred1 typing2 :: star sigma1' typings2'
-              | n when n < 0 -> hpred1 :: star sigma1' typ2
-              | _ -> star sg1 typings2'
-            end in
-      try star sigma1 typings2
-      with exn when exn_not_failure exn ->
-        L.d_str "cannot star ";
-        Prop.d_sigma sigma1; L.d_str " and "; Prover.d_typings typings2;
-        L.d_ln ();
-        raise (Prop.Cannot_star (try assert false with Assert_failure x -> x))
-    end
-  else sigma1
+  let typing_lhs_compare (e1, _) (e2, _) = Sil.exp_compare e1 e2 in
+  let sigma1 = IList.stable_sort hpred_lhs_compare sigma1 in
+  let typings2 = IList.stable_sort typing_lhs_compare typings2 in
+  let rec star sg1 typ2 : Sil.hpred list =
+    match sg1, typ2 with
+    | [], _ -> []
+    | sigma1,[] -> sigma1
+    | hpred1:: sigma1', typing2:: typings2' ->
+        begin
+          match hpred_typing_lhs_compare hpred1 typing2 with
+          | 0 -> hpred_star_typing hpred1 typing2 :: star sigma1' typings2'
+          | n when n < 0 -> hpred1 :: star sigma1' typ2
+          | _ -> star sg1 typings2'
+        end in
+  try star sigma1 typings2
+  with exn when exn_not_failure exn ->
+    L.d_str "cannot star ";
+    Prop.d_sigma sigma1; L.d_str " and "; Prover.d_typings typings2;
+    L.d_ln ();
+    raise (Prop.Cannot_star (try assert false with Assert_failure x -> x))
 
 (** [prop_footprint_add_pi_sigma_starfld_sigma prop pi sigma missing_fld] extends the footprint of [prop] with [pi,sigma] and extends the fields of |-> with [missing_fld] *)
 let prop_footprint_add_pi_sigma_starfld_sigma (prop : 'a Prop.t) pi_new sigma_new missing_fld missing_typ : Prop.normal Prop.t option =

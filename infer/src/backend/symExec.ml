@@ -1517,11 +1517,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
       match actual_pars, formal_types with
       | [], [] -> actual_pars
       | (e, t_e):: etl', t:: tl' ->
-          (e,
-           if
-             (!Config.Experiment.activate_subtyping_in_cpp ||
-              !Config.curr_language = Config.Java)
-           then t_e else t) :: comb etl' tl'
+          (e, t_e) :: comb etl' tl'
       | _,[] ->
           Errdesc.warning_err
             (State.get_loc ())
@@ -1885,7 +1881,8 @@ module ModelBuiltins = struct
                     | _ -> false) (Prop.get_sigma prop) in
                 match hpred with
                 | Sil.Hpointsto(_, _, texp1) ->
-                    let pos_type_opt, neg_type_opt = Prover.subtype_case_analysis tenv texp1 texp2 in
+                    let pos_type_opt, neg_type_opt =
+                      Prover.Subtyping_check.subtype_case_analysis tenv texp1 texp2 in
                     let mk_res type_opt res_e = match type_opt with
                       | None -> []
                       | Some texp1' ->

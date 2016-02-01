@@ -1446,113 +1446,157 @@ let expand_hpred_pointer calc_index_frame hpred : bool * bool * Sil.hpred =
     | _ -> changed, calc_index_frame, hpred in
   expand false calc_index_frame hpred
 
-let object_type = Typename.Java.from_string "java.lang.Object"
+module Subtyping_check =
+struct
 
-let serializable_type = Typename.Java.from_string "java.io.Serializable"
+  let object_type = Typename.Java.from_string "java.lang.Object"
 
-let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
+  let serializable_type = Typename.Java.from_string "java.io.Serializable"
 
-let is_interface tenv class_name =
-  match Sil.tenv_lookup tenv class_name with
-  | Some (Sil.Tstruct ( { Sil.csu = Csu.Class _; struct_name = Some _ } as struct_typ )) ->
-      (IList.length struct_typ.Sil.instance_fields = 0) &&
-      (IList.length struct_typ.Sil.def_methods = 0)
-  | _ -> false
+  let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
 
-(** check if c1 is a subclass of c2 *)
-let check_subclass_tenv tenv c1 c2 =
-  let rec check cn =
-    Typename.equal cn c2 || Typename.equal c2 object_type ||
-    match Sil.tenv_lookup tenv cn with
-    | Some (Sil.Tstruct { Sil.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
-        IList.exists check superclasses
-    | _ -> false in
-  check c1
+  let is_interface tenv class_name =
+    match Sil.tenv_lookup tenv class_name with
+    | Some (Sil.Tstruct ( { Sil.csu = Csu.Class Csu.Java; struct_name = Some _ } as struct_typ )) ->
+        (IList.length struct_typ.Sil.instance_fields = 0) &&
+        (IList.length struct_typ.Sil.def_methods = 0)
+    | _ -> false
 
-let check_subclass tenv c1 c2 =
-  let f = check_subclass_tenv tenv in
-  Sil.Subtype.check_subtype f c1 c2
+  let is_root_class class_name =
+    match class_name with
+    | Typename.TN_csu (Csu.Class Csu.Java, _) ->
+        Typename.equal class_name object_type
+    | Typename.TN_csu (Csu.Class Csu.CPP, _) ->
+        false
+    | _ -> false (* TODO add ObjC case *)
 
-(** check that t1 and t2 are the same primitive type *)
-let check_subtype_basic_type t1 t2 =
-  match t2 with
-  | (Sil.Tint Sil.IInt) | (Sil.Tint Sil.IBool)
-  | (Sil.Tint Sil.IChar) | (Sil.Tfloat Sil.FDouble)
-  | (Sil.Tfloat Sil.FFloat) | (Sil.Tint Sil.ILong)
-  | (Sil.Tint Sil.IShort) -> Sil.typ_equal t1 t2
-  | _ -> false
+  (** check if c1 is a subclass of c2 *)
+  let check_subclass_tenv tenv c1 c2 =
+    let rec check cn =
+      Typename.equal cn c2 || is_root_class c2 ||
+      match Sil.tenv_lookup tenv cn with
+      | Some (Sil.Tstruct { Sil.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
+          IList.exists check superclasses
+      | _ -> false in
+    check c1
 
-(** check if t1 is a subtype of t2 *)
-let rec check_subtype tenv t1 t2 =
-  match t1, t2 with
-  | Sil.Tstruct { Sil.csu = Csu.Class ck1; struct_name = Some c1 },
-    Sil.Tstruct { Sil.csu = Csu.Class ck2; struct_name = Some c2 } ->
-      let cn1 = Typename.TN_csu (Csu.Class ck1, c1)
-      and cn2 = Typename.TN_csu (Csu.Class ck2, c2) in
-      (check_subclass tenv cn1 cn2)
+  let check_subclass tenv c1 c2 =
+    let f = check_subclass_tenv tenv in
+    Sil.Subtype.check_subtype f c1 c2
 
-  | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
-      check_subtype tenv dom_type1 dom_type2
+  (** check that t1 and t2 are the same primitive type *)
+  let check_subtype_basic_type t1 t2 =
+    match t2 with
+    | Sil.Tint Sil.IInt | Sil.Tint Sil.IBool
+    | Sil.Tint Sil.IChar | Sil.Tfloat Sil.FDouble
+    | Sil.Tfloat Sil.FFloat | Sil.Tint Sil.ILong
+    | Sil.Tint Sil.IShort -> Sil.typ_equal t1 t2
+    | _ -> false
 
-  | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
-      check_subtype tenv dom_type1 dom_type2
+  (** check if t1 is a subtype of t2, in Java *)
+  let rec check_subtype_java tenv t1 t2 =
+    match t1, t2 with
+    | Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c1 },
+      Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
+        let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1)
+        and cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
+        check_subclass tenv cn1 cn2
 
-  | Sil.Tarray _, Sil.Tstruct { Sil.csu = Csu.Class ck2; struct_name = Some c2 } ->
-      let cn2 = Typename.TN_csu (Csu.Class ck2, c2) in
-      Typename.equal cn2 serializable_type
-      || Typename.equal cn2 cloneable_type
-      || Typename.equal cn2 object_type
+    | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
+        check_subtype_java tenv dom_type1 dom_type2
 
-  | _ -> (check_subtype_basic_type t1 t2)
+    | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
+        check_subtype_java tenv dom_type1 dom_type2
 
-let rec case_analysis_type tenv (t1, st1) (t2, st2) =
-  match t1, t2 with
-  | Sil.Tstruct { Sil.csu = Csu.Class ck1; struct_name = Some c1 },
-    Sil.Tstruct { Sil.csu = Csu.Class ck2; struct_name = Some c2 } ->
-      let cn1 = Typename.TN_csu (Csu.Class ck1, c1)
-      and cn2 = Typename.TN_csu (Csu.Class ck2, c2) in
-      (Sil.Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv) (is_interface tenv))
+    | Sil.Tarray _, Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
+        let cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
+        Typename.equal cn2 serializable_type
+        || Typename.equal cn2 cloneable_type
+        || Typename.equal cn2 object_type
+    | _ -> check_subtype_basic_type t1 t2
 
-  | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
-      (case_analysis_type tenv (dom_type1, st1) (dom_type2, st2))
+  (** check if t1 is a subtype of t2 *)
+  let check_subtype tenv t1 t2 =
+    if !Config.curr_language = Config.Java then
+      check_subtype_java tenv t1 t2
+    else match t1, t2 with
+      | Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c1 },
+        Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c2 } ->
+          let cn1 = Typename.TN_csu (Csu.Class Csu.CPP, c1)
+          and cn2 = Typename.TN_csu (Csu.Class Csu.CPP, c2) in
+          check_subclass tenv cn1 cn2
+      | _ -> false (* TODO ObjC case *)
 
-  | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
-      (case_analysis_type tenv (dom_type1, st1) (dom_type2, st2))
+  let rec case_analysis_type_java tenv (t1, st1) (t2, st2) =
+    match t1, t2 with
+    | Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c1 },
+      Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c2 } ->
+        let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1)
+        and cn2 = Typename.TN_csu (Csu.Class Csu.Java, c2) in
+        Sil.Subtype.case_analysis (cn1, st1) (cn2, st2)
+          (check_subclass tenv) (is_interface tenv)
 
-  | Sil.Tstruct { Sil.csu = Csu.Class ck1; struct_name = Some c1 }, Sil.Tarray _ ->
-      let cn1 = Typename.TN_csu (Csu.Class ck1, c1) in
-      if (Typename.equal cn1 serializable_type
-          || Typename.equal cn1 cloneable_type
-          || Typename.equal cn1 object_type) &&
-         (st1 <> Sil.Subtype.exact) then (Some st1, None)
-      else (None, Some st1)
+    | Sil.Tarray (dom_type1, _), Sil.Tarray (dom_type2, _) ->
+        case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
 
-  | _ -> if (check_subtype_basic_type t1 t2) then (Some st1, None)
-      else (None, Some st1)
+    | Sil.Tptr (dom_type1, _), Sil.Tptr (dom_type2, _) ->
+        case_analysis_type_java tenv (dom_type1, st1) (dom_type2, st2)
 
-(** perform case analysis on [texp1 <: texp2], and return the updated types in the true and false case, if they are possible *)
-let subtype_case_analysis tenv texp1 texp2 =
-  match texp1, texp2 with
-  | Sil.Sizeof (t1, st1), Sil.Sizeof (t2, st2) ->
-      begin
-        let pos_opt, neg_opt = case_analysis_type tenv (t1, st1) (t2, st2) in
-        let pos_type_opt = match pos_opt with
-          | None -> None
-          | Some st1' ->
-              let t1' = if (check_subtype tenv t1 t2) then t1 else t2 in
-              Some (Sil.Sizeof (t1', st1')) in
-        let neg_type_opt = match neg_opt with
-          | None -> None
-          | Some st1' -> Some (Sil.Sizeof (t1, st1')) in
-        pos_type_opt, neg_type_opt
-      end
-  | _ -> (* don't know, consider both possibilities *)
-      Some texp1, Some texp1
+    | Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some c1 }, Sil.Tarray _ ->
+        let cn1 = Typename.TN_csu (Csu.Class Csu.Java, c1) in
+        if (Typename.equal cn1 serializable_type
+            || Typename.equal cn1 cloneable_type
+            || Typename.equal cn1 object_type) &&
+           st1 <> Sil.Subtype.exact then Some st1, None
+        else (None, Some st1)
+
+    | _ -> if check_subtype_basic_type t1 t2 then Some st1, None
+        else None, Some st1
+
+  let case_analysis_type tenv (t1, st1) (t2, st2) =
+    if !Config.curr_language = Config.Java then
+      case_analysis_type_java tenv (t1, st1) (t2, st2)
+    else match t1, t2 with
+      | Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c1 },
+        Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c2 } ->
+          let cn1 = Typename.TN_csu (Csu.Class Csu.CPP, c1)
+          and cn2 = Typename.TN_csu (Csu.Class Csu.CPP, c2) in
+          (* cn1 <: cn2 or cn2 <: cn1 is implied in Java when we get two types compared *)
+          (* that get through the type system, but not in C++ because of multiple inheritance, *)
+          (* and the algorithm will only work correctly if this is the case *)
+          if check_subclass tenv cn1 cn2 || check_subclass tenv cn2 cn1 then
+            Sil.Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv)
+              (is_interface tenv)
+          else None, Some st1
+      | _ -> None, Some st1 (* TODO ObjC case *)
+
+  (** perform case analysis on [texp1 <: texp2], and return the updated types in the true and false
+      case, if they are possible *)
+  let subtype_case_analysis tenv texp1 texp2 =
+    match texp1, texp2 with
+    | Sil.Sizeof (t1, st1), Sil.Sizeof (t2, st2) ->
+        begin
+          let pos_opt, neg_opt = case_analysis_type tenv (t1, st1) (t2, st2) in
+          let pos_type_opt = match pos_opt with
+            | None -> None
+            | Some st1' ->
+                let t1' = if check_subtype tenv t1 t2 then t1 else t2 in
+                Some (Sil.Sizeof (t1', st1')) in
+          let neg_type_opt = match neg_opt with
+            | None -> None
+            | Some st1' -> Some (Sil.Sizeof (t1, st1')) in
+          pos_type_opt, neg_type_opt
+        end
+    | _ -> (* don't know, consider both possibilities *)
+        Some texp1, Some texp1
+end
 
 let cast_exception tenv texp1 texp2 e1 subs =
   let _ = match texp1, texp2 with
     | Sil.Sizeof (t1, st1), Sil.Sizeof (t2, st2) ->
-        if (!Config.developer_mode) || ((Sil.Subtype.is_cast st2) && not (check_subtype tenv t1 t2)) then
+        if !Config.developer_mode ||
+           (Sil.Subtype.is_cast st2 &&
+            not (Subtyping_check.check_subtype tenv t1 t2)) then
           ProverState.checks := Class_cast_check (texp1, texp2, e1) :: !ProverState.checks
     | _ -> () in
   raise (IMPL_EXC ("class cast exception", subs, EXC_FALSE))
@@ -1567,7 +1611,7 @@ let get_overrides_of tenv supertype pname =
     | _ -> false in
   let gather_overrides tname typ overrides_acc =
     (* get all types in the type environment that are non-reflexive subtypes of [supertype] *)
-    if not (Sil.typ_equal typ supertype) && check_subtype tenv typ supertype then
+    if not (Sil.typ_equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
       (* only select the ones that implement [pname] as overrides *)
       let resolved_pname = Procname.java_replace_class pname (Typename.name tname) in
       if typ_has_method resolved_pname typ then (typ, resolved_pname) :: overrides_acc
@@ -1588,11 +1632,15 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
     | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tstruct _, _)
     | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tarray _, _)
     | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tstruct _, _)
-    | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tarray _, _) -> true
+    | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tarray _, _) ->
+        !Config.curr_language = Config.Java
+
+    | Sil.Sizeof (typ1, _), Sil.Sizeof (typ2, _) -> Sil.is_cpp_class typ1 && Sil.is_cpp_class typ2
+    (* TODO ObjC case *)
     | _ -> false in
-  if !Config.curr_language = Config.Java && types_subject_to_cast then
+  if types_subject_to_cast then
     begin
-      let pos_type_opt, neg_type_opt = subtype_case_analysis tenv texp1 texp2 in
+      let pos_type_opt, neg_type_opt = Subtyping_check.subtype_case_analysis tenv texp1 texp2 in
       let has_changed = match pos_type_opt with
         | Some texp1' ->
             not (texp_equal_modulo_subtype_flag texp1' texp1)
@@ -1626,7 +1674,7 @@ let sexp_imply_preprocess se1 texp1 se2 = match se1, texp1, se2 with
       se1'
   | _ -> se1
 
-(** handle parameter subtype for java: when the type of a callee variable in the caller is a strict subtype
+(** handle parameter subtype: when the type of a callee variable in the caller is a strict subtype
     of the one in the callee, add a type frame and type missing *)
 let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2) =
   let is_callee = match e1 with
@@ -1651,9 +1699,11 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
           let t1, t2 = Sil.expand_type tenv _t1, Sil.expand_type tenv _t2 in
           match type_rhs e2' with
           | Some (t2_ptsto , sub2) ->
-              if not (Sil.typ_equal t1 t2) && check_subtype tenv t1 t2
+              if not (Sil.typ_equal t1 t2) && Subtyping_check.check_subtype tenv t1 t2
               then begin
-                let pos_type_opt, _ = subtype_case_analysis tenv (Sil.Sizeof(t1, Sil.Subtype.subtypes)) (Sil.Sizeof(t2_ptsto, sub2)) in
+                let pos_type_opt, _ =
+                  Subtyping_check.subtype_case_analysis tenv
+                    (Sil.Sizeof (t1, Sil.Subtype.subtypes)) (Sil.Sizeof (t2_ptsto, sub2)) in
                 match pos_type_opt with
                 | Some t1_noptr ->
                     ProverState.add_frame_typ (e1', t1_noptr);
@@ -1663,10 +1713,7 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
           | None -> ()
         end
     | _ -> () in
-  if is_callee &&
-     !Config.footprint &&
-     (!Config.Experiment.activate_subtyping_in_cpp || !Config.curr_language = Config.Java)
-  then add_subtype ()
+  if is_callee && !Config.footprint then add_subtype ()
 
 let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 : subst2 * Prop.normal Prop.t = match hpred2 with
   | Sil.Hpointsto (_e2, se2, texp2) ->

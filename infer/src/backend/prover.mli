@@ -92,18 +92,21 @@ val find_minimum_pure_cover : (Sil.atom list * 'a) list -> (Sil.atom list * 'a) 
 (** Computer an upper bound of an expression *)
 val compute_upper_bound_of_exp : Prop.normal Prop.t -> Sil.exp -> Sil.Int.t option
 
-
 (** {2 Subtype checking} *)
 
-(** check_subtype t1 t2 checks whether t1 is a subtype of t2, given the type environment tenv. *)
-val check_subtype : Sil.tenv -> Sil.typ -> Sil.typ -> bool
+module Subtyping_check :
+sig
 
-(** subtype_case_analysis tenv tecp1 texp2 performs case analysis on [texp1 <: texp2],
-    and returns the updated types in the true and false case, if they are possible *)
-val subtype_case_analysis : Sil.tenv -> Sil.exp -> Sil.exp -> Sil.exp option * Sil.exp option
+  (** check_subtype t1 t2 checks whether t1 is a subtype of t2, given the type environment tenv. *)
+  val check_subtype : Sil.tenv -> Sil.typ -> Sil.typ -> bool
+
+  (** subtype_case_analysis tenv tecp1 texp2 performs case analysis on [texp1 <: texp2],
+      and returns the updated types in the true and false case, if they are possible *)
+  val subtype_case_analysis : Sil.tenv -> Sil.exp -> Sil.exp -> Sil.exp option * Sil.exp option
+
+end
 
 val get_overrides_of : Sil.tenv -> Sil.typ -> Procname.t -> (typ * Procname.t) list
-
 
 
 

@@ -367,9 +367,6 @@ let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
 
 module Experiment = struct
 
-  (** if true, activate the subtyping routines in C++ as well, not just in Java *)
-  let activate_subtyping_in_cpp = ref false
-
   (** if true, a precondition with e.g. index 3 in an array does not require the caller to have index 3 too
       this mimics what happens with direct access to the array without a procedure call, where the index is simply materialized if not there *)
   let allow_missing_index_in_proc_call = ref true

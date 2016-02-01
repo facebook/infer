@@ -376,7 +376,7 @@ let is_closeable program tenv typ =
   let closeable_typ = get_class_type program tenv closeable_cn in
   let autocloseable_cn = JBasics.make_cn "java.lang.AutoCloseable" in
   let autocloseable_typ = get_class_type program tenv autocloseable_cn in
-  let implements t = Prover.check_subtype tenv typ t in
+  let implements t = Prover.Subtyping_check.check_subtype tenv typ t in
   implements closeable_typ || implements autocloseable_typ
 
 
