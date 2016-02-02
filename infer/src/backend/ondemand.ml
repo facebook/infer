@@ -89,11 +89,28 @@ let procedure_should_be_analyzed curr_pdesc proc_name =
 
 type global_state =
   {
-    name_generator : Ident.NameGenerator.t;
     current_source : DB.source_file;
-    html_formatter : F.formatter;
     delayed_prints : L.print_action list;
+    footprint_mode : bool;
+    html_formatter : F.formatter;
+    name_generator : Ident.NameGenerator.t;
   }
+
+let save_global_state () =
+  {
+    current_source = !DB.current_source;
+    delayed_prints = L.get_delayed_prints ();
+    footprint_mode = !Config.footprint;
+    html_formatter = !Printer.html_formatter;
+    name_generator = Ident.NameGenerator.get_current ();
+  }
+
+let restore_global_state st =
+  DB.current_source := st.current_source;
+  L.set_delayed_prints st.delayed_prints;
+  Config.footprint := st.footprint_mode;
+  Printer.html_formatter := st.html_formatter;
+  Ident.NameGenerator.set_current st.name_generator
 
 let do_analysis curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
@@ -105,13 +122,6 @@ let do_analysis curr_pdesc callee_pname =
         Procname.pp callee_pname;
 
     let preprocess () =
-      let old_state =
-        {
-          name_generator = Ident.NameGenerator.get_current ();
-          current_source = !DB.current_source;
-          html_formatter = !Printer.html_formatter;
-          delayed_prints = L.get_delayed_prints ();
-        } in
       incr nesting;
       let attributes_opt =
         Specs.proc_resolve_attributes callee_pname in
@@ -128,15 +138,7 @@ let do_analysis curr_pdesc callee_pname =
         Cg.add_defined_node cg callee_pname;
         cg in
       Specs.reset_summary call_graph callee_pname attributes_opt;
-      Specs.set_status callee_pname Specs.ACTIVE;
-
-      old_state in
-
-    let restore old_state =
-      Ident.NameGenerator.set_current old_state.name_generator;
-      DB.current_source := old_state.current_source;
-      Printer.html_formatter := old_state.html_formatter;
-      L.set_delayed_prints old_state.delayed_prints in
+      Specs.set_status callee_pname Specs.ACTIVE in
 
     let postprocess () =
       decr nesting;
@@ -148,17 +150,18 @@ let do_analysis curr_pdesc callee_pname =
       Specs.add_summary callee_pname summary';
       Checkers.ST.store_summary callee_pname in
 
-    let old_state = preprocess () in
+    let old_state = save_global_state () in
+    preprocess ();
     try
       analyze_proc callee_pname;
       postprocess ();
-      restore old_state;
+      restore_global_state old_state;
     with e ->
       L.stderr "ONDEMAND EXCEPTION %a %s %s@."
         Procname.pp callee_pname
         (Printexc.to_string e)
         (Printexc.get_backtrace ());
-      restore old_state;
+      restore_global_state old_state;
       raise e in
 
   match !callbacks_ref with
