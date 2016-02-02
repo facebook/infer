@@ -1822,7 +1822,7 @@ module ModelBuiltins = struct
       non_null_case
     else if ((IList.length non_null_case) > 0) && (is_undefined_opt prop n_lexp) then
       non_null_case
-    else null_case@non_null_case
+    else null_case @ non_null_case
 
   let execute___get_type_of cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -1870,6 +1870,18 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let val1, __prop = exp_norm_check_arith pname _prop _val1 in
         let texp2, prop = exp_norm_check_arith pname __prop _texp2 in
+        let is_cast_to_reference =
+          match typ1 with
+          | Sil.Tptr (base_typ, Sil.Pk_reference) -> true
+          | _ -> false in
+        (* In Java, we throw an exception, in C++ we return 0 in case of a cast to a pointer, *)
+        (* and throw an exception in case of a cast to a reference. *)
+        let should_throw_exception =
+          !Config.curr_language = Config.Java || is_cast_to_reference in
+        let deal_with_failed_cast val1 typ1 texp1 texp2 =
+          Tabulation.raise_cast_exception
+            (try assert false with Assert_failure ml_loc -> ml_loc)
+            None texp1 texp2 val1 in
         let exe_one_prop prop =
           if Sil.exp_equal texp2 Sil.exp_zero then
             [(return_result Sil.exp_zero prop ret_ids, path)]
@@ -1877,10 +1889,10 @@ module ModelBuiltins = struct
             begin
               try
                 let hpred = IList.find (function
-                    | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
+                    | Sil.Hpointsto (e1, _, _) -> Sil.exp_equal e1 val1
                     | _ -> false) (Prop.get_sigma prop) in
                 match hpred with
-                | Sil.Hpointsto(_, _, texp1) ->
+                | Sil.Hpointsto (_, _, texp1) ->
                     let pos_type_opt, neg_type_opt =
                       Prover.Subtyping_check.subtype_case_analysis tenv texp1 texp2 in
                     let mk_res type_opt res_e = match type_opt with
@@ -1890,33 +1902,32 @@ module ModelBuiltins = struct
                             if Sil.exp_equal texp1 texp1' then prop
                             else replace_ptsto_texp prop val1 texp1' in
                           [(return_result res_e prop' ret_ids, path)] in
-                    if (instof) then (* instanceof *)
+                    if instof then (* instanceof *)
                       begin
                         let pos_res = mk_res pos_type_opt Sil.exp_one in
                         let neg_res = mk_res neg_type_opt Sil.exp_zero in
                         pos_res @ neg_res
                       end
                     else (* cast *)
+                    if not should_throw_exception then (* C++ case when negative cast returns 0 *)
+                      let pos_res = mk_res pos_type_opt val1 in
+                      let neg_res = mk_res neg_type_opt Sil.exp_zero in
+                      pos_res @ neg_res
+                    else
                       begin
                         if (!Config.footprint = true) then
                           begin
                             match pos_type_opt with
-                            | None ->
-                                Tabulation.raise_cast_exception
-                                  (try assert false with Assert_failure ml_loc -> ml_loc)
-                                  None texp1 texp2 val1
-                            | Some texp1' -> (mk_res pos_type_opt val1)
+                            | None -> deal_with_failed_cast val1 typ1 texp1 texp2
+                            | Some texp1' -> mk_res pos_type_opt val1
                           end
                         else (* !Config.footprint = false *)
                           begin
                             match neg_type_opt with
                             | Some _ ->
-                                if (is_undefined_opt prop val1) then (mk_res pos_type_opt val1)
-                                else
-                                  Tabulation.raise_cast_exception
-                                    (try assert false with Assert_failure ml_loc -> ml_loc)
-                                    None texp1 texp2 val1
-                            | None -> (mk_res pos_type_opt val1)
+                                if is_undefined_opt prop val1 then mk_res pos_type_opt val1
+                                else deal_with_failed_cast val1 typ1 texp1 texp2
+                            | None -> mk_res pos_type_opt val1
                           end
                       end
                 | _ -> []

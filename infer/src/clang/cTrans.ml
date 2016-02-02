@@ -1948,6 +1948,33 @@ struct
     let stmt = match stmt_list with [stmt] -> stmt | _ -> assert false in
     instruction trans_state' stmt
 
+  and cxxDynamicCastExpr_trans trans_state stmt_info stmts cast_type_ptr =
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let trans_state' = { trans_state_pri with succ_nodes = [] } in
+    let context = trans_state.context in
+    let subtypes = Sil.Subtype.subtypes_cast in
+    let tenv = context.CContext.tenv in
+    let sil_loc = CLocation.get_sil_location stmt_info context in
+    let cast_type = CTypes_decl.type_ptr_to_sil_type tenv cast_type_ptr in
+    let sizeof_expr = match cast_type with
+      | Sil.Tptr (typ, _) -> Sil.Sizeof (typ, subtypes)
+      | _ -> assert false in
+    let builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast) in
+    let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
+    let res_trans_stmt = exec_with_lvalue_as_reference instruction trans_state' stmt in
+    let exp = match res_trans_stmt.exps with | [e] -> e | _ -> assert false in
+    let args = [exp; (sizeof_expr, Sil.Tvoid)] in
+    let ret_id = Ident.create_fresh Ident.knormal in
+    let call = Sil.Call ([ret_id], builtin, args, sil_loc, Sil.cf_default) in
+    let res_ex = Sil.Var ret_id in
+    let res_trans_dynamic_cast = { empty_res_trans with instrs = [call]; ids = [ret_id] } in
+    let all_res_trans = [ res_trans_stmt; res_trans_dynamic_cast ] in
+    let nname = "CxxDynamicCast" in
+    let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname
+        stmt_info all_res_trans in
+    { res_trans_to_parent with exps = [(res_ex, cast_type)] }
+
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2173,9 +2200,14 @@ struct
         compoundLiteralExpr_trans trans_state stmt_info stmt_list expr_info
     | InitListExpr (stmt_info, stmts, expr_info) ->
         initListExpr_trans trans_state stmt_info expr_info stmts
-    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, cxx_bind_temp_expr_info)->
+
+    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, cxx_bind_temp_expr_info) ->
         (* right now we ignore this expression and try to translate the child node *)
         parenExpr_trans trans_state stmt_info stmt_list
+
+    | CXXDynamicCastExpr (stmt_info, stmts, expr_info, cast_expr_info, type_ptr, _) ->
+        cxxDynamicCastExpr_trans trans_state stmt_info stmts type_ptr
+
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);
