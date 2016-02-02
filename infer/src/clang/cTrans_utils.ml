@@ -652,53 +652,5 @@ let get_decl_pointer decl_ref_expr_info =
   | Some decl_ref -> decl_ref.Clang_ast_t.dr_decl_pointer
   | None -> assert false
 
-let rec pointer_of_call_expr stmt =
-  let open Clang_ast_t in
-  match stmt with
-  | DeclRefExpr(_, _, _, decl_ref_expr_info) ->
-      Some (get_decl_pointer decl_ref_expr_info)
-  | MemberExpr(_, _, _, member_expr_info) ->
-      let decl_ref = member_expr_info.Clang_ast_t.mei_decl_ref in
-      Some decl_ref.Clang_ast_t.dr_decl_pointer
-  | CXXConstructExpr (_, _, _, cxx_construct_expr_info)
-  | CXXTemporaryObjectExpr (_, _, _, cxx_construct_expr_info) ->
-      let decl_ref = cxx_construct_expr_info.xcei_decl_ref in
-      Some decl_ref.Clang_ast_t.dr_decl_pointer
-  | _ ->
-      match snd (Clang_ast_proj.get_stmt_tuple stmt) with
-      | [stmt] -> pointer_of_call_expr stmt
-      | _ -> None
-
-let get_decl_from_call_expr stmt =
-  match pointer_of_call_expr stmt with
-  | Some pointer -> Ast_utils.get_decl pointer
-  | _ -> None
-
-let assign_default_params params_stmt call_stmt =
-  let open Clang_ast_t in
-  match get_decl_from_call_expr call_stmt with
-  | Some FunctionDecl (_, name_info, _, fdecl_info)
-  | Some CXXMethodDecl (_, name_info, _, fdecl_info, _)
-  | Some CXXConversionDecl (_, name_info, _, fdecl_info, _)
-  | Some CXXConstructorDecl (_, name_info, _, fdecl_info, _) ->
-      (let get_param_default_val param_decl = match param_decl with
-          | ParmVarDecl (_, _, _, var_decl_info) -> var_decl_info.vdi_init_expr
-          | _ -> None in
-       let replace_default_arg param = match param with
-         | CXXDefaultArgExpr _, Some default_expr -> default_expr
-         | instr, _ -> instr in
-       let default_params = IList.map get_param_default_val fdecl_info.Clang_ast_t.fdi_parameters in
-       try
-         let param_args = IList.combine params_stmt default_params in
-         IList.map replace_default_arg param_args
-       with Invalid_argument _ ->
-         let name = name_info.ni_name in
-         (* IList.combine failed because of different list lengths *)
-         Printing.log_err "Param count doesn't match %s\n" name;
-         params_stmt)
-  | Some _ -> params_stmt
-  | None -> params_stmt
-
-
 let is_block_enumerate_function mei =
   mei.Clang_ast_t.omei_selector = CFrontend_config.enumerateObjectsUsingBlock

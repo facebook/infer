@@ -747,8 +747,7 @@ struct
           (* verbatim from a call to a different function, and they might be side-effecting *)
           (Procname.to_string pn) <> CFrontend_config.builtin_object_size
       | _ -> true in
-    let params_stmt = if should_translate_args then
-        CTrans_utils.assign_default_params params_stmt fun_exp_stmt
+    let params_stmt = if should_translate_args then params_stmt
       else [] in
     let result_trans_subexprs =
       let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
@@ -846,7 +845,7 @@ struct
     (* CXXOperatorCallExpr: First stmt is method/function deref without this expr and the *)
     (*                      rest are params, possibly including 'this' *)
     let fun_exp_stmt, params_stmt = (match stmt_list with
-        | fe :: params -> fe, assign_default_params params fe
+        | fe :: params -> fe, params
         | _ -> assert false) in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     (* claim priority if no ancestors has claimed priority before *)
@@ -857,33 +856,28 @@ struct
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type
 
-  and cxxConstructExpr_trans trans_state expr =
-    match expr with
-    | Clang_ast_t.CXXConstructExpr (si, params_stmt, ei, cxx_constr_info)
-    | Clang_ast_t.CXXTemporaryObjectExpr (si, params_stmt, ei, cxx_constr_info) ->
-        let context = trans_state.context in
-        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-        let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
-        let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
-        let this_type = Sil.Tptr (class_type, Sil.Pk_pointer) in
-        let var_exp = match trans_state.var_exp with
-          | Some e -> e
-          | None ->
-              let tenv = trans_state.context.CContext.tenv in
-              let procdesc = trans_state.context.CContext.procdesc in
-              let pvar = mk_temp_sil_var tenv procdesc "__temp_construct_" in
-              Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, class_type)];
-              Sil.Lvar pvar in
-        let this_res_trans = { empty_res_trans with
-                               exps = [(var_exp, this_type)];
-                               initd_exps = [var_exp];
-                             } in
-        let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
-        let params_stmt' = assign_default_params params_stmt expr in
-        let res_trans = cxx_method_construct_call_trans trans_state_pri res_trans_callee
-            params_stmt' si Sil.Tvoid in
-        { res_trans with exps = [(var_exp, class_type)] }
-    | _ -> assert false
+  and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info =
+    let context = trans_state.context in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
+    let decl_ref = cxx_constr_info.Clang_ast_t.xcei_decl_ref in
+    let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
+    let this_type = Sil.Tptr (class_type, Sil.Pk_pointer) in
+    let var_exp = match trans_state.var_exp with
+      | Some e -> e
+      | None ->
+          let tenv = trans_state.context.CContext.tenv in
+          let procdesc = trans_state.context.CContext.procdesc in
+          let pvar = mk_temp_sil_var tenv procdesc "__temp_construct_" in
+          Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, class_type)];
+          Sil.Lvar pvar in
+    let this_res_trans = { empty_res_trans with
+                           exps = [(var_exp, this_type)];
+                           initd_exps = [var_exp];
+                         } in
+    let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
+    let res_trans = cxx_method_construct_call_trans trans_state_pri res_trans_callee
+        params_stmt si Sil.Tvoid in
+    { res_trans with exps = [(var_exp, class_type)] }
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
@@ -1974,6 +1968,10 @@ struct
         stmt_info all_res_trans in
     { res_trans_to_parent with exps = [(res_ex, cast_type)] }
 
+  and cxxDefaultArgExpr_trans trans_state default_arg_info =
+    match default_arg_info.Clang_ast_t.xdaei_init_expr with
+    | Some exp -> instruction trans_state exp
+    | None -> assert false
 
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
@@ -2010,8 +2008,9 @@ struct
     | CXXOperatorCallExpr(stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
 
-    | CXXConstructExpr _ | CXXTemporaryObjectExpr _ ->
-        cxxConstructExpr_trans trans_state instr
+    | CXXConstructExpr (stmt_info, stmt_list, expr_info, cxx_constr_info)
+    | CXXTemporaryObjectExpr (stmt_info, stmt_list, expr_info, cxx_constr_info) ->
+        cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info cxx_constr_info
 
     | ObjCMessageExpr(stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         if is_block_enumerate_function obj_c_message_expr_info then
@@ -2207,6 +2206,9 @@ struct
 
     | CXXDynamicCastExpr (stmt_info, stmts, expr_info, cast_expr_info, type_ptr, _) ->
         cxxDynamicCastExpr_trans trans_state stmt_info stmts type_ptr
+
+    | CXXDefaultArgExpr (stmt_info, stmt_list, expr_info, default_arg_info) ->
+        cxxDefaultArgExpr_trans trans_state default_arg_info
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
