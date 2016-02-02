@@ -17,8 +17,7 @@ let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
 let one_cluster_per_procedure () = false
 
 let () = Config.ondemand_enabled :=
-    Config.from_env_variable "INFER_ONDEMAND" &&
-    not Config.analyze_models
+    Config.from_env_variable "INFER_ONDEMAND"
 
 let across_files () = true
 
