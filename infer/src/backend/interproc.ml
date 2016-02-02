@@ -12,10 +12,14 @@
 
 module L = Logging
 module F = Format
-open Utils (* No abbreviation for Utils, as every module can depend on it *)
+open Utils
 
+(** A node with a number of visits *)
 type visitednode =
-  { node: Cfg.Node.t; visits: int }
+  {
+    node: Cfg.Node.t;
+    visits: int;
+  }
 
 (** Set of nodes with number of visits *)
 module NodeVisitSet =
@@ -41,30 +45,69 @@ module NodeVisitSet =
       else compare_ids x1.node x2.node
   end)
 
+(** Table for the results of the join operation on nodes. *)
+module Join_table : sig
+  type t
+  type node_id = int
+
+  val add : t -> node_id -> Paths.PathSet.t -> unit
+  val create : unit -> t
+  val find : t -> node_id -> Paths.PathSet.t
+end = struct
+  type t = (int, Paths.PathSet.t) Hashtbl.t
+
+  type node_id = int
+
+  let create () : t =
+    Hashtbl.create 11
+
+  let find table i =
+    try Hashtbl.find table i with
+    | Not_found -> Paths.PathSet.empty
+
+  let add table i dset =
+    Hashtbl.replace table i dset
+end
+
 (* =============== START of module Worklist =============== *)
 module Worklist = struct
   module NodeMap = Map.Make(Cfg.Node)
-  let worklist : NodeVisitSet.t ref = ref NodeVisitSet.empty
-  let map : int NodeMap.t ref = ref NodeMap.empty
 
-  let reset pdesc =
-    worklist := NodeVisitSet.empty;
-    map := NodeMap.empty;
-    Cfg.Procdesc.compute_distance_to_exit_node pdesc
+  type node_id = int
 
-  let is_empty () : bool =
-    NodeVisitSet.is_empty !worklist
+  type t = {
+    join_table : Join_table.t; (** Table of join results *)
+    path_set_todo : (node_id, Paths.PathSet.t) Hashtbl.t; (** Pathset todo *)
+    path_set_visited : (node_id, Paths.PathSet.t) Hashtbl.t; (** Pathset visited *)
+    mutable todo_set : NodeVisitSet.t; (** Set of nodes still to do, with visit count *)
+    mutable visit_map : node_id NodeMap.t; (** Map from nodes done to visit count *)
+  }
 
-  let add (node : Cfg.node) : unit =
-    let visits = try NodeMap.find node !map with Not_found -> 0 in
-    worklist := NodeVisitSet.add { node = node; visits = visits } !worklist
+  let create () = {
+    join_table = Join_table.create ();
+    path_set_todo = Hashtbl.create 11;
+    path_set_visited = Hashtbl.create 11;
+    todo_set = NodeVisitSet.empty;
+    visit_map = NodeMap.empty;
+  }
+
+  let is_empty (wl : t) : bool =
+    NodeVisitSet.is_empty wl.todo_set
+
+  let add (wl : t) (node : Cfg.node) : unit =
+    let visits = (* recover visit count if it was visited before *)
+      try NodeMap.find node wl.visit_map with
+      | Not_found -> 0 in
+    wl.todo_set <- NodeVisitSet.add { node; visits } wl.todo_set
 
   (** remove the minimum element from the worklist, and increase its number of visits *)
-  let remove () : Cfg.Node.t =
+  let remove (wl : t) : Cfg.Node.t =
     try
-      let min = NodeVisitSet.min_elt !worklist in
-      worklist := NodeVisitSet.remove min !worklist;
-      map := NodeMap.add min.node (min.visits + 1) !map; (* increase the visits *)
+      let min = NodeVisitSet.min_elt wl.todo_set in
+      wl.todo_set <-
+        NodeVisitSet.remove min wl.todo_set;
+      wl.visit_map <-
+        NodeMap.add min.node (min.visits + 1) wl.visit_map; (* increase the visits *)
       min.node
     with Not_found -> begin
         L.out "@\n...Work list is empty! Impossible to remove edge...@\n";
@@ -73,28 +116,11 @@ module Worklist = struct
 end
 (* =============== END of module Worklist =============== *)
 
-module Join_table : sig
-  val reset : unit -> unit
-  val find : int -> Paths.PathSet.t
-  val put : int -> Paths.PathSet.t -> unit
-end = struct
-  let table : (int, Paths.PathSet.t) Hashtbl.t = Hashtbl.create 1024
-  let reset () = Hashtbl.clear table
-  let find i =
-    try Hashtbl.find table i with Not_found -> Paths.PathSet.empty
-  let put i dset = Hashtbl.replace table i dset
-end
 
-let path_set_visited : (int, Paths.PathSet.t) Hashtbl.t = Hashtbl.create 1024
-
-let path_set_todo : (int, Paths.PathSet.t) Hashtbl.t = Hashtbl.create 1024
-
-let path_set_worklist_reset pdesc =
+let path_set_create_worklist pdesc =
   State.reset ();
-  Hashtbl.clear path_set_visited;
-  Hashtbl.clear path_set_todo;
-  Join_table.reset ();
-  Worklist.reset pdesc
+  Cfg.Procdesc.compute_distance_to_exit_node pdesc;
+  Worklist.create ()
 
 let htable_retrieve (htable : (int, Paths.PathSet.t) Hashtbl.t) (key : int) : Paths.PathSet.t =
   try
@@ -103,80 +129,34 @@ let htable_retrieve (htable : (int, Paths.PathSet.t) Hashtbl.t) (key : int) : Pa
     Hashtbl.replace htable key Paths.PathSet.empty;
     Paths.PathSet.empty
 
-let path_set_get_visited (sid: int) : Paths.PathSet.t =
-  htable_retrieve path_set_visited sid
-
 (** Add [d] to the pathset todo at [node] returning true if changed *)
-let path_set_put_todo (node: Cfg.node) (d: Paths.PathSet.t) : bool =
+let path_set_put_todo (wl : Worklist.t) (node: Cfg.node) (d: Paths.PathSet.t) : bool =
   let changed =
     if Paths.PathSet.is_empty d then false
     else
-      let sid = Cfg.Node.get_id node in
-      let old_todo = htable_retrieve path_set_todo sid in
-      let old_visited = htable_retrieve path_set_visited sid in
+      let node_id = Cfg.Node.get_id node in
+      let old_todo = htable_retrieve wl.Worklist.path_set_todo node_id in
+      let old_visited = htable_retrieve wl.Worklist.path_set_visited node_id in
       let d' = Paths.PathSet.diff d old_visited in (* differential fixpoint *)
       let todo_new = Paths.PathSet.union old_todo d' in
-      Hashtbl.replace path_set_todo sid todo_new;
+      Hashtbl.replace wl.Worklist.path_set_todo node_id todo_new;
       not (Paths.PathSet.equal old_todo todo_new) in
   changed
 
-let path_set_checkout_todo (node: Cfg.node) : Paths.PathSet.t =
+let path_set_checkout_todo (wl : Worklist.t) (node: Cfg.node) : Paths.PathSet.t =
   try
-    let sid = Cfg.Node.get_id node in
-    let todo = Hashtbl.find path_set_todo sid in
-    Hashtbl.replace path_set_todo sid Paths.PathSet.empty;
-    let visited = Hashtbl.find path_set_visited sid in
+    let node_id = Cfg.Node.get_id node in
+    let todo = Hashtbl.find wl.Worklist.path_set_todo node_id in
+    Hashtbl.replace wl.Worklist.path_set_todo node_id Paths.PathSet.empty;
+    let visited = Hashtbl.find wl.Worklist.path_set_visited node_id in
     let new_visited = Paths.PathSet.union visited todo in
-    Hashtbl.replace path_set_visited sid new_visited;
+    Hashtbl.replace wl.Worklist.path_set_visited node_id new_visited;
     todo
   with Not_found ->
     L.out "@.@.ERROR: could not find todo for node %a@.@." Cfg.Node.pp node;
     assert false
 
 (* =============== END of the edge_set object =============== *)
-
-(* =============== START: Print a complete path in a dotty file =============== *)
-
-let pp_path_dotty f path =
-  let count = ref 0 in
-  let prev_n_id = ref 0 in
-  let curr_n_id = ref 0 in
-  prev_n_id:=- 1;
-  let get_node_id_from_path p = match Paths.Path.curr_node p with
-    | Some node ->
-        Cfg.Node.get_id node
-    | None ->
-        !curr_n_id in
-  let g level p session exn_opt = match Paths.Path.curr_node p with
-    | Some curr_node ->
-        let curr_path_set = htable_retrieve path_set_visited (Cfg.Node.get_id curr_node) in
-        let plist = Paths.PathSet.filter_path p curr_path_set in
-        incr count;
-        curr_n_id := get_node_id_from_path p;
-        Dotty.pp_dotty_prop_list_in_path f plist !prev_n_id !curr_n_id;
-        L.out "@.Path #%d: %a@." !count Paths.Path.pp p;
-        prev_n_id:=!curr_n_id
-    | None ->
-        () in
-  L.out "@.@.Printing Path: %a to file error_path.dot@." Paths.Path.pp path;
-  Dotty.reset_proposition_counter ();
-  Dotty.reset_dotty_spec_counter ();
-  F.fprintf f "@\n@\n@\ndigraph main { \nnode [shape=box]; @\n";
-  F.fprintf f "@\n compound = true; @\n";
-  (*  F.fprintf f "@\n size=\"12,7\"; ratio=fill; @\n"; *)
-  Paths.Path.iter_longest_sequence g None path;
-  F.fprintf f "@\n}"
-
-let pp_complete_path_dotty_file =
-  let counter = ref 0 in
-  fun path ->
-    incr counter;
-    let outc = open_out ("error_path" ^ string_of_int !counter ^ ".dot") in
-    let fmt = F.formatter_of_out_channel outc in
-    F.fprintf fmt "#### Dotty version:  ####@.%a@.@." pp_path_dotty path;
-    close_out outc
-
-(* =============== END: Print a complete path in a dotty file =============== *)
 
 let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
   if !Config.footprint then begin
@@ -254,23 +234,28 @@ let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list 
 
 (* =============== START of symbolic execution =============== *)
 
-(* propagate a set of results to the given node *)
-let propagate pname is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
+(** propagate a set of results to the given node *)
+let propagate (wl : Worklist.t) pname is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
   let edgeset_todo =
     let f prop path edgeset_curr = (** prop must be a renamed prop by the invariant preserved by PropSet *)
       let exn_opt =
-        if is_exception then Some (Tabulation.prop_get_exn_name pname prop)
+        if is_exception
+        then Some (Tabulation.prop_get_exn_name pname prop)
         else None in
-      Paths.PathSet.add_renamed_prop prop (Paths.Path.extend curr_node exn_opt (State.get_session ()) path) edgeset_curr in
+      Paths.PathSet.add_renamed_prop
+        prop
+        (Paths.Path.extend curr_node exn_opt (State.get_session ()) path)
+        edgeset_curr in
     Paths.PathSet.fold f pset Paths.PathSet.empty in
-  let changed = path_set_put_todo curr_node edgeset_todo in
-  if changed then (Worklist.add curr_node)
+  let changed = path_set_put_todo wl curr_node edgeset_todo in
+  if changed then
+    Worklist.add wl curr_node
 
-(* propagate a set of results, including exceptions and divergence *)
+(** propagate a set of results, including exceptions and divergence *)
 let propagate_nodes_divergence
     tenv (pdesc: Cfg.Procdesc.t) (pset: Paths.PathSet.t)
     (path: Paths.Path.t) (kind_curr_node : Cfg.Node.nodekind) (_succ_nodes: Cfg.node list)
-    (exn_nodes: Cfg.node list) =
+    (exn_nodes: Cfg.node list) (wl : Worklist.t) =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   let succ_nodes = match State.get_goto_node () with (* handle Sil.Goto_node target, if any *)
@@ -290,29 +275,29 @@ let propagate_nodes_divergence
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
-      propagate pname false prop_incons exit_node
+      propagate wl pname false prop_incons exit_node
     end;
-  IList.iter (propagate pname false pset_ok) succ_nodes;
-  IList.iter (propagate pname true pset_exn) exn_nodes
+  IList.iter (propagate wl pname false pset_ok) succ_nodes;
+  IList.iter (propagate wl pname true pset_exn) exn_nodes
 
 (* ===================== END of symbolic execution ===================== *)
 
 (* =============== START of forward_tabulate =============== *)
 
 (** Symbolic execution for a Join node *)
-let do_symexec_join pname tenv curr_node (edgeset_todo : Paths.PathSet.t) =
+let do_symexec_join pname tenv wl curr_node (edgeset_todo : Paths.PathSet.t) =
   let curr_pdesc = Cfg.Node.get_proc_desc curr_node in
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
-  let curr_id = Cfg.Node.get_id curr_node in
+  let curr_node_id = Cfg.Node.get_id curr_node in
   let succ_nodes = Cfg.Node.get_succs curr_node in
   let new_dset = edgeset_todo in
-  let old_dset = Join_table.find curr_id in
+  let old_dset = Join_table.find wl.Worklist.join_table curr_node_id in
   let old_dset', new_dset' = Dom.pathset_join curr_pname tenv old_dset new_dset in
-  Join_table.put curr_id (Paths.PathSet.union old_dset' new_dset');
+  Join_table.add wl.Worklist.join_table curr_node_id (Paths.PathSet.union old_dset' new_dset');
   IList.iter (fun node ->
       Paths.PathSet.iter (fun prop path ->
           State.set_path path None;
-          propagate pname false (Paths.PathSet.from_renamed_list [(prop, path)]) node)
+          propagate wl pname false (Paths.PathSet.from_renamed_list [(prop, path)]) node)
         new_dset') succ_nodes
 
 let prop_max_size = ref (0, Prop.prop_emp)
@@ -334,30 +319,6 @@ let check_prop_size edgeset_todo =
 let reset_prop_metrics () =
   prop_max_size := (0, Prop.prop_emp);
   prop_max_chain_size := (0, Prop.prop_emp)
-
-(** dump a path *)
-let d_path (path, pos_opt) =
-  let step = ref 0 in
-  let prop_last_step = ref Prop.prop_emp in (* if the last step had a singleton prop, store it here *)
-  let f level p session exn_opt = match Paths.Path.curr_node p with
-    | Some curr_node ->
-        let curr_path_set = htable_retrieve path_set_visited (Cfg.Node.get_id curr_node) in
-        let plist = Paths.PathSet.filter_path p curr_path_set in
-        incr step;
-        (* Propset.pp_proplist_dotty_file ("path" ^ (string_of_int !count) ^ ".dot") plist; *)
-        L.d_strln ("Path Step #" ^ string_of_int !step ^
-                   " node " ^ string_of_int (Cfg.Node.get_id curr_node) ^
-                   " session " ^ string_of_int session ^ ":");
-        Propset.d !prop_last_step (Propset.from_proplist plist); L.d_ln ();
-        Cfg.Node.d_instrs true None curr_node; L.d_ln (); L.d_ln ();
-        prop_last_step := (match plist with | [prop] -> prop | _ -> Prop.prop_emp)
-    | None ->
-        () in
-  L.d_str "Path: "; Paths.Path.d_stats path; L.d_ln ();
-  Paths.Path.d path; L.d_ln ();
-  (* pp_complete_path_dotty_file path; *)
-  (* if !Config.write_dotty then Dotty.print_icfg_dotty (IList.rev (get_edges path)) *)
-  Paths.Path.iter_longest_sequence f pos_opt path
 
 exception RE_EXE_ERROR
 
@@ -506,13 +467,15 @@ let do_symbolic_execution handle_exn cfg tenv
   pset
 
 let mark_visited summary node =
-  let id = Cfg.Node.get_id node in
+  let node_id = Cfg.Node.get_id node in
   let stats = summary.Specs.stats in
   if !Config.footprint
-  then stats.Specs.nodes_visited_fp <- IntSet.add id stats.Specs.nodes_visited_fp
-  else stats.Specs.nodes_visited_re <- IntSet.add id stats.Specs.nodes_visited_re
+  then
+    stats.Specs.nodes_visited_fp <- IntSet.add node_id stats.Specs.nodes_visited_fp
+  else
+    stats.Specs.nodes_visited_re <- IntSet.add node_id stats.Specs.nodes_visited_re
 
-let forward_tabulate cfg tenv =
+let forward_tabulate cfg tenv wl =
   let handled_some_exception = ref false in
   let handle_exn curr_node exn =
     let curr_pdesc = Cfg.Node.get_proc_desc curr_node in
@@ -530,10 +493,10 @@ let forward_tabulate cfg tenv =
     State.mark_instr_fail pre_opt exn;
     handled_some_exception := true in
 
-  while not (Worklist.is_empty ()) do
-    let curr_node = Worklist.remove () in
-    let kind_curr_node = Cfg.Node.get_kind curr_node in
-    let sid_curr_node = Cfg.Node.get_id curr_node in
+  while not (Worklist.is_empty wl) do
+    let curr_node = Worklist.remove wl in
+    let curr_node_kind = Cfg.Node.get_kind curr_node in
+    let curr_node_id = Cfg.Node.get_id curr_node in
     let proc_desc = Cfg.Node.get_proc_desc curr_node in
     let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
     let formal_params = Cfg.Procdesc.get_formals proc_desc in
@@ -543,7 +506,7 @@ let forward_tabulate cfg tenv =
       incr summary.Specs.sessions;
       !(summary.Specs.sessions) in
     do_before_node session curr_node;
-    let pathset_todo = path_set_checkout_todo curr_node in
+    let pathset_todo = path_set_checkout_todo wl curr_node in
     let succ_nodes = Cfg.Node.get_succs curr_node in
     let exn_nodes = Cfg.Node.get_exn curr_node in
     let exe_iter f pathset =
@@ -563,7 +526,7 @@ let forward_tabulate cfg tenv =
       handled_some_exception := false;
       check_prop_size pathset_todo;
       L.d_strln ("**** " ^ (log_string proc_name) ^ " " ^
-                 "Node: " ^ string_of_int sid_curr_node ^ ", " ^
+                 "Node: " ^ string_of_int curr_node_id ^ ", " ^
                  "Procedure: " ^ Procname.to_string proc_name ^ ", " ^
                  "Session: " ^ string_of_int session ^ ", " ^
                  "Todo: " ^ string_of_int (Paths.PathSet.size pathset_todo) ^ " ****");
@@ -573,8 +536,9 @@ let forward_tabulate cfg tenv =
       Cfg.Node.d_instrs ~sub_instrs: true (State.get_instr ()) curr_node;
       L.d_ln (); L.d_ln ();
 
-      match kind_curr_node with
-      | Cfg.Node.Join_node -> do_symexec_join proc_name tenv curr_node pathset_todo
+      match curr_node_kind with
+      | Cfg.Node.Join_node ->
+          do_symexec_join proc_name tenv wl curr_node pathset_todo
       | Cfg.Node.Stmt_node _
       | Cfg.Node.Prune_node _
       | Cfg.Node.Exit_node _
@@ -587,23 +551,30 @@ let forward_tabulate cfg tenv =
                      let tainted_params = Taint.tainted_params proc_name in
                      Tabulation.add_param_taint proc_name formal_params prop tainted_params
                    else prop in
-                 L.d_strln ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths);
+                 L.d_strln
+                   ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths);
                  L.d_increase_indent 1;
                  State.reset_diverging_states_goto_node ();
                  let pset =
                    do_symbolic_execution (handle_exn curr_node) cfg tenv curr_node prop path in
                  L.d_decrease_indent 1; L.d_ln();
-                 propagate_nodes_divergence tenv proc_desc pset path kind_curr_node succ_nodes exn_nodes;
-               with exn when Exceptions.handle_exception exn && !Config.footprint ->
-                 handle_exn curr_node exn;
-                 if !Config.nonstop then propagate_nodes_divergence tenv proc_desc (Paths.PathSet.from_renamed_list [(prop, path)]) path kind_curr_node succ_nodes exn_nodes;
-                 L.d_decrease_indent 1; L.d_ln ())
+                 propagate_nodes_divergence
+                   tenv proc_desc pset path curr_node_kind succ_nodes exn_nodes wl;
+               with
+               | exn when Exceptions.handle_exception exn && !Config.footprint ->
+                   handle_exn curr_node exn;
+                   if !Config.nonstop then
+                     propagate_nodes_divergence
+                       tenv proc_desc (Paths.PathSet.from_renamed_list [(prop, path)])
+                       path curr_node_kind succ_nodes exn_nodes wl;
+                   L.d_decrease_indent 1; L.d_ln ())
             pathset_todo in
-    try begin
-      doit();
-      if !handled_some_exception then Printer.force_delayed_prints ();
-      do_after_node curr_node
-    end
+    try
+      begin
+        doit();
+        if !handled_some_exception then Printer.force_delayed_prints ();
+        do_after_node curr_node
+      end
     with
     | exn when Exceptions.handle_exception exn ->
         handle_exn curr_node exn;
@@ -669,10 +640,10 @@ let remove_locals_formals_and_check pdesc p =
   p'
 
 (* Collect the analysis results for the exit node *)
-let collect_analysis_result pdesc : Paths.PathSet.t =
+let collect_analysis_result wl pdesc : Paths.PathSet.t =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
-  let exit_sid = Cfg.Node.get_id exit_node in
-  let pathset = path_set_get_visited exit_sid in
+  let exit_node_id = Cfg.Node.get_id exit_node in
+  let pathset = htable_retrieve wl.Worklist.path_set_visited exit_node_id in
   Paths.PathSet.map (remove_locals_formals_and_check pdesc) pathset
 
 module Pmap = Map.Make (struct type t = Prop.normal Prop.t let compare = Prop.prop_compare end)
@@ -745,9 +716,9 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   Pmap.iter add_spec pre_post_map;
   !specs
 
-let collect_postconditions tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
+let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let pathset = collect_analysis_result pdesc in
+  let pathset = collect_analysis_result wl pdesc in
   L.d_strln ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Analysis result ####");
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset pathset);
   L.d_ln ();
@@ -832,7 +803,7 @@ let initial_prop_from_pre tenv curr_f pre =
     initial_prop tenv curr_f pre false
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
-let execute_filter_prop cfg tenv pdesc init_node (precondition : Prop.normal Specs.Jprop.t)
+let execute_filter_prop wl cfg tenv pdesc init_node (precondition : Prop.normal Specs.Jprop.t)
   : Prop.normal Specs.spec option =
   let proc_name = Cfg.Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node;
@@ -844,17 +815,16 @@ let execute_filter_prop cfg tenv pdesc init_node (precondition : Prop.normal Spe
   let init_edgeset = Paths.PathSet.add_renamed_prop init_prop (Paths.Path.start init_node) Paths.PathSet.empty in
   do_after_node init_node;
   try
-    path_set_worklist_reset pdesc;
-    Worklist.add init_node;
-    ignore (path_set_put_todo init_node init_edgeset);
-    forward_tabulate cfg tenv;
+    Worklist.add wl init_node;
+    ignore (path_set_put_todo wl init_node init_edgeset);
+    forward_tabulate cfg tenv wl;
     do_before_node 0 init_node;
     L.d_strln_color Green ("#### Finished: RE-execution for " ^ Procname.to_string proc_name ^ " ####");
     L.d_increase_indent 1;
     L.d_strln "Precond:"; Prop.d_prop (Specs.Jprop.to_prop precondition);
     L.d_ln ();
     let posts, visited =
-      let pset, visited = collect_postconditions tenv pdesc in
+      let pset, visited = collect_postconditions wl tenv pdesc in
       let plist = IList.map (fun (p, path) -> (Cfg.remove_seed_vars p, path)) (Paths.PathSet.elements pset) in
       plist, visited in
     let pre =
@@ -882,10 +852,12 @@ let execute_filter_prop cfg tenv pdesc init_node (precondition : Prop.normal Spe
 let get_procs_and_defined_children call_graph =
   IList.map (fun (n, ns) -> (n, Procname.Set.elements ns)) (Cg.get_nodes_and_defined_children call_graph)
 
-let pp_intra_stats cfg proc_desc fmt proc_name =
+let pp_intra_stats wl cfg proc_desc fmt proc_name =
   let nstates = ref 0 in
   let nodes = Cfg.Procdesc.get_nodes proc_desc in
-  IList.iter (fun node -> nstates := !nstates + Paths.PathSet.size (path_set_get_visited (Cfg.Node.get_id node))) nodes;
+  IList.iter (fun node ->
+      nstates := !nstates + Paths.PathSet.size
+                   (htable_retrieve wl.Worklist.path_set_visited (Cfg.Node.get_id node))) nodes;
   F.fprintf fmt "(%d nodes containing %d states)" (IList.length nodes) !nstates
 
 (** Return functions to perform one phase of the analysis for a procedure.
@@ -907,7 +879,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       end in
 
   let compute_footprint : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
-    let go () =
+    let go (wl : Worklist.t) () =
       let init_prop = initial_prop_from_emp tenv pdesc in
       let init_props_from_pres = (* use existing pre's (in recursion some might exist) as starting points *)
         let specs = Specs.get_specs pname in
@@ -924,20 +896,19 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       L.d_strln "initial props =";
       Propset.d Prop.prop_emp init_props; L.d_ln (); L.d_ln();
       L.d_decrease_indent 1;
-      path_set_worklist_reset pdesc;
       check_recursion_level ();
-      Worklist.add start_node;
+      Worklist.add wl start_node;
       Config.arc_mode := Hashtbl.mem (Cfg.Procdesc.get_flags pdesc) Mleak_buckets.objc_arc_flag;
-      ignore (path_set_put_todo start_node init_edgeset);
-      forward_tabulate cfg tenv;
+      ignore (path_set_put_todo wl start_node init_edgeset);
+      forward_tabulate cfg tenv wl
     in
-    let get_results () =
+    let get_results (wl : Worklist.t) () =
       State.process_execution_failures Reporting.log_warning pname;
-      let results = collect_analysis_result pdesc in
+      let results = collect_analysis_result wl pdesc in
       L.out "#### [FUNCTION %a] ... OK #####@\n" Procname.pp pname;
       L.out "#### Finished: Footprint Computation for %a %a ####@."
         Procname.pp pname
-        (pp_intra_stats cfg pdesc) pname;
+        (pp_intra_stats wl cfg pdesc) pname;
       L.out "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@."
         Procname.pp pname
         (Paths.PathSet.pp pe_text) results;
@@ -950,7 +921,8 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
             Reporting.log_error pname ~pre: pre_opt exn;
             [] (* retuning no specs *) in
       specs, Specs.FOOTPRINT in
-    go, get_results in
+    let wl = path_set_create_worklist pdesc in
+    go wl, get_results wl in
 
   let re_execution proc_name
     : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
@@ -960,7 +932,8 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       L.out "@.#### Start: Re-Execution for %a ####@." Procname.pp proc_name;
       check_recursion_level ();
       let filter p =
-        let speco = execute_filter_prop cfg tenv pdesc start_node p in
+        let wl = path_set_create_worklist pdesc in
+        let speco = execute_filter_prop wl cfg tenv pdesc start_node p in
         let is_valid = match speco with
           | None -> false
           | Some spec ->
@@ -969,7 +942,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
         let outcome = if is_valid then "pass" else "fail" in
         L.out "Finished re-execution for precondition %d %a (%s)@."
           (Specs.Jprop.to_number p)
-          (pp_intra_stats cfg pdesc) proc_name
+          (pp_intra_stats wl cfg pdesc) proc_name
           outcome;
         speco in
       if !Config.undo_join then
