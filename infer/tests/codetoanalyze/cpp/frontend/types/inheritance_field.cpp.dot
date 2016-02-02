@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 41 -> 40 ;
-40 [label="40:  DeclStmt \n   n$2=*&s:class Sub * [line 68]\n  *&b:struct Base1 *=n$2 [line 68]\n  REMOVE_TEMPS(n$2); [line 68]\n  NULLIFY(&s,false); [line 68]\n " shape="box"]
+40 [label="40:  DeclStmt \n   n$2=*&s:class Sub * [line 68]\n  *&b:class Sub *=n$2 [line 68]\n  REMOVE_TEMPS(n$2); [line 68]\n  NULLIFY(&s,false); [line 68]\n " shape="box"]
 	
 
 	 40 -> 39 ;
@@ -75,7 +75,7 @@ digraph iCFG {
 	
 
 	 22 -> 21 ;
-21 [label="21:  DeclStmt \n   *&b:struct Base1 &=&s [line 45]\n " shape="box"]
+21 [label="21:  DeclStmt \n   *&b:class Sub &=&s [line 45]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -94,7 +94,7 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  DeclStmt \n   n$2=*&s:class Sub * [line 39]\n  *&b:struct Base1 *=n$2 [line 39]\n  REMOVE_TEMPS(n$2); [line 39]\n  NULLIFY(&s,false); [line 39]\n " shape="box"]
+16 [label="16:  DeclStmt \n   n$2=*&s:class Sub * [line 39]\n  *&b:class Sub *=n$2 [line 39]\n  REMOVE_TEMPS(n$2); [line 39]\n  NULLIFY(&s,false); [line 39]\n " shape="box"]
 	
 
 	 16 -> 15 ;

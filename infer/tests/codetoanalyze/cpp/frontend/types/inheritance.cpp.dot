@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 24 -> 23 ;
-23 [label="23:  DeclStmt \n   n$13=_fun___new(sizeof(class Sub ):unsigned long ) [line 23]\n  *&s1:class Base *=n$13 [line 23]\n  REMOVE_TEMPS(n$13); [line 23]\n " shape="box"]
+23 [label="23:  DeclStmt \n   n$13=_fun___new(sizeof(class Sub ):unsigned long ) [line 23]\n  *&s1:class Sub *=n$13 [line 23]\n  REMOVE_TEMPS(n$13); [line 23]\n " shape="box"]
 	
 
 	 23 -> 22 ;

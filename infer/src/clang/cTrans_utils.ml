@@ -398,7 +398,7 @@ let dereference_value_from_result sil_loc trans_result ~strip_pointer =
 let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
   let (exp, typ) = extract_exp_from_list exps "" in
   let exp_typ = match cast_kind with
-    | `UncheckedDerivedToBase -> typ  (* This cast ignores change of type *)
+    | `UncheckedDerivedToBase | `DerivedToBase -> typ  (* These casts ignore change of type *)
     | _ -> cast_typ (* by default use the return type of cast expr *) in 
   if is_objc_bridged then
     let id, instr, exp = create_cast_instrs context exp typ cast_typ sil_loc in
