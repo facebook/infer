@@ -84,7 +84,7 @@ public class CollectSuppressWarnings extends AbstractProcessor {
     for (TypeElement te : annotations) {
       for (Element e : env.getElementsAnnotatedWith(te)) {
         SuppressWarnings annot = e.getAnnotation(SuppressWarnings.class);
-        if (shouldProcess(annot)) {
+        if (annot != null && shouldProcess(annot)) {
           if (e instanceof TypeElement) { // class
             String className = elements.getBinaryName((TypeElement) e).toString();
             mSuppressMap.put(className, Collections.EMPTY_SET);
