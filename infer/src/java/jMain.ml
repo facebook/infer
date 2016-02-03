@@ -59,13 +59,16 @@ let init_global_state source_file =
   Config.nLOC := nLOC
 
 
-let store_icfg tenv cg cfg source_file =
+let store_icfg tenv cg cfg source_file program =
+  let f_translate_typ tenv typ_str =
+    let cn = JBasics.make_cn typ_str in
+    ignore (JTransType.get_class_type program tenv cn) in
   let source_dir = DB.source_dir_from_source_file !DB.current_source in
   begin
     let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
     let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
     Cfg.add_removetemps_instructions cfg;
-    Preanal.doit cfg cg tenv;
+    Preanal.doit ~f_translate_typ:(Some f_translate_typ) cfg cg tenv;
     Cfg.add_abstraction_instructions cfg;
     Cg.store_to_file cg_file cg;
     Cfg.store_cfg_to_file cfg_file true cfg;
@@ -90,7 +93,7 @@ let do_source_file
     JFrontend.compute_source_icfg
       never_null_matcher linereader classes program tenv
       source_basename package_opt in
-  store_icfg tenv call_graph cfg source_file;
+  store_icfg tenv call_graph cfg source_file program;
   if !JConfig.create_harness then
     IList.fold_left
       (fun proc_file_map pdesc ->
@@ -111,7 +114,7 @@ let capture_libs never_null_matcher linereader program tenv =
           let call_graph, cfg =
             JFrontend.compute_class_icfg
               never_null_matcher linereader program tenv node fake_source_file in
-          store_icfg tenv call_graph cfg fake_source_file;
+          store_icfg tenv call_graph cfg fake_source_file program;
           JFrontend.cache_classname cn;
         end in
   JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)

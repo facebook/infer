@@ -671,12 +671,10 @@ let resolve_virtual_pname cfg tenv prop actuals pname call_flags : Procname.t =
     | Some class_name -> resolve_method tenv class_name pname
     | None -> pname in
   let receiver_types_equal pname actual_receiver_typ =
-    try
-      let formal_receiver_typ =
-        let receiver_typ_str = Procname.java_get_class pname in
-        Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer) in
-      Sil.typ_equal formal_receiver_typ actual_receiver_typ
-    with Cannot_convert_string_to_typ _ -> false in
+    let formal_receiver_typ =
+      let receiver_typ_str = Procname.java_get_class pname in
+      Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer) in
+    Sil.typ_equal formal_receiver_typ actual_receiver_typ in
   match actuals with
   | _ when not (call_flags.Sil.cf_virtual || call_flags.Sil.cf_interface) ->
       (* if this is not a virtual or interface call, there's no need for resolution *)

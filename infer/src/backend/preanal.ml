@@ -374,7 +374,22 @@ let analyze_and_annotate_proc cfg tenv pname pdesc =
   Table.reset ()
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
-let add_dispatch_calls cfg cg tenv =
+let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
+  let pname_translate_types pname =
+    match f_translate_typ_opt with
+    | Some f_translate_typ ->
+        if Procname.is_java pname then
+          let param_type_strs =
+            IList.map Procname.java_type_to_string (Procname.java_get_parameters pname) in
+          let receiver_type_str = Procname.java_get_class pname in
+          let return_type_str = Procname.java_get_return_type pname in
+          IList.iter
+            (fun typ_str -> f_translate_typ tenv typ_str)
+            (return_type_str :: (receiver_type_str :: param_type_strs))
+        else
+          (* TODO: support this for C/CPP/Obj-C *)
+          ()
+    | None -> () in
   let node_add_dispatch_calls caller_pname node =
     (* TODO: handle dynamic dispatch for virtual calls as well *)
     let call_flags_is_dispatch call_flags = call_flags.Sil.cf_interface in
@@ -399,6 +414,7 @@ let add_dispatch_calls cfg cg tenv =
                (* TODO: do this with all possible targets. for now, it is too slow to do this, so we
                   just pick one target *)
                Cg.add_edge cg caller_pname target_pname;
+               pname_translate_types target_pname;
                let call_flags' = { call_flags with Sil.cf_targets = [target_pname]; } in
                Sil.Call (ret_ids, call_exp, args, loc, call_flags'))
       | instr -> instr in
@@ -410,9 +426,9 @@ let add_dispatch_calls cfg cg tenv =
     Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc in
   Cfg.iter_proc_desc cfg proc_add_dispach_calls
 
-let doit cfg cg tenv =
+let doit ?(f_translate_typ=None) cfg cg tenv =
   AllPreds.mk_table cfg;
   Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
   AllPreds.clear_table ();
-  if !Config.sound_dynamic_dispatch then add_dispatch_calls cfg cg tenv;
+  if !Config.sound_dynamic_dispatch then add_dispatch_calls cfg cg tenv f_translate_typ;
 

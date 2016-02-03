@@ -11,4 +11,5 @@
 (** Preanalysis for eliminating dead local variables *)
 
 (** Perform liveness analysis *)
-val doit : Cfg.cfg -> Cg.t -> Sil.tenv -> unit
+val doit : ?f_translate_typ:(Sil.tenv -> string -> unit) option -> Cfg.cfg -> Cg.t -> Sil.tenv
+  -> unit
