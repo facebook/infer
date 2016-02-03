@@ -98,18 +98,17 @@ let create_csu opt_type =
 (* We need to take the name out of the type as the struct can be anonymous*)
 let get_record_name_csu decl =
   let open Clang_ast_t in
-  let name_info, opt_type, should_be_class = match decl with
-    | RecordDecl (_, name_info, opt_type, _, _, _, _) -> name_info, opt_type, false
-    | CXXRecordDecl (_, name_info, opt_type, _, _, _, _, cxx_record_info)
-    | ClassTemplateSpecializationDecl (_, name_info, opt_type, _, _, _, _, cxx_record_info) ->
+  let name_info, csu = match decl with
+    | RecordDecl (_, name_info, opt_type, _, _, _, _) ->
+        name_info, create_csu opt_type
+    | CXXRecordDecl (_, name_info, opt_type, _, _, _, _, _)
+    | ClassTemplateSpecializationDecl (_, name_info, opt_type, _, _, _, _, _) ->
         (* we use Csu.Class for C++ because we expect Csu.Class csu from *)
         (* types that have methods. And in C++ struct/class/union can have methods *)
-        name_info, opt_type, not cxx_record_info.xrdi_is_c_like
+        name_info, Csu.Class Csu.CPP
     | _-> assert false in
-  let csu  = create_csu opt_type in
-  let csu' = if should_be_class then Csu.Class Csu.CPP else csu in
   let name = Ast_utils.get_qualified_name name_info in
-  csu', name
+  csu, name
 
 let get_record_name decl = snd (get_record_name_csu decl)
 
