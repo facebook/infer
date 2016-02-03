@@ -101,6 +101,16 @@ let source_file_encoding source_file =
       let crc = CRC.crc16 dir in
       base ^ "." ^ crc
 
+(** covert a long filename to a short ones by truncating the name and adding a hash *)
+let get_short_filename filename =
+  let cutoff_length = 100 in (** if longer than cutoff, cut it and append CRC *)
+  let name_up_to_cutoff =
+    if String.length filename <= cutoff_length
+    then filename
+    else String.sub filename 0 cutoff_length in
+  let crc_str = CRC.crc16 filename in
+  name_up_to_cutoff ^ ":" ^ crc_str
+
 let source_file_empty = Absolute ""
 
 (** current source file *)
@@ -118,7 +128,8 @@ let source_dir_to_string source_dir = source_dir
 
 (** get the path to an internal file with the given extention (.cfg, .cg, .tenv) *)
 let source_dir_get_internal_file source_dir extension =
-  let source_dir_name = Filename.chop_extension (Filename.basename source_dir) in
+  let source_dir_name =
+    get_short_filename (Filename.chop_extension (Filename.basename source_dir)) in
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname
 
