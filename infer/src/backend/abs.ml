@@ -1310,12 +1310,13 @@ let check_junk ?original_prop pname tenv prop =
                 (match alloc_attribute, resource with
                  | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->
                      (* When there is a cycle in objc we ignore it *)
-                     (* only if it has weak or unsafe_unretained fields. *)
+                     (* only if it's empty or it has weak or unsafe_unretained fields. *)
                      (* Otherwise we report a retain cycle. *)
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
-                     if cycle_has_weak_or_unretained_or_assign_field cycle then
-                       true, exn_retain_cycle cycle
-                     else false, exn_retain_cycle cycle
+                     let ignore_cycle =
+                       (IList.length cycle = 0) ||
+                       (cycle_has_weak_or_unretained_or_assign_field cycle) in
+                     ignore_cycle, exn_retain_cycle cycle
                  | Some _, Sil.Rmemory Sil.Mobjc
                  | Some _, Sil.Rmemory Sil.Mnew when !Config.curr_language = Config.C_CPP ->
                      ml_bucket_opt = None, exn_leak
@@ -1328,7 +1329,7 @@ let check_junk ?original_prop pname tenv prop =
                      (* we have a retain cycle. Objc object may not have the *)
                      (* Sil.Mobjc qualifier when added in footprint doing abduction *)
                      let cycle = get_var_retain_cycle (remove_opt original_prop) in
-                     false, exn_retain_cycle cycle
+                     IList.length cycle = 0, exn_retain_cycle cycle
                  | _ -> !Config.curr_language = Config.Java, exn_leak) in
               let already_reported () =
                 let attr_opt_equal ao1 ao2 = match ao1, ao2 with
