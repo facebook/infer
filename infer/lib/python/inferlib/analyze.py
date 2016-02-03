@@ -430,6 +430,12 @@ class Infer:
         elif self.args.project_root:
             infer_options += ['-project_root', self.args.project_root]
 
+        if self.args.analyzer in [config.ANALYZER_CHECKERS,
+                                  config.ANALYZER_ERADICATE]:
+            os.environ['INFER_ONDEMAND'] = 'Y'
+
+        os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
+
         if self.args.multicore == 1:
             analysis_start_time = time.time()
             analyze_cmd = infer_analyze + infer_options
@@ -445,12 +451,6 @@ class Infer:
             self.timing['makefile_generation'] = 0
 
         else:
-            if self.args.analyzer in [config.ANALYZER_CHECKERS,
-                                      config.ANALYZER_ERADICATE]:
-                os.environ['INFER_ONDEMAND'] = 'Y'
-
-            os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
-
             multicore_dir = os.path.join(self.args.infer_out, 'multicore')
             pwd = os.getcwd()
             if os.path.isdir(multicore_dir):
