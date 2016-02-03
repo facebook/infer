@@ -451,11 +451,12 @@ let to_simplified_string ?(withclass = false) p =
 let to_filename (pn : proc_name) =
   let cutoff_length = 100 in (** if longer than cutoff, cut it and append CRC *)
   let name = to_unique_id pn in
-  if String.length name <= cutoff_length then name
-  else
-    let pname_first_100 = String.sub name 0 cutoff_length in
-    let crc_str = CRC.crc16 name in
-    pname_first_100 ^ crc_str
+  let pname_up_to_cutoff =
+    if String.length name <= cutoff_length
+    then name
+    else String.sub name 0 cutoff_length in
+  let crc_str = CRC.crc16 name in
+  pname_up_to_cutoff ^ ":" ^ crc_str
 
 (** Pretty print a proc name *)
 let pp f pn =
