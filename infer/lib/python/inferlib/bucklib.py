@@ -66,7 +66,6 @@ def prepare_build(args):
 
     infer_options = [
         '--buck',
-        '--incremental',
         '--analyzer', args.analyzer,
     ]
 

@@ -112,8 +112,11 @@ def main():
 
     args = global_argparser.parse_args(to_parse)
 
-    if (imported_module and not args.incremental and
-            capture_module_name != 'analyze'):
+    remove_infer_out = (imported_module
+                        and not args.incremental
+                        and capture_module_name != 'analyze'
+                        and not args.buck)
+    if remove_infer_out:
         analyze.remove_infer_out(args.infer_out)
 
     if imported_module:
