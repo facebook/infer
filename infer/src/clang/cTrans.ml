@@ -363,6 +363,18 @@ struct
       exps = [(exp, typ)];
       ids = ids; }
 
+  let cxxScalarValueInitExpr_trans trans_state stmt_info expr_info =
+    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    (* constant will be different depending on type *)
+    let zero_opt = match typ with
+      | Sil.Tfloat _ -> Some (Sil.Cfloat 0.0)
+      | Sil.Tptr _ -> Some (Sil.Cint Sil.Int.null)
+      | Sil.Tvoid -> None
+      | _ -> Some (Sil.Cint Sil.Int.zero) in
+    match zero_opt with
+    | Some zero -> { empty_res_trans with exps = [(Sil.Const zero, typ)] }
+    | _ -> empty_res_trans
+
   let nullStmt_trans succ_nodes stmt_info =
     { empty_res_trans with root_nodes = succ_nodes }
 
@@ -2150,6 +2162,9 @@ struct
 
     | FloatingLiteral (stmt_info, stmts, expr_info, float_string) ->
         floatingLiteral_trans trans_state stmt_info expr_info float_string
+
+    | CXXScalarValueInitExpr (stmt_info, stmts, expr_info) ->
+        cxxScalarValueInitExpr_trans trans_state stmt_info expr_info
 
     | ObjCBoxedExpr (stmt_info, stmts, info, sel) ->
         objCBoxedExpr_trans trans_state info sel stmt_info stmts

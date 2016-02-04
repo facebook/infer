@@ -24,10 +24,18 @@ public class LiteralsTest {
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
 
   @Test
-  public void whenCaptureRunCommaThenDotFilesAreTheSame()
+  public void whenCaptureRunNullptrThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
     String src =
         "infer/tests/codetoanalyze/cpp/frontend/literals/nullptr.cpp";
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
+  }
+
+  @Test
+  public void whenCaptureRunScalarValueInitThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+    String src =
+        "infer/tests/codetoanalyze/cpp/frontend/literals/scalar_value_init.cpp";
     ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
   }
 }
