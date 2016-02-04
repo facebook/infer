@@ -348,7 +348,7 @@ type summary_val =
     vin_calls : int;
     vout_calls : int;
     vproof_trace : string;
-    vcyclomatic : int }
+  }
 
 (** compute values from summary data to export to csv and xml format *)
 let summary_values top_proc_set summary =
@@ -389,7 +389,6 @@ let summary_values top_proc_set summary =
     pp_to_string pp_failure_kind failure in
 
 
-  let cyclomatic = stats.Specs.cyclomatic in
   { vname = Procname.to_string proc_name;
     vname_id = Procname.to_filename proc_name;
     vspecs = IList.length specs;
@@ -411,13 +410,32 @@ let summary_values top_proc_set summary =
     vin_calls = in_calls;
     vout_calls = out_calls;
     vproof_trace = proof_trace;
-    vcyclomatic = cyclomatic }
+  }
 
 
 module ProcsCsv = struct
   (** Print the header of the procedures csv file, with column names *)
   let pp_header fmt () =
-    Format.fprintf fmt "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s@\n" Io_infer.Xml.tag_name Io_infer.Xml.tag_name_id Io_infer.Xml.tag_specs Io_infer.Xml.tag_time Io_infer.Xml.tag_to Io_infer.Xml.tag_symop Io_infer.Xml.tag_err Io_infer.Xml.tag_file Io_infer.Xml.tag_line Io_infer.Xml.tag_loc Io_infer.Xml.tag_top Io_infer.Xml.tag_signature Io_infer.Xml.tag_weight Io_infer.Xml.tag_proof_coverage Io_infer.Xml.tag_rank Io_infer.Xml.tag_in_calls Io_infer.Xml.tag_out_calls Io_infer.Xml.tag_proof_trace Io_infer.Xml.tag_cyclomatic
+    Format.fprintf fmt
+      "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s@\n"
+      Io_infer.Xml.tag_name
+      Io_infer.Xml.tag_name_id
+      Io_infer.Xml.tag_specs
+      Io_infer.Xml.tag_time
+      Io_infer.Xml.tag_to
+      Io_infer.Xml.tag_symop
+      Io_infer.Xml.tag_err
+      Io_infer.Xml.tag_file
+      Io_infer.Xml.tag_line
+      Io_infer.Xml.tag_loc
+      Io_infer.Xml.tag_top
+      Io_infer.Xml.tag_signature
+      Io_infer.Xml.tag_weight
+      Io_infer.Xml.tag_proof_coverage
+      Io_infer.Xml.tag_rank
+      Io_infer.Xml.tag_in_calls
+      Io_infer.Xml.tag_out_calls
+      Io_infer.Xml.tag_proof_trace
 
   (** Write proc summary stats in csv format *)
   let pp_summary fname top_proc_set fmt summary =
@@ -441,7 +459,6 @@ module ProcsCsv = struct
     pp "%d," sv.vin_calls;
     pp "%d," sv.vout_calls;
     pp "%s," sv.vproof_trace;
-    pp "%d@\n" sv.vcyclomatic
 end
 
 module ProcsXml = struct
@@ -475,7 +492,6 @@ module ProcsXml = struct
           subtree Io_infer.Xml.tag_in_calls (string_of_int sv.vin_calls);
           subtree Io_infer.Xml.tag_out_calls (string_of_int sv.vin_calls);
           subtree Io_infer.Xml.tag_proof_trace sv.vproof_trace;
-          subtree Io_infer.Xml.tag_cyclomatic (string_of_int sv.vcyclomatic);
           subtree Io_infer.Xml.tag_flags (string_of_int (Hashtbl.length sv.vflags));
         ] in
       Io_infer.Xml.create_tree "procedure" attributes forest in
@@ -701,7 +717,14 @@ end
 module CallsCsv = struct
   (** Print the header of the calls csv file, with column names *)
   let pp_header fmt () =
-    Format.fprintf fmt "%s,%s,%s,%s,%s,%s,%s@\n" Io_infer.Xml.tag_caller Io_infer.Xml.tag_caller_id Io_infer.Xml.tag_callee Io_infer.Xml.tag_callee_id Io_infer.Xml.tag_file Io_infer.Xml.tag_line Io_infer.Xml.tag_call_trace
+    Format.fprintf fmt "%s,%s,%s,%s,%s,%s,%s@\n"
+      Io_infer.Xml.tag_caller
+      Io_infer.Xml.tag_caller_id
+      Io_infer.Xml.tag_callee
+      Io_infer.Xml.tag_callee_id
+      Io_infer.Xml.tag_file
+      Io_infer.Xml.tag_line
+      Io_infer.Xml.tag_call_trace
 
   (** Write proc summary stats in csv format *)
   let pp_calls fname fmt summary =

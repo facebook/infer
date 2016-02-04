@@ -39,7 +39,6 @@ module Xml : sig
   val tag_callee_id : string
   val tag_caller : string
   val tag_caller_id : string
-  val tag_cyclomatic : string
   val tag_class : string
   val tag_code : string
   val tag_description : string

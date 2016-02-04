@@ -294,7 +294,6 @@ type stats =
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)
     mutable nodes_visited_re : IntSet.t; (** Nodes visited during the re-execution phase *)
     call_stats : call_stats;
-    cyclomatic : int;
   }
 
 type status = ACTIVE | INACTIVE | STALE
@@ -465,7 +464,7 @@ let pp_summary pe whole_seconds fmt summary =
 let pp_spec_table pe whole_seconds fmt () =
   Procname.Hash.iter (fun proc_name (summ, orig) -> F.fprintf fmt "PROC %a@\n%a@\n" Procname.pp proc_name (pp_summary pe whole_seconds) summ) spec_tbl
 
-let empty_stats calls cyclomatic in_out_calls_opt =
+let empty_stats calls in_out_calls_opt =
   { stats_time = 0.0;
     stats_failure = None;
     stats_calls =
@@ -476,7 +475,6 @@ let empty_stats calls cyclomatic in_out_calls_opt =
     nodes_visited_fp = IntSet.empty;
     nodes_visited_re = IntSet.empty;
     call_stats = CallStats.init calls;
-    cyclomatic = cyclomatic;
   }
 
 let rec post_equal pl1 pl2 = match pl1, pl2 with
@@ -799,11 +797,11 @@ let empty_payload =
   }
 
 (** [init_summary (depend_list, nodes,
-    proc_flags, calls, cyclomatic, in_out_calls_opt, proc_attributes)]
+    proc_flags, calls, in_out_calls_opt, proc_attributes)]
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary
     (depend_list, nodes,
-     proc_flags, calls, cyclomatic, in_out_calls_opt,
+     proc_flags, calls, in_out_calls_opt,
      proc_attributes) =
   let dependency_map = mk_initial_dependency_map depend_list in
   let summary =
@@ -813,7 +811,7 @@ let init_summary
       phase = FOOTPRINT;
       sessions = ref 0;
       payload = empty_payload;
-      stats = empty_stats calls cyclomatic in_out_calls_opt;
+      stats = empty_stats calls in_out_calls_opt;
       status = INACTIVE;
       timestamp = 0;
       attributes =
@@ -835,7 +833,6 @@ let reset_summary call_graph proc_name attributes_opt =
     [],
     proc_flags_empty (),
     [],
-    0,
     Some (Cg.get_calls call_graph proc_name),
     proc_attributes
   )

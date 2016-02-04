@@ -195,7 +195,6 @@ module Xml = struct
   let tag_callee_id = "callee_id"
   let tag_caller = "caller"
   let tag_caller_id = "caller_id"
-  let tag_cyclomatic = "cyclomatic"
   let tag_class = "class"
   let tag_code = "code"
   let tag_description = "description"

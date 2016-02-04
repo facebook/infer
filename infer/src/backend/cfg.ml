@@ -498,19 +498,6 @@ module Node = struct
     proc_desc.pd_attributes.ProcAttributes.locals <-
       proc_desc.pd_attributes.ProcAttributes.locals @ new_locals
 
-  (** Get the cyclomatic complexity for the procedure *)
-  let proc_desc_get_cyclomatic proc_desc =
-    let num_edges = ref 0 in
-    let num_nodes = ref 0 in
-    let num_connected = 1 in (* always one connected component in a procedure's cfg *)
-    let nodes = proc_desc_get_nodes proc_desc in
-    let do_node node =
-      incr num_nodes;
-      num_edges := !num_edges + IList.length (get_succs node) in
-    IList.iter do_node nodes;
-    let cyclo = !num_edges - !num_nodes + 2 * num_connected in (* formula for cyclomatic complexity *)
-    cyclo
-
   (** Print extended instructions for the node, highlighting the given subinstruction if present *)
   let pp_instr pe0 ~sub_instrs instro fmt node =
     let pe = match instro with
@@ -638,7 +625,6 @@ module Procdesc = struct
   let remove = Node.proc_desc_remove
   let find_from_name = Node.proc_desc_from_name
   let get_attributes = Node.proc_desc_get_attributes
-  let get_cyclomatic = Node.proc_desc_get_cyclomatic
   let get_err_log = Node.proc_desc_get_err_log
   let get_exit_node = Node.proc_desc_get_exit_node
   let get_flags = Node.proc_desc_get_flags

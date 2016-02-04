@@ -108,7 +108,6 @@ type stats =
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)
     mutable nodes_visited_re : IntSet.t; (** Nodes visited during the re-execution phase *)
     call_stats : CallStats.t;
-    cyclomatic : int;
   }
 
 type status = ACTIVE | INACTIVE | STALE
@@ -220,7 +219,6 @@ val init_summary :
    int list * (** nodes *)
    proc_flags * (** procedure flags *)
    (Procname.t * Location.t) list * (** calls *)
-   int * (** cyclomatic *)
    (Cg.in_out_calls option) * (** in and out calls *)
    ProcAttributes.t) (** attributes of the procedure *)
   -> unit

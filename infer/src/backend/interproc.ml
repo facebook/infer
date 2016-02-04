@@ -1254,7 +1254,6 @@ let do_analysis exe_env =
     let proc_flags = Cfg.Procdesc.get_flags pdesc in
     let static_err_log = Cfg.Procdesc.get_err_log pdesc in (** err log from translation *)
     let calls = get_calls pdesc in
-    let cyclomatic = Cfg.Procdesc.get_cyclomatic pdesc in
     let attributes =
       { (Cfg.Procdesc.get_attributes pdesc) with
         ProcAttributes.err_log = static_err_log; } in
@@ -1262,7 +1261,7 @@ let do_analysis exe_env =
     Callbacks.proc_inline_synthetic_methods cfg pdesc;
     Specs.init_summary
       (dep, nodes, proc_flags,
-       calls, cyclomatic, None, attributes) in
+       calls, None, attributes) in
   let filter =
     if !Config.only_skips then (filter_skipped_procs cg procs_and_defined_children)
     else if !Config.only_nospecs then filter_nospecs

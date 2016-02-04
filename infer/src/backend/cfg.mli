@@ -44,9 +44,6 @@ module Procdesc : sig
   (** Get the attributes of the procedure. *)
   val get_attributes : t -> ProcAttributes.t
 
-  (** Get the cyclomatic complexity for the procedure *)
-  val get_cyclomatic : t -> int
-
   val get_err_log : t -> Errlog.t
 
   val get_exit_node : t -> node
