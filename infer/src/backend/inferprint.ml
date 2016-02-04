@@ -188,8 +188,7 @@ let error_desc_to_plain_string error_desc =
   pp_to_string pp ()
 
 let error_desc_to_dotty_string error_desc =
-  let dotty_opt = Localise.error_desc_get_dotty error_desc in
-  match dotty_opt with Some s -> s | None -> ""
+  Localise.error_desc_get_dotty error_desc
 
 let error_desc_to_xml_string error_desc =
   let pp fmt () = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in

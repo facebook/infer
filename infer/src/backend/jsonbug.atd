@@ -31,7 +31,7 @@ type jsonbug = {
   key : int;
   qualifier_tags : tag_value_record list;
   hash : int;
-  dotty : string;
+  ?dotty : string option;
   ?infer_source_loc: loc option;
 }
 
