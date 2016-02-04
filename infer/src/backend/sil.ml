@@ -1298,11 +1298,14 @@ let rec const_compare (c1 : const) (c2 : const) : int =
   | Ctuple el1, Ctuple el2 -> IList.compare exp_compare el1 el2
 
 and struct_typ_compare struct_typ1 struct_typ2 =
-  let n = fld_typ_ann_list_compare struct_typ1.instance_fields struct_typ2.instance_fields in
-  if n <> 0 then n else
-    let n = fld_typ_ann_list_compare struct_typ1.static_fields struct_typ2.static_fields in
-    if n <> 0 then n else let n = Csu.compare struct_typ1.csu struct_typ2.csu in
-      if n <> 0 then n else cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
+  if struct_typ1.csu = Csu.Class Csu.Java && struct_typ2.csu = Csu.Class Csu.Java then
+    cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
+  else
+    let n = fld_typ_ann_list_compare struct_typ1.instance_fields struct_typ2.instance_fields in
+    if n <> 0 then n else
+      let n = fld_typ_ann_list_compare struct_typ1.static_fields struct_typ2.static_fields in
+      if n <> 0 then n else let n = Csu.compare struct_typ1.csu struct_typ2.csu in
+        if n <> 0 then n else cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
 
 (** Comparision for types. *)
 and typ_compare t1 t2 =
