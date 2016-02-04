@@ -573,11 +573,19 @@ struct
     let type_name_crc = Some (CRC.crc16 type_name) in
     Procname.mangled_c_method class_name method_name type_name_crc
 
+  let get_var_name_string name_info var_decl_info =
+    let clang_name = Ast_utils.get_qualified_name name_info in
+    match clang_name, var_decl_info.Clang_ast_t.vdi_parm_index_in_function with
+    | "", Some index -> "__param_" ^ string_of_int index
+    | "", None -> assert false
+    | _ -> clang_name
+
   let mk_sil_var name decl_info_type_ptr_opt procname outer_procname =
     let name_string = Ast_utils.get_qualified_name name in
-    let simple_name = Mangled.from_string name_string  in
     match decl_info_type_ptr_opt with
     | Some (decl_info, type_ptr, var_decl_info, should_be_mangled) ->
+        let name_string = get_var_name_string name var_decl_info in
+        let simple_name = Mangled.from_string name_string in
         if var_decl_info.Clang_ast_t.vdi_is_global then
           let global_mangled_name =
             if var_decl_info.Clang_ast_t.vdi_is_static_local then
@@ -593,7 +601,7 @@ struct
           let mangled = CRC.crc16 (type_name ^ line_str) in
           let mangled_name = Mangled.mangled name_string mangled in
           Sil.mk_pvar mangled_name procname
-    | None -> Sil.mk_pvar simple_name procname
+    | None -> Sil.mk_pvar (Mangled.from_string name_string) procname
 
   let is_cpp_translation language =
     language = CFrontend_config.CPP || language = CFrontend_config.OBJCPP

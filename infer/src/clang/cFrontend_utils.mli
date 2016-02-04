@@ -179,6 +179,8 @@ sig
 
   val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
 
+  val get_var_name_string : Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info -> string
+
   val mk_sil_var : Clang_ast_t.named_decl_info -> var_info option -> Procname.t -> Procname.t ->
     Sil.pvar
 

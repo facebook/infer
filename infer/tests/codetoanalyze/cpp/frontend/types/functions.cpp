@@ -17,6 +17,10 @@ int fun_default_decl(int a, int b) {
   return a + b;
 }
 
+int fun_ignore_param(int a, int, int) {
+  return a;
+}
+
 void test() {
   fun_default(1, 2);
   fun_default(1);
@@ -24,4 +28,8 @@ void test() {
 
   fun_default_decl(6);
   fun_default_decl(6,6);
+}
+
+void test2() {
+  fun_ignore_param(1, 1, 1);
 }

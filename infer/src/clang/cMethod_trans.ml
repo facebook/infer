@@ -103,7 +103,7 @@ let get_parameters tenv function_method_decl_info =
   let par_to_ms_par par =
     match par with
     | Clang_ast_t.ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
-        let name = name_info.Clang_ast_t.ni_name in
+        let name = General_utils.get_var_name_string name_info var_decl_info in
         (name, type_ptr)
     | _ -> assert false in
   let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
