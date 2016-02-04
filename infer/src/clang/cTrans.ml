@@ -207,27 +207,32 @@ struct
       { empty_res_trans with
         exps = [(Sil.Sizeof(expanded_type, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
 
-  let add_reference_if_lvalue typ expr_info =
-    match expr_info.Clang_ast_t.ei_value_kind, typ with
-    | `LValue, Sil.Tptr (_, Sil.Pk_reference) ->
+  let add_reference_if_glvalue typ expr_info =
+    (* glvalue definition per C++11:*)
+    (* http://en.cppreference.com/w/cpp/language/value_category *)
+    let is_glvalue = match expr_info.Clang_ast_t.ei_value_kind with
+      | `LValue | `XValue -> true
+      | `RValue -> false in
+    match is_glvalue, typ with
+    | true, Sil.Tptr (_, Sil.Pk_reference) ->
         (* reference of reference is not allowed in C++ - it's most likely frontend *)
         (* trying to add same reference to same type twice*)
         (* this is hacky and should be fixed (t9838691) *)
         typ
-    | `LValue, _ -> Sil.Tptr (typ, Sil.Pk_reference)
+    | true, _ -> Sil.Tptr (typ, Sil.Pk_reference)
     | _ -> typ
 
   (** Execute translation and then possibly adjust the type of the result of translation:
       In C++, when expression returns reference to type T, it will be lvalue to T, not T&, but
       infer needs it to be T& *)
-  let exec_with_lvalue_as_reference f trans_state stmt =
+  let exec_with_glvalue_as_reference f trans_state stmt =
     let expr_info = match Clang_ast_proj.get_expr_tuple stmt with
       | Some (_, _, ei) -> ei
       | None -> assert false in
     let res_trans = f trans_state stmt in
     let (exp, typ) = extract_exp_from_list res_trans.exps
         "[Warning] Need exactly one expression to add reference type\n" in
-    { res_trans with exps = [(exp, add_reference_if_lvalue typ expr_info)] }
+    { res_trans with exps = [(exp, add_reference_if_glvalue typ expr_info)] }
 
   (* Execute translation of e forcing to release priority (if it's not free) and then setting it back.*)
   (* This is used in conditional operators where we need to force the priority to be free for the *)
@@ -715,7 +720,7 @@ struct
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
     let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    let function_type = add_reference_if_lvalue fn_type_no_ref expr_info in
+    let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
     (* First stmt is the function expr and the rest are params *)
@@ -750,7 +755,7 @@ struct
     let params_stmt = if should_translate_args then params_stmt
       else [] in
     let result_trans_subexprs =
-      let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+      let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
       let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
       res_trans_callee :: res_trans_p in
     let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
@@ -816,7 +821,7 @@ struct
     let trans_state_param =
       { trans_state_pri with succ_nodes = []; var_exp = None } in
     let result_trans_subexprs =
-      let instruction' = exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+      let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
       let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
       result_trans_callee :: res_trans_p in
     (* first expr is method address, rest are params including 'this' parameter *)
@@ -852,7 +857,7 @@ struct
     let trans_state_callee = { trans_state_pri with succ_nodes = [] } in
     let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
     let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    let function_type = add_reference_if_lvalue fn_type_no_ref expr_info in
+    let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type
 
@@ -929,7 +934,7 @@ struct
               Ast_expressions.make_obj_c_message_expr_info_class selector class_name pointer in
             obj_c_message_expr_info, empty_res_trans in
         let instruction' =
-          exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+          exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
         let l = IList.map (instruction' trans_state_param) rest in
         obj_c_message_expr_info, fst_res_trans :: l
     | [] -> obj_c_message_expr_info, [empty_res_trans]
@@ -940,7 +945,7 @@ struct
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location si context in
     let method_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
-    let method_type = add_reference_if_lvalue method_type_no_ref expr_info in
+    let method_type = add_reference_if_glvalue method_type_no_ref expr_info in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let trans_state_param = { trans_state_pri with succ_nodes = []; var_exp = None } in
     let obj_c_message_expr_info, res_trans_subexpr_list =
@@ -1038,7 +1043,7 @@ struct
      | [cond; exp1; exp2] ->
          let typ =
            CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-         let var_typ = add_reference_if_lvalue typ expr_info in
+         let var_typ = add_reference_if_glvalue typ expr_info in
          let join_node = create_node (Cfg.Node.Join_node) [] [] sil_loc context in
          Cfg.Node.set_succs_exn join_node succ_nodes [];
          let pvar = mk_temp_var (Cfg.Node.get_id join_node) in
@@ -1556,7 +1561,7 @@ struct
         let res_trans_ie =
           let trans_state' = { trans_state_pri with succ_nodes = []; var_exp = Some var_exp } in
           let instruction' =
-            exec_with_self_exception (exec_with_lvalue_as_reference instruction) in
+            exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
           exec_with_block_priority_exception instruction' trans_state' ie var_stmt_info in
         let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps
             "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
@@ -1701,7 +1706,7 @@ struct
     (* with wrong value. For example, we don't want p to be initialized with X(1) for:*)
     (* int p = X(1).field; *)
     let trans_state' = { trans_state with var_exp = None } in
-    let result_trans_exp_stmt = exec_with_lvalue_as_reference instruction trans_state' exp_stmt in
+    let result_trans_exp_stmt = exec_with_glvalue_as_reference instruction trans_state' exp_stmt in
     decl_ref_trans trans_state result_trans_exp_stmt stmt_info expr_info decl_ref
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
@@ -1955,7 +1960,7 @@ struct
       | _ -> assert false in
     let builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast) in
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
-    let res_trans_stmt = exec_with_lvalue_as_reference instruction trans_state' stmt in
+    let res_trans_stmt = exec_with_glvalue_as_reference instruction trans_state' stmt in
     let exp = match res_trans_stmt.exps with | [e] -> e | _ -> assert false in
     let args = [exp; (sizeof_expr, Sil.Tvoid)] in
     let ret_id = Ident.create_fresh Ident.knormal in

@@ -1,5 +1,5 @@
 digraph iCFG {
-12 [label="12:  DeclStmt \n   n$2=*&a:class A * [line 22]\n  _fun_A_get(n$2:class A *,1:int ,&SIL_materialize_temp__n$1:class X *) [line 22]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$1:class X ) [line 22]\n  REMOVE_TEMPS(n$2); [line 22]\n  NULLIFY(&a,false); [line 22]\n " shape="box"]
+12 [label="12:  DeclStmt \n   n$2=*&a:class A * [line 22]\n  _fun_A_get(n$2:class A *,1:int ,&SIL_materialize_temp__n$1:class X *) [line 22]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$1:class X &) [line 22]\n  REMOVE_TEMPS(n$2); [line 22]\n  NULLIFY(&a,false); [line 22]\n " shape="box"]
 	
 
 	 12 -> 11 ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 8 -> 7 ;
-7 [label="7:  Return Stmt \n   n$0=*&__return_param:void * [line 17]\n  _fun_X_X(n$0:class X *,&x:class X ) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&__return_param,false); [line 17]\n  NULLIFY(&x,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+7 [label="7:  Return Stmt \n   n$0=*&__return_param:void * [line 17]\n  _fun_X_X(n$0:class X *,&x:class X &) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&__return_param,false); [line 17]\n  NULLIFY(&x,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 7 -> 6 ;
@@ -32,7 +32,7 @@ digraph iCFG {
 4 [label="4: Exit X_X \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start X_X\nFormals:  this:class X * __param_0:void \nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+3 [label="3: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 3 -> 4 ;

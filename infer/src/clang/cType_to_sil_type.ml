@@ -113,6 +113,7 @@ and sil_type_of_c_type translate_decl tenv c_type =
        | None -> Sil.Tvoid)
   | ObjCInterfaceType (type_info, pointer) ->
       decl_ptr_to_sil_type translate_decl tenv pointer
+  | RValueReferenceType (type_info, type_ptr)
   | LValueReferenceType (type_info, type_ptr) ->
       let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
       Sil.Tptr (typ, Sil.Pk_reference)
