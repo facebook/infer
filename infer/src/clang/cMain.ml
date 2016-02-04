@@ -23,52 +23,65 @@ let arg_desc =
       "-c",
       Arg.String (fun cfile -> CFrontend_config.source_file := Some cfile),
       Some "cfile",
-      "C File to translate";
+      "C File to translate"
+      ;
       "-x",
       Arg.String (fun lang -> CFrontend_config.lang_from_string lang),
       Some "cfile",
-      "Language (c, objective-c, c++, objc-++)";
+      "Language (c, objective-c, c++, objc-++)"
+      ;
       "-ast",
       Arg.String (fun file -> CFrontend_config.ast_file := Some file),
       Some "file",
-      "AST file for the translation";
+      "AST file for the translation"
+      ;
       "-dotty_cfg_libs",
       Arg.Unit (fun _ -> Config.dotty_cfg_libs := true),
       None,
-      "Prints the cfg of the code coming from the libraries";
+      "Prints the cfg of the code coming from the libraries"
+      ;
       "-no_headers",
       Arg.Unit (fun _ -> CFrontend_config.no_translate_libs := true),
       None,
-      "Do not translate code in header files (default)";
+      "Do not translate code in header files (default)"
+      ;
       "-headers",
       Arg.Unit (fun _ -> CFrontend_config.no_translate_libs := false),
       None,
-      "Translate code in header files";
+      "Translate code in header files"
+      ;
       "-testing_mode",
       Arg.Unit (fun _ -> CFrontend_config.testing_mode := true),
       None,
-      "Mode for testing, where no libraries are translated, including enums defined in the libraries";
+      "Mode for testing, where no libraries are translated,
+      including enums defined in the libraries"
+      ;
       "-debug",
       Arg.Unit (fun _ -> CFrontend_config.debug_mode := true),
       None,
-      "Enables debug mode";
+      "Enables debug mode"
+      ;
       "-stats",
       Arg.Unit (fun _ -> CFrontend_config.stats_mode := true),
       None,
-      "Enables stats mode";
+      "Enables stats mode"
+      ;
       "-project_root",
       Arg.String (fun s ->
           Config.project_root := Some (Utils.filename_to_absolute s)),
       Some "dir",
-      "Toot directory of the project";
+      "Toot directory of the project"
+      ;
       "-fobjc-arc",
       Arg.Unit (fun s -> Config.arc_mode := true),
       None,
-      "Translate with Objective-C Automatic Reference Counting (ARC)";
+      "Translate with Objective-C Automatic Reference Counting (ARC)"
+      ;
       "-models_mode",
       Arg.Unit (fun _ -> CFrontend_config.models_mode := true),
       None,
-      "Mode for computing the models";
+      "Mode for computing the models"
+      ;
     ] in
   Utils.Arg.create_options_desc false "Parsing Options" desc
 

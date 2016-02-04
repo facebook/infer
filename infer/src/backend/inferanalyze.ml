@@ -137,63 +137,214 @@ let arg_desc =
     let desc =
       base_arg_desc @
       [
-        "-err_file", Arg.Set_string err_file_cmdline, Some "file", "use file for the err channel";
-        "-exclude", Arg.String exclude, Some "file", "exclude from analysis the files and directories specified in file";
-        "-incremental_changed_only", Arg.Unit incremental_changed_only, None, "only analyze files captured since the last analysis";
-        "-incremental", Arg.Unit incremental, None, "analyze files captured since the last analysis plus any dependencies";
-        "-iterations", Arg.Set_int iterations_cmdline, Some "n", "set the max number of operations for each function, expressed as a multiple of symbolic operations (default n=1)";
-        "-nonstop", Arg.Set Config.nonstop, None, "activate the nonstop mode: the analysis continues after finding errors. With this option the analysis can become less precise.";
-        "-out_file", Arg.Set_string out_file_cmdline, Some "file", "use file for the out channel";
-        "-print_builtins", Arg.Unit SymExec.print_builtins, None, "print the builtin functions and exit";
-        "-source_path", Arg.String source_path, Some "path", "specify the absolute path to the root of the source files. Used to interpret relative paths when using option -exclude.";
+        "-err_file",
+        Arg.Set_string err_file_cmdline,
+        Some "file",
+        "use file for the err channel"
+        ;
+        "-exclude",
+        Arg.String exclude,
+        Some "file",
+        "exclude from analysis the files and directories specified in file"
+        ;
+        "-incremental_changed_only",
+        Arg.Unit incremental_changed_only,
+        None,
+        "only analyze files captured since the last analysis"
+        ;
+        "-incremental",
+        Arg.Unit incremental,
+        None,
+        "analyze files captured since the last analysis plus any dependencies"
+        ;
+        "-iterations",
+        Arg.Set_int iterations_cmdline,
+        Some "n",
+        "set the max number of operations for each function,
+        expressed as a multiple of symbolic operations (default n=1)"
+        ;
+        "-nonstop",
+        Arg.Set Config.nonstop,
+        None,
+        "activate the nonstop mode: the analysis continues after finding errors.
+        With this option the analysis can become less precise."
+        ;
+        "-out_file",
+        Arg.Set_string out_file_cmdline,
+        Some "file",
+        "use file for the out channel"
+        ;
+        "-print_builtins",
+        Arg.Unit SymExec.print_builtins,
+        None,
+        "print the builtin functions and exit"
+        ;
+        "-source_path",
+        Arg.String source_path,
+        Some "path",
+        "specify the absolute path to the root of the source files.
+        Used to interpret relative paths when using option -exclude."
+        ;
         (* TODO: merge with the -project_root option *)
-        "-java", Arg.Unit (fun () -> Config.curr_language := Config.Java), None, "Set language to Java";
-        "-version", Arg.Unit print_version, None, "print version information and exit";
-        "-version_json", Arg.Unit print_version_json, None, "print version json formatted";
-        "-objcm", Arg.Set Config.objc_memory_model_on, None, "Use ObjC memory model";
-        "-no_progress_bar", Arg.Unit (fun () -> Config.show_progress_bar := false), None, "Do not show a progress bar";
-        "-ml_buckets", Arg.Set_string ml_buckets_arg, Some "ml_buckets",
-        "memory leak buckets to be checked, separated by commas. The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp, unknown_origin";
+        "-java",
+        Arg.Unit (fun () -> Config.curr_language := Config.Java),
+        None,
+        "Set language to Java"
+        ;
+        "-version",
+        Arg.Unit print_version,
+        None,
+        "print version information and exit"
+        ;
+        "-version_json",
+        Arg.Unit print_version_json,
+        None,
+        "print version json formatted"
+        ;
+        "-objcm",
+        Arg.Set Config.objc_memory_model_on,
+        None,
+        "Use ObjC memory model"
+        ;
+        "-no_progress_bar",
+        Arg.Unit (fun () -> Config.show_progress_bar := false),
+        None,
+        "Do not show a progress bar"
+        ;
+        "-ml_buckets",
+        Arg.Set_string ml_buckets_arg,
+        Some "ml_buckets",
+        "memory leak buckets to be checked, separated by commas.
+        The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp, unknown_origin"
+        ;
       ] in
     Arg.create_options_desc false "Analysis Options" desc in
   let reserved_arg =
     let desc =
       reserved_arg_desc @
       [
-        "-analysis_stops", Arg.Set Config.analysis_stops, None, "issue a warning when the analysis stops";
-        "-angelic_execution", Arg.Set Config.angelic_execution, None, "activate angelic execution: the analysis ignores errors caused by unknown procedure calls.";
-        "-checkers", Arg.Set checkers, None, " run only the checkers instead of the full analysis";
-        "-cluster", Arg.String (fun s -> cluster_cmdline := Some s), Some "fname", "specify a .cluster file to be analyzed";
-        "-codequery", Arg.String (fun s -> CodeQuery.query := Some s), Some "query", " execute the code query";
-        "-eradicate", Arg.Set Config.eradicate, None, " activate the eradicate checker for java annotations";
-        "-file", Arg.String (fun s -> only_files_cmdline := s :: !only_files_cmdline), Some "fname", "specify one file to be analyzed (without path); the option can be repeated";
-        "-intraprocedural", Arg.Set Config.intraprocedural, None, "perform an intraprocedural analysis only";
-        "-makefile", Arg.Set_string makefile_cmdline, Some "file", "create a makefile to perform the analysis";
-        "-max_cluster", Arg.Set_int Config.max_cluster_size, Some "n", "set the max number of procedures in each cluster (default n=2000)";
-        "-only_nospecs", Arg.Set Config.only_nospecs, None, " only analyze procedures which were analyzed before but have no specs";
-        "-only_skips", Arg.Set Config.only_skips, None, " only analyze procedures dependent on previous skips which now have a .specs file";
-        "-seconds_per_iteration", Arg.Set_int seconds_per_iteration, Some "n", "set the number of seconds per iteration (default n=30)";
-        "-simulate", Arg.Set simulate, None, " run a simulation of the analysis only";
-        "-subtype_multirange", Arg.Set Config.subtype_multirange, None, "use the multirange subtyping domain";
-        "-optimistic_cast", Arg.Set Config.optimistic_cast, None, "allow cast of undefined values";
-        "-select_proc", Arg.String (fun s -> select_proc := Some s), Some "string", "only consider procedures whose name contains the given string";
-        "-symops_per_iteration", Arg.Set_int symops_per_iteration, Some "n", "set the number of symbolic operations per iteration (default n="^(string_of_int !symops_per_iteration)^")";
-        "-type_size", Arg.Set Config.type_size, None, "consider the size of types during analysis";
-        "-tracing", Arg.Unit (fun () -> Config.report_runtime_exceptions := true), None,
-        "Report error traces for runtime exceptions (Only for Java)";
-        "-allow_specs_cleanup", Arg.Unit (fun () -> allow_specs_cleanup := true), None,
-        "Allow to remove existing specs before running analysis when it's not incremental";
-        "-print_buckets", Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true), None,
+        "-analysis_stops",
+        Arg.Set Config.analysis_stops,
+        None,
+        "issue a warning when the analysis stops"
+        ;
+        "-angelic_execution",
+        Arg.Set Config.angelic_execution,
+        None,
+        "activate angelic execution:
+        The analysis ignores errors caused by unknown procedure calls."
+        ;
+        "-checkers",
+        Arg.Set checkers,
+        None,
+        " run only the checkers instead of the full analysis"
+        ;
+        "-cluster",
+        Arg.String (fun s -> cluster_cmdline := Some s),
+        Some "fname",
+        "specify a .cluster file to be analyzed"
+        ;
+        "-codequery",
+        Arg.String (fun s -> CodeQuery.query := Some s),
+        Some "query",
+        " execute the code query"
+        ;
+        "-eradicate",
+        Arg.Set Config.eradicate,
+        None,
+        " activate the eradicate checker for java annotations"
+        ;
+        "-file",
+        Arg.String (fun s -> only_files_cmdline := s :: !only_files_cmdline),
+        Some "fname",
+        "specify one file to be analyzed (without path); the option can be repeated"
+        ;
+        "-intraprocedural",
+        Arg.Set Config.intraprocedural,
+        None,
+        "perform an intraprocedural analysis only"
+        ;
+        "-makefile",
+        Arg.Set_string makefile_cmdline,
+        Some "file",
+        "create a makefile to perform the analysis"
+        ;
+        "-max_cluster",
+        Arg.Set_int Config.max_cluster_size,
+        Some "n",
+        "set the max number of procedures in each cluster (default n=2000)"
+        ;
+        "-only_nospecs",
+        Arg.Set Config.only_nospecs,
+        None,
+        " only analyze procedures which were analyzed before but have no specs"
+        ;
+        "-only_skips",
+        Arg.Set Config.only_skips,
+        None,
+        " only analyze procedures dependent on previous skips which now have a .specs file"
+        ;
+        "-seconds_per_iteration",
+        Arg.Set_int seconds_per_iteration,
+        Some "n",
+        "set the number of seconds per iteration (default n=30)"
+        ;
+        "-simulate",
+        Arg.Set simulate,
+        None,
+        " run a simulation of the analysis only"
+        ;
+        "-subtype_multirange",
+        Arg.Set Config.subtype_multirange,
+        None,
+        "use the multirange subtyping domain"
+        ;
+        "-optimistic_cast",
+        Arg.Set Config.optimistic_cast,
+        None,
+        "allow cast of undefined values"
+        ;
+        "-select_proc",
+        Arg.String (fun s -> select_proc := Some s),
+        Some "string",
+        "only consider procedures whose name contains the given string"
+        ;
+        "-symops_per_iteration",
+        Arg.Set_int symops_per_iteration,
+        Some "n",
+        "set the number of symbolic operations per iteration (default n="
+        ^ (string_of_int !symops_per_iteration) ^ ")"
+        ;
+        "-type_size",
+        Arg.Set Config.type_size,
+        None,
+        "consider the size of types during analysis"
+        ;
+        "-tracing",
+        Arg.Unit (fun () -> Config.report_runtime_exceptions := true),
+        None,
+        "Report error traces for runtime exceptions (Only for Java)"
+        ;
+        "-allow_specs_cleanup",
+        Arg.Unit (fun () -> allow_specs_cleanup := true),
+        None,
+        "Allow to remove existing specs before running analysis when it's not incremental"
+        ;
+        "-print_buckets",
+        Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true),
+        None,
         "Add buckets to issue descriptions, useful when developing infer"
+        ;
       ] in
     Arg.create_options_desc false
       "Reserved Options: Experimental features, use with caution!" desc in
   base_arg @ reserved_arg
 
 let usage =
-  (version_string ()) ^
-  "\nUsage: InferAnalyze [options]\n" ^
-  " Analyze the files captured in the project results directory, which can be specified with the -results_dir option."
+  (version_string ()) ^ "
+Usage: InferAnalyze [options]
+  Analyze the files captured in the project results directory,
+  which can be specified with the -results_dir option."
 
 let print_usage_exit () =
   Arg.usage arg_desc usage;

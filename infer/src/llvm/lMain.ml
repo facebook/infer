@@ -17,11 +17,13 @@ let arg_desc =
       "-c",
       Arg.String (fun cfile -> LConfig.source_filename := Some cfile),
       Some "cfile",
-      "C/C++ file being translated";
+      "C/C++ file being translated"
+      ;
       "-debug",
       Arg.Unit (fun _ -> LConfig.debug_mode := true),
       None,
       "Enables debug mode"
+      ;
     ] in
   Arg.create_options_desc false "Parsing Options" desc
 

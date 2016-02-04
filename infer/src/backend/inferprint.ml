@@ -94,53 +94,153 @@ let arg_desc =
   let base_arg =
     let desc =
       [
-        "-bugs", Arg.String (fun s -> bugs_csv := create_outfile s), Some "bugs.csv", "create file bugs.csv containing a list of bugs in CSV format";
-        "-bugs_json", Arg.String (fun s -> bugs_json := create_outfile s), Some "bugs.json", "create file bugs.json containing a list of bugs in JSON format";
-        "-bugs_txt", Arg.String (fun s -> bugs_txt := create_outfile s), Some "bugs.txt", "create file bugs.txt containing a list of bugs in text format";
-        "-bugs_xml", Arg.String (fun s -> bugs_xml := create_outfile s), Some "bugs.xml", "create file bugs.xml containing a list of bugs in XML format";
-        "-calls", Arg.String (fun s -> calls_csv := create_outfile s), Some "calls.csv", "write individual calls in csv format to file.csv";
-        "-load_results", Arg.String (fun s -> load_analysis_results := Some s), Some "file.iar", "load analysis results from Infer Analysis Results file file.iar";
-        "-procs", Arg.String (fun s -> procs_csv := create_outfile s), Some "procs.csv", "create file procs.csv containing statistics for each procedure in CSV format";
-        "-procs_xml", Arg.String (fun s -> procs_xml := create_outfile s), Some "procs.xml", "create file procs.xml containing statistics for each procedure in XML format";
-        "-results_dir", Arg.String (fun s -> results_dir_cmdline := true; Config.results_dir := s), Some "dir", "read all the .specs files in the results dir";
-        "-lib", Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library), Some "dir", "add dir to the list of directories to be searched for spec files";
-        "-q", Arg.Set quiet, None, "quiet: do not print specs on standard output";
-        "-save_results", Arg.String (fun s -> save_analysis_results := Some s), Some "file.iar", "save analysis results to Infer Analysis Results file file.iar";
-        "-unit_test", Arg.Set unit_test, None, "print unit test code";
-        "-xml", Arg.Set xml_specs, None, "export specs into XML files file1.xml ... filen.xml";
-        "-test_filtering", Arg.Set test_filtering, None,
-        "list all the files Infer can report on (should be call at the root of the procject, where
-      .inferconfig lives).";
-        "-analyzer", Arg.String (fun s -> analyzer := Some (Utils.analyzer_of_string s)), Some "analyzer",
-        "setup the analyzer for the path filtering";
-        "-inferconfig_home", Arg.String (fun s -> Inferconfig.inferconfig_home := Some s), Some "dir",
-        "Path to the .inferconfig file";
-        "-local_config", Arg.String (fun s -> Inferconfig.local_config := Some s), Some "Path",
-        "Path to local config file";
-        "-with_infer_src_loc", Arg.Set reports_include_ml_loc, None,
-        "include the location (in the Infer source code) from where reports are generated";
+        "-bugs",
+        Arg.String (fun s -> bugs_csv := create_outfile s),
+        Some "bugs.csv",
+        "create file bugs.csv containing a list of bugs in CSV format"
+        ;
+        "-bugs_json",
+        Arg.String (fun s -> bugs_json := create_outfile s),
+        Some "bugs.json",
+        "create file bugs.json containing a list of bugs in JSON format"
+        ;
+        "-bugs_txt",
+        Arg.String (fun s -> bugs_txt := create_outfile s),
+        Some "bugs.txt",
+        "create file bugs.txt containing a list of bugs in text format"
+        ;
+        "-bugs_xml",
+        Arg.String (fun s -> bugs_xml := create_outfile s),
+        Some "bugs.xml",
+        "create file bugs.xml containing a list of bugs in XML format"
+        ;
+        "-calls",
+        Arg.String (fun s -> calls_csv := create_outfile s),
+        Some "calls.csv",
+        "write individual calls in csv format to file.csv"
+        ;
+        "-load_results",
+        Arg.String (fun s -> load_analysis_results := Some s),
+        Some "file.iar",
+        "load analysis results from Infer Analysis Results file file.iar"
+        ;
+        "-procs",
+        Arg.String (fun s -> procs_csv := create_outfile s),
+        Some "procs.csv",
+        "create file procs.csv containing statistics for each procedure in CSV format"
+        ;
+        "-procs_xml",
+        Arg.String (fun s -> procs_xml := create_outfile s),
+        Some "procs.xml",
+        "create file procs.xml containing statistics for each procedure in XML format"
+        ;
+        "-results_dir",
+        Arg.String (fun s -> results_dir_cmdline := true; Config.results_dir := s),
+        Some "dir",
+        "read all the .specs files in the results dir"
+        ;
+        "-lib",
+        Arg.String (fun s ->
+            Config.specs_library := filename_to_absolute s :: !Config.specs_library),
+        Some "dir",
+        "add dir to the list of directories to be searched for spec files"
+        ;
+        "-q",
+        Arg.Set quiet,
+        None,
+        "quiet: do not print specs on standard output"
+        ;
+        "-save_results",
+        Arg.String (fun s -> save_analysis_results := Some s),
+        Some "file.iar",
+        "save analysis results to Infer Analysis Results file file.iar"
+        ;
+        "-unit_test",
+        Arg.Set unit_test,
+        None,
+        "print unit test code"
+        ;
+        "-xml",
+        Arg.Set xml_specs,
+        None,
+        "export specs into XML files file1.xml ... filen.xml"
+        ;
+        "-test_filtering",
+        Arg.Set test_filtering,
+        None,
+        "list all the files Infer can report on (should be call at the root of the procject,
+        where .inferconfig lives)."
+        ;
+        "-analyzer",
+        Arg.String (fun s -> analyzer := Some (Utils.analyzer_of_string s)),
+        Some "analyzer",
+        "setup the analyzer for the path filtering"
+        ;
+        "-inferconfig_home",
+        Arg.String (fun s -> Inferconfig.inferconfig_home := Some s),
+        Some "dir",
+        "Path to the .inferconfig file"
+        ;
+        "-local_config",
+        Arg.String (fun s -> Inferconfig.local_config := Some s),
+        Some "Path",
+        "Path to local config file"
+        ;
+        "-with_infer_src_loc",
+        Arg.Set reports_include_ml_loc,
+        None,
+        "include the location (in the Infer source code) from where reports are generated"
+        ;
       ] in
     Arg.create_options_desc false "Options" desc in
   let reserved_arg =
     let desc =
       [
-        "-latex", Arg.String (fun s -> latex := create_outfile s), Some "file.tex", "print latex report to file.tex";
-        "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
-        "-precondition_stats", Arg.Set precondition_stats, None, "print stats about preconditions to standard output";
-        "-report", Arg.String (fun s -> report := create_outfile s), Some "report_file", "create file report_file containing a report of the analysis results";
-        "-source_file_copy", Arg.String (fun s -> source_file_copy := Some (DB.abs_source_file_from_path s)), Some "source_file", "print the path of the copy of source_file in the results directory";
-        "-svg", Arg.Set svg, None, "generate .dot and .svg";
-        "-whole_seconds", Arg.Set whole_seconds, None, "print whole seconds only";
+        "-latex",
+        Arg.String (fun s -> latex := create_outfile s),
+        Some "file.tex",
+        "print latex report to file.tex"
+        ;
+        "-print_types",
+        Arg.Set Config.print_types,
+        None,
+        "print types in symbolic heaps"
+        ;
+        "-precondition_stats",
+        Arg.Set precondition_stats,
+        None,
+        "print stats about preconditions to standard output"
+        ;
+        "-report",
+        Arg.String (fun s -> report := create_outfile s),
+        Some "report_file",
+        "create file report_file containing a report of the analysis results"
+        ;
+        "-source_file_copy",
+        Arg.String (fun s -> source_file_copy := Some (DB.abs_source_file_from_path s)),
+        Some "source_file",
+        "print the path of the copy of source_file in the results directory"
+        ;
+        "-svg",
+        Arg.Set svg,
+        None,
+        "generate .dot and .svg"
+        ;
+        "-whole_seconds",
+        Arg.Set whole_seconds,
+        None,
+        "print whole seconds only"
+        ;
       ] in
     Arg.create_options_desc false "Reserved Options" desc in
   base_arg @ reserved_arg
 
 let usage =
-  "Usage: InferPrint [options] name1.specs ... namen.specs\n" ^
-  " Read, convert, and print .specs files.\n" ^
-  " To process all the .specs in the current directory, pass . as only parameter.\n" ^
-  " To process all the .specs in the results directory, use option -results_dir.\n" ^
-  " Each spec is printed to standard output unless option -q is used."
+  "Usage: InferPrint [options] name1.specs ... namen.specs
+  Read, convert, and print .specs files.
+  To process all the .specs in the current directory, pass . as only parameter
+  To process all the .specs in the results directory, use option -results_dir
+  Each spec is printed to standard output unless option -q is used."
 
 let print_usage_exit err_s =
   L.err "Load Error: %s@.@." err_s;
@@ -868,11 +968,11 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
     let dot_file = DB.filename_add_suffix base ".dot" in
     let svg_file = DB.filename_add_suffix base ".svg" in
     if not (DB.file_exists dot_file)
-       || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time dot_file
+    || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time dot_file
     then
       Dotty.pp_speclist_dotty_file base specs;
     if not (DB.file_exists svg_file)
-       || DB.file_modified_time dot_file > DB.file_modified_time svg_file
+    || DB.file_modified_time dot_file > DB.file_modified_time svg_file
     then
       ignore (Sys.command ("dot -Tsvg \"" ^ (DB.filename_to_string dot_file) ^ "\" >\"" ^ (DB.filename_to_string svg_file) ^"\""))
   end;
@@ -880,7 +980,7 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
     let xml_file = DB.filename_add_suffix base ".xml" in
     let specs = Specs.get_specs_from_payload summary in
     if not (DB.file_exists xml_file)
-       || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
+    || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
     then
       begin
         let xml_out = ref (create_outfile (DB.filename_to_string xml_file)) in

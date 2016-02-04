@@ -264,7 +264,10 @@ let check_copyright fname = match read_file fname with
 
 
 let speclist = [
-  ("-i", Arg.Set update_files, "Update copyright notice in-place");
+  "-i",
+  Arg.Set update_files,
+  "Update copyright notice in-place"
+  ;
 ]
 
 let usage_msg = "checkCopyright [-i] file1 ..."

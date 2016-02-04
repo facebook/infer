@@ -18,18 +18,51 @@ let arg_desc =
   let desc =
     (arg_desc_filter options_to_keep base_arg_desc) @
     [
-      "-classpath", Arg.String (fun classpath -> JConfig.classpath := Some classpath), None, "set the classpath";
-      "-class_source_map", Arg.String (fun filename -> JConfig.class_source_map := Some filename), None, "path to class -> source map in JSON format";
-      "-models", Arg.String (fun filename -> JClasspath.add_models filename), Some "paths", "set the path to the jar containing the models";
-      "-debug", Arg.Unit (fun () -> JConfig.debug_mode := true), None, "write extra translation information";
-      "-dependencies", Arg.Unit (fun _ -> JConfig.dependency_mode := true), None, "translate all the dependencies during the capture";
-      "-no-static_final", Arg.Unit (fun () -> JTrans.no_static_final := true), None, "no special treatment for static final fields";
-      "-tracing", Arg.Unit (fun () -> JConfig.translate_checks := true), None,
-      "Translate JVM checks";
-      "-harness", Arg.Unit (fun () -> JConfig.create_harness := true), None,
-      "Create Android lifecycle harness";
-      "-verbose_out", Arg.String (fun path -> JClasspath.set_verbose_out path), None,
+      "-classpath",
+      Arg.String (fun classpath -> JConfig.classpath := Some classpath),
+      None,
+      "set the classpath"
+      ;
+      "-class_source_map",
+      Arg.String (fun filename -> JConfig.class_source_map := Some filename),
+      None,
+      "path to class -> source map in JSON format"
+      ;
+      "-models",
+      Arg.String (fun filename -> JClasspath.add_models filename),
+      Some "paths",
+      "set the path to the jar containing the models"
+      ;
+      "-debug",
+      Arg.Unit (fun () -> JConfig.debug_mode := true),
+      None,
+      "write extra translation information"
+      ;
+      "-dependencies",
+      Arg.Unit (fun _ -> JConfig.dependency_mode := true),
+      None,
+      "translate all the dependencies during the capture"
+      ;
+      "-no-static_final",
+      Arg.Unit (fun () -> JTrans.no_static_final := true),
+      None,
+      "no special treatment for static final fields"
+      ;
+      "-tracing",
+      Arg.Unit (fun () -> JConfig.translate_checks := true),
+      None,
+      "Translate JVM checks"
+      ;
+      "-harness",
+      Arg.Unit (fun () -> JConfig.create_harness := true),
+      None,
+      "Create Android lifecycle harness"
+      ;
+      "-verbose_out",
+      Arg.String (fun path -> JClasspath.set_verbose_out path),
+      None,
       "Set the path to the javac verbose output"
+      ;
     ] in
   Arg.create_options_desc false "Parsing Options" desc
 

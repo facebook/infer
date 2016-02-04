@@ -679,29 +679,118 @@ let base_arg_desc =
 
 let reserved_arg_desc =
   [
-    "-absstruct", Arg.Set_int Config.abs_struct, Some "n", "abstraction level for fields of structs (default n = 1)";
-    "-absval", Arg.Set_int Config.abs_val, Some "n", "abstraction level for expressions (default n = 2)";
-    "-arraylevel", Arg.Set_int Config.array_level, Some "n", "the level of treating the array indexing and pointer arithmetic (default n = 0)";
-    "-developer_mode", Arg.Set Config.developer_mode, None, "reserved";
-    "-dotty", Arg.Set Config.write_dotty, None, "produce dotty files in the results directory";
-    "-exit_node_bias", Arg.Unit (fun () -> Config.worklist_mode:= 1), None, "nodes nearest the exit node are analyzed first";
-    "-html", Arg.Set Config.write_html, None, "produce hmtl output in the results directory";
-    "-join_cond", Arg.Set_int Config.join_cond, Some "n", "set the strength of the final information-loss check used by the join (default n=1)";
-    "-leak", Arg.Set Config.allowleak, None, "forget leaks during abstraction";
-    "-monitor_prop_size", Arg.Set Config.monitor_prop_size, None, "monitor size of props";
-    "-nelseg", Arg.Set Config.nelseg, None, "use only nonempty lsegs";
-    "-noliveness", Arg.Clear Config.liveness, None, "turn the dead program variable elimination off";
-    "-noprintdiff", Arg.Clear Config.print_using_diff, None, "turn off highlighting diff w.r.t. previous prop in printing";
-    "-notest", Arg.Clear Config.test, None, "turn test mode off";
-    "-only_footprint", Arg.Set Config.only_footprint, None, "skip the re-execution phase";
-    "-print_types", Arg.Set Config.print_types, None, "print types in symbolic heaps";
-    "-set_pp_margin", Arg.Int (fun i -> F.set_margin i), Some "n", "set right margin for the pretty printing functions";
-    "-slice_fun", Arg.Set_string Config.slice_fun, None, "analyze only functions recursively called by function given as argument";
-    "-spec_abs_level", Arg.Set_int Config.spec_abs_level, Some "n", "set the level of abstracting the postconditions of discovered specs (default n=1)";
-    "-trace_error", Arg.Set Config.trace_error, None, "turn on tracing of error explanation";
-    "-trace_join", Arg.Set Config.trace_join, None, "turn on tracing of join";
-    "-trace_rearrange", Arg.Set Config.trace_rearrange, None, "turn on tracing of rearrangement";
-    "-visits_bias", Arg.Unit (fun () -> Config.worklist_mode:= 2), None, "nodes visited fewer times are analyzed first";
+    "-absstruct",
+    Arg.Set_int Config.abs_struct,
+    Some "n",
+    "abstraction level for fields of structs (default n = 1)"
+    ;
+    "-absval",
+    Arg.Set_int Config.abs_val,
+    Some "n",
+    "abstraction level for expressions (default n = 2)";
+    "-arraylevel",
+    Arg.Set_int Config.array_level,
+    Some "n",
+    "the level of treating the array indexing and pointer arithmetic (default n = 0)"
+    ;
+    "-developer_mode",
+    Arg.Set Config.developer_mode,
+    None,
+    "reserved"
+    ;
+    "-dotty",
+    Arg.Set Config.write_dotty,
+    None,
+    "produce dotty files in the results directory";
+    "-exit_node_bias",
+    Arg.Unit (fun () -> Config.worklist_mode:= 1),
+    None,
+    "nodes nearest the exit node are analyzed first";
+    "-html",
+    Arg.Set Config.write_html,
+    None,
+    "produce hmtl output in the results directory"
+    ;
+    "-join_cond",
+    Arg.Set_int Config.join_cond,
+    Some "n",
+    "set the strength of the final information-loss check used by the join (default n=1)"
+    ;
+    "-leak",
+    Arg.Set Config.allowleak,
+    None,
+    "forget leaks during abstraction"
+    ;
+    "-monitor_prop_size",
+    Arg.Set Config.monitor_prop_size,
+    None,
+    "monitor size of props"
+    ;
+    "-nelseg",
+    Arg.Set Config.nelseg,
+    None,
+    "use only nonempty lsegs"
+    ;
+    "-noliveness",
+    Arg.Clear Config.liveness,
+    None,
+    "turn the dead program variable elimination off"
+    ;
+    "-noprintdiff",
+    Arg.Clear Config.print_using_diff,
+    None,
+    "turn off highlighting diff w.r.t. previous prop in printing"
+    ;
+    "-notest",
+    Arg.Clear Config.test,
+    None,
+    "turn test mode off"
+    ;
+    "-only_footprint",
+    Arg.Set Config.only_footprint,
+    None,
+    "skip the re-execution phase"
+    ;
+    "-print_types",
+    Arg.Set Config.print_types,
+    None,
+    "print types in symbolic heaps"
+    ;
+    "-set_pp_margin",
+    Arg.Int (fun i -> F.set_margin i),
+    Some "n",
+    "set right margin for the pretty printing functions"
+    ;
+    "-slice_fun",
+    Arg.Set_string Config.slice_fun,
+    None,
+    "analyze only functions recursively called by function given as argument"
+    ;
+    "-spec_abs_level",
+    Arg.Set_int Config.spec_abs_level,
+    Some "n",
+    "set the level of abstracting the postconditions of discovered specs (default n=1)"
+    ;
+    "-trace_error",
+    Arg.Set Config.trace_error,
+    None,
+    "turn on tracing of error explanation"
+    ;
+    "-trace_join",
+    Arg.Set Config.trace_join,
+    None,
+    "turn on tracing of join"
+    ;
+    "-trace_rearrange",
+    Arg.Set Config.trace_rearrange,
+    None,
+    "turn on tracing of rearrangement"
+    ;
+    "-visits_bias",
+    Arg.Unit (fun () -> Config.worklist_mode:= 2),
+    None,
+    "nodes visited fewer times are analyzed first"
+    ;
   ]
 
 
