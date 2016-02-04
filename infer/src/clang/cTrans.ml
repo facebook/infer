@@ -521,19 +521,20 @@ struct
     | Some decl_ref -> method_deref_trans trans_state pvar_trans_result decl_ref
     | None -> empty_res_trans
 
-
-  let cxxThisExpr_trans trans_state stmt_info expr_info =
+  let this_expr_trans trans_state sil_loc class_type_ptr =
     let context = trans_state.context in
-    let sil_loc = CLocation.get_sil_location stmt_info context in
-    let tp = expr_info.Clang_ast_t.ei_type_ptr in
     let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
     let name = CFrontend_config.this in
     let pvar = Sil.mk_pvar (Mangled.from_string name) procname in
     let exp = Sil.Lvar pvar in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv tp in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv class_type_ptr in
     let exps =  [(exp, typ)] in
     (* there is no cast operation in AST, but backend needs it *)
     dereference_value_from_result sil_loc { empty_res_trans with exps = exps } ~strip_pointer:false
+
+  let cxxThisExpr_trans trans_state stmt_info expr_info =
+    let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+    this_expr_trans trans_state sil_loc expr_info.Clang_ast_t.ei_type_ptr
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     (* go ahead with the translation *)
@@ -547,7 +548,7 @@ struct
     Cfg.Node.set_succs_exn root_node' res_trans.root_nodes [];
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  and decl_ref_trans trans_state pre_trans_result stmt_info expr_info decl_ref =
+  and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref =
     let open CContext in
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
@@ -574,7 +575,7 @@ struct
     let decl_ref = match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
       | Some dr -> dr
       | None -> assert false in
-    decl_ref_trans trans_state empty_res_trans stmt_info expr_info decl_ref
+    decl_ref_trans trans_state empty_res_trans stmt_info decl_ref
 
   (* evaluates an enum constant *)
   and enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero =
@@ -879,7 +880,7 @@ struct
                            exps = [(var_exp, this_type)];
                            initd_exps = [var_exp];
                          } in
-    let res_trans_callee = decl_ref_trans trans_state this_res_trans si ei decl_ref in
+    let res_trans_callee = decl_ref_trans trans_state this_res_trans si decl_ref in
     let res_trans = cxx_method_construct_call_trans trans_state_pri res_trans_callee
         params_stmt si Sil.Tvoid in
     { res_trans with exps = [(var_exp, class_type)] }
@@ -1710,7 +1711,7 @@ struct
     (* int p = X(1).field; *)
     let trans_state' = { trans_state with var_exp_typ = None } in
     let result_trans_exp_stmt = exec_with_glvalue_as_reference instruction trans_state' exp_stmt in
-    decl_ref_trans trans_state result_trans_exp_stmt stmt_info expr_info decl_ref
+    decl_ref_trans trans_state result_trans_exp_stmt stmt_info decl_ref
 
   and objCIvarRefExpr_trans trans_state stmt_info expr_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
@@ -2227,6 +2228,38 @@ struct
               (Ast_utils.string_of_stmt s);
             assert false)
 
+  (* Function similar to instruction function, but it takes C++ constructor initializer as *)
+  (* an input parameter. *)
+  and cxx_constructor_init_trans ctor_init trans_state =
+    (*let tenv = trans_state.context.CContext.tenv in*)
+    let class_name = CContext.get_curr_class_name trans_state.context.CContext.curr_class in
+    let sil_loc =
+      CLocation.get_sil_location_from_range ctor_init.Clang_ast_t.xci_source_range true in
+    (* its pointer will be used in PriorityNode *)
+    let this_stmt_info = Ast_expressions.dummy_stmt_info () in
+    (* this will be used to avoid creating node in init_expr_trans *)
+    let child_stmt_info = Ast_expressions.dummy_stmt_info () in
+    let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
+    let class_type_ptr = Ast_expressions.create_pointer_type
+        (Ast_expressions.create_class_type (class_name, `CPP)) in
+    let this_res_trans = this_expr_trans trans_state' sil_loc class_type_ptr in
+    let var_res_trans = match ctor_init.Clang_ast_t.xci_subject with
+      | `Delegating _ | `BaseClass _ ->
+          let this_exp, this_typ = extract_exp_from_list this_res_trans.exps
+              "WARNING: There should be one expression for 'this' in constructor. \n" in
+          (* Hack: Strip pointer from type here since cxxConstructExpr_trans expects it this way *)
+          (* it will add pointer back before making it a parameter to a call *)
+          let class_typ = match this_typ with Sil.Tptr (t, _) -> t | _ -> assert false in
+          { this_res_trans with exps = [this_exp, class_typ] }
+      | `Member (decl_ref) ->
+          decl_ref_trans trans_state' this_res_trans child_stmt_info decl_ref in
+    let var_exp_typ = extract_exp_from_list var_res_trans.exps
+        "WARNING: There should be one expression to initialize in constructor initializer. \n" in
+    let init_expr = ctor_init.Clang_ast_t.xci_init_expr in
+    let init_res_trans = init_expr_trans trans_state' var_exp_typ child_stmt_info init_expr in
+    PriorityNode.compute_results_to_parent trans_state' sil_loc "Constructor Init"
+      this_stmt_info [var_res_trans; init_res_trans]
+
   (** Given a translation state and list of translation functions it executes translation *)
   and exec_trans_instrs trans_state trans_stmt_fun_list =
     let rec exec_trans_instrs_no_rev trans_state rev_trans_fun_list = match rev_trans_fun_list with
@@ -2253,7 +2286,7 @@ struct
   (* TODO write translate function for cxx constructor exprs *)
   and get_custom_stmt_trans stmt = match stmt with
     | `ClangStmt stmt -> get_clang_stmt_trans stmt
-    | `CXXConstructorInit instr -> empty_trans_fun
+    | `CXXConstructorInit instr -> cxx_constructor_init_trans instr
 
   (** Given a translation state, this function translates a list of clang statements. *)
   and instructions trans_state stmt_list =

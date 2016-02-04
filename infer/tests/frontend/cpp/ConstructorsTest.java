@@ -46,4 +46,16 @@ public class ConstructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("temp_object.cpp");
   }
+
+  @Test
+  public void testConstructorInitDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("constructor_init.cpp");
+  }
+
+  @Test
+  public void testCopyMoveConstructorDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("copy_move_constructor.cpp");
+  }
 }

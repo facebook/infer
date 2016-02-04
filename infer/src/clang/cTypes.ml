@@ -107,6 +107,7 @@ let is_block_type tp =
 let is_reference_type tp =
   match Ast_utils.get_desugared_type tp with
   | Some Clang_ast_t.LValueReferenceType _ -> true
+  | Some Clang_ast_t.RValueReferenceType _ -> true
   | _ -> false
 
 (* Expand a named type Tvar if it has a definition in tenv. This is used for Tenum, Tstruct, etc. *)
