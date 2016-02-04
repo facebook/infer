@@ -20,7 +20,7 @@ type method_signature = {
   language : CFrontend_config.lang;
   pointer_to_parent : Clang_ast_t.pointer option;
   pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
-  has_return_param : bool;
+  return_param_typ : Sil.typ option;
 }
 
 let ms_get_name { name } =
@@ -53,8 +53,8 @@ let ms_get_pointer_to_parent { pointer_to_parent } =
 let ms_get_pointer_to_property_opt { pointer_to_property_opt } =
   pointer_to_property_opt
 
-let ms_has_return_param { has_return_param } =
-  has_return_param
+let ms_get_return_param_typ { return_param_typ } =
+  return_param_typ
 
 (* A method is a getter if it has a link to a property and *)
 (* it has 1 argument (this includes self) *)
@@ -69,7 +69,7 @@ let ms_is_setter { pointer_to_property_opt; args } =
   IList.length args == 2
 
 let make_ms name args ret_type attributes loc is_instance language pointer_to_parent
-    pointer_to_property_opt ~has_return_param =
+    pointer_to_property_opt return_param_typ =
   {
     name;
     args;
@@ -80,7 +80,7 @@ let make_ms name args ret_type attributes loc is_instance language pointer_to_pa
     language;
     pointer_to_parent;
     pointer_to_property_opt;
-    has_return_param;
+    return_param_typ;
   }
 
 let replace_name_ms ms name =

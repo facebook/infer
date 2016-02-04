@@ -75,9 +75,9 @@ struct
     match body_opt with
     | Some body -> (* Only in the case the function declaration has a defined body we create a procdesc *)
         let procname = CMethod_signature.ms_get_name ms in
-        let has_return_param = CMethod_signature.ms_has_return_param ms in
+        let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
-          add_method tenv cg cfg CContext.ContextNoCls procname body has_return_param false
+          add_method tenv cg cfg CContext.ContextNoCls procname body return_param_typ_opt false
             captured_vars outer_context_opt extra_instrs
     | None -> ()
 
@@ -89,9 +89,9 @@ struct
         let is_instance = CMethod_signature.ms_is_instance ms in
         let procname = CMethod_signature.ms_get_name ms in
         let is_objc_inst_method = is_instance && is_objc in
-        let has_return_param = CMethod_signature.ms_has_return_param ms in
+        let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_objc_inst_method then
-          add_method tenv cg cfg curr_class procname body has_return_param is_objc []
+          add_method tenv cg cfg curr_class procname body return_param_typ_opt is_objc []
             None extra_instrs
     | None -> ()
 

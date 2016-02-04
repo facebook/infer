@@ -30,19 +30,19 @@ type t =
     procdesc : Cfg.Procdesc.t;
     is_objc_method : bool;
     curr_class: curr_class;
-    has_return_param : bool;
+    return_param_typ : Sil.typ option;
     is_callee_expression : bool;
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
     mutable blocks_static_vars : ((Sil.pvar * Sil.typ) list) Procname.Map.t;
   }
 
-let create_context tenv cg cfg procdesc curr_class ~has_return_param is_objc_method context_opt =
+let create_context tenv cg cfg procdesc curr_class return_param_typ is_objc_method context_opt =
   { tenv = tenv;
     cg = cg;
     cfg = cfg;
     procdesc = procdesc;
     curr_class = curr_class;
-    has_return_param = has_return_param;
+    return_param_typ = return_param_typ;
     is_callee_expression = false;
     is_objc_method = is_objc_method;
     outer_context = context_opt;

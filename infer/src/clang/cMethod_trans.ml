@@ -109,26 +109,26 @@ let get_parameters tenv function_method_decl_info =
   let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
   get_class_param function_method_decl_info @ pars @ get_return_param tenv function_method_decl_info
 
-(** get return type of the function and whether function has return parameter *)
+(** get return type of the function and optionally type of function's return parameter *)
 let get_return_type tenv function_method_decl_info =
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
   let is_objc_method = is_objc_method function_method_decl_info in
   if should_add_return_param return_typ is_objc_method then
-    Ast_expressions.create_void_type, true
-  else return_type_ptr, false
+    Ast_expressions.create_void_type, Some (Sil.Tptr (return_typ, Sil.Pk_pointer))
+  else return_type_ptr, None
 
 let build_method_signature tenv decl_info procname function_method_decl_info is_anonym_block
     parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
-  let tp, has_return_param = get_return_type tenv function_method_decl_info in
+  let tp, return_param_type_opt = get_return_type tenv function_method_decl_info in
   let is_instance_method = is_instance_method function_method_decl_info in
   let parameters = get_parameters tenv function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language function_method_decl_info in
   CMethod_signature.make_ms
     procname parameters tp attributes source_range is_instance_method lang parent_pointer
-    pointer_to_property_opt ~has_return_param
+    pointer_to_property_opt return_param_type_opt
 
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
@@ -446,7 +446,7 @@ let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
   | None ->
       let ms_type_ptr = Clang_ast_types.pointer_to_type_ptr (Ast_utils.get_invalid_pointer ()) in
       let ms = CMethod_signature.make_ms proc_name [] ms_type_ptr [] source_range false
-          CFrontend_config.OBJC None None false in
+          CFrontend_config.OBJC None None None in
       let body = [Clang_ast_t.CompoundStmt (stmt_info, [])] in
       ignore (create_local_procdesc cfg tenv ms body [] false);
       let pdesc = Option.get (Cfg.Procdesc.find_from_name cfg proc_name) in

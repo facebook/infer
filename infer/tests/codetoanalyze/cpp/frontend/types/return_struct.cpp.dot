@@ -85,7 +85,7 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12:  Return Stmt \n   n$0=*&__return_param:void * [line 23]\n  _fun_X_X(n$0:class X *,&x:class X &) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&__return_param,false); [line 23]\n  NULLIFY(&x,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+12 [label="12:  Return Stmt \n   n$0=*&__return_param:class X * [line 23]\n  _fun_X_X(n$0:class X *,&x:class X &) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&__return_param,false); [line 23]\n  NULLIFY(&x,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 12 -> 11 ;

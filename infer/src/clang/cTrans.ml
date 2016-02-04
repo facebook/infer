@@ -1750,16 +1750,16 @@ struct
     let trans_result = (match stmt_list with
         | [stmt] -> (* return exp; *)
             let procdesc = context.CContext.procdesc in
-            let ret_exp, var_instrs, var_ids = if context.CContext.has_return_param then
-                let name = CFrontend_config.return_param in
-                let procname = Cfg.Procdesc.get_proc_name procdesc in
-                let pvar = Sil.mk_pvar (Mangled.from_string name) procname in
-                let id = Ident.create_fresh Ident.knormal in
-                let ret_type_ptr = Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer) in
-                let instr = Sil.Letderef (id, Sil.Lvar pvar, ret_type_ptr, sil_loc) in
-                Sil.Var id, [instr], [id]
-              else
-                Sil.Lvar (Cfg.Procdesc.get_ret_var procdesc), [], [] in
+            let ret_exp, var_instrs, var_ids = match context.CContext.return_param_typ with
+              | Some ret_param_typ ->
+                  let name = CFrontend_config.return_param in
+                  let procname = Cfg.Procdesc.get_proc_name procdesc in
+                  let pvar = Sil.mk_pvar (Mangled.from_string name) procname in
+                  let id = Ident.create_fresh Ident.knormal in
+                  let instr = Sil.Letderef (id, Sil.Lvar pvar, ret_param_typ, sil_loc) in
+                  Sil.Var id, [instr], [id]
+              | None ->
+                  Sil.Lvar (Cfg.Procdesc.get_ret_var procdesc), [], [] in
             let ret_type = Cfg.Procdesc.get_ret_type procdesc in
             let trans_state' = { trans_state_pri with succ_nodes = []; var_exp = Some ret_exp} in
             let res_trans_stmt = exec_with_self_exception instruction trans_state' stmt in
