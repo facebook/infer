@@ -144,6 +144,13 @@ def clean_json(args, json_report):
     shutil.move(temporary_file, json_report)
 
 
+def _text_of_infer_loc(loc):
+    return u' (%s:%d:%d)' % (
+        loc[JSON_INDEX_ISL_FILE],
+        loc[JSON_INDEX_ISL_LINE],
+        loc[JSON_INDEX_ISL_COLUMN],
+    )
+
 def text_of_report(report):
     filename = report[JSON_INDEX_FILENAME]
     kind = report[JSON_INDEX_KIND]
@@ -152,12 +159,7 @@ def text_of_report(report):
     msg = report[JSON_INDEX_QUALIFIER]
     infer_loc = ''
     if JSON_INDEX_INFER_SOURCE_LOC in report:
-        loc = report[JSON_INDEX_INFER_SOURCE_LOC]
-        infer_loc = u' (%s:%d:%d)' % (
-            loc[JSON_INDEX_ISL_FILE],
-            loc[JSON_INDEX_ISL_LINE],
-            loc[JSON_INDEX_ISL_COLUMN],
-        )
+        infer_loc = _text_of_infer_loc(report[JSON_INDEX_INFER_SOURCE_LOC])
     return u'%s:%d: %s: %s%s\n  %s' % (
         filename,
         line,
@@ -170,6 +172,7 @@ def text_of_report(report):
 
 def _text_of_report_list(reports):
     text_errors_list = []
+    error_types_count = {}
     for report in reports:
         filename = report[JSON_INDEX_FILENAME]
         line = report[JSON_INDEX_LINE]
@@ -185,13 +188,36 @@ def _text_of_report_list(reports):
         text = '%s\n%s' % (text_of_report(report), source_context)
         text_errors_list.append(text)
 
+        t = report[JSON_INDEX_TYPE]
+        # assert failures are not very informative without knowing
+        # which assertion failed
+        if t == 'Assert_failure' and JSON_INDEX_INFER_SOURCE_LOC in report:
+            t += _text_of_infer_loc(report[JSON_INDEX_INFER_SOURCE_LOC])
+        if t not in error_types_count:
+            error_types_count[t] = 1
+        else:
+            error_types_count[t] += 1
+
     n_issues = len(text_errors_list)
     if n_issues == 0:
         return 'No issues found'
     else:
-        msg = '\nFound %s\n' % utils.get_plural('issue', n_issues)
+        max_type_length = max(map(len, error_types_count.keys())) + 2
+        sorted_error_types = error_types_count.items()
+        sorted_error_types.sort(key=operator.itemgetter(1), reverse=True)
+        types_text_list = map(lambda (t, count): '%s: %d' % (
+            t.rjust(max_type_length),
+            count,
+        ), sorted_error_types)
+
         text_errors = '\n\n'.join(text_errors_list)
-        return msg + text_errors
+
+        msg = '\nFound %s\n\n%s\n\nSummary of the reports:\n\n%s' % (
+            utils.get_plural('issue', n_issues),
+            text_errors,
+            '\n'.join(types_text_list),
+        )
+        return msg
 
 
 def _is_user_visible(report):
