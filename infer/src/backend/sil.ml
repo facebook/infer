@@ -618,6 +618,8 @@ and attribute =
   | Aundef of Procname.t * Location.t * path_pos
   | Ataint of Procname.t (** Procname is the source of the taint *)
   | Auntaint
+  | Alocked
+  | Aunlocked
   (** value appeared in second argument of division at given path position *)
   | Adiv0 of path_pos
   (** the exp. is null because of a call to a method with exp as a null receiver *)
@@ -630,6 +632,7 @@ and attribute_category =
   | ACresource
   | ACautorelease
   | ACtaint
+  | AClock
   | ACdiv0
   | ACobjc_null
   | ACundef
@@ -1170,6 +1173,8 @@ let attribute_to_category att =
   | Adangling _ -> ACresource
   | Ataint _
   | Auntaint -> ACtaint
+  | Alocked
+  | Aunlocked -> AClock
   | Aautorelease -> ACautorelease
   | Adiv0 _ -> ACdiv0
   | Aobjc_null _ -> ACobjc_null
@@ -1376,6 +1381,12 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
   | Auntaint, Auntaint -> 0
   | Auntaint, _ -> -1
   | _, Auntaint -> 1
+  | Alocked, Alocked -> 0
+  | Alocked, _ -> -1
+  | _, Alocked -> 1
+  | Aunlocked, Aunlocked -> 0
+  | Aunlocked, _ -> -1
+  | _, Aunlocked -> 1
   | Adiv0 pp1, Adiv0 pp2 ->
       path_pos_compare pp1 pp2
   | Adiv0 _, _ -> -1
@@ -1940,6 +1951,8 @@ and attribute_to_string pe = function
       (str_binop pe Gt) ^ ":" ^ (string_of_int loc.Location.line)
   | Ataint pn -> "TAINTED[" ^ (Procname.to_string pn) ^ "]"
   | Auntaint -> "UNTAINTED"
+  | Alocked -> "LOCKED"
+  | Aunlocked -> "UNLOCKED"
   | Adiv0 (pn, nd_id) -> "DIV0"
   | Aobjc_null exp ->
       let info_s =

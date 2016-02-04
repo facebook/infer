@@ -248,6 +248,8 @@ and attribute =
   | Aundef of Procname.t * Location.t * path_pos
   | Ataint of Procname.t (** Procname is the source of the taint *)
   | Auntaint
+  | Alocked
+  | Aunlocked
   (** value appeared in second argument of division at given path position *)
   | Adiv0 of path_pos
   (** the exp. is null because of a call to a method with exp as a null receiver *)
@@ -260,6 +262,7 @@ and attribute_category =
   | ACresource
   | ACautorelease
   | ACtaint
+  | AClock
   | ACdiv0
   | ACobjc_null
   | ACundef

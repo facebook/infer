@@ -2018,6 +2018,27 @@ module ModelBuiltins = struct
         [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Auntaint), path)]
     | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
 
+  (** Set the attibute of the value as locked*)
+  let execute___set_locked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+    : Builtin.ret_typ =
+    match args, ret_ids with
+    | [(lexp, typ)], _ ->
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
+        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Alocked), path)]
+    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+
+  (** Set the attibute of the value as unlocked*)
+  let execute___set_unlocked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+    : Builtin.ret_typ =
+    match args, ret_ids with
+    | [(lexp, typ)], _ ->
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
+        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Aunlocked), path)]
+    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+
+
   (** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
   let execute___check_untainted cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2511,9 +2532,16 @@ module ModelBuiltins = struct
   let __infer_fail = Builtin.register "__infer_fail" execute___infer_fail
   let __assert_fail = Builtin.register "__assert_fail" execute___assert_fail
 
-  let _ = Builtin.register "__set_hidden_field" execute___set_hidden_field  (* set a hidden field in the struct to the given value *)
-  let _ = Builtin.register "__set_taint_attribute" execute___set_taint_attribute (* set the attribute of the parameter as tainted *)
-  let _ = Builtin.register "__set_untaint_attribute" execute___set_untaint_attribute (* set the attribute of the parameter as tainted *)
+  (* set a hidden field in the struct to the given value *)
+  let _ = Builtin.register "__set_hidden_field" execute___set_hidden_field  
+  (* set the attribute of the parameter as tainted *)
+  let _ = Builtin.register "__set_taint_attribute" execute___set_taint_attribute 
+  (* set the attribute of the parameter as untainted *)
+  let _ = Builtin.register "__set_untaint_attribute" execute___set_untaint_attribute 
+  (* set the attribute of the parameter as locked *)
+  let _ = Builtin.register "__set_locked_attribute" execute___set_locked_attribute 
+  (* set the attribute of the parameter as unlocked *)
+  let _ = Builtin.register "__set_unlocked_attribute" execute___set_unlocked_attribute 
   let _ = Builtin.register "__check_untainted" execute___check_untainted (* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
   let __objc_retain = Builtin.register "__objc_retain" execute___objc_retain (* objective-c "retain" *)
   let __objc_release = Builtin.register "__objc_release" execute___objc_release (* objective-c "release" *)
