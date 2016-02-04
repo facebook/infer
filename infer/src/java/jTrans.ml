@@ -529,11 +529,31 @@ let rec expression context pc expr =
         (idl @ [tmp_id], instrs @ [lderef_instr], Sil.Var tmp_id)
 
 let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_code method_kind =
+  (* This function tries to recursively search for the classname of the class *)
+  (* where the method is defined. It returns the classname given as argument*)
+  (* when this classname cannot be found *)
+  let resolve_method context cn ms =
+    let rec loop fallback_cn cn =
+      match JClasspath.lookup_node cn (JContext.get_program context) with
+      | None -> fallback_cn
+      | Some node ->
+          if Javalib.defines_method node ms then cn
+          else
+            match node with
+            | Javalib.JInterface jinterface -> fallback_cn
+            | Javalib.JClass jclass ->
+                begin
+                  match jclass.Javalib.c_super_class with
+                  | None -> fallback_cn
+                  | Some super_cn -> loop fallback_cn super_cn
+                end in
+    loop cn cn in
+  let cn' = resolve_method context cn ms in
   let cfg = JContext.get_cfg context in
   let tenv = JContext.get_tenv context in
   let program = JContext.get_program context in
   if JConfig.create_callee_procdesc then
-    ignore (get_method_procdesc program cfg tenv cn ms method_kind);
+    ignore (get_method_procdesc program cfg tenv cn' ms method_kind);
   let cf_virtual, cf_interface = match invoke_code with
     | I_Virtual -> (true, false)
     | I_Interface -> (true, true)
@@ -570,8 +590,8 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
       expr_list in
   let callee_procname =
     let proc = Procname.from_string_c_fun (JBasics.ms_name ms) in
-    if JBasics.cn_equal cn JConfig.infer_builtins_cl && SymExec.function_is_builtin proc then proc
-    else JTransType.get_method_procname cn ms method_kind in
+    if JBasics.cn_equal cn' JConfig.infer_builtins_cl && SymExec.function_is_builtin proc then proc
+    else JTransType.get_method_procname cn' ms method_kind in
   let call_idl, call_instrs =
     let callee_fun = Sil.Const (Sil.Cfun callee_procname) in
     let return_type =
@@ -672,27 +692,6 @@ type translation =
   | Instr of Cfg.Node.t
   | Prune of Cfg.Node.t * Cfg.Node.t
   | Loop of Cfg.Node.t * Cfg.Node.t * Cfg.Node.t
-
-(* TODO: this is a little bit hacky. The purpose of this is not so clear *)
-(* This function tries to recursively search for the classname of the class *)
-(* where the method is defined. It returns the classname given as argument*)
-(* when this classname cannot be found *)
-let resolve_method context cn ms =
-  let rec loop fallback_cn cn =
-    match JClasspath.lookup_node cn (JContext.get_program context) with
-    | None -> fallback_cn
-    | Some node ->
-        if Javalib.defines_method node ms then cn
-        else
-          match node with
-          | Javalib.JInterface jinterface -> fallback_cn
-          | Javalib.JClass jclass ->
-              begin
-                match jclass.Javalib.c_super_class with
-                | None -> fallback_cn
-                | Some super_cn -> loop fallback_cn super_cn
-              end in
-  loop cn cn
 
 (* TODO: unclear if this corresponds to what JControlFlow.resolve_method'*)
 (* is trying to do. Normally, this implementation below goes deeper into *)
@@ -925,7 +924,6 @@ let rec instruction context pc instr : translation =
         let node = create_node node_kind (idl @ [ret_id]) (instrs @ [call_instr; set_instr]) in
         Instr node
     | JBir.InvokeStatic (var_opt, cn, ms, args) ->
-        let cn = (resolve_method context cn ms) in
         let sil_obj_opt, args, ids, instrs =
           match args with
           | [arg] when is_clone ms ->
@@ -955,15 +953,14 @@ let rec instruction context pc instr : translation =
           let call_node = create_node node_kind (ids @ call_ids) (instrs @ call_instrs) in
           Cg.add_edge cg caller_procname callee_procname;
           call_node in
-        let trans_virtual_call cn invoke_kind =
-          match instruction_thread_start context cn ms obj args var_opt with
+        let trans_virtual_call original_cn invoke_kind =
+          match instruction_thread_start context original_cn ms obj args var_opt with
           | Some start_call -> instruction context pc start_call
           | None ->
-              let cn = match (JTransType.extract_cn_no_obj sil_obj_type) with
+              let cn' = match JTransType.extract_cn_no_obj sil_obj_type with
                 | Some cn -> cn
-                | None -> cn in
-              let cn = (resolve_method context cn ms) in
-              let call_node = create_call_node cn invoke_kind in
+                | None -> original_cn in
+              let call_node = create_call_node cn' invoke_kind in
               Instr call_node in
         begin
           match call_kind with
@@ -979,7 +976,6 @@ let rec instruction context pc instr : translation =
               trans_virtual_call cn I_Interface
         end
     | JBir.InvokeNonVirtual (var_opt, obj, cn, ms, args) ->
-        let cn = (resolve_method context cn ms) in
         let (ids, instrs, sil_obj_expr) = expression context pc obj in
         let sil_obj_type = JTransType.expr_type context obj in
         let callee_procname, call_ids, call_instrs =
