@@ -1,33 +1,40 @@
 type tag_value_record = {
-	tag : string;
-	value : string;
+  tag : string;
+  value : string;
 }
 
 type json_trace_item = {
-	level : int;
-	filename : string;
-	line_number : int;
-	description : string;
-	node_tags : tag_value_record list;
+  level : int;
+  filename : string;
+  line_number : int;
+  description : string;
+  node_tags : tag_value_record list;
+}
+
+type loc = {
+  file: string;
+  line: int;
+  column: int;
 }
 
 type jsonbug = {
-	bug_class : string;
-	kind : string;
-	bug_type : string;
-	qualifier : string;
-	severity : string;
-	line: int;
-	procedure : string;
-	procedure_id : string;
-	file : string;
-	bug_trace : json_trace_item list;
-	key : int;
-	qualifier_tags : tag_value_record list;
-	hash : int;
-	dotty : string;
+  bug_class : string;
+  kind : string;
+  bug_type : string;
+  qualifier : string;
+  severity : string;
+  line: int;
+  procedure : string;
+  procedure_id : string;
+  file : string;
+  bug_trace : json_trace_item list;
+  key : int;
+  qualifier_tags : tag_value_record list;
+  hash : int;
+  dotty : string;
+  ?infer_source_loc: loc option;
 }
 
 type json_trace = {
-	trace : json_trace_item list;
+  trace : json_trace_item list;
 }

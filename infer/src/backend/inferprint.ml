@@ -64,6 +64,9 @@ let precondition_stats = ref false
 (** name of the file to load analysis results from *)
 let load_analysis_results = ref None
 
+(** If true then include Infer source code locations in json reports *)
+let reports_include_ml_loc = ref false
+
 (** name of the file to load save results to *)
 let save_analysis_results = ref None
 
@@ -114,6 +117,8 @@ let arg_desc =
         "Path to the .inferconfig file";
         "-local_config", Arg.String (fun s -> Inferconfig.local_config := Some s), Some "Path",
         "Path to local config file";
+        "-with_infer_src_loc", Arg.Set reports_include_ml_loc, None,
+        "include the location (in the Infer source code) from where reports are generated";
       ] in
     Arg.create_options_desc false "Options" desc in
   let reserved_arg =
@@ -414,7 +419,7 @@ module BugsCsv = struct
   let pp_bugs error_filter fname fmt summary =
     let pp x = F.fprintf fmt x in
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let pp_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let pp_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         let err_desc_string = error_desc_to_csv_string error_desc in
         let err_advice_string = error_advice_to_csv_string error_desc in
@@ -463,13 +468,17 @@ module BugsJson = struct
   let pp_bugs error_filter fname fmt summary =
     let pp x = F.fprintf fmt x in
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let pp_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let pp_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         let kind = Exceptions.err_kind_string ekind in
         let bug_type = Localise.to_string error_name in
         let procedure_id = Procname.to_filename (Specs.get_proc_name summary) in
         let file =
           DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file in
+        let json_mloc = match ml_loc_opt with
+          | Some (file, line, column) when !reports_include_ml_loc ->
+              Some Jsonbug_j.{ file; line; column }
+          | _ -> None in
         let bug = {
           bug_class = Exceptions.err_class_string eclass;
           kind = kind;
@@ -485,6 +494,7 @@ module BugsJson = struct
           qualifier_tags = error_desc_to_qualifier_tags_records error_desc;
           hash = get_bug_hash kind bug_type procedure_id file node_key error_desc;
           dotty = error_desc_to_dotty_string error_desc;
+          infer_source_loc = json_mloc;
         } in
         if not !is_first_item then pp "," else is_first_item := false;
         pp "%s@?" (string_of_jsonbug bug) in
@@ -495,7 +505,7 @@ module BugsTxt = struct
   (** Write bug report in text format *)
   let pp_bugs error_filter fname fmt summary =
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let pp_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let pp_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         Exceptions.pp_err (node_id, node_key) loc ekind error_name error_desc None fmt () in
     Errlog.iter pp_row err_log
@@ -535,7 +545,7 @@ module BugsXml = struct
   (** print bugs from summary in xml *)
   let pp_bugs error_filter linereader fmt summary =
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let do_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let do_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         let err_desc_string = error_desc_to_xml_string error_desc in
         let precondition_tree () = match pre_opt with
@@ -729,7 +739,7 @@ module Stats = struct
 
   let process_err_log error_filter linereader err_log stats =
     let found_errors = ref false in
-    let process_row (node_id, node_key) loc ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let process_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       let type_str = Localise.to_string error_name in
       if in_footprint && error_filter error_desc error_name
       then match ekind with

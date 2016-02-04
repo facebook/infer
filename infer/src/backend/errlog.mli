@@ -9,6 +9,8 @@
 
 (** Module for error logs. *)
 
+open Utils
+
 (** Element of a loc trace *)
 type loc_trace_elem = {
   lt_level : int; (** nesting level of procedure calls *)
@@ -28,8 +30,16 @@ val empty : unit -> t
 
 (** type of the function to be passed to iter *)
 type iter_fun =
-  (int * int) -> Location.t -> Exceptions.err_kind -> bool -> Localise.t -> Localise.error_desc ->
-  string -> loc_trace -> Prop.normal Prop.t option -> Exceptions.err_class -> unit
+  (int * int) ->
+  Location.t ->
+  ml_location option ->
+  Exceptions.err_kind ->
+  bool ->
+  Localise.t -> Localise.error_desc -> string ->
+  loc_trace ->
+  Prop.normal Prop.t option ->
+  Exceptions.err_class ->
+  unit
 
 (** Apply f to nodes and error names *)
 val iter : iter_fun -> t -> unit

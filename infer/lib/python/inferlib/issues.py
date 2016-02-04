@@ -93,6 +93,10 @@ JSON_INDEX_TRACE_DESCRIPTION = 'description'
 JSON_INDEX_TRACE_NODE_TAGS = 'node_tags'
 JSON_INDEX_TRACE_NODE_TAGS_TAG = 'tags'
 JSON_INDEX_TRACE_NODE_TAGS_VALUE = 'value'
+JSON_INDEX_INFER_SOURCE_LOC = 'infer_source_loc'
+JSON_INDEX_ISL_FILE = 'file'
+JSON_INDEX_ISL_LINE = 'line'
+JSON_INDEX_ISL_COLUMN = 'column'
 
 QUALIFIER_TAGS = 'qualifier_tags'
 BUCKET_TAGS = 'bucket'
@@ -146,11 +150,20 @@ def text_of_report(report):
     line = report[JSON_INDEX_LINE]
     error_type = report[JSON_INDEX_TYPE]
     msg = report[JSON_INDEX_QUALIFIER]
-    return u'%s:%d: %s: %s\n  %s' % (
+    infer_loc = ''
+    if JSON_INDEX_INFER_SOURCE_LOC in report:
+        loc = report[JSON_INDEX_INFER_SOURCE_LOC]
+        infer_loc = u' (%s:%d:%d)' % (
+            loc[JSON_INDEX_ISL_FILE],
+            loc[JSON_INDEX_ISL_LINE],
+            loc[JSON_INDEX_ISL_COLUMN],
+        )
+    return u'%s:%d: %s: %s%s\n  %s' % (
         filename,
         line,
         kind.lower(),
         error_type,
+        infer_loc,
         msg,
     )
 

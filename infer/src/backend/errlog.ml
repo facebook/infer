@@ -64,8 +64,16 @@ let empty () = ErrLogHash.create 13
 
 (** type of the function to be passed to iter *)
 type iter_fun =
-  (int * int) -> Location.t -> Exceptions.err_kind -> bool -> Localise.t -> Localise.error_desc ->
-  string -> loc_trace -> Prop.normal Prop.t option -> Exceptions.err_class -> unit
+  (int * int) ->
+  Location.t ->
+  ml_location option ->
+  Exceptions.err_kind ->
+  bool ->
+  Localise.t -> Localise.error_desc -> string ->
+  loc_trace ->
+  Prop.normal Prop.t option ->
+  Exceptions.err_class ->
+  unit
 
 (** Apply f to nodes and error names *)
 let iter (f: iter_fun) (err_log: t) =
@@ -73,7 +81,7 @@ let iter (f: iter_fun) (err_log: t) =
       ErrDataSet.iter
         (fun (node_id_key, section, loc, mloco, ltr, pre_opt, eclass) ->
            f
-             node_id_key loc ekind in_footprint err_name
+             node_id_key loc mloco ekind in_footprint err_name
              desc severity ltr pre_opt eclass)
         set)
     err_log
