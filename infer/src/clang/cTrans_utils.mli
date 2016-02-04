@@ -24,7 +24,7 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list;
   continuation: continuation option;
   priority: priority_node;
-  var_exp: Sil.exp option;
+  var_exp_typ: (Sil.exp * Sil.typ) option;
 }
 
 type trans_result = {

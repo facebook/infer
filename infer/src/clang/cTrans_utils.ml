@@ -136,7 +136,7 @@ type trans_state = {
   succ_nodes: Cfg.Node.t list; (* successor nodes in the cfg *)
   continuation: continuation option; (* current continuation *)
   priority: priority_node;
-  var_exp: Sil.exp option;
+  var_exp_typ: (Sil.exp * Sil.typ) option;
 }
 
 (* A translation result. It is returned by the translation function. *)
