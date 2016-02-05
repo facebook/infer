@@ -38,9 +38,7 @@ infer -- mvn <maven target>
 
 ### Xcodebuild
 
-Infer can analyze apps built using `xcodebuild`. Only `.m` and `.c`
-files will be analyzed; `.cpp`, `.cc` and `.mm` files will be
-ignored. For instance, for an iOS app:
+Infer can analyze apps built using `xcodebuild`. For instance, for an iOS app:
 
 ```bash
 infer -- xcodebuild -target <target name> -configuration <build configuration> -sdk iphonesimulator
