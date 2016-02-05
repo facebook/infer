@@ -1258,7 +1258,6 @@ let do_analysis exe_env =
       { (Cfg.Procdesc.get_attributes pdesc) with
         ProcAttributes.err_log = static_err_log; } in
 
-    Callbacks.proc_inline_synthetic_methods cfg pdesc;
     Specs.init_summary
       (dep, nodes, proc_flags,
        calls, None, attributes) in

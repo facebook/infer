@@ -42,6 +42,3 @@ val unregister_all_callbacks : unit -> unit
 
 (** Invoke all the registered callbacks. *)
 val iterate_callbacks : (Procname.t -> unit) -> Cg.t -> Exe_env.t -> unit
-
-(** Find synthetic (access or bridge) methods in the procedure and inline them in the cfg. *)
-val proc_inline_synthetic_methods: Cfg.cfg -> Cfg.Procdesc.t -> unit

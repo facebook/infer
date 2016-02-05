@@ -586,7 +586,7 @@ module Node = struct
       match get_succs node with
       | [n] ->
           if not (NodeSet.mem n !visited)
-             && not (equal node dst_node)
+          && not (equal node dst_node)
           then do_node n
       | _ -> ()
     end in
@@ -967,8 +967,91 @@ let save_attributes filename cfg =
     AttributesTable.store_attributes attributes' in
   IList.iter save_proc (get_all_procs cfg)
 
+(** Inline a synthetic (access or bridge) method. *)
+let inline_synthetic_method ret_ids etl proc_desc proc_name loc_call : Sil.instr option =
+  let modified = ref None in
+  let debug = false in
+  let found instr instr' =
+    modified := Some instr';
+    if debug then
+      begin
+        L.stderr "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr pe_text) instr;
+        L.stderr "XX inline_synthetic_method instr': %a@." (Sil.pp_instr pe_text) instr'
+      end in
+  let do_instr node instr =
+    match instr, ret_ids, etl with
+    | Sil.Letderef (id1, Sil.Lfield (Sil.Var id2, fn, ft), bt, loc),
+      [ret_id],
+      [(e1, t1)] -> (* getter for fields *)
+        let instr' = Sil.Letderef (ret_id, Sil.Lfield (e1, fn, ft), bt, loc_call) in
+        found instr instr'
+    | Sil.Letderef (id1, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, loc), [ret_id], []
+      when Sil.pvar_is_global pvar -> (* getter for static fields *)
+        let instr' = Sil.Letderef (ret_id, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, loc_call) in
+        found instr instr'
+    | Sil.Set (Sil.Lfield (ex1, fn, ft), bt , ex2, loc),
+      _,
+      [(e1, t1); (e2, t2)] -> (* setter for fields *)
+        let instr' = Sil.Set (Sil.Lfield (e1, fn, ft), bt , e2, loc_call) in
+        found instr instr'
+    | Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , ex2, loc), _, [(e1, t1)]
+      when Sil.pvar_is_global pvar -> (* setter for static fields *)
+        let instr' = Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , e1, loc_call) in
+        found instr instr'
+    | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
+      when IList.length ret_ids = IList.length ret_ids'
+        && IList.length etl' = IList.length etl ->
+        let instr' = Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl, loc_call, cf) in
+        found instr instr'
+    | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
+      when IList.length ret_ids = IList.length ret_ids'
+        && IList.length etl' + 1 = IList.length etl ->
+        let etl1 = match IList.rev etl with (* remove last element *)
+          | _ :: l -> IList.rev l
+          | [] -> assert false in
+        let instr' = Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl1, loc_call, cf) in
+        found instr instr'
+    | _ -> () in
+  Procdesc.iter_instrs do_instr proc_desc;
+  !modified
+
+(** Find synthetic (access or bridge) Java methods in the procedure and inline them in the cfg. *)
+let proc_inline_synthetic_methods cfg proc_desc : unit =
+  let instr_inline_synthetic_method = function
+    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl, loc, _) ->
+        (match Procdesc.find_from_name cfg pn with
+         | Some pd ->
+             let is_access = Procname.java_is_access_method pn in
+             let attributes = Procdesc.get_attributes pd in
+             let is_synthetic = attributes.ProcAttributes.is_synthetic_method in
+             let is_bridge = attributes.ProcAttributes.is_bridge_method in
+             if is_access || is_bridge || is_synthetic
+             then inline_synthetic_method ret_ids etl pd pn loc
+             else None
+         | None -> None)
+    | _ -> None in
+  let node_inline_synthetic_methods node =
+    let modified = ref false in
+    let do_instr instr = match instr_inline_synthetic_method instr with
+      | None -> instr
+      | Some instr' ->
+          modified := true;
+          instr' in
+    let instrs = Node.get_instrs node in
+    let instrs' = IList.map do_instr instrs in
+    if !modified then Node.replace_instrs node instrs' in
+  Procdesc.iter_nodes node_inline_synthetic_methods proc_desc
+
+(** Inline the java synthetic methods in the cfg *)
+let inline_java_synthetic_methods cfg =
+  let f proc_name proc_desc =
+    if Procname.is_java proc_name
+    then proc_inline_synthetic_methods cfg proc_desc in
+  iter_proc_desc cfg f
+
 (** Save a cfg into a file *)
 let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg : cfg) =
+  inline_java_synthetic_methods cfg;
   if save_sources then save_source_files cfg;
   if !Config.incremental_procs then
     begin
