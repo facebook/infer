@@ -11,7 +11,7 @@ ghrepo: "facebook/infer"
 
 # Build settings
 markdown: redcarpet
-highlighter: pygments
+highlighter: rouge
 
 collections:
   docs:
