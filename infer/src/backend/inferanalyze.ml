@@ -235,7 +235,7 @@ let arg_desc =
         The analysis ignores errors caused by unknown procedure calls."
         ;
         "-checkers",
-        Arg.Set checkers,
+        Arg.Unit (fun () -> checkers := true; Config.intraprocedural := true),
         None,
         " run only the checkers instead of the full analysis"
         ;
@@ -250,7 +250,7 @@ let arg_desc =
         " execute the code query"
         ;
         "-eradicate",
-        Arg.Set Config.eradicate,
+        Arg.Unit (fun () -> Config.eradicate := true; Config.intraprocedural := true),
         None,
         " activate the eradicate checker for java annotations"
         ;
