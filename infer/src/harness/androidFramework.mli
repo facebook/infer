@@ -32,6 +32,8 @@ val is_activity : Sil.typ -> Sil.tenv -> bool
 (** return true if [typ] <: android.view.View *)
 val is_view : Sil.typ -> Sil.tenv -> bool
 
+val is_fragment : Sil.typ -> Sil.tenv -> bool
+
 (** return true if [procname] is a special lifecycle cleanup method *)
 val is_destroy_method : Procname.t -> bool
 

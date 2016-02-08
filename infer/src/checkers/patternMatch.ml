@@ -328,3 +328,18 @@ let proc_iter_overridden_methods f tenv proc_name =
     | Some curr_type ->
         IList.iter (do_super_type tenv) (type_get_direct_supertypes curr_type)
     | None -> ()
+
+(** return the set of instance fields that are assigned to a null literal in [procdesc] *)
+let get_fields_nullified procdesc =
+  (* walk through the instructions and look for instance fields that are assigned to null *)
+  let collect_nullified_flds (nullified_flds, this_ids) _ = function
+    | Sil.Set (Sil.Lfield (Sil.Var lhs, fld, _), typ, rhs, loc)
+      when Sil.exp_is_null_literal rhs && Ident.IdentSet.mem lhs this_ids ->
+        (Ident.FieldSet.add fld nullified_flds, this_ids)
+    | Sil.Letderef (id, rhs, _, _) when Sil.exp_is_this rhs ->
+        (nullified_flds, Ident.IdentSet.add id this_ids)
+    | _ -> (nullified_flds, this_ids) in
+  let (nullified_flds, _) =
+    Cfg.Procdesc.fold_instrs
+      collect_nullified_flds (Ident.FieldSet.empty, Ident.IdentSet.empty) procdesc in
+  nullified_flds
