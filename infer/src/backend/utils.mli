@@ -248,6 +248,14 @@ module Arg : sig
 
 end
 
+(** Compute a 32-character hexadecimal crc using the Digest module  *)
+val string_crc_hex32 : string -> string
+
+(** Append a crc to the string, using string_crc_hex32.
+    Cut the string if it exceeds the cutoff limit.
+    Use an optional key to compute the crc.  *)
+val string_append_crc_cutoff : ?cutoff:int -> ?key:string -> string -> string
+
 (** Check if the lhs is a substring of the rhs. *)
 val string_is_prefix : string -> string -> bool
 

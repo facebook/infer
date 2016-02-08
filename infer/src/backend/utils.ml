@@ -971,3 +971,17 @@ let analyzer_of_string = function
   | "checkers" -> Checkers
   | "tracing" -> Tracing
   | _ -> raise Unknown_analyzer
+
+
+let string_crc_hex32 =
+  Config.string_crc_hex32 (* implemented in Config to avoid circularities *)
+
+let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
+  let name_up_to_cutoff =
+    if String.length name <= cutoff
+    then name
+    else String.sub name 0 cutoff in
+  let crc_str =
+    let name_for_crc = name ^ key in
+    string_crc_hex32 name_for_crc in
+  name_up_to_cutoff ^ "." ^ crc_str
