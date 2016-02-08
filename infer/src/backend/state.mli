@@ -12,6 +12,9 @@
 
 open Utils
 
+(**  Internal state *)
+type t
+
 (** Add diverging states *)
 val add_diverging_states : Paths.PathSet.t -> unit
 
@@ -96,11 +99,17 @@ type log_issue =
 (** Process the failures during symbolic execution of a procedure *)
 val process_execution_failures : log_issue -> Procname.t -> unit
 
-(** Reset all the global data in the module: diverging states and failure stats *)
+(** Reset all the global data. *)
 val reset : unit -> unit
 
 (** Reset the diverging states and goto information for the node *)
 val reset_diverging_states_goto_node : unit -> unit
+
+(** Restore the old state. *)
+val restore_state : t -> unit
+
+(** Return the old state, and revert the current state to the initial one. *)
+val save_state : unit -> t
 
 (** Set the constant map for the current procedure. *)
 val set_const_map : const_map -> unit
