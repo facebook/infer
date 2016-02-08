@@ -19,6 +19,7 @@ out = 'out'
 clean_cmd = ' '.join(['rm', '-rf', out])
 classpath = ':'.join([('$(classpath ' + path + ')') for path in dependencies])
 infer_cmd = ' '.join([
+    'INFER_ONDEMAND=Y',
     'infer',
     '--no-progress-bar',
     '--absolute-paths',

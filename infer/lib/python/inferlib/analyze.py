@@ -431,7 +431,9 @@ class Infer:
             infer_options += ['-project_root', self.args.project_root]
 
         if self.args.analyzer in [config.ANALYZER_CHECKERS]:
-            os.environ['INFER_ONDEMAND'] = 'Y'
+            # TODO: 9936222: restore on-demand for the checkers
+            # os.environ['INFER_ONDEMAND'] = 'Y'
+            pass
 
         os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
 
