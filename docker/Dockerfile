@@ -35,6 +35,7 @@ RUN curl -sL \
       -o /usr/local/bin/opam && \
     chmod 755 /usr/local/bin/opam
 RUN opam init -y --comp=4.01.0 && \
+    opam switch 4.02.3 && \
     opam install -y extlib.1.5.4 atdgen.1.6.0 javalib.2.3.1 sawja.1.5.1
 
 # Download the latest Infer release
