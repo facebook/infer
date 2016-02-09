@@ -67,7 +67,8 @@ public class NullPointerExceptionTest {
         "derefNull",
         "nullListFiles",
         "nullTryLock",
-        "tryLockThrows"
+        "tryLockThrows",
+        "dereferenceAfterLoopOnList",
     };
     assertThat(
         "Results should contain " + NULL_DEREFERENCE,

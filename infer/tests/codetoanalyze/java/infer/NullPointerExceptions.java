@@ -469,4 +469,20 @@ public class NullPointerExceptions {
     }
   }
 
+  class L {
+    L next;
+  }
+
+  Object returnsNullAfterLoopOnList(L l) {
+    while (l != null) {
+      l = l.next;
+    }
+    return null;
+  }
+
+  void dereferenceAfterLoopOnList(L l) {
+    Object obj = returnsNullAfterLoopOnList(l);
+    obj.toString();
+  }
+
 }

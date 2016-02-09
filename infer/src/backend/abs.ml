@@ -404,8 +404,8 @@ let mk_rules_for_dll (para : Sil.hpara_dll) : rule list =
 (******************  End of DLL abstraction rules  ******************)
 
 (******************  Start of Predicate Discovery  ******************)
-let typ_get_recursive_flds tenv te =
-  let filter (_, t, _) =
+let typ_get_recursive_flds tenv typ_exp =
+  let filter typ (_, t, _) =
     match t with
     | Sil.Tvar _ | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ -> false
     | Sil.Tptr (Sil.Tvar tname', _) ->
@@ -414,22 +414,22 @@ let typ_get_recursive_flds tenv te =
               L.err "@.typ_get_recursive: Undefined type %s@." (Typename.to_string tname');
               t
           | Some typ' -> typ' in
-        Sil.exp_equal te (Sil.Sizeof (typ', Sil.Subtype.exact))
+        Sil.typ_equal typ' typ
     | Sil.Tptr _ | Sil.Tstruct _ | Sil.Tarray _ | Sil.Tenum _ ->
         false
   in
-  match te with
+  match typ_exp with
   | Sil.Sizeof (typ, _) ->
       (match typ with
        | Sil.Tvar _ -> assert false (* there should be no indirection *)
        | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ | Sil.Tenum _ -> []
        | Sil.Tstruct { Sil.instance_fields } ->
-           IList.map (fun (x, y, z) -> x) (IList.filter filter instance_fields)
+           IList.map (fun (x, y, z) -> x) (IList.filter (filter typ) instance_fields)
        | Sil.Tarray _ -> [])
   | Sil.Var _ -> [] (* type of |-> not known yet *)
   | Sil.Const _ -> []
   | _ ->
-      L.err "@.typ_get_recursive: unexpected type expr: %a@." (Sil.pp_exp pe_text) te;
+      L.err "@.typ_get_recursive: unexpected type expr: %a@." (Sil.pp_exp pe_text) typ_exp;
       assert false
 
 let discover_para_roots p root1 next1 root2 next2 : Sil.hpara option =

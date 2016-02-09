@@ -230,6 +230,11 @@
     "procedure": "void NullPointerExceptions.derefNullableGetter()"
   },
   {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.dereferenceAfterLoopOnList(NullPointerExceptions$L)"
+  },
+  {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
     "procedure": "void FilterInputStreamLeaks.digestInputStreamNotClosedAfterRead()"
