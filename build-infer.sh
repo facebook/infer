@@ -105,7 +105,7 @@ check_installed opam
 opam init --no-setup --yes > /dev/null || \
   opam init --no-setup --yes --comp=4.02.3
 
-eval $(opam config env)
+eval $(opam config env --shell=bash)
 
 echo "preparing build... "
 if [ ! -f .release ]; then
