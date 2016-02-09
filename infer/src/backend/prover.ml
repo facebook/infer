@@ -1468,7 +1468,7 @@ struct
         Typename.equal class_name object_type
     | Typename.TN_csu (Csu.Class Csu.CPP, _) ->
         false
-    | _ -> false (* TODO add ObjC case *)
+    | _ -> false
 
   (** check if c1 is a subclass of c2 *)
   let check_subclass_tenv tenv c1 c2 =
@@ -1515,17 +1515,21 @@ struct
         || Typename.equal cn2 object_type
     | _ -> check_subtype_basic_type t1 t2
 
+  let get_cpp_objc_type_name t =
+    match t with
+    | Sil.Tstruct { Sil.csu = Csu.Class csu; struct_name = Some c }
+      when csu = Csu.CPP || csu = Csu.Objc ->
+        Some (Typename.TN_csu (Csu.Class csu, c))
+    | _ -> None
+
   (** check if t1 is a subtype of t2 *)
   let check_subtype tenv t1 t2 =
     if !Config.curr_language = Config.Java then
       check_subtype_java tenv t1 t2
-    else match t1, t2 with
-      | Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c1 },
-        Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c2 } ->
-          let cn1 = Typename.TN_csu (Csu.Class Csu.CPP, c1)
-          and cn2 = Typename.TN_csu (Csu.Class Csu.CPP, c2) in
-          check_subclass tenv cn1 cn2
-      | _ -> false (* TODO ObjC case *)
+    else
+      match get_cpp_objc_type_name t1, get_cpp_objc_type_name t2 with
+      | Some cn1, Some cn2 -> check_subclass tenv cn1 cn2
+      | _ -> false
 
   let rec case_analysis_type_java tenv (t1, st1) (t2, st2) =
     match t1, t2 with
@@ -1556,19 +1560,17 @@ struct
   let case_analysis_type tenv (t1, st1) (t2, st2) =
     if !Config.curr_language = Config.Java then
       case_analysis_type_java tenv (t1, st1) (t2, st2)
-    else match t1, t2 with
-      | Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c1 },
-        Sil.Tstruct { Sil.csu = Csu.Class Csu.CPP; struct_name = Some c2 } ->
-          let cn1 = Typename.TN_csu (Csu.Class Csu.CPP, c1)
-          and cn2 = Typename.TN_csu (Csu.Class Csu.CPP, c2) in
+    else match get_cpp_objc_type_name t1, get_cpp_objc_type_name t2 with
+      | Some cn1, Some cn2 ->
           (* cn1 <: cn2 or cn2 <: cn1 is implied in Java when we get two types compared *)
           (* that get through the type system, but not in C++ because of multiple inheritance, *)
+          (* and not in ObjC because of being weakly typed, *)
           (* and the algorithm will only work correctly if this is the case *)
           if check_subclass tenv cn1 cn2 || check_subclass tenv cn2 cn1 then
             Sil.Subtype.case_analysis (cn1, st1) (cn2, st2) (check_subclass tenv)
               (is_interface tenv)
           else None, Some st1
-      | _ -> None, Some st1 (* TODO ObjC case *)
+      | _ -> None, Some st1
 
   (** perform case analysis on [texp1 <: texp2], and return the updated types in the true and false
       case, if they are possible *)
@@ -1627,7 +1629,9 @@ let texp_equal_modulo_subtype_flag texp1 texp2 = match texp1, texp2 with
 
 (** check implication between type expressions *)
 let texp_imply tenv subs texp1 texp2 e1 calc_missing =
-  let types_subject_to_cast = (* check whether the types could be subject to dynamic cast: classes and arrays *)
+  (* check whether the types could be subject to dynamic cast: *)
+  (* classes and arrays in Java, and just classes in C++ and ObjC *)
+  let types_subject_to_dynamic_cast =
     match texp1, texp2 with
     | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tstruct _, _)
     | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tarray _, _)
@@ -1635,10 +1639,11 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
     | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tarray _, _) ->
         !Config.curr_language = Config.Java
 
-    | Sil.Sizeof (typ1, _), Sil.Sizeof (typ2, _) -> Sil.is_cpp_class typ1 && Sil.is_cpp_class typ2
-    (* TODO ObjC case *)
+    | Sil.Sizeof (typ1, _), Sil.Sizeof (typ2, _) ->
+        (Sil.is_cpp_class typ1 && Sil.is_cpp_class typ2) ||
+        (Sil.is_objc_class typ1 && Sil.is_objc_class typ2)
     | _ -> false in
-  if types_subject_to_cast then
+  if types_subject_to_dynamic_cast then
     begin
       let pos_type_opt, neg_type_opt = Subtyping_check.subtype_case_analysis tenv texp1 texp2 in
       let has_changed = match pos_type_opt with

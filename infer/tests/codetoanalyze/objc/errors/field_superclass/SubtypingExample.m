@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2016 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+#import <Foundation/Foundation.h>
+
+@interface Person : NSObject
+
+{
+    NSString *personName;
+    int personAge;
+}
+
+- (id)initWithName:(NSString *)name andAge:(int)age;
+
+- (void) setAge:(int) age;
+
+- (int) getAge;
+
+@end
+
+@implementation Person
+
+- (id)initWithName:(NSString *)name andAge:(int)age{
+    personName = name;
+    personAge = age;
+    return self;
+}
+
+- (void) setAge:(int) age {
+    self->personAge = age;
+}
+
+- (int) getAge {
+    return self->personAge;
+}
+
+@end
+
+@interface Employee : Person
+
+{
+    NSString *employeeEducation;
+}
+
+- (id)initWithName:(NSString *)name andAge:(int)age
+      andEducation:(NSString *)education;
+
+- (void) setEmployeeEducation:(NSString*) employeeEducation;
+
+@end
+
+
+@implementation Employee
+
+- (id)initWithName:(NSString *)name andAge:(int)age
+      andEducation: (NSString *)education
+{
+    if (self = [super initWithName:name andAge:age]) {
+        employeeEducation = education;
+    }
+    int x = 1/0;
+    return self;
+}
+
+- (void) setEmployeeEducation:(NSString*) employeeEducation {
+    self->employeeEducation = employeeEducation;
+}
+
+@end
+
+int testFields() {
+    Employee* employee = [Employee new];
+    [employee setEmployeeEducation:@"Master"];
+    [employee setAge:29];
+    [employee setEmployeeEducation:@"PhD"];
+    return [employee getAge];
+}
+
+int test() {
+    return 1/(testFields() - 29);
+}
