@@ -183,16 +183,11 @@ type capture_status =
 (* returns true for the set of classes that are selected to be translated *)
 let should_capture classes package_opt source_basename node =
   let classname = Javalib.get_name node in
-  let temporary_skip =
-    (* TODO (#6341744): remove this *)
-    IList.exists
-      (fun part -> part = "graphschema")
-      (JBasics.cn_package classname) in
   let match_package pkg cn =
     match JTransType.package_to_string (JBasics.cn_package cn) with
     | None -> pkg = ""
     | Some found_pkg -> found_pkg = pkg in
-  if JBasics.ClassSet.mem classname classes && not temporary_skip then
+  if JBasics.ClassSet.mem classname classes then
     begin
       match Javalib.get_sourcefile node with
       | None -> false
