@@ -56,6 +56,9 @@ let models_dir =
   let lib_specs_dir = Filename.concat lib_dir specs_dir_name in
   lib_specs_dir
 
+let string_crc_hex32 s =
+  Digest.to_hex (Digest.string s)
+
 module JarCache =
 struct
   let infer_cache : string option ref = ref None
@@ -80,7 +83,7 @@ struct
     match !infer_cache with
     | Some cache_dir ->
         let basename = Filename.basename jarfile in
-        let key = basename ^ CRC.crc16 jarfile in
+        let key = basename ^ string_crc_hex32 jarfile in
         let key_dir = Filename.concat cache_dir key in
 
         if (mkdir key_dir)

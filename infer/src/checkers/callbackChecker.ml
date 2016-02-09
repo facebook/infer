@@ -16,22 +16,6 @@ module IdSet = Ident.IdentSet
 module FldSet = Ident.FieldSet
 open Utils
 
-(** Automatically create a harness method to exercise code under test *)
-
-(** return the set of instance fields that are assigned to a null literal in [procdesc] *)
-let get_fields_nullified procdesc =
-  (* walk through the instructions and look for instance fields that are assigned to null *)
-  let collect_nullified_flds (nullified_flds, this_ids) _ = function
-    | Sil.Set (Sil.Lfield (Sil.Var lhs, fld, _), typ, rhs, loc)
-      when Sil.exp_is_null_literal rhs && IdSet.mem lhs this_ids ->
-        (FldSet.add fld nullified_flds, this_ids)
-    | Sil.Letderef (id, rhs, _, _) when Sil.exp_is_this rhs ->
-        (nullified_flds, IdSet.add id this_ids)
-    | _ -> (nullified_flds, this_ids) in
-  let (nullified_flds, _) =
-    Cfg.Procdesc.fold_instrs collect_nullified_flds (FldSet.empty, IdSet.empty) procdesc in
-  nullified_flds
-
 (** set of instance fields belonging to the current file that are assigned to null literals *)
 let fields_nullified = ref FldSet.empty
 
@@ -112,7 +96,8 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
         let _ = if AndroidFramework.is_destroy_method proc_name then
             (* compute the set of fields nullified by this procedure *)
             (* TODO (t4959422): get fields that are nullified in callees of the destroy method *)
-            fields_nullified := FldSet.union (get_fields_nullified proc_desc) !fields_nullified in
+            fields_nullified :=
+              FldSet.union (PatternMatch.get_fields_nullified proc_desc) !fields_nullified in
         if done_checking (IList.length def_methods) then
           do_eradicate_check all_procs get_procdesc idenv tenv
   | _ -> ()

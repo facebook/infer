@@ -95,8 +95,8 @@ let check_block_retain_cycle cfg tenv pname _prop block_nullified =
     this function. If the tool follows this protocol, it will never hit the assert
     false cases for field and array accesses. *)
 let rec apply_offlist
-    footprint_part pdesc tenv p fp_root nullify_struct
-    (root_lexp, strexp, typ) offlist (f: Sil.exp option -> Sil.exp) inst lookup_inst =
+    pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist
+    (f: Sil.exp option -> Sil.exp) inst lookup_inst =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pp_error () =
     L.d_strln ".... Invalid Field ....";
@@ -146,13 +146,11 @@ let rec apply_offlist
   | [], Sil.Earray _ ->
       let offlist' = (Sil.Off_index Sil.exp_zero):: offlist in
       apply_offlist
-        footprint_part pdesc tenv p fp_root nullify_struct
-        (root_lexp, strexp, typ) offlist' f inst lookup_inst
+        pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist' f inst lookup_inst
   | (Sil.Off_fld (fld, _)):: offlist', Sil.Earray _ ->
       let offlist_new = Sil.Off_index(Sil.exp_zero) :: offlist in
       apply_offlist
-        footprint_part pdesc tenv p fp_root nullify_struct
-        (root_lexp, strexp, typ) offlist_new f inst lookup_inst
+        pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist_new f inst lookup_inst
   | (Sil.Off_fld (fld, fld_typ)):: offlist', Sil.Estruct (fsel, inst') ->
       begin
         let typ' = Sil.expand_type tenv typ in
@@ -166,7 +164,7 @@ let rec apply_offlist
           let _, se' = IList.find (fun fse -> Ident.fieldname_equal fld (fst fse)) fsel in
           let res_e', res_se', res_t', res_pred_insts_op' =
             apply_offlist
-              footprint_part pdesc tenv p fp_root nullify_struct
+              pdesc tenv p fp_root nullify_struct
               (root_lexp, se', t') offlist' f inst lookup_inst in
           let replace_fse fse = if Sil.fld_equal fld (fst fse) then (fld, res_se') else fse in
           let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
@@ -194,7 +192,7 @@ let rec apply_offlist
           let idx_ese', se' = IList.find (fun ese -> Prover.check_equal p nidx (fst ese)) esel in
           let res_e', res_se', res_t', res_pred_insts_op' =
             apply_offlist
-              footprint_part pdesc tenv p fp_root nullify_struct
+              pdesc tenv p fp_root nullify_struct
               (root_lexp, se', t') offlist' f inst lookup_inst in
           let replace_ese ese = if Sil.exp_equal idx_ese' (fst ese) then (idx_ese', res_se') else ese in
           let res_se = Sil.Earray(size, IList.map replace_ese esel, inst1) in
@@ -223,7 +221,7 @@ let rec apply_offlist
     Finally, before running this function, the tool should run strexp_extend_value
     in rearrange.ml for the same se and offlist, so that all the necessary
     extensions of se are done before this function. *)
-let ptsto_lookup footprint_part pdesc tenv p (lexp, se, typ, st) offlist id =
+let ptsto_lookup pdesc tenv p (lexp, se, typ, st) offlist id =
   let f =
     function Some exp -> exp | None -> Sil.Var id in
   let fp_root =
@@ -231,8 +229,7 @@ let ptsto_lookup footprint_part pdesc tenv p (lexp, se, typ, st) offlist id =
   let lookup_inst = ref None in
   let e', se', typ', pred_insts_op' =
     apply_offlist
-      footprint_part pdesc tenv p fp_root false
-      (lexp, se, typ) offlist f Sil.inst_lookup lookup_inst in
+      pdesc tenv p fp_root false (lexp, se, typ) offlist f Sil.inst_lookup lookup_inst in
   let lookup_uninitialized = (* true if we have looked up an uninitialized value *)
     match !lookup_inst with
     | Some (Sil.Iinitial | Sil.Ialloc | Sil.Ilookup) -> true
@@ -251,7 +248,7 @@ let ptsto_lookup footprint_part pdesc tenv p (lexp, se, typ, st) offlist id =
     the tool should run strexp_extend_value in rearrange.ml for the same
     se and offlist, so that all the necessary extensions of se are done
     before this function. *)
-let ptsto_update footprint_part pdesc tenv p (lexp, se, typ, st) offlist exp =
+let ptsto_update pdesc tenv p (lexp, se, typ, st) offlist exp =
   let f _ = exp in
   let fp_root =
     match lexp with Sil.Var id -> Ident.is_footprint id | _ -> false in
@@ -259,8 +256,7 @@ let ptsto_update footprint_part pdesc tenv p (lexp, se, typ, st) offlist exp =
   let _, se', typ', pred_insts_op' =
     let pos = State.get_path_pos () in
     apply_offlist
-      footprint_part pdesc tenv p fp_root true (lexp, se, typ)
-      offlist f (State.get_inst_update pos) lookup_inst in
+      pdesc tenv p fp_root true (lexp, se, typ) offlist f (State.get_inst_update pos) lookup_inst in
   let ptsto' = Prop.mk_ptsto lexp se' (Sil.Sizeof (typ', st)) in
   (ptsto', pred_insts_op')
 
@@ -913,7 +909,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
     match Prop.prop_iter_current iter_ren with
     | (Sil.Hpointsto(lexp, strexp, Sil.Sizeof (typ, st)), offlist) ->
         let contents, new_ptsto, pred_insts_op, lookup_uninitialized =
-          ptsto_lookup false pdesc tenv prop_ren (lexp, strexp, typ, st) offlist id in
+          ptsto_lookup pdesc tenv prop_ren (lexp, strexp, typ, st) offlist id in
         let update acc (pi, sigma) =
           let pi' = Sil.Aeq (Sil.Var(id), contents):: pi in
           let sigma' = new_ptsto:: sigma in
@@ -976,7 +972,7 @@ let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp
       | _ -> assert false in
     let p = Prop.prop_iter_to_prop iter in
     let new_ptsto, pred_insts_op =
-      ptsto_update false pdesc tenv p (lexp, strexp, typ, st) offlist rhs_exp in
+      ptsto_update pdesc tenv p (lexp, strexp, typ, st) offlist rhs_exp in
     let update acc (pi, sigma) =
       let sigma' = new_ptsto:: sigma in
       let iter' = update_iter iter pi sigma' in

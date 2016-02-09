@@ -28,6 +28,7 @@ let active_procedure_checkers () =
         Checkers.callback_check_write_to_parcel, false;
         Checkers.callback_find_deserialization, false;
         Dataflow.callback_test_dataflow, false;
+        FragmentRetainsViewChecker.callback_fragment_retains_view, checkers_enabled;
         SqlChecker.callback_sql, false;
         Eradicate.callback_eradicate, !Config.eradicate;
         CodeQuery.code_query_callback, !CodeQuery.query <> None;

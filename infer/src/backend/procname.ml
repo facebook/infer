@@ -449,7 +449,7 @@ let to_simplified_string ?(withclass = false) p =
 
 (** Convert a proc name to a filename *)
 let to_filename (pn : proc_name) =
-  DB.get_short_filename (to_unique_id pn)
+  string_append_crc_cutoff (to_unique_id pn)
 
 (** Pretty print a proc name *)
 let pp f pn =

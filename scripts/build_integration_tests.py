@@ -45,6 +45,7 @@ def quote(s):
 
 
 def string_of_error(e):
+    line = ''
     if issues.JSON_INDEX_LINE in e:
         line = ' on line %s ' % e[issues.JSON_INDEX_LINE]
     msg = '%s in file %s, procedure %s%s' % (

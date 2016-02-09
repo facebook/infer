@@ -289,6 +289,10 @@ let is_activity typ tenv =
 let is_view typ tenv =
   is_subtype_package_class typ "android.view" "View" tenv
 
+let is_fragment typ tenv =
+  is_subtype_package_class typ "android.app" "Fragment" tenv ||
+  is_subtype_package_class typ "android.support.v4.app" "Fragment" tenv
+
 (** return true if [class_name] is a known callback class name *)
 let is_callback_class_name class_name = Mangled.MangledSet.mem class_name android_callbacks
 

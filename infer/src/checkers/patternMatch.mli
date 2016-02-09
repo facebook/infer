@@ -80,3 +80,6 @@ val type_is_nested_in_type : Sil.typ -> Mangled.t -> bool
 
 (** Is the type java.lang.Object *)
 val type_is_object : Sil.typ -> bool
+
+(** return the set of instance fields that are assigned to a null literal in [procdesc] *)
+val get_fields_nullified : Cfg.Procdesc.t -> Ident.FieldSet.t

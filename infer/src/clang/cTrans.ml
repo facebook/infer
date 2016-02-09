@@ -1440,6 +1440,32 @@ struct
     let dowhile_kind = Loops.DoWhile (cond, body) in
     loop_instruction trans_state dowhile_kind stmt_info
 
+
+  (* Iteration over colection 
+    
+      for (v : C) { body; }
+ 
+    is translated as follows: 
+ 
+      TypeC __range = C;
+      for (__begin = __range.begin(), __end = __range.end();
+           __begin != __end;
+           ++__begin) 
+       {
+          v = *__begin;
+          loop_body;
+        }   
+  *)
+  and cxxForRangeStmt_trans trans_state stmt_info stmt_list =
+    let open Clang_ast_t in
+    match stmt_list with
+    | [iterator_decl; initial_cond; exit_cond; increment; assign_current_index; loop_body] -> 
+      let loop_body' = CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
+      let null_stmt = NullStmt (stmt_info, []) in 
+      let for_loop = ForStmt (stmt_info, [initial_cond; null_stmt; exit_cond; increment; loop_body']) in
+      instruction trans_state (CompoundStmt (stmt_info, [iterator_decl; for_loop])) 
+    | _ -> assert false  
+
   (* Fast iteration for colection
      for (type_it i in collection) { body }
      is translate as
@@ -2064,7 +2090,6 @@ struct
         stmtExpr_trans trans_state stmt_info stmt_list expr_info
 
     | ForStmt(stmt_info, [init; decl_stmt; cond; incr; body]) ->
-        (* Note: we ignore null_stmt at the moment.*)
         forStmt_trans trans_state init decl_stmt cond incr body stmt_info
 
     | WhileStmt(stmt_info, [decl_stmt; cond; body]) ->
@@ -2072,6 +2097,9 @@ struct
 
     | DoStmt(stmt_info, [body; cond]) ->
         doStmt_trans trans_state stmt_info cond body
+           
+    | CXXForRangeStmt (stmt_info, stmt_list) -> 
+        cxxForRangeStmt_trans trans_state stmt_info stmt_list
 
     | ObjCForCollectionStmt(stmt_info, [item; items; body]) ->
         objCForCollectionStmt_trans trans_state item items body stmt_info
@@ -2237,7 +2265,7 @@ struct
 
     | CXXDefaultArgExpr (stmt_info, stmt_list, expr_info, default_arg_info) ->
         cxxDefaultArgExpr_trans trans_state default_arg_info
-
+    
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);

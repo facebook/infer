@@ -561,7 +561,7 @@ struct
     if String.length mangled == 0 then
       Procname.from_string_c_fun name
     else
-      let crc = CRC.crc16 mangled in
+      let crc = string_crc_hex32 mangled in
       Procname.mangled_c_fun name crc
 
   let mk_procname_from_objc_method class_name method_name method_kind =
@@ -570,7 +570,7 @@ struct
 
   let mk_procname_from_cpp_method class_name method_name tp =
     let type_name = Ast_utils.string_of_type_ptr tp in
-    let type_name_crc = Some (CRC.crc16 type_name) in
+    let type_name_crc = Some (string_crc_hex32 type_name) in
     Procname.mangled_c_method class_name method_name type_name_crc
 
   let get_var_name_string name_info var_decl_info =
@@ -598,7 +598,7 @@ struct
           let start_location = fst decl_info.Clang_ast_t.di_source_range in
           let line_opt = start_location.Clang_ast_t.sl_line in
           let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
-          let mangled = CRC.crc16 (type_name ^ line_str) in
+          let mangled = string_crc_hex32 (type_name ^ line_str) in
           let mangled_name = Mangled.mangled name_string mangled in
           Sil.mk_pvar mangled_name procname
     | None -> Sil.mk_pvar (Mangled.from_string name_string) procname

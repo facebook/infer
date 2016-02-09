@@ -93,6 +93,7 @@ type global_state =
     footprint_mode : bool;
     html_formatter : F.formatter;
     name_generator : Ident.NameGenerator.t;
+    symexec_state : State.t
   }
 
 let save_global_state () =
@@ -102,6 +103,7 @@ let save_global_state () =
     footprint_mode = !Config.footprint;
     html_formatter = !Printer.html_formatter;
     name_generator = Ident.NameGenerator.get_current ();
+    symexec_state = State.save_state ();
   }
 
 let restore_global_state st =
@@ -109,7 +111,8 @@ let restore_global_state st =
   L.set_delayed_prints st.delayed_prints;
   Config.footprint := st.footprint_mode;
   Printer.html_formatter := st.html_formatter;
-  Ident.NameGenerator.set_current st.name_generator
+  Ident.NameGenerator.set_current st.name_generator;
+  State.restore_state st.symexec_state
 
 let do_analysis curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
