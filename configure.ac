@@ -181,6 +181,7 @@ if test "x$enable_java_analyzers" = "xyes"; then
 public class conftest {
   public static void main(String[[]] args) {
     System.out.println(System.getProperty("java.home"));
+    System.exit(0);
   }
 }
 _ACEOF
