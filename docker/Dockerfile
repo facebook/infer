@@ -52,6 +52,7 @@ RUN INFER_VERSION=$(curl -s https://api.github.com/repos/facebook/infer/releases
 # Compile Infer
 RUN cd /infer && \
     eval $(opam config env) && \
+    ./configure && \
     make -C infer clang java
 
 # Install Infer
