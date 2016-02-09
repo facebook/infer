@@ -441,8 +441,13 @@ def parse_buck_command(args):
     build_keyword = 'build'
     if build_keyword in args and len(args[args.index(build_keyword):]) > 1:
         next_index = args.index(build_keyword) + 1
-        buck_args = parser.parse_args(args[next_index:])
-        return buck_args
+        buck_args = args[next_index:]
+        parsed_args = parser.parse_args(buck_args)
+        base_cmd_without_targets = [p for p in buck_args
+                                    if p not in parsed_args.targets]
+        base_cmd = ['buck', build_keyword] + base_cmd_without_targets
+        return base_cmd, parsed_args
+
     else:
         raise UnsuportedBuckCommand(args)
 
@@ -452,14 +457,12 @@ class Wrapper:
     def __init__(self, infer_args, buck_cmd):
         self.timer = utils.Timer(logging.info)
         self.infer_args = infer_args
-        buck_args = parse_buck_command(buck_cmd)
         self.timer.start('Computing library targets')
-        buck_cmd_without_targets = [p for p in buck_cmd
-                                    if p not in buck_args.targets]
+        base_cmd, buck_args = parse_buck_command(buck_cmd)
         self.normalized_targets = get_normalized_targets(
             buck_args.targets,
             self.infer_args.verbose)
-        self.buck_cmd = buck_cmd_without_targets + self.normalized_targets
+        self.buck_cmd = base_cmd + self.normalized_targets
         self.timer.stop('%d targets computed', len(self.normalized_targets))
 
     def run(self):
