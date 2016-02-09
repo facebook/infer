@@ -166,7 +166,7 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
 end (* MakeDF *)
 
 (** Example dataflow callback: compute the the distance from a node to the start node. *)
-let callback_test_dataflow all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_test_dataflow { Callbacks.proc_desc } =
   let verbose = false in
   let module DFCount = MakeDF(struct
       type t = int

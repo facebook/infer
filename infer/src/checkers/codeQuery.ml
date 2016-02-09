@@ -204,7 +204,7 @@ module Match = struct
 
 end
 
-let code_query_callback all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let code_query_callback { Callbacks.proc_desc; idenv; proc_name } =
   let do_instr node instr =
     let env = Match.init_env () in
     let _found = Match.match_query true env idenv node proc_name (Lazy.force query_ast) proc_name node instr in

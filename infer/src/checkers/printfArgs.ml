@@ -219,12 +219,6 @@ let check_printf_args_ok
       | None -> ())
   | _ -> ()
 
-let callback_printf_args
-    (all_procs : Procname.t list)
-    (get_proc_desc: Procname.t -> Cfg.Procdesc.t option)
-    (idenv: Idenv.t)
-    (tenv: Sil.tenv)
-    (proc_name: Procname.t)
-    (proc_desc : Cfg.Procdesc.t) : unit =
+let callback_printf_args { Callbacks.proc_desc; proc_name } : unit =
   Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok n i proc_name proc_desc) proc_desc
 

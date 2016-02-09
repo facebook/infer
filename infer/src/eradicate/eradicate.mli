@@ -21,10 +21,7 @@ type parameters = (Sil.exp * Sil.typ) list
 (** Type for a module that provides a main callback function *)
 module type CallBackT =
 sig
-  val callback :
-    TypeCheck.checks -> Procname.t list -> TypeCheck.get_proc_desc ->
-    Idenv.t -> Sil.tenv -> Procname.t ->
-    Cfg.Procdesc.t -> unit
+  val callback : TypeCheck.checks -> Callbacks.proc_callback_args -> unit
 end (* CallBackT *)
 
 

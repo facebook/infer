@@ -26,10 +26,10 @@ let report_error fld fld_typ pname pdesc =
   let exn = Exceptions.Checkers (retained_view, Localise.verbatim_desc description) in
   Reporting.log_error pname ~loc:(Some loc) exn
 
-let callback_fragment_retains_view all_procs get_procdesc idenv tenv pname pdesc =
+let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
-  let is_on_destroy_view = Procname.java_get_method pname = "onDestroyView" in
+  let is_on_destroy_view = Procname.java_get_method proc_name = "onDestroyView" in
   (* this is needlessly complicated because field types are Tvars instead of Tstructs *)
   let fld_typ_is_view = function
     | Sil.Tptr (Sil.Tvar tname, _) ->
@@ -45,18 +45,18 @@ let callback_fragment_retains_view all_procs get_procdesc idenv tenv pname pdesc
     Typename.equal fld_classname class_typename && fld_typ_is_view fld_typ in
   if is_on_destroy_view then
     begin
-      let class_typename = Typename.Java.from_string (Procname.java_get_class pname) in
+      let class_typename = Typename.Java.from_string (Procname.java_get_class proc_name) in
       match Sil.tenv_lookup tenv class_typename with
-      | Some (Sil.Tstruct { Sil.csu; struct_name = Some class_name; def_methods; instance_fields }
+      | Some (Sil.Tstruct { Sil.struct_name = Some _; instance_fields }
               as typ) when AndroidFramework.is_fragment typ tenv ->
           let declared_view_fields =
             IList.filter (is_declared_view_typ class_typename) instance_fields in
-          let fields_nullified = PatternMatch.get_fields_nullified pdesc in
+          let fields_nullified = PatternMatch.get_fields_nullified proc_desc in
           (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
           IList.iter
             (fun (fname, typ, _) ->
                if not (Ident.FieldSet.mem fname fields_nullified) then
-                 report_error fname typ pname pdesc)
+                 report_error fname typ proc_name proc_desc)
             declared_view_fields
       | _ -> ()
     end

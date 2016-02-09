@@ -13,7 +13,7 @@ module L = Logging
 
 
 (** Find SQL statements in string concatenations *)
-let callback_sql all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_sql { Callbacks.proc_desc; proc_name } =
   let verbose = false in
 
   (* Case insensitive SQL statement patterns *)

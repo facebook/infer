@@ -31,10 +31,7 @@ type parameters = TypeState.parameters
 (** Type for a module that provides a main callback function *)
 module type CallBackT =
 sig
-  val callback :
-    TypeCheck.checks -> Procname.t list -> TypeCheck.get_proc_desc ->
-    Idenv.t -> Sil.tenv -> Procname.t ->
-    Cfg.Procdesc.t -> unit
+  val callback : TypeCheck.checks -> Callbacks.proc_callback_args -> unit
 end (* CallBackT *)
 
 (** Extension to the type checker. *)
@@ -149,8 +146,16 @@ struct
         !calls_this, None
 
   let callback2
-      calls_this checks all_procs get_proc_desc idenv tenv curr_pname
-      curr_pdesc annotated_signature linereader proc_loc : unit =
+      calls_this checks
+      {
+        Callbacks.proc_desc = curr_pdesc;
+        proc_name = curr_pname;
+        get_proc_desc;
+        idenv;
+        tenv;
+        get_procs_in_file;
+      }
+      annotated_signature linereader proc_loc : unit =
 
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
     let find_canonical_duplicate node =
@@ -251,7 +256,7 @@ struct
             | Some pdesc ->
                 res := (pname, pdesc) :: !res
             | None -> () in
-        IList.iter do_proc all_procs;
+        IList.iter do_proc (get_procs_in_file curr_pname);
         IList.rev !res
 
       (** Typestates after the current procedure and all initializer procedures. *)
@@ -322,7 +327,7 @@ struct
     update_summary curr_pname curr_pdesc final_typestate_opt
 
   (** Entry point for the eradicate-based checker infrastructure. *)
-  let callback checks all_procs get_proc_desc idenv tenv proc_name proc_desc =
+  let callback checks ({ Callbacks.proc_desc; proc_name } as callback_args) =
     let calls_this = ref false in
 
     let filter_special_cases () =
@@ -346,8 +351,7 @@ struct
             annotated_signature;
 
         callback2
-          calls_this checks all_procs get_proc_desc idenv tenv
-          proc_name proc_desc annotated_signature linereader loc
+          calls_this checks callback_args annotated_signature linereader loc
 
 end (* MkCallback *)
 
@@ -383,7 +387,7 @@ module Main =
   Build(EmptyExtension)
 
 (** Eradicate checker for Java @Nullable annotations. *)
-let callback_eradicate all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_eradicate ({ Callbacks.get_proc_desc; idenv; proc_desc; proc_name } as callback_args) =
   let checks =
     {
       TypeCheck.eradicate = true;
@@ -396,7 +400,11 @@ let callback_eradicate all_procs get_proc_desc idenv tenv proc_name proc_desc =
       | None -> ()
       | Some pdesc ->
           let idenv_pname = Idenv.create_from_idenv idenv pdesc in
-          Main.callback checks all_procs get_proc_desc idenv_pname tenv pname pdesc in
+          Main.callback checks
+            { callback_args with
+              Callbacks.idenv = idenv_pname;
+              proc_name = pname;
+              proc_desc = pdesc; } in
     { Ondemand.analyze_ondemand; get_proc_desc; } in
 
   if not !Config.ondemand_enabled ||
@@ -404,17 +412,16 @@ let callback_eradicate all_procs get_proc_desc idenv tenv proc_name proc_desc =
   then
     begin
       Ondemand.set_callbacks callbacks;
-      Main.callback checks all_procs get_proc_desc idenv tenv proc_name proc_desc;
+      Main.callback checks callback_args;
       Ondemand.unset_callbacks ()
     end
 
 (** Call the given check_return_type at the end of every procedure. *)
-let callback_check_return_type check_return_type all_procs
-    get_proc_desc idenv tenv proc_name proc_desc =
+let callback_check_return_type check_return_type callback_args =
   let checks =
     {
       TypeCheck.eradicate = false;
       check_extension = false;
       check_ret_type = [check_return_type];
     } in
-  Main.callback checks all_procs get_proc_desc idenv tenv proc_name proc_desc
+  Main.callback checks callback_args

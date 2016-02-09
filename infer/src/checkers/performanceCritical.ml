@@ -227,7 +227,7 @@ let check_one_procedure tenv pname pdesc =
   | _ -> ()
 
 
-let callback_performance_checker _ get_proc_desc _ tenv pname pdesc =
+let callback_performance_checker { Callbacks.proc_desc; proc_name; get_proc_desc; tenv } =
   let callbacks =
     let analyze_ondemand pn =
       match get_proc_desc pn with
@@ -235,10 +235,10 @@ let callback_performance_checker _ get_proc_desc _ tenv pname pdesc =
       | Some pd -> check_one_procedure tenv pn pd in
     { Ondemand.analyze_ondemand; get_proc_desc; } in
   if !Config.ondemand_enabled
-     || Ondemand.procedure_should_be_analyzed pdesc pname
+  || Ondemand.procedure_should_be_analyzed proc_desc proc_name
   then
     begin
       Ondemand.set_callbacks callbacks;
-      check_one_procedure tenv pname pdesc;
+      check_one_procedure tenv proc_name proc_desc;
       Ondemand.unset_callbacks ()
     end

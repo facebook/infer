@@ -181,7 +181,7 @@ let report_calls_and_accesses callback node instr =
       | None -> ()
 
 (** Report all field accesses and method calls of a procedure. *)
-let callback_check_access all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_check_access { Callbacks.proc_desc } =
   Cfg.Procdesc.iter_instrs (report_calls_and_accesses "PROC") proc_desc
 
 (** Report all field accesses and method calls of a class. *)
@@ -191,7 +191,7 @@ let callback_check_cluster_access all_procs get_proc_desc proc_definitions =
     (IList.map get_proc_desc all_procs)
 
 (** Looks for writeToParcel methods and checks whether read is in reverse *)
-let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_check_write_to_parcel { Callbacks.proc_desc; proc_name; idenv; get_proc_desc } =
   let verbose = ref false in
 
   let is_write_to_parcel this_expr this_type =
@@ -274,7 +274,7 @@ let callback_check_write_to_parcel all_procs get_proc_desc idenv tenv proc_name 
   Cfg.Procdesc.iter_instrs do_instr proc_desc
 
 (** Monitor calls to Preconditions.checkNotNull and detect inconsistent uses. *)
-let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
   let verbose = ref false in
 
   let class_formal_names = lazy (
@@ -341,11 +341,11 @@ let callback_monitor_nullcheck all_procs get_proc_desc idenv tenv proc_name proc
   summary_checks_of_formals ()
 
 (** Test persistent state. *)
-let callback_test_state all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_test_state { Callbacks.proc_name } =
   ST.pname_add proc_name "somekey" "somevalue"
 
 (** Check the uses of VisibleForTesting *)
-let callback_checkVisibleForTesting all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_checkVisibleForTesting { Callbacks.proc_desc } =
   let ma = (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
   if Annotations.ma_contains ma [Annotations.visibleForTesting] then
     begin
@@ -355,7 +355,7 @@ let callback_checkVisibleForTesting all_procs get_proc_desc idenv tenv proc_name
     end
 
 (** Check for readValue and readValueAs json deserialization *)
-let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; proc_name } =
   let verbose = true in
 
   let ret_const_key = "return_const" in
@@ -448,7 +448,7 @@ let callback_find_deserialization all_procs get_proc_desc idenv tenv proc_name p
   Cfg.Procdesc.iter_instrs do_instr proc_desc
 
 (** Check field accesses. *)
-let callback_check_field_access all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_check_field_access { Callbacks.proc_desc } =
   let rec do_exp is_read = function
     | Sil.Var _ -> ()
     | Sil.UnOp (_, e, _) ->
@@ -491,7 +491,7 @@ let callback_check_field_access all_procs get_proc_desc idenv tenv proc_name pro
   Cfg.Procdesc.iter_instrs do_instr proc_desc
 
 (** Print c method calls. *)
-let callback_print_c_method_calls all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
   let do_instr node = function
     | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (e, t):: args, loc, cf)
       when Procname.is_c_method pn ->

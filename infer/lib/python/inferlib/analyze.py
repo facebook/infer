@@ -373,7 +373,7 @@ class Infer:
         infer_options += ['-allow_specs_cleanup']
 
         if self.args.analyzer == config.ANALYZER_ERADICATE:
-            infer_options += ['-checkers', '-eradicate']
+            infer_options += ['-eradicate']
         elif self.args.analyzer == config.ANALYZER_CHECKERS:
             infer_options += ['-checkers']
         else:

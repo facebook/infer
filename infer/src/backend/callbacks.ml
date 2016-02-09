@@ -12,14 +12,16 @@ module L = Logging
 
 (** Module to register and invoke callbacks *)
 
-type proc_callback_t =
-  Procname.t list ->
-  (Procname.t -> Cfg.Procdesc.t option) ->
-  Idenv.t ->
-  Sil.tenv ->
-  Procname.t ->
-  Cfg.Procdesc.t ->
-  unit
+type proc_callback_args = {
+  get_proc_desc : Procname.t -> Cfg.Procdesc.t option;
+  get_procs_in_file : Procname.t -> Procname.t list;
+  idenv : Idenv.t;
+  tenv : Sil.tenv;
+  proc_name : Procname.t;
+  proc_desc : Cfg.Procdesc.t;
+}
+
+type proc_callback_t = proc_callback_args -> unit
 
 type cluster_callback_t =
   Procname.t list ->
@@ -55,14 +57,18 @@ let get_procedure_definition exe_env proc_name =
 let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.C_CPP
 
 (** Invoke all registered procedure callbacks on a set of procedures. *)
-let iterate_procedure_callbacks all_procs exe_env proc_name =
+let iterate_procedure_callbacks exe_env proc_name =
   let procedure_language = get_language proc_name in
   Config.curr_language := procedure_language;
 
   let cfg = Exe_env.get_cfg exe_env proc_name in
-  let get_procdesc proc_name =
+  let get_proc_desc proc_name =
     let cfg = try Exe_env.get_cfg exe_env proc_name with Not_found -> cfg in
     Cfg.Procdesc.find_from_name cfg proc_name in
+  let get_procs_in_file proc_name =
+    let cfg = try Exe_env.get_cfg exe_env proc_name with Not_found -> cfg in
+    IList.map Cfg.Procdesc.get_proc_name (Cfg.get_defined_procs cfg) in
+
 
   let update_time proc_name elapsed =
     match Specs.get_summary proc_name with
@@ -83,7 +89,15 @@ let iterate_procedure_callbacks all_procs exe_env proc_name =
             if language_matches then
               begin
                 let init_time = Unix.gettimeofday () in
-                proc_callback all_procs get_procdesc idenv tenv proc_name proc_desc;
+                proc_callback
+                  {
+                    get_proc_desc;
+                    get_procs_in_file;
+                    idenv;
+                    tenv;
+                    proc_name;
+                    proc_desc;
+                  };
                 let elapsed = Unix.gettimeofday () -. init_time in
                 update_time proc_name elapsed
               end)
@@ -160,7 +174,7 @@ let iterate_callbacks store_summary call_graph exe_env =
 
   (* Invoke callbacks. *)
   IList.iter
-    (iterate_procedure_callbacks originally_defined_procs exe_env)
+    (iterate_procedure_callbacks exe_env)
     procs_to_analyze;
 
   IList.iter

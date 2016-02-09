@@ -38,8 +38,6 @@ let get_or_create_lifecycle_typs tenv = match !android_lifecycle_typs with
       lifecycle_typs
   | typs -> typs
 
-let do_eradicate_check all_procs get_procdesc idenv tenv proc_name proc_desc =
-  Eradicate.callback_eradicate all_procs get_procdesc idenv tenv proc_name proc_desc
 
 let num_methods_checked = ref 0
 
@@ -49,21 +47,23 @@ let done_checking num_methods =
 
 (** ask Eradicate to check each of the procs in [registered_callback_procs] (and their transitive
  * callees) in a context where each of the fields in [fields_nullifed] is marked as @Nullable *)
-let do_eradicate_check all_procs get_procdesc idenv tenv =
+let do_eradicate_check ({ Callbacks.get_proc_desc } as callback_args) =
   (* tell Eradicate to treat each of the fields nullified in on_destroy as nullable *)
   FldSet.iter (fun fld -> Models.Inference.field_add_nullable_annotation fld) !fields_nullified;
   Procname.Set.iter
     (fun proc_name ->
-       match get_procdesc proc_name with
+       match get_proc_desc proc_name with
        | Some proc_desc ->
-           do_eradicate_check all_procs get_procdesc idenv tenv proc_name proc_desc
+           Eradicate.callback_eradicate
+             { callback_args with Callbacks.proc_name; proc_desc }
        | None -> ())
     !registered_callback_procs
 
 (** if [procname] belongs to an Android lifecycle type, save the set of callbacks registered in
  * [procname]. in addition, if [procname] is a special "destroy" /"cleanup" method, save the set of
  * fields that are nullified *)
-let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc =
+let callback_checker_main
+    ({ Callbacks.proc_desc; proc_name; tenv } as callback_args) =
   let typename =
     Typename.TN_csu
       (Csu.Class Csu.Java, Mangled.from_string (Procname.java_get_class proc_name)) in
@@ -99,5 +99,5 @@ let callback_checker_main all_procs get_procdesc idenv tenv proc_name proc_desc 
             fields_nullified :=
               FldSet.union (PatternMatch.get_fields_nullified proc_desc) !fields_nullified in
         if done_checking (IList.length def_methods) then
-          do_eradicate_check all_procs get_procdesc idenv tenv
+          do_eradicate_check callback_args
   | _ -> ()

@@ -88,13 +88,7 @@ let check_final_state proc_name proc_desc exit_node final_s =
     end
 
 (** Simple check for dead code. *)
-let callback_check_dead_code
-    (all_procs : Procname.t list)
-    (get_proc_desc: Procname.t -> Cfg.Procdesc.t option)
-    (idenv: Idenv.t)
-    (tenv: Sil.tenv)
-    (proc_name: Procname.t)
-    (proc_desc : Cfg.Procdesc.t) : unit =
+let callback_check_dead_code { Callbacks.proc_desc; proc_name } =
 
   let module DFDead = MakeDF(struct
       type t = State.t

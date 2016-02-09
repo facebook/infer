@@ -250,7 +250,10 @@ let arg_desc =
         " execute the code query"
         ;
         "-eradicate",
-        Arg.Unit (fun () -> Config.eradicate := true; Config.intraprocedural := true),
+        Arg.Unit (fun () ->
+            Config.eradicate := true;
+            checkers := true;
+            Config.intraprocedural := true),
         None,
         " activate the eradicate checker for java annotations"
         ;

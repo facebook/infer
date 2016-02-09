@@ -165,11 +165,11 @@ end (* CheckRepeatedCalls *)
 module MainRepeatedCalls =
   Eradicate.Build(RepeatedCallsExtension)
 
-let callback_check_repeated_calls all_procs get_proc_desc idenv tenv proc_name proc_desc =
+let callback_check_repeated_calls callback_args =
   let checks =
     {
       TypeCheck.eradicate = false;
       check_extension = checkers_repeated_calls;
       check_ret_type = [];
     } in
-  MainRepeatedCalls.callback checks all_procs get_proc_desc idenv tenv proc_name proc_desc
+  MainRepeatedCalls.callback checks callback_args
