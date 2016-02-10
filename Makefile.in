@@ -57,6 +57,7 @@ clang_setup:
 	$(FCP_DIR)/clang/setup.sh
 
 clang_plugin: clang_setup
+ifeq (@INFER_IS_RELEASE@,no)
 	$(MAKE) -C $(FCP_DIR)/libtooling all \
 	  CC=@CC@ CXX=@CXX@ \
 	  CXX="@CXX@" CXXFLAGS="@CXXFLAGS@" \
@@ -72,6 +73,7 @@ clang_plugin: clang_setup
 	  LOCAL_CLANG=@CLANG_PREFIX@/bin/clang \
 	  CLANG_PREFIX=@CLANG_PREFIX@ \
 	  CLANG_INCLUDES=@CLANG_INCLUDES@
+endif
 
 clang: clang_plugin
 endif
