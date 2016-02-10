@@ -118,36 +118,6 @@ if [ "$BUILD_JAVA" = "yes" ]; then
 fi
 if [ "$BUILD_CLANG" = "yes" ]; then
   TARGETS+=" clang"
-  if ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
-    echo ""
-    echo "  Warning: you are not using a release of Infer. The C and"
-    echo "  Objective-C analyses require a custom clang to be compiled"
-    echo "  now. This step takes ~30-60 minutes, possibly more."
-    echo ""
-    echo "  To speed this along, you are encouraged to use a release of"
-    echo "  Infer instead:"
-    echo ""
-    echo "  http://fbinfer.com/docs/getting-started.html"
-    echo ""
-    echo "  If you are only interested in analyzing Java programs, simply"
-    echo "  run this script with only the \"java\" argument:"
-    echo ""
-    echo "  $0 java"
-    echo ""
-
-    confirm="n"
-    printf "Are you sure you want to compile clang? (y/N) "
-    if [ "$INTERACTIVE" = "no" ]; then
-        confirm="y"
-        echo "$confirm"
-    else
-        read confirm
-    fi
-
-    if [ "x$confirm" != "xy" ]; then
-        exit 0
-    fi
-  fi
 fi
 
 CONFIGURE_ARGS=
@@ -158,15 +128,39 @@ if [ "$BUILD_JAVA" = "no" ]; then
   CONFIGURE_ARGS+=" --disable-java-analyzers"
 fi
 
-echo
-echo "  *************************"
-echo "  **                     **"
-echo "  **   Building Infer    **"
-echo "  **                     **"
-echo "  *************************"
-echo
-
 ./configure $CONFIGURE_ARGS
+
+if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-check-install; then
+  echo ""
+  echo "  Warning: you are not using a release of Infer. The C and"
+  echo "  Objective-C analyses require a custom clang to be compiled"
+  echo "  now. This step takes ~30-60 minutes, possibly more."
+  echo ""
+  echo "  To speed this along, you are encouraged to use a release of"
+  echo "  Infer instead:"
+  echo ""
+  echo "  http://fbinfer.com/docs/getting-started.html"
+  echo ""
+  echo "  If you are only interested in analyzing Java programs, simply"
+  echo "  run this script with only the \"java\" argument:"
+  echo ""
+  echo "  $0 java"
+  echo ""
+
+  confirm="n"
+  printf "Are you sure you want to compile clang? (y/N) "
+  if [ "$INTERACTIVE" = "no" ]; then
+    confirm="y"
+    echo "$confirm"
+  else
+    read confirm
+  fi
+
+  if [ "x$confirm" != "xy" ]; then
+    exit 0
+  fi
+fi
+
 make -j $TARGETS || (
   echo
   echo '  compilation failure; you can try running'
