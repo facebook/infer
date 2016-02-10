@@ -22,10 +22,6 @@ BOOL ExampleSanitizer(NSURL * u, int f)
 @end
 
 @implementation ExampleViewController
-- (void) dealloc
-{
-    [self dealloc];
-}
 - (void)loadURL:(NSURL *)URL
   trackingCodes: (NSArray *)trackingCodes
 {
@@ -38,15 +34,10 @@ BOOL ExampleSanitizer(NSURL * u, int f)
 @end
 
 @implementation B
-- (void) dealloc
-{
-    [self dealloc];
-}
 - (void) another_url_pass: (NSURL *) u
 {
     ExampleViewController *vc = [[ExampleViewController alloc] init];
     [vc loadURL:u trackingCodes:nil];
-    [vc dealloc];
 }
 @end
 
@@ -55,15 +46,10 @@ BOOL ExampleSanitizer(NSURL * u, int f)
 @end
 
 @implementation A
-- (void) dealloc
-{
-    [self dealloc];
-}
 - (void) pass_url_arond: (NSURL *) u
 {
     B* b = [[B alloc] init];
     [b another_url_pass:u];
-    [b dealloc];
 }
 @end
 
@@ -88,7 +74,6 @@ BOOL ExampleSanitizer(NSURL * u, int f)
     if (!ExampleSanitizer(URL, 1 )) {
         [a pass_url_arond:URL]; // No taint
     }
-    [a dealloc];
     return YES;
 }
 @end

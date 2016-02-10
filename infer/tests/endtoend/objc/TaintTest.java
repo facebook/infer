@@ -40,9 +40,11 @@ public class TaintTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createObjCInferCommand(
+    inferCmd = InferRunner.createObjCInferCommandWithMLBuckets(
         folder,
-        TaintFile);
+        TaintFile,
+        "cf",
+        false);
   }
 
   @Test
