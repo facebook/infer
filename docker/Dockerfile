@@ -34,7 +34,7 @@ RUN curl -sL \
       https://github.com/ocaml/opam/releases/download/1.2.2/opam-1.2.2-x86_64-Linux \
       -o /usr/local/bin/opam && \
     chmod 755 /usr/local/bin/opam
-RUN opam init -y --comp=4.01.0 && \
+RUN opam init -y --comp=4.02.3 && \
     opam install -y extlib.1.5.4 atdgen.1.6.0 javalib.2.3.1 sawja.1.5.1
 
 # Download the latest Infer release
@@ -52,6 +52,7 @@ RUN INFER_VERSION=$(curl -s https://api.github.com/repos/facebook/infer/releases
 # Compile Infer
 RUN cd /infer && \
     eval $(opam config env) && \
+    ./configure && \
     make -C infer clang java
 
 # Install Infer
