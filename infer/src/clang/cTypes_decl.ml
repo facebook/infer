@@ -182,35 +182,38 @@ and get_struct_cpp_class_declaration_type tenv decl =
   | RecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info) ->
       let csu, name = get_record_name_csu decl in
       let mangled_name = Mangled.from_string name in
-      let sil_typename = Sil.Tvar (Typename.TN_csu (csu, mangled_name)) in
-      (* temporarily saves the type name to avoid infinite loops in recursive types *)
-      Ast_utils.update_sil_types_map type_ptr sil_typename;
-      if not record_decl_info.Clang_ast_t.rdi_is_complete_definition then
-        Printing.log_err
-          "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
-      let non_static_fields = get_struct_fields tenv decl in
-      let non_static_fields' = if CTrans_models.is_objc_memory_model_controlled name then
-          General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
-        else non_static_fields in
-      let sorted_non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields' in
-      let static_fields = [] in (* Warning for the moment we do not treat static field. *)
-      let def_methods = get_class_methods tenv name decl_list in (* C++ methods only *)
-      let superclasses = get_superclass_list_cpp decl in
-      let struct_annotations =
-        if csu = Csu.Class Csu.CPP then Sil.cpp_class_annotation
-        else Sil.item_annotation_empty in  (* No annotations for structs *)
-      let sil_type = Sil.Tstruct
-          { Sil.instance_fields = sorted_non_static_fields;
-            static_fields;
-            csu;
-            struct_name = Some mangled_name;
-            superclasses;
-            def_methods;
-            struct_annotations;
-          } in
-      Ast_utils.update_sil_types_map type_ptr sil_type;
-      add_struct_to_tenv tenv sil_type;
-      sil_type
+      let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
+      let sil_typename = Typename.TN_csu (csu, mangled_name) in
+      (match is_complete_definition, Sil.tenv_lookup tenv sil_typename  with
+       | false, Some sil_type -> sil_type (* just reuse what is already in tenv *)
+       | _ ->
+           if not is_complete_definition then Printing.log_err
+               "   ...Warning, definition incomplete. The full definition will probably be later \n@.";
+           (* temporarily saves the type name to avoid infinite loops in recursive types *)
+           Ast_utils.update_sil_types_map type_ptr (Sil.Tvar sil_typename);
+           let non_static_fields = get_struct_fields tenv decl in
+           let non_static_fields' = if CTrans_models.is_objc_memory_model_controlled name then
+               General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] non_static_fields
+             else non_static_fields in
+           let sorted_non_static_fields = CFrontend_utils.General_utils.sort_fields non_static_fields' in
+           let static_fields = [] in (* Warning for the moment we do not treat static field. *)
+           let def_methods = get_class_methods tenv name decl_list in (* C++ methods only *)
+           let superclasses = get_superclass_list_cpp decl in
+           let struct_annotations =
+             if csu = Csu.Class Csu.CPP then Sil.cpp_class_annotation
+             else Sil.item_annotation_empty in  (* No annotations for structs *)
+           let sil_type = Sil.Tstruct
+               { Sil.instance_fields = sorted_non_static_fields;
+                 static_fields;
+                 csu;
+                 struct_name = Some mangled_name;
+                 superclasses;
+                 def_methods;
+                 struct_annotations;
+               } in
+           Ast_utils.update_sil_types_map type_ptr sil_type;
+           add_struct_to_tenv tenv sil_type;
+           sil_type)
   | _ -> assert false
 
 and add_types_from_decl_to_tenv tenv decl =

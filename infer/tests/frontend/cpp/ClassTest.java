@@ -30,4 +30,12 @@ public class ClassTest {
         "infer/tests/codetoanalyze/cpp/frontend/types/struct.cpp";
     ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
   }
+
+  @Test
+  public void whenCaptureRunStructForwardDeclareThenDotFilesAreTheSame()
+      throws InterruptedException, IOException, InferException {
+    String src =
+        "infer/tests/codetoanalyze/cpp/frontend/types/struct_forward_declare.cpp";
+    ClangFrontendUtils.createAndCompareCppDotFiles(folder, src);
+  }
 }
