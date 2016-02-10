@@ -14,11 +14,8 @@ set -e
 # repo in the first place?)
 if test -d '.git'; then
   printf 'git repository detected, updating submodule... '
-  if git submodule update --init > /dev/null; then
-    printf 'done\n'
-  else
-    printf 'error running git command\n'
-  fi
+  git submodule update --init > /dev/null
+  printf 'done\n'
 else
   echo 'no git repository detected; not updating git submodules'
 fi
