@@ -35,6 +35,7 @@ extern struct delicious *bakery(struct delicious **cake);
 extern struct delicious *bakery2(struct delicious **cake,
                                  struct delicious **pie);
 extern struct delicious *returnPassByRef();
+extern void skip(struct delicious * s);
 
 struct delicious *skip_external_function(void) {
   struct delicious *cake = NULL;
@@ -86,4 +87,11 @@ void returnPassByRefDeref() {
   struct delicious *ret = returnPassByRef();
   ret->yum = 2; // should not report a warning
   free(ret);
+}
+
+int passStructByRefDeref() {
+  struct delicious d;
+  d.yum = 7;
+  skip(&d);
+  return 1 / d.yum; // should not report a warning
 }

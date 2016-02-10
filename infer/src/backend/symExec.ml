@@ -1362,7 +1362,7 @@ and call_unknown_or_scan is_scan cfg pdesc tenv pre path
   let actuals_by_ref =
     IList.filter
       (function
-        | Sil.Lvar _, _ -> true
+        | Sil.Lvar _, Sil.Tptr (Sil.Tptr _, _) -> true
         | _ -> false)
       actual_pars in
   let pre_final =
