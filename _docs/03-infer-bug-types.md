@@ -269,6 +269,12 @@ In an escaping example  maybe you could refactor lots of code so that try-with-r
 This just illustrates that, though you might hear people say that try-with-resources "solves" the resource problem, it does not. It is very useful, but you cannot use it blindly
 when you see a resource-allocation site.
 
+##<a name="CONTEXT_LEAK"></a> `Context` leak
+
+This error type is specific to Android. In Android applications, subtypes of `Context` (other than `Application`, which is a special case) are ephemeral components that can be created and destroyed at the discretion of the Android framework. Once the framework decides to destroy a `Context`, it cannot be used again and should be freed by the garbage collector. However, the programmer can create a memory leak by retaining a reference to the `Context` after it has been destroyed (thereby preventing collection).
+
+Infer decides to report a `Context` leak when it determines that a chain of references between a static field and a `Context` may exist at the end of a `public` method of a non-`Application` `Context` subtype.
+
 ## <a name="MEMORY_LEAK"></a>Memory leak
 
 
@@ -464,12 +470,6 @@ An example of such variadic methods is [arrayWithObjects](https://developer.appl
 ```
 
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
-
-##<a name="CONTEXT_LEAK"></a> `Context` leak
-
-This error type is specific to Android. In Android applications, subtypes of `Context` (other than `Application`, which is a special case) are ephemeral components that can be created and destroyed at the discretion of the Android framework. Once the framework decides to destroy a `Context`, it cannot be used again and should be freed by the garbage collector. However, the programmer can create a memory leak by retaining a reference to the `Context` after it has been destroyed (thereby preventing collection).
-
-Infer decides to report a `Context` leak when it determines that a chain of references between a static field and a `Context` may exist at the end of a `public` method of a non-`Application` `Context` subtype.
 
 ##<a name="BAD_POINTER_COMPARISON"></a> Bad pointer comparison
 
