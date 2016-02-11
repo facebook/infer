@@ -431,7 +431,7 @@ let interprocedural_algorithm
     (* wrap _process_result and handle exceptions *)
     try _process_result exe_env (pname, calls) summary with
     | exn ->
-        let err_name, _, mloco, _, _, _, _ = Exceptions.recognize_exception exn in
+        let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let err_str = "process_result raised " ^ (Localise.to_string err_name) in
         L.err "Error: %s@." err_str;
         let exn' = Exceptions.Internal_error (Localise.verbatim_desc err_str) in

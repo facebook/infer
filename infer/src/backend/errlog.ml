@@ -24,12 +24,12 @@ type loc_trace = loc_trace_elem list
 
 (** Data associated to a specific error *)
 type err_data =
-  (int * int) * int * Location.t * ml_location option * loc_trace *
+  (int * int) * int * Location.t * ml_loc option * loc_trace *
   Prop.normal Prop.t option * Exceptions.err_class
 
 let err_data_compare
-    ((nodeid1, key1), session1, loc1, mloco1, ltr1, po1, ec1)
-    ((nodeid2, key2), session2, loc2, mloco2, ltr2, po2, ec2) =
+    ((nodeid1, key1), session1, loc1, ml_loc_opt1, ltr1, po1, ec1)
+    ((nodeid2, key2), session2, loc2, ml_loc_opt2, ltr2, po2, ec2) =
   Location.compare loc1 loc2
 
 module ErrDataSet = (* set err_data with no repeated loc *)
@@ -66,7 +66,7 @@ let empty () = ErrLogHash.create 13
 type iter_fun =
   (int * int) ->
   Location.t ->
-  ml_location option ->
+  ml_loc option ->
   Exceptions.err_kind ->
   bool ->
   Localise.t -> Localise.error_desc -> string ->
@@ -79,9 +79,9 @@ type iter_fun =
 let iter (f: iter_fun) (err_log: t) =
   ErrLogHash.iter (fun (ekind, in_footprint, err_name, desc, severity) set ->
       ErrDataSet.iter
-        (fun (node_id_key, section, loc, mloco, ltr, pre_opt, eclass) ->
+        (fun (node_id_key, section, loc, ml_loc_opt, ltr, pre_opt, eclass) ->
            f
-             node_id_key loc mloco ekind in_footprint err_name
+             node_id_key loc ml_loc_opt ekind in_footprint err_name
              desc severity ltr pre_opt eclass)
         set)
     err_log
@@ -110,7 +110,8 @@ let pp_warnings fmt (errlog : t) =
 (** Print an error log in html format *)
 let pp_html path_to_root fmt (errlog: t) =
   let pp_eds fmt eds =
-    let pp_nodeid_session_loc fmt ((nodeid, nodekey), session, loc, mloco, ltr, pre_opt, eclass) =
+    let pp_nodeid_session_loc
+        fmt ((nodeid, nodekey), session, loc, ml_loc_opt, ltr, pre_opt, eclass) =
       Io_infer.Html.pp_session_link path_to_root fmt (nodeid, session, loc.Location.line) in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) eds in
   let f do_fp ek (ekind, infp, err_name, desc, severity) eds =
@@ -167,7 +168,7 @@ let update errlog_old errlog_new =
 
 
 let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
-  let err_name, desc, mloco, visibility, severity, force_kind, eclass =
+  let err_name, desc, ml_loc_opt, visibility, severity, force_kind, eclass =
     Exceptions.recognize_exception exn in
   let ekind = match force_kind with
     | Some ekind -> ekind
@@ -188,14 +189,14 @@ let log_issue _ekind err_log loc node_id_key session ltr pre_opt exn =
     let added =
       add_issue err_log
         (ekind, !Config.footprint, err_name, desc, severity_to_str severity)
-        (ErrDataSet.singleton (node_id_key, session, loc, mloco, ltr, pre_opt, eclass)) in
+        (ErrDataSet.singleton (node_id_key, session, loc, ml_loc_opt, ltr, pre_opt, eclass)) in
     let should_print_now =
       match exn with
       | Exceptions.Internal_error _ -> true
       | _ -> added in
     let print_now () =
-      let ex_name, desc, mloco, _, _, _, _ = Exceptions.recognize_exception exn in
-      L.err "%a@?" (Exceptions.pp_err node_id_key loc ekind ex_name desc mloco) ();
+      let ex_name, desc, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
+      L.err "%a@?" (Exceptions.pp_err node_id_key loc ekind ex_name desc ml_loc_opt) ();
       if _ekind <> Exceptions.Kerror then begin
         let warn_str =
           let pp fmt () =
@@ -265,9 +266,9 @@ module Err_table = struct
       ErrDataSet.iter (fun loc -> add_err loc err_name) eds in
     ErrLogHash.iter f err_table;
 
-    let pp ekind (nodeidkey, session, loc, mloco, ltr, pre_opt, eclass) fmt err_names =
+    let pp ekind (nodeidkey, session, loc, ml_loc_opt, ltr, pre_opt, eclass) fmt err_names =
       IList.iter (fun (err_name, desc) ->
-          Exceptions.pp_err nodeidkey loc ekind err_name desc mloco fmt ()) err_names in
+          Exceptions.pp_err nodeidkey loc ekind err_name desc ml_loc_opt fmt ()) err_names in
     F.fprintf fmt "@.Detailed errors during footprint phase:@.";
     LocMap.iter (fun nslm err_names ->
         F.fprintf fmt "%a" (pp Exceptions.Kerror nslm) err_names) !map_err_fp;

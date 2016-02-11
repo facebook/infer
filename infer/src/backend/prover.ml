@@ -1165,7 +1165,7 @@ let exp_imply calc_missing subs e1_in e2_in : subst2 =
         do_imply (do_imply subs e1 e2) f1 f2
     | _ ->
         d_impl_err ("exp_imply not implemented", subs, (EXC_FALSE_EXPS (e1, e2)));
-        raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)) in
+        raise (Exceptions.Abduction_case_not_implemented __POS__) in
   do_imply subs e1 e2
 
 (** Convert a path (from lhs of a |-> to a field name present only in
@@ -1237,7 +1237,7 @@ let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subs
             (fst subs, sub2'), None, None
         | _ ->
             d_impl_err ("sexp_imply not implemented", subs, (EXC_FALSE_SEXPS (se1, se2)));
-            raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x))
+            raise (Exceptions.Abduction_case_not_implemented __POS__)
       end
   | Sil.Earray (size1, esel1, inst1), Sil.Earray (size2, esel2, _) ->
       let indices2 = IList.map fst esel2 in
@@ -1265,7 +1265,7 @@ let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subs
       sexp_imply source true calc_missing subs se1 se2' typ2' (* calculate index_frame because the rhs is a singleton array *)
   | _ ->
       d_impl_err ("sexp_imply not implemented", subs, (EXC_FALSE_SEXPS (se1, se2)));
-      raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x))
+      raise (Exceptions.Abduction_case_not_implemented __POS__)
 
 and struct_imply source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ident.fieldname * Sil.strexp) list) * ((Ident.fieldname * Sil.strexp) list) =
   match fsel1, fsel2 with
@@ -1727,7 +1727,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
         | Sil.Lvar p -> ()
         | Sil.Var v -> if Ident.is_primed v then
               (d_impl_err ("rhs |-> not implemented", subs, (EXC_FALSE_HPRED hpred2));
-               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+               raise (Exceptions.Abduction_case_not_implemented __POS__))
         | _ -> () in
       (match Prop.prop_iter_create prop1 with
        | None -> raise (IMPL_EXC ("lhs is empty", subs, EXC_FALSE))
@@ -1812,7 +1812,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
         | Sil.Lvar p -> ()
         | Sil.Var v -> if Ident.is_primed v then
               (d_impl_err ("rhs |-> not implemented", subs, (EXC_FALSE_HPRED hpred2));
-               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+               raise (Exceptions.Abduction_case_not_implemented __POS__))
         | _ -> ()
       in
       if Sil.exp_equal e2 f2 && k == Sil.Lseg_PE then (subs, prop1)
@@ -1863,7 +1863,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
         )
   | Sil.Hdllseg (Sil.Lseg_PE, _, _, _, _, _, _) ->
       (d_impl_err ("rhs dllsegPE not implemented", subs, (EXC_FALSE_HPRED hpred2));
-       raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+       raise (Exceptions.Abduction_case_not_implemented __POS__))
   | Sil.Hdllseg (k, para2, iF2, oB2, oF2, iB2, elist2) -> (* for now ignore implications between PE and NE *)
       let iF2, oF2 = Sil.exp_sub (snd subs) iF2, Sil.exp_sub (snd subs) oF2 in
       let iB2, oB2 = Sil.exp_sub (snd subs) iB2, Sil.exp_sub (snd subs) oB2 in
@@ -1871,14 +1871,14 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
         | Sil.Lvar p -> ()
         | Sil.Var v -> if Ident.is_primed v then
               (d_impl_err ("rhs dllseg not implemented", subs, (EXC_FALSE_HPRED hpred2));
-               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+               raise (Exceptions.Abduction_case_not_implemented __POS__))
         | _ -> ()
       in
       let _ = match oB2 with
         | Sil.Lvar p -> ()
         | Sil.Var v -> if Ident.is_primed v then
               (d_impl_err ("rhs dllseg not implemented", subs, (EXC_FALSE_HPRED hpred2));
-               raise (Exceptions.Abduction_case_not_implemented (try assert false with Assert_failure x -> x)))
+               raise (Exceptions.Abduction_case_not_implemented __POS__))
         | _ -> ()
       in
       (match Prop.prop_iter_create prop1 with
@@ -2144,7 +2144,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
   | MISSING_EXC s ->
       L.d_strln ("WARNING: footprint failed to find MISSING because: " ^ s);
       None
-  | (Exceptions.Abduction_case_not_implemented mloc as exn) ->
+  | (Exceptions.Abduction_case_not_implemented _ as exn) ->
       Reporting.log_error pname exn;
       None
 

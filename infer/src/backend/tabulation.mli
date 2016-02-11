@@ -24,7 +24,7 @@ val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * Sil.path_
 
 (** raise a cast exception *)
 val raise_cast_exception :
-  Utils.ml_location -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
+  Utils.ml_loc -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
 
 (** check if a prop is an exception *)
 val prop_is_exn : Procname.t -> 'a Prop.t -> bool

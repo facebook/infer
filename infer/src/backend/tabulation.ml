@@ -109,14 +109,16 @@ let spec_find_rename trace_call (proc_name : Procname.t) : (int * Prop.exposed S
     if specs == [] then
       begin
         trace_call Specs.CallStats.CR_not_found;
-        raise (Exceptions.Precondition_not_found (Localise.verbatim_desc (Procname.to_string proc_name), try assert false with Assert_failure x -> x))
+        raise (Exceptions.Precondition_not_found
+                 (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
       end;
     let formal_parameters =
       IList.map (fun (x, _) -> Sil.mk_pvar_callee x proc_name) formals in
     IList.map f specs, formal_parameters
   with Not_found -> begin
       L.d_strln ("ERROR: found no entry for procedure " ^ Procname.to_string proc_name ^ ". Give up...");
-      raise (Exceptions.Precondition_not_found (Localise.verbatim_desc (Procname.to_string proc_name), try assert false with Assert_failure x -> x))
+      raise (Exceptions.Precondition_not_found
+               (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
     end
 
 let check_splitting_precondition sub1 sub2 =
@@ -348,7 +350,7 @@ let check_path_errors_in_post caller_pname post post_path =
             then post_path, Some path_pos
             else current_path, None in (* position not found, only use the path up to the callee *)
           State.set_path new_path path_pos_opt;
-          let exn = Exceptions.Divide_by_zero (desc, try assert false with Assert_failure x -> x) in
+          let exn = Exceptions.Divide_by_zero (desc, __POS__) in
           let pre_opt = State.get_normalized_pre (fun te p -> p) (* Abs.abstract_no_symop *) in
           Reporting.log_warning caller_pname ~pre: pre_opt exn
     | _ -> () in
@@ -481,7 +483,7 @@ let sigma_star_fld (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpr
     L.d_str "cannot star ";
     Prop.d_sigma sigma1; L.d_str " and "; Prop.d_sigma sigma2;
     L.d_ln ();
-    raise (Prop.Cannot_star (try assert false with Assert_failure x -> x))
+    raise (Prop.Cannot_star __POS__)
 
 let hpred_typing_lhs_compare hpred1 (e2, te2) = match hpred1 with
   | Sil.Hpointsto(e1, _, _) -> Sil.exp_compare e1 e2
@@ -513,7 +515,7 @@ let sigma_star_typ (sigma1 : Sil.hpred list) (typings2 : (Sil.exp * Sil.exp) lis
     L.d_str "cannot star ";
     Prop.d_sigma sigma1; L.d_str " and "; Prover.d_typings typings2;
     L.d_ln ();
-    raise (Prop.Cannot_star (try assert false with Assert_failure x -> x))
+    raise (Prop.Cannot_star __POS__)
 
 (** [prop_footprint_add_pi_sigma_starfld_sigma prop pi sigma missing_fld] extends the footprint of [prop] with [pi,sigma] and extends the fields of |-> with [missing_fld] *)
 let prop_footprint_add_pi_sigma_starfld_sigma (prop : 'a Prop.t) pi_new sigma_new missing_fld missing_typ : Prop.normal Prop.t option =
@@ -556,7 +558,7 @@ let check_attr_dealloc_mismatch att_old att_new = match att_old, att_new with
     Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease; Sil.ra_res = Sil.Rmemory mk_new } as ra_new)
     when Sil.mem_kind_compare mk_old mk_new <> 0 ->
       let desc = Errdesc.explain_allocation_mismatch ra_old ra_new in
-      raise (Exceptions.Deallocation_mismatch (desc, try assert false with Assert_failure x -> x))
+      raise (Exceptions.Deallocation_mismatch (desc, __POS__))
   | _ -> ()
 
 (** [prop_copy_footprint p1 p2] copies the footprint and pure part of [p1] into [p2] *)
@@ -796,7 +798,7 @@ let mk_actual_precondition prop actual_params formal_params =
             (let str = "more actual pars than formal pars in fun call (" ^ string_of_int (IList.length actual_params) ^ " vs " ^ string_of_int (IList.length formal_params) ^ ")" in
              L.d_warning str; L.d_ln ());
           []
-      | _:: _,[] -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
+      | _:: _,[] -> raise (Exceptions.Wrong_argument_number __POS__) in
     comb formal_params actual_params in
   let mk_instantiation (formal_var, (actual_e, actual_t)) =
     Prop.mk_ptsto (Sil.Lvar formal_var) (Sil.Eexp (actual_e, Sil.inst_actual_precondition)) (Sil.Sizeof (actual_t, Sil.Subtype.exact)) in
@@ -893,7 +895,7 @@ let do_taint_check caller_pname callee_pname calling_pi missing_pi sub prop =
           callee_pname (State.get_loc ()) in
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function
-          (err_desc, try assert false with Assert_failure x -> x) in
+          (err_desc, __POS__) in
       Reporting.log_warning caller_pname exn in
     IList.iter report_one_error taint_atoms in
   Sil.ExpMap.iter report_taint_errors taint_untaint_exp_map;
@@ -912,26 +914,26 @@ let do_taint_check caller_pname callee_pname calling_pi missing_pi sub prop =
          taint_untaint_exp_map) in
   IList.filter not_untaint_atom missing_pi_sub
 
-let class_cast_exn pname_opt texp1 texp2 exp ml_location =
+let class_cast_exn pname_opt texp1 texp2 exp ml_loc =
   let desc = Errdesc.explain_class_cast_exception pname_opt texp1 texp2 exp (State.get_node ()) (State.get_loc ()) in
-  Exceptions.Class_cast_exception (desc, ml_location)
+  Exceptions.Class_cast_exception (desc, ml_loc)
 
-let raise_cast_exception ml_location pname_opt texp1 texp2 exp =
-  let exn = class_cast_exn pname_opt texp1 texp2 exp ml_location in
+let raise_cast_exception ml_loc pname_opt texp1 texp2 exp =
+  let exn = class_cast_exn pname_opt texp1 texp2 exp ml_loc in
   raise exn
 
-let get_check_exn check callee_pname loc ml_location = match check with
+let get_check_exn check callee_pname loc ml_loc = match check with
   | Prover.Bounds_check ->
       let desc = Localise.desc_precondition_not_met (Some Localise.Pnm_bounds) callee_pname loc in
-      Exceptions.Precondition_not_met (desc, ml_location)
+      Exceptions.Precondition_not_met (desc, ml_loc)
   | Prover.Class_cast_check (texp1, texp2, exp) ->
-      class_cast_exn (Some callee_pname) texp1 texp2 exp ml_location
+      class_cast_exn (Some callee_pname) texp1 texp2 exp ml_loc
 
 let check_uninitialize_dangling_deref callee_pname actual_pre sub formal_params props =
   IList.iter (fun (p, _ ) ->
       match check_dereferences callee_pname actual_pre sub p formal_params with
       | Some (Deref_undef_exp, desc) ->
-          raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAuninit, desc, try assert false with Assert_failure x -> x))
+          raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAuninit, desc, __POS__))
       | _ -> ()) props
 
 (** Perform symbolic execution for a single spec *)
@@ -952,7 +954,7 @@ let exe_spec
   | Prover.ImplFail checks -> Invalid_res (Prover_checks checks)
   | Prover.ImplOK (checks, sub1, sub2, frame, missing_pi, missing_sigma, frame_fld, missing_fld, frame_typ, missing_typ) ->
       let log_check_exn check =
-        let exn = get_check_exn check callee_pname loc (try assert false with Assert_failure x -> x) in
+        let exn = get_check_exn check callee_pname loc __POS__ in
         Reporting.log_warning caller_pname exn in
       let do_split () =
         let missing_pi' =
@@ -1088,27 +1090,29 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
               | Dereference_error (Deref_minusone, desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt None;
-                  raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAminusone, desc, try assert false with Assert_failure x -> x))
+                  raise (Exceptions.Dangling_pointer_dereference
+                           (Some Sil.DAminusone, desc, __POS__))
               | Dereference_error (Deref_undef_exp, desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt None;
-                  raise (Exceptions.Dangling_pointer_dereference (Some Sil.DAuninit, desc, try assert false with Assert_failure x -> x))
+                  raise (Exceptions.Dangling_pointer_dereference
+                           (Some Sil.DAuninit, desc, __POS__))
               | Dereference_error (Deref_null pos, desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt (Some pos);
                   if Localise.is_parameter_not_null_checked_desc desc then
-                    raise (Exceptions.Parameter_not_null_checked (desc, try assert false with Assert_failure x -> x))
+                    raise (Exceptions.Parameter_not_null_checked (desc, __POS__))
                   else if Localise.is_field_not_null_checked_desc desc then
-                    raise (Exceptions.Field_not_null_checked (desc, try assert false with Assert_failure x -> x))
-                  else raise (Exceptions.Null_dereference (desc, try assert false with Assert_failure x -> x))
+                    raise (Exceptions.Field_not_null_checked (desc, __POS__))
+                  else raise (Exceptions.Null_dereference (desc, __POS__))
               | Dereference_error (Deref_freed ra, desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt None;
-                  raise (Exceptions.Use_after_free (desc, try assert false with Assert_failure x -> x))
+                  raise (Exceptions.Use_after_free (desc, __POS__))
               | Dereference_error (Deref_undef (s, loc, pos), desc, path_opt) ->
                   trace_call Specs.CallStats.CR_not_met;
                   extend_path path_opt (Some pos);
-                  raise (Exceptions.Skip_pointer_dereference (desc, try assert false with Assert_failure x -> x))
+                  raise (Exceptions.Skip_pointer_dereference (desc, __POS__))
               | Prover_checks _ | Cannot_combine | Missing_sigma_not_empty | Missing_fld_not_empty ->
                   trace_call Specs.CallStats.CR_not_met;
                   assert false
@@ -1119,13 +1123,13 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
                 else if IList.exists (function
                     | Prover_checks (check :: _) ->
                         trace_call Specs.CallStats.CR_not_met;
-                        let exn = get_check_exn check callee_pname loc (try assert false with Assert_failure x -> x) in
+                        let exn = get_check_exn check callee_pname loc __POS__ in
                         raise exn
                     | _ -> false) invalid_res then
                   call_desc (Some Localise.Pnm_bounds)
                 else call_desc None in
               trace_call Specs.CallStats.CR_not_met;
-              raise (Exceptions.Precondition_not_met (desc, try assert false with Assert_failure x -> x))
+              raise (Exceptions.Precondition_not_met (desc, __POS__))
           end
         else (* combine the valid results, and store diverging states *)
           let process_valid_res vr =
@@ -1140,7 +1144,7 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
     else if valid_res_no_miss_pi != [] then
       IList.flatten (IList.map (fun vr -> vr.vr_cons_res) valid_res_no_miss_pi)
     else if valid_res_miss_pi == [] then
-      raise (Exceptions.Precondition_not_met (call_desc None, try assert false with Assert_failure x -> x))
+      raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
     else
       begin
         L.d_strln "Missing pure facts for the function call:";
@@ -1148,7 +1152,7 @@ let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop r
         match Prover.find_minimum_pure_cover (IList.map (fun vr -> (vr.vr_pi, vr.vr_cons_res)) valid_res_miss_pi) with
         | None ->
             trace_call Specs.CallStats.CR_not_met;
-            raise (Exceptions.Precondition_not_met (call_desc None, try assert false with Assert_failure x -> x))
+            raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
         | Some cover ->
             L.d_strln "Found minimum cover";
             IList.iter print_pi (IList.map fst cover);

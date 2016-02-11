@@ -590,9 +590,9 @@ module BugsJson = struct
         let procedure_id = Procname.to_filename (Specs.get_proc_name summary) in
         let file =
           DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file in
-        let json_mloc = match ml_loc_opt with
-          | Some (file, line, column) when !reports_include_ml_loc ->
-              Some Jsonbug_j.{ file; line; column }
+        let json_ml_loc = match ml_loc_opt with
+          | Some (file, lnum, cnum, enum)  when !reports_include_ml_loc ->
+              Some Jsonbug_j.{ file; lnum; cnum; enum; }
           | _ -> None in
         let bug = {
           bug_class = Exceptions.err_class_string eclass;
@@ -609,7 +609,7 @@ module BugsJson = struct
           qualifier_tags = error_desc_to_qualifier_tags_records error_desc;
           hash = get_bug_hash kind bug_type procedure_id file node_key error_desc;
           dotty = error_desc_to_dotty_string error_desc;
-          infer_source_loc = json_mloc;
+          infer_source_loc = json_ml_loc;
         } in
         if not !is_first_item then pp "," else is_first_item := false;
         pp "%s@?" (string_of_jsonbug bug) in

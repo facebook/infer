@@ -34,8 +34,7 @@ let log_frontend_warning pdesc warn_desc =
   let err_desc =
     Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion loc in
   let exn = Exceptions.Frontend_warning
-      (warn_desc.name, err_desc,
-       try assert false with Assert_failure x -> x) in
+      (warn_desc.name, err_desc, __POS__) in
   Reporting.log_error_from_errlog errlog exn ~loc:(Some loc)
 
 (* Call all checkers on properties of class c *)

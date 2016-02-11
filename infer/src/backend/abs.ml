@@ -1298,14 +1298,13 @@ let check_junk ?original_prop pname tenv prop =
                 let desc = Errdesc.explain_retain_cycle
                     (remove_opt original_prop) cycle (State.get_loc ()) cycle_dotty in
                 Exceptions.Retain_cycle
-                  (remove_opt original_prop, hpred, desc,
-                   try assert false with Assert_failure x -> x) in
+                  (remove_opt original_prop, hpred, desc, __POS__) in
               let exn_leak = Exceptions.Leak
                   (fp_part, prop, hpred,
                    Errdesc.explain_leak tenv hpred prop alloc_attribute ml_bucket_opt,
                    !Absarray.array_abstraction_performed,
                    resource,
-                   try assert false with Assert_failure x -> x) in
+                   __POS__) in
               let ignore_resource, exn =
                 (match alloc_attribute, resource with
                  | Some _, Sil.Rmemory Sil.Mobjc when (hpred_in_cycle hpred) ->

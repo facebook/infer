@@ -234,8 +234,7 @@ let mk_table list =
   IList.iter (function (v, pn_id) -> Hashtbl.replace map pn_id v) list;
   map
 
-let ml_location =
-  try assert false with Assert_failure x -> x
+let this_file = __FILE__
 
 let annotated_table_nullable = mk_table annotated_list_nullable
 let annotated_table_present = mk_table annotated_list_present

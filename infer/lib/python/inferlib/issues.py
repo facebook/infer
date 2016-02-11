@@ -95,8 +95,10 @@ JSON_INDEX_TRACE_NODE_TAGS_TAG = 'tags'
 JSON_INDEX_TRACE_NODE_TAGS_VALUE = 'value'
 JSON_INDEX_INFER_SOURCE_LOC = 'infer_source_loc'
 JSON_INDEX_ISL_FILE = 'file'
-JSON_INDEX_ISL_LINE = 'line'
-JSON_INDEX_ISL_COLUMN = 'column'
+JSON_INDEX_ISL_LNUM = 'lnum'
+JSON_INDEX_ISL_CNUM = 'cnum'
+JSON_INDEX_ISL_ENUM = 'enum'
+
 
 QUALIFIER_TAGS = 'qualifier_tags'
 BUCKET_TAGS = 'bucket'
@@ -143,13 +145,14 @@ def clean_json(args, json_report):
     utils.dump_json_to_path(rows, temporary_file)
     shutil.move(temporary_file, json_report)
 
-
 def _text_of_infer_loc(loc):
-    return u' (%s:%d:%d)' % (
+    return u' (%s:%d:%d-%d:)' % (
         loc[JSON_INDEX_ISL_FILE],
-        loc[JSON_INDEX_ISL_LINE],
-        loc[JSON_INDEX_ISL_COLUMN],
+        loc[JSON_INDEX_ISL_LNUM],
+        loc[JSON_INDEX_ISL_CNUM],
+        loc[JSON_INDEX_ISL_ENUM],
     )
+
 
 def text_of_report(report):
     filename = report[JSON_INDEX_FILENAME]

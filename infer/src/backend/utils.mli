@@ -68,17 +68,14 @@ module StringMap : Map.S with type key = string
 
 (** {2 Printing} *)
 
-(** Type of location in ml source: file,line,column *)
-type ml_location = string * int * int
+(** Type of location in ml source: __POS__ *)
+type ml_loc = string * int * int * int
 
-(** String describing the file of an ml location *)
-val ml_location_file_string : ml_location -> string
-
-(** Turn an ml location into a string *)
-val ml_location_string : ml_location -> string
+(** Convert a ml location to a string *)
+val ml_loc_to_string : ml_loc -> string
 
 (** Pretty print a location of ml source *)
-val pp_ml_location_opt : Format.formatter -> ml_location option -> unit
+val pp_ml_loc_opt : Format.formatter -> ml_loc option -> unit
 
 (** Colors supported in printing *)
 type color = Black | Blue | Green | Orange | Red

@@ -49,7 +49,7 @@ let rec unroll_type tenv typ off =
           L.d_strln ".... Invalid Field Access ....";
           L.d_strln ("Fld : " ^ Ident.fieldname_to_string fld);
           L.d_str "Type : "; Sil.d_typ_full typ; L.d_ln ();
-          raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x))
+          raise (Exceptions.Bad_footprint __POS__)
       end
   | Sil.Tarray (typ', _), Sil.Off_index _ ->
       typ'
@@ -125,7 +125,7 @@ let rec apply_offlist
               else Prop.get_undef_attribute p root_lexp in
             let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
             let err_desc = Errdesc.explain_memory_access deref_str p (State.get_loc ()) in
-            let exn = (Exceptions.Uninitialized_value (err_desc, try assert false with Assert_failure x -> x)) in
+            let exn = (Exceptions.Uninitialized_value (err_desc, __POS__)) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
             Reporting.log_warning pname ~pre: pre_opt exn;
             Sil.update_inst inst_curr inst
@@ -478,7 +478,11 @@ let report_raise_memory_leak tenv msg hpred prop =
   let resource = match Errdesc.hpred_is_open_resource prop hpred with
     | Some res -> res
     | None -> Sil.Rmemory Sil.Mmalloc in
-  raise (Exceptions.Leak (footprint_part, prop, hpred, Errdesc.explain_leak tenv hpred prop None None, false, resource, try assert false with Assert_failure x -> x))
+  raise
+    (Exceptions.Leak
+       (footprint_part, prop, hpred,
+        Errdesc.explain_leak tenv hpred prop None None, false,
+        resource, __POS__))
 
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
@@ -502,13 +506,15 @@ let exp_norm_check_arith pname prop exp =
   match Prop.find_arithmetic_problem (State.get_path_pos ()) prop exp with
   | Some (Prop.Div0 div), prop' ->
       let desc = Errdesc.explain_divide_by_zero div (State.get_node ()) (State.get_loc ()) in
-      let exn = Exceptions.Divide_by_zero (desc, try assert false with Assert_failure x -> x) in
+      let exn = Exceptions.Divide_by_zero (desc, __POS__) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
       Reporting.log_warning pname ~pre: pre_opt exn;
       Prop.exp_normalize_prop prop exp, prop'
   | Some (Prop.UminusUnsigned (e, typ)), prop' ->
-      let desc = Errdesc.explain_unary_minus_applied_to_unsigned_expression e typ (State.get_node ()) (State.get_loc ()) in
-      let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, try assert false with Assert_failure x -> x) in
+      let desc =
+        Errdesc.explain_unary_minus_applied_to_unsigned_expression
+          e typ (State.get_node ()) (State.get_loc ()) in
+      let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
       Reporting.log_warning pname ~pre: pre_opt exn;
       Prop.exp_normalize_prop prop exp, prop'
@@ -543,7 +549,8 @@ let check_already_dereferenced pname cond prop =
   match dereferenced_line with
   | Some (id, (n, pos)) ->
       let desc = Errdesc.explain_null_test_after_dereference (Sil.Var id) (State.get_node ()) n (State.get_loc ()) in
-      let exn = (Exceptions.Null_test_after_dereference (desc, try assert false with Assert_failure x -> x)) in
+      let exn =
+        (Exceptions.Null_test_after_dereference (desc, __POS__)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
       Reporting.log_warning pname ~pre: pre_opt exn
   | None -> ()
@@ -1054,7 +1061,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         | Sil.Const (Sil.Cint i) when report_condition_always_true_false i ->
             let node = State.get_node () in
             let desc = Errdesc.explain_condition_always_true_false i cond node loc in
-            let exn = Exceptions.Condition_always_true_false (desc, not (Sil.Int.iszero i), try assert false with Assert_failure x -> x) in
+            let exn =
+              Exceptions.Condition_always_true_false (desc, not (Sil.Int.iszero i), __POS__) in
             let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
             Reporting.log_warning pname ~pre: pre_opt exn
         | Sil.BinOp ((Sil.Eq | Sil.Ne), lhs, rhs)
@@ -1075,8 +1083,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
             if not (Sil.exp_is_zero lhs_normal) && lhs_is_ns_ptr () then
               let node = State.get_node () in
               let desc = Errdesc.explain_bad_pointer_comparison lhs node loc in
-              let fail = try assert false with Assert_failure x -> x in
-              let exn = Exceptions.Bad_pointer_comparison (desc, fail) in
+              let exn = Exceptions.Bad_pointer_comparison (desc, __POS__) in
               Reporting.log_warning pname exn
         | _ -> () in
       check_already_dereferenced pname cond _prop;
@@ -1235,7 +1242,7 @@ and sym_exec_generated mask_errors cfg tenv pdesc instrs ppl =
     with exn when exn_not_failure exn && mask_errors ->
       let err_name, _, ml_source, _ , _, _, _ = Exceptions.recognize_exception exn in
       let loc = (match ml_source with
-          | Some (src, l, c) -> "at "^(src^" "^(string_of_int l))
+          | Some ml_loc -> "at " ^ (ml_loc_to_string ml_loc)
           | None -> "") in
       L.d_warning ("Generated Instruction Failed with: " ^ (Localise.to_string err_name)^loc ); L.d_ln();
       [(p, path)] in
@@ -1320,7 +1327,7 @@ and check_untainted exp caller_pname callee_pname prop =
           callee_pname (State.get_loc ()) in
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function
-          (err_desc, try assert false with Assert_failure x -> x) in
+          (err_desc, __POS__) in
       Reporting.log_warning caller_pname exn;
       Prop.add_or_replace_exp_attribute prop exp (Sil.Auntaint)
   | _ ->
@@ -1413,8 +1420,7 @@ and sym_exe_check_variadic_sentinel ?(fails_on_nil = false) cfg pdesc tenv prop 
         let err_desc =
           Errdesc.explain_dereference ~use_buckets: true ~is_premature_nil: true
             deref_str prop loc in
-        raise (Exceptions.Premature_nil_termination
-                 (err_desc, try assert false with Assert_failure x -> x))
+        raise (Exceptions.Premature_nil_termination (err_desc, __POS__))
       else
         raise e in
   (* IList.fold_left reverses the arguments back so that we report an *)
@@ -1456,7 +1462,7 @@ and sym_exec_objc_getter field_name ret_typ_opt tenv cfg ret_ids pdesc pname loc
       let field_access_exp = Sil.Lfield (lexp, field_name, typ') in
       execute_letderef
         ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc prop
-  | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+  | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 and sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc pname loc args prop =
   L.d_strln ("No custom setter found. Executing the ObjC builtin setter with ivar "^
@@ -1469,7 +1475,7 @@ and sym_exec_objc_setter field_name ret_typ_opt tenv cfg ret_ids pdesc pname loc
           | _ -> assert false) in
       let field_access_exp = Sil.Lfield (lexp1, field_name, typ1') in
       execute_set ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
-  | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+  | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 and sym_exec_objc_accessor property_accesor ret_typ_opt tenv cfg ret_ids pdesc callee_pname loc args
     prop path : Builtin.ret_typ =
@@ -1501,7 +1507,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
     if is_ignored
     && Specs.get_flag callee_pname proc_flag_ignore_return = None then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
-      let exn = (Exceptions.Return_value_ignored (err_desc, try assert false with Assert_failure x -> x)) in
+      let exn = (Exceptions.Return_value_ignored (err_desc, __POS__)) in
       let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop caller_pname) in
       Reporting.log_warning caller_pname ~pre: pre_opt exn in
   check_inherently_dangerous_function caller_pname callee_pname;
@@ -1525,7 +1531,7 @@ and sym_exec_call cfg pdesc tenv pre path ret_ids actual_pars summary loc =
           L.d_strln (" mismatch in the number of parameters ****");
           L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
           L.d_str "formal parameters: "; Sil.d_typ_list formal_types; L.d_ln ();
-          raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
+          raise (Exceptions.Wrong_argument_number __POS__) in
     let actual_params = comb actual_pars formal_types in
     (* Actual parameters are associated to their formal
        parameter type if there are enough formal parameters, and
@@ -1662,7 +1668,7 @@ module ModelBuiltins = struct
     | [(lexp1, typ1); (lexp2, typ2); (lexp3, typ3)], _ ->
         let instr' = Sil.Set (lexp3, typ3, Sil.exp_zero, loc) in
         sym_exec_generated true cfg tenv pdesc [instr'] [(prop, path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let mk_empty_array size =
     Sil.Earray (size, [], Sil.inst_none)
@@ -1715,7 +1721,7 @@ module ModelBuiltins = struct
                 [(return_result_for_array_size size prop'' ret_ids, path)]
             | _ -> []
         end
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___set_array_size cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -1751,7 +1757,7 @@ module ModelBuiltins = struct
               [(prop'', path)]
           | _ -> []
         end
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___print_value cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -1838,7 +1844,7 @@ module ModelBuiltins = struct
             with Not_found -> (return_result Sil.exp_zero prop ret_ids), path
           end in
         (IList.map aux props)
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** replace the type of the ptsto rooted at [root_e] with [texp] in [prop] *)
   let replace_ptsto_texp prop root_e texp =
@@ -1874,8 +1880,7 @@ module ModelBuiltins = struct
           !Config.curr_language = Config.Java || is_cast_to_reference in
         let deal_with_failed_cast val1 typ1 texp1 texp2 =
           Tabulation.raise_cast_exception
-            (try assert false with Assert_failure ml_loc -> ml_loc)
-            None texp1 texp2 val1 in
+            __POS__ None texp1 texp2 val1 in
         let exe_one_prop prop =
           if Sil.exp_equal texp2 Sil.exp_zero then
             [(return_result Sil.exp_zero prop ret_ids, path)]
@@ -1930,7 +1935,7 @@ module ModelBuiltins = struct
             end in
         let props = create_type tenv val1 typ1 prop in
         IList.flatten (IList.map exe_one_prop props)
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___instanceof cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -1961,7 +1966,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc Sil.Rfile
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the attibute of the value as lock *)
   let execute___set_lock_attribute cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
@@ -1971,7 +1976,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc Sil.Rlock
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the resource attribute of the first real argument of method as ignore, the first argument is assumed to be "this" *)
   let execute___method_set_ignore_attribute
@@ -1982,7 +1987,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc Sil.Rignore
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the attibute of the value as memory *)
   let execute___set_mem_attribute cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
@@ -1992,7 +1997,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         set_resource_attribute prop path n_lexp loc (Sil.Rmemory Sil.Mnew)
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the attibute of the value as tainted *)
   let execute___set_taint_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
@@ -2002,7 +2007,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Ataint pname), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the attibute of the value as untainted *)
   let execute___set_untaint_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
@@ -2012,7 +2017,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Auntaint), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the attibute of the value as locked*)
   let execute___set_locked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
@@ -2022,7 +2027,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Alocked), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the attibute of the value as unlocked*)
   let execute___set_unlocked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
@@ -2032,7 +2037,7 @@ module ModelBuiltins = struct
         let pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
         [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Aunlocked), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 
   (** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
@@ -2043,7 +2048,7 @@ module ModelBuiltins = struct
         let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
         let n_lexp, prop = exp_norm_check_arith caller_pname prop lexp in
         [(check_untainted n_lexp caller_pname callee_pname prop, path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** take a pointer to a struct, and return the value of a hidden field in the struct *)
   let execute___get_hidden_field cfg pdesc instr tenv _prop path ret_ids args callee_name loc
@@ -2079,7 +2084,7 @@ module ModelBuiltins = struct
         let prop' = Prop.replace_sigma_footprint sigma_fp' (Prop.replace_sigma sigma' prop) in
         let prop'' = return_val (Prop.normalize prop') in
         [(prop'', path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** take a pointer to a struct and a value, and set a hidden field in the struct to the given value *)
   let execute___set_hidden_field cfg pdesc instr tenv _prop path ret_ids args callee_name loc
@@ -2108,7 +2113,7 @@ module ModelBuiltins = struct
         let prop' = Prop.replace_sigma_footprint sigma_fp' (Prop.replace_sigma sigma' prop) in
         let prop'' = Prop.normalize prop' in
         [(prop'', path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (* Update the objective-c hidden counter by applying the operation op and the operand delta.*)
   (* Eg. op=+/- delta is an integer *)
@@ -2133,7 +2138,7 @@ module ModelBuiltins = struct
         let update_counter = Sil.Set(hidden_field, typ', Sil.BinOp(op, Sil.Var tmp, Sil.Const (Sil.Cint delta)), loc) in
         let update_counter_instrs = [counter_to_tmp; update_counter; Sil.Remove_temps([tmp], loc)] in
         sym_exec_generated suppress_npe_report cfg tenv pdesc update_counter_instrs [(_prop, path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (* Given a list of args checks if the first is the flag indicating whether is a call to retain/release for which*)
   (* we have to suppress NPE report or not. If the flag is present it is removed from the list of args. *)
@@ -2151,7 +2156,7 @@ module ModelBuiltins = struct
         let prop = return_result lexp _prop ret_ids in
         execute___objc_counter_update suppress_npe_report (Sil.PlusA) (Sil.Int.one)
           cfg pdesc instr tenv prop path ret_ids args' callee_name loc
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___objc_retain cfg pdesc instr tenv _prop path ret_ids args callee_name loc
     : Builtin.ret_typ =
@@ -2192,7 +2197,7 @@ module ModelBuiltins = struct
           let prop' = Prop.add_or_replace_exp_attribute prop n_lexp Sil.Aautorelease in
           [(prop', path)]
         else execute___no_op prop path
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Release all the objects in the pool *)
   let execute___release_autorelease_pool
@@ -2237,11 +2242,13 @@ module ModelBuiltins = struct
                [(return_result val1 prop' ret_ids, path)]
            | _ -> [(return_result val1 prop ret_ids, path)]
          with Not_found -> [(return_result val1 prop ret_ids, path)])
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute_abort cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
-    raise (Exceptions.Precondition_not_found (Localise.verbatim_desc (Procname.to_string callee_pname), try assert false with Assert_failure x -> x))
+    raise
+      (Exceptions.Precondition_not_found
+         (Localise.verbatim_desc (Procname.to_string callee_pname), __POS__))
 
   let execute_exit cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2283,7 +2290,7 @@ module ModelBuiltins = struct
         L.d_strln ".... Array containing allocated heap cells ....";
         L.d_str "  Instr: "; Sil.d_instr instr; L.d_ln ();
         L.d_str "  PROP: "; Prop.d_prop prop; L.d_ln ();
-        raise (Exceptions.Array_of_pointsto (try assert false with Assert_failure x -> x))
+        raise (Exceptions.Array_of_pointsto __POS__)
       end
 
   let execute_free mk cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
@@ -2304,7 +2311,7 @@ module ModelBuiltins = struct
                   (Prop.exp_normalize_prop p lexp) typ loc) prop_nonzero) in
           IList.map (fun p -> (p, path)) plist
         end
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute_alloc mk can_return_null cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2327,7 +2334,7 @@ module ModelBuiltins = struct
       | [(num_obj, _); (base_exp, _)] -> (* for __new_array *)
           Sil.BinOp (Sil.Mult, num_obj, base_exp)
       | _ ->
-          raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
+          raise (Exceptions.Wrong_argument_number __POS__) in
     let ret_id = match ret_ids with
       | [ret_id] -> ret_id
       | _ -> Ident.create_fresh Ident.kprimed in
@@ -2373,7 +2380,7 @@ module ModelBuiltins = struct
          | _ ->
              L.d_str "pthread_create: unknown function "; Sil.d_exp routine_name; L.d_strln ", skipping call.";
              [(prop, path)])
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute_skip cfg pdesc instr tenv prop path ret_ids args callee_pname loc : Builtin.ret_typ =
     [(prop, path)]
@@ -2386,7 +2393,7 @@ module ModelBuiltins = struct
         let varargs = ref args in
         for i = 1 to skip_n_arguments do varargs := IList.tl !varargs done;
         call_unknown_or_scan true cfg pdesc tenv prop path ret_ids None !varargs callee_pname loc
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute__unwrap_exception cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2401,7 +2408,7 @@ module ModelBuiltins = struct
               [(prop_with_exn, path)]
           | _ -> assert false
         end
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute_return_first_argument cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2411,7 +2418,7 @@ module ModelBuiltins = struct
         let arg1, prop = exp_norm_check_arith pname _prop _arg1 in
         let prop' = return_result arg1 prop ret_ids in
         [(prop', path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___split_get_nth cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2431,7 +2438,7 @@ module ModelBuiltins = struct
                 [(return_result res prop ret_ids, path)]
               with Not_found -> assert false)
          | _ -> [(prop, path)])
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___create_tuple cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2452,7 +2459,7 @@ module ModelBuiltins = struct
              let en = IList.nth el n in
              [(return_result en prop ret_ids, path)]
          | _ -> [(prop, path)])
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (* forces the expression passed as parameter to be assumed true at the point where this
      builtin is called, blocks if this causes an inconsistency *)
@@ -2463,7 +2470,7 @@ module ModelBuiltins = struct
         let prop_assume = Prop.conjoin_eq lexp (Sil.exp_bool true) prop in
         if Prover.check_inconsistency prop_assume then  execute_diverge prop_assume path
         else [(prop_assume, path)]
-    | _ -> raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x))
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (* creates a named error state *)
   let execute___infer_fail cfg pdesc instr tenv prop path ret_ids args callee_pname loc
@@ -2477,7 +2484,7 @@ module ModelBuiltins = struct
             | _ -> assert false
           end
       | _ ->
-          raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
+          raise (Exceptions.Wrong_argument_number __POS__) in
     let set_instr =
       Sil.Set (Sil.Lvar Sil.custom_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
     sym_exec_generated true cfg tenv pdesc [set_instr] [(prop, path)]
@@ -2490,7 +2497,7 @@ module ModelBuiltins = struct
       | l when IList.length l = 4 ->
           Config.default_failure_name
       | _ ->
-          raise (Exceptions.Wrong_argument_number (try assert false with Assert_failure x -> x)) in
+          raise (Exceptions.Wrong_argument_number __POS__) in
     let set_instr =
       Sil.Set (Sil.Lvar Sil.custom_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
     sym_exec_generated true cfg tenv pdesc [set_instr] [(prop, path)]

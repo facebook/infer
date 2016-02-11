@@ -46,7 +46,7 @@ type 'a t =
     foot_pi: Sil.atom list;  (** abduced pure part *)
   }
 
-exception Cannot_star of ml_location
+exception Cannot_star of ml_loc
 
 (** Pure proposition. *)
 type pure_prop = Sil.subst * Sil.atom list

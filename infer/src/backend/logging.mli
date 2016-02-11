@@ -97,7 +97,7 @@ val flush_streams : unit -> unit
 
 (** print a warning with information of the position in the ml source where it oririnated.
     use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
-val warning_position: string -> ml_location -> unit
+val warning_position: string -> ml_loc -> unit
 
 (** dump a string *)
 val d_str : string -> unit

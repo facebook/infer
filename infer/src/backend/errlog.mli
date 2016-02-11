@@ -32,7 +32,7 @@ val empty : unit -> t
 type iter_fun =
   (int * int) ->
   Location.t ->
-  ml_location option ->
+  ml_loc option ->
   Exceptions.err_kind ->
   bool ->
   Localise.t -> Localise.error_desc -> string ->

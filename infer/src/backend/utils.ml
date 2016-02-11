@@ -237,25 +237,21 @@ let pp_elapsed_time fmt () =
   let elapsed = Unix.gettimeofday () -. initial_timeofday in
   Format.fprintf fmt "%f" elapsed
 
-(** Type of location in ml source: file,line,column *)
-type ml_location = string * int * int
+(** Type of location in ml source: __POS__ *)
+type ml_loc = string * int * int * int
 
-(** String describing the file of an ml location *)
-let ml_location_file_string ((file: string), (line: int), (column: int)) =
-  "file " ^ file
-
-(** Turn an ml location into a string *)
-let ml_location_string ((file: string), (line: int), (column: int)) =
-  "file " ^ file ^ " line " ^ string_of_int line ^ " column " ^ string_of_int column
+(** Convert a ml location to a string *)
+let ml_loc_to_string (file, lnum, cnum, enum) =
+  Printf.sprintf "%s:%d:%d-%d:" file lnum cnum enum
 
 (** Pretty print a location of ml source *)
-let pp_ml_location fmt mloc =
-  F.fprintf fmt "%s" (ml_location_string mloc)
+let pp_ml_loc fmt ml_loc =
+  F.fprintf fmt "%s" (ml_loc_to_string ml_loc)
 
-let pp_ml_location_opt fmt mloco =
-  if !Config.developer_mode then match mloco with
+let pp_ml_loc_opt fmt ml_loc_opt =
+  if !Config.developer_mode then match ml_loc_opt with
     | None -> ()
-    | Some mloc -> F.fprintf fmt "(%a)" pp_ml_location mloc
+    | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
 
 (** {2 SymOp and Failures: units of symbolic execution} *)
 

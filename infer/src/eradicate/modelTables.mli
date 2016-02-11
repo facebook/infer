@@ -11,8 +11,8 @@ open Utils
 
 type model_table_t = (string, bool * bool list) Hashtbl.t
 
-(** Location of this file. *)
-val ml_location : ml_location
+(** Name of this file. *)
+val this_file : string
 
 val annotated_table_nullable : model_table_t
 val annotated_table_present : model_table_t

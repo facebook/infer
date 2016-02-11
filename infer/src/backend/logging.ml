@@ -133,8 +133,8 @@ let stdout fmt_string =
 
 (** print a warning with information of the position in the ml source where it oririnated.
     use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
-let warning_position (s: string) (mloc: ml_location) =
-  err "WARNING: %s in %a@." s pp_ml_location_opt (Some mloc)
+let warning_position (s: string) (ml_loc: ml_loc) =
+  err "WARNING: %s in %a@." s pp_ml_loc_opt (Some ml_loc)
 
 (** dump a string *)
 let d_str (s: string) = add_print_action (PTstr, Obj.repr s)

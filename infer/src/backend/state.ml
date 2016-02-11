@@ -330,9 +330,9 @@ let process_execution_failures (log_issue : log_issue) pname =
     (* L.err "Node:%a node_ok:%d node_fail:%d@." Cfg.Node.pp node fs.node_ok fs.node_fail; *)
     match fs.node_ok, fs.first_failure with
     | 0, Some (loc, key, session, loc_trace, pre_opt, exn) ->
-        let ex_name, desc, mloco, _, _, _, _ = Exceptions.recognize_exception exn in
+        let ex_name, desc, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ Localise.to_string ex_name) in
-        let exn' = Exceptions.Analysis_stops (desc', mloco) in
+        let exn' = Exceptions.Analysis_stops (desc', ml_loc_opt) in
         log_issue
           pname ~loc: (Some loc) ~node_id: (Some key) ~ltr: (Some loc_trace) ~pre: pre_opt exn'
     | _ -> () in

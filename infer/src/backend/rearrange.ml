@@ -65,15 +65,17 @@ let check_bad_index pname tenv p size index loc =
       let index_const_opt = get_const_opt index in
       if index_provably_out_of_bound () then
         let deref_str = Localise.deref_str_array_bound size_const_opt index_const_opt in
-        let exn = Exceptions.Array_out_of_bounds_l1 (Errdesc.explain_array_access deref_str p loc, try assert false with Assert_failure x -> x) in
+        let exn =
+          Exceptions.Array_out_of_bounds_l1
+            (Errdesc.explain_array_access deref_str p loc, __POS__) in
         let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
         Reporting.log_warning pname ~pre: pre_opt exn
       else if size_is_constant then
         let deref_str = Localise.deref_str_array_bound size_const_opt index_const_opt in
         let desc = Errdesc.explain_array_access deref_str p loc in
         let exn = if index_has_bounds ()
-          then Exceptions.Array_out_of_bounds_l2 (desc, try assert false with Assert_failure x -> x)
-          else Exceptions.Array_out_of_bounds_l3 (desc, try assert false with Assert_failure x -> x) in
+          then Exceptions.Array_out_of_bounds_l2 (desc, __POS__)
+          else Exceptions.Array_out_of_bounds_l3 (desc, __POS__) in
         let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
         Reporting.log_warning pname ~pre: pre_opt exn
     end
@@ -111,7 +113,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
             IList.find (fun (f', _, _) -> Ident.fieldname_equal f f')
               (instance_fields @ static_fields)
           with Not_found ->
-            raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x)) in
+            raise (Exceptions.Bad_footprint __POS__) in
         let atoms', se', res_t' =
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
@@ -165,7 +167,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         (Sil.Aeq(e, e'):: atoms', se, res_t)
     | Sil.Tint _, _ | Sil.Tfloat _, _ | Sil.Tvoid, _ | Sil.Tfun _, _ | Sil.Tptr _, _ ->
         L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
-        raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x))
+        raise (Exceptions.Bad_footprint __POS__)
 
     | Sil.Tvar _, _ | Sil.Tenum _, _ ->
         L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
@@ -209,7 +211,7 @@ let rec _strexp_extend_values
           IList.find (fun (f', t', a') -> Ident.fieldname_equal f f')
             (instance_fields @ static_fields)
         with Not_found ->
-          raise (Exceptions.Missing_fld (f, try assert false with Assert_failure x -> x)) in
+          raise (Exceptions.Missing_fld (f, __POS__)) in
       begin
         try
           let _, se' = IList.find (fun (f', _) -> Ident.fieldname_equal f f') fsel in
@@ -238,7 +240,7 @@ let rec _strexp_extend_values
           [(atoms', Sil.Estruct (res_fsel', inst'), struct_typ)]
       end
   | (Sil.Off_fld (f, _)):: off', _, _ ->
-      raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x))
+      raise (Exceptions.Bad_footprint __POS__)
 
   | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tint _
   | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tfloat _
@@ -270,7 +272,7 @@ let rec _strexp_extend_values
             let res_esel' = IList.map replace_ise esel in
             if (Sil.typ_equal res_typ' typ') || (IList.length res_esel' = 1)
             then (res_atoms', Sil.Earray(size, res_esel', inst_arr), Sil.Tarray(res_typ', size_for_typ')) :: acc
-            else raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x)) in
+            else raise (Exceptions.Bad_footprint __POS__) in
           IList.fold_left replace [] atoms_se_typ_list'
         with Not_found ->
           array_case_analysis_index pname tenv orig_prop
@@ -280,7 +282,7 @@ let rec _strexp_extend_values
             e off' inst_arr inst
       end
   | _, _, _ ->
-      raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x))
+      raise (Exceptions.Bad_footprint __POS__)
 
 and array_case_analysis_index pname tenv orig_prop
     footprint_part kind max_stamp
@@ -290,7 +292,7 @@ and array_case_analysis_index pname tenv orig_prop
   =
   let check_sound t' =
     if not (Sil.typ_equal typ_cont t' || array_cont == [])
-    then raise (Exceptions.Bad_footprint (try assert false with Assert_failure x -> x)) in
+    then raise (Exceptions.Bad_footprint __POS__) in
   let index_in_array =
     IList.exists (fun (i, _) -> Prover.check_equal Prop.prop_emp index i) array_cont in
   let array_is_full =
@@ -421,7 +423,7 @@ let mk_ptsto_exp_footprint
           Errdesc.explain_dereference deref_str orig_prop (State.get_loc ()) in
         raise
           (Exceptions.Dangling_pointer_dereference
-             (None, err_desc, try assert false with Assert_failure x -> x))
+             (None, err_desc, __POS__))
       end
   end;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
@@ -636,7 +638,7 @@ let rearrange_arith lexp prop =
     if Prover.check_allocatedness prop root then
       raise ARRAY_ACCESS
     else
-      raise (Exceptions.Symexec_memory_error (try assert false with Assert_failure x -> x))
+      raise (Exceptions.Symexec_memory_error __POS__)
 
 let pp_rearrangement_error message prop lexp =
   L.d_strln (".... Rearrangement Error .... " ^ message);
@@ -661,7 +663,7 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
     | Some fld ->
         begin
           pp_rearrangement_error "field splitting check failed" orig_prop lexp;
-          raise (Exceptions.Missing_fld (fld, try assert false with Assert_failure x -> x))
+          raise (Exceptions.Missing_fld (fld, __POS__))
         end in
   let res =
     if !Config.footprint
@@ -836,8 +838,7 @@ let check_type_size pname prop texp off typ_from_instr =
         let loc = State.get_loc () in
         let exn =
           Exceptions.Pointer_size_mismatch (
-            Errdesc.explain_dereference deref_str prop loc,
-            try assert false with Assert_failure x -> x) in
+            Errdesc.explain_dereference deref_str prop loc, __POS__) in
         let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
         Reporting.log_warning pname ~pre: pre_opt exn
       end
@@ -888,7 +889,7 @@ let rec iter_rearrange
     else begin
       pp_rearrangement_error "cannot find predicate with root" prop lexp;
       if not !Config.footprint then Printer.force_delayed_prints ();
-      raise (Exceptions.Symexec_memory_error (try assert false with Assert_failure x -> x))
+      raise (Exceptions.Symexec_memory_error __POS__)
     end in
   let recurse_on_iters iters =
     let f_one_iter iter' =
@@ -1013,31 +1014,31 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
         Errdesc.explain_dereference ~use_buckets: true ~is_nullable: is_deref_of_nullable
           deref_str prop loc in
       if Localise.is_parameter_not_null_checked_desc err_desc then
-        raise (Exceptions.Parameter_not_null_checked (err_desc, try assert false with Assert_failure x -> x))
+        raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
       else if Localise.is_field_not_null_checked_desc err_desc then
-        raise (Exceptions.Field_not_null_checked (err_desc, try assert false with Assert_failure x -> x))
-      else raise (Exceptions.Null_dereference (err_desc, try assert false with Assert_failure x -> x))
+        raise (Exceptions.Field_not_null_checked (err_desc, __POS__))
+      else raise (Exceptions.Null_dereference (err_desc, __POS__))
     end;
   match attribute_opt with
   | Some (Sil.Adangling dk) ->
       let deref_str = Localise.deref_str_dangling (Some dk) in
       let err_desc = Errdesc.explain_dereference deref_str prop (State.get_loc ()) in
-      raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, try assert false with Assert_failure x -> x))
+      raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
   | Some (Sil.Aundef (s, undef_loc, _)) ->
       if !Config.angelic_execution then ()
       else
         let deref_str = Localise.deref_str_undef (s, undef_loc) in
         let err_desc = Errdesc.explain_dereference deref_str prop loc in
-        raise (Exceptions.Skip_pointer_dereference (err_desc, try assert false with Assert_failure x -> x))
+        raise (Exceptions.Skip_pointer_dereference (err_desc, __POS__))
   | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra)) ->
       let deref_str = Localise.deref_str_freed ra in
       let err_desc = Errdesc.explain_dereference ~use_buckets: true deref_str prop loc in
-      raise (Exceptions.Use_after_free (err_desc, try assert false with Assert_failure x -> x))
+      raise (Exceptions.Use_after_free (err_desc, __POS__))
   | _ ->
       if Prover.check_equal Prop.prop_emp (Sil.root_of_lexp root) Sil.exp_minus_one then
         let deref_str = Localise.deref_str_dangling None in
         let err_desc = Errdesc.explain_dereference deref_str prop loc in
-        raise (Exceptions.Dangling_pointer_dereference (None, err_desc, try assert false with Assert_failure x -> x))
+        raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__))
 
 (* Check that an expression representin an objc block can be null and raise a [B1] null exception.*)
 (* It's used to check that we don't call possibly null blocks *)
@@ -1087,11 +1088,11 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
           if is_field_deref then
             raise
               (Exceptions.Field_not_null_checked
-                 (err_desc, try assert false with Assert_failure x -> x))
+                 (err_desc, __POS__))
           else
             raise
               (Exceptions.Parameter_not_null_checked
-                 (err_desc, try assert false with Assert_failure x -> x))
+                 (err_desc, __POS__))
       | _ ->
           (* HP: fun_exp is not a footprint therefore,
              either is a local or it's a modified param *)
@@ -1099,7 +1100,7 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
             Localise.error_desc_set_bucket
               err_desc_nobuckets Localise.BucketLevel.b1 !Config.show_buckets in
           raise (Exceptions.Null_dereference
-                   (err_desc, try assert false with Assert_failure x -> x))
+                   (err_desc, __POS__))
     end
 
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
@@ -1127,6 +1128,6 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
       else
         begin
           pp_rearrangement_error "sigma is empty" prop nlexp;
-          raise (Exceptions.Symexec_memory_error (try assert false with Assert_failure x -> x))
+          raise (Exceptions.Symexec_memory_error __POS__)
         end
   | Some iter -> iter_rearrange pname tenv nlexp typ prop iter inst

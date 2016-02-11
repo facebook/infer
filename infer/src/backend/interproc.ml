@@ -439,7 +439,7 @@ let check_assignement_guard node =
           | [Sil.Set(e, _, _, _)] -> (* we now check if e is the same expression used to prune*)
               if (is_prune_exp e) && not ((node_contains_call node) && (is_cil_tmp e)) && not (is_edg_tmp e) then (
                 let desc = Errdesc.explain_condition_is_assignment l_node in
-                let exn = Exceptions.Condition_is_assignment (desc, try assert false with Assert_failure x -> x) in
+                let exn = Exceptions.Condition_is_assignment (desc, __POS__) in
                 let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
                 Reporting.log_warning pname ~loc: (Some l_node) ~pre: pre_opt exn
               )
@@ -601,8 +601,7 @@ let report_context_leaks pname sigma tenv =
              | Some path -> path
              | None -> assert false in (* a path must exist in order for a leak to be reported *)
            let err_desc = Errdesc.explain_context_leak pname typ fld_name leak_path in
-           let exn = Exceptions.Context_leak
-               (err_desc, try assert false with Assert_failure x -> x) in
+           let exn = Exceptions.Context_leak (err_desc, __POS__) in
            Reporting.log_error pname exn)
       context_exps in
   (* get the set of pointed-to expressions of type T <: Context *)
@@ -634,7 +633,7 @@ let remove_locals_formals_and_check pdesc p =
     let loc = Cfg.Node.get_loc (Cfg.Procdesc.get_exit_node pdesc) in
     let dexp_opt, _ = Errdesc.vpath_find p (Sil.Lvar pvar) in
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
-    let exn = Exceptions.Stack_variable_address_escape (desc, try assert false with Assert_failure x -> x) in
+    let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
     Reporting.log_warning pname exn in
   IList.iter check_pvar pvars;
   p'
@@ -1162,9 +1161,9 @@ let perform_transition exe_env cg proc_name =
         apply_start_node do_after_node;
         Config.allowleak := allowleak;
         L.err "Error in collect_preconditions for %a@." Procname.pp proc_name;
-        let err_name, _, mloco, _, _, _, _ = Exceptions.recognize_exception exn in
+        let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let err_str = "exception raised " ^ (Localise.to_string err_name) in
-        L.err "Error: %s %a@." err_str pp_ml_location_opt mloco;
+        L.err "Error: %s %a@." err_str pp_ml_loc_opt ml_loc_opt;
         [] in
     Fork.transition_footprint_re_exe pname joined_pres in
   IList.iter transition proc_names

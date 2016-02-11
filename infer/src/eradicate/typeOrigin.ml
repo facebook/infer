@@ -96,7 +96,7 @@ let get_description origin =
         | None -> "" in
       let modelled_in =
         if Models.is_modelled_nullable po.pname
-        then " modelled in " ^ (Utils.ml_location_file_string ModelTables.ml_location)
+        then " modelled in " ^ ModelTables.this_file
         else "" in
       let description = Printf.sprintf
           "call to %s%s%s%s"
