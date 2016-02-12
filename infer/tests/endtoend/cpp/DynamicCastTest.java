@@ -107,4 +107,14 @@ public class DynamicCastTest {
         contains(CLASS_CAST_EXCEPTION, FILE, "wrongReferenceCastNotAssigned"));
   }
 
+  @Test
+  public void whenInferRunsOnWrongCastOfArgumentReferenceThenClassCastExceptionIsFound()
+      throws InterruptedException, IOException, InferException {
+    InferResults inferResults = InferRunner.runInferCPP(inferCmd);
+    assertThat(
+        "Results should contain class cast exception",
+        inferResults,
+        contains(CLASS_CAST_EXCEPTION, FILE, "wrongCastOfArgumentReference"));
+  }
+
 }

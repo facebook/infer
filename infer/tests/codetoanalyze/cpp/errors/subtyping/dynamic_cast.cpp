@@ -33,7 +33,6 @@ int wrongCastOfArgumentPointer(){
     return 1/castOfArgumentPointer(&pdd);
 }
 
-//This should give a CLASS_CAST_EXCEPTION error but doesn't yet.
 int wrongCastOfArgumentReference(){
     Base pdd;
     return castOfArgumentReference(pdd);

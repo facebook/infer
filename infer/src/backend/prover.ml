@@ -1636,8 +1636,8 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
     | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tstruct _, _)
     | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tarray _, _)
     | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tstruct _, _)
-    | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tarray _, _) ->
-        !Config.curr_language = Config.Java
+    | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tarray _, _)
+      when !Config.curr_language = Config.Java -> true
 
     | Sil.Sizeof (typ1, _), Sil.Sizeof (typ2, _) ->
         (Sil.is_cpp_class typ1 && Sil.is_cpp_class typ2) ||
