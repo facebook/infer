@@ -207,6 +207,9 @@ val java_unchecked_exn_desc : Procname.t -> Typename.t -> string -> error_desc
 val desc_context_leak :
   Procname.t -> Sil.typ -> Ident.fieldname -> (Ident.fieldname option * Sil.typ) list -> error_desc
 
+val desc_fragment_retains_view :
+  Sil.typ -> Ident.fieldname -> Sil.typ -> Procname.t -> error_desc
+
 (* Create human-readable error description for assertion failures *)
 val desc_custom_error : Location.t -> error_desc
 

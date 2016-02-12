@@ -235,6 +235,26 @@ let by_call_to tags proc_name =
 let by_call_to_ra tags ra =
   "by " ^ call_to_at_line tags ra.Sil.ra_pname ra.Sil.ra_loc
 
+let rec format_typ = function
+  | Sil.Tptr (typ, _) when !Config.curr_language = Config.Java ->
+      format_typ typ
+  | Sil.Tstruct { Sil.struct_name = Some name } ->
+      Mangled.to_string name
+  | Sil.Tvar tname ->
+      Typename.name tname
+  | typ ->
+      Sil.typ_to_string typ
+
+let format_field f =
+  if !Config.curr_language = Config.Java
+  then Ident.java_fieldname_get_field f
+  else Ident.fieldname_to_string f
+
+let format_method m =
+  if !Config.curr_language = Config.Java
+  then Procname.java_get_method m
+  else Procname.to_string m
+
 let mem_dyn_allocated = "memory dynamically allocated"
 let lock_acquired = "lock acquired"
 let released = "released"
@@ -395,6 +415,20 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
     let pname_str = Procname.java_get_class pname ^ "." ^ Procname.java_get_method pname in
     "Context " ^ context_str ^ "may leak during method " ^ pname_str ^ ":\n" in
   { no_desc with descriptions = [preamble; leak_root; path_str] }
+
+let desc_fragment_retains_view fragment_typ fieldname fld_typ pname : error_desc =
+  (* TODO: try advice *)
+  let problem =
+    Printf.sprintf "Fragment %s does not nullify View field %s (type %s) in %s."
+      (format_typ fragment_typ)
+      (format_field fieldname)
+      (format_typ fld_typ)
+      (format_method pname) in
+  let consequences =
+    "If this Fragment is placed on the back stack, a reference to this (probably dead) View will be retained." in
+  let advice =
+    "In general, it is a good idea to initialize View's in onCreateView, then nullify them in onDestroyView." in
+  { no_desc with descriptions = [problem; consequences; advice] }
 
 let desc_custom_error loc : error_desc =
   { no_desc with descriptions = ["detected"; at_line (Tags.create ()) loc] }

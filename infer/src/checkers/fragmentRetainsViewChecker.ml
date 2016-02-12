@@ -12,18 +12,11 @@
 module P = Printf
 open Utils
 
-let report_error fld fld_typ pname pdesc =
+let report_error fragment_typ fld fld_typ pname pdesc =
   let retained_view = "CHECKERS_FRAGMENT_RETAINS_VIEW" in
-  let fld_decl_class, fld_name =
-    Ident.java_fieldname_get_class fld, Ident.java_fieldname_get_field fld in
-  let description =
-    P.sprintf
-      "Fragment %s does not nullify View field %s (type %s) in onDestroyView. If the Fragment is placed on the back stack, a reference to the View may be retained."
-      fld_decl_class
-      fld_name
-      (Sil.typ_to_string (Sil.typ_strip_ptr fld_typ)) in
+  let description = Localise.desc_fragment_retains_view fragment_typ fld fld_typ pname in
+  let exn =  Exceptions.Checkers (retained_view, description) in
   let loc = Cfg.Procdesc.get_loc pdesc in
-  let exn = Exceptions.Checkers (retained_view, Localise.verbatim_desc description) in
   Reporting.log_error pname ~loc:(Some loc) exn
 
 let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
@@ -54,9 +47,9 @@ let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
           let fields_nullified = PatternMatch.get_fields_nullified proc_desc in
           (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
           IList.iter
-            (fun (fname, typ, _) ->
+            (fun (fname, fld_typ, _) ->
                if not (Ident.FieldSet.mem fname fields_nullified) then
-                 report_error fname typ proc_name proc_desc)
+                 report_error typ fname fld_typ proc_name proc_desc)
             declared_view_fields
       | _ -> ()
     end
