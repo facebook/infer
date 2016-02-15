@@ -527,7 +527,7 @@ class Infer:
         if self.javac.annotations_out is not None:
             infer_print_options += [
                 '-local_config', self.javac.annotations_out]
-        if self.args.debug:
+        if self.args.debug or self.args.debug_exceptions:
             infer_print_options.append('-with_infer_src_loc')
         exit_status = subprocess.check_call(
             infer_print_cmd + infer_print_options
