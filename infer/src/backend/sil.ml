@@ -3831,6 +3831,7 @@ let rec expand_type tenv typ =
       begin
         match tenv_lookup tenv tname with
         | None -> assert false
+        | Some (Tvar _) -> assert false
         | Some typ' -> expand_type tenv typ'
       end
   | _ -> typ
