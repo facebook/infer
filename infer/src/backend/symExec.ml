@@ -1999,47 +1999,6 @@ module ModelBuiltins = struct
         set_resource_attribute prop path n_lexp loc (Sil.Rmemory Sil.Mnew)
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-  (** Set the attibute of the value as tainted *)
-  let execute___set_taint_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
-    : Builtin.ret_typ =
-    match args, ret_ids with
-    | [(lexp, typ)], _ ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Ataint pname), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
-
-  (** Set the attibute of the value as untainted *)
-  let execute___set_untaint_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
-    : Builtin.ret_typ =
-    match args, ret_ids with
-    | [(lexp, typ)], _ ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Auntaint), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
-
-  (** Set the attibute of the value as locked*)
-  let execute___set_locked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
-    : Builtin.ret_typ =
-    match args, ret_ids with
-    | [(lexp, typ)], _ ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Alocked), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
-
-  (** Set the attibute of the value as unlocked*)
-  let execute___set_unlocked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
-    : Builtin.ret_typ =
-    match args, ret_ids with
-    | [(lexp, typ)], _ ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-        [(Prop.add_or_replace_exp_attribute prop n_lexp (Sil.Aunlocked), path)]
-    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
-
-
   (** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
   let execute___check_untainted cfg pdesc instr tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2224,6 +2183,23 @@ module ModelBuiltins = struct
         | [] -> res in
       IList.fold_left call_release [(prop, path)] autoreleased_objects
     else execute___no_op _prop path
+
+  (** Set attibute att *)
+  let execute___set_attr att cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+    : Builtin.ret_typ =
+    match args with
+    | [(lexp, typ)] ->
+        let pname = Cfg.Procdesc.get_proc_name pdesc in
+        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
+        [(Prop.add_or_replace_exp_attribute prop n_lexp att, path)]
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
+
+  (** Set the attibute of the value as tainted *)
+  let execute___set_taint_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+    : Builtin.ret_typ =
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
+    execute___set_attr (Sil.Ataint pname)
+      cfg pdesc instr tenv _prop path ret_ids args callee_name loc
 
   let execute___objc_cast cfg pdesc instr tenv _prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
@@ -2528,6 +2504,13 @@ module ModelBuiltins = struct
   let __set_lock_attribute = Builtin.register "__set_lock_attribute" execute___set_lock_attribute (* set the attribute of the parameter as file *)
   let __set_mem_attribute = Builtin.register "__set_mem_attribute" execute___set_mem_attribute (* set the attribute of the parameter as memory *)
   let __set_autorelease_attribute = Builtin.register "__set_autorelease_attribute" execute___set_autorelease_attribute (* set the attribute of the parameter as autorelease *)
+  (* set the observer attribute of the parameter *)
+  let __set_observer_attribute =
+    Builtin.register "__set_observer_attribute" (execute___set_attr Sil.Aobserver)
+  (* set the unregistered observer attribute of the parameter *)
+  let __set_unsubscribed_observer_attribute =
+    Builtin.register "__set_unsubscribed_observer_attribute"
+      (execute___set_attr Sil.Aunsubscribed_observer)
   let __objc_release_autorelease_pool = Builtin.register "__objc_release_autorelease_pool" execute___release_autorelease_pool (* set the attribute of the parameter as autorelease *)
   let __split_get_nth = Builtin.register "__split_get_nth" execute___split_get_nth (* splits a string given a separator and returns the nth string *)
 
@@ -2540,11 +2523,11 @@ module ModelBuiltins = struct
   (* set the attribute of the parameter as tainted *)
   let _ = Builtin.register "__set_taint_attribute" execute___set_taint_attribute 
   (* set the attribute of the parameter as untainted *)
-  let _ = Builtin.register "__set_untaint_attribute" execute___set_untaint_attribute 
+  let _ = Builtin.register "__set_untaint_attribute" (execute___set_attr Sil.Auntaint)
   (* set the attribute of the parameter as locked *)
-  let _ = Builtin.register "__set_locked_attribute" execute___set_locked_attribute 
+  let _ = Builtin.register "__set_locked_attribute" (execute___set_attr Sil.Alocked)
   (* set the attribute of the parameter as unlocked *)
-  let _ = Builtin.register "__set_unlocked_attribute" execute___set_unlocked_attribute 
+  let _ = Builtin.register "__set_unlocked_attribute" (execute___set_attr Sil.Aunlocked)
   let _ = Builtin.register "__check_untainted" execute___check_untainted (* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
   let __objc_retain = Builtin.register "__objc_retain" execute___objc_retain (* objective-c "retain" *)
   let __objc_release = Builtin.register "__objc_release" execute___objc_release (* objective-c "release" *)

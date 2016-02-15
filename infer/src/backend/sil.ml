@@ -626,6 +626,10 @@ and attribute =
   | Aobjc_null of exp
   (** value was returned from a call to the given procedure *)
   | Aretval of Procname.t
+  (** denotes an object registered as an observers to a notification center *)
+  | Aobserver
+  (** denotes an object unsubscribed from observers of a notification center *)
+  | Aunsubscribed_observer
 
 (** Categories of attributes *)
 and attribute_category =
@@ -637,6 +641,7 @@ and attribute_category =
   | ACobjc_null
   | ACundef
   | ACretval
+  | ACobserver
 
 (** Constants *)
 and const =
@@ -1180,6 +1185,8 @@ let attribute_to_category att =
   | Aobjc_null _ -> ACobjc_null
   | Aretval _ -> ACretval
   | Aundef _ -> ACundef
+  | Aobserver
+  | Aunsubscribed_observer -> ACobserver
 
 let attr_is_undef = function
   | Aundef _ -> true
@@ -1398,6 +1405,12 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
   | Aretval pn1, Aretval pn2 -> Procname.compare pn1 pn2
   | Aretval _, _ -> -1
   | _, Aretval _ -> 1
+  | Aobserver, Aobserver -> 0
+  | Aobserver, _ -> -1
+  | _, Aobserver -> 1
+  | Aunsubscribed_observer, Aunsubscribed_observer -> 0
+  | Aunsubscribed_observer, _ -> -1
+  | _, Aunsubscribed_observer -> 1
 
 (** Compare epressions. Variables come before other expressions. *)
 and exp_compare (e1 : exp) (e2 : exp) : int =
@@ -1962,6 +1975,8 @@ and attribute_to_string pe = function
         | _ -> "" in
       "OBJC_NULL["^ info_s ^"]"
   | Aretval pn -> "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
+  | Aobserver -> "OBSERVER"
+  | Aunsubscribed_observer -> "UNSUBSCRIBED_OBSERVER"
 
 and pp_const pe f = function
   | Cint i -> Int.pp f i

@@ -256,6 +256,10 @@ and attribute =
   | Aobjc_null of exp
   (** value was returned from a call to the given procedure *)
   | Aretval of Procname.t
+  (** denotes an object registered as an observers to a notification center *)
+  | Aobserver
+  (** denotes an object unsubscribed from observers of a notification center *)
+  | Aunsubscribed_observer
 
 (** Categories of attributes *)
 and attribute_category =
@@ -267,6 +271,7 @@ and attribute_category =
   | ACobjc_null
   | ACundef
   | ACretval
+  | ACobserver
 
 (** Constants *)
 and const =
