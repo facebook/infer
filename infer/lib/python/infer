@@ -121,6 +121,7 @@ def main():
 
     if imported_module:
         analyze.create_results_dir(args.infer_out)
+        analyze.reset_start_file(args.infer_out)
 
         utils.configure_logging(args)
         logging.info('Running command %s', ' '.join(sys.argv))

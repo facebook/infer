@@ -332,3 +332,15 @@ let is_source_file path =
   IList.exists
     (fun ext -> Filename.check_suffix path ext)
     Config.source_file_extentions
+
+let infer_start_time = lazy
+  (file_modified_time (Results_dir.path_to_filename Results_dir.Abs_root [Config.start_filename]))
+
+(** Return whether filename was updated after analysis started. File doesn't have to exist *)
+let file_was_updated_after_start fname =
+  if file_exists fname then
+    let file_mtime = file_modified_time fname in
+    file_mtime >= Lazy.force infer_start_time
+  else
+    (* since file doesn't exist, it wasn't modified *)
+    false

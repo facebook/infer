@@ -198,6 +198,11 @@ def create_results_dir(results_dir):
     utils.mkdir_if_not_exists(os.path.join(results_dir, 'sources'))
 
 
+def reset_start_file(results_dir):
+    # create new empty file - this will update modified timestamp
+    open(os.path.join(results_dir, '.start'), 'w').close()
+
+
 def clean(infer_out):
     directories = ['multicore', 'classnames', 'sources', jwlib.FILELISTS]
     extensions = ['.cfg', '.cg']

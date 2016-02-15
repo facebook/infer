@@ -396,6 +396,8 @@ let weak = "<\"Weak\">"
 
 let assign = "<\"Assign\">"
 
+let start_filename = ".start"
+
 (** Programming language. *)
 type language = C_CPP | Java
 
