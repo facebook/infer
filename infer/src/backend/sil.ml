@@ -3820,7 +3820,9 @@ let tenv_lookup tenv name =
 
 (** Add a (name,type) pair to the global type environment. *)
 let tenv_add tenv name typ =
-  TypenameHash.replace tenv name typ
+  match typ with
+  | Tvar _ -> assert false
+  | _ -> TypenameHash.replace tenv name typ
 
 (** expand a type if it is a typename by looking it up in the type environment *)
 let rec expand_type tenv typ =

@@ -16,8 +16,7 @@ module L = Logging
 exception Typename_not_found
 
 let add_predefined_objc_types tenv =
-  let objc_class_mangled = Mangled.from_string CFrontend_config.objc_class in
-  let objc_class_name = Typename.TN_csu (Csu.Class Csu.Objc, objc_class_mangled) in
+  let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
   let objc_class_type_info =
     Sil.Tstruct {
       Sil.instance_fields = [];
@@ -28,15 +27,8 @@ let add_predefined_objc_types tenv =
       def_methods = [];
       struct_annotations = [];
     } in
-  Sil.tenv_add tenv objc_class_name objc_class_type_info;
-  let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
-  let class_typ = Sil.Tvar (Typename.TN_csu (Csu.Struct, objc_class_mangled)) in
-  Sil.tenv_add tenv class_typename class_typ;
-  let typename_objc_object =
-    Typename.TN_csu (Csu.Struct, Mangled.from_string CFrontend_config.objc_object) in
-  let id_typedef = Sil.Tvar (typename_objc_object) in
+  Sil.tenv_add tenv class_typename objc_class_type_info;
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
-  Sil.tenv_add tenv id_typename id_typedef;
   let objc_object_type_info =
     Sil.Tstruct {
       Sil.instance_fields = [];
@@ -47,7 +39,7 @@ let add_predefined_objc_types tenv =
       def_methods = [];
       struct_annotations = [];
     } in
-  Sil.tenv_add tenv typename_objc_object objc_object_type_info
+  Sil.tenv_add tenv id_typename objc_object_type_info
 
 (* Whenever new type are added manually to the translation in ast_expressions, *)
 (* they should be added here too!! *)
