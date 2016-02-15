@@ -51,6 +51,8 @@ public class StructForwardDeclareTest {
         "X_div0",
         "X_ptr_div0",
         "X_Y_div0",
+        "Z_div0",
+        "Z_ptr_div0",
     };
     assertThat(
         "Results should contain the expected divide by zero",

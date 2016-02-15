@@ -10,11 +10,24 @@
 // this will never be defined
 struct Y;
 
+// this will be defined at the end
+struct Z;
+
 struct X;
 struct X {
   int f;
   int getF() { return f; }
   Y *y;
+  Z *z;
+};
+
+void fun_with_Z(Z *z1) {
+  Z *z2 = z1;
+}
+
+struct Z {
+  int f;
+  int getF() { return f; }
 };
 
 // forward declare again
@@ -39,4 +52,18 @@ int X_Y_div0() {
     return 1;
   }
   return 1 / x.getF();
+}
+
+int Z_div0() {
+  Z z;
+  z.f = 0;
+  return 1 / z.getF();
+}
+
+int Z_ptr_div0(Z *z) {
+  // internal implementation details, subject to change:
+  // Z * will by Sil.Tptr (Sil.Tvar Z) type and
+  // will get expanded by clang frontend
+  z->f = 0;
+  return 1 / z->getF();
 }
