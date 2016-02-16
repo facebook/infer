@@ -852,7 +852,8 @@ module Stats = struct
         | None -> "" in
       let line =
         let pp fmt () =
-          if description <> "" then F.fprintf fmt "%s%04s  // %s@\n" (indent_string (level + indent_num)) " " description;
+          if description <> ""
+          then F.fprintf fmt "%s%4s  // %s@\n" (indent_string (level + indent_num)) " " description;
           F.fprintf fmt "%s%04d: %s" (indent_string (level + indent_num)) loc.Location.line code in
         pp_to_string pp () in
       res := line :: "" :: !res in

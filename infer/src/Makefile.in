@@ -78,6 +78,7 @@ OCAMLBUILD_OPTIONS = \
                      $(OCAMLBUILD_QUIET_OPTIONS) \
                      -classic-display \
                      -cflags -principal \
+                     -cflags -strict-formats \
                      -cflags -w,@5 \
                      -cflags -w,@8 \
                      -cflags -w,@10 \
