@@ -117,7 +117,7 @@ def prepare_build(args):
     return temp_files, infer_script.name
 
 
-def get_normalized_targets(targets, verbose):
+def get_normalized_targets(targets):
     """ Use buck to convert a list of input targets/aliases
         into a set of the (transitive) target deps for all inputs"""
 
@@ -132,10 +132,6 @@ def get_normalized_targets(targets, verbose):
         targets = filter(
             lambda line: len(line) > 0,
             subprocess.check_output(buck_cmd).decode().strip().split('\n'))
-        if len(targets) > 0 and verbose:
-            logging.debug('Targets to analyze:')
-            for target in targets:
-                logging.debug(target)
         return targets
     except subprocess.CalledProcessError as e:
         logging.error('Error while expanding targets with {0}'.format(buck_cmd))
@@ -460,8 +456,7 @@ class Wrapper:
         self.timer.start('Computing library targets')
         base_cmd, buck_args = parse_buck_command(buck_cmd)
         self.normalized_targets = get_normalized_targets(
-            buck_args.targets,
-            self.infer_args.verbose)
+            buck_args.targets)
         self.buck_cmd = base_cmd + self.normalized_targets
         self.timer.stop('%d targets computed', len(self.normalized_targets))
 

@@ -39,10 +39,6 @@ def create_argparser(group_name=MODULE_NAME):
         "{grp} module".format(grp=MODULE_NAME),
         description=MODULE_DESCRIPTION,
     )
-    group.add_argument('--verbose', action='store_true',
-                       help='Print buck compilation steps')
-    group.add_argument('--no-cache', action='store_true',
-                       help='Do not use buck distributed cache')
     group.add_argument('--print-harness', action='store_true',
                        help='Print generated harness code (Android only)')
     group.add_argument('--use-flavors', action='store_true',
@@ -152,6 +148,6 @@ class BuckAnalyzer:
         return os.EX_OK
 
     def capture_without_flavors(self):
-        # BuckAnalyze is a special case, and we run the analysis from here
+        # Java is a special case, and we run the analysis from here
         buck_wrapper = bucklib.Wrapper(self.args, self.cmd)
         return buck_wrapper.run()
