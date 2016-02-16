@@ -13,7 +13,6 @@ open Utils
 open CFrontend_utils
 
 module L = Logging
-exception Typename_not_found
 
 let add_predefined_objc_types tenv =
   let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
