@@ -79,6 +79,7 @@ OCAMLBUILD_OPTIONS = \
                      -classic-display \
                      -cflags -principal \
                      -cflags -strict-formats \
+                     -cflags -strict-sequence \
                      -cflags -w,@5 \
                      -cflags -w,@8 \
                      -cflags -w,@10 \
