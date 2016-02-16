@@ -77,6 +77,7 @@ OCAMLBUILD_OPTIONS = \
                      $(OCAMLBUILD_BINANNOT_OPTIONS) \
                      $(OCAMLBUILD_QUIET_OPTIONS) \
                      -classic-display \
+                     -cflags -short-paths \
                      -cflags -principal \
                      -cflags -strict-formats \
                      -cflags -strict-sequence \
