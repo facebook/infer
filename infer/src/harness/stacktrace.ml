@@ -36,7 +36,7 @@ type stack_frame =
 type stack_trace = stack_frame list
 
 (** given [str_frame], try to resolve its components in [exe_env] *)
-let try_resolve_frame str_frame exe_env tenv =
+let try_resolve_frame (str_frame : str_frame) exe_env tenv =
   try
     let class_name = Mangled.from_string str_frame.class_str in
     (* find the class name in the tenv and get the procedure(s) whose names match the procedure name

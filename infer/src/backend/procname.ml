@@ -281,7 +281,7 @@ let java_is_static = function
   | _ -> assert false
 
 (** Prints a string of a java procname with the given level of verbosity *)
-let java_to_string ?(withclass = false) j verbosity =
+let java_to_string ?(withclass = false) (j : java_signature) verbosity =
   match verbosity with
   | Verbose | Non_verbose ->
       (* if verbose, then package.class.method(params): rtype,

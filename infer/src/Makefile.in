@@ -77,7 +77,17 @@ OCAMLBUILD_OPTIONS = \
                      $(OCAMLBUILD_BINANNOT_OPTIONS) \
                      $(OCAMLBUILD_QUIET_OPTIONS) \
                      -classic-display \
-                     -cflags -warn-error,@5@8@10..12@20@26@39 \
+                     -cflags -principal \
+                     -cflags -w,@5 \
+                     -cflags -w,@8 \
+                     -cflags -w,@10 \
+                     -cflags -w,@11 \
+                     -cflags -w,@12 \
+                     -cflags -w,@18 \
+                     -cflags -w,@19 \
+                     -cflags -w,@20 \
+                     -cflags -w,@26 \
+                     -cflags -w,@39 \
                      -lflags $(OCAML_INCLUDES) \
                      -cflags $(OCAML_INCLUDES) \
                      $(addprefix -lib ,$(OCAML_LIBS)) \

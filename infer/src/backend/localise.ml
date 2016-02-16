@@ -489,7 +489,7 @@ let dereference_string deref_str value_str access_opt loc =
     [(problem_str ^ " " ^ at_line tags loc)] in
   { no_desc with descriptions = value_desc:: access_desc @ problem_desc; tags = !tags }
 
-let parameter_field_not_null_checked_desc desc exp =
+let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let parameter_not_nullable_desc var =
     let var_s = Sil.pvar_to_string var in
     let param_not_null_desc =
