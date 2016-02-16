@@ -13,8 +13,13 @@ INFER_MINOR = @INFER_MINOR@
 INFER_PATCH = @INFER_PATCH@
 INFER_IS_RELEASE = @INFER_IS_RELEASE@
 
+ifneq (,$(findstring s,$(MAKEFLAGS)))
+REMOVE = @rm -f
+REMOVE_DIR = @rm -rf
+else
 REMOVE = @rm -vf
 REMOVE_DIR = @rm -rvf
+endif
 COPY = cp -f -p
 COPY_DIR = cp -rf
 MKDIR = mkdir -p
