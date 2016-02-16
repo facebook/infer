@@ -839,7 +839,7 @@ module Stats = struct
     let res = ref [] in
     let indent_string n =
       let s = ref "" in
-      for i = 1 to n do s := "  " ^ !s done;
+      for _ = 1 to n do s := "  " ^ !s done;
       !s in
     let num = ref 0 in
     let loc_to_string lt =

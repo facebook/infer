@@ -26,11 +26,11 @@ module Codegen = struct
     for file_nr = 1 to num_files do
       let fname = Printf.sprintf "file%04d.c" file_nr in
       let fmt = open_out fname in
-      for i = 1 to num_functions do
+      for _ = 1 to num_functions do
         incr fun_nr;
         let num_calls = if !fun_nr = 1 then 0 else Random.int calls_per_fun in
         Printf.fprintf fmt "void f%04d() {\n" !fun_nr;
-        for call_nr = 1 to num_calls do
+        for _ = 1 to num_calls do
           let callee_nr = 1 + Random.int (max 1 (num_calls - 1)) in
           Printf.fprintf fmt "f%04d();\n" callee_nr
         done;

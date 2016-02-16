@@ -90,8 +90,10 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -w,@19 \
                      -cflags -w,@20 \
                      -cflags -w,@26 \
+                     -cflags -w,@35 \
                      -cflags -w,@38 \
                      -cflags -w,@39 \
+                     -tag-line "<*clang/clang_ast_*>: warn(-35-39)" \
                      -lflags $(OCAML_INCLUDES) \
                      -cflags $(OCAML_INCLUDES) \
                      $(addprefix -lib ,$(OCAML_LIBS)) \

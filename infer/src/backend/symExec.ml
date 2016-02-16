@@ -2403,7 +2403,7 @@ module ModelBuiltins = struct
     match args with
     | _ when IList.length args >= skip_n_arguments ->
         let varargs = ref args in
-        for i = 1 to skip_n_arguments do varargs := IList.tl !varargs done;
+        for _ = 1 to skip_n_arguments do varargs := IList.tl !varargs done;
         call_unknown_or_scan true cfg pdesc tenv prop path ret_ids None !varargs callee_pname loc
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 

@@ -163,7 +163,7 @@ let d_ln () = add_print_action (PTstrln, Obj.repr "")
 (** dump an indentation *)
 let d_indent indent =
   let s = ref "" in
-  for i = 1 to indent do s := "  " ^ !s done;
+  for _ = 1 to indent do s := "  " ^ !s done;
   if indent <> 0 then add_print_action (PTstr, Obj.repr !s)
 
 (** dump command to increase the indentation level *)

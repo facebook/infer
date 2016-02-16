@@ -106,7 +106,7 @@ let force_delayed_print fmt =
       Sil.pp_atom pe_default fmt a
   | (L.PTdecrease_indent, n) ->
       let (n: int) = Obj.obj n in
-      for i = 1 to n do F.fprintf fmt "@]" done
+      for _ = 1 to n do F.fprintf fmt "@]" done
   | (L.PTexp, e) ->
       let (e: Sil.exp) = Obj.obj e in
       Sil.pp_exp pe_default fmt e
@@ -119,7 +119,7 @@ let force_delayed_print fmt =
   | (L.PTincrease_indent, n) ->
       let (n: int) = Obj.obj n in
       let s = ref "" in
-      for i = 1 to n do s := "  " ^ !s done;
+      for _ = 1 to n do s := "  " ^ !s done;
       F.fprintf fmt "%s@[" !s
   | (L.PTinstr, i) ->
       let (i: Sil.instr) = Obj.obj i in
