@@ -67,9 +67,15 @@ ifeq (@ENABLE_OCAML_BINANNOT@,yes)
 OCAMLBUILD_BINANNOT_OPTIONS = -cflags -bin-annot
 endif
 
+OCAMLBUILD_QUIET_OPTIONS =
+ifneq (,$(findstring s,$(MAKEFLAGS)))
+OCAMLBUILD_QUIET_OPTIONS = -quiet
+endif
+
 OCAMLBUILD_OPTIONS = \
                      $(OCAMLBUILD_ANNOT_OPTIONS) \
                      $(OCAMLBUILD_BINANNOT_OPTIONS) \
+                     $(OCAMLBUILD_QUIET_OPTIONS) \
                      -classic-display \
                      -cflags -warn-error,@5@8@10..12@20@26@39 \
                      -lflags $(OCAML_INCLUDES) \
