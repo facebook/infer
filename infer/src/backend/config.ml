@@ -156,10 +156,6 @@ let array_level = ref 0
 (** Check whether to report Analysis_stops message in user mode *)
 let analysis_stops = ref false
 
-(** experimental: dynamic dispatch for interface calls only in Java. off by default because of the
-    cost *)
-let sound_dynamic_dispatch = ref true
-
 type os_type = Unix | Win32 | Cygwin
 
 let os_type = match Sys.os_type with
@@ -367,6 +363,9 @@ let default_failure_name = "ASSERTION_FAILURE"
 
 let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
 
+(** experimental: dynamic dispatch for interface calls only in Java. off by default because of the
+    cost *)
+let sound_dynamic_dispatch = from_env_variable "INFER_SOUND_DYNAMIC_DISPATCH"
 
 module Experiment = struct
 

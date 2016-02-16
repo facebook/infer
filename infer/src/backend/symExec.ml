@@ -669,31 +669,65 @@ let lookup_java_typ_from_string tenv typ_str =
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
     in the signature of [pname], resolve [pname] to T_actual.[pname]. *)
-let resolve_virtual_pname cfg tenv prop actuals pname call_flags : Procname.t =
+let resolve_virtual_pname cfg tenv prop actuals callee_pname call_flags : Procname.t list =
   let resolve receiver_exp pname prop = match resolve_typename prop receiver_exp with
     | Some class_name -> resolve_method tenv class_name pname
     | None -> pname in
+  let get_receiver_typ pname fallback_typ =
+    if !Config.curr_language = Config.Java then
+      try
+        let receiver_typ_str = Procname.java_get_class pname in
+        Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer)
+      with Cannot_convert_string_to_typ _ -> fallback_typ
+    else fallback_typ in
   let receiver_types_equal pname actual_receiver_typ =
-    let formal_receiver_typ =
-      let receiver_typ_str = Procname.java_get_class pname in
-      Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer) in
+    (* the type of the receiver according to the function signature *)
+    let formal_receiver_typ = get_receiver_typ pname actual_receiver_typ in
     Sil.typ_equal formal_receiver_typ actual_receiver_typ in
+  let do_resolve called_pname receiver_exp actual_receiver_typ =
+    if receiver_types_equal called_pname actual_receiver_typ
+    then resolve receiver_exp called_pname prop
+    else called_pname in
   match actuals with
   | _ when not (call_flags.Sil.cf_virtual || call_flags.Sil.cf_interface) ->
       (* if this is not a virtual or interface call, there's no need for resolution *)
-      pname
+      [callee_pname]
   | (receiver_exp, actual_receiver_typ) :: _ ->
-      if !Config.curr_language = Config.Java && call_flags.Sil.cf_interface &&
-         !Config.sound_dynamic_dispatch && receiver_types_equal pname actual_receiver_typ then
-        (* pick one implementation of the interface method and call it *)
-        (* TODO: consider all implementations of the interface method *)
-        (* TODO: do this for virtual calls as well *)
-        match call_flags.Sil.cf_targets with
-        | target :: _ -> target
-        | _ -> pname
+      if !Config.curr_language <> Config.Java then
+        (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
+        [do_resolve callee_pname receiver_exp actual_receiver_typ]
+      else if Config.sound_dynamic_dispatch then
+        let targets =
+          if call_flags.Sil.cf_virtual
+          then
+            (* virtual call--either [called_pname] or an override in some subtype may be called *)
+            callee_pname :: call_flags.Sil.cf_targets
+          else
+            (* interface call--[called_pname] has no implementation), we don't want to consider *)
+            call_flags.Sil.cf_targets in (* interface call, don't want to consider *)
+        (* return true if (receiver typ of [target_pname]) <: [actual_receiver_typ] *)
+        let may_dispatch_to target_pname =
+          let target_receiver_typ = get_receiver_typ target_pname actual_receiver_typ in
+          Prover.Subtyping_check.check_subtype tenv target_receiver_typ actual_receiver_typ in
+        let resolved_pname = do_resolve callee_pname receiver_exp actual_receiver_typ in
+        let feasible_targets = IList.filter may_dispatch_to targets in
+        (* make sure [resolved_pname] is not a duplicate *)
+        if IList.mem Procname.equal resolved_pname feasible_targets
+        then feasible_targets
+        else resolved_pname :: feasible_targets
       else
-        (* [actual_receiver_typ] <: the formal receiver_type, do resolution *)
-        resolve receiver_exp pname prop
+        begin
+          match call_flags.Sil.cf_targets with
+          | target :: _ when call_flags.Sil.cf_interface &&
+                             receiver_types_equal callee_pname actual_receiver_typ ->
+              (* "production mode" of dynamic dispatch for Java: unsound, but faster. the handling
+                 is restricted to interfaces: if we can't resolve an interface call, we pick the
+                 first implementation of the interface and call it *)
+              [target]
+          | _ ->
+              (* default mode for Java virtual calls: resolution only *)
+              [do_resolve callee_pname receiver_exp actual_receiver_typ]
+        end
   | _ -> failwith "A virtual call must have a receiver"
 
 (** recognize calls to shared_ptr procedures and re-direct them to infer procedures for modelling *)
@@ -1100,33 +1134,35 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       let norm_prop, norm_args = normalize_params pname _prop actual_params in
       let url_handled_args =
         call_constructor_url_update_args callee_pname norm_args in
-      let resolved_pname =
+      let resolved_pnames =
         resolve_virtual_pname cfg tenv norm_prop url_handled_args callee_pname call_flags in
-      if !Config.ondemand_enabled then
-        Ondemand.do_analysis pdesc resolved_pname;
-      let exec_skip_call ret_type =
-        skip_call norm_prop path resolved_pname loc ret_ids (Some ret_type) url_handled_args in
-      begin
-        match Specs.get_summary resolved_pname with
+      let exec_one_pname pname =
+        if !Config.ondemand_enabled then
+          Ondemand.do_analysis pdesc pname;
+        let exec_skip_call ret_type =
+          skip_call norm_prop path pname loc ret_ids (Some ret_type) url_handled_args in
+        match Specs.get_summary pname with
         | None ->
-            let ret_typ_str = Procname.java_get_return_type resolved_pname in
+            let ret_typ_str = Procname.java_get_return_type pname in
             let ret_typ =
               match lookup_java_typ_from_string tenv ret_typ_str with
               | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
               | typ -> typ in
             exec_skip_call ret_typ
-        | Some summary when call_should_be_skipped resolved_pname summary ->
+        | Some summary when call_should_be_skipped pname summary ->
             exec_skip_call summary.Specs.attributes.ProcAttributes.ret_type
         | Some summary ->
-            sym_exec_call cfg pdesc tenv norm_prop path ret_ids url_handled_args summary loc
-      end
+            sym_exec_call cfg pdesc tenv norm_prop path ret_ids url_handled_args summary loc in
+      IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
 
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags) ->
       (** Generic fun call with known name *)
       let (prop_r, _n_actual_params) = normalize_params pname _prop actual_params in
       let fn, n_actual_params = handle_special_cases_call tenv cfg callee_pname _n_actual_params in
       let resolved_pname =
-        resolve_virtual_pname cfg tenv prop_r n_actual_params fn call_flags in
+        match resolve_virtual_pname cfg tenv prop_r n_actual_params fn call_flags with
+        | resolved_pname :: _ -> resolved_pname
+        | [] -> fn in
       if !Config.ondemand_enabled then
         Ondemand.do_analysis pdesc resolved_pname;
       let callee_pdesc_opt = Cfg.Procdesc.find_from_name cfg resolved_pname in

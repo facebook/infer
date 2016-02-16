@@ -392,7 +392,10 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
     | None -> () in
   let node_add_dispatch_calls caller_pname node =
     (* TODO: handle dynamic dispatch for virtual calls as well *)
-    let call_flags_is_dispatch call_flags = call_flags.Sil.cf_interface in
+    let call_flags_is_dispatch call_flags =
+      (* if sound dispatch is turned off, only consider dispatch for interface calls *)
+      (Config.sound_dynamic_dispatch && call_flags.Sil.cf_virtual) ||
+      call_flags.Sil.cf_interface in
     let instr_is_dispatch_call = function
       | Sil.Call (_, _, _, _, call_flags) -> call_flags_is_dispatch call_flags
       | _ -> false in
@@ -409,14 +412,23 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
             let overrides = Prover.get_overrides_of tenv receiver_typ_no_ptr callee_pname in
             IList.sort (fun (_, p1) (_, p2) -> Procname.compare p1 p2) overrides in
           (match sorted_overrides with
-           | [] -> instr
-           | (_, target_pname) :: _ ->
-               (* TODO: do this with all possible targets. for now, it is too slow to do this, so we
-                  just pick one target *)
-               Cg.add_edge cg caller_pname target_pname;
-               pname_translate_types target_pname;
-               let call_flags' = { call_flags with Sil.cf_targets = [target_pname]; } in
-               Sil.Call (ret_ids, call_exp, args, loc, call_flags'))
+           | ((_, target_pname) :: targets) as all_targets ->
+               let targets_to_add =
+                 if Config.sound_dynamic_dispatch then
+                   IList.map snd all_targets
+                 else
+                   (* if sound dispatch is turned off, consider only the first target. we do this
+                      because choosing all targets is too expensive for everyday use *)
+                   [target_pname] in
+               IList.iter
+                 (fun target_pname ->
+                    pname_translate_types target_pname;
+                    Cg.add_edge cg caller_pname target_pname)
+                 targets_to_add;
+               let call_flags' = { call_flags with Sil.cf_targets = targets_to_add; } in
+               Sil.Call (ret_ids, call_exp, args, loc, call_flags')
+           | [] -> instr)
+
       | instr -> instr in
     let instrs = Cfg.Node.get_instrs node in
     if has_dispatch_call instrs then
@@ -430,5 +442,6 @@ let doit ?(f_translate_typ=None) cfg cg tenv =
   AllPreds.mk_table cfg;
   Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
   AllPreds.clear_table ();
-  if !Config.sound_dynamic_dispatch then add_dispatch_calls cfg cg tenv f_translate_typ;
+  if !Config.curr_language = Config.Java
+  then add_dispatch_calls cfg cg tenv f_translate_typ;
 
