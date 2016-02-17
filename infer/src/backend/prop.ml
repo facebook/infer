@@ -27,8 +27,8 @@ let unSome = function
   | Some x -> x
   | _ -> assert false
 
-type normal = Normal (** kind for normal props, i.e. normalized *)
-type exposed = Exposed (** kind for exposed props *)
+type normal (** kind for normal props, i.e. normalized *)
+type exposed (** kind for exposed props *)
 
 (** A proposition. The following invariants are mantained. [sub] is of
     the form id1 = e1 ... idn = en where: the id's are distinct and do not

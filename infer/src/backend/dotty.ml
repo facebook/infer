@@ -1127,15 +1127,6 @@ type visual_heap_edge = {
 
 let mk_visual_heap_edge s t l = { src = s; trg = t; lab = l }
 
-(* a visual heap has an integer identifier, a set of nodes and a set of edges*)
-type visual_heap =
-  | VH of int * visual_heap_node list * visual_heap_edge list
-
-(* set of visual heaps used to represent a proposition. In general, since we have high-order *)
-(* lists a proposition is not a single visual heap but a set of it. The parameter of a high-order*)
-(* list is visualized with a distinct visual heap. Similarly for the parameter in new arrays*)
-type visual_proposition = visual_heap list
-
 (* used to generate unique identifier for all the nodes in the set of visual graphs used to *)
 (* represent a proposition*)
 let global_node_counter = ref 0

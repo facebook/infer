@@ -92,6 +92,7 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -w,@20 \
                      -cflags -w,@26 \
                      -cflags -w,@35 \
+                     -cflags -w,@37 \
                      -cflags -w,@38 \
                      -cflags -w,@39 \
                      -tag-line "<*clang/clang_ast_*>: warn(-35-39)" \

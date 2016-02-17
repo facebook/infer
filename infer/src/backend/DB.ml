@@ -60,9 +60,9 @@ let rel_source_file_from_abs_path root fname =
     abs_source_file_from_path fname
 
 type encoding_type =
-    Enc_base | Enc_path_with_underscores | Enc_crc
+  [ `Enc_base | `Enc_path_with_underscores | `Enc_crc ]
 
-let curr_encoding = Enc_crc
+let curr_encoding = `Enc_crc
 
 let source_file_to_string fname =
   match fname with
@@ -91,11 +91,11 @@ let source_file_to_rel_path fname =
 let source_file_encoding source_file =
   let source_file_s = source_file_to_string source_file in
   match curr_encoding with
-  | Enc_base ->
+  | `Enc_base ->
       Filename.basename source_file_s
-  | Enc_path_with_underscores ->
+  | `Enc_path_with_underscores ->
       Escape.escape_path source_file_s
-  | Enc_crc ->
+  | `Enc_crc ->
       let base = Filename.basename source_file_s in
       let dir = Filename.dirname source_file_s in
       string_append_crc_cutoff ~key:dir base

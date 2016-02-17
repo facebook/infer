@@ -25,7 +25,6 @@ module ComplexExpressions = struct
       Boolean checks (e.g. null check) and assignments on expressions considered constant are
       retained across the control flow assuming there are no modifications in between. *)
   type expressions_constant =
-    | FL_NO (* none *)
     | FL_PARAMETER_STATIC (* parameter.field and static fields *)
     | FL_ALL_NESTED_FIELDS (* all forms of var.field1. ... .fieldn *)
     | FUNCTIONS_IDEMPOTENT (* the above plus function calls are considered idempotent *)

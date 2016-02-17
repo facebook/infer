@@ -302,8 +302,6 @@ type phase = FOOTPRINT | RE_EXECUTION
 
 type dependency_map_t = int Procname.Map.t
 
-type is_library = Source | Library
-
 (** Payload: results of some analysis *)
 type payload =
   {

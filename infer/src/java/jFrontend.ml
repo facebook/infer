@@ -174,11 +174,11 @@ let create_icfg never_null_matcher linereader program icfg cn node =
 (*
 This type definition is for a future improvement of the capture where in one pass, the frontend will
 translate things differently whether a source file is found for a given class
-*)
 type capture_status =
   | With_source of string
   | Library of string
   | Unknown
+*)
 
 (* returns true for the set of classes that are selected to be translated *)
 let should_capture classes package_opt source_basename node =
