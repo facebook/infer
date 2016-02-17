@@ -43,7 +43,6 @@ let add_predefined_objc_types tenv =
 (* they should be added here too!! *)
 let add_predefined_basic_types tenv =
   let open Ast_expressions in
-  let open Clang_ast_t in
   let add_basic_type tp basic_type_kind =
     let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
     Ast_utils.update_sil_types_map tp sil_type in

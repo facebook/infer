@@ -9,7 +9,6 @@
  *)
 
 open Javalib_pack
-open Sawja_pack
 
 (** Jar file containing the models *)
 val models_jar : string ref

@@ -7,8 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module L = Logging
-
 (** returns true if [callee_pname] returns a tainted value *)
 let returns_secret callee_pname = false
 

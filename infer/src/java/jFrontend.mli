@@ -9,7 +9,6 @@
  *)
 
 open Javalib_pack
-open Sawja_pack
 
 (** [path_of_cached_classname cn] returns the path of a cached classname *)
 val path_of_cached_classname : JBasics.class_name -> string

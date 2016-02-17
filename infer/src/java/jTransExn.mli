@@ -8,7 +8,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open Javalib_pack
 open Sawja_pack
 
 

@@ -8,7 +8,6 @@
  *)
 
 {
-  open Lexing
   open LParser
 
   exception LexingError of string

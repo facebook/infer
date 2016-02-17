@@ -560,7 +560,6 @@ struct
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
   and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref =
-    let open CContext in
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
@@ -580,7 +579,6 @@ struct
         print_error decl_kind; assert false
 
   and declRefExpr_trans trans_state stmt_info expr_info decl_ref_expr_info e =
-    let open CContext in
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let decl_ref = match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
@@ -1706,7 +1704,6 @@ struct
   (* the stmt_list will be [x.f = a; x; a; CallToSetter] Among all element of the list we only need*)
   (* to translate the CallToSetter which is how x.f = a is actually implemented by the runtime.*)
   and pseudoObjectExpr_trans trans_state stmt_info stmt_list =
-    let open Clang_ast_t in
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let rec do_semantic_elements el =

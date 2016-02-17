@@ -9,7 +9,6 @@
  *)
 
 open Javalib_pack
-open Sawja_pack
 
 module L = Logging
 

@@ -8,8 +8,5 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open Javalib_pack
-
-
 (** TODO: replace by a Infer-wide debug mode printing *)
 val log : ('a, Format.formatter, unit) format -> 'a

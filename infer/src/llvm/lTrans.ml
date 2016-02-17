@@ -125,7 +125,6 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
         | None -> Sil.Tvoid
         | Some ret_tp -> trans_typ ret_tp in
       let (proc_attrs : ProcAttributes.t) =
-        let open Sil in
         { (ProcAttributes.default proc_name Config.C_CPP) with
           ProcAttributes.formals =
             IList.map (fun (tp, name) -> (Mangled.from_string name, trans_typ tp)) params;

@@ -10,7 +10,6 @@
 
 (** Functions for Theorem Proving *)
 
-open Ident
 open Sil
 
 (** {2 Ordinary Theorem Proving} *)
