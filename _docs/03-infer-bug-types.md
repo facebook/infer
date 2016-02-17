@@ -423,7 +423,7 @@ The call checkNotNull(foo()) will never return null; in case foo()  returns null
 <b> If you are absolutely sure that foo() will not be null </b>, then if you land your diff this case will no longer be reported after your diff makes it to master.  In the future we might include analysis directives (hey, analyzer, p is not null!) like in Hack that tell the analyzer
 the information that you know, but that is for later.
 
-##<a name="PARAMETER_NOT_NULL_CHECKED"></a> Parameter not null checked
+## <a name="PARAMETER_NOT_NULL_CHECKED"></a> Parameter not null checked
 
 This error type is reported only in Objective-C. It is similar to Null dereference, but Infer hasn't found a whole trace where the error can happen, but only found that a null dereference can happen if you call a method with nil as an argument. Therefore it is only a warning. For example:
 
@@ -459,7 +459,7 @@ This error type is only reported in Objective-C. This is similar to Null derefer
 
 Possible solutions are adding a check for `nil`, or making sure that the method is not called with `nil`.
 
-##<a name="PREMATURE_NIL_TERMINATION_ARGUMENT"></a> Premature nil termination argument
+## <a name="PREMATURE_NIL_TERMINATION_ARGUMENT"></a> Premature nil termination argument
 
 This error type is reported in C and Objective-C. In many variadic methods, `nil` is used to signify the end of the list of input objects. This is similar to nil-termination of C strings. If one of the arguments that is not the last argument to the method is `nil` as well, Infer reports an error because that may lead to unexpected behavior.
 
@@ -471,7 +471,7 @@ An example of such variadic methods is [arrayWithObjects](https://developer.appl
 
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
 
-##<a name="BAD_POINTER_COMPARISON"></a> Bad pointer comparison
+## <a name="BAD_POINTER_COMPARISON"></a> Bad pointer comparison
 
 Infer reports these warnings in Objective-C when a boxed primitive type such as `NSNumber *` is coerced to a boolean in a comparison. For example, consider the code
 
@@ -482,19 +482,19 @@ void foo(NSNumber * n) {
 
 The branch in the above code will be taken when the pointer `n` is non-`nil`, but the programmer might have actually wanted the branch to be taken when the integer pointed to by `n` is nonzero (e.g., she may have meant to call an accessor like `[n intValue]` instead). Infer will ask the programmer explicitly compare `n` to `nil` or call an accessor to clarify her intention.
 
-##<a name="DIRECT_ATOMIC_PROPERTY_ACCESS"></a> Direct atomic property access
+## <a name="DIRECT_ATOMIC_PROPERTY_ACCESS"></a> Direct atomic property access
 
 This check warns you when you are accessing an atomic property directly with an ivar. 
 This makes the atomic property not atomic anymore. So potentially you may get a race condition.
 
 To fix the problem you need to access properties with their getter or setter.
 
-##<a name="STRONG_DELEGATE_WARNING"></a> Strong delegate warning
+## <a name="STRONG_DELEGATE_WARNING"></a> Strong delegate warning
 
 This check warns you when you have a property called delegate or variations thereof which is declared strong. The idea is that 
 delegates should generally be weak, otherwise this may cause retain cycles.
 
-##<a name="CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"></a> C++ reference captured in Objective-C block
+## <a name="CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"></a> C++ reference captured in Objective-C block
 
 With this check, Infer detects C++ references captured in a block. Doing this is almost always wrong. 
 The reason is that C++ references are not managed pointers (like ARC pointers) and so the referent is 
