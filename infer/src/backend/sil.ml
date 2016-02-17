@@ -234,7 +234,7 @@ module Subtype = struct
 
   type subtMap = bool SubtypesMap.t
 
-  let subtMap = ref SubtypesMap.empty
+  let subtMap : subtMap ref = ref SubtypesMap.empty
 
   let check_subtype f c1 c2 =
     try

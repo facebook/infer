@@ -53,7 +53,7 @@ end = struct
     IdMap.iter do_id ev
 
   (** create a new evaluation *)
-  let new_eval vars =
+  let new_eval vars : eval =
     let ev = ref IdMap.empty in
     let add_var id =
       ev := IdMap.add id (new_range ()) !ev in

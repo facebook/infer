@@ -459,7 +459,7 @@ module FreshVarExp : sig
 
   val init : unit -> unit
   val get_fresh_exp : Sil.exp -> Sil.exp -> Sil.exp
-  val get_induced_pi : unit -> Sil.atom list
+  val get_induced_pi : unit -> pi
   val lookup : side -> Sil.exp -> (Sil.exp * Sil.exp) option
   val final : unit -> unit
 
@@ -566,7 +566,8 @@ module Rename : sig
 end = struct
 
   type t = (Sil.exp * Sil.exp * Sil.exp) list
-  let tbl = ref []
+
+  let tbl : t ref = ref []
   let empty = []
 
   let init () = tbl := []
@@ -1578,7 +1579,7 @@ let widening_bottom = Sil.Int.of_int64 Int64.min_int ++ Sil.Int.of_int 1000 (* n
 (** {2 Join and Meet for Pi} *)
 let pi_partial_join mode
     (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.t)
-    (pi1: Sil.atom list) (pi2: Sil.atom list) : Sil.atom list
+    (pi1: pi) (pi2: pi) : pi
   =
   let exp_is_const = function
     (* | Sil.Var id -> is_normal id *)

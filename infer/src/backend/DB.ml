@@ -59,9 +59,6 @@ let rel_source_file_from_abs_path root fname =
     (* The project root is not a prefix of the file name *)
     abs_source_file_from_path fname
 
-type encoding_type =
-  [ `Enc_base | `Enc_path_with_underscores | `Enc_crc ]
-
 let curr_encoding = `Enc_crc
 
 let source_file_to_string fname =

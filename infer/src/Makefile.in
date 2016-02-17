@@ -91,6 +91,7 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -w,@19 \
                      -cflags -w,@20 \
                      -cflags -w,@26 \
+                     -cflags -w,@34 \
                      -cflags -w,@35 \
                      -cflags -w,@37 \
                      -cflags -w,@38 \

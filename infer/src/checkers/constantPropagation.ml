@@ -11,8 +11,6 @@ open Utils
 
 module L = Logging
 
-type t
-
 
 let string_widening_limit = 1000
 let verbose = false

@@ -209,8 +209,6 @@ end = struct
     normalize spec'
 end
 
-type norm_spec = NormSpec.t
-
 (** Convert spec into normal form w.r.t. variable renaming *)
 let spec_normalize =
   NormSpec.normalize

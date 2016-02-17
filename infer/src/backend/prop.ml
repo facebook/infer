@@ -48,9 +48,6 @@ type 'a t =
 
 exception Cannot_star of ml_loc
 
-(** Pure proposition. *)
-type pure_prop = Sil.subst * Sil.atom list
-
 (** {2 Basic Functions for Propositions} *)
 
 (** {1 Functions for Comparison} *)
