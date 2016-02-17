@@ -595,8 +595,12 @@ let proc_desc_copy cfg pdesc pname pname' =
 let method_exists right_proc_name methods =
   if !Config.curr_language = Config.Java then
     IList.exists (fun meth_name -> Procname.equal right_proc_name meth_name) methods
-  else (* ObjC case *)
-    Specs.summary_exists right_proc_name
+  else (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
+          the method has been called directly somewhere. It can still be that this is not the
+          case but we have a model for the method. *)
+    match AttributesTable.load_attributes right_proc_name with
+    | Some attrs -> attrs.ProcAttributes.is_defined
+    | None -> Specs.summary_exists_in_models right_proc_name
 
 let resolve_method tenv class_name proc_name =
   let found_class =
