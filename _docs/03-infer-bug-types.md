@@ -329,7 +329,7 @@ You can fix a retain cycle in ARC by using __weak variables or weak properties f
 }
 @end
 ```
-## <a name="NULL_DEREFERENCE"></a>Null Dereference
+## <a name="NULL_DEREFERENCE"></a> Null Dereference
 
 
 Infer reports null dereference bugs in C, Objective-C and Java. The issue is about a pointer that can be `null` 
