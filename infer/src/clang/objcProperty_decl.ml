@@ -15,7 +15,6 @@
 (* - Second, in the class implementation, if synthetize is available, create the getters and setters, *)
 (* unless some of these methods has already been created before. *)
 
-open Utils
 open CFrontend_utils
 
 let is_strong_property obj_c_property_decl_info =

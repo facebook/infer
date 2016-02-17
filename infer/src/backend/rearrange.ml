@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let (++) = Sil.Int.add
 

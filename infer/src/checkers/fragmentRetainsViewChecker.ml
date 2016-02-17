@@ -10,7 +10,6 @@
 (** Make sure callbacks are always unregistered. drive the point home by reporting possible NPE's *)
 
 module P = Printf
-open Utils
 
 let report_error fragment_typ fld fld_typ pname pdesc =
   let retained_view = "CHECKERS_FRAGMENT_RETAINS_VIEW" in

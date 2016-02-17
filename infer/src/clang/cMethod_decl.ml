@@ -9,7 +9,6 @@
 
 (** Process methods or functions declarations by adding them to the cfg. *)
 
-open Utils
 open CFrontend_utils
 
 module L = Logging

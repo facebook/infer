@@ -10,8 +10,6 @@
 
 (** Propositions seen as graphs *)
 
-open Utils
-
 type t (** prop considered as a graph *)
 
 type node (** node of the graph *)

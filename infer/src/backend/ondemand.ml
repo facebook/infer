@@ -11,7 +11,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
 let one_cluster_per_procedure () = false

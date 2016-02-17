@@ -18,3 +18,7 @@ us a line at cla@fb.com. Thanks!
   `infer/tests/codetoanalyze/` and
   `infer/tests/{endtoend,frontend}/`. To run the all tests, execute
   `./scripts/test.sh`.
+
+## Hacking
+
+* Be aware that the build system implicitly opens the Utils module.

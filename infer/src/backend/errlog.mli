@@ -9,8 +9,6 @@
 
 (** Module for error logs. *)
 
-open Utils
-
 (** Element of a loc trace *)
 type loc_trace_elem = {
   lt_level : int; (** nesting level of procedure calls *)

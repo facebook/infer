@@ -10,9 +10,7 @@
 (** Contains current class and current method to be translated as well as local variables, *)
 (** and the cg, cfg, and tenv corresponding to the current file. *)
 
-open Utils
 open CFrontend_utils
-
 module L = Logging
 
 type curr_class =

@@ -10,7 +10,6 @@
 (** Process variable declarations by saving them as local or global variables.  *)
 (** Computes the local variables of a function or method to be added to the procdesc *)
 
-open Utils
 open CFrontend_utils
 
 module L = Logging

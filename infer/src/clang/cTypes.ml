@@ -9,7 +9,6 @@
 
 (** Utility module for retrieving types *)
 
-open Utils
 open CFrontend_utils
 module L = Logging
 

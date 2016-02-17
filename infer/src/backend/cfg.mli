@@ -10,8 +10,6 @@
 
 (**  Control Flow Graph for Interprocedural Analysis *)
 
-open Utils
-
 (** {2 ADT node and proc_desc} *)
 
 type node

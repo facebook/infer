@@ -9,8 +9,6 @@
 
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
-open Utils
-
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 val get_lifecycles : (string * string * string list) list
 

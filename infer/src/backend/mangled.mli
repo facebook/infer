@@ -10,8 +10,6 @@
 
 (** Module for Mangled Names *)
 
-open Utils
-
 (** Type of mangled names *)
 type t
 

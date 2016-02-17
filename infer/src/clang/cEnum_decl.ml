@@ -10,7 +10,6 @@
 (** Translate an enumeration declaration by adding it to the tenv and *)
 (** translating the code and adding it to a fake procdesc *)
 
-open Utils
 open CFrontend_utils
 
 (*Check if the constant is in the map, in which case that means that all the *)

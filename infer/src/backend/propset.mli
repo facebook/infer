@@ -10,8 +10,6 @@
 
 (** Functions for Sets of Propositions with and without sharing *)
 
-open Utils
-
 (** {2 Sets of Propositions} *)
 
 (** Sets of propositions.

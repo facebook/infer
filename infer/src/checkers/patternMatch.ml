@@ -11,7 +11,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let object_name = Mangled.from_string "java.lang.Object"
 

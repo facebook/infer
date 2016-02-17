@@ -14,7 +14,6 @@ module F = Format
 module P = Printf
 module IdSet = Ident.IdentSet
 module FldSet = Ident.FieldSet
-open Utils
 
 (** set of instance fields belonging to the current file that are assigned to null literals *)
 let fields_nullified = ref FldSet.empty

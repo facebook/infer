@@ -11,7 +11,6 @@
 open Javalib_pack
 
 module L = Logging
-open Utils
 
 let arg_desc =
   let options_to_keep = ["-results_dir"; "-project_root"] in

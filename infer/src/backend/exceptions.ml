@@ -10,7 +10,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 type exception_visibility = (** visibility of the exception *)
   | Exn_user (** always add to error log *)

@@ -10,8 +10,6 @@
 
 (** State of symbolic execution *)
 
-open Utils
-
 (**  Internal state *)
 type t
 

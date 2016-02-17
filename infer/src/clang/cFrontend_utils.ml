@@ -10,8 +10,6 @@
 (** Module for utility functions for the whole frontend. Includes functions for printing,  *)
 (** for transformations of ast nodes and general utility functions such as  functions on lists *)
 
-open Utils
-
 module L = Logging
 module F = Format
 

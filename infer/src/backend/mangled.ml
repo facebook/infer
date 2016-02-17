@@ -11,7 +11,6 @@
 (** Module for Mangled Names *)
 
 module F = Format
-open Utils
 
 type t =
   { plain: string;

@@ -11,7 +11,6 @@
 (** Support for localisation *)
 
 module F = Format
-open Utils
 
 (** type of string used for localisation *)
 type t = string

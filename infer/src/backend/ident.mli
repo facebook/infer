@@ -10,8 +10,6 @@
 
 (** Identifiers: program variables and logical variables *)
 
-open Utils
-
 (** Program and logical variables. *)
 type t
 

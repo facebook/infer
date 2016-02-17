@@ -9,7 +9,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 type printf_signature = {
   unique_id: string;

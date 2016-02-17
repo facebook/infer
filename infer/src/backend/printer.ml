@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils (* No abbreviation for Util, as every module can depend on it *)
 
 (** return true if the node was visited during footprint and during re-execution*)
 let is_visited_phase node =

@@ -9,8 +9,6 @@
 
 (** Attributes of a procedure. *)
 
-open Utils
-
 type objc_accessor_type =
   | Objc_getter of Ident.fieldname
   | Objc_setter of Ident.fieldname

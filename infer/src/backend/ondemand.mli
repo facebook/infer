@@ -9,8 +9,6 @@
 
 (** Module for on-demand analysis. *)
 
-open Utils
-
 (** Optional set of source dirs to analyze in on-demand mode. *)
 val read_dirs_to_analyze : unit -> StringSet.t option
 

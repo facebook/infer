@@ -10,8 +10,6 @@
 
 (** Create descriptions of analysis errors *)
 
-open Utils
-
 (** find the dexp, if any, where the given value is stored
     also return the type of the value if found *)
 val vpath_find : 'a Prop.t -> Sil.exp -> Sil.vpath * Sil.typ option

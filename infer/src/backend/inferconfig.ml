@@ -7,8 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open Utils
-
 (** Name of the infer configuration file *)
 let inferconfig_file = ".inferconfig"
 

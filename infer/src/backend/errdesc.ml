@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 let hpred_is_open_resource prop = function

@@ -10,8 +10,6 @@
 
 (** Classify bugs into buckets *)
 
-open Utils
-
 (** Classify the bucket of an error desc using Location.access and nullable information *)
 val classify_access :
   Localise.error_desc -> Localise.access option -> Sil.dexp option -> bool -> Localise.error_desc

@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** type to describe different strategies for initializing fields of a structure. [No_init] does not
     initialize any fields of the struct. [Fld_init] initializes the fields of the struct with fresh

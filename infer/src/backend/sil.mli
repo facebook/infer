@@ -10,8 +10,6 @@
 
 (** The Smallfoot Intermediate Language *)
 
-open Utils
-
 (** {2 Programs and Types} *)
 
 (** Type to represent one @Annotation. *)

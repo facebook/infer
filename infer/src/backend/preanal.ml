@@ -9,7 +9,6 @@
  *)
 
 module L = Logging
-open Utils
 
 (** find all the predecessors of nodes, using exception links *)
 module AllPreds = struct

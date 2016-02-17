@@ -10,7 +10,6 @@
 module L = Logging
 module F = Format
 module P = Printf
-open Utils
 
 (** Module to represent annotations on types. *)
 

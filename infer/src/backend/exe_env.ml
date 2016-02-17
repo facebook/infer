@@ -10,7 +10,6 @@
 
 (** Support for Execution environments *)
 
-open Utils
 module L = Logging
 
 (** per-file data: type environment and cfg *)

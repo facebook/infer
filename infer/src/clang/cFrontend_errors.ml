@@ -14,7 +14,6 @@
  * - loc: the location where is occurs
 *)
 
-open Utils
 open CFrontend_utils
 open General_utils
 

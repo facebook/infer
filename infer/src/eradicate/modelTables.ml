@@ -12,8 +12,6 @@
  * @nolint
  *)
 
-open Utils
-
 (* in strict mode cannot insert null in containers *)
 let strict_containers = false
 

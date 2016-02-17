@@ -16,7 +16,6 @@ module P = Printf
 module IdSet = Ident.IdentSet
 module TypSet = Sil.TypSet
 module TypMap = Sil.TypMap
-open Utils
 
 type lifecycle_trace = (Procname.t * Sil.typ option) list
 type callback_trace = (Sil.exp * Sil.typ) list

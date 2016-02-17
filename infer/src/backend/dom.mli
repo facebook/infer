@@ -10,8 +10,6 @@
 
 (** Join and Meet Operators *)
 
-open Utils
-
 (** {2 Join Operators} *)
 
 (** Join two pathsets *)

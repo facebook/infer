@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 open Str
 
 type java_type = string option * string (* e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects *)

@@ -15,7 +15,6 @@
 
 module L = Logging
 
-open Utils
 open CFrontend_utils
 open CGen_trans
 

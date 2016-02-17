@@ -9,7 +9,6 @@
 
 module L = Logging
 module P = Printf
-open Utils
 
 
 (** Describe the origin of values propagated by the checker. *)

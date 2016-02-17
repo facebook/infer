@@ -11,8 +11,6 @@
 module L = Logging
 module F = Format
 
-open Utils (* No abbreviation for Utils, as every module can depend on it *)
-
 (* ============== START of ADT node and proc_desc ============== *)
 
 (* =============== START of module Node =============== *)

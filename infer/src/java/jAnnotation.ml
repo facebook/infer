@@ -9,7 +9,6 @@
  *)
 
 open Javalib_pack
-open Utils
 
 (** Translate an annotation. *)
 let translate a : Sil.annotation =

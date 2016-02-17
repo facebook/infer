@@ -9,8 +9,6 @@
 
 (** Module for parsing stack traces and using them to guide Infer analysis *)
 
-open Utils
-
 type stack_trace
 
 (** create an Infer-readable representation of a stack trace given its raw text *)

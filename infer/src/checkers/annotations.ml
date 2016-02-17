@@ -9,7 +9,6 @@
 
 module F = Format
 module L = Logging
-open Utils
 
 (** Annotations. *)
 

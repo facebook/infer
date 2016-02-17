@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let mem_idlist i l =
   IList.exists (Ident.equal i) l

@@ -10,8 +10,6 @@
 
 (** Module for Procedure Names *)
 
-open Utils
-
 (** Type of procedure names *)
 type t
 

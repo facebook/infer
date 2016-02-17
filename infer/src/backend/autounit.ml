@@ -10,7 +10,6 @@
 
 (** Generate unit tests automatically from specs *)
 
-open Utils
 module L = Logging
 module F = Format
 

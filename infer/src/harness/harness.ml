@@ -10,8 +10,6 @@
 module L = Logging
 module F = Format
 
-open Utils
-
 (** Automatically create a harness method to exercise code under test *)
 
 (** given a list [lst] = fst @ (e :: rest), a test predicate [test], and a list [to_insert], returns

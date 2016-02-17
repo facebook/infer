@@ -9,7 +9,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** Module to process clusters of procedures. *)
 

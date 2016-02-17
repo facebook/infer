@@ -9,7 +9,6 @@
 
 (** Utility module to retrieve fields of structs of classes *)
 
-open Utils
 open CFrontend_utils
 
 module L = Logging

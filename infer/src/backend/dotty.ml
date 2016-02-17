@@ -10,7 +10,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** {1 Dotty} *)
 

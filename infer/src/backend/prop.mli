@@ -10,7 +10,6 @@
 
 (** Functions for Propositions (i.e., Symbolic Heaps) *)
 
-open Utils
 open Sil
 
 type normal (** kind for normal props, i.e. normalized *)

@@ -9,8 +9,6 @@
 
 module L = Logging
 
-open Utils
-
 (** returns true if [callee_pname] returns a tainted value *)
 let returns_secret callee_pname = false
 

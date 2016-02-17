@@ -9,7 +9,6 @@
 
 module L = Logging
 module P = Printf
-open Utils
 
 (** Module for Type Error messages. *)
 

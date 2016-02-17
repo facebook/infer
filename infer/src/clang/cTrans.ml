@@ -9,7 +9,6 @@
 
 (** Translates instructions: (statements and expressions) from the ast into sil *)
 
-open Utils
 open CTrans_utils
 open CFrontend_utils
 

@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
 

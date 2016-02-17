@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let rec idlist_assoc id = function
   | [] -> raise Not_found

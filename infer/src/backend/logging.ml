@@ -11,8 +11,6 @@
 (** log messages at different levels of verbosity *)
 
 module F = Format
-open Utils
-
 
 (* =============== START of module MyErr =============== *)
 (** type of printable elements *)

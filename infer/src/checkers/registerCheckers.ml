@@ -11,7 +11,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** Flags to activate checkers. *)
 let active_procedure_checkers () =

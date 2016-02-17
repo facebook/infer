@@ -9,7 +9,6 @@
 
 (** Processes types and record declarations by adding them to the tenv *)
 
-open Utils
 open CFrontend_utils
 
 module L = Logging

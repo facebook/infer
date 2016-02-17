@@ -9,7 +9,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 open Dataflow
 
 (** Simple check for dead code. *)

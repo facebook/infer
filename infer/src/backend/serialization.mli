@@ -10,8 +10,6 @@
 
 (** Serialization of data stuctures *)
 
-open Utils
-
 (** Generic serializer *)
 type 'a serializer
 

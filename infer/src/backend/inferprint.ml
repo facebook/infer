@@ -10,7 +10,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 open Jsonbug_j
 
 (** Outfile to save the latex report *)

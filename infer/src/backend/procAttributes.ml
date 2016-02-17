@@ -11,7 +11,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** Type for ObjC accessors *)
 type objc_accessor_type =

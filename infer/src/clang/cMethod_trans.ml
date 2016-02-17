@@ -10,7 +10,6 @@
 (** Methods for creating a procdesc from a method or function declaration *)
 (**   and for resolving a method call and finding the right callee *)
 
-open Utils
 open CFrontend_utils
 
 module L = Logging

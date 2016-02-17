@@ -10,7 +10,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** Generic serializer *)
 type 'a serializer = (string -> 'a option) * (DB.filename -> 'a option) * (DB.filename -> 'a -> unit)

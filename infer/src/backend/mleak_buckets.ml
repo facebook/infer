@@ -10,8 +10,6 @@
 
 (** This module handles buckets of memory leaks in Objective-C/C++ *)
 
-open Utils
-
 let objc_arc_flag = "objc_arc"
 
 let bucket_delimiter = ","

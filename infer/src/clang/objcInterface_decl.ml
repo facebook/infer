@@ -14,7 +14,6 @@
 (* ObjectiveC doesn't have a notion of static or class fields. *)
 (* So, in this module we translate a class into a sil srtuct with an empty list of static fields.*)
 
-open Utils
 open CFrontend_utils
 
 module L = Logging

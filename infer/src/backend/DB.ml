@@ -10,7 +10,6 @@
 
 (** Database of analysis results *)
 
-open Utils
 module F = Format
 module L = Logging
 

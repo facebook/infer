@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let pp_nodeset fmt set =
   let f node = F.fprintf fmt "%a@ " Procname.pp node in

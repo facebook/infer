@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 (** A node with a number of visits *)
 type visitednode =

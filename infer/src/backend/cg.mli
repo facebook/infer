@@ -10,8 +10,6 @@
 
 (** Module for call graphs *)
 
-open Utils
-
 type in_out_calls =
   { in_calls: int; (** total number of in calls transitively *)
     out_calls: int (** total number of out calls transitively *)

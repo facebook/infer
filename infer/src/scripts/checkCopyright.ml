@@ -9,7 +9,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let copyright_modified_exit_code = 1
 let copyright_malformed_exit_code = 2

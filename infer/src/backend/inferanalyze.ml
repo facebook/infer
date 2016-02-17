@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 open Yojson.Basic.Util
 
 (* This module, unused by default, generates random c files with procedure calls *)

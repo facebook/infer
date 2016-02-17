@@ -11,7 +11,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 open Dataflow
 
 (* ERADICATE CHECKER. TODOS:*)

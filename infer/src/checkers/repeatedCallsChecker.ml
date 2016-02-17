@@ -9,7 +9,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let checkers_repeated_calls_name = "CHECKERS_REPEATED_CALLS"
 

@@ -10,8 +10,6 @@
 
 (** Specifications and spec table *)
 
-open Utils
-
 (** {2 Spec Tables} *)
 
 (** Module for joined props: the result of joining together propositions repeatedly *)

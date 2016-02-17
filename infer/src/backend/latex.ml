@@ -9,7 +9,6 @@
  *)
 
 module F = Format
-open Utils
 
 (** Produce output in latex *)
 

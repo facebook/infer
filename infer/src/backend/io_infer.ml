@@ -11,7 +11,6 @@
 (** Module to handle IO. Includes html and xml modules. *)
 
 module F = Format
-open Utils
 
 (* =============== START of module Html =============== *)
 module Html : sig

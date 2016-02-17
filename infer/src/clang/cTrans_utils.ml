@@ -9,7 +9,6 @@
 
 (** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
 
-open Utils
 open CFrontend_utils
 
 module L = Logging

@@ -12,7 +12,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let decrease_indent_when_exception thunk =
   try (thunk ())

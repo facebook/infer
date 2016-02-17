@@ -8,7 +8,6 @@
  *)
 
 open ModelTables
-open Utils
 module L = Logging
 
 (** Module for standard library models. *)

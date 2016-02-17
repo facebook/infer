@@ -11,7 +11,6 @@
 
 module L = Logging
 module F = Format
-open Utils
 
 let verbose = false
 let query = ref None

@@ -14,8 +14,6 @@
     See {{: http://dx.doi.org/10.1007/978-3-540-73368-3_22 }  CAV 2007 } for the therory involved.
 *)
 
-open Utils
-
 (* TODO: missing documentation *)
 val hpara_match_with_impl : bool -> Sil.hpara -> Sil.hpara -> bool
 val hpara_dll_match_with_impl : bool -> Sil.hpara_dll -> Sil.hpara_dll -> bool

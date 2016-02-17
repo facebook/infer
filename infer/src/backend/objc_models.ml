@@ -9,8 +9,6 @@
 
 (** This module handles C or Objective-C types for which there are special rules for memory management *)
 
-open Utils
-
 (** This module models special c struct types from the Apple's Core Foundation libraries
     for which there are particular rules for memory management. *)
 

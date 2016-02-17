@@ -11,8 +11,6 @@ module L = Logging
 module F = Format
 module TypSet = Sil.TypSet
 
-open Utils
-
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
 (** work-in-progress list of known callback-registering method names *)

@@ -11,9 +11,6 @@
 open Javalib_pack
 open Sawja_pack
 
-
-open Utils
-
 (** Type transformations between Javalib datatypes and sil datatypes *)
 
 exception Type_tranlsation_error of string

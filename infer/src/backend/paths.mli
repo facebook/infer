@@ -10,8 +10,6 @@
 
 (** Execution Paths *)
 
-open Utils
-
 module Path : sig
   (** type for paths *)
   type t

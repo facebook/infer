@@ -11,9 +11,6 @@
 open Javalib_pack
 open Sawja_pack
 
-open Utils
-
-
 module L = Logging
 
 
