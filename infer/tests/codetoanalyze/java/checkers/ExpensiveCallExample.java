@@ -17,6 +17,14 @@ import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
 
 
+interface AnnotatedInterface {
+
+  @PerformanceCritical
+  void annotatedPerformanceCriticalInInterface();
+
+}
+
+
 class Other {
 
   @Expensive
@@ -30,16 +38,14 @@ class Other {
 }
 
 
-public class ExpensiveCallExample {
+public class ExpensiveCallExample implements AnnotatedInterface {
 
   Other mOther;
 
   void nonExpensiveMethod() {}
 
   @Expensive
-  void expensiveMethod() {
-    mOther = new Other();
-  }
+  void expensiveMethod() {}
 
   void methodWrapper() {
     expensiveMethod();
@@ -82,6 +88,10 @@ public class ExpensiveCallExample {
   @PerformanceCritical
   View callsFindViewByIdFromActivity(FragmentActivity activity, int id) {
     return activity.findViewById(id);
+  }
+
+  public void annotatedPerformanceCriticalInInterface() {
+    mOther.callsExpensive1();
   }
 
 }

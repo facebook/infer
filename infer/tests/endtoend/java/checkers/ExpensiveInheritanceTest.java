@@ -38,18 +38,17 @@ public class ExpensiveInheritanceTest {
 
   @Test
   public void matchErrors()
-      throws IOException, InterruptedException, InferException {
+    throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "reportsBecauseFooIsExpensiveInA",
-        "reportsAssumingObjectOfTypeA",
+      "reportsBecauseFooIsExpensiveInA",
+      "reportsAssumingObjectOfTypeA",
+      "doesReportBecauseFlowInsensitive",
     };
-    assertThat(
-        "Results should contain " + CALLS_EXPENSIVE_METHOD,
-        inferResults,
-        containsExactly(
-            CALLS_EXPENSIVE_METHOD,
-            SOURCE_FILE,
-            methods));
+    assertThat("Results should contain " + CALLS_EXPENSIVE_METHOD,
+               inferResults,
+               containsExactly(CALLS_EXPENSIVE_METHOD,
+                               SOURCE_FILE,
+                               methods));
   }
 
 }

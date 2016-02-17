@@ -46,6 +46,7 @@ public class ExpensiveCallTest {
         "longerCallStackToExpensive",
         "callsFindViewByIdFromView",
         "callsFindViewByIdFromActivity",
+        "annotatedPerformanceCriticalInInterface",
     };
     assertThat(
         "Results should contain " + CALLS_EXPENSIVE_METHOD,

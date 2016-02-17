@@ -9,11 +9,6 @@
 
 module L = Logging
 
-(* Automatically detect if a method is considered as performance critical
-   by looking for the annotation in the super-types *)
-let infer_performance_critical_methods = true
-
-
 (* Warning name when a performance critical method directly or indirectly
    calls a method annotatd as expensive *)
 let calls_expensive_method =
@@ -23,14 +18,6 @@ let calls_expensive_method =
    by a method annotated as expensive *)
 let expensive_overrides_unexpensive =
   "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
-
-(* Warning name for the subtyping rule: methods overriding methods annotated as performance critical
-   should also be annotated as performance critical *)
-let unannotated_overrides_performance_critical =
-  "CHECKERS_UNANNOTATED_OVERRIDES_PERFOMANCE_CRITICAL"
-
-(* Triggers report on violation of the sybtyping rule for the performance critical annotation *)
-let enforce_performance_critical_subtyping_rule = false
 
 
 let check_attributes check attributes =
@@ -179,7 +166,8 @@ let check_one_procedure tenv pname pdesc =
   let loc = Cfg.Procdesc.get_loc pdesc in
   let attributes = Cfg.Procdesc.get_attributes pdesc in
   let expensive = is_expensive attributes
-  and performance_critical = is_performance_critical attributes in
+  and performance_critical =
+    method_overrides_performance_critical tenv pname in
 
   let check_expensive_subtyping_rules overridden_pname =
     if not (method_is_expensive tenv overridden_pname) then
@@ -189,26 +177,14 @@ let check_one_procedure tenv pname pdesc =
           (Procname.to_string pname)
           (Procname.to_string overridden_pname)
           Annotations.expensive in
-      Checkers.ST.report_error
-        pname pdesc expensive_overrides_unexpensive loc description
-
-  and check_performance_critical_subtyping_rules overridden_pname =
-    if method_is_performance_critical overridden_pname then
-      let description =
-        Printf.sprintf
-          "Method `%s` overrides method `%s` annotated with `%s` and should also be annotated"
-          (Procname.to_string pname)
-          (Procname.to_string overridden_pname)
-          Annotations.performance_critical in
-      Checkers.ST.report_error
-        pname pdesc unannotated_overrides_performance_critical loc description in
+      let exn =
+        Exceptions.Checkers
+          (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
+      Reporting.log_error pname ~loc: (Some loc) ~ltr: None exn in
 
   if expensive then
     PatternMatch.proc_iter_overridden_methods
       check_expensive_subtyping_rules tenv pname;
-  if enforce_performance_critical_subtyping_rule && not performance_critical then
-    PatternMatch.proc_iter_overridden_methods
-      check_performance_critical_subtyping_rules tenv pname;
 
   let expensive_call_trees =
     let checked_pnames = ref Procname.Set.empty in
@@ -221,9 +197,6 @@ let check_one_procedure tenv pname pdesc =
   | [] -> ()
   | call_trees when performance_critical ->
       report_expensive_calls pname pdesc loc call_trees
-  | call_trees when infer_performance_critical_methods ->
-      if method_overrides_performance_critical tenv pname then
-        report_expensive_calls pname pdesc loc call_trees
   | _ -> ()
 
 
