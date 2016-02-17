@@ -47,6 +47,8 @@ module ModelBuiltins : sig
   val __unwrap_exception : Procname.t
   val __set_file_attribute : Procname.t
   val __set_mem_attribute : Procname.t
+  val __set_locked_attribute : Procname.t
+  val __set_unlocked_attribute : Procname.t
   val __infer_assume : Procname.t
   val __objc_retain : Procname.t
   val __objc_release : Procname.t

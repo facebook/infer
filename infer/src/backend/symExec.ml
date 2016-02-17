@@ -2564,9 +2564,11 @@ module ModelBuiltins = struct
   (* set the attribute of the parameter as untainted *)
   let _ = Builtin.register "__set_untaint_attribute" (execute___set_attr Sil.Auntaint)
   (* set the attribute of the parameter as locked *)
-  let _ = Builtin.register "__set_locked_attribute" (execute___set_attr Sil.Alocked)
+  let __set_locked_attribute =
+    Builtin.register "__set_locked_attribute" (execute___set_attr Sil.Alocked)
   (* set the attribute of the parameter as unlocked *)
-  let _ = Builtin.register "__set_unlocked_attribute" (execute___set_attr Sil.Aunlocked)
+  let __set_unlocked_attribute =
+    Builtin.register "__set_unlocked_attribute" (execute___set_attr Sil.Aunlocked)
   let _ = Builtin.register "__check_untainted" execute___check_untainted (* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
   let __objc_retain = Builtin.register "__objc_retain" execute___objc_retain (* objective-c "retain" *)
   let __objc_release = Builtin.register "__objc_release" execute___objc_release (* objective-c "release" *)

@@ -771,7 +771,6 @@ let assume_not_null loc sil_expr =
   let call_args = [(not_null_expr, Sil.Tint Sil.IBool)] in
   Sil.Call ([], builtin_infer_assume, call_args, loc, assume_call_flag)
 
-
 let rec instruction context pc instr : translation =
   let cfg = JContext.get_cfg context in
   let tenv = JContext.get_tenv context in
@@ -790,6 +789,13 @@ let rec instruction context pc instr : translation =
   let return_not_null () =
     (match_never_null loc.Location.file proc_name
      || IList.exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
+  let trans_monitor_enter_exit context expr pc loc builtin node_desc =
+    let sil_type = JTransType.expr_type context expr
+    and ids, instrs, sil_expr = expression context pc expr in
+    let builtin_const = Sil.Const (Sil.Cfun builtin) in
+    let instr = Sil.Call ([], builtin_const, [(sil_expr, sil_type)], loc, Sil.cf_default) in
+    let node_kind = Cfg.Node.Stmt_node node_desc in
+    Instr (create_node node_kind ids (instrs @ [instr])) in
   try
     match instr with
     | JBir.AffectVar (var, expr) ->
@@ -1115,6 +1121,13 @@ let rec instruction context pc instr : translation =
           create_node throw_cast_exception_kind (ids @ call_ids) cce_instrs in
 
         Prune (is_instance_node, throw_cast_exception_node)
+    | JBir.MonitorEnter expr ->
+        trans_monitor_enter_exit
+          context expr pc loc SymExec.ModelBuiltins.__set_locked_attribute "MonitorEnter"
+
+    | JBir.MonitorExit expr ->
+        trans_monitor_enter_exit
+          context expr pc loc SymExec.ModelBuiltins.__set_unlocked_attribute "MonitorExit"
 
     | _ -> Skip
   with Frontend_error s ->
