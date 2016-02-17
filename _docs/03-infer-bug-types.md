@@ -299,6 +299,7 @@ Additionally, in Objective-C, Infer reports memory leaks that happen when object
     CGPathRef shadowPath = CGPathCreateWithRect(self.inputView.bounds, NULL); //object created and not released.
 }
 ```
+
 ## <a name="RETAIN_CYCLE"></a>Retain cycle
 
 
@@ -329,6 +330,7 @@ You can fix a retain cycle in ARC by using __weak variables or weak properties f
 }
 @end
 ```
+
 ## <a name="NULL_DEREFERENCE"></a> Null Dereference
 
 Infer reports null dereference bugs in C, Objective-C and Java. The issue is about a pointer that can be `null` 
