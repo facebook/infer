@@ -45,7 +45,10 @@ public class ExpensiveCallExample implements AnnotatedInterface {
   void nonExpensiveMethod() {}
 
   @Expensive
-  void expensiveMethod() {}
+  void expensiveMethod() {
+    // The checker should still report the expensive call stack despite the call cycle
+    methodWrapper();
+  }
 
   void methodWrapper() {
     expensiveMethod();

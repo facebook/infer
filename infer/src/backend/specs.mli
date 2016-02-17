@@ -114,12 +114,15 @@ type phase = FOOTPRINT | RE_EXECUTION
 
 type dependency_map_t = int Procname.Map.t
 
+(** Type for calls consiting in the name of the callee and the location of the call *)
+type call = Procname.t * Location.t
+
 (** Payload: results of some analysis *)
 type payload =
   {
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
-    calls:  CallTree.t list option; (** list of call tree *)
+    calls:  call list option; (** list of call tree *)
   }
 
 (** Procedure summary *)
