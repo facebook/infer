@@ -158,13 +158,13 @@ let arg_desc =
         "-iterations",
         Arg.Set_int iterations_cmdline,
         Some "n",
-        "set the max number of operations for each function,
+        "set the max number of operations for each function, \
         expressed as a multiple of symbolic operations (default n=1)"
         ;
         "-nonstop",
         Arg.Set Config.nonstop,
         None,
-        "activate the nonstop mode: the analysis continues after finding errors.
+        "activate the nonstop mode: the analysis continues after finding errors. \
         With this option the analysis can become less precise."
         ;
         "-out_file",
@@ -180,7 +180,7 @@ let arg_desc =
         "-source_path",
         Arg.String source_path,
         Some "path",
-        "specify the absolute path to the root of the source files.
+        "specify the absolute path to the root of the source files. \
         Used to interpret relative paths when using option -exclude."
         ;
         (* TODO: merge with the -project_root option *)
@@ -212,7 +212,7 @@ let arg_desc =
         "-ml_buckets",
         Arg.Set_string ml_buckets_arg,
         Some "ml_buckets",
-        "memory leak buckets to be checked, separated by commas.
+        "memory leak buckets to be checked, separated by commas. \
         The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp, unknown_origin"
         ;
       ] in
@@ -229,7 +229,7 @@ let arg_desc =
         "-angelic_execution",
         Arg.Set Config.angelic_execution,
         None,
-        "activate angelic execution:
+        "activate angelic execution: \
         The analysis ignores errors caused by unknown procedure calls."
         ;
         "-checkers",
@@ -342,9 +342,9 @@ let arg_desc =
   base_arg @ reserved_arg
 
 let usage =
-  (version_string ()) ^ "
-Usage: InferAnalyze [options]
-  Analyze the files captured in the project results directory,
+  (version_string ()) ^ "\
+  Usage: InferAnalyze [options]\n\
+  Analyze the files captured in the project results directory, \
   which can be specified with the -results_dir option."
 
 let print_usage_exit () =

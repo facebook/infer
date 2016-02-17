@@ -167,7 +167,7 @@ let arg_desc =
         "-test_filtering",
         Arg.Set test_filtering,
         None,
-        "list all the files Infer can report on (should be call at the root of the procject,
+        "list all the files Infer can report on (should be call at the root of the procject, \
         where .inferconfig lives)."
         ;
         "-analyzer",
@@ -235,11 +235,11 @@ let arg_desc =
   base_arg @ reserved_arg
 
 let usage =
-  "Usage: InferPrint [options] name1.specs ... namen.specs
-  Read, convert, and print .specs files.
-  To process all the .specs in the current directory, pass . as only parameter
-  To process all the .specs in the results directory, use option -results_dir
-  Each spec is printed to standard output unless option -q is used."
+  "Usage: InferPrint [options] name1.specs ... namen.specs\n\
+   Read, convert, and print .specs files. \
+   To process all the .specs in the current directory, pass . as only parameter \
+   To process all the .specs in the results directory, use option -results_dir \
+   Each spec is printed to standard output unless option -q is used."
 
 let print_usage_exit err_s =
   L.err "Load Error: %s@.@." err_s;

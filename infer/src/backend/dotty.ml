@@ -730,12 +730,12 @@ let rec print_struct f pe e te l coo c =
   F.fprintf f "subgraph structs_%iL%i {\n" n lambda ;
   if !print_full_prop then
     F.fprintf f
-      " node [shape=record]; \n struct%iL%i
+      " node [shape=record]; \n struct%iL%i \
         [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s\n"
       n lambda e_no_special_char n lambda (Sil.pp_exp pe) e (struct_to_dotty_str pe coo) l c
   else
     F.fprintf f
-      " node [shape=record]; \n struct%iL%i
+      " node [shape=record]; \n struct%iL%i \
         [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s\n"
       n lambda e_no_special_char n lambda print_type (struct_to_dotty_str pe coo) l c;
   F.fprintf f "}\n"

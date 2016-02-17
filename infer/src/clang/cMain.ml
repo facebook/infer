@@ -53,7 +53,7 @@ let arg_desc =
       "-testing_mode",
       Arg.Unit (fun _ -> CFrontend_config.testing_mode := true),
       None,
-      "Mode for testing, where no libraries are translated,
+      "Mode for testing, where no libraries are translated, \
       including enums defined in the libraries"
       ;
       "-debug",
