@@ -8,6 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open Utils
 open Javalib_pack
 open Sawja_pack
 
@@ -23,8 +24,8 @@ let reset_pcs () =
   field_nonfinal_pcs := []
 
 let sort_pcs () =
-  field_final_pcs := (List.sort Pervasives.compare !field_final_pcs);
-  field_nonfinal_pcs := (List.sort Pervasives.compare !field_nonfinal_pcs)
+  field_final_pcs := (IList.sort Pervasives.compare !field_final_pcs);
+  field_nonfinal_pcs := (IList.sort Pervasives.compare !field_nonfinal_pcs)
 
 let is_basic_type fs =
   let vt = (JBasics.fs_type fs) in
@@ -50,7 +51,7 @@ let collect_field_pc instrs field_pc_list =
         field_pc_list := (fs, pc)::!field_pc_list
     | _ -> () in
   (Array.iteri aux instrs);
-  (List.rev !field_pc_list)
+  (IList.rev !field_pc_list)
 
 (** Changes every position in the code where a static field is set to a value,
     to returning that value *)
@@ -70,7 +71,7 @@ let rec find_pc field list =
   | (fs, pc):: rest ->
       if JBasics.fs_equal field fs then
         try
-          let (nfs, npc) = List.hd rest in
+          let (nfs, npc) = IList.hd rest in
           npc + 1
         with hd -> 1
       else (find_pc field rest)
@@ -82,14 +83,14 @@ let remove_nonfinal_instrs code end_pc =
     sort_pcs ();
     let rec aux2 pc =
       let next_pc = pc + 1 in
-      if not (List.mem pc !field_final_pcs) && not (List.mem pc !field_nonfinal_pcs) then
+      if not (IList.mem (=) pc !field_final_pcs) && not (IList.mem (=) pc !field_nonfinal_pcs) then
         begin
           Array.set code pc JBir.Nop;
           if next_pc < end_pc then aux2 next_pc
         end
       else () in
     let aux pc instr =
-      if List.mem pc !field_nonfinal_pcs then
+      if IList.mem (=) pc !field_nonfinal_pcs then
         begin
           Array.set code pc JBir.Nop;
           aux2 (pc +1)

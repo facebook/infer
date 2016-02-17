@@ -8,6 +8,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open Utils
 open Javalib_pack
 open Sawja_pack
 
@@ -21,7 +22,7 @@ let create_handler_table impl =
       Hashtbl.replace handler_tb pc (exn_handler:: handlers)
     with Not_found ->
       Hashtbl.add handler_tb pc [exn_handler] in
-  List.iter collect (JBir.exception_edges impl);
+  IList.iter collect (JBir.exception_edges impl);
   handler_tb
 
 let translate_exceptions context exit_nodes get_body_nodes handler_table =
@@ -95,7 +96,8 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
         is_last_handler := false;
         collect succ_nodes remove_temps rethrow_exception handler in
 
-      let nodes_first_handler = List.fold_left process_handler exit_nodes (List.rev handler_list) in
+      let nodes_first_handler =
+        IList.fold_left process_handler exit_nodes (IList.rev handler_list) in
       let loc = match nodes_first_handler with
         | n:: _ -> Cfg.Node.get_loc n
         | [] -> Location.dummy in
