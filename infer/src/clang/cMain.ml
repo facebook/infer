@@ -16,7 +16,6 @@ module L = Logging
 open CFrontend_utils
 
 let arg_desc =
-  Config.dotty_cfg_libs := false; (* default behavior for this frontend *)
   let desc =
     (Utils.arg_desc_filter ["-results_dir"] Utils.base_arg_desc) @
     [
@@ -35,8 +34,8 @@ let arg_desc =
       Some "file",
       "AST file for the translation"
       ;
-      "-dotty_cfg_libs",
-      Arg.Unit (fun _ -> Config.dotty_cfg_libs := true),
+      "-dotty_no_cfg_libs",
+      Arg.Unit (fun _ -> Config.dotty_cfg_libs := false),
       None,
       "Prints the cfg of the code coming from the libraries"
       ;

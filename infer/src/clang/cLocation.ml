@@ -75,17 +75,28 @@ let clang_to_sil_location clang_loc procdesc_opt =
   Location.{line; col; file; nLOC}
 
 let should_translate (loc_start, loc_end) =
-  let map_file_of pred loc =
+  let map_path_of pred loc =
     match loc.Clang_ast_t.sl_file with
-    | Some f -> pred (source_file_from_path f)
+    | Some f -> pred f
     | None -> false
+  in
+  let map_file_of pred loc =
+    let path_pred path = pred (source_file_from_path path) in
+    map_path_of path_pred loc
   in
   let equal_current_source file =
     DB.source_file_equal file !DB.current_source
   in
+  let file_in_project file = match !Config.project_root with
+    | Some root ->  Utils.string_is_prefix root file
+    | None -> false
+  in
+  let file_in_project = map_path_of file_in_project loc_end
+                        || map_path_of file_in_project loc_start in
   equal_current_source !curr_file
   || map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
+  || (!CFrontend_config.testing_mode && file_in_project)
 
 let should_translate_lib source_range =
   not !CFrontend_config.no_translate_libs
