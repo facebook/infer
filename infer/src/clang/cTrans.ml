@@ -259,7 +259,7 @@ struct
       else [Ident.create_fresh Ident.knormal] in
     let ret_id', params, initd_exps, ret_exps =
       (* Assumption: should_add_return_param will return true only for struct types *)
-      if CMethod_trans.should_add_return_param return_type is_objc_method then
+      if CMethod_trans.should_add_return_param return_type ~is_objc_method then
         let param_type = Sil.Tptr (return_type, Sil.Pk_pointer) in
         let var_exp = match trans_state.var_exp_typ with
           | Some (exp, _) -> exp

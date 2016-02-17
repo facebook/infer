@@ -82,6 +82,7 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -strict-formats \
                      -cflags -strict-sequence \
                      -cflags -w,@5 \
+                     -cflags -w,@6 \
                      -cflags -w,@8 \
                      -cflags -w,@10 \
                      -cflags -w,@11 \

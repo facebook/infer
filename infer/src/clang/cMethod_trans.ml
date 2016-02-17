@@ -75,7 +75,7 @@ let get_return_param tenv function_method_decl_info =
   let is_objc_method = is_objc_method function_method_decl_info in
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
-  if should_add_return_param return_typ is_objc_method then
+  if should_add_return_param return_typ ~is_objc_method then
     [(CFrontend_config.return_param, Ast_expressions.create_pointer_type return_type_ptr)]
   else
     []
@@ -114,7 +114,7 @@ let get_return_type tenv function_method_decl_info =
   let return_type_ptr = get_original_return_type function_method_decl_info in
   let return_typ = CTypes_decl.type_ptr_to_sil_type tenv return_type_ptr in
   let is_objc_method = is_objc_method function_method_decl_info in
-  if should_add_return_param return_typ is_objc_method then
+  if should_add_return_param return_typ ~is_objc_method then
     Ast_expressions.create_void_type, Some (Sil.Tptr (return_typ, Sil.Pk_pointer))
   else return_type_ptr, None
 
