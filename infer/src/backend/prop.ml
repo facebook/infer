@@ -30,6 +30,9 @@ let unSome = function
 type normal (** kind for normal props, i.e. normalized *)
 type exposed (** kind for exposed props *)
 
+type pi = Sil.atom list
+type sigma = Sil.hpred list
+
 (** A proposition. The following invariants are mantained. [sub] is of
     the form id1 = e1 ... idn = en where: the id's are distinct and do not
     occur in the e's nor in [pi] or [sigma]; the id's are in sorted
@@ -39,11 +42,11 @@ type exposed (** kind for exposed props *)
     normalized. *)
 type 'a t =
   {
-    sigma: Sil.hpred list;  (** spatial part *)
+    sigma: sigma;  (** spatial part *)
     sub: Sil.subst;  (** substitution *)
-    pi: Sil.atom list;  (** pure part *)
-    foot_sigma : Sil.hpred list;  (** abduced spatial part *)
-    foot_pi: Sil.atom list;  (** abduced pure part *)
+    pi: pi;  (** pure part *)
+    foot_sigma : sigma;  (** abduced spatial part *)
+    foot_pi: pi;  (** abduced pure part *)
   }
 
 exception Cannot_star of ml_loc
@@ -162,7 +165,7 @@ let pp_pi pe =
   else pp_semicolon_seq_oneline pe (Sil.pp_atom pe)
 
 (** Dump a pi. *)
-let d_pi (pi: Sil.atom list) = L.add_print_action (L.PTpi, Obj.repr pi)
+let d_pi (pi: pi) = L.add_print_action (L.PTpi, Obj.repr pi)
 
 (** Pretty print a sigma. *)
 let pp_sigma pe =
@@ -191,7 +194,7 @@ let pp_sigma_simple pe env fmt sigma =
     Format.fprintf fmt "%a%a%a" pp_stack sigma_stack pp_nl (sigma_stack != [] && sigma_nonstack != []) pp_nonstack sigma_nonstack
 
 (** Dump a sigma. *)
-let d_sigma (sigma: Sil.hpred list) = L.add_print_action (L.PTsigma, Obj.repr sigma)
+let d_sigma (sigma: sigma) = L.add_print_action (L.PTsigma, Obj.repr sigma)
 
 (** Dump a pi and a sigma *)
 let d_pi_sigma pi sigma =
@@ -202,13 +205,13 @@ let d_pi_sigma pi sigma =
 let get_sub (p: 'a t) : Sil.subst = p.sub
 
 (** Return the pi part of [prop]. *)
-let get_pi (p: 'a t) : Sil.atom list = p.pi
+let get_pi (p: 'a t) : pi = p.pi
 
 let pi_of_subst sub =
   IList.map (fun (id1, e2) -> Sil.Aeq (Sil.Var id1, e2)) (Sil.sub_to_list sub)
 
 (** Return the pure part of [prop]. *)
-let get_pure (p: 'a t) : Sil.atom list =
+let get_pure (p: 'a t) : pi =
   pi_of_subst p.sub @ p.pi
 
 (** Print existential quantification *)
@@ -239,7 +242,7 @@ let pp_hpara_dll_simple _pe env n f pred =
       F.fprintf f "P_{%d} = %a%a" n (pp_evars pe) pred.Sil.evars_dll (pp_semicolon_seq pe (Sil.pp_hpred_env pe (Some env))) pred.Sil.body_dll
 
 (** Create an environment mapping (ident) expressions to the program variables containing them *)
-let create_pvar_env (sigma: Sil.hpred list) : (Sil.exp -> Sil.exp) =
+let create_pvar_env (sigma: sigma) : (Sil.exp -> Sil.exp) =
   let env = ref [] in
   let filter = function
     | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var v, inst), _) ->
@@ -1535,7 +1538,7 @@ let prop_hpred_star (p : 'a t) (h : Sil.hpred) : exposed t =
   let sigma' = h:: p.sigma in
   { p with sigma = sigma'}
 
-let prop_sigma_star (p : 'a t) (sigma : Sil.hpred list) : exposed t =
+let prop_sigma_star (p : 'a t) (sigma : sigma) : exposed t =
   let sigma' = sigma @ p.sigma in
   { p with sigma = sigma' }
 
@@ -1758,7 +1761,7 @@ let conjoin_neq ?(footprint = false) exp1 exp2 prop =
   prop_atom_and ~footprint prop (Sil.Aneq (exp1, exp2))
 
 (** Return the spatial part *)
-let get_sigma (p: 'a t) : Sil.hpred list = p.sigma
+let get_sigma (p: 'a t) : sigma = p.sigma
 
 (** Return the pure part of the footprint *)
 let get_pi_footprint p =
@@ -2511,15 +2514,15 @@ let prop_rename_fav_with_existentials (p : normal t) : normal t =
 (** Iterator state over sigma. *)
 type 'a prop_iter =
   { pit_sub : Sil.subst; (** substitution for equalities *)
-    pit_pi : Sil.atom list;    (** pure part *)
+    pit_pi : pi;    (** pure part *)
     pit_newpi : (bool * Sil.atom) list;   (** newly added atoms. *)
     (** The first records !Config.footprint. *)
-    pit_old : Sil.hpred list; (** sigma already visited *)
+    pit_old : sigma; (** sigma already visited *)
     pit_curr : Sil.hpred;      (** current element *)
     pit_state : 'a; (** state of current element *)
-    pit_new : Sil.hpred list; (** sigma not yet visited *)
-    pit_foot_pi : Sil.atom list; (** pure part of the footprint *)
-    pit_foot_sigma : Sil.hpred list; (** sigma part of the footprint *)
+    pit_new : sigma; (** sigma not yet visited *)
+    pit_foot_pi : pi; (** pure part of the footprint *)
+    pit_foot_sigma : sigma; (** sigma part of the footprint *)
   }
 
 let prop_iter_create prop =

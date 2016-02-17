@@ -17,6 +17,10 @@ type normal (** kind for normal props, i.e. normalized *)
 type exposed (** kind for exposed props *)
 
 (** Proposition. *)
+
+type pi = Sil.atom list
+type sigma = Sil.hpred list
+
 type 'a t (** the kind 'a should range over [normal] and [exposed] *)
 
 (** type to describe different strategies for initializing fields of a structure. [No_init] does not
@@ -34,7 +38,7 @@ exception Cannot_star of ml_loc
 val prop_compare : 'a t -> 'a t -> int
 
 (** Check the equality of two sigma's *)
-val sigma_equal : Sil.hpred list -> Sil.hpred list -> bool
+val sigma_equal : sigma -> sigma -> bool
 
 (** Check the equality of two propositions *)
 val prop_equal : 'a t -> 'a t -> bool
@@ -46,23 +50,23 @@ val pp_sub : printenv -> Format.formatter -> subst -> unit
 val d_sub : subst -> unit
 
 (** Pretty print a pi. *)
-val pp_pi : printenv -> Format.formatter -> Sil.atom list -> unit
+val pp_pi : printenv -> Format.formatter -> pi -> unit
 
 (** Dump a pi. *)
-val d_pi : Sil.atom list -> unit
+val d_pi : pi -> unit
 
 (** Pretty print a sigma. *)
-val pp_sigma : printenv -> Format.formatter -> Sil.hpred list -> unit
+val pp_sigma : printenv -> Format.formatter -> sigma -> unit
 
 (** Dump a sigma. *)
-val d_sigma : Sil.hpred list -> unit
+val d_sigma : sigma -> unit
 
 (** Dump a pi and a sigma *)
-val d_pi_sigma: Sil.atom list -> Sil.hpred list -> unit
+val d_pi_sigma: pi -> sigma -> unit
 
 (** Split sigma into stack and nonstack parts.
     The boolean indicates whether the stack should only include local variales. *)
-val sigma_get_stack_nonstack : bool -> Sil.hpred list -> Sil.hpred list * Sil.hpred list
+val sigma_get_stack_nonstack : bool -> sigma -> sigma * sigma
 
 (** Update the object substitution given the stack variables in the prop *)
 val prop_update_obj_sub : printenv -> 'a t -> printenv
@@ -385,25 +389,25 @@ val prop_primed_vars_to_normal_vars : normal t -> normal t
 val prop_rename_primed_fresh : normal t -> normal t
 
 (** Build an exposed prop from pi *)
-val from_pi : Sil.atom list -> exposed t
+val from_pi : pi -> exposed t
 
 (** Build an exposed prop from sigma *)
-val from_sigma : Sil.hpred list -> exposed t
+val from_sigma : sigma -> exposed t
 
 (** Replace the substitution part of a prop *)
 val replace_sub : Sil.subst -> 'a t -> exposed t
 
 (** Replace the pi part of a prop *)
-val replace_pi : Sil.atom list -> 'a t -> exposed t
+val replace_pi : pi -> 'a t -> exposed t
 
 (** Replace the sigma part of a prop *)
-val replace_sigma : Sil.hpred list -> 'a t -> exposed t
+val replace_sigma : sigma -> 'a t -> exposed t
 
 (** Replace the sigma part of the footprint of a prop *)
-val replace_sigma_footprint : Sil.hpred list -> 'a t -> exposed t
+val replace_sigma_footprint : sigma -> 'a t -> exposed t
 
 (** Replace the pi part of the footprint of a prop *)
-val replace_pi_footprint : Sil.atom list -> 'a t -> exposed t
+val replace_pi_footprint : pi -> 'a t -> exposed t
 
 (** Rename free variables in a prop replacing them with existentially quantified vars *)
 val prop_rename_fav_with_existentials : normal t -> normal t
@@ -489,7 +493,7 @@ val get_fld_typ_path_opt : Sil.ExpSet.t -> Sil.exp -> Sil.HpredSet.t ->
   (Ident.fieldname option * Sil.typ) list option
 
 (** filter [pi] by removing the pure atoms that do not contain an expression in [exps] *)
-val compute_reachable_atoms : Sil.atom list -> Sil.ExpSet.t -> Sil.atom list
+val compute_reachable_atoms : pi -> Sil.ExpSet.t -> pi
 
 (** {2 Internal modules} *)
 

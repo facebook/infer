@@ -17,9 +17,6 @@ open Utils
 let (++) = Sil.Int.add
 let (--) = Sil.Int.sub
 
-type pi = Sil.atom list
-type sigma = Sil.hpred list
-
 (** {2 Object representing the status of the join operation} *)
 
 module JoinState : sig
@@ -221,7 +218,7 @@ end
 
 module type InfoLossCheckerSig =
 sig
-  val init : sigma -> sigma -> unit
+  val init : Prop.sigma -> Prop.sigma -> unit
   val final : unit -> unit
   val lost_little : side -> Sil.exp -> Sil.exp list -> bool
   val add : side -> Sil.exp -> Sil.exp -> unit
@@ -229,7 +226,7 @@ end
 
 module Dangling : sig
 
-  val init : sigma -> sigma -> unit
+  val init : Prop.sigma -> Prop.sigma -> unit
   val final : unit -> unit
   val check : side -> Sil.exp -> bool
 
@@ -343,7 +340,7 @@ end
 
 module CheckJoin : sig
 
-  val init : JoinState.mode -> sigma -> sigma -> unit
+  val init : JoinState.mode -> Prop.sigma -> Prop.sigma -> unit
   val final : unit -> unit
   val lost_little : side -> Sil.exp -> Sil.exp list -> bool
   val add : side -> Sil.exp -> Sil.exp -> unit
@@ -459,7 +456,7 @@ module FreshVarExp : sig
 
   val init : unit -> unit
   val get_fresh_exp : Sil.exp -> Sil.exp -> Sil.exp
-  val get_induced_pi : unit -> pi
+  val get_induced_pi : unit -> Prop.pi
   val lookup : side -> Sil.exp -> (Sil.exp * Sil.exp) option
   val final : unit -> unit
 
@@ -1293,7 +1290,7 @@ let hpred_partial_meet (todo: Sil.exp * Sil.exp * Sil.exp) (hpred1: Sil.hpred) (
 
 (** {2 Join and Meet for Sigma} *)
 
-let find_hpred_by_address (e: Sil.exp) (sigma: sigma) : Sil.hpred option * sigma =
+let find_hpred_by_address (e: Sil.exp) (sigma: Prop.sigma) : Sil.hpred option * Prop.sigma =
   let is_root_for_e e' =
     match (Prover.is_root Prop.prop_emp e' e) with
     | None -> false
@@ -1321,7 +1318,7 @@ let same_pred (hpred1: Sil.hpred) (hpred2: Sil.hpred) : bool =
 (* check that applying renaming to the lhs / rhs of [sigma_new]
  * gives [sigma] and that the renaming is injective *)
 
-let sigma_renaming_check (lhs: side) (sigma: sigma) (sigma_new: sigma) =
+let sigma_renaming_check (lhs: side) (sigma: Prop.sigma) (sigma_new: Prop.sigma) =
   (* apply the lhs / rhs of the renaming to sigma,
    * and check that the renaming of primed vars is injective *)
   let fav_sigma = Prop.sigma_fav sigma_new in
@@ -1332,8 +1329,8 @@ let sigma_renaming_check (lhs: side) (sigma: sigma) (sigma_new: sigma) =
 let sigma_renaming_check_lhs = sigma_renaming_check Lhs
 let sigma_renaming_check_rhs = sigma_renaming_check Rhs
 
-let rec sigma_partial_join' mode (sigma_acc: sigma)
-    (sigma1_in: sigma) (sigma2_in: sigma) : (sigma * sigma * sigma) =
+let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
+    (sigma1_in: Prop.sigma) (sigma2_in: Prop.sigma) : (Prop.sigma * Prop.sigma * Prop.sigma) =
 
   let lookup_and_expand side e e' =
     match (Rename.get_others side e, side) with
@@ -1398,7 +1395,7 @@ let rec sigma_partial_join' mode (sigma_acc: sigma)
      'side' describes that target is Lhs or Rhs.
      'todo' describes the start point. *)
 
-  let cut_sigma side todo (target: sigma) (other: sigma) =
+  let cut_sigma side todo (target: Prop.sigma) (other: Prop.sigma) =
     let list_is_empty l = if l != [] then (L.d_strln "failure reason 61"; raise IList.Fail) in
     let x = Todo.take () in
     Todo.push todo;
@@ -1518,7 +1515,8 @@ let rec sigma_partial_join' mode (sigma_acc: sigma)
     | _:: _, _:: _ -> L.d_strln "todo is empty, but the sigmas are not"; raise IList.Fail
     | _ -> sigma_acc, sigma1_in, sigma2_in
 
-let sigma_partial_join mode (sigma1: sigma) (sigma2: sigma) : (sigma * sigma * sigma) =
+let sigma_partial_join mode (sigma1: Prop.sigma) (sigma2: Prop.sigma)
+  : (Prop.sigma * Prop.sigma * Prop.sigma) =
   CheckJoin.init mode sigma1 sigma2;
   let lost_little = CheckJoin.lost_little in
   let s1, s2, s3 = sigma_partial_join' mode [] sigma1 sigma2 in
@@ -1533,7 +1531,8 @@ let sigma_partial_join mode (sigma1: sigma) (sigma2: sigma) : (sigma * sigma * s
   with
   | exn -> (CheckJoin.final (); raise exn)
 
-let rec sigma_partial_meet' (sigma_acc: sigma) (sigma1_in: sigma) (sigma2_in: sigma) : sigma =
+let rec sigma_partial_meet' (sigma_acc: Prop.sigma) (sigma1_in: Prop.sigma) (sigma2_in: Prop.sigma)
+  : Prop.sigma =
   try
     let todo_curr = Todo.pop () in
     let e1, e2, e = todo_curr in
@@ -1570,7 +1569,7 @@ let rec sigma_partial_meet' (sigma_acc: sigma) (sigma1_in: sigma) (sigma2_in: si
     | [], [] -> sigma_acc
     | _, _ -> L.d_strln "todo is empty, but the sigmas are not"; raise IList.Fail
 
-let sigma_partial_meet (sigma1: sigma) (sigma2: sigma) : sigma =
+let sigma_partial_meet (sigma1: Prop.sigma) (sigma2: Prop.sigma) : Prop.sigma =
   sigma_partial_meet' [] sigma1 sigma2
 
 let widening_top = Sil.Int.of_int64 Int64.max_int -- Sil.Int.of_int 1000 (* nearly max_int but not so close to overflow *)
@@ -1579,7 +1578,7 @@ let widening_bottom = Sil.Int.of_int64 Int64.min_int ++ Sil.Int.of_int 1000 (* n
 (** {2 Join and Meet for Pi} *)
 let pi_partial_join mode
     (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.t)
-    (pi1: pi) (pi2: pi) : pi
+    (pi1: Prop.pi) (pi2: Prop.pi) : Prop.pi
   =
   let exp_is_const = function
     (* | Sil.Var id -> is_normal id *)
