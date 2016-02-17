@@ -278,7 +278,7 @@ Infer decides to report a `Context` leak when it determines that a chain of refe
 ## <a name="MEMORY_LEAK"></a>Memory leak
 
 
-###Memory leak in C
+### Memory leak in C
 
 This error type is only reported in C and Objective-C code. In Java we do not report memory leaks because it is a garbage collected language.
 
