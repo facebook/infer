@@ -87,7 +87,7 @@ buck_test_xml: $(INFER_ANALYZERS)
 	NO_BUCKD=1 buck test --xml test.xml $(TARGETS_TO_TEST)
 
 build_integration_tests: $(INFER_ANALYZERS)
-	./scripts/build_integration_tests.py
+	NO_BUCKD=1 ./scripts/build_integration_tests.py
 
 test: buck_test
 
