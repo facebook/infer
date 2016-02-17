@@ -167,17 +167,23 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
     mk_procname lang [(CFrontend_config.self, class_type)] Ast_expressions.create_void_type
     [] (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
 
+let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
+  let condition = method_name = CFrontend_config.is_kind_of_class in
+  let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
+  get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
+    mk_procname lang [(CFrontend_config.self, class_type)] Ast_expressions.create_BOOL_type
+    [] (Some SymExec.ModelBuiltins.__instanceof)
+
 let get_predefined_model_method_signature class_name method_name mk_procname lang =
-  match get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang with
-  | Some ms -> Some ms
-  | None ->
-      let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
-      match get_predefined_ms_retain_release class_type method_name mk_procname lang with
-      | Some ms -> Some ms
-      | None ->
-          match get_predefined_ms_stringWithUTF8String class_name method_name mk_procname lang with
-          | Some ms -> Some ms
-          | None -> get_predefined_ms_autoreleasepool_init class_name method_name mk_procname lang
+  let next_predefined f a = function
+    | Some _ as x -> x
+    | None -> f a method_name mk_procname lang in
+  let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
+  get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang
+  |> next_predefined get_predefined_ms_retain_release class_type
+  |> next_predefined get_predefined_ms_stringWithUTF8String class_name
+  |> next_predefined get_predefined_ms_autoreleasepool_init class_name
+  |> next_predefined get_predefined_ms_is_kind_of_class class_name
 
 let dispatch_functions = [
   ("_dispatch_once", 1);

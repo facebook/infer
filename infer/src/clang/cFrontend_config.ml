@@ -19,6 +19,8 @@ let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"
 
 let string_with_utf8_m = "stringWithUTF8String:"
 
+let is_kind_of_class = "isKindOfClass:"
+
 let nsstring_cl = "NSString"
 
 let nsobject_cl = "NSObject"

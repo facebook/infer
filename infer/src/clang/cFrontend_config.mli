@@ -65,6 +65,8 @@ val nsautorelease_pool_cl : string
 
 val string_with_utf8_m : string
 
+val is_kind_of_class : string
+
 val alloc : string
 
 val malloc : string
