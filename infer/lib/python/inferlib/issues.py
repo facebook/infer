@@ -234,7 +234,7 @@ def print_and_save_errors(json_report, bugs_out):
     errors = utils.load_json_from_path(json_report)
     errors = filter(_is_user_visible, errors)
     text = _text_of_report_list(errors)
-    print(text)
+    print(text.encode(config.LOCALE))
     with codecs.open(bugs_out, 'w', encoding=config.LOCALE) as file_out:
         file_out.write(text)
 
