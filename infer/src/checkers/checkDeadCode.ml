@@ -65,7 +65,7 @@ let report_error description pn pd loc =
 
 
 (** Check the final state at the end of the analysis. *)
-let check_final_state proc_name proc_desc exit_node final_s =
+let check_final_state proc_name proc_desc final_s =
   let proc_nodes = Cfg.Procdesc.get_nodes proc_desc in
   let tot_nodes = IList.length proc_nodes in
   let tot_visited = State.num_visited final_s in
@@ -94,7 +94,7 @@ let callback_check_dead_code { Callbacks.proc_desc; proc_name } =
       let equal = State.equal
       let join = State.join
       let do_node = do_node
-      let proc_throws pn = DontKnow
+      let proc_throws _ = DontKnow
     end) in
 
   let do_check () =
@@ -105,7 +105,7 @@ let callback_check_dead_code { Callbacks.proc_desc; proc_name } =
       match transitions exit_node with
       | DFDead.Transition (pre_final_s, _, _) ->
           let final_s = State.add_visited exit_node pre_final_s in
-          check_final_state proc_name proc_desc exit_node final_s
+          check_final_state proc_name proc_desc final_s
       | DFDead.Dead_state -> ()
     end in
 

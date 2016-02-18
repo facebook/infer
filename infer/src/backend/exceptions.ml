@@ -147,7 +147,7 @@ let recognize_exception exn =
          desc, Some ml_loc, Exn_user, Medium, None, Nocat)
     | Dangling_pointer_dereference (dko, desc, ml_loc) ->
         let visibility = match dko with
-          | Some dk -> Exn_user (* only show to the user if the category was identified *)
+          | Some _ -> Exn_user (* only show to the user if the category was identified *)
           | None -> Exn_developer in
         (Localise.dangling_pointer_dereference,
          desc, Some ml_loc, visibility, High, None, Prover)
@@ -192,7 +192,7 @@ let recognize_exception exn =
     | Invalid_argument s ->
         let desc = Localise.verbatim_desc s in
         (Localise.from_string "Invalid_argument", desc, None, Exn_system, Low, None, Nocat)
-    | Java_runtime_exception (exn_name, pre_str, desc) ->
+    | Java_runtime_exception (exn_name, _, desc) ->
         let exn_str = Typename.name exn_name in
         (Localise.from_string exn_str, desc, None, Exn_user, High, None, Prover)
     | Leak (fp_part, _, _, (exn_vis, error_desc), done_array_abstraction, resource, ml_loc) ->
@@ -231,7 +231,7 @@ let recognize_exception exn =
     | Precondition_not_met (desc, ml_loc) ->
         (Localise.precondition_not_met,
          desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat) (** always a warning *)
-    | Retain_cycle (prop, hpred, desc, ml_loc) ->
+    | Retain_cycle (_, _, desc, ml_loc) ->
         (Localise.retain_cycle,
          desc, Some ml_loc, Exn_user, High, None, Prover)
     | Return_expression_required (desc, ml_loc) ->
@@ -320,7 +320,7 @@ let err_class_string = function
 let print_key = false
 
 (** pretty print an error given its (id,key), location, kind, name, description, and optional ml location *)
-let pp_err (node_id, node_key) loc ekind ex_name desc ml_loc_opt fmt () =
+let pp_err (_, node_key) loc ekind ex_name desc ml_loc_opt fmt () =
   let kind = err_kind_string (if ekind = Kinfo then Kwarning else ekind) (* eclipse does not know about infos: treat as warning *) in
   let pp_key fmt k = if print_key then F.fprintf fmt " key: %d " k else () in
   F.fprintf fmt "%s:%d: %s: %a %a%a%a@\n"

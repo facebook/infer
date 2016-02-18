@@ -155,7 +155,7 @@ let file_data_to_tenv file_data =
       assert false
   | Some tenv -> tenv
 
-let file_data_to_cfg exe_env file_data =
+let file_data_to_cfg file_data =
   match file_data.cfg with
   | None ->
       let cfg = match Cfg.load_cfg_from_file file_data.cfg_file with
@@ -175,7 +175,7 @@ let get_tenv exe_env pname =
 (** return the cfg associated to the procedure *)
 let get_cfg exe_env pname =
   let file_data = get_file_data exe_env pname in
-  file_data_to_cfg exe_env file_data
+  file_data_to_cfg file_data
 
 (** [iter_files f exe_env] applies [f] to the filename and tenv and cfg for each file in [exe_env] *)
 let iter_files f exe_env =
@@ -189,7 +189,7 @@ let iter_files f exe_env =
       begin
         DB.current_source := fname;
         Config.nLOC := file_data.nLOC;
-        f fname (file_data_to_tenv file_data) (file_data_to_cfg exe_env file_data);
+        f fname (file_data_to_cfg file_data);
         DB.SourceFileSet.add fname seen_files_acc
       end in
   ignore (Procname.Hash.fold do_file exe_env.proc_map DB.SourceFileSet.empty)

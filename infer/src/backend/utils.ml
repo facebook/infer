@@ -112,13 +112,13 @@ type printenv = {
 }
 
 (** Create a colormap of a given color *)
-let colormap_from_color color (o: Obj.t) = color
+let colormap_from_color color (_: Obj.t) = color
 
 (** standard colormap: black *)
-let colormap_black (o: Obj.t) = Black
+let colormap_black (_: Obj.t) = Black
 
 (** red colormap *)
-let colormap_red (o: Obj.t) = Red
+let colormap_red (_: Obj.t) = Red
 
 (** Default text print environment *)
 let pe_text =
@@ -552,9 +552,9 @@ module FileNormalize = struct
   let rec normalize done_l todo_l = match done_l, todo_l with
     | _, y :: tl when y = Filename.current_dir_name -> (* path/. --> path *)
         normalize done_l tl
-    | [root], y :: tl when y = Filename.parent_dir_name -> (* /.. --> / *)
+    | [_], y :: tl when y = Filename.parent_dir_name -> (* /.. --> / *)
         normalize done_l tl
-    | x :: dl, y :: tl when y = Filename.parent_dir_name -> (* path/x/.. --> path *)
+    | _ :: dl, y :: tl when y = Filename.parent_dir_name -> (* path/x/.. --> path *)
         normalize dl tl
     | _, y :: tl -> normalize (y :: done_l) tl
     | _, [] -> IList.rev done_l

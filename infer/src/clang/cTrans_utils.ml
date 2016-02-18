@@ -310,7 +310,7 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc =
 
 let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let fname = SymExec.ModelBuiltins.__objc_alloc_no_fail in
-  let (alloc_ret_type, alloc_ret_id, alloc_stmt_call, alloc_exp) =
+  let (alloc_ret_type, alloc_ret_id, alloc_stmt_call, _) =
     create_alloc_instrs trans_state.context loc function_type fname in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
@@ -440,7 +440,7 @@ let trans_assume_false sil_loc context succ_nodes =
   Cfg.Node.set_succs_exn prune_node succ_nodes [];
   { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }
 
-let define_condition_side_effects context e_cond instrs_cond sil_loc =
+let define_condition_side_effects e_cond instrs_cond sil_loc =
   let (e', typ) = extract_exp_from_list e_cond "\nWARNING: Missing expression in IfStmt. Need to be fixed\n" in
   match e' with
   | Sil.Lvar pvar ->
@@ -575,7 +575,7 @@ let rec is_owning_method s =
 
 let rec is_method_call s =
   match s with
-  | Clang_ast_t.ObjCMessageExpr (_, _ , _, mei) -> true
+  | Clang_ast_t.ObjCMessageExpr _ -> true
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple s) with
       | [] -> false
       | s'':: _ -> is_method_call s'')
@@ -588,14 +588,14 @@ let get_info_from_decl_ref decl_ref =
 
 let rec get_decl_ref_info s =
   match s with
-  | Clang_ast_t.DeclRefExpr (stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
+  | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) ->
       (match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
        | Some decl_ref -> decl_ref
        | None -> assert false)
   | _ ->
       match Clang_ast_proj.get_stmt_tuple s with
-      | stmt_info, [] -> assert false
-      | stmt_info, s'':: _ ->
+      | _, [] -> assert false
+      | _, s'':: _ ->
           get_decl_ref_info s''
 
 let rec contains_opaque_value_expr s =
@@ -624,7 +624,7 @@ let is_dispatch_function stmt_list =
                 let s = name_info.Clang_ast_t.ni_name in
                 (match (CTrans_models.is_dispatch_function_name s) with
                  | None -> None
-                 | Some (dispatch_function, block_arg_pos) ->
+                 | Some (_, block_arg_pos) ->
                      try
                        (match IList.nth stmts block_arg_pos with
                         | BlockExpr _ -> Some block_arg_pos

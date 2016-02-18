@@ -73,7 +73,7 @@ let print_usage_exit () =
   exit(1)
 
 let () =
-  Arg.parse arg_desc (fun arg -> ()) usage;
+  Arg.parse arg_desc (fun _ -> ()) usage;
   if Config.analyze_models && !JClasspath.models_jar <> "" then
     failwith "Not expecting model file when analyzing the models";
   if not Config.analyze_models && !JClasspath.models_jar = "" then
@@ -91,7 +91,7 @@ let init_global_state source_file =
   Config.nLOC := nLOC
 
 
-let store_icfg tenv cg cfg source_file program =
+let store_icfg tenv cg cfg program =
   let f_translate_typ tenv typ_str =
     let cn = JBasics.make_cn typ_str in
     ignore (JTransType.get_class_type program tenv cn) in
@@ -125,7 +125,7 @@ let do_source_file
     JFrontend.compute_source_icfg
       never_null_matcher linereader classes program tenv
       source_basename package_opt in
-  store_icfg tenv call_graph cfg source_file program;
+  store_icfg tenv call_graph cfg program;
   if !JConfig.create_harness then
     IList.fold_left
       (fun proc_file_map pdesc ->
@@ -144,16 +144,15 @@ let capture_libs never_null_matcher linereader program tenv =
           let fake_source_file = JClasspath.java_source_file_from_path (JFrontend.path_of_cached_classname cn) in
           init_global_state fake_source_file;
           let call_graph, cfg =
-            JFrontend.compute_class_icfg
-              never_null_matcher linereader program tenv node fake_source_file in
-          store_icfg tenv call_graph cfg fake_source_file program;
+            JFrontend.compute_class_icfg never_null_matcher linereader program tenv node in
+          store_icfg tenv call_graph cfg program;
           JFrontend.cache_classname cn;
         end in
   JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)
 
 
 (* load a stored global tenv if the file is found, and create a new one otherwise *)
-let load_tenv program =
+let load_tenv () =
   let tenv_filename = DB.global_tenv_fname () in
   let tenv =
     if DB.file_exists tenv_filename then
@@ -174,7 +173,7 @@ let load_tenv program =
 
 
 (* Store to a file the type environment containing all the types required to perform the analysis *)
-let save_tenv classpath tenv =
+let save_tenv tenv =
   if not Config.analyze_models then JTransType.add_models_types tenv;
   let tenv_filename = DB.global_tenv_fname () in
   (* TODO: this prevents per compilation step incremental analysis at this stage *)
@@ -189,7 +188,7 @@ let do_all_files classpath sources classes =
     (StringMap.cardinal sources)
     (JBasics.ClassSet.cardinal classes);
   let program = JClasspath.load_program classpath classes in
-  let tenv = load_tenv program in
+  let tenv = load_tenv () in
   let linereader = Printer.LineReader.create () in
   let skip_translation_matcher =
     Inferconfig.SkipTranslationMatcher.load_matcher (Inferconfig.inferconfig ()) in
@@ -198,7 +197,7 @@ let do_all_files classpath sources classes =
   let proc_file_map =
     let skip source_file =
       skip_translation_matcher source_file Procname.empty in
-    let translate_source_file basename (package_opt, source_file) source_file map =
+    let translate_source_file basename (package_opt, _) source_file map =
       init_global_state source_file;
       if skip source_file then map
       else do_source_file
@@ -219,7 +218,7 @@ let do_all_files classpath sources classes =
   if !JConfig.dependency_mode then
     capture_libs never_null_matcher linereader program tenv;
   if !JConfig.create_harness then Harness.create_harness proc_file_map tenv;
-  save_tenv classpath tenv;
+  save_tenv tenv;
   JClasspath.cleanup program;
   JUtils.log "done @."
 

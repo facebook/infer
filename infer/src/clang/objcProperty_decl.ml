@@ -28,7 +28,7 @@ let get_methods curr_class decl_list =
   let class_name = CContext.get_curr_class_name curr_class in
   let get_method decl list_methods =
     match decl with
-    | Clang_ast_t.ObjCMethodDecl (decl_info, name_info, method_decl_info) ->
+    | Clang_ast_t.ObjCMethodDecl (_, name_info, method_decl_info) ->
         let is_instance = method_decl_info.Clang_ast_t.omdi_is_instance_method in
         let method_kind = Procname.objc_method_kind_of_bool is_instance in
         let method_name = name_info.Clang_ast_t.ni_name in

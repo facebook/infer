@@ -104,7 +104,7 @@ let create_struct_type struct_name = `StructType struct_name
 
 let create_pointer_type typ = `PointerOf typ
 
-let create_integer_literal stmt_info n =
+let create_integer_literal n =
   let stmt_info = dummy_stmt_info () in
   let expr_info = {
     Clang_ast_t.ei_type_ptr = create_int_type;
@@ -151,7 +151,7 @@ let create_implicit_cast_expr stmt_info stmts typ cast_kind =
   Clang_ast_t.ImplicitCastExpr (stmt_info, stmts, expr_info, cast_expr_info)
 
 let create_nil stmt_info =
-  let integer_literal = create_integer_literal stmt_info "0" in
+  let integer_literal = create_integer_literal "0" in
   let cstyle_cast_expr = create_cstyle_cast_expr stmt_info [integer_literal] create_int_type in
   let paren_expr = create_parent_expr stmt_info [cstyle_cast_expr] in
   create_implicit_cast_expr stmt_info [paren_expr] create_id_type `NullToPointer
@@ -218,7 +218,7 @@ let make_decl_ref_expr_info decl_ref = {
   drti_found_decl_ref = None;
 }
 
-let make_objc_ivar_decl decl_info tp property_impl_decl_info ivar_name =
+let make_objc_ivar_decl decl_info tp ivar_name =
   let field_decl_info = {
     Clang_ast_t.fldi_is_mutable = true;
     fldi_is_module_private = true;
@@ -265,7 +265,7 @@ let make_binary_stmt stmt1 stmt2 stmt_info expr_info boi =
 let make_next_object_exp stmt_info item items =
   let var_decl_ref, var_type =
     match item with
-    | Clang_ast_t.DeclStmt (stmt_info, _, [Clang_ast_t.VarDecl(di, name_info, var_type, _)]) ->
+    | Clang_ast_t.DeclStmt (_, _, [Clang_ast_t.VarDecl(di, name_info, var_type, _)]) ->
         let decl_ptr = di.Clang_ast_t.di_pointer in
         let decl_ref = make_decl_ref_tp `Var decl_ptr name_info false var_type in
         let stmt_info_var = {
@@ -290,7 +290,7 @@ let make_next_object_exp stmt_info item items =
 
 (* dispatch_once(v,block_def) is transformed as: *)
 (* void (^block_var)()=block_def; block_var() *)
-let translate_dispatch_function block_name stmt_info stmt_list ei n =
+let translate_dispatch_function block_name stmt_info stmt_list n =
   let block_expr =
     try IList.nth stmt_list (n + 1)
     with Not_found -> assert false in
@@ -300,7 +300,7 @@ let translate_dispatch_function block_name stmt_info stmt_list ei n =
   } in
   let open Clang_ast_t in
   match block_expr with
-  | BlockExpr (bsi, bsl, bei, bd) ->
+  | BlockExpr (_, _, bei, _) ->
       let tp = bei.ei_type_ptr in
       let cast_info = { cei_cast_kind = `BitCast; cei_base_path =[]} in
       let block_def = ImplicitCastExpr(stmt_info,[block_expr], bei, cast_info) in
@@ -344,7 +344,7 @@ let pseudo_object_tp () = create_class_type (CFrontend_config.pseudo_object_type
 (* Create expression PseudoObjectExpr for 'o.m' *)
 let build_PseudoObjectExpr tp_m o_cast_decl_ref_exp mname =
   match o_cast_decl_ref_exp with
-  | Clang_ast_t.ImplicitCastExpr (si, stmt_list, ei, cast_expr_info) ->
+  | Clang_ast_t.ImplicitCastExpr (si, _, ei, _) ->
       let ove = build_OpaqueValueExpr si o_cast_decl_ref_exp ei in
       let ei_opre = make_expr_info (pseudo_object_tp ()) in
       let count_name = Ast_utils.make_name_decl CFrontend_config.count in
@@ -410,7 +410,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   let build_idx_decl pidx =
     match pidx with
     | Clang_ast_t.ParmVarDecl (di_idx, name_idx, tp_idx, _) ->
-        let zero = create_integer_literal stmt_info "0" in
+        let zero = create_integer_literal "0" in
         (* tp_idx idx = 0; *)
         let idx_decl_stmt = make_DeclStmt (fresh_stmt_info stmt_info) di_idx tp_idx name_idx (Some zero) in
         let idx_ei = make_expr_info tp_idx in
@@ -475,7 +475,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
 
   (* idx<a.count *)
   let bin_op pidx array_decl_ref_exp =
-    let idx_decl_stmt, idx_decl_ref_exp, idx_cast, idx_tp = build_idx_decl pidx in
+    let _, _, idx_cast, idx_tp = build_idx_decl pidx in
     let rhs = build_PseudoObjectExpr idx_tp array_decl_ref_exp CFrontend_config.count in
     let lt = { Clang_ast_t.boi_kind = `LT } in
     let exp_info = make_expr_info create_int_type in
@@ -493,7 +493,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
     | _ -> assert false in
 
   (* id object = objects[idx]; *)
-  let build_object_DeclStmt pobj decl_ref_expr_array decl_ref_expr_idx tp_idx =
+  let build_object_DeclStmt pobj decl_ref_expr_array decl_ref_expr_idx =
     let open Clang_ast_t in
     match pobj with
     | ParmVarDecl(di_obj, name_obj, tp_obj, _) ->
@@ -525,7 +525,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
 
   let make_object_cast_decl_ref_expr objects =
     match objects with
-    | Clang_ast_t.DeclStmt (si, _, [Clang_ast_t.VarDecl (di, name, tp, vdi)]) ->
+    | Clang_ast_t.DeclStmt (si, _, [Clang_ast_t.VarDecl (_, name, tp, _)]) ->
         let decl_ref = make_decl_ref_tp `Var si.Clang_ast_t.si_pointer name false tp in
         cast_expr decl_ref tp
     | _ -> assert false in
@@ -574,7 +574,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let idx_decl_stmt, idx_decl_ref_exp, idx_cast, tp_idx = build_idx_decl pidx in
         let guard = bin_op pidx objects in
         let incr = un_op idx_decl_ref_exp tp_idx in
-        let obj_assignment = build_object_DeclStmt pobj objects idx_cast tp_idx in
+        let obj_assignment = build_object_DeclStmt pobj objects idx_cast in
         let object_cast = build_cast_decl_ref_expr_from_parm pobj in
         let stop_cast = build_cast_decl_ref_expr_from_parm pstop in
         let call_block = make_block_call block_tp object_cast idx_cast stop_cast in
@@ -598,7 +598,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
 (* We translate the logical negation of an integer with a conditional*)
 (* !x <=> x?0:1 *)
 let trans_negation_with_conditional stmt_info expr_info stmt_list =
-  let stmt_list_cond = stmt_list @ [create_integer_literal stmt_info "0"] @ [create_integer_literal stmt_info "1"] in
+  let stmt_list_cond = stmt_list @ [create_integer_literal "0"] @ [create_integer_literal "1"] in
   Clang_ast_t.ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
 
 let create_assume_not_null_call decl_info var_name var_type =
@@ -617,7 +617,7 @@ let create_assume_not_null_call decl_info var_name var_type =
   } in
   let cast_info_call = { Clang_ast_t.cei_cast_kind = `LValueToRValue; cei_base_path = [] } in
   let decl_ref_exp_cast = Clang_ast_t.ImplicitCastExpr (stmt_info, [var_decl_ref], expr_info, cast_info_call) in
-  let null_expr = create_integer_literal stmt_info "0" in
+  let null_expr = create_integer_literal "0" in
   let bin_op_expr_info = make_general_expr_info create_BOOL_type `RValue `Ordinary in
   let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info bin_op_expr_info boi in
   let parameters = [bin_op] in

@@ -289,7 +289,7 @@ let proc_write_log whole_seconds cfg pname =
 (** Creare a hash table mapping line numbers to the set of errors occurring on that line *)
 let create_errors_per_line err_log =
   let err_per_line = Hashtbl.create 17 in
-  let add_err node_id_key loc ml_loc_opt ekind in_footprint err_name desc severity ltr pre_opt eclass =
+  let add_err _ loc _ _ _ err_name desc _ _ _ _ =
     let err_str = Localise.to_string err_name ^ " " ^ (pp_to_string Localise.pp_error_desc desc) in
     try
       let set = Hashtbl.find err_per_line loc.Location.line in
@@ -373,7 +373,7 @@ end = struct
 end
 
 (** Create filename.c.html with line numbers and links to nodes *)
-let c_file_write_html proc_is_active linereader fname tenv cfg =
+let c_file_write_html proc_is_active linereader fname cfg =
   let proof_cover = ref Specs.Visitedset.empty in
   let tbl = Hashtbl.create 11 in
   let process_node n =

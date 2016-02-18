@@ -142,8 +142,8 @@ let java_sig_compare (js1: java_signature) (js2 : java_signature) =
 
 let c_function_mangled_compare mangled1 mangled2 =
   match mangled1, mangled2 with
-  | Some mangled1, None -> 1
-  | None, Some mangled2 -> -1
+  | Some _, None -> 1
+  | None, Some _ -> -1
   | None, None -> 0
   | Some mangled1, Some mangled2 ->
       string_compare mangled1 mangled2
@@ -328,7 +328,7 @@ let java_is_anonymous_inner_class = function
 let java_remove_hidden_inner_class_parameter = function
   | Java_method js ->
       (match IList.rev js.parameters with
-       | (so, s) :: par' ->
+       | (_, s) :: par' ->
            if is_anonymous_inner_class_name s
            then Some (Java_method { js with parameters = IList.rev par'})
            else None
@@ -388,7 +388,7 @@ let is_class_initializer = function
 
 (** [is_infer_undefined pn] returns true if [pn] is a special Infer undefined proc *)
 let is_infer_undefined pn = match pn with
-  | Java_method j ->
+  | Java_method _ ->
       let regexp = Str.regexp "com.facebook.infer.models.InferUndefined" in
       Str.string_match regexp (java_get_class pn) 0
   | _ ->
@@ -439,7 +439,7 @@ let to_simplified_string ?(withclass = false) p =
   | C_function (c1, c2) ->
       to_readable_string (c1, c2) false ^ "()"
   | ObjC_Cpp_method osig -> c_method_to_string osig Simple
-  | ObjC_block name -> "block"
+  | ObjC_block _ -> "block"
 
 (** Convert a proc name to a filename *)
 let to_filename (pn : proc_name) =

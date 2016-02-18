@@ -268,12 +268,14 @@ real_instruction:
   | RET tp = typ op = operand { Ret (Some (tp, op)) }
   | RET VOID { Ret None }
   | BR LABEL lbl = variable { UncondBranch lbl }
-  | BR i = INT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable { CondBranch (op, lbl1, lbl2) }
+  | BR _ = INT op = operand COMMA LABEL lbl1 = variable COMMA LABEL lbl2 = variable
+      { CondBranch (op, lbl1, lbl2) }
   (* Memory access operations *)
   | var = variable EQUALS ALLOCA tp = typ align? { Alloc (var, tp, 1) }
   | var = variable EQUALS LOAD tp = ptr_typ ptr = variable align? { Load (var, tp, ptr) }
-  | STORE val_tp = typ value = operand COMMA ptr_tp = ptr_typ var = variable align? { Store (value, val_tp, var) }
-    (* don't yet know why val_tp and ptr_tp would be different *)
+  | STORE val_tp = typ value = operand COMMA _ptr_tp = ptr_typ var = variable align?
+      { Store (value, val_tp, var) }
+    (* don't yet know why val_tp and _ptr_tp would be different *)
   (* Function call *)
   | ret_var = variable EQUALS CALL ret_typ func_var = variable LPAREN
     args = separated_list(COMMA, pair(typ, operand)) RPAREN { Call (ret_var, func_var, args) }

@@ -30,7 +30,7 @@ let rec list_rev_and_concat l1 l2 =
     If the index is provably out of bound, a bound error is given.
     If the size is a constant and the index is not provably in bound, a warning is given.
 *)
-let check_bad_index pname tenv p size index loc =
+let check_bad_index pname p size index loc =
   let size_is_constant = match size with
     | Sil.Const _ -> true
     | _ -> false in
@@ -73,14 +73,14 @@ let check_bad_index pname tenv p size index loc =
     end
 
 (** Perform bounds checking *)
-let bounds_check pname tenv prop size e =
+let bounds_check pname prop size e =
   if !Config.trace_rearrange then
     begin
       L.d_str "Bounds check index:"; Sil.d_exp e;
       L.d_str " size: "; Sil.d_exp size;
       L.d_ln()
     end;
-  check_bad_index pname tenv prop size e
+  check_bad_index pname prop size e
 
 let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp t
     (off: Sil.offset list) inst : Sil.atom list * Sil.strexp * Sil.typ =
@@ -126,7 +126,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     | Sil.Tarray(_, size),[] ->
         ([], Sil.Earray(size, [], inst), t)
     | Sil.Tarray(t', size'), (Sil.Off_index e) :: off' ->
-        bounds_check pname tenv orig_prop size' e (State.get_loc ());
+        bounds_check pname orig_prop size' e (State.get_loc ());
 
         let atoms', se', res_t' =
           create_struct_values
@@ -191,7 +191,7 @@ let rec _strexp_extend_values
       let off_new = Sil.Off_index(Sil.exp_zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
-  | (Sil.Off_fld (f, _)):: _, Sil.Earray _, Sil.Tarray _ ->
+  | (Sil.Off_fld _):: _, Sil.Earray _, Sil.Tarray _ ->
       let off_new = Sil.Off_index(Sil.exp_zero):: off in
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
@@ -200,7 +200,7 @@ let rec _strexp_extend_values
       let replace_fv new_v fv = if Ident.fieldname_equal (fst fv) f then (f, new_v) else fv in
       let _, typ', _ =
         try
-          IList.find (fun (f', t', a') -> Ident.fieldname_equal f f')
+          IList.find (fun (f', _, _) -> Ident.fieldname_equal f f')
             (instance_fields @ static_fields)
         with Not_found ->
           raise (Exceptions.Missing_fld (f, __POS__)) in
@@ -231,7 +231,7 @@ let rec _strexp_extend_values
           let struct_typ = Sil.Tstruct { struct_typ with Sil.instance_fields = instance_fields' } in
           [(atoms', Sil.Estruct (res_fsel', inst'), struct_typ)]
       end
-  | (Sil.Off_fld (f, _)):: off', _, _ ->
+  | (Sil.Off_fld (_, _)):: _, _, _ ->
       raise (Exceptions.Bad_footprint __POS__)
 
   | (Sil.Off_index _):: _, Sil.Eexp _, Sil.Tint _
@@ -252,7 +252,7 @@ let rec _strexp_extend_values
       _strexp_extend_values
         pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off inst
   | (Sil.Off_index e):: off', Sil.Earray(size, esel, inst_arr), Sil.Tarray(typ', size_for_typ') ->
-      bounds_check pname tenv orig_prop size e (State.get_loc ());
+      bounds_check pname orig_prop size e (State.get_loc ());
       begin
         try
           let _, se' = IList.find (fun (e', _) -> Sil.exp_equal e e') esel in
@@ -447,7 +447,7 @@ let mk_ptsto_exp_footprint
     If it exists, return None. Otherwise, return [Some fld] with [fld] the missing field. *)
 let prop_iter_check_fields_ptsto_shallow iter lexp =
   let offset = Sil.exp_get_offsets lexp in
-  let (e, se, t) =
+  let (_, se, _) =
     match Prop.prop_iter_current iter with
     | Sil.Hpointsto (e, se, t), _ -> (e, se, t)
     | _ -> assert false in
@@ -461,7 +461,7 @@ let prop_iter_check_fields_ptsto_shallow iter lexp =
                 check_offset se' off'
               with Not_found -> Some fld)
          | _ -> Some fld)
-    | (Sil.Off_index e):: off' -> None in
+    | (Sil.Off_index _):: _ -> None in
   check_offset se offset
 
 let fav_max_stamp fav =
@@ -528,8 +528,9 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
           let sigma_pto, sigma_rest =
             IList.partition (function
                 | Sil.Hpointsto(e', _, _) -> Sil.exp_equal e e'
-                | Sil.Hlseg (_, _, e1, e2, _) -> Sil.exp_equal e e1
-                | Sil.Hdllseg (_, _, e_iF, e_oB, e_oF, e_iB, _) -> Sil.exp_equal e e_iF || Sil.exp_equal e e_iB
+                | Sil.Hlseg (_, _, e1, _, _) -> Sil.exp_equal e e1
+                | Sil.Hdllseg (_, _, e_iF, _, _, e_iB, _) ->
+                    Sil.exp_equal e e_iF || Sil.exp_equal e e_iB
               ) footprint_sigma in
           let atoms_sigma_list =
             match sigma_pto with
@@ -797,8 +798,8 @@ let type_at_offset texp off =
     | (Sil.Off_fld (f, _)):: off', Sil.Tstruct { Sil.instance_fields } ->
         (try
            let typ' =
-             (fun (x, y, z) -> y)
-               (IList.find (fun (f', t', a') -> Ident.fieldname_equal f f') instance_fields) in
+             (fun (_, y, _) -> y)
+               (IList.find (fun (f', _, _) -> Ident.fieldname_equal f f') instance_fields) in
            strip_offset off' typ'
          with Not_found -> None)
     | (Sil.Off_index _):: off', Sil.Tarray (typ', _) ->
@@ -947,7 +948,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                nullable_obj_str := Some (Sil.pvar_to_string pvar);
              (* it's ok for a non-nullable local to point to deref_exp *)
              is_nullable || Sil.pvar_is_local pvar
-         | Sil.Hpointsto (_, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
+         | Sil.Hpointsto (_, Sil.Estruct (flds, _), Sil.Sizeof (typ, _)) ->
              let fld_is_nullable fld =
                match Annotations.get_field_type_and_annotation fld typ with
                | Some (_, annot) -> Annotations.ia_is_nullable annot

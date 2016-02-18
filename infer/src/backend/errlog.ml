@@ -27,8 +27,8 @@ type err_data =
   Prop.normal Prop.t option * Exceptions.err_class
 
 let err_data_compare
-    ((nodeid1, key1), session1, loc1, ml_loc_opt1, ltr1, po1, ec1)
-    ((nodeid2, key2), session2, loc2, ml_loc_opt2, ltr2, po2, ec2) =
+    (_, _, loc1, _, _, _, _)
+    (_, _, loc2, _, _, _, _) =
   Location.compare loc1 loc2
 
 module ErrDataSet = (* set err_data with no repeated loc *)
@@ -42,12 +42,12 @@ module ErrLogHash = Hashtbl.Make (struct
 
     type t = Exceptions.err_kind * bool * Localise.t * Localise.error_desc * string
 
-    let hash (ekind, in_footprint, err_name, desc, severity) =
+    let hash (ekind, in_footprint, err_name, desc, _) =
       Hashtbl.hash (ekind, in_footprint, err_name, Localise.error_desc_hash desc)
 
     let equal
-        (ekind1, in_footprint1, err_name1, desc1, severity1)
-        (ekind2, in_footprint2, err_name2, desc2, severity2) =
+        (ekind1, in_footprint1, err_name1, desc1, _)
+        (ekind2, in_footprint2, err_name2, desc2, _) =
       (ekind1, in_footprint1, err_name1) = (ekind2, in_footprint2, err_name2) &&
       Localise.error_desc_equal desc1 desc2
 
@@ -78,7 +78,7 @@ type iter_fun =
 let iter (f: iter_fun) (err_log: t) =
   ErrLogHash.iter (fun (ekind, in_footprint, err_name, desc, severity) set ->
       ErrDataSet.iter
-        (fun (node_id_key, section, loc, ml_loc_opt, ltr, pre_opt, eclass) ->
+        (fun (node_id_key, _, loc, ml_loc_opt, ltr, pre_opt, eclass) ->
            f
              node_id_key loc ml_loc_opt ekind in_footprint err_name
              desc severity ltr pre_opt eclass)
@@ -94,14 +94,14 @@ let size filter (err_log: t) =
 
 (** Print errors from error log *)
 let pp_errors fmt (errlog : t) =
-  let f (ekind, _, ename, _, _) locs =
+  let f (ekind, _, ename, _, _) _ =
     if ekind == Exceptions.Kerror then
       F.fprintf fmt "%a@ " Localise.pp ename in
   ErrLogHash.iter f errlog
 
 (** Print warnings from error log *)
 let pp_warnings fmt (errlog : t) =
-  let f (ekind, _, ename, desc, _) locs =
+  let f (ekind, _, ename, desc, _) _ =
     if ekind == Exceptions.Kwarning then
       F.fprintf fmt "%a %a@ " Localise.pp ename Localise.pp_error_desc desc in
   ErrLogHash.iter f errlog
@@ -110,10 +110,10 @@ let pp_warnings fmt (errlog : t) =
 let pp_html path_to_root fmt (errlog: t) =
   let pp_eds fmt eds =
     let pp_nodeid_session_loc
-        fmt ((nodeid, nodekey), session, loc, ml_loc_opt, ltr, pre_opt, eclass) =
+        fmt ((nodeid, _), session, loc, _, _, _, _) =
       Io_infer.Html.pp_session_link path_to_root fmt (nodeid, session, loc.Location.line) in
     ErrDataSet.iter (pp_nodeid_session_loc fmt) eds in
-  let f do_fp ek (ekind, infp, err_name, desc, severity) eds =
+  let f do_fp ek (ekind, infp, err_name, desc, _) eds =
     if ekind == ek && do_fp == infp
     then
       F.fprintf fmt "<br>%a %a %a"
@@ -231,7 +231,7 @@ module Err_table = struct
       let err_string = Localise.to_string err_name in
       let count = try StringMap.find err_string !err_name_map with Not_found -> 0 in
       err_name_map := StringMap.add err_string (count + n) !err_name_map in
-    let count (ekind', in_footprint, err_name, desc, severity) eds =
+    let count (ekind', in_footprint, err_name, _, _) eds =
       if ekind = ekind' && in_footprint then count_err err_name (ErrDataSet.cardinal eds) in
     ErrLogHash.iter count err_table;
     let pp err_string count = F.fprintf fmt " %s:%d" err_string count in
@@ -249,7 +249,7 @@ module Err_table = struct
     let map_warn_fp = ref LocMap.empty in
     let map_warn_re = ref LocMap.empty in
     let map_info = ref LocMap.empty in
-    let add_err nslm (ekind , in_fp, err_name, desc, severity) =
+    let add_err nslm (ekind , in_fp, err_name, desc, _) =
       let map = match in_fp, ekind with
         | true, Exceptions.Kerror -> map_err_fp
         | false, Exceptions.Kerror -> map_err_re
@@ -265,7 +265,7 @@ module Err_table = struct
       ErrDataSet.iter (fun loc -> add_err loc err_name) eds in
     ErrLogHash.iter f err_table;
 
-    let pp ekind (nodeidkey, session, loc, ml_loc_opt, ltr, pre_opt, eclass) fmt err_names =
+    let pp ekind (nodeidkey, _, loc, ml_loc_opt, _, _, _) fmt err_names =
       IList.iter (fun (err_name, desc) ->
           Exceptions.pp_err nodeidkey loc ekind err_name desc ml_loc_opt fmt ()) err_names in
     F.fprintf fmt "@.Detailed errors during footprint phase:@.";

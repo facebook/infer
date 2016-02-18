@@ -110,12 +110,12 @@ let pp_texp_simple pe = match pe.pe_opt with
   | PP_SIM_WITH_TYP -> Sil.pp_texp_full pe
 
 (** Pretty print a pointsto representing a stack variable as an equality *)
-let pp_hpred_stackvar pe0 env f hpred =
+let pp_hpred_stackvar pe0 f hpred =
   let pe, changed = Sil.color_pre_wrapper pe0 f hpred in
   begin match hpred with
     | Sil.Hpointsto (Sil.Lvar pvar, se, te) ->
         let pe' = match se with
-          | Sil.Eexp (Sil.Var id, inst) when not (Sil.pvar_is_global pvar) ->
+          | Sil.Eexp (Sil.Var _, _) when not (Sil.pvar_is_global pvar) ->
               { pe with pe_obj_sub = None } (* dont use obj sub on the var defining it *)
           | _ -> pe in
         (match pe'.pe_kind with
@@ -177,7 +177,7 @@ let pp_sigma_simple pe env fmt sigma =
   let sigma_stack, sigma_nonstack = sigma_get_stack_nonstack false sigma in
   let pp_stack fmt _sg =
     let sg = IList.sort Sil.hpred_compare _sg in
-    if sg != [] then Format.fprintf fmt "%a" (pp_semicolon_seq pe (pp_hpred_stackvar pe env)) sg in
+    if sg != [] then Format.fprintf fmt "%a" (pp_semicolon_seq pe (pp_hpred_stackvar pe)) sg in
   let pp_nl fmt doit = if doit then
       (match pe.pe_kind with
        | PP_TEXT | PP_HTML -> Format.fprintf fmt " ;@\n"
@@ -238,13 +238,13 @@ let pp_hpara_dll_simple _pe env n f pred =
 let create_pvar_env (sigma: sigma) : (Sil.exp -> Sil.exp) =
   let env = ref [] in
   let filter = function
-    | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var v, inst), _) ->
+    | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var v, _), _) ->
         if not (Sil.pvar_is_global pvar) then env := (Sil.Var v, Sil.Lvar pvar) :: !env
     | _ -> () in
   IList.iter filter sigma;
   let find e =
     try
-      snd (IList.find (fun (e1, e2) -> Sil.exp_equal e1 e) !env)
+      snd (IList.find (fun (e1, _) -> Sil.exp_equal e1 e) !env)
     with Not_found -> e in
   find
 
@@ -287,7 +287,7 @@ let pp_prop pe0 f prop =
         let env = prop_pred_env prop in
         let iter_f n hpara = F.fprintf f "@,@[<h>%a@]" (pp_hpara_simple pe env n) hpara in
         let iter_f_dll n hpara_dll = F.fprintf f "@,@[<h>%a@]" (pp_hpara_dll_simple pe env n) hpara_dll in
-        let pp_predicates fmt () =
+        let pp_predicates _ () =
           if Sil.Predicates.is_empty env
           then ()
           else if latex then
@@ -573,7 +573,7 @@ let sym_eval abs e =
         eval (Sil.BinOp (Sil.PlusPI, e11, e2'))
     | Sil.BinOp
         (Sil.PlusA,
-         (Sil.Sizeof (Sil.Tstruct struct_typ, st) as e1),
+         (Sil.Sizeof (Sil.Tstruct struct_typ, _) as e1),
          e2) ->
         (* pattern for extensible structs given a struct declatead as struct s { ... t arr[n] ... },
            allocation pattern malloc(sizeof(struct s) + k * siezof(t)) turn it into
@@ -698,7 +698,7 @@ let sym_eval abs e =
               Sil.exp_int (Sil.Int.mul n m)
           | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
               Sil.exp_float (v *. w)
-          | Sil.Var v, Sil.Var w ->
+          | Sil.Var _, Sil.Var _ ->
               Sil.BinOp(Sil.Mult, e1', e2')
           | _, _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp(Sil.Mult, e1', e2')
@@ -841,7 +841,7 @@ and typ_normalize sub typ = match typ with
         }
   | Sil.Tarray (t, e) ->
       Sil.Tarray (typ_normalize sub t, exp_normalize sub e)
-  | Sil.Tenum econsts ->
+  | Sil.Tenum _ ->
       typ
 
 let run_with_abs_val_eq_zero f =
@@ -1003,7 +1003,7 @@ let atom_normalize sub a0 =
         (e1, Sil.exp_int (n1 ++ n2))
     | Sil.BinOp(Sil.MinusA, Sil.Const (Sil.Cint n1), e1), Sil.Const (Sil.Cint n2) -> (* n1-e1 == n2 -> e1==n1-n2 *)
         (e1, Sil.exp_int (n1 -- n2))
-    | Sil.Lfield (e1', fld1, typ1), Sil.Lfield (e2', fld2, typ2) ->
+    | Sil.Lfield (e1', fld1, _), Sil.Lfield (e2', fld2, _) ->
         if Sil.fld_equal fld1 fld2
         then normalize_eq (e1', e2')
         else eq
@@ -1132,9 +1132,9 @@ let mk_ptsto lexp sexp te =
     base for fresh identifiers. If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
 let mk_ptsto_exp tenvo struct_init_mode (exp, te, expo) inst : Sil.hpred =
   let default_strexp () = match te with
-    | Sil.Sizeof (typ, st) ->
+    | Sil.Sizeof (typ, _) ->
         create_strexp_of_type tenvo struct_init_mode typ inst
-    | Sil.Var id ->
+    | Sil.Var _ ->
         Sil.Estruct ([], inst)
     | te ->
         L.err "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full pe_text) te;
@@ -1161,14 +1161,19 @@ let rec hpred_normalize sub hpred =
       let normalized_cnt = strexp_normalize sub cnt in
       let normalized_te = texp_normalize sub te in
       begin match normalized_cnt, normalized_te with
-        | Sil.Earray (Sil.Sizeof (t, st1), [], inst), Sil.Sizeof (Sil.Tarray _, st2) ->
-            (* check for an empty array whose size expression is (Sizeof type), and turn the array into a strexp of the given type *)
+        | Sil.Earray (Sil.Sizeof (t, st1), [], inst), Sil.Sizeof (Sil.Tarray _, _) ->
+            (* check for an empty array whose size expression is (Sizeof type), and turn the array
+               into a strexp of the given type *)
             let hpred' = mk_ptsto_exp None Fld_init (root, Sil.Sizeof (t, st1), None) inst in
             replace_hpred hpred'
-        | Sil.Earray (Sil.BinOp(Sil.Mult, Sil.Sizeof (t, st1), x), esel, inst), Sil.Sizeof (Sil.Tarray _, st2)
-        | Sil.Earray (Sil.BinOp(Sil.Mult, x, Sil.Sizeof (t, st1)), esel, inst), Sil.Sizeof (Sil.Tarray _, st2) ->
-            (* check for an array whose size expression is n * (Sizeof type), and turn the array into a strexp of the given type *)
-            let hpred' = mk_ptsto_exp None Fld_init (root, Sil.Sizeof (Sil.Tarray(t, x), st1), None) inst in
+        | Sil.Earray (Sil.BinOp(Sil.Mult, Sil.Sizeof (t, st1), x), esel, inst),
+          Sil.Sizeof (Sil.Tarray _, _)
+        | Sil.Earray (Sil.BinOp(Sil.Mult, x, Sil.Sizeof (t, st1)), esel, inst),
+          Sil.Sizeof (Sil.Tarray _, _) ->
+            (* check for an array whose size expression is n * (Sizeof type), and turn the array
+               into a strexp of the given type *)
+            let hpred' =
+              mk_ptsto_exp None Fld_init (root, Sil.Sizeof (Sil.Tarray(t, x), st1), None) inst in
             replace_hpred (replace_array_contents hpred' esel)
         | _ -> Sil.Hpointsto (normalized_root, normalized_cnt, normalized_te)
       end
@@ -1176,7 +1181,7 @@ let rec hpred_normalize sub hpred =
       let normalized_e1 = exp_normalize sub e1 in
       let normalized_e2 = exp_normalize sub e2 in
       let normalized_elist = IList.map (exp_normalize sub) elist in
-      let normalized_para = hpara_normalize sub para in
+      let normalized_para = hpara_normalize para in
       Sil.Hlseg (k, normalized_para, normalized_e1, normalized_e2, normalized_elist)
   | Sil.Hdllseg (k, para, e1, e2, e3, e4, elist) ->
       let norm_e1 = exp_normalize sub e1 in
@@ -1184,15 +1189,15 @@ let rec hpred_normalize sub hpred =
       let norm_e3 = exp_normalize sub e3 in
       let norm_e4 = exp_normalize sub e4 in
       let norm_elist = IList.map (exp_normalize sub) elist in
-      let norm_para = hpara_dll_normalize sub para in
+      let norm_para = hpara_dll_normalize para in
       Sil.Hdllseg (k, norm_para, norm_e1, norm_e2, norm_e3, norm_e4, norm_elist)
 
-and hpara_normalize sub para =
+and hpara_normalize para =
   let normalized_body = IList.map (hpred_normalize Sil.sub_empty) (para.Sil.body) in
   let sorted_body = IList.sort Sil.hpred_compare normalized_body in
   { para with Sil.body = sorted_body }
 
-and hpara_dll_normalize sub para =
+and hpara_dll_normalize para =
   let normalized_body = IList.map (hpred_normalize Sil.sub_empty) (para.Sil.body_dll) in
   let sorted_body = IList.sort Sil.hpred_compare normalized_body in
   { para with Sil.body_dll = sorted_body }
@@ -1302,7 +1307,7 @@ let pi_normalize sub sigma pi0 =
         not (syntactically_different (e1, e2))
     | Sil.Aeq(Sil.Const c1, Sil.Const c2) ->
         not (Sil.const_equal c1 c2)
-    | a -> true in
+    | _ -> true in
   let pi' = IList.stable_sort Sil.atom_compare ((IList.filter filter_useful_atom nonineq_list) @ ineq_list) in
   let pi'' = pi_sorted_remove_redundant pi' in
   if pi_equal pi0 pi'' then pi0 else pi''
@@ -1359,7 +1364,7 @@ let lexp_normalize_prop p lexp =
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
-let exp_collapse_consecutive_indices_prop p typ exp =
+let exp_collapse_consecutive_indices_prop typ exp =
   let typ_is_base = function
     | Sil.Tint _ | Sil.Tfloat _ | Sil.Tstruct _ | Sil.Tvoid | Sil.Tfun _ -> true
     | _ -> false in
@@ -1457,23 +1462,23 @@ let mk_ptsto_lvar tenv expand_structs inst ((pvar: Sil.pvar), texp, expo) : Sil.
 
 (** Sil.Construct a lseg predicate *)
 let mk_lseg k para e_start e_end es_shared =
-  let npara = hpara_normalize Sil.sub_empty para in
+  let npara = hpara_normalize para in
   Sil.Hlseg (k, npara, e_start, e_end, es_shared)
 
 (** Sil.Construct a dllseg predicate *)
 let mk_dllseg k para exp_iF exp_oB exp_oF exp_iB exps_shared =
-  let npara = hpara_dll_normalize Sil.sub_empty para in
+  let npara = hpara_dll_normalize para in
   Sil.Hdllseg (k, npara, exp_iF, exp_oB , exp_oF, exp_iB, exps_shared)
 
 (** Sil.Construct a hpara *)
 let mk_hpara root next svars evars body =
   let para = { Sil.root = root; Sil.next = next; Sil.svars = svars; Sil.evars = evars; Sil.body = body } in
-  hpara_normalize Sil.sub_empty para
+  hpara_normalize para
 
 (** Sil.Construct a dll_hpara *)
 let mk_dll_hpara iF oB oF svars evars body =
   let para = { Sil.cell = iF; Sil.blink = oB; Sil.flink = oF; Sil.svars_dll = svars; Sil.evars_dll = evars; Sil.body_dll = body } in
-  hpara_dll_normalize Sil.sub_empty para
+  hpara_dll_normalize para
 
 (** Proposition [true /\ emp]. *)
 let prop_emp : normal t =
@@ -1536,7 +1541,7 @@ let get_fld_typ_path_opt src_exps snk_exp_ reachable_hpreds_ =
     | (_, Sil.Eexp (e, _)) -> Sil.exp_equal target_exp e
     | _ -> false in
   let extend_path hpred (snk_exp, path, reachable_hpreds) = match hpred with
-    | Sil.Hpointsto (lhs, Sil.Estruct (flds, inst), Sil.Sizeof (typ, _)) ->
+    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Sil.Sizeof (typ, _)) ->
         (try
            let fld, _ = IList.find (fun fld -> strexp_matches snk_exp fld) flds in
            let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
@@ -1838,8 +1843,8 @@ let mark_vars_as_undefined prop vars_to_mark callee_pname loc path_pos =
 (** Remove an attribute from all the atoms in the heap *)
 let remove_attribute att prop =
   let atom_remove atom pi = match atom with
-    | Sil.Aneq (e, Sil.Const (Sil.Cattribute att_old))
-    | Sil.Aneq (Sil.Const (Sil.Cattribute att_old), e) ->
+    | Sil.Aneq (_, Sil.Const (Sil.Cattribute att_old))
+    | Sil.Aneq (Sil.Const (Sil.Cattribute att_old), _) ->
         if Sil.attribute_equal att_old att then
           pi
         else atom:: pi
@@ -1862,7 +1867,7 @@ let remove_attribute_from_exp att prop exp =
 (* Replace an attribute OBJC_NULL($n1) with OBJC_NULL(var) when var = $n1, and also sets $n1 = 0 *)
 let replace_objc_null prop lhs_exp rhs_exp =
   match get_objc_null_attribute prop rhs_exp, rhs_exp with
-  | Some att, Sil.Var var ->
+  | Some att, Sil.Var _ ->
       let prop = remove_attribute_from_exp att prop rhs_exp in
       let prop = conjoin_eq rhs_exp Sil.exp_zero prop in
       add_or_replace_exp_attribute prop lhs_exp att
@@ -1870,12 +1875,12 @@ let replace_objc_null prop lhs_exp rhs_exp =
 
 let rec nullify_exp_with_objc_null prop exp =
   match exp with
-  | Sil.BinOp (op, exp1, exp2) ->
+  | Sil.BinOp (_, exp1, exp2) ->
       let prop' = nullify_exp_with_objc_null prop exp1 in
       nullify_exp_with_objc_null prop' exp2
-  | Sil.UnOp (op, exp, _) ->
+  | Sil.UnOp (_, exp, _) ->
       nullify_exp_with_objc_null prop exp
-  | Sil.Var name ->
+  | Sil.Var _ ->
       (match get_objc_null_attribute prop exp with
        | Some att ->
            let prop' = remove_attribute_from_exp att prop exp in
@@ -2037,10 +2042,10 @@ let sigma_dfs_sort sigma =
   let final () = ExpStack.final () in
 
   let rec handle_strexp = function
-    | Sil.Eexp (e, inst) -> ExpStack.push e
-    | Sil.Estruct (fld_se_list, inst) ->
+    | Sil.Eexp (e, _) -> ExpStack.push e
+    | Sil.Estruct (fld_se_list, _) ->
         IList.iter (fun (_, se) -> handle_strexp se) fld_se_list
-    | Sil.Earray (_, idx_se_list, inst) ->
+    | Sil.Earray (_, idx_se_list, _) ->
         IList.iter (fun (_, se) -> handle_strexp se) idx_se_list in
 
   let rec handle_e visited seen e = function
@@ -2092,10 +2097,10 @@ let prop_fav_add_dfs fav prop =
 
 let rec strexp_get_array_indices acc = function
   | Sil.Eexp _ -> acc
-  | Sil.Estruct (fsel, inst) ->
+  | Sil.Estruct (fsel, _) ->
       let se_list = IList.map snd fsel in
       IList.fold_left strexp_get_array_indices acc se_list
-  | Sil.Earray (size, isel, _) ->
+  | Sil.Earray (_, isel, _) ->
       let acc_new = IList.fold_left (fun acc' (idx, _) -> idx:: acc') acc isel in
       let se_list = IList.map snd isel in
       IList.fold_left strexp_get_array_indices acc_new se_list
@@ -2245,7 +2250,7 @@ and typ_captured_ren ren typ = match typ with
       Sil.Tptr (typ_captured_ren ren t', pk)
   | Sil.Tarray (t, e) ->
       Sil.Tarray (typ_captured_ren ren t, exp_captured_ren ren e)
-  | Sil.Tenum econsts ->
+  | Sil.Tenum _ ->
       typ
 
 let atom_captured_ren ren = function
@@ -2600,7 +2605,7 @@ let prop_iter_make_id_primed id iter =
   let rec get_eqs acc = function
     | [] | [_] ->
         IList.rev acc
-    | (_, e1) :: (((_, e2) :: pairs') as pairs) ->
+    | (_, e1) :: (((_, e2) :: _) as pairs) ->
         get_eqs (Sil.Aeq(e1, e2):: acc) pairs in
 
   let sub_new, sub_use, eqs_add =

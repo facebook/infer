@@ -135,7 +135,7 @@ let fieldname_to_simplified_string fn =
   match string_split_character s '.' with
   | Some s1, s2 ->
       (match string_split_character s1 '.' with
-       | Some s3, s4 -> s4 ^ "." ^ s2
+       | Some _, s4 -> s4 ^ "." ^ s2
        | _ -> s)
   | _ -> s
 
@@ -143,7 +143,7 @@ let fieldname_to_simplified_string fn =
 let fieldname_to_flat_string fn =
   let s = Mangled.to_string fn.fname in
   match string_split_character s '.' with
-  | Some s1, s2 -> s2
+  | Some _, s2 -> s2
   | _ -> s
 
 (** Returns the class part of the fieldname *)

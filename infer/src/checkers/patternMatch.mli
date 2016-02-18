@@ -44,14 +44,14 @@ val is_direct_subtype_of : Sil.typ -> Typename.t -> bool
 val java_get_const_type_name : Sil.const -> string
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
-val java_get_vararg_values : Cfg.Node.t -> Sil.pvar -> Idenv.t -> Cfg.Procdesc.t -> Sil.exp list
+val java_get_vararg_values : Cfg.Node.t -> Sil.pvar -> Idenv.t -> Sil.exp list
 
 val java_proc_name_with_class_method : Procname.t -> string -> string -> bool
 
 (** Return the callees that satisfy [filter]. *)
 val proc_calls :
   (Procname.t -> ProcAttributes.t option) ->
-  Procname.t -> Cfg.Procdesc.t ->
+  Cfg.Procdesc.t ->
   (Procname.t -> ProcAttributes.t -> bool) ->
   (Procname.t * ProcAttributes.t) list
 

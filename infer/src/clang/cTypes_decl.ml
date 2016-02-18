@@ -41,7 +41,7 @@ let add_predefined_objc_types tenv =
 
 (* Whenever new type are added manually to the translation in ast_expressions, *)
 (* they should be added here too!! *)
-let add_predefined_basic_types tenv =
+let add_predefined_basic_types () =
   let open Ast_expressions in
   let add_basic_type tp basic_type_kind =
     let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
@@ -71,16 +71,16 @@ let add_predefined_basic_types tenv =
 
 let add_predefined_types tenv =
   add_predefined_objc_types tenv;
-  add_predefined_basic_types tenv
+  add_predefined_basic_types ()
 
 let create_csu opt_type =
   match opt_type with
   | `Type s ->
       (let buf = Str.split (Str.regexp "[ \t]+") s in
        match buf with
-       | "struct":: l ->Csu.Struct
-       | "class":: l -> Csu.Class Csu.CPP
-       | "union":: l -> Csu.Union
+       | "struct":: _ ->Csu.Struct
+       | "class":: _ -> Csu.Class Csu.CPP
+       | "union":: _ -> Csu.Union
        | _ -> Csu.Struct)
   | _ -> assert false
 
@@ -90,8 +90,8 @@ let get_record_name_csu decl =
   let name_info, csu = match decl with
     | RecordDecl (_, name_info, opt_type, _, _, _, _) ->
         name_info, create_csu opt_type
-    | CXXRecordDecl (_, name_info, opt_type, _, _, _, _, _)
-    | ClassTemplateSpecializationDecl (_, name_info, opt_type, _, _, _, _, _) ->
+    | CXXRecordDecl (_, name_info, _, _, _, _, _, _)
+    | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _) ->
         (* we use Csu.Class for C++ because we expect Csu.Class csu from *)
         (* types that have methods. And in C++ struct/class/union can have methods *)
         name_info, Csu.Class Csu.CPP
@@ -101,12 +101,12 @@ let get_record_name_csu decl =
 
 let get_record_name decl = snd (get_record_name_csu decl)
 
-let get_class_methods tenv class_name decl_list =
+let get_class_methods class_name decl_list =
   let process_method_decl = function
-    | Clang_ast_t.CXXMethodDecl (decl_info, name_info, tp, function_decl_info, _)
-    | Clang_ast_t.CXXConstructorDecl (decl_info, name_info, tp, function_decl_info, _)
-    | Clang_ast_t.CXXConversionDecl (decl_info, name_info, tp, function_decl_info, _)
-    | Clang_ast_t.CXXDestructorDecl (decl_info, name_info, tp, function_decl_info, _) ->
+    | Clang_ast_t.CXXMethodDecl (_, name_info, tp, _, _)
+    | Clang_ast_t.CXXConstructorDecl (_, name_info, tp, _, _)
+    | Clang_ast_t.CXXConversionDecl (_, name_info, tp, _, _)
+    | Clang_ast_t.CXXDestructorDecl (_, name_info, tp, _, _) ->
         let method_name = name_info.Clang_ast_t.ni_name in
         Printing.log_out "  ...Declaring method '%s'.\n" method_name;
         let method_proc = General_utils.mk_procname_from_cpp_method class_name method_name tp in
@@ -186,7 +186,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
           General_utils.append_no_duplicates_fields extra_fields non_static_fields in
         let sorted_non_static_fields = General_utils.sort_fields non_static_fields' in
         let static_fields = [] in (* Note: We treat static field same as global variables *)
-        let def_methods = get_class_methods tenv name decl_list in (* C++ methods only *)
+        let def_methods = get_class_methods name decl_list in (* C++ methods only *)
         let superclasses = get_superclass_list_cpp decl in
         let sil_type = Sil.Tstruct {
             Sil.instance_fields = sorted_non_static_fields;

@@ -35,11 +35,11 @@ let is_alloc_model typ funct =
 
 let rec get_func_type_from_stmt stmt =
   match stmt with
-  | Clang_ast_t.DeclRefExpr(stmt_info, stmt_list, expr_info, decl_ref_expr_info) ->
+  | Clang_ast_t.DeclRefExpr(_, _, expr_info, _) ->
       Some expr_info.Clang_ast_t.ei_type_ptr
   | _ ->
       match CFrontend_utils.Ast_utils.get_stmts_from_stmt stmt with
-      | stmt:: rest -> get_func_type_from_stmt stmt
+      | stmt:: _ -> get_func_type_from_stmt stmt
       | [] -> None
 
 let is_retain_predefined_model typ funct =
@@ -138,7 +138,7 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname la
   get_predefined_ms_method condition class_name method_name Procname.Class_objc_method
     mk_procname lang [("x", Ast_expressions.create_char_star_type)] id_type [] None
 
-let get_predefined_ms_retain_release class_name method_name mk_procname lang =
+let get_predefined_ms_retain_release method_name mk_procname lang =
   let condition = is_retain_or_release method_name in
   let return_type =
     if is_retain_method method_name || is_autorelease_method method_name
@@ -175,15 +175,14 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
     [] (Some SymExec.ModelBuiltins.__instanceof)
 
 let get_predefined_model_method_signature class_name method_name mk_procname lang =
-  let next_predefined f a = function
+  let next_predefined f = function
     | Some _ as x -> x
-    | None -> f a method_name mk_procname lang in
-  let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
+    | None -> f method_name mk_procname lang in
   get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang
-  |> next_predefined get_predefined_ms_retain_release class_type
-  |> next_predefined get_predefined_ms_stringWithUTF8String class_name
-  |> next_predefined get_predefined_ms_autoreleasepool_init class_name
-  |> next_predefined get_predefined_ms_is_kind_of_class class_name
+  |> next_predefined get_predefined_ms_retain_release
+  |> next_predefined (get_predefined_ms_stringWithUTF8String class_name)
+  |> next_predefined (get_predefined_ms_autoreleasepool_init class_name)
+  |> next_predefined (get_predefined_ms_is_kind_of_class class_name)
 
 let dispatch_functions = [
   ("_dispatch_once", 1);

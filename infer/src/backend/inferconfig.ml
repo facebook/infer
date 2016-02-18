@@ -31,9 +31,9 @@ type filters =
     proc_filter : proc_filter;
   }
 
-let default_path_filter : path_filter = function path -> true
-let default_error_filter : error_filter = function error_name -> true
-let default_proc_filter : proc_filter = function proc_name -> true
+let default_path_filter : path_filter = function _ -> true
+let default_error_filter : error_filter = function _ -> true
+let default_proc_filter : proc_filter = function _ -> true
 
 let do_not_filter : filters =
   {
@@ -63,7 +63,7 @@ let is_matching patterns =
 module FileContainsStringMatcher = struct
   type matcher = DB.source_file -> bool
 
-  let default_matcher : matcher = fun fname -> false
+  let default_matcher : matcher = fun _ -> false
 
   let file_contains regexp file_in =
     let rec loop () =
@@ -104,7 +104,7 @@ struct
   type matcher = DB.source_file -> Procname.t -> bool
 
   let default_matcher : matcher =
-    fun source_file proc_name -> false
+    fun _ _ -> false
 
   type method_pattern = {
     class_name : string;
@@ -158,7 +158,7 @@ struct
         | `String s -> s:: accu
         | _ -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc)) in
       IList.rev (IList.fold_left collect [] l) in
-    let create_method_pattern mp assoc =
+    let create_method_pattern assoc =
       let loop mp = function
         | (key, `String s) when key = "class" ->
             { mp with class_name = s }
@@ -169,17 +169,17 @@ struct
         | (key, _) when key = "language" -> mp
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
       IList.fold_left loop default_method_pattern assoc
-    and create_string_contains sc assoc =
+    and create_string_contains assoc =
       let loop sc = function
         | (key, `String pattern) when key = "source_contains" -> pattern
         | (key, _) when key = "language" -> sc
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
       IList.fold_left loop default_source_contains assoc in
     match detect_pattern assoc with
-    | Method_pattern (language, mp) ->
-        Method_pattern (language, create_method_pattern mp assoc)
-    | Source_contains (language, sc) ->
-        Source_contains (language, create_string_contains sc assoc)
+    | Method_pattern (language, _) ->
+        Method_pattern (language, create_method_pattern assoc)
+    | Source_contains (language, _) ->
+        Source_contains (language, create_string_contains assoc)
 
   let rec translate accu (json : Yojson.Basic.json) : pattern list =
     match json with
@@ -201,7 +201,7 @@ struct
              StringMap.add pattern.class_name (pattern:: previous) map)
           StringMap.empty
           m_patterns in
-      fun source_file proc_name ->
+      fun _ proc_name ->
         let class_name = Procname.java_get_class proc_name
         and method_name = Procname.java_get_method proc_name in
         try
@@ -217,12 +217,12 @@ struct
   let create_file_matcher patterns =
     let s_patterns, m_patterns =
       let collect (s_patterns, m_patterns) = function
-        | Source_contains (lang, s) -> (s:: s_patterns, m_patterns)
-        | Method_pattern (lang, mp) -> (s_patterns, mp :: m_patterns) in
+        | Source_contains (_, s) -> (s:: s_patterns, m_patterns)
+        | Method_pattern (_, mp) -> (s_patterns, mp :: m_patterns) in
       IList.fold_left collect ([], []) patterns in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
-      fun source_file proc_name -> matcher source_file
+      fun source_file _ -> matcher source_file
     and m_matcher = create_method_matcher m_patterns in
     fun source_file proc_name ->
       m_matcher source_file proc_name || s_matcher source_file proc_name

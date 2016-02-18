@@ -68,7 +68,7 @@ and sil_type_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
   | Some type_ptr ->
       (match Ast_utils.get_type type_ptr with
-       | Some Clang_ast_t.ObjCObjectPointerType (type_info', type_ptr') ->
+       | Some Clang_ast_t.ObjCObjectPointerType (_, type_ptr') ->
            let typ = type_ptr_to_sil_type translate_decl tenv type_ptr' in
            Sil.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
        | _ -> type_ptr_to_sil_type translate_decl tenv type_ptr)
@@ -77,44 +77,44 @@ and sil_type_of_attr_type translate_decl tenv type_info attr_info =
 and sil_type_of_c_type translate_decl tenv c_type =
   let open Clang_ast_t in
   match c_type with
-  | NoneType (type_info) -> Sil.Tvoid
-  | BuiltinType (type_info, builtin_type_kind) ->
+  | NoneType _ -> Sil.Tvoid
+  | BuiltinType (_, builtin_type_kind) ->
       sil_type_of_builtin_type_kind builtin_type_kind
-  | PointerType (type_info, type_ptr)
-  | ObjCObjectPointerType (type_info, type_ptr) ->
+  | PointerType (_, type_ptr)
+  | ObjCObjectPointerType (_, type_ptr) ->
       let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
       if Sil.typ_equal typ (get_builtin_objc_type `ObjCClass) then
         typ
       else Sil.Tptr (typ, Sil.Pk_pointer)
-  | ObjCObjectType (type_info, objc_object_type_info) ->
+  | ObjCObjectType (_, objc_object_type_info) ->
       type_ptr_to_sil_type translate_decl tenv objc_object_type_info.Clang_ast_t.base_type
-  | BlockPointerType (type_info, type_ptr) ->
+  | BlockPointerType (_, type_ptr) ->
       let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
       Sil.Tptr (typ, Sil.Pk_pointer)
-  | IncompleteArrayType (type_info, type_ptr)
-  | DependentSizedArrayType (type_info, type_ptr)
-  | VariableArrayType (type_info, type_ptr) ->
+  | IncompleteArrayType (_, type_ptr)
+  | DependentSizedArrayType (_, type_ptr)
+  | VariableArrayType (_, type_ptr) ->
       build_array_type translate_decl tenv type_ptr (-1)
-  | ConstantArrayType (type_info, type_ptr, n) ->
+  | ConstantArrayType (_, type_ptr, n) ->
       build_array_type translate_decl tenv type_ptr n
-  | FunctionProtoType (type_info, function_type_info, _)
-  | FunctionNoProtoType (type_info, function_type_info) ->
+  | FunctionProtoType _
+  | FunctionNoProtoType _ ->
       Sil.Tfun false
-  | ParenType (type_info, type_ptr) ->
+  | ParenType (_, type_ptr) ->
       type_ptr_to_sil_type translate_decl tenv type_ptr
-  | DecayedType (type_info, type_ptr) ->
+  | DecayedType (_, type_ptr) ->
       type_ptr_to_sil_type translate_decl tenv type_ptr
-  | RecordType (type_info, pointer)
-  | EnumType (type_info, pointer) ->
+  | RecordType (_, pointer)
+  | EnumType (_, pointer) ->
       decl_ptr_to_sil_type translate_decl tenv pointer
   | ElaboratedType (type_info) ->
       (match type_info.Clang_ast_t.ti_desugared_type with
          Some type_ptr -> type_ptr_to_sil_type translate_decl tenv type_ptr
        | None -> Sil.Tvoid)
-  | ObjCInterfaceType (type_info, pointer) ->
+  | ObjCInterfaceType (_, pointer) ->
       decl_ptr_to_sil_type translate_decl tenv pointer
-  | RValueReferenceType (type_info, type_ptr)
-  | LValueReferenceType (type_info, type_ptr) ->
+  | RValueReferenceType (_, type_ptr)
+  | LValueReferenceType (_, type_ptr) ->
       let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
       Sil.Tptr (typ, Sil.Pk_reference)
   | AttributedType (type_info, attr_info) ->

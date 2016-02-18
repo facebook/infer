@@ -852,7 +852,7 @@ val attribute_to_string : printenv -> attribute -> string
 val dexp_to_string : dexp -> string
 
 (** Pretty print a dexp. *)
-val pp_dexp : printenv -> Format.formatter -> dexp -> unit
+val pp_dexp : Format.formatter -> dexp -> unit
 
 (** Pretty print an expression. *)
 val pp_exp : printenv -> Format.formatter -> exp -> unit
@@ -1151,8 +1151,6 @@ val hpred_fav_add : fav -> hpred -> unit
 
 val hpred_fav : hpred -> fav
 
-val hpara_fav_add : fav -> hpara -> unit
-
 (** Variables in hpara, excluding bound vars in the body *)
 val hpara_shallow_av : hpara -> fav
 
@@ -1270,8 +1268,6 @@ val atom_sub : subst -> atom -> atom
 val instr_sub : subst -> instr -> instr
 
 val hpred_sub : subst -> hpred -> hpred
-
-val hpara_sub : subst -> hpara -> hpara
 
 (** {2 Functions for replacing occurrences of expressions.} *)
 

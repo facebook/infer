@@ -61,7 +61,7 @@ type t = {
 }
 
 let initial () = {
-  const_map = (fun node exp -> None);
+  const_map = (fun _ _ -> None);
   diverging_states_node = Paths.PathSet.empty;
   diverging_states_proc = Paths.PathSet.empty;
   goto_node = None;
@@ -184,7 +184,7 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
   let module S = (* set of nodes with normalized insructions *)
     Set.Make(struct
       type t = Cfg.Node.t * Sil.instr list
-      let compare (n1, instrs1) (n2, instrs2) =
+      let compare (n1, _) (n2, _) =
         Cfg.Node.compare n1 n2
     end) in
 
@@ -221,7 +221,7 @@ let mk_find_duplicate_nodes proc_desc : (Cfg.Node.t -> Cfg.NodeSet.t) =
     try
       let s = M.find (get_key node) map in
       let elements = S.elements s in
-      let (_, node_normalized_instrs), others =
+      let (_, node_normalized_instrs), _ =
         let filter (node', _) = Cfg.Node.equal node node' in
         match IList.partition filter elements with
         | [this], others -> this, others
@@ -325,11 +325,11 @@ type log_issue =
   unit
 
 let process_execution_failures (log_issue : log_issue) pname =
-  let do_failure node fs =
+  let do_failure _ fs =
     (* L.err "Node:%a node_ok:%d node_fail:%d@." Cfg.Node.pp node fs.node_ok fs.node_fail; *)
     match fs.node_ok, fs.first_failure with
-    | 0, Some (loc, key, session, loc_trace, pre_opt, exn) ->
-        let ex_name, desc, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
+    | 0, Some (loc, key, _, loc_trace, pre_opt, exn) ->
+        let ex_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ Localise.to_string ex_name) in
         let exn' = Exceptions.Analysis_stops (desc', ml_loc_opt) in
         log_issue

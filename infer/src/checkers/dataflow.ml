@@ -46,15 +46,15 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
       let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
       Sil.pvar_equal pvar ret_pvar in
     match instr with
-    | Sil.Set (Sil.Lvar pvar, typ, Sil.Const (Sil.Cexn _), loc) when pvar_is_return pvar ->
+    | Sil.Set (Sil.Lvar pvar, _, Sil.Const (Sil.Cexn _), _) when pvar_is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
-    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), args, loc, _)
+    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _)
       when SymExec.function_is_builtin callee_pn ->
         if Procname.equal callee_pn SymExec.ModelBuiltins.__cast
         then DontKnow
         else DoesNotThrow
-    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), args, loc, _) ->
+    | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _) ->
         proc_throws callee_pn
     | _ ->
         DoesNotThrow in
@@ -173,11 +173,11 @@ let callback_test_dataflow { Callbacks.proc_desc } =
       let do_node n s =
         if verbose then L.stdout "visiting node %a with state %d@." Cfg.Node.pp n s;
         [s + 1], [s + 1]
-      let proc_throws pn = DoesNotThrow
+      let proc_throws _ = DoesNotThrow
     end) in
   let transitions = DFCount.run proc_desc 0 in
   let do_node node =
     match transitions node with
-    | DFCount.Transition (pre_state, _, _) -> ()
+    | DFCount.Transition _ -> ()
     | DFCount.Dead_state -> () in
   IList.iter do_node (Cfg.Procdesc.get_nodes proc_desc)

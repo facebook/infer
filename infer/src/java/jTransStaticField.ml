@@ -29,7 +29,7 @@ let sort_pcs () =
 (** Returns whether the node contains static final fields
     that are not of a primitive type or String. *)
 let has_static_final_fields node =
-  let detect fs f test =
+  let detect _ f test =
     test || (Javalib.is_static_field f && Javalib.is_final_field f) in
   JBasics.FieldMap.fold detect (Javalib.get_fields node) false
 (* Seems that there is no function "exists" on this implementation of *)
@@ -40,7 +40,7 @@ let has_static_final_fields node =
 let collect_field_pc instrs field_pc_list =
   let aux pc instr =
     match instr with
-    | JBir.AffectStaticField (cn, fs, e) ->
+    | JBir.AffectStaticField (_, fs, _) ->
         field_pc_list := (fs, pc)::!field_pc_list
     | _ -> () in
   (Array.iteri aux instrs);
@@ -51,7 +51,7 @@ let collect_field_pc instrs field_pc_list =
 let add_return_field instrs =
   let aux instr =
     match instr with
-    | JBir.AffectStaticField (cn, fs, e) ->
+    | JBir.AffectStaticField (_, _, e) ->
         JBir.Return (Some e)
     | _ -> instr in
   (Array.map aux instrs)
@@ -61,12 +61,12 @@ let add_return_field instrs =
     which is the line after the previous field has been initialised. *)
 let rec find_pc field list =
   match list with
-  | (fs, pc):: rest ->
+  | (fs, _):: rest ->
       if JBasics.fs_equal field fs then
         try
-          let (nfs, npc) = IList.hd rest in
+          let (_, npc) = IList.hd rest in
           npc + 1
-        with hd -> 1
+        with _ -> 1
       else (find_pc field rest)
   | [] -> -1
 
@@ -82,7 +82,7 @@ let remove_nonfinal_instrs code end_pc =
           if next_pc < end_pc then aux2 next_pc
         end
       else () in
-    let aux pc instr =
+    let aux pc _ =
       if IList.mem (=) pc !field_nonfinal_pcs then
         begin
           Array.set code pc JBir.Nop;
@@ -90,12 +90,12 @@ let remove_nonfinal_instrs code end_pc =
         end
       else () in
     Array.iteri aux code
-  with Invalid_argument s -> assert false
+  with Invalid_argument _ -> assert false
 
 let has_unclear_control_flow code =
   let aux instr nok =
     match instr with
-    | JBir.Goto n -> true
+    | JBir.Goto _ -> true
     | _ -> nok in
   Array.fold_right aux code false
 
@@ -104,7 +104,7 @@ let has_unclear_control_flow code =
     for returning the field selected by the parameter. *)
 (* The constant s means the parameter field of the function.
    Note that we remove the initialisation of non - final static fields. *)
-let static_field_init_complex cn code fields length =
+let static_field_init_complex code fields length =
   let code = Array.append [| (JBir.Goto length ) |] code in
   let s = JConfig.field_cst in
   let field_pc_list = ref [] in
@@ -172,7 +172,7 @@ let static_field_init node cn code =
     let code =
       if has_unclear_control_flow code then
         static_field_init_simple cn code field_list length
-      else static_field_init_complex cn code field_list length in
+      else static_field_init_complex code field_list length in
     code
   with Not_found -> code
 

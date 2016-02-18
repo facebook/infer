@@ -93,13 +93,13 @@ let set_pvar context var typ = fst (get_or_set_pvar_type context var typ)
 let reset_pvar_type context =
   let var_map = get_var_map context in
   let aux var item =
-    match item with (pvar, otyp, typ) ->
+    match item with (pvar, otyp, _) ->
       set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map) in
   JBir.VarMap.iter aux var_map
 
 let get_var_type context var =
   try
-    let (_, otyp', otyp) = JBir.VarMap.find var (get_var_map context) in
+    let (_, _, otyp) = JBir.VarMap.find var (get_var_map context) in
     Some otyp
   with Not_found -> None
 

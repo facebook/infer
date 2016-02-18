@@ -14,7 +14,7 @@ let string_widening_limit = 1000
 let verbose = false
 
 (* Merge two constant maps by adding keys as necessary *)
-let merge_values key c1_opt c2_opt =
+let merge_values _ c1_opt c2_opt =
   match c1_opt, c2_opt with
   | Some (Some c1), Some (Some c2) when Sil.const_equal c1 c2 -> Some (Some c1)
   | Some c, None
@@ -43,7 +43,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
     let join = ConstantMap.merge merge_values
 
-    let proc_throws pn = Dataflow.DontKnow
+    let proc_throws _ = Dataflow.DontKnow
 
     let do_node node constants =
 

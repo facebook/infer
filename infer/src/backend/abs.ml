@@ -51,7 +51,7 @@ let create_fresh_primeds_ls para =
   let id_end = Ident.create_fresh Ident.kprimed in
   let ids_shared =
     let svars = para.Sil.svars in
-    let f id = Ident.create_fresh Ident.kprimed in
+    let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
   let ids_tuple = (id_base, id_next, id_end, ids_shared) in
   let exp_base = Sil.Var id_base in
@@ -71,7 +71,7 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.subst) =
     (insts_of_private_ids, insts_of_public_ids, inst_of_base) in
   let fav_insts_of_public_ids = IList.flatten (IList.map Sil.exp_fav_list insts_of_public_ids) in
   let fav_insts_of_private_ids = IList.flatten (IList.map Sil.exp_fav_list insts_of_private_ids) in
-  let (fav_p_leftover, fav_in_pvars) =
+  let (fav_p_leftover, _) =
     let sigma = Prop.get_sigma p_leftover in
     (sigma_fav_list sigma, sigma_fav_in_pvars_list sigma) in
   let fpv_inst_of_base = Sil.exp_fpv inst_of_base in
@@ -108,7 +108,7 @@ let mk_rule_ptspts_ls impl_ok1 impl_ok2 (para: Sil.hpara) =
     let para_body_hpats = IList.map mark_impl_flag para_body in
     (ids, para_body_hpats) in
   let lseg_res = Prop.mk_lseg Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = [] in
+  let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: (ids_exist_fst @ ids_exist_snd) in
     create_condition_ls ids_private id_base in
@@ -132,7 +132,7 @@ let mk_rule_ptsls_ls k2 impl_ok1 impl_ok2 para =
         (allow_impl hpred, IList.map allow_impl hpreds) in
   let lseg_pat = { Match.hpred = Prop.mk_lseg k2 para exp_next exp_end exps_shared; Match.flag = impl_ok2 } in
   let lseg_res = Prop.mk_lseg Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = [] in
+  let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base in
@@ -154,7 +154,7 @@ let mk_rule_lspts_ls k1 impl_ok1 impl_ok2 para =
     let para_body_pat = IList.map allow_impl para_body in
     (ids, para_body_pat) in
   let lseg_res = Prop.mk_lseg Sil.Lseg_NE para exp_base exp_end exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = [] in
+  let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_next :: ids_exist in
     create_condition_ls ids_private id_base in
@@ -179,7 +179,7 @@ let mk_rule_lsls_ls k1 k2 impl_ok1 impl_ok2 para =
     { Match.hpred = Prop.mk_lseg k2 para exp_next exp_end exps_shared; Match.flag = impl_ok2 } in
   let k_res = lseg_kind_add k1 k2 in
   let lseg_res = Prop.mk_lseg k_res para exp_base exp_end exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = []
+  let gen_pi_res _ _ (_: Sil.subst) = []
   (*
   let inst_base, inst_next, inst_end =
   let find x = sub_find (equal x) inst in
@@ -239,7 +239,7 @@ let mk_rule_ptspts_dll impl_ok1 impl_ok2 para =
   let id_oF = Ident.create_fresh Ident.kprimed in
   let ids_shared =
     let svars = para.Sil.svars_dll in
-    let f id = Ident.create_fresh Ident.kprimed in
+    let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
   let exp_iF = Sil.Var id_iF in
   let exp_iF' = Sil.Var id_iF' in
@@ -261,7 +261,7 @@ let mk_rule_ptspts_dll impl_ok1 impl_ok2 para =
     let para_body_hpats = IList.map mark_impl_flag para_body in
     (ids, para_body_hpats) in
   let dllseg_res = Prop.mk_dllseg Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = [] in
+  let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     (* for the case of ptspts since iF'=iB therefore iF' cannot be private*)
     let ids_private = ids_exist_fst @ ids_exist_snd in
@@ -287,7 +287,7 @@ let mk_rule_ptsdll_dll k2 impl_ok1 impl_ok2 para =
   let id_iB = Ident.create_fresh Ident.kprimed in
   let ids_shared =
     let svars = para.Sil.svars_dll in
-    let f id = Ident.create_fresh Ident.kprimed in
+    let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
   let exp_iF = Sil.Var id_iF in
   let exp_iF' = Sil.Var id_iF' in
@@ -304,7 +304,7 @@ let mk_rule_ptsdll_dll k2 impl_ok1 impl_ok2 para =
         (allow_impl hpred, IList.map allow_impl hpreds) in
   let dllseg_pat = { Match.hpred = Prop.mk_dllseg k2 para exp_iF' exp_iF exp_oF exp_iB exps_shared; Match.flag = impl_ok2 } in
   let dllseg_res = Prop.mk_dllseg Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iB exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = [] in
+  let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_iF':: ids_exist in
     create_condition_dll ids_private id_iF in
@@ -323,7 +323,7 @@ let mk_rule_dllpts_dll k1 impl_ok1 impl_ok2 para =
   let id_oF = Ident.create_fresh Ident.kprimed in
   let ids_shared =
     let svars = para.Sil.svars_dll in
-    let f id = Ident.create_fresh Ident.kprimed in
+    let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
   let exp_iF = Sil.Var id_iF in
   let exp_iF' = Sil.Var id_iF' in
@@ -337,7 +337,7 @@ let mk_rule_dllpts_dll k1 impl_ok1 impl_ok2 para =
     IList.map allow_impl para_inst in
   let dllseg_pat = { Match.hpred = Prop.mk_dllseg k1 para exp_iF exp_oB exp_iF' exp_oB' exps_shared; Match.flag = impl_ok1 } in
   let dllseg_res = Prop.mk_dllseg Sil.Lseg_NE para exp_iF exp_oB exp_oF exp_iF' exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = [] in
+  let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = id_oB':: ids_exist in
     create_condition_dll ids_private id_iF in
@@ -357,7 +357,7 @@ let mk_rule_dlldll_dll k1 k2 impl_ok1 impl_ok2 para =
   let id_iB = Ident.create_fresh Ident.kprimed in
   let ids_shared =
     let svars = para.Sil.svars_dll in
-    let f id = Ident.create_fresh Ident.kprimed in
+    let f _ = Ident.create_fresh Ident.kprimed in
     IList.map f svars in
   let exp_iF = Sil.Var id_iF in
   let exp_iF' = Sil.Var id_iF' in
@@ -370,7 +370,7 @@ let mk_rule_dlldll_dll k1 k2 impl_ok1 impl_ok2 para =
   let lseg_snd_pat = { Match.hpred = Prop.mk_dllseg k2 para exp_iF' exp_oB' exp_oF exp_iB exps_shared; Match.flag = impl_ok2 } in
   let k_res = lseg_kind_add k1 k2 in
   let lseg_res = Prop.mk_dllseg k_res para exp_iF exp_oB exp_oF exp_iB exps_shared in
-  let gen_pi_res p_start p_leftover (inst: Sil.subst) = [] in
+  let gen_pi_res _ _ (_: Sil.subst) = [] in
   let condition =
     let ids_private = [id_iF'; id_oB'] in
     create_condition_dll ids_private id_iF in
@@ -423,7 +423,7 @@ let typ_get_recursive_flds tenv typ_exp =
        | Sil.Tvar _ -> assert false (* there should be no indirection *)
        | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ | Sil.Tenum _ -> []
        | Sil.Tstruct { Sil.instance_fields } ->
-           IList.map (fun (x, y, z) -> x) (IList.filter (filter typ) instance_fields)
+           IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) instance_fields)
        | Sil.Tarray _ -> [])
   | Sil.Var _ -> [] (* type of |-> not known yet *)
   | Sil.Const _ -> []
@@ -474,7 +474,7 @@ let discover_para_candidates tenv p =
         let fsel' = IList.filter (fun (fld, _) -> is_rec_fld fld) fsel in
         let process (_, nextse) =
           match nextse with
-          | Sil.Eexp (next, inst) -> add_edge (root, next)
+          | Sil.Eexp (next, _) -> add_edge (root, next)
           | _ -> assert false in
         IList.iter process fsel' in
   let rec get_edges_sigma = function
@@ -510,7 +510,7 @@ let discover_para_dll_candidates tenv p =
         let fsel' = IList.filter (fun (fld, _) -> is_rec_fld fld) fsel in
         let convert_to_exp acc (_, se) =
           match se with
-          | Sil.Eexp (e, inst) -> e:: acc
+          | Sil.Eexp (e, _) -> e:: acc
           | _ -> assert false in
         let links = IList.rev (IList.fold_left convert_to_exp [] fsel') in
         let rec iter_pairs = function
@@ -616,7 +616,7 @@ let sigma_special_cases_eqs sigma =
         [(IList.rev ids_acc, IList.rev eqs_acc, IList.rev sigma_acc)]
     | Sil.Hpointsto _ as hpred :: sigma_rest ->
         f ids_acc eqs_acc (hpred:: sigma_acc) sigma_rest
-    | Sil.Hlseg(k, para, e1, e2, es) as hpred :: sigma_rest ->
+    | Sil.Hlseg(_, para, e1, e2, es) as hpred :: sigma_rest ->
         let empty_case =
           f ids_acc ((e1, e2):: eqs_acc) sigma_acc sigma_rest in
         let pointsto_case =
@@ -625,7 +625,7 @@ let sigma_special_cases_eqs sigma =
         let general_case =
           f ids_acc eqs_acc (hpred:: sigma_acc) sigma_rest in
         empty_case @ pointsto_case @ general_case
-    | Sil.Hdllseg(k, para, e1, e2, e3, e4, es) as hpred :: sigma_rest ->
+    | Sil.Hdllseg(_, para, e1, e2, e3, e4, es) as hpred :: sigma_rest ->
         let empty_case =
           f ids_acc ((e1, e3):: (e2, e4):: eqs_acc) sigma_acc sigma_rest in
         let pointsto_case =
@@ -957,7 +957,7 @@ let abstract_pure_part p ~(from_abstract_footprint: bool) =
       IList.fold_left
         (fun pi a ->
            match a with
-           | Sil.Aneq (Sil.Var name, _) -> a:: pi
+           | Sil.Aneq (Sil.Var _, _) -> a:: pi
            (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
            | Sil.Aeq (Sil.Const (Sil.Cint i), Sil.BinOp (Sil.Lt, _, _))
            | Sil.Aeq (Sil.BinOp (Sil.Lt, _, _), Sil.Const (Sil.Cint i))
@@ -1107,9 +1107,10 @@ let get_cycle root prop =
 (* Check whether the hidden counter field of a struct representing an *)
 (* objective-c object is positive, and whether the leak is part of the *)
 (* specified buckets. In the positive case, it returns the bucket *)
-let should_raise_objc_leak prop hpred =
+let should_raise_objc_leak hpred =
   match hpred with
-  | Sil.Hpointsto(e, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Sil.Cint i)), _)):: _, _), Sil.Sizeof (typ, _))
+  | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Sil.Const (Sil.Cint i)), _)):: _, _),
+                  Sil.Sizeof (typ, _))
     when Ident.fieldname_is_hidden fn && Sil.Int.gt i Sil.Int.zero (* counter > 0 *) ->
       Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
@@ -1125,7 +1126,7 @@ let get_var_retain_cycle _prop =
   let sigma = Prop.get_sigma _prop in
   let is_pvar v h =
     match h with
-    | Sil.Hpointsto (Sil.Lvar pv, v', _) when Sil.strexp_equal v v' -> true
+    | Sil.Hpointsto (Sil.Lvar _, v', _) when Sil.strexp_equal v v' -> true
     | _ -> false in
   let is_hpred_block v h =
     match h, v with
@@ -1176,7 +1177,7 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
     match t with
     | Sil.Tstruct { Sil.instance_fields; static_fields } ->
         let ia = ref [] in
-        IList.iter (fun (fn', t', ia') ->
+        IList.iter (fun (fn', _, ia') ->
             if Ident.fieldname_equal fn fn' then ia := ia')
           (instance_fields @ static_fields);
         !ia
@@ -1192,7 +1193,7 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
   let rec do_cycle c =
     match c with
     | [] -> false
-    | ((e, t), fn, _):: c' ->
+    | ((_, t), fn, _):: c' ->
         let ia = get_item_annotation t fn in
         if (IList.exists do_annotation ia) then true
         else do_cycle c' in
@@ -1270,7 +1271,7 @@ let check_junk ?original_prop pname tenv prop =
                 | None -> Sil.Rmemory Sil.Mmalloc in
               let ml_bucket_opt =
                 match resource with
-                | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak prop hpred
+                | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak hpred
                 | Sil.Rmemory Sil.Mnew when !Config.curr_language = Config.C_CPP ->
                     Mleak_buckets.should_raise_cpp_leak ()
                 | _ -> None in

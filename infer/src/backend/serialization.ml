@@ -56,7 +56,7 @@ let create_serializer (key : key) : 'a serializer =
   let from_string (str : string) : 'a option =
     try
       match_data (Marshal.from_string str 0) "string"
-    with Sys_error s -> None in
+    with Sys_error _ -> None in
   let from_file (_fname : DB.filename) : 'a option =
     let read () =
       try
@@ -66,7 +66,7 @@ let create_serializer (key : key) : 'a serializer =
         close_in inc;
         value_option
       with
-      | Sys_error s -> None in
+      | Sys_error _ -> None in
     let timeout = 1.0 in
     let catch_exn = function
       | End_of_file -> true

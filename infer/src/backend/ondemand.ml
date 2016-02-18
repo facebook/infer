@@ -116,7 +116,7 @@ let restore_global_state st =
 let do_analysis curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
-  let really_do_analysis analyze_proc proc_desc =
+  let really_do_analysis analyze_proc =
     if trace () then L.stderr "[%d] really_do_analysis %a -> %a@."
         !nesting
         Procname.pp curr_pname
@@ -170,8 +170,7 @@ let do_analysis curr_pdesc callee_pname =
     when procedure_should_be_analyzed curr_pdesc callee_pname ->
       begin
         match callbacks.get_proc_desc callee_pname with
-        | Some proc_desc ->
-            really_do_analysis callbacks.analyze_ondemand proc_desc
+        | Some _ -> really_do_analysis callbacks.analyze_ondemand
         | None -> ()
       end
   | _ ->

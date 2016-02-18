@@ -75,7 +75,7 @@ let rec get_curr_class context =
 let get_curr_class_name curr_class =
   match curr_class with
   | ContextCls (name, _, _) -> name
-  | ContextCategory (name, cls) -> cls
+  | ContextCategory (_, cls) -> cls
   | ContextProtocol name -> name
   | ContextNoCls -> assert false
 
@@ -127,12 +127,12 @@ let create_curr_class tenv class_name ck =
 
 let add_block_static_var context block_name static_var_typ =
   match context.outer_context, static_var_typ with
-  | Some outer_context, (static_var, typ) when Sil.pvar_is_global static_var ->
+  | Some outer_context, (static_var, _) when Sil.pvar_is_global static_var ->
       (let new_static_vars, duplicate =
          try
            let static_vars = Procname.Map.find block_name outer_context.blocks_static_vars in
            if IList.mem (
-               fun (var1, typ1) (var2, typ2) -> Sil.pvar_equal var1 var2
+               fun (var1, _) (var2, _) -> Sil.pvar_equal var1 var2
              ) static_var_typ static_vars then
              static_vars, true
            else

@@ -352,7 +352,7 @@ let print_usage_exit () =
   exit(1)
 
 let () = (* parse command-line arguments *)
-  let f arg =
+  let f _ =
     () (* ignore anonymous arguments *) in
   Arg.parse arg_desc f usage;
   if not (Sys.file_exists !Config.results_dir) then
@@ -364,7 +364,7 @@ let () = (* parse command-line arguments *)
 module Simulator = struct (** Simulate the analysis only *)
   let reset_summaries cg =
     IList.iter
-      (fun (pname, in_out_calls) -> Specs.reset_summary cg pname None)
+      (fun (pname, _) -> Specs.reset_summary cg pname None)
       (Cg.get_nodes_and_calls cg)
 
   (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
@@ -386,14 +386,14 @@ module Simulator = struct (** Simulate the analysis only *)
     let procs_done = Fork.procs_become_done (Exe_env.get_cg exe_env) proc_name in
     Fork.post_process_procs exe_env procs_done
 
-  let analyze_proc exe_env tenv proc_name =
+  let analyze_proc _ proc_name =
     L.err "in analyze_proc %a@." Procname.pp proc_name;
     (* for i = 1 to Random.int 1000000 do () done; *)
     let prev_summary = Specs.get_summary_unsafe "Simulator" proc_name in
     let timestamp = max 1 (prev_summary.Specs.timestamp) in
     { prev_summary with Specs.timestamp = timestamp }
 
-  let filter_out cg proc_name = false
+  let filter_out _ _ = false
 end
 
 let analyze exe_env =
@@ -412,7 +412,7 @@ let analyze exe_env =
       Simulator.reset_summaries (Exe_env.get_cg exe_env);
       Fork.interprocedural_algorithm
         exe_env
-        (Simulator.analyze_proc exe_env)
+        Simulator.analyze_proc
         Simulator.process_result
         Simulator.filter_out
     end
@@ -643,7 +643,7 @@ let compute_clusters exe_env files_changed : Cluster.t list =
   let defined_procs = Cg.get_defined_nodes global_cg in
   let total_nodes = IList.length nodes in
   let computed_nodes = ref 0 in
-  let do_node (n, defined, restricted) =
+  let do_node (n, defined, _) =
     L.log_progress "Computing dependencies..." computed_nodes total_nodes;
     if defined then
       Cg.add_defined_node file_cg
@@ -711,7 +711,7 @@ let compute_clusters exe_env files_changed : Cluster.t list =
   clusters'
 
 (** compute the set of procedures in [cg] changed since the last analysis *)
-let cg_get_changed_procs exe_env source_dir cg =
+let cg_get_changed_procs source_dir cg =
   let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cfg_opt = Cfg.load_cfg_from_file cfg_fname in
   let pdesc_changed pname =
@@ -750,11 +750,11 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
          | Some cg -> (source_dir, cg) :: cg_list)
       []
       sorted_dirs in
-  let exe_env_get_files_changed files_changed_map exe_env =
+  let exe_env_get_files_changed files_changed_map =
     let cg_get_files_changed files_changed_map (source_dir, cg) =
       let changed_procs =
         if !incremental_mode = ANALYZE_ALL then Cg.get_defined_nodes cg
-        else cg_get_changed_procs exe_env source_dir cg in
+        else cg_get_changed_procs source_dir cg in
       if changed_procs <> [] then
         let file_pname = ClusterMakefile.source_file_to_pname (Cg.get_source cg) in
         Procname.Map.add file_pname (proc_list_to_set changed_procs) files_changed_map
@@ -763,7 +763,7 @@ let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclud
   let exe_env = Exe_env.freeze _exe_env in
   let files_changed =
     if !incremental_mode = ANALYZE_ALL then Procname.Map.empty
-    else exe_env_get_files_changed Procname.Map.empty exe_env in
+    else exe_env_get_files_changed Procname.Map.empty in
   files_changed, exe_env
 
 (** Create an exe_env from a cluster. *)
@@ -824,7 +824,7 @@ let open_output_file f fname =
 
 let close_output_file = function
   | None -> ()
-  | Some (fmt, cout) -> close_out cout
+  | Some (_, cout) -> close_out cout
 
 let setup_logging () =
   if !Config.developer_mode then

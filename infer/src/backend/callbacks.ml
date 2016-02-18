@@ -79,7 +79,7 @@ let iterate_procedure_callbacks exe_env proc_name =
     | None -> () in
 
   Option.may
-    (fun (idenv, tenv, proc_name, proc_desc, language) ->
+    (fun (idenv, tenv, proc_name, proc_desc, _) ->
        IList.iter
          (fun (language_opt, proc_callback) ->
             let language_matches = match language_opt with

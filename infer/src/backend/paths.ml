@@ -99,7 +99,7 @@ end = struct
 
   let get_description path =
     match path with
-    | Pnode (node, exn_opt, session, path, stats, descr_opt) ->
+    | Pnode (_, _, _, _, _, descr_opt) ->
         descr_opt
     | _ -> None
 
@@ -182,9 +182,9 @@ end = struct
     (** restore the invariant that all the stats are dummy, so the path is ready for another traversal *)
     (** assumes that the stats are computed beforehand, and ensures that the invariant holds afterwards *)
     let rec reset_stats = function
-      | Pstart (node, stats) ->
+      | Pstart (_, stats) ->
           if not (stats_is_dummy stats) then set_dummy_stats stats
-      | Pnode (node, exn_opt, session, path, stats, _) ->
+      | Pnode (_, _, _, path, stats, _) ->
           if not (stats_is_dummy stats) then
             begin
               reset_stats path;
@@ -197,7 +197,7 @@ end = struct
               reset_stats path2;
               set_dummy_stats stats
             end
-      | Pcall (path1, pname, path2, stats) ->
+      | Pcall (path1, _, path2, stats) ->
           if not (stats_is_dummy stats) then
             begin
               reset_stats path1;
@@ -221,7 +221,7 @@ end = struct
               stats.max_length <- if found then 1 else 0;
               stats.linear_num <- 1.0;
             end
-      | Pnode (node, exn_opt, session, path, stats, _) ->
+      | Pnode (node, _, _, path, stats, _) ->
           if stats_is_dummy stats then
             begin
               compute_stats do_calls f path;
@@ -239,7 +239,7 @@ end = struct
               stats.max_length <- max stats1.max_length stats2.max_length;
               stats.linear_num <- stats1.linear_num +. stats2.linear_num
             end
-      | Pcall (path1, pname, path2, stats) ->
+      | Pcall (path1, _, path2, stats) ->
           if stats_is_dummy stats then
             begin
               let stats2 = match do_calls with
@@ -287,7 +287,7 @@ end = struct
       (filter: Cfg.Node.t -> bool) (path: t) : unit =
     let rec doit level session path prev_exn_opt = match path with
       | Pstart _ -> f level path session prev_exn_opt
-      | Pnode (node, exn_opt, session', p, _, _) ->
+      | Pnode (_, exn_opt, session', p, _, _) ->
           let next_exn_opt = if prev_exn_opt <> None then None else exn_opt in (* no two consecutive exceptions *)
           doit level session' p next_exn_opt;
           f level path session prev_exn_opt
@@ -328,7 +328,7 @@ end = struct
     let sequence_up_to_last_seen =
       if !position_seen then
         let rec remove_until_seen = function
-          | ((level, p, session, exn_opt) as x):: l ->
+          | ((_, p, _, _) as x):: l ->
               if path_pos_at_path p then IList.rev (x :: l)
               else remove_until_seen l
           | [] -> [] in
@@ -352,7 +352,7 @@ end = struct
           end
       | None ->
           () in
-    iter_longest_sequence (fun level p s exn_opt -> add_node (curr_node p)) None path;
+    iter_longest_sequence (fun _ p _ _ -> add_node (curr_node p)) None path;
     let max_rep_node = ref (Cfg.Node.dummy ()) in
     let max_rep_num = ref 0 in
     NodeMap.iter (fun node num -> if num > !max_rep_num then (max_rep_node := node; max_rep_num := num)) !map;
@@ -405,11 +405,15 @@ end = struct
         let num = PathMap.find path !delayed in
         F.fprintf fmt "P%d" num
       with Not_found ->
-        match path with
-        | Pstart (node, _) -> F.fprintf fmt "n%a" Cfg.Node.pp node
-        | Pnode (node, exn_top, session, path, _, _) -> F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path session Cfg.Node.pp node
-        | Pjoin (path1, path2, _) -> F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
-        | Pcall (path1, _, path2, _) -> F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2 in
+      match path with
+      | Pstart (node, _) ->
+          F.fprintf fmt "n%a" Cfg.Node.pp node
+      | Pnode (node, _, session, path, _, _) ->
+          F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path session Cfg.Node.pp node
+      | Pjoin (path1, path2, _) ->
+          F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
+      | Pcall (path1, _, path2, _) ->
+          F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2 in
     let print_delayed () =
       if not (PathMap.is_empty !delayed) then begin
         let f path num = F.fprintf fmt "P%d = %a@\n" num (doit 1) path in
@@ -435,7 +439,7 @@ end = struct
         Errlog.lt_loc = loc;
         Errlog.lt_description = descr;
         Errlog.lt_node_tags = node_tags } in
-    let g level path session exn_opt =
+    let g level path _ exn_opt =
       match curr_node path with
       | Some curr_node ->
           begin
@@ -585,7 +589,7 @@ module PathSet : sig
 end = struct
   type t = Path.t PropMap.t
 
-  let equal = PropMap.equal (fun p1 p2 -> true) (* only discriminate props, and ignore paths *) (* Path.equal *)
+  let equal = PropMap.equal (fun _ _ -> true) (* only discriminate props, and ignore paths *)
 
   let empty : t = PropMap.empty
 
@@ -668,7 +672,7 @@ end = struct
 
   let size ps =
     let res = ref 0 in
-    let add p _ = incr res in
+    let add _ _ = incr res in
     let () = PropMap.iter add ps
     in !res
 

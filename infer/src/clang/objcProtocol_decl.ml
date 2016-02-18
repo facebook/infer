@@ -49,5 +49,5 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
 let is_protocol decl =
   let open Clang_ast_t in
   match decl with
-  | ObjCProtocolDecl(decl_info, name_info, decl_list, _, obj_c_protocol_decl_info) -> true
+  | ObjCProtocolDecl _ -> true
   | _ -> false

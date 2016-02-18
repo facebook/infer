@@ -294,18 +294,18 @@ let create_idmap sigma : idmap =
     | Sil.BinOp (Sil.PlusPI, e1, e2), _ ->
         do_exp e1 typ;
         do_exp e2 (Sil.Tint Sil.IULong)
-    | Sil.Lfield (e1, f, t), _ ->
+    | Sil.Lfield (e1, _, _), _ ->
         do_exp e1 typ
     | Sil.Sizeof _, _ -> ()
     | _ ->
         L.err "Unmatched exp: %a : %a@." (Sil.pp_exp pe) e (Sil.pp_typ_full pe) typ;
         assert false in
   let rec do_se se typ = match se, typ with
-    | Sil.Eexp (e, inst), _ ->
+    | Sil.Eexp (e, _), _ ->
         do_exp e typ
     | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields } ->
         do_struct fsel instance_fields
-    | Sil.Earray (size, esel, _), Sil.Tarray (typ, size') ->
+    | Sil.Earray (size, esel, _), Sil.Tarray (typ, _) ->
         do_se (Sil.Eexp (size, Sil.inst_none)) (Sil.Tint Sil.IULong);
         do_array esel typ
     | _ ->
@@ -313,10 +313,10 @@ let create_idmap sigma : idmap =
         assert false
   and do_struct fsel ftal = match fsel, ftal with
     | [], _ -> ()
-    | (f1, se) :: fsel', (f2, typ, a2) :: ftl' when Ident.fieldname_equal f1 f2 ->
+    | (f1, se) :: fsel', (f2, typ, _) :: ftl' when Ident.fieldname_equal f1 f2 ->
         do_se se typ;
         do_struct fsel' ftl'
-    | (f1, se) :: fsel', (f2, typ, a2) :: ftal' ->
+    | _ :: _, _ :: ftal' ->
         do_struct fsel ftal'
     | _:: _, [] -> assert false
   and do_array esel typ = match esel with
@@ -333,7 +333,7 @@ let create_idmap sigma : idmap =
     | Sil.Hpointsto (e, se, Sil.Sizeof (typ, _)) ->
         do_lhs_e e (Sil.Tptr (typ, Sil.Pk_pointer));
         do_se se typ
-    | Sil.Hlseg (k, hpar, e, f, el) ->
+    | Sil.Hlseg (_, _, e, f, el) ->
         do_lhs_e e (Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer));
         do_se (Sil.Eexp (f, Sil.inst_none)) (Sil.Tptr (Sil.Tvoid, Sil.Pk_pointer));
         IList.iter (fun e -> do_se (Sil.Eexp (e, Sil.inst_none)) Sil.Tvoid) el
@@ -377,7 +377,7 @@ type code = Code.t
 let pp_code = Code.pp
 
 (** pretty print an ident in C *)
-let pp_id_c pe fmt id =
+let pp_id_c fmt id =
   let name = Ident.get_name id in
   let stamp = Ident.get_stamp id in
   let varname = Ident.name_to_string name in
@@ -385,16 +385,16 @@ let pp_id_c pe fmt id =
 
 (** pretty print an expression in C *)
 let rec pp_exp_c pe fmt = function
-  | Sil.Lfield (e, f, t) ->
+  | Sil.Lfield (e, f, _) ->
       F.fprintf fmt "&(%a->%a)" (pp_exp_c pe) e Ident.pp_fieldname f
   | Sil.Var id ->
-      pp_id_c pe fmt id
+      pp_id_c fmt id
   | e ->
       Sil.pp_exp pe fmt e
 
 (** pretty print a type in C *)
 let pp_typ_c pe typ =
-  let pp_nil fmt () = () in
+  let pp_nil _ () = () in
   Sil.pp_type_decl pe pp_nil pp_exp_c typ
 
 (** Convert a pvar to a string by just extracting the name *)
@@ -431,17 +431,17 @@ let pp_texp_for_malloc fmt =
   | e -> pp_exp_c pe fmt e
 
 (* generate code for sigma *)
-let gen_sigma code proc_name spec_num env idmap sigma =
+let gen_sigma code proc_name spec_num env sigma =
   let post_code = Code.empty () in
   let rec do_strexp code' base need_deref = function
-    | Sil.Eexp (e, inst) ->
+    | Sil.Eexp (e, _) ->
         let lhs = if need_deref then "(*"^base^")" else base in
         let pp f () = F.fprintf f "%s = %a;" lhs (pp_exp_c pe) e in
         Code.add_from_pp code' pp
     | Sil.Estruct (fsel, _) ->
         let accessor = if need_deref then "->" else "." in
         IList.iter (fun (f, se) -> do_strexp code' (base ^ accessor ^ Ident.fieldname_to_string f) false se) fsel
-    | Sil.Earray (size, esel, _) ->
+    | Sil.Earray (_, esel, _) ->
         IList.iter (fun (e, se) ->
             let pp f () = F.fprintf f "%a" (pp_exp_c pe) e in
             let index = pp_to_string pp () in
@@ -453,15 +453,15 @@ let gen_sigma code proc_name spec_num env idmap sigma =
         do_strexp post_code base false se
     | Sil.Hpointsto (Sil.Var id, se, te) ->
         let pp1 f () =
-          F.fprintf f "%a = malloc(%a);" (pp_id_c pe) id pp_texp_for_malloc te in
+          F.fprintf f "%a = malloc(%a);" pp_id_c id pp_texp_for_malloc te in
         let pp2 f () =
-          F.fprintf f "if(%a == NULL) exit(12);" (pp_id_c pe) id in
+          F.fprintf f "if(%a == NULL) exit(12);" pp_id_c id in
         Code.add_from_pp code pp1;
         Code.add_from_pp code pp2;
-        let pp3 f () = F.fprintf f "%a" (pp_id_c pe) id in
+        let pp3 f () = F.fprintf f "%a" pp_id_c id in
         let base = pp_to_string pp3 () in
         do_strexp post_code base true se
-    | Sil.Hlseg (k, hpar, Sil.Var id, f, el) ->
+    | Sil.Hlseg (_, hpar, Sil.Var id, f, el) ->
         let hpara_id = Sil.Predicates.get_hpara_id env hpar in
         let size_var = mk_size_name hpara_id in
         let mk_name = mk_lseg_name hpara_id proc_name spec_num in
@@ -470,7 +470,7 @@ let gen_sigma code proc_name spec_num env idmap sigma =
         let pp1 fmt () =
           F.fprintf fmt "int %s = 42;" size_var in
         let pp2 fmt () =
-          F.fprintf fmt "%a = %s(%s, %a%a);" (pp_id_c pe) id mk_name size_var (pp_exp_c pe) f pp_el el in
+          F.fprintf fmt "%a = %s(%s, %a%a);" pp_id_c id mk_name size_var (pp_exp_c pe) f pp_el el in
         Code.add_from_pp code pp1;
         Code.add_from_pp code pp2
     | hpred ->
@@ -482,7 +482,7 @@ let gen_sigma code proc_name spec_num env idmap sigma =
 let gen_init_equalities code pure =
   let do_atom = function
     | Sil.Aeq (Sil.Var id, e) ->
-        let pp f () = F.fprintf f "%a = %a;" (pp_id_c pe) id (pp_exp_c pe) e in
+        let pp f () = F.fprintf f "%a = %a;" pp_id_c id (pp_exp_c pe) e in
         Code.add_from_pp code pp
     | _ -> () in
   IList.iter do_atom pure
@@ -493,8 +493,8 @@ let gen_var_decl code idmap parameters =
     let pp_name f () = Mangled.pp f name in
     let pp f () = F.fprintf f "%a;" (Sil.pp_type_decl pe pp_name pp_exp_c) typ in
     Code.add_from_pp code pp in
-  let do_vinfo id { typ = typ; alloc = alloc } =
-    let pp_var f () = pp_id_c pe f id in
+  let do_vinfo id { typ } =
+    let pp_var f () = pp_id_c f id in
     let pp f () = F.fprintf f "%a;" (Sil.pp_type_decl pe pp_var pp_exp_c) typ in
     Code.add_from_pp code pp in
   IList.iter do_parameter parameters;
@@ -520,7 +520,8 @@ let gen_init_vars code solutions idmap =
             L.err "do_vinfo type undefined: %a@." (Sil.pp_typ_full pe) typ;
             assert false in
       let pp fmt () =
-        F.fprintf fmt "%a = (%a) %a;" (pp_id_c pe) id (Sil.pp_typ_full pe) typ (Sil.pp_exp pe) (Sil.Const const) in
+        F.fprintf fmt "%a = (%a) %a;"
+          pp_id_c id (Sil.pp_typ_full pe) typ (Sil.pp_exp pe) (Sil.Const const) in
       Code.add_from_pp code pp in
   IdMap.iter do_vinfo idmap
 
@@ -531,16 +532,18 @@ let filter_idmap filter idmap =
   !idmap'
 
 let pp_svars fmt svars =
-  if svars != [] then F.fprintf fmt "%a" (pp_comma_seq (pp_id_c pe)) svars
+  if svars != [] then F.fprintf fmt "%a" (pp_comma_seq pp_id_c) svars
 
 
 let gen_hpara code proc_name spec_num env id hpara =
   let mk_name = mk_lseg_name id proc_name spec_num in
   let size_name = mk_size_name id in
   let pp1 f () =
-    F.fprintf f "void* %s(int %s, void* %a%a) {" mk_name size_name (pp_id_c pe) hpara.Sil.next pp_svars hpara.Sil.svars in
+    F.fprintf f "void* %s(int %s, void* %a%a) {"
+      mk_name size_name pp_id_c hpara.Sil.next pp_svars hpara.Sil.svars in
   let pp2 f () =
-    F.fprintf f "%a= %s(%s -1 , %a%a);" (pp_id_c pe) hpara.Sil.next mk_name size_name (pp_id_c pe) hpara.Sil.next pp_svars hpara.Sil.svars in
+    F.fprintf f "%a= %s(%s -1 , %a%a);"
+      pp_id_c hpara.Sil.next mk_name size_name pp_id_c hpara.Sil.next pp_svars hpara.Sil.svars in
   let line1 = pp_to_string pp1 () in
   let idmap = create_idmap hpara.Sil.body in
   let idmap_ex =
@@ -552,10 +555,10 @@ let gen_hpara code proc_name spec_num env id hpara =
       not (Ident.equal i hpara.Sil.next) in
     filter_idmap filter idmap in
   let line11 = "if ("^size_name^" == 0) {" in
-  let line12 = "return " ^ (pp_to_string (pp_id_c pe) hpara.Sil.next) ^ ";" in
+  let line12 = "return " ^ (pp_to_string pp_id_c hpara.Sil.next) ^ ";" in
   let line13 ="} else {" in
   let line14 = pp_to_string pp2 () in
-  let line2 = "return " ^ (pp_to_string (pp_id_c pe) hpara.Sil.root) ^ ";" in
+  let line2 = "return " ^ (pp_to_string pp_id_c hpara.Sil.root) ^ ";" in
   let line3 = "}" in
   Code.add_line code line1;
   Code.set_indent "  ";
@@ -568,7 +571,7 @@ let gen_hpara code proc_name spec_num env id hpara =
   Code.set_indent "    ";
   Code.add_line code line14;
   gen_init_vars code IdMap.empty idmap_ex;
-  gen_sigma code proc_name spec_num env idmap hpara.Sil.body;
+  gen_sigma code proc_name spec_num env hpara.Sil.body;
   Code.add_line code line2;
   Code.set_indent "  ";
   Code.add_line code line3;
@@ -576,7 +579,7 @@ let gen_hpara code proc_name spec_num env id hpara =
   Code.add_line code line3;
   Code.add_line code ""
 
-let gen_hpara_dll code proc_name spec_num env id hpara_dll = assert false
+let gen_hpara_dll _ _ _ _ _ _ = assert false
 
 (** Generate epilog for the test case *)
 let gen_epilog code proc_name (parameters : (Mangled.t * Sil.typ) list) =
@@ -603,7 +606,7 @@ let gen_prolog code fname proc_name spec_num =
 
 let solve_constraints pure idmap =
   let vars = ref [] in
-  let do_vinfo id { typ = typ; alloc = alloc } =
+  let do_vinfo id { alloc } =
     if not alloc then vars := !vars @ [id] in
   IdMap.iter do_vinfo idmap;
   Constraint.solve_from_pure pure !vars
@@ -623,7 +626,7 @@ let genunit fname proc_name spec_num parameters spec =
   gen_var_decl code idmap parameters;
   gen_init_vars code (solve_constraints pure idmap) idmap;
   gen_init_equalities code pure;
-  gen_sigma code proc_name spec_num env idmap sigma;
+  gen_sigma code proc_name spec_num env sigma;
   gen_epilog code proc_name parameters;
   code
 

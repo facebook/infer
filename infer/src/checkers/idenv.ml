@@ -13,10 +13,10 @@
 
 type t = (Sil.exp Ident.IdentHash.t) Lazy.t * Cfg.cfg
 
-let _create cfg proc_desc =
+let _create proc_desc =
   let map = Ident.IdentHash.create 1 in
-  let do_instr node = function
-    | Sil.Letderef (id, e, t, loc) ->
+  let do_instr _ = function
+    | Sil.Letderef (id, e, _, _) ->
         Ident.IdentHash.add map id e
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc;
@@ -24,12 +24,12 @@ let _create cfg proc_desc =
 
 (* lazy implementation, only create when used *)
 let create cfg proc_desc =
-  let map = lazy (_create cfg proc_desc) in
+  let map = lazy (_create proc_desc) in
   map, cfg
 
 (* create an idenv for another procedure *)
 let create_from_idenv (_, cfg) proc_desc =
-  let map = lazy (_create cfg proc_desc) in
+  let map = lazy (_create proc_desc) in
   map, cfg
 
 let lookup (_map, _) id =

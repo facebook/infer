@@ -58,7 +58,7 @@ let sil_var_of_decl_ref context decl_ref procname =
 let add_var_to_locals procdesc var_decl sil_typ pvar =
   let open Clang_ast_t in
   match var_decl with
-  | VarDecl (di, var_name, type_ptr, vdi) ->
+  | VarDecl (_, _, _, vdi) ->
       if not vdi.Clang_ast_t.vdi_is_global then
         Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, sil_typ)]
   | _ -> assert false
@@ -67,7 +67,7 @@ let rec compute_autorelease_pool_vars context stmts =
   let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
   match stmts with
   | [] -> []
-  | Clang_ast_t.DeclRefExpr (si, sl, ei, drei):: stmts' ->
+  | Clang_ast_t.DeclRefExpr (_, _, _, drei):: stmts' ->
       (let res = compute_autorelease_pool_vars context stmts' in
        match drei.Clang_ast_t.drti_decl_ref with
        | Some decl_ref ->

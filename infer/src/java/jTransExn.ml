@@ -42,7 +42,7 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
       let unwrap_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__unwrap_exception) in
       Sil.Call([id_exn_val], unwrap_builtin, [(Sil.Var id_ret_val, ret_type)], loc, Sil.cf_default) in
     create_node loc Cfg.Node.exn_handler_kind [instr_get_ret_val; instr_deactivate_exn; instr_unwrap_ret_val] [id_ret_val; id_deactivate] in
-  let create_entry_block pc handler_list =
+  let create_entry_block handler_list =
     try
       ignore (Hashtbl.find catch_block_table handler_list)
     with Not_found ->
@@ -103,12 +103,12 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
       let entry_node = create_entry_node loc in
       Cfg.Node.set_succs_exn entry_node nodes_first_handler exit_nodes;
       Hashtbl.add catch_block_table handler_list [entry_node] in
-  Hashtbl.iter (fun pc handler_list -> create_entry_block pc handler_list) handler_table;
+  Hashtbl.iter (fun _ handler_list -> create_entry_block handler_list) handler_table;
   catch_block_table
 
 let create_exception_handlers context exit_nodes get_body_nodes impl =
   match JBir.exc_tbl impl with
-  | [] -> fun pc -> exit_nodes
+  | [] -> fun _ -> exit_nodes
   | _ ->
       let handler_table = create_handler_table impl in
       let catch_block_table = translate_exceptions context exit_nodes get_body_nodes handler_table in

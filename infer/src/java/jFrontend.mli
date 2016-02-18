@@ -37,5 +37,4 @@ val compute_class_icfg :
   JClasspath.program ->
   Sil.tenv ->
   JCode.jcode Javalib.interface_or_class ->
-  DB.source_file ->
   Cg.t * Cfg.cfg

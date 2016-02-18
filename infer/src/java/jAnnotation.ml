@@ -13,7 +13,7 @@ open Javalib_pack
 (** Translate an annotation. *)
 let translate a : Sil.annotation =
   let class_name = JBasics.cn_name a.JBasics.kind in
-  let translate_value_pair (name, value) =
+  let translate_value_pair (_, value) =
     match value with
     | JBasics.EVArray [JBasics.EVCstString s] ->
         s

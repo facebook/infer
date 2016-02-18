@@ -35,7 +35,7 @@ let is_generated_field fieldname =
 
 (** find callees that register callbacks and add instrumentation to extract the callback.
     return the set of new global static fields created to extract callbacks and their types *)
-let extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar callback_fields =
+let extract_callbacks procdesc cfg_file cfg tenv harness_lvar callback_fields =
   (* try to turn a nasty callback name like MyActivity$1 into a nice callback name like
    * Button.OnClickListener[line 7]*)
   let create_descriptive_callback_name callback_typ loc =
@@ -108,14 +108,14 @@ let find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv =
       match Cfg.load_cfg_from_file cfg_file with
       | Some cfg ->
           IList.fold_left (fun registered_callbacks procdesc ->
-              extract_callbacks procdesc cfg_file cfg tenv harness_name harness_lvar registered_callbacks
+              extract_callbacks procdesc cfg_file cfg tenv harness_lvar registered_callbacks
             ) registered_callbacks (Cfg.get_all_procs cfg)
       | None -> registered_callbacks
     ) lifecycle_cfg_files []
 
 (** if [typ] is a lifecycle type, generate a list of (method call, receiver) pairs constituting a
     lifecycle trace *)
-let try_create_lifecycle_trace typ lifecycle_typ lifecycle_procs proc_file_map tenv = match typ with
+let try_create_lifecycle_trace typ lifecycle_typ lifecycle_procs tenv = match typ with
   | Sil.Tstruct { Sil.csu = Csu.Class Csu.Java; struct_name = Some name } ->
       let class_name = Typename.TN_csu (Csu.Class Csu.Java, name) in
       if AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv &&
@@ -176,7 +176,7 @@ let create_android_harness proc_file_map tenv =
           (* iterate through the type environment and generate a lifecycle harness for each subclass of
            * [lifecycle_typ] *)
           Sil.tenv_iter (fun _ typ ->
-              match try_create_lifecycle_trace typ framework_typ framework_procs proc_file_map tenv with
+              match try_create_lifecycle_trace typ framework_typ framework_procs tenv with
               | [] -> ()
               | lifecycle_trace ->
                   (* we have identified an application lifecycle type and created a trace for it. now,
@@ -187,7 +187,8 @@ let create_android_harness proc_file_map tenv =
                     Procname.mangled_java (None, harness_cls_name) None "InferGeneratedHarness" [] Procname.Static in
                   let callback_fields =
                     extract_callbacks lifecycle_trace harness_procname proc_file_map tenv in
-                  Inhabit.inhabit_trace lifecycle_trace callback_fields harness_procname proc_file_map tenv
+                  Inhabit.inhabit_trace
+                    lifecycle_trace callback_fields harness_procname proc_file_map
             ) tenv
       | None -> ()
     ) AndroidFramework.get_lifecycles

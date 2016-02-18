@@ -29,29 +29,29 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
   let should_translate_decl = CLocation.should_translate_lib source_range in
   (if should_translate_decl then
      match dec with
-     | FunctionDecl(di, name_info, tp, fdecl_info) ->
+     | FunctionDecl(_, _, _, _) ->
          CMethod_declImpl.function_decl tenv cfg cg dec None
 
-     | ObjCInterfaceDecl(decl_info, name_info, decl_list, decl_context_info, oi_decl_info) ->
+     | ObjCInterfaceDecl(_, name_info, decl_list, _, oi_decl_info) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcInterface_decl.get_curr_class name oi_decl_info in
          ignore
            (ObjcInterface_decl.interface_declaration CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list
 
-     | ObjCProtocolDecl(decl_info, name_info, decl_list, decl_context_info, _) ->
+     | ObjCProtocolDecl(_, name_info, decl_list, _, _) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = CContext.ContextProtocol name in
          ignore (ObjcProtocol_decl.protocol_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list
 
-     | ObjCCategoryDecl(decl_info, name_info, decl_list, decl_context_info, ocdi) ->
+     | ObjCCategoryDecl(_, name_info, decl_list, _, ocdi) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcCategory_decl.get_curr_class_from_category_decl name ocdi in
          ignore (ObjcCategory_decl.category_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list
 
-     | ObjCCategoryImplDecl(decl_info, name_info, decl_list, decl_context_info, ocidi) ->
+     | ObjCCategoryImplDecl(_, name_info, decl_list, _, ocidi) ->
          let name = Ast_utils.get_qualified_name name_info in
          let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
          ignore (ObjcCategory_decl.category_impl_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
@@ -63,7 +63,7 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
               CFrontend_errors.check_for_property_errors cfg cg tenv name decls
           | _ -> ())
 
-     | ObjCImplementationDecl(decl_info, name_info, decl_list, decl_context_info, idi) ->
+     | ObjCImplementationDecl(_, _, decl_list, _, idi) ->
          let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
          let type_ptr_to_sil_type = CTypes_decl.type_ptr_to_sil_type in
          ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
@@ -75,10 +75,10 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
               CFrontend_errors.check_for_property_errors cfg cg tenv name decls
           | _ -> ())
 
-     | CXXMethodDecl (decl_info, name_info, type_ptr, function_decl_info, _)
-     | CXXConstructorDecl (decl_info, name_info, type_ptr, function_decl_info, _)
-     | CXXConversionDecl (decl_info, name_info, type_ptr, function_decl_info, _)
-     | CXXDestructorDecl (decl_info, name_info, type_ptr, function_decl_info, _) ->
+     | CXXMethodDecl (decl_info, _, _, _, _)
+     | CXXConstructorDecl (decl_info, _, _, _, _)
+     | CXXConversionDecl (decl_info, _, _, _, _)
+     | CXXDestructorDecl (decl_info, _, _, _, _) ->
          (* di_parent_pointer has pointer to lexical context such as class.*)
          (* If it's not defined, then it's the same as parent in AST *)
          let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with
@@ -93,7 +93,7 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
                 CMethod_declImpl.process_methods tenv cg cfg curr_class [dec]
           | Some dec -> Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
           | None -> ())
-     | dec -> ());
+     | _ -> ());
   match dec with
   (* Currently C/C++ record decl treated in the same way *)
   | ClassTemplateSpecializationDecl (decl_info, _, _, _, decl_list, _, _, _)
@@ -109,19 +109,19 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
       ignore (CTypes_decl.add_types_from_decl_to_tenv tenv dec);
       IList.iter (translate_one_declaration tenv cg cfg dec) method_decls
   | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
-  | LinkageSpecDecl (decl_info, decl_list, decl_context_info) ->
+  | LinkageSpecDecl (_, decl_list, _) ->
       Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
-  | NamespaceDecl (decl_info, name_info, decl_list, decl_context_info, _) ->
+  | NamespaceDecl (_, _, decl_list, _, _) ->
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
-  | ClassTemplateDecl (decl_info, named_decl_info, template_decl_info)
-  | FunctionTemplateDecl (decl_info, named_decl_info, template_decl_info) ->
+  | ClassTemplateDecl (_, _, template_decl_info)
+  | FunctionTemplateDecl (_, _, template_decl_info) ->
       let decl_list = template_decl_info.Clang_ast_t.tdi_specializations in
       IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
-  | dec -> ()
+  | _ -> ()
 
 (* Translates a file by translating the ast into a cfg. *)
-let compute_icfg tenv source_file ast =
+let compute_icfg tenv ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       CFrontend_config.global_translation_unit_decls := decl_list;
@@ -148,7 +148,7 @@ let do_source_file source_file ast =
   Config.nLOC := FileLOC.file_get_loc (DB.source_file_to_string source_file);
   Printing.log_out "\n Start building call/cfg graph for '%s'....\n"
     (DB.source_file_to_string source_file);
-  let call_graph, cfg = compute_icfg tenv (DB.source_file_to_string source_file) ast in
+  let call_graph, cfg = compute_icfg tenv ast in
   Printing.log_out "\n End building call/cfg graph for '%s'.\n"
     (DB.source_file_to_string source_file);
   (* This part below is a boilerplate in every frontends. *)

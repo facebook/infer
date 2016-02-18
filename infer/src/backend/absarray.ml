@@ -36,7 +36,7 @@ module StrexpMatch : sig
   val find_path : sigma -> path -> t
 
   (** Find a strexp with the given property. *)
-  val find : sigma -> (sigma -> strexp_data -> bool) -> t list
+  val find : sigma -> (strexp_data -> bool) -> t list
 
   (** Get the array *)
   val get_data : t -> strexp_data
@@ -66,13 +66,13 @@ end = struct
     match se, t, syn_offs with
     | _, _, [] -> (se, t)
     | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields }, Field (fld, _) :: syn_offs' ->
-        let se' = snd (IList.find (fun (f', se') -> Sil.fld_equal f' fld) fsel) in
-        let t' = (fun (x,y,z) -> y)
-            (IList.find (fun (f', t', a') ->
+        let se' = snd (IList.find (fun (f', _) -> Sil.fld_equal f' fld) fsel) in
+        let t' = (fun (_,y,_) -> y)
+            (IList.find (fun (f', _, _) ->
                  Sil.fld_equal f' fld) instance_fields) in
         get_strexp_at_syn_offsets se' t' syn_offs'
-    | Sil.Earray (size, esel, _), Sil.Tarray(t', _), Index ind :: syn_offs' ->
-        let se' = snd (IList.find (fun (i', se') -> Sil.exp_equal i' ind) esel) in
+    | Sil.Earray (_, esel, _), Sil.Tarray(t', _), Index ind :: syn_offs' ->
+        let se' = snd (IList.find (fun (i', _) -> Sil.exp_equal i' ind) esel) in
         get_strexp_at_syn_offsets se' t' syn_offs'
     | _ ->
         L.d_strln "Failure of get_strexp_at_syn_offsets";
@@ -84,10 +84,10 @@ end = struct
   let rec replace_strexp_at_syn_offsets se t syn_offs update =
     match se, t, syn_offs with
     | _, _, [] ->
-        update se t
+        update se
     | Sil.Estruct (fsel, inst), Sil.Tstruct { Sil.instance_fields }, Field (fld, _) :: syn_offs' ->
         let se' = snd (IList.find (fun (f', _) -> Sil.fld_equal f' fld) fsel) in
-        let t' = (fun (x,y,z) -> y)
+        let t' = (fun (_,y,_) -> y)
             (IList.find (fun (f', _, _) ->
                  Sil.fld_equal f' fld) instance_fields) in
         let se_mod = replace_strexp_at_syn_offsets se' t' syn_offs' update in
@@ -137,17 +137,17 @@ end = struct
     (sigma, hpred, syn_offs)
 
   (** Find a sub strexp with the given property. Can raise [Not_found] *)
-  let find (sigma : sigma) (pred : sigma -> strexp_data -> bool) : t list =
+  let find (sigma : sigma) (pred : strexp_data -> bool) : t list =
     let found = ref [] in
     let rec find_offset_sexp sigma_other hpred root offs se typ =
       let offs' = IList.rev offs in
       let path = (root, offs') in
-      if pred sigma_other (path, se, typ) then found := (sigma, hpred, offs') :: !found
+      if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
         match se, typ with
         | Sil.Estruct (fsel, _), Sil.Tstruct { Sil.instance_fields } ->
             find_offset_fsel sigma_other hpred root offs fsel instance_fields typ
-        | Sil.Earray (size, esel, _), Sil.Tarray (t, _) ->
+        | Sil.Earray (_, esel, _), Sil.Tarray (t, _) ->
             find_offset_esel sigma_other hpred root offs esel t
         | _ -> ()
       end
@@ -156,7 +156,7 @@ end = struct
       | (f, se) :: fsel' ->
           begin
             try
-              let t = (fun (x,y,z) -> y) (IList.find (fun (f', t, a) -> Sil.fld_equal f' f) ftal) in
+              let t = (fun (_,y,_) -> y) (IList.find (fun (f', _, _) -> Sil.fld_equal f' f) ftal) in
               find_offset_sexp sigma_other hpred root ((Field (f, typ)) :: offs) se t
             with Not_found ->
               L.d_strln ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")
@@ -195,15 +195,15 @@ end = struct
     | _ -> assert false
 
   (** Replace the current hpred *)
-  let replace_hpred ((sigma, hpred, syn_offs) : t) hpred' =
+  let replace_hpred ((sigma, hpred, _) : t) hpred' =
     IList.map (fun hpred'' -> if hpred''== hpred then hpred' else hpred'') sigma
 
   (** Replace the strexp at the given offset in the given hpred *)
   let hpred_replace_strexp footprint_part hpred syn_offs update =
-    let update se' t' =
-      let se_in = update se' t' in
+    let update se' =
+      let se_in = update se' in
       match se', se_in with
-      | Sil.Earray (size, esel, inst1), Sil.Earray (_, esel_in, inst2) ->
+      | Sil.Earray (size, esel, _), Sil.Earray (_, esel_in, inst2) ->
           let orig_indices = IList.map fst esel in
           let index_is_not_new idx = IList.exists (Sil.exp_equal idx) orig_indices in
           let process_index idx =
@@ -222,13 +222,13 @@ end = struct
 
   (** Replace the strexp at a given position by a new strexp *)
   let replace_strexp footprint_part ((sigma, hpred, syn_offs) : t) se_in =
-    let update se' t' = se_in in
+    let update _ = se_in in
     let hpred' = hpred_replace_strexp footprint_part hpred syn_offs update in
     replace_hpred (sigma, hpred, syn_offs) hpred'
 
   (** Replace the index in the array at a given position with the new index *)
   let replace_index footprint_part ((sigma, hpred, syn_offs) : t) (index: Sil.exp) (index': Sil.exp) =
-    let update se' t' =
+    let update se' =
       match se' with
       | Sil.Earray (size, esel, inst) ->
           let esel' = IList.map (fun (e', se') -> if Sil.exp_equal e' index then (index', se') else (e', se')) esel in
@@ -297,12 +297,12 @@ let array_abstraction_performed = ref false
 let generic_strexp_abstract
     (abstraction_name : string)
     (p_in : Prop.normal Prop.t)
-    (_can_abstract : sigma -> StrexpMatch.strexp_data -> bool)
+    (can_abstract_ : StrexpMatch.strexp_data -> bool)
     (do_abstract : bool -> Prop.normal Prop.t -> StrexpMatch.strexp_data -> Prop.normal Prop.t * bool)
   : Prop.normal Prop.t
   =
-  let can_abstract s data =
-    let r = _can_abstract s data in
+  let can_abstract data =
+    let r = can_abstract_ data in
     if r then array_abstraction_performed := true;
     r in
   let find_strexp_to_abstract p0 =
@@ -352,14 +352,13 @@ let index_is_pointed_to (p: Prop.normal Prop.t) (path: StrexpMatch.path) (index:
     fun i -> IList.map (add_index i) elist_path in
   let pointers = IList.flatten (IList.map add_index_to_paths indices) in
   let filter = function
-    | Sil.Hpointsto (_, Sil.Eexp (e, inst), _) -> IList.exists (Sil.exp_equal e) pointers
+    | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> IList.exists (Sil.exp_equal e) pointers
     | _ -> false in
   IList.exists filter (Prop.get_sigma p)
 
 
 (** Given [p] containing an array at [path], blur [index] in it *)
 let blur_array_index
-    (footprint_part: bool)
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
     (index: Sil.exp) : Prop.normal Prop.t
@@ -392,18 +391,16 @@ let blur_array_index
 
 (** Given [p] containing an array at [root], blur [indices] in it *)
 let blur_array_indices
-    (footprint_part : bool)
     (p: Prop.normal Prop.t)
     (root: StrexpMatch.path)
     (indices: Sil.exp list) : Prop.normal Prop.t * bool
   =
-  let f prop index = blur_array_index footprint_part prop root index in
+  let f prop index = blur_array_index prop root index in
   (IList.fold_left f p indices, IList.length indices > 0)
 
 
 (** Given [p] containing an array at [root], only keep [indices] in it *)
 let keep_only_indices
-    (footprint_part : bool)
     (p: Prop.normal Prop.t)
     (path: StrexpMatch.path)
     (indices: Sil.exp list) : Prop.normal Prop.t * bool
@@ -432,9 +429,9 @@ let array_typ_can_abstract = function
   | _ -> true
 
 (** This function checks whether we can apply an abstraction to a strexp *)
-let strexp_can_abstract sigma_rest ((_, se, typ) : StrexpMatch.strexp_data) : bool =
+let strexp_can_abstract ((_, se, typ) : StrexpMatch.strexp_data) : bool =
   let can_abstract_se = match se with
-    | Sil.Earray (size, esel, _) ->
+    | Sil.Earray (_, esel, _) ->
         let len = IList.length esel in
         len > 1
     | _ -> false in
@@ -442,7 +439,8 @@ let strexp_can_abstract sigma_rest ((_, se, typ) : StrexpMatch.strexp_data) : bo
 
 
 (** This function abstracts a strexp *)
-let strexp_do_abstract footprint_part p ((path, se_in, typ_in) : StrexpMatch.strexp_data) : Prop.normal Prop.t * bool =
+let strexp_do_abstract
+    footprint_part p ((path, se_in, _) : StrexpMatch.strexp_data) : Prop.normal Prop.t * bool =
   if !Config.trace_absarray && footprint_part then (L.d_str "strexp_do_abstract (footprint)"; L.d_ln ());
   if !Config.trace_absarray && not footprint_part then (L.d_str "strexp_do_abstract (nonfootprint)"; L.d_ln ());
   let prune_and_blur d_keys keep blur path keep_keys blur_keys =
@@ -458,13 +456,11 @@ let strexp_do_abstract footprint_part p ((path, se_in, typ_in) : StrexpMatch.str
     if !Config.trace_absarray then (L.d_strln "Returns"; Prop.d_prop p3; L.d_ln (); L.d_ln ());
     (p3, changed2 || changed3) in
   let prune_and_blur_indices =
-    prune_and_blur Sil.d_exp_list
-      (keep_only_indices footprint_part)
-      (blur_array_indices footprint_part) in
+    prune_and_blur Sil.d_exp_list keep_only_indices blur_array_indices in
 
   let partition_abstract should_keep abstract ksel default_keys =
     let keep_ksel, remove_ksel = IList.partition should_keep ksel in
-    let keep_keys, remove_keys, keys =
+    let keep_keys, _, _ =
       IList.map fst keep_ksel, IList.map fst remove_ksel, IList.map fst ksel in
     let keep_keys' = if keep_keys == [] then default_keys else keep_keys in
     abstract keep_keys' keep_keys' in

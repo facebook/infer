@@ -18,7 +18,7 @@ open CFrontend_utils
 (* The difference is when the lvalue is a __strong or __autoreleasing. In those*)
 (* case we need to add proper retain/release.*)
 (* See document: "Objective-C Automatic Reference Counting" describing the semantics *)
-let assignment_arc_mode context e1 typ e2 loc rhs_owning_method is_e1_decl =
+let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
   let assign = Sil.Set (e1, typ, e2, loc) in
   let retain_pname = SymExec.ModelBuiltins.__objc_retain in
   let release_pname = SymExec.ModelBuiltins.__objc_release in
@@ -27,7 +27,7 @@ let assignment_arc_mode context e1 typ e2 loc rhs_owning_method is_e1_decl =
     let bi_retain = Sil.Const (Sil.Cfun procname) in
     Sil.Call([], bi_retain, [(e, t)], loc, Sil.cf_default) in
   match typ with
-  | Sil.Tptr (t, Sil.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
+  | Sil.Tptr (_, Sil.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
       (* for __strong e1 = e2 the semantics is*)
       (* retain(e2); tmp=e1; e1=e2; release(tmp); *)
       let retain = mk_call retain_pname e2 typ in
@@ -35,15 +35,15 @@ let assignment_arc_mode context e1 typ e2 loc rhs_owning_method is_e1_decl =
       let tmp_assign = Sil.Letderef(id, e1, typ, loc) in
       let release = mk_call release_pname (Sil.Var id) typ in
       (e1,[retain; tmp_assign; assign; release ], [id])
-  | Sil.Tptr (t, Sil.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
+  | Sil.Tptr (_, Sil.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
       (* for A __strong *e1 = e2 the semantics is*)
       (* retain(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in
       (e1,[retain; assign ], [])
-  | Sil.Tptr (t, Sil.Pk_objc_weak)
-  | Sil.Tptr (t, Sil.Pk_objc_unsafe_unretained) ->
+  | Sil.Tptr (_, Sil.Pk_objc_weak)
+  | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) ->
       (e1, [assign],[])
-  | Sil.Tptr (t, Sil.Pk_objc_autoreleasing) ->
+  | Sil.Tptr (_, Sil.Pk_objc_autoreleasing) ->
       (* for __autoreleasing e1 = e2 the semantics is*)
       (* retain(e2); autorelease(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in
@@ -89,7 +89,7 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
     | `XorAssign ->
         let e1_xor_e2 = Sil.BinOp(Sil.BXor, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_xor_e2, loc)])
-    | bok -> assert false in
+    | _ -> assert false in
   (e_res, instr1:: instr_op, [id])
 
 (* Returns a pair ([binary_expression], instructions). "binary_expression" *)
@@ -119,7 +119,7 @@ let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
   | `LOr -> (binop_exp (Sil.LOr), [], [])
   | `Assign ->
       if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
-        assignment_arc_mode context e1 typ e2 loc rhs_owning_method false
+        assignment_arc_mode e1 typ e2 loc rhs_owning_method false
       else
         (e1, [Sil.Set (e1, typ, e2, loc)], [])
   | `Comma -> (e2, [], []) (* C99 6.5.17-2 *)

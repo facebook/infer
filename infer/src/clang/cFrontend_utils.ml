@@ -141,7 +141,7 @@ struct
          | _ -> lstmt)
     (* given that this has not been translated, looking up for variables *)
     (* inside leads to inconsistencies *)
-    | ObjCAtCatchStmt (stmt_info, stmt_list, obj_c_message_expr_kind) ->
+    | ObjCAtCatchStmt _ ->
         []
     | _ -> snd (Clang_ast_proj.get_stmt_tuple stmt)
 
@@ -158,7 +158,7 @@ struct
 
   let get_unqualified_name name_info =
     let name = match name_info.Clang_ast_t.ni_qual_name with
-      | name :: quals -> name
+      | name :: _ -> name
       | [] -> name_info.Clang_ast_t.ni_name in
     fold_qual_name [name]
 
@@ -291,7 +291,7 @@ struct
 
   let update_enum_map enum_constant_pointer sil_exp =
     let open Clang_ast_main in
-    let (predecessor_pointer_opt, sil_exp_opt) =
+    let (predecessor_pointer_opt, _) =
       try PointerMap.find enum_constant_pointer !CFrontend_config.enum_map
       with Not_found -> assert false in
     let enum_map_value = (predecessor_pointer_opt, Some sil_exp) in
@@ -334,7 +334,7 @@ struct
     let typ = match typ_opt with Some t -> t | _ -> assert false in
     (* it needs extending to handle objC types *)
     match typ with
-    | Clang_ast_t.RecordType (ti, decl_ptr) -> get_decl decl_ptr
+    | Clang_ast_t.RecordType (_, decl_ptr) -> get_decl decl_ptr
     | _ -> None
 
   (*TODO take the attributes into account too. To be done after we get the attribute's arguments. *)
@@ -523,7 +523,7 @@ struct
       if n < i then acc else aux (n -1) (n :: acc)
     in aux j [] ;;
 
-  let replicate n el = IList.map (fun i -> el) (list_range 0 (n -1))
+  let replicate n el = IList.map (fun _ -> el) (list_range 0 (n -1))
 
   let mk_class_field_name field_qual_name =
     let field_name = field_qual_name.Clang_ast_t.ni_name in

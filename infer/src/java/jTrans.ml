@@ -59,7 +59,7 @@ let get_location impl pc meth_kind cn =
     let line_number =
       let ln =
         try JBir.get_source_line_number pc impl
-        with Invalid_argument e -> None in
+        with Invalid_argument _ -> None in
       match ln with
       | None -> 0
       | Some n -> n in
@@ -78,7 +78,7 @@ let get_undefined_method_call ovt =
         | JBasics.TObject ot ->
             begin
               match ot with
-              | JBasics.TArray vt -> assert false
+              | JBasics.TArray _ -> assert false
               | JBasics.TClass cn ->
                   if JBasics.cn_name cn = JConfig.string_cl then
                     "string_undefined"
@@ -100,10 +100,10 @@ let retrieve_fieldname fieldname =
       assert false
     else
       IList.hd (IList.rev subs)
-  with hd -> assert false
+  with _ -> assert false
 
 
-let get_field_name program static tenv cn fs context =
+let get_field_name program static tenv cn fs =
   match JTransType.get_class_type_no_pointer program tenv cn with
   | Sil.Tstruct { Sil.instance_fields; static_fields; csu = Csu.Class _ } ->
       let fieldname, _, _ =
@@ -195,9 +195,9 @@ let get_binop binop =
   | JBir.LXor -> Sil.BXor
   | JBir.LUshr ->
       raise (Frontend_error "Unsigned right shift operator")
-  | JBir.CMP comp ->
+  | JBir.CMP _ ->
       raise (Frontend_error "Unsigned right shift operator")
-  | JBir.ArrayLoad vt ->
+  | JBir.ArrayLoad _ ->
       raise (Frontend_error "Array load operator")
 
 let get_test_operator op =
@@ -354,7 +354,7 @@ let create_local_procdesc program linereader cfg tenv node m =
     | Created defined_status ->
         begin
           match defined_status with
-          | Defined procdesc -> assert false
+          | Defined _ -> assert false
           | Called procdesc ->
               Cfg.Procdesc.remove cfg (Cfg.Procdesc.get_proc_name procdesc) false;
               create_new_procdesc ()
@@ -406,23 +406,22 @@ let rec expression context pc expr =
   let loc = get_location (JContext.get_impl context) pc (JContext.get_meth_kind context) cn in
   let tenv = JContext.get_tenv context in
   let type_of_expr = JTransType.expr_type context expr in
-  let trans_var pvar var_type =
+  let trans_var pvar =
     let id = Ident.create_fresh Ident.knormal in
     let sil_instr = Sil.Letderef (id, Sil.Lvar pvar, type_of_expr, loc) in
     ([id], [sil_instr], Sil.Var id) in
   match expr with
-  | JBir.Var (vt, var) ->
+  | JBir.Var (_, var) ->
       let pvar = (JContext.set_pvar context var type_of_expr) in
-      trans_var pvar type_of_expr
+      trans_var pvar
   | JBir.Const c ->
       begin
         match c with (* We use the constant <field> internally to mean a variable. *)
         | `String s when (JBasics.jstr_pp s) = JConfig.field_cst ->
             let varname = JConfig.field_st in
-            let string_type = (JTransType.get_class_type program tenv (JBasics.make_cn JConfig.string_cl)) in
             let procname = (Cfg.Procdesc.get_proc_name (JContext.get_procdesc context)) in
             let pvar = Sil.mk_pvar varname procname in
-            trans_var pvar string_type
+            trans_var pvar
         | _ -> ([], [], Sil.Const (get_constant c))
       end
   | JBir.Unop (unop, ex) ->
@@ -454,8 +453,8 @@ let rec expression context pc expr =
               JTransType.sizeof_of_object_type program tenv ot subtypes in
             let builtin =
               (match unop with
-               | JBir.InstanceOf ot -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__instanceof)
-               | JBir.Cast ot -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast)
+               | JBir.InstanceOf _ -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__instanceof)
+               | JBir.Cast _ -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast)
                | _ -> assert false) in
             let args = [(sil_ex, type_of_ex); (sizeof_expr, Sil.Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
@@ -468,7 +467,7 @@ let rec expression context pc expr =
       and (idl2, instrs2, sil_ex2) = expression context pc ex2 in
       begin
         match binop with
-        | JBir.ArrayLoad vt ->
+        | JBir.ArrayLoad _ ->
             (* add an instruction that dereferences the array *)
             let array_typ = Sil.Tarray(type_of_expr, Sil.Var (Ident.create_fresh Ident.kprimed)) in
             let fresh_id, deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
@@ -485,7 +484,7 @@ let rec expression context pc expr =
       end
   | JBir.Field (ex, cn, fs) ->
       let (idl, instrs, sil_expr) = expression context pc ex in
-      let field_name = get_field_name program false tenv cn fs context in
+      let field_name = get_field_name program false tenv cn fs in
       let sil_type = JTransType.get_class_type_no_pointer program tenv cn in
       let sil_expr = Sil.Lfield (sil_expr, field_name, sil_type) in
       let tmp_id = Ident.create_fresh Ident.knormal in
@@ -497,7 +496,7 @@ let rec expression context pc expr =
         let var_name = Sil.mk_pvar_global classname in
         Sil.Lvar var_name in
       let (idl, instrs, sil_expr) = [], [], class_exp in
-      let field_name = get_field_name program true tenv cn fs context in
+      let field_name = get_field_name program true tenv cn fs in
       let sil_type = JTransType.get_class_type_no_pointer program tenv cn in
       if JTransStaticField.is_static_final_field context cn fs && use_static_final_fields context
       then
@@ -533,7 +532,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
           if Javalib.defines_method node ms then cn
           else
             match node with
-            | Javalib.JInterface jinterface -> fallback_cn
+            | Javalib.JInterface _ -> fallback_cn
             | Javalib.JClass jclass ->
                 begin
                   match jclass.Javalib.c_super_class with
@@ -564,7 +563,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
             | I_Special -> false
             | _ -> true in
           match sil_obj_expr with
-          | Sil.Var id when is_non_constructor_call && not !JConfig.translate_checks ->
+          | Sil.Var _ when is_non_constructor_call && not !JConfig.translate_checks ->
               let obj_typ_no_ptr =
                 match sil_obj_type with
                 | Sil.Tptr (typ, _) -> typ
@@ -609,7 +608,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     | _ when Config.analyze_models || JClasspath.is_model callee_procname -> call_instrs
 
     (* add a file attribute when calling the constructor of a subtype of Closeable *)
-    | (var, typ) as exp :: _
+    | (_, typ) as exp :: _
       when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
         let set_file_attr =
           let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_file_attribute) in
@@ -618,7 +617,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
         call_instrs @ [set_file_attr]
 
     (* remove file attribute when calling the close method of a subtype of Closeable *)
-    | (var, typ) as exp :: []
+    | (_, typ) as exp :: []
       when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
         let set_mem_attr =
           let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_mem_attribute) in
@@ -718,7 +717,7 @@ let extends context node1 node2 =
     IList.exists per_classname cn_list in
   check [Javalib.get_name node1]
 
-let instruction_array_call ms obj_type obj args var_opt vt =
+let instruction_array_call ms obj_type obj args var_opt =
   if is_clone ms then
     (let cn = JBasics.make_cn JConfig.infer_array_cl in
      let vt = (JBasics.TObject obj_type) in
@@ -833,7 +832,7 @@ let rec instruction context pc instr : translation =
     | JBir.AffectField (e_lhs, cn, fs, e_rhs) ->
         let (idl1, stml1, sil_expr_lhs) = expression context pc e_lhs in
         let (idl2, stml2, sil_expr_rhs) = expression context pc e_rhs in
-        let field_name = get_field_name program false tenv cn fs context in
+        let field_name = get_field_name program false tenv cn fs in
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
         let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Sil.Lfield(sil_expr_lhs, field_name, type_of_the_surrounding_class) in
@@ -848,7 +847,7 @@ let rec instruction context pc instr : translation =
           Sil.Lvar var_name in
         let (idl1, stml1, sil_expr_lhs) = [], [], class_exp in
         let (idl2, stml2, sil_expr_rhs) = expression context pc e_rhs in
-        let field_name = get_field_name program true tenv cn fs context in
+        let field_name = get_field_name program true tenv cn fs in
         let type_of_the_surrounding_class = JTransType.get_class_type_no_pointer program tenv cn in
         let type_of_the_root_of_e_lhs = type_of_the_surrounding_class in
         let expr_off = Sil.Lfield(sil_expr_lhs, field_name, type_of_the_surrounding_class) in
@@ -967,8 +966,8 @@ let rec instruction context pc instr : translation =
               begin
                 match obj_type with
                 | JBasics.TClass cn -> trans_virtual_call cn I_Virtual
-                | JBasics.TArray vt ->
-                    let instr = instruction_array_call ms obj_type obj args var_opt vt in
+                | JBasics.TArray _ ->
+                    let instr = instruction_array_call ms obj_type obj args var_opt in
                     instruction context pc instr
               end
           | JBir.InterfaceCall cn ->
@@ -1013,7 +1012,7 @@ let rec instruction context pc instr : translation =
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let constr_procname, call_ids, call_instrs =
+          let _, call_ids, call_instrs =
             let ret_opt = Some (Sil.Var ret_id, class_type) in
             method_invocation context loc pc None npe_cn constr_ms ret_opt [] I_Special Procname.Static in
           let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in
@@ -1024,7 +1023,7 @@ let rec instruction context pc instr : translation =
 
     | JBir.Check (JBir.CheckArrayBound (array_expr, index_expr)) when !JConfig.translate_checks ->
 
-        let ids, instrs, sil_array_expr, sil_length_expr, sil_index_expr =
+        let ids, instrs, _, sil_length_expr, sil_index_expr =
           let array_ids, array_instrs, sil_array_expr =
             expression context pc array_expr
           and length_ids, length_instrs, sil_length_expr =
@@ -1067,7 +1066,7 @@ let rec instruction context pc instr : translation =
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let constr_procname, call_ids, call_instrs =
+          let _, call_ids, call_instrs =
             method_invocation
               context loc pc None out_of_bound_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
@@ -1106,7 +1105,7 @@ let rec instruction context pc instr : translation =
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr = Sil.Call([ret_id], builtin_new, args, loc, Sil.cf_default) in
           let constr_ms = JBasics.make_ms JConfig.constructor_name [] None in
-          let constr_procname, call_ids, call_instrs =
+          let _, call_ids, call_instrs =
             method_invocation context loc pc None cce_cn constr_ms
               (Some (Sil.Var ret_id, class_type)) [] I_Special Procname.Static in
           let sil_exn = Sil.Const (Sil.Cexn (Sil.Var ret_id)) in

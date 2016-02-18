@@ -253,14 +253,13 @@ let propagate (wl : Worklist.t) pname is_exception (pset: Paths.PathSet.t) (curr
 (** propagate a set of results, including exceptions and divergence *)
 let propagate_nodes_divergence
     tenv (pdesc: Cfg.Procdesc.t) (pset: Paths.PathSet.t)
-    (path: Paths.Path.t) (kind_curr_node : Cfg.Node.nodekind) (_succ_nodes: Cfg.node list)
-    (exn_nodes: Cfg.node list) (wl : Worklist.t) =
+    (succ_nodes_: Cfg.node list) (exn_nodes: Cfg.node list) (wl : Worklist.t) =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   let succ_nodes = match State.get_goto_node () with (* handle Sil.Goto_node target, if any *)
     | Some node_id ->
-        IList.filter (fun n -> Cfg.Node.get_id n = node_id) _succ_nodes
-    | None -> _succ_nodes in
+        IList.filter (fun n -> Cfg.Node.get_id n = node_id) succ_nodes_
+    | None -> succ_nodes_ in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then
     begin
       Errdesc.warning_err (State.get_loc ()) "Propagating Divergence@.";
@@ -303,7 +302,7 @@ let prop_max_size = ref (0, Prop.prop_emp)
 let prop_max_chain_size = ref (0, Prop.prop_emp)
 
 (* Check if the prop exceeds the current max *)
-let check_prop_size p path =
+let check_prop_size p _ =
   let size = Prop.Metrics.prop_size p in
   if size > fst !prop_max_size then
     (prop_max_size := (size, p);
@@ -552,15 +551,14 @@ let forward_tabulate cfg tenv wl =
                  let pset =
                    do_symbolic_execution (handle_exn curr_node) cfg tenv curr_node prop path in
                  L.d_decrease_indent 1; L.d_ln();
-                 propagate_nodes_divergence
-                   tenv proc_desc pset path curr_node_kind succ_nodes exn_nodes wl;
+                 propagate_nodes_divergence tenv proc_desc pset succ_nodes exn_nodes wl;
                with
                | exn when Exceptions.handle_exception exn && !Config.footprint ->
                    handle_exn curr_node exn;
                    if !Config.nonstop then
                      propagate_nodes_divergence
                        tenv proc_desc (Paths.PathSet.from_renamed_list [(prop, path)])
-                       path curr_node_kind succ_nodes exn_nodes wl;
+                       succ_nodes exn_nodes wl;
                    L.d_decrease_indent 1; L.d_ln ())
             pathset_todo in
     try
@@ -645,7 +643,7 @@ let vset_ref_add_path vset_ref path =
   Paths.Path.iter_all_nodes_nocalls (fun n -> vset_ref := Cfg.NodeSet.add n !vset_ref) path
 
 let vset_ref_add_pathset vset_ref pathset =
-  Paths.PathSet.iter (fun p path -> vset_ref_add_path vset_ref path) pathset
+  Paths.PathSet.iter (fun _ path -> vset_ref_add_path vset_ref path) pathset
 
 let compute_visited vset =
   let res = ref Specs.Visitedset.empty in
@@ -663,7 +661,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let sub =
     let fav = Sil.fav_new () in
-    Paths.PathSet.iter (fun prop path -> Prop.prop_fav_add fav prop) pathset;
+    Paths.PathSet.iter (fun prop _ -> Prop.prop_fav_add fav prop) pathset;
     let sub_list = IList.map (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.knormal)))) (Sil.fav_to_list fav) in
     Sil.sub_of_list sub_list in
   let pre_post_visited_list =
@@ -845,7 +843,7 @@ let execute_filter_prop wl cfg tenv pdesc init_node (precondition : Prop.normal 
 let get_procs_and_defined_children call_graph =
   IList.map (fun (n, ns) -> (n, Procname.Set.elements ns)) (Cg.get_nodes_and_defined_children call_graph)
 
-let pp_intra_stats wl cfg proc_desc fmt proc_name =
+let pp_intra_stats wl proc_desc fmt _ =
   let nstates = ref 0 in
   let nodes = Cfg.Procdesc.get_nodes proc_desc in
   IList.iter (fun node ->
@@ -901,7 +899,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       L.out "#### [FUNCTION %a] ... OK #####@\n" Procname.pp pname;
       L.out "#### Finished: Footprint Computation for %a %a ####@."
         Procname.pp pname
-        (pp_intra_stats wl cfg pdesc) pname;
+        (pp_intra_stats wl pdesc) pname;
       L.out "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@."
         Procname.pp pname
         (Paths.PathSet.pp pe_text) results;
@@ -935,7 +933,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
         let outcome = if is_valid then "pass" else "fail" in
         L.out "Finished re-execution for precondition %d %a (%s)@."
           (Specs.Jprop.to_number p)
-          (pp_intra_stats wl cfg pdesc) proc_name
+          (pp_intra_stats wl pdesc) proc_name
           outcome;
         speco in
       if !Config.undo_join then
@@ -967,17 +965,17 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
   | Specs.RE_EXECUTION ->
       re_execution pname
 
-let set_current_language cfg proc_desc =
+let set_current_language proc_desc =
   let language = (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.language in
   Config.curr_language := language
 
 (** reset counters before analysing a procedure *)
-let reset_global_counters cfg proc_name proc_desc =
+let reset_global_counters proc_desc =
   Ident.NameGenerator.reset ();
   SymOp.reset_total ();
   reset_prop_metrics ();
   Abs.abs_rules_reset ();
-  set_current_language cfg proc_desc
+  set_current_language proc_desc
 
 (* Collect all pairs of the kind (precondition, runtime exception) from a summary *)
 let exception_preconditions tenv pname summary =
@@ -993,7 +991,7 @@ let exception_preconditions tenv pname summary =
   IList.fold_left collect_spec [] (Specs.get_specs_from_payload summary)
 
 (* Collect all pairs of the kind (precondition, custom error) from a summary *)
-let custom_error_preconditions tenv pname summary =
+let custom_error_preconditions summary =
   let collect_errors pre errors (prop, _) =
     match Tabulation.lookup_custom_errors prop with
     | None -> errors
@@ -1038,7 +1036,7 @@ let is_unavoidable pre =
 (** Detects if there are specs of the form {precondition} proc {runtime exception} and report
     an error in that case, generating the trace that lead to the runtime exception if the method is
     called in the context { precondition } *)
-let report_runtime_exceptions tenv cfg pdesc summary =
+let report_runtime_exceptions tenv pdesc summary =
   let pname = Specs.get_proc_name summary in
   let is_public_method =
     (Specs.get_attributes summary).ProcAttributes.access = Sil.Public in
@@ -1064,7 +1062,7 @@ let report_runtime_exceptions tenv cfg pdesc summary =
   IList.iter report (exception_preconditions tenv pname summary)
 
 
-let report_custom_errors tenv cfg pdesc summary =
+let report_custom_errors summary =
   let pname = Specs.get_proc_name summary in
   let report (pre, custom_error) =
     if is_unavoidable pre then
@@ -1072,7 +1070,7 @@ let report_custom_errors tenv cfg pdesc summary =
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
       Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
-  IList.iter report (custom_error_preconditions tenv pname summary)
+  IList.iter report (custom_error_preconditions summary)
 
 
 (** update a summary after analysing a procedure *)
@@ -1084,7 +1082,7 @@ let update_summary prev_summary specs phase proc_name elapsed res =
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
   let stats_failure = match res with
     | None -> prev_summary.Specs.stats.Specs.stats_failure
-    | Some failure_kind -> res in
+    | Some _ -> res in
   let stats =
     { prev_summary.Specs.stats with
       Specs.stats_time;
@@ -1114,7 +1112,7 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let proc_desc = match Cfg.Procdesc.find_from_name cfg proc_name with
     | Some proc_desc -> proc_desc
     | None -> assert false in
-  reset_global_counters cfg proc_name proc_desc;
+  reset_global_counters proc_desc;
   let go, get_results = perform_analysis_phase cfg tenv proc_name proc_desc in
   let res = Fork.Timeout.exe_timeout (Specs.get_iterations proc_name) go () in
   let specs, phase = get_results () in
@@ -1123,9 +1121,9 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let updated_summary =
     update_summary prev_summary specs phase proc_name elapsed res in
   if !Config.curr_language == Config.C_CPP && Config.report_custom_error then
-    report_custom_errors tenv cfg proc_desc updated_summary;
+    report_custom_errors updated_summary;
   if !Config.curr_language == Config.Java && !Config.report_runtime_exceptions then
-    report_runtime_exceptions tenv cfg proc_desc updated_summary;
+    report_runtime_exceptions tenv proc_desc updated_summary;
   updated_summary
 
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
@@ -1195,7 +1193,7 @@ let filter_out (call_graph: Cg.t) (proc_name: Procname.t) : bool =
 
 let check_skipped_procs procs_and_defined_children =
   let skipped_procs = ref Procname.Set.empty in
-  let proc_check_skips (pname, dep) =
+  let proc_check_skips (pname, _) =
     let process_skip () =
       let call_stats =
         (Specs.get_summary_unsafe "check_skipped_procs" pname).Specs.stats.Specs.call_stats in
@@ -1214,7 +1212,7 @@ let check_skipped_procs procs_and_defined_children =
 (** create a function to filter procedures which were skips but now have a .specs file *)
 let filter_skipped_procs cg procs_and_defined_children =
   let skipped_procs_with_summary = check_skipped_procs procs_and_defined_children in
-  let filter (pname, dep) =
+  let filter (pname, _) =
     let calls_recurs pn =
       let r = try Cg.calls_recursively cg pname pn with Not_found -> false in
       L.err "calls recursively %a %a: %b@." Procname.pp pname Procname.pp pn r;
@@ -1223,7 +1221,7 @@ let filter_skipped_procs cg procs_and_defined_children =
   filter
 
 (** create a function to filter procedures which were analyzed before but had no specs *)
-let filter_nospecs (pname, dep) =
+let filter_nospecs (pname, _) =
   if Specs.summary_exists pname
   then Specs.get_specs pname = []
   else false
@@ -1386,7 +1384,7 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
 let _print_stats exe_env =
   let proc_is_active proc_desc =
     Exe_env.proc_is_active exe_env (Cfg.Procdesc.get_proc_name proc_desc) in
-  Exe_env.iter_files (fun fname tenv cfg ->
+  Exe_env.iter_files (fun fname cfg ->
       let proc_shadowed proc_desc =
         (** return true if a proc with the same name in another module was analyzed instead *)
         let proc_name = Cfg.Procdesc.get_proc_name proc_desc in

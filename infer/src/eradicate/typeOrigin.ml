@@ -64,8 +64,8 @@ let equal o1 o2 = match o1, o2 with
   | Undef, Undef -> true
 
 let to_string = function
-  | Const loc -> "Const"
-  | Field (fn, loc) -> "Field " ^ Ident.fieldname_to_simplified_string fn
+  | Const _ -> "Const"
+  | Field (fn, _) -> "Field " ^ Ident.fieldname_to_simplified_string fn
   | Formal s -> "Formal " ^ Mangled.to_string s
   | Proc po ->
       Printf.sprintf

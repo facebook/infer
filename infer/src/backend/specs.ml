@@ -113,12 +113,12 @@ module Jprop = struct
   let filter (f: 'a t -> 'b option) jpl =
     let rec do_filter acc = function
       | [] -> acc
-      | (Prop (_, p) as jp) :: jpl ->
+      | (Prop _ as jp) :: jpl ->
           (match f jp with
            | Some x ->
                do_filter (x:: acc) jpl
            | None -> do_filter acc jpl)
-      | (Joined (_, p, jp1, jp2) as jp) :: jpl ->
+      | (Joined (_, _, jp1, jp2) as jp) :: jpl ->
           (match f jp with
            | Some x ->
                do_filter (x:: acc) jpl
@@ -142,13 +142,13 @@ end
 module Visitedset =
   Set.Make (struct
     type t = int * int list
-    let compare (node_id1, line1) (node_id2, line2) = int_compare node_id1 node_id2
+    let compare (node_id1, _) (node_id2, _) = int_compare node_id1 node_id2
   end)
 
 let visited_str vis =
   let s = ref "" in
   let lines = ref IntSet.empty in
-  let do_one (node, ns) =
+  let do_one (_, ns) =
     (* if IList.length ns > 1 then
        begin
        let ss = ref "" in
@@ -180,7 +180,7 @@ end = struct
   let spec_fav (spec: Prop.normal spec) : Sil.fav =
     let fav = Sil.fav_new () in
     Jprop.fav_add_dfs fav spec.pre;
-    IList.iter (fun (p, path) -> Prop.prop_fav_add_dfs fav p) spec.posts;
+    IList.iter (fun (p, _) -> Prop.prop_fav_add_dfs fav p) spec.posts;
     fav
 
   let spec_sub sub spec =
@@ -432,7 +432,7 @@ let pp_summary_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" pp_pair (describe_phase summary);
   F.fprintf fmt "Dependency_map: @[%a@]@\n" pp_dependency_map summary.dependency_map
 
-let pp_stats_html err_log fmt stats =
+let pp_stats_html err_log fmt =
   Errlog.pp_html [] fmt err_log
 
 let get_specs_from_payload summary =
@@ -452,7 +452,7 @@ let pp_summary pe whole_seconds fmt summary =
       Io_infer.Html.pp_start_color fmt Black;
       F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
       Io_infer.Html.pp_end_color fmt ();
-      pp_stats_html err_log fmt summary.stats;
+      pp_stats_html err_log fmt;
       Io_infer.Html.pp_hline fmt ();
       F.fprintf fmt "<LISTING>@\n";
       pp_specs pe fmt (get_specs_from_payload summary);
@@ -466,7 +466,9 @@ let pp_summary pe whole_seconds fmt summary =
 
 (** Print the spec table *)
 let pp_spec_table pe whole_seconds fmt () =
-  Procname.Hash.iter (fun proc_name (summ, orig) -> F.fprintf fmt "PROC %a@\n%a@\n" Procname.pp proc_name (pp_summary pe whole_seconds) summ) spec_tbl
+  Procname.Hash.iter (fun proc_name (summ, _) ->
+      F.fprintf fmt "PROC %a@\n%a@\n" Procname.pp proc_name (pp_summary pe whole_seconds) summ
+    ) spec_tbl
 
 let empty_stats calls in_out_calls_opt =
   { stats_time = 0.0;
@@ -752,7 +754,7 @@ let get_specs proc_name =
 let get_phase proc_name =
   match get_summary_origin proc_name with
   | None -> raise (Failure ("Specs.get_phase: " ^ (Procname.to_string proc_name) ^ " Not_found"))
-  | Some (summary, origin) -> summary.phase
+  | Some (summary, _) -> summary.phase
 
 (** Set the current status for the proc *)
 let set_status proc_name status =
@@ -766,7 +768,7 @@ let mk_initial_dependency_map proc_list : dependency_map_t =
 
 (** Re-initialize a dependency map *)
 let re_initialize_dependency_map dependency_map =
-  Procname.Map.map (fun dep_proc -> - 1) dependency_map
+  Procname.Map.map (fun _ -> - 1) dependency_map
 
 (** Update the dependency map of [proc_name] with the current
     timestamps of the dependents *)
@@ -778,7 +780,7 @@ let update_dependency_map proc_name =
   | Some (summary, origin) ->
       let current_dependency_map =
         Procname.Map.mapi
-          (fun dep_proc old_stamp -> get_timestamp summary)
+          (fun _ _ -> get_timestamp summary)
           summary.dependency_map in
       set_summary_origin proc_name { summary with dependency_map = current_dependency_map } origin
 

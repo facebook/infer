@@ -118,7 +118,7 @@ type from_call =
   | From_containsKey (** x.containsKey *)
 
 (** Check the normalized "is zero" or "is not zero" condition of a prune instruction. *)
-let check_condition case_zero find_canonical_duplicate get_proc_desc curr_pname
+let check_condition case_zero find_canonical_duplicate curr_pname
     node e typ ta true_branch from_call idenv linereader loc instr_ref : unit =
   let is_fun_nonnull ta = match TypeAnnotation.get_origin ta with
     | TypeOrigin.Proc proc_origin ->
@@ -186,7 +186,7 @@ let check_nonzero find_canonical_duplicate = check_condition false find_canonica
 (** Check an assignment to a field. *)
 let check_field_assignment
     find_canonical_duplicate curr_pname node instr_ref typestate exp_lhs
-    exp_rhs typ loc fname t_ia_opt typecheck_expr print_current_state : unit =
+    exp_rhs typ loc fname t_ia_opt typecheck_expr : unit =
   let (t_lhs, ta_lhs, _) =
     typecheck_expr node instr_ref curr_pname typestate exp_lhs
       (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, [loc]) loc in
@@ -253,7 +253,7 @@ let check_constructor_initialization
   then begin
     match PatternMatch.get_this_type (Cfg.Procdesc.get_attributes curr_pdesc) with
     | Some (Sil.Tptr (Sil.Tstruct { Sil.instance_fields; struct_name } as ts, _)) ->
-        let do_field (fn, ft, ia) =
+        let do_field (fn, ft, _) =
           let annotated_with f = match get_field_annotation fn ts with
             | None -> false
             | Some (_, ia) -> f ia in
@@ -347,7 +347,7 @@ let spec_make_return_nullable curr_pname =
 
 (** Check the annotations when returning from a method. *)
 let check_return_annotation
-    find_canonical_duplicate curr_pname curr_pdesc exit_node ret_range
+    find_canonical_duplicate curr_pname exit_node ret_range
     ret_ia ret_implicitly_nullable loc : unit =
   let ret_annotated_nullable = Annotations.ia_is_nullable ret_ia in
   let ret_annotated_present = Annotations.ia_is_present ret_ia in
@@ -414,11 +414,10 @@ let check_call_receiver
     typestate
     call_params
     callee_pname
-    callee_loc
     (instr_ref : TypeErr.InstrRef.t)
     loc
     typecheck_expr
-    print_current_state : unit =
+  : unit =
   match call_params with
   | ((original_this_e, this_e), typ) :: _ ->
       let (_, this_ta, _) =
@@ -447,8 +446,7 @@ let check_call_receiver
 (** Check the parameters of a call. *)
 let check_call_parameters
     find_canonical_duplicate curr_pname node typestate callee_attributes
-    sig_params call_params loc annotated_signature
-    instr_ref typecheck_expr print_current_state : unit =
+    sig_params call_params loc instr_ref typecheck_expr : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let has_this = is_virtual sig_params in
   let tot_param_num = IList.length sig_params - (if has_this then 1 else 0) in
@@ -515,7 +513,7 @@ let check_call_parameters
 (** Checks if the annotations are consistent with the inherited class or with the
     implemented interfaces *)
 let check_overridden_annotations
-    find_canonical_duplicate get_proc_desc tenv proc_name proc_desc annotated_signature =
+    find_canonical_duplicate tenv proc_name proc_desc annotated_signature =
 
   let start_node = Cfg.Procdesc.get_start_node proc_desc in
   let loc = Cfg.Node.get_loc start_node in
@@ -537,8 +535,8 @@ let check_overridden_annotations
 
   and check_params overriden_proc_name overriden_signature =
     let compare pos current_param overriden_param : int =
-      let current_name, current_ia, current_type = current_param in
-      let _, overriden_ia, overriden_type = overriden_param in
+      let current_name, current_ia, _ = current_param in
+      let _, overriden_ia, _ = overriden_param in
       let () =
         if not (Annotations.ia_is_nullable current_ia)
         && Annotations.ia_is_nullable overriden_ia then

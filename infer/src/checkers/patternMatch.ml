@@ -33,7 +33,7 @@ let is_direct_subtype_of this_type super_type_name =
 
 (** The type the method is invoked on *)
 let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals with
-  | (n, t):: args -> Some t
+  | (_, t):: _ -> Some t
   | _ -> None
 
 let type_get_direct_supertypes = function
@@ -137,7 +137,7 @@ let get_vararg_type_names
         (Sil.pvar_equal ivar iv && Ident.equal t1 t2 &&
          Procname.equal pn (Procname.from_string_c_fun "__new_array"))
         || initializes_array is
-    | i:: is -> initializes_array is
+    | _:: is -> initializes_array is
     | _ -> false in
 
   (* Get the type name added to ivar or None *)
@@ -146,10 +146,10 @@ let get_vararg_type_names
       match instrs with
       | Sil.Letderef (nv, Sil.Lfield (_, id, t), _, _):: _
         when Ident.equal nv nvar -> get_field_type_name t id
-      | Sil.Letderef (nv, e, t, _):: _
+      | Sil.Letderef (nv, _, t, _):: _
         when Ident.equal nv nvar ->
           Some (get_type_name t)
-      | i:: is -> nvar_type_name nvar is
+      | _:: is -> nvar_type_name nvar is
       | _ -> None in
     let rec added_nvar array_nvar instrs =
       match instrs with
@@ -157,14 +157,14 @@ let get_vararg_type_names
         when Ident.equal iv array_nvar -> nvar_type_name nvar (Cfg.Node.get_instrs node)
       | Sil.Set (Sil.Lindex (Sil.Var iv, _), _, Sil.Const c, _):: _
         when Ident.equal iv array_nvar -> Some (java_get_const_type_name c)
-      | i:: is -> added_nvar array_nvar is
+      | _:: is -> added_nvar array_nvar is
       | _ -> None in
     let rec array_nvar instrs =
       match instrs with
       | Sil.Letderef (nv, Sil.Lvar iv, _, _):: _
         when Sil.pvar_equal iv ivar ->
           added_nvar nv instrs
-      | i:: is -> array_nvar is
+      | _:: is -> array_nvar is
       | _ -> None in
     array_nvar (Cfg.Node.get_instrs node) in
 
@@ -181,7 +181,7 @@ let get_vararg_type_names
 
   IList.rev (type_names call_node)
 
-let has_formal_proc_argument_type_names proc_desc proc_name argument_type_names =
+let has_formal_proc_argument_type_names proc_desc argument_type_names =
   let formals = Cfg.Procdesc.get_formals proc_desc in
   let equal_formal_arg (_, typ) arg_type_name = get_type_name typ = arg_type_name in
   IList.length formals = IList.length argument_type_names
@@ -189,7 +189,7 @@ let has_formal_proc_argument_type_names proc_desc proc_name argument_type_names 
 
 let has_formal_method_argument_type_names cfg proc_name argument_type_names =
   has_formal_proc_argument_type_names
-    cfg proc_name ((Procname.java_get_class proc_name):: argument_type_names)
+    cfg ((Procname.java_get_class proc_name):: argument_type_names)
 
 let is_getter proc_name =
   Str.string_match (Str.regexp "get*") (Procname.java_get_method proc_name) 0
@@ -199,16 +199,16 @@ let is_setter proc_name =
 
 (** Returns the signature of a field access (class name, field name, field type name) *)
 let get_java_field_access_signature = function
-  | Sil.Letderef (id, Sil.Lfield (e, fn, ft), bt, loc) ->
+  | Sil.Letderef (_, Sil.Lfield (_, fn, ft), bt, _) ->
       Some (get_type_name bt, Ident.java_fieldname_get_field fn, get_type_name ft)
   | _ -> None
 
 (** Returns the formal signature (class name, method name,
     argument type names and return type name) *)
 let get_java_method_call_formal_signature = function
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) ->
+  | Sil.Call (_, Sil.Const (Sil.Cfun pn), (_, tt):: args, _, _) ->
       (try
-         let arg_names = IList.map (function | e, t -> get_type_name t) args in
+         let arg_names = IList.map (function | _, t -> get_type_name t) args in
          let rt_name = Procname.java_get_return_type pn in
          let m_name = Procname.java_get_method pn in
          Some (get_type_name tt, m_name, arg_names, rt_name)
@@ -262,7 +262,7 @@ let method_is_initializer
   | None -> false
 
 (** Get the vararg values by looking for array assignments to the pvar. *)
-let java_get_vararg_values node pvar idenv pdesc =
+let java_get_vararg_values node pvar idenv =
   let values = ref [] in
   let do_instr = function
     | Sil.Set (Sil.Lindex (array_exp, _), _, content_exp, _)
@@ -274,13 +274,13 @@ let java_get_vararg_values node pvar idenv pdesc =
     IList.iter do_instr (Cfg.Node.get_instrs n) in
   let () = match Errdesc.find_program_variable_assignment node pvar with
     | Some (node', _) ->
-        Cfg.Procdesc.iter_slope_range do_node pdesc node' node
+        Cfg.Procdesc.iter_slope_range do_node node' node
     | None -> () in
   !values
 
-let proc_calls resolve_attributes pname pdesc filter : (Procname.t * ProcAttributes.t) list =
+let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t) list =
   let res = ref [] in
-  let do_instruction node instr = match instr with
+  let do_instruction _ instr = match instr with
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _) ->
         begin
           match resolve_attributes callee_pn with
@@ -329,7 +329,7 @@ let proc_iter_overridden_methods f tenv proc_name =
 let get_fields_nullified procdesc =
   (* walk through the instructions and look for instance fields that are assigned to null *)
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
-    | Sil.Set (Sil.Lfield (Sil.Var lhs, fld, _), typ, rhs, loc)
+    | Sil.Set (Sil.Lfield (Sil.Var lhs, fld, _), _, rhs, _)
       when Sil.exp_is_null_literal rhs && Ident.IdentSet.mem lhs this_ids ->
         (Ident.FieldSet.add fld nullified_flds, this_ids)
     | Sil.Letderef (id, rhs, _, _) when Sil.exp_is_this rhs ->

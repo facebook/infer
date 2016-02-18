@@ -19,7 +19,7 @@ module AllPreds = struct
     NodeHash.clear preds_table
 
   let mk_table cfg =
-    let do_pdesc pname pdesc =
+    let do_pdesc _ pdesc =
       let exit_node = Cfg.Procdesc.get_exit_node pdesc in
       let add_edge is_exn nfrom nto =
         if is_exn && Cfg.Node.equal nto exit_node then ()
@@ -90,12 +90,12 @@ let rec use_exp cfg pdesc (exp: Sil.exp) acc =
 and use_etl cfg pdesc (etl: (Sil.exp * Sil.typ) list) acc =
   IList.fold_left (fun acc (e, _) -> use_exp cfg pdesc e acc) acc etl
 
-and use_instr cfg tenv (pdesc: Cfg.Procdesc.t) (instr: Sil.instr) acc =
+and use_instr cfg (pdesc: Cfg.Procdesc.t) (instr: Sil.instr) acc =
   match instr with
   | Sil.Set (_, _, e, _)
   | Sil.Letderef (_, e, _, _) -> use_exp cfg pdesc e acc
   | Sil.Prune (e, _, _, _) -> use_exp cfg pdesc e acc
-  | Sil.Call (_, e, etl, _, _) -> use_etl cfg pdesc etl acc
+  | Sil.Call (_, _, etl, _, _) -> use_etl cfg pdesc etl acc
   | Sil.Nullify _ -> acc
   | Sil.Abstract _ | Sil.Remove_temps _ | Sil.Stackop _ | Sil.Declare_locals _ -> acc
   | Sil.Goto_node (e, _) -> use_exp cfg pdesc e acc
@@ -144,11 +144,11 @@ let def_node cfg node acc =
   | Cfg.Node.Stmt_node _ ->
       def_instrl cfg (Cfg.Node.get_instrs node) acc
 
-let compute_live_instr cfg tenv pdesc s instr =
-  use_instr cfg tenv pdesc instr (Vset.diff s (def_instr cfg instr Vset.empty))
+let compute_live_instr cfg pdesc s instr =
+  use_instr cfg pdesc instr (Vset.diff s (def_instr cfg instr Vset.empty))
 
-let compute_live_instrl cfg tenv pdesc instrs livel =
-  IList.fold_left (compute_live_instr cfg tenv pdesc) livel (IList.rev instrs)
+let compute_live_instrl cfg pdesc instrs livel =
+  IList.fold_left (compute_live_instr cfg pdesc) livel (IList.rev instrs)
 
 module Worklist = struct
   module S = Cfg.NodeSet
@@ -226,7 +226,7 @@ let compute_candidates procdesc : Vset.t * (Vset.t -> Vset.elt list) =
   !candidates, get_sorted_candidates
 
 (** Construct a table wich associates to each node a set of live variables *)
-let analyze_proc cfg tenv pdesc cand =
+let analyze_proc cfg pdesc cand =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
   Worklist.reset ();
   Table.reset ();
@@ -242,7 +242,7 @@ let analyze_proc cfg tenv pdesc cand =
         | Cfg.Node.Start_node _ | Cfg.Node.Exit_node _ | Cfg.Node.Join_node | Cfg.Node.Skip_node _ -> curr_live
         | Cfg.Node.Prune_node _
         | Cfg.Node.Stmt_node _ ->
-            compute_live_instrl cfg tenv pdesc (Cfg.Node.get_instrs node) curr_live in
+            compute_live_instrl cfg pdesc (Cfg.Node.get_instrs node) curr_live in
       Table.propagate_to_preds (Vset.inter live_at_predecessors cand) preds
     done
   with Not_found -> ()
@@ -310,7 +310,7 @@ let add_dead_pvars_after_conditionals_join cfg n dead_pvars =
 
 (** Find the set of dead variables for the procedure pname and add nullify instructions.
     The variables that are possibly aliased are only considered just before the exit node. *)
-let analyze_and_annotate_proc cfg tenv pname pdesc =
+let analyze_and_annotate_proc cfg pname pdesc =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
   let exit_node_is_succ node =
     match Cfg.Node.get_succs node with
@@ -319,7 +319,7 @@ let analyze_and_annotate_proc cfg tenv pname pdesc =
   let cand, get_sorted_cand = compute_candidates pdesc in
   aliased_var:= Vset.empty;
   captured_var:= Vset.empty;
-  analyze_proc cfg tenv pdesc cand; (* as side effect it coputes the set aliased_var  *)
+  analyze_proc cfg pdesc cand; (* as side effect it coputes the set aliased_var  *)
   (* print_aliased_var "@.@.Aliased variable computed: " !aliased_var;
      L.out "  PROCEDURE %s@." (Procname.to_string pname); *)
   let dead_pvars_added = ref 0 in
@@ -383,7 +383,7 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
       IList.exists instr_is_dispatch_call instrs in
     let replace_dispatch_calls = function
       | Sil.Call (ret_ids, (Sil.Const (Sil.Cfun callee_pname) as call_exp),
-                  (((receiver_exp, receiver_typ) :: _) as args), loc, call_flags) as instr
+                  (((_, receiver_typ) :: _) as args), loc, call_flags) as instr
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
           assert (call_flags.Sil.cf_targets = []);
@@ -392,7 +392,7 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
             let overrides = Prover.get_overrides_of tenv receiver_typ_no_ptr callee_pname in
             IList.sort (fun (_, p1) (_, p2) -> Procname.compare p1 p2) overrides in
           (match sorted_overrides with
-           | ((_, target_pname) :: targets) as all_targets ->
+           | ((_, target_pname) :: _) as all_targets ->
                let targets_to_add =
                  if Config.sound_dynamic_dispatch then
                    IList.map snd all_targets
@@ -420,7 +420,7 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
 
 let doit ?(f_translate_typ=None) cfg cg tenv =
   AllPreds.mk_table cfg;
-  Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
+  Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg);
   AllPreds.clear_table ();
   if !Config.curr_language = Config.Java
   then add_dispatch_calls cfg cg tenv f_translate_typ;

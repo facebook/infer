@@ -16,8 +16,7 @@ type callback_trace = (Sil.exp * Sil.typ) list
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
     order with the specified receiver and add it to the execution environment *)
 val inhabit_trace : lifecycle_trace -> callback_trace -> Procname.t ->
-
-  DB.source_file Procname.Map.t -> Sil.tenv -> unit
+  DB.source_file Procname.Map.t -> unit
 
 val source_dir_from_name : Procname.t -> DB.source_file Procname.Map.t -> DB.source_dir
 

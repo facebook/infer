@@ -92,14 +92,16 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -w,@20 \
                      -cflags -w,@26 \
                      -cflags -w,@29 \
-                     -cflags -w,+32 \
+                     -cflags -w,@27 \
+                     -cflags -w,@32 \
                      -cflags -w,@33 \
                      -cflags -w,@34 \
                      -cflags -w,@35 \
                      -cflags -w,@37 \
                      -cflags -w,@38 \
                      -cflags -w,@39 \
-                     -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*}>: warn(-32-35-39)" \
+                     -cflags -w,-40..42 \
+                     -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*}>: warn(-27-32-35-39)" \
                      -tag-line "not <**/{config,iList,utils}.*>: open(Utils)" \
                      -lflags $(OCAML_INCLUDES) \
                      -cflags $(OCAML_INCLUDES) \

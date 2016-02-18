@@ -106,7 +106,7 @@ module Procdesc : sig
   val iter_slope_calls : (Procname.t -> unit) -> t -> unit
 
   (** iterate between two nodes or until we reach a branching structure *)
-  val iter_slope_range : (node -> unit) -> t -> node -> node -> unit
+  val iter_slope_range : (node -> unit) -> node -> node -> unit
 
   val set_exit_node : t -> node -> unit
 

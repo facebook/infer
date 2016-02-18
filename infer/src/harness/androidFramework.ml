@@ -256,14 +256,14 @@ let get_all_supertypes typ tenv =
     | _ -> [] in
   let rec add_typ class_name typs =
     match Sil.tenv_lookup tenv class_name with
-    | Some typ -> get_supers_rec typ tenv (TypSet.add typ typs)
+    | Some typ -> get_supers_rec typ (TypSet.add typ typs)
     | None -> typs
-  and get_supers_rec typ tenv all_supers =
+  and get_supers_rec typ all_supers =
     let direct_supers = get_direct_supers typ in
     IList.fold_left
       (fun typs class_name -> add_typ class_name typs)
       all_supers direct_supers in
-  get_supers_rec typ tenv (TypSet.add typ TypSet.empty)
+  get_supers_rec typ (TypSet.add typ TypSet.empty)
 
 (** return true if [typ0] <: [typ1] *)
 let is_subtype (typ0 : Sil.typ) (typ1 : Sil.typ) tenv =
@@ -339,8 +339,8 @@ let get_callback_registered_by procname args tenv =
 
 (** return a list of typ's corresponding to callback classes registered by [procdesc] *)
 let get_callbacks_registered_by_proc procdesc tenv =
-  let collect_callback_typs callback_typs node instr = match instr with
-    | Sil.Call([], Sil.Const (Sil.Cfun callee), args, loc, _) ->
+  let collect_callback_typs callback_typs _ instr = match instr with
+    | Sil.Call([], Sil.Const (Sil.Cfun callee), args, _, _) ->
         begin
           match get_callback_registered_by callee args tenv with
           | Some (_, callback_typ) -> callback_typ :: callback_typs

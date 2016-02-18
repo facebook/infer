@@ -43,8 +43,7 @@ val create_struct_type : string -> type_ptr
 
 val create_pointer_type : type_ptr -> type_ptr
 
-val make_objc_ivar_decl : decl_info -> type_ptr -> obj_c_property_impl_decl_info ->
-  named_decl_info -> decl
+val make_objc_ivar_decl : decl_info -> type_ptr -> named_decl_info -> decl
 
 val make_stmt_info : decl_info -> stmt_info
 
@@ -72,7 +71,7 @@ val make_obj_c_message_expr_info_class : string -> string -> pointer option ->
 
 val make_obj_c_message_expr_info_instance : string -> obj_c_message_expr_info
 
-val translate_dispatch_function : string -> stmt_info -> stmt list -> expr_info -> int -> stmt * type_ptr
+val translate_dispatch_function : string -> stmt_info -> stmt list -> int -> stmt * type_ptr
 
 val translate_block_enumerate : string ->  stmt_info  -> stmt list -> expr_info ->
   stmt * (string * Clang_ast_t.pointer * type_ptr) list

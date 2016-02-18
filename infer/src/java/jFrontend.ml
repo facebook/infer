@@ -42,7 +42,7 @@ let add_edges context start_node exn_node exit_nodes method_body_nodes impl supe
     | None -> direct_successors pc
     | Some jump_pc -> get_body_nodes jump_pc in
   let get_exn_nodes =
-    if super_call then (fun x -> exit_nodes)
+    if super_call then (fun _ -> exit_nodes)
     else JTransExn.create_exception_handlers context [exn_node] get_body_nodes impl in
   let connect node pc =
     Cfg.Node.set_succs_exn node (get_succ_nodes node pc) (get_exn_nodes pc) in
@@ -103,7 +103,7 @@ let add_cmethod never_null_matcher program icfg node cm is_static =
 
 
 (** Add an abstract method. *)
-let add_amethod program icfg node am is_static =
+let add_amethod program icfg am is_static =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let cn, ms = JBasics.cms_split am.Javalib.am_class_method_signature in
@@ -164,7 +164,7 @@ let create_icfg never_null_matcher linereader program icfg cn node =
         | Javalib.ConcreteMethod cm ->
             add_cmethod never_null_matcher program icfg node cm method_kind
         | Javalib.AbstractMethod am ->
-            add_amethod program icfg node am method_kind
+            add_amethod program icfg am method_kind
       ) node
   end
 
@@ -225,7 +225,7 @@ let compute_source_icfg
       (JClasspath.get_classmap program) in
   (icfg.JContext.cg, icfg.JContext.cfg)
 
-let compute_class_icfg never_null_matcher linereader program tenv node fake_source_file =
+let compute_class_icfg never_null_matcher linereader program tenv node =
   let icfg =
     { JContext.cg = Cg.create ();
       JContext.cfg = Cfg.Node.create_cfg ();

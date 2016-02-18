@@ -67,7 +67,7 @@ let flatten_options list =
 
 let rec drop_first n = function
   | xs when n == 0 -> xs
-  | x:: xs -> drop_first (n - 1) xs
+  | _ :: xs -> drop_first (n - 1) xs
   | [] -> []
 
 let drop_last n list =

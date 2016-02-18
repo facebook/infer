@@ -31,7 +31,7 @@ let rec is_root = function
   | Sil.UnOp _ | Sil.BinOp _ | Sil.Lfield _ | Sil.Lindex _ | Sil.Sizeof _ -> false
 
 (** Return [true] if the nodes are connected. Used to compute reachability. *)
-let nodes_connected g n1 n2 =
+let nodes_connected n1 n2 =
   Sil.exp_equal n1 n2 (* Implemented as equality for now, later it might contain offset by a constant *)
 
 (** Return [true] if the edge is an hpred, and [false] if it is an atom *)
@@ -44,17 +44,17 @@ let edge_is_hpred = function
 let edge_get_source = function
   | Ehpred (Sil.Hpointsto(e, _, _)) -> e
   | Ehpred (Sil.Hlseg(_, _, e, _, _)) -> e
-  | Ehpred (Sil.Hdllseg(_, _, e1, _, _, e2, _)) -> e1 (* :: e2 only one direction supported for now *)
+  | Ehpred (Sil.Hdllseg(_, _, e1, _, _, _, _)) -> e1 (* only one direction supported for now *)
   | Eatom (Sil.Aeq (e1, _)) -> e1
   | Eatom (Sil.Aneq (e1, _)) -> e1
-  | Esub_entry (x, e) -> Sil.Var x
+  | Esub_entry (x, _) -> Sil.Var x
 
 (** Return the successor nodes of the edge *)
 let edge_get_succs = function
   | Ehpred hpred -> Sil.ExpSet.elements (Prop.hpred_get_targets hpred)
   | Eatom (Sil.Aeq (_, e2)) -> [e2]
   | Eatom (Sil.Aneq (_, e2)) -> [e2]
-  | Esub_entry (s, e) -> [e]
+  | Esub_entry (_, e) -> [e]
 
 let get_sigma footprint_part g =
   if footprint_part then Prop.get_sigma_footprint g else Prop.get_sigma g
@@ -120,7 +120,7 @@ let compute_exp_diff (e1: Sil.exp) (e2: Sil.exp) : Obj.t list =
 
 (** Compute the subobjects in [se2] which are different from those in [se1] *)
 let rec compute_sexp_diff (se1: Sil.strexp) (se2: Sil.strexp) : Obj.t list = match se1, se2 with
-  | Sil.Eexp (e1, inst1), Sil.Eexp (e2, inst2) -> if Sil.exp_equal e1 e2 then [] else [Obj.repr se2]
+  | Sil.Eexp (e1, _), Sil.Eexp (e2, _) -> if Sil.exp_equal e1 e2 then [] else [Obj.repr se2]
   | Sil.Estruct (fsel1, _), Sil.Estruct (fsel2, _) ->
       compute_fsel_diff fsel1 fsel2
   | Sil.Earray (e1, esel1, _), Sil.Earray (e2, esel2, _) ->

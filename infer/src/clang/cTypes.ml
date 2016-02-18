@@ -44,7 +44,7 @@ let classname_of_type typ =
 let search_enum_type_by_name tenv name =
   let found = ref None in
   let mname = Mangled.from_string name in
-  let f tn typ =
+  let f _ typ =
     match typ with
     | Sil.Tenum enum_constants ->
         IList.iter (fun (c, v) -> if Mangled.equal c mname then found:= Some v else ()) enum_constants
@@ -68,10 +68,10 @@ let is_class typ =
 let rec return_type_of_function_type_ptr type_ptr =
   let open Clang_ast_t in
   match Ast_utils.get_type type_ptr with
-  | Some FunctionProtoType (type_info, function_type_info, _)
-  | Some FunctionNoProtoType (type_info, function_type_info) ->
+  | Some FunctionProtoType (_, function_type_info, _)
+  | Some FunctionNoProtoType (_, function_type_info) ->
       function_type_info.Clang_ast_t.fti_return_type
-  | Some BlockPointerType (type_info, in_type_ptr) ->
+  | Some BlockPointerType (_, in_type_ptr) ->
       return_type_of_function_type_ptr in_type_ptr
   | Some _ ->
       Printing.log_err "Warning: Type pointer %s is not a function type."
@@ -108,7 +108,7 @@ let rec expand_structured_type tenv typ =
              typ
            else expand_structured_type tenv t
        | None -> typ)
-  | Sil.Tptr(t, _) -> typ (*do not expand types under pointers *)
+  | Sil.Tptr _ -> typ (*do not expand types under pointers *)
   | _ -> typ
 
 (* To be called with strings of format "<pointer_type_info>*<class_name>" *)

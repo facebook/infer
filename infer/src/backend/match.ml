@@ -52,7 +52,7 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       check_equal sub vars e1 e2
   | Sil.Sizeof _, _ | _, Sil.Sizeof _ ->
       check_equal sub vars e1 e2
-  | Sil.Cast (t1, e1'), Sil.Cast (t2, e2') -> (* we are currently ignoring cast *)
+  | Sil.Cast (_, e1'), Sil.Cast (_, e2') -> (* we are currently ignoring cast *)
       exp_match e1' sub vars e2'
   | Sil.Cast _, _ | _, Sil.Cast _ ->
       None
@@ -68,7 +68,7 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
       None (* Naive *)
   | Sil.Lvar _, _ | _, Sil.Lvar _ ->
       check_equal sub vars e1 e2
-  | Sil.Lfield(e1', fld1, t1), Sil.Lfield(e2', fld2, t2) when (Sil.fld_equal fld1 fld2) ->
+  | Sil.Lfield(e1', fld1, _), Sil.Lfield(e2', fld2, _) when (Sil.fld_equal fld1 fld2) ->
       exp_match e1' sub vars e2'
   | Sil.Lfield _, _ | _, Sil.Lfield _ ->
       None
@@ -91,7 +91,7 @@ let exp_list_match es1 sub vars es2 =
     sometimes forgets fields of hpred. It can possibly cause a problem. *)
 let rec strexp_match sexp1 sub vars sexp2 : (Sil.subst * Ident.t list) option =
   match sexp1, sexp2 with
-  | Sil.Eexp (exp1, inst1), Sil.Eexp (exp2, inst2) ->
+  | Sil.Eexp (exp1, _), Sil.Eexp (exp2, _) ->
       exp_match exp1 sub vars exp2
   | Sil.Eexp _, _ | _, Sil.Eexp _ ->
       None
@@ -180,7 +180,7 @@ let rec instantiate_to_emp p condition sub vars = function
       if not hpat.flag then None
       else match hpat.hpred with
         | Sil.Hpointsto _ | Sil.Hlseg (Sil.Lseg_NE, _, _, _, _) | Sil.Hdllseg (Sil.Lseg_NE, _, _, _, _, _, _) -> None
-        | Sil.Hlseg (k, _, e1, e2, _) ->
+        | Sil.Hlseg (_, _, e1, e2, _) ->
             let fully_instantiated = not (IList.exists (fun id -> Sil.ident_in_exp id e1) vars)
             in if (not fully_instantiated) then None else
               let e1' = Sil.exp_sub sub e1
@@ -190,7 +190,7 @@ let rec instantiate_to_emp p condition sub vars = function
                 | Some (sub_new, vars_leftover) ->
                     instantiate_to_emp p condition sub_new vars_leftover hpats
               end
-        | Sil.Hdllseg (k, _, iF, oB, oF, iB, _) ->
+        | Sil.Hdllseg (_, _, iF, oB, oF, iB, _) ->
             let fully_instantiated =
               not (IList.exists (fun id -> Sil.ident_in_exp id iF || Sil.ident_in_exp id oB) vars)
             in if (not fully_instantiated) then None else
@@ -484,7 +484,7 @@ type iso_mode = Exact | LFieldForget | RFieldForget
 
 let rec generate_todos_from_strexp mode todos sexp1 sexp2 =
   match sexp1, sexp2 with
-  | Sil.Eexp (exp1, inst1), Sil.Eexp (exp2, inst2) ->
+  | Sil.Eexp (exp1, _), Sil.Eexp (exp2, _) ->
       let new_todos = (exp1, exp2) :: todos in
       Some new_todos
   | Sil.Eexp _, _ ->

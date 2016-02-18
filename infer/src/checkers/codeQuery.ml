@@ -100,7 +100,7 @@ module Match = struct
     | CodeQueryAst.Null, Vval e -> Sil.exp_equal e Sil.exp_zero
     | CodeQueryAst.Null, _ -> false
     | CodeQueryAst.ConstString s, (Vfun pn) -> string_contains s (Procname.to_string pn)
-    | CodeQueryAst.ConstString s, _ -> false
+    | CodeQueryAst.ConstString _, _ -> false
     | CodeQueryAst.Ident id, x ->
         env_add env id x
 
@@ -158,7 +158,7 @@ module Match = struct
           | Some s -> s in
         Err.add_error_to_spec proc_name err_name node loc
 
-  let rec match_query show env idenv node caller_pn (rule, action) proc_name node instr =
+  let rec match_query show env idenv caller_pn (rule, action) proc_name node instr =
     match rule, instr with
     | CodeQueryAst.Call (ae1, ae2), Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _) ->
         if exp_match env ae1 (Vfun caller_pn) && exp_match env ae2 (Vfun pn) then
@@ -168,9 +168,10 @@ module Match = struct
           end
         else false
     | CodeQueryAst.Call _, _ -> false
-    | CodeQueryAst.MethodCall (ae1, ae2, ael_opt), Sil.Call (_, Sil.Const (Sil.Cfun pn), (_e1, t1):: params, loc, { Sil.cf_virtual = true }) ->
+    | CodeQueryAst.MethodCall (ae1, ae2, ael_opt),
+      Sil.Call (_, Sil.Const (Sil.Cfun pn), (_e1, _):: params, loc, { Sil.cf_virtual = true }) ->
         let e1 = Idenv.expand_expr idenv _e1 in
-        let vl = IList.map (function _e, t -> Vval (Idenv.expand_expr idenv _e)) params in
+        let vl = IList.map (function _e, _ -> Vval (Idenv.expand_expr idenv _e)) params in
         if exp_match env ae1 (Vval e1) && exp_match env ae2 (Vfun pn) && opt_match exp_list_match env ael_opt vl then
           begin
             if show then print_action env action proc_name node loc;
@@ -178,13 +179,14 @@ module Match = struct
           end
         else false
     | CodeQueryAst.MethodCall _, _ -> false
-    | CodeQueryAst.If (ae1, op, ae2, body_rule), Sil.Prune (cond, loc, true_branch, ik) ->
+    | CodeQueryAst.If (ae1, op, ae2, body_rule), Sil.Prune (cond, loc, true_branch, _) ->
         if true_branch && cond_match env idenv cond (ae1, op, ae2) then
           begin
             let found = ref false in
-            let iter (node', instr') =
+            let iter (_, instr') =
               let env' = env_copy env in
-              if not !found && match_query false env' idenv node' caller_pn (body_rule, action) proc_name node instr'
+              if not !found
+              && match_query false env' idenv caller_pn (body_rule, action) proc_name node instr'
               then found := true in
             iter_succ_nodes node iter;
             let line_contains_null () =
@@ -206,7 +208,8 @@ end
 let code_query_callback { Callbacks.proc_desc; idenv; proc_name } =
   let do_instr node instr =
     let env = Match.init_env () in
-    let _found = Match.match_query true env idenv node proc_name (Lazy.force query_ast) proc_name node instr in
+    let _found =
+      Match.match_query true env idenv proc_name (Lazy.force query_ast) proc_name node instr in
     () in
   if verbose then L.stdout "code_query_callback on %a@." Procname.pp proc_name;
   Cfg.Procdesc.iter_instrs do_instr proc_desc;

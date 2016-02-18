@@ -46,7 +46,7 @@ let find_variable_assigment node id : Sil.instr option =
   let res = ref None in
   let node_instrs = Cfg.Node.get_instrs node in
   let find_set instr = match instr with
-    | Sil.Set (Sil.Lvar pv, _, e, _) when Sil.exp_equal (Sil.Var id) e ->
+    | Sil.Set (Sil.Lvar _, _, e, _) when Sil.exp_equal (Sil.Var id) e ->
         res := Some instr;
         true
     | _ -> false in
@@ -275,7 +275,7 @@ and _exp_lv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =
                 end
           end
         else Some (Sil.Dpvar pvar)
-    | Sil.Lfield (Sil.Var id, f, typ) when Ident.is_normal id ->
+    | Sil.Lfield (Sil.Var id, f, _) when Ident.is_normal id ->
         if !verbose then
           begin
             L.d_str "exp_lv_dexp: Lfield with var ";
@@ -286,7 +286,7 @@ and _exp_lv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =
         (match _find_normal_variable_letderef seen node id with
          | None -> None
          | Some de -> Some (Sil.Darrow (de, f)))
-    | Sil.Lfield (e1, f, typ) ->
+    | Sil.Lfield (e1, f, _) ->
         if !verbose then
           begin
             L.d_str "exp_lv_dexp: Lfield ";
@@ -334,7 +334,7 @@ and _exp_rv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =
     | Sil.Var id when Ident.is_normal id ->
         if !verbose then (L.d_str "exp_rv_dexp: normal var "; Sil.d_exp e; L.d_ln ());
         _find_normal_variable_letderef seen node id
-    | Sil.Lfield (e1, f, typ) ->
+    | Sil.Lfield (e1, f, _) ->
         if !verbose then
           begin
             L.d_str "exp_rv_dexp: Lfield ";
@@ -412,9 +412,9 @@ let leak_from_list_abstraction hpred prop =
   let check_hpred texp hp = match hpred_type hp with
     | Some texp' when Sil.exp_equal texp texp' -> found := true
     | _ -> () in
-  let check_hpara texp n hpara =
+  let check_hpara texp _ hpara =
     IList.iter (check_hpred texp) hpara.Sil.body in
-  let check_hpara_dll texp n hpara =
+  let check_hpara_dll texp _ hpara =
     IList.iter (check_hpred texp) hpara.Sil.body_dll in
   match hpred_type hpred with
   | Some texp ->
@@ -430,7 +430,7 @@ let find_hpred_typ hpred = match hpred with
   | _ -> None
 
 (** find the type of pvar and remove the pointer, if any *)
-let find_pvar_typ_without_ptr tenv prop pvar =
+let find_pvar_typ_without_ptr prop pvar =
   let res = ref None in
   let do_hpred = function
     | Sil.Hpointsto (e, _, te) when Sil.exp_equal e (Sil.Lvar pvar) ->
@@ -470,8 +470,8 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
   let check_pvar pvar = (* check that pvar is local or global and has the same type as the leaked hpred *)
     (Sil.pvar_is_local pvar || Sil.pvar_is_global pvar) &&
     not (pvar_is_frontend_tmp pvar) &&
-    match hpred_typ_opt, find_pvar_typ_without_ptr tenv prop pvar with
-    | Some (Sil.Sizeof (t1, st1)), Some (Sil.Sizeof (Sil.Tptr (_t2, _), st2)) ->
+    match hpred_typ_opt, find_pvar_typ_without_ptr prop pvar with
+    | Some (Sil.Sizeof (t1, _)), Some (Sil.Sizeof (Sil.Tptr (_t2, _), _)) ->
         (try
            let t2 = Sil.expand_type tenv _t2 in
            Sil.typ_equal t1 t2
@@ -483,7 +483,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     | None ->
         if !verbose then (L.d_str "explain_leak: no current instruction"; L.d_ln ());
         value_str_from_pvars_vpath [] vpath
-    | Some (Sil.Nullify (pvar, loc, _)) when check_pvar pvar ->
+    | Some (Sil.Nullify (pvar, _, _)) when check_pvar pvar ->
         if !verbose then (L.d_str "explain_leak: current instruction is Nullify for pvar "; Sil.d_pvar pvar; L.d_ln ());
         (match exp_lv_dexp (State.get_node ()) (Sil.Lvar pvar) with
          | None -> None
@@ -564,7 +564,7 @@ let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
           let res = ref (None, None) in
           IList.iter (do_fse res sigma_acc' sigma_todo' lexp texp) fsel;
           !res
-      | sexp ->
+      | _ ->
           None, None in
     let do_hpred sigma_acc' sigma_todo' =
       let substituted_from_normal id =
@@ -577,7 +577,7 @@ let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
           do_sexp sigma_acc' sigma_todo' (Sil.Lvar pv) sexp texp
       | Sil.Hpointsto (Sil.Var id, sexp, texp) when Ident.is_normal id || (Ident.is_footprint id && substituted_from_normal id) ->
           do_sexp sigma_acc' sigma_todo' (Sil.Var id) sexp texp
-      | hpred ->
+      | _ ->
           (* if !verbose then (L.d_str "vpath_find do_hpred: no match "; Sil.d_hpred hpred; L.d_ln ()); *)
           None, None in
     match sigma_todo with
@@ -664,13 +664,13 @@ let explain_dexp_access prop dexp is_nullable =
          | None -> None
          | Some (Sil.Eexp (e, _)) -> find_ptsto e
          | Some _ -> None)
-    | (Sil.Dbinop(Sil.PlusPI, Sil.Dpvar pvar, Sil.Dconst c) as de) ->
+    | (Sil.Dbinop(Sil.PlusPI, Sil.Dpvar _, Sil.Dconst _) as de) ->
         if !verbose then (L.d_strln ("lookup: case )pvar + constant) " ^ Sil.dexp_to_string de));
         None
     | Sil.Dfcall (Sil.Dconst c, _, loc, _) ->
         if !verbose then (L.d_strln "lookup: found Dfcall ");
         (match c with
-         | Sil.Cfun pn -> (* Treat function as an update *)
+         | Sil.Cfun _ -> (* Treat function as an update *)
              Some (Sil.Eexp (Sil.Const c, Sil.Ireturn_from_call loc.Location.line))
          | _ -> None)
     | de ->
@@ -680,9 +680,9 @@ let explain_dexp_access prop dexp is_nullable =
     | None ->
         if !verbose then (L.d_strln ("explain_dexp_access: cannot find inst of " ^ Sil.dexp_to_string dexp));
         None
-    | Some (Sil.Iupdate (_, ncf, n, pos)) ->
+    | Some (Sil.Iupdate (_, ncf, n, _)) ->
         Some (Localise.Last_assigned (n, ncf))
-    | Some (Sil.Irearrange (_, _, n, pos)) ->
+    | Some (Sil.Irearrange (_, _, n, _)) ->
         Some (Localise.Last_accessed (n, is_nullable))
     | Some (Sil.Ireturn_from_call n) ->
         Some (Localise.Returned_from_call n)
@@ -696,11 +696,11 @@ let explain_dexp_access prop dexp is_nullable =
 let explain_dereference_access outermost_array is_nullable _de_opt prop =
   let de_opt =
     let rec remove_outermost_array_access = function (* remove outermost array access from [de] *)
-      | Sil.Dbinop(Sil.PlusPI, de1, de2) -> (* remove pointer arithmetic before array access *)
+      | Sil.Dbinop(Sil.PlusPI, de1, _) -> (* remove pointer arithmetic before array access *)
           remove_outermost_array_access de1
-      | Sil.Darray(Sil.Dderef de1, de2) -> (* array access is a deref already: remove both *)
+      | Sil.Darray(Sil.Dderef de1, _) -> (* array access is a deref already: remove both *)
           de1
-      | Sil.Darray(de1, de2) -> (* remove array access *)
+      | Sil.Darray(de1, _) -> (* remove array access *)
           de1
       | Sil.Dderef de -> (* remove implicit array access *)
           de
@@ -758,16 +758,16 @@ let _explain_access
     ?(is_premature_nil = false)
     deref_str prop loc =
   let rec find_outermost_dereference node e = match e with
-    | Sil.Const c ->
+    | Sil.Const _ ->
         if !verbose then (L.d_str "find_outermost_dereference: constant "; Sil.d_exp e; L.d_ln ());
         exp_lv_dexp node e
     | Sil.Var id when Ident.is_normal id -> (* look up the normal variable declaration *)
         if !verbose then (L.d_str "find_outermost_dereference: normal var "; Sil.d_exp e; L.d_ln ());
         find_normal_variable_letderef node id
-    | Sil.Lfield (e', f, t) ->
+    | Sil.Lfield (e', _, _) ->
         if !verbose then (L.d_str "find_outermost_dereference: Lfield "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
-    | Sil.Lindex(e', e2) ->
+    | Sil.Lindex(e', _) ->
         if !verbose then (L.d_str "find_outermost_dereference: Lindex "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
     | Sil.Lvar _ ->
@@ -785,22 +785,23 @@ let _explain_access
     | _ ->
         if !verbose then (L.d_str "find_outermost_dereference: no match for "; Sil.d_exp e; L.d_ln ());
         None in
-  let find_exp_dereferenced node = match State.get_instr () with
+  let find_exp_dereferenced () = match State.get_instr () with
     | Some Sil.Set (e, _, _, _) ->
         if !verbose then (L.d_str "explain_dereference Sil.Set "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Letderef (_, e, _, _) ->
         if !verbose then (L.d_str "explain_dereference Sil.Leteref "; Sil.d_exp e; L.d_ln ());
         Some e
-    | Some Sil.Call (_, Sil.Const (Sil.Cfun fn), [(e, typ)], loc, _) when Procname.to_string fn = "free" ->
+    | Some Sil.Call (_, Sil.Const (Sil.Cfun fn), [(e, _)], _, _)
+      when Procname.to_string fn = "free" ->
         if !verbose then (L.d_str "explain_dereference Sil.Call "; Sil.d_exp e; L.d_ln ());
         Some e
-    | Some Sil.Call (_, (Sil.Var id as e), _, loc, _) ->
+    | Some Sil.Call (_, (Sil.Var _ as e), _, _, _) ->
         if !verbose then (L.d_str "explain_dereference Sil.Call "; Sil.d_exp e; L.d_ln ());
         Some e
     | _ -> None in
   let node = State.get_node () in
-  match find_exp_dereferenced node with
+  match find_exp_dereferenced () with
   | None ->
       if !verbose then L.d_strln "_explain_access: find_exp_dereferenced returned None";
       Localise.no_desc

@@ -55,7 +55,7 @@ val fix_param_exps_mismatch : 'a list -> (Sil.exp * Sil.typ) list -> (Sil.exp * 
 val get_selector_receiver : Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.receiver_kind
 
 val define_condition_side_effects :
-  CContext.t -> (Sil.exp * Sil.typ) list -> Sil.instr list -> Location.t ->
+  (Sil.exp * Sil.typ) list -> Sil.instr list -> Location.t ->
   (Sil.exp * Sil.typ) list * Sil.instr list
 
 val extract_stmt_from_singleton : Clang_ast_t.stmt list -> string -> Clang_ast_t.stmt

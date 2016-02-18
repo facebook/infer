@@ -23,7 +23,7 @@ val from_prop : Prop.normal Prop.t -> t
 val is_root : node -> bool
 
 (** Return [true] if the nodes are connected. Used to compute reachability. *)
-val nodes_connected : t -> node -> node -> bool
+val nodes_connected : node -> node -> bool
 
 (** Return the source of the edge *)
 val edge_get_source : edge -> node

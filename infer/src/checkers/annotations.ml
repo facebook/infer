@@ -37,7 +37,7 @@ let get_field_type_and_annotation fn = function
   | Sil.Tptr (Sil.Tstruct struct_typ, _)
   | Sil.Tstruct struct_typ ->
       (try
-         let (_, t, a) = IList.find (fun (f, t, a) ->
+         let (_, t, a) = IList.find (fun (f, _, _) ->
              Sil.fld_equal f fn)
              (struct_typ.Sil.instance_fields @ struct_typ.Sil.static_fields) in
          Some (t, a)
@@ -45,7 +45,7 @@ let get_field_type_and_annotation fn = function
   | _ -> None
 
 let ia_iter f =
-  let ann_iter (a, b) = f a in
+  let ann_iter (a, _) = f a in
   IList.iter ann_iter
 
 let ma_iter f ((ia, ial) : Sil.method_annotation) =

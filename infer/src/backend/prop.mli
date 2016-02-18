@@ -176,7 +176,7 @@ val exp_normalize_noabs : Sil.subst -> Sil.exp -> Sil.exp
 (** Collapse consecutive indices that should be added. For instance,
     this function reduces x[1][1] to x[2]. The [typ] argument is used
     to ensure the soundness of this collapsing. *)
-val exp_collapse_consecutive_indices_prop : 'a t -> Sil.typ -> Sil.exp -> Sil.exp
+val exp_collapse_consecutive_indices_prop : Sil.typ -> Sil.exp -> Sil.exp
 
 (** Normalize [exp] used for the address of a heap cell.
     This normalization does not combine two offsets inside [exp]. *)

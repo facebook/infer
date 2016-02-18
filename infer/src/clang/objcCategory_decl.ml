@@ -52,15 +52,15 @@ let get_base_class_name_from_category decl =
   let open Clang_ast_t in
   let base_class_pointer_opt =
     match decl with
-    | ObjCCategoryDecl (decl_info, name_info, decl_list, decl_context_info, cdi) ->
+    | ObjCCategoryDecl (_, _, _, _, cdi) ->
         cdi.Clang_ast_t.odi_class_interface
-    | ObjCCategoryImplDecl (decl_info, name_info, decl_list, decl_context_info, cii) ->
+    | ObjCCategoryImplDecl (_, _, _, _, cii) ->
         cii.Clang_ast_t.ocidi_class_interface
     | _ -> None in
   match base_class_pointer_opt with
   | Some decl_ref ->
       (match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
-       | Some ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
+       | Some ObjCInterfaceDecl (_, name_info, _, _, _) ->
            Some (Ast_utils.get_qualified_name name_info)
        | _ -> None)
   | None -> None
@@ -98,7 +98,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
 let category_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
-  | ObjCCategoryDecl (decl_info, name_info, decl_list, decl_context_info, cdi) ->
+  | ObjCCategoryDecl (decl_info, name_info, decl_list, _, cdi) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_decl name cdi in
       Printing.log_out "ADDING: ObjCCategoryDecl for '%s'\n" name;
@@ -111,7 +111,7 @@ let category_decl type_ptr_to_sil_type tenv decl =
 let category_impl_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
-  | ObjCCategoryImplDecl (decl_info, name_info, decl_list, decl_context_info, cii) ->
+  | ObjCCategoryImplDecl (decl_info, name_info, decl_list, _, cii) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = get_curr_class_from_category_impl name cii in
       Printing.log_out "ADDING: ObjCCategoryImplDecl for '%s'\n" name;

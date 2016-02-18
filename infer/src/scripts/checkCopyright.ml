@@ -196,7 +196,7 @@ let com_style_of_lang = [
   (".py", comment_style_shell);
 ]
 
-let file_should_have_copyright fname lines =
+let file_should_have_copyright fname =
   IList.mem_assoc Filename.check_suffix fname com_style_of_lang
 
 let get_filename_extension fname =
@@ -224,7 +224,7 @@ let check_copyright fname = match read_file fname with
   | Some lines ->
       match find_copyright_line lines 0 with
       | None ->
-          if file_should_have_copyright fname lines then
+          if file_should_have_copyright fname then
             begin
               let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
               let ext = get_filename_extension fname in

@@ -381,14 +381,13 @@ module Node = struct
     pdesc_tbl_add cfg proc_attributes.ProcAttributes.proc_name pdesc;
     pdesc
 
-  let remove_node' filter_out_fun cfg node =
+  let remove_node' filter_out_fun cfg =
     let remove_node_in_cfg nodes =
       IList.filter filter_out_fun nodes in
     cfg.node_list := remove_node_in_cfg !(cfg.node_list)
 
   let remove_node_set cfg nodes =
-    remove_node' (fun node' -> not (NodeSet.mem node' nodes))
-      cfg nodes
+    remove_node' (fun node' -> not (NodeSet.mem node' nodes)) cfg
 
   let proc_desc_remove cfg name remove_nodes =
     (if remove_nodes then
@@ -500,7 +499,7 @@ module Node = struct
     | Stmt_node s ->
         if sub_instrs then print_sub_instrs ()
         else F.fprintf fmt "statements (%s) %a" s pp_loc ()
-    | Prune_node (is_true_branch, if_kind, descr) ->
+    | Prune_node (_, _, descr) ->
         if sub_instrs then print_sub_instrs ()
         else F.fprintf fmt "assume %s %a" descr pp_loc ()
     | Exit_node _ ->
@@ -526,11 +525,11 @@ module Node = struct
       match get_kind node with
       | Stmt_node _ ->
           "Instructions"
-      | Prune_node (is_true_branch, if_kind, descr) ->
+      | Prune_node (_, _, descr) ->
           "Conditional" ^ " " ^ descr
       | Exit_node _ ->
           "Exit"
-      | Skip_node s ->
+      | Skip_node _ ->
           "Skip"
       | Start_node _ ->
           "Start"
@@ -568,7 +567,7 @@ module Node = struct
     do_node (proc_desc_get_start_node proc_desc)
 
   (** iterate between two nodes or until we reach a branching structure *)
-  let proc_desc_iter_slope_range f proc_desc src_node dst_node =
+  let proc_desc_iter_slope_range f src_node dst_node =
     let visited = ref NodeSet.empty in
     let rec do_node node = begin
       visited := NodeSet.add node !visited;
@@ -672,7 +671,7 @@ let rec pp_node_list f = function
 (** Get all the procdescs (defined and declared) *)
 let get_all_procs cfg =
   let procs = ref [] in
-  let f pname pdesc = procs := pdesc :: !procs in
+  let f _ pdesc = procs := pdesc :: !procs in
   iter_proc_desc cfg f; !procs
 
 (** Get the procedures whose body is defined in this cfg *)
@@ -724,7 +723,7 @@ let add_abstraction_instructions cfg =
     if node_requires_abstraction node then Node.append_instrs_temps node [Sil.Abstract loc] [] in
   IList.iter do_node all_nodes
 
-let get_name_of_local (curr_f : Procdesc.t) (x, typ) =
+let get_name_of_local (curr_f : Procdesc.t) (x, _) =
   Sil.mk_pvar x (Procdesc.get_proc_name curr_f)
 
 (* returns a list of local static variables (ie local variables defined static) in a proposition *)
@@ -766,7 +765,7 @@ let remove_abducted_retvars p =
           IList.fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps flds
 
       | Sil.Earray (_, elems, _) ->
-          IList.fold_left (fun exps (index, strexp) -> collect_exps exps strexp) exps elems in
+          IList.fold_left (fun exps (_, strexp) -> collect_exps exps strexp) exps elems in
     let rec compute_reachable_hpreds_rec sigma (reach, exps) =
       let add_hpred_if_reachable (reach, exps) = function
         | Sil.Hpointsto (lhs, rhs, _) as hpred when Sil.ExpSet.mem lhs exps ->
@@ -925,7 +924,7 @@ let load_cfg_from_file (filename : DB.filename) : cfg option =
 (** save a copy in the results dir of the source files of procedures defined in the cfg,
     unless an updated copy already exists *)
 let save_source_files cfg =
-  let process_proc pname pdesc =
+  let process_proc _ pdesc =
     let loc = Node.proc_desc_get_loc pdesc in
     let source_file = loc.Location.file in
     let source_file_str = DB.source_file_to_abs_path source_file in
@@ -945,7 +944,7 @@ let save_source_files cfg =
   Node.iter_proc_desc cfg process_proc
 
 (** Save the .attr files for the procedures in the cfg. *)
-let save_attributes filename cfg =
+let save_attributes cfg =
   let save_proc proc_desc =
     let attributes = Procdesc.get_attributes proc_desc in
     let loc = attributes.ProcAttributes.loc in
@@ -966,7 +965,7 @@ let save_attributes filename cfg =
   IList.iter save_proc (get_all_procs cfg)
 
 (** Inline a synthetic (access or bridge) method. *)
-let inline_synthetic_method ret_ids etl proc_desc proc_name loc_call : Sil.instr option =
+let inline_synthetic_method ret_ids etl proc_desc loc_call : Sil.instr option =
   let modified = ref None in
   let debug = false in
   let found instr instr' =
@@ -976,32 +975,32 @@ let inline_synthetic_method ret_ids etl proc_desc proc_name loc_call : Sil.instr
         L.stderr "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr pe_text) instr;
         L.stderr "XX inline_synthetic_method instr': %a@." (Sil.pp_instr pe_text) instr'
       end in
-  let do_instr node instr =
+  let do_instr _ instr =
     match instr, ret_ids, etl with
-    | Sil.Letderef (id1, Sil.Lfield (Sil.Var id2, fn, ft), bt, loc),
+    | Sil.Letderef (_, Sil.Lfield (Sil.Var _, fn, ft), bt, _),
       [ret_id],
-      [(e1, t1)] -> (* getter for fields *)
+      [(e1, _)] -> (* getter for fields *)
         let instr' = Sil.Letderef (ret_id, Sil.Lfield (e1, fn, ft), bt, loc_call) in
         found instr instr'
-    | Sil.Letderef (id1, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, loc), [ret_id], []
+    | Sil.Letderef (_, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, _), [ret_id], []
       when Sil.pvar_is_global pvar -> (* getter for static fields *)
         let instr' = Sil.Letderef (ret_id, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, loc_call) in
         found instr instr'
-    | Sil.Set (Sil.Lfield (ex1, fn, ft), bt , ex2, loc),
+    | Sil.Set (Sil.Lfield (_, fn, ft), bt , _, _),
       _,
-      [(e1, t1); (e2, t2)] -> (* setter for fields *)
+      [(e1, _); (e2, _)] -> (* setter for fields *)
         let instr' = Sil.Set (Sil.Lfield (e1, fn, ft), bt , e2, loc_call) in
         found instr instr'
-    | Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , ex2, loc), _, [(e1, t1)]
+    | Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , _, _), _, [(e1, _)]
       when Sil.pvar_is_global pvar -> (* setter for static fields *)
         let instr' = Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , e1, loc_call) in
         found instr instr'
-    | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
+    | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', _, cf), _, _
       when IList.length ret_ids = IList.length ret_ids'
         && IList.length etl' = IList.length etl ->
         let instr' = Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), etl, loc_call, cf) in
         found instr instr'
-    | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', loc', cf), _, _
+    | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', _, cf), _, _
       when IList.length ret_ids = IList.length ret_ids'
         && IList.length etl' + 1 = IList.length etl ->
         let etl1 = match IList.rev etl with (* remove last element *)
@@ -1024,7 +1023,7 @@ let proc_inline_synthetic_methods cfg proc_desc : unit =
              let is_synthetic = attributes.ProcAttributes.is_synthetic_method in
              let is_bridge = attributes.ProcAttributes.is_bridge_method in
              if is_access || is_bridge || is_synthetic
-             then inline_synthetic_method ret_ids etl pd pn loc
+             then inline_synthetic_method ret_ids etl pd loc
              else None
          | None -> None)
     | _ -> None in
@@ -1057,5 +1056,5 @@ let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg : cfg)
       | Some old_cfg -> Node.mark_unchanged_pdescs cfg old_cfg
       | None -> ()
     end;
-  save_attributes filename cfg;
+  save_attributes cfg;
   Serialization.to_file cfg_serializer filename cfg

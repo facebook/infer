@@ -101,7 +101,7 @@ let get_language function_method_decl_info =
 let get_parameters tenv function_method_decl_info =
   let par_to_ms_par par =
     match par with
-    | Clang_ast_t.ParmVarDecl (decl_info, name_info, type_ptr, var_decl_info) ->
+    | Clang_ast_t.ParmVarDecl (_, name_info, type_ptr, var_decl_info) ->
         let name = General_utils.get_var_name_string name_info var_decl_info in
         (name, type_ptr)
     | _ -> assert false in
@@ -117,7 +117,7 @@ let get_return_type tenv function_method_decl_info =
     Ast_expressions.create_void_type, Some (Sil.Tptr (return_typ, Sil.Pk_pointer))
   else return_type_ptr, None
 
-let build_method_signature tenv decl_info procname function_method_decl_info is_anonym_block
+let build_method_signature tenv decl_info procname function_method_decl_info
     parent_pointer pointer_to_property_opt =
   let source_range = decl_info.Clang_ast_t.di_source_range in
   let tp, return_param_type_opt = get_return_type tenv function_method_decl_info in
@@ -131,7 +131,7 @@ let build_method_signature tenv decl_info procname function_method_decl_info is_
 
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with
-    | Clang_ast_t.ParmVarDecl (decl_info, name, tp, var_decl_info)
+    | Clang_ast_t.ParmVarDecl (decl_info, name, tp, _)
       when CFrontend_utils.Ast_utils.is_type_nonnull tp ->
         let assume_call = Ast_expressions.create_assume_not_null_call decl_info name tp in
         [(`ClangStmt assume_call)]
@@ -151,7 +151,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
       let procname = General_utils.mk_procname_from_function name function_info tp language in
-      let ms = build_method_signature tenv decl_info procname func_decl false None None in
+      let ms = build_method_signature tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
   | CXXMethodDecl (decl_info, name_info, tp, fdi, mdi), _
@@ -163,8 +163,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
       let procname = General_utils.mk_procname_from_cpp_method class_name method_name tp in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, class_name, tp)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
-      let ms = build_method_signature tenv decl_info procname method_decl false parent_pointer
-          None in
+      let ms = build_method_signature tenv decl_info procname method_decl parent_pointer None in
       let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
@@ -180,13 +179,13 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
         match mdi.Clang_ast_t.omdi_property_decl with
         | Some decl_ref -> Some decl_ref.Clang_ast_t.dr_decl_pointer
         | None -> None in
-      let ms = build_method_signature tenv decl_info procname method_decl false
+      let ms = build_method_signature tenv decl_info procname method_decl
           parent_pointer pointer_to_property_opt in
       let extra_instrs = get_assume_not_null_calls mdi.omdi_parameters in
       ms, mdi.omdi_body, extra_instrs
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
-      let ms = build_method_signature tenv decl_info procname func_decl true None None in
+      let ms = build_method_signature tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls bdi.bdi_parameters in
       ms, bdi.bdi_body, extra_instrs
   | _ -> raise Invalid_declaration
@@ -257,8 +256,8 @@ let get_class_name_method_call_from_receiver_kind context obj_c_message_expr_inf
       (CTypes.classname_of_type sil_type)
   | `Instance ->
       (match act_params with
-       | (instance_obj, Sil.Tptr(t, _)):: _
-       | (instance_obj, t):: _ -> CTypes.classname_of_type t
+       | (_, Sil.Tptr(t, _)):: _
+       | (_, t):: _ -> CTypes.classname_of_type t
        | _ -> assert false)
   | `SuperInstance ->get_superclass_curr_class_objc context
   | `SuperClass -> get_superclass_curr_class_objc context
@@ -276,7 +275,7 @@ let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   let pointer_to_property_opt = CMethod_signature.ms_get_pointer_to_property_opt ms in
   match Ast_utils.get_decl_opt pointer_to_property_opt with
-  | Some (ObjCPropertyDecl (decl_info, named_decl_info, obj_c_property_decl_info) as d) ->
+  | Some (ObjCPropertyDecl _ as d) ->
       let class_name = Procname.c_get_class (CMethod_signature.ms_get_name ms) in
       let field_name = CField_decl.get_property_corresponding_ivar tenv
           CTypes_decl.type_ptr_to_sil_type class_name d in

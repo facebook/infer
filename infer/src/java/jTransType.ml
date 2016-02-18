@@ -46,8 +46,8 @@ let cast_type = function
 
 let const_type const =
   match const with
-  | `String str -> (JBasics.TObject (JBasics.TClass (JBasics.make_cn JConfig.string_cl)))
-  | `Class cl -> (JBasics.TObject (JBasics.TClass (JBasics.make_cn JConfig.class_cl)))
+  | `String _ -> (JBasics.TObject (JBasics.TClass (JBasics.make_cn JConfig.string_cl)))
+  | `Class _ -> (JBasics.TObject (JBasics.TClass (JBasics.make_cn JConfig.class_cl)))
   | `Double _ -> (JBasics.TBasic `Double)
   | `Int _ -> (JBasics.TBasic`Int)
   | `Float _ -> (JBasics.TBasic`Float)
@@ -416,7 +416,7 @@ let get_var_type_from_sig context var =
     let tenv = JContext.get_tenv context in
     let vt', var' =
       IList.find
-        (fun (vt', var') -> JBir.var_equal var var')
+        (fun (_, var') -> JBir.var_equal var var')
         (JBir.params (JContext.get_impl context)) in
     Some (param_type program tenv (JContext.get_cn context) var' vt')
   with Not_found -> None
@@ -425,7 +425,7 @@ let get_var_type_from_sig context var =
 let get_var_type context var =
   let typ_opt = JContext.get_var_type context var in
   match typ_opt with
-  | Some atype -> typ_opt
+  | Some _ -> typ_opt
   | None -> get_var_type_from_sig context var
 
 
@@ -446,7 +446,7 @@ let rec expr_type context expr =
       (match get_var_type context var with
        | Some typ -> typ
        | None -> (value_type program tenv vt))
-  | JBir.Binop ((JBir.ArrayLoad typ), e1, e2) ->
+  | JBir.Binop ((JBir.ArrayLoad _), e1, _) ->
       let typ = expr_type context e1 in
       (extract_array_type typ)
   | _ -> value_type program tenv (JBir.type_of_expr expr)

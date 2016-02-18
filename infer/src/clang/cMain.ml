@@ -72,7 +72,7 @@ let arg_desc =
       "Toot directory of the project"
       ;
       "-fobjc-arc",
-      Arg.Unit (fun s -> Config.arc_mode := true),
+      Arg.Unit (fun _ -> Config.arc_mode := true),
       None,
       "Translate with Objective-C Automatic Reference Counting (ARC)"
       ;
@@ -92,7 +92,7 @@ let print_usage_exit () =
   exit(1)
 
 let () =
-  Utils.Arg.parse arg_desc (fun arg -> ()) usage
+  Utils.Arg.parse arg_desc (fun _ -> ()) usage
 
 (* This function reads the json file in fname, validates it, and encoded in the AST data structure*)
 (* defined in Clang_ast_t.  *)

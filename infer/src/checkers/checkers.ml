@@ -170,7 +170,7 @@ let report_calls_and_accesses callback node instr =
         (Format.sprintf "field access %s.%s:%s in %s@." bt fn ft callee)
   | None ->
       match PatternMatch.get_java_method_call_formal_signature instr with
-      | Some (bt, fn, ats, rt) ->
+      | Some (bt, fn, _, rt) ->
           ST.report_error
             proc_name
             proc_desc
@@ -184,7 +184,7 @@ let callback_check_access { Callbacks.proc_desc } =
   Cfg.Procdesc.iter_instrs (report_calls_and_accesses "PROC") proc_desc
 
 (** Report all field accesses and method calls of a class. *)
-let callback_check_cluster_access all_procs get_proc_desc proc_definitions =
+let callback_check_cluster_access all_procs get_proc_desc _ =
   IList.iter
     (Option.may (fun d -> Cfg.Procdesc.iter_instrs (report_calls_and_accesses "CLUSTER") d))
     (IList.map get_proc_desc all_procs)
@@ -211,7 +211,7 @@ let callback_check_write_to_parcel { Callbacks.proc_desc; proc_name; idenv; get_
         IList.filter is_parcel_constructor def_methods
     | _ -> [] in
 
-  let check r_name r_desc w_name w_desc =
+  let check r_desc w_desc =
 
     let is_serialization_node node =
       match Cfg.Node.get_callees node with
@@ -246,25 +246,24 @@ let callback_check_write_to_parcel { Callbacks.proc_desc; proc_name; idenv; get_
             L.stdout "Serialization missmatch in %a for %a and %a@." Procname.pp proc_name Procname.pp rc Procname.pp wc
           else
             check_match (rcs, wcs)
-      | rc:: rcs, [] ->
+      | rc:: _, [] ->
           L.stdout "Missing write in %a: for %a@." Procname.pp proc_name Procname.pp rc
-      | _, wc:: wcs ->
+      | _, wc:: _ ->
           L.stdout "Missing read in %a: for %a@." Procname.pp proc_name Procname.pp wc
       | _ -> () in
 
     check_match (r_call_descs, w_call_descs) in
 
-  let do_instr node instr = match instr with
-    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (_this_exp, this_type):: args, loc, cf) ->
+  let do_instr _ instr = match instr with
+    | Sil.Call (_, Sil.Const (Sil.Cfun _), (_this_exp, this_type):: _, _, _) ->
         let this_exp = Idenv.expand_expr idenv _this_exp in
         if is_write_to_parcel this_exp this_type then begin
           if !verbose then L.stdout "Serialization check for %a@." Procname.pp proc_name;
           try
             match parcel_constructors this_type with
-            | x :: xs ->
+            | x :: _ ->
                 (match get_proc_desc x with
-                 | Some x_proc_desc ->
-                     check x x_proc_desc proc_name proc_desc
+                 | Some x_proc_desc -> check x_proc_desc proc_desc
                  | None -> raise Not_found)
             | _ -> L.stdout "No parcel constructor found for %a@." Procname.pp proc_name
           with Not_found -> if !verbose then L.stdout "Methods not available@."
@@ -330,8 +329,8 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
         L.stdout "%a@." (PP.pp_loc_range linereader 10 10) loc
       end in
 
-  let do_instr node instr = match instr with
-    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (_arg1, t1):: arg_ts, loc, cf) when is_nullcheck pn ->
+  let do_instr _ instr = match instr with
+    | Sil.Call (_, Sil.Const (Sil.Cfun pn), (_arg1, _):: _, _, _) when is_nullcheck pn ->
         let arg1 = Idenv.expand_expr idenv _arg1 in
         if is_formal_param arg1 then handle_check_of_formal arg1;
         if !verbose then L.stdout "call in %s %s: %a with first arg: %a@." (Procname.java_get_class proc_name) (Procname.java_get_method proc_name) (Sil.pp_instr pe_text) instr (Sil.pp_exp pe_text) arg1
@@ -386,30 +385,30 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
     | None -> "?" in
 
   let get_actual_arguments node instr = match instr with
-    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (te, tt):: args, loc, cf) ->
+    | Sil.Call (_, Sil.Const (Sil.Cfun _), _:: args, _, _) ->
         (try
-           let find_const exp typ =
+           let find_const exp =
              let expanded = Idenv.expand_expr idenv exp in
              match expanded with
              | Sil.Const (Sil.Cclass n) -> Ident.name_to_string n
-             | Sil.Lvar p -> (
+             | Sil.Lvar _ -> (
                  let is_call_instr set call = match set, call with
                    | Sil.Set (_, _, Sil.Var (i1), _), Sil.Call (i2::[], _, _, _, _)
                      when Ident.equal i1 i2 -> true
                    | _ -> false in
                  let is_set_instr = function
-                   | Sil.Set (e1, t, e2, l) when Sil.exp_equal expanded e1 -> true
+                   | Sil.Set (e1, _, _, _) when Sil.exp_equal expanded e1 -> true
                    | _ -> false in
                  match reverse_find_instr is_set_instr node with
                  (** Look for ivar := tmp *)
                  | Some s -> (
                      match reverse_find_instr (is_call_instr s) node with
                      (** Look for tmp := foo() *)
-                     | Some (Sil.Call (_, Sil.Const (Sil.Cfun pn), _, l, _)) -> get_return_const pn
+                     | Some (Sil.Call (_, Sil.Const (Sil.Cfun pn), _, _, _)) -> get_return_const pn
                      | _ -> "?")
                  | _ -> "?")
              | _ -> "?" in
-           let arg_name (exp, typ) = find_const exp typ in
+           let arg_name (exp, _) = find_const exp in
            Some (IList.map arg_name args)
          with _ -> None)
     | _ -> None in
@@ -459,7 +458,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
     | Sil.Cast (_, e) ->
         do_exp is_read e
     | Sil.Lvar _ -> ()
-    | Sil.Lfield (e, fn, t) ->
+    | Sil.Lfield (e, fn, _) ->
         if not (Ident.java_fieldname_is_outer_instance fn) then
           L.stdout "field %s %s@." (Ident.fieldname_to_string fn) (if is_read then "reading" else "writing");
         do_exp is_read e
@@ -469,7 +468,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
     | Sil.Sizeof _ -> () in
   let do_read_exp = do_exp true in
   let do_write_exp = do_exp false in
-  let do_instr node = function
+  let do_instr _ = function
     | Sil.Letderef (_, e, _, _) ->
         do_read_exp e
     | Sil.Set (e1, _, e2, _) ->
@@ -492,7 +491,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
 (** Print c method calls. *)
 let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
   let do_instr node = function
-    | Sil.Call (ret_ids, Sil.Const (Sil.Cfun pn), (e, t):: args, loc, cf)
+    | Sil.Call (_, Sil.Const (Sil.Cfun pn), (e, _):: _, loc, _)
       when Procname.is_c_method pn ->
         let receiver = match Errdesc.exp_rv_dexp node e with
           | Some de -> Sil.dexp_to_string de

@@ -131,7 +131,7 @@ module Tags = struct
   let create () = ref []
   let add tags tag value = tags := (tag, value) :: !tags
   let update tags tag value =
-    let tags' = IList.filter (fun (t, v) -> t <> tag) tags in
+    let tags' = IList.filter (fun (t, _) -> t <> tag) tags in
     (tag, value) :: tags'
   let get tags tag =
     try
@@ -184,8 +184,8 @@ let error_desc_set_bucket err_desc bucket show_in_message =
 (** get the value tag, if any *)
 let get_value_line_tag tags =
   try
-    let value = snd (IList.find (fun (_tag, value) -> _tag = Tags.value) tags) in
-    let line = snd (IList.find (fun (_tag, value) -> _tag = Tags.line) tags) in
+    let value = snd (IList.find (fun (_tag, _) -> _tag = Tags.value) tags) in
+    let line = snd (IList.find (fun (_tag, _) -> _tag = Tags.line) tags) in
     Some [value; line]
   with Not_found -> None
 
@@ -470,7 +470,7 @@ let dereference_string deref_str value_str access_opt loc =
         let line_str = string_of_int n in
         Tags.add tags Tags.accessed_line line_str;
         ["last accessed on line " ^ line_str]
-    | Some (Last_assigned (n, ncf)) ->
+    | Some (Last_assigned (n, _)) ->
         let line_str = string_of_int n in
         Tags.add tags Tags.assigned_line line_str;
         ["last assigned on line " ^ line_str]
@@ -498,7 +498,7 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let field_not_nullable_desc exp =
     let rec exp_to_string exp =
       match exp with
-      | Sil.Lfield (exp', field, typ) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
+      | Sil.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
       | Sil.Lvar pvar -> Mangled.to_string (Sil.pvar_get_name pvar)
       | _ -> "" in
     let var_s = exp_to_string exp in
@@ -512,7 +512,7 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   | _ -> desc
 
 let has_tag (desc : error_desc) tag =
-  IList.exists (fun (tag', value) -> tag = tag') desc.tags
+  IList.exists (fun (tag', _) -> tag = tag') desc.tags
 
 let is_parameter_not_null_checked_desc desc = has_tag desc Tags.parameter_not_null_checked
 
@@ -713,7 +713,7 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
     match Str.split_delim (Str.regexp_string "&old_") s with
     | [_; s'] -> s'
     | _ -> s in
-  let do_edge ((se, _), f, se') =
+  let do_edge ((se, _), f, _) =
     match se with
     | Sil.Eexp(Sil.Lvar pvar, _) when Sil.pvar_equal pvar Sil.block_pvar ->
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing "^(Ident.fieldname_to_string f)^"; ";

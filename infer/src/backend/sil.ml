@@ -67,7 +67,7 @@ let pp_annotation fmt annotation = F.fprintf fmt "@@%s" annotation.class_name
 
 (** Pretty print an item annotation. *)
 let pp_item_annotation fmt item_annotation =
-  let pp fmt (a, v) = pp_annotation fmt a in
+  let pp fmt (a, _) = pp_annotation fmt a in
   F.fprintf fmt "<%a>" (pp_seq pp) item_annotation
 
 let item_annotation_to_string ann =
@@ -80,12 +80,9 @@ let pp_method_annotation s fmt (ia, ial) =
 
 (** Return the value of the FA_sentinel attribute in [attr_list] if it is found *)
 let get_sentinel_func_attribute_value attr_list =
-  (* Sentinel is the only kind of attributes *)
-  let is_sentinel a = true in
-  try
-    match IList.find is_sentinel attr_list with
-    | FA_sentinel (sentinel, null_pos) -> Some (sentinel, null_pos)
-  with Not_found -> None
+  match attr_list with
+  | FA_sentinel (sentinel, null_pos) :: _ -> Some (sentinel, null_pos)
+  | [] -> None
 
 (** Kind of global variables *)
 type pvar_kind =
@@ -306,7 +303,7 @@ module Subtype = struct
   let compare t1 t2 =
     pair_compare compare_subt compare_flag t1 t2
 
-  let equal_modulo_flag (st1, flag1) (st2, flag2) =
+  let equal_modulo_flag (st1, _) (st2, _) =
     compare_subt st1 st2 = 0
 
   let update_flag c1 c2 flag flag' =
@@ -409,16 +406,16 @@ module Subtype = struct
           else (None, Some st1) in
     (normalize_subtypes pos_st c1 c2 flag1 flag2), (normalize_subtypes neg_st c1 c2 flag1 flag2)
 
-  let case_analysis_basic (c1, st) (c2, (st2, flag2)) f =
+  let case_analysis_basic (c1, st) (c2, (_, flag2)) f =
     let (pos_st, neg_st) =
       if f c1 c2 then (Some st, None)
       else if f c2 c1 then
         match st with
-        | Exact, flag ->
+        | Exact, _ ->
             if Typename.equal c1 c2
             then (Some st, None)
             else (None, Some st)
-        | Subtypes _ , flag ->
+        | Subtypes _ , _ ->
             if Typename.equal c1 c2
             then (Some st, None)
             else (Some st, Some st)
@@ -490,11 +487,11 @@ end = struct
     if area unsigned i = 3 then None (* not representable as signed *)
     else Some (false, i, ptr)
 
-  let compare (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) =
+  let compare (unsigned1, i1, _) (unsigned2, i2, _) =
     let n = bool_compare unsigned1 unsigned2 in
     if n <> 0 then n else Int64.compare i1 i2
 
-  let compare_value (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) =
+  let compare_value (unsigned1, i1, _) (unsigned2, i2, _) =
     let area1 = area unsigned1 i1 in
     let area2 = area unsigned2 i2 in
     let n = int_compare area1 area2 in
@@ -511,18 +508,18 @@ end = struct
   let of_int32 i = of_int64 (Int64.of_int32 i)
   let of_int64_unsigned i unsigned = (unsigned, i, false)
   let of_int i = of_int64 (Int64.of_int i)
-  let to_int (large, i, ptr) = Int64.to_int i
+  let to_int (_, i, _) = Int64.to_int i
   let null = (false, 0L, true)
   let zero = of_int 0
   let one = of_int 1
   let two = of_int 2
   let minus_one = of_int (-1)
 
-  let isone (_, i, ptr) = i = 1L
-  let iszero (_, i, ptr) = i = 0L
+  let isone (_, i, _) = i = 1L
+  let iszero (_, i, _) = i = 0L
   let isnull (_, i, ptr) = i = 0L && ptr
-  let isminusone (unsigned, i, ptr) = not unsigned && i = -1L
-  let isnegative (unsigned, i, ptr) = not unsigned && i < 0L
+  let isminusone (unsigned, i, _) = not unsigned && i = -1L
+  let isnegative (unsigned, i, _) = not unsigned && i < 0L
 
   let neg (unsigned, i, ptr) = (unsigned, Int64.neg i, ptr)
 
@@ -834,7 +831,7 @@ let objc_ref_counter_field =
 
 (** {2 Comparision and Inspection Functions} *)
 
-let is_objc_ref_counter_field (fld, t, a) =
+let is_objc_ref_counter_field (fld, _, a) =
   Ident.fieldname_is_hidden fld && (item_annotation_compare a objc_ref_counter_annot = 0)
 
 let has_objc_ref_counter hpred =
@@ -886,7 +883,7 @@ let pvar_get_simplified_name pv =
   match string_split_character s '.' with
   | Some s1, s2 ->
       (match string_split_character s1 '.' with
-       | Some s3, s4 -> s4 ^ "." ^ s2
+       | Some _, s4 -> s4 ^ "." ^ s2
        | _ -> s)
   | _ -> s
 
@@ -937,7 +934,7 @@ let mk_static_local_name pname vname =
 let is_static_local_name pname pvar = (* local static name is of the form procname_varname *)
   let var_name = Mangled.to_string(pvar_get_name pvar) in
   match Str.split_delim (Str.regexp_string pname) var_name with
-  | [s1; s2] -> true
+  | [_; _] -> true
   | _ -> false
 
 let rec pv_kind_compare k1 k2 = match k1, k2 with
@@ -1511,13 +1508,13 @@ let lseg_kind_equal k1 k2 =
 let rec strexp_compare se1 se2 =
   if se1 == se2 then 0
   else match se1, se2 with
-    | Eexp (e1, inst1), Eexp (e2, inst2) -> exp_compare e1 e2
+    | Eexp (e1, _), Eexp (e2, _) -> exp_compare e1 e2
     | Eexp _, _ -> - 1
     | _, Eexp _ -> 1
-    | Estruct (fel1, inst1), Estruct (fel2, inst2) -> fld_strexp_list_compare fel1 fel2
+    | Estruct (fel1, _), Estruct (fel2, _) -> fld_strexp_list_compare fel1 fel2
     | Estruct _, _ -> - 1
     | _, Estruct _ -> 1
-    | Earray (e1, esel1, inst1), Earray (e2, esel2, inst2) ->
+    | Earray (e1, esel1, _), Earray (e2, esel2, _) ->
         let n = exp_compare e1 e2 in
         if n <> 0 then n else exp_strexp_list_compare esel1 esel2
 
@@ -1683,11 +1680,11 @@ let pp_seq_diff pp pe0 f =
     let rec doit = function
       | [] -> ()
       | [x] ->
-          let pe, changed = color_pre_wrapper pe0 f x in
+          let _, changed = color_pre_wrapper pe0 f x in
           F.fprintf f "%a" pp x;
           color_post_wrapper changed pe0 f
       | x :: l ->
-          let pe, changed = color_pre_wrapper pe0 f x in
+          let _, changed = color_pre_wrapper pe0 f x in
           F.fprintf f "%a" pp x;
           color_post_wrapper changed pe0 f;
           F.fprintf f ", ";
@@ -1769,15 +1766,15 @@ let rec _pp_pvar f pv =
 let pp_pvar_latex f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
-  | Local_var n ->
+  | Local_var _ ->
       Latex.pp_string Latex.Roman f (Mangled.to_string name)
-  | Callee_var n ->
+  | Callee_var _ ->
       F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "callee"
-  | Abducted_retvar (n, l) ->
+  | Abducted_retvar _ ->
       F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abductedRetvar"
-  | Abducted_ref_param (n, pv, l) ->
+  | Abducted_ref_param _ ->
       F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abductedRefParam"
   | Global_var ->
@@ -1852,7 +1849,7 @@ let rec dexp_to_string = function
       Procname.to_simplified_string pn
   | Dconst c -> exp_to_string (Const c)
   | Dderef de -> "*" ^ dexp_to_string de
-  | Dfcall (fun_dexp, args, loc, { cf_virtual = isvirtual }) ->
+  | Dfcall (fun_dexp, args, _, { cf_virtual = isvirtual }) ->
       let pp_arg fmt de = F.fprintf fmt "%s" (dexp_to_string de) in
       let pp_args fmt des =
         if eradicate_java ()
@@ -1882,7 +1879,7 @@ let rec dexp_to_string = function
       if Ident.fieldname_is_hidden f then dexp_to_string de
       else if java() then dexp_to_string de ^ "." ^ Ident.fieldname_to_flat_string f
       else dexp_to_string de ^ "->" ^ Ident.fieldname_to_string f
-  | Ddot (Dpvar pv, fe) when eradicate_java () -> (* static field access *)
+  | Ddot (Dpvar _, fe) when eradicate_java () -> (* static field access *)
       Ident.fieldname_to_simplified_string fe
   | Ddot (de, f) ->
       if Ident.fieldname_is_hidden f then "&" ^ dexp_to_string de
@@ -1898,18 +1895,18 @@ let rec dexp_to_string = function
         else "&" in
       ampersand ^ s
   | Dunop (op, de) -> str_unop op ^ dexp_to_string de
-  | Dsizeof (typ, sub) -> pp_to_string (pp_typ_full pe_text) typ
+  | Dsizeof (typ, _) -> pp_to_string (pp_typ_full pe_text) typ
   | Dunknown -> "unknown"
   | Dretcall (de, _, _, _) ->
       "returned by " ^ (dexp_to_string de)
 
 (** Pretty print a dexp. *)
-and pp_dexp pe fmt de = F.fprintf fmt "%s" (dexp_to_string de)
+and pp_dexp fmt de = F.fprintf fmt "%s" (dexp_to_string de)
 
 (** Pretty print a value path *)
 and pp_vpath pe fmt vpath =
   let pp fmt = function
-    | Some de -> pp_dexp pe fmt de
+    | Some de -> pp_dexp fmt de
     | None -> () in
   if pe.pe_kind == PP_HTML then
     F.fprintf fmt " %a{vpath: %a}%a" Io_infer.Html.pp_start_color Orange pp vpath Io_infer.Html.pp_end_color ()
@@ -1952,7 +1949,7 @@ and attribute_to_string pe = function
   | Auntaint -> "UNTAINTED"
   | Alocked -> "LOCKED"
   | Aunlocked -> "UNLOCKED"
-  | Adiv0 (pn, nd_id) -> "DIV0"
+  | Adiv0 (_, _) -> "DIV0"
   | Aobjc_null exp ->
       let info_s =
         match exp with
@@ -1975,7 +1972,7 @@ and pp_const pe f = function
   | Cattribute att -> F.fprintf f "%s" (attribute_to_string pe att)
   | Cexn e -> F.fprintf f "EXN %a" (pp_exp pe) e
   | Cclass c -> F.fprintf f "%a" Ident.pp_name c
-  | Cptr_to_fld (fn, typ) -> F.fprintf f "__fld_%a" Ident.pp_fieldname fn
+  | Cptr_to_fld (fn, _) -> F.fprintf f "__fld_%a" Ident.pp_fieldname fn
   | Ctuple el -> F.fprintf f "(%a)" (pp_comma_seq (pp_exp pe)) el
 
 (** Pretty print a type. Do nothing by default. *)
@@ -2003,7 +2000,7 @@ and pp_type_decl pe pp_base pp_size f = function
       F.fprintf f "%s %a {%a} %a"
         (Csu.name struct_typ.csu)
         Mangled.pp name
-        (pp_seq (fun f (fld, t, ann) ->
+        (pp_seq (fun f (fld, t, _) ->
              F.fprintf f "%a %a"
                (pp_typ_full pe) t
                Ident.pp_fieldname fld)) struct_typ.instance_fields
@@ -2016,7 +2013,7 @@ and pp_type_decl pe pp_base pp_size f = function
   | Tstruct ({struct_name = None} as struct_typ) ->
       F.fprintf f "%s {%a} %a"
         (Csu.name struct_typ.csu)
-        (pp_seq (fun f (fld, t, ann) ->
+        (pp_seq (fun f (fld, t, _) ->
              F.fprintf f "%a %a"
                (pp_typ_full pe) t
                Ident.pp_fieldname fld)) struct_typ.instance_fields
@@ -2029,7 +2026,7 @@ and pp_type_decl pe pp_base pp_size f = function
         (pp_seq (fun f (n, e) -> F.fprintf f " (%a, %a) " Mangled.pp n (pp_const pe) e)) econsts
 
 (** Pretty print a type with all the details, using the C syntax. *)
-and pp_typ_full pe = pp_type_decl pe (fun fmt () -> ()) pp_exp_full
+and pp_typ_full pe = pp_type_decl pe (fun _ () -> ()) pp_exp_full
 
 (** Pretty print an expression. *)
 and _pp_exp pe0 pp_t f e0 =
@@ -2060,7 +2057,7 @@ and _pp_exp pe0 pp_t f e0 =
        | BinOp (op, Const c, e2) when !Config.smt_output -> print_binop_stm_output (Const c) op e2
        | BinOp (op, e1, e2) -> F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
        | Lvar pv -> pp_pvar pe f pv
-       | Lfield (e, fld, typ) -> F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
+       | Lfield (e, fld, _) -> F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
        | Lindex (e1, e2) -> F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
        | Sizeof (t, s) -> F.fprintf f "sizeof(%a%a)" pp_t t Subtype.pp s
      end);
@@ -2108,7 +2105,7 @@ let d_texp_full (te: exp) = L.add_print_action (L.PTtexp_full, Obj.repr te)
 
 (** Pretty print an offset *)
 let pp_offset pe f = function
-  | Off_fld (fld, typ) -> F.fprintf f "%a" Ident.pp_fieldname fld
+  | Off_fld (fld, _) -> F.fprintf f "%a" Ident.pp_fieldname fld
   | Off_index exp -> F.fprintf f "%a" (pp_exp pe) exp
 
 (** dump an offset. *)
@@ -2184,7 +2181,7 @@ let pp_instr pe0 f instr =
          (pp_typ pe) t
          (pp_exp pe) e2
          Location.pp loc
-   | Prune (cond, loc, true_branch, ik) ->
+   | Prune (cond, loc, true_branch, _) ->
        F.fprintf f "PRUNE(%a, %b); %a" (pp_exp pe) cond true_branch Location.pp loc
    | Call (ret_ids, e, arg_ts, loc, cf) ->
        (match ret_ids with
@@ -2209,7 +2206,7 @@ let pp_instr pe0 f instr =
        F.fprintf f "STACKOP.%s; %a" s Location.pp loc
    | Declare_locals (ptl, loc) ->
        (* let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a:%a" (pp_pvar pe) pvar (pp_typ_full pe) typ in *)
-       let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a" (pp_pvar pe) pvar in
+       let pp_pvar_typ fmt (pvar, _) = F.fprintf fmt "%a" (pp_pvar pe) pvar in
        F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_pvar_typ) ptl Location.pp loc
    | Goto_node (e, loc) ->
        F.fprintf f "Goto_node %a %a" (pp_exp pe) e Location.pp loc
@@ -2218,7 +2215,7 @@ let pp_instr pe0 f instr =
 
 let has_block_prefix s =
   match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) s with
-  | s1:: s2:: _ -> true
+  | _ :: _ :: _ -> true
   | _ -> false
 
 (** Check if a pvar is a local pointing to a block in objc *)
@@ -2239,20 +2236,20 @@ let rec typ_iter_types (f : typ -> unit) typ =
   | Tvoid
   | Tfun _ ->
       ()
-  | Tptr (t', pk) ->
+  | Tptr (t', _) ->
       typ_iter_types f t'
   | Tstruct struct_typ ->
       IList.iter (fun (_, t, _) -> typ_iter_types f t) struct_typ.instance_fields
   | Tarray (t, e) ->
       typ_iter_types f t;
       exp_iter_types f e
-  | Tenum econsts ->
+  | Tenum _ ->
       ()
 
 (** Iterate over all the subtypes in the type (including the type itself) *)
 and exp_iter_types f e =
   match e with
-  | Var id -> ()
+  | Var _ -> ()
   | Const (Cexn e1) ->
       exp_iter_types f e1
   | Const (Ctuple el) ->
@@ -2262,48 +2259,48 @@ and exp_iter_types f e =
   | Cast (t, e1) ->
       typ_iter_types f t;
       exp_iter_types f e1
-  | UnOp (op, e1, typo) ->
+  | UnOp (_, e1, typo) ->
       exp_iter_types f e1;
       (match typo with
        | Some t -> typ_iter_types f t
        | None -> ())
-  | BinOp (op, e1, e2) ->
+  | BinOp (_, e1, e2) ->
       exp_iter_types f e1;
       exp_iter_types f e2
-  | Lvar id ->
+  | Lvar _ ->
       ()
-  | Lfield (e1, fld, typ) ->
+  | Lfield (e1, _, typ) ->
       exp_iter_types f e1;
       typ_iter_types f typ
   | Lindex (e1, e2) ->
       exp_iter_types f e1;
       exp_iter_types f e2
-  | Sizeof (t, s) ->
+  | Sizeof (t, _) ->
       typ_iter_types f t
 
 (** Iterate over all the types (and subtypes) in the instruction *)
 let instr_iter_types f instr = match instr with
-  | Letderef (id, e, t, loc) ->
+  | Letderef (_, e, t, _) ->
       exp_iter_types f e;
       typ_iter_types f t
-  | Set (e1, t, e2, loc) ->
+  | Set (e1, t, e2, _) ->
       exp_iter_types f e1;
       typ_iter_types f t;
       exp_iter_types f e2
-  | Prune (cond, loc, true_branch, ik) ->
+  | Prune (cond, _, _, _) ->
       exp_iter_types f cond
-  | Call (ret_ids, e, arg_ts, loc, cf) ->
+  | Call (_, e, arg_ts, _, _) ->
       exp_iter_types f e;
       IList.iter (fun (e, t) -> exp_iter_types f e; typ_iter_types f t) arg_ts
-  | Nullify (pvar, loc, deallocate) ->
+  | Nullify (_, _, _) ->
       ()
-  | Abstract loc ->
+  | Abstract _ ->
       ()
-  | Remove_temps (temps, loc) ->
+  | Remove_temps (_, _) ->
       ()
-  | Stackop (stackop, loc) ->
+  | Stackop (_, _) ->
       ()
-  | Declare_locals (ptl, loc) ->
+  | Declare_locals (ptl, _) ->
       IList.iter (fun (_, t) -> typ_iter_types f t) ptl
   | Goto_node _ ->
       ()
@@ -2334,8 +2331,8 @@ let pp_atom pe0 f a =
              F.fprintf f "%a = %a" (pp_exp pe) e1 (pp_exp pe) e2
          | PP_LATEX ->
              F.fprintf f "%a{=}%a" (pp_exp pe) e1 (pp_exp pe) e2)
-    | Aneq ((Const (Cattribute a) as ea), e)
-    | Aneq (e, (Const (Cattribute a) as ea)) ->
+    | Aneq ((Const (Cattribute _) as ea), e)
+    | Aneq (e, (Const (Cattribute _) as ea)) ->
         F.fprintf f "%a(%a)" (pp_exp pe) ea (pp_exp pe) e
     | Aneq (e1, e2) ->
         (match pe.pe_kind with
@@ -2435,9 +2432,9 @@ end = struct
   let rec process_sexp env = function
     | Eexp _ -> ()
     | Earray (_, esel, _) ->
-        IList.iter (fun (e, se) -> process_sexp env se) esel
+        IList.iter (fun (_, se) -> process_sexp env se) esel
     | Estruct (fsel, _) ->
-        IList.iter (fun (f, se) -> process_sexp env se) fsel
+        IList.iter (fun (_, se) -> process_sexp env se) fsel
 
   (** Process one hpred, updating env *)
   let rec process_hpred env = function
@@ -2504,15 +2501,15 @@ let inst_new_loc loc inst = match inst with
   | Iabstraction -> inst
   | Iactual_precondition -> inst
   | Ialloc -> inst
-  | Iformal (zf, ncf) -> inst
+  | Iformal _ -> inst
   | Iinitial -> inst
   | Ilookup -> inst
   | Inone -> inst
   | Inullify -> inst
-  | Irearrange (zf, ncf, n, pos) -> Irearrange (zf, ncf, loc.Location.line, pos)
+  | Irearrange (zf, ncf, _, pos) -> Irearrange (zf, ncf, loc.Location.line, pos)
   | Itaint -> inst
-  | Iupdate (zf, ncf, n, pos) -> Iupdate (zf, ncf, loc.Location.line, pos)
-  | Ireturn_from_call n -> Ireturn_from_call loc.Location.line
+  | Iupdate (zf, ncf, _, pos) -> Iupdate (zf, ncf, loc.Location.line, pos)
+  | Ireturn_from_call _ -> Ireturn_from_call loc.Location.line
 
 (** return a string representing the inst *)
 let inst_to_string inst =
@@ -2560,14 +2557,14 @@ let inst_zero_flag = function
   | Iabstraction -> None
   | Iactual_precondition -> None
   | Ialloc -> None
-  | Iformal (zf, ncf) -> zf
+  | Iformal (zf, _) -> zf
   | Iinitial -> None
   | Ilookup -> None
   | Inone -> None
   | Inullify -> None
-  | Irearrange (zf, ncf, n, _) -> zf
+  | Irearrange (zf, _, _, _) -> zf
   | Itaint -> None
-  | Iupdate (zf, ncf, n, _) -> zf
+  | Iupdate (zf, _, _, _) -> zf
   | Ireturn_from_call _ -> None
 
 (** Set the null case flag of the inst. *)
@@ -2652,7 +2649,7 @@ and pp_hpred_env pe0 envo f hpred =
   begin match hpred with
     | Hpointsto (e, se, te) ->
         let pe' = match (e, se) with
-          | Lvar pvar, Eexp (Var id, inst) when not (pvar_is_global pvar) ->
+          | Lvar pvar, Eexp (Var _, _) when not (pvar_is_global pvar) ->
               { pe with pe_obj_sub = None } (* dont use obj sub on the var defining it *)
           | _ -> pe in
         (match pe'.pe_kind with
@@ -2844,7 +2841,7 @@ let unsome_typ s = function
     If not a sizeof, return the default type if given, otherwise raise an exception *)
 let texp_to_typ default_opt = function
   | Sizeof (t, _) -> t
-  | t ->
+  | _ ->
       unsome_typ "texp_to_typ" default_opt
 
 (** If a struct type with field f, return the type of f.
@@ -2853,8 +2850,8 @@ let struct_typ_fld default_opt f =
   let def () = unsome_typ "struct_typ_fld" default_opt in
   function
   | Tstruct struct_typ ->
-      (try (fun (x, y, z) -> y)
-             (IList.find (fun (_f, t, ann) ->
+      (try (fun (_, y, _) -> y)
+             (IList.find (fun (_f, _, _) ->
                   Ident.fieldname_equal _f f) struct_typ.instance_fields)
        with Not_found -> def ())
   | _ -> def ()
@@ -2863,14 +2860,14 @@ let struct_typ_fld default_opt f =
     If not, return the default type if given, otherwise raise an exception *)
 let array_typ_elem default_opt = function
   | Tarray (t_el, _) -> t_el
-  | t ->
+  | _ ->
       unsome_typ "array_typ_elem" default_opt
 
 (** Return the root of [lexp]. *)
 let rec root_of_lexp lexp = match lexp with
   | Var _ -> lexp
   | Const _ -> lexp
-  | Cast (t, e) -> root_of_lexp e
+  | Cast (_, e) -> root_of_lexp e
   | UnOp _ | BinOp _ -> lexp
   | Lvar _ -> lexp
   | Lfield(e, _, _) -> root_of_lexp e
@@ -2928,7 +2925,7 @@ let exp_lt e1 e2 =
 (** {2 Functions for computing program variables} *)
 
 let rec exp_fpv = function
-  | Var id -> []
+  | Var _ -> []
   | Const (Cexn e) -> exp_fpv e
   | Const (Ctuple el) -> exp_list_fpv el
   | Const _ -> []
@@ -2946,11 +2943,11 @@ let atom_fpv = function
   | Aneq (e1, e2) -> exp_fpv e1 @ exp_fpv e2
 
 let rec strexp_fpv = function
-  | Eexp (e, inst) -> exp_fpv e
-  | Estruct (fld_se_list, inst) ->
+  | Eexp (e, _) -> exp_fpv e
+  | Estruct (fld_se_list, _) ->
       let f (_, se) = strexp_fpv se in
       IList.flatten (IList.map f fld_se_list)
-  | Earray (size, idx_se_list, inst) ->
+  | Earray (size, idx_se_list, _) ->
       let fpv_in_size = exp_fpv size in
       let f (idx, se) = exp_fpv idx @ strexp_fpv se in
       fpv_in_size @ IList.flatten (IList.map f idx_se_list)
@@ -3096,7 +3093,7 @@ let rec exp_fav_add fav = function
   | Const _ -> ()
   | Cast (_, e) | UnOp (_, e, _) -> exp_fav_add fav e
   | BinOp (_, e1, e2) -> exp_fav_add fav e1; exp_fav_add fav e2
-  | Lvar id -> () (* do nothing since we only count non-program variables *)
+  | Lvar _ -> () (* do nothing since we only count non-program variables *)
   | Lfield (e, _, _) -> exp_fav_add fav e
   | Lindex (e1, e2) -> exp_fav_add fav e1; exp_fav_add fav e2
   | Sizeof _ -> ()
@@ -3121,25 +3118,20 @@ let atom_fav =
 (** Atoms do not contain binders *)
 let atom_av_add = atom_fav_add
 
-let hpara_fav_add fav para = () (* Global invariant: hpara is closed *)
-let hpara_dll_fav_add fav para = () (* Global invariant: hpara_dll is closed *)
-
 let rec strexp_fav_add fav = function
-  | Eexp (e, inst) -> exp_fav_add fav e
-  | Estruct (fld_se_list, inst) ->
+  | Eexp (e, _) -> exp_fav_add fav e
+  | Estruct (fld_se_list, _) ->
       IList.iter (fun (_, se) -> strexp_fav_add fav se) fld_se_list
-  | Earray (size, idx_se_list, inst) ->
+  | Earray (size, idx_se_list, _) ->
       exp_fav_add fav size;
       IList.iter (fun (e, se) -> exp_fav_add fav e; strexp_fav_add fav se) idx_se_list
 
 let hpred_fav_add fav = function
   | Hpointsto (base, sexp, te) -> exp_fav_add fav base; strexp_fav_add fav sexp; exp_fav_add fav te
-  | Hlseg (_, para, e1, e2, elist) ->
-      hpara_fav_add fav para;
+  | Hlseg (_, _, e1, e2, elist) ->
       exp_fav_add fav e1; exp_fav_add fav e2;
       IList.iter (exp_fav_add fav) elist
-  | Hdllseg (_, para, e1, e2, e3, e4, elist) ->
-      hpara_dll_fav_add fav para;
+  | Hdllseg (_, _, e1, e2, e3, e4, elist) ->
       exp_fav_add fav e1; exp_fav_add fav e2;
       exp_fav_add fav e3; exp_fav_add fav e4;
       IList.iter (exp_fav_add fav) elist
@@ -3387,7 +3379,7 @@ let rec typ_sub (subst: subst) typ =
       Tptr (typ_sub subst t', pk)
   | Tarray (t, e) ->
       Tarray (typ_sub subst t, exp_sub subst e)
-  | Tenum econsts ->
+  | Tenum _ ->
       typ
 
 and exp_sub (subst: subst) e =
@@ -3418,7 +3410,7 @@ and exp_sub (subst: subst) e =
       let e1' = exp_sub subst e1 in
       let e2' = exp_sub subst e2 in
       BinOp (op, e1', e2')
-  | Lvar id ->
+  | Lvar _ ->
       e
   | Lfield (e1, fld, typ) ->
       let e1' = exp_sub subst e1 in
@@ -3447,13 +3439,13 @@ let instr_sub (subst: subst) instr =
   | Call (ret_ids, e, arg_ts, loc, cf) ->
       let arg_s (e, t) = (exp_s e, typ_s t) in
       Call (IList.map id_s ret_ids, exp_s e, IList.map arg_s arg_ts, loc, cf)
-  | Nullify (pvar, loc, deallocate) ->
+  | Nullify _ ->
       instr
-  | Abstract loc ->
+  | Abstract _ ->
       instr
   | Remove_temps (temps, loc) ->
       Remove_temps (IList.map id_s temps, loc)
-  | Stackop (stackop, loc) ->
+  | Stackop _ ->
       instr
   | Declare_locals (ptl, loc) ->
       let pt_s (pv, t) = (pv, typ_s t) in
@@ -3546,7 +3538,7 @@ let rec exp_compare_structural e1 e2 exp_map =
       (* assume e1 and e2 equal, enforce by adding to [exp_map] *)
       0, ExpMap.add e1 e2 exp_map in
   match (e1, e2) with
-  | Var id1, Var id2 -> compare_exps_with_map e1 e2 exp_map
+  | Var _, Var _ -> compare_exps_with_map e1 e2 exp_map
   | UnOp (o1, e1, to1), UnOp (o2, e2, to2) ->
       let n = unop_compare o1 o2 in
       if n <> 0 then n, exp_map
@@ -3563,7 +3555,7 @@ let rec exp_compare_structural e1 e2 exp_map =
   | Cast (t1, e1), Cast(t2, e2) ->
       let n, exp_map = exp_compare_structural e1 e2 exp_map in
       (if n <> 0 then n else typ_compare t1 t2), exp_map
-  | Lvar i1, Lvar i2 -> compare_exps_with_map e1 e2 exp_map
+  | Lvar _, Lvar _ -> compare_exps_with_map e1 e2 exp_map
   | Lfield (e1, f1, t1), Lfield (e2, f2, t2) ->
       let n, exp_map = exp_compare_structural e1 e2 exp_map in
       (if n <> 0 then n
@@ -3596,26 +3588,26 @@ let instr_compare_structural instr1 instr2 exp_map =
         ids1
         ids2 in
   match instr1, instr2 with
-  | Letderef (id1, e1, t1, loc1), Letderef (id2, e2, t2, loc2) ->
+  | Letderef (id1, e1, t1, _), Letderef (id2, e2, t2, _) ->
       let n, exp_map = exp_compare_structural (Var id1) (Var id2) exp_map in
       if n <> 0 then n, exp_map
       else
         let n, exp_map = exp_compare_structural e1 e2 exp_map in
         (if n <> 0 then n else typ_compare t1 t2), exp_map
-  | Set (e11, t1, e21, loc1), Set (e12, t2, e22, loc2) ->
+  | Set (e11, t1, e21, _), Set (e12, t2, e22, _) ->
       let n, exp_map = exp_compare_structural e11 e12 exp_map in
       if n <> 0 then n, exp_map
       else
         let n = typ_compare t1 t2 in
         if n <> 0 then n, exp_map
         else exp_compare_structural e21 e22 exp_map
-  | Prune (cond1, loc1, true_branch1, ik1), Prune (cond2, loc2, true_branch2, ik2) ->
+  | Prune (cond1, _, true_branch1, ik1), Prune (cond2, _, true_branch2, ik2) ->
       let n, exp_map = exp_compare_structural cond1 cond2 exp_map in
       (if n <> 0 then n
        else let n = bool_compare true_branch1 true_branch2 in
          if n <> 0 then n
          else Pervasives.compare ik1 ik2), exp_map
-  | Call (ret_ids1, e1, arg_ts1, loc1, cf1), Call (ret_ids2, e2, arg_ts2, loc2, cf2) ->
+  | Call (ret_ids1, e1, arg_ts1, _, cf1), Call (ret_ids2, e2, arg_ts2, _, cf2) ->
       let args_compare_structural args1 args2 exp_map =
         let n = Pervasives.compare (IList.length args1) (IList.length args2) in
         if n <> 0 then n, exp_map
@@ -3634,15 +3626,15 @@ let instr_compare_structural instr1 instr2 exp_map =
         else
           let n, exp_map = args_compare_structural arg_ts1 arg_ts2 exp_map in
           (if n <> 0 then n else call_flags_compare cf1 cf2), exp_map
-  | Nullify (pvar1, loc1, deallocate1), Nullify (pvar2, loc2, deallocate2) ->
+  | Nullify (pvar1, _, deallocate1), Nullify (pvar2, _, deallocate2) ->
       let n, exp_map = exp_compare_structural (Lvar pvar1) (Lvar pvar2) exp_map in
       (if n <> 0 then n else bool_compare deallocate1 deallocate2), exp_map
-  | Abstract loc1, Abstract loc2 -> 0, exp_map
-  | Remove_temps (temps1, loc1), Remove_temps (temps2, loc2) ->
+  | Abstract _, Abstract _ -> 0, exp_map
+  | Remove_temps (temps1, _), Remove_temps (temps2, _) ->
       id_list_compare_structural temps1 temps2 exp_map
-  | Stackop (stackop1, loc1), Stackop (stackop2, loc2) ->
+  | Stackop (stackop1, _), Stackop (stackop2, _) ->
       Pervasives.compare stackop1 stackop2, exp_map
-  | Declare_locals (ptl1, loc1), Declare_locals (ptl2, loc2) ->
+  | Declare_locals (ptl1, _), Declare_locals (ptl2, _) ->
       let n = Pervasives.compare (IList.length ptl1) (IList.length ptl2) in
       if n <> 0 then n, exp_map
       else
@@ -3655,7 +3647,7 @@ let instr_compare_structural instr1 instr2 exp_map =
           (0, exp_map)
           ptl1
           ptl2
-  | Goto_node (e1, loc1), Goto_node (e2, loc2) ->
+  | Goto_node (e1, _), Goto_node (e2, _) ->
       exp_compare_structural e1 e2 exp_map
   | _ -> instr_compare instr1 instr2, exp_map
 
@@ -3665,8 +3657,6 @@ let atom_sub subst =
 let hpred_sub subst =
   let f (e, inst_opt) = (exp_sub subst e, inst_opt) in
   hpred_expmap f
-
-let hpara_sub subst para = para
 
 (** {2 Functions for replacing occurrences of expressions.} *)
 
@@ -3888,7 +3878,7 @@ let pvar_to_callee pname pvar = match pvar.pv_kind with
 let exp_get_offsets exp =
   let rec f offlist_past e = match e with
     | Var _ | Const _ | UnOp _ | BinOp _ | Lvar _ | Sizeof _ -> offlist_past
-    | Cast(t, sub_exp) -> f offlist_past sub_exp
+    | Cast(_, sub_exp) -> f offlist_past sub_exp
     | Lfield(sub_exp, fldname, typ) -> f (Off_fld (fldname, typ):: offlist_past) sub_exp
     | Lindex(sub_exp, e) -> f (Off_index e :: offlist_past) sub_exp in
   f [] exp
@@ -3927,7 +3917,7 @@ let hpara_instantiate para e1 e2 elist =
     try (IList.map2 g para.svars elist)
     with Invalid_argument _ -> assert false in
   let ids_evars =
-    let g id = Ident.create_fresh Ident.kprimed in
+    let g _ = Ident.create_fresh Ident.kprimed in
     IList.map g para.evars in
   let subst_for_evars =
     let g id id' = (id, Var id') in
@@ -3946,7 +3936,7 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
     try (IList.map2 g para.svars_dll elist)
     with Invalid_argument _ -> assert false in
   let ids_evars =
-    let g id = Ident.create_fresh Ident.kprimed in
+    let g _ = Ident.create_fresh Ident.kprimed in
     IList.map g para.evars_dll in
   let subst_for_evars =
     let g id id' = (id, Var id') in

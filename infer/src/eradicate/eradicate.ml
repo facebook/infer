@@ -69,7 +69,7 @@ struct
     | None -> ()
 
   let callback1
-      find_canonical_duplicate calls_this checks get_proc_desc idenv tenv curr_pname
+      find_canonical_duplicate calls_this checks get_proc_desc idenv curr_pname
       curr_pdesc annotated_signature linereader proc_loc
     : bool * Extension.extension TypeState.t option =
     let mk_pvar s = Sil.mk_pvar s curr_pname in
@@ -100,7 +100,7 @@ struct
           checks.TypeCheck.check_ret_type;
       if checks.TypeCheck.eradicate then
         EradicateChecks.check_return_annotation
-          find_canonical_duplicate curr_pname curr_pdesc exit_node ret_range
+          find_canonical_duplicate curr_pname exit_node ret_range
           ret_ia ret_implicitly_nullable loc in
 
     let do_before_dataflow initial_typestate =
@@ -131,7 +131,7 @@ struct
                   (TypeState.pp Extension.ext) typestate_succ)
               typestates_succ;
           typestates_succ, typestates_exn
-        let proc_throws pn = DontKnow
+        let proc_throws _ = DontKnow
       end) in
     let initial_typestate = get_initial_typestate () in
     do_before_dataflow initial_typestate;
@@ -181,7 +181,7 @@ struct
           }, ref false in
       callback1
         find_canonical_duplicate calls_this' checks' get_proc_desc idenv_pn
-        tenv pname pdesc ann_sig linereader loc in
+        pname pdesc ann_sig linereader loc in
 
     let module Initializers = struct
       type init = Procname.t * Cfg.Procdesc.t
@@ -201,8 +201,8 @@ struct
                 get_class_opt init_pn = get_class_opt callee_pn in
               is_private && same_class in
             let private_called = PatternMatch.proc_calls
-                Specs.proc_resolve_attributes init_pn init_pd filter in
-            let do_called (callee_pn, callee_attributes) =
+                Specs.proc_resolve_attributes init_pd filter in
+            let do_called (callee_pn, _) =
               match get_proc_desc callee_pn with
               | Some callee_pd ->
                   res := (callee_pn, callee_pd) :: !res
@@ -260,7 +260,7 @@ struct
       (** Typestates after the current procedure and all initializer procedures. *)
       let final_initializer_typestates_lazy = lazy
         begin
-          let is_initializer pname proc_attributes =
+          let is_initializer proc_attributes =
             PatternMatch.method_is_initializer tenv proc_attributes ||
             let ia, _ =
               (Models.get_modelled_annotated_signature proc_attributes).Annotations.ret in
@@ -268,7 +268,7 @@ struct
           let initializers_current_class =
             pname_and_pdescs_with
               (function (pname, proc_attributes) ->
-                is_initializer pname proc_attributes &&
+                is_initializer proc_attributes &&
                 Procname.java_get_class pname = Procname.java_get_class curr_pname) in
           final_typestates
             ((curr_pname, curr_pdesc) :: initializers_current_class)
@@ -279,7 +279,7 @@ struct
         begin
           let constructors_current_class =
             pname_and_pdescs_with
-              (fun (pname, proc_attributes) ->
+              (fun (pname, _) ->
                  Procname.is_constructor pname &&
                  Procname.java_get_class pname = Procname.java_get_class curr_pname) in
           final_typestates constructors_current_class
@@ -317,7 +317,7 @@ struct
     do_final_typestate final_typestate_opt calls_this;
     if checks.TypeCheck.eradicate then
       EradicateChecks.check_overridden_annotations
-        find_canonical_duplicate get_proc_desc
+        find_canonical_duplicate
         tenv curr_pname curr_pdesc
         annotated_signature;
 
@@ -367,9 +367,9 @@ struct
   type extension = unit
   let ext =
     let empty = () in
-    let check_instr get_proc_desc proc_name proc_desc node ext instr param = ext in
+    let check_instr _ _ _ ext _ _ = ext in
     let join () () = () in
-    let pp fmt () = () in
+    let pp _ () = () in
     {
       TypeState.empty = empty;
       check_instr = check_instr;

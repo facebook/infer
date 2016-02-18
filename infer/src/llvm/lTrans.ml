@@ -30,7 +30,7 @@ let trans_operand : LAst.operand -> Sil.exp = function
   | Const const -> trans_constant const
 
 let rec trans_typ : LAst.typ -> Sil.typ = function
-  | Tint i -> Sil.Tint Sil.IInt (* TODO: check what size int is needed here *)
+  | Tint _i -> Sil.Tint Sil.IInt (* TODO: check what size int is needed here *)
   | Tfloat -> Sil.Tfloat Sil.FFloat
   | Tptr tp -> Sil.Tptr (trans_typ tp, Sil.Pk_pointer)
   | Tvector (i, tp)
@@ -81,7 +81,7 @@ let rec trans_annotated_instructions
             let new_sil_instr =
               Sil.Set (trans_variable var, trans_typ tp, trans_operand op, location) in
             (new_sil_instr :: sil_instrs, locals)
-        | Alloc (var, tp, num_elems) ->
+        | Alloc (var, tp, _num_elems) ->
             (* num_elems currently ignored *)
             begin match var with
               | Global (Name var_name) | Local (Name var_name) ->

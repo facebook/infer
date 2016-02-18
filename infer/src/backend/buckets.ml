@@ -30,11 +30,13 @@ let check_nested_loop path pos_opt =
         (* if !verbose then L.d_strln ((if b then "enter" else "exit") ^ " node " ^ (string_of_int (Cfg.Node.get_id node))); *)
         loop_visits_log := b :: !loop_visits_log
     | _ -> () in
-  let do_any_node level node =
+  let do_any_node _level _node =
     incr trace_length;
-    (* L.d_strln ("level " ^ string_of_int level ^ " (Cfg.Node.get_id node) " ^ string_of_int nid); *)
-    () in
-  let f level p session exn_opt = match Paths.Path.curr_node p  with
+    (* L.d_strln *)
+    (*   ("level " ^ string_of_int _level ^ *)
+    (*    " (Cfg.Node.get_id node) " ^ string_of_int (Cfg.Node.get_id _node)) *)
+  in
+  let f level p _ _ = match Paths.Path.curr_node p  with
     | Some node ->
         do_any_node level node;
         if level = 0 then do_node_caller node
@@ -80,7 +82,7 @@ let check_access access_opt de_opt =
       let filter = function
         | Sil.Call (_, _, etl, _, _) ->
             let formal_ids = find_formal_ids node in
-            let arg_is_formal_param (e, t) = match e with
+            let arg_is_formal_param (e, _) = match e with
               | Sil.Var id -> IList.exists (Ident.equal id) formal_ids
               | _ -> false in
             if IList.exists arg_is_formal_param etl then formal_param_used_in_call := true;
@@ -111,7 +113,7 @@ let check_access access_opt de_opt =
       find_bucket n ncf
   | Some (Localise.Returned_from_call n) ->
       find_bucket n false
-  | Some (Localise.Last_accessed (n, is_nullable)) when is_nullable ->
+  | Some (Localise.Last_accessed (_, is_nullable)) when is_nullable ->
       Some Localise.BucketLevel.b1
   | _ ->
       begin

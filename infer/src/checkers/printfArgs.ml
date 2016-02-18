@@ -158,16 +158,16 @@ let check_printf_args_ok
     match instrs, nvar with
     | Sil.Letderef (id, Sil.Lvar iv, _, _):: _, Sil.Var nid
       when Ident.equal id nid -> iv
-    | i:: is, _ -> array_ivar is nvar
+    | _:: is, _ -> array_ivar is nvar
     | _ -> raise Not_found in
 
   let rec fixed_nvar_type_name instrs nvar =
     match nvar with
     | Sil.Var nid -> (
         match instrs with
-        | Sil.Letderef (id, Sil.Lvar iv, t, _):: _
+        | Sil.Letderef (id, Sil.Lvar _, t, _):: _
           when Ident.equal id nid -> PatternMatch.get_type_name t
-        | i:: is -> fixed_nvar_type_name is nvar
+        | _:: is -> fixed_nvar_type_name is nvar
         | _ -> raise Not_found)
     | Sil.Const c -> PatternMatch.java_get_const_type_name c
     | _ -> raise (Failure "Could not resolve fixed type name") in

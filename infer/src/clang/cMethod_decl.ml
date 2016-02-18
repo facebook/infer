@@ -30,7 +30,7 @@ struct
 
   (* Translates the method/function's body into nodes of the cfg. *)
   let add_method tenv cg cfg class_decl_opt procname body has_return_param is_objc_method
-      captured_vars outer_context_opt extra_instrs =
+      outer_context_opt extra_instrs =
 
     Printing.log_out
       "\n\n>>---------- ADDING METHOD: '%s' ---------<<\n@." (Procname.to_string procname);
@@ -77,7 +77,7 @@ struct
         let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] captured_vars false then
           add_method tenv cg cfg CContext.ContextNoCls procname body return_param_typ_opt false
-            captured_vars outer_context_opt extra_instrs
+            outer_context_opt extra_instrs
     | None -> ()
 
   let process_method_decl tenv cg cfg curr_class meth_decl ~is_objc =
@@ -90,7 +90,7 @@ struct
         let is_objc_inst_method = is_instance && is_objc in
         let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
         if CMethod_trans.create_local_procdesc cfg tenv ms [body] [] is_objc_inst_method then
-          add_method tenv cg cfg curr_class procname body return_param_typ_opt is_objc []
+          add_method tenv cg cfg curr_class procname body return_param_typ_opt is_objc
             None extra_instrs
     | None -> ()
 

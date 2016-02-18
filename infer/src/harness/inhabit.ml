@@ -96,7 +96,7 @@ let rec inhabit_typ typ proc_file_map env =
   try (TypMap.find typ env.cache, env)
   with Not_found ->
     let inhabit_internal typ env = match typ with
-      | Sil.Tptr (Sil.Tarray (inner_typ, Sil.Const (Sil.Cint size)), Sil.Pk_pointer) ->
+      | Sil.Tptr (Sil.Tarray (inner_typ, Sil.Const (Sil.Cint _)), Sil.Pk_pointer) ->
           let arr_size = Sil.Const (Sil.Cint (Sil.Int.one)) in
           let arr_typ = Sil.Tarray (inner_typ, arr_size) in
           inhabit_alloc arr_typ typ SymExec.ModelBuiltins.__new_array env
@@ -151,7 +151,7 @@ let rec inhabit_typ typ proc_file_map env =
 
 (** inhabit each of the types in the formals list *)
 and inhabit_args formals proc_file_map env =
-  let inhabit_arg (formal_name, formal_typ) (args, env) =
+  let inhabit_arg (_, formal_typ) (args, env) =
     let (exp, env) = inhabit_typ formal_typ proc_file_map env in
     ((exp, formal_typ) :: args, env) in
   IList.fold_right inhabit_arg formals ([], env)
@@ -187,9 +187,9 @@ let inhabit_call (procname, receiver) proc_file_map env =
     let procdesc = procdesc_from_name procname proc_file_map in
     (* swap the type of the 'this' formal with the receiver type, if there is one *)
     let formals = match (Cfg.Procdesc.get_formals procdesc, receiver) with
-      | ((name, typ) :: formals, Some receiver) -> (name, receiver) :: formals
+      | ((name, _) :: formals, Some receiver) -> (name, receiver) :: formals
       | (formals, None) -> formals
-      | ([], Some receiver) ->
+      | ([], Some _) ->
           L.err
             "Expected at least one formal to bind receiver to in method %a@." Procname.pp procname;
           assert false in
@@ -224,7 +224,7 @@ let inhabit_fld_trace flds proc_file_map env =
   IList.fold_left (fun env fld -> invoke_cb fld env) env flds
 
 (** create a dummy file for the harness and associate them in the exe_env *)
-let create_dummy_harness_file harness_name harness_cfg tenv =
+let create_dummy_harness_file harness_name =
   let dummy_file_name =
     let dummy_file_dir =
       let sources_dir = DB.sources_dir () in
@@ -248,13 +248,13 @@ let write_harness_to_file harness_instrs harness_file =
       close_outf outf)
 
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
-let add_harness_to_cg harness_name harness_cfg harness_node loc cg tenv =
+let add_harness_to_cg harness_name harness_node cg =
   Cg.add_defined_node cg harness_name;
   IList.iter (fun p -> Cg.add_edge cg harness_name p) (Cfg.Node.get_callees harness_node)
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
  * proc to the cg *)
-let setup_harness_cfg harness_name harness_cfg env source_dir cg tenv =
+let setup_harness_cfg harness_name env source_dir cg =
   (* each procedure has different scope: start names from id 0 *)
   Ident.NameGenerator.reset ();
 
@@ -287,14 +287,14 @@ let setup_harness_cfg harness_name harness_cfg env source_dir cg tenv =
   Cfg.Node.set_succs_exn harness_node [exit_node] [exit_node];
   Cfg.add_removetemps_instructions harness_cfg;
   Cfg.add_abstraction_instructions harness_cfg;
-  add_harness_to_cg harness_name harness_cfg harness_node env.pc cg tenv;
+  add_harness_to_cg harness_name harness_node cg;
   (* save out the cg and cfg so that they will be accessible in the next phase of the analysis *)
   Cg.store_to_file cg_file cg;
   Cfg.store_cfg_to_file cfg_file false harness_cfg
 
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
  * order with the specified receiver and add it to the execution environment *)
-let inhabit_trace trace cb_flds harness_name proc_file_map tenv =
+let inhabit_trace trace cb_flds harness_name proc_file_map =
   if IList.length trace > 0 then
     (* pick an arbitrary cg and cfg to piggyback the harness code onto *)
     let (source_dir, source_file, cg) =
@@ -302,8 +302,7 @@ let inhabit_trace trace cb_flds harness_name proc_file_map tenv =
       let cg = cg_from_name proc_name proc_file_map in
       (source_dir_from_name proc_name proc_file_map, source_file, cg) in
 
-    let harness_cfg = Cfg.Node.create_cfg () in
-    let harness_file = create_dummy_harness_file harness_name harness_cfg tenv in
+    let harness_file = create_dummy_harness_file harness_name in
     let start_line = (Cg.get_nLOC cg) + 1 in
     let empty_env =
       let pc = { Location.line = start_line; col = 1; file = source_file; nLOC = 0; } in
@@ -321,6 +320,6 @@ let inhabit_trace trace cb_flds harness_name proc_file_map tenv =
       (* invoke callbacks *)
       inhabit_fld_trace cb_flds proc_file_map env' in
     try
-      setup_harness_cfg harness_name harness_cfg env'' source_dir cg tenv;
+      setup_harness_cfg harness_name env'' source_dir cg;
       write_harness_to_file (IList.rev env''.instrs) harness_file
     with Not_found -> ()

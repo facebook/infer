@@ -20,7 +20,7 @@ val unary_operation_instruction :
   Ident.t list * Sil.exp * Sil.instr list
 
 val assignment_arc_mode :
-  CContext.t -> Sil.exp -> Sil.typ -> Sil.exp -> Location.t -> bool -> bool ->
+  Sil.exp -> Sil.typ -> Sil.exp -> Location.t -> bool -> bool ->
   Sil.exp * Sil.instr list * Ident.t list
 
 val sil_const_plus_one : Sil.exp -> Sil.exp

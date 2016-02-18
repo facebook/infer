@@ -22,7 +22,7 @@ module WeightedPnameSet =
   end)
 
 let pp_weightedpnameset fmt set =
-  let f (pname, weight) = F.fprintf fmt "%a@ " Procname.pp pname in
+  let f (pname, _) = F.fprintf fmt "%a@ " Procname.pp pname in
   WeightedPnameSet.iter f set
 
 let compute_weighed_pnameset gr =
@@ -210,7 +210,7 @@ let post_process_procs exe_env procs_done =
 
 (** Find the max string in the [set] which satisfies [filter],and count the number of attempts.
     Precedence is given to strings in [priority_set] *)
-let filter_max exe_env cg filter set priority_set =
+let filter_max exe_env filter set priority_set =
   let rec find_max n filter set =
     let elem = WeightedPnameSet.max_elt set in
     if filter elem then
@@ -322,7 +322,7 @@ end
     propagates results, and handles fixpoints in the call graph. *)
 let main_algorithm exe_env analyze_proc filter_out process_result : unit =
   let call_graph = Exe_env.get_cg exe_env in
-  let filter_initial (pname, w) =
+  let filter_initial (pname, _) =
     let summary = Specs.get_summary_unsafe "main_algorithm" pname in
     Specs.get_timestamp summary = 0 in
   wpnames_todo := WeightedPnameSet.filter filter_initial (compute_weighed_pnameset call_graph);
@@ -333,7 +333,7 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
   tot_procs := WeightedPnameSet.cardinal !wpnames_todo;
   num_procs_done := 0;
   let max_timeout = ref 1 in
-  let wpname_can_be_analyzed (pname, weight) : bool =
+  let wpname_can_be_analyzed (pname, _) : bool =
     (* Return true if [pname] is not up to date and it can be analyzed right now *)
     Procname.Set.for_all
       (proc_is_done call_graph) (Cg.get_nonrecursive_dependents call_graph pname) &&
@@ -383,7 +383,7 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
       try
         let pname, calls =
           (** find max analyzable proc *)
-          filter_max exe_env call_graph wpname_can_be_analyzed !wpnames_todo wpnames_address_of in
+          filter_max exe_env wpname_can_be_analyzed !wpnames_todo wpnames_address_of in
         process_one_proc pname calls
       with Not_found -> (* no analyzable procs *)
         L.err "Error: can't analyze any procs. Printing current spec table@\n@[<v>%a@]@."
@@ -430,11 +430,11 @@ let interprocedural_algorithm
     (* wrap _process_result and handle exceptions *)
     try _process_result exe_env (pname, calls) summary with
     | exn ->
-        let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
+        let err_name, _, _, _, _, _, _ = Exceptions.recognize_exception exn in
         let err_str = "process_result raised " ^ (Localise.to_string err_name) in
         L.err "Error: %s@." err_str;
         let exn' = Exceptions.Internal_error (Localise.verbatim_desc err_str) in
         Reporting.log_error pname exn';
         post_process_procs exe_env [pname] in
   main_algorithm
-    exe_env (fun exe_env (n, w) -> analyze_proc exe_env n) filter_out process_result
+    exe_env (fun exe_env (n, _) -> analyze_proc exe_env n) filter_out process_result

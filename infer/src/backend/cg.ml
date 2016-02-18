@@ -180,7 +180,7 @@ let restrict_defined (g: t) (nodeset_opt: Procname.Set.t option) =
 
 let get_nodes (g: t) =
   let nodes = ref Procname.Set.empty in
-  let f node info =
+  let f node _ =
     nodes := Procname.Set.add node !nodes in
   node_map_iter f g;
   !nodes
@@ -204,7 +204,7 @@ let get_all_nodes (g: t) =
   IList.map (fun node -> (node, get_calls g node)) nodes
 
 let get_nodes_and_calls (g: t) =
-  IList.filter (fun (n, calls) -> node_defined g n) (get_all_nodes g)
+  IList.filter (fun (n, _) -> node_defined g n) (get_all_nodes g)
 
 let node_get_num_ancestors g n =
   (n, Procname.Set.cardinal (get_ancestors g n))
@@ -277,11 +277,11 @@ type nodes_and_edges =
 let get_nodes_and_edges (g: t) : nodes_and_edges =
   let nodes = ref [] in
   let edges = ref [] in
-  let do_children node info nto =
+  let do_children node nto =
     edges := (node, nto) :: !edges in
   let f node info =
     nodes := (node, info.defined, info.disabled) :: !nodes;
-    Procname.Set.iter (do_children node info) info.children in
+    Procname.Set.iter (do_children node) info.children in
   node_map_iter f g;
   (!nodes, !edges)
 
@@ -345,11 +345,11 @@ let store_to_file (filename : DB.filename) (call_graph : t) =
 let pp_graph_dotty get_specs (g: t) fmt =
   let nodes_with_calls = get_all_nodes g in
   let num_specs n = try IList.length (get_specs n) with exn when exn_not_failure exn -> - 1 in
-  let get_color (n, calls) =
+  let get_color (n, _) =
     if num_specs n != 0 then "green" else "red" in
-  let get_shape (n, calls) =
+  let get_shape (n, _) =
     if node_defined g n then "box" else "diamond" in
-  let pp_node fmt (n, calls) =
+  let pp_node fmt (n, _) =
     F.fprintf fmt "\"%s\"" (Procname.to_filename n) in
   let pp_node_label fmt (n, calls) =
     F.fprintf fmt "\"%a | calls=%d %d | specs=%d)\"" Procname.pp n calls.in_calls calls.out_calls (num_specs n) in

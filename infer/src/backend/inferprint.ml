@@ -269,7 +269,7 @@ let begin_latex_file fmt =
   Latex.pp_begin fmt (author, title, table_of_contents)
 
 (** Write proc summary to latex file *)
-let write_summary_latex fname fmt summary =
+let write_summary_latex fmt summary =
   let proc_name = Specs.get_proc_name summary in
   Latex.pp_section fmt ("Analysis of function " ^ (Latex.convert_string (Procname.to_string proc_name)));
   F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary (pe_latex Black) !whole_seconds) summary
@@ -364,7 +364,7 @@ let summary_values top_proc_set summary =
     let do_spec spec = visited := Specs.Visitedset.union spec.Specs.visited !visited in
     IList.iter do_spec specs;
     let visited_lines = ref IntSet.empty in
-    Specs.Visitedset.iter (fun (n, ls) ->
+    Specs.Visitedset.iter (fun (_, ls) ->
         IList.iter (fun l -> visited_lines := IntSet.add l !visited_lines) ls)
       !visited;
     Specs.Visitedset.cardinal !visited, IntSet.elements !visited_lines in
@@ -437,7 +437,7 @@ module ProcsCsv = struct
       Io_infer.Xml.tag_proof_trace
 
   (** Write proc summary stats in csv format *)
-  let pp_summary fname top_proc_set fmt summary =
+  let pp_summary top_proc_set fmt summary =
     let pp x = F.fprintf fmt x in
     let sv = summary_values top_proc_set summary in
     pp "\"%s\"," (Escape.escape_csv sv.vname);
@@ -530,10 +530,10 @@ module BugsCsv = struct
       "advice"
 
   (** Write bug report in csv format *)
-  let pp_bugs error_filter fname fmt summary =
+  let pp_bugs error_filter fmt summary =
     let pp x = F.fprintf fmt x in
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let pp_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr _ eclass =
       if in_footprint && error_filter error_desc error_name then
         let err_desc_string = error_desc_to_csv_string error_desc in
         let err_advice_string = error_advice_to_csv_string error_desc in
@@ -579,10 +579,12 @@ module BugsJson = struct
   let pp_json_close fmt () = F.fprintf fmt "]\n@?"
 
   (** Write bug report in JSON format *)
-  let pp_bugs error_filter fname fmt summary =
+  let pp_bugs error_filter fmt summary =
     let pp x = F.fprintf fmt x in
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let pp_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let pp_row
+        (_, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr _ eclass
+      =
       if in_footprint && error_filter error_desc error_name then
         let kind = Exceptions.err_kind_string ekind in
         let bug_type = Localise.to_string error_name in
@@ -617,9 +619,9 @@ end
 
 module BugsTxt = struct
   (** Write bug report in text format *)
-  let pp_bugs error_filter fname fmt summary =
+  let pp_bugs error_filter fmt summary =
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let pp_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ =
       if in_footprint && error_filter error_desc error_name then
         Exceptions.pp_err (node_id, node_key) loc ekind error_name error_desc None fmt () in
     Errlog.iter pp_row err_log
@@ -659,7 +661,8 @@ module BugsXml = struct
   (** print bugs from summary in xml *)
   let pp_bugs error_filter linereader fmt summary =
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-    let do_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let do_row
+        (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
       if in_footprint && error_filter error_desc error_name then
         let err_desc_string = error_desc_to_xml_string error_desc in
         let precondition_tree () = match pre_opt with
@@ -726,7 +729,7 @@ module CallsCsv = struct
       Io_infer.Xml.tag_call_trace
 
   (** Write proc summary stats in csv format *)
-  let pp_calls fname fmt summary =
+  let pp_calls fmt summary =
     let pp x = F.fprintf fmt x in
     let stats = summary.Specs.stats in
     let caller_name = Specs.get_proc_name summary in
@@ -746,7 +749,7 @@ module UnitTest = struct
   let procs_done = ref []
 
   (** Print unit test for every spec in the summary *)
-  let print_unit_test fname proc_name summary =
+  let print_unit_test proc_name summary =
     let cnt = ref 0 in
     let fmt = F.std_formatter in
     let do_spec spec =
@@ -861,7 +864,7 @@ module Stats = struct
 
   let process_err_log error_filter linereader err_log stats =
     let found_errors = ref false in
-    let process_row (node_id, node_key) loc ml_loc_opt ekind in_footprint error_name error_desc severity ltr pre_opt eclass =
+    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ =
       let type_str = Localise.to_string error_name in
       if in_footprint && error_filter error_desc error_name
       then match ekind with
@@ -974,18 +977,18 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
     (filters.Inferconfig.path_filter summary.Specs.attributes.ProcAttributes.loc.Location.file
      || always_report ()) &&
     filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name in
-  do_outf procs_csv (fun outf -> F.fprintf outf.fmt "%a" (ProcsCsv.pp_summary fname top_proc_set) summary);
-  do_outf calls_csv (fun outf -> F.fprintf outf.fmt "%a" (CallsCsv.pp_calls fname) summary);
+  do_outf procs_csv (fun outf -> ProcsCsv.pp_summary top_proc_set outf.fmt summary);
+  do_outf calls_csv (fun outf -> CallsCsv.pp_calls outf.fmt summary);
   do_outf procs_xml (fun outf -> ProcsXml.pp_proc top_proc_set outf.fmt summary);
-  do_outf bugs_csv (fun outf -> BugsCsv.pp_bugs error_filter fname outf.fmt summary);
-  do_outf bugs_json (fun outf -> BugsJson.pp_bugs error_filter fname outf.fmt summary);
-  do_outf bugs_txt (fun outf -> BugsTxt.pp_bugs error_filter linereader outf.fmt summary);
+  do_outf bugs_csv (fun outf -> BugsCsv.pp_bugs error_filter outf.fmt summary);
+  do_outf bugs_json (fun outf -> BugsJson.pp_bugs error_filter outf.fmt summary);
+  do_outf bugs_txt (fun outf -> BugsTxt.pp_bugs error_filter outf.fmt summary);
   do_outf bugs_xml (fun outf -> BugsXml.pp_bugs error_filter linereader outf.fmt summary);
-  do_outf report (fun outf -> Stats.process_summary error_filter summary linereader stats);
+  do_outf report (fun _ -> Stats.process_summary error_filter summary linereader stats);
   if !precondition_stats then PreconditionStats.do_summary proc_name summary;
-  if !unit_test then UnitTest.print_unit_test fname proc_name summary;
+  if !unit_test then UnitTest.print_unit_test proc_name summary;
   Config.pp_simple := pp_simple_saved;
-  do_outf latex (fun outf -> write_summary_latex (DB.filename_from_string fname) outf.fmt summary);
+  do_outf latex (fun outf -> write_summary_latex outf.fmt summary);
   if !svg then begin
     let specs = Specs.get_specs_from_payload summary in
     let dot_file = DB.filename_add_suffix base ".dot" in
@@ -1058,7 +1061,7 @@ module AnalysisResults = struct
       | Some summary ->
           summaries := (fname, summary) :: !summaries in
     apply_without_gc (IList.iter load_file) spec_files_from_cmdline;
-    let summ_cmp (fname1, summ1) (fname2, summ2) =
+    let summ_cmp (_, summ1) (_, summ2) =
       let n =
         DB.source_file_compare
           summ1.Specs.attributes.ProcAttributes.loc.Location.file

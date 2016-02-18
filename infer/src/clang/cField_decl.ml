@@ -60,7 +60,7 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
     General_utils.append_no_duplicates_fields [field_tuple] fields in
   match decl_list with
   | [] -> []
-  | ObjCPropertyDecl (_, named_decl_info, obj_c_property_decl_info) :: decl_list' ->
+  | ObjCPropertyDecl (_, _, obj_c_property_decl_info) :: decl_list' ->
       (let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
        match Ast_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
        | Some (ObjCIvarDecl (_, name_info, type_ptr, _, _)) ->
@@ -69,7 +69,7 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
        | _ -> get_fields type_ptr_to_sil_type tenv curr_class decl_list')
   | ObjCIvarDecl (_, name_info, type_ptr, _, _) :: decl_list' ->
       add_field name_info type_ptr [] decl_list'
-  | decl :: decl_list' ->
+  | _ :: decl_list' ->
       get_fields type_ptr_to_sil_type tenv curr_class decl_list'
 
 (* Add potential extra fields defined only in the implementation of the class *)
@@ -110,10 +110,10 @@ let is_ivar_atomic ivar fields =
 let get_property_corresponding_ivar tenv type_ptr_to_sil_type class_name property_decl =
   let open Clang_ast_t in
   match property_decl with
-  | ObjCPropertyDecl (decl_info, named_decl_info, obj_c_property_decl_info) ->
+  | ObjCPropertyDecl (_, named_decl_info, obj_c_property_decl_info) ->
       (let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
        match Ast_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-       | Some ObjCIvarDecl (decl_info, named_decl_info, type_ptr, _, _) ->
+       | Some ObjCIvarDecl (_, named_decl_info, _, _, _) ->
            General_utils.mk_class_field_name named_decl_info
        | _ -> (* Ivar is not known, so add a default one to the tenv *)
            let type_ptr = obj_c_property_decl_info.Clang_ast_t.opdi_type_ptr in
