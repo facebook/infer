@@ -376,11 +376,6 @@ let check_assignement_guard node =
     | Sil.Lvar pv ->
         Errdesc.pvar_is_cil_tmp pv
     | _ -> false in
-  let is_edg_tmp e =
-    match e with
-    | Sil.Lvar pv ->
-        Errdesc.pvar_is_edg_tmp pv
-    | _ -> false in
   let succs = Cfg.Node.get_succs node in
   let l_node = Cfg.Node.get_last_loc node in
   (* e is prune if in all successors prune nodes we have for some temp n$1: *)
@@ -436,7 +431,7 @@ let check_assignement_guard node =
              instr in
          (match set_instr_at_succs_loc with
           | [Sil.Set(e, _, _, _)] -> (* we now check if e is the same expression used to prune*)
-              if (is_prune_exp e) && not ((node_contains_call node) && (is_cil_tmp e)) && not (is_edg_tmp e) then (
+              if (is_prune_exp e) && not ((node_contains_call node) && (is_cil_tmp e)) then (
                 let desc = Errdesc.explain_condition_is_assignment l_node in
                 let exn = Exceptions.Condition_is_assignment (desc, __POS__) in
                 let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
