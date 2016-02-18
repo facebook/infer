@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "infer"
-version: "0.4.0"
+version: "0.7.0"
 maintainer: "opam-devel@lists.ocaml.org"
 authors: "Facebook"
 homepage: "https://github.com/facebook/infer"
@@ -13,6 +13,7 @@ build: [
 ]
 install: []
 remove: []
+ocaml-version: [ >= "4.02.1" ]
 depends: [
   "ocamlfind" {build}
   "sawja" {>="1.5.1"}
