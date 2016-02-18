@@ -94,13 +94,24 @@ let print_usage_exit () =
 let () =
   Utils.Arg.parse arg_desc (fun _ -> ()) usage
 
+let buffer_len = 16384
+
 (* This function reads the json file in fname, validates it, and encoded in the AST data structure*)
 (* defined in Clang_ast_t.  *)
 let validate_decl_from_file fname =
-  Ag_util.Biniou.from_file Clang_ast_b.read_decl fname
+  try 
+    Ag_util.Biniou.from_file ~len:buffer_len Clang_ast_b.read_decl fname
+  with (Invalid_argument "Bi_inbuf.refill_from_channel") ->
+    Printing.log_stats "WARNING: biniou buffer too short, skipping the file\n";
+    assert false
 
 let validate_decl_from_stdin () =
-  Ag_util.Biniou.from_channel Clang_ast_b.read_decl stdin
+  try 
+    Ag_util.Biniou.from_channel ~len:buffer_len Clang_ast_b.read_decl stdin
+  with (Invalid_argument "Bi_inbuf.refill_from_channel") ->
+    Printing.log_stats "WARNING: biniou buffer too short, skipping the file\n";
+    assert false
+  
 
 let do_run source_path ast_path =
   try
