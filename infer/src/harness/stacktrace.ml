@@ -88,6 +88,8 @@ let pp_str_frame fmt = function
   | Unresolved f ->
       F.fprintf fmt "UNRESOLVED: %s %s %s %d" f.class_str f.method_str f.file_str f.line_num
 
+(*
 let rec pp_str_stack_trace fmt = function
   | [] -> ()
   | frame :: rest -> F.fprintf fmt "%a;@\n%a" pp_str_frame frame pp_str_stack_trace rest
+*)

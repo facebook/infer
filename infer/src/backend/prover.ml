@@ -193,20 +193,8 @@ module Inequalities : sig
   (** type for inequalities (and implied disequalities) *)
   type t
 
-  (** Extract inequalities and disequalities from [pi] *)
-  val from_pi : Sil.atom list -> t
-
-  (** Extract inequalities and disequalities from [sigma] *)
-  val from_sigma : Sil.hpred list -> t
-
   (** Extract inequalities and disequalities from [prop] *)
   val from_prop : Prop.normal Prop.t -> t
-
-  (** Join two sets of inequalities *)
-  val join : t -> t -> t
-
-  (** Pretty print inequalities and disequalities *)
-  val pp : printenv -> Format.formatter -> t -> unit
 
   (** Check [t |- e1!=e2]. Result [false] means "don't know". *)
   val check_ne : t -> Sil.exp -> Sil.exp -> bool
@@ -226,6 +214,19 @@ module Inequalities : sig
   (** Return [true] if a simple inconsistency is detected *)
   val inconsistent : t -> bool
 
+(*
+  (** Extract inequalities and disequalities from [pi] *)
+  val from_pi : Sil.atom list -> t
+
+  (** Extract inequalities and disequalities from [sigma] *)
+  val from_sigma : Sil.hpred list -> t
+
+  (** Join two sets of inequalities *)
+  val join : t -> t -> t
+
+  (** Pretty print inequalities and disequalities *)
+  val pp : printenv -> Format.formatter -> t -> unit
+
   (** Pretty print <= *)
   val d_leqs : t -> unit
 
@@ -234,6 +235,7 @@ module Inequalities : sig
 
   (** Pretty print <> *)
   val d_neqs : t -> unit
+*)
 end = struct
 
   type t = {
@@ -482,6 +484,7 @@ end = struct
     IList.exists inconsistent_leq leqs ||
     IList.exists inconsistent_lt lts
 
+(*
   (** Pretty print inequalities and disequalities *)
   let pp pe fmt { leqs = leqs; lts = lts; neqs = neqs } =
     let pp_leq fmt (e1, e2) = F.fprintf fmt "%a<=%a" (Sil.pp_exp pe) e1 (Sil.pp_exp pe) e2 in
@@ -500,6 +503,7 @@ end = struct
   let d_neqs { leqs = leqs; lts = lts; neqs = neqs } =
     let elist = IList.map (fun (e1, e2) -> Sil.BinOp(Sil.Ne, e1, e2)) lts in
     Sil.d_exp_list elist
+*)
 end
 (* End of module Inequalities *)
 
@@ -727,11 +731,6 @@ let check_le prop e1 e2 =
   let e1_le_e2 = Sil.BinOp (Sil.Le, e1, e2) in
   check_atom prop (Prop.mk_inequality e1_le_e2)
 
-(** Check [prop |- e1<e2]. Result [false] means "don't know". *)
-let check_lt prop e1 e2 =
-  let e1_lt_e2 = Sil.BinOp (Sil.Lt, e1, e2) in
-  check_atom prop (Prop.mk_inequality e1_lt_e2)
-
 (** Check whether [prop |- allocated(e)]. *)
 let check_allocatedness prop e =
   let n_e = Prop.exp_normalize_prop prop e in
@@ -753,10 +752,6 @@ let check_allocatedness prop e =
 let compute_upper_bound_of_exp p e =
   let ineq = Inequalities.from_prop p in
   Inequalities.compute_upper_bound ineq e
-
-let pair_compare compare1 compare2 (x1, x2) (y1, y2) =
-  let n1 = compare1 x1 y1 in
-  if n1 <> 0 then n1 else compare2 x2 y2
 
 (** Check if two hpreds have the same allocated lhs *)
 let check_inconsistency_two_hpreds prop =
@@ -1352,10 +1347,6 @@ let rec exp_list_imply calc_missing subs l1 l2 = match l1, l2 with
       exp_list_imply calc_missing (exp_imply calc_missing subs e1 e2) l1 l2
   | _ -> assert false
 
-let filter_ptsto_lhs sub e0 = function
-  | Sil.Hpointsto (e, _, _) -> if Sil.exp_equal e0 (Sil.exp_sub sub e) then Some () else None
-  | _ -> None
-
 let filter_ne_lhs sub e0 = function
   | Sil.Hpointsto (e, _, _) -> if Sil.exp_equal e0 (Sil.exp_sub sub e) then Some () else None
   | Sil.Hlseg (Sil.Lseg_NE, _, e, _, _) -> if Sil.exp_equal e0 (Sil.exp_sub sub e) then Some () else None
@@ -1402,8 +1393,6 @@ let move_primed_lhs_from_front subs sigma = match sigma with
         | [] -> raise (IMPL_EXC ("every hpred has primed lhs, cannot proceed", subs, (EXC_FALSE_SIGMA sigma)))
         | _:: _ -> sigma_unprimed @ sigma_primed
       else sigma
-
-let name_n = Ident.string_to_name "n"
 
 (** [expand_hpred_pointer calc_index_frame hpred] expands [hpred] if it is a |-> whose lhs is a Lfield or Lindex or ptr+off.
     Return [(changed, calc_index_frame', hpred')] where [changed] indicates whether the predicate has changed. *)
@@ -2213,4 +2202,13 @@ let find_minimum_pure_cover cases =
   in try Some (shrink (grow [] cases))
   with NO_COVER -> None
 
+(*
+(** Check [prop |- e1<e2]. Result [false] means "don't know". *)
+let check_lt prop e1 e2 =
+  let e1_lt_e2 = Sil.BinOp (Sil.Lt, e1, e2) in
+  check_atom prop (Prop.mk_inequality e1_lt_e2)
 
+let filter_ptsto_lhs sub e0 = function
+  | Sil.Hpointsto (e, _, _) -> if Sil.exp_equal e0 (Sil.exp_sub sub e) then Some () else None
+  | _ -> None
+*)

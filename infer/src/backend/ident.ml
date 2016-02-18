@@ -294,10 +294,6 @@ let path_ident_stamp = - 3
 let is_path (id: t) =
   id.kind == knormal && id.stamp = path_ident_stamp
 
-let make_ident_primed id =
-  if id.kind == kprimed then assert false
-  else { id with kind = kprimed }
-
 let make_unprimed id =
   if id.kind <> kprimed then assert false
   else { id with kind = knormal }
@@ -359,3 +355,9 @@ let pp_list pe = pp_comma_seq (pp pe)
 
 (** pretty printer for lists of names *)
 let pp_name_list = pp_comma_seq pp_name
+
+(*
+let make_ident_primed id =
+  if id.kind == kprimed then assert false
+  else { id with kind = kprimed }
+*)

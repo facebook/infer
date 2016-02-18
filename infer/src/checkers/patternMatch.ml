@@ -181,9 +181,6 @@ let get_vararg_type_names
 
   IList.rev (type_names call_node)
 
-let has_type_name typ type_name =
-  get_type_name typ = type_name
-
 let has_formal_proc_argument_type_names proc_desc proc_name argument_type_names =
   let formals = Cfg.Procdesc.get_formals proc_desc in
   let equal_formal_arg (_, typ) arg_type_name = get_type_name typ = arg_type_name in

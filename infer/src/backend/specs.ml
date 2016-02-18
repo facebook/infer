@@ -38,10 +38,6 @@ module Jprop = struct
         fav_add_dfs fav jp1;
         fav_add_dfs fav jp2
 
-  let rec jprop_sub sub = function
-    | Prop (n, p) -> Prop (n, Prop.prop_sub sub p)
-    | Joined (n, p, jp1, jp2) -> Joined (n, Prop.prop_sub sub p, jprop_sub sub jp1, jprop_sub sub jp2)
-
   let rec normalize = function
     | Prop (n, p) -> Prop (n, Prop.normalize p)
     | Joined (n, p, jp1, jp2) -> Joined (n, Prop.normalize p, normalize jp1, normalize jp2)
@@ -133,6 +129,13 @@ module Jprop = struct
   let rec map (f : 'a Prop.t -> 'b Prop.t) = function
     | Prop (n, p) -> Prop (n, f p)
     | Joined (n, p, jp1, jp2) -> Joined (n, f p, map f jp1, map f jp2)
+
+(*
+  let rec jprop_sub sub = function
+    | Prop (n, p) -> Prop (n, Prop.prop_sub sub p)
+    | Joined (n, p, jp1, jp2) ->
+        Joined (n, Prop.prop_sub sub p, jprop_sub sub jp1, jprop_sub sub jp2)
+*)
 end
 (***** End of module Jprop *****)
 
@@ -166,14 +169,11 @@ type 'a spec = { pre: 'a Jprop.t; posts: ('a Prop.t * Paths.Path.t) list; visite
 module NormSpec : sig (* encapsulate type for normalized specs *)
   type t
   val normalize : Prop.normal spec -> t
-  val tospec : t -> Prop.normal spec
   val tospecs : t list -> Prop.normal spec list
   val compact : Sil.sharing_env -> t -> t (** Return a compact representation of the spec *)
   val erase_join_info_pre : t -> t (** Erase join info from pre of spec *)
 end = struct
   type t = Prop.normal spec
-
-  let tospec spec = spec
 
   let tospecs specs = specs
 
@@ -273,10 +273,12 @@ module CallStats = struct (** module for tracing stats of function calls *)
       IList.sort compare !elems in
     IList.iter (fun (x, tr) -> f x tr) sorted_elems
 
+(*
   let pp fmt t =
     let do_call (pname, loc) tr =
       F.fprintf fmt "%a %a: %a@\n" Procname.pp pname Location.pp loc pp_trace tr in
     iter do_call t
+*)
 end
 
 (** stats of the calls performed during the analysis *)
@@ -479,14 +481,6 @@ let empty_stats calls in_out_calls_opt =
     call_stats = CallStats.init calls;
   }
 
-let rec post_equal pl1 pl2 = match pl1, pl2 with
-  | [],[] -> true
-  | [], _:: _ -> false
-  | _:: _,[] -> false
-  | p1:: pl1', p2:: pl2' ->
-      if Prop.prop_equal p1 p2 then post_equal pl1' pl2'
-      else false
-
 let payload_compact sh payload =
   match payload.preposts with
   | Some specs ->
@@ -518,9 +512,6 @@ let specs_filename pname =
 (** path to the .specs file for the given procedure in the current results directory *)
 let res_dir_specs_filename pname =
   DB.Results_dir.path_to_filename DB.Results_dir.Abs_root [Config.specs_dir_name; specs_filename pname]
-
-let summary_exists pname =
-  Sys.file_exists (DB.filename_to_string (res_dir_specs_filename pname))
 
 (** paths to the .specs file for the given procedure in the current spec libraries *)
 let specs_library_filenames pname =
@@ -840,3 +831,13 @@ let reset_summary call_graph proc_name attributes_opt =
   )
 
 (* =============== END of support for spec tables =============== *)
+
+(*
+let rec post_equal pl1 pl2 = match pl1, pl2 with
+  | [],[] -> true
+  | [], _:: _ -> false
+  | _:: _,[] -> false
+  | p1:: pl1', p2:: pl2' ->
+      if Prop.prop_equal p1 p2 then post_equal pl1' pl2'
+      else false
+*)

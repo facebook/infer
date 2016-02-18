@@ -2320,8 +2320,6 @@ struct
 
   and get_clang_stmt_trans stmt = fun trans_state -> instruction trans_state stmt
 
-  and empty_trans_fun trans_state = empty_res_trans
-
   (* TODO write translate function for cxx constructor exprs *)
   and get_custom_stmt_trans stmt = match stmt with
     | `ClangStmt stmt -> get_clang_stmt_trans stmt

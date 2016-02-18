@@ -216,10 +216,6 @@ let java_get_class = function
   | Java_method j -> java_type_to_string j.class_name
   | _ -> assert false
 
-(** Return path components of a java class name *)
-let java_get_class_components proc_name =
-  Str.split (Str.regexp (Str.quote ".")) (java_get_class proc_name)
-
 (** Return the class name of a java procedure name. *)
 let java_get_simple_class = function
   | Java_method j -> snd j.class_name
@@ -495,3 +491,9 @@ module Set = Set.Make(struct
 (** Pretty print a set of proc names *)
 let pp_set fmt set =
   Set.iter (fun pname -> F.fprintf fmt "%a " pp pname) set
+
+(*
+(** Return path components of a java class name *)
+let java_get_class_components proc_name =
+  Str.split (Str.regexp (Str.quote ".")) (java_get_class proc_name)
+*)

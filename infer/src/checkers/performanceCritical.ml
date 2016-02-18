@@ -35,10 +35,6 @@ let check_attributes check attributes =
   check ret_annotation
 
 
-let is_performance_critical attributes =
-  check_attributes Annotations.ia_is_performance_critical attributes
-
-
 let is_expensive attributes =
   check_attributes Annotations.ia_is_expensive attributes
 
@@ -318,3 +314,8 @@ let callback_performance_checker { Callbacks.proc_desc; proc_name; get_proc_desc
       check_one_procedure tenv proc_name proc_desc;
       Ondemand.unset_callbacks ()
     end
+
+(*
+let is_performance_critical attributes =
+  check_attributes Annotations.ia_is_performance_critical attributes
+*)

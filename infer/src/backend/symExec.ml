@@ -13,28 +13,9 @@
 module L = Logging
 module F = Format
 
-let rec idlist_assoc id = function
-  | [] -> raise Not_found
-  | (i, x):: l -> if Ident.equal i id then x else idlist_assoc id l
-
 let rec fldlist_assoc fld = function
   | [] -> raise Not_found
   | (fld', x, a):: l -> if Sil.fld_equal fld fld' then x else fldlist_assoc fld l
-
-let rec explist_assoc e = function
-  | [] -> raise Not_found
-  | (e', x):: l -> if Sil.exp_equal e e' then x else explist_assoc e l
-
-let append_list_op list_op1 list_op2 =
-  match list_op1, list_op2 with
-  | None, _ -> list_op2
-  | _, None -> list_op1
-  | Some list1, Some list2 -> Some (list1@list2)
-
-let reverse_list_op list_op =
-  match list_op with
-  | None -> None
-  | Some list -> Some (IList.rev list)
 
 let rec unroll_type tenv typ off =
   match (typ, off) with
@@ -294,19 +275,9 @@ module Builtin = struct
     Procname.Hash.replace builtin_functions proc_name sym_exe_fun;
     proc_name
 
-  (* register a builtin plain function name and symbolic execution handler *)
-  let register_plain proc_name_str (sym_exe_fun: sym_exe_builtin) =
-    let proc_name = Procname.from_string_c_fun proc_name_str in
-    Hashtbl.replace builtin_plain_functions proc_name_str sym_exe_fun;
-    proc_name
-
   (* register a builtin [Procname.t] and symbolic execution handler *)
   let register_procname proc_name (sym_exe_fun: sym_exe_builtin) =
     Procname.Hash.replace builtin_functions proc_name sym_exe_fun
-
-  (* register a builtin plain [Procname.t] and symbolic execution handler *)
-  let register_plain_procname proc_name (sym_exe_fun: sym_exe_builtin) =
-    Hashtbl.replace builtin_plain_functions (Procname.to_string proc_name) sym_exe_fun
 
   (** print the functions registered *)
   let pp_registered fmt () =
@@ -317,6 +288,18 @@ module Builtin = struct
     Format.fprintf fmt "Registered builtins:@\n  @[";
     IList.iter pp !builtin_names;
     Format.fprintf fmt "@]@."
+
+(*
+  (** register a builtin plain function name and symbolic execution handler *)
+  let register_plain proc_name_str (sym_exe_fun: sym_exe_builtin) =
+    let proc_name = Procname.from_string_c_fun proc_name_str in
+    Hashtbl.replace builtin_plain_functions proc_name_str sym_exe_fun;
+    proc_name
+
+  (** register a builtin plain [Procname.t] and symbolic execution handler *)
+  let register_plain_procname proc_name (sym_exe_fun: sym_exe_builtin) =
+    Hashtbl.replace builtin_plain_functions (Procname.to_string proc_name) sym_exe_fun
+*)
 end
 
 (** print the builtin functions and exit *)
@@ -463,25 +446,6 @@ let call_should_be_skipped callee_pname summary =
   || summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
   || (!Config.angelic_execution && Specs.get_specs_from_payload summary == [])
-
-let report_raise_memory_leak tenv msg hpred prop =
-  L.d_strln msg;
-  L.d_increase_indent 1;
-  L.d_strln "PROP:";
-  Prop.d_prop prop; L.d_ln ();
-  L.d_strln "PREDICATE:";
-  Prop.d_sigma [hpred];
-  L.d_decrease_indent 1;
-  L.d_ln ();
-  let footprint_part = false in
-  let resource = match Errdesc.hpred_is_open_resource prop hpred with
-    | Some res -> res
-    | None -> Sil.Rmemory Sil.Mmalloc in
-  raise
-    (Exceptions.Leak
-       (footprint_part, prop, hpred,
-        Errdesc.explain_leak tenv hpred prop None None, false,
-        resource, __POS__))
 
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
@@ -2654,3 +2618,43 @@ module ModelBuiltins = struct
 
 end
 (* ============== END of ModelBuiltins ============== *)
+
+(*
+let rec idlist_assoc id = function
+  | [] -> raise Not_found
+  | (i, x):: l -> if Ident.equal i id then x else idlist_assoc id l
+
+let rec explist_assoc e = function
+  | [] -> raise Not_found
+  | (e', x):: l -> if Sil.exp_equal e e' then x else explist_assoc e l
+
+let append_list_op list_op1 list_op2 =
+  match list_op1, list_op2 with
+  | None, _ -> list_op2
+  | _, None -> list_op1
+  | Some list1, Some list2 -> Some (list1@list2)
+
+let reverse_list_op list_op =
+  match list_op with
+  | None -> None
+  | Some list -> Some (IList.rev list)
+
+let report_raise_memory_leak tenv msg hpred prop =
+  L.d_strln msg;
+  L.d_increase_indent 1;
+  L.d_strln "PROP:";
+  Prop.d_prop prop; L.d_ln ();
+  L.d_strln "PREDICATE:";
+  Prop.d_sigma [hpred];
+  L.d_decrease_indent 1;
+  L.d_ln ();
+  let footprint_part = false in
+  let resource = match Errdesc.hpred_is_open_resource prop hpred with
+    | Some res -> res
+    | None -> Sil.Rmemory Sil.Mmalloc in
+  raise
+    (Exceptions.Leak
+       (footprint_part, prop, hpred,
+        Errdesc.explain_leak tenv hpred prop None None, false,
+        resource, __POS__))
+*)

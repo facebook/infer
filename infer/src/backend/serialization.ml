@@ -26,13 +26,6 @@ let tenv_key, summary_key, cfg_key, trace_key, cg_key,
 (** version of the binary files, to be incremented for each change *)
 let version = 24
 
-(** Generate random keys, to be used in an ocaml toplevel *)
-let generate_keys () =
-  Random.self_init ();
-  let max_rand_int = 0x3FFFFFFF (* determined by Rand library *) in
-  let gen () = Random.int max_rand_int in
-  gen (), gen (), gen (), gen (), gen (), gen ()
-
 
 (** Retry the function while an exception filtered is thrown,
     or until the timeout in seconds expires. *)
@@ -103,3 +96,12 @@ let from_file (serializer : 'a serializer) =
 
 let to_file (serializer : 'a serializer) =
   let (_, _, s) = serializer in s
+
+(*
+(** Generate random keys, to be used in an ocaml toplevel *)
+let generate_keys () =
+  Random.self_init ();
+  let max_rand_int = 0x3FFFFFFF (* determined by Rand library *) in
+  let gen () = Random.int max_rand_int in
+  gen (), gen (), gen (), gen (), gen (), gen ()
+*)

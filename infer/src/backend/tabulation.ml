@@ -120,20 +120,6 @@ let spec_find_rename trace_call (proc_name : Procname.t) : (int * Prop.exposed S
                (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
     end
 
-let check_splitting_precondition sub1 sub2 =
-  let dom1 = Sil.sub_domain sub1 in
-  let rng1 = Sil.sub_range sub1 in
-  let dom2 = Sil.sub_domain sub2 in
-  let rng2 = Sil.sub_range sub2 in
-  let overlap = IList.exists (fun id -> IList.exists (Ident.equal id) dom1) dom2 in
-  if overlap then begin
-    L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom1); L.d_ln ();
-    L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
-    L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom2); L.d_ln ();
-    L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
-    assert false
-  end
-
 (** Process a splitting coming straight from a call to the prover:
     change the instantiating substitution so that it returns primed vars,
     except for vars occurring in the missing part, where it returns
@@ -1046,14 +1032,6 @@ let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
   else (** add pure fact to footprint *)
     Prop.normalize (Prop.replace_pi_footprint (Prop.get_pi_footprint p @ new_footprint_atoms) p)
 
-(** check whether 0|->- occurs in sigma *)
-let sigma_has_null_pointer sigma =
-  let hpred_null_pointer = function
-    | Sil.Hpointsto (e, _, _) ->
-        Sil.exp_equal e Sil.exp_zero
-    | _ -> false in
-  IList.exists hpred_null_pointer sigma
-
 (** post-process the raw result of a function call *)
 let exe_call_postprocess tenv ret_ids trace_call callee_pname loc initial_prop results =
   let filter_valid_res = function
@@ -1194,3 +1172,27 @@ let exe_function_call tenv cfg ret_ids caller_pdesc callee_pname loc actual_para
   let exe_one_spec (n, spec) = exe_spec tenv cfg ret_ids (n, nspecs) caller_pdesc callee_pname loc prop path spec actual_params formal_params in
   let results = IList.map exe_one_spec spec_list in
   exe_call_postprocess tenv ret_ids trace_call callee_pname loc prop results
+
+(*
+let check_splitting_precondition sub1 sub2 =
+  let dom1 = Sil.sub_domain sub1 in
+  let rng1 = Sil.sub_range sub1 in
+  let dom2 = Sil.sub_domain sub2 in
+  let rng2 = Sil.sub_range sub2 in
+  let overlap = IList.exists (fun id -> IList.exists (Ident.equal id) dom1) dom2 in
+  if overlap then begin
+    L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom1); L.d_ln ();
+    L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
+    L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Sil.Var id) dom2); L.d_ln ();
+    L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
+    assert false
+  end
+
+(** check whether 0|->- occurs in sigma *)
+let sigma_has_null_pointer sigma =
+  let hpred_null_pointer = function
+    | Sil.Hpointsto (e, _, _) ->
+        Sil.exp_equal e Sil.exp_zero
+    | _ -> false in
+  IList.exists hpred_null_pointer sigma
+*)

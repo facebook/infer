@@ -147,9 +147,6 @@ module Node : sig
   (** Add the instructions and temporaries at the beginning of the list of instructions to execute *)
   val prepend_instrs_temps : t -> Sil.instr list -> Ident.t list -> unit
 
-  (** Replace the instructions to be executed. *)
-  val replace_instrs : t -> Sil.instr list -> unit
-
   (** Add declarations for local variables and return variable to the node *)
   val add_locals_ret_declaration : t -> (Mangled.t * Sil.typ) list -> unit
 
@@ -259,6 +256,10 @@ module Node : sig
 
   (** Set the temporary variables *)
   val set_temps : t -> Ident.t list -> unit
+(*
+  (** Replace the instructions to be executed. *)
+  val replace_instrs : t -> Sil.instr list -> unit
+*)
 end
 
 (** Hash table with nodes as keys. *)

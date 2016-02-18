@@ -13,10 +13,6 @@
 module L = Logging
 module F = Format
 
-let pp_nodeset fmt set =
-  let f node = F.fprintf fmt "%a@ " Procname.pp node in
-  Procname.Set.iter f set
-
 type node = Procname.t
 
 type in_out_calls =
@@ -189,10 +185,6 @@ let get_nodes (g: t) =
   node_map_iter f g;
   !nodes
 
-let map_option f l =
-  let lo = IList.filter (function | Some _ -> true | None -> false) (IList.map f l) in
-  IList.map (function Some p -> p | None -> assert false) lo
-
 let compute_calls g node =
   { in_calls = Procname.Set.cardinal (get_ancestors g node);
     out_calls = Procname.Set.cardinal (get_heirs g node) }
@@ -235,10 +227,6 @@ let get_defined_children (g: t) n =
 (** Return the parents of [n] *)
 let get_parents (g: t) n =
   (Procname.Hash.find g.node_map n).parents
-
-(** Return true if [n] is recursive *)
-let is_recursive (g: t) n =
-  Procname.Set.mem n (get_ancestors g n)
 
 (** [call_recursively source dest] returns [true] if function [source] recursively calls function [dest] *)
 let calls_recursively (g: t) source dest =
@@ -379,3 +367,17 @@ let save_call_graph_dotty fname_opt get_specs (g: t) =
   let fmt = F.formatter_of_out_channel outc in
   pp_graph_dotty get_specs g fmt;
   close_out outc
+
+(*
+let pp_nodeset fmt set =
+  let f node = F.fprintf fmt "%a@ " Procname.pp node in
+  Procname.Set.iter f set
+
+let map_option f l =
+  let lo = IList.filter (function | Some _ -> true | None -> false) (IList.map f l) in
+  IList.map (function Some p -> p | None -> assert false) lo
+
+(** Return true if [n] is recursive *)
+let is_recursive (g: t) n =
+  Procname.Set.mem n (get_ancestors g n)
+*)

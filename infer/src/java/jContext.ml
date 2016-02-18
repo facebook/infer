@@ -88,8 +88,6 @@ let get_or_set_pvar_type context var typ =
     set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
     (pvar, typ)
 
-let lookup_pvar_type context var typ = (get_or_set_pvar_type context var typ)
-
 let set_pvar context var typ = fst (get_or_set_pvar_type context var typ)
 
 let reset_pvar_type context =

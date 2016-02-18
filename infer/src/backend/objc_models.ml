@@ -230,10 +230,6 @@ struct
   let function_arg_is_cftype typ =
     (string_contains cf_type typ)
 
-  let function_arg_is_core_pgraphics typ =
-    let res = (string_contains cf_type typ) in
-    res
-
   let is_core_lib_retain typ funct =
     function_arg_is_cftype typ && funct = cf_retain
 
@@ -247,6 +243,11 @@ struct
       (string_contains (cg_typ^ref) typ)
     with Not_found -> false
 
+(*
+  let function_arg_is_core_pgraphics typ =
+    let res = (string_contains cf_type typ) in
+    res
+*)
 end
 
 let is_core_lib_type typ =

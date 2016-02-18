@@ -12,22 +12,10 @@
 open CFrontend_utils
 module L = Logging
 
-let get_type_from_expr_info ei =
-  ei.Clang_ast_t.ei_type_ptr
-
 let get_name_from_struct s =
   match s with
   | Sil.Tstruct { Sil.struct_name = Some n } -> n
   | _ -> assert false
-
-let rec get_type_list nn ll =
-  match ll with
-  | [] -> []
-  | (n, t):: ll' -> (* Printing.log_out ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
-      if n = nn then (
-        Printing.log_out ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@." (Sil.typ_to_string t);
-        [t]
-      ) else get_type_list nn ll'
 
 let add_pointer_to_typ typ =
   Sil.Tptr(typ, Sil.Pk_pointer)
@@ -128,3 +116,15 @@ let get_name_from_type_pointer custom_type_pointer =
   match Str.split (Str.regexp "*") custom_type_pointer with
   | [pointer_type_info; class_name] -> pointer_type_info, class_name
   | _ -> assert false
+
+(*
+let rec get_type_list nn ll =
+  match ll with
+  | [] -> []
+  | (n, t):: ll' -> (* Printing.log_out ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
+      if n = nn then (
+        Printing.log_out ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
+          (Sil.typ_to_string t);
+        [t]
+      ) else get_type_list nn ll'
+*)

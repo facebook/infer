@@ -174,11 +174,6 @@ let get_constant (c : JBir.const) =
   | `Long i64 -> Sil.Cint (Sil.Int.of_int64 i64)
   | `String jstr -> Sil.Cstr (JBasics.jstr_pp jstr)
 
-let static_field_name cn fs =
-  let classname = JBasics.cn_name cn in
-  let fieldname = JBasics.fs_name fs in
-  Mangled.from_string (classname^"."^fieldname)
-
 let get_binop binop =
   match binop with
   | JBir.Add _ -> Sil.PlusA
@@ -1133,3 +1128,10 @@ let rec instruction context pc instr : translation =
   with Frontend_error s ->
     JUtils.log "Skipping because of: %s@." s;
     Skip
+
+(*
+let static_field_name cn fs =
+  let classname = JBasics.cn_name cn in
+  let fieldname = JBasics.fs_name fs in
+  Mangled.from_string (classname^"."^fieldname)
+*)

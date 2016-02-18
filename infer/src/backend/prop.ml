@@ -20,8 +20,6 @@ type struct_init_mode =
   | No_init
   | Fld_init
 
-let cil_exp_compare (e1: Sil.exp) (e2: Sil.exp) = Pervasives.compare e1 e2
-
 let unSome = function
   | Some x -> x
   | _ -> assert false
@@ -106,10 +104,6 @@ let pp_footprint _pe f fp =
       F.fprintf f "%a ;@\n" (pp_semicolon_seq_oneline pe (Sil.pp_atom pe)) fp.foot_pi in
   if fp.foot_pi != [] || fp.foot_sigma != [] then
     F.fprintf f "@\n[footprint@\n  @[%a%a@]  ]" pp_pi () (pp_semicolon_seq pe (Sil.pp_hpred pe)) fp.foot_sigma
-
-let pp_lseg_kind f = function
-  | Sil.Lseg_NE -> F.fprintf f "ne"
-  | Sil.Lseg_PE -> F.fprintf f ""
 
 let pp_texp_simple pe = match pe.pe_opt with
   | PP_SIM_DEFAULT -> Sil.pp_texp pe
@@ -397,24 +391,6 @@ let prop_fpv prop =
   (pi_fpv prop.foot_pi) @
   (sigma_fpv prop.foot_sigma) @
   (sigma_fpv prop.sigma)
-
-(** {1 Functions for computing free or bound non-program variables} *)
-
-let pi_av_add fav pi =
-  IList.iter (Sil.atom_av_add fav) pi
-
-let sigma_av_add fav sigma =
-  IList.iter (Sil.hpred_av_add fav) sigma
-
-let prop_av_add fav prop =
-  Sil.sub_av_add fav prop.sub;
-  pi_av_add fav prop.pi;
-  sigma_av_add fav prop.sigma;
-  pi_av_add fav prop.foot_pi;
-  sigma_av_add fav prop.foot_sigma
-
-let prop_av =
-  Sil.fav_imperative_to_functional prop_av_add
 
 (** {2 Functions for Subsitition} *)
 
@@ -1070,14 +1046,6 @@ let atom_negate = function
   | Sil.Aeq (e1, e2) -> Sil.Aneq (e1, e2)
   | Sil.Aneq (e1, e2) -> Sil.Aeq (e1, e2)
 
-let rec remove_duplicates_from_sorted special_equal = function
-  | [] -> []
-  | [x] -> [x]
-  | x:: y:: l ->
-      if (special_equal x y)
-      then remove_duplicates_from_sorted special_equal (y:: l)
-      else x:: (remove_duplicates_from_sorted special_equal (y:: l))
-
 let rec strexp_normalize sub se =
   match se with
   | Sil.Eexp (e, inst) ->
@@ -1443,12 +1411,6 @@ let replace_pi pi eprop =
 let replace_sigma sigma eprop =
   { eprop with sigma = sigma }
 
-exception No_Footprint
-
-let unSome_footprint = function
-  | None -> raise No_Footprint
-  | Some fp -> fp
-
 let replace_sigma_footprint sigma (prop : 'a t) : exposed t =
   { prop with foot_sigma = sigma }
 
@@ -1472,11 +1434,6 @@ let prop_is_emp p = match p.sigma with
 
 (** {2 Functions for changing and generating propositions} *)
 
-(** Replace the sub part of [prop]. *)
-let prop_replace_sub sub p =
-  let nsub = sub_normalize sub in
-  { p with sub = nsub }
-
 (** Sil.Construct a disequality. *)
 let mk_neq e1 e2 =
   run_with_abs_val_eq_zero
@@ -1492,10 +1449,6 @@ let mk_eq e1 e2 =
        let ne1 = exp_normalize Sil.sub_empty e1 in
        let ne2 = exp_normalize Sil.sub_empty e2 in
        atom_normalize Sil.sub_empty (Sil.Aeq (ne1, ne2)))
-
-let unstructured_type = function
-  | Sil.Tstruct _ | Sil.Tarray _ -> false
-  | _ -> true
 
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
@@ -2226,11 +2179,6 @@ let prop_rename_array_indices prop =
     apply_reindexing subst prop
   end
 
-let rec pp_ren pe f = function
-  | [] -> ()
-  | [(i, x)] -> F.fprintf f "%a->%a" (Ident.pp pe) i (Ident.pp pe) x
-  | (i, x):: ren -> F.fprintf f "%a->%a, %a" (Ident.pp pe) i (Ident.pp pe) x (pp_ren pe) ren
-
 let compute_renaming fav =
   let ids = Sil.fav_to_list fav in
   let ids_primed, ids_nonprimed = IList.partition Ident.is_primed ids in
@@ -2405,11 +2353,6 @@ let prop_rename_primed_footprint_vars p =
 
 let mem_idlist i l =
   IList.exists (fun id -> Ident.equal i id) l
-
-let id_exp_compare (id1, e1) (id2, e2) =
-  let n = Sil.exp_compare e1 e2 in
-  if n <> 0 then n
-  else Ident.compare id1 id2
 
 let expose (p : normal t) : exposed t = Obj.magic p
 
@@ -2771,11 +2714,6 @@ let prop_case_split prop =
     (IList.fold_left prop_atom_and prop' pi):: props_acc in
   IList.fold_left f [] pi_sigma_list
 
-(** Raise an exception if the prop is not normalized *)
-let check_prop_normalized prop =
-  let sigma' = sigma_normalize_prop prop prop.sigma in
-  if sigma_equal prop.sigma sigma' == false then assert false
-
 let prop_expand prop =
   (*
   let _ = check_prop_normalized prop in
@@ -2885,7 +2823,21 @@ end = struct
 
   let pi_size pi = pi_weight * IList.length pi
 
+  (** Compute a size value for the prop, which indicates its
+      complexity *)
+  let prop_size p =
+    let size_current = sigma_size p.sigma in
+    let size_footprint = sigma_size p.foot_sigma in
+    max size_current size_footprint
 
+  (** Approximate the size of the longest chain by counting the max
+      number of |-> with the same type and whose lhs is primed or
+      footprint *)
+  let prop_chain_size p =
+    let fp_size = pi_size p.foot_pi + sigma_size p.foot_sigma in
+    pi_size p.pi + sigma_size p.sigma + fp_size
+
+(*
   (** Approximate the size of the longest chain by counting the max
       number of |-> with the same type and whose lhs is primed or
       footprint *)
@@ -2908,20 +2860,7 @@ end = struct
     let size = ref 0 in
     Sil.ExpMap.iter (fun t n -> size := max n !size) !tbl;
     !size
-
-  (** Compute a size value for the prop, which indicates its
-      complexity *)
-  let prop_size p =
-    let size_current = sigma_size p.sigma in
-    let size_footprint = sigma_size p.foot_sigma in
-    max size_current size_footprint
-
-  (** Approximate the size of the longest chain by counting the max
-      number of |-> with the same type and whose lhs is primed or
-      footprint *)
-  let prop_chain_size p =
-    let fp_size = pi_size p.foot_pi + sigma_size p.foot_sigma in
-    pi_size p.pi + sigma_size p.sigma + fp_size
+*)
 end
 (*** END of module Metrics ***)
 
@@ -2976,3 +2915,57 @@ module CategorizePreconditions = struct
     | _:: _, [], [] ->
         DataConstraints
 end
+
+(*
+let pp_lseg_kind f = function
+  | Sil.Lseg_NE -> F.fprintf f "ne"
+  | Sil.Lseg_PE -> F.fprintf f ""
+
+let pi_av_add fav pi =
+  IList.iter (Sil.atom_av_add fav) pi
+
+let sigma_av_add fav sigma =
+  IList.iter (Sil.hpred_av_add fav) sigma
+
+let prop_av_add fav prop =
+  Sil.sub_av_add fav prop.sub;
+  pi_av_add fav prop.pi;
+  sigma_av_add fav prop.sigma;
+  pi_av_add fav prop.foot_pi;
+  sigma_av_add fav prop.foot_sigma
+
+let prop_av =
+  Sil.fav_imperative_to_functional prop_av_add
+
+let rec remove_duplicates_from_sorted special_equal = function
+  | [] -> []
+  | [x] -> [x]
+  | x:: y:: l ->
+      if (special_equal x y)
+      then remove_duplicates_from_sorted special_equal (y:: l)
+      else x:: (remove_duplicates_from_sorted special_equal (y:: l))
+
+(** Replace the sub part of [prop]. *)
+let prop_replace_sub sub p =
+  let nsub = sub_normalize sub in
+  { p with sub = nsub }
+
+let unstructured_type = function
+  | Sil.Tstruct _ | Sil.Tarray _ -> false
+  | _ -> true
+
+let rec pp_ren pe f = function
+  | [] -> ()
+  | [(i, x)] -> F.fprintf f "%a->%a" (Ident.pp pe) i (Ident.pp pe) x
+  | (i, x):: ren -> F.fprintf f "%a->%a, %a" (Ident.pp pe) i (Ident.pp pe) x (pp_ren pe) ren
+
+let id_exp_compare (id1, e1) (id2, e2) =
+  let n = Sil.exp_compare e1 e2 in
+  if n <> 0 then n
+  else Ident.compare id1 id2
+
+(** Raise an exception if the prop is not normalized *)
+let check_prop_normalized prop =
+  let sigma' = sigma_normalize_prop prop prop.sigma in
+  if sigma_equal prop.sigma sigma' == false then assert false
+*)

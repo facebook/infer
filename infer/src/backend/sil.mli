@@ -649,9 +649,6 @@ val int_of_int64_kind : int64 -> ikind -> Int.t
 (** Comparision for ptr_kind *)
 val ptr_kind_compare : ptr_kind -> ptr_kind -> int
 
-(** Equality for consts. *)
-val const_equal : const -> const -> bool
-
 (** Comparision for types. *)
 val typ_compare : typ -> typ -> int
 
@@ -1340,3 +1337,8 @@ val exp_iter_types : (typ -> unit) -> exp -> unit
 val instr_iter_types : (typ -> unit) -> instr -> unit
 
 val custom_error : pvar
+
+(*
+(** Equality for consts. *)
+val const_equal : const -> const -> bool
+*)

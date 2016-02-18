@@ -153,9 +153,6 @@ type origin =
 (** Add the summary to the table for the given function *)
 val add_summary : Procname.t -> summary -> unit
 
-(** Check if a summary for a given procedure exists in the results directory *)
-val summary_exists : Procname.t -> bool
-
 (** Check if a summary for a given procedure exists in the models directory *)
 val summary_exists_in_models : Procname.t -> bool
 

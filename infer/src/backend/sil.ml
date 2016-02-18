@@ -55,10 +55,6 @@ let item_annotation_empty = []
 (** Empty method annotation. *)
 let method_annotation_empty = [], []
 
-(** Check if the item annotation is empty. *)
-let item_annotation_is_empty avl =
-  avl = []
-
 (** Check if the item annodation is empty. *)
 let item_annotation_is_empty ia = ia = []
 
@@ -1502,9 +1498,6 @@ let atom_compare a b =
 let atom_equal x y =
   atom_compare x y = 0
 
-let atom_list_compare l1 l2 =
-  IList.compare atom_compare l1 l2
-
 let lseg_kind_compare k1 k2 = match k1, k2 with
   | Lseg_NE, Lseg_NE -> 0
   | Lseg_NE, Lseg_PE -> - 1
@@ -1619,12 +1612,6 @@ and hpara_dll_compare hp1 hp2 =
 
 let strexp_equal se1 se2 =
   (strexp_compare se1 se2 = 0)
-
-let fld_strexp_equal fld_sexp1 fld_sexp2 =
-  (fld_strexp_compare fld_sexp1 fld_sexp2 = 0)
-
-let exp_strexp_equal ese1 ese2 =
-  (exp_strexp_compare ese1 ese2 = 0)
 
 let hpred_equal hpred1 hpred2 =
   (hpred_compare hpred1 hpred2 = 0)
@@ -2096,9 +2083,6 @@ let d_typ_full (t: typ) = L.add_print_action (L.PTtyp_full, Obj.repr t)
 
 (** dump a list of types. *)
 let d_typ_list (tl: typ list) = L.add_print_action (L.PTtyp_list, Obj.repr tl)
-
-let pp_pair pe f ((fld: Ident.fieldname), (t: typ)) =
-  F.fprintf f "%a %a" (pp_typ pe) t Ident.pp_fieldname fld
 
 (** dump an expression. *)
 let d_exp (e: exp) = L.add_print_action (L.PTexp, Obj.repr e)
@@ -3271,13 +3255,6 @@ let sub_check_duplicated_ids sub =
   let f (id1, _) (id2, _) = Ident.equal id1 id2 in
   sorted_list_check_consecutives f sub
 
-let sub_check_sortedness sub =
-  let sub' = IList.sort ident_exp_compare sub in
-  sub_equal sub sub'
-
-let sub_check_inv sub =
-  (sub_check_sortedness sub) && not (sub_check_duplicated_ids sub)
-
 (** Create a substitution from a list of pairs.
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. *)
@@ -3336,8 +3313,6 @@ let sub_symmetric_difference sub1_in sub2_in =
   diff [] [] [] sub1_in sub2_in
 
 module Typtbl = Hashtbl.Make (struct type t = typ let equal = typ_equal let hash = Hashtbl.hash end)
-
-let typ_update_memo = Typtbl.create 17
 
 (** [sub_find filter sub] returns the expression associated to the first identifier that satisfies [filter]. Raise [Not_found] if there isn't one. *)
 let sub_find filter (sub: subst) =
@@ -3687,19 +3662,11 @@ let instr_compare_structural instr1 instr2 exp_map =
 let atom_sub subst =
   atom_expmap (exp_sub subst)
 
-let range_sub subst range =
-  let lower, upper = range in
-  let lower' = exp_sub subst lower in
-  let upper' = exp_sub subst upper in
-  (lower', upper')
-
 let hpred_sub subst =
   let f (e, inst_opt) = (exp_sub subst e, inst_opt) in
   hpred_expmap f
 
 let hpara_sub subst para = para
-
-let hpara_dll_sub subst para = para
 
 (** {2 Functions for replacing occurrences of expressions.} *)
 
@@ -3708,9 +3675,6 @@ let exp_replace_exp epairs e =
     let (_, e') = IList.find (fun (e1, _) -> exp_equal e e1) epairs in
     e'
   with Not_found -> e
-
-let exp_list_replace_exp epairs l =
-  IList.map (exp_replace_exp epairs) l
 
 let atom_replace_exp epairs = function
   | Aeq (e1, e2) ->
@@ -3991,17 +3955,52 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   let subst = sub_of_list ((para.cell, cell):: (para.blink, blink):: (para.flink, flink):: subst_for_svars@subst_for_evars) in
   (ids_evars, IList.map (hpred_sub subst) para.body_dll)
 
-(** Return the list of expressions that could be understood as outgoing arrows from the strexp *)
-let rec strexp_get_target_exps = function
-  | Eexp (e, inst) -> [e]
-  | Estruct (fsel, inst) -> IList.flatten (IList.map (fun (_, se) -> strexp_get_target_exps se) fsel)
-  | Earray (_, esel, _) ->
-      (* We ignore size and indices since they are not quite outgoing arrows. *)
-      IList.flatten (IList.map (fun (_, se) -> strexp_get_target_exps se) esel)
-
 let custom_error =
   mk_pvar_global (Mangled.from_string "INFER_CUSTOM_ERROR")
 
 (* A block pvar used to explain retain cycles *)
 let block_pvar =
   mk_pvar (Mangled.from_string "block") (Procname.from_string_c_fun "")
+
+(*
+(** Check if the item annotation is empty. *)
+let item_annotation_is_empty avl =
+  avl = []
+
+let atom_list_compare l1 l2 =
+  IList.compare atom_compare l1 l2
+
+let fld_strexp_equal fld_sexp1 fld_sexp2 =
+  (fld_strexp_compare fld_sexp1 fld_sexp2 = 0)
+
+let exp_strexp_equal ese1 ese2 =
+  (exp_strexp_compare ese1 ese2 = 0)
+
+let pp_pair pe f ((fld: Ident.fieldname), (t: typ)) =
+  F.fprintf f "%a %a" (pp_typ pe) t Ident.pp_fieldname fld
+
+let sub_check_sortedness sub =
+  let sub' = IList.sort ident_exp_compare sub in
+  sub_equal sub sub'
+
+let sub_check_inv sub =
+  (sub_check_sortedness sub) && not (sub_check_duplicated_ids sub)
+
+let range_sub subst range =
+  let lower, upper = range in
+  let lower' = exp_sub subst lower in
+  let upper' = exp_sub subst upper in
+  (lower', upper')
+
+let exp_list_replace_exp epairs l =
+  IList.map (exp_replace_exp epairs) l
+
+(** Return the list of expressions that could be understood as outgoing arrows from the strexp *)
+let rec strexp_get_target_exps = function
+  | Eexp (e, inst) -> [e]
+  | Estruct (fsel, inst) ->
+      IList.flatten (IList.map (fun (_, se) -> strexp_get_target_exps se) fsel)
+  | Earray (_, esel, _) ->
+      (* We ignore size and indices since they are not quite outgoing arrows. *)
+      IList.flatten (IList.map (fun (_, se) -> strexp_get_target_exps se) esel)
+*)

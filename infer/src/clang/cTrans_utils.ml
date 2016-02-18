@@ -464,12 +464,6 @@ let is_superinstance mei =
 let get_selector_receiver obj_c_message_expr_info =
   obj_c_message_expr_info.Clang_ast_t.omei_selector, obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind
 
-(* Similar to extract_item_from_singleton but for option type *)
-let extract_item_from_option op warning_string =
-  match op with
-  | Some item -> item
-  | _ -> Printing.log_err warning_string; assert false
-
 let is_member_exp stmt =
   match stmt with
   | Clang_ast_t.MemberExpr _ -> true
@@ -490,14 +484,8 @@ let is_null_stmt s =
   | Clang_ast_t.NullStmt _ -> true
   | _ -> false
 
-let dummy_id () =
-  Ident.create_normal (Ident.string_to_name "DUMMY_ID_INFER") 0
-
 let extract_stmt_from_singleton stmt_list warning_string =
   extract_item_from_singleton stmt_list warning_string (Ast_expressions.dummy_stmt ())
-
-let extract_id_from_singleton id_list warning_string =
-  extract_item_from_singleton id_list warning_string (dummy_id ())
 
 let rec get_type_from_exp_stmt stmt =
   let do_decl_ref_exp i =
@@ -646,10 +634,21 @@ let is_dispatch_function stmt_list =
             | _ -> None))
   | _ -> None
 
+let is_block_enumerate_function mei =
+  mei.Clang_ast_t.omei_selector = CFrontend_config.enumerateObjectsUsingBlock
+
+(*
+(** Similar to extract_item_from_singleton but for option type *)
+let extract_item_from_option op warning_string =
+  match op with
+  | Some item -> item
+  | _ -> Printing.log_err warning_string; assert false
+
+let extract_id_from_singleton id_list warning_string =
+  extract_item_from_singleton id_list warning_string (dummy_id ())
+
 let get_decl_pointer decl_ref_expr_info =
   match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
   | Some decl_ref -> decl_ref.Clang_ast_t.dr_decl_pointer
   | None -> assert false
-
-let is_block_enumerate_function mei =
-  mei.Clang_ast_t.omei_selector = CFrontend_config.enumerateObjectsUsingBlock
+*)

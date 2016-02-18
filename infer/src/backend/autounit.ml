@@ -350,7 +350,7 @@ module Code : sig
   val empty : unit -> t
   val pp : F.formatter -> t -> unit
   val set_indent : string -> unit
-  val to_list : t -> string list
+  (* val to_list : t -> string list *)
 end = struct
   type t = string list ref
   let indent = ref ""

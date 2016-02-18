@@ -115,7 +115,6 @@ struct
 
     let module DFTypeCheck = MakeDF(struct
         type t = Extension.extension TypeState.t
-        let initial = TypeState.empty Extension.ext
         let equal = TypeState.equal
         let join = TypeState.join Extension.ext
         let do_node node typestate =

@@ -349,12 +349,6 @@ let get_callbacks_registered_by_proc procdesc tenv =
     | _ -> callback_typs in
   Cfg.Procdesc.fold_instrs collect_callback_typs [] procdesc
 
-(** returns true if [procname] is a method that registers a callback *)
-let is_callback_register_method procname args tenv =
-  match get_callback_registered_by procname args tenv with
-  | Some _ -> true
-  | None -> false
-
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
@@ -393,3 +387,11 @@ let is_runtime_exception tenv exn =
 let non_stub_android_jar () =
   let root_dir = Filename.dirname (Filename.dirname Sys.executable_name) in
   IList.fold_left Filename.concat root_dir ["lib"; "java"; "android"; "android-19.jar"]
+
+(*
+(** returns true if [procname] is a method that registers a callback *)
+let is_callback_register_method procname args tenv =
+  match get_callback_registered_by procname args tenv with
+  | Some _ -> true
+  | None -> false
+*)

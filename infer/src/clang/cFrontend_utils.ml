@@ -255,22 +255,6 @@ struct
     | Some name_info -> Some (get_qualified_name name_info)
     | None -> None
 
-  let rec getter_attribute_opt attributes =
-    match attributes with
-    | [] -> None
-    | attr:: rest ->
-        match attr with
-        | `Getter getter -> getter.Clang_ast_t.dr_name
-        | _ -> (getter_attribute_opt rest)
-
-  let rec setter_attribute_opt attributes =
-    match attributes with
-    | [] -> None
-    | attr:: rest ->
-        match attr with
-        | `Setter setter -> setter.Clang_ast_t.dr_name
-        | _ -> (setter_attribute_opt rest)
-
   let pointer_counter = ref 0
 
   let get_fresh_pointer () =
@@ -382,6 +366,23 @@ struct
       ignore (type_ptr_to_sil_type tenv (`DeclPtr dr.Clang_ast_t.dr_decl_pointer)) in
     IList.iter add_elem decl_ref_list
 
+(*
+  let rec getter_attribute_opt attributes =
+    match attributes with
+    | [] -> None
+    | attr:: rest ->
+        match attr with
+        | `Getter getter -> getter.Clang_ast_t.dr_name
+        | _ -> (getter_attribute_opt rest)
+
+  let rec setter_attribute_opt attributes =
+    match attributes with
+    | [] -> None
+    | attr:: rest ->
+        match attr with
+        | `Setter setter -> setter.Clang_ast_t.dr_name
+        | _ -> (setter_attribute_opt rest)
+*)
 end
 
 (* Global counter for anonymous block*)
@@ -416,8 +417,6 @@ struct
     | [] -> ""
     | [item] -> item
     | item:: l' -> item^" "^(string_from_list l')
-
-  let get_fun_body fdecl_info = fdecl_info.Clang_ast_t.fdi_body
 
   let rec append_no_duplicates eq list1 list2 =
     match list2 with

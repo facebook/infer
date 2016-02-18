@@ -431,10 +431,6 @@ let create_procdesc_with_pointer context pointer class_name_opt name tp =
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
-let instance_to_method_call_type instance =
-  if instance then MCVirtual
-  else MCStatic
-
 let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
   let stmt_info = Ast_expressions.make_stmt_info decl_info in
   let source_range = decl_info.Clang_ast_t.di_source_range in
@@ -454,3 +450,9 @@ let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
       Cfg.Node.set_succs_exn start_node [end_node] [];
       Cg.add_defined_node cg proc_name;
       pdesc
+
+(*
+let instance_to_method_call_type instance =
+  if instance then MCVirtual
+  else MCStatic
+*)

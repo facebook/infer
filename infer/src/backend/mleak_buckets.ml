@@ -32,14 +32,6 @@ let bucket_from_string bucket_s =
   | "unknown_origin" -> MLeak_unknown
   | _ -> assert false
 
-let bucket_to_string bucket =
-  match bucket with
-  | MLeak_cf -> "Core Foundation"
-  | MLeak_arc -> "Arc"
-  | MLeak_no_arc -> "No arc"
-  | MLeak_cpp -> "Cpp"
-  | MLeak_unknown -> "Unknown origin"
-
 let bucket_to_message bucket =
   match bucket with
   | MLeak_cf -> "[CF]"
@@ -130,3 +122,13 @@ let should_raise_objc_leak typ =
   else if should_raise_leak_arc () then Some (bucket_to_message MLeak_arc)
   else if should_raise_leak_no_arc () then Some (bucket_to_message MLeak_no_arc)
   else None
+
+(*
+let bucket_to_string bucket =
+  match bucket with
+  | MLeak_cf -> "Core Foundation"
+  | MLeak_arc -> "Arc"
+  | MLeak_no_arc -> "No arc"
+  | MLeak_cpp -> "Cpp"
+  | MLeak_unknown -> "Unknown origin"
+*)

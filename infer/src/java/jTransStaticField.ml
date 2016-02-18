@@ -26,12 +26,6 @@ let sort_pcs () =
   field_final_pcs := (IList.sort Pervasives.compare !field_final_pcs);
   field_nonfinal_pcs := (IList.sort Pervasives.compare !field_nonfinal_pcs)
 
-let is_basic_type fs =
-  let vt = (JBasics.fs_type fs) in
-  match vt with
-  | JBasics.TBasic bt -> true
-  | JBasics.TObject ot -> false
-
 (** Returns whether the node contains static final fields
     that are not of a primitive type or String. *)
 let has_static_final_fields node =
@@ -206,3 +200,11 @@ let is_static_final_field context cn fs =
         let is_final = Javalib.is_final_field f in
         (is_static && is_final)
       with Not_found -> false
+
+(*
+let is_basic_type fs =
+  let vt = (JBasics.fs_type fs) in
+  match vt with
+  | JBasics.TBasic bt -> true
+  | JBasics.TObject ot -> false
+*)

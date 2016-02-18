@@ -14,13 +14,6 @@ module L = Logging
 
 let models_specs_filenames = ref StringSet.empty
 
-let arg_classpath = ref ""
-
-let arg_jarfile = ref ""
-
-let set_jarfile file =
-  arg_jarfile := file
-
 let javac_verbose_out = ref ""
 
 let set_verbose_out path =
@@ -267,12 +260,6 @@ let collect_classes classmap jar_filename =
   classes
 
 
-let classmap_of_classpath classpath =
-  let jar_filenames =
-    IList.filter (fun p -> not (Sys.is_directory p)) (split_classpath classpath) in
-  IList.fold_left collect_classes JBasics.ClassMap.empty jar_filenames
-
-
 let load_program classpath classes =
   JUtils.log "loading program ... %!";
   let models =
@@ -288,3 +275,10 @@ let load_program classpath classes =
     classes;
   JUtils.log "done@.";
   program
+
+(*
+let classmap_of_classpath classpath =
+  let jar_filenames =
+    IList.filter (fun p -> not (Sys.is_directory p)) (split_classpath classpath) in
+  IList.fold_left collect_classes JBasics.ClassMap.empty jar_filenames
+*)

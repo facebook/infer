@@ -128,32 +128,6 @@ struct
     | "Java" -> Config.Java
     | l -> failwith ("Inferconfig JSON key " ^ M.json_key ^ " not supported for language " ^ l)
 
-  let pp_pattern fmt pattern =
-    let pp_string fmt s =
-      Format.fprintf fmt "%s" s in
-    let pp_option pp_value fmt = function
-      | None -> pp_string fmt "None"
-      | Some value -> Format.fprintf fmt "%a" pp_value value in
-    let pp_key_value pp_value fmt (key, value) =
-      Format.fprintf fmt "  %s: %a,\n" key (pp_option pp_value) value in
-    let pp_method_pattern fmt mp =
-      let pp_params fmt l =
-        Format.fprintf fmt "[%a]"
-          (pp_semicolon_seq_oneline pe_text pp_string) l in
-      Format.fprintf fmt "%a%a%a"
-        (pp_key_value pp_string) ("class", Some mp.class_name)
-        (pp_key_value pp_string) ("method", mp.method_name)
-        (pp_key_value pp_params) ("parameters", mp.parameters)
-    and pp_source_contains fmt sc =
-      Format.fprintf fmt "  pattern: %s\n" sc in
-    match pattern with
-    | Method_pattern (language, mp) ->
-        Format.fprintf fmt "Method pattern (%s) {\n%a}\n"
-          (Config.string_of_language language) pp_method_pattern mp
-    | Source_contains (language, sc) ->
-        Format.fprintf fmt "Source contains (%s) {\n%a}\n"
-          (Config.string_of_language language) pp_source_contains sc
-
   let detect_language assoc =
     let rec loop = function
       | [] ->
@@ -267,6 +241,33 @@ struct
         default_matcher
     else default_matcher
 
+(*
+  let pp_pattern fmt pattern =
+    let pp_string fmt s =
+      Format.fprintf fmt "%s" s in
+    let pp_option pp_value fmt = function
+      | None -> pp_string fmt "None"
+      | Some value -> Format.fprintf fmt "%a" pp_value value in
+    let pp_key_value pp_value fmt (key, value) =
+      Format.fprintf fmt "  %s: %a,\n" key (pp_option pp_value) value in
+    let pp_method_pattern fmt mp =
+      let pp_params fmt l =
+        Format.fprintf fmt "[%a]"
+          (pp_semicolon_seq_oneline pe_text pp_string) l in
+      Format.fprintf fmt "%a%a%a"
+        (pp_key_value pp_string) ("class", Some mp.class_name)
+        (pp_key_value pp_string) ("method", mp.method_name)
+        (pp_key_value pp_params) ("parameters", mp.parameters)
+    and pp_source_contains fmt sc =
+      Format.fprintf fmt "  pattern: %s\n" sc in
+    match pattern with
+    | Method_pattern (language, mp) ->
+        Format.fprintf fmt "Method pattern (%s) {\n%a}\n"
+          (Config.string_of_language language) pp_method_pattern mp
+    | Source_contains (language, sc) ->
+        Format.fprintf fmt "Source contains (%s) {\n%a}\n"
+          (Config.string_of_language language) pp_source_contains sc
+*)
 end (* of module FileOrProcMatcher *)
 
 

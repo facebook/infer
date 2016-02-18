@@ -42,16 +42,11 @@ module Path : sig
   (** dump statistics of the path *)
   val d_stats : t -> unit
 
-  (** equality for paths *)
-  val equal : t -> t -> bool
-
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
   val extend : Cfg.node -> Typename.t option -> session -> t -> t
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
   val add_description : t -> string -> t
-
-  val get_description : t -> string option
 
   (** iterate over each node in the path, excluding calls, once *)
   val iter_all_nodes_nocalls : (Cfg.node -> unit) -> t -> unit
@@ -73,6 +68,13 @@ module Path : sig
 
   (** create a new path with given start node *)
   val start : Cfg.node -> t
+
+(*
+  (** equality for paths *)
+  val equal : t -> t -> bool
+
+  val get_description : t -> string option
+*)
 end = struct
   type session = int
   type stats =
@@ -150,9 +152,6 @@ end = struct
       | Pcall(p1, _, sub1, _), Pcall(p2, _, sub2, _) ->
           let n = compare p1 p2 in
           if n <> 0 then n else compare sub1 sub2
-
-  let equal p1 p2 =
-    compare p1 p2 = 0
 
   let start node = Pstart (node, get_dummy_stats ())
 
@@ -508,6 +507,10 @@ end = struct
     IList.remove_irrelevant_duplicates compare relevant (IList.rev !trace)
     (* IList.remove_duplicates compare (IList.sort compare !trace) *)
 
+(*
+  let equal p1 p2 =
+    compare p1 p2 = 0
+*)
 end
 (* =============== END of the Path module ===============*)
 

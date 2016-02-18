@@ -13,8 +13,6 @@
 module L = Logging
 module F = Format
 
-let (++) = Sil.Int.add
-
 let list_product l1 l2 =
   let l1' = IList.rev l1 in
   let l2' = IList.rev l2 in
@@ -26,11 +24,6 @@ let rec list_rev_and_concat l1 l2 =
   match l1 with
   | [] -> l2
   | x1:: l1' -> list_rev_and_concat l1' (x1:: l2)
-
-let pp_off fmt off =
-  IList.iter (fun n -> match n with
-      | Sil.Off_fld (f, t) -> F.fprintf fmt "%a " Ident.pp_fieldname f
-      | Sil.Off_index e -> F.fprintf fmt "%a " (Sil.pp_exp pe_text) e) off
 
 (** Check whether the index is out of bounds.
     If the size is - 1, no check is performed.
@@ -619,10 +612,6 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
   let offsets_default = Sil.exp_get_offsets lexp in
   Prop.prop_iter_set_state iter' offsets_default
 
-let sort_ftl ftl =
-  let compare (f1, _) (f2, _) = Sil.fld_compare f1 f2 in
-  IList.sort compare ftl
-
 exception ARRAY_ACCESS
 
 let rearrange_arith lexp prop =
@@ -643,8 +632,6 @@ let pp_rearrangement_error message prop lexp =
   L.d_strln (".... Rearrangement Error .... " ^ message);
   L.d_str "Exp:"; Sil.d_exp lexp; L.d_ln ();
   L.d_str "Prop:"; L.d_ln (); Prop.d_prop prop; L.d_ln (); L.d_ln ()
-
-let name_n = Ident.string_to_name "n"
 
 (** do re-arrangment for an iter whose current element is a pointsto *)
 let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
@@ -1130,3 +1117,14 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
           raise (Exceptions.Symexec_memory_error __POS__)
         end
   | Some iter -> iter_rearrange pname tenv nlexp typ prop iter inst
+
+(*
+let pp_off fmt off =
+  IList.iter (fun n -> match n with
+      | Sil.Off_fld (f, t) -> F.fprintf fmt "%a " Ident.pp_fieldname f
+      | Sil.Off_index e -> F.fprintf fmt "%a " (Sil.pp_exp pe_text) e) off
+
+let sort_ftl ftl =
+  let compare (f1, _) (f2, _) = Sil.fld_compare f1 f2 in
+  IList.sort compare ftl
+*)

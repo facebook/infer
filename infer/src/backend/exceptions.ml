@@ -82,9 +82,6 @@ exception Use_after_free of Localise.error_desc * ml_loc
 exception Wrong_argument_number of ml_loc
 
 
-let file_line_column_string (file, line, column) =
-  Printf.sprintf "file %s line %d column %d" file line column
-
 (** Turn an exception into a descriptive string, error description, location in ml source, and category *)
 let recognize_exception exn =
   let filter_out_bucket desc =

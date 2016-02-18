@@ -192,7 +192,5 @@ let create_android_harness proc_file_map tenv =
       | None -> ()
     ) AndroidFramework.get_lifecycles
 
-let parse_trace trace = Stacktrace.parse_stack_trace trace
-
 (** Generate a harness method for exe_env and add it to the execution environment *)
 let create_harness proc_file_map tenv = create_android_harness proc_file_map tenv

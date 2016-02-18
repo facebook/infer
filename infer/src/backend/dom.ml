@@ -89,11 +89,6 @@ module EPset = Set.Make
         | _ -> Sil.exp_compare e1' e2'
     end)
 
-let epset_add e e' set =
-  match (Sil.exp_compare e e') with
-  | i when i <= 0 -> EPset.add (e, e') set
-  | _ -> EPset.add (e', e) set
-
 (** {2 Module for maintaining information about noninjectivity during join} *)
 
 module NonInj : sig
@@ -456,9 +451,11 @@ module FreshVarExp : sig
   val init : unit -> unit
   val get_fresh_exp : Sil.exp -> Sil.exp -> Sil.exp
   val get_induced_pi : unit -> Prop.pi
-  val lookup : side -> Sil.exp -> (Sil.exp * Sil.exp) option
   val final : unit -> unit
 
+(*
+  val lookup : side -> Sil.exp -> (Sil.exp * Sil.exp) option
+*)
 end = struct
 
   let t = ref []
@@ -478,13 +475,6 @@ end = struct
       let e = Sil.exp_get_undefined (JoinState.get_footprint ()) in
       t := (e1, e2, e)::!t;
       e
-
-  let lookup side e =
-    try
-      let (e1, e2, e) = IList.find (fun (e1', e2', _) -> Sil.exp_equal e (select side e1' e2')) !t in
-      Some (e, select (opposite side) e1 e2)
-    with Not_found ->
-      None
 
   let get_induced_atom acc strict_lower upper e =
     let ineq_lower = Prop.mk_inequality (Sil.BinOp(Sil.Lt, strict_lower, e)) in
@@ -532,6 +522,15 @@ end = struct
       | _ -> acc in
     IList.fold_left f_ineqs eqs t_minimal
 
+(*
+  let lookup side e =
+    try
+      let (e1, e2, e) =
+        IList.find (fun (e1', e2', _) -> Sil.exp_equal e (select side e1' e2')) !t in
+      Some (e, select (opposite side) e1 e2)
+    with Not_found ->
+      None
+*)
 end
 
 (** {2 Modules for renaming} *)
@@ -547,7 +546,6 @@ module Rename : sig
   val extend : Sil.exp -> Sil.exp -> data_opt -> Sil.exp
   val check : (side -> Sil.exp -> Sil.exp list -> bool) -> bool
 
-  val get : Sil.exp -> Sil.exp -> Sil.exp option
   val get_others : side -> Sil.exp -> (Sil.exp * Sil.exp) option
   val get_other_atoms : side -> Sil.atom -> (Sil.atom * Sil.atom) option
 
@@ -557,14 +555,15 @@ module Rename : sig
 
   val to_subst_proj : side -> Sil.fav -> Sil.subst
   val to_subst_emb : side -> Sil.subst
+(*
+  val get : Sil.exp -> Sil.exp -> Sil.exp option
   val pp : printenv -> Format.formatter -> (Sil.exp * Sil.exp * Sil.exp) list -> unit
-
+*)
 end = struct
 
   type t = (Sil.exp * Sil.exp * Sil.exp) list
 
   let tbl : t ref = ref []
-  let empty = []
 
   let init () = tbl := []
   let final () = tbl := []
@@ -678,12 +677,6 @@ end = struct
     if find_duplicates sub_list_sorted then (L.d_strln "failure reason 12"; raise IList.Fail)
     else Sil.sub_of_list sub_list_sorted
 
-  let get e1 e2 =
-    let f (e1', e2', _) = Sil.exp_equal e1 e1' && Sil.exp_equal e2 e2' in
-    match (IList.filter f !tbl) with
-    | [] -> None
-    | (_, _, e):: _ -> Some e
-
   let get_others' f_lookup side e =
     let side_op = opposite side in
     let r = f_lookup side e in
@@ -786,12 +779,18 @@ end = struct
       push entry;
       Todo.push entry;
       e
+(*
+  let get e1 e2 =
+    let f (e1', e2', _) = Sil.exp_equal e1 e1' && Sil.exp_equal e2 e2' in
+    match (IList.filter f !tbl) with
+    | [] -> None
+    | (_, _, e):: _ -> Some e
 
   let pp pe f renaming =
     let pp_triple f (e1, e2, e3) =
       F.fprintf f "(%a,%a,%a)" (Sil.pp_exp pe) e3 (Sil.pp_exp pe) e1 (Sil.pp_exp pe) e2 in
     (pp_seq pp_triple) f renaming
-
+*)
 end
 
 (** {2 Functions for constructing fresh sil data types} *)
@@ -1044,28 +1043,6 @@ let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
 let exp_list_partial_join = IList.map2 exp_partial_join
 
 let exp_list_partial_meet = IList.map2 exp_partial_meet
-
-let run_without_absval f e1 e2 =
-  let old_abs_val = !Config.abs_val in
-  let new_abs_val = if old_abs_val = 0 then 0 else 1 in
-  try
-    begin
-      Config.abs_val := new_abs_val;
-      let e = f e1 e2 in
-      Config.abs_val := old_abs_val;
-      e
-    end
-  with exn ->
-    begin
-      Config.abs_val := old_abs_val;
-      raise exn
-    end
-
-let exp_partial_join_without_absval e1 e2 =
-  run_without_absval exp_partial_join e1 e2
-
-let exp_partial_meet_without_absval e1 e2 =
-  run_without_absval exp_partial_meet e1 e2
 
 
 (** {2 Join and Meet for Strexp} *)
@@ -2046,3 +2023,32 @@ let propset_meet_generate_pre pset =
     let plist_old = Propset.to_proplist pset in
     let plist_new = Propset.to_proplist pset_new in
     plist_new @ plist_old
+
+(*
+let epset_add e e' set =
+  match (Sil.exp_compare e e') with
+  | i when i <= 0 -> EPset.add (e, e') set
+  | _ -> EPset.add (e', e) set
+
+let run_without_absval f e1 e2 =
+  let old_abs_val = !Config.abs_val in
+  let new_abs_val = if old_abs_val = 0 then 0 else 1 in
+  try
+    begin
+      Config.abs_val := new_abs_val;
+      let e = f e1 e2 in
+      Config.abs_val := old_abs_val;
+      e
+    end
+  with exn ->
+    begin
+      Config.abs_val := old_abs_val;
+      raise exn
+    end
+
+let exp_partial_join_without_absval e1 e2 =
+  run_without_absval exp_partial_join e1 e2
+
+let exp_partial_meet_without_absval e1 e2 =
+  run_without_absval exp_partial_meet e1 e2
+*)

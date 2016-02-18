@@ -101,9 +101,6 @@ let invisible_arrows = ref false
 
 let print_stack_info = ref false
 
-let exp_is_neq_zero e =
-  IList.exists (fun e' -> Sil.exp_equal e e') !exps_neq_zero
-
 (* replace a dollar sign in a name with a D. We need this because dotty get confused if there is*)
 (* a dollar sign i a label*)
 let strip_special_chars s =
@@ -170,19 +167,6 @@ and get_contents pe coo f = function
   | idx_se:: l ->
       F.fprintf f "%a | %a" (get_contents_single pe coo) idx_se (get_contents pe coo) l
 
-and get_contents_range_single pe coo f range_se =
-  let (e1, e2), se = range_se in
-  let e1_no_special_char = strip_special_chars (Sil.exp_to_string e1) in
-  F.fprintf f "{ <%s> [%a,%a] : %a }"
-    e1_no_special_char (Sil.pp_exp pe) e1 (Sil.pp_exp pe) e2 (get_contents_sexp pe coo) se
-
-and get_contents_range pe coo f = function
-  | [] -> ()
-  | [range_se] ->
-      F.fprintf f "%a" (get_contents_range_single pe coo) range_se
-  | range_se:: l ->
-      F.fprintf f "%a | %a" (get_contents_range_single pe coo) range_se (get_contents_range pe coo) l
-
 (* true if node is the sorce node of the expression e*)
 let is_source_node_of_exp e node =
   match node with
@@ -236,29 +220,9 @@ let look_up dotnodes e lambda =
   let r'= IList.map get_coordinate_id r in
   r' @ look_up_for_back_pointer e dotnodes lambda
 
-let pp_nesting fmt nesting =
-  if nesting > 1 then F.fprintf fmt "%d" nesting
-
 let reset_proposition_counter () = proposition_counter:= 0
 
 let reset_dotty_spec_counter () = spec_counter:= 0
-
-let max_map f l =
-  let curr_max = ref 0 in
-  IList.iter (fun x -> curr_max := max !curr_max (f x)) l;
-  ! curr_max
-
-let rec sigma_nesting_level sigma =
-  max_map (function
-      | Sil.Hpointsto _ -> 0
-      | Sil.Hlseg (_, hpara, _, _, _) -> hpara_nesting_level hpara
-      | Sil.Hdllseg (_, hpara_dll, _, _, _, _, _) -> hpara_dll_nesting_level hpara_dll) sigma
-
-and hpara_nesting_level hpara =
-  1 + sigma_nesting_level hpara.Sil.body
-
-and hpara_dll_nesting_level hpara_dll =
-  1 + sigma_nesting_level hpara_dll.Sil.body_dll
 
 let color_to_str c =
   match c with
@@ -373,17 +337,6 @@ let box_dangling e =
   |[] -> None
   | Dotdangling(coo, _, _):: _ -> Some coo.id
   | _ -> None (* NOTE: this cannot be possible since entry_e can be composed only by Dotdangling, see def of entry_e*)
-
-let rec get_color_exp dot_nodes e =
-  match dot_nodes with
-  | [] ->""
-  | Dotnil(_):: l' -> get_color_exp l' e
-  | Dotpointsto(_, e', c):: l'
-  | Dotdangling(_, e', c):: l'
-  | Dotarray(_, _, e', _, _, c):: l'
-  | Dotlseg(_, e', _, _, _, c):: l'
-  | Dotstruct(_, e', _, c, _):: l'
-  | Dotdllseg(_, e', _, _, _, _, _, c):: l' -> if (Sil.exp_equal e e') then c else get_color_exp l' e
 
 (* construct a Dotnil and returns it's id *)
 let make_nil_node lambda =
@@ -1427,3 +1380,54 @@ let print_specs_xml signature specs loc fmt =
        ("line", string_of_int loc.Location.line)]
       [xml_signature; xml_specifications] in
   Io_infer.Xml.pp_document true fmt proc_summary
+
+(*
+let exp_is_neq_zero e =
+  IList.exists (fun e' -> Sil.exp_equal e e') !exps_neq_zero
+
+let rec get_contents_range_single pe coo f range_se =
+  let (e1, e2), se = range_se in
+  let e1_no_special_char = strip_special_chars (Sil.exp_to_string e1) in
+  F.fprintf f "{ <%s> [%a,%a] : %a }"
+    e1_no_special_char (Sil.pp_exp pe) e1 (Sil.pp_exp pe) e2 (get_contents_sexp pe coo) se
+
+and get_contents_range pe coo f = function
+  | [] -> ()
+  | [range_se] ->
+      F.fprintf f "%a" (get_contents_range_single pe coo) range_se
+  | range_se:: l ->
+      F.fprintf f "%a | %a"
+        (get_contents_range_single pe coo) range_se (get_contents_range pe coo) l
+
+let pp_nesting fmt nesting =
+  if nesting > 1 then F.fprintf fmt "%d" nesting
+
+let max_map f l =
+  let curr_max = ref 0 in
+  IList.iter (fun x -> curr_max := max !curr_max (f x)) l;
+  ! curr_max
+
+let rec sigma_nesting_level sigma =
+  max_map (function
+      | Sil.Hpointsto _ -> 0
+      | Sil.Hlseg (_, hpara, _, _, _) -> hpara_nesting_level hpara
+      | Sil.Hdllseg (_, hpara_dll, _, _, _, _, _) -> hpara_dll_nesting_level hpara_dll) sigma
+
+and hpara_nesting_level hpara =
+  1 + sigma_nesting_level hpara.Sil.body
+
+and hpara_dll_nesting_level hpara_dll =
+  1 + sigma_nesting_level hpara_dll.Sil.body_dll
+
+let rec get_color_exp dot_nodes e =
+  match dot_nodes with
+  | [] ->""
+  | Dotnil(_):: l' -> get_color_exp l' e
+  | Dotpointsto(_, e', c):: l'
+  | Dotdangling(_, e', c):: l'
+  | Dotarray(_, _, e', _, _, c):: l'
+  | Dotlseg(_, e', _, _, _, c):: l'
+  | Dotstruct(_, e', _, c, _):: l'
+  | Dotdllseg(_, e', _, _, _, _, _, c):: l' ->
+      if (Sil.exp_equal e e') then c else get_color_exp l' e
+*)

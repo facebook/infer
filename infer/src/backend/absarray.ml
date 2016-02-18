@@ -41,18 +41,18 @@ module StrexpMatch : sig
   (** Get the array *)
   val get_data : t -> strexp_data
 
-  (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
-  val get_sigma_partition : t -> sigma * Sil.hpred
-
   (** Replace the strexp at a given position by a new strexp *)
   val replace_strexp : bool -> t -> Sil.strexp -> sigma
 
-  (** Replace the strexp and the unmatched part of the sigma by the givn inputs *)
-  val replace_strexp_sigma : bool -> t -> Sil.strexp -> sigma -> sigma
-
   (** Replace the index in the array at a given position with the new index *)
   val replace_index : bool -> t -> Sil.exp -> Sil.exp -> sigma
+(*
+  (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
+  val get_sigma_partition : t -> sigma * Sil.hpred
 
+  (** Replace the strexp and the unmatched part of the sigma by the givn inputs *)
+  val replace_strexp_sigma : bool -> t -> Sil.strexp -> sigma -> sigma
+*)
 end = struct
 
   (** syntactic offset *)
@@ -194,11 +194,6 @@ end = struct
         (path', se', t')
     | _ -> assert false
 
-  (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
-  let get_sigma_partition (sigma, hpred, _) =
-    let sigma_unmatched = IList.filter (fun hpred' -> not (hpred' == hpred)) sigma in
-    (sigma_unmatched, hpred)
-
   (** Replace the current hpred *)
   let replace_hpred ((sigma, hpred, syn_offs) : t) hpred' =
     IList.map (fun hpred'' -> if hpred''== hpred then hpred' else hpred'') sigma
@@ -231,12 +226,6 @@ end = struct
     let hpred' = hpred_replace_strexp footprint_part hpred syn_offs update in
     replace_hpred (sigma, hpred, syn_offs) hpred'
 
-  (** Replace the strexp and the unmatched part of the sigma by the given inputs *)
-  let replace_strexp_sigma footprint_part ((_, hpred, syn_offs) : t) se_in sigma_in =
-    let new_sigma = hpred :: sigma_in in
-    let sigma' = replace_strexp footprint_part (new_sigma, hpred, syn_offs) se_in in
-    IList.sort Sil.hpred_compare sigma'
-
   (** Replace the index in the array at a given position with the new index *)
   let replace_index footprint_part ((sigma, hpred, syn_offs) : t) (index: Sil.exp) (index': Sil.exp) =
     let update se' t' =
@@ -247,6 +236,18 @@ end = struct
       | _ -> assert false in
     let hpred' = hpred_replace_strexp footprint_part hpred syn_offs update in
     replace_hpred (sigma, hpred, syn_offs) hpred'
+(*
+  (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
+  let get_sigma_partition (sigma, hpred, _) =
+    let sigma_unmatched = IList.filter (fun hpred' -> not (hpred' == hpred)) sigma in
+    (sigma_unmatched, hpred)
+
+  (** Replace the strexp and the unmatched part of the sigma by the given inputs *)
+  let replace_strexp_sigma footprint_part ((_, hpred, syn_offs) : t) se_in sigma_in =
+    let new_sigma = hpred :: sigma_in in
+    let sigma' = replace_strexp footprint_part (new_sigma, hpred, syn_offs) se_in in
+    IList.sort Sil.hpred_compare sigma'
+*)
 end
 
 (** This function renames expressions in [p]. The renaming is, roughly
@@ -286,29 +287,6 @@ let prop_update_sigma_and_fp_sigma
       (Prop.replace_sigma_footprint sigma_fp' ep1, changed')
     else (ep1, false) in
   (Prop.normalize ep2, changed || changed2)
-
-(** This function uses [update] and transforms the sigma of the
-    current SH of [p] or that of the footprint of [p], depending on
-    [footprint_part]. *)
-let prop_update_sigma_or_fp_sigma
-    (footprint_part : bool)
-    (p : Prop.normal Prop.t)
-    (update : bool -> sigma -> sigma * bool) : Prop.normal Prop.t * bool
-  =
-  let ep1, changed1 =
-    if footprint_part then (Prop.expose p, false)
-    else
-      let sigma', changed = update false (Prop.get_sigma p) in
-      (Prop.replace_sigma sigma' p, changed) in
-  let ep2, changed2 =
-    if not footprint_part then (ep1, false)
-    else
-      begin
-        (if not !Config.footprint then assert false); (* always run in the footprint mode *)
-        let sigma_fp', changed = update true (Prop.get_sigma_footprint ep1) in
-        (Prop.replace_sigma_footprint sigma_fp' ep1, changed)
-      end in
-  (Prop.normalize ep2, changed1 || changed2)
 
 (** Remember whether array abstraction was performed (to be reset before calling Abs.abstract) *)
 let array_abstraction_performed = ref false
@@ -535,16 +513,6 @@ let report_error prop =
   Prop.d_prop prop; L.d_ln ();
   assert false
 
-let check_footprint_pure prop =
-  let fav_pure = Sil.fav_new () in
-  Prop.pi_fav_add fav_pure (Prop.get_pure prop @ Prop.get_pi_footprint prop);
-  let fav_sigma = Sil.fav_new () in
-  Prop.sigma_fav_add fav_sigma (Prop.get_sigma prop @ Prop.get_sigma_footprint prop);
-  Sil.fav_filter_ident fav_pure Ident.is_footprint;
-  Sil.fav_filter_ident fav_sigma Ident.is_footprint;
-  if not (Sil.fav_subset_ident fav_pure fav_sigma)
-  then (L.d_strln "footprint vars in pure and not in sigma"; report_error prop)
-
 (** Check performed after the array abstraction to see whether it was successful. Raise assert false in case of failure *)
 let check_after_array_abstraction prop =
   let check_index root offs (ind, _) =
@@ -632,3 +600,35 @@ let remove_redundant_elements prop =
     Prop.normalize prop'
   else prop
 
+(*
+(** This function uses [update] and transforms the sigma of the
+    current SH of [p] or that of the footprint of [p], depending on
+    [footprint_part]. *)
+let prop_update_sigma_or_fp_sigma
+    (footprint_part : bool) (p : Prop.normal Prop.t) (update : bool -> sigma -> sigma * bool)
+  : Prop.normal Prop.t * bool =
+  let ep1, changed1 =
+    if footprint_part then (Prop.expose p, false)
+    else
+      let sigma', changed = update false (Prop.get_sigma p) in
+      (Prop.replace_sigma sigma' p, changed) in
+  let ep2, changed2 =
+    if not footprint_part then (ep1, false)
+    else
+      begin
+        (if not !Config.footprint then assert false); (* always run in the footprint mode *)
+        let sigma_fp', changed = update true (Prop.get_sigma_footprint ep1) in
+        (Prop.replace_sigma_footprint sigma_fp' ep1, changed)
+      end in
+  (Prop.normalize ep2, changed1 || changed2)
+
+let check_footprint_pure prop =
+  let fav_pure = Sil.fav_new () in
+  Prop.pi_fav_add fav_pure (Prop.get_pure prop @ Prop.get_pi_footprint prop);
+  let fav_sigma = Sil.fav_new () in
+  Prop.sigma_fav_add fav_sigma (Prop.get_sigma prop @ Prop.get_sigma_footprint prop);
+  Sil.fav_filter_ident fav_pure Ident.is_footprint;
+  Sil.fav_filter_ident fav_sigma Ident.is_footprint;
+  if not (Sil.fav_subset_ident fav_pure fav_sigma)
+  then (L.d_strln "footprint vars in pure and not in sigma"; report_error prop)
+*)

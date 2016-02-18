@@ -155,22 +155,6 @@ let file_data_to_tenv file_data =
       assert false
   | Some tenv -> tenv
 
-(** return the procs enabled: active and not shadowed, plus the procs they call directly *)
-let procs_enabled exe_env source =
-  let is_not_shadowed proc_name = (* not shadowed by a definition in another file *)
-    DB.source_file_equal (get_source exe_env proc_name) source in
-  match exe_env.active_opt with
-  | Some pset ->
-      let res = ref Procname.Set.empty in
-      let do_pname proc_name = (* add any proc which is not shadowed, and all the procs it calls *)
-        if is_not_shadowed proc_name then
-          let pset' = Cg.get_all_children exe_env.cg proc_name in
-          let pset'' = Procname.Set.add proc_name pset' in
-          res := Procname.Set.union pset'' !res in
-      Procname.Set.iter do_pname pset;
-      Some !res
-  | None -> None
-
 let file_data_to_cfg exe_env file_data =
   match file_data.cfg with
   | None ->
@@ -209,3 +193,22 @@ let iter_files f exe_env =
         DB.SourceFileSet.add fname seen_files_acc
       end in
   ignore (Procname.Hash.fold do_file exe_env.proc_map DB.SourceFileSet.empty)
+
+(*
+(** return the procs enabled: active and not shadowed, plus the procs they call directly *)
+let procs_enabled exe_env source =
+  let is_not_shadowed proc_name = (* not shadowed by a definition in another file *)
+    DB.source_file_equal (get_source exe_env proc_name) source in
+  match exe_env.active_opt with
+  | Some pset ->
+      let res = ref Procname.Set.empty in
+      (* add any proc which is not shadowed, and all the procs it calls *)
+      let do_pname proc_name =
+        if is_not_shadowed proc_name then
+          let pset' = Cg.get_all_children exe_env.cg proc_name in
+          let pset'' = Procname.Set.add proc_name pset' in
+          res := Procname.Set.union pset'' !res in
+      Procname.Set.iter do_pname pset;
+      Some !res
+  | None -> None
+*)

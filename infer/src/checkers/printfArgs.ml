@@ -17,15 +17,6 @@ type printf_signature = {
   vararg_pos: int option
 }
 
-let printf_signature_to_string
-    (printf: printf_signature): string =
-  Printf.sprintf
-    "{%s; %d [%s] %s}"
-    printf.unique_id
-    printf.format_pos
-    (String.concat "," (IList.map string_of_int printf.fixed_pos))
-    (match printf.vararg_pos with | Some i -> string_of_int i | _ -> "-")
-
 let printf_like_functions =
   ref
     [
@@ -221,3 +212,13 @@ let check_printf_args_ok
 let callback_printf_args { Callbacks.proc_desc; proc_name } : unit =
   Cfg.Procdesc.iter_instrs (fun n i -> check_printf_args_ok n i proc_name proc_desc) proc_desc
 
+(*
+let printf_signature_to_string
+    (printf: printf_signature): string =
+  Printf.sprintf
+    "{%s; %d [%s] %s}"
+    printf.unique_id
+    printf.format_pos
+    (String.concat "," (IList.map string_of_int printf.fixed_pos))
+    (match printf.vararg_pos with | Some i -> string_of_int i | _ -> "-")
+*)

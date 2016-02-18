@@ -90,9 +90,6 @@ let rec use_exp cfg pdesc (exp: Sil.exp) acc =
 and use_etl cfg pdesc (etl: (Sil.exp * Sil.typ) list) acc =
   IList.fold_left (fun acc (e, _) -> use_exp cfg pdesc e acc) acc etl
 
-and use_instrl cfg tenv (pdesc: Cfg.Procdesc.t) (il : Sil.instr list) acc =
-  IList.fold_left (fun acc instr -> use_instr cfg tenv pdesc instr acc) acc il
-
 and use_instr cfg tenv (pdesc: Cfg.Procdesc.t) (instr: Sil.instr) acc =
   match instr with
   | Sil.Set (_, _, e, _)
@@ -124,7 +121,7 @@ and def_instrl cfg instrs acc =
 
 (* computes the addresses that are assigned to something or passed as parameters to*)
 (* a functions. These will be considered becoming possibly aliased *)
-let rec aliasing_instr cfg pdesc (instr: Sil.instr) acc =
+let aliasing_instr cfg pdesc (instr: Sil.instr) acc =
   match instr with
   | Sil.Set (_, _, e, _) -> use_exp cfg pdesc e acc
   | Sil.Call (_, _, argl, _, _) ->
@@ -134,9 +131,6 @@ let rec aliasing_instr cfg pdesc (instr: Sil.instr) acc =
   | Sil.Nullify _ -> acc
   | Sil.Abstract _ | Sil.Remove_temps _ | Sil.Stackop _ | Sil.Declare_locals _ -> acc
   | Sil.Goto_node _ -> acc
-
-and aliasing_instrl cfg pdesc (il : Sil.instr list) acc =
-  IList.fold_left (fun acc instr -> aliasing_instr cfg pdesc instr acc) acc il
 
 (* computes possible alisased var *)
 let def_aliased_var cfg pdesc instrs acc =
@@ -163,7 +157,6 @@ module Worklist = struct
 
   let reset _ = worklist := S.empty
   let add node = worklist := S.add node !worklist
-  let add_list = IList.iter add
   let pick () =
     let min = S.min_elt !worklist in
     worklist := S.remove min !worklist;
@@ -174,9 +167,9 @@ end
 module Table: sig
   val reset: unit -> unit
   val get_live: Cfg.node -> Vset.t (** variables live after the last instruction in the current node *)
-  val replace: Cfg.node -> Vset.t -> unit
   val propagate_to_preds: Vset.t -> Cfg.node list -> unit (** propagate live variables to predecessor nodes *)
   val iter: Vset.t -> (Cfg.node -> Vset.t -> Vset.t -> unit) -> unit
+  (* val replace: Cfg.node -> Vset.t -> unit *)
 end = struct
   module H = Cfg.NodeHash
   let table = H.create 1024
@@ -253,18 +246,6 @@ let analyze_proc cfg tenv pdesc cand =
       Table.propagate_to_preds (Vset.inter live_at_predecessors cand) preds
     done
   with Not_found -> ()
-
-(* Printing function useful for debugging *)
-let print_aliased_var s al_var =
-  L.out s;
-  Vset.iter (fun v -> L.out " %a, " (Sil.pp_pvar pe_text) v) al_var;
-  L.out "@."
-
-(* Printing function useful for debugging *)
-let print_aliased_var_l s al_var =
-  L.out s;
-  IList.iter (fun v -> L.out " %a, " (Sil.pp_pvar pe_text) v) al_var;
-  L.out "@."
 
 (* Instruction i is nullifying a block variable *)
 let is_block_nullify i =
@@ -444,3 +425,16 @@ let doit ?(f_translate_typ=None) cfg cg tenv =
   if !Config.curr_language = Config.Java
   then add_dispatch_calls cfg cg tenv f_translate_typ;
 
+(*
+Printing function useful for debugging
+let print_aliased_var s al_var =
+  L.out s;
+  Vset.iter (fun v -> L.out " %a, " (Sil.pp_pvar pe_text) v) al_var;
+  L.out "@."
+
+Printing function useful for debugging
+let print_aliased_var_l s al_var =
+  L.out s;
+  IList.iter (fun v -> L.out " %a, " (Sil.pp_pvar pe_text) v) al_var;
+  L.out "@."
+*)

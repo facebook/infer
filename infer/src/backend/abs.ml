@@ -1103,24 +1103,6 @@ let get_cycle root prop =
         [])
   | _ -> L.d_strln "Root exp is not an allocated object. No cycle found"; []
 
-(** return a reachability function based on whether an id appears in several hpreds *)
-let reachable_when_in_several_hpreds sigma : Ident.t -> bool =
-  let (id_hpred_map : HpredSet.t IdMap.t ref) = ref IdMap.empty (* map id to hpreds in which it occurs *) in
-  let add_id_hpred id hpred =
-    try
-      let hpred_set = IdMap.find id !id_hpred_map in
-      id_hpred_map := IdMap.add id (HpredSet.add hpred hpred_set) !id_hpred_map
-    with
-    | Not_found -> id_hpred_map := IdMap.add id (HpredSet.singleton hpred) !id_hpred_map in
-  let add_hpred hpred =
-    let fav = Sil.fav_new () in
-    Sil.hpred_fav_add fav hpred;
-    IList.iter (fun id -> add_id_hpred id hpred) (Sil.fav_to_list fav) in
-  let id_in_several_hpreds id =
-    HpredSet.cardinal (IdMap.find id !id_hpred_map) > 1 in
-  IList.iter add_hpred sigma;
-  id_in_several_hpreds
-
 
 (* Check whether the hidden counter field of a struct representing an *)
 (* objective-c object is positive, and whether the leak is part of the *)
@@ -1463,3 +1445,24 @@ let lifted_abstract pname tenv pset =
   abstracted_pset
 
 (***************** End of Main Abstraction Functions *****************)
+
+(*
+(** return a reachability function based on whether an id appears in several hpreds *)
+let reachable_when_in_several_hpreds sigma : Ident.t -> bool =
+  (* map id to hpreds in which it occurs *)
+  let (id_hpred_map : HpredSet.t IdMap.t ref) = ref IdMap.empty in
+  let add_id_hpred id hpred =
+    try
+      let hpred_set = IdMap.find id !id_hpred_map in
+      id_hpred_map := IdMap.add id (HpredSet.add hpred hpred_set) !id_hpred_map
+    with
+    | Not_found -> id_hpred_map := IdMap.add id (HpredSet.singleton hpred) !id_hpred_map in
+  let add_hpred hpred =
+    let fav = Sil.fav_new () in
+    Sil.hpred_fav_add fav hpred;
+    IList.iter (fun id -> add_id_hpred id hpred) (Sil.fav_to_list fav) in
+  let id_in_several_hpreds id =
+    HpredSet.cardinal (IdMap.find id !id_hpred_map) > 1 in
+  IList.iter add_hpred sigma;
+  id_in_several_hpreds
+*)

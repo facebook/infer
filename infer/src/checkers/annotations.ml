@@ -30,8 +30,6 @@ let equal as1 as2 =
   IList.for_all2 param_equal as1.params as2.params
 
 let visibleForTesting = "com.google.common.annotations.VisibleForTesting"
-let javaxNullable = "javax.annotation.Nullable"
-let javaxNonnull = "javax.annotation.Nonnull"
 let suppressLint = "android.annotation.SuppressLint"
 
 

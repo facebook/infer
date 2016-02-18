@@ -61,9 +61,6 @@ val is_c_method : t -> bool
 (** Replace package and classname of a java procname. *)
 val java_replace_class : t -> string -> t
 
-(** Replace the method of a java procname. *)
-val java_replace_method : t -> string -> t
-
 (** Replace the parameters of a java procname. *)
 val java_replace_parameters : t -> java_type list -> t
 
@@ -176,3 +173,8 @@ module Set : Set.S with type elt = t
 
 (** Pretty print a set of proc names *)
 val pp_set : Format.formatter -> Set.t -> unit
+
+(*
+(** Replace the method of a java procname. *)
+val java_replace_method : t -> string -> t
+*)

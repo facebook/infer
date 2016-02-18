@@ -316,10 +316,6 @@ module Node = struct
     try Some (pdesc_tbl_find cfg proc_name)
     with Not_found -> None
 
-  (** Set the proc desc of the node *)
-  let node_set_proc_desc pdesc node =
-    node.nd_proc <- Some pdesc
-
   let set_temps node temps =
     node.nd_temps <- temps
 
@@ -389,10 +385,6 @@ module Node = struct
     let remove_node_in_cfg nodes =
       IList.filter filter_out_fun nodes in
     cfg.node_list := remove_node_in_cfg !(cfg.node_list)
-
-  let remove_node cfg node =
-    remove_node' (fun node' -> not (equal node node'))
-      cfg node
 
   let remove_node_set cfg nodes =
     remove_node' (fun node' -> not (NodeSet.mem node' nodes))
@@ -606,7 +598,15 @@ module Node = struct
     let fold_node acc node =
       IList.fold_left (fun acc instr -> f acc node instr) acc (get_instrs node) in
     proc_desc_fold_nodes fold_node acc proc_desc
+(*
+  (** Set the proc desc of the node *)
+  let node_set_proc_desc pdesc node =
+    node.nd_proc <- Some pdesc
 
+  let remove_node cfg node =
+    remove_node' (fun node' -> not (equal node node'))
+      cfg node
+*)
 end
 (* =============== END of module Node =============== *)
 
