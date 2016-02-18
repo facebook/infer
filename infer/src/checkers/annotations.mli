@@ -13,6 +13,7 @@ val suppressLint : string
 
 val expensive : string
 val performance_critical : string
+val no_allocation : string
 
 type annotation =
   | Nullable
@@ -72,6 +73,7 @@ val ia_is_true_on_null : Sil.item_annotation -> bool
 val ia_is_verify : Sil.item_annotation -> bool
 val ia_is_expensive : Sil.item_annotation -> bool
 val ia_is_performance_critical : Sil.item_annotation -> bool
+val ia_is_no_allocation : Sil.item_annotation -> bool
 
 val ia_iter : (Sil.annotation -> unit) -> Sil.item_annotation -> unit
 

@@ -117,12 +117,18 @@ type dependency_map_t = int Procname.Map.t
 (** Type for calls consiting in the name of the callee and the location of the call *)
 type call = Procname.t * Location.t
 
+(** Collection of first step calls toward expensive call stacks or call stack allocating memory *)
+type call_summary = {
+  expensive_calls: call list;
+  allocations: call list
+}
+
 (** Payload: results of some analysis *)
 type payload =
   {
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
-    calls:  call list option; (** list of call tree *)
+    calls:  call_summary option; (** list of calls of the form (call, loc) *)
   }
 
 (** Procedure summary *)

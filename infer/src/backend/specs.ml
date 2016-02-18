@@ -301,12 +301,17 @@ type dependency_map_t = int Procname.Map.t
 
 type call = Procname.t * Location.t
 
+type call_summary = {
+  expensive_calls: call list;
+  allocations: call list
+}
+
 (** Payload: results of some analysis *)
 type payload =
   {
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
-    calls: call list option;
+    calls: call_summary option;
   }
 
 type summary =
