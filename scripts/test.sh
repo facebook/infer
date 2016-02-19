@@ -18,4 +18,4 @@ if [ "$1" == "--xml" ]; then
     XML="_xml"
 fi
 
-make -C "$INFER_DIR" test$XML
+make -j -C "$INFER_DIR" test_build test$XML

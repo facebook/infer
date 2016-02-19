@@ -39,6 +39,8 @@ ETC_DIR = $(INFER_DIR)/etc
 
 #### ocamlbuild options ####
 
+OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+26+29+27+32+33+34+35+37+38+39
+
 OCAMLBUILD_OPTIONS = \
                      -classic-display \
                      -cflags -short-paths \
@@ -46,26 +48,7 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -principal \
                      -cflags -strict-formats \
                      -cflags -strict-sequence \
-                     -cflags -w,@5 \
-                     -cflags -w,@6 \
-                     -cflags -w,@8 \
-                     -cflags -w,@10 \
-                     -cflags -w,@11 \
-                     -cflags -w,@12 \
-                     -cflags -w,@18 \
-                     -cflags -w,@19 \
-                     -cflags -w,@20 \
-                     -cflags -w,@26 \
-                     -cflags -w,@29 \
-                     -cflags -w,@27 \
-                     -cflags -w,@32 \
-                     -cflags -w,@33 \
-                     -cflags -w,@34 \
-                     -cflags -w,@35 \
-                     -cflags -w,@37 \
-                     -cflags -w,@38 \
-                     -cflags -w,@39 \
-                     -cflags -w,-40..42 \
+                     -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48-50 \
                      -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*}>: warn(-27-32-35-39)" \
                      -tag-line "not <**/{config,iList,utils}.*>: open(Utils)" \
                      -pkgs atdgen,extlib,str,unix,yojson,zip
@@ -199,6 +182,14 @@ byte: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MI
 	  $(INFERJAVA_MAIN).byte \
 	  $(INFERCLANG_MAIN).byte
 
+test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+	$(OCAMLBUILD) -build-dir $(TEST_BUILD_DIR) $(JAVA_OCAMLBUILD_OPTIONS) \
+	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
+	  $(INFERANALYZE_MAIN).byte \
+	  $(INFERPRINT_MAIN).byte \
+	  $(INFERJAVA_MAIN).byte \
+	  $(INFERCLANG_MAIN).byte
+
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
 java_annotations: build_java
 	rsync -a --include '*/' --include '*.annot' --exclude '*' $(JAVA_BUILD_DIR)/ $(ANNOT_DIR)/
@@ -299,6 +290,9 @@ $(INFERLLVM_BIN): build_llvm
 
 $(CHECKCOPYRIGHT_BIN): build_checkCopyright
 	$(COPY) $(SCRIPTS_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
+
+test_clean:
+	$(REMOVE_DIR) $(TEST_BUILD_DIR)
 
 clean:
 	$(REMOVE_DIR) $(BUILD_DIR)
