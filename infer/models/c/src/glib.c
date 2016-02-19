@@ -39,7 +39,7 @@ void *g_realloc(void *ptr, size_t size) {
     __set_array_size(ptr, size); // enlarge the block
     return ptr;
   }
-  int *newblock = malloc(size);
+  int *newblock = (int*)malloc(size);
   if(newblock) {
     free(ptr);
     return newblock;

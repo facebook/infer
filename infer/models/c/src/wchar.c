@@ -12,12 +12,20 @@
 
 #include "infer_builtins.h"
 
+#define __asm(N)
+
+// standard headers on mac don't use USE_CPP_OVERLOADS the way it's expected
+#if defined __CORRECT_ISO_CPP_WCHAR_H_PROTO && !defined __APPLE__
+#define USE_CPP_OVERLOADS
+#endif
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <wchar.h>
 
 #define restrict
+
 
 #ifdef _WIN32
 #define CLIBCALL __cdecl
@@ -197,7 +205,16 @@ wchar_t * CLIBCALL wcscat(wchar_t * restrict s1, const wchar_t * restrict s2)
 }
 
 // modeled using strchr
+#ifndef USE_CPP_OVERLOADS
 wchar_t * CLIBCALL wcschr(const wchar_t *s, wchar_t c)
+# else
+const wchar_t * CLIBCALL wcschr(const wchar_t *s, wchar_t c)
+{
+  return wcschr((wchar_t*) s, c);
+}
+
+wchar_t * CLIBCALL wcschr(wchar_t *s, wchar_t c)
+#endif
 {
   return (wchar_t *) strchr((char *) s, c);
 }
@@ -254,13 +271,30 @@ int CLIBCALL wcsncmp(const wchar_t *s1, const wchar_t *s2, size_t n)
 }
 
 // modeled using strpbrk
+#ifndef USE_CPP_OVERLOADS
 wchar_t * CLIBCALL wcspbrk(const wchar_t *s1, const wchar_t *s2)
+#else
+const wchar_t * CLIBCALL wcspbrk(const wchar_t *s1, const wchar_t *s2)
+{
+  return wcspbrk((wchar_t*) s1, s2);
+}
+wchar_t * CLIBCALL wcspbrk(wchar_t *s1, const wchar_t *s2)
+#endif
 {
   return (wchar_t *) strpbrk((char *) s1, (char *) s2);
 }
 
 // modeled using strchr
+#ifndef USE_CPP_OVERLOADS
 wchar_t * CLIBCALL wcsrchr(const wchar_t *s, wchar_t c)
+#else
+const wchar_t * CLIBCALL wcsrchr(const wchar_t *s, wchar_t c)
+{
+  return wcsrchr((wchar_t*) s, c);
+}
+
+wchar_t * CLIBCALL wcsrchr(wchar_t *s, wchar_t c)
+#endif
 {
   return (wchar_t *) strchr((char *) s, c);
 }
@@ -278,7 +312,16 @@ size_t CLIBCALL wcsspn(const wchar_t *s1, const wchar_t *s2)
 }
 
 // modeled using strstr
+#ifndef USE_CPP_OVERLOADS
 wchar_t * CLIBCALL wcsstr(const wchar_t *s1, const wchar_t *s2)
+#else
+
+const wchar_t * CLIBCALL wcsstr(const wchar_t *s1, const wchar_t *s2)
+{
+  return wcsstr((wchar_t*) s1, s2);
+}
+wchar_t * CLIBCALL wcsstr(wchar_t *s1, const wchar_t *s2)
+#endif
 {
   return (wchar_t *) strstr((char *) s1, (char *) s2);
 }
@@ -336,7 +379,16 @@ size_t CLIBCALL wcsxfrm(wchar_t * restrict s1, const wchar_t * restrict s2, size
 }
 
 // modeled using memchr
+#ifndef USE_CPP_OVERLOADS
 wchar_t * CLIBCALL wmemchr(const wchar_t *s, wchar_t c, size_t n)
+#else
+
+const wchar_t * CLIBCALL wmemchr(const wchar_t *s, wchar_t c, size_t n)
+{
+  return wmemchr((wchar_t*) s, c, n);
+}
+wchar_t * CLIBCALL wmemchr(wchar_t *s, wchar_t c, size_t n)
+#endif
 {
   return (wchar_t *) memchr((char *) s, c, n);
 }

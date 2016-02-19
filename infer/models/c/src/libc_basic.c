@@ -17,6 +17,8 @@
 #endif
 #define _FORTIFY_SOURCE 0
 
+#define __asm(N)
+
 #ifdef __APPLE__ // disable block instructions on mac
 #ifdef __BLOCKS__
 #undef __BLOCKS__
@@ -63,226 +65,6 @@ struct __dirstream {
 };
 #endif
 
-#ifdef __CYGWIN__ // define __WAIT_STATUS as int * on cygwin
-#define __WAIT_STATUS    int *
-#endif
-#ifdef __APPLE__ // define __WAIT_STATUS as int * on mac
-#define __WAIT_STATUS    int *
-#endif
-
-//long __builtin_expect(long, long);
-void abort(void); // builtin: modeled internally
-int access(const char *path, int mode);
-char *asctime(const struct tm *timeptr);
-double atof(const char *str);
-int atoi(const char *str);
-void *bsearch(const void *key, const void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
-void *calloc(size_t nmemb, size_t size);
-#ifdef clearerr // cygwin defines clearerr as a macro
-#undef clearerr
-#endif
-void clearerr(FILE *stream);
-clock_t clock();
-int close(int fildes);
-int closedir(DIR *dirp);
-size_t confstr(int name, char *buf, size_t len);
-int creat(const char *path, mode_t mode);
-char *ctime(const time_t *clock);
-double difftime(time_t time1, time_t time0);
-int dup(int fildes);
-void endpwent(void);
-void exit(int status); // builtin: modeled internally
-int fclose (FILE *stream);
-int fcntl(int fildes, int cmd, ...);
-FILE *fdopen(int fildes, const char *mode);
-#ifdef feof // cygwin defines feof as a macro
-#undef feof
-#endif
-int feof(FILE *stream);
-#ifdef ferror // cygwin defines ferror as a macro
-#undef ferror
-#endif
-int ferror(FILE *stream);
-int fflush(FILE *stream);
-int fgetc(FILE *stream);
-int fgetpos(FILE *__restrict stream, fpos_t *__restrict pos);
-char *fgets( char *str, int num, FILE *stream );
-int fileno(FILE *stream);
-int flock(int fd, int operation);
-FILE *fopen (const char *filename, const char *mode);
-pid_t fork(void);
-int fprintf(FILE *stream, const char *format, ...);
-int fputc(int c, FILE *stream);
-int fputs(const char *str, FILE *stream);
-size_t fread(void *__restrict ptr, size_t size, size_t nmemb, FILE *__restrict stream);
-void free(void *ptr); // builtin: modeled internally
-FILE *freopen(const char *__restrict filename, const char *__restrict mode, FILE *__restrict stream);
-int fscanf(FILE *stream, const char *format, ...); // builtin: modeled internally
-int fsctl(const char *path, unsigned long request, void *data, unsigned int options);
-int fseek(FILE *stream, long int offset, int whence);
-int fsetpos(FILE *stream, const fpos_t *pos);
-int fstat(int fildes, struct stat *buf);
-int fsync(int fildes);
-long int ftell(FILE *stream);
-int futimes(int fildes, const struct timeval times[2]);
-size_t fwrite(const void *__restrict ptr, size_t size, size_t nmemb, FILE *__restrict stream);
-int getc(FILE *stream);
-#ifdef getchar // cygwin defines getchar as a macro
-#undef getchar
-#endif
-int getchar(void);
-char *getcwd (char *buffer, size_t size);
-char *getenv(const char *name);
-char *getlogin();
-char *getpass(const char *prompt);
-pid_t getpid(void);
-struct passwd *getpwent(void);
-struct passwd *getpwnam(const char *login);
-struct passwd *getpwuid(uid_t uid);
-int getrusage(int who, struct rusage *r_usage);
-char *gets(char *s);
-#ifdef __APPLE__
-#define gettimeofday_tzp_decl void *__restrict tzp
-#else
-#ifdef __CYGWIN__
-#define gettimeofday_tzp_decl void *__restrict tzp
-#else
-#define gettimeofday_tzp_decl struct timezone *__restrict tzp
-#endif
-#endif
-int gettimeofday(struct timeval *__restrict tp, gettimeofday_tzp_decl);
-uid_t getuid(void);
-struct tm *gmtime(const time_t *timer);
-int isalnum(int x);
-int isalpha(int x);
-int isascii(int x);
-int isatty(int fildes);
-int isblank(int x);
-int iscntrl(int x);
-int isdigit(int x);
-int isgraph(int x);
-int islower(int x);
-int isprint(int x);
-int ispunct(int x);
-int isspace(int x);
-int isupper(int x);
-int isxdigit(int x);
-struct lconv *localeconv();
-struct tm *localtime(const time_t *clock);
-struct tm *localtime_r(const time_t *__restrict timer, struct tm *__restrict result);
-void longjmp(jmp_buf env, int val);
-off_t lseek(int fildes, off_t offset, int whence);
-void *malloc(size_t size); // builtin: modeled internally
-int mblen(const char *s, size_t n);
-size_t mbstowcs(wchar_t * __restrict pwcs, const char * __restrict s, size_t n);
-int mbtowc(wchar_t * __restrict pwc, const char * __restrict s, size_t n);
-void *memchr(const void *s, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-void *memcpy(void *s1, const void *s2, size_t n);
-void *memmove(void *s1, const void *s2, size_t n);
-void *memset(void *s, int c, size_t n);
-int mkdir (const char *filename, mode_t mode);
-time_t mktime(struct tm *timeptr);
-int munmap(void *addr, size_t len);
-int open(const char *path, int oflag, ...);
-DIR *opendir(const char *dirname);
-int pause(void);
-void perror(const char *s);
-int pipe(int fildes[2]);
-int printf(const char *format, ...);
-int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg); // builtin: modeled internally
-void pthread_exit(void *value_ptr);
-int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
-int pthread_mutexattr_init(pthread_mutexattr_t *attr);
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
-int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
-int pthread_mutex_destroy(pthread_mutex_t *mutex);
-int pthread_mutex_init(pthread_mutex_t *__restrict mutex, const pthread_mutexattr_t *__restrict attr);
-int pthread_mutex_lock(pthread_mutex_t *mutex);
-int pthread_mutex_trylock(pthread_mutex_t *mutex);
-int pthread_mutex_unlock(pthread_mutex_t *mutex);
-int putc(int c, FILE *stream);
-int puts(const char *str);
-void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
-int raise(int sig);
-long random(void);
-struct dirent *readdir(DIR *dirp);
-ssize_t read(int fildes, void *buf, size_t nbyte);
-char *readline(const char *prompt);
-void *realloc(void *ptr, size_t size);
-int remove(const char *path);
-int rename(const char *old, const char *new);
-void rewind(FILE *stream);
-int scanf(const char *format, ...); // builtin: modeled internally
-void setbuf(FILE * __restrict stream, char * __restrict buf);
-int setitimer(int which, const struct itimerval *__restrict value, struct itimerval *__restrict ovalue);
-char *setlocale(int category, const char *locale);
-int setlogin(const char *name);
-int setpassent(int stayopen);
-void setpwent(void);
-int setvbuf(FILE * __restrict stream, char * __restrict buf, int mode, size_t size);
-void *shmat(int shmid, const void *shmaddr, int shmflg);
-int shmctl(int shmid, int cmd, struct shmid_ds *buf);
-int shmdt(const void *shmaddr);
-int shmget(key_t key, size_t size, int shmflg);
-int sigaction(int sig, const struct sigaction *act, struct sigaction *oact);
-void (*signal(int sig, void (*func)(int)))(int);
-int sigprocmask(int how, const sigset_t *set, sigset_t *oset);
-unsigned sleep(unsigned seconds);
-int snprintf(char * __restrict s, size_t n, const char * __restrict format, ...);
-int socket (int namespace, int style, int protocol);
-int sprintf(char *s, const char *format, ...);
-int sscanf(const char *s, const char *format, ...); // builtin: modeled internally
-int stat(const char *path, struct stat *buf);
-int statfs(const char *path, struct statfs *buf);
-char *strcat(char *s1, const char *s2);
-char *strchr(const char *s, int c);
-int strcmp(const char *s1, const char *s2);
-int strcoll(const char *s1, const char *s2);
-char *strcpy(char *s1, const char *s2);
-size_t strcspn(const char *s1, const char *s2);
-char *strdup(const char *s);
-size_t strftime(char *__restrict s, size_t maxsize, const char *__restrict format, const struct tm *__restrict timeptr);
-int strerror_r(int errnum, char *strerrbuf, size_t buflen);
-size_t strlcat(char *dst, const char *src, size_t size);
-size_t strlcpy(char *dst, const char *src, size_t size);
-size_t strlen(const char *s);
-char *strlwr(char *s);
-char *strncat(char *s1, const char *s2, size_t n);
-int strncmp(const char *s1, const char *s2, size_t n);
-char *strncpy(char *s1, const char *s2, size_t n);
-char *strpbrk(const char *s1, const char *s2);
-char *strrchr(const char *s, int c);
-size_t strspn(const char *s1, const char *s2);
-char *strstr(const char *s1, const char *s2);
-double strtod(const char *str, char **endptr);
-long strtol(const char *str, char **endptr, int base);
-unsigned long strtoul(const char *str, char **endptr, int base);
-char *strupr(char *s);
-time_t time(time_t *tloc);
-FILE *tmpfile(void);
-char *tmpnam(char *s);
-int toascii(int x);
-int tolower(int x);
-int toupper(int x);
-int ungetc(int c, FILE *stream);
-int unlink (const char *filename);
-int usleep(useconds_t useconds);
-int utimes(const char *path, const struct timeval times[2]);
-int vfprintf(FILE *stream, const char *format, va_list arg);
-int vfscanf(FILE *stream, const char *format, va_list arg); // builtin: modeled internally
-int vprintf(const char *format, va_list arg);
-int vscanf(const char *format, va_list arg); // builtin: modeled internally
-int vsnprintf(char *s, size_t n, const char *format, va_list arg);
-int vsprintf(char *s, const char *format, va_list arg);
-int vsscanf(const char *s, const char *format, va_list arg); // builtin: modeled internally
-pid_t wait(__WAIT_STATUS stat_loc);
-size_t wcstombs(char * __restrict s, const wchar_t * __restrict pwcs, size_t n);
-int wctomb(char *s, wchar_t wc);
-ssize_t write(int fildes, const void *buf, size_t nbyte);
-void *xcalloc(size_t nmemb, size_t size);
-void *xmalloc(size_t size);
-
 // modelling of errno
 // errno expands to different function calls on mac or other systems
 // the function call returns the address of a global variable called "errno"
@@ -313,7 +95,7 @@ char *strcpy(char *s1, const char *s2) {
 char *strdup(const char *s) {
   int size;
   size = __get_array_size(s);
-  return malloc(size);
+  return (char*)malloc(size);
 }
 
 // the strings s1 and s2 need to be allocated
@@ -328,9 +110,21 @@ char *strcat(char *s1, const char *s2) {
   return s1;
 }
 
-// the string s must be allocated
+// C++ has two versions of strchr:
+// http://www.cplusplus.com/reference/cstring/strchr/
+// C has one version of strchr/strrchr with different signature
+
+// The string s must be allocated
 // nondeterministically return 0 or a pointer inside the buffer
+#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 char *strchr(const char *s, int c) {
+#else
+const char *strchr(const char *s, int c) throw() {
+  return strchr((char*) s, c);
+}
+
+char *strchr(char *s, int c) throw() {
+#endif
   int size;
   int nondet;
   int offset;
@@ -340,8 +134,23 @@ char *strchr(const char *s, int c) {
   size = __get_array_size(s);
   if(nondet) return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >=size);
-  return (void *)s + offset;
+  return (char *)s + offset;
 }
+
+// modelled like strchr
+#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
+char *strrchr(const char *s, int c) {
+  return strchr(s,c);
+}
+#else
+const char *strrchr(const char *s, int c) throw() {
+  return strchr((char*) s, c);
+}
+
+char *strrchr(char *s, int c) throw() {
+  return strchr(s, c);
+}
+#endif
 
 // s1 and s2 must be allocated.
 // return a non-deterministic integer
@@ -412,9 +221,15 @@ char *strncpy(char *s1, const char *s2, size_t n) {
   return s1;
 }
 
-// the strings s1 and s2 must be allocated
-// nondeterministically return 0 or a pointer inside the string s1
+#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 char *strpbrk(const char *s1, const char *s2) {
+#else
+const char *strpbrk(const char *s1, const char *s2) throw() {
+  return strpbrk((char*) s1, s2);
+}
+
+char *strpbrk(char *s1, const char *s2) throw() {
+#endif
   int size1, size2;
   int nondet;
   int offset;
@@ -425,12 +240,7 @@ char *strpbrk(const char *s1, const char *s2) {
   size2 = __get_array_size(s2);
   if(nondet) return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >=size1);
-  return (void *)s1 + offset;
-}
-
-// modelled like strchr
-char *strrchr(const char *s, int c) {
-  return strchr(s,c);
+  return (char *)s1 + offset;
 }
 
 // s1 and s2 must be allocated.
@@ -447,9 +257,16 @@ size_t strspn(const char *s1, const char *s2) {
   return res;
 }
 
-// the strings s1 and s2 must be allocated
-// nondeterministically return 0 or a pointer inside the string s1
+#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 char *strstr(const char *s1, const char *s2) {
+#else
+
+const char *strstr(const char *s1, const char *s2) throw() {
+  return strstr((char*) s1, s2);
+}
+
+char *strstr(char *s1, const char *s2) throw() {
+#endif
   int size1, size2;
   int nondet;
   int offset;
@@ -460,7 +277,7 @@ char *strstr(const char *s1, const char *s2) {
   size2 = __get_array_size(s2);
   if(nondet) return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >=size1);
-  return (void *)s1 + offset;
+  return (char *)s1 + offset;
 }
 
 // modeled using strtoul
@@ -502,7 +319,16 @@ char *strupr(char *s) {
 // the array s must be allocated
 // n should not be greater than the size of s
 // nondeterministically return 0 or a pointer within the first n elements of s
+#ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
 void *memchr(const void *s, int c, size_t n) {
+#else
+
+const void *memchr(const void *s, int c, size_t n) throw() {
+  return memchr((void*) s, c, n);
+}
+
+void *memchr(void *s, int c, size_t n) throw() {
+#endif
   int size;
   int nondet;
   int offset;
@@ -513,7 +339,7 @@ void *memchr(const void *s, int c, size_t n) {
   INFER_EXCLUDE_CONDITION(n > size);
   if(nondet) return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >= n);
-  return (void *)s + offset;
+  return (char *)s + offset;
 }
 
 // s1 and s2 must be allocated
@@ -577,7 +403,7 @@ int atoi(const char *str) {
 // modeled using malloc and set file attribute
 FILE *fopen (const char *filename, const char *mode) {
   FILE *ret;
-  ret = malloc(sizeof(FILE));
+  ret = (FILE*) malloc(sizeof(FILE));
   if(ret) __set_file_attribute(ret);
   return ret;
 }
@@ -624,11 +450,11 @@ int fclose (FILE *stream) {
 // modeled using malloc and set file attribute
 // return the allocated ptr - 1 if malloc succeeds, otherwise return -1
 int open(const char *path, int oflag, ...) {
-  int *ret = malloc(sizeof(int));
+  int *ret = (int*)malloc(sizeof(int));
   if(ret) {
     __set_file_attribute(ret);
     INFER_EXCLUDE_CONDITION(ret < (int *)1); // force result to be > 0
-    return ret;
+    return (size_t)ret;
   }
   return -1;
 }
@@ -769,7 +595,7 @@ char *getcwd (char *buffer, size_t size) {
 }
 
 // return nonteterministically 0 or -1
-int rename(const char *old, const char *new) {
+int rename(const char *old, const char *new_) {
   int n;
 
   n = __infer_nondet_int();
@@ -800,6 +626,13 @@ unsigned sleep(unsigned seconds) {
   return n;
 }
 
+#ifdef __CYGWIN__ // define __WAIT_STATUS as int * on cygwin
+#define __WAIT_STATUS    int *
+#endif
+#ifdef __APPLE__ // define __WAIT_STATUS as int * on mac
+#define __WAIT_STATUS    int *
+#endif
+
 // the waiting is modeled as skip. Then the return value is a random value of a process or
 // -1 in case of an error
 pid_t wait(__WAIT_STATUS stat_loc) {
@@ -811,11 +644,13 @@ pid_t wait(__WAIT_STATUS stat_loc) {
   else return -1;
 }
 
+#ifndef __cplusplus
 // return a nondeterministic pointer
 void (*signal(int sig, void (*func)(int)))(int) {
   void (*res) (int) = __infer_nondet_ptr();
   return res;
 };
+#endif
 
 // modelled as exit
 void pthread_exit(void *value_ptr) { exit(0); };
@@ -886,7 +721,7 @@ void *realloc(void *ptr, size_t size) {
     __set_array_size(ptr, size); // enlarge the block
     return ptr;
   }
-  int *newblock = malloc(size);
+  int *newblock = (int*)malloc(size);
   if(newblock) {
     free(ptr);
     return newblock;
@@ -959,7 +794,7 @@ off_t lseek(int fildes, off_t offset, int whence) {
 // modeled using malloc and set file attribute
 DIR *opendir(const char *dirname) {
   DIR *ret;
-  ret = malloc(sizeof(void *));
+  ret = (DIR*)malloc(sizeof(void *));
   if(ret) __set_file_attribute(ret);
   return ret;
 }
@@ -1399,7 +1234,7 @@ char *readline(const char *prompt) {
   size = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(size<0);
 
-  ret = malloc(sizeof(size));
+  ret = (char*) malloc(sizeof(size));
   return ret;
 }
 
@@ -1505,6 +1340,16 @@ int getrusage(int who, struct rusage *r_usage){
   return ret;
 }
 
+
+#ifdef __APPLE__
+#define gettimeofday_tzp_decl void *__restrict tzp
+#else
+#ifdef __CYGWIN__
+#define gettimeofday_tzp_decl void *__restrict tzp
+#else
+#define gettimeofday_tzp_decl struct timezone *__restrict tzp
+#endif
+#endif
 
 
 int gettimeofday(struct timeval *__restrict tp, gettimeofday_tzp_decl){
@@ -1640,6 +1485,9 @@ int futimes(int fildes, const struct timeval times[2]) {
   return ret;
 }
 
+#ifdef getchar // cygwin defines getchar as a macro
+#undef getchar
+#endif
 int getchar(void) {
   //randomly produce an error
   int ret = __infer_nondet_int();
@@ -1692,6 +1540,9 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact){
 //TODO: this function has been disabled because it cannot be compiled with LLVM.
 //It is normally a builtin that should not be implemented and LLVM complains about this
 
+#ifdef clearerr // cygwin defines clearerr as a macro
+#undef clearerr
+#endif
 // modelled as skip
 // stream is required to be allocated
 void clearerr(FILE *stream) {
@@ -1699,6 +1550,9 @@ void clearerr(FILE *stream) {
     tmp = *stream;
 }
 
+#ifdef ferror // cygwin defines ferror as a macro
+#undef ferror
+#endif
 // return a nondeterministic value
 // stream required to be allocated
 int ferror(FILE *stream) {
@@ -1708,6 +1562,9 @@ int ferror(FILE *stream) {
   return __infer_nondet_int();
 }
 
+#ifdef feof // cygwin defines feof as a macro
+#undef feof
+#endif
 // return a nondeterministic value
 // stream required to be allocated
 int feof(FILE *stream) {
@@ -1725,9 +1582,9 @@ int fgetpos(FILE *__restrict stream, fpos_t *__restrict pos) {
   FILE tmp;
   tmp = *stream;
   #ifdef __APPLE__  //fpos_t is a long in MacOS, but a struct in Linux.
-    *pos = __infer_nondet_long();
+    *pos = __infer_nondet_long_int();
   #else
-    pos->__pos = __infer_nondet_long();
+    pos->__pos = __infer_nondet_long_int();
   #endif
   success = __infer_nondet_int();
   if(success) return 0;
@@ -1776,11 +1633,16 @@ size_t strcspn(const char *s1, const char *s2){
   return ret;
 }
 
+// There is non-standard version of strerr_r:
+// http://linux.die.net/man/3/strerror_r
+// It's not modelled right now
+# if defined __APPLE__ || (defined __USE_XOPEN2K && !defined __USE_GNU)
 int strerror_r(int errnum, char *strerrbuf, size_t buflen) {
   INFER_EXCLUDE_CONDITION(__get_array_size(strerrbuf) < buflen);
 
   return __infer_nondet_int();
 }
+#endif
 
 ssize_t write(int fildes, const void *buf, size_t nbyte) {
   INFER_EXCLUDE_CONDITION(__get_array_size(buf) < nbyte);
@@ -1839,7 +1701,7 @@ void *bsearch(const void *key, const void *base, size_t nmemb, size_t size, int 
   INFER_EXCLUDE_CONDITION(nmemb > base_size);
   if(nondet) return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >= nmemb);
-  return (void *)base + offset;
+  return (char*)base + offset;
 }
 
 // return a nondeterministic value
@@ -1877,12 +1739,12 @@ int wctomb(char *s, wchar_t wc) {
 }
 
 // modeled like open
-int socket(int namespace, int style, int protocol) {
-  int *ret = malloc(sizeof(int));
+int socket(int namespace_, int style, int protocol) {
+  int *ret = (int*)malloc(sizeof(int));
   if(ret) {
     __set_file_attribute(ret);
     INFER_EXCLUDE_CONDITION(ret < (int *)1); // force result to be > 0
-    return ret;
+    return (size_t)ret;
   }
   return -1;
 }

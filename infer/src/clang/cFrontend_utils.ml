@@ -554,7 +554,12 @@ struct
       | CFrontend_config.CPP
       | CFrontend_config.OBJCPP -> Ast_utils.string_of_type_ptr tp
       | _ -> "" in
-    let mangled = file ^ type_string in
+    (* remove __restrict from type name to avoid mismatches. Clang allows to declare function*)
+    (* with __restrict parameters and then define it without (it mostly applies to models).*)
+    (* We are not using this information right now so we can remove it to avoid dealing with*)
+    (* corner cases on different systems *)
+    let type_string_no_restrict = Str.global_replace (Str.regexp "__restrict") "" type_string in
+    let mangled = file ^ type_string_no_restrict in
     if String.length mangled == 0 then
       Procname.from_string_c_fun name
     else

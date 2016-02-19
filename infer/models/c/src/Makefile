@@ -1,14 +1,14 @@
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
-CC=gcc
+CC=clang
 CFLAGS=-c -w
 
-all: $(OBJECTS) $(OBJECTSXX)
+all: $(OBJECTS) 
 
 clean:
-	@rm -rf $(OBJECTS)
+	@rm -rf $(OBJECTS) 
 
-.c.o:
+%.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
 .PHONY: all clean

@@ -18,7 +18,7 @@
 char *XGetAtomName(void *display, void *atom) {
   int size;
   INFER_EXCLUDE_CONDITION(size <= 0);
-  return malloc(size);
+  return (char*)malloc(size);
 }
 
 // modelled as free, requires NONNULL pointer
