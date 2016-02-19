@@ -51,12 +51,6 @@ OCAML_INCLUDES = -I,$(EASYFORMAT_INCLUDE_DIR),-I,$(BINIOU_INCLUDE_DIR),-I,$(YOJS
 OCAML_LIBS = unix str atdgen extLib zip
 OCAML_MODS = easy_format bi_util bi_share bi_outbuf bi_inbuf bi_vint bi_io yojson ag_oj_run ag_ob_run ag_util
 
-# backwards compatibility with OCaml version < 4.02.0
-ifeq (@OCAML_HAS_NATIVE_BYTES@,no)
-OCAML_INCLUDES := $(OCAML_INCLUDES),-I,@OCAML_PKG_PATH_bytes@
-OCAML_LIBS += bytes
-endif
-
 OCAMLBUILD_ANNOT_OPTIONS =
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
 OCAMLBUILD_ANNOT_OPTIONS = -cflags -annot
@@ -78,6 +72,7 @@ OCAMLBUILD_OPTIONS = \
                      $(OCAMLBUILD_QUIET_OPTIONS) \
                      -classic-display \
                      -cflags -short-paths \
+                     -cflags -safe-string \
                      -cflags -principal \
                      -cflags -strict-formats \
                      -cflags -strict-sequence \
@@ -107,10 +102,6 @@ OCAMLBUILD_OPTIONS = \
                      -cflags $(OCAML_INCLUDES) \
                      $(addprefix -lib ,$(OCAML_LIBS)) \
                      $(addprefix -mod ,$(OCAML_MODS))
-
-ifeq (@OCAMLC_HAS_SAFE_STRING@,yes)
-OCAMLBUILD_OPTIONS += -cflags -safe-string
-endif
 
 #### Backend declarations ####
 
