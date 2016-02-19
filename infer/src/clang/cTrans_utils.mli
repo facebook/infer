@@ -34,6 +34,7 @@ type trans_result = {
   instrs: Sil.instr list;
   exps: (Sil.exp * Sil.typ) list;
   initd_exps: Sil.exp list;
+  is_cpp_call_virtual : bool;
 }
 
 val empty_res_trans: trans_result

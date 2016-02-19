@@ -70,4 +70,10 @@ public class MethodsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("conversion_operator.cpp");
   }
+
+  @Test
+  public void testVirtualMethodsDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("virtual_methods.cpp");
+  }
 }

@@ -17,6 +17,7 @@ type method_signature = {
   attributes : Clang_ast_t.attribute list;
   loc : Clang_ast_t.source_range;
   is_instance : bool;
+  is_cpp_virtual : bool;
   language : CFrontend_config.lang;
   pointer_to_parent : Clang_ast_t.pointer option;
   pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
@@ -44,6 +45,9 @@ let ms_get_loc { loc } =
 let ms_is_instance { is_instance } =
   is_instance
 
+let ms_is_cpp_virtual { is_cpp_virtual } =
+  is_cpp_virtual
+
 let ms_get_lang { language } =
   language
 
@@ -68,8 +72,11 @@ let ms_is_setter { pointer_to_property_opt; args } =
   Option.is_some pointer_to_property_opt &&
   IList.length args == 2
 
-let make_ms name args ret_type attributes loc is_instance language pointer_to_parent
+let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual language pointer_to_parent
     pointer_to_property_opt return_param_typ =
+  let is_cpp_virtual = match is_cpp_virtual with
+    | Some is_cpp_virtual -> is_cpp_virtual
+    | None -> false in
   {
     name;
     args;
@@ -77,6 +84,7 @@ let make_ms name args ret_type attributes loc is_instance language pointer_to_pa
     attributes;
     loc;
     is_instance;
+    is_cpp_virtual;
     language;
     pointer_to_parent;
     pointer_to_property_opt;

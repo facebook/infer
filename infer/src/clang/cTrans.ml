@@ -493,10 +493,13 @@ struct
     let class_name = Ast_utils.get_class_name_from_member name_info in
     Printing.log_out "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
-    let is_instance_method =
-      match CMethod_trans.method_signature_of_pointer context.tenv decl_ptr with
+    let ms_opt = CMethod_trans.method_signature_of_pointer context.tenv decl_ptr in
+    let is_instance_method = match ms_opt with
       | Some ms -> CMethod_signature.ms_is_instance ms
       | _ -> true in (* might happen for methods that are not exported yet (some templates). *)
+    let is_cpp_virtual = match ms_opt with
+      | Some ms -> CMethod_signature.ms_is_cpp_virtual ms
+      | _ -> false in
     let extra_exps = if is_instance_method then (
         (* pre_trans_result.exps may contain expr for 'this' parameter:*)
         (* if it comes from CXXMemberCallExpr it will be there *)
@@ -518,7 +521,8 @@ struct
         method_name type_ptr in
     let method_exp = (Sil.Const (Sil.Cfun pname), method_typ) in
     Cfg.set_procname_priority context.CContext.cfg pname;
-    { pre_trans_result with exps = [method_exp] @ extra_exps }
+    { pre_trans_result with
+      exps = [method_exp] @ extra_exps; is_cpp_call_virtual = is_cpp_virtual }
 
   let destructor_deref_trans trans_state pvar_trans_result class_type_ptr =
     let open Clang_ast_t in
@@ -659,7 +663,8 @@ struct
       ids = res_trans_idx.ids @ res_trans_a.ids;
       instrs = res_trans_a.instrs @ res_trans_idx.instrs;
       exps = [(array_exp, typ)];
-      initd_exps = res_trans_idx.initd_exps @ res_trans_a.initd_exps; }
+      initd_exps = res_trans_idx.initd_exps @ res_trans_a.initd_exps;
+      is_cpp_call_virtual = false;}
 
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     let open Clang_ast_t in
@@ -815,7 +820,7 @@ struct
           { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
-      si function_type =
+      si function_type is_cpp_call_virtual =
     let open CContext in
     let context = trans_state_pri.context in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
@@ -838,7 +843,7 @@ struct
     (* first expr is method address, rest are params including 'this' parameter *)
     let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
     let call_flags = {
-      Sil.cf_virtual = false (* TODO t7725350 *);
+      Sil.cf_virtual = is_cpp_call_virtual;
       Sil.cf_interface = false;
       Sil.cf_noreturn = false;
       Sil.cf_is_objc_block = false;
@@ -867,10 +872,11 @@ struct
     (* claim priority if no ancestors has claimed priority before *)
     let trans_state_callee = { trans_state_pri with succ_nodes = [] } in
     let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
+    let is_cpp_call_virtual = result_trans_callee.is_cpp_call_virtual in
     let fn_type_no_ref = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
     cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
-      si function_type
+      si function_type is_cpp_call_virtual
 
   and cxxConstructExpr_trans trans_state si params_stmt ei cxx_constr_info =
     let context = trans_state.context in
@@ -891,14 +897,16 @@ struct
                          } in
     let res_trans_callee = decl_ref_trans trans_state this_res_trans si decl_ref in
     let res_trans = cxx_method_construct_call_trans trans_state_pri res_trans_callee
-        params_stmt si Sil.Tvoid in
+        params_stmt si Sil.Tvoid false in
     { res_trans with exps = [(var_exp, class_type)] }
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     let res_trans_callee = destructor_deref_trans trans_state this_res_trans class_type_ptr in
+    let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     if res_trans_callee.exps <> [] then
       cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si Sil.Tvoid
+        is_cpp_call_virtual
     else empty_res_trans
 
   and objCMessageExpr_trans_special_cases trans_state si obj_c_message_expr_info
@@ -1073,6 +1081,7 @@ struct
            instrs = instrs;
            exps = [(Sil.Var id, typ)];
            initd_exps = []; (* TODO we should get exps from branches+cond *)
+           is_cpp_call_virtual = false;
          }
      | _ -> assert false)
 
@@ -1112,6 +1121,7 @@ struct
         instrs = instrs';
         exps = e';
         initd_exps = [];
+        is_cpp_call_virtual = false;
       } in
 
     (* This function translate (s1 binop s2) doing shortcircuit for '&&' and '||' *)
@@ -1145,6 +1155,7 @@ struct
         instrs = res_trans_s1.instrs@res_trans_s2.instrs;
         exps = [(e_cond, typ1)];
         initd_exps = [];
+        is_cpp_call_virtual = false;
       } in
     Printing.log_out "Translating Condition for Conditional/Loop \n";
     let open Clang_ast_t in
@@ -1204,6 +1215,7 @@ struct
            instrs = [];
            exps = [];
            initd_exps = [];
+           is_cpp_call_virtual = false;
          }
      | _ -> assert false)
 
@@ -1439,11 +1451,11 @@ struct
 
 
   (* Iteration over colection 
-    
+
       for (v : C) { body; }
- 
-    is translated as follows: 
- 
+
+     is translated as follows:
+
       TypeC __range = C;
       for (__begin = __range.begin(), __end = __range.end();
            __begin != __end;
@@ -1457,10 +1469,10 @@ struct
     let open Clang_ast_t in
     match stmt_list with
     | [iterator_decl; initial_cond; exit_cond; increment; assign_current_index; loop_body] -> 
-      let loop_body' = CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
-      let null_stmt = NullStmt (stmt_info, []) in 
-      let for_loop = ForStmt (stmt_info, [initial_cond; null_stmt; exit_cond; increment; loop_body']) in
-      instruction trans_state (CompoundStmt (stmt_info, [iterator_decl; for_loop])) 
+        let loop_body' = CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
+        let null_stmt = NullStmt (stmt_info, []) in
+        let for_loop = ForStmt (stmt_info, [initial_cond; null_stmt; exit_cond; increment; loop_body']) in
+        instruction trans_state (CompoundStmt (stmt_info, [iterator_decl; for_loop]))
     | _ -> assert false  
 
   (* Fast iteration for colection
@@ -1567,6 +1579,7 @@ struct
           instrs = instructions;
           exps = [(var_exp, var_type)];
           initd_exps = [var_exp];
+          is_cpp_call_virtual = false;
         }
       ) else {
         root_nodes = [];
@@ -1575,6 +1588,7 @@ struct
         instrs = instructions;
         exps = [(var_exp, var_type)];
         initd_exps = [var_exp];
+        is_cpp_call_virtual = false;
       }
     )
 
@@ -1652,7 +1666,9 @@ struct
           ids = res_trans_tmp.ids @ res_trans_vd.ids;
           instrs = res_trans_tmp.instrs @ res_trans_vd.instrs;
           exps = res_trans_tmp.exps @ res_trans_vd.exps;
-          initd_exps = res_trans_tmp.initd_exps @ res_trans_vd.initd_exps; }
+          initd_exps = res_trans_tmp.initd_exps @ res_trans_vd.initd_exps;
+          is_cpp_call_virtual = false;
+        }
     | CXXRecordDecl _ :: var_decls' (*C++/C record decl treated in the same way *)
     | RecordDecl _ :: var_decls' ->
         (* Record declaration is done in the beginning when procdesc is defined.*)
@@ -1755,7 +1771,9 @@ struct
 
   and memberExpr_trans trans_state stmt_info stmt_list member_expr_info =
     let decl_ref = member_expr_info.Clang_ast_t.mei_decl_ref in
-    do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref
+    let res_trans = do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref in
+    let is_virtual_dispatch = member_expr_info.Clang_ast_t.mei_performs_virtual_dispatch in
+    { res_trans with is_cpp_call_virtual = res_trans.is_cpp_call_virtual && is_virtual_dispatch }
 
   and unaryOperator_trans trans_state stmt_info expr_info stmt_list unary_operator_info =
     let context = trans_state.context in
@@ -2094,7 +2112,7 @@ struct
 
     | DoStmt(stmt_info, [body; cond]) ->
         doStmt_trans trans_state stmt_info cond body
-           
+
     | CXXForRangeStmt (stmt_info, stmt_list) -> 
         cxxForRangeStmt_trans trans_state stmt_info stmt_list
 
@@ -2262,7 +2280,7 @@ struct
 
     | CXXDefaultArgExpr (_, _, _, default_arg_info) ->
         cxxDefaultArgExpr_trans trans_state default_arg_info
-    
+
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
               (Ast_utils.string_of_stmt s);
@@ -2316,7 +2334,9 @@ struct
             ids = res_trans_s.ids @ res_trans_tail.ids;
             instrs = res_trans_tail.instrs @ res_trans_s.instrs;
             exps = res_trans_tail.exps @ res_trans_s.exps;
-            initd_exps = res_trans_tail.initd_exps @ res_trans_s.initd_exps; } in
+            initd_exps = res_trans_tail.initd_exps @ res_trans_s.initd_exps;
+            is_cpp_call_virtual = false
+          } in
     exec_trans_instrs_no_rev trans_state (IList.rev trans_stmt_fun_list)
 
   and get_clang_stmt_trans stmt = fun trans_state -> instruction trans_state stmt

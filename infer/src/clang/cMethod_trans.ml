@@ -94,6 +94,11 @@ let get_language function_method_decl_info =
   | ObjC_Meth_decl_info _ -> CFrontend_config.OBJC
   | Block_decl_info _ -> CFrontend_config.OBJC
 
+let is_cpp_virtual function_method_decl_info =
+  match function_method_decl_info with
+  | Cpp_Meth_decl_info (_, mdi, _, _) -> mdi.Clang_ast_t.xmdi_is_virtual
+  | _ -> false
+
 (** Returns parameters of a function/method. They will have following order:
     1. self/this parameter (optional, only for methods)
     2. normal parameters
@@ -125,9 +130,10 @@ let build_method_signature tenv decl_info procname function_method_decl_info
   let parameters = get_parameters tenv function_method_decl_info in
   let attributes = decl_info.Clang_ast_t.di_attributes in
   let lang = get_language function_method_decl_info in
+  let is_cpp_virtual = is_cpp_virtual function_method_decl_info in
   CMethod_signature.make_ms
-    procname parameters tp attributes source_range is_instance_method lang parent_pointer
-    pointer_to_property_opt return_param_type_opt
+    procname parameters tp attributes source_range is_instance_method ~is_cpp_virtual:is_cpp_virtual
+    lang parent_pointer pointer_to_property_opt return_param_type_opt
 
 let get_assume_not_null_calls param_decls =
   let do_one_param decl = match decl with

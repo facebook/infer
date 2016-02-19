@@ -146,6 +146,7 @@ type trans_result = {
   instrs: Sil.instr list; (* list of SIL instruction that need to be placed in cfg nodes of the parent*)
   exps: (Sil.exp * Sil.typ) list; (* SIL expressions resulting from the translation of the clang stmt *)
   initd_exps: Sil.exp list;
+  is_cpp_call_virtual : bool
 }
 
 (* Empty result translation *)
@@ -156,6 +157,7 @@ let empty_res_trans = {
   instrs = [];
   exps = [];
   initd_exps = [];
+  is_cpp_call_virtual = false;
 }
 
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
@@ -178,7 +180,8 @@ let collect_res_trans l =
             ids = rt.ids@rt'.ids;
             instrs = rt.instrs@rt'.instrs;
             exps = rt.exps@rt'.exps;
-            initd_exps = rt.initd_exps@rt'.initd_exps; } in
+            initd_exps = rt.initd_exps@rt'.initd_exps;
+            is_cpp_call_virtual = false} in
   collect l empty_res_trans
 
 (* priority_node is used to enforce some kind of policy for creating nodes *)
