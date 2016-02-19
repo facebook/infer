@@ -38,25 +38,7 @@ ETC_DIR = $(INFER_DIR)/etc
 
 #### ocamlbuild options ####
 
-OCAMLBUILD_ANNOT_OPTIONS =
-ifeq (@ENABLE_OCAML_ANNOT@,yes)
-OCAMLBUILD_ANNOT_OPTIONS = -cflags -annot
-endif
-
-OCAMLBUILD_BINANNOT_OPTIONS =
-ifeq (@ENABLE_OCAML_BINANNOT@,yes)
-OCAMLBUILD_BINANNOT_OPTIONS = -cflags -bin-annot
-endif
-
-OCAMLBUILD_QUIET_OPTIONS =
-ifneq (,$(findstring s,$(MAKEFLAGS)))
-OCAMLBUILD_QUIET_OPTIONS = -quiet
-endif
-
 OCAMLBUILD_OPTIONS = \
-                     $(OCAMLBUILD_ANNOT_OPTIONS) \
-                     $(OCAMLBUILD_BINANNOT_OPTIONS) \
-                     $(OCAMLBUILD_QUIET_OPTIONS) \
                      -classic-display \
                      -cflags -short-paths \
                      -cflags -safe-string \
@@ -86,6 +68,18 @@ OCAMLBUILD_OPTIONS = \
                      -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*}>: warn(-27-32-35-39)" \
                      -tag-line "not <**/{config,iList,utils}.*>: open(Utils)" \
                      -pkgs atdgen,extlib,str,unix,yojson,zip
+
+ifeq (@ENABLE_OCAML_ANNOT@,yes)
+OCAMLBUILD_OPTIONS += -cflags -annot
+endif
+
+ifeq (@ENABLE_OCAML_BINANNOT@,yes)
+OCAMLBUILD_OPTIONS += -cflags -bin-annot
+endif
+
+ifneq (,$(findstring s,$(MAKEFLAGS)))
+OCAMLBUILD_OPTIONS += -quiet
+endif
 
 #### Backend declarations ####
 
