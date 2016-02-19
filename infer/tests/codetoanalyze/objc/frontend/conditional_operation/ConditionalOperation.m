@@ -11,17 +11,17 @@
 
 @interface A : NSObject
 
--(int) test4:(int) x;
+- (int)test4:(int)x;
 @end
 
 @implementation A
 
--(int) test4:(int) x {
-    return x;
+- (int)test4:(int)x {
+  return x;
 }
 
--(int) test5:(BOOL) b {
-    return [self test4 : (b ? b : 1)];
+- (int)test5:(BOOL)b {
+  return [self test4:(b ? b : 1)];
 }
 
 @end

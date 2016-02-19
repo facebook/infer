@@ -9,6 +9,4 @@
 
 #include <stdbool.h>
 
-bool revert(bool e) {
-    return e;
-}
+bool revert(bool e) { return e; }

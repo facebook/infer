@@ -15,9 +15,8 @@
 
 @implementation B
 
-- (instancetype) init
-{
-    return nil;
+- (instancetype)init {
+  return nil;
 }
 
 @end
@@ -26,22 +25,20 @@
 
 @end
 
-@implementation A
-{
-    int a;
+@implementation A {
+  int a;
 }
 
-- (instancetype) init
-{
-    self = [super init];
-    self->a = 4;
-    return self;
+- (instancetype)init {
+  self = [super init];
+  self->a = 4;
+  return self;
 }
 
 @end
 
-int main(int argc, char *argv[]) {
-    @autoreleasepool {
-        __unused id a = [A new];
-    }
+int main(int argc, char* argv[]) {
+  @autoreleasepool {
+    __unused id a = [A new];
+  }
 }

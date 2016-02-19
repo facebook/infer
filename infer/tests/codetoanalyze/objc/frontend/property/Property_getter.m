@@ -16,7 +16,7 @@
 @implementation A
 
 - (int)addTarget:(A*)target {
-    return target.x;
+  return target.x;
 }
 
 @end

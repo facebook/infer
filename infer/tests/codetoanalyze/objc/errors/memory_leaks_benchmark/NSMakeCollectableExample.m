@@ -15,14 +15,13 @@
 
 @implementation E
 
-- (CFReadStreamRef) readStream {
-    return nil;
+- (CFReadStreamRef)readStream {
+  return nil;
 }
 
-- (void) handleStreamError
-{
-    NSError *underlyingError = NSMakeCollectable(
-        [(NSError*)CFReadStreamCopyError((CFReadStreamRef)[self readStream]) autorelease]);
+- (void)handleStreamError {
+  NSError* underlyingError = NSMakeCollectable([(NSError*)CFReadStreamCopyError(
+      (CFReadStreamRef)[self readStream]) autorelease]);
 }
 
 @end

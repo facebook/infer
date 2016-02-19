@@ -1,9 +1,9 @@
 digraph iCFG {
-16 [label="16:  DeclStmt \n   *&a:int =3 [line 24]\n " shape="box"]
+16 [label="16:  DeclStmt \n   *&a:int =3 [line 23]\n " shape="box"]
 	
 
 	 16 -> 15 ;
-15 [label="15:  DeclStmt \n   n$3=*&a:int  [line 25]\n  *&b:int =n$3 [line 25]\n  REMOVE_TEMPS(n$3); [line 25]\n  NULLIFY(&b,false); [line 25]\n " shape="box"]
+15 [label="15:  DeclStmt \n   n$3=*&a:int  [line 24]\n  *&b:int =n$3 [line 24]\n  REMOVE_TEMPS(n$3); [line 24]\n  NULLIFY(&b,false); [line 24]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -18,7 +18,7 @@ digraph iCFG {
 12 [label="12: Exit crazy_nested \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start crazy_nested\nFormals: \nLocals:  ref_from_ref:int & ref_from_val:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&b,&a); [line 23]\n  NULLIFY(&b,false); [line 23]\n  NULLIFY(&ref_from_ref,false); [line 23]\n  NULLIFY(&ref_from_val,false); [line 23]\n " color=yellow style=filled]
+11 [label="11: Start crazy_nested\nFormals: \nLocals:  ref_from_ref:int & ref_from_val:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&ref_from_ref,&ref_from_val,&b,&a); [line 22]\n  NULLIFY(&b,false); [line 22]\n  NULLIFY(&ref_from_ref,false); [line 22]\n  NULLIFY(&ref_from_val,false); [line 22]\n " color=yellow style=filled]
 	
 
 	 11 -> 16 ;

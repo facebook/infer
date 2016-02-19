@@ -20,29 +20,29 @@
 
 - (instancetype)initWithFileDescriptor:(int)fd;
 
-@property (nonatomic, readonly) int fileDescriptor;
+@property(nonatomic, readonly) int fileDescriptor;
 
 @end
 
 @implementation NSFileHandle
 
 - (instancetype)initWithFileDescriptor:(int)fd closeOnDealloc:(BOOL)closeopt {
-    if (self) {
-        self->_fileDescriptor = fd;
-        return self;
-    }
+  if (self) {
+    self->_fileDescriptor = fd;
+    return self;
+  }
 }
 
 - (instancetype)initWithFileDescriptor:(int)fd {
-    [self initWithFileDescriptor:fd closeOnDealloc:NO];
+  [self initWithFileDescriptor:fd closeOnDealloc:NO];
 }
 
 - (void)closeFile {
-    close(self->_fileDescriptor);
+  close(self->_fileDescriptor);
 }
 
 - (void)dealloc {
-    [self closeFile];
+  [self closeFile];
 }
 
 @end

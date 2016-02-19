@@ -10,8 +10,8 @@
 #import <Foundation/NSObject.h>
 
 @interface ContainerClass : NSObject {
-@public
-    int containedValue;
+ @public
+  int containedValue;
 }
 
 @end
@@ -26,16 +26,16 @@
 
 @implementation MyClass
 
-- (void) aMethod: (ContainerClass*) c {
-    int i = 0;
-    if (c == nil) {
-        return;
-    }
+- (void)aMethod:(ContainerClass*)c {
+  int i = 0;
+  if (c == nil) {
+    return;
+  }
 
-    if(i == 0) {
-        // here c cannot be nil, because of the previous if
-        i = c->containedValue;
-    }
+  if (i == 0) {
+    // here c cannot be nil, because of the previous if
+    i = c->containedValue;
+  }
 }
 
 @end

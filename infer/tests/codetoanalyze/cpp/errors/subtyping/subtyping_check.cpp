@@ -8,19 +8,18 @@
  */
 
 struct A {
-    int f;
-    void setF() {
-        f = 1;
-    }
+  int f;
+  void setF() { f = 1; }
 };
 
 struct B : public A {
-    int g;
-    void setFG() {
-        setF();
-        g = 1;
-        if (g == 1)
-            g = 1/0;
-        else g = 0;
-    }
+  int g;
+  void setFG() {
+    setF();
+    g = 1;
+    if (g == 1)
+      g = 1 / 0;
+    else
+      g = 0;
+  }
 };

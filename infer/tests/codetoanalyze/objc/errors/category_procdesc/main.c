@@ -9,10 +9,9 @@
 
 #import "EOCPerson.h"
 
-
 int main() {
-    EOCPerson *person = [[EOCPerson alloc] init];
-    [person performDaysWork];
-    int *x = malloc(sizeof(int));
-    return 0;
+  EOCPerson* person = [[EOCPerson alloc] init];
+  [person performDaysWork];
+  int* x = malloc(sizeof(int));
+  return 0;
 }

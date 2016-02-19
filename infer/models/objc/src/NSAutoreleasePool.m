@@ -7,18 +7,18 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
- #pragma clang diagnostic ignored "-Wprotocol"
+#pragma clang diagnostic ignored "-Wprotocol"
 
- #pragma clang diagnostic ignored "-Wincomplete-implementation"
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
 
- #pragma clang diagnostic ignored "-Wimplicit-function-declaration"
+#pragma clang diagnostic ignored "-Wimplicit-function-declaration"
 
- #import <Foundation/NSObject.h>
+#import <Foundation/NSObject.h>
 
- @implementation NSAutoreleasePool
+@implementation NSAutoreleasePool
 
- - (id)init {
-     return (id)[self autorelease];
- }
+- (id)init {
+  return (id)[self autorelease];
+}
 
- @end
+@end

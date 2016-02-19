@@ -10,50 +10,49 @@
 #import <Foundation/Foundation.h>
 
 @interface A : NSObject {
-
 }
 @end
 
 @implementation A
 
--(void) noProblem {
-  NSArray *foo = @[@"aaa", @"bbb"];
+- (void)noProblem {
+  NSArray* foo = @[ @"aaa", @"bbb" ];
   // check that array literals create valid objects
-  NSArray *foofoo = @[foo];
+  NSArray* foofoo = @[ foo ];
 }
 
--(void) nilInArrayLiteral0 {
-  NSString *str = nil;
+- (void)nilInArrayLiteral0 {
+  NSString* str = nil;
 
   // nil argument in array literal crashes
-  NSArray *foo = @[str];
+  NSArray* foo = @[ str ];
 }
 
--(void) nilInArrayLiteral1 {
-  NSString *str = nil;
+- (void)nilInArrayLiteral1 {
+  NSString* str = nil;
 
   // nil argument in array literal crashes
-  NSArray *foo = @[str, @"bbb"];
+  NSArray* foo = @[ str, @"bbb" ];
 }
 
--(void) nilInArrayLiteral2 {
-  NSString *str = nil;
+- (void)nilInArrayLiteral2 {
+  NSString* str = nil;
 
   // nil argument in array literal crashes
-  NSArray *foo = @[@"aaa", str, @"bbb"];
+  NSArray* foo = @[ @"aaa", str, @"bbb" ];
 }
 
--(void) nilInArrayLiteral3 {
-  NSString *str = nil;
+- (void)nilInArrayLiteral3 {
+  NSString* str = nil;
 
   // nil argument in array literal crashes
-  NSArray *foo = @[@"aaa", @"bbb", str];
+  NSArray* foo = @[ @"aaa", @"bbb", str ];
 }
 
 @end
 
 int main() {
-  A *a = [A alloc];
+  A* a = [A alloc];
   [a noProblem];
   [a nilInArrayLiteral0];
   return 0;

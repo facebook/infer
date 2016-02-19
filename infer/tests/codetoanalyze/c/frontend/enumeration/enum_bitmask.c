@@ -8,11 +8,11 @@
  */
 
 typedef enum MyOption {
-    MyOption1 = 1 << 0,
-    MyOption2 = 1 << 1,
+  MyOption1 = 1 << 0,
+  MyOption2 = 1 << 1,
 };
 
 int main() {
-    MyOption option1 = MyOption1;
-    MyOption option2 = MyOption2;
+  MyOption option1 = MyOption1;
+  MyOption option2 = MyOption2;
 }

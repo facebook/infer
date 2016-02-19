@@ -9,12 +9,12 @@
 
 struct X {
   int f;
-  int call() {return f;}
+  int call() { return f; }
 };
 
 X global;
-X * get_ptr() {return &global;}
-X& get_ref() {return global;}
+X* get_ptr() { return &global; }
+X& get_ref() { return global; }
 
 void test_ref() {
   int f = get_ref().f;

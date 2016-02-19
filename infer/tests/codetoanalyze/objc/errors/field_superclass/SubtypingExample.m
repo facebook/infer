@@ -11,77 +11,75 @@
 
 @interface Person : NSObject
 
-{
-    NSString *personName;
-    int personAge;
+                    {
+  NSString* personName;
+  int personAge;
 }
 
-- (id)initWithName:(NSString *)name andAge:(int)age;
+- (id)initWithName:(NSString*)name andAge:(int)age;
 
-- (void) setAge:(int) age;
+- (void)setAge:(int)age;
 
-- (int) getAge;
+- (int)getAge;
 
 @end
 
 @implementation Person
 
-- (id)initWithName:(NSString *)name andAge:(int)age{
-    personName = name;
-    personAge = age;
-    return self;
+- (id)initWithName:(NSString*)name andAge:(int)age {
+  personName = name;
+  personAge = age;
+  return self;
 }
 
-- (void) setAge:(int) age {
-    self->personAge = age;
+- (void)setAge:(int)age {
+  self->personAge = age;
 }
 
-- (int) getAge {
-    return self->personAge;
+- (int)getAge {
+  return self->personAge;
 }
 
 @end
 
 @interface Employee : Person
 
-{
-    NSString *employeeEducation;
+                      {
+  NSString* employeeEducation;
 }
 
-- (id)initWithName:(NSString *)name andAge:(int)age
-      andEducation:(NSString *)education;
+- (id)initWithName:(NSString*)name
+            andAge:(int)age
+      andEducation:(NSString*)education;
 
-- (void) setEmployeeEducation:(NSString*) employeeEducation;
+- (void)setEmployeeEducation:(NSString*)employeeEducation;
 
 @end
 
-
 @implementation Employee
 
-- (id)initWithName:(NSString *)name andAge:(int)age
-      andEducation: (NSString *)education
-{
-    if (self = [super initWithName:name andAge:age]) {
-        employeeEducation = education;
-    }
-    int x = 1/0;
-    return self;
+- (id)initWithName:(NSString*)name
+            andAge:(int)age
+      andEducation:(NSString*)education {
+  if (self = [super initWithName:name andAge:age]) {
+    employeeEducation = education;
+  }
+  int x = 1 / 0;
+  return self;
 }
 
-- (void) setEmployeeEducation:(NSString*) employeeEducation {
-    self->employeeEducation = employeeEducation;
+- (void)setEmployeeEducation:(NSString*)employeeEducation {
+  self->employeeEducation = employeeEducation;
 }
 
 @end
 
 int testFields() {
-    Employee* employee = [Employee new];
-    [employee setEmployeeEducation:@"Master"];
-    [employee setAge:29];
-    [employee setEmployeeEducation:@"PhD"];
-    return [employee getAge];
+  Employee* employee = [Employee new];
+  [employee setEmployeeEducation:@"Master"];
+  [employee setAge:29];
+  [employee setEmployeeEducation:@"PhD"];
+  return [employee getAge];
 }
 
-int test() {
-    return 1/(testFields() - 29);
-}
+int test() { return 1 / (testFields() - 29); }

@@ -8,7 +8,7 @@
  */
 
 class X {
-public:
+ public:
   int field;
 };
 
@@ -18,11 +18,11 @@ X globalX;
 X* getNonNull() { return &globalX; }
 
 void derefNullField() {
-  X *x = getNull();
+  X* x = getNull();
   int c = x->field;
 }
 
 void derefNonNullField() {
-  X *x = getNonNull();
+  X* x = getNonNull();
   int c = x->field;
 }

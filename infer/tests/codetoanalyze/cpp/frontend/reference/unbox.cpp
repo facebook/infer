@@ -7,9 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int fun_p(int *p) { return *p;}
-int fun_v(int p) { return p;}
-int fun_r(int &p) { return p;}
+int fun_p(int* p) { return *p; }
+int fun_v(int p) { return p; }
+int fun_r(int& p) { return p; }
 
 // cfgs should look similar for unbox_ref and unbox_ptr
 
@@ -26,7 +26,7 @@ void unbox_ref() {
 // test conversions from int* to {int*, int, int&)
 void unbox_ptr() {
   int a = 3;
-  int *p = &a;
+  int* p = &a;
 
   fun_p(p);
   fun_v(*p);

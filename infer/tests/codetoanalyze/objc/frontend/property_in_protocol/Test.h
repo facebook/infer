@@ -7,13 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/NSObject.h>
 #import "MyProtocol.h"
+#import <Foundation/NSObject.h>
 
 @interface Test : NSObject<MyProtocol> {
 
-    int numberOfFiles;
-
+  int numberOfFiles;
 }
 
 @end

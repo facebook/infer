@@ -8,8 +8,9 @@
  */
 
 class A {
-int field;
-public:
+  int field;
+
+ public:
   void init(int val) { field = val; }
   int method();
 };
@@ -20,6 +21,6 @@ int A::method() {
 }
 
 void test() {
-  A *a_ptr;
+  A* a_ptr;
   a_ptr->method();
 }

@@ -1,20 +1,20 @@
 digraph iCFG {
-5 [label="5:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class Bicycle ):unsigned long ) [line 15]\n  *&bike:class Bicycle *=n$1 [line 15]\n  REMOVE_TEMPS(n$1); [line 15]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class Bicycle ):unsigned long ) [line 14]\n  *&bike:class Bicycle *=n$1 [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  Message Call: signalStop \n   n$0=*&bike:class Bicycle * [line 17]\n  _fun_Bicycle_signalStop(n$0:class Bicycle *) virtual [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&bike,false); [line 17]\n " shape="box"]
+4 [label="4:  Message Call: signalStop \n   n$0=*&bike:class Bicycle * [line 16]\n  _fun_Bicycle_signalStop(n$0:class Bicycle *) virtual [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&bike,false); [line 16]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  bike:class Bicycle * \n   DECLARE_LOCALS(&return,&bike); [line 13]\n  NULLIFY(&bike,false); [line 13]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  bike:class Bicycle * \n   DECLARE_LOCALS(&return,&bike); [line 12]\n  NULLIFY(&bike,false); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 5 ;

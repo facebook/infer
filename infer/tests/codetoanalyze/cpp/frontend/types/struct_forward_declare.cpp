@@ -17,13 +17,11 @@ struct X;
 struct X {
   int f;
   int getF() { return f; }
-  Y *y;
-  Z *z;
+  Y* y;
+  Z* z;
 };
 
-void fun_with_Z(Z *z1) {
-  Z *z2 = z1;
-}
+void fun_with_Z(Z* z1) { Z* z2 = z1; }
 
 struct Z {
   int f;
@@ -39,7 +37,7 @@ int X_div0() {
   return 1 / x.getF();
 }
 
-int X_ptr_div0(X *x) {
+int X_ptr_div0(X* x) {
   x->f = 0;
   return 1 / x->getF();
 }
@@ -60,7 +58,7 @@ int Z_div0() {
   return 1 / z.getF();
 }
 
-int Z_ptr_div0(Z *z) {
+int Z_ptr_div0(Z* z) {
   // internal implementation details, subject to change:
   // Z * will by Sil.Tptr (Sil.Tvar Z) type and
   // will get expanded by clang frontend

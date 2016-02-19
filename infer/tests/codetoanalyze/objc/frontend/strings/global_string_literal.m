@@ -9,8 +9,6 @@
 
 #import <Foundation/NSObject.h>
 
-NSString *lastName = @"Rodriguez";
+NSString* lastName = @"Rodriguez";
 
-int main () {
-  return 0;
-}
+int main() { return 0; }

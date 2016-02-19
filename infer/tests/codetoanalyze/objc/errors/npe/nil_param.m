@@ -16,23 +16,21 @@
 
 @implementation A
 
--(void) test2 {
+- (void)test2 {
   self->x = 1;
 }
 
--(void) test1:(A*) other {
+- (void)test1:(A*)other {
 
-        [other test2];
-
-
+  [other test2];
 }
 
 @end
 
-int main () {
+int main() {
 
-    A* a=[A alloc];
-    [a test1: nil];
-    [a release];
-    return 0;
+  A* a = [A alloc];
+  [a test1:nil];
+  [a release];
+  return 0;
 }

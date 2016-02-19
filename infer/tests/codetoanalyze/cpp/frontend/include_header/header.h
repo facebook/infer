@@ -11,12 +11,14 @@ struct A {
   int div0() { return 1 / 0; }
 };
 
-template<class T>
+template <class T>
 struct B {
   int div0() { return 1 / 0; }
 };
 
 int div0_fun() { return 1 / 0; }
 
-template<class T>
-int div0_templ() { return 1 / 0; }
+template <class T>
+int div0_templ() {
+  return 1 / 0;
+}

@@ -10,34 +10,35 @@
 #import <Foundation/NSObject.h>
 
 @interface A : NSObject {
-    @public int x;
+ @public
+  int x;
 }
 
-+(A*) meth;
++ (A*)meth;
 
-@property (nonatomic, readonly) A* meth;
+@property(nonatomic, readonly) A* meth;
 
 @end
 
 @implementation A
 
-+(A*) meth {
-    return [A new];
++ (A*)meth {
+  return [A new];
 }
 
--(A*) meth {
-    return nil;
+- (A*)meth {
+  return nil;
 }
 
 @end
 
 int test() {
-    A* para = [A new];
-    A *a = [para meth];
-    return a->x;
+  A* para = [A new];
+  A* a = [para meth];
+  return a->x;
 }
 
 int test2(A* para) {
-    A *a = [A meth];
-    return a->x;
+  A* a = [A meth];
+  return a->x;
 }

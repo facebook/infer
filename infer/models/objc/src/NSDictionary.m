@@ -16,7 +16,7 @@
 @implementation NSDictionary
 
 + (instancetype)dictionary {
-     return [NSDictionary alloc];
+  return [NSDictionary alloc];
 }
 
 @end

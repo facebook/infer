@@ -9,7 +9,7 @@
 
 int main() {
   int j = 0;
-  for (int b=0;; b++) {
+  for (int b = 0;; b++) {
     j += j;
   }
   return 0;

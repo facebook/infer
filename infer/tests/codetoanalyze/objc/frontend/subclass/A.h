@@ -10,7 +10,7 @@
 #import <Foundation/NSObject.h>
 
 @interface A : NSObject {
-    int x;
+  int x;
 }
 
 @end

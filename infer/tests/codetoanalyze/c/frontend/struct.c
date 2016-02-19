@@ -8,8 +8,8 @@
  */
 
 struct X {
-int a;
-int b;
+  int a;
+  int b;
 };
 
 void test() {

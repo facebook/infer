@@ -14,7 +14,7 @@
 
 - (int)myNumber {
 
-int subclassNumber = [super myNumber] + 1;
+  int subclassNumber = [super myNumber] + 1;
   return subclassNumber;
 }
 

@@ -15,123 +15,120 @@
 
 @interface Parent : NSObject
 
--(void) setChild: (Child *) c;
+- (void)setChild:(Child*)c;
 
 @end
 
 @implementation Parent {
-    Child *child;
+  Child* child;
 }
 
--(void) setChild: (Child *) c {
+- (void)setChild:(Child*)c {
 
-    self->child =c;
+  self->child = c;
 }
 
 @end
 
 @interface ParentW : NSObject
 
--(void) setChild: (ChildW *) c;
+- (void)setChild:(ChildW*)c;
 
 @end
 
 @implementation ParentW {
-    ChildW *child;
+  ChildW* child;
 }
 
--(void) setChild: (ChildW *) c {
+- (void)setChild:(ChildW*)c {
 
-    self->child =c;
+  self->child = c;
 }
 
 @end
 
 @interface ParentUU : NSObject
 
--(void) setChild: (ChildUU *) c;
+- (void)setChild:(ChildUU*)c;
 
 @end
 
 @implementation ParentUU {
-    ChildUU *child;
+  ChildUU* child;
 }
 
--(void) setChild: (ChildUU *) c {
+- (void)setChild:(ChildUU*)c {
 
-    self->child =c;
+  self->child = c;
 }
 
 @end
 
-
 @interface Child : NSObject
 
--(void) setParent: (Parent *) p;
+- (void)setParent:(Parent*)p;
 
 @end
 
 @implementation Child {
-    Parent *parent;
+  Parent* parent;
 }
 
--(void) setParent: (Parent *) p {
-    self->parent =p;
+- (void)setParent:(Parent*)p {
+  self->parent = p;
 }
 
 @end
 
-
 @interface ChildW : NSObject
 
--(void) setParent: (ParentW *) p;
+- (void)setParent:(ParentW*)p;
 
 @end
 
 @implementation ChildW {
-    ParentW __weak *parent;
+  ParentW __weak* parent;
 }
 
--(void) setParent: (ParentW *) p {
-    self->parent =p;
+- (void)setParent:(ParentW*)p {
+  self->parent = p;
 }
 
 @end
 
+@interface ChildUU : NSObject
 
-@interface ChildUU: NSObject
-
--(void) setParent: (ParentUU *) p;
+- (void)setParent:(ParentUU*)p;
 
 @end
 
 @implementation ChildUU {
-    ParentUU __unsafe_unretained *parent;
+  ParentUU __unsafe_unretained* parent;
 }
 
--(void) setParent: (ParentUU *) p {
-    self->parent =p;
+- (void)setParent:(ParentUU*)p {
+  self->parent = p;
 }
 
 @end
 
 void strongcycle() {
-    Parent *parent = [[Parent alloc] init];
-    Child *child = [[Child alloc] init];
-    [parent setChild:child];
-    [child setParent: parent];
+  Parent* parent = [[Parent alloc] init];
+  Child* child = [[Child alloc] init];
+  [parent setChild:child];
+  [child setParent:parent];
 }
 
 void weakcycle() {
-    ParentW *parent = [[ParentW alloc] init];
-    ChildW *child = [[ChildW alloc] init];
-    [parent setChild:child];
-    [child setParent: parent];
+  ParentW* parent = [[ParentW alloc] init];
+  ChildW* child = [[ChildW alloc] init];
+  [parent setChild:child];
+  [child setParent:parent];
 }
 
 void unsafeunretainedcycle() {
-    ParentUU *parent = [[ParentUU alloc] init];
-    ChildUU *child = [[ChildUU alloc] init];
-    [parent setChild:child];
-    [child setParent: parent];
+  ParentUU* parent = [[ParentUU alloc] init];
+  ChildUU* child = [[ChildUU alloc] init];
+  [parent setChild:child];
+  [child setParent:parent];
 }

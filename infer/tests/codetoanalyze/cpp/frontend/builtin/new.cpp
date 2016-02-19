@@ -13,6 +13,6 @@ void test() {
   new int; // this will be leak - test that it gets to cfg
   delete i;
 
-  //int* i_a = new int[10];
-  //delete[] i_a;
+  // int* i_a = new int[10];
+  // delete[] i_a;
 }

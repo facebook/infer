@@ -11,16 +11,14 @@
 
 @interface AClass : NSObject {
 }
-   - (NSObject *)sharedInstance;
+- (NSObject*)sharedInstance;
 @end
 
-
 @implementation AClass
-NSObject *aVariable;
+NSObject* aVariable;
 
-- (NSObject *)sharedInstance
-{
-    return aVariable;
+- (NSObject*)sharedInstance {
+  return aVariable;
 }
 
 @end

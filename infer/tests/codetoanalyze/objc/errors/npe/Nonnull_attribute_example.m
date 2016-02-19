@@ -12,37 +12,35 @@
 void __infer_assume(int cond);
 
 @interface A : NSObject {
-    @public int x;
+ @public
+  int x;
 }
 
--(A*) getA;
+- (A*)getA;
 
 @end
 
 @implementation A
 
--(A*) getA {
-    return [A new];
+- (A*)getA {
+  return [A new];
 }
 
 @end
 
 @interface C : NSObject
-@property (copy, nonnull) NSString *name;
+@property(copy, nonnull) NSString* name;
 
 @end
 
 @implementation C
 
-- (instancetype)initWithCoder:(NSString*)aDecoder and:( A*  __nonnull)a
-{
-    A* a1 = [a getA];
-    int y = a1->x;
-    return self;
+- (instancetype)initWithCoder:(NSString*)aDecoder and:(A* __nonnull)a {
+  A* a1 = [a getA];
+  int y = a1->x;
+  return self;
 }
 
 @end
 
-void test(void (^ __nonnull callback)(NSError *, id)) {
-    callback(NULL, NULL);
-}
+void test(void (^__nonnull callback)(NSError*, id)) { callback(NULL, NULL); }

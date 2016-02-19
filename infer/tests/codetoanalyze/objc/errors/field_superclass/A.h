@@ -7,12 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-
 #import <Foundation/NSObject.h>
 
 @interface A : NSObject {
-    @public int x;
-    @public A *a;
+ @public
+  int x;
+ @public
+  A* a;
 }
 
 @end

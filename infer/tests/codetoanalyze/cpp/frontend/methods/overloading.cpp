@@ -12,17 +12,13 @@ class A {
   int fun(int a, int b, int c);
 };
 
-int A::fun(int a, int b, int c) {
-  return a + b + c;
-}
+int A::fun(int a, int b, int c) { return a + b + c; }
 
-int A::fun(int a, int b) {
-  return a - b;
-}
+int A::fun(int a, int b) { return a - b; }
 
 void test() {
-  A *a_ptr;
+  A* a_ptr;
   // calling methods
-  a_ptr->fun(1,2);
-  a_ptr->fun(1,2,3);
+  a_ptr->fun(1, 2);
+  a_ptr->fun(1, 2, 3);
 }

@@ -11,8 +11,8 @@
 #include <stdlib.h>
 
 int main() {
-    IvarExample *i = [IvarExample alloc];
-    int a = i.aProperty;
-    int *x = malloc(sizeof(int));
-    return 0;
+  IvarExample* i = [IvarExample alloc];
+  int a = i.aProperty;
+  int* x = malloc(sizeof(int));
+  return 0;
 }

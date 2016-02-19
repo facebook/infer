@@ -13,27 +13,24 @@
 
 @end
 
-
 typedef void (^MyHandler)(D* data);
-
 
 @interface B : NSObject
 
-- (void)sHandler: (MyHandler) h;
+- (void)sHandler:(MyHandler)h;
 @end
 
 @implementation B {
-    D* _d;
-    MyHandler _h;
+  D* _d;
+  MyHandler _h;
 }
 
 - (void)sHandler:(MyHandler)h {
 
-    self->_h=h;
+  self->_h = h;
 }
 
 @end
-
 
 @interface A : NSObject
 
@@ -41,33 +38,31 @@ typedef void (^MyHandler)(D* data);
 @end
 
 @implementation A {
-    B* _b;
-    D* _data;
+  B* _b;
+  D* _data;
 }
 
-- (void)capture
-{
-    _b=[B alloc];
-    [_b sHandler:^(D *d){
-        _data=d;
-    }];
+- (void)capture {
+  _b = [B alloc];
+  [_b sHandler:^(D* d) {
+    _data = d;
+  }];
 }
 
 @end
 
 A* foo(A* a) {
 
-    [a capture];
+  [a capture];
 
-    return a;
+  return a;
 };
 
+int main(int argc, const char* argv[]) {
 
-int main(int argc, const char * argv[]) {
+  A* a = [A alloc];
 
-    A* a = [A alloc];
+  a = foo(a);
 
-    a=foo(a);
-
-    return 0;
+  return 0;
 }

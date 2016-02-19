@@ -10,7 +10,7 @@
 int simple_assignment() {
   int x = 10;
   int result = 0;
-  while(int a = x) {
+  while (int a = x) {
     result += a;
     x -= 1;
   }
@@ -20,7 +20,7 @@ int simple_assignment() {
 int conditional_assignment() {
   int x = 10;
   int result = 0;
-  while(int a = x > 0 ? x : 0) {
+  while (int a = x > 0 ? x : 0) {
     result += a;
     x -= 1;
   }

@@ -12,11 +12,9 @@ struct point {
   int y;
 };
 
-int compound_literal_expr() {
-  return ((struct point) { .y = 32, .x = 52 }).x;
-}
+int compound_literal_expr() { return ((struct point){.y = 32, .x = 52}).x; }
 
 int init_with_compound_literal() {
-  struct point p = (struct point) { 32, 52 };
+  struct point p = (struct point){32, 52};
   return p.x;
 }

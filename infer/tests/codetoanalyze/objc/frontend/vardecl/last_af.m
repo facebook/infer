@@ -7,6 +7,4 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int main() {
-    int a = 0, b = a + 2;
-}
+int main() { int a = 0, b = a + 2; }

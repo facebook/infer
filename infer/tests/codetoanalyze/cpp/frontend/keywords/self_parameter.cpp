@@ -8,16 +8,10 @@
  */
 
 class A {
-public:
-    int meth_with_self(int self, int b) {
-        return self + b;
-    }
+ public:
+  int meth_with_self(int self, int b) { return self + b; }
 };
 
-int fun_with_self(int self) {
-    return self;
-}
+int fun_with_self(int self) { return self; }
 
-int test(A *a) {
-    return a->meth_with_self(1, 2) + fun_with_self(10);
-}
+int test(A* a) { return a->meth_with_self(1, 2) + fun_with_self(10); }

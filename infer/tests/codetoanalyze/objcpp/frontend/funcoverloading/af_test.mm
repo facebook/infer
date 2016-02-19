@@ -9,12 +9,6 @@
 
 #import <Foundation/NSObject.h>
 
-int POPSelectValueType(id obj)
-{
-  return 1;
-}
+int POPSelectValueType(id obj) { return 1; }
 
-int POPSelectValueType(int v)
-{
-  return v;
-}
+int POPSelectValueType(int v) { return v; }

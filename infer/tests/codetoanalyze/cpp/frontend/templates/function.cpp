@@ -19,24 +19,24 @@ struct X3 {
   int get() { return 0; }
 };
 
-template<class T>
-int getVal(T &x) {
+template <class T>
+int getVal(T& x) {
   return x.getVal();
 }
 
 // explicit specialization
-template<>
-int getVal(X3 &x) {
+template <>
+int getVal(X3& x) {
   return x.get();
 }
 
-template<class T>
+template <class T>
 int createAndGetVal() {
   T x;
   return getVal(x);
 }
 
-template<class T>
+template <class T>
 int createAndDiv() {
   return 1 / createAndGetVal<T>();
 }

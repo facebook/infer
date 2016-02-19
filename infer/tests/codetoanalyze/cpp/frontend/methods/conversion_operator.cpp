@@ -12,13 +12,19 @@ struct X {
   operator bool() { return b_; }
   int f_;
   bool b_;
-  X(int f, bool b) { f_ = f; b_ = b; }
-  X(const X& x) { f_ = x.f_; b_ = x.b_; }
+  X(int f, bool b) {
+    f_ = f;
+    b_ = b;
+  }
+  X(const X& x) {
+    f_ = x.f_;
+    b_ = x.b_;
+  }
 };
 
 struct Y {
   // operator returning struct type
-  operator X() { return X(f,b); }
+  operator X() { return X(f, b); }
   int f;
   int b;
 };

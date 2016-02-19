@@ -11,10 +11,6 @@ struct X {
   ~X() {}
 };
 
-void deleteX(X *x) {
-  delete x;
-}
+void deleteX(X* x) { delete x; }
 
-void deleteInt(int *x) {
-  delete x;
-}
+void deleteInt(int* x) { delete x; }

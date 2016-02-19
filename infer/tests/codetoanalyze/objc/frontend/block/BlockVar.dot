@@ -30,11 +30,11 @@ digraph iCFG {
 	
 
 	 12 -> 7 ;
-11 [label="11:  Return Stmt \n   NULLIFY(&p,false); [line 27]\n  n$3=*&x:int  [line 27]\n  *&return:int =n$3 [line 27]\n  REMOVE_TEMPS(n$3); [line 27]\n  NULLIFY(&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1,true); [line 27]\n  NULLIFY(&x,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+11 [label="11:  Return Stmt \n   NULLIFY(&p,false); [line 29]\n  n$3=*&x:int  [line 29]\n  *&return:int =n$3 [line 29]\n  REMOVE_TEMPS(n$3); [line 29]\n  NULLIFY(&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1,true); [line 29]\n  NULLIFY(&x,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 11 -> 5 ;
-10 [label="10:  Return Stmt \n   NULLIFY(&x,false); [line 26]\n  n$1=*&p:int * [line 26]\n  n$2=*n$1:int  [line 26]\n  *&return:int =n$2 [line 26]\n  REMOVE_TEMPS(n$1,n$2); [line 26]\n  NULLIFY(&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1,true); [line 26]\n  NULLIFY(&p,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+10 [label="10:  Return Stmt \n   NULLIFY(&x,false); [line 27]\n  n$1=*&p:int * [line 27]\n  n$2=*n$1:int  [line 27]\n  *&return:int =n$2 [line 27]\n  REMOVE_TEMPS(n$1,n$2); [line 27]\n  NULLIFY(&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1,true); [line 27]\n  NULLIFY(&p,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 10 -> 5 ;

@@ -9,9 +9,7 @@
 
 struct A {
   int f;
-  ~A() {
-    f = 0;
-  }
+  ~A() { f = 0; }
 };
 
 struct B {
@@ -19,6 +17,4 @@ struct B {
   ~B();
 };
 
-B::~B() {
-  f = 1;
-}
+B::~B() { f = 1; }

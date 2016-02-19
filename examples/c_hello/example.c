@@ -7,17 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/select.h>
 #include <unistd.h>
 
 struct Person {
@@ -27,26 +27,23 @@ struct Person {
 };
 
 int simple_null_pointer() {
-  struct Person *max = 0;
+  struct Person* max = 0;
   return max->age;
 }
 
-struct Person *Person_create(int age, int height, int weight) {
-  struct Person *who = 0;
+struct Person* Person_create(int age, int height, int weight) {
+  struct Person* who = 0;
   return who;
 }
 
-int get_age(struct Person *who) {
-  return who->age;
-}
+int get_age(struct Person* who) { return who->age; }
 
 int null_pointer_interproc() {
-  struct Person *joe = Person_create(32, 64, 140);
+  struct Person* joe = Person_create(32, 64, 140);
   return get_age(joe);
 }
 
-void fileNotClosed()
-{
+void fileNotClosed() {
   int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
   if (fd != -1) {
     char buffer[256];
@@ -56,14 +53,15 @@ void fileNotClosed()
 }
 
 void simple_leak() {
-  int *p;
-  p = (int*) malloc(sizeof(int));
+  int* p;
+  p = (int*)malloc(sizeof(int));
 }
 
 void common_realloc_leak() {
   int *p, *q;
-  p = (int*) malloc(sizeof(int));
-  q = (int*) realloc(p, sizeof(int) * 42);
+  p = (int*)malloc(sizeof(int));
+  q = (int*)realloc(p, sizeof(int) * 42);
   // if realloc fails, then p becomes unreachable
-  if (q != NULL) free(q);
+  if (q != NULL)
+    free(q);
 }

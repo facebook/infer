@@ -8,16 +8,15 @@
  */
 
 // Splitting EOCPerson into categories
-#import <Foundation/NSString.h>
 #import <Foundation/NSObject.h>
+#import <Foundation/NSString.h>
 
 @interface EOCPerson : NSObject
-@property (nonatomic, copy, readonly) NSString *firstName;
-@property (nonatomic, copy, readonly) NSString *lastName;
-@property (nonatomic, strong, readonly) NSArray *friends;
+@property(nonatomic, copy, readonly) NSString* firstName;
+@property(nonatomic, copy, readonly) NSString* lastName;
+@property(nonatomic, strong, readonly) NSArray* friends;
 
-- (id)initWithFirstName:(NSString*)firstName
-            andLastName:(NSString*)lastName;
+- (id)initWithFirstName:(NSString*)firstName andLastName:(NSString*)lastName;
 @end
 
 @interface EOCPerson (Friendship)

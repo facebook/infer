@@ -12,7 +12,7 @@
 @implementation NSArray
 
 + (instancetype)array {
-    return [NSArray alloc];
+  return [NSArray alloc];
 }
 
 @end

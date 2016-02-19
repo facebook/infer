@@ -12,10 +12,6 @@ struct point {
   int y;
 };
 
-int return_zero() {
-  return ((struct point) { .y = 32, .x = 0 }).x;
-}
+int return_zero() { return ((struct point){.y = 32, .x = 0}).x; }
 
-int divide_by_zero() {
-  return 1/return_zero();
-}
+int divide_by_zero() { return 1 / return_zero(); }

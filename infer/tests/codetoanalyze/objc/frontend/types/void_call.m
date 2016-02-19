@@ -11,49 +11,39 @@
 
 @interface AClass : NSObject {
 }
-- (void) foo: (int)a;
-- (int)  bar: (int)a;
+- (void)foo:(int)a;
+- (int)bar:(int)a;
 @end
-
 
 @implementation AClass
 
-- (void) foo: (int)a {
-    a++;
+- (void)foo:(int)a {
+  a++;
 }
-- (int)  bar: (int)a {
-    return a++;
+- (int)bar:(int)a {
+  return a++;
 }
 
 @end
 
+void foo1(int a) { a++; }
 
-
-void foo1(int a) {
-    a++;
-}
-
-int bar1(int a) {
-
-    return a++;
-}
+int bar1(int a) { return a++; }
 
 int main() {
 
-    int x=1;
-    foo1(x);
+  int x = 1;
+  foo1(x);
 
-    x=bar1(x);
+  x = bar1(x);
 
-    AClass* o =[AClass alloc];
+  AClass* o = [AClass alloc];
 
-    if (o) {
+  if (o) {
 
-        [o foo:x];
-        x=[o bar:x];
+    [o foo:x];
+    x = [o bar:x];
+  }
 
-    }
-
-    return 0;
-
+  return 0;
 }

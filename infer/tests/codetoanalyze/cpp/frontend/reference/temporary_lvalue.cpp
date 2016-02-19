@@ -14,9 +14,7 @@ int div0_init_expr() {
   return div(a);
 }
 
-int div0_function_param_cast() {
-  return div(0);
-}
+int div0_function_param_cast() { return div(0); }
 
 // to compare with cfgs when no MaterializeTemporaryExpr is produced
 int div0_no_const_ref() {

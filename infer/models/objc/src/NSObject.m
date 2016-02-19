@@ -18,6 +18,6 @@
 @implementation NSObject
 
 - (id)init {
-    return (id)self;
+  return (id)self;
 }
 @end

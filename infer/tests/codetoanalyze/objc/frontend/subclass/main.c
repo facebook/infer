@@ -10,6 +10,6 @@
 #import "A.h"
 
 int main() {
-    A* a = [[A alloc] init];
-    return 0;
+  A* a = [[A alloc] init];
+  return 0;
 }

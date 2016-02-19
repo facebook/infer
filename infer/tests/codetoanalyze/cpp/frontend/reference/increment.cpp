@@ -9,13 +9,13 @@
 
 void using_value() {
   int v = 3;
-  int &r = ++v;
-  int &q = --v;
+  int& r = ++v;
+  int& q = --v;
 }
 
 void using_ref() {
   int v = 3;
-  int &vr = v;
-  int &r = ++vr;
-  int &q = --vr;
+  int& vr = v;
+  int& r = ++vr;
+  int& q = --vr;
 }

@@ -17,8 +17,8 @@ CFLocaleRef CFLocaleCopyCurrent(void) {
   return __cf_non_null_alloc(c);
 }
 
-CFLocaleRef CFLocaleCreate ( CFAllocatorRef allocator,
-                             CFStringRef localeIdentifier ) {
+CFLocaleRef CFLocaleCreate(CFAllocatorRef allocator,
+                           CFStringRef localeIdentifier) {
   CFLocaleRef c;
   return __cf_alloc(c);
 }

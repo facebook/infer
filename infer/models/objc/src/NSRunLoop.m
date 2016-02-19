@@ -7,50 +7,44 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-
 #import "NSRunLoop.h"
 
-@implementation  NSRunLoop
+@implementation NSRunLoop
 
-+ (NSRunLoop*) currentRunLoop {
-   
-    return [NSRunLoop alloc];
++ (NSRunLoop*)currentRunLoop {
+
+  return [NSRunLoop alloc];
 };
 
-+ (NSRunLoop*) mainRunLoop {
-    
-    return [NSRunLoop alloc];
++ (NSRunLoop*)mainRunLoop {
+
+  return [NSRunLoop alloc];
 };
 
+- (void)acceptInputForMode:(NSString*)mode beforeDate:(NSDate*)limit_date{};
 
-- (void) acceptInputForMode: (NSString*)mode
-                 beforeDate: (NSDate*)limit_date {
+- (void)addTimer:(NSTimer*)timer
+         forMode:(NSString*)mode{
+
+                 };
+
+- (NSString*)currentMode {
+  return @"";
 };
 
-- (void) addTimer: (NSTimer*)timer
-          forMode: (NSString*)mode {
-    
+- (NSDate*)limitDateForMode:(NSString*)mode {
+
+  return [NSDate alloc];
 };
 
-- (NSString*) currentMode {
-    return @"";
+- (void)run{};
+
+- (BOOL)runMode:(NSString*)mode beforeDate:(NSDate*)date {
+
+  int res;
+  return res;
 };
 
-- (NSDate*) limitDateForMode: (NSString*)mode {
-    
-    return [NSDate alloc];
-};
-
-- (void) run {};
-
-- (BOOL) runMode: (NSString*)mode
-      beforeDate: (NSDate*)date {
-    
-    int res;
-    return res;
-};
-
-- (void) runUntilDate: (NSDate*)date {};
+- (void)runUntilDate:(NSDate*)date{};
 
 @end
-

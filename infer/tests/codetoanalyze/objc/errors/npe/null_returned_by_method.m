@@ -14,15 +14,15 @@
 @end
 
 @implementation A {
-   int x;
+  int x;
 }
 
--(A*)test {
-   return nil;
+- (A*)test {
+  return nil;
 }
 
--(int)test1 {
-   return [self test]->x;
+- (int)test1 {
+  return [self test]->x;
 }
 
 @end

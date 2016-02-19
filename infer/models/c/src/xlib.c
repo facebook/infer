@@ -15,14 +15,14 @@
 #include <stdlib.h>
 
 // modelled using malloc
-char *XGetAtomName(void *display, void *atom) {
+char* XGetAtomName(void* display, void* atom) {
   int size;
   INFER_EXCLUDE_CONDITION(size <= 0);
   return (char*)malloc(size);
 }
 
 // modelled as free, requires NONNULL pointer
-void XFree(void *ptr) {
+void XFree(void* ptr) {
   INFER_EXCLUDE_CONDITION(!ptr);
   free(ptr);
 }

@@ -12,11 +12,10 @@
 @implementation EOCPerson (Work)
 
 - (void)performDaysWork {
-    NSLog(@"Performing days at work");
+  NSLog(@"Performing days at work");
 }
 
-
-- (void)takeVacationFromWork{
-    NSLog(@"BTaking vacations");
+- (void)takeVacationFromWork {
+  NSLog(@"BTaking vacations");
 }
 @end

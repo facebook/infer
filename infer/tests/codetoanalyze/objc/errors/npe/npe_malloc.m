@@ -11,8 +11,8 @@
 #import <stdlib.h>
 
 struct Person {
-    int x;
-    int y;
+  int x;
+  int y;
 };
 
 @interface C : NSObject
@@ -21,11 +21,10 @@ struct Person {
 
 @implementation C
 
-- (struct Person*) test
-{
-    struct Person* person = (struct Person *)malloc(sizeof(struct Person));
-    person->x = 10;
-    return person;
+- (struct Person*)test {
+  struct Person* person = (struct Person*)malloc(sizeof(struct Person));
+  person->x = 10;
+  return person;
 }
 
 @end

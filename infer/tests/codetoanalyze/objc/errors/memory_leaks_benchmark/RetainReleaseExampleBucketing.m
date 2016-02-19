@@ -18,6 +18,4 @@
 @end
 
 // no leak in bucketing cf mode
-void test() {
-    A *a = [[A alloc] init];
-}
+void test() { A* a = [[A alloc] init]; }

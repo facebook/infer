@@ -23,105 +23,50 @@
 #define CLIBCALL
 #endif
 
-
 // Microsoft-specific
-int CLIBCALL __iswcsymf(wint_t wc)
-{
-  return __infer_nondet_int();
-}
+int CLIBCALL __iswcsymf(wint_t wc) { return __infer_nondet_int(); }
 
 // Microsoft-specific, inline
-int CLIBCALL isleadbyte(int wc)
-{
+int CLIBCALL isleadbyte(int wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswalnum(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswalpha(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswblank(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswcntrl(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswctype(wint_t wc, wctype_t desc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswdigit(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswgraph(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswlower(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswprint(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswpunct(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswspace(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswupper(wint_t wc) { return __infer_nondet_int(); }
+
+int CLIBCALL iswxdigit(wint_t wc) { return __infer_nondet_int(); }
+
+wint_t CLIBCALL towlower(wint_t wc) { return __infer_nondet_int(); }
+
+wint_t CLIBCALL towctrans(wint_t wc, wctrans_t desc) {
   return __infer_nondet_int();
 }
 
-int CLIBCALL iswalnum(wint_t wc)
-{
-  return __infer_nondet_int();
-}
+wint_t CLIBCALL towupper(wint_t wc) { return __infer_nondet_int(); }
 
-int CLIBCALL iswalpha(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswblank(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswcntrl(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswctype(wint_t wc, wctype_t desc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswdigit(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswgraph(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswlower(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswprint(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswpunct(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswspace(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswupper(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-int CLIBCALL iswxdigit(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-wint_t CLIBCALL towlower(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-wint_t CLIBCALL towctrans(wint_t wc, wctrans_t desc)
-{
-  return __infer_nondet_int();
-}
-
-wint_t CLIBCALL towupper(wint_t wc)
-{
-  return __infer_nondet_int();
-}
-
-wctrans_t CLIBCALL wctrans(const char *property)
-{
+wctrans_t CLIBCALL wctrans(const char* property) {
   return (wctrans_t)__infer_nondet_int();
 }
 
-wctype_t CLIBCALL wctype(const char *property)
-{
+wctype_t CLIBCALL wctype(const char* property) {
   return (wctype_t)__infer_nondet_int();
 }

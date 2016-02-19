@@ -7,10 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-void check(int x) {
-}
+void check(int x) {}
 
 void main() {
-    int x = 3;
-    check(x<2);
+  int x = 3;
+  check(x < 2);
 }

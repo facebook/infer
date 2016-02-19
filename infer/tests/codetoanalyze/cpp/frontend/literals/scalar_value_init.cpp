@@ -7,12 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-enum ENUM {
-  val1,
-  val2
-};
+enum ENUM { val1, val2 };
 
-template<class T> T get() {
+template <class T>
+T get() {
   return T();
 }
 

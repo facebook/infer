@@ -19,9 +19,9 @@ struct X {
 struct Y {
   int f;
   Y() = default;
-  Y(const Y &y) = default;
+  Y(const Y& y) = default;
   // move constructor with different behavior than copy constructor
-  Y(const Y &&y) : f(y.f - 1) {}
+  Y(const Y&& y) : f(y.f - 1) {}
 };
 
 X getX(int f) {
@@ -43,10 +43,7 @@ int copyX_div0() {
   return 1 / x2.f;
 }
 
-int moveX_div0() {
-  return 1 / getX(0).f;
-}
-
+int moveX_div0() { return 1 / getX(0).f; }
 
 int copyY_div0() {
   Y y1;
@@ -55,12 +52,10 @@ int copyY_div0() {
   return 1 / y2.f;
 }
 
-int moveY_div0() {
-  return 1 / getY(1).f;
-}
+int moveY_div0() { return 1 / getY(1).f; }
 
 int moveY_moveY_copyY_div0() {
-  Y y1 = getY(2); //move constructor in getY and in assignment
+  Y y1 = getY(2); // move constructor in getY and in assignment
   Y y2 = y1;
   return 1 / y2.f;
 }

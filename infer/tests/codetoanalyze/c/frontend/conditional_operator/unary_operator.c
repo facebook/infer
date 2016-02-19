@@ -7,11 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-void dereference_ifthenelse(int *p) {
+void dereference_ifthenelse(int* p) {
   int x;
-  x = * (1 ? p : p);
+  x = *(1 ? p : p);
 
-  int y = * (1 ? p : p);
+  int y = *(1 ? p : p);
 
-  * (1 ? p : p);
+  *(1 ? p : p);
 }

@@ -12,7 +12,8 @@
 void __infer_fail(char*);
 
 void check_exponent(int x) {
-  if (x < 0) __infer_fail("UNEXPECTED_NEGATIVE_EXPONENT");
+  if (x < 0)
+    __infer_fail("UNEXPECTED_NEGATIVE_EXPONENT");
 }
 
 int power(int x) {
@@ -32,9 +33,7 @@ int paf() {
 
 int global;
 
-void set_global() {
-  global = -2;
-}
+void set_global() { global = -2; }
 
 int pouf() {
   set_global();

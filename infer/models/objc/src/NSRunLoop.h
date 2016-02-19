@@ -7,39 +7,28 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-
-#import <Foundation/NSObject.h>
 #import <Foundation/NSDate.h>
-
-
+#import <Foundation/NSObject.h>
 
 @class NSTimer;
 
-
-
 @interface NSRunLoop : NSObject
 
-+ (NSRunLoop*) currentRunLoop;
-+ (NSRunLoop*) mainRunLoop;
++ (NSRunLoop*)currentRunLoop;
++ (NSRunLoop*)mainRunLoop;
 
+- (void)acceptInputForMode:(NSString*)mode beforeDate:(NSDate*)limit_date;
 
-- (void) acceptInputForMode: (NSString*)mode
-                 beforeDate: (NSDate*)limit_date;
+- (void)addTimer:(NSTimer*)timer forMode:(NSString*)mode;
 
-- (void) addTimer: (NSTimer*)timer
-	  forMode: (NSString*)mode;
+- (NSString*)currentMode;
 
-- (NSString*) currentMode;
+- (NSDate*)limitDateForMode:(NSString*)mode;
 
-- (NSDate*) limitDateForMode: (NSString*)mode;
+- (void)run;
 
-- (void) run;
+- (BOOL)runMode:(NSString*)mode beforeDate:(NSDate*)date;
 
-- (BOOL) runMode: (NSString*)mode
-      beforeDate: (NSDate*)date;
-
-- (void) runUntilDate: (NSDate*)date;
+- (void)runUntilDate:(NSDate*)date;
 
 @end
-
-

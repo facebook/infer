@@ -7,11 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int *always_null(void) {
-   return 0;
-}
+int* always_null(void) { return 0; }
 
 void foo(void) {
-   int *p = always_null();
-   *p = 42;
+  int* p = always_null();
+  *p = 42;
 }

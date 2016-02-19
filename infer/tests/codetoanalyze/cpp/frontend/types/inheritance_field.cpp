@@ -34,25 +34,25 @@ int div0_s(Sub s) {
   return 1 / s.s;
 }
 
-int div0_cast(Sub *s) {
+int div0_cast(Sub* s) {
   s->b1 = 0;
-  Base1 *b = s;
+  Base1* b = s;
   return 1 / b->b1;
 }
 
 int div0_cast_ref(Sub s) {
   s.b1 = 0;
-  Base1 &b = s;
+  Base1& b = s;
   return 1 / b.b1;
 }
 
-int div0_b1_s(Sub *s) {
+int div0_b1_s(Sub* s) {
   s->b1 = 1;
   s->s = 1;
   return 1 / (s->b1 - s->s);
 }
 
-int div0_s_b1(Sub *s) {
+int div0_s_b1(Sub* s) {
   s->b1 = 1;
   s->s = 1;
   return 1 / (s->b1 - s->s);
@@ -63,8 +63,8 @@ int div1_b1(Sub s) {
   return 1 / s.b1;
 }
 
-int div1_cast(Sub *s) {
+int div1_cast(Sub* s) {
   s->b1 = 1;
-  Base1 *b = s;
+  Base1* b = s;
   return 1 / b->b1;
 }

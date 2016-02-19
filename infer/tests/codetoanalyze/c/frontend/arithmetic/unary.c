@@ -22,10 +22,10 @@ int main() {
   y = x--;
 
   int a;
-  int *b;
+  int* b;
 
   b = &a;
-  a = *(b+1);
+  a = *(b + 1);
   *b = *b + 1;
   a = *(&a);
 

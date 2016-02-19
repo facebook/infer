@@ -9,44 +9,42 @@
 
 #import <Foundation/Foundation.h>
 
-void bad1(NSNumber * isNum) {
+void bad1(NSNumber* isNum) {
   if (isNum) {
   }
 }
 
-void bad2(NSNumber * isNum) {
+void bad2(NSNumber* isNum) {
   if (!isNum) {
   }
 }
 
-
-void ok1(NSNumber * isNum) {
+void ok1(NSNumber* isNum) {
   if (isNum != nil) {
   }
 }
 
-void ok2(NSNumber * isNum) {
+void ok2(NSNumber* isNum) {
   if (nil != isNum) {
   }
 }
 
-void ok3(NSNumber * isNum) {
+void ok3(NSNumber* isNum) {
   if (nil == isNum) {
   }
 }
 
-
-void ok4(NSNumber * isNum) {
+void ok4(NSNumber* isNum) {
   if (isNum == nil) {
   }
 }
 
-void accessor_ok1(NSNumber * num) {
+void accessor_ok1(NSNumber* num) {
   if (![num boolValue]) {
   }
 }
 
-void accessor_ok2(NSNumber * num) {
+void accessor_ok2(NSNumber* num) {
   if ([num boolValue]) {
   }
 }

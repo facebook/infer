@@ -7,7 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int main(){
-  while(1) {}
+int main() {
+  while (1) {
+  }
   return 0;
 }

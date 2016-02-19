@@ -11,9 +11,8 @@
 
 @implementation PropertyImplSetter
 
-- (void)setMaximumFileSize:(int)newMaximumFileSize
-{
-    _maximumFileSize = 0;
+- (void)setMaximumFileSize:(int)newMaximumFileSize {
+  _maximumFileSize = 0;
 }
 
 @end

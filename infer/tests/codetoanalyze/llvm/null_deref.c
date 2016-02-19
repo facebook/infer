@@ -8,6 +8,6 @@
  */
 
 void foo(void) {
-   int *p = 0;
-   *p = 42;
+  int* p = 0;
+  *p = 42;
 }

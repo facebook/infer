@@ -12,7 +12,7 @@
 @interface CADisplayLink : NSObject {
 
   id _target;
- SEL _selector;
+  SEL _selector;
 }
 
 @property(readonly, nonatomic) CFTimeInterval duration;
@@ -24,10 +24,9 @@
 @property(readonly, nonatomic) CFTimeInterval timestamp;
 
 // Returns a new display link.
-+ (CADisplayLink *)displayLinkWithTarget:(id)target
-                                selector:(SEL)sel;
++ (CADisplayLink*)displayLinkWithTarget:(id)target selector:(SEL)sel;
 
 // Release the target
-- (void) invalidate;
+- (void)invalidate;
 
 @end

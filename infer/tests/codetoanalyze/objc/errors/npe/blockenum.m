@@ -10,57 +10,55 @@
 #import <Foundation/Foundation.h>
 
 @interface B : NSObject
-+ foo:(id) obj;
++ foo:(id)obj;
 @end
 
 @implementation B
 
-+ (B*) foo:(id) obj
-{
-    return obj;
++ (B*)foo:(id)obj {
+  return obj;
 }
 
 @end
 
-
 @interface A : NSObject
-- (NSMutableArray *) allResultsList: (NSArray *) allResults;
+- (NSMutableArray*)allResultsList:(NSArray*)allResults;
 @end
-
 
 @implementation A
 
 // From a diff
-- (NSMutableArray *) allResultsList: (NSArray *) allResults {
-    NSMutableArray *resultsList = [[NSMutableArray alloc] init];
-        [allResults enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-            id  *result = [B foo:obj];
-            if (result != nil) {
-                [resultsList addObject:result];
-            }
-        }];
-    return resultsList;
+- (NSMutableArray*)allResultsList:(NSArray*)allResults {
+  NSMutableArray* resultsList = [[NSMutableArray alloc] init];
+  [allResults enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL* stop) {
+    id* result = [B foo:obj];
+    if (result != nil) {
+      [resultsList addObject:result];
+    }
+  }];
+  return resultsList;
 }
 
 // How that code is translated in INFER
-- (void) foo1: (NSArray*) a {
-    NSArray *objects = a;
-    NSMutableArray *resultsList = [[NSMutableArray alloc] init];
-    void (^enumerateObjectsUsingBlock)(id, NSUInteger, BOOL* ) =
+- (void)foo1:(NSArray*)a {
+  NSArray* objects = a;
+  NSMutableArray* resultsList = [[NSMutableArray alloc] init];
+  void (^enumerateObjectsUsingBlock)(id, NSUInteger, BOOL*) =
       ^(id obj, NSUInteger idx, BOOL* stop) {
-        id  *result = [B foo:obj];
+        id* result = [B foo:obj];
         if (result != nil) {
-            [resultsList addObject:result];
+          [resultsList addObject:result];
         }
-    };
-    BOOL *stop = malloc(sizeof(BOOL));
-    *stop = NO;
-    for (NSUInteger idx = 0; idx < objects.count; idx++) {
-        id object = objects[idx];
-        enumerateObjectsUsingBlock(object, idx, stop);
-        if ( *stop == YES) break;
-    }
-    free(stop);
+      };
+  BOOL* stop = malloc(sizeof(BOOL));
+  *stop = NO;
+  for (NSUInteger idx = 0; idx < objects.count; idx++) {
+    id object = objects[idx];
+    enumerateObjectsUsingBlock(object, idx, stop);
+    if (*stop == YES)
+      break;
+  }
+  free(stop);
 }
 
 @end

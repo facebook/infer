@@ -9,7 +9,7 @@
 
 struct X {
   int f;
-  int call() {return f;}
+  int call() { return f; }
 };
 
 void access_ref(X& x) {

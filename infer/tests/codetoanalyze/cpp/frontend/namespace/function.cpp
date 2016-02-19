@@ -8,12 +8,12 @@
  */
 
 namespace f1 {
-  int get() { return 1;}
-  int get0() { return 0;}
+int get() { return 1; }
+int get0() { return 0; }
 }
 
 namespace f2 {
-  int get() { return -1;}
+int get() { return -1; }
 }
 
 int div0_using() {
@@ -21,6 +21,4 @@ int div0_using() {
   return 1 / get0();
 }
 
-int div0_namespace_resolution() {
-  return 1 / (f1::get() + f2::get());
-}
+int div0_namespace_resolution() { return 1 / (f1::get() + f2::get()); }

@@ -14,72 +14,69 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-
-void fileNotClosed()
-{
-    int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
-    if (fd != -1) {
-        char buffer[256];
-        // We can easily batch that by separating with space
-        write(fd, buffer, strlen(buffer));
-    }
+void fileNotClosed() {
+  int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+  if (fd != -1) {
+    char buffer[256];
+    // We can easily batch that by separating with space
+    write(fd, buffer, strlen(buffer));
+  }
 }
 
-void fileClosed()
-{
-    int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
-    if (fd != -1) {
-        char buffer[256];
-        // We can easily batch that by separating with space
-        write(fd, buffer, strlen(buffer));
-        close(fd);
-    }
+void fileClosed() {
+  int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+  if (fd != -1) {
+    char buffer[256];
+    // We can easily batch that by separating with space
+    write(fd, buffer, strlen(buffer));
+    close(fd);
+  }
 }
 
-void socketNotClosed()
-{
-    int fd = socket(AF_LOCAL, SOCK_RAW, 0);
-    if (fd != -1) {
-        char buffer[256];
-        // We can easily batch that by separating with space
-        write(fd, buffer, strlen(buffer));
-    }
+void socketNotClosed() {
+  int fd = socket(AF_LOCAL, SOCK_RAW, 0);
+  if (fd != -1) {
+    char buffer[256];
+    // We can easily batch that by separating with space
+    write(fd, buffer, strlen(buffer));
+  }
 }
 
-int socketClosed()
-{
-    int socketFD = socket(AF_LOCAL, SOCK_RAW, 0);
-    if (socketFD == -1) {
-      return -1;
-    }
+int socketClosed() {
+  int socketFD = socket(AF_LOCAL, SOCK_RAW, 0);
+  if (socketFD == -1) {
+    return -1;
+  }
 
-    int status;
+  int status;
 
-    status = fcntl(socketFD, F_SETFL, O_NONBLOCK);
-    if (status == -1) {
-      close(socketFD);
-      return -1;
-    }
+  status = fcntl(socketFD, F_SETFL, O_NONBLOCK);
+  if (status == -1) {
+    close(socketFD);
+    return -1;
+  }
 
-    int reuseaddr = 1;
-    status = setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr));
-    if (status == -1) {
-      close(socketFD);
-      return -1;
-    }
+  int reuseaddr = 1;
+  status = setsockopt(
+      socketFD, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(reuseaddr));
+  if (status == -1) {
+    close(socketFD);
+    return -1;
+  }
 
-    int nosigpipe = 1;
-    status = setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &nosigpipe, sizeof(nosigpipe));
-    if (status == -1) {
-      close(socketFD);
-      return -1;
-    }
+  int nosigpipe = 1;
+  status = setsockopt(
+      socketFD, SOL_SOCKET, SO_REUSEADDR, &nosigpipe, sizeof(nosigpipe));
+  if (status == -1) {
+    close(socketFD);
+    return -1;
+  }
 
-    return socketFD;
+  return socketFD;
 }

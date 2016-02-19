@@ -40,26 +40,25 @@
 }
 @end
 
-
-Fraction *Fraction_create() {
-  Fraction *f = NULL;
+Fraction* Fraction_create() {
+  Fraction* f = NULL;
   return f;
 }
 
 int null_deref_objc_class() {
-  Fraction *fraction = Fraction_create();
-  [fraction setNumerator: 5];
+  Fraction* fraction = Fraction_create();
+  [fraction setNumerator:5];
   return 0;
 }
 
 void test_virtual_call() {
-    id *fraction = [Fraction alloc];
-    // virtual call: the type of fraction is obtained from the allocation
-    [fraction setNumerator: 5];
-    if ([fraction getNumerator] != 4) {
-        // unreachable
-        int *x = NULL;
-        *x = 0;
-    }
-    [fraction release];
+  id* fraction = [Fraction alloc];
+  // virtual call: the type of fraction is obtained from the allocation
+  [fraction setNumerator:5];
+  if ([fraction getNumerator] != 4) {
+    // unreachable
+    int* x = NULL;
+    *x = 0;
+  }
+  [fraction release];
 }

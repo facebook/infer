@@ -14,19 +14,16 @@
 
 @implementation FBScrollViewDelegateProxy
 
-typedef struct
-{
-    float placeHolderWidth;
-    float placeHolderHeight;
-    float contentLeftSidePadding;
-    float contentRightSidePadding;
-    float additionalPlaceholderOffset;
-    float contentGap;
+typedef struct {
+  float placeHolderWidth;
+  float placeHolderHeight;
+  float contentLeftSidePadding;
+  float contentRightSidePadding;
+  float additionalPlaceholderOffset;
+  float contentGap;
 } FBVideoAdLayout;
 
-
-static const FBVideoAdLayout __iPadVideoAdLayout =
-{
+static const FBVideoAdLayout __iPadVideoAdLayout = {
     .placeHolderWidth = 554,
     .placeHolderHeight = 350,
     .contentLeftSidePadding = 140,
@@ -35,8 +32,7 @@ static const FBVideoAdLayout __iPadVideoAdLayout =
     .contentGap = 11,
 };
 
-static const FBVideoAdLayout __iPhoneVideoAdLayout =
-{
+static const FBVideoAdLayout __iPhoneVideoAdLayout = {
     .placeHolderWidth = 244,
     .placeHolderHeight = 175,
     .contentLeftSidePadding = 20,
@@ -45,9 +41,8 @@ static const FBVideoAdLayout __iPhoneVideoAdLayout =
     .contentGap = 7,
 };
 
-+ (FBVideoAdLayout)layoutToUse
-{
-    return __iPhoneVideoAdLayout;
++ (FBVideoAdLayout)layoutToUse {
+  return __iPhoneVideoAdLayout;
 }
 
 @end

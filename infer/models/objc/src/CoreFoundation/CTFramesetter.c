@@ -11,7 +11,8 @@
 
 CTFramesetterRef __cf_alloc(CTFramesetterRef);
 
-CTFramesetterRef CTFramesetterCreateWithAttributedString ( CFAttributedStringRef string ) {
-    CTFramesetterRef c;
-    return __cf_alloc(c);
+CTFramesetterRef CTFramesetterCreateWithAttributedString(
+    CFAttributedStringRef string) {
+  CTFramesetterRef c;
+  return __cf_alloc(c);
 }

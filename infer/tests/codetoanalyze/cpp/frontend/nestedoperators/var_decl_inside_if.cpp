@@ -9,7 +9,7 @@
 
 int simple_init_div1() {
   if (int a = 1) {
-    return 1/a;
+    return 1 / a;
   }
 }
 
@@ -17,7 +17,7 @@ int simple_init_div0() {
   if (int a = 0) {
     return a;
   } else {
-    return 1/a;
+    return 1 / a;
   }
 }
 
@@ -31,9 +31,7 @@ int simple_inif_elseif_div0() {
   }
 }
 
-int get1() {
-  return 1;
-}
+int get1() { return 1; }
 
 int function_call_init_div0() {
   if (int a = get1()) {
@@ -52,11 +50,11 @@ int reference_init_div0() {
   if (int& a = r) {
     a = 0;
   }
-  return 1/r;
+  return 1 / r;
 }
 
 int simple_init_null_deref() {
-  if (int *p = nullptr) {
+  if (int* p = nullptr) {
     return 1;
   } else {
     return *p;

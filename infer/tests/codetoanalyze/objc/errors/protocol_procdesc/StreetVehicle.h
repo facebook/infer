@@ -9,12 +9,10 @@
 
 #import <Foundation/NSObject.h>
 
-@protocol StreetVehicle <NSObject>
-
+@protocol StreetVehicle<NSObject>
 
 - (void)signalStop;
 - (void)signalLeftTurn;
 - (void)signalRightTurn;
-
 
 @end

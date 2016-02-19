@@ -11,6 +11,6 @@
 
 @interface MethodCall : NSObject
 
-- (int)plusX :(int)x andY: (int)y;
+- (int)plusX:(int)x andY:(int)y;
 
 @end

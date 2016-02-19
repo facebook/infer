@@ -18,7 +18,7 @@
 @end
 
 void test() {
-    A *a = [[A alloc] init];
-    [a retain];
-    [a release];
+  A* a = [[A alloc] init];
+  [a retain];
+  [a release];
 }

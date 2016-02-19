@@ -7,28 +7,23 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int identity(int x) {
-    return x;
-}
-
+int identity(int x) { return x; }
 
 int bar(int x) {
-    if (identity(x)) {
-        return 1;
-    } else {
-        return 0;
-    }
+  if (identity(x)) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 int baz(int x) {
 
-    if (identity(!x)) {
-        return 1;
-    } else {
-        return 0;
-    }
+  if (identity(!x)) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
-int neg(int x) {
-    return !x;
-}
+int neg(int x) { return !x; }

@@ -7,9 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/Foundation.h>
 #import <CoreText/CTFont.h>
-
+#import <Foundation/Foundation.h>
 
 @interface TollBridgeExample : NSObject
 
@@ -18,29 +17,28 @@
 @implementation TollBridgeExample
 
 - (void)bridgeTransfer {
-    CFLocaleRef nameRef = CFLocaleCreate (NULL, NULL);
-    NSLocale *a = (__bridge_transfer NSLocale *)nameRef;
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  NSLocale* a = (__bridge_transfer NSLocale*)nameRef;
 }
 
 - (void)bridge {
-    CFLocaleRef nameRef = CFLocaleCreate (NULL, NULL);
-    NSLocale *a = (__bridge NSLocale *)nameRef;
+  CFLocaleRef nameRef = CFLocaleCreate(NULL, NULL);
+  NSLocale* a = (__bridge NSLocale*)nameRef;
 }
 
-
 - (void)brideRetained {
-    id observer = [NSLocale alloc];
-    CFLocaleRef a = (__bridge_retained CFLocaleRef)observer;
+  id observer = [NSLocale alloc];
+  CFLocaleRef a = (__bridge_retained CFLocaleRef)observer;
 }
 
 - (void)_readHTTPHeader;
 {
-    CFDictionaryRef ref =  CFHTTPMessageCopyAllHeaderFields(NULL);
-    CFBridgingRelease(ref);
+  CFDictionaryRef ref = CFHTTPMessageCopyAllHeaderFields(NULL);
+  CFBridgingRelease(ref);
 }
 
 CTFontRef cfautorelease_test() {
-    return CFAutorelease(CTFontCreateWithName(CFSTR("Icon"), 17.0, NULL));
+  return CFAutorelease(CTFontCreateWithName(CFSTR("Icon"), 17.0, NULL));
 }
 
 @end

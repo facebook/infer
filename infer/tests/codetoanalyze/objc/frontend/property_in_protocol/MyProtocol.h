@@ -9,7 +9,7 @@
 
 #import <Foundation/NSObject.h>
 
-@protocol MyProtocol <NSObject>
+@protocol MyProtocol<NSObject>
 
 @property int numberOfFiles;
 

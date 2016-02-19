@@ -9,7 +9,7 @@
 
 #import <Foundation/NSObject.h>
 
-int main () {
-  NSString *lastName = @"Rodriguez";
+int main() {
+  NSString* lastName = @"Rodriguez";
   return 0;
 }

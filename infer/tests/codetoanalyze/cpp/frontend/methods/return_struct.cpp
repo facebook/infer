@@ -18,7 +18,7 @@ struct A {
   }
 };
 
-int test(A *a) {
+int test(A* a) {
   X x = a->get(1);
   return 1 / x.f;
 }

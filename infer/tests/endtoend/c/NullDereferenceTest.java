@@ -65,7 +65,7 @@ public class NullDereferenceTest {
   @Test
   public void whenInferRunsOnSimpleNpe_interprocThenCorrectLineIsReported()
       throws InterruptedException, IOException, InferException {
-    int[] lines = {20, 34};
+    int[] lines = {20, 32};
     assertThat(
         "Results should contain null pointer dereference error",
         inferResults,

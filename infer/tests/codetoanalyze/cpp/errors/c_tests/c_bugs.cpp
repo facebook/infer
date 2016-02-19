@@ -8,32 +8,28 @@
  */
 
 #include <cstdio>
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 
 // basic tests for C bugs in C++ code
 
-void malloc_memory_leak_is_reported() {
-  int *p = (int*) malloc(sizeof(int));
-}
+void malloc_memory_leak_is_reported() { int* p = (int*)malloc(sizeof(int)); }
 
 void malloc_free_works() {
-  int *p = (int*)malloc(sizeof(int));
+  int* p = (int*)malloc(sizeof(int));
   free(p);
 }
 
 void malloc_fail_gets_reported() {
-  int *p = (int*)malloc(sizeof(int));
+  int* p = (int*)malloc(sizeof(int));
   *p = 3; // Null dereference
   free(p);
 }
 
-void resource_leak_is_reported() {
-  FILE * fd = fopen("hi.txt", "w");
-}
+void resource_leak_is_reported() { FILE* fd = fopen("hi.txt", "w"); }
 
 void fopen_fclose_works() {
-  FILE * fd = fopen("hi.txt", "w");
+  FILE* fd = fopen("hi.txt", "w");
   if (fd) {
     fclose(fd);
   }

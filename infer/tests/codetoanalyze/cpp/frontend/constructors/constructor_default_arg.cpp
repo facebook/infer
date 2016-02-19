@@ -9,14 +9,13 @@
 
 class X {
   int f;
-public:
+
+ public:
   X(int a, int b = 0);
   int div() { return 1 / f; }
 };
 
-X::X(int a, int b) {
-  f = a + b;
-}
+X::X(int a, int b) { f = a + b; }
 
 void test() {
   X x1(0);

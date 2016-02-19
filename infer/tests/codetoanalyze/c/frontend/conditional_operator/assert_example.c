@@ -10,10 +10,10 @@
 #include <assert.h>
 
 struct MyPoint {
-    int x;
+  int x;
 };
 
-int test (struct MyPoint* activeq) {
-    assert(activeq != 0);
-    return activeq->x;
+int test(struct MyPoint* activeq) {
+  assert(activeq != 0);
+  return activeq->x;
 }

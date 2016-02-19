@@ -9,15 +9,15 @@
 
 int main() {
 
-int volatile a;
-int *volatile b;
-float *const c;
-long double d;
+  int volatile a;
+  int* volatile b;
+  float* const c;
+  long double d;
 
- static const int kDuration = 3;
+  static const int kDuration = 3;
 
- int large_int = 9223372036854775807;
- int overflow_int = 9223372036854775808;
+  int large_int = 9223372036854775807;
+  int overflow_int = 9223372036854775808;
 
- return 0;
+  return 0;
 }

@@ -11,8 +11,8 @@
 
 @implementation MethodCall
 
-- (int)plusX : (int)x andY : (int)y {
-    return x+y;
+- (int)plusX:(int)x andY:(int)y {
+  return x + y;
 }
 
 @end

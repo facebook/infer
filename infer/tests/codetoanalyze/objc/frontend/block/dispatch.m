@@ -20,30 +20,30 @@
 @implementation A {
 }
 
-+ (instancetype)sharedInstance
-{
-    static dispatch_once_t once;
-    static id sharedInstance;
-    dispatch_once(&once, ^{
-        sharedInstance = [[self alloc] init];
-    });
-    return sharedInstance;
++ (instancetype)sharedInstance {
+  static dispatch_once_t once;
+  static id sharedInstance;
+  dispatch_once(&once, ^{
+    sharedInstance = [[self alloc] init];
+  });
+  return sharedInstance;
 }
 
-+ (instancetype)trans
-{
-    static id sharedInstance;
-    void (^dummy_block)() = ^{
-        sharedInstance = [[self alloc] init];
-    };
-    dummy_block();
-    return sharedInstance;
++ (instancetype)trans {
+  static id sharedInstance;
+  void (^dummy_block)() = ^{
+    sharedInstance = [[self alloc] init];
+  };
+  dummy_block();
+  return sharedInstance;
 }
 @end
 
-int main () {
-    A *b = [A sharedInstance];
-    int *p = 0;
-    if (b == 0) return *p;
-    else return 0;
+int main() {
+  A* b = [A sharedInstance];
+  int* p = 0;
+  if (b == 0)
+    return *p;
+  else
+    return 0;
 }

@@ -8,17 +8,15 @@
  */
 
 class A {
-public:
+ public:
   static int fun(int);
 };
 
-int A::fun(int a) { return 1 / a;}
+int A::fun(int a) { return 1 / a; }
 
-void div0_class() {
-  A::fun(0);
-}
+void div0_class() { A::fun(0); }
 
-void div0_instance(A *a) {
+void div0_instance(A* a) {
   /* this will call static method as well */
   a->fun(0);
 }

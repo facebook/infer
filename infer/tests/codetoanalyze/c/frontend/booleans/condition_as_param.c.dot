@@ -1,16 +1,16 @@
 digraph iCFG {
-6 [label="6:  DeclStmt \n   *&x:int =3 [line 14]\n " shape="box"]
+6 [label="6:  DeclStmt \n   *&x:int =3 [line 13]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5:  Call _fun_check \n   n$0=*&x:int  [line 15]\n  _fun_check((n$0 < 2):int ) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&x,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+5 [label="5:  Call _fun_check \n   n$0=*&x:int  [line 14]\n  _fun_check((n$0 < 2):int ) [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&x,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 5 -> 4 ;
 4 [label="4: Exit main \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start main\nFormals: \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 13]\n  NULLIFY(&x,false); [line 13]\n " color=yellow style=filled]
+3 [label="3: Start main\nFormals: \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 12]\n  NULLIFY(&x,false); [line 12]\n " color=yellow style=filled]
 	
 
 	 3 -> 6 ;

@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-void init_from_ref(int &par) {
+void init_from_ref(int& par) {
   int v = par;
   int& d = par;
   int* p = &par;
@@ -19,7 +19,7 @@ void init_from_val(int par) {
   int* p = &par;
 }
 
-void init_from_ptr(int *par) {
+void init_from_ptr(int* par) {
   int v = *par;
   int& d = *par;
   int* p = par;

@@ -10,70 +10,65 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-BOOL ExampleSanitizer(NSURL * u, int f)
-{
-    if (f) __set_untaint_attribute(u);
-    return f;
+BOOL ExampleSanitizer(NSURL* u, int f) {
+  if (f)
+    __set_untaint_attribute(u);
+  return f;
 }
 
 @interface ExampleViewController : NSObject
-- (void)loadURL:(NSURL *)URL
-  trackingCodes:(NSArray *)trackingCodes;
+- (void)loadURL:(NSURL*)URL trackingCodes:(NSArray*)trackingCodes;
 @end
 
 @implementation ExampleViewController
-- (void)loadURL:(NSURL *)URL
-  trackingCodes: (NSArray *)trackingCodes
-{
-    // Require untainted URL
-};
+- (void)loadURL:(NSURL*)URL
+  trackingCodes:(NSArray*)trackingCodes{
+                    // Require untainted URL
+                };
 @end
 
 @interface B : NSObject
-- (void) another_url_pass: (NSURL *) u;
+- (void)another_url_pass:(NSURL*)u;
 @end
 
 @implementation B
-- (void) another_url_pass: (NSURL *) u
-{
-    ExampleViewController *vc = [[ExampleViewController alloc] init];
-    [vc loadURL:u trackingCodes:nil];
+- (void)another_url_pass:(NSURL*)u {
+  ExampleViewController* vc = [[ExampleViewController alloc] init];
+  [vc loadURL:u trackingCodes:nil];
 }
 @end
 
 @interface A : NSObject
-- (void) pass_url_arond:(NSURL *) u;
+- (void)pass_url_arond:(NSURL*)u;
 @end
 
 @implementation A
-- (void) pass_url_arond: (NSURL *) u
-{
-    B* b = [[B alloc] init];
-    [b another_url_pass:u];
+- (void)pass_url_arond:(NSURL*)u {
+  B* b = [[B alloc] init];
+  [b another_url_pass:u];
 }
 @end
 
 @interface ExampleDelegate : NSObject
-- (BOOL)application: (UIApplication *)application
-            openURL: (NSURL *)URL
-  sourceApplication: (NSString *)sourceApplication
-         annotation: (id)annotation;
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)URL
+  sourceApplication:(NSString*)sourceApplication
+         annotation:(id)annotation;
 @end
 
 @implementation ExampleDelegate
-- (BOOL)application: (UIApplication *)application
-            openURL: (NSURL *)URL
-  sourceApplication: (NSString *)sourceApplication
-         annotation: (id)annotation
-{
-    // Assume tainted URL;
-    A* a = [[A alloc] init];
-    if (!ExampleSanitizer(URL, 0 )) {
-        [a pass_url_arond:URL]; // report taint
-    }
-    if (!ExampleSanitizer(URL, 1 )) {
-        [a pass_url_arond:URL]; // No taint
-    }
-    return YES;
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)URL
+  sourceApplication:(NSString*)sourceApplication
+         annotation:(id)annotation {
+  // Assume tainted URL;
+  A* a = [[A alloc] init];
+  if (!ExampleSanitizer(URL, 0)) {
+    [a pass_url_arond:URL]; // report taint
+  }
+  if (!ExampleSanitizer(URL, 1)) {
+    [a pass_url_arond:URL]; // No taint
+  }
+  return YES;
 }
 @end

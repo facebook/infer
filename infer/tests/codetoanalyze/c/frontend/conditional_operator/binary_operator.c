@@ -18,7 +18,6 @@ void binop_with_side_effects(int z) {
   int x3;
   x3 = (1 ? z : z) + (1 ? z : z);
 
-
   // initializer
   int y1 = (1 ? z : z) + 77;
 

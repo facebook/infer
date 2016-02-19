@@ -7,20 +7,19 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import<Foundation/NSObject.h>
+#import <Foundation/NSObject.h>
 
 @protocol Foo
 - (void)fooMethod;
 
-  @property (retain) NSString *foo;
+@property(retain) NSString* foo;
 @end
 
-
-@interface Bla: NSObject
+@interface Bla : NSObject
 - (void)fooMethod;
 @end
 
-@implementation Bla: NSObject
+@implementation Bla : NSObject
 
 - (void)fooMethod {
   if ([self conformsToProtocol:@protocol(Foo)]) {

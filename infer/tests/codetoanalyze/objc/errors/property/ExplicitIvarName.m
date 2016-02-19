@@ -11,13 +11,13 @@
 
 @interface A : NSObject
 
-@property (nonatomic) int x;
+@property(nonatomic) int x;
 
 @end
 
 @interface B : NSObject
 
-@property (nonatomic) int y;
+@property(nonatomic) int y;
 
 @end
 
@@ -25,23 +25,24 @@
 
 @synthesize x;
 
-
--(int) test {
-    int* p = 0;
-    self->x = 5;
-    if (self.x == 5) { // If NPE is found, means that getter is using the correct ivar name x
-                       //rather than the default _x
-        return *p;
-    };
+- (int)test {
+  int* p = 0;
+  self->x = 5;
+  if (self.x == 5) { // If NPE is found, means that getter is using the correct
+    // ivar name x
+    // rather than the default _x
+    return *p;
+  };
 }
 
--(int) testDefaultName {
-    int* p = 0;
-    B *b = [[B alloc] init];
-    b.y = 5;
-    if (b.y == 5) { // If NPE is found, means that getter is using default name _y that is
-                    // added to the tenv, so there is no Missing_fld beforehand.
-        return *p;
-    };
+- (int)testDefaultName {
+  int* p = 0;
+  B* b = [[B alloc] init];
+  b.y = 5;
+  if (b.y == 5) { // If NPE is found, means that getter is using default name _y
+    // that is
+    // added to the tenv, so there is no Missing_fld beforehand.
+    return *p;
+  };
 }
 @end

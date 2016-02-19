@@ -7,12 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int main () {
+int main() {
   int a = 10;
   int b = 0;
   do {
     a = 1;
-  }while( b < 20 );
+  } while (b < 20);
 
   return 0;
 }

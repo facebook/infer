@@ -11,12 +11,11 @@
 
 @implementation A
 
--(instancetype) init
-{
-    if ([super self]) {
-        self->x = 10;
-    }
-    return self;
+- (instancetype)init {
+  if ([super self]) {
+    self->x = 10;
+  }
+  return self;
 }
 
 @end

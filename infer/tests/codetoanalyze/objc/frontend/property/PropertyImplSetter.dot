@@ -1,5 +1,5 @@
 digraph iCFG {
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:class PropertyImplSetter * [line 16]\n  *n$0._maximumFileSize:int =0 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&self,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:class PropertyImplSetter * [line 15]\n  *n$0._maximumFileSize:int =0 [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&self,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

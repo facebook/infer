@@ -13,19 +13,18 @@
 
 // Returns a new display link.
 // The model retains strongly the target object.
-+ (CADisplayLink *)displayLinkWithTarget:(id)target
-                                selector:(SEL)sel {
++ (CADisplayLink*)displayLinkWithTarget:(id)target selector:(SEL)sel {
 
-    CADisplayLink *c = [CADisplayLink alloc];
-        c->_target = target;
-        c->_selector = sel;
+  CADisplayLink* c = [CADisplayLink alloc];
+  c->_target = target;
+  c->_selector = sel;
 
-    return c;
+  return c;
 }
 
 // Release the target
-- (void) invalidate {
-    self->_target = nil;
+- (void)invalidate {
+  self->_target = nil;
 }
 
 @end

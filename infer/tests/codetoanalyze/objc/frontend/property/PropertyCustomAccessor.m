@@ -11,12 +11,10 @@
 
 @interface ASDisplayNode : NSObject
 
-@property (atomic, getter=isOpaque)  BOOL opaque;
+@property(atomic, getter=isOpaque) BOOL opaque;
 
 @end
 
-
 @implementation ASDisplayNode
-
 
 @end

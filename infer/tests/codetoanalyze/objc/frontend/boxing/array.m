@@ -7,22 +7,25 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import<Foundation/Foundation.h>
-
-
+#import <Foundation/Foundation.h>
 
 int main() {
 
-  NSString *s;
+  NSString* s;
 
-  NSArray *germanCars = @[@"Mercedes-Benz", @"BMW", @"Porsche",
-                            @"Opel", @"Volkswagen", @"Audi"];
+  NSArray* germanCars = @[
+    @"Mercedes-Benz",
+    @"BMW",
+    @"Porsche",
+    @"Opel",
+    @"Volkswagen",
+    @"Audi"
+  ];
   s = germanCars[3];
 
-  for (NSString *item in germanCars) {
+  for (NSString* item in germanCars) {
     NSLog(@"%@", item);
   }
 
   return 0;
-
 }

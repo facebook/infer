@@ -9,15 +9,18 @@
 
 class A {
   struct AIn {
-    int fun() { return 1;}
+    int fun() { return 1; }
   };
-  AIn *in;
+  AIn* in;
   // inline definition
-  int fun() { int c = 10; return c+1;}
+  int fun() {
+    int c = 10;
+    return c + 1;
+  }
 };
 
 void test_call() {
-  A *a_ptr;
+  A* a_ptr;
   a_ptr->fun();
   a_ptr->in->fun();
 }

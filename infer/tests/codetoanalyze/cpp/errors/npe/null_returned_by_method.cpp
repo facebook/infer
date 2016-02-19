@@ -8,27 +8,27 @@
  */
 
 class X {
-public:
+ public:
   int field;
 };
 
 class XFactory {
-public:
+ public:
   X nonNull;
   X* getNull() { return nullptr; }
   X* getNonNull() { return &nonNull; }
 };
 
-int testNullDeref(XFactory *factory) {
+int testNullDeref(XFactory* factory) {
   if (factory) {
-    X *x = factory->getNull();
+    X* x = factory->getNull();
     return x->field;
   }
 }
 
-int testNoNullDeref(XFactory *factory) {
+int testNoNullDeref(XFactory* factory) {
   if (factory) {
-    X *x = factory->getNonNull();
+    X* x = factory->getNonNull();
     return x->field;
   }
 }

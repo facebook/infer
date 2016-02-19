@@ -10,10 +10,9 @@
 class X {
   int f;
   void init() { f = 0; }
-public:
-  X() {
-    init();
-  }
+
+ public:
+  X() { init(); }
 
   X(int a, int b);
 

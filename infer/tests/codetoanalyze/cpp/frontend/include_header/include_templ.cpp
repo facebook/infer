@@ -20,10 +20,6 @@ void div0_B_A() {
   b.div0();
 }
 
-void div0_templ_int() {
-  div0_templ<int>();
-}
+void div0_templ_int() { div0_templ<int>(); }
 
-int div0_templ_A() {
-  div0_templ<A>();
-}
+int div0_templ_A() { div0_templ<A>(); }

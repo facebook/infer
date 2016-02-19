@@ -12,7 +12,7 @@
 
 @interface MemoryLeakExample : NSObject
 
-@property UIView *backgroundCoveringView;
-@property UIView *attachmentContainerView;
+@property UIView* backgroundCoveringView;
+@property UIView* attachmentContainerView;
 
 @end

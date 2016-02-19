@@ -8,20 +8,20 @@
  */
 
 class Base {
-public:
-  int fun() { return 1;}
+ public:
+  int fun() { return 1; }
   int fun_redefine() { return 10; } // note that they are not virtual
 };
 
 class Sub : public Base {
-public:
+ public:
   int fun_redefine() { return 20; }
 };
 
 void call_static_methods() {
-  Base *b = new Base;
-  Base *s1 = new Sub; // note the type of s1
-  Sub *s2 = new Sub;
+  Base* b = new Base;
+  Base* s1 = new Sub; // note the type of s1
+  Sub* s2 = new Sub;
 
   b->fun();
   s1->fun();

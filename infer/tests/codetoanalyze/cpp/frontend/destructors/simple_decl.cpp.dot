@@ -1,16 +1,16 @@
 digraph iCFG {
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B * [line 23]\n  *n$0.f:int =1 [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&this,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B * [line 20]\n  *n$0.f:int =1 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&this,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 6 -> 5 ;
 5 [label="5: Exit B_~B \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start B_~B\nFormals:  this:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+4 [label="4: Start B_~B\nFormals:  this:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A * [line 13]\n  *n$0.f:int =0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&this,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A * [line 12]\n  *n$0.f:int =0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

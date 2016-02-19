@@ -9,8 +9,8 @@
 
 int main() {
   int j = 0;
-  for (int b=0;;) {
-      j += j;
-    }
+  for (int b = 0;;) {
+    j += j;
+  }
   return 0;
 }

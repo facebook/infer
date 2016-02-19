@@ -10,9 +10,8 @@
 #import <Foundation/NSObject.h>
 
 @interface AClass : NSObject
-    @property (nonatomic, strong) NSObject* aDynValue;
+@property(nonatomic, strong) NSObject* aDynValue;
 @end
-
 
 @implementation AClass
 

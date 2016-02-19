@@ -8,13 +8,14 @@
  */
 
 class Rectangle {
-    int width, height;
-public:
-    Rectangle(int x, int y) : width(x), height(y) {}
-    int area(void) { return width * height; }
+  int width, height;
+
+ public:
+  Rectangle(int x, int y) : width(x), height(y) {}
+  int area(void) { return width * height; }
 };
 
 int main() {
-    Rectangle *bar = new Rectangle (5, 6);
-    return 0;
+  Rectangle* bar = new Rectangle(5, 6);
+  return 0;
 }

@@ -1,162 +1,162 @@
 digraph iCFG {
-48 [label="48:  DeclStmt \n   n$35=_fun_FBColorCreateWithGray(0.000000:double ,0.300000:double ) [line 95]\n  *&borderColor:struct CGColor *=n$35 [line 95]\n  REMOVE_TEMPS(n$35); [line 95]\n " shape="box"]
+48 [label="48:  DeclStmt \n   n$35=_fun_FBColorCreateWithGray(0.000000:double ,0.300000:double ) [line 86]\n  *&borderColor:struct CGColor *=n$35 [line 86]\n  REMOVE_TEMPS(n$35); [line 86]\n " shape="box"]
 	
 
 	 48 -> 47 ;
-47 [label="47:  Call _fun_CGColorRelease \n   n$34=*&borderColor:struct CGColor * [line 96]\n  _fun_CGColorRelease(n$34:struct CGColor *) [line 96]\n  REMOVE_TEMPS(n$34); [line 96]\n  NULLIFY(&borderColor,false); [line 96]\n  APPLY_ABSTRACTION; [line 96]\n " shape="box"]
+47 [label="47:  Call _fun_CGColorRelease \n   n$34=*&borderColor:struct CGColor * [line 87]\n  _fun_CGColorRelease(n$34:struct CGColor *) [line 87]\n  REMOVE_TEMPS(n$34); [line 87]\n  NULLIFY(&borderColor,false); [line 87]\n  APPLY_ABSTRACTION; [line 87]\n " shape="box"]
 	
 
 	 47 -> 46 ;
 46 [label="46: Exit MemoryLeakExample_testFBColorCreateWithGray \n  " color=yellow style=filled]
 	
 
-45 [label="45: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:class MemoryLeakExample *\nLocals:  borderColor:struct CGColor * \n   DECLARE_LOCALS(&return,&borderColor); [line 93]\n  NULLIFY(&borderColor,false); [line 93]\n  NULLIFY(&self,false); [line 93]\n " color=yellow style=filled]
+45 [label="45: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:class MemoryLeakExample *\nLocals:  borderColor:struct CGColor * \n   DECLARE_LOCALS(&return,&borderColor); [line 85]\n  NULLIFY(&borderColor,false); [line 85]\n  NULLIFY(&self,false); [line 85]\n " color=yellow style=filled]
 	
 
 	 45 -> 48 ;
-44 [label="44:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(0:struct CGContext *) [line 87]\n  *&newImage:struct CGImage *=n$33 [line 87]\n  REMOVE_TEMPS(n$33); [line 87]\n " shape="box"]
+44 [label="44:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(0:struct CGContext *) [line 79]\n  *&newImage:struct CGImage *=n$33 [line 79]\n  REMOVE_TEMPS(n$33); [line 79]\n " shape="box"]
 	
 
 	 44 -> 43 ;
-43 [label="43:  Call _fun_CGImageRelease \n   n$32=*&newImage:struct CGImage * [line 88]\n  _fun_CGImageRelease(n$32:struct CGImage *) [line 88]\n  REMOVE_TEMPS(n$32); [line 88]\n  NULLIFY(&newImage,false); [line 88]\n  APPLY_ABSTRACTION; [line 88]\n " shape="box"]
+43 [label="43:  Call _fun_CGImageRelease \n   n$32=*&newImage:struct CGImage * [line 80]\n  _fun_CGImageRelease(n$32:struct CGImage *) [line 80]\n  REMOVE_TEMPS(n$32); [line 80]\n  NULLIFY(&newImage,false); [line 80]\n  APPLY_ABSTRACTION; [line 80]\n " shape="box"]
 	
 
 	 43 -> 42 ;
 42 [label="42: Exit MemoryLeakExample_testImageRefRelease \n  " color=yellow style=filled]
 	
 
-41 [label="41: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return,&newImage); [line 85]\n  NULLIFY(&newImage,false); [line 85]\n " color=yellow style=filled]
+41 [label="41: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return,&newImage); [line 78]\n  NULLIFY(&newImage,false); [line 78]\n " color=yellow style=filled]
 	
 
 	 41 -> 44 ;
-40 [label="40:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(0:struct __SecTrust *) [line 81]\n  *&allowedPublicKey:struct __SecKey *=n$31 [line 81]\n  REMOVE_TEMPS(n$31); [line 81]\n " shape="box"]
+40 [label="40:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(0:struct __SecTrust *) [line 74]\n  *&allowedPublicKey:struct __SecKey *=n$31 [line 74]\n  REMOVE_TEMPS(n$31); [line 74]\n " shape="box"]
 	
 
 	 40 -> 39 ;
-39 [label="39:  Call _fun___objc_release_cf \n   n$30=*&allowedPublicKey:struct __SecKey * [line 82]\n  _fun___objc_release_cf(1:_Bool ,n$30:void *) [line 82]\n  REMOVE_TEMPS(n$30); [line 82]\n  NULLIFY(&allowedPublicKey,false); [line 82]\n  APPLY_ABSTRACTION; [line 82]\n " shape="box"]
+39 [label="39:  Call _fun___objc_release_cf \n   n$30=*&allowedPublicKey:struct __SecKey * [line 75]\n  _fun___objc_release_cf(1:_Bool ,n$30:void *) [line 75]\n  REMOVE_TEMPS(n$30); [line 75]\n  NULLIFY(&allowedPublicKey,false); [line 75]\n  APPLY_ABSTRACTION; [line 75]\n " shape="box"]
 	
 
 	 39 -> 38 ;
 38 [label="38: Exit MemoryLeakExample_test2NoLeak \n  " color=yellow style=filled]
 	
 
-37 [label="37: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 79]\n  NULLIFY(&allowedPublicKey,false); [line 79]\n " color=yellow style=filled]
+37 [label="37: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 73]\n  NULLIFY(&allowedPublicKey,false); [line 73]\n " color=yellow style=filled]
 	
 
 	 37 -> 40 ;
-36 [label="36:  DeclStmt \n   n$28=*&trust:struct __SecTrust * [line 76]\n  n$29=_fun_SecTrustCopyPublicKey(n$28:struct __SecTrust *) [line 76]\n  *&allowedPublicKey:struct __SecKey *=n$29 [line 76]\n  REMOVE_TEMPS(n$28,n$29); [line 76]\n  NULLIFY(&allowedPublicKey,false); [line 76]\n  NULLIFY(&trust,false); [line 76]\n  APPLY_ABSTRACTION; [line 76]\n " shape="box"]
+36 [label="36:  DeclStmt \n   n$28=*&trust:struct __SecTrust * [line 70]\n  n$29=_fun_SecTrustCopyPublicKey(n$28:struct __SecTrust *) [line 70]\n  *&allowedPublicKey:struct __SecKey *=n$29 [line 70]\n  REMOVE_TEMPS(n$28,n$29); [line 70]\n  NULLIFY(&allowedPublicKey,false); [line 70]\n  NULLIFY(&trust,false); [line 70]\n  APPLY_ABSTRACTION; [line 70]\n " shape="box"]
 	
 
 	 36 -> 35 ;
 35 [label="35: Exit MemoryLeakExample_test2: \n  " color=yellow style=filled]
 	
 
-34 [label="34: Start MemoryLeakExample_test2:\nFormals:  trust:struct __SecTrust *\nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 74]\n  NULLIFY(&allowedPublicKey,false); [line 74]\n " color=yellow style=filled]
+34 [label="34: Start MemoryLeakExample_test2:\nFormals:  trust:struct __SecTrust *\nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 69]\n  NULLIFY(&allowedPublicKey,false); [line 69]\n " color=yellow style=filled]
 	
 
 	 34 -> 36 ;
-33 [label="33:  DeclStmt \n   n$26=*&rect:struct CGRect  [line 67]\n  n$27=_fun_CGRectGetHeight(n$26:struct CGRect ) [line 67]\n  *&lineThickness:double =(0.200000 * n$27) [line 67]\n  REMOVE_TEMPS(n$26,n$27); [line 67]\n  NULLIFY(&rect,false); [line 67]\n  NULLIFY(&lineThickness,false); [line 67]\n " shape="box"]
+33 [label="33:  DeclStmt \n   n$26=*&rect:struct CGRect  [line 62]\n  n$27=_fun_CGRectGetHeight(n$26:struct CGRect ) [line 62]\n  *&lineThickness:double =(0.200000 * n$27) [line 62]\n  REMOVE_TEMPS(n$26,n$27); [line 62]\n  NULLIFY(&rect,false); [line 62]\n  NULLIFY(&lineThickness,false); [line 62]\n " shape="box"]
 	
 
 	 33 -> 32 ;
-32 [label="32:  DeclStmt \n   n$25=_fun_CGPathCreateMutable() [line 70]\n  *&path1:struct CGPath *=n$25 [line 70]\n  REMOVE_TEMPS(n$25); [line 70]\n " shape="box"]
+32 [label="32:  DeclStmt \n   n$25=_fun_CGPathCreateMutable() [line 65]\n  *&path1:struct CGPath *=n$25 [line 65]\n  REMOVE_TEMPS(n$25); [line 65]\n " shape="box"]
 	
 
 	 32 -> 31 ;
-31 [label="31:  Call _fun___objc_release_cf \n   n$24=*&path1:struct CGPath * [line 71]\n  _fun___objc_release_cf(1:_Bool ,n$24:void *) [line 71]\n  REMOVE_TEMPS(n$24); [line 71]\n  NULLIFY(&path1,false); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
+31 [label="31:  Call _fun___objc_release_cf \n   n$24=*&path1:struct CGPath * [line 66]\n  _fun___objc_release_cf(1:_Bool ,n$24:void *) [line 66]\n  REMOVE_TEMPS(n$24); [line 66]\n  NULLIFY(&path1,false); [line 66]\n  APPLY_ABSTRACTION; [line 66]\n " shape="box"]
 	
 
 	 31 -> 30 ;
 30 [label="30: Exit MemoryLeakExample_createCloseCrossGlyphNoLeak: \n  " color=yellow style=filled]
 	
 
-29 [label="29: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 65]\n  NULLIFY(&lineThickness,false); [line 65]\n  NULLIFY(&path1,false); [line 65]\n " color=yellow style=filled]
+29 [label="29: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 61]\n  NULLIFY(&lineThickness,false); [line 61]\n  NULLIFY(&path1,false); [line 61]\n " color=yellow style=filled]
 	
 
 	 29 -> 33 ;
-28 [label="28:  DeclStmt \n   n$22=*&rect:struct CGRect  [line 59]\n  n$23=_fun_CGRectGetHeight(n$22:struct CGRect ) [line 59]\n  *&lineThickness:double =(0.200000 * n$23) [line 59]\n  REMOVE_TEMPS(n$22,n$23); [line 59]\n  NULLIFY(&rect,false); [line 59]\n  NULLIFY(&lineThickness,false); [line 59]\n " shape="box"]
+28 [label="28:  DeclStmt \n   n$22=*&rect:struct CGRect  [line 55]\n  n$23=_fun_CGRectGetHeight(n$22:struct CGRect ) [line 55]\n  *&lineThickness:double =(0.200000 * n$23) [line 55]\n  REMOVE_TEMPS(n$22,n$23); [line 55]\n  NULLIFY(&rect,false); [line 55]\n  NULLIFY(&lineThickness,false); [line 55]\n " shape="box"]
 	
 
 	 28 -> 27 ;
-27 [label="27:  DeclStmt \n   n$21=_fun_CGPathCreateMutable() [line 62]\n  *&path1:struct CGPath *=n$21 [line 62]\n  REMOVE_TEMPS(n$21); [line 62]\n  NULLIFY(&path1,false); [line 62]\n  APPLY_ABSTRACTION; [line 62]\n " shape="box"]
+27 [label="27:  DeclStmt \n   n$21=_fun_CGPathCreateMutable() [line 58]\n  *&path1:struct CGPath *=n$21 [line 58]\n  REMOVE_TEMPS(n$21); [line 58]\n  NULLIFY(&path1,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
 	
 
 	 27 -> 26 ;
 26 [label="26: Exit MemoryLeakExample_createCloseCrossGlyph: \n  " color=yellow style=filled]
 	
 
-25 [label="25: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 57]\n  NULLIFY(&lineThickness,false); [line 57]\n  NULLIFY(&path1,false); [line 57]\n " color=yellow style=filled]
+25 [label="25: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 54]\n  NULLIFY(&lineThickness,false); [line 54]\n  NULLIFY(&path1,false); [line 54]\n " color=yellow style=filled]
 	
 
 	 25 -> 28 ;
-24 [label="24:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(0:struct __CFAttributedString *) [line 53]\n  *&framesetter:struct __CTFramesetter *=n$20 [line 53]\n  REMOVE_TEMPS(n$20); [line 53]\n " shape="box"]
+24 [label="24:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(0:struct __CFAttributedString *) [line 50]\n  *&framesetter:struct __CTFramesetter *=n$20 [line 50]\n  REMOVE_TEMPS(n$20); [line 50]\n " shape="box"]
 	
 
 	 24 -> 23 ;
-23 [label="23:  Call _fun___objc_release_cf \n   n$19=*&framesetter:struct __CTFramesetter * [line 54]\n  _fun___objc_release_cf(1:_Bool ,n$19:void *) [line 54]\n  REMOVE_TEMPS(n$19); [line 54]\n  NULLIFY(&framesetter,false); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
+23 [label="23:  Call _fun___objc_release_cf \n   n$19=*&framesetter:struct __CTFramesetter * [line 51]\n  _fun___objc_release_cf(1:_Bool ,n$19:void *) [line 51]\n  REMOVE_TEMPS(n$19); [line 51]\n  NULLIFY(&framesetter,false); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="box"]
 	
 
 	 23 -> 22 ;
 22 [label="22: Exit MemoryLeakExample_test1NoLeak \n  " color=yellow style=filled]
 	
 
-21 [label="21: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 51]\n  NULLIFY(&framesetter,false); [line 51]\n " color=yellow style=filled]
+21 [label="21: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 49]\n  NULLIFY(&framesetter,false); [line 49]\n " color=yellow style=filled]
 	
 
 	 21 -> 24 ;
-20 [label="20:  DeclStmt \n   n$17=*&str:struct __CFAttributedString * [line 48]\n  n$18=_fun_CTFramesetterCreateWithAttributedString(n$17:struct __CFAttributedString *) [line 48]\n  *&framesetter:struct __CTFramesetter *=n$18 [line 48]\n  REMOVE_TEMPS(n$17,n$18); [line 48]\n  NULLIFY(&framesetter,false); [line 48]\n  NULLIFY(&str,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+20 [label="20:  DeclStmt \n   n$17=*&str:struct __CFAttributedString * [line 46]\n  n$18=_fun_CTFramesetterCreateWithAttributedString(n$17:struct __CFAttributedString *) [line 46]\n  *&framesetter:struct __CTFramesetter *=n$18 [line 46]\n  REMOVE_TEMPS(n$17,n$18); [line 46]\n  NULLIFY(&framesetter,false); [line 46]\n  NULLIFY(&str,false); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	
 
 	 20 -> 19 ;
 19 [label="19: Exit MemoryLeakExample_test1: \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start MemoryLeakExample_test1:\nFormals:  str:struct __CFAttributedString *\nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 46]\n  NULLIFY(&framesetter,false); [line 46]\n " color=yellow style=filled]
+18 [label="18: Start MemoryLeakExample_test1:\nFormals:  str:struct __CFAttributedString *\nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 45]\n  NULLIFY(&framesetter,false); [line 45]\n " color=yellow style=filled]
 	
 
 	 18 -> 20 ;
-17 [label="17:  DeclStmt \n   n$16=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 42]\n  *&maString:struct __CFAttributedString *=n$16 [line 42]\n  REMOVE_TEMPS(n$16); [line 42]\n " shape="box"]
+17 [label="17:  DeclStmt \n   n$16=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 41]\n  *&maString:struct __CFAttributedString *=n$16 [line 41]\n  REMOVE_TEMPS(n$16); [line 41]\n " shape="box"]
 	
 
 	 17 -> 16 ;
-16 [label="16:  Call _fun___objc_release_cf \n   n$15=*&maString:struct __CFAttributedString * [line 43]\n  _fun___objc_release_cf(1:_Bool ,n$15:void *) [line 43]\n  REMOVE_TEMPS(n$15); [line 43]\n  NULLIFY(&maString,false); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+16 [label="16:  Call _fun___objc_release_cf \n   n$15=*&maString:struct __CFAttributedString * [line 42]\n  _fun___objc_release_cf(1:_Bool ,n$15:void *) [line 42]\n  REMOVE_TEMPS(n$15); [line 42]\n  NULLIFY(&maString,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 16 -> 15 ;
 15 [label="15: Exit MemoryLeakExample_measureFrameSizeForTextNoLeak \n  " color=yellow style=filled]
 	
 
-14 [label="14: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 40]\n  NULLIFY(&maString,false); [line 40]\n " color=yellow style=filled]
+14 [label="14: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 39]\n  NULLIFY(&maString,false); [line 39]\n " color=yellow style=filled]
 	
 
 	 14 -> 17 ;
-13 [label="13:  DeclStmt \n   n$14=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 37]\n  *&maString:struct __CFAttributedString *=n$14 [line 37]\n  REMOVE_TEMPS(n$14); [line 37]\n  NULLIFY(&maString,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+13 [label="13:  DeclStmt \n   n$14=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 36]\n  *&maString:struct __CFAttributedString *=n$14 [line 36]\n  REMOVE_TEMPS(n$14); [line 36]\n  NULLIFY(&maString,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 13 -> 12 ;
 12 [label="12: Exit MemoryLeakExample_measureFrameSizeForText \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 35]\n  NULLIFY(&maString,false); [line 35]\n " color=yellow style=filled]
+11 [label="11: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 34]\n  NULLIFY(&maString,false); [line 34]\n " color=yellow style=filled]
 	
 
 	 11 -> 13 ;
-10 [label="10:  DeclStmt \n   n$10=*&self:class MemoryLeakExample * [line 31]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:class MemoryLeakExample *) [line 31]\n  n$12=_fun_UIView_bounds(n$11:class UIView *) [line 31]\n  n$13=_fun_CGPathCreateWithRect(n$12:struct CGRect ,0:struct CGAffineTransform *) [line 31]\n  *&shadowPath:struct CGPath *=n$13 [line 31]\n  REMOVE_TEMPS(n$10,n$11,n$12,n$13); [line 31]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$10=*&self:class MemoryLeakExample * [line 30]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:class MemoryLeakExample *) [line 30]\n  n$12=_fun_UIView_bounds(n$11:class UIView *) [line 30]\n  n$13=_fun_CGPathCreateWithRect(n$12:struct CGRect ,0:struct CGAffineTransform *) [line 30]\n  *&shadowPath:struct CGPath *=n$13 [line 30]\n  REMOVE_TEMPS(n$10,n$11,n$12,n$13); [line 30]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 32]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) [line 32]\n  n$8=_fun_UIView_layer(n$7:class UIView *) [line 32]\n  n$9=*&shadowPath:struct CGPath * [line 32]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) [line 32]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 32]\n  NULLIFY(&self,false); [line 32]\n  NULLIFY(&shadowPath,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+9 [label="9:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 31]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) [line 31]\n  n$8=_fun_UIView_layer(n$7:class UIView *) [line 31]\n  n$9=*&shadowPath:struct CGPath * [line 31]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) [line 31]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 31]\n  NULLIFY(&self,false); [line 31]\n  NULLIFY(&shadowPath,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 9 -> 8 ;
 8 [label="8: Exit MemoryLeakExample_test \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start MemoryLeakExample_test\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * \n   DECLARE_LOCALS(&return,&shadowPath); [line 29]\n  NULLIFY(&shadowPath,false); [line 29]\n " color=yellow style=filled]
+7 [label="7: Start MemoryLeakExample_test\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * \n   DECLARE_LOCALS(&return,&shadowPath); [line 28]\n  NULLIFY(&shadowPath,false); [line 28]\n " color=yellow style=filled]
 	
 
 	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class UIView ):unsigned long ) [line 21]\n  *&attachmentContainerView:class UIView *=n$5 [line 21]\n  REMOVE_TEMPS(n$5); [line 21]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class UIView ):unsigned long ) [line 20]\n  *&attachmentContainerView:class UIView *=n$5 [line 20]\n  REMOVE_TEMPS(n$5); [line 20]\n " shape="box"]
 	
 
 	 6 -> 5 ;

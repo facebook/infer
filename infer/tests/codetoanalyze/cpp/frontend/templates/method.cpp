@@ -20,14 +20,18 @@ struct X3 {
 };
 
 struct Getter {
-  template<class S>
-  int get(S &s) { return s.get(); }
+  template <class S>
+  int get(S& s) {
+    return s.get();
+  }
 };
 
-template<class T>
+template <class T>
 struct GetterTempl {
-  template<class S>
-  int get(T &t, S &s) { return t.get() + s.get(); }
+  template <class S>
+  int get(T& t, S& s) {
+    return t.get() + s.get();
+  }
 };
 
 int div0_getter() {

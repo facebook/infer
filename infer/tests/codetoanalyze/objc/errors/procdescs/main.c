@@ -11,15 +11,15 @@
 #include <stdlib.h>
 
 int main() {
-    MethodCall *call = [MethodCall alloc];
-    int n = [call plusX : 1 andY: 3];
-    int *x = malloc(sizeof(int));
-    return n;
+  MethodCall* call = [MethodCall alloc];
+  int n = [call plusX:1 andY:3];
+  int* x = malloc(sizeof(int));
+  return n;
 }
 
 int call_nslog() {
-  MethodCall *call = [MethodCall alloc];
+  MethodCall* call = [MethodCall alloc];
   NSLog(@"%s", "printing");
-  int *x = malloc(sizeof(int));
+  int* x = malloc(sizeof(int));
   return 0;
 }

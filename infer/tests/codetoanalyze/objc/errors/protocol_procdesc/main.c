@@ -9,12 +9,11 @@
 
 #include "Bicycle.h"
 
-
 int main() {
 
-    Bicycle *bike = [Bicycle alloc];
+  Bicycle* bike = [Bicycle alloc];
 
-    [bike signalStop];
+  [bike signalStop];
 
-    return 0;
+  return 0;
 }

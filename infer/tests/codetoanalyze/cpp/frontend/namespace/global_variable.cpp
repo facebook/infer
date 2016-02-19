@@ -13,7 +13,6 @@ int val;
 struct A {
   static int v;
 };
-
 }
 
 namespace f2 {
@@ -24,7 +23,7 @@ struct B {
   static int v;
 };
 
-struct C : public B { };
+struct C : public B {};
 
 int div0_namepace_res() {
   f1::val = 1;
@@ -33,12 +32,12 @@ int div0_namepace_res() {
 }
 
 int div0_static_field() {
-  B::v= 1;
+  B::v = 1;
   f1::A::v = -2;
   return 1 / (f1::A::v + B::v + 1);
 }
 
-int div0_static_field_member_access(f1::A *a, C *b) {
+int div0_static_field_member_access(f1::A* a, C* b) {
   a->v = 1;
   b->v = -2;
   return 1 / (f1::A::v + B::v + 1);

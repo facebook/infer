@@ -10,78 +10,93 @@
 #import <Foundation/Foundation.h>
 
 @interface A : NSObject {
-
 }
 @end
 
 @implementation A
 
--(void) noProblem {
-  NSDictionary *foo = @{@"aaa":@"a value", @"bbb":@"b value"};
+- (void)noProblem {
+  NSDictionary* foo = @{ @"aaa" : @"a value", @"bbb" : @"b value" };
   // check that dictionary literals create valid objects
-  NSArray *foofoo = @[foo];
+  NSArray* foofoo = @[ foo ];
 }
 
--(void) nilInDictionaryLiteralKey0 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralKey0 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{str: @"a value"};
+  NSDictionary* foo = @{ str : @"a value" };
 }
 
--(void) nilInDictionaryLiteralValue0 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralValue0 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{@"aaa": str};
+  NSDictionary* foo = @{ @"aaa" : str };
 }
 
--(void) nilInDictionaryLiteralKey1 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralKey1 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{str: @"a value", @"bbb":@"b value"};
+  NSDictionary* foo = @{ str : @"a value", @"bbb" : @"b value" };
 }
 
--(void) nilInDictionaryLiteralValue1 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralValue1 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{@"aaa": str, @"bbb":@"b value"};
+  NSDictionary* foo = @{ @"aaa" : str, @"bbb" : @"b value" };
 }
 
--(void) nilInDictionaryLiteralKey2 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralKey2 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{@"aaa":@"a value", str:@"b value", @"ccc":@"c value"};
+  NSDictionary* foo = @{
+    @"aaa" : @"a value",
+    str : @"b value",
+    @"ccc" : @"c value"
+  };
 }
 
--(void) nilInDictionaryLiteralValue2 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralValue2 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{@"aaa":@"a value", @"bbb":str, @"ccc":@"c value"};
+  NSDictionary* foo = @{
+    @"aaa" : @"a value",
+    @"bbb" : str,
+    @"ccc" : @"c value"
+  };
 }
 
--(void) nilInDictionaryLiteralKey3 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralKey3 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{@"aaa":@"a value", @"bbb":@"b value", str:@"c value"};
+  NSDictionary* foo = @{
+    @"aaa" : @"a value",
+    @"bbb" : @"b value",
+    str : @"c value"
+  };
 }
 
--(void) nilInDictionaryLiteralValue3 {
-  NSString *str = nil;
+- (void)nilInDictionaryLiteralValue3 {
+  NSString* str = nil;
 
   // nil argument in dictionary literal crashes
-  NSDictionary *foo = @{@"aaa":@"a value", @"bbb":@"b value", @"ccc":str};
+  NSDictionary* foo = @{
+    @"aaa" : @"a value",
+    @"bbb" : @"b value",
+    @"ccc" : str
+  };
 }
 
 @end
 
 int main() {
-  A *a = [A alloc];
+  A* a = [A alloc];
   [a noProblem];
   [a nilInDictionaryLiteralKey0];
   return 0;

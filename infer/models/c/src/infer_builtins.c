@@ -43,8 +43,8 @@ unsigned long int __infer_nondet_unsigned_long_int() {
 }
 
 // model returning an arbitrary (nondeterministic) pointer
-void *__infer_nondet_ptr() {
-  void *res;
+void* __infer_nondet_ptr() {
+  void* res;
   return res;
 }
 
@@ -92,7 +92,10 @@ long infer__builtin_expect(long e, long x) {
   }
 }
 
-void *infer__builtin___memset_chk(void *dest, int val, unsigned long len, unsigned long dstlen) {
+void* infer__builtin___memset_chk(void* dest,
+                                  int val,
+                                  unsigned long len,
+                                  unsigned long dstlen) {
   INFER_EXCLUDE_CONDITION(dstlen < len);
   return dest;
 }

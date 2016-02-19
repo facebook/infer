@@ -12,16 +12,14 @@
  to be used before it is defined.
  */
 
-int sum (int, int);
+int sum(int, int);
 
-int main (void) {
-    int total;
+int main(void) {
+  int total;
 
-    total = sum (2, 3);
+  total = sum(2, 3);
 
-    return 0;
+  return 0;
 }
 
-int sum (int a, int b) {
-    return a + b;
-}
+int sum(int a, int b) { return a + b; }

@@ -8,14 +8,14 @@
  */
 
 class A {
-  public:
+ public:
   // default parameters
-  int fun_default(int a, int b = 10, int c = 20) {return a+b+c;}
+  int fun_default(int a, int b = 10, int c = 20) { return a + b + c; }
 };
 
 void call_method_with_default_parameters() {
-  A *a_ptr;
-  a_ptr->fun_default(1,2,3);
-  a_ptr->fun_default(1,2);
+  A* a_ptr;
+  a_ptr->fun_default(1, 2, 3);
+  a_ptr->fun_default(1, 2);
   a_ptr->fun_default(1);
 }

@@ -16,7 +16,6 @@ struct X {
   int skip(); // this should be skip in the backend
 };
 
-
 X get(int a) {
   X x;
   x.f = a;
@@ -33,19 +32,13 @@ int get_field_div0() {
   return 1 / get(0).f;
 }
 
-int get_method_div0() {
-  return get(0).div();
-}
+int get_method_div0() { return get(0).div(); }
 
 int get_div1() {
   X x = get(1);
   return 1 / x.f;
 }
 
-int get_field_div1() {
-  return 1 / get(1).f;
-}
+int get_field_div1() { return 1 / get(1).f; }
 
-int get_method_div1() {
-  return get(1).div();
-}
+int get_method_div1() { return get(1).div(); }

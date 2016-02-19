@@ -11,6 +11,6 @@
 
 @interface PropertyImplSetter : NSObject
 
-@property (nonatomic) int maximumFileSize;
+@property(nonatomic) int maximumFileSize;
 
 @end

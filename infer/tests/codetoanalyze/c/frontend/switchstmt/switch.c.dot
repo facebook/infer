@@ -1,42 +1,42 @@
 digraph iCFG {
-195 [label="195:  DeclStmt \n   *&value:int =0 [line 222]\n " shape="box"]
+195 [label="195:  DeclStmt \n   *&value:int =0 [line 192]\n " shape="box"]
 	
 
 	 195 -> 186 ;
-194 [label="194: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 225]\n  APPLY_ABSTRACTION; [line 225]\n " shape="invhouse"]
+194 [label="194: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 194]\n  APPLY_ABSTRACTION; [line 194]\n " shape="invhouse"]
 	
 
 	 194 -> 184 ;
-193 [label="193: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 225]\n " shape="invhouse"]
+193 [label="193: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 194]\n " shape="invhouse"]
 	
 
 	 193 -> 192 ;
-192 [label="192:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 226]\n  REMOVE_TEMPS(n$3); [line 226]\n  APPLY_ABSTRACTION; [line 226]\n " shape="box"]
+192 [label="192:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 195]\n  REMOVE_TEMPS(n$3); [line 195]\n  APPLY_ABSTRACTION; [line 195]\n " shape="box"]
 	
 
 	 192 -> 184 ;
-191 [label="191:  Switch_stmt \n   n$1=*&SIL_temp_conditional___185:int  [line 223]\n  NULLIFY(&SIL_temp_conditional___185,true); [line 223]\n  *&value:int =n$1 [line 223]\n  n$2=*&value:int  [line 223]\n  NULLIFY(&value,false); [line 223]\n " shape="box"]
+191 [label="191:  Switch_stmt \n   n$1=*&SIL_temp_conditional___185:int  [line 193]\n  NULLIFY(&SIL_temp_conditional___185,true); [line 193]\n  *&value:int =n$1 [line 193]\n  n$2=*&value:int  [line 193]\n  NULLIFY(&value,false); [line 193]\n " shape="box"]
 	
 
 	 191 -> 193 ;
 	 191 -> 194 ;
-190 [label="190:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___185); [line 223]\n  *&SIL_temp_conditional___185:int =9 [line 223]\n  APPLY_ABSTRACTION; [line 223]\n " shape="box"]
+190 [label="190:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___185); [line 193]\n  *&SIL_temp_conditional___185:int =9 [line 193]\n  APPLY_ABSTRACTION; [line 193]\n " shape="box"]
 	
 
 	 190 -> 185 ;
-189 [label="189:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___185); [line 223]\n  *&SIL_temp_conditional___185:int =7 [line 223]\n  APPLY_ABSTRACTION; [line 223]\n " shape="box"]
+189 [label="189:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___185); [line 193]\n  *&SIL_temp_conditional___185:int =7 [line 193]\n  APPLY_ABSTRACTION; [line 193]\n " shape="box"]
 	
 
 	 189 -> 185 ;
-188 [label="188: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 223]\n  REMOVE_TEMPS(n$0); [line 223]\n " shape="invhouse"]
+188 [label="188: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 193]\n  REMOVE_TEMPS(n$0); [line 193]\n " shape="invhouse"]
 	
 
 	 188 -> 190 ;
-187 [label="187: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 223]\n  REMOVE_TEMPS(n$0); [line 223]\n " shape="invhouse"]
+187 [label="187: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 193]\n  REMOVE_TEMPS(n$0); [line 193]\n " shape="invhouse"]
 	
 
 	 187 -> 189 ;
-186 [label="186:  BinaryOperatorStmt: EQ \n   n$0=*&value:int  [line 223]\n  NULLIFY(&value,false); [line 223]\n " shape="box"]
+186 [label="186:  BinaryOperatorStmt: EQ \n   n$0=*&value:int  [line 193]\n  NULLIFY(&value,false); [line 193]\n " shape="box"]
 	
 
 	 186 -> 187 ;
@@ -45,136 +45,136 @@ digraph iCFG {
 	
 
 	 185 -> 191 ;
-184 [label="184:  Return Stmt \n   *&return:int =0 [line 228]\n  REMOVE_TEMPS(n$1,n$2); [line 228]\n  APPLY_ABSTRACTION; [line 228]\n " shape="box"]
+184 [label="184:  Return Stmt \n   *&return:int =0 [line 197]\n  REMOVE_TEMPS(n$1,n$2); [line 197]\n  APPLY_ABSTRACTION; [line 197]\n " shape="box"]
 	
 
 	 184 -> 183 ;
 183 [label="183: Exit m11 \n  " color=yellow style=filled]
 	
 
-182 [label="182: Start m11\nFormals: \nLocals:  value:int  \n   DECLARE_LOCALS(&return,&value); [line 220]\n  NULLIFY(&value,false); [line 220]\n " color=yellow style=filled]
+182 [label="182: Start m11\nFormals: \nLocals:  value:int  \n   DECLARE_LOCALS(&return,&value); [line 191]\n  NULLIFY(&value,false); [line 191]\n " color=yellow style=filled]
 	
 
 	 182 -> 195 ;
-181 [label="181:  DeclStmt \n   *&value:int =0 [line 213]\n  NULLIFY(&value,false); [line 213]\n " shape="box"]
+181 [label="181:  DeclStmt \n   *&value:int =0 [line 186]\n  NULLIFY(&value,false); [line 186]\n " shape="box"]
 	
 
 	 181 -> 180 ;
-180 [label="180:  Switch_stmt \n   *&value:int =7 [line 214]\n  n$0=*&value:int  [line 214]\n  NULLIFY(&value,false); [line 214]\n " shape="box"]
+180 [label="180:  Switch_stmt \n   *&value:int =7 [line 187]\n  n$0=*&value:int  [line 187]\n  NULLIFY(&value,false); [line 187]\n " shape="box"]
 	
 
 	 180 -> 179 ;
-179 [label="179:  Return Stmt \n   *&return:int =0 [line 217]\n  REMOVE_TEMPS(n$0); [line 217]\n  APPLY_ABSTRACTION; [line 217]\n " shape="box"]
+179 [label="179:  Return Stmt \n   *&return:int =0 [line 188]\n  REMOVE_TEMPS(n$0); [line 188]\n  APPLY_ABSTRACTION; [line 188]\n " shape="box"]
 	
 
 	 179 -> 178 ;
 178 [label="178: Exit m10 \n  " color=yellow style=filled]
 	
 
-177 [label="177: Start m10\nFormals: \nLocals:  value:int  \n   DECLARE_LOCALS(&return,&value); [line 211]\n  NULLIFY(&value,false); [line 211]\n " color=yellow style=filled]
+177 [label="177: Start m10\nFormals: \nLocals:  value:int  \n   DECLARE_LOCALS(&return,&value); [line 185]\n  NULLIFY(&value,false); [line 185]\n " color=yellow style=filled]
 	
 
 	 177 -> 181 ;
-176 [label="176:  DeclStmt \n   *&value:int =0 [line 204]\n " shape="box"]
+176 [label="176:  DeclStmt \n   *&value:int =0 [line 180]\n " shape="box"]
 	
 
 	 176 -> 175 ;
-175 [label="175:  Switch_stmt \n   n$0=*&value:int  [line 205]\n  NULLIFY(&value,false); [line 205]\n " shape="box"]
+175 [label="175:  Switch_stmt \n   n$0=*&value:int  [line 181]\n  NULLIFY(&value,false); [line 181]\n " shape="box"]
 	
 
 	 175 -> 174 ;
-174 [label="174:  Return Stmt \n   *&return:int =0 [line 208]\n  REMOVE_TEMPS(n$0); [line 208]\n  APPLY_ABSTRACTION; [line 208]\n " shape="box"]
+174 [label="174:  Return Stmt \n   *&return:int =0 [line 182]\n  REMOVE_TEMPS(n$0); [line 182]\n  APPLY_ABSTRACTION; [line 182]\n " shape="box"]
 	
 
 	 174 -> 173 ;
 173 [label="173: Exit m9 \n  " color=yellow style=filled]
 	
 
-172 [label="172: Start m9\nFormals: \nLocals:  value:int  \n   DECLARE_LOCALS(&return,&value); [line 202]\n  NULLIFY(&value,false); [line 202]\n " color=yellow style=filled]
+172 [label="172: Start m9\nFormals: \nLocals:  value:int  \n   DECLARE_LOCALS(&return,&value); [line 179]\n  NULLIFY(&value,false); [line 179]\n " color=yellow style=filled]
 	
 
 	 172 -> 176 ;
-171 [label="171:  DeclStmt \n   *&value:int =0 [line 178]\n  APPLY_ABSTRACTION; [line 178]\n " shape="box"]
+171 [label="171:  DeclStmt \n   *&value:int =0 [line 158]\n  APPLY_ABSTRACTION; [line 158]\n " shape="box"]
 	
 
 	 171 -> 146 ;
-170 [label="170: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 183]\n " shape="invhouse"]
+170 [label="170: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 161]\n " shape="invhouse"]
 	
 
 	 170 -> 165 ;
 	 170 -> 166 ;
-169 [label="169: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 183]\n " shape="invhouse"]
+169 [label="169: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 161]\n " shape="invhouse"]
 	
 
 	 169 -> 168 ;
-168 [label="168:  Call _fun_printf \n   NULLIFY(&value,false); [line 184]\n  n$4=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 184]\n  REMOVE_TEMPS(n$4); [line 184]\n " shape="box"]
+168 [label="168:  Call _fun_printf \n   NULLIFY(&value,false); [line 162]\n  n$4=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 162]\n  REMOVE_TEMPS(n$4); [line 162]\n " shape="box"]
 	
 
 	 168 -> 167 ;
-167 [label="167:  Return Stmt \n   *&return:int =0 [line 185]\n  APPLY_ABSTRACTION; [line 185]\n " shape="box"]
+167 [label="167:  Return Stmt \n   *&return:int =0 [line 163]\n  APPLY_ABSTRACTION; [line 163]\n " shape="box"]
 	
 
 	 167 -> 144 ;
-166 [label="166: Prune (false branch) \n   PRUNE(((n$2 == 1) == 0), false); [line 186]\n " shape="invhouse"]
+166 [label="166: Prune (false branch) \n   PRUNE(((n$2 == 1) == 0), false); [line 164]\n " shape="invhouse"]
 	
 
 	 166 -> 160 ;
 	 166 -> 161 ;
-165 [label="165: Prune (true branch) \n   PRUNE(((n$2 == 1) != 0), true); [line 186]\n " shape="invhouse"]
+165 [label="165: Prune (true branch) \n   PRUNE(((n$2 == 1) != 0), true); [line 164]\n " shape="invhouse"]
 	
 
 	 165 -> 164 ;
-164 [label="164:  DeclStmt \n   *&something:int =1 [line 188]\n " shape="box"]
+164 [label="164:  DeclStmt \n   *&something:int =1 [line 165]\n " shape="box"]
 	
 
 	 164 -> 163 ;
-163 [label="163:  UnaryOperator \n   n$3=*&something:int  [line 189]\n  *&something:int =(n$3 + 1) [line 189]\n  REMOVE_TEMPS(n$3); [line 189]\n  NULLIFY(&something,false); [line 189]\n  APPLY_ABSTRACTION; [line 189]\n " shape="box"]
+163 [label="163:  UnaryOperator \n   n$3=*&something:int  [line 166]\n  *&something:int =(n$3 + 1) [line 166]\n  REMOVE_TEMPS(n$3); [line 166]\n  NULLIFY(&something,false); [line 166]\n  APPLY_ABSTRACTION; [line 166]\n " shape="box"]
 	
 
 	 163 -> 146 ;
-162 [label="162:  DeclStmt \n   *&z:int =9 [line 193]\n  NULLIFY(&a,false); [line 193]\n  NULLIFY(&something,false); [line 193]\n  NULLIFY(&z,false); [line 193]\n  APPLY_ABSTRACTION; [line 193]\n " shape="box"]
+162 [label="162:  DeclStmt \n   *&z:int =9 [line 169]\n  NULLIFY(&a,false); [line 169]\n  NULLIFY(&something,false); [line 169]\n  NULLIFY(&z,false); [line 169]\n  APPLY_ABSTRACTION; [line 169]\n " shape="box"]
 	
 
 	 162 -> 150 ;
-161 [label="161: Prune (false branch) \n   PRUNE(((n$2 == 2) == 0), false); [line 194]\n " shape="invhouse"]
+161 [label="161: Prune (false branch) \n   PRUNE(((n$2 == 2) == 0), false); [line 170]\n " shape="invhouse"]
 	
 
 	 161 -> 158 ;
 	 161 -> 159 ;
-160 [label="160: Prune (true branch) \n   PRUNE(((n$2 == 2) != 0), true); [line 194]\n  APPLY_ABSTRACTION; [line 194]\n " shape="invhouse"]
+160 [label="160: Prune (true branch) \n   PRUNE(((n$2 == 2) != 0), true); [line 170]\n  APPLY_ABSTRACTION; [line 170]\n " shape="invhouse"]
 	
 
 	 160 -> 150 ;
-159 [label="159: Prune (false branch) \n   PRUNE(((n$2 == 3) == 0), false); [line 195]\n  APPLY_ABSTRACTION; [line 195]\n " shape="invhouse"]
+159 [label="159: Prune (false branch) \n   PRUNE(((n$2 == 3) == 0), false); [line 171]\n  APPLY_ABSTRACTION; [line 171]\n " shape="invhouse"]
 	
 
 	 159 -> 150 ;
-158 [label="158: Prune (true branch) \n   PRUNE(((n$2 == 3) != 0), true); [line 195]\n  APPLY_ABSTRACTION; [line 195]\n " shape="invhouse"]
+158 [label="158: Prune (true branch) \n   PRUNE(((n$2 == 3) != 0), true); [line 171]\n  APPLY_ABSTRACTION; [line 171]\n " shape="invhouse"]
 	
 
 	 158 -> 150 ;
-157 [label="157:  Switch_stmt \n   n$2=*&SIL_temp_conditional___151:int  [line 181]\n  NULLIFY(&SIL_temp_conditional___151,true); [line 181]\n " shape="box"]
+157 [label="157:  Switch_stmt \n   n$2=*&SIL_temp_conditional___151:int  [line 160]\n  NULLIFY(&SIL_temp_conditional___151,true); [line 160]\n " shape="box"]
 	
 
 	 157 -> 169 ;
 	 157 -> 170 ;
-156 [label="156:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___151); [line 181]\n  *&SIL_temp_conditional___151:int =2 [line 181]\n  APPLY_ABSTRACTION; [line 181]\n " shape="box"]
+156 [label="156:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___151); [line 160]\n  *&SIL_temp_conditional___151:int =2 [line 160]\n  APPLY_ABSTRACTION; [line 160]\n " shape="box"]
 	
 
 	 156 -> 151 ;
-155 [label="155:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___151); [line 181]\n  *&SIL_temp_conditional___151:int =1 [line 181]\n  APPLY_ABSTRACTION; [line 181]\n " shape="box"]
+155 [label="155:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___151); [line 160]\n  *&SIL_temp_conditional___151:int =1 [line 160]\n  APPLY_ABSTRACTION; [line 160]\n " shape="box"]
 	
 
 	 155 -> 151 ;
-154 [label="154: Prune (false branch) \n   PRUNE(((n$1 == 0) == 0), false); [line 181]\n  REMOVE_TEMPS(n$1); [line 181]\n " shape="invhouse"]
+154 [label="154: Prune (false branch) \n   PRUNE(((n$1 == 0) == 0), false); [line 160]\n  REMOVE_TEMPS(n$1); [line 160]\n " shape="invhouse"]
 	
 
 	 154 -> 156 ;
-153 [label="153: Prune (true branch) \n   PRUNE(((n$1 == 0) != 0), true); [line 181]\n  REMOVE_TEMPS(n$1); [line 181]\n " shape="invhouse"]
+153 [label="153: Prune (true branch) \n   PRUNE(((n$1 == 0) != 0), true); [line 160]\n  REMOVE_TEMPS(n$1); [line 160]\n " shape="invhouse"]
 	
 
 	 153 -> 155 ;
-152 [label="152:  BinaryOperatorStmt: EQ \n   n$1=_fun_getValue() [line 181]\n " shape="box"]
+152 [label="152:  BinaryOperatorStmt: EQ \n   n$1=_fun_getValue() [line 160]\n " shape="box"]
 	
 
 	 152 -> 153 ;
@@ -183,19 +183,19 @@ digraph iCFG {
 	
 
 	 151 -> 157 ;
-150 [label="150:  DeclStmt \n   *&a:int =0 [line 197]\n  REMOVE_TEMPS(n$2); [line 197]\n  NULLIFY(&a,false); [line 197]\n  APPLY_ABSTRACTION; [line 197]\n " shape="box"]
+150 [label="150:  DeclStmt \n   *&a:int =0 [line 174]\n  REMOVE_TEMPS(n$2); [line 174]\n  NULLIFY(&a,false); [line 174]\n  APPLY_ABSTRACTION; [line 174]\n " shape="box"]
 	
 
 	 150 -> 146 ;
-149 [label="149: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 179]\n  REMOVE_TEMPS(n$0); [line 179]\n " shape="invhouse"]
+149 [label="149: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 159]\n  REMOVE_TEMPS(n$0); [line 159]\n " shape="invhouse"]
 	
 
 	 149 -> 145 ;
-148 [label="148: Prune (true branch) \n   PRUNE(((n$0 < 10) != 0), true); [line 179]\n  REMOVE_TEMPS(n$0); [line 179]\n " shape="invhouse"]
+148 [label="148: Prune (true branch) \n   PRUNE(((n$0 < 10) != 0), true); [line 159]\n  REMOVE_TEMPS(n$0); [line 159]\n " shape="invhouse"]
 	
 
 	 148 -> 152 ;
-147 [label="147:  BinaryOperatorStmt: LT \n   n$0=*&value:int  [line 179]\n " shape="box"]
+147 [label="147:  BinaryOperatorStmt: LT \n   n$0=*&value:int  [line 159]\n " shape="box"]
 	
 
 	 147 -> 148 ;
@@ -204,176 +204,176 @@ digraph iCFG {
 	
 
 	 146 -> 147 ;
-145 [label="145:  Return Stmt \n   NULLIFY(&value,false); [line 199]\n  *&return:int =0 [line 199]\n  APPLY_ABSTRACTION; [line 199]\n " shape="box"]
+145 [label="145:  Return Stmt \n   NULLIFY(&value,false); [line 176]\n  *&return:int =0 [line 176]\n  APPLY_ABSTRACTION; [line 176]\n " shape="box"]
 	
 
 	 145 -> 144 ;
 144 [label="144: Exit m8 \n  " color=yellow style=filled]
 	
 
-143 [label="143: Start m8\nFormals: \nLocals:  a:int  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&a,&z,&something,&value); [line 176]\n  NULLIFY(&a,false); [line 176]\n  NULLIFY(&something,false); [line 176]\n  NULLIFY(&value,false); [line 176]\n  NULLIFY(&z,false); [line 176]\n " color=yellow style=filled]
+143 [label="143: Start m8\nFormals: \nLocals:  a:int  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&a,&z,&something,&value); [line 157]\n  NULLIFY(&a,false); [line 157]\n  NULLIFY(&something,false); [line 157]\n  NULLIFY(&value,false); [line 157]\n  NULLIFY(&z,false); [line 157]\n " color=yellow style=filled]
 	
 
 	 143 -> 171 ;
-142 [label="142:  DeclStmt \n   *&value:int =0 [line 158]\n  NULLIFY(&value,false); [line 158]\n " shape="box"]
+142 [label="142:  DeclStmt \n   *&value:int =0 [line 140]\n  NULLIFY(&value,false); [line 140]\n " shape="box"]
 	
 
 	 142 -> 129 ;
-141 [label="141: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 161]\n " shape="invhouse"]
+141 [label="141: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 142]\n " shape="invhouse"]
 	
 
 	 141 -> 137 ;
 	 141 -> 138 ;
-140 [label="140: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 161]\n " shape="invhouse"]
+140 [label="140: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 142]\n " shape="invhouse"]
 	
 
 	 140 -> 139 ;
-139 [label="139:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 162]\n  REMOVE_TEMPS(n$2); [line 162]\n  APPLY_ABSTRACTION; [line 162]\n " shape="box"]
+139 [label="139:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 143]\n  REMOVE_TEMPS(n$2); [line 143]\n  APPLY_ABSTRACTION; [line 143]\n " shape="box"]
 	
 
 	 139 -> 128 ;
-138 [label="138: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 164]\n " shape="invhouse"]
+138 [label="138: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 145]\n " shape="invhouse"]
 	
 
 	 138 -> 132 ;
 	 138 -> 133 ;
-137 [label="137: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 164]\n " shape="invhouse"]
+137 [label="137: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 145]\n " shape="invhouse"]
 	
 
 	 137 -> 136 ;
-136 [label="136:  DeclStmt \n   *&something:int =1 [line 165]\n " shape="box"]
+136 [label="136:  DeclStmt \n   *&something:int =1 [line 146]\n " shape="box"]
 	
 
 	 136 -> 135 ;
-135 [label="135:  UnaryOperator \n   n$1=*&something:int  [line 166]\n  *&something:int =(n$1 + 1) [line 166]\n  REMOVE_TEMPS(n$1); [line 166]\n  NULLIFY(&something,false); [line 166]\n  APPLY_ABSTRACTION; [line 166]\n " shape="box"]
+135 [label="135:  UnaryOperator \n   n$1=*&something:int  [line 147]\n  *&something:int =(n$1 + 1) [line 147]\n  REMOVE_TEMPS(n$1); [line 147]\n  NULLIFY(&something,false); [line 147]\n  APPLY_ABSTRACTION; [line 147]\n " shape="box"]
 	
 
 	 135 -> 128 ;
-134 [label="134:  DeclStmt \n   *&z:int =9 [line 169]\n  NULLIFY(&something,false); [line 169]\n  NULLIFY(&value,false); [line 169]\n  NULLIFY(&z,false); [line 169]\n  APPLY_ABSTRACTION; [line 169]\n " shape="box"]
+134 [label="134:  DeclStmt \n   *&z:int =9 [line 149]\n  NULLIFY(&something,false); [line 149]\n  NULLIFY(&value,false); [line 149]\n  NULLIFY(&z,false); [line 149]\n  APPLY_ABSTRACTION; [line 149]\n " shape="box"]
 	
 
 	 134 -> 128 ;
-133 [label="133: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 170]\n " shape="invhouse"]
+133 [label="133: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 150]\n " shape="invhouse"]
 	
 
 	 133 -> 130 ;
 	 133 -> 131 ;
-132 [label="132: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 170]\n  APPLY_ABSTRACTION; [line 170]\n " shape="invhouse"]
+132 [label="132: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 150]\n  APPLY_ABSTRACTION; [line 150]\n " shape="invhouse"]
 	
 
 	 132 -> 128 ;
-131 [label="131: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 171]\n  APPLY_ABSTRACTION; [line 171]\n " shape="invhouse"]
+131 [label="131: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 151]\n  APPLY_ABSTRACTION; [line 151]\n " shape="invhouse"]
 	
 
 	 131 -> 128 ;
-130 [label="130: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 171]\n  APPLY_ABSTRACTION; [line 171]\n " shape="invhouse"]
+130 [label="130: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 151]\n  APPLY_ABSTRACTION; [line 151]\n " shape="invhouse"]
 	
 
 	 130 -> 128 ;
-129 [label="129:  Switch_stmt \n   n$0=_fun_getValue() [line 159]\n " shape="box"]
+129 [label="129:  Switch_stmt \n   n$0=_fun_getValue() [line 141]\n " shape="box"]
 	
 
 	 129 -> 140 ;
 	 129 -> 141 ;
-128 [label="128:  Return Stmt \n   *&return:int =0 [line 173]\n  REMOVE_TEMPS(n$0); [line 173]\n  APPLY_ABSTRACTION; [line 173]\n " shape="box"]
+128 [label="128:  Return Stmt \n   *&return:int =0 [line 154]\n  REMOVE_TEMPS(n$0); [line 154]\n  APPLY_ABSTRACTION; [line 154]\n " shape="box"]
 	
 
 	 128 -> 127 ;
 127 [label="127: Exit m7 \n  " color=yellow style=filled]
 	
 
-126 [label="126: Start m7\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 156]\n  NULLIFY(&something,false); [line 156]\n  NULLIFY(&value,false); [line 156]\n  NULLIFY(&z,false); [line 156]\n " color=yellow style=filled]
+126 [label="126: Start m7\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 139]\n  NULLIFY(&something,false); [line 139]\n  NULLIFY(&value,false); [line 139]\n  NULLIFY(&z,false); [line 139]\n " color=yellow style=filled]
 	
 
 	 126 -> 142 ;
-125 [label="125:  Return Stmt \n   *&return:int =1 [line 153]\n  APPLY_ABSTRACTION; [line 153]\n " shape="box"]
+125 [label="125:  Return Stmt \n   *&return:int =1 [line 137]\n  APPLY_ABSTRACTION; [line 137]\n " shape="box"]
 	
 
 	 125 -> 124 ;
 124 [label="124: Exit getValue \n  " color=yellow style=filled]
 	
 
-123 [label="123: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 151]\n " color=yellow style=filled]
+123 [label="123: Start getValue\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 137]\n " color=yellow style=filled]
 	
 
 	 123 -> 125 ;
-122 [label="122:  DeclStmt \n   *&value:int =0 [line 132]\n " shape="box"]
+122 [label="122:  DeclStmt \n   *&value:int =0 [line 120]\n " shape="box"]
 	
 
 	 122 -> 104 ;
-121 [label="121: Prune (false branch) \n   PRUNE(((n$1 == 0) == 0), false); [line 135]\n " shape="invhouse"]
+121 [label="121: Prune (false branch) \n   PRUNE(((n$1 == 0) == 0), false); [line 122]\n " shape="invhouse"]
 	
 
 	 121 -> 117 ;
 	 121 -> 118 ;
-120 [label="120: Prune (true branch) \n   PRUNE(((n$1 == 0) != 0), true); [line 135]\n " shape="invhouse"]
+120 [label="120: Prune (true branch) \n   PRUNE(((n$1 == 0) != 0), true); [line 122]\n " shape="invhouse"]
 	
 
 	 120 -> 119 ;
-119 [label="119:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 136]\n  REMOVE_TEMPS(n$3); [line 136]\n  APPLY_ABSTRACTION; [line 136]\n " shape="box"]
+119 [label="119:  Call _fun_printf \n   n$3=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 123]\n  REMOVE_TEMPS(n$3); [line 123]\n  APPLY_ABSTRACTION; [line 123]\n " shape="box"]
 	
 
 	 119 -> 102 ;
-118 [label="118: Prune (false branch) \n   PRUNE(((n$1 == 1) == 0), false); [line 138]\n " shape="invhouse"]
+118 [label="118: Prune (false branch) \n   PRUNE(((n$1 == 1) == 0), false); [line 125]\n " shape="invhouse"]
 	
 
 	 118 -> 112 ;
 	 118 -> 113 ;
-117 [label="117: Prune (true branch) \n   PRUNE(((n$1 == 1) != 0), true); [line 138]\n " shape="invhouse"]
+117 [label="117: Prune (true branch) \n   PRUNE(((n$1 == 1) != 0), true); [line 125]\n " shape="invhouse"]
 	
 
 	 117 -> 116 ;
-116 [label="116:  DeclStmt \n   *&something:int =1 [line 139]\n " shape="box"]
+116 [label="116:  DeclStmt \n   *&something:int =1 [line 126]\n " shape="box"]
 	
 
 	 116 -> 115 ;
-115 [label="115:  UnaryOperator \n   n$2=*&something:int  [line 140]\n  *&something:int =(n$2 + 1) [line 140]\n  REMOVE_TEMPS(n$2); [line 140]\n  NULLIFY(&something,false); [line 140]\n  APPLY_ABSTRACTION; [line 140]\n " shape="box"]
+115 [label="115:  UnaryOperator \n   n$2=*&something:int  [line 127]\n  *&something:int =(n$2 + 1) [line 127]\n  REMOVE_TEMPS(n$2); [line 127]\n  NULLIFY(&something,false); [line 127]\n  APPLY_ABSTRACTION; [line 127]\n " shape="box"]
 	
 
 	 115 -> 102 ;
-114 [label="114:  DeclStmt \n   *&z:int =9 [line 143]\n  NULLIFY(&something,false); [line 143]\n  NULLIFY(&value,false); [line 143]\n  NULLIFY(&z,false); [line 143]\n  APPLY_ABSTRACTION; [line 143]\n " shape="box"]
+114 [label="114:  DeclStmt \n   *&z:int =9 [line 129]\n  NULLIFY(&something,false); [line 129]\n  NULLIFY(&value,false); [line 129]\n  NULLIFY(&z,false); [line 129]\n  APPLY_ABSTRACTION; [line 129]\n " shape="box"]
 	
 
 	 114 -> 102 ;
-113 [label="113: Prune (false branch) \n   PRUNE(((n$1 == 2) == 0), false); [line 144]\n " shape="invhouse"]
+113 [label="113: Prune (false branch) \n   PRUNE(((n$1 == 2) == 0), false); [line 130]\n " shape="invhouse"]
 	
 
 	 113 -> 110 ;
 	 113 -> 111 ;
-112 [label="112: Prune (true branch) \n   PRUNE(((n$1 == 2) != 0), true); [line 144]\n  APPLY_ABSTRACTION; [line 144]\n " shape="invhouse"]
+112 [label="112: Prune (true branch) \n   PRUNE(((n$1 == 2) != 0), true); [line 130]\n  APPLY_ABSTRACTION; [line 130]\n " shape="invhouse"]
 	
 
 	 112 -> 102 ;
-111 [label="111: Prune (false branch) \n   PRUNE(((n$1 == 3) == 0), false); [line 145]\n  APPLY_ABSTRACTION; [line 145]\n " shape="invhouse"]
+111 [label="111: Prune (false branch) \n   PRUNE(((n$1 == 3) == 0), false); [line 131]\n  APPLY_ABSTRACTION; [line 131]\n " shape="invhouse"]
 	
 
 	 111 -> 102 ;
-110 [label="110: Prune (true branch) \n   PRUNE(((n$1 == 3) != 0), true); [line 145]\n  APPLY_ABSTRACTION; [line 145]\n " shape="invhouse"]
+110 [label="110: Prune (true branch) \n   PRUNE(((n$1 == 3) != 0), true); [line 131]\n  APPLY_ABSTRACTION; [line 131]\n " shape="invhouse"]
 	
 
 	 110 -> 102 ;
-109 [label="109:  Switch_stmt \n   n$1=*&SIL_temp_conditional___103:int  [line 133]\n  NULLIFY(&SIL_temp_conditional___103,true); [line 133]\n " shape="box"]
+109 [label="109:  Switch_stmt \n   n$1=*&SIL_temp_conditional___103:int  [line 121]\n  NULLIFY(&SIL_temp_conditional___103,true); [line 121]\n " shape="box"]
 	
 
 	 109 -> 120 ;
 	 109 -> 121 ;
-108 [label="108:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___103); [line 133]\n  *&SIL_temp_conditional___103:int =0 [line 133]\n  APPLY_ABSTRACTION; [line 133]\n " shape="box"]
+108 [label="108:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___103); [line 121]\n  *&SIL_temp_conditional___103:int =0 [line 121]\n  APPLY_ABSTRACTION; [line 121]\n " shape="box"]
 	
 
 	 108 -> 103 ;
-107 [label="107:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___103); [line 133]\n  *&SIL_temp_conditional___103:int =1 [line 133]\n  APPLY_ABSTRACTION; [line 133]\n " shape="box"]
+107 [label="107:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___103); [line 121]\n  *&SIL_temp_conditional___103:int =1 [line 121]\n  APPLY_ABSTRACTION; [line 121]\n " shape="box"]
 	
 
 	 107 -> 103 ;
-106 [label="106: Prune (false branch) \n   PRUNE(((n$0 > 0) == 0), false); [line 133]\n  REMOVE_TEMPS(n$0); [line 133]\n " shape="invhouse"]
+106 [label="106: Prune (false branch) \n   PRUNE(((n$0 > 0) == 0), false); [line 121]\n  REMOVE_TEMPS(n$0); [line 121]\n " shape="invhouse"]
 	
 
 	 106 -> 108 ;
-105 [label="105: Prune (true branch) \n   PRUNE(((n$0 > 0) != 0), true); [line 133]\n  REMOVE_TEMPS(n$0); [line 133]\n " shape="invhouse"]
+105 [label="105: Prune (true branch) \n   PRUNE(((n$0 > 0) != 0), true); [line 121]\n  REMOVE_TEMPS(n$0); [line 121]\n " shape="invhouse"]
 	
 
 	 105 -> 107 ;
-104 [label="104:  BinaryOperatorStmt: GT \n   n$0=*&value:int  [line 133]\n  NULLIFY(&value,false); [line 133]\n " shape="box"]
+104 [label="104:  BinaryOperatorStmt: GT \n   n$0=*&value:int  [line 121]\n  NULLIFY(&value,false); [line 121]\n " shape="box"]
 	
 
 	 104 -> 105 ;
@@ -382,407 +382,407 @@ digraph iCFG {
 	
 
 	 103 -> 109 ;
-102 [label="102:  Return Stmt \n   *&return:int =0 [line 147]\n  REMOVE_TEMPS(n$1); [line 147]\n  APPLY_ABSTRACTION; [line 147]\n " shape="box"]
+102 [label="102:  Return Stmt \n   *&return:int =0 [line 134]\n  REMOVE_TEMPS(n$1); [line 134]\n  APPLY_ABSTRACTION; [line 134]\n " shape="box"]
 	
 
 	 102 -> 101 ;
 101 [label="101: Exit m6 \n  " color=yellow style=filled]
 	
 
-100 [label="100: Start m6\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 130]\n  NULLIFY(&something,false); [line 130]\n  NULLIFY(&value,false); [line 130]\n  NULLIFY(&z,false); [line 130]\n " color=yellow style=filled]
+100 [label="100: Start m6\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 119]\n  NULLIFY(&something,false); [line 119]\n  NULLIFY(&value,false); [line 119]\n  NULLIFY(&z,false); [line 119]\n " color=yellow style=filled]
 	
 
 	 100 -> 122 ;
-99 [label="99:  DeclStmt \n   *&value:int =0 [line 114]\n  APPLY_ABSTRACTION; [line 114]\n " shape="box"]
+99 [label="99:  DeclStmt \n   *&value:int =0 [line 104]\n  APPLY_ABSTRACTION; [line 104]\n " shape="box"]
 	
 
 	 99 -> 88 ;
-98 [label="98:  DeclStmt \n   *&x:int =1 [line 117]\n  NULLIFY(&x,false); [line 117]\n " shape="box"]
+98 [label="98:  DeclStmt \n   *&x:int =1 [line 107]\n  NULLIFY(&x,false); [line 107]\n " shape="box"]
 	
 
 	 98 -> 97 ;
-97 [label="97:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 118]\n  REMOVE_TEMPS(n$4); [line 118]\n " shape="box"]
+97 [label="97:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 108]\n  REMOVE_TEMPS(n$4); [line 108]\n " shape="box"]
 	
 
 	 97 -> 96 ;
-96 [label="96:  BinaryOperatorStmt: Assign \n   n$3=*&value:int  [line 119]\n  *&x:int =(n$3 + 1) [line 119]\n  REMOVE_TEMPS(n$3); [line 119]\n  NULLIFY(&x,false); [line 119]\n  APPLY_ABSTRACTION; [line 119]\n " shape="box"]
+96 [label="96:  BinaryOperatorStmt: Assign \n   n$3=*&value:int  [line 109]\n  *&x:int =(n$3 + 1) [line 109]\n  REMOVE_TEMPS(n$3); [line 109]\n  NULLIFY(&x,false); [line 109]\n  APPLY_ABSTRACTION; [line 109]\n " shape="box"]
 	
 
 	 96 -> 88 ;
-95 [label="95: Prune (false branch) \n   PRUNE(((n$1 == 0) == 0), false); [line 121]\n  APPLY_ABSTRACTION; [line 121]\n " shape="invhouse"]
+95 [label="95: Prune (false branch) \n   PRUNE(((n$1 == 0) == 0), false); [line 111]\n  APPLY_ABSTRACTION; [line 111]\n " shape="invhouse"]
 	
 
 	 95 -> 88 ;
-94 [label="94: Prune (true branch) \n   PRUNE(((n$1 == 0) != 0), true); [line 121]\n " shape="invhouse"]
+94 [label="94: Prune (true branch) \n   PRUNE(((n$1 == 0) != 0), true); [line 111]\n " shape="invhouse"]
 	
 
 	 94 -> 93 ;
-93 [label="93:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 122]\n  REMOVE_TEMPS(n$2); [line 122]\n  APPLY_ABSTRACTION; [line 122]\n " shape="box"]
+93 [label="93:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 112]\n  REMOVE_TEMPS(n$2); [line 112]\n  APPLY_ABSTRACTION; [line 112]\n " shape="box"]
 	
 
 	 93 -> 88 ;
-92 [label="92:  Switch_stmt \n   n$1=*&value:int  [line 116]\n " shape="box"]
+92 [label="92:  Switch_stmt \n   n$1=*&value:int  [line 106]\n " shape="box"]
 	
 
 	 92 -> 94 ;
 	 92 -> 95 ;
-91 [label="91: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 115]\n  REMOVE_TEMPS(n$0); [line 115]\n " shape="invhouse"]
+91 [label="91: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 105]\n  REMOVE_TEMPS(n$0); [line 105]\n " shape="invhouse"]
 	
 
 	 91 -> 87 ;
-90 [label="90: Prune (true branch) \n   PRUNE(((n$0 < 10) != 0), true); [line 115]\n  REMOVE_TEMPS(n$0); [line 115]\n " shape="invhouse"]
+90 [label="90: Prune (true branch) \n   PRUNE(((n$0 < 10) != 0), true); [line 105]\n  REMOVE_TEMPS(n$0); [line 105]\n " shape="invhouse"]
 	
 
 	 90 -> 92 ;
-89 [label="89:  BinaryOperatorStmt: LT \n   n$0=*&value:int  [line 115]\n " shape="box"]
+89 [label="89:  BinaryOperatorStmt: LT \n   n$0=*&value:int  [line 105]\n " shape="box"]
 	
 
 	 89 -> 90 ;
 	 89 -> 91 ;
-88 [label="88: + \n   REMOVE_TEMPS(n$1); [line 115]\n " ]
+88 [label="88: + \n   REMOVE_TEMPS(n$1); [line 105]\n " ]
 	
 
 	 88 -> 89 ;
-87 [label="87:  Return Stmt \n   NULLIFY(&value,false); [line 126]\n  *&return:int =0 [line 126]\n  APPLY_ABSTRACTION; [line 126]\n " shape="box"]
+87 [label="87:  Return Stmt \n   NULLIFY(&value,false); [line 116]\n  *&return:int =0 [line 116]\n  APPLY_ABSTRACTION; [line 116]\n " shape="box"]
 	
 
 	 87 -> 86 ;
 86 [label="86: Exit m5 \n  " color=yellow style=filled]
 	
 
-85 [label="85: Start m5\nFormals: \nLocals:  x:int  value:int  \n   DECLARE_LOCALS(&return,&x,&value); [line 112]\n  NULLIFY(&value,false); [line 112]\n  NULLIFY(&x,false); [line 112]\n " color=yellow style=filled]
+85 [label="85: Start m5\nFormals: \nLocals:  x:int  value:int  \n   DECLARE_LOCALS(&return,&x,&value); [line 103]\n  NULLIFY(&value,false); [line 103]\n  NULLIFY(&x,false); [line 103]\n " color=yellow style=filled]
 	
 
 	 85 -> 99 ;
-84 [label="84:  DeclStmt \n   *&value:int =0 [line 87]\n " shape="box"]
+84 [label="84:  DeclStmt \n   *&value:int =0 [line 79]\n " shape="box"]
 	
 
 	 84 -> 66 ;
-83 [label="83:  DeclStmt \n   *&x:int =1 [line 90]\n  NULLIFY(&something,false); [line 90]\n  NULLIFY(&x,false); [line 90]\n  NULLIFY(&z,false); [line 90]\n " shape="box"]
+83 [label="83:  DeclStmt \n   *&x:int =1 [line 81]\n  NULLIFY(&something,false); [line 81]\n  NULLIFY(&x,false); [line 81]\n  NULLIFY(&z,false); [line 81]\n " shape="box"]
 	
 
 	 83 -> 82 ;
-82 [label="82:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 91]\n  REMOVE_TEMPS(n$4); [line 91]\n " shape="box"]
+82 [label="82:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 82]\n  REMOVE_TEMPS(n$4); [line 82]\n " shape="box"]
 	
 
 	 82 -> 81 ;
-81 [label="81:  BinaryOperatorStmt: Assign \n   n$3=*&value:int  [line 92]\n  *&x:int =(n$3 + 1) [line 92]\n  REMOVE_TEMPS(n$3); [line 92]\n  NULLIFY(&value,false); [line 92]\n  NULLIFY(&x,false); [line 92]\n  APPLY_ABSTRACTION; [line 92]\n " shape="box"]
+81 [label="81:  BinaryOperatorStmt: Assign \n   n$3=*&value:int  [line 83]\n  *&x:int =(n$3 + 1) [line 83]\n  REMOVE_TEMPS(n$3); [line 83]\n  NULLIFY(&value,false); [line 83]\n  NULLIFY(&x,false); [line 83]\n  APPLY_ABSTRACTION; [line 83]\n " shape="box"]
 	
 
 	 81 -> 78 ;
-80 [label="80: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 93]\n " shape="invhouse"]
+80 [label="80: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 84]\n " shape="invhouse"]
 	
 
 	 80 -> 75 ;
 	 80 -> 76 ;
-79 [label="79: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 93]\n  APPLY_ABSTRACTION; [line 93]\n " shape="invhouse"]
+79 [label="79: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 84]\n  APPLY_ABSTRACTION; [line 84]\n " shape="invhouse"]
 	
 
 	 79 -> 78 ;
-78 [label="78:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 94]\n  REMOVE_TEMPS(n$2); [line 94]\n  APPLY_ABSTRACTION; [line 94]\n " shape="box"]
+78 [label="78:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 85]\n  REMOVE_TEMPS(n$2); [line 85]\n  APPLY_ABSTRACTION; [line 85]\n " shape="box"]
 	
 
 	 78 -> 65 ;
-77 [label="77:  DeclStmt \n   *&z:int =9 [line 96]\n  NULLIFY(&something,false); [line 96]\n  NULLIFY(&value,false); [line 96]\n  NULLIFY(&x,false); [line 96]\n  NULLIFY(&z,false); [line 96]\n  APPLY_ABSTRACTION; [line 96]\n " shape="box"]
+77 [label="77:  DeclStmt \n   *&z:int =9 [line 87]\n  NULLIFY(&something,false); [line 87]\n  NULLIFY(&value,false); [line 87]\n  NULLIFY(&x,false); [line 87]\n  NULLIFY(&z,false); [line 87]\n  APPLY_ABSTRACTION; [line 87]\n " shape="box"]
 	
 
 	 77 -> 74 ;
-76 [label="76: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 99]\n " shape="invhouse"]
+76 [label="76: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 90]\n " shape="invhouse"]
 	
 
 	 76 -> 70 ;
 	 76 -> 71 ;
-75 [label="75: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 99]\n  APPLY_ABSTRACTION; [line 99]\n " shape="invhouse"]
+75 [label="75: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 90]\n  APPLY_ABSTRACTION; [line 90]\n " shape="invhouse"]
 	
 
 	 75 -> 74 ;
-74 [label="74:  DeclStmt \n   *&something:int =1 [line 100]\n " shape="box"]
+74 [label="74:  DeclStmt \n   *&something:int =1 [line 91]\n " shape="box"]
 	
 
 	 74 -> 73 ;
-73 [label="73:  UnaryOperator \n   n$1=*&something:int  [line 101]\n  *&something:int =(n$1 + 1) [line 101]\n  REMOVE_TEMPS(n$1); [line 101]\n  NULLIFY(&something,false); [line 101]\n " shape="box"]
+73 [label="73:  UnaryOperator \n   n$1=*&something:int  [line 92]\n  *&something:int =(n$1 + 1) [line 92]\n  REMOVE_TEMPS(n$1); [line 92]\n  NULLIFY(&something,false); [line 92]\n " shape="box"]
 	
 
 	 73 -> 72 ;
-72 [label="72:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 103]\n  NULLIFY(&z,false); [line 103]\n  APPLY_ABSTRACTION; [line 103]\n " shape="box"]
+72 [label="72:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 94]\n  NULLIFY(&z,false); [line 94]\n  APPLY_ABSTRACTION; [line 94]\n " shape="box"]
 	
 
 	 72 -> 65 ;
-71 [label="71: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 105]\n " shape="invhouse"]
+71 [label="71: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 96]\n " shape="invhouse"]
 	
 
 	 71 -> 68 ;
 	 71 -> 69 ;
-70 [label="70: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 105]\n  APPLY_ABSTRACTION; [line 105]\n " shape="invhouse"]
+70 [label="70: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 96]\n  APPLY_ABSTRACTION; [line 96]\n " shape="invhouse"]
 	
 
 	 70 -> 65 ;
-69 [label="69: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 106]\n " shape="invhouse"]
+69 [label="69: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 97]\n " shape="invhouse"]
 	
 
 	 69 -> 67 ;
-68 [label="68: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 106]\n  APPLY_ABSTRACTION; [line 106]\n " shape="invhouse"]
+68 [label="68: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 97]\n  APPLY_ABSTRACTION; [line 97]\n " shape="invhouse"]
 	
 
 	 68 -> 65 ;
-67 [label="67:  DefaultStmt_placeholder \n   APPLY_ABSTRACTION; [line 97]\n " shape="box"]
+67 [label="67:  DefaultStmt_placeholder \n   APPLY_ABSTRACTION; [line 88]\n " shape="box"]
 	
 
 	 67 -> 74 ;
-66 [label="66:  Switch_stmt \n   n$0=*&value:int  [line 88]\n  NULLIFY(&value,false); [line 88]\n " shape="box"]
+66 [label="66:  Switch_stmt \n   n$0=*&value:int  [line 80]\n  NULLIFY(&value,false); [line 80]\n " shape="box"]
 	
 
 	 66 -> 79 ;
 	 66 -> 80 ;
-65 [label="65:  Return Stmt \n   *&return:int =0 [line 108]\n  REMOVE_TEMPS(n$0); [line 108]\n  APPLY_ABSTRACTION; [line 108]\n " shape="box"]
+65 [label="65:  Return Stmt \n   *&return:int =0 [line 100]\n  REMOVE_TEMPS(n$0); [line 100]\n  APPLY_ABSTRACTION; [line 100]\n " shape="box"]
 	
 
 	 65 -> 64 ;
 64 [label="64: Exit m4 \n  " color=yellow style=filled]
 	
 
-63 [label="63: Start m4\nFormals: \nLocals:  something:int  z:int  x:int  value:int  \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 85]\n  NULLIFY(&something,false); [line 85]\n  NULLIFY(&value,false); [line 85]\n  NULLIFY(&x,false); [line 85]\n  NULLIFY(&z,false); [line 85]\n " color=yellow style=filled]
+63 [label="63: Start m4\nFormals: \nLocals:  something:int  z:int  x:int  value:int  \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 78]\n  NULLIFY(&something,false); [line 78]\n  NULLIFY(&value,false); [line 78]\n  NULLIFY(&x,false); [line 78]\n  NULLIFY(&z,false); [line 78]\n " color=yellow style=filled]
 	
 
 	 63 -> 84 ;
-62 [label="62:  DeclStmt \n   *&value:int =0 [line 66]\n " shape="box"]
+62 [label="62:  DeclStmt \n   *&value:int =0 [line 61]\n " shape="box"]
 	
 
 	 62 -> 49 ;
-61 [label="61: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 69]\n " shape="invhouse"]
+61 [label="61: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 63]\n " shape="invhouse"]
 	
 
 	 61 -> 57 ;
 	 61 -> 58 ;
-60 [label="60: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 69]\n " shape="invhouse"]
+60 [label="60: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 63]\n " shape="invhouse"]
 	
 
 	 60 -> 59 ;
-59 [label="59:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 70]\n  REMOVE_TEMPS(n$2); [line 70]\n  APPLY_ABSTRACTION; [line 70]\n " shape="box"]
+59 [label="59:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 64]\n  REMOVE_TEMPS(n$2); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
 	
 
 	 59 -> 48 ;
-58 [label="58: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 72]\n " shape="invhouse"]
+58 [label="58: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 66]\n " shape="invhouse"]
 	
 
 	 58 -> 52 ;
 	 58 -> 53 ;
-57 [label="57: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 72]\n " shape="invhouse"]
+57 [label="57: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 66]\n " shape="invhouse"]
 	
 
 	 57 -> 56 ;
-56 [label="56:  DeclStmt \n   *&something:int =1 [line 73]\n " shape="box"]
+56 [label="56:  DeclStmt \n   *&something:int =1 [line 67]\n " shape="box"]
 	
 
 	 56 -> 55 ;
-55 [label="55:  UnaryOperator \n   n$1=*&something:int  [line 74]\n  *&something:int =(n$1 + 1) [line 74]\n  REMOVE_TEMPS(n$1); [line 74]\n  NULLIFY(&something,false); [line 74]\n  APPLY_ABSTRACTION; [line 74]\n " shape="box"]
+55 [label="55:  UnaryOperator \n   n$1=*&something:int  [line 68]\n  *&something:int =(n$1 + 1) [line 68]\n  REMOVE_TEMPS(n$1); [line 68]\n  NULLIFY(&something,false); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
 	
 
 	 55 -> 48 ;
-54 [label="54:  DeclStmt \n   *&z:int =9 [line 77]\n  NULLIFY(&something,false); [line 77]\n  NULLIFY(&value,false); [line 77]\n  NULLIFY(&z,false); [line 77]\n  APPLY_ABSTRACTION; [line 77]\n " shape="box"]
+54 [label="54:  DeclStmt \n   *&z:int =9 [line 70]\n  NULLIFY(&something,false); [line 70]\n  NULLIFY(&value,false); [line 70]\n  NULLIFY(&z,false); [line 70]\n  APPLY_ABSTRACTION; [line 70]\n " shape="box"]
 	
 
 	 54 -> 48 ;
-53 [label="53: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 78]\n " shape="invhouse"]
+53 [label="53: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 71]\n " shape="invhouse"]
 	
 
 	 53 -> 50 ;
 	 53 -> 51 ;
-52 [label="52: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 78]\n  APPLY_ABSTRACTION; [line 78]\n " shape="invhouse"]
+52 [label="52: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="invhouse"]
 	
 
 	 52 -> 48 ;
-51 [label="51: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 79]\n  APPLY_ABSTRACTION; [line 79]\n " shape="invhouse"]
+51 [label="51: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="invhouse"]
 	
 
 	 51 -> 48 ;
-50 [label="50: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 79]\n  APPLY_ABSTRACTION; [line 79]\n " shape="invhouse"]
+50 [label="50: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="invhouse"]
 	
 
 	 50 -> 48 ;
-49 [label="49:  Switch_stmt \n   n$0=*&value:int  [line 67]\n  NULLIFY(&value,false); [line 67]\n " shape="box"]
+49 [label="49:  Switch_stmt \n   n$0=*&value:int  [line 62]\n  NULLIFY(&value,false); [line 62]\n " shape="box"]
 	
 
 	 49 -> 60 ;
 	 49 -> 61 ;
-48 [label="48:  Return Stmt \n   *&return:int =0 [line 81]\n  REMOVE_TEMPS(n$0); [line 81]\n  APPLY_ABSTRACTION; [line 81]\n " shape="box"]
+48 [label="48:  Return Stmt \n   *&return:int =0 [line 75]\n  REMOVE_TEMPS(n$0); [line 75]\n  APPLY_ABSTRACTION; [line 75]\n " shape="box"]
 	
 
 	 48 -> 47 ;
 47 [label="47: Exit m3 \n  " color=yellow style=filled]
 	
 
-46 [label="46: Start m3\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 64]\n  NULLIFY(&something,false); [line 64]\n  NULLIFY(&value,false); [line 64]\n  NULLIFY(&z,false); [line 64]\n " color=yellow style=filled]
+46 [label="46: Start m3\nFormals: \nLocals:  z:int  something:int  value:int  \n   DECLARE_LOCALS(&return,&z,&something,&value); [line 60]\n  NULLIFY(&something,false); [line 60]\n  NULLIFY(&value,false); [line 60]\n  NULLIFY(&z,false); [line 60]\n " color=yellow style=filled]
 	
 
 	 46 -> 62 ;
-45 [label="45:  DeclStmt \n   *&value:int =0 [line 39]\n " shape="box"]
+45 [label="45:  DeclStmt \n   *&value:int =0 [line 36]\n " shape="box"]
 	
 
 	 45 -> 27 ;
-44 [label="44:  DeclStmt \n   *&x:int =1 [line 42]\n  NULLIFY(&something,false); [line 42]\n  NULLIFY(&x,false); [line 42]\n  NULLIFY(&z,false); [line 42]\n " shape="box"]
+44 [label="44:  DeclStmt \n   *&x:int =1 [line 38]\n  NULLIFY(&something,false); [line 38]\n  NULLIFY(&x,false); [line 38]\n  NULLIFY(&z,false); [line 38]\n " shape="box"]
 	
 
 	 44 -> 43 ;
-43 [label="43:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 43]\n  REMOVE_TEMPS(n$4); [line 43]\n " shape="box"]
+43 [label="43:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 39]\n  REMOVE_TEMPS(n$4); [line 39]\n " shape="box"]
 	
 
 	 43 -> 42 ;
-42 [label="42:  BinaryOperatorStmt: Assign \n   n$3=*&value:int  [line 44]\n  *&x:int =(n$3 + 1) [line 44]\n  REMOVE_TEMPS(n$3); [line 44]\n  NULLIFY(&value,false); [line 44]\n  NULLIFY(&x,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+42 [label="42:  BinaryOperatorStmt: Assign \n   n$3=*&value:int  [line 40]\n  *&x:int =(n$3 + 1) [line 40]\n  REMOVE_TEMPS(n$3); [line 40]\n  NULLIFY(&value,false); [line 40]\n  NULLIFY(&x,false); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
 	
 
 	 42 -> 39 ;
-41 [label="41: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 45]\n " shape="invhouse"]
+41 [label="41: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 41]\n " shape="invhouse"]
 	
 
 	 41 -> 36 ;
 	 41 -> 37 ;
-40 [label="40: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="invhouse"]
+40 [label="40: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="invhouse"]
 	
 
 	 40 -> 39 ;
-39 [label="39:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 46]\n  REMOVE_TEMPS(n$2); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+39 [label="39:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 42]\n  REMOVE_TEMPS(n$2); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 39 -> 26 ;
-38 [label="38:  DeclStmt \n   *&z:int =9 [line 48]\n  NULLIFY(&something,false); [line 48]\n  NULLIFY(&value,false); [line 48]\n  NULLIFY(&x,false); [line 48]\n  NULLIFY(&z,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+38 [label="38:  DeclStmt \n   *&z:int =9 [line 44]\n  NULLIFY(&something,false); [line 44]\n  NULLIFY(&value,false); [line 44]\n  NULLIFY(&x,false); [line 44]\n  NULLIFY(&z,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
 	 38 -> 35 ;
-37 [label="37: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 51]\n " shape="invhouse"]
+37 [label="37: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 47]\n " shape="invhouse"]
 	
 
 	 37 -> 31 ;
 	 37 -> 32 ;
-36 [label="36: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="invhouse"]
+36 [label="36: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="invhouse"]
 	
 
 	 36 -> 35 ;
-35 [label="35:  DeclStmt \n   *&something:int =1 [line 52]\n " shape="box"]
+35 [label="35:  DeclStmt \n   *&something:int =1 [line 48]\n " shape="box"]
 	
 
 	 35 -> 34 ;
-34 [label="34:  UnaryOperator \n   n$1=*&something:int  [line 53]\n  *&something:int =(n$1 + 1) [line 53]\n  REMOVE_TEMPS(n$1); [line 53]\n  NULLIFY(&something,false); [line 53]\n " shape="box"]
+34 [label="34:  UnaryOperator \n   n$1=*&something:int  [line 49]\n  *&something:int =(n$1 + 1) [line 49]\n  REMOVE_TEMPS(n$1); [line 49]\n  NULLIFY(&something,false); [line 49]\n " shape="box"]
 	
 
 	 34 -> 33 ;
-33 [label="33:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 55]\n  NULLIFY(&z,false); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
+33 [label="33:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 51]\n  NULLIFY(&z,false); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="box"]
 	
 
 	 33 -> 26 ;
-32 [label="32: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 57]\n " shape="invhouse"]
+32 [label="32: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 53]\n " shape="invhouse"]
 	
 
 	 32 -> 29 ;
 	 32 -> 30 ;
-31 [label="31: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 57]\n  APPLY_ABSTRACTION; [line 57]\n " shape="invhouse"]
+31 [label="31: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 53]\n  APPLY_ABSTRACTION; [line 53]\n " shape="invhouse"]
 	
 
 	 31 -> 26 ;
-30 [label="30: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 58]\n " shape="invhouse"]
+30 [label="30: Prune (false branch) \n   PRUNE(((n$0 == 3) == 0), false); [line 54]\n " shape="invhouse"]
 	
 
 	 30 -> 28 ;
-29 [label="29: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="invhouse"]
+29 [label="29: Prune (true branch) \n   PRUNE(((n$0 == 3) != 0), true); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="invhouse"]
 	
 
 	 29 -> 26 ;
-28 [label="28:  DefaultStmt_placeholder \n   APPLY_ABSTRACTION; [line 49]\n " shape="box"]
+28 [label="28:  DefaultStmt_placeholder \n   APPLY_ABSTRACTION; [line 45]\n " shape="box"]
 	
 
 	 28 -> 35 ;
-27 [label="27:  Switch_stmt \n   n$0=*&value:int  [line 40]\n  NULLIFY(&value,false); [line 40]\n " shape="box"]
+27 [label="27:  Switch_stmt \n   n$0=*&value:int  [line 37]\n  NULLIFY(&value,false); [line 37]\n " shape="box"]
 	
 
 	 27 -> 40 ;
 	 27 -> 41 ;
-26 [label="26:  Return Stmt \n   *&return:int =0 [line 60]\n  REMOVE_TEMPS(n$0); [line 60]\n  APPLY_ABSTRACTION; [line 60]\n " shape="box"]
+26 [label="26:  Return Stmt \n   *&return:int =0 [line 57]\n  REMOVE_TEMPS(n$0); [line 57]\n  APPLY_ABSTRACTION; [line 57]\n " shape="box"]
 	
 
 	 26 -> 25 ;
 25 [label="25: Exit m2 \n  " color=yellow style=filled]
 	
 
-24 [label="24: Start m2\nFormals: \nLocals:  something:int  z:int  x:int  value:int  \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 37]\n  NULLIFY(&something,false); [line 37]\n  NULLIFY(&value,false); [line 37]\n  NULLIFY(&x,false); [line 37]\n  NULLIFY(&z,false); [line 37]\n " color=yellow style=filled]
+24 [label="24: Start m2\nFormals: \nLocals:  something:int  z:int  x:int  value:int  \n   DECLARE_LOCALS(&return,&something,&z,&x,&value); [line 35]\n  NULLIFY(&something,false); [line 35]\n  NULLIFY(&value,false); [line 35]\n  NULLIFY(&x,false); [line 35]\n  NULLIFY(&z,false); [line 35]\n " color=yellow style=filled]
 	
 
 	 24 -> 45 ;
-23 [label="23:  DeclStmt \n   *&value:int =0 [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+23 [label="23:  DeclStmt \n   *&value:int =0 [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 23 -> 4 ;
-22 [label="22:  DeclStmt \n   *&x:int =1 [line 17]\n  NULLIFY(&x,false); [line 17]\n " shape="box"]
+22 [label="22:  DeclStmt \n   *&x:int =1 [line 16]\n  NULLIFY(&x,false); [line 16]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21:  Call _fun_printf \n   n$7=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 18]\n  REMOVE_TEMPS(n$7); [line 18]\n " shape="box"]
+21 [label="21:  Call _fun_printf \n   n$7=_fun_printf(\"(out)HELLO WORLD!\":char *) [line 17]\n  REMOVE_TEMPS(n$7); [line 17]\n " shape="box"]
 	
 
 	 21 -> 20 ;
-20 [label="20:  BinaryOperatorStmt: Assign \n   n$6=*&value:int  [line 19]\n  *&x:int =(n$6 + 1) [line 19]\n  REMOVE_TEMPS(n$6); [line 19]\n  NULLIFY(&x,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+20 [label="20:  BinaryOperatorStmt: Assign \n   n$6=*&value:int  [line 18]\n  *&x:int =(n$6 + 1) [line 18]\n  REMOVE_TEMPS(n$6); [line 18]\n  NULLIFY(&x,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 20 -> 17 ;
-19 [label="19: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 20]\n " shape="invhouse"]
+19 [label="19: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 19]\n " shape="invhouse"]
 	
 
 	 19 -> 15 ;
 	 19 -> 16 ;
-18 [label="18: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="invhouse"]
+18 [label="18: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 21]\n  REMOVE_TEMPS(n$5); [line 21]\n " shape="box"]
+17 [label="17:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char *) [line 20]\n  REMOVE_TEMPS(n$5); [line 20]\n " shape="box"]
 	
 
 	 17 -> 8 ;
-16 [label="16: Prune (false branch) \n   PRUNE(((n$2 == 1) == 0), false); [line 23]\n " shape="invhouse"]
+16 [label="16: Prune (false branch) \n   PRUNE(((n$2 == 1) == 0), false); [line 22]\n " shape="invhouse"]
 	
 
 	 16 -> 12 ;
 	 16 -> 13 ;
-15 [label="15: Prune (true branch) \n   PRUNE(((n$2 == 1) != 0), true); [line 23]\n " shape="invhouse"]
+15 [label="15: Prune (true branch) \n   PRUNE(((n$2 == 1) != 0), true); [line 22]\n " shape="invhouse"]
 	
 
 	 15 -> 14 ;
-14 [label="14:  Call _fun_printf \n   n$4=_fun_printf(\"(1)HELLO WORLD!\":char *) [line 24]\n  REMOVE_TEMPS(n$4); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+14 [label="14:  Call _fun_printf \n   n$4=_fun_printf(\"(1)HELLO WORLD!\":char *) [line 23]\n  REMOVE_TEMPS(n$4); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 14 -> 4 ;
-13 [label="13: Prune (false branch) \n   PRUNE(((n$2 == 2) == 0), false); [line 26]\n " shape="invhouse"]
+13 [label="13: Prune (false branch) \n   PRUNE(((n$2 == 2) == 0), false); [line 25]\n " shape="invhouse"]
 	
 
 	 13 -> 10 ;
-12 [label="12: Prune (true branch) \n   PRUNE(((n$2 == 2) != 0), true); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="invhouse"]
+12 [label="12: Prune (true branch) \n   PRUNE(((n$2 == 2) != 0), true); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="invhouse"]
 	
 
 	 12 -> 11 ;
-11 [label="11:  Call _fun_printf \n   n$3=_fun_printf(\"(2/def)HELLO WORLD!\":char *) [line 28]\n  REMOVE_TEMPS(n$3); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+11 [label="11:  Call _fun_printf \n   n$3=_fun_printf(\"(2/def)HELLO WORLD!\":char *) [line 27]\n  REMOVE_TEMPS(n$3); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 11 -> 4 ;
-10 [label="10:  DefaultStmt_placeholder \n   APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+10 [label="10:  DefaultStmt_placeholder \n   APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
 	 10 -> 11 ;
-9 [label="9:  Switch_stmt \n   n$2=*&value:int  [line 16]\n " shape="box"]
+9 [label="9:  Switch_stmt \n   n$2=*&value:int  [line 15]\n " shape="box"]
 	
 
 	 9 -> 18 ;
 	 9 -> 19 ;
-8 [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char *) [line 31]\n  REMOVE_TEMPS(n$1,n$2); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+8 [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char *) [line 30]\n  REMOVE_TEMPS(n$1,n$2); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
 	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;
-6 [label="6: Prune (true branch) \n   PRUNE(((n$0 < 10) != 0), true); [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n " shape="invhouse"]
+6 [label="6: Prune (true branch) \n   PRUNE(((n$0 < 10) != 0), true); [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n " shape="invhouse"]
 	
 
 	 6 -> 9 ;
-5 [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int  [line 15]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: LT \n   n$0=*&value:int  [line 14]\n " shape="box"]
 	
 
 	 5 -> 6 ;
@@ -791,7 +791,7 @@ digraph iCFG {
 	
 
 	 4 -> 5 ;
-3 [label="3:  Return Stmt \n   NULLIFY(&value,false); [line 33]\n  *&return:int =0 [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+3 [label="3:  Return Stmt \n   NULLIFY(&value,false); [line 32]\n  *&return:int =0 [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 3 -> 2 ;

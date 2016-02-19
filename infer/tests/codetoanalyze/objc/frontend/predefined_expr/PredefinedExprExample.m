@@ -15,16 +15,16 @@
 
 @implementation A
 
-- (void) testPrettyFunction {
-    NSLog(@"%s", __PRETTY_FUNCTION__);
+- (void)testPrettyFunction {
+  NSLog(@"%s", __PRETTY_FUNCTION__);
 }
 
-- (void) testFunction {
-    NSLog(@"%s", __FUNCTION__);
+- (void)testFunction {
+  NSLog(@"%s", __FUNCTION__);
 }
 
-- (void) testFunct {
-    NSLog(@"%s", __func__);
+- (void)testFunct {
+  NSLog(@"%s", __func__);
 }
 
 @end
