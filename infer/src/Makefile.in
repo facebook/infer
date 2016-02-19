@@ -33,6 +33,7 @@ JAVA_BUILD_DIR = $(BUILD_DIR)/java
 CLANG_BUILD_DIR = $(BUILD_DIR)/clang
 LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
 SCRIPTS_BUILD_DIR = $(BUILD_DIR)/scripts
+TEST_BUILD_DIR = $(BUILD_DIR)/test
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 
@@ -160,6 +161,8 @@ OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -j 0 $(addprefix -I , $(DEPENDENCI
         java_annotations clang_annotations llvm_annotations scripts_annotations \
         init version sanitize clean
 
+default: $(INFER_ANALYZERS)
+
 all: java clang llvm checkCopyright
 
 java: $(INFERJAVA_BIN)
@@ -188,6 +191,13 @@ build_llvm:
 build_checkCopyright:
 	$(OCAMLBUILD) -build-dir $(SCRIPTS_BUILD_DIR) -I $(SCRIPT_SOURCES) \
 	  $(CHECKCOPYRIGHT_MAIN).native
+
+byte: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+	$(OCAMLBUILD) -build-dir $(TEST_BUILD_DIR) $(JAVA_OCAMLBUILD_OPTIONS) \
+	  $(INFERANALYZE_MAIN).byte \
+	  $(INFERPRINT_MAIN).byte \
+	  $(INFERJAVA_MAIN).byte \
+	  $(INFERCLANG_MAIN).byte
 
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
 java_annotations: build_java
