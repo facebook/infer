@@ -51,9 +51,9 @@ let abs_source_file_from_path fname =
 
 (** convert a project root directory and a full path to a rooted source file *)
 let rel_source_file_from_abs_path root fname =
-  if Utils.string_is_prefix root fname then
-    let relative_fname = filename_to_relative root fname in
-    Relative relative_fname
+  let relative_complemented_fname = filename_to_relative root fname in
+  if Utils.string_is_prefix root fname && Filename.is_relative relative_complemented_fname then
+    Relative relative_complemented_fname
   else
     (* The project root is not a prefix of the file name *)
     abs_source_file_from_path fname
