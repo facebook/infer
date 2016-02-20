@@ -253,20 +253,14 @@ module Builtin = struct
 
   (* builtin function names for which we do symbolic execution *)
   let builtin_functions = Procname.Hash.create 4
-  (* builtin plain function names: they match all the function names whose plain name is the given string *)
-  let builtin_plain_functions = Hashtbl.create 4
 
   (* Check if the function is a builtin *)
   let is_registered name =
     Procname.Hash.mem builtin_functions name
-    ||
-    Hashtbl.mem builtin_plain_functions (Procname.to_string name)
 
   (* get the symbolic execution handler associated to the builtin function name *)
   let get_sym_exe_builtin name : sym_exe_builtin =
     try Procname.Hash.find builtin_functions name
-    with Not_found ->
-    try Hashtbl.find builtin_plain_functions (Procname.to_string name)
     with Not_found -> assert false
 
   (* register a builtin function name and symbolic execution handler *)
@@ -289,17 +283,6 @@ module Builtin = struct
     IList.iter pp !builtin_names;
     Format.fprintf fmt "@]@."
 
-(*
-  (** register a builtin plain function name and symbolic execution handler *)
-  let register_plain proc_name_str (sym_exe_fun: sym_exe_builtin) =
-    let proc_name = Procname.from_string_c_fun proc_name_str in
-    Hashtbl.replace builtin_plain_functions proc_name_str sym_exe_fun;
-    proc_name
-
-  (** register a builtin plain [Procname.t] and symbolic execution handler *)
-  let register_plain_procname proc_name (sym_exe_fun: sym_exe_builtin) =
-    Hashtbl.replace builtin_plain_functions (Procname.to_string proc_name) sym_exe_fun
-*)
 end
 
 (** print the builtin functions and exit *)
