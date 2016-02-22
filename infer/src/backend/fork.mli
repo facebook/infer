@@ -16,9 +16,6 @@ module Timeout : sig
   val exe_timeout : int -> ('a -> unit) -> 'a -> Utils.failure_kind option
 end
 
-val this_cluster_files : int ref (** Number of files in the current cluster *)
-val tot_files : int ref (** Total number of files in all the clusters *)
-val tot_files_done : int ref (** Total number of files done so far *)
 
 (** {2 Algorithm} *)
 

@@ -376,7 +376,10 @@ module Simulator = struct (** Simulate the analysis only *)
       Fork.transition_footprint_re_exe proc_name joined_pres in
     IList.iter f proc_names
 
-  let process_result (exe_env: Exe_env.t) ((proc_name: Procname.t), (calls: Cg.in_out_calls)) (_summ: Specs.summary) : unit =
+  let process_result
+      (exe_env: Exe_env.t)
+      ((proc_name: Procname.t), (calls: Cg.in_out_calls))
+      (_summ: Specs.summary) : unit =
     L.err "in process_result %a@." Procname.pp proc_name;
     let summ =
       { _summ with
@@ -788,15 +791,15 @@ let exe_env_from_cluster cluster =
 
 (** Analyze a cluster of files *)
 let analyze_cluster cluster_num tot_clusters (cluster : Cluster.t) =
-  incr cluster_num;
+  let cluster_num_ref = ref cluster_num in
+  incr cluster_num_ref;
   let exe_env = exe_env_from_cluster cluster in
   let num_files = IList.length cluster in
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env) in
   let num_procs = IList.length defined_procs in
-  L.err "@.Processing cluster #%d/%d with %d files and %d procedures@." !cluster_num tot_clusters num_files num_procs;
-  Fork.this_cluster_files := num_files;
-  analyze exe_env;
-  Fork.tot_files_done := num_files + !Fork.tot_files_done
+  L.err "@.Processing cluster #%d/%d with %d files and %d procedures@."
+    !cluster_num_ref tot_clusters num_files num_procs;
+  analyze exe_env
 
 let process_cluster_cmdline_exit () =
   match !cluster_cmdline with
@@ -807,9 +810,7 @@ let process_cluster_cmdline_exit () =
            L.err "Cannot find cluster file %s@." fname;
            exit 0
        | Some (nr, tot_nr, cluster) ->
-           Fork.tot_files_done := (nr - 1) * IList.length cluster;
-           Fork.tot_files := tot_nr * IList.length cluster;
-           analyze_cluster (ref (nr -1)) tot_nr cluster;
+           analyze_cluster (nr - 1) tot_nr cluster;
            exit 0)
 
 let open_output_file f fname =
@@ -914,7 +915,6 @@ let () =
 
 
   let tot_clusters = IList.length clusters in
-  Fork.tot_files := IList.fold_left (fun n cluster -> n + IList.length cluster) 0 clusters;
-  IList.iter (analyze_cluster (ref 0) tot_clusters) clusters;
+  IList.iter (analyze_cluster 0 tot_clusters) clusters;
   teardown_logging analyzer_out_of analyzer_err_of;
   if !cluster_cmdline = None then L.stdout "Analysis finished in %as@." pp_elapsed_time ()

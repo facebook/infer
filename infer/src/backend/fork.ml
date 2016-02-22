@@ -11,30 +11,37 @@
 module L = Logging
 module F = Format
 
+(** Procedure name with weight given by the number of in-calls.
+    Used to form a set ordered by weight. *)
+module WeightedPname =
+struct
+  type t = (Procname.t * Cg.in_out_calls)
+  let compare (pn1, calls1) (pn2, calls2) =
+    let n = int_compare calls1.Cg.in_calls calls2.Cg.in_calls in
+    if n != 0 then n
+    else Procname.compare pn1 pn2
+end
+
+let weighted_pname_from_cg cg pname =
+  (pname, Cg.get_calls cg pname)
+
 module WeightedPnameSet =
-  Set.Make(struct
-    type t = (Procname.t * Cg.in_out_calls)
-    let compare
-        ((pn1: Procname.t), (calls1: Cg.in_out_calls))
-        ((pn2: Procname.t), (calls2: Cg.in_out_calls)) =
-      let n = int_compare calls1.Cg.in_calls calls2.Cg.in_calls in if n != 0 then n
-      else Procname.compare pn1 pn2
-  end)
+  Set.Make(WeightedPname)
 
 let pp_weightedpnameset fmt set =
   let f (pname, _) = F.fprintf fmt "%a@ " Procname.pp pname in
   WeightedPnameSet.iter f set
 
-let compute_weighed_pnameset gr =
-  let pnameset = ref WeightedPnameSet.empty in
-  let add_pname_calls (pn, calls) =
-    pnameset := WeightedPnameSet.add (pn, calls) !pnameset in
-  IList.iter add_pname_calls (Cg.get_nodes_and_calls gr);
-  !pnameset
+let compute_weighed_pnameset cg =
+  let set = ref WeightedPnameSet.empty in
+  let add_pname_calls (pn, _) =
+    set := WeightedPnameSet.add (weighted_pname_from_cg cg pn) !set in
+  IList.iter add_pname_calls (Cg.get_nodes_and_calls cg);
+  !set
 
 (* Return true if there are no children of [pname] whose specs
    have changed since [pname] was last analyzed. *)
-let proc_is_up_to_date gr pname =
+let proc_is_up_to_date cg pname =
   match Specs.get_summary pname with
   | None -> false
   | Some summary ->
@@ -44,18 +51,18 @@ let proc_is_up_to_date gr pname =
           Procname.Map.find dependent_proc summary.Specs.dependency_map
         with Not_found -> (* can happen in on-demand *)
           true in
-      Procname.Set.for_all filter (Cg.get_defined_children gr pname)
+      Procname.Set.for_all filter (Cg.get_defined_children cg pname)
 
 (** Return the list of procedures which should perform a phase
     transition from [FOOTPRINT] to [RE_EXECUTION] *)
-let should_perform_transition gr proc_name : Procname.t list =
+let should_perform_transition cg proc_name : Procname.t list =
   let recursive_dependents =
     if !Config.ondemand_enabled then Procname.Set.empty
-    else Cg.get_recursive_dependents gr proc_name in
+    else Cg.get_recursive_dependents cg proc_name in
   let recursive_dependents_plus_self = Procname.Set.add proc_name recursive_dependents in
   let should_transition =
     Specs.get_phase proc_name == Specs.FOOTPRINT &&
-    Procname.Set.for_all (proc_is_up_to_date gr) recursive_dependents in
+    Procname.Set.for_all (proc_is_up_to_date cg) recursive_dependents in
   if should_transition then Procname.Set.elements recursive_dependents_plus_self
   else []
 
@@ -156,29 +163,39 @@ let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
   SpecMap.iter convert !current_specs;
   !res,!changed
 
-let tot_procs = ref 0 (** Total number of procedures to analyze *)
-let num_procs_done = ref 0 (** Number of procedures done *)
-let wpnames_todo = ref WeightedPnameSet.empty (** Weighted pnames (procedure names with weight) to do *)
-let tot_files = ref 1 (** Total number of files in all the clusters *)
-let tot_files_done = ref 0 (** Total number of files done so far *)
-let this_cluster_files = ref 1 (** Number of files in the current cluster *)
+module GlobalState =
+struct
+  (** Total number of procedures to analyze *)
+  let tot_procs =
+    ref 0
+
+  (** Number of procedures done *)
+  let num_procs_done =
+    ref 0
+
+  (** Weighted pnames (procedure names with weight) to do *)
+  let wpnames_todo =
+    ref WeightedPnameSet.empty
+end
+
+module G = GlobalState
 
 (** Return true if [pname] is done and requires no further analysis *)
-let proc_is_done gr pname =
-  not (WeightedPnameSet.mem (pname, Cg.get_calls gr pname) !wpnames_todo)
+let proc_is_done cg pname =
+  not (WeightedPnameSet.mem (weighted_pname_from_cg cg pname) !G.wpnames_todo)
 
 (** flag to activate tracing of the algorithm *)
 let trace = ref false
 
 (** Return true if [pname] has just become done *)
-let procs_become_done gr pname : Procname.t list =
-  let recursive_dependents = Cg.get_recursive_dependents gr pname in
-  let nonrecursive_dependents = Cg.get_nonrecursive_dependents gr pname in
+let procs_become_done cg pname : Procname.t list =
+  let recursive_dependents = Cg.get_recursive_dependents cg pname in
+  let nonrecursive_dependents = Cg.get_nonrecursive_dependents cg pname in
   let summary = Specs.get_summary_unsafe "procs_become_done" pname in
   let is_done = Specs.get_timestamp summary <> 0 &&
                 (!Config.only_footprint || Specs.get_phase pname == Specs.RE_EXECUTION) &&
-                Procname.Set.for_all (proc_is_done gr) nonrecursive_dependents &&
-                Procname.Set.for_all (proc_is_up_to_date gr) recursive_dependents in
+                Procname.Set.for_all (proc_is_done cg) nonrecursive_dependents &&
+                Procname.Set.for_all (proc_is_up_to_date cg) recursive_dependents in
   if !trace then L.err "proc is%s done@." (if is_done then "" else " not");
   if is_done
   then
@@ -197,11 +214,11 @@ let post_process_procs exe_env procs_done =
     end in
   let cg = Exe_env.get_cg exe_env in
   IList.iter (fun pn ->
-      let elem = (pn, Cg.get_calls cg pn) in
-      if WeightedPnameSet.mem elem !wpnames_todo then
+      let elem = weighted_pname_from_cg cg pn in
+      if WeightedPnameSet.mem elem !G.wpnames_todo then
         begin
-          incr num_procs_done;
-          wpnames_todo := WeightedPnameSet.remove (pn, Cg.get_calls cg pn) !wpnames_todo;
+          incr G.num_procs_done;
+          G.wpnames_todo := WeightedPnameSet.remove elem !G.wpnames_todo;
           let whole_seconds = false in
           check_no_specs pn;
           Printer.proc_write_log whole_seconds (Exe_env.get_cfg exe_env pn) pn
@@ -219,19 +236,10 @@ let filter_max exe_env filter set priority_set =
         Config.footprint := Specs.get_phase proc_name = Specs.FOOTPRINT;
         let file_name = Exe_env.get_source exe_env proc_name in
         let action = if !Config.footprint then "Discovering" else "Verifying" in
-        let pp_cluster_info fmt () =
-          let files_done_previous_clusters = float_of_int !tot_files_done in
-          let ratio_procs_this_cluster =
-            (float_of_int !num_procs_done) /. (float_of_int !tot_procs) in
-          let files_done_this_cluster =
-            (float_of_int !this_cluster_files) *. ratio_procs_this_cluster in
-          let files_done = files_done_previous_clusters +. files_done_this_cluster in
-          let perc_total = 100. *. files_done /. (float_of_int !tot_files) in
-          F.fprintf fmt " (%3.2f%% total)" perc_total in
         L.err "@\n**%s specs: %a file: %s@\n"
           action Procname.pp proc_name (DB.source_file_to_string file_name);
-        L.err "  %d/%d procedures done%a@."
-          !num_procs_done !tot_procs pp_cluster_info ();
+        L.err "  %d/%d procedures done@."
+          !G.num_procs_done !G.tot_procs;
         elem
       end
     else
@@ -325,13 +333,14 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
   let filter_initial (pname, _) =
     let summary = Specs.get_summary_unsafe "main_algorithm" pname in
     Specs.get_timestamp summary = 0 in
-  wpnames_todo := WeightedPnameSet.filter filter_initial (compute_weighed_pnameset call_graph);
+  G.wpnames_todo :=
+    WeightedPnameSet.filter filter_initial (compute_weighed_pnameset call_graph);
   let wpnames_address_of = (* subset of the procedures whose address is taken *)
     let address_taken_of n =
       Procname.Set.mem n (Cfg.get_priority_procnames (Exe_env.get_cfg exe_env n)) in
-    WeightedPnameSet.filter (fun (n, _) -> address_taken_of n) !wpnames_todo in
-  tot_procs := WeightedPnameSet.cardinal !wpnames_todo;
-  num_procs_done := 0;
+    WeightedPnameSet.filter (fun (n, _) -> address_taken_of n) !G.wpnames_todo in
+  G.tot_procs := WeightedPnameSet.cardinal !G.wpnames_todo;
+  G.num_procs_done := 0;
   let max_timeout = ref 1 in
   let wpname_can_be_analyzed (pname, _) : bool =
     (* Return true if [pname] is not up to date and it can be analyzed right now *)
@@ -351,7 +360,7 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
       with Not_found -> false
     else
       false in
-  let process_one_proc pname (calls: Cg.in_out_calls) =
+  let process_one_proc ((pname, _) as elem) =
     DB.current_source :=
       (Specs.get_summary_unsafe "main_algorithm" pname)
       .Specs.attributes.ProcAttributes.loc.Location.file;
@@ -371,31 +380,31 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
       begin
         max_timeout := max (Specs.get_iterations pname) !max_timeout;
         Specs.update_dependency_map pname;
-        process_result exe_env (pname, calls) (analyze_proc exe_env (pname, calls));
+        process_result exe_env elem (analyze_proc exe_env elem);
       end in
-  while not (WeightedPnameSet.is_empty !wpnames_todo) do
+  while not (WeightedPnameSet.is_empty !G.wpnames_todo) do
     begin
       if !trace then begin
-        let analyzable_pnames = WeightedPnameSet.filter wpname_can_be_analyzed !wpnames_todo in
-        L.err "Nodes todo: %a@\n" pp_weightedpnameset !wpnames_todo;
+        let analyzable_pnames = WeightedPnameSet.filter wpname_can_be_analyzed !G.wpnames_todo in
+        L.err "Nodes todo: %a@\n" pp_weightedpnameset !G.wpnames_todo;
         L.err "Analyzable procs: %a@\n" pp_weightedpnameset analyzable_pnames
       end;
       try
-        let pname, calls =
+        let elem =
           (** find max analyzable proc *)
-          filter_max exe_env wpname_can_be_analyzed !wpnames_todo wpnames_address_of in
-        process_one_proc pname calls
+          filter_max exe_env wpname_can_be_analyzed !G.wpnames_todo wpnames_address_of in
+        process_one_proc elem
       with Not_found -> (* no analyzable procs *)
         L.err "Error: can't analyze any procs. Printing current spec table@\n@[<v>%a@]@."
           (Specs.pp_spec_table pe_text false) ();
-        if !Config.ondemand_enabled then wpnames_todo := WeightedPnameSet.empty
+        if !Config.ondemand_enabled then G.wpnames_todo := WeightedPnameSet.empty
         else raise (Failure "Stopping")
     end
   done
 
 type analyze_proc = Exe_env.t -> Procname.t -> Specs.summary
 
-type process_result = Exe_env.t -> (Procname.t * Cg.in_out_calls) -> Specs.summary -> unit
+type process_result = Exe_env.t -> WeightedPname.t -> Specs.summary -> unit
 
 type filter_out = Cg.t -> Procname.t -> bool
 
