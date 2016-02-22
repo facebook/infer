@@ -2417,13 +2417,14 @@ module ModelBuiltins = struct
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (* forces the expression passed as parameter to be assumed true at the point where this
-     builtin is called, blocks if this causes an inconsistency *)
+     builtin is called, diverges if this causes an inconsistency *)
   let execute___infer_assume _ _ _ _ prop path _ args _ _
     : Builtin.ret_typ =
     match args with
     | [(lexp, _)] ->
         let prop_assume = Prop.conjoin_eq lexp (Sil.exp_bool true) prop in
-        if Prover.check_inconsistency prop_assume then  execute_diverge prop_assume path
+        if Prover.check_inconsistency prop_assume
+        then execute_diverge prop_assume path
         else [(prop_assume, path)]
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -2457,86 +2458,196 @@ module ModelBuiltins = struct
       Sil.Set (Sil.Lvar Sil.custom_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
     sym_exec_generated true cfg tenv pdesc [set_instr] [(prop, path)]
 
-  let _ = Builtin.register "__method_set_ignore_attribute" execute___method_set_ignore_attribute
-  let _ = Builtin.register "__builtin_va_arg" execute___builtin_va_arg (* model va_arg *)
-  let _ = Builtin.register "__builtin_va_copy" execute_skip (** NOTE: __builtin_va_copy should have been handled in the translation already (see frontend.ml) *)
-  let _ = Builtin.register "__builtin_va_end" execute_skip (* model va_end as skip *)
-  let _ = Builtin.register "__builtin_va_start" execute_skip (** NOTE: __builtin_va_start should have been handled in the translation already (see frontend.ml) *)
-  let __create_tuple = Builtin.register "__create_tuple" execute___create_tuple (* create a tuple value from the arguments *)
-  let __delete = Builtin.register "__delete" (execute_free Sil.Mnew) (* like free *)
-  let __delete_array = Builtin.register "__delete_array" (execute_free Sil.Mnew_array) (* like free *)
-  let __exit = Builtin.register "_exit" execute_exit (* _exit from C library *)
-  let __get_array_size = Builtin.register "__get_array_size" execute___get_array_size (* return the size of the array passed as a parameter *)
-  let _ = Builtin.register "__get_hidden_field" execute___get_hidden_field   (* return the value of a hidden field in the struct *)
-  let __get_type_of = Builtin.register "__get_type_of" execute___get_type_of (* return the get the type of the allocated object passed as a parameter *)
-  let __instanceof = Builtin.register "__instanceof" execute___instanceof (** [__instanceof(val,typ)] implements java's [val instanceof typ] *)
-  let __cast = Builtin.register "__cast" execute___cast (** [__cast(val,typ)] implements java's [typ(val)] *)
-  let __new = Builtin.register "__new" (execute_alloc Sil.Mnew false) (* like malloc, but always succeeds *)
-  let __new_array = Builtin.register "__new_array" (execute_alloc Sil.Mnew_array false) (* like malloc, but always succeeds *)
-  let __objc_alloc = Builtin.register "__objc_alloc" (execute_alloc Sil.Mobjc true) (* Objective C alloc *)
-  let __objc_alloc_no_fail = Builtin.register "__objc_alloc_no_fail" (execute_alloc Sil.Mobjc false) (* like __objc_alloc, but does not return nil *)
-  let __placement_delete = Builtin.register "__placement_delete" execute_skip (* placement delete is skip *)
-  let __placement_new = Builtin.register "__placement_new" execute_return_first_argument (* placement new returns the first argument *)
-  let _ = Builtin.register "__print_value" execute___print_value (* print a value as seen by the engine *)
-  let __set_array_size = Builtin.register "__set_array_size" execute___set_array_size (* set the size of the array passed as a parameter *)
-  let __set_file_attribute = Builtin.register "__set_file_attribute" execute___set_file_attribute (* set the attribute of the parameter as file *)
-  let __set_lock_attribute = Builtin.register "__set_lock_attribute" execute___set_lock_attribute (* set the attribute of the parameter as file *)
-  let __set_mem_attribute = Builtin.register "__set_mem_attribute" execute___set_mem_attribute (* set the attribute of the parameter as memory *)
-  let __set_autorelease_attribute = Builtin.register "__set_autorelease_attribute" execute___set_autorelease_attribute (* set the attribute of the parameter as autorelease *)
-  (* set the observer attribute of the parameter *)
-  let __set_observer_attribute =
-    Builtin.register "__set_observer_attribute" (execute___set_attr Sil.Aobserver)
-  (* set the unregistered observer attribute of the parameter *)
-  let __set_unsubscribed_observer_attribute =
-    Builtin.register "__set_unsubscribed_observer_attribute"
+  let __assert_fail = Builtin.register
+      "__assert_fail" execute___assert_fail
+  let _ = Builtin.register
+      (* model for va_arg *)
+      "__builtin_va_arg" execute___builtin_va_arg
+  let _ = Builtin.register
+      "__builtin_va_copy" execute_skip
+  let _ = Builtin.register
+      (* model va_end as skip *)
+      "__builtin_va_end" execute_skip
+  let _ = Builtin.register
+      "__builtin_va_start" execute_skip
+  let __cast = Builtin.register
+      (* [__cast(val,typ)] implements java's [typ(val)] *)
+      "__cast" execute___cast
+  let _ = Builtin.register
+      (* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
+      "__check_untainted" execute___check_untainted
+  let __create_tuple = Builtin.register
+      (* create a tuple value from the arguments *)
+      "__create_tuple" execute___create_tuple
+  let __delete = Builtin.register
+      (* like free *)
+      "__delete" (execute_free Sil.Mnew)
+  let __delete_array = Builtin.register
+      (* like free *)
+      "__delete_array" (execute_free Sil.Mnew_array)
+  let __exit = Builtin.register
+      (* _exit from C library *)
+      "_exit" execute_exit
+  let __get_array_size = Builtin.register
+      (* return the size of the array passed as a parameter *)
+      "__get_array_size" execute___get_array_size
+  let _ = Builtin.register
+      (* return the value of a hidden field in the struct *)
+      "__get_hidden_field" execute___get_hidden_field
+  let __get_type_of = Builtin.register
+      (* return the get the type of the allocated object passed as a parameter *)
+      "__get_type_of" execute___get_type_of
+  let __infer_assume = Builtin.register
+      (* infer assume, diverging on inconsistencies *)
+      "__infer_assume" execute___infer_assume
+  let __infer_fail = Builtin.register
+      (* externally create new errors *)
+      "__infer_fail" execute___infer_fail
+  let __instanceof = Builtin.register
+      (* [__instanceof(val,typ)] implements java's [val instanceof typ] *)
+      "__instanceof" execute___instanceof
+  let _ = Builtin.register
+      "__method_set_ignore_attribute" execute___method_set_ignore_attribute
+  let __new = Builtin.register
+      (* like malloc, but always succeeds *)
+      "__new" (execute_alloc Sil.Mnew false)
+  let __new_array = Builtin.register
+      (* like malloc, but always succeeds *)
+      "__new_array" (execute_alloc Sil.Mnew_array false)
+  let __objc_alloc = Builtin.register
+      (* Objective C alloc *)
+      "__objc_alloc" (execute_alloc Sil.Mobjc true)
+  let __objc_alloc_no_fail = Builtin.register
+      (* like __objc_alloc, but does not return nil *)
+      "__objc_alloc_no_fail" (execute_alloc Sil.Mobjc false)
+  let __objc_cast = Builtin.register
+      (* objective-c "cast" *)
+      "__objc_cast" execute___objc_cast
+  let __objc_release = Builtin.register
+      (* objective-c "release" *)
+      "__objc_release" execute___objc_release
+  let __objc_release_autorelease_pool = Builtin.register
+      (* set the attribute of the parameter as autorelease *)
+      "__objc_release_autorelease_pool" execute___release_autorelease_pool
+  let __objc_release_cf = Builtin.register
+      (* objective-c "release" *)
+      "__objc_release_cf" execute___objc_release_cf
+  let __objc_retain = Builtin.register
+      (* objective-c "retain" *)
+      "__objc_retain" execute___objc_retain
+  let __objc_retain_cf = Builtin.register
+      "__objc_retain_cf" execute___objc_retain_cf
+  let __placement_delete = Builtin.register
+      (* placement delete is skip *)
+      "__placement_delete" execute_skip
+  let __placement_new = Builtin.register
+      (* placement new returns the first argument *)
+      "__placement_new" execute_return_first_argument
+  let _ = Builtin.register
+      (* print a value as seen by the engine *)
+      "__print_value" execute___print_value
+  let __set_array_size = Builtin.register
+      (* set the size of the array passed as a parameter *)
+      "__set_array_size" execute___set_array_size
+  let __set_autorelease_attribute = Builtin.register
+      (* set the attribute of the parameter as autorelease *)
+      "__set_autorelease_attribute" execute___set_autorelease_attribute
+  let __set_file_attribute = Builtin.register
+      (* set the attribute of the parameter as file *)
+      "__set_file_attribute" execute___set_file_attribute
+  let __set_lock_attribute = Builtin.register
+      (* set the attribute of the parameter as file *)
+      "__set_lock_attribute" execute___set_lock_attribute
+  let __set_mem_attribute = Builtin.register
+      (* set the attribute of the parameter as memory *)
+      "__set_mem_attribute" execute___set_mem_attribute
+  let __set_observer_attribute = Builtin.register
+      (* set the observer attribute of the parameter *)
+      "__set_observer_attribute" (execute___set_attr Sil.Aobserver)
+  let __set_unsubscribed_observer_attribute = Builtin.register
+      (* set the unregistered observer attribute of the parameter *)
+      "__set_unsubscribed_observer_attribute"
       (execute___set_attr Sil.Aunsubscribed_observer)
-  let __objc_release_autorelease_pool = Builtin.register "__objc_release_autorelease_pool" execute___release_autorelease_pool (* set the attribute of the parameter as autorelease *)
-  let __split_get_nth = Builtin.register "__split_get_nth" execute___split_get_nth (* splits a string given a separator and returns the nth string *)
-
-  (* builtin function to externally create new errors *)
-  let __infer_fail = Builtin.register "__infer_fail" execute___infer_fail
-  let __assert_fail = Builtin.register "__assert_fail" execute___assert_fail
-
-  (* set a hidden field in the struct to the given value *)
-  let _ = Builtin.register "__set_hidden_field" execute___set_hidden_field  
-  (* set the attribute of the parameter as tainted *)
-  let _ = Builtin.register "__set_taint_attribute" execute___set_taint_attribute 
-  (* set the attribute of the parameter as untainted *)
-  let _ = Builtin.register "__set_untaint_attribute" (execute___set_attr Sil.Auntaint)
-  (* set the attribute of the parameter as locked *)
-  let __set_locked_attribute =
-    Builtin.register "__set_locked_attribute" (execute___set_attr Sil.Alocked)
-  (* set the attribute of the parameter as unlocked *)
-  let __set_unlocked_attribute =
-    Builtin.register "__set_unlocked_attribute" (execute___set_attr Sil.Aunlocked)
-  let _ = Builtin.register "__check_untainted" execute___check_untainted (* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
-  let __objc_retain = Builtin.register "__objc_retain" execute___objc_retain (* objective-c "retain" *)
-  let __objc_release = Builtin.register "__objc_release" execute___objc_release (* objective-c "release" *)
-  let __objc_retain_cf = Builtin.register "__objc_retain_cf" execute___objc_retain_cf (* objective-c "retain" *)
-  let __objc_release_cf = Builtin.register "__objc_release_cf" execute___objc_release_cf (* objective-c "release" *)
-  let __objc_cast = Builtin.register "__objc_cast" execute___objc_cast (* objective-c "cast" *)
-  let _ = Builtin.register "__throw" execute_skip (** NOTE: __throw should have been handled in the translation already (see frontend.ml) *)
-  let __tuple_get_nth = Builtin.register "__tuple_get_nth" execute___tuple_get_nth (* return the nth element of a tuple *)
-  let __unwrap_exception = Builtin.register "__unwrap_exception" execute__unwrap_exception (* the correct function to unwrapp execption remains to be written *)
-  let __infer_assume = Builtin.register "__infer_assume" execute___infer_assume
-  let _ = Builtin.register "abort" execute_abort (* abort from C library *)
-  let _ = Builtin.register "exit" execute_exit (* exit from C library *)
-  let _ = Builtin.register "free" (execute_free Sil.Mmalloc) (* free from C library, requires allocated memory *)
-  let _ = Builtin.register "fscanf" (execute_scan_function 2) (* fscanf from C library *)
-  let _ = Builtin.register "fwscanf" (execute_scan_function 2) (* vsscanf from C library *)
-  let _ = Builtin.register "malloc" (execute_alloc Sil.Mmalloc true) (* malloc from C library *)
-  let malloc_no_fail = Builtin.register "malloc_no_fail" (execute_alloc Sil.Mmalloc false) (* malloc from ObjC library *)
-  let _ = Builtin.register "pthread_create" execute_pthread_create (* register execution handler for pthread_create *)
-  let _ = Builtin.register "scanf" (execute_scan_function 1) (* scanf from C library *)
-  let _ = Builtin.register "sscanf" (execute_scan_function 2) (* sscanf from C library *)
-  let _ = Builtin.register "swscanf" (execute_scan_function 2) (* vsscanf from C library *)
-  let _ = Builtin.register "vfscanf" (execute_scan_function 2) (* vfwscanf from C library *)
-  let _ = Builtin.register "vfwscanf" (execute_scan_function 2) (* vsscanf from C library *)
-  let _ = Builtin.register "vscanf" (execute_scan_function 1) (* vscanf from C library *)
-  let _ = Builtin.register "vsscanf" (execute_scan_function 2) (* vsscanf from C library *)
-  let _ = Builtin.register "vswscanf" (execute_scan_function 2) (* vsscanf from C library *)
-  let _ = Builtin.register "vwscanf" (execute_scan_function 1) (* vsscanf from C library *)
-  let _ = Builtin.register "wscanf" (execute_scan_function 1) (* vsscanf from C library *)
+  let __split_get_nth = Builtin.register
+      (* splits a string given a separator and returns the nth string *)
+      "__split_get_nth" execute___split_get_nth
+  let _ = Builtin.register
+      (* set a hidden field in the struct to the given value *)
+      "__set_hidden_field" execute___set_hidden_field
+  let _ = Builtin.register
+      (* set the attribute of the parameter as tainted *)
+      "__set_taint_attribute" execute___set_taint_attribute
+  let _ = Builtin.register
+      (* set the attribute of the parameter as untainted *)
+      "__set_untaint_attribute" (execute___set_attr Sil.Auntaint)
+  let __set_locked_attribute = Builtin.register
+      (* set the attribute of the parameter as locked *)
+      "__set_locked_attribute" (execute___set_attr Sil.Alocked)
+  let __set_unlocked_attribute = Builtin.register
+      (* set the attribute of the parameter as unlocked *)
+      "__set_unlocked_attribute" (execute___set_attr Sil.Aunlocked)
+  let _ = Builtin.register
+      "__throw" execute_skip
+  let __tuple_get_nth = Builtin.register
+      (* return the nth element of a tuple *)
+      "__tuple_get_nth" execute___tuple_get_nth
+  let __unwrap_exception = Builtin.register
+      (* unwrap an exception *)
+      "__unwrap_exception" execute__unwrap_exception
+  let _ = Builtin.register
+      (* abort from C library *)
+      "abort" execute_abort
+  let _ = Builtin.register
+      (* exit from C library *)
+      "exit" execute_exit
+  let _ = Builtin.register
+      (* free from C library, requires allocated memory *)
+      "free" (execute_free Sil.Mmalloc)
+  let _ = Builtin.register
+      (* fscanf from C library *)
+      "fscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* vsscanf from C library *)
+      "fwscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* malloc from C library *)
+      "malloc" (execute_alloc Sil.Mmalloc true)
+  let malloc_no_fail = Builtin.register
+      (* malloc from ObjC library *)
+      "malloc_no_fail" (execute_alloc Sil.Mmalloc false)
+  let _ = Builtin.register
+      (* register execution handler for pthread_create *)
+      "pthread_create" execute_pthread_create
+  let _ = Builtin.register
+      (* scanf from C library *)
+      "scanf" (execute_scan_function 1)
+  let _ = Builtin.register
+      (* sscanf from C library *)
+      "sscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* vsscanf from C library *)
+      "swscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* vfwscanf from C library *)
+      "vfscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* vsscanf from C library *)
+      "vfwscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* vscanf from C library *)
+      "vscanf" (execute_scan_function 1)
+  let _ = Builtin.register
+      (* vsscanf from C library *)
+      "vsscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* vsscanf from C library *)
+      "vswscanf" (execute_scan_function 2)
+  let _ = Builtin.register
+      (* vsscanf from C library *)
+      "vwscanf" (execute_scan_function 1)
+  let _ = Builtin.register
+      (* vsscanf from C library *)
+      "wscanf" (execute_scan_function 1)
 
   let execute_objc_alloc_no_fail cfg pdesc tenv symb_state ret_ids typ loc =
     let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
