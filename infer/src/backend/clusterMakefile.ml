@@ -30,12 +30,29 @@ let pp_prolog fmt clusters =
         begin
           match Cluster.get_ondemand_info ce with
           | Some source_dir ->
-              let in_ondemand_config = match Ondemand.read_dirs_to_analyze () with
+              let fname = DB.source_dir_to_string source_dir in
+              let in_ondemand_config =
+                match Ondemand.read_dirs_to_analyze () with
+                | None ->
+                    None
+                | Some set ->
+                    Some (StringSet.mem fname set) in
+              let check_modified () =
+                let modified =
+                  DB.file_was_updated_after_start (DB.filename_from_string fname) in
+                if modified &&
+                   !Config.developer_mode
+                then L.stdout "Modified: %s@." fname;
+                modified in
+              begin
+                match in_ondemand_config with
+                | Some b -> (* ondemand config file is specified *)
+                    b
+                | None when !Config.reactive_mode  ->
+                    check_modified ()
                 | None ->
                     true
-                | Some set ->
-                    StringSet.mem (DB.source_dir_to_string source_dir) set in
-              in_ondemand_config
+              end
           | None ->
               true
         end

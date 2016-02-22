@@ -177,6 +177,11 @@ let arg_desc =
         None,
         "print the builtin functions and exit"
         ;
+        "-reactive",
+        Arg.Unit (fun () -> Config.ondemand_enabled := true; Config.reactive_mode := true),
+        None,
+        "analyze in reactive propagation mode starting from changed files"
+        ;
         "-source_path",
         Arg.String source_path,
         Some "path",

@@ -114,6 +114,7 @@ def main():
 
     remove_infer_out = (imported_module
                         and not args.incremental
+                        and not args.reactive
                         and capture_module_name != 'analyze'
                         and not args.buck)
     if remove_infer_out:

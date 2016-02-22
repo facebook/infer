@@ -75,6 +75,9 @@ base_group.add_argument('-ic', '--changed-only',
                         action=ConfirmIncrementalAction,
                         help='''Same as -i, but does not analyze
                         dependencies of changed procedures.''')
+base_group.add_argument('--reactive', action='store_true',
+                        help='''Analyze in reactive propagation mode
+                        starting from changed files.''')
 base_group.add_argument('--debug-exceptions', action='store_true',
                         help='''Generate lightweight debugging information:
                         just print the internal exceptions during analysis''')
@@ -417,6 +420,9 @@ class Infer:
                 infer_options.append('-incremental_changed_only')
             else:
                 infer_options.append('-incremental')
+
+        if self.args.reactive:
+            infer_options.append('-reactive')
 
         if self.args.specs_dirs:
             infer_options += self.args.specs_dirs

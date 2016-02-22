@@ -179,8 +179,13 @@ let eradicate = ref false
 (** should the checkers be run? *)
 let checkers_enabled () = not !eradicate
 
-(** flag to activate ondemand mode. *)
+(** flag for ondemand mode:
+    procedure calls trigger a new analysis if the summary is not present already *)
 let ondemand_enabled = ref false
+
+(** flag for reactive mode:
+    the analysis starts from the files captured since the "infer" command started *)
+let reactive_mode = ref false
 
 (** Flag for footprint discovery mode *)
 let footprint = ref true
