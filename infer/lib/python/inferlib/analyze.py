@@ -595,11 +595,9 @@ class Infer:
                     issues.print_and_save_errors(json_report, bugs_out)
 
     def print_analysis_stats(self):
-        procs_total = self.stats['int']['procedures']
         files_total = self.stats['int']['files']
-        procs_str = utils.get_plural('procedure', procs_total)
         files_str = utils.get_plural('file', files_total)
-        print('Analyzed %s in %s' % (procs_str, files_str))
+        print('Analyzed {}'.format(files_str))
 
     def start(self):
         if self.javac.args.version:
