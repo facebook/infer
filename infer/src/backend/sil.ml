@@ -3793,14 +3793,14 @@ let tenv_add tenv name typ =
   | _ -> TypenameHash.replace tenv name typ
 
 (** expand a type if it is a typename by looking it up in the type environment *)
-let rec expand_type tenv typ =
+let expand_type tenv typ =
   match typ with
   | Tvar tname ->
       begin
         match tenv_lookup tenv tname with
         | None -> assert false
         | Some (Tvar _) -> assert false
-        | Some typ' -> expand_type tenv typ'
+        | Some typ' -> typ'
       end
   | _ -> typ
 
