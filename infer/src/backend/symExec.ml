@@ -838,14 +838,28 @@ let do_error_checks node_opt instr pname pdesc = match node_opt with
   | None ->
       ()
 
-let add_to_footprint abducted_pv typ prop =
+let add_strexp_to_footprint strexp abducted_pv typ prop =
   let abducted_lvar = Sil.Lvar abducted_pv in
-  let fresh_fp_var = Sil.Var (Ident.create_fresh Ident.kfootprint) in
   let lvar_pt_fpvar =
     let sizeof_exp = Sil.Sizeof (typ, Sil.Subtype.subtypes) in
-    Prop.mk_ptsto abducted_lvar (Sil.Eexp (fresh_fp_var, Sil.Inone)) sizeof_exp in
+    Prop.mk_ptsto abducted_lvar strexp sizeof_exp in
   let sigma_fp = Prop.get_sigma_footprint prop in
-  (Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop), fresh_fp_var)
+  Prop.normalize (Prop.replace_sigma_footprint (lvar_pt_fpvar :: sigma_fp) prop)
+
+let add_to_footprint abducted_pv typ prop =
+  let fresh_fp_var = Sil.Var (Ident.create_fresh Ident.kfootprint) in
+  let prop' = add_strexp_to_footprint (Sil.Eexp (fresh_fp_var, Sil.Inone)) abducted_pv typ prop in
+  prop', fresh_fp_var
+
+(* the current abduction mechanism treats struct values differently than all other types. abduction
+   on struct values adds a a struct whose fields are initialized to fresh footprint vars to the
+   footprint. regular abduction just adds a fresh footprint value of the correct type to the
+   footprint. we can get rid of this special case if we fix the abduction on struct values *)
+let add_struct_value_to_footprint tenv abducted_pv typ prop =
+  let struct_strexp =
+    Prop.create_strexp_of_type (Some tenv) Prop.Fld_init typ Sil.inst_none in
+  let prop' = add_strexp_to_footprint struct_strexp abducted_pv typ prop in
+  prop', struct_strexp
 
 let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
   if Procname.is_infer_undefined callee_pname then prop
@@ -1004,7 +1018,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
          Specs.CallStats.trace
            summary.Specs.stats.Specs.call_stats callee_pname loc
            (Specs.CallStats.CR_skip) !Config.footprint);
-    call_unknown_or_scan false pdesc prop path ret_ids ret_typ_opt actual_args callee_pname loc in
+    call_unknown_or_scan
+      tenv false pdesc prop path ret_ids ret_typ_opt actual_args callee_pname loc in
   let instr = match _instr with
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop _prop exp in
@@ -1154,7 +1169,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
       end else begin
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp; L.d_strln ", returning undefined value.";
         let callee_pname = Procname.from_string_c_fun "__function_pointer__" in
-        call_unknown_or_scan false pdesc prop_r path ret_ids None n_actual_params callee_pname loc
+        call_unknown_or_scan
+          tenv false pdesc prop_r path ret_ids None n_actual_params callee_pname loc
       end
   | Sil.Nullify (pvar, _, deallocate) ->
       begin
@@ -1232,7 +1248,7 @@ and sym_exec_generated mask_errors cfg tenv pdesc instrs ppl =
   let f plist instr = IList.flatten (IList.map (exe_instr instr) plist) in
   IList.fold_left f ppl instrs
 
-and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_loc =
+and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname callee_loc =
   (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
   let replace_actual_hpred actual_var new_hpred prop =
     let sigma' =
@@ -1259,14 +1275,24 @@ and add_constraints_on_actuals_by_ref prop actuals_by_ref callee_pname callee_lo
           if already_has_abducted_retval prop then prop
           else
           if !Config.footprint then
-            let (prop', fresh_fp_var) =
-              add_to_footprint abducted_ref_pv (Sil.typ_strip_ptr actual_typ) prop in
+            let prop', abduced_strexp = match actual_typ with
+              | Sil.Tptr ((Sil.Tstruct _) as typ, _) ->
+                  (* for struct types passed by reference, do abduction on the fields of the
+                     struct *)
+                  add_struct_value_to_footprint tenv abducted_ref_pv typ prop
+              | Sil.Tptr (typ, _) ->
+                  (* for pointer types passed by reference, do abduction directly on the pointer *)
+                  let (prop', fresh_fp_var) =
+                    add_to_footprint abducted_ref_pv typ prop in
+                  prop', Sil.Eexp (fresh_fp_var, Sil.Inone)
+              | typ ->
+                  failwith ("No need for abduction on non-pointer type " ^ (Sil.typ_to_string typ)) in
             (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
             let filtered_sigma =
               IList.map
                 (function
                   | Sil.Hpointsto (lhs, _, typ_exp) when Sil.exp_equal lhs actual ->
-                      Sil.Hpointsto (lhs, Sil.Eexp (fresh_fp_var, Sil.Inone), typ_exp)
+                      Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
                   | hpred -> hpred)
                 (Prop.get_sigma prop') in
             Prop.normalize (Prop.replace_sigma filtered_sigma prop')
@@ -1321,7 +1347,7 @@ and check_untainted exp caller_pname callee_pname prop =
       else prop
 
 (** execute a call for an unknown or scan function *)
-and call_unknown_or_scan is_scan pdesc pre path
+and call_unknown_or_scan tenv is_scan pdesc pre path
     ret_ids ret_type_option actual_pars callee_pname loc =
   let remove_file_attribute prop =
     let do_exp p (e, _) =
@@ -1352,7 +1378,7 @@ and call_unknown_or_scan is_scan pdesc pre path
   let actuals_by_ref =
     IList.filter
       (function
-        | Sil.Lvar _, Sil.Tptr (Sil.Tptr _, _) -> true
+        | Sil.Lvar _, Sil.Tptr _ -> true
         | _ -> false)
       actual_pars in
   let pre_final =
@@ -1362,7 +1388,7 @@ and call_unknown_or_scan is_scan pdesc pre path
       | [ret_id], Some ret_typ ->
           add_constraints_on_retval pdesc pre_1 (Sil.Var ret_id) ret_typ callee_pname loc
       | _ -> pre_1 in
-    let pre_3 = add_constraints_on_actuals_by_ref pre_2 actuals_by_ref callee_pname loc in
+    let pre_3 = add_constraints_on_actuals_by_ref tenv pre_2 actuals_by_ref callee_pname loc in
     let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
     add_tainted_pre pre_3 actual_pars caller_pname callee_pname in
   if is_scan (* if scan function, don't mark anything with undef attributes *)
@@ -2341,13 +2367,13 @@ module ModelBuiltins = struct
   let execute_skip _ _ _ _ prop path _ _ _ _ : Builtin.ret_typ =
     [(prop, path)]
 
-  let execute_scan_function skip_n_arguments _ pdesc _ _ prop path ret_ids args callee_pname loc
+  let execute_scan_function skip_n_arguments _ pdesc _ tenv prop path ret_ids args callee_pname loc
     : Builtin.ret_typ =
     match args with
     | _ when IList.length args >= skip_n_arguments ->
         let varargs = ref args in
         for _ = 1 to skip_n_arguments do varargs := IList.tl !varargs done;
-        call_unknown_or_scan true pdesc prop path ret_ids None !varargs callee_pname loc
+        call_unknown_or_scan tenv true pdesc prop path ret_ids None !varargs callee_pname loc
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute__unwrap_exception _ pdesc _ _ _prop path ret_ids args _ _

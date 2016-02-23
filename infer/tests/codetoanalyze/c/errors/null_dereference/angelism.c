@@ -11,6 +11,7 @@
 
 struct delicious {
   int yum;
+  int* ptr;
 };
 
 struct delicious* bake(struct delicious** cake) {
@@ -89,9 +90,92 @@ void returnPassByRefDeref() {
   free(ret);
 }
 
+extern void struct_ptr_skip(struct delicious* s);
+
+extern void struct_val_skip(struct delicious s);
+
 int passStructByRefDeref() {
   struct delicious d;
   d.yum = 7;
-  skip(&d);
-  return 1 / d.yum; // should not report a warning
+  struct_ptr_skip(&d);
+  return 1 / d.yum; // should not report divide by zero warning
+}
+
+int struct_value_by_ref_pure() {
+  struct delicious x;
+  struct_ptr_skip(&x);
+  return 1 / x.yum; // should not report divide by zero warning
+}
+
+int struct_value_by_ref_ptr() {
+  struct delicious x;
+  struct_ptr_skip(&x);
+  return *x.ptr; // should not report null deref warning
+}
+
+int struct_value_by_ref_abduce() {
+  struct delicious x;
+  struct_ptr_skip(&x);
+  return 1 / *x.ptr; // shoult not report divide by zero warning
+}
+
+int struct_value_by_ref_ptr_write_before() {
+  struct delicious x;
+  x.ptr = NULL;
+  struct_ptr_skip(&x);
+  return *x.ptr; // should not report null deref warning
+}
+
+int struct_value_by_ref_ptr_write() {
+  struct delicious x;
+  struct_ptr_skip(&x);
+  x.ptr = NULL;
+  return *x.ptr; // should report null deref warning
+}
+
+void setF(struct delicious* x, int val) { x->ptr = val; }
+
+int struct_value_by_ref_callee_write_no_skip() {
+  struct delicious x;
+  setF(&x, NULL);
+  return *x.ptr; // should report null deref warning
+}
+
+int struct_value_by_ref_callee_write_skip() {
+  struct delicious x;
+  struct_ptr_skip(&x);
+  setF(&x, NULL);
+  return *x.ptr; // should report null deref warning
+}
+
+int struct_value_by_ref_write_then_skip() {
+  struct delicious x;
+  x.ptr = NULL;
+  struct_ptr_skip(&x);
+  return *x.ptr; // should not report null deref warning
+}
+
+int struct_value_skip_null_deref() {
+  struct delicious x;
+  x.ptr = NULL;
+  struct_val_skip(x);
+  return *x.ptr; // should report null deref warning
+}
+
+int struct_value_skip_ok() {
+  struct delicious x;
+  x.yum = 7;
+  struct_val_skip(x);
+  return 1 / x.yum; // should not report div by zero warning
+}
+
+int struct_value_from_pointer_skip_ok(struct delicious* x) {
+  struct_val_skip(*x);
+  return 1 / x->yum; // should not report div by zero warning
+}
+
+int struct_value_from_pointer_skip_bad(struct delicious* x) {
+  x->ptr = NULL;
+  struct_val_skip(*x);
+  return 1 / *x->ptr; // should report null deref warning
 }

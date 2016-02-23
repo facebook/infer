@@ -27,6 +27,7 @@ public class AngelismTest {
       "null_dereference/angelism.c";
 
   public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
+  public static final String DIVIDE_BY_ZERO = "DIVIDE_BY_ZERO";
 
   private static InferResults inferResults;
 
@@ -38,10 +39,15 @@ public class AngelismTest {
   }
 
   @Test
-  public void angelismTest() throws InterruptedException, IOException, InferException {
+  public void angelismNPETest() throws InterruptedException, IOException, InferException {
     String[] procedures = {
         "bake",
-        "call_by_ref_actual_already_in_footprint_bad"
+        "call_by_ref_actual_already_in_footprint_bad",
+        "struct_value_by_ref_ptr_write",
+        "struct_value_by_ref_callee_write_no_skip",
+        "struct_value_by_ref_callee_write_skip",
+        "struct_value_skip_null_deref",
+        "struct_value_from_pointer_skip_bad"
     };
     assertThat(
         "Results should contain null pointer dereference error",
