@@ -42,6 +42,7 @@ PROC_STATS_FILENAME = 'proc_stats.json'
 CSV_REPORT_FILENAME = 'report.csv'
 JSON_REPORT_FILENAME = 'report.json'
 BUGS_FILENAME = 'bugs.txt'
+JAVAC_FILELISTS_FILENAME = 'filelists'
 
 IOS_CAPTURE_ERRORS = 'errors'
 IOS_BUILD_OUTPUT = 'build_output'

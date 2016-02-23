@@ -14,8 +14,6 @@ import subprocess
 import config
 import utils
 
-FILELISTS = 'filelists'
-
 # javac options
 parser = argparse.ArgumentParser()
 

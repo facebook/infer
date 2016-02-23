@@ -207,7 +207,10 @@ def reset_start_file(results_dir):
 
 
 def clean(infer_out):
-    directories = ['multicore', 'classnames', 'sources', jwlib.FILELISTS]
+    directories = [
+        'multicore', 'classnames', 'sources',
+        config.JAVAC_FILELISTS_FILENAME,
+    ]
     extensions = ['.cfg', '.cg']
 
     for root, dirs, files in os.walk(infer_out):

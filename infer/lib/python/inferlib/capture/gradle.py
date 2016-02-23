@@ -38,7 +38,8 @@ class GradleCapture:
         self.build_cmd = [cmd[0], '--debug'] + cmd[1:]
         # That contains javac version as well
         version_str = util.run_cmd_ignore_fail([cmd[0], '--version'])
-        path = os.path.join(self.args.infer_out, jwlib.FILELISTS)
+        path = os.path.join(self.args.infer_out,
+                            config.JAVAC_FILELISTS_FILENAME)
         if not os.path.exists(path):
             os.mkdir(path)
         logging.info("Running with:\n" + version_str)
@@ -69,7 +70,8 @@ class GradleCapture:
                         mode='w',
                         suffix='.txt',
                         prefix='gradle_',
-                        dir=os.path.join(self.args.infer_out, jwlib.FILELISTS),
+                        dir=os.path.join(self.args.infer_out,
+                                         config.JAVAC_FILELISTS_FILENAME),
                         delete=False) as sources:
                     sources.write("\n".join(java_files))
                     sources.flush()
