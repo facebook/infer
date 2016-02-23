@@ -349,17 +349,24 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
     (Specs.get_timestamp (Specs.get_summary_unsafe "main_algorithm" pname) = 0
      || not (proc_is_up_to_date call_graph pname)) in
   let filter_out_ondemand pname =
-    if !Config.ondemand_enabled then
-      try
-        let cfg = Exe_env.get_cfg exe_env pname in
-        match Cfg.Procdesc.find_from_name cfg pname with
-        | Some pdesc ->
-            not (Ondemand.procedure_should_be_analyzed pdesc pname)
-        | None ->
-            false
-      with Not_found -> false
-    else
-      false in
+    let to_analyze =
+      if !Config.ondemand_enabled then
+        try
+          let cfg = Exe_env.get_cfg exe_env pname in
+          match Cfg.Procdesc.find_from_name cfg pname with
+          | Some pdesc ->
+              let reactive_changed =
+                if !Config.reactive_mode
+                then (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.changed
+                else true in
+              reactive_changed && (* in reactive mode, only analyze changed procedures *)
+              Ondemand.procedure_should_be_analyzed pdesc pname
+          | None ->
+              true
+        with Not_found -> true
+      else
+        true in
+    not to_analyze in
   let process_one_proc ((pname, _) as elem) =
     DB.current_source :=
       (Specs.get_summary_unsafe "main_algorithm" pname)

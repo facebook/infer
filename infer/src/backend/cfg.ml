@@ -43,7 +43,6 @@ module Node = struct
     mutable pd_nodes : t list; (** list of nodes of this procedure *)
     mutable pd_start_node : t; (** start node of this procedure *)
     mutable pd_exit_node : t; (** exit node of ths procedure *)
-    mutable pd_changed : bool; (** true if proc has changed since last analysis *)
   }
 
   let exn_handler_kind = Stmt_node "exception handler"
@@ -112,7 +111,7 @@ module Node = struct
       try
         let old_pdesc = Procname.Hash.find old_procs pname in
         let changed = not (pdescs_eq old_pdesc new_pdesc) in
-        new_pdesc.pd_changed <- changed
+        new_pdesc.pd_attributes.changed <- changed
       with Not_found -> () in
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 
@@ -133,7 +132,7 @@ module Node = struct
   let proc_name_is_changed cfg proc_name =
     try
       let pdesc = proc_name_to_proc_desc cfg proc_name in
-      pdesc.pd_changed
+      pdesc.pd_attributes.changed
     with Not_found -> true
 
   let iter_proc_desc cfg f =
@@ -376,7 +375,6 @@ module Node = struct
         pd_nodes = [];
         pd_start_node = dummy ();
         pd_exit_node = dummy ();
-        pd_changed = true
       } in
     pdesc_tbl_add cfg proc_attributes.ProcAttributes.proc_name pdesc;
     pdesc
