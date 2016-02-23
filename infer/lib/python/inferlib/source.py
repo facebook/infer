@@ -78,14 +78,15 @@ def build_source_context(source_name, mode, report_line):
     n_length = len(str(end_line))
     line_number = 1
     s = ''
-    with codecs.open(source_name, 'r', encoding=config.LOCALE) as source_file:
+    with codecs.open(source_name, 'r',
+                     encoding=config.LOCALE, errors="replace") as source_file:
         for line in source_file:
             if start_line <= line_number <= end_line:
                 num = str(line_number).zfill(n_length)
                 caret = '  '
                 if line_number == report_line:
                     caret = '> '
-                s += u'%s. %s%s' % (num, caret, line)
+                s += '%s. %s%s' % (num, caret, line)
             line_number += 1
     return _syntax_highlighting(source_name, mode, s)
 

@@ -84,50 +84,11 @@ def elapsed_time(start_time):
 
 
 def error(msg):
-    print(msg, file=sys.stderr)
+    print(encode(msg), file=sys.stderr)
 
 
 def get_cmd_in_bin_dir(binary_name):
     return os.path.join(config.BIN_DIRECTORY, binary_name)
-
-
-def write_cmd_streams_to_file(logfile, cmd=None, out=None, err=None):
-    with codecs.open(logfile, 'w', encoding=config.LOCALE) as log_filedesc:
-        if cmd:
-            log_filedesc.write(' '.join(cmd) + '\n')
-        if err is not None:
-            errors = str(err)
-            log_filedesc.write('\nSTDERR:\n')
-            log_filedesc.write(errors)
-        if out is not None:
-            output = str(out)
-            log_filedesc.write('\n\nSTDOUT:\n')
-            log_filedesc.write(output)
-
-
-def save_failed_command(
-        infer_out,
-        cmd,
-        message,
-        prefix='failed_',
-        out=None,
-        err=None):
-    cmd_filename = tempfile.mktemp(
-        '_' + message + ".txt",
-        prefix, infer_out
-    )
-    write_cmd_streams_to_file(cmd_filename, cmd=cmd, out=out, err=err)
-    logging.error('\n' + message + ' error saved in ' + cmd_filename)
-
-
-def run_command(cmd, debug_mode, infer_out, message, env=os.environ):
-    if debug_mode:
-        print('\n{0}\n'.format(' '.join(cmd)))
-    try:
-        return subprocess.check_call(cmd, env=env)
-    except subprocess.CalledProcessError as e:
-        save_failed_command(infer_out, cmd, message)
-        raise e
 
 
 def load_json_from_path(path):
@@ -143,7 +104,8 @@ def dump_json_to_path(
         separators=None,
         encoding=config.LOCALE,  # customized
         default=None, sort_keys=False, **kw):
-    with codecs.open(path, 'w', encoding=config.LOCALE) as file_out:
+    with codecs.open(path, 'w',
+                     encoding=config.LOCALE, errors='replace') as file_out:
         json.dump(data, file_out, skipkeys=skipkeys, ensure_ascii=ensure_ascii,
                   check_circular=check_circular, allow_nan=allow_nan, cls=cls,
                   indent=indent, separators=separators, encoding=encoding,
@@ -307,24 +269,6 @@ def uncompress_gzip_file(gzip_file, out_dir):
             uncompressed_fd.close()
 
 
-def run_process(cmd, cwd=None, logfile=None):
-    # Input:
-    #    - command to execute
-    #    - current working directory to cd before running the cmd
-    #    - logfile where to dump stdout/stderr
-    # Output:
-    #    - exitcode of the executed process
-    p = subprocess.Popen(
-        cmd,
-        cwd=cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
-    (out, err) = p.communicate()
-    if logfile:
-        write_cmd_streams_to_file(logfile, cmd=cmd, out=out, err=err)
-    return p.returncode
-
-
 def invoke_function_with_callbacks(
         func,
         args,
@@ -344,6 +288,22 @@ def invoke_function_with_callbacks(
 def get_plural(_str, count):
     plural_str = _str if count == 1 else _str + 's'
     return '%d %s' % (count, plural_str)
+
+
+def decode(s, errors="replace"):
+    return s.decode(encoding=config.LOCALE, errors=errors)
+
+
+def encode(u, errors="replace"):
+    return u.encode(encoding=config.LOCALE, errors=errors)
+
+
+def stdout(s, errors="replace"):
+    print(encode(s, errors=errors))
+
+
+def stderr(s, errors="replace"):
+    print(encode(s, errors=errors), file=sys.stderr)
 
 
 class AbsolutePathAction(argparse.Action):

@@ -146,7 +146,7 @@ def clean_json(args, json_report):
     shutil.move(temporary_file, json_report)
 
 def _text_of_infer_loc(loc):
-    return u' (%s:%d:%d-%d:)' % (
+    return ' ({}:{}:{}-{}:)'.format(
         loc[JSON_INDEX_ISL_FILE],
         loc[JSON_INDEX_ISL_LNUM],
         loc[JSON_INDEX_ISL_CNUM],
@@ -163,7 +163,7 @@ def text_of_report(report):
     infer_loc = ''
     if JSON_INDEX_INFER_SOURCE_LOC in report:
         infer_loc = _text_of_infer_loc(report[JSON_INDEX_INFER_SOURCE_LOC])
-    return u'%s:%d: %s: %s%s\n  %s' % (
+    return '%s:%d: %s: %s%s\n  %s' % (
         filename,
         line,
         kind.lower(),
@@ -234,8 +234,9 @@ def print_and_save_errors(json_report, bugs_out):
     errors = utils.load_json_from_path(json_report)
     errors = filter(_is_user_visible, errors)
     text = _text_of_report_list(errors)
-    print(text.encode(config.LOCALE))
-    with codecs.open(bugs_out, 'w', encoding=config.LOCALE) as file_out:
+    utils.stdout(text)
+    with codecs.open(bugs_out, 'w',
+                     encoding=config.LOCALE, errors='replace') as file_out:
         file_out.write(text)
 
 
@@ -312,5 +313,5 @@ def _should_report_json(analyzer, row):
 
 
 def _print_and_write(file_out, message):
-    print(message)
-    file_out.write(message + '\n')
+    utils.stdout(message)
+    file_out.write(utils.encode(message + '\n'))

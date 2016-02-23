@@ -36,8 +36,8 @@ def get_infer_version():
         return subprocess.check_output([
             utils.get_cmd_in_bin_dir(INFER_ANALYZE_BINARY), '-version'])
     except:
-        print("Failed to run {0} binary, exiting".
-              format(INFER_ANALYZE_BINARY))
+        utils.stdout('Failed to run {0} binary, exiting'
+                     .format(INFER_ANALYZE_BINARY))
         sys.exit(os.EX_UNAVAILABLE)
 
 
@@ -223,14 +223,14 @@ def clean(infer_out):
 
 
 def help_exit(message):
-    print(message)
+    utils.stdout(message)
     infer_parser.print_usage()
     exit(1)
 
 
 def run_command(cmd, debug_mode, javac_arguments, step, analyzer):
     if debug_mode:
-        print('\n{0}\n'.format(' '.join(cmd)))
+        utils.stdout('\n{0}\n'.format(' '.join(cmd)))
     try:
         return subprocess.check_call(cmd)
     except subprocess.CalledProcessError as e:
@@ -297,7 +297,7 @@ class Infer:
 
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
-            print('removing', self.args.infer_out)
+            utils.stdout('removing {}'.format(self.args.infer_out))
             shutil.rmtree(self.args.infer_out)
         exit(os.EX_OK)
 
@@ -603,7 +603,7 @@ class Infer:
         if self.javac.args.version:
             if self.args.buck:
                 key = self.args.analyzer
-                print(utils.infer_key(key), file=sys.stderr)
+                utils.stderr(utils.infer_key(key), errors="strict")
             else:
                 return self.javac.run()
         else:

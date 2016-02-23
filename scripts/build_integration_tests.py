@@ -6,6 +6,11 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import json
 import os
 import shutil
@@ -126,14 +131,14 @@ def missing_errors(errors, patterns):
 def check_results(errors, patterns):
     unexpected = unexpected_errors(errors, patterns)
     if unexpected != []:
-        print('\nInfer found the following unexpected errors:')
+        utils.stderr('\nInfer found the following unexpected errors:')
         for e in unexpected:
-            print('\t{}\n'.format(string_of_error(e)))
+            utils.stderr('\t{}\n'.format(string_of_error(e)))
     missing = missing_errors(errors, patterns)
     if missing != []:
-        print('\nInfer did not find the following errors:')
+        utils.stderr('\nInfer did not find the following errors:')
         for p in missing:
-            print('\t{}\n'.format(string_of_error(p)))
+            utils.stderr('\t{}\n'.format(string_of_error(p)))
     assert unexpected == []
     assert missing == []
 

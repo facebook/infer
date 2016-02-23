@@ -60,7 +60,7 @@ base_parser.add_argument('--html',
 
 
 def show_error_and_exit(err, show_help):
-    print(err)
+    print(utils.encode(err))
     if show_help:
         print('')
         base_parser.print_help()
@@ -144,7 +144,7 @@ class Selector(object):
             #       <second line of report goes here>
             msg = issues.text_of_report(report) \
                         .replace('\n', '\n%s' % ((n_length + 2) * ' '))
-            print('%s. %s\n' % (str(n).rjust(n_length), msg))
+            utils.stdout('%s. %s\n' % (str(n).rjust(n_length), msg))
             n += 1
 
     def prompt_report(self):
@@ -246,7 +246,7 @@ def get_remote_source_template():
             # these
             if project.endswith('.git'):
                 project = project[:-len('.git')]
-            print('Detected GitHub project %s' % project)
+            utils.stdout('Detected GitHub project %s' % project)
             hash = subprocess.check_output(
                 ['git',
                  'rev-parse',
@@ -345,19 +345,21 @@ def generate_html_report(args, reports):
     for bug in sel:
         bug_trace_path = path_of_bug_number(traces_dir, i)
         with codecs.open(bug_trace_path, 'w',
-                         encoding=config.LOCALE) as bug_trace_file:
+                         encoding=config.LOCALE,
+                         errors='xmlcharrefreplace') as bug_trace_file:
             bug_trace_file.write(html_bug_trace(args, bug, i))
         i += 1
 
     remote_source_template = get_remote_source_template()
     bug_list_path = os.path.join(html_dir, 'index.html')
     with codecs.open(bug_list_path, 'w',
-                     encoding=config.LOCALE) as bug_list_file:
+                     encoding=config.LOCALE,
+                     errors='xmlcharrefreplace') as bug_list_file:
         bug_list_file.write(html_list_of_bugs(args,
                                               remote_source_template,
                                               sel))
 
-    print('Saved html report in:\n%s' % bug_list_path)
+    utils.stdout('Saved html report in:\n%s' % bug_list_path)
 
 
 def main():
@@ -383,11 +385,11 @@ def main():
     report = sel.prompt_report()
     max_level = sel.prompt_level()
 
-    print(issues.text_of_report(report))
+    utils.stdout(issues.text_of_report(report))
 
     tracer = Tracer(args, max_level)
     tracer.build_report(report)
-    print(tracer)
+    utils.stdout(tracer)
 
 
 if __name__ == '__main__':

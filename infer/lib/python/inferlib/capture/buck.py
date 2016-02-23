@@ -5,15 +5,20 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import argparse
 import json
 import logging
 import os
 import subprocess
 import traceback
-import util
 
 from inferlib import config, issues, utils, bucklib
+from . import util
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -143,8 +148,8 @@ class BuckAnalyzer:
         merged_results_path = os.path.join(self.args.infer_out,
                                            config.JSON_REPORT_FILENAME)
         utils.dump_json_to_path(all_results, merged_results_path)
-        print('Results saved in {results_path}'.format(
-            results_path=merged_results_path))
+        utils.stdout('Results saved in {results_path}'
+                     .format(results_path=merged_results_path))
         return os.EX_OK
 
     def capture_without_flavors(self):
