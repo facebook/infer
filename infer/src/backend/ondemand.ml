@@ -15,8 +15,8 @@ module F = Format
 let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
 let one_cluster_per_procedure () = false
 
-let () = Config.ondemand_enabled :=
-    Config.from_env_variable "INFER_ONDEMAND"
+let () =
+  Config.ondemand_enabled := true
 
 let across_files () = true
 
