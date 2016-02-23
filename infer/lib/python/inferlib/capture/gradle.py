@@ -11,6 +11,7 @@ import util
 import tempfile
 
 from inferlib import jwlib
+from inferlib import config
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
