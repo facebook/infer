@@ -42,8 +42,8 @@ class AnnotationProcessorNotFound(Exception):
 
 class CompilerCall:
 
-    def __init__(self, arguments):
-
+    def __init__(self, javac_cmd, arguments):
+        self.javac_cmd = javac_cmd
         self.original_arguments = arguments
         self.args, self.remaining_args = parser.parse_known_args(arguments)
         self.verbose_out = None
@@ -51,9 +51,9 @@ class CompilerCall:
 
     def run(self):
         if self.args.version:
-            return subprocess.call(['javac'] + self.original_arguments)
+            return subprocess.call([self.javac_cmd] + self.original_arguments)
         else:
-            javac_cmd = ['javac', '-verbose', '-g']
+            javac_cmd = [self.javac_cmd, '-verbose', '-g']
 
             if self.args.bootclasspath is not None:
                 javac_cmd += ['-bootclasspath', self.args.bootclasspath]

@@ -23,6 +23,7 @@ def create_infer_command(args, javac_arguments):
     infer_args += ['--analyzer', 'capture']
 
     return analyze.Infer(analyze.infer_parser.parse_args(infer_args),
+                         'javac',
                          analyze.get_javac_args(['javac'] + javac_arguments))
 
 
