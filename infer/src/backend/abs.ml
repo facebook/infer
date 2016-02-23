@@ -419,12 +419,12 @@ let typ_get_recursive_flds tenv typ_exp =
   in
   match typ_exp with
   | Sil.Sizeof (typ, _) ->
-      (match typ with
-       | Sil.Tvar _ -> assert false (* there should be no indirection *)
+      (match Sil.expand_type tenv typ with
        | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ | Sil.Tenum _ -> []
        | Sil.Tstruct { Sil.instance_fields } ->
            IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) instance_fields)
-       | Sil.Tarray _ -> [])
+       | Sil.Tarray _ -> []
+       | Sil.Tvar _ -> assert false)
   | Sil.Var _ -> [] (* type of |-> not known yet *)
   | Sil.Const _ -> []
   | _ ->
