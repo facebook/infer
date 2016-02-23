@@ -58,4 +58,10 @@ public class ConstructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("copy_move_constructor.cpp");
   }
+
+  @Test
+  public void testDefaultFieldInitDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("default_field_init.cpp");
+  }
 }

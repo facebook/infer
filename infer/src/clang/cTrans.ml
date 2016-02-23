@@ -2034,8 +2034,8 @@ struct
         stmt_info all_res_trans in
     { res_trans_to_parent with exps = [(res_ex, cast_type)] }
 
-  and cxxDefaultArgExpr_trans trans_state default_arg_info =
-    match default_arg_info.Clang_ast_t.xdaei_init_expr with
+  and cxxDefaultExpr_trans trans_state default_expr_info =
+    match default_expr_info.Clang_ast_t.xdaei_init_expr with
     | Some exp -> instruction trans_state exp
     | None -> assert false
 
@@ -2278,8 +2278,9 @@ struct
     | CXXDynamicCastExpr (stmt_info, stmts, _, _, type_ptr, _) ->
         cxxDynamicCastExpr_trans trans_state stmt_info stmts type_ptr
 
-    | CXXDefaultArgExpr (_, _, _, default_arg_info) ->
-        cxxDefaultArgExpr_trans trans_state default_arg_info
+    | CXXDefaultArgExpr (_, _, _, default_expr_info)
+    | CXXDefaultInitExpr (_, _, _, default_expr_info) ->
+        cxxDefaultExpr_trans trans_state default_expr_info
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
