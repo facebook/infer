@@ -387,7 +387,11 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
           assert (call_flags.Sil.cf_targets = []);
-          let receiver_typ_no_ptr = Sil.typ_strip_ptr receiver_typ in
+          let receiver_typ_no_ptr = match receiver_typ with
+            | Sil.Tptr (typ', _) ->
+                typ'
+            | _ ->
+                receiver_typ in
           let sorted_overrides =
             let overrides = Prover.get_overrides_of tenv receiver_typ_no_ptr callee_pname in
             IList.sort (fun (_, p1) (_, p2) -> Procname.compare p1 p2) overrides in
