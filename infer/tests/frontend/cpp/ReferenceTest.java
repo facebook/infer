@@ -88,4 +88,11 @@ public class ReferenceTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("reference_struct_e2e.cpp");
   }
+
+  @Test
+  public void testReferenceFieldDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("reference_field.cpp");
+  }
+
 }

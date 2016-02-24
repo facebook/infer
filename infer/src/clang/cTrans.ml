@@ -455,7 +455,7 @@ struct
       dereference_value_from_result sil_loc res_trans ~strip_pointer:true
     else res_trans
 
-  let field_deref_trans trans_state stmt_info pre_trans_result decl_ref =
+  let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init =
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -474,8 +474,16 @@ struct
     Printing.log_out "Type is  '%s' @." (Sil.typ_to_string class_typ);
     let field_name = General_utils.mk_class_field_name name_info in
     let field_exp = Sil.Lfield (obj_sil, field_name, class_typ) in
-    let exp, deref_ids, deref_instrs = if not is_pointer_typ then
-        (* There will be no LValueToRValue cast, but backend needs dereference there either way *)
+    (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
+    (* there either way:*)
+    (* 1. Class is not a pointer type - it means that it's rvalue struct most likely coming from*)
+    (*    create_call_instr - more info there*)
+    (* 2. Field has reference type - we need to add extra dereference in same fashion*)
+    (*    it's done in var_deref_trans. The only exception is during field initialization in*)
+    (*    constructor's initializer list (when reference itself is initialized) *)
+    let should_add_deref = (not is_pointer_typ) ||
+                           (not is_constructor_init && CTypes.is_reference_type type_ptr) in
+    let exp, deref_ids, deref_instrs = if should_add_deref then
         let id = Ident.create_fresh Ident.knormal in
         let deref_instr = Sil.Letderef (id, field_exp, field_typ, sil_loc) in
         Sil.Var id, [id], [deref_instr]
@@ -572,7 +580,7 @@ struct
     Cfg.Node.set_succs_exn root_node' res_trans.root_nodes [];
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref =
+  and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref ~is_constructor_init =
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
@@ -580,7 +588,8 @@ struct
     | `EnumConstant -> enum_constant_trans trans_state decl_ref
     | `Function -> function_deref_trans trans_state decl_ref
     | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
-    | `Field | `ObjCIvar -> field_deref_trans trans_state stmt_info pre_trans_result decl_ref
+    | `Field | `ObjCIvar ->
+        field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
     | `CXXMethod | `CXXConversion | `CXXConstructor ->
         method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind
     | _ ->
@@ -597,7 +606,7 @@ struct
     let decl_ref = match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
       | Some dr -> dr
       | None -> assert false in
-    decl_ref_trans trans_state empty_res_trans stmt_info decl_ref
+    decl_ref_trans trans_state empty_res_trans stmt_info decl_ref ~is_constructor_init:false
 
   (* evaluates an enum constant *)
   and enum_const_eval context enum_constant_pointer prev_enum_constant_opt zero =
@@ -905,7 +914,8 @@ struct
                            exps = [(var_exp, this_type)];
                            initd_exps = [var_exp];
                          } in
-    let res_trans_callee = decl_ref_trans trans_state this_res_trans si decl_ref in
+    let res_trans_callee = decl_ref_trans trans_state this_res_trans si decl_ref
+        ~is_constructor_init:false in
     let res_trans = cxx_method_construct_call_trans trans_state_pri res_trans_callee
         params_stmt si Sil.Tvoid false in
     { res_trans with exps = [(var_exp, class_type)] }
@@ -1772,7 +1782,7 @@ struct
     (* int p = X(1).field; *)
     let trans_state' = { trans_state with var_exp_typ = None } in
     let result_trans_exp_stmt = exec_with_glvalue_as_reference instruction trans_state' exp_stmt in
-    decl_ref_trans trans_state result_trans_exp_stmt stmt_info decl_ref
+    decl_ref_trans trans_state result_trans_exp_stmt stmt_info decl_ref ~is_constructor_init:false
 
   and objCIvarRefExpr_trans trans_state stmt_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
@@ -2321,7 +2331,8 @@ struct
           let class_typ = match this_typ with Sil.Tptr (t, _) -> t | _ -> assert false in
           { this_res_trans with exps = [this_exp, class_typ] }
       | `Member (decl_ref) ->
-          decl_ref_trans trans_state' this_res_trans child_stmt_info decl_ref in
+          decl_ref_trans trans_state' this_res_trans child_stmt_info decl_ref
+            ~is_constructor_init:true in
     let var_exp_typ = extract_exp_from_list var_res_trans.exps
         "WARNING: There should be one expression to initialize in constructor initializer. \n" in
     let init_expr = ctor_init.Clang_ast_t.xci_init_expr in
