@@ -159,13 +159,13 @@ let arg_desc =
         Arg.Set_int iterations_cmdline,
         Some "n",
         "set the max number of operations for each function, \
-        expressed as a multiple of symbolic operations (default n=1)"
+         expressed as a multiple of symbolic operations (default n=1)"
         ;
         "-nonstop",
         Arg.Set Config.nonstop,
         None,
         "activate the nonstop mode: the analysis continues after finding errors. \
-        With this option the analysis can become less precise."
+         With this option the analysis can become less precise."
         ;
         "-out_file",
         Arg.Set_string out_file_cmdline,
@@ -186,7 +186,7 @@ let arg_desc =
         Arg.String source_path,
         Some "path",
         "specify the absolute path to the root of the source files. \
-        Used to interpret relative paths when using option -exclude."
+         Used to interpret relative paths when using option -exclude."
         ;
         (* TODO: merge with the -project_root option *)
         "-java",
@@ -218,7 +218,7 @@ let arg_desc =
         Arg.Set_string ml_buckets_arg,
         Some "ml_buckets",
         "memory leak buckets to be checked, separated by commas. \
-        The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp, unknown_origin"
+         The possible buckets are cf (Core Foundation), arc, narc (No arc), cpp, unknown_origin"
         ;
       ] in
     Arg.create_options_desc false "Analysis Options" desc in
@@ -235,7 +235,7 @@ let arg_desc =
         Arg.Set Config.angelic_execution,
         None,
         "activate angelic execution: \
-        The analysis ignores errors caused by unknown procedure calls."
+         The analysis ignores errors caused by unknown procedure calls."
         ;
         "-checkers",
         Arg.Unit (fun () -> checkers := true; Config.intraprocedural := true),
@@ -279,16 +279,6 @@ let arg_desc =
         Arg.Set_int Config.max_cluster_size,
         Some "n",
         "set the max number of procedures in each cluster (default n=2000)"
-        ;
-        "-only_nospecs",
-        Arg.Set Config.only_nospecs,
-        None,
-        " only analyze procedures which were analyzed before but have no specs"
-        ;
-        "-only_skips",
-        Arg.Set Config.only_skips,
-        None,
-        " only analyze procedures dependent on previous skips which now have a .specs file"
         ;
         "-seconds_per_iteration",
         Arg.Set_int seconds_per_iteration,

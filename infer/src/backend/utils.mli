@@ -367,3 +367,11 @@ val analyzers: analyzer list
 val string_of_analyzer: analyzer -> string
 
 val analyzer_of_string: string -> analyzer
+
+(** Call f x with Config.footprint set to false.
+    Restore the initial value of footprint also in case of exception. *)
+val run_with_footprint_false : ('a -> 'b) -> 'a -> 'b
+
+(** Call f x with Config.abs_val set to zero.
+    Restore the initial value also in case of exception. *)
+val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b

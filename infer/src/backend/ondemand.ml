@@ -87,6 +87,8 @@ let procedure_should_be_analyzed curr_pdesc proc_name =
 
 type global_state =
   {
+    abs_val : int;
+    abstraction_rules : Abs.rules;
     current_source : DB.source_file;
     delayed_prints : L.print_action list;
     footprint_mode : bool;
@@ -97,6 +99,8 @@ type global_state =
 
 let save_global_state () =
   {
+    abs_val = !Config.abs_val;
+    abstraction_rules = Abs.get_current_rules ();
     current_source = !DB.current_source;
     delayed_prints = L.get_delayed_prints ();
     footprint_mode = !Config.footprint;
@@ -106,6 +110,8 @@ let save_global_state () =
   }
 
 let restore_global_state st =
+  Config.abs_val := st.abs_val;
+  Abs.set_current_rules st.abstraction_rules;
   DB.current_source := st.current_source;
   L.set_delayed_prints st.delayed_prints;
   Config.footprint := st.footprint_mode;

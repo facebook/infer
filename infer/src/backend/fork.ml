@@ -348,25 +348,6 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
       (proc_is_done call_graph) (Cg.get_nonrecursive_dependents call_graph pname) &&
     (Specs.get_timestamp (Specs.get_summary_unsafe "main_algorithm" pname) = 0
      || not (proc_is_up_to_date call_graph pname)) in
-  let filter_out_ondemand pname =
-    let to_analyze =
-      if !Config.ondemand_enabled then
-        try
-          let cfg = Exe_env.get_cfg exe_env pname in
-          match Cfg.Procdesc.find_from_name cfg pname with
-          | Some pdesc ->
-              let reactive_changed =
-                if !Config.reactive_mode
-                then (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.changed
-                else true in
-              reactive_changed && (* in reactive mode, only analyze changed procedures *)
-              Ondemand.procedure_should_be_analyzed pdesc pname
-          | None ->
-              true
-        with Not_found -> true
-      else
-        true in
-    not to_analyze in
   let process_one_proc ((pname, _) as elem) =
     DB.current_source :=
       (Specs.get_summary_unsafe "main_algorithm" pname)
@@ -379,15 +360,14 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
           (Specs.pp_summary pe_text whole_seconds)
           (Specs.get_summary_unsafe "main_algorithm" pname)
       end;
-    if filter_out call_graph pname ||
-       filter_out_ondemand pname
+    if filter_out exe_env pname
     then
       post_process_procs exe_env [pname]
     else
       begin
         max_timeout := max (Specs.get_iterations pname) !max_timeout;
         Specs.update_dependency_map pname;
-        process_result exe_env elem (analyze_proc exe_env elem);
+        process_result exe_env elem (analyze_proc exe_env pname);
       end in
   while not (WeightedPnameSet.is_empty !G.wpnames_todo) do
     begin
@@ -413,7 +393,7 @@ type analyze_proc = Exe_env.t -> Procname.t -> Specs.summary
 
 type process_result = Exe_env.t -> WeightedPname.t -> Specs.summary -> unit
 
-type filter_out = Cg.t -> Procname.t -> bool
+type filter_out = Exe_env.t -> Procname.t -> bool
 
 (** Execute [analyze_proc] respecting dependencies between procedures,
     and apply [process_result] to the result of the analysis.
@@ -452,5 +432,4 @@ let interprocedural_algorithm
         let exn' = Exceptions.Internal_error (Localise.verbatim_desc err_str) in
         Reporting.log_error pname exn';
         post_process_procs exe_env [pname] in
-  main_algorithm
-    exe_env (fun exe_env (n, _) -> analyze_proc exe_env n) filter_out process_result
+  main_algorithm exe_env analyze_proc filter_out process_result

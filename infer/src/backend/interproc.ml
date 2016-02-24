@@ -158,25 +158,25 @@ let path_set_checkout_todo (wl : Worklist.t) (node: Cfg.node) : Paths.PathSet.t 
 (* =============== END of the edge_set object =============== *)
 
 let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
-  if !Config.footprint then begin
-    Config.footprint := false;
-    let pset' = Abs.lifted_abstract pname tenv pset in
-    Config.footprint := true;
-    pset'
-  end
-  else Abs.lifted_abstract pname tenv pset
+  if !Config.footprint
+  then
+    run_with_footprint_false
+      (Abs.lifted_abstract pname tenv)
+      pset
+  else
+    Abs.lifted_abstract pname tenv pset
 
 let collect_do_abstract_post pname tenv (pathset : Paths.PathSet.t) : Paths.PathSet.t =
   let abs_option p =
     if Prover.check_inconsistency p then None
     else Some (Abs.abstract pname tenv p) in
-  if !Config.footprint then begin
-    Config.footprint := false;
-    let pathset' = Paths.PathSet.map_option abs_option pathset in
-    Config.footprint := true;
-    pathset'
-  end
-  else Paths.PathSet.map_option abs_option pathset
+  if !Config.footprint
+  then
+    run_with_footprint_false
+      (Paths.PathSet.map_option abs_option)
+      pathset
+  else
+    Paths.PathSet.map_option abs_option pathset
 
 let do_join_pre plist =
   Dom.proplist_collapse_pre plist
@@ -196,12 +196,13 @@ let do_meet_pre pset =
 (** Find the preconditions in the current spec table, apply meet then join, and return the joined preconditions *)
 let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list =
   let collect_do_abstract_one tenv prop =
-    if !Config.footprint then begin
-      Config.footprint := false;
-      let prop' = Abs.abstract_no_symop tenv prop in
-      Config.footprint := true;
-      prop' end
-    else Abs.abstract_no_symop tenv prop in
+    if !Config.footprint
+    then
+      run_with_footprint_false
+        (Abs.abstract_no_symop tenv)
+        prop
+    else
+      Abs.abstract_no_symop tenv prop in
   let pres = IList.map (fun spec -> Specs.Jprop.to_prop spec.Specs.pre) (Specs.get_specs proc_name) in
   let pset = Propset.from_proplist pres in
   let pset' =
@@ -969,12 +970,13 @@ let set_current_language proc_desc =
   let language = (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.language in
   Config.curr_language := language
 
-(** reset counters before analysing a procedure *)
-let reset_global_counters proc_desc =
+(** reset global values before analysing a procedure *)
+let reset_global_values proc_desc =
+  Config.reset_abs_val ();
   Ident.NameGenerator.reset ();
   SymOp.reset_total ();
   reset_prop_metrics ();
-  Abs.abs_rules_reset ();
+  Abs.reset_current_rules ();
   set_current_language proc_desc
 
 (* Collect all pairs of the kind (precondition, runtime exception) from a summary *)
@@ -1112,7 +1114,7 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
   let proc_desc = match Cfg.Procdesc.find_from_name cfg proc_name with
     | Some proc_desc -> proc_desc
     | None -> assert false in
-  reset_global_counters proc_desc;
+  reset_global_values proc_desc;
   let go, get_results = perform_analysis_phase cfg tenv proc_name proc_desc in
   let res = Fork.Timeout.exe_timeout (Specs.get_iterations proc_name) go () in
   let specs, phase = get_results () in
@@ -1179,52 +1181,25 @@ let process_result (exe_env: Exe_env.t) (proc_name, calls) (_summ: Specs.summary
   let procs_done = Fork.procs_become_done call_graph proc_name in
   Fork.post_process_procs exe_env procs_done
 
-(** Return true if the analysis of [proc_name] should be
-    skipped. Called by the parent process before attempting to analyze a
-    proc. *)
-let filter_out (call_graph: Cg.t) (proc_name: Procname.t) : bool =
-  if !Config.trace_anal then L.err "===filter_out@.";
-  let slice_out = (* filter out if slicing is active and [proc_name] not in slice *)
-    (!Config.slice_fun <> "") &&
-    (Procname.compare (Procname.from_string_c_fun !Config.slice_fun) proc_name != 0) &&
-    (Cg.node_defined call_graph proc_name) &&
-    not (Cg.calls_recursively call_graph (Procname.from_string_c_fun !Config.slice_fun) proc_name) in
-  slice_out
-
-let check_skipped_procs procs_and_defined_children =
-  let skipped_procs = ref Procname.Set.empty in
-  let proc_check_skips (pname, _) =
-    let process_skip () =
-      let call_stats =
-        (Specs.get_summary_unsafe "check_skipped_procs" pname).Specs.stats.Specs.call_stats in
-      let do_tr_elem pn = function
-        | Specs.CallStats.CR_skip, _ ->
-            skipped_procs := Procname.Set.add pn !skipped_procs
-        | _ -> () in
-      let do_call (pn, _) (tr: Specs.CallStats.trace) = IList.iter (do_tr_elem pn) tr in
-      Specs.CallStats.iter do_call call_stats in
-    if Specs.summary_exists pname then process_skip () in
-  IList.iter proc_check_skips procs_and_defined_children;
-  let skipped_procs_with_summary =
-    Procname.Set.filter Specs.summary_exists !skipped_procs in
-  skipped_procs_with_summary
-
-(** create a function to filter procedures which were skips but now have a .specs file *)
-let filter_skipped_procs cg procs_and_defined_children =
-  let skipped_procs_with_summary = check_skipped_procs procs_and_defined_children in
-  let filter (pname, _) =
-    let calls_recurs pn =
-      let r = try Cg.calls_recursively cg pname pn with Not_found -> false in
-      L.err "calls recursively %a %a: %b@." Procname.pp pname Procname.pp pn r;
-      r in
-    Procname.Set.exists calls_recurs skipped_procs_with_summary in
-  filter
-
-(** create a function to filter procedures which were analyzed before but had no specs *)
-let filter_nospecs (pname, _) =
-  if Specs.summary_exists pname
-  then Specs.get_specs pname = []
-  else false
+let filter_out_ondemand exe_env proc_name =
+  let to_analyze =
+    if !Config.ondemand_enabled then
+      try
+        let cfg = Exe_env.get_cfg exe_env proc_name in
+        match Cfg.Procdesc.find_from_name cfg proc_name with
+        | Some pdesc ->
+            let reactive_changed =
+              if !Config.reactive_mode
+              then (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.changed
+              else true in
+            reactive_changed && (* in reactive mode, only analyze changed procedures *)
+            Ondemand.procedure_should_be_analyzed pdesc proc_name
+        | None ->
+            true
+      with Not_found -> true
+    else
+      true in
+  not to_analyze
 
 (** Perform the analysis of an exe_env *)
 let do_analysis exe_env =
@@ -1248,22 +1223,15 @@ let do_analysis exe_env =
     let attributes =
       { (Cfg.Procdesc.get_attributes pdesc) with
         ProcAttributes.err_log = static_err_log; } in
+    Specs.init_summary (dep, nodes, proc_flags, calls, None, attributes) in
 
-    Specs.init_summary
-      (dep, nodes, proc_flags,
-       calls, None, attributes) in
-  let filter =
-    if !Config.only_skips then (filter_skipped_procs cg procs_and_defined_children)
-    else if !Config.only_nospecs then filter_nospecs
-    else (fun _ -> true) in
   IList.iter
     (fun ((pn, _) as x) ->
        let should_init () =
          Config.analyze_models ||
          not !Config.ondemand_enabled ||
          Specs.get_summary pn = None in
-       if filter x &&
-          should_init ()
+       if should_init ()
        then init_proc x)
     procs_and_defined_children;
 
@@ -1287,7 +1255,7 @@ let do_analysis exe_env =
     { Ondemand.analyze_ondemand; get_proc_desc; } in
 
   Ondemand.set_callbacks callbacks;
-  Fork.interprocedural_algorithm exe_env analyze_proc process_result filter_out;
+  Fork.interprocedural_algorithm exe_env analyze_proc process_result filter_out_ondemand;
   Ondemand.unset_callbacks ()
 
 

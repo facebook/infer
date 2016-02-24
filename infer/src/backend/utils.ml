@@ -757,11 +757,6 @@ let reserved_arg_desc =
     Some "n",
     "set right margin for the pretty printing functions"
     ;
-    "-slice_fun",
-    Arg.Set_string Config.slice_fun,
-    None,
-    "analyze only functions recursively called by function given as argument"
-    ;
     "-spec_abs_level",
     Arg.Set_int Config.spec_abs_level,
     Some "n",
@@ -981,3 +976,23 @@ let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
     let name_for_crc = name ^ key in
     string_crc_hex32 name_for_crc in
   name_up_to_cutoff ^ "." ^ crc_str
+
+let run_with_val reference value f x =
+  let saved = !reference in
+  let restore () =
+    reference := saved in
+  try
+    reference := value;
+    let res = f x in
+    restore ();
+    res
+  with
+  | exn ->
+      restore ();
+      raise exn
+
+let run_with_footprint_false f x =
+  run_with_val Config.footprint false f x
+
+let run_with_abs_val_equal_zero f x =
+  run_with_val Config.abs_val 0 f x

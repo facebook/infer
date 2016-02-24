@@ -2023,32 +2023,3 @@ let propset_meet_generate_pre pset =
     let plist_old = Propset.to_proplist pset in
     let plist_new = Propset.to_proplist pset_new in
     plist_new @ plist_old
-
-(*
-let epset_add e e' set =
-  match (Sil.exp_compare e e') with
-  | i when i <= 0 -> EPset.add (e, e') set
-  | _ -> EPset.add (e', e) set
-
-let run_without_absval f e1 e2 =
-  let old_abs_val = !Config.abs_val in
-  let new_abs_val = if old_abs_val = 0 then 0 else 1 in
-  try
-    begin
-      Config.abs_val := new_abs_val;
-      let e = f e1 e2 in
-      Config.abs_val := old_abs_val;
-      e
-    end
-  with exn ->
-    begin
-      Config.abs_val := old_abs_val;
-      raise exn
-    end
-
-let exp_partial_join_without_absval e1 e2 =
-  run_without_absval exp_partial_join e1 e2
-
-let exp_partial_meet_without_absval e1 e2 =
-  run_without_absval exp_partial_meet e1 e2
-*)

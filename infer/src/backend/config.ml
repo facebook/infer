@@ -134,7 +134,12 @@ let abs_struct = ref 1
     1 = evaluate all expressions abstractly.
     2 = 1 + abstract constant integer values during join.
 *)
-let abs_val = ref 2
+let abs_val_default = 2
+let abs_val =
+  ref abs_val_default
+
+let reset_abs_val () =
+  abs_val := abs_val_default
 
 (** if true, completely ignore the possibility that errors can be caused by unknown procedures
  * during the symbolic execution phase *)
@@ -244,17 +249,8 @@ let nelseg = ref false
 (** Flag to activate nonstop mode: the analysis continues after in encounters errors *)
 let nonstop = ref false
 
-(** Flag for the on-the-fly predicate discovery *)
-let on_the_fly = ref true
-
 (** if true, skip the re-execution phase *)
 let only_footprint = ref false
-
-(** flag: only analyze procedures which were analyzed before but have no specs *)
-let only_nospecs = ref false
-
-(** flag: only analyze procedures dependent on previous skips which now have a .specs file *)
-let only_skips = ref false
 
 (** if true, user simple pretty printing *)
 let pp_simple = ref true
@@ -267,9 +263,6 @@ let print_using_diff = ref true
 
 (** path of the project results directory *)
 let results_dir = ref default_results_dir
-
-(** If not "", only consider functions recursively called by function [!slice_fun] *)
-let slice_fun = ref ""
 
 (** Flag to tune the level of abstracting the postconditions of specs discovered
     by the footprint analysis.

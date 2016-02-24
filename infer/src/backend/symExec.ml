@@ -501,16 +501,6 @@ let check_already_dereferenced pname cond prop =
       Reporting.log_warning pname ~pre: pre_opt exn
   | None -> ()
 
-let run_with_abs_val_eq_zero f =
-  let abs_val_old = !Config.abs_val in
-  Config.abs_val := 0;
-  let res = try f () with
-    | exn ->
-        Config.abs_val := abs_val_old;
-        raise exn in
-  Config.abs_val := abs_val_old;
-  res
-
 (** Check whether symbolic execution de-allocated a stack variable or a constant string, raising an exception in that case *)
 let check_deallocate_static_memory prop_after =
   let check_deallocated_attribute = function
@@ -1204,14 +1194,12 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
   | Sil.Declare_locals (ptl, _) ->
       let sigma_locals =
         let add_None (x, y) = (x, Sil.Sizeof (y, Sil.Subtype.exact), None) in
-        let fp_mode = !Config.footprint in
-        Config.footprint := false; (* no footprint vars for locals *)
-        let sigma_locals =
+        let sigma_locals () =
           IList.map
             (Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_initial)
             (IList.map add_None ptl) in
-        Config.footprint := fp_mode;
-        sigma_locals in
+        run_with_footprint_false (* no footprint vars for locals *)
+          sigma_locals () in
       let sigma' = Prop.get_sigma _prop @ sigma_locals in
       let prop' = Prop.normalize (Prop.replace_sigma sigma' _prop) in
       ret_old_path [prop']
@@ -1598,17 +1586,25 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
       let curr_node = State.get_node () in
       match Cfg.Node.get_kind curr_node with
       | Cfg.Node.Prune_node _ when not (node_has_abstraction curr_node) ->
-          (* don't check for leaks in prune nodes, unless there is abstraction anyway, but force them into either branch *)
+          (* don't check for leaks in prune nodes, unless there is abstraction anyway,*)
+          (* but force them into either branch *)
           p'
       | _ ->
           check_deallocate_static_memory (Abs.abstract_junk ~original_prop: p pname tenv p') in
     L.d_str "Instruction "; Sil.d_instr instr; L.d_ln ();
     let prop', fav_normal = pre_process_prop prop in
-    let res_list = run_with_abs_val_eq_zero (* no exp abstraction during sym exe *)
-        (fun () ->
-           sym_exec cfg tenv pdesc instr prop' path) in
-    let res_list_nojunk = IList.map (fun (p, path) -> (post_process_result fav_normal p path, path)) res_list in
-    let results = IList.map (fun (p, path) -> (Prop.prop_rename_primed_footprint_vars p, path)) res_list_nojunk in
+    let res_list =
+      run_with_abs_val_equal_zero (* no exp abstraction during sym exe *)
+        (fun () -> sym_exec cfg tenv pdesc instr prop' path)
+        () in
+    let res_list_nojunk =
+      IList.map
+        (fun (p, path) -> (post_process_result fav_normal p path, path))
+        res_list in
+    let results =
+      IList.map
+        (fun (p, path) -> (Prop.prop_rename_primed_footprint_vars p, path))
+        res_list_nojunk in
     L.d_strln "Instruction Returns";
     Propgraph.d_proplist prop (IList.map fst results); L.d_ln ();
     State.mark_instr_ok ();
@@ -1616,8 +1612,11 @@ and sym_exec_wrapper handle_exn cfg tenv pdesc instr ((prop: Prop.normal Prop.t)
   with exn when Exceptions.handle_exception exn && !Config.footprint ->
     handle_exn exn; (* calls State.mark_instr_fail *)
     if !Config.nonstop
-    then (Paths.PathSet.from_renamed_list [(prop, path)]) (* in nonstop mode treat the instruction as skip *)
-    else Paths.PathSet.empty
+    then
+      (* in nonstop mode treat the instruction as skip *)
+      (Paths.PathSet.from_renamed_list [(prop, path)])
+    else
+      Paths.PathSet.empty
 
 (** {2 Lifted Abstract Transfer Functions} *)
 
