@@ -2199,6 +2199,25 @@ module ModelBuiltins = struct
         [(Prop.add_or_replace_exp_attribute prop n_lexp att, path)]
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
+  (** Set the attibute of the value as resource/locked*)
+  let execute___set_locked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+    : Builtin.ret_typ =
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
+    (* ra_kind = Racquire in following indicates locked *)
+    let ra = { Sil.ra_kind = Sil.Racquire; Sil.ra_res = Sil.Rlock; Sil.ra_pname = pname; Sil.ra_loc = loc; Sil.ra_vpath = None } in
+    execute___set_attr (Sil.Aresource ra)
+      cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+
+  (** Set the attibute of the value as resource/unlocked*)
+  let execute___set_unlocked_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+    : Builtin.ret_typ =
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
+    (* ra_kind = Rrelease in following indicates unlocked *)
+    let ra = { Sil.ra_kind = Sil.Rrelease; Sil.ra_res = Sil.Rlock; Sil.ra_pname = pname; Sil.ra_loc = loc; Sil.ra_vpath = None } in
+    execute___set_attr (Sil.Aresource ra)
+      cfg pdesc instr tenv _prop path ret_ids args callee_name loc
+
+
   (** Set the attibute of the value as tainted *)
   let execute___set_taint_attribute cfg pdesc instr tenv _prop path ret_ids args callee_name loc
     : Builtin.ret_typ =
@@ -2607,10 +2626,10 @@ module ModelBuiltins = struct
       "__set_untaint_attribute" (execute___set_attr Sil.Auntaint)
   let __set_locked_attribute = Builtin.register
       (* set the attribute of the parameter as locked *)
-      "__set_locked_attribute" (execute___set_attr Sil.Alocked)
+      "__set_locked_attribute" execute___set_locked_attribute 
   let __set_unlocked_attribute = Builtin.register
       (* set the attribute of the parameter as unlocked *)
-      "__set_unlocked_attribute" (execute___set_attr Sil.Aunlocked)
+      "__set_unlocked_attribute" execute___set_unlocked_attribute 
   let _ = Builtin.register
       "__throw" execute_skip
   let __tuple_get_nth = Builtin.register
