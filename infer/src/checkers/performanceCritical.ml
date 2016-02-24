@@ -125,13 +125,23 @@ let method_calls_expensive tenv pname =
   || calls_expensive ()
 
 
-let method_allocates pname =
+let is_allocator tenv pname =
+  let is_exception () =
+    let class_name =
+      Typename.Java.from_string (Procname.java_get_class pname) in
+    AndroidFramework.is_exception tenv class_name in
+  Procname.is_constructor pname
+  && not (SymExec.function_is_builtin pname)
+  && not (is_exception ())
+
+
+let method_allocates tenv pname =
   let allocates () =
     match lookup_call_summary pname with
     | Some { Specs.allocations } ->
         allocations <> []
     | None -> false in
-  Procname.is_constructor pname
+  is_allocator tenv pname
   || allocates ()
 
 
@@ -154,7 +164,7 @@ let collect_calls tenv caller_pdesc checked_pnames call_summary (pname, _) =
         else
           call_summary.Specs.expensive_calls in
       let updated_allocations =
-        if method_allocates pname then
+        if method_allocates tenv pname then
           (pname, call_loc) :: call_summary.Specs.allocations
         else
           call_summary.Specs.allocations in
@@ -178,6 +188,7 @@ let update_summary call_summary pname =
 
 let string_of_pname =
   Procname.to_simplified_string ~withclass:true
+
 
 let update_trace trace loc =
   if Location.equal loc Location.dummy then trace

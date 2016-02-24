@@ -373,15 +373,26 @@ let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
 let get_lifecycles = android_lifecycles
 
 
-(** Checks if the exception is an uncheched exception *)
-let is_runtime_exception tenv exn =
+let is_subclass tenv cn1 cn2 =
   let lookup = Sil.tenv_lookup tenv in
+  match lookup cn1, lookup cn2 with
+  | Some typ1, Some typ2 ->
+      is_subtype typ1 typ2 tenv
+  | _ -> false
+
+
+(** Checks if the exception is an uncheched exception *)
+let is_runtime_exception tenv typename =
   let runtime_exception_typename =
     Typename.Java.from_string "java.lang.RuntimeException" in
-  match lookup runtime_exception_typename, lookup exn with
-  | Some runtime_exception_type, Some exn_type ->
-      is_subtype exn_type runtime_exception_type tenv
-  | _ -> false
+  is_subclass tenv typename runtime_exception_typename
+
+
+(** Checks if the class name is a Java exception *)
+let is_exception tenv typename =
+  let exception_typename =
+    Typename.Java.from_string "java.lang.Exception" in
+  is_subclass tenv typename exception_typename
 
 
 let non_stub_android_jar () =

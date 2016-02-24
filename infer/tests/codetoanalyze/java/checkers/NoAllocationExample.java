@@ -40,4 +40,14 @@ public class NoAllocationExample {
     new Object();
   }
 
+  @NoAllocation
+  void throwsException() {
+    throw new RuntimeException();
+  }
+
+  @NoAllocation
+  void creatingExceptionIsFine() {
+    throwsException();
+  }
+
 }
