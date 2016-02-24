@@ -1259,6 +1259,7 @@ let do_analysis exe_env =
   IList.iter
     (fun ((pn, _) as x) ->
        let should_init () =
+         Config.analyze_models ||
          not !Config.ondemand_enabled ||
          Specs.get_summary pn = None in
        if filter x &&
