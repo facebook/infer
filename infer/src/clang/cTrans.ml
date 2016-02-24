@@ -485,9 +485,10 @@ struct
     let ids = pre_trans_result.ids @ deref_ids in
     { pre_trans_result with ids; instrs; exps = [(exp, field_typ)] }
 
-  let method_deref_trans trans_state pre_trans_result decl_ref =
+  let method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind =
     let open CContext in
     let context = trans_state.context in
+    let sil_loc = CLocation.get_sil_location stmt_info context in
     let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
     let method_name = Ast_utils.get_unqualified_name name_info in
     let class_name = Ast_utils.get_class_name_from_member name_info in
@@ -500,21 +501,27 @@ struct
     let is_cpp_virtual = match ms_opt with
       | Some ms -> CMethod_signature.ms_is_cpp_virtual ms
       | _ -> false in
-    let extra_exps = if is_instance_method then (
+    let extra_exps, extra_ids, extra_instrs = if is_instance_method then (
         (* pre_trans_result.exps may contain expr for 'this' parameter:*)
         (* if it comes from CXXMemberCallExpr it will be there *)
         (* if it comes from CXXOperatorCallExpr it won't be there and will be added later *)
         (* In case of CXXMemberCallExpr it's possible that type of 'this' parameter *)
         (* won't have a pointer - if that happens add a pointer to type of the object *)
         match pre_trans_result.exps with
-        | [] -> []
-        | [(_, Sil.Tptr _ )] -> pre_trans_result.exps
-        | [(sil, typ)] -> [(sil, Sil.Tptr (typ, Sil.Pk_reference))]
+        | [] -> [], [], []
+        (* We need to add a dereference before a method call to find null dereferences when *)
+        (* calling a method with null *)
+        | [(exp, Sil.Tptr (typ, _) )] when decl_kind <> `CXXConstructor ->
+            let typ = CTypes.expand_structured_type context.tenv typ in
+            let extra_ids, extra_instrs, _ = CTrans_utils.dereference_var_sil (exp, typ) sil_loc in
+            pre_trans_result.exps, extra_ids, extra_instrs
+        | [(_, Sil.Tptr _ )] -> pre_trans_result.exps, [], []
+        | [(sil, typ)] -> [(sil, Sil.Tptr (typ, Sil.Pk_reference))], [], []
         | _ -> assert false
       )
       else
         (* don't add 'this' expression for static methods *)
-        [] in
+        [], [], [] in
     (* consider using context.CContext.is_callee_expression to deal with pointers to methods? *)
     (* unlike field access, for method calls there is no need to expand class type *)
     let pname = CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
@@ -522,9 +529,12 @@ struct
     let method_exp = (Sil.Const (Sil.Cfun pname), method_typ) in
     Cfg.set_procname_priority context.CContext.cfg pname;
     { pre_trans_result with
-      exps = [method_exp] @ extra_exps; is_cpp_call_virtual = is_cpp_virtual }
+      is_cpp_call_virtual = is_cpp_virtual;
+      exps = [method_exp] @ extra_exps;
+      instrs = pre_trans_result.instrs @ extra_instrs;
+      ids = pre_trans_result.ids @ extra_ids }
 
-  let destructor_deref_trans trans_state pvar_trans_result class_type_ptr =
+  let destructor_deref_trans trans_state pvar_trans_result class_type_ptr si =
     let open Clang_ast_t in
     let destruct_decl_ref_opt = match Ast_utils.get_decl_from_typ_ptr class_type_ptr with
       | Some CXXRecordDecl (_, _, _ , _, _, _, _, cxx_record_info)
@@ -532,7 +542,7 @@ struct
           cxx_record_info.xrdi_destructor
       | _ -> None in
     match destruct_decl_ref_opt with
-    | Some decl_ref -> method_deref_trans trans_state pvar_trans_result decl_ref
+    | Some decl_ref -> method_deref_trans trans_state pvar_trans_result decl_ref si `CXXDestructor
     | None -> empty_res_trans
 
   let this_expr_trans trans_state sil_loc class_type_ptr =
@@ -571,8 +581,8 @@ struct
     | `Function -> function_deref_trans trans_state decl_ref
     | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
     | `Field | `ObjCIvar -> field_deref_trans trans_state stmt_info pre_trans_result decl_ref
-    | `CXXMethod | `CXXConstructor | `CXXConversion ->
-        method_deref_trans trans_state pre_trans_result decl_ref
+    | `CXXMethod | `CXXConversion | `CXXConstructor ->
+        method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind
     | _ ->
         let print_error decl_kind =
           Printing.log_stats
@@ -902,7 +912,7 @@ struct
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-    let res_trans_callee = destructor_deref_trans trans_state this_res_trans class_type_ptr in
+    let res_trans_callee = destructor_deref_trans trans_state this_res_trans class_type_ptr si in
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     if res_trans_callee.exps <> [] then
       cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si Sil.Tvoid

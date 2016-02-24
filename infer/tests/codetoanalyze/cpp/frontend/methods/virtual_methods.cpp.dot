@@ -1,9 +1,9 @@
 digraph iCFG {
-53 [label="53:  DeclStmt \n   n$1=_fun___new(sizeof(class Triangle ):unsigned long ) [line 71]\n  *&trgl:class Triangle *=n$1 [line 71]\n  REMOVE_TEMPS(n$1); [line 71]\n " shape="box"]
+53 [label="53:  DeclStmt \n   n$2=_fun___new(sizeof(class Triangle ):unsigned long ) [line 71]\n  *&trgl:class Triangle *=n$2 [line 71]\n  REMOVE_TEMPS(n$2); [line 71]\n " shape="box"]
 	
 
 	 53 -> 52 ;
-52 [label="52:  Call delete \n   n$0=*&trgl:class Polygon * [line 72]\n  _fun_Polygon_~Polygon(n$0:class Polygon *) virtual [line 72]\n  _fun___delete(n$0:class Polygon *) [line 72]\n  REMOVE_TEMPS(n$0); [line 72]\n  NULLIFY(&trgl,false); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
+52 [label="52:  Call delete \n   n$0=*&trgl:class Polygon * [line 72]\n  n$1=*n$0:class Polygon  [line 72]\n  _fun_Polygon_~Polygon(n$0:class Polygon *) virtual [line 72]\n  _fun___delete(n$0:class Polygon *) [line 72]\n  REMOVE_TEMPS(n$0,n$1); [line 72]\n  NULLIFY(&trgl,false); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
 	
 
 	 52 -> 51 ;
@@ -26,11 +26,11 @@ digraph iCFG {
 	
 
 	 47 -> 46 ;
-46 [label="46:  Call _fun_Polygon_set_values \n   n$2=*&ppoly2:class Polygon * [line 63]\n  _fun_Polygon_set_values(n$2:class Polygon *,4:int ,5:int ) [line 63]\n  REMOVE_TEMPS(n$2); [line 63]\n " shape="box"]
+46 [label="46:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon * [line 63]\n  n$4=*n$3:class Polygon  [line 63]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 63]\n  REMOVE_TEMPS(n$3,n$4); [line 63]\n " shape="box"]
 	
 
 	 46 -> 45 ;
-45 [label="45:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 64]\n  n$1=_fun_Polygon_area(n$0:class Polygon *) [line 64]\n  *&return:int =(1 / n$1) [line 64]\n  REMOVE_TEMPS(n$0,n$1); [line 64]\n  NULLIFY(&ppoly2,false); [line 64]\n  NULLIFY(&poly,false); [line 64]\n  NULLIFY(&trgl,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+45 [label="45:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 64]\n  n$1=*n$0:class Polygon  [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) [line 64]\n  *&return:int =(1 / n$2) [line 64]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 64]\n  NULLIFY(&ppoly2,false); [line 64]\n  NULLIFY(&poly,false); [line 64]\n  NULLIFY(&trgl,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
 	
 
 	 45 -> 44 ;
@@ -49,7 +49,7 @@ digraph iCFG {
 	
 
 	 41 -> 40 ;
-40 [label="40:  Return Stmt \n   n$0=*&ppoly3:class Polygon * [line 56]\n  n$1=_fun_Polygon_area(n$0:class Polygon *) virtual [line 56]\n  *&return:int =(1 / n$1) [line 56]\n  REMOVE_TEMPS(n$0,n$1); [line 56]\n  NULLIFY(&ppoly3,false); [line 56]\n  NULLIFY(&poly,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
+40 [label="40:  Return Stmt \n   n$0=*&ppoly3:class Polygon * [line 56]\n  n$1=*n$0:class Polygon  [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 56]\n  *&return:int =(1 / n$2) [line 56]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 56]\n  NULLIFY(&ppoly3,false); [line 56]\n  NULLIFY(&poly,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
 	
 
 	 40 -> 39 ;
@@ -72,11 +72,11 @@ digraph iCFG {
 	
 
 	 35 -> 34 ;
-34 [label="34:  Call _fun_Polygon_set_values \n   n$2=*&ppoly2:class Polygon * [line 49]\n  _fun_Polygon_set_values(n$2:class Polygon *,4:int ,5:int ) [line 49]\n  REMOVE_TEMPS(n$2); [line 49]\n " shape="box"]
+34 [label="34:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon * [line 49]\n  n$4=*n$3:class Polygon  [line 49]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 49]\n  REMOVE_TEMPS(n$3,n$4); [line 49]\n " shape="box"]
 	
 
 	 34 -> 33 ;
-33 [label="33:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 50]\n  n$1=_fun_Polygon_area(n$0:class Polygon *) virtual [line 50]\n  *&return:int =(1 / (n$1 - 10)) [line 50]\n  REMOVE_TEMPS(n$0,n$1); [line 50]\n  NULLIFY(&ppoly2,false); [line 50]\n  NULLIFY(&poly,false); [line 50]\n  NULLIFY(&trgl,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
+33 [label="33:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 50]\n  n$1=*n$0:class Polygon  [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 50]\n  *&return:int =(1 / (n$2 - 10)) [line 50]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 50]\n  NULLIFY(&ppoly2,false); [line 50]\n  NULLIFY(&poly,false); [line 50]\n  NULLIFY(&trgl,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
 	
 
 	 33 -> 32 ;
@@ -95,11 +95,11 @@ digraph iCFG {
 	
 
 	 29 -> 28 ;
-28 [label="28:  Call _fun_Polygon_set_values \n   n$2=*&ppoly1:class Polygon * [line 41]\n  _fun_Polygon_set_values(n$2:class Polygon *,4:int ,5:int ) [line 41]\n  REMOVE_TEMPS(n$2); [line 41]\n " shape="box"]
+28 [label="28:  Call _fun_Polygon_set_values \n   n$3=*&ppoly1:class Polygon * [line 41]\n  n$4=*n$3:class Polygon  [line 41]\n  _fun_Polygon_set_values(n$3:class Polygon *,4:int ,5:int ) [line 41]\n  REMOVE_TEMPS(n$3,n$4); [line 41]\n " shape="box"]
 	
 
 	 28 -> 27 ;
-27 [label="27:  Return Stmt \n   n$0=*&ppoly1:class Polygon * [line 42]\n  n$1=_fun_Polygon_area(n$0:class Polygon *) virtual [line 42]\n  *&return:int =(1 / (n$1 - 20)) [line 42]\n  REMOVE_TEMPS(n$0,n$1); [line 42]\n  NULLIFY(&ppoly1,false); [line 42]\n  NULLIFY(&rect,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+27 [label="27:  Return Stmt \n   n$0=*&ppoly1:class Polygon * [line 42]\n  n$1=*n$0:class Polygon  [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 42]\n  *&return:int =(1 / (n$2 - 20)) [line 42]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 42]\n  NULLIFY(&ppoly1,false); [line 42]\n  NULLIFY(&rect,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 27 -> 26 ;

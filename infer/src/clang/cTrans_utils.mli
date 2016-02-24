@@ -109,6 +109,8 @@ val cast_trans :
   CContext.t -> (Sil.exp * Sil.typ) list -> Location.t -> Procname.t option -> Sil.typ ->
   (Ident.t * Sil.instr * Sil.exp) option
 
+val dereference_var_sil : Sil.exp * Sil.typ -> Location.t -> Ident.t list * Sil.instr list * Sil.exp
+
 (** Module for creating cfg nodes and other utility functions related to them.  *)
 module Nodes :
 sig

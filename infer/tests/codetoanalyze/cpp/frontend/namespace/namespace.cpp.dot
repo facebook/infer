@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 23 -> 22 ;
-22 [label="22:  Call _fun_bar::Rectangle_set_values \n   _fun_bar::Rectangle_set_values(&rect1:class bar::Rectangle &,3:int ,4:int ) [line 49]\n " shape="box"]
+22 [label="22:  Call _fun_bar::Rectangle_set_values \n   n$4=*&rect1:class bar::Rectangle  [line 49]\n  _fun_bar::Rectangle_set_values(&rect1:class bar::Rectangle &,3:int ,4:int ) [line 49]\n  REMOVE_TEMPS(n$4); [line 49]\n " shape="box"]
 	
 
 	 22 -> 21 ;
@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  Call _fun_foo::Rectangle_set_values \n   _fun_foo::Rectangle_set_values(&rect2:class foo::Rectangle &,7:int ,10:int ) [line 52]\n " shape="box"]
+20 [label="20:  Call _fun_foo::Rectangle_set_values \n   n$3=*&rect2:class foo::Rectangle  [line 52]\n  _fun_foo::Rectangle_set_values(&rect2:class foo::Rectangle &,7:int ,10:int ) [line 52]\n  REMOVE_TEMPS(n$3); [line 52]\n " shape="box"]
 	
 
 	 20 -> 19 ;

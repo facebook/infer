@@ -111,7 +111,7 @@ digraph iCFG {
 	
 
 	 20 -> 23 ;
-19 [label="19:  Return Stmt \n   n$0=*&x:class X3 & [line 30]\n  n$1=_fun_X3_get(n$0:class X3 &) [line 30]\n  *&return:int =n$1 [line 30]\n  REMOVE_TEMPS(n$0,n$1); [line 30]\n  NULLIFY(&x,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+19 [label="19:  Return Stmt \n   n$0=*&x:class X3 & [line 30]\n  n$1=*n$0:class X3  [line 30]\n  n$2=_fun_X3_get(n$0:class X3 &) [line 30]\n  *&return:int =n$2 [line 30]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 30]\n  NULLIFY(&x,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -122,7 +122,7 @@ digraph iCFG {
 	
 
 	 17 -> 19 ;
-16 [label="16:  Return Stmt \n   n$0=*&x:class X1 & [line 24]\n  n$1=_fun_X1_getVal(n$0:class X1 &) [line 24]\n  *&return:int =n$1 [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&x,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+16 [label="16:  Return Stmt \n   n$0=*&x:class X1 & [line 24]\n  n$1=*n$0:class X1  [line 24]\n  n$2=_fun_X1_getVal(n$0:class X1 &) [line 24]\n  *&return:int =n$2 [line 24]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 24]\n  NULLIFY(&x,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 16 -> 15 ;

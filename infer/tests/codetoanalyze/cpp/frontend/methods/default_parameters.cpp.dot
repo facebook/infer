@@ -1,13 +1,13 @@
 digraph iCFG {
-8 [label="8:  Call _fun_A_fun_default \n   n$4=*&a_ptr:class A * [line 18]\n  n$5=_fun_A_fun_default(n$4:class A *,1:int ,2:int ,3:int ) [line 18]\n  REMOVE_TEMPS(n$4,n$5); [line 18]\n " shape="box"]
+8 [label="8:  Call _fun_A_fun_default \n   n$6=*&a_ptr:class A * [line 18]\n  n$7=*n$6:class A  [line 18]\n  n$8=_fun_A_fun_default(n$6:class A *,1:int ,2:int ,3:int ) [line 18]\n  REMOVE_TEMPS(n$6,n$7,n$8); [line 18]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  Call _fun_A_fun_default \n   n$2=*&a_ptr:class A * [line 19]\n  n$3=_fun_A_fun_default(n$2:class A *,1:int ,2:int ,20:int ) [line 19]\n  REMOVE_TEMPS(n$2,n$3); [line 19]\n " shape="box"]
+7 [label="7:  Call _fun_A_fun_default \n   n$3=*&a_ptr:class A * [line 19]\n  n$4=*n$3:class A  [line 19]\n  n$5=_fun_A_fun_default(n$3:class A *,1:int ,2:int ,20:int ) [line 19]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 19]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  Call _fun_A_fun_default \n   n$0=*&a_ptr:class A * [line 20]\n  n$1=_fun_A_fun_default(n$0:class A *,1:int ,10:int ,20:int ) [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&a_ptr,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+6 [label="6:  Call _fun_A_fun_default \n   n$0=*&a_ptr:class A * [line 20]\n  n$1=*n$0:class A  [line 20]\n  n$2=_fun_A_fun_default(n$0:class A *,1:int ,10:int ,20:int ) [line 20]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 20]\n  NULLIFY(&a_ptr,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 6 -> 5 ;

@@ -76,18 +76,18 @@ digraph iCFG {
 	
 
 	 23 -> 25 ;
-22 [label="22:  DeclStmt \n   _fun_X_X(&SIL_materialize_temp__n$1:class X *,0:int ,1:int ) [line 27]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$1:class X &) [line 27]\n " shape="box"]
+22 [label="22:  DeclStmt \n   _fun_X_X(&SIL_materialize_temp__n$2:class X *,0:int ,1:int ) [line 27]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$2:class X &) [line 27]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   n$0=_fun_X_div(&x:class X &) [line 28]\n  *&return:int =n$0 [line 28]\n  REMOVE_TEMPS(n$0); [line 28]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 28]\n  NULLIFY(&x,false); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+21 [label="21:  Return Stmt \n   n$0=*&x:class X  [line 28]\n  n$1=_fun_X_div(&x:class X &) [line 28]\n  *&return:int =n$1 [line 28]\n  REMOVE_TEMPS(n$0,n$1); [line 28]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 28]\n  NULLIFY(&x,false); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
 	
 
 	 21 -> 20 ;
 20 [label="20: Exit assign_temp_div0 \n  " color=yellow style=filled]
 	
 
-19 [label="19: Start assign_temp_div0\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$1:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$1); [line 26]\n " color=yellow style=filled]
+19 [label="19: Start assign_temp_div0\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$2:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$2); [line 26]\n " color=yellow style=filled]
 	
 
 	 19 -> 22 ;

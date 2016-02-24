@@ -54,9 +54,10 @@ int div0_getter_templ() {
 }
 
 int div0_getter_templ2() {
-  X2 x2;
+  X2 x2_1;
+  X2 x2_2;
   GetterTempl<X2> g;
-  return 1 / g.get(x2, x2);
+  return 1 / g.get(x2_1, x2_2);
 }
 
 int div1_getter_templ() {
@@ -67,7 +68,8 @@ int div1_getter_templ() {
 }
 
 int div1_getter_templ2() {
-  X1 x1;
+  X1 x1_1;
+  X1 x1_2;
   GetterTempl<X1> g;
-  return 1 / g.get(x1, x1);
+  return 1 / g.get(x1_1, x1_2);
 }

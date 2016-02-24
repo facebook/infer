@@ -1,9 +1,9 @@
 digraph iCFG {
-41 [label="41:  BinaryOperatorStmt: Assign \n   n$2=*&z:class Z * [line 65]\n  *n$2.f:int =0 [line 65]\n  REMOVE_TEMPS(n$2); [line 65]\n " shape="box"]
+41 [label="41:  BinaryOperatorStmt: Assign \n   n$3=*&z:class Z * [line 65]\n  *n$3.f:int =0 [line 65]\n  REMOVE_TEMPS(n$3); [line 65]\n " shape="box"]
 	
 
 	 41 -> 40 ;
-40 [label="40:  Return Stmt \n   n$0=*&z:class Z * [line 66]\n  n$1=_fun_Z_getF(n$0:class Z *) [line 66]\n  *&return:int =(1 / n$1) [line 66]\n  REMOVE_TEMPS(n$0,n$1); [line 66]\n  NULLIFY(&z,false); [line 66]\n  APPLY_ABSTRACTION; [line 66]\n " shape="box"]
+40 [label="40:  Return Stmt \n   n$0=*&z:class Z * [line 66]\n  n$1=*n$0:class Z  [line 66]\n  n$2=_fun_Z_getF(n$0:class Z *) [line 66]\n  *&return:int =(1 / n$2) [line 66]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 66]\n  NULLIFY(&z,false); [line 66]\n  APPLY_ABSTRACTION; [line 66]\n " shape="box"]
 	
 
 	 40 -> 39 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 36 -> 35 ;
-35 [label="35:  Return Stmt \n   n$0=_fun_Z_getF(&z:class Z &) [line 58]\n  *&return:int =(1 / n$0) [line 58]\n  REMOVE_TEMPS(n$0); [line 58]\n  NULLIFY(&z,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
+35 [label="35:  Return Stmt \n   n$0=*&z:class Z  [line 58]\n  n$1=_fun_Z_getF(&z:class Z &) [line 58]\n  *&return:int =(1 / n$1) [line 58]\n  REMOVE_TEMPS(n$0,n$1); [line 58]\n  NULLIFY(&z,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
 	
 
 	 35 -> 34 ;
@@ -50,11 +50,11 @@ digraph iCFG {
 	
 
 	 29 -> 24 ;
-28 [label="28: Prune (false branch) \n   n$1=*&x.y:class Y * [line 49]\n  PRUNE((n$1 == 0), false); [line 49]\n  REMOVE_TEMPS(n$1); [line 49]\n " shape="invhouse"]
+28 [label="28: Prune (false branch) \n   n$2=*&x.y:class Y * [line 49]\n  PRUNE((n$2 == 0), false); [line 49]\n  REMOVE_TEMPS(n$2); [line 49]\n " shape="invhouse"]
 	
 
 	 28 -> 26 ;
-27 [label="27: Prune (true branch) \n   n$1=*&x.y:class Y * [line 49]\n  PRUNE((n$1 != 0), true); [line 49]\n  REMOVE_TEMPS(n$1); [line 49]\n " shape="invhouse"]
+27 [label="27: Prune (true branch) \n   n$2=*&x.y:class Y * [line 49]\n  PRUNE((n$2 != 0), true); [line 49]\n  REMOVE_TEMPS(n$2); [line 49]\n " shape="invhouse"]
 	
 
 	 27 -> 29 ;
@@ -62,7 +62,7 @@ digraph iCFG {
 	
 
 	 26 -> 25 ;
-25 [label="25:  Return Stmt \n   n$0=_fun_X_getF(&x:class X &) [line 52]\n  *&return:int =(1 / n$0) [line 52]\n  REMOVE_TEMPS(n$0); [line 52]\n  NULLIFY(&x,false); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
+25 [label="25:  Return Stmt \n   n$0=*&x:class X  [line 52]\n  n$1=_fun_X_getF(&x:class X &) [line 52]\n  *&return:int =(1 / n$1) [line 52]\n  REMOVE_TEMPS(n$0,n$1); [line 52]\n  NULLIFY(&x,false); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
 	
 
 	 25 -> 24 ;
@@ -73,11 +73,11 @@ digraph iCFG {
 	
 
 	 23 -> 32 ;
-22 [label="22:  BinaryOperatorStmt: Assign \n   n$2=*&x:class X * [line 41]\n  *n$2.f:int =0 [line 41]\n  REMOVE_TEMPS(n$2); [line 41]\n " shape="box"]
+22 [label="22:  BinaryOperatorStmt: Assign \n   n$3=*&x:class X * [line 41]\n  *n$3.f:int =0 [line 41]\n  REMOVE_TEMPS(n$3); [line 41]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   n$0=*&x:class X * [line 42]\n  n$1=_fun_X_getF(n$0:class X *) [line 42]\n  *&return:int =(1 / n$1) [line 42]\n  REMOVE_TEMPS(n$0,n$1); [line 42]\n  NULLIFY(&x,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+21 [label="21:  Return Stmt \n   n$0=*&x:class X * [line 42]\n  n$1=*n$0:class X  [line 42]\n  n$2=_fun_X_getF(n$0:class X *) [line 42]\n  *&return:int =(1 / n$2) [line 42]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 42]\n  NULLIFY(&x,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -96,7 +96,7 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  Return Stmt \n   n$0=_fun_X_getF(&x:class X &) [line 37]\n  *&return:int =(1 / n$0) [line 37]\n  REMOVE_TEMPS(n$0); [line 37]\n  NULLIFY(&x,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+16 [label="16:  Return Stmt \n   n$0=*&x:class X  [line 37]\n  n$1=_fun_X_getF(&x:class X &) [line 37]\n  *&return:int =(1 / n$1) [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&x,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
 	 16 -> 15 ;

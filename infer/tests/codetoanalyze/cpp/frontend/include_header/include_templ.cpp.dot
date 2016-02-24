@@ -25,7 +25,7 @@ digraph iCFG {
 	
 
 	 30 -> 29 ;
-29 [label="29:  Call _fun_B<A>_div0 \n   n$0=_fun_B<A>_div0(&b:class B<A> &) [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&b,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+29 [label="29:  Call _fun_B<A>_div0 \n   n$0=*&b:class B<A>  [line 20]\n  n$1=_fun_B<A>_div0(&b:class B<A> &) [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&b,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 29 -> 28 ;
@@ -40,7 +40,7 @@ digraph iCFG {
 	
 
 	 26 -> 25 ;
-25 [label="25:  Call _fun_B<int>_div0 \n   n$0=_fun_B<int>_div0(&b:class B<int> &) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&b,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+25 [label="25:  Call _fun_B<int>_div0 \n   n$0=*&b:class B<int>  [line 15]\n  n$1=_fun_B<int>_div0(&b:class B<int> &) [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  NULLIFY(&b,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 25 -> 24 ;
