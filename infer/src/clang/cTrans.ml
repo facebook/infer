@@ -1773,7 +1773,6 @@ struct
 
   and objCIvarRefExpr_trans trans_state stmt_info stmt_list obj_c_ivar_ref_expr_info =
     let decl_ref = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref in
-    CFrontend_errors.check_for_ivar_errors trans_state.context stmt_info obj_c_ivar_ref_expr_info;
     do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref
 
   and memberExpr_trans trans_state stmt_info stmt_list member_expr_info =
@@ -1941,7 +1940,6 @@ struct
         Cg.add_edge context.cg procname block_pname;
         let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
         let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
-        CFrontend_errors.check_for_captured_vars context stmt_info captured_vars;
         let ids_instrs = IList.map assign_captured_var captured_vars in
         let ids, instrs = IList.split ids_instrs in
         let block_data = (context, type_ptr, block_pname, captured_vars) in
@@ -2054,6 +2052,8 @@ struct
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
   and instruction trans_state instr =
+    (* Run the frontend checkers on this instruction *)
+    CFrontend_errors.run_frontend_checkers_on_stmt trans_state instr;
     let stmt_kind = Clang_ast_proj.get_stmt_kind_string instr in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple instr in
     let stmt_pointer = stmt_info.Clang_ast_t.si_pointer in

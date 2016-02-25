@@ -10,14 +10,9 @@
 
 (* Module for warnings detected at translation time by the frontend *)
 
+(* Run frontend checkers on a statement *)
+val run_frontend_checkers_on_stmt : CTrans_utils.trans_state -> Clang_ast_t.stmt -> unit
 
-(* Checks for warnings on properties of class c *)
-val check_for_property_errors : Cfg.cfg -> Cg.t -> Sil.tenv -> string -> Clang_ast_t.decl list ->
-  unit
+(* Run frontend checkers on a declaration *)
+val run_frontend_checkers_on_decl : Sil.tenv -> Cg.t -> Cfg.cfg -> Clang_ast_t.decl -> unit
 
-(* Call checkers on a specific access of an ivar *)
-val check_for_ivar_errors :
-  CContext.t -> Clang_ast_t.stmt_info -> Clang_ast_t.obj_c_ivar_ref_expr_info -> unit
-
-val check_for_captured_vars : CContext.t -> Clang_ast_t.stmt_info ->
-  (Sil.pvar * Sil.typ) list -> unit

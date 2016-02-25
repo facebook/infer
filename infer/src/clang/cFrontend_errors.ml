@@ -7,27 +7,32 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-(* Module for warnings detected at translation time by the frontend
- * To specify a checker define the following:
- * - condition: a boolean condition when the warning should be flagged
- * - description: a string describing the warning
- * - loc: the location where is occurs
-*)
-
 open CFrontend_utils
-open General_utils
 
 (* List of checkers on properties *)
-let property_checkers_list = [CFrontend_checkers.checker_strong_delegate_warning]
+let property_checkers_list = [CFrontend_checkers.strong_delegate_warning]
+
+(* Invocation of checker belonging to property_checker_list *)
+let checkers_for_property decl_info pname_info pdi checker =
+  checker decl_info pname_info pdi
 
 (* List of checkers on ivar access *)
-let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access]
+let ivar_access_checker_list =  [CFrontend_checkers.direct_atomic_property_access_warning]
+
+(* Invocation of checker belonging to ivar_access_checker_list *)
+let checkers_for_ivar context stmt_info dr_name checker =
+  checker context stmt_info dr_name
 
 (* List of checkers for captured vars in objc blocks *)
-let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_block]
+let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_block_warning]
+
+(* Invocation of checker belonging to captured_vars_checker_list *)
+let checkers_for_capture_vars stmt_info captured_vars checker =
+  checker stmt_info captured_vars
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_warning pdesc warn_desc =
+  let open CFrontend_checkers in
   let loc = warn_desc.loc in
   let errlog = Cfg.Procdesc.get_err_log pdesc in
   let err_desc =
@@ -36,16 +41,25 @@ let log_frontend_warning pdesc warn_desc =
       (warn_desc.name, err_desc, __POS__) in
   Reporting.log_error_from_errlog errlog exn ~loc:(Some loc)
 
+(* General invocation function for checkers
+   Takes
+   1. f a particular way to apply a checker, it's a partial function
+   2. context
+   3. the list of checkers to be applied *)
+let invoke_set_of_checkers f pdesc checkers  =
+  IList.iter (fun checker ->
+      match f checker with
+      | Some warning_desc -> log_frontend_warning pdesc warning_desc
+      | None -> ()) checkers
+
 (* Call all checkers on properties of class c *)
 let rec check_for_property_errors cfg cg tenv class_name decl_list =
   let open Clang_ast_t in
   let do_one_property decl_info pname_info pdi =
-    IList.iter (fun checker ->
-        let (condition, warning_desc) = checker decl_info pname_info pdi in
-        if condition then
-          let proc_desc =
-            CMethod_trans.get_method_for_frontend_checks cfg cg tenv class_name decl_info in
-          log_frontend_warning proc_desc warning_desc) property_checkers_list in
+    let pdesc =
+      CMethod_trans.get_method_for_frontend_checks cfg cg tenv class_name decl_info in
+    let call_property_checker = checkers_for_property decl_info pname_info pdi in
+    invoke_set_of_checkers call_property_checker pdesc property_checkers_list in
   match decl_list with
   | [] -> ()
   | ObjCPropertyDecl (decl_info, pname_info, pdi) :: rest ->
@@ -54,18 +68,40 @@ let rec check_for_property_errors cfg cg tenv class_name decl_list =
   | _ :: rest  ->
       check_for_property_errors cfg cg tenv class_name rest
 
-(* Call checkers on a specific access of an ivar *)
-let check_for_ivar_errors context stmt_info obj_c_ivar_ref_expr_info =
-  let dr_name = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref.Clang_ast_t.dr_name in
-  let pdesc = CContext.get_procdesc context in
-  IList.iter (fun checker ->
-      match checker context stmt_info dr_name with
-      | true, Some warning_desc -> log_frontend_warning pdesc warning_desc
-      | _, _ -> ()) ivar_access_checker_list
+let get_categories_decls decl_ref =
+  match Ast_utils.get_decl_opt_with_decl_ref decl_ref with
+  | Some ObjCCategoryDecl (_, _, decls, _, _)
+  | Some ObjCInterfaceDecl (_, _, decls, _, _) -> decls
+  | _ -> []
 
-let check_for_captured_vars context stmt_info captured_vars =
+let run_frontend_checkers_on_stmt trans_state instr =
+  let open Clang_ast_t in
+  let context = trans_state.CTrans_utils.context in
   let pdesc = CContext.get_procdesc context in
-  IList.iter (fun checker ->
-      match checker stmt_info captured_vars with
-      | true, Some warning_desc -> log_frontend_warning pdesc warning_desc
-      | _, _ -> ()) captured_vars_checker_list
+  match instr with
+  | ObjCIvarRefExpr(stmt_info, _, _, obj_c_ivar_ref_expr_info) ->
+      let dr_name = obj_c_ivar_ref_expr_info.Clang_ast_t.ovrei_decl_ref.Clang_ast_t.dr_name in
+      let call_checker_for_ivar = checkers_for_ivar context stmt_info dr_name in
+      invoke_set_of_checkers call_checker_for_ivar pdesc ivar_access_checker_list
+  | BlockExpr(stmt_info, _ , _, Clang_ast_t.BlockDecl (_, block_decl_info)) ->
+      let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
+      let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
+      let call_captured_vars_checker =  checkers_for_capture_vars stmt_info captured_vars in
+      invoke_set_of_checkers call_captured_vars_checker pdesc captured_vars_checker_list
+  | _ -> ()
+
+let run_frontend_checkers_on_decl tenv cg cfg dec =
+  let open Clang_ast_t in
+  match dec with
+  | ObjCCategoryImplDecl(_, name_info, decl_list, _, ocidi) ->
+      let name = Ast_utils.get_qualified_name name_info in
+      let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
+      let decls = (get_categories_decls ocidi.Clang_ast_t.ocidi_category_decl) @ decl_list in
+      let name = CContext.get_curr_class_name curr_class in
+      check_for_property_errors cfg cg tenv name decls
+  | ObjCImplementationDecl(_, _, decl_list, _, idi) ->
+      let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
+      let name = CContext.get_curr_class_name curr_class in
+      let decls = (get_categories_decls idi.Clang_ast_t.oidi_class_interface) @ decl_list in
+      check_for_property_errors cfg cg tenv name decls
+  | _ -> ()

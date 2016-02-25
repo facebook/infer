@@ -396,13 +396,6 @@ let get_fresh_block_index () =
 module General_utils =
 struct
 
-  type warning_desc = {
-    name : string;
-    description : string;
-    suggestion : string; (* an optional suggestion or correction *)
-    loc : Location.t;
-  }
-
   type var_info = Clang_ast_t.decl_info * Clang_ast_t.type_ptr * Clang_ast_t.var_decl_info * bool
 
   let rec swap_elements_list l =

@@ -21,6 +21,8 @@ open CGen_trans
 (* Translate one global declaration *)
 let rec translate_one_declaration tenv cg cfg parent_dec dec =
   let open Clang_ast_t in
+  (* Run the frontend checkers on this declaration *)
+  CFrontend_errors.run_frontend_checkers_on_decl tenv cg cfg dec;
   (* each procedure has different scope: start names from id 0 *)
   Ident.NameGenerator.reset ();
   let info = Clang_ast_proj.get_decl_tuple dec in
@@ -56,24 +58,12 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
          let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
          ignore (ObjcCategory_decl.category_impl_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list;
-         (match Ast_utils.get_decl_opt_with_decl_ref ocidi.Clang_ast_t.ocidi_category_decl with
-          | Some ObjCCategoryDecl(_, _, cat_decl_list, _, _) ->
-              let name = CContext.get_curr_class_name curr_class in
-              let decls = cat_decl_list @ decl_list in
-              CFrontend_errors.check_for_property_errors cfg cg tenv name decls
-          | _ -> ())
 
      | ObjCImplementationDecl(_, _, decl_list, _, idi) ->
          let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
          let type_ptr_to_sil_type = CTypes_decl.type_ptr_to_sil_type in
          ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
          CMethod_declImpl.process_methods tenv cg cfg curr_class decl_list;
-         (match Ast_utils.get_decl_opt_with_decl_ref idi.Clang_ast_t.oidi_class_interface with
-          | Some ObjCInterfaceDecl(_, _, cl_decl_list, _, _) ->
-              let name = CContext.get_curr_class_name curr_class in
-              let decls = cl_decl_list @ decl_list in
-              CFrontend_errors.check_for_property_errors cfg cg tenv name decls
-          | _ -> ())
 
      | CXXMethodDecl (decl_info, _, _, _, _)
      | CXXConstructorDecl (decl_info, _, _, _, _)
