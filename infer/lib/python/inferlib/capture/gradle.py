@@ -77,7 +77,7 @@ class GradleCapture:
                     sources.write("\n".join(java_files))
                     sources.flush()
                     java_args.append("@" + sources.name)
-                    capture = util.create_infer_command(self.args,
+                    capture = jwlib.create_infer_command(self.args,
                                                          java_args)
                     calls.append(capture)
         return calls

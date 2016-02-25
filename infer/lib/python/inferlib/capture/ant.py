@@ -8,7 +8,8 @@
 import os
 import logging
 
-import util
+from . import util
+from inferlib import jwlib
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -59,7 +60,7 @@ class AntCapture:
                 if argument_start_pattern in line:
                     collect = True
                     if javac_arguments != []:
-                        capture = util.create_infer_command(self.args,
+                        capture = jwlib.create_infer_command(self.args,
                                                              javac_arguments)
                         calls.append(capture)
                         javac_arguments = []
@@ -70,7 +71,7 @@ class AntCapture:
                         arg = self.remove_quotes(content)
                         javac_arguments.append(arg)
         if javac_arguments != []:
-            capture = util.create_infer_command(self.args, javac_arguments)
+            capture = jwlib.create_infer_command(self.args, javac_arguments)
             calls.append(capture)
             javac_arguments = []
         return calls

@@ -20,18 +20,6 @@ import traceback
 
 from inferlib import analyze, utils
 
-
-def create_infer_command(args, javac_arguments):
-    infer_args = ['-o', args.infer_out]
-    if args.debug:
-        infer_args.append('--debug')
-    infer_args += ['--analyzer', 'capture']
-
-    return analyze.Infer(analyze.infer_parser.parse_args(infer_args),
-                         'javac',
-                         analyze.get_javac_args(['javac'] + javac_arguments))
-
-
 def get_build_output(build_cmd):
     #  TODO make it return generator to be able to handle large builds
     proc = subprocess.Popen(build_cmd, stdout=subprocess.PIPE)

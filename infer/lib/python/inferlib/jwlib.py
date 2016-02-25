@@ -11,6 +11,7 @@ import os
 import tempfile
 import subprocess
 
+import analyze
 import config
 import utils
 
@@ -27,6 +28,33 @@ parser.add_argument('-bootclasspath', type=str)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
 parser.add_argument('-processorpath', type=str, dest='processorpath')
 parser.add_argument('-processor', type=str, dest='processor')
+
+
+def _get_javac_args(args):
+    try:
+        javac_pos = args.index('javac')
+    except ValueError:
+        return None
+    javac_args = args[javac_pos + 1:]
+    if len(javac_args) == 0:
+        return None
+    else:
+        # replace any -g:.* flag with -g to preserve debugging symbols
+        args = map(lambda arg: '-g' if '-g:' in arg else arg, javac_args)
+        # skip -Werror
+        args = filter(lambda arg: arg != '-Werror', args)
+        return args
+
+
+def create_infer_command(args, javac_arguments):
+    infer_args = ['-o', args.infer_out]
+    if args.debug:
+        infer_args.append('--debug')
+    infer_args += ['--analyzer', 'capture']
+
+    return analyze.Infer(analyze.infer_parser.parse_args(infer_args),
+                         'javac',
+                         _get_javac_args(['javac'] + javac_arguments))
 
 
 class AnnotationProcessorNotFound(Exception):

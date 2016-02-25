@@ -161,33 +161,6 @@ infer_group.add_argument('--specs-dir-list-file',
                               'in <file> to the list of directories to be '
                               'searched for spec files')
 
-def detect_javac(args):
-    for index, arg in enumerate(args):
-        if arg == 'javac':
-            return index
-
-
-def get_infer_args(args):
-    index = detect_javac(args)
-    if index is None:
-        cmd_args = args
-    else:
-        cmd_args = args[:index]
-    return infer_parser.parse_args(cmd_args)
-
-
-def get_javac_args(args):
-    javac_args = args[detect_javac(args) + 1:]
-    if len(javac_args) == 0:
-        return None
-    else:
-        # replace any -g:.* flag with -g to preserve debugging symbols
-        args = map(lambda arg: '-g' if '-g:' in arg else arg, javac_args)
-        # skip -Werror
-        args = filter(lambda arg: arg != '-Werror', args)
-        return args
-
-
 def remove_infer_out(infer_out):
     # it is safe to ignore errors here because recreating the infer_out
     # directory will fail later
