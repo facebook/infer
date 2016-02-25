@@ -6,14 +6,18 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import argparse
 import os
-import tempfile
 import subprocess
+import tempfile
+import time
 
-import analyze
-import config
-import utils
+from . import analyze, config, utils
 
 # javac options
 parser = argparse.ArgumentParser()
@@ -52,9 +56,11 @@ def create_infer_command(args, javac_arguments):
         infer_args.append('--debug')
     infer_args += ['--analyzer', 'capture']
 
-    return analyze.Infer(analyze.infer_parser.parse_args(infer_args),
-                         'javac',
-                         _get_javac_args(['javac'] + javac_arguments))
+    return AnalyzerWithFrontendWrapper(
+        analyze.infer_parser.parse_args(infer_args),
+        'javac',
+        _get_javac_args(['javac'] + javac_arguments)
+    )
 
 
 class AnnotationProcessorNotFound(Exception):
@@ -66,9 +72,10 @@ class AnnotationProcessorNotFound(Exception):
         return repr(self.path + ' not found')
 
 
-class CompilerCall:
+class CompilerCall(object):
 
     def __init__(self, javac_cmd, arguments):
+        assert javac_cmd is not None and arguments is not None
         self.javac_cmd = javac_cmd
         self.original_arguments = arguments
         self.args, self.remaining_args = parser.parse_known_args(arguments)
@@ -156,3 +163,114 @@ class CompilerCall:
                     subprocess.check_call(failing_cmd)
 
         return os.EX_OK
+
+
+class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
+
+    def __init__(self, args, javac_cmd, javac_args):
+        self.javac = CompilerCall(javac_cmd, javac_args)
+        if not self.javac.args.version:
+            if javac_args is None:
+                help_exit('No javac command detected')
+
+        analyze.AnalyzerWrapper.__init__(self, args)
+
+        if self.args.buck:
+            self.args.infer_out = os.path.join(
+                self.javac.args.classes_out,
+                config.BUCK_INFER_OUT)
+            self.args.infer_out = os.path.abspath(self.args.infer_out)
+
+    def start(self):
+        if self.javac.args.version:
+            if self.args.buck:
+                key = self.args.analyzer
+                print(utils.infer_key(key), file=sys.stderr)
+            else:
+                return self.javac.run()
+        else:
+            start_time = time.time()
+
+            self._compile()
+            if self.args.analyzer == config.ANALYZER_COMPILE:
+                return os.EX_OK
+
+            self._run_infer_frontend()
+            self.timing['capture'] = utils.elapsed_time(start_time)
+            if self.args.analyzer == config.ANALYZER_CAPTURE:
+                return os.EX_OK
+
+            self.analyze_and_report()
+            self._close()
+            self.timing['total'] = utils.elapsed_time(start_time)
+            self.save_stats()
+
+            return self.stats
+
+    # create a classpath to pass to the frontend
+    def _create_frontend_classpath(self):
+        classes_out = '.'
+        if self.javac.args.classes_out is not None:
+            classes_out = self.javac.args.classes_out
+        classes_out = os.path.abspath(classes_out)
+        original_classpath = []
+        if self.javac.args.bootclasspath is not None:
+            original_classpath = self.javac.args.bootclasspath.split(':')
+        if self.javac.args.classpath is not None:
+            original_classpath += self.javac.args.classpath.split(':')
+        if len(original_classpath) > 0:
+            # add classes_out, unless it's already in the classpath
+            classpath = [os.path.abspath(p) for p in original_classpath]
+            if classes_out not in classpath:
+                classpath = [classes_out] + classpath
+                # remove models.jar; it's added by the frontend
+                models_jar = os.path.abspath(config.MODELS_JAR)
+                if models_jar in classpath:
+                    classpath.remove(models_jar)
+            return ':'.join(classpath)
+        return classes_out
+
+    def _run_infer_frontend(self):
+        infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]
+        infer_cmd += ['-classpath', self._create_frontend_classpath()]
+        infer_cmd += ['-class_source_map', self.javac.class_source_map]
+
+        if not self.args.absolute_paths:
+            infer_cmd += ['-project_root', self.args.project_root]
+
+        infer_cmd += [
+            '-results_dir', self.args.infer_out,
+            '-verbose_out', self.javac.verbose_out,
+        ]
+
+        if os.path.isfile(config.MODELS_JAR):
+            infer_cmd += ['-models', config.MODELS_JAR]
+
+        infer_cmd.append('-no-static_final')
+
+        if self.args.debug:
+            infer_cmd.append('-debug')
+        if self.args.analyzer == config.ANALYZER_TRACING:
+            infer_cmd.append('-tracing')
+        if self.args.android_harness:
+            infer_cmd.append('-harness')
+
+        if (self.args.android_harness or
+            self.args.analyzer in [config.ANALYZER_CHECKERS,
+                                   config.ANALYZER_ERADICATE]):
+                os.environ['INFER_CREATE_CALLEE_PDESC'] = 'Y'
+
+        return analyze.run_command(
+            infer_cmd,
+            self.args.debug,
+            self.javac.original_arguments,
+            'frontend',
+            self.args.analyzer
+        )
+
+    def _compile(self):
+        return self.javac.run()
+
+    def _close(self):
+        os.remove(self.javac.verbose_out)
+        os.remove(self.javac.annotations_out)

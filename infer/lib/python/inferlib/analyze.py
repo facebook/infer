@@ -23,7 +23,7 @@ import subprocess
 import sys
 import time
 
-from . import config, issues, jwlib, utils
+from . import config, issues, utils
 
 # Increase the limit of the CSV parser to sys.maxlimit
 csv.field_size_limit(sys.maxsize)
@@ -220,37 +220,26 @@ def run_command(cmd, debug_mode, javac_arguments, step, analyzer):
         raise e
 
 
-class Infer:
+class AnalyzerWrapper(object):
 
-    def __init__(self, args, javac_cmd=None, javac_args=[]):
+    javac = None
+
+    def __init__(self, args):
         self.args = args
         if self.args.analyzer not in config.ANALYZERS:
             help_exit('Unknown analysis mode \"{0}\"'
                       .format(self.args.analyzer))
 
-        self.javac = jwlib.CompilerCall(javac_cmd, javac_args)
+        if self.args.infer_out is None:
+            help_exit('Expect Infer results directory')
+        try:
+            os.mkdir(self.args.infer_out)
+        except OSError as e:
+            if not os.path.isdir(self.args.infer_out):
+                raise e
 
-        if not self.javac.args.version:
-            if javac_args is None:
-                help_exit('No javac command detected')
-
-            if self.args.infer_out is None:
-                help_exit('Expect Infer results directory')
-
-            if self.args.buck:
-                self.args.infer_out = os.path.join(
-                    self.javac.args.classes_out,
-                    config.BUCK_INFER_OUT)
-                self.args.infer_out = os.path.abspath(self.args.infer_out)
-
-            try:
-                os.mkdir(self.args.infer_out)
-            except OSError as e:
-                if not os.path.isdir(self.args.infer_out):
-                    raise e
-
-            self.stats = {'int': {}}
-            self.timing = {}
+        self.stats = {'int': {}}
+        self.timing = {}
 
         if self.args.specs_dirs:
             # Each dir passed in input is prepended by '-lib'.
@@ -270,78 +259,11 @@ class Infer:
                 ['-specs-dir-list-file',
                  os.path.abspath(self.args.specs_dir_list_file)]
 
-
     def clean_exit(self):
         if os.path.isdir(self.args.infer_out):
             utils.stdout('removing {}'.format(self.args.infer_out))
             shutil.rmtree(self.args.infer_out)
         exit(os.EX_OK)
-
-    # create a classpath to pass to the frontend
-    def create_frontend_classpath(self):
-        classes_out = '.'
-        if self.javac.args.classes_out is not None:
-            classes_out = self.javac.args.classes_out
-        classes_out = os.path.abspath(classes_out)
-        original_classpath = []
-        if self.javac.args.bootclasspath is not None:
-            original_classpath = self.javac.args.bootclasspath.split(':')
-        if self.javac.args.classpath is not None:
-            original_classpath += self.javac.args.classpath.split(':')
-        if len(original_classpath) > 0:
-            # add classes_out, unless it's already in the classpath
-            classpath = [os.path.abspath(p) for p in original_classpath]
-            if not classes_out in classpath:
-                classpath = [classes_out] + classpath
-                # remove models.jar; it's added by the frontend
-                models_jar = os.path.abspath(config.MODELS_JAR)
-                if models_jar in classpath:
-                    classpath.remove(models_jar)
-            return ':'.join(classpath)
-        return classes_out
-
-
-    def run_infer_frontend(self):
-
-        infer_cmd = [utils.get_cmd_in_bin_dir('InferJava')]
-        infer_cmd += ['-classpath', self.create_frontend_classpath()]
-        infer_cmd += ['-class_source_map', self.javac.class_source_map]
-
-        if not self.args.absolute_paths:
-            infer_cmd += ['-project_root', self.args.project_root]
-
-        infer_cmd += [
-            '-results_dir', self.args.infer_out,
-            '-verbose_out', self.javac.verbose_out,
-        ]
-
-        if os.path.isfile(config.MODELS_JAR):
-            infer_cmd += ['-models', config.MODELS_JAR]
-
-        infer_cmd.append('-no-static_final')
-
-        if self.args.debug:
-            infer_cmd.append('-debug')
-        if self.args.analyzer == config.ANALYZER_TRACING:
-            infer_cmd.append('-tracing')
-        if self.args.android_harness:
-            infer_cmd.append('-harness')
-
-        if (self.args.android_harness
-            or self.args.analyzer in [config.ANALYZER_CHECKERS,
-                                      config.ANALYZER_ERADICATE]):
-                os.environ['INFER_CREATE_CALLEE_PDESC'] = 'Y'
-
-        return run_command(
-            infer_cmd,
-            self.args.debug,
-            self.javac.original_arguments,
-            'frontend',
-            self.args.analyzer
-        )
-
-    def compile(self):
-        return self.javac.run()
 
     def analyze(self):
         logging.info('Starting analysis')
@@ -408,7 +330,7 @@ class Infer:
 
         exit_status = os.EX_OK
 
-        if self.args.buck:
+        if self.javac is not None and self.args.buck:
             infer_options += ['-project_root', os.getcwd(), '-java']
             if self.javac.args.classpath is not None:
                 for path in self.javac.args.classpath.split(os.pathsep):
@@ -423,13 +345,16 @@ class Infer:
 
         os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
 
+        javac_original_arguments = \
+            self.javac.original_arguments if self.javac is not None else []
+
         if self.args.multicore == 1:
             analysis_start_time = time.time()
             analyze_cmd = infer_analyze + infer_options
             exit_status = run_command(
                 analyze_cmd,
                 self.args.debug,
-                self.javac.original_arguments,
+                javac_original_arguments,
                 'analysis',
                 self.args.analyzer
             )
@@ -450,7 +375,7 @@ class Infer:
             makefile_status = run_command(
                 analyze_cmd,
                 self.args.debug,
-                self.javac.original_arguments,
+                javac_original_arguments,
                 'create_makefile',
                 self.args.analyzer
             )
@@ -465,7 +390,7 @@ class Infer:
                 make_status = run_command(
                     make_cmd,
                     self.args.debug,
-                    self.javac.original_arguments,
+                    javac_original_arguments,
                     'run_makefile',
                     self.args.analyzer
                 )
@@ -506,7 +431,7 @@ class Infer:
             '-procs', procs_report,
             '-analyzer', self.args.analyzer
         ]
-        if self.javac.annotations_out is not None:
+        if self.javac is not None and self.javac.annotations_out is not None:
             infer_print_options += [
                 '-local_config', self.javac.annotations_out]
         if self.args.debug or self.args.debug_exceptions:
@@ -551,11 +476,6 @@ class Infer:
         stats_path = os.path.join(self.args.infer_out, config.STATS_FILENAME)
         utils.dump_json_to_path(self.stats, stats_path)
 
-
-    def close(self):
-        os.remove(self.javac.verbose_out)
-        os.remove(self.javac.annotations_out)
-
     def analyze_and_report(self):
         should_print_errors = False
         if self.args.analyzer not in [config.ANALYZER_COMPILE,
@@ -578,29 +498,3 @@ class Infer:
         files_total = self.stats['int']['files']
         files_str = utils.get_plural('file', files_total)
         print('Analyzed {}'.format(files_str))
-
-    def start(self):
-        if self.javac.args.version:
-            if self.args.buck:
-                key = self.args.analyzer
-                utils.stderr(utils.infer_key(key), errors="strict")
-            else:
-                return self.javac.run()
-        else:
-            start_time = time.time()
-
-            self.compile()
-            if self.args.analyzer == config.ANALYZER_COMPILE:
-                return os.EX_OK
-
-            self.run_infer_frontend()
-            self.timing['capture'] = utils.elapsed_time(start_time)
-            if self.args.analyzer == config.ANALYZER_CAPTURE:
-                return os.EX_OK
-
-            self.analyze_and_report()
-            self.close()
-            self.timing['total'] = utils.elapsed_time(start_time)
-            self.save_stats()
-
-            return self.stats

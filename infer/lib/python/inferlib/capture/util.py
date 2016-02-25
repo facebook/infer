@@ -18,7 +18,7 @@ import logging
 import subprocess
 import traceback
 
-from inferlib import analyze, utils
+from inferlib import analyze, jwlib, utils
 
 def get_build_output(build_cmd):
     #  TODO make it return generator to be able to handle large builds

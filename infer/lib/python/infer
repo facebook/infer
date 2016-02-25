@@ -160,7 +160,7 @@ def main():
         if not os.path.exists(os.path.join(args.infer_out, 'captured')):
             print('There was nothing to analyze, exiting')
             exit(os.EX_USAGE)
-        analysis = analyze.Infer(args)
+        analysis = analyze.AnalyzerWrapper(args)
         analysis.analyze_and_report()
         analysis.save_stats()
 
