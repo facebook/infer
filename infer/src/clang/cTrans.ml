@@ -677,80 +677,77 @@ struct
     (* Note the order of res_trans_idx.ids @ res_trans_a.ids is important. *)
     (* We expect to use only res_trans_idx.ids in construction of other operation.                  *)
     (* res_trans_a.ids is passed to be Removed.*)
-    { root_nodes = root_nodes;
-      leaf_nodes = leaf_nodes;
+    { empty_res_trans with
+      root_nodes;
+      leaf_nodes;
       ids = res_trans_idx.ids @ res_trans_a.ids;
       instrs = res_trans_a.instrs @ res_trans_idx.instrs;
       exps = [(array_exp, typ)];
-      initd_exps = res_trans_idx.initd_exps @ res_trans_a.initd_exps;
-      is_cpp_call_virtual = false;}
+      initd_exps = res_trans_idx.initd_exps @ res_trans_a.initd_exps; }
 
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
-    let open Clang_ast_t in
-    let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let bok = (Clang_ast_j.string_of_binary_operator_kind binary_operator_info.Clang_ast_t.boi_kind) in
     Printing.log_out "  BinaryOperator '%s' " bok;
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let nname = "BinaryOperatorStmt: "^ (CArithmetic_trans.bin_op_to_string binary_operator_info) in
+    let trans_state' = { trans_state_pri with succ_nodes = [] } in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     (match stmt_list with
-     | [s1; ImplicitCastExpr (_, [CompoundLiteralExpr (_, stmts, expr_info)], _, _)] ->
-         let decl_ref  = get_decl_ref_info s1 in
-         let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
-         let trans_state' = { trans_state with var_exp_typ = Some (Sil.Lvar pvar, typ) } in
-         let res_trans_tmp =
-           initListExpr_trans trans_state' stmt_info expr_info stmts in
-         { res_trans_tmp with leaf_nodes =[]}
      | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
          let rhs_owning_method = CTrans_utils.is_owning_method s2 in
          (* NOTE: we create a node only if required. In that case this node *)
          (* becomes the successor of the nodes that may be created when     *)
          (* translating the operands.                                       *)
-         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-         let trans_state' = { trans_state_pri with succ_nodes = [] } in
          let res_trans_e1 = exec_with_self_exception instruction trans_state' s1 in
+         let (var_exp, var_exp_typ)  = extract_exp_from_list res_trans_e1.exps
+             "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
+         let trans_state'' = { trans_state' with var_exp_typ = Some (var_exp, var_exp_typ)  } in
          let res_trans_e2 =
            (* translation of s2 is done taking care of block special case *)
-           exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state' s2 stmt_info in
-         let (sil_e1, sil_typ1) = extract_exp_from_list res_trans_e1.exps "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
-         let (sil_e2, _) =
-           extract_exp_from_list res_trans_e2.exps
+           exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state''
+             s2 stmt_info in
+         let (sil_e2, _) = extract_exp_from_list res_trans_e2.exps
              "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
-         let exp_op, instr_bin, ids_bin =
-           CArithmetic_trans.binary_operation_instruction context binary_operator_info sil_e1 typ sil_e2 sil_loc rhs_owning_method in
+         let binop_res_trans, exp_to_parent =
+           if IList.exists (Sil.exp_equal var_exp) res_trans_e2.initd_exps then [], []
+           else
+             let exp_op, instr_bin, ids_bin = CArithmetic_trans.binary_operation_instruction
+                 context binary_operator_info var_exp typ sil_e2 sil_loc rhs_owning_method in
 
+             (* Create a node if the priority if free and there are instructions *)
+             let creating_node =
+               (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
+               (IList.length instr_bin >0) in
 
-         (* Create a node if the priority if free and there are instructions *)
-         let creating_node =
-           (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
-           (IList.length instr_bin >0) in
-
-         let extra_instrs, extra_ids, exp_to_parent =
-           if (is_binary_assign_op binary_operator_info)
-           (* assignment operator result is lvalue in CPP, rvalue in C, hence the difference *)
-           && (not (General_utils.is_cpp_translation !CFrontend_config.language))
-           && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
-             (* We are in this case when an assignment is inside        *)
-             (* another operator that creates a node. Eg. another       *)
-             (* assignment.  *)
-             (* As no node is created here ids are passed to the parent *)
-             let id = Ident.create_fresh Ident.knormal in
-             let res_instr = Sil.Letderef (id, sil_e1, sil_typ1, sil_loc) in
-             [res_instr], [id], Sil.Var id
-           ) else (
-             [], [], exp_op) in
-
-         let binop_res_trans = { empty_res_trans with
-                                 ids = ids_bin @ extra_ids;
-                                 instrs = instr_bin @ extra_instrs
-                               } in
-         let all_res_trans = [res_trans_e1; res_trans_e2; binop_res_trans] in
-         let nname = "BinaryOperatorStmt: "^ (CArithmetic_trans.bin_op_to_string binary_operator_info) in
-         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname stmt_info all_res_trans in
-         { res_trans_to_parent with exps = [(exp_to_parent, sil_typ1)] }
-     | _ -> assert false) (* Binary operator should have two operands*)
+             let extra_instrs, extra_ids, exp_to_parent =
+               if (is_binary_assign_op binary_operator_info)
+               (* assignment operator result is lvalue in CPP, rvalue in C, *)
+               (* hence the difference *)
+               && (not (General_utils.is_cpp_translation !CFrontend_config.language))
+               && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
+                 (* We are in this case when an assignment is inside        *)
+                 (* another operator that creates a node. Eg. another       *)
+                 (* assignment.  *)
+                 (* As no node is created here ids are passed to the parent *)
+                 let id = Ident.create_fresh Ident.knormal in
+                 let res_instr = Sil.Letderef (id, var_exp, var_exp_typ, sil_loc) in
+                 [res_instr], [id], Sil.Var id
+               ) else (
+                 [], [], exp_op) in
+             let binop_res_trans = { empty_res_trans with
+                                     ids = ids_bin @ extra_ids;
+                                     instrs = instr_bin @ extra_instrs
+                                   } in
+             [binop_res_trans], [(exp_to_parent, var_exp_typ)] in
+         let all_res_trans = [res_trans_e1; res_trans_e2] @ binop_res_trans in
+         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+             nname stmt_info all_res_trans in
+         { res_trans_to_parent with exps = exp_to_parent }
+     | _ -> assert false) (* Binary operator should have two operands *)
 
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
@@ -1095,13 +1092,13 @@ struct
            Sil.Letderef (id, Sil.Lvar pvar, var_typ, sil_loc);
            Sil.Nullify (pvar, sil_loc, true)
          ] in
-         { root_nodes = res_trans_cond.root_nodes;
+         { empty_res_trans with
+           root_nodes = res_trans_cond.root_nodes;
            leaf_nodes = [join_node];
            ids = [id];
            instrs = instrs;
            exps = [(Sil.Var id, typ)];
            initd_exps = []; (* TODO we should get exps from branches+cond *)
-           is_cpp_call_virtual = false;
          }
      | _ -> assert false)
 
@@ -1135,13 +1132,12 @@ struct
       let rnodes = if (IList.length res_trans_cond.root_nodes) = 0 then
           [prune_t; prune_f]
         else res_trans_cond.root_nodes in
-      { root_nodes = rnodes;
+      { empty_res_trans with
+        root_nodes = rnodes;
         leaf_nodes = [prune_t; prune_f];
         ids = res_trans_cond.ids;
         instrs = instrs';
         exps = e';
-        initd_exps = [];
-        is_cpp_call_virtual = false;
       } in
 
     (* This function translate (s1 binop s2) doing shortcircuit for '&&' and '||' *)
@@ -1169,13 +1165,12 @@ struct
       let (exp1, typ1) = extract_exp res_trans_s1.exps in
       let (exp2, _) = extract_exp res_trans_s2.exps in
       let e_cond = Sil.BinOp (binop, exp1, exp2) in
-      { root_nodes = root_nodes_to_parent;
+      { empty_res_trans with
+        root_nodes = root_nodes_to_parent;
         leaf_nodes = prune_to_short_c@res_trans_s2.leaf_nodes;
         ids = res_trans_s1.ids@res_trans_s2.ids;
         instrs = res_trans_s1.instrs@res_trans_s2.instrs;
         exps = [(e_cond, typ1)];
-        initd_exps = [];
-        is_cpp_call_virtual = false;
       } in
     Printing.log_out "Translating Condition for Conditional/Loop \n";
     let open Clang_ast_t in
@@ -1228,14 +1223,10 @@ struct
          (* Note: by contruction prune nodes are leafs_nodes_cond *)
          let ids_t = do_branch true stmt1 res_trans_cond.leaf_nodes in
          let ids_f = do_branch false stmt2 res_trans_cond.leaf_nodes in
-         {
+         { empty_res_trans with
            root_nodes = res_trans_decl.root_nodes;
            leaf_nodes = [join_node];
            ids = res_trans_decl.ids @ res_trans_cond.ids @ ids_t @ ids_f;
-           instrs = [];
-           exps = [];
-           initd_exps = [];
-           is_cpp_call_virtual = false;
          }
      | _ -> assert false)
 
@@ -1514,6 +1505,7 @@ struct
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
   and initListExpr_trans trans_state stmt_info expr_info stmts =
+    let open General_utils in
     let var_exp, _ = match trans_state.var_exp_typ with Some e -> e | _ -> assert false in
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
@@ -1529,7 +1521,6 @@ struct
           let is_method_call = CTrans_utils.is_method_call stmt in
           [(res_trans_stmt.ids, res_trans_stmt.instrs, exp, is_method_call, is_owning_method, typ)] in
     let rec collect_left_hand_exprs e typ tns =
-      let open General_utils in
       match typ with
       | Sil.Tvar tn ->
           (match Sil.tenv_lookup context.CContext.tenv tn with
@@ -1563,7 +1554,7 @@ struct
     let var_type = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let lh = IList.flatten (collect_left_hand_exprs var_exp var_type Utils.StringSet.empty) in
     let rh = IList.flatten (IList.map (collect_right_hand_exprs trans_state_pri) stmts ) in
-    if (IList.length rh != IList.length lh) then (
+    if IList.length rh != IList.length lh then (
       (* If the right hand expressions are not as many as the left hand expressions something's wrong *)
       { empty_res_trans with root_nodes = succ_nodes }
     ) else (
@@ -1582,34 +1573,28 @@ struct
              else
                ([], [Sil.Set (lh_exp, lh_t, rh_exp, sil_loc)], []))
           (General_utils.zip lh rh) in
-      let rh_instrs = IList.flatten ( IList.map (fun (_, instrs, _, _, _, _) -> instrs) rh) in
-      let assign_instrs = IList.flatten(IList.map (fun (_, instrs, _) -> instrs) big_zip) in
-      let assign_ids = IList.flatten(IList.map (fun (_, _, ids) -> ids) big_zip) in
-      let instructions = IList.append (rh_instrs) assign_instrs in
-      let rh_ids = IList.flatten ( IList.map (fun (ids, _, _, _, _, _) -> ids) rh) in
-      let ids = IList.append (rh_ids) assign_ids in
+      let rh_instrs = IList.flatten (IList.map (fun (_, instrs, _, _, _, _) -> instrs) rh) in
+      let assign_instrs = IList.flatten (IList.map (fun (_, instrs, _) -> instrs) big_zip) in
+      let assign_ids = IList.flatten (IList.map (fun (_, _, ids) -> ids) big_zip) in
+      let instructions = IList.append rh_instrs assign_instrs in
+      let rh_ids = IList.flatten (IList.map (fun (ids, _, _, _, _, _) -> ids) rh) in
+      let ids = IList.append rh_ids assign_ids in
       if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
         let node_kind = Cfg.Node.Stmt_node "InitListExp" in
-        let node = create_node node_kind (ids) (instructions) sil_loc context in
+        let node = create_node node_kind ids instructions sil_loc context in
         Cfg.Node.set_succs_exn node succ_nodes [];
-        {
+        { empty_res_trans with
           root_nodes = [node];
-          leaf_nodes = [];
-          ids = rh_ids;
-          instrs = instructions;
           exps = [(var_exp, var_type)];
           initd_exps = [var_exp];
-          is_cpp_call_virtual = false;
-        }
-      ) else {
-        root_nodes = [];
-        leaf_nodes = [];
-        ids = rh_ids;
-        instrs = instructions;
-        exps = [(var_exp, var_type)];
-        initd_exps = [var_exp];
-        is_cpp_call_virtual = false;
-      }
+          ids = rh_ids;
+          instrs = instructions; }
+      ) else
+        { empty_res_trans with
+          exps = [(var_exp, var_type)];
+          initd_exps = [var_exp];
+          ids = rh_ids;
+          instrs = instructions; }
     )
 
   and init_expr_trans trans_state var_exp_typ var_stmt_info init_expr_opt =
@@ -1682,12 +1667,12 @@ struct
         (* Var are defined when procdesc is created, here we only take care of initialization*)
         let res_trans_vd = collect_all_decl trans_state var_decls' next_nodes stmt_info in
         let res_trans_tmp = do_var_dec (di, n, tp, vdi) res_trans_vd.root_nodes in
-        { root_nodes = res_trans_tmp.root_nodes; leaf_nodes = [];
+        { empty_res_trans with
+          root_nodes = res_trans_tmp.root_nodes; leaf_nodes = [];
           ids = res_trans_tmp.ids @ res_trans_vd.ids;
           instrs = res_trans_tmp.instrs @ res_trans_vd.instrs;
           exps = res_trans_tmp.exps @ res_trans_vd.exps;
           initd_exps = res_trans_tmp.initd_exps @ res_trans_vd.initd_exps;
-          is_cpp_call_virtual = false;
         }
     | CXXRecordDecl _ :: var_decls' (*C++/C record decl treated in the same way *)
     | RecordDecl _ :: var_decls' ->
@@ -1763,10 +1748,12 @@ struct
     let stmt = extract_stmt_from_singleton stmt_list
         "WARNING: In CastExpr There must be only one stmt defining the expression to be cast.\n" in
     let res_trans_stmt = instruction trans_state stmt in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+    let typ =
+      CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     (* This gives the differnece among cast operations kind*)
-    let cast_ids, cast_inst, cast_exp = cast_operation context cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged in
+    let cast_ids, cast_inst, cast_exp =
+      cast_operation context cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged in
     { res_trans_stmt with
       ids = res_trans_stmt.ids @ cast_ids;
       instrs = res_trans_stmt.instrs @ cast_inst;
@@ -2019,13 +2006,17 @@ struct
     { res_trans with exps = [var_exp_typ] }
 
   and compoundLiteralExpr_trans trans_state stmt_list expr_info =
-    let context = trans_state.context in
-    let procdesc = context.CContext.procdesc in
-    let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
-        "SIL_compound_literal__" expr_info in
-    Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
-    let trans_state' = { trans_state with var_exp_typ = Some (Sil.Lvar pvar, typ) } in
     let stmt = match stmt_list with [stmt] -> stmt | _ -> assert false in
+    let var_exp_typ =
+      if Option.is_some trans_state.var_exp_typ then trans_state.var_exp_typ
+      else
+        let context = trans_state.context in
+        let procdesc = context.CContext.procdesc in
+        let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
+            "SIL_compound_literal__" expr_info in
+        Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
+        Some (Sil.Lvar pvar, typ) in
+    let trans_state' = { trans_state with var_exp_typ = var_exp_typ } in
     instruction trans_state' stmt
 
   and cxxDynamicCastExpr_trans trans_state stmt_info stmts cast_type_ptr =
@@ -2351,13 +2342,13 @@ struct
             then { trans_state with succ_nodes = res_trans_s.root_nodes }
             else trans_state in
           let res_trans_tail = exec_trans_instrs_no_rev trans_state' trans_stmt_fun_list' in
-          { root_nodes = res_trans_tail.root_nodes;
+          { empty_res_trans with
+            root_nodes = res_trans_tail.root_nodes;
             leaf_nodes = [];
             ids = res_trans_s.ids @ res_trans_tail.ids;
             instrs = res_trans_tail.instrs @ res_trans_s.instrs;
             exps = res_trans_tail.exps @ res_trans_s.exps;
             initd_exps = res_trans_tail.initd_exps @ res_trans_s.initd_exps;
-            is_cpp_call_virtual = false
           } in
     exec_trans_instrs_no_rev trans_state (IList.rev trans_stmt_fun_list)
 

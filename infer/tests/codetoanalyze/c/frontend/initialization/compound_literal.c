@@ -16,5 +16,5 @@ int compound_literal_expr() { return ((struct point){.y = 32, .x = 52}).x; }
 
 int init_with_compound_literal() {
   struct point p = (struct point){32, 52};
-  return p.x;
+  return 1 / (p.x - 32);
 }

@@ -1,16 +1,16 @@
 digraph iCFG {
-7 [label="7:  DeclStmt \n   *&SIL_compound_literal__n$1.x:int =32 [line 18]\n  *&SIL_compound_literal__n$1.y:int =52 [line 18]\n  n$2=*&SIL_compound_literal__n$1:struct point  [line 18]\n  *&p:struct point =n$2 [line 18]\n  REMOVE_TEMPS(n$2); [line 18]\n  NULLIFY(&SIL_compound_literal__n$1,false); [line 18]\n " shape="box"]
+7 [label="7:  DeclStmt \n   *&p.x:int =32 [line 18]\n  *&p.y:int =52 [line 18]\n  n$1=*&p:struct point  [line 18]\n  REMOVE_TEMPS(n$1); [line 18]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  Return Stmt \n   n$0=*&p.x:int  [line 19]\n  *&return:int =n$0 [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&p,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&p.x:int  [line 19]\n  *&return:int =(1 / (n$0 - 32)) [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&p,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
 	 6 -> 5 ;
 5 [label="5: Exit init_with_compound_literal \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start init_with_compound_literal\nFormals: \nLocals:  p:struct point  SIL_compound_literal__n$1:struct point  \n   DECLARE_LOCALS(&return,&p,&SIL_compound_literal__n$1); [line 17]\n  NULLIFY(&p,false); [line 17]\n " color=yellow style=filled]
+4 [label="4: Start init_with_compound_literal\nFormals: \nLocals:  p:struct point  \n   DECLARE_LOCALS(&return,&p); [line 17]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;

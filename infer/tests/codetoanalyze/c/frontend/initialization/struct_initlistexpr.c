@@ -16,9 +16,9 @@ int foo() { return 5; }
 
 int main() { struct Point p = {1, foo() + 3}; }
 
-int test(Point* p) {
+int point_coords_set_correctly(Point* p) {
   *p = (Point){4, 5};
-  return 0;
+  return 1 / (p->x - 4);
 }
 
 struct Employee {
