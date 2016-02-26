@@ -10,6 +10,8 @@ import logging
 import re
 import util
 
+from inferlib import jwlib
+
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
 mvn [options] [task]
