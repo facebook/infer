@@ -1016,6 +1016,22 @@ let cycle_has_weak_or_unretained_or_assign_field cycle =
         else do_cycle c' in
   do_cycle cycle
 
+let check_observer_is_unsubscribed_deallocation prop e =
+  let pvar_opt = match Prop.get_resource_attribute prop e with
+    | Some (Sil.Aresource ({Sil.ra_vpath =  Some (Sil.Dpvar pvar) })) -> Some pvar
+    | _ -> None in
+  let loc = State.get_loc () in
+  match Prop.get_observer_attribute prop e with
+  | Some Sil.Aobserver ->
+      (match pvar_opt with
+       |  Some pvar ->
+           L.d_strln (" ERROR: Object " ^ (Sil.pvar_to_string pvar) ^
+                      " is being deallocated while still registered in a notification center");
+           let desc = Localise.desc_registered_observer_being_deallocated pvar loc in
+           raise (Exceptions.Registered_observer_being_deallocated (desc, __POS__))
+       | _ -> ())
+  | _ -> ()
+
 let check_junk ?original_prop pname tenv prop =
   let fav_sub_sigmafp = Sil.fav_new () in
   Sil.sub_fav_add fav_sub_sigmafp (Prop.get_sub prop);
@@ -1070,6 +1086,7 @@ let check_junk ?original_prop pname tenv prop =
                 (* find the alloc attribute of one of the roots of hpred, if it exists *)
                 let res = ref None in
                 let do_entry e =
+                  check_observer_is_unsubscribed_deallocation prop e;
                   match Prop.get_resource_attribute prop e with
                   | Some (Sil.Aresource ({ Sil.ra_kind = Sil.Racquire }) as a) ->
                       L.d_str "ATTRIBUTE: "; Sil.d_exp (Sil.Const (Sil.Cattribute a)); L.d_ln ();

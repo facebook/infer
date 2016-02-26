@@ -393,6 +393,20 @@ public class InferRunner {
         false);
   }
 
+  public static ImmutableList<String> createObjCInferCommandSimple(
+      TemporaryFolder folder,
+      String sourceFile,
+      String ml_bucket) throws IOException, InterruptedException {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        Language.ObjC,
+        true,
+        null,
+        ml_bucket,
+        false);
+  }
+
   public static ImmutableList<String> createObjCInferCommandWithMLBuckets(
       TemporaryFolder folder,
       String sourceFile,

@@ -67,6 +67,7 @@ exception Pointer_size_mismatch of Localise.error_desc * ml_loc
 exception Precondition_not_found of Localise.error_desc * ml_loc
 exception Precondition_not_met of Localise.error_desc * ml_loc
 exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * ml_loc
+exception Registered_observer_being_deallocated of Localise.error_desc * ml_loc
 exception Return_expression_required of Localise.error_desc * ml_loc
 exception Return_statement_missing of Localise.error_desc * ml_loc
 exception Return_value_ignored of Localise.error_desc * ml_loc
@@ -234,6 +235,9 @@ let recognize_exception exn =
     | Retain_cycle (_, _, desc, ml_loc) ->
         (Localise.retain_cycle,
          desc, Some ml_loc, Exn_user, High, None, Prover)
+    | Registered_observer_being_deallocated (desc, ml_loc) ->
+        (Localise.registered_observer_being_deallocated,
+         desc, Some ml_loc, Exn_user, High, Some Kerror, Nocat)
     | Return_expression_required (desc, ml_loc) ->
         (Localise.return_expression_required,
          desc, Some ml_loc, Exn_user, Medium, None, Nocat)

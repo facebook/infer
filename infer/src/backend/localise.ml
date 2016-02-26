@@ -53,6 +53,7 @@ let pointer_size_mismatch = "POINTER_SIZE_MISMATCH"
 let precondition_not_found = "PRECONDITION_NOT_FOUND"
 let precondition_not_met = "PRECONDITION_NOT_MET"
 let premature_nil_termination = "PREMATURE_NIL_TERMINATION_ARGUMENT"
+let registered_observer_being_deallocated = "REGISTERED_OBSERVER_BEING_DEALLOCATED"
 let resource_leak = "RESOURCE_LEAK"
 let retain_cycle = "RETAIN_CYCLE"
 let return_value_ignored = "RETURN_VALUE_IGNORED"
@@ -733,6 +734,16 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
   let desc = Format.sprintf "Retain cycle involving the following objects: %s  %s"
       !str_cycle (at_line tags loc) in
   { no_desc with descriptions = [desc]; tags = !tags; dotty = cycle_dotty }
+
+let desc_registered_observer_being_deallocated pvar loc =
+  let tags = Tags.create () in
+  let obj_str = Sil.pvar_to_string pvar in
+  { no_desc with descriptions = ["Object " ^ obj_str ^
+                                 " has not been unregistered from a notification " ^
+                                 "center and is being deallocated " ^ at_line tags loc ^
+                                 ". Being still registered as observer of the notification " ^
+                                 "center, the deallocated object "
+                                 ^ obj_str ^ " may be notified in the future." ]; tags = !tags }
 
 let desc_return_statement_missing loc =
   let tags = Tags.create () in

@@ -61,6 +61,7 @@ public class InferResults {
           errorType.equals("STRONG_DELEGATE_WARNING") ||
           errorType.equals("DIRECT_ATOMIC_PROPERTY_ACCESS") ||
           errorType.equals("CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK") ||
+          errorType.equals("REGISTERED_OBSERVER_BEING_DEALLOCATED") ||
           errorType.equals("IMMUTABLE_CAST") ||
           errorType.equals("PARAMETER_NOT_NULL_CHECKED") ||
           errorType.equals("DANGLING_POINTER_DEREFERENCE") ||

@@ -289,6 +289,9 @@ val get_autorelease_attribute : 'a t -> exp -> attribute option
 (** Get the div0 attribute associated to the expression, if any *)
 val get_div0_attribute : 'a t -> exp -> attribute option
 
+(** Get the observer attribute associated to the expression, if any *)
+val get_observer_attribute : 'a t -> exp -> attribute option
+
 (** Get the objc null attribute associated to the expression, if any *)
 val get_objc_null_attribute : 'a t -> exp -> attribute option
 

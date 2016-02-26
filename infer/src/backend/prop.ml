@@ -1788,6 +1788,9 @@ let get_objc_null_attribute prop exp =
 let get_div0_attribute prop exp =
   get_attribute prop exp Sil.ACdiv0
 
+let get_observer_attribute prop exp =
+  get_attribute prop exp Sil.ACobserver
+
 let has_dangling_uninit_attribute prop exp =
   let la = get_exp_attributes prop exp in
   IList.exists (fun a -> Sil.attribute_equal a (Sil.Adangling (Sil.DAuninit))) la

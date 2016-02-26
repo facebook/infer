@@ -66,6 +66,7 @@ exception Pointer_size_mismatch of Localise.error_desc * ml_loc
 exception Precondition_not_found of Localise.error_desc * ml_loc
 exception Precondition_not_met of Localise.error_desc * ml_loc
 exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * ml_loc
+exception Registered_observer_being_deallocated of Localise.error_desc * ml_loc
 exception Return_expression_required of Localise.error_desc * ml_loc
 exception Return_statement_missing of Localise.error_desc * ml_loc
 exception Return_value_ignored of Localise.error_desc * ml_loc
