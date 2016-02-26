@@ -1073,7 +1073,8 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
               let exn = Exceptions.Bad_pointer_comparison (desc, __POS__) in
               Reporting.log_warning pname exn
         | _ -> () in
-      check_already_dereferenced pname cond _prop;
+      if not !Config.report_runtime_exceptions then
+        check_already_dereferenced pname cond _prop;
       check_condition_always_true_false ();
       let n_cond, prop = exp_norm_check_arith pname _prop cond in
       ret_old_path (Propset.to_proplist (prune_prop n_cond prop))
