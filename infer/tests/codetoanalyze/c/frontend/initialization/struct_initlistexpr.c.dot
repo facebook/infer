@@ -1,16 +1,16 @@
 digraph iCFG {
-14 [label="14:  DeclStmt \n   *&e.doj.date:int =12 [line 35]\n  *&e.doj.month:int =3000.500000 [line 35]\n  *&e.doj.year:int =12 [line 35]\n  *&e.salary:float =12 [line 35]\n  *&e.ssn:int =2010 [line 35]\n " shape="box"]
+14 [label="14:  DeclStmt \n   *&e.ssn:int =12 [line 35]\n  *&e.salary:float =3000.500000 [line 35]\n  *&e.doj.date:int =12 [line 35]\n  *&e.doj.month:int =12 [line 35]\n  *&e.doj.year:int =2010 [line 35]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$0=*&e.ssn:int  [line 36]\n  *&return:int =n$0 [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&e,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$0=*&e.ssn:int  [line 36]\n  *&return:int =(1 / (n$0 - 12)) [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&e,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 13 -> 12 ;
-12 [label="12: Exit main2 \n  " color=yellow style=filled]
+12 [label="12: Exit field_set_correctly \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start main2\nFormals: \nLocals:  e:struct Employee  \n   DECLARE_LOCALS(&return,&e); [line 34]\n " color=yellow style=filled]
+11 [label="11: Start field_set_correctly\nFormals: \nLocals:  e:struct Employee  \n   DECLARE_LOCALS(&return,&e); [line 34]\n " color=yellow style=filled]
 	
 
 	 11 -> 14 ;

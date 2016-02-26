@@ -182,14 +182,13 @@ and get_struct_cpp_class_declaration_type tenv decl =
       if is_complete_definition then (
         Ast_utils.update_sil_types_map type_ptr (Sil.Tvar sil_typename);
         let non_static_fields = get_struct_fields tenv decl in
-        let non_static_fields' =
-          General_utils.append_no_duplicates_fields extra_fields non_static_fields in
-        let sorted_non_static_fields = General_utils.sort_fields non_static_fields' in
+        let non_static_fields =
+          General_utils.append_no_duplicates_fields non_static_fields extra_fields in
         let static_fields = [] in (* Note: We treat static field same as global variables *)
         let def_methods = get_class_methods name decl_list in (* C++ methods only *)
         let superclasses = get_superclass_list_cpp decl in
         let sil_type = Sil.Tstruct {
-            Sil.instance_fields = sorted_non_static_fields;
+            Sil.instance_fields = non_static_fields;
             static_fields;
             csu;
             struct_name = Some mangled_name;
@@ -212,7 +211,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
             (* there was no full definition of that type yet. *)
             let tvar_type = Sil.Tvar sil_typename in
             let empty_struct_type = Sil.Tstruct {
-                Sil.instance_fields = General_utils.sort_fields extra_fields;
+                Sil.instance_fields = extra_fields;
                 static_fields = [];
                 csu;
                 struct_name = Some mangled_name;

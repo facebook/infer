@@ -464,6 +464,16 @@ struct
       Ident.fieldname_compare name1 name2 in
     IList.sort compare fields
 
+
+  let sort_fields_tenv tenv =
+    let sort_fields_struct typname typ =
+      match typ with
+      | Sil.Tstruct st ->
+          let st' = { st with Sil.instance_fields = (sort_fields st.Sil.instance_fields) } in
+          Sil.tenv_add tenv typname (Sil.Tstruct st')
+      | _ -> () in
+    Sil.tenv_iter sort_fields_struct tenv
+
   let rec collect_list_tuples l (a, a1, b, c, d) =
     match l with
     | [] -> (a, a1, b, c, d)

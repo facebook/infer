@@ -79,8 +79,7 @@ let add_missing_fields tenv class_name ck fields =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, mang_name) in
   match Sil.tenv_lookup tenv class_tn_name with
   | Some Sil.Tstruct ({ Sil.instance_fields } as struct_typ) ->
-      let new_fields = General_utils.append_no_duplicates_fields fields instance_fields in
-      let new_fields = CFrontend_utils.General_utils.sort_fields new_fields in
+      let new_fields = General_utils.append_no_duplicates_fields instance_fields fields in
       let class_type_info =
         Sil.Tstruct
           { struct_typ with

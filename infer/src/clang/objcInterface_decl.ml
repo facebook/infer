@@ -121,7 +121,6 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
   let fields = General_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
   let fields = General_utils.append_no_duplicates_fields [Sil.objc_ref_counter_field] fields in
-  let fields = General_utils.sort_fields fields in
   Printing.log_out "Class %s field:\n" class_name;
   IList.iter (fun (fn, _, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;

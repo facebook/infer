@@ -142,6 +142,8 @@ sig
 
   val sort_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
 
+  val sort_fields_tenv : Sil.tenv -> unit
+
   val collect_list_tuples : ('a list * 'b list * 'c list * 'd list * 'e list) list ->
     'a list * 'b list * 'c list * 'd list * 'e list -> 'a list * 'b list * 'c list * 'd list * 'e list
 

@@ -49,7 +49,7 @@ public class InitListExprTest {
   public void nullDereferenceTest() throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferC(inferCmd);
     String[] procedures = {
-        "point_coords_set_correctly",
+        "point_coords_set_correctly", "field_set_correctly",
     };
     assertThat(
         "Results should contain divide by zero",

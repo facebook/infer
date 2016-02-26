@@ -155,6 +155,7 @@ let do_source_file source_file ast =
   (*Logging.out "Tenv %a@." Sil.pp_tenv tenv;*)
   (* Printing.print_tenv tenv; *)
   (*Printing.print_procedures cfg; *)
+  General_utils.sort_fields_tenv tenv;
   Sil.store_tenv_to_file tenv_file tenv;
   if !CFrontend_config.stats_mode then Cfg.check_cfg_connectedness cfg;
   if !CFrontend_config.stats_mode || !CFrontend_config.debug_mode || !CFrontend_config.testing_mode then

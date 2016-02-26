@@ -31,7 +31,7 @@ struct Employee {
   } doj;
 } emp1;
 
-int main2() {
+int field_set_correctly() {
   struct Employee e = {12, 3000.50, 12, 12, 2010};
-  return e.ssn;
+  return 1 / (e.ssn - 12);
 }
