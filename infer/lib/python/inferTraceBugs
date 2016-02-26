@@ -389,7 +389,7 @@ def main():
 
     tracer = Tracer(args, max_level)
     tracer.build_report(report)
-    utils.stdout(tracer)
+    utils.stdout(str(tracer))
 
 
 if __name__ == '__main__':
