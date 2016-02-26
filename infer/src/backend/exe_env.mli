@@ -22,11 +22,9 @@ val freeze : initial -> t
 (** create a new execution environment, given an optional set restricting the active procedures *)
 val create : Procname.Set.t option -> initial
 
-(** add call graph from the source dir in the spec db, with relative tenv and cfg, to the execution environment *)
+(** add call graph from the source dir in the spec db,
+    with relative tenv and cfg, to the execution environment *)
 val add_cg : initial -> DB.source_dir -> Cg.t option
-
-(** like add_cg, but use exclude_fun to determine files to be excluded *)
-val add_cg_exclude_fun : initial -> DB.source_dir -> (DB.source_file -> bool) -> Cg.t option
 
 (** get the global call graph *)
 val get_cg : t -> Cg.t

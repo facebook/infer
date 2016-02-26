@@ -45,13 +45,6 @@ end
 (** if true, save file dependency graph to disk *)
 let save_file_dependency = ref false
 
-type incremental =
-  | ANALYZE_ALL (** analyze all the files in the results dir *)
-  | ANALYZE_CHANGED_AND_DEPENDENCIES (** analyze the files that have changed, as well as those dependent on them *)
-  | ANALYZE_CHANGED_ONLY (** only analyze the files that have changed *)
-
-let incremental_mode = ref ANALYZE_ALL
-
 (** command line option: if true, simulate the analysis only *)
 let simulate = ref false
 
@@ -76,30 +69,11 @@ let out_file_cmdline = ref ""
 (** value of -err_file command-line *)
 let err_file_cmdline = ref ""
 
-(** Files excluded from the analysis *)
-let excluded_files : string list ref = ref []
-
-(** Absolute path to the project source, used for relative paths in the exclude list *)
-let source_path = ref ""
-
 (** List of obj memory leak buckets to be checked in Objective-C/C++ *)
 let ml_buckets_arg = ref "cf"
 
 (** Whether specs can be cleaned up before starting analysis *)
 let allow_specs_cleanup = ref false
-
-(** Compute the exclude function from excluded_files and source_path.
-    The exclude function builds an exclude list of file path prefixes, and checks if one
-    of them is a prefix of the given source file.
-    Prefixes are obtained by prepending source_path, if any, to relative paths in excluded_fies *)
-let compute_exclude_fun () : DB.source_file -> bool =
-  let prepend_source_path s =
-    if Filename.is_relative s then Filename.concat !source_path s
-    else s in
-  let excluded_list = IList.map (fun file_path -> prepend_source_path file_path) !excluded_files in
-  let exclude_fun (source_file : DB.source_file) =
-    IList.exists (fun excluded_path -> string_is_prefix excluded_path (DB.source_file_to_string source_file)) excluded_list in
-  exclude_fun
 
 let version_string () =
   "Infer version " ^ Version.versionString ^ "\nCopyright 2009 - present Facebook. All Rights Reserved.\n"
@@ -114,24 +88,6 @@ let print_version_json () =
 
 let arg_desc =
   let base_arg =
-    let exclude s = match read_file s with
-      | None ->
-          F.fprintf F.std_formatter "ERROR: cannot read the exclude file %s@." s;
-          exit 1
-      | Some files -> excluded_files := files in
-    let source_path s =
-      if Filename.is_relative s then
-        begin
-          F.fprintf F.std_formatter "ERROR: source_path must be an absolute path: %s @." s;
-          exit 1
-        end;
-      source_path := s in
-    let incremental_changed_only () =
-      Config.ondemand_enabled := false;
-      incremental_mode := ANALYZE_CHANGED_ONLY in
-    let incremental () =
-      Config.ondemand_enabled := false;
-      incremental_mode := ANALYZE_CHANGED_AND_DEPENDENCIES in
     let desc =
       base_arg_desc @
       [
@@ -139,21 +95,6 @@ let arg_desc =
         Arg.Set_string err_file_cmdline,
         Some "file",
         "use file for the err channel"
-        ;
-        "-exclude",
-        Arg.String exclude,
-        Some "file",
-        "exclude from analysis the files and directories specified in file"
-        ;
-        "-incremental_changed_only",
-        Arg.Unit incremental_changed_only,
-        None,
-        "only analyze files captured since the last analysis"
-        ;
-        "-incremental",
-        Arg.Unit incremental,
-        None,
-        "analyze files captured since the last analysis plus any dependencies"
         ;
         "-iterations",
         Arg.Int set_iterations,
@@ -181,12 +122,6 @@ let arg_desc =
         Arg.Unit (fun () -> Config.ondemand_enabled := true; Config.reactive_mode := true),
         None,
         "analyze in reactive propagation mode starting from changed files"
-        ;
-        "-source_path",
-        Arg.String source_path,
-        Some "path",
-        "specify the absolute path to the root of the source files. \
-         Used to interpret relative paths when using option -exclude."
         ;
         (* TODO: merge with the -project_root option *)
         "-java",
@@ -573,66 +508,10 @@ let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
 let proc_list_to_set proc_list =
   IList.fold_left (fun s p -> Procname.Set.add p s) Procname.Set.empty proc_list
 
-(** compute the files to analyze map for incremental mode *)
-let compute_to_analyze_map_incremental files_changed_map global_cg exe_env =
-  let changed_fold_f files_changed_map f =
-    let apply_f _ procs acc =
-      Procname.Set.fold (fun proc acc -> Procname.Set.union acc (f proc)) procs acc in
-    Procname.Map.fold apply_f files_changed_map Procname.Set.empty in
-  (* all callers of changed procedures *)
-  let callers_of_changed =
-    changed_fold_f files_changed_map (fun p -> Cg.get_ancestors global_cg p) in
-  (* all callees of changed procedures *)
-  let callees_of_changed =
-    changed_fold_f files_changed_map (fun p -> Cg.get_heirs global_cg p) in
-  (* add a procedure to the file -> (procedures to analyze) map *)
-  let add_proc_to_map proc map =
-    let source_opt =
-      try Some (Exe_env.get_source exe_env proc)
-      with Not_found -> None in
-    match source_opt with
-    | Some source ->
-        let proc_file_pname = ClusterMakefile.source_file_to_pname source in
-        let procs_to_analyze =
-          try Procname.Map.find proc_file_pname map
-          with Not_found -> Procname.Set.empty in
-        let procs_to_analyze' = Procname.Set.add proc procs_to_analyze in
-        Procname.Map.add proc_file_pname procs_to_analyze' map
-    | None -> map in
-  let get_specs_filename pname =
-    Specs.res_dir_specs_filename pname in
-  let is_stale pname =
-    let specs_file = get_specs_filename pname in
-    match Specs.load_summary specs_file with
-    | Some summary -> summary.Specs.status = Specs.STALE
-    | None -> false in
-  (* add stale callees to the map *)
-  let add_stale_callee_to_map callee map =
-    if is_stale callee then add_proc_to_map callee map
-    else map in
-  let files_changed_map' =
-    Procname.Set.fold add_stale_callee_to_map callees_of_changed files_changed_map in
-  if !incremental_mode = ANALYZE_CHANGED_ONLY then
-    (* mark all caller specs stale. this ensures future runs of the analysis that need to use specs
-       from callers will re-compute them first. we do this instead of deleting the specs because
-       that would force the next analysis run to re-compute them even if it doesn't need them. *)
-    let mark_spec_as_stale pname =
-      let specs_file = get_specs_filename pname in
-      match Specs.load_summary specs_file with
-      | Some summary ->
-          let summary' = { summary with Specs.status = Specs.STALE } in
-          Specs.store_summary pname summary'
-      | None -> ()  in
-    Procname.Set.iter (fun caller -> mark_spec_as_stale caller) callers_of_changed;
-    files_changed_map'
-  else (* !incremental_mode = ANALYZE_CHANGED_AND_DEPENDENTS *)
-    (* add callers of changed procedures to the map of stuff to analyze *)
-    Procname.Set.fold add_proc_to_map callers_of_changed files_changed_map'
-
 (** compute the clusters *)
-let compute_clusters exe_env files_changed : Cluster.t list =
+let compute_clusters exe_env : Cluster.t list =
   if !Cluster.trace_clusters then
-    L.err "[compute_clusters] %d changed files@." (Procname.Map.cardinal files_changed);
+    L.err "[compute_clusters] @.";
   let file_cg = Cg.create () in
   let global_cg = Exe_env.get_cg exe_env in
   let nodes, edges = Cg.get_nodes_and_edges global_cg in
@@ -669,16 +548,14 @@ let compute_clusters exe_env files_changed : Cluster.t list =
   let num_files = IList.length files in
   L.err "@.Found %d defined procedures in %d files.@." (IList.length defined_procs) num_files;
   let to_analyze_map =
-    if !incremental_mode = ANALYZE_ALL then
-      (* get all procedures defined in a file *)
-      let get_defined_procs file_pname = match file_pname_to_cg file_pname with
-        | None -> Procname.Set.empty
-        | Some cg -> proc_list_to_set (Cg.get_defined_nodes cg) in
-      IList.fold_left
-        (fun m file_pname -> Procname.Map.add file_pname (get_defined_procs file_pname) m)
-        Procname.Map.empty
-        files
-    else compute_to_analyze_map_incremental files_changed global_cg exe_env in
+    (* get all procedures defined in a file *)
+    let get_defined_procs file_pname = match file_pname_to_cg file_pname with
+      | None -> Procname.Set.empty
+      | Some cg -> proc_list_to_set (Cg.get_defined_nodes cg) in
+    IList.fold_left
+      (fun m file_pname -> Procname.Map.add file_pname (get_defined_procs file_pname) m)
+      Procname.Map.empty
+      files in
   L.err "Analyzing %d files.@.@." (Procname.Map.cardinal to_analyze_map);
   let clusters = create_minimal_clusters file_cg exe_env to_analyze_map in
   L.err "Minimal clusters:@.";
@@ -706,61 +583,22 @@ let compute_clusters exe_env files_changed : Cluster.t list =
   L.log_progress_simple ("\nAnalyzing "^(string_of_int number_of_clusters)^" clusters");
   clusters'
 
-(** compute the set of procedures in [cg] changed since the last analysis *)
-let cg_get_changed_procs source_dir cg =
-  let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg" in
-  let cfg_opt = Cfg.load_cfg_from_file cfg_fname in
-  let pdesc_changed pname =
-    match cfg_opt with
-    | Some cfg -> Cfg.pdesc_is_changed cfg pname
-    | None -> true in
-  let spec_exists pname =
-    let spec_fname = Specs.res_dir_specs_filename pname in
-    Sys.file_exists (DB.filename_to_string spec_fname) in
-  let cfg_modified_after_specs pname =
-    let spec_fname = Specs.res_dir_specs_filename pname in
-    DB.file_modified_time cfg_fname > DB.file_modified_time spec_fname in
-  let is_changed pname =
-    not (spec_exists pname) || (cfg_modified_after_specs pname && pdesc_changed pname) in
-  let defined_nodes = Cg.get_defined_nodes cg in
-  if !Config.incremental_procs then IList.filter is_changed defined_nodes
-  else if IList.exists is_changed defined_nodes then defined_nodes
-  else []
-
 (** Load a .c or .cpp file into an execution environment *)
-let load_cg_file (_exe_env: Exe_env.initial) (source_dir : DB.source_dir) exclude_fun =
-  match Exe_env.add_cg_exclude_fun _exe_env source_dir exclude_fun with
+let load_cg_file (_exe_env: Exe_env.initial) (source_dir : DB.source_dir) =
+  match Exe_env.add_cg _exe_env source_dir with
   | None -> None
   | Some cg ->
       L.err "loaded %s@." (DB.source_dir_to_string source_dir);
       Some cg
 
-(** Return a map of (changed file procname) -> (procs in that file that have changed) *)
-let compute_files_changed_map _exe_env (source_dirs : DB.source_dir list) exclude_fun =
+(** Populate the exe_env by loading cg files. *)
+let populate_exe_env _exe_env (source_dirs : DB.source_dir list) =
   let sorted_dirs = IList.sort DB.source_dir_compare source_dirs in
-  let cg_list =
-    IList.fold_left
-      (fun cg_list source_dir ->
-         match load_cg_file _exe_env source_dir exclude_fun with
-         | None -> cg_list
-         | Some cg -> (source_dir, cg) :: cg_list)
-      []
-      sorted_dirs in
-  let exe_env_get_files_changed files_changed_map =
-    let cg_get_files_changed files_changed_map (source_dir, cg) =
-      let changed_procs =
-        if !incremental_mode = ANALYZE_ALL then Cg.get_defined_nodes cg
-        else cg_get_changed_procs source_dir cg in
-      if changed_procs <> [] then
-        let file_pname = ClusterMakefile.source_file_to_pname (Cg.get_source cg) in
-        Procname.Map.add file_pname (proc_list_to_set changed_procs) files_changed_map
-      else files_changed_map in
-    IList.fold_left cg_get_files_changed files_changed_map cg_list in
-  let exe_env = Exe_env.freeze _exe_env in
-  let files_changed =
-    if !incremental_mode = ANALYZE_ALL then Procname.Map.empty
-    else exe_env_get_files_changed Procname.Map.empty in
-  files_changed, exe_env
+  IList.iter
+    (fun source_dir ->
+       ignore (load_cg_file _exe_env source_dir))
+    sorted_dirs;
+  Exe_env.freeze _exe_env
 
 (** Create an exe_env from a cluster. *)
 let exe_env_from_cluster cluster =
@@ -875,7 +713,7 @@ let () =
   RegisterCheckers.register ();
   Facebook.register_checkers ();
 
-  if !allow_specs_cleanup = true && !incremental_mode = ANALYZE_ALL && !cluster_cmdline = None then
+  if !allow_specs_cleanup = true && !cluster_cmdline = None then
     DB.Results_dir.clean_specs_dir ();
 
   let analyzer_out_of, analyzer_err_of = setup_logging () in
@@ -899,11 +737,11 @@ let () =
     else
       begin
         let _exe_env = Exe_env.create None in
-        let files_changed_map, exe_env =
-          compute_files_changed_map _exe_env source_dirs (compute_exclude_fun ()) in
+        let exe_env =
+          populate_exe_env _exe_env source_dirs in
         L.err "Procedures defined in more than one file: %a@."
           Procname.pp_set (Exe_env.get_procs_defined_in_several_files exe_env);
-        compute_clusters exe_env files_changed_map
+        compute_clusters exe_env
       end in
 
 

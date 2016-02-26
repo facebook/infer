@@ -10,7 +10,6 @@ tests_dependencies = [
     '//infer/tests/codetoanalyze/java/checkers:checkers',
     '//infer/tests/codetoanalyze/java/eradicate:eradicate',
     '//infer/tests/codetoanalyze/java/infer:infer',
-    '//infer/tests/codetoanalyze/java/incremental:incremental',
     '//infer/tests/codetoanalyze/java/tracing:tracing',
 ]
 
@@ -98,7 +97,6 @@ java_test(
         '//infer/tests/endtoend/java/harness:harness',
         '//infer/tests/endtoend/java/tracing:tracing',
         '//infer/tests/endtoend/java/comparison:comparison',
-        '//infer/tests/endtoend/java/incremental:incremental',
     ],
     visibility=integration_tests,
 )

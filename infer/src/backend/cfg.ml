@@ -126,15 +126,6 @@ module Node = struct
   let pdesc_tbl_find cfg proc_name =
     Procname.Hash.find cfg.name_pdesc_tbl proc_name
 
-  let proc_name_to_proc_desc cfg proc_name =
-    pdesc_tbl_find cfg proc_name
-
-  let proc_name_is_changed cfg proc_name =
-    try
-      let pdesc = proc_name_to_proc_desc cfg proc_name in
-      pdesc.pd_attributes.changed
-    with Not_found -> true
-
   let iter_proc_desc cfg f =
     Procname.Hash.iter f cfg.name_pdesc_tbl
 
@@ -894,10 +885,6 @@ let get_block_pdesc cfg block =
     let block_pdesc = IList.find is_block_pdesc pdescs in
     Some block_pdesc
   with Not_found -> None
-
-(** return true if the pdesc associated with [pname] changed since the last analysis run or did
-    not exist in the last analysis run *)
-let pdesc_is_changed cfg pname = Node.proc_name_is_changed cfg pname
 
 (** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
 let remove_seed_captured_vars_block captured_vars prop =

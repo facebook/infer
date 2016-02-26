@@ -52,15 +52,6 @@ class VersionAction(argparse._VersionAction):
                                             option_string)
 
 
-class ConfirmIncrementalAction(argparse._StoreTrueAction):
-    def __call__(self, parser, namespace, values, option_string=None):
-        if not getattr(namespace, 'incremental'):
-            parser.error('-ic/--changed-only should only be used with -i')
-        super(ConfirmIncrementalAction, self).__call__(parser,
-                                                       namespace,
-                                                       values,
-                                                       option_string)
-
 
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
@@ -68,13 +59,12 @@ base_group.add_argument('-o', '--out', metavar='<directory>',
                         default=config.DEFAULT_INFER_OUT, dest='infer_out',
                         action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
-base_group.add_argument('-i', '--incremental', action='store_true',
-                        help='''Analyze only changed procedures and their
-                        dependencies''')
+base_group.add_argument('-i', '--incremental',
+                        dest='reactive', action='store_true',
+                        help='''DEPRECATED: use --reactive.''')
 base_group.add_argument('-ic', '--changed-only',
-                        action=ConfirmIncrementalAction,
-                        help='''Same as -i, but does not analyze
-                        dependencies of changed procedures.''')
+                        dest='reactive', action='store_true',
+                        help='''DEPRECATED: use --reactive.''')
 base_group.add_argument('--reactive', action='store_true',
                         help='''Analyze in reactive propagation mode
                         starting from changed files.''')
@@ -312,12 +302,6 @@ class AnalyzerWrapper(object):
         elif self.args.debug_exceptions:
             infer_options.append('-developer_mode')
             self.args.no_filtering = True
-
-        if self.args.incremental:
-            if self.args.changed_only:
-                infer_options.append('-incremental_changed_only')
-            else:
-                infer_options.append('-incremental')
 
         if self.args.reactive:
             infer_options.append('-reactive')
