@@ -141,8 +141,9 @@ let method_allocates tenv pname =
     | Some { Specs.allocations } ->
         allocations <> []
     | None -> false in
-  is_allocator tenv pname
-  || allocates ()
+  not (check_method Annotations.ia_is_ignore_allocations pname)
+  && (is_allocator tenv pname
+      || allocates ())
 
 
 let lookup_location pname =

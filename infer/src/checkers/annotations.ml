@@ -111,6 +111,7 @@ let verify_annotation = "com.facebook.infer.annotation.Verify"
 let expensive = "Expensive"
 let performance_critical = "PerformanceCritical"
 let no_allocation = "NoAllocation"
+let ignore_allocations = "IgnoreAllocations"
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
@@ -157,6 +158,9 @@ let ia_is_performance_critical ia =
 
 let ia_is_no_allocation ia =
   ia_ends_with ia no_allocation
+
+let ia_is_ignore_allocations ia =
+  ia_ends_with ia ignore_allocations
 
 type annotation =
   | Nullable

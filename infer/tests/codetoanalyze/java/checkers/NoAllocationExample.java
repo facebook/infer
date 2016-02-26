@@ -10,6 +10,7 @@
 package codetoanalyze.java.checkers;
 
 import com.facebook.infer.annotation.NoAllocation;
+import com.facebook.infer.annotation.IgnoreAllocations;
 
 public class NoAllocationExample {
 
@@ -48,6 +49,16 @@ public class NoAllocationExample {
   @NoAllocation
   void creatingExceptionIsFine() {
     throwsException();
+  }
+
+  @IgnoreAllocations
+  void acceptableAllocation() {
+    new Object();
+  }
+
+  @NoAllocation
+  void onlyAllocatesInAcceptableWay() {
+    acceptableAllocation();
   }
 
 }
