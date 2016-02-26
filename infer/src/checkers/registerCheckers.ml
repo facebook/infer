@@ -56,3 +56,7 @@ let register () =
     if active then registry language_opt callback in
   IList.iter (register Callbacks.register_procedure_callback) (active_procedure_checkers ());
   IList.iter (register Callbacks.register_cluster_callback) (active_cluster_checkers ())
+
+module Test (C : ProcCfg.Wrapper) = struct
+
+end
