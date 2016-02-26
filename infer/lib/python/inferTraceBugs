@@ -60,7 +60,7 @@ base_parser.add_argument('--html',
 
 
 def show_error_and_exit(err, show_help):
-    print(utils.encode(err))
+    utils.stderr(err)
     if show_help:
         print('')
         base_parser.print_help()

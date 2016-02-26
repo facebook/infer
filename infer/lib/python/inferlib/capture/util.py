@@ -54,7 +54,7 @@ def run_cmd_ignore_fail(cmd):
 def log_java_version():
     java_version = run_cmd_ignore_fail(['java', '-version'])
     javac_version = run_cmd_ignore_fail(['javac', '-version'])
-    logging.info("java versions:\n%s%s", java_version, javac_version)
+    logging.info('java versions:\n%s%s', java_version, javac_version)
 
 
 def base_argparser(description, module_name):
@@ -63,7 +63,7 @@ def base_argparser(description, module_name):
         description/usage information and no arguments."""
         parser = argparse.ArgumentParser(add_help=False)
         group = parser.add_argument_group(
-            "{grp} module".format(grp=group_name),
+            '{grp} module'.format(grp=group_name),
             description=description,
         )
         return parser
@@ -76,7 +76,7 @@ def clang_frontend_argparser(description, module_name):
         clang for their capture phase, thus InferClang and clang wrappers"""
         parser = argparse.ArgumentParser(add_help=False)
         group = parser.add_argument_group(
-            "{grp} module".format(grp=group_name),
+            '{grp} module'.format(grp=group_name),
             description=description,
         )
         group.add_argument(

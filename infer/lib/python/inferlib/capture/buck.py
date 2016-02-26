@@ -41,7 +41,7 @@ def create_argparser(group_name=MODULE_NAME):
     top-level module"""
     parser = argparse.ArgumentParser(add_help=False)
     group = parser.add_argument_group(
-        "{grp} module".format(grp=MODULE_NAME),
+        '{grp} module'.format(grp=MODULE_NAME),
         description=MODULE_DESCRIPTION,
     )
     group.add_argument('--print-harness', action='store_true',

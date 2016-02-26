@@ -28,7 +28,7 @@ from . import config, issues, utils
 # Increase the limit of the CSV parser to sys.maxlimit
 csv.field_size_limit(sys.maxsize)
 
-INFER_ANALYZE_BINARY = "InferAnalyze"
+INFER_ANALYZE_BINARY = 'InferAnalyze'
 
 
 def get_infer_version():

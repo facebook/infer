@@ -43,7 +43,7 @@ class GradleCapture:
                             config.JAVAC_FILELISTS_FILENAME)
         if not os.path.exists(path):
             os.mkdir(path)
-        logging.info("Running with:\n" + version_str)
+        logging.info('Running with:\n' + version_str)
 
     def get_infer_commands(self, verbose_output):
         argument_start_pattern = ' Compiler arguments: '
@@ -74,9 +74,9 @@ class GradleCapture:
                         dir=os.path.join(self.args.infer_out,
                                          config.JAVAC_FILELISTS_FILENAME),
                         delete=False) as sources:
-                    sources.write("\n".join(java_files))
+                    sources.write('\n'.join(java_files))
                     sources.flush()
-                    java_args.append("@" + sources.name)
+                    java_args.append('@' + sources.name)
                     capture = jwlib.create_infer_command(self.args,
                                                          java_args)
                     calls.append(capture)

@@ -159,7 +159,7 @@ class CompilerCall(object):
                                 + 'EOF\n"""\n'
                     failing_cmd = filter(lambda arg: arg != '-verbose',
                                          javac_cmd)
-                    utils.error(error_msg.format(failing_cmd))
+                    utils.stderr(error_msg.format(failing_cmd))
                     subprocess.check_call(failing_cmd)
 
         return os.EX_OK

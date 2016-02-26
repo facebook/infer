@@ -31,7 +31,7 @@ DEBUG_FORMAT = '[%(levelname)s:%(filename)s:%(lineno)03d] %(message)s'
 
 
 # Monkey patching subprocess (I'm so sorry!).
-if "check_output" not in dir(subprocess):
+if 'check_output' not in dir(subprocess):
     def f(*popenargs, **kwargs):
         if 'stdout' in kwargs:
             raise ValueError('stdout not supported')
@@ -42,7 +42,7 @@ if "check_output" not in dir(subprocess):
         output, unused_err = process.communicate()
         retcode = process.poll()
         if retcode:
-            cmd = kwargs.get("args")
+            cmd = kwargs.get('args')
             if cmd is None:
                 cmd = popenargs[0]
             raise subprocess.CalledProcessError(retcode, cmd)
@@ -63,7 +63,7 @@ def configure_logging(args):
     be called before any logging is done.
     """
     logging.TIMING = logging.ERROR + 5
-    logging.addLevelName(logging.TIMING, "TIMING")
+    logging.addLevelName(logging.TIMING, 'TIMING')
 
     def timing(msg, *args, **kwargs):
         logging.log(logging.TIMING, msg, *args, **kwargs)
@@ -81,10 +81,6 @@ def configure_logging(args):
 
 def elapsed_time(start_time):
     return time.time() - start_time
-
-
-def error(msg):
-    print(encode(msg), file=sys.stderr)
 
 
 def get_cmd_in_bin_dir(binary_name):
@@ -229,7 +225,7 @@ def search_files(root_dir, extension):
     if not os.path.isabs(root_dir):
         root_dir = os.path.abspath(root_dir)
     for dirpath, _, filenames in os.walk(root_dir):
-        for filename in fnmatch.filter(filenames, "*" + extension):
+        for filename in fnmatch.filter(filenames, '*' + extension):
             files.append(os.path.join(dirpath, filename))
     return files
 
@@ -290,19 +286,19 @@ def get_plural(_str, count):
     return '%d %s' % (count, plural_str)
 
 
-def decode(s, errors="replace"):
+def decode(s, errors='replace'):
     return s.decode(encoding=config.LOCALE, errors=errors)
 
 
-def encode(u, errors="replace"):
+def encode(u, errors='replace'):
     return u.encode(encoding=config.LOCALE, errors=errors)
 
 
-def stdout(s, errors="replace"):
+def stdout(s, errors='replace'):
     print(encode(s, errors=errors))
 
 
-def stderr(s, errors="replace"):
+def stderr(s, errors='replace'):
     print(encode(s, errors=errors), file=sys.stderr)
 
 
