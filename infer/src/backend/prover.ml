@@ -693,14 +693,13 @@ let check_lt_normalized prop e1 e2 =
     | Some upper1, Some lower2 -> Sil.Int.leq upper1 lower2 in
   (upper_lower_check ()) || (Inequalities.check_lt ineq e1 e2)
 
-(* given an atom and a proposition returns a unique identifier. *)
-(* We use this to distinguish among different queries *)
+(** Given an atom and a proposition returns a unique identifier.
+    We use this to distinguish among different queries. *)
 let get_smt_key a p =
   let tmp_filename = Filename.temp_file "smt_query" ".cns" in
   let outc_tmp = open_out tmp_filename in
   let fmt_tmp = F.formatter_of_out_channel outc_tmp in
-  let pe = Utils.pe_text in
-  let () = F.fprintf fmt_tmp "%a%a" (Sil.pp_atom pe) a (Prop.pp_prop pe) p in
+  let () = F.fprintf fmt_tmp "%a%a" (Sil.pp_atom pe_text) a (Prop.pp_prop pe_text) p in
   close_out outc_tmp;
   Digest.to_hex (Digest.file tmp_filename)
 
@@ -709,20 +708,23 @@ let check_atom prop a0 =
   let a = Prop.atom_normalize_prop prop a0 in
   let prop_no_fp = Prop.replace_sigma_footprint [] (Prop.replace_pi_footprint [] prop) in
   if !Config.smt_output then begin
-    let pe = Utils.pe_text in
     let key = get_smt_key a prop_no_fp in
-    let key_filename = DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir [(key ^ ".cns")] in
+    let key_filename =
+      DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir [(key ^ ".cns")] in
     let outc = open_out (DB.filename_to_string key_filename) in
     let fmt = F.formatter_of_out_channel outc in
     L.d_str ("ID: "^key); L.d_ln ();
     L.d_str "CHECK_ATOM_BOUND: "; Sil.d_atom a; L.d_ln ();
     L.d_str "WHERE:"; L.d_ln(); Prop.d_prop prop_no_fp; L.d_ln (); L.d_ln ();
-    let () = F.fprintf fmt "ID: %s @\nCHECK_ATOM_BOUND: %a@\nWHERE:@\n%a" key (Sil.pp_atom pe) a (Prop.pp_prop pe) prop_no_fp in
+    F.fprintf fmt "ID: %s @\nCHECK_ATOM_BOUND: %a@\nWHERE:@\n%a"
+      key (Sil.pp_atom pe_text) a (Prop.pp_prop pe_text) prop_no_fp;
     close_out outc;
   end;
   match a with
-  | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i)) when Sil.Int.isone i -> check_le_normalized prop e1 e2
-  | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i)) when Sil.Int.isone i -> check_lt_normalized prop e1 e2
+  | Sil.Aeq (Sil.BinOp (Sil.Le, e1, e2), Sil.Const (Sil.Cint i))
+    when Sil.Int.isone i -> check_le_normalized prop e1 e2
+  | Sil.Aeq (Sil.BinOp (Sil.Lt, e1, e2), Sil.Const (Sil.Cint i))
+    when Sil.Int.isone i -> check_lt_normalized prop e1 e2
   | Sil.Aeq (e1, e2) -> check_equal prop e1 e2
   | Sil.Aneq (e1, e2) -> check_disequal prop e1 e2
 
@@ -765,7 +767,8 @@ let check_inconsistency_two_hpreds prop =
     | (Sil.Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) as hpred) :: sigma_rest ->
         if Sil.exp_equal iF e || Sil.exp_equal iB e then true
         else f e (hpred:: sigma_seen) sigma_rest
-    | Sil.Hlseg (Sil.Lseg_PE, _, e1, Sil.Const (Sil.Cint i), _) as hpred :: sigma_rest when Sil.Int.iszero i ->
+    | Sil.Hlseg (Sil.Lseg_PE, _, e1, Sil.Const (Sil.Cint i), _) as hpred :: sigma_rest
+      when Sil.Int.iszero i ->
         if Sil.exp_equal e1 e then true
         else f e (hpred:: sigma_seen) sigma_rest
     | Sil.Hlseg (Sil.Lseg_PE, _, e1, e2, _) as hpred :: sigma_rest ->
@@ -811,14 +814,19 @@ let check_inconsistency_base prop =
   let inconsistent_ptsto _ =
     check_allocatedness prop Sil.exp_zero in
   let inconsistent_this_self_var () =
-    let procdesc = Cfg.Node.get_proc_desc (State.get_node ()) in
-    let procedure_attr = Cfg.Procdesc.get_attributes procdesc in
-    let is_java_this pvar = !Config.curr_language = Config.Java && Sil.pvar_is_this pvar in
-    let is_objc_instance_self pvar = !Config.curr_language = Config.C_CPP &&
-                                     Sil.pvar_get_name pvar = Mangled.from_string "self" &&
-                                     procedure_attr.ProcAttributes.is_objc_instance_method in
-    let is_cpp_this pvar = !Config.curr_language = Config.C_CPP && Sil.pvar_is_this pvar &&
-                           procedure_attr.ProcAttributes.is_cpp_instance_method in
+    let procdesc =
+      Cfg.Node.get_proc_desc (State.get_node ()) in
+    let procedure_attr =
+      Cfg.Procdesc.get_attributes procdesc in
+    let is_java_this pvar =
+      !Config.curr_language = Config.Java && Sil.pvar_is_this pvar in
+    let is_objc_instance_self pvar =
+      !Config.curr_language = Config.C_CPP &&
+      Sil.pvar_get_name pvar = Mangled.from_string "self" &&
+      procedure_attr.ProcAttributes.is_objc_instance_method in
+    let is_cpp_this pvar =
+      !Config.curr_language = Config.C_CPP && Sil.pvar_is_this pvar &&
+      procedure_attr.ProcAttributes.is_cpp_instance_method in
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
           Sil.exp_equal e Sil.exp_zero &&

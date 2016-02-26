@@ -15,8 +15,8 @@ module F = Format
 let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
 let one_cluster_per_procedure () = false
 
-let () = Config.ondemand_enabled :=
-    Config.from_env_variable "INFER_ONDEMAND"
+let () =
+  Config.ondemand_enabled := true
 
 let across_files () = true
 
@@ -27,7 +27,7 @@ let ondemand_file () = Config.get_env_variable "INFER_ONDEMAND_FILE"
 let read_dirs_to_analyze () =
   let lines_opt = match ondemand_file () with
     | None -> None
-    | Some fname -> Utils.read_file fname in
+    | Some fname ->read_file fname in
   match lines_opt with
   | None ->
       None
@@ -98,6 +98,7 @@ type global_state =
   }
 
 let save_global_state () =
+  Timeout.suspend_existing_timeout ();
   {
     abs_val = !Config.abs_val;
     abstraction_rules = Abs.get_current_rules ();
@@ -117,7 +118,8 @@ let restore_global_state st =
   Config.footprint := st.footprint_mode;
   Printer.html_formatter := st.html_formatter;
   Ident.NameGenerator.set_current st.name_generator;
-  State.restore_state st.symexec_state
+  State.restore_state st.symexec_state;
+  Timeout.resume_previous_timeout ()
 
 let do_analysis curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
@@ -164,9 +166,10 @@ let do_analysis curr_pdesc callee_pname =
       postprocess ();
       restore_global_state old_state;
     with e ->
-      L.stderr "ONDEMAND EXCEPTION %a %s %s@."
+      L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.CALL STACK@.%s@.BACK TRACE@.%s@."
         Procname.pp callee_pname
         (Printexc.to_string e)
+        (Printexc.raw_backtrace_to_string (Printexc.get_callstack 1000))
         (Printexc.get_backtrace ());
       restore_global_state old_state;
       raise e in

@@ -1,0 +1,126 @@
+(*
+ * Copyright (c) 2016 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
+
+module L = Logging
+module F = Format
+
+(** Handle timeout events *)
+
+(** status of a timeout instance *)
+type status =
+  {
+    (** Seconds remaining in the current timeout *)
+    seconds_remaining : float;
+
+    (** Internal State of SymOp *)
+    symop_state : SymOp.t
+  }
+
+(** stack of suspended timeout instances *)
+type timeouts_stack =
+  status list ref
+
+module GlobalState = struct
+  let stack : timeouts_stack =
+    ref []
+
+  let pop () =
+    match !stack with
+    | top_status :: l ->
+        stack := l;
+        Some top_status
+    | [] ->
+        None
+
+  let push status =
+    stack := status :: !stack
+end
+
+let set_alarm nsecs =
+  match Config.os_type with
+  | Config.Unix | Config.Cygwin ->
+      ignore (Unix.setitimer Unix.ITIMER_REAL
+                { Unix.it_interval = 3.0; (* try again after 3 seconds if the signal is lost *)
+                  Unix.it_value = nsecs })
+  | Config.Win32 ->
+      SymOp.set_wallclock_alarm nsecs
+
+let unset_alarm () =
+  match Config.os_type with
+  | Config.Unix | Config.Cygwin ->
+      set_alarm 0.0
+  | Config.Win32 ->
+      SymOp.unset_wallclock_alarm ()
+
+let get_seconds_remaining () =
+  match Config.os_type with
+  | Config.Unix | Config.Cygwin ->
+      (Unix.getitimer Unix.ITIMER_REAL).Unix.it_value
+  | Config.Win32 ->
+      SymOp.get_remaining_wallclock_time ()
+
+let get_current_status () =
+  let seconds_remaining = get_seconds_remaining () in
+  let symop_state = SymOp.save_state () in
+  {
+    seconds_remaining;
+    symop_state;
+  }
+
+let set_status status =
+  SymOp.restore_state status.symop_state;
+  set_alarm status.seconds_remaining
+
+let timeout_action _ =
+  unset_alarm ();
+  raise (Analysis_failure_exe (FKtimeout))
+
+let () = begin
+  match Config.os_type with
+  | Config.Unix | Config.Cygwin ->
+      Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action);
+      Sys.set_signal Sys.sigalrm (Sys.Signal_handle timeout_action)
+  | Config.Win32 ->
+      SymOp.set_wallclock_timeout_handler timeout_action;
+      (* use the Gc alarm for periodic timeout checks *)
+      ignore (Gc.create_alarm SymOp.check_wallclock_alarm)
+end
+
+let unwind () =
+  unset_alarm ();
+  SymOp.unset_alarm ();
+  GlobalState.pop ()
+
+let suspend_existing_timeout () =
+  let current_status = get_current_status () in
+  unset_alarm ();
+  GlobalState.push current_status
+
+let resume_previous_timeout () =
+  let status_opt = unwind () in
+  Option.may set_status status_opt
+
+let exe_timeout f x =
+  let suspend_existing_timeout_and_start_new_one () =
+    suspend_existing_timeout ();
+    set_alarm (get_timeout_seconds ());
+    SymOp.set_alarm () in
+  try
+    suspend_existing_timeout_and_start_new_one ();
+    f x;
+    resume_previous_timeout ();
+    None
+  with
+  | Analysis_failure_exe kind ->
+      resume_previous_timeout ();
+      Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." pp_failure_kind kind;
+      Some kind
+  | exe ->
+      resume_previous_timeout ();
+      raise exe

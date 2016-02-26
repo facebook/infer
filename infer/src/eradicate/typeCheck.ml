@@ -250,7 +250,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
   let handle_field_access_via_temporary typestate exp =
     let name_is_temporary name =
       let prefix = "$T" in
-      Utils.string_is_prefix prefix name in
+      string_is_prefix prefix name in
     let pvar_get_origin pvar =
       match TypeState.lookup_pvar pvar typestate with
       | Some (_, ta, _) ->

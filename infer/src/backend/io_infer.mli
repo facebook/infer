@@ -11,24 +11,51 @@
 (** Module to handle IO. Includes html and xml modules. *)
 
 module Html : sig
-  val close : Unix.file_descr * Format.formatter -> unit (** Close an Html file *)
-  val create : DB.Results_dir.path_kind -> DB.Results_dir.path -> Unix.file_descr * Format.formatter (** Create a new html file *)
-  val modified_during_analysis : DB.Results_dir.path -> bool (** Return true if the html file was modified since the beginning of the analysis *)
-  val open_out : DB.Results_dir.path -> Unix.file_descr * Format.formatter (** Open an Html file to append data *)
-  val pp_line_link : ?with_name: bool -> ?text: (string option) -> DB.Results_dir.path -> Format.formatter -> int -> unit (** Print an html link to the given line number of the current source file *)
-  val pp_hline : Format.formatter -> unit -> unit (** Print a horizontal line *)
-  val pp_end_color : Format.formatter -> unit -> unit (** Print end color *)
+  (** Close an Html file *)
+  val close : Unix.file_descr * Format.formatter -> unit
 
-  (** [pp_node_link path_to_root description isvisited isproof fmt id] prints an html link to the given node.
+  (** Create a new html file *)
+  val create :
+    DB.Results_dir.path_kind -> DB.Results_dir.path -> Unix.file_descr * Format.formatter
+
+  (** Return true if the html file was modified since the beginning of the analysis *)
+  val modified_during_analysis : DB.Results_dir.path -> bool
+
+  (** Open an Html file to append data *)
+  val open_out : DB.Results_dir.path -> Unix.file_descr * Format.formatter
+
+  (** Print an html link to the given line number of the current source file *)
+  val pp_line_link :
+    ?with_name: bool -> ?text: (string option) ->
+    DB.Results_dir.path -> Format.formatter -> int -> unit
+
+  (** Print a horizontal line *)
+  val pp_hline : Format.formatter -> unit -> unit
+
+  (** Print end color *)
+  val pp_end_color : Format.formatter -> unit -> unit
+
+  (** [pp_node_link path_to_root description isvisited isproof fmt id]
+      prints an html link to the given node.
       [path_to_root] is the path to the dir for the procedure in the spec db.
       [description] is a string description.
       [is_visited] indicates whether the node should be active or greyed out.
       [is_proof] indicates whether the node is part of a proof and should be green.
       [id] is the node identifier. *)
-  val pp_node_link : DB.Results_dir.path -> string -> int list -> int list -> int list -> bool -> bool -> Format.formatter -> int -> unit
-  val pp_proc_link : DB.Results_dir.path -> Procname.t -> Format.formatter -> string -> unit (** Print an html link to the given proc *)
-  val pp_session_link : ?with_name: bool -> string list -> Format.formatter -> int * int * int -> unit (** Print an html link given node id and session *)
-  val pp_start_color : Format.formatter -> Utils.color -> unit (** Print start color *)
+  val pp_node_link :
+    DB.Results_dir.path -> string -> int list -> int list -> int list ->
+    bool -> bool -> Format.formatter -> int -> unit
+
+  (** Print an html link to the given proc *)
+  val pp_proc_link :
+    DB.Results_dir.path -> Procname.t -> Format.formatter -> string -> unit
+
+  (** Print an html link given node id and session *)
+  val pp_session_link :
+    ?with_name: bool -> string list -> Format.formatter -> int * int * int -> unit
+
+  (** Print start color *)
+  val pp_start_color : Format.formatter -> color -> unit
 end
 
 (** Create and print xml trees *)

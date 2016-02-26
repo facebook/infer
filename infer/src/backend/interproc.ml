@@ -669,9 +669,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
     let pplist = Paths.PathSet.elements pathset in
     let f (prop, path) =
       let _, prop' = Cfg.remove_locals_formals pdesc prop in
-      (* let () = L.out "@.BEFORE abs:@.$%a@." (Prop.pp_prop Utils.pe_text)  prop' in *)
       let prop'' = Abs.abstract pname tenv prop' in
-      (* let () = L.out "@.AFTER abs:@.$%a@." (Prop.pp_prop Utils.pe_text) prop'' in *)
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
       if !Config.curr_language = Config.Java && Cfg.Procdesc.get_access pdesc <> Sil.Private then
@@ -1057,7 +1055,7 @@ let report_runtime_exceptions tenv pdesc summary =
   let report (pre, runtime_exception) =
     if should_report pre then
       let pre_str =
-        Utils.pp_to_string (Prop.pp_prop pe_text) (Specs.Jprop.to_prop pre) in
+        pp_to_string (Prop.pp_prop pe_text) (Specs.Jprop.to_prop pre) in
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
       Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
@@ -1116,7 +1114,7 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
     | None -> assert false in
   reset_global_values proc_desc;
   let go, get_results = perform_analysis_phase cfg tenv proc_name proc_desc in
-  let res = Fork.Timeout.exe_timeout (Specs.get_iterations proc_name) go () in
+  let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
   let elapsed = Unix.gettimeofday () -. init_time in
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in

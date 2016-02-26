@@ -95,7 +95,7 @@ let curr_class_compare curr_class1 curr_class2 =
   | ContextCls (_, _, _), _ -> -1
   | _, ContextCls (_, _, _) -> 1
   | ContextCategory (name1, cls1), ContextCategory (name2, cls2) ->
-      Utils.pair_compare String.compare String.compare (name1, cls1) (name2, cls2)
+      pair_compare String.compare String.compare (name1, cls1) (name2, cls2)
   | ContextCategory (_, _), _ -> -1
   | _, ContextCategory (_, _) -> 1
   | ContextProtocol name1, ContextProtocol name2 ->

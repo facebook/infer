@@ -10,15 +10,6 @@
 
 (** Implementation of the Interprocedural Footprint Analysis Algorithm *)
 
-(** Handle timeout events *)
-module Timeout : sig
-  (** execute the function up to a given timeout given by the iterations parameter *)
-  val exe_timeout : int -> ('a -> unit) -> 'a -> Utils.failure_kind option
-end
-
-
-(** {2 Algorithm} *)
-
 val procs_become_done : Cg.t -> Procname.t -> Procname.t list
 
 val post_process_procs : Exe_env.t -> Procname.t list -> unit

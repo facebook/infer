@@ -17,7 +17,7 @@ open CFrontend_utils
 
 let arg_desc =
   let desc =
-    (Utils.arg_desc_filter ["-results_dir"] Utils.base_arg_desc) @
+    (Utils.arg_desc_filter ["-results_dir"] base_arg_desc) @
     [
       "-c",
       Arg.String (fun cfile -> CFrontend_config.source_file := Some cfile),
@@ -53,7 +53,7 @@ let arg_desc =
       Arg.Unit (fun _ -> CFrontend_config.testing_mode := true),
       None,
       "Mode for testing, where no libraries are translated, \
-      including enums defined in the libraries"
+       including enums defined in the libraries"
       ;
       "-debug",
       Arg.Unit (fun _ -> CFrontend_config.debug_mode := true),
@@ -82,17 +82,17 @@ let arg_desc =
       "Mode for computing the models"
       ;
     ] in
-  Utils.Arg.create_options_desc false "Parsing Options" desc
+  Arg.create_options_desc false "Parsing Options" desc
 
 let usage =
   "\nUsage: InferClang -c C Files -ast AST Files -results_dir <output-dir> [options] \n"
 
 let print_usage_exit () =
-  Utils.Arg.usage arg_desc usage;
+  Arg.usage arg_desc usage;
   exit(1)
 
 let () =
-  Utils.Arg.parse arg_desc (fun _ -> ()) usage
+  Arg.parse arg_desc (fun _ -> ()) usage
 
 let buffer_len = 16384
 

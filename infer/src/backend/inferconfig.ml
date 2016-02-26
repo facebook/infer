@@ -85,13 +85,13 @@ module FileContainsStringMatcher = struct
         try
           DB.SourceFileMap.find source_file !source_map
         with Not_found ->
-          try
-            let file_in = open_in (DB.source_file_to_string source_file) in
-            let pattern_found = file_contains regexp file_in in
-            close_in file_in;
-            source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
-            pattern_found
-          with Sys_error _ -> false
+        try
+          let file_in = open_in (DB.source_file_to_string source_file) in
+          let pattern_found = file_contains regexp file_in in
+          close_in file_in;
+          source_map := DB.SourceFileMap.add source_file pattern_found !source_map;
+          pattern_found
+        with Sys_error _ -> false
 end
 
 module type MATCHABLE_JSON = sig
@@ -358,20 +358,20 @@ let create_filters analyzer =
 let test () =
   Config.project_root := Some (Sys.getcwd ());
   let filters =
-    IList.map (fun analyzer -> (analyzer, create_filters analyzer)) Utils.analyzers in
+    IList.map (fun analyzer -> (analyzer, create_filters analyzer)) analyzers in
   let matching_analyzers path =
     IList.fold_left
       (fun l (a, f) -> if f.path_filter path then a:: l else l)
       [] filters in
-  Utils.directory_iter
+  directory_iter
     (fun path ->
        if DB.is_source_file path then
          let source_file = (DB.source_file_from_string path) in
          let matching = matching_analyzers source_file in
          if matching <> [] then
            let matching_s =
-             Utils.join_strings ", "
-               (IList.map Utils.string_of_analyzer matching) in
+             join_strings ", "
+               (IList.map string_of_analyzer matching) in
            Logging.stderr "%s -> {%s}@."
              (DB.source_file_to_rel_path source_file)
              matching_s)

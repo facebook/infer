@@ -16,15 +16,17 @@ type splitting
 (** Remove constant string or class from a prop *)
 val remove_constant_string_class : 'a Prop.t -> Prop.normal Prop.t
 
-(** Check if the attribute change is a mismatch between a kind of allocation and a different kind of deallocation *)
+(** Check if the attribute change is a mismatch between a kind of allocation
+    and a different kind of deallocation *)
 val check_attr_dealloc_mismatch : Sil.attribute -> Sil.attribute -> unit
 
-(** Check whether a sexp contains a dereference without null check, and return the line number and path position *)
+(** Check whether a sexp contains a dereference without null check,
+    and return the line number and path position *)
 val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * Sil.path_pos) option
 
 (** raise a cast exception *)
 val raise_cast_exception :
-  Utils.ml_loc -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
+  ml_loc -> Procname.t option -> Sil.exp -> Sil.exp -> Sil.exp -> 'a
 
 (** check if a prop is an exception *)
 val prop_is_exn : Procname.t -> 'a Prop.t -> bool

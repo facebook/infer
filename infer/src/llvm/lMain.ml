@@ -28,7 +28,7 @@ let arg_desc =
 let usage = "Usage: InferLLVM -c <cfile> [options]\n"
 
 let print_usage_exit () =
-  Utils.Arg.usage arg_desc usage;
+  Arg.usage arg_desc usage;
   exit(1)
 
 let init_global_state source_filename =

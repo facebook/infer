@@ -34,7 +34,7 @@ type filters =
 val do_not_filter : filters
 
 (** Create filters based on the config file *)
-val create_filters : Utils.analyzer -> filters
+val create_filters : analyzer -> filters
 
 module NeverReturnNull : sig
   type matcher = DB.source_file -> Procname.t -> bool

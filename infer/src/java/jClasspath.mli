@@ -16,7 +16,8 @@ val models_jar : string ref
 (** Type environment of the models *)
 val models_tenv : Sil.tenv ref
 
-(**  Adds the set of procnames for the models of Java libraries so that methods with similar names are skipped during the capture *)
+(**  Adds the set of procnames for the models of Java libraries so that methods
+     with similar names are skipped during the capture *)
 val add_models : string -> unit
 
 (** Check if there is a model for the given procname *)
@@ -24,7 +25,8 @@ val is_model : Procname.t -> bool
 
 val set_verbose_out: string -> unit
 
-(** create a source file from an absolute path. Source files are relative if the project root is specified and absolute otherwise *)
+(** create a source file from an absolute path.
+    Source files are relative if the project root is specified and absolute otherwise *)
 val java_source_file_from_path : string -> DB.source_file
 
 val split_classpath : string -> string list
@@ -36,7 +38,7 @@ type file_entry =
 
 (** load the list of source files and the list of classes from the javac verbose file *)
 val load_sources_and_classes : unit ->
-  string * file_entry Utils.StringMap.t * JBasics.ClassSet.t
+  string * file_entry StringMap.t * JBasics.ClassSet.t
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 

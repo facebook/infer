@@ -457,7 +457,7 @@ module ProcsCsv = struct
     pp "%s," sv.vrank;
     pp "%d," sv.vin_calls;
     pp "%d," sv.vout_calls;
-    pp "%s," sv.vproof_trace;
+    pp "%s@\n" sv.vproof_trace;
 end
 
 module ProcsXml = struct
@@ -540,7 +540,7 @@ module BugsCsv = struct
         let qualifier_tag_xml =
           let xml_node = Io_infer.Xml.create_tree Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc) in
           let p fmt () = F.fprintf fmt "%a" (Io_infer.Xml.pp_document false) xml_node in
-          let s = Utils.pp_to_string p () in
+          let s = pp_to_string p () in
           Escape.escape_csv s in
         let kind = Exceptions.err_kind_string ekind in
         let type_str = Localise.to_string error_name in

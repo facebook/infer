@@ -94,10 +94,10 @@ struct
     L.err "AST Element> %s IN FILE> %s @.@." pointer !CFrontend_config.json
 
   let print_nodes nodes =
-    IList.iter (fun node -> print_endline (Cfg.Node.get_description Utils.pe_text node)) nodes
+    IList.iter (fun node -> print_endline (Cfg.Node.get_description pe_text node)) nodes
 
   let instrs_to_string instrs =
-    let pp fmt () = Format.fprintf fmt "%a" (Sil.pp_instr_list Utils.pe_text) instrs in
+    let pp fmt () = Format.fprintf fmt "%a" (Sil.pp_instr_list pe_text) instrs in
     pp_to_string pp ()
 
 end

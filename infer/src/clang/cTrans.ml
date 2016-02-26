@@ -1551,8 +1551,9 @@ struct
           IList.map (fun (e, t) -> IList.flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
       | _ -> [ [(e, typ)] ] in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-    let var_type = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-    let lh = IList.flatten (collect_left_hand_exprs var_exp var_type Utils.StringSet.empty) in
+    let var_type =
+      CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+    let lh = IList.flatten (collect_left_hand_exprs var_exp var_type StringSet.empty) in
     let rh = IList.flatten (IList.map (collect_right_hand_exprs trans_state_pri) stmts ) in
     if IList.length rh != IList.length lh then (
       (* If the right hand expressions are not as many as the left hand expressions something's wrong *)

@@ -277,9 +277,9 @@ let pp_failure_kind fmt = function
 let symops_timeout, seconds_timeout =
   (* default timeout and long timeout are the same for now, but this will change shortly *)
   let default_symops_timeout = 333 in
-  let default_seconds_timeout = 10 in
+  let default_seconds_timeout = 10.0 in
   let long_symops_timeout = 1000 in
-  let long_seconds_timeout = 30 in
+  let long_seconds_timeout = 30.0 in
   if Config.analyze_models then
     (* use longer timeouts when analyzing models *)
     long_symops_timeout, long_seconds_timeout
@@ -292,9 +292,6 @@ let symops_per_iteration = ref symops_timeout
 (** number of seconds to multiply by the number of iterations, after which there is a timeout *)
 let seconds_per_iteration = ref seconds_timeout
 
-(** timeout value from the -iterations command line option *)
-let iterations_cmdline = ref 1
-
 (** Timeout in seconds for each function *)
 let timeout_seconds = ref !seconds_per_iteration
 
@@ -304,23 +301,53 @@ let timeout_symops = ref !symops_per_iteration
 (** Set the timeout values in seconds and symops, computed as a multiple of the integer parameter *)
 let set_iterations n =
   timeout_symops := !symops_per_iteration * n;
-  timeout_seconds := !seconds_per_iteration * n
+  timeout_seconds := !seconds_per_iteration *. (float_of_int n)
 
 let get_timeout_seconds () = !timeout_seconds
 
 (** Count the number of symbolic operations *)
 module SymOp = struct
-  (** Number of symop's *)
-  let symop_count = ref 0
 
-  (** Total number of symop's since the beginning *)
-  let symop_total = ref 0
+  (** Internal state of the module *)
+  type t =
+    {
+      (** Only throw timeout exception when alarm is active *)
+      mutable alarm_active : bool;
 
-  (** Only throw timeout exception when alarm is active *)
-  let alarm_active = ref false
+      (** last wallclock set by an alarm, if any *)
+      mutable last_wallclock : float option;
 
-  (** last wallclock set by an alarm, if any *)
-  let last_wallclock = ref None
+      (** Number of symop's *)
+      mutable symop_count : int;
+
+      (** Total number of symop's since the beginning *)
+      mutable symop_total : int;
+
+      (** Time in the beginning *)
+      mutable timer : float;
+    }
+
+  let initial () : t =
+    {
+      alarm_active = false;
+      last_wallclock = None;
+      symop_count = 0;
+      symop_total = 0;
+      timer = Unix.gettimeofday ();
+    }
+
+  (** Global State *)
+  let gs : t ref = ref (initial ())
+
+  (** Restore the old state. *)
+  let restore_state state =
+    gs := state
+
+  (** Return the old state, and revert the current state to the initial one. *)
+  let save_state () =
+    let old_state = !gs in
+    gs := initial ();
+    old_state
 
   (** handler for the wallclock timeout *)
   let wallclock_timeout_handler = ref None
@@ -331,65 +358,66 @@ module SymOp = struct
 
   (** Set the wallclock alarm checked at every pay() *)
   let set_wallclock_alarm nsecs =
-    last_wallclock := Some (Unix.gettimeofday () +. float_of_int nsecs)
+    !gs.last_wallclock <- Some (Unix.gettimeofday () +. nsecs)
 
   (** Unset the wallclock alarm checked at every pay() *)
   let unset_wallclock_alarm () =
-    last_wallclock := None
+    !gs.last_wallclock <- None
 
   (** if the wallclock alarm has expired, raise a timeout exception *)
   let check_wallclock_alarm () =
-    match !last_wallclock, !wallclock_timeout_handler with
+    match !gs.last_wallclock, !wallclock_timeout_handler with
     | Some alarm_time, Some handler when Unix.gettimeofday () >= alarm_time ->
         unset_wallclock_alarm ();
         handler ()
     | _ -> ()
 
+  (** Return the time remaining before the wallclock alarm expires *)
+  let get_remaining_wallclock_time () =
+    match !gs.last_wallclock with
+    | Some alarm_time ->
+        max 0.0 (alarm_time -. Unix.gettimeofday ())
+    | None ->
+        0.0
+
   (** Return the total number of symop's since the beginning *)
-  let get_total () = !symop_total
+  let get_total () =
+    !gs.symop_total
 
   (** Reset the total number of symop's *)
-  let reset_total () = symop_total := 0
-
-  (** timer at load time *)
-  let initial_time = Unix.gettimeofday ()
-
-  (** Time in the beginning *)
-  let timer = ref initial_time
+  let reset_total () =
+    !gs.symop_total <- 0
 
   (** Count one symop *)
   let pay () =
-    incr symop_count; incr symop_total;
-    if !symop_count > !timeout_symops && !alarm_active
-    then raise (Analysis_failure_exe (FKsymops_timeout !symop_count));
+    !gs.symop_count <- !gs.symop_count + 1;
+    !gs.symop_total <- !gs.symop_total + 1;
+    if !gs.symop_count > !timeout_symops &&
+       !gs.alarm_active
+    then raise (Analysis_failure_exe (FKsymops_timeout !gs.symop_count));
     check_wallclock_alarm ()
 
   (** Reset the counters *)
   let reset () =
-    symop_count := 0;
-    timer := Unix.gettimeofday ()
+    !gs.symop_count <- 0;
+    !gs.timer <- Unix.gettimeofday ()
 
   (** Reset the counter and activate the alarm *)
   let set_alarm () =
     reset ();
-    alarm_active := true
+    !gs.alarm_active <- true
 
   (** De-activate the alarm *)
   let unset_alarm () =
-    alarm_active := false
+    !gs.alarm_active <- false
 
   let report_stats f symops elapsed =
     F.fprintf f "SymOp stats -- symops:%d time:%f symops/sec:%f" symops elapsed ((float_of_int symops) /. elapsed)
 
   (** Report the stats since the last reset *)
   let report f () =
-    let elapsed = Unix.gettimeofday () -. !timer in
-    report_stats f !symop_count elapsed
-
-  (** Report the stats since the loading of this module *)
-  let report_total f () =
-    let elapsed = Unix.gettimeofday () -. initial_time in
-    report_stats f !symop_total elapsed
+    let elapsed = Unix.gettimeofday () -. !gs.timer in
+    report_stats f !gs.symop_count elapsed
 end
 
 (** Check if the lhs is a substring of the rhs. *)
@@ -879,7 +907,6 @@ type proc_flags = (string, string) Hashtbl.t
 
 let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
-let proc_flag_iterations = "iterations"
 let proc_flag_skip = "skip"
 let proc_flag_ignore_return = "ignore_return"
 

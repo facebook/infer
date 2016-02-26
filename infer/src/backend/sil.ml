@@ -72,7 +72,7 @@ let pp_item_annotation fmt item_annotation =
 
 let item_annotation_to_string ann =
   let pp fmt () = pp_item_annotation fmt ann in
-  Utils.pp_to_string pp ()
+  pp_to_string pp ()
 
 (** Pretty print a method annotation. *)
 let pp_method_annotation s fmt (ia, ial) =
@@ -551,7 +551,7 @@ end = struct
     else F.fprintf f "%Ld" n
 
   let to_string i =
-    Utils.pp_to_string pp i
+    pp_to_string pp i
 end
 
 (** Flags for a procedure call *)
@@ -2072,8 +2072,8 @@ and pp_exp_full pe f e =
 and exp_to_string e = pp_to_string (pp_exp pe_text) e
 
 let typ_to_string typ =
-  let pp fmt () = pp_typ_full Utils.pe_text fmt typ in
-  Utils.pp_to_string pp ()
+  let pp fmt () = pp_typ_full pe_text fmt typ in
+  pp_to_string pp ()
 
 (** dump a type with all the details. *)
 let d_typ_full (t: typ) = L.add_print_action (L.PTtyp_full, Obj.repr t)

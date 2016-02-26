@@ -936,7 +936,7 @@ let save_source_files cfg =
        >
        DB.file_modified_time dest_file) in
     if needs_copy then
-      match Utils.copy_file source_file_str dest_file_str with
+      match copy_file source_file_str dest_file_str with
       | Some _ -> ()
       | None -> L.err "Error cannot create copy of source file %s@." source_file_str in
   Node.iter_proc_desc cfg process_proc

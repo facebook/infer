@@ -156,7 +156,7 @@ let arg_desc =
         "analyze files captured since the last analysis plus any dependencies"
         ;
         "-iterations",
-        Arg.Set_int iterations_cmdline,
+        Arg.Int set_iterations,
         Some "n",
         "set the max number of operations for each function, \
          expressed as a multiple of symbolic operations (default n=1)"
@@ -281,7 +281,7 @@ let arg_desc =
         "set the max number of procedures in each cluster (default n=2000)"
         ;
         "-seconds_per_iteration",
-        Arg.Set_int seconds_per_iteration,
+        Arg.Set_float seconds_per_iteration,
         Some "n",
         "set the number of seconds per iteration (default n=30)"
         ;
@@ -890,7 +890,7 @@ let () =
     else
       let filter source_dir =
         let source_dir_base = Filename.basename (DB.source_dir_to_string source_dir) in
-        IList.exists (fun s -> Utils.string_is_prefix s source_dir_base) !only_files_cmdline in
+        IList.exists (fun s -> string_is_prefix s source_dir_base) !only_files_cmdline in
       IList.filter filter (DB.find_source_dirs ()) in
   L.err "Found %d source files in %s@." (IList.length source_dirs) !Config.results_dir;
 

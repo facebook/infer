@@ -20,7 +20,7 @@ val convert_string : string -> string
 val pp_string : style -> Format.formatter -> string -> unit
 
 (** Print color command *)
-val pp_color : Format.formatter -> Utils.color -> unit
+val pp_color : Format.formatter -> color -> unit
 
 (** Prelude for a latex file with the given author and title and table of contents flag *)
 val pp_begin : Format.formatter -> (string * string * bool) -> unit

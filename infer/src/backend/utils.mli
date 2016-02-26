@@ -160,13 +160,10 @@ val initial_analysis_time : float
 val symops_per_iteration : int ref
 
 (** number of seconds to multiply by the number of iterations, after which there is a timeout *)
-val seconds_per_iteration : int ref
-
-(** timeout value from the -iterations command line option *)
-val iterations_cmdline : int ref
+val seconds_per_iteration : float ref
 
 (** Timeout in seconds for each function *)
-val get_timeout_seconds : unit -> int
+val get_timeout_seconds : unit -> float
 
 (** Set the timeout values in seconds and symops, computed as a multiple of the integer parameter *)
 val set_iterations : int -> unit
@@ -187,38 +184,47 @@ val pp_failure_kind : Format.formatter -> failure_kind -> unit
 
 (** Count the number of symbolic operations *)
 module SymOp : sig
-  (** Count one symop *)
-  val pay : unit -> unit
-
-  (** Reset the counter and activate the alarm *)
-  val set_alarm : unit -> unit
-
-  (** De-activate the alarm *)
-  val unset_alarm : unit -> unit
-
-  (** set the handler for the wallclock timeout *)
-  val set_wallclock_timeout_handler : (unit -> unit) -> unit
-
-  (** Set the wallclock alarm checked at every pay() *)
-  val set_wallclock_alarm : int -> unit
-
-  (** Unset the wallclock alarm checked at every pay() *)
-  val unset_wallclock_alarm : unit -> unit
+  (** Internal state of the module *)
+  type t
 
   (** if the wallclock alarm has expired, raise a timeout exception *)
   val check_wallclock_alarm : unit -> unit
 
+  (** Return the time remaining before the wallclock alarm expires *)
+  val get_remaining_wallclock_time : unit -> float
+
   (** Return the total number of symop's since the beginning *)
   val get_total : unit -> int
 
-  (** Reset the total number of symop's *)
-  val reset_total : unit -> unit
+  (** Count one symop *)
+  val pay : unit -> unit
 
   (** Report the stats since the last reset *)
   val report : Format.formatter -> unit -> unit
 
-  (** Report the stats since the loading of this module *)
-  val report_total : Format.formatter -> unit -> unit
+  (** Reset the total number of symop's *)
+  val reset_total : unit -> unit
+
+  (** Restore the old state. *)
+  val restore_state : t -> unit
+
+  (** Return the old state, and revert the current state to the initial one. *)
+  val save_state : unit -> t
+
+  (** Reset the counter and activate the alarm *)
+  val set_alarm : unit -> unit
+
+  (** Set the wallclock alarm checked at every pay() *)
+  val set_wallclock_alarm : float -> unit
+
+  (** set the handler for the wallclock timeout *)
+  val set_wallclock_timeout_handler : (unit -> unit) -> unit
+
+  (** De-activate the alarm *)
+  val unset_alarm : unit -> unit
+
+  (** Unset the wallclock alarm checked at every pay() *)
+  val unset_wallclock_alarm : unit -> unit
 end
 
 module Arg : sig
@@ -328,7 +334,6 @@ end
 type proc_flags = (string, string) Hashtbl.t
 
 (** keys for proc_flags *)
-val proc_flag_iterations : string (** key to specify procedure-specific iterations *)
 val proc_flag_skip : string (** key to specify that a function should be treated as a skip function *)
 val proc_flag_ignore_return : string (** key to specify that it is OK to ignore the return value *)
 

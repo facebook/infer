@@ -9,7 +9,7 @@
 
 (** Representation of LLVM constructs *)
 
-module MetadataMap = Utils.IntMap;;
+module MetadataMap = IntMap;;
 
 type variable_id =
   | Name of string

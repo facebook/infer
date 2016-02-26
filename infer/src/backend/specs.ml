@@ -261,7 +261,10 @@ module CallStats = struct (** module for tracing stats of function calls *)
     let s2 = if in_footprint then "FP" else "RE" in
     s1 ^ ":" ^ s2
 
-  let pp_trace fmt tr = Utils.pp_seq (fun fmt x -> F.fprintf fmt "%s" (tr_elem_str x)) fmt (IList.rev tr)
+  let pp_trace fmt tr =
+    pp_seq
+      (fun fmt x -> F.fprintf fmt "%s" (tr_elem_str x))
+      fmt (IList.rev tr)
 
   let iter f t =
     let elems = ref [] in
@@ -722,19 +725,6 @@ let get_flag proc_name key =
       try
         Some (Hashtbl.find proc_flags key)
       with Not_found -> None
-
-(** Get the iterations associated to the procedure if any, or the default timeout from the
-    command line *)
-let get_iterations proc_name =
-  match get_summary proc_name with
-  | None ->
-      raise (Failure ("Specs.get_iterations: " ^ (Procname.to_string proc_name) ^ "Not_found"))
-  | Some summary ->
-      let proc_flags = summary.attributes.ProcAttributes.proc_flags in
-      try
-        let time_str = Hashtbl.find proc_flags proc_flag_iterations in
-        Pervasives.int_of_string time_str
-      with exn when exn_not_failure exn -> !iterations_cmdline
 
 (** Return the specs and parameters for the proc in the spec table *)
 let get_specs_formals proc_name =

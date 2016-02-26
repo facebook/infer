@@ -88,7 +88,7 @@ let should_translate (loc_start, loc_end) =
     DB.source_file_equal file !DB.current_source
   in
   let file_in_project file = match !Config.project_root with
-    | Some root ->  Utils.string_is_prefix root file
+    | Some root -> string_is_prefix root file
     | None -> false
   in
   let file_in_project = map_path_of file_in_project loc_end

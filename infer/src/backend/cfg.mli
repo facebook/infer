@@ -180,7 +180,7 @@ module Node : sig
   val get_distance_to_exit: t -> int option
 
   (** Return a description of the node *)
-  val get_description : Utils.printenv -> t -> string
+  val get_description : printenv -> t -> string
 
   (** Get the exception nodes from the current node *)
   val get_exn : t -> t list

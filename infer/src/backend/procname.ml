@@ -369,7 +369,8 @@ let java_is_vararg = function
 let is_constructor = function
   | Java_method js -> js.method_name = "<init>"
   | ObjC_Cpp_method name ->
-      (name.method_name = "new") || Utils.string_is_prefix "init" name.method_name
+      (name.method_name = "new") ||
+      string_is_prefix "init" name.method_name
   | _ -> false
 
 (** [is_objc_dealloc pname] returns true if [pname] is the dealloc method in Objective-C *)

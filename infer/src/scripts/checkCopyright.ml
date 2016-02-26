@@ -162,7 +162,7 @@ let copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr =
     !r in
   let new_copyright =
     let pp fmt () = pp_copyright mono fb_year com_style fmt prefix in
-    Utils.pp_to_string pp () in
+    pp_to_string pp () in
   old_copyright <> new_copyright
 
 let update_file fname mono fb_year com_style prefix cstart cend lines_arr =

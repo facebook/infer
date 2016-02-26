@@ -177,9 +177,6 @@ val get_formals : summary -> (Mangled.t * Sil.typ) list
 (** Get the flag with the given key for the procedure, if any *)
 val get_flag : Procname.t -> string -> string option
 
-(** Get the iterations associated to the procedure if any, or the default timeout from the command line *)
-val get_iterations : Procname.t -> int
-
 (** Return the current phase for the proc *)
 val get_phase : Procname.t -> phase
 

@@ -251,79 +251,6 @@ let filter_max exe_env filter set priority_set =
     find_max 1 filter (WeightedPnameSet.inter set priority_set)
   with Not_found -> find_max 1 filter set
 
-(** Handle timeout events *)
-module Timeout : sig
-  (** execute the function up to a given timeout given by the parameter *)
-  val exe_timeout : int -> ('a -> unit) -> 'a -> failure_kind option
-end = struct
-  let set_alarm nsecs =
-    match Config.os_type with
-    | Config.Unix | Config.Cygwin ->
-        ignore (Unix.setitimer Unix.ITIMER_REAL
-                  { Unix.it_interval = 3.0; (* try again after 3 seconds if the signal is lost *)
-                    Unix.it_value = float_of_int nsecs })
-    | Config.Win32 ->
-        SymOp.set_wallclock_alarm nsecs
-
-  let unset_alarm () =
-    match Config.os_type with
-    | Config.Unix | Config.Cygwin -> set_alarm 0
-    | Config.Win32 -> SymOp.unset_wallclock_alarm ()
-
-  let timeout_action _ =
-    unset_alarm ();
-    raise (Analysis_failure_exe (FKtimeout))
-
-  let () = begin
-    match Config.os_type with
-    | Config.Unix | Config.Cygwin ->
-        Sys.set_signal Sys.sigvtalrm (Sys.Signal_handle timeout_action);
-        Sys.set_signal Sys.sigalrm (Sys.Signal_handle timeout_action)
-    | Config.Win32 ->
-        SymOp.set_wallclock_timeout_handler timeout_action;
-        (* use the Gc alarm for periodic timeout checks *)
-        ignore (Gc.create_alarm SymOp.check_wallclock_alarm)
-  end
-
-  let current_timeouts = ref []
-
-  let exe_timeout iterations f x =
-    let restore_timeout () =
-      match !current_timeouts with
-      | prev_iterations :: _ ->
-          set_alarm prev_iterations
-      | [] ->
-          () in
-    let unwind () =
-      let pop () = match !current_timeouts with
-        | _ :: l -> current_timeouts := l
-        | [] -> () in
-      unset_alarm ();
-      SymOp.unset_alarm ();
-      pop () in
-    let before () =
-      current_timeouts := iterations :: !current_timeouts;
-      set_iterations iterations;
-      set_alarm (get_timeout_seconds ());
-      SymOp.set_alarm () in
-    let after () =
-      unwind ();
-      restore_timeout () in
-    try
-      before ();
-      f x;
-      after ();
-      None
-    with
-    | Analysis_failure_exe kind ->
-        after ();
-        Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." pp_failure_kind kind;
-        Some kind
-    | exe ->
-        after ();
-        raise exe
-end
-
 
 (** Main algorithm responsible for driving the analysis of an Exe_env (set of procedures).
     The algorithm computes dependencies between procedures,
@@ -341,7 +268,6 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
     WeightedPnameSet.filter (fun (n, _) -> address_taken_of n) !G.wpnames_todo in
   G.tot_procs := WeightedPnameSet.cardinal !G.wpnames_todo;
   G.num_procs_done := 0;
-  let max_timeout = ref 1 in
   let wpname_can_be_analyzed (pname, _) : bool =
     (* Return true if [pname] is not up to date and it can be analyzed right now *)
     Procname.Set.for_all
@@ -365,7 +291,6 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
       post_process_procs exe_env [pname]
     else
       begin
-        max_timeout := max (Specs.get_iterations pname) !max_timeout;
         Specs.update_dependency_map pname;
         process_result exe_env elem (analyze_proc exe_env pname);
       end in
