@@ -156,7 +156,7 @@ let collect_calls tenv caller_pdesc checked_pnames call_summary (pname, _) =
   if Procname.Set.mem pname !checked_pnames then call_summary
   else
     begin
-      Ondemand.do_analysis caller_pdesc pname;
+      Ondemand.do_analysis ~propagate_exceptions:true caller_pdesc pname;
       checked_pnames := Procname.Set.add pname !checked_pnames;
       let call_loc = lookup_location pname in
       let updated_expensive_calls =

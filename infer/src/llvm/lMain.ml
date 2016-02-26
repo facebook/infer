@@ -41,7 +41,6 @@ let init_global_state source_filename =
   end;
   DB.Results_dir.init ();
   Ident.NameGenerator.reset ();
-  SymOp.reset_total ();
   Config.nLOC := FileLOC.file_get_loc source_filename
 
 let store_icfg tenv cg cfg =

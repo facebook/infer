@@ -1179,25 +1179,54 @@ let process_result (exe_env: Exe_env.t) (proc_name, calls) (_summ: Specs.summary
   let procs_done = Fork.procs_become_done call_graph proc_name in
   Fork.post_process_procs exe_env procs_done
 
-let filter_out_ondemand exe_env proc_name =
-  let to_analyze =
-    if !Config.ondemand_enabled then
-      try
-        let cfg = Exe_env.get_cfg exe_env proc_name in
-        match Cfg.Procdesc.find_from_name cfg proc_name with
-        | Some pdesc ->
-            let reactive_changed =
-              if !Config.reactive_mode
-              then (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.changed
-              else true in
+let analyze_proc_for_ondemand exe_env proc_name =
+  let saved_footprint = !Config.footprint in
+  Config.footprint := true;
+  let summaryfp = analyze_proc exe_env proc_name in
+  Specs.add_summary proc_name summaryfp;
+  let cg = Cg.create () in
+  Cg.add_defined_node cg proc_name;
+  perform_transition exe_env cg proc_name;
+  Config.footprint := false;
+  let summaryre = analyze_proc exe_env proc_name in
+  Specs.add_summary proc_name summaryre;
+  Config.footprint := saved_footprint
+
+let interprocedural_algorithm_ondemand exe_env : unit =
+  let call_graph = Exe_env.get_cg exe_env in
+  let filter_initial proc_name =
+    let summary = Specs.get_summary_unsafe "main_algorithm" proc_name in
+    Specs.get_timestamp summary = 0 in
+  let procs_to_analyze =
+    IList.filter filter_initial (Cg.get_defined_nodes call_graph) in
+  let to_analyze proc_name =
+    try
+      let cfg = Exe_env.get_cfg exe_env proc_name in
+      match Cfg.Procdesc.find_from_name cfg proc_name with
+      | Some pdesc ->
+          let reactive_changed =
+            if !Config.reactive_mode
+            then (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.changed
+            else true in
+          if
             reactive_changed && (* in reactive mode, only analyze changed procedures *)
             Ondemand.procedure_should_be_analyzed pdesc proc_name
-        | None ->
-            true
-      with Not_found -> true
-    else
-      true in
-  not to_analyze
+          then
+            Some pdesc
+          else
+            None
+      | None ->
+          None
+    with Not_found ->
+      None in
+  let process_one_proc proc_name =
+    match to_analyze proc_name with
+    | Some pdesc ->
+        Ondemand.do_analysis ~propagate_exceptions:false pdesc proc_name
+    | None ->
+        () in
+  IList.iter process_one_proc procs_to_analyze
+
 
 (** Perform the analysis of an exe_env *)
 let do_analysis exe_env =
@@ -1238,24 +1267,18 @@ let do_analysis exe_env =
       let callee_cfg = Exe_env.get_cfg exe_env proc_name in
       Cfg.Procdesc.find_from_name callee_cfg proc_name in
     let analyze_ondemand proc_name =
-      let saved_footprint = !Config.footprint in
-      Config.footprint := true;
-      let summaryfp = analyze_proc exe_env proc_name in
-      Specs.add_summary proc_name summaryfp;
-      let cg = Cg.create () in
-      Cg.add_defined_node cg proc_name;
-      perform_transition exe_env cg proc_name;
-      Config.footprint := false;
-      let summaryre = analyze_proc exe_env proc_name in
-      Specs.add_summary proc_name summaryre;
-      Config.footprint := saved_footprint;
-      () in
+      analyze_proc_for_ondemand exe_env proc_name in
     { Ondemand.analyze_ondemand; get_proc_desc; } in
 
-  Ondemand.set_callbacks callbacks;
-  Fork.interprocedural_algorithm exe_env analyze_proc process_result filter_out_ondemand;
-  Ondemand.unset_callbacks ()
-
+  if !Config.ondemand_enabled
+  then
+    begin
+      Ondemand.set_callbacks callbacks;
+      interprocedural_algorithm_ondemand exe_env;
+      Ondemand.unset_callbacks ()
+    end
+  else
+    Fork.interprocedural_algorithm exe_env analyze_proc process_result
 
 let visited_and_total_nodes cfg =
   let all_nodes =

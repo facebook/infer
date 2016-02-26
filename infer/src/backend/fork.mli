@@ -29,9 +29,6 @@ type analyze_proc = Exe_env.t -> Procname.t -> Specs.summary
 
 type process_result = Exe_env.t -> (Procname.t * Cg.in_out_calls) -> Specs.summary -> unit
 
-type filter_out = Exe_env.t -> Procname.t -> bool
-
 (** Execute [analyze_proc] respecting dependencies between procedures,
-    and apply [process_result] to the result of the analysis.
-    If [filter_out] returns true, don't analyze the procedure. *)
-val interprocedural_algorithm : Exe_env.t -> analyze_proc -> process_result -> filter_out -> unit
+    and apply [process_result] to the result of the analysis. *)
+val interprocedural_algorithm : Exe_env.t -> analyze_proc -> process_result -> unit

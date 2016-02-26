@@ -1092,7 +1092,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags in
       let exec_one_pname pname =
         if !Config.ondemand_enabled then
-          Ondemand.do_analysis pdesc pname;
+          Ondemand.do_analysis ~propagate_exceptions:true pdesc pname;
         let exec_skip_call ret_type =
           skip_call norm_prop path pname loc ret_ids (Some ret_type) url_handled_args in
         match Specs.get_summary pname with
@@ -1118,7 +1118,7 @@ let rec sym_exec cfg tenv pdesc _instr (_prop: Prop.normal Prop.t) path
         | resolved_pname :: _ -> resolved_pname
         | [] -> fn in
       if !Config.ondemand_enabled then
-        Ondemand.do_analysis pdesc resolved_pname;
+        Ondemand.do_analysis ~propagate_exceptions:true pdesc resolved_pname;
       let callee_pdesc_opt = Cfg.Procdesc.find_from_name cfg resolved_pname in
       let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
       let sentinel_result =

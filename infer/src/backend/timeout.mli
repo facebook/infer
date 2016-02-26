@@ -16,4 +16,4 @@ val exe_timeout : ('a -> unit) -> 'a -> failure_kind option
 val resume_previous_timeout : unit -> unit
 
 (** Suspend the current timeout. It must be resumed later. *)
-val suspend_existing_timeout : unit -> unit
+val suspend_existing_timeout : keep_symop_total:bool -> unit

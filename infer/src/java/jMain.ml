@@ -85,7 +85,6 @@ let init_global_state source_file =
   DB.current_source := source_file;
   DB.Results_dir.init ();
   Ident.NameGenerator.reset ();
-  SymOp.reset_total ();
   JContext.reset_exn_node_table ();
   let nLOC = FileLOC.file_get_loc (DB.source_file_to_string source_file) in
   Config.nLOC := nLOC

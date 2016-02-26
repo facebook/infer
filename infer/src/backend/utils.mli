@@ -199,17 +199,15 @@ module SymOp : sig
   (** Count one symop *)
   val pay : unit -> unit
 
-  (** Report the stats since the last reset *)
-  val report : Format.formatter -> unit -> unit
-
   (** Reset the total number of symop's *)
   val reset_total : unit -> unit
 
   (** Restore the old state. *)
   val restore_state : t -> unit
 
-  (** Return the old state, and revert the current state to the initial one. *)
-  val save_state : unit -> t
+  (** Return the old state, and revert the current state to the initial one.
+      If keep_symop_total is true, share the total counter. *)
+  val save_state : keep_symop_total:bool -> t
 
   (** Reset the counter and activate the alarm *)
   val set_alarm : unit -> unit

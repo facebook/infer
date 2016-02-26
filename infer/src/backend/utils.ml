@@ -320,11 +320,10 @@ module SymOp = struct
       (** Number of symop's *)
       mutable symop_count : int;
 
-      (** Total number of symop's since the beginning *)
-      mutable symop_total : int;
-
-      (** Time in the beginning *)
-      mutable timer : float;
+      (** Counter for the total number of symop's.
+          The new state created when save_state is called shares this counter
+          if keep_symop_total is true. Otherwise, a new counter is created. *)
+      symop_total : int ref;
     }
 
   let initial () : t =
@@ -332,8 +331,7 @@ module SymOp = struct
       alarm_active = false;
       last_wallclock = None;
       symop_count = 0;
-      symop_total = 0;
-      timer = Unix.gettimeofday ();
+      symop_total = ref 0;
     }
 
   (** Global State *)
@@ -343,10 +341,18 @@ module SymOp = struct
   let restore_state state =
     gs := state
 
-  (** Return the old state, and revert the current state to the initial one. *)
-  let save_state () =
+  (** Return the old state, and revert the current state to the initial one.
+      If keep_symop_total is true, share the total counter. *)
+  let save_state ~keep_symop_total =
     let old_state = !gs in
-    gs := initial ();
+    let new_state =
+      let st = initial () in
+      if keep_symop_total
+      then
+        { st with symop_total = old_state.symop_total }
+      else
+        st in
+    gs := new_state;
     old_state
 
   (** handler for the wallclock timeout *)
@@ -382,42 +388,33 @@ module SymOp = struct
 
   (** Return the total number of symop's since the beginning *)
   let get_total () =
-    !gs.symop_total
+    !(!gs.symop_total)
 
   (** Reset the total number of symop's *)
   let reset_total () =
-    !gs.symop_total <- 0
+    !gs.symop_total := 0
 
   (** Count one symop *)
   let pay () =
     !gs.symop_count <- !gs.symop_count + 1;
-    !gs.symop_total <- !gs.symop_total + 1;
+    !gs.symop_total := !(!gs.symop_total) + 1;
     if !gs.symop_count > !timeout_symops &&
        !gs.alarm_active
     then raise (Analysis_failure_exe (FKsymops_timeout !gs.symop_count));
     check_wallclock_alarm ()
 
-  (** Reset the counters *)
-  let reset () =
-    !gs.symop_count <- 0;
-    !gs.timer <- Unix.gettimeofday ()
+  (** Reset the counter *)
+  let reset_count () =
+    !gs.symop_count <- 0
 
   (** Reset the counter and activate the alarm *)
   let set_alarm () =
-    reset ();
+    reset_count ();
     !gs.alarm_active <- true
 
   (** De-activate the alarm *)
   let unset_alarm () =
     !gs.alarm_active <- false
-
-  let report_stats f symops elapsed =
-    F.fprintf f "SymOp stats -- symops:%d time:%f symops/sec:%f" symops elapsed ((float_of_int symops) /. elapsed)
-
-  (** Report the stats since the last reset *)
-  let report f () =
-    let elapsed = Unix.gettimeofday () -. !gs.timer in
-    report_stats f !gs.symop_count elapsed
 end
 
 (** Check if the lhs is a substring of the rhs. *)

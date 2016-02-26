@@ -65,9 +65,9 @@ let get_seconds_remaining () =
   | Config.Win32 ->
       SymOp.get_remaining_wallclock_time ()
 
-let get_current_status () =
+let get_current_status ~keep_symop_total =
   let seconds_remaining = get_seconds_remaining () in
-  let symop_state = SymOp.save_state () in
+  let symop_state = SymOp.save_state ~keep_symop_total in
   {
     seconds_remaining;
     symop_state;
@@ -97,8 +97,8 @@ let unwind () =
   SymOp.unset_alarm ();
   GlobalState.pop ()
 
-let suspend_existing_timeout () =
-  let current_status = get_current_status () in
+let suspend_existing_timeout ~keep_symop_total =
+  let current_status = get_current_status ~keep_symop_total in
   unset_alarm ();
   GlobalState.push current_status
 
@@ -108,7 +108,7 @@ let resume_previous_timeout () =
 
 let exe_timeout f x =
   let suspend_existing_timeout_and_start_new_one () =
-    suspend_existing_timeout ();
+    suspend_existing_timeout ~keep_symop_total:true;
     set_alarm (get_timeout_seconds ());
     SymOp.set_alarm () in
   try

@@ -25,7 +25,7 @@ type callbacks =
 (** do_analysis curr_pdesc proc_name
     performs an on-demand analysis of proc_name
     triggered during the analysis of curr_pname. *)
-val do_analysis : Cfg.Procdesc.t -> Procname.t -> unit
+val do_analysis : propagate_exceptions:bool -> Cfg.Procdesc.t -> Procname.t -> unit
 
 val one_cluster_per_procedure : unit -> bool
 

@@ -391,7 +391,6 @@ module Simulator = struct (** Simulate the analysis only *)
     let timestamp = max 1 (prev_summary.Specs.timestamp) in
     { prev_summary with Specs.timestamp = timestamp }
 
-  let filter_out _ _ = false
 end
 
 let analyze exe_env =
@@ -412,7 +411,6 @@ let analyze exe_env =
         exe_env
         Simulator.analyze_proc
         Simulator.process_result
-        Simulator.filter_out
     end
   else (* full analysis *)
     begin

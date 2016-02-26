@@ -98,7 +98,8 @@ type global_state =
   }
 
 let save_global_state () =
-  Timeout.suspend_existing_timeout ();
+  Timeout.suspend_existing_timeout
+    ~keep_symop_total:false; (* use a new global counter for the callee *)
   {
     abs_val = !Config.abs_val;
     abstraction_rules = Abs.get_current_rules ();
@@ -121,7 +122,7 @@ let restore_global_state st =
   State.restore_state st.symexec_state;
   Timeout.resume_previous_timeout ()
 
-let do_analysis curr_pdesc callee_pname =
+let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
   let really_do_analysis analyze_proc =
@@ -159,20 +160,42 @@ let do_analysis curr_pdesc callee_pname =
       Specs.add_summary callee_pname summary';
       Checkers.ST.store_summary callee_pname in
 
+    let log_error_and_continue exn kind =
+      Reporting.log_error callee_pname exn;
+      let prev_summary = Specs.get_summary_unsafe "Ondemand.do_analysis" callee_pname in
+      let timestamp = max 1 (prev_summary.Specs.timestamp) in
+      let stats = { prev_summary.Specs.stats with Specs.stats_failure = Some kind } in
+      let payload =
+        { prev_summary.Specs.payload with Specs.preposts = Some []; } in
+      let new_summary =
+        { prev_summary with Specs.stats; payload; timestamp; } in
+      Specs.add_summary callee_pname new_summary in
+
     let old_state = save_global_state () in
     preprocess ();
     try
       analyze_proc callee_pname;
       postprocess ();
       restore_global_state old_state;
-    with e ->
+    with exn ->
       L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.CALL STACK@.%s@.BACK TRACE@.%s@."
         Procname.pp callee_pname
-        (Printexc.to_string e)
+        (Printexc.to_string exn)
         (Printexc.raw_backtrace_to_string (Printexc.get_callstack 1000))
         (Printexc.get_backtrace ());
       restore_global_state old_state;
-      raise e in
+      if propagate_exceptions
+      then
+        raise exn
+      else
+        match exn with
+        | Analysis_failure_exe kind ->
+            (* in production mode, log the timeout/crash and continue with the summary we had before
+               the failure occurred *)
+            log_error_and_continue exn kind
+        | _ ->
+            (* this happens with assert false or some other unrecognized exception *)
+            log_error_and_continue exn (FKcrash (Printexc.to_string exn)) in
 
   match !callbacks_ref with
   | Some callbacks

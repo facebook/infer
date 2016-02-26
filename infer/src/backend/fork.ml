@@ -255,7 +255,7 @@ let filter_max exe_env filter set priority_set =
 (** Main algorithm responsible for driving the analysis of an Exe_env (set of procedures).
     The algorithm computes dependencies between procedures,
     propagates results, and handles fixpoints in the call graph. *)
-let main_algorithm exe_env analyze_proc filter_out process_result : unit =
+let main_algorithm exe_env analyze_proc process_result : unit =
   let call_graph = Exe_env.get_cg exe_env in
   let filter_initial (pname, _) =
     let summary = Specs.get_summary_unsafe "main_algorithm" pname in
@@ -286,14 +286,8 @@ let main_algorithm exe_env analyze_proc filter_out process_result : unit =
           (Specs.pp_summary pe_text whole_seconds)
           (Specs.get_summary_unsafe "main_algorithm" pname)
       end;
-    if filter_out exe_env pname
-    then
-      post_process_procs exe_env [pname]
-    else
-      begin
-        Specs.update_dependency_map pname;
-        process_result exe_env elem (analyze_proc exe_env pname);
-      end in
+    Specs.update_dependency_map pname;
+    process_result exe_env elem (analyze_proc exe_env pname) in
   while not (WeightedPnameSet.is_empty !G.wpnames_todo) do
     begin
       if !trace then begin
@@ -318,16 +312,13 @@ type analyze_proc = Exe_env.t -> Procname.t -> Specs.summary
 
 type process_result = Exe_env.t -> WeightedPname.t -> Specs.summary -> unit
 
-type filter_out = Exe_env.t -> Procname.t -> bool
-
 (** Execute [analyze_proc] respecting dependencies between procedures,
-    and apply [process_result] to the result of the analysis.
-    If [filter_out] returns true, don't analyze the procedure. *)
+    and apply [process_result] to the result of the analysis. *)
 let interprocedural_algorithm
     (exe_env: Exe_env.t)
     (_analyze_proc: analyze_proc)
     (_process_result: process_result)
-    (filter_out: filter_out) : unit =
+  : unit =
   let analyze_proc exe_env pname = (* wrap _analyze_proc and handle exceptions *)
     let log_error_and_continue exn kind =
       Reporting.log_error pname exn;
@@ -357,4 +348,4 @@ let interprocedural_algorithm
         let exn' = Exceptions.Internal_error (Localise.verbatim_desc err_str) in
         Reporting.log_error pname exn';
         post_process_procs exe_env [pname] in
-  main_algorithm exe_env analyze_proc filter_out process_result
+  main_algorithm exe_env analyze_proc process_result
