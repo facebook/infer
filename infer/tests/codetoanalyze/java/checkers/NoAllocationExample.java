@@ -51,6 +51,11 @@ public class NoAllocationExample {
     throwsException();
   }
 
+  @NoAllocation
+  void thowingAThrowableIsFine() {
+    throw new AssertionError();
+  }
+
   @IgnoreAllocations
   void acceptableAllocation() {
     new Object();

@@ -126,22 +126,24 @@ let method_calls_expensive tenv pname =
 
 
 let is_allocator tenv pname =
-  let is_exception () =
+  let is_throwable () =
     let class_name =
       Typename.Java.from_string (Procname.java_get_class pname) in
-    AndroidFramework.is_exception tenv class_name in
+    AndroidFramework.is_throwable tenv class_name in
   Procname.is_constructor pname
   && not (SymExec.function_is_builtin pname)
-  && not (is_exception ())
+  && not (is_throwable ())
 
 
 let method_allocates tenv pname =
+  let annotated_ignore_allocation =
+    check_method Annotations.ia_is_ignore_allocations pname in
   let allocates () =
     match lookup_call_summary pname with
     | Some { Specs.allocations } ->
         allocations <> []
     | None -> false in
-  not (check_method Annotations.ia_is_ignore_allocations pname)
+  not annotated_ignore_allocation
   && (is_allocator tenv pname
       || allocates ())
 
