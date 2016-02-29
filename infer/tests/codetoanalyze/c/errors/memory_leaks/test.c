@@ -38,4 +38,10 @@ void uses_allocator() {
   *p = 42;
 }
 
-void* builtin_no_leak(size_t s) { return memset(malloc(s), 0, s); }
+void* builtin_no_leak(size_t s) {
+
+  char* str = malloc(sizeof(s));
+    if (str) {
+    return memset(str, 0, s);
+    }
+}

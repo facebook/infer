@@ -1678,6 +1678,12 @@ module ModelBuiltins = struct
   let mk_empty_array size =
     Sil.Earray (size, [], Sil.inst_none)
 
+  (* Make a rearranged array. As it is rearranged when it appears in a precondition
+     it requires that the function is called with the array allocated. If not infer
+     return a null pointer deref *)
+  let mk_empty_array_rearranged size =
+    Sil.Earray (size, [], Sil.inst_rearrange true (State.get_loc ()) (State.get_path_pos ()))
+
   let extract_array_type typ =
     if (!Config.curr_language = Config.Java) then
       match typ with
@@ -1695,73 +1701,76 @@ module ModelBuiltins = struct
     | [ret_id] -> Prop.conjoin_eq e (Sil.Var ret_id) prop
     | _ -> prop
 
-  let execute___get_array_size _ pdesc _ _ _prop path ret_ids args _ _
+  (* Add an array of typ pointed to by lexp to prop_ if it doesnt exist alread*)
+  (*  Return the new prop and the array size *)
+  (*  Return None if it fails to add the array *)
+  let add_array_to_prop pdesc prop_ lexp typ =
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
+    let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+    begin
+      try
+        let hpred = IList.find (function
+            | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
+            | _ -> false) (Prop.get_sigma prop) in
+        match hpred with
+        | Sil.Hpointsto(_, Sil.Earray(size, _, _), _) ->
+            Some (size, prop)
+        | _ -> None (* e points to something but not an array *)
+      with Not_found -> (* e is not allocated, so we can add the array *)
+        let otyp' = (extract_array_type typ) in
+        match otyp' with
+        | Some typ' ->
+            let size = Sil.Var(Ident.create_fresh Ident.kfootprint) in
+            let s = mk_empty_array_rearranged size in
+            let hpred =
+              Prop.mk_ptsto n_lexp s (Sil.Sizeof(Sil.Tarray(typ', size), Sil.Subtype.exact)) in
+            let sigma = Prop.get_sigma prop in
+            let sigma_fp = Prop.get_sigma_footprint prop in
+            let prop'= Prop.replace_sigma (hpred:: sigma) prop in
+            let prop''= Prop.replace_sigma_footprint (hpred:: sigma_fp) prop' in
+            let prop''= Prop.normalize prop'' in
+            Some (size, prop'')
+        | _ -> None
+    end
+
+  (* Add an array in prop if it is not allocated.*)
+  let execute___require_allocated_array _ pdesc _ _ prop_ path ret_ids args _ _
     : Builtin.ret_typ =
     match args with
     | [(lexp, typ)] when IList.length ret_ids <= 1 ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let return_result_for_array_size e prop ret_ids = return_result e prop ret_ids in
-        let n_lexp, prop = exp_norm_check_arith pname _prop lexp in
-        begin
-          try
-            let hpred = IList.find (function
-                | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
-                | _ -> false) (Prop.get_sigma prop) in
-            match hpred with
-            | Sil.Hpointsto(_, Sil.Earray(size, _, _), _) ->
-                [(return_result_for_array_size size prop ret_ids, path)]
-            | _ -> []
-          with Not_found ->
-            let otyp' = (extract_array_type typ) in
-            match otyp' with
-            | Some typ' ->
-                let size = Sil.Var(Ident.create_fresh Ident.kfootprint) in
-                let s = mk_empty_array size in
-                let hpred = Prop.mk_ptsto n_lexp s (Sil.Sizeof(Sil.Tarray(typ', size), Sil.Subtype.exact)) in
-                let sigma = Prop.get_sigma prop in
-                let sigma_fp = Prop.get_sigma_footprint prop in
-                let prop'= Prop.replace_sigma (hpred:: sigma) prop in
-                let prop''= Prop.replace_sigma_footprint (hpred:: sigma_fp) prop' in
-                let prop''= Prop.normalize prop'' in
-                [(return_result_for_array_size size prop'' ret_ids, path)]
-            | _ -> []
-        end
+        (match add_array_to_prop pdesc prop_ lexp typ with
+         | None -> []
+         | Some (_, prop) -> [(prop, path)])
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-  let execute___set_array_size _ pdesc _ _ _prop path ret_ids args _ _
+  let execute___get_array_size _ pdesc _ _ prop_ path ret_ids args _ _
+    : Builtin.ret_typ =
+    match args with
+    | [(lexp, typ)] when IList.length ret_ids <= 1 ->
+        (match add_array_to_prop pdesc prop_ lexp typ with
+         | None -> []
+         | Some (size, prop) -> [(return_result size prop ret_ids, path)])
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
+
+  let execute___set_array_size _ pdesc _ _ prop_ path ret_ids args _ _
     : Builtin.ret_typ =
     match args, ret_ids with
-    | [(lexp, typ); (size, _)], [] ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, _prop' = exp_norm_check_arith pname _prop lexp in
-        let n_size, prop = exp_norm_check_arith pname _prop' size in
-        begin
-          try
-            let hpred, sigma' = IList.partition (function
-                | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
-                | _ -> false) (Prop.get_sigma prop) in
-            match hpred with
-            | [Sil.Hpointsto(e, Sil.Earray(_, esel, inst), t)] ->
-                let hpred' = Sil.Hpointsto (e, Sil.Earray (n_size, esel, inst), t) in
-                let prop' = Prop.replace_sigma (hpred':: sigma') prop in
-                [(Prop.normalize prop', path)]
-            | _ -> raise Not_found
-          with Not_found ->
-          match typ with
-          | Sil.Tptr (typ', _) ->
-              let size_fp = Sil.Var(Ident.create_fresh Ident.kfootprint) in
-              let se = mk_empty_array n_size in
-              let se_fp = mk_empty_array size_fp in
-              let hpred = Prop.mk_ptsto n_lexp se (Sil.Sizeof(Sil.Tarray(typ', size), Sil.Subtype.exact)) in
-              let hpred_fp = Prop.mk_ptsto n_lexp se_fp (Sil.Sizeof(Sil.Tarray(typ', size_fp), Sil.Subtype.exact)) in
-              let sigma = Prop.get_sigma prop in
-              let sigma_fp = Prop.get_sigma_footprint prop in
-              let prop'= Prop.replace_sigma (hpred:: sigma) prop in
-              let prop''= Prop.replace_sigma_footprint (hpred_fp:: sigma_fp) prop' in
-              let prop''= Prop.normalize prop'' in
-              [(prop'', path)]
-          | _ -> []
-        end
+    | [(lexp, typ); (size, _)], []->
+        (match add_array_to_prop pdesc prop_ lexp typ with
+         | None -> []
+         | Some (_, prop_a) -> (* Invariant: prop_a has an array pointed to by lexp *)
+             let pname = Cfg.Procdesc.get_proc_name pdesc in
+             let n_lexp, _prop' = exp_norm_check_arith pname prop_a lexp in
+             let n_size, prop = exp_norm_check_arith pname _prop' size in
+             let hpred, sigma' = IList.partition (function
+                 | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
+                 | _ -> false) (Prop.get_sigma prop) in
+             (match hpred with
+              | [Sil.Hpointsto(e, Sil.Earray(_, esel, inst), t)] ->
+                  let hpred' = Sil.Hpointsto (e, Sil.Earray (n_size, esel, inst), t) in
+                  let prop' = Prop.replace_sigma (hpred':: sigma') prop in
+                  [(Prop.normalize prop', path)]
+              | _ -> [])) (* by construction of prop_a this case is impossible *)
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___print_value _ pdesc _ _ prop path _ args _ _
@@ -2532,6 +2541,9 @@ module ModelBuiltins = struct
   let __get_array_size = Builtin.register
       (* return the size of the array passed as a parameter *)
       "__get_array_size" execute___get_array_size
+  let __require_allocated_array = Builtin.register
+      (* require the parameter to point to an allocated array *)
+      "__require_allocated_array" execute___require_allocated_array
   let _ = Builtin.register
       (* return the value of a hidden field in the struct *)
       "__get_hidden_field" execute___get_hidden_field

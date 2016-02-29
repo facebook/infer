@@ -57,7 +57,10 @@ clock_t __infer_nondet_clock_t();
   if (cond)                           \
     while (1)
 
-// builtin: force arr to be an array and return the size
+// builtin: force arr to be an array
+extern void __require_allocated_array(const void* arr);
+
+// builtin: return the size of arr
 extern size_t __get_array_size(const void* arr);
 
 // builtin: change the attribute of ret to a file attribute

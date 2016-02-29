@@ -83,8 +83,9 @@ char* strcpy(char* s1, const char* s2) {
   int size2;
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
-
+  __require_allocated_array(s1);
   size1 = __get_array_size(s1);
+  __require_allocated_array(s2);
   size2 = __get_array_size(s2);
   INFER_EXCLUDE_CONDITION(size2 > size1);
   return s1;
@@ -94,6 +95,7 @@ char* strcpy(char* s1, const char* s2) {
 // size
 char* strdup(const char* s) {
   int size;
+  __require_allocated_array(s);
   size = __get_array_size(s);
   return (char*)malloc(size);
 }
@@ -103,8 +105,9 @@ char* strdup(const char* s) {
 char* strcat(char* s1, const char* s2) {
   int size1;
   int size2;
-
+  __require_allocated_array(s1);
   size1 = __get_array_size(s1);
+  __require_allocated_array(s2);
   size2 = __get_array_size(s2);
   INFER_EXCLUDE_CONDITION(size2 > size1);
   return s1;
@@ -129,6 +132,7 @@ char* strchr(char* s, int c) throw() {
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
 
+  __require_allocated_array(s);
   size = __get_array_size(s);
   if (nondet)
     return 0;
@@ -150,13 +154,11 @@ char* strrchr(char* s, int c) throw() { return strchr(s, c); }
 // s1 and s2 must be allocated.
 // return a non-deterministic integer
 int strcmp(const char* s1, const char* s2) {
-  int size_s1;
-  int size_s2;
   int res;
   res = __infer_nondet_int();
 
-  size_s1 = __get_array_size(s1);
-  size_s2 = __get_array_size(s2);
+  __require_allocated_array(s1);
+  __require_allocated_array(s2);
   return res;
 }
 
@@ -164,6 +166,7 @@ int strcmp(const char* s1, const char* s2) {
 // return the size of the buffer - 1
 size_t strlen(const char* s) {
   int size;
+  __require_allocated_array(s);
   size = __get_array_size(s);
   return size - 1;
 }
@@ -171,8 +174,7 @@ size_t strlen(const char* s) {
 // s must be allocated
 // return s
 char* strlwr(char* s) {
-  int size1;
-  size1 = __get_array_size(s);
+  __require_allocated_array(s);
   return s;
 }
 
@@ -182,8 +184,9 @@ char* strlwr(char* s) {
 char* strncat(char* s1, const char* s2, size_t n) {
   int size_s1;
   int size_s2;
-
+  __require_allocated_array(s1);
   size_s1 = __get_array_size(s1);
+  __require_allocated_array(s2);
   size_s2 = __get_array_size(s2);
   INFER_EXCLUDE_CONDITION((n > size_s1) || (n > size_s2));
   return s1;
@@ -197,8 +200,9 @@ int strncmp(const char* s1, const char* s2, size_t n) {
   int size_s2;
   int res;
   res = __infer_nondet_int();
-
+  __require_allocated_array(s1);
   size_s1 = __get_array_size(s1);
+  __require_allocated_array(s2);
   size_s2 = __get_array_size(s2);
   INFER_EXCLUDE_CONDITION((n > size_s1) || (n > size_s2));
   return res;
@@ -208,12 +212,12 @@ int strncmp(const char* s1, const char* s2, size_t n) {
 // check that n characters fit in s1 (because even if s2 is shorter than n, null
 // characters are appended to s1)
 char* strncpy(char* s1, const char* s2, size_t n) {
-  int size1, size2;
+  int size1;
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
-
+  __require_allocated_array(s1);
   size1 = __get_array_size(s1);
-  size2 = __get_array_size(s2);
+  __require_allocated_array(s2);
   INFER_EXCLUDE_CONDITION(n > size1);
   return s1;
 }
@@ -227,14 +231,14 @@ const char* strpbrk(const char* s1, const char* s2) throw() {
 
 char* strpbrk(char* s1, const char* s2) throw() {
 #endif
-  int size1, size2;
+  int size1;
   int nondet;
   int offset;
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
-
+  __require_allocated_array(s1);
   size1 = __get_array_size(s1);
-  size2 = __get_array_size(s2);
+  __require_allocated_array(s2);
   if (nondet)
     return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >= size1);
@@ -245,12 +249,11 @@ char* strpbrk(char* s1, const char* s2) throw() {
 // return an integer between 0 ans the size of s1
 size_t strspn(const char* s1, const char* s2) {
   int size_s1;
-  int size_s2;
   int res;
   res = __infer_nondet_int();
-
+  __require_allocated_array(s1);
   size_s1 = __get_array_size(s1);
-  size_s2 = __get_array_size(s2);
+  __require_allocated_array(s2);
   INFER_EXCLUDE_CONDITION(res < 0 || res > size_s1);
   return res;
 }
@@ -270,9 +273,9 @@ char* strstr(char* s1, const char* s2) throw() {
   int offset;
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
-
+  __require_allocated_array(s1);
   size1 = __get_array_size(s1);
-  size2 = __get_array_size(s2);
+  __require_allocated_array(s2);
   if (nondet)
     return 0;
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >= size1);
@@ -296,6 +299,7 @@ unsigned long strtoul(const char* str, char** endptr, int base) {
   int size;
   int offset;
   int res;
+  __require_allocated_array(str);
   size = __get_array_size(str);
   offset = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(offset < 0 || offset >= size);
@@ -311,8 +315,7 @@ unsigned long strtoul(const char* str, char** endptr, int base) {
 // s must be allocated
 // return s
 char* strupr(char* s) {
-  int size1;
-  size1 = __get_array_size(s);
+  __require_allocated_array(s);
   return s;
 }
 
@@ -334,7 +337,7 @@ void* memchr(void* s, int c, size_t n) throw() {
   int offset;
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
-
+  __require_allocated_array(s);
   size = __get_array_size(s);
   INFER_EXCLUDE_CONDITION(n > size);
   if (nondet)
@@ -349,8 +352,9 @@ void* memchr(void* s, int c, size_t n) throw() {
 int memcmp(const void* s1, const void* s2, size_t n) {
   int size_s1;
   int size_s2;
-
+  __require_allocated_array(s1);
   size_s1 = __get_array_size(s1);
+  __require_allocated_array(s2);
   size_s2 = __get_array_size(s2);
   INFER_EXCLUDE_CONDITION((n > size_s1) || (n > size_s2));
   return __infer_nondet_int();
@@ -363,8 +367,9 @@ void* memcpy(void* s1, const void* s2, size_t n) {
   int size_s2;
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
-
+  __require_allocated_array(s1);
   size_s1 = __get_array_size(s1);
+  __require_allocated_array(s2);
   size_s2 = __get_array_size(s2);
   INFER_EXCLUDE_CONDITION((n < 0) || (n > size_s1) || (n > size_s2));
   return s1;
@@ -383,7 +388,7 @@ void* memset(void* s, int c, size_t n) {
   int size_s;
   __infer_set_flag("ignore_return",
                    ""); // no warnings if the return value is ignored
-
+  __require_allocated_array(s);
   size_s = __get_array_size(s);
   INFER_EXCLUDE_CONDITION(n > size_s);
   return s;
@@ -428,6 +433,7 @@ char* tmpnam(char* s) {
   if (!success)
     return NULL;
   if (s) {
+    __require_allocated_array(s);
     size = __get_array_size(s);
     INFER_EXCLUDE_CONDITION(size < L_tmpnam);
     return s;
@@ -525,6 +531,7 @@ char* fgets(char* str, int num, FILE* stream) {
   n = __infer_nondet_int();
 
   if (n > 0) {
+    __require_allocated_array(str);
     size1 = __get_array_size(str);
     INFER_EXCLUDE_CONDITION(num > size1);
     return str;
@@ -535,9 +542,8 @@ char* fgets(char* str, int num, FILE* stream) {
 // string s must be allocated; return nondeterministically s or NULL
 char* gets(char* s) {
   int n;
-  int size;
 
-  size = __get_array_size(s);
+  __require_allocated_array(s);
   n = __infer_nondet_int();
   if (n)
     return s;
@@ -547,8 +553,7 @@ char* gets(char* s) {
 
 // str must be allocated, return a nondeterministic value
 int puts(const char* str) {
-  int size1;
-  size1 = __get_array_size(str);
+  __require_allocated_array(str);
   return __infer_nondet_int();
 }
 
@@ -605,6 +610,7 @@ char* getcwd(char* buffer, size_t size) {
   n = __infer_nondet_int();
 
   if (n > 0) {
+    __require_allocated_array(buffer);
     size_buf = __get_array_size(buffer);
     INFER_EXCLUDE_CONDITION(size > size_buf);
     return buffer;
@@ -739,9 +745,8 @@ void* realloc(void* ptr, size_t size) {
   if (ptr == 0) { // if ptr in NULL, behave as malloc
     return malloc(size);
   }
-  int old_size;
   int can_enlarge;
-  old_size = __get_array_size(ptr); // force ptr to be an array
+  __require_allocated_array(ptr);
   can_enlarge = __infer_nondet_int(); // nondeterministically choose whether the
   // current block can be enlarged
   if (can_enlarge) {
@@ -842,10 +847,9 @@ extern struct dirent* _dirent_global;
 // dirp must be allocated
 // return 0 or the allocated pointerq _dirent_global, nondeterministically
 struct dirent* readdir(DIR* dirp) {
-  int len;
   int nondet;
   struct dirent* ret = _dirent_global;
-  len = __get_array_size(dirp);
+  __require_allocated_array(dirp);
   nondet = __infer_nondet_int();
   if (nondet)
     return 0;
@@ -857,10 +861,9 @@ extern char* _getenv_global;
 // string name must be allocated
 // return 0 or the allocated string _getenv_global, nondeterministically
 char* getenv(const char* name) {
-  int size;
   int nondet;
-  size = __get_array_size(name);
-  size = __get_array_size(_getenv_global);
+  __require_allocated_array(name);
+  __require_allocated_array(_getenv_global);
   nondet = __infer_nondet_int();
   if (nondet)
     return 0;
@@ -872,10 +875,9 @@ extern char* _locale_global;
 // string locale must be allocated
 // return 0 or the allocated string _locale_global, nondeterministically
 char* setlocale(int category, const char* locale) {
-  int size;
   int nondet;
-  size = __get_array_size(locale);
-  size = __get_array_size(_locale_global);
+  __require_allocated_array(locale);
+  __require_allocated_array(_locale_global);
   nondet = __infer_nondet_int();
   if (nondet)
     return 0;
@@ -993,8 +995,7 @@ extern struct passwd* _getpwnam_global;
 // return either NULL or the global variable _getpnam_global
 struct passwd* getpwnam(const char* login) {
   int found;
-  int size1;
-  size1 = __get_array_size(login);
+  __require_allocated_array(login);
   found = __infer_nondet_int();
   if (found)
     return _getpwnam_global;
@@ -1025,7 +1026,7 @@ extern char* _getlogin_global;
 char* getlogin() {
   int size;
   int nondet;
-  size = __get_array_size(_getlogin_global);
+  __require_allocated_array(_getlogin_global);
   nondet = __infer_nondet_int();
   if (nondet)
     return 0;
@@ -1034,8 +1035,7 @@ char* getlogin() {
 
 int setlogin(const char* name) {
   int success;
-  int size1;
-  size1 = __get_array_size(name);
+  __require_allocated_array(name);
   success = __infer_nondet_int();
   if (success) {
     strcpy(_getlogin_global, name);
@@ -1049,9 +1049,8 @@ extern char* _getpass_global;
 // prompt must be allocated
 // return the global variable _getpass_global, which must be allocated
 char* getpass(const char* prompt) {
-  int size1;
-  size1 = __get_array_size(prompt);
-  size1 = __get_array_size(_getpass_global);
+  __require_allocated_array(prompt);
+  __require_allocated_array(_getpass_global);
   return _getpass_global;
 }
 
@@ -1086,8 +1085,7 @@ int snprintf(char* __restrict s, size_t n, const char* __restrict format, ...) {
 // return a nondeterministic nonnegative integer
 int sprintf(char* s, const char* format, ...) {
   int res;
-  int size1;
-  size1 = __get_array_size(s);
+  __require_allocated_array(s);
   res = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(res < 0);
   return res;
@@ -1132,10 +1130,9 @@ int vprintf(const char* format, va_list arg) {
 // forces path to be allocated
 // return nondeterministically 0 or -1
 int utimes(const char* path, const struct timeval times[2]) {
-  int size1;
   int success = __infer_nondet_int();
 
-  size1 = __get_array_size(path);
+  __require_allocated_array(path);
   // return random result
   return (success > 0) ? 0 : -1;
 }
@@ -1143,9 +1140,8 @@ int utimes(const char* path, const struct timeval times[2]) {
 // forces filename  to be allocated
 // return nondeterministically 0 or -1
 int unlink(const char* filename) {
-  int size1;
   int success = __infer_nondet_int();
-  size1 = __get_array_size(filename);
+  __require_allocated_array(filename);
   return (success > 0) ? 0 : -1;
 }
 
@@ -1158,16 +1154,16 @@ int usleep(useconds_t useconds) {
 // dst and src must be allocated
 // return an integer between 0 and size
 size_t strlcpy(char* dst, const char* src, size_t size) {
-  int size_src;
   int size_dst;
   int res;
 
   res = __infer_nondet_int();
 
   // force src to be allocated
-  size_src = __get_array_size(src);
+  __require_allocated_array(src);
 
   // force dst to be allocated for at least size
+  __require_allocated_array(dst);
   size_dst = __get_array_size(dst);
   INFER_EXCLUDE_CONDITION(size > size_dst);
 
@@ -1179,16 +1175,16 @@ size_t strlcpy(char* dst, const char* src, size_t size) {
 // dst and src must be allocated
 // return an integer between 0 and size
 size_t strlcat(char* dst, const char* src, size_t size) {
-  int size_src;
   int size_dst;
   int res;
 
   res = __infer_nondet_int();
 
   // force src to be allocated
-  size_src = __get_array_size(src);
+  __require_allocated_array(src);
 
   // force dst to be allocated for at least size
+  __require_allocated_array(dst);
   size_dst = __get_array_size(dst);
   INFER_EXCLUDE_CONDITION(size > size_dst);
 
@@ -1202,12 +1198,11 @@ size_t strlcat(char* dst, const char* src, size_t size) {
 // return 0 or -1
 int statfs(const char* path, struct statfs* buf) {
   int success;
-  int size_path;
 
   success = __infer_nondet_int();
 
   // force path to be allocated
-  size_path = __get_array_size(path);
+  __require_allocated_array(path);
 
   struct statfs s; // uninitialized struct statfs
   *buf = s;
@@ -1220,12 +1215,11 @@ int statfs(const char* path, struct statfs* buf) {
 // return 0 or -1
 int stat(const char* path, struct stat* buf) {
   int success;
-  int size_path;
 
   success = __infer_nondet_int();
 
   // force path to be allocated
-  size_path = __get_array_size(path);
+  __require_allocated_array(path);
 
   struct stat s; // uninitialized struct stat
   *buf = s;
@@ -1234,24 +1228,22 @@ int stat(const char* path, struct stat* buf) {
 }
 
 int remove(const char* path) {
-  int size_path;
   int success;
 
   // force path to be allocated
-  size_path = __get_array_size(path);
+  __require_allocated_array(path);
 
   success = __infer_nondet_int();
   return (success > 0) ? 0 : -1;
 }
 
 char* readline(const char* prompt) {
-  int size_prompt;
   char* ret;
   int size;
 
   // force prompt to be allocated when not null
   if (prompt != NULL) {
-    size_prompt = __get_array_size(prompt);
+    __require_allocated_array(prompt);
   }
 
   // return random string of positive size
@@ -1284,11 +1276,10 @@ int putc(int c, FILE* stream) {
 }
 
 int access(const char* path, int mode) {
-  int size;
   int success;
 
   // force path to be allocated
-  size = __get_array_size(path);
+  __require_allocated_array(path);
 
   // determine return value
   success = __infer_nondet_int();
@@ -1297,7 +1288,6 @@ int access(const char* path, int mode) {
 }
 
 size_t confstr(int name, char* buf, size_t len) {
-  int size;
   int ret;
 
   // determine return value
@@ -1306,7 +1296,7 @@ size_t confstr(int name, char* buf, size_t len) {
 
   // buf should be allocated if len is not zero. Otherwise, we want buf=0.
   if (len)
-    size = __get_array_size(buf);
+    __require_allocated_array(buf);
   else
     INFER_EXCLUDE_CONDITION(buf != 0);
 
@@ -1339,13 +1329,11 @@ int fsctl(const char* path,
           unsigned long request,
           void* data,
           unsigned int options) {
-  int size1;
-  int size2;
   int ret;
 
   // forces path and data to be allocated
-  size1 = __get_array_size(path);
-  size2 = __get_array_size(data);
+  __require_allocated_array(path);
+  __require_allocated_array(data);
 
   ret = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(ret < -1 || ret > 0);
@@ -1403,10 +1391,9 @@ struct tm* localtime_r(const time_t* __restrict timer,
 }
 
 int mkdir(const char* filename, mode_t mode) {
-  int size;
   int ret;
 
-  size = __get_array_size(filename);
+  __require_allocated_array(filename);
 
   ret = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(ret < -1 || ret > 0);
@@ -1528,8 +1515,7 @@ int isatty(int fildes) {
 }
 
 void perror(const char* s) {
-  int size = __get_array_size(s);
-  size = 0;
+    __require_allocated_array(s);
 }
 
 int pipe(int fildes[2]) {
@@ -1543,6 +1529,7 @@ int raise(int sig) { return __infer_nondet_int(); }
 ssize_t read(int fildes, void* buf, size_t nbyte) {
   if (nbyte == 0)
     return 0;
+  __require_allocated_array(buf);
   INFER_EXCLUDE_CONDITION(__get_array_size(buf) < nbyte);
 
   int ret = __infer_nondet_int();
@@ -1661,10 +1648,8 @@ size_t fwrite(const void* __restrict ptr,
 }
 
 size_t strcspn(const char* s1, const char* s2) {
-  int size1, size2;
-  size1 = __get_array_size(s1);
-  size2 = __get_array_size(s2);
-  ;
+  __require_allocated_array(s1);
+  __require_allocated_array(s2);
 
   int ret = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(ret < 0);
@@ -1676,6 +1661,7 @@ size_t strcspn(const char* s1, const char* s2) {
 // It's not modelled right now
 #if defined __APPLE__ || (defined __USE_XOPEN2K && !defined __USE_GNU)
 int strerror_r(int errnum, char* strerrbuf, size_t buflen) {
+  __require_allocated_array(strerrbuf);
   INFER_EXCLUDE_CONDITION(__get_array_size(strerrbuf) < buflen);
 
   return __infer_nondet_int();
@@ -1683,6 +1669,7 @@ int strerror_r(int errnum, char* strerrbuf, size_t buflen) {
 #endif
 
 ssize_t write(int fildes, const void* buf, size_t nbyte) {
+  __require_allocated_array(buf);
   INFER_EXCLUDE_CONDITION(__get_array_size(buf) < nbyte);
 
   int ret = __infer_nondet_int();
@@ -1691,8 +1678,7 @@ ssize_t write(int fildes, const void* buf, size_t nbyte) {
 }
 
 int creat(const char* path, mode_t mode) {
-  int size;
-  size = __get_array_size(path);
+  __require_allocated_array(path);
 
   int ret = __infer_nondet_int();
   INFER_EXCLUDE_CONDITION(ret < -1);
@@ -1741,7 +1727,7 @@ void* bsearch(const void* key,
   int offset;
   nondet = __infer_nondet_int();
   offset = __infer_nondet_int();
-
+  __require_allocated_array(base);
   base_size = __get_array_size(base);
   INFER_EXCLUDE_CONDITION(nmemb > base_size);
   if (nondet)
