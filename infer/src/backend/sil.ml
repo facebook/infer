@@ -671,7 +671,6 @@ and typ =
   | Tptr of typ * ptr_kind (** pointer type *)
   | Tstruct of struct_typ (** Type for a structured value *)
   | Tarray of typ * exp (** array type with fixed size *)
-  | Tenum of (Mangled.t * const) list
 
 (** program expressions *)
 and exp =
@@ -1339,14 +1338,6 @@ and typ_compare t1 t2 =
     | Tstruct _, _ -> - 1
     | _, Tstruct _ -> 1
     | Tarray (t1, _), Tarray (t2, _) -> typ_compare t1 t2
-    | Tarray _, _ -> -1
-    | _, Tarray _ -> 1
-    | Tenum l1, Tenum l2 ->
-        (* Here we take as result the first non-zero result when comparing their (constant,value) pair.*)
-        let compare_pair (n1, e1) (n2, e2) =
-          let n = Mangled.compare n1 n2 in
-          if n <> 0 then n else const_compare e1 e2 in
-        IList.compare compare_pair l1 l2
 
 and typ_opt_compare to1 to2 = match to1, to2 with
   | None, None -> 0
@@ -2021,9 +2012,6 @@ and pp_type_decl pe pp_base pp_size f = function
   | Tarray (typ, size) ->
       let pp_base' fmt () = F.fprintf fmt "%a[%a]" pp_base () (pp_size pe) size in
       pp_type_decl pe pp_base' pp_size f typ
-  | Tenum econsts ->
-      F.fprintf f "enum { %a }"
-        (pp_seq (fun f (n, e) -> F.fprintf f " (%a, %a) " Mangled.pp n (pp_const pe) e)) econsts
 
 (** Pretty print a type with all the details, using the C syntax. *)
 and pp_typ_full pe = pp_type_decl pe (fun _ () -> ()) pp_exp_full
@@ -2243,8 +2231,6 @@ let rec typ_iter_types (f : typ -> unit) typ =
   | Tarray (t, e) ->
       typ_iter_types f t;
       exp_iter_types f e
-  | Tenum _ ->
-      ()
 
 (** Iterate over all the subtypes in the type (including the type itself) *)
 and exp_iter_types f e =
@@ -3379,8 +3365,6 @@ let rec typ_sub (subst: subst) typ =
       Tptr (typ_sub subst t', pk)
   | Tarray (t, e) ->
       Tarray (typ_sub subst t, exp_sub subst e)
-  | Tenum _ ->
-      typ
 
 and exp_sub (subst: subst) e =
   match e with

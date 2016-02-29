@@ -36,22 +36,6 @@ let classname_of_type typ =
         "Classname of type cannot be extracted in type %s" (Sil.typ_to_string typ);
       "undefined"
 
-(* Iterates over the tenv to find the value of the enumeration constant    *)
-(* using its name Here we assume that the enumeration constant have        *)
-(* different names. Note: this assumption may not be true all the time. So *)
-(* need to be careful and give name that cane ensure uniqueness. In case   *)
-(* of repeated names it gets the last.                                     *)
-let search_enum_type_by_name tenv name =
-  let found = ref None in
-  let mname = Mangled.from_string name in
-  let f _ typ =
-    match typ with
-    | Sil.Tenum enum_constants ->
-        IList.iter (fun (c, v) -> if Mangled.equal c mname then found:= Some v else ()) enum_constants
-    | _ -> () in
-  Sil.tenv_iter f tenv;
-  !found
-
 let mk_classname n ck = Typename.TN_csu (Csu.Class ck, Mangled.from_string n)
 
 let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)

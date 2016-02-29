@@ -11,8 +11,6 @@
 
 val add_pointer_to_typ : Sil.typ -> Sil.typ
 
-val search_enum_type_by_name : Sil.tenv -> string -> Sil.const option
-
 val classname_of_type : Sil.typ -> string
 
 val mk_classname : string -> Csu.class_kind -> Typename.t

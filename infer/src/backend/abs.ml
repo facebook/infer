@@ -414,13 +414,13 @@ let typ_get_recursive_flds tenv typ_exp =
               t
           | Some typ' -> typ' in
         Sil.typ_equal typ' typ
-    | Sil.Tptr _ | Sil.Tstruct _ | Sil.Tarray _ | Sil.Tenum _ ->
+    | Sil.Tptr _ | Sil.Tstruct _ | Sil.Tarray _ ->
         false
   in
   match typ_exp with
   | Sil.Sizeof (typ, _) ->
       (match Sil.expand_type tenv typ with
-       | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ | Sil.Tenum _ -> []
+       | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ -> []
        | Sil.Tstruct { Sil.instance_fields } ->
            IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) instance_fields)
        | Sil.Tarray _ -> []

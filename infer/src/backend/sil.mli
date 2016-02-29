@@ -307,7 +307,6 @@ and typ =
   | Tptr of typ * ptr_kind (** pointer type *)
   | Tstruct of struct_typ (** Type for a structured value *)
   | Tarray of typ * exp (** array type with fixed size *)
-  | Tenum of (Mangled.t * const) list
 
 (** Program expressions. *)
 and exp =

@@ -841,8 +841,6 @@ and typ_normalize sub typ = match typ with
         }
   | Sil.Tarray (t, e) ->
       Sil.Tarray (typ_normalize sub t, exp_normalize sub e)
-  | Sil.Tenum _ ->
-      typ
 
 let run_with_abs_val_eq_zero f =
   let abs_val_old = !Config.abs_val in
@@ -1092,7 +1090,7 @@ let rec create_strexp_of_type tenvo struct_init_mode typ inst =
     else
       create_fresh_var () in
   match typ with
-  | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tenum _ ->
+  | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ ->
       Sil.Eexp (init_value (), inst)
   | Sil.Tstruct { Sil.instance_fields } ->
       begin
@@ -2253,8 +2251,6 @@ and typ_captured_ren ren typ = match typ with
       Sil.Tptr (typ_captured_ren ren t', pk)
   | Sil.Tarray (t, e) ->
       Sil.Tarray (typ_captured_ren ren t, exp_captured_ren ren e)
-  | Sil.Tenum _ ->
-      typ
 
 let atom_captured_ren ren = function
   | Sil.Aeq (e1, e2) ->

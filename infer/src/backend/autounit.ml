@@ -414,7 +414,7 @@ let mk_size_name id =
 
 let pp_texp_for_malloc fmt =
   let rec handle_arr_size typ = match typ with
-    | Sil.Tvar _ | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tenum _ ->
+    | Sil.Tvar _ | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ ->
         typ
     | Sil.Tptr (t, pk) ->
         Sil.Tptr (handle_arr_size t, pk)

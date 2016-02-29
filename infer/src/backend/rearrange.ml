@@ -161,7 +161,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
         raise (Exceptions.Bad_footprint __POS__)
 
-    | Sil.Tvar _, _ | Sil.Tenum _, _ ->
+    | Sil.Tvar _, _ ->
         L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
         assert false in
 
