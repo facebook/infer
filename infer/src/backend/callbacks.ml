@@ -140,8 +140,7 @@ let iterate_callbacks store_summary call_graph exe_env =
     (* analyze all the currently defined procedures *)
     Cg.get_defined_nodes call_graph in
   let originally_defined_procs =
-    (* all the defined procedures, even if we are analyzing a restricted subset *)
-    Cg.get_originally_defined_nodes call_graph in
+    Cg.get_defined_nodes call_graph in
   let saved_language = !Config.curr_language in
 
   let cluster_id proc_name =
@@ -163,7 +162,6 @@ let iterate_callbacks store_summary call_graph exe_env =
     let attributes_opt =
       Specs.proc_resolve_attributes proc_name in
     let should_reset =
-      not !Config.ondemand_enabled ||
       Specs.get_summary proc_name = None in
     if should_reset
     then Specs.reset_summary call_graph proc_name attributes_opt in

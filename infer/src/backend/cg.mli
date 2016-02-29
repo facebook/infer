@@ -31,8 +31,7 @@ val add_edge : t -> Procname.t -> Procname.t -> unit
 (** Add a node to the call graph as defined *)
 val add_defined_node : t -> Procname.t -> unit
 
-(** [calls_recursively g source dest] returns [true] if function [source]
-    recursively calls function [dest] *)
+(** Check if [source] recursively calls [dest] *)
 val calls_recursively: t -> Procname.t -> Procname.t -> bool
 
 (** Create an empty call graph *)
@@ -57,10 +56,6 @@ val get_calls : t -> Procname.t -> in_out_calls
 (** Return the list of nodes which are defined *)
 val get_defined_nodes : t -> Procname.t list
 
-(** Return the list of nodes which were originally defined,
-    i.e. the nodes that were defined before calling restrict_defined.  *)
-val get_originally_defined_nodes : t -> Procname.t list
-
 (** Return the children of [n] which are defined *)
 val get_defined_children: t -> Procname.t -> Procname.Set.t
 
@@ -76,8 +71,8 @@ val get_nodes_and_calls : t -> (Procname.t * in_out_calls) list
 (** Return all the nodes with their defined children *)
 val get_nodes_and_defined_children : t -> (Procname.t * Procname.Set.t) list
 
-(** Return the list of nodes, with defined+disabled flag, and the list of edges *)
-val get_nodes_and_edges : t -> (Procname.t * bool * bool) list * (Procname.t * Procname.t) list
+(** Return the list of nodes, with defined flag, and the list of edges *)
+val get_nodes_and_edges : t -> (Procname.t * bool) list * (Procname.t * Procname.t) list
 
 (** Return the children of [n] which are not heirs of [n] and are defined *)
 val get_nonrecursive_dependents : t -> Procname.t -> Procname.Set.t
@@ -97,16 +92,9 @@ val load_from_file : DB.filename -> t option
 (** Returns true if the node is defined *)
 val node_defined : t -> Procname.t -> bool
 
-(** If not None, restrict defined nodes to the given set,
-    and mark them as disabled. *)
-val restrict_defined : t -> Procname.Set.t option -> unit
-
 (** Print the current call graph as a dotty file. If the filename is [None],
     use the current file dir inside the DB dir. *)
 val save_call_graph_dotty : DB.filename option -> (Procname.t -> 'a list) -> t -> unit
 
 (** Save a call graph into a file *)
 val store_to_file : DB.filename -> t -> unit
-
-(** Change the defined flag of a node *)
-val node_set_defined : t -> Procname.t -> bool -> unit

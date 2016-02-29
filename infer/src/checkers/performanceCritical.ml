@@ -320,8 +320,7 @@ let callback_performance_checker { Callbacks.proc_desc; proc_name; get_proc_desc
       | None -> ()
       | Some pd -> check_one_procedure tenv pn pd in
     { Ondemand.analyze_ondemand; get_proc_desc; } in
-  if !Config.ondemand_enabled
-  || Ondemand.procedure_should_be_analyzed proc_desc proc_name
+  if Ondemand.procedure_should_be_analyzed proc_name
   then
     begin
       Ondemand.set_callbacks callbacks;

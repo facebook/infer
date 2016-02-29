@@ -375,7 +375,6 @@ let check_return_annotation
         Models.Inference.proc_mark_return_nullable curr_pname;
 
       if return_not_nullable &&
-         !Config.ondemand_enabled &&
          activate_propagate_return_nullable
       then
         spec_make_return_nullable curr_pname;

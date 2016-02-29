@@ -49,8 +49,6 @@ let new_file_data source nLOC cg_fname =
 type t =
   { cg: Cg.t; (** global call graph *)
     proc_map: file_data Procname.Hash.t; (** map from procedure name to file data *)
-    mutable active_opt : Procname.Set.t option; (** if not None, restrict the active procedures to the given set *)
-    mutable procs_defined_in_several_files : Procname.Set.t; (** Procedures defined in more than one file *)
     mutable source_files : DB.SourceFileSet.t; (** Source files in the execution environment *)
   }
 
@@ -61,37 +59,20 @@ type initial = t
 let freeze exe_env = exe_env (* TODO: unclear what this function is used for *)
 
 (** create a new execution environment *)
-let create procset_opt =
+let create () =
   { cg = Cg.create ();
     proc_map = Procname.Hash.create 17;
-    active_opt = procset_opt;
-    procs_defined_in_several_files = Procname.Set.empty;
     source_files = DB.SourceFileSet.empty;
   }
-
-(** check if a procedure is marked as active *)
-let proc_is_active exe_env proc_name =
-  match exe_env.active_opt with
-  | None -> true
-  | Some procset -> Procname.Set.mem proc_name procset
-
-(** add a procedure to the set of active procedures *)
-let add_active_proc exe_env proc_name =
-  match exe_env.active_opt with
-  | None -> ()
-  | Some procset -> exe_env.active_opt <- Some (Procname.Set.add proc_name procset)
 
 (** add call graph from fname in the spec db,
     with relative tenv and cfg, to the execution environment *)
 let add_cg (exe_env: t) (source_dir : DB.source_dir) =
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-  let cg_opt = match Cg.load_from_file cg_fname with
-    | None -> (L.stderr "cannot load %s@." (DB.filename_to_string cg_fname); None)
-    | Some cg ->
-        Cg.restrict_defined cg exe_env.active_opt;
-        Some cg in
-  match cg_opt with
-  | None -> None
+  match Cg.load_from_file cg_fname with
+  | None ->
+      L.stderr "cannot load %s@." (DB.filename_to_string cg_fname);
+      None
   | Some cg ->
       let source = Cg.get_source cg in
       exe_env.source_files <- DB.SourceFileSet.add source exe_env.source_files;
@@ -102,22 +83,16 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
       IList.iter (fun pname ->
           let should_update =
             if Procname.Hash.mem exe_env.proc_map pname then
-              let old_source = (Procname.Hash.find exe_env.proc_map pname).source in
-              exe_env.procs_defined_in_several_files <-
-                Procname.Set.add pname exe_env.procs_defined_in_several_files;
-              (* L.err "Warning: procedure %a is defined in both %s and %s@."*)
-              (* Procname.pp pname (DB.source_file_to_string source)*)
-              (* (DB.source_file_to_string old_source); *)
-              source < old_source (* when a procedure is defined in several files,
-                                     map to the first alphabetically *)
+              let old_source =
+                (Procname.Hash.find exe_env.proc_map pname).source in
+              (* when a procedure is defined in several files, *)
+              (* map to the first alphabetically *)
+              source < old_source
             else true in
           if should_update
-          then Procname.Hash.replace exe_env.proc_map pname file_data) defined_procs;
+          then Procname.Hash.replace exe_env.proc_map pname file_data)
+        defined_procs;
       Some cg
-
-(** get the procedures defined in more than one file *)
-let get_procs_defined_in_several_files exe_env =
-  exe_env.procs_defined_in_several_files
 
 (** get the global call graph *)
 let get_cg exe_env =

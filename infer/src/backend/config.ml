@@ -184,10 +184,6 @@ let eradicate = ref false
 (** should the checkers be run? *)
 let checkers_enabled () = not !eradicate
 
-(** flag for ondemand mode:
-    procedure calls trigger a new analysis if the summary is not present already *)
-let ondemand_enabled = ref false
-
 (** flag for reactive mode:
     the analysis starts from the files captured since the "infer" command started *)
 let reactive_mode = ref false
@@ -203,9 +199,6 @@ let idempotent_getters = ref true
 
 (** if true, changes to code are checked at the procedure level; if false, at the file level *)
 let incremental_procs = ref true
-
-(** Flag to activate intraprocedural-only analysis *)
-let intraprocedural = ref false
 
 (** if active, join  x+j and x+k for constants j and k *)
 let join_plus = ref true
@@ -226,9 +219,6 @@ let long_static_proc_names = ref false
 
 (** Number of lines of code in original file *)
 let nLOC = ref 0
-
-(** max number of procedures in each cluster *)
-let max_cluster_size = ref 2000
 
 (** Maximum level of recursion during the analysis, after which a timeout is generated *)
 let max_recursion = ref 5

@@ -27,10 +27,8 @@ type callbacks =
     triggered during the analysis of curr_pname. *)
 val do_analysis : propagate_exceptions:bool -> Cfg.Procdesc.t -> Procname.t -> unit
 
-val one_cluster_per_procedure : unit -> bool
-
-(** Check if the procedure called by the current pdesc needs to be analyzed. *)
-val procedure_should_be_analyzed : Cfg.Procdesc.t -> Procname.t -> bool
+(** Check if the procedure called needs to be analyzed. *)
+val procedure_should_be_analyzed : Procname.t -> bool
 
 (** Set the callbacks used to perform on-demand analysis. *)
 val set_callbacks : callbacks -> unit

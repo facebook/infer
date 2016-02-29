@@ -72,16 +72,16 @@ end = struct
              (is_visited node) false fmt (Cfg.Node.get_id node)) preds;
        F.fprintf fmt "<br>SUCCS: @\n";
        IList.iter (fun node -> Io_infer.Html.pp_node_link [".."] ""
-                     (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node))
-                     (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node))
-                     (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node))
-                     (is_visited node) false fmt (Cfg.Node.get_id node)) succs;
+                      (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node))
+                      (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node))
+                      (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node))
+                      (is_visited node) false fmt (Cfg.Node.get_id node)) succs;
        F.fprintf fmt "<br>EXN: @\n";
        IList.iter (fun node -> Io_infer.Html.pp_node_link [".."] ""
-                     (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node))
-                     (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node))
-                     (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node))
-                     (is_visited node) false fmt (Cfg.Node.get_id node)) exn;
+                      (IList.map Cfg.Node.get_id (Cfg.Node.get_preds node))
+                      (IList.map Cfg.Node.get_id (Cfg.Node.get_succs node))
+                      (IList.map Cfg.Node.get_id (Cfg.Node.get_exn node))
+                      (is_visited node) false fmt (Cfg.Node.get_id node)) exn;
        F.fprintf fmt "<br>@\n";
        F.pp_print_flush fmt ();
        true
@@ -373,7 +373,7 @@ end = struct
 end
 
 (** Create filename.c.html with line numbers and links to nodes *)
-let c_file_write_html proc_is_active linereader fname cfg =
+let c_file_write_html linereader fname cfg =
   let proof_cover = ref Specs.Visitedset.empty in
   let tbl = Hashtbl.create 11 in
   let process_node n =
@@ -387,8 +387,7 @@ let c_file_write_html proc_is_active linereader fname cfg =
   let global_err_log = Errlog.empty () in
   let do_proc proc_name proc_desc = (* add the err_log of this proc to [global_err_log] *)
     let proc_loc = (Cfg.Procdesc.get_loc proc_desc) in
-    if proc_is_active proc_name &&
-       Cfg.Procdesc.is_defined proc_desc &&
+    if Cfg.Procdesc.is_defined proc_desc &&
        (DB.source_file_equal proc_loc.Location.file !DB.current_source) then
       begin
         IList.iter process_node (Cfg.Procdesc.get_nodes proc_desc);
@@ -444,5 +443,4 @@ let c_file_write_html proc_is_active linereader fname cfg =
      Io_infer.Html.close (fd, fmt))
 
 let c_files_write_html linereader exe_env =
-  let proc_is_active = Exe_env.proc_is_active exe_env in
-  if !Config.write_html then Exe_env.iter_files (c_file_write_html proc_is_active linereader) exe_env
+  if !Config.write_html then Exe_env.iter_files (c_file_write_html linereader) exe_env

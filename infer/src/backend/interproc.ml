@@ -1072,11 +1072,76 @@ let report_custom_errors summary =
       Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
   IList.iter report (custom_error_preconditions summary)
 
+module SpecMap = Map.Make (struct
+    type t = Prop.normal Specs.Jprop.t
+    let compare = Specs.Jprop.compare
+  end)
+
+(** Update the specs of the current proc after the execution of one phase *)
+let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
+  : Specs.NormSpec.t list * bool =
+  let new_specs = Specs.normalized_specs_to_specs new_specs in
+  let old_specs = Specs.get_specs proc_name in
+  let changed = ref false in
+  let current_specs =
+    ref
+      (IList.fold_left
+         (fun map spec ->
+            SpecMap.add
+              spec.Specs.pre
+              (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
+         SpecMap.empty old_specs) in
+  let re_exe_filter old_spec = (* filter out pres which failed re-exe *)
+    if phase == Specs.RE_EXECUTION &&
+       not (IList.exists
+              (fun new_spec -> Specs.Jprop.equal new_spec.Specs.pre old_spec.Specs.pre)
+              new_specs)
+    then begin
+      changed:= true;
+      L.out "Specs changed: removing pre of spec@\n%a@." (Specs.pp_spec pe_text None) old_spec;
+      current_specs := SpecMap.remove old_spec.Specs.pre !current_specs end
+    else () in
+  let add_spec spec = (* add a new spec by doing union of the posts *)
+    try
+      let old_post, old_visited = SpecMap.find spec.Specs.pre !current_specs in
+      let new_post, new_visited =
+        Paths.PathSet.union
+          old_post
+          (Paths.PathSet.from_renamed_list spec.Specs.posts),
+        Specs.Visitedset.union old_visited spec.Specs.visited in
+      if not (Paths.PathSet.equal old_post new_post) then begin
+        changed := true;
+        L.out "Specs changed: added new post@\n%a@."
+          (Propset.pp pe_text (Specs.Jprop.to_prop spec.Specs.pre))
+          (Paths.PathSet.to_propset new_post);
+        current_specs :=
+          SpecMap.add spec.Specs.pre (new_post, new_visited)
+            (SpecMap.remove spec.Specs.pre !current_specs) end
+
+    with Not_found ->
+      changed := true;
+      L.out "Specs changed: added new pre@\n%a@." (Specs.Jprop.pp_short pe_text) spec.Specs.pre;
+      current_specs :=
+        SpecMap.add
+          spec.Specs.pre
+          ((Paths.PathSet.from_renamed_list spec.Specs.posts), spec.Specs.visited)
+          !current_specs in
+  let res = ref [] in
+  let convert pre (post_set, visited) =
+    res :=
+      Specs.spec_normalize
+        { Specs.pre = pre;
+          Specs.posts = Paths.PathSet.elements post_set;
+          Specs.visited = visited }:: !res in
+  IList.iter re_exe_filter old_specs; (* filter out pre's which failed re-exe *)
+  IList.iter add_spec new_specs; (* add new specs *)
+  SpecMap.iter convert !current_specs;
+  !res,!changed
 
 (** update a summary after analysing a procedure *)
 let update_summary prev_summary specs phase proc_name elapsed res =
   let normal_specs = IList.map Specs.spec_normalize specs in
-  let new_specs, changed = Fork.update_specs proc_name phase normal_specs in
+  let new_specs, changed = update_specs proc_name phase normal_specs in
   let timestamp = max 1 (prev_summary.Specs.timestamp + if changed then 1 else 0) in
   let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
@@ -1126,10 +1191,40 @@ let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
     report_runtime_exceptions tenv proc_desc updated_summary;
   updated_summary
 
+(** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
+let transition_footprint_re_exe proc_name joined_pres =
+  L.out "Transition %a from footprint to re-exe@." Procname.pp proc_name;
+  let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
+  let summary' =
+    if !Config.only_footprint then
+      { summary with
+        Specs.phase = Specs.RE_EXECUTION;
+      }
+    else
+      let specs =
+        IList.map
+          (fun jp ->
+             Specs.spec_normalize
+               { Specs.pre = jp;
+                 posts = [];
+                 visited = Specs.Visitedset.empty })
+          joined_pres in
+      let payload =
+        { summary.Specs.payload with
+          Specs.preposts = Some specs; } in
+      let dependency_map =
+        Specs.re_initialize_dependency_map summary.Specs.dependency_map in
+      { summary with
+        Specs.timestamp = 0;
+        phase = Specs.RE_EXECUTION;
+        dependency_map;
+        payload;
+      } in
+  Specs.add_summary proc_name summary'
+
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
     the procedures enabled after the analysis of [proc_name] *)
-let perform_transition exe_env cg proc_name =
-  let proc_names = Fork.should_perform_transition cg proc_name in
+let perform_transition exe_env proc_name =
   let transition pname =
     let tenv = Exe_env.get_tenv exe_env pname in
     let joined_pres = (* disable exceptions for leaks and protect against any other errors *)
@@ -1157,27 +1252,9 @@ let perform_transition exe_env cg proc_name =
         let err_str = "exception raised " ^ (Localise.to_string err_name) in
         L.err "Error: %s %a@." err_str pp_ml_loc_opt ml_loc_opt;
         [] in
-    Fork.transition_footprint_re_exe pname joined_pres in
-  IList.iter transition proc_names
-
-(** Process the result of the analysis of [proc_name]: update the
-    returned summary and add it to the spec table. Executed in the
-    parent process as soon as a child process returns a result. *)
-let process_result (exe_env: Exe_env.t) (proc_name, calls) (_summ: Specs.summary) : unit =
-  if !Config.trace_anal then L.err "===process_result@.";
-  Ident.NameGenerator.reset (); (* for consistency with multi-core mode *)
-  let summ =
-    { _summ with
-      Specs.stats = { _summ.Specs.stats with Specs.stats_calls = calls }} in
-  Specs.add_summary proc_name summ;
-  let call_graph = Exe_env.get_cg exe_env in
-  perform_transition exe_env call_graph proc_name;
-  if !Config.only_footprint || summ.Specs.phase != Specs.FOOTPRINT then
-    (try Specs.store_summary proc_name summ with
-       Sys_error s ->
-         L.err "@.### System Error while writing summary of procedure %a to disk: %s@." Procname.pp proc_name s);
-  let procs_done = Fork.procs_become_done call_graph proc_name in
-  Fork.post_process_procs exe_env procs_done
+    transition_footprint_re_exe pname joined_pres in
+  if Specs.get_phase proc_name == Specs.FOOTPRINT
+  then transition proc_name
 
 let analyze_proc_for_ondemand exe_env proc_name =
   let saved_footprint = !Config.footprint in
@@ -1186,13 +1263,13 @@ let analyze_proc_for_ondemand exe_env proc_name =
   Specs.add_summary proc_name summaryfp;
   let cg = Cg.create () in
   Cg.add_defined_node cg proc_name;
-  perform_transition exe_env cg proc_name;
+  perform_transition exe_env proc_name;
   Config.footprint := false;
   let summaryre = analyze_proc exe_env proc_name in
   Specs.add_summary proc_name summaryre;
   Config.footprint := saved_footprint
 
-let interprocedural_algorithm_ondemand exe_env : unit =
+let interprocedural_algorithm exe_env : unit =
   let call_graph = Exe_env.get_cg exe_env in
   let filter_initial proc_name =
     let summary = Specs.get_summary_unsafe "main_algorithm" proc_name in
@@ -1210,7 +1287,7 @@ let interprocedural_algorithm_ondemand exe_env : unit =
             else true in
           if
             reactive_changed && (* in reactive mode, only analyze changed procedures *)
-            Ondemand.procedure_should_be_analyzed pdesc proc_name
+            Ondemand.procedure_should_be_analyzed proc_name
           then
             Some pdesc
           else
@@ -1226,7 +1303,6 @@ let interprocedural_algorithm_ondemand exe_env : unit =
     | None ->
         () in
   IList.iter process_one_proc procs_to_analyze
-
 
 (** Perform the analysis of an exe_env *)
 let do_analysis exe_env =
@@ -1256,7 +1332,6 @@ let do_analysis exe_env =
     (fun ((pn, _) as x) ->
        let should_init () =
          Config.analyze_models ||
-         not !Config.ondemand_enabled ||
          Specs.get_summary pn = None in
        if should_init ()
        then init_proc x)
@@ -1270,15 +1345,10 @@ let do_analysis exe_env =
       analyze_proc_for_ondemand exe_env proc_name in
     { Ondemand.analyze_ondemand; get_proc_desc; } in
 
-  if !Config.ondemand_enabled
-  then
-    begin
-      Ondemand.set_callbacks callbacks;
-      interprocedural_algorithm_ondemand exe_env;
-      Ondemand.unset_callbacks ()
-    end
-  else
-    Fork.interprocedural_algorithm exe_env analyze_proc process_result
+  Ondemand.set_callbacks callbacks;
+  interprocedural_algorithm exe_env;
+  Ondemand.unset_callbacks ()
+
 
 let visited_and_total_nodes cfg =
   let all_nodes =
@@ -1296,9 +1366,8 @@ let visited_and_total_nodes cfg =
 
 (** Print the stats for the given cfg; consider every defined proc unless a proc with the same name
     was defined in another module, and was the one which was analyzed *)
-let print_stats_cfg proc_shadowed proc_is_active cfg =
+let print_stats_cfg proc_shadowed cfg =
   let err_table = Errlog.create_err_table () in
-  let active_procs = IList.filter proc_is_active (Cfg.get_defined_procs cfg) in
   let nvisited, ntotal = visited_and_total_nodes cfg in
   let node_filter n =
     let node_procname = Cfg.Procdesc.get_proc_name (Cfg.Node.get_proc_desc n) in
@@ -1345,8 +1414,14 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
     (* F.fprintf fmt "VISITED: %a@\n" (pp_seq pp_node) nodes_visited;
        F.fprintf fmt "TOTAL: %a@\n" (pp_seq pp_node) nodes_total; *)
     F.fprintf fmt "@\n++++++++++++++++++++++++++++++++++++++++++++++++++@\n";
-    F.fprintf fmt "+ FILE: %s  LOC: %n  VISITED: %d/%d SYMOPS: %d@\n" (DB.source_file_to_string !DB.current_source) !Config.nLOC (IList.length nodes_visited) (IList.length nodes_total) !tot_symops;
-    F.fprintf fmt "+  num_procs: %d (%d ok, %d timeouts, %d errors, %d warnings, %d infos)@\n" !num_proc num_ok_proc !num_timeout num_errors num_warnings num_infos;
+    F.fprintf fmt "+ FILE: %s  LOC: %n  VISITED: %d/%d SYMOPS: %d@\n"
+      (DB.source_file_to_string !DB.current_source)
+      !Config.nLOC
+      (IList.length nodes_visited)
+      (IList.length nodes_total)
+      !tot_symops;
+    F.fprintf fmt "+  num_procs: %d (%d ok, %d timeouts, %d errors, %d warnings, %d infos)@\n"
+      !num_proc num_ok_proc !num_timeout num_errors num_warnings num_infos;
     F.fprintf fmt "+  detail procs:@\n";
     F.fprintf fmt "+    - No Errors and No Specs: %d@\n" !num_nospec_noerror_proc;
     F.fprintf fmt "+    - Some Errors and No Specs: %d@\n" !num_nospec_error_proc;
@@ -1367,20 +1442,18 @@ let print_stats_cfg proc_shadowed proc_is_active cfg =
       print_file_stats fmt ();
       close_out outc
     with Sys_error _ -> () in
-  IList.iter compute_stats_proc active_procs;
+  IList.iter compute_stats_proc (Cfg.get_defined_procs cfg);
   L.out "%a" print_file_stats ();
   save_file_stats ()
 
-let _print_stats exe_env =
-  let proc_is_active proc_desc =
-    Exe_env.proc_is_active exe_env (Cfg.Procdesc.get_proc_name proc_desc) in
-  Exe_env.iter_files (fun fname cfg ->
-      let proc_shadowed proc_desc =
-        (** return true if a proc with the same name in another module was analyzed instead *)
-        let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
-        Exe_env.get_source exe_env proc_name <> fname in
-      print_stats_cfg proc_shadowed proc_is_active cfg) exe_env
-
 (** Print the stats for all the files in the exe_env *)
 let print_stats exe_env =
-  if !Config.developer_mode then _print_stats exe_env
+  if !Config.developer_mode then
+    Exe_env.iter_files
+      (fun fname cfg ->
+         let proc_shadowed proc_desc =
+           (** return true if a proc with the same name in another module was analyzed instead *)
+           let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+           Exe_env.get_source exe_env proc_name <> fname in
+         print_stats_cfg proc_shadowed cfg)
+      exe_env

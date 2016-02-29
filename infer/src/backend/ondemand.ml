@@ -13,12 +13,6 @@ module L = Logging
 module F = Format
 
 let trace () = Config.from_env_variable "INFER_TRACE_ONDEMAND"
-let one_cluster_per_procedure () = false
-
-let () =
-  Config.ondemand_enabled := true
-
-let across_files () = true
 
 (** Name of the ondemand file *)
 let ondemand_file () = Config.get_env_variable "INFER_ONDEMAND_FILE"
@@ -59,7 +53,7 @@ let unset_callbacks () =
 
 let nesting = ref 0
 
-let procedure_should_be_analyzed curr_pdesc proc_name =
+let procedure_should_be_analyzed proc_name =
   match AttributesTable.load_attributes proc_name with
   | Some proc_attributes ->
       let currently_analyzed =
@@ -70,18 +64,10 @@ let procedure_should_be_analyzed curr_pdesc proc_name =
             Specs.get_timestamp summary > 0
         | None ->
             false in
-      (* The procedure to be analyzed is in the same file as the current one. *)
-      let same_file proc_attributes =
-        (Cfg.Procdesc.get_loc curr_pdesc).Location.file
-        =
-        proc_attributes.ProcAttributes.loc.Location.file in
 
-      !Config.ondemand_enabled &&
       proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
       not currently_analyzed && (* avoid infinite loops *)
-      not already_analyzed && (* avoid re-analysis of the same procedure *)
-      (across_files () || (* whether to push the analysis into other files *)
-       same_file proc_attributes)
+      not already_analyzed (* avoid re-analysis of the same procedure *)
   | None ->
       false
 
@@ -199,7 +185,7 @@ let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
 
   match !callbacks_ref with
   | Some callbacks
-    when procedure_should_be_analyzed curr_pdesc callee_pname ->
+    when procedure_should_be_analyzed callee_pname ->
       begin
         match callbacks.get_proc_desc callee_pname with
         | Some _ -> really_do_analysis callbacks.analyze_ondemand

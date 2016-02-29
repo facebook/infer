@@ -42,23 +42,11 @@ module Codegen = struct
     exit 0
 end
 
-(** if true, save file dependency graph to disk *)
-let save_file_dependency = ref false
-
-(** command line option: if true, simulate the analysis only *)
-let simulate = ref false
-
 (** command line option: if true, run the analysis in checker mode *)
 let checkers = ref false
 
 (** command line option: name of the makefile to create with clusters and dependencies *)
 let makefile_cmdline = ref ""
-
-(** Command line option: only consider procedures whose name begins with the given string. *)
-let select_proc = ref None
-
-(** if not empty, only analyze the files in the list provided from the command-line *)
-let only_files_cmdline = ref []
 
 (** optional command-line name of the .cluster file *)
 let cluster_cmdline = ref None
@@ -119,7 +107,7 @@ let arg_desc =
         "print the builtin functions and exit"
         ;
         "-reactive",
-        Arg.Unit (fun () -> Config.ondemand_enabled := true; Config.reactive_mode := true),
+        Arg.Unit (fun () -> Config.reactive_mode := true),
         None,
         "analyze in reactive propagation mode starting from changed files"
         ;
@@ -173,7 +161,7 @@ let arg_desc =
          The analysis ignores errors caused by unknown procedure calls."
         ;
         "-checkers",
-        Arg.Unit (fun () -> checkers := true; Config.intraprocedural := true),
+        Arg.Unit (fun () -> checkers := true),
         None,
         " run only the checkers instead of the full analysis"
         ;
@@ -190,40 +178,19 @@ let arg_desc =
         "-eradicate",
         Arg.Unit (fun () ->
             Config.eradicate := true;
-            checkers := true;
-            Config.intraprocedural := true),
+            checkers := true),
         None,
         " activate the eradicate checker for java annotations"
-        ;
-        "-file",
-        Arg.String (fun s -> only_files_cmdline := s :: !only_files_cmdline),
-        Some "fname",
-        "specify one file to be analyzed (without path); the option can be repeated"
-        ;
-        "-intraprocedural",
-        Arg.Set Config.intraprocedural,
-        None,
-        "perform an intraprocedural analysis only"
         ;
         "-makefile",
         Arg.Set_string makefile_cmdline,
         Some "file",
         "create a makefile to perform the analysis"
         ;
-        "-max_cluster",
-        Arg.Set_int Config.max_cluster_size,
-        Some "n",
-        "set the max number of procedures in each cluster (default n=2000)"
-        ;
         "-seconds_per_iteration",
         Arg.Set_float seconds_per_iteration,
         Some "n",
         "set the number of seconds per iteration (default n=30)"
-        ;
-        "-simulate",
-        Arg.Set simulate,
-        None,
-        " run a simulation of the analysis only"
         ;
         "-subtype_multirange",
         Arg.Set Config.subtype_multirange,
@@ -234,11 +201,6 @@ let arg_desc =
         Arg.Set Config.optimistic_cast,
         None,
         "allow cast of undefined values"
-        ;
-        "-select_proc",
-        Arg.String (fun s -> select_proc := Some s),
-        Some "string",
-        "only consider procedures whose name contains the given string"
         ;
         "-symops_per_iteration",
         Arg.Set_int symops_per_iteration,
@@ -291,44 +253,7 @@ let () = (* parse command-line arguments *)
       print_usage_exit ()
     end
 
-module Simulator = struct (** Simulate the analysis only *)
-  let reset_summaries cg =
-    IList.iter
-      (fun (pname, _) -> Specs.reset_summary cg pname None)
-      (Cg.get_nodes_and_calls cg)
-
-  (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
-      the procedures enabled after the analysis of [proc_name] *)
-  let perform_transition exe_env proc_name =
-    let proc_names = Fork.should_perform_transition (Exe_env.get_cg exe_env) proc_name in
-    let f proc_name =
-      let joined_pres = [] in
-      Fork.transition_footprint_re_exe proc_name joined_pres in
-    IList.iter f proc_names
-
-  let process_result
-      (exe_env: Exe_env.t)
-      ((proc_name: Procname.t), (calls: Cg.in_out_calls))
-      (_summ: Specs.summary) : unit =
-    L.err "in process_result %a@." Procname.pp proc_name;
-    let summ =
-      { _summ with
-        Specs.stats = { _summ.Specs.stats with Specs.stats_calls = calls }} in
-    Specs.add_summary proc_name summ;
-    perform_transition exe_env proc_name;
-    let procs_done = Fork.procs_become_done (Exe_env.get_cg exe_env) proc_name in
-    Fork.post_process_procs exe_env procs_done
-
-  let analyze_proc _ proc_name =
-    L.err "in analyze_proc %a@." Procname.pp proc_name;
-    (* for i = 1 to Random.int 1000000 do () done; *)
-    let prev_summary = Specs.get_summary_unsafe "Simulator" proc_name in
-    let timestamp = max 1 (prev_summary.Specs.timestamp) in
-    { prev_summary with Specs.timestamp = timestamp }
-
-end
-
-let analyze exe_env =
+let analyze_exe_env exe_env =
   let init_time = Unix.gettimeofday () in
   L.log_progress_simple ".";
   Specs.clear_spec_tbl ();
@@ -339,83 +264,14 @@ let analyze exe_env =
       let call_graph = Exe_env.get_cg exe_env in
       Callbacks.iterate_callbacks Checkers.ST.store_summary call_graph exe_env
     end
-  else if !simulate then (* simulate the analysis *)
-    begin
-      Simulator.reset_summaries (Exe_env.get_cg exe_env);
-      Fork.interprocedural_algorithm
-        exe_env
-        Simulator.analyze_proc
-        Simulator.process_result
-    end
-  else (* full analysis *)
-    begin
+  else
+    begin (* run the full analysis *)
       Interproc.do_analysis exe_env;
       Printer.c_files_write_html line_reader exe_env;
       Interproc.print_stats exe_env;
       let elapsed = Unix.gettimeofday () -. init_time in
       L.out "Interprocedural footprint analysis terminated in %f sec@." elapsed
     end
-
-(** add [x] to list [l] at position [nth] *)
-let list_add_nth x l nth =
-  let rec add acc todo nth =
-    if nth = 0 then IList.rev_append acc (x:: todo)
-    else match todo with
-      | [] -> raise Not_found
-      | y:: todo' -> add (y:: acc) todo' (nth - 1) in
-  add [] l nth
-
-(** sort a list weakly w.r.t. a compare function which doest not have to be a total order
-    the number returned by [compare x y] indicates 'how strongly' x should come before y *)
-let weak_sort compare list =
-  let weak_add l x =
-    let length = IList.length l in
-    let fitness = Array.make (length + 1) 0 in
-    IList.iter (fun y -> fitness.(0) <- fitness.(0) + compare x y) l;
-    let best_position = ref 0 in
-    let best_value = ref (fitness.(0)) in
-    let i = ref 0 in
-    IList.iter (fun y ->
-        incr i;
-        let new_value = fitness.(!i - 1) - (compare x y) + (compare y x) in
-        fitness.(!i) <- new_value;
-        if new_value < !best_value then
-          begin
-            best_value := new_value;
-            best_position := !i
-          end)
-      l;
-    list_add_nth x l !best_position in
-  IList.fold_left weak_add [] list
-
-let pp_stringlist fmt slist =
-  IList.iter (fun pname -> F.fprintf fmt "%s " pname) slist
-
-let weak_sort_nodes cg =
-  let nodes = Cg.get_defined_nodes cg in
-  let grand_hash = Procname.Hash.create 1 in
-  let get_grandparents x =
-    try Procname.Hash.find grand_hash x with
-    | Not_found ->
-        let res = ref Procname.Set.empty in
-        let do_parent p = res := Procname.Set.union (Cg.get_parents cg p) !res in
-        Procname.Set.iter do_parent (Cg.get_parents cg x);
-        Procname.Hash.replace grand_hash x !res;
-        !res in
-  let cmp x y =
-    let res = ref 0 in
-    if Procname.Set.mem y (Cg.get_parents cg x) then res := !res - 2;
-    if Procname.Set.mem y (get_grandparents x) then res := !res - 1;
-    if Procname.Set.mem x (Cg.get_parents cg y) then res := !res + 2;
-    if Procname.Set.mem x (get_grandparents y) then res := !res + 1;
-    !res in
-  weak_sort cmp nodes
-
-let file_pname_to_cg file_pname =
-  let source_file = ClusterMakefile.source_file_from_pname file_pname in
-  let source_dir = DB.source_dir_from_source_file source_file in
-  let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
-  Cg.load_from_file cg_fname
 
 let output_json_file_stats num_files num_procs num_lines =
   let file_stats =
@@ -426,195 +282,11 @@ let output_json_file_stats num_files num_procs num_lines =
   let f = open_out (Filename.concat !Config.results_dir Config.proc_stats_filename) in
   Yojson.Basic.pretty_to_channel f file_stats
 
-(** create clusters of minimal size in the dependence order,
-    with recursive parts grouped together. *)
-let create_minimal_clusters file_cg exe_env to_analyze_map : Cluster.t list =
-  if !Cluster.trace_clusters then L.err "[create_minimal_clusters]@.";
-  let sorted_files = weak_sort_nodes file_cg in
-  let seen = ref Procname.Set.empty in
-  let clusters = ref [] in
-  let total_files = ref 0 in
-  let total_procs = ref 0 in
-  let total_LOC = ref 0 in
-  let total = Procname.Map.cardinal to_analyze_map in
-  let analyzed_map_done = ref 0 in
-  let create_cluster_elem  (file_pname, changed_procs) = (* create a Cluster.elem for the file *)
-    L.log_progress "Creating clusters..." analyzed_map_done total;
-    let source_file = ClusterMakefile.source_file_from_pname file_pname in
-    if !Cluster.trace_clusters then
-      L.err "      [create_minimal_clusters] %s@." (DB.source_file_to_string source_file);
-    DB.current_source := source_file;
-    match file_pname_to_cg file_pname with
-    | None ->
-        Cluster.create_bottomup source_file 0 []
-    | Some cg ->
-        (* decide whether a proc is active using pname_to_fname, i.e. whether this is the file associated to it *)
-        let proc_is_selected pname = match !select_proc with
-          | None -> true
-          | Some pattern_str -> string_is_prefix pattern_str (Procname.to_unique_id pname) in
-        let proc_is_active pname =
-          proc_is_selected pname &&
-          DB.source_file_equal (Exe_env.get_source exe_env pname) source_file in
-        let active_procs = IList.filter proc_is_active (Procname.Set.elements changed_procs) in
-        let naprocs = IList.length active_procs in
-        total_files := !total_files + 1;
-        total_procs := !total_procs + naprocs;
-        total_LOC := !total_LOC + (Cg.get_nLOC cg);
-        Cluster.create_bottomup source_file naprocs active_procs in
-  let choose_next_file list = (* choose next file from the weakly ordered list *)
-    let file_has_no_unseen_dependents fname =
-      Procname.Set.subset (Cg.get_dependents file_cg fname) !seen in
-    match IList.partition file_has_no_unseen_dependents list with
-    | (fname :: no_deps), deps -> (* if all the dependents of fname have been seen, bypass the order in the list *)
-        if !Cluster.trace_clusters then
-          L.err "  [choose_next_file] %s (NO dependents)@." (Procname.to_string fname);
-        Some (fname, IList.rev_append no_deps deps)
-    | [], _ ->
-        begin
-          match list with
-          | fname :: list' ->
-              if !Cluster.trace_clusters then
-                L.err "  [choose_next_file] %s (HAS dependents)@." (Procname.to_string fname);
-              Some(fname, list')
-          | [] -> None
-        end in
-  let rec build_clusters list = match choose_next_file list with
-    | None -> ()
-    | Some (fname, list') ->
-        if !Cluster.trace_clusters then
-          L.err "    [build_clusters] %s@." (Procname.to_string fname);
-        if Procname.Set.mem fname !seen then build_clusters list'
-        else
-          let cluster_set = Procname.Set.add fname (Cg.get_recursive_dependents file_cg fname) in
-          let cluster, list'' = IList.partition (fun node -> Procname.Set.mem node cluster_set) list in
-          seen := Procname.Set.union !seen cluster_set;
-          let to_analyze =
-            IList.fold_right
-              (fun file_pname l ->
-                 try (file_pname, Procname.Map.find file_pname to_analyze_map) :: l
-                 with Not_found -> l)
-              cluster
-              [] in
-          if to_analyze <> [] then
-            begin
-              let cluster = IList.map create_cluster_elem to_analyze in
-              clusters := cluster :: !clusters;
-            end;
-          build_clusters list'' in
-  build_clusters sorted_files;
-  output_json_file_stats !total_files !total_procs !total_LOC;
-  IList.rev !clusters
-
-let proc_list_to_set proc_list =
-  IList.fold_left (fun s p -> Procname.Set.add p s) Procname.Set.empty proc_list
-
-(** compute the clusters *)
-let compute_clusters exe_env : Cluster.t list =
-  if !Cluster.trace_clusters then
-    L.err "[compute_clusters] @.";
-  let file_cg = Cg.create () in
-  let global_cg = Exe_env.get_cg exe_env in
-  let nodes, edges = Cg.get_nodes_and_edges global_cg in
-  let defined_procs = Cg.get_defined_nodes global_cg in
-  let total_nodes = IList.length nodes in
-  let computed_nodes = ref 0 in
-  let do_node (n, defined, _) =
-    L.log_progress "Computing dependencies..." computed_nodes total_nodes;
-    if defined then
-      Cg.add_defined_node file_cg
-        (ClusterMakefile.source_file_to_pname (Exe_env.get_source exe_env n)) in
-  let do_edge (n1, n2) =
-    if Cg.node_defined global_cg n1 && Cg.node_defined global_cg n2 then
-      begin
-        let src1 = Exe_env.get_source exe_env n1 in
-        let src2 = Exe_env.get_source exe_env n2 in
-        if not (DB.source_file_equal src1 src2) then begin
-          if !Cluster.trace_clusters then
-            L.err "file_cg %s -> %s [%a]@."
-              (DB.source_file_to_string src1)
-              (DB.source_file_to_string src2)
-              Procname.pp n2;
-          Cg.add_edge file_cg
-            (ClusterMakefile.source_file_to_pname src1)
-            (ClusterMakefile.source_file_to_pname src2)
-        end
-      end in
-  IList.iter do_node nodes;
-  if IList.length nodes > 0 then L.log_progress_simple "\n";
-  if not !Config.intraprocedural then IList.iter do_edge edges;
-  if !save_file_dependency then
-    Cg.save_call_graph_dotty (Some (DB.filename_from_string "file_dependency.dot")) Specs.get_specs file_cg;
-  let files = Cg.get_defined_nodes file_cg in
-  let num_files = IList.length files in
-  L.err "@.Found %d defined procedures in %d files.@." (IList.length defined_procs) num_files;
-  let to_analyze_map =
-    (* get all procedures defined in a file *)
-    let get_defined_procs file_pname = match file_pname_to_cg file_pname with
-      | None -> Procname.Set.empty
-      | Some cg -> proc_list_to_set (Cg.get_defined_nodes cg) in
-    IList.fold_left
-      (fun m file_pname -> Procname.Map.add file_pname (get_defined_procs file_pname) m)
-      Procname.Map.empty
-      files in
-  L.err "Analyzing %d files.@.@." (Procname.Map.cardinal to_analyze_map);
-  let clusters = create_minimal_clusters file_cg exe_env to_analyze_map in
-  L.err "Minimal clusters:@.";
-  Cluster.print_clusters_stats clusters;
-  if !makefile_cmdline <> "" then
-    begin
-      let max_cluster_size = 50 in
-      let desired_cluster_size = 1 in
-      let clusters' =
-        Cluster.combine_split_clusters clusters max_cluster_size desired_cluster_size in
-      L.err "@.Combined clusters with max size %d@." max_cluster_size;
-      Cluster.print_clusters_stats clusters';
-      let number_of_clusters = IList.length clusters' in
-      let plural_of_cluster = if number_of_clusters != 1 then "s" else "" in
-      L.log_progress_simple
-        (Printf.sprintf "Analyzing %d cluster%s" number_of_clusters plural_of_cluster);
-      ClusterMakefile.create_cluster_makefile_and_exit clusters' file_cg !makefile_cmdline false
-    end;
-  let clusters' =
-    Cluster.combine_split_clusters
-      clusters !Config.max_cluster_size !Config.max_cluster_size in
-  L.err "@.Combined clusters with max size %d@." !Config.max_cluster_size;
-  Cluster.print_clusters_stats clusters';
-  let number_of_clusters = IList.length clusters' in
-  L.log_progress_simple ("\nAnalyzing "^(string_of_int number_of_clusters)^" clusters");
-  clusters'
-
-(** Load a .c or .cpp file into an execution environment *)
-let load_cg_file (_exe_env: Exe_env.initial) (source_dir : DB.source_dir) =
-  match Exe_env.add_cg _exe_env source_dir with
-  | None -> None
-  | Some cg ->
-      L.err "loaded %s@." (DB.source_dir_to_string source_dir);
-      Some cg
-
-(** Populate the exe_env by loading cg files. *)
-let populate_exe_env _exe_env (source_dirs : DB.source_dir list) =
-  let sorted_dirs = IList.sort DB.source_dir_compare source_dirs in
-  IList.iter
-    (fun source_dir ->
-       ignore (load_cg_file _exe_env source_dir))
-    sorted_dirs;
-  Exe_env.freeze _exe_env
 
 (** Create an exe_env from a cluster. *)
 let exe_env_from_cluster cluster =
-  let _exe_env =
-    let active_procs_opt = Cluster.get_active_procs cluster in
-    Exe_env.create active_procs_opt in
-  let source_dirs =
-    let fold_cluster_elem source_dirs ce =
-      let source_dir =
-        match Cluster.get_ondemand_info ce with
-        | Some source_dir ->
-            source_dir
-        | None ->
-            DB.source_dir_from_source_file ce.Cluster.ce_file in
-      source_dir :: source_dirs in
-    IList.fold_left fold_cluster_elem [] cluster in
+  let _exe_env = Exe_env.create () in
+  let source_dirs = [cluster] in
   let sorted_dirs = IList.sort DB.source_dir_compare source_dirs in
   IList.iter (fun src_dir -> ignore (Exe_env.add_cg _exe_env src_dir)) sorted_dirs;
   let exe_env = Exe_env.freeze _exe_env in
@@ -625,12 +297,11 @@ let analyze_cluster cluster_num tot_clusters (cluster : Cluster.t) =
   let cluster_num_ref = ref cluster_num in
   incr cluster_num_ref;
   let exe_env = exe_env_from_cluster cluster in
-  let num_files = IList.length cluster in
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env) in
   let num_procs = IList.length defined_procs in
-  L.err "@.Processing cluster #%d/%d with %d files and %d procedures@."
-    !cluster_num_ref tot_clusters num_files num_procs;
-  analyze exe_env
+  L.err "@.Processing cluster #%d/%d with %d procedures@."
+    !cluster_num_ref tot_clusters num_procs;
+  analyze_exe_env exe_env
 
 let process_cluster_cmdline_exit () =
   match !cluster_cmdline with
@@ -684,32 +355,26 @@ let teardown_logging analyzer_out_of analyzer_err_of =
       close_output_file analyzer_err_of;
     end
 
-(** Compute clusters when on-demand is active.
+(** Compute clusters.
     Each cluster will contain only the name of the directory for a file. *)
-let compute_ondemand_clusters source_dirs =
-  let mk_cluster source_dir =
-    Cluster.create_ondemand source_dir in
-  let clusters =
-    let do_source_dir acc source_dir = mk_cluster source_dir @ acc in
-    IList.fold_left do_source_dir [] source_dirs in
-  Cluster.print_clusters_stats clusters;
+let compute_clusters clusters =
+  Cluster.print_clusters clusters;
   let num_files = IList.length clusters in
   let num_procs = 0 (* can't compute it at this stage *) in
   let num_lines = 0 in
   output_json_file_stats num_files num_procs num_lines;
-  if !makefile_cmdline <> "" then
-    begin
-      let file_cg = Cg.create () in
-      ClusterMakefile.create_cluster_makefile_and_exit clusters file_cg !makefile_cmdline false
-    end;
+  if !makefile_cmdline <> ""
+  then ClusterMakefile.create_cluster_makefile_and_exit clusters !makefile_cmdline;
   clusters
 
+let print_prolog () =
+  match !cluster_cmdline with
+  | None ->
+      L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
+  | Some clname -> L.stdout "Cluster %s@." clname
+
 let () =
-  let () =
-    match !cluster_cmdline with
-    | None ->
-        L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
-    | Some clname -> L.stdout "Cluster %s@." clname in
+  print_prolog ();
   RegisterCheckers.register ();
   Facebook.register_checkers ();
 
@@ -721,29 +386,10 @@ let () =
 
   process_cluster_cmdline_exit ();
 
-  let source_dirs =
-    if !only_files_cmdline = [] then DB.find_source_dirs ()
-    else
-      let filter source_dir =
-        let source_dir_base = Filename.basename (DB.source_dir_to_string source_dir) in
-        IList.exists (fun s -> string_is_prefix s source_dir_base) !only_files_cmdline in
-      IList.filter filter (DB.find_source_dirs ()) in
+  let source_dirs = DB.find_source_dirs () in
   L.err "Found %d source files in %s@." (IList.length source_dirs) !Config.results_dir;
 
-  let clusters =
-    if !Config.ondemand_enabled
-    then
-      compute_ondemand_clusters source_dirs
-    else
-      begin
-        let _exe_env = Exe_env.create None in
-        let exe_env =
-          populate_exe_env _exe_env source_dirs in
-        L.err "Procedures defined in more than one file: %a@."
-          Procname.pp_set (Exe_env.get_procs_defined_in_several_files exe_env);
-        compute_clusters exe_env
-      end in
-
+  let clusters = compute_clusters source_dirs in
 
   let tot_clusters = IList.length clusters in
   IList.iter (analyze_cluster 0 tot_clusters) clusters;
