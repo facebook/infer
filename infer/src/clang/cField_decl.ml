@@ -19,11 +19,10 @@ let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
   match Sil.tenv_lookup tenv super_class with
   | None -> []
-  | Some Sil.Tstruct { Sil.instance_fields; superclasses = super_class :: _ } ->
+  | Some { Sil.instance_fields; superclasses = super_class :: _ } ->
       let sc_fields = get_fields_super_classes tenv super_class in
       General_utils.append_no_duplicates_fields instance_fields sc_fields
-  | Some Sil.Tstruct { Sil.instance_fields } -> instance_fields
-  | Some _ -> []
+  | Some { Sil.instance_fields } -> instance_fields
 
 let fields_superclass tenv interface_decl_info ck =
   match interface_decl_info.Clang_ast_t.otdi_super with
@@ -78,7 +77,7 @@ let add_missing_fields tenv class_name ck fields =
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class ck, mang_name) in
   match Sil.tenv_lookup tenv class_tn_name with
-  | Some Sil.Tstruct ({ Sil.instance_fields } as struct_typ) ->
+  | Some ({ Sil.instance_fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields instance_fields fields in
       let class_type_info =
         {

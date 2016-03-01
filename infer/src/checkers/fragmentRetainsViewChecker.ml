@@ -27,7 +27,7 @@ let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
     | Sil.Tptr (Sil.Tvar tname, _) ->
         begin
           match Sil.tenv_lookup tenv tname with
-          | Some typ -> AndroidFramework.is_view typ tenv
+          | Some struct_typ -> AndroidFramework.is_view (Sil.Tstruct struct_typ) tenv
           | None -> false
         end
     | _ -> false in
@@ -39,8 +39,8 @@ let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
     begin
       let class_typename = Typename.Java.from_string (Procname.java_get_class proc_name) in
       match Sil.tenv_lookup tenv class_typename with
-      | Some (Sil.Tstruct { Sil.struct_name = Some _; instance_fields }
-              as typ) when AndroidFramework.is_fragment typ tenv ->
+      | Some ({ Sil.struct_name = Some _; instance_fields } as struct_typ)
+        when AndroidFramework.is_fragment (Sil.Tstruct struct_typ) tenv ->
           let declared_view_fields =
             IList.filter (is_declared_view_typ class_typename) instance_fields in
           let fields_nullified = PatternMatch.get_fields_nullified proc_desc in
@@ -48,7 +48,7 @@ let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
           IList.iter
             (fun (fname, fld_typ, _) ->
                if not (Ident.FieldSet.mem fname fields_nullified) then
-                 report_error typ fname fld_typ proc_name proc_desc)
+                 report_error (Sil.Tstruct struct_typ) fname fld_typ proc_name proc_desc)
             declared_view_fields
       | _ -> ()
     end

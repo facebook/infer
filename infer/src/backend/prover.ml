@@ -1454,7 +1454,7 @@ struct
 
   let is_interface tenv class_name =
     match Sil.tenv_lookup tenv class_name with
-    | Some (Sil.Tstruct ( { Sil.csu = Csu.Class Csu.Java; struct_name = Some _ } as struct_typ )) ->
+    | Some ({ Sil.csu = Csu.Class Csu.Java; struct_name = Some _ } as struct_typ) ->
         (IList.length struct_typ.Sil.instance_fields = 0) &&
         (IList.length struct_typ.Sil.def_methods = 0)
     | _ -> false
@@ -1472,7 +1472,7 @@ struct
     let rec check cn =
       Typename.equal cn c2 || is_root_class c2 ||
       match Sil.tenv_lookup tenv cn with
-      | Some (Sil.Tstruct { Sil.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
+      | Some ({ Sil.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
           IList.exists check superclasses
       | _ -> false in
     check c1
@@ -1944,7 +1944,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
           let typ = match Sil.tenv_lookup tenv object_type with
             | Some typ -> typ
             | None -> assert false in
-          Sil.Sizeof (typ, Sil.Subtype.exact) in
+          Sil.Sizeof (Sil.Tstruct typ, Sil.Subtype.exact) in
     Sil.Hpointsto (root, sexp, const_string_texp) in
   let mk_constant_class_hpred s = (* creat an hpred from a constant class *)
     let root = Sil.Const (Sil.Cclass (Ident.string_to_name s)) in
@@ -1956,7 +1956,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
       let typ = match Sil.tenv_lookup tenv class_type with
         | Some typ -> typ
         | None -> assert false in
-      Sil.Sizeof (typ, Sil.Subtype.exact) in
+      Sil.Sizeof (Sil.Tstruct typ, Sil.Subtype.exact) in
     Sil.Hpointsto (root, sexp, class_texp) in
   try
     (match move_primed_lhs_from_front subs sigma2 with

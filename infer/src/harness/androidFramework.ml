@@ -256,7 +256,9 @@ let get_all_supertypes typ tenv =
     | _ -> [] in
   let rec add_typ class_name typs =
     match Sil.tenv_lookup tenv class_name with
-    | Some typ -> get_supers_rec typ (TypSet.add typ typs)
+    | Some struct_typ ->
+        let typ' = Sil.Tstruct struct_typ in
+        get_supers_rec typ' (TypSet.add typ' typs)
     | None -> typs
   and get_supers_rec typ all_supers =
     let direct_supers = get_direct_supers typ in
@@ -272,7 +274,7 @@ let is_subtype (typ0 : Sil.typ) (typ1 : Sil.typ) tenv =
 let is_subtype_package_class typ package classname tenv =
   let classname = Mangled.from_package_class package classname in
   match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, classname)) with
-  | Some found_typ -> is_subtype typ found_typ tenv
+  | Some found_struct_typ -> is_subtype typ (Sil.Tstruct found_struct_typ) tenv
   | _ -> false
 
 let is_context typ tenv =
@@ -353,8 +355,7 @@ let get_callbacks_registered_by_proc procdesc tenv =
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
   match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, lifecycle_typ)) with
-  | Some (Sil.Tstruct
-            { Sil.csu = Csu.Class _; struct_name = Some _; def_methods } as lifecycle_typ) ->
+  | Some ({ Sil.csu = Csu.Class _; struct_name = Some _; def_methods } as lifecycle_typ) ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         IList.find (fun decl_proc ->
@@ -366,7 +367,7 @@ let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
             try (lookup_proc lifecycle_proc_str) :: lifecycle_procs
             with Not_found -> lifecycle_procs)
           [] lifecycle_proc_strs in
-      Some (lifecycle_typ, lifecycle_procs)
+      Some (Sil.Tstruct lifecycle_typ, lifecycle_procs)
   | _ -> None
 
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
@@ -379,7 +380,7 @@ let is_subclass tenv cn1 classname_str =
   let lookup = Sil.tenv_lookup tenv in
   match lookup cn1, lookup typename with
   | Some typ1, Some typ2 ->
-      is_subtype typ1 typ2 tenv
+      is_subtype (Sil.Tstruct typ1) (Sil.Tstruct typ2) tenv
   | _ -> false
 
 

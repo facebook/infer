@@ -1106,19 +1106,7 @@ let rec create_strexp_of_type tenvo struct_init_mode typ inst =
       end
   | Sil.Tarray (_, size) ->
       Sil.Earray (size, [], inst)
-  | Sil.Tvar name ->
-      L.out "@[<2>ANALYSIS BUG@\n";
-      L.out "type %a should be expanded to " (Sil.pp_typ_full pe_text) typ;
-      begin
-        match tenvo with
-        | None -> L.out "nothing@\n@."
-        | Some tenv ->
-            begin
-              match Sil.tenv_lookup tenv name with
-              | None -> L.out "nothing@\n@."
-              | Some typ' -> L.out "%a@\n@." (Sil.pp_typ_full pe_text) typ'
-            end;
-      end;
+  | Sil.Tvar _ ->
       assert false
 
 (** Sil.Construct a pointsto. *)

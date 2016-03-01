@@ -201,7 +201,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
         sil_type
       ) else (
         match Sil.tenv_lookup tenv sil_typename with
-        | Some sil_type -> sil_type (* just reuse what is already in tenv *)
+        | Some struct_typ -> Sil.Tstruct struct_typ (* just reuse what is already in tenv *)
         | None ->
             (* This is first forward definition seen so far. Instead of adding *)
             (* empty Tstruct to sil_types_map add Tvar so that frontend doeasn't expand *)

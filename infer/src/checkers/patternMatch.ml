@@ -79,7 +79,8 @@ let type_has_supertype
               let match_name () = Typename.equal cn class_name in
               let has_indirect_supertype () =
                 match Sil.tenv_lookup tenv cn with
-                | Some supertype -> has_supertype supertype (Sil.TypSet.add typ visited)
+                | Some supertype ->
+                    has_supertype (Sil.Tstruct supertype) (Sil.TypSet.add typ visited)
                 | None -> false in
               (match_name () || has_indirect_supertype ()) in
             IList.exists match_supertype superclasses
@@ -305,7 +306,7 @@ let proc_iter_overridden_methods f tenv proc_name =
     let super_proc_name =
       Procname.java_replace_class proc_name (Typename.name super_class_name) in
     match Sil.tenv_lookup tenv super_class_name with
-    | Some (Sil.Tstruct { Sil.def_methods }) ->
+    | Some ({ Sil.def_methods }) ->
         let is_override pname =
           Procname.equal pname super_proc_name &&
           not (Procname.is_constructor pname) in
@@ -321,8 +322,8 @@ let proc_iter_overridden_methods f tenv proc_name =
       let class_name = Procname.java_get_class proc_name in
       Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name) in
     match Sil.tenv_lookup tenv type_name with
-    | Some curr_type ->
-        IList.iter (do_super_type tenv) (type_get_direct_supertypes curr_type)
+    | Some curr_struct_typ ->
+        IList.iter (do_super_type tenv) (type_get_direct_supertypes (Sil.Tstruct curr_struct_typ))
     | None -> ()
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)

@@ -522,7 +522,7 @@ val create_tenv : unit -> tenv
 val tenv_mem : tenv -> Typename.t -> bool
 
 (** Look up a name in the global type environment. *)
-val tenv_lookup : tenv -> Typename.t -> typ option
+val tenv_lookup : tenv -> Typename.t -> struct_typ option
 
 (** Add a (name,typ) pair to the global type environment. *)
 val tenv_add : tenv -> Typename.t -> struct_typ -> unit

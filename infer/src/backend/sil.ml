@@ -3770,7 +3770,7 @@ let tenv_mem tenv name =
 
 (** Look up a name in the global type environment. *)
 let tenv_lookup tenv name =
-  try Some (Tstruct (TypenameHash.find tenv name))
+  try Some (TypenameHash.find tenv name)
   with Not_found -> None
 
 (** Add a (name,type) pair to the global type environment. *)
@@ -3784,7 +3784,7 @@ let expand_type tenv typ =
       begin
         match tenv_lookup tenv tname with
         | None -> assert false
-        | Some typ' -> typ'
+        | Some struct_typ -> Tstruct struct_typ
       end
   | _ -> typ
 

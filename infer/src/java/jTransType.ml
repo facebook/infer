@@ -349,18 +349,16 @@ and create_sil_type program tenv cn =
         struct_annotations;
       }
 
-
 and get_class_type_no_pointer program tenv cn =
   let named_type = typename_of_classname cn in
-  let class_type_np =
-    match Sil.tenv_lookup tenv named_type with
-    | None -> create_sil_type program tenv cn
-    | Some t -> t in
-  match class_type_np with
-  | Sil.Tstruct struct_typ ->
-      Sil.tenv_add tenv named_type struct_typ;
-      class_type_np
-  | _ -> assert false
+  match Sil.tenv_lookup tenv named_type with
+  | None ->
+      (match create_sil_type program tenv cn with
+       | (Sil.Tstruct struct_typ) as typ->
+           Sil.tenv_add tenv named_type struct_typ;
+           typ
+       | _ -> assert false)
+  | Some struct_typ -> Sil.Tstruct struct_typ
 
 let get_class_type program tenv cn =
   let t = get_class_type_no_pointer program tenv cn in

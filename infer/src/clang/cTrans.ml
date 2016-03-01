@@ -1525,12 +1525,7 @@ struct
       match typ with
       | Sil.Tvar tn ->
           (match Sil.tenv_lookup context.CContext.tenv tn with
-           | Some (Sil.Tstruct _ as str) -> collect_left_hand_exprs e str tns
-           | Some ((Sil.Tvar typename) as tvar) ->
-               if (StringSet.mem (Typename.to_string typename) tns) then
-                 [[(e, typ)]]
-               else
-                 collect_left_hand_exprs e tvar (StringSet.add (Typename.to_string typename) tns)
+           | Some struct_typ -> collect_left_hand_exprs e (Sil.Tstruct struct_typ) tns
            | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
       | Sil.Tstruct { Sil.instance_fields } as type_struct ->
           let lh_exprs = IList.map ( fun (fieldname, _, _) ->

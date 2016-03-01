@@ -412,7 +412,7 @@ let typ_get_recursive_flds tenv typ_exp =
           | None ->
               L.err "@.typ_get_recursive: Undefined type %s@." (Typename.to_string tname');
               t
-          | Some typ' -> typ' in
+          | Some st -> Sil.Tstruct st in
         Sil.typ_equal typ' typ
     | Sil.Tptr _ | Sil.Tstruct _ | Sil.Tarray _ ->
         false

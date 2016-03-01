@@ -67,7 +67,8 @@ let callback_checker_main
     Typename.TN_csu
       (Csu.Class Csu.Java, Mangled.from_string (Procname.java_get_class proc_name)) in
   match Sil.tenv_lookup tenv typename with
-  | Some (Sil.Tstruct { struct_name = Some _; def_methods } as typ) ->
+  | Some ({ struct_name = Some _; def_methods } as struct_typ) ->
+      let typ = Sil.Tstruct struct_typ in
       let lifecycle_typs = get_or_create_lifecycle_typs tenv in
       let proc_belongs_to_lifecycle_typ = IList.exists
           (fun lifecycle_typ -> AndroidFramework.typ_is_lifecycle_typ typ lifecycle_typ tenv)

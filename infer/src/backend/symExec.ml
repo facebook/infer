@@ -547,7 +547,7 @@ let resolve_method tenv class_name proc_name =
           Procname.java_replace_class proc_name (Typename.name class_name)
         else Procname.c_method_replace_class proc_name (Typename.name class_name) in
       match Sil.tenv_lookup tenv class_name with
-      | Some (Sil.Tstruct { Sil.csu = Csu.Class _; def_methods; superclasses }) ->
+      | Some { Sil.csu = Csu.Class _; def_methods; superclasses } ->
           if method_exists right_proc_name def_methods then
             Some right_proc_name
           else
@@ -601,7 +601,7 @@ let lookup_java_typ_from_string tenv typ_str =
         (* non-primitive/non-array type--resolve it in the tenv *)
         let typename = Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string typ_str)) in
         match Sil.tenv_lookup tenv typename with
-        | Some (Sil.Tstruct _ as typ) -> typ
+        | Some struct_typ -> Sil.Tstruct struct_typ
         | _ -> raise (Cannot_convert_string_to_typ typ_str) in
   loop typ_str
 
@@ -771,30 +771,6 @@ let redirect_shared_ptr tenv cfg pname actual_params =
           let _pdesc = proc_desc_copy cfg pdesc pname pname' in
           pname'
     else pname
-
-(** Lookup Java types by name *)
-let lookup_java_typ_from_string tenv typ_str =
-  let rec loop = function
-    | "" | "void" -> Sil.Tvoid
-    | "int" -> Sil.Tint Sil.IInt
-    | "byte" -> Sil.Tint Sil.IShort
-    | "short" -> Sil.Tint Sil.IShort
-    | "boolean" -> Sil.Tint Sil.IBool
-    | "char" -> Sil.Tint Sil.IChar
-    | "long" -> Sil.Tint Sil.ILong
-    | "float" -> Sil.Tfloat Sil.FFloat
-    | "double" -> Sil.Tfloat Sil.FDouble
-    | typ_str when String.contains typ_str '[' ->
-        let stripped_typ = String.sub typ_str 0 ((String.length typ_str) - 2) in
-        let array_typ_size = Sil.exp_get_undefined false in
-        Sil.Tptr (Sil.Tarray (loop stripped_typ, array_typ_size), Sil.Pk_pointer)
-    | typ_str ->
-        (* non-primitive/non-array type--resolve it in the tenv *)
-        let typename = Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string typ_str)) in
-        match Sil.tenv_lookup tenv typename with
-        | Some (Sil.Tstruct _ as typ) -> typ
-        | _ -> failwith ("Failed to look up typ " ^ typ_str) in
-  loop typ_str
 
 (** recognize calls to the constructor java.net.URL and splits the argument string
     to be only the protocol.  *)
