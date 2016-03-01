@@ -39,44 +39,38 @@ struct
     pp Format.std_formatter fmt
 
   let print_tenv tenv =
-    Sil.tenv_iter (fun typname typ ->
+    Sil.tenv_iter (fun typname struct_t ->
         match typname with
         | Typename.TN_csu (Csu.Class _, _) | Typename.TN_csu (Csu.Protocol, _) ->
-            (match typ with
-             | Sil.Tstruct { Sil.instance_fields; superclasses; def_methods; struct_annotations } ->
-                 print_endline (
-                   (Typename.to_string typname) ^ " " ^
-                   (Sil.item_annotation_to_string struct_annotations) ^ "\n" ^
-                   "---> superclass and protocols " ^ (IList.to_string (fun tn ->
-                       "\t" ^ (Typename.to_string tn) ^ "\n") superclasses) ^
-                   "---> methods " ^
-                   (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") def_methods)
-                   ^ "  " ^
-                   "\t---> fields " ^ (IList.to_string field_to_string instance_fields) ^ "\n")
-             | _ -> ())
+            print_endline (
+              (Typename.to_string typname) ^ " " ^
+              (Sil.item_annotation_to_string struct_t.struct_annotations) ^ "\n" ^
+              "---> superclass and protocols " ^ (IList.to_string (fun tn ->
+                  "\t" ^ (Typename.to_string tn) ^ "\n") struct_t.superclasses) ^
+              "---> methods " ^
+              (IList.to_string (fun x ->"\t" ^ (Procname.to_string x) ^ "\n") struct_t.def_methods)
+              ^ "  " ^
+              "\t---> fields " ^ (IList.to_string field_to_string struct_t.instance_fields) ^ "\n")
         | _ -> ()
       ) tenv
 
   let print_tenv_struct_unions tenv =
-    Sil.tenv_iter (fun typname typ ->
+    Sil.tenv_iter (fun typname struct_t ->
         match typname with
         | Typename.TN_csu (Csu.Struct, _) | Typename.TN_csu (Csu.Union, _) ->
-            (match typ with
-             | Sil.Tstruct { Sil.instance_fields } ->
-                 print_endline (
-                   (Typename.to_string typname)^"\n"^
-                   "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
-                       match typ with
-                       | Sil.Tvar tname -> "tvar"^(Typename.to_string tname)
-                       | Sil.Tstruct _ | _ ->
-                           "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
-                           (Sil.typ_to_string typ)^"\n") instance_fields
-                     )
-                 )
-             | _ -> ()
+            print_endline (
+              (Typename.to_string typname)^"\n"^
+              "\t---> fields "^(IList.to_string (fun (fieldname, typ, _) ->
+                  match typ with
+                  | Sil.Tvar tname -> "tvar"^(Typename.to_string tname)
+                  | Sil.Tstruct _ | _ ->
+                      "\t struct "^(Ident.fieldname_to_string fieldname)^" "^
+                      (Sil.typ_to_string typ)^"\n") struct_t.instance_fields
+                )
             )
         | Typename.TN_typedef typname ->
-            print_endline ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string typ))
+            print_endline
+              ((Mangled.to_string typname)^"-->"^(Sil.typ_to_string (Sil.Tstruct struct_t)))
         | _ -> ()
       ) tenv
 
@@ -466,12 +460,9 @@ struct
 
 
   let sort_fields_tenv tenv =
-    let sort_fields_struct typname typ =
-      match typ with
-      | Sil.Tstruct st ->
-          let st' = { st with Sil.instance_fields = (sort_fields st.Sil.instance_fields) } in
-          Sil.tenv_add tenv typname (Sil.Tstruct st')
-      | _ -> () in
+    let sort_fields_struct typname st =
+      let st' = { st with Sil.instance_fields = (sort_fields st.Sil.instance_fields) } in
+      Sil.tenv_add tenv typname (Sil.Tstruct st') in
     Sil.tenv_iter sort_fields_struct tenv
 
   let rec collect_list_tuples l (a, a1, b, c, d) =

@@ -465,9 +465,9 @@ let return_type program tenv ms meth_kind =
 
 
 let add_models_types tenv =
-  let add_type t typename typ =
+  let add_type t typename struct_typ =
     if not (Sil.tenv_mem t typename) then
-      Sil.tenv_add tenv typename typ in
+      Sil.tenv_add tenv typename (Sil.Tstruct struct_typ) in
   Sil.tenv_iter (add_type tenv) !JClasspath.models_tenv
 
 

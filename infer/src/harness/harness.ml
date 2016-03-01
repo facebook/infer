@@ -175,7 +175,8 @@ let create_android_harness proc_file_map tenv =
       | Some (framework_typ, framework_procs) ->
           (* iterate through the type environment and generate a lifecycle harness for each subclass of
            * [lifecycle_typ] *)
-          Sil.tenv_iter (fun _ typ ->
+          Sil.tenv_iter (fun _ struct_typ ->
+              let typ = Sil.Tstruct struct_typ in
               match try_create_lifecycle_trace typ framework_typ framework_procs tenv with
               | [] -> ()
               | lifecycle_trace ->

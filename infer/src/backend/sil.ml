@@ -1970,6 +1970,31 @@ and pp_const pe f = function
 and pp_typ pe f te =
   if !Config.print_types then pp_typ_full pe f te else ()
 
+and pp_struct_typ pe pp_base f struct_typ = match struct_typ.struct_name with
+  | Some name when false ->
+      (* remove "when false" to print the details of struct *)
+      F.fprintf f "%s %a {%a} %a"
+        (Csu.name struct_typ.csu)
+        Mangled.pp name
+        (pp_seq (fun f (fld, t, _) ->
+             F.fprintf f "%a %a"
+               (pp_typ_full pe) t
+               Ident.pp_fieldname fld)) struct_typ.instance_fields
+        pp_base ()
+  | Some name ->
+      F.fprintf f "%s %a %a"
+        (Csu.name struct_typ.csu)
+        Mangled.pp name
+        pp_base ()
+  | None ->
+      F.fprintf f "%s {%a} %a"
+        (Csu.name struct_typ.csu)
+        (pp_seq (fun f (fld, t, _) ->
+             F.fprintf f "%a %a"
+               (pp_typ_full pe) t
+               Ident.pp_fieldname fld)) struct_typ.instance_fields
+        pp_base ()
+
 (** Pretty print a type declaration.
     pp_base prints the variable for a declaration, or can be skip to print only the type
     pp_size prints the expression for the array size *)
@@ -1986,29 +2011,7 @@ and pp_type_decl pe pp_base pp_size f = function
   | Tptr (typ, pk) ->
       let pp_base' fmt () = F.fprintf fmt "%s%a" (ptr_kind_string pk) pp_base () in
       pp_type_decl pe pp_base' pp_size f typ
-  | Tstruct ({struct_name = Some name} as struct_typ) when false ->
-      (* remove "when false" to print the details of struct *)
-      F.fprintf f "%s %a {%a} %a"
-        (Csu.name struct_typ.csu)
-        Mangled.pp name
-        (pp_seq (fun f (fld, t, _) ->
-             F.fprintf f "%a %a"
-               (pp_typ_full pe) t
-               Ident.pp_fieldname fld)) struct_typ.instance_fields
-        pp_base ()
-  | Tstruct ({struct_name = Some name} as struct_typ) ->
-      F.fprintf f "%s %a %a"
-        (Csu.name struct_typ.csu)
-        Mangled.pp name
-        pp_base ()
-  | Tstruct ({struct_name = None} as struct_typ) ->
-      F.fprintf f "%s {%a} %a"
-        (Csu.name struct_typ.csu)
-        (pp_seq (fun f (fld, t, _) ->
-             F.fprintf f "%a %a"
-               (pp_typ_full pe) t
-               Ident.pp_fieldname fld)) struct_typ.instance_fields
-        pp_base ()
+  | Tstruct struct_typ -> pp_struct_typ pe pp_base f struct_typ
   | Tarray (typ, size) ->
       let pp_base' fmt () = F.fprintf fmt "%a[%a]" pp_base () (pp_size pe) size in
       pp_type_decl pe pp_base' pp_size f typ
@@ -3756,7 +3759,7 @@ module TypenameHash =
   end)
 
 (** Type for type environment. *)
-type tenv = typ TypenameHash.t
+type tenv = struct_typ TypenameHash.t
 
 (** Create a new type environment. *)
 let create_tenv () = TypenameHash.create 1000
@@ -3767,14 +3770,14 @@ let tenv_mem tenv name =
 
 (** Look up a name in the global type environment. *)
 let tenv_lookup tenv name =
-  try Some (TypenameHash.find tenv name)
+  try Some (Tstruct (TypenameHash.find tenv name))
   with Not_found -> None
 
 (** Add a (name,type) pair to the global type environment. *)
 let tenv_add tenv name typ =
   match typ with
-  | Tvar _ -> assert false
-  | _ -> TypenameHash.replace tenv name typ
+  | Tstruct struct_typ -> TypenameHash.replace tenv name struct_typ
+  | _ -> assert false
 
 (** expand a type if it is a typename by looking it up in the type environment *)
 let expand_type tenv typ =
@@ -3783,7 +3786,6 @@ let expand_type tenv typ =
       begin
         match tenv_lookup tenv tname with
         | None -> assert false
-        | Some (Tvar _) -> assert false
         | Some typ' -> typ'
       end
   | _ -> typ
@@ -3818,7 +3820,7 @@ let pp_tenv f (tenv : tenv) =
   TypenameHash.iter
     (fun name typ ->
        Format.fprintf f "@[<6>NAME: %s@." (Typename.to_string name);
-       Format.fprintf f "@[<6>TYPE: %a@." (pp_typ_full pe_text) typ)
+       Format.fprintf f "@[<6>TYPE: %a@." (pp_struct_typ pe_text (fun _ () -> ())) typ)
     tenv
 
 (** {2 Functions for constructing or destructing entities in this module} *)

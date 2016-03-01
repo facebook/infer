@@ -540,9 +540,9 @@ val load_tenv_from_file : DB.filename -> tenv option
 val store_tenv_to_file : DB.filename -> tenv -> unit
 
 (** iterate over a type environment *)
-val tenv_iter : (Typename.t -> typ -> unit) -> tenv -> unit
+val tenv_iter : (Typename.t -> struct_typ -> unit) -> tenv -> unit
 
-val tenv_fold : (Typename.t -> typ -> 'a -> 'a) -> tenv -> 'a -> 'a
+val tenv_fold : (Typename.t -> struct_typ -> 'a -> 'a) -> tenv -> 'a -> 'a
 
 (** print a type environment *)
 val pp_tenv : Format.formatter -> tenv -> unit

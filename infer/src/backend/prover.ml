@@ -1608,7 +1608,8 @@ let get_overrides_of tenv supertype pname =
     | Sil.Tstruct { Sil.def_methods } ->
         IList.exists (fun m -> Procname.equal pname m) def_methods
     | _ -> false in
-  let gather_overrides tname typ overrides_acc =
+  let gather_overrides tname struct_typ overrides_acc =
+    let typ = Sil.Tstruct struct_typ in
     (* get all types in the type environment that are non-reflexive subtypes of [supertype] *)
     if not (Sil.typ_equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
       (* only select the ones that implement [pname] as overrides *)
