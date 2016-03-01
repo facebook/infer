@@ -332,6 +332,9 @@ class AnalyzerWrapper(object):
         javac_original_arguments = \
             self.javac.original_arguments if self.javac is not None else []
 
+        if self.args.analyzer == config.ANALYZER_TRACING:
+            os.environ['INFER_LAZY_DYNAMIC_DISPATCH'] = 'Y'
+
         if self.args.multicore == 1:
             analysis_start_time = time.time()
             analyze_cmd = infer_analyze + infer_options

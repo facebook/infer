@@ -34,7 +34,7 @@ public class NullPointerExceptionTest {
   @BeforeClass
   public static void loadResults() throws InterruptedException, IOException {
     inferResults = InferResults.loadTracingResults(
-        ArrayIndexOutOfBoundsExceptionTest.class,
+        NullPointerExceptionTest.class,
         SOURCE_FILE);
   }
 

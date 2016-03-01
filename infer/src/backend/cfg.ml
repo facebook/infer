@@ -179,7 +179,13 @@ module Node = struct
   let get_succs node = node.nd_succs
 
   type node = t
+
   module NodeSet = Set.Make(struct
+      type t = node
+      let compare = compare
+    end)
+
+  module NodeMap = Map.Make(struct
       type t = node
       let compare = compare
     end)
@@ -586,15 +592,117 @@ module Node = struct
     let fold_node acc node =
       IList.fold_left (fun acc instr -> f acc node instr) acc (get_instrs node) in
     proc_desc_fold_nodes fold_node acc proc_desc
+
 (*
   (** Set the proc desc of the node *)
   let node_set_proc_desc pdesc node =
     node.nd_proc <- Some pdesc
 
+
   let remove_node cfg node =
     remove_node' (fun node' -> not (equal node node'))
       cfg node
 *)
+
+  (* clone a procedure description and apply the type substitutions where
+     the parameters are used *)
+  let proc_desc_specialize_types cfg callee_proc_desc resolved_attributes substitutions =
+    let resolved_proc_desc = proc_desc_create cfg resolved_attributes in
+    let resolved_proc_name = proc_desc_get_proc_name resolved_proc_desc
+    and callee_start_node = proc_desc_get_start_node callee_proc_desc
+    and callee_exit_node = proc_desc_get_exit_node callee_proc_desc in
+    let convert_pvar pvar =
+      Sil.mk_pvar (Sil.pvar_get_name pvar) resolved_proc_name in
+    let convert_exp = function
+      | Sil.Lvar origin_pvar ->
+          Sil.Lvar (convert_pvar origin_pvar)
+      | exp -> exp in
+    let extract_class_name = function
+      | Sil.Tptr (Sil.Tstruct { Sil.struct_name }, _) when struct_name <> None ->
+          Mangled.to_string (Option.get struct_name)
+      | _ -> failwith "Expecting classname for Java types" in
+    let subst_map = ref Ident.IdentMap.empty in
+    let redirected_class_name origin_id =
+      try
+        Some (Ident.IdentMap.find origin_id !subst_map)
+      with Not_found -> None in
+    let convert_instr instrs = function
+      | Sil.Letderef (id, (Sil.Lvar origin_pvar as origin_exp), origin_typ, loc) ->
+          let (_, specialized_typ) =
+            let pvar_name = Sil.pvar_get_name origin_pvar in
+            try
+              IList.find
+                (fun (n, _) -> Mangled.equal n pvar_name)
+                substitutions
+            with Not_found ->
+              (pvar_name, origin_typ) in
+          subst_map := Ident.IdentMap.add id specialized_typ !subst_map;
+          Sil.Letderef (id, convert_exp origin_exp, specialized_typ, loc) :: instrs
+      | Sil.Letderef (id, origin_exp, origin_typ, loc) ->
+          Sil.Letderef (id, convert_exp origin_exp, origin_typ, loc) :: instrs
+      | Sil.Set (assignee_exp, origin_typ, origin_exp, loc) ->
+          let set_instr =
+            Sil.Set (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc) in
+          set_instr :: instrs
+      | Sil.Call (return_ids, Sil.Const (Sil.Cfun callee_pname),
+                  (Sil.Var id, _) :: origin_args, loc, call_flags)
+        when call_flags.Sil.cf_virtual && redirected_class_name id <> None ->
+          let redirected_typ  = Option.get (redirected_class_name id) in
+          let redirected_pname =
+            Procname.java_replace_class
+              callee_pname (extract_class_name redirected_typ)
+          and args =
+            let other_args = (IList.map (fun (exp, typ) -> (convert_exp exp, typ)) origin_args) in
+            (Sil.Var id, redirected_typ) :: other_args in
+          let call_instr =
+            Sil.Call (return_ids, Sil.Const (Sil.Cfun redirected_pname), args, loc, call_flags) in
+          call_instr :: instrs
+      | Sil.Call (return_ids, origin_call_exp, origin_args, loc, call_flags) ->
+          let converted_args = IList.map (fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
+          let call_instr =
+            Sil.Call (return_ids, convert_exp origin_call_exp, converted_args, loc, call_flags) in
+          call_instr :: instrs
+      | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
+          Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind):: instrs
+      | Sil.Nullify (origin_pvar, loc, deallocate) ->
+          Sil.Nullify (convert_pvar origin_pvar, loc, deallocate) :: instrs
+      | Sil.Declare_locals (typed_vars, loc) ->
+          let new_typed_vars = IList.map (fun (pvar, typ) -> (convert_pvar pvar, typ)) typed_vars in
+          (Sil.Declare_locals (new_typed_vars, loc)) :: instrs
+      | instr -> instr :: instrs in
+    let convert_node_kind = function
+      | Start_node _ -> Start_node resolved_proc_desc
+      | Exit_node _ -> Exit_node resolved_proc_desc
+      | node_kind -> node_kind in
+    let node_map = ref NodeMap.empty in
+    let rec convert_node node =
+      let loc = get_loc node
+      and kind = convert_node_kind (get_kind node)
+      and instrs =
+        IList.fold_left convert_instr [] (get_instrs node) in
+      create cfg loc kind (IList.rev instrs) resolved_proc_desc (get_temps node)
+    and loop callee_nodes =
+      match callee_nodes with
+      | [] -> []
+      | node :: other_node ->
+          let converted_node =
+            try
+              NodeMap.find node !node_map
+            with Not_found ->
+              let new_node = convert_node node
+              and successors = get_succs node
+              and exn_nodes = get_exn node in
+              node_map := NodeMap.add node new_node !node_map;
+              if equal node callee_start_node then
+                proc_desc_set_start_node resolved_proc_desc new_node;
+              if equal node callee_exit_node then
+                proc_desc_set_exit_node resolved_proc_desc new_node;
+              set_succs_exn new_node (loop successors) (loop exn_nodes);
+              new_node in
+          converted_node :: (loop other_node) in
+    ignore (loop [callee_start_node]);
+    pdesc_tbl_add cfg resolved_proc_name resolved_proc_desc
+
 end
 (* =============== END of module Node =============== *)
 
@@ -639,6 +747,7 @@ module Procdesc = struct
   let set_flag = Node.proc_desc_set_flag
   let set_start_node = Node.proc_desc_set_start_node
   let append_locals = Node.proc_desc_append_locals
+  let specialize_types = Node.proc_desc_specialize_types
 end
 
 (* =============== END of module Procdesc =============== *)
@@ -1043,3 +1152,39 @@ let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg : cfg)
     end;
   save_attributes cfg;
   Serialization.to_file cfg_serializer filename cfg
+
+
+(** Creates a copy of a procedure description and a list of type substitutions of the form
+    (name, typ) where name is a parameter. The resulting procedure CFG is isomorphic but
+    all the type of the parameters are replaced in the instructions according to the list.
+    The virtual calls are also replaced to match the parameter types *)
+let specialize_types cfg callee_proc_name resolved_proc_name args =
+  (* TODO (#9333890): This currently only works when the callee is defined in the same file.
+         Add support to search for the callee procedure description in the execution environment *)
+  match Procdesc.find_from_name cfg resolved_proc_name with
+  | Some _ -> ()
+  | None ->
+      begin
+        match Procdesc.find_from_name cfg callee_proc_name with
+        | None -> ()
+        | Some callee_proc_desc ->
+            let callee_attributes = Procdesc.get_attributes callee_proc_desc in
+            let resolved_formals =
+              IList.fold_left2
+                (fun accu (name, _) (_, arg_typ) -> (name, arg_typ) :: accu)
+                [] callee_attributes.ProcAttributes.formals args |> IList.rev in
+            let resolved_attributes =
+              { callee_attributes with
+                ProcAttributes.formals = resolved_formals;
+                proc_name = resolved_proc_name;
+              } in
+            AttributesTable.store_attributes resolved_attributes;
+            Procdesc.specialize_types cfg callee_proc_desc resolved_attributes resolved_formals;
+            begin
+              let source_file = resolved_attributes.ProcAttributes.loc.Location.file in
+              let source_dir = DB.source_dir_from_source_file source_file in
+              let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
+              let save_sources = false in
+              store_cfg_to_file cfg_file save_sources cfg
+            end
+      end

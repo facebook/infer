@@ -355,6 +355,11 @@ let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
     cost *)
 let sound_dynamic_dispatch = from_env_variable "INFER_SOUND_DYNAMIC_DISPATCH"
 
+(** experimental: handle dynamic dispatch by following the JVM semantics and creating
+    during the symbolic excution procedure descriptions using the types information
+    found in the abstract state *)
+let lazy_dynamic_dispatch = from_env_variable "INFER_LAZY_DYNAMIC_DISPATCH"
+
 module Experiment = struct
 
   (** if true, a precondition with e.g. index 3 in an array does not require the caller to have index 3 too

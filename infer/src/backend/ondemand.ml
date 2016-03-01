@@ -45,7 +45,7 @@ type callbacks =
 
 let callbacks_ref = ref None
 
-let set_callbacks  (callbacks : callbacks) =
+let set_callbacks (callbacks : callbacks) =
   callbacks_ref := Some callbacks
 
 let unset_callbacks () =

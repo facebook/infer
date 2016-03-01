@@ -28,6 +28,9 @@ module IdentSet : Set.S with type elt = t
 (** Hash table with ident as key. *)
 module IdentHash : Hashtbl.S with type key = t
 
+(** Map with ident as key. *)
+module IdentMap : Map.S with type key = t
+
 (** Set for fieldnames *)
 module FieldSet : Set.S with type elt = fieldname
 

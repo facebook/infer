@@ -22,6 +22,10 @@ class SubClassA extends SuperClass {
 class SubClassB extends SuperClass {
 }
 
+interface MyInterface {
+  public int getInt();
+}
+
 class ImplementationOfInterface implements MyInterface {
 
   public int getInt() {
@@ -33,10 +37,6 @@ class AnotherImplementationOfInterface implements MyInterface {
   public int getInt() {
     return 1;
   }
-}
-
-interface MyInterface {
-  public int getInt();
 }
 
 

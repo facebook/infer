@@ -7,7 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-package endtoend.java.comparison;
+
+package endtoend.java.tracing;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsExactly.containsExactly;
@@ -20,20 +21,20 @@ import java.io.IOException;
 import utils.InferException;
 import utils.InferResults;
 
-public class ClassCastExceptionTest {
+public class LazyDynamicDispatchTest {
 
   public static final String SOURCE_FILE =
-      "infer/tests/codetoanalyze/java/infer/ClassCastExceptions.java";
+      "infer/tests/codetoanalyze/java/tracing/LazyDynamicDispatchExample.java";
 
-  public static final String CLASS_CAST_EXCEPTION =
-      "java.lang.ClassCastException";
+  public static final String NPE =
+      "java.lang.NullPointerException";
 
   private static InferResults inferResults;
 
   @BeforeClass
   public static void loadResults() throws InterruptedException, IOException {
-    inferResults = InferResults.loadTracingComparisonResults(
-        ClassCastExceptionTest.class,
+    inferResults = InferResults.loadTracingResults(
+        LazyDynamicDispatchTest.class,
         SOURCE_FILE);
   }
 
@@ -41,15 +42,13 @@ public class ClassCastExceptionTest {
   public void matchErrors()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "classCastException",
-        "classCastExceptionImplementsInterface",
-        "openHttpURLConnection",
+        "bar"
     };
     assertThat(
-        "Results should contain " + CLASS_CAST_EXCEPTION,
+        "Results should contain " + NPE,
         inferResults,
         containsExactly(
-            CLASS_CAST_EXCEPTION,
+            NPE,
             SOURCE_FILE,
             methods
         )

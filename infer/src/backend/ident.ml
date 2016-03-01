@@ -77,6 +77,12 @@ module IdentSet = Set.Make
       let compare = compare
     end)
 
+module IdentMap = Map.Make
+    (struct
+      type t = _ident
+      let compare = compare
+    end)
+
 module IdentHash =
   Hashtbl.Make(struct
     type t = _ident

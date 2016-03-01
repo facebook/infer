@@ -117,6 +117,7 @@ module Procdesc : sig
 
   (** append a list of new local variables to the existing list of local variables *)
   val append_locals : t -> (Mangled.t * Sil.typ) list -> unit
+
 end
 
 (** node of the control flow graph *)
@@ -314,3 +315,9 @@ val get_block_pdesc : cfg -> Mangled.t -> Procdesc.t option
 
 (** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
 val remove_seed_captured_vars_block : Mangled.t list -> Prop.normal Prop.t -> Prop.normal Prop.t
+
+(** Creates a copy of a procedure description and a list of type substitutions of the form
+    (name, typ) where name is a parameter. The resulting procedure CFG is isomorphic but
+    all the type of the parameters are replaced in the instructions according to the list.
+    The virtual calls are also replaced to match the parameter types *)
+val specialize_types : cfg -> Procname.t -> Procname.t -> (Sil.exp * Sil.typ) list -> unit
