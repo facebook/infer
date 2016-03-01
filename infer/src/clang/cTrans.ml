@@ -116,17 +116,19 @@ struct
     IList.iter (fun (fn, _, _) ->
         Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
-    let block_type = Sil.Tstruct
-        { Sil.instance_fields = fields;
-          static_fields = [];
-          csu = Csu.Class Csu.Objc;
-          struct_name = Some mblock;
-          superclasses = [];
-          def_methods = [];
-          struct_annotations = [];
-        } in
+    let block_struct_typ =
+      {
+        Sil.instance_fields = fields;
+        static_fields = [];
+        csu = Csu.Class Csu.Objc;
+        struct_name = Some mblock;
+        superclasses = [];
+        def_methods = [];
+        struct_annotations = [];
+      } in
+    let block_type = Sil.Tstruct block_struct_typ in
     let block_name = Typename.TN_csu (Csu.Class Csu.Objc, mblock) in
-    Sil.tenv_add tenv block_name block_type;
+    Sil.tenv_add tenv block_name block_struct_typ;
     let trans_res = CTrans_utils.alloc_trans trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true in
     let id_block = match trans_res.exps with
       | [(Sil.Var id, _)] -> id

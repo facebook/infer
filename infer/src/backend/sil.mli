@@ -525,7 +525,7 @@ val tenv_mem : tenv -> Typename.t -> bool
 val tenv_lookup : tenv -> Typename.t -> typ option
 
 (** Add a (name,typ) pair to the global type environment. *)
-val tenv_add : tenv -> Typename.t -> typ -> unit
+val tenv_add : tenv -> Typename.t -> struct_typ -> unit
 
 (** expand a type if it is a typename by looking it up in the type environment *)
 val expand_type : tenv -> typ -> typ

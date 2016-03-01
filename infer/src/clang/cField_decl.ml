@@ -81,13 +81,13 @@ let add_missing_fields tenv class_name ck fields =
   | Some Sil.Tstruct ({ Sil.instance_fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields instance_fields fields in
       let class_type_info =
-        Sil.Tstruct
-          { struct_typ with
-            Sil.instance_fields = new_fields;
-            static_fields = [];
-            csu = Csu.Class ck;
-            struct_name = Some mang_name;
-          } in
+        {
+          struct_typ with
+          Sil.instance_fields = new_fields;
+          static_fields = [];
+          csu = Csu.Class ck;
+          struct_name = Some mang_name;
+        } in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
       Sil.tenv_add tenv class_tn_name class_type_info
   | _ -> ()

@@ -16,7 +16,7 @@ module L = Logging
 let add_predefined_objc_types tenv =
   let class_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCClass in
   let objc_class_type_info =
-    Sil.Tstruct {
+    {
       Sil.instance_fields = [];
       static_fields = [];
       csu = Csu.Struct;
@@ -28,7 +28,7 @@ let add_predefined_objc_types tenv =
   Sil.tenv_add tenv class_typename objc_class_type_info;
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
   let objc_object_type_info =
-    Sil.Tstruct {
+    {
       Sil.instance_fields = [];
       static_fields = [];
       csu = Csu.Struct;
@@ -137,12 +137,12 @@ let get_superclass_list_cpp decl =
   IList.map get_super_field base_decls
 
 let add_struct_to_tenv tenv typ =
-  let csu = match typ with
-    | Sil.Tstruct { Sil.csu } -> csu
+  let csu, struct_typ = match typ with
+    | Sil.Tstruct ({ Sil.csu } as struct_typ) -> csu, struct_typ
     | _ -> assert false in
   let mangled = CTypes.get_name_from_struct typ in
   let typename = Typename.TN_csu(csu, mangled) in
-  Sil.tenv_add tenv typename typ
+  Sil.tenv_add tenv typename struct_typ
 
 let rec get_struct_fields tenv decl =
   let open Clang_ast_t in

@@ -462,7 +462,7 @@ struct
   let sort_fields_tenv tenv =
     let sort_fields_struct typname st =
       let st' = { st with Sil.instance_fields = (sort_fields st.Sil.instance_fields) } in
-      Sil.tenv_add tenv typname (Sil.Tstruct st') in
+      Sil.tenv_add tenv typname st' in
     Sil.tenv_iter sort_fields_struct tenv
 
   let rec collect_list_tuples l (a, a1, b, c, d) =

@@ -125,7 +125,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
   IList.iter (fun (fn, _, _) ->
       Printing.log_out "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
   let interface_type_info =
-    Sil.Tstruct {
+    {
       Sil.instance_fields = fields;
       static_fields = [];
       csu = Csu.Class Csu.Objc;
@@ -155,11 +155,8 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
           def_methods;
         } as struct_typ) ->
        let methods = General_utils.append_no_duplicates_methods def_methods methods in
-       let typ =
-         Sil.Tstruct
-           { struct_typ with
-             Sil.def_methods = methods; } in
-       Sil.tenv_add tenv class_tn_name typ
+       let struct_typ' = { struct_typ with Sil.def_methods = methods; } in
+       Sil.tenv_add tenv class_tn_name struct_typ'
    | _ -> ());
   Sil.Tvar class_tn_name
 

@@ -356,9 +356,11 @@ and get_class_type_no_pointer program tenv cn =
     match Sil.tenv_lookup tenv named_type with
     | None -> create_sil_type program tenv cn
     | Some t -> t in
-  Sil.tenv_add tenv named_type class_type_np;
-  class_type_np
-
+  match class_type_np with
+  | Sil.Tstruct struct_typ ->
+      Sil.tenv_add tenv named_type struct_typ;
+      class_type_np
+  | _ -> assert false
 
 let get_class_type program tenv cn =
   let t = get_class_type_no_pointer program tenv cn in
@@ -467,7 +469,7 @@ let return_type program tenv ms meth_kind =
 let add_models_types tenv =
   let add_type t typename struct_typ =
     if not (Sil.tenv_mem t typename) then
-      Sil.tenv_add tenv typename (Sil.Tstruct struct_typ) in
+      Sil.tenv_add tenv typename struct_typ in
   Sil.tenv_iter (add_type tenv) !JClasspath.models_tenv
 
 

@@ -3774,10 +3774,8 @@ let tenv_lookup tenv name =
   with Not_found -> None
 
 (** Add a (name,type) pair to the global type environment. *)
-let tenv_add tenv name typ =
-  match typ with
-  | Tstruct struct_typ -> TypenameHash.replace tenv name struct_typ
-  | _ -> assert false
+let tenv_add tenv name struct_typ =
+  TypenameHash.replace tenv name struct_typ
 
 (** expand a type if it is a typename by looking it up in the type environment *)
 let expand_type tenv typ =

@@ -82,13 +82,14 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
        let new_fields = General_utils.append_no_duplicates_fields fields instance_fields in
        let new_methods = General_utils.append_no_duplicates_methods methods def_methods in
        let class_type_info =
-         Sil.Tstruct { struct_typ with
-                       Sil.instance_fields = new_fields;
-                       static_fields = [];
-                       csu = Csu.Class Csu.Objc;
-                       struct_name = Some mang_name;
-                       def_methods = new_methods;
-                     } in
+         {
+           struct_typ with
+           Sil.instance_fields = new_fields;
+           static_fields = [];
+           csu = Csu.Class Csu.Objc;
+           struct_name = Some mang_name;
+           def_methods = new_methods;
+         } in
        Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
        Sil.tenv_add tenv class_tn_name class_type_info
    | _ -> ());

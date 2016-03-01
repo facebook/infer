@@ -140,8 +140,8 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
     find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv in
   let fields = IList.map (fun (fld, typ, _) -> (fld, typ, [])) registered_cbs in
   (* create a new typ for the harness containing all of the cb extraction vars as static fields *)
-  let harness_typ =
-    Sil.Tstruct {
+  let harness_struct_typ =
+    {
       Sil.instance_fields = fields;
       static_fields = [];
       csu = Csu.Class Csu.Java;
@@ -150,10 +150,11 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
       def_methods = [harness_procname];
       struct_annotations = [];
     } in
+  let harness_typ = Sil.Tstruct harness_struct_typ in
   (* update the tenv with our created harness typ. we don't have to save the tenv to disk here
    * because this is done immediately after harness generation runs in jMain.ml *)
   let harness_class = Typename.TN_csu (Csu.Class Csu.Java, harness_name) in
-  Sil.tenv_add tenv harness_class harness_typ;
+  Sil.tenv_add tenv harness_class harness_struct_typ;
   let cfgs_to_save =
     IList.fold_left (fun cfgs_to_save (_, _, instrument_sil_f) ->
         (* instrument the cfg's with callback extraction code *)
