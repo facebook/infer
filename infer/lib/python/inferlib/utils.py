@@ -302,6 +302,15 @@ def stderr(s, errors='replace'):
     print(encode(s, errors=errors), file=sys.stderr)
 
 
+def merge_and_dedup_files_into_path(files_to_merge, dest):
+    lines = set()
+    for file_to_merge in files_to_merge:
+        with open(file_to_merge, 'r') as fsrc:
+            lines |= set(fsrc.readlines())
+    with open(dest, 'w') as fdest:
+        fdest.writelines(lines)
+
+
 class AbsolutePathAction(argparse.Action):
     """Convert a path from relative to absolute in the arg parser"""
     def __call__(self, parser, namespace, values, option_string=None):
