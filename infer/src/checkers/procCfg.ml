@@ -19,16 +19,16 @@ module type Wrapper = sig
   type node
   type node_id
 
-  val get_node_id : node -> node_id
-  val get_succs : node -> node list
-  val get_exn_succs : node -> node list
-  val get_preds : node -> node list
-  val get_start_node : t -> node
-  val get_exit_node : t -> node
-  val get_instrs : node -> Sil.instr list
-  val get_kind : node -> Cfg.Node.nodekind
-  val get_proc_desc : t -> Cfg.Procdesc.t
-  val get_nodes : t -> node list
+  val node_id : node -> node_id
+  val succs : t -> node -> node list
+  val exn_succs : t -> node -> node list
+  val preds : t -> node -> node list
+  val start_node : t -> node
+  val exit_node : t -> node
+  val instrs : node -> Sil.instr list
+  val kind : node -> Cfg.Node.nodekind
+  val proc_desc : t -> Cfg.Procdesc.t
+  val nodes : t -> node list
 
   val from_pdesc : Cfg.Procdesc.t -> t
 
@@ -44,16 +44,16 @@ module Forward : Wrapper with type node = Cfg.node = struct
   type node = Cfg.node
   type node_id = int
 
-  let get_node_id = Cfg.Node.get_id
-  let get_succs = Cfg.Node.get_succs
-  let get_exn_succs = Cfg.Node.get_exn
-  let get_preds = Cfg.Node.get_preds
-  let get_start_node = Cfg.Procdesc.get_start_node
-  let get_exit_node = Cfg.Procdesc.get_exit_node
-  let get_instrs = Cfg.Node.get_instrs
-  let get_kind = Cfg.Node.get_kind
-  let get_proc_desc t = t
-  let get_nodes = Cfg.Procdesc.get_nodes
+  let node_id = Cfg.Node.get_id
+  let succs _ n = Cfg.Node.get_succs n
+  let exn_succs _ n = Cfg.Node.get_exn n
+  let preds _ n = Cfg.Node.get_preds n
+  let start_node = Cfg.Procdesc.get_start_node
+  let exit_node = Cfg.Procdesc.get_exit_node
+  let instrs = Cfg.Node.get_instrs
+  let kind = Cfg.Node.get_kind
+  let proc_desc t = t
+  let nodes = Cfg.Procdesc.get_nodes
 
   let from_pdesc pdesc = pdesc
 
@@ -67,14 +67,14 @@ end
 module Backward (W : Wrapper) : Wrapper = struct
   include W
 
-  let get_succs = W.get_preds
-  let get_preds = W.get_succs
-  let get_start_node = W.get_exit_node
-  let get_exit_node = W.get_start_node
-  let get_instrs t = IList.rev (W.get_instrs t)
+  let succs = W.preds
+  let preds = W.succs
+  let start_node = W.exit_node
+  let exit_node = W.start_node
+  let instrs t = IList.rev (W.instrs t)
 
   (* TODO: we'll need to change the CFG to implement this correctly *)
-  let get_exn_succs _ =
+  let exn_succs _ =
     failwith "Getting exceptional preds in backward analysis"
 
 end
