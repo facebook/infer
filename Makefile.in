@@ -96,7 +96,29 @@ ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 	NO_BUCKD=1 ./scripts/build_integration_tests.py
 endif
 
-test: buck_test
+inferTraceBugs_test: $(INFER_ANALYZERS)
+ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+	$(PYTHON_DIR)/infer -o __test-infer-out__ -- \
+	  javac $(EXAMPLES_DIR)/Hello.java \
+	   > /dev/null
+	@rm -f Hello.class
+else
+	$(PYTHON_DIR)/infer -o __test-infer-out__ \
+	  -- clang -c $(EXAMPLES_DIR)/hello.c \
+	   > /dev/null
+	@rm -f hello.o
+endif
+	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
+	  --select 0 --max-level max > /dev/null
+	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
+	  --select 0 --max-level 0 > /dev/null
+	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
+	  --select 0 --max-level max --no-source > /dev/null
+	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
+	  --only-show > /dev/null
+	@rm -fr __test-infer-out__
+
+test: buck_test inferTraceBugs_test
 
 test_xml: buck_test_xml
 
@@ -108,4 +130,6 @@ ifeq (@BUILD_C_ANALYZERS@,yes)
 endif
 	$(MAKE) -C $(INFER_DIR) clean
 
-.PHONY: all build_integration_tests clean clang clang_plugin clang_setup java test test_xml test_build
+.PHONY: all buck_test buck_test_xml build_integration_tests clean clang
+.PHONY: clang_plugin clang_setup inferTraceBugs_test java
+.PHONY: test test_xml test_build

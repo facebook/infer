@@ -9,6 +9,7 @@ PLATFORM = $(shell uname)
 
 ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 
+EXAMPLES_DIR = $(ABSOLUTE_ROOT_DIR)/examples
 FCP_DIR = $(ABSOLUTE_ROOT_DIR)/facebook-clang-plugins
 INFER_DIR = $(ABSOLUTE_ROOT_DIR)/infer
 DEPENDENCIES_DIR = $(ABSOLUTE_ROOT_DIR)/dependencies
@@ -24,9 +25,10 @@ MODELS_DIR = $(INFER_DIR)/models
 SRC_DIR = $(INFER_DIR)/src
 
 JAVA_LIB_DIR = $(LIB_DIR)/java
-PYTHON_LIB_DIR = $(LIB_DIR)/python/inferlib
 SPECS_LIB_DIR = $(LIB_DIR)/specs
 
+PYTHON_DIR = $(LIB_DIR)/python
+PYTHON_LIB_DIR = $(PYTHON_DIR)/inferlib
 CAPTURE_LIB_DIR = $(PYTHON_LIB_DIR)/capture
 
 INFERANALYZE_BIN = $(BIN_DIR)/InferAnalyze
