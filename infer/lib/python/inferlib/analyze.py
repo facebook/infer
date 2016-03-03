@@ -301,6 +301,7 @@ class AnalyzerWrapper(object):
 
         elif self.args.debug_exceptions:
             infer_options.append('-developer_mode')
+            infer_options.append('-print_buckets')
             self.args.no_filtering = True
 
         if self.args.reactive:
