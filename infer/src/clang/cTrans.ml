@@ -2247,14 +2247,25 @@ struct
 
     | ObjCAtTryStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts
+    | CXXTryStmt (_, stmts) ->
+        (Printing.log_stats
+           "\n!!!!WARNING: found statement %s. \nTranslation need to be improved.... \n"
+           (Ast_utils.string_of_stmt instr);
+         compoundStmt_trans trans_state stmts)
 
     | ObjCAtThrowStmt (stmt_info, stmts) ->
         returnStmt_trans trans_state stmt_info stmts
+    | CXXThrowExpr (stmt_info, stmts, _) ->
+        (Printing.log_stats
+           "\n!!!!WARNING: found statement %s. \nTranslation need to be improved.... \n"
+           (Ast_utils.string_of_stmt instr);
+         returnStmt_trans trans_state stmt_info stmts)
 
     | ObjCAtFinallyStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts
 
-    | ObjCAtCatchStmt _ ->
+    | ObjCAtCatchStmt _
+    | CXXCatchStmt _ ->
         compoundStmt_trans trans_state []
 
     | PredefinedExpr (_, _, expr_info, _) ->
