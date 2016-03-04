@@ -39,7 +39,12 @@ let log_frontend_warning pdesc warn_desc =
     Errdesc.explain_frontend_warning warn_desc.description warn_desc.suggestion loc in
   let exn = Exceptions.Frontend_warning
       (warn_desc.name, err_desc, __POS__) in
-  Reporting.log_error_from_errlog errlog exn ~loc:(Some loc)
+  let trace = [
+    { Errlog.lt_level = 0;
+      Errlog.lt_loc = warn_desc.loc;
+      Errlog.lt_description = "";
+      Errlog.lt_node_tags = []}] in
+  Reporting.log_error_from_errlog errlog exn ~loc:(Some loc) ~ltr:(Some trace)
 
 (* General invocation function for checkers
    Takes
