@@ -2253,6 +2253,8 @@ struct
 
     | ImplicitValueInitExpr (_, _, expr_info) ->
         implicitValueInitExpr_trans trans_state expr_info
+    | GenericSelectionExpr _ -> (* to be fixed when we dump the right info in the ast *)
+        { empty_res_trans with exps = [(Sil.exp_get_undefined false, Sil.Tvoid)] }
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
