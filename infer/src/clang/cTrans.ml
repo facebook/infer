@@ -366,13 +366,19 @@ struct
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     (* constant will be different depending on type *)
     let zero_opt = match typ with
-      | Sil.Tfloat _ -> Some (Sil.Cfloat 0.0)
-      | Sil.Tptr _ -> Some (Sil.Cint Sil.Int.null)
+      | Sil.Tfloat _  | Sil.Tptr _ | Sil.Tint _ -> Some (Sil.zero_value_of_numerical_type typ)
       | Sil.Tvoid -> None
-      | _ -> Some (Sil.Cint Sil.Int.zero) in
+      | _ -> Some (Sil.Const (Sil.Cint Sil.Int.zero)) in
     match zero_opt with
-    | Some zero -> { empty_res_trans with exps = [(Sil.Const zero, typ)] }
+    | Some zero -> { empty_res_trans with exps = [(zero, typ)] }
     | _ -> empty_res_trans
+
+  let implicitValueInitExpr_trans trans_state expr_info =
+    let (var_exp, _) = extract_var_exp_of_fail trans_state in
+    let tenv = trans_state.context.CContext.tenv in
+    let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
+    let exps = var_or_zero_in_init_list tenv var_exp typ ~return_zero:true in
+    { empty_res_trans with exps = exps }
 
   let nullStmt_trans succ_nodes =
     { empty_res_trans with root_nodes = succ_nodes }
@@ -723,7 +729,6 @@ struct
              let creating_node =
                (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
                (IList.length instr_bin >0) in
-
              let extra_instrs, extra_ids, exp_to_parent =
                if (is_binary_assign_op binary_operator_info)
                (* assignment operator result is lvalue in CPP, rvalue in C, *)
@@ -1506,93 +1511,38 @@ struct
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
   and initListExpr_trans trans_state stmt_info expr_info stmts =
-    let open General_utils in
-    let var_exp, _ = match trans_state.var_exp_typ with Some e -> e | _ -> assert false in
     let context = trans_state.context in
-    let succ_nodes = trans_state.succ_nodes in
-    let rec collect_right_hand_exprs ts stmt = match stmt with
-      | Clang_ast_t.InitListExpr (_ , stmts , _) ->
-          IList.flatten (IList.map (collect_right_hand_exprs ts) stmts)
-      | _ ->
-          let trans_state' = { ts with succ_nodes = []} in
-          let res_trans_stmt = instruction trans_state' stmt in
-          let (exp, typ) = extract_exp_from_list res_trans_stmt.exps
-              "WARNING: in InitListExpr we expect the translation of each stmt to return one expression.\n" in
-          let is_owning_method = CTrans_utils.is_owning_method stmt in
-          let is_method_call = CTrans_utils.is_method_call stmt in
-          [(res_trans_stmt.ids, res_trans_stmt.instrs, exp, is_method_call, is_owning_method, typ)] in
-    let rec collect_left_hand_exprs e typ tns =
-      match typ with
-      | Sil.Tvar tn ->
-          (match Sil.tenv_lookup context.CContext.tenv tn with
-           | Some struct_typ -> collect_left_hand_exprs e (Sil.Tstruct struct_typ) tns
-           | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
-      | Sil.Tstruct { Sil.instance_fields } as type_struct ->
-          let lh_exprs = IList.map ( fun (fieldname, _, _) ->
-              Sil.Lfield (e, fieldname, type_struct) )
-              instance_fields in
-          let lh_types = IList.map ( fun (_, fieldtype, _) -> fieldtype)
-              instance_fields in
-          IList.map (fun (e, t) -> IList.flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
-      | Sil.Tarray (arrtyp, Sil.Const (Sil.Cint n)) ->
-          let size = Sil.Int.to_int n in
-          let indices = list_range 0 (size - 1) in
-          let index_constants = IList.map
-              (fun i -> (Sil.Const (Sil.Cint (Sil.Int.of_int i))))
-              indices in
-          let lh_exprs = IList.map
-              (fun index_expr -> Sil.Lindex (e, index_expr))
-              index_constants in
-          let lh_types = replicate size arrtyp in
-          IList.map (fun (e, t) -> IList.flatten (collect_left_hand_exprs e t tns)) (zip lh_exprs lh_types)
-      | _ -> [ [(e, typ)] ] in
+    let tenv = context.tenv in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let sil_loc = CLocation.get_sil_location stmt_info context in
+    let var_exp, _ = extract_var_exp_of_fail trans_state in
     let var_type =
       CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-    let lh = IList.flatten (collect_left_hand_exprs var_exp var_type StringSet.empty) in
-    let rh = IList.flatten (IList.map (collect_right_hand_exprs trans_state_pri) stmts ) in
-    if IList.length rh != IList.length lh then (
+    let lh = var_or_zero_in_init_list tenv var_exp var_type ~return_zero:false in
+    let rec collect_right_hand_exprs stmt = match stmt with
+      | Clang_ast_t.InitListExpr (_ , stmts , _) ->
+          CTrans_utils.collect_res_trans (IList.map collect_right_hand_exprs stmts)
+      | _ -> instruction trans_state stmt in
+    let res_trans_subexpr_list = IList.map collect_right_hand_exprs stmts in
+    let rh_exps = collect_exprs res_trans_subexpr_list in
+    if IList.length rh_exps != IList.length lh then
       (* If the right hand expressions are not as many as the left hand expressions something's wrong *)
-      { empty_res_trans with root_nodes = succ_nodes }
-    ) else (
+      { empty_res_trans with root_nodes = trans_state.succ_nodes }
+    else
       (* Creating new instructions by assigning right hand side to left hand side expressions *)
-      let sil_loc = CLocation.get_sil_location stmt_info context in
-      let big_zip = IList.map
-          (fun ( (lh_exp, lh_t), (_, _, rh_exp, is_method_call, rhs_owning_method, rh_t) ) ->
-             let is_pointer_object = ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv rh_t in
-             if !Config.arc_mode && (is_method_call || is_pointer_object) then
-               (* In arc mode, if it's a method call or we are initializing with a pointer to objc class *)
-               (* we need to add retain/release *)
-               let (e, instrs, ids) =
-                 CArithmetic_trans.assignment_arc_mode
-                   lh_exp lh_t rh_exp sil_loc rhs_owning_method true in
-               ([(e, lh_t)], instrs, ids)
-             else
-               ([], [Sil.Set (lh_exp, lh_t, rh_exp, sil_loc)], []))
-          (General_utils.zip lh rh) in
-      let rh_instrs = IList.flatten (IList.map (fun (_, instrs, _, _, _, _) -> instrs) rh) in
-      let assign_instrs = IList.flatten (IList.map (fun (_, instrs, _) -> instrs) big_zip) in
-      let assign_ids = IList.flatten (IList.map (fun (_, _, ids) -> ids) big_zip) in
-      let instructions = IList.append rh_instrs assign_instrs in
-      let rh_ids = IList.flatten (IList.map (fun (ids, _, _, _, _, _) -> ids) rh) in
-      let ids = IList.append rh_ids assign_ids in
-      if PriorityNode.own_priority_node trans_state_pri.priority stmt_info then (
-        let node_kind = Cfg.Node.Stmt_node "InitListExp" in
-        let node = create_node node_kind ids instructions sil_loc context in
-        Cfg.Node.set_succs_exn node succ_nodes [];
-        { empty_res_trans with
-          root_nodes = [node];
-          exps = [(var_exp, var_type)];
-          initd_exps = [var_exp];
-          ids = rh_ids;
-          instrs = instructions; }
-      ) else
+      let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Set (lh_exp, lh_t, rh_exp, sil_loc) in
+      let assign_instrs = IList.map2 assign_instr lh rh_exps in
+      let initlist_expr_res =
         { empty_res_trans with
           exps = [(var_exp, var_type)];
           initd_exps = [var_exp];
-          ids = rh_ids;
-          instrs = instructions; }
-    )
+          instrs = assign_instrs;
+        } in
+      let all_res_trans = res_trans_subexpr_list @ [initlist_expr_res] in
+      let nname = "InitListExp" in
+      let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+          nname stmt_info all_res_trans in
+      { res_trans_to_parent with exps = initlist_expr_res.exps }
 
   and init_expr_trans trans_state var_exp_typ var_stmt_info init_expr_opt =
     let open Clang_ast_t in
@@ -2300,6 +2250,9 @@ struct
     | CXXDefaultArgExpr (_, _, _, default_expr_info)
     | CXXDefaultInitExpr (_, _, _, default_expr_info) ->
         cxxDefaultExpr_trans trans_state default_expr_info
+
+    | ImplicitValueInitExpr (_, _, expr_info) ->
+        implicitValueInitExpr_trans trans_state expr_info
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"

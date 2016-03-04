@@ -581,6 +581,8 @@ val path_pos_equal : path_pos -> path_pos -> bool
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 val typ_strip_ptr : typ -> typ
 
+val zero_value_of_numerical_type : typ -> exp
+
 val pvar_get_name : pvar -> Mangled.t
 
 val pvar_to_string : pvar -> string

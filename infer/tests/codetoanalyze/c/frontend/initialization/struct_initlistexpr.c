@@ -35,3 +35,26 @@ int field_set_correctly() {
   struct Employee e = {12, 3000.50, 12, 12, 2010};
   return 1 / (e.ssn - 12);
 }
+
+struct dotdot {
+  int a;
+  int b;
+};
+
+struct dot {
+  struct dotdot x;
+  int y;
+};
+struct rect {
+  struct dot origin;
+  int z;
+  int size;
+};
+
+typedef struct rect rect;
+
+int implicit_expr_set_correctly() {
+  rect imageDrawRect;
+  imageDrawRect = (rect){.size = 5};
+  return 1 / imageDrawRect.origin.x.a;
+}

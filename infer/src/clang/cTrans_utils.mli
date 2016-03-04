@@ -39,6 +39,10 @@ type trans_result = {
 
 val empty_res_trans: trans_result
 
+val collect_res_trans : trans_result list -> trans_result
+
+val extract_var_exp_of_fail : trans_state -> Sil.exp * Sil.typ
+
 val is_return_temp: continuation option -> bool
 
 val ids_to_parent: continuation option -> Ident.t list -> Ident.t list
@@ -215,3 +219,6 @@ val is_logical_negation_of_int : Sil.tenv -> Clang_ast_t.expr_info -> Clang_ast_
 val is_dispatch_function : Clang_ast_t.stmt list -> int option
 
 val is_block_enumerate_function : Clang_ast_t.obj_c_message_expr_info -> bool
+
+val var_or_zero_in_init_list : Sil.tenv -> Sil.exp -> Sil.typ -> return_zero:bool ->
+  (Sil.exp * Sil.typ) list

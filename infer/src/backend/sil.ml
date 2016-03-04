@@ -873,6 +873,13 @@ let typ_strip_ptr = function
   | Tptr (t, _) -> t
   | _ -> assert false
 
+let zero_value_of_numerical_type typ =
+  match typ with
+  | Tint _ -> Const (Cint Int.zero)
+  | Tfloat _ -> Const (Cfloat 0.0)
+  | Tptr _ -> Const (Cint Int.null)
+  | _ -> assert false
+
 let pvar_get_name pv = pv.pv_name
 
 let pvar_to_string pv = Mangled.to_string pv.pv_name

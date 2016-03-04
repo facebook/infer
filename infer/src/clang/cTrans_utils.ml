@@ -184,6 +184,11 @@ let collect_res_trans l =
             is_cpp_call_virtual = false; } in
   collect l empty_res_trans
 
+let extract_var_exp_of_fail transt_state =
+  match transt_state.var_exp_typ with
+  | Some var_exp_typ -> var_exp_typ
+  | None -> assert false
+
 (* priority_node is used to enforce some kind of policy for creating nodes *)
 (* in the cfg. Certain elements of the AST _must_ create nodes therefore   *)
 (* there is no need for them to use priority_node. Certain elements        *)
@@ -639,6 +644,42 @@ let is_dispatch_function stmt_list =
 
 let is_block_enumerate_function mei =
   mei.Clang_ast_t.omei_selector = CFrontend_config.enumerateObjectsUsingBlock
+
+(* This takes a variable of type struct or array and returns a list of expressions *)
+(* for each of its fields (also recursively, such that each field access is of a basic type) *)
+(* If the flag return_zero is true, the list will be a list of zero values, otherwise it will *)
+(* be a list of LField expressions *)
+let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
+  let rec var_or_zero_in_init_list' e typ tns =
+    let open General_utils in
+    match typ with
+    | Sil.Tvar tn ->
+        (match Sil.tenv_lookup tenv tn with
+         | Some struct_typ -> var_or_zero_in_init_list' e (Sil.Tstruct struct_typ) tns
+         | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
+    | Sil.Tstruct { Sil.instance_fields } as type_struct ->
+        let lh_exprs = IList.map ( fun (fieldname, _, _) ->
+            Sil.Lfield (e, fieldname, type_struct) ) instance_fields in
+        let lh_types = IList.map ( fun (_, fieldtype, _) -> fieldtype) instance_fields in
+        let exp_types = zip lh_exprs lh_types in
+        IList.map (fun (e, t) ->
+            IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
+    | Sil.Tarray (arrtyp, Sil.Const (Sil.Cint n)) ->
+        let size = Sil.Int.to_int n in
+        let indices = list_range 0 (size - 1) in
+        let index_constants =
+          IList.map (fun i -> (Sil.Const (Sil.Cint (Sil.Int.of_int i)))) indices in
+        let lh_exprs =
+          IList.map (fun index_expr -> Sil.Lindex (e, index_expr)) index_constants in
+        let lh_types = replicate size arrtyp in
+        let exp_types = zip lh_exprs lh_types in
+        IList.map (fun (e, t) ->
+            IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
+    | Sil.Tint _ | Sil.Tfloat _  | Sil.Tptr _ ->
+        let exp = if return_zero then Sil.zero_value_of_numerical_type typ else e in
+        [ [(exp, typ)] ]
+    | Sil.Tfun _ | Sil.Tvoid | Sil.Tarray _ -> assert false in
+  IList.flatten (var_or_zero_in_init_list' e typ StringSet.empty)
 
 (*
 (** Similar to extract_item_from_singleton but for option type *)
