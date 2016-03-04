@@ -34,6 +34,7 @@ CLANG_BUILD_DIR = $(BUILD_DIR)/clang
 LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
 SCRIPTS_BUILD_DIR = $(BUILD_DIR)/scripts
 TEST_BUILD_DIR = $(BUILD_DIR)/test
+UNIT_BUILD_DIR = $(BUILD_DIR)/unit
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
 
@@ -79,6 +80,12 @@ INFERPRINT_ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(INFERPRINT_ATDGEN_SUFFIXES))
 
 INFERPRINT_MAIN = $(BACKEND_SOURCES)/inferprint
+
+### InferUnit declarations ###
+
+UNIT_SOURCES = unit
+
+INFERUNIT_MAIN = $(UNIT_SOURCES)/inferunit
 
 #### Java declarations ####
 
@@ -140,19 +147,21 @@ DEPENDENCIES = $(BACKEND_SOURCES) checkers eradicate facebook/checkers facebook/
 
 OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -j 0 $(addprefix -I , $(DEPENDENCIES))
 
-.PHONY: all java clang llvm checkCopyright build_java build_clang build_llvm build_checkCopyright \
-        java_annotations clang_annotations llvm_annotations scripts_annotations \
-        init version sanitize clean
+.PHONY: all java clang llvm unit checkCopyright build_java build_clang build_llvm build_unit \
+	build_checkCopyright java_annotations clang_annotations llvm_annotations \
+	scripts_annotations init version sanitize clean
 
 default: $(INFER_ANALYZERS)
 
-all: java clang llvm checkCopyright
+all: java clang llvm checkCopyright unit
 
 java: $(INFERJAVA_BIN)
 
 clang: $(INFERCLANG_BIN) $(CLANG_BINIOU_DICT)
 
 llvm: $(INFERLLVM_BIN)
+
+unit: $(INFERUNIT_BIN)
 
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
@@ -175,12 +184,17 @@ build_checkCopyright:
 	$(OCAMLBUILD) -build-dir $(SCRIPTS_BUILD_DIR) -I $(SCRIPT_SOURCES) \
 	  $(CHECKCOPYRIGHT_MAIN).native
 
+build_unit:
+	$(OCAMLBUILD) -build-dir $(UNIT_BUILD_DIR) -I $(UNIT_SOURCES) \
+	  $(INFERUNIT_MAIN).native
+
 byte: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD) -build-dir $(TEST_BUILD_DIR) $(JAVA_OCAMLBUILD_OPTIONS) \
 	  $(INFERANALYZE_MAIN).byte \
 	  $(INFERPRINT_MAIN).byte \
 	  $(INFERJAVA_MAIN).byte \
-	  $(INFERCLANG_MAIN).byte
+	  $(INFERCLANG_MAIN).byte \
+	  $(INFERUNIT_MAIN).byte
 
 test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD) -build-dir $(TEST_BUILD_DIR) $(JAVA_OCAMLBUILD_OPTIONS) \
@@ -188,7 +202,8 @@ test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_
 	  $(INFERANALYZE_MAIN).byte \
 	  $(INFERPRINT_MAIN).byte \
 	  $(INFERJAVA_MAIN).byte \
-	  $(INFERCLANG_MAIN).byte
+	  $(INFERCLANG_MAIN).byte \
+	  $(INFERUNIT_MAIN).byte
 
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
 java_annotations: build_java
@@ -288,6 +303,9 @@ $(INFERCLANG_BIN): build_clang
 $(INFERLLVM_BIN): build_llvm
 	$(COPY) $(LLVM_BUILD_DIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BIN)
 
+$(INFERUNIT_BIN): build_unit
+	$(COPY) $(UNIT_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
+
 $(CHECKCOPYRIGHT_BIN): build_checkCopyright
 	$(COPY) $(SCRIPTS_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 
@@ -301,7 +319,7 @@ ifeq (@ENABLE_OCAML_ANNOT@,yes)
 endif
 	$(REMOVE) $(BACKEND_SOURCES)/version.ml
 	$(REMOVE) $(BACKEND_SOURCES)/version.ml.tmp.*
-	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN)
+	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN) $(INFERUNIT_BIN)
 	$(REMOVE) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)

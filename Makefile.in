@@ -78,9 +78,15 @@ endif
 clang: clang_plugin
 endif
 
+unit:
+	$(MAKE) -C $(SRC_DIR) unit
+
 test_build:
 	$(MAKE) -C $(SRC_DIR) test_clean
 	$(MAKE) -C $(SRC_DIR) test_build
+
+ocaml_unit_test: $(INFER_ANALYZERS) unit
+	InferUnit
 
 buck_test: $(INFER_ANALYZERS)
 	NO_BUCKD=1 buck clean
@@ -118,7 +124,7 @@ endif
 	  --only-show > /dev/null
 	@rm -fr __test-infer-out__
 
-test: buck_test inferTraceBugs_test
+test: ocaml_unit_test buck_test inferTraceBugs_test
 
 test_xml: buck_test_xml
 
@@ -131,5 +137,6 @@ endif
 	$(MAKE) -C $(INFER_DIR) clean
 
 .PHONY: all buck_test buck_test_xml build_integration_tests clean clang
-.PHONY: clang_plugin clang_setup inferTraceBugs_test java
+.PHONY: clang_plugin clang_setup inferTraceBugs_test java ocaml_unit_test
 .PHONY: test test_xml test_build
+
