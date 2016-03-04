@@ -662,11 +662,6 @@
   {
     "bug_type": "NULL_DEREFERENCE",
     "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
-    "procedure": "void NullPointerExceptions.shouldNotReportNPE()"
-  },
-  {
-    "bug_type": "NULL_DEREFERENCE",
-    "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
     "procedure": "void NullPointerExceptions.sinkWithNeverNullSource()"
   },
   {

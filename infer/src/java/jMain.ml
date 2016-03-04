@@ -62,6 +62,11 @@ let arg_desc =
       None,
       "Set the path to the javac verbose output"
       ;
+      "-local_config",
+      Arg.String (fun s -> Inferconfig.local_config := Some s),
+      Some "Path",
+      "Path to local config file"
+      ;
     ] in
   Arg.create_options_desc false "Parsing Options" desc
 

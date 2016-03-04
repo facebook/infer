@@ -36,15 +36,16 @@ val do_not_filter : filters
 (** Create filters based on the config file *)
 val create_filters : analyzer -> filters
 
-module NeverReturnNull : sig
+module type Matcher = sig
   type matcher = DB.source_file -> Procname.t -> bool
   val load_matcher : string -> matcher
 end
 
-module SkipTranslationMatcher : sig
-  type matcher = DB.source_file -> Procname.t -> bool
-  val load_matcher : string -> matcher
-end
+module NeverReturnNull : Matcher
+
+module SkipTranslationMatcher : Matcher
+
+module ProcMatcher : Matcher
 
 (** Load the config file and list the files to report on *)
 val test: unit -> unit

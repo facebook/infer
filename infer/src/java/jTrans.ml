@@ -275,8 +275,10 @@ let create_local_procdesc program linereader cfg tenv node m =
       try
         match m with
         | Javalib.AbstractMethod am -> (* create a procdesc with empty body *)
-            let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
-            let method_annotation = JAnnotation.translate_method am.Javalib.am_annotations in
+            let formals =
+              formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
+            let method_annotation =
+              JAnnotation.translate_method proc_name am.Javalib.am_annotations in
             let procdesc =
               let proc_attributes =
                 { (ProcAttributes.default proc_name Config.Java) with
@@ -300,7 +302,8 @@ let create_local_procdesc program linereader cfg tenv node m =
             Cfg.Procdesc.set_exit_node procdesc exit_node
         | Javalib.ConcreteMethod cm when is_java_native cm ->
             let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
-            let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
+            let method_annotation =
+              JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
             let proc_attributes =
               { (ProcAttributes.default proc_name Config.Java) with
                 ProcAttributes.access = trans_access cm.Javalib.cm_access;
@@ -319,7 +322,8 @@ let create_local_procdesc program linereader cfg tenv node m =
               let loc = (get_location impl 0 JContext.Normal cn) in
               fix_method_definition_line linereader proc_name loc in
             let loc_exit = (get_location impl (Array.length (JBir.code impl) - 1) JContext.Normal cn) in
-            let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
+            let method_annotation =
+              JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
             update_constr_loc cn ms loc_start;
             update_init_loc cn ms loc_exit;
             let procdesc =

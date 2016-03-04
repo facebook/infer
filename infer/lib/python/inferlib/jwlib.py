@@ -246,6 +246,9 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         if os.path.isfile(config.MODELS_JAR):
             infer_cmd += ['-models', config.MODELS_JAR]
 
+        if self.javac.annotations_out is not None:
+            infer_cmd += ['-local_config', self.javac.annotations_out]
+
         infer_cmd.append('-no-static_final')
 
         if self.args.debug:

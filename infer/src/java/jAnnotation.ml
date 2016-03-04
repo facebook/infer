@@ -10,6 +10,40 @@
 
 open Javalib_pack
 
+
+let suppress_warnings_lookup = ref None
+
+
+let load_suppress_warnings_lookup () =
+  let default_matcher = fun _ -> false in
+  let matcher =
+    match !Inferconfig.local_config with
+    | Some f ->
+        (try
+           let m = Inferconfig.ProcMatcher.load_matcher f in
+           (m DB.source_file_empty)
+         with Yojson.Json_error _ ->
+           default_matcher)
+    | None -> failwith "Local config expected!" in
+  suppress_warnings_lookup := Some matcher
+
+
+let is_suppress_warnings_annotated proc_name =
+  let matcher =
+    let () =
+      match !suppress_warnings_lookup with
+      | None ->
+          load_suppress_warnings_lookup ()
+      | Some _ -> () in
+    Option.get !suppress_warnings_lookup in
+  matcher proc_name
+
+
+let suppress_warnings =
+  ({ Sil.class_name = Annotations.suppress_warnings;
+     Sil.parameters = ["infer"] },
+   true)
+
 (** Translate an annotation. *)
 let translate a : Sil.annotation =
   let class_name = JBasics.cn_name a.JBasics.kind in
@@ -35,9 +69,13 @@ let translate_item avlist : Sil.item_annotation =
 
 
 (** Translate a method annotation. *)
-let translate_method ann : Sil.method_annotation =
+let translate_method proc_name ann : Sil.method_annotation =
   let global_ann = ann.Javalib.ma_global in
   let param_ann = ann.Javalib.ma_parameters in
-  let ret_item = translate_item global_ann in
+  let ret_item =
+    let base_annotations = translate_item global_ann in
+    if is_suppress_warnings_annotated proc_name then
+      suppress_warnings :: base_annotations
+    else base_annotations in
   let param_items = IList.map translate_item param_ann in
   ret_item, param_items

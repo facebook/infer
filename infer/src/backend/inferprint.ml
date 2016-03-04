@@ -180,11 +180,6 @@ let arg_desc =
         Some "dir",
         "Path to the .inferconfig file"
         ;
-        "-local_config",
-        Arg.String (fun s -> Inferconfig.local_config := Some s),
-        Some "Path",
-        "Path to local config file"
-        ;
         "-with_infer_src_loc",
         Arg.Set reports_include_ml_loc,
         None,

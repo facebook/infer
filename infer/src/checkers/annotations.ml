@@ -112,6 +112,7 @@ let expensive = "Expensive"
 let performance_critical = "PerformanceCritical"
 let no_allocation = "NoAllocation"
 let ignore_allocations = "IgnoreAllocations"
+let suppress_warnings = "SuppressWarnings"
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
@@ -161,6 +162,10 @@ let ia_is_no_allocation ia =
 
 let ia_is_ignore_allocations ia =
   ia_ends_with ia ignore_allocations
+
+let ia_is_suppress_warnings ia =
+  ia_ends_with ia suppress_warnings
+
 
 type annotation =
   | Nullable

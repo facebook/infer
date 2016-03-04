@@ -23,4 +23,9 @@ public class MainActivity extends ActionBarActivity {
     source().toString();
   }
 
+  @SuppressWarnings("infer")
+  void shouldNotBeReported() {
+    source().toString();
+  }
+
 }
