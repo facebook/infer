@@ -168,3 +168,5 @@ let infer = "infer"
 let block = "block"
 
 let atomic_att = "<\"Atomic\">"
+
+let infer_skip_gcc_ast_stmt = "__infer_skip_gcc_ast_stmt"

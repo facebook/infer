@@ -1995,6 +1995,25 @@ struct
     | Some exp -> instruction trans_state exp
     | None -> assert false
 
+  and gccAstStmt_trans trans_state stmt_info stmts =
+    let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let trans_state_param = { trans_state_pri with succ_nodes = [] } in
+    let res_trans_subexpr_list =
+      IList.map (exec_with_glvalue_as_reference instruction trans_state_param) stmts in
+    let params = collect_exprs res_trans_subexpr_list  in
+    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_gcc_ast_stmt in
+    let sil_fun = Sil.Const (Sil.Cfun fun_name) in
+    let call_instr = Sil.Call ([], sil_fun, params, sil_loc, Sil.cf_default) in
+    let res_trans_call = { empty_res_trans with
+                           ids = [];
+                           instrs = [call_instr];
+                           exps = []; } in
+    let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
+    let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+        "GCCAstStmt" stmt_info all_res_trans in
+    { res_trans_to_parent with exps = res_trans_call.exps }
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2255,6 +2274,9 @@ struct
         implicitValueInitExpr_trans trans_state expr_info
     | GenericSelectionExpr _ -> (* to be fixed when we dump the right info in the ast *)
         { empty_res_trans with exps = [(Sil.exp_get_undefined false, Sil.Tvoid)] }
+
+    | GCCAsmStmt (stmt_info, stmts) ->
+        gccAstStmt_trans trans_state stmt_info stmts
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
