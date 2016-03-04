@@ -20,6 +20,7 @@ depends: [
   "atdgen" {>="1.6.0"}
   "javalib" {>="2.3.1"}
   "extlib" {>="1.5.4"}
+  "oUnit" {>="2.0.0"}
 ]
 depexts: [
   [ ["ubuntu"] ["python2.7-dev"] ]

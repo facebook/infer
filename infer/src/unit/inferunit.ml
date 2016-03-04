@@ -12,4 +12,7 @@
 module L = Logging
 
 let () =
-  L.stdout "All OCaml unit tests passed.@."
+  let open OUnit2 in
+  let tests = [] in
+  let test_suite = "all" >::: tests in
+  OUnit2.run_test_tt_main test_suite

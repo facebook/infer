@@ -165,6 +165,7 @@ AC_ASSERT_OCAML_PKG([biniou])
 AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])
 AC_ASSERT_OCAML_PKG([extlib], [], [1.5.4])
+AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.0])
 AC_ASSERT_OCAML_PKG([yojson])
 
 if test "x$enable_java_analyzers" = "xyes"; then
