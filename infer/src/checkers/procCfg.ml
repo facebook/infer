@@ -13,16 +13,22 @@ module F = Format
 (** control-flow graph for a single procedure (as opposed to cfg.ml, which represents a cfg for a
     file). *)
 
-(* wrapper that allows us to do tricks like turn a forward cfg to into a backward one *)
-module type Wrapper = sig
+module type Base = sig
   type t
   type node
   type node_id
 
   val node_id : node -> node_id
+  val node_id_compare : node_id -> node_id -> int
   val succs : t -> node -> node list
-  val exn_succs : t -> node -> node list
   val preds : t -> node -> node list
+end
+
+(* wrapper that allows us to do tricks like turn a forward cfg to into a backward one *)
+module type Wrapper = sig
+  include Base
+
+  val exn_succs : t -> node -> node list
   val start_node : t -> node
   val exit_node : t -> node
   val instrs : node -> Sil.instr list
@@ -31,8 +37,6 @@ module type Wrapper = sig
   val nodes : t -> node list
 
   val from_pdesc : Cfg.Procdesc.t -> t
-
-  val node_id_compare : node_id -> node_id -> int
 
   val pp_node : F.formatter -> node -> unit
   val pp_node_id : F.formatter -> node_id -> unit
@@ -79,12 +83,12 @@ module Backward (W : Wrapper) : Wrapper = struct
 
 end
 
-module NodeIdMap (W : Wrapper) = Map.Make(struct
-    type t = W.node_id
-    let compare = W.node_id_compare
+module NodeIdMap (B : Base) = Map.Make(struct
+    type t = B.node_id
+    let compare = B.node_id_compare
   end)
 
-module NodeIdSet (W : Wrapper) = Set.Make(struct
-    type t = W.node_id
-    let compare = W.node_id_compare
+module NodeIdSet (B : Base) = Set.Make(struct
+    type t = B.node_id
+    let compare = B.node_id_compare
   end)
