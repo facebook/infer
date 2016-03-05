@@ -291,9 +291,6 @@ let smt_output = ref false
 (** flag: if true performs taint analysis *)
 let taint_analysis = ref true
 
-(** set to true to printing tracing information for the analysis *)
-let trace_anal = ref false
-
 (** Flag for turning on the optimization based on locality
     0 = no
     1 = based on reachability

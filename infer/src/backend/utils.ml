@@ -1001,7 +1001,7 @@ let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
     string_crc_hex32 name_for_crc in
   name_up_to_cutoff ^ "." ^ crc_str
 
-let run_with_val reference value f x =
+let set_reference_and_call_function reference value f x =
   let saved = !reference in
   let restore () =
     reference := saved in
@@ -1015,8 +1015,11 @@ let run_with_val reference value f x =
       restore ();
       raise exn
 
-let run_with_footprint_false f x =
-  run_with_val Config.footprint false f x
+let run_in_re_execution_mode f x =
+  set_reference_and_call_function Config.footprint false f x
+
+let run_in_footprint_mode f x =
+  set_reference_and_call_function Config.footprint true f x
 
 let run_with_abs_val_equal_zero f x =
-  run_with_val Config.abs_val 0 f x
+  set_reference_and_call_function Config.abs_val 0 f x

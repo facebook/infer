@@ -14,13 +14,19 @@ val read_dirs_to_analyze : unit -> StringSet.t option
 
 type analyze_ondemand = Procname.t -> unit
 
+type get_cfg = Procname.t -> Cfg.cfg option
+
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
 type callbacks =
   {
     analyze_ondemand : analyze_ondemand;
+    get_cfg : get_cfg;
     get_proc_desc : get_proc_desc;
   }
+
+(** Find a cfg for the procedure, perhaps loading it from disk. *)
+val get_cfg : get_cfg
 
 (** do_analysis curr_pdesc proc_name
     performs an on-demand analysis of proc_name

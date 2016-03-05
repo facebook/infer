@@ -42,31 +42,6 @@ type t =
     ret_type : Sil.typ; (** return type *)
   }
 
-let copy pa =
-  {
-    access = pa.access;
-    captured = pa.captured;
-    changed = pa.changed;
-    err_log = pa.err_log;
-    exceptions = pa.exceptions;
-    formals = pa.formals;
-    func_attributes = pa.func_attributes;
-    is_abstract = pa.is_abstract;
-    is_bridge_method = pa.is_bridge_method;
-    is_cpp_instance_method = pa.is_cpp_instance_method;
-    is_defined = pa.is_defined;
-    is_objc_instance_method = pa.is_objc_instance_method;
-    is_synthetic_method = pa.is_synthetic_method;
-    language = pa.language;
-    loc = pa.loc;
-    locals = pa.locals;
-    method_annotation = pa.method_annotation;
-    objc_accessor = pa.objc_accessor;
-    proc_flags = pa.proc_flags;
-    proc_name = pa.proc_name;
-    ret_type = pa.ret_type;
-  }
-
 let default proc_name language = {
   access = Sil.Default;
   captured = [];

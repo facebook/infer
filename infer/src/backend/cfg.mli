@@ -310,9 +310,6 @@ val remove_seed_vars : 'a Prop.t -> Prop.normal Prop.t
 (** checks whether a cfg is connected or not *)
 val check_cfg_connectedness : cfg -> unit
 
-(** Given a mangled name of a block return its procdesc if exists*)
-val get_block_pdesc : cfg -> Mangled.t -> Procdesc.t option
-
 (** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
 val remove_seed_captured_vars_block : Mangled.t list -> Prop.normal Prop.t -> Prop.normal Prop.t
 

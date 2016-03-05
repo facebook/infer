@@ -160,7 +160,7 @@ let path_set_checkout_todo (wl : Worklist.t) (node: Cfg.node) : Paths.PathSet.t 
 let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
   if !Config.footprint
   then
-    run_with_footprint_false
+    run_in_re_execution_mode
       (Abs.lifted_abstract pname tenv)
       pset
   else
@@ -172,7 +172,7 @@ let collect_do_abstract_post pname tenv (pathset : Paths.PathSet.t) : Paths.Path
     else Some (Abs.abstract pname tenv p) in
   if !Config.footprint
   then
-    run_with_footprint_false
+    run_in_re_execution_mode
       (Paths.PathSet.map_option abs_option)
       pathset
   else
@@ -198,7 +198,7 @@ let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list 
   let collect_do_abstract_one tenv prop =
     if !Config.footprint
     then
-      run_with_footprint_false
+      run_in_re_execution_mode
         (Abs.abstract_no_symop tenv)
         prop
     else
@@ -443,7 +443,7 @@ let check_assignement_guard node =
     ) else ()
 
 (** Perform symbolic execution for a node starting from an initial prop *)
-let do_symbolic_execution handle_exn cfg tenv
+let do_symbolic_execution handle_exn tenv
     (node : Cfg.node) (prop: Prop.normal Prop.t) (path : Paths.Path.t) =
   let pdesc = Cfg.Node.get_proc_desc node in
   State.mark_execution_start node;
@@ -452,7 +452,7 @@ let do_symbolic_execution handle_exn cfg tenv
   let instrs = Cfg.Node.get_instrs node in
   Ident.update_name_generator (instrs_get_normal_vars instrs); (* fresh normal vars must be fresh w.r.t. instructions *)
   let pset =
-    SymExec.lifted_sym_exec handle_exn cfg tenv pdesc
+    SymExec.lifted_sym_exec handle_exn tenv pdesc
       (Paths.PathSet.from_renamed_list [(prop, path)]) node instrs in
   L.d_strln ".... After Symbolic Execution ....";
   Propset.d prop (Paths.PathSet.to_propset pset);
@@ -469,7 +469,7 @@ let mark_visited summary node =
   else
     stats.Specs.nodes_visited_re <- IntSet.add node_id stats.Specs.nodes_visited_re
 
-let forward_tabulate cfg tenv wl =
+let forward_tabulate tenv wl =
   let handled_some_exception = ref false in
   let handle_exn curr_node exn =
     let curr_pdesc = Cfg.Node.get_proc_desc curr_node in
@@ -550,7 +550,7 @@ let forward_tabulate cfg tenv wl =
                  L.d_increase_indent 1;
                  State.reset_diverging_states_goto_node ();
                  let pset =
-                   do_symbolic_execution (handle_exn curr_node) cfg tenv curr_node prop path in
+                   do_symbolic_execution (handle_exn curr_node) tenv curr_node prop path in
                  L.d_decrease_indent 1; L.d_ln();
                  propagate_nodes_divergence tenv proc_desc pset succ_nodes exn_nodes wl;
                with
@@ -793,7 +793,7 @@ let initial_prop_from_pre tenv curr_f pre =
     initial_prop tenv curr_f pre false
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
-let execute_filter_prop wl cfg tenv pdesc init_node (precondition : Prop.normal Specs.Jprop.t)
+let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Specs.Jprop.t)
   : Prop.normal Specs.spec option =
   let proc_name = Cfg.Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node;
@@ -807,7 +807,7 @@ let execute_filter_prop wl cfg tenv pdesc init_node (precondition : Prop.normal 
   try
     Worklist.add wl init_node;
     ignore (path_set_put_todo wl init_node init_edgeset);
-    forward_tabulate cfg tenv wl;
+    forward_tabulate tenv wl;
     do_before_node 0 init_node;
     L.d_strln_color Green ("#### Finished: RE-execution for " ^ Procname.to_string proc_name ^ " ####");
     L.d_increase_indent 1;
@@ -855,7 +855,7 @@ let pp_intra_stats wl proc_desc fmt _ =
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
+let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
   : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
   let start_node = Cfg.Procdesc.get_start_node pdesc in
 
@@ -890,8 +890,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       Worklist.add wl start_node;
       Config.arc_mode := Hashtbl.mem (Cfg.Procdesc.get_flags pdesc) Mleak_buckets.objc_arc_flag;
       ignore (path_set_put_todo wl start_node init_edgeset);
-      forward_tabulate cfg tenv wl
-    in
+      forward_tabulate tenv wl in
     let get_results (wl : Worklist.t) () =
       State.process_execution_failures Reporting.log_warning pname;
       let results = collect_analysis_result wl pdesc in
@@ -923,7 +922,7 @@ let perform_analysis_phase cfg tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t
       check_recursion_level ();
       let filter p =
         let wl = path_set_create_worklist pdesc in
-        let speco = execute_filter_prop wl cfg tenv pdesc start_node p in
+        let speco = execute_filter_prop wl tenv pdesc start_node p in
         let is_valid = match speco with
           | None -> false
           | Some spec ->
@@ -1166,19 +1165,13 @@ let update_summary prev_summary specs phase proc_name elapsed res =
   }
 
 
-(** Analyze [proc_name] and return the updated summary. Use module
-    [Timeout] to call [perform_analysis_phase] with a time limit, and
-    then return the updated summary. Executed as a child process. *)
-let analyze_proc exe_env (proc_name: Procname.t) : Specs.summary =
-  if !Config.trace_anal then L.err "===analyze_proc@.";
+(** Analyze the procedure and return the resulting summary. *)
+let analyze_proc exe_env proc_desc : Specs.summary =
+  let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
   let init_time = Unix.gettimeofday () in
   let tenv = Exe_env.get_tenv exe_env proc_name in
-  let cfg = Exe_env.get_cfg exe_env proc_name in
-  let proc_desc = match Cfg.Procdesc.find_from_name cfg proc_name with
-    | Some proc_desc -> proc_desc
-    | None -> assert false in
   reset_global_values proc_desc;
-  let go, get_results = perform_analysis_phase cfg tenv proc_name proc_desc in
+  let go, get_results = perform_analysis_phase tenv proc_name proc_desc in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
   let elapsed = Unix.gettimeofday () -. init_time in
@@ -1256,18 +1249,6 @@ let perform_transition exe_env proc_name =
   if Specs.get_phase proc_name == Specs.FOOTPRINT
   then transition proc_name
 
-let analyze_proc_for_ondemand exe_env proc_name =
-  let saved_footprint = !Config.footprint in
-  Config.footprint := true;
-  let summaryfp = analyze_proc exe_env proc_name in
-  Specs.add_summary proc_name summaryfp;
-  let cg = Cg.create () in
-  Cg.add_defined_node cg proc_name;
-  perform_transition exe_env proc_name;
-  Config.footprint := false;
-  let summaryre = analyze_proc exe_env proc_name in
-  Specs.add_summary proc_name summaryre;
-  Config.footprint := saved_footprint
 
 let interprocedural_algorithm exe_env : unit =
   let call_graph = Exe_env.get_cg exe_env in
@@ -1306,7 +1287,6 @@ let interprocedural_algorithm exe_env : unit =
 
 (** Perform the analysis of an exe_env *)
 let do_analysis exe_env =
-  if !Config.trace_anal then L.err "do_analysis@.";
   let cg = Exe_env.get_cg exe_env in
   let procs_and_defined_children = get_procs_and_defined_children cg in
   let get_calls caller_pdesc =
@@ -1338,12 +1318,30 @@ let do_analysis exe_env =
     procs_and_defined_children;
 
   let callbacks =
+    let get_cfg proc_name =
+      Some (Exe_env.get_cfg exe_env proc_name) in
     let get_proc_desc proc_name =
       let callee_cfg = Exe_env.get_cfg exe_env proc_name in
       Cfg.Procdesc.find_from_name callee_cfg proc_name in
     let analyze_ondemand proc_name =
-      analyze_proc_for_ondemand exe_env proc_name in
-    { Ondemand.analyze_ondemand; get_proc_desc; } in
+      match get_proc_desc proc_name with
+      | Some proc_desc ->
+          let summaryfp =
+            run_in_footprint_mode (analyze_proc exe_env) proc_desc in
+          Specs.add_summary proc_name summaryfp;
+
+          perform_transition exe_env proc_name;
+
+          let summaryre =
+            run_in_re_execution_mode (analyze_proc exe_env) proc_desc in
+          Specs.add_summary proc_name summaryre
+      | None ->
+          () in
+    {
+      Ondemand.analyze_ondemand;
+      get_cfg;
+      get_proc_desc;
+    } in
 
   Ondemand.set_callbacks callbacks;
   interprocedural_algorithm exe_env;

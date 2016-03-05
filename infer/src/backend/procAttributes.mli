@@ -38,8 +38,5 @@ type t =
     ret_type : Sil.typ; (** return type *)
   }
 
-(** Create a copy of a proc_attributes *)
-val copy : t -> t
-
 (** Create a proc_attributes with default values. *)
 val default : Procname.t -> Config.language -> t

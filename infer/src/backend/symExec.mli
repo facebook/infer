@@ -17,7 +17,7 @@ val print_builtins : unit -> unit
 val function_is_builtin : Procname.t -> bool
 
 (** symbolic execution on the level of sets of propositions *)
-val lifted_sym_exec : (exn -> unit) -> Cfg.cfg -> Sil.tenv -> Cfg.Procdesc.t ->
+val lifted_sym_exec : (exn -> unit) -> Sil.tenv -> Cfg.Procdesc.t ->
   Paths.PathSet.t -> Cfg.Node.t -> Sil.instr list -> Paths.PathSet.t
 
 (** OO method resolution: given a class name and a method name, climb the class hierarchy to find

@@ -385,7 +385,8 @@ module Main =
   Build(EmptyExtension)
 
 (** Eradicate checker for Java @Nullable annotations. *)
-let callback_eradicate ({ Callbacks.get_proc_desc; idenv; proc_name } as callback_args) =
+let callback_eradicate
+    ({ Callbacks.get_cfg; get_proc_desc; idenv; proc_name } as callback_args) =
   let checks =
     {
       TypeCheck.eradicate = true;
@@ -403,7 +404,11 @@ let callback_eradicate ({ Callbacks.get_proc_desc; idenv; proc_name } as callbac
               Callbacks.idenv = idenv_pname;
               proc_name = pname;
               proc_desc = pdesc; } in
-    { Ondemand.analyze_ondemand; get_proc_desc; } in
+    {
+      Ondemand.analyze_ondemand;
+      get_cfg;
+      get_proc_desc;
+    } in
 
   if Ondemand.procedure_should_be_analyzed proc_name
   then

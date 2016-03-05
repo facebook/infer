@@ -314,13 +314,18 @@ let check_one_procedure tenv pname pdesc =
     report_allocations tenv pname pdesc loc call_summary.Specs.allocations
 
 
-let callback_performance_checker { Callbacks.proc_desc; proc_name; get_proc_desc; tenv } =
+let callback_performance_checker
+    { Callbacks.get_cfg; get_proc_desc; proc_desc; proc_name; tenv } =
   let callbacks =
     let analyze_ondemand pn =
       match get_proc_desc pn with
       | None -> ()
       | Some pd -> check_one_procedure tenv pn pd in
-    { Ondemand.analyze_ondemand; get_proc_desc; } in
+    {
+      Ondemand.analyze_ondemand;
+      get_cfg;
+      get_proc_desc;
+    } in
   if Ondemand.procedure_should_be_analyzed proc_name
   then
     begin

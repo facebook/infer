@@ -984,17 +984,6 @@ let check_cfg_connectedness cfg =
   let pdescs = get_all_procs cfg in
   IList.iter do_pdesc pdescs
 
-(** Given a mangled name of a block return its procdesc if exists*)
-let get_block_pdesc cfg block =
-  let pdescs = get_defined_procs cfg in
-  let is_block_pdesc pd =
-    let name = Procdesc.get_proc_name pd in
-    (Procname.to_string name) = (Mangled.to_string block) in
-  try
-    let block_pdesc = IList.find is_block_pdesc pdescs in
-    Some block_pdesc
-  with Not_found -> None
-
 (** Removes seeds variables from a prop corresponding to captured variables in an objc block *)
 let remove_seed_captured_vars_block captured_vars prop =
   let is_captured pname vn = Mangled.equal pname vn in
@@ -1158,14 +1147,14 @@ let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg : cfg)
     (name, typ) where name is a parameter. The resulting procedure CFG is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types *)
-let specialize_types cfg callee_proc_name resolved_proc_name args =
-  (* TODO (#9333890): This currently only works when the callee is defined in the same file.
-         Add support to search for the callee procedure description in the execution environment *)
-  match Procdesc.find_from_name cfg resolved_proc_name with
+let specialize_types caller_cfg callee_proc_name resolved_proc_name args =
+  (** TODO (#9333890): This currently only works when the callee is defined in the same file.
+      Add support to search for the callee procedure description in the execution environment *)
+  match Procdesc.find_from_name caller_cfg resolved_proc_name with
   | Some _ -> ()
   | None ->
       begin
-        match Procdesc.find_from_name cfg callee_proc_name with
+        match Procdesc.find_from_name caller_cfg callee_proc_name with
         | None -> ()
         | Some callee_proc_desc ->
             let callee_attributes = Procdesc.get_attributes callee_proc_desc in
@@ -1179,12 +1168,13 @@ let specialize_types cfg callee_proc_name resolved_proc_name args =
                 proc_name = resolved_proc_name;
               } in
             AttributesTable.store_attributes resolved_attributes;
-            Procdesc.specialize_types cfg callee_proc_desc resolved_attributes resolved_formals;
+            Procdesc.specialize_types
+              caller_cfg callee_proc_desc resolved_attributes resolved_formals;
             begin
               let source_file = resolved_attributes.ProcAttributes.loc.Location.file in
               let source_dir = DB.source_dir_from_source_file source_file in
               let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
               let save_sources = false in
-              store_cfg_to_file cfg_file save_sources cfg
+              store_cfg_to_file cfg_file save_sources caller_cfg
             end
       end

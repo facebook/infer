@@ -35,11 +35,14 @@ let read_dirs_to_analyze () =
 
 type analyze_ondemand = Procname.t -> unit
 
+type get_cfg = Procname.t -> Cfg.cfg option
+
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
 type callbacks =
   {
     analyze_ondemand : analyze_ondemand;
+    get_cfg : get_cfg;
     get_proc_desc : get_proc_desc;
   }
 
@@ -108,6 +111,9 @@ let restore_global_state st =
   State.restore_state st.symexec_state;
   Timeout.resume_previous_timeout ()
 
+(** do_analysis curr_pdesc proc_name
+    performs an on-demand analysis of proc_name
+    triggered during the analysis of curr_pname. *)
 let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
@@ -193,3 +199,11 @@ let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
       end
   | _ ->
       () (* skipping *)
+
+(** Find a cfg for the procedure, perhaps loading it from disk. *)
+let get_cfg callee_pname =
+  match !callbacks_ref with
+  | Some callbacks ->
+      callbacks.get_cfg callee_pname
+  | None ->
+      None

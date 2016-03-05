@@ -12,6 +12,7 @@ module L = Logging
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args = {
+  get_cfg : Procname.t -> Cfg.cfg option;
   get_proc_desc : Procname.t -> Cfg.Procdesc.t option;
   get_procs_in_file : Procname.t -> Procname.t list;
   idenv : Idenv.t;
@@ -61,6 +62,8 @@ let iterate_procedure_callbacks exe_env proc_name =
   Config.curr_language := procedure_language;
 
   let cfg = Exe_env.get_cfg exe_env proc_name in
+  let get_cfg pname =
+    Some (Exe_env.get_cfg exe_env pname) in
   let get_proc_desc proc_name =
     let cfg = try Exe_env.get_cfg exe_env proc_name with Not_found -> cfg in
     Cfg.Procdesc.find_from_name cfg proc_name in
@@ -90,6 +93,7 @@ let iterate_procedure_callbacks exe_env proc_name =
                 let init_time = Unix.gettimeofday () in
                 proc_callback
                   {
+                    get_cfg;
                     get_proc_desc;
                     get_procs_in_file;
                     idenv;

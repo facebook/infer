@@ -10,6 +10,7 @@
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args = {
+  get_cfg : Procname.t -> Cfg.cfg option;
   get_proc_desc : Procname.t -> Cfg.Procdesc.t option;
   get_procs_in_file : Procname.t -> Procname.t list;
   idenv : Idenv.t;
