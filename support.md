@@ -22,10 +22,11 @@ least your operating system and the version of Infer that you are
 using.
 
 
-### Twitter
+### Updates
 
-Keep up to date with the latest Infer news on
-[@fbinfer](https://twitter.com/fbinfer).
+Keep up to date with the latest Infer news on our
+[Facebook page](https://www.facebook.com/inferstaticanalyzer/)
+and our [Twitter account](https://twitter.com/fbinfer).
 
 ### IRC
 
