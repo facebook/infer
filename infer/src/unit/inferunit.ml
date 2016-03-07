@@ -13,7 +13,7 @@ let () =
   let open OUnit2 in
   let tests = [
     SchedulerTests.tests;
-    AbstractInterpreter.UnitTests.tests;
+    AbstractInterpreterTests.tests;
   ] in
   let test_suite = "all" >::: tests in
   OUnit2.run_test_tt_main test_suite
