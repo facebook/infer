@@ -28,7 +28,7 @@ Infer.
 # Build Infer; 20min or so; to be executed from docker/ in the Infer repo
 ./run.sh
 # you should now be inside the docker container with a shell prompt, e.g.
-# "root@5c3b9af90d59:/# "
-cd infer/examples/android_hello/
-infer -- gradle build
+# "root@5c3b9af90d59:/infer/examples# "
+cd android_hello/
+infer -- ./gradlew build
 ```

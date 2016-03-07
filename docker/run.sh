@@ -48,4 +48,4 @@ fi
 NAME="infer"
 
 docker build -t $NAME . && \
-docker run -it $NAME /bin/bash
+docker run -it $NAME /bin/bash -c 'cd /infer/examples/; exec /bin/bash'
