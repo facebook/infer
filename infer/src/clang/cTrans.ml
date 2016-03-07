@@ -2272,7 +2272,8 @@ struct
 
     | ImplicitValueInitExpr (_, _, expr_info) ->
         implicitValueInitExpr_trans trans_state expr_info
-    | GenericSelectionExpr _ -> (* to be fixed when we dump the right info in the ast *)
+    | GenericSelectionExpr _ (* to be fixed when we dump the right info in the ast *)
+    | SizeOfPackExpr _ ->
         { empty_res_trans with exps = [(Sil.exp_get_undefined false, Sil.Tvoid)] }
 
     | GCCAsmStmt (stmt_info, stmts) ->

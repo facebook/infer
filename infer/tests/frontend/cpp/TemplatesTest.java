@@ -52,4 +52,10 @@ public class TemplatesTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("method.cpp");
   }
+
+  @Test
+  public void testSizeofPackDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("sizeof_pack.cpp");
+  }
 }
