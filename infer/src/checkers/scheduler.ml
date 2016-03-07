@@ -17,10 +17,8 @@ module type S = functor (C : ProcCfg.Base) -> sig
   val schedule_succs : t -> C.node -> t
   (* remove and return the node with the highest priority, the ids of its visited
      predecessors, and the new schedule *)
-  val pop : t -> C.node * C.node_id list * t
+  val pop : t -> (C.node * C.node_id list * t) option
   val empty : C.t -> t
-
-  exception Empty
 
 end
 
@@ -28,7 +26,6 @@ end
    and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
 module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
   module M = ProcCfg.NodeIdMap (C)
-  exception Empty
 
   module WorkUnit = struct
     module IdSet = ProcCfg.NodeIdSet(C)
@@ -82,10 +79,10 @@ module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
   (* TODO: could do this slightly more efficiently by keeping a list of priority zero nodes for
      quick popping, and do a linear search only when this list is empty *)
   let pop t =
-    let max_priority_id, _ =
-      try
-        let init_id, init_work = M.choose t.worklist in
-        let init_priority = WorkUnit.priority init_work in
+    try
+      let init_id, init_work = M.choose t.worklist in
+      let init_priority = WorkUnit.priority init_work in
+      let max_priority_id, _ =
         M.fold
           (fun id work (lowest_id, lowest_priority) ->
              let priority = WorkUnit.priority work in
@@ -93,12 +90,12 @@ module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
              then id, priority
              else lowest_id, lowest_priority)
           t.worklist
-          (init_id, init_priority)
-      with Not_found -> raise Empty in
-    let max_priority_work = M.find max_priority_id t.worklist in
-    let node = WorkUnit.node max_priority_work in
-    let t' = { t with worklist = M.remove (C.node_id node) t.worklist } in
-    node, WorkUnit.visited_preds max_priority_work, t'
+          (init_id, init_priority) in
+      let max_priority_work = M.find max_priority_id t.worklist in
+      let node = WorkUnit.node max_priority_work in
+      let t' = { t with worklist = M.remove (C.node_id node) t.worklist } in
+      Some (node, WorkUnit.visited_preds max_priority_work, t')
+    with Not_found -> None
 
   let empty cfg = { worklist = M.empty; cfg; }
 

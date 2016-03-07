@@ -42,10 +42,10 @@ module S = Scheduler.ReversePostorder (MockProcCfg)
 let create_test test_graph expected_result _ =
   (* keep popping and scheduling until the queue is empty, record the results *)
   let rec pop_schedule_record q visited_acc =
-    try
-      let n, _, q' = S.pop q in
-      pop_schedule_record (S.schedule_succs q' n) (n :: visited_acc)
-    with S.Empty -> IList.rev visited_acc in
+    match S.pop q with
+    | Some (n, _, q') ->
+        pop_schedule_record (S.schedule_succs q' n) (n :: visited_acc)
+    | None -> IList.rev visited_acc in
   let pp_diff fmt (exp, actual) =
     let pp_sched fmt l =
       F.pp_print_list ~pp_sep:F.pp_print_space (fun fmt i -> F.fprintf fmt "%d" i) fmt l in

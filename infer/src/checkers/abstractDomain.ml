@@ -15,14 +15,14 @@ module type AbstractDomain = sig
   val init : astate (* the initial state *)
   val bot : astate
   val is_bot : astate -> bool
-  val lteq : astate -> astate -> bool (* fst \sqsubseteq snd? *)
+  val lteq : lhs:astate -> rhs:astate -> bool (* fst \sqsubseteq snd? *)
   val join : astate -> astate -> astate
-  val widen : astate -> astate -> astate
+  val widen : prev:astate -> next:astate -> num_iters:int -> astate
   val pp : F.formatter -> astate -> unit
 
 end
 
-module BotLiftedAbstractDomain (A : AbstractDomain) = struct
+module BotLiftedAbstractDomain (A : AbstractDomain) : AbstractDomain = struct
   type astate =
     | Bot
     | NonBot of A.astate
@@ -34,10 +34,10 @@ module BotLiftedAbstractDomain (A : AbstractDomain) = struct
 
   let init = NonBot A.init
 
-  let lteq astate1 astate2 = match astate1, astate2 with
+  let lteq ~lhs ~rhs = match lhs, rhs with
     | Bot, _ -> true
     | _ , Bot -> false
-    | NonBot a1, NonBot a2 -> A.lteq a1 a2
+    | NonBot lhs, NonBot rhs -> A.lteq ~lhs ~rhs
 
   let join astate1 astate2 =
     match astate1, astate2 with
@@ -45,11 +45,11 @@ module BotLiftedAbstractDomain (A : AbstractDomain) = struct
     | _, Bot -> astate1
     | NonBot a1, NonBot a2 -> NonBot (A.join a1 a2)
 
-  let widen astate1 astate2 =
-    match astate1, astate2 with
-    | Bot, _ -> astate2
-    | _, Bot -> astate1
-    | NonBot a1, NonBot a2 -> NonBot (A.widen a1 a2)
+  let widen ~prev ~next ~num_iters =
+    match prev, next with
+    | Bot, _ -> next
+    | _, Bot -> prev
+    | NonBot prev, NonBot next -> NonBot (A.widen ~prev ~next ~num_iters)
 
   let pp fmt = function
     | Bot -> F.fprintf fmt "_|_"
