@@ -157,7 +157,7 @@ module Make
         try
           let state = M.find node_id inv_map in
           state.post
-        with Not_found -> A.bot in
+        with Not_found -> A.bottom in
       let post_str = pp_to_string A.pp node_id_post in
       if inv_str <> post_str then
         let error_msg =

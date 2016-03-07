@@ -36,7 +36,7 @@ module Make
       let old_state = M.find node_id inv_map in
       let widened_post =
         A.widen ~prev:old_state.post ~next:astate_post ~num_iters:old_state.visit_count in
-      if A.lteq ~lhs:widened_post ~rhs:old_state.post
+      if A.(<=) ~lhs:widened_post ~rhs:old_state.post
       then
         begin
           L.out "Old state contains new, not adding succs@.";
@@ -65,7 +65,7 @@ module Make
         let join_pred astate_acc pred_id =
           let pred_state = M.find pred_id inv_map in
           A.join pred_state.post astate_acc in
-        let astate_pre = IList.fold_left join_pred A.bot visited_preds in
+        let astate_pre = IList.fold_left join_pred A.bottom visited_preds in
         let inv_map', work_queue'' = exec_node node astate_pre work_queue' inv_map in
         exec_worklist work_queue'' inv_map'
     | None -> inv_map
@@ -74,7 +74,7 @@ module Make
     L.out "Starting analysis of %a@." Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
     let cfg = C.from_pdesc pdesc in
     let start_node = C.start_node cfg in
-    let inv_map', work_queue' = exec_node start_node A.init (S.empty cfg) M.empty in
+    let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty in
     exec_worklist work_queue' inv_map'
 
 end
