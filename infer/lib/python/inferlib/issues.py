@@ -174,22 +174,26 @@ def text_of_report(report):
     )
 
 
-def _text_of_report_list(reports):
+def _text_of_report_list(reports, formatter=source.TERMINAL_FORMATTER):
     text_errors_list = []
     error_types_count = {}
     for report in reports:
         filename = report[JSON_INDEX_FILENAME]
         line = report[JSON_INDEX_LINE]
-        source_context = source.build_source_context(
-            filename,
-            source.TERMINAL_FORMATTER,
-            line,
-        )
-        indenter = source.Indenter() \
-                         .indent_push() \
-                         .add(source_context)
-        source_context = unicode(indenter)
-        text = '%s\n%s' % (text_of_report(report), source_context)
+
+        source_context = ''
+        if formatter is not None:
+            source_context = source.build_source_context(
+                filename,
+                source.TERMINAL_FORMATTER,
+                line,
+            )
+            indenter = source.Indenter() \
+                             .indent_push() \
+                             .add(source_context)
+            source_context = '\n' + unicode(indenter)
+
+        text = '%s%s' % (text_of_report(report), source_context)
         text_errors_list.append(text)
 
         t = report[JSON_INDEX_TYPE]
@@ -205,23 +209,23 @@ def _text_of_report_list(reports):
     n_issues = len(text_errors_list)
     if n_issues == 0:
         return 'No issues found'
-    else:
-        max_type_length = max(map(len, error_types_count.keys())) + 2
-        sorted_error_types = error_types_count.items()
-        sorted_error_types.sort(key=operator.itemgetter(1), reverse=True)
-        types_text_list = map(lambda (t, count): '%s: %d' % (
-            t.rjust(max_type_length),
-            count,
-        ), sorted_error_types)
 
-        text_errors = '\n\n'.join(text_errors_list)
+    max_type_length = max(map(len, error_types_count.keys())) + 2
+    sorted_error_types = error_types_count.items()
+    sorted_error_types.sort(key=operator.itemgetter(1), reverse=True)
+    types_text_list = map(lambda (t, count): '%s: %d' % (
+        t.rjust(max_type_length),
+        count,
+    ), sorted_error_types)
 
-        msg = '\nFound %s\n\n%s\n\nSummary of the reports:\n\n%s' % (
-            utils.get_plural('issue', n_issues),
-            text_errors,
-            '\n'.join(types_text_list),
-        )
-        return msg
+    text_errors = '\n\n'.join(text_errors_list)
+
+    msg = 'Found %s\n\n%s\n\nSummary of the reports:\n\n%s' % (
+        utils.get_plural('issue', n_issues),
+        text_errors,
+        '\n'.join(types_text_list),
+    )
+    return msg
 
 
 def _is_user_visible(report):
@@ -234,11 +238,10 @@ def _is_user_visible(report):
 def print_and_save_errors(json_report, bugs_out):
     errors = utils.load_json_from_path(json_report)
     errors = filter(_is_user_visible, errors)
-    text = _text_of_report_list(errors)
-    utils.stdout(text)
+    utils.stdout('\n' + _text_of_report_list(errors))
     with codecs.open(bugs_out, 'w',
                      encoding=config.LOCALE, errors='replace') as file_out:
-        file_out.write(text)
+        file_out.write(_text_of_report_list(errors, formatter=None))
 
 
 def merge_reports_from_paths(report_paths):
