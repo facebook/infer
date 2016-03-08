@@ -126,11 +126,8 @@ InferPrint -results_dir infer-out
 
 ## Run internal tests
 
-There are many tests in the Infer code base that check that Infer behaves correctly on small program examples. The tests use [Buck](http://buckbuild.com/), another Facebook's open source tool for building projects. We provide the script `inferTest` to run the tests, which requires buck to be in your PATH.
+There are many tests in the Infer code base that check that Infer behaves correctly on small program examples. The tests use [Buck](http://buckbuild.com/), another Facebook's open source tool for building projects, so running the tests requires buck to be in your PATH. This is how you'd typically run the tests; you can adapt the figure `8` depending on the number of cores available on your machine:
 
 ```bash
-inferTest java    # Run the tests about Java analysis
-inferTest clang   # Run the tests about C and Objective-C analysis
-inferTest c       # Run the tests about C analysis
-inferTest objc    # Run the tests about Objective-C analysis
+make -j8 test
 ```
