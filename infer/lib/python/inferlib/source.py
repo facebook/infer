@@ -11,24 +11,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import codecs
-try:
-    import pygments
-    import pygments.formatters
-    import pygments.lexers
-except ImportError:
-    pygments = None
-import sys
 
-from . import config, utils
+from . import config, colorize, utils
 
 BASE_INDENT = 2
 # how many lines of context around each report
 SOURCE_CONTEXT = 2
-
-# syntax highlighting modes
-PLAIN_FORMATTER = 0
-TERMINAL_FORMATTER = 1
-
 
 class Indenter(str):
     def __init__(self):
@@ -88,17 +76,4 @@ def build_source_context(source_name, mode, report_line):
                     caret = '> '
                 s += '%s. %s%s' % (num, caret, line)
             line_number += 1
-    return _syntax_highlighting(source_name, mode, s)
-
-
-def _syntax_highlighting(source_name, mode, s):
-    if pygments is None or mode == PLAIN_FORMATTER:
-        return s
-
-    lexer = pygments.lexers.get_lexer_for_filename(source_name)
-    formatter = None
-    if mode == TERMINAL_FORMATTER:
-        if not sys.stdout.isatty():
-            return s
-        formatter = pygments.formatters.TerminalFormatter()
-    return pygments.highlight(s, lexer, formatter)
+    return colorize.syntax_highlighting(source_name, mode, s)

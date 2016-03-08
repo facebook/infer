@@ -21,7 +21,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from . import config, source, utils
+from . import config, colorize, source, utils
 
 
 # Increase the limit of the CSV parser to sys.maxlimit
@@ -174,7 +174,7 @@ def text_of_report(report):
     )
 
 
-def _text_of_report_list(reports, formatter=source.TERMINAL_FORMATTER):
+def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
     text_errors_list = []
     error_types_count = {}
     for report in reports:
@@ -185,7 +185,7 @@ def _text_of_report_list(reports, formatter=source.TERMINAL_FORMATTER):
         if formatter is not None:
             source_context = source.build_source_context(
                 filename,
-                source.TERMINAL_FORMATTER,
+                colorize.TERMINAL_FORMATTER,
                 line,
             )
             indenter = source.Indenter() \

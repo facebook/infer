@@ -21,7 +21,7 @@ import shutil
 import subprocess
 import sys
 
-from inferlib import config, issues, source, utils
+from inferlib import colorize, config, issues, source, utils
 
 HTML_REPORT_DIR = 'report.html'
 TRACES_REPORT_DIR = 'traces'
@@ -93,9 +93,9 @@ class Tracer(object):
 
         if not self.args.no_source:
             self.indenter.indent_push(node[issues.JSON_INDEX_TRACE_LEVEL])
-            mode = source.TERMINAL_FORMATTER
+            mode = colorize.TERMINAL_FORMATTER
             if self.args.html:
-                mode = source.PLAIN_FORMATTER
+                mode = colorize.PLAIN_FORMATTER
             self.indenter.add(source.build_source_context(fname,
                                                           mode,
                                                           report_line))
