@@ -7,7 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module L = Logging
 module F = Format
 
 (** Module to process clusters of procedures. *)
@@ -15,17 +14,14 @@ module F = Format
 (** a cluster is a file *)
 type t = DB.source_dir
 
-(** type stored in .cluster file: (n,m,cl) indicates cl is cluster n out of m *)
-type serializer_t = int * int * t
+(** type stored in .cluster file: (n,cl) indicates cl is cluster n *)
+type serializer_t = int * t
 
 (** Load a cluster from a file *)
 val load_from_file : DB.filename -> serializer_t option
 
 (** Print a cluster *)
-val pp_cluster : int -> int -> t -> F.formatter -> unit -> unit
+val pp_cluster : F.formatter -> serializer_t -> unit
 
 (** Print a cluster name *)
 val pp_cluster_name : F.formatter -> int -> unit
-
-(** Print clusters *)
-val print_clusters : t list -> unit

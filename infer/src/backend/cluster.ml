@@ -15,8 +15,8 @@ module F = Format
 (** a cluster is a file *)
 type t = DB.source_dir
 
-(** type stored in .cluster file: (n,m,cl) indicates cl is cluster n out of m *)
-type serializer_t = int * int * t
+(** type stored in .cluster file: (n,cl) indicates cl is cluster n *)
+type serializer_t = int * t
 
 (** Serializer for clusters *)
 let serializer : serializer_t Serialization.serializer =
@@ -34,15 +34,10 @@ let cl_name n = "cl" ^ string_of_int n
 let cl_file n = "x" ^ (cl_name n) ^ ".cluster"
 let pp_cluster_name fmt n = Format.fprintf fmt "%s" (cl_name n)
 
-let pp_cluster nr tot_nr cluster fmt () =
+let pp_cluster fmt (nr, cluster) =
   let fname = cl_file nr in
   let pp_cl fmt n = Format.fprintf fmt "%s" (cl_name n) in
-  store_to_file (DB.filename_from_string fname) (nr, tot_nr, cluster);
+  store_to_file (DB.filename_from_string fname) (nr, cluster);
   F.fprintf fmt "%a: @\n" pp_cl nr;
   F.fprintf fmt "\t$(INFERANALYZE) -cluster %s >%a@\n" fname pp_cl nr;
   F.fprintf fmt "@\n"
-
-let print_clusters clusters =
-  let pp_cluster num =
-    L.err "cluster #%d @." num in
-  IList.iteri (fun i _ -> pp_cluster i) clusters

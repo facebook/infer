@@ -13,35 +13,6 @@
 module L = Logging
 module F = Format
 
-(* This module, unused by default, generates random c files with procedure calls *)
-module Codegen = struct
-  let num_files = 5000
-  let num_functions = 1000
-  let calls_per_fun = 5
-  let fun_nr = ref 0
-
-  let gen () =
-    for file_nr = 1 to num_files do
-      let fname = Printf.sprintf "file%04d.c" file_nr in
-      let fmt = open_out fname in
-      for _ = 1 to num_functions do
-        incr fun_nr;
-        let num_calls = if !fun_nr = 1 then 0 else Random.int calls_per_fun in
-        Printf.fprintf fmt "void f%04d() {\n" !fun_nr;
-        for _ = 1 to num_calls do
-          let callee_nr = 1 + Random.int (max 1 (num_calls - 1)) in
-          Printf.fprintf fmt "f%04d();\n" callee_nr
-        done;
-        Printf.fprintf fmt "}\n";
-      done;
-      close_out fmt
-    done
-
-  let dont () =
-    gen ();
-    exit 0
-end
-
 (** command line option: if true, run the analysis in checker mode *)
 let checkers = ref false
 
@@ -255,7 +226,7 @@ let () = (* parse command-line arguments *)
 
 let analyze_exe_env exe_env =
   let init_time = Unix.gettimeofday () in
-  L.log_progress_simple ".";
+  L.log_progress_file ();
   Specs.clear_spec_tbl ();
   Random.self_init ();
   let line_reader = Printer.LineReader.create () in
@@ -273,16 +244,6 @@ let analyze_exe_env exe_env =
       L.out "Interprocedural footprint analysis terminated in %f sec@." elapsed
     end
 
-let output_json_file_stats num_files num_procs num_lines =
-  let file_stats =
-    `Assoc [ ("files", `Int num_files);
-             ("procedures", `Int num_procs);
-             ("lines", `Int num_lines) ] in
-  (* write stats file to disk, intentionally overwriting old file if it already exists *)
-  let f = open_out (Filename.concat !Config.results_dir Config.proc_stats_filename) in
-  Yojson.Basic.pretty_to_channel f file_stats
-
-
 (** Create an exe_env from a cluster. *)
 let exe_env_from_cluster cluster =
   let _exe_env = Exe_env.create () in
@@ -293,27 +254,13 @@ let exe_env_from_cluster cluster =
   exe_env
 
 (** Analyze a cluster of files *)
-let analyze_cluster cluster_num tot_clusters (cluster : Cluster.t) =
-  let cluster_num_ref = ref cluster_num in
-  incr cluster_num_ref;
+let analyze_cluster cluster_num (cluster : Cluster.t) =
   let exe_env = exe_env_from_cluster cluster in
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env) in
   let num_procs = IList.length defined_procs in
-  L.err "@.Processing cluster #%d/%d with %d procedures@."
-    !cluster_num_ref tot_clusters num_procs;
+  L.err "@.Processing cluster #%d with %d procedures@."
+    (cluster_num + 1) num_procs;
   analyze_exe_env exe_env
-
-let process_cluster_cmdline_exit () =
-  match !cluster_cmdline with
-  | None -> ()
-  | Some fname ->
-      (match Cluster.load_from_file (DB.filename_from_string fname) with
-       | None ->
-           L.err "Cannot find cluster file %s@." fname;
-           exit 0
-       | Some (nr, tot_nr, cluster) ->
-           analyze_cluster (nr - 1) tot_nr cluster;
-           exit 0)
 
 let open_output_file f fname =
   try
@@ -355,23 +302,32 @@ let teardown_logging analyzer_out_of analyzer_err_of =
       close_output_file analyzer_err_of;
     end
 
-(** Compute clusters.
-    Each cluster will contain only the name of the directory for a file. *)
-let compute_clusters clusters =
-  Cluster.print_clusters clusters;
-  let num_files = IList.length clusters in
+let output_json_makefile_stats clusters =
+  let clusters_to_analyze =
+    IList.filter ClusterMakefile.cluster_should_be_analyzed clusters in
+  let num_files = IList.length clusters_to_analyze in
   let num_procs = 0 (* can't compute it at this stage *) in
   let num_lines = 0 in
-  output_json_file_stats num_files num_procs num_lines;
-  if !makefile_cmdline <> ""
-  then ClusterMakefile.create_cluster_makefile_and_exit clusters !makefile_cmdline;
-  clusters
+  let file_stats =
+    `Assoc [ ("files", `Int num_files);
+             ("procedures", `Int num_procs);
+             ("lines", `Int num_lines) ] in
+  (* write stats file to disk, intentionally overwriting old file if it already exists *)
+  let f = open_out (Filename.concat !Config.results_dir Config.proc_stats_filename) in
+  Yojson.Basic.pretty_to_channel f file_stats
 
 let print_prolog () =
   match !cluster_cmdline with
   | None ->
       L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
   | Some clname -> L.stdout "Cluster %s@." clname
+
+let process_cluster_cmdline fname =
+  match Cluster.load_from_file (DB.filename_from_string fname) with
+  | None ->
+      L.err "Cannot find cluster file %s@." fname
+  | Some (nr, cluster) ->
+      analyze_cluster (nr - 1)  cluster
 
 let () =
   print_prolog ();
@@ -383,15 +339,28 @@ let () =
 
   let analyzer_out_of, analyzer_err_of = setup_logging () in
   if (!Config.curr_language = Config.C_CPP) then Mleak_buckets.init_buckets !ml_buckets_arg;
+  let finish_logging () =
+    teardown_logging analyzer_out_of analyzer_err_of in
 
-  process_cluster_cmdline_exit ();
+  match !cluster_cmdline with
+  | Some fname ->
+      process_cluster_cmdline fname;
+      finish_logging ()
+  | None ->
+      let clusters = DB.find_source_dirs () in
+      L.err "Found %d source files in %s@."
+        (IList.length clusters) !Config.results_dir;
 
-  let source_dirs = DB.find_source_dirs () in
-  L.err "Found %d source files in %s@." (IList.length source_dirs) !Config.results_dir;
+      if !makefile_cmdline <> ""
+      then
+        ClusterMakefile.create_cluster_makefile clusters !makefile_cmdline
+      else
+        begin
+          IList.iteri
+            (fun i cluster -> analyze_cluster i cluster)
+            clusters;
+          L.stdout "Analysis finished in %as@." pp_elapsed_time ()
+        end;
+      output_json_makefile_stats clusters;
+      finish_logging ()
 
-  let clusters = compute_clusters source_dirs in
-
-  let tot_clusters = IList.length clusters in
-  IList.iter (analyze_cluster 0 tot_clusters) clusters;
-  teardown_logging analyzer_out_of analyzer_err_of;
-  if !cluster_cmdline = None then L.stdout "Analysis finished in %as@." pp_elapsed_time ()

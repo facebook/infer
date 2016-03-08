@@ -20,8 +20,10 @@ let ondemand_file () = Config.get_env_variable "INFER_ONDEMAND_FILE"
 (** Read the directories to analyze from the ondemand file. *)
 let read_dirs_to_analyze () =
   let lines_opt = match ondemand_file () with
-    | None -> None
-    | Some fname ->read_file fname in
+    | None ->
+        None
+    | Some fname ->
+        read_file fname in
   match lines_opt with
   | None ->
       None
@@ -32,6 +34,10 @@ let read_dirs_to_analyze () =
         res := StringSet.add (DB.source_dir_to_string source_dir) !res in
       IList.iter do_line lines;
       Some !res
+
+(** Directories to analyze from the ondemand file. *)
+let dirs_to_analyze =
+  lazy (read_dirs_to_analyze ())
 
 type analyze_ondemand = Procname.t -> unit
 
@@ -118,6 +124,8 @@ let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
   let really_do_analysis callee_pdesc analyze_proc =
+    (** Dot means start of a procedure *)
+    L.log_progress_procedure ();
     if trace () then L.stderr "[%d] really_do_analysis %a -> %a@."
         !nesting
         Procname.pp curr_pname

@@ -130,6 +130,8 @@ val d_increase_indent : int -> unit
 (** dump command to decrease the indentation level *)
 val d_decrease_indent : int -> unit
 
-val log_progress : string -> int ref -> int -> unit
+(** Progress bar: start of the analysis of a file. *)
+val log_progress_file : unit -> unit
 
-val log_progress_simple : string -> unit
+(** Progress bar: start of the analysis of a procedure. *)
+val log_progress_procedure : unit -> unit
