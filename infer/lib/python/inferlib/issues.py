@@ -21,7 +21,7 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 
-from . import config, colorize, source, utils
+from . import colorize, config, source, utils
 
 
 # Increase the limit of the CSV parser to sys.maxlimit
@@ -182,10 +182,10 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
         line = report[JSON_INDEX_LINE]
 
         source_context = ''
-        if formatter is not None:
+        if formatter == colorize.TERMINAL_FORMATTER:
             source_context = source.build_source_context(
                 filename,
-                colorize.TERMINAL_FORMATTER,
+                formatter,
                 line,
             )
             indenter = source.Indenter() \
@@ -193,7 +193,12 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
                              .add(source_context)
             source_context = '\n' + unicode(indenter)
 
-        text = '%s%s' % (text_of_report(report), source_context)
+        msg = text_of_report(report)
+        if report[JSON_INDEX_KIND] == ISSUE_KIND_ERROR:
+            msg = colorize.color(msg, colorize.ERROR, formatter)
+        elif report[JSON_INDEX_KIND] == ISSUE_KIND_WARNING:
+            msg = colorize.color(msg, colorize.WARNING, formatter)
+        text = '%s%s' % (msg, source_context)
         text_errors_list.append(text)
 
         t = report[JSON_INDEX_TYPE]
@@ -208,7 +213,10 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
 
     n_issues = len(text_errors_list)
     if n_issues == 0:
-        return 'No issues found'
+        if formatter == colorize.TERMINAL_FORMATTER:
+            return colorize.logo(formatter)
+        else:
+            return 'No issues found'
 
     max_type_length = max(map(len, error_types_count.keys())) + 2
     sorted_error_types = error_types_count.items()
@@ -220,10 +228,17 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
 
     text_errors = '\n\n'.join(text_errors_list)
 
-    msg = 'Found %s\n\n%s\n\nSummary of the reports:\n\n%s' % (
-        utils.get_plural('issue', n_issues),
-        text_errors,
-        '\n'.join(types_text_list),
+    issues_found = 'Found {n_issues}'.format(
+        n_issues=utils.get_plural('issue', n_issues),
+    )
+    msg = '{issues_found}\n\n{issues}\n\n{header}\n\n{summary}'.format(
+        issues_found=colorize.color(issues_found,
+                                    colorize.HEADER,
+                                    formatter),
+        issues=text_errors,
+        header=colorize.color('Summary of the reports',
+                              colorize.HEADER, formatter),
+        summary='\n'.join(types_text_list),
     )
     return msg
 
@@ -241,7 +256,9 @@ def print_and_save_errors(json_report, bugs_out):
     utils.stdout('\n' + _text_of_report_list(errors))
     with codecs.open(bugs_out, 'w',
                      encoding=config.LOCALE, errors='replace') as file_out:
-        file_out.write(_text_of_report_list(errors, formatter=None))
+        plain_out = _text_of_report_list(errors,
+                                         formatter=colorize.PLAIN_FORMATTER)
+        file_out.write(plain_out)
 
 
 def merge_reports_from_paths(report_paths):

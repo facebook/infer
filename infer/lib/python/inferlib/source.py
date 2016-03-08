@@ -12,7 +12,7 @@ from __future__ import unicode_literals
 
 import codecs
 
-from . import config, colorize, utils
+from . import colorize, config, utils
 
 BASE_INDENT = 2
 # how many lines of context around each report
@@ -63,17 +63,30 @@ def build_source_context(source_name, mode, report_line):
     # could go beyond last line, checked in the loop
     end_line = report_line + SOURCE_CONTEXT
 
-    n_length = len(str(end_line))
+    # get source excerpt
     line_number = 1
-    s = ''
+    excerpt = ''
     with codecs.open(source_name, 'r',
                      encoding=config.LOCALE, errors="replace") as source_file:
+        # avoid going past the end of the file
         for line in source_file:
             if start_line <= line_number <= end_line:
-                num = str(line_number).zfill(n_length)
-                caret = '  '
-                if line_number == report_line:
-                    caret = '> '
-                s += '%s. %s%s' % (num, caret, line)
+                excerpt += line
             line_number += 1
-    return colorize.syntax_highlighting(source_name, mode, s)
+    excerpt = colorize.syntax_highlighting(source_name, mode, excerpt)
+
+    # number lines and add caret at the right position
+    n_length = len(str(end_line))
+    s = ''
+    line_number = start_line
+    for line in excerpt.split('\n'):
+        num = colorize.color((str(line_number) + '.').zfill(n_length),
+                             colorize.DIM, mode)
+        caret = '  '
+        if line_number == report_line:
+            caret = colorize.color('> ',
+                                   colorize.HEADER, mode)
+        s += '%s %s%s\n' % (num, caret, line)
+        line_number += 1
+
+    return s

@@ -24,6 +24,75 @@ PLAIN_FORMATTER = 0
 TERMINAL_FORMATTER = 1
 
 
+def terminal_only(s):
+    if not sys.stdout.isatty():
+        return ''
+    return s
+
+BLUE = terminal_only('\033[34m')
+BLUE_BG = terminal_only('\033[44m')
+MAGENTA = terminal_only('\033[35m')
+MAGENTA_BG = terminal_only('\033[45m')
+BRIGHT = terminal_only('\033[1m')
+DIM = terminal_only('\033[2m')
+RED = terminal_only('\033[31m')
+RESET = terminal_only('\033[0m')
+WHITE = terminal_only('\033[37m')
+WHITE_BG = terminal_only('\033[47m')
+YELLOW = terminal_only('\033[35m')
+
+ERROR = RED
+HEADER = BRIGHT
+SUCCESS = MAGENTA_BG + WHITE + BRIGHT
+WARNING = ''
+
+
+class Invalid_mode(Exception):
+    pass
+
+INFER_LOGO = """\
+                      _.........
+                _.....................
+             _...........................
+          _.................................
+        _.....................................
+       _...............I  _....................
+     _.................I  _......................
+    _..................I  _.......................
+    _..................I  _.......................
+   _...................I  _........................
+   _...................I  _........................
+  _....................I No issues  _...............
+  _....................I  found     _...............
+  _....................I  _.........................
+   _...................I  _........................
+   _...................I  _........................
+    _..................I  _.......................
+     _.................I  _......................
+      _................I  _.....................
+        _.....................................
+         _...................................
+            _.............................
+               _........................
+                   _...............\
+"""
+
+
+def logo(mode):
+    if mode == PLAIN_FORMATTER:
+        return ''
+    if mode != TERMINAL_FORMATTER:
+        raise Invalid_mode()
+
+    disc_color = MAGENTA_BG
+    entailment_color = WHITE_BG + MAGENTA
+    logo = INFER_LOGO.replace('_', disc_color + ' ') \
+                     .replace('I', entailment_color + ' ') \
+                     .replace('.', ' ') \
+                     .replace('\n', RESET + '\n')
+    return logo + RESET
+
+
 def syntax_highlighting(source_name, mode, s):
     if pygments is None or mode == PLAIN_FORMATTER:
         return s
@@ -35,3 +104,11 @@ def syntax_highlighting(source_name, mode, s):
             return s
         formatter = pygments.formatters.TerminalFormatter()
     return pygments.highlight(s, lexer, formatter)
+
+
+def color(s, color, mode):
+    if mode == TERMINAL_FORMATTER:
+        return color + s + RESET
+    if mode == PLAIN_FORMATTER:
+        return s
+    raise Invalid_mode()
