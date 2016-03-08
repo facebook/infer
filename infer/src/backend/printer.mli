@@ -29,7 +29,7 @@ val start_session : Cfg.node -> Location.t -> Procname.t -> int -> unit
 val finish_session : Cfg.node -> unit
 
 (** Write log file for the proc, the boolean indicates whether to print whole seconds only *)
-val proc_write_log : bool -> Cfg.cfg -> Procname.t -> unit
+val proc_write_log : bool -> Cfg.Procdesc.t -> unit
 
 (** Module to read specific lines from files.
     The data from any file will stay in memory until the handle is collected by the gc *)

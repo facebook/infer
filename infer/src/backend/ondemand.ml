@@ -117,7 +117,7 @@ let restore_global_state st =
 let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
   let curr_pname = Cfg.Procdesc.get_proc_name curr_pdesc in
 
-  let really_do_analysis analyze_proc =
+  let really_do_analysis callee_pdesc analyze_proc =
     if trace () then L.stderr "[%d] really_do_analysis %a -> %a@."
         !nesting
         Procname.pp curr_pname
@@ -150,7 +150,8 @@ let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
           Specs.status = Specs.INACTIVE;
           timestamp = summary.Specs.timestamp + 1 } in
       Specs.add_summary callee_pname summary';
-      Checkers.ST.store_summary callee_pname in
+      Checkers.ST.store_summary callee_pname;
+      Printer.proc_write_log false callee_pdesc in
 
     let log_error_and_continue exn kind =
       Reporting.log_error callee_pname exn;
@@ -194,8 +195,10 @@ let do_analysis ~propagate_exceptions curr_pdesc callee_pname =
     when procedure_should_be_analyzed callee_pname ->
       begin
         match callbacks.get_proc_desc callee_pname with
-        | Some _ -> really_do_analysis callbacks.analyze_ondemand
-        | None -> ()
+        | Some callee_pdesc ->
+            really_do_analysis callee_pdesc callbacks.analyze_ondemand
+        | None ->
+            ()
       end
   | _ ->
       () (* skipping *)

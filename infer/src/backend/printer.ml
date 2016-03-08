@@ -258,9 +258,10 @@ let finish_session node =
   end
 
 (** Write log file for the proc *)
-let _proc_write_log whole_seconds cfg pname =
-  match Cfg.Procdesc.find_from_name cfg pname with
-  | Some pdesc ->
+let proc_write_log whole_seconds pdesc =
+  if !Config.write_html then
+    begin
+      let pname = Cfg.Procdesc.get_proc_name pdesc in
       let nodes = IList.sort Cfg.Node.compare (Cfg.Procdesc.get_nodes pdesc) in
       let linenum = (Cfg.Node.get_loc (IList.hd nodes)).Location.line in
       let fd, fmt =
@@ -281,10 +282,7 @@ let _proc_write_log whole_seconds cfg pname =
        | Some summary ->
            Specs.pp_summary (pe_html Black) whole_seconds fmt summary;
            Io_infer.Html.close (fd, fmt))
-  | None -> ()
-
-let proc_write_log whole_seconds cfg pname =
-  if !Config.write_html then _proc_write_log whole_seconds cfg pname
+    end
 
 (** Creare a hash table mapping line numbers to the set of errors occurring on that line *)
 let create_errors_per_line err_log =
