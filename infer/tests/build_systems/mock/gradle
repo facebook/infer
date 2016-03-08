@@ -1,0 +1,16 @@
+#!/bin/sh
+# Copyright (c) 2016 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+# mock implementation of gradle, to be run from examples/java_hello/
+
+# gradle outputs absolute paths
+path_to_java_hello=$(pwd)
+
+# this is the part of the output of "gradle --debug build" that infer
+# cares about
+echo 19:12:21.084 [DEBUG] [org.gradle.api.internal.tasks.compile.NormalizingJavaCompiler] Compiler arguments: -g -encoding UTF-8 "$path_to_java_hello"/Pointers.java "$path_to_java_hello"/Resources.java "$path_to_java_hello"/Hello.java

@@ -1,17 +1,17 @@
 [
   {
     "bug_type": "NULL_DEREFERENCE",
-    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java",
-    "procedure": "void MainActivity.onCreate(Bundle)"
-  },
-  {
-    "bug_type": "NULL_DEREFERENCE",
-    "file": "app/src/main/java/infer/other/MainActivity.java",
-    "procedure": "void MainActivity.onCreate(Bundle)"
+    "file": "Hello.java",
+    "procedure": "void Hello.mayCauseNPE()"
   },
   {
     "bug_type": "RESOURCE_LEAK",
-    "file": "app/src/main/java/infer/inferandroidexample/MainActivity.java",
-    "procedure": "void MainActivity.writeToFile()"
+    "file": "Hello.java",
+    "procedure": "void Hello.mayLeakResource()"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "Hello.java",
+    "procedure": "void Hello.twoResources()"
   }
 ]
