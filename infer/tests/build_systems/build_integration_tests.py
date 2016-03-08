@@ -19,15 +19,14 @@ import sys
 import tempfile
 import unittest
 
-SCRIPTS_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+SCRIPT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0,
-                os.path.join(SCRIPTS_DIRECTORY,
-                             os.pardir, 'infer', 'lib', 'python'))
+                os.path.join(SCRIPT_DIRECTORY,
+                             os.pardir, os.pardir, 'lib', 'python'))
 
 from inferlib import issues, utils
 
 
-CURRENT_DIR = os.getcwd()
 REPORT_JSON = 'report.json'
 
 INFER_EXECUTABLE = 'infer'
@@ -40,6 +39,7 @@ REPORT_FIELDS = [
     issues.JSON_INDEX_TYPE,
 ]
 
+EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIRECTORY, 'expected_outputs')
 
 def should_record_tests():
     return RECORD_ENV in os.environ and os.environ[RECORD_ENV] == '1'
@@ -94,7 +94,7 @@ def run_analysis(root, clean_cmd, build_cmd, analyzer):
     json_path = os.path.join(temp_out_dir, REPORT_JSON)
     found_errors = utils.load_json_from_path(json_path)
     shutil.rmtree(temp_out_dir)
-    os.chdir(CURRENT_DIR)
+    os.chdir(SCRIPT_DIRECTORY)
 
     return found_errors
 
@@ -168,13 +168,14 @@ class BuildIntegrationTest(unittest.TestCase):
     def test_ant_integration(self):
         if is_tool_available(['ant', '-version']):
             print('\nRunning Gradle integration test')
-            root = os.path.join(CURRENT_DIR, 'infer', 'tests')
+            root = os.path.join(SCRIPT_DIRECTORY, os.pardir)
             errors = run_analysis(
                 root,
                 ['ant', 'clean'],
                 ['ant', 'compile'],
                 INFER_EXECUTABLE)
-            do_test(errors, os.path.join(root, 'ant_report.json'))
+            original = os.path.join(EXPECTED_OUTPUTS_DIR, 'ant_report.json')
+            do_test(errors, original)
         else:
             print('\nSkipping Ant integration test')
             assert True
@@ -182,13 +183,15 @@ class BuildIntegrationTest(unittest.TestCase):
     def test_gradle_integration(self):
         if is_tool_available(['gradle', '--version']):
             print('\nRunning Gradle integration test')
-            root = os.path.join(CURRENT_DIR, 'examples', 'android_hello')
+            root = os.path.join(SCRIPT_DIRECTORY, os.pardir, os.pardir,
+                                os.pardir, 'examples', 'android_hello')
             errors = run_analysis(
                 root,
                 ['gradle', 'clean'],
                 ['gradle', 'build'],
                 INFER_EXECUTABLE)
-            do_test(errors, os.path.join(root, 'gradle_report.json'))
+            original = os.path.join(EXPECTED_OUTPUTS_DIR, 'gradle_report.json')
+            do_test(errors, original)
         else:
             print('\nSkipping Gradle integration test')
             assert True
@@ -196,15 +199,15 @@ class BuildIntegrationTest(unittest.TestCase):
     def test_buck_integration(self):
         if is_tool_available(['buck', '--version']):
             print('\nRunning Buck integration test')
-            root = CURRENT_DIR
+            root = os.path.join(SCRIPT_DIRECTORY,
+                                os.pardir, os.pardir, os.pardir)
             errors = run_analysis(
                 root,
                 ['buck', 'clean'],
                 ['buck', 'build', 'infer'],
                 INFER_EXECUTABLE)
-            report_path = os.path.join(
-                CURRENT_DIR, 'infer', 'tests', 'buck_report.json')
-            do_test(errors, report_path)
+            original = os.path.join(EXPECTED_OUTPUTS_DIR, 'buck_report.json')
+            do_test(errors, original)
         else:
             print('\nSkipping Buck integration test')
             assert True

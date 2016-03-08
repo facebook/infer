@@ -86,20 +86,20 @@ test_build:
 	$(MAKE) -C $(SRC_DIR) test_build
 
 ocaml_unit_test: $(INFER_ANALYZERS) unit
-	InferUnit
+	$(INFERUNIT_BIN)
 
 buck_test: $(INFER_ANALYZERS)
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test $(TARGETS_TO_TEST)
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
-	NO_BUCKD=1 ./scripts/build_integration_tests.py
+	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 endif
 
 buck_test_xml: $(INFER_ANALYZERS)
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test --xml test.xml $(TARGETS_TO_TEST)
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
-	NO_BUCKD=1 ./scripts/build_integration_tests.py
+	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 endif
 
 inferTraceBugs_test: $(INFER_ANALYZERS)
@@ -136,7 +136,6 @@ ifeq (@BUILD_C_ANALYZERS@,yes)
 endif
 	$(MAKE) -C $(INFER_DIR) clean
 
-.PHONY: all buck_test buck_test_xml build_integration_tests clean clang
+.PHONY: all buck_test buck_test_xml clean clang
 .PHONY: clang_plugin clang_setup inferTraceBugs_test java ocaml_unit_test
-.PHONY: test test_xml test_build
-
+.PHONY: test test_xml test_build unit
