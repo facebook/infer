@@ -66,33 +66,4 @@ public final class URL implements java.io.Serializable {
         return openConnection(null);
     }
 
-    public String getHost() {
-        String res = new String();
-        InferBuiltins.__set_taint_attribute(res);
-        return res;
-    }
-
-    public String getAuthority() {
-        String res = new String();
-        InferBuiltins.__set_taint_attribute(res);
-        return res;
-    }
-
-    public String getProtocol() {
-        String res = new String();
-        InferBuiltins.__set_taint_attribute(res);
-        return res;
-    }
-
-    public String toExternalForm() {
-        String res = new String();
-        InferBuiltins.__set_taint_attribute(res);
-        return res;
-    }
-
-    public String toString() {
-        String res = new String();
-        InferBuiltins.__set_taint_attribute(res);
-        return res;
-    }
 }

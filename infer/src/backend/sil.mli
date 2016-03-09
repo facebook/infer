@@ -237,6 +237,16 @@ and res_action =
     ra_vpath: vpath; (** vpath of the resource value *)
   }
 
+and taint_kind =
+  | UnverifiedSSLSocket
+  | SharedPreferencesData
+  | Unknown
+
+and taint_info = {
+  taint_source : Procname.t;
+  taint_kind : taint_kind;
+}
+
 (** Attributes *)
 and attribute =
   | Aresource of res_action (** resource acquire/release *)
@@ -244,7 +254,7 @@ and attribute =
   | Adangling of dangling_kind (** dangling pointer *)
   (** undefined value obtained by calling the given procedure *)
   | Aundef of Procname.t * Location.t * path_pos
-  | Ataint of Procname.t (** Procname is the source of the taint *)
+  | Ataint of taint_info
   | Auntaint
   | Alocked
   | Aunlocked

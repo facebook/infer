@@ -883,7 +883,7 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
             bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
         let prop'' = add_ret_non_null ret_exp typ prop' in
         if !Config.taint_analysis && Taint.returns_secret callee_pname then
-          add_tainted_post ret_exp callee_pname prop''
+          add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind = Unknown } prop''
         else prop''
     else add_ret_non_null ret_exp typ prop
 
@@ -2259,14 +2259,16 @@ module ModelBuiltins = struct
       IList.fold_left call_release [(prop_without_attribute, path)] autoreleased_objects
     else execute___no_op prop_ path
 
+  let set_attr pdesc prop path exp attr =
+    let pname = Cfg.Procdesc.get_proc_name pdesc in
+    let n_lexp, prop = exp_norm_check_arith pname prop exp in
+    [(Prop.add_or_replace_exp_attribute prop n_lexp attr, path)]
+
   (** Set attibute att *)
-  let execute___set_attr att { Builtin.pdesc; prop_; path; args; }
+  let execute___set_attr attr { Builtin.pdesc; prop_; path; args; }
     : Builtin.ret_typ =
     match args with
-    | [(lexp, _)] ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
-        [(Prop.add_or_replace_exp_attribute prop n_lexp att, path)]
+    | [(lexp, _)] -> set_attr pdesc prop_ path lexp attr
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
   (** Set the attibute of the value as resource/locked*)
@@ -2297,13 +2299,21 @@ module ModelBuiltins = struct
       ra_vpath = None; } in
     execute___set_attr (Sil.Aresource ra) builtin_args
 
-
   (** Set the attibute of the value as tainted *)
   let execute___set_taint_attribute
-      ({ Builtin.pdesc; } as builtin_args)
+      ({ Builtin.pdesc; args; prop_; path; })
     : Builtin.ret_typ =
-    let pname = Cfg.Procdesc.get_proc_name pdesc in
-    execute___set_attr (Sil.Ataint pname) builtin_args
+    match args with
+    | (exp, _) :: [(Sil.Const (Sil.Cstr taint_kind_str), _)] ->
+        let taint_source = Cfg.Procdesc.get_proc_name pdesc in
+        let taint_kind = match taint_kind_str with
+          | "UnverifiedSSLSocket" -> Sil.UnverifiedSSLSocket
+          | "SharedPreferenceData" -> Sil.SharedPreferencesData
+          | other_str -> failwith ("Unrecognized taint kind " ^ other_str) in
+        set_attr pdesc prop_ path exp (Sil.Ataint { Sil.taint_source; taint_kind})
+    | _ ->
+        (* note: we can also get this if [taint_kind] is not a string literal *)
+        raise (Exceptions.Wrong_argument_number __POS__)
 
   let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
     : Builtin.ret_typ =

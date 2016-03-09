@@ -36,7 +36,7 @@ public class SocketFactory {
 
   public Socket createSocket() {
     Socket socket = returnAllocatedSocket();
-    InferBuiltins.__set_taint_attribute(socket);
+    InferBuiltins.__set_taint_attribute(socket, "UnverifiedSSLSocket");
     return socket;
   }
 

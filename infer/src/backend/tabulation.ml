@@ -757,11 +757,13 @@ let add_tainting_att_param_list prop param_nums formal_params att =
                " to be set as tainted/untainted ");
     prop
 
-(* Set Ataint attribute to list of parameteres in a prop *)
+(* Set Ataint attribute to list of parameters in a prop *)
 let add_param_taint proc_name formal_params prop param_nums =
   let formal_params' = IList.map
       (fun (p, _) -> Sil.mk_pvar p proc_name) formal_params in
-  add_tainting_att_param_list prop param_nums formal_params' (Sil.Ataint proc_name)
+  (* TODO: add taint_kind as part of specification format in taint.ml *)
+  let taint_info = { Sil.taint_source = proc_name; taint_kind = Unknown; } in
+  add_tainting_att_param_list prop param_nums formal_params' (Sil.Ataint taint_info)
 
 (* add Auntaint attribute to a callee_pname precondition *)
 let mk_pre pre formal_params callee_pname =
@@ -825,7 +827,7 @@ let mk_posts ret_ids prop callee_pname posts =
             let prop' =
               Prop.add_or_replace_exp_attribute prop_normal
                 (Sil.Var ret_id)
-                (Sil.Ataint callee_pname)
+                (Sil.Ataint { Sil.taint_source = callee_pname; taint_kind = Unknown })
               |> Prop.expose in
             (prop', path) in
           IList.map taint_retval posts
@@ -874,10 +876,10 @@ let do_taint_check caller_pname callee_pname calling_pi missing_pi sub =
      the untaint atoms *)
   let report_taint_errors e (taint_atoms, _untaint_atoms) =
     let report_one_error taint_atom =
-      let tainting_fun = match Prop.atom_get_exp_attribute taint_atom with
-        | Some (_, Sil.Ataint pname) -> pname
+      let taint_info = match Prop.atom_get_exp_attribute taint_atom with
+        | Some (_, Sil.Ataint taint_info) -> taint_info
         | _ -> failwith "Expected to get taint attr on atom" in
-      let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e tainting_fun
+      let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e taint_info
           callee_pname (State.get_loc ()) in
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function

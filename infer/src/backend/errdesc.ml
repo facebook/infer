@@ -956,13 +956,18 @@ let explain_retain_cycle prop cycle loc dotty_str =
   Localise.desc_retain_cycle prop cycle loc dotty_str
 
 (** Explain a tainted value error *)
-let explain_tainted_value_reaching_sensitive_function e taint_fun sensitive_fun loc =
+let explain_tainted_value_reaching_sensitive_function e { Sil.taint_source } sensitive_fun loc =
   let var_desc =
     match e with
     | Sil.Lvar pv -> Sil.pvar_to_string pv
-    | _ -> " of some parameter " in
+    | exp ->
+        begin
+          match exp_rv_dexp (State.get_node ()) exp with
+          | Some dexp -> Sil.dexp_to_string dexp
+          | None -> Sil.exp_to_string exp
+        end in
   Localise.desc_tainted_value_reaching_sensitive_function var_desc
-    (Procname.to_string taint_fun) (Procname.to_string sensitive_fun) loc
+    (Procname.to_string taint_source) (Procname.to_string sensitive_fun) loc
 
 (** explain a return statement missing *)
 let explain_return_statement_missing loc =

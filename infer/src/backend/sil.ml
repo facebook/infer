@@ -601,6 +601,16 @@ and res_action =
     ra_vpath: vpath; (** vpath of the resource value *)
   }
 
+and taint_kind =
+  | UnverifiedSSLSocket
+  | SharedPreferencesData
+  | Unknown
+
+and taint_info = {
+  taint_source : Procname.t;
+  taint_kind : taint_kind;
+}
+
 (** Attributes *)
 and attribute =
   | Aresource of res_action (** resource acquire/release *)
@@ -608,7 +618,7 @@ and attribute =
   | Adangling of dangling_kind (** dangling pointer *)
   (** undefined value obtained by calling the given procedure *)
   | Aundef of Procname.t * Location.t * path_pos
-  | Ataint of Procname.t (** Procname is the source of the taint *)
+  | Ataint of taint_info
   | Auntaint
   | Alocked
   | Aunlocked
@@ -1164,6 +1174,19 @@ let dangling_kind_compare dk1 dk2 = match dk1, dk2 with
   | _, DAaddr_stack_var -> 1
   | DAminusone, DAminusone -> 0
 
+let taint_kind_compare tk1 tk2 = match tk1, tk2 with
+  | UnverifiedSSLSocket, UnverifiedSSLSocket -> 0
+  | UnverifiedSSLSocket, _ -> - 1
+  | _, UnverifiedSSLSocket -> 1
+  | SharedPreferencesData, SharedPreferencesData -> 0
+  | SharedPreferencesData, _ -> 1
+  | _, SharedPreferencesData -> - 1
+  | Unknown, Unknown -> 0
+
+let taint_info_compare { taint_source=ts1; taint_kind=tk1; } { taint_source=ts2; taint_kind=tk2; } =
+  taint_kind_compare tk1 tk2
+  |> next Procname.compare ts1 ts2
+
 let attribute_category_compare (ac1 : attribute_category) (ac2 : attribute_category) : int =
   Pervasives.compare ac1 ac2
 
@@ -1372,7 +1395,7 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
   | Adangling _, _ -> - 1
   | _, Adangling _ -> 1
   | Aundef (pn1, _, _), Aundef (pn2, _, _) -> Procname.compare pn1 pn2
-  | Ataint pn1, Ataint pn2 -> Procname.compare pn1 pn2
+  | Ataint ti1, Ataint ti2 -> taint_info_compare ti1 ti2
   | Ataint _, _ -> -1
   | _, Ataint _ -> 1
   | Auntaint, Auntaint -> 0
@@ -1943,7 +1966,7 @@ and attribute_to_string pe = function
   | Aundef (pn, loc, _) ->
       "UND" ^ (str_binop pe Lt) ^ Procname.to_string pn ^
       (str_binop pe Gt) ^ ":" ^ (string_of_int loc.Location.line)
-  | Ataint pn -> "TAINTED[" ^ (Procname.to_string pn) ^ "]"
+  | Ataint { taint_source; } -> "TAINTED[" ^ (Procname.to_string taint_source) ^ "]"
   | Auntaint -> "UNTAINTED"
   | Alocked -> "LOCKED"
   | Aunlocked -> "UNLOCKED"
