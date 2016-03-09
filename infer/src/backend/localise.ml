@@ -794,18 +794,36 @@ let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
 
-let desc_tainted_value_reaching_sensitive_function expr_str tainting_fun sensitive_fun loc =
+let desc_tainted_value_reaching_sensitive_function
+    taint_kind expr_str tainting_fun sensitive_fun loc =
   let tags = Tags.create () in
   Tags.add tags Tags.value expr_str;
-  let description = Format.sprintf
-      "Value %s could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
-      expr_str
-      tainting_fun
-      "and is reaching sensitive function"
-      sensitive_fun
-      (at_line tags loc)
-      sensitive_fun
-      "requires its input to be verified or sanitized." in
+  let description =
+    match taint_kind with
+    | Sil.UnverifiedSSLSocket ->
+        Format.sprintf
+          "The hostname of SSL socket `%s` (returned from %s) has not been verified! Reading from the socket via the call to %s %s is dangerous. You should verify the hostname of the socket using a HostnameVerifier before reading; otherwise, you may be vulnerable to a man-in-the-middle attack."
+          expr_str
+          (format_method tainting_fun)
+          (format_method sensitive_fun)
+          (at_line tags loc)
+    | Sil.SharedPreferencesData ->
+        Format.sprintf
+          "`%s` holds sensitive data read from a SharedPreferences object (via call to %s). This data may leak via the call to %s %s."
+          expr_str
+          (format_method tainting_fun)
+          (format_method sensitive_fun)
+          (at_line tags loc)
+    | Sil.Unknown ->
+        Format.sprintf
+          "Value `%s` could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
+          expr_str
+          (format_method tainting_fun)
+          "and is reaching sensitive function"
+          (format_method sensitive_fun)
+          (at_line tags loc)
+          (format_method sensitive_fun)
+          "requires its input to be verified or sanitized." in
   { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_uninitialized_dangling_pointer_deref deref expr_str loc =

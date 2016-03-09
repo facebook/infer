@@ -111,7 +111,7 @@ val explain_unary_minus_applied_to_unsigned_expression :
 
 (** Explain a tainted value error *)
 val explain_tainted_value_reaching_sensitive_function :
-  Sil.exp -> Sil.taint_info -> Procname.t -> Location.t -> Localise.error_desc
+  Prop.normal Prop.t -> Sil.exp -> Sil.taint_info -> Procname.t -> Location.t -> Localise.error_desc
 
 (** Produce a description of a leak by looking at the current state.
     If the current instruction is a variable nullify, blame the variable.

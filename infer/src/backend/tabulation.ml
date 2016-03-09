@@ -851,7 +851,8 @@ let inconsistent_actualpre_missing actual_pre split_opt =
 
 (* perform the taint analysis check by comparing the taint atoms in [calling_pi] with the untaint
    atoms required by the [missing_pi] computed during abduction *)
-let do_taint_check caller_pname callee_pname calling_pi missing_pi sub =
+let do_taint_check caller_pname callee_pname calling_prop missing_pi sub =
+  let calling_pi = Prop.get_pi calling_prop in
   (* get a version of [missing_pi] whose var names match the names in calling pi *)
   let missing_pi_sub = Prop.pi_sub sub missing_pi in
   let combined_pi = calling_pi @ missing_pi_sub in
@@ -879,8 +880,13 @@ let do_taint_check caller_pname callee_pname calling_pi missing_pi sub =
       let taint_info = match Prop.atom_get_exp_attribute taint_atom with
         | Some (_, Sil.Ataint taint_info) -> taint_info
         | _ -> failwith "Expected to get taint attr on atom" in
-      let err_desc = Errdesc.explain_tainted_value_reaching_sensitive_function e taint_info
-          callee_pname (State.get_loc ()) in
+      let err_desc =
+        Errdesc.explain_tainted_value_reaching_sensitive_function
+          calling_prop
+          e
+          taint_info
+          callee_pname
+          (State.get_loc ()) in
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, __POS__) in
@@ -947,7 +953,7 @@ let exe_spec
       let do_split () =
         let missing_pi' =
           if !Config.taint_analysis then
-            do_taint_check caller_pname callee_pname (Prop.get_pi actual_pre) missing_pi sub2
+            do_taint_check caller_pname callee_pname actual_pre missing_pi sub2
           else missing_pi in
         process_splitting actual_pre sub1 sub2 frame missing_pi' missing_sigma frame_fld missing_fld frame_typ missing_typ in
       let report_valid_res split =

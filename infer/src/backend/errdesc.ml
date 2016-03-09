@@ -871,7 +871,8 @@ let explain_nth_function_parameter use_buckets deref_str prop n pvar_off =
 let find_pvar_with_exp prop exp =
   let res = ref None in
   let found_in_pvar pv =
-    res := Some (pv, Fpvar) in
+    if not (Sil.pvar_is_abducted pv) && not (Sil.pvar_is_this pv) then
+      res := Some (pv, Fpvar) in
   let found_in_struct pv fld_lst = (* found_in_pvar has priority *)
     if !res = None then res := Some (pv, Fstruct (IList.rev fld_lst)) in
   let rec search_struct pv fld_lst = function
@@ -956,18 +957,25 @@ let explain_retain_cycle prop cycle loc dotty_str =
   Localise.desc_retain_cycle prop cycle loc dotty_str
 
 (** Explain a tainted value error *)
-let explain_tainted_value_reaching_sensitive_function e { Sil.taint_source } sensitive_fun loc =
+let explain_tainted_value_reaching_sensitive_function
+    prop e { Sil.taint_source; taint_kind } sensitive_fun loc =
   let var_desc =
     match e with
     | Sil.Lvar pv -> Sil.pvar_to_string pv
-    | exp ->
+    | _ ->
         begin
-          match exp_rv_dexp (State.get_node ()) exp with
-          | Some dexp -> Sil.dexp_to_string dexp
-          | None -> Sil.exp_to_string exp
+          match find_pvar_with_exp prop e with
+          | Some (pvar, pvar_off) ->
+              let dexp = dexp_apply_pvar_off (Sil.Dpvar pvar) pvar_off in
+              Sil.dexp_to_string dexp
+          | None -> Sil.exp_to_string e
         end in
-  Localise.desc_tainted_value_reaching_sensitive_function var_desc
-    (Procname.to_string taint_source) (Procname.to_string sensitive_fun) loc
+  Localise.desc_tainted_value_reaching_sensitive_function
+    taint_kind
+    var_desc
+    taint_source
+    sensitive_fun
+    loc
 
 (** explain a return statement missing *)
 let explain_return_statement_missing loc =

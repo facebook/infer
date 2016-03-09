@@ -1359,8 +1359,12 @@ and check_untainted exp caller_pname callee_pname prop =
   match Prop.get_taint_attribute prop exp with
   | Some (Sil.Ataint source_pname) ->
       let err_desc =
-        Errdesc.explain_tainted_value_reaching_sensitive_function exp source_pname
-          callee_pname (State.get_loc ()) in
+        Errdesc.explain_tainted_value_reaching_sensitive_function
+          prop
+          exp
+          source_pname
+          callee_pname
+          (State.get_loc ()) in
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, __POS__) in
