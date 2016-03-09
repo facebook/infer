@@ -19,14 +19,14 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
   - [Memory leak](/docs/infer-bug-types.html#MEMORY_LEAK)
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
-  - [Parameter not null checked](/docs/infer-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
-  - [Ivar not null checked](/docs/infer-bug-types.html#IVAR_NOT_NULL_CHECKED)
   - [Premature nil termination argument](/docs/infer-bug-types.html#PREMATURE_NIL_TERMINATION_ARGUMENT)
 
 - Bugs reported only in Objective-C
   - [Retain cycle](/docs/infer-bug-types.html#RETAIN_CYCLE)
   - [Bad pointer comparison](/docs/infer-bug-types.html#BAD_POINTER_COMPARISON)
   - [Direct atomic property access](/docs/infer-bug-types.html#DIRECT_ATOMIC_PROPERTY_ACCESS)
+  - [Ivar not null checked](/docs/infer-bug-types.html#IVAR_NOT_NULL_CHECKED)
+  - [Parameter not null checked](/docs/infer-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
   - [Strong delegate warning](/docs/infer-bug-types.html#STRONG_DELEGATE_WARNING)
   - [C++ reference captured in Objective-C block](/docs/infer-bug-types.html#CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK)
 
