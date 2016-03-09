@@ -140,21 +140,21 @@ $$
 Notice that this satisfy the (Function Call) requirement to correctly make the call.
 So let's add that information in the pre, and while we are at it
 record the information in the post of the first statement that comes from (spec).
-<center>
+
 \\( \lbrace r1 \mapsto open  \rbrace \\)  
 \\( closeResource(r1) \\)  
 \\( \lbrace r1 \mapsto closed \rbrace \\)  
 \\( closeResource(r2) \\)
-</center>
+
 Now, let's move to the second statement. Its precondition \\(r1 \mapsto closed\\) in the partial symbolic execution trace just given
 does not have the information needed by \\(closeResource(r2)\\), so we can fill that in and continue by
 putting \\(r2 \mapsto open\\) in the pre. While we are at it we can thread this assertion back to the beginning.
-<center>
+
 \\( \lbrace r1 \mapsto open * r2 \mapsto open  \rbrace \\)  
 \\( closeResource(r1) \\)  
 \\( \lbrace r1 \mapsto closed * r2 \mapsto open\rbrace \\)  
 \\( closeResource(r2) \\)
-</center>
+
 This information on what to thread backwards can be obtained as the antiframe part of the bi-abduction question
 $$
 r1 \mapsto closed * ?antiframe \vdash r2 \mapsto open * ?frame
@@ -163,14 +163,14 @@ where the solution picks
 \\(antiframe = r2 \mapsto open\\) and \\(frame = r1 \mapsto closed\\).
 Note that the antiframe is precisely the information missing from the precondition in order for \\(closeResource(r2)\\) to proceed. On the other hand, the frame \\(r1 \mapsto closed\\) is the portion of state not changed by \\(closeResource(r2)\\);
 we can thread that through to the overall postconditon 
-( as justified by the frame rule), giving us
-<center>
+(as justified by the frame rule), giving us
+
 \\( \lbrace r1 \mapsto open * r2 \mapsto open  \rbrace \\)  
 \\( closeResource(r1) \\)  
 \\( \lbrace r1 \mapsto closed * r2 \mapsto open\rbrace \\)  
 \\( closeResource(r2) \\)  
 \\( \lbrace r1 \mapsto closed * r2 \mapsto closed \rbrace\\)
-</center>
+
 Thus, we have obtained a pre and post for this code by symbolically executing it, using bi-abduction
 to discover preconditions (abduction of antiframes) as well as untouched portions of memory (frames) as we go along.
 
