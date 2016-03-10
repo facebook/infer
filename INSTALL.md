@@ -1,18 +1,14 @@
-# How to compile and install Infer
+# How to install Infer from source
 
-## Pre-compiled versions
+## Pre-compiled clang versions
 
 We provide a source release of Infer packaged with pre-build binaries
 for clang and facebook-clang-plugins for Linux and MacOS. We encourage
 you to use this release as compiling clang is time-consuming. Install
 the dependencies as explained in the next section, then follow the
-instructions in [Infer's getting-started
-page](http://fbinfer.com/docs/getting-started.html) to compile and
-install Infer.
-
-Alternatively, we also provide a docker image in the docker/
-directory. Simply go to that directory and run `./run.sh` to get
-started with a working installation of Infer.
+instructions in our [Getting
+Started](http://fbinfer.com/docs/getting-started.html#install-from-source)
+page to compile and install Infer.
 
 
 ## Infer dependencies for MacOSX
