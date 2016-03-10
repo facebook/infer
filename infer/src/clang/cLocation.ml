@@ -74,6 +74,12 @@ let clang_to_sil_location clang_loc procdesc_opt =
         | None -> !curr_file, !Config.nLOC in
   Location.{line; col; file; nLOC}
 
+(* We translate by default the instructions in the current file.*)
+(* In C++ development, we also translate the headers that are part *)
+(* of the project. However, in testing mode, we don't want to translate *)
+(* the headers because the dot files in the frontend tests should contain nothing *)
+(* else than the source file to avoid conflicts between different versions of the *)
+(* libraries in the CI *)
 let should_translate (loc_start, loc_end) =
   let map_path_of pred loc =
     match loc.Clang_ast_t.sl_file with
@@ -96,14 +102,11 @@ let should_translate (loc_start, loc_end) =
   equal_current_source !curr_file
   || map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
-  || (!CFrontend_config.testing_mode && file_in_project)
+  || (!CFrontend_config.cxx_experimental && file_in_project
+      && not (!CFrontend_config.testing_mode))
 
 let should_translate_lib source_range =
   not !CFrontend_config.no_translate_libs
-  || should_translate source_range
-
-let should_translate_enum source_range =
-  not !CFrontend_config.testing_mode
   || should_translate source_range
 
 let get_sil_location_from_range source_range prefer_first =

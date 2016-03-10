@@ -243,7 +243,8 @@ public class InferRunner {
       boolean analyze,
       @Nullable String isysroot,
       @Nullable String ml_buckets,
-      boolean arc) {
+      boolean arc,
+      boolean headers) {
     File resultsDir = createResultsDir(folder);
     String resultsDirName = resultsDir.getAbsolutePath();
     InferRunner.bugsFile = new File(resultsDir, BUGS_FILE_NAME);
@@ -254,6 +255,10 @@ public class InferRunner {
       analyzeOption
           .add("--analyzer")
           .add("capture");
+    }
+    if (headers) {
+      analyzeOption
+          .add("--headers");
     }
     ImmutableList.Builder<String> ml_bucketsOption =
         new ImmutableList.Builder<>();
@@ -267,12 +272,32 @@ public class InferRunner {
         .add("--out")
         .add(resultsDirName)
         .add("--testing_mode")
+        .add("--cxx")
         .addAll(analyzeOption.build())
         .addAll(ml_bucketsOption.build())
         .add("--")
         .addAll(createClangCommand(sourceFile, lang, isysroot, arc))
         .build();
     return inferCmd;
+  }
+
+  public static ImmutableList<String> createClangInferCommand(
+      TemporaryFolder folder,
+      String sourceFile,
+      Language lang,
+      boolean analyze,
+      @Nullable String isysroot,
+      @Nullable String ml_buckets,
+      boolean arc) {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        lang,
+        analyze,
+        isysroot,
+        ml_buckets,
+        arc,
+        false);
   }
 
   public static ImmutableList<String> createCInferCommandFrontend(
@@ -364,6 +389,20 @@ public class InferRunner {
         null,
         null,
         false);
+  }
+
+  public static ImmutableList<String> createCPPInferCommandIncludeHeaders(
+      TemporaryFolder folder,
+      String sourceFile) {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        Language.CPP,
+        true,
+        null,
+        null,
+        false,
+        true);
   }
 
   public static ImmutableList<String> createCPPInferCommandWithMLBuckets(

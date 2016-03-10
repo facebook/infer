@@ -52,8 +52,8 @@ let arg_desc =
       "-testing_mode",
       Arg.Unit (fun _ -> CFrontend_config.testing_mode := true),
       None,
-      "Mode for testing, where no libraries are translated, \
-       including enums defined in the libraries"
+      "Mode for testing, where no headers are translated, \
+       and dot files are created"
       ;
       "-debug",
       Arg.Unit (fun _ -> CFrontend_config.debug_mode := true),
@@ -80,6 +80,11 @@ let arg_desc =
       Arg.Unit (fun _ -> CFrontend_config.models_mode := true),
       None,
       "Mode for computing the models"
+      ;
+      "-cxx-experimental",
+      Arg.Unit (fun _ -> CFrontend_config.cxx_experimental := true),
+      None,
+      "Analyze C++ methods, still experimental"
       ;
     ] in
   Arg.create_options_desc false "Parsing Options" desc

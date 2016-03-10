@@ -13,6 +13,8 @@ let no_translate_libs = ref true
 
 let testing_mode = ref false
 
+let cxx_experimental = ref false
+
 let array_with_objects_count_m = "arrayWithObjects:count:"
 
 let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"

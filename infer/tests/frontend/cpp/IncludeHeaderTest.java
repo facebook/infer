@@ -26,7 +26,7 @@ public class IncludeHeaderTest {
   public DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
 
   void frontendTest(String fileRelative) throws InterruptedException, IOException, InferException {
-    ClangFrontendUtils.createAndCompareCppDotFiles(folder, basePath + fileRelative);
+    ClangFrontendUtils.createAndCompareCppDotFilesIncludeHeaders(folder, basePath + fileRelative);
   }
 
   @Test

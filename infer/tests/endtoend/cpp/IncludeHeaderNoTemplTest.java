@@ -42,7 +42,7 @@ public class IncludeHeaderNoTemplTest {
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createCPPInferCommand(folder, FILE);
+    inferCmd = InferRunner.createCPPInferCommandIncludeHeaders(folder, FILE);
   }
 
   @Test

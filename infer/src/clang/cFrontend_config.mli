@@ -39,6 +39,8 @@ val no_translate_libs : bool ref
 
 val testing_mode : bool ref
 
+val cxx_experimental : bool ref
+
 (** constants *)
 
 val json : string ref

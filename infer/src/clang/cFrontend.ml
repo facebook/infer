@@ -79,7 +79,7 @@ let rec translate_one_declaration tenv cg cfg parent_dec dec =
           | Some (ClassTemplateSpecializationDecl _ as d) ->
               let class_name = CTypes_decl.get_record_name d in
               let curr_class = CContext.ContextCls(class_name, None, []) in
-              if !CFrontend_config.testing_mode then
+              if !CFrontend_config.cxx_experimental then
                 CMethod_declImpl.process_methods tenv cg cfg curr_class [dec]
           | Some dec -> Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)
           | None -> ())

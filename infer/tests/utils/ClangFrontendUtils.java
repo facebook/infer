@@ -22,20 +22,36 @@ import utils.InferException;
 import utils.InferRunner;
 
 public class ClangFrontendUtils {
-  public static void createAndCompareCppDotFiles(DebuggableTemporaryFolder folder, String pathToSrcFile)
+  public static void createAndCompareCppDotFiles (
+      DebuggableTemporaryFolder folder,
+      String pathToSrcFile,
+      boolean headers)
       throws InterruptedException, IOException, InferException {
 
     String test_src = pathToSrcFile;
     String test_dotty = pathToSrcFile + ".dot";
-    ImmutableList<String> inferCmd =
-        InferRunner.createCPPInferCommandFrontend(
-            folder,
-            test_src);
+    ImmutableList<String> inferCmd;
+    if (headers)
+      inferCmd = InferRunner.createCPPInferCommandIncludeHeaders(folder, test_src);
+    else
+      inferCmd = InferRunner.createCPPInferCommandFrontend(folder, test_src);
     File newDotFile = InferRunner.runInferFrontend(inferCmd);
     assertThat(
         "In the capture of " + test_src +
             " the dotty files should be the same.",
         newDotFile, dotFileEqualTo(test_dotty));
+  }
+
+  public static void createAndCompareCppDotFiles(DebuggableTemporaryFolder folder,
+  String pathToSrcFile)
+      throws InterruptedException, IOException, InferException {
+    createAndCompareCppDotFiles(folder, pathToSrcFile, false);
+  }
+
+  public static void createAndCompareCppDotFilesIncludeHeaders(DebuggableTemporaryFolder folder,
+      String pathToSrcFile)
+      throws InterruptedException, IOException, InferException {
+    createAndCompareCppDotFiles(folder, pathToSrcFile, true);
   }
 
   public static void createAndCompareCDotFiles(DebuggableTemporaryFolder folder, String pathToSrcFile)

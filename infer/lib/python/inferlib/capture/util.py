@@ -100,8 +100,12 @@ def clang_frontend_argparser(description, module_name):
             '-tm', '--testing_mode',
             dest='testing_mode',
             action='store_true',
-            help='Testing mode for the translation: Do not translate libraries'
-                 ' (including enums)')
+            help='Testing mode for the translation: Do not translate headers')
+        group.add_argument(
+            '--cxx',
+            dest='cxx',
+            action='store_true',
+            help='Analyze C++ methods, still experimental')
         group.add_argument(
             '-fs', '--frontend-stats',
             dest='frontend_stats',
@@ -132,6 +136,8 @@ def get_clang_frontend_envvars(args):
         frontend_args += ['-project_root', args.project_root]
     if args.testing_mode:
         frontend_args.append('-testing_mode')
+    if args.cxx:
+        frontend_args.append('-cxx-experimental')
     if args.frontend_debug:
         frontend_args += ['-debug']
         env_vars['FCP_DEBUG_MODE'] = '1'
