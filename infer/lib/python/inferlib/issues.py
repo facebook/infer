@@ -214,7 +214,9 @@ def _text_of_report_list(reports, formatter=colorize.TERMINAL_FORMATTER):
     n_issues = len(text_errors_list)
     if n_issues == 0:
         if formatter == colorize.TERMINAL_FORMATTER:
-            return colorize.logo(formatter)
+            out = colorize.color('  No issues found  ',
+                                 colorize.SUCCESS, formatter)
+            return out + '\n'
         else:
             return 'No issues found'
 
