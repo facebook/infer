@@ -1,0 +1,51 @@
+digraph iCFG {
+13 [label="13:  DeclStmt \n   *&t:int *=0 [line 24]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12:  Call _fun_destroy<int *> \n   n$0=_fun_destroy<int *>(&t:int **) [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&t,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11: Exit test \n  " color=yellow style=filled]
+	
+
+10 [label="10: Start test\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 23]\n " color=yellow style=filled]
+	
+
+	 10 -> 13 ;
+9 [label="9:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 19]\n " shape="box"]
+	
+
+	 9 -> 8 ;
+8 [label="8:  Return Stmt \n   *&return:int =0 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit destroy<int *> \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start destroy<int *>\nFormals:  ptr:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&ptr,false); [line 18]\n " color=yellow style=filled]
+	
+
+	 6 -> 9 ;
+5 [label="5:  DeclStmt \n   n$1=*&p:int * [line 12]\n  n$2=*n$1:int  [line 12]\n  *&x:int =n$2 [line 12]\n  REMOVE_TEMPS(n$1,n$2); [line 12]\n  NULLIFY(&p,false); [line 12]\n " shape="box"]
+	
+
+	 5 -> 4 ;
+4 [label="4:  Call _fun___infer_skip_function \n   _fun___infer_skip_function() [line 13]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 14]\n  *&return:int =n$0 [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&x,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit f \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start f\nFormals:  p:int *\nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 11]\n  NULLIFY(&x,false); [line 11]\n " color=yellow style=filled]
+	
+
+	 1 -> 5 ;
+}

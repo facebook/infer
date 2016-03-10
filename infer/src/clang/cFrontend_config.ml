@@ -172,3 +172,5 @@ let block = "block"
 let atomic_att = "<\"Atomic\">"
 
 let infer_skip_gcc_ast_stmt = "__infer_skip_gcc_ast_stmt"
+
+let infer_skip_fun = "__infer_skip_function"

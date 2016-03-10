@@ -167,3 +167,5 @@ val block : string
 val atomic_att : string
 
 val infer_skip_gcc_ast_stmt : string
+
+val infer_skip_fun : string

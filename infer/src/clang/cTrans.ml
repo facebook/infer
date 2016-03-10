@@ -2014,6 +2014,10 @@ struct
         "GCCAstStmt" stmt_info all_res_trans in
     { res_trans_to_parent with exps = res_trans_call.exps }
 
+  and cxxPseudoDestructorExpr_trans () =
+    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
+    { empty_res_trans with exps = [(Sil.Const (Sil.Cfun fun_name), Sil.Tvoid)] }
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2278,6 +2282,9 @@ struct
 
     | GCCAsmStmt (stmt_info, stmts) ->
         gccAstStmt_trans trans_state stmt_info stmts
+
+    | CXXPseudoDestructorExpr _ ->
+        cxxPseudoDestructorExpr_trans ()
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
