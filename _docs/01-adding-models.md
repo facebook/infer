@@ -201,21 +201,21 @@ To create a model for `getStatus()`, we need to add a class with the name and th
 
 - create a file `infer/models/java/src/infer/models/Server.java` with the following content:
 
-    ```Java
-    package infer.models;
-    
-    import com.facebook.infer.models.InferBuiltins;
-    import com.facebook.infer.models.InferUndefined;
-    
-    public class Server {
-    
-      public int getStatus() {
-        int status = InferUndefined.int_undefined();
-        InferBuiltins.assume(status >= 0 && status < 3);
-        return status;
-      }
-    }
-    ```
+```Java
+package infer.models;
+
+import com.facebook.infer.models.InferBuiltins;
+import com.facebook.infer.models.InferUndefined;
+
+public class Server {
+
+  public int getStatus() {
+    int status = InferUndefined.int_undefined();
+    InferBuiltins.assume(status >= 0 && status < 3);
+    return status;
+  }
+}
+```
 
 - recompile infer:
 
