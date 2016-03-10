@@ -8,19 +8,37 @@ section_order: 00
 order: 01
 ---
 
-## Dependencies
+## Install Infer on Mac
 
-To use infer, first you need to [install the dependencies](https://github.com/facebook/infer/blob/master/INSTALL.md#install-the-dependencies).
+You'll need [Homebrew](http://brew.sh/). Simply type this into a terminal:
 
-## Get the latest Infer release
+```sh
+brew install infer
+```
 
-We provide a source release of Infer packaged with pre-built binaries for clang and facebook-clang-plugins for Linux and MacOS. Download the latest release from GitHub [here](https://github.com/facebook/infer/releases/latest/).
+## Install Infer on Linux
 
-## Compile and install Infer
+The easiest way is via [Docker](https://docs.docker.com/engine/installation/):
 
-```bash
-tar xf infer-*-v0.7.0.tar.xz
-cd infer-*-v0.7.0
+```sh
+wget -O Dockerfile https://raw.githubusercontent.com/facebook/infer/master/docker/Dockerfile
+wget -O run.sh https://raw.githubusercontent.com/facebook/infer/master/docker/run.sh
+sh run.sh
+```
+
+## Try Infer in your browser
+
+Try Infer on a small example on [Codeboard](https://codeboard.io/projects/11587?view=2.1-21.0-22.0).
+
+## Install from source
+
+We recommend that you start from our latest [GitHub release](https://github.com/facebook/infer/releases/latest), which contains a pre-compiled version of clang, used for our C/Objective-C analyzers.
+
+You'll need to first install the [build dependencies](https://github.com/facebook/infer/blob/master/INSTALL.md#pre-compiled-versions), then run the following commands:
+
+```sh
+tar xf infer-<release>.tar.xz
+cd infer-<release>/
 ./build-infer.sh
 export PATH=`pwd`/infer/bin:$PATH
 ```
