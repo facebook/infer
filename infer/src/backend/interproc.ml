@@ -1280,7 +1280,7 @@ let interprocedural_algorithm exe_env : unit =
   let process_one_proc proc_name =
     match to_analyze proc_name with
     | Some pdesc ->
-        Ondemand.do_analysis ~propagate_exceptions:false pdesc proc_name
+        Ondemand.analyze_proc_name ~propagate_exceptions:false pdesc proc_name
     | None ->
         () in
   IList.iter process_one_proc procs_to_analyze
@@ -1323,20 +1323,17 @@ let do_analysis exe_env =
     let get_proc_desc proc_name =
       let callee_cfg = Exe_env.get_cfg exe_env proc_name in
       Cfg.Procdesc.find_from_name callee_cfg proc_name in
-    let analyze_ondemand proc_name =
-      match get_proc_desc proc_name with
-      | Some proc_desc ->
-          let summaryfp =
-            run_in_footprint_mode (analyze_proc exe_env) proc_desc in
-          Specs.add_summary proc_name summaryfp;
+    let analyze_ondemand proc_desc =
+      let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+      let summaryfp =
+        run_in_footprint_mode (analyze_proc exe_env) proc_desc in
+      Specs.add_summary proc_name summaryfp;
 
-          perform_transition exe_env proc_name;
+      perform_transition exe_env proc_name;
 
-          let summaryre =
-            run_in_re_execution_mode (analyze_proc exe_env) proc_desc in
-          Specs.add_summary proc_name summaryre
-      | None ->
-          () in
+      let summaryre =
+        run_in_re_execution_mode (analyze_proc exe_env) proc_desc in
+      Specs.add_summary proc_name summaryre in
     {
       Ondemand.analyze_ondemand;
       get_cfg;

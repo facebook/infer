@@ -556,7 +556,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
       typestate (* skip othe builtins *)
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _etl, loc, cflags)
     when Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname <> None ->
-      Ondemand.do_analysis ~propagate_exceptions:true curr_pdesc callee_pname;
+      Ondemand.analyze_proc_name ~propagate_exceptions:true curr_pdesc callee_pname;
       let callee_attributes =
         match Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname with
         | Some proc_attributes -> proc_attributes

@@ -317,4 +317,5 @@ val remove_seed_captured_vars_block : Mangled.t list -> Prop.normal Prop.t -> Pr
     (name, typ) where name is a parameter. The resulting procedure CFG is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types *)
-val specialize_types : cfg -> Procname.t -> Procname.t -> (Sil.exp * Sil.typ) list -> unit
+val specialize_types :
+  cfg -> Procname.t -> Procname.t -> (Sil.exp * Sil.typ) list -> Procdesc.t option

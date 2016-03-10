@@ -159,7 +159,7 @@ let collect_calls tenv caller_pdesc checked_pnames call_summary (pname, _) =
   if Procname.Set.mem pname !checked_pnames then call_summary
   else
     begin
-      Ondemand.do_analysis ~propagate_exceptions:true caller_pdesc pname;
+      Ondemand.analyze_proc_name ~propagate_exceptions:true caller_pdesc pname;
       checked_pnames := Procname.Set.add pname !checked_pnames;
       let call_loc = lookup_location pname in
       let updated_expensive_calls =
@@ -317,10 +317,8 @@ let check_one_procedure tenv pname pdesc =
 let callback_performance_checker
     { Callbacks.get_cfg; get_proc_desc; proc_desc; proc_name; tenv } =
   let callbacks =
-    let analyze_ondemand pn =
-      match get_proc_desc pn with
-      | None -> ()
-      | Some pd -> check_one_procedure tenv pn pd in
+    let analyze_ondemand pdesc =
+      check_one_procedure tenv (Cfg.Procdesc.get_proc_name pdesc) pdesc in
     {
       Ondemand.analyze_ondemand;
       get_cfg;

@@ -12,7 +12,7 @@
 (** Optional set of source dirs to analyze in on-demand mode. *)
 val dirs_to_analyze : StringSet.t option Lazy.t
 
-type analyze_ondemand = Procname.t -> unit
+type analyze_ondemand = Cfg.Procdesc.t -> unit
 
 type get_cfg = Procname.t -> Cfg.cfg option
 
@@ -28,10 +28,15 @@ type callbacks =
 (** Find a cfg for the procedure, perhaps loading it from disk. *)
 val get_cfg : get_cfg
 
-(** do_analysis curr_pdesc proc_name
+(** analyze_proc_desc curr_pdesc callee_pdesc
+    performs an on-demand analysis of callee_pdesc
+    triggered during the analysis of curr_pdesc. *)
+val analyze_proc_desc : propagate_exceptions:bool -> Cfg.Procdesc.t -> Cfg.Procdesc.t -> unit
+
+(** analyze_proc_name curr_pdesc proc_name
     performs an on-demand analysis of proc_name
-    triggered during the analysis of curr_pname. *)
-val do_analysis : propagate_exceptions:bool -> Cfg.Procdesc.t -> Procname.t -> unit
+    triggered during the analysis of curr_pdesc. *)
+val analyze_proc_name : propagate_exceptions:bool -> Cfg.Procdesc.t -> Procname.t -> unit
 
 (** Check if the procedure called needs to be analyzed. *)
 val procedure_should_be_analyzed : Procname.t -> bool

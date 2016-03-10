@@ -394,16 +394,13 @@ let callback_eradicate
       check_ret_type = [];
     } in
   let callbacks =
-    let analyze_ondemand pname =
-      match get_proc_desc pname with
-      | None -> ()
-      | Some pdesc ->
-          let idenv_pname = Idenv.create_from_idenv idenv pdesc in
-          Main.callback checks
-            { callback_args with
-              Callbacks.idenv = idenv_pname;
-              proc_name = pname;
-              proc_desc = pdesc; } in
+    let analyze_ondemand pdesc =
+      let idenv_pname = Idenv.create_from_idenv idenv pdesc in
+      Main.callback checks
+        { callback_args with
+          Callbacks.idenv = idenv_pname;
+          proc_name = (Cfg.Procdesc.get_proc_name pdesc);
+          proc_desc = pdesc; } in
     {
       Ondemand.analyze_ondemand;
       get_cfg;

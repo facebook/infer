@@ -701,7 +701,7 @@ module Node = struct
               new_node in
           converted_node :: (loop other_node) in
     ignore (loop [callee_start_node]);
-    pdesc_tbl_add cfg resolved_proc_name resolved_proc_desc
+    resolved_proc_desc
 
 end
 (* =============== END of module Node =============== *)
@@ -1151,30 +1151,21 @@ let specialize_types caller_cfg callee_proc_name resolved_proc_name args =
   (** TODO (#9333890): This currently only works when the callee is defined in the same file.
       Add support to search for the callee procedure description in the execution environment *)
   match Procdesc.find_from_name caller_cfg resolved_proc_name with
-  | Some _ -> ()
+  | Some pdesc -> Some pdesc
   | None ->
-      begin
-        match Procdesc.find_from_name caller_cfg callee_proc_name with
-        | None -> ()
-        | Some callee_proc_desc ->
-            let callee_attributes = Procdesc.get_attributes callee_proc_desc in
-            let resolved_formals =
-              IList.fold_left2
-                (fun accu (name, _) (_, arg_typ) -> (name, arg_typ) :: accu)
-                [] callee_attributes.ProcAttributes.formals args |> IList.rev in
-            let resolved_attributes =
-              { callee_attributes with
-                ProcAttributes.formals = resolved_formals;
-                proc_name = resolved_proc_name;
-              } in
-            AttributesTable.store_attributes resolved_attributes;
-            Procdesc.specialize_types
-              caller_cfg callee_proc_desc resolved_attributes resolved_formals;
-            begin
-              let source_file = resolved_attributes.ProcAttributes.loc.Location.file in
-              let source_dir = DB.source_dir_from_source_file source_file in
-              let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
-              let save_sources = false in
-              store_cfg_to_file cfg_file save_sources caller_cfg
-            end
-      end
+      Option.map
+        (fun callee_proc_desc ->
+           let callee_attributes = Procdesc.get_attributes callee_proc_desc in
+           let resolved_formals =
+             IList.fold_left2
+               (fun accu (name, _) (_, arg_typ) -> (name, arg_typ) :: accu)
+               [] callee_attributes.ProcAttributes.formals args |> IList.rev in
+           let resolved_attributes =
+             { callee_attributes with
+               ProcAttributes.formals = resolved_formals;
+               proc_name = resolved_proc_name;
+             } in
+           AttributesTable.store_attributes resolved_attributes;
+           Procdesc.specialize_types
+             caller_cfg callee_proc_desc resolved_attributes resolved_formals)
+        (Procdesc.find_from_name caller_cfg callee_proc_name)
