@@ -1,0 +1,13 @@
+digraph iCFG {
+3 [label="3:  Call _fun_Person_~Person \n   n$0=*&p:class Person * [line 15]\n  n$1=*n$0:class Person  [line 15]\n  _fun_Person_~Person(n$0:class Person *) [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  NULLIFY(&p,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit f \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start f\nFormals:  p:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

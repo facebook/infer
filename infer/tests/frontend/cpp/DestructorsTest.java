@@ -46,4 +46,10 @@ public class DestructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("pseudo_destructor_expr.cpp");
   }
+
+  @Test
+  public void testCallOnCallDestructorDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("call_destructor.cpp");
+  }
 }

@@ -597,7 +597,7 @@ struct
     | `Var | `ImplicitParam | `ParmVar -> var_deref_trans trans_state stmt_info decl_ref
     | `Field | `ObjCIvar ->
         field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init
-    | `CXXMethod | `CXXConversion | `CXXConstructor ->
+    | `CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor  ->
         method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind
     | _ ->
         let print_error decl_kind =
