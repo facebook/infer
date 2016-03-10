@@ -194,7 +194,7 @@ let do_meet_pre pset =
     Propset.to_proplist pset
 
 (** Find the preconditions in the current spec table, apply meet then join, and return the joined preconditions *)
-let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list =
+let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
   let collect_do_abstract_one tenv prop =
     if !Config.footprint
     then
@@ -203,7 +203,10 @@ let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list 
         prop
     else
       Abs.abstract_no_symop tenv prop in
-  let pres = IList.map (fun spec -> Specs.Jprop.to_prop spec.Specs.pre) (Specs.get_specs proc_name) in
+  let pres =
+    IList.map
+      (fun spec -> Specs.Jprop.to_prop spec.Specs.pre)
+      (Specs.get_specs proc_name) in
   let pset = Propset.from_proplist pres in
   let pset' =
     let f p = Prop.prop_normal_vars_to_primed_vars p in
@@ -212,10 +215,11 @@ let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list 
   L.d_strln ("#### Extracted footprint of " ^ Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Propset.d Prop.prop_emp pset'; L.d_decrease_indent 1; L.d_ln ();
   L.d_ln ();
-  let pset'' = collect_do_abstract_pre pname tenv pset' in
+  let pset'' = collect_do_abstract_pre proc_name tenv pset' in
   let plist_meet = do_meet_pre pset'' in
   L.d_strln ("#### Footprint of " ^ Procname.to_string proc_name ^ " after Meet  ####");
-  L.d_increase_indent 1; Propgraph.d_proplist Prop.prop_emp plist_meet; L.d_decrease_indent 1; L.d_ln ();
+  L.d_increase_indent 1; Propgraph.d_proplist Prop.prop_emp plist_meet;
+  L.d_decrease_indent 1; L.d_ln ();
   L.d_ln ();
   L.d_increase_indent 2; (* Indent for the join output *)
   let jplist = do_join_pre plist_meet in
@@ -226,7 +230,9 @@ let collect_preconditions pname tenv proc_name : Prop.normal Specs.Jprop.t list 
   L.d_strln ("#### Renamed footprint of " ^ Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist'; L.d_decrease_indent 1; L.d_ln ();
   let jplist'' =
-    let f p = Prop.prop_primed_vars_to_normal_vars (collect_do_abstract_one pname tenv p) in
+    let f p =
+      Prop.prop_primed_vars_to_normal_vars
+        (collect_do_abstract_one proc_name tenv p) in
     IList.map (Specs.Jprop.map f) jplist' in
   L.d_strln ("#### Abstracted footprint of " ^ Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist''; L.d_decrease_indent 1; L.d_ln();
@@ -1217,14 +1223,13 @@ let transition_footprint_re_exe proc_name joined_pres =
 
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
     the procedures enabled after the analysis of [proc_name] *)
-let perform_transition exe_env proc_name =
-  let transition pname =
-    let tenv = Exe_env.get_tenv exe_env pname in
+let perform_transition exe_env tenv proc_name =
+  let transition () =
     let joined_pres = (* disable exceptions for leaks and protect against any other errors *)
       let allowleak = !Config.allowleak in
       let apply_start_node f = (* apply the start node to f, and do nothing in case of exception *)
         try
-          match Cfg.Procdesc.find_from_name (Exe_env.get_cfg exe_env pname) pname with
+          match Exe_env.get_proc_desc exe_env proc_name with
           | Some pdesc ->
               let start_node = Cfg.Procdesc.get_start_node pdesc in
               f start_node
@@ -1233,7 +1238,7 @@ let perform_transition exe_env proc_name =
       apply_start_node (do_before_node 0);
       try
         Config.allowleak := true;
-        let res = collect_preconditions proc_name tenv pname in
+        let res = collect_preconditions tenv proc_name in
         Config.allowleak := allowleak;
         apply_start_node do_after_node;
         res
@@ -1245,9 +1250,9 @@ let perform_transition exe_env proc_name =
         let err_str = "exception raised " ^ (Localise.to_string err_name) in
         L.err "Error: %s %a@." err_str pp_ml_loc_opt ml_loc_opt;
         [] in
-    transition_footprint_re_exe pname joined_pres in
+    transition_footprint_re_exe proc_name joined_pres in
   if Specs.get_phase proc_name == Specs.FOOTPRINT
-  then transition proc_name
+  then transition ()
 
 
 let interprocedural_algorithm exe_env : unit =
@@ -1258,25 +1263,21 @@ let interprocedural_algorithm exe_env : unit =
   let procs_to_analyze =
     IList.filter filter_initial (Cg.get_defined_nodes call_graph) in
   let to_analyze proc_name =
-    try
-      let cfg = Exe_env.get_cfg exe_env proc_name in
-      match Cfg.Procdesc.find_from_name cfg proc_name with
-      | Some pdesc ->
-          let reactive_changed =
-            if !Config.reactive_mode
-            then (Cfg.Procdesc.get_attributes pdesc).ProcAttributes.changed
-            else true in
-          if
-            reactive_changed && (* in reactive mode, only analyze changed procedures *)
-            Ondemand.procedure_should_be_analyzed proc_name
-          then
-            Some pdesc
-          else
-            None
-      | None ->
+    match Exe_env.get_proc_desc exe_env proc_name with
+    | Some proc_desc ->
+        let reactive_changed =
+          if !Config.reactive_mode
+          then (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.changed
+          else true in
+        if
+          reactive_changed && (* in reactive mode, only analyze changed procedures *)
+          Ondemand.procedure_should_be_analyzed proc_name
+        then
+          Some proc_desc
+        else
           None
-    with Not_found ->
-      None in
+    | None ->
+        None in
   let process_one_proc proc_name =
     match to_analyze proc_name with
     | Some pdesc ->
@@ -1295,10 +1296,11 @@ let do_analysis exe_env =
     Cfg.Procdesc.iter_calls f caller_pdesc;
     IList.rev !calls in
   let init_proc (pname, dep) =
-    let cfg = Exe_env.get_cfg exe_env pname in
-    let pdesc = match Cfg.Procdesc.find_from_name cfg pname with
-      | Some pdesc -> pdesc
-      | None -> assert false in
+    let pdesc = match Exe_env.get_proc_desc exe_env pname with
+      | Some pdesc ->
+          pdesc
+      | None ->
+          assert false in
     let nodes = IList.map (fun n -> Cfg.Node.get_id n) (Cfg.Procdesc.get_nodes pdesc) in
     let proc_flags = Cfg.Procdesc.get_flags pdesc in
     let static_err_log = Cfg.Procdesc.get_err_log pdesc in (** err log from translation *)
@@ -1319,17 +1321,17 @@ let do_analysis exe_env =
 
   let callbacks =
     let get_cfg proc_name =
-      Some (Exe_env.get_cfg exe_env proc_name) in
+      Exe_env.get_cfg exe_env proc_name in
     let get_proc_desc proc_name =
-      let callee_cfg = Exe_env.get_cfg exe_env proc_name in
-      Cfg.Procdesc.find_from_name callee_cfg proc_name in
+      Exe_env.get_proc_desc exe_env proc_name in
     let analyze_ondemand proc_desc =
       let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
+      let tenv = Exe_env.get_tenv exe_env proc_name in
       let summaryfp =
         run_in_footprint_mode (analyze_proc exe_env) proc_desc in
       Specs.add_summary proc_name summaryfp;
 
-      perform_transition exe_env proc_name;
+      perform_transition exe_env tenv proc_name;
 
       let summaryre =
         run_in_re_execution_mode (analyze_proc exe_env) proc_desc in

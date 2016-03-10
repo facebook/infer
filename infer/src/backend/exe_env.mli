@@ -36,7 +36,10 @@ val get_source : t -> Procname.t -> DB.source_file
 val get_tenv : t -> Procname.t -> Sil.tenv
 
 (** return the cfg associated to the procedure *)
-val get_cfg : t -> Procname.t -> Cfg.cfg
+val get_cfg : t -> Procname.t -> Cfg.cfg option
+
+(** return the proc desc associated to the procedure *)
+val get_proc_desc : t -> Procname.t -> Cfg.Procdesc.t option
 
 (** [iter_files f exe_env] applies [f] to the source file and tenv and cfg for each file in [exe_env] *)
 val iter_files : (DB.source_file -> Cfg.cfg -> unit) -> t -> unit

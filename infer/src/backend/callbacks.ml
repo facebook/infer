@@ -45,32 +45,33 @@ let unregister_all_callbacks () =
 
 (** Collect what we need to know about a procedure for the analysis. *)
 let get_procedure_definition exe_env proc_name =
-  let cfg = Exe_env.get_cfg exe_env proc_name in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   Option.map
     (fun proc_desc ->
-       let idenv = Idenv.create cfg proc_desc
+       let idenv = Idenv.create proc_desc
        and language = (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.language in
        (idenv, tenv, proc_name, proc_desc, language))
-    (Cfg.Procdesc.find_from_name cfg proc_name)
+    (Exe_env.get_proc_desc exe_env proc_name)
 
 let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.C_CPP
 
-(** Invoke all registered procedure callbacks on a set of procedures. *)
-let iterate_procedure_callbacks exe_env proc_name =
-  let procedure_language = get_language proc_name in
+(** Invoke all registered procedure callbacks on the given procedure. *)
+let iterate_procedure_callbacks exe_env caller_pname =
+  let procedure_language = get_language caller_pname in
   Config.curr_language := procedure_language;
 
-  let cfg = Exe_env.get_cfg exe_env proc_name in
-  let get_cfg pname =
-    Some (Exe_env.get_cfg exe_env pname) in
-  let get_proc_desc proc_name =
-    let cfg = try Exe_env.get_cfg exe_env proc_name with Not_found -> cfg in
-    Cfg.Procdesc.find_from_name cfg proc_name in
-  let get_procs_in_file proc_name =
-    let cfg = try Exe_env.get_cfg exe_env proc_name with Not_found -> cfg in
-    IList.map Cfg.Procdesc.get_proc_name (Cfg.get_defined_procs cfg) in
+  let get_cfg proc_name =
+    Exe_env.get_cfg exe_env proc_name in
 
+  let get_proc_desc proc_name =
+    Exe_env.get_proc_desc exe_env proc_name in
+
+  let get_procs_in_file proc_name =
+    match Exe_env.get_cfg exe_env proc_name with
+    | Some cfg->
+        IList.map Cfg.Procdesc.get_proc_name (Cfg.get_defined_procs cfg)
+    | None ->
+        [] in
 
   let update_time proc_name elapsed =
     match Specs.get_summary proc_name with
@@ -105,15 +106,11 @@ let iterate_procedure_callbacks exe_env proc_name =
                 update_time proc_name elapsed
               end)
          !procedure_callbacks)
-    (get_procedure_definition exe_env proc_name)
+    (get_procedure_definition exe_env caller_pname)
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks all_procs exe_env proc_names =
-  let get_procdesc proc_name =
-    try
-      let cfg = Exe_env.get_cfg exe_env proc_name in
-      Cfg.Procdesc.find_from_name cfg proc_name
-    with Not_found -> None in
+  let get_procdesc = Exe_env.get_proc_desc exe_env in
 
   let procedure_definitions =
     IList.map (get_procedure_definition exe_env) proc_names

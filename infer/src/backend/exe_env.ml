@@ -123,34 +123,36 @@ let get_source exe_env pname =
   (get_file_data exe_env pname).source
 
 let file_data_to_tenv file_data =
-  if file_data.tenv == None then file_data.tenv <- Sil.load_tenv_from_file file_data.tenv_file;
-  match file_data.tenv with
-  | None ->
-      L.err "Cannot find tenv for %s@." (DB.filename_to_string file_data.tenv_file);
-      assert false
-  | Some tenv -> tenv
+  if file_data.tenv == None
+  then file_data.tenv <- Sil.load_tenv_from_file file_data.tenv_file;
+  file_data.tenv
 
 let file_data_to_cfg file_data =
-  match file_data.cfg with
-  | None ->
-      let cfg = match Cfg.load_cfg_from_file file_data.cfg_file with
-        | None ->
-            L.err "Cannot find cfg for %s@." (DB.filename_to_string file_data.cfg_file);
-            assert false
-        | Some cfg -> cfg in
-      file_data.cfg <- Some cfg;
-      cfg
-  | Some cfg -> cfg
+  if file_data.cfg = None
+  then file_data.cfg <- Cfg.load_cfg_from_file file_data.cfg_file;
+  file_data.cfg
 
 (** return the type environment associated to the procedure *)
-let get_tenv exe_env pname =
-  let file_data = get_file_data exe_env pname in
-  file_data_to_tenv file_data
+let get_tenv exe_env proc_name : Sil.tenv =
+  let file_data = get_file_data exe_env proc_name in
+  match file_data_to_tenv file_data with
+  | Some tenv ->
+      tenv
+  | None ->
+      failwith ("get_tenv: tenv not found for" ^ Procname.to_string proc_name)
 
 (** return the cfg associated to the procedure *)
 let get_cfg exe_env pname =
   let file_data = get_file_data exe_env pname in
   file_data_to_cfg file_data
+
+(** return the proc desc associated to the procedure *)
+let get_proc_desc exe_env pname =
+  match get_cfg exe_env pname with
+  | Some cfg ->
+      Cfg.Procdesc.find_from_name cfg pname
+  | None ->
+      None
 
 (** [iter_files f exe_env] applies [f] to the filename and tenv and cfg for each file in [exe_env] *)
 let iter_files f exe_env =
@@ -164,26 +166,7 @@ let iter_files f exe_env =
       begin
         DB.current_source := fname;
         Config.nLOC := file_data.nLOC;
-        f fname (file_data_to_cfg file_data);
+        Option.may (fun cfg -> f fname cfg) (file_data_to_cfg file_data);
         DB.SourceFileSet.add fname seen_files_acc
       end in
   ignore (Procname.Hash.fold do_file exe_env.proc_map DB.SourceFileSet.empty)
-
-(*
-(** return the procs enabled: active and not shadowed, plus the procs they call directly *)
-let procs_enabled exe_env source =
-  let is_not_shadowed proc_name = (* not shadowed by a definition in another file *)
-    DB.source_file_equal (get_source exe_env proc_name) source in
-  match exe_env.active_opt with
-  | Some pset ->
-      let res = ref Procname.Set.empty in
-      (* add any proc which is not shadowed, and all the procs it calls *)
-      let do_pname proc_name =
-        if is_not_shadowed proc_name then
-          let pset' = Cg.get_all_children exe_env.cg proc_name in
-          let pset'' = Procname.Set.add proc_name pset' in
-          res := Procname.Set.union pset'' !res in
-      Procname.Set.iter do_pname pset;
-      Some !res
-  | None -> None
-*)

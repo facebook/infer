@@ -11,9 +11,9 @@
     Lazy implementation: only created when actually used. *)
 
 
-type t = (Sil.exp Ident.IdentHash.t) Lazy.t * Cfg.cfg
+type t = (Sil.exp Ident.IdentHash.t) Lazy.t
 
-let _create proc_desc =
+let create_ proc_desc =
   let map = Ident.IdentHash.create 1 in
   let do_instr _ = function
     | Sil.Letderef (id, e, _, _) ->
@@ -23,17 +23,17 @@ let _create proc_desc =
   map
 
 (* lazy implementation, only create when used *)
-let create cfg proc_desc =
-  let map = lazy (_create proc_desc) in
-  map, cfg
+let create proc_desc =
+  let map = lazy (create_ proc_desc) in
+  map
 
 (* create an idenv for another procedure *)
-let create_from_idenv (_, cfg) proc_desc =
-  let map = lazy (_create proc_desc) in
-  map, cfg
+let create_from_idenv _ proc_desc =
+  let map = lazy (create_ proc_desc) in
+  map
 
-let lookup (_map, _) id =
-  let map = Lazy.force _map in
+let lookup map_ id =
+  let map = Lazy.force map_ in
   try
     Some (Ident.IdentHash.find map id)
   with Not_found -> None

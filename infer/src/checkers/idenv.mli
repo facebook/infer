@@ -13,7 +13,7 @@
 
 type t
 
-val create : Cfg.cfg -> Cfg.Procdesc.t -> t
+val create : Cfg.Procdesc.t -> t
 val create_from_idenv : t -> Cfg.Procdesc.t -> t
 val lookup : t -> Ident.t -> Sil.exp option
 val expand_expr : t -> Sil.exp -> Sil.exp
