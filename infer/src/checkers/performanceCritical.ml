@@ -315,13 +315,12 @@ let check_one_procedure tenv pname pdesc =
 
 
 let callback_performance_checker
-    { Callbacks.get_cfg; get_proc_desc; proc_desc; proc_name; tenv } =
+    { Callbacks.get_proc_desc; proc_desc; proc_name; tenv } =
   let callbacks =
     let analyze_ondemand pdesc =
       check_one_procedure tenv (Cfg.Procdesc.get_proc_name pdesc) pdesc in
     {
       Ondemand.analyze_ondemand;
-      get_cfg;
       get_proc_desc;
     } in
   if Ondemand.procedure_should_be_analyzed proc_name

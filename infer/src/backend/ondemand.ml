@@ -41,14 +41,11 @@ let dirs_to_analyze =
 
 type analyze_ondemand = Cfg.Procdesc.t -> unit
 
-type get_cfg = Procname.t -> Cfg.cfg option
-
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
 type callbacks =
   {
     analyze_ondemand : analyze_ondemand;
-    get_cfg : get_cfg;
     get_proc_desc : get_proc_desc;
   }
 
@@ -230,10 +227,10 @@ let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname =
   | _ ->
       () (* skipping *)
 
-(** Find a cfg for the procedure, perhaps loading it from disk. *)
-let get_cfg callee_pname =
+(** Find a proc desc for the procedure, perhaps loading it from disk. *)
+let get_proc_desc callee_pname =
   match !callbacks_ref with
   | Some callbacks ->
-      callbacks.get_cfg callee_pname
+      callbacks.get_proc_desc callee_pname
   | None ->
       None

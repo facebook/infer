@@ -30,7 +30,7 @@ val add_cg : initial -> DB.source_dir -> Cg.t option
 val get_cg : t -> Cg.t
 
 (** return the source file associated to the procedure *)
-val get_source : t -> Procname.t -> DB.source_file
+val get_source : t -> Procname.t -> DB.source_file option
 
 (** return the type environment associated to the procedure *)
 val get_tenv : t -> Procname.t -> Sil.tenv

@@ -14,19 +14,16 @@ val dirs_to_analyze : StringSet.t option Lazy.t
 
 type analyze_ondemand = Cfg.Procdesc.t -> unit
 
-type get_cfg = Procname.t -> Cfg.cfg option
-
 type get_proc_desc = Procname.t -> Cfg.Procdesc.t option
 
 type callbacks =
   {
     analyze_ondemand : analyze_ondemand;
-    get_cfg : get_cfg;
     get_proc_desc : get_proc_desc;
   }
 
-(** Find a cfg for the procedure, perhaps loading it from disk. *)
-val get_cfg : get_cfg
+(** Find a proc desc for the procedure, perhaps loading it from disk. *)
+val get_proc_desc : get_proc_desc
 
 (** analyze_proc_desc curr_pdesc callee_pdesc
     performs an on-demand analysis of callee_pdesc

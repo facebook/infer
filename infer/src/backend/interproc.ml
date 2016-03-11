@@ -1320,8 +1320,6 @@ let do_analysis exe_env =
     procs_and_defined_children;
 
   let callbacks =
-    let get_cfg proc_name =
-      Exe_env.get_cfg exe_env proc_name in
     let get_proc_desc proc_name =
       Exe_env.get_proc_desc exe_env proc_name in
     let analyze_ondemand proc_desc =
@@ -1338,7 +1336,6 @@ let do_analysis exe_env =
       Specs.add_summary proc_name summaryre in
     {
       Ondemand.analyze_ondemand;
-      get_cfg;
       get_proc_desc;
     } in
 
@@ -1451,6 +1448,6 @@ let print_stats exe_env =
          let proc_shadowed proc_desc =
            (** return true if a proc with the same name in another module was analyzed instead *)
            let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
-           Exe_env.get_source exe_env proc_name <> fname in
+           Exe_env.get_source exe_env proc_name <> Some fname in
          print_stats_cfg proc_shadowed cfg)
       exe_env

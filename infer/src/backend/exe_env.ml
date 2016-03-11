@@ -100,13 +100,13 @@ let get_cg exe_env =
 
 let get_file_data exe_env pname =
   try
-    Procname.Hash.find exe_env.proc_map pname
+    Some (Procname.Hash.find exe_env.proc_map pname)
   with Not_found ->
     begin
       match AttributesTable.load_attributes pname with
       | None ->
           L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
-          raise Not_found
+          None
       | Some proc_attributes ->
           let loc = proc_attributes.ProcAttributes.loc in
           let source_file = loc.Location.file in
@@ -115,12 +115,14 @@ let get_file_data exe_env pname =
           let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
           let file_data = new_file_data source_file nLOC cg_fname in
           Procname.Hash.replace exe_env.proc_map pname file_data;
-          file_data
+          Some file_data
     end
 
 (** return the source file associated to the procedure *)
 let get_source exe_env pname =
-  (get_file_data exe_env pname).source
+  Option.map
+    (fun file_data -> file_data.source)
+    (get_file_data exe_env pname)
 
 let file_data_to_tenv file_data =
   if file_data.tenv == None
@@ -134,17 +136,25 @@ let file_data_to_cfg file_data =
 
 (** return the type environment associated to the procedure *)
 let get_tenv exe_env proc_name : Sil.tenv =
-  let file_data = get_file_data exe_env proc_name in
-  match file_data_to_tenv file_data with
-  | Some tenv ->
-      tenv
+  match get_file_data exe_env proc_name with
   | None ->
-      failwith ("get_tenv: tenv not found for" ^ Procname.to_string proc_name)
+      failwith ("get_tenv: file_data not found for" ^ Procname.to_string proc_name)
+  | Some file_data ->
+      begin
+        match file_data_to_tenv file_data with
+        | Some tenv ->
+            tenv
+        | None ->
+            failwith ("get_tenv: tenv not found for" ^ Procname.to_string proc_name)
+      end
 
 (** return the cfg associated to the procedure *)
 let get_cfg exe_env pname =
-  let file_data = get_file_data exe_env pname in
-  file_data_to_cfg file_data
+  match get_file_data exe_env pname with
+  | None ->
+      None
+  | Some file_data ->
+      file_data_to_cfg file_data
 
 (** return the proc desc associated to the procedure *)
 let get_proc_desc exe_env pname =
