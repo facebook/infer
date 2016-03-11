@@ -234,13 +234,16 @@ module Node : sig
   (** Pretty print the node *)
   val pp : Format.formatter -> t -> unit
 
-  (** Print extended instructions for the node, highlighting the given subinstruction if present *)
-  val pp_instr : printenv -> sub_instrs: bool -> Sil.instr option -> Format.formatter -> t -> unit
+  (** Print extended instructions for the node,
+      highlighting the given subinstruction if present *)
+  val pp_instrs :
+    printenv -> sub_instrs: bool -> Sil.instr option -> Format.formatter -> t -> unit
 
   (** Replace the instructions to be executed. *)
   val replace_instrs : t -> Sil.instr list -> unit
 
-  (** Set the (after/before) dead program variables. After/before indicated with the true/false flag. *)
+  (** Set the (after/before) dead program variables.
+      After/before indicated with the true/false flag. *)
   val set_dead_pvars : t -> bool -> Sil.pvar list -> unit
 
   (** Set the node kind *)

@@ -24,13 +24,22 @@ type visitednode =
 module NodeVisitSet =
   Set.Make(struct
     type t = visitednode
-    let compare_ids n1 n2 = Cfg.Node.compare n2 n1 (* higher id is better *)
-    let compare_distance_to_exit { node = n1 } { node = n2 } = (* smaller means higher priority *)
-      let n = match Cfg.Node.get_distance_to_exit n1, Cfg.Node.get_distance_to_exit n2 with
-        | None, None -> 0
-        | None, Some _ -> 1
-        | Some _, None -> - 1
-        | Some d1, Some d2 -> int_compare d1 d2 (* shorter distance to exit is better *) in
+    let compare_ids n1 n2 =
+      (* higher id is better *)
+      Cfg.Node.compare n2 n1
+    let compare_distance_to_exit { node = n1 } { node = n2 } =
+      (* smaller means higher priority *)
+      let n =
+        match Cfg.Node.get_distance_to_exit n1, Cfg.Node.get_distance_to_exit n2 with
+        | None, None ->
+            0
+        | None, Some _ ->
+            1
+        | Some _, None ->
+            - 1
+        | Some d1, Some d2 ->
+            (* shorter distance to exit is better *)
+            int_compare d1 d2 in
       if n <> 0 then n else compare_ids n1 n2
     let compare_number_of_visits x1 x2 =
       let n = int_compare x1.visits x2.visits in (* visited fewer times is better *)
@@ -193,7 +202,8 @@ let do_meet_pre pset =
   else
     Propset.to_proplist pset
 
-(** Find the preconditions in the current spec table, apply meet then join, and return the joined preconditions *)
+(** Find the preconditions in the current spec table,
+    apply meet then join, and return the joined preconditions *)
 let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
   let collect_do_abstract_one tenv prop =
     if !Config.footprint
@@ -241,9 +251,11 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
 (* =============== START of symbolic execution =============== *)
 
 (** propagate a set of results to the given node *)
-let propagate (wl : Worklist.t) pname is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
+let propagate
+    (wl : Worklist.t) pname is_exception (pset: Paths.PathSet.t) (curr_node: Cfg.node) =
   let edgeset_todo =
-    let f prop path edgeset_curr = (** prop must be a renamed prop by the invariant preserved by PropSet *)
+    (** prop must be a renamed prop by the invariant preserved by PropSet *)
+    let f prop path edgeset_curr =
       let exn_opt =
         if is_exception
         then Some (Tabulation.prop_get_exn_name pname prop)
@@ -334,9 +346,10 @@ let do_before_node session node =
   State.set_node node;
   State.set_session session;
   L.reset_delayed_prints ();
-  Printer.start_session node loc proc_name session
+  Printer.node_start_session node loc proc_name session
 
-let do_after_node node = Printer.finish_session node
+let do_after_node node =
+  Printer.node_finish_session node
 
 (** Return the list of normal ids occurring in the instructions *)
 let instrs_get_normal_vars instrs =
@@ -393,8 +406,12 @@ let check_assignement_guard node =
       let leti = IList.filter is_letderef_instr ins in
       match pi, leti with
       | [Sil.Prune (Sil.Var(e1), _, _, _)], [Sil.Letderef(e2, e', _, _)]
-      | [Sil.Prune (Sil.UnOp(Sil.LNot, Sil.Var(e1), _), _, _, _)], [Sil.Letderef(e2, e', _, _)] when (Ident.equal e1 e2) ->
-          if verbose then L.d_strln ("Found "^(Sil.exp_to_string e')^" as prune var");
+      | [Sil.Prune (Sil.UnOp(Sil.LNot, Sil.Var(e1), _), _, _, _)],
+        [Sil.Letderef(e2, e', _, _)]
+        when (Ident.equal e1 e2) ->
+          if verbose
+          then
+            L.d_strln ("Found " ^ (Sil.exp_to_string e') ^ " as prune var");
           [e']
       | _ -> [] in
     let prune_vars = IList.flatten(IList.map (fun n -> prune_var n) succs) in
@@ -415,7 +432,8 @@ let check_assignement_guard node =
                     " nLOC: " ^ (string_of_int l.Location.nLOC));
            L.d_strln " ");
         Location.equal l l_node) succs_loc in
-  let succs_have_simple_guards () = (* check that the guards of the succs are a var or its negation *)
+  (* check that the guards of the succs are a var or its negation *)
+  let succs_have_simple_guards () =
     let check_instr = function
       | Sil.Prune (Sil.Var _, _, _, _) -> true
       | Sil.Prune (Sil.UnOp(Sil.LNot, Sil.Var _, _), _, _, _) -> true
@@ -430,13 +448,17 @@ let check_assignement_guard node =
      succs_have_simple_guards () then
     (let instr = Cfg.Node.get_instrs node in
      match succs_loc with
-     | loc_succ:: _ -> (* at this point all successors are at the same location, so we can take the first*)
+     (* at this point all successors are at the same location, so we can take the first*)
+     | loc_succ:: _ ->
          let set_instr_at_succs_loc =
            IList.filter
-             (fun i -> (Location.equal (Sil.instr_get_loc i) loc_succ) && is_set_instr i)
+             (fun i ->
+                Location.equal (Sil.instr_get_loc i) loc_succ &&
+                is_set_instr i)
              instr in
          (match set_instr_at_succs_loc with
-          | [Sil.Set(e, _, _, _)] -> (* we now check if e is the same expression used to prune*)
+          | [Sil.Set(e, _, _, _)] ->
+              (* we now check if e is the same expression used to prune*)
               if (is_prune_exp e) && not ((node_contains_call node) && (is_cil_tmp e)) then (
                 let desc = Errdesc.explain_condition_is_assignment l_node in
                 let exn = Exceptions.Condition_is_assignment (desc, __POS__) in
@@ -444,8 +466,10 @@ let check_assignement_guard node =
                 Reporting.log_warning pname ~loc: (Some l_node) ~pre: pre_opt exn
               )
               else ()
-          | _ -> ())
-     | _ -> if verbose then L.d_strln "NOT FOUND loc_succ"
+          | _ ->
+              ())
+     | _ ->
+         if verbose then L.d_strln "NOT FOUND loc_succ"
     ) else ()
 
 (** Perform symbolic execution for a node starting from an initial prop *)
@@ -453,10 +477,12 @@ let do_symbolic_execution handle_exn tenv
     (node : Cfg.node) (prop: Prop.normal Prop.t) (path : Paths.Path.t) =
   let pdesc = Cfg.Node.get_proc_desc node in
   State.mark_execution_start node;
-  State.set_const_map (ConstantPropagation.build_const_map pdesc); (* build the const map lazily *)
+  (* build the const map lazily *)
+  State.set_const_map (ConstantPropagation.build_const_map pdesc);
   check_assignement_guard node;
   let instrs = Cfg.Node.get_instrs node in
-  Ident.update_name_generator (instrs_get_normal_vars instrs); (* fresh normal vars must be fresh w.r.t. instructions *)
+  (* fresh normal vars must be fresh w.r.t. instructions *)
+  Ident.update_name_generator (instrs_get_normal_vars instrs);
   let pset =
     SymExec.lifted_sym_exec handle_exn tenv pdesc
       (Paths.PathSet.from_renamed_list [(prop, path)]) node instrs in
@@ -518,7 +544,8 @@ let forward_tabulate tenv wl =
         f prop path !cnt ps_size in
       Paths.PathSet.iter exe pathset in
     let log_string proc_name =
-      let phase_string = (if Specs.get_phase proc_name == Specs.FOOTPRINT then "FP" else "RE") in
+      let phase_string =
+        if Specs.get_phase proc_name == Specs.FOOTPRINT then "FP" else "RE" in
       let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
       let timestamp = Specs.get_timestamp summary in
       F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
@@ -616,15 +643,20 @@ let report_context_leaks pname sigma tenv =
       sigma in
   IList.iter
     (function
-      | Sil.Hpointsto (Sil.Lvar pv, Sil.Estruct (static_flds, _), _) when Sil.pvar_is_global pv ->
+      | Sil.Hpointsto (Sil.Lvar pv, Sil.Estruct (static_flds, _), _)
+        when Sil.pvar_is_global pv ->
           IList.iter
             (fun (f_name, f_strexp) ->
-               if not (Harness.is_generated_field f_name) then
-                 check_reachable_context_from_fld (f_name, f_strexp) context_exps) static_flds
+               if not (Harness.is_generated_field f_name)
+               then
+                 check_reachable_context_from_fld
+                   (f_name, f_strexp) context_exps)
+            static_flds
       | _ -> ())
     sigma
 
-(** remove locals and formals, and check if the address of a stack variable is left in the result *)
+(** Remove locals and formals,
+    and check if the address of a stack variable is left in the result *)
 let remove_locals_formals_and_check pdesc p =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pvars, p' = Cfg.remove_locals_formals pdesc p in
@@ -637,17 +669,23 @@ let remove_locals_formals_and_check pdesc p =
   IList.iter check_pvar pvars;
   p'
 
-(* Collect the analysis results for the exit node *)
+(** Collect the analysis results for the exit node. *)
 let collect_analysis_result wl pdesc : Paths.PathSet.t =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
   let exit_node_id = Cfg.Node.get_id exit_node in
   let pathset = htable_retrieve wl.Worklist.path_set_visited exit_node_id in
   Paths.PathSet.map (remove_locals_formals_and_check pdesc) pathset
 
-module Pmap = Map.Make (struct type t = Prop.normal Prop.t let compare = Prop.prop_compare end)
+module Pmap = Map.Make
+    (struct
+      type t = Prop.normal Prop.t
+      let compare = Prop.prop_compare
+    end)
 
 let vset_ref_add_path vset_ref path =
-  Paths.Path.iter_all_nodes_nocalls (fun n -> vset_ref := Cfg.NodeSet.add n !vset_ref) path
+  Paths.Path.iter_all_nodes_nocalls
+    (fun n -> vset_ref := Cfg.NodeSet.add n !vset_ref)
+    path
 
 let vset_ref_add_pathset vset_ref pathset =
   Paths.PathSet.iter (fun _ path -> vset_ref_add_path vset_ref path) pathset
@@ -659,7 +697,9 @@ let compute_visited vset =
     let instrs_loc = IList.map Sil.instr_get_loc (Cfg.Node.get_instrs n) in
     let lines = IList.map (fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
     IList.remove_duplicates int_compare (IList.sort int_compare lines) in
-  let do_node n = res := Specs.Visitedset.add (Cfg.Node.get_id n, node_get_all_lines n) !res in
+  let do_node n =
+    res :=
+      Specs.Visitedset.add (Cfg.Node.get_id n, node_get_all_lines n) !res in
   Cfg.NodeSet.iter do_node vset;
   !res
 
@@ -668,8 +708,13 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let sub =
     let fav = Sil.fav_new () in
-    Paths.PathSet.iter (fun prop _ -> Prop.prop_fav_add fav prop) pathset;
-    let sub_list = IList.map (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.knormal)))) (Sil.fav_to_list fav) in
+    Paths.PathSet.iter
+      (fun prop _ -> Prop.prop_fav_add fav prop)
+      pathset;
+    let sub_list =
+      IList.map
+        (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.knormal))))
+        (Sil.fav_to_list fav) in
     Sil.sub_of_list sub_list in
   let pre_post_visited_list =
     let pplist = Paths.PathSet.elements pathset in
@@ -678,7 +723,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       let prop'' = Abs.abstract pname tenv prop' in
       let pre, post = Prop.extract_spec prop'' in
       let pre' = Prop.normalize (Prop.prop_sub sub pre) in
-      if !Config.curr_language = Config.Java && Cfg.Procdesc.get_access pdesc <> Sil.Private then
+      if !Config.curr_language =
+         Config.Java && Cfg.Procdesc.get_access pdesc <> Sil.Private then
         report_context_leaks pname (Prop.get_sigma post) tenv;
       let post' =
         if Prover.check_inconsistency_base prop then None
@@ -691,7 +737,10 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
     IList.map f pplist in
   let pre_post_map =
     let add map (pre, post, visited) =
-      let current_posts, current_visited = try Pmap.find pre map with Not_found -> (Paths.PathSet.empty, Specs.Visitedset.empty) in
+      let current_posts, current_visited =
+        try Pmap.find pre map
+        with Not_found ->
+          (Paths.PathSet.empty, Specs.Visitedset.empty) in
       let new_posts = match post with
         | None -> current_posts
         | Some (post, path) -> Paths.PathSet.add_renamed_prop post path current_posts in
@@ -715,7 +764,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
 let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pathset = collect_analysis_result wl pdesc in
-  L.d_strln ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Analysis result ####");
+  L.d_strln
+    ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Analysis result ####");
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset pathset);
   L.d_ln ();
   let res =
@@ -725,13 +775,17 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
       let visited =
         let vset_ref = ref Cfg.NodeSet.empty in
         vset_ref_add_pathset vset_ref pathset;
-        vset_ref_add_pathset vset_ref pathset_diverging; (* nodes from diverging states were also visited *)
+        (* nodes from diverging states were also visited *)
+        vset_ref_add_pathset vset_ref pathset_diverging;
         compute_visited !vset_ref in
       do_join_post pname tenv pathset, visited with
     | exn when (match exn with Exceptions.Leak _ -> true | _ -> false) ->
         raise (Failure "Leak in post collecion") in
-  L.d_strln ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Postconditions after join ####");
-  L.d_increase_indent 1; Propset.d Prop.prop_emp (Paths.PathSet.to_propset (fst res)); L.d_decrease_indent 1;
+  L.d_strln
+    ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Postconditions after join ####");
+  L.d_increase_indent 1;
+  Propset.d Prop.prop_emp (Paths.PathSet.to_propset (fst res));
+  L.d_decrease_indent 1;
   L.d_ln ();
   res
 
@@ -755,31 +809,35 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
       Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     IList.map do_formal new_formals in
   let sigma_seed =
-    create_seed_vars (Prop.get_sigma prop @ sigma_new_formals) (* formals already there plus new ones *) in
+    create_seed_vars
+      (* formals already there plus new ones *)
+      (Prop.get_sigma prop @ sigma_new_formals) in
   let sigma = sigma_seed @ sigma_new_formals in
   let new_pi =
-    let pi = Prop.get_pi prop in
-    pi
-    (* inactive until it becomes necessary, as it pollutes props
-       let fav_ids = Sil.fav_to_list (Prop.sigma_fav sigma_locals) in
-       let mk_undef_atom id = Prop.mk_neq (Sil.Var id) (Sil.Const (Sil.Cattribute (Sil.Aundef "UNINITIALIZED"))) in
-       let pi_undef = IList.map mk_undef_atom fav_ids in
-       pi_undef @ pi *) in
+    Prop.get_pi prop in
   let prop' =
     Prop.replace_pi new_pi (Prop.prop_sigma_star prop sigma) in
-  Prop.replace_sigma_footprint (Prop.get_sigma_footprint prop' @ sigma_new_formals) prop'
+  Prop.replace_sigma_footprint
+    (Prop.get_sigma_footprint prop' @ sigma_new_formals)
+    prop'
 
 (** Construct an initial prop by extending [prop] with locals, and formals if [add_formals] is true
     as well as seed variables *)
-let initial_prop tenv (curr_f: Cfg.Procdesc.t) (prop : 'a Prop.t) add_formals : Prop.normal Prop.t =
+let initial_prop
+    tenv (curr_f: Cfg.Procdesc.t) (prop : 'a Prop.t) add_formals
+  : Prop.normal Prop.t =
   let construct_decl (x, typ) =
     (Sil.mk_pvar x (Cfg.Procdesc.get_proc_name curr_f), typ) in
   let new_formals =
     if add_formals
     then IList.map construct_decl (Cfg.Procdesc.get_formals curr_f)
     else [] in (** no new formals added *)
-  let prop1 = Prop.prop_reset_inst (fun inst_old -> Sil.update_inst inst_old Sil.inst_formal) prop in
-  let prop2 = prop_init_formals_seed tenv new_formals prop1 in
+  let prop1 =
+    Prop.prop_reset_inst
+      (fun inst_old -> Sil.update_inst inst_old Sil.inst_formal)
+      prop in
+  let prop2 =
+    prop_init_formals_seed tenv new_formals prop1 in
   Prop.prop_rename_primed_footprint_vars (Prop.normalize prop2)
 
 (** Construct an initial prop from the empty prop *)
@@ -790,10 +848,16 @@ let initial_prop_from_emp tenv curr_f =
 let initial_prop_from_pre tenv curr_f pre =
   if !Config.footprint then
     let vars = Sil.fav_to_list (Prop.prop_fav pre) in
-    let sub_list = IList.map (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.kfootprint)))) vars in
+    let sub_list =
+      IList.map
+        (fun id -> (id, Sil.Var (Ident.create_fresh (Ident.kfootprint))))
+        vars in
     let sub = Sil.sub_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
-    let pre3 = Prop.replace_sigma_footprint (Prop.get_sigma pre2) (Prop.replace_pi_footprint (Prop.get_pure pre2) pre2) in
+    let pre3 =
+      Prop.replace_sigma_footprint
+        (Prop.get_sigma pre2)
+        (Prop.replace_pi_footprint (Prop.get_pure pre2) pre2) in
     initial_prop tenv curr_f pre3 false
   else
     initial_prop tenv curr_f pre false
@@ -807,8 +871,13 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
   L.d_indent 1;
   L.d_strln "Precond:"; Specs.Jprop.d_shallow precondition;
   L.d_ln (); L.d_ln ();
-  let init_prop = initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition) in
-  let init_edgeset = Paths.PathSet.add_renamed_prop init_prop (Paths.Path.start init_node) Paths.PathSet.empty in
+  let init_prop =
+    initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition) in
+  let init_edgeset =
+    Paths.PathSet.add_renamed_prop
+      init_prop
+      (Paths.Path.start init_node)
+      Paths.PathSet.empty in
   do_after_node init_node;
   try
     Worklist.add wl init_node;
@@ -821,7 +890,10 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
     L.d_ln ();
     let posts, visited =
       let pset, visited = collect_postconditions wl tenv pdesc in
-      let plist = IList.map (fun (p, path) -> (Cfg.remove_seed_vars p, path)) (Paths.PathSet.elements pset) in
+      let plist =
+        IList.map
+          (fun (p, path) -> (Cfg.remove_seed_vars p, path))
+          (Paths.PathSet.elements pset) in
       plist, visited in
     let pre =
       let p = Cfg.remove_locals_ret pdesc (Specs.Jprop.to_prop precondition) in
@@ -846,14 +918,21 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
 
 (** get all the nodes in the current call graph with their defined children *)
 let get_procs_and_defined_children call_graph =
-  IList.map (fun (n, ns) -> (n, Procname.Set.elements ns)) (Cg.get_nodes_and_defined_children call_graph)
+  IList.map
+    (fun (n, ns) ->
+       (n, Procname.Set.elements ns))
+    (Cg.get_nodes_and_defined_children call_graph)
 
 let pp_intra_stats wl proc_desc fmt _ =
   let nstates = ref 0 in
   let nodes = Cfg.Procdesc.get_nodes proc_desc in
-  IList.iter (fun node ->
-      nstates := !nstates + Paths.PathSet.size
-                   (htable_retrieve wl.Worklist.path_set_visited (Cfg.Node.get_id node))) nodes;
+  IList.iter
+    (fun node ->
+       nstates :=
+         !nstates +
+         Paths.PathSet.size
+           (htable_retrieve wl.Worklist.path_set_visited (Cfg.Node.get_id node)))
+    nodes;
   F.fprintf fmt "(%d nodes containing %d states)" (IList.length nodes) !nstates
 
 (** Return functions to perform one phase of the analysis for a procedure.
@@ -877,9 +956,11 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
   let compute_footprint : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
     let go (wl : Worklist.t) () =
       let init_prop = initial_prop_from_emp tenv pdesc in
-      let init_props_from_pres = (* use existing pre's (in recursion some might exist) as starting points *)
+      (* use existing pre's (in recursion some might exist) as starting points *)
+      let init_props_from_pres =
         let specs = Specs.get_specs pname in
-        let mk_init precondition = (* rename spec vars to footrpint vars, and copy current to footprint *)
+        (* rename spec vars to footrpint vars, and copy current to footprint *)
+        let mk_init precondition =
           initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition) in
         IList.map (fun spec -> mk_init spec.Specs.pre) specs in
       let init_props = Propset.from_proplist (init_prop :: init_props_from_pres) in
@@ -894,7 +975,10 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
       L.d_decrease_indent 1;
       check_recursion_level ();
       Worklist.add wl start_node;
-      Config.arc_mode := Hashtbl.mem (Cfg.Procdesc.get_flags pdesc) Mleak_buckets.objc_arc_flag;
+      Config.arc_mode :=
+        Hashtbl.mem
+          (Cfg.Procdesc.get_flags pdesc)
+          Mleak_buckets.objc_arc_flag;
       ignore (path_set_put_todo wl start_node init_edgeset);
       forward_tabulate tenv wl in
     let get_results (wl : Worklist.t) () =
@@ -921,7 +1005,10 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
 
   let re_execution proc_name
     : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
-    let candidate_preconditions = IList.map (fun spec -> spec.Specs.pre) (Specs.get_specs proc_name) in
+    let candidate_preconditions =
+      IList.map
+        (fun spec -> spec.Specs.pre)
+        (Specs.get_specs proc_name) in
     let valid_specs = ref [] in
     let go () =
       L.out "@.#### Start: Re-Execution for %a ####@." Procname.pp proc_name;
@@ -948,8 +1035,12 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
       let specs = !valid_specs in
       L.out "#### [FUNCTION %a] ... OK #####@\n" Procname.pp proc_name;
       L.out "#### Finished: Re-Execution for %a ####@." Procname.pp proc_name;
-      let valid_preconditions = IList.map (fun spec -> spec.Specs.pre) specs in
-      let filename = DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir [(Procname.to_filename proc_name)] in
+      let valid_preconditions =
+        IList.map (fun spec -> spec.Specs.pre) specs in
+      let filename =
+        DB.Results_dir.path_to_filename
+          DB.Results_dir.Abs_source_dir
+          [(Procname.to_filename proc_name)] in
       if !Config.write_dotty then
         Dotty.pp_speclist_dotty_file filename specs;
       L.out "@.@.================================================";
@@ -1103,7 +1194,8 @@ let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
               new_specs)
     then begin
       changed:= true;
-      L.out "Specs changed: removing pre of spec@\n%a@." (Specs.pp_spec pe_text None) old_spec;
+      L.out "Specs changed: removing pre of spec@\n%a@."
+        (Specs.pp_spec pe_text None) old_spec;
       current_specs := SpecMap.remove old_spec.Specs.pre !current_specs end
     else () in
   let add_spec spec = (* add a new spec by doing union of the posts *)
@@ -1125,7 +1217,8 @@ let update_specs proc_name phase (new_specs : Specs.NormSpec.t list)
 
     with Not_found ->
       changed := true;
-      L.out "Specs changed: added new pre@\n%a@." (Specs.Jprop.pp_short pe_text) spec.Specs.pre;
+      L.out "Specs changed: added new pre@\n%a@."
+        (Specs.Jprop.pp_short pe_text) spec.Specs.pre;
       current_specs :=
         SpecMap.add
           spec.Specs.pre
@@ -1225,9 +1318,11 @@ let transition_footprint_re_exe proc_name joined_pres =
     the procedures enabled after the analysis of [proc_name] *)
 let perform_transition exe_env tenv proc_name =
   let transition () =
-    let joined_pres = (* disable exceptions for leaks and protect against any other errors *)
+    (* disable exceptions for leaks and protect against any other errors *)
+    let joined_pres =
       let allowleak = !Config.allowleak in
-      let apply_start_node f = (* apply the start node to f, and do nothing in case of exception *)
+      (* apply the start node to f, and do nothing in case of exception *)
+      let apply_start_node f =
         try
           match Exe_env.get_proc_desc exe_env proc_name with
           | Some pdesc ->
@@ -1355,10 +1450,14 @@ let visited_and_total_nodes cfg =
     | Cfg.Node.Start_node _ | Cfg.Node.Exit_node _ -> true
     | Cfg.Node.Skip_node _ | Cfg.Node.Join_node -> false in
   let counted_nodes = Cfg.NodeSet.filter filter_node all_nodes in
-  let visited_nodes_re = Cfg.NodeSet.filter (fun node -> snd (Printer.is_visited_phase node)) counted_nodes in
+  let visited_nodes_re =
+    Cfg.NodeSet.filter
+      (fun node -> snd (Printer.node_is_visited node))
+      counted_nodes in
   Cfg.NodeSet.elements visited_nodes_re, Cfg.NodeSet.elements counted_nodes
 
-(** Print the stats for the given cfg; consider every defined proc unless a proc with the same name
+(** Print the stats for the given cfg.
+    Consider every defined proc unless a proc with the same name
     was defined in another module, and was the one which was analyzed *)
 let print_stats_cfg proc_shadowed cfg =
   let err_table = Errlog.create_err_table () in
@@ -1380,7 +1479,8 @@ let print_stats_cfg proc_shadowed cfg =
     let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
     if proc_shadowed proc_desc ||
        Specs.get_summary proc_name = None then
-      L.out "print_stats: ignoring function %a which is also defined in another file@." Procname.pp proc_name
+      L.out "print_stats: ignoring function %a which is also defined in another file@."
+        Procname.pp proc_name
     else
       let summary = Specs.get_summary_unsafe "print_stats_cfg" proc_name in
       let stats = summary.Specs.stats in

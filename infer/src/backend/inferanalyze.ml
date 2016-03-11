@@ -230,15 +230,17 @@ let analyze_exe_env exe_env =
   Specs.clear_spec_tbl ();
   Random.self_init ();
   let line_reader = Printer.LineReader.create () in
-  if !checkers then (* run the checkers only *)
+  if !checkers then
     begin
+      (** run the checkers only *)
       let call_graph = Exe_env.get_cg exe_env in
       Callbacks.iterate_callbacks Checkers.ST.store_summary call_graph exe_env
     end
   else
-    begin (* run the full analysis *)
+    begin
+      (** run the full analysis *)
       Interproc.do_analysis exe_env;
-      Printer.c_files_write_html line_reader exe_env;
+      Printer.write_all_html_files line_reader exe_env;
       Interproc.print_stats exe_env;
       let elapsed = Unix.gettimeofday () -. init_time in
       L.out "Interprocedural footprint analysis terminated in %f sec@." elapsed

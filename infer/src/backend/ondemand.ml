@@ -101,7 +101,7 @@ let save_global_state () =
     current_source = !DB.current_source;
     delayed_prints = L.get_delayed_prints ();
     footprint_mode = !Config.footprint;
-    html_formatter = !Printer.html_formatter;
+    html_formatter = !Printer.curr_html_formatter;
     name_generator = Ident.NameGenerator.get_current ();
     symexec_state = State.save_state ();
   }
@@ -112,7 +112,7 @@ let restore_global_state st =
   DB.current_source := st.current_source;
   L.set_delayed_prints st.delayed_prints;
   Config.footprint := st.footprint_mode;
-  Printer.html_formatter := st.html_formatter;
+  Printer.curr_html_formatter := st.html_formatter;
   Ident.NameGenerator.set_current st.name_generator;
   State.restore_state st.symexec_state;
   Timeout.resume_previous_timeout ()
@@ -157,7 +157,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
         timestamp = summary.Specs.timestamp + 1 } in
     Specs.add_summary callee_pname summary';
     Checkers.ST.store_summary callee_pname;
-    Printer.proc_write_log false callee_pdesc in
+    Printer.write_proc_html false callee_pdesc in
 
   let log_error_and_continue exn kind =
     Reporting.log_error callee_pname exn;

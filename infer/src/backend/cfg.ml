@@ -24,18 +24,41 @@ module Node = struct
     | Skip_node of string
 
   and t = { (** a node *)
-    nd_id : int; (** unique id of the node *)
-    mutable nd_dist_exit : int option; (** distance to the exit node *)
-    mutable nd_temps : Ident.t list; (** temporary variables *)
-    mutable nd_dead_pvars_after : Sil.pvar list; (** dead program variables after executing the instructions *)
-    mutable nd_dead_pvars_before : Sil.pvar list; (** dead program variables before executing the instructions *)
-    mutable nd_exn : t list; (** exception nodes in the cfg *)
-    mutable nd_instrs : Sil.instr list; (** instructions for symbolic execution *)
-    mutable nd_kind : nodekind; (** kind of node *)
-    mutable nd_loc : Location.t; (** location in the source code *)
-    mutable nd_preds : t list; (** predecessor nodes in the cfg *)
-    mutable nd_proc : proc_desc option; (** proc desc from cil *)
-    mutable nd_succs : t list; (** successor nodes in the cfg *)
+    (** unique id of the node *)
+    nd_id : int;
+
+    (** distance to the exit node *)
+    mutable nd_dist_exit : int option;
+
+    (** temporary variables *)
+    mutable nd_temps : Ident.t list;
+
+    (** dead program variables after executing the instructions *)
+    mutable nd_dead_pvars_after : Sil.pvar list;
+
+    (** dead program variables before executing the instructions *)
+    mutable nd_dead_pvars_before : Sil.pvar list;
+
+    (** exception nodes in the cfg *)
+    mutable nd_exn : t list;
+
+    (** instructions for symbolic execution *)
+    mutable nd_instrs : Sil.instr list;
+
+    (** kind of node *)
+    mutable nd_kind : nodekind;
+
+    (** location in the source code *)
+    mutable nd_loc : Location.t;
+
+    (** predecessor nodes in the cfg *)
+    mutable nd_preds : t list;
+
+    (** proc desc from cil *)
+    mutable nd_proc : proc_desc option;
+
+    (** successor nodes in the cfg *)
+    mutable nd_succs : t list;
   }
   and proc_desc = { (** procedure description *)
     pd_attributes : ProcAttributes.t; (** attributes of the procedure *)
@@ -482,14 +505,17 @@ module Node = struct
     proc_desc.pd_attributes.ProcAttributes.locals <-
       proc_desc.pd_attributes.ProcAttributes.locals @ new_locals
 
-  (** Print extended instructions for the node, highlighting the given subinstruction if present *)
-  let pp_instr pe0 ~sub_instrs instro fmt node =
+  (** Print extended instructions for the node,
+      highlighting the given subinstruction if present *)
+  let pp_instrs pe0 ~sub_instrs instro fmt node =
     let pe = match instro with
       | None -> pe0
       | Some instr -> pe_extend_colormap pe0 (Obj.repr instr) Red in
     let instrs = get_instrs node in
-    let pp_loc fmt () = F.fprintf fmt " %a " Location.pp (get_loc node) in
-    let print_sub_instrs () = F.fprintf fmt "%a" (Sil.pp_instr_list pe) instrs in
+    let pp_loc fmt () =
+      F.fprintf fmt " %a " Location.pp (get_loc node) in
+    let print_sub_instrs () =
+      F.fprintf fmt "%a" (Sil.pp_instr_list pe) instrs in
     match get_kind node with
     | Stmt_node s ->
         if sub_instrs then print_sub_instrs ()
@@ -530,7 +556,10 @@ module Node = struct
           "Start"
       | Join_node ->
           "Join" in
-    let pp fmt () = F.fprintf fmt "%s\n%a@?" str (pp_instr pe None ~sub_instrs: true) node in
+    let pp fmt () =
+      F.fprintf fmt "%s\n%a@?"
+        str
+        (pp_instrs pe None ~sub_instrs: true) node in
     pp_to_string pp ()
 
   let proc_desc_iter_nodes f proc_desc =
