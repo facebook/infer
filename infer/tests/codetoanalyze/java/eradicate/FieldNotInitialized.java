@@ -33,6 +33,8 @@ public class FieldNotInitialized {
 
   @Bind(42) EditText f;
 
+  @SuppressViewNullability @NonNull EditText g;
+
   //  Eradicate should only report one initialization error
   FieldNotInitialized() {}
 
