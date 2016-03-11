@@ -9,7 +9,7 @@
 
 val inferconfig_home : string option ref
 
-val local_config : string option ref
+val suppress_warnings_annotations : string option ref
 
 (** get the path to the .inferconfig file *)
 val inferconfig : unit -> string
@@ -45,7 +45,7 @@ module NeverReturnNull : Matcher
 
 module SkipTranslationMatcher : Matcher
 
-module ProcMatcher : Matcher
+module SuppressWarningsMatcher : Matcher
 
 (** Load the config file and list the files to report on *)
 val test: unit -> unit

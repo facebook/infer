@@ -53,6 +53,7 @@ LOG_FILE = 'toplevel.log'
 BUCK_INFER_OUT = 'infer'
 
 CLASS_SOURCE_MAP_OUTPUT_FILENAME_OPTION = 'classSourceMapOutputFilename'
+SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION = 'SuppressWarningsOutputFilename'
 
 
 # exit value when infer finds something to report

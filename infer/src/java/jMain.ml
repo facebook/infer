@@ -62,10 +62,10 @@ let arg_desc =
       None,
       "Set the path to the javac verbose output"
       ;
-      "-local_config",
-      Arg.String (fun s -> Inferconfig.local_config := Some s),
+      "-suppress_warnings_out",
+      Arg.String (fun s -> Inferconfig.suppress_warnings_annotations := Some s),
       Some "Path",
-      "Path to local config file"
+      "Path to list of collected @SuppressWarnings annotations"
       ;
     ] in
   Arg.create_options_desc false "Parsing Options" desc

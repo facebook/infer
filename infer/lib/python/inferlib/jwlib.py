@@ -80,7 +80,6 @@ class CompilerCall(object):
         self.original_arguments = arguments
         self.args, self.remaining_args = parser.parse_known_args(arguments)
         self.verbose_out = None
-        self.annotations_out = None
 
     def run(self):
         if self.args.version:
@@ -136,7 +135,10 @@ class CompilerCall(object):
                     suffix='.out',
                     prefix='annotations_',
                     delete=False) as annot_out:
-                self.annotations_out = annot_out.name
+                self.suppress_warnings_out = annot_out.name
+            javac_cmd += ['-A%s=%s' %
+                          (config.SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION,
+                           self.suppress_warnings_out)]
 
             with tempfile.NamedTemporaryFile(
                     mode='w',
@@ -144,7 +146,6 @@ class CompilerCall(object):
                     prefix='javac_',
                     delete=False) as file_out:
                 self.verbose_out = file_out.name
-                os.environ['INFER_ANNOTATIONS_OUT'] = self.annotations_out
                 try:
                     subprocess.check_call(javac_cmd, stderr=file_out)
                 except subprocess.CalledProcessError:
@@ -241,13 +242,11 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         infer_cmd += [
             '-results_dir', self.args.infer_out,
             '-verbose_out', self.javac.verbose_out,
+            '-suppress_warnings_out', self.javac.suppress_warnings_out,
         ]
 
         if os.path.isfile(config.MODELS_JAR):
             infer_cmd += ['-models', config.MODELS_JAR]
-
-        if self.javac.annotations_out is not None:
-            infer_cmd += ['-local_config', self.javac.annotations_out]
 
         infer_cmd.append('-no-static_final')
 
@@ -276,4 +275,4 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
 
     def _close(self):
         os.remove(self.javac.verbose_out)
-        os.remove(self.javac.annotations_out)
+        os.remove(self.javac.suppress_warnings_out)

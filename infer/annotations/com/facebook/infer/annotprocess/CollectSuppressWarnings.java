@@ -9,11 +9,9 @@
 
 package com.facebook.infer.annotprocess;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -22,39 +20,37 @@ import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 
+@SupportedOptions({ "SuppressWarningsOutputFilename" })
 @SupportedAnnotationTypes({ "java.lang.SuppressWarnings" })
 public class CollectSuppressWarnings extends AbstractProcessor {
 
-  private static final String ANNOTATION_ENV_VAR = "INFER_ANNOTATIONS_OUT";
+  private static final String OUTPUT_FILENAME_OPTION = "SuppressWarningsOutputFilename";
 
-  private String mOutputFilename;
-
-  // map of (classes -> methods in class). an empty set means suppress all
-  // warnings on class
+  // map of (classes -> methods in class). an empty set means suppress all warnings on class
   public Map<String, Set<String>> mSuppressMap = new LinkedHashMap<String, Set<String>>();
 
   // total number of classes/methods with a SuppressWarnings annotation
   private int mNumToSuppress = 0;
 
   // write the methods/classes to suppress to .inferconfig-style JSON
-  private void exportSuppressMap() throws FileNotFoundException, IOException {
-    Map<String, String> env = System.getenv();
-    if (env.get(ANNOTATION_ENV_VAR) == null) {
-      throw new RuntimeException("Env variable INFER_ANNOTATIONS_OUT not set");
-    } else {
-      mOutputFilename = env.get(ANNOTATION_ENV_VAR);
-    }
+  private void exportSuppressMap() throws IOException {
+
+    Map<String, String> options = processingEnv.getOptions();
+    String mOutputFilename =
+      Preconditions.checkNotNull(options.get(OUTPUT_FILENAME_OPTION),
+                                 "The filename should be passed from the Infer top-level script");
 
     // output .inferconfig format file in JSON
     try (PrintWriter out = new PrintWriter(mOutputFilename)) {
       int elemCount = 0;
-      out.println("{ \"suppress_procedures\": [");
+      out.println("{ \"suppress_warnings\": [");
       for (Map.Entry<String, Set<String>> entry : mSuppressMap.entrySet()) {
         String clazz = entry.getKey();
         Set<String> methods = entry.getValue();
@@ -79,10 +75,11 @@ public class CollectSuppressWarnings extends AbstractProcessor {
   }
 
   // collect all of the SuppressWarnings annotations from the Java source files being compiled
-  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
+  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+
     Elements elements = processingEnv.getElementUtils();
     for (TypeElement te : annotations) {
-      for (Element e : env.getElementsAnnotatedWith(te)) {
+      for (Element e : roundEnv.getElementsAnnotatedWith(te)) {
         SuppressWarnings annot = e.getAnnotation(SuppressWarnings.class);
         if (annot != null && shouldProcess(annot)) {
           if (e instanceof TypeElement) { // class
@@ -107,13 +104,14 @@ public class CollectSuppressWarnings extends AbstractProcessor {
       }
     }
 
-    if (env.processingOver() && mNumToSuppress > 0) {
+    if (roundEnv.processingOver() && mNumToSuppress > 0) {
       try {
         exportSuppressMap();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
+
     return false;
   }
 

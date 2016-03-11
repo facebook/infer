@@ -55,12 +55,11 @@ let log_issue
     ?(pre = None)
     exn =
   let should_suppress_warnings summary =
-    if !Config.curr_language = Config.C_CPP then false
-    else
-      let annotated_signature =
-        Annotations.get_annotated_signature summary.Specs.attributes in
-      let ret_annotation, _ = annotated_signature.Annotations.ret in
-      Annotations.ia_is_suppress_warnings ret_annotation in
+    !Config.curr_language = Config.Java &&
+    let annotated_signature =
+      Annotations.get_annotated_signature summary.Specs.attributes in
+    let ret_annotation, _ = annotated_signature.Annotations.ret in
+    Annotations.ia_is_suppress_warnings ret_annotation in
   match Specs.get_summary proc_name with
   | Some summary when should_suppress_warnings summary -> ()
   | Some summary ->

@@ -12,7 +12,7 @@ let inferconfig_file = ".inferconfig"
 
 let inferconfig_home = ref None
 
-let local_config = ref None
+let suppress_warnings_annotations = ref None
 
 (** Look up a key in a json file containing a list of strings *)
 let lookup_string_list key json =
@@ -280,8 +280,8 @@ module NeverReturnNull = FileOrProcMatcher(struct
     let json_key = "never_returning_null"
   end)
 
-module ProcMatcher = FileOrProcMatcher(struct
-    let json_key = "suppress_procedures"
+module SuppressWarningsMatcher = FileOrProcMatcher(struct
+    let json_key = "suppress_warnings"
   end)
 
 module SkipTranslationMatcher = FileOrProcMatcher(struct

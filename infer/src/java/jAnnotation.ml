@@ -17,10 +17,10 @@ let suppress_warnings_lookup = ref None
 let load_suppress_warnings_lookup () =
   let default_matcher = fun _ -> false in
   let matcher =
-    match !Inferconfig.local_config with
+    match !Inferconfig.suppress_warnings_annotations with
     | Some f ->
         (try
-           let m = Inferconfig.ProcMatcher.load_matcher f in
+           let m = Inferconfig.SuppressWarningsMatcher.load_matcher f in
            (m DB.source_file_empty)
          with Yojson.Json_error _ ->
            default_matcher)
