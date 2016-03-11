@@ -119,6 +119,7 @@ let exe_timeout f x =
   with
   | Analysis_failure_exe kind ->
       resume_previous_timeout ();
+      L.log_progress_timeout_event kind;
       Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." pp_failure_kind kind;
       Some kind
   | exe ->

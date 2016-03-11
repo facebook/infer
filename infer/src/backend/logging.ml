@@ -181,3 +181,17 @@ let log_progress_file () =
 
 let log_progress_procedure () =
   log_progress_simple "."
+
+let log_progress_timeout_event failure_kind =
+  if !Config.developer_mode then
+    begin
+      match failure_kind with
+      | FKtimeout ->
+          log_progress_simple "T"
+      | FKsymops_timeout _ ->
+          log_progress_simple "S"
+      | FKrecursion_timeout _ ->
+          log_progress_simple "R"
+      | FKcrash _ ->
+          log_progress_simple "C"
+    end

@@ -135,3 +135,6 @@ val log_progress_file : unit -> unit
 
 (** Progress bar: start of the analysis of a procedure. *)
 val log_progress_procedure : unit -> unit
+
+(** Progress bar: log a timeout event if in developer mode. *)
+val log_progress_timeout_event : failure_kind -> unit
