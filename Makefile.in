@@ -85,6 +85,10 @@ test_build:
 	$(MAKE) -C $(SRC_DIR) test_clean
 	$(MAKE) -C $(SRC_DIR) test_build
 
+ifeq (@BUILD_C_ANALYZERS@,yes)
+test_build: clang_plugin
+endif
+
 ocaml_unit_test: $(INFER_ANALYZERS) unit
 	$(INFERUNIT_BIN)
 
