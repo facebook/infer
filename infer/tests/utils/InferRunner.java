@@ -52,6 +52,9 @@ public class InferRunner {
       "/dependencies/java/jackson/jackson-2.2.3.jar",
   };
 
+  private static final String CXX_INCLUDE_DIR =
+      "/facebook-clang-plugins/clang/include/c++/v1/";
+
   private static final String IPHONESIMULATOR_ISYSROOT_SUFFIX =
       "/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk";
 
@@ -202,6 +205,21 @@ public class InferRunner {
     return stdParam;
   }
 
+  private static String getSystemHeaderFlag(Language lang) {
+    String headerFlag = "";
+    switch (lang) {
+      case CPP:
+        String current_dir = System.getProperty("user.dir");
+        headerFlag = new StringBuilder()
+          .append("-isystem")
+          .append(current_dir)
+          .append(CXX_INCLUDE_DIR)
+          .toString();
+        break;
+    }
+    return headerFlag;
+  }
+
   public static ImmutableList<String> createClangCommand(
     String sourceFile,
     Language lang,
@@ -226,6 +244,7 @@ public class InferRunner {
         .add("-x")
         .add(getClangLangOption(lang))
         .add(getStdParam(lang))
+        .add(getSystemHeaderFlag(lang))
         .addAll(isysrootOption.build())
         .addAll(arcOption.build())
         .add("-c")
