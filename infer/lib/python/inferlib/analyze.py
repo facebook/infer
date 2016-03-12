@@ -268,6 +268,8 @@ class AnalyzerWrapper(object):
         # to be reported
         infer_options += ['-allow_specs_cleanup']
 
+        infer_options += ['-inferconfig_home', os.getcwd()]
+
         if self.args.analyzer == config.ANALYZER_ERADICATE:
             infer_options += ['-eradicate']
         elif self.args.analyzer == config.ANALYZER_CHECKERS:

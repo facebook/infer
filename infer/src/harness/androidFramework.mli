@@ -52,6 +52,8 @@ val is_android_lib_class : Typename.t -> bool
 (** Path to the android.jar file containing real code, not just the method stubs as in the SDK *)
 val non_stub_android_jar : unit -> string
 
+val is_subclass : Sil.tenv -> Typename.t -> string -> bool
+
 (** [is_exception tenv class_name] checks if class_name is of type java.lang.Exception *)
 val is_exception : Sil.tenv -> Typename.t -> bool
 

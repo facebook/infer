@@ -7,10 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-val inferconfig_home : string option ref
-
-val suppress_warnings_annotations : string option ref
-
 (** get the path to the .inferconfig file *)
 val inferconfig : unit -> string
 
@@ -46,6 +42,11 @@ module NeverReturnNull : Matcher
 module SkipTranslationMatcher : Matcher
 
 module SuppressWarningsMatcher : Matcher
+
+module ModeledExpensiveMatcher : sig
+  type matcher = (string -> bool) -> Procname.t -> bool
+  val load_matcher : string -> matcher
+end
 
 (** Load the config file and list the files to report on *)
 val test: unit -> unit

@@ -63,7 +63,7 @@ let arg_desc =
       "Set the path to the javac verbose output"
       ;
       "-suppress_warnings_out",
-      Arg.String (fun s -> Inferconfig.suppress_warnings_annotations := Some s),
+      Arg.String (fun s -> Config.suppress_warnings_annotations := Some s),
       Some "Path",
       "Path to list of collected @SuppressWarnings annotations"
       ;

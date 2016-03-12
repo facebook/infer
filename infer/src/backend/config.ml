@@ -46,6 +46,13 @@ let proc_stats_filename = "proc_stats.json"
 
 let global_tenv_filename = "global.tenv"
 
+(** Name of the infer configuration file *)
+let inferconfig_file = ".inferconfig"
+
+let inferconfig_home : string option ref = ref None
+
+let suppress_warnings_annotations : string option ref = ref None
+
 (** List of paths to the directories containing specs for library functions. *)
 let specs_library = ref []
 

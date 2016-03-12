@@ -29,6 +29,17 @@ let expensive_overrides_unexpensive =
   "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
 
 
+let is_modeled_expensive =
+  let matcher =
+    lazy (let config_file = Inferconfig.inferconfig () in
+          Inferconfig.ModeledExpensiveMatcher.load_matcher config_file) in
+  fun tenv proc_name ->
+    not (SymExec.function_is_builtin proc_name) &&
+    let classname =
+      Typename.Java.from_string (Procname.java_get_class proc_name) in
+    (Lazy.force matcher) (AndroidFramework.is_subclass tenv classname) proc_name
+
+
 let check_attributes check attributes =
   let annotated_signature = Annotations.get_annotated_signature attributes in
   let ret_annotation, _ = annotated_signature.Annotations.ret in
@@ -73,24 +84,6 @@ let method_overrides_performance_critical tenv pname =
 
 let method_overrides_no_allocation tenv pname =
   method_overrides method_is_no_allcation tenv pname
-
-
-let is_modeled_expensive tenv pname =
-  if SymExec.function_is_builtin pname then false
-  else if Procname.java_get_method pname <> "findViewById" then false
-  else
-    let package =
-      match Procname.java_get_package pname with
-      | None -> ""
-      | Some p -> p in
-    let classname =
-      Mangled.from_package_class package (Procname.java_get_simple_class pname) in
-    match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, classname)) with
-    | None -> false
-    | Some struct_typ ->
-        let typ = Sil.Tstruct struct_typ in
-        AndroidFramework.is_view typ tenv
-        || AndroidFramework.is_activity typ tenv
 
 
 let method_is_expensive tenv pname =
@@ -239,9 +232,9 @@ let report_allocation_stack pname loc trace stack_str constructor_pname call_loc
   Reporting.log_error pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
 
 
-let report_call_stack end_of_stack lookup_next_calls report tenv pname pdesc loc calls =
+let report_call_stack end_of_stack lookup_next_calls report pname pdesc loc calls =
   let rec loop visited_pnames (trace, stack_str) (callee_pname, callee_loc) =
-    if end_of_stack tenv callee_pname then
+    if end_of_stack callee_pname then
       report pname loc trace stack_str callee_pname callee_loc
     else
       let next_calls = lookup_next_calls callee_pname in
@@ -261,14 +254,14 @@ let report_call_stack end_of_stack lookup_next_calls report tenv pname pdesc loc
 
 let report_expensive_calls tenv pname pdesc loc calls =
   report_call_stack
-    method_is_expensive lookup_expensive_calls report_expensive_call_stack
-    tenv pname pdesc loc calls
+    (method_is_expensive tenv) lookup_expensive_calls
+    report_expensive_call_stack pname pdesc loc calls
 
 
-let report_allocations tenv pname pdesc loc calls =
+let report_allocations pname pdesc loc calls =
   report_call_stack
-    (fun _ p -> Procname.is_constructor p) lookup_allocations report_allocation_stack
-    tenv pname pdesc loc calls
+    Procname.is_constructor lookup_allocations
+    report_allocation_stack pname pdesc loc calls
 
 
 let check_one_procedure tenv pname pdesc =
@@ -311,7 +304,7 @@ let check_one_procedure tenv pname pdesc =
   if performance_critical then
     report_expensive_calls tenv pname pdesc loc call_summary.Specs.expensive_calls;
   if no_allocation then
-    report_allocations tenv pname pdesc loc call_summary.Specs.allocations
+    report_allocations pname pdesc loc call_summary.Specs.allocations
 
 
 let callback_performance_checker

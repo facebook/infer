@@ -18,5 +18,17 @@
       "language": "Java",
       "source_contains": "_SHOULD_BE_SKIPPED_"
     }
+  ],
+  "modeled_expensive": [
+    {
+      "language": "Java",
+      "class": "android.app.Activity",
+      "method": "findViewById"
+    },
+    {
+      "language": "Java",
+      "class": "android.view.View",
+      "method": "findViewById"
+    }
   ]
 }

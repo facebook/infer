@@ -667,35 +667,47 @@ let base_arg_desc =
     Arg.String (fun s -> Config.results_dir := s),
     Some "dir",
     "set the project results directory (default dir=" ^ Config.default_results_dir ^ ")";
+
     "-coverage",
     Arg.Unit (fun () -> Config.worklist_mode:= 2),
     None,
     "analysis mode to maximize coverage (can take longer)";
+
     "-lib",
     Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library),
     Some "dir",
     "add dir to the list of directories to be searched for spec files";
+
     "-specs-dir-list-file",
     Arg.String (fun s -> Config.specs_library := (read_specs_dir_list_file s) @ !Config.specs_library),
     Some "file",
     "add the newline-separated directories listed in <file> to the list of directories to \
      be searched for spec files";
+
     "-models",
     Arg.String (fun s -> Config.add_models (filename_to_absolute s)),
     Some "zip file",
     "add a zip file containing the models";
+
     "-ziplib",
     Arg.String (fun s -> Config.add_zip_library (filename_to_absolute s)),
     Some "zip file",
     "add a zip file containing library spec files";
+
     "-project_root",
     Arg.String (fun s -> Config.project_root := Some (filename_to_absolute s)),
     Some "dir",
     "root directory of the project";
+
     "-infer_cache",
     Arg.String (fun s -> Config.JarCache.infer_cache := Some (filename_to_absolute s)),
     Some "dir",
     "Select a directory to contain the infer cache";
+
+    "-inferconfig_home",
+    Arg.String (fun s -> Config.inferconfig_home := Some s),
+    Some "dir",
+    "Path to the .inferconfig file";
   ]
 
 let reserved_arg_desc =

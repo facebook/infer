@@ -176,7 +176,7 @@ let arg_desc =
         "setup the analyzer for the path filtering"
         ;
         "-inferconfig_home",
-        Arg.String (fun s -> Inferconfig.inferconfig_home := Some s),
+        Arg.String (fun s -> Config.inferconfig_home := Some s),
         Some "dir",
         "Path to the .inferconfig file"
         ;

@@ -11,32 +11,20 @@
 open Javalib_pack
 
 
-let suppress_warnings_lookup = ref None
-
-
-let load_suppress_warnings_lookup () =
-  let default_matcher = fun _ -> false in
+let is_suppress_warnings_annotated =
   let matcher =
-    match !Inferconfig.suppress_warnings_annotations with
-    | Some f ->
-        (try
-           let m = Inferconfig.SuppressWarningsMatcher.load_matcher f in
-           (m DB.source_file_empty)
-         with Yojson.Json_error _ ->
-           default_matcher)
-    | None -> failwith "Local config expected!" in
-  suppress_warnings_lookup := Some matcher
-
-
-let is_suppress_warnings_annotated proc_name =
-  let matcher =
-    let () =
-      match !suppress_warnings_lookup with
-      | None ->
-          load_suppress_warnings_lookup ()
-      | Some _ -> () in
-    Option.get !suppress_warnings_lookup in
-  matcher proc_name
+    lazy
+      (let default_matcher = fun _ -> false in
+       match !Config.suppress_warnings_annotations with
+       | Some f ->
+           (try
+              let m = Inferconfig.SuppressWarningsMatcher.load_matcher f in
+              (m DB.source_file_empty)
+            with Yojson.Json_error _ ->
+              default_matcher)
+       | None -> failwith "Local config expected!") in
+  fun proc_name ->
+    (Lazy.force matcher) proc_name
 
 
 let suppress_warnings =
