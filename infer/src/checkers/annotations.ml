@@ -141,7 +141,9 @@ let ia_is_inject ia =
     [inject; inject_view; bind; suppress_view_nullability]
 
 let ia_is_inject_view ia =
-  ia_ends_with ia inject_view
+  IList.exists
+    (ia_ends_with ia)
+    [inject_view; bind; suppress_view_nullability]
 
 let ia_is_mutable ia =
   ia_ends_with ia mutable_
