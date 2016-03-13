@@ -140,12 +140,14 @@ let ia_is_initializer ia =
   ia_ends_with ia initializer_
 
 let ia_is_inject ia =
-  ia_ends_with ia inject
+  IList.exists
+    (ia_ends_with ia)
+    [inject; inject_view; bind; bind_array; bind_bitmap; bind_drawable; bind_string; suppress_view_nullability]
 
 let ia_is_inject_view ia =
   IList.exists
     (ia_ends_with ia)
-    [inject; inject_view; bind; bind_array; bind_bitmap; bind_drawable; bind_string; suppress_view_nullability]
+    [inject_view; bind; bind_array; bind_bitmap; bind_drawable; bind_string; suppress_view_nullability]
 
 let ia_is_mutable ia =
   ia_ends_with ia mutable_
