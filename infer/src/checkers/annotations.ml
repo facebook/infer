@@ -98,6 +98,10 @@ let initializer_ = "Initializer"
 let inject = "Inject"
 let inject_view = "InjectView"
 let bind = "Bind"
+let bind_array = "BindArray"
+let bind_bitmap = "BindBitmap"
+let bind_drawable = "BindDrawable"
+let bind_string = "BindString"
 let suppress_view_nullability = "SuppressViewNullability"
 let false_on_null = "FalseOnNull"
 let mutable_ = "Mutable"
@@ -138,7 +142,7 @@ let ia_is_initializer ia =
 let ia_is_inject ia =
   IList.exists
     (ia_ends_with ia)
-    [inject; inject_view; bind; suppress_view_nullability]
+    [inject; inject_view; bind; bind_array; bind_bitmap; bind_drawable; bind_string; suppress_view_nullability]
 
 let ia_is_inject_view ia =
   IList.exists
