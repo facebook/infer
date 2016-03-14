@@ -19,5 +19,5 @@ module type CTrans = sig
 end
 
 
-module CTrans_funct(M: CModule_type.CMethod_declaration) : CTrans
+module CTrans_funct(F: CModule_type.CFrontend) : CTrans
 

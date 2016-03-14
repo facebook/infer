@@ -26,7 +26,7 @@ module type CTrans = sig
 
 end
 
-module CTrans_funct(M: CModule_type.CMethod_declaration) : CTrans =
+module CTrans_funct(F: CModule_type.CFrontend) : CTrans =
 struct
 
   (*Returns the procname and whether is instance, according to the selector *)
@@ -1890,7 +1890,7 @@ struct
         let ids_instrs = IList.map assign_captured_var captured_vars in
         let ids, instrs = IList.split ids_instrs in
         let block_data = (context, type_ptr, block_pname, captured_vars) in
-        M.function_decl context.tenv context.cfg context.cg decl (Some block_data);
+        F.function_decl context.tenv context.cfg context.cg decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_exps = IList.map (fun id -> Sil.Var id) ids in
         let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)) :: captured_exps) in
