@@ -560,4 +560,20 @@ let write_html_file linereader filename cfg =
 (** Create filename.ext.html for each file in the exe_env. *)
 let write_all_html_files linereader exe_env =
   if !Config.write_html then
-    Exe_env.iter_files (write_html_file linereader) exe_env
+    Exe_env.iter_files
+      (fun _ cfg ->
+         let source_files_in_cfg =
+           let files = ref DB.SourceFileSet.empty in
+           Cfg.iter_proc_desc cfg
+             (fun _ proc_desc ->
+                if Cfg.Procdesc.is_defined proc_desc
+                then
+                  let file = (Cfg.Procdesc.get_loc proc_desc).Location.file in
+                  files := DB.SourceFileSet.add file !files);
+           !files in
+         DB.SourceFileSet.iter
+           (fun file ->
+              DB.current_source := file;
+              write_html_file linereader file cfg)
+           source_files_in_cfg)
+      exe_env
