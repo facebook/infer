@@ -132,7 +132,7 @@ let do_run source_path ast_path =
     CLocation.check_source_file source_path;
     let source_file = CLocation.source_file_from_path source_path in
     print_endline ("Start translation of AST from " ^ !CFrontend_config.json);
-    CGen_trans.do_source_file  source_file ast_decl;
+    CFrontend.do_source_file  source_file ast_decl;
     print_endline ("End translation AST file " ^ !CFrontend_config.json ^ "... OK!")
   with
     (Yojson.Json_error s) as exc -> Printing.log_err "%s\n" s;

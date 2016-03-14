@@ -13,12 +13,4 @@
 (** declarations as procdescs to the cfg, and adding the control flow graph of all the *)
 (** code of those functions and methods to the cfg   *)
 
-module type CFrontend_decl = sig
-  val function_decl : Sil.tenv -> Cfg.cfg -> Cg.t -> Clang_ast_t.decl ->
-    CModule_type.block_data option -> unit
-
-  val translate_one_declaration : Sil.tenv -> Cg.t -> Cfg.cfg ->
-    Clang_ast_t.decl -> Clang_ast_t.decl -> unit
-end
-
-module CFrontend_decl_funct(T: CModule_type.CTranslation) : CFrontend_decl
+val do_source_file : DB.source_file ->  Clang_ast_t.decl -> unit
