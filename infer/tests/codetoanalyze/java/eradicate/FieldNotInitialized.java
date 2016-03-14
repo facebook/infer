@@ -15,6 +15,8 @@ import android.widget.EditText;
 
 import butterknife.Bind;
 
+import com.facebook.infer.annotation.SuppressViewNullability;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -31,9 +33,15 @@ public class FieldNotInitialized {
 
   @NonNull String e;
 
-  @Bind(42) EditText f;
+  @Bind(42) EditText f; // Means: assume it will be initialized, and ignore null assignment
+
+  @SuppressViewNullability EditText g;
 
   //  Eradicate should only report one initialization error
   FieldNotInitialized() {}
 
+  void testNullifyFields() {
+    f = null; // OK  the framework could write null into the field
+    g = null; // OK  the framework could write null into the field
+  }
 }

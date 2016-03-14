@@ -194,14 +194,16 @@ let check_field_assignment
     typecheck_expr node instr_ref curr_pname typestate exp_rhs
       (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, [loc]) loc in
   let should_report_nullable =
-    let field_is_inject_view () = match t_ia_opt with
-      | Some (_, ia) -> Annotations.ia_is_inject_view ia
-      | _ -> false in
+    let field_is_field_injector_readwrite () = match t_ia_opt with
+      | Some (_, ia) ->
+          Annotations.ia_is_field_injector_readwrite ia
+      | _ ->
+          false in
     TypeAnnotation.get_value Annotations.Nullable ta_lhs = false &&
     TypeAnnotation.get_value Annotations.Nullable ta_rhs = true &&
     PatternMatch.type_is_class t_lhs &&
     not (Ident.java_fieldname_is_outer_instance fname) &&
-    not (field_is_inject_view ()) in
+    not (field_is_field_injector_readwrite ()) in
   let should_report_absent =
     activate_optional_present &&
     TypeAnnotation.get_value Annotations.Present ta_lhs = true &&
@@ -259,7 +261,8 @@ let check_constructor_initialization
             | Some (_, ia) -> f ia in
           let nullable_annotated = annotated_with Annotations.ia_is_nullable in
           let nonnull_annotated = annotated_with Annotations.ia_is_nonnull in
-          let inject_annotated = annotated_with Annotations.ia_is_inject in
+          let injector_readonly_annotated =
+            annotated_with Annotations.ia_is_field_injector_readonly in
 
           let final_type_annotation_with unknown list f =
             let filter_range_opt = function
@@ -285,18 +288,18 @@ let check_constructor_initialization
               (Lazy.force final_constructor_typestates)
               (fun ta -> TypeAnnotation.get_value Annotations.Nullable ta = true) in
 
-          let should_check_field =
+          let should_check_field_initialization =
             let in_current_class =
               let fld_cname = Ident.java_fieldname_get_class fn in
               match struct_name with
               | None -> false
               | Some name -> Mangled.equal name (Mangled.from_string fld_cname) in
-            not inject_annotated &&
+            not injector_readonly_annotated &&
             PatternMatch.type_is_class ft &&
             in_current_class &&
             not (Ident.java_fieldname_is_outer_instance fn) in
 
-          if should_check_field then
+          if should_check_field_initialization then
             begin
               if Models.Inference.enabled then Models.Inference.field_add_nullable_annotation fn;
 

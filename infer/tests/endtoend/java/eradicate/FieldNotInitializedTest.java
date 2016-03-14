@@ -10,6 +10,7 @@
 package endtoend.java.eradicate;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 import static utils.matchers.ResultContainsNumberOfErrorsInMethod.containsNumberOfErrors;
 
 import org.junit.BeforeClass;
@@ -46,7 +47,20 @@ public class FieldNotInitializedTest {
             FIELD_NOT_INITIALIZED,
             SOURCE_FILE,
             "<init>",
-            1));
+            1
+        )
+    );
+
+    String[] procedures = {"<init>"};
+    assertThat(
+        "Results should contain " + FIELD_NOT_INITIALIZED,
+        inferResults,
+        containsExactly(
+            FIELD_NOT_INITIALIZED,
+            SOURCE_FILE,
+            procedures
+        )
+    );
   }
 
 }
