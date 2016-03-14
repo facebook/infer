@@ -106,7 +106,8 @@ let should_translate (loc_start, loc_end) =
   || map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models
-  || (!CFrontend_config.cxx_experimental && file_in_project)
+  || (!CFrontend_config.cxx_experimental && file_in_project
+      && not (!CFrontend_config.testing_mode))
 
 let should_translate_lib source_range =
   not !CFrontend_config.no_translate_libs
