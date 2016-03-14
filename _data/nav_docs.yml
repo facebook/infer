@@ -6,8 +6,8 @@
   items:
   - id: infer-workflow
   - id: analyzing-apps-or-projects
-  - id: checkers
   - id: eradicate
+  - id: checkers
   - id: advanced-features
   - id: adding-models
 - title: Foundations
