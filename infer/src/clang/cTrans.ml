@@ -2018,6 +2018,36 @@ struct
     let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
     { empty_res_trans with exps = [(Sil.Const (Sil.Cfun fun_name), Sil.Tvoid)] }
 
+  and cxxTypeidExpr_trans trans_state stmt_info stmts expr_info =
+    let tenv = trans_state.context.CContext.tenv in
+    let typ = CTypes_decl.get_type_from_expr_info expr_info tenv in
+    let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let res_trans_subexpr =
+      match stmts with
+      | [stmt] ->
+          let trans_state_param = { trans_state_pri with succ_nodes = [] } in
+          instruction trans_state_param stmt
+      | _ -> empty_res_trans in
+    let fun_name = SymExec.ModelBuiltins.__cxx_typeid in
+    let sil_fun = Sil.Const (Sil.Cfun fun_name) in
+    let ret_id = Ident.create_fresh Ident.knormal in
+    let type_info_objc = (Sil.Sizeof (typ, Sil.Subtype.exact), Sil.Tvoid) in
+    let field_name_decl = Ast_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
+    let field_name = General_utils.mk_class_field_name field_name_decl in
+    let ret_exp = Sil.Var ret_id in
+    let field_exp = Sil.Lfield (ret_exp, field_name, typ) in
+    let args = [type_info_objc; (field_exp, Sil.Tvoid)] @ res_trans_subexpr.exps in
+    let call_instr = Sil.Call ([ret_id], sil_fun, args, sil_loc, Sil.cf_default) in
+    let res_trans_call = { empty_res_trans with
+                           ids = [ret_id];
+                           instrs = [call_instr];
+                           exps = [(ret_exp, typ)]; } in
+    let all_res_trans = [res_trans_subexpr; res_trans_call] in
+    let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+        "CXXTypeidExpr" stmt_info all_res_trans in
+    { res_trans_to_parent with exps = res_trans_call.exps }
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2285,6 +2315,9 @@ struct
 
     | CXXPseudoDestructorExpr _ ->
         cxxPseudoDestructorExpr_trans ()
+
+    | CXXTypeidExpr (stmt_info, stmts, expr_info) ->
+        cxxTypeidExpr_trans trans_state stmt_info stmts  expr_info
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"
