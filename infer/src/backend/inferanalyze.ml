@@ -82,6 +82,12 @@ let arg_desc =
         None,
         "analyze in reactive propagation mode starting from changed files"
         ;
+        "-continue",
+        Arg.Set Config.continue_capture,
+        None,
+        "continue the capture for the reactive analysis,\
+         increasing the changed files/procedures."
+        ;
         (* TODO: merge with the -project_root option *)
         "-java",
         Arg.Unit (fun () -> Config.curr_language := Config.Java),

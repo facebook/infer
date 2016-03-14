@@ -65,9 +65,13 @@ base_group.add_argument('-i', '--incremental',
 base_group.add_argument('-ic', '--changed-only',
                         dest='reactive', action='store_true',
                         help='''DEPRECATED: use --reactive.''')
-base_group.add_argument('--reactive', action='store_true',
+base_group.add_argument('-r', '--reactive', action='store_true',
                         help='''Analyze in reactive propagation mode
                         starting from changed files.''')
+base_group.add_argument('-c', '--continue', action='store_true',
+                        dest='continue_capture',
+                        help='''Continue the capture for the reactive
+                        analysis, increasing the changed files/procedures.''')
 base_group.add_argument('--debug-exceptions', action='store_true',
                         help='''Generate lightweight debugging information:
                         just print the internal exceptions during analysis''')
@@ -108,7 +112,7 @@ infer_group.add_argument('-j', '--multicore', metavar='n', type=int,
 infer_group.add_argument('-x', '--project', metavar='<projectname>',
                            help='Project name, for recording purposes only')
 
-infer_group.add_argument('-r', '--revision', metavar='<githash>',
+infer_group.add_argument('--revision', metavar='<githash>',
                            help='The githash, for recording purposes only')
 
 infer_group.add_argument('--buck', action='store_true', dest='buck',
@@ -308,6 +312,9 @@ class AnalyzerWrapper(object):
 
         if self.args.reactive:
             infer_options.append('-reactive')
+
+        if self.args.continue_capture:
+            infer_options.append('-continue')
 
         if self.args.specs_dirs:
             infer_options += self.args.specs_dirs

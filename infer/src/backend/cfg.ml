@@ -133,7 +133,10 @@ module Node = struct
     let mark_pdesc_if_unchanged pname new_pdesc =
       try
         let old_pdesc = Procname.Hash.find old_procs pname in
-        let changed = not (pdescs_eq old_pdesc new_pdesc) in
+        let changed =
+          (* in continue_capture mode keep the old changed bit *)
+          (!Config.continue_capture && old_pdesc.pd_attributes.ProcAttributes.changed) ||
+          not (pdescs_eq old_pdesc new_pdesc) in
         new_pdesc.pd_attributes.changed <- changed
       with Not_found -> () in
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
