@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2014 - present Facebook, Inc.
+ * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -7,4 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-let register_checkers () = ()
+(** Check the sequence of calls to tracing APIs in a method (intraprocedural). *)
+
+val callback_check_trace_call_sequence: Callbacks.proc_callback_t

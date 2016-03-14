@@ -340,7 +340,6 @@ let process_cluster_cmdline fname =
 let () =
   print_prolog ();
   RegisterCheckers.register ();
-  Facebook.register_checkers ();
 
   if !allow_specs_cleanup = true && !cluster_cmdline = None then
     DB.Results_dir.clean_specs_dir ();
