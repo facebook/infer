@@ -117,3 +117,6 @@ buck-out/
 /infer/annotations/processor_classes/
 /infer/lib/java/processor.jar
 infer/src/.project
+
+#Ounit
+oUnit-all.cache
