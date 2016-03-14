@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/checkers-bug-types.html
 section: Bug Types Reference
 section_order: 03
-order: 02
+order: 03
 ---
 
 ## <a name="CHECKERS_IMMUTABLE_CAST"></a>Checkers immutable cast
