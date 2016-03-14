@@ -26,7 +26,7 @@ let active_procedure_checkers () =
         Checkers.callback_checkVisibleForTesting, false;
         Checkers.callback_check_write_to_parcel, false;
         Checkers.callback_find_deserialization, false;
-		Checkers.callback_print_java_call, false; (**danger luis*)
+		Checkers.callback_print_java_method_call, false; (**danger luis*)
         Dataflow.callback_test_dataflow, false;
         FragmentRetainsViewChecker.callback_fragment_retains_view, checkers_enabled;
         SqlChecker.callback_sql, false;
