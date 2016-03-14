@@ -515,3 +515,21 @@ let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
           description
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc
+  
+ 
+  (**danger**)
+  let callback_print_java_method_call { Callbacks.proc_desc; proc_name } =
+    let do_instr node = function
+      | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _) ->
+          let description =
+            Printf.sprintf "call to %s" (Procname.to_string pn) in
+          ST.report_error
+            proc_name
+            proc_desc
+            "CHECKERS_PRINT_JAVA_CALL"
+            loc
+            description
+      | _ -> () in
+    Cfg.Procdesc.iter_instrs do_instr proc_desc
+ 
+ 

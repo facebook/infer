@@ -51,3 +51,4 @@ val callback_check_write_to_parcel : Callbacks.proc_callback_t
 val callback_find_deserialization : Callbacks.proc_callback_t
 val callback_check_field_access : Callbacks.proc_callback_t
 val callback_print_c_method_calls : Callbacks.proc_callback_t
+val callback_print_java_method_call : Callbacks.proc_callback_t (**danger**)
