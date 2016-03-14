@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/eradicate-warnings.html
 section: Bug Types Reference
 section_order: 03
-order: 03
+order: 02
 ---
 
 Below you will find a description of all the warnings reported by 
