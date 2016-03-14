@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/checkers.html
 section: User Guide
 section_order: 01
-order: 03
+order: 04
 ---
 
 The Infer analyzer performs sophisticated interprocedural static
