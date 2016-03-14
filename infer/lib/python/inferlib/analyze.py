@@ -102,6 +102,10 @@ base_parser.add_argument('-v', '--version',
                          help='''Print the version of Infer and exit''',
                          action=VersionAction)
 
+base_group.add_argument('--pmd-xml',
+                        action='store_true',
+                        help='''Output issues in (PMD) XML format.''')
+
 
 infer_parser = argparse.ArgumentParser(parents=[base_parser])
 infer_group = infer_parser.add_argument_group('backend arguments')
@@ -486,7 +490,12 @@ class AnalyzerWrapper(object):
                                                config.JSON_REPORT_FILENAME)
                     bugs_out = os.path.join(self.args.infer_out,
                                             config.BUGS_FILENAME)
-                    issues.print_and_save_errors(json_report, bugs_out)
+                    xml_out = None
+                    if self.args.pmd_xml:
+                        xml_out = os.path.join(self.args.infer_out,
+                                               config.PMD_XML_FILENAME)
+                    issues.print_and_save_errors(json_report,
+                                                 bugs_out, xml_out)
 
     def print_analysis_stats(self):
         files_total = self.stats['int']['files']
