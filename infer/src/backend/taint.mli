@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2013 - present Facebook, Inc.
+ * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -8,11 +8,11 @@
  *)
 
 (** returns true if [callee_pname] returns a tainted value *)
-let returns_secret callee_pname = false
+val returns_tainted : Procname.t -> bool
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
-let accepts_sensitive_params callee_pname = []
+val accepts_sensitive_params : Procname.t -> int list
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)
-let tainted_params callee_pname = []
+val tainted_params : Procname.t -> int list

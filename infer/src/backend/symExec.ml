@@ -879,7 +879,7 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
             (* bind return id to the abducted value pointed to by the pvar we introduced *)
             bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
         let prop'' = add_ret_non_null ret_exp typ prop' in
-        if !Config.taint_analysis && Taint.returns_secret callee_pname then
+        if !Config.taint_analysis && Taint.returns_tainted callee_pname then
           add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind = Unknown } prop''
         else prop''
     else add_ret_non_null ret_exp typ prop

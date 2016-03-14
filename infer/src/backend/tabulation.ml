@@ -821,7 +821,7 @@ let mk_posts ret_ids prop callee_pname posts =
           IList.filter (fun (prop, _) -> not (returns_null prop)) posts
         else posts in
       let mk_retval_tainted posts =
-        if Taint.returns_secret callee_pname then
+        if Taint.returns_tainted callee_pname then
           let taint_retval (prop, path) =
             let prop_normal = Prop.normalize prop in
             let prop' =
