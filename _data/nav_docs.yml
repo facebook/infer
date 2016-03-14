@@ -18,5 +18,5 @@
 - title: Bug Types Reference
   items:
   - id: infer-bug-types
-  - id: checkers-bug-types
   - id: eradicate-warnings
+  - id: checkers-bug-types
