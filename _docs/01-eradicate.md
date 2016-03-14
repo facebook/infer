@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/eradicate.html
 section: User Guide
 section_order: 01
-order: 04
+order: 03
 ---
 
 
