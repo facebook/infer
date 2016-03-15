@@ -395,6 +395,14 @@ let is_infer_undefined pn = match pn with
   | _ ->
       (* TODO: add cases for obj-c, c, c++ *)
       false
+	  
+(** [java_is_print_method pn] returns true if [pn] is an output method **)
+let java_is_print_method = function
+	| Java_method js ->
+		let _, class_name = js.class_name in
+		(js.method_name = "println") && (class_name = "PrintStream")
+	| _ -> false
+
 
 (** to_string for C_function type *)
 let to_readable_string (c1, c2) verbose =
