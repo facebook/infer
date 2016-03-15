@@ -161,6 +161,7 @@ to tell Infer to combine several changes into one before the analysis.
 This is done with the `--continue` option.
 
 For example:
+
 ```bash
 edit some/File1.java
 # make some changes to some/File1.java
@@ -177,6 +178,7 @@ analyze the results of the second change.
 
 Finally, it is always possible to perform an analysis of the
 current changes in isolation:
+
 ```bash
 infer --reactive --continue -- analyze
 ```
