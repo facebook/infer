@@ -879,7 +879,7 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
             (* bind return id to the abducted value pointed to by the pvar we introduced *)
             bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
         let prop'' = add_ret_non_null ret_exp typ prop' in
-        if !Config.taint_analysis && Taint.returns_secret callee_pname then
+        if !Config.taint_analysis && Taint.returns_tainted callee_pname then
           add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind = Unknown } prop''
         else prop''
     else add_ret_non_null ret_exp typ prop
@@ -2445,6 +2445,30 @@ module ModelBuiltins = struct
       [(prop_alloc, path); (prop_null, path)]
     else [(prop_alloc, path)]
 
+  let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
+    : Builtin.ret_typ =
+    match args with
+    | type_info_exp :: rest ->
+        (let res = execute_alloc Sil.Mnew false { r with args = [type_info_exp] } in
+         match rest with
+         | [(field_exp, _); (lexp, typ)] ->
+             let pname = Cfg.Procdesc.get_proc_name pdesc in
+             let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+             let typ =
+               try
+                 let hpred = IList.find (function
+                     | Sil.Hpointsto (e, _, _) -> Sil.exp_equal e n_lexp
+                     | _ -> false) (Prop.get_sigma prop) in
+                 match hpred with
+                 | Sil.Hpointsto (_, _, Sil.Sizeof (dynamic_type, _)) -> dynamic_type
+                 | _ -> typ
+               with Not_found -> typ in
+             let typ_string = Sil.typ_to_string typ in
+             let set_instr = Sil.Set (field_exp, Sil.Tvoid, Sil.Const (Sil.Cstr typ_string), loc) in
+             sym_exec_generated true tenv pdesc [set_instr] res
+         | _ -> res)
+    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
+
   let execute_pthread_create { Builtin.pdesc; tenv; prop_; path; ret_ids; args; loc; }
     : Builtin.ret_typ =
     match args with
@@ -2671,6 +2695,9 @@ module ModelBuiltins = struct
       "__objc_retain" execute___objc_retain
   let __objc_retain_cf = Builtin.register
       "__objc_retain_cf" execute___objc_retain_cf
+  let __cxx_typeid = Builtin.register
+      (* C++ "typeid" *)
+      "__cxx_typeid" execute___cxx_typeid
   let __placement_delete = Builtin.register
       (* placement delete is skip *)
       "__placement_delete" execute_skip

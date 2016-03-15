@@ -82,6 +82,12 @@ let arg_desc =
         None,
         "analyze in reactive propagation mode starting from changed files"
         ;
+        "-continue",
+        Arg.Set Config.continue_capture,
+        None,
+        "continue the capture for the reactive analysis,\
+         increasing the changed files/procedures."
+        ;
         (* TODO: merge with the -project_root option *)
         "-java",
         Arg.Unit (fun () -> Config.curr_language := Config.Java),
@@ -334,7 +340,6 @@ let process_cluster_cmdline fname =
 let () =
   print_prolog ();
   RegisterCheckers.register ();
-  Facebook.register_checkers ();
 
   if !allow_specs_cleanup = true && !cluster_cmdline = None then
     DB.Results_dir.clean_specs_dir ();

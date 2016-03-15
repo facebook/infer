@@ -13,5 +13,4 @@
 (** declarations as procdescs to the cfg, and adding the control flow graph of all the *)
 (** code of those functions and methods to the cfg   *)
 
-
-val do_source_file : DB.source_file -> Clang_ast_t.decl -> unit
+val do_source_file : DB.source_file ->  Clang_ast_t.decl -> unit

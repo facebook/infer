@@ -380,7 +380,11 @@ def collect_results(args, start_time):
         report.flush()
 
     print('\n')
-    issues.print_and_save_errors(json_report, bugs_out)
+    xml_out = None
+    if args.pmd_xml:
+        xml_out = os.path.join(args.infer_out,
+                               config.PMD_XML_FILENAME)
+    issues.print_and_save_errors(json_report, bugs_out, xml_out)
 
     stats['int']['total_time'] = int(round(utils.elapsed_time(start_time)))
 

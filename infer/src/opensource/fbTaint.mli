@@ -1,5 +1,5 @@
 (*
- * Copyright (c) 2013 - present Facebook, Inc.
+ * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -7,8 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module rec CTransImpl : CTrans.CTrans =
-  CTrans.CTrans_funct(CMethod_declImpl)
+val sources : PatternMatch.method_str list
 
-and CMethod_declImpl : CMethod_decl.CMethod_decl =
-  CMethod_decl.CMethod_decl_funct(CTransImpl)
+val sinks : (PatternMatch.method_str * int list) list
+
+val functions_with_tainted_params : (PatternMatch.method_str * int list) list

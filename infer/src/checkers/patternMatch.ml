@@ -12,6 +12,15 @@
 module L = Logging
 module F = Format
 
+type method_str = {
+  classname : string;
+  method_name : string;
+  ret_type : string;
+  params : string list;
+  is_static : bool;
+  language : Config.language
+}
+
 let object_name = Mangled.from_string "java.lang.Object"
 
 let type_is_object = function

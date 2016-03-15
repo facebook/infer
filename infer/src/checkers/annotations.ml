@@ -98,6 +98,11 @@ let initializer_ = "Initializer"
 let inject = "Inject"
 let inject_view = "InjectView"
 let bind = "Bind"
+let bind_array = "BindArray"
+let bind_bitmap = "BindBitmap"
+let bind_drawable = "BindDrawable"
+let bind_string = "BindString"
+let suppress_view_nullability = "SuppressViewNullability"
 let false_on_null = "FalseOnNull"
 let mutable_ = "Mutable"
 let nullable = "Nullable"
@@ -134,13 +139,35 @@ let ia_is_true_on_null ia =
 let ia_is_initializer ia =
   ia_ends_with ia initializer_
 
-let ia_is_inject ia =
+let field_injector_readwrite_list =
+  [
+    inject_view;
+    bind;
+    bind_array;
+    bind_bitmap;
+    bind_drawable;
+    bind_string;
+    suppress_view_nullability;
+  ]
+
+let field_injector_readonly_list =
+  inject
+  ::
+  field_injector_readwrite_list
+
+(** Annotations for readonly injectors.
+    The injector framework initializes the field but does not write null into it. *)
+let ia_is_field_injector_readonly ia =
   IList.exists
     (ia_ends_with ia)
-    [inject; inject_view; bind]
+    field_injector_readonly_list
 
-let ia_is_inject_view ia =
-  ia_ends_with ia inject_view
+(** Annotations for read-write injectors.
+    The injector framework initializes the field and can write null into it. *)
+let ia_is_field_injector_readwrite ia =
+  IList.exists
+    (ia_ends_with ia)
+    field_injector_readwrite_list
 
 let ia_is_mutable ia =
   ia_ends_with ia mutable_

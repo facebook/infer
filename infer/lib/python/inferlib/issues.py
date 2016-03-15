@@ -12,14 +12,21 @@ from __future__ import unicode_literals
 
 import codecs
 import csv
+import datetime
 import itertools
 import json
 import operator
 import os
+import re
 import shutil
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+
+try:
+    from lxml import etree
+except ImportError:
+    etree = None
 
 from . import colorize, config, source, utils
 
@@ -82,6 +89,7 @@ JSON_INDEX_HASH = 'hash'
 JSON_INDEX_KIND = 'kind'
 JSON_INDEX_LINE = 'line'
 JSON_INDEX_PROCEDURE = 'procedure'
+JSON_INDEX_PROCEDURE_ID = 'procedure_id'
 JSON_INDEX_QUALIFIER = 'qualifier'
 JSON_INDEX_QUALIFIER_TAGS = 'qualifier_tags'
 JSON_INDEX_SEVERITY = 'file'
@@ -103,6 +111,7 @@ JSON_INDEX_ISL_ENUM = 'enum'
 
 QUALIFIER_TAGS = 'qualifier_tags'
 BUCKET_TAGS = 'bucket'
+ISSUE_TYPES_URL = 'http://fbinfer.com/docs/infer-issue-types.html#'
 
 
 def clean_csv(args, csv_report):
@@ -252,15 +261,19 @@ def _is_user_visible(report):
             kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING])
 
 
-def print_and_save_errors(json_report, bugs_out):
+def print_and_save_errors(json_report, bugs_out, xml_out):
     errors = utils.load_json_from_path(json_report)
     errors = filter(_is_user_visible, errors)
     utils.stdout('\n' + _text_of_report_list(errors))
+    plain_out = _text_of_report_list(errors,
+                                     formatter=colorize.PLAIN_FORMATTER)
     with codecs.open(bugs_out, 'w',
                      encoding=config.LOCALE, errors='replace') as file_out:
-        plain_out = _text_of_report_list(errors,
-                                         formatter=colorize.PLAIN_FORMATTER)
         file_out.write(plain_out)
+    if xml_out is not None:
+        with codecs.open(xml_out, 'w',
+                         encoding=config.LOCALE, errors='replace') as file_out:
+            file_out.write(_pmd_xml_of_issues(errors))
 
 
 def merge_reports_from_paths(report_paths):
@@ -268,6 +281,48 @@ def merge_reports_from_paths(report_paths):
     for json_path in report_paths:
         json_data.extend(utils.load_json_from_path(json_path))
     return _sort_and_uniq_rows(json_data)
+
+
+def _pmd_xml_of_issues(issues):
+    if etree is None:
+        print('ERROR: "etree" Python package not found.')
+        print('ERROR: You need to install it to use Infer with --pmd-xml')
+        sys.exit(1)
+    root = etree.Element('pmd')
+    root.attrib['version'] = '5.4.1'
+    root.attrib['date'] = datetime.datetime.now().isoformat()
+    for issue in issues:
+        fully_qualifed_method_name = re.search('(.*)\(.*',
+                                               issue[JSON_INDEX_PROCEDURE_ID])
+        class_name = ''
+        package = ''
+        if fully_qualifed_method_name is not None:
+            # probably Java
+            info = fully_qualifed_method_name.groups()[0].split('.')
+            class_name = info[-2:-1][0]
+            method = info[-1]
+            package = '.'.join(info[0:-2])
+        else:
+            method = issue[JSON_INDEX_PROCEDURE]
+        file_node = etree.Element('file')
+        file_node.attrib['name'] = issue[JSON_INDEX_FILENAME]
+        violation = etree.Element('violation')
+        violation.attrib['begincolumn'] = '0'
+        violation.attrib['beginline'] = str(issue[JSON_INDEX_LINE])
+        violation.attrib['endcolumn'] = '0'
+        violation.attrib['endline'] = str(issue[JSON_INDEX_LINE] + 1)
+        violation.attrib['class'] = class_name
+        violation.attrib['method'] = method
+        violation.attrib['package'] = package
+        violation.attrib['priority'] = '1'
+        violation.attrib['rule'] = issue[JSON_INDEX_TYPE]
+        violation.attrib['ruleset'] = 'Infer Rules'
+        violation.attrib['externalinfourl'] = (
+            ISSUE_TYPES_URL + issue[JSON_INDEX_TYPE])
+        violation.text = issue[JSON_INDEX_QUALIFIER]
+        file_node.append(violation)
+        root.append(file_node)
+    return etree.tostring(root, pretty_print=True, encoding=config.LOCALE)
 
 
 def _sort_and_uniq_rows(l):

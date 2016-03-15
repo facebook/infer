@@ -195,6 +195,10 @@ let checkers_enabled () = not !eradicate
     the analysis starts from the files captured since the "infer" command started *)
 let reactive_mode = ref false
 
+(** Continue the capture for reactive mode:
+    If a procedure was changed beforehand, keep the changed marking. *)
+let continue_capture = ref false
+
 (** Flag for footprint discovery mode *)
 let footprint = ref true
 

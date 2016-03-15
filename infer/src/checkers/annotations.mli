@@ -64,8 +64,15 @@ val ia_get_strict : Sil.item_annotation -> Sil.annotation option
 
 val ia_is_false_on_null : Sil.item_annotation -> bool
 val ia_is_initializer : Sil.item_annotation -> bool
-val ia_is_inject : Sil.item_annotation -> bool
-val ia_is_inject_view : Sil.item_annotation -> bool
+
+(** Annotations for readonly injectors.
+    The injector framework initializes the field but does not write null into it. *)
+val ia_is_field_injector_readonly : Sil.item_annotation -> bool
+
+(** Annotations for read-write injectors.
+    The injector framework initializes the field and can write null into it. *)
+val ia_is_field_injector_readwrite : Sil.item_annotation -> bool
+
 val ia_is_mutable : Sil.item_annotation -> bool
 val ia_is_nonnull : Sil.item_annotation -> bool
 val ia_is_nullable : Sil.item_annotation -> bool

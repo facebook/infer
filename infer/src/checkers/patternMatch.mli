@@ -9,6 +9,15 @@
 
 (** Module for Pattern matching. *)
 
+type method_str = {
+  classname : string;
+  method_name : string;
+  ret_type : string;
+  params : string list;
+  is_static : bool;
+  language : Config.language
+}
+
 (** Returns the signature of a field access (class name, field name, field type name) *)
 val get_java_field_access_signature : Sil.instr -> (string * string * string) option
 
