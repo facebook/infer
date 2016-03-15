@@ -13,7 +13,6 @@ module type AbstractDomain = sig
   type astate
 
   val initial : astate
-  val bottom : astate
   val is_bottom : astate -> bool
   val (<=) : lhs:astate -> rhs:astate -> bool (* fst \sqsubseteq snd? *)
   val join : astate -> astate -> astate
@@ -26,8 +25,6 @@ module BottomLiftedAbstractDomain (A : AbstractDomain) : AbstractDomain = struct
   type astate =
     | Bottom
     | NonBottom of A.astate
-
-  let bottom = Bottom
 
   let is_bottom astate =
     astate = Bottom

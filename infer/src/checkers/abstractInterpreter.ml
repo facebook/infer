@@ -26,11 +26,15 @@ module Make
   type inv_map = state M.t
 
   let exec_node node astate_pre work_queue inv_map =
+    let exec_instrs astate_acc instr =
+      if A.is_bottom astate_acc
+      then astate_acc
+      else T.exec_instr astate_acc instr in
     let node_id = C.node_id node in
     L.out "Doing analysis of node %a from pre %a@." C.pp_node_id node_id A.pp astate_pre;
     let instrs = C.instrs node in
     let astate_post =
-      IList.fold_left (fun astate_acc instr -> T.exec_instr astate_acc instr) astate_pre instrs in
+      IList.fold_left exec_instrs astate_pre instrs in
     L.out "Post for node %a is %a@." C.pp_node_id node_id A.pp astate_post;
     if M.mem node_id inv_map then
       let old_state = M.find node_id inv_map in
@@ -60,12 +64,15 @@ module Make
 
   let rec exec_worklist work_queue inv_map =
     match S.pop work_queue with
-    | Some (node, visited_preds, work_queue') ->
+    | Some (_, [], work_queue') ->
+        exec_worklist work_queue' inv_map
+    | Some (node, visited_pred :: visited_preds, work_queue') ->
+        let get_post pred_id =
+          (M.find pred_id inv_map).post in
         (* compute the precondition for node by joining post of all visited preds *)
-        let join_pred astate_acc pred_id =
-          let pred_state = M.find pred_id inv_map in
-          A.join pred_state.post astate_acc in
-        let astate_pre = IList.fold_left join_pred A.bottom visited_preds in
+        let join_pred_posts astate_acc pred_id =
+          A.join (get_post pred_id) astate_acc in
+        let astate_pre = IList.fold_left join_pred_posts (get_post visited_pred) visited_preds in
         let inv_map', work_queue'' = exec_node node astate_pre work_queue' inv_map in
         exec_worklist work_queue'' inv_map'
     | None -> inv_map
@@ -76,13 +83,5 @@ module Make
     let start_node = C.start_node cfg in
     let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty in
     exec_worklist work_queue' inv_map'
-
 end
 
-module UnitTests = struct
-
-  let tests =
-    let open OUnit2 in
-    "abstract_interpreter_suite">:::[]
-
-end

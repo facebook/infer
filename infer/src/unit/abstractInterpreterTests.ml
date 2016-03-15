@@ -25,13 +25,9 @@ module PathCountDomain = struct
     then Top
     else PathCount c
 
-  let bottom = make_path_count 0
-
   let initial = make_path_count 1
 
-  let is_bottom = function
-    | PathCount c -> c = 0
-    | Top -> false
+  let is_bottom _ = false
 
   let (<=) ~lhs ~rhs = match lhs, rhs with
     | PathCount c1, PathCount c2 -> c1 <= c2

@@ -153,12 +153,11 @@ module Make
     let inv_map = I.exec_pdesc pdesc in
 
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
-      let node_id_post =
+      let post_str =
         try
           let state = M.find node_id inv_map in
-          state.post
-        with Not_found -> A.bottom in
-      let post_str = pp_to_string A.pp node_id_post in
+          pp_to_string A.pp state.post
+        with Not_found -> "_|_" in
       if inv_str <> post_str then
         let error_msg =
           F.fprintf F.str_formatter
