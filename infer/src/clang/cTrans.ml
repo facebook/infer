@@ -253,6 +253,14 @@ struct
     let typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
     (mk_temp_sil_var procdesc var_name_prefix, typ)
 
+  let create_var_exp_tmp_var trans_state expr_info var_name =
+    let context = trans_state.context in
+    let procdesc = context.CContext.procdesc in
+    let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
+        var_name expr_info in
+    Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
+    Sil.Lvar pvar, typ
+
   let create_call_instr trans_state return_type function_sil params_sil sil_loc
       call_flags ~is_objc_method =
     let ret_id = if (Sil.typ_equal return_type Sil.Tvoid) then []
@@ -374,7 +382,7 @@ struct
     | _ -> empty_res_trans
 
   let implicitValueInitExpr_trans trans_state expr_info =
-    let (var_exp, _) = extract_var_exp_of_fail trans_state in
+    let (var_exp, _) = extract_var_exp_or_fail trans_state in
     let tenv = trans_state.context.CContext.tenv in
     let typ = CTypes_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exps = var_or_zero_in_init_list tenv var_exp typ ~return_zero:true in
@@ -1513,9 +1521,13 @@ struct
   and initListExpr_trans trans_state stmt_info expr_info stmts =
     let context = trans_state.context in
     let tenv = context.tenv in
+    let (var_exp, typ) =
+      match trans_state.var_exp_typ with
+      | Some var_exp_typ -> var_exp_typ
+      | None -> create_var_exp_tmp_var trans_state expr_info "SIL_init_list__" in
+    let trans_state = { trans_state with var_exp_typ = Some (var_exp, typ) } in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let var_exp, _ = extract_var_exp_of_fail trans_state in
     let var_type =
       CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let lh = var_or_zero_in_init_list tenv var_exp var_type ~return_zero:false in
@@ -1955,12 +1967,7 @@ struct
     let var_exp_typ =
       if Option.is_some trans_state.var_exp_typ then trans_state.var_exp_typ
       else
-        let context = trans_state.context in
-        let procdesc = context.CContext.procdesc in
-        let (pvar, typ) = mk_temp_sil_var_for_expr context.CContext.tenv procdesc
-            "SIL_compound_literal__" expr_info in
-        Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, typ)];
-        Some (Sil.Lvar pvar, typ) in
+        Some (create_var_exp_tmp_var trans_state expr_info "SIL_compound_literal__") in
     let trans_state' = { trans_state with var_exp_typ = var_exp_typ } in
     instruction trans_state' stmt
 

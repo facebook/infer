@@ -64,4 +64,10 @@ public class ConstructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("default_field_init.cpp");
   }
+
+  @Test
+  public void testConstructorInitListDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("constructor_struct_init_list.cpp");
+  }
 }

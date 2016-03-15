@@ -184,7 +184,7 @@ let collect_res_trans l =
             is_cpp_call_virtual = false; } in
   collect l empty_res_trans
 
-let extract_var_exp_of_fail transt_state =
+let extract_var_exp_or_fail transt_state =
   match transt_state.var_exp_typ with
   | Some var_exp_typ -> var_exp_typ
   | None -> assert false

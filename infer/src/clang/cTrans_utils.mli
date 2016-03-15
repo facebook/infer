@@ -41,7 +41,7 @@ val empty_res_trans: trans_result
 
 val collect_res_trans : trans_result list -> trans_result
 
-val extract_var_exp_of_fail : trans_state -> Sil.exp * Sil.typ
+val extract_var_exp_or_fail : trans_state -> Sil.exp * Sil.typ
 
 val is_return_temp: continuation option -> bool
 
