@@ -14,6 +14,7 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
   - [Context leak](/docs/infer-bug-types.html#CONTEXT_LEAK)
+  - [Tainted value reaching sensitive function](/docs/infer-bug-types.html#TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION)
 
 - Bugs reported in C and Objective-C
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
@@ -260,7 +261,7 @@ Clearly, accounting for the ramifications of all the exceptional cases is compli
  All the complicated exceptional cases above are (apparently) covered by this construct, and the result is much simpler.
 
 So, if you are trying to fix a potential leak in code with multiples resources you can go ahead and try to understand whether the potential leak is real.
-Or, if the code is complex and it is hard to figure out, it would be perfectly legitimate to   simply convert the code over to
+Or, if the code is complex and it is hard to figure out, it would be perfectly legitimate to simply convert the code over to
 try-with-resources if you have access to Java 7, so as to save yourself some brain-cycles. You will also end up with cleaner code.
 
 If try-with-resources is so great you should <i>always</i> use it. But you shouldn't… Try-with-resources gives resources static scoping, and works via a stack discipline. Sometimes, you want a resource to persist beyond scope,
@@ -274,6 +275,10 @@ when you see a resource-allocation site.
 This error type is specific to Android. In Android applications, subtypes of `Context` (other than `Application`, which is a special case) are ephemeral components that can be created and destroyed at the discretion of the Android framework. Once the framework decides to destroy a `Context`, it cannot be used again and should be freed by the garbage collector. However, the programmer can create a memory leak by retaining a reference to the `Context` after it has been destroyed (thereby preventing collection).
 
 Infer decides to report a `Context` leak when it determines that a chain of references between a static field and a `Context` may exist at the end of a `public` method of a non-`Application` `Context` subtype.
+
+## <a name="TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"></a>Tainted value reaching sensitive function
+
+This error type corresponds to a security or privacy issue. A security bug is reported when unsafe data flows to sensitive function (e.g., reading from some `SSLSocket` whose hostname has not been verified). A privacy bug is report when secret data flows to a function that may leak the value to the outside world (e.g., user data from `SharedPreferences` flowing to a logging function).
 
 ## <a name="MEMORY_LEAK"></a>Memory leak
 
@@ -359,7 +364,7 @@ int null_pointer_interproc() {
 
 In Objective-C, null dereferences are less common than in Java, but they still happen and their cause can be hidden. 
 In general, passing a message to nil does not cause a crash and returns `nil`, but dereferencing a pointer directly 
-does cause a crash as well as calling a `nil` block.
+does cause a crash as well as calling a `nil` block.C
 
 ```objc
 -(void) foo:(void (^)())callback {
