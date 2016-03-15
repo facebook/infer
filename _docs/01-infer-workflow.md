@@ -16,7 +16,7 @@ to your own project.
 1. Make sure your project is clean when you first run Infer on it
   (with `make clean`, or `gradle clean`, or ...).
 2. When running Infer several times in a row, either clean your
-  project as in step 1 in-between Infer runs, or add `--incremental`
+  project as in step 1 in-between Infer runs, or add `--reactive`
   to the `infer` command.
 3. These steps are not needed if you are not using an incremental
   build system, for instance if you are analyzing single files with
@@ -68,12 +68,14 @@ however, we also save a file `report.csv` that contains all the
 errors, warnings and infos reported by Infer in csv format.
 
 
-## Incremental and non-incremental workflows
+## Global (default) and differential workflows
 
 By default, running Infer will delete the previous `infer-out/`
-directory if it exists. This leads to a *non-incremental*
-workflow. Passing `--incremental` (or `-i`) to Infer prevents it from
-deleting `infer-out/`, leading to an *incremental* workflow.
+directory if it exists. This leads to a *default* workflow where
+the entire project is analyzed every time.
+Passing `--reactive` (or `-r`) to Infer prevents it from
+deleting `infer-out/`, leading to a *differential* workflow.
+(Note that the previous `--incremental` mode is now deprecated).
 
 There are exceptions to this. In particular, you can run only one of
 the phases above. For instance, `infer -- javac Hello.java` is
@@ -90,66 +92,97 @@ files it needs to analyze live there!
 You can learn more about the various modes of operations of Infer by
 running `infer --help`.
 
-Let us highlight when you may need non-incremental and incremental
+Let us highlight when you may need global and differential
 workflows.
 
 
-### Non-incremental workflow
+### Global workflow
 
-Non-incremental workflow is well suited to running Infer repeatedly
-with a single compiler command, e.g.
-
-```bash
-infer -- javac Hello.java
-edit Hello.java
-# make some changes to Hello.java, e.g. fix a bug reported by Infer
-infer -- javac Hello.java
-```
-
-To start a fresh analysis, you have to
-
-1. delete the results directory:
-
-    ```bash
-    rm -fr infer-out
-    ```
-
-2. clean the build products, for instance with `make clean` for a make-based project.
-
-
-### Incremental workflow
-
-Software projects such as mobile apps use *incremental* build systems.
-Infer understands several such build systems, detailed in the [next
-section](docs/analyzing-apps-or-projects.html). To analyze your
-project using Infer, it has to use one of these build systems.
-
-Running Infer on your project is as simple as running `infer -- <your
-build command here>` where the build command is the one you would
-normally use to compile your source code. Infer should be first run on
-a *clean* version of the project, to capture all the compilation
-commands in its capture phase.
-
-For instance, for a project compiled using gradle,
+The global workflow is well suited to running Infer on all the files
+in a project, e.g., for a Gradle-based project that compiles using the
+`gradle build` command:
 
 ```bash
-gradle clean
 infer -- gradle build
 ```
 
+In general, running Infer on your project is as simple as running
+`infer -- <your build command here>` where the build command is the
+one you would normally use to compile your source code.
+
+To start a fresh analysis and be sure to analyze all the files in your
+project, you have to clean the build products, for instance with `make clean`
+for a make-based project, `gradle clean` for Gradle, etc.
+
+
+### Differential workflow
+
+Software projects such as mobile apps use *incremental* build systems,
+where code evolves as a sequence of code changes. For these projects,
+it can often make sense to analyze only the current changes in the
+project, instead of analyzing the whole project every time. It is
+possible to analyze only what's changed using Infer's *reactive mode*.
+
+Infer should first be run on
+a *clean* version of the project, to capture all the compilation
+commands in its capture phase.
+
+For instance, for a project compiled using Gradle,
+
+```bash
+gradle clean
+infer -a capture -- gradle build
+```
+
+Note that the above command does not perform an expensive analysis, but
+captures all the compilation commands and stores the results
+in Infer's internal format.
+
 Next, if you change some files in your project, for instance in
-response to an Infer report, you can either repeat the commands above,
-that is clean and reanalyze the entire project, or else tell Infer
-that you are using an incremental toolchain:
+response to an Infer report, or as part of normal development, you can
+either clean and reanalyze the entire project (as in the [global
+workflow](#Global-workflow) above), or else tell Infer that you are
+interested in the effects of the code change.
+The second option can be significantly faster, as only a subset of the project
+needs to be analyzed: the modified files/procedures and their
+dependencies.
 
 ```bash
 edit some/File.java
 # make some changes to some/File.java
-infer --incremental -- gradle build
+infer --reactive -- gradle build
 ```
 
-Note that you can run Infer with the `--incremental` flag the first
+Note that you can run Infer with the `--reactive` flag the first
 time around as well.
+
+To control the granularity of the changes to be analyzed, it is possible
+to tell Infer to combine several changes into one before the analysis.
+This is done with the `--continue` option.
+
+For example:
+```bash
+edit some/File1.java
+# make some changes to some/File1.java
+infer --reactive -- gradle build
+edit some/File2.java
+# make some changes to some/File2.java
+infer --reactive --continue -- gradle build
+```
+
+After the first invocation, Infer will analyze the results of the first change.
+After the second invocation, Infer will analyze the results of both
+changes. If the `--continue` option were omitted, it would only
+analyze the results of the second change.
+
+Finally, it is always possible to perform an analysis of the
+current changes in isolation:
+```bash
+infer --reactive --continue -- analyze
+```
+
+The list of build systems supported by Infer is detailed in the [next
+section](docs/analyzing-apps-or-projects.html).
 
 
 ## Exploring Infer reports
