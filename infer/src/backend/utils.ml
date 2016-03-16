@@ -857,6 +857,19 @@ module Arg = struct
       ("", Arg.Unit (fun () -> ()), " \n  " ^ title ^ "\n") ::
       IList.sort (fun (x, _, _) (y, _, _) -> Pervasives.compare x y) unsorted_desc' in
     align dlist
+
+  let env_to_argv env =
+    Str.split (Str.regexp ":") env
+
+  let prepend_to_argv args =
+    let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in
+    Sys.executable_name :: args @ cl_args
+
+  let parse env_var spec anon usage =
+    let env_args = env_to_argv (try Unix.getenv env_var with Not_found -> "") in
+    let env_cl_args = prepend_to_argv env_args in
+    Arg.parse_argv (Array.of_list env_cl_args) spec anon usage
+
 end
 
 (** flags for a procedure *)

@@ -1023,7 +1023,7 @@ module AnalysisResults = struct
       if not (Filename.check_suffix arg ".specs") && arg <> "."
       then print_usage_exit "arguments must be .specs files"
       else args := arg::!args in
-    Arg.parse arg_desc f usage;
+    Arg.parse "INFERPRINT_ARGS" arg_desc f usage;
     if !test_filtering then
       begin
         Inferconfig.test ();

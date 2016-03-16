@@ -67,7 +67,7 @@ let store_tenv tenv =
   Sil.store_tenv_to_file tenv_filename tenv
 
 let () =
-  Arg.parse arg_desc (fun _ -> ()) usage;
+  Arg.parse "INFERLLVM_ARGS" arg_desc (fun _ -> ()) usage;
   begin match !LConfig.source_filename with
     | None -> print_usage_exit ()
     | Some source_filename -> init_global_state source_filename

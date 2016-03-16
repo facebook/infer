@@ -96,9 +96,6 @@ let print_usage_exit () =
   Arg.usage arg_desc usage;
   exit(1)
 
-let () =
-  Arg.parse arg_desc (fun _ -> ()) usage
-
 let buffer_len = 16384
 
 (* This function reads the json file in fname, validates it, and encoded in the AST data structure*)
@@ -138,7 +135,8 @@ let do_run source_path ast_path =
     (Yojson.Json_error s) as exc -> Printing.log_err "%s\n" s;
       raise exc
 
-let _ =
+let () =
+  Arg.parse "INFERCLANG_ARGS" arg_desc (fun _ -> ()) usage ;
   Config.print_types := true;
   if Option.is_none !CFrontend_config.source_file then
     (Printing.log_err "Incorrect command line arguments\n";

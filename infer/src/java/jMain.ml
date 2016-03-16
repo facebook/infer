@@ -78,7 +78,7 @@ let print_usage_exit () =
   exit(1)
 
 let () =
-  Arg.parse arg_desc (fun _ -> ()) usage;
+  Arg.parse "INFERJAVA_ARGS" arg_desc (fun _ -> ()) usage;
   if Config.analyze_models && !JClasspath.models_jar <> "" then
     failwith "Not expecting model file when analyzing the models";
   if not Config.analyze_models && !JClasspath.models_jar = "" then

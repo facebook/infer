@@ -233,7 +233,12 @@ module Arg : sig
 
   val align : (key * spec * doc) list -> aligned list
 
-  val parse : aligned list -> anon_fun -> usage_msg -> unit
+  (** [parse env_var arg_desc anon_fun usage_msg] prepends the decoded value of environment variable
+      [env_var] to [Sys.argv] and then parses the result using the standard [Arg.parse].  Therefore
+      arguments passed on the command line supercede those specified in the environment variable.
+      WARNING: If an argument appears both in the environment variable and on the command line, it
+      will be interpreted twice. *)
+  val parse : string -> aligned list -> anon_fun -> usage_msg -> unit
 
   val usage : aligned list -> usage_msg -> unit
 

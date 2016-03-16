@@ -223,7 +223,7 @@ let print_usage_exit () =
 let () = (* parse command-line arguments *)
   let f _ =
     () (* ignore anonymous arguments *) in
-  Arg.parse arg_desc f usage;
+  Arg.parse "INFER_ARGS" arg_desc f usage;
   if not (Sys.file_exists !Config.results_dir) then
     begin
       L.err "ERROR: results directory %s does not exist@.@." !Config.results_dir;
