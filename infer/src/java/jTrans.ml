@@ -28,12 +28,13 @@ let init_loc_map : Location.t JBasics.ClassMap.t ref = ref JBasics.ClassMap.empt
 (** Fix the line associated to a method definition.
     Since Sawja often reports a method off by a few lines, we search
     backwards for a line where the method name is. *)
-let fix_method_definition_line linereader proc_name loc =
+let fix_method_definition_line linereader proc_name_java loc =
+  let proc_name = Procname.Java proc_name_java in
   let method_name =
     if Procname.is_constructor proc_name then
       let inner_class_name cname = snd (string_split_character cname '$') in
-      inner_class_name (Procname.java_get_simple_class proc_name)
-    else Procname.java_get_method proc_name in
+      inner_class_name (Procname.java_get_simple_class proc_name_java)
+    else Procname.java_get_method proc_name_java in
   let regex = Str.regexp (Str.quote method_name) in
   let method_is_defined_here linenum =
     match Printer.LineReader.from_file_linenum_original linereader loc.Location.file linenum with
@@ -265,7 +266,8 @@ let create_local_procdesc program linereader cfg tenv node m =
       meth_kind = JContext.Init &&
       not (JTransStaticField.has_static_final_fields node))
   then
-    let proc_name = JTransType.get_method_procname cn ms (JTransType.get_method_kind m) in
+    let proc_name_java = JTransType.get_method_procname cn ms (JTransType.get_method_kind m) in
+    let proc_name = Procname.Java proc_name_java in
     let create_new_procdesc () =
       let trans_access = function
         | `Default -> Sil.Default
@@ -278,7 +280,7 @@ let create_local_procdesc program linereader cfg tenv node m =
             let formals =
               formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
             let method_annotation =
-              JAnnotation.translate_method proc_name am.Javalib.am_annotations in
+              JAnnotation.translate_method proc_name_java am.Javalib.am_annotations in
             let procdesc =
               let proc_attributes =
                 { (ProcAttributes.default proc_name Config.Java) with
@@ -303,7 +305,7 @@ let create_local_procdesc program linereader cfg tenv node m =
         | Javalib.ConcreteMethod cm when is_java_native cm ->
             let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
             let method_annotation =
-              JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
+              JAnnotation.translate_method proc_name_java cm.Javalib.cm_annotations in
             let proc_attributes =
               { (ProcAttributes.default proc_name Config.Java) with
                 ProcAttributes.access = trans_access cm.Javalib.cm_access;
@@ -320,10 +322,10 @@ let create_local_procdesc program linereader cfg tenv node m =
             let locals, formals = locals_formals program tenv cn impl meth_kind in
             let loc_start =
               let loc = (get_location impl 0 JContext.Normal cn) in
-              fix_method_definition_line linereader proc_name loc in
+              fix_method_definition_line linereader proc_name_java loc in
             let loc_exit = (get_location impl (Array.length (JBir.code impl) - 1) JContext.Normal cn) in
             let method_annotation =
-              JAnnotation.translate_method proc_name cm.Javalib.cm_annotations in
+              JAnnotation.translate_method proc_name_java cm.Javalib.cm_annotations in
             update_constr_loc cn ms loc_start;
             update_init_loc cn ms loc_exit;
             let procdesc =
@@ -354,7 +356,8 @@ let create_local_procdesc program linereader cfg tenv node m =
       with JBir.Subroutine ->
         L.err "create_local_procdesc raised JBir.Subroutine on %a@." Procname.pp proc_name in
     match lookup_procdesc cfg proc_name with
-    | Unknown -> create_new_procdesc ()
+    | Unknown ->
+        create_new_procdesc ()
     | Created defined_status ->
         begin
           match defined_status with
@@ -370,10 +373,10 @@ let create_external_procdesc program cfg tenv cn ms kind =
     | None -> Sil.Tvoid
     | Some vt -> JTransType.value_type program tenv vt in
   let formals = formals_from_signature program tenv cn ms kind in
-  let proc_name = JTransType.get_method_procname cn ms kind in
+  let proc_name_java = JTransType.get_method_procname cn ms kind in
   ignore (
     let proc_attributes =
-      { (ProcAttributes.default proc_name Config.Java) with
+      { (ProcAttributes.default (Procname.Java proc_name_java) Config.Java) with
         ProcAttributes.formals;
         ret_type = return_type;
       } in
@@ -381,8 +384,8 @@ let create_external_procdesc program cfg tenv cn ms kind =
 
 (** returns the procedure description of the given method and creates it if it hasn't been created before *)
 let rec get_method_procdesc program cfg tenv cn ms kind =
-  let procname = JTransType.get_method_procname cn ms kind in
-  match lookup_procdesc cfg procname with
+  let procname_java = JTransType.get_method_procname cn ms kind in
+  match lookup_procdesc cfg (Procname.Java procname_java) with
   | Unknown ->
       create_external_procdesc program cfg tenv cn ms kind;
       get_method_procdesc program cfg tenv cn ms kind
@@ -588,8 +591,10 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
       expr_list in
   let callee_procname =
     let proc = Procname.from_string_c_fun (JBasics.ms_name ms) in
-    if JBasics.cn_equal cn' JConfig.infer_builtins_cl && SymExec.function_is_builtin proc then proc
-    else JTransType.get_method_procname cn' ms method_kind in
+    if JBasics.cn_equal cn' JConfig.infer_builtins_cl &&
+       SymExec.function_is_builtin proc
+    then proc
+    else Procname.Java (JTransType.get_method_procname cn' ms method_kind) in
   let call_idl, call_instrs =
     let callee_fun = Sil.Const (Sil.Cfun callee_procname) in
     let return_type =
@@ -787,8 +792,11 @@ let rec instruction context pc instr : translation =
     Cfg.Node.create
       cfg (get_location (JContext.get_impl context) pc meth_kind cn) node_kind sil_instrs (JContext.get_procdesc context) temps in
   let return_not_null () =
-    (match_never_null loc.Location.file proc_name
-     || IList.exists (fun p -> Procname.equal p proc_name) JTransType.never_returning_null) in
+    match_never_null loc.Location.file proc_name
+    ||
+    IList.exists
+      (fun pnj -> Procname.equal (Procname.Java pnj) proc_name)
+      JTransType.never_returning_null in
   let trans_monitor_enter_exit context expr pc loc builtin node_desc =
     let ids, instrs, sil_expr, sil_type = expression context pc expr in
     let builtin_const = Sil.Const (Sil.Cfun builtin) in

@@ -28,10 +28,10 @@ let type_is_object = function
       Mangled.equal name object_name
   | _ -> false
 
-let java_proc_name_with_class_method pn class_with_path method_name =
+let java_proc_name_with_class_method pn_java class_with_path method_name =
   (try
-     Procname.java_get_class pn = class_with_path &&
-     Procname.java_get_method pn = method_name
+     Procname.java_get_class pn_java = class_with_path &&
+     Procname.java_get_method pn_java = method_name
    with _ -> false)
 
 let is_direct_subtype_of this_type super_type_name =
@@ -197,15 +197,15 @@ let has_formal_proc_argument_type_names proc_desc argument_type_names =
   IList.length formals = IList.length argument_type_names
   && IList.for_all2 equal_formal_arg formals argument_type_names
 
-let has_formal_method_argument_type_names cfg proc_name argument_type_names =
+let has_formal_method_argument_type_names cfg pname_java argument_type_names =
   has_formal_proc_argument_type_names
-    cfg ((Procname.java_get_class proc_name):: argument_type_names)
+    cfg ((Procname.java_get_class pname_java):: argument_type_names)
 
-let is_getter proc_name =
-  Str.string_match (Str.regexp "get*") (Procname.java_get_method proc_name) 0
+let is_getter pname_java =
+  Str.string_match (Str.regexp "get*") (Procname.java_get_method pname_java) 0
 
-let is_setter proc_name =
-  Str.string_match (Str.regexp "set*") (Procname.java_get_method proc_name) 0
+let is_setter pname_java =
+  Str.string_match (Str.regexp "set*") (Procname.java_get_method pname_java) 0
 
 (** Returns the signature of a field access (class name, field name, field type name) *)
 let get_java_field_access_signature = function
@@ -217,12 +217,14 @@ let get_java_field_access_signature = function
     argument type names and return type name) *)
 let get_java_method_call_formal_signature = function
   | Sil.Call (_, Sil.Const (Sil.Cfun pn), (_, tt):: args, _, _) ->
-      (try
-         let arg_names = IList.map (function | _, t -> get_type_name t) args in
-         let rt_name = Procname.java_get_return_type pn in
-         let m_name = Procname.java_get_method pn in
-         Some (get_type_name tt, m_name, arg_names, rt_name)
-       with _ -> None)
+      (match pn with
+       | Procname.Java pn_java ->
+           let arg_names = IList.map (function | _, t -> get_type_name t) args in
+           let rt_name = Procname.java_get_return_type pn_java in
+           let m_name = Procname.java_get_method pn_java in
+           Some (get_type_name tt, m_name, arg_names, rt_name)
+       |  _ ->
+           None)
   | _ -> None
 
 
@@ -265,8 +267,12 @@ let method_is_initializer
   match get_this_type proc_attributes with
   | Some this_type ->
       if type_has_initializer tenv this_type then
-        let mname = Procname.java_get_method (proc_attributes.ProcAttributes.proc_name) in
-        IList.exists (string_equal mname) initializer_methods
+        match proc_attributes.ProcAttributes.proc_name with
+        | Procname.Java pname_java ->
+            let mname = Procname.java_get_method pname_java in
+            IList.exists (string_equal mname) initializer_methods
+        | _ ->
+            false
       else
         false
   | None -> false
@@ -326,14 +332,20 @@ let proc_iter_overridden_methods f tenv proc_name =
           def_methods
     | _ -> () in
 
-  if Procname.is_java proc_name then
-    let type_name =
-      let class_name = Procname.java_get_class proc_name in
-      Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name) in
-    match Sil.tenv_lookup tenv type_name with
-    | Some curr_struct_typ ->
-        IList.iter (do_super_type tenv) (type_get_direct_supertypes (Sil.Tstruct curr_struct_typ))
-    | None -> ()
+  match proc_name with
+  | Procname.Java pname_java ->
+      let type_name =
+        let class_name = Procname.java_get_class pname_java in
+        Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name) in
+      (match Sil.tenv_lookup tenv type_name with
+       | Some curr_struct_typ ->
+           IList.iter
+             (do_super_type tenv)
+             (type_get_direct_supertypes (Sil.Tstruct curr_struct_typ))
+       | None ->
+           ())
+  | _ ->
+      () (* Only java supported at the moment *)
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 let get_fields_nullified procdesc =

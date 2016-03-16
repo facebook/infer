@@ -55,6 +55,17 @@ module ConstantFlow = Dataflow.MakeDF(struct
               constants
               (ConstantMap.add key value ConstantMap.empty) in
 
+          let has_class pn name = match pn with
+            | Procname.Java pn_java ->
+                Procname.java_get_class pn_java = name
+            | _ ->
+                false in
+          let has_method pn name = match pn with
+            | Procname.Java pn_java ->
+                Procname.java_get_method pn_java = name
+            | _ ->
+                false in
+
           match instr with
           | Sil.Letderef (i, Sil.Lvar p, _, _) ->        (* tmp = var *)
               update (Sil.Var i) (ConstantMap.find (Sil.Lvar p) constants) constants
@@ -67,18 +78,18 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
           (* Handle propagation of string with StringBuilder. Does not handle null case *)
           | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var sb, _):: [], _, _)
-            when Procname.java_get_class pn = "java.lang.StringBuilder"
-                 && Procname.java_get_method pn = "<init>" ->  (* StringBuilder.<init> *)
+            when has_class pn "java.lang.StringBuilder"
+              && has_method pn "<init>" ->  (* StringBuilder.<init> *)
               update (Sil.Var sb) (Some (Sil.Cstr "")) constants
 
           | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: [], _, _)
-            when Procname.java_get_class pn = "java.lang.StringBuilder"
-                 && Procname.java_get_method pn = "toString" -> (* StringBuilder.toString *)
+            when has_class pn "java.lang.StringBuilder"
+              && has_method pn "toString" -> (* StringBuilder.toString *)
               update (Sil.Var i) (ConstantMap.find (Sil.Var i1) constants) constants
 
           | Sil.Call (i:: [], Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], _, _)
-            when Procname.java_get_class pn = "java.lang.StringBuilder"
-                 && Procname.java_get_method pn = "append" -> (* StringBuilder.append *)
+            when has_class pn "java.lang.StringBuilder"
+              && has_method pn "append" -> (* StringBuilder.append *)
               (match
                  ConstantMap.find (Sil.Var i1) constants,
                  ConstantMap.find (Sil.Var i2) constants with

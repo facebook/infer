@@ -140,9 +140,11 @@ let iterate_callbacks store_summary call_graph exe_env =
   let saved_language = !Config.curr_language in
 
   let cluster_id proc_name =
-    match get_language proc_name with
-    | Config.Java -> Procname.java_get_class proc_name
-    | _ -> "unknown" in
+    match proc_name with
+    | Procname.Java pname_java ->
+        Procname.java_get_class pname_java
+    | _ ->
+        "unknown" in
   let cluster proc_names =
     let cluster_map =
       IList.fold_left

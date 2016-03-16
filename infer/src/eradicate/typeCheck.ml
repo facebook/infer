@@ -384,8 +384,12 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
     | _ -> default in
 
   let constructor_check_calls_this calls_this pn =
-    if Procname.java_get_class curr_pname = Procname.java_get_class pn
-    then calls_this := true in
+    match curr_pname, pn with
+    | Procname.Java curr_pname_java, Procname.Java pn_java ->
+        if Procname.java_get_class curr_pname_java = Procname.java_get_class pn_java
+        then calls_this := true
+    | _ ->
+        () in
 
   (* Drops hidden and synthetic parameters which we do not check in a call. *)
   let drop_unchecked_params calls_this proc_attributes params =
@@ -796,13 +800,18 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                     get_proc_desc curr_pname curr_pdesc extension instr etl' in
                 TypeState.set_extension typestate1 extension'
               else typestate1 in
+            let has_method pn name = match pn with
+              | Procname.Java pn_java ->
+                  Procname.java_get_method pn_java = name
+              | _ ->
+                  false in
             if Models.is_check_not_null callee_pname then
               do_preconditions_check_not_null
                 (Models.get_check_not_null_parameter callee_pname)
                 false (* is_vararg *)
                 typestate2
             else
-            if Procname.java_get_method callee_pname = "checkNotNull"
+            if has_method callee_pname "checkNotNull"
             && Procname.java_is_vararg callee_pname
             then
               let last_parameter = IList.length call_params in

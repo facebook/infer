@@ -18,10 +18,11 @@ let report_error fragment_typ fld fld_typ pname pdesc =
   let loc = Cfg.Procdesc.get_loc pdesc in
   Reporting.log_error pname ~loc:(Some loc) exn
 
-let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
+let callback_fragment_retains_view_java
+    pname_java { Callbacks.proc_desc; tenv } =
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
-  let is_on_destroy_view = Procname.java_get_method proc_name = "onDestroyView" in
+  let is_on_destroy_view = Procname.java_get_method pname_java = "onDestroyView" in
   (* this is needlessly complicated because field types are Tvars instead of Tstructs *)
   let fld_typ_is_view = function
     | Sil.Tptr (Sil.Tvar tname, _) ->
@@ -37,7 +38,7 @@ let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
     Typename.equal fld_classname class_typename && fld_typ_is_view fld_typ in
   if is_on_destroy_view then
     begin
-      let class_typename = Typename.Java.from_string (Procname.java_get_class proc_name) in
+      let class_typename = Typename.Java.from_string (Procname.java_get_class pname_java) in
       match Sil.tenv_lookup tenv class_typename with
       | Some ({ Sil.struct_name = Some _; instance_fields } as struct_typ)
         when AndroidFramework.is_fragment (Sil.Tstruct struct_typ) tenv ->
@@ -48,7 +49,16 @@ let callback_fragment_retains_view { Callbacks.proc_desc; proc_name; tenv } =
           IList.iter
             (fun (fname, fld_typ, _) ->
                if not (Ident.FieldSet.mem fname fields_nullified) then
-                 report_error (Sil.Tstruct struct_typ) fname fld_typ proc_name proc_desc)
+                 report_error
+                   (Sil.Tstruct struct_typ) fname fld_typ
+                   (Procname.Java pname_java) proc_desc)
             declared_view_fields
       | _ -> ()
     end
+
+let callback_fragment_retains_view ({ Callbacks.proc_name } as args) =
+  match proc_name with
+  | Procname.Java pname_java ->
+      callback_fragment_retains_view_java pname_java args
+  | _ ->
+      ()

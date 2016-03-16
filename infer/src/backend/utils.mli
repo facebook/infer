@@ -375,3 +375,6 @@ val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
 (** [set_reference_and_call_function ref val f x] calls f x with ref set to val.
     Restore the initial value also in case of exception. *)
 val set_reference_and_call_function : 'a ref -> 'a -> ('b -> 'c) -> 'b -> 'c
+
+(** Pritn stack trace and throw assert false *)
+val assert_false : ml_loc -> 'a

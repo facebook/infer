@@ -43,11 +43,17 @@ let report_warning description pn pd loc =
 (** Tracing APIs. *)
 module APIs = struct
   let method_match pn pkgname cname mname =
-    Procname.is_java pn &&
-    Procname.java_get_method pn = mname &&
-    (match pkgname with
-     | "" -> Procname.java_get_simple_class pn = cname
-     | _ -> Procname.java_get_class pn = pkgname ^ "." ^ cname)
+    match pn with
+    | Procname.Java pn_java ->
+        Procname.java_get_method pn_java = mname
+        &&
+        (match pkgname with
+         | "" ->
+             Procname.java_get_simple_class pn_java = cname
+         | _ ->
+             Procname.java_get_class pn_java = pkgname ^ "." ^ cname)
+    | _ ->
+        false
   let is_begin pn =
     let filter (pkgname, cname, begin_name, _) = method_match pn pkgname cname begin_name in
     IList.exists filter tracing_methods
@@ -181,14 +187,19 @@ module Automaton = struct
 
   (** Transfer function for a procedure call. *)
   let do_call caller_pn caller_pd callee_pn (s : State.t) loc : State.t =
+    let method_name () = match callee_pn with
+      | Procname.Java pname_java ->
+          Procname.java_get_method pname_java
+      | _ ->
+          Procname.to_simplified_string callee_pn in
     if APIs.is_begin callee_pn then
       begin
-        if verbose then L.stderr "  calling %s@." (Procname.java_get_method callee_pn);
+        if verbose then L.stderr "  calling %s@." (method_name ());
         State.incr s
       end
     else if APIs.is_end callee_pn then
       begin
-        if verbose then L.stderr "  calling %s@." (Procname.java_get_method callee_pn);
+        if verbose then L.stderr "  calling %s@." (method_name ());
         if State.has_zero s then report_warning "too many end/stop" caller_pn caller_pd loc;
         State.decr s
       end

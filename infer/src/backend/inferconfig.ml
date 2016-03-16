@@ -57,22 +57,22 @@ let is_matching patterns =
 
 
 type method_pattern = {
-    class_name : string;
-    method_name : string option;
-    parameters : (string list) option
-  }
+  class_name : string;
+  method_name : string option;
+  parameters : (string list) option
+}
 
-  let default_method_pattern = {
-    class_name = "";
-    method_name = None;
-    parameters = None
-  }
+let default_method_pattern = {
+  class_name = "";
+  method_name = None;
+  parameters = None
+}
 
-  let default_source_contains = ""
+let default_source_contains = ""
 
-  type pattern =
-    | Method_pattern of Config.language * method_pattern
-    | Source_contains of Config.language * string
+type pattern =
+  | Method_pattern of Config.language * method_pattern
+  | Source_contains of Config.language * string
 
 let language_of_string json_key = function
   | "Java" -> Config.Java
@@ -85,8 +85,8 @@ let detect_language json_key assoc =
           ("No language found for " ^ json_key ^ " in " ^ Config.inferconfig_file)
     | (key, `String s) :: _ when key = "language" ->
         language_of_string json_key s
-      | _:: tl -> loop tl in
-    loop assoc
+    | _:: tl -> loop tl in
+  loop assoc
 
 (* Detect the kind of pattern, method pattern or pattern based on the content of the source file.
    Detecting the kind of patterns in a first step makes it easier to parse the parts of the
@@ -98,49 +98,49 @@ let detect_pattern json_key assoc =
   let rec loop = function
     | [] ->
         failwith ("Unknown pattern for " ^ json_key ^ " in " ^ Config.inferconfig_file)
-      | (key, _) :: _ when is_method_pattern key ->
-          Method_pattern (language, default_method_pattern)
-      | (key, _) :: _ when is_source_contains key ->
-          Source_contains (language, default_source_contains)
-      | _:: tl -> loop tl in
-    loop assoc
+    | (key, _) :: _ when is_method_pattern key ->
+        Method_pattern (language, default_method_pattern)
+    | (key, _) :: _ when is_source_contains key ->
+        Source_contains (language, default_source_contains)
+    | _:: tl -> loop tl in
+  loop assoc
 
 (* Translate a JSON entry into a matching pattern *)
 let create_pattern json_key (assoc : (string * Yojson.Basic.json) list) =
-    let collect_params l =
-      let collect accu = function
-        | `String s -> s:: accu
-        | _ -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.rev (IList.fold_left collect [] l) in
-    let create_method_pattern assoc =
-      let loop mp = function
-        | (key, `String s) when key = "class" ->
-            { mp with class_name = s }
-        | (key, `String s) when key = "method" ->
-            { mp with method_name = Some s }
-        | (key, `List l) when key = "parameters" ->
-            { mp with parameters = Some (collect_params l) }
-        | (key, _) when key = "language" -> mp
-        | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.fold_left loop default_method_pattern assoc
-    and create_string_contains assoc =
-      let loop sc = function
+  let collect_params l =
+    let collect accu = function
+      | `String s -> s:: accu
+      | _ -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc)) in
+    IList.rev (IList.fold_left collect [] l) in
+  let create_method_pattern assoc =
+    let loop mp = function
+      | (key, `String s) when key = "class" ->
+          { mp with class_name = s }
+      | (key, `String s) when key = "method" ->
+          { mp with method_name = Some s }
+      | (key, `List l) when key = "parameters" ->
+          { mp with parameters = Some (collect_params l) }
+      | (key, _) when key = "language" -> mp
+      | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
+    IList.fold_left loop default_method_pattern assoc
+  and create_string_contains assoc =
+    let loop sc = function
       | (key, `String pattern) when key = "source_contains" -> pattern
       | (key, _) when key = "language" -> sc
       | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
     IList.fold_left loop default_source_contains assoc in
   match detect_pattern json_key assoc with
-    | Method_pattern (language, _) ->
-        Method_pattern (language, create_method_pattern assoc)
-    | Source_contains (language, _) ->
-        Source_contains (language, create_string_contains assoc)
+  | Method_pattern (language, _) ->
+      Method_pattern (language, create_method_pattern assoc)
+  | Source_contains (language, _) ->
+      Source_contains (language, create_string_contains assoc)
 
 (* Translate all the JSON entries into matching patterns *)
 let rec translate json_key accu (json : Yojson.Basic.json) : pattern list =
   match json with
   | `Assoc l -> (create_pattern json_key l):: accu
   | `List l -> IList.fold_left (translate json_key) accu l
-    | _ -> assert false
+  | _ -> assert false
 
 (* Creates a list of matching patterns for the given inferconfig file *)
 let load_patterns json_key inferconfig =
@@ -154,12 +154,13 @@ let load_patterns json_key inferconfig =
 (* Check if a proc name is matching the name given as string *)
 let match_method language proc_name method_name =
   not (SymExec.function_is_builtin proc_name) &&
-  match language with
-  | Config.Java ->
-      Procname.java_get_method proc_name = method_name
-  | Config.C_CPP ->
-      Procname.c_get_method proc_name = method_name
-
+  match proc_name with
+  | Procname.Java pname_java ->
+      Procname.java_get_method pname_java = method_name
+  | _ ->
+      if language = Config.C_CPP
+      then Procname.c_get_method proc_name = method_name
+      else false
 
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
@@ -229,9 +230,9 @@ struct
              StringMap.add pattern.class_name (pattern:: previous) map)
           StringMap.empty
           m_patterns in
-      fun _ proc_name ->
-        let class_name = Procname.java_get_class proc_name
-        and method_name = Procname.java_get_method proc_name in
+      let do_java pname_java =
+        let class_name = Procname.java_get_class pname_java
+        and method_name = Procname.java_get_method pname_java in
         try
           let class_patterns = StringMap.find class_name pattern_map in
           IList.exists
@@ -240,7 +241,14 @@ struct
                | None -> true
                | Some m -> string_equal m method_name)
             class_patterns
-        with Not_found -> false
+        with Not_found -> false in
+
+      fun _ proc_name ->
+        match proc_name with
+        | Procname.Java pname_java ->
+            do_java pname_java
+        | _ ->
+            false
 
   let create_file_matcher patterns =
     let s_patterns, m_patterns =

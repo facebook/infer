@@ -55,9 +55,13 @@ let extract_callbacks procdesc cfg_file cfg tenv harness_lvar callback_fields =
       else typ_str in
     Mangled.from_string (pretty_typ_str ^ "[line " ^ Location.to_string loc ^ "]") in
   let create_instrumentation_fields created_flds node instr = match instr with
-    | Sil.Call([], Sil.Const (Sil.Cfun callee), args, loc, _) ->
+    | Sil.Call ([], Sil.Const (Sil.Cfun callee), args, loc, _)
+      when Procname.is_java callee ->
+        let callee_java = match callee with
+          | Procname.Java callee_java -> callee_java
+          | _ -> assert false in
         begin
-          match AndroidFramework.get_callback_registered_by callee args tenv with
+          match AndroidFramework.get_callback_registered_by callee_java args tenv with
           | Some (cb_obj, (Sil.Tptr (cb_typ, Sil.Pk_pointer) as ptr_to_cb_typ)) ->
               let callback_fld_name = create_descriptive_callback_name ptr_to_cb_typ loc in
               let created_fld = Ident.create_fieldname callback_fld_name generated_field_offset in
@@ -79,7 +83,8 @@ let extract_callbacks procdesc cfg_file cfg tenv harness_lvar callback_fields =
               (created_fld, ptr_to_cb_typ, mk_field_write) :: created_flds
           | _ -> created_flds
         end
-    | _ -> created_flds in
+    | _ ->
+        created_flds in
   Cfg.Procdesc.fold_instrs create_instrumentation_fields callback_fields procdesc
 
 (** find all of the callbacks registered by methods in [lifecycle_trace *)
@@ -135,7 +140,8 @@ let try_create_lifecycle_trace typ lifecycle_typ lifecycle_procs tenv = match ty
     global static fields belong to the harness so that they are easily callable, and return a list
     of the (field, typ) pairs that we have created for this purpose *)
 let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
-  let harness_name = Mangled.from_string (Procname.to_string harness_procname) in
+  let harness_name =
+    Mangled.from_string (Procname.to_string (Procname.Java harness_procname)) in
   let registered_cbs =
     find_registered_callbacks lifecycle_trace harness_name proc_file_map tenv in
   let fields = IList.map (fun (fld, typ, _) -> (fld, typ, [])) registered_cbs in
@@ -147,7 +153,7 @@ let extract_callbacks lifecycle_trace harness_procname proc_file_map tenv =
       csu = Csu.Class Csu.Java;
       struct_name = Some harness_name;
       superclasses = [];
-      def_methods = [harness_procname];
+      def_methods = [Procname.Java harness_procname];
       struct_annotations = [];
     } in
   let harness_typ = Sil.Tstruct harness_struct_typ in
@@ -186,7 +192,14 @@ let create_android_harness proc_file_map tenv =
                    * inhabitation module to create a harness for us *)
                   let harness_procname =
                     let harness_cls_name = PatternMatch.get_type_name typ in
-                    Procname.mangled_java (None, harness_cls_name) None "InferGeneratedHarness" [] Procname.Static in
+                    let pname =
+                      Procname.Java
+                        (Procname.java
+                           (None, harness_cls_name) None
+                           "InferGeneratedHarness" [] Procname.Static) in
+                    match pname with
+                    | Procname.Java harness_procname -> harness_procname
+                    | _ -> assert false in
                   let callback_fields =
                     extract_callbacks lifecycle_trace harness_procname proc_file_map tenv in
                   Inhabit.inhabit_trace

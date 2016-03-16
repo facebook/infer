@@ -1138,9 +1138,13 @@ let report_runtime_exceptions tenv pdesc summary =
     (Specs.get_attributes summary).ProcAttributes.access = Sil.Public in
   let is_main =
     is_public_method
-    && Procname.is_java pname
-    && Procname.java_is_static pname
-    && (Procname.java_get_method pname) = "main" in
+    &&
+    (match pname with
+     | Procname.Java pname_java ->
+         Procname.java_is_static pname
+         && (Procname.java_get_method pname_java) = "main"
+     | _ ->
+         false) in
   let is_annotated =
     let proc_attributes = Specs.pdesc_resolve_attributes pdesc in
     let annotated_signature = Annotations.get_annotated_signature proc_attributes in

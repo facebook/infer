@@ -35,9 +35,10 @@ val is_fragment : Sil.typ -> Sil.tenv -> bool
 (** return true if [procname] is a special lifecycle cleanup method *)
 val is_destroy_method : Procname.t -> bool
 
-(** returns an option containing the var name and type of a callback registered by [procname], None
-    if no callback is registered *)
-val get_callback_registered_by : Procname.t -> (Sil.exp * Sil.typ) list -> Sil.tenv -> (Sil.exp * Sil.typ) option
+(** returns an option containing the var name and type of a callback registered by [procname],
+    None if no callback is registered *)
+val get_callback_registered_by :
+  Procname.java -> (Sil.exp * Sil.typ) list -> Sil.tenv -> (Sil.exp * Sil.typ) option
 
 (** return a list of typ's corresponding to callback classes registered by [procdesc] *)
 val get_callbacks_registered_by_proc : Cfg.Procdesc.t -> Sil.tenv -> Sil.typ list

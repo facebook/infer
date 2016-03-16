@@ -193,7 +193,7 @@ let get_method_kind m = if Javalib.is_static_method m then Procname.Static else 
 let get_method_procname cn ms kind =
   let return_type_name, method_name, args_type_name = method_signature_names ms in
   let class_name = cn_to_java_type cn in
-  Procname.mangled_java class_name return_type_name method_name args_type_name kind
+  Procname.java class_name return_type_name method_name args_type_name kind
 
 let get_class_procnames cn node =
   let collect jmethod procnames =
@@ -338,7 +338,7 @@ and create_sil_type program tenv cn =
                   super_classname :: interface_list in
             (super_classname_list, nonstatic_fields, static_fields, item_annotation) in
       let classname = Mangled.from_string (JBasics.cn_name cn) in
-      let def_methods = get_class_procnames cn node in
+      let def_methods = IList.map (fun j -> Procname.Java j) (get_class_procnames cn node) in
       Sil.Tstruct {
         Sil.instance_fields;
         static_fields;

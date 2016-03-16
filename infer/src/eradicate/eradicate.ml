@@ -195,9 +195,11 @@ struct
               let is_private =
                 callee_attributes.ProcAttributes.access = Sil.Private in
               let same_class =
-                let get_class_opt pn =
-                  if Procname.is_java pn then Some (Procname.java_get_class pn)
-                  else None in
+                let get_class_opt pn = match pn with
+                  | Procname.Java pn_java ->
+                      Some (Procname.java_get_class pn_java)
+                  | _ ->
+                      None in
                 get_class_opt init_pn = get_class_opt callee_pn in
               is_private && same_class in
             let private_called = PatternMatch.proc_calls
@@ -257,6 +259,12 @@ struct
         IList.iter do_proc (get_procs_in_file curr_pname);
         IList.rev !res
 
+      let get_class pn = match pn with
+        | Procname.Java pn_java ->
+            Some (Procname.java_get_class pn_java)
+        | _ ->
+            None
+
       (** Typestates after the current procedure and all initializer procedures. *)
       let final_initializer_typestates_lazy = lazy
         begin
@@ -269,7 +277,7 @@ struct
             pname_and_pdescs_with
               (function (pname, proc_attributes) ->
                 is_initializer proc_attributes &&
-                Procname.java_get_class pname = Procname.java_get_class curr_pname) in
+                get_class pname = get_class curr_pname) in
           final_typestates
             ((curr_pname, curr_pdesc) :: initializers_current_class)
         end
@@ -281,7 +289,7 @@ struct
             pname_and_pdescs_with
               (fun (pname, _) ->
                  Procname.is_constructor pname &&
-                 Procname.java_get_class pname = Procname.java_get_class curr_pname) in
+                 get_class pname = get_class curr_pname) in
           final_typestates constructors_current_class
         end
 

@@ -1878,7 +1878,12 @@ let rec dexp_to_string = function
         else (pp_comma_seq) pp_arg fmt des in
       let pp_fun fmt = function
         | Dconst (Cfun pname) ->
-            let s = (if Procname.is_java pname then Procname.java_get_method else Procname.to_string) pname in
+            let s =
+              match pname with
+              | Procname.Java pname_java ->
+                  Procname.java_get_method pname_java
+              | _ ->
+                  Procname.to_string pname in
             F.fprintf fmt "%s" s
         | de -> F.fprintf fmt "%s" (dexp_to_string de) in
       let receiver, args' = match args with

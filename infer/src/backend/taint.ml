@@ -127,12 +127,13 @@ let functions_with_tainted_params = [
 
 (* turn string specificiation of Java method into a procname *)
 let java_method_to_procname java_method =
-  Procname.mangled_java
-    (Procname.split_classname java_method.classname)
-    (Some (Procname.split_classname java_method.ret_type))
-    java_method.method_name
-    (IList.map Procname.split_classname java_method.params)
-    (if java_method.is_static then Procname.Static else Procname.Non_Static)
+  Procname.Java
+    (Procname.java
+       (Procname.split_classname java_method.classname)
+       (Some (Procname.split_classname java_method.ret_type))
+       java_method.method_name
+       (IList.map Procname.split_classname java_method.params)
+       (if java_method.is_static then Procname.Static else Procname.Non_Static))
 
 (* turn string specificiation of an objc method into a procname *)
 let objc_method_to_procname objc_method =

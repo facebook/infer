@@ -23,12 +23,14 @@ let is_known_callback_register_method proc_str = StringSet.mem proc_str callback
 let on_destroy = "onDestroy"
 let on_destroy_view = "onDestroyView"
 
-(** return true if [procname] is a special lifecycle cleanup method *)
-let is_destroy_method procname =
-  if Procname.is_java procname then
-    let method_name = Procname.java_get_method procname in
-    string_equal method_name on_destroy || string_equal method_name on_destroy_view
-  else false
+(** return true if [pname] is a special lifecycle cleanup method *)
+let is_destroy_method pname =
+  match pname with
+  | Procname.Java pname_java ->
+      let method_name = Procname.java_get_method pname_java in
+      string_equal method_name on_destroy || string_equal method_name on_destroy_view
+  | _ ->
+      false
 
 let android_lifecycles =
   let android_content = "android.content" in
@@ -314,19 +316,20 @@ let is_android_lib_class class_name =
   let class_str = Typename.name class_name in
   string_is_prefix "android" class_str || string_is_prefix "com.android" class_str
 
-(** returns an option containing the var name and type of a callback registered by [procname], None
-    if no callback is registered *)
-let get_callback_registered_by procname args tenv =
+(** returns an option containing the var name and type of a callback registered by [procname],
+    None if no callback is registered *)
+let get_callback_registered_by (pname_java : Procname.java) args tenv =
   (* TODO (t4565077): this check should be replaced with a membership check in a hardcoded list of
    * Android callback registration methods *)
   (* for now, we assume a method is a callback registration method if it is a setter and has a
    * callback class as a non - receiver argument *)
   let is_callback_register_like =
     let has_non_this_callback_arg args = IList.length args > 1 in
-    let has_registery_name procname =
-      Procname.is_java procname && (PatternMatch.is_setter procname ||
-                                    is_known_callback_register_method (Procname.java_get_method procname)) in
-    has_registery_name procname && has_non_this_callback_arg args in
+    let has_registery_name () =
+      PatternMatch.is_setter pname_java ||
+      is_known_callback_register_method (Procname.java_get_method pname_java) in
+    has_registery_name () &&
+    has_non_this_callback_arg args in
   let is_ptr_to_callback_class typ tenv = match typ with
     | Sil.Tptr (typ, Sil.Pk_pointer) -> is_callback_class typ tenv
     | _ -> false in
@@ -342,11 +345,17 @@ let get_callback_registered_by procname args tenv =
 (** return a list of typ's corresponding to callback classes registered by [procdesc] *)
 let get_callbacks_registered_by_proc procdesc tenv =
   let collect_callback_typs callback_typs _ instr = match instr with
-    | Sil.Call([], Sil.Const (Sil.Cfun callee), args, _, _) ->
+    | Sil.Call ([], Sil.Const (Sil.Cfun callee), args, _, _) ->
         begin
-          match get_callback_registered_by callee args tenv with
-          | Some (_, callback_typ) -> callback_typ :: callback_typs
-          | None -> callback_typs
+          match callee with
+          | Procname.Java callee_java ->
+              begin
+                match get_callback_registered_by callee_java args tenv with
+                | Some (_, callback_typ) -> callback_typ :: callback_typs
+                | None -> callback_typs
+              end
+          | _ ->
+              callback_typs
         end
     | _ -> callback_typs in
   Cfg.Procdesc.fold_instrs collect_callback_typs [] procdesc
@@ -359,7 +368,11 @@ let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         IList.find (fun decl_proc ->
-            Procname.is_java decl_proc && lifecycle_proc = Procname.java_get_method decl_proc
+            match decl_proc with
+            | Procname.Java decl_proc_java ->
+                lifecycle_proc = Procname.java_get_method decl_proc_java
+            | _ ->
+                false
           ) def_methods in
       (* convert each of the framework lifecycle proc strings to a lifecycle method procname *)
       let lifecycle_procs =
@@ -402,11 +415,3 @@ let is_throwable tenv typename =
 let non_stub_android_jar () =
   let root_dir = Filename.dirname (Filename.dirname Sys.executable_name) in
   IList.fold_left Filename.concat root_dir ["lib"; "java"; "android"; "android-19.jar"]
-
-(*
-(** returns true if [procname] is a method that registers a callback *)
-let is_callback_register_method procname args tenv =
-  match get_callback_registered_by procname args tenv with
-  | Some _ -> true
-  | None -> false
-*)

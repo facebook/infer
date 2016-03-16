@@ -61,11 +61,11 @@ let do_eradicate_check ({ Callbacks.get_proc_desc } as callback_args) =
 (** if [procname] belongs to an Android lifecycle type, save the set of callbacks registered in
  * [procname]. in addition, if [procname] is a special "destroy" /"cleanup" method, save the set of
  * fields that are nullified *)
-let callback_checker_main
-    ({ Callbacks.proc_desc; proc_name; tenv } as callback_args) =
+let callback_checker_main_java
+    proc_name_java ({ Callbacks.proc_desc; tenv } as callback_args) =
   let typename =
     Typename.TN_csu
-      (Csu.Class Csu.Java, Mangled.from_string (Procname.java_get_class proc_name)) in
+      (Csu.Class Csu.Java, Mangled.from_string (Procname.java_get_class proc_name_java)) in
   match Sil.tenv_lookup tenv typename with
   | Some ({ struct_name = Some _; def_methods } as struct_typ) ->
       let typ = Sil.Tstruct struct_typ in
@@ -93,7 +93,7 @@ let callback_checker_main
             !registered_callback_procs
             registered_callback_typs in
         registered_callback_procs := registered_callback_procs';
-        let _ = if AndroidFramework.is_destroy_method proc_name then
+        let _ = if AndroidFramework.is_destroy_method callback_args.Callbacks.proc_name then
             (* compute the set of fields nullified by this procedure *)
             (* TODO (t4959422): get fields that are nullified in callees of the destroy method *)
             fields_nullified :=
@@ -101,3 +101,12 @@ let callback_checker_main
         if done_checking (IList.length def_methods) then
           do_eradicate_check callback_args
   | _ -> ()
+
+
+let callback_checker_main
+    ({ Callbacks.proc_name } as callback_args) =
+  match proc_name with
+  | Procname.Java pname_java ->
+      callback_checker_main_java pname_java callback_args
+  | _ ->
+      ()

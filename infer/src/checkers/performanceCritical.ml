@@ -33,11 +33,14 @@ let is_modeled_expensive =
   let matcher =
     lazy (let config_file = Inferconfig.inferconfig () in
           Inferconfig.ModeledExpensiveMatcher.load_matcher config_file) in
-  fun tenv proc_name ->
-    not (SymExec.function_is_builtin proc_name) &&
-    let classname =
-      Typename.Java.from_string (Procname.java_get_class proc_name) in
-    (Lazy.force matcher) (AndroidFramework.is_subclass tenv classname) proc_name
+  fun tenv proc_name -> match proc_name with
+    | Procname.Java proc_name_java ->
+        not (SymExec.function_is_builtin proc_name) &&
+        let classname =
+          Typename.Java.from_string (Procname.java_get_class proc_name_java) in
+        (Lazy.force matcher) (AndroidFramework.is_subclass tenv classname) proc_name
+    | _ ->
+        false
 
 
 let check_attributes check attributes =
@@ -119,14 +122,17 @@ let method_calls_expensive tenv pname =
   || calls_expensive ()
 
 
-let is_allocator tenv pname =
-  let is_throwable () =
-    let class_name =
-      Typename.Java.from_string (Procname.java_get_class pname) in
-    AndroidFramework.is_throwable tenv class_name in
-  Procname.is_constructor pname
-  && not (SymExec.function_is_builtin pname)
-  && not (is_throwable ())
+let is_allocator tenv pname = match pname with
+  | Procname.Java pname_java ->
+      let is_throwable () =
+        let class_name =
+          Typename.Java.from_string (Procname.java_get_class pname_java) in
+        AndroidFramework.is_throwable tenv class_name in
+      Procname.is_constructor pname
+      && not (SymExec.function_is_builtin pname)
+      && not (is_throwable ())
+  | _ ->
+      false
 
 
 let method_allocates tenv pname =

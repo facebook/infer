@@ -50,7 +50,8 @@ let get_field_annotation fn typ =
         else ia in
       Some (t, ia')
 
-let report_error = TypeErr.report_error Checkers.ST.report_error
+let report_error =
+  TypeErr.report_error Checkers.ST.report_error
 
 let explain_expr node e =
   match Errdesc.exp_rv_dexp node e with
@@ -516,7 +517,6 @@ let check_call_parameters
     implemented interfaces *)
 let check_overridden_annotations
     find_canonical_duplicate tenv proc_name proc_desc annotated_signature =
-
   let start_node = Cfg.Procdesc.get_start_node proc_desc in
   let loc = Cfg.Node.get_loc start_node in
 

@@ -250,10 +250,12 @@ let format_field f =
   then Ident.java_fieldname_get_field f
   else Ident.fieldname_to_string f
 
-let format_method m =
-  if !Config.curr_language = Config.Java
-  then Procname.java_get_method m
-  else Procname.to_string m
+let format_method pname =
+  match pname with
+  | Procname.Java pname_java ->
+      Procname.java_get_method pname_java
+  | _ ->
+      Procname.to_string pname
 
 let mem_dyn_allocated = "memory dynamically allocated"
 let lock_acquired = "lock acquired"
@@ -412,7 +414,13 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
       else (IList.fold_left leak_path_entry_to_str "" leak_path) ^ " Leaked " in
     path_prefix ^ context_str in
   let preamble =
-    let pname_str = Procname.java_get_class pname ^ "." ^ Procname.java_get_method pname in
+    let pname_str = match pname with
+      | Procname.Java pname_java ->
+          Printf.sprintf "%s.%s"
+            (Procname.java_get_class pname_java)
+            (Procname.java_get_method pname_java)
+      | _ ->
+          "" in
     "Context " ^ context_str ^ "may leak during method " ^ pname_str ^ ":\n" in
   { no_desc with descriptions = [preamble; leak_root; path_str] }
 

@@ -28,7 +28,7 @@ type env = { instrs : Sil.instr list;
              (* set of types currently being inhabited. consult to prevent infinite recursion *)
              cur_inhabiting : TypSet.t;
              pc : Location.t;
-             harness_name : Procname.t }
+             harness_name : Procname.java }
 
 (** add an instruction to the env, update tmp_vars, and bump the pc *)
 let env_add_instr instr tmp_vars env =
@@ -125,14 +125,18 @@ let rec inhabit_typ typ proc_file_map env =
                 (* try to get the unqualified name as a class (e.g., Object for java.lang.Object so we
                  * we can use it as a descriptive local variable name in the harness *)
                 let typ_class_name =
-                  if Procname.is_java constructor then Procname.java_get_simple_class constructor
-                  else create_fresh_local_name () in
+                  match constructor with
+                  | Procname.Java pname_java ->
+                      Procname.java_get_simple_class pname_java
+                  | _ ->
+                      create_fresh_local_name () in
                 (env, Mangled.from_string typ_class_name)
             | [] -> (env, Mangled.from_string (create_fresh_local_name ())) in
           (* add the instructions *& local = [allocated_obj_exp]; id = *& local, where local and id are
            * both fresh. the only point of this is to add a descriptive local name that makes error
            * reports from the harness look nicer -- it's not necessary to make symbolic execution work *)
-          let fresh_local_exp = Sil.Lvar (Sil.mk_pvar typ_class_name env.harness_name) in
+          let fresh_local_exp =
+            Sil.Lvar (Sil.mk_pvar typ_class_name (Procname.Java env.harness_name)) in
           let write_to_local_instr =
             Sil.Set (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
           let env' = env_add_instr write_to_local_instr [] env in
@@ -249,8 +253,10 @@ let write_harness_to_file harness_instrs harness_file =
 
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_node cg =
-  Cg.add_defined_node cg harness_name;
-  IList.iter (fun p -> Cg.add_edge cg harness_name p) (Cfg.Node.get_callees harness_node)
+  Cg.add_defined_node cg (Procname.Java harness_name);
+  IList.iter
+    (fun p -> Cg.add_edge cg (Procname.Java harness_name) p)
+    (Cfg.Node.get_callees harness_node)
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
  * proc to the cg *)
@@ -265,7 +271,7 @@ let setup_harness_cfg harness_name env source_dir cg =
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   let procdesc =
     let proc_attributes =
-      { (ProcAttributes.default harness_name Config.Java) with
+      { (ProcAttributes.default (Procname.Java harness_name) Config.Java) with
         ProcAttributes.is_defined = true;
         loc = env.pc;
       } in

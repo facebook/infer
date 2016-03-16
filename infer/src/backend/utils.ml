@@ -983,3 +983,9 @@ let run_in_footprint_mode f x =
 
 let run_with_abs_val_equal_zero f x =
   set_reference_and_call_function Config.abs_val 0 f x
+
+let assert_false ((file, lnum, cnum, _) as ml_loc) =
+  Printf.eprintf "\nASSERT FALSE %s\nCALL STACK\n%s\n%!"
+    (ml_loc_to_string ml_loc)
+    (Printexc.raw_backtrace_to_string (Printexc.get_callstack 1000));
+  raise (Assert_failure (file, lnum, cnum))

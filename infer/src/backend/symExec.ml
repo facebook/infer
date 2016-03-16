@@ -616,12 +616,14 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
     | Some class_name -> resolve_method tenv class_name pname
     | None -> pname in
   let get_receiver_typ pname fallback_typ =
-    if !Config.curr_language = Config.Java then
-      try
-        let receiver_typ_str = Procname.java_get_class pname in
-        Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer)
-      with Cannot_convert_string_to_typ _ -> fallback_typ
-    else fallback_typ in
+    match pname with
+    | Procname.Java pname_java ->
+        (try
+           let receiver_typ_str = Procname.java_get_class pname_java in
+           Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer)
+         with Cannot_convert_string_to_typ _ -> fallback_typ)
+    | _ ->
+        fallback_typ in
   let receiver_types_equal pname actual_receiver_typ =
     (* the type of the receiver according to the function signature *)
     let formal_receiver_typ = get_receiver_typ pname actual_receiver_typ in
@@ -740,8 +742,11 @@ let resolve_and_analyze
 (** recognize calls to the constructor java.net.URL and splits the argument string
     to be only the protocol.  *)
 let call_constructor_url_update_args pname actual_params =
-  let url_pname = Procname.mangled_java
-      ((Some "java.net"), "URL") None "<init>" [(Some "java.lang"), "String"] Procname.Non_Static in
+  let url_pname =
+    Procname.Java
+      (Procname.java
+         ((Some "java.net"), "URL") None "<init>"
+         [(Some "java.lang"), "String"] Procname.Non_Static) in
   if (Procname.equal url_pname pname) then
     (match actual_params with
      | [this; (Sil.Const (Sil.Cstr s), atype)] ->
@@ -975,28 +980,28 @@ let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp
     else [prop_]
 
 (** Execute [instr] with a symbolic heap [prop].*)
-let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
+let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   : (Prop.normal Prop.t * Paths.Path.t) list =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let current_pname = Cfg.Procdesc.get_proc_name current_pdesc in
   State.set_instr _instr; (* mark instruction last seen *)
-  State.set_prop_tenv_pdesc prop_ tenv pdesc; (* mark prop,tenv,pdesc last seen *)
+  State.set_prop_tenv_pdesc prop_ tenv current_pdesc; (* mark prop,tenv,pdesc last seen *)
   SymOp.pay(); (* pay one symop *)
   let ret_old_path pl = (* return the old path unchanged *)
     IList.map (fun p -> (p, path)) pl in
   let skip_call prop path callee_pname loc ret_ids ret_typ_opt actual_args =
     let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-    Reporting.log_info pname exn;
+    Reporting.log_info current_pname exn;
     L.d_strln
       ("Undefined function " ^ Procname.to_string callee_pname
        ^ ", returning undefined value.");
-    (match Specs.get_summary pname with
+    (match Specs.get_summary current_pname with
      | None -> ()
      | Some summary ->
          Specs.CallStats.trace
            summary.Specs.stats.Specs.call_stats callee_pname loc
            (Specs.CallStats.CR_skip) !Config.footprint);
     call_unknown_or_scan
-      tenv false pdesc prop path ret_ids ret_typ_opt actual_args callee_pname loc in
+      tenv false current_pdesc prop path ret_ids ret_typ_opt actual_args callee_pname loc in
   let instr = match _instr with
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop prop_ exp in
@@ -1011,10 +1016,10 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
     | _ -> _instr in
   match instr with
   | Sil.Letderef (id, rhs_exp, typ, loc) ->
-      execute_letderef pname pdesc tenv id rhs_exp typ loc prop_
+      execute_letderef current_pname current_pdesc tenv id rhs_exp typ loc prop_
       |> ret_old_path
   | Sil.Set (lhs_exp, typ, rhs_exp, loc) ->
-      execute_set pname pdesc tenv lhs_exp typ rhs_exp loc prop_
+      execute_set current_pname current_pdesc tenv lhs_exp typ rhs_exp loc prop_
       |> ret_old_path
   | Sil.Prune (cond, loc, true_branch, ik) ->
       let prop__ = Prop.nullify_exp_with_objc_null prop_ cond in
@@ -1037,8 +1042,8 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
             let desc = Errdesc.explain_condition_always_true_false i cond node loc in
             let exn =
               Exceptions.Condition_always_true_false (desc, not (Sil.Int.iszero i), __POS__) in
-            let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop pname) in
-            Reporting.log_warning pname ~pre: pre_opt exn
+            let pre_opt = State.get_normalized_pre (Abs.abstract_no_symop current_pname) in
+            Reporting.log_warning current_pname ~pre: pre_opt exn
         | Sil.BinOp ((Sil.Eq | Sil.Ne), lhs, rhs)
           when true_branch && !Config.footprint && not (is_comparison_to_nil rhs) ->
             (* iOS: check that NSNumber *'s are not used in conditionals without comparing to nil *)
@@ -1058,19 +1063,19 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
               let node = State.get_node () in
               let desc = Errdesc.explain_bad_pointer_comparison lhs node loc in
               let exn = Exceptions.Bad_pointer_comparison (desc, __POS__) in
-              Reporting.log_warning pname exn
+              Reporting.log_warning current_pname exn
         | _ -> () in
       if not !Config.report_runtime_exceptions then
-        check_already_dereferenced pname cond prop__;
+        check_already_dereferenced current_pname cond prop__;
       check_condition_always_true_false ();
-      let n_cond, prop = exp_norm_check_arith pname prop__ cond in
+      let n_cond, prop = exp_norm_check_arith current_pname prop__ cond in
       ret_old_path (Propset.to_proplist (prune_prop n_cond prop))
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), args, loc, _)
     when function_is_builtin callee_pname ->
       let sym_exe_builtin = Builtin.get_sym_exe_builtin callee_pname in
       sym_exe_builtin
         {
-          pdesc;
+          pdesc = current_pdesc;
           instr;
           tenv;
           prop_;
@@ -1080,17 +1085,19 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
           proc_name = callee_pname;
           loc;
         }
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags)
-    when !Config.curr_language = Config.Java && Config.lazy_dynamic_dispatch ->
-      let norm_prop, norm_args = normalize_params pname prop_ actual_params in
+  | Sil.Call (ret_ids,
+              Sil.Const (Sil.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+              actual_params, loc, call_flags)
+    when Config.lazy_dynamic_dispatch ->
+      let norm_prop, norm_args = normalize_params current_pname prop_ actual_params in
       let exec_skip_call skipped_pname ret_type =
         skip_call norm_prop path skipped_pname loc ret_ids (Some ret_type) norm_args in
       let resolved_pname, summary_opt =
-        resolve_and_analyze tenv pdesc norm_prop norm_args callee_pname call_flags in
+        resolve_and_analyze tenv current_pdesc norm_prop norm_args callee_pname call_flags in
       begin
         match summary_opt with
         | None ->
-            let ret_typ_str = Procname.java_get_return_type pname in
+            let ret_typ_str = Procname.java_get_return_type callee_pname_java in
             let ret_typ =
               match lookup_java_typ_from_string tenv ret_typ_str with
               | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
@@ -1099,24 +1106,29 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
         | Some summary when call_should_be_skipped resolved_pname summary ->
             exec_skip_call resolved_pname summary.Specs.attributes.ProcAttributes.ret_type
         | Some summary ->
-            sym_exec_call pdesc tenv norm_prop path ret_ids norm_args summary loc
+            sym_exec_call current_pdesc tenv norm_prop path ret_ids norm_args summary loc
       end
 
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags)
-    when !Config.curr_language = Config.Java ->
-      do_error_checks (Paths.Path.curr_node path) instr pname pdesc;
-      let norm_prop, norm_args = normalize_params pname prop_ actual_params in
+  | Sil.Call (ret_ids,
+              Sil.Const (Sil.Cfun ((Procname.Java _) as callee_pname)),
+              actual_params, loc, call_flags) ->
+      do_error_checks (Paths.Path.curr_node path) instr current_pname current_pdesc;
+      let norm_prop, norm_args = normalize_params current_pname prop_ actual_params in
       let url_handled_args =
         call_constructor_url_update_args callee_pname norm_args in
       let resolved_pnames =
         resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags in
       let exec_one_pname pname =
-        Ondemand.analyze_proc_name ~propagate_exceptions:true pdesc pname;
+        Ondemand.analyze_proc_name ~propagate_exceptions:true current_pdesc pname;
         let exec_skip_call ret_type =
           skip_call norm_prop path pname loc ret_ids (Some ret_type) url_handled_args in
         match Specs.get_summary pname with
         | None ->
-            let ret_typ_str = Procname.java_get_return_type pname in
+            let ret_typ_str = match pname with
+              | Procname.Java pname_java ->
+                  Procname.java_get_return_type pname_java
+              | _ ->
+                  "unknown_return_type" in
             let ret_typ =
               match lookup_java_typ_from_string tenv ret_typ_str with
               | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
@@ -1125,18 +1137,18 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
         | Some summary when call_should_be_skipped pname summary ->
             exec_skip_call summary.Specs.attributes.ProcAttributes.ret_type
         | Some summary ->
-            sym_exec_call pdesc tenv norm_prop path ret_ids url_handled_args summary loc in
+            sym_exec_call current_pdesc tenv norm_prop path ret_ids url_handled_args summary loc in
       IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
 
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), actual_params, loc, call_flags) ->
       (** Generic fun call with known name *)
-      let (prop_r, n_actual_params) = normalize_params pname prop_ actual_params in
+      let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
       let resolved_pname =
         match resolve_virtual_pname tenv prop_r n_actual_params callee_pname call_flags with
         | resolved_pname :: _ -> resolved_pname
         | [] -> callee_pname in
 
-      Ondemand.analyze_proc_name ~propagate_exceptions:true pdesc resolved_pname;
+      Ondemand.analyze_proc_name ~propagate_exceptions:true current_pdesc resolved_pname;
 
       let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
 
@@ -1144,7 +1156,7 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
       let sentinel_result =
         if !Config.curr_language = Config.C_CPP then
           sym_exe_check_variadic_sentinel_if_present
-            { Builtin.pdesc;
+            { Builtin.pdesc = current_pdesc;
               instr;
               tenv;
               prop_ = prop_r;
@@ -1171,18 +1183,20 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
           match objc_property_accessor with
           | Some objc_property_accessor ->
               handle_objc_method_call
-                n_actual_params n_actual_params prop tenv ret_ids pdesc callee_pname loc path
+                n_actual_params n_actual_params prop tenv ret_ids
+                current_pdesc callee_pname loc path
                 (sym_exec_objc_accessor objc_property_accessor ret_typ_opt)
           | None ->
               skip_call prop path resolved_pname loc ret_ids ret_typ_opt n_actual_params
         else
-          sym_exec_call pdesc tenv prop path ret_ids n_actual_params (Option.get summary) loc in
+          sym_exec_call
+            current_pdesc tenv prop path ret_ids n_actual_params (Option.get summary) loc in
       IList.flatten (IList.map do_call sentinel_result)
   | Sil.Call (ret_ids, fun_exp, actual_params, loc, call_flags) -> (** Call via function pointer *)
-      let (prop_r, n_actual_params) = normalize_params pname prop_ actual_params in
+      let (prop_r, n_actual_params) = normalize_params current_pname prop_ actual_params in
       if call_flags.Sil.cf_is_objc_block then
-        Rearrange.check_call_to_objc_block_error pdesc prop_r fun_exp loc;
-      Rearrange.check_dereference_error pdesc prop_r fun_exp loc;
+        Rearrange.check_call_to_objc_block_error current_pdesc prop_r fun_exp loc;
+      Rearrange.check_dereference_error current_pdesc prop_r fun_exp loc;
       if call_flags.Sil.cf_noreturn then begin
         L.d_str "Unknown function pointer with noreturn attribute "; Sil.d_exp fun_exp; L.d_strln ", diverging.";
         execute_diverge prop_r path
@@ -1190,7 +1204,7 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp; L.d_strln ", returning undefined value.";
         let callee_pname = Procname.from_string_c_fun "__function_pointer__" in
         call_unknown_or_scan
-          tenv false pdesc prop_r path ret_ids None n_actual_params callee_pname loc
+          tenv false current_pdesc prop_r path ret_ids None n_actual_params callee_pname loc
       end
   | Sil.Nullify (pvar, _, deallocate) ->
       begin
@@ -1212,13 +1226,14 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
   | Sil.Abstract _ ->
       let node = State.get_node () in
       let blocks_nullified = get_blocks_nullified node in
-      IList.iter (check_block_retain_cycle tenv pname prop_) blocks_nullified;
+      IList.iter (check_block_retain_cycle tenv current_pname prop_) blocks_nullified;
       if Prover.check_inconsistency prop_
       then
         ret_old_path []
       else
-        ret_old_path [Abs.remove_redundant_array_elements pname tenv
-                        (Abs.abstract pname tenv prop_)]
+        ret_old_path
+          [Abs.remove_redundant_array_elements current_pname tenv
+             (Abs.abstract current_pname tenv prop_)]
   | Sil.Remove_temps (temps, _) ->
       ret_old_path [Prop.exist_quantify (Sil.fav_from_list temps) prop_]
   | Sil.Declare_locals (ptl, _) ->
@@ -1236,7 +1251,7 @@ let rec sym_exec tenv pdesc _instr (prop_: Prop.normal Prop.t) path
   | Sil.Stackop _ -> (* this should be handled at the propset level *)
       assert false
   | Sil.Goto_node (node_e, _) ->
-      let n_node_e, prop = exp_norm_check_arith pname prop_ node_e in
+      let n_node_e, prop = exp_norm_check_arith current_pname prop_ node_e in
       begin
         match n_node_e with
         | Sil.Const (Sil.Cint i) ->

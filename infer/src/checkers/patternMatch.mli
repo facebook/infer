@@ -35,16 +35,17 @@ val get_type_name : Sil.typ -> string
 (** Get the type names of a variable argument *)
 val get_vararg_type_names : Cfg.Node.t -> Sil.pvar -> string list
 
-val has_formal_method_argument_type_names : Cfg.Procdesc.t -> Procname.t -> string list -> bool
+val has_formal_method_argument_type_names :
+  Cfg.Procdesc.t -> Procname.java -> string list -> bool
 
 (** Check if the method is one of the known initializer methods. *)
 val method_is_initializer : Sil.tenv -> ProcAttributes.t -> bool
 
 (** Is this a getter proc name? *)
-val is_getter : Procname.t -> bool
+val is_getter : Procname.java -> bool
 
 (** Is this a setter proc name? *)
-val is_setter : Procname.t -> bool
+val is_setter : Procname.java -> bool
 
 (** Is the type a direct subtype of *)
 val is_direct_subtype_of : Sil.typ -> Typename.t -> bool
@@ -55,7 +56,7 @@ val java_get_const_type_name : Sil.const -> string
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
 val java_get_vararg_values : Cfg.Node.t -> Sil.pvar -> Idenv.t -> Sil.exp list
 
-val java_proc_name_with_class_method : Procname.t -> string -> string -> bool
+val java_proc_name_with_class_method : Procname.java -> string -> string -> bool
 
 (** Return the callees that satisfy [filter]. *)
 val proc_calls :

@@ -118,7 +118,7 @@ val reset_pvar_type : t -> unit
 val reset_exn_node_table : unit -> unit
 
 (** adds the exception node for a given method *)
-val add_exn_node : Procname.Hash.key -> Cfg.Node.t -> unit
+val add_exn_node : Procname.t -> Cfg.Node.t -> unit
 
 (** returns the exception node of a given method *)
 val get_exn_node : Cfg.Procdesc.t -> Cfg.Node.t option

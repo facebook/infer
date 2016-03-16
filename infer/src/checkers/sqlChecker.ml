@@ -25,26 +25,39 @@ let callback_sql { Callbacks.proc_desc; proc_name } =
     IList.map Str.regexp_case_fold _sql_start in
 
   (* Check for SQL string concatenations *)
-  let do_instr const_map node = function
-    | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], l, _)
-      when Procname.java_get_class pn = "java.lang.StringBuilder"
-           && Procname.java_get_method pn = "append" ->
-        let rvar1 = Sil.Var i1 in
-        let rvar2 = Sil.Var i2 in
+  let do_instr const_map node instr =
+    let do_call pn_java i1 i2 l =
+      if Procname.java_get_class pn_java = "java.lang.StringBuilder"
+      && Procname.java_get_method pn_java = "append"
+      then
         begin
-          let matches s r = Str.string_match r s 0 in
-          match const_map node rvar1, const_map node rvar2 with
-          | Some (Sil.Cstr ""), Some (Sil.Cstr s2) ->
-              if IList.exists (matches s2) sql_start then
-                begin
-                  L.stdout
-                    "%s%s@."
-                    "Possible SQL query using string concatenation. "
-                    "Please consider using a prepared statement instead.";
-                  let linereader = Printer.LineReader.create () in
-                  L.stdout "%a@." (Checkers.PP.pp_loc_range linereader 2 2) l
-                end
-          | _ -> ()
+          let rvar1 = Sil.Var i1 in
+          let rvar2 = Sil.Var i2 in
+          begin
+            let matches s r = Str.string_match r s 0 in
+            match const_map node rvar1, const_map node rvar2 with
+            | Some (Sil.Cstr ""), Some (Sil.Cstr s2) ->
+                if IList.exists (matches s2) sql_start then
+                  begin
+                    L.stdout
+                      "%s%s@."
+                      "Possible SQL query using string concatenation. "
+                      "Please consider using a prepared statement instead.";
+                    let linereader = Printer.LineReader.create () in
+                    L.stdout "%a@." (Checkers.PP.pp_loc_range linereader 2 2) l
+                  end
+            | _ -> ()
+          end
+        end in
+
+    match instr with
+    | Sil.Call (_, Sil.Const (Sil.Cfun pn), (Sil.Var i1, _):: (Sil.Var i2, _):: [], l, _) ->
+        begin
+          match pn with
+          | Procname.Java pn_java ->
+              do_call pn_java i1 i2 l
+          | _ ->
+              ()
         end
     | _ -> () in
 

@@ -23,8 +23,8 @@ val create_fieldname : JBasics.class_name -> JBasics.field_signature -> Ident.fi
 val get_method_kind : JCode.jcode Javalib.jmethod -> Procname.method_kind
 
 (** returns a procedure name based on the class name and the method's signature. *)
-val get_method_procname : JBasics.class_name -> JBasics.method_signature -> Procname.method_kind ->
-  Procname.t
+val get_method_procname :
+  JBasics.class_name -> JBasics.method_signature -> Procname.method_kind -> Procname.java
 
 (** [get_class_type_no_pointer program tenv cn] returns the sil type representation of the class
     without the pointer part *)
@@ -90,4 +90,4 @@ val cn_to_java_type : JBasics.class_name -> Procname.java_type
 val add_models_types : Sil.tenv -> unit
 
 (** list of methods that are never returning null *)
-val never_returning_null : Procname.t list
+val never_returning_null : Procname.java list

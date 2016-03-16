@@ -303,10 +303,16 @@ type st_report_error =
   unit
 
 (** Report an error right now. *)
-let report_error_now (st_report_error : st_report_error) node err_instance loc proc_name : unit =
+let report_error_now
+    (st_report_error : st_report_error) node err_instance loc pname : unit =
   let demo_mode = true in
   let do_print_base ew_string kind_s s =
-    L.stdout "%s %s in %s %s@." ew_string kind_s (Procname.java_get_method proc_name) s in
+    let mname = match pname with
+      | Procname.Java pname_java ->
+          Procname.java_get_method pname_java
+      | _ ->
+          Procname.to_simplified_string pname in
+    L.stdout "%s %s in %s %s@." ew_string kind_s mname s in
   let do_print ew_string kind_s s =
     L.stdout "%s:%d " (DB.source_file_to_string loc.Location.file) loc.Location.line;
     do_print_base ew_string kind_s s in
@@ -335,7 +341,14 @@ let report_error_now (st_report_error : st_report_error) node err_instance loc p
         None
     | Field_not_initialized (fn, pn) ->
         let constructor_name =
-          if Procname.is_constructor pn then "the constructor" else Procname.java_get_method pn in
+          if Procname.is_constructor pn
+          then "the constructor"
+          else
+            match pn with
+            | Procname.Java pn_java ->
+                Procname.java_get_method pn_java
+            | _ ->
+                Procname.to_simplified_string pn in
         true,
         "ERADICATE_FIELD_NOT_INITIALIZED",
         P.sprintf
@@ -377,7 +390,14 @@ let report_error_now (st_report_error : st_report_error) node err_instance loc p
         origin_loc
     | Field_over_annotated (fn, pn) ->
         let constructor_name =
-          if Procname.is_constructor pn then "the constructor" else Procname.java_get_method pn in
+          if Procname.is_constructor pn
+          then "the constructor"
+          else
+            match pn with
+            | Procname.Java pn_java ->
+                Procname.java_get_method pn_java
+            | _ ->
+                Procname.to_simplified_string pn in
         true,
         "ERADICATE_FIELD_OVER_ANNOTATED",
         P.sprintf
@@ -432,13 +452,14 @@ let report_error_now (st_report_error : st_report_error) node err_instance loc p
                 n
                 s
                 origin_desc
-          | Annotations.Present -> "ERADICATE_PARAMETER_VALUE_ABSENT",
-                                   P.sprintf
-                                     "`%s` needs a present value in parameter %d but argument `%s` can be absent. %s"
-                                     (Procname.to_simplified_string pn)
-                                     n
-                                     s
-                                     origin_desc in
+          | Annotations.Present ->
+              "ERADICATE_PARAMETER_VALUE_ABSENT",
+              P.sprintf
+                "`%s` needs a present value in parameter %d but argument `%s` can be absent. %s"
+                (Procname.to_simplified_string pn)
+                n
+                s
+                origin_desc in
         true,
         kind_s,
         description,
@@ -492,19 +513,20 @@ let report_error_now (st_report_error : st_report_error) node err_instance loc p
           | n -> (string_of_int n)^"th" in
         false,
         "ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION",
-        P.sprintf "%s parameter `%s` of method `%s` is not `@Nullable` but is declared `@Nullable` in the parent class method `%s`."
+        P.sprintf
+          "%s parameter `%s` of method `%s` is not `@Nullable` but is declared `@Nullable`\
+           in the parent class method `%s`."
           (translate_position pos) param_name
           (Procname.to_simplified_string ~withclass: true pn)
           (Procname.to_simplified_string ~withclass: true opn),
         None,
         None,
-        None
-  in
+        None in
   let ew_string = if is_err then "Error" else "Warning" in
   (if demo_mode then do_print_demo else do_print) ew_string kind_s description;
   let always_report = Strict.err_instance_get_strict err_instance <> None in
   st_report_error
-    proc_name
+    pname
     (Cfg.Node.get_proc_desc node)
     kind_s
     loc
@@ -518,12 +540,12 @@ let report_error_now (st_report_error : st_report_error) node err_instance loc p
 
 (** Report an error unless is has been reported already, or unless it's a forall error
     since it requires waiting until the end of the analysis and be printed by flush. *)
-let report_error st_report_error find_canonical_duplicate node
-    err_instance instr_ref_opt loc proc_name =
+let report_error (st_report_error : st_report_error) find_canonical_duplicate node
+    err_instance instr_ref_opt loc pname_java =
   let should_report_now =
     add_err find_canonical_duplicate err_instance instr_ref_opt loc in
   if should_report_now then
-    report_error_now st_report_error node err_instance loc proc_name
+    report_error_now st_report_error node err_instance loc pname_java
 
 (** Report the forall checks at the end of the analysis and reset the error table *)
 let report_forall_checks_and_reset st_report_error proc_name =

@@ -358,17 +358,20 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
   let pname_translate_types pname =
     match f_translate_typ_opt with
     | Some f_translate_typ ->
-        if Procname.is_java pname then
-          let param_type_strs =
-            IList.map Procname.java_type_to_string (Procname.java_get_parameters pname) in
-          let receiver_type_str = Procname.java_get_class pname in
-          let return_type_str = Procname.java_get_return_type pname in
-          IList.iter
-            (fun typ_str -> f_translate_typ tenv typ_str)
-            (return_type_str :: (receiver_type_str :: param_type_strs))
-        else
-          (* TODO: support this for C/CPP/Obj-C *)
-          ()
+        (match pname with
+         | Procname.Java pname_java ->
+             let param_type_strs =
+               IList.map Procname.java_type_to_string (Procname.java_get_parameters pname) in
+             let receiver_type_str = Procname.java_get_class pname_java in
+             let return_type_str = Procname.java_get_return_type pname_java in
+             IList.iter
+               (fun typ_str -> f_translate_typ tenv typ_str)
+               (return_type_str :: (receiver_type_str :: param_type_strs))
+         | Procname.C _
+         | Procname.ObjC_Cpp _
+         | Procname.Block _ ->
+             (* TODO: support this for C/CPP/Obj-C *)
+             ())
     | None -> () in
   let node_add_dispatch_calls caller_pname node =
     (* TODO: handle dynamic dispatch for virtual calls as well *)

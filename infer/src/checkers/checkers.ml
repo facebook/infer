@@ -190,11 +190,13 @@ let callback_check_cluster_access all_procs get_proc_desc _ =
     (IList.map get_proc_desc all_procs)
 
 (** Looks for writeToParcel methods and checks whether read is in reverse *)
-let callback_check_write_to_parcel { Callbacks.proc_desc; proc_name; idenv; get_proc_desc } =
+let callback_check_write_to_parcel_java
+    pname_java ({ Callbacks.proc_desc; idenv; get_proc_desc } as args) =
   let verbose = ref false in
 
   let is_write_to_parcel this_expr this_type =
-    let method_match () = Procname.java_get_method proc_name = "writeToParcel" in
+    let method_match () =
+      Procname.java_get_method pname_java = "writeToParcel" in
     let expr_match () = Sil.exp_is_this this_expr in
     let type_match () =
       let class_name =
@@ -204,7 +206,8 @@ let callback_check_write_to_parcel { Callbacks.proc_desc; proc_name; idenv; get_
 
   let is_parcel_constructor proc_name =
     Procname.is_constructor proc_name &&
-    PatternMatch.has_formal_method_argument_type_names proc_desc proc_name ["android.os.Parcel"] in
+    PatternMatch.has_formal_method_argument_type_names
+      proc_desc pname_java ["android.os.Parcel"] in
 
   let parcel_constructors = function
     | Sil.Tptr (Sil.Tstruct { Sil.def_methods }, _) ->
@@ -216,41 +219,60 @@ let callback_check_write_to_parcel { Callbacks.proc_desc; proc_name; idenv; get_
     let is_serialization_node node =
       match Cfg.Node.get_callees node with
       | [] -> false
-      | [proc_name] ->
-          let class_name = Procname.java_get_class proc_name in
-          let method_name = Procname.java_get_method proc_name in
+      | [Procname.Java pname_java] ->
+          let class_name = Procname.java_get_class pname_java in
+          let method_name = Procname.java_get_method pname_java in
           (try
-             class_name = "android.os.Parcel" && (String.sub method_name 0 5 = "write" || String.sub method_name 0 4 = "read")
+             class_name = "android.os.Parcel" &&
+             (String.sub method_name 0 5 = "write"
+              ||
+              String.sub method_name 0 4 = "read")
            with Invalid_argument _ -> false)
       | _ -> assert false in
 
-    let is_inverse rc wc =
-      let rn = Procname.java_get_method rc in
-      let wn = Procname.java_get_method wc in
-      let postfix_length = String.length wn - 5 in (* covers writeList <-> readArrayList etc. *)
-      try
-        String.sub rn (String.length rn - postfix_length) postfix_length = String.sub wn 5 postfix_length
-      with Invalid_argument _ -> false in
+    let is_inverse rc_ wc_ = match rc_, wc_ with
+      | Procname.Java rc, Procname.Java wc ->
+          let rn = Procname.java_get_method rc in
+          let wn = Procname.java_get_method wc in
+          let postfix_length = String.length wn - 5 in (* covers writeList <-> readArrayList etc. *)
+          (try
+             String.sub rn (String.length rn - postfix_length) postfix_length =
+             String.sub wn 5 postfix_length
+           with Invalid_argument _ -> false)
+      | _ ->
+          false in
 
     let node_to_call_desc node =
       match Cfg.Node.get_callees node with
       | [desc] -> desc
       | _ -> assert false in
 
-    let r_call_descs = IList.map node_to_call_desc (IList.filter is_serialization_node (Cfg.Procdesc.get_sliced_slope r_desc is_serialization_node)) in
-    let w_call_descs = IList.map node_to_call_desc (IList.filter is_serialization_node (Cfg.Procdesc.get_sliced_slope w_desc is_serialization_node)) in
+    let r_call_descs =
+      IList.map node_to_call_desc
+        (IList.filter is_serialization_node
+           (Cfg.Procdesc.get_sliced_slope r_desc is_serialization_node)) in
+    let w_call_descs =
+      IList.map node_to_call_desc
+        (IList.filter is_serialization_node
+           (Cfg.Procdesc.get_sliced_slope w_desc is_serialization_node)) in
 
     let rec check_match = function
       | rc:: rcs, wc:: wcs ->
           if not (is_inverse rc wc) then
-            L.stdout "Serialization missmatch in %a for %a and %a@." Procname.pp proc_name Procname.pp rc Procname.pp wc
+            L.stdout "Serialization missmatch in %a for %a and %a@."
+              Procname.pp args.Callbacks.proc_name
+              Procname.pp rc
+              Procname.pp wc
           else
             check_match (rcs, wcs)
       | rc:: _, [] ->
-          L.stdout "Missing write in %a: for %a@." Procname.pp proc_name Procname.pp rc
+          L.stdout "Missing write in %a: for %a@."
+            Procname.pp args.Callbacks.proc_name Procname.pp rc
       | _, wc:: _ ->
-          L.stdout "Missing read in %a: for %a@." Procname.pp proc_name Procname.pp wc
-      | _ -> () in
+          L.stdout "Missing read in %a: for %a@."
+            Procname.pp args.Callbacks.proc_name Procname.pp wc
+      | _ ->
+          () in
 
     check_match (r_call_descs, w_call_descs) in
 
@@ -258,18 +280,31 @@ let callback_check_write_to_parcel { Callbacks.proc_desc; proc_name; idenv; get_
     | Sil.Call (_, Sil.Const (Sil.Cfun _), (_this_exp, this_type):: _, _, _) ->
         let this_exp = Idenv.expand_expr idenv _this_exp in
         if is_write_to_parcel this_exp this_type then begin
-          if !verbose then L.stdout "Serialization check for %a@." Procname.pp proc_name;
+          if !verbose then
+            L.stdout "Serialization check for %a@."
+              Procname.pp args.Callbacks.proc_name;
           try
             match parcel_constructors this_type with
             | x :: _ ->
                 (match get_proc_desc x with
                  | Some x_proc_desc -> check x_proc_desc proc_desc
                  | None -> raise Not_found)
-            | _ -> L.stdout "No parcel constructor found for %a@." Procname.pp proc_name
-          with Not_found -> if !verbose then L.stdout "Methods not available@."
+            | _ ->
+                L.stdout "No parcel constructor found for %a@."
+                  Procname.pp args.Callbacks.proc_name
+          with Not_found ->
+            if !verbose then L.stdout "Methods not available@."
         end
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc
+
+(** Looks for writeToParcel methods and checks whether read is in reverse *)
+let callback_check_write_to_parcel ({ Callbacks.proc_name } as args) =
+  match proc_name with
+  | Procname.Java pname_java ->
+      callback_check_write_to_parcel_java pname_java args
+  | _ ->
+      ()
 
 (** Monitor calls to Preconditions.checkNotNull and detect inconsistent uses. *)
 let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
@@ -295,9 +330,12 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
   let is_formal_param exp =
     IList.exists (equal_formal_param exp) (Lazy.force class_formal_names) in
 
-  let is_nullcheck pn =
-    PatternMatch.java_proc_name_with_class_method
-      pn "com.google.common.base.Preconditions" "checkNotNull" in
+  let is_nullcheck pn = match pn with
+    | Procname.Java pn_java ->
+        PatternMatch.java_proc_name_with_class_method
+          pn_java "com.google.common.base.Preconditions" "checkNotNull"
+    | _ ->
+        false in
 
   let checks_to_formals = ref Sil.ExpSet.empty in
 
@@ -333,7 +371,16 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     | Sil.Call (_, Sil.Const (Sil.Cfun pn), (_arg1, _):: _, _, _) when is_nullcheck pn ->
         let arg1 = Idenv.expand_expr idenv _arg1 in
         if is_formal_param arg1 then handle_check_of_formal arg1;
-        if !verbose then L.stdout "call in %s %s: %a with first arg: %a@." (Procname.java_get_class proc_name) (Procname.java_get_method proc_name) (Sil.pp_instr pe_text) instr (Sil.pp_exp pe_text) arg1
+        if !verbose then
+          (match proc_name with
+           | Procname.Java pname_java ->
+               L.stdout "call in %s %s: %a with first arg: %a@."
+                 (Procname.java_get_class pname_java)
+                 (Procname.java_get_method pname_java)
+                 (Sil.pp_instr pe_text) instr
+                 (Sil.pp_exp pe_text) arg1
+           | _ ->
+               ())
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc;
   summary_checks_of_formals ()

@@ -10,8 +10,24 @@
 
 (** Module for Procedure Names *)
 
+(** Type of java procedure names *)
+type java
+
+(** Type of C function names *)
+type c_function
+
+(** Type of Objective C and C++ method names *)
+type objc_cpp_method
+
+(** Type of Objective C block names *)
+type block
+
 (** Type of procedure names *)
-type t
+type t =
+  | Java of java
+  | C of c_function
+  | ObjC_Cpp of objc_cpp_method
+  | Block of block
 
 type java_type = string option * string
 
@@ -40,11 +56,12 @@ val equal : t -> t -> bool
 (** Convert a string to a proc name *)
 val from_string_c_fun : string -> t
 
+(** Create a Java procedure name from its
+    class_name method_name args_type_name return_type_name method_kind *)
+val java : java_type -> java_type option -> string -> java_type list -> method_kind -> java
+
 (** Create a C++ procedure name from plain and mangled name *)
 val mangled_c_fun : string -> string -> t
-
-(** Create a Java procedure name from its class_name method_name args_type_name return_type_name method_kind *)
-val mangled_java : java_type -> java_type option -> string -> java_type list -> method_kind -> t
 
 (** Create an objc procedure name from a class_name and method_name. *)
 val mangled_c_method : string -> string -> string option -> t
@@ -74,16 +91,16 @@ val c_method_replace_class : t -> string -> t
 val c_get_class : t -> string
 
 (** Return the class name of a java procedure name. *)
-val java_get_class : t -> string
+val java_get_class : java -> string
 
 (** Return the simple class name of a java procedure name. *)
-val java_get_simple_class : t -> string
+val java_get_simple_class : java -> string
 
 (** Return the package name of a java procedure name. *)
-val java_get_package : t -> string option
+val java_get_package : java -> string option
 
 (** Return the method name of a java procedure name. *)
-val java_get_method : t -> string
+val java_get_method : java -> string
 
 (** Return the method of a objc/c++ procname. *)
 val c_get_method : t -> string
@@ -92,7 +109,7 @@ val c_get_method : t -> string
 val java_replace_method : t -> string -> t
 
 (** Return the return type of a java procedure name. *)
-val java_get_return_type : t -> string
+val java_get_return_type : java -> string
 
 (** Return the parameters of a java procedure name. *)
 val java_get_parameters : t -> java_type list
