@@ -10,20 +10,20 @@ order: 01
 
 ## How can I create my own checkers?
 
-Infer Checkers provide a framework to perform intra-procedurally static analyses.
+Infer Checkers provide a framework to perform intra-procedural static analyses.
 Since this is an open source project, everyone is welcome to contribute with new great checkers.
 In this page, we will create a very basic checker - a detector for every time the output method ```PrintStream.println``` is called.
 This should be enough to get you started.
 
 ## Before you start
 
-Make sure you are able to successfully build Infer project:
+Make sure you are able to successfully build Infer:
 
 ```
 ./build-infer.sh
 ```
 
-Get familiar with Infer checkers and run it with some examples:
+Get familiar with Infer checkers and run Infer with some examples:
 
 ```
 infer -a checkers -- javac Hello.java
@@ -67,16 +67,16 @@ let callback_my_simple_checker { Callbacks.proc_desc; proc_name } =
 
 ```
 
-Checkers implement a function that detects a given pattern for our specific checker and then they call ```Cfg.Procdesc.iter_instrs``` to iterate over all the nodes of the CFG.
+Checkers implement a function that detects a given pattern for our specific checker and then calls ```Cfg.Procdesc.iter_instrs``` to iterate over all the nodes of the CFG.
 
 So now we need to know how to create our pattern.
-As example consider the following:
+As an example, consider the following:
 
 ```ocaml
 Sil.Call (_, Sil.Const (Sil.Cfun pn), _, loc, _)
 ```
 
-This pattern matches with every function call. In our code it would look like:
+This pattern matches every function call. In our code, it would look like:
 
 ```ocaml
 let callback_my_simple_checker { Callbacks.proc_desc; proc_name } =
@@ -95,7 +95,7 @@ let callback_my_simple_checker { Callbacks.proc_desc; proc_name } =
 
 Each node is represented using the type ```instr``` from the Smallfoot Intermediate Language (SIL). Take a look at ```sil.mli``` to get familiar with all the types. All source code languages supported by Infer are converted to this representation.
 
-In this particular example Sil.Call has the following information:
+In this particular example, `Sil.Call` has the following information:
 
 ```ocaml
 Sil.Call (
@@ -107,9 +107,9 @@ Sil.Call (
 )
 ```
 
-I hope this looks straight forward. Argument ```call_flags``` holds information about the function, such as whether it is virtual or not. Again, this is specified in the file ```sil.mli``.
+I hope this looks straight forward. Argument ```call_flags``` holds information about the function, such as whether it is virtual or not. Again, this is specified in the file ```sil.mli```.
 
-The Checker we have so far is able to detect every single function call. Now, we have to detect whether a specific function call is actually calling ```Printstream.println```.
+The Checker we have written so far is able to detect every single function call. Now, we have to detect whether a specific function call is actually calling ```Printstream.println```.
 
 Let's try this:
 
@@ -132,7 +132,7 @@ Can you spot the difference? A new restriction was added to our pattern -- ```Pr
 
 ```Procname``` module implements several utility functions that are useful for this kind of analysis. However, this particular one ```java_is_print_method``` is not implemented yet.
 
-In the file ```procname.ml``` add the following function:
+In file ```procname.ml``` add the following function:
 
 ```ocaml
 (** [java_is_print_method pn] returns true if [pn] is an output method **)
