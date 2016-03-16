@@ -317,17 +317,6 @@ val base_arg_desc : arg_list
 (** Reserved command-line arguments *)
 val reserved_arg_desc : arg_list
 
-(** Escape a string for use in a CSV or XML file: replace reserved characters with escape sequences *)
-module Escape : sig
-  (** escape a string specifying the per character escaping function *)
-  val escape_map : (char -> string option) -> string -> string
-  val escape_dotty : string -> string (** escape a string to be used in a dotty file *)
-  val escape_csv : string -> string (** escape a string to be used in a csv file *)
-  val escape_path : string -> string (** escape a path replacing the directory separator with an underscore *)
-  val escape_xml : string -> string (** escape a string to be used in an xml file *)
-end
-
-
 (** flags for a procedure *)
 type proc_flags = (string, string) Hashtbl.t
 
