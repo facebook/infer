@@ -20,3 +20,6 @@
   - id: infer-bug-types
   - id: eradicate-warnings
   - id: checkers-bug-types
+- title: Contribute
+  items:
+  - id: adding-checkers
