@@ -111,18 +111,21 @@ let rec def_instr cfg (instr: Sil.instr) acc =
 and def_instrl cfg instrs acc =
   IList.fold_left (fun acc' i -> def_instr cfg i acc') acc instrs
 
-(* computes the addresses that are assigned to something or passed as parameters to*)
-(* a functions. These will be considered becoming possibly aliased *)
+(* computes the addresses that are assigned to something or passed as parameters to a function.
+   these will be considered aliased. *)
 let aliasing_instr cfg pdesc (instr: Sil.instr) acc =
   match instr with
-  | Sil.Set (_, _, e, _) -> use_exp cfg pdesc e acc
+  | Sil.Set (_, Sil.Tptr (_, _), exp, _) ->
+      use_exp cfg pdesc exp acc
   | Sil.Call (_, _, argl, _, _) ->
-      let argl'= fst (IList.split argl) in
-      IList.fold_left (fun acc' e' -> use_exp cfg pdesc e' acc') acc argl'
-  | Sil.Letderef _ | Sil.Prune _ -> acc
-  | Sil.Nullify _ -> acc
-  | Sil.Abstract _ | Sil.Remove_temps _ | Sil.Stackop _ | Sil.Declare_locals _ -> acc
-  | Sil.Goto_node _ -> acc
+      IList.fold_left
+        (fun acc (arg, typ) -> match typ with
+           | Sil.Tptr _ -> use_exp cfg pdesc arg acc
+           | _ -> acc)
+        acc
+        argl
+  | Sil.Set _ | Sil.Letderef _ | Sil.Prune _ | Sil.Nullify _ | Sil.Abstract _ | Sil.Remove_temps _
+  | Sil.Stackop _ | Sil.Declare_locals _ | Sil.Goto_node _ -> acc
 
 (* computes possible alisased var *)
 let def_aliased_var cfg pdesc instrs acc =
@@ -226,7 +229,8 @@ let analyze_proc cfg pdesc cand =
   try
     while true do
       let node = Worklist.pick () in
-      aliased_var := Vset.union (compute_aliased cfg node !aliased_var) !aliased_var;
+      if not (!Config.curr_language = Config.Java) then
+        aliased_var := Vset.union (compute_aliased cfg node !aliased_var) !aliased_var;
       let curr_live = Table.get_live node in
       let preds = AllPreds.get_preds node in
       let live_at_predecessors =

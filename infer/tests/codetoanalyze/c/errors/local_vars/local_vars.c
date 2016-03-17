@@ -49,3 +49,15 @@ int t() {
   }
   return 0;
 }
+
+int address_taken() {
+  int** x;
+  int* y;
+  int i = 7;
+  y = &i;
+  x = &y;
+  // if we don't reason about taken addresses while adding nullify instructions,
+  // we'll add
+  // `nullify(y)` here and report a false NPE on the next line
+  return **x;
+}

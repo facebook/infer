@@ -80,4 +80,13 @@
   _block_field(); // Ivar not nullable
 }
 
+- (int)check_nullify {
+  int i = 7;
+  int* x = &i;
+  int (^my_block)(void) = ^() {
+    return *x; // we'll get a false NPE here if we nullify x too early.
+  };
+  return my_block();
+}
+
 @end
