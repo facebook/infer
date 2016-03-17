@@ -421,12 +421,54 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
     Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc in
   Cfg.iter_proc_desc cfg proc_add_dispach_calls
 
+(** add instructions to perform abstraction *)
+let add_abstraction_instructions cfg =
+  let open Cfg in
+  (* true if there is a succ node s.t.: it is an exit node, or the succ of >1 nodes *)
+  let converging_node node =
+    let is_exit node = match Node.get_kind node with
+      | Node.Exit_node _ -> true
+      | _ -> false in
+    let succ_nodes = Node.get_succs node in
+    if IList.exists is_exit succ_nodes then true
+    else match succ_nodes with
+      | [] -> false
+      | [h] -> IList.length (Node.get_preds h) > 1
+      | _ -> false in
+  let node_requires_abstraction node =
+    match Node.get_kind node with
+    | Node.Start_node _
+    | Node.Join_node ->
+        false
+    | Node.Exit_node _
+    | Node.Stmt_node _
+    | Node.Prune_node _
+    | Node.Skip_node _ ->
+        converging_node node in
+  let all_nodes = Node.get_all_nodes cfg in
+  let do_node node =
+    let loc = Node.get_last_loc node in
+    if node_requires_abstraction node then Node.append_instrs_temps node [Sil.Abstract loc] [] in
+  IList.iter do_node all_nodes
+
+(** add instructions to remove temporaries *)
+let add_removetemps_instructions cfg =
+  let open Cfg in
+  let all_nodes = Node.get_all_nodes cfg in
+  let do_node node =
+    let loc = Node.get_last_loc node in
+    let temps = Node.get_temps node in
+    if temps != [] then Node.append_instrs_temps node [Sil.Remove_temps (temps, loc)] [] in
+  IList.iter do_node all_nodes
+
 let doit ?(f_translate_typ=None) cfg cg tenv =
+  add_removetemps_instructions cfg;
   AllPreds.mk_table cfg;
   Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg);
   AllPreds.clear_table ();
   if !Config.curr_language = Config.Java
   then add_dispatch_calls cfg cg tenv f_translate_typ;
+  add_abstraction_instructions cfg;
 
 (*
 Printing function useful for debugging

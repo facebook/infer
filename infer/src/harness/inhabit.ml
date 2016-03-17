@@ -291,8 +291,6 @@ let setup_harness_cfg harness_name env source_dir cg =
   Cfg.Node.add_locals_ret_declaration start_node [];
   Cfg.Node.set_succs_exn start_node [harness_node] [exit_node];
   Cfg.Node.set_succs_exn harness_node [exit_node] [exit_node];
-  Cfg.add_removetemps_instructions harness_cfg;
-  Cfg.add_abstraction_instructions harness_cfg;
   add_harness_to_cg harness_name harness_node cg;
   (* save out the cg and cfg so that they will be accessible in the next phase of the analysis *)
   Cg.store_to_file cg_file cg;

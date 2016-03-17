@@ -48,9 +48,7 @@ let store_icfg tenv cg cfg =
   let get_internal_file = DB.source_dir_get_internal_file source_dir in
   let cg_file = get_internal_file ".cg" in
   let cfg_file = get_internal_file ".cfg" in
-  Cfg.add_removetemps_instructions cfg;
   Preanal.doit cfg cg tenv;
-  Cfg.add_abstraction_instructions cfg;
   Cg.store_to_file cg_file cg;
   Cfg.store_cfg_to_file cfg_file true cfg;
   if !LConfig.debug_mode then

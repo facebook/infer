@@ -817,43 +817,6 @@ let get_priority_procnames cfg =
 let set_procname_priority cfg pname =
   cfg.Node.priority_set <- Procname.Set.add pname cfg.Node.priority_set
 
-(** add instructions to remove temporaries *)
-let add_removetemps_instructions cfg =
-  let all_nodes = Node.get_all_nodes cfg in
-  let do_node node =
-    let loc = Node.get_last_loc node in
-    let temps = Node.get_temps node in
-    if temps != [] then Node.append_instrs_temps node [Sil.Remove_temps (temps, loc)] [] in
-  IList.iter do_node all_nodes
-
-(** add instructions to perform abstraction *)
-let add_abstraction_instructions cfg =
-  let converging_node node = (* true if there is a succ node s.t.: it is an exit node, or the succ of >1 nodes *)
-    let is_exit node = match Node.get_kind node with
-      | Node.Exit_node _ -> true
-      | _ -> false in
-    let succ_nodes = Node.get_succs node in
-    if IList.exists is_exit succ_nodes then true
-    else match succ_nodes with
-      | [] -> false
-      | [h] -> IList.length (Node.get_preds h) > 1
-      | _ -> false in
-  let node_requires_abstraction node =
-    match Node.get_kind node with
-    | Node.Start_node _
-    | Node.Join_node ->
-        false
-    | Node.Exit_node _
-    | Node.Stmt_node _
-    | Node.Prune_node _
-    | Node.Skip_node _ ->
-        converging_node node in
-  let all_nodes = Node.get_all_nodes cfg in
-  let do_node node =
-    let loc = Node.get_last_loc node in
-    if node_requires_abstraction node then Node.append_instrs_temps node [Sil.Abstract loc] [] in
-  IList.iter do_node all_nodes
-
 let get_name_of_local (curr_f : Procdesc.t) (x, _) =
   Sil.mk_pvar x (Procdesc.get_proc_name curr_f)
 

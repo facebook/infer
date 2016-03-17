@@ -291,12 +291,6 @@ val get_priority_procnames : cfg -> Procname.Set.t
 (** set the function names whose address has been taken in this file *)
 val set_procname_priority : cfg -> Procname.t -> unit
 
-(** add instructions to remove temporaries *)
-val add_removetemps_instructions : cfg -> unit
-
-(** add instructions to perform abstraction *)
-val add_abstraction_instructions : cfg -> unit
-
 (** remove the return variable from the prop *)
 val remove_ret : Procdesc.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
