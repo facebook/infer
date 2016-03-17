@@ -108,6 +108,23 @@ struct
   let process_methods tenv cg cfg curr_class decl_list =
     IList.iter (process_one_method_decl tenv cg cfg curr_class) decl_list
 
+  let should_translate_decl dec =
+    let info = Clang_ast_proj.get_decl_tuple dec in
+    CLocation.update_curr_file info;
+    let source_range = info.Clang_ast_t.di_source_range in
+    let translate_location = CLocation.should_translate_lib source_range in
+    let always_translate_decl = match dec with
+      | Clang_ast_t.FunctionDecl (_, name_info, _, _) ->
+          (* named_decl_info.ni_name has name without template parameters.*)
+          (* It makes it possible to capture whole family of function instantiations*)
+          (* to be named the same *)
+          let fun_name = name_info.Clang_ast_t.ni_name in
+          let top_qual = IList.hd (IList.rev name_info.Clang_ast_t.ni_qual_name) in
+          (* Always translate std::move so that it can be analyzed *)
+          top_qual="std" && fun_name = "move"
+      | _ -> false in
+    translate_location || always_translate_decl
+
   (* Translate one global declaration *)
   let rec translate_one_declaration tenv cg cfg parent_dec dec =
     let open Clang_ast_t in
@@ -115,11 +132,8 @@ struct
     CFrontend_errors.run_frontend_checkers_on_decl tenv cg cfg dec;
     (* each procedure has different scope: start names from id 0 *)
     Ident.NameGenerator.reset ();
-    let info = Clang_ast_proj.get_decl_tuple dec in
-    CLocation.update_curr_file info;
-    let source_range = info.Clang_ast_t.di_source_range in
-    let should_translate_decl = CLocation.should_translate_lib source_range in
-    (if should_translate_decl then
+
+    (if should_translate_decl dec then
        match dec with
        | FunctionDecl(_, _, _, _) ->
            function_decl tenv cfg cg dec None

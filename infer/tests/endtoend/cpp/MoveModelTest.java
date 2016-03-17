@@ -26,14 +26,14 @@ import utils.InferException;
 import utils.InferResults;
 import utils.InferRunner;
 
-public class SharedPtrDerefTest {
+public class MoveModelTest {
 
   public static final String FILE =
-      "infer/tests/codetoanalyze/cpp/errors/smart_ptr/shared_ptr_deref.cpp";
+      "infer/tests/codetoanalyze/cpp/errors/models/move.cpp";
 
   private static ImmutableList<String> inferCmd;
 
-  public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
+  public static final String DIVIDE_BY_ZERO = "DIVIDE_BY_ZERO";
 
   @ClassRule
   public static DebuggableTemporaryFolder folder =
@@ -45,26 +45,18 @@ public class SharedPtrDerefTest {
   }
 
   @Test
-  public void whenInferRunsNullDerefFunctionsErrorIsFound()
+  public void whenInferRunsOnDiv0FunctionsErrorIsFound()
       throws InterruptedException, IOException, InferException {
     String[] procedures = {
-        "empty_ptr_deref",
-        "nullptr_ptr_deref",
-        "empty_ptr_field_deref",
-        "empty_ptr_field_deref2",
-        "empty_ptr_method_deref",
-        "reset_ptr_null_deref",
-        "reset_ptr_null_deref2",
-        "shared_ptr_copy_null_deref",
-        "shared_ptr_assign_null_deref",
-        "shared_ptr_move_null_deref",
+        "div0_moved_from",
+        "div0_moved_to",
     };
     InferResults inferResults = InferRunner.runInferCPP(inferCmd);
     assertThat(
         "Results should contain divide by 0 error",
         inferResults,
         containsExactly(
-            NULL_DEREFERENCE,
+            DIVIDE_BY_ZERO,
             FILE,
             procedures
         )

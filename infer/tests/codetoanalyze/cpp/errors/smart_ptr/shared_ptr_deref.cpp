@@ -101,3 +101,9 @@ int shared_ptr_assign_ok_deref() {
   p1.reset();
   return *p2;
 }
+
+int shared_ptr_move_null_deref() {
+  std::shared_ptr<int> p1(new int);
+  std::shared_ptr<int> p2 = std::move(p1);
+  return *p1;
+}
