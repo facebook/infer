@@ -5,7 +5,9 @@ author: jul
 category: blog
 ---
 
-![Infer + Spotify collaboration](/static/images/Infer-Spotify.png)
+<p style="text-align: center;">
+<img src="/static/images/Infer-Spotify.png" title="Infer/Spotify collaboration">
+</p>
 
 Working on deploying Infer inside Facebook has taught us how important
 it is to have the analysis tool deeply embedded into the developers'
