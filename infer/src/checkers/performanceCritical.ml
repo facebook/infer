@@ -9,10 +9,6 @@
 
 module L = Logging
 
-
-let performance_critical_implies_no_allocation = true
-
-
 (* Warning name when a performance critical method directly or indirectly
    calls a method annotatd as expensive *)
 let calls_expensive_method =
@@ -65,9 +61,7 @@ let method_is_performance_critical pname =
 
 
 let method_is_no_allcation pname =
-  (performance_critical_implies_no_allocation
-   && method_is_performance_critical pname)
-  || check_method Annotations.ia_is_no_allocation pname
+  check_method Annotations.ia_is_no_allocation pname
 
 
 let method_overrides is_annotated tenv pname =
