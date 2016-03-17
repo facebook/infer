@@ -3,6 +3,7 @@ B _build-infer/**
 PKG atdgen
 PKG extlib
 PKG javalib
+PKG ounit
 PKG ptrees
 PKG sawja
 PKG str
