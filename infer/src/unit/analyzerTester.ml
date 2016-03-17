@@ -66,8 +66,42 @@ module StructuredSil = struct
   let var_of_str str =
     Sil.Lvar (Sil.mk_pvar (Mangled.from_string str) dummy_procname)
 
+  let ident_of_str str =
+    Ident.create_normal (Ident.string_to_name str) 0
+
   let unknown_exp =
     var_of_str "__unknown__"
+
+  let make_letderef lhs_id rhs_exp =
+    Cmd (Sil.Letderef (lhs_id, rhs_exp, dummy_typ, dummy_loc))
+
+  let make_set ~lhs_exp ~rhs_exp =
+    Cmd (Sil.Set (lhs_exp, dummy_typ, rhs_exp, dummy_loc))
+
+  let id_assign_id lhs rhs =
+    let lhs_id = ident_of_str lhs in
+    let rhs_exp = Sil.Var (ident_of_str rhs) in
+    make_letderef lhs_id rhs_exp
+
+  let id_assign_var lhs rhs =
+    let lhs_id = ident_of_str lhs in
+    let rhs_exp = var_of_str rhs in
+    make_letderef lhs_id rhs_exp
+
+  let var_assign_int lhs rhs =
+    let lhs_exp = var_of_str lhs in
+    let rhs_exp = Sil.exp_int (Sil.Int.of_int rhs) in
+    make_set ~lhs_exp ~rhs_exp
+
+  let var_assign_id lhs rhs =
+    let lhs_exp = var_of_str lhs in
+    let rhs_exp = Sil.Var (ident_of_str rhs) in
+    make_set ~lhs_exp ~rhs_exp
+
+  let var_assign_var lhs rhs =
+    let lhs_exp = var_of_str lhs in
+    let rhs_exp = var_of_str rhs in
+    make_set ~lhs_exp ~rhs_exp
 
 end
 

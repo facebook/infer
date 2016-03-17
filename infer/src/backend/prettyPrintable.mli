@@ -36,12 +36,13 @@ module type PPMap = sig
 end
 
 module MakePPSet : functor (Ord : SetOrderedType) -> sig
-  include Set.S
+  include Set.S with type elt = Ord.t
   val pp_element : F.formatter -> Ord.t -> unit
   val pp : F.formatter -> t -> unit
 end
 
 module MakePPMap : functor (Ord : MapOrderedType) -> sig
-  include Map.S
-  val pp :pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
+  include Map.S with type key = Ord.t
+  val pp_key : F.formatter -> Ord.t -> unit
+  val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
