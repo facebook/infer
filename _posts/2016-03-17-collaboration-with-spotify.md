@@ -1,7 +1,7 @@
 ---
 title: Collaboration with Spotify
 layout: post
-author: jvillard
+author: jul
 category: blog
 ---
 
@@ -43,7 +43,7 @@ part of Spotify's CI system, and here is a quote from Türgolu on
 Spotify's perspective on Infer, which we include with his kind
 permission.
 
-> At Spotify we are continuously working on making our codebase better,
+> “At Spotify we are continuously working on making our codebase better,
 > and in the Android infrastructure team we use a lot of tools: static
 > analyzers, linters, thread/address sanitizers, etc. In our quest to
 > make our code even better, we started using Infer. Infer found several
@@ -55,7 +55,7 @@ permission.
 > you can simply add it to your flow and it will tell you where you
 > forgot to close that cursor or leaked that context. If you find a
 > false positive, just report it or, even better, make a PR. With more
-> users, it will just keep getting better.
+> users, it will just keep getting better.”
 
 This collaboration was truly a two-way street: Not only does Infer
 find issues in Spotify, which helps improve its Android app, but
