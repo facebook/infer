@@ -281,6 +281,12 @@ and attribute_category =
   | ACretval
   | ACobserver
 
+
+and closure = {
+  name : Procname.t;
+  captured_vars : (Ident.t * pvar * typ) list;
+}
+
 (** Constants *)
 and const =
   | Cint of Int.t (** integer constants *)
@@ -292,7 +298,7 @@ and const =
   | Cclass of Ident.name (** class constant *)
   | Cptr_to_fld of Ident.fieldname * typ (** pointer to field constant,
                                              and type of the surrounding Csu.t type *)
-  | Ctuple of exp list (** tuple of values *)
+  | Cclosure of closure (** anonymous function *)
 
 and struct_fields = (Ident.fieldname * typ * item_annotation) list
 

@@ -160,23 +160,25 @@ struct
   let extract_block_from_tuple procname exps loc =
     let insts = ref [] in
     let ids = ref [] in
-    let is_function_name t e =
-      match e with
-      | Sil.Const (Sil.Cfun bn) ->
-          let bn'= Procname.to_string bn in
-          let bn''= Mangled.from_string bn' in
-          let block = Sil.Lvar (Sil.mk_pvar bn'' procname) in
-          let id = Ident.create_fresh Ident.knormal in
-          ids := id :: !ids;
-          insts := Sil.Letderef (id, block, t, loc) :: !insts;
-          [(Sil.Var id, t)]
-      | _ -> [(e, t)] in
-    let get_function_name t el = IList.flatten(IList.map (is_function_name t) el) in
+    let make_function_name typ bn =
+      let bn'= Procname.to_string bn in
+      let bn''= Mangled.from_string bn' in
+      let block = Sil.Lvar (Sil.mk_pvar bn'' procname) in
+      let id = Ident.create_fresh Ident.knormal in
+      ids := id :: !ids;
+      insts := Sil.Letderef (id, block, typ, loc) :: !insts;
+      (Sil.Var id, typ) in
+    let make_arg typ (id, _, _) = (Sil.Var id, typ) in
     let rec f es =
       match es with
       | [] -> []
-      | (Sil.Const(Sil.Ctuple el), (Sil.Tptr((Sil.Tfun _), _ ) as t)) :: es' ->
-          get_function_name t el @ (f es')
+      | (Sil.Const (Sil.Cclosure { name; captured_vars}),
+         (Sil.Tptr((Sil.Tfun _), _ ) as t)) :: es' ->
+          let app =
+            let function_name = make_function_name t name in
+            let args = IList.map (make_arg t) captured_vars in
+            function_name :: args in
+          app @ (f es')
       | e :: es' -> e :: f es' in
     (f exps, !insts, !ids)
 
@@ -1898,20 +1900,25 @@ struct
         (* defining procedure. We add an edge in the call graph.*)
         Cg.add_edge context.cg procname block_pname;
         let captured_block_vars = block_decl_info.Clang_ast_t.bdi_captured_variables in
-        let captured_vars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
-        let ids_instrs = IList.map assign_captured_var captured_vars in
+        let captured_pvars = CVar_decl.captured_vars_from_block_info context captured_block_vars in
+        let ids_instrs = IList.map assign_captured_var captured_pvars in
         let ids, instrs = IList.split ids_instrs in
-        let block_data = (context, type_ptr, block_pname, captured_vars) in
+        let block_data = (context, type_ptr, block_pname, captured_pvars) in
         F.function_decl context.tenv context.cfg context.cg decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
-        let captured_exps = IList.map (fun id -> Sil.Var id) ids in
-        let tu = Sil.Ctuple ((Sil.Const (Sil.Cfun block_pname)) :: captured_exps) in
+        let captured_vars =
+          IList.map2 (fun id (pvar, typ) -> (id, pvar, typ)) ids captured_pvars in
+        let closure = Sil.Cclosure { name=block_pname; captured_vars } in
         let block_name = Procname.to_string block_pname in
         let static_vars = CContext.static_vars_for_block context block_pname in
-        let captured_static_vars = captured_vars @ static_vars in
+        let captured_static_vars = captured_pvars @ static_vars in
         let alloc_block_instr, ids_block =
           allocate_block trans_state block_name captured_static_vars loc in
-        { empty_res_trans with ids = ids_block @ ids; instrs = alloc_block_instr @ instrs; exps = [(Sil.Const tu, typ)]}
+        { empty_res_trans with
+          ids = ids_block @ ids;
+          instrs = alloc_block_instr @ instrs;
+          exps = [(Sil.Const closure, typ)];
+        }
     | _ -> assert false
 
   and cxxNewExpr_trans trans_state stmt_info expr_info =

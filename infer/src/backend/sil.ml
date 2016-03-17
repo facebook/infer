@@ -645,6 +645,11 @@ and attribute_category =
   | ACretval
   | ACobserver
 
+and closure = {
+  name : Procname.t;
+  captured_vars : (Ident.t * pvar * typ) list;
+}
+
 (** Constants *)
 and const =
   | Cint of Int.t (** integer constants *)
@@ -656,7 +661,7 @@ and const =
   | Cclass of Ident.name (** class constant *)
   | Cptr_to_fld of Ident.fieldname * typ (** pointer to field constant,
                                              and type of the surrounding Csu.t type *)
-  | Ctuple of exp list (** tuple of values *)
+  | Cclosure of closure (** anonymous function *)
 
 and struct_fields = (Ident.fieldname * typ * item_annotation) list
 
@@ -1297,7 +1302,7 @@ let const_kind_equal c1 c2 =
     | Cexn _ -> 6
     | Cclass _ -> 7
     | Cptr_to_fld _ -> 8
-    | Ctuple _ -> 9 in
+    | Cclosure _ -> 9 in
   const_kind_number c1 = const_kind_number c2
 
 let rec const_compare (c1 : const) (c2 : const) : int =
@@ -1328,7 +1333,18 @@ let rec const_compare (c1 : const) (c2 : const) : int =
       if n <> 0 then n else typ_compare t1 t2
   | Cptr_to_fld _, _ -> -1
   | _, Cptr_to_fld _ -> 1
-  | Ctuple el1, Ctuple el2 -> IList.compare exp_compare el1 el2
+  | Cclosure { name=n1; captured_vars=c1; }, Cclosure { name=n2; captured_vars=c2; } ->
+      let captured_var_compare acc (id1, pvar1, typ1) (id2, pvar2, typ2) =
+        if acc <> 0 then acc
+        else
+          let n = Ident.compare id1 id2 in
+          if n <> 0 then n
+          else
+            let n = pvar_compare pvar1 pvar2 in
+            if n <> 0 then n
+            else typ_compare typ1 typ2 in
+      let n = Procname.compare n1 n2 in
+      if n <> 0 then n else IList.fold_left2 captured_var_compare 0 c1 c2
 
 and struct_typ_compare struct_typ1 struct_typ2 =
   if struct_typ1.csu = Csu.Class Csu.Java && struct_typ2.csu = Csu.Class Csu.Java then
@@ -1999,7 +2015,9 @@ and pp_const pe f = function
   | Cexn e -> F.fprintf f "EXN %a" (pp_exp pe) e
   | Cclass c -> F.fprintf f "%a" Ident.pp_name c
   | Cptr_to_fld (fn, _) -> F.fprintf f "__fld_%a" Ident.pp_fieldname fn
-  | Ctuple el -> F.fprintf f "(%a)" (pp_comma_seq (pp_exp pe)) el
+  | Cclosure { name; captured_vars; } ->
+      let id_exps = IList.map (fun (id, _, _) -> Var id) captured_vars in
+      F.fprintf f "(%a)" (pp_comma_seq (pp_exp pe)) ((Const (Cfun name)) :: id_exps)
 
 (** Pretty print a type. Do nothing by default. *)
 and pp_typ pe f te =
@@ -2276,8 +2294,8 @@ and exp_iter_types f e =
   | Var _ -> ()
   | Const (Cexn e1) ->
       exp_iter_types f e1
-  | Const (Ctuple el) ->
-      IList.iter (exp_iter_types f) el
+  | Const (Cclosure { captured_vars }) ->
+      IList.iter (fun (_, _, typ) -> f typ) captured_vars
   | Const _ ->
       ()
   | Cast (t, e1) ->
@@ -2951,7 +2969,7 @@ let exp_lt e1 e2 =
 let rec exp_fpv = function
   | Var _ -> []
   | Const (Cexn e) -> exp_fpv e
-  | Const (Ctuple el) -> exp_list_fpv el
+  | Const (Cclosure _) -> []
   | Const _ -> []
   | Cast (_, e) | UnOp (_, e, _) -> exp_fpv e
   | BinOp (_, e1, e2) -> exp_fpv e1 @ exp_fpv e2
@@ -3113,8 +3131,8 @@ let fav_mem fav id =
 let rec exp_fav_add fav = function
   | Var id -> fav ++ id
   | Const (Cexn e) -> exp_fav_add fav e
-  | Const (Ctuple el) -> IList.iter (exp_fav_add fav) el
-  | Const _ -> ()
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _
+          | Cclosure _) -> ()
   | Cast (_, e) | UnOp (_, e, _) -> exp_fav_add fav e
   | BinOp (_, e1, e2) -> exp_fav_add fav e1; exp_fav_add fav e2
   | Lvar _ -> () (* do nothing since we only count non-program variables *)
@@ -3414,10 +3432,8 @@ and exp_sub (subst: subst) e =
   | Const (Cexn e1) ->
       let e1' = exp_sub subst e1 in
       Const (Cexn e1')
-  | Const (Ctuple el) ->
-      let el' = IList.map (exp_sub subst) el in
-      Const (Ctuple el')
-  | Const _ ->
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _
+          | Cclosure _) ->
       e
   | Cast (t, e1) ->
       let e1' = exp_sub subst e1 in

@@ -67,18 +67,10 @@ let is_captured_pvar pdesc x =
 let rec use_exp cfg pdesc (exp: Sil.exp) acc =
   match exp with
   | Sil.Var _ | Sil.Sizeof _ -> acc
-  | Sil.Const (Sil.Ctuple((Sil.Const (Sil.Cfun pname)):: _)) ->
-      (* for tuples representing the assignment of a block we take the block name *)
-      (* look for its procdesc and add its captured vars to the set of captured vars. *)
-      let found_pd = ref None in
-      Cfg.iter_proc_desc cfg (fun pn pd -> if Procname.equal pn pname then found_pd:= Some pd);
-      let defining_proc = Cfg.Procdesc.get_proc_name pdesc in
-      (match !found_pd with
-       | Some pd ->
-           IList.iter (fun (x, _) ->
-               captured_var:= Vset.add (Sil.mk_pvar x defining_proc) !captured_var
-             ) (Cfg.Procdesc.get_captured pd)
-       | _ -> ());
+  | Sil.Const (Cclosure { captured_vars }) ->
+      IList.iter
+        (fun (_, captured_pvar, _) -> captured_var:= Vset.add captured_pvar !captured_var)
+        captured_vars;
       acc
   | Sil.Const _ -> acc
   | Sil.Lvar x ->

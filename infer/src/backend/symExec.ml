@@ -1006,10 +1006,11 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop prop_ exp in
         let instr' = match exp' with
-          | Sil.Const (Sil.Ctuple (e1 :: el)) -> (* closure: combine arguments to call *)
-              let e1' = Prop.exp_normalize_prop prop_ e1 in
-              let par' = IList.map (fun e -> (e, Sil.Tvoid)) el in
-              Sil.Call (ret, e1', par' @ par, loc, call_flags)
+          | Sil.Const (Sil.Cclosure c) ->
+              let proc_exp = Sil.Const (Sil.Cfun c.name) in
+              let proc_exp' = Prop.exp_normalize_prop prop_ proc_exp in
+              let par' = IList.map (fun (id, _, typ) -> (Sil.Var id, typ)) c.captured_vars in
+              Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
           | _ ->
               Sil.Call (ret, exp', par, loc, call_flags) in
         instr'
@@ -2565,27 +2566,6 @@ module ModelBuiltins = struct
          | _ -> [(prop, path)])
     | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-  let execute___create_tuple { Builtin.prop_; path; ret_ids; args; }
-    : Builtin.ret_typ =
-    let el = IList.map fst args in
-    let res = Sil.Const (Sil.Ctuple el) in
-    [(return_result res prop_ ret_ids, path)]
-
-  let execute___tuple_get_nth { Builtin.pdesc; prop_; path; ret_ids; args; }
-    : Builtin.ret_typ =
-    match args with
-    | [(lexp1, _); (lexp2, _)] ->
-        let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp1, prop__ = exp_norm_check_arith pname prop_ lexp1 in
-        let n_lexp2, prop = exp_norm_check_arith pname prop__ lexp2 in
-        (match n_lexp1, n_lexp2 with
-         | Sil.Const (Sil.Ctuple el), Sil.Const (Sil.Cint i) ->
-             let n = Sil.Int.to_int i in
-             let en = IList.nth el n in
-             [(return_result en prop ret_ids, path)]
-         | _ -> [(prop, path)])
-    | _ -> raise (Exceptions.Wrong_argument_number __POS__)
-
   (* forces the expression passed as parameter to be assumed true at the point where this
      builtin is called, diverges if this causes an inconsistency *)
   let execute___infer_assume { Builtin.prop_; path; args; }
@@ -2646,9 +2626,6 @@ module ModelBuiltins = struct
   let _ = Builtin.register
       (* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
       "__check_untainted" execute___check_untainted
-  let __create_tuple = Builtin.register
-      (* create a tuple value from the arguments *)
-      "__create_tuple" execute___create_tuple
   let __delete = Builtin.register
       (* like free *)
       "__delete" (execute_free Sil.Mnew)
@@ -2764,9 +2741,6 @@ module ModelBuiltins = struct
       "__set_unlocked_attribute" execute___set_unlocked_attribute 
   let _ = Builtin.register
       "__throw" execute_skip
-  let __tuple_get_nth = Builtin.register
-      (* return the nth element of a tuple *)
-      "__tuple_get_nth" execute___tuple_get_nth
   let __unwrap_exception = Builtin.register
       (* unwrap an exception *)
       "__unwrap_exception" execute__unwrap_exception

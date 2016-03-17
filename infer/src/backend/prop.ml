@@ -434,8 +434,6 @@ let sym_eval abs e =
     match e with
     | Sil.Var _ ->
         e
-    | Sil.Const (Sil.Ctuple el) ->
-        Sil.Const (Sil.Ctuple (IList.map eval el))
     | Sil.Const _ ->
         e
     | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, e), _)
