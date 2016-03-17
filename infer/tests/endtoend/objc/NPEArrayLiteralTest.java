@@ -63,7 +63,8 @@ public class NPEArrayLiteralTest {
         "nilInArrayLiteral0",
         "nilInArrayLiteral1",
         "nilInArrayLiteral2",
-        "nilInArrayLiteral3"
+        "nilInArrayLiteral3",
+        "nilInArrayWithObject"
     };
     assertThat(
         "Only NPE should be found", inferResults,

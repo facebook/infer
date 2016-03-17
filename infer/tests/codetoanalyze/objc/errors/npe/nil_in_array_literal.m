@@ -19,6 +19,10 @@
   NSArray* foo = @[ @"aaa", @"bbb" ];
   // check that array literals create valid objects
   NSArray* foofoo = @[ foo ];
+  NSArray* bar = [NSArray arrayWithObject:@"ccc"];
+  // test return value of arrayWithObject to avoid RETURN_VALUE_IGNORED report
+  if (bar)
+    return;
 }
 
 - (void)nilInArrayLiteral0 {
@@ -49,11 +53,21 @@
   NSArray* foo = @[ @"aaa", @"bbb", str ];
 }
 
+- (NSArray*)nilInArrayWithObject {
+  NSString* str = nil;
+
+  // nil argument in arrayWithObject crashes
+  NSArray* foo = [NSArray arrayWithObject:str];
+
+  return foo;
+}
+
 @end
 
 int main() {
   A* a = [A alloc];
   [a noProblem];
   [a nilInArrayLiteral0];
+  [a nilInArrayWithObject];
   return 0;
 }

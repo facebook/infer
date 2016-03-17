@@ -15,4 +15,9 @@
   return [NSArray alloc];
 }
 
++ (instancetype)arrayWithObject:(char*)anObject {
+  char _ = *anObject;
+  return [NSArray alloc];
+}
+
 @end
