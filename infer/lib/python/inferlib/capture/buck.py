@@ -119,7 +119,7 @@ class BuckAnalyzer:
                 regex=self.args.blacklist_regex))
         return args
 
-    def _get_analysis_result_files(self):
+    def _get_analysis_result_paths(self):
         # TODO(8610738): Make targets extraction smarter
         buck_results_cmd = [
             self.cmd[0],
@@ -130,8 +130,24 @@ class BuckAnalyzer:
         (buck_output, _) = proc.communicate()
         # remove target name prefixes from each line and split them into a list
         out = [x.split(None, 1)[1] for x in buck_output.strip().split('\n')]
-        # from the resulting list, get only what ends in json
-        return [x for x in out if x.endswith('.json')]
+        return [os.path.dirname(x)
+                if os.path.isfile(x) else x
+                for x in out if os.path.exists(x)]
+
+    @staticmethod
+    def _merge_infer_dep_files(root_paths, merged_out_path):
+        potential_dep_files = [os.path.join(p, config.INFER_BUCK_DEPS_FILENAME)
+                               for p in root_paths]
+        dep_files = filter(os.path.exists, potential_dep_files)
+        utils.merge_and_dedup_files_into_path(dep_files, merged_out_path)
+
+    @staticmethod
+    def _merge_infer_report_files(root_paths, merged_out_path):
+        potential_report_files = [os.path.join(p, config.JSON_REPORT_FILENAME)
+                                  for p in root_paths]
+        report_files = filter(os.path.exists, potential_report_files)
+        all_results = issues.merge_reports_from_paths(report_files)
+        utils.dump_json_to_path(all_results, merged_out_path)
 
     def _run_buck_with_flavors(self):
         # TODO: Use buck to identify the project's root folder
@@ -147,23 +163,19 @@ class BuckAnalyzer:
         ret = self._run_buck_with_flavors()
         if not ret == os.EX_OK:
             return ret
-        result_files = self._get_analysis_result_files()
-        all_results = issues.merge_reports_from_paths(result_files)
-        merged_results_path = os.path.join(self.args.infer_out,
-                                           config.JSON_REPORT_FILENAME)
-        utils.dump_json_to_path(all_results, merged_results_path)
-        if self.args.merge_deps_files:
-            infer_deps_to_merge = [
-                os.path.join(
-                    os.path.dirname(x), config.INFER_BUCK_DEPS_FILENAME)
-                for x in result_files]
-            merged_infer_deps_path = os.path.join(
-                self.args.infer_out,
-                config.INFER_BUCK_DEPS_FILENAME)
-            utils.merge_and_dedup_files_into_path(infer_deps_to_merge,
-                                                  merged_infer_deps_path)
-        utils.stdout('Results saved in {results_path}'
-                     .format(results_path=merged_results_path))
+        result_paths = self._get_analysis_result_paths()
+        merged_reports_path = os.path.join(
+            self.args.infer_out, config.JSON_REPORT_FILENAME)
+        merged_deps_path = os.path.join(
+            self.args.infer_out, config.INFER_BUCK_DEPS_FILENAME)
+        self._merge_infer_report_files(result_paths, merged_reports_path)
+        self._merge_infer_dep_files(result_paths, merged_deps_path)
+        bugs_out = os.path.join(self.args.infer_out, config.BUGS_FILENAME)
+        xml_out = None
+        if self.args.pmd_xml:
+            xml_out = os.path.join(
+                self.args.infer_out, config.PMD_XML_FILENAME)
+        issues.print_and_save_errors(merged_reports_path, bugs_out, xml_out)
         return os.EX_OK
 
     def capture_without_flavors(self):
