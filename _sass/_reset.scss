@@ -30,7 +30,11 @@ ol, ul {
 	list-style: none;
 }
 blockquote, q {
-	quotes: none;
+        quotes: "\201C""\201D""\2018""\2019";
+        border-left: 10px solid #ccc;
+        margin-left: 20px;
+        margin-right: 50px;
+        padding: 8px;
 }
 blockquote:before, blockquote:after,
 q:before, q:after {
