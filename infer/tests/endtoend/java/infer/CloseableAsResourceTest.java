@@ -43,6 +43,7 @@ public class CloseableAsResourceTest {
         "notClosingWrapper",
         "failToCloseWithCloseQuietly",
         "sourceOfNullWithResourceLeak",
+        "leakFoundWhenIndirectlyImplementingCloseable",
     };
     assertThat(
         "Results should not contain resource leak errors",

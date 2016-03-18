@@ -149,4 +149,14 @@ public class CloseableAsResourceExample {
     return null;
   }
 
+  interface MyCloseable extends Closeable {}
+
+  class MyResource implements MyCloseable {
+    public void close() {}
+  }
+
+  void leakFoundWhenIndirectlyImplementingCloseable() {
+    MyResource res = new MyResource();
+  }
+
 }

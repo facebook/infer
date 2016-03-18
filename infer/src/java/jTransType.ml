@@ -312,6 +312,7 @@ and create_sil_type program tenv cn =
   | None -> dummy_type cn
   | Some node ->
       let create_super_list interface_names =
+        IList.iter (fun cn -> ignore (get_class_type_no_pointer program tenv cn)) interface_names;
         IList.map typename_of_classname interface_names in
       let superclasses, instance_fields, static_fields, struct_annotations =
         match node with
