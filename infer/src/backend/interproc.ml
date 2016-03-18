@@ -647,10 +647,7 @@ let report_context_leaks pname sigma tenv =
         when Sil.pvar_is_global pv ->
           IList.iter
             (fun (f_name, f_strexp) ->
-               if not (Harness.is_generated_field f_name)
-               then
-                 check_reachable_context_from_fld
-                   (f_name, f_strexp) context_exps)
+               check_reachable_context_from_fld (f_name, f_strexp) context_exps)
             static_flds
       | _ -> ())
     sigma

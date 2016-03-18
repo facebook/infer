@@ -103,6 +103,7 @@ let store_icfg tenv cg cfg program =
   begin
     let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
     let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
+    if !JConfig.create_harness then Harness.create_harness cfg cg tenv;
     Preanal.doit ~f_translate_typ:(Some f_translate_typ) cfg cg tenv;
     Cg.store_to_file cg_file cg;
     Cfg.store_cfg_to_file cfg_file true cfg;
@@ -120,20 +121,14 @@ let store_icfg tenv cg cfg program =
 (* environment are obtained and saved. *)
 let do_source_file
     never_null_matcher linereader classes program tenv
-    source_basename (package_opt, source_file) proc_file_map =
+    source_basename (package_opt, source_file) =
   JUtils.log "\nfilename: %s (%s)@."
     (DB.source_file_to_string source_file) source_basename;
   let call_graph, cfg =
     JFrontend.compute_source_icfg
       never_null_matcher linereader classes program tenv
       source_basename package_opt in
-  store_icfg tenv call_graph cfg program;
-  if !JConfig.create_harness then
-    IList.fold_left
-      (fun proc_file_map pdesc ->
-         Procname.Map.add (Cfg.Procdesc.get_proc_name pdesc) source_file proc_file_map)
-      proc_file_map (Cfg.get_all_procs cfg)
-  else proc_file_map
+  store_icfg tenv call_graph cfg program
 
 
 let capture_libs never_null_matcher linereader program tenv =
@@ -196,30 +191,26 @@ let do_all_files classpath sources classes =
     Inferconfig.SkipTranslationMatcher.load_matcher (Inferconfig.inferconfig ()) in
   let never_null_matcher =
     Inferconfig.NeverReturnNull.load_matcher (Inferconfig.inferconfig ()) in
-  let proc_file_map =
-    let skip source_file =
-      skip_translation_matcher source_file Procname.empty in
-    let translate_source_file basename (package_opt, _) source_file map =
-      init_global_state source_file;
-      if skip source_file then map
-      else do_source_file
-          never_null_matcher linereader classes program tenv
-          basename (package_opt, source_file) map in
-    StringMap.fold
-      (fun basename file_entry map ->
-         match file_entry with
-         | JClasspath.Singleton source_file ->
-             translate_source_file basename (None, source_file) source_file map
-         | JClasspath.Duplicate source_files ->
-             IList.fold_left
-               (fun accu (package, source_file) ->
-                  translate_source_file basename (Some package, source_file) source_file accu)
-               map source_files)
-      sources
-      Procname.Map.empty in
+  let skip source_file =
+    skip_translation_matcher source_file Procname.empty in
+  let translate_source_file basename (package_opt, _) source_file =
+    init_global_state source_file;
+    if not (skip source_file) then
+      do_source_file
+        never_null_matcher linereader classes program tenv basename (package_opt, source_file) in
+  StringMap.iter
+    (fun basename file_entry ->
+       match file_entry with
+       | JClasspath.Singleton source_file ->
+           translate_source_file basename (None, source_file) source_file
+       | JClasspath.Duplicate source_files ->
+           IList.iter
+             (fun (package, source_file) ->
+                translate_source_file basename (Some package, source_file) source_file)
+             source_files)
+    sources;
   if !JConfig.dependency_mode then
     capture_libs never_null_matcher linereader program tenv;
-  if !JConfig.create_harness then Harness.create_harness proc_file_map tenv;
   save_tenv tenv;
   JClasspath.cleanup program;
   JUtils.log "done @."
