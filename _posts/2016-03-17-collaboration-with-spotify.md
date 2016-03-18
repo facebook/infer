@@ -28,7 +28,7 @@ with their build system. They were using the
 within Facebook is done using a different build system, Facebook's
 [Buck](https://buckbuild.com/); we had only an initial, basic
 integration with Gradle, which did not work with Spotify's app. A
-Spotify engineer, Deniz Türgolu, made improvements to our Gradle
+Spotify engineer, Deniz Türkoglu, made improvements to our Gradle
 integration, which he submitted as a [pull
 request](https://github.com/facebook/infer/pull/131) to Infer's
 codebase, which is hosted on
@@ -39,7 +39,7 @@ Jules Villard, traveled to the Spotify office in Stockholm to attend a
 Hack Week there. After running Infer on the Spotify app, we discussed
 the analyzer reports with Spotify engineers, and we agreed that they
 identified potential problems in the code. Infer is now running as
-part of Spotify's CI system, and here is a quote from Türgolu on
+part of Spotify's CI system, and here is a quote from Deniz on
 Spotify's perspective on Infer, which we include with his kind
 permission.
 
