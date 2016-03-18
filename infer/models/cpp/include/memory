@@ -5,6 +5,7 @@
 #include_next <memory>
 #include <infer_model/end_name_override.inc>
 
+#include<infer_model/unique_ptr.h>
 #include<infer_model/shared_ptr.h>
 
 #else // __cplusplus < 201103L
