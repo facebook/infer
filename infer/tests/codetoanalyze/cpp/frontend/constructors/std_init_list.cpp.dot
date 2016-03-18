@@ -1,0 +1,45 @@
+digraph iCFG {
+11 [label="11:  DeclStmt \n   *&SIL_materialize_temp__n$0[0]:int =1 [line 24]\n  *&SIL_materialize_temp__n$0[1]:int =2 [line 24]\n  *&SIL_materialize_temp__n$0[2]:int =3 [line 24]\n  *&SIL_materialize_temp__n$0[3]:int =4 [line 24]\n  *&SIL_materialize_temp__n$0[4]:int =5 [line 24]\n  n$1=_fun___infer_skip_function(&SIL_materialize_temp__n$0:int [5]) [line 24]\n  _fun_X_X(&x:class X *,n$1:class std::initializer_list<int> ) [line 24]\n  REMOVE_TEMPS(n$1); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$0,false); [line 24]\n  NULLIFY(&x,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit main \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start main\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$0:int [5] \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$0); [line 24]\n " color=yellow style=filled]
+	
+
+	 9 -> 11 ;
+8 [label="8: Prune (false branch) \n   PRUNE(((n$3 != n$5) == 0), false); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n  NULLIFY(&i,false); [line 15]\n  NULLIFY(&list,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
+	
+
+	 8 -> 2 ;
+7 [label="7: Prune (true branch) \n   PRUNE(((n$3 != n$5) != 0), true); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n " shape="invhouse"]
+	
+
+	 7 -> 5 ;
+6 [label="6:  BinaryOperatorStmt: NE \n   n$3=*&i:int * [line 15]\n  n$4=*&list:class std::initializer_list<int>  [line 15]\n  n$5=_fun_std::initializer_list<int>_end(&list:class std::initializer_list<int> &) [line 15]\n " shape="box"]
+	
+
+	 6 -> 7 ;
+	 6 -> 8 ;
+5 [label="5:  UnaryOperator \n   n$2=*&i:int * [line 15]\n  *&i:int *=(n$2 + 1) [line 15]\n  REMOVE_TEMPS(n$2); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	
+
+	 5 -> 3 ;
+4 [label="4:  DeclStmt \n   n$0=*&list:class std::initializer_list<int>  [line 15]\n  n$1=_fun_std::initializer_list<int>_begin(&list:class std::initializer_list<int> &) [line 15]\n  *&i:int *=n$1 [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	
+
+	 4 -> 3 ;
+3 [label="3: + \n  " ]
+	
+
+	 3 -> 6 ;
+2 [label="2: Exit X_X \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X_X\nFormals:  this:class X * list:class std::initializer_list<int> \nLocals:  i:int * \n   DECLARE_LOCALS(&return,&i); [line 14]\n  NULLIFY(&i,false); [line 14]\n  NULLIFY(&this,false); [line 14]\n " color=yellow style=filled]
+	
+
+	 1 -> 4 ;
+}

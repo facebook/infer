@@ -2062,6 +2062,30 @@ struct
         "CXXTypeidExpr" stmt_info all_res_trans in
     { res_trans_to_parent with exps = res_trans_call.exps }
 
+  and cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info =
+    let context = trans_state.context in
+    let tenv = context.CContext.tenv in
+    let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+    let type_pointer = expr_info.Clang_ast_t.ei_type_ptr in
+    let typ = CTypes_decl.type_ptr_to_sil_type tenv type_pointer in
+    let fun_name = Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let trans_state_param = { trans_state_pri with succ_nodes = [] } in
+    let res_trans_subexpr_list = IList.map (instruction trans_state_param) stmts in
+    let params = collect_exprs res_trans_subexpr_list  in
+    let sil_fun = Sil.Const (Sil.Cfun fun_name) in
+    let ret_id = Ident.create_fresh Ident.knormal in
+    let ret_exp = Sil.Var ret_id in
+    let call_instr = Sil.Call ([ret_id], sil_fun, params, sil_loc, Sil.cf_default) in
+    let res_trans_call = { empty_res_trans with
+                           ids = [ret_id];
+                           instrs = [call_instr];
+                           exps = [(ret_exp, typ)]; } in
+    let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
+    let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+        "CXXStdInitializerListExpr" stmt_info all_res_trans in
+    { res_trans_to_parent with exps = res_trans_call.exps }
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2332,6 +2356,9 @@ struct
 
     | CXXTypeidExpr (stmt_info, stmts, expr_info) ->
         cxxTypeidExpr_trans trans_state stmt_info stmts  expr_info
+
+    | CXXStdInitializerListExpr (stmt_info, stmts, expr_info) ->
+        cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: Translation need to be defined. Statement ignored.... \n"

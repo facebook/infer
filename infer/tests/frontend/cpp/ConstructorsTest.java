@@ -70,4 +70,10 @@ public class ConstructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("constructor_struct_init_list.cpp");
   }
+
+  @Test
+  public void testStdInitListDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("std_init_list.cpp");
+  }
 }
