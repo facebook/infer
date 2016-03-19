@@ -338,6 +338,8 @@ let process_cluster_cmdline fname =
       analyze_cluster (nr - 1)  cluster
 
 let () =
+  if !Config.developer_mode then
+    Printexc.record_backtrace true;
   print_prolog ();
   RegisterCheckers.register ();
 
