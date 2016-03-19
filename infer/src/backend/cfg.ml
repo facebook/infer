@@ -677,13 +677,13 @@ module Node = struct
           let set_instr =
             Sil.Set (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc) in
           set_instr :: instrs
-      | Sil.Call (return_ids, Sil.Const (Sil.Cfun callee_pname),
+      | Sil.Call (return_ids, Sil.Const (Sil.Cfun (Procname.Java callee_pname_java)),
                   (Sil.Var id, _) :: origin_args, loc, call_flags)
         when call_flags.Sil.cf_virtual && redirected_class_name id <> None ->
           let redirected_typ  = Option.get (redirected_class_name id) in
           let redirected_pname =
-            Procname.java_replace_class
-              callee_pname (extract_class_name redirected_typ)
+            Procname.replace_class
+              (Procname.Java callee_pname_java) (extract_class_name redirected_typ)
           and args =
             let other_args = (IList.map (fun (exp, typ) -> (convert_exp exp, typ)) origin_args) in
             (Sil.Var id, redirected_typ) :: other_args in

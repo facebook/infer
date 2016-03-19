@@ -151,16 +151,11 @@ let load_patterns json_key inferconfig =
   IList.fold_left (translate json_key) [] found
 
 
-(* Check if a proc name is matching the name given as string *)
+(** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
   not (SymExec.function_is_builtin proc_name) &&
-  match proc_name with
-  | Procname.Java pname_java ->
-      Procname.java_get_method pname_java = method_name
-  | _ ->
-      if language = Config.C_CPP
-      then Procname.c_get_method proc_name = method_name
-      else false
+  Procname.get_language proc_name = language &&
+  Procname.get_method proc_name = method_name
 
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
@@ -231,7 +226,7 @@ struct
           StringMap.empty
           m_patterns in
       let do_java pname_java =
-        let class_name = Procname.java_get_class pname_java
+        let class_name = Procname.java_get_class_name pname_java
         and method_name = Procname.java_get_method pname_java in
         try
           let class_patterns = StringMap.find class_name pattern_map in

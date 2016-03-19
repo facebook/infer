@@ -30,7 +30,7 @@ let type_is_object = function
 
 let java_proc_name_with_class_method pn_java class_with_path method_name =
   (try
-     Procname.java_get_class pn_java = class_with_path &&
+     Procname.java_get_class_name pn_java = class_with_path &&
      Procname.java_get_method pn_java = method_name
    with _ -> false)
 
@@ -199,7 +199,7 @@ let has_formal_proc_argument_type_names proc_desc argument_type_names =
 
 let has_formal_method_argument_type_names cfg pname_java argument_type_names =
   has_formal_proc_argument_type_names
-    cfg ((Procname.java_get_class pname_java):: argument_type_names)
+    cfg ((Procname.java_get_class_name pname_java):: argument_type_names)
 
 let is_getter pname_java =
   Str.string_match (Str.regexp "get*") (Procname.java_get_method pname_java) 0
@@ -319,7 +319,7 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
 let proc_iter_overridden_methods f tenv proc_name =
   let do_super_type tenv super_class_name =
     let super_proc_name =
-      Procname.java_replace_class proc_name (Typename.name super_class_name) in
+      Procname.replace_class proc_name (Typename.name super_class_name) in
     match Sil.tenv_lookup tenv super_class_name with
     | Some ({ Sil.def_methods }) ->
         let is_override pname =
@@ -333,9 +333,9 @@ let proc_iter_overridden_methods f tenv proc_name =
     | _ -> () in
 
   match proc_name with
-  | Procname.Java pname_java ->
+  | Procname.Java proc_name_java ->
       let type_name =
-        let class_name = Procname.java_get_class pname_java in
+        let class_name = Procname.java_get_class_name proc_name_java in
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name) in
       (match Sil.tenv_lookup tenv type_name with
        | Some curr_struct_typ ->

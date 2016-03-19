@@ -57,7 +57,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
           let has_class pn name = match pn with
             | Procname.Java pn_java ->
-                Procname.java_get_class pn_java = name
+                Procname.java_get_class_name pn_java = name
             | _ ->
                 false in
           let has_method pn name = match pn with

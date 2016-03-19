@@ -44,17 +44,21 @@ struct
       match method_pointer_opt with
       | Some pointer -> CMethod_trans.method_signature_of_pointer context.tenv pointer
       | None -> None in
-    let procname =
+    let proc_name =
       match CMethod_trans.get_method_name_from_clang context.tenv ms_opt with
-      | Some ms -> CMethod_signature.ms_get_name ms
+      | Some ms ->
+          CMethod_signature.ms_get_name ms
       | None ->  (* fall back to our method resolution if clang's fails *)
           let class_name = CMethod_trans.get_class_name_method_call_from_receiver_kind context
               obj_c_message_expr_info act_params in
           General_utils.mk_procname_from_objc_method class_name selector method_kind in
-    let class_name = Procname.c_get_class procname in
-    let predefined_ms_opt =
-      CTrans_models.get_predefined_model_method_signature class_name selector
-        General_utils.mk_procname_from_objc_method CFrontend_config.OBJC in
+    let predefined_ms_opt = match proc_name with
+      | Procname.ObjC_Cpp objc_cpp ->
+          let class_name = Procname.objc_cpp_get_class_name objc_cpp in
+          CTrans_models.get_predefined_model_method_signature class_name selector
+            General_utils.mk_procname_from_objc_method CFrontend_config.OBJC
+      | _ ->
+          None in
     match predefined_ms_opt, ms_opt with
     | Some ms, _ ->
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
@@ -62,22 +66,23 @@ struct
     | None, Some ms ->
         ignore (CMethod_trans.create_local_procdesc context.cfg context.tenv ms [] [] is_instance);
         if CMethod_signature.ms_is_getter ms || CMethod_signature.ms_is_setter ms then
-          procname, CMethod_trans.MCNoVirtual
+          proc_name, CMethod_trans.MCNoVirtual
         else
-          procname, mc_type
+          proc_name, mc_type
     | _ ->
-        CMethod_trans.create_external_procdesc context.cfg procname is_instance None;
-        procname, mc_type
+        CMethod_trans.create_external_procdesc context.cfg proc_name is_instance None;
+        proc_name, mc_type
 
 
   let add_autorelease_call context exp typ sil_loc =
-    let method_name = Procname.c_get_method (Cfg.Procdesc.get_proc_name context.CContext.procdesc) in
+    let method_name = Procname.get_method (Cfg.Procdesc.get_proc_name context.CContext.procdesc) in
     if !Config.arc_mode &&
        not (CTrans_utils.is_owning_name method_name) &&
        ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
       let fname = SymExec.ModelBuiltins.__set_autorelease_attribute in
       let ret_id = Ident.create_fresh Ident.knormal in
-      let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), [(exp, typ)], sil_loc, Sil.cf_default) in
+      let stmt_call =
+        Sil.Call ([ret_id], (Sil.Const (Sil.Cfun fname)), [(exp, typ)], sil_loc, Sil.cf_default) in
       ([ret_id], [stmt_call])
     else ([], [])
 
@@ -1838,7 +1843,7 @@ struct
   and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
     let typ = CTypes_decl.class_from_pointer_type trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
     let dictionary_literal_pname = SymExec.ModelBuiltins.__objc_dictionary_literal in
-    let dictionary_literal_s = Procname.c_get_method dictionary_literal_pname in
+    let dictionary_literal_s = Procname.get_method dictionary_literal_pname in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class dictionary_literal_s typ None in
     let stmts = General_utils.swap_elements_list stmts in

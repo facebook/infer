@@ -547,9 +547,7 @@ let resolve_method tenv class_name proc_name =
     let rec resolve class_name =
       visited := Typename.Set.add class_name !visited;
       let right_proc_name =
-        if Procname.is_java proc_name then
-          Procname.java_replace_class proc_name (Typename.name class_name)
-        else Procname.c_method_replace_class proc_name (Typename.name class_name) in
+        Procname.replace_class proc_name (Typename.name class_name) in
       match Sil.tenv_lookup tenv class_name with
       | Some { Sil.csu = Csu.Class _; def_methods; superclasses } ->
           if method_exists right_proc_name def_methods then
@@ -568,7 +566,8 @@ let resolve_method tenv class_name proc_name =
       Logging.d_strln
         ("Couldn't find method in the hierarchy of type "^(Typename.name class_name));
       proc_name
-  | Some proc_name -> proc_name
+  | Some proc_name ->
+      proc_name
 
 let resolve_typename prop receiver_exp =
   let typexp_opt =
@@ -619,7 +618,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
     match pname with
     | Procname.Java pname_java ->
         (try
-           let receiver_typ_str = Procname.java_get_class pname_java in
+           let receiver_typ_str = Procname.java_get_class_name pname_java in
            Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer)
          with Cannot_convert_string_to_typ _ -> fallback_typ)
     | _ ->
@@ -676,11 +675,11 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
 
 
 (** Resolve the name of the procedure to call based on the type of the arguments *)
-let resolve_java_pname tenv prop args pname call_flags : Procname.t =
-  let resolve_from_args pname args =
-    let parameters = Procname.java_get_parameters pname in
+let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
+  let resolve_from_args resolved_pname_java args =
+    let parameters = Procname.java_get_parameters resolved_pname_java in
     if IList.length args <> IList.length parameters then
-      pname
+      resolved_pname_java
     else
       let resolved_params =
         IList.fold_left2
@@ -689,24 +688,33 @@ let resolve_java_pname tenv prop args pname call_flags : Procname.t =
              | Some class_name ->
                  (Procname.split_classname (Typename.name class_name)) :: accu
              | None -> name :: accu)
-          [] args (Procname.java_get_parameters pname) |> IList.rev in
-      Procname.java_replace_parameters pname resolved_params in
-  let resolved_pname, other_args =
+          [] args (Procname.java_get_parameters resolved_pname_java) |> IList.rev in
+      Procname.java_replace_parameters resolved_pname_java resolved_params in
+  let resolved_pname_java, other_args =
     match args with
-    | [] -> pname, []
+    | [] ->
+        pname_java, []
     | (first_arg, _) :: other_args when call_flags.Sil.cf_virtual ->
         let resolved =
           begin
             match resolve_typename prop first_arg with
-            | Some class_name -> resolve_method tenv class_name pname
-            | None -> pname
+            | Some class_name ->
+                begin
+                  match resolve_method tenv class_name (Procname.Java pname_java) with
+                  | Procname.Java resolved_pname_java ->
+                      resolved_pname_java
+                  | _ ->
+                      pname_java
+                end
+            | None ->
+                pname_java
           end in
         resolved, other_args
-    | _ :: other_args when Procname.is_constructor pname ->
-        pname, other_args
+    | _ :: other_args when Procname.is_constructor (Procname.Java pname_java) ->
+        pname_java, other_args
     | args ->
-        pname, args in
-  resolve_from_args resolved_pname other_args
+        pname_java, args in
+  resolve_from_args resolved_pname_java other_args
 
 
 (** Resolve the procedure name and run the analysis of the resolved procedure
@@ -733,8 +741,12 @@ let resolve_and_analyze
                     Cfg.specialize_types callee_proc_desc resolved_pname args)
                  (Ondemand.get_proc_desc callee_proc_name)
              end) in
-  let resolved_pname =
-    resolve_java_pname tenv prop args callee_proc_name call_flags in
+  let resolved_pname = match callee_proc_name with
+    | Procname.Java callee_proc_name_java ->
+        Procname.Java
+          (resolve_java_pname tenv prop args callee_proc_name_java call_flags)
+    | _ ->
+        callee_proc_name in
   analyze_ondemand resolved_pname;
   resolved_pname, Specs.get_summary resolved_pname
 
@@ -2828,12 +2840,14 @@ module ModelBuiltins = struct
   let _ =
     let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
     Builtin.register_procname
-      (Procname.mangled_c_method "NSArray" "arrayWithObjects:count:" method_kind)
+      (Procname.ObjC_Cpp
+         (Procname.objc_cpp "NSArray" "arrayWithObjects:count:" method_kind))
       execute_NSArray_arrayWithObjects_count
   let _ =
     let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
     Builtin.register_procname
-      (Procname.mangled_c_method "NSArray" "arrayWithObjects:" method_kind)
+      (Procname.ObjC_Cpp
+         (Procname.objc_cpp "NSArray" "arrayWithObjects:" method_kind))
       execute_NSArray_arrayWithObjects
 
   let execute_objc_NSDictionary_alloc_no_fail
@@ -2853,7 +2867,9 @@ module ModelBuiltins = struct
 
   let __objc_dictionary_literal =
     let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
-    let pname = Procname.mangled_c_method "NSDictionary" "__objc_dictionary_literal:" method_kind in
+    let pname =
+      Procname.ObjC_Cpp
+        (Procname.objc_cpp "NSDictionary" "__objc_dictionary_literal:" method_kind) in
     Builtin.register_procname pname execute___objc_dictionary_literal;
     pname
 

@@ -192,7 +192,7 @@ let do_all_files classpath sources classes =
   let never_null_matcher =
     Inferconfig.NeverReturnNull.load_matcher (Inferconfig.inferconfig ()) in
   let skip source_file =
-    skip_translation_matcher source_file Procname.empty in
+    skip_translation_matcher source_file Procname.empty_block in
   let translate_source_file basename (package_opt, _) source_file =
     init_global_state source_file;
     if not (skip source_file) then

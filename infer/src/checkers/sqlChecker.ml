@@ -27,7 +27,7 @@ let callback_sql { Callbacks.proc_desc; proc_name } =
   (* Check for SQL string concatenations *)
   let do_instr const_map node instr =
     let do_call pn_java i1 i2 l =
-      if Procname.java_get_class pn_java = "java.lang.StringBuilder"
+      if Procname.java_get_class_name pn_java = "java.lang.StringBuilder"
       && Procname.java_get_method pn_java = "append"
       then
         begin

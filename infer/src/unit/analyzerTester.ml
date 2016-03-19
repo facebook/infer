@@ -52,7 +52,7 @@ module StructuredSil = struct
 
   let dummy_typ = Sil.Tvoid
   let dummy_loc = Location.dummy
-  let dummy_procname = Procname.empty
+  let dummy_procname = Procname.empty_block
 
   let label_counter = ref 0
 

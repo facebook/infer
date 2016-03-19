@@ -49,9 +49,9 @@ module APIs = struct
         &&
         (match pkgname with
          | "" ->
-             Procname.java_get_simple_class pn_java = cname
+             Procname.java_get_simple_class_name pn_java = cname
          | _ ->
-             Procname.java_get_class pn_java = pkgname ^ "." ^ cname)
+             Procname.java_get_class_name pn_java = pkgname ^ "." ^ cname)
     | _ ->
         false
   let is_begin pn =

@@ -113,7 +113,7 @@ let rec inhabit_typ typ cfg env =
                 let typ_class_name =
                   match constructor with
                   | Procname.Java pname_java ->
-                      Procname.java_get_simple_class pname_java
+                      Procname.java_get_simple_class_name pname_java
                   | _ ->
                       create_fresh_local_name () in
                 (env, Mangled.from_string typ_class_name)
@@ -198,7 +198,8 @@ let create_dummy_harness_file harness_name =
       if Sys.file_exists sources_dir then sources_dir
       else Filename.get_temp_dir_name () in
     let file_str =
-      Procname.java_get_class harness_name ^ "_" ^Procname.java_get_method harness_name ^ ".java" in
+      Procname.java_get_class_name
+        harness_name ^ "_" ^Procname.java_get_method harness_name ^ ".java" in
     Filename.concat dummy_file_dir file_str in
   DB.source_file_from_string dummy_file_name
 

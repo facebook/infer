@@ -558,16 +558,18 @@ struct
       Procname.from_string_c_fun name
     else
       let crc = string_crc_hex32 mangled in
-      Procname.mangled_c_fun name crc
+      Procname.C (Procname.c name crc)
 
   let mk_procname_from_objc_method class_name method_name method_kind =
     let mangled = Procname.mangled_of_objc_method_kind method_kind in
-    Procname.mangled_c_method class_name method_name mangled
+    Procname.ObjC_Cpp
+      (Procname.objc_cpp class_name method_name mangled)
 
   let mk_procname_from_cpp_method class_name method_name tp =
     let type_name = Ast_utils.string_of_type_ptr tp in
     let type_name_crc = Some (string_crc_hex32 type_name) in
-    Procname.mangled_c_method class_name method_name type_name_crc
+    Procname.ObjC_Cpp
+      (Procname.objc_cpp class_name method_name type_name_crc)
 
   let get_var_name_string name_info var_decl_info =
     let clang_name = Ast_utils.get_qualified_name name_info in

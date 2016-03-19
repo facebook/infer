@@ -220,7 +220,7 @@ let callback_check_write_to_parcel_java
       match Cfg.Node.get_callees node with
       | [] -> false
       | [Procname.Java pname_java] ->
-          let class_name = Procname.java_get_class pname_java in
+          let class_name = Procname.java_get_class_name pname_java in
           let method_name = Procname.java_get_method pname_java in
           (try
              class_name = "android.os.Parcel" &&
@@ -375,7 +375,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
           (match proc_name with
            | Procname.Java pname_java ->
                L.stdout "call in %s %s: %a with first arg: %a@."
-                 (Procname.java_get_class pname_java)
+                 (Procname.java_get_class_name pname_java)
                  (Procname.java_get_method pname_java)
                  (Sil.pp_instr pe_text) instr
                  (Sil.pp_exp pe_text) arg1

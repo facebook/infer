@@ -142,7 +142,7 @@ let iterate_callbacks store_summary call_graph exe_env =
   let cluster_id proc_name =
     match proc_name with
     | Procname.Java pname_java ->
-        Procname.java_get_class pname_java
+        Procname.java_get_class_name pname_java
     | _ ->
         "unknown" in
   let cluster proc_names =

@@ -1150,7 +1150,11 @@ let exe_call_postprocess ret_ids trace_call callee_pname loc results =
       (fun (p, path) -> (quantify_path_idents_remove_constant_strings p, path))
       res_with_path_idents in
   let should_add_ret_attr _ =
-    let is_likely_getter pn = IList.length (Procname.java_get_parameters pn) = 0 in
+    let is_likely_getter = function
+      | Procname.Java pn_java ->
+          IList.length (Procname.java_get_parameters pn_java) = 0
+      | _ ->
+          false in
     !Config.idempotent_getters &&
     !Config.curr_language = Config.Java &&
     is_likely_getter callee_pname in

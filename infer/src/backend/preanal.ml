@@ -357,8 +357,8 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
         (match pname with
          | Procname.Java pname_java ->
              let param_type_strs =
-               IList.map Procname.java_type_to_string (Procname.java_get_parameters pname) in
-             let receiver_type_str = Procname.java_get_class pname_java in
+               IList.map Procname.java_type_to_string (Procname.java_get_parameters pname_java) in
+             let receiver_type_str = Procname.java_get_class_name pname_java in
              let return_type_str = Procname.java_get_return_type pname_java in
              IList.iter
                (fun typ_str -> f_translate_typ tenv typ_str)

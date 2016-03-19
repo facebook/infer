@@ -139,12 +139,15 @@ let java_method_to_procname java_method =
 let objc_method_to_procname objc_method =
   let method_kind = Procname.objc_method_kind_of_bool (not objc_method.is_static) in
   let mangled = Procname.mangled_of_objc_method_kind method_kind in
-  Procname.mangled_c_method objc_method.classname objc_method.method_name mangled
+  Procname.ObjC_Cpp
+    (Procname.objc_cpp objc_method.classname objc_method.method_name mangled)
 
 let method_str_to_pname method_str =
   match method_str.language with
-  | Config.C_CPP -> objc_method_to_procname method_str
-  | Config.Java -> java_method_to_procname method_str
+  | Config.C_CPP ->
+      objc_method_to_procname method_str
+  | Config.Java ->
+      java_method_to_procname method_str
 
 let sources =
   IList.map method_str_to_pname sources

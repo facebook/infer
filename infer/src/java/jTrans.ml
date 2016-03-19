@@ -33,7 +33,7 @@ let fix_method_definition_line linereader proc_name_java loc =
   let method_name =
     if Procname.is_constructor proc_name then
       let inner_class_name cname = snd (string_split_character cname '$') in
-      inner_class_name (Procname.java_get_simple_class proc_name_java)
+      inner_class_name (Procname.java_get_simple_class_name proc_name_java)
     else Procname.java_get_method proc_name_java in
   let regex = Str.regexp (Str.quote method_name) in
   let method_is_defined_here linenum =

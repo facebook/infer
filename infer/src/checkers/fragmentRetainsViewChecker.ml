@@ -38,7 +38,8 @@ let callback_fragment_retains_view_java
     Typename.equal fld_classname class_typename && fld_typ_is_view fld_typ in
   if is_on_destroy_view then
     begin
-      let class_typename = Typename.Java.from_string (Procname.java_get_class pname_java) in
+      let class_typename =
+        Typename.Java.from_string (Procname.java_get_class_name pname_java) in
       match Sil.tenv_lookup tenv class_typename with
       | Some ({ Sil.struct_name = Some _; instance_fields } as struct_typ)
         when AndroidFramework.is_fragment (Sil.Tstruct struct_typ) tenv ->

@@ -216,7 +216,7 @@ let get_method_name_from_clang tenv ms_opt =
               match ObjcCategory_decl.get_base_class_name_from_category decl with
               | Some class_name ->
                   let procname = CMethod_signature.ms_get_name ms in
-                  let new_procname = Procname.c_method_replace_class procname class_name in
+                  let new_procname = Procname.replace_class procname class_name in
                   CMethod_signature.ms_set_name ms new_procname;
                   Some ms
               | None -> Some ms)
@@ -249,8 +249,13 @@ let get_class_name_method_call_from_clang tenv obj_c_message_expr_info =
   | Some pointer ->
       (match method_signature_of_pointer tenv pointer with
        | Some ms ->
-           let class_name = Procname.c_get_class (CMethod_signature.ms_get_name ms) in
-           Some class_name
+           begin
+             match CMethod_signature.ms_get_name ms with
+             | Procname.ObjC_Cpp objc_cpp ->
+                 Some (Procname.objc_cpp_get_class_name objc_cpp)
+             | _ ->
+                 None
+           end
        | None -> None)
   | None -> None
 
@@ -280,9 +285,9 @@ let get_objc_method_data obj_c_message_expr_info =
 let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   let pointer_to_property_opt = CMethod_signature.ms_get_pointer_to_property_opt ms in
-  match Ast_utils.get_decl_opt pointer_to_property_opt with
-  | Some (ObjCPropertyDecl _ as d) ->
-      let class_name = Procname.c_get_class (CMethod_signature.ms_get_name ms) in
+  match Ast_utils.get_decl_opt pointer_to_property_opt, CMethod_signature.ms_get_name ms with
+  | Some (ObjCPropertyDecl _ as d), Procname.ObjC_Cpp objc_cpp ->
+      let class_name = Procname.objc_cpp_get_class_name objc_cpp in
       let field_name = CField_decl.get_property_corresponding_ivar tenv
           CTypes_decl.type_ptr_to_sil_type class_name d in
       if CMethod_signature.ms_is_getter ms then

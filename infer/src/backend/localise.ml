@@ -417,7 +417,7 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
     let pname_str = match pname with
       | Procname.Java pname_java ->
           Printf.sprintf "%s.%s"
-            (Procname.java_get_class pname_java)
+            (Procname.java_get_class_name pname_java)
             (Procname.java_get_method pname_java)
       | _ ->
           "" in

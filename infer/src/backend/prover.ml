@@ -1613,7 +1613,8 @@ let get_overrides_of tenv supertype pname =
     (* get all types in the type environment that are non-reflexive subtypes of [supertype] *)
     if not (Sil.typ_equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
       (* only select the ones that implement [pname] as overrides *)
-      let resolved_pname = Procname.java_replace_class pname (Typename.name tname) in
+      let resolved_pname =
+        Procname.replace_class pname (Typename.name tname) in
       if typ_has_method resolved_pname typ then (typ, resolved_pname) :: overrides_acc
       else overrides_acc
     else overrides_acc in

@@ -386,7 +386,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
   let constructor_check_calls_this calls_this pn =
     match curr_pname, pn with
     | Procname.Java curr_pname_java, Procname.Java pn_java ->
-        if Procname.java_get_class curr_pname_java = Procname.java_get_class pn_java
+        if Procname.java_get_class_name curr_pname_java = Procname.java_get_class_name pn_java
         then calls_this := true
     | _ ->
         () in
@@ -734,9 +734,10 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
           ((_, exp_key), _) ::
           ((_, exp_value), typ_value) :: _ ->
             (* Convert the dexp for k to the dexp for m.get(k) *)
-            let convert_dexp_key_to_dexp_get = function
-              | Some dexp_key ->
-                  let pname_get = pname_get_from_pname_put callee_pname in
+            let convert_dexp_key_to_dexp_get dopt = match dopt, callee_pname with
+              | Some dexp_key, Procname.Java callee_pname_java ->
+                  let pname_get =
+                    Procname.Java (pname_get_from_pname_put callee_pname_java) in
                   let dexp_get = Sil.Dconst (Sil.Cfun pname_get) in
                   let dexp_map = Sil.Dpvar pv_map in
                   let args = [dexp_map; dexp_key] in
@@ -869,13 +870,16 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
         (* which is then treated as a normal condition != null. *)
         let handle_containsKey e =
           let map_dexp = function
-            | Some (Sil.Dretcall (Sil.Dconst (Sil.Cfun pname), args, loc, call_flags)) ->
-                let pname' =
+            | Some
+                (Sil.Dretcall
+                   (Sil.Dconst
+                      (Sil.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
+                let pname_java' =
                   let object_t = (Some "java.lang", "Object") in
                   Procname.java_replace_return_type
-                    (Procname.java_replace_method pname "get")
+                    (Procname.java_replace_method pname_java "get")
                     object_t in
-                let fun_dexp = Sil.Dconst (Sil.Cfun pname') in
+                let fun_dexp = Sil.Dconst (Sil.Cfun (Procname.Java pname_java')) in
                 Some (Sil.Dretcall (fun_dexp, args, loc, call_flags))
             | _ -> None in
           begin

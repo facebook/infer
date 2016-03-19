@@ -19,7 +19,7 @@ type method_kind =
   | Static (* in Java, procedures called with invokestatic *)
   | Non_Static (* in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
 
-(* java procedure name *)
+(** Type of java procedure names. *)
 type java = {
   class_name: java_type;
   return_type: java_type option; (* option because constructors have no return type *)
@@ -27,6 +27,32 @@ type java = {
   parameters: java_type list;
   kind: method_kind
 }
+
+(** Type of c procedure names. *)
+type c = string * (string option)
+
+(** Type of Objective C and C++ procedure names: method signatures. *)
+type objc_cpp = {
+  class_name: string;
+  method_name: string;
+  mangled: string option;
+}
+
+(** Type of Objective C block names. *)
+type block = string
+
+(** Type of procedure names. *)
+type t =
+  | Java of java
+  | C of c
+  | ObjC_Cpp of objc_cpp
+  | Block of block
+
+(** Level of verbosity of some to_string functions. *)
+type detail_level =
+  | Verbose
+  | Non_verbose
+  | Simple
 
 type objc_method_kind =
   | Instance_objc_method
@@ -41,37 +67,7 @@ let objc_method_kind_of_bool is_instance =
   if is_instance then Instance_objc_method
   else Class_objc_method
 
-(* C++/ObjC method signature *)
-type objc_cpp_method = {
-  class_name: string;
-  method_name: string;
-  mangled: string option;
-}
-
-type block = string
-
-type c_function = string * (string option)
-
-type t =
-  | Java of java
-
-  (* a pair (plain, mangled optional) for standard C function *)
-  | C of c_function
-
-  (* structure with class name and method name for methods in Objective C and C++ *)
-  | ObjC_Cpp of objc_cpp_method
-
-  | Block of block
-
-(* Defines the level of verbosity of some to_string functions *)
-type detail_level =
-  | Verbose
-  | Non_verbose
-  | Simple
-
-
-let empty = Block ""
-
+let empty_block = Block ""
 
 let is_verbose v =
   match v with
@@ -165,7 +161,7 @@ let split_classname package_classname =
 
 let from_string_c_fun (s: string) = C (s, None)
 
-let mangled_c_fun (plain: string) (mangled: string) = C (plain, Some mangled)
+let c (plain: string) (mangled: string) = (plain, Some mangled)
 
 let java class_name return_type method_name parameters kind =
   {
@@ -177,8 +173,8 @@ let java class_name return_type method_name parameters kind =
   }
 
 (** Create an objc procedure name from a class_name and method_name. *)
-let mangled_c_method class_name method_name mangled =
-  ObjC_Cpp {
+let objc_cpp class_name method_name mangled =
+  {
     class_name = class_name;
     method_name = method_name;
     mangled = mangled;
@@ -196,36 +192,27 @@ let is_c_method = function
   | ObjC_Cpp _ -> true
   | _ -> false
 
-(** Replace package and classname of a java procname. *)
-let java_replace_class p package_classname =
-  match p with
+(** Replace the class name component of a procedure name.
+    In case of Java, replace package and class name. *)
+let replace_class t new_class = match t with
   | Java j ->
-      Java { j with class_name = (split_classname package_classname) }
-  | _ ->
-      Utils.assert_false __POS__
-
-(** Replace the class name of an objc procedure name. *)
-let c_method_replace_class t class_name =
-  match t with
+      Java { j with class_name = (split_classname new_class) }
   | ObjC_Cpp osig ->
-      ObjC_Cpp { osig with class_name = class_name }
-  | _ ->
-      Utils.assert_false __POS__
+      ObjC_Cpp { osig with class_name = new_class }
+  | C _
+  | Block _ ->
+      t
 
 (** Get the class name of a Objective-C/C++ procedure name. *)
-let c_get_class t =
-  match t with
-  | ObjC_Cpp osig ->
-      osig.class_name
-  | _ ->
-      Utils.assert_false __POS__
+let objc_cpp_get_class_name objc_cpp =
+  objc_cpp.class_name
 
 (** Return the package.classname of a java procname. *)
-let java_get_class (j : java) =
+let java_get_class_name (j : java) =
   java_type_to_string j.class_name
 
 (** Return the class name of a java procedure name. *)
-let java_get_simple_class (j : java) =
+let java_get_simple_class_name (j : java) =
   snd j.class_name
 
 (** Return the package of a java procname. *)
@@ -237,61 +224,58 @@ let java_get_method (j : java) =
   j.method_name
 
 (** Replace the method of a java procname. *)
-let java_replace_method j mname = match j with
-  | Java j ->
-      Java { j with method_name = mname }
-  | _ ->
-      Utils.assert_false __POS__
+let java_replace_method (j : java) mname =
+  { j with method_name = mname }
 
 (** Replace the return type of a java procname. *)
-let java_replace_return_type p ret_type = match p with
-  | Java j ->
-      Java { j with return_type = Some ret_type }
-  | _ ->
-      Utils.assert_false __POS__
+let java_replace_return_type j ret_type =
+  { j with return_type = Some ret_type }
 
 (** Replace the parameters of a java procname. *)
-let java_replace_parameters p parameters = match p with
-  | Java j ->
-      Java { j with parameters }
-  | _ ->
-      Utils.assert_false __POS__
+let java_replace_parameters j parameters =
+  { j with parameters }
 
-(** Return the method of a objc/c++ procname. *)
-let c_get_method = function
+(** Return the method/function of a procname. *)
+let get_method = function
   | ObjC_Cpp name ->
       name.method_name
   | C (name, _) ->
       name
   | Block name ->
       name
-  | _ ->
-      Utils.assert_false __POS__
+  | Java j ->
+      j.method_name
+
+(** Return the language of the procedure. *)
+let get_language = function
+  | ObjC_Cpp _ ->
+      Config.C_CPP
+  | C _ ->
+      Config.C_CPP
+  | Block _ ->
+      Config.C_CPP
+  | Java _ ->
+      Config.Java
+
 
 (** Return the return type of a java procname. *)
 let java_get_return_type (j : java) =
   java_return_type_to_string j Verbose
 
 (** Return the parameters of a java procname. *)
-let java_get_parameters = function
-  | Java j ->
-      j.parameters
-  | _ ->
-      Utils.assert_false __POS__
+let java_get_parameters j =
+  j.parameters
 
 (** Return the parameters of a java procname as strings. *)
-let java_get_parameters_as_strings = function
-  | Java j ->
-      IList.map (fun param -> java_type_to_string param) j.parameters
-  | _ ->
-      Utils.assert_false __POS__
+let java_get_parameters_as_strings j =
+  IList.map (fun param -> java_type_to_string param) j.parameters
 
 (** Return true if the java procedure is static *)
 let java_is_static = function
   | Java j ->
       j.kind = Static
   | _ ->
-      Utils.assert_false __POS__
+      false
 
 (** Prints a string of a java procname with the given level of verbosity *)
 let java_to_string ?(withclass = false) (j : java) verbosity =
@@ -322,7 +306,7 @@ let java_to_string ?(withclass = false) (j : java) verbosity =
         | _ -> "..." in
       let method_name =
         if j.method_name = "<init>" then
-          java_get_simple_class j
+          java_get_simple_class_name j
         else
           cls_prefix ^ j.method_name in
       method_name ^ "(" ^ params ^ ")"
@@ -410,7 +394,7 @@ let is_class_initializer = function
 let is_infer_undefined pn = match pn with
   | Java j ->
       let regexp = Str.regexp "com.facebook.infer.models.InferUndefined" in
-      Str.string_match regexp (java_get_class j) 0
+      Str.string_match regexp (java_get_class_name j) 0
   | _ ->
       (* TODO: add cases for obj-c, c, c++ *)
       false

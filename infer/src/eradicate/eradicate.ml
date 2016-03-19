@@ -197,7 +197,7 @@ struct
               let same_class =
                 let get_class_opt pn = match pn with
                   | Procname.Java pn_java ->
-                      Some (Procname.java_get_class pn_java)
+                      Some (Procname.java_get_class_name pn_java)
                   | _ ->
                       None in
                 get_class_opt init_pn = get_class_opt callee_pn in
@@ -261,7 +261,7 @@ struct
 
       let get_class pn = match pn with
         | Procname.Java pn_java ->
-            Some (Procname.java_get_class pn_java)
+            Some (Procname.java_get_class_name pn_java)
         | _ ->
             None
 
