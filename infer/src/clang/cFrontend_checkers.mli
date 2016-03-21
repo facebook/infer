@@ -30,3 +30,7 @@ val direct_atomic_property_access_warning :
    should not be captured in blocks.  *)
 val captured_cxx_ref_in_objc_block_warning : Clang_ast_t.stmt_info -> (Sil.pvar * Sil.typ) list ->
   warning_desc option
+
+(* REGISTERED_OBSERVER_BEING_DEALLOCATED: an object is registered in a notification center
+   but not removed before deallocation *)
+val checker_NSNotificationCenter : Clang_ast_t.decl_info -> Clang_ast_t.decl list -> warning_desc option

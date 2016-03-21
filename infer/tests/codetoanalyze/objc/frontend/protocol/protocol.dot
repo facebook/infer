@@ -1,30 +1,37 @@
 digraph iCFG {
-7 [label="7:  Return Stmt \n   APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+9 [label="9:  Return Stmt \n   APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
-	 7 -> 2 ;
-6 [label="6: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n " shape="invhouse"]
+	 9 -> 4 ;
+8 [label="8: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n " shape="invhouse"]
 	
 
-	 6 -> 3 ;
-5 [label="5: Prune (true branch) \n   PRUNE((n$1 != 0), true); [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n " shape="invhouse"]
+	 8 -> 5 ;
+7 [label="7: Prune (true branch) \n   PRUNE((n$1 != 0), true); [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n " shape="invhouse"]
 	
 
-	 5 -> 7 ;
-4 [label="4:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla * [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla *,\"Foo\":class Protocol *) virtual [line 25]\n  NULLIFY(&self,false); [line 25]\n " shape="box"]
+	 7 -> 9 ;
+6 [label="6:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla * [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla *,\"Foo\":class Protocol *) virtual [line 25]\n  NULLIFY(&self,false); [line 25]\n " shape="box"]
 	
 
-	 4 -> 5 ;
-	 4 -> 6 ;
-3 [label="3: + \n  " ]
+	 6 -> 7 ;
+	 6 -> 8 ;
+5 [label="5: + \n  " ]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit Bla_fooMethod \n  " color=yellow style=filled]
+	 5 -> 4 ;
+4 [label="4: Exit Bla_fooMethod \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Bla_fooMethod\nFormals:  self:class Bla *\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+3 [label="3: Start Bla_fooMethod\nFormals:  self:class Bla *\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
-	 1 -> 4 ;
+	 3 -> 6 ;
+2 [label="2: Exit Bla_frontendChecks \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start Bla_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 1 -> 2 ;
 }

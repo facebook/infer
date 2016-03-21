@@ -1,24 +1,31 @@
 digraph iCFG {
-6 [label="6:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"BTaking vacations\":char *) [line 19]\n  _fun_NSLog(n$1:struct objc_object *) [line 19]\n  REMOVE_TEMPS(n$1); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+8 [label="8:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"BTaking vacations\":char *) [line 19]\n  _fun_NSLog(n$1:struct objc_object *) [line 19]\n  REMOVE_TEMPS(n$1); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5: Exit EOCPerson_takeVacationFromWork \n  " color=yellow style=filled]
+	 8 -> 7 ;
+7 [label="7: Exit EOCPerson_takeVacationFromWork \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start EOCPerson_takeVacationFromWork\nFormals:  self:class EOCPerson *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+6 [label="6: Start EOCPerson_takeVacationFromWork\nFormals:  self:class EOCPerson *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
 	
 
-	 4 -> 6 ;
-3 [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"Performing days at work\":char *) [line 15]\n  _fun_NSLog(n$0:struct objc_object *) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+	 6 -> 8 ;
+5 [label="5:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"Performing days at work\":char *) [line 15]\n  _fun_NSLog(n$0:struct objc_object *) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit EOCPerson_performDaysWork \n  " color=yellow style=filled]
+	 5 -> 4 ;
+4 [label="4: Exit EOCPerson_performDaysWork \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start EOCPerson_performDaysWork\nFormals:  self:class EOCPerson *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n  NULLIFY(&self,false); [line 14]\n " color=yellow style=filled]
+3 [label="3: Start EOCPerson_performDaysWork\nFormals:  self:class EOCPerson *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n  NULLIFY(&self,false); [line 14]\n " color=yellow style=filled]
 	
 
-	 1 -> 3 ;
+	 3 -> 5 ;
+2 [label="2: Exit EOCPerson_frontendChecks \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start EOCPerson_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 1 -> 2 ;
 }

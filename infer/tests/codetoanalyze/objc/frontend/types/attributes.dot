@@ -1,57 +1,64 @@
 digraph iCFG {
-14 [label="14:  DeclStmt \n   *&aWeakRef:class A __weak *=0 [line 22]\n " shape="box"]
+16 [label="16:  DeclStmt \n   *&aWeakRef:class A __weak *=0 [line 22]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  DeclStmt \n   _fun___objc_retain(0:class A *) [line 23]\n  *&aStrongRef:class A *=0 [line 23]\n  NULLIFY(&aStrongRef,false); [line 23]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14:  DeclStmt \n   *&anUnsafeUnretRef:class A __unsafe_unretained *=0 [line 24]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  DeclStmt \n   _fun___objc_retain(0:class A *) [line 23]\n  *&aStrongRef:class A *=0 [line 23]\n  NULLIFY(&aStrongRef,false); [line 23]\n " shape="box"]
+13 [label="13:  DeclStmt \n   _fun___objc_retain(0:class A __autoreleasing *) [line 25]\n  _fun___set_autorelease_attribute(0:class A __autoreleasing *) [line 25]\n  *&anAutoRelRef:class A __autoreleasing *=0 [line 25]\n " shape="box"]
 	
 
 	 13 -> 12 ;
-12 [label="12:  DeclStmt \n   *&anUnsafeUnretRef:class A __unsafe_unretained *=0 [line 24]\n " shape="box"]
+12 [label="12:  DeclStmt \n   _fun___objc_retain(0:class A *) [line 26]\n  *&aStdRef:class A *=0 [line 26]\n " shape="box"]
 	
 
 	 12 -> 11 ;
-11 [label="11:  DeclStmt \n   _fun___objc_retain(0:class A __autoreleasing *) [line 25]\n  _fun___set_autorelease_attribute(0:class A __autoreleasing *) [line 25]\n  *&anAutoRelRef:class A __autoreleasing *=0 [line 25]\n " shape="box"]
+11 [label="11:  BinaryOperatorStmt: Assign \n   n$9=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 29]\n  *&aStrongRef:class A *=n$9 [line 29]\n  REMOVE_TEMPS(n$9); [line 29]\n " shape="box"]
 	
 
 	 11 -> 10 ;
-10 [label="10:  DeclStmt \n   _fun___objc_retain(0:class A *) [line 26]\n  *&aStdRef:class A *=0 [line 26]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$7=*&aStrongRef:class A * [line 31]\n  _fun___objc_retain(n$7:class A *) [line 31]\n  n$8=*&aStdRef:class A * [line 31]\n  *&aStdRef:class A *=n$7 [line 31]\n  _fun___objc_release(n$8:class A *) [line 31]\n  REMOVE_TEMPS(n$7,n$8); [line 31]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$9=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 29]\n  *&aStrongRef:class A *=n$9 [line 29]\n  REMOVE_TEMPS(n$9); [line 29]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   _fun___objc_retain(0:class A *) [line 33]\n  n$6=*&aStrongRef:class A * [line 33]\n  *&aStrongRef:class A *=0 [line 33]\n  _fun___objc_release(n$6:class A *) [line 33]\n  REMOVE_TEMPS(n$6); [line 33]\n  NULLIFY(&aStrongRef,false); [line 33]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   n$7=*&aStrongRef:class A * [line 31]\n  _fun___objc_retain(n$7:class A *) [line 31]\n  n$8=*&aStdRef:class A * [line 31]\n  *&aStdRef:class A *=n$7 [line 31]\n  _fun___objc_release(n$8:class A *) [line 31]\n  REMOVE_TEMPS(n$7,n$8); [line 31]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$4=*&aStdRef:class A * [line 35]\n  _fun___objc_retain(n$4:class A *) [line 35]\n  n$5=*&aWeakRef:class A * [line 35]\n  *&aWeakRef:class A *=n$4 [line 35]\n  _fun___objc_release(n$5:class A *) [line 35]\n  REMOVE_TEMPS(n$4,n$5); [line 35]\n  NULLIFY(&aWeakRef,false); [line 35]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  BinaryOperatorStmt: Assign \n   _fun___objc_retain(0:class A *) [line 33]\n  n$6=*&aStrongRef:class A * [line 33]\n  *&aStrongRef:class A *=0 [line 33]\n  _fun___objc_release(n$6:class A *) [line 33]\n  REMOVE_TEMPS(n$6); [line 33]\n  NULLIFY(&aStrongRef,false); [line 33]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: Assign \n   n$2=*&aStdRef:class A * [line 37]\n  _fun___objc_retain(n$2:class A *) [line 37]\n  n$3=*&anAutoRelRef:class A * [line 37]\n  *&anAutoRelRef:class A *=n$2 [line 37]\n  _fun___objc_release(n$3:class A *) [line 37]\n  REMOVE_TEMPS(n$2,n$3); [line 37]\n  NULLIFY(&anAutoRelRef,false); [line 37]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$4=*&aStdRef:class A * [line 35]\n  _fun___objc_retain(n$4:class A *) [line 35]\n  n$5=*&aWeakRef:class A * [line 35]\n  *&aWeakRef:class A *=n$4 [line 35]\n  _fun___objc_release(n$5:class A *) [line 35]\n  REMOVE_TEMPS(n$4,n$5); [line 35]\n  NULLIFY(&aWeakRef,false); [line 35]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&aStdRef:class A * [line 39]\n  _fun___objc_retain(n$0:class A *) [line 39]\n  n$1=*&anUnsafeUnretRef:class A * [line 39]\n  *&anUnsafeUnretRef:class A *=n$0 [line 39]\n  _fun___objc_release(n$1:class A *) [line 39]\n  REMOVE_TEMPS(n$0,n$1); [line 39]\n  NULLIFY(&aStdRef,false); [line 39]\n  NULLIFY(&anUnsafeUnretRef,false); [line 39]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&aStdRef:class A * [line 37]\n  _fun___objc_retain(n$2:class A *) [line 37]\n  n$3=*&anAutoRelRef:class A * [line 37]\n  *&anAutoRelRef:class A *=n$2 [line 37]\n  _fun___objc_release(n$3:class A *) [line 37]\n  REMOVE_TEMPS(n$2,n$3); [line 37]\n  NULLIFY(&anAutoRelRef,false); [line 37]\n " shape="box"]
+5 [label="5:  Return Stmt \n   *&return:int =0 [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  BinaryOperatorStmt: Assign \n   n$0=*&aStdRef:class A * [line 39]\n  _fun___objc_retain(n$0:class A *) [line 39]\n  n$1=*&anUnsafeUnretRef:class A * [line 39]\n  *&anUnsafeUnretRef:class A *=n$0 [line 39]\n  _fun___objc_release(n$1:class A *) [line 39]\n  REMOVE_TEMPS(n$0,n$1); [line 39]\n  NULLIFY(&aStdRef,false); [line 39]\n  NULLIFY(&anUnsafeUnretRef,false); [line 39]\n " shape="box"]
+4 [label="4: Exit main \n  " color=yellow style=filled]
 	
 
-	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+3 [label="3: Start main\nFormals: \nLocals:  aStdRef:class A * anAutoRelRef:class A __autoreleasing * anUnsafeUnretRef:class A __unsafe_unretained * aStrongRef:class A * aWeakRef:class A __weak * \n   DECLARE_LOCALS(&return,&aStdRef,&anAutoRelRef,&anUnsafeUnretRef,&aStrongRef,&aWeakRef); [line 20]\n  NULLIFY(&aStdRef,false); [line 20]\n  NULLIFY(&aStrongRef,false); [line 20]\n  NULLIFY(&aWeakRef,false); [line 20]\n  NULLIFY(&anAutoRelRef,false); [line 20]\n  NULLIFY(&anUnsafeUnretRef,false); [line 20]\n " color=yellow style=filled]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+	 3 -> 16 ;
+2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  aStdRef:class A * anAutoRelRef:class A __autoreleasing * anUnsafeUnretRef:class A __unsafe_unretained * aStrongRef:class A * aWeakRef:class A __weak * \n   DECLARE_LOCALS(&return,&aStdRef,&anAutoRelRef,&anUnsafeUnretRef,&aStrongRef,&aWeakRef); [line 20]\n  NULLIFY(&aStdRef,false); [line 20]\n  NULLIFY(&aStrongRef,false); [line 20]\n  NULLIFY(&aWeakRef,false); [line 20]\n  NULLIFY(&anAutoRelRef,false); [line 20]\n  NULLIFY(&anUnsafeUnretRef,false); [line 20]\n " color=yellow style=filled]
+1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 1 -> 14 ;
+	 1 -> 2 ;
 }

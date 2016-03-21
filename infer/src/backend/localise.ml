@@ -743,12 +743,13 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
       !str_cycle (at_line tags loc) in
   { no_desc with descriptions = [desc]; tags = !tags; dotty = cycle_dotty }
 
+let registered_observer_being_deallocated_str obj_str =
+  "Object " ^ obj_str ^ " is registered in a notification center but not being removed before deallocation"
+
 let desc_registered_observer_being_deallocated pvar loc =
   let tags = Tags.create () in
   let obj_str = Sil.pvar_to_string pvar in
-  { no_desc with descriptions = ["Object " ^ obj_str ^
-                                 " has not been unregistered from a notification " ^
-                                 "center and is being deallocated " ^ at_line tags loc ^
+  { no_desc with descriptions = [ registered_observer_being_deallocated_str obj_str ^ at_line tags loc ^
                                  ". Being still registered as observer of the notification " ^
                                  "center, the deallocated object "
                                  ^ obj_str ^ " may be notified in the future." ]; tags = !tags }

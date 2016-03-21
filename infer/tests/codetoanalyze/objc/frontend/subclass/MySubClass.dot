@@ -1,17 +1,24 @@
 digraph iCFG {
-4 [label="4:  DeclStmt \n   n$1=*&self:class MySubclass * [line 17]\n  n$2=_fun_MyClass_myNumber(n$1:class MySubclass *) [line 17]\n  *&subclassNumber:int =(n$2 + 1) [line 17]\n  REMOVE_TEMPS(n$1,n$2); [line 17]\n  NULLIFY(&self,false); [line 17]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$1=*&self:class MySubclass * [line 17]\n  n$2=_fun_MyClass_myNumber(n$1:class MySubclass *) [line 17]\n  *&subclassNumber:int =(n$2 + 1) [line 17]\n  REMOVE_TEMPS(n$1,n$2); [line 17]\n  NULLIFY(&self,false); [line 17]\n " shape="box"]
 	
 
-	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&subclassNumber:int  [line 18]\n  *&return:int =n$0 [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&subclassNumber,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+	 6 -> 5 ;
+5 [label="5:  Return Stmt \n   n$0=*&subclassNumber:int  [line 18]\n  *&return:int =n$0 [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&subclassNumber,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit MySubclass_myNumber \n  " color=yellow style=filled]
+	 5 -> 4 ;
+4 [label="4: Exit MySubclass_myNumber \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MySubclass_myNumber\nFormals:  self:class MySubclass *\nLocals:  subclassNumber:int  \n   DECLARE_LOCALS(&return,&subclassNumber); [line 15]\n  NULLIFY(&subclassNumber,false); [line 15]\n " color=yellow style=filled]
+3 [label="3: Start MySubclass_myNumber\nFormals:  self:class MySubclass *\nLocals:  subclassNumber:int  \n   DECLARE_LOCALS(&return,&subclassNumber); [line 15]\n  NULLIFY(&subclassNumber,false); [line 15]\n " color=yellow style=filled]
 	
 
-	 1 -> 4 ;
+	 3 -> 6 ;
+2 [label="2: Exit MySubclass_frontendChecks \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start MySubclass_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 1 -> 2 ;
 }

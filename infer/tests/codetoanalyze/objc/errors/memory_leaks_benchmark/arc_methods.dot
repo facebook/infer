@@ -1,59 +1,66 @@
 digraph iCFG {
-15 [label="15:  DeclStmt \n   n$3=_fun_A_newA() [line 42]\n  *&a1:class A *=n$3 [line 42]\n  REMOVE_TEMPS(n$3); [line 42]\n " shape="box"]
+17 [label="17:  DeclStmt \n   n$3=_fun_A_newA() [line 42]\n  *&a1:class A *=n$3 [line 42]\n  REMOVE_TEMPS(n$3); [line 42]\n " shape="box"]
+	
+
+	 17 -> 16 ;
+16 [label="16:  DeclStmt \n   n$2=*&a1:class A * [line 43]\n  _fun___objc_retain(n$2:class A *) [line 43]\n  *&aa:class A *=n$2 [line 43]\n  REMOVE_TEMPS(n$2); [line 43]\n  NULLIFY(&a1,false); [line 43]\n  NULLIFY(&aa,false); [line 43]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  DeclStmt \n   n$1=_fun_A_someA() [line 44]\n  _fun___objc_retain(n$1:class A *) [line 44]\n  *&a2:class A *=n$1 [line 44]\n  REMOVE_TEMPS(n$1); [line 44]\n " shape="box"]
 	
 
 	 15 -> 14 ;
-14 [label="14:  DeclStmt \n   n$2=*&a1:class A * [line 43]\n  _fun___objc_retain(n$2:class A *) [line 43]\n  *&aa:class A *=n$2 [line 43]\n  REMOVE_TEMPS(n$2); [line 43]\n  NULLIFY(&a1,false); [line 43]\n  NULLIFY(&aa,false); [line 43]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$0=*&a2:class A * [line 45]\n  _fun___objc_retain(n$0:class A *) [line 45]\n  *&ab:class A *=n$0 [line 45]\n  REMOVE_TEMPS(n$0); [line 45]\n  NULLIFY(&a2,false); [line 45]\n  NULLIFY(&ab,false); [line 45]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  DeclStmt \n   n$1=_fun_A_someA() [line 44]\n  _fun___objc_retain(n$1:class A *) [line 44]\n  *&a2:class A *=n$1 [line 44]\n  REMOVE_TEMPS(n$1); [line 44]\n " shape="box"]
+13 [label="13:  Return Stmt \n   *&return:int =0 [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	
 
 	 13 -> 12 ;
-12 [label="12:  DeclStmt \n   n$0=*&a2:class A * [line 45]\n  _fun___objc_retain(n$0:class A *) [line 45]\n  *&ab:class A *=n$0 [line 45]\n  REMOVE_TEMPS(n$0); [line 45]\n  NULLIFY(&a2,false); [line 45]\n  NULLIFY(&ab,false); [line 45]\n " shape="box"]
+12 [label="12: Exit main \n  " color=yellow style=filled]
 	
 
-	 12 -> 11 ;
-11 [label="11:  Return Stmt \n   *&return:int =0 [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+11 [label="11: Start main\nFormals: \nLocals:  ab:class A * a2:class A * aa:class A * a1:class A * \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 35]\n  NULLIFY(&a1,false); [line 35]\n  NULLIFY(&a2,false); [line 35]\n  NULLIFY(&aa,false); [line 35]\n  NULLIFY(&ab,false); [line 35]\n " color=yellow style=filled]
 	
 
-	 11 -> 10 ;
-10 [label="10: Exit main \n  " color=yellow style=filled]
+	 11 -> 17 ;
+10 [label="10:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 28]\n  n$6=_fun_NSObject_init(n$5:class A *) virtual [line 28]\n  *&a:class A *=n$6 [line 28]\n  REMOVE_TEMPS(n$5,n$6); [line 28]\n " shape="box"]
 	
 
-9 [label="9: Start main\nFormals: \nLocals:  ab:class A * a2:class A * aa:class A * a1:class A * \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 35]\n  NULLIFY(&a1,false); [line 35]\n  NULLIFY(&a2,false); [line 35]\n  NULLIFY(&aa,false); [line 35]\n  NULLIFY(&ab,false); [line 35]\n " color=yellow style=filled]
+	 10 -> 9 ;
+9 [label="9:  Return Stmt \n   n$3=*&a:class A * [line 30]\n  *&return:class A *=n$3 [line 30]\n  n$4=_fun___set_autorelease_attribute(n$3:class A *) [line 30]\n  REMOVE_TEMPS(n$3,n$4); [line 30]\n  NULLIFY(&a,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
-	 9 -> 15 ;
-8 [label="8:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 28]\n  n$6=_fun_NSObject_init(n$5:class A *) virtual [line 28]\n  *&a:class A *=n$6 [line 28]\n  REMOVE_TEMPS(n$5,n$6); [line 28]\n " shape="box"]
+	 9 -> 8 ;
+8 [label="8: Exit A_someA \n  " color=yellow style=filled]
 	
 
-	 8 -> 7 ;
-7 [label="7:  Return Stmt \n   n$3=*&a:class A * [line 30]\n  *&return:class A *=n$3 [line 30]\n  n$4=_fun___set_autorelease_attribute(n$3:class A *) [line 30]\n  REMOVE_TEMPS(n$3,n$4); [line 30]\n  NULLIFY(&a,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+7 [label="7: Start A_someA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 27]\n  NULLIFY(&a,false); [line 27]\n " color=yellow style=filled]
 	
 
-	 7 -> 6 ;
-6 [label="6: Exit A_someA \n  " color=yellow style=filled]
+	 7 -> 10 ;
+6 [label="6:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 23]\n  n$2=_fun_NSObject_init(n$1:class A *) virtual [line 23]\n  *&a:class A *=n$2 [line 23]\n  REMOVE_TEMPS(n$1,n$2); [line 23]\n " shape="box"]
 	
 
-5 [label="5: Start A_someA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 27]\n  NULLIFY(&a,false); [line 27]\n " color=yellow style=filled]
+	 6 -> 5 ;
+5 [label="5:  Return Stmt \n   n$0=*&a:class A * [line 24]\n  *&return:class A *=n$0 [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  NULLIFY(&a,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 5 -> 8 ;
-4 [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 23]\n  n$2=_fun_NSObject_init(n$1:class A *) virtual [line 23]\n  *&a:class A *=n$2 [line 23]\n  REMOVE_TEMPS(n$1,n$2); [line 23]\n " shape="box"]
+	 5 -> 4 ;
+4 [label="4: Exit A_newA \n  " color=yellow style=filled]
 	
 
-	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&a:class A * [line 24]\n  *&return:class A *=n$0 [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  NULLIFY(&a,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+3 [label="3: Start A_newA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 22]\n  NULLIFY(&a,false); [line 22]\n " color=yellow style=filled]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit A_newA \n  " color=yellow style=filled]
+	 3 -> 6 ;
+2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_newA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 22]\n  NULLIFY(&a,false); [line 22]\n " color=yellow style=filled]
+1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 1 -> 4 ;
+	 1 -> 2 ;
 }

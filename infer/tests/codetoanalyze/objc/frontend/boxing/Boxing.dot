@@ -1,100 +1,107 @@
 digraph iCFG {
-26 [label="26:  DeclStmt \n   n$15=_fun_strdup(\"hello world\":char *) [line 42]\n  n$16=_fun_NSString_stringWithUTF8String:(n$15:char *) [line 42]\n  *&s:class NSString *=n$16 [line 42]\n  REMOVE_TEMPS(n$15,n$16); [line 42]\n  NULLIFY(&s,false); [line 42]\n " shape="box"]
+28 [label="28:  DeclStmt \n   n$15=_fun_strdup(\"hello world\":char *) [line 42]\n  n$16=_fun_NSString_stringWithUTF8String:(n$15:char *) [line 42]\n  *&s:class NSString *=n$16 [line 42]\n  REMOVE_TEMPS(n$15,n$16); [line 42]\n  NULLIFY(&s,false); [line 42]\n " shape="box"]
 	
 
-	 26 -> 25 ;
-25 [label="25:  Return Stmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"hello world\":char *) [line 43]\n  *&return:class NSString *=n$14 [line 43]\n  REMOVE_TEMPS(n$14); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+	 28 -> 27 ;
+27 [label="27:  Return Stmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"hello world\":char *) [line 43]\n  *&return:class NSString *=n$14 [line 43]\n  REMOVE_TEMPS(n$14); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	
 
-	 25 -> 24 ;
-24 [label="24: Exit Boxing_getS \n  " color=yellow style=filled]
+	 27 -> 26 ;
+26 [label="26: Exit Boxing_getS \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start Boxing_getS\nFormals:  self:class Boxing *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 41]\n  NULLIFY(&s,false); [line 41]\n  NULLIFY(&self,false); [line 41]\n " color=yellow style=filled]
+25 [label="25: Start Boxing_getS\nFormals:  self:class Boxing *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 41]\n  NULLIFY(&s,false); [line 41]\n  NULLIFY(&self,false); [line 41]\n " color=yellow style=filled]
 	
 
-	 23 -> 26 ;
-22 [label="22:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 37]\n  *&n:class NSNumber *=n$13 [line 37]\n  REMOVE_TEMPS(n$13); [line 37]\n  NULLIFY(&n,false); [line 37]\n " shape="box"]
+	 25 -> 28 ;
+24 [label="24:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 37]\n  *&n:class NSNumber *=n$13 [line 37]\n  REMOVE_TEMPS(n$13); [line 37]\n  NULLIFY(&n,false); [line 37]\n " shape="box"]
 	
 
-	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 38]\n  *&return:class NSNumber *=n$12 [line 38]\n  REMOVE_TEMPS(n$12); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+	 24 -> 23 ;
+23 [label="23:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 38]\n  *&return:class NSNumber *=n$12 [line 38]\n  REMOVE_TEMPS(n$12); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
 	
 
-	 21 -> 20 ;
-20 [label="20: Exit Boxing_getBool \n  " color=yellow style=filled]
+	 23 -> 22 ;
+22 [label="22: Exit Boxing_getBool \n  " color=yellow style=filled]
 	
 
-19 [label="19: Start Boxing_getBool\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 36]\n  NULLIFY(&n,false); [line 36]\n  NULLIFY(&self,false); [line 36]\n " color=yellow style=filled]
+21 [label="21: Start Boxing_getBool\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 36]\n  NULLIFY(&n,false); [line 36]\n  NULLIFY(&self,false); [line 36]\n " color=yellow style=filled]
 	
 
-	 19 -> 22 ;
-18 [label="18:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double ) [line 32]\n  *&n:class NSNumber *=n$11 [line 32]\n  REMOVE_TEMPS(n$11); [line 32]\n  NULLIFY(&n,false); [line 32]\n " shape="box"]
+	 21 -> 24 ;
+20 [label="20:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double ) [line 32]\n  *&n:class NSNumber *=n$11 [line 32]\n  REMOVE_TEMPS(n$11); [line 32]\n  NULLIFY(&n,false); [line 32]\n " shape="box"]
 	
 
-	 18 -> 17 ;
-17 [label="17:  Return Stmt \n   n$10=_fun_NSNumber_numberWithDouble:(1.500000:double ) [line 33]\n  *&return:class NSNumber *=n$10 [line 33]\n  REMOVE_TEMPS(n$10); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+	 20 -> 19 ;
+19 [label="19:  Return Stmt \n   n$10=_fun_NSNumber_numberWithDouble:(1.500000:double ) [line 33]\n  *&return:class NSNumber *=n$10 [line 33]\n  REMOVE_TEMPS(n$10); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
-	 17 -> 16 ;
-16 [label="16: Exit Boxing_getDouble \n  " color=yellow style=filled]
+	 19 -> 18 ;
+18 [label="18: Exit Boxing_getDouble \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start Boxing_getDouble\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 31]\n  NULLIFY(&n,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n " color=yellow style=filled]
+17 [label="17: Start Boxing_getDouble\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 31]\n  NULLIFY(&n,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n " color=yellow style=filled]
 	
 
-	 15 -> 18 ;
-14 [label="14:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float ) [line 27]\n  *&n:class NSNumber *=n$9 [line 27]\n  REMOVE_TEMPS(n$9); [line 27]\n  NULLIFY(&n,false); [line 27]\n " shape="box"]
+	 17 -> 20 ;
+16 [label="16:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float ) [line 27]\n  *&n:class NSNumber *=n$9 [line 27]\n  REMOVE_TEMPS(n$9); [line 27]\n  NULLIFY(&n,false); [line 27]\n " shape="box"]
 	
 
-	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$8=_fun_NSNumber_numberWithFloat:(1.500000:float ) [line 28]\n  *&return:class NSNumber *=n$8 [line 28]\n  REMOVE_TEMPS(n$8); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+	 16 -> 15 ;
+15 [label="15:  Return Stmt \n   n$8=_fun_NSNumber_numberWithFloat:(1.500000:float ) [line 28]\n  *&return:class NSNumber *=n$8 [line 28]\n  REMOVE_TEMPS(n$8); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
 	
 
-	 13 -> 12 ;
-12 [label="12: Exit Boxing_getFloat \n  " color=yellow style=filled]
+	 15 -> 14 ;
+14 [label="14: Exit Boxing_getFloat \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start Boxing_getFloat\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 26]\n  NULLIFY(&n,false); [line 26]\n  NULLIFY(&self,false); [line 26]\n " color=yellow style=filled]
+13 [label="13: Start Boxing_getFloat\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 26]\n  NULLIFY(&n,false); [line 26]\n  NULLIFY(&self,false); [line 26]\n " color=yellow style=filled]
 	
 
-	 11 -> 14 ;
-10 [label="10:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int ) [line 22]\n  *&n:class NSNumber *=n$7 [line 22]\n  REMOVE_TEMPS(n$7); [line 22]\n  NULLIFY(&n,false); [line 22]\n " shape="box"]
+	 13 -> 16 ;
+12 [label="12:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int ) [line 22]\n  *&n:class NSNumber *=n$7 [line 22]\n  REMOVE_TEMPS(n$7); [line 22]\n  NULLIFY(&n,false); [line 22]\n " shape="box"]
 	
 
-	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$6=_fun_NSNumber_numberWithInt:(5:int ) [line 23]\n  *&return:class NSNumber *=n$6 [line 23]\n  REMOVE_TEMPS(n$6); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+	 12 -> 11 ;
+11 [label="11:  Return Stmt \n   n$6=_fun_NSNumber_numberWithInt:(5:int ) [line 23]\n  *&return:class NSNumber *=n$6 [line 23]\n  REMOVE_TEMPS(n$6); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
-	 9 -> 8 ;
-8 [label="8: Exit Boxing_getInt \n  " color=yellow style=filled]
+	 11 -> 10 ;
+10 [label="10: Exit Boxing_getInt \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start Boxing_getInt\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 21]\n  NULLIFY(&n,false); [line 21]\n  NULLIFY(&self,false); [line 21]\n " color=yellow style=filled]
+9 [label="9: Start Boxing_getInt\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 21]\n  NULLIFY(&n,false); [line 21]\n  NULLIFY(&self,false); [line 21]\n " color=yellow style=filled]
 	
 
-	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   *&x:int =4 [line 15]\n " shape="box"]
+	 9 -> 12 ;
+8 [label="8:  DeclStmt \n   *&x:int =4 [line 15]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7:  DeclStmt \n   *&y:int =5 [line 16]\n " shape="box"]
+	
+
+	 7 -> 6 ;
+6 [label="6:  DeclStmt \n   n$3=*&x:int  [line 17]\n  n$4=*&y:int  [line 17]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int ) [line 17]\n  *&n:class NSNumber *=n$5 [line 17]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 17]\n  NULLIFY(&n,false); [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   *&y:int =5 [line 16]\n " shape="box"]
+5 [label="5:  Return Stmt \n   n$0=*&x:int  [line 18]\n  n$1=*&y:int  [line 18]\n  n$2=_fun_NSNumber_numberWithInt:((n$0 + n$1):int ) [line 18]\n  *&return:class NSNumber *=n$2 [line 18]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 18]\n  NULLIFY(&x,false); [line 18]\n  NULLIFY(&y,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   n$3=*&x:int  [line 17]\n  n$4=*&y:int  [line 17]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int ) [line 17]\n  *&n:class NSNumber *=n$5 [line 17]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 17]\n  NULLIFY(&n,false); [line 17]\n " shape="box"]
+4 [label="4: Exit Boxing_getIntExp \n  " color=yellow style=filled]
 	
 
-	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 18]\n  n$1=*&y:int  [line 18]\n  n$2=_fun_NSNumber_numberWithInt:((n$0 + n$1):int ) [line 18]\n  *&return:class NSNumber *=n$2 [line 18]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 18]\n  NULLIFY(&x,false); [line 18]\n  NULLIFY(&y,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+3 [label="3: Start Boxing_getIntExp\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * y:int  x:int  \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14]\n  NULLIFY(&n,false); [line 14]\n  NULLIFY(&self,false); [line 14]\n  NULLIFY(&x,false); [line 14]\n  NULLIFY(&y,false); [line 14]\n " color=yellow style=filled]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit Boxing_getIntExp \n  " color=yellow style=filled]
+	 3 -> 8 ;
+2 [label="2: Exit Boxing_frontendChecks \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Boxing_getIntExp\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * y:int  x:int  \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14]\n  NULLIFY(&n,false); [line 14]\n  NULLIFY(&self,false); [line 14]\n  NULLIFY(&x,false); [line 14]\n  NULLIFY(&y,false); [line 14]\n " color=yellow style=filled]
+1 [label="1: Start Boxing_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 1 -> 6 ;
+	 1 -> 2 ;
 }

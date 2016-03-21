@@ -30,6 +30,13 @@ let captured_vars_checker_list = [CFrontend_checkers.captured_cxx_ref_in_objc_bl
 let checkers_for_capture_vars stmt_info captured_vars checker =
   checker stmt_info captured_vars
 
+(* List of checkers on NSNotificationCenter *)
+let ns_notification_checker_list = [CFrontend_checkers.checker_NSNotificationCenter]
+
+(* Invocation of checker belonging to ns_notification_center_list *)
+let checkers_for_ns decl_info decls checker =
+  checker decl_info decls
+
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_warning pdesc warn_desc =
   let open CFrontend_checkers in
@@ -58,20 +65,18 @@ let invoke_set_of_checkers f pdesc checkers  =
       | None -> ()) checkers
 
 (* Call all checkers on properties of class c *)
-let rec check_for_property_errors cfg cg tenv class_name decl_list =
+let rec check_for_property_errors cfg cg tenv pdesc decl_list =
   let open Clang_ast_t in
   let do_one_property decl_info pname_info pdi =
-    let pdesc =
-      CMethod_trans.get_method_for_frontend_checks cfg cg tenv class_name decl_info in
     let call_property_checker = checkers_for_property decl_info pname_info pdi in
     invoke_set_of_checkers call_property_checker pdesc property_checkers_list in
   match decl_list with
   | [] -> ()
   | ObjCPropertyDecl (decl_info, pname_info, pdi) :: rest ->
       do_one_property decl_info pname_info pdi;
-      check_for_property_errors cfg cg tenv class_name rest
+      check_for_property_errors cfg cg tenv pdesc rest
   | _ :: rest  ->
-      check_for_property_errors cfg cg tenv class_name rest
+      check_for_property_errors cfg cg tenv pdesc rest
 
 let get_categories_decls decl_ref =
   match Ast_utils.get_decl_opt_with_decl_ref decl_ref with
@@ -95,18 +100,26 @@ let run_frontend_checkers_on_stmt trans_state instr =
       invoke_set_of_checkers call_captured_vars_checker pdesc captured_vars_checker_list
   | _ -> ()
 
-let run_frontend_checkers_on_decl tenv cg cfg dec =
+let rec run_frontend_checkers_on_decl tenv cg cfg dec =
+  let pdesc_checker curr_class =
+    let name = CContext.get_curr_class_name curr_class in
+    let di = Clang_ast_proj.get_decl_tuple dec in
+    CMethod_trans.get_method_for_frontend_checks cfg cg tenv name di in
   let open Clang_ast_t in
   match dec with
   | ObjCCategoryImplDecl(_, name_info, decl_list, _, ocidi) ->
       let name = Ast_utils.get_qualified_name name_info in
       let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
+      let pdesc = pdesc_checker curr_class in
       let decls = (get_categories_decls ocidi.Clang_ast_t.ocidi_category_decl) @ decl_list in
-      let name = CContext.get_curr_class_name curr_class in
-      check_for_property_errors cfg cg tenv name decls
-  | ObjCImplementationDecl(_, _, decl_list, _, idi) ->
+      check_for_property_errors cfg cg tenv pdesc decls;
+      IList.iter (run_frontend_checkers_on_decl tenv cg cfg) decl_list
+  | ObjCImplementationDecl(decl_info, _, decl_list, _, idi) ->
       let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
-      let name = CContext.get_curr_class_name curr_class in
+      let pdesc = pdesc_checker curr_class in
       let decls = (get_categories_decls idi.Clang_ast_t.oidi_class_interface) @ decl_list in
-      check_for_property_errors cfg cg tenv name decls
+      check_for_property_errors cfg cg tenv pdesc decls;
+      let call_ns_checker = checkers_for_ns decl_info decl_list in
+      invoke_set_of_checkers call_ns_checker pdesc ns_notification_checker_list;
+      IList.iter (run_frontend_checkers_on_decl tenv cg cfg) decl_list
   | _ -> ()

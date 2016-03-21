@@ -229,6 +229,8 @@ val desc_retain_cycle :
   Prop.normal Prop.t -> ((Sil.strexp * Sil.typ) * Ident.fieldname * Sil.strexp) list ->
   Location.t -> string option -> error_desc
 
+val registered_observer_being_deallocated_str : string -> string
+
 val desc_registered_observer_being_deallocated : Sil.pvar -> Location.t -> error_desc
 
 val desc_return_statement_missing : Location.t -> error_desc

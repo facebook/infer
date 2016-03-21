@@ -1,59 +1,66 @@
 digraph iCFG {
-14 [label="14:  DeclStmt \n   *&i:int =0 [line 19]\n " shape="box"]
+16 [label="16:  DeclStmt \n   *&i:int =0 [line 19]\n " shape="box"]
 	
 
-	 14 -> 13 ;
-13 [label="13:  DeclStmt \n   *&j:int =0 [line 20]\n " shape="box"]
+	 16 -> 15 ;
+15 [label="15:  DeclStmt \n   *&j:int =0 [line 20]\n " shape="box"]
 	
 
-	 13 -> 9 ;
-12 [label="12:  Return Stmt \n   NULLIFY(&i,false); [line 22]\n  NULLIFY(&j,false); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+	 15 -> 11 ;
+14 [label="14:  Return Stmt \n   NULLIFY(&i,false); [line 22]\n  NULLIFY(&j,false); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
 	
 
-	 12 -> 2 ;
-11 [label="11: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 21]\n  REMOVE_TEMPS(n$2); [line 21]\n " shape="invhouse"]
+	 14 -> 4 ;
+13 [label="13: Prune (false branch) \n   PRUNE(((n$2 == 0) == 0), false); [line 21]\n  REMOVE_TEMPS(n$2); [line 21]\n " shape="invhouse"]
 	
 
-	 11 -> 8 ;
-10 [label="10: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 21]\n  REMOVE_TEMPS(n$2); [line 21]\n " shape="invhouse"]
+	 13 -> 10 ;
+12 [label="12: Prune (true branch) \n   PRUNE(((n$2 == 0) != 0), true); [line 21]\n  REMOVE_TEMPS(n$2); [line 21]\n " shape="invhouse"]
 	
 
-	 10 -> 12 ;
-9 [label="9:  BinaryOperatorStmt: EQ \n   n$2=*&i:int  [line 21]\n " shape="box"]
+	 12 -> 14 ;
+11 [label="11:  BinaryOperatorStmt: EQ \n   n$2=*&i:int  [line 21]\n " shape="box"]
 	
 
-	 9 -> 10 ;
-	 9 -> 11 ;
-8 [label="8: + \n  " ]
+	 11 -> 12 ;
+	 11 -> 13 ;
+10 [label="10: + \n  " ]
 	
 
-	 8 -> 4 ;
-7 [label="7:  UnaryOperator \n   n$1=*&i:int  [line 26]\n  *&i:int =(n$1 + 1) [line 26]\n  REMOVE_TEMPS(n$1); [line 26]\n  NULLIFY(&i,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+	 10 -> 6 ;
+9 [label="9:  UnaryOperator \n   n$1=*&i:int  [line 26]\n  *&i:int =(n$1 + 1) [line 26]\n  REMOVE_TEMPS(n$1); [line 26]\n  NULLIFY(&i,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
-	 7 -> 3 ;
-6 [label="6: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="invhouse"]
+	 9 -> 5 ;
+8 [label="8: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="invhouse"]
 	
 
-	 6 -> 3 ;
-5 [label="5: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n " shape="invhouse"]
+	 8 -> 5 ;
+7 [label="7: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n " shape="invhouse"]
 	
 
-	 5 -> 7 ;
-4 [label="4:  BinaryOperatorStmt: EQ \n   n$0=*&j:int  [line 25]\n  NULLIFY(&j,false); [line 25]\n " shape="box"]
+	 7 -> 9 ;
+6 [label="6:  BinaryOperatorStmt: EQ \n   n$0=*&j:int  [line 25]\n  NULLIFY(&j,false); [line 25]\n " shape="box"]
 	
 
-	 4 -> 5 ;
-	 4 -> 6 ;
-3 [label="3: + \n   NULLIFY(&i,false); [line 25]\n " ]
+	 6 -> 7 ;
+	 6 -> 8 ;
+5 [label="5: + \n   NULLIFY(&i,false); [line 25]\n " ]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit MyClass_aMethod \n  " color=yellow style=filled]
+	 5 -> 4 ;
+4 [label="4: Exit MyClass_aMethod \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MyClass_aMethod\nFormals:  self:class MyClass *\nLocals:  j:int  i:int  \n   DECLARE_LOCALS(&return,&j,&i); [line 18]\n  NULLIFY(&i,false); [line 18]\n  NULLIFY(&j,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+3 [label="3: Start MyClass_aMethod\nFormals:  self:class MyClass *\nLocals:  j:int  i:int  \n   DECLARE_LOCALS(&return,&j,&i); [line 18]\n  NULLIFY(&i,false); [line 18]\n  NULLIFY(&j,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
 	
 
-	 1 -> 14 ;
+	 3 -> 16 ;
+2 [label="2: Exit MyClass_frontendChecks \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start MyClass_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 1 -> 2 ;
 }

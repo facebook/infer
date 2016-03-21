@@ -1,45 +1,52 @@
 digraph iCFG {
-11 [label="11:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 28]\n  *&s:class NSString *=n$7 [line 28]\n  REMOVE_TEMPS(n$7); [line 28]\n " shape="box"]
+13 [label="13:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 28]\n  *&s:class NSString *=n$7 [line 28]\n  REMOVE_TEMPS(n$7); [line 28]\n " shape="box"]
 	
 
-	 11 -> 8 ;
+	 13 -> 10 ;
+	 13 -> 11 ;
+12 [label="12:  Return Stmt \n   NULLIFY(&s,false); [line 30]\n  n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char *) [line 31]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char *) [line 33]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:class NSString *,n$5:class NSString *,0:class NSDictionary *) [line 30]\n  *&return:void =n$6 [line 30]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	
+
+	 12 -> 8 ;
+11 [label="11: Prune (false branch) \n   n$3=*&s:class NSString * [line 29]\n  PRUNE((n$3 == 0), false); [line 29]\n  REMOVE_TEMPS(n$3); [line 29]\n " shape="invhouse"]
+	
+
 	 11 -> 9 ;
-10 [label="10:  Return Stmt \n   NULLIFY(&s,false); [line 30]\n  n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char *) [line 31]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char *) [line 33]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:class NSString *,n$5:class NSString *,0:class NSDictionary *) [line 30]\n  *&return:void =n$6 [line 30]\n  REMOVE_TEMPS(n$4,n$5,n$6); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+10 [label="10: Prune (true branch) \n   n$3=*&s:class NSString * [line 29]\n  PRUNE((n$3 != 0), true); [line 29]\n  REMOVE_TEMPS(n$3); [line 29]\n " shape="invhouse"]
 	
 
-	 10 -> 6 ;
-9 [label="9: Prune (false branch) \n   n$3=*&s:class NSString * [line 29]\n  PRUNE((n$3 == 0), false); [line 29]\n  REMOVE_TEMPS(n$3); [line 29]\n " shape="invhouse"]
+	 10 -> 12 ;
+9 [label="9: + \n   NULLIFY(&s,false); [line 29]\n " ]
 	
 
-	 9 -> 7 ;
-8 [label="8: Prune (true branch) \n   n$3=*&s:class NSString * [line 29]\n  PRUNE((n$3 != 0), true); [line 29]\n  REMOVE_TEMPS(n$3); [line 29]\n " shape="invhouse"]
+	 9 -> 8 ;
+8 [label="8: Exit ExceptionExample_test1 \n  " color=yellow style=filled]
 	
 
-	 8 -> 10 ;
-7 [label="7: + \n   NULLIFY(&s,false); [line 29]\n " ]
+7 [label="7: Start ExceptionExample_test1\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 27]\n  NULLIFY(&s,false); [line 27]\n  NULLIFY(&self,false); [line 27]\n " color=yellow style=filled]
 	
 
-	 7 -> 6 ;
-6 [label="6: Exit ExceptionExample_test1 \n  " color=yellow style=filled]
+	 7 -> 13 ;
+6 [label="6:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 20]\n  *&s:class NSString *=n$2 [line 20]\n  REMOVE_TEMPS(n$2); [line 20]\n  NULLIFY(&s,false); [line 20]\n " shape="box"]
 	
 
-5 [label="5: Start ExceptionExample_test1\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 27]\n  NULLIFY(&s,false); [line 27]\n  NULLIFY(&self,false); [line 27]\n " color=yellow style=filled]
+	 6 -> 5 ;
+5 [label="5:  Message Call: description \n   n$0=*&self:class ExceptionExample * [line 23]\n  n$1=_fun_ExceptionExample_description(n$0:class ExceptionExample *) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&self,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
-	 5 -> 11 ;
-4 [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 20]\n  *&s:class NSString *=n$2 [line 20]\n  REMOVE_TEMPS(n$2); [line 20]\n  NULLIFY(&s,false); [line 20]\n " shape="box"]
+	 5 -> 4 ;
+4 [label="4: Exit ExceptionExample_test \n  " color=yellow style=filled]
 	
 
-	 4 -> 3 ;
-3 [label="3:  Message Call: description \n   n$0=*&self:class ExceptionExample * [line 23]\n  n$1=_fun_ExceptionExample_description(n$0:class ExceptionExample *) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&self,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+3 [label="3: Start ExceptionExample_test\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 18]\n  NULLIFY(&s,false); [line 18]\n " color=yellow style=filled]
 	
 
-	 3 -> 2 ;
-2 [label="2: Exit ExceptionExample_test \n  " color=yellow style=filled]
+	 3 -> 6 ;
+2 [label="2: Exit ExceptionExample_frontendChecks \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start ExceptionExample_test\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 18]\n  NULLIFY(&s,false); [line 18]\n " color=yellow style=filled]
+1 [label="1: Start ExceptionExample_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
-	 1 -> 4 ;
+	 1 -> 2 ;
 }
