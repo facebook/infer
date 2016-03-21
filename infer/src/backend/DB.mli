@@ -26,7 +26,10 @@ val filename_concat : filename -> string -> filename
 val filename_add_suffix : filename -> string -> filename
 val file_exists : filename -> bool
 val file_remove : filename -> unit
-val file_modified_time : filename -> float (** Return the time when a file was last modified. The file must exist. *)
+
+(** Return the time when a file was last modified. The file must exist. *)
+val file_modified_time : ?symlink:bool -> filename -> float
+
 (** Return whether filename was updated after analysis started. File doesn't have to exist *)
 val file_was_updated_after_start : filename -> bool
 

@@ -126,6 +126,11 @@ let arg_desc =
     let desc =
       reserved_arg_desc @
       [
+        "-allow_specs_cleanup",
+        Arg.Unit (fun () -> allow_specs_cleanup := true),
+        None,
+        "Allow to remove existing specs before running analysis when it's not incremental"
+        ;
         "-analysis_stops",
         Arg.Set Config.analysis_stops,
         None,
@@ -159,10 +164,30 @@ let arg_desc =
         None,
         " activate the eradicate checker for java annotations"
         ;
+        "-merge_captured",
+        Arg.Unit MergeCapture.merge_captured_targets,
+        None,
+        "merge the captured results directories specified in the dependency file"
+        ;
         "-makefile",
         Arg.Set_string makefile_cmdline,
         Some "file",
         "create a makefile to perform the analysis"
+        ;
+        "-modified_targets",
+        Arg.String (fun file -> MergeCapture.modified_file file),
+        Some "file",
+        "read the file of buck targets modified since the last analysis"
+        ;
+        "-optimistic_cast",
+        Arg.Set Config.optimistic_cast,
+        None,
+        "allow cast of undefined values"
+        ;
+        "-print_buckets",
+        Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true),
+        None,
+        "Add buckets to issue descriptions, useful when developing infer"
         ;
         "-seconds_per_iteration",
         Arg.Set_float seconds_per_iteration,
@@ -174,36 +199,21 @@ let arg_desc =
         None,
         "use the multirange subtyping domain"
         ;
-        "-optimistic_cast",
-        Arg.Set Config.optimistic_cast,
-        None,
-        "allow cast of undefined values"
-        ;
         "-symops_per_iteration",
         Arg.Set_int symops_per_iteration,
         Some "n",
         "set the number of symbolic operations per iteration (default n="
         ^ (string_of_int !symops_per_iteration) ^ ")"
         ;
-        "-type_size",
-        Arg.Set Config.type_size,
-        None,
-        "consider the size of types during analysis"
-        ;
         "-tracing",
         Arg.Unit (fun () -> Config.report_runtime_exceptions := true),
         None,
         "Report error traces for runtime exceptions (Only for Java)"
         ;
-        "-allow_specs_cleanup",
-        Arg.Unit (fun () -> allow_specs_cleanup := true),
+        "-type_size",
+        Arg.Set Config.type_size,
         None,
-        "Allow to remove existing specs before running analysis when it's not incremental"
-        ;
-        "-print_buckets",
-        Arg.Unit (fun() -> Config.show_buckets := true; Config.show_ml_buckets := true),
-        None,
-        "Add buckets to issue descriptions, useful when developing infer"
+        "consider the size of types during analysis"
         ;
       ] in
     Arg.create_options_desc false
@@ -372,4 +382,3 @@ let () =
         end;
       output_json_makefile_stats clusters;
       finish_logging ()
-

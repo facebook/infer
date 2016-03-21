@@ -183,8 +183,8 @@ module FilenameMap = Map.Make(
   end)
 
 (** Return the time when a file was last modified. The file must exist. *)
-let file_modified_time fname =
-  let stat = Unix.stat fname in
+let file_modified_time ?(symlink=false) fname =
+  let stat = (if symlink then Unix.lstat else Unix.stat) fname in
   stat.Unix.st_mtime
 
 (** Create a directory if it does not exist already. *)

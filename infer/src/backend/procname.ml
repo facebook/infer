@@ -507,9 +507,3 @@ module Set = Set.Make(struct
 (** Pretty print a set of proc names *)
 let pp_set fmt set =
   Set.iter (fun pname -> F.fprintf fmt "%a " pp pname) set
-
-(*
-(** Return path components of a java class name *)
-let java_get_class_components proc_name =
-  Str.split (Str.regexp (Str.quote ".")) (java_get_class proc_name)
-*)
