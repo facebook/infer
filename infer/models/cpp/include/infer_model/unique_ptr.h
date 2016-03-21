@@ -45,7 +45,7 @@ struct unique_ptr {
 
   constexpr unique_ptr(nullptr_t) noexcept : unique_ptr<_Tp, _Dp>() {}
 
-  unique_ptr(pointer ptr) : data(ptr) {}
+  explicit unique_ptr(pointer ptr) : data(ptr) {}
 
   unique_ptr(pointer ptr,
              typename conditional<
@@ -152,7 +152,7 @@ struct unique_ptr<_Tp[], _Dp> {
 
   constexpr unique_ptr(nullptr_t) noexcept : data(nullptr) {}
 
-  unique_ptr(pointer ptr) : data(ptr) {}
+  explicit unique_ptr(pointer ptr) : data(ptr) {}
 
   unique_ptr(
       pointer ptr,
