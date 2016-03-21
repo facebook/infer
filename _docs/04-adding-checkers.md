@@ -137,7 +137,7 @@ In file ```procname.ml``` add the following function:
 ```ocaml
 (** [java_is_print_method pn] returns true if [pn] is an output method **)
 let java_is_print_method = function
-	| Java_method js ->
+	| Java js ->
 		let _, class_name = js.class_name in
 		(js.method_name = "println") && (class_name = "PrintStream")
 	| _ -> false
