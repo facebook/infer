@@ -53,11 +53,6 @@ cmd = ['{0}'] + {1} + ['--', 'javac'] + sys.argv[1:]
 subprocess.check_call(cmd)
 """
 
-LOCAL_CONFIG = """\
-    [tools]
-        javac = %s
-"""
-
 
 def prepare_build(args):
     """Creates script that redirects javac calls to infer and a local buck

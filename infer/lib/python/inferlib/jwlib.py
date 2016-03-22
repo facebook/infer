@@ -186,7 +186,7 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         if self.javac.args.version:
             if self.args.buck:
                 key = self.args.analyzer
-                print(utils.infer_key(key), file=sys.stderr)
+                utils.stderr(utils.infer_key(key))
             else:
                 return self.javac.run()
         else:
