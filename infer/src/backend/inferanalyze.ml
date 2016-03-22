@@ -164,7 +164,7 @@ let arg_desc =
         None,
         " activate the eradicate checker for java annotations"
         ;
-        "-merge_captured",
+        "-merge",
         Arg.Unit MergeCapture.merge_captured_targets,
         None,
         "merge the captured results directories specified in the dependency file"

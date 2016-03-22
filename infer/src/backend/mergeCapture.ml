@@ -14,9 +14,9 @@ module F = Format
 
 (** Flag to control whether the timestamp of symbolic links
     is used to determine whether a captured directory needs to be merged. *)
-let check_timestamp_of_symlinks = false
+let check_timestamp_of_symlinks = true
 
-let buck_out = ref (Filename.concat (Sys.getcwd ()) "buck-out")
+let buck_out () = Filename.concat (Filename.dirname !Config.results_dir) "buck-out"
 
 let infer_deps () = Filename.concat !Config.results_dir "infer-deps.txt"
 
@@ -80,7 +80,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
     if debug >= 2 then
       L.stderr "file:%s time_orig:%f time_link:%f@."
         file time_orig time_link;
-    time_link >= time_orig in
+    time_link > time_orig in
   let symlinks_up_to_date captured_file =
     if Sys.is_directory captured_file then
       let contents = Array.to_list (Sys.readdir captured_file) in
@@ -130,7 +130,7 @@ let process_merge_file deps_file =
   let process_line line =
     match Str.split_delim (Str.regexp (Str.quote "\t")) line with
     | target :: _ :: target_results_dir :: _ ->
-        let infer_out_src = Filename.concat (Filename.dirname !buck_out) target_results_dir in
+        let infer_out_src = Filename.concat (Filename.dirname (buck_out ())) target_results_dir in
         if should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst
         then slink ~stats infer_out_src infer_out_dst
     | _ ->
@@ -144,5 +144,4 @@ let process_merge_file deps_file =
 
 
 let merge_captured_targets () =
-  process_merge_file (infer_deps ());
-  exit 0
+  process_merge_file (infer_deps ())

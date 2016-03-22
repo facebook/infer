@@ -68,6 +68,9 @@ base_group.add_argument('-ic', '--changed-only',
 base_group.add_argument('-r', '--reactive', action='store_true',
                         help='''Analyze in reactive propagation mode
                         starting from changed files.''')
+base_group.add_argument('-m', '--merge', action='store_true',
+                        help='''merge the captured results directories specified
+                        in the dependency file.''')
 base_group.add_argument('-c', '--continue', action='store_true',
                         dest='continue_capture',
                         help='''Continue the capture for the reactive
@@ -319,6 +322,9 @@ class AnalyzerWrapper(object):
 
         if self.args.continue_capture:
             infer_options.append('-continue')
+
+        if self.args.merge:
+            infer_options.append('-merge')
 
         if self.args.specs_dirs:
             infer_options += self.args.specs_dirs
