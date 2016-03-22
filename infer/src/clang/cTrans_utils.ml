@@ -348,14 +348,11 @@ let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selecto
     objc_new_trans trans_state loc stmt_info class_name function_type
   else assert false
 
-let cpp_new_trans trans_state sil_loc stmt_info function_type =
+let cpp_new_trans trans_state sil_loc function_type =
   let fname = SymExec.ModelBuiltins.__new in
-  let (function_type, ret_id, stmt_call, exp) = create_alloc_instrs trans_state.context sil_loc function_type fname in
-  let res_trans_tmp = { empty_res_trans with ids =[ret_id]; instrs =[stmt_call]} in
-  let res_trans =
-    let nname = "Call C++ new" in
-    PriorityNode.compute_results_to_parent trans_state sil_loc nname stmt_info [res_trans_tmp] in
-  { res_trans with exps = [(exp, function_type)] }
+  let (function_type, ret_id, stmt_call, exp) =
+    create_alloc_instrs trans_state.context sil_loc function_type fname in
+  { empty_res_trans with ids = [ret_id]; instrs = [stmt_call]; exps = [(exp, function_type)] }
 
 let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in

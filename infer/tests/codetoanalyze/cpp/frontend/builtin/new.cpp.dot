@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  Call C++ new \n   n$1=_fun___new(sizeof(int ):unsigned long ) [line 13]\n  REMOVE_TEMPS(n$1); [line 13]\n " shape="box"]
+4 [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(int ):unsigned long ) [line 13]\n  REMOVE_TEMPS(n$1); [line 13]\n " shape="box"]
 	
 
 	 4 -> 3 ;

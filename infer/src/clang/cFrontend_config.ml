@@ -55,6 +55,8 @@ let json = ref ""
 
 let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
 
+let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
+
 let debug_mode = ref false
 
 let stats_mode = ref false

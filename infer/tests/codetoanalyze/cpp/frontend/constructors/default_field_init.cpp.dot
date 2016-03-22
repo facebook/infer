@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  *n$0.c:int =-1 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&this,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+8 [label="8:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  *n$0.c:int =0 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&this,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -56,7 +56,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  *n$0.c:int =-1 [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&this,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  *n$0.c:int =0 [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&this,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

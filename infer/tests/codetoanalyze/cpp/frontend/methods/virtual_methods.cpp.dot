@@ -1,5 +1,5 @@
 digraph iCFG {
-53 [label="53:  DeclStmt \n   n$2=_fun___new(sizeof(class Triangle ):unsigned long ) [line 71]\n  *&trgl:class Triangle *=n$2 [line 71]\n  REMOVE_TEMPS(n$2); [line 71]\n " shape="box"]
+53 [label="53:  DeclStmt \n   n$2=_fun___new(sizeof(class Triangle ):unsigned long ) [line 71]\n  _fun_Triangle_Triangle(n$2:class Triangle *) [line 71]\n  *&trgl:class Triangle *=n$2 [line 71]\n  REMOVE_TEMPS(n$2); [line 71]\n " shape="box"]
 	
 
 	 53 -> 52 ;

@@ -1,13 +1,13 @@
 digraph iCFG {
-25 [label="25:  DeclStmt \n   n$20=_fun___new(sizeof(class Base ):unsigned long ) [line 22]\n  *&b:class Base *=n$20 [line 22]\n  REMOVE_TEMPS(n$20); [line 22]\n " shape="box"]
+25 [label="25:  DeclStmt \n   n$20=_fun___new(sizeof(class Base ):unsigned long ) [line 22]\n  _fun_Base_Base(n$20:class Base *) [line 22]\n  *&b:class Base *=n$20 [line 22]\n  REMOVE_TEMPS(n$20); [line 22]\n " shape="box"]
 	
 
 	 25 -> 24 ;
-24 [label="24:  DeclStmt \n   n$19=_fun___new(sizeof(class Sub ):unsigned long ) [line 23]\n  *&s1:class Sub *=n$19 [line 23]\n  REMOVE_TEMPS(n$19); [line 23]\n " shape="box"]
+24 [label="24:  DeclStmt \n   n$19=_fun___new(sizeof(class Sub ):unsigned long ) [line 23]\n  _fun_Sub_Sub(n$19:class Sub *) [line 23]\n  *&s1:class Sub *=n$19 [line 23]\n  REMOVE_TEMPS(n$19); [line 23]\n " shape="box"]
 	
 
 	 24 -> 23 ;
-23 [label="23:  DeclStmt \n   n$18=_fun___new(sizeof(class Sub ):unsigned long ) [line 24]\n  *&s2:class Sub *=n$18 [line 24]\n  REMOVE_TEMPS(n$18); [line 24]\n " shape="box"]
+23 [label="23:  DeclStmt \n   n$18=_fun___new(sizeof(class Sub ):unsigned long ) [line 24]\n  _fun_Sub_Sub(n$18:class Sub *) [line 24]\n  *&s2:class Sub *=n$18 [line 24]\n  REMOVE_TEMPS(n$18); [line 24]\n " shape="box"]
 	
 
 	 23 -> 22 ;

@@ -47,6 +47,8 @@ val json : string ref
 
 val pointer_decl_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
 
+val pointer_stmt_index : Clang_ast_t.stmt Clang_ast_main.PointerMap.t ref
+
 val objc_object : string
 
 val id_cl : string

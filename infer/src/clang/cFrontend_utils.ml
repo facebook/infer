@@ -274,6 +274,16 @@ struct
     | Some decl_ptr -> get_decl decl_ptr
     | None -> None
 
+  let get_stmt stmt_ptr =
+    try
+      Some (Clang_ast_main.PointerMap.find stmt_ptr !CFrontend_config.pointer_stmt_index)
+    with Not_found -> Printing.log_stats "stmt with pointer %d not found\n" stmt_ptr; None
+
+  let get_stmt_opt stmt_ptr_opt =
+    match stmt_ptr_opt with
+    | Some stmt_ptr -> get_stmt stmt_ptr
+    | None -> None
+
   let get_decl_opt_with_decl_ref decl_ref_opt =
     match decl_ref_opt with
     | Some decl_ref -> get_decl decl_ref.Clang_ast_t.dr_decl_pointer

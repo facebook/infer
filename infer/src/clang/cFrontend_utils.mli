@@ -75,6 +75,10 @@ sig
 
   val get_decl_opt : Clang_ast_t.pointer option -> Clang_ast_t.decl option
 
+  val get_stmt : Clang_ast_t.pointer -> Clang_ast_t.stmt option
+
+  val get_stmt_opt : Clang_ast_t.pointer option -> Clang_ast_t.stmt option
+
   val get_decl_opt_with_decl_ref : Clang_ast_t.decl_ref option -> Clang_ast_t.decl option
 
   val update_sil_types_map : Clang_ast_t.type_ptr -> Sil.typ -> unit

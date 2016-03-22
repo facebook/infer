@@ -927,7 +927,10 @@ struct
           let class_type = CTypes_decl.get_type_from_expr_info ei context.CContext.tenv in
           Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, class_type)];
           Sil.Lvar pvar, class_type in
-    let this_type = Sil.Tptr (class_type, Sil.Pk_pointer) in
+    let this_type =
+      match class_type with
+      | Sil.Tptr _ -> class_type
+      | _ -> Sil.Tptr (class_type, Sil.Pk_pointer) in
     let this_res_trans = { empty_res_trans with
                            exps = [(var_exp, this_type)];
                            initd_exps = [var_exp];
@@ -1544,7 +1547,10 @@ struct
       | _ -> instruction trans_state stmt in
     let res_trans_subexpr_list = IList.map collect_right_hand_exprs stmts in
     let rh_exps = collect_exprs res_trans_subexpr_list in
-    if IList.length rh_exps != IList.length lh then
+    if IList.length rh_exps == 0 then
+      let exp = Sil.zero_value_of_numerical_type var_type in
+      { empty_res_trans with root_nodes = trans_state.succ_nodes; exps = [(exp, typ)]; }
+    else if IList.length rh_exps != IList.length lh then
       (* If the right hand expressions are not as many as the left hand expressions something's wrong *)
       { empty_res_trans with root_nodes = trans_state.succ_nodes }
     else
@@ -1564,16 +1570,8 @@ struct
       { res_trans_to_parent with exps = initlist_expr_res.exps }
 
   and init_expr_trans trans_state var_exp_typ var_stmt_info init_expr_opt =
-    let open Clang_ast_t in
     match init_expr_opt with
     | None -> { empty_res_trans with root_nodes = trans_state.succ_nodes } (* Nothing to do if no init expression *)
-    | Some (ImplicitValueInitExpr (_, stmt_list, _)) ->
-        (* Seems unclear what it does, so let's keep an eye on the stmts *)
-        (* and report a warning if it finds a non empty list of stmts *)
-        (match stmt_list with
-         | [] -> ()
-         | _ -> Printing.log_stats "\n!!!!WARNING: found statement <\"ImplicitValueInitExpr\"> with non-empty stmt_list.\n");
-        { empty_res_trans with root_nodes = trans_state.succ_nodes }
     | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
         let stmt_info, _ = Clang_ast_proj.get_stmt_tuple ie in
         let var_exp, _ = var_exp_typ in
@@ -1926,15 +1924,31 @@ struct
         }
     | _ -> assert false
 
-  and cxxNewExpr_trans trans_state stmt_info expr_info =
+  and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
     let typ = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-    cpp_new_trans trans_state_pri sil_loc stmt_info typ
+    let res_trans_new = cpp_new_trans trans_state_pri sil_loc typ in
+    if cxx_new_expr_info.Clang_ast_t.xnei_is_array then
+      assert false (* TODO *)
+    else
+      let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
+      let trans_state_init = { trans_state_pri with succ_nodes = []; } in
+      let var_exp_typ = match res_trans_new.exps with [exp] -> exp | _ -> assert false in
+      (* Need a new stmt_info for the translation of the initializer, so that it can create nodes *)
+      (* if it needs to, with the same stmt_info it doesn't work. *)
+      let init_stmt_info = { stmt_info with
+                             Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+      let res_trans_init =
+        init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt in
+      let all_res_trans = [res_trans_new; res_trans_init] in
+      let nname = "CXXNewExpr" in
+      let result_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+          nname stmt_info all_res_trans in
+      { result_trans_to_parent with exps = res_trans_new.exps }
   (* TODOs 7912220 - no usable information in json as of right now *)
   (* 1. Handle __new_array *)
-  (* 2. Handle initialization values *)
 
   and cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info =
     let context = trans_state.context in
@@ -2325,8 +2339,8 @@ struct
                   "BinaryConditionalOperator not translated %s @."
                   (Ast_utils.string_of_stmt instr);
              assert false)
-    | CXXNewExpr (stmt_info, _, expr_info, _) ->
-        cxxNewExpr_trans trans_state stmt_info expr_info
+    | CXXNewExpr (stmt_info, _, expr_info, cxx_new_expr_info) ->
+        cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info
     | CXXDeleteExpr (stmt_info, stmt_list, _, delete_expr_info) ->
         cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->

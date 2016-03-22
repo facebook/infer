@@ -76,4 +76,10 @@ public class ConstructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("std_init_list.cpp");
   }
+
+  @Test
+  public void testConstructorNewFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("constructor_new.cpp");
+  }
 }

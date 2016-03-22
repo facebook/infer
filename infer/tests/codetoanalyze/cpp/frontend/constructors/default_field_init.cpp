@@ -10,7 +10,7 @@
 struct X {
   int a = -1;
   int b{-2};
-  int c{}; // doesn't work yet
+  int c{};
   int d;
   X() = default;
   X(int a, int b) : a(a + b) {}
