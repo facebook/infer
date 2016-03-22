@@ -63,8 +63,11 @@ module StructuredSil = struct
   let invariant inv_str =
     Invariant (inv_str, fresh_label ())
 
+  let pvar_of_str str =
+    Sil.mk_pvar (Mangled.from_string str) dummy_procname
+
   let var_of_str str =
-    Sil.Lvar (Sil.mk_pvar (Mangled.from_string str) dummy_procname)
+    Sil.Lvar (pvar_of_str str)
 
   let ident_of_str str =
     Ident.create_normal (Ident.string_to_name str) 0
@@ -72,36 +75,40 @@ module StructuredSil = struct
   let unknown_exp =
     var_of_str "__unknown__"
 
-  let make_letderef lhs_id rhs_exp =
-    Cmd (Sil.Letderef (lhs_id, rhs_exp, dummy_typ, dummy_loc))
+  let make_letderef ~rhs_typ lhs_id rhs_exp =
+    Cmd (Sil.Letderef (lhs_id, rhs_exp, rhs_typ, dummy_loc))
 
-  let make_set ~lhs_exp ~rhs_exp =
-    Cmd (Sil.Set (lhs_exp, dummy_typ, rhs_exp, dummy_loc))
+  let make_set ~rhs_typ ~lhs_exp ~rhs_exp =
+    Cmd (Sil.Set (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
 
-  let id_assign_id lhs rhs =
+  let id_assign_id  ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_exp = Sil.Var (ident_of_str rhs) in
-    make_letderef lhs_id rhs_exp
+    make_letderef ~rhs_typ lhs_id rhs_exp
 
-  let id_assign_var lhs rhs =
+  let id_assign_var ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_exp = var_of_str rhs in
-    make_letderef lhs_id rhs_exp
+    make_letderef ~rhs_typ lhs_id rhs_exp
+
+  let var_assign_exp ~rhs_typ lhs rhs_exp =
+    let lhs_exp = var_of_str lhs in
+    make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
   let var_assign_int lhs rhs =
-    let lhs_exp = var_of_str lhs in
     let rhs_exp = Sil.exp_int (Sil.Int.of_int rhs) in
-    make_set ~lhs_exp ~rhs_exp
+    let rhs_typ = Sil.Tint Sil.IInt in
+    var_assign_exp ~rhs_typ lhs rhs_exp
 
-  let var_assign_id lhs rhs =
+  let var_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_exp = var_of_str lhs in
     let rhs_exp = Sil.Var (ident_of_str rhs) in
-    make_set ~lhs_exp ~rhs_exp
+    make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
-  let var_assign_var lhs rhs =
+  let var_assign_var ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_exp = var_of_str lhs in
     let rhs_exp = var_of_str rhs in
-    make_set ~lhs_exp ~rhs_exp
+    make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
 end
 

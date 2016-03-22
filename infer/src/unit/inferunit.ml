@@ -12,9 +12,10 @@
 let () =
   let open OUnit2 in
   let tests = [
-    SchedulerTests.tests;
     AbstractInterpreterTests.tests;
+    AddressTakenTests.tests;
     CopyPropagationTests.tests;
+    SchedulerTests.tests;
   ] in
   let test_suite = "all" >::: tests in
   OUnit2.run_test_tt_main test_suite

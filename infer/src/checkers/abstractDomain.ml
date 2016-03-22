@@ -53,3 +53,17 @@ module BottomLiftedAbstractDomain (A : AbstractDomain) : AbstractDomain = struct
     | NonBottom astate -> A.pp fmt astate
 
 end
+
+(* lift a set to a domain. the elements of the set should be drawn from a *finite* collection of
+   possible values, since the widening operator here is just union. *)
+module FiniteSetDomain (S : PrettyPrintable.PPSet) = struct
+  include S
+  type astate = t
+
+  let initial = empty
+  let is_bottom _ = false
+  let (<=) ~lhs ~rhs = subset lhs rhs
+  let join = union
+  let widen ~prev ~next ~num_iters:_ = union prev next
+
+end
