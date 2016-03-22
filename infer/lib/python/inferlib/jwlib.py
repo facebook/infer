@@ -259,7 +259,8 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
 
         if (self.args.android_harness or
             self.args.analyzer in [config.ANALYZER_CHECKERS,
-                                   config.ANALYZER_ERADICATE]):
+                                   config.ANALYZER_ERADICATE,
+                                   config.ANALYZER_CAPTURE]):
                 os.environ['INFER_CREATE_CALLEE_PDESC'] = 'Y'
 
         return analyze.run_command(
