@@ -868,7 +868,11 @@ module Arg = struct
   let parse env_var spec anon usage =
     let env_args = env_to_argv (try Unix.getenv env_var with Not_found -> "") in
     let env_cl_args = prepend_to_argv env_args in
-    Arg.parse_argv (Array.of_list env_cl_args) spec anon usage
+    try
+      Arg.parse_argv (Array.of_list env_cl_args) spec anon usage
+    with
+    | Bad usage -> Pervasives.prerr_string usage; exit 2;
+    | Help usage -> Pervasives.print_string usage; exit 0;
 
 end
 
