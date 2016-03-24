@@ -24,6 +24,10 @@
 
 @property(nonatomic, strong) id OneDelegateFile;
 
+@property(nonatomic, strong) id OneDelegateQueue;
+
+@property(nonatomic, strong) id OneQueueInTheMiddleDelegate;
+
 @end
 
 @implementation A {

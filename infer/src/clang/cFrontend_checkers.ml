@@ -29,7 +29,7 @@ type warning_desc = {
 
 (* Helper functions *)
 
-let property_name_contains_word pname word =
+let name_contains_word pname word =
   let rexp = Str.regexp_string_case_fold word in
   try
     Str.search_forward rexp pname.Clang_ast_t.ni_name 0 >= 0
@@ -87,7 +87,8 @@ let dec_body_eventually atomic_pred param dec =
 
 (* Strong Delegate Warning: a property with name delegate should not be declared strong *)
 let strong_delegate_warning decl_info pname obj_c_property_decl_info =
-  let condition = property_name_contains_word pname "delegate"
+  let condition = (name_contains_word pname "delegate")
+                  && not (name_contains_word pname "queue")
                   && ObjcProperty_decl.is_strong_property obj_c_property_decl_info in
   if condition then
     Some { name = "STRONG_DELEGATE_WARNING";
