@@ -70,3 +70,15 @@ int constructor_nodes() {
   Person* p = new Person(getValue(0) ? getValue(1) : 1 + z);
   return 1 / (p->x - 7);
 }
+
+int int_array() {
+  int* x2 = new int[getValue(5) ? getValue(5) : 3];
+  x2[0] = 1;
+  x2[1] = 2;
+  return 1 / ((x2[0] + x2[1]) - 3);
+}
+
+int int_array_init() {
+  int* arr = new int[100]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  return 1 / ((arr[0] + arr[1] + arr[2] + arr[3] + arr[4]) - 15);
+}

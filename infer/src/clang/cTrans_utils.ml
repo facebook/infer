@@ -288,7 +288,7 @@ struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs context sil_loc function_type fname =
+let create_alloc_instrs context sil_loc function_type fname size_exp_opt =
   let function_type, function_type_np =
     match function_type with
     | Sil.Tptr (styp, Sil.Pk_pointer)
@@ -298,7 +298,10 @@ let create_alloc_instrs context sil_loc function_type fname =
         function_type, styp
     | _ -> Sil.Tptr (function_type, Sil.Pk_pointer), function_type in
   let function_type_np = CTypes.expand_structured_type context.CContext.tenv function_type_np in
-  let sizeof_exp = Sil.Sizeof (function_type_np, Sil.Subtype.exact) in
+  let sizeof_exp_ = Sil.Sizeof (function_type_np, Sil.Subtype.exact) in
+  let sizeof_exp = match size_exp_opt with
+    | Some exp -> Sil.BinOp (Sil.Mult, sizeof_exp_, exp)
+    | None -> sizeof_exp_ in
   let exp = (sizeof_exp, Sil.Tint Sil.IULong) in
   let ret_id = Ident.create_fresh Ident.knormal in
   let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
@@ -309,7 +312,8 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc =
       SymExec.ModelBuiltins.__objc_alloc_no_fail
     else
       SymExec.ModelBuiltins.__objc_alloc in
-  let (function_type, ret_id, stmt_call, exp) = create_alloc_instrs trans_state.context loc function_type fname in
+  let (function_type, ret_id, stmt_call, exp) =
+    create_alloc_instrs trans_state.context loc function_type fname None in
   let res_trans_tmp = { empty_res_trans with ids =[ret_id]; instrs =[stmt_call]} in
   let res_trans =
     let nname = "Call alloc" in
@@ -319,7 +323,7 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc =
 let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let fname = SymExec.ModelBuiltins.__objc_alloc_no_fail in
   let (alloc_ret_type, alloc_ret_id, alloc_stmt_call, _) =
-    create_alloc_instrs trans_state.context loc function_type fname in
+    create_alloc_instrs trans_state.context loc function_type fname None in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
   let call_flags = { Sil.cf_default with Sil.cf_virtual = is_instance; } in
@@ -348,10 +352,13 @@ let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selecto
     objc_new_trans trans_state loc stmt_info class_name function_type
   else assert false
 
-let cpp_new_trans trans_state sil_loc function_type =
-  let fname = SymExec.ModelBuiltins.__new in
+let cpp_new_trans trans_state sil_loc function_type size_exp_opt =
+  let fname =
+    match size_exp_opt with
+    | Some _ -> SymExec.ModelBuiltins.__new_array
+    | None -> SymExec.ModelBuiltins.__new in
   let (function_type, ret_id, stmt_call, exp) =
-    create_alloc_instrs trans_state.context sil_loc function_type fname in
+    create_alloc_instrs trans_state.context sil_loc function_type fname size_exp_opt  in
   { empty_res_trans with ids = [ret_id]; instrs = [stmt_call]; exps = [(exp, function_type)] }
 
 let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =

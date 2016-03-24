@@ -1106,7 +1106,8 @@ let check_junk ?original_prop pname tenv prop =
               let ml_bucket_opt =
                 match resource with
                 | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak hpred
-                | Sil.Rmemory Sil.Mnew when !Config.curr_language = Config.C_CPP ->
+                | Sil.Rmemory Sil.Mnew | Sil.Rmemory Sil.Mnew_array
+                  when !Config.curr_language = Config.C_CPP ->
                     Mleak_buckets.should_raise_cpp_leak ()
                 | _ -> None in
               let exn_retain_cycle cycle =
@@ -1133,7 +1134,8 @@ let check_junk ?original_prop pname tenv prop =
                        (cycle_has_weak_or_unretained_or_assign_field cycle) in
                      ignore_cycle, exn_retain_cycle cycle
                  | Some _, Sil.Rmemory Sil.Mobjc
-                 | Some _, Sil.Rmemory Sil.Mnew when !Config.curr_language = Config.C_CPP ->
+                 | Some _, Sil.Rmemory Sil.Mnew
+                 | Some _, Sil.Rmemory Sil.Mnew_array when !Config.curr_language = Config.C_CPP ->
                      ml_bucket_opt = None, exn_leak
                  | Some _, Sil.Rmemory _ -> !Config.curr_language = Config.Java, exn_leak
                  | Some _, Sil.Rignore -> true, exn_leak

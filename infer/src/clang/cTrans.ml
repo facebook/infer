@@ -1531,6 +1531,7 @@ struct
   and initListExpr_trans trans_state stmt_info expr_info stmts =
     let context = trans_state.context in
     let tenv = context.tenv in
+    let is_array typ = match typ with | Sil.Tarray _ -> true | _ -> false in
     let (var_exp, typ) =
       match trans_state.var_exp_typ with
       | Some var_exp_typ -> var_exp_typ
@@ -1550,24 +1551,32 @@ struct
     if IList.length rh_exps == 0 then
       let exp = Sil.zero_value_of_numerical_type var_type in
       { empty_res_trans with root_nodes = trans_state.succ_nodes; exps = [(exp, typ)]; }
-    else if IList.length rh_exps != IList.length lh then
-      (* If the right hand expressions are not as many as the left hand expressions something's wrong *)
-      { empty_res_trans with root_nodes = trans_state.succ_nodes }
     else
-      (* Creating new instructions by assigning right hand side to left hand side expressions *)
-      let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Set (lh_exp, lh_t, rh_exp, sil_loc) in
-      let assign_instrs = IList.map2 assign_instr lh rh_exps in
-      let initlist_expr_res =
-        { empty_res_trans with
-          exps = [(var_exp, var_type)];
-          initd_exps = [var_exp];
-          instrs = assign_instrs;
-        } in
-      let all_res_trans = res_trans_subexpr_list @ [initlist_expr_res] in
-      let nname = "InitListExp" in
-      let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-          nname stmt_info all_res_trans in
-      { res_trans_to_parent with exps = initlist_expr_res.exps }
+      (* For arrays, the size in the type may be an overapproximation of the number *)
+      (* of literals the array is initialized with *)
+      let lh =
+        if is_array var_type && IList.length lh > IList.length rh_exps then
+          let i = IList.length lh - IList.length rh_exps in
+          IList.drop_last i lh
+        else lh in
+      if IList.length rh_exps == IList.length lh then
+        (* Creating new instructions by assigning right hand side to left hand side expressions *)
+        let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Set (lh_exp, lh_t, rh_exp, sil_loc) in
+        let assign_instrs = IList.map2 assign_instr lh rh_exps in
+        let initlist_expr_res =
+          { empty_res_trans with
+            exps = [(var_exp, var_type)];
+            initd_exps = [var_exp];
+            instrs = assign_instrs;
+          } in
+        let all_res_trans = res_trans_subexpr_list @ [initlist_expr_res] in
+        let nname = "InitListExp" in
+        let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+            nname stmt_info all_res_trans in
+        { res_trans_to_parent with exps = initlist_expr_res.exps }
+      else  (* If the right hand expressions are not as many as the left hand expressions *)
+        (* something's wrong *)
+        { empty_res_trans with root_nodes = trans_state.succ_nodes }
 
   and init_expr_trans trans_state var_exp_typ var_stmt_info init_expr_opt =
     match init_expr_opt with
@@ -1929,24 +1938,32 @@ struct
     let typ = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-    let res_trans_new = cpp_new_trans trans_state_pri sil_loc typ in
-    if cxx_new_expr_info.Clang_ast_t.xnei_is_array then
-      assert false (* TODO *)
-    else
-      let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
-      let trans_state_init = { trans_state_pri with succ_nodes = []; } in
-      let var_exp_typ = match res_trans_new.exps with [exp] -> exp | _ -> assert false in
-      (* Need a new stmt_info for the translation of the initializer, so that it can create nodes *)
-      (* if it needs to, with the same stmt_info it doesn't work. *)
-      let init_stmt_info = { stmt_info with
-                             Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
-      let res_trans_init =
-        init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt in
-      let all_res_trans = [res_trans_new; res_trans_init] in
-      let nname = "CXXNewExpr" in
-      let result_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-          nname stmt_info all_res_trans in
-      { result_trans_to_parent with exps = res_trans_new.exps }
+    let size_exp_opt, res_trans_size =
+      if cxx_new_expr_info.Clang_ast_t.xnei_is_array then
+        match Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_array_size_expr with
+        | Some stmt ->
+            let trans_state_size = { trans_state_pri with succ_nodes = []; } in
+            let res_trans_size = instruction trans_state_size stmt in
+            (match res_trans_size.exps with
+             | [(exp, _)] -> Some exp, res_trans_size
+             | _ -> None, empty_res_trans)
+        | None -> Some (Sil.Const (Sil.Cint (Sil.Int.minus_one))), empty_res_trans
+      else None, empty_res_trans in
+    let res_trans_new = cpp_new_trans trans_state_pri sil_loc typ size_exp_opt in
+    let stmt_opt = Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr in
+    let trans_state_init = { trans_state_pri with succ_nodes = []; } in
+    let var_exp_typ = match res_trans_new.exps with [exp] -> exp | _ -> assert false in
+    (* Need a new stmt_info for the translation of the initializer, so that it can create nodes *)
+    (* if it needs to, with the same stmt_info it doesn't work. *)
+    let init_stmt_info = { stmt_info with
+                           Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+    let res_trans_init =
+      init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt in
+    let all_res_trans = [res_trans_size; res_trans_new; res_trans_init] in
+    let nname = "CXXNewExpr" in
+    let result_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+        nname stmt_info all_res_trans in
+    { result_trans_to_parent with exps = res_trans_new.exps }
   (* TODOs 7912220 - no usable information in json as of right now *)
   (* 1. Handle __new_array *)
 

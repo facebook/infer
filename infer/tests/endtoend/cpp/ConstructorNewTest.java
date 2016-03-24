@@ -56,7 +56,9 @@ public class ConstructorNewTest {
         "int_init_empty_list",
         "int_init_empty_list_new",
         "int_init_nodes",
-        "constructor_nodes"
+        "constructor_nodes",
+        "int_array",
+        "int_array_init"
     };
     assertThat(
         "Results should contain the expected divide by zero",
