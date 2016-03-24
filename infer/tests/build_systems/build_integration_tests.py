@@ -6,6 +6,16 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+# example usage:
+# # run all the tests
+# ./build_integration_test.py
+# # run only the ant and gradle tests
+# ./build_integration_test.py -- ant gradle
+# # run no test
+# ./build_integration_test.py --
+# # run only the buck tests and record the output
+# INFER_RECORD_INTEGRATION_TESTS=1 ./build_integration_test.py -- buck
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -42,6 +52,11 @@ REPORT_FIELDS = [
 ]
 
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
+
+ALL_TESTS = ['ant', 'buck', 'gradle']
+
+to_test = ALL_TESTS
+
 
 def should_record_tests():
     return RECORD_ENV in os.environ and os.environ[RECORD_ENV] == '1'
@@ -168,21 +183,26 @@ def do_test(errors, expected_errors_filename):
 class BuildIntegrationTest(unittest.TestCase):
 
     def test_ant_integration(self):
-        if is_tool_available(['ant', '-version']):
-            print('\nRunning Gradle integration test')
-            root = os.path.join(SCRIPT_DIR, os.pardir)
-            errors = run_analysis(
-                root,
-                ['ant', 'clean'],
-                ['ant', 'compile'],
-                INFER_EXECUTABLE)
-            original = os.path.join(EXPECTED_OUTPUTS_DIR, 'ant_report.json')
-            do_test(errors, original)
-        else:
+        if not ('ant' in to_test and is_tool_available(['ant', '-version'])):
             print('\nSkipping Ant integration test')
-            assert True
+            return
+
+        print('\nRunning Ant integration test')
+        root = os.path.join(SCRIPT_DIR, os.pardir)
+        errors = run_analysis(
+            root,
+            ['ant', 'clean'],
+            ['ant', 'compile'],
+            INFER_EXECUTABLE)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'ant_report.json')
+        do_test(errors, original)
+
 
     def test_gradle_integration(self):
+        if 'gradle' not in to_test:
+            print('\nSkipping Gradle integration test')
+            return
+
         print('\nRunning Gradle integration test using mock gradle')
         root = os.path.join(ROOT_DIR, 'examples', 'java_hello')
         env = os.environ
@@ -200,19 +220,28 @@ class BuildIntegrationTest(unittest.TestCase):
         do_test(errors, original)
 
     def test_buck_integration(self):
-        if is_tool_available(['buck', '--version']):
-            print('\nRunning Buck integration test')
-            errors = run_analysis(
-                ROOT_DIR,
-                ['buck', 'clean'],
-                ['buck', 'build', 'infer'],
-                INFER_EXECUTABLE)
-            original = os.path.join(EXPECTED_OUTPUTS_DIR, 'buck_report.json')
-            do_test(errors, original)
-        else:
+        if not ('buck' in to_test and
+                is_tool_available(['buck', '--version'])):
             print('\nSkipping Buck integration test')
-            assert True
+            return
+
+        print('\nRunning Buck integration test')
+        errors = run_analysis(
+            ROOT_DIR,
+            ['buck', 'clean'],
+            ['buck', 'build', 'infer'],
+            INFER_EXECUTABLE)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'buck_report.json')
+        do_test(errors, original)
 
 
 if __name__ == '__main__':
+    # hackish capturing of the arguments after '--'
+    try:
+        i = sys.argv.index('--')
+        to_test = sys.argv[i + 1:]
+        sys.argv = sys.argv[:i]
+    except ValueError:
+        pass
+
     unittest.main()  # run all the tests
