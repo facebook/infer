@@ -51,9 +51,10 @@ REPORT_FIELDS = [
     issues.JSON_INDEX_TYPE,
 ]
 
+CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
-ALL_TESTS = ['ant', 'buck', 'gradle']
+ALL_TESTS = ['ant', 'buck', 'gradle', 'make', 'locale']
 
 to_test = ALL_TESTS
 
@@ -94,10 +95,10 @@ def save_report(reports, filename):
                             separators=(',', ': '), sort_keys=True)
 
 
-def run_analysis(root, clean_cmd, build_cmd, analyzer, env=None):
+def run_analysis(root, clean_cmd, build_cmd, analyzer, env=None, n=1):
     os.chdir(root)
 
-    subprocess.check_call(clean_cmd)
+    subprocess.check_call(clean_cmd, env=env)
 
     temp_out_dir = tempfile.mkdtemp(suffix='_out', prefix='infer_')
     infer_cmd = ['infer', '-a', analyzer, '-o', temp_out_dir, '--'] + build_cmd
@@ -106,7 +107,8 @@ def run_analysis(root, clean_cmd, build_cmd, analyzer, env=None):
             mode='w',
             suffix='.out',
             prefix='analysis_') as analysis_output:
-        subprocess.check_call(infer_cmd, stdout=analysis_output, env=env)
+        for i in xrange(n):
+            subprocess.check_call(infer_cmd, stdout=analysis_output, env=env)
 
     json_path = os.path.join(temp_out_dir, REPORT_JSON)
     found_errors = utils.load_json_from_path(json_path)
@@ -232,6 +234,42 @@ class BuildIntegrationTest(unittest.TestCase):
             ['buck', 'build', 'infer'],
             INFER_EXECUTABLE)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'buck_report.json')
+        do_test(errors, original)
+
+    def test_make_integration(self):
+        if 'make' not in to_test:
+            print('\nSkipping make integration test')
+            return
+
+        print('\nRunning make integration test')
+        root = os.path.join(CODETOANALYZE_DIR, 'make')
+        errors = run_analysis(
+            root,
+            ['make', 'clean'],
+            ['make', 'all'],
+            INFER_EXECUTABLE)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'make_report.json')
+        do_test(errors, original)
+
+    def test_wonky_locale_integration(self):
+        if 'locale' not in to_test:
+            print('\nSkipping wonky locale integration test')
+            return
+
+        print('\nRunning wonky locale integration test')
+        root = os.path.join(CODETOANALYZE_DIR, 'make')
+        env = os.environ
+        env['LC_ALL'] = 'C'
+        # check that we are able to remove the previous results by
+        # running the analysis twice
+        errors = run_analysis(
+            root,
+            ['true'],
+            ['clang', '-c', 'utf8_in_function_names.c'],
+            INFER_EXECUTABLE,
+            env=env,
+            n=2)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'locale_report.json')
         do_test(errors, original)
 
 

@@ -449,8 +449,8 @@ let to_simplified_string ?(withclass = false) p =
       "block"
 
 (** Convert a proc name to a filename *)
-let to_filename (pn : proc_name) =
-  string_append_crc_cutoff (to_unique_id pn)
+let to_filename proc_name =
+  Escape.escape_filename @@ string_append_crc_cutoff @@ to_unique_id proc_name
 
 (** Pretty print a proc name *)
 let pp f pn =

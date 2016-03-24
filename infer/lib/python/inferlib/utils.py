@@ -87,8 +87,9 @@ def get_cmd_in_bin_dir(binary_name):
     return os.path.join(config.BIN_DIRECTORY, binary_name)
 
 
-def load_json_from_path(path):
-    with codecs.open(path, 'r', encoding=config.LOCALE) as file_in:
+def load_json_from_path(path, errors='replace'):
+    with codecs.open(path, 'r',
+                     encoding=config.LOCALE, errors=errors) as file_in:
         return json.load(file_in, encoding=config.LOCALE)
 
 

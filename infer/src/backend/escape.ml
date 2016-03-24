@@ -56,3 +56,11 @@ let escape_path s =
         then Some "_"
         else None in
   escape_map map s
+
+(* Python 2 sucks at utf8 so do not write unicode file names to disk
+   as Python may need to see them *)
+let escape_filename s =
+  let map = function
+    | c when Char.code c > 127 -> Some "?" (* non-ascii character: escape *)
+    | _ -> None in
+  escape_map map s

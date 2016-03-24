@@ -24,3 +24,6 @@ val escape_path : string -> string
 
 (** escape a string to be used in an xml file *)
 val escape_xml : string -> string
+
+(** escape a string to be used as a file name *)
+val escape_filename : string -> string
