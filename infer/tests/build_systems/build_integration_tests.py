@@ -54,7 +54,7 @@ REPORT_FIELDS = [
 CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
-ALL_TESTS = ['ant', 'buck', 'gradle', 'make', 'locale']
+ALL_TESTS = ['ant', 'buck', 'gradle', 'make', 'locale', 'waf']
 
 to_test = ALL_TESTS
 
@@ -270,6 +270,21 @@ class BuildIntegrationTest(unittest.TestCase):
             env=env,
             n=2)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'locale_report.json')
+        do_test(errors, original)
+
+    def test_waf_integration(self):
+        if 'waf' not in to_test:
+            print('\nSkipping waf integration test')
+            return
+
+        print('\nRunning waf integration test')
+        root = os.path.join(CODETOANALYZE_DIR, 'make')
+        errors = run_analysis(
+            root,
+            ['make', 'clean'],
+            ['./waf', 'build'],
+            INFER_EXECUTABLE)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'waf_report.json')
         do_test(errors, original)
 
 

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# mock waf implementation
+
+# waf likes to hardcode paths to compilers during ./waf configure, so
+# you should run `infer -- ./waf configure` to capture compiler calls
+my_cc=$(which gcc)
+
+echo "compiling"
+# compile everything with the hardcoded compiler
+make CC="$my_cc"

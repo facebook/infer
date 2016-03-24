@@ -25,6 +25,9 @@ infer -- make all
 infer -- clang -c srcfile.m
 infer -- gcc -c srcfile.c'''
 
+ALIASED_COMMANDS = ['clang', 'clang++', 'cc', 'gcc', 'g++']
+BUILD_COMMANDS = ['make', 'waf']
+SUPPORTED_COMMANDS = ALIASED_COMMANDS + BUILD_COMMANDS
 
 def gen_instance(*args):
     return MakeCapture(*args)
@@ -37,7 +40,12 @@ create_argparser = \
 class MakeCapture:
     def __init__(self, args, cmd):
         self.args = args
-        self.cmd = [os.path.basename(cmd[0])] + cmd[1:]
+        self.cmd = cmd
+        command_name = os.path.basename(cmd[0])
+        if command_name in ALIASED_COMMANDS:
+            # remove absolute paths for these commands as we want to
+            # substitue our own wrappers instead using a PATH trick
+            cmd[0] = command_name
 
     def get_envvars(self):
         env_vars = dict(os.environ)

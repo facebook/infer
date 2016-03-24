@@ -15,7 +15,7 @@ import sys
 
 import inferlib
 from inferlib import analyze, config, utils
-
+from inferlib.capture import make
 
 CAPTURE_PACKAGE = 'capture'
 
@@ -32,7 +32,7 @@ MODULE_TO_COMMAND = {
     'buck': ['buck'],
     'gradle': ['gradle', 'gradlew'],
     'javac': ['javac'],
-    'make': ['make', 'clang', 'clang++', 'cc', 'gcc', 'g++'],
+    'make': make.SUPPORTED_COMMANDS,
     'xcodebuild': ['xcodebuild'],
     'mvn': ['mvn']
 }
