@@ -1964,13 +1964,14 @@ struct
     let result_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
         nname stmt_info all_res_trans in
     { result_trans_to_parent with exps = res_trans_new.exps }
-  (* TODOs 7912220 - no usable information in json as of right now *)
-  (* 1. Handle __new_array *)
 
   and cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info =
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let fname = SymExec.ModelBuiltins.__delete in
+    let is_array = delete_expr_info.Clang_ast_t.xdei_is_array in
+    let fname =
+      if is_array then SymExec.ModelBuiltins.__delete_array
+      else SymExec.ModelBuiltins.__delete in
     let param = match stmt_list with [p] -> p | _ -> assert false in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
