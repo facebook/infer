@@ -23,14 +23,15 @@ let read_dirs_to_analyze () =
     | None ->
         None
     | Some fname ->
-        read_file fname in
+        read_file (DB.source_file_to_abs_path (DB.source_file_from_string fname)) in
   match lines_opt with
   | None ->
       None
   | Some lines ->
       let res = ref StringSet.empty in
       let do_line line =
-        let source_dir = DB.source_dir_from_source_file (DB.source_file_from_string line) in
+        let rel_file = DB.source_file_to_rel_path (DB.source_file_from_string line) in
+        let source_dir = DB.source_dir_from_source_file (DB.source_file_from_string rel_file) in
         res := StringSet.add (DB.source_dir_to_string source_dir) !res in
       IList.iter do_line lines;
       Some !res
