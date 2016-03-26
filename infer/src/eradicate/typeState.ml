@@ -23,7 +23,8 @@ type 'a ext =
   {
     empty : 'a; (** empty extension *)
     check_instr : (** check the extension for an instruction *)
-      get_proc_desc -> Procname.t -> Cfg.Procdesc.t -> 'a -> Sil.instr -> parameters -> 'a;
+      Sil.tenv -> get_proc_desc -> Procname.t ->
+      Cfg.Procdesc.t -> 'a -> Sil.instr -> parameters -> 'a;
     join : 'a -> 'a -> 'a; (** join two extensions *)
     pp : Format.formatter -> 'a -> unit (** pretty print an extension *)
   }

@@ -146,7 +146,3 @@ let translate_checks = ref false
 
 (* Generate harness for Android code *)
 let create_harness = ref false
-
-(* Create a procedure description of callees *)
-let create_callee_procdesc =
-  Config.from_env_variable "INFER_CREATE_CALLEE_PDESC"

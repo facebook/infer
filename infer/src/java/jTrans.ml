@@ -551,11 +551,8 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
                 end in
     loop cn cn in
   let cn' = resolve_method context cn ms in
-  let cfg = JContext.get_cfg context in
   let tenv = JContext.get_tenv context in
   let program = JContext.get_program context in
-  if JConfig.create_callee_procdesc then
-    ignore (get_method_procdesc program cfg tenv cn' ms method_kind);
   let cf_virtual, cf_interface = match invoke_code with
     | I_Virtual -> (true, false)
     | I_Interface -> (true, true)

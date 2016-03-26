@@ -11,7 +11,7 @@ module L = Logging
 
 
 (** Find SQL statements in string concatenations *)
-let callback_sql { Callbacks.proc_desc; proc_name } =
+let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
   let verbose = false in
 
   (* Case insensitive SQL statement patterns *)
@@ -62,7 +62,7 @@ let callback_sql { Callbacks.proc_desc; proc_name } =
     | _ -> () in
 
   try
-    let const_map = ConstantPropagation.build_const_map proc_desc in
+    let const_map = ConstantPropagation.build_const_map tenv proc_desc in
     if verbose then L.stdout "Analyzing %a...\n@." Procname.pp proc_name;
     Cfg.Procdesc.iter_instrs (do_instr const_map) proc_desc
   with _ -> ()

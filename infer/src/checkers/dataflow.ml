@@ -21,7 +21,7 @@ module type DFStateType = sig
   val join : t -> t -> t (** Join two states (the old one is the first parameter). *)
 
   (** Perform a state transition on a node. *)
-  val do_node : Cfg.Node.t -> t -> (t list) * (t list)
+  val do_node : Sil.tenv -> Cfg.Node.t -> t -> (t list) * (t list)
 
   val proc_throws : Procname.t -> throws (** Can proc throw an exception? *)
 end
@@ -35,7 +35,7 @@ module type DF = sig
     | Transition of state * state list * state list
 
   val join : state list -> state -> state
-  val run : Cfg.Procdesc.t -> state -> (Cfg.Node.t -> transition)
+  val run : Sil.tenv -> Cfg.Procdesc.t -> state -> (Cfg.Node.t -> transition)
 end
 
 (** Determine if the node can throw an exception. *)
@@ -126,7 +126,7 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
     H.replace t.exn_states node states_exn
 
   (** Run the worklist-based dataflow algorithm. *)
-  let run proc_desc state =
+  let run tenv proc_desc state =
 
     let t =
       let start_node = Cfg.Procdesc.get_start_node proc_desc in
@@ -148,7 +148,7 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
         t.worklist <- S.remove node t.worklist;
         try
           let state = H.find t.pre_states node in
-          let states_succ, states_exn = St.do_node node state in
+          let states_succ, states_exn = St.do_node tenv node state in
           propagate t node states_succ states_exn (node_throws node St.proc_throws)
         with Not_found -> ()
       done in
@@ -164,18 +164,18 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
 end (* MakeDF *)
 
 (** Example dataflow callback: compute the the distance from a node to the start node. *)
-let callback_test_dataflow { Callbacks.proc_desc } =
+let callback_test_dataflow { Callbacks.proc_desc; tenv } =
   let verbose = false in
   let module DFCount = MakeDF(struct
       type t = int
       let equal = int_equal
       let join n m = if n = 0 then m else n
-      let do_node n s =
+      let do_node _ n s =
         if verbose then L.stdout "visiting node %a with state %d@." Cfg.Node.pp n s;
         [s + 1], [s + 1]
       let proc_throws _ = DoesNotThrow
     end) in
-  let transitions = DFCount.run proc_desc 0 in
+  let transitions = DFCount.run tenv proc_desc 0 in
   let do_node node =
     match transitions node with
     | DFCount.Transition _ -> ()

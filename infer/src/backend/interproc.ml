@@ -478,7 +478,7 @@ let do_symbolic_execution handle_exn tenv
   let pdesc = Cfg.Node.get_proc_desc node in
   State.mark_execution_start node;
   (* build the const map lazily *)
-  State.set_const_map (ConstantPropagation.build_const_map pdesc);
+  State.set_const_map (ConstantPropagation.build_const_map tenv pdesc);
   check_assignement_guard node;
   let instrs = Cfg.Node.get_instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)

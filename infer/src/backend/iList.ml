@@ -100,6 +100,15 @@ let append l1 l2 =
 let map f l =
   rev (rev_map f l)
 
+(** tail-recursive variant of List.mapi *)
+let mapi f l =
+  let i = ref 0 in
+  rev (rev_map
+         (fun x ->
+            incr i;
+            f (!i - 1) x)
+         l)
+
 (** Remove consecutive equal elements from a list (according to the given comparison functions) *)
 let remove_duplicates compare l =
   let rec remove compare acc = function

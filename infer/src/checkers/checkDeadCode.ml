@@ -50,7 +50,7 @@ module State = struct
     Cfg.NodeSet.cardinal t.visited
 end
 
-let do_node node (s : State.t) : (State.t list) * (State.t list) =
+let do_node _ node (s : State.t) : (State.t list) * (State.t list) =
   let s' = State.add_visited node s in
   if verbose then L.stderr "  N:%a (#visited: %a)@."
       Cfg.Node.pp node
@@ -87,7 +87,7 @@ let check_final_state proc_name proc_desc final_s =
     end
 
 (** Simple check for dead code. *)
-let callback_check_dead_code { Callbacks.proc_desc; proc_name } =
+let callback_check_dead_code { Callbacks.proc_desc; proc_name; tenv } =
 
   let module DFDead = MakeDF(struct
       type t = State.t
@@ -100,7 +100,7 @@ let callback_check_dead_code { Callbacks.proc_desc; proc_name } =
   let do_check () =
     begin
       if verbose then L.stderr "@.--@.PROC: %a@." Procname.pp proc_name;
-      let transitions = DFDead.run proc_desc State.initial in
+      let transitions = DFDead.run tenv proc_desc State.initial in
       let exit_node = Cfg.Procdesc.get_exit_node proc_desc in
       match transitions exit_node with
       | DFDead.Transition (pre_final_s, _, _) ->

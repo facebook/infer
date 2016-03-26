@@ -236,7 +236,8 @@ let rec typecheck_expr
   | _ -> tr_default
 
 (** Typecheck an instruction. *)
-let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc curr_pname
+let typecheck_instr
+    tenv ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc curr_pname
     curr_pdesc find_canonical_duplicate annotated_signature instr_ref linereader typestate instr =
   (* let print_current_state () = *)
   (*   L.stdout "Current Typestate in node %a@\n%a@." *)
@@ -558,15 +559,42 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
         typestate
   | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, _, _) when SymExec.function_is_builtin pn ->
       typestate (* skip othe builtins *)
-  | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), _etl, loc, cflags)
-    when Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname <> None ->
+  | Sil.Call
+      (ret_ids,
+       Sil.Const (Sil.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+       etl_,
+       loc,
+       cflags)
+    ->
       Ondemand.analyze_proc_name ~propagate_exceptions:true curr_pdesc callee_pname;
       let callee_attributes =
         match Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname with
-        | Some proc_attributes -> proc_attributes
-        | None -> assert false in
+        | Some proc_attributes ->
+            proc_attributes
+        | None ->
+            let formals =
+              IList.mapi
+                (fun i (_, typ) ->
+                   let arg =
+                     if i = 0 &&
+                        not (Procname.java_is_static callee_pname)
+                     then "this"
+                     else Printf.sprintf "arg%d" i in
+                   (Mangled.from_string arg, typ))
+                etl_ in
+            let ret_typ_str = Procname.java_get_return_type callee_pname_java in
+            let ret_type =
+              match SymExec.lookup_java_typ_from_string tenv ret_typ_str with
+              | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
+              | typ -> typ in
+            let proc_attributes =
+              { (ProcAttributes.default callee_pname Config.Java) with
+                ProcAttributes.formals;
+                ret_type;
+              } in
+            proc_attributes in
 
-      let etl = drop_unchecked_params calls_this callee_attributes _etl in
+      let etl = drop_unchecked_params calls_this callee_attributes etl_ in
       let call_params, typestate1 =
         let handle_et (e1, t1) (etl1, typestate1) =
           typecheck_expr_for_errors typestate e1 loc;
@@ -798,7 +826,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
                 let extension = TypeState.get_extension typestate1 in
                 let extension' =
                   ext.TypeState.check_instr
-                    get_proc_desc curr_pname curr_pdesc extension instr etl' in
+                    tenv get_proc_desc curr_pname curr_pdesc extension instr etl' in
                 TypeState.set_extension typestate1 extension'
               else typestate1 in
             let has_method pn name = match pn with
@@ -1043,7 +1071,7 @@ let typecheck_instr ext calls_this checks (node: Cfg.Node.t) idenv get_proc_desc
 
 (** Typecheck the instructions in a cfg node. *)
 let typecheck_node
-    ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
+    tenv ext calls_this checks idenv get_proc_desc curr_pname curr_pdesc
     find_canonical_duplicate annotated_signature typestate node linereader =
 
   let instrs = Cfg.Node.get_instrs node in
@@ -1074,7 +1102,8 @@ let typecheck_node
     let instr_ref = (* keep unique instruction reference per-node *)
       TypeErr.InstrRef.gen instr_ref_gen in
     let instr' =
-      typecheck_instr ext calls_this checks node idenv get_proc_desc curr_pname curr_pdesc
+      typecheck_instr
+        tenv ext calls_this checks node idenv get_proc_desc curr_pname curr_pdesc
         find_canonical_duplicate annotated_signature instr_ref linereader typestate instr in
     handle_exceptions typestate instr;
     instr' in

@@ -10,6 +10,9 @@
 
 (** Symbolic Execution *)
 
+(** Lookup Java types by name. *)
+val lookup_java_typ_from_string :  Sil.tenv -> string -> Sil.typ
+
 (** print the builtin functions and exit *)
 val print_builtins : unit -> unit
 

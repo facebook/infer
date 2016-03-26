@@ -45,7 +45,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
     let proc_throws _ = Dataflow.DontKnow
 
-    let do_node node constants =
+    let do_node _ node constants =
 
       let do_instr constants instr =
         try
@@ -125,8 +125,8 @@ module ConstantFlow = Dataflow.MakeDF(struct
       [constants], [constants]
   end)
 
-let run proc_desc =
-  let transitions = ConstantFlow.run proc_desc ConstantMap.empty in
+let run tenv proc_desc =
+  let transitions = ConstantFlow.run tenv proc_desc ConstantMap.empty in
   let get_constants node =
     match transitions node with
     | ConstantFlow.Transition (_, post_states, _) -> ConstantFlow.join post_states ConstantMap.empty
@@ -136,8 +136,8 @@ let run proc_desc =
 type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
 
 (** Build a const map lazily. *)
-let build_const_map pdesc =
-  let const_map = lazy (run pdesc) in
+let build_const_map tenv pdesc =
+  let const_map = lazy (run tenv pdesc) in
   let f node exp =
     try
       let map = (Lazy.force const_map) node in
