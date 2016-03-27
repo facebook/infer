@@ -73,7 +73,7 @@ module ComplexExpressions = struct
     procname_optional_isPresent pn ||
     procname_instanceof pn ||
     procname_containsKey pn ||
-    SymExec.function_is_builtin pn
+    Builtin.is_registered pn
 
 
   exception Not_handled
@@ -557,7 +557,7 @@ let typecheck_instr
           [loc]
         )
         typestate
-  | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, _, _) when SymExec.function_is_builtin pn ->
+  | Sil.Call (_, Sil.Const (Sil.Cfun pn), _, _, _) when Builtin.is_registered pn ->
       typestate (* skip othe builtins *)
   | Sil.Call
       (ret_ids,

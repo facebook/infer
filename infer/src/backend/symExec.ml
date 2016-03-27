@@ -248,67 +248,6 @@ let update_iter iter pi sigma =
   let iter' = Prop.prop_iter_update_current_by_list iter sigma in
   IList.fold_left (Prop.prop_iter_add_atom false) iter' pi
 
-(** Module for builtin functions with their symbolic execution handler *)
-module Builtin = struct
-  type ret_typ = (Prop.normal Prop.t * Paths.Path.t) list
-
-  type builtin_args =
-    {
-      pdesc : Cfg.Procdesc.t;
-      instr : Sil.instr;
-      tenv : Sil.tenv;
-      prop_ : Prop.normal Prop.t;
-      path : Paths.Path.t;
-      ret_ids : Ident.t list;
-      args : (Sil.exp * Sil.typ) list;
-      proc_name : Procname.t;
-      loc : Location.t;
-    }
-
-  type sym_exe_builtin = builtin_args -> ret_typ
-
-  (* builtin function names for which we do symbolic execution *)
-  let builtin_functions = Procname.Hash.create 4
-
-  (* Check if the function is a builtin *)
-  let is_registered name =
-    Procname.Hash.mem builtin_functions name
-
-  (* get the symbolic execution handler associated to the builtin function name *)
-  let get_sym_exe_builtin name : sym_exe_builtin =
-    try Procname.Hash.find builtin_functions name
-    with Not_found -> assert false
-
-  (* register a builtin function name and symbolic execution handler *)
-  let register proc_name_str (sym_exe_fun: sym_exe_builtin) =
-    let proc_name = Procname.from_string_c_fun proc_name_str in
-    Procname.Hash.replace builtin_functions proc_name sym_exe_fun;
-    proc_name
-
-  (* register a builtin [Procname.t] and symbolic execution handler *)
-  let register_procname proc_name (sym_exe_fun: sym_exe_builtin) =
-    Procname.Hash.replace builtin_functions proc_name sym_exe_fun
-
-  (** print the functions registered *)
-  let pp_registered fmt () =
-    let builtin_names = ref [] in
-    Procname.Hash.iter (fun name _ -> builtin_names := name :: !builtin_names) builtin_functions;
-    builtin_names := IList.sort Procname.compare !builtin_names;
-    let pp pname = Format.fprintf fmt "%a@\n" Procname.pp pname in
-    Format.fprintf fmt "Registered builtins:@\n  @[";
-    IList.iter pp !builtin_names;
-    Format.fprintf fmt "@]@."
-
-end
-
-(** print the builtin functions and exit *)
-let print_builtins () =
-  Builtin.pp_registered Format.std_formatter ();
-  exit 0
-
-(** Check if the function is a builtin *)
-let function_is_builtin = Builtin.is_registered
-
 (** Precondition: se should not include hpara_psto
     that could mean nonempty heaps. *)
 let rec execute_nullify_se = function
@@ -1084,8 +1023,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       let n_cond, prop = exp_norm_check_arith current_pname prop__ cond in
       ret_old_path (Propset.to_proplist (prune_prop n_cond prop))
   | Sil.Call (ret_ids, Sil.Const (Sil.Cfun callee_pname), args, loc, _)
-    when function_is_builtin callee_pname ->
-      let sym_exe_builtin = Builtin.get_sym_exe_builtin callee_pname in
+    when Builtin.is_registered callee_pname ->
+      let sym_exe_builtin = Builtin.get callee_pname in
       sym_exe_builtin
         {
           pdesc = current_pdesc;

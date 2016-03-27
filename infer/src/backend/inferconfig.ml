@@ -153,7 +153,7 @@ let load_patterns json_key inferconfig =
 
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
-  not (SymExec.function_is_builtin proc_name) &&
+  not (Builtin.is_registered proc_name) &&
   Procname.get_language proc_name = language &&
   Procname.get_method proc_name = method_name
 

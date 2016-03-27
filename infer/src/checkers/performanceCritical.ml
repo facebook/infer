@@ -31,7 +31,7 @@ let is_modeled_expensive =
           Inferconfig.ModeledExpensiveMatcher.load_matcher config_file) in
   fun tenv proc_name -> match proc_name with
     | Procname.Java proc_name_java ->
-        not (SymExec.function_is_builtin proc_name) &&
+        not (Builtin.is_registered proc_name) &&
         let classname =
           Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
         (Lazy.force matcher) (AndroidFramework.is_subclass tenv classname) proc_name
@@ -123,7 +123,7 @@ let is_allocator tenv pname = match pname with
           Typename.Java.from_string (Procname.java_get_class_name pname_java) in
         AndroidFramework.is_throwable tenv class_name in
       Procname.is_constructor pname
-      && not (SymExec.function_is_builtin pname)
+      && not (Builtin.is_registered pname)
       && not (is_throwable ())
   | _ ->
       false

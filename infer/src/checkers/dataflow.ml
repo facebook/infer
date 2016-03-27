@@ -50,7 +50,7 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _)
-      when SymExec.function_is_builtin callee_pn ->
+      when Builtin.is_registered callee_pn ->
         if Procname.equal callee_pn SymExec.ModelBuiltins.__cast
         then DontKnow
         else DoesNotThrow

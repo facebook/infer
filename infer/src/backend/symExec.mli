@@ -13,12 +13,6 @@
 (** Lookup Java types by name. *)
 val lookup_java_typ_from_string :  Sil.tenv -> string -> Sil.typ
 
-(** print the builtin functions and exit *)
-val print_builtins : unit -> unit
-
-(** Check if the function is a builtin *)
-val function_is_builtin : Procname.t -> bool
-
 (** symbolic execution on the level of sets of propositions *)
 val lifted_sym_exec : (exn -> unit) -> Sil.tenv -> Cfg.Procdesc.t ->
   Paths.PathSet.t -> Cfg.Node.t -> Sil.instr list -> Paths.PathSet.t

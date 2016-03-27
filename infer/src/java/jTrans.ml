@@ -589,7 +589,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
   let callee_procname =
     let proc = Procname.from_string_c_fun (JBasics.ms_name ms) in
     if JBasics.cn_equal cn' JConfig.infer_builtins_cl &&
-       SymExec.function_is_builtin proc
+       Builtin.is_registered proc
     then proc
     else Procname.Java (JTransType.get_method_procname cn' ms method_kind) in
   let call_idl, call_instrs =

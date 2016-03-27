@@ -442,7 +442,7 @@ struct
           !CFrontend_config.language = CFrontend_config.OBJCPP) then
         SymExec.ModelBuiltins.malloc_no_fail
       else Procname.from_string_c_fun name in
-    let is_builtin = SymExec.function_is_builtin non_mangled_func_name in
+    let is_builtin = Builtin.is_registered non_mangled_func_name in
     if is_builtin then (* malloc, free, exit, scanf, ... *)
       { empty_res_trans with exps = [(Sil.Const (Sil.Cfun non_mangled_func_name), typ)] }
     else
@@ -849,7 +849,7 @@ struct
           (match callee_pname_opt with
            | Some callee_pname ->
                let open CContext in
-               if not (SymExec.function_is_builtin callee_pname) then
+               if not (Builtin.is_registered callee_pname) then
                  begin
                    Cg.add_edge context.cg procname callee_pname;
                  end

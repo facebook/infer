@@ -73,7 +73,7 @@ let arg_desc =
         "use file for the out channel"
         ;
         "-print_builtins",
-        Arg.Unit SymExec.print_builtins,
+        Arg.Unit Builtin.print_and_exit,
         None,
         "print the builtin functions and exit"
         ;
