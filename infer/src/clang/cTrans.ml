@@ -173,7 +173,7 @@ struct
       ids := id :: !ids;
       insts := Sil.Letderef (id, block, typ, loc) :: !insts;
       (Sil.Var id, typ) in
-    let make_arg typ (id, _, _) = (Sil.Var id, typ) in
+    let make_arg typ (id, _, _) = (id, typ) in
     let rec f es =
       match es with
       | [] -> []
@@ -1919,7 +1919,7 @@ struct
         F.function_decl context.tenv context.cfg context.cg decl (Some block_data);
         Cfg.set_procname_priority context.cfg block_pname;
         let captured_vars =
-          IList.map2 (fun id (pvar, typ) -> (id, pvar, typ)) ids captured_pvars in
+          IList.map2 (fun id (pvar, typ) -> (Sil.Var id, pvar, typ)) ids captured_pvars in
         let closure = Sil.Cclosure { name=block_pname; captured_vars } in
         let block_name = Procname.to_string block_pname in
         let static_vars = CContext.static_vars_for_block context block_pname in

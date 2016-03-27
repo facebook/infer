@@ -647,7 +647,7 @@ and attribute_category =
 
 and closure = {
   name : Procname.t;
-  captured_vars : (Ident.t * pvar * typ) list;
+  captured_vars : (exp * pvar * typ) list;
 }
 
 (** Constants *)
@@ -1334,10 +1334,10 @@ let rec const_compare (c1 : const) (c2 : const) : int =
   | Cptr_to_fld _, _ -> -1
   | _, Cptr_to_fld _ -> 1
   | Cclosure { name=n1; captured_vars=c1; }, Cclosure { name=n2; captured_vars=c2; } ->
-      let captured_var_compare acc (id1, pvar1, typ1) (id2, pvar2, typ2) =
+      let captured_var_compare acc (e1, pvar1, typ1) (e2, pvar2, typ2) =
         if acc <> 0 then acc
         else
-          let n = Ident.compare id1 id2 in
+          let n = exp_compare e1 e2 in
           if n <> 0 then n
           else
             let n = pvar_compare pvar1 pvar2 in
@@ -2016,7 +2016,7 @@ and pp_const pe f = function
   | Cclass c -> F.fprintf f "%a" Ident.pp_name c
   | Cptr_to_fld (fn, _) -> F.fprintf f "__fld_%a" Ident.pp_fieldname fn
   | Cclosure { name; captured_vars; } ->
-      let id_exps = IList.map (fun (id, _, _) -> Var id) captured_vars in
+      let id_exps = IList.map (fun (id_exp, _, _) -> id_exp) captured_vars in
       F.fprintf f "(%a)" (pp_comma_seq (pp_exp pe)) ((Const (Cfun name)) :: id_exps)
 
 (** Pretty print a type. Do nothing by default. *)
@@ -2969,7 +2969,8 @@ let exp_lt e1 e2 =
 let rec exp_fpv = function
   | Var _ -> []
   | Const (Cexn e) -> exp_fpv e
-  | Const (Cclosure _) -> []
+  | Const (Cclosure { captured_vars; }) ->
+      IList.map (fun (_, pvar, _) -> pvar) captured_vars
   | Const _ -> []
   | Cast (_, e) | UnOp (_, e, _) -> exp_fpv e
   | BinOp (_, e1, e2) -> exp_fpv e1 @ exp_fpv e2
@@ -3131,8 +3132,9 @@ let fav_mem fav id =
 let rec exp_fav_add fav = function
   | Var id -> fav ++ id
   | Const (Cexn e) -> exp_fav_add fav e
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _
-          | Cclosure _) -> ()
+  | Const (Cclosure { captured_vars; }) ->
+      IList.iter (fun (e, _, _) -> exp_fav_add fav e) captured_vars
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) -> ()
   | Cast (_, e) | UnOp (_, e, _) -> exp_fav_add fav e
   | BinOp (_, e1, e2) -> exp_fav_add fav e1; exp_fav_add fav e2
   | Lvar _ -> () (* do nothing since we only count non-program variables *)
@@ -3432,8 +3434,11 @@ and exp_sub (subst: subst) e =
   | Const (Cexn e1) ->
       let e1' = exp_sub subst e1 in
       Const (Cexn e1')
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _
-          | Cclosure _) ->
+  | Const (Cclosure c) ->
+      let captured_vars =
+        IList.map (fun (exp, pvar, typ) -> (exp_sub subst exp, pvar, typ)) c.captured_vars in
+      Const (Cclosure { c with captured_vars })
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) ->
       e
   | Cast (t, e1) ->
       let e1' = exp_sub subst e1 in

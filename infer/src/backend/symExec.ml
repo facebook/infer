@@ -960,7 +960,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           | Sil.Const (Sil.Cclosure c) ->
               let proc_exp = Sil.Const (Sil.Cfun c.name) in
               let proc_exp' = Prop.exp_normalize_prop prop_ proc_exp in
-              let par' = IList.map (fun (id, _, typ) -> (Sil.Var id, typ)) c.captured_vars in
+              let par' = IList.map (fun (id_exp, _, typ) -> (id_exp, typ)) c.captured_vars in
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
           | _ ->
               Sil.Call (ret, exp', par, loc, call_flags) in

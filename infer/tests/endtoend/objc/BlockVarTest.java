@@ -44,11 +44,13 @@ public class BlockVarTest {
   }
 
   @Test
-  public void whenInferRunsOnNavigateToURLInBackgroundThenNPEIsFound()
+  public void matchErrors()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     String[] procedures = {
         "navigateToURLInBackground",
+        "blockPostBad",
+        "capturedNullDeref"
     };
     assertThat(
         "Results should contain the expected null pointer exception",
@@ -60,4 +62,5 @@ public class BlockVarTest {
         )
     );
   }
+
 }

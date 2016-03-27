@@ -284,7 +284,7 @@ and attribute_category =
 
 and closure = {
   name : Procname.t;
-  captured_vars : (Ident.t * pvar * typ) list;
+  captured_vars : (exp * pvar * typ) list;
 }
 
 (** Constants *)

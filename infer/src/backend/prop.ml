@@ -434,6 +434,10 @@ let sym_eval abs e =
     match e with
     | Sil.Var _ ->
         e
+    | Sil.Const (Sil.Cclosure c) ->
+        let captured_vars =
+          IList.map (fun (exp, pvar, typ) -> (eval exp, pvar, typ)) c.captured_vars in
+        Sil.Const (Sil.Cclosure { c with captured_vars; })
     | Sil.Const _ ->
         e
     | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, e), _)
