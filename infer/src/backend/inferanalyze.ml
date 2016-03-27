@@ -165,7 +165,7 @@ let arg_desc =
         " activate the eradicate checker for java annotations"
         ;
         "-merge",
-        Arg.Unit MergeCapture.merge_captured_targets,
+        Arg.Set Config.merge,
         None,
         "merge the captured results directories specified in the dependency file"
         ;
@@ -238,7 +238,8 @@ let () = (* parse command-line arguments *)
     begin
       L.err "ERROR: results directory %s does not exist@.@." !Config.results_dir;
       print_usage_exit ()
-    end
+    end ;
+  if !Config.merge then MergeCapture.merge_captured_targets ()
 
 let analyze_exe_env exe_env =
   let init_time = Unix.gettimeofday () in

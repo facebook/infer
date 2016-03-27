@@ -199,6 +199,9 @@ let reactive_mode = ref false
     If a procedure was changed beforehand, keep the changed marking. *)
 let continue_capture = ref false
 
+(** Merge the captured results directories specified in the dependency file *)
+let merge = ref false
+
 (** Flag for footprint discovery mode *)
 let footprint = ref true
 
