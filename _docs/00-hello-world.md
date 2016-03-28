@@ -196,20 +196,43 @@ infer -- ./gradlew build
 Infer will output the list of found bugs:
 
 ```bash
-MainActivity.java:20: error: NULL_DEREFERENCE
-   object s last assigned on line 19 could be null and is dereferenced at line 20
+app/src/main/java/infer/inferandroidexample/MainActivity.java:29: error: NULL_DEREFERENCE
+  object s last assigned on line 28 could be null and is dereferenced at line 29
+  27.           setContentView(R.layout.activity_main);
+  28.           String s = getDay();
+  29. >         int length = s.length();
+  30.           writeToFile();
+  31.       }
+  32.   
 
-MainActivity.java:37: error: RESOURCE_LEAK
-   resource acquired by call to FileOutputStream(...) at line 34 is not released after line 37
+app/src/main/java/infer/inferandroidexample/MainActivity.java:46: error: RESOURCE_LEAK
+   resource of type java.io.FileOutputStream acquired to fis by call to FileOutputStream(...) at line 43 is not released after line 46
+  44.               fis.write(arr);
+  45.               fis.close();
+  46. >         } catch (IOException e) {
+  47.               //Deal with exception
+  48.           }
+  49.   
+
+app/src/main/java/infer/other/MainActivity.java:23: error: NULL_DEREFERENCE
+  object returned by source() could be null and is dereferenced at line 23
+  21.     @Override
+  22.     protected void onCreate(Bundle savedInstanceState) {
+  23. >     source().toString();
+  24.     }
+  25.   
+
 ```
 
-### Incremental analysis
+### Differential analysis
+
+**(Note: `--incremental` is deprecated since Infer version v0.8.0).**
 
 If you run Infer again without changing any files, you will notice
 that this time nothing gets analyzed. This is because gradle is
 *incremental*: everything was compiled already so nothing gets
 recompiled. Infer captures the compilation commands to know which
-files to analyze, hence it analyzes nothing in this case. There are two
+files to analyze, hence it analyzes nothing in this case. There are three
 solutions to remedy this:
 
 1. Run gradlew clean in between Infer runs.
@@ -219,15 +242,26 @@ solutions to remedy this:
    ```
    This causes gradle to recompile everything each time, and subsequently Infer to capture all the files again.
 
-2. Run Infer in incremental mode.
+2. Run Infer indicating that the capture of compilation commands should continue, using option `--continue` (or `-c` for short).
 
     ```bash
-    infer --incremental -- ./gradlew build
+    infer --continue -- ./gradlew build
     ```
 
-  This makes Infer preserve the results of the previous
-  compilation. Without `--incremental` (or `-i` for short), Infer will
-  remove the `infer-out` directory where these results are stored.
+  This makes Infer add the effects of the new compilation commands to the previous ones, and start a new analysis of the entire code.
+
+3. Run Infer in reactive mode after a code change, using option `--reactive` (or `-r` for short).
+
+    ```bash
+    infer --reactive -- ./gradlew build
+    ```
+
+  This makes Infer analyze the effects of the code
+  change, without re-analyzing everything.
+  Note that only the modified files, and those
+  dependent on them, are re-analyzed.
+  This analysis mode can be significantly faster.
+
 
 You can learn more about the particulars of each solution in the
 [Infer workflow](docs/infer-workflow.html) page.
@@ -274,11 +308,11 @@ Hello.m:30: warning: PARAMETER_NOT_NULL_CHECKED
 Similarly to the case of
 [gradle](docs/hello-world.html#incremental-analysis), running the
 command above a second time will yield no analysis results, as nothing
-gets recompiled. Either add the `--incremental` (or `-i`) flag to the
+gets recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
 
 ```bash
-infer --incremental -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
+infer --reactive -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
 ```
 
 or ask the build system to reinitialize the directory
@@ -321,11 +355,11 @@ example.c:57: error: MEMORY_LEAK
 Similarly to the case of
 [gradle](docs/hello-world.html#incremental-analysis), running `infer
 -- make` a second time will yield no analysis results, as nothing gets
-recompiled. Either add the `--incremental` (or `-i`) flag to the
+recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
 
 ```bash
-infer --incremental -- make
+infer --reactive -- make
 ```
 
 or run
