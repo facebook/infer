@@ -31,7 +31,7 @@ type annotated_signature =
 val annotated_signature_is_anonymous_inner_class_wrapper : annotated_signature -> Procname.t -> bool
 
 (** Check if the given parameter has a Nullable annotation in the given signature *)
-val param_is_nullable : Sil.pvar -> annotated_signature -> bool
+val param_is_nullable : Pvar.t -> annotated_signature -> bool
 
 (** Mark the annotated signature with the given annotation map. *)
 val annotated_signature_mark :

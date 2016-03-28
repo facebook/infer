@@ -84,19 +84,6 @@ let get_sentinel_func_attribute_value attr_list =
   | FA_sentinel (sentinel, null_pos) :: _ -> Some (sentinel, null_pos)
   | [] -> None
 
-(** Kind of global variables *)
-type pvar_kind =
-  | Local_var of Procname.t (** local variable belonging to a function *)
-  | Callee_var of Procname.t (** local variable belonging to a callee *)
-  | Abducted_retvar of Procname.t * Location.t (** synthetic variable to represent return value *)
-  | Abducted_ref_param of Procname.t * pvar * Location.t
-  (** synthetic variable to represent param passed by reference *)
-  | Global_var (** gloval variable *)
-  | Seed_var (** variable used to store the initial value of formal parameters *)
-
-(** Names for program variables. *)
-and pvar = { pv_name: Mangled.t; pv_kind: pvar_kind }
-
 (** Unary operations *)
 type unop =
   | Neg  (** Unary minus *)
@@ -593,8 +580,8 @@ type dexp =
   | Dfcall of dexp * dexp list * Location.t * call_flags
   | Darrow of dexp * Ident.fieldname
   | Ddot of dexp * Ident.fieldname
-  | Dpvar of pvar
-  | Dpvaraddr of pvar
+  | Dpvar of Pvar.t
+  | Dpvaraddr of Pvar.t
   | Dunop of unop * dexp
   | Dunknown
   | Dretcall of dexp * dexp list * Location.t * call_flags
@@ -659,7 +646,7 @@ and attribute_category =
 
 and closure = {
   name : Procname.t;
-  captured_vars : (exp * pvar * typ) list;
+  captured_vars : (exp * Pvar.t * typ) list;
 }
 
 (** Constants *)
@@ -718,7 +705,7 @@ and exp =
   | Cast of typ * exp
 
   (** The address of a program variable *)
-  | Lvar of pvar
+  | Lvar of Pvar.t
 
   (** A field offset, the type is the surrounding struct type *)
   | Lfield of exp * Ident.fieldname * typ
@@ -758,11 +745,11 @@ type instr =
       where n = 0 for void return and n > 1 for struct return *)
   | Call of Ident.t list * exp * (exp * typ) list * Location.t * call_flags
   (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
-  | Nullify of pvar * Location.t * bool
+  | Nullify of Pvar.t * Location.t * bool
   | Abstract of Location.t (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
   | Stackop of stackop * Location.t (** operation on the stack of propsets *)
-  | Declare_locals of (pvar * typ) list * Location.t (** declare local variables *)
+  | Declare_locals of (Pvar.t * typ) list * Location.t (** declare local variables *)
   (** jump to a specific cfg node,
       assuming all the possible target nodes are successors of the current node *)
   | Goto_node of exp * Location.t
@@ -925,99 +912,16 @@ let zero_value_of_numerical_type typ =
   | Tptr _ -> Const (Cint Int.null)
   | _ -> assert false
 
-let pvar_get_name pv = pv.pv_name
-
-let pvar_to_string pv = Mangled.to_string pv.pv_name
-
-let pvar_get_simplified_name pv =
-  let s = Mangled.to_string pv.pv_name in
-  match string_split_character s '.' with
-  | Some s1, s2 ->
-      (match string_split_character s1 '.' with
-       | Some _, s4 -> s4 ^ "." ^ s2
-       | _ -> s)
-  | _ -> s
-
-(** Check if the pvar is an abucted return var or param passed by ref *)
-let pvar_is_abducted pv =
-  match pv.pv_kind with
-  | Abducted_retvar _ | Abducted_ref_param _ -> true
-  | _ -> false
-
-(** Turn a pvar into a seed pvar (which stored the initial value) *)
-let pvar_to_seed pv = { pv with pv_kind = Seed_var }
-
-(** Check if the pvar is a local var *)
-let pvar_is_local pv =
-  match pv.pv_kind with
-  | Local_var _ -> true
-  | _ -> false
-
-(** Check if the pvar is a callee var *)
-let pvar_is_callee pv =
-  match pv.pv_kind with
-  | Callee_var _ -> true
-  | _ -> false
-
-(** Check if the pvar is a seed var *)
-let pvar_is_seed pv =
-  match pv.pv_kind with
-  | Seed_var -> true
-  | _ -> false
-
-(** Check if the pvar is a global var *)
-let pvar_is_global pv =
-  pv.pv_kind = Global_var
-
-(** Check if a pvar is the special "this" var *)
-let pvar_is_this pvar =
-  Mangled.equal (pvar_get_name pvar) (Mangled.from_string "this")
-
-(** Check if the pvar is a return var *)
-let pvar_is_return pv =
-  pvar_get_name pv = Ident.name_return
-
 (** Make a static local name in objc *)
 let mk_static_local_name pname vname =
   pname^"_"^vname
 
 (** Check if a pvar is a local static in objc *)
 let is_static_local_name pname pvar = (* local static name is of the form procname_varname *)
-  let var_name = Mangled.to_string(pvar_get_name pvar) in
+  let var_name = Mangled.to_string (Pvar.get_name pvar) in
   match Str.split_delim (Str.regexp_string pname) var_name with
   | [_; _] -> true
   | _ -> false
-
-let rec pv_kind_compare k1 k2 = match k1, k2 with
-  | Local_var n1, Local_var n2 -> Procname.compare n1 n2
-  | Local_var _, _ -> - 1
-  | _, Local_var _ -> 1
-  | Callee_var n1, Callee_var n2 -> Procname.compare n1 n2
-  | Callee_var _, _ -> - 1
-  | _, Callee_var _ -> 1
-  | Abducted_retvar (p1, l1), Abducted_retvar (p2, l2) ->
-      let n = Procname.compare p1 p2 in
-      if n <> 0 then n else Location.compare l1 l2
-  | Abducted_retvar _, _ -> - 1
-  | _, Abducted_retvar _ -> 1
-  | Abducted_ref_param (p1, pv1, l1), Abducted_ref_param (p2, pv2, l2) ->
-      let n = Procname.compare p1 p2 in
-      if n <> 0 then n else
-        let n = pvar_compare pv1 pv2 in
-        if n <> 0 then n else Location.compare l1 l2
-  | Abducted_ref_param _, _ -> - 1
-  | _, Abducted_ref_param _ -> 1
-  | Global_var, Global_var -> 0
-  | Global_var, _ -> - 1
-  | _, Global_var -> 1
-  | Seed_var, Seed_var -> 0
-
-and pvar_compare pv1 pv2 =
-  let n = Mangled.compare pv1.pv_name pv2.pv_name in
-  if n <> 0 then n else pv_kind_compare pv1.pv_kind pv2.pv_kind
-
-let pvar_equal pvar1 pvar2 =
-  pvar_compare pvar1 pvar2 = 0
 
 let fld_compare (fld1 : Ident.fieldname) fld2 = Ident.fieldname_compare fld1 fld2
 
@@ -1032,7 +936,7 @@ let exp_is_null_literal = function
   | _ -> false
 
 let exp_is_this = function
-  | Lvar pvar -> pvar_is_this pvar
+  | Lvar pvar -> Pvar.is_this pvar
   | _ -> false
 
 let ikind_is_char = function
@@ -1370,7 +1274,7 @@ let rec const_compare (c1 : const) (c2 : const) : int =
           let n = exp_compare e1 e2 in
           if n <> 0 then n
           else
-            let n = pvar_compare pvar1 pvar2 in
+            let n = Pvar.compare pvar1 pvar2 in
             if n <> 0 then n
             else typ_compare typ1 typ2 in
       let n = Procname.compare n1 n2 in
@@ -1506,7 +1410,7 @@ and exp_compare (e1 : exp) (e2 : exp) : int =
   | Cast _, _ -> - 1
   | _, Cast _ -> 1
   | Lvar i1, Lvar i2 ->
-      pvar_compare i1 i2
+      Pvar.compare i1 i2
   | Lvar _, _ -> - 1
   | _, Lvar _ -> 1
   | Lfield (e1, f1, t1), Lfield (e2, f2, t2) ->
@@ -1818,71 +1722,6 @@ let str_binop pe binop =
   | _ ->
       text_binop binop
 
-let rec _pp_pvar f pv =
-  let name = pv.pv_name in
-  match pv.pv_kind with
-  | Local_var n ->
-      if !Config.pp_simple then F.fprintf f "%a" Mangled.pp name
-      else F.fprintf f "%a$%a" Procname.pp n Mangled.pp name
-  | Callee_var n ->
-      if !Config.pp_simple then F.fprintf f "%a|callee" Mangled.pp name
-      else F.fprintf f "%a$%a|callee" Procname.pp n Mangled.pp name
-  | Abducted_retvar (n, l) ->
-      if !Config.pp_simple then F.fprintf f "%a|abductedRetvar" Mangled.pp name
-      else F.fprintf f "%a$%a%a|abductedRetvar" Procname.pp n Location.pp l Mangled.pp name
-  | Abducted_ref_param (n, pv, l) ->
-      if !Config.pp_simple then F.fprintf f "%a|%a|abductedRefParam" _pp_pvar pv Mangled.pp name
-      else F.fprintf f "%a$%a%a|abductedRefParam" Procname.pp n Location.pp l Mangled.pp name
-  | Global_var -> F.fprintf f "#GB$%a" Mangled.pp name
-  | Seed_var -> F.fprintf f "old_%a" Mangled.pp name
-
-(** Pretty print a program variable in latex. *)
-let pp_pvar_latex f pv =
-  let name = pv.pv_name in
-  match pv.pv_kind with
-  | Local_var _ ->
-      Latex.pp_string Latex.Roman f (Mangled.to_string name)
-  | Callee_var _ ->
-      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "callee"
-  | Abducted_retvar _ ->
-      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "abductedRetvar"
-  | Abducted_ref_param _ ->
-      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "abductedRefParam"
-  | Global_var ->
-      Latex.pp_string Latex.Boldface f (Mangled.to_string name)
-  | Seed_var ->
-      F.fprintf f "%a^{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "old"
-
-(** Pretty print a pvar which denotes a value, not an address *)
-let pp_pvar_value pe f pv =
-  match pe.pe_kind with
-  | PP_TEXT -> _pp_pvar f pv
-  | PP_HTML -> _pp_pvar f pv
-  | PP_LATEX -> pp_pvar_latex f pv
-
-(** Pretty print a program variable. *)
-let pp_pvar pe f pv =
-  let ampersand = match pe.pe_kind with
-    | PP_TEXT -> "&"
-    | PP_HTML -> "&amp;"
-    | PP_LATEX -> "\\&" in
-  F.fprintf f "%s%a" ampersand (pp_pvar_value pe) pv
-
-(** Dump a program variable. *)
-let d_pvar (pvar: pvar) = L.add_print_action (L.PTpvar, Obj.repr pvar)
-
-(** Pretty print a list of program variables. *)
-let pp_pvar_list pe f pvl =
-  F.fprintf f "%a" (pp_seq (fun f e -> F.fprintf f "%a" (pp_pvar pe) e)) pvl
-
-(** Dump a list of program variables. *)
-let d_pvar_list pvl =
-  IList.iter (fun pv -> d_pvar pv; L.d_str " ") pvl
-
 let ikind_to_string = function
   | IChar -> "char"
   | ISChar -> "signed char"
@@ -1940,7 +1779,7 @@ let rec dexp_to_string = function
             F.fprintf fmt "%s" s
         | de -> F.fprintf fmt "%s" (dexp_to_string de) in
       let receiver, args' = match args with
-        | (Dpvar pv):: args' when isvirtual && pvar_is_this pv ->
+        | (Dpvar pv):: args' when isvirtual && Pvar.is_this pv ->
             (None, args')
         | a:: args' when isvirtual ->
             (Some a, args')
@@ -1952,7 +1791,7 @@ let rec dexp_to_string = function
           | Some arg -> F.fprintf fmt "%a." pp_arg arg in
         F.fprintf fmt "%a%a(%a)" pp_receiver receiver pp_fun fun_dexp pp_args args' in
       pp_to_string pp ()
-  | Darrow ((Dpvar pv), f) when pvar_is_this pv -> (* this->fieldname *)
+  | Darrow ((Dpvar pv), f) when Pvar.is_this pv -> (* this->fieldname *)
       Ident.fieldname_to_simplified_string f
   | Darrow (de, f) ->
       if Ident.fieldname_is_hidden f then dexp_to_string de
@@ -1964,11 +1803,11 @@ let rec dexp_to_string = function
       if Ident.fieldname_is_hidden f then "&" ^ dexp_to_string de
       else if java() then dexp_to_string de ^ "." ^ Ident.fieldname_to_flat_string f
       else dexp_to_string de ^ "." ^ Ident.fieldname_to_string f
-  | Dpvar pv -> Mangled.to_string (pvar_get_name pv)
+  | Dpvar pv -> Mangled.to_string (Pvar.get_name pv)
   | Dpvaraddr pv ->
       let s =
-        if eradicate_java () then pvar_get_simplified_name pv
-        else Mangled.to_string (pvar_get_name pv) in
+        if eradicate_java () then Pvar.get_simplified_name pv
+        else Mangled.to_string (Pvar.get_name pv) in
       let ampersand =
         if eradicate_java () then ""
         else "&" in
@@ -2033,8 +1872,8 @@ and attribute_to_string pe = function
   | Aobjc_null exp ->
       let info_s =
         match exp with
-        | Lvar var -> "FORMAL "^(pvar_to_string var)
-        | Lfield _ -> "FIELD "^(exp_to_string exp)
+        | Lvar var -> "FORMAL " ^ (Pvar.to_string var)
+        | Lfield _ -> "FIELD " ^ (exp_to_string exp)
         | _ -> "" in
       "OBJC_NULL["^ info_s ^"]"
   | Aretval pn -> "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
@@ -2119,7 +1958,7 @@ and _pp_exp pe0 pp_t f e0 =
   (if not (exp_equal e0 e)
    then
      match e with
-     | Lvar pvar -> pp_pvar_value pe f pvar
+     | Lvar pvar -> Pvar.pp_value pe f pvar
      | _ -> assert false
    else
      let pp_exp = _pp_exp pe pp_t in
@@ -2138,7 +1977,7 @@ and _pp_exp pe0 pp_t f e0 =
        | UnOp (op, e, _) -> F.fprintf f "%s%a" (str_unop op) pp_exp e
        | BinOp (op, Const c, e2) when !Config.smt_output -> print_binop_stm_output (Const c) op e2
        | BinOp (op, e1, e2) -> F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
-       | Lvar pv -> pp_pvar pe f pv
+       | Lvar pv -> Pvar.pp pe f pv
        | Lfield (e, fld, _) -> F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
        | Lindex (e1, e2) -> F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
        | Sizeof (t, s) -> F.fprintf f "sizeof(%a%a)" pp_t t Subtype.pp s
@@ -2275,7 +2114,7 @@ let pp_instr pe0 f instr =
          pp_call_flags cf
          Location.pp loc
    | Nullify (pvar, loc, deallocate) ->
-       F.fprintf f "NULLIFY(%a,%b); %a" (pp_pvar pe) pvar deallocate Location.pp loc
+       F.fprintf f "NULLIFY(%a,%b); %a" (Pvar.pp pe) pvar deallocate Location.pp loc
    | Abstract loc ->
        F.fprintf f "APPLY_ABSTRACTION; %a" Location.pp loc
    | Remove_temps (temps, loc) ->
@@ -2287,8 +2126,8 @@ let pp_instr pe0 f instr =
          | Pop -> "Pop" in
        F.fprintf f "STACKOP.%s; %a" s Location.pp loc
    | Declare_locals (ptl, loc) ->
-       let pp_pvar_typ fmt (pvar, _) = F.fprintf fmt "%a" (pp_pvar pe) pvar in
-       F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_pvar_typ) ptl Location.pp loc
+       let pp_typ fmt (pvar, _) = F.fprintf fmt "%a" (Pvar.pp pe) pvar in
+       F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_typ) ptl Location.pp loc
    | Goto_node (e, loc) ->
        F.fprintf f "Goto_node %a %a" (pp_exp pe) e Location.pp loc
   );
@@ -2299,13 +2138,17 @@ let has_block_prefix s =
   | _ :: _ :: _ -> true
   | _ -> false
 
-(** Check if a pvar is a local pointing to a block in objc *)
-let is_block_pvar pvar =
-  has_block_prefix (Mangled.to_string (pvar_get_name pvar))
-
 (** Check if type is a type for a block in objc *)
 let is_block_type typ =
   has_block_prefix (typ_to_string typ)
+
+(** Check if a pvar is a local pointing to a block in objc *)
+let is_block_pvar pvar =
+  has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
+
+(* A block pvar used to explain retain cycles *)
+let block_pvar =
+  Pvar.mk (Mangled.from_string "block") (Procname.from_string_c_fun "")
 
 (** Iterate over all the subtypes in the type (including the type itself) *)
 let rec typ_iter_types (f : typ -> unit) typ =
@@ -2738,7 +2581,7 @@ and pp_hpred_env pe0 envo f hpred =
   begin match hpred with
     | Hpointsto (e, se, te) ->
         let pe' = match (e, se) with
-          | Lvar pvar, Eexp (Var _, _) when not (pvar_is_global pvar) ->
+          | Lvar pvar, Eexp (Var _, _) when not (Pvar.is_global pvar) ->
               { pe with pe_obj_sub = None } (* dont use obj sub on the var defining it *)
           | _ -> pe in
         (match pe'.pe_kind with
@@ -3612,7 +3455,7 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
   | Call _, _ -> -1
   | _, Call _ -> 1
   | Nullify (pvar1, loc1, deallocate1), Nullify (pvar2, loc2, deallocate2) ->
-      let n = pvar_compare pvar1 pvar2 in
+      let n = Pvar.compare pvar1 pvar2 in
       if n <> 0 then n else let n = Location.compare loc1 loc2 in
         if n <> 0 then n else bool_compare deallocate1 deallocate2
   | Nullify _, _ -> -1
@@ -3633,7 +3476,7 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
   | _, Stackop _ -> 1
   | Declare_locals (ptl1, loc1), Declare_locals (ptl2, loc2) ->
       let pt_compare (pv1, t1) (pv2, t2) =
-        let n = pvar_compare pv1 pv2 in
+        let n = Pvar.compare pv1 pv2 in
         if n <> 0 then n else typ_compare t1 t2 in
 
       let n = IList.compare pt_compare ptl1 ptl2 in
@@ -3881,42 +3724,6 @@ let hpred_compact sh hpred =
 
 (** {2 Functions for constructing or destructing entities in this module} *)
 
-(** [mk_pvar name proc_name] creates a program var with the given function name *)
-let mk_pvar (name: Mangled.t) (proc_name: Procname.t) : pvar =
-  { pv_name = name; pv_kind = Local_var proc_name }
-
-
-let get_ret_pvar pname =
-  mk_pvar Ident.name_return pname
-
-(** [mk_pvar_callee name proc_name] creates a program var
-    for a callee function with the given function name *)
-let mk_pvar_callee (name: Mangled.t) (proc_name: Procname.t) : pvar =
-  { pv_name = name; pv_kind = Callee_var proc_name }
-
-(** create a global variable with the given name *)
-let mk_pvar_global (name: Mangled.t) : pvar =
-  { pv_name = name; pv_kind = Global_var }
-
-(** create an abducted return variable for a call to [proc_name] at [loc] *)
-let mk_pvar_abducted_ret (proc_name : Procname.t) (loc : Location.t) : pvar =
-  let name = Mangled.from_string ("$RET_" ^ (Procname.to_unique_id proc_name)) in
-  { pv_name = name; pv_kind = Abducted_retvar (proc_name, loc) }
-
-let mk_pvar_abducted_ref_param (proc_name : Procname.t) (pv : pvar) (loc : Location.t) : pvar =
-  let name = Mangled.from_string ("$REF_PARAM_" ^ (Procname.to_unique_id proc_name)) in
-  { pv_name = name; pv_kind = Abducted_ref_param (proc_name, pv, loc) }
-
-(** Turn an ordinary program variable into a callee program variable *)
-let pvar_to_callee pname pvar = match pvar.pv_kind with
-  | Local_var _ ->
-      { pvar with pv_kind = Callee_var pname }
-  | Global_var -> pvar
-  | Callee_var _ | Abducted_retvar _ | Abducted_ref_param _ | Seed_var ->
-      L.d_str "Cannot convert pvar to callee: ";
-      d_pvar pvar; L.d_ln ();
-      assert false
-
 (** Compute the offset list of an expression *)
 let exp_get_offsets exp =
   let rec f offlist_past e = match e with
@@ -3999,51 +3806,4 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   (ids_evars, IList.map (hpred_sub subst) para.body_dll)
 
 let custom_error =
-  mk_pvar_global (Mangled.from_string "INFER_CUSTOM_ERROR")
-
-(* A block pvar used to explain retain cycles *)
-let block_pvar =
-  mk_pvar (Mangled.from_string "block") (Procname.from_string_c_fun "")
-
-(*
-(** Check if the item annotation is empty. *)
-let item_annotation_is_empty avl =
-  avl = []
-
-let atom_list_compare l1 l2 =
-  IList.compare atom_compare l1 l2
-
-let fld_strexp_equal fld_sexp1 fld_sexp2 =
-  (fld_strexp_compare fld_sexp1 fld_sexp2 = 0)
-
-let exp_strexp_equal ese1 ese2 =
-  (exp_strexp_compare ese1 ese2 = 0)
-
-let pp_pair pe f ((fld: Ident.fieldname), (t: typ)) =
-  F.fprintf f "%a %a" (pp_typ pe) t Ident.pp_fieldname fld
-
-let sub_check_sortedness sub =
-  let sub' = IList.sort ident_exp_compare sub in
-  sub_equal sub sub'
-
-let sub_check_inv sub =
-  (sub_check_sortedness sub) && not (sub_check_duplicated_ids sub)
-
-let range_sub subst range =
-  let lower, upper = range in
-  let lower' = exp_sub subst lower in
-  let upper' = exp_sub subst upper in
-  (lower', upper')
-
-let exp_list_replace_exp epairs l =
-  IList.map (exp_replace_exp epairs) l
-
-(** Return the list of expressions that could be understood as outgoing arrows from the strexp *)
-let rec strexp_get_target_exps = function
-  | Eexp (e, inst) -> [e]
-  | Estruct (fsel, inst) ->
-      IList.flatten (IList.map (fun (_, se) -> strexp_get_target_exps se) fsel)
-  | Earray (_, esel, _) ->
-      (* We ignore size and indices since they are not quite outgoing arrows. *)
-      IList.flatten (IList.map (fun (_, se) -> strexp_get_target_exps se) esel)
-*)
+  Pvar.mk_global (Mangled.from_string "INFER_CUSTOM_ERROR")

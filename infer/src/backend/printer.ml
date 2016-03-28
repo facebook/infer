@@ -255,8 +255,8 @@ let force_delayed_print fmt =
       let (p: Prop.normal Prop.t) = Obj.obj p in
       Prop.pp_prop_with_typ pe_default fmt p
   | (L.PTpvar, pvar) ->
-      let (pvar: Sil.pvar) = Obj.obj pvar in
-      Sil.pp_pvar pe_default fmt pvar
+      let (pvar: Pvar.t) = Obj.obj pvar in
+      Pvar.pp pe_default fmt pvar
   | (L.PTsexp, se) ->
       let (se: Sil.strexp) = Obj.obj se in
       Sil.pp_sexp pe_default fmt se

@@ -139,7 +139,7 @@ let add_id id range typestate =
   if map' == typestate.map then typestate
   else { typestate with map = map' }
 
-let add_pvar pvar range typestate =
+let add pvar range typestate =
   let map' = M.add (Sil.Lvar pvar) range typestate.map in
   if map' == typestate.map then typestate
   else { typestate with map = map' }

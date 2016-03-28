@@ -116,7 +116,7 @@ module ComplexExpressions = struct
           case_not_handled ()
       | Sil.Dpvar pv
       | Sil.Dpvaraddr pv when not (Errdesc.pvar_is_frontend_tmp pv) ->
-          Sil.pvar_to_string pv
+          Pvar.to_string pv
       | Sil.Dpvar _
       | Sil.Dpvaraddr _ (* front-end variable -- this should not happen) *) ->
           case_not_handled ()
@@ -258,11 +258,11 @@ let typecheck_instr
           Some (TypeAnnotation.get_origin ta)
       | None -> None in
     let handle_temporary e = match Idenv.expand_expr idenv e with
-      | Sil.Lvar pvar when name_is_temporary (Sil.pvar_to_string pvar) ->
+      | Sil.Lvar pvar when name_is_temporary (Pvar.to_string pvar) ->
           begin
             match pvar_get_origin pvar with
             | Some (TypeOrigin.Formal s) ->
-                let pvar' = Sil.mk_pvar s curr_pname in
+                let pvar' = Pvar.mk s curr_pname in
                 Some (Sil.Lvar pvar')
             | _ -> None
           end
@@ -295,7 +295,7 @@ let typecheck_instr
                    TypeAnnotation.from_item_annotation ia (TypeOrigin.Field (fn, loc)),
                    [loc]
                  ) in
-               TypeState.add_pvar pvar range typestate
+               TypeState.add pvar range typestate
            | None -> typestate) in
 
     (* Convert a function call to a pvar. *)
@@ -307,7 +307,7 @@ let typecheck_instr
             match ComplexExpressions.exp_to_string node' exp with
             | None -> default
             | Some exp_str ->
-                let pvar = Sil.mk_pvar (Mangled.from_string exp_str) curr_pname in
+                let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
                 let already_defined_in_typestate =
                   match TypeState.lookup_pvar pvar typestate with
                   | Some (_, ta, _) ->
@@ -345,27 +345,27 @@ let typecheck_instr
         let exp' = Idenv.expand_expr_temps idenv node _exp in
 
         let is_parameter_field pvar = (* parameter.field *)
-          let name = Sil.pvar_get_name pvar in
+          let name = Pvar.get_name pvar in
           let filter (s, _, _) = Mangled.equal s name in
           IList.exists filter annotated_signature.Annotations.params in
 
         let is_static_field pvar = (* static field *)
-          Sil.pvar_is_global pvar in
+          Pvar.is_global pvar in
 
         let pvar_to_str pvar =
           if Sil.exp_is_this (Sil.Lvar pvar) then ""
-          else Sil.pvar_to_string pvar ^ "_" in
+          else Pvar.to_string pvar ^ "_" in
 
         let res = match exp' with
           | Sil.Lvar pv when is_parameter_field pv || is_static_field pv ->
               let fld_name = pvar_to_str pv ^ Ident.fieldname_to_string fn in
-              let pvar = Sil.mk_pvar (Mangled.from_string fld_name) curr_pname in
+              let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
               let typestate' = update_typestate_fld pvar fn typ in
               (Sil.Lvar pvar, typestate')
           | Sil.Lfield (_exp', fn', _) when Ident.java_fieldname_is_outer_instance fn' ->
               (** handle double dereference when accessing a field from an outer class *)
               let fld_name = Ident.fieldname_to_string fn' ^ "_" ^ Ident.fieldname_to_string fn in
-              let pvar = Sil.mk_pvar (Mangled.from_string fld_name) curr_pname in
+              let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
               let typestate' = update_typestate_fld pvar fn typ in
               (Sil.Lvar pvar, typestate')
           | Sil.Lvar _ | Sil.Lfield _ when ComplexExpressions.all_nested_fields () ->
@@ -373,7 +373,7 @@ let typecheck_instr
               begin
                 match ComplexExpressions.exp_to_string node' exp with
                 | Some exp_str ->
-                    let pvar = Sil.mk_pvar (Mangled.from_string exp_str) curr_pname in
+                    let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
                     let typestate' = update_typestate_fld pvar fn typ in
                     (Sil.Lvar pvar, typestate')
                 | None ->
@@ -430,10 +430,10 @@ let typecheck_instr
     else
       annotated_signature.Annotations.params in
 
-  let pvar_is_return pvar =
+  let is_return pvar =
     let pdesc = Cfg.Node.get_proc_desc node in
     let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
-    Sil.pvar_equal pvar ret_pvar in
+    Pvar.equal pvar ret_pvar in
 
   (* Apply a function to a pvar and its associated content if front-end generated. *)
   let pvar_apply loc handle_pvar typestate pvar =
@@ -481,7 +481,7 @@ let typecheck_instr
       TypeState.add_id id
         (typecheck_expr_simple typestate' e' typ TypeOrigin.Undef loc)
         typestate'
-  | Sil.Set (Sil.Lvar pvar, _, Sil.Const (Sil.Cexn _), _) when pvar_is_return pvar ->
+  | Sil.Set (Sil.Lvar pvar, _, Sil.Const (Sil.Cexn _), _) when is_return pvar ->
       (* skip assignment to return variable where it is an artifact of a throw instruction *)
       typestate
   | Sil.Set (e1, typ, e2, loc) ->
@@ -499,7 +499,7 @@ let typecheck_instr
       let typestate2 =
         match e1' with
         | Sil.Lvar pvar ->
-            TypeState.add_pvar
+            TypeState.add
               pvar
               (typecheck_expr_simple typestate1 e2 typ TypeOrigin.Undef loc)
               typestate1
@@ -655,7 +655,7 @@ let typecheck_instr
                     (Some instr_ref)
                     loc curr_pname
                 end;
-              TypeState.add_pvar
+              TypeState.add
                 pvar
                 (t, TypeAnnotation.const Annotations.Nullable false TypeOrigin.ONone, [loc])
                 typestate''
@@ -686,7 +686,7 @@ let typecheck_instr
         let handle_pvar ann b typestate1 pvar = (* handle the annotation flag for pvar *)
           match TypeState.lookup_pvar pvar typestate1 with
           | Some (t, _, _) ->
-              TypeState.add_pvar
+              TypeState.add
                 pvar
                 (t, TypeAnnotation.const ann b TypeOrigin.ONone, [loc])
                 typestate1
@@ -776,8 +776,8 @@ let typecheck_instr
               match ComplexExpressions.exp_to_string_map_dexp
                       convert_dexp_key_to_dexp_get node exp_key with
               | Some map_get_str ->
-                  let pvar_map_get = Sil.mk_pvar (Mangled.from_string map_get_str) curr_pname in
-                  TypeState.add_pvar
+                  let pvar_map_get = Pvar.mk (Mangled.from_string map_get_str) curr_pname in
+                  TypeState.add
                     pvar_map_get
                     (typecheck_expr_simple typestate' exp_value typ_value TypeOrigin.Undef loc)
                     typestate'
@@ -914,12 +914,12 @@ let typecheck_instr
             match ComplexExpressions.exp_to_string_map_dexp map_dexp node' e with
             | Some e_str ->
                 let pvar =
-                  Sil.mk_pvar (Mangled.from_string e_str) curr_pname in
+                  Pvar.mk (Mangled.from_string e_str) curr_pname in
                 let e1 = Sil.Lvar pvar in
                 let (typ, ta, _) =
                   typecheck_expr_simple typestate e1 Sil.Tvoid TypeOrigin.ONone loc in
                 let range = (typ, ta, [loc]) in
-                let typestate1 = TypeState.add_pvar pvar range typestate in
+                let typestate1 = TypeState.add pvar range typestate in
                 typestate1, e1, EradicateChecks.From_containsKey
             | None ->
                 typestate, e, EradicateChecks.From_condition
@@ -931,7 +931,7 @@ let typecheck_instr
             | Some (t, ta1, locs) ->
                 if TypeAnnotation.get_value ann ta1 <> b then
                   let ta2 = TypeAnnotation.set_value ann b ta1 in
-                  TypeState.add_pvar pvar (t, ta2, locs) typestate'
+                  TypeState.add pvar (t, ta2, locs) typestate'
                 else typestate'
             | None -> typestate' in
           match e' with
@@ -1090,7 +1090,7 @@ let typecheck_node
         if has_exceptions then
           typestates_exn := typestate :: !typestates_exn
     | Sil.Set (Sil.Lvar pv, _, _, _) when
-        Sil.pvar_is_return pv &&
+        Pvar.is_return pv &&
         Cfg.Node.get_kind node = Cfg.Node.throw_kind ->
         (* throw instruction *)
         typestates_exn := typestate :: !typestates_exn

@@ -106,7 +106,7 @@ val get_node : t -> JCode.jcode Javalib.interface_or_class
 val get_never_null_matcher : t -> Inferconfig.NeverReturnNull.matcher
 
 (** [set_pvar context var type] adds a variable with a type to the context  *)
-val set_pvar : t -> JBir.var -> Sil.typ -> Sil.pvar
+val set_pvar : t -> JBir.var -> Sil.typ -> Pvar.t
 
 (** [get_var_type context var] returns the type of the variable, if the variable is in the context *)
 val get_var_type : t -> JBir.var -> Sil.typ option

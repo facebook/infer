@@ -34,10 +34,10 @@ module Node = struct
     mutable nd_temps : Ident.t list;
 
     (** dead program variables after executing the instructions *)
-    mutable nd_dead_pvars_after : Sil.pvar list;
+    mutable nd_dead_pvars_after : Pvar.t list;
 
     (** dead program variables before executing the instructions *)
-    mutable nd_dead_pvars_before : Sil.pvar list;
+    mutable nd_deads_before : Pvar.t list;
 
     (** exception nodes in the cfg *)
     mutable nd_exn : t list;
@@ -160,7 +160,7 @@ module Node = struct
     nd_dist_exit = None;
     nd_temps = [];
     nd_dead_pvars_after = [];
-    nd_dead_pvars_before = [];
+    nd_deads_before = [];
     nd_instrs = [];
     nd_kind = Skip_node "dummy";
     nd_loc = Location.dummy;
@@ -186,7 +186,7 @@ module Node = struct
         nd_dist_exit = None;
         nd_temps = temps;
         nd_dead_pvars_after = [];
-        nd_dead_pvars_before = [];
+        nd_deads_before = [];
         nd_instrs = instrs;
         nd_kind = kind;
         nd_loc = loc;
@@ -222,7 +222,9 @@ module Node = struct
       let do_node acc n =
         visited := NodeSet.add n !visited;
         if f n then NodeSet.singleton n
-        else NodeSet.union acc (slice_nodes (IList.filter (fun s -> not (NodeSet.mem s !visited)) n.nd_succs)) in
+        else
+          NodeSet.union acc
+            (slice_nodes (IList.filter (fun s -> not (NodeSet.mem s !visited)) n.nd_succs)) in
       IList.fold_left do_node NodeSet.empty nodes in
     NodeSet.elements (slice_nodes node.nd_succs)
 
@@ -232,7 +234,9 @@ module Node = struct
       let do_node acc n =
         visited := NodeSet.add n !visited;
         if f n then NodeSet.singleton n
-        else NodeSet.union acc (slice_nodes (IList.filter (fun s -> not (NodeSet.mem s !visited)) n.nd_preds)) in
+        else
+          NodeSet.union acc
+            (slice_nodes (IList.filter (fun s -> not (NodeSet.mem s !visited)) n.nd_preds)) in
       IList.fold_left do_node NodeSet.empty nodes in
     NodeSet.elements (slice_nodes node.nd_preds)
 
@@ -249,7 +253,8 @@ module Node = struct
   (** Get the predecessors of the node *)
   let get_preds node = node.nd_preds
 
-  (** Generates a list of nodes starting at a given node and recursively adding the results of the generator *)
+  (** Generates a list of nodes starting at a given node
+      and recursively adding the results of the generator *)
   let get_generated_slope start_node generator =
     let visited = ref NodeSet.empty in
     let rec nodes n =
@@ -346,11 +351,11 @@ module Node = struct
 
   let set_dead_pvars node after dead =
     if after then node.nd_dead_pvars_after <- dead
-    else node.nd_dead_pvars_before <- dead
+    else node.nd_deads_before <- dead
 
   let get_dead_pvars node after =
     if after then node.nd_dead_pvars_after
-    else node.nd_dead_pvars_before
+    else node.nd_deads_before
 
   let get_distance_to_exit node =
     node.nd_dist_exit
@@ -360,7 +365,8 @@ module Node = struct
     node.nd_instrs <- node.nd_instrs @ instrs;
     node.nd_temps <- node.nd_temps @ temps
 
-  (** Add the instructions and temporaties at the beginning of the list of instructions to execute *)
+  (** Add the instructions and temporaties at the beginning
+      of the list of instructions to execute *)
   let prepend_instrs_temps node instrs temps =
     node.nd_instrs <- instrs @ node.nd_instrs;
     node.nd_temps <- temps @ node.nd_temps
@@ -370,7 +376,7 @@ module Node = struct
     node.nd_instrs <- instrs
 
   let proc_desc_get_ret_var pdesc =
-    Sil.get_ret_pvar pdesc.pd_attributes.ProcAttributes.proc_name
+    Pvar.get_ret_pvar pdesc.pd_attributes.ProcAttributes.proc_name
 
   (** Add declarations for local variables and return variable to the node *)
   let add_locals_ret_declaration node locals =
@@ -381,7 +387,7 @@ module Node = struct
       let ret_type = pdesc.pd_attributes.ProcAttributes.ret_type in
       (proc_desc_get_ret_var pdesc, ret_type) in
     let construct_decl (x, typ) =
-      (Sil.mk_pvar x proc_name, typ) in
+      (Pvar.mk x proc_name, typ) in
     let ptl = ret_var :: IList.map construct_decl locals in
     let instr = Sil.Declare_locals (ptl, loc) in
     prepend_instrs_temps node [instr] []
@@ -645,7 +651,7 @@ module Node = struct
     and callee_start_node = proc_desc_get_start_node callee_proc_desc
     and callee_exit_node = proc_desc_get_exit_node callee_proc_desc in
     let convert_pvar pvar =
-      Sil.mk_pvar (Sil.pvar_get_name pvar) resolved_proc_name in
+      Pvar.mk (Pvar.get_name pvar) resolved_proc_name in
     let convert_exp = function
       | Sil.Lvar origin_pvar ->
           Sil.Lvar (convert_pvar origin_pvar)
@@ -662,7 +668,7 @@ module Node = struct
     let convert_instr instrs = function
       | Sil.Letderef (id, (Sil.Lvar origin_pvar as origin_exp), origin_typ, loc) ->
           let (_, specialized_typ) =
-            let pvar_name = Sil.pvar_get_name origin_pvar in
+            let pvar_name = Pvar.get_name origin_pvar in
             try
               IList.find
                 (fun (n, _) -> Mangled.equal n pvar_name)
@@ -765,7 +771,7 @@ module Procdesc = struct
   let get_sliced_slope = Node.proc_desc_get_sliced_slope
   let get_proc_name = Node.proc_desc_get_proc_name
   let get_ret_type = Node.proc_desc_get_ret_type
-  let get_ret_var pdesc = Sil.mk_pvar Ident.name_return (get_proc_name pdesc)
+  let get_ret_var pdesc = Pvar.mk Ident.name_return (get_proc_name pdesc)
   let get_start_node = Node.proc_desc_get_start_node
   let is_defined = Node.proc_desc_is_defined
   let iter_nodes = Node.proc_desc_iter_nodes
@@ -818,14 +824,15 @@ let set_procname_priority cfg pname =
   cfg.Node.priority_set <- Procname.Set.add pname cfg.Node.priority_set
 
 let get_name_of_local (curr_f : Procdesc.t) (x, _) =
-  Sil.mk_pvar x (Procdesc.get_proc_name curr_f)
+  Pvar.mk x (Procdesc.get_proc_name curr_f)
 
 (* returns a list of local static variables (ie local variables defined static) in a proposition *)
 let get_name_of_objc_static_locals (curr_f : Procdesc.t) p =
   let pname = Procname.to_string (Procdesc.get_proc_name curr_f) in
   let local_static e =
     match e with (* is a local static if it's a global and it has a static local name *)
-    | Sil.Lvar pvar when (Sil.pvar_is_global pvar) && (Sil.is_static_local_name pname pvar) -> [pvar]
+    | Sil.Lvar pvar
+      when (Pvar.is_global pvar) && (Sil.is_static_local_name pname pvar) -> [pvar]
     | _ -> [] in
   let hpred_local_static hpred =
     match hpred with
@@ -885,18 +892,18 @@ let remove_abducted_retvars p =
         pi in
     Sil.HpredSet.elements reach_hpreds, reach_pi in
   (* separate the abducted pvars from the normal ones, deallocate the abducted ones*)
-  let abducted_pvars, normal_pvars =
+  let abducteds, normal_pvars =
     IList.fold_left
       (fun pvars hpred ->
          match hpred with
          | Sil.Hpointsto (Sil.Lvar pvar, _, _) ->
-             let abducted_pvars, normal_pvars = pvars in
-             if Sil.pvar_is_abducted pvar then pvar :: abducted_pvars, normal_pvars
-             else abducted_pvars, pvar :: normal_pvars
+             let abducteds, normal_pvars = pvars in
+             if Pvar.is_abducted pvar then pvar :: abducteds, normal_pvars
+             else abducteds, pvar :: normal_pvars
          | _ -> pvars)
       ([], [])
       (Prop.get_sigma p) in
-  let _, p' = Prop.deallocate_stack_vars p abducted_pvars in
+  let _, p' = Prop.deallocate_stack_vars p abducteds in
   let normal_pvar_set =
     IList.fold_left
       (fun normal_pvar_set pvar -> Sil.ExpSet.add (Sil.Lvar pvar) normal_pvar_set)
@@ -919,14 +926,14 @@ let remove_locals (curr_f : Procdesc.t) p =
 
 let remove_formals (curr_f : Procdesc.t) p =
   let pname = Procdesc.get_proc_name curr_f in
-  let formal_vars = IList.map (fun (n, _) -> Sil.mk_pvar n pname) (Procdesc.get_formals curr_f) in
+  let formal_vars = IList.map (fun (n, _) -> Pvar.mk n pname) (Procdesc.get_formals curr_f) in
   Prop.deallocate_stack_vars p formal_vars
 
 (** remove the return variable from the prop *)
 let remove_ret (curr_f : Procdesc.t) (p: Prop.normal Prop.t) =
   let pname = Procdesc.get_proc_name curr_f in
   let name_of_ret = Procdesc.get_ret_var curr_f in
-  let _, p' = Prop.deallocate_stack_vars p [(Sil.pvar_to_callee pname name_of_ret)] in
+  let _, p' = Prop.deallocate_stack_vars p [(Pvar.to_callee pname name_of_ret)] in
   p'
 
 (** remove locals and return variable from the prop *)
@@ -943,7 +950,7 @@ let remove_locals_formals (curr_f : Procdesc.t) p =
 (** remove seed vars from a prop *)
 let remove_seed_vars (prop: 'a Prop.t) : Prop.normal Prop.t =
   let hpred_not_seed = function
-    | Sil.Hpointsto(Sil.Lvar pv, _, _) -> not (Sil.pvar_is_seed pv)
+    | Sil.Hpointsto(Sil.Lvar pv, _, _) -> not (Pvar.is_seed pv)
     | _ -> true in
   let sigma = Prop.get_sigma prop in
   let sigma' = IList.filter hpred_not_seed sigma in
@@ -964,7 +971,8 @@ let check_cfg_connectedness cfg =
     | Node.Stmt_node _ | Node.Prune_node _
     | Node.Skip_node _ -> (IList.length succs = 0) || (IList.length preds = 0)
     | Node.Join_node ->
-        (* Join node has the exception that it may be without predecessors and pointing to an exit node *)
+        (* Join node has the exception that it may be without predecessors
+           and pointing to an exit node *)
         (* if the if brances end with a return *)
         (match succs with
          | [n'] when is_exit_node n' -> false
@@ -985,8 +993,8 @@ let remove_seed_captured_vars_block captured_vars prop =
   let is_captured pname vn = Mangled.equal pname vn in
   let hpred_seed_captured = function
     | Sil.Hpointsto(Sil.Lvar pv, _, _) ->
-        let pname = Sil.pvar_get_name pv in
-        (Sil.pvar_is_seed pv) && (IList.mem is_captured pname captured_vars)
+        let pname = Pvar.get_name pv in
+        (Pvar.is_seed pv) && (IList.mem is_captured pname captured_vars)
     | _ -> false in
   let sigma = Prop.get_sigma prop in
   let sigma' = IList.filter (fun hpred -> not (hpred_seed_captured hpred)) sigma in
@@ -1062,7 +1070,7 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call : Sil.instr option =
         let instr' = Sil.Letderef (ret_id, Sil.Lfield (e1, fn, ft), bt, loc_call) in
         found instr instr'
     | Sil.Letderef (_, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, _), [ret_id], []
-      when Sil.pvar_is_global pvar -> (* getter for static fields *)
+      when Pvar.is_global pvar -> (* getter for static fields *)
         let instr' = Sil.Letderef (ret_id, Sil.Lfield (Sil.Lvar pvar, fn, ft), bt, loc_call) in
         found instr instr'
     | Sil.Set (Sil.Lfield (_, fn, ft), bt , _, _),
@@ -1071,7 +1079,7 @@ let inline_synthetic_method ret_ids etl proc_desc loc_call : Sil.instr option =
         let instr' = Sil.Set (Sil.Lfield (e1, fn, ft), bt , e2, loc_call) in
         found instr instr'
     | Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , _, _), _, [(e1, _)]
-      when Sil.pvar_is_global pvar -> (* setter for static fields *)
+      when Pvar.is_global pvar -> (* setter for static fields *)
         let instr' = Sil.Set (Sil.Lfield (Sil.Lvar pvar, fn, ft), bt , e1, loc_call) in
         found instr instr'
     | Sil.Call (ret_ids', Sil.Const (Sil.Cfun pn), etl', _, cf), _, _

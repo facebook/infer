@@ -398,8 +398,8 @@ let pp_typ_c pe typ =
   Sil.pp_type_decl pe pp_nil pp_exp_c typ
 
 (** Convert a pvar to a string by just extracting the name *)
-let pvar_to_string pvar =
-  Mangled.to_string (Sil.pvar_get_name pvar)
+let to_string pvar =
+  Mangled.to_string (Pvar.get_name pvar)
 
 (** pretty print an expression list in C *)
 let pp_exp_list_c pe f expl =
@@ -449,7 +449,7 @@ let gen_sigma code proc_name spec_num env sigma =
 
   let gen_hpred = function
     | Sil.Hpointsto (Sil.Lvar pvar, se, _) ->
-        let base = pvar_to_string pvar in
+        let base = to_string pvar in
         do_strexp post_code base false se
     | Sil.Hpointsto (Sil.Var id, se, te) ->
         let pp1 f () =

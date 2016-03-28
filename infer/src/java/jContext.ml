@@ -33,7 +33,7 @@ type t =
   { icfg : icfg;
     procdesc : Cfg.Procdesc.t;
     impl : JBir.t;
-    mutable var_map : (Sil.pvar * Sil.typ * Sil.typ) JBir.VarMap.t;
+    mutable var_map : (Pvar.t * Sil.typ * Sil.typ) JBir.VarMap.t;
     if_jumps : int NodeTbl.t;
     goto_jumps : (int, jump_kind) Hashtbl.t;
     cn : JBasics.class_name;
@@ -84,7 +84,7 @@ let get_or_set_pvar_type context var typ =
   with Not_found ->
     let procname = (Cfg.Procdesc.get_proc_name (get_procdesc context)) in
     let varname = Mangled.from_string (JBir.var_name_g var) in
-    let pvar = Sil.mk_pvar varname procname in
+    let pvar = Pvar.mk varname procname in
     set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map);
     (pvar, typ)
 

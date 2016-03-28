@@ -433,7 +433,7 @@ struct
     let eq (m1, t1) (m2, t2) = (Mangled.equal m1 m2) && (Sil.typ_equal t1 t2) in
     append_no_duplicates eq list1 list2
 
-  let append_no_duplicated_pvars list1 list2 =
+  let append_no_duplicateds list1 list2 =
     let eq (e1, t1) (e2, t2) = (Sil.exp_equal e1 e2) && (Sil.typ_equal t1 t2) in
     append_no_duplicates eq list1 list2
 
@@ -498,7 +498,7 @@ struct
   (* It does not update the global block_counter *)
   let get_next_block_pvar defining_proc =
     let name = block_procname_with_index defining_proc (!block_counter +1) in
-    Sil.mk_pvar (Mangled.from_string (CFrontend_config.temp_var^"_"^name)) defining_proc
+    Pvar.mk (Mangled.from_string (CFrontend_config.temp_var^"_"^name)) defining_proc
 
   (* Reset  block counter *)
   let reset_block_counter () =
@@ -599,8 +599,8 @@ struct
             if var_decl_info.Clang_ast_t.vdi_is_static_local then
               Mangled.from_string ((Procname.to_string outer_procname) ^ "_" ^ name_string)
             else simple_name in
-          Sil.mk_pvar_global global_mangled_name
-        else if not should_be_mangled then Sil.mk_pvar simple_name procname
+          Pvar.mk_global global_mangled_name
+        else if not should_be_mangled then Pvar.mk simple_name procname
         else
           let type_name = Ast_utils.string_of_type_ptr type_ptr in
           let start_location = fst decl_info.Clang_ast_t.di_source_range in
@@ -608,8 +608,8 @@ struct
           let line_str = match line_opt with | Some line -> string_of_int line | None -> "" in
           let mangled = string_crc_hex32 (type_name ^ line_str) in
           let mangled_name = Mangled.mangled name_string mangled in
-          Sil.mk_pvar mangled_name procname
-    | None -> Sil.mk_pvar (Mangled.from_string name_string) procname
+          Pvar.mk mangled_name procname
+    | None -> Pvar.mk (Mangled.from_string name_string) procname
 
   let is_cpp_translation language =
     language = CFrontend_config.CPP || language = CFrontend_config.OBJCPP

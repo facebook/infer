@@ -499,7 +499,7 @@ let dereference_string deref_str value_str access_opt loc =
 
 let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let parameter_not_nullable_desc var =
-    let var_s = Sil.pvar_to_string var in
+    let var_s = Pvar.to_string var in
     let param_not_null_desc =
       "Parameter "^var_s^" is not checked for null, there could be a null pointer dereference:" in
     { desc with descriptions = param_not_null_desc :: desc.descriptions;
@@ -508,7 +508,7 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
     let rec exp_to_string exp =
       match exp with
       | Sil.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
-      | Sil.Lvar pvar -> Mangled.to_string (Sil.pvar_get_name pvar)
+      | Sil.Lvar pvar -> Mangled.to_string (Pvar.get_name pvar)
       | _ -> "" in
     let var_s = exp_to_string exp in
     let field_not_null_desc =
@@ -724,12 +724,12 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
     | _ -> s in
   let do_edge ((se, _), f, _) =
     match se with
-    | Sil.Eexp(Sil.Lvar pvar, _) when Sil.pvar_equal pvar Sil.block_pvar ->
+    | Sil.Eexp(Sil.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing "^(Ident.fieldname_to_string f)^"; ";
         ct:=!ct +1;
     | Sil.Eexp(Sil.Lvar pvar as e, _) ->
         let e_str = Sil.exp_to_string e in
-        let e_str = if Sil.pvar_is_seed pvar then
+        let e_str = if Pvar.is_seed pvar then
             remove_old e_str
           else e_str in
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining "^e_str^"."^(Ident.fieldname_to_string f)^", ";
@@ -748,7 +748,7 @@ let registered_observer_being_deallocated_str obj_str =
 
 let desc_registered_observer_being_deallocated pvar loc =
   let tags = Tags.create () in
-  let obj_str = Sil.pvar_to_string pvar in
+  let obj_str = Pvar.to_string pvar in
   { no_desc with descriptions = [ registered_observer_being_deallocated_str obj_str ^ at_line tags loc ^
                                  ". Being still registered as observer of the notification " ^
                                  "center, the deallocated object "

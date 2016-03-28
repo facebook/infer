@@ -11,11 +11,11 @@ module F = Format
 module L = Logging
 
 type var =
-  | ProgramVar of Sil.pvar
+  | ProgramVar of Pvar.t
   | LogicalVar of Ident.t
 
 let var_compare v1 v2 = match v1, v2 with
-  | ProgramVar pv1, ProgramVar pv2 -> Sil.pvar_compare pv1 pv2
+  | ProgramVar pv1, ProgramVar pv2 -> Pvar.compare pv1 pv2
   | LogicalVar sv1, LogicalVar sv2 -> Ident.compare sv1 sv2
   | ProgramVar _, _ -> 1
   | LogicalVar _, _ -> -1
@@ -24,8 +24,10 @@ let var_equal v1 v2 =
   var_compare v1 v2 = 0
 
 let pp_var fmt = function
-  | ProgramVar pv -> (Sil.pp_pvar pe_text) fmt pv
-  | LogicalVar id -> (Ident.pp pe_text) fmt id
+  | ProgramVar pv ->
+      (Pvar.pp pe_text) fmt pv
+  | LogicalVar id ->
+      (Ident.pp pe_text) fmt id
 
 module Domain = struct
   module VarMap = PrettyPrintable.MakePPMap(struct
@@ -102,12 +104,12 @@ module TransferFunctions = struct
     | Sil.Letderef (lhs_id, Sil.Var rhs_id, _, _) ->
         (* note: logical vars are SSA, don't need to worry about overwriting existing bindings *)
         Domain.gen (LogicalVar lhs_id) (LogicalVar rhs_id) astate
-    | Sil.Letderef (lhs_id, Sil.Lvar rhs_pvar, _, _) when not (Sil.pvar_is_global rhs_pvar) ->
+    | Sil.Letderef (lhs_id, Sil.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
         Domain.gen (LogicalVar lhs_id) (ProgramVar rhs_pvar) astate
-    | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Var rhs_id, _) when not (Sil.pvar_is_global lhs_pvar) ->
+    | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
         Domain.kill_then_gen (ProgramVar lhs_pvar) (LogicalVar rhs_id) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Lvar rhs_pvar, _)
-      when not (Sil.pvar_is_global lhs_pvar || Sil.pvar_is_global rhs_pvar)  ->
+      when not (Pvar.is_global lhs_pvar || Pvar.is_global rhs_pvar)  ->
         Domain.kill_then_gen (ProgramVar lhs_pvar) (ProgramVar rhs_pvar) astate
     | Sil.Letderef (lhs_id, _, _, _) ->
         (* non-copy assignment (or assignment to global); can only kill *)

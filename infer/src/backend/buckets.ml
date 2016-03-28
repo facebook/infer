@@ -54,13 +54,13 @@ let check_access access_opt de_opt =
       let formals = Cfg.Procdesc.get_formals (Cfg.Node.get_proc_desc node) in
       let formal_names = IList.map fst formals in
       let is_formal pvar =
-        let name = Sil.pvar_get_name pvar in
+        let name = Pvar.get_name pvar in
         IList.exists (Mangled.equal name) formal_names in
       let formal_ids = ref [] in
       let process_formal_letref = function
         | Sil.Letderef (id, Sil.Lvar pvar, _, _) ->
             let is_java_this =
-              !Config.curr_language = Config.Java && Sil.pvar_is_this pvar in
+              !Config.curr_language = Config.Java && Pvar.is_this pvar in
             if not is_java_this && is_formal pvar then formal_ids := id :: !formal_ids
         | _ -> () in
       IList.iter process_formal_letref node_instrs;

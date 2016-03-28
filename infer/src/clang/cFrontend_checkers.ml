@@ -140,7 +140,7 @@ let captured_cxx_ref_in_objc_block_warning stmt_info captured_vars =
     | _ -> false in
   let capt_refs = IList.filter is_cxx_ref captured_vars in
   let pvar_descs =
-    IList.fold_left (fun s (v, _)  -> s ^ " '" ^ (Sil.pvar_to_string v) ^ "' ") "" capt_refs in
+    IList.fold_left (fun s (v, _)  -> s ^ " '" ^ (Pvar.to_string v) ^ "' ") "" capt_refs in
   (* Fire if the list of captured references is not empty *)
   let condition = IList.length capt_refs > 0 in
   if condition then

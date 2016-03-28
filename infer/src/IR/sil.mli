@@ -32,14 +32,6 @@ type func_attribute =
 (** Visibility modifiers. *)
 type access = Default | Public | Private | Protected
 
-(** Type for program variables. There are 4 kinds of variables:
-    1) local variables, used for local variables and formal parameters
-    2) callee program variables, used to handle recursion ([x | callee] is distinguished from [x])
-    3) global variables
-    4) seed variables, used to store the initial value of formal parameters
-*)
-type pvar
-
 (** Unary operations *)
 type unop =
   | Neg  (** Unary minus *)
@@ -225,8 +217,8 @@ type dexp =
   | Dfcall of dexp * dexp list * Location.t * call_flags
   | Darrow of dexp * Ident.fieldname
   | Ddot of dexp * Ident.fieldname
-  | Dpvar of pvar
-  | Dpvaraddr of pvar
+  | Dpvar of Pvar.t
+  | Dpvaraddr of Pvar.t
   | Dunop of unop * dexp
   | Dunknown
   | Dretcall of dexp * dexp list * Location.t * call_flags
@@ -292,7 +284,7 @@ and attribute_category =
 
 and closure = {
   name : Procname.t;
-  captured_vars : (exp * pvar * typ) list;
+  captured_vars : (exp * Pvar.t * typ) list;
 }
 
 (** Constants *)
@@ -350,7 +342,7 @@ and exp =
   | Cast of typ * exp
 
   (** The address of a program variable *)
-  | Lvar of pvar
+  | Lvar of Pvar.t
 
   (** A field offset, the type is the surrounding struct type *)
   | Lfield of exp * Ident.fieldname * typ
@@ -408,11 +400,11 @@ type instr =
       where n = 0 for void return and n > 1 for struct return *)
   | Call of Ident.t list * exp * (exp * typ) list * Location.t * call_flags
   (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
-  | Nullify of pvar * Location.t * bool
+  | Nullify of Pvar.t * Location.t * bool
   | Abstract of Location.t (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
   | Stackop of stackop * Location.t (** operation on the stack of propsets *)
-  | Declare_locals of (pvar * typ) list * Location.t (** declare local variables *)
+  | Declare_locals of (Pvar.t * typ) list * Location.t (** declare local variables *)
   (** jump to a specific cfg node,
       assuming all the possible target nodes are successors of the current node *)
   | Goto_node of exp * Location.t
@@ -583,54 +575,20 @@ val typ_strip_ptr : typ -> typ
 
 val zero_value_of_numerical_type : typ -> exp
 
-val pvar_get_name : pvar -> Mangled.t
-
-val pvar_to_string : pvar -> string
-
-(** Turn a pvar into a seed pvar (which stores the initial value of a stack var) *)
-val pvar_to_seed : pvar -> pvar
-
-(** Check if the pvar is a callee var *)
-val pvar_is_callee : pvar -> bool
-
-(** Check if the pvar is an abducted return var or param passed by ref *)
-val pvar_is_abducted : pvar -> bool
-
-(** Check if the pvar is a local var *)
-val pvar_is_local : pvar -> bool
-
-(** Check if the pvar is a seed var *)
-val pvar_is_seed : pvar -> bool
-
-(** Check if the pvar is a global var *)
-val pvar_is_global : pvar -> bool
-
-(** Check if a pvar is the special "this" var *)
-val pvar_is_this : pvar -> bool
-
-(** Check if the pvar is a return var *)
-val pvar_is_return : pvar -> bool
-
 (** Make a static local name in objc *)
 val mk_static_local_name : string -> string -> string
 
 (** Check if a pvar is a local static in objc *)
-val is_static_local_name : string -> pvar -> bool
+val is_static_local_name : string -> Pvar.t -> bool
 
 (* A block pvar used to explain retain cycles *)
-val block_pvar : pvar
+val block_pvar : Pvar.t
 
 (** Check if a pvar is a local pointing to a block in objc *)
-val is_block_pvar : pvar -> bool
+val is_block_pvar : Pvar.t -> bool
 
 (** Check if type is a type for a block in objc *)
 val is_block_type : typ -> bool
-
-(** Compare two pvar's *)
-val pvar_compare : pvar -> pvar -> int
-
-(** Equality for pvar's *)
-val pvar_equal : pvar -> pvar -> bool
 
 (** Comparision for fieldnames. *)
 val fld_compare : Ident.fieldname -> Ident.fieldname -> int
@@ -842,21 +800,6 @@ val d_typ_full : typ -> unit
 
 (** Dump a list of types. *)
 val d_typ_list : typ list -> unit
-
-(** Pretty print a program variable. *)
-val pp_pvar : printenv -> F.formatter -> pvar -> unit
-
-(** Pretty print a pvar which denotes a value, not an address *)
-val pp_pvar_value : printenv -> F.formatter -> pvar -> unit
-
-(** Dump a program variable. *)
-val d_pvar : pvar -> unit
-
-(** Pretty print a list of program variables. *)
-val pp_pvar_list : printenv -> F.formatter -> pvar list -> unit
-
-(** Dump a list of program variables. *)
-val d_pvar_list : pvar list -> unit
 
 (** convert the attribute to a string *)
 val attribute_to_string : printenv -> attribute -> string
@@ -1086,15 +1029,15 @@ val exp_lt : exp -> exp -> exp
 
 (** {2 Functions for computing program variables} *)
 
-val exp_fpv : exp -> pvar list
+val exp_fpv : exp -> Pvar.t list
 
-val strexp_fpv : strexp -> pvar list
+val strexp_fpv : strexp -> Pvar.t list
 
-val atom_fpv : atom -> pvar list
+val atom_fpv : atom -> Pvar.t list
 
-val hpred_fpv : hpred -> pvar list
+val hpred_fpv : hpred -> Pvar.t list
 
-val hpara_fpv : hpara -> pvar list
+val hpara_fpv : hpara -> Pvar.t list
 
 (** {2 Functions for computing free non-program variables} *)
 
@@ -1277,7 +1220,7 @@ val sub_fav_add : fav -> subst -> unit
 val sub_av_add : fav -> subst -> unit
 
 (** Compute free pvars in a sub *)
-val sub_fpv : subst -> pvar list
+val sub_fpv : subst -> Pvar.t list
 
 (** substitution functions *)
 (** WARNING: these functions do not ensure that the results are normalized. *)
@@ -1303,28 +1246,6 @@ val atom_replace_exp : (exp * exp) list -> atom -> atom
 val hpred_replace_exp : (exp * exp) list -> hpred -> hpred
 
 (** {2 Functions for constructing or destructing entities in this module} *)
-
-
-(** [mk_pvar name proc_name suffix] creates a program var with the given function name and suffix *)
-val mk_pvar : Mangled.t -> Procname.t -> pvar
-
-(** [get_ret_pvar proc_name] retuns the return pvar associated with the procedure name *)
-val get_ret_pvar : Procname.t -> pvar
-
-(** [mk_pvar_callee name proc_name] creates a program var
-    for a callee function with the given function name *)
-val mk_pvar_callee : Mangled.t -> Procname.t -> pvar
-
-(** create a global variable with the given name *)
-val mk_pvar_global : Mangled.t -> pvar
-
-(** create an abducted return variable for a call to [proc_name] at [loc] *)
-val mk_pvar_abducted_ret : Procname.t -> Location.t -> pvar
-
-val mk_pvar_abducted_ref_param : Procname.t -> pvar -> Location.t -> pvar
-
-(** Turn an ordinary program variable into a callee program variable *)
-val pvar_to_callee : Procname.t -> pvar -> pvar
 
 (** Compute the offset list of an expression *)
 val exp_get_offsets : exp -> offset list
@@ -1354,9 +1275,4 @@ val exp_iter_types : (typ -> unit) -> exp -> unit
 (** Iterate over all the types (and subtypes) in the instruction *)
 val instr_iter_types : (typ -> unit) -> instr -> unit
 
-val custom_error : pvar
-
-(*
-(** Equality for consts. *)
-val const_equal : const -> const -> bool
-*)
+val custom_error : Pvar.t

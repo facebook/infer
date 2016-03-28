@@ -427,7 +427,7 @@ let rec expression context pc expr =
         | `String s when (JBasics.jstr_pp s) = JConfig.field_cst ->
             let varname = JConfig.field_st in
             let procname = (Cfg.Procdesc.get_proc_name (JContext.get_procdesc context)) in
-            let pvar = Sil.mk_pvar varname procname in
+            let pvar = Pvar.mk varname procname in
             trans_var pvar
         | _ -> ([], [], Sil.Const (get_constant c), type_of_expr)
       end
@@ -500,7 +500,7 @@ let rec expression context pc expr =
   | JBir.StaticField (cn, fs) ->
       let class_exp =
         let classname = Mangled.from_string (JBasics.cn_name cn) in
-        let var_name = Sil.mk_pvar_global classname in
+        let var_name = Pvar.mk_global classname in
         Sil.Lvar var_name in
       let (idl, instrs, sil_expr) = [], [], class_exp in
       let field_name = get_field_name program true tenv cn fs in
@@ -781,7 +781,7 @@ let rec instruction context pc instr : translation =
   let program = JContext.get_program context in
   let meth_kind = JContext.get_meth_kind context in
   let proc_name = Cfg.Procdesc.get_proc_name (JContext.get_procdesc context) in
-  let ret_var = Sil.get_ret_pvar proc_name in
+  let ret_var = Pvar.get_ret_pvar proc_name in
   let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
   let loc = get_location (JContext.get_impl context) pc meth_kind cn in
   let match_never_null = JContext.get_never_null_matcher context in
@@ -851,7 +851,7 @@ let rec instruction context pc instr : translation =
     | JBir.AffectStaticField (cn, fs, e_rhs) ->
         let class_exp =
           let classname = Mangled.from_string (JBasics.cn_name cn) in
-          let var_name = Sil.mk_pvar_global classname in
+          let var_name = Pvar.mk_global classname in
           Sil.Lvar var_name in
         let (idl1, stml1, sil_expr_lhs) = [], [], class_exp in
         let (idl2, stml2, sil_expr_rhs, _) = expression context pc e_rhs in

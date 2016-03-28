@@ -122,7 +122,7 @@ let rec inhabit_typ typ cfg env =
            * both fresh. the only point of this is to add a descriptive local name that makes error
            * reports from the harness look nicer -- it's not necessary to make symbolic execution work *)
           let fresh_local_exp =
-            Sil.Lvar (Sil.mk_pvar typ_class_name (Procname.Java env.harness_name)) in
+            Sil.Lvar (Pvar.mk typ_class_name (Procname.Java env.harness_name)) in
           let write_to_local_instr =
             Sil.Set (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
           let env' = env_add_instr write_to_local_instr [] env in

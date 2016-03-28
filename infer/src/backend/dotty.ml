@@ -125,7 +125,7 @@ let strip_special_chars s =
 
 let rec strexp_to_string pe coo f se =
   match se with
-  | Sil.Eexp (Sil.Lvar pvar, _) -> F.fprintf f "%a" (Sil.pp_pvar pe) pvar
+  | Sil.Eexp (Sil.Lvar pvar, _) -> F.fprintf f "%a" (Pvar.pp pe) pvar
   | Sil.Eexp (Sil.Var id, _) ->
       if !print_full_prop then
         F.fprintf f "%a" (Ident.pp pe) id
@@ -1306,11 +1306,11 @@ let xml_pure_info prop =
 (** Return a string describing the kind of a pointsto address *)
 let pointsto_addr_kind = function
   | Sil.Lvar pv ->
-      if Sil.pvar_is_global pv
+      if Pvar.is_global pv
       then "global"
-      else if Sil.pvar_is_local pv && Mangled.equal (Sil.pvar_get_name pv) Ident.name_return
+      else if Pvar.is_local pv && Mangled.equal (Pvar.get_name pv) Ident.name_return
       then "return"
-      else if Sil.pvar_is_local pv
+      else if Pvar.is_local pv
       then "parameter"
       else "other"
   | _ -> "other"

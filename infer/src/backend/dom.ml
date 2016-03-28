@@ -954,7 +954,7 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
         let e2'' = exp_partial_join e1' e2' in
         Sil.BinOp(binop1, e1'', e2'')
   | Sil.Lvar(pvar1), Sil.Lvar(pvar2) ->
-      if not (Sil.pvar_equal pvar1 pvar2) then (L.d_strln "failure reason 25"; raise IList.Fail)
+      if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 25"; raise IList.Fail)
       else e1
   | Sil.Lfield(e1, f1, t1), Sil.Lfield(e2, f2, _) ->
       if not (Sil.fld_equal f1 f2) then (L.d_strln "failure reason 26"; raise IList.Fail)
@@ -1029,7 +1029,7 @@ let rec exp_partial_meet (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
         Rename.extend e1 e2 (Rename.ExtDefault(e1))
       else (L.d_strln "failure reason 34"; raise IList.Fail)
   | Sil.Lvar(pvar1), Sil.Lvar(pvar2) ->
-      if not (Sil.pvar_equal pvar1 pvar2) then (L.d_strln "failure reason 35"; raise IList.Fail)
+      if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 35"; raise IList.Fail)
       else e1
   | Sil.Lfield(e1, f1, t1), Sil.Lfield(e2, f2, _) ->
       if not (Sil.fld_equal f1 f2) then (L.d_strln "failure reason 36"; raise IList.Fail)

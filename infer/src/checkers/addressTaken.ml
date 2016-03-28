@@ -8,9 +8,9 @@
  *)
 
 module PvarSet = PrettyPrintable.MakePPSet(struct
-    type t = Sil.pvar
-    let compare = Sil.pvar_compare
-    let pp_element = (Sil.pp_pvar pe_text)
+    type t = Pvar.t
+    let compare = Pvar.compare
+    let pp_element = (Pvar.pp pe_text)
   end)
 
 module Domain = AbstractDomain.FiniteSetDomain(PvarSet)

@@ -323,7 +323,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     IList.map fst class_formals) in
   let equal_formal_param exp formal_name = match exp with
     | Sil.Lvar pvar ->
-        let name = Sil.pvar_get_name pvar in
+        let name = Pvar.get_name pvar in
         Mangled.equal name formal_name
     | _ -> false in
 
@@ -424,7 +424,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
       Some proc_desc' ->
         let is_return_instr = function
           | Sil.Set (Sil.Lvar p, _, _, _)
-            when Sil.pvar_equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
+            when Pvar.equal p (Cfg.Procdesc.get_ret_var proc_desc') -> true
           | _ -> false in
         (match reverse_find_instr is_return_instr (Cfg.Procdesc.get_exit_node proc_desc') with
          | Some (Sil.Set (_, _, Sil.Const (Sil.Cclass n), _)) -> Ident.name_to_string n

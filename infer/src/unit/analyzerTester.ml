@@ -64,7 +64,7 @@ module StructuredSil = struct
     Invariant (inv_str, fresh_label ())
 
   let pvar_of_str str =
-    Sil.mk_pvar (Mangled.from_string str) dummy_procname
+    Pvar.mk (Mangled.from_string str) dummy_procname
 
   let var_of_str str =
     Sil.Lvar (pvar_of_str str)

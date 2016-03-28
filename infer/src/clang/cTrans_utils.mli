@@ -211,7 +211,7 @@ sig
     CContext.t -> Procname.t -> Location.t -> Clang_ast_t.obj_c_message_expr_info ->
     trans_result
 
-  val is_var_self : Sil.pvar -> bool -> bool
+  val is_var_self : Pvar.t -> bool -> bool
 end
 
 val is_logical_negation_of_int :

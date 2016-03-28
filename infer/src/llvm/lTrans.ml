@@ -69,7 +69,7 @@ let rec trans_annotated_instructions
         | Ret None -> (sil_instrs, locals)
         | Ret (Some (tp, exp)) ->
             let procname = Cfg.Procdesc.get_proc_name procdesc in
-            let ret_var = Sil.get_ret_pvar procname in
+            let ret_var = Pvar.get_ret_pvar procname in
             let new_sil_instr =
               Sil.Set (Sil.Lvar ret_var, trans_typ tp, trans_operand exp, location) in
             (new_sil_instr :: sil_instrs, locals)

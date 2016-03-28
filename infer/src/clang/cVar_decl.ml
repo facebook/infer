@@ -50,7 +50,7 @@ let sil_var_of_decl_ref context decl_ref procname =
       General_utils.mk_sil_var name None procname outer_procname
   | _ ->
       if is_custom_var_pointer pointer then
-        Sil.mk_pvar (Mangled.from_string name.Clang_ast_t.ni_name) procname
+        Pvar.mk (Mangled.from_string name.Clang_ast_t.ni_name) procname
       else match Ast_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
         | Some var_decl -> sil_var_of_decl context var_decl procname
         | None -> assert false
@@ -60,7 +60,7 @@ let add_var_to_locals procdesc var_decl sil_typ pvar =
   match var_decl with
   | VarDecl (_, _, _, vdi) ->
       if not vdi.Clang_ast_t.vdi_is_global then
-        Cfg.Procdesc.append_locals procdesc [(Sil.pvar_get_name pvar, sil_typ)]
+        Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, sil_typ)]
   | _ -> assert false
 
 let rec compute_autorelease_pool_vars context stmts =
@@ -75,8 +75,8 @@ let rec compute_autorelease_pool_vars context stmts =
             | Some type_ptr when decl_ref.Clang_ast_t.dr_kind = `Var ->
                 let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
                 let pvar = sil_var_of_decl_ref context decl_ref procname in
-                if Sil.pvar_is_local pvar then
-                  General_utils.append_no_duplicated_pvars [(Sil.Lvar pvar, typ)] res
+                if Pvar.is_local pvar then
+                  General_utils.append_no_duplicateds [(Sil.Lvar pvar, typ)] res
                 else res
             | _ -> res)
        | _ -> res)

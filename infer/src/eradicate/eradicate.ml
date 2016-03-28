@@ -73,13 +73,13 @@ struct
       tenv find_canonical_duplicate calls_this checks get_proc_desc idenv curr_pname
       curr_pdesc annotated_signature linereader proc_loc
     : bool * Extension.extension TypeState.t option =
-    let mk_pvar s = Sil.mk_pvar s curr_pname in
+    let mk s = Pvar.mk s curr_pname in
     let add_formal typestate (s, ia, typ) =
-      let pvar = mk_pvar s in
+      let pvar = mk s in
       let ta =
         let origin = TypeOrigin.Formal s in
         TypeAnnotation.from_item_annotation ia origin in
-      TypeState.add_pvar pvar (typ, ta, []) typestate in
+      TypeState.add pvar (typ, ta, []) typestate in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty Extension.ext in
       IList.fold_left add_formal typestate_empty annotated_signature.Annotations.params in

@@ -258,7 +258,7 @@ let annotated_signature_is_anonymous_inner_class_wrapper ann_sig proc_name =
 let param_is_nullable pvar ann_sig =
   IList.exists
     (fun (param, annot, _) ->
-       Mangled.equal param (Sil.pvar_get_name pvar) && ia_is_nullable annot)
+       Mangled.equal param (Pvar.get_name pvar) && ia_is_nullable annot)
     ann_sig.params
 
 (** Pretty print a method signature with annotations. *)

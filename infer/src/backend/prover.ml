@@ -819,18 +819,18 @@ let check_inconsistency_base prop =
     let procedure_attr =
       Cfg.Procdesc.get_attributes procdesc in
     let is_java_this pvar =
-      !Config.curr_language = Config.Java && Sil.pvar_is_this pvar in
+      !Config.curr_language = Config.Java && Pvar.is_this pvar in
     let is_objc_instance_self pvar =
       !Config.curr_language = Config.C_CPP &&
-      Sil.pvar_get_name pvar = Mangled.from_string "self" &&
+      Pvar.get_name pvar = Mangled.from_string "self" &&
       procedure_attr.ProcAttributes.is_objc_instance_method in
     let is_cpp_this pvar =
-      !Config.curr_language = Config.C_CPP && Sil.pvar_is_this pvar &&
+      !Config.curr_language = Config.C_CPP && Pvar.is_this pvar &&
       procedure_attr.ProcAttributes.is_cpp_instance_method in
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
           Sil.exp_equal e Sil.exp_zero &&
-          Sil.pvar_is_seed pv &&
+          Pvar.is_seed pv &&
           (is_java_this pv || is_cpp_this pv || is_objc_instance_self pv)
       | _ -> false in
     IList.exists do_hpred sigma in
@@ -1139,13 +1139,13 @@ let exp_imply calc_missing subs e1_in e2_in : subst2 =
           let () = ProverState.add_missing_pi (Sil.Aeq (e1_in, e2_in)) in
           subs
         else raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
-    | Sil.Lvar pv1, Sil.Const _ when Sil.pvar_is_global pv1 ->
+    | Sil.Lvar pv1, Sil.Const _ when Pvar.is_global pv1 ->
         if calc_missing then
           let () = ProverState.add_missing_pi (Sil.Aeq (e1_in, e2_in)) in
           subs
         else raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Sil.Lvar v1, Sil.Lvar v2 ->
-        if Sil.pvar_equal v1 v2 then subs
+        if Pvar.equal v1 v2 then subs
         else raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Sil.Const c1, Sil.Const c2 ->
         if (Sil.const_equal c1 c2) then subs
@@ -1682,7 +1682,7 @@ let sexp_imply_preprocess se1 texp1 se2 = match se1, texp1, se2 with
     of the one in the callee, add a type frame and type missing *)
 let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2) =
   let is_callee = match e1 with
-    | Sil.Lvar pv -> Sil.pvar_is_callee pv
+    | Sil.Lvar pv -> Pvar.is_callee pv
     | _ -> false in
   let is_allocated_lhs e =
     let filter = function

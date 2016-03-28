@@ -424,7 +424,7 @@ let mk_ptsto_exp_footprint
     | Config.Java -> Sil.Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ with
     | Sil.Lvar pvar, [], Sil.Tfun _ ->
-        let fun_name = Procname.from_string_c_fun (Mangled.to_string (Sil.pvar_get_name pvar)) in
+        let fun_name = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
         let fun_exp = Sil.Const (Sil.Cfun fun_name) in
         ([], Prop.mk_ptsto root (Sil.Eexp (fun_exp, inst)) (Sil.Sizeof (typ, st)))
     | _, [], Sil.Tfun _ ->
@@ -512,7 +512,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     end;
     let extend_kind = match e with (* Determine whether to extend the footprint part or just the normal part *)
       | Sil.Var id when not (Ident.is_footprint id) -> Ident.kprimed
-      | Sil.Lvar pvar when Sil.pvar_is_local pvar -> Ident.kprimed
+      | Sil.Lvar pvar when Pvar.is_local pvar -> Ident.kprimed
       | _ -> Ident.kfootprint in
     let iter_list =
       let atoms_se_te_list =
@@ -945,9 +945,9 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
            when Sil.exp_equal exp deref_exp ->
              let is_nullable = Annotations.param_is_nullable pvar ann_sig in
              if is_nullable then
-               nullable_obj_str := Some (Sil.pvar_to_string pvar);
+               nullable_obj_str := Some (Pvar.to_string pvar);
              (* it's ok for a non-nullable local to point to deref_exp *)
-             is_nullable || Sil.pvar_is_local pvar
+             is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Sil.Sizeof (typ, _)) ->
              let fld_is_nullable fld =
                match Annotations.get_field_type_and_annotation fld typ with
@@ -1047,7 +1047,7 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
   let is_fun_exp_captured_var () = (* Called expression is a captured variable of the block *)
     match get_exp_called () with
     | Some (_, Sil.Lvar pvar) -> (* pvar is the block *)
-        let name = Sil.pvar_get_name pvar in
+        let name = Pvar.get_name pvar in
         IList.exists (fun (cn, _) -> (Mangled.to_string name) = (Mangled.to_string cn)) (Cfg.Procdesc.get_captured pdesc)
     | _ -> false in
   let is_field_deref () = (*Called expression is a field *)

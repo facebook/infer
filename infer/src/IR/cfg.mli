@@ -78,7 +78,7 @@ module Procdesc : sig
   (** Return the return type of the procedure and type string *)
   val get_ret_type : t -> Sil.typ
 
-  val get_ret_var : t -> Sil.pvar
+  val get_ret_var : t -> Pvar.t
 
   val get_start_node : t -> node
 
@@ -178,7 +178,7 @@ module Node : sig
 
   (** Get the (after/before) dead program variables.
       After/before indicated with the true/false flag. *)
-  val get_dead_pvars: t -> bool -> Sil.pvar list
+  val get_dead_pvars: t -> bool -> Pvar.t list
 
   (** Get the distance to the exit node, if it has been computed *)
   val get_distance_to_exit: t -> int option
@@ -248,7 +248,7 @@ module Node : sig
 
   (** Set the (after/before) dead program variables.
       After/before indicated with the true/false flag. *)
-  val set_dead_pvars : t -> bool -> Sil.pvar list -> unit
+  val set_dead_pvars : t -> bool -> Pvar.t list -> unit
 
   (** Set the node kind *)
   val set_kind : t -> nodekind -> unit
@@ -303,7 +303,7 @@ val remove_locals_ret : Procdesc.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. *)
-val remove_locals_formals : Procdesc.t -> Prop.normal Prop.t -> Sil.pvar list * Prop.normal Prop.t
+val remove_locals_formals : Procdesc.t -> Prop.normal Prop.t -> Pvar.t list * Prop.normal Prop.t
 
 (** remove seed vars from a prop *)
 val remove_seed_vars : 'a Prop.t -> Prop.normal Prop.t

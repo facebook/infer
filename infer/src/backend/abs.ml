@@ -950,7 +950,7 @@ let get_var_retain_cycle _prop =
     | Sil.Hpointsto (e, _, Sil.Sizeof(typ, _)), Sil.Eexp (e', _)
       when Sil.exp_equal e e' && Sil.is_block_type typ -> true
     | _, _ -> false in
-  let find_pvar v =
+  let find v =
     try
       let hp = IList.find (is_pvar v) sigma in
       Some (Sil.hpred_get_lhs hp)
@@ -960,8 +960,8 @@ let get_var_retain_cycle _prop =
       Some (Sil.Lvar Sil.block_pvar)
     else None in
   let sexp e = Sil.Eexp (e, Sil.Inone) in
-  let find_pvar_or_block ((e, t), f, e') =
-    match find_pvar e with
+  let find_or_block ((e, t), f, e') =
+    match find e with
     | Some pvar -> [((sexp pvar, t), f, e')]
     | _ -> (match find_block e with
         | Some blk -> [((sexp blk, t), f, e')]
@@ -976,7 +976,7 @@ let get_var_retain_cycle _prop =
     | hp:: sigma' ->
         let cycle = get_cycle hp _prop in
         L.d_strln "Filtering pvar in cycle ";
-        let cycle' = IList.flatten (IList.map find_pvar_or_block cycle) in
+        let cycle' = IList.flatten (IList.map find_or_block cycle) in
         if cycle' = [] then do_sigma sigma'
         else cycle' in
   do_sigma sigma
@@ -1025,7 +1025,7 @@ let check_observer_is_unsubscribed_deallocation prop e =
   | Some Sil.Aobserver ->
       (match pvar_opt with
        |  Some pvar ->
-           L.d_strln (" ERROR: Object " ^ (Sil.pvar_to_string pvar) ^
+           L.d_strln (" ERROR: Object " ^ (Pvar.to_string pvar) ^
                       " is being deallocated while still registered in a notification center");
            let desc = Localise.desc_registered_observer_being_deallocated pvar loc in
            raise (Exceptions.Registered_observer_being_deallocated (desc, __POS__))
@@ -1219,8 +1219,8 @@ let get_local_stack cur_sigma init_sigma =
   let get_stack_var = function
     | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> pvar
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> assert false in
-  let filter_local_stack old_pvars = function
-    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> not (IList.exists (Sil.pvar_equal pvar) old_pvars)
+  let filter_local_stack olds = function
+    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> not (IList.exists (Pvar.equal pvar) olds)
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> false in
   let init_stack = IList.filter filter_stack init_sigma in
   let init_stack_pvars = IList.map get_stack_var init_stack in
@@ -1229,7 +1229,7 @@ let get_local_stack cur_sigma init_sigma =
   (cur_local_stack, cur_local_stack_pvars)
 
 (** Extract the footprint, add a local stack and return it as a prop *)
-let extract_footprint_for_abs (p : 'a Prop.t) : Prop.exposed Prop.t * Sil.pvar list =
+let extract_footprint_for_abs (p : 'a Prop.t) : Prop.exposed Prop.t * Pvar.t list =
   let sigma = Prop.get_sigma p in
   let foot_pi = Prop.get_pi_footprint p in
   let foot_sigma = Prop.get_sigma_footprint p in
@@ -1240,7 +1240,7 @@ let extract_footprint_for_abs (p : 'a Prop.t) : Prop.exposed Prop.t * Sil.pvar l
 
 let remove_local_stack sigma pvars =
   let filter_non_stack = function
-    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> not (IList.exists (Sil.pvar_equal pvar) pvars)
+    | Sil.Hpointsto (Sil.Lvar pvar, _, _) -> not (IList.exists (Pvar.equal pvar) pvars)
     | Sil.Hpointsto _ | Sil.Hlseg _ | Sil.Hdllseg _ -> true in
   IList.filter filter_non_stack sigma
 

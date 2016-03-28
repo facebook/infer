@@ -23,7 +23,7 @@ type method_call_type =
 val should_add_return_param : Sil.typ -> is_objc_method:bool -> bool
 
 val create_local_procdesc : Cfg.cfg -> Tenv.t -> CMethod_signature.method_signature ->
-  Clang_ast_t.stmt list -> (Sil.pvar * Sil.typ) list -> bool -> bool
+  Clang_ast_t.stmt list -> (Pvar.t * Sil.typ) list -> bool -> bool
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.typ list) option -> unit
 

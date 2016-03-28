@@ -33,7 +33,7 @@ val get_this_type : ProcAttributes.t -> Sil.typ option
 val get_type_name : Sil.typ -> string
 
 (** Get the type names of a variable argument *)
-val get_vararg_type_names : Cfg.Node.t -> Sil.pvar -> string list
+val get_vararg_type_names : Cfg.Node.t -> Pvar.t -> string list
 
 val has_formal_method_argument_type_names :
   Cfg.Procdesc.t -> Procname.java -> string list -> bool
@@ -54,7 +54,7 @@ val is_direct_subtype_of : Sil.typ -> Typename.t -> bool
 val java_get_const_type_name : Sil.const -> string
 
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
-val java_get_vararg_values : Cfg.Node.t -> Sil.pvar -> Idenv.t -> Sil.exp list
+val java_get_vararg_values : Cfg.Node.t -> Pvar.t -> Idenv.t -> Sil.exp list
 
 val java_proc_name_with_class_method : Procname.java -> string -> string -> bool
 

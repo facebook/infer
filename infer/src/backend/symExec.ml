@@ -51,7 +51,7 @@ let get_blocks_nullified node =
 (** Given a proposition and an objc block checks whether by existentially quantifying
     captured variables in the block we obtain a leak. *)
 let check_block_retain_cycle tenv caller_pname prop block_nullified =
-  let mblock = Sil.pvar_get_name block_nullified in
+  let mblock = Pvar.get_name block_nullified in
   let block_pname = Procname.mangled_objc_block (Mangled.to_string mblock) in
   let block_captured =
     match AttributesTable.load_attributes block_pname with
@@ -473,7 +473,7 @@ let check_already_dereferenced pname cond prop =
 let check_deallocate_static_memory prop_after =
   let check_deallocated_attribute = function
     | Sil.Lvar pv, Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra)
-      when Sil.pvar_is_local pv || Sil.pvar_is_global pv ->
+      when Pvar.is_local pv || Pvar.is_global pv ->
         let freed_desc = Errdesc.explain_deallocate_stack_var pv ra in
         raise (Exceptions.Deallocate_stack_variable freed_desc)
     | Sil.Const (Sil.Cstr s), Sil.Aresource ({ Sil.ra_kind = Sil.Rrelease } as ra) ->
@@ -834,14 +834,14 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
     let already_has_abducted_retval p abducted_ret_pv =
       IList.exists
         (fun hpred -> match hpred with
-           | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ret_pv
+           | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Pvar.equal pv abducted_ret_pv
            | _ -> false)
         (Prop.get_sigma_footprint p) in
-    (* find an hpred [abducted_pvar] |-> A in [prop] and add [exp] = A to prop *)
-    let bind_exp_to_abducted_val exp_to_bind abducted_pvar prop =
+    (* find an hpred [abducted] |-> A in [prop] and add [exp] = A to prop *)
+    let bind_exp_to_abducted_val exp_to_bind abducted prop =
       let bind_exp prop = function
         | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (rhs, _), _)
-          when Sil.pvar_equal pv abducted_pvar ->
+          when Pvar.equal pv abducted ->
             Prop.conjoin_eq exp_to_bind rhs prop
         | _ -> prop in
       IList.fold_left bind_exp prop (Prop.get_sigma prop) in
@@ -855,7 +855,7 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
 
     if !Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
-      let abducted_ret_pv = Sil.mk_pvar_abducted_ret callee_pname callee_loc in
+      let abducted_ret_pv = Pvar.mk_abducted_ret callee_pname callee_loc in
       (* prevent introducing multiple abducted retvals for a single call site in a loop *)
       if already_has_abducted_retval prop abducted_ret_pv then prop
       else
@@ -1200,7 +1200,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         let eprop = Prop.expose prop_ in
         match IList.partition
                 (function
-                  | Sil.Hpointsto (Sil.Lvar pvar', _, _) -> Sil.pvar_equal pvar pvar'
+                  | Sil.Hpointsto (Sil.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
                   | _ -> false) (Prop.get_sigma eprop) with
         | [Sil.Hpointsto(e, se, typ)], sigma' ->
             let sigma'' = match deallocate with
@@ -1289,11 +1289,11 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
       | Sil.Lvar actual_pv ->
           (* introduce a fresh program variable to allow abduction on the return value *)
           let abducted_ref_pv =
-            Sil.mk_pvar_abducted_ref_param callee_pname actual_pv callee_loc in
+            Pvar.mk_abducted_ref_param callee_pname actual_pv callee_loc in
           let already_has_abducted_retval p =
             IList.exists
               (fun hpred -> match hpred with
-                 | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Sil.pvar_equal pv abducted_ref_pv
+                 | Sil.Hpointsto (Sil.Lvar pv, _, _) -> Pvar.equal pv abducted_ref_pv
                  | _ -> false)
               (Prop.get_sigma_footprint p) in
           (* prevent introducing multiple abducted retvals for a single call site in a loop *)
@@ -1337,7 +1337,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
             IList.fold_left
               (fun p hpred ->
                  match hpred with
-                 | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Sil.pvar_equal pv abducted_ref_pv ->
+                 | Sil.Hpointsto (Sil.Lvar pv, rhs, texp) when Pvar.equal pv abducted_ref_pv ->
                      let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
                      Prop.normalize (Prop.replace_sigma (new_hpred :: (Prop.get_sigma prop')) p)
                  | _ -> p)
@@ -2519,7 +2519,7 @@ module ModelBuiltins = struct
         let routine_arg = Prop.exp_normalize_prop prop_ (fst arg) in
         (match routine_name, (snd start_routine) with
          | Sil.Lvar pvar, _ ->
-             let fun_name = Sil.pvar_get_name pvar in
+             let fun_name = Pvar.get_name pvar in
              let fun_string = Mangled.to_string fun_name in
              L.d_strln ("pthread_create: calling function " ^ fun_string);
              begin

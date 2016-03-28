@@ -22,9 +22,9 @@ let tests =
   let int_typ = Sil.Tint IInt in
   let int_ptr_typ = Sil.Tptr (int_typ, Pk_pointer) in
   let fun_ptr_typ = Sil.Tptr (Tfun false, Pk_pointer) in
-  let closure_exp captured_pvars =
+  let closure_exp captureds =
     let mk_captured_var str = (Sil.Var (ident_of_str str), pvar_of_str str, int_ptr_typ) in
-    let captured_vars = IList.map mk_captured_var captured_pvars in
+    let captured_vars = IList.map mk_captured_var captureds in
     let closure = { Sil.name=dummy_procname; captured_vars; } in
     Sil.Const (Cclosure closure) in
   let test_list = [

@@ -271,7 +271,7 @@ let check_constructor_initialization
               | None -> unknown in
             IList.exists
               (function pname, typestate ->
-                let pvar = Sil.mk_pvar
+                let pvar = Pvar.mk
                     (Mangled.from_string (Ident.fieldname_to_string fn))
                     pname in
                 filter_range_opt (TypeState.lookup_pvar pvar typestate))

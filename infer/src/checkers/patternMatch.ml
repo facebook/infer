@@ -138,13 +138,13 @@ let java_get_const_type_name
 
 let get_vararg_type_names
     (call_node: Cfg.Node.t)
-    (ivar: Sil.pvar): string list =
+    (ivar: Pvar.t): string list =
   (* Is this the node creating ivar? *)
   let rec initializes_array instrs =
     match instrs with
     | Sil.Call ([t1], Sil.Const (Sil.Cfun pn), _, _, _)::
       Sil.Set (Sil.Lvar iv, _, Sil.Var t2, _):: is ->
-        (Sil.pvar_equal ivar iv && Ident.equal t1 t2 &&
+        (Pvar.equal ivar iv && Ident.equal t1 t2 &&
          Procname.equal pn (Procname.from_string_c_fun "__new_array"))
         || initializes_array is
     | _:: is -> initializes_array is
@@ -172,7 +172,7 @@ let get_vararg_type_names
     let rec array_nvar instrs =
       match instrs with
       | Sil.Letderef (nv, Sil.Lvar iv, _, _):: _
-        when Sil.pvar_equal iv ivar ->
+        when Pvar.equal iv ivar ->
           added_nvar nv instrs
       | _:: is -> array_nvar is
       | _ -> None in

@@ -41,12 +41,12 @@ end
 (** Determine if the node can throw an exception. *)
 let node_throws node (proc_throws : Procname.t -> throws) : throws =
   let instr_throws instr =
-    let pvar_is_return pvar =
+    let is_return pvar =
       let pdesc = Cfg.Node.get_proc_desc node in
       let ret_pvar = Cfg.Procdesc.get_ret_var pdesc in
-      Sil.pvar_equal pvar ret_pvar in
+      Pvar.equal pvar ret_pvar in
     match instr with
-    | Sil.Set (Sil.Lvar pvar, _, Sil.Const (Sil.Cexn _), _) when pvar_is_return pvar ->
+    | Sil.Set (Sil.Lvar pvar, _, Sil.Const (Sil.Cexn _), _) when is_return pvar ->
         (* assignment to return variable is an artifact of a throw instruction *)
         Throws
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _)

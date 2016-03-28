@@ -108,7 +108,8 @@ val error_desc_get_tag_call_procedure : error_desc -> string
 (** get the bucket value of an error_desc, if any *)
 val error_desc_get_bucket : error_desc -> string option
 
-(** set the bucket value of an error_desc; the boolean indicates where the bucket should be shown in the message *)
+(** set the bucket value of an error_desc.
+    The boolean indicates where the bucket should be shown in the message *)
 val error_desc_set_bucket : error_desc -> string -> bool -> error_desc
 
 (** hash function for error_desc *)
@@ -231,7 +232,7 @@ val desc_retain_cycle :
 
 val registered_observer_being_deallocated_str : string -> string
 
-val desc_registered_observer_being_deallocated : Sil.pvar -> Location.t -> error_desc
+val desc_registered_observer_being_deallocated : Pvar.t -> Location.t -> error_desc
 
 val desc_return_statement_missing : Location.t -> error_desc
 

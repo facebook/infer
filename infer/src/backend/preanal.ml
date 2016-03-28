@@ -47,8 +47,8 @@ module AllPreds = struct
 end
 
 module Vset = Set.Make (struct
-    type t = Sil.pvar
-    let compare = Sil.pvar_compare
+    type t = Pvar.t
+    let compare = Pvar.compare
   end)
 
 let aliased_var = ref Vset.empty
@@ -56,12 +56,12 @@ let aliased_var = ref Vset.empty
 let captured_var = ref Vset.empty
 
 let is_not_function cfg x =
-  let pname = Procname.from_string_c_fun (Mangled.to_string (Sil.pvar_get_name x)) in
+  let pname = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name x)) in
   Cfg.Procdesc.find_from_name cfg pname = None
 
-let is_captured_pvar pdesc x =
+let is_captured pdesc x =
   let captured = Cfg.Procdesc.get_captured pdesc in
-  IList.exists (fun (m, _) -> (Sil.pvar_to_string x) = (Mangled.to_string m)) captured
+  IList.exists (fun (m, _) -> (Pvar.to_string x) = (Mangled.to_string m)) captured
 
 (** variables read in the expression *)
 let rec use_exp cfg pdesc (exp: Sil.exp) acc =
@@ -69,13 +69,13 @@ let rec use_exp cfg pdesc (exp: Sil.exp) acc =
   | Sil.Var _ | Sil.Sizeof _ -> acc
   | Sil.Const (Cclosure { captured_vars }) ->
       IList.iter
-        (fun (_, captured_pvar, _) -> captured_var:= Vset.add captured_pvar !captured_var)
+        (fun (_, captured, _) -> captured_var:= Vset.add captured !captured_var)
         captured_vars;
       acc
   | Sil.Const _ -> acc
   | Sil.Lvar x ->
       (* If x is a captured var in the current procdesc don't add it to acc *)
-      if is_captured_pvar pdesc x then acc else Vset.add x acc
+      if is_captured pdesc x then acc else Vset.add x acc
   | Sil.Cast (_, e) | Sil.UnOp (_, e, _) | Sil.Lfield (e, _, _) -> use_exp cfg pdesc e acc
   | Sil.BinOp (_, e1, e2) | Sil.Lindex (e1, e2) -> use_exp cfg pdesc e1 (use_exp cfg pdesc e2 acc)
 
@@ -161,10 +161,14 @@ end
 (** table of live variables *)
 module Table: sig
   val reset: unit -> unit
-  val get_live: Cfg.node -> Vset.t (** variables live after the last instruction in the current node *)
-  val propagate_to_preds: Vset.t -> Cfg.node list -> unit (** propagate live variables to predecessor nodes *)
+
+  (** variables live after the last instruction in the current node *)
+  val get_live: Cfg.node -> Vset.t
+
+  (** propagate live variables to predecessor nodes *)
+  val propagate_to_preds: Vset.t -> Cfg.node list -> unit
+
   val iter: Vset.t -> (Cfg.node -> Vset.t -> Vset.t -> unit) -> unit
-  (* val replace: Cfg.node -> Vset.t -> unit *)
 end = struct
   module H = Cfg.NodeHash
   let table = H.create 1024
@@ -194,7 +198,10 @@ end
 (** compute the variables which are possibly aliased in node n *)
 let compute_aliased cfg n aliased_var =
   match Cfg.Node.get_kind n with
-  | Cfg.Node.Start_node _ | Cfg.Node.Exit_node _ | Cfg.Node.Join_node | Cfg.Node.Skip_node _ -> aliased_var
+  | Cfg.Node.Start_node _
+  | Cfg.Node.Exit_node _
+  | Cfg.Node.Join_node
+  | Cfg.Node.Skip_node _ -> aliased_var
   | Cfg.Node.Prune_node _
   | Cfg.Node.Stmt_node _ ->
       def_aliased_var cfg (Cfg.Node.get_proc_desc n) (Cfg.Node.get_instrs n) aliased_var
@@ -207,8 +214,9 @@ let compute_candidates procdesc : Vset.t * (Vset.t -> Vset.elt list) =
     | Sil.Tstruct _ | Sil.Tarray _ -> true
     | _ -> false in
   let add_vi (pvar, typ) =
-    let pv = Sil.mk_pvar pvar (Cfg.Procdesc.get_proc_name procdesc) in
-    if is_captured_pvar procdesc pv then () (* don't add captured vars of the current pdesc to candidates *)
+    let pv = Pvar.mk pvar (Cfg.Procdesc.get_proc_name procdesc) in
+    if is_captured procdesc pv then ()
+    (* don't add captured vars of the current pdesc to candidates *)
     else (
       candidates := Vset.add pv !candidates;
       if typ_is_struct_array typ then struct_array_cand := Vset.add pv !struct_array_cand
@@ -216,7 +224,10 @@ let compute_candidates procdesc : Vset.t * (Vset.t -> Vset.elt list) =
   IList.iter add_vi (Cfg.Procdesc.get_formals procdesc);
   IList.iter add_vi (Cfg.Procdesc.get_locals procdesc);
   let get_sorted_candidates vs =
-    let priority, no_pri = IList.partition (fun pv -> Vset.mem pv !struct_array_cand) (Vset.elements vs) in
+    let priority, no_pri =
+      IList.partition
+        (fun pv -> Vset.mem pv !struct_array_cand)
+        (Vset.elements vs) in
     IList.rev_append (IList.rev priority) no_pri in
   !candidates, get_sorted_candidates
 
@@ -235,7 +246,10 @@ let analyze_proc cfg pdesc cand =
       let preds = AllPreds.get_preds node in
       let live_at_predecessors =
         match Cfg.Node.get_kind node with
-        | Cfg.Node.Start_node _ | Cfg.Node.Exit_node _ | Cfg.Node.Join_node | Cfg.Node.Skip_node _ -> curr_live
+        | Cfg.Node.Start_node _
+        | Cfg.Node.Exit_node _
+        | Cfg.Node.Join_node
+        | Cfg.Node.Skip_node _ -> curr_live
         | Cfg.Node.Prune_node _
         | Cfg.Node.Stmt_node _ ->
             compute_live_instrl cfg pdesc (Cfg.Node.get_instrs node) curr_live in
@@ -256,11 +270,17 @@ let node_add_nullify_instrs n dead_vars_after dead_vars_before =
     let pvars_tmp, pvars_notmp = IList.partition Errdesc.pvar_is_frontend_tmp pvars in
     pvars_tmp @ pvars_notmp in
   let instrs_after =
-    IList.map (fun pvar -> Sil.Nullify (pvar, loc, false)) (move_tmp_pvars_first dead_vars_after) in
+    IList.map
+      (fun pvar -> Sil.Nullify (pvar, loc, false))
+      (move_tmp_pvars_first dead_vars_after) in
   let instrs_before =
-    IList.map (fun pvar -> Sil.Nullify (pvar, loc, false)) (move_tmp_pvars_first dead_vars_before) in
-  (* Nullify(bloc_var,_,true) can be placed in the middle of the block because when we add this instruction*)
-  (* we don't have already all the instructions of the node. Here we reorder the instructions to move *)
+    IList.map
+      (fun pvar -> Sil.Nullify (pvar, loc, false))
+      (move_tmp_pvars_first dead_vars_before) in
+  (* Nullify(bloc_var,_,true) can be placed in the middle
+     of the block because when we add this instruction*)
+  (* we don't have already all the instructions of the node.
+     Here we reorder the instructions to move *)
   (* nullification of blocks at the end of existing instructions. *)
   let block_nullify, no_block_nullify = IList.partition is_block_nullify (Cfg.Node.get_instrs n) in
   Cfg.Node.replace_instrs n (no_block_nullify @ block_nullify);
@@ -275,12 +295,12 @@ let node_assigns_no_variables cfg node =
 
 (** Set the dead variables of a node, by default as dead_after.
     If the node is a prune or a join node, propagate as dead_before in the successors *)
-let add_dead_pvars_after_conditionals_join cfg n dead_pvars =
-  (* L.out "    node %d: %a@." (Cfg.Node.get_id n) (Sil.pp_pvar_list pe_text) dead_pvars; *)
+let add_deads_after_conditionals_join cfg n deads =
+  (* L.out "    node %d: %a@." (Cfg.Node.get_id n) (Sil.pp_list pe_text) deads; *)
   let seen = ref Cfg.NodeSet.empty in
   let rec add_after_prune_join is_after node =
     if Cfg.NodeSet.mem node !seen (* gone through a loop in the cfg *)
-    then Cfg.Node.set_dead_pvars n true dead_pvars
+    then Cfg.Node.set_dead_pvars n true deads
     else
       begin
         seen := Cfg.NodeSet.add node !seen;
@@ -291,15 +311,18 @@ let add_dead_pvars_after_conditionals_join cfg n dead_pvars =
           | [n'] -> node_is_exit n'
           | _ -> false in
         match Cfg.Node.get_kind node with
-        | Cfg.Node.Prune_node _ | Cfg.Node.Join_node when node_assigns_no_variables cfg node && not (next_is_exit node) ->
-            (* cannot push nullify instructions after an assignment, as they could nullify the same variable *)
+        | Cfg.Node.Prune_node _
+        | Cfg.Node.Join_node
+          when node_assigns_no_variables cfg node && not (next_is_exit node) ->
+            (* cannot push nullify instructions after an assignment,
+               as they could nullify the same variable *)
             let succs = Cfg.Node.get_succs node in
             IList.iter (add_after_prune_join false) succs
         | _ ->
             let new_dead_pvs =
               let old_pvs = Cfg.Node.get_dead_pvars node is_after in
-              let pv_is_new pv = not (IList.exists (Sil.pvar_equal pv) old_pvs) in
-              (IList.filter pv_is_new dead_pvars) @ old_pvs in
+              let pv_is_new pv = not (IList.exists (Pvar.equal pv) old_pvs) in
+              (IList.filter pv_is_new deads) @ old_pvs in
             Cfg.Node.set_dead_pvars node is_after new_dead_pvs
       end in
   add_after_prune_join true n
@@ -318,30 +341,34 @@ let analyze_and_annotate_proc cfg pname pdesc =
   analyze_proc cfg pdesc cand; (* as side effect it coputes the set aliased_var  *)
   (* print_aliased_var "@.@.Aliased variable computed: " !aliased_var;
      L.out "  PROCEDURE %s@." (Procname.to_string pname); *)
-  let dead_pvars_added = ref 0 in
-  let dead_pvars_limit = 100000 in
-  let incr_dead_pvars_added pvars =
+  let deads_added = ref 0 in
+  let deads_limit = 100000 in
+  let incr_deads_added pvars =
     let num = IList.length pvars in
-    dead_pvars_added := num + !dead_pvars_added;
-    if !dead_pvars_added > dead_pvars_limit && !dead_pvars_added - num <= dead_pvars_limit
-    then L.err "WARNING: liveness: more than %d dead pvars added in procedure %a, stopping@." dead_pvars_limit Procname.pp pname in
+    deads_added := num + !deads_added;
+    if !deads_added > deads_limit && !deads_added - num <= deads_limit
+    then
+      L.err "WARNING: liveness: more than %d dead pvars added in procedure %a, stopping@."
+        deads_limit Procname.pp pname in
   Table.iter cand (fun n live_at_predecessors live_current -> (* set dead variables on nodes *)
-      let nonnull_pvars = Vset.inter (def_node cfg n live_at_predecessors) cand in (* live before, or assigned to *)
-      let dead_pvars = Vset.diff nonnull_pvars live_current in (* only nullify when variable become live *)
+      let nonnull_pvars =
+        Vset.inter (def_node cfg n live_at_predecessors) cand in (* live before, or assigned to *)
+      let deads =
+        Vset.diff nonnull_pvars live_current in (* only nullify when variable become live *)
       (* L.out "    Node %s " (string_of_int (Cfg.Node.get_id n)); *)
-      let dead_pvars_no_captured = Vset.diff dead_pvars !captured_var in
+      let deads_no_captured = Vset.diff deads !captured_var in
       (* print_aliased_var "@.@.Non-nullable variable computed: " nonnull_pvars;
-         print_aliased_var "@.Dead variable computed: " dead_pvars;
+         print_aliased_var "@.Dead variable computed: " deads;
          print_aliased_var "@.Captured variable computed: " !captured_var;
-         print_aliased_var "@.Dead variable excluding captured computed: " dead_pvars_no_captured; *)
-      let dead_pvars_no_alias = get_sorted_cand (Vset.diff dead_pvars_no_captured !aliased_var) in
-      (* print_aliased_var_l "@. Final Dead variable computed: " dead_pvars_no_alias; *)
-      let dead_pvars_to_add =
+         print_aliased_var "@.Dead variable excluding captured computed: " deads_no_captured; *)
+      let deads_no_alias = get_sorted_cand (Vset.diff deads_no_captured !aliased_var) in
+      (* print_aliased_var_l "@. Final Dead variable computed: " deads_no_alias; *)
+      let deads_to_add =
         if exit_node_is_succ n (* add dead aliased vars just before the exit node *)
-        then dead_pvars_no_alias @ (get_sorted_cand (Vset.inter cand !aliased_var))
-        else dead_pvars_no_alias in
-      incr_dead_pvars_added dead_pvars_to_add;
-      if !dead_pvars_added < dead_pvars_limit then add_dead_pvars_after_conditionals_join cfg n dead_pvars_to_add);
+        then deads_no_alias @ (get_sorted_cand (Vset.inter cand !aliased_var))
+        else deads_no_alias in
+      incr_deads_added deads_to_add;
+      if !deads_added < deads_limit then add_deads_after_conditionals_join cfg n deads_to_add);
   IList.iter (fun n -> (* generate nullify instructions *)
       let dead_pvs_after = Cfg.Node.get_dead_pvars n true in
       let dead_pvs_before = Cfg.Node.get_dead_pvars n false in
@@ -474,12 +501,12 @@ let doit ?(f_translate_typ=None) cfg cg tenv =
 Printing function useful for debugging
 let print_aliased_var s al_var =
   L.out s;
-  Vset.iter (fun v -> L.out " %a, " (Sil.pp_pvar pe_text) v) al_var;
+  Vset.iter (fun v -> L.out " %a, " (Sil.pp pe_text) v) al_var;
   L.out "@."
 
 Printing function useful for debugging
 let print_aliased_var_l s al_var =
   L.out s;
-  IList.iter (fun v -> L.out " %a, " (Sil.pp_pvar pe_text) v) al_var;
+  IList.iter (fun v -> L.out " %a, " (Sil.pp pe_text) v) al_var;
   L.out "@."
 *)

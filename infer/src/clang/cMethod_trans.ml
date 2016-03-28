@@ -368,7 +368,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_str =
-      IList.map (fun (var, t) -> (Mangled.from_string (Sil.pvar_to_string var), t)) captured in
+      IList.map (fun (var, t) -> (Mangled.from_string (Pvar.to_string var), t)) captured in
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_str @ formals in
     let source_range = CMethod_signature.ms_get_loc ms in
@@ -376,7 +376,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     let loc_start = CLocation.get_sil_location_from_range source_range true in
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
     let ret_type = get_return_type tenv ms in
-    let captured' = IList.map (fun (var, t) -> (Sil.pvar_get_name var, t)) captured in
+    let captured' = IList.map (fun (var, t) -> (Pvar.get_name var, t)) captured in
     let procdesc =
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.C_CPP) with

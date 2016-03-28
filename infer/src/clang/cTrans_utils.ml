@@ -536,7 +536,7 @@ struct
         let t' = CTypes.add_pointer_to_typ
             (CTypes_decl.get_type_curr_class_objc
                context.CContext.tenv context.CContext.curr_class) in
-        let e = Sil.Lvar (Sil.mk_pvar (Mangled.from_string CFrontend_config.self) procname) in
+        let e = Sil.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Sil.Var id, [id], [Sil.Letderef (id, e, t', loc)] in
       { empty_res_trans with
@@ -546,7 +546,7 @@ struct
     else empty_res_trans
 
   let is_var_self pvar is_objc_method =
-    let is_self = Mangled.to_string (Sil.pvar_get_name pvar) = CFrontend_config.self in
+    let is_self = Mangled.to_string (Pvar.get_name pvar) = CFrontend_config.self in
     is_self && is_objc_method
 
 end

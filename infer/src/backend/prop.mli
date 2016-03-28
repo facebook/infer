@@ -119,7 +119,7 @@ val prop_fav_nonpure : normal t -> fav
 val prop_footprint_fav : 'a t -> fav
 
 (** Compute all the free program variables in the prop *)
-val prop_fpv: 'a t -> Sil.pvar list
+val prop_fpv: 'a t -> Pvar.t list
 
 (** Apply substitution for pi *)
 val pi_sub : subst -> atom list -> atom list
@@ -159,8 +159,11 @@ val atom_negate : Sil.atom -> Sil.atom
 
 (** type for arithmetic problems *)
 type arith_problem =
-  | Div0 of Sil.exp (* division by zero *)
-  | UminusUnsigned of Sil.exp * Sil.typ (* unary minus of unsigned type applied to the given expression *)
+  (* division by zero *)
+  | Div0 of Sil.exp
+
+  (* unary minus of unsigned type applied to the given expression *)
+  | UminusUnsigned of Sil.exp * Sil.typ
 
 (** Look for an arithmetic problem in [exp] *)
 val find_arithmetic_problem : path_pos -> normal t -> Sil.exp -> arith_problem option * normal t
@@ -228,7 +231,7 @@ val mk_ptsto_exp : Tenv.t option -> struct_init_mode -> exp * exp * exp option -
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
 val mk_ptsto_lvar :
-  Tenv.t option -> struct_init_mode -> Sil.inst -> pvar * exp * exp option -> hpred
+  Tenv.t option -> struct_init_mode -> Sil.inst -> Pvar.t * exp * exp option -> hpred
 
 (** Construct a lseg predicate *)
 val mk_lseg : lseg_kind -> hpara -> exp -> exp -> exp list -> hpred
@@ -240,7 +243,8 @@ val mk_dllseg : lseg_kind -> hpara_dll -> exp -> exp -> exp -> exp -> exp list -
 val mk_hpara : Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara
 
 (** Construct a dll_hpara *)
-val mk_dll_hpara : Ident.t -> Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara_dll
+val mk_dll_hpara :
+  Ident.t -> Ident.t -> Ident.t -> Ident.t list -> Ident.t list -> hpred list -> hpara_dll
 
 (** Proposition [true /\ emp]. *)
 val prop_emp : normal t
@@ -316,7 +320,8 @@ val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Location.
 (** Remove an attribute from all the atoms in the heap *)
 val remove_attribute : Sil.attribute -> 'a t -> normal t
 
-(** [replace_objc_null lhs rhs]. If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
+(** [replace_objc_null lhs rhs].
+    If rhs has the objc_null attribute, replace the attribute and set the lhs = 0 *)
 val replace_objc_null : normal t -> exp -> exp -> normal t
 
 val nullify_exp_with_objc_null : normal t -> exp -> normal t
@@ -347,7 +352,7 @@ val get_sigma_footprint : 'a t -> hpred list
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. *)
-val deallocate_stack_vars : normal t -> pvar list -> Sil.pvar list * normal t
+val deallocate_stack_vars : normal t -> Pvar.t list -> Pvar.t list * normal t
 
 (** Canonicalize the names of primed variables. *)
 val prop_rename_primed_footprint_vars : normal t -> normal t
@@ -512,10 +517,17 @@ end
 
 module CategorizePreconditions : sig
   type pre_category =
-    | NoPres (* no preconditions *)
-    | Empty (* the preconditions impose no restrictions *)
-    | OnlyAllocation (* the preconditions only demand that some pointers are allocated *)
-    | DataConstraints (* the preconditions impose constraints on the values of variables and/or memory *)
+    (* no preconditions *)
+    | NoPres
+
+    (* the preconditions impose no restrictions *)
+    | Empty
+
+    (* the preconditions only demand that some pointers are allocated *)
+    | OnlyAllocation
+
+    (* the preconditions impose constraints on the values of variables and/or memory *)
+    | DataConstraints
 
   (** categorize a list of preconditions *)
   val categorize : 'a t list -> pre_category

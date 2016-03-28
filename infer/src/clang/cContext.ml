@@ -30,7 +30,7 @@ type t =
     return_param_typ : Sil.typ option;
     is_callee_expression : bool;
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
-    mutable blocks_static_vars : ((Sil.pvar * Sil.typ) list) Procname.Map.t;
+    mutable blocks_static_vars : ((Pvar.t * Sil.typ) list) Procname.Map.t;
   }
 
 let create_context tenv cg cfg procdesc curr_class return_param_typ is_objc_method context_opt =
@@ -127,12 +127,12 @@ let create_curr_class tenv class_name ck =
 
 let add_block_static_var context block_name static_var_typ =
   match context.outer_context, static_var_typ with
-  | Some outer_context, (static_var, _) when Sil.pvar_is_global static_var ->
+  | Some outer_context, (static_var, _) when Pvar.is_global static_var ->
       (let new_static_vars, duplicate =
          try
            let static_vars = Procname.Map.find block_name outer_context.blocks_static_vars in
            if IList.mem (
-               fun (var1, _) (var2, _) -> Sil.pvar_equal var1 var2
+               fun (var1, _) (var2, _) -> Pvar.equal var1 var2
              ) static_var_typ static_vars then
              static_vars, true
            else
