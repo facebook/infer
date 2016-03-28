@@ -75,7 +75,9 @@ directory if it exists. This leads to a *default* workflow where
 the entire project is analyzed every time.
 Passing `--reactive` (or `-r`) to Infer prevents it from
 deleting `infer-out/`, leading to a *differential* workflow.
-(Note that the previous `--incremental` mode is now deprecated).
+
+**(Note: `--incremental` is deprecated since Infer version v0.8.0).**
+
 
 There are exceptions to this. In particular, you can run only one of
 the phases above. For instance, `infer -- javac Hello.java` is
@@ -116,6 +118,8 @@ for a make-based project, `gradle clean` for Gradle, etc.
 
 
 ### Differential workflow
+
+**(Note: `--incremental` is deprecated since Infer version v0.8.0).**
 
 Software projects such as mobile apps use *incremental* build systems,
 where code evolves as a sequence of code changes. For these projects,
