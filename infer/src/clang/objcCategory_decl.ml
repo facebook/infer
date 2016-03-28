@@ -75,7 +75,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
   let class_tn_name = Typename.TN_csu (Csu.Class Csu.Objc, mang_name) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
-  (match Sil.tenv_lookup tenv class_tn_name with
+  (match Tenv.lookup tenv class_tn_name with
    | Some ({ Sil.instance_fields; def_methods } as struct_typ) ->
        let new_fields = General_utils.append_no_duplicates_fields fields instance_fields in
        let new_methods = General_utils.append_no_duplicates_methods methods def_methods in
@@ -89,7 +89,7 @@ let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
            def_methods = new_methods;
          } in
        Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
-       Sil.tenv_add tenv class_tn_name class_type_info
+       Tenv.add tenv class_tn_name class_type_info
    | _ -> ());
   Sil.Tvar class_tn_name
 

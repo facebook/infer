@@ -39,7 +39,7 @@ struct
     pp Format.std_formatter fmt
 
   let print_tenv tenv =
-    Sil.tenv_iter (fun typname struct_t ->
+    Tenv.iter (fun typname struct_t ->
         match typname with
         | Typename.TN_csu (Csu.Class _, _) | Typename.TN_csu (Csu.Protocol, _) ->
             print_endline (
@@ -55,7 +55,7 @@ struct
       ) tenv
 
   let print_tenv_struct_unions tenv =
-    Sil.tenv_iter (fun typname struct_t ->
+    Tenv.iter (fun typname struct_t ->
         match typname with
         | Typename.TN_csu (Csu.Struct, _) | Typename.TN_csu (Csu.Union, _) ->
             print_endline (
@@ -98,7 +98,7 @@ end
 
 module Ast_utils =
 struct
-  type type_ptr_to_sil_type = Sil.tenv -> Clang_ast_t.type_ptr -> Sil.typ
+  type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Sil.typ
 
   let string_of_decl decl =
     let name = Clang_ast_proj.get_decl_kind_string decl in
@@ -472,8 +472,8 @@ struct
   let sort_fields_tenv tenv =
     let sort_fields_struct typname st =
       let st' = { st with Sil.instance_fields = (sort_fields st.Sil.instance_fields) } in
-      Sil.tenv_add tenv typname st' in
-    Sil.tenv_iter sort_fields_struct tenv
+      Tenv.add tenv typname st' in
+    Tenv.iter sort_fields_struct tenv
 
   let rec collect_list_tuples l (a, a1, b, c, d) =
     match l with

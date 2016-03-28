@@ -22,7 +22,7 @@ let set_verbose_out path =
 let models_jar = ref ""
 
 
-let models_tenv = ref (Sil.create_tenv ())
+let models_tenv = ref (Tenv.create ())
 
 
 let load_models_tenv zip_channel =
@@ -36,7 +36,7 @@ let load_models_tenv zip_channel =
   let models_tenv =
     try
       Zip.copy_entry_to_file zip_channel entry temp_tenv_file;
-      match Sil.load_tenv_from_file temp_tenv_filename with
+      match Tenv.load_from_file temp_tenv_filename with
       | None -> failwith "Models tenv file could not be loaded"
       | Some tenv -> tenv
     with

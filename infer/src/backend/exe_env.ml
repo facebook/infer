@@ -17,7 +17,7 @@ type file_data =
   { source: DB.source_file;
     nLOC : int;
     tenv_file: DB.filename;
-    mutable tenv: Sil.tenv option;
+    mutable tenv: Tenv.t option;
     cfg_file: DB.filename;
     mutable cfg: Cfg.cfg option;
   }
@@ -126,7 +126,7 @@ let get_source exe_env pname =
 
 let file_data_to_tenv file_data =
   if file_data.tenv == None
-  then file_data.tenv <- Sil.load_tenv_from_file file_data.tenv_file;
+  then file_data.tenv <- Tenv.load_from_file file_data.tenv_file;
   file_data.tenv
 
 let file_data_to_cfg file_data =
@@ -135,7 +135,7 @@ let file_data_to_cfg file_data =
   file_data.cfg
 
 (** return the type environment associated to the procedure *)
-let get_tenv exe_env proc_name : Sil.tenv =
+let get_tenv exe_env proc_name : Tenv.t =
   match get_file_data exe_env proc_name with
   | None ->
       failwith ("get_tenv: file_data not found for" ^ Procname.to_string proc_name)

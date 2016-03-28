@@ -12,9 +12,9 @@
 
 open CFrontend_utils
 
-val category_decl : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl -> Sil.typ
+val category_decl : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Sil.typ
 
-val category_impl_decl : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl -> Sil.typ
+val category_impl_decl : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl -> Sil.typ
 
 val noname_category : string -> string
 

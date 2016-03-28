@@ -244,7 +244,8 @@ let print_usage_exit err_s =
 (** return the list of the .specs files in the results dir and libs, if they're defined *)
 let load_specfiles () =
   let specs_files_in_dir dir =
-    let is_specs_file fname = not (Sys.is_directory fname) && Filename.check_suffix fname ".specs" in
+    let is_specs_file fname =
+      not (Sys.is_directory fname) && Filename.check_suffix fname ".specs" in
     let all_filenames = Array.to_list (Sys.readdir dir) in
     let all_filepaths = IList.map (fun fname -> Filename.concat dir fname) all_filenames in
     IList.filter is_specs_file all_filepaths in
@@ -266,7 +267,8 @@ let begin_latex_file fmt =
 (** Write proc summary to latex file *)
 let write_summary_latex fmt summary =
   let proc_name = Specs.get_proc_name summary in
-  Latex.pp_section fmt ("Analysis of function " ^ (Latex.convert_string (Procname.to_string proc_name)));
+  Latex.pp_section fmt ("Analysis of function "
+                        ^ (Latex.convert_string (Procname.to_string proc_name)));
   F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary (pe_latex Black) !whole_seconds) summary
 
 let error_desc_to_csv_string error_desc =
@@ -294,10 +296,14 @@ let error_desc_to_xml_tags error_desc =
     Io_infer.Xml.create_tree label [] [(Io_infer.Xml.String contents)] in
   IList.map (fun (tag, value) -> subtree tag (Escape.escape_xml value)) tags
 
-let get_bug_hash (kind: string) (type_str: string) (procedure_id: string) (filename: string) (node_key: int) (error_desc: Localise.error_desc) =
+let get_bug_hash
+    (kind: string) (type_str: string) (procedure_id: string) (filename: string)
+    (node_key: int) (error_desc: Localise.error_desc) =
   let qualifier_tag_call_procedure = Localise.error_desc_get_tag_call_procedure error_desc in
   let qualifier_tag_value = Localise.error_desc_get_tag_value error_desc in
-  Hashtbl.hash(kind, type_str, procedure_id, filename, node_key, qualifier_tag_call_procedure, qualifier_tag_value)
+  Hashtbl.hash
+    (kind, type_str, procedure_id, filename, node_key,
+     qualifier_tag_call_procedure, qualifier_tag_value)
 
 let loc_trace_to_jsonbug_record trace_list ekind =
   match ekind with
@@ -533,7 +539,9 @@ module BugsCsv = struct
         let err_desc_string = error_desc_to_csv_string error_desc in
         let err_advice_string = error_advice_to_csv_string error_desc in
         let qualifier_tag_xml =
-          let xml_node = Io_infer.Xml.create_tree Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc) in
+          let xml_node =
+            Io_infer.Xml.create_tree
+              Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc) in
           let p fmt () = F.fprintf fmt "%a" (Io_infer.Xml.pp_document false) xml_node in
           let s = pp_to_string p () in
           Escape.escape_csv s in
@@ -693,7 +701,8 @@ module BugsXml = struct
               subtree Io_infer.Xml.tag_file filename;
               Io_infer.Xml.create_tree Io_infer.Xml.tag_trace [] (loc_trace_to_xml linereader ltr);
               subtree Io_infer.Xml.tag_key (string_of_int node_key);
-              Io_infer.Xml.create_tree Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc);
+              Io_infer.Xml.create_tree
+                Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc);
               subtree Io_infer.Xml.tag_hash (string_of_int bug_hash)
             ]
             @
@@ -965,7 +974,8 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true;
   if !quiet then ()
-  else L.out "Procedure: %a@\n%a@." Procname.pp proc_name (Specs.pp_summary pe_text !whole_seconds) summary;
+  else L.out "Procedure: %a@\n%a@."
+      Procname.pp proc_name (Specs.pp_summary pe_text !whole_seconds) summary;
   let error_filter error_desc error_name =
     let always_report () =
       Localise.error_desc_extract_tag_value error_desc "always_report" = "true" in
@@ -995,7 +1005,10 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
     if not (DB.file_exists svg_file)
     || DB.file_modified_time dot_file > DB.file_modified_time svg_file
     then
-      ignore (Sys.command ("dot -Tsvg \"" ^ (DB.filename_to_string dot_file) ^ "\" >\"" ^ (DB.filename_to_string svg_file) ^"\""))
+      ignore (Sys.command ("dot -Tsvg \"" ^
+                           (DB.filename_to_string dot_file) ^
+                           "\" >\"" ^
+                           (DB.filename_to_string svg_file) ^"\""))
   end;
   if !xml_specs then begin
     let xml_file = DB.filename_add_suffix base ".xml" in
@@ -1017,7 +1030,8 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
 module AnalysisResults = struct
   type t = (string * Specs.summary) list
 
-  let spec_files_from_cmdline = (* parse command-line arguments, and find spec files specified there *)
+  let spec_files_from_cmdline =
+    (* parse command-line arguments, and find spec files specified there *)
     let args = ref [] in
     let f arg =
       if not (Filename.check_suffix arg ".specs") && arg <> "."
@@ -1082,7 +1096,8 @@ module AnalysisResults = struct
     iterate
 
   (** Serializer for analysis results *)
-  let analysis_results_serializer : t Serialization.serializer = Serialization.create_serializer Serialization.analysis_results_key
+  let analysis_results_serializer : t Serialization.serializer =
+    Serialization.create_serializer Serialization.analysis_results_key
 
   (** Load analysis_results from a file *)
   let load_analysis_results_from_file (filename : DB.filename) : t option =
@@ -1093,7 +1108,8 @@ module AnalysisResults = struct
     Serialization.to_file analysis_results_serializer filename analysis_results
 
   (** Return an iterator over all the summaries.
-      If options - load_results or - save_results are used, all the summaries are loaded in memory *)
+      If options - load_results or - save_results are used,
+      all the summaries are loaded in memory *)
   let get_summary_iterator () =
     let iterator_of_summary_list r =
       fun f -> IList.iter f r in
@@ -1119,7 +1135,8 @@ module AnalysisResults = struct
         end
 end
 
-let compute_top_procedures = ref false (* warning: computing top procedures iterates over summaries twice *)
+(* warning: computing top procedures iterates over summaries twice *)
+let compute_top_procedures = ref false
 
 let () =
   Config.developer_mode := true;
@@ -1141,7 +1158,8 @@ let () =
   do_outf bugs_xml (fun outf -> BugsXml.pp_bugs_open outf.fmt ());
   do_outf report (fun outf -> Report.pp_header outf.fmt ());
   let top_proc = TopProcedures.create () in
-  if !compute_top_procedures && (!procs_csv != None || !procs_xml != None) then iterate_summaries (TopProcedures.process_summary top_proc);
+  if !compute_top_procedures && (!procs_csv != None || !procs_xml != None)
+  then iterate_summaries (TopProcedures.process_summary top_proc);
   let top_proc_set = TopProcedures.top_set top_proc in
   let linereader = Printer.LineReader.create () in
   let stats = Stats.create () in

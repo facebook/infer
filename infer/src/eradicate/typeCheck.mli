@@ -25,7 +25,7 @@ type checks =
   }
 
 val typecheck_node :
-  Sil.tenv -> 'a TypeState.ext ->
+  Tenv.t -> 'a TypeState.ext ->
   bool ref -> checks -> Idenv.t ->
   get_proc_desc -> Procname.t -> Cfg.Procdesc.t ->
   find_canonical_duplicate -> Annotations.annotated_signature -> 'a TypeState.t ->

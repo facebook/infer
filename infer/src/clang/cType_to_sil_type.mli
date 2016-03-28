@@ -13,5 +13,5 @@ val get_builtin_objc_type : [< `ObjCClass | `ObjCId ] -> Sil.typ
 
 val sil_type_of_builtin_type_kind : Clang_ast_t.builtin_type_kind -> Sil.typ
 
-val type_ptr_to_sil_type : (Sil.tenv -> Clang_ast_t.decl -> Sil.typ) ->
-  Sil.tenv -> Clang_ast_t.type_ptr -> Sil.typ
+val type_ptr_to_sil_type : (Tenv.t -> Clang_ast_t.decl -> Sil.typ) ->
+  Tenv.t -> Clang_ast_t.type_ptr -> Sil.typ

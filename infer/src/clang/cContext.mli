@@ -19,7 +19,7 @@ type curr_class =
 
 type t =
   {
-    tenv : Sil.tenv;
+    tenv : Tenv.t;
     cg : Cg.t;
     cfg : Cfg.cfg;
     procdesc : Cfg.Procdesc.t;
@@ -51,12 +51,12 @@ val curr_class_hash : curr_class -> int
 
 val is_objc_method : t -> bool
 
-val get_tenv : t -> Sil.tenv
+val get_tenv : t -> Tenv.t
 
-val create_context : Sil.tenv -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
+val create_context : Tenv.t -> Cg.t -> Cfg.cfg -> Cfg.Procdesc.t ->
   curr_class -> Sil.typ option -> bool -> t option -> t
 
-val create_curr_class : Sil.tenv -> string -> Csu.class_kind -> curr_class
+val create_curr_class : Tenv.t -> string -> Csu.class_kind -> curr_class
 
 val add_block_static_var : t -> Procname.t -> (Sil.pvar * Sil.typ) -> unit
 

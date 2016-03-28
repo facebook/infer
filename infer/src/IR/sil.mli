@@ -10,6 +10,8 @@
 
 (** The Smallfoot Intermediate Language *)
 
+module F = Format
+
 (** {2 Programs and Types} *)
 
 (** Type to represent one @Annotation. *)
@@ -115,9 +117,14 @@ type res_act_kind =
 
 (** kind of dangling pointers *)
 type dangling_kind =
-  | DAuninit (** pointer is dangling because it is uninitialized *)
-  | DAaddr_stack_var (** pointer is dangling because it is the address of a stack variable which went out of scope *)
-  | DAminusone (** pointer is -1 *)
+  (** pointer is dangling because it is uninitialized *)
+  | DAuninit
+
+  (** pointer is dangling because it is the address of a stack variable which went out of scope *)
+  | DAaddr_stack_var
+
+  (** pointer is -1 *)
+  | DAminusone
 
 (** kind of pointer *)
 type ptr_kind =
@@ -159,7 +166,8 @@ module Int : sig
   type t
   val add : t -> t -> t
 
-  (** compare the value of the integers, notice this is different from const compare, which distinguished between signed and unsigned +1 *)
+  (** compare the value of the integers, notice this is different from const compare,
+      which distinguished between signed and unsigned +1 *)
   val compare_value : t -> t -> int
   val div : t -> t -> t
   val eq : t -> t -> bool
@@ -185,7 +193,7 @@ module Int : sig
   val neq : t -> t -> bool
   val null : t (** null behaves like zero except for the function isnull *)
   val one : t
-  val pp : Format.formatter -> t -> unit
+  val pp : F.formatter -> t -> unit
   val rem : t -> t -> t
   val sub : t -> t -> t
   val to_int : t -> int
@@ -326,15 +334,32 @@ and typ =
 
 (** Program expressions. *)
 and exp =
-  | Var of Ident.t (** pure variable: it is not an lvalue *)
-  | UnOp of unop * exp * typ option (** unary operator with type of the result if known *)
-  | BinOp of binop * exp * exp (** binary operator *)
-  | Const of const  (** constants *)
-  | Cast of typ * exp  (** type cast *)
-  | Lvar of pvar  (** the address of a program variable *)
-  | Lfield of exp * Ident.fieldname * typ (** a field offset, the type is the surrounding struct type *)
-  | Lindex of exp * exp (** an array index offset: [exp1\[exp2\]] *)
-  | Sizeof of typ * Subtype.t (** a sizeof expression *)
+  (** Pure variable: it is not an lvalue *)
+  | Var of Ident.t
+
+  (** Unary operator with type of the result if known *)
+  | UnOp of unop * exp * typ option
+
+  (** Binary operator *)
+  | BinOp of binop * exp * exp
+
+  (** Constants *)
+  | Const of const
+
+  (** Type cast *)
+  | Cast of typ * exp
+
+  (** The address of a program variable *)
+  | Lvar of pvar
+
+  (** A field offset, the type is the surrounding struct type *)
+  | Lfield of exp * Ident.fieldname * typ
+
+  (** An array index offset: [exp1\[exp2\]] *)
+  | Lindex of exp * exp
+
+  (** A sizeof expression *)
+  | Sizeof of typ * Subtype.t
 
 (** Sets of types. *)
 module TypSet : Set.S with type elt = typ
@@ -527,47 +552,6 @@ val exp_compact : sharing_env -> exp -> exp
 (** Return a compact representation of the exp *)
 val hpred_compact : sharing_env -> hpred -> hpred
 
-(** {2 Type Environment} *)
-
-type tenv (** Type for type environment. *)
-
-(** Create a new type environment. *)
-val create_tenv : unit -> tenv
-
-(** Check if typename is found in tenv *)
-val tenv_mem : tenv -> Typename.t -> bool
-
-(** Look up a name in the global type environment. *)
-val tenv_lookup : tenv -> Typename.t -> struct_typ option
-
-(** Add a (name,typ) pair to the global type environment. *)
-val tenv_add : tenv -> Typename.t -> struct_typ -> unit
-
-(** expand a type if it is a typename by looking it up in the type environment *)
-val expand_type : tenv -> typ -> typ
-
-(** type environment used for parsing, to be set by the client of the parser module *)
-val tenv_for_parsing : tenv ref
-
-(** Load a type environment from a file *)
-val load_tenv_from_file : DB.filename -> tenv option
-
-(** Save a type environment into a file *)
-val store_tenv_to_file : DB.filename -> tenv -> unit
-
-(** iterate over a type environment *)
-val tenv_iter : (Typename.t -> struct_typ -> unit) -> tenv -> unit
-
-val tenv_fold : (Typename.t -> struct_typ -> 'a -> 'a) -> tenv -> 'a -> 'a
-
-(** print a type environment *)
-val pp_tenv : Format.formatter -> tenv -> unit
-
-(** Return the lhs expression of a hpred *)
-val hpred_get_lhs : hpred -> exp
-
-(** Field used for objective-c reference counting *)
-val objc_ref_counter_field : (Ident.fieldname * typ * item_annotation)
 
 (** {2 Comparision And Inspection Functions} *)
 
@@ -660,7 +644,8 @@ val ikind_is_char : ikind -> bool
 (** Check wheter the integer kind is unsigned *)
 val ikind_is_unsigned : ikind -> bool
 
-(** Convert an int64 into an Int.t given the kind: the int64 is interpreted as unsigned according to the kind *)
+(** Convert an int64 into an Int.t given the kind:
+    the int64 is interpreted as unsigned according to the kind *)
 val int_of_int64_kind : int64 -> ikind -> Int.t
 
 (** Comparision for ptr_kind *)
@@ -673,7 +658,8 @@ val typ_compare : typ -> typ -> int
 val typ_equal : typ -> typ -> bool
 
 (** Comparision for fieldnames * types * item annotations. *)
-val fld_typ_ann_compare : Ident.fieldname * typ * item_annotation -> Ident.fieldname * typ * item_annotation -> int
+val fld_typ_ann_compare :
+  Ident.fieldname * typ * item_annotation -> Ident.fieldname * typ * item_annotation -> int
 
 val unop_equal : unop -> unop -> bool
 
@@ -764,9 +750,17 @@ val hpred_equal : hpred -> hpred -> bool
 
 val fld_strexp_compare : Ident.fieldname * strexp -> Ident.fieldname * strexp -> int
 
-val fld_strexp_list_compare : (Ident.fieldname * strexp) list -> (Ident.fieldname * strexp) list -> int
+val fld_strexp_list_compare :
+  (Ident.fieldname * strexp) list -> (Ident.fieldname * strexp) list -> int
 
 val exp_strexp_compare : exp * strexp -> exp * strexp -> int
+
+(** Return the lhs expression of a hpred *)
+val hpred_get_lhs : hpred -> exp
+
+(** Field used for objective-c reference counting *)
+val objc_ref_counter_field : (Ident.fieldname * typ * item_annotation)
+
 
 (** Compare function for annotations. *)
 val annotation_compare : annotation -> annotation -> int
@@ -795,10 +789,10 @@ val get_sentinel_func_attribute_value : func_attribute list -> (int * int) optio
 (** {2 Pretty Printing} *)
 
 (** Begin change color if using diff printing, return updated printenv and change status *)
-val color_pre_wrapper : printenv -> Format.formatter -> 'a -> printenv * bool
+val color_pre_wrapper : printenv -> F.formatter -> 'a -> printenv * bool
 
 (** Close color annotation if changed *)
-val color_post_wrapper : bool -> printenv -> Format.formatter -> unit
+val color_post_wrapper : bool -> printenv -> F.formatter -> unit
 
 (** String representation of a unary operator. *)
 val str_unop : unop -> string
@@ -813,33 +807,35 @@ val mem_alloc_pname : mem_kind -> Procname.t
 val mem_dealloc_pname : mem_kind -> Procname.t
 
 (** Pretty print an annotation. *)
-val pp_annotation : Format.formatter -> annotation -> unit
+val pp_annotation : F.formatter -> annotation -> unit
 
 (** Pretty print a const. *)
-val pp_const: printenv -> Format.formatter -> const -> unit
+val pp_const: printenv -> F.formatter -> const -> unit
 
 (** Pretty print an item annotation. *)
-val pp_item_annotation : Format.formatter -> item_annotation -> unit
+val pp_item_annotation : F.formatter -> item_annotation -> unit
 
 val item_annotation_to_string : item_annotation -> string
 
 (** Pretty print a method annotation. *)
-val pp_method_annotation : string -> Format.formatter -> method_annotation -> unit
+val pp_method_annotation : string -> F.formatter -> method_annotation -> unit
 
 (** Pretty print a type. *)
-val pp_typ : printenv -> Format.formatter -> typ -> unit
+val pp_typ : printenv -> F.formatter -> typ -> unit
+
+val pp_struct_typ : printenv -> (F.formatter -> unit -> unit) -> F.formatter -> struct_typ -> unit
 
 (** Pretty print a type with all the details. *)
-val pp_typ_full : printenv -> Format.formatter -> typ -> unit
+val pp_typ_full : printenv -> F.formatter -> typ -> unit
 
 val typ_to_string : typ -> string
 
 (** [pp_type_decl pe pp_base pp_size f typ] pretty prints a type declaration.
     pp_base prints the variable for a declaration, or can be skip to print only the type
     pp_size prints the expression for the array size *)
-val pp_type_decl: printenv -> (Format.formatter -> unit -> unit) ->
-  (printenv -> Format.formatter -> exp -> unit) ->
-  Format.formatter -> typ -> unit
+val pp_type_decl: printenv -> (F.formatter -> unit -> unit) ->
+  (printenv -> F.formatter -> exp -> unit) ->
+  F.formatter -> typ -> unit
 
 (** Dump a type with all the details. *)
 val d_typ_full : typ -> unit
@@ -848,16 +844,16 @@ val d_typ_full : typ -> unit
 val d_typ_list : typ list -> unit
 
 (** Pretty print a program variable. *)
-val pp_pvar : printenv -> Format.formatter -> pvar -> unit
+val pp_pvar : printenv -> F.formatter -> pvar -> unit
 
 (** Pretty print a pvar which denotes a value, not an address *)
-val pp_pvar_value : printenv -> Format.formatter -> pvar -> unit
+val pp_pvar_value : printenv -> F.formatter -> pvar -> unit
 
 (** Dump a program variable. *)
 val d_pvar : pvar -> unit
 
 (** Pretty print a list of program variables. *)
-val pp_pvar_list : printenv -> Format.formatter -> pvar list -> unit
+val pp_pvar_list : printenv -> F.formatter -> pvar list -> unit
 
 (** Dump a list of program variables. *)
 val d_pvar_list : pvar list -> unit
@@ -869,13 +865,13 @@ val attribute_to_string : printenv -> attribute -> string
 val dexp_to_string : dexp -> string
 
 (** Pretty print a dexp. *)
-val pp_dexp : Format.formatter -> dexp -> unit
+val pp_dexp : F.formatter -> dexp -> unit
 
 (** Pretty print an expression. *)
-val pp_exp : printenv -> Format.formatter -> exp -> unit
+val pp_exp : printenv -> F.formatter -> exp -> unit
 
 (** Pretty print an expression with type. *)
-val pp_exp_typ : printenv -> Format.formatter -> exp * typ -> unit
+val pp_exp_typ : printenv -> F.formatter -> exp * typ -> unit
 
 (** Convert an expression to a string *)
 val exp_to_string : exp -> string
@@ -884,28 +880,28 @@ val exp_to_string : exp -> string
 val d_exp : exp -> unit
 
 (** Pretty print a type. *)
-val pp_texp : printenv -> Format.formatter -> exp -> unit
+val pp_texp : printenv -> F.formatter -> exp -> unit
 
 (** Pretty print a type with all the details. *)
-val pp_texp_full : printenv -> Format.formatter -> exp -> unit
+val pp_texp_full : printenv -> F.formatter -> exp -> unit
 
 (** Dump a type expression with all the details. *)
 val d_texp_full : exp -> unit
 
 (** Pretty print a list of expressions. *)
-val pp_exp_list : printenv -> Format.formatter -> exp list -> unit
+val pp_exp_list : printenv -> F.formatter -> exp list -> unit
 
 (** Dump a list of expressions. *)
 val d_exp_list : exp list -> unit
 
 (** Pretty print an offset *)
-val pp_offset : printenv -> Format.formatter -> offset -> unit
+val pp_offset : printenv -> F.formatter -> offset -> unit
 
 (** Dump an offset *)
 val d_offset : offset -> unit
 
 (** Pretty print a list of offsets *)
-val pp_offset_list : printenv -> Format.formatter -> offset list -> unit
+val pp_offset_list : printenv -> F.formatter -> offset list -> unit
 
 (** Dump a list of offsets *)
 val d_offset_list : offset list -> unit
@@ -917,22 +913,22 @@ val instr_get_loc : instr -> Location.t
 val instr_get_exps : instr -> exp list
 
 (** Pretty print an instruction. *)
-val pp_instr : printenv -> Format.formatter -> instr -> unit
+val pp_instr : printenv -> F.formatter -> instr -> unit
 
 (** Dump an instruction. *)
 val d_instr : instr -> unit
 
 (** Pretty print a list of instructions. *)
-val pp_instr_list : printenv -> Format.formatter -> instr list -> unit
+val pp_instr_list : printenv -> F.formatter -> instr list -> unit
 
 (** Dump a list of instructions. *)
 val d_instr_list : instr list -> unit
 
 (** Pretty print a value path *)
-val pp_vpath : printenv -> Format.formatter -> vpath -> unit
+val pp_vpath : printenv -> F.formatter -> vpath -> unit
 
 (** Pretty print an atom. *)
-val pp_atom : printenv -> Format.formatter -> atom -> unit
+val pp_atom : printenv -> F.formatter -> atom -> unit
 
 (** Dump an atom. *)
 val d_atom : atom -> unit
@@ -941,37 +937,38 @@ val d_atom : atom -> unit
 val inst_to_string : inst -> string
 
 (** Pretty print a strexp. *)
-val pp_sexp : printenv -> Format.formatter -> strexp -> unit
+val pp_sexp : printenv -> F.formatter -> strexp -> unit
 
 (** Dump a strexp. *)
 val d_sexp : strexp -> unit
 
 (** Pretty print a strexp list. *)
-val pp_sexp_list : printenv -> Format.formatter -> strexp list -> unit
+val pp_sexp_list : printenv -> F.formatter -> strexp list -> unit
 
 (** Dump a strexp. *)
 val d_sexp_list : strexp list -> unit
 
 (** Pretty print a hpred. *)
-val pp_hpred : printenv -> Format.formatter -> hpred -> unit
+val pp_hpred : printenv -> F.formatter -> hpred -> unit
 
 (** Dump a hpred. *)
 val d_hpred : hpred -> unit
 
 (** Pretty print a hpara. *)
-val pp_hpara : printenv -> Format.formatter -> hpara -> unit
+val pp_hpara : printenv -> F.formatter -> hpara -> unit
 
 (** Pretty print a list of hparas. *)
-val pp_hpara_list : printenv -> Format.formatter -> hpara list -> unit
+val pp_hpara_list : printenv -> F.formatter -> hpara list -> unit
 
 (** Pretty print a hpara_dll. *)
-val pp_hpara_dll : printenv -> Format.formatter -> hpara_dll -> unit
+val pp_hpara_dll : printenv -> F.formatter -> hpara_dll -> unit
 
 (** Pretty print a list of hpara_dlls. *)
-val pp_hpara_dll_list : printenv -> Format.formatter -> hpara_dll list -> unit
+val pp_hpara_dll_list : printenv -> F.formatter -> hpara_dll list -> unit
 
 (** Module Predicates records the occurrences of predicates as parameters
-    of (doubly -)linked lists and Epara. Provides unique numbering for predicates and an iterator. *)
+    of (doubly -)linked lists and Epara.
+    Provides unique numbering for predicates and an iterator. *)
 module Predicates : sig
   (** predicate environment *)
   type env
@@ -991,13 +988,14 @@ module Predicates : sig
 end
 
 (** Pretty print a hpred with optional predicate env *)
-val pp_hpred_env : printenv -> Predicates.env option -> Format.formatter -> hpred -> unit
+val pp_hpred_env : printenv -> Predicates.env option -> F.formatter -> hpred -> unit
 
 (** {2 Functions for traversing SIL data types} *)
 
 (** This function should be used before adding a new
     index to Earray. The [exp] is the newly created
-    index. This function "cleans" [exp] according to whether it is the footprint or current part of the prop.
+    index. This function "cleans" [exp] according to whether it is the
+    footprint or current part of the prop.
     The function faults in the re - execution mode, as an internal check of the tool. *)
 val array_clean_new_index : bool -> exp -> exp
 
@@ -1045,7 +1043,8 @@ val array_typ_elem : typ option -> typ -> typ
 (** Return the root of [lexp]. *)
 val root_of_lexp : exp -> exp
 
-(** Get an expression "undefined", the boolean indicates whether the undefined value goest into the footprint *)
+(** Get an expression "undefined", the boolean indicates
+    whether the undefined value goest into the footprint *)
 val exp_get_undefined : bool -> exp
 
 (** Checks whether an expression denotes a location using pointer arithmetic.
@@ -1099,14 +1098,16 @@ val hpara_fpv : hpara -> pvar list
 
 (** {2 Functions for computing free non-program variables} *)
 
-(** Type of free variables. These include primed, normal and footprint variables. We remember the order in which variables are added. *)
+(** Type of free variables. These include primed, normal and footprint variables.
+    We remember the order in which variables are added. *)
 type fav
 
-(** flag to indicate whether fav's are stored in duplicate form -- only to be used with fav_to_list *)
+(** flag to indicate whether fav's are stored in duplicate form.
+    Only to be used with fav_to_list *)
 val fav_duplicates : bool ref
 
 (** Pretty print a fav. *)
-val pp_fav : printenv -> Format.formatter -> fav -> unit
+val pp_fav : printenv -> F.formatter -> fav -> unit
 
 (** Create a new [fav]. *)
 val fav_new : unit -> fav
@@ -1227,7 +1228,9 @@ val sub_join : subst -> subst -> subst
     and [subst2], respectively. *)
 val sub_symmetric_difference : subst -> subst -> subst * subst * subst
 
-(** [sub_find filter sub] returns the expression associated to the first identifier that satisfies [filter]. Raise [Not_found] if there isn't one. *)
+(** [sub_find filter sub] returns the expression associated to the first identifier
+    that satisfies [filter].
+    Raise [Not_found] if there isn't one. *)
 val sub_find : (Ident.t -> bool) -> subst -> exp
 
 (** [sub_filter filter sub] restricts the domain of [sub] to the
@@ -1308,7 +1311,8 @@ val mk_pvar : Mangled.t -> Procname.t -> pvar
 (** [get_ret_pvar proc_name] retuns the return pvar associated with the procedure name *)
 val get_ret_pvar : Procname.t -> pvar
 
-(** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)
+(** [mk_pvar_callee name proc_name] creates a program var
+    for a callee function with the given function name *)
 val mk_pvar_callee : Mangled.t -> Procname.t -> pvar
 
 (** create a global variable with the given name *)
@@ -1338,7 +1342,8 @@ val hpara_instantiate : hpara -> exp -> exp -> exp list -> Ident.t list * hpred 
 
 (** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
     [blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
-    then the result of the instantiation is [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
+    then the result of the instantiation is
+    [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
     for some fresh [_zs'].*)
 val hpara_dll_instantiate : hpara_dll -> exp -> exp -> exp -> exp list -> Ident.t list * hpred list
 

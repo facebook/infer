@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 AC_INIT([Infer],
         [0.8.0],
         [https://github.com/facebook/infer/issues/])
-AC_CONFIG_SRCDIR([infer/src/backend/sil.ml])
+AC_CONFIG_SRCDIR([infer/src/IR/sil.ml])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=0

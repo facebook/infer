@@ -257,7 +257,7 @@ let get_all_supertypes typ tenv =
         superclasses
     | _ -> [] in
   let rec add_typ class_name typs =
-    match Sil.tenv_lookup tenv class_name with
+    match Tenv.lookup tenv class_name with
     | Some struct_typ ->
         let typ' = Sil.Tstruct struct_typ in
         get_supers_rec typ' (TypSet.add typ' typs)
@@ -275,7 +275,7 @@ let is_subtype (typ0 : Sil.typ) (typ1 : Sil.typ) tenv =
 
 let is_subtype_package_class typ package classname tenv =
   let classname = Mangled.from_package_class package classname in
-  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, classname)) with
+  match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, classname)) with
   | Some found_struct_typ -> is_subtype typ (Sil.Tstruct found_struct_typ) tenv
   | _ -> false
 
@@ -363,7 +363,7 @@ let get_callbacks_registered_by_proc procdesc tenv =
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt lifecycle_typ lifecycle_proc_strs tenv =
-  match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, lifecycle_typ)) with
+  match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Java, lifecycle_typ)) with
   | Some ({ Sil.csu = Csu.Class _; struct_name = Some _; def_methods } as lifecycle_typ) ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
@@ -390,7 +390,7 @@ let get_lifecycles = android_lifecycles
 let is_subclass tenv cn1 classname_str =
   let typename =
     Typename.Java.from_string classname_str in
-  let lookup = Sil.tenv_lookup tenv in
+  let lookup = Tenv.lookup tenv in
   match lookup cn1, lookup typename with
   | Some typ1, Some typ2 ->
       is_subtype (Sil.Tstruct typ1) (Sil.Tstruct typ2) tenv

@@ -12,18 +12,18 @@ open CFrontend_utils
 
 type field_type = Ident.fieldname * Sil.typ * (Sil.annotation * bool) list
 
-val get_fields : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> CContext.curr_class ->
+val get_fields : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> CContext.curr_class ->
   Clang_ast_t.decl list -> field_type list
 
 val fields_superclass :
-  Sil.tenv -> Clang_ast_t.obj_c_interface_decl_info -> Csu.class_kind -> field_type list
+  Tenv.t -> Clang_ast_t.obj_c_interface_decl_info -> Csu.class_kind -> field_type list
 
-val build_sil_field : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.named_decl_info ->
+val build_sil_field : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.named_decl_info ->
   Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list -> field_type
 
-val add_missing_fields : Sil.tenv -> string -> Csu.class_kind -> field_type list -> unit
+val add_missing_fields : Tenv.t -> string -> Csu.class_kind -> field_type list -> unit
 
 val is_ivar_atomic : Ident.fieldname -> Sil.struct_fields -> bool
 
-val get_property_corresponding_ivar : Sil.tenv -> Ast_utils.type_ptr_to_sil_type -> string ->
+val get_property_corresponding_ivar : Tenv.t -> Ast_utils.type_ptr_to_sil_type -> string ->
   Clang_ast_t.decl -> Ident.fieldname

@@ -39,7 +39,7 @@ val has_formal_method_argument_type_names :
   Cfg.Procdesc.t -> Procname.java -> string list -> bool
 
 (** Check if the method is one of the known initializer methods. *)
-val method_is_initializer : Sil.tenv -> ProcAttributes.t -> bool
+val method_is_initializer : Tenv.t -> ProcAttributes.t -> bool
 
 (** Is this a getter proc name? *)
 val is_getter : Procname.java -> bool
@@ -67,7 +67,7 @@ val proc_calls :
 
 (** Iterate over all the methods overridden by the procedure.
     Only Java supported at the moment. *)
-val proc_iter_overridden_methods : (Procname.t -> unit) -> Sil.tenv -> Procname.t -> unit
+val proc_iter_overridden_methods : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 
 val type_get_annotation : Sil.typ -> Sil.item_annotation option
 

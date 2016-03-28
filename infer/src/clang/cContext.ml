@@ -21,7 +21,7 @@ type curr_class =
 
 type t =
   {
-    tenv : Sil.tenv;
+    tenv : Tenv.t;
     cg : Cg.t;
     cfg : Cfg.cfg;
     procdesc : Cfg.Procdesc.t;
@@ -116,7 +116,7 @@ let curr_class_hash curr_class =
 
 let create_curr_class tenv class_name ck =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
-  match Sil.tenv_lookup tenv class_tn_name with
+  match Tenv.lookup tenv class_tn_name with
   | Some { Sil.superclasses } ->
       (let superclasses_names = IList.map Typename.name superclasses in
        match superclasses_names with

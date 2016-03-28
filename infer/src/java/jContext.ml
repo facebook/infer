@@ -24,7 +24,7 @@ type meth_kind =
 
 (** data  *)
 type icfg = {
-  tenv : Sil.tenv;
+  tenv : Tenv.t;
   cg : Cg.t;
   cfg : Cfg.cfg;
 }

@@ -25,7 +25,7 @@ let add_predefined_objc_types tenv =
       def_methods = [];
       struct_annotations = [];
     } in
-  Sil.tenv_add tenv class_typename objc_class_type_info;
+  Tenv.add tenv class_typename objc_class_type_info;
   let id_typename = CType_to_sil_type.get_builtin_objc_typename `ObjCId in
   let objc_object_type_info =
     {
@@ -37,7 +37,7 @@ let add_predefined_objc_types tenv =
       def_methods = [];
       struct_annotations = [];
     } in
-  Sil.tenv_add tenv id_typename objc_object_type_info
+  Tenv.add tenv id_typename objc_object_type_info
 
 (* Whenever new type are added manually to the translation in ast_expressions, *)
 (* they should be added here too!! *)
@@ -142,7 +142,7 @@ let add_struct_to_tenv tenv typ =
     | _ -> assert false in
   let mangled = CTypes.get_name_from_struct typ in
   let typename = Typename.TN_csu(csu, mangled) in
-  Sil.tenv_add tenv typename struct_typ
+  Tenv.add tenv typename struct_typ
 
 let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
@@ -200,7 +200,7 @@ and get_struct_cpp_class_declaration_type tenv decl =
         add_struct_to_tenv tenv sil_type;
         sil_type
       ) else (
-        match Sil.tenv_lookup tenv sil_typename with
+        match Tenv.lookup tenv sil_typename with
         | Some struct_typ -> Sil.Tstruct struct_typ (* just reuse what is already in tenv *)
         | None ->
             (* This is first forward definition seen so far. Instead of adding *)

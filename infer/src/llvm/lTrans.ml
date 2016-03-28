@@ -87,7 +87,10 @@ let rec trans_annotated_instructions
               | Global (Name var_name) | Local (Name var_name) ->
                   let new_local = (Mangled.from_string var_name, trans_typ (Tptr tp)) in
                   (sil_instrs, new_local :: locals)
-              | _ -> raise (ImproperTypeError "Not expecting alloca instruction to a numbered variable.")
+              | _ ->
+                  raise
+                    (ImproperTypeError
+                       "Not expecting alloca instruction to a numbered variable.")
             end
         | Call (ret_var, func_var, typed_args) ->
             let new_sil_instr = Sil.Call (
@@ -145,7 +148,8 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
         (* link all nodes in a chain for now *)
         | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
         | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
-      let (sil_instrs, locals) = trans_annotated_instructions cfg procdesc metadata annotated_instrs in
+      let (sil_instrs, locals) =
+        trans_annotated_instructions cfg procdesc metadata annotated_instrs in
       let nodes = IList.map (node_of_sil_instr cfg procdesc) sil_instrs in
       Cfg.Procdesc.set_start_node procdesc start_node;
       Cfg.Procdesc.set_exit_node procdesc exit_node;
@@ -154,10 +158,10 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
       Cg.add_defined_node cg proc_name;
       IList.iter (Cg.add_edge cg proc_name) (callees_of_function_def func_def)
 
-let trans_program : LAst.program -> Cfg.cfg * Cg.t * Sil.tenv = function
+let trans_program : LAst.program -> Cfg.cfg * Cg.t * Tenv.t = function
     Program (func_defs, metadata) ->
       let cfg = Cfg.Node.create_cfg () in
       let cg = Cg.create () in
-      let tenv = Sil.create_tenv () in
+      let tenv = Tenv.create () in
       IList.iter (trans_function_def cfg cg metadata) func_defs;
       (cfg, cg, tenv)

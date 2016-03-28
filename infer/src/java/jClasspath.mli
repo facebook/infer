@@ -14,7 +14,7 @@ open Javalib_pack
 val models_jar : string ref
 
 (** Type environment of the models *)
-val models_tenv : Sil.tenv ref
+val models_tenv : Tenv.t ref
 
 (**  Adds the set of procnames for the models of Java libraries so that methods
      with similar names are skipped during the capture *)

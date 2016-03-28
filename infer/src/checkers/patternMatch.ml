@@ -73,7 +73,7 @@ let type_has_direct_supertype (typ : Sil.typ) (class_name : Typename.t) =
   IList.exists (fun cn -> Typename.equal cn class_name) (type_get_direct_supertypes typ)
 
 let type_has_supertype
-    (tenv: Sil.tenv)
+    (tenv: Tenv.t)
     (typ: Sil.typ)
     (class_name: Typename.t): bool =
   let rec has_supertype typ visited =
@@ -81,13 +81,13 @@ let type_has_supertype
       false
     else
       begin
-        match Sil.expand_type tenv typ with
+        match Tenv.expand_type tenv typ with
         | Sil.Tptr (Sil.Tstruct { Sil.superclasses }, _)
         | Sil.Tstruct { Sil.superclasses } ->
             let match_supertype cn =
               let match_name () = Typename.equal cn class_name in
               let has_indirect_supertype () =
-                match Sil.tenv_lookup tenv cn with
+                match Tenv.lookup tenv cn with
                 | Some supertype ->
                     has_supertype (Sil.Tstruct supertype) (Sil.TypSet.add typ visited)
                 | None -> false in
@@ -255,14 +255,14 @@ let initializer_methods = [
 
 (** Check if the type has in its supertypes from the initializer_classes list. *)
 let type_has_initializer
-    (tenv: Sil.tenv)
+    (tenv: Tenv.t)
     (t: Sil.typ): bool =
   let check_candidate class_name = type_has_supertype tenv t class_name in
   IList.exists check_candidate initializer_classes
 
 (** Check if the method is one of the known initializer methods. *)
 let method_is_initializer
-    (tenv: Sil.tenv)
+    (tenv: Tenv.t)
     (proc_attributes: ProcAttributes.t) : bool =
   match get_this_type proc_attributes with
   | Some this_type ->
@@ -320,7 +320,7 @@ let proc_iter_overridden_methods f tenv proc_name =
   let do_super_type tenv super_class_name =
     let super_proc_name =
       Procname.replace_class proc_name (Typename.name super_class_name) in
-    match Sil.tenv_lookup tenv super_class_name with
+    match Tenv.lookup tenv super_class_name with
     | Some ({ Sil.def_methods }) ->
         let is_override pname =
           Procname.equal pname super_proc_name &&
@@ -337,7 +337,7 @@ let proc_iter_overridden_methods f tenv proc_name =
       let type_name =
         let class_name = Procname.java_get_class_name proc_name_java in
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string class_name) in
-      (match Sil.tenv_lookup tenv type_name with
+      (match Tenv.lookup tenv type_name with
        | Some curr_struct_typ ->
            IList.iter
              (do_super_type tenv)

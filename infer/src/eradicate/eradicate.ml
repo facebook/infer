@@ -22,7 +22,8 @@ let verbose = Config.from_env_variable "ERADICATE_TYPINGS"
 (* print step-by-step tracing information *)
 let trace = Config.from_env_variable "ERADICATE_TRACE"
 
-let check_field_initialization = true (* check that nonnullable fields are initialized in constructors *)
+(* check that nonnullable fields are initialized in constructors *)
+let check_field_initialization = true
 
 type parameters = TypeState.parameters
 

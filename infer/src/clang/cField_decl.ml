@@ -17,7 +17,7 @@ type field_type = Ident.fieldname * Sil.typ * (Sil.annotation * bool) list
 
 let rec get_fields_super_classes tenv super_class =
   Printing.log_out "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
-  match Sil.tenv_lookup tenv super_class with
+  match Tenv.lookup tenv super_class with
   | None -> []
   | Some { Sil.instance_fields; superclasses = super_class :: _ } ->
       let sc_fields = get_fields_super_classes tenv super_class in
@@ -76,7 +76,7 @@ let rec get_fields type_ptr_to_sil_type tenv curr_class decl_list =
 let add_missing_fields tenv class_name ck fields =
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class ck, mang_name) in
-  match Sil.tenv_lookup tenv class_tn_name with
+  match Tenv.lookup tenv class_tn_name with
   | Some ({ Sil.instance_fields } as struct_typ) ->
       let new_fields = General_utils.append_no_duplicates_fields instance_fields fields in
       let class_type_info =
@@ -88,7 +88,7 @@ let add_missing_fields tenv class_name ck fields =
           struct_name = Some mang_name;
         } in
       Printing.log_out " Updating info for class '%s' in tenv\n" class_name;
-      Sil.tenv_add tenv class_tn_name class_type_info
+      Tenv.add tenv class_tn_name class_type_info
   | _ -> ()
 
 (* checks if ivar is defined among a set of fields and if it is atomic *)

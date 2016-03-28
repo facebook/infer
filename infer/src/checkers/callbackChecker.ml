@@ -67,7 +67,7 @@ let callback_checker_main_java
     Typename.TN_csu
       (Csu.Class Csu.Java,
        Mangled.from_string (Procname.java_get_class_name proc_name_java)) in
-  match Sil.tenv_lookup tenv typename with
+  match Tenv.lookup tenv typename with
   | Some ({ struct_name = Some _; def_methods } as struct_typ) ->
       let typ = Sil.Tstruct struct_typ in
       let lifecycle_typs = get_or_create_lifecycle_typs tenv in

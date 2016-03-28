@@ -12,13 +12,13 @@
 (** list of defined methods *)
 open CFrontend_utils
 
-val interface_declaration : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl ->
+val interface_declaration : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl ->
   Sil.typ
 
-val interface_impl_declaration : Ast_utils.type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl ->
+val interface_impl_declaration : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl ->
   Sil.typ
 
-val is_pointer_to_objc_class : Sil.tenv -> Sil.typ -> bool
+val is_pointer_to_objc_class : Tenv.t -> Sil.typ -> bool
 
 val get_curr_class : string -> Clang_ast_t.obj_c_interface_decl_info -> CContext.curr_class
 

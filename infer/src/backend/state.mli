@@ -53,7 +53,8 @@ val get_node_id_key : unit -> int * int
 
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)
-val get_normalized_pre : (Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
+val get_normalized_pre :
+  (Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t) -> Prop.normal Prop.t option
 
 (** Get last path seen in symbolic execution *)
 val get_path : unit -> Paths.Path.t * (Sil.path_pos option)
@@ -62,7 +63,7 @@ val get_path : unit -> Paths.Path.t * (Sil.path_pos option)
 val get_path_pos : unit -> Sil.path_pos
 
 (** Get last last prop,tenv,pdesc seen in symbolic execution *)
-val get_prop_tenv_pdesc : unit -> (Prop.normal Prop.t * Sil.tenv * Cfg.Procdesc.t) option
+val get_prop_tenv_pdesc : unit -> (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option
 
 (** Get last session seen in symbolic execution *)
 val get_session : unit -> int
@@ -125,7 +126,7 @@ val set_node : Cfg.node -> unit
 val set_path : Paths.Path.t -> Sil.path_pos option -> unit
 
 (** Set last prop,tenv,pdesc seen in symbolic execution *)
-val set_prop_tenv_pdesc : Prop.normal Prop.t -> Sil.tenv -> Cfg.Procdesc.t -> unit
+val set_prop_tenv_pdesc : Prop.normal Prop.t -> Tenv.t -> Cfg.Procdesc.t -> unit
 
 (** Set last session seen in symbolic execution *)
 val set_session : int -> unit

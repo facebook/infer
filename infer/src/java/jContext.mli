@@ -32,7 +32,7 @@ module NodeTbl : Hashtbl.S with type key = Cfg.Node.t
     representation of a file: the type environment, the control graph and the control
     flow graph *)
 type icfg = {
-  tenv : Sil.tenv;
+  tenv : Tenv.t;
   cg : Cg.t;
   cfg : Cfg.cfg;
 }
@@ -63,7 +63,7 @@ val get_impl : t -> JBir.t
 val get_cn : t -> JBasics.class_name
 
 (** returns the type environment that corresponds to the current file. *)
-val get_tenv : t -> Sil.tenv
+val get_tenv : t -> Tenv.t
 
 (** returns the control graph that corresponds to the current file.  *)
 val get_cg : t -> Cg.t

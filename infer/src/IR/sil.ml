@@ -174,9 +174,15 @@ type res_act_kind =
 
 (** kind of dangling pointers *)
 type dangling_kind =
-  | DAuninit (** pointer is dangling because it is uninitialized *)
-  | DAaddr_stack_var (** pointer is dangling because it is the address of a stack variable which went out of scope *)
-  | DAminusone (** pointer is -1 *)
+  (** pointer is dangling because it is uninitialized *)
+  | DAuninit
+
+  (** pointer is dangling because it is the address
+      of a stack variable which went out of scope *)
+  | DAaddr_stack_var
+
+  (** pointer is -1 *)
+  | DAminusone
 
 (** kind of pointer *)
 type ptr_kind =
@@ -392,7 +398,8 @@ module Subtype = struct
           if (is_sub) then (Some st1, None)
           else
             let l1' = updates_head f c2 l1 in
-            if (is_subtype f c2 l1) then (Some (Subtypes l1'), Some (Subtypes (add_not_subtype f c1 l1 [c2])))
+            if (is_subtype f c2 l1)
+            then (Some (Subtypes l1'), Some (Subtypes (add_not_subtype f c1 l1 [c2])))
             else (None, Some st1)
       | Subtypes l1, Subtypes l2 ->
           if (is_interface c2) || (is_sub) then
@@ -402,7 +409,8 @@ module Subtype = struct
             else (None, Some st1)
           else if ((is_interface c1) || (f c2 c1)) && (is_subtype f c2 l1) then
             let l1' = updates_head f c2 l1 in
-            (Some (Subtypes (add_not_subtype f c2 l1' l2)), Some (Subtypes (add_not_subtype f c1 l1 [c2])))
+            (Some (Subtypes (add_not_subtype f c2 l1' l2)),
+             Some (Subtypes (add_not_subtype f c1 l1 [c2])))
           else (None, Some st1) in
     (normalize_subtypes pos_st c1 c2 flag1 flag2), (normalize_subtypes neg_st c1 c2 flag1 flag2)
 
@@ -422,11 +430,13 @@ module Subtype = struct
       else (None, Some st) in
     (change_flag pos_st c1 c2 flag2), (change_flag neg_st c1 c2 flag2)
 
-  (** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2] according to [st1] and [st2]
+  (** [case_analysis (c1, st1) (c2,st2) f] performs case analysis on [c1 <: c2]
+      according to [st1] and [st2]
       where f c1 c2 is true if c1 is a subtype of c2.
       get_subtypes returning a pair:
       - whether [st1] and [st2] admit [c1 <: c2], and in case return the updated subtype [st1]
-      - whether [st1] and [st2] admit [not(c1 <: c2)], and in case return the updated subtype [st1] *)
+      - whether [st1] and [st2] admit [not(c1 <: c2)],
+      and in case return the updated subtype [st1] *)
   let case_analysis (c1, st1) (c2, st2) f is_interface =
     let f = check_subtype f in
     if (!Config.subtype_multirange) then
@@ -475,7 +485,8 @@ module Int : sig
   val two : t
   val zero : t
 end = struct
-  (* the first bool indicates whether this is an unsigned value, and the second whether it is a pointer *)
+  (* the first bool indicates whether this is an unsigned value,
+     and the second whether it is a pointer *)
   type t = bool * Int64.t * bool
 
   let area u i = match i < 0L, u with
@@ -523,7 +534,8 @@ end = struct
 
   let neg (unsigned, i, ptr) = (unsigned, Int64.neg i, ptr)
 
-  let lift binop (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) = (unsigned1 || unsigned2, binop i1 i2, ptr1 || ptr2)
+  let lift binop (unsigned1, i1, ptr1) (unsigned2, i2, ptr2) =
+    (unsigned1 || unsigned2, binop i1 i2, ptr1 || ptr2)
 
   let lift1 unop (unsigned, i, ptr) = (unsigned, unop i, ptr)
 
@@ -687,17 +699,35 @@ and typ =
   | Tstruct of struct_typ (** Type for a structured value *)
   | Tarray of typ * exp (** array type with fixed size *)
 
-(** program expressions *)
+
+(** Program expressions. *)
 and exp =
-  | Var of Ident.t (** pure variable: it is not an lvalue *)
-  | UnOp of unop * exp * typ option (** unary operator with type of the result if known *)
-  | BinOp of binop * exp * exp (** binary operator *)
-  | Const of const  (** constants *)
-  | Cast of typ * exp  (** type cast *)
-  | Lvar of pvar  (** the address of a program variable *)
-  | Lfield of exp * Ident.fieldname * typ (** a field offset, the type is the surrounding struct type *)
-  | Lindex of exp * exp (** an array index offset: exp1[exp2] *)
-  | Sizeof of typ * Subtype.t (** a sizeof expression *)
+  (** Pure variable: it is not an lvalue *)
+  | Var of Ident.t
+
+  (** Unary operator with type of the result if known *)
+  | UnOp of unop * exp * typ option
+
+  (** Binary operator *)
+  | BinOp of binop * exp * exp
+
+  (** Constants *)
+  | Const of const
+
+  (** Type cast *)
+  | Cast of typ * exp
+
+  (** The address of a program variable *)
+  | Lvar of pvar
+
+  (** A field offset, the type is the surrounding struct type *)
+  | Lfield of exp * Ident.fieldname * typ
+
+  (** An array index offset: [exp1\[exp2\]] *)
+  | Lindex of exp * exp
+
+  (** A sizeof expression *)
+  | Sizeof of typ * Subtype.t
 
 (** Kind of prune instruction *)
 type if_kind =
@@ -1401,7 +1431,10 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
   match att1, att2 with
   | Aresource ra1, Aresource ra2 ->
       let n = res_act_kind_compare ra1.ra_kind ra2.ra_kind in
-      if n <> 0 then n else resource_compare ra1.ra_res ra2.ra_res (* ignore other values beside resources: arbitrary merging into one *)
+      if n <> 0
+      then n
+      (* ignore other values beside resources: arbitrary merging into one *)
+      else resource_compare ra1.ra_res ra2.ra_res
   | Aresource _, _ -> - 1
   | _, Aresource _ -> 1
   | Aautorelease, Aautorelease -> 0
@@ -1700,14 +1733,18 @@ let color_pre_wrapper pe f x =
     let color = pe.pe_cmap_norm (Obj.repr x) in
     if color != pe.pe_color then begin
       (if pe.pe_kind == PP_HTML then Io_infer.Html.pp_start_color else Latex.pp_color) f color;
-      if color == Red then ({ pe with pe_cmap_norm = colormap_red; pe_color = Red }, true) (** Al subexpressiona red *)
+      if color == Red
+      (** All subexpressiona red *)
+      then ({ pe with pe_cmap_norm = colormap_red; pe_color = Red }, true)
       else ({ pe with pe_color = color }, true) end
     else (pe, false) end
   else (pe, false)
 
 (** Close color annotation if changed *)
 let color_post_wrapper changed pe f =
-  if changed then (if pe.pe_kind == PP_HTML then Io_infer.Html.pp_end_color f () else Latex.pp_color f pe.pe_color)
+  if changed
+  then (if pe.pe_kind == PP_HTML then Io_infer.Html.pp_end_color f ()
+        else Latex.pp_color f pe.pe_color)
 
 (** Print a sequence with difference mode if enabled. *)
 let pp_seq_diff pp pe0 f =
@@ -1951,7 +1988,8 @@ and pp_vpath pe fmt vpath =
     | Some de -> pp_dexp fmt de
     | None -> () in
   if pe.pe_kind == PP_HTML then
-    F.fprintf fmt " %a{vpath: %a}%a" Io_infer.Html.pp_start_color Orange pp vpath Io_infer.Html.pp_end_color ()
+    F.fprintf fmt " %a{vpath: %a}%a"
+      Io_infer.Html.pp_start_color Orange pp vpath Io_infer.Html.pp_end_color ()
   else
     F.fprintf fmt "%a" pp vpath
 
@@ -2249,7 +2287,6 @@ let pp_instr pe0 f instr =
          | Pop -> "Pop" in
        F.fprintf f "STACKOP.%s; %a" s Location.pp loc
    | Declare_locals (ptl, loc) ->
-       (* let pp_pvar_typ fmt (pvar, typ) = F.fprintf fmt "%a:%a" (pp_pvar pe) pvar (pp_typ_full pe) typ in *)
        let pp_pvar_typ fmt (pvar, _) = F.fprintf fmt "%a" (pp_pvar pe) pvar in
        F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_pvar_typ) ptl Location.pp loc
    | Goto_node (e, loc) ->
@@ -2400,7 +2437,8 @@ let rec pp_star_seq pp f = function
 
 (********* START OF MODULE Predicates **********)
 (** Module Predicates records the occurrences of predicates as parameters
-    of (doubly -)linked lists and Epara. Provides unique numbering for predicates and an iterator. *)
+    of (doubly -)linked lists and Epara. Provides unique numbering
+    for predicates and an iterator. *)
 module Predicates : sig
   (** predicate environment *)
   type env
@@ -2499,8 +2537,10 @@ end = struct
       todo_dll =[];
     }
 
-  (** iterator for predicates which are marked as todo in env, unless they have been visited already.
-      This can in turn extend the todo list for the nested predicates, which are then visited as well.
+  (** iterator for predicates which are marked as todo in env,
+      unless they have been visited already.
+      This can in turn extend the todo list for the nested predicates,
+      which are then visited as well.
       Can be applied only once, as it destroys the todo list *)
   let iter (env: env) f f_dll =
     while env.todo != [] || env.todo_dll != [] do
@@ -2673,15 +2713,22 @@ let rec pp_sexp_env pe0 envo f se =
         begin
           match pe.pe_kind with
           | PP_TEXT | PP_HTML ->
-              let pp_diff f (n, se) = F.fprintf f "%a:%a" Ident.pp_fieldname n (pp_sexp_env pe envo) se in
+              let pp_diff f (n, se) =
+                F.fprintf f "%a:%a" Ident.pp_fieldname n (pp_sexp_env pe envo) se in
               F.fprintf f "{%a}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
           | PP_LATEX ->
-              let pp_diff f (n, se) = F.fprintf f "%a:%a" (Ident.pp_fieldname_latex Latex.Boldface) n (pp_sexp_env pe envo) se in
-              F.fprintf f "\\{%a\\}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
+              let pp_diff f (n, se) =
+                F.fprintf f "%a:%a"
+                  (Ident.pp_fieldname_latex Latex.Boldface) n (pp_sexp_env pe envo) se in
+              F.fprintf f "\\{%a\\}%a"
+                (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
         end
     | Earray (size, nel, inst) ->
-        let pp_diff f (i, se) = F.fprintf f "%a:%a" (pp_exp pe) i (pp_sexp_env pe envo) se in
-        F.fprintf f "[%a|%a]%a" (pp_exp pe) size (pp_seq_diff pp_diff pe) nel (pp_inst_if_trace pe) inst
+        let pp_diff f (i, se) =
+          F.fprintf f "%a:%a"
+            (pp_exp pe) i (pp_sexp_env pe envo) se in
+        F.fprintf f "[%a|%a]%a"
+          (pp_exp pe) size (pp_seq_diff pp_diff pe) nel (pp_inst_if_trace pe) inst
   end;
   color_post_wrapper changed pe0 f
 
@@ -2696,31 +2743,53 @@ and pp_hpred_env pe0 envo f hpred =
           | _ -> pe in
         (match pe'.pe_kind with
          | PP_TEXT | PP_HTML ->
-             F.fprintf f "%a|->%a:%a" (pp_exp pe') e (pp_sexp_env pe' envo) se (pp_texp_simple pe') te
+             F.fprintf f "%a|->%a:%a"
+               (pp_exp pe') e (pp_sexp_env pe' envo) se (pp_texp_simple pe') te
          | PP_LATEX ->
              F.fprintf f "%a\\mapsto %a" (pp_exp pe') e (pp_sexp_env pe' envo) se)
     | Hlseg (k, hpara, e1, e2, elist) ->
         (match pe.pe_kind with
          | PP_TEXT | PP_HTML ->
              F.fprintf f "lseg%a(%a,%a,[%a],%a)"
-               pp_lseg_kind k (pp_exp pe) e1 (pp_exp pe) e2 (pp_comma_seq (pp_exp pe)) elist (pp_hpara_env pe envo) hpara
+               pp_lseg_kind k
+               (pp_exp pe) e1
+               (pp_exp pe) e2
+               (pp_comma_seq (pp_exp pe)) elist
+               (pp_hpara_env pe envo) hpara
          | PP_LATEX ->
              F.fprintf f "\\textsf{lseg}_{%a}(%a,%a,[%a],%a)"
-               pp_lseg_kind k (pp_exp pe) e1 (pp_exp pe) e2 (pp_comma_seq (pp_exp pe)) elist (pp_hpara_env pe envo) hpara)
+               pp_lseg_kind k
+               (pp_exp pe) e1
+               (pp_exp pe) e2
+               (pp_comma_seq (pp_exp pe)) elist
+               (pp_hpara_env pe envo) hpara)
     | Hdllseg (k, hpara_dll, iF, oB, oF, iB, elist) ->
         (match pe.pe_kind with
          | PP_TEXT | PP_HTML ->
              F.fprintf f "dllseg%a(%a,%a,%a,%a,[%a],%a)"
-               pp_lseg_kind k (pp_exp pe) iF (pp_exp pe) oB (pp_exp pe) oF (pp_exp pe) iB (pp_comma_seq (pp_exp pe)) elist (pp_hpara_dll_env pe envo) hpara_dll
+               pp_lseg_kind k
+               (pp_exp pe) iF
+               (pp_exp pe) oB
+               (pp_exp pe) oF
+               (pp_exp pe) iB
+               (pp_comma_seq (pp_exp pe)) elist
+               (pp_hpara_dll_env pe envo) hpara_dll
          | PP_LATEX ->
              F.fprintf f "\\textsf{dllseg}_{%a}(%a,%a,%a,%a,[%a],%a)"
-               pp_lseg_kind k (pp_exp pe) iF (pp_exp pe) oB (pp_exp pe) oF (pp_exp pe) iB (pp_comma_seq (pp_exp pe)) elist (pp_hpara_dll_env pe envo) hpara_dll)
+               pp_lseg_kind k
+               (pp_exp pe) iF
+               (pp_exp pe) oB
+               (pp_exp pe) oF
+               (pp_exp pe) iB
+               (pp_comma_seq (pp_exp pe)) elist
+               (pp_hpara_dll_env pe envo) hpara_dll)
   end;
   color_post_wrapper changed pe0 f
 
 and pp_hpara_env pe envo f hpara = match envo with
   | None ->
-      let (r, n, svars, evars, b) = (hpara.root, hpara.next, hpara.svars, hpara.evars, hpara.body) in
+      let (r, n, svars, evars, b) =
+        (hpara.root, hpara.next, hpara.svars, hpara.evars, hpara.body) in
       F.fprintf f "lam [%a,%a,%a]. exists [%a]. %a"
         (Ident.pp pe) r
         (Ident.pp pe) n
@@ -2732,7 +2801,9 @@ and pp_hpara_env pe envo f hpara = match envo with
 
 and pp_hpara_dll_env pe envo f hpara_dll = match envo with
   | None ->
-      let (iF, oB, oF, svars, evars, b) = (hpara_dll.cell, hpara_dll.blink, hpara_dll.flink, hpara_dll.svars_dll, hpara_dll.evars_dll, hpara_dll.body_dll) in
+      let (iF, oB, oF, svars, evars, b) =
+        (hpara_dll.cell, hpara_dll.blink, hpara_dll.flink,
+         hpara_dll.svars_dll, hpara_dll.evars_dll, hpara_dll.body_dll) in
       F.fprintf f "lam [%a,%a,%a,%a]. exists [%a]. %a"
         (Ident.pp pe) iF
         (Ident.pp pe) oB
@@ -3035,7 +3106,8 @@ and hpara_dll_fpv para =
 
 (** {2 Functions for computing free non-program variables} *)
 
-(** Type of free variables. These include primed, normal and footprint variables. We keep a count of how many types the variables appear. *)
+(** Type of free variables. These include primed, normal and footprint variables.
+    We keep a count of how many types the variables appear. *)
 type fav = Ident.t list ref
 
 let fav_new () =
@@ -3054,7 +3126,8 @@ let fav_for_all fav predicate =
 let fav_exists fav predicate =
   IList.exists predicate !fav
 
-(** flag to indicate whether fav's are stored in duplicate form -- only to be used with fav_to_list *)
+(** flag to indicate whether fav's are stored in duplicate form.
+    Only to be used with fav_to_list *)
 let fav_duplicates = ref false
 
 (** extend [fav] with a [id] *)
@@ -3185,7 +3258,8 @@ let hpred_fav =
 
 (** This function should be used before adding a new
     index to Earray. The [exp] is the newly created
-    index. This function "cleans" [exp] according to whether it is the footprint or current part of the prop.
+    index. This function "cleans" [exp] according to whether it is
+    the footprint or current part of the prop.
     The function faults in the re - execution mode, as an internal check of the tool. *)
 let array_clean_new_index footprint_part new_idx =
   if footprint_part && not !Config.footprint then assert false;
@@ -3350,7 +3424,8 @@ let sub_symmetric_difference sub1_in sub2_in =
 
 module Typtbl = Hashtbl.Make (struct type t = typ let equal = typ_equal let hash = Hashtbl.hash end)
 
-(** [sub_find filter sub] returns the expression associated to the first identifier that satisfies [filter]. Raise [Not_found] if there isn't one. *)
+(** [sub_find filter sub] returns the expression associated to the first identifier
+    that satisfies [filter]. Raise [Not_found] if there isn't one. *)
 let sub_find filter (sub: subst) =
   snd (IList.find (fun (i, _) -> filter i) sub)
 
@@ -3804,79 +3879,6 @@ let hpred_compact sh hpred =
       HpredHash.add sh.hpredh hpred' hpred';
       hpred'
 
-(** {2 Type Environment} *)
-(** hash tables on strings *)
-
-module TypenameHash =
-  Hashtbl.Make(struct
-    type t = Typename.t
-    let equal tn1 tn2 = Typename.equal tn1 tn2
-    let hash = Hashtbl.hash
-  end)
-
-(** Type for type environment. *)
-type tenv = struct_typ TypenameHash.t
-
-(** Create a new type environment. *)
-let create_tenv () = TypenameHash.create 1000
-
-(** Check if typename is found in tenv *)
-let tenv_mem tenv name =
-  TypenameHash.mem tenv name
-
-(** Look up a name in the global type environment. *)
-let tenv_lookup tenv name =
-  try Some (TypenameHash.find tenv name)
-  with Not_found -> None
-
-(** Add a (name,type) pair to the global type environment. *)
-let tenv_add tenv name struct_typ =
-  TypenameHash.replace tenv name struct_typ
-
-(** expand a type if it is a typename by looking it up in the type environment *)
-let expand_type tenv typ =
-  match typ with
-  | Tvar tname ->
-      begin
-        match tenv_lookup tenv tname with
-        | None -> assert false
-        | Some struct_typ -> Tstruct struct_typ
-      end
-  | _ -> typ
-
-(** type environment used for parsing, to be set by the client of the parser module *)
-let tenv_for_parsing = ref (create_tenv ())
-
-(** Serializer for type environments *)
-let tenv_serializer : tenv Serialization.serializer = Serialization.create_serializer Serialization.tenv_key
-
-let global_tenv: (tenv option) Lazy.t =
-  lazy (Serialization.from_file tenv_serializer (DB.global_tenv_fname ()))
-
-(** Load a type environment from a file *)
-let load_tenv_from_file (filename : DB.filename) : tenv option =
-  if filename = DB.global_tenv_fname () then
-    Lazy.force global_tenv
-  else
-    Serialization.from_file tenv_serializer filename
-
-(** Save a type environment into a file *)
-let store_tenv_to_file (filename : DB.filename) (tenv : tenv) =
-  Serialization.to_file tenv_serializer filename tenv
-
-let tenv_iter f tenv =
-  TypenameHash.iter f tenv
-
-let tenv_fold f tenv =
-  TypenameHash.fold f tenv
-
-let pp_tenv f (tenv : tenv) =
-  TypenameHash.iter
-    (fun name typ ->
-       Format.fprintf f "@[<6>NAME: %s@." (Typename.to_string name);
-       Format.fprintf f "@[<6>TYPE: %a@." (pp_struct_typ pe_text (fun _ () -> ())) typ)
-    tenv
-
 (** {2 Functions for constructing or destructing entities in this module} *)
 
 (** [mk_pvar name proc_name] creates a program var with the given function name *)
@@ -3887,7 +3889,8 @@ let mk_pvar (name: Mangled.t) (proc_name: Procname.t) : pvar =
 let get_ret_pvar pname =
   mk_pvar Ident.name_return pname
 
-(** [mk_pvar_callee name proc_name] creates a program var for a callee function with the given function name *)
+(** [mk_pvar_callee name proc_name] creates a program var
+    for a callee function with the given function name *)
 let mk_pvar_callee (name: Mangled.t) (proc_name: Procname.t) : pvar =
   { pv_name = name; pv_kind = Callee_var proc_name }
 
@@ -3938,10 +3941,14 @@ let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
           let g (eqs, sigma) = (eqs, hpred:: sigma) in
           IList.map g eqs_sigma_list
       | Hlseg(Lseg_PE, para, e1, e2, el) ->
-          let g (eqs, sigma) = [(Aeq(e1, e2):: eqs, sigma); (eqs, Hlseg(Lseg_NE, para, e1, e2, el):: sigma)] in
+          let g (eqs, sigma) =
+            [(Aeq(e1, e2):: eqs, sigma);
+             (eqs, Hlseg(Lseg_NE, para, e1, e2, el):: sigma)] in
           IList.flatten (IList.map g eqs_sigma_list)
       | Hdllseg(Lseg_PE, para_dll, e1, e2, e3, e4, el) ->
-          let g (eqs, sigma) = [(Aeq(e1, e3):: Aeq(e2, e4):: eqs, sigma); (eqs, Hdllseg(Lseg_NE, para_dll, e1, e2, e3, e4, el):: sigma)] in
+          let g (eqs, sigma) =
+            [(Aeq(e1, e3):: Aeq(e2, e4):: eqs, sigma);
+             (eqs, Hdllseg(Lseg_NE, para_dll, e1, e2, e3, e4, el):: sigma)] in
           IList.flatten (IList.map g eqs_sigma_list) in
     IList.fold_left f [([],[])] sigma
   else
@@ -3968,7 +3975,8 @@ let hpara_instantiate para e1 e2 elist =
 
 (** [hpara_dll_instantiate para cell blink flink  elist] instantiates [para] with [cell],
     [blink], [flink], and [elist]. If [para = lambda (x, y, z, xs). exists zs. b],
-    then the result of the instantiation is [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
+    then the result of the instantiation is
+    [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
     for some fresh [_zs'].*)
 let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   let subst_for_svars =
@@ -3982,7 +3990,12 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
     let g id id' = (id, Var id') in
     try (IList.map2 g para.evars_dll ids_evars)
     with Invalid_argument _ -> assert false in
-  let subst = sub_of_list ((para.cell, cell):: (para.blink, blink):: (para.flink, flink):: subst_for_svars@subst_for_evars) in
+  let subst =
+    sub_of_list
+      ((para.cell, cell) ::
+       (para.blink, blink) ::
+       (para.flink, flink) ::
+       subst_for_svars@subst_for_evars) in
   (ids_evars, IList.map (hpred_sub subst) para.body_dll)
 
 let custom_error =

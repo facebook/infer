@@ -227,7 +227,7 @@ let get_superclass_curr_class_objc context =
   let retrive_super cname super_opt =
     let iname = Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string cname) in
     Printing.log_out "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
-    match Sil.tenv_lookup (CContext.get_tenv context) iname with
+    match Tenv.lookup (CContext.get_tenv context) iname with
     | Some { Sil.superclasses =  super_name :: _ } ->
         Typename.name super_name
     | _ ->

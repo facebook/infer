@@ -32,7 +32,8 @@ module Procdesc : sig
   (** Create a procdesc *)
   val create : cfg -> ProcAttributes.t -> t
 
-  (** [remove cfg name remove_nodes] remove the procdesc [name] from the control flow graph [cfg]. *)
+  (** [remove cfg name remove_nodes] remove the procdesc [name]
+      from the control flow graph [cfg]. *)
   (** It also removes all the nodes from the procedure from the cfg if remove_nodes is true *)
   val remove: cfg -> Procname.t -> bool -> unit
 
@@ -145,7 +146,8 @@ module Node : sig
   (** Append the instructions and temporaries to the list of instructions to execute *)
   val append_instrs_temps : t -> Sil.instr list -> Ident.t list -> unit
 
-  (** Add the instructions and temporaries at the beginning of the list of instructions to execute *)
+  (** Add the instructions and temporaries at the beginning
+      of the list of instructions to execute *)
   val prepend_instrs_temps : t -> Sil.instr list -> Ident.t list -> unit
 
   (** Add declarations for local variables and return variable to the node *)
@@ -174,7 +176,8 @@ module Node : sig
   (** Get all the nodes *)
   val get_all_nodes : cfg -> t list
 
-  (** Get the (after/before) dead program variables. After/before indicated with the true/false flag. *)
+  (** Get the (after/before) dead program variables.
+      After/before indicated with the true/false flag. *)
   val get_dead_pvars: t -> bool -> Sil.pvar list
 
   (** Get the distance to the exit node, if it has been computed *)
@@ -201,7 +204,8 @@ module Node : sig
   (** Get the predecessor nodes of the current node *)
   val get_preds : t -> t list
 
-  (** Get a list of unique nodes until the first branch starting from a node with subsequent applications of a generator function *)
+  (** Get a list of unique nodes until the first branch starting
+      from a node with subsequent applications of a generator function *)
   val get_generated_slope : t -> (t -> t list) -> t list
 
   (** Get the proc desc associated to the node *)

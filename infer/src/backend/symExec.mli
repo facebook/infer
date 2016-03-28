@@ -11,17 +11,17 @@
 (** Symbolic Execution *)
 
 (** Lookup Java types by name. *)
-val lookup_java_typ_from_string :  Sil.tenv -> string -> Sil.typ
+val lookup_java_typ_from_string :  Tenv.t -> string -> Sil.typ
 
 (** symbolic execution on the level of sets of propositions *)
-val lifted_sym_exec : (exn -> unit) -> Sil.tenv -> Cfg.Procdesc.t ->
+val lifted_sym_exec : (exn -> unit) -> Tenv.t -> Cfg.Procdesc.t ->
   Paths.PathSet.t -> Cfg.Node.t -> Sil.instr list -> Paths.PathSet.t
 
 (** OO method resolution: given a class name and a method name, climb the class hierarchy to find
  * the procname that the method name will actually resolve to at runtime. For example, if we have
  * a procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
  * toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)
-val resolve_method : Sil.tenv -> Typename.t -> Procname.t -> Procname.t
+val resolve_method : Tenv.t -> Typename.t -> Procname.t -> Procname.t
 (** {2 Functions for handling builtins } *)
 
 module ModelBuiltins : sig

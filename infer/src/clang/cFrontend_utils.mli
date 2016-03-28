@@ -21,9 +21,9 @@ sig
 
   val print_failure_info : string -> unit
 
-  val print_tenv : Sil.tenv -> unit
+  val print_tenv : Tenv.t -> unit
 
-  val print_tenv_struct_unions : Sil.tenv -> unit
+  val print_tenv_struct_unions : Tenv.t -> unit
 
   val print_procedures : Cfg.cfg -> unit
 
@@ -115,12 +115,12 @@ sig
 
   val make_qual_name_decl : string list -> string -> Clang_ast_t.named_decl_info
 
-  type type_ptr_to_sil_type =  Sil.tenv -> Clang_ast_t.type_ptr -> Sil.typ
+  type type_ptr_to_sil_type =  Tenv.t -> Clang_ast_t.type_ptr -> Sil.typ
 
-  val add_type_from_decl_ref : type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl_ref option ->
+  val add_type_from_decl_ref : type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl_ref option ->
     bool -> unit
 
-  val add_type_from_decl_ref_list : type_ptr_to_sil_type -> Sil.tenv -> Clang_ast_t.decl_ref list ->
+  val add_type_from_decl_ref_list : type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl_ref list ->
     unit
 
 end
@@ -146,7 +146,7 @@ sig
 
   val sort_fields : (Ident.fieldname * Sil.typ * Sil.item_annotation) list -> (Ident.fieldname * Sil.typ * Sil.item_annotation) list
 
-  val sort_fields_tenv : Sil.tenv -> unit
+  val sort_fields_tenv : Tenv.t -> unit
 
   val collect_list_tuples : ('a list * 'b list * 'c list * 'd list * 'e list) list ->
     'a list * 'b list * 'c list * 'd list * 'e list -> 'a list * 'b list * 'c list * 'd list * 'e list

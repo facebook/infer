@@ -35,7 +35,9 @@ let ml_buckets_arg = ref "cf"
 let allow_specs_cleanup = ref false
 
 let version_string () =
-  "Infer version " ^ Version.versionString ^ "\nCopyright 2009 - present Facebook. All Rights Reserved.\n"
+  "Infer version "
+  ^ Version.versionString
+  ^ "\nCopyright 2009 - present Facebook. All Rights Reserved.\n"
 
 let print_version () =
   F.fprintf F.std_formatter "%s@." (version_string ());
@@ -300,7 +302,9 @@ let setup_logging () =
     let log_dir_name = "log" in
     let analyzer_out_name = "analyzer_out" in
     let analyzer_err_name = "analyzer_err" in
-    let log_dir = DB.filename_to_string (DB.Results_dir.path_to_filename DB.Results_dir.Abs_root [log_dir_name]) in
+    let log_dir =
+      DB.filename_to_string
+        (DB.Results_dir.path_to_filename DB.Results_dir.Abs_root [log_dir_name]) in
     DB.create_dir log_dir;
     let analyzer_out_file =
       if !out_file_cmdline = "" then Filename.concat log_dir analyzer_out_name
@@ -358,7 +362,10 @@ let () =
     DB.Results_dir.clean_specs_dir ();
 
   let analyzer_out_of, analyzer_err_of = setup_logging () in
-  if (!Config.curr_language = Config.C_CPP) then Mleak_buckets.init_buckets !ml_buckets_arg;
+
+  if !Config.curr_language = Config.C_CPP
+  then Mleak_buckets.init_buckets !ml_buckets_arg;
+
   let finish_logging () =
     teardown_logging analyzer_out_of analyzer_err_of in
 

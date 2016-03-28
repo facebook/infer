@@ -27,7 +27,7 @@ let callback_fragment_retains_view_java
   let fld_typ_is_view = function
     | Sil.Tptr (Sil.Tvar tname, _) ->
         begin
-          match Sil.tenv_lookup tenv tname with
+          match Tenv.lookup tenv tname with
           | Some struct_typ -> AndroidFramework.is_view (Sil.Tstruct struct_typ) tenv
           | None -> false
         end
@@ -40,7 +40,7 @@ let callback_fragment_retains_view_java
     begin
       let class_typename =
         Typename.Java.from_string (Procname.java_get_class_name pname_java) in
-      match Sil.tenv_lookup tenv class_typename with
+      match Tenv.lookup tenv class_typename with
       | Some ({ Sil.struct_name = Some _; instance_fields } as struct_typ)
         when AndroidFramework.is_fragment (Sil.Tstruct struct_typ) tenv ->
           let declared_view_fields =

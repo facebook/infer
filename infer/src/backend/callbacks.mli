@@ -13,7 +13,7 @@ type proc_callback_args = {
   get_proc_desc : Procname.t -> Cfg.Procdesc.t option;
   get_procs_in_file : Procname.t -> Procname.t list;
   idenv : Idenv.t;
-  tenv : Sil.tenv;
+  tenv : Tenv.t;
   proc_name : Procname.t;
   proc_desc : Cfg.Procdesc.t;
 }
@@ -29,7 +29,7 @@ type proc_callback_t = proc_callback_args -> unit
 type cluster_callback_t =
   Procname.t list ->
   (Procname.t -> Cfg.Procdesc.t option) ->
-  (Idenv.t * Sil.tenv * Procname.t * Cfg.Procdesc.t) list ->
+  (Idenv.t * Tenv.t * Procname.t * Cfg.Procdesc.t) list ->
   unit
 
 (** register a procedure callback *)

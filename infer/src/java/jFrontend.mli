@@ -25,7 +25,7 @@ val compute_source_icfg :
   Printer.LineReader.t ->
   JBasics.ClassSet.t ->
   JClasspath.program ->
-  Sil.tenv ->
+  Tenv.t ->
   string ->
   string option ->
   Cg.t * Cfg.cfg
@@ -35,6 +35,6 @@ val compute_class_icfg :
   Inferconfig.NeverReturnNull.matcher ->
   Printer.LineReader.t ->
   JClasspath.program ->
-  Sil.tenv ->
+  Tenv.t ->
   JCode.jcode Javalib.interface_or_class ->
   Cg.t * Cfg.cfg

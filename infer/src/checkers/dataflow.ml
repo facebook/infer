@@ -21,7 +21,7 @@ module type DFStateType = sig
   val join : t -> t -> t (** Join two states (the old one is the first parameter). *)
 
   (** Perform a state transition on a node. *)
-  val do_node : Sil.tenv -> Cfg.Node.t -> t -> (t list) * (t list)
+  val do_node : Tenv.t -> Cfg.Node.t -> t -> (t list) * (t list)
 
   val proc_throws : Procname.t -> throws (** Can proc throw an exception? *)
 end
@@ -35,7 +35,7 @@ module type DF = sig
     | Transition of state * state list * state list
 
   val join : state list -> state -> state
-  val run : Sil.tenv -> Cfg.Procdesc.t -> state -> (Cfg.Node.t -> transition)
+  val run : Tenv.t -> Cfg.Procdesc.t -> state -> (Cfg.Node.t -> transition)
 end
 
 (** Determine if the node can throw an exception. *)

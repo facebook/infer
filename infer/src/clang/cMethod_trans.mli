@@ -22,7 +22,7 @@ type method_call_type =
 
 val should_add_return_param : Sil.typ -> is_objc_method:bool -> bool
 
-val create_local_procdesc : Cfg.cfg -> Sil.tenv -> CMethod_signature.method_signature ->
+val create_local_procdesc : Cfg.cfg -> Tenv.t -> CMethod_signature.method_signature ->
   Clang_ast_t.stmt list -> (Sil.pvar * Sil.typ) list -> bool -> bool
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Sil.typ * Sil.typ list) option -> unit
@@ -33,20 +33,20 @@ val get_objc_method_data : Clang_ast_t.obj_c_message_expr_info ->
 val get_class_name_method_call_from_receiver_kind : CContext.t ->
   Clang_ast_t.obj_c_message_expr_info -> (Sil.exp * Sil.typ) list -> string
 
-val get_class_name_method_call_from_clang : Sil.tenv -> Clang_ast_t.obj_c_message_expr_info ->
+val get_class_name_method_call_from_clang : Tenv.t -> Clang_ast_t.obj_c_message_expr_info ->
   string option
 
-val method_signature_of_decl : Sil.tenv -> Clang_ast_t.decl -> CModule_type.block_data option ->
+val method_signature_of_decl : Tenv.t -> Clang_ast_t.decl -> CModule_type.block_data option ->
   CMethod_signature.method_signature * Clang_ast_t.stmt option * CModule_type.instr_type list
 
-val method_signature_of_pointer : Sil.tenv -> Clang_ast_t.pointer ->
+val method_signature_of_pointer : Tenv.t -> Clang_ast_t.pointer ->
   CMethod_signature.method_signature option
 
-val get_method_name_from_clang : Sil.tenv -> CMethod_signature.method_signature option ->
+val get_method_name_from_clang : Tenv.t -> CMethod_signature.method_signature option ->
   CMethod_signature.method_signature option
 
 val create_procdesc_with_pointer : CContext.t -> Clang_ast_t.pointer -> string option ->
   string -> Clang_ast_t.type_ptr -> Procname.t
 
-val get_method_for_frontend_checks : Cfg.cfg -> Cg.t -> Sil.tenv -> string ->
+val get_method_for_frontend_checks : Cfg.cfg -> Cg.t -> Tenv.t -> string ->
   Clang_ast_t.decl_info -> Cfg.Procdesc.t

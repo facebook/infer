@@ -51,7 +51,7 @@ type t = {
   mutable last_path : (Paths.Path.t * (Sil.path_pos option)) option;
 
   (** Last prop,tenv,pdesc seen *)
-  mutable last_prop_tenv_pdesc : (Prop.normal Prop.t * Sil.tenv * Cfg.Procdesc.t) option;
+  mutable last_prop_tenv_pdesc : (Prop.normal Prop.t * Tenv.t * Cfg.Procdesc.t) option;
 
   (** Last session seen *)
   mutable last_session : int;
@@ -272,7 +272,8 @@ let extract_pre p tenv pdesc abstract_fun =
 
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)
-let get_normalized_pre (abstract_fun : Sil.tenv -> Prop.normal Prop.t -> Prop.normal Prop.t) : Prop.normal Prop.t option =
+let get_normalized_pre (abstract_fun : Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t)
+  : Prop.normal Prop.t option =
   match get_prop_tenv_pdesc () with
   | None -> None
   | Some (prop, tenv, pdesc) ->

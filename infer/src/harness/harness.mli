@@ -10,4 +10,4 @@
 (** Automatically create a harness method to exercise code under test *)
 
 (** Generate a harness method for exe_env and add it to the execution environment *)
-val create_harness : Cfg.cfg -> Cg.t -> Sil.tenv -> unit
+val create_harness : Cfg.cfg -> Cg.t -> Tenv.t -> unit

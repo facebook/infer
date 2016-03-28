@@ -1453,7 +1453,7 @@ struct
   let cloneable_type = Typename.Java.from_string "java.lang.Cloneable"
 
   let is_interface tenv class_name =
-    match Sil.tenv_lookup tenv class_name with
+    match Tenv.lookup tenv class_name with
     | Some ({ Sil.csu = Csu.Class Csu.Java; struct_name = Some _ } as struct_typ) ->
         (IList.length struct_typ.Sil.instance_fields = 0) &&
         (IList.length struct_typ.Sil.def_methods = 0)
@@ -1471,7 +1471,7 @@ struct
   let check_subclass_tenv tenv c1 c2 =
     let rec check cn =
       Typename.equal cn c2 || is_root_class c2 ||
-      match Sil.tenv_lookup tenv cn with
+      match Tenv.lookup tenv cn with
       | Some ({ Sil.struct_name = Some _; csu = Csu.Class _; superclasses }) ->
           IList.exists check superclasses
       | _ -> false in
@@ -1618,7 +1618,7 @@ let get_overrides_of tenv supertype pname =
       if typ_has_method resolved_pname typ then (typ, resolved_pname) :: overrides_acc
       else overrides_acc
     else overrides_acc in
-  Sil.tenv_fold gather_overrides tenv []
+  Tenv.fold gather_overrides tenv []
 
 (** Check the equality of two types ignoring flags in the subtyping components *)
 let texp_equal_modulo_subtype_flag texp1 texp2 = match texp1, texp2 with
@@ -1702,7 +1702,7 @@ let handle_parameter_subtype tenv prop1 sigma2 subs (e1, se1, texp1) (se2, texp2
       Sil.Eexp(e1', _), Sil.Eexp(e2', _)
       when not (is_allocated_lhs e1') ->
         begin
-          let t1, t2 = Sil.expand_type tenv _t1, Sil.expand_type tenv _t2 in
+          let t1, t2 = Tenv.expand_type tenv _t1, Tenv.expand_type tenv _t2 in
           match type_rhs e2' with
           | Some (t2_ptsto , sub2) ->
               if not (Sil.typ_equal t1 t2) && Subtyping_check.check_subtype tenv t1 t2
@@ -1942,7 +1942,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
       | Config.Java ->
           let object_type =
             Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.String") in
-          let typ = match Sil.tenv_lookup tenv object_type with
+          let typ = match Tenv.lookup tenv object_type with
             | Some typ -> typ
             | None -> assert false in
           Sil.Sizeof (Sil.Tstruct typ, Sil.Subtype.exact) in
@@ -1954,7 +1954,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let class_texp =
       let class_type =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.Class") in
-      let typ = match Sil.tenv_lookup tenv class_type with
+      let typ = match Tenv.lookup tenv class_type with
         | Some typ -> typ
         | None -> assert false in
       Sil.Sizeof (Sil.Tstruct typ, Sil.Subtype.exact) in

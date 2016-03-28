@@ -473,7 +473,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     match hpred_typ_opt, find_pvar_typ_without_ptr prop pvar with
     | Some (Sil.Sizeof (t1, _)), Some (Sil.Sizeof (Sil.Tptr (_t2, _), _)) ->
         (try
-           let t2 = Sil.expand_type tenv _t2 in
+           let t2 = Tenv.expand_type tenv _t2 in
            Sil.typ_equal t1 t2
          with exn when exn_not_failure exn -> false)
     | Some (Sil.Sizeof (Sil.Tint _, _)), Some (Sil.Sizeof (Sil.Tint _, _)) when is_file -> (* must be a file opened with "open" *)

@@ -408,7 +408,7 @@ let typ_get_recursive_flds tenv typ_exp =
     match t with
     | Sil.Tvar _ | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ -> false
     | Sil.Tptr (Sil.Tvar tname', _) ->
-        let typ' = match Sil.tenv_lookup tenv tname' with
+        let typ' = match Tenv.lookup tenv tname' with
           | None ->
               L.err "@.typ_get_recursive: Undefined type %s@." (Typename.to_string tname');
               t
@@ -419,7 +419,7 @@ let typ_get_recursive_flds tenv typ_exp =
   in
   match typ_exp with
   | Sil.Sizeof (typ, _) ->
-      (match Sil.expand_type tenv typ with
+      (match Tenv.expand_type tenv typ with
        | Sil.Tint _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ | Sil.Tfloat _ -> []
        | Sil.Tstruct { Sil.instance_fields } ->
            IList.map (fun (x, _, _) -> x) (IList.filter (filter typ) instance_fields)
@@ -1254,7 +1254,7 @@ let set_footprint_for_abs (p : 'a Prop.t) (p_foot : 'a Prop.t) local_stack_pvars
   Prop.replace_sigma_footprint sigma (Prop.replace_pi_footprint pi p)
 
 (** Abstract the footprint of prop *)
-let abstract_footprint pname (tenv : Sil.tenv) (prop : Prop.normal Prop.t) : Prop.normal Prop.t =
+let abstract_footprint pname (tenv : Tenv.t) (prop : Prop.normal Prop.t) : Prop.normal Prop.t =
   let (p, added_local_vars) = extract_footprint_for_abs prop in
   let p_abs =
     abstract_prop

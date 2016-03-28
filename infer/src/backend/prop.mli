@@ -216,18 +216,19 @@ val mk_neq : exp -> exp -> atom
 val mk_eq : exp -> exp -> atom
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
-val create_strexp_of_type: Sil.tenv option -> struct_init_mode -> Sil.typ -> Sil.inst -> Sil.strexp
+val create_strexp_of_type: Tenv.t option -> struct_init_mode -> Sil.typ -> Sil.inst -> Sil.strexp
 
 (** Construct a pointsto. *)
 val mk_ptsto : exp -> strexp -> exp -> hpred
 
 (** Construct a points-to predicate for an expression using either the provided expression [name] as
     base for fresh identifiers. *)
-val mk_ptsto_exp : Sil.tenv option -> struct_init_mode -> exp * exp * exp option -> Sil.inst -> hpred
+val mk_ptsto_exp : Tenv.t option -> struct_init_mode -> exp * exp * exp option -> Sil.inst -> hpred
 
 (** Construct a points-to predicate for a single program variable.
     If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
-val mk_ptsto_lvar : Sil.tenv option -> struct_init_mode -> Sil.inst -> pvar * exp * exp option -> hpred
+val mk_ptsto_lvar :
+  Tenv.t option -> struct_init_mode -> Sil.inst -> pvar * exp * exp option -> hpred
 
 (** Construct a lseg predicate *)
 val mk_lseg : lseg_kind -> hpara -> exp -> exp -> exp list -> hpred

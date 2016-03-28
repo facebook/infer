@@ -68,18 +68,16 @@ endif
 
 #### Backend declarations ####
 
-BACKEND_SOURCES = backend
-
-INFERANALYZE_MAIN = $(BACKEND_SOURCES)/inferanalyze
+INFERANALYZE_MAIN = backend/inferanalyze
 
 #### InferPrint declarations ####
 
-INFERPRINT_ATDGEN_STUB_BASE = $(BACKEND_SOURCES)/jsonbug
+INFERPRINT_ATDGEN_STUB_BASE = backend/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
 INFERPRINT_ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(INFERPRINT_ATDGEN_SUFFIXES))
 
-INFERPRINT_MAIN = $(BACKEND_SOURCES)/inferprint
+INFERPRINT_MAIN = backend/inferprint
 
 ### InferUnit declarations ###
 
@@ -143,7 +141,8 @@ else
 	EXTRA_DEPS = facebook
 endif
 
-DEPENDENCIES = $(BACKEND_SOURCES) checkers eradicate facebook/checkers facebook/checkers/graphql facebook/scripts harness $(EXTRA_DEPS)
+DEPENDENCIES = IR backend checkers eradicate harness \
+	facebook/checkers facebook/checkers/graphql facebook/scripts $(EXTRA_DEPS)
 
 OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -j 0 $(addprefix -I , $(DEPENDENCIES))
 
@@ -272,8 +271,8 @@ ifneq ($(wildcard $(BUILD_DIR)/sanitize.sh),)
 	$(BUILD_DIR)/sanitize.sh
 endif
 
-version: $(BACKEND_SOURCES)/version.ml.in Makefile
-	TMPFILE=$$(mktemp $(BACKEND_SOURCES)/version.ml.tmp.XXXX); \
+version: backend/version.ml.in Makefile
+	TMPFILE=$$(mktemp backend/version.ml.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
 	sed \
@@ -284,7 +283,7 @@ version: $(BACKEND_SOURCES)/version.ml.in Makefile
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
 	  $< > "$$TMPFILE"; \
-	@INSTALL@ -m 644 -C "$$TMPFILE" $(BACKEND_SOURCES)/version.ml; \
+	@INSTALL@ -m 644 -C "$$TMPFILE" backend/version.ml; \
 	rm -f "$$TMPFILE"
 
 $(BUILD_DIR):
@@ -317,8 +316,8 @@ clean:
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
 	$(REMOVE_DIR) $(ANNOT_DIR)
 endif
-	$(REMOVE) $(BACKEND_SOURCES)/version.ml
-	$(REMOVE) $(BACKEND_SOURCES)/version.ml.tmp.*
+	$(REMOVE) backend/version.ml
+	$(REMOVE) backend/version.ml.tmp.*
 	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN) $(INFERUNIT_BIN)
 	$(REMOVE) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)

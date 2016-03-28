@@ -108,7 +108,7 @@ let direct_atomic_property_access_warning context stmt_info ivar_name =
         Ast_utils.get_class_name_from_member n
     | _ -> Ident.create_fieldname (Mangled.from_string "") 0, "" in
   let tname = Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string cname) in
-  let condition = match Sil.tenv_lookup tenv tname with
+  let condition = match Tenv.lookup tenv tname with
     | Some { Sil.instance_fields; static_fields } ->
         (* We give the warning when:
              (1) the property has the atomic attribute and

@@ -41,7 +41,7 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
           def_methods;
           struct_annotations = [];
         } in
-      Sil.tenv_add tenv protocol_name protocol_type_info;
+      Tenv.add tenv protocol_name protocol_type_info;
       add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
       Sil.Tvar protocol_name
   | _ -> assert false

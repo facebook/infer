@@ -40,7 +40,7 @@ let create_harness cfg cg tenv =
              subclass of [lifecycle_typ] *)
           (* TODO: instead of iterating through the type environment, interate through the types
              declared in [cfg] *)
-          Sil.tenv_iter (fun _ struct_typ ->
+          Tenv.iter (fun _ struct_typ ->
               let typ = Sil.Tstruct struct_typ in
               match try_create_lifecycle_trace typ framework_typ framework_procs tenv with
               | [] -> ()

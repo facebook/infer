@@ -138,7 +138,8 @@ let capture_libs never_null_matcher linereader program tenv =
     | Javalib.JClass _ when JFrontend.is_classname_cached cn -> ()
     | Javalib.JClass _ ->
         begin
-          let fake_source_file = JClasspath.java_source_file_from_path (JFrontend.path_of_cached_classname cn) in
+          let fake_source_file =
+            JClasspath.java_source_file_from_path (JFrontend.path_of_cached_classname cn) in
           init_global_state fake_source_file;
           let call_graph, cfg =
             JFrontend.compute_class_icfg never_null_matcher linereader program tenv node in
@@ -154,18 +155,20 @@ let load_tenv () =
   let tenv =
     if DB.file_exists tenv_filename then
       begin
-        match Sil.load_tenv_from_file tenv_filename with
-        | None -> Sil.create_tenv ()
+        match Tenv.load_from_file tenv_filename with
+        | None ->
+            Tenv.create ()
         | Some _ when Config.analyze_models ->
             let error_msg =
               "Unexpected tenv file "
               ^ (DB.filename_to_string tenv_filename)
               ^ " found while generating the models" in
             failwith error_msg
-        | Some tenv -> tenv
+        | Some tenv ->
+            tenv
       end
     else
-      Sil.create_tenv () in
+      Tenv.create () in
   tenv
 
 
@@ -176,7 +179,7 @@ let save_tenv tenv =
   (* TODO: this prevents per compilation step incremental analysis at this stage *)
   if DB.file_exists tenv_filename then DB.file_remove tenv_filename;
   JUtils.log "writing new tenv %s@." (DB.filename_to_string tenv_filename);
-  Sil.store_tenv_to_file tenv_filename tenv
+  Tenv.store_to_file tenv_filename tenv
 
 
 (* The program is loaded and translated *)

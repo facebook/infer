@@ -85,7 +85,7 @@ let is_reference_type tp =
 let rec expand_structured_type tenv typ =
   match typ with
   | Sil.Tvar tn ->
-      (match Sil.tenv_lookup tenv tn with
+      (match Tenv.lookup tenv tn with
        | Some ts ->
            let t = Sil.Tstruct ts in
            Printing.log_out "   Type expanded with type '%s' found in tenv@." (Sil.typ_to_string t);

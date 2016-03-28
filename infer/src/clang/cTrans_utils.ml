@@ -658,7 +658,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
     let open General_utils in
     match typ with
     | Sil.Tvar tn ->
-        (match Sil.tenv_lookup tenv tn with
+        (match Tenv.lookup tenv tn with
          | Some struct_typ -> var_or_zero_in_init_list' e (Sil.Tstruct struct_typ) tns
          | _ -> [[(e, typ)]] (*This case is an error, shouldn't happen.*))
     | Sil.Tstruct { Sil.instance_fields } as type_struct ->

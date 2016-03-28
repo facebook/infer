@@ -1,6 +1,6 @@
 # docker images for Infer
 
-This directory, 'docker/' inside the Infer repo,
+This directory, `docker/` inside the Infer repo,
 contains a docker file to install Infer within a
 [docker](https://www.docker.com/) container. This can be used to
 quickly try Infer or to deploy Infer.

@@ -12,7 +12,7 @@
 type args = {
   pdesc : Cfg.Procdesc.t;
   instr : Sil.instr;
-  tenv : Sil.tenv;
+  tenv : Tenv.t;
   prop_ : Prop.normal Prop.t;
   path : Paths.Path.t;
   ret_ids : Ident.t list;

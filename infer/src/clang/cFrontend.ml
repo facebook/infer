@@ -39,7 +39,7 @@ let init_global_state source_file =
   CFrontend_utils.General_utils.reset_block_counter ()
 
 let do_source_file source_file ast =
-  let tenv = Sil.create_tenv () in
+  let tenv = Tenv.create () in
   CTypes_decl.add_predefined_types tenv;
   init_global_state source_file;
   Config.nLOC := FileLOC.file_get_loc (DB.source_file_to_string source_file);
@@ -61,7 +61,7 @@ let do_source_file source_file ast =
   (* Printing.print_tenv tenv; *)
   (*Printing.print_procedures cfg; *)
   General_utils.sort_fields_tenv tenv;
-  Sil.store_tenv_to_file tenv_file tenv;
+  Tenv.store_to_file tenv_file tenv;
   if !CFrontend_config.stats_mode then Cfg.check_cfg_connectedness cfg;
   if !CFrontend_config.stats_mode
   || !CFrontend_config.debug_mode || !CFrontend_config.testing_mode then

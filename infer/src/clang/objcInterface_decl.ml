@@ -21,7 +21,7 @@ module L = Logging
 let is_pointer_to_objc_class tenv typ =
   match typ with
   | Sil.Tptr (Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, cname)), _) ->
-      (match Sil.tenv_lookup tenv (Typename.TN_csu (Csu.Class Csu.Objc, cname)) with
+      (match Tenv.lookup tenv (Typename.TN_csu (Csu.Class Csu.Objc, cname)) with
        | Some struct_typ when Sil.is_objc_class (Sil.Tstruct struct_typ) -> true
        | _ -> false)
   | Sil.Tptr (typ, _) when Sil.is_objc_class typ -> true
@@ -112,7 +112,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
       Printing.log_out "type: '%s'\n" (Sil.typ_to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (superclasses : Typename.t list), methods =
-    match Sil.tenv_lookup tenv interface_name with
+    match Tenv.lookup tenv interface_name with
     | Some ({ Sil.instance_fields; superclasses; def_methods }) ->
         General_utils.append_no_duplicates_fields fields instance_fields,
         General_utils.append_no_duplicates_csu superclasses superclasses,
@@ -134,10 +134,10 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info class_name 
       def_methods = methods;
       struct_annotations = Sil.objc_class_annotation;
     } in
-  Sil.tenv_add tenv interface_name interface_type_info;
+  Tenv.add tenv interface_name interface_type_info;
   Printing.log_out
     "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
-  (match Sil.tenv_lookup tenv interface_name with
+  (match Tenv.lookup tenv interface_name with
    | Some st -> Printing.log_out "  >>>OK. Found typ='%s'\n" (Sil.typ_to_string (Sil.Tstruct st))
    | None -> Printing.log_out "  >>>NOT Found!!\n");
   Sil.Tvar interface_name
@@ -148,7 +148,7 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   Ast_utils.update_sil_types_map decl_key (Sil.Tvar class_tn_name);
   begin
-    match Sil.tenv_lookup tenv class_tn_name with
+    match Tenv.lookup tenv class_tn_name with
     | Some ({ Sil.static_fields = [];
               csu = Csu.Class _;
               struct_name = Some _;
@@ -156,7 +156,7 @@ let add_missing_methods tenv class_name ck decl_info decl_list curr_class =
             } as struct_typ) ->
         let methods = General_utils.append_no_duplicates_methods def_methods methods in
         let struct_typ' = { struct_typ with Sil.def_methods = methods; } in
-        Sil.tenv_add tenv class_tn_name struct_typ'
+        Tenv.add tenv class_tn_name struct_typ'
     | _ -> ()
   end;
   Sil.Tvar class_tn_name
