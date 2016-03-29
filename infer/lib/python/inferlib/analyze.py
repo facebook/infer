@@ -175,10 +175,11 @@ def create_results_dir(results_dir):
     utils.mkdir_if_not_exists(os.path.join(results_dir, 'sources'))
 
 
-def reset_start_file(results_dir):
-    # create new empty file - this will update modified timestamp
-    open(os.path.join(results_dir, '.start'), 'w').close()
-
+def reset_start_file(results_dir, touch_if_present=False):
+    start_path = os.path.join(results_dir, '.start')
+    if (not os.path.exists(start_path)) or touch_if_present:
+        # create new empty file - this will update modified timestamp
+        open(start_path, 'w').close()
 
 def clean(infer_out):
     directories = [

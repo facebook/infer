@@ -126,8 +126,8 @@ def main():
 
     if imported_module:
         analyze.create_results_dir(args.infer_out)
-        if not args.continue_capture:
-            analyze.reset_start_file(args.infer_out)
+        analyze.reset_start_file(args.infer_out,
+                                 touch_if_present=not args.continue_capture)
 
         utils.configure_logging(args)
         logging.info('Running command %s', ' '.join(sys.argv))
