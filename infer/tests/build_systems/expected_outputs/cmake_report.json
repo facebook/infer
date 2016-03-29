@@ -1,0 +1,7 @@
+[
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "/home/jul/infer/infer/tests/build_systems/codetoanalyze/cmake/hello.c",
+    "procedure": "test"
+  }
+]

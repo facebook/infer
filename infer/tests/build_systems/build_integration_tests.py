@@ -95,19 +95,25 @@ def save_report(reports, filename):
                             separators=(',', ': '), sort_keys=True)
 
 
-def run_analysis(root, clean_cmd, build_cmd, analyzer, env=None, n=1):
+def run_analysis(root, clean_cmds, build_cmds, analyzer, env=None):
+    if not os.path.exists(root):
+        os.makedirs(root)
     os.chdir(root)
 
-    subprocess.check_call(clean_cmd, env=env)
+    for clean_cmd in clean_cmds:
+        subprocess.check_call(clean_cmd, env=env)
 
-    temp_out_dir = tempfile.mkdtemp(suffix='_out', prefix='infer_')
-    infer_cmd = ['infer', '-a', analyzer, '-o', temp_out_dir, '--'] + build_cmd
-
-    with tempfile.TemporaryFile(
-            mode='w',
-            suffix='.out',
-            prefix='analysis_') as analysis_output:
-        for i in xrange(n):
+    for build_cmd in build_cmds:
+        temp_out_dir = tempfile.mkdtemp(suffix='_out', prefix='infer_')
+        infer_cmd = (['infer', '-a', analyzer, '-o', temp_out_dir, '--'] +
+                     build_cmd)
+        # Only record the output of the last build command. We record
+        # all of them but each command overwrites the output of the
+        # previous one.
+        with tempfile.TemporaryFile(
+                mode='w',
+                suffix='.out',
+                prefix='analysis_') as analysis_output:
             subprocess.check_call(infer_cmd, stdout=analysis_output, env=env)
 
     json_path = os.path.join(temp_out_dir, REPORT_JSON)
@@ -193,8 +199,8 @@ class BuildIntegrationTest(unittest.TestCase):
         root = os.path.join(SCRIPT_DIR, os.pardir)
         errors = run_analysis(
             root,
-            ['ant', 'clean'],
-            ['ant', 'compile'],
+            [['ant', 'clean']],
+            [['ant', 'compile']],
             INFER_EXECUTABLE)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'ant_report.json')
         do_test(errors, original)
@@ -214,8 +220,8 @@ class BuildIntegrationTest(unittest.TestCase):
         )
         errors = run_analysis(
             root,
-            ['true'],
-            ['gradle', 'build'],
+            [],
+            [['gradle', 'build']],
             INFER_EXECUTABLE,
             env=env)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'gradle_report.json')
@@ -230,8 +236,8 @@ class BuildIntegrationTest(unittest.TestCase):
         print('\nRunning Buck integration test')
         errors = run_analysis(
             ROOT_DIR,
-            ['buck', 'clean'],
-            ['buck', 'build', 'infer'],
+            [['buck', 'clean']],
+            [['buck', 'build', 'infer']],
             INFER_EXECUTABLE)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'buck_report.json')
         do_test(errors, original)
@@ -245,8 +251,8 @@ class BuildIntegrationTest(unittest.TestCase):
         root = os.path.join(CODETOANALYZE_DIR, 'make')
         errors = run_analysis(
             root,
-            ['make', 'clean'],
-            ['make', 'all'],
+            [['make', 'clean']],
+            [['make', 'all']],
             INFER_EXECUTABLE)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'make_report.json')
         do_test(errors, original)
@@ -264,11 +270,11 @@ class BuildIntegrationTest(unittest.TestCase):
         # running the analysis twice
         errors = run_analysis(
             root,
-            ['true'],
-            ['clang', '-c', 'utf8_in_function_names.c'],
+            [],
+            [['clang', '-c', 'utf8_in_function_names.c'],
+             ['clang', '-c', 'utf8_in_function_names.c']],
             INFER_EXECUTABLE,
-            env=env,
-            n=2)
+            env=env)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'locale_report.json')
         do_test(errors, original)
 
@@ -281,10 +287,28 @@ class BuildIntegrationTest(unittest.TestCase):
         root = os.path.join(CODETOANALYZE_DIR, 'make')
         errors = run_analysis(
             root,
-            ['make', 'clean'],
-            ['./waf', 'build'],
+            [['make', 'clean']],
+            [['./waf', 'build']],
             INFER_EXECUTABLE)
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'waf_report.json')
+        do_test(errors, original)
+
+    def test_cmake_integration(self):
+        if not ('cmake' in to_test and
+                is_tool_available(['cmake', '--version'])):
+            print('\nSkipping cmake integration test')
+            return
+
+        print('\nRunning cmake integration test')
+        root = os.path.join(CODETOANALYZE_DIR, 'cmake', 'build')
+        errors = run_analysis(
+            root,
+            [],
+            [['cmake', '..'], ['make', 'clean', 'all']],
+            INFER_EXECUTABLE)
+        # remove build/ directory
+        shutil.rmtree(root)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'cmake_report.json')
         do_test(errors, original)
 
 
