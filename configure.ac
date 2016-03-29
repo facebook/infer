@@ -10,8 +10,10 @@ dnl of patent rights can be found in the PATENTS file in the same directory.
 
 AC_PREREQ([2.63])
 
-# WARNING: AC_INIT only accepts string literals so the version number
-# has to be kept in sync with below
+# WARNING: the version number has to be kept in sync with:
+# - the values below
+# - opam
+# - docker/Dockerfile
 AC_INIT([Infer],
         [0.8.0],
         [https://github.com/facebook/infer/issues/])

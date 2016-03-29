@@ -39,10 +39,7 @@ RUN curl -sL \
 RUN opam init -y --comp=4.02.3
 
 # Download the latest Infer release
-RUN INFER_VERSION=$(curl -s https://api.github.com/repos/facebook/infer/releases \
-      | grep -e '^[ ]\+"tag_name"' \
-      | head -1 \
-      | cut -d '"' -f 4); \
+RUN INFER_VERSION=v0.8.0; \
     cd /opt && \
     curl -sL \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
