@@ -77,11 +77,49 @@ module Make
         exec_worklist work_queue'' inv_map'
     | None -> inv_map
 
-  let exec_pdesc pdesc =
-    L.out "Starting analysis of %a@." Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
-    let cfg = C.from_pdesc pdesc in
+  (* compute and return an invariant map for [cfg] *)
+  let exec_cfg cfg =
     let start_node = C.start_node cfg in
     let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty in
     exec_worklist work_queue' inv_map'
+
+  (* compute and return an invariant map for [pdesc] *)
+  let exec_pdesc pdesc =
+    L.out "Starting analysis of %a@." Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
+    exec_cfg (C.from_pdesc pdesc)
+
+  (* compute and return the postcondition of [pdesc] *)
+  let compute_post pdesc =
+    let cfg = C.from_pdesc pdesc in
+    let inv_map = exec_cfg cfg in
+    let end_state =
+      try M.find (C.node_id (C.exit_node cfg)) inv_map
+      with Not_found ->
+        failwith
+          (Printf.sprintf
+             "No postcondition found for exit node of %s; this should never happen"
+             (Procname.to_string (Cfg.Procdesc.get_proc_name pdesc))) in
+    end_state.post
+
+  module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
+
+    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; } =
+      let analyze_ondemand pdesc =
+        let post = compute_post pdesc in
+        Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post in
+      let callbacks =
+        {
+          Ondemand.analyze_ondemand;
+          get_proc_desc;
+        } in
+      if Ondemand.procedure_should_be_analyzed proc_name
+      then
+        begin
+          Ondemand.set_callbacks callbacks;
+          analyze_ondemand proc_desc;
+          Ondemand.unset_callbacks ()
+        end
+  end
+
 end
 
