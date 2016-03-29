@@ -395,10 +395,10 @@ let use_static_final_fields context =
   (not !no_static_final) && (JContext.get_meth_kind context) <> JContext.Init
 
 let builtin_new =
-  Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__new)
+  Sil.Const (Sil.Cfun ModelBuiltins.__new)
 
 let builtin_get_array_size =
-  Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__get_array_size)
+  Sil.Const (Sil.Cfun ModelBuiltins.__get_array_size)
 
 let create_sil_deref exp typ loc =
   let fresh_id = Ident.create_fresh Ident.knormal in
@@ -460,8 +460,8 @@ let rec expression context pc expr =
               JTransType.sizeof_of_object_type program tenv ot subtypes in
             let builtin =
               (match unop with
-               | JBir.InstanceOf _ -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__instanceof)
-               | JBir.Cast _ -> Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast)
+               | JBir.InstanceOf _ -> Sil.Const (Sil.Cfun ModelBuiltins.__instanceof)
+               | JBir.Cast _ -> Sil.Const (Sil.Cfun ModelBuiltins.__cast)
                | _ -> assert false) in
             let args = [(sil_ex, type_of_ex); (sizeof_expr, Sil.Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
@@ -619,7 +619,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     | (_, typ) as exp :: _
       when Procname.is_constructor callee_procname && JTransType.is_closeable program tenv typ ->
         let set_file_attr =
-          let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_file_attribute) in
+          let set_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__set_file_attribute) in
           Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
         (* Exceptions thrown in the constructor should prevent adding the resource attribute *)
         call_instrs @ [set_file_attr]
@@ -628,7 +628,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
     | (_, typ) as exp :: []
       when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
         let set_mem_attr =
-          let set_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__set_mem_attribute) in
+          let set_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__set_mem_attribute) in
           Sil.Call ([], set_builtin, [exp], loc, Sil.cf_default) in
         (* Exceptions thrown in the close method should not prevent the resource from being *)
         (* considered as closed *)
@@ -766,7 +766,7 @@ let is_this expr =
 
 
 let assume_not_null loc sil_expr =
-  let builtin_infer_assume = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__infer_assume) in
+  let builtin_infer_assume = Sil.Const (Sil.Cfun ModelBuiltins.__infer_assume) in
   let not_null_expr =
     Sil.BinOp (Sil.Ne, sil_expr, Sil.exp_null) in
   let assume_call_flag = { Sil.cf_default with Sil.cf_noreturn = true; } in
@@ -895,7 +895,7 @@ let rec instruction context pc instr : translation =
         JContext.add_goto_jump context pc JContext.Exit;
         Instr node
     | JBir.New (var, cn, constr_type_list, constr_arg_list) ->
-        let builtin_new = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__new) in
+        let builtin_new = Sil.Const (Sil.Cfun ModelBuiltins.__new) in
         let class_type = JTransType.get_class_type program tenv cn in
         let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
         let sizeof_exp = Sil.Sizeof (class_type_np, Sil.Subtype.exact) in
@@ -917,7 +917,7 @@ let rec instruction context pc instr : translation =
         Cg.add_edge cg caller_procname constr_procname;
         Instr node
     | JBir.NewArray (var, vt, expr_list) ->
-        let builtin_new_array = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__new_array) in
+        let builtin_new_array = Sil.Const (Sil.Cfun ModelBuiltins.__new_array) in
         let content_type = JTransType.value_type program tenv vt in
         let array_type = JTransType.create_array_type content_type (IList.length expr_list) in
         let array_name = JContext.set_pvar context var array_type in
@@ -1089,7 +1089,7 @@ let rec instruction context pc instr : translation =
         and ret_id = Ident.create_fresh Ident.knormal
         and sizeof_expr =
           JTransType.sizeof_of_object_type program tenv object_type Sil.Subtype.subtypes_instof in
-        let check_cast = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__instanceof) in
+        let check_cast = Sil.Const (Sil.Cfun ModelBuiltins.__instanceof) in
         let args = [(sil_expr, sil_type); (sizeof_expr, Sil.Tvoid)] in
         let call = Sil.Call([ret_id], check_cast, args, loc, Sil.cf_default) in
         let res_ex = Sil.Var ret_id in
@@ -1122,11 +1122,11 @@ let rec instruction context pc instr : translation =
         Prune (is_instance_node, throw_cast_exception_node)
     | JBir.MonitorEnter expr ->
         trans_monitor_enter_exit
-          context expr pc loc SymExec.ModelBuiltins.__set_locked_attribute "MonitorEnter"
+          context expr pc loc ModelBuiltins.__set_locked_attribute "MonitorEnter"
 
     | JBir.MonitorExit expr ->
         trans_monitor_enter_exit
-          context expr pc loc SymExec.ModelBuiltins.__set_unlocked_attribute "MonitorExit"
+          context expr pc loc ModelBuiltins.__set_unlocked_attribute "MonitorExit"
 
     | _ -> Skip
   with Frontend_error s ->

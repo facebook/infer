@@ -51,7 +51,7 @@ let node_throws node (proc_throws : Procname.t -> throws) : throws =
         Throws
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _)
       when Builtin.is_registered callee_pn ->
-        if Procname.equal callee_pn SymExec.ModelBuiltins.__cast
+        if Procname.equal callee_pn ModelBuiltins.__cast
         then DontKnow
         else DoesNotThrow
     | Sil.Call (_, Sil.Const (Sil.Cfun callee_pn), _, _, _) ->

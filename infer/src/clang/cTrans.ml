@@ -79,7 +79,7 @@ struct
     if !Config.arc_mode &&
        not (CTrans_utils.is_owning_name method_name) &&
        ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
-      let fname = SymExec.ModelBuiltins.__set_autorelease_attribute in
+      let fname = ModelBuiltins.__set_autorelease_attribute in
       let ret_id = Ident.create_fresh Ident.knormal in
       let stmt_call =
         Sil.Call ([ret_id], (Sil.Const (Sil.Cfun fname)), [(exp, typ)], sil_loc, Sil.cf_default) in
@@ -463,7 +463,7 @@ struct
       if name = CFrontend_config.malloc &&
          (!CFrontend_config.language = CFrontend_config.OBJC ||
           !CFrontend_config.language = CFrontend_config.OBJCPP) then
-        SymExec.ModelBuiltins.malloc_no_fail
+        ModelBuiltins.malloc_no_fail
       else Procname.from_string_c_fun name in
     let is_builtin = Builtin.is_registered non_mangled_func_name in
     if is_builtin then (* malloc, free, exit, scanf, ... *)
@@ -1937,7 +1937,7 @@ struct
     let typ =
       CTypes_decl.class_from_pointer_type
         trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
-    let dictionary_literal_pname = SymExec.ModelBuiltins.__objc_dictionary_literal in
+    let dictionary_literal_pname = ModelBuiltins.__objc_dictionary_literal in
     let dictionary_literal_s = Procname.get_method dictionary_literal_pname in
     let obj_c_message_expr_info =
       Ast_expressions.make_obj_c_message_expr_info_class dictionary_literal_s typ None in
@@ -1964,7 +1964,7 @@ struct
       then those objects are released and the autorelease flag is removed. *)
   and objcAutoreleasePool_trans trans_state stmt_info stmts =
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
-    let fname = SymExec.ModelBuiltins.__objc_release_autorelease_pool in
+    let fname = ModelBuiltins.__objc_release_autorelease_pool in
     let ret_id = Ident.create_fresh Ident.knormal in
     let autorelease_pool_vars = CVar_decl.compute_autorelease_pool_vars trans_state.context stmts in
     let stmt_call =
@@ -2065,8 +2065,8 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let is_array = delete_expr_info.Clang_ast_t.xdei_is_array in
     let fname =
-      if is_array then SymExec.ModelBuiltins.__delete_array
-      else SymExec.ModelBuiltins.__delete in
+      if is_array then ModelBuiltins.__delete_array
+      else ModelBuiltins.__delete in
     let param = match stmt_list with [p] -> p | _ -> assert false in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
@@ -2121,7 +2121,7 @@ struct
     let sizeof_expr = match cast_type with
       | Sil.Tptr (typ, _) -> Sil.Sizeof (typ, subtypes)
       | _ -> assert false in
-    let builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__cast) in
+    let builtin = Sil.Const (Sil.Cfun ModelBuiltins.__cast) in
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
     let res_trans_stmt = exec_with_glvalue_as_reference instruction trans_state' stmt in
     let exp = match res_trans_stmt.exps with | [e] -> e | _ -> assert false in
@@ -2175,7 +2175,7 @@ struct
           let trans_state_param = { trans_state_pri with succ_nodes = [] } in
           instruction trans_state_param stmt
       | _ -> empty_res_trans in
-    let fun_name = SymExec.ModelBuiltins.__cxx_typeid in
+    let fun_name = ModelBuiltins.__cxx_typeid in
     let sil_fun = Sil.Const (Sil.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let type_info_objc = (Sil.Sizeof (typ, Sil.Subtype.exact), Sil.Tvoid) in

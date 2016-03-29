@@ -39,7 +39,7 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
     let id_deactivate = Ident.create_fresh Ident.knormal in
     let instr_deactivate_exn = Sil.Set (Sil.Lvar ret_var, ret_type, Sil.Var id_deactivate, loc) in
     let instr_unwrap_ret_val =
-      let unwrap_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__unwrap_exception) in
+      let unwrap_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__unwrap_exception) in
       Sil.Call([id_exn_val], unwrap_builtin, [(Sil.Var id_ret_val, ret_type)], loc, Sil.cf_default) in
     create_node loc Cfg.Node.exn_handler_kind [instr_get_ret_val; instr_deactivate_exn; instr_unwrap_ret_val] [id_ret_val; id_deactivate] in
   let create_entry_block handler_list =
@@ -61,7 +61,7 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
           | _ -> assert false in
         let id_instanceof = Ident.create_fresh Ident.knormal in
         let instr_call_instanceof =
-          let instanceof_builtin = Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__instanceof) in
+          let instanceof_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__instanceof) in
           let args = [(Sil.Var id_exn_val, Sil.Tptr(exn_type, Sil.Pk_pointer)); (Sil.Sizeof (exn_type, Sil.Subtype.exact), Sil.Tvoid)] in
           Sil.Call ([id_instanceof], instanceof_builtin, args, loc, Sil.cf_default) in
         let if_kind = Sil.Ik_switch in

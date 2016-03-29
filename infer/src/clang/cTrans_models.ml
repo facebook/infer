@@ -60,11 +60,11 @@ let is_autorelease_method funct =
 
 let get_builtinname method_name =
   if is_retain_method method_name then
-    Some SymExec.ModelBuiltins.__objc_retain
+    Some ModelBuiltins.__objc_retain
   else if is_autorelease_method method_name then
-    Some SymExec.ModelBuiltins.__set_autorelease_attribute
+    Some ModelBuiltins.__set_autorelease_attribute
   else if is_release_method method_name then
-    Some SymExec.ModelBuiltins.__objc_release
+    Some ModelBuiltins.__objc_release
   else None
 
 let is_modeled_builtin funct =
@@ -103,9 +103,9 @@ let builtin_predefined_model fun_stmt sil_fe =
       (match sil_fe with
        | Sil.Const (Sil.Cfun pn) when Specs.summary_exists pn -> sil_fe, false
        | Sil.Const (Sil.Cfun pn) when is_retain_predefined_model typ (Procname.to_string pn) ->
-           Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__objc_retain_cf) , true
+           Sil.Const (Sil.Cfun ModelBuiltins.__objc_retain_cf) , true
        | Sil.Const (Sil.Cfun pn) when is_release_predefined_model typ (Procname.to_string pn) ->
-           Sil.Const (Sil.Cfun SymExec.ModelBuiltins.__objc_release_cf), true
+           Sil.Const (Sil.Cfun ModelBuiltins.__objc_release_cf), true
        | _ -> sil_fe, false)
   | _ -> sil_fe, false
 
@@ -165,14 +165,14 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
   let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
     mk_procname lang [(CFrontend_config.self, class_type)] Ast_expressions.create_void_type
-    [] (Some SymExec.ModelBuiltins.__objc_release_autorelease_pool)
+    [] (Some ModelBuiltins.__objc_release_autorelease_pool)
 
 let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
   let condition = method_name = CFrontend_config.is_kind_of_class in
   let class_type = Ast_expressions.create_class_type (class_name, `OBJC) in
   get_predefined_ms_method condition class_name method_name Procname.Instance_objc_method
     mk_procname lang [(CFrontend_config.self, class_type)] Ast_expressions.create_BOOL_type
-    [] (Some SymExec.ModelBuiltins.__instanceof)
+    [] (Some ModelBuiltins.__instanceof)
 
 let get_predefined_model_method_signature class_name method_name mk_procname lang =
   let next_predefined f = function

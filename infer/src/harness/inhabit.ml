@@ -86,11 +86,11 @@ let rec inhabit_typ typ cfg env =
       | Sil.Tptr (Sil.Tarray (inner_typ, Sil.Const (Sil.Cint _)), Sil.Pk_pointer) ->
           let arr_size = Sil.Const (Sil.Cint (Sil.Int.one)) in
           let arr_typ = Sil.Tarray (inner_typ, arr_size) in
-          inhabit_alloc arr_typ typ SymExec.ModelBuiltins.__new_array env
+          inhabit_alloc arr_typ typ ModelBuiltins.__new_array env
       | Sil.Tptr (typ, Sil.Pk_pointer) as ptr_to_typ ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently
            * broken in Infer anyway (see t4592290) *)
-          let (allocated_obj_exp, env) = inhabit_alloc typ typ SymExec.ModelBuiltins.__new env in
+          let (allocated_obj_exp, env) = inhabit_alloc typ typ ModelBuiltins.__new env in
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors typ = match typ with

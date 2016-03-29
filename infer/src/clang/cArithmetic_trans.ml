@@ -20,9 +20,9 @@ open CFrontend_utils
 (* See document: "Objective-C Automatic Reference Counting" describing the semantics *)
 let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
   let assign = Sil.Set (e1, typ, e2, loc) in
-  let retain_pname = SymExec.ModelBuiltins.__objc_retain in
-  let release_pname = SymExec.ModelBuiltins.__objc_release in
-  let autorelease_pname = SymExec.ModelBuiltins.__set_autorelease_attribute in
+  let retain_pname = ModelBuiltins.__objc_retain in
+  let release_pname = ModelBuiltins.__objc_release in
+  let autorelease_pname = ModelBuiltins.__set_autorelease_attribute in
   let mk_call procname e t =
     let bi_retain = Sil.Const (Sil.Cfun procname) in
     Sil.Call([], bi_retain, [(e, t)], loc, Sil.cf_default) in

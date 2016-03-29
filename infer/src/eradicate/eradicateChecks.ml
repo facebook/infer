@@ -139,7 +139,7 @@ let check_condition case_zero find_canonical_duplicate curr_pname
       | _ -> false in
     let do_instr = function
       | Sil.Call (_, Sil.Const (Sil.Cfun pn), [_; (Sil.Sizeof(t, _), _)], _, _) when
-          Procname.equal pn SymExec.ModelBuiltins.__instanceof && typ_is_throwable t ->
+          Procname.equal pn ModelBuiltins.__instanceof && typ_is_throwable t ->
           throwable_found := true
       | _ -> () in
     let do_node n =

@@ -41,7 +41,7 @@ module ComplexExpressions = struct
 
 
   let procname_optional_isPresent = Models.is_optional_isPresent
-  let procname_instanceof = Procname.equal SymExec.ModelBuiltins.__instanceof
+  let procname_instanceof = Procname.equal ModelBuiltins.__instanceof
 
   let procname_is_false_on_null pn =
     match Specs.proc_resolve_attributes pn with
@@ -510,14 +510,14 @@ let typecheck_instr
       check_field_assign ();
       typestate2
   | Sil.Call ([id], Sil.Const (Sil.Cfun pn), [(_, typ)], loc, _)
-    when Procname.equal pn SymExec.ModelBuiltins.__new ||
-         Procname.equal pn SymExec.ModelBuiltins.__new_array ->
+    when Procname.equal pn ModelBuiltins.__new ||
+         Procname.equal pn ModelBuiltins.__new_array ->
       TypeState.add_id
         id
         (typ, TypeAnnotation.const Annotations.Nullable false TypeOrigin.New, [loc])
         typestate (* new never returns null *)
   | Sil.Call ([id], Sil.Const (Sil.Cfun pn), (e, typ):: _, loc, _)
-    when Procname.equal pn SymExec.ModelBuiltins.__cast ->
+    when Procname.equal pn ModelBuiltins.__cast ->
       typecheck_expr_for_errors typestate e loc;
       let e', typestate' =
         convert_complex_exp_to_pvar node false e typestate loc in
@@ -526,7 +526,7 @@ let typecheck_instr
         (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc)
         typestate'
   | Sil.Call ([id], Sil.Const (Sil.Cfun pn), [(array_exp, t)], loc, _)
-    when Procname.equal pn SymExec.ModelBuiltins.__get_array_size ->
+    when Procname.equal pn ModelBuiltins.__get_array_size ->
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
           calls_this

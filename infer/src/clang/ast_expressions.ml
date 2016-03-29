@@ -621,6 +621,6 @@ let create_assume_not_null_call decl_info var_name var_type =
   let bin_op_expr_info = make_general_expr_info create_BOOL_type `RValue `Ordinary in
   let bin_op = make_binary_stmt decl_ref_exp_cast null_expr stmt_info bin_op_expr_info boi in
   let parameters = [bin_op] in
-  let procname = Procname.to_string SymExec.ModelBuiltins.__infer_assume in
+  let procname = Procname.to_string ModelBuiltins.__infer_assume in
   let qual_procname = Ast_utils.make_name_decl procname in
   create_call stmt_info var_decl_ptr qual_procname create_void_star_type parameters
