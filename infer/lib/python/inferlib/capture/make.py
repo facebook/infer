@@ -26,7 +26,7 @@ infer -- clang -c srcfile.m
 infer -- gcc -c srcfile.c'''
 
 ALIASED_COMMANDS = ['clang', 'clang++', 'cc', 'gcc', 'g++']
-BUILD_COMMANDS = ['make', 'waf']
+BUILD_COMMANDS = ['configure', 'make', 'waf']
 SUPPORTED_COMMANDS = ALIASED_COMMANDS + BUILD_COMMANDS
 
 def gen_instance(*args):
