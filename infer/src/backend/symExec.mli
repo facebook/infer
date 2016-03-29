@@ -12,47 +12,38 @@
 
 exception Cannot_convert_string_to_typ of string
 
-val lookup_java_typ_from_string : Tenv.t -> string -> Sil.typ
 (** Lookup Java types by name. May raise [Cannot_convert_string_to_typ]. *)
+val lookup_java_typ_from_string : Tenv.t -> string -> Sil.typ
 
-val resolve_method : Tenv.t -> Typename.t -> Procname.t -> Procname.t
-(** OO method resolution: given a class name and a method name, climb the class hierarchy to find
-    the procname that the method name will actually resolve to at runtime. For example, if we have a
-    procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
-    toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)
+(** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)
+val node : (exn -> unit) -> Tenv.t -> Cfg.Node.t -> Paths.PathSet.t -> Paths.PathSet.t
 
-val prune_polarity : bool -> Sil.exp -> Prop.normal Prop.t -> Propset.t
-
-val exp_norm_check_arith :
-  Procname.t -> Prop.normal Prop.t -> Sil.exp -> Sil.exp * Prop.normal Prop.t
-(** Normalize an expression and check for arithmetic problems *)
-
-val execute_diverge :
-  Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
-
-val sym_exec_generated :
-  bool -> Tenv.t -> Cfg.Procdesc.t -> Sil.instr list ->
+(** Symbolic execution of a sequence of instructions.
+    If errors occur and [mask_errors] is true, just treat as skip. *)
+val instrs :
+  ?mask_errors:bool -> Tenv.t -> Cfg.Procdesc.t -> Sil.instr list ->
   (Prop.normal Prop.t * Paths.Path.t) list -> (Prop.normal Prop.t * Paths.Path.t) list
-(** Execute generated instructions from a symbolic heap.
-    If errors occur and [mask_errors] is false, just treat as skip.*)
 
-val sym_exe_check_variadic_sentinel :
-  ?fails_on_nil:bool -> int -> int * int -> Builtin.args ->
-  (Prop.normal Prop.t * Paths.Path.t) list
+(** Symbolic execution of the divergent pure computation. *)
+val diverge : Prop.normal Prop.t -> Paths.Path.t -> (Prop.normal Prop.t * Paths.Path.t) list
+
+val proc_call : Specs.summary -> Builtin.t
+
+val unknown_or_scan_call : is_scan:bool -> Sil.typ option -> Builtin.t
+
+val check_variadic_sentinel : ?fails_on_nil:bool -> int -> int * int -> Builtin.t
 
 val check_untainted :
   Sil.exp -> Procname.t -> Procname.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
-val call_unknown_or_scan :
-  Tenv.t -> bool -> Cfg.Procdesc.t -> Prop.normal Prop.t -> Paths.Path.t -> Ident.t list ->
-  Sil.typ option -> (Sil.exp * Sil.typ) list -> Procname.t -> Location.t ->
-  (Prop.normal Prop.t * Paths.Path.t) list
+(** Check for arithmetic problems and normalize an expression. *)
+val check_arith_norm_exp :
+  Procname.t -> Sil.exp -> Prop.normal Prop.t -> Sil.exp * Prop.normal Prop.t
 
-val sym_exec_call :
-  Cfg.Procdesc.t -> Tenv.t -> Prop.normal Prop.t -> Paths.Path.t -> Ident.t list ->
-  (Sil.exp * Sil.typ) list -> Specs.summary -> Location.t ->
-  (Prop.normal Prop.t * Paths.Path.t) list
+val prune : positive:bool -> Sil.exp -> Prop.normal Prop.t -> Propset.t
 
-val lifted_sym_exec : (exn -> unit) -> Tenv.t -> Cfg.Procdesc.t ->
-  Paths.PathSet.t -> Cfg.Node.t -> Sil.instr list -> Paths.PathSet.t
-(** symbolic execution on the level of sets of propositions *)
+(** OO method resolution: given a class name and a method name, climb the class hierarchy to find
+    the procname that the method name will actually resolve to at runtime. For example, if we have a
+    procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
+    toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)
+val resolve_method : Tenv.t -> Typename.t -> Procname.t -> Procname.t

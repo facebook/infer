@@ -483,9 +483,7 @@ let do_symbolic_execution handle_exn tenv
   let instrs = Cfg.Node.get_instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
   Ident.update_name_generator (instrs_get_normal_vars instrs);
-  let pset =
-    SymExec.lifted_sym_exec handle_exn tenv pdesc
-      (Paths.PathSet.from_renamed_list [(prop, path)]) node instrs in
+  let pset = SymExec.node handle_exn tenv node (Paths.PathSet.from_renamed_list [(prop, path)]) in
   L.d_strln ".... After Symbolic Execution ....";
   Propset.d prop (Paths.PathSet.to_propset pset);
   L.d_ln (); L.d_ln();

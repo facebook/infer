@@ -23,7 +23,7 @@ let execute___builtin_va_arg { Builtin.pdesc; tenv; prop_; path; ret_ids; args; 
   match args, ret_ids with
   | [_; _; (lexp3, typ3)], _ ->
       let instr' = Sil.Set (lexp3, typ3, Sil.exp_zero, loc) in
-      sym_exec_generated true tenv pdesc [instr'] [(prop_, path)]
+      SymExec.instrs ~mask_errors:true tenv pdesc [instr'] [(prop_, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 let mk_empty_array size =
@@ -57,7 +57,7 @@ let return_result e prop ret_ids =
 (*  Return None if it fails to add the array *)
 let add_array_to_prop pdesc prop_ lexp typ =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+  let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
   begin
     try
       let hpred = IList.find (function
@@ -111,8 +111,8 @@ let execute___set_array_size { Builtin.pdesc; prop_; path; ret_ids; args; }
        | None -> []
        | Some (_, prop_a) -> (* Invariant: prop_a has an array pointed to by lexp *)
            let pname = Cfg.Procdesc.get_proc_name pdesc in
-           let n_lexp, prop__ = exp_norm_check_arith pname prop_a lexp in
-           let n_size, prop = exp_norm_check_arith pname prop__ size in
+           let n_lexp, prop__ = check_arith_norm_exp pname lexp prop_a in
+           let n_size, prop = check_arith_norm_exp pname size prop__ in
            let hpred, sigma' = IList.partition (function
                | Sil.Hpointsto(e, _, _) -> Sil.exp_equal e n_lexp
                | _ -> false) (Prop.get_sigma prop) in
@@ -129,7 +129,7 @@ let execute___print_value { Builtin.pdesc; prop_; path; args; }
   L.err "__print_value: ";
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let do_arg (lexp, _) =
-    let n_lexp, _ = exp_norm_check_arith pname prop_ lexp in
+    let n_lexp, _ = check_arith_norm_exp pname lexp prop_ in
     L.err "%a " (Sil.pp_exp pe_text) n_lexp in
   IList.iter do_arg args;
   L.err "@.";
@@ -181,8 +181,8 @@ let create_type tenv n_lexp typ prop =
       | None -> prop in
   let sil_is_null = Sil.BinOp (Sil.Eq, n_lexp, Sil.exp_zero) in
   let sil_is_nonnull = Sil.UnOp (Sil.LNot, sil_is_null, None) in
-  let null_case = Propset.to_proplist (prune_polarity true sil_is_null prop) in
-  let non_null_case = Propset.to_proplist (prune_polarity true sil_is_nonnull prop_type) in
+  let null_case = Propset.to_proplist (prune ~positive:true sil_is_null prop) in
+  let non_null_case = Propset.to_proplist (prune ~positive:true sil_is_nonnull prop_type) in
   if ((IList.length non_null_case) > 0) && (!Config.footprint) then
     non_null_case
   else if ((IList.length non_null_case) > 0) && (is_undefined_opt prop n_lexp) then
@@ -194,7 +194,7 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_ids; args; }
   match args with
   | [(lexp, typ)] when IList.length ret_ids <= 1 ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
       let props = create_type tenv n_lexp typ prop in
       let aux prop =
         begin
@@ -233,8 +233,8 @@ let execute___instanceof_cast ~instof
   match args with
   | [(val1_, typ1); (texp2_, _)] when IList.length ret_ids <= 1 ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let val1, prop__ = exp_norm_check_arith pname prop_ val1_ in
-      let texp2, prop = exp_norm_check_arith pname prop__ texp2_ in
+      let val1, prop__ = check_arith_norm_exp pname val1_ prop_ in
+      let texp2, prop = check_arith_norm_exp pname texp2_ prop__ in
       let is_cast_to_reference =
         match typ1 with
         | Sil.Tptr (_, Sil.Pk_reference) -> true
@@ -334,7 +334,7 @@ let execute___set_file_attribute { Builtin.pdesc; prop_; path; ret_ids; args; lo
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
       set_resource_attribute prop path n_lexp loc Sil.Rfile
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -344,7 +344,7 @@ let execute___set_lock_attribute { Builtin.pdesc; prop_; path; ret_ids; args; lo
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
       set_resource_attribute prop path n_lexp loc Sil.Rlock
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -356,7 +356,7 @@ let execute___method_set_ignore_attribute
   match args, ret_ids with
   | [_ ; (lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
       set_resource_attribute prop path n_lexp loc Sil.Rignore
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -366,7 +366,7 @@ let execute___set_mem_attribute { Builtin.pdesc; prop_; path; ret_ids; args; loc
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
       set_resource_attribute prop path n_lexp loc (Sil.Rmemory Sil.Mnew)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -377,7 +377,7 @@ let execute___check_untainted
   match args, ret_ids with
   | [(lexp, _)], _ ->
       let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = exp_norm_check_arith caller_pname prop_ lexp in
+      let n_lexp, prop = check_arith_norm_exp caller_pname lexp prop_ in
       [(check_untainted n_lexp caller_pname callee_pname prop, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -387,7 +387,7 @@ let execute___get_hidden_field { Builtin.pdesc; prop_; path; ret_ids; args; }
   match args with
   | [(lexp, _)] ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+      let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
       let ret_val = ref None in
       let return_val p = match !ret_val with
         | Some e -> return_result e p ret_ids
@@ -426,8 +426,8 @@ let execute___set_hidden_field { Builtin.pdesc; prop_; path; args; }
   match args with
   | [(lexp1, _); (lexp2, _)] ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp1, prop__ = exp_norm_check_arith pname prop_ lexp1 in
-      let n_lexp2, prop = exp_norm_check_arith pname prop__ lexp2 in
+      let n_lexp1, prop__ = check_arith_norm_exp pname lexp1 prop_ in
+      let n_lexp2, prop = check_arith_norm_exp pname lexp2 prop__ in
       let foot_var = lazy (Sil.Var (Ident.create_fresh Ident.kfootprint)) in
       let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
       let has_fld_hidden fsel = IList.exists filter_fld_hidden fsel in
@@ -456,7 +456,7 @@ let execute___set_hidden_field { Builtin.pdesc; prop_; path; args; }
 (* Update the objective-c hidden counter by applying the operation op and the operand delta.*)
 (* Eg. op=+/- delta is an integer *)
 let execute___objc_counter_update
-    suppress_npe_report op delta
+    ~mask_errors op delta
     { Builtin.pdesc; tenv; prop_; path; args; loc; }
   : Builtin.ret_typ =
   match args with
@@ -484,8 +484,7 @@ let execute___objc_counter_update
            loc) in
       let update_counter_instrs =
         [ counter_to_tmp; update_counter; Sil.Remove_temps([tmp], loc) ] in
-      sym_exec_generated
-        suppress_npe_report tenv pdesc update_counter_instrs [(prop_, path)]
+      SymExec.instrs ~mask_errors tenv pdesc update_counter_instrs [(prop_, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (* Given a list of args checks if the first is the flag indicating whether is a call to
@@ -500,12 +499,12 @@ let get_suppress_npe_flag args =
 let execute___objc_retain_impl
     ({ Builtin.prop_; args; ret_ids; } as builtin_args)
   : Builtin.ret_typ =
-  let suppress_npe_report, args' = get_suppress_npe_flag args in
+  let mask_errors, args' = get_suppress_npe_flag args in
   match args' with
   | [(lexp, _)] ->
       let prop = return_result lexp prop_ ret_ids in
       execute___objc_counter_update
-        suppress_npe_report (Sil.PlusA) (Sil.Int.one)
+        ~mask_errors (Sil.PlusA) (Sil.Int.one)
         { builtin_args with Builtin.prop_ = prop; args = args'; }
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -523,9 +522,9 @@ let execute___objc_release_impl
     ({ Builtin.args; }
      as builtin_args)
   : Builtin.ret_typ =
-  let suppress_npe_flag, args' = get_suppress_npe_flag args in
+  let mask_errors, args' = get_suppress_npe_flag args in
   execute___objc_counter_update
-    suppress_npe_flag Sil.MinusA Sil.Int.one
+    ~mask_errors Sil.MinusA Sil.Int.one
     { builtin_args with Builtin.args = args'; }
 
 let execute___objc_release builtin_args
@@ -547,7 +546,7 @@ let execute___set_autorelease_attribute
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let prop = return_result lexp prop_ ret_ids in
       if !Config.objc_memory_model_on then
-        let n_lexp, prop = exp_norm_check_arith pname prop lexp in
+        let n_lexp, prop = check_arith_norm_exp pname lexp prop in
         let prop' = Prop.add_or_replace_exp_attribute prop n_lexp Sil.Aautorelease in
         [(prop', path)]
       else execute___no_op prop path
@@ -584,7 +583,7 @@ let execute___release_autorelease_pool
 
 let set_attr pdesc prop path exp attr =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  let n_lexp, prop = exp_norm_check_arith pname prop exp in
+  let n_lexp, prop = check_arith_norm_exp pname exp prop in
   [(Prop.add_or_replace_exp_attribute prop n_lexp attr, path)]
 
 (** Set attibute att *)
@@ -643,8 +642,8 @@ let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
   match args with
   | [(val1_, _); (texp2_, _)] when IList.length ret_ids <= 1 ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let val1, prop__ = exp_norm_check_arith pname prop_ val1_ in
-      let texp2, prop = exp_norm_check_arith pname prop__ texp2_ in
+      let val1, prop__ = check_arith_norm_exp pname val1_ prop_ in
+      let texp2, prop = check_arith_norm_exp pname texp2_ prop__ in
       (try
          let hpred = IList.find (function
              | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
@@ -665,7 +664,7 @@ let execute_abort { Builtin.proc_name; }
 
 let execute_exit { Builtin.prop_; path; }
   : Builtin.ret_typ =
-  execute_diverge prop_ path
+  SymExec.diverge prop_ path
 
 let _execute_free mk loc acc iter =
   match Prop.prop_iter_current iter with
@@ -717,11 +716,11 @@ let execute_free mk { Builtin.pdesc; instr; tenv; prop_; path; args; loc; }
   | [(lexp, typ)] ->
       begin
         let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+        let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
         let prop_nonzero = (* case n_lexp!=0 *)
-          Propset.to_proplist (prune_polarity true n_lexp prop) in
+          Propset.to_proplist (prune ~positive:true n_lexp prop) in
         let prop_zero = (* case n_lexp==0 *)
-          Propset.to_proplist (prune_polarity false n_lexp prop) in
+          Propset.to_proplist (prune ~positive:false n_lexp prop) in
         let plist =
           prop_zero @ (* model: if 0 then skip else _execute_free_nonzero *)
           IList.flatten (IList.map (fun p ->
@@ -758,7 +757,7 @@ let execute_alloc mk can_return_null
     | [ret_id] -> ret_id
     | _ -> Ident.create_fresh Ident.kprimed in
   let size_exp', prop =
-    let n_size_exp, prop = exp_norm_check_arith pname prop_ size_exp in
+    let n_size_exp, prop = check_arith_norm_exp pname size_exp prop_ in
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     Prop.exp_normalize_prop prop n_size_exp', prop in
   let cnt_te = handle_sizeof_exp size_exp' in
@@ -791,7 +790,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
        match rest with
        | [(field_exp, _); (lexp, typ)] ->
            let pname = Cfg.Procdesc.get_proc_name pdesc in
-           let n_lexp, prop = exp_norm_check_arith pname prop_ lexp in
+           let n_lexp, prop = check_arith_norm_exp pname lexp prop_ in
            let typ =
              try
                let hpred = IList.find (function
@@ -803,11 +802,11 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
              with Not_found -> typ in
            let typ_string = Sil.typ_to_string typ in
            let set_instr = Sil.Set (field_exp, Sil.Tvoid, Sil.Const (Sil.Cstr typ_string), loc) in
-           sym_exec_generated true tenv pdesc [set_instr] res
+           SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] res
        | _ -> res)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-let execute_pthread_create { Builtin.pdesc; tenv; prop_; path; ret_ids; args; loc; }
+let execute_pthread_create ({ Builtin.prop_; path; args; } as builtin_args)
   : Builtin.ret_typ =
   match args with
   | [_; _; start_routine; arg] ->
@@ -822,8 +821,8 @@ let execute_pthread_create { Builtin.pdesc; tenv; prop_; path; ret_ids; args; lo
              match Specs.get_summary (Procname.from_string_c_fun fun_string) with
              | None -> assert false
              | Some callee_summary ->
-                 sym_exec_call
-                   pdesc tenv prop_ path ret_ids [(routine_arg, snd arg)] callee_summary loc
+                 SymExec.proc_call callee_summary
+                   { builtin_args with args = [(routine_arg, snd arg)] }
            end
        | _ ->
            L.d_str "pthread_create: unknown function ";
@@ -834,14 +833,13 @@ let execute_pthread_create { Builtin.pdesc; tenv; prop_; path; ret_ids; args; lo
 let execute_skip { Builtin.prop_; path; } : Builtin.ret_typ =
   [(prop_, path)]
 
-let execute_scan_function skip_n_arguments
-    { Builtin.pdesc; tenv; prop_; path; ret_ids; args; proc_name; loc; }
+let execute_scan_function skip_n_arguments ({ Builtin.args } as call_args)
   : Builtin.ret_typ =
   match args with
   | _ when IList.length args >= skip_n_arguments ->
       let varargs = ref args in
       for _ = 1 to skip_n_arguments do varargs := IList.tl !varargs done;
-      call_unknown_or_scan tenv true pdesc prop_ path ret_ids None !varargs proc_name loc
+      SymExec.unknown_or_scan_call ~is_scan:true None { call_args with args = !varargs }
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 let execute__unwrap_exception { Builtin.pdesc; prop_; path; ret_ids; args; }
@@ -850,7 +848,7 @@ let execute__unwrap_exception { Builtin.pdesc; prop_; path; ret_ids; args; }
   | [(ret_exn, _)] ->
       begin
         let pname = Cfg.Procdesc.get_proc_name pdesc in
-        let n_ret_exn, prop = exp_norm_check_arith pname prop_ ret_exn in
+        let n_ret_exn, prop = check_arith_norm_exp pname ret_exn prop_ in
         match n_ret_exn with
         | Sil.Const (Sil.Cexn exp) ->
             let prop_with_exn = return_result exp prop ret_ids in
@@ -864,7 +862,7 @@ let execute_return_first_argument { Builtin.pdesc; prop_; path; ret_ids; args; }
   match args with
   | (arg1_, _):: _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let arg1, prop = exp_norm_check_arith pname prop_ arg1_ in
+      let arg1, prop = check_arith_norm_exp pname arg1_ prop_ in
       let prop' = return_result arg1 prop ret_ids in
       [(prop', path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -874,9 +872,9 @@ let execute___split_get_nth { Builtin.pdesc; prop_; path; ret_ids; args; }
   match args with
   | [(lexp1, _); (lexp2, _); (lexp3, _)] ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
-      let n_lexp1, prop__ = exp_norm_check_arith pname prop_ lexp1 in
-      let n_lexp2, prop___ = exp_norm_check_arith pname prop__ lexp2 in
-      let n_lexp3, prop = exp_norm_check_arith pname prop___ lexp3 in
+      let n_lexp1, prop__ = check_arith_norm_exp pname lexp1 prop_ in
+      let n_lexp2, prop___ = check_arith_norm_exp pname lexp2 prop__ in
+      let n_lexp3, prop = check_arith_norm_exp pname lexp3 prop___ in
       (match n_lexp1, n_lexp2, n_lexp3 with
        | Sil.Const (Sil.Cstr str1), Sil.Const (Sil.Cstr str2), Sil.Const (Sil.Cint n_sil) ->
            (let n = Sil.Int.to_int n_sil in
@@ -897,7 +895,7 @@ let execute___infer_assume { Builtin.prop_; path; args; }
   | [(lexp, _)] ->
       let prop_assume = Prop.conjoin_eq lexp (Sil.exp_bool true) prop_ in
       if Prover.check_inconsistency prop_assume
-      then execute_diverge prop_assume path
+      then SymExec.diverge prop_assume path
       else [(prop_assume, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -916,7 +914,7 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
     Sil.Set (Sil.Lvar Sil.custom_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
-  sym_exec_generated true tenv pdesc [set_instr] [(prop_, path)]
+  SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 (* translate builtin assertion failure *)
 let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
@@ -929,7 +927,7 @@ let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
     Sil.Set (Sil.Lvar Sil.custom_error, Sil.Tvoid, Sil.Const (Sil.Cstr error_str), loc) in
-  sym_exec_generated true tenv pdesc [set_instr] [(prop_, path)]
+  SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 let __assert_fail = Builtin.register
     "__assert_fail" execute___assert_fail
@@ -1129,7 +1127,7 @@ let execute_objc_alloc_no_fail
   let ptr_typ = Sil.Tptr (typ, Sil.Pk_pointer) in
   let sizeof_typ = Sil.Sizeof (typ, Sil.Subtype.exact) in
   let alloc_instr = Sil.Call (ret_ids, alloc_fun, [sizeof_typ, ptr_typ], loc, Sil.cf_default) in
-  sym_exec_generated false tenv pdesc [alloc_instr] symb_state
+  SymExec.instrs tenv pdesc [alloc_instr] symb_state
 
 let execute_objc_NSArray_alloc_no_fail
     ({ Builtin.tenv; } as builtin_args) symb_state =
@@ -1140,12 +1138,12 @@ let execute_objc_NSArray_alloc_no_fail
 
 let execute_NSArray_arrayWithObjects_count builtin_args =
   let n_formals = 1 in
-  let res = sym_exe_check_variadic_sentinel ~fails_on_nil: true n_formals (0,1) builtin_args in
+  let res = SymExec.check_variadic_sentinel ~fails_on_nil: true n_formals (0,1) builtin_args in
   execute_objc_NSArray_alloc_no_fail builtin_args res
 
 let execute_NSArray_arrayWithObjects builtin_args =
   let n_formals = 1 in
-  let res = sym_exe_check_variadic_sentinel n_formals (0,1) builtin_args in
+  let res = SymExec.check_variadic_sentinel n_formals (0,1) builtin_args in
   execute_objc_NSArray_alloc_no_fail builtin_args res
 
 let _ =
@@ -1172,8 +1170,7 @@ let execute_objc_NSDictionary_alloc_no_fail
 
 let execute___objc_dictionary_literal builtin_args =
   let n_formals = 1 in
-  let res' =
-    sym_exe_check_variadic_sentinel ~fails_on_nil: true n_formals (0,1) builtin_args in
+  let res' = SymExec.check_variadic_sentinel ~fails_on_nil: true n_formals (0,1) builtin_args in
   execute_objc_NSDictionary_alloc_no_fail res' builtin_args
 
 let __objc_dictionary_literal =

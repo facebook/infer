@@ -632,11 +632,6 @@ module Node = struct
     proc_desc_fold_nodes fold_node acc proc_desc
 
 (*
-  (** Set the proc desc of the node *)
-  let node_set_proc_desc pdesc node =
-    node.nd_proc <- Some pdesc
-
-
   let remove_node cfg node =
     remove_node' (fun node' -> not (equal node node'))
       cfg node
