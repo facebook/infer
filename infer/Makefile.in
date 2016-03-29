@@ -10,18 +10,21 @@ ROOT_DIR = ..
 
 include $(ROOT_DIR)/Makefile.config
 
-all: clang java llvm checkCopyright
+all: clang java llvm $(INFER_BIN) $(INFERTRACEBUGS_BIN) checkCopyright
 
-java:
+$(INFER_BIN) $(INFERTRACEBUGS_BIN):
+	ln -sf ../lib/python/$(@F) $@
+
+java: $(INFER_BIN)
 	$(MAKE) -C $(SRC_DIR) java
 	$(MAKE) -C $(ANNOTATIONS_DIR)
 	$(MAKE) -C $(MODELS_DIR) java
 
-clang:
+clang: $(INFER_BIN)
 	$(MAKE) -C $(SRC_DIR) clang
 	$(MAKE) -C $(MODELS_DIR) clang
 
-llvm:
+llvm: $(INFER_BIN)
 	$(MAKE) -C $(SRC_DIR) llvm
 
 checkCopyright:
@@ -31,5 +34,6 @@ clean:
 	$(MAKE) -C $(SRC_DIR) clean
 	$(MAKE) -C $(ANNOTATIONS_DIR) clean
 	$(MAKE) -C $(MODELS_DIR) clean
+	$(REMOVE) $(INFER_BIN) $(INFERTRACEBUGS_BIN)
 
 .PHONY: all checkCopyright clang clean java llvm models

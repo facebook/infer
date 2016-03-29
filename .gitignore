@@ -75,6 +75,8 @@ buck-out/
 /infer/bin/InferPrint
 /infer/bin/InferUnit
 /infer/bin/Typeprop
+/infer/bin/infer
+/infer/bin/inferTraceBugs
 /infer/src/backend/version.ml
 /infer/models/java/models/
 /infer/models/java/models.jar

@@ -23,7 +23,7 @@ TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
 all: $(INFER_ANALYZERS)
 
-java:
+java: inferTraceBugs
 ifneq (@BUILD_JAVA_ANALYZERS@,yes)
 	@echo
 	@echo "  error: java analyzers disabled by ./configure"
@@ -36,7 +36,7 @@ else
 	$(MAKE) -C $(INFER_DIR) java
 endif
 
-clang:
+clang: inferTraceBugs
 ifneq (@BUILD_C_ANALYZERS@,yes)
 	@echo
 	@echo "  error: clang analyzers disabled by ./configure"
@@ -106,14 +106,17 @@ ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 endif
 
+inferTraceBugs:
+	make -C infer $(INFERTRACEBUGS_BIN)
+
 inferTraceBugs_test: $(INFER_ANALYZERS)
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
-	$(PYTHON_DIR)/infer -o __test-infer-out__ -- \
+	$(INFER_BIN) -o __test-infer-out__ -- \
 	  javac $(EXAMPLES_DIR)/Hello.java \
 	   > /dev/null
 	@rm -f Hello.class
 else
-	$(PYTHON_DIR)/infer -o __test-infer-out__ \
+	$(INFER_BIN) -o __test-infer-out__ \
 	  -- clang -c $(EXAMPLES_DIR)/hello.c \
 	   > /dev/null
 	@rm -f hello.o
@@ -141,5 +144,5 @@ endif
 	$(MAKE) -C $(INFER_DIR) clean
 
 .PHONY: all buck_test buck_test_xml clean clang
-.PHONY: clang_plugin clang_setup inferTraceBugs_test java ocaml_unit_test
-.PHONY: test test_xml test_build unit
+.PHONY: clang_plugin clang_setup inferTraceBugs inferTraceBugs_test java
+.PHONY: ocaml_unit_test test test_xml test_build unit

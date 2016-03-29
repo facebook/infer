@@ -36,6 +36,8 @@ INFERCLANG_BIN = $(BIN_DIR)/InferClang
 INFERJAVA_BIN = $(BIN_DIR)/InferJava
 INFERPRINT_BIN = $(BIN_DIR)/InferPrint
 INFERUNIT_BIN = $(BIN_DIR)/InferUnit
+INFER_BIN = $(BIN_DIR)/infer
+INFERTRACEBUGS_BIN = $(BIN_DIR)/inferTraceBugs
 
 INFER_ANALYZERS=
 ifeq (@BUILD_C_ANALYZERS@,yes)
@@ -50,7 +52,7 @@ endif
 JAVA_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
               analyze.py config.py issues.py jwlib.py source.py utils.py) \
             $(addprefix $(CAPTURE_LIB_DIR)/, javac.py util.py) \
-            $(BIN_DIR)/infer \
+            $(INFER_BIN) \
             $(INFERANALYZE_BIN) \
             $(INFERJAVA_BIN) \
             $(INFERPRINT_BIN)
@@ -58,9 +60,21 @@ JAVA_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
 CLANG_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
                analyze.py config.py issues.py source.py utils.py) \
              $(addprefix $(CAPTURE_LIB_DIR)/, make.py util.py) \
-             $(BIN_DIR)/infer \
+             $(INFER_BIN) \
              $(INFERANALYZE_BIN) \
              $(INFERCLANG_BIN) \
              $(INFERPRINT_BIN)
 
 JAVA_MODELS_JAR = $(LIB_DIR)/java/models.jar
+
+ifneq (,$(findstring s,$(MAKEFLAGS)))
+REMOVE = @rm -f
+REMOVE_DIR = @rm -rf
+else
+REMOVE = @rm -vf
+REMOVE_DIR = @rm -rvf
+endif
+COPY = cp -f -p
+COPY_DIR = cp -rf
+MKDIR = mkdir -p
+LINK = ln -sf
