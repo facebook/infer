@@ -32,6 +32,32 @@ let lookup tenv name =
   try Some (TypenameHash.find tenv name)
   with Not_found -> None
 
+exception Cannot_convert_string_to_typ of string
+
+(** Lookup Java types by name *)
+let lookup_java_typ_from_string tenv typ_str =
+  let rec loop = function
+    | "" | "void" -> Sil.Tvoid
+    | "int" -> Sil.Tint Sil.IInt
+    | "byte" -> Sil.Tint Sil.IShort
+    | "short" -> Sil.Tint Sil.IShort
+    | "boolean" -> Sil.Tint Sil.IBool
+    | "char" -> Sil.Tint Sil.IChar
+    | "long" -> Sil.Tint Sil.ILong
+    | "float" -> Sil.Tfloat Sil.FFloat
+    | "double" -> Sil.Tfloat Sil.FDouble
+    | typ_str when String.contains typ_str '[' ->
+        let stripped_typ = String.sub typ_str 0 ((String.length typ_str) - 2) in
+        let array_typ_size = Sil.exp_get_undefined false in
+        Sil.Tptr (Sil.Tarray (loop stripped_typ, array_typ_size), Sil.Pk_pointer)
+    | typ_str ->
+        (* non-primitive/non-array type--resolve it in the tenv *)
+        let typename = Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string typ_str)) in
+        match lookup tenv typename with
+        | Some struct_typ -> Sil.Tstruct struct_typ
+        | _ -> raise (Cannot_convert_string_to_typ typ_str) in
+  loop typ_str
+
 (** Add a (name,type) pair to the global type environment. *)
 let add tenv name struct_typ =
   TypenameHash.replace tenv name struct_typ

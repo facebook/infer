@@ -529,32 +529,6 @@ let resolve_typename prop receiver_exp =
       Some (Typename.TN_csu (Csu.Class ck, name))
   | _ -> None
 
-exception Cannot_convert_string_to_typ of string
-
-(** Lookup Java types by name *)
-let lookup_java_typ_from_string tenv typ_str =
-  let rec loop = function
-    | "" | "void" -> Sil.Tvoid
-    | "int" -> Sil.Tint Sil.IInt
-    | "byte" -> Sil.Tint Sil.IShort
-    | "short" -> Sil.Tint Sil.IShort
-    | "boolean" -> Sil.Tint Sil.IBool
-    | "char" -> Sil.Tint Sil.IChar
-    | "long" -> Sil.Tint Sil.ILong
-    | "float" -> Sil.Tfloat Sil.FFloat
-    | "double" -> Sil.Tfloat Sil.FDouble
-    | typ_str when String.contains typ_str '[' ->
-        let stripped_typ = String.sub typ_str 0 ((String.length typ_str) - 2) in
-        let array_typ_size = Sil.exp_get_undefined false in
-        Sil.Tptr (Sil.Tarray (loop stripped_typ, array_typ_size), Sil.Pk_pointer)
-    | typ_str ->
-        (* non-primitive/non-array type--resolve it in the tenv *)
-        let typename = Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string typ_str)) in
-        match Tenv.lookup tenv typename with
-        | Some struct_typ -> Sil.Tstruct struct_typ
-        | _ -> raise (Cannot_convert_string_to_typ typ_str) in
-  loop typ_str
-
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
     in the signature of [pname], resolve [pname] to T_actual.[pname]. *)
 let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t list =
@@ -566,8 +540,8 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
     | Procname.Java pname_java ->
         (try
            let receiver_typ_str = Procname.java_get_class_name pname_java in
-           Sil.Tptr (lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer)
-         with Cannot_convert_string_to_typ _ -> fallback_typ)
+           Sil.Tptr (Tenv.lookup_java_typ_from_string tenv receiver_typ_str, Sil.Pk_pointer)
+         with Tenv.Cannot_convert_string_to_typ _ -> fallback_typ)
     | _ ->
         fallback_typ in
   let receiver_types_equal pname actual_receiver_typ =
@@ -1072,7 +1046,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         | None ->
             let ret_typ_str = Procname.java_get_return_type callee_pname_java in
             let ret_typ =
-              match lookup_java_typ_from_string tenv ret_typ_str with
+              match Tenv.lookup_java_typ_from_string tenv ret_typ_str with
               | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
               | typ -> typ in
             exec_skip_call resolved_pname ret_typ
@@ -1103,7 +1077,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               | _ ->
                   "unknown_return_type" in
             let ret_typ =
-              match lookup_java_typ_from_string tenv ret_typ_str with
+              match Tenv.lookup_java_typ_from_string tenv ret_typ_str with
               | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
               | typ -> typ in
             exec_skip_call ret_typ

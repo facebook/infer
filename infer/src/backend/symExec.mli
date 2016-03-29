@@ -10,11 +10,6 @@
 
 (** Symbolic Execution *)
 
-exception Cannot_convert_string_to_typ of string
-
-(** Lookup Java types by name. May raise [Cannot_convert_string_to_typ]. *)
-val lookup_java_typ_from_string : Tenv.t -> string -> Sil.typ
-
 (** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)
 val node : (exn -> unit) -> Tenv.t -> Cfg.Node.t -> Paths.PathSet.t -> Paths.PathSet.t
 

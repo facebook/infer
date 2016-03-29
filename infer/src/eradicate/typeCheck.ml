@@ -584,7 +584,7 @@ let typecheck_instr
                 etl_ in
             let ret_typ_str = Procname.java_get_return_type callee_pname_java in
             let ret_type =
-              match SymExec.lookup_java_typ_from_string tenv ret_typ_str with
+              match Tenv.lookup_java_typ_from_string tenv ret_typ_str with
               | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
               | typ -> typ in
             let proc_attributes =
