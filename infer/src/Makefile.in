@@ -276,7 +276,7 @@ version: backend/version.ml.in Makefile
 	rm -f "$$TMPFILE"
 
 $(BUILD_DIR):
-	$(MKDIR) $(BUILD_DIR)
+	$(MKDIR_P) $(BUILD_DIR)
 
 $(INFERJAVA_BIN): build_java
 	$(COPY) $(JAVA_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)

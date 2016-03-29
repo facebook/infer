@@ -8,11 +8,22 @@ bug-reports: "https://github.com/facebook/infer/issues"
 dev-repo: "https://github.com/facebook/infer.git"
 license: "BSD"
 build: [
-  ["echo" "building from opam is not supported yet"]
-  ["exit" "1"]
+  ["./autogen.sh"]
+  ["./configure"
+     "--disable-c-analyzers"
+     "--prefix=%{prefix}%"]
+  ["make" "-j%{jobs}%"]
 ]
-install: []
-remove: []
+install: [
+  ["make" "install"]
+]
+remove: [
+  ["./autogen.sh"]
+  ["./configure"
+     "--disable-c-analyzers"
+     "--prefix=%{prefix}%"]
+  ["make" "uninstall"]
+]
 ocaml-version: [ >= "4.02.1" ]
 depends: [
   "ocamlfind" {build}

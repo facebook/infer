@@ -108,6 +108,7 @@ AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AC_PROG_MKDIR_P
 
 if test "x$enable_c_analyzers" = "xyes"; then
   AC_PROG_CPP

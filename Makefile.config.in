@@ -68,13 +68,13 @@ CLANG_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
 JAVA_MODELS_JAR = $(LIB_DIR)/java/models.jar
 
 ifneq (,$(findstring s,$(MAKEFLAGS)))
-REMOVE = @rm -f
-REMOVE_DIR = @rm -rf
+REMOVE = rm -f
+REMOVE_DIR = rm -rf
 else
-REMOVE = @rm -vf
-REMOVE_DIR = @rm -rvf
+REMOVE = rm -vf
+REMOVE_DIR = rm -rvf
 endif
 COPY = cp -f -p
-COPY_DIR = cp -rf
-MKDIR = mkdir -p
-LINK = ln -sf
+COPY_DIR = cp -Rf
+MKDIR_P = @MKDIR_P@
+LN_S = @LN_S@

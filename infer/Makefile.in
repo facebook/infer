@@ -13,7 +13,9 @@ include $(ROOT_DIR)/Makefile.config
 all: clang java llvm $(INFER_BIN) $(INFERTRACEBUGS_BIN) checkCopyright
 
 $(INFER_BIN) $(INFERTRACEBUGS_BIN):
-	ln -sf ../lib/python/$(@F) $@
+	($(REMOVE) $@ && \
+	 cd $(@D) && \
+	 $(LN_S) ../lib/python/$(@F) $(@F))
 
 java: $(INFER_BIN)
 	$(MAKE) -C $(SRC_DIR) java
