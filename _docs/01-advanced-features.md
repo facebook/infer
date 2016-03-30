@@ -21,23 +21,21 @@ results of the analysis. By default this directory is called
 ```
 infer-out
 ├── captured/
-├── log/
-├── multicore/
-├── sources/
 ├── specs/
+├── ...
 ├── bugs.txt
 ├── procs.csv
 ├── report.csv
 ├── report.json
-└── stats.json
+├── stats.json
+└── toplevel.log
 ```
 
 - `captured/` contains information for each file analyzed by Infer. See [below](docs/advanced-features.html#captured-folder) for more information.
-- The `log/`, `multicore/`, and `sources/` folders are used internally to drive the analyzer.
 - `specs/` contains the [specs](docs/advanced-features.html#print-the-specs) of each function that was analyzed, as inferred by Infer.
 - `bugs.txt`, `report.csv`, and `report.json` contain the Infer reports in three different formats.
-- `procs.csv` and `stats.json` contain debug information about the run.
-
+- `toplevel.log`, `procs.csv`, and `stats.json` contain debug information about the run.
+- there are other folders reserved for Infer's internal workings
 
 ### Captured folder
 
