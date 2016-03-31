@@ -11,7 +11,7 @@ include $(ROOT_DIR)/Makefile.config
 INFER_MAJOR = @INFER_MAJOR@
 INFER_MINOR = @INFER_MINOR@
 INFER_PATCH = @INFER_PATCH@
-INFER_IS_RELEASE = @INFER_IS_RELEASE@
+IS_RELEASE_TREE = @IS_RELEASE_TREE@
 
 ATDGEN = @ATDGEN@
 
@@ -122,12 +122,10 @@ CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
 
 #### End of declarations ####
 
-# Check whether .facebook file exists in a root directory.
-# Based on that determine which code should be loaded
-ifeq ($(wildcard $(ROOT_DIR)/.facebook),)
-	EXTRA_DEPS = opensource
+ifeq (@IS_FACEBOOK_TREE@,yes)
+EXTRA_DEPS = facebook
 else
-	EXTRA_DEPS = facebook
+EXTRA_DEPS = opensource
 endif
 
 DEPENDENCIES = IR backend checkers eradicate harness \
@@ -268,7 +266,7 @@ version: backend/version.ml.in Makefile
 	  -e 's|@INFER_MAJOR[@]|$(INFER_MAJOR)|g' \
 	  -e 's|@INFER_MINOR[@]|$(INFER_MINOR)|g' \
 	  -e 's|@INFER_PATCH[@]|$(INFER_PATCH)|g' \
-	  -e 's|@INFER_IS_RELEASE[@]|$(INFER_IS_RELEASE)|g' \
+	  -e 's|@IS_RELEASE_TREE[@]|$(IS_RELEASE_TREE)|g' \
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
 	  $< > "$$TMPFILE"; \

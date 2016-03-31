@@ -34,6 +34,7 @@ _build
 /infer/models/java/Makefile
 /infer/models/objc/Makefile
 /infer/src/Makefile
+/.buckversion
 
 # IntelliJ files
 /scripts/.idea/

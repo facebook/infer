@@ -28,13 +28,15 @@ AC_SUBST([INFER_MAJOR])
 AC_SUBST([INFER_MINOR])
 AC_SUBST([INFER_PATCH])
 
-# record if we are in a release of Infer
-AC_MSG_CHECKING([if we are in an Infer release build])
-is_infer_release=no
-AS_IF([test -f ".release"], [is_infer_release=yes])
-INFER_IS_RELEASE=$is_infer_release
-AC_SUBST([INFER_IS_RELEASE])
-AC_MSG_RESULT([$is_infer_release])
+# are we in a release source tree
+AC_CHECK_FILE([.release], [is_release_tree=yes], [is_release_tree=no])
+IS_RELEASE_TREE=$is_release_tree
+AC_SUBST([IS_RELEASE_TREE])
+
+# are we in an internal source tree
+AC_CHECK_FILE([.facebook], [is_facebook_tree=yes], [is_facebook_tree=no])
+IS_FACEBOOK_TREE=$is_facebook_tree
+AC_SUBST([IS_FACEBOOK_TREE])
 
 # to compile the facebook-clang-plugins
 AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang)])
@@ -69,7 +71,7 @@ AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--without-fcp-clang],
     [do not use $CLANG_PREFIX/bin/clang to override the default compiler (default is to override if in an infer release)]),
   ,
-  with_fcp_clang=$is_infer_release)
+  with_fcp_clang=$is_release_tree)
 
 AS_IF([test "x$enable_c_analyzers" = "xyes"], [
   AC_MSG_CHECKING([whether to use the compilers in $CLANG_PREFIX/bin])
@@ -224,6 +226,18 @@ AC_ARG_ENABLE(ocaml-bin-annot,
   enable_ocaml_bin_annot=yes)
 ENABLE_OCAML_BINANNOT=$enable_ocaml_bin_annot
 AC_SUBST([ENABLE_OCAML_BINANNOT])
+
+
+# We use Buck to run the Infer tests
+AC_MSG_CHECKING([which version of Buck to use])
+buckversion_file=.buckversion
+oss_buck_version=a965937ccdadf8119a98ab766c3feb0708dc424e
+fb_buck_version=440619c312cf07951891083d8f02d05a713205b5
+AS_IF([test x"$is_facebook_tree" = x"yes"],
+  [buck_version=$fb_buck_version],
+  [buck_version=$oss_buck_version])
+echo $buck_version > "$buckversion_file"
+AC_MSG_RESULT([$buck_version])
 
 
 AC_CONFIG_FILES([

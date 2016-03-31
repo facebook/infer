@@ -65,7 +65,7 @@ clang_setup:
 	$(FCP_DIR)/clang/setup.sh
 
 clang_plugin: clang_setup
-ifeq (@INFER_IS_RELEASE@,no)
+ifeq (@IS_RELEASE_TREE@,no)
 	$(MAKE) -C $(FCP_DIR)/libtooling all \
 	  CC=@CC@ CXX=@CXX@ \
 	  CXX="@CXX@" CXXFLAGS="@CXXFLAGS@" \
