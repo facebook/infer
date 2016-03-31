@@ -26,6 +26,7 @@ remove: [
 ]
 ocaml-version: [ >= "4.02.1" ]
 depends: [
+  "conf-autoconf"
   "ocamlfind" {build}
   "sawja" {>="1.5.1"}
   "atdgen" {>="1.6.0"}
@@ -36,4 +37,6 @@ depends: [
 depexts: [
   [ ["ubuntu"] ["python2.7-dev"] ]
   [ ["debian"] ["python2.7-dev"] ]
+  [ ["ubuntu"] ["default-jdk"] ]
+  [ ["debian"] ["default-jdk"] ]
 ]
