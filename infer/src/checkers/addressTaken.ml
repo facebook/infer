@@ -31,7 +31,7 @@ module TransferFunctions = struct
     | Var _ | Sizeof _ ->
         astate
 
-  let exec_instr astate = function
+  let exec_instr astate _ = function
     | Sil.Set (_, Tptr _, rhs_exp, _) ->
         add_address_taken_pvars rhs_exp astate
     | Sil.Call (_, _, actuals, _, _) ->

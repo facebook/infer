@@ -21,8 +21,9 @@ module type S = sig
 
   (* write the summary for [name] to persistent storage *)
   val write_summary : Procname.t -> summary -> unit
-  (* read and return the summary for [pname]. does the analysis to create the summary if needed *)
-  val read_summary : Procname.t -> summary option
+  (* read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis to
+     create the summary if needed *)
+  val read_summary : Cfg.Procdesc.t -> Procname.t -> summary option
 end
 
 module Make (H : Helper) = struct
@@ -37,13 +38,9 @@ module Make (H : Helper) = struct
         Printf.sprintf "Summary for %s should exist, but does not!@." (Procname.to_string pname)
         |> failwith
 
-  let read_summary pname =
-    (* this is reprehensible. but the caller_pdesc is only used for debug printing *)
-    (* TODO: fix the ondemand API so we can choose to pass a pdesc option *)
-    let dummy_caller_pdesc =
-      Cfg.Procdesc.create (Cfg.Node.create_cfg ()) (ProcAttributes.default pname Config.Java) in
-    Ondemand.analyze_proc_name ~propagate_exceptions:false dummy_caller_pdesc pname;
-    match Specs.get_summary pname with
+  let read_summary caller_pdesc callee_pname =
+    Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname;
+    match Specs.get_summary callee_pname with
     | None -> None
     | Some summary -> Some (H.read_from_payload summary.Specs.payload)
 end
