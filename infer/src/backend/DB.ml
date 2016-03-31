@@ -337,7 +337,7 @@ let infer_start_time = lazy
 let file_was_updated_after_start fname =
   if file_exists fname then
     let file_mtime = file_modified_time fname in
-    file_mtime >= Lazy.force infer_start_time
+    file_mtime > Lazy.force infer_start_time
   else
     (* since file doesn't exist, it wasn't modified *)
     false

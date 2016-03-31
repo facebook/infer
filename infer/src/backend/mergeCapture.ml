@@ -63,6 +63,12 @@ let rec slink ~stats src dst =
     begin
       if Sys.file_exists dst then Sys.remove dst;
       Unix.symlink src dst;
+      (* Set the accessed and modified time of the new symlink to be slightly in the future.  Due to
+         the coarse precision of the timestamps, it is possible for the source and destination of a
+         link to have the same modification time. When this happens, the files will be considered to
+         need re-analysis every time, indefinitely. *)
+      let near_future = Unix.gettimeofday () +. 1. in
+      Unix.utimes dst near_future near_future ;
       stats.files_linked <- stats.files_linked + 1;
     end
 
