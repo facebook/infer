@@ -10,13 +10,11 @@ RUN ["/opt/sdk-tools/android-accept-licenses.sh", \
      "android update sdk --filter \"build-tools-22.0.1\" --no-ui --force --all"]
 
 # Debian config
-RUN add-apt-repository ppa:cwchien/gradle # to get a recent gradle
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
             build-essential \
             curl \
             git \
-            gradle \
             groff \
             libgmp-dev \
             libmpc-dev \
