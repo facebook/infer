@@ -240,6 +240,26 @@ echo $buck_version > "$buckversion_file"
 AC_MSG_RESULT([$buck_version])
 
 
+AC_CHECK_TOOL([HAVE_NPROC], [nproc], [no])
+AC_CHECK_TOOL([HAVE_SYSCTL], [sysctl], [no])
+AC_MSG_CHECKING([the number of cpus the build host has])
+if test "$HAVE_NPROC" != "no"; then
+  if test $(nproc); then
+    NCPU=$(nproc)
+    AC_MSG_RESULT([$NCPU])
+  fi
+elif test $"HAVE_SYSCTL" != "no"; then
+  if test $(sysctl -n hw.ncpu); then
+    NCPU=$(sysctl -n hw.ncpu)
+    AC_MSG_RESULT([$NCPU])
+  fi
+else
+  NCPU=1
+  AC_MSG_RESULT([failed, defaulting to 1])
+fi
+AC_SUBST([NCPU])
+
+
 AC_CONFIG_FILES([
   Makefile.config
   Makefile
