@@ -10,23 +10,24 @@ ROOT_DIR = ..
 
 include $(ROOT_DIR)/Makefile.config
 
-all: clang java llvm $(INFER_BIN) $(INFERTRACEBUGS_BIN) checkCopyright
+all: clang java llvm $(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH)
+all: checkCopyright
 
-$(INFER_BIN) $(INFERTRACEBUGS_BIN):
+$(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH):
 	($(REMOVE) $@ && \
 	 cd $(@D) && \
 	 $(LN_S) ../lib/python/$(@F) $(@F))
 
-java: $(INFER_BIN)
+java: $(INFER_BIN_RELPATH)
 	$(MAKE) -C $(SRC_DIR) java
 	$(MAKE) -C $(ANNOTATIONS_DIR)
 	$(MAKE) -C $(MODELS_DIR) java
 
-clang: $(INFER_BIN)
+clang: $(INFER_BIN_RELPATH)
 	$(MAKE) -C $(SRC_DIR) clang
 	$(MAKE) -C $(MODELS_DIR) clang
 
-llvm: $(INFER_BIN)
+llvm: $(INFER_BIN_RELPATH)
 	$(MAKE) -C $(SRC_DIR) llvm
 
 checkCopyright:
@@ -36,6 +37,6 @@ clean:
 	$(MAKE) -C $(SRC_DIR) clean
 	$(MAKE) -C $(ANNOTATIONS_DIR) clean
 	$(MAKE) -C $(MODELS_DIR) clean
-	$(REMOVE) $(INFER_BIN) $(INFERTRACEBUGS_BIN)
+	$(REMOVE) $(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH)
 
 .PHONY: all checkCopyright clang clean java llvm models

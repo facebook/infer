@@ -38,6 +38,9 @@ INFERPRINT_BIN = $(BIN_DIR)/InferPrint
 INFERUNIT_BIN = $(BIN_DIR)/InferUnit
 INFER_BIN = $(BIN_DIR)/infer
 INFERTRACEBUGS_BIN = $(BIN_DIR)/inferTraceBugs
+# paths relative to $(INFER_DIR)
+INFER_BIN_RELPATH = bin/infer
+INFERTRACEBUGS_BIN_RELPATH = bin/inferTraceBugs
 
 INFER_ANALYZERS=
 ifeq (@BUILD_C_ANALYZERS@,yes)
