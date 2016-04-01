@@ -46,12 +46,7 @@ module AllPreds = struct
       Cfg.Node.get_preds n
 end
 
-module Vset = Set.Make (struct
-    type t = Pvar.t
-    let compare = Pvar.compare
-  end)
-
-let aliased_var = ref Vset.empty
+module Vset = AddressTaken.PvarSet
 
 let captured_var = ref Vset.empty
 
@@ -110,26 +105,6 @@ let rec def_instr cfg (instr: Sil.instr) acc =
 
 and def_instrl cfg instrs acc =
   IList.fold_left (fun acc' i -> def_instr cfg i acc') acc instrs
-
-(* computes the addresses that are assigned to something or passed as parameters to a function.
-   these will be considered aliased. *)
-let aliasing_instr cfg pdesc (instr: Sil.instr) acc =
-  match instr with
-  | Sil.Set (_, Sil.Tptr (_, _), exp, _) ->
-      use_exp cfg pdesc exp acc
-  | Sil.Call (_, _, argl, _, _) ->
-      IList.fold_left
-        (fun acc (arg, typ) -> match typ with
-           | Sil.Tptr _ -> use_exp cfg pdesc arg acc
-           | _ -> acc)
-        acc
-        argl
-  | Sil.Set _ | Sil.Letderef _ | Sil.Prune _ | Sil.Nullify _ | Sil.Abstract _ | Sil.Remove_temps _
-  | Sil.Stackop _ | Sil.Declare_locals _ | Sil.Goto_node _ -> acc
-
-(* computes possible alisased var *)
-let def_aliased_var cfg pdesc instrs acc =
-  IList.fold_left (fun acc' i -> aliasing_instr cfg pdesc i acc') acc instrs
 
 (** variables written by instructions in the node *)
 let def_node cfg node acc =
@@ -195,17 +170,6 @@ end = struct
     H.iter (fun node live -> f node (get_live_preds init node) live) table
 end
 
-(** compute the variables which are possibly aliased in node n *)
-let compute_aliased cfg n aliased_var =
-  match Cfg.Node.get_kind n with
-  | Cfg.Node.Start_node _
-  | Cfg.Node.Exit_node _
-  | Cfg.Node.Join_node
-  | Cfg.Node.Skip_node _ -> aliased_var
-  | Cfg.Node.Prune_node _
-  | Cfg.Node.Stmt_node _ ->
-      def_aliased_var cfg (Cfg.Node.get_proc_desc n) (Cfg.Node.get_instrs n) aliased_var
-
 (** Compute condidate nullable variables amongst formals and locals *)
 let compute_candidates procdesc : Vset.t * (Vset.t -> Vset.elt list) =
   let candidates = ref Vset.empty in
@@ -240,8 +204,6 @@ let analyze_proc cfg pdesc cand =
   try
     while true do
       let node = Worklist.pick () in
-      if not (!Config.curr_language = Config.Java) then
-        aliased_var := Vset.union (compute_aliased cfg node !aliased_var) !aliased_var;
       let curr_live = Table.get_live node in
       let preds = AllPreds.get_preds node in
       let live_at_predecessors =
@@ -295,7 +257,7 @@ let node_assigns_no_variables cfg node =
 
 (** Set the dead variables of a node, by default as dead_after.
     If the node is a prune or a join node, propagate as dead_before in the successors *)
-let add_deads_after_conditionals_join cfg n deads =
+let add_dead_pvars_after_conditionals_join cfg n deads =
   (* L.out "    node %d: %a@." (Cfg.Node.get_id n) (Sil.pp_list pe_text) deads; *)
   let seen = ref Cfg.NodeSet.empty in
   let rec add_after_prune_join is_after node =
@@ -328,7 +290,7 @@ let add_deads_after_conditionals_join cfg n deads =
   add_after_prune_join true n
 
 (** Find the set of dead variables for the procedure pname and add nullify instructions.
-    The variables that are possibly aliased are only considered just before the exit node. *)
+    The variables whose addresses may be taken are only considered just before the exit node. *)
 let analyze_and_annotate_proc cfg pname pdesc =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
   let exit_node_is_succ node =
@@ -336,39 +298,44 @@ let analyze_and_annotate_proc cfg pname pdesc =
     | [en] -> Cfg.Node.equal en exit_node
     | _ -> false in
   let cand, get_sorted_cand = compute_candidates pdesc in
-  aliased_var:= Vset.empty;
+
+  let addr_taken_vars =
+    if !Config.curr_language = Config.Java
+    then Vset.empty
+    else
+      match AddressTaken.Analyzer.compute_post pdesc with
+      | Some post -> post
+      | None -> Vset.empty in
   captured_var:= Vset.empty;
-  analyze_proc cfg pdesc cand; (* as side effect it coputes the set aliased_var  *)
-  (* print_aliased_var "@.@.Aliased variable computed: " !aliased_var;
-     L.out "  PROCEDURE %s@." (Procname.to_string pname); *)
-  let deads_added = ref 0 in
-  let deads_limit = 100000 in
-  let incr_deads_added pvars =
+
+  analyze_proc cfg pdesc cand;
+
+  let dead_pvars_added = ref 0 in
+  let dead_pvars_limit = 100000 in
+  let incr_dead_pvars_added pvars =
+
     let num = IList.length pvars in
-    deads_added := num + !deads_added;
-    if !deads_added > deads_limit && !deads_added - num <= deads_limit
+    dead_pvars_added := num + !dead_pvars_added;
+    if !dead_pvars_added > dead_pvars_limit && !dead_pvars_added - num <= dead_pvars_limit
     then
       L.err "WARNING: liveness: more than %d dead pvars added in procedure %a, stopping@."
-        deads_limit Procname.pp pname in
+        dead_pvars_limit Procname.pp pname in
   Table.iter cand (fun n live_at_predecessors live_current -> (* set dead variables on nodes *)
       let nonnull_pvars =
         Vset.inter (def_node cfg n live_at_predecessors) cand in (* live before, or assigned to *)
-      let deads =
+      let dead_pvars =
         Vset.diff nonnull_pvars live_current in (* only nullify when variable become live *)
-      (* L.out "    Node %s " (string_of_int (Cfg.Node.get_id n)); *)
-      let deads_no_captured = Vset.diff deads !captured_var in
-      (* print_aliased_var "@.@.Non-nullable variable computed: " nonnull_pvars;
-         print_aliased_var "@.Dead variable computed: " deads;
-         print_aliased_var "@.Captured variable computed: " !captured_var;
-         print_aliased_var "@.Dead variable excluding captured computed: " deads_no_captured; *)
-      let deads_no_alias = get_sorted_cand (Vset.diff deads_no_captured !aliased_var) in
-      (* print_aliased_var_l "@. Final Dead variable computed: " deads_no_alias; *)
-      let deads_to_add =
-        if exit_node_is_succ n (* add dead aliased vars just before the exit node *)
-        then deads_no_alias @ (get_sorted_cand (Vset.inter cand !aliased_var))
-        else deads_no_alias in
-      incr_deads_added deads_to_add;
-      if !deads_added < deads_limit then add_deads_after_conditionals_join cfg n deads_to_add);
+      let dead_pvars_no_captured = Vset.diff dead_pvars !captured_var in
+      let dead_pvars_no_addr_taken =
+        get_sorted_cand (Vset.diff dead_pvars_no_captured addr_taken_vars) in
+      let dead_pvars_to_add =
+        if exit_node_is_succ n (* add dead address taken vars just before the exit node *)
+        then dead_pvars_no_addr_taken @ (get_sorted_cand (Vset.inter cand addr_taken_vars))
+        else dead_pvars_no_addr_taken in
+      incr_dead_pvars_added dead_pvars_to_add;
+      if !dead_pvars_added < dead_pvars_limit
+      then add_dead_pvars_after_conditionals_join cfg n dead_pvars_to_add);
+
   IList.iter (fun n -> (* generate nullify instructions *)
       let dead_pvs_after = Cfg.Node.get_dead_pvars n true in
       let dead_pvs_before = Cfg.Node.get_dead_pvars n false in
@@ -496,17 +463,3 @@ let doit ?(f_translate_typ=None) cfg cg tenv =
   if !Config.curr_language = Config.Java
   then add_dispatch_calls cfg cg tenv f_translate_typ;
   add_abstraction_instructions cfg;
-
-(*
-Printing function useful for debugging
-let print_aliased_var s al_var =
-  L.out s;
-  Vset.iter (fun v -> L.out " %a, " (Sil.pp pe_text) v) al_var;
-  L.out "@."
-
-Printing function useful for debugging
-let print_aliased_var_l s al_var =
-  L.out s;
-  IList.iter (fun v -> L.out " %a, " (Sil.pp pe_text) v) al_var;
-  L.out "@."
-*)

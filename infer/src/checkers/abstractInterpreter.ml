@@ -92,21 +92,25 @@ module Make
   let compute_post pdesc =
     let cfg = C.from_pdesc pdesc in
     let inv_map = exec_cfg cfg pdesc in
-    let end_state =
-      try M.find (C.node_id (C.exit_node cfg)) inv_map
-      with Not_found ->
-        failwith
-          (Printf.sprintf
-             "No postcondition found for exit node of %s; this should never happen"
-             (Procname.to_string (Cfg.Procdesc.get_proc_name pdesc))) in
-    end_state.post
+    try
+      let end_state = M.find (C.node_id (C.exit_node cfg)) inv_map in
+      Some (end_state.post)
+    with Not_found ->
+      (* TODO: this happens when we get a malformed CFG due to a frontend failure. can eliminate in
+         the future once we fix the frontends. *)
+      L.err
+        "Warning: No postcondition found for exit node of %a"
+        Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
+      None
 
   module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
 
     let checker { Callbacks.get_proc_desc; proc_desc; proc_name; } =
       let analyze_ondemand pdesc =
-        let post = compute_post pdesc in
-        Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post in
+        match compute_post pdesc with
+        | Some post ->
+            Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post
+        | None -> () in
       let callbacks =
         {
           Ondemand.analyze_ondemand;
@@ -120,6 +124,5 @@ module Make
           Ondemand.unset_callbacks ()
         end
   end
-
 end
 
