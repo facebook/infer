@@ -8,12 +8,29 @@
  */
 
 #pragma once
-// TODO set it in configure script instead
-// This is hacky attempt to follow what folly does
+// This is a hacky attempt to follow what folly does
 // https://github.com/facebook/folly/blob/b1eb6819f3ffe6b645f39d505ca8ace3116b7873/folly/configure.ac#L232
-#if !defined(INFER_USE_LIBCPP) && defined(__APPLE__)
+// Depending whether the project is compiled with libc++ or stdlibc++, include their
+// internal config headers to get information about versions
+#if __has_include(<__config>) // defines _LIBCPP_VERSION
+#include <__config>
+#elif __has_include(<bits / c++ config.h>) // defines __GLIBCXX__
+#include <bits/c++config.h>
+#endif
+
+// Figure out whether the library really supports c++11 standard
+#if __cplusplus >= 201103L
+#if __GLIBCXX__ >= 20130531
+// C++11 is really supported from gcc 4.8.1 onward.
+#define INFER_CPP11_ON 1
+#elif defined _LIBCPP_VERSION // for now assume libc++ always supported c++11
+#define INFER_CPP11_ON 1
+#endif
+#endif // __cplusplus >= 201103L
+
+#if !defined(INFER_USE_LIBCPP) && defined(_LIBCPP_VERSION)
 #define INFER_USE_LIBCPP 1
-#elif defined(FOLLY_USE_LIBCPP)
+#elif defined(FOLLY_USE_LIBCPP) // follow folly configuration if it's available
 #define INFER_USE_LIBCPP 1
 #endif
 

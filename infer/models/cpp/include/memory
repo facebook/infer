@@ -1,5 +1,7 @@
 
-#if __cplusplus >= 201103L
+#include <infer_model/portability.h>
+
+#ifdef INFER_CPP11_ON
 
 #include <infer_model/begin_name_override.inc>
 #include_next <memory>
@@ -8,7 +10,7 @@
 #include<infer_model/unique_ptr.h>
 #include<infer_model/shared_ptr.h>
 
-#else // __cplusplus < 201103L
+#else 
 // don't model memory for pre-C++11 code
 #include_next <memory>
 #endif
