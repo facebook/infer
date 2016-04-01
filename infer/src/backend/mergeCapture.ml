@@ -16,7 +16,12 @@ module F = Format
     is used to determine whether a captured directory needs to be merged. *)
 let check_timestamp_of_symlinks = true
 
-let buck_out () = Filename.concat (Filename.dirname !Config.results_dir) "buck-out"
+let buck_out () =
+  match !Config.project_root with
+  | Some root ->
+      Filename.concat root "buck-out"
+  | None ->
+      Filename.concat (Filename.dirname !Config.results_dir) "buck-out"
 
 let infer_deps () = Filename.concat !Config.results_dir "infer-deps.txt"
 
@@ -43,6 +48,12 @@ let empty_stats () =
     targets_merged = 0;
   }
 
+let link_exists s =
+  try
+    let _ = Unix.lstat s in
+    true
+  with Unix.Unix_error _ -> false
+
 (** Create symbolic links recursively from the destination to the source.
     Replicate the structure of the source directory in the destination,
     with files replaced by links to the source. *)
@@ -61,14 +72,14 @@ let rec slink ~stats src dst =
     end
   else
     begin
-      if Sys.file_exists dst then Sys.remove dst;
+      if link_exists dst then Unix.unlink dst;
       Unix.symlink src dst;
-      (* Set the accessed and modified time of the new symlink to be slightly in the future.  Due to
+      (* Set the accessed and modified time of the original file slightly in the past.  Due to
          the coarse precision of the timestamps, it is possible for the source and destination of a
          link to have the same modification time. When this happens, the files will be considered to
          need re-analysis every time, indefinitely. *)
-      let near_future = Unix.gettimeofday () +. 1. in
-      Unix.utimes dst near_future near_future ;
+      let near_past = Unix.gettimeofday () -. 1. in
+      Unix.utimes src near_past near_past;
       stats.files_linked <- stats.files_linked + 1;
     end
 

@@ -240,8 +240,7 @@ let () = (* parse command-line arguments *)
     begin
       L.err "ERROR: results directory %s does not exist@.@." !Config.results_dir;
       print_usage_exit ()
-    end ;
-  if !Config.merge then MergeCapture.merge_captured_targets ()
+    end
 
 let analyze_exe_env exe_env =
   let init_time = Unix.gettimeofday () in
@@ -374,6 +373,7 @@ let () =
       process_cluster_cmdline fname;
       finish_logging ()
   | None ->
+      if !Config.merge then MergeCapture.merge_captured_targets ();
       let clusters = DB.find_source_dirs () in
       L.err "Found %d source files in %s@."
         (IList.length clusters) !Config.results_dir;
