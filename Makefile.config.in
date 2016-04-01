@@ -79,5 +79,9 @@ REMOVE_DIR = rm -rvf
 endif
 COPY = cp -f -p
 COPY_DIR = cp -Rf
-MKDIR_P = @MKDIR_P@
+MKDIR_P_CMD = case "@MKDIR_P@" in \
+    ./*) printf "$(ROOT_DIR)/@MKDIR_P@\n";; \
+    *) printf "@MKDIR_P@\n";; \
+    esac
+MKDIR_P = $(shell $(MKDIR_P_CMD))
 LN_S = @LN_S@
