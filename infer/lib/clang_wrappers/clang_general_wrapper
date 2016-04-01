@@ -38,6 +38,8 @@ REPORT_FRONTEND_FAILURE="${FCP_REPORT_FRONTEND_FAILURE}"
 DEBUG_MODE="${FCP_DEBUG_MODE}"
 # specify where is located Apple's clang
 APPLE_CLANG="${FCP_APPLE_CLANG}"
+# whether to amend include search path with C++ model headers
+INFER_CXX_MODELS="${FCP_INFER_CXX_MODELS}"
 
 if [ -z "$RESULTS_DIR" ]; then
     echo '$FCP_RESULTS_DIR with the name of the output directory not provided.' > /dev/stderr
@@ -45,7 +47,14 @@ if [ -z "$RESULTS_DIR" ]; then
 fi
 
 if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
-CLANG_CMD=("${CLANG_COMPILER}${XX}" "$@")
+
+EXTRA_INCLUDE_PATH=()
+if [ -n "$INFER_CXX_MODELS" ]; then
+    EXTRA_INCLUDE_PATH+=("-isystem")
+    EXTRA_INCLUDE_PATH+=("${SCRIPT_DIR}/../../models/cpp/include")
+fi
+
+CLANG_CMD=("${CLANG_COMPILER}${XX}" "${EXTRA_INCLUDE_PATH[@]}" "$@")
 CWD=$(pwd)
 CWD="${CWD%/}"
 [ ! -d "$RESULTS_DIR" ] && mkdir -p "$RESULTS_DIR"

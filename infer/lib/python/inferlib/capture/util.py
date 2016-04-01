@@ -105,7 +105,7 @@ def clang_frontend_argparser(description, module_name):
             '--cxx',
             dest='cxx',
             action='store_true',
-            help='Analyze C++ methods, still experimental')
+            help='Analyze C++ code, still experimental')
         group.add_argument(
             '-fs', '--frontend-stats',
             dest='frontend_stats',
@@ -138,6 +138,7 @@ def get_clang_frontend_envvars(args):
         frontend_args.append('-testing_mode')
     if args.cxx:
         frontend_args.append('-cxx-experimental')
+        env_vars['FCP_INFER_CXX_MODELS'] = '1'
     if args.frontend_debug:
         frontend_args += ['-debug']
         env_vars['FCP_DEBUG_MODE'] = '1'

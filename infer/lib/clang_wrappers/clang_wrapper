@@ -11,8 +11,6 @@ CLANG_COMPILER="${SCRIPT_DIR}/../../../facebook-clang-plugins/clang/bin/clang"
 if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
 
 COMMAND=("${CLANG_COMPILER}${XX}")
-COMMAND+=("-isystem")
-COMMAND+=("${SCRIPT_DIR}/../../models/cpp/include")
 
 # Remove command line options not supported by the opensource compiler or the plugins.
 PREV=""
