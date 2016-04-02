@@ -202,6 +202,11 @@ let create_dir dir =
            (L.err "@.ERROR: cannot create directory %s@." dir;
             assert false))
 
+let filename_create_dir fname =
+  let dirname = Filename.dirname fname in
+  if not (Sys.file_exists dirname)
+  then create_dir dirname
+
 let read_whole_file fd =
   let stats = Unix.fstat fd in
   let size = stats.Unix.st_size in

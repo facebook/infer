@@ -21,8 +21,19 @@ let attributes_filename pname =
 
 (** path to the .attr file for the given procedure in the current results directory *)
 let res_dir_attr_filename pname =
-  DB.Results_dir.path_to_filename
-    DB.Results_dir.Abs_root [Config.attributes_dir_name; attributes_filename pname]
+  let attr_fname = attributes_filename pname in
+  let bucket_dir =
+    let base = Filename.chop_extension attr_fname in
+    let len = String.length base in
+    if len < 2
+    then Filename.current_dir_name
+    else String.sub base (len - 2) 2 in
+  let filename =
+    DB.Results_dir.path_to_filename
+      DB.Results_dir.Abs_root
+      [Config.attributes_dir_name; bucket_dir; attr_fname] in
+  DB.filename_create_dir filename;
+  filename
 
 let store_attributes proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in

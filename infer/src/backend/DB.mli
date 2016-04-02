@@ -134,6 +134,9 @@ val source_file_in_resdir : source_file -> filename
 (** directory where the results of the capture phase are stored *)
 val captured_dir : unit -> filename
 
+(** create the directory containing the file bane *)
+val filename_create_dir : filename -> unit
+
 (** Find the source directories in the current results dir *)
 val find_source_dirs : unit -> source_dir list
 
