@@ -41,7 +41,7 @@ digraph iCFG {
 	
 
 	 13 -> 9 ;
-12 [label="12:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 48]\n  n$4=*&d:class D * [line 48]\n  *n$3._data:class D *=n$4 [line 48]\n  REMOVE_TEMPS(n$3,n$4); [line 48]\n  NULLIFY(&d,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+12 [label="12:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 48]\n  n$4=*&d:class D * [line 48]\n  *n$3._data:class D *=n$4 [line 48]\n  REMOVE_TEMPS(n$3,n$4); [line 48]\n  NULLIFY(&d,false); [line 48]\n  NULLIFY(&self,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
 	
 
 	 12 -> 11 ;

@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______2); [line 18]\n  n$27=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_main1______2 ):unsigned long ) [line 18]\n  *&__objc_anonymous_block_main1______2:class __objc_anonymous_block_main1______2 =n$27 [line 18]\n  n$28=*&x:int  [line 18]\n  *n$27.x:int =n$28 [line 18]\n  n$11=*&x:int  [line 18]\n  *&addblock:_fn_ (*)=(_fun___objc_anonymous_block_main1______2,n$11) [line 18]\n  REMOVE_TEMPS(n$27,n$28,n$11); [line 18]\n " shape="box"]
+20 [label="20:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______2); [line 18]\n  n$27=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_main1______2 ):unsigned long ) [line 18]\n  *&__objc_anonymous_block_main1______2:class __objc_anonymous_block_main1______2 =n$27 [line 18]\n  n$28=*&x:int  [line 18]\n  *n$27.x:int =n$28 [line 18]\n  n$11=*&x:int  [line 18]\n  *&addblock:_fn_ (*)=(_fun___objc_anonymous_block_main1______2,n$11) [line 18]\n  REMOVE_TEMPS(n$27,n$28,n$11); [line 18]\n  NULLIFY(&x,false); [line 18]\n " shape="box"]
 	
 
 	 20 -> 10 ;
@@ -26,11 +26,11 @@ digraph iCFG {
 	
 
 	 19 -> 18 ;
-18 [label="18:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block___objc_anonymous_block_main1______2______3); [line 24]\n  n$23=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block___objc_anonymous_block_main1______2______3 ):unsigned long ) [line 24]\n  *&__objc_anonymous_block___objc_anonymous_block_main1______2______3:class __objc_anonymous_block___objc_anonymous_block_main1______2______3 =n$23 [line 24]\n  n$24=*&x:int  [line 24]\n  n$25=*&bla:int  [line 24]\n  n$26=*&#GB$main1_s:int  [line 24]\n  *n$23.x:int =n$24 [line 24]\n  *n$23.bla:int =n$25 [line 24]\n  *n$23.main1_s:int =n$26 [line 24]\n  n$17=*&x:int  [line 24]\n  n$18=*&bla:int  [line 24]\n  *&addblock2:_fn_ (*)=(_fun___objc_anonymous_block___objc_anonymous_block_main1______2______3,n$17,n$18) [line 24]\n  REMOVE_TEMPS(n$23,n$24,n$25,n$26,n$17,n$18); [line 24]\n " shape="box"]
+18 [label="18:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block___objc_anonymous_block_main1______2______3); [line 24]\n  n$23=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block___objc_anonymous_block_main1______2______3 ):unsigned long ) [line 24]\n  *&__objc_anonymous_block___objc_anonymous_block_main1______2______3:class __objc_anonymous_block___objc_anonymous_block_main1______2______3 =n$23 [line 24]\n  n$24=*&x:int  [line 24]\n  n$25=*&bla:int  [line 24]\n  n$26=*&#GB$main1_s:int  [line 24]\n  *n$23.x:int =n$24 [line 24]\n  *n$23.bla:int =n$25 [line 24]\n  *n$23.main1_s:int =n$26 [line 24]\n  n$17=*&x:int  [line 24]\n  n$18=*&bla:int  [line 24]\n  *&addblock2:_fn_ (*)=(_fun___objc_anonymous_block___objc_anonymous_block_main1______2______3,n$17,n$18) [line 24]\n  REMOVE_TEMPS(n$23,n$24,n$25,n$26,n$17,n$18); [line 24]\n  NULLIFY(&x,false); [line 24]\n " shape="box"]
 	
 
 	 18 -> 14 ;
-17 [label="17:  Return Stmt \n   n$19=*&z:int  [line 25]\n  n$20=*&#GB$main1_s:int  [line 25]\n  n$21=*&x:int  [line 25]\n  n$22=*&bla:int  [line 25]\n  *&return:int =(((n$19 + n$20) + n$21) + n$22) [line 25]\n  REMOVE_TEMPS(n$19,n$20,n$21,n$22); [line 25]\n  NULLIFY(&z,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+17 [label="17:  Return Stmt \n   n$19=*&z:int  [line 25]\n  n$20=*&#GB$main1_s:int  [line 25]\n  n$21=*&x:int  [line 25]\n  n$22=*&bla:int  [line 25]\n  *&return:int =(((n$19 + n$20) + n$21) + n$22) [line 25]\n  REMOVE_TEMPS(n$19,n$20,n$21,n$22); [line 25]\n  NULLIFY(&bla,false); [line 25]\n  NULLIFY(&x,false); [line 25]\n  NULLIFY(&z,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -45,14 +45,14 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$12=*&c:int  [line 29]\n  n$13=*&add2:int  [line 29]\n  n$14=*&bla:int  [line 29]\n  *&return:int =((n$12 + n$13) + n$14) [line 29]\n  REMOVE_TEMPS(n$12,n$13,n$14); [line 29]\n  NULLIFY(&__objc_anonymous_block___objc_anonymous_block_main1______2______3,true); [line 29]\n  NULLIFY(&add2,false); [line 29]\n  NULLIFY(&c,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$12=*&c:int  [line 29]\n  n$13=*&add2:int  [line 29]\n  n$14=*&bla:int  [line 29]\n  *&return:int =((n$12 + n$13) + n$14) [line 29]\n  REMOVE_TEMPS(n$12,n$13,n$14); [line 29]\n  NULLIFY(&__objc_anonymous_block___objc_anonymous_block_main1______2______3,true); [line 29]\n  NULLIFY(&add2,false); [line 29]\n  NULLIFY(&bla,false); [line 29]\n  NULLIFY(&c,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 13 -> 12 ;
 12 [label="12: Exit __objc_anonymous_block_main1______2 \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start __objc_anonymous_block_main1______2\nFormals:  x:int  c:int  d:int \nLocals:  bla:int  add2:int  addblock2:_fn_ (*)\nCaptured:  x:int  \n   DECLARE_LOCALS(&return,&bla,&add2,&addblock2); [line 18]\n  NULLIFY(&add2,false); [line 18]\n  NULLIFY(&addblock2,false); [line 18]\n  NULLIFY(&d,false); [line 18]\n " color=yellow style=filled]
+11 [label="11: Start __objc_anonymous_block_main1______2\nFormals:  x:int  c:int  d:int \nLocals:  bla:int  add2:int  addblock2:_fn_ (*)\nCaptured:  x:int  \n   DECLARE_LOCALS(&return,&bla,&add2,&addblock2); [line 18]\n  NULLIFY(&add2,false); [line 18]\n  NULLIFY(&addblock2,false); [line 18]\n  NULLIFY(&bla,false); [line 18]\n  NULLIFY(&d,false); [line 18]\n " color=yellow style=filled]
 	
 
 	 11 -> 19 ;
@@ -90,7 +90,7 @@ digraph iCFG {
 2 [label="2: Exit main1 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main1\nFormals:  y:int \nLocals:  addblock:_fn_ (*) add2:int  add1:int  x:int  \n   DECLARE_LOCALS(&return,&addblock,&add2,&add1,&x); [line 10]\n  NULLIFY(&add1,false); [line 10]\n  NULLIFY(&add2,false); [line 10]\n  NULLIFY(&addblock,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start main1\nFormals:  y:int \nLocals:  addblock:_fn_ (*) add2:int  add1:int  x:int  \n   DECLARE_LOCALS(&return,&addblock,&add2,&add1,&x); [line 10]\n  NULLIFY(&add1,false); [line 10]\n  NULLIFY(&add2,false); [line 10]\n  NULLIFY(&addblock,false); [line 10]\n  NULLIFY(&x,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 22 ;

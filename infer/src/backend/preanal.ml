@@ -48,29 +48,23 @@ end
 
 module Vset = AddressTaken.PvarSet
 
-let captured_var = ref Vset.empty
-
 let is_not_function cfg x =
   let pname = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name x)) in
   Cfg.Procdesc.find_from_name cfg pname = None
-
-let is_captured pdesc x =
-  let captured = Cfg.Procdesc.get_captured pdesc in
-  IList.exists (fun (m, _) -> (Pvar.to_string x) = (Mangled.to_string m)) captured
 
 (** variables read in the expression *)
 let rec use_exp cfg pdesc (exp: Sil.exp) acc =
   match exp with
   | Sil.Var _ | Sil.Sizeof _ -> acc
-  | Sil.Const (Cclosure { captured_vars }) ->
-      IList.iter
-        (fun (_, captured, _) -> captured_var:= Vset.add captured !captured_var)
-        captured_vars;
+  | Sil.Const (Cclosure { captured_vars; }) ->
+      IList.fold_left
+        (fun vset_acc (_, captured_pvar, _) -> Vset.add captured_pvar vset_acc)
+        acc
+        captured_vars
+  | Sil.Const
+      (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cexn _ | Cclass _ | Cptr_to_fld _) ->
       acc
-  | Sil.Const _ -> acc
-  | Sil.Lvar x ->
-      (* If x is a captured var in the current procdesc don't add it to acc *)
-      if is_captured pdesc x then acc else Vset.add x acc
+  | Sil.Lvar x -> Vset.add x acc
   | Sil.Cast (_, e) | Sil.UnOp (_, e, _) | Sil.Lfield (e, _, _) -> use_exp cfg pdesc e acc
   | Sil.BinOp (_, e1, e2) | Sil.Lindex (e1, e2) -> use_exp cfg pdesc e1 (use_exp cfg pdesc e2 acc)
 
@@ -179,12 +173,8 @@ let compute_candidates procdesc : Vset.t * (Vset.t -> Vset.elt list) =
     | _ -> false in
   let add_vi (pvar, typ) =
     let pv = Pvar.mk pvar (Cfg.Procdesc.get_proc_name procdesc) in
-    if is_captured procdesc pv then ()
-    (* don't add captured vars of the current pdesc to candidates *)
-    else (
-      candidates := Vset.add pv !candidates;
-      if typ_is_struct_array typ then struct_array_cand := Vset.add pv !struct_array_cand
-    ) in
+    candidates := Vset.add pv !candidates;
+    if typ_is_struct_array typ then struct_array_cand := Vset.add pv !struct_array_cand in
   IList.iter add_vi (Cfg.Procdesc.get_formals procdesc);
   IList.iter add_vi (Cfg.Procdesc.get_locals procdesc);
   let get_sorted_candidates vs =
@@ -306,7 +296,6 @@ let analyze_and_annotate_proc cfg pname pdesc =
       match AddressTaken.Analyzer.compute_post pdesc with
       | Some post -> post
       | None -> Vset.empty in
-  captured_var:= Vset.empty;
 
   analyze_proc cfg pdesc cand;
 
@@ -321,13 +310,11 @@ let analyze_and_annotate_proc cfg pname pdesc =
       L.err "WARNING: liveness: more than %d dead pvars added in procedure %a, stopping@."
         dead_pvars_limit Procname.pp pname in
   Table.iter cand (fun n live_at_predecessors live_current -> (* set dead variables on nodes *)
-      let nonnull_pvars =
-        Vset.inter (def_node cfg n live_at_predecessors) cand in (* live before, or assigned to *)
-      let dead_pvars =
-        Vset.diff nonnull_pvars live_current in (* only nullify when variable become live *)
-      let dead_pvars_no_captured = Vset.diff dead_pvars !captured_var in
-      let dead_pvars_no_addr_taken =
-        get_sorted_cand (Vset.diff dead_pvars_no_captured addr_taken_vars) in
+      (* live before, or assigned to *)
+      let nonnull_pvars = Vset.inter (def_node cfg n live_at_predecessors) cand in
+      (* only nullify when variables become live *)
+      let dead_pvars = Vset.diff nonnull_pvars live_current in
+      let dead_pvars_no_addr_taken = get_sorted_cand (Vset.diff dead_pvars addr_taken_vars) in
       let dead_pvars_to_add =
         if exit_node_is_succ n (* add dead address taken vars just before the exit node *)
         then dead_pvars_no_addr_taken @ (get_sorted_cand (Vset.inter cand addr_taken_vars))

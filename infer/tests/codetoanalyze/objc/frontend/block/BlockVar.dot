@@ -7,11 +7,11 @@ digraph iCFG {
 	
 
 	 54 -> 53 ;
-53 [label="53:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5); [line 59]\n  n$37=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_capturedNoNullDeref______5 ):unsigned long ) [line 59]\n  *&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5:class __objc_anonymous_block_BlockVar_capturedNoNullDeref______5 =n$37 [line 59]\n  n$38=*&x:int * [line 59]\n  *n$37.x:int *=n$38 [line 59]\n  n$34=*&x:int * [line 59]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_capturedNoNullDeref______5,n$34) [line 59]\n  REMOVE_TEMPS(n$37,n$38,n$34); [line 59]\n " shape="box"]
+53 [label="53:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5); [line 59]\n  n$37=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_capturedNoNullDeref______5 ):unsigned long ) [line 59]\n  *&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5:class __objc_anonymous_block_BlockVar_capturedNoNullDeref______5 =n$37 [line 59]\n  n$38=*&x:int * [line 59]\n  *n$37.x:int *=n$38 [line 59]\n  n$34=*&x:int * [line 59]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_capturedNoNullDeref______5,n$34) [line 59]\n  REMOVE_TEMPS(n$37,n$38,n$34); [line 59]\n  NULLIFY(&x,false); [line 59]\n " shape="box"]
 	
 
 	 53 -> 49 ;
-52 [label="52:  Return Stmt \n   n$35=*&x:int * [line 60]\n  n$36=*n$35:int  [line 60]\n  *&return:int =n$36 [line 60]\n  REMOVE_TEMPS(n$35,n$36); [line 60]\n  APPLY_ABSTRACTION; [line 60]\n " shape="box"]
+52 [label="52:  Return Stmt \n   n$35=*&x:int * [line 60]\n  n$36=*n$35:int  [line 60]\n  *&return:int =n$36 [line 60]\n  REMOVE_TEMPS(n$35,n$36); [line 60]\n  NULLIFY(&x,false); [line 60]\n  APPLY_ABSTRACTION; [line 60]\n " shape="box"]
 	
 
 	 52 -> 51 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 50 -> 52 ;
-49 [label="49:  BinaryOperatorStmt: Assign \n   *&x:int *=0 [line 62]\n " shape="box"]
+49 [label="49:  BinaryOperatorStmt: Assign \n   *&x:int *=0 [line 62]\n  NULLIFY(&x,false); [line 62]\n " shape="box"]
 	
 
 	 49 -> 48 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 47 [label="47: Exit BlockVar_capturedNoNullDeref \n  " color=yellow style=filled]
 	
 
-46 [label="46: Start BlockVar_capturedNoNullDeref\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * i:int  \n   DECLARE_LOCALS(&return,&my_block,&x,&i); [line 56]\n  NULLIFY(&my_block,false); [line 56]\n  NULLIFY(&self,false); [line 56]\n " color=yellow style=filled]
+46 [label="46: Start BlockVar_capturedNoNullDeref\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * i:int  \n   DECLARE_LOCALS(&return,&my_block,&x,&i); [line 56]\n  NULLIFY(&my_block,false); [line 56]\n  NULLIFY(&self,false); [line 56]\n  NULLIFY(&x,false); [line 56]\n " color=yellow style=filled]
 	
 
 	 46 -> 55 ;
@@ -41,11 +41,11 @@ digraph iCFG {
 	
 
 	 45 -> 44 ;
-44 [label="44:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNullDeref______4); [line 50]\n  n$30=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_capturedNullDeref______4 ):unsigned long ) [line 50]\n  *&__objc_anonymous_block_BlockVar_capturedNullDeref______4:class __objc_anonymous_block_BlockVar_capturedNullDeref______4 =n$30 [line 50]\n  n$31=*&x:int * [line 50]\n  *n$30.x:int *=n$31 [line 50]\n  n$27=*&x:int * [line 50]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_capturedNullDeref______4,n$27) [line 50]\n  REMOVE_TEMPS(n$30,n$31,n$27); [line 50]\n " shape="box"]
+44 [label="44:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNullDeref______4); [line 50]\n  n$30=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_capturedNullDeref______4 ):unsigned long ) [line 50]\n  *&__objc_anonymous_block_BlockVar_capturedNullDeref______4:class __objc_anonymous_block_BlockVar_capturedNullDeref______4 =n$30 [line 50]\n  n$31=*&x:int * [line 50]\n  *n$30.x:int *=n$31 [line 50]\n  n$27=*&x:int * [line 50]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_capturedNullDeref______4,n$27) [line 50]\n  REMOVE_TEMPS(n$30,n$31,n$27); [line 50]\n  NULLIFY(&x,false); [line 50]\n " shape="box"]
 	
 
 	 44 -> 40 ;
-43 [label="43:  Return Stmt \n   n$28=*&x:int * [line 51]\n  n$29=*n$28:int  [line 51]\n  *&return:int =n$29 [line 51]\n  REMOVE_TEMPS(n$28,n$29); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="box"]
+43 [label="43:  Return Stmt \n   n$28=*&x:int * [line 51]\n  n$29=*n$28:int  [line 51]\n  *&return:int =n$29 [line 51]\n  REMOVE_TEMPS(n$28,n$29); [line 51]\n  NULLIFY(&x,false); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="box"]
 	
 
 	 43 -> 42 ;
@@ -63,7 +63,7 @@ digraph iCFG {
 39 [label="39: Exit BlockVar_capturedNullDeref \n  " color=yellow style=filled]
 	
 
-38 [label="38: Start BlockVar_capturedNullDeref\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&my_block,&x); [line 48]\n  NULLIFY(&my_block,false); [line 48]\n  NULLIFY(&self,false); [line 48]\n " color=yellow style=filled]
+38 [label="38: Start BlockVar_capturedNullDeref\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&my_block,&x); [line 48]\n  NULLIFY(&my_block,false); [line 48]\n  NULLIFY(&self,false); [line 48]\n  NULLIFY(&x,false); [line 48]\n " color=yellow style=filled]
 	
 
 	 38 -> 45 ;
@@ -75,11 +75,11 @@ digraph iCFG {
 	
 
 	 36 -> 35 ;
-35 [label="35:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostOk______3); [line 42]\n  n$23=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_blockPostOk______3 ):unsigned long ) [line 42]\n  *&__objc_anonymous_block_BlockVar_blockPostOk______3:class __objc_anonymous_block_BlockVar_blockPostOk______3 =n$23 [line 42]\n  n$24=*&x:int * [line 42]\n  *n$23.x:int *=n$24 [line 42]\n  n$21=*&x:int * [line 42]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_blockPostOk______3,n$21) [line 42]\n  REMOVE_TEMPS(n$23,n$24,n$21); [line 42]\n " shape="box"]
+35 [label="35:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostOk______3); [line 42]\n  n$23=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_blockPostOk______3 ):unsigned long ) [line 42]\n  *&__objc_anonymous_block_BlockVar_blockPostOk______3:class __objc_anonymous_block_BlockVar_blockPostOk______3 =n$23 [line 42]\n  n$24=*&x:int * [line 42]\n  *n$23.x:int *=n$24 [line 42]\n  n$21=*&x:int * [line 42]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_blockPostOk______3,n$21) [line 42]\n  REMOVE_TEMPS(n$23,n$24,n$21); [line 42]\n  NULLIFY(&x,false); [line 42]\n " shape="box"]
 	
 
 	 35 -> 31 ;
-34 [label="34:  Return Stmt \n   n$22=*&x:int * [line 43]\n  *&return:int *=n$22 [line 43]\n  REMOVE_TEMPS(n$22); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+34 [label="34:  Return Stmt \n   n$22=*&x:int * [line 43]\n  *&return:int *=n$22 [line 43]\n  REMOVE_TEMPS(n$22); [line 43]\n  NULLIFY(&x,false); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	
 
 	 34 -> 33 ;
@@ -97,7 +97,7 @@ digraph iCFG {
 30 [label="30: Exit BlockVar_blockPostOk \n  " color=yellow style=filled]
 	
 
-29 [label="29: Start BlockVar_blockPostOk\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * i:int  \n   DECLARE_LOCALS(&return,&my_block,&x,&i); [line 39]\n  NULLIFY(&my_block,false); [line 39]\n  NULLIFY(&self,false); [line 39]\n " color=yellow style=filled]
+29 [label="29: Start BlockVar_blockPostOk\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * i:int  \n   DECLARE_LOCALS(&return,&my_block,&x,&i); [line 39]\n  NULLIFY(&my_block,false); [line 39]\n  NULLIFY(&self,false); [line 39]\n  NULLIFY(&x,false); [line 39]\n " color=yellow style=filled]
 	
 
 	 29 -> 37 ;
@@ -105,11 +105,11 @@ digraph iCFG {
 	
 
 	 28 -> 27 ;
-27 [label="27:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostBad______2); [line 33]\n  n$16=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_blockPostBad______2 ):unsigned long ) [line 33]\n  *&__objc_anonymous_block_BlockVar_blockPostBad______2:class __objc_anonymous_block_BlockVar_blockPostBad______2 =n$16 [line 33]\n  n$17=*&x:int * [line 33]\n  *n$16.x:int *=n$17 [line 33]\n  n$14=*&x:int * [line 33]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_blockPostBad______2,n$14) [line 33]\n  REMOVE_TEMPS(n$16,n$17,n$14); [line 33]\n " shape="box"]
+27 [label="27:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostBad______2); [line 33]\n  n$16=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_BlockVar_blockPostBad______2 ):unsigned long ) [line 33]\n  *&__objc_anonymous_block_BlockVar_blockPostBad______2:class __objc_anonymous_block_BlockVar_blockPostBad______2 =n$16 [line 33]\n  n$17=*&x:int * [line 33]\n  *n$16.x:int *=n$17 [line 33]\n  n$14=*&x:int * [line 33]\n  *&my_block:_fn_ (*)=(_fun___objc_anonymous_block_BlockVar_blockPostBad______2,n$14) [line 33]\n  REMOVE_TEMPS(n$16,n$17,n$14); [line 33]\n  NULLIFY(&x,false); [line 33]\n " shape="box"]
 	
 
 	 27 -> 23 ;
-26 [label="26:  Return Stmt \n   n$15=*&x:int * [line 34]\n  *&return:int *=n$15 [line 34]\n  REMOVE_TEMPS(n$15); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+26 [label="26:  Return Stmt \n   n$15=*&x:int * [line 34]\n  *&return:int *=n$15 [line 34]\n  REMOVE_TEMPS(n$15); [line 34]\n  NULLIFY(&x,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -127,7 +127,7 @@ digraph iCFG {
 22 [label="22: Exit BlockVar_blockPostBad \n  " color=yellow style=filled]
 	
 
-21 [label="21: Start BlockVar_blockPostBad\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&my_block,&x); [line 31]\n  NULLIFY(&my_block,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n " color=yellow style=filled]
+21 [label="21: Start BlockVar_blockPostBad\nFormals:  self:class BlockVar *\nLocals:  my_block:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&my_block,&x); [line 31]\n  NULLIFY(&my_block,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n  NULLIFY(&x,false); [line 31]\n " color=yellow style=filled]
 	
 
 	 21 -> 28 ;

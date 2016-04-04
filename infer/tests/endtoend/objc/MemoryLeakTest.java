@@ -10,8 +10,7 @@
 package endtoend.objc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsErrorInMethod.contains;
-import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import com.google.common.collect.ImmutableList;
 
@@ -49,144 +48,30 @@ public class MemoryLeakTest {
         false);
   }
 
-  @Test
-  public void whenInferRunsOnLayoutSubviewsThenMLIsNotFound()
+    @Test
+  public void matchErrors()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
+    String[] procedures = {
+      "test",
+      "measureFrameSizeForText",
+      "test1:",
+      "createCloseCrossGlyph:",
+      "test2:",
+      "regularLeak",
+      "blockCapturedVarLeak",
+      // TODO: don't report on this test
+      "blockFreeNoLeakTODO"
+    };
     assertThat(
-        "Results should not contain memory leak",
+        "Results should contain the expected memory leak",
         inferResults,
-        doesNotContain(
+        containsExactly(
             MEMORY_LEAK,
             memory_leak_file,
-            "layoutSubviews"));
-  }
-
-  @Test
-  public void whenInferRunsOnTestThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should contain memory leak",
-        inferResults,
-        contains(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "test"
+            procedures
         )
     );
-  }
-
-  @Test
-  public void whenInferRunsOnMeasureFrameSizeForTextThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should contain memory leak",
-        inferResults,
-        contains(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "measureFrameSizeForText"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnMeasureFrameSizeForTextNoLeakThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain a memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "measureFrameSizeForTextNoLeak"));
-  }
-
-  @Test
-  public void whenInferRunsOnTest1ThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should contain memory leak",
-        inferResults,
-        contains(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "test1:"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnTest1NoLeakThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain a memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "test1NoLeak"));
-  }
-
-  @Test
-  public void whenInferRunsOn_createCloseCrossGlyphWithRectThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should contain memory leak",
-        inferResults,
-        contains(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "createCloseCrossGlyph:"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOn_createCloseCrossGlyphWithRectNoLeakThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain a memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "createCloseCrossGlyphNoLeak:"));
-  }
-
-  @Test
-  public void whenInferRunsOnTest2ThenMLIFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should contain memory leak",
-        inferResults,
-        contains(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "test2:"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferTest2NoLakNoLeakThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain a memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "test2NoLeak"));
   }
 
 }

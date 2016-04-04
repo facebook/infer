@@ -32,8 +32,7 @@
 }
 
 + (void)measureFrameSizeForText {
-  CFMutableAttributedStringRef maString =
-      CFAttributedStringCreateMutable(nil, 0);
+  CFAttributedStringCreateMutable(nil, 0);
 }
 
 + (void)measureFrameSizeForTextNoLeak {
@@ -43,7 +42,7 @@
 }
 
 + (void)test1:(CFAttributedStringRef)str {
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(str);
+  CTFramesetterCreateWithAttributedString(str);
 }
 
 + (void)test1NoLeak {
@@ -52,10 +51,8 @@
 }
 
 + (void)createCloseCrossGlyph:(CGRect)rect {
-  CGFloat lineThickness = 0.20f * CGRectGetHeight(rect);
-
-  // One rectangle
-  CGMutablePathRef path1 = CGPathCreateMutable();
+  0.20f * CGRectGetHeight(rect);
+  CGPathCreateMutable();
 }
 
 + (void)createCloseCrossGlyphNoLeak:(CGRect)rect {
@@ -67,7 +64,7 @@
 }
 
 + (void)test2:(SecTrustRef)trust {
-  SecKeyRef allowedPublicKey = SecTrustCopyPublicKey(trust);
+  SecTrustCopyPublicKey(trust);
 }
 
 + (void)test2NoLeak {
@@ -85,6 +82,32 @@ CGColorRef FBColorCreateWithGray(CGFloat gray, CGFloat a);
 - (id)testFBColorCreateWithGray {
   CGColorRef borderColor = FBColorCreateWithGray(0.0, 0.3);
   CGColorRelease(borderColor);
+}
+
+- (int)regularLeak {
+  int* x = malloc(sizeof(int));
+  *x = 7;
+  return *x;
+}
+
+- (int)blockCapturedVarLeak {
+  int* x = malloc(sizeof(int));
+  *x = 2;
+  int (^blk)(void) = ^() {
+    return *x;
+  };
+  return blk();
+}
+
+- (int)blockFreeNoLeakTODO {
+  int* x = malloc(sizeof(int));
+  *x = 2;
+  int (^blk)(void) = ^() {
+    int i = *x;
+    free(x);
+    return i;
+  };
+  return blk();
 }
 
 @end
