@@ -13,8 +13,6 @@
 #include <cstdlib>
 #include <cstdio>
 
-#define static_assert(...)
-
 namespace infer_model {
 // code compiled with infer headers is not supposed to be executed
 struct AbortWhenRun {

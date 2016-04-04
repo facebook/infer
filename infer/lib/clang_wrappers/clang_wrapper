@@ -39,11 +39,7 @@ done
 # compiler can't elevate them to error level.
 COMMAND+=("-Wno-everything")
 
-
-# set _FORTIFY_SOURCE to 0 to prevent it from changing some function prototypes
-# https://securityblog.redhat.com/2014/03/26/fortify-and-you/
-# We always do it when building models so we should do same thing
-# when building any source code
-COMMAND+=("-D_FORTIFY_SOURCE=0")
+COMMAND+=("-include")
+COMMAND+=(${SCRIPT_DIR}/"global_defines.h")
 
 "${COMMAND[@]}"
