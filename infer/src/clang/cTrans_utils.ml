@@ -177,12 +177,19 @@ let collect_res_trans l =
         collect l'
           { root_nodes = root_nodes;
             leaf_nodes = leaf_nodes;
-            ids = rt.ids@rt'.ids;
-            instrs = rt.instrs@rt'.instrs;
-            exps = rt.exps@rt'.exps;
-            initd_exps = rt.initd_exps@rt'.initd_exps;
+            ids = IList.rev_append rt'.ids rt.ids;
+            instrs = IList.rev_append rt'.instrs rt.instrs;
+            exps = IList.rev_append rt'.exps rt.exps;
+            initd_exps = IList.rev_append rt'.initd_exps rt.initd_exps;
             is_cpp_call_virtual = false; } in
-  collect l empty_res_trans
+  let rt = collect l empty_res_trans in
+  {
+    rt with
+    ids = IList.rev rt.ids;
+    instrs = IList.rev rt.instrs;
+    exps = IList.rev rt.exps;
+    initd_exps = IList.rev rt.initd_exps;
+  }
 
 let extract_var_exp_or_fail transt_state =
   match transt_state.var_exp_typ with
