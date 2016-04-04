@@ -16,23 +16,6 @@ module F = Format
 let (++) = Sil.Int.add
 let (--) = Sil.Int.sub
 
-(** {2 Object representing the status of the join operation} *)
-
-module JoinState : sig
-
-  type mode = Pre | Post
-  val get_footprint : unit -> bool
-  val set_footprint : bool -> unit
-
-end = struct
-
-  type mode = Pre | Post
-  let footprint = ref false (* set to true when we are doing join of footprints *)
-  let get_footprint () = !footprint
-  let set_footprint b = footprint := b
-
-end
-
 (** {2 Utility functions for ids} *)
 
 let can_rename id =
