@@ -116,11 +116,17 @@ let validate_decl_from_stdin () =
 
 
 let do_run source_path ast_path =
+  let init_time = Unix.gettimeofday () in
+  let print_elapsed () =
+    let elapsed = Unix.gettimeofday () -. init_time in
+    Printf.printf "Elapsed: %07.3f seconds.\n" elapsed in
   try
     let ast_filename, ast_decl =
       match ast_path with
-      | Some path -> path, validate_decl_from_file path
-      | None -> "stdin of " ^ source_path, validate_decl_from_stdin () in
+      | Some path ->
+          path, validate_decl_from_file path
+      | None ->
+          "stdin of " ^ source_path, validate_decl_from_stdin () in
 
     let decl_index, stmt_index, type_index = Clang_ast_main.index_node_pointers ast_decl in
     CFrontend_config.pointer_decl_index := decl_index;
@@ -129,11 +135,14 @@ let do_run source_path ast_path =
     CFrontend_config.json := ast_filename;
     CLocation.check_source_file source_path;
     let source_file = CLocation.source_file_from_path source_path in
-    print_endline ("Start translation of AST from " ^ !CFrontend_config.json);
+    Printf.printf "Start translation of AST from %s\n" !CFrontend_config.json;
     CFrontend.do_source_file  source_file ast_decl;
-    print_endline ("End translation AST file " ^ !CFrontend_config.json ^ "... OK!")
+    Printf.printf "End translation AST file %s... OK!\n" !CFrontend_config.json;
+    print_elapsed ();
   with
-    (Yojson.Json_error s) as exc -> Printing.log_err "%s\n" s;
+    (Yojson.Json_error s) as exc ->
+      Printing.log_err "%s\n" s;
+      print_elapsed ();
       raise exc
 
 let () =
@@ -144,5 +153,7 @@ let () =
      print_usage_exit ())
   else
     match !CFrontend_config.source_file with
-    | Some path -> do_run path !CFrontend_config.ast_file
-    | None -> assert false
+    | Some path ->
+        do_run path !CFrontend_config.ast_file
+    | None ->
+        assert false
