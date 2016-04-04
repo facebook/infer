@@ -116,8 +116,7 @@ your project to use Infer's version of clang whenever you want Infer
 to run:
 
 ```sh
-rm -f CMakeCache.txt
-CC=/path/to/infer/infer/lib/capture/clang cmake .
+infer -- cmake .
 infer -- make
 ```
 
