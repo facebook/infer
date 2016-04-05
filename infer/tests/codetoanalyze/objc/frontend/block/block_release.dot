@@ -11,11 +11,11 @@ digraph iCFG {
 	
 
 	 18 -> 17 ;
-17 [label="17:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_m______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:class __objc_anonymous_block_My_manager_m______1 =n$8 [line 25]\n  n$9=*&newImage:struct CGImage * [line 25]\n  *n$8.newImage:struct CGImage *=n$9 [line 25]\n  n$5=*&newImage:struct CGImage * [line 25]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n  REMOVE_TEMPS(n$8,n$9,n$5); [line 25]\n " shape="box"]
+17 [label="17:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_blockReleaseTODO______1); [line 25]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_blockReleaseTODO______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_My_manager_blockReleaseTODO______1:class __objc_anonymous_block_My_manager_blockReleaseTODO______1 =n$8 [line 25]\n  n$9=*&newImage:struct CGImage * [line 25]\n  *n$8.newImage:struct CGImage *=n$9 [line 25]\n  n$5=*&newImage:struct CGImage * [line 25]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_blockReleaseTODO______1,n$5) [line 25]\n  REMOVE_TEMPS(n$8,n$9,n$5); [line 25]\n  NULLIFY(&newImage,false); [line 25]\n " shape="box"]
 	
 
 	 17 -> 10 ;
-16 [label="16:  Call _fun_CGImageRelease \n   n$7=*&newImage:struct CGImage * [line 27]\n  _fun_CGImageRelease(n$7:struct CGImage *) [line 27]\n  REMOVE_TEMPS(n$7); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+16 [label="16:  Call _fun_CGImageRelease \n   n$7=*&newImage:struct CGImage * [line 27]\n  _fun_CGImageRelease(n$7:struct CGImage *) [line 27]\n  REMOVE_TEMPS(n$7); [line 27]\n  NULLIFY(&newImage,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 16 -> 13 ;
@@ -27,14 +27,14 @@ digraph iCFG {
 	
 
 	 14 -> 16 ;
-13 [label="13: + \n  " ]
+13 [label="13: + \n   NULLIFY(&newImage,false); [line 26]\n " ]
 	
 
 	 13 -> 12 ;
-12 [label="12: Exit __objc_anonymous_block_My_manager_m______1 \n  " color=yellow style=filled]
+12 [label="12: Exit __objc_anonymous_block_My_manager_blockReleaseTODO______1 \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start __objc_anonymous_block_My_manager_m______1\nFormals:  newImage:struct CGImage * a:int \nLocals: \nCaptured:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return); [line 25]\n  NULLIFY(&a,false); [line 25]\n " color=yellow style=filled]
+11 [label="11: Start __objc_anonymous_block_My_manager_blockReleaseTODO______1\nFormals:  newImage:struct CGImage * a:int \nLocals: \nCaptured:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return); [line 25]\n  NULLIFY(&a,false); [line 25]\n " color=yellow style=filled]
 	
 
 	 11 -> 14 ;
@@ -60,14 +60,14 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  Return Stmt \n   NULLIFY(&context,false); [line 32]\n  n$0=*&z:int  [line 32]\n  *&return:int =n$0 [line 32]\n  REMOVE_TEMPS(n$0); [line 32]\n  NULLIFY(&__objc_anonymous_block_My_manager_m______1,true); [line 32]\n  NULLIFY(&z,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+5 [label="5:  Return Stmt \n   NULLIFY(&context,false); [line 32]\n  n$0=*&z:int  [line 32]\n  *&return:int =n$0 [line 32]\n  REMOVE_TEMPS(n$0); [line 32]\n  NULLIFY(&__objc_anonymous_block_My_manager_blockReleaseTODO______1,true); [line 32]\n  NULLIFY(&z,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4: Exit My_manager_m \n  " color=yellow style=filled]
+4 [label="4: Exit My_manager_blockReleaseTODO \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start My_manager_m\nFormals:  self:class My_manager *\nLocals:  newImage:struct CGImage * context:struct CGContext * z:int  b:_fn_ (*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 20]\n  NULLIFY(&b,false); [line 20]\n  NULLIFY(&context,false); [line 20]\n  NULLIFY(&self,false); [line 20]\n  NULLIFY(&z,false); [line 20]\n " color=yellow style=filled]
+3 [label="3: Start My_manager_blockReleaseTODO\nFormals:  self:class My_manager *\nLocals:  newImage:struct CGImage * context:struct CGContext * z:int  b:_fn_ (*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 20]\n  NULLIFY(&b,false); [line 20]\n  NULLIFY(&context,false); [line 20]\n  NULLIFY(&newImage,false); [line 20]\n  NULLIFY(&self,false); [line 20]\n  NULLIFY(&z,false); [line 20]\n " color=yellow style=filled]
 	
 
 	 3 -> 20 ;
