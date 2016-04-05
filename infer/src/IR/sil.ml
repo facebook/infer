@@ -3724,6 +3724,28 @@ let hpred_compact sh hpred =
 
 (** {2 Functions for constructing or destructing entities in this module} *)
 
+(** Extract the ids and pvars from an expression *)
+let exp_get_vars exp =
+  let rec exp_get_vars_ exp vars = match exp with
+    | Lvar pvar ->
+        (fst vars, pvar :: (snd vars))
+    | Var id ->
+        (id :: (fst vars), snd vars)
+    | Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) | Const (Cexn e) ->
+        exp_get_vars_ e vars
+    | BinOp (_, e1, e2) | Lindex (e1, e2) ->
+        exp_get_vars_ e1 vars
+        |> exp_get_vars_ e2
+    | Const (Cclosure { captured_vars }) ->
+        IList.fold_left
+          (fun vars_acc (captured_exp, _, _) -> exp_get_vars_ captured_exp vars_acc)
+          vars
+          captured_vars
+    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _)
+    | Sizeof _ ->
+        vars in
+  exp_get_vars_ exp ([], [])
+
 (** Compute the offset list of an expression *)
 let exp_get_offsets exp =
   let rec f offlist_past e = match e with

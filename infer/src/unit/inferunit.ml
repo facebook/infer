@@ -15,6 +15,7 @@ let () =
     AbstractInterpreterTests.tests;
     AddressTakenTests.tests;
     CopyPropagationTests.tests;
+    LivenessTests.tests;
     SchedulerTests.tests;
   ] in
   let test_suite = "all" >::: tests in

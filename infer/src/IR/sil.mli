@@ -1247,6 +1247,9 @@ val hpred_replace_exp : (exp * exp) list -> hpred -> hpred
 
 (** {2 Functions for constructing or destructing entities in this module} *)
 
+(** Extract the ids and pvars from an expression *)
+val exp_get_vars : exp -> (Ident.t list * Pvar.t list)
+
 (** Compute the offset list of an expression *)
 val exp_get_offsets : exp -> offset list
 

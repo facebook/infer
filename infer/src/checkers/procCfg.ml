@@ -68,7 +68,7 @@ module Forward : Wrapper with type node = Cfg.node = struct
 
 end
 
-module Backward (W : Wrapper) : Wrapper = struct
+module Backward (W : Wrapper) = struct
   include W
 
   let succs = W.preds

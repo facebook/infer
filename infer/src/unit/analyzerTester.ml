@@ -81,7 +81,11 @@ module StructuredSil = struct
   let make_set ~rhs_typ ~lhs_exp ~rhs_exp =
     Cmd (Sil.Set (lhs_exp, rhs_typ, rhs_exp, dummy_loc))
 
-  let id_assign_id  ?(rhs_typ=dummy_typ) lhs rhs =
+  let make_call ?(procname=dummy_procname) ret_ids args =
+    let call_exp = Sil.Const (Sil.Cfun procname) in
+    Cmd (Sil.Call (ret_ids, call_exp, args, dummy_loc, Sil.cf_default))
+
+  let id_assign_id ?(rhs_typ=dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_exp = Sil.Var (ident_of_str rhs) in
     make_letderef ~rhs_typ lhs_id rhs_exp
@@ -110,6 +114,13 @@ module StructuredSil = struct
     let rhs_exp = var_of_str rhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
+  let call_unknown ret_id_strs arg_strs =
+    let args = IList.map (fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
+    let ret_ids = IList.map ident_of_str ret_id_strs in
+    make_call ret_ids args
+
+  let call_unknown_no_ret arg_strs =
+    call_unknown [] arg_strs
 end
 
 module Make
@@ -173,10 +184,11 @@ module Make
           set_succs loop_body_end_node [loop_head_join_node];
           set_succs false_prune_node [loop_exit_node];
           loop_exit_node, assert_map'
-      | Invariant (inv_str, inv_label)  ->
-          let n_id = C.node_id last_node in
+      | Invariant (inv_str, inv_label) ->
+          let node = create_node (Cfg.Node.Stmt_node "Invariant") [] in
+          set_succs last_node [node];
           (* add the assertion to be checked after analysis converges *)
-          last_node, M.add n_id (inv_str, inv_label) assert_map
+          node, M.add (C.node_id node) (inv_str, inv_label) assert_map
     and structured_instrs_to_node last_node assert_map instrs =
       IList.fold_left
         (fun acc instr -> structured_instr_to_node acc instr) (last_node, assert_map) instrs in
