@@ -64,10 +64,10 @@ int fooOK2() {
 }
 
 int barError() {
-  ViewController* vc = [[ViewController alloc] init];
-  [vc fired];
+  // ViewController* vc = [[ViewController alloc] init];
+  //[vc fired];
 
-  vc = [[ViewController alloc] init];
+  // vc = [[ViewController alloc] init];
   return 0;
 }
 

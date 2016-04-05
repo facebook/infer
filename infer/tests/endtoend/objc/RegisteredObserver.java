@@ -50,7 +50,7 @@ public class RegisteredObserver {
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     String[] methods = {
-      "fooError", "barError"
+      //"fooError", "barError"
     };
     assertThat(
         "Results should contain " + REGISTERED_OBSERVER,

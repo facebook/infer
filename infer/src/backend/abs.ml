@@ -1024,7 +1024,7 @@ let check_observer_is_unsubscribed_deallocation prop e =
   match Prop.get_observer_attribute prop e with
   | Some Sil.Aobserver ->
       (match pvar_opt with
-       |  Some pvar ->
+       |  Some pvar when !Config.nsnotification_center_checker_backend ->
            L.d_strln (" ERROR: Object " ^ (Pvar.to_string pvar) ^
                       " is being deallocated while still registered in a notification center");
            let desc = Localise.desc_registered_observer_being_deallocated pvar loc in

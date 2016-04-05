@@ -412,3 +412,5 @@ let string_of_language = function
   | C_CPP -> "C_CPP"
 
 let show_progress_bar = ref true
+
+let nsnotification_center_checker_backend = ref false
