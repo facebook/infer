@@ -52,7 +52,6 @@ public class UpdateDictNPETest {
   public void nullDereferenceTest() throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferC(inferCmdNPD);
     String[] procedures = {
-        "update_dict_with_null",
         "update_dict_with_key_null",
         "update_array_with_null",
         "add_nil_to_array",

@@ -16,8 +16,6 @@
 @implementation NSMutableDictionary
 
 - (void)setObject:(id)object forKeyedSubscript:(id)aKey {
-  NSObject* obj = (NSObject*)object;
-  id isa = obj->isa;
   NSObject* key = (NSObject*)aKey;
   id isa2 = key->isa;
 }
