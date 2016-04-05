@@ -30,10 +30,13 @@ RUN apt-get update && \
             zlib1g-dev
 
 # Install OPAM
-RUN curl -sL \
-      https://github.com/ocaml/opam/releases/download/1.2.2/opam-1.2.2-x86_64-Linux \
+RUN VERSION=1.2.2; \
+    curl -sL \
+      https://github.com/ocaml/opam/releases/download/$VERSION/opam-$VERSION-x86_64-Linux \
       -o /usr/local/bin/opam && \
-    chmod 755 /usr/local/bin/opam
+    chmod 755 /usr/local/bin/opam && \
+    ((/usr/local/bin/opam --version | grep -q $VERSION) || \
+     (echo "failed to download opam from GitHub."; exit 1))
 RUN opam init -y --comp=4.02.3
 
 # Download the latest Infer release
