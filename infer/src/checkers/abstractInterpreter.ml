@@ -9,14 +9,11 @@
 
 module L = Logging
 
-open AbstractDomain
-open TransferFunctions
-
 module Make
     (C : ProcCfg.Wrapper)
     (Sched : Scheduler.S)
-    (A : AbstractDomain)
-    (T : TransferFunctions with type astate = A.astate) = struct
+    (A : AbstractDomain.S)
+    (T : TransferFunctions.S with type astate = A.astate) = struct
 
   module S = Sched (C)
   module M = ProcCfg.NodeIdMap (C)

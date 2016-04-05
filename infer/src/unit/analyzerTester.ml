@@ -10,9 +10,6 @@
 module F = Format
 module L = Logging
 
-open AbstractDomain
-open TransferFunctions
-
 (** utilities for writing abstract domains/transfer function tests *)
 
 (** structured language that makes it easy to write small test programs in OCaml *)
@@ -126,8 +123,8 @@ end
 module Make
     (C : ProcCfg.Wrapper with type node = Cfg.Node.t)
     (S : Scheduler.S)
-    (A : AbstractDomain)
-    (T : TransferFunctions with type astate = A.astate) = struct
+    (A : AbstractDomain.S)
+    (T : TransferFunctions.S with type astate = A.astate) = struct
 
   open StructuredSil
 

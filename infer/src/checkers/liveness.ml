@@ -18,7 +18,7 @@ module VarSet = PrettyPrintable.MakePPSet(struct
     let pp_element = CopyPropagation.pp_var
   end)
 
-module Domain = AbstractDomain.FiniteSetDomain(VarSet)
+module Domain = AbstractDomain.FiniteSet(VarSet)
 
 (* compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
    read, kill the variable when it is assigned *)

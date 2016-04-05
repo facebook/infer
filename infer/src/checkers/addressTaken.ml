@@ -13,7 +13,7 @@ module PvarSet = PrettyPrintable.MakePPSet(struct
     let pp_element = (Pvar.pp pe_text)
   end)
 
-module Domain = AbstractDomain.FiniteSetDomain(PvarSet)
+module Domain = AbstractDomain.FiniteSet(PvarSet)
 
 module TransferFunctions = struct
   type astate = Domain.astate

@@ -8,7 +8,7 @@
  *)
 
 
-module type TransferFunctions = sig
+module type S = sig
   type astate
 
   (* {A} instr {A'}. [caller_pdesc] is the procdesc of the current procedure *)
