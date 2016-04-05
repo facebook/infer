@@ -12,11 +12,13 @@
 // https://github.com/facebook/folly/blob/b1eb6819f3ffe6b645f39d505ca8ace3116b7873/folly/configure.ac#L232
 // Depending whether the project is compiled with libc++ or stdlibc++, include their
 // internal config headers to get information about versions
+// clang-format off
 #if __has_include(<__config>) // defines _LIBCPP_VERSION
 #include <__config>
-#elif __has_include(<bits / c++ config.h>) // defines __GLIBCXX__
+#elif __has_include(<bits/c++config.h>) // defines __GLIBCXX__
 #include <bits/c++config.h>
 #endif
+// clang-format on
 
 // Figure out whether the library really supports c++11 standard
 #if __cplusplus >= 201103L
