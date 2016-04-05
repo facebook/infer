@@ -76,7 +76,6 @@ public class BlockTest {
   public void whenCaptureRunOnBlockReleaseThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
 
-    Assume.assumeTrue(InferRunner.runsSupportedXCode());
     String block_src =
         "infer/tests/codetoanalyze/objc/frontend/block/block_release.m";
 

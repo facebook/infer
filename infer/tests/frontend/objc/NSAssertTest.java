@@ -36,7 +36,6 @@ public class NSAssertTest {
   public void whenCaptureRunOnPropertyThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {
 
-    Assume.assumeTrue(InferRunner.runsSupportedXCode());
     String src = "infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m";
 
     String dotty = "infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.dot";
