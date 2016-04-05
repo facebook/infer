@@ -22,9 +22,6 @@ PLUGIN_PATH="${SCRIPT_DIR}/../../../${CLANG_PLUGIN_REL_PATH}"
 PLUGIN_NAME="BiniouASTExporter"
 # output directory of the plugin
 RESULTS_DIR="${FCP_RESULTS_DIR}"
-# space-separated list of source file extensions to compile, where the plugin is needed
-# e.g. EXTENSIONS="c cpp m mm" (*note* no dots needed)
-EXTENSIONS="${FCP_EXTENSIONS}"
 # this forces the wrapper to invoke get_standard_commandline_args to get
 # a more precise clang command with all the arguments in the right place (slow)
 USE_STD_CLANG_CMD="${FCP_USE_STD_CLANG_CMD}"
@@ -58,15 +55,6 @@ CLANG_CMD=("${CLANG_COMPILER}${XX}" "${EXTRA_INCLUDE_PATH[@]}" "$@")
 CWD=$(pwd)
 CWD="${CWD%/}"
 [ ! -d "$RESULTS_DIR" ] && mkdir -p "$RESULTS_DIR"
-
-# If no extensions provided, will use default ones (c, h, cc, cpp, m, mm)
-if [ -z "$EXTENSIONS" ]; then
-    EXTENSIONS="c h cc cpp m mm"
-fi
-
-# regular expression for grep to look for specific extensions
-# (for example c,h,m files)
-EXTENSIONS_REGEX="\.($(echo $EXTENSIONS | tr ' ' '|'))$"
 
 # Functions
 function get_option_argument {
@@ -107,15 +95,13 @@ then
     # get the source file name
     if [ -n "$USE_STD_CLANG_CMD" ]; then
         # the source file is at the end of the command, match it with the wanted extensions
-        SOURCE_FILE=$(echo ${INPUT_ARGUMENTS[${#INPUT_ARGUMENTS[@]} - 1]} \
-            | grep -i -E "$EXTENSIONS_REGEX")
+        SOURCE_FILE=$(echo ${INPUT_ARGUMENTS[${#INPUT_ARGUMENTS[@]} - 1]})
     else
         # in this case we search for the argument after -c, match it with the wanted extensions
-        SOURCE_FILE=$(get_option_argument "-c" "${INPUT_ARGUMENTS[@]}" \
-            | grep -i -E "$EXTENSIONS_REGEX")
+        SOURCE_FILE=$(get_option_argument "-c" "${INPUT_ARGUMENTS[@]}")
     fi
 
-    if [ -n "$SOURCE_FILE" ]
+    if [ -f "$SOURCE_FILE" ]
     then
         # (t7400979) this is a workaround to avoid that clang crashes when the -fmodules flag
         # and the YojsonASTExporter plugin are used. Since the -plugin argument disables
