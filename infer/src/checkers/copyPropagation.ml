@@ -10,86 +10,61 @@
 module F = Format
 module L = Logging
 
-type var =
-  | ProgramVar of Pvar.t
-  | LogicalVar of Ident.t
-
-let var_compare v1 v2 = match v1, v2 with
-  | ProgramVar pv1, ProgramVar pv2 -> Pvar.compare pv1 pv2
-  | LogicalVar sv1, LogicalVar sv2 -> Ident.compare sv1 sv2
-  | ProgramVar _, _ -> 1
-  | LogicalVar _, _ -> -1
-
-let var_equal v1 v2 =
-  var_compare v1 v2 = 0
-
-let pp_var fmt = function
-  | ProgramVar pv ->
-      (Pvar.pp pe_text) fmt pv
-  | LogicalVar id ->
-      (Ident.pp pe_text) fmt id
-
 module Domain = struct
-  module VarMap = PrettyPrintable.MakePPMap(struct
-      type t = var
-      let compare = var_compare
-      let pp_key = pp_var
-    end)
+  type astate = Var.t Var.Map.t
 
-  type astate = var VarMap.t
-
-  let initial = VarMap.empty
+  let initial = Var.Map.empty
 
   let is_bottom _ = false
 
   (* return true if the key-value bindings in [rhs] are a subset of the key-value bindings in
      [lhs] *)
   let (<=) ~lhs ~rhs =
-    VarMap.for_all
+    Var.Map.for_all
       (fun k v ->
-         try var_equal v (VarMap.find k lhs)
+         try Var.var_equal v (Var.Map.find k lhs)
          with Not_found -> false)
       rhs
 
   let join astate1 astate2 =
     let keep_if_same _ v1_opt v2_opt = match v1_opt, v2_opt with
       | Some v1, Some v2 ->
-          if var_equal v1 v2 then Some v1 else None
+          if Var.var_equal v1 v2 then Some v1 else None
       | _ -> None in
-    VarMap.merge keep_if_same astate1 astate2
+    Var.Map.merge keep_if_same astate1 astate2
 
   let widen ~prev ~next ~num_iters:_=
     join prev next
 
   let pp fmt astate =
-    let pp_value = pp_var in
-    VarMap.pp ~pp_value fmt astate
+    let pp_value = Var.pp_var in
+    Var.Map.pp ~pp_value fmt astate
 
   let gen var1 var2 astate =
     (* don't add tautological copies *)
-    if var_equal var1 var2
+    if Var.var_equal var1 var2
     then astate
-    else VarMap.add var1 var2 astate
+    else Var.Map.add var1 var2 astate
 
   let kill_copies_with_var var astate =
     let do_kill lhs_var rhs_var astate_acc =
-      if var_equal var lhs_var
+      if Var.var_equal var lhs_var
       then astate_acc (* kill copies vith [var] on lhs *)
       else
-      if var_equal var rhs_var
+      if Var.var_equal var rhs_var
       then (* delete [var] = [rhs_var] copy, but add [lhs_var] = M(rhs_var) copy*)
-        try VarMap.add lhs_var (VarMap.find rhs_var astate) astate_acc
+        try Var.Map.add lhs_var (Var.Map.find rhs_var astate) astate_acc
         with Not_found -> astate_acc
       else (* copy is unaffected by killing [var]; keep it *)
-        VarMap.add lhs_var rhs_var astate_acc in
-    VarMap.fold do_kill astate VarMap.empty
+        Var.Map.add lhs_var rhs_var astate_acc in
+    Var.Map.fold do_kill astate Var.Map.empty
 
   (* kill the previous binding for [lhs_var], and add a new [lhs_var] -> [rhs_var] binding *)
   let kill_then_gen lhs_var rhs_var astate =
     let already_has_binding lhs_var rhs_var astate =
-      try var_equal rhs_var (VarMap.find lhs_var astate)
+      try Var.var_equal rhs_var (Var.Map.find lhs_var astate)
       with Not_found -> false in
-    if var_equal lhs_var rhs_var || already_has_binding lhs_var rhs_var astate
+    if Var.var_equal lhs_var rhs_var || already_has_binding lhs_var rhs_var astate
     then astate (* already have this binding; no need to kill or gen *)
     else
       kill_copies_with_var lhs_var astate

@@ -12,18 +12,11 @@ module L = Logging
 
 (** backward analysis for computing set of maybe-live variables at each program point *)
 
-module VarSet = PrettyPrintable.MakePPSet(struct
-    type t = CopyPropagation.var
-    let compare = CopyPropagation.var_compare
-    let pp_element = CopyPropagation.pp_var
-  end)
-
-module Domain = AbstractDomain.FiniteSet(VarSet)
+module Domain = AbstractDomain.FiniteSet(Var.Set)
 
 (* compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
    read, kill the variable when it is assigned *)
 module TransferFunctions = struct
-
   type astate = Domain.astate
 
   (* add all of the vars read in [exp] to the live set *)
