@@ -9,6 +9,13 @@
 
 #import <Foundation/NSObject.h>
 
+@class NSIndexSet;
+
 @interface NSMutableArray : NSObject
+
+- (void)replaceObjectAtIndex:(NSUInteger)index withObject:(id)anObject;
+- (void)removeObjectsAtIndexes:(NSIndexSet*)indexes;
+- (void)replaceObjectsAtIndexes:(NSIndexSet*)indexes
+                    withObjects:(NSArray*)objects;
 
 @end

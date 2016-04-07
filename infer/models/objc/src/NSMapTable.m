@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - present Facebook, Inc.
+ * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -7,10 +7,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/NSObject.h>
+#import "NSMapTable.h"
 
-@interface NSArray : NSObject
+@implementation NSMapTable
 
-- (NSArray*)arrayByAddingObject:(id)anObject;
+- (id)objectForKey:(id)aKey {
+  if (aKey == NULL)
+    return NULL;
+  return [NSObject alloc];
+}
 
 @end

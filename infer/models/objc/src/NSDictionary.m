@@ -15,7 +15,25 @@
 
 @implementation NSDictionary
 
+- (id)objectForKey:(id)aKey {
+  if (aKey == NULL)
+    return NULL;
+  return [NSObject alloc];
+}
+
+- (id)objectForKeyedSubscript:(id)aKey {
+  if (aKey == NULL)
+    return NULL;
+  return [NSObject alloc];
+}
+
 + (instancetype)dictionary {
+  return [NSDictionary alloc];
+}
+
++ (instancetype)dictionaryWithObject:(id)object forKey:(id)key {
+  id a = ((NSObject*)object)->isa;
+  id b = ((NSObject*)key)->isa;
   return [NSDictionary alloc];
 }
 

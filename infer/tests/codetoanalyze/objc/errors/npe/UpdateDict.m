@@ -95,3 +95,52 @@ void no_npe_for_undef_values(NSDictionary* response) {
   NSMutableDictionary* d = [NSMutableDictionary dictionary];
   d[@"fds"] = fileInfo;
 }
+
+void nullable_NSDictionary_objectForKey(NSDictionary* dict, NSObject* key) {
+  if (key != nil) {
+    // check objectForKey may return nil for non-nil key
+    if ([dict objectForKey:key] == nil) {
+      char _ = *(char*)nil;
+    } // report
+  }
+}
+
+void strict_NSDictionary_objectForKey(NSDictionary* dict) {
+  // check objectForKey returns nil for nil key
+  if ([dict objectForKey:nil] != nil) {
+    char _ = *(char*)nil;
+  } // no report
+}
+
+void nullable_NSDictionary_objectForKeyedSubscript(NSDictionary* dict,
+                                                   NSObject* key) {
+  if (key != nil) {
+    // check objectForKey may return nil for non-nil key
+    if (dict[key] == nil) {
+      char _ = *(char*)nil;
+    } // report
+  }
+}
+
+void strict_NSDictionary_objectForKeyedSubscript(NSDictionary* dict) {
+  // check objectForKey returns nil for nil key
+  if (dict[nil] != nil) {
+    char _ = *(char*)nil;
+  } // no report
+}
+
+void nullable_NSMapTable_objectForKey(NSMapTable* map, NSObject* key) {
+  if (key != nil) {
+    // check objectForKey may return nil for non-nil key
+    if ([map objectForKey:key] == nil) {
+      char _ = *(char*)nil;
+    } // report
+  }
+}
+
+void strict_NSMapTable_objectForKey(NSMapTable* map) {
+  // check objectForKey returns nil for nil key
+  if ([map objectForKey:nil] != nil) {
+    char _ = *(char*)nil;
+  } // no report
+}

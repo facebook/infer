@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - present Facebook, Inc.
+ * Copyright (c) 2016 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -9,12 +9,8 @@
 
 #import <Foundation/NSObject.h>
 
-@interface NSDictionary : NSObject
+@interface NSMapTable : NSObject
 
 - (id)objectForKey:(id)aKey;
-- (id)objectForKeyedSubscript:(id)key;
-
-+ (instancetype)dictionary;
-+ (instancetype)dictionaryWithObject:(id)object forKey:(id)key;
 
 @end

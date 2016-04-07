@@ -11,12 +11,17 @@
 
 @implementation NSArray
 
+- (NSArray*)arrayByAddingObject:(id)anObject {
+  id a = ((NSObject*)anObject)->isa;
+  return [NSArray alloc];
+}
+
 + (instancetype)array {
   return [NSArray alloc];
 }
 
 + (instancetype)arrayWithObject:(char*)anObject {
-  char _ = *anObject;
+  id a = ((NSObject*)anObject)->isa;
   return [NSArray alloc];
 }
 

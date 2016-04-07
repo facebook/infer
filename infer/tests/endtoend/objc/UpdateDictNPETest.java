@@ -56,7 +56,10 @@ public class UpdateDictNPETest {
         "update_array_with_null",
         "add_nil_to_array",
         "insert_nil_in_array",
-        "add_nil_in_dict"
+        "add_nil_in_dict",
+        "nullable_NSDictionary_objectForKey",
+        "nullable_NSDictionary_objectForKeyedSubscript",
+        "nullable_NSMapTable_objectForKey"
     };
     assertThat(
         "Results should contain null pointer dereference error",

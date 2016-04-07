@@ -11,4 +11,7 @@
 
 @interface NSMutableDictionary : NSObject
 
+- (void)removeObjectForKey:(id)aKey;
++ (NSMutableDictionary*)dictionaryWithSharedKeySet:(id)keyset;
+
 @end
