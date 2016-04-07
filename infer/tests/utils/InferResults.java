@@ -58,6 +58,7 @@ public class InferResults {
       String errorType = items[2].trim();
       if (errorKind.equals("ERROR") ||
           errorType.equals("RETURN_VALUE_IGNORED") ||
+          errorType.equals("ASSIGN_POINTER_WARNING") ||
           errorType.equals("STRONG_DELEGATE_WARNING") ||
           errorType.equals("DIRECT_ATOMIC_PROPERTY_ACCESS") ||
           errorType.equals("CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK") ||

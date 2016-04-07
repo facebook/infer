@@ -1,38 +1,80 @@
 digraph iCFG {
-10 [label="10:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 29]\n  *&s:class NSString *=n$4 [line 29]\n  REMOVE_TEMPS(n$4); [line 29]\n " shape="box"]
+22 [label="22:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 29]\n  *&s:class NSString *=n$4 [line 29]\n  REMOVE_TEMPS(n$4); [line 29]\n " shape="box"]
 	
 
-	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$3=*&s:class NSString * [line 30]\n  *&return:class NSString *=n$3 [line 30]\n  REMOVE_TEMPS(n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	 22 -> 21 ;
+21 [label="21:  Return Stmt \n   n$3=*&s:class NSString * [line 30]\n  *&return:class NSString *=n$3 [line 30]\n  REMOVE_TEMPS(n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
-	 9 -> 8 ;
-8 [label="8: Exit A_newS \n  " color=yellow style=filled]
+	 21 -> 20 ;
+20 [label="20: Exit A_newS \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start A_newS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 28]\n  NULLIFY(&s,false); [line 28]\n  NULLIFY(&self,false); [line 28]\n " color=yellow style=filled]
+19 [label="19: Start A_newS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 28]\n  NULLIFY(&s,false); [line 28]\n  NULLIFY(&self,false); [line 28]\n " color=yellow style=filled]
 	
 
-	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 23]\n  *&s:class NSString *=n$2 [line 23]\n  REMOVE_TEMPS(n$2); [line 23]\n " shape="box"]
+	 19 -> 22 ;
+18 [label="18:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 23]\n  *&s:class NSString *=n$2 [line 23]\n  REMOVE_TEMPS(n$2); [line 23]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  *&return:class NSString *=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	 18 -> 17 ;
+17 [label="17:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  *&return:class NSString *=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit A_getS \n  " color=yellow style=filled]
+	 17 -> 16 ;
+16 [label="16: Exit A_getS \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start A_getS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n  NULLIFY(&s,false); [line 22]\n  NULLIFY(&self,false); [line 22]\n " color=yellow style=filled]
+15 [label="15: Start A_getS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n  NULLIFY(&s,false); [line 22]\n  NULLIFY(&self,false); [line 22]\n " color=yellow style=filled]
 	
 
-	 3 -> 6 ;
-2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
+	 15 -> 18 ;
+14 [label="14: Exit A_frontendChecks \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+13 [label="13: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 13 -> 14 ;
+12 [label="12: Exit NSDiscardableContent_frontendChecks \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start NSDiscardableContent_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 11 -> 12 ;
+10 [label="10: Exit NSSecureCoding_frontendChecks \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start NSSecureCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 9 -> 10 ;
+8 [label="8: Exit NSCoding_frontendChecks \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start NSCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 7 -> 8 ;
+6 [label="6: Exit NSMutableCopying_frontendChecks \n  " color=yellow style=filled]
+	
+
+5 [label="5: Start NSMutableCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 5 -> 6 ;
+4 [label="4: Exit NSCopying_frontendChecks \n  " color=yellow style=filled]
+	
+
+3 [label="3: Start NSCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 3 -> 4 ;
+2 [label="2: Exit NSObject_frontendChecks \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start NSObject_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 1 -> 2 ;

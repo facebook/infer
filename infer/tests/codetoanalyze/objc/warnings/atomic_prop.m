@@ -27,7 +27,7 @@
 @property int* q; // atomic by default
 @property(atomic, assign) float f;
 
-@property B* b;
+@property(strong) B* b;
 
 - (void)write_p:(int)i;
 - (int)read_p;

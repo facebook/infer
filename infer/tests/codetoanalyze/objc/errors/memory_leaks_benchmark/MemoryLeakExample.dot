@@ -1,283 +1,1200 @@
 digraph iCFG {
-75 [label="75:  DeclStmt \n   n$59=_fun_malloc_no_fail(sizeof(int ):int ) [line 103]\n  *&x:int *=n$59 [line 103]\n  REMOVE_TEMPS(n$59); [line 103]\n " shape="box"]
+337 [label="337:  DeclStmt \n   n$59=_fun_malloc_no_fail(sizeof(int ):int ) [line 103]\n  *&x:int *=n$59 [line 103]\n  REMOVE_TEMPS(n$59); [line 103]\n " shape="box"]
 	
 
-	 75 -> 74 ;
-74 [label="74:  BinaryOperatorStmt: Assign \n   n$58=*&x:int * [line 104]\n  *n$58:int =2 [line 104]\n  REMOVE_TEMPS(n$58); [line 104]\n " shape="box"]
+	 337 -> 336 ;
+336 [label="336:  BinaryOperatorStmt: Assign \n   n$58=*&x:int * [line 104]\n  *n$58:int =2 [line 104]\n  REMOVE_TEMPS(n$58); [line 104]\n " shape="box"]
 	
 
-	 74 -> 73 ;
-73 [label="73:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2); [line 105]\n  n$56=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 ):unsigned long ) [line 105]\n  *&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2:class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 =n$56 [line 105]\n  n$57=*&x:int * [line 105]\n  *n$56.x:int *=n$57 [line 105]\n  n$51=*&x:int * [line 105]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,n$51) [line 105]\n  REMOVE_TEMPS(n$56,n$57,n$51); [line 105]\n  NULLIFY(&x,false); [line 105]\n " shape="box"]
+	 336 -> 335 ;
+335 [label="335:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2); [line 105]\n  n$56=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 ):unsigned long ) [line 105]\n  *&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2:class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 =n$56 [line 105]\n  n$57=*&x:int * [line 105]\n  *n$56.x:int *=n$57 [line 105]\n  n$51=*&x:int * [line 105]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,n$51) [line 105]\n  REMOVE_TEMPS(n$56,n$57,n$51); [line 105]\n  NULLIFY(&x,false); [line 105]\n " shape="box"]
 	
 
-	 73 -> 67 ;
-72 [label="72:  DeclStmt \n   n$54=*&x:int * [line 106]\n  n$55=*n$54:int  [line 106]\n  *&i:int =n$55 [line 106]\n  REMOVE_TEMPS(n$54,n$55); [line 106]\n " shape="box"]
+	 335 -> 329 ;
+334 [label="334:  DeclStmt \n   n$54=*&x:int * [line 106]\n  n$55=*n$54:int  [line 106]\n  *&i:int =n$55 [line 106]\n  REMOVE_TEMPS(n$54,n$55); [line 106]\n " shape="box"]
 	
 
-	 72 -> 71 ;
-71 [label="71:  Call _fun_free \n   n$53=*&x:int * [line 107]\n  _fun_free(n$53:void *) [line 107]\n  REMOVE_TEMPS(n$53); [line 107]\n  NULLIFY(&x,false); [line 107]\n " shape="box"]
+	 334 -> 333 ;
+333 [label="333:  Call _fun_free \n   n$53=*&x:int * [line 107]\n  _fun_free(n$53:void *) [line 107]\n  REMOVE_TEMPS(n$53); [line 107]\n  NULLIFY(&x,false); [line 107]\n " shape="box"]
 	
 
-	 71 -> 70 ;
-70 [label="70:  Return Stmt \n   n$52=*&i:int  [line 108]\n  *&return:int =n$52 [line 108]\n  REMOVE_TEMPS(n$52); [line 108]\n  NULLIFY(&i,false); [line 108]\n  APPLY_ABSTRACTION; [line 108]\n " shape="box"]
+	 333 -> 332 ;
+332 [label="332:  Return Stmt \n   n$52=*&i:int  [line 108]\n  *&return:int =n$52 [line 108]\n  REMOVE_TEMPS(n$52); [line 108]\n  NULLIFY(&i,false); [line 108]\n  APPLY_ABSTRACTION; [line 108]\n " shape="box"]
 	
 
-	 70 -> 69 ;
-69 [label="69: Exit __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 \n  " color=yellow style=filled]
+	 332 -> 331 ;
+331 [label="331: Exit __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 \n  " color=yellow style=filled]
 	
 
-68 [label="68: Start __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2\nFormals:  x:int *\nLocals:  i:int \nCaptured:  x:int * \n   DECLARE_LOCALS(&return,&i); [line 105]\n  NULLIFY(&i,false); [line 105]\n " color=yellow style=filled]
+330 [label="330: Start __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2\nFormals:  x:int *\nLocals:  i:int \nCaptured:  x:int * \n   DECLARE_LOCALS(&return,&i); [line 105]\n  NULLIFY(&i,false); [line 105]\n " color=yellow style=filled]
 	
 
-	 68 -> 72 ;
-67 [label="67:  Return Stmt \n   n$49=*&blk:_fn_ (*) [line 110]\n  n$50=n$49() [line 110]\n  *&return:int =n$50 [line 110]\n  REMOVE_TEMPS(n$49,n$50); [line 110]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,true); [line 110]\n  NULLIFY(&blk,false); [line 110]\n  APPLY_ABSTRACTION; [line 110]\n " shape="box"]
+	 330 -> 334 ;
+329 [label="329:  Return Stmt \n   n$49=*&blk:_fn_ (*) [line 110]\n  n$50=n$49() [line 110]\n  *&return:int =n$50 [line 110]\n  REMOVE_TEMPS(n$49,n$50); [line 110]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,true); [line 110]\n  NULLIFY(&blk,false); [line 110]\n  APPLY_ABSTRACTION; [line 110]\n " shape="box"]
 	
 
-	 67 -> 66 ;
-66 [label="66: Exit MemoryLeakExample_blockFreeNoLeakTODO \n  " color=yellow style=filled]
+	 329 -> 328 ;
+328 [label="328: Exit MemoryLeakExample_blockFreeNoLeakTODO \n  " color=yellow style=filled]
 	
 
-65 [label="65: Start MemoryLeakExample_blockFreeNoLeakTODO\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 102]\n  NULLIFY(&blk,false); [line 102]\n  NULLIFY(&self,false); [line 102]\n  NULLIFY(&x,false); [line 102]\n " color=yellow style=filled]
+327 [label="327: Start MemoryLeakExample_blockFreeNoLeakTODO\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 102]\n  NULLIFY(&blk,false); [line 102]\n  NULLIFY(&self,false); [line 102]\n  NULLIFY(&x,false); [line 102]\n " color=yellow style=filled]
 	
 
-	 65 -> 75 ;
-64 [label="64:  DeclStmt \n   n$48=_fun_malloc_no_fail(sizeof(int ):int ) [line 94]\n  *&x:int *=n$48 [line 94]\n  REMOVE_TEMPS(n$48); [line 94]\n " shape="box"]
+	 327 -> 337 ;
+326 [label="326:  DeclStmt \n   n$48=_fun_malloc_no_fail(sizeof(int ):int ) [line 94]\n  *&x:int *=n$48 [line 94]\n  REMOVE_TEMPS(n$48); [line 94]\n " shape="box"]
 	
 
-	 64 -> 63 ;
-63 [label="63:  BinaryOperatorStmt: Assign \n   n$47=*&x:int * [line 95]\n  *n$47:int =2 [line 95]\n  REMOVE_TEMPS(n$47); [line 95]\n " shape="box"]
+	 326 -> 325 ;
+325 [label="325:  BinaryOperatorStmt: Assign \n   n$47=*&x:int * [line 95]\n  *n$47:int =2 [line 95]\n  REMOVE_TEMPS(n$47); [line 95]\n " shape="box"]
 	
 
-	 63 -> 62 ;
-62 [label="62:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1); [line 96]\n  n$45=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 ):unsigned long ) [line 96]\n  *&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1:class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 =n$45 [line 96]\n  n$46=*&x:int * [line 96]\n  *n$45.x:int *=n$46 [line 96]\n  n$42=*&x:int * [line 96]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,n$42) [line 96]\n  REMOVE_TEMPS(n$45,n$46,n$42); [line 96]\n  NULLIFY(&x,false); [line 96]\n " shape="box"]
+	 325 -> 324 ;
+324 [label="324:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1); [line 96]\n  n$45=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 ):unsigned long ) [line 96]\n  *&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1:class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 =n$45 [line 96]\n  n$46=*&x:int * [line 96]\n  *n$45.x:int *=n$46 [line 96]\n  n$42=*&x:int * [line 96]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,n$42) [line 96]\n  REMOVE_TEMPS(n$45,n$46,n$42); [line 96]\n  NULLIFY(&x,false); [line 96]\n " shape="box"]
 	
 
-	 62 -> 58 ;
-61 [label="61:  Return Stmt \n   n$43=*&x:int * [line 97]\n  n$44=*n$43:int  [line 97]\n  *&return:int =n$44 [line 97]\n  REMOVE_TEMPS(n$43,n$44); [line 97]\n  NULLIFY(&x,false); [line 97]\n  APPLY_ABSTRACTION; [line 97]\n " shape="box"]
+	 324 -> 320 ;
+323 [label="323:  Return Stmt \n   n$43=*&x:int * [line 97]\n  n$44=*n$43:int  [line 97]\n  *&return:int =n$44 [line 97]\n  REMOVE_TEMPS(n$43,n$44); [line 97]\n  NULLIFY(&x,false); [line 97]\n  APPLY_ABSTRACTION; [line 97]\n " shape="box"]
 	
 
-	 61 -> 60 ;
-60 [label="60: Exit __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 \n  " color=yellow style=filled]
+	 323 -> 322 ;
+322 [label="322: Exit __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 \n  " color=yellow style=filled]
 	
 
-59 [label="59: Start __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1\nFormals:  x:int *\nLocals: \nCaptured:  x:int * \n   DECLARE_LOCALS(&return); [line 96]\n " color=yellow style=filled]
+321 [label="321: Start __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1\nFormals:  x:int *\nLocals: \nCaptured:  x:int * \n   DECLARE_LOCALS(&return); [line 96]\n " color=yellow style=filled]
 	
 
-	 59 -> 61 ;
-58 [label="58:  Return Stmt \n   n$40=*&blk:_fn_ (*) [line 99]\n  n$41=n$40() [line 99]\n  *&return:int =n$41 [line 99]\n  REMOVE_TEMPS(n$40,n$41); [line 99]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,true); [line 99]\n  NULLIFY(&blk,false); [line 99]\n  APPLY_ABSTRACTION; [line 99]\n " shape="box"]
+	 321 -> 323 ;
+320 [label="320:  Return Stmt \n   n$40=*&blk:_fn_ (*) [line 99]\n  n$41=n$40() [line 99]\n  *&return:int =n$41 [line 99]\n  REMOVE_TEMPS(n$40,n$41); [line 99]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,true); [line 99]\n  NULLIFY(&blk,false); [line 99]\n  APPLY_ABSTRACTION; [line 99]\n " shape="box"]
 	
 
-	 58 -> 57 ;
-57 [label="57: Exit MemoryLeakExample_blockCapturedVarLeak \n  " color=yellow style=filled]
+	 320 -> 319 ;
+319 [label="319: Exit MemoryLeakExample_blockCapturedVarLeak \n  " color=yellow style=filled]
 	
 
-56 [label="56: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 93]\n  NULLIFY(&blk,false); [line 93]\n  NULLIFY(&self,false); [line 93]\n  NULLIFY(&x,false); [line 93]\n " color=yellow style=filled]
+318 [label="318: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 93]\n  NULLIFY(&blk,false); [line 93]\n  NULLIFY(&self,false); [line 93]\n  NULLIFY(&x,false); [line 93]\n " color=yellow style=filled]
 	
 
-	 56 -> 64 ;
-55 [label="55:  DeclStmt \n   n$39=_fun_malloc_no_fail(sizeof(int ):int ) [line 88]\n  *&x:int *=n$39 [line 88]\n  REMOVE_TEMPS(n$39); [line 88]\n " shape="box"]
+	 318 -> 326 ;
+317 [label="317:  DeclStmt \n   n$39=_fun_malloc_no_fail(sizeof(int ):int ) [line 88]\n  *&x:int *=n$39 [line 88]\n  REMOVE_TEMPS(n$39); [line 88]\n " shape="box"]
 	
 
-	 55 -> 54 ;
-54 [label="54:  BinaryOperatorStmt: Assign \n   n$38=*&x:int * [line 89]\n  *n$38:int =7 [line 89]\n  REMOVE_TEMPS(n$38); [line 89]\n " shape="box"]
+	 317 -> 316 ;
+316 [label="316:  BinaryOperatorStmt: Assign \n   n$38=*&x:int * [line 89]\n  *n$38:int =7 [line 89]\n  REMOVE_TEMPS(n$38); [line 89]\n " shape="box"]
 	
 
-	 54 -> 53 ;
-53 [label="53:  Return Stmt \n   n$36=*&x:int * [line 90]\n  n$37=*n$36:int  [line 90]\n  *&return:int =n$37 [line 90]\n  REMOVE_TEMPS(n$36,n$37); [line 90]\n  NULLIFY(&x,false); [line 90]\n  APPLY_ABSTRACTION; [line 90]\n " shape="box"]
+	 316 -> 315 ;
+315 [label="315:  Return Stmt \n   n$36=*&x:int * [line 90]\n  n$37=*n$36:int  [line 90]\n  *&return:int =n$37 [line 90]\n  REMOVE_TEMPS(n$36,n$37); [line 90]\n  NULLIFY(&x,false); [line 90]\n  APPLY_ABSTRACTION; [line 90]\n " shape="box"]
 	
 
-	 53 -> 52 ;
-52 [label="52: Exit MemoryLeakExample_regularLeak \n  " color=yellow style=filled]
+	 315 -> 314 ;
+314 [label="314: Exit MemoryLeakExample_regularLeak \n  " color=yellow style=filled]
 	
 
-51 [label="51: Start MemoryLeakExample_regularLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  x:int * \n   DECLARE_LOCALS(&return,&x); [line 87]\n  NULLIFY(&self,false); [line 87]\n  NULLIFY(&x,false); [line 87]\n " color=yellow style=filled]
+313 [label="313: Start MemoryLeakExample_regularLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  x:int * \n   DECLARE_LOCALS(&return,&x); [line 87]\n  NULLIFY(&self,false); [line 87]\n  NULLIFY(&x,false); [line 87]\n " color=yellow style=filled]
 	
 
-	 51 -> 55 ;
-50 [label="50:  DeclStmt \n   n$35=_fun_FBColorCreateWithGray(0.000000:double ,0.300000:double ) [line 83]\n  *&borderColor:struct CGColor *=n$35 [line 83]\n  REMOVE_TEMPS(n$35); [line 83]\n " shape="box"]
+	 313 -> 317 ;
+312 [label="312:  DeclStmt \n   n$35=_fun_FBColorCreateWithGray(0.000000:double ,0.300000:double ) [line 83]\n  *&borderColor:struct CGColor *=n$35 [line 83]\n  REMOVE_TEMPS(n$35); [line 83]\n " shape="box"]
 	
 
-	 50 -> 49 ;
-49 [label="49:  Call _fun_CGColorRelease \n   n$34=*&borderColor:struct CGColor * [line 84]\n  _fun_CGColorRelease(n$34:struct CGColor *) [line 84]\n  REMOVE_TEMPS(n$34); [line 84]\n  NULLIFY(&borderColor,false); [line 84]\n  APPLY_ABSTRACTION; [line 84]\n " shape="box"]
+	 312 -> 311 ;
+311 [label="311:  Call _fun_CGColorRelease \n   n$34=*&borderColor:struct CGColor * [line 84]\n  _fun_CGColorRelease(n$34:struct CGColor *) [line 84]\n  REMOVE_TEMPS(n$34); [line 84]\n  NULLIFY(&borderColor,false); [line 84]\n  APPLY_ABSTRACTION; [line 84]\n " shape="box"]
 	
 
-	 49 -> 48 ;
-48 [label="48: Exit MemoryLeakExample_testFBColorCreateWithGray \n  " color=yellow style=filled]
+	 311 -> 310 ;
+310 [label="310: Exit MemoryLeakExample_testFBColorCreateWithGray \n  " color=yellow style=filled]
 	
 
-47 [label="47: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:class MemoryLeakExample *\nLocals:  borderColor:struct CGColor * \n   DECLARE_LOCALS(&return,&borderColor); [line 82]\n  NULLIFY(&borderColor,false); [line 82]\n  NULLIFY(&self,false); [line 82]\n " color=yellow style=filled]
+309 [label="309: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:class MemoryLeakExample *\nLocals:  borderColor:struct CGColor * \n   DECLARE_LOCALS(&return,&borderColor); [line 82]\n  NULLIFY(&borderColor,false); [line 82]\n  NULLIFY(&self,false); [line 82]\n " color=yellow style=filled]
 	
 
-	 47 -> 50 ;
-46 [label="46:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(0:struct CGContext *) [line 76]\n  *&newImage:struct CGImage *=n$33 [line 76]\n  REMOVE_TEMPS(n$33); [line 76]\n " shape="box"]
+	 309 -> 312 ;
+308 [label="308:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(0:struct CGContext *) [line 76]\n  *&newImage:struct CGImage *=n$33 [line 76]\n  REMOVE_TEMPS(n$33); [line 76]\n " shape="box"]
 	
 
-	 46 -> 45 ;
-45 [label="45:  Call _fun_CGImageRelease \n   n$32=*&newImage:struct CGImage * [line 77]\n  _fun_CGImageRelease(n$32:struct CGImage *) [line 77]\n  REMOVE_TEMPS(n$32); [line 77]\n  NULLIFY(&newImage,false); [line 77]\n  APPLY_ABSTRACTION; [line 77]\n " shape="box"]
+	 308 -> 307 ;
+307 [label="307:  Call _fun_CGImageRelease \n   n$32=*&newImage:struct CGImage * [line 77]\n  _fun_CGImageRelease(n$32:struct CGImage *) [line 77]\n  REMOVE_TEMPS(n$32); [line 77]\n  NULLIFY(&newImage,false); [line 77]\n  APPLY_ABSTRACTION; [line 77]\n " shape="box"]
 	
 
-	 45 -> 44 ;
-44 [label="44: Exit MemoryLeakExample_testImageRefRelease \n  " color=yellow style=filled]
+	 307 -> 306 ;
+306 [label="306: Exit MemoryLeakExample_testImageRefRelease \n  " color=yellow style=filled]
 	
 
-43 [label="43: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return,&newImage); [line 75]\n  NULLIFY(&newImage,false); [line 75]\n " color=yellow style=filled]
+305 [label="305: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return,&newImage); [line 75]\n  NULLIFY(&newImage,false); [line 75]\n " color=yellow style=filled]
 	
 
-	 43 -> 46 ;
-42 [label="42:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(0:struct __SecTrust *) [line 71]\n  *&allowedPublicKey:struct __SecKey *=n$31 [line 71]\n  REMOVE_TEMPS(n$31); [line 71]\n " shape="box"]
+	 305 -> 308 ;
+304 [label="304:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(0:struct __SecTrust *) [line 71]\n  *&allowedPublicKey:struct __SecKey *=n$31 [line 71]\n  REMOVE_TEMPS(n$31); [line 71]\n " shape="box"]
 	
 
-	 42 -> 41 ;
-41 [label="41:  Call _fun___objc_release_cf \n   n$30=*&allowedPublicKey:struct __SecKey * [line 72]\n  _fun___objc_release_cf(1:_Bool ,n$30:void *) [line 72]\n  REMOVE_TEMPS(n$30); [line 72]\n  NULLIFY(&allowedPublicKey,false); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
+	 304 -> 303 ;
+303 [label="303:  Call _fun___objc_release_cf \n   n$30=*&allowedPublicKey:struct __SecKey * [line 72]\n  _fun___objc_release_cf(1:_Bool ,n$30:void *) [line 72]\n  REMOVE_TEMPS(n$30); [line 72]\n  NULLIFY(&allowedPublicKey,false); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
 	
 
-	 41 -> 40 ;
-40 [label="40: Exit MemoryLeakExample_test2NoLeak \n  " color=yellow style=filled]
+	 303 -> 302 ;
+302 [label="302: Exit MemoryLeakExample_test2NoLeak \n  " color=yellow style=filled]
 	
 
-39 [label="39: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 70]\n  NULLIFY(&allowedPublicKey,false); [line 70]\n " color=yellow style=filled]
+301 [label="301: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 70]\n  NULLIFY(&allowedPublicKey,false); [line 70]\n " color=yellow style=filled]
 	
 
-	 39 -> 42 ;
-38 [label="38:  Call _fun_SecTrustCopyPublicKey \n   n$28=*&trust:struct __SecTrust * [line 67]\n  n$29=_fun_SecTrustCopyPublicKey(n$28:struct __SecTrust *) [line 67]\n  REMOVE_TEMPS(n$28,n$29); [line 67]\n  NULLIFY(&trust,false); [line 67]\n  APPLY_ABSTRACTION; [line 67]\n " shape="box"]
+	 301 -> 304 ;
+300 [label="300:  Call _fun_SecTrustCopyPublicKey \n   n$28=*&trust:struct __SecTrust * [line 67]\n  n$29=_fun_SecTrustCopyPublicKey(n$28:struct __SecTrust *) [line 67]\n  REMOVE_TEMPS(n$28,n$29); [line 67]\n  NULLIFY(&trust,false); [line 67]\n  APPLY_ABSTRACTION; [line 67]\n " shape="box"]
 	
 
-	 38 -> 37 ;
-37 [label="37: Exit MemoryLeakExample_test2: \n  " color=yellow style=filled]
+	 300 -> 299 ;
+299 [label="299: Exit MemoryLeakExample_test2: \n  " color=yellow style=filled]
 	
 
-36 [label="36: Start MemoryLeakExample_test2:\nFormals:  trust:struct __SecTrust *\nLocals:  \n   DECLARE_LOCALS(&return); [line 66]\n " color=yellow style=filled]
+298 [label="298: Start MemoryLeakExample_test2:\nFormals:  trust:struct __SecTrust *\nLocals:  \n   DECLARE_LOCALS(&return); [line 66]\n " color=yellow style=filled]
 	
 
-	 36 -> 38 ;
-35 [label="35:  DeclStmt \n   n$26=*&rect:struct CGRect  [line 59]\n  n$27=_fun_CGRectGetHeight(n$26:struct CGRect ) [line 59]\n  *&lineThickness:double =(0.200000 * n$27) [line 59]\n  REMOVE_TEMPS(n$26,n$27); [line 59]\n  NULLIFY(&rect,false); [line 59]\n  NULLIFY(&lineThickness,false); [line 59]\n " shape="box"]
+	 298 -> 300 ;
+297 [label="297:  DeclStmt \n   n$26=*&rect:struct CGRect  [line 59]\n  n$27=_fun_CGRectGetHeight(n$26:struct CGRect ) [line 59]\n  *&lineThickness:double =(0.200000 * n$27) [line 59]\n  REMOVE_TEMPS(n$26,n$27); [line 59]\n  NULLIFY(&rect,false); [line 59]\n  NULLIFY(&lineThickness,false); [line 59]\n " shape="box"]
 	
 
-	 35 -> 34 ;
-34 [label="34:  DeclStmt \n   n$25=_fun_CGPathCreateMutable() [line 62]\n  *&path1:struct CGPath *=n$25 [line 62]\n  REMOVE_TEMPS(n$25); [line 62]\n " shape="box"]
+	 297 -> 296 ;
+296 [label="296:  DeclStmt \n   n$25=_fun_CGPathCreateMutable() [line 62]\n  *&path1:struct CGPath *=n$25 [line 62]\n  REMOVE_TEMPS(n$25); [line 62]\n " shape="box"]
 	
 
-	 34 -> 33 ;
-33 [label="33:  Call _fun___objc_release_cf \n   n$24=*&path1:struct CGPath * [line 63]\n  _fun___objc_release_cf(1:_Bool ,n$24:void *) [line 63]\n  REMOVE_TEMPS(n$24); [line 63]\n  NULLIFY(&path1,false); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="box"]
+	 296 -> 295 ;
+295 [label="295:  Call _fun___objc_release_cf \n   n$24=*&path1:struct CGPath * [line 63]\n  _fun___objc_release_cf(1:_Bool ,n$24:void *) [line 63]\n  REMOVE_TEMPS(n$24); [line 63]\n  NULLIFY(&path1,false); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="box"]
 	
 
-	 33 -> 32 ;
-32 [label="32: Exit MemoryLeakExample_createCloseCrossGlyphNoLeak: \n  " color=yellow style=filled]
+	 295 -> 294 ;
+294 [label="294: Exit MemoryLeakExample_createCloseCrossGlyphNoLeak: \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 58]\n  NULLIFY(&lineThickness,false); [line 58]\n  NULLIFY(&path1,false); [line 58]\n " color=yellow style=filled]
+293 [label="293: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 58]\n  NULLIFY(&lineThickness,false); [line 58]\n  NULLIFY(&path1,false); [line 58]\n " color=yellow style=filled]
 	
 
-	 31 -> 35 ;
-30 [label="30:  BinaryOperatorStmt: Mul \n   n$22=*&rect:struct CGRect  [line 54]\n  n$23=_fun_CGRectGetHeight(n$22:struct CGRect ) [line 54]\n  REMOVE_TEMPS(n$22,n$23); [line 54]\n  NULLIFY(&rect,false); [line 54]\n " shape="box"]
+	 293 -> 297 ;
+292 [label="292:  BinaryOperatorStmt: Mul \n   n$22=*&rect:struct CGRect  [line 54]\n  n$23=_fun_CGRectGetHeight(n$22:struct CGRect ) [line 54]\n  REMOVE_TEMPS(n$22,n$23); [line 54]\n  NULLIFY(&rect,false); [line 54]\n " shape="box"]
 	
 
-	 30 -> 29 ;
-29 [label="29:  Call _fun_CGPathCreateMutable \n   n$21=_fun_CGPathCreateMutable() [line 55]\n  REMOVE_TEMPS(n$21); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
+	 292 -> 291 ;
+291 [label="291:  Call _fun_CGPathCreateMutable \n   n$21=_fun_CGPathCreateMutable() [line 55]\n  REMOVE_TEMPS(n$21); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
 	
 
-	 29 -> 28 ;
-28 [label="28: Exit MemoryLeakExample_createCloseCrossGlyph: \n  " color=yellow style=filled]
+	 291 -> 290 ;
+290 [label="290: Exit MemoryLeakExample_createCloseCrossGlyph: \n  " color=yellow style=filled]
 	
 
-27 [label="27: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:struct CGRect \nLocals:  \n   DECLARE_LOCALS(&return); [line 53]\n " color=yellow style=filled]
+289 [label="289: Start MemoryLeakExample_createCloseCrossGlyph:\nFormals:  rect:struct CGRect \nLocals:  \n   DECLARE_LOCALS(&return); [line 53]\n " color=yellow style=filled]
 	
 
-	 27 -> 30 ;
-26 [label="26:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(0:struct __CFAttributedString *) [line 49]\n  *&framesetter:struct __CTFramesetter *=n$20 [line 49]\n  REMOVE_TEMPS(n$20); [line 49]\n " shape="box"]
+	 289 -> 292 ;
+288 [label="288:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(0:struct __CFAttributedString *) [line 49]\n  *&framesetter:struct __CTFramesetter *=n$20 [line 49]\n  REMOVE_TEMPS(n$20); [line 49]\n " shape="box"]
 	
 
-	 26 -> 25 ;
-25 [label="25:  Call _fun___objc_release_cf \n   n$19=*&framesetter:struct __CTFramesetter * [line 50]\n  _fun___objc_release_cf(1:_Bool ,n$19:void *) [line 50]\n  REMOVE_TEMPS(n$19); [line 50]\n  NULLIFY(&framesetter,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
+	 288 -> 287 ;
+287 [label="287:  Call _fun___objc_release_cf \n   n$19=*&framesetter:struct __CTFramesetter * [line 50]\n  _fun___objc_release_cf(1:_Bool ,n$19:void *) [line 50]\n  REMOVE_TEMPS(n$19); [line 50]\n  NULLIFY(&framesetter,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
 	
 
-	 25 -> 24 ;
-24 [label="24: Exit MemoryLeakExample_test1NoLeak \n  " color=yellow style=filled]
+	 287 -> 286 ;
+286 [label="286: Exit MemoryLeakExample_test1NoLeak \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 48]\n  NULLIFY(&framesetter,false); [line 48]\n " color=yellow style=filled]
+285 [label="285: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 48]\n  NULLIFY(&framesetter,false); [line 48]\n " color=yellow style=filled]
 	
 
-	 23 -> 26 ;
-22 [label="22:  Call _fun_CTFramesetterCreateWithAttributedString \n   n$17=*&str:struct __CFAttributedString * [line 45]\n  n$18=_fun_CTFramesetterCreateWithAttributedString(n$17:struct __CFAttributedString *) [line 45]\n  REMOVE_TEMPS(n$17,n$18); [line 45]\n  NULLIFY(&str,false); [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
+	 285 -> 288 ;
+284 [label="284:  Call _fun_CTFramesetterCreateWithAttributedString \n   n$17=*&str:struct __CFAttributedString * [line 45]\n  n$18=_fun_CTFramesetterCreateWithAttributedString(n$17:struct __CFAttributedString *) [line 45]\n  REMOVE_TEMPS(n$17,n$18); [line 45]\n  NULLIFY(&str,false); [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
 	
 
-	 22 -> 21 ;
-21 [label="21: Exit MemoryLeakExample_test1: \n  " color=yellow style=filled]
+	 284 -> 283 ;
+283 [label="283: Exit MemoryLeakExample_test1: \n  " color=yellow style=filled]
 	
 
-20 [label="20: Start MemoryLeakExample_test1:\nFormals:  str:struct __CFAttributedString *\nLocals:  \n   DECLARE_LOCALS(&return); [line 44]\n " color=yellow style=filled]
+282 [label="282: Start MemoryLeakExample_test1:\nFormals:  str:struct __CFAttributedString *\nLocals:  \n   DECLARE_LOCALS(&return); [line 44]\n " color=yellow style=filled]
 	
 
-	 20 -> 22 ;
-19 [label="19:  DeclStmt \n   n$16=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 40]\n  *&maString:struct __CFAttributedString *=n$16 [line 40]\n  REMOVE_TEMPS(n$16); [line 40]\n " shape="box"]
+	 282 -> 284 ;
+281 [label="281:  DeclStmt \n   n$16=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 40]\n  *&maString:struct __CFAttributedString *=n$16 [line 40]\n  REMOVE_TEMPS(n$16); [line 40]\n " shape="box"]
 	
 
-	 19 -> 18 ;
-18 [label="18:  Call _fun___objc_release_cf \n   n$15=*&maString:struct __CFAttributedString * [line 41]\n  _fun___objc_release_cf(1:_Bool ,n$15:void *) [line 41]\n  REMOVE_TEMPS(n$15); [line 41]\n  NULLIFY(&maString,false); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
+	 281 -> 280 ;
+280 [label="280:  Call _fun___objc_release_cf \n   n$15=*&maString:struct __CFAttributedString * [line 41]\n  _fun___objc_release_cf(1:_Bool ,n$15:void *) [line 41]\n  REMOVE_TEMPS(n$15); [line 41]\n  NULLIFY(&maString,false); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
 	
 
-	 18 -> 17 ;
-17 [label="17: Exit MemoryLeakExample_measureFrameSizeForTextNoLeak \n  " color=yellow style=filled]
+	 280 -> 279 ;
+279 [label="279: Exit MemoryLeakExample_measureFrameSizeForTextNoLeak \n  " color=yellow style=filled]
 	
 
-16 [label="16: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 38]\n  NULLIFY(&maString,false); [line 38]\n " color=yellow style=filled]
+278 [label="278: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 38]\n  NULLIFY(&maString,false); [line 38]\n " color=yellow style=filled]
 	
 
-	 16 -> 19 ;
-15 [label="15:  Call _fun_CFAttributedStringCreateMutable \n   n$14=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 35]\n  REMOVE_TEMPS(n$14); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+	 278 -> 281 ;
+277 [label="277:  Call _fun_CFAttributedStringCreateMutable \n   n$14=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 35]\n  REMOVE_TEMPS(n$14); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
 	
 
-	 15 -> 14 ;
-14 [label="14: Exit MemoryLeakExample_measureFrameSizeForText \n  " color=yellow style=filled]
+	 277 -> 276 ;
+276 [label="276: Exit MemoryLeakExample_measureFrameSizeForText \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
+275 [label="275: Start MemoryLeakExample_measureFrameSizeForText\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
 	
 
-	 13 -> 15 ;
-12 [label="12:  DeclStmt \n   n$10=*&self:class MemoryLeakExample * [line 30]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:class MemoryLeakExample *) [line 30]\n  n$12=_fun_UIView_bounds(n$11:class UIView *) [line 30]\n  n$13=_fun_CGPathCreateWithRect(n$12:struct CGRect ,0:struct CGAffineTransform *) [line 30]\n  *&shadowPath:struct CGPath *=n$13 [line 30]\n  REMOVE_TEMPS(n$10,n$11,n$12,n$13); [line 30]\n " shape="box"]
+	 275 -> 277 ;
+274 [label="274:  DeclStmt \n   n$10=*&self:class MemoryLeakExample * [line 30]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:class MemoryLeakExample *) [line 30]\n  n$12=_fun_UIView_bounds(n$11:class UIView *) [line 30]\n  n$13=_fun_CGPathCreateWithRect(n$12:struct CGRect ,0:struct CGAffineTransform *) [line 30]\n  *&shadowPath:struct CGPath *=n$13 [line 30]\n  REMOVE_TEMPS(n$10,n$11,n$12,n$13); [line 30]\n " shape="box"]
 	
 
-	 12 -> 11 ;
-11 [label="11:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 31]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) [line 31]\n  n$8=_fun_UIView_layer(n$7:class UIView *) [line 31]\n  n$9=*&shadowPath:struct CGPath * [line 31]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) [line 31]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 31]\n  NULLIFY(&self,false); [line 31]\n  NULLIFY(&shadowPath,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+	 274 -> 273 ;
+273 [label="273:  Message Call: setShadowPath: \n   n$6=*&self:class MemoryLeakExample * [line 31]\n  n$7=_fun_MemoryLeakExample_backgroundCoveringView(n$6:class MemoryLeakExample *) [line 31]\n  n$8=_fun_UIView_layer(n$7:class UIView *) [line 31]\n  n$9=*&shadowPath:struct CGPath * [line 31]\n  _fun_CALayer_setShadowPath:(n$8:class CALayer *,n$9:struct CGPath *) [line 31]\n  REMOVE_TEMPS(n$6,n$7,n$8,n$9); [line 31]\n  NULLIFY(&self,false); [line 31]\n  NULLIFY(&shadowPath,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-	 11 -> 10 ;
-10 [label="10: Exit MemoryLeakExample_test \n  " color=yellow style=filled]
+	 273 -> 272 ;
+272 [label="272: Exit MemoryLeakExample_test \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start MemoryLeakExample_test\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * \n   DECLARE_LOCALS(&return,&shadowPath); [line 28]\n  NULLIFY(&shadowPath,false); [line 28]\n " color=yellow style=filled]
+271 [label="271: Start MemoryLeakExample_test\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * \n   DECLARE_LOCALS(&return,&shadowPath); [line 28]\n  NULLIFY(&shadowPath,false); [line 28]\n " color=yellow style=filled]
 	
 
-	 9 -> 12 ;
-8 [label="8:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class UIView ):unsigned long ) [line 20]\n  *&attachmentContainerView:class UIView *=n$5 [line 20]\n  REMOVE_TEMPS(n$5); [line 20]\n " shape="box"]
+	 271 -> 274 ;
+270 [label="270:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class UIView ):unsigned long ) [line 20]\n  *&attachmentContainerView:class UIView *=n$5 [line 20]\n  REMOVE_TEMPS(n$5); [line 20]\n " shape="box"]
 	
 
-	 8 -> 7 ;
-7 [label="7:  DeclStmt \n   n$2=*&attachmentContainerView:class UIView * [line 22]\n  n$3=_fun_UIView_bounds(n$2:class UIView *) [line 22]\n  n$4=_fun_CGPathCreateWithRect(n$3:struct CGRect ,0:struct CGAffineTransform *) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 22]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 22]\n " shape="box"]
+	 270 -> 269 ;
+269 [label="269:  DeclStmt \n   n$2=*&attachmentContainerView:class UIView * [line 22]\n  n$3=_fun_UIView_bounds(n$2:class UIView *) [line 22]\n  n$4=_fun_CGPathCreateWithRect(n$3:struct CGRect ,0:struct CGAffineTransform *) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 22]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 22]\n " shape="box"]
 	
 
-	 7 -> 6 ;
-6 [label="6:  Call _fun_CGPathRelease \n   n$1=*&shadowPath:struct CGPath * [line 24]\n  _fun_CGPathRelease(n$1:struct CGPath *) [line 24]\n  REMOVE_TEMPS(n$1); [line 24]\n  NULLIFY(&shadowPath,false); [line 24]\n " shape="box"]
+	 269 -> 268 ;
+268 [label="268:  Call _fun_CGPathRelease \n   n$1=*&shadowPath:struct CGPath * [line 24]\n  _fun_CGPathRelease(n$1:struct CGPath *) [line 24]\n  REMOVE_TEMPS(n$1); [line 24]\n  NULLIFY(&shadowPath,false); [line 24]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5:  Message Call: release \n   n$0=*&attachmentContainerView:class UIView * [line 25]\n  _fun___objc_release(n$0:class UIView *) [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&attachmentContainerView,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+	 268 -> 267 ;
+267 [label="267:  Message Call: release \n   n$0=*&attachmentContainerView:class UIView * [line 25]\n  _fun___objc_release(n$0:class UIView *) [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&attachmentContainerView,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit MemoryLeakExample_layoutSubviews \n  " color=yellow style=filled]
+	 267 -> 266 ;
+266 [label="266: Exit MemoryLeakExample_layoutSubviews \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start MemoryLeakExample_layoutSubviews\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * attachmentContainerView:class UIView * \n   DECLARE_LOCALS(&return,&shadowPath,&attachmentContainerView); [line 19]\n  NULLIFY(&attachmentContainerView,false); [line 19]\n  NULLIFY(&self,false); [line 19]\n  NULLIFY(&shadowPath,false); [line 19]\n " color=yellow style=filled]
+265 [label="265: Start MemoryLeakExample_layoutSubviews\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * attachmentContainerView:class UIView * \n   DECLARE_LOCALS(&return,&shadowPath,&attachmentContainerView); [line 19]\n  NULLIFY(&attachmentContainerView,false); [line 19]\n  NULLIFY(&self,false); [line 19]\n  NULLIFY(&shadowPath,false); [line 19]\n " color=yellow style=filled]
 	
 
-	 3 -> 8 ;
-2 [label="2: Exit MemoryLeakExample_frontendChecks \n  " color=yellow style=filled]
+	 265 -> 270 ;
+264 [label="264: Exit MemoryLeakExample_frontendChecks \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MemoryLeakExample_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+263 [label="263: Start MemoryLeakExample_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 263 -> 264 ;
+262 [label="262: Exit UICollisionBehaviorDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+261 [label="261: Start UICollisionBehaviorDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 261 -> 262 ;
+260 [label="260: Exit UIDynamicAnimatorDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+259 [label="259: Start UIDynamicAnimatorDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 259 -> 260 ;
+258 [label="258: Exit UIPopoverPresentationControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+257 [label="257: Start UIPopoverPresentationControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 257 -> 258 ;
+256 [label="256: Exit NSTextAttachmentContainer_frontendChecks \n  " color=yellow style=filled]
+	
+
+255 [label="255: Start NSTextAttachmentContainer_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 255 -> 256 ;
+254 [label="254: Exit NSTextLayoutOrientationProvider_frontendChecks \n  " color=yellow style=filled]
+	
+
+253 [label="253: Start NSTextLayoutOrientationProvider_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 253 -> 254 ;
+252 [label="252: Exit NSLayoutManagerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+251 [label="251: Start NSLayoutManagerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 251 -> 252 ;
+250 [label="250: Exit NSTextStorageDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+249 [label="249: Start NSTextStorageDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 249 -> 250 ;
+248 [label="248: Exit UIWebViewDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+247 [label="247: Start UIWebViewDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 247 -> 248 ;
+246 [label="246: Exit UIVideoEditorControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+245 [label="245: Start UIVideoEditorControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 245 -> 246 ;
+244 [label="244: Exit UIToolbarDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+243 [label="243: Start UIToolbarDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 243 -> 244 ;
+242 [label="242: Exit UITextViewDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+241 [label="241: Start UITextViewDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 241 -> 242 ;
+240 [label="240: Exit UITabBarControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+239 [label="239: Start UITabBarControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 239 -> 240 ;
+238 [label="238: Exit UITabBarDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+237 [label="237: Start UITabBarDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 237 -> 238 ;
+236 [label="236: Exit UISplitViewControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+235 [label="235: Start UISplitViewControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 235 -> 236 ;
+234 [label="234: Exit EAGLDrawable_frontendChecks \n  " color=yellow style=filled]
+	
+
+233 [label="233: Start EAGLDrawable_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 233 -> 234 ;
+232 [label="232: Exit CAAction_frontendChecks \n  " color=yellow style=filled]
+	
+
+231 [label="231: Start CAAction_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 231 -> 232 ;
+230 [label="230: Exit CAMediaTiming_frontendChecks \n  " color=yellow style=filled]
+	
+
+229 [label="229: Start CAMediaTiming_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 229 -> 230 ;
+228 [label="228: Exit UISearchDisplayDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+227 [label="227: Start UISearchDisplayDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 227 -> 228 ;
+226 [label="226: Exit UISearchResultsUpdating_frontendChecks \n  " color=yellow style=filled]
+	
+
+225 [label="225: Start UISearchResultsUpdating_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 225 -> 226 ;
+224 [label="224: Exit UISearchControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+223 [label="223: Start UISearchControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 223 -> 224 ;
+222 [label="222: Exit UIViewControllerContextTransitioning_frontendChecks \n  " color=yellow style=filled]
+	
+
+221 [label="221: Start UIViewControllerContextTransitioning_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 221 -> 222 ;
+220 [label="220: Exit UIAdaptivePresentationControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+219 [label="219: Start UIAdaptivePresentationControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 219 -> 220 ;
+218 [label="218: Exit UIViewControllerTransitionCoordinatorContext_frontendChecks \n  " color=yellow style=filled]
+	
+
+217 [label="217: Start UIViewControllerTransitionCoordinatorContext_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 217 -> 218 ;
+216 [label="216: Exit UISearchBarDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+215 [label="215: Start UISearchBarDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 215 -> 216 ;
+214 [label="214: Exit UIPrintInteractionControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+213 [label="213: Start UIPrintInteractionControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 213 -> 214 ;
+212 [label="212: Exit UIPrinterPickerControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+211 [label="211: Start UIPrinterPickerControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 211 -> 212 ;
+210 [label="210: Exit UIPopoverBackgroundViewMethods_frontendChecks \n  " color=yellow style=filled]
+	
+
+209 [label="209: Start UIPopoverBackgroundViewMethods_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 209 -> 210 ;
+208 [label="208: Exit UIPopoverControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+207 [label="207: Start UIPopoverControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 207 -> 208 ;
+206 [label="206: Exit UIPageViewControllerDataSource_frontendChecks \n  " color=yellow style=filled]
+	
+
+205 [label="205: Start UIPageViewControllerDataSource_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 205 -> 206 ;
+204 [label="204: Exit UIPageViewControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+203 [label="203: Start UIPageViewControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 203 -> 204 ;
+202 [label="202: Exit UINavigationBarDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+201 [label="201: Start UINavigationBarDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 201 -> 202 ;
+200 [label="200: Exit UITextDocumentProxy_frontendChecks \n  " color=yellow style=filled]
+	
+
+199 [label="199: Start UITextDocumentProxy_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 199 -> 200 ;
+198 [label="198: Exit UIImagePickerControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+197 [label="197: Start UIImagePickerControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 197 -> 198 ;
+196 [label="196: Exit UIViewControllerAnimatedTransitioning_frontendChecks \n  " color=yellow style=filled]
+	
+
+195 [label="195: Start UIViewControllerAnimatedTransitioning_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 195 -> 196 ;
+194 [label="194: Exit UIViewControllerInteractiveTransitioning_frontendChecks \n  " color=yellow style=filled]
+	
+
+193 [label="193: Start UIViewControllerInteractiveTransitioning_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 193 -> 194 ;
+192 [label="192: Exit UINavigationControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+191 [label="191: Start UINavigationControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 191 -> 192 ;
+190 [label="190: Exit UIDocumentMenuDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+189 [label="189: Start UIDocumentMenuDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 189 -> 190 ;
+188 [label="188: Exit UIDocumentPickerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+187 [label="187: Start UIDocumentPickerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 187 -> 188 ;
+186 [label="186: Exit UIDocumentInteractionControllerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+185 [label="185: Start UIDocumentInteractionControllerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 185 -> 186 ;
+184 [label="184: Exit UICollectionViewDelegateFlowLayout_frontendChecks \n  " color=yellow style=filled]
+	
+
+183 [label="183: Start UICollectionViewDelegateFlowLayout_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 183 -> 184 ;
+182 [label="182: Exit UICollectionViewDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+181 [label="181: Start UICollectionViewDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 181 -> 182 ;
+180 [label="180: Exit UICollectionViewDataSource_frontendChecks \n  " color=yellow style=filled]
+	
+
+179 [label="179: Start UICollectionViewDataSource_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 179 -> 180 ;
+178 [label="178: Exit UIBarPositioningDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+177 [label="177: Start UIBarPositioningDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 177 -> 178 ;
+176 [label="176: Exit UIBarPositioning_frontendChecks \n  " color=yellow style=filled]
+	
+
+175 [label="175: Start UIBarPositioning_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 175 -> 176 ;
+174 [label="174: Exit UIPreviewActionItem_frontendChecks \n  " color=yellow style=filled]
+	
+
+173 [label="173: Start UIPreviewActionItem_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 173 -> 174 ;
+172 [label="172: Exit UIViewControllerPreviewing_frontendChecks \n  " color=yellow style=filled]
+	
+
+171 [label="171: Start UIViewControllerPreviewing_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 171 -> 172 ;
+170 [label="170: Exit UIViewControllerPreviewingDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+169 [label="169: Start UIViewControllerPreviewingDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 169 -> 170 ;
+168 [label="168: Exit UIViewControllerTransitioningDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+167 [label="167: Start UIViewControllerTransitioningDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 167 -> 168 ;
+166 [label="166: Exit UIContentContainer_frontendChecks \n  " color=yellow style=filled]
+	
+
+165 [label="165: Start UIContentContainer_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 165 -> 166 ;
+164 [label="164: Exit UIViewControllerTransitionCoordinator_frontendChecks \n  " color=yellow style=filled]
+	
+
+163 [label="163: Start UIViewControllerTransitionCoordinator_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 163 -> 164 ;
+162 [label="162: Exit UIObjectRestoration_frontendChecks \n  " color=yellow style=filled]
+	
+
+161 [label="161: Start UIObjectRestoration_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 161 -> 162 ;
+160 [label="160: Exit UIDataSourceModelAssociation_frontendChecks \n  " color=yellow style=filled]
+	
+
+159 [label="159: Start UIDataSourceModelAssociation_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 159 -> 160 ;
+158 [label="158: Exit UIViewControllerRestoration_frontendChecks \n  " color=yellow style=filled]
+	
+
+157 [label="157: Start UIViewControllerRestoration_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 157 -> 158 ;
+156 [label="156: Exit UIStateRestoring_frontendChecks \n  " color=yellow style=filled]
+	
+
+155 [label="155: Start UIStateRestoring_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 155 -> 156 ;
+154 [label="154: Exit UIApplicationDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+153 [label="153: Start UIApplicationDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 153 -> 154 ;
+152 [label="152: Exit UIAlertViewDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+151 [label="151: Start UIAlertViewDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 151 -> 152 ;
+150 [label="150: Exit UIActionSheetDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+149 [label="149: Start UIActionSheetDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 149 -> 150 ;
+148 [label="148: Exit UITextSelecting_frontendChecks \n  " color=yellow style=filled]
+	
+
+147 [label="147: Start UITextSelecting_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 147 -> 148 ;
+146 [label="146: Exit UITextFieldDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+145 [label="145: Start UITextFieldDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 145 -> 146 ;
+144 [label="144: Exit UITextInput_frontendChecks \n  " color=yellow style=filled]
+	
+
+143 [label="143: Start UITextInput_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 143 -> 144 ;
+142 [label="142: Exit UITextInputDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+141 [label="141: Start UITextInputDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 141 -> 142 ;
+140 [label="140: Exit UITextInputTokenizer_frontendChecks \n  " color=yellow style=filled]
+	
+
+139 [label="139: Start UITextInputTokenizer_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 139 -> 140 ;
+138 [label="138: Exit UIKeyInput_frontendChecks \n  " color=yellow style=filled]
+	
+
+137 [label="137: Start UIKeyInput_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 137 -> 138 ;
+136 [label="136: Exit UITextInputTraits_frontendChecks \n  " color=yellow style=filled]
+	
+
+135 [label="135: Start UITextInputTraits_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 135 -> 136 ;
+134 [label="134: Exit UIActivityItemSource_frontendChecks \n  " color=yellow style=filled]
+	
+
+133 [label="133: Start UIActivityItemSource_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 133 -> 134 ;
+132 [label="132: Exit UIAccessibilityReadingContent_frontendChecks \n  " color=yellow style=filled]
+	
+
+131 [label="131: Start UIAccessibilityReadingContent_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 131 -> 132 ;
+130 [label="130: Exit UIGuidedAccessRestrictionDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+129 [label="129: Start UIGuidedAccessRestrictionDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 129 -> 130 ;
+128 [label="128: Exit UIAccessibilityIdentification_frontendChecks \n  " color=yellow style=filled]
+	
+
+127 [label="127: Start UIAccessibilityIdentification_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 127 -> 128 ;
+126 [label="126: Exit UIScrollViewAccessibilityDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+125 [label="125: Start UIScrollViewAccessibilityDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 125 -> 126 ;
+124 [label="124: Exit UIPickerViewAccessibilityDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+123 [label="123: Start UIPickerViewAccessibilityDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 123 -> 124 ;
+122 [label="122: Exit UIPickerViewDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+121 [label="121: Start UIPickerViewDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 121 -> 122 ;
+120 [label="120: Exit UIPickerViewDataSource_frontendChecks \n  " color=yellow style=filled]
+	
+
+119 [label="119: Start UIPickerViewDataSource_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 119 -> 120 ;
+118 [label="118: Exit UITableViewDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+117 [label="117: Start UITableViewDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 117 -> 118 ;
+116 [label="116: Exit UITableViewDataSource_frontendChecks \n  " color=yellow style=filled]
+	
+
+115 [label="115: Start UITableViewDataSource_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 115 -> 116 ;
+114 [label="114: Exit UIGestureRecognizerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+113 [label="113: Start UIGestureRecognizerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 113 -> 114 ;
+112 [label="112: Exit UIScrollViewDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+111 [label="111: Start UIScrollViewDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 111 -> 112 ;
+110 [label="110: Exit UICoordinateSpace_frontendChecks \n  " color=yellow style=filled]
+	
+
+109 [label="109: Start UICoordinateSpace_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 109 -> 110 ;
+108 [label="108: Exit UIFocusEnvironment_frontendChecks \n  " color=yellow style=filled]
+	
+
+107 [label="107: Start UIFocusEnvironment_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 107 -> 108 ;
+106 [label="106: Exit UITraitEnvironment_frontendChecks \n  " color=yellow style=filled]
+	
+
+105 [label="105: Start UITraitEnvironment_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 105 -> 106 ;
+104 [label="104: Exit UIInputViewAudioFeedback_frontendChecks \n  " color=yellow style=filled]
+	
+
+103 [label="103: Start UIInputViewAudioFeedback_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 103 -> 104 ;
+102 [label="102: Exit UILayoutSupport_frontendChecks \n  " color=yellow style=filled]
+	
+
+101 [label="101: Start UILayoutSupport_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 101 -> 102 ;
+100 [label="100: Exit UIDynamicItem_frontendChecks \n  " color=yellow style=filled]
+	
+
+99 [label="99: Start UIDynamicItem_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 99 -> 100 ;
+98 [label="98: Exit UIAppearance_frontendChecks \n  " color=yellow style=filled]
+	
+
+97 [label="97: Start UIAppearance_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 97 -> 98 ;
+96 [label="96: Exit UIAppearanceContainer_frontendChecks \n  " color=yellow style=filled]
+	
+
+95 [label="95: Start UIAppearanceContainer_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 95 -> 96 ;
+94 [label="94: Exit CIFilterConstructor_frontendChecks \n  " color=yellow style=filled]
+	
+
+93 [label="93: Start CIFilterConstructor_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 93 -> 94 ;
+92 [label="92: Exit MTLCommandBuffer_frontendChecks \n  " color=yellow style=filled]
+	
+
+91 [label="91: Start MTLCommandBuffer_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 91 -> 92 ;
+90 [label="90: Exit MTLDevice_frontendChecks \n  " color=yellow style=filled]
+	
+
+89 [label="89: Start MTLDevice_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 89 -> 90 ;
+88 [label="88: Exit MTLTexture_frontendChecks \n  " color=yellow style=filled]
+	
+
+87 [label="87: Start MTLTexture_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 87 -> 88 ;
+86 [label="86: Exit UIAccelerometerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+85 [label="85: Start UIAccelerometerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 85 -> 86 ;
+84 [label="84: Exit NSUserActivityDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+83 [label="83: Start NSUserActivityDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 83 -> 84 ;
+82 [label="82: Exit NSURLSessionStreamDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+81 [label="81: Start NSURLSessionStreamDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 81 -> 82 ;
+80 [label="80: Exit NSURLSessionDownloadDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+79 [label="79: Start NSURLSessionDownloadDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 79 -> 80 ;
+78 [label="78: Exit NSURLSessionDataDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+77 [label="77: Start NSURLSessionDataDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 77 -> 78 ;
+76 [label="76: Exit NSURLSessionTaskDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+75 [label="75: Start NSURLSessionTaskDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 75 -> 76 ;
+74 [label="74: Exit NSURLSessionDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+73 [label="73: Start NSURLSessionDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 73 -> 74 ;
+72 [label="72: Exit NSNetServiceBrowserDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+71 [label="71: Start NSNetServiceBrowserDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 71 -> 72 ;
+70 [label="70: Exit NSNetServiceDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+69 [label="69: Start NSNetServiceDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 69 -> 70 ;
+68 [label="68: Exit NSMetadataQueryDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+67 [label="67: Start NSMetadataQueryDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 67 -> 68 ;
+66 [label="66: Exit NSFilePresenter_frontendChecks \n  " color=yellow style=filled]
+	
+
+65 [label="65: Start NSFilePresenter_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 65 -> 66 ;
+64 [label="64: Exit NSExtensionRequestHandling_frontendChecks \n  " color=yellow style=filled]
+	
+
+63 [label="63: Start NSExtensionRequestHandling_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 63 -> 64 ;
+62 [label="62: Exit NSCacheDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+61 [label="61: Start NSCacheDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 61 -> 62 ;
+60 [label="60: Exit NSXMLParserDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+59 [label="59: Start NSXMLParserDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 59 -> 60 ;
+58 [label="58: Exit NSURLProtocolClient_frontendChecks \n  " color=yellow style=filled]
+	
+
+57 [label="57: Start NSURLProtocolClient_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 57 -> 58 ;
+56 [label="56: Exit NSURLConnectionDownloadDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+55 [label="55: Start NSURLConnectionDownloadDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 55 -> 56 ;
+54 [label="54: Exit NSURLConnectionDataDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+53 [label="53: Start NSURLConnectionDataDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 53 -> 54 ;
+52 [label="52: Exit NSURLConnectionDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+51 [label="51: Start NSURLConnectionDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 51 -> 52 ;
+50 [label="50: Exit NSURLAuthenticationChallengeSender_frontendChecks \n  " color=yellow style=filled]
+	
+
+49 [label="49: Start NSURLAuthenticationChallengeSender_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 49 -> 50 ;
+48 [label="48: Exit NSStreamDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+47 [label="47: Start NSStreamDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 47 -> 48 ;
+46 [label="46: Exit NSMachPortDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+45 [label="45: Start NSMachPortDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 45 -> 46 ;
+44 [label="44: Exit NSPortDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+43 [label="43: Start NSPortDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 43 -> 44 ;
+42 [label="42: Exit NSLocking_frontendChecks \n  " color=yellow style=filled]
+	
+
+41 [label="41: Start NSLocking_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 41 -> 42 ;
+40 [label="40: Exit NSKeyedUnarchiverDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+39 [label="39: Start NSKeyedUnarchiverDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 39 -> 40 ;
+38 [label="38: Exit NSKeyedArchiverDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+37 [label="37: Start NSKeyedArchiverDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 37 -> 38 ;
+36 [label="36: Exit NSFileManagerDelegate_frontendChecks \n  " color=yellow style=filled]
+	
+
+35 [label="35: Start NSFileManagerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 35 -> 36 ;
+34 [label="34: Exit NSDecimalNumberBehaviors_frontendChecks \n  " color=yellow style=filled]
+	
+
+33 [label="33: Start NSDecimalNumberBehaviors_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 33 -> 34 ;
+32 [label="32: Exit NSProgressReporting_frontendChecks \n  " color=yellow style=filled]
+	
+
+31 [label="31: Start NSProgressReporting_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 31 -> 32 ;
+30 [label="30: Exit NSFastEnumeration_frontendChecks \n  " color=yellow style=filled]
+	
+
+29 [label="29: Start NSFastEnumeration_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 29 -> 30 ;
+28 [label="28: Exit OS_dispatch_io_frontendChecks \n  " color=yellow style=filled]
+	
+
+27 [label="27: Start OS_dispatch_io_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 27 -> 28 ;
+26 [label="26: Exit OS_dispatch_data_frontendChecks \n  " color=yellow style=filled]
+	
+
+25 [label="25: Start OS_dispatch_data_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 25 -> 26 ;
+24 [label="24: Exit OS_dispatch_semaphore_frontendChecks \n  " color=yellow style=filled]
+	
+
+23 [label="23: Start OS_dispatch_semaphore_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 23 -> 24 ;
+22 [label="22: Exit OS_dispatch_group_frontendChecks \n  " color=yellow style=filled]
+	
+
+21 [label="21: Start OS_dispatch_group_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 21 -> 22 ;
+20 [label="20: Exit OS_dispatch_source_frontendChecks \n  " color=yellow style=filled]
+	
+
+19 [label="19: Start OS_dispatch_source_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 19 -> 20 ;
+18 [label="18: Exit OS_dispatch_queue_attr_frontendChecks \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start OS_dispatch_queue_attr_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 17 -> 18 ;
+16 [label="16: Exit OS_dispatch_queue_frontendChecks \n  " color=yellow style=filled]
+	
+
+15 [label="15: Start OS_dispatch_queue_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 15 -> 16 ;
+14 [label="14: Exit OS_dispatch_object_frontendChecks \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start OS_dispatch_object_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 13 -> 14 ;
+12 [label="12: Exit NSDiscardableContent_frontendChecks \n  " color=yellow style=filled]
+	
+
+11 [label="11: Start NSDiscardableContent_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 11 -> 12 ;
+10 [label="10: Exit NSSecureCoding_frontendChecks \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start NSSecureCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 9 -> 10 ;
+8 [label="8: Exit NSCoding_frontendChecks \n  " color=yellow style=filled]
+	
+
+7 [label="7: Start NSCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 7 -> 8 ;
+6 [label="6: Exit NSMutableCopying_frontendChecks \n  " color=yellow style=filled]
+	
+
+5 [label="5: Start NSMutableCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 5 -> 6 ;
+4 [label="4: Exit NSCopying_frontendChecks \n  " color=yellow style=filled]
+	
+
+3 [label="3: Start NSCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 3 -> 4 ;
+2 [label="2: Exit NSObject_frontendChecks \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start NSObject_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 1 -> 2 ;

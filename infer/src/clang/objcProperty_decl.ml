@@ -23,6 +23,12 @@ let is_strong_property obj_c_property_decl_info =
       | `Strong -> true
       | _ -> false) attrs
 
+let is_assign_property obj_c_property_decl_info =
+  let attrs = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
+  IList.exists (fun a -> match a with
+      | `Assign -> true
+      | _ -> false) attrs
+
 (* Given a list of declarations in an interface returns list of methods *)
 let get_methods curr_class decl_list =
   let class_name = CContext.get_curr_class_name curr_class in

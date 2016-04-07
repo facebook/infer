@@ -14,3 +14,6 @@ val get_methods : CContext.curr_class -> Clang_ast_t.decl list -> Procname.t lis
 
 (* Given a property type returns whether the property is strong *)
 val is_strong_property : Clang_ast_t.obj_c_property_decl_info -> bool
+
+(* Returns true if a property has the `assign` attribute *)
+val is_assign_property : Clang_ast_t.obj_c_property_decl_info -> bool
