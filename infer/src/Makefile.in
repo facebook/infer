@@ -300,12 +300,14 @@ test_clean:
 
 clean:
 	$(REMOVE_DIR) $(BUILD_DIR)
+	$(REMOVE) $(ETC_DIR)/clang_ast.dict
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
 	$(REMOVE_DIR) $(ANNOT_DIR)
 endif
 	$(REMOVE) backend/version.ml
 	$(REMOVE) backend/version.ml.tmp.*
+	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
 	$(REMOVE) $(INFERJAVA_BIN) $(INFERCLANG_BIN) $(INFERLLVM_BIN) $(INFERUNIT_BIN)
-	$(REMOVE) $(CHECKCOPYRIGHT_BIN)
+	$(REMOVE) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
