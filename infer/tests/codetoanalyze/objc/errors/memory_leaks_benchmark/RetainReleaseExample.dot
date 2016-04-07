@@ -1,69 +1,27 @@
 digraph iCFG {
-19 [label="19:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 21]\n  n$4=_fun_NSObject_init(n$3:class A *) virtual [line 21]\n  *&a:class A *=n$4 [line 21]\n  REMOVE_TEMPS(n$3,n$4); [line 21]\n " shape="box"]
+7 [label="7:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 21]\n  n$4=_fun_NSObject_init(n$3:class A *) virtual [line 21]\n  *&a:class A *=n$4 [line 21]\n  REMOVE_TEMPS(n$3,n$4); [line 21]\n " shape="box"]
 	
 
-	 19 -> 18 ;
-18 [label="18:  Message Call: retain \n   n$1=*&a:class A * [line 22]\n  n$2=_fun___objc_retain(n$1:class A *) [line 22]\n  REMOVE_TEMPS(n$1,n$2); [line 22]\n " shape="box"]
+	 7 -> 6 ;
+6 [label="6:  Message Call: retain \n   n$1=*&a:class A * [line 22]\n  n$2=_fun___objc_retain(n$1:class A *) [line 22]\n  REMOVE_TEMPS(n$1,n$2); [line 22]\n " shape="box"]
 	
 
-	 18 -> 17 ;
-17 [label="17:  Message Call: release \n   n$0=*&a:class A * [line 23]\n  _fun___objc_release(n$0:class A *) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+	 6 -> 5 ;
+5 [label="5:  Message Call: release \n   n$0=*&a:class A * [line 23]\n  _fun___objc_release(n$0:class A *) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
-	 17 -> 16 ;
-16 [label="16: Exit test \n  " color=yellow style=filled]
+	 5 -> 4 ;
+4 [label="4: Exit test \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start test\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 20]\n  NULLIFY(&a,false); [line 20]\n " color=yellow style=filled]
+3 [label="3: Start test\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 20]\n  NULLIFY(&a,false); [line 20]\n " color=yellow style=filled]
 	
 
-	 15 -> 19 ;
-14 [label="14: Exit A_frontendChecks \n  " color=yellow style=filled]
+	 3 -> 7 ;
+2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 13 -> 14 ;
-12 [label="12: Exit NSDiscardableContent_frontendChecks \n  " color=yellow style=filled]
-	
-
-11 [label="11: Start NSDiscardableContent_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 11 -> 12 ;
-10 [label="10: Exit NSSecureCoding_frontendChecks \n  " color=yellow style=filled]
-	
-
-9 [label="9: Start NSSecureCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 9 -> 10 ;
-8 [label="8: Exit NSCoding_frontendChecks \n  " color=yellow style=filled]
-	
-
-7 [label="7: Start NSCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 7 -> 8 ;
-6 [label="6: Exit NSMutableCopying_frontendChecks \n  " color=yellow style=filled]
-	
-
-5 [label="5: Start NSMutableCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 5 -> 6 ;
-4 [label="4: Exit NSCopying_frontendChecks \n  " color=yellow style=filled]
-	
-
-3 [label="3: Start NSCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 3 -> 4 ;
-2 [label="2: Exit NSObject_frontendChecks \n  " color=yellow style=filled]
-	
-
-1 [label="1: Start NSObject_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 1 -> 2 ;

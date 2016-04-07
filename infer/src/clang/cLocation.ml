@@ -74,6 +74,15 @@ let clang_to_sil_location clang_loc procdesc_opt =
         | None -> !curr_file, !Config.nLOC in
   Location.{line; col; file; nLOC}
 
+let should_do_frontend_check (loc_start, _) =
+  let equal_current_source loc =
+    match loc.Clang_ast_t.sl_file with
+    | Some f -> DB.source_file_equal (source_file_from_path f) !DB.current_source
+    | None -> false in
+  if !CFrontend_config.testing_mode then
+    equal_current_source loc_start
+  else true
+
 (* We translate by default the instructions in the current file.*)
 (* In C++ development, we also translate the headers that are part *)
 (* of the project. However, in testing mode, we don't want to translate *)

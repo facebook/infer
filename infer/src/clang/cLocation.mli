@@ -21,6 +21,8 @@ val get_sil_location : Clang_ast_t.stmt_info -> CContext.t -> Location.t
 
 val should_translate_lib : Clang_ast_t.source_range -> bool
 
+val should_do_frontend_check : Clang_ast_t.source_range -> bool
+
 val update_curr_file : Clang_ast_t.decl_info -> unit
 
 val check_source_file : string -> unit

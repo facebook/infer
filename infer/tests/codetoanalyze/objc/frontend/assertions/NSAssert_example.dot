@@ -1,736 +1,442 @@
 digraph iCFG {
-191 [label="191:  DeclStmt \n   n$20=_fun_NSString_stringWithUTF8String:(\"\":char *) [line 36]\n  _fun___objc_retain(n$20:class NSString *) [line 36]\n  *&__assert_fn__:class NSString *=n$20 [line 36]\n  REMOVE_TEMPS(n$20); [line 36]\n " shape="box"]
+107 [label="107:  DeclStmt \n   n$20=_fun_NSString_stringWithUTF8String:(\"\":char *) [line 36]\n  _fun___objc_retain(n$20:class NSString *) [line 36]\n  *&__assert_fn__:class NSString *=n$20 [line 36]\n  REMOVE_TEMPS(n$20); [line 36]\n " shape="box"]
 	
 
-	 191 -> 186 ;
-	 191 -> 187 ;
-190 [label="190:  BinaryOperatorStmt: Assign \n   n$18=*&SIL_temp_conditional___185:class NSString * [line 36]\n  NULLIFY(&SIL_temp_conditional___185,true); [line 36]\n  _fun___objc_retain(n$18:class NSString *) [line 36]\n  n$19=*&__assert_fn__:class NSString * [line 36]\n  *&__assert_fn__:class NSString *=n$18 [line 36]\n  _fun___objc_release(n$19:class NSString *) [line 36]\n  REMOVE_TEMPS(n$18,n$19); [line 36]\n  NULLIFY(&__assert_fn__,false); [line 36]\n " shape="box"]
-	
-
-	 190 -> 184 ;
-189 [label="189:  ConditinalStmt Branch \n   n$17=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___185); [line 36]\n  *&SIL_temp_conditional___185:class NSString *=n$17 [line 36]\n  REMOVE_TEMPS(n$17); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
-	
-
-	 189 -> 185 ;
-188 [label="188:  ConditinalStmt Branch \n   n$16=*&__assert_fn__:class NSString * [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___185); [line 36]\n  *&SIL_temp_conditional___185:class NSString *=n$16 [line 36]\n  REMOVE_TEMPS(n$16); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
-	
-
-	 188 -> 185 ;
-187 [label="187: Prune (false branch) \n   n$15=*&__assert_fn__:class NSString * [line 36]\n  PRUNE((n$15 == 0), false); [line 36]\n  REMOVE_TEMPS(n$15); [line 36]\n " shape="invhouse"]
-	
-
-	 187 -> 189 ;
-186 [label="186: Prune (true branch) \n   n$15=*&__assert_fn__:class NSString * [line 36]\n  PRUNE((n$15 != 0), true); [line 36]\n  REMOVE_TEMPS(n$15); [line 36]\n " shape="invhouse"]
-	
-
-	 186 -> 188 ;
-185 [label="185: + \n  " ]
-	
-
-	 185 -> 190 ;
-184 [label="184:  DeclStmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 36]\n  _fun___objc_retain(n$14:class NSString *) [line 36]\n  *&__assert_file__:class NSString *=n$14 [line 36]\n  REMOVE_TEMPS(n$14); [line 36]\n " shape="box"]
-	
-
-	 184 -> 179 ;
-	 184 -> 180 ;
-183 [label="183:  BinaryOperatorStmt: Assign \n   n$12=*&SIL_temp_conditional___178:class NSString * [line 36]\n  NULLIFY(&SIL_temp_conditional___178,true); [line 36]\n  _fun___objc_retain(n$12:class NSString *) [line 36]\n  n$13=*&__assert_file__:class NSString * [line 36]\n  *&__assert_file__:class NSString *=n$12 [line 36]\n  _fun___objc_release(n$13:class NSString *) [line 36]\n  REMOVE_TEMPS(n$12,n$13); [line 36]\n  NULLIFY(&__assert_file__,false); [line 36]\n " shape="box"]
-	
-
-	 183 -> 177 ;
-182 [label="182:  ConditinalStmt Branch \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___178); [line 36]\n  *&SIL_temp_conditional___178:class NSString *=n$11 [line 36]\n  REMOVE_TEMPS(n$11); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
-	
-
-	 182 -> 178 ;
-181 [label="181:  ConditinalStmt Branch \n   n$10=*&__assert_file__:class NSString * [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___178); [line 36]\n  *&SIL_temp_conditional___178:class NSString *=n$10 [line 36]\n  REMOVE_TEMPS(n$10); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
-	
-
-	 181 -> 178 ;
-180 [label="180: Prune (false branch) \n   n$9=*&__assert_file__:class NSString * [line 36]\n  PRUNE((n$9 == 0), false); [line 36]\n  REMOVE_TEMPS(n$9); [line 36]\n " shape="invhouse"]
-	
-
-	 180 -> 182 ;
-179 [label="179: Prune (true branch) \n   n$9=*&__assert_file__:class NSString * [line 36]\n  PRUNE((n$9 != 0), true); [line 36]\n  REMOVE_TEMPS(n$9); [line 36]\n " shape="invhouse"]
-	
-
-	 179 -> 181 ;
-178 [label="178: + \n  " ]
-	
-
-	 178 -> 183 ;
-177 [label="177:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
-	
-
-	 177 -> 164 ;
-176 [label="176: Prune (false branch) \n   n$3=*&SIL_temp_conditional___170:int  [line 36]\n  NULLIFY(&SIL_temp_conditional___170,true); [line 36]\n  PRUNE((n$3 == 0), false); [line 36]\n  REMOVE_TEMPS(n$3); [line 36]\n " shape="invhouse"]
-	
-
-	 176 -> 169 ;
-175 [label="175: Prune (true branch) \n   n$3=*&SIL_temp_conditional___170:int  [line 36]\n  NULLIFY(&SIL_temp_conditional___170,true); [line 36]\n  PRUNE((n$3 != 0), true); [line 36]\n  REMOVE_TEMPS(n$3); [line 36]\n  NULLIFY(&target,false); [line 36]\n " shape="invhouse"]
-	
-
-	 175 -> 191 ;
-174 [label="174:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___170); [line 36]\n  *&SIL_temp_conditional___170:int =1 [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
-	
-
-	 174 -> 170 ;
-173 [label="173:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___170); [line 36]\n  *&SIL_temp_conditional___170:int =0 [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
-	
-
-	 173 -> 170 ;
-172 [label="172: Prune (false branch) \n   n$2=*&target:class A * [line 36]\n  PRUNE((n$2 == 0), false); [line 36]\n  REMOVE_TEMPS(n$2); [line 36]\n " shape="invhouse"]
-	
-
-	 172 -> 174 ;
-171 [label="171: Prune (true branch) \n   n$2=*&target:class A * [line 36]\n  PRUNE((n$2 != 0), true); [line 36]\n  REMOVE_TEMPS(n$2); [line 36]\n " shape="invhouse"]
-	
-
-	 171 -> 173 ;
-170 [label="170: + \n  " ]
-	
-
-	 170 -> 175 ;
-	 170 -> 176 ;
-169 [label="169: + \n  " ]
-	
-
-	 169 -> 167 ;
-	 169 -> 168 ;
-168 [label="168: Prune (false branch) \n   PRUNE((0 == 0), false); [line 36]\n " shape="invhouse"]
-	
-
-	 168 -> 165 ;
-167 [label="167: Prune (true branch) \n   PRUNE((0 != 0), true); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="invhouse"]
-	
-
-	 167 -> 166 ;
-166 [label="166: + \n  " ]
-	
-
-	 166 -> 171 ;
-	 166 -> 172 ;
-165 [label="165:  Return Stmt \n   n$0=*&target:class A * [line 37]\n  n$1=_fun_A_x(n$0:class A *) [line 37]\n  *&return:int =n$1 [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&target,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
-	
-
-	 165 -> 164 ;
-164 [label="164: Exit test2 \n  " color=yellow style=filled]
-	
-
-163 [label="163: Start test2\nFormals:  target:class A *\nLocals:  __assert_file__:class NSString * __assert_fn__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__,&__assert_fn__); [line 35]\n  NULLIFY(&__assert_file__,false); [line 35]\n  NULLIFY(&__assert_fn__,false); [line 35]\n " color=yellow style=filled]
-	
-
-	 163 -> 166 ;
-162 [label="162:  DeclStmt \n   n$19=_fun_NSString_stringWithUTF8String:(\"\":char *) [line 31]\n  _fun___objc_retain(n$19:class NSString *) [line 31]\n  *&__assert_fn__:class NSString *=n$19 [line 31]\n  REMOVE_TEMPS(n$19); [line 31]\n " shape="box"]
-	
-
-	 162 -> 157 ;
-	 162 -> 158 ;
-161 [label="161:  BinaryOperatorStmt: Assign \n   n$17=*&SIL_temp_conditional___156:class NSString * [line 31]\n  NULLIFY(&SIL_temp_conditional___156,true); [line 31]\n  _fun___objc_retain(n$17:class NSString *) [line 31]\n  n$18=*&__assert_fn__:class NSString * [line 31]\n  *&__assert_fn__:class NSString *=n$17 [line 31]\n  _fun___objc_release(n$18:class NSString *) [line 31]\n  REMOVE_TEMPS(n$17,n$18); [line 31]\n  NULLIFY(&__assert_fn__,false); [line 31]\n " shape="box"]
-	
-
-	 161 -> 155 ;
-160 [label="160:  ConditinalStmt Branch \n   n$16=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___156); [line 31]\n  *&SIL_temp_conditional___156:class NSString *=n$16 [line 31]\n  REMOVE_TEMPS(n$16); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
-	
-
-	 160 -> 156 ;
-159 [label="159:  ConditinalStmt Branch \n   n$15=*&__assert_fn__:class NSString * [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___156); [line 31]\n  *&SIL_temp_conditional___156:class NSString *=n$15 [line 31]\n  REMOVE_TEMPS(n$15); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
-	
-
-	 159 -> 156 ;
-158 [label="158: Prune (false branch) \n   n$14=*&__assert_fn__:class NSString * [line 31]\n  PRUNE((n$14 == 0), false); [line 31]\n  REMOVE_TEMPS(n$14); [line 31]\n " shape="invhouse"]
-	
-
-	 158 -> 160 ;
-157 [label="157: Prune (true branch) \n   n$14=*&__assert_fn__:class NSString * [line 31]\n  PRUNE((n$14 != 0), true); [line 31]\n  REMOVE_TEMPS(n$14); [line 31]\n " shape="invhouse"]
-	
-
-	 157 -> 159 ;
-156 [label="156: + \n  " ]
-	
-
-	 156 -> 161 ;
-155 [label="155:  DeclStmt \n   n$13=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 31]\n  _fun___objc_retain(n$13:class NSString *) [line 31]\n  *&__assert_file__:class NSString *=n$13 [line 31]\n  REMOVE_TEMPS(n$13); [line 31]\n " shape="box"]
-	
-
-	 155 -> 150 ;
-	 155 -> 151 ;
-154 [label="154:  BinaryOperatorStmt: Assign \n   n$11=*&SIL_temp_conditional___149:class NSString * [line 31]\n  NULLIFY(&SIL_temp_conditional___149,true); [line 31]\n  _fun___objc_retain(n$11:class NSString *) [line 31]\n  n$12=*&__assert_file__:class NSString * [line 31]\n  *&__assert_file__:class NSString *=n$11 [line 31]\n  _fun___objc_release(n$12:class NSString *) [line 31]\n  REMOVE_TEMPS(n$11,n$12); [line 31]\n  NULLIFY(&__assert_file__,false); [line 31]\n " shape="box"]
-	
-
-	 154 -> 148 ;
-153 [label="153:  ConditinalStmt Branch \n   n$10=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___149); [line 31]\n  *&SIL_temp_conditional___149:class NSString *=n$10 [line 31]\n  REMOVE_TEMPS(n$10); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
-	
-
-	 153 -> 149 ;
-152 [label="152:  ConditinalStmt Branch \n   n$9=*&__assert_file__:class NSString * [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___149); [line 31]\n  *&SIL_temp_conditional___149:class NSString *=n$9 [line 31]\n  REMOVE_TEMPS(n$9); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
-	
-
-	 152 -> 149 ;
-151 [label="151: Prune (false branch) \n   n$8=*&__assert_file__:class NSString * [line 31]\n  PRUNE((n$8 == 0), false); [line 31]\n  REMOVE_TEMPS(n$8); [line 31]\n " shape="invhouse"]
-	
-
-	 151 -> 153 ;
-150 [label="150: Prune (true branch) \n   n$8=*&__assert_file__:class NSString * [line 31]\n  PRUNE((n$8 != 0), true); [line 31]\n  REMOVE_TEMPS(n$8); [line 31]\n " shape="invhouse"]
-	
-
-	 150 -> 152 ;
-149 [label="149: + \n  " ]
-	
-
-	 149 -> 154 ;
-148 [label="148:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
-	
-
-	 148 -> 134 ;
-147 [label="147: Prune (false branch) \n   n$3=*&SIL_temp_conditional___140:int  [line 31]\n  NULLIFY(&SIL_temp_conditional___140,true); [line 31]\n  PRUNE((n$3 == 0), false); [line 31]\n  REMOVE_TEMPS(n$3); [line 31]\n " shape="invhouse"]
-	
-
-	 147 -> 139 ;
-146 [label="146: Prune (true branch) \n   n$3=*&SIL_temp_conditional___140:int  [line 31]\n  NULLIFY(&SIL_temp_conditional___140,true); [line 31]\n  PRUNE((n$3 != 0), true); [line 31]\n  REMOVE_TEMPS(n$3); [line 31]\n  NULLIFY(&target,false); [line 31]\n " shape="invhouse"]
-	
-
-	 146 -> 162 ;
-145 [label="145:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___140); [line 31]\n  *&SIL_temp_conditional___140:int =1 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
-	
-
-	 145 -> 140 ;
-144 [label="144:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___140); [line 31]\n  *&SIL_temp_conditional___140:int =0 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
-	
-
-	 144 -> 140 ;
-143 [label="143: Prune (false branch) \n   PRUNE(((n$2 != (void *)0) == 0), false); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
-	
-
-	 143 -> 145 ;
-142 [label="142: Prune (true branch) \n   PRUNE(((n$2 != (void *)0) != 0), true); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
-	
-
-	 142 -> 144 ;
-141 [label="141:  BinaryOperatorStmt: NE \n   n$2=*&target:class A * [line 31]\n " shape="box"]
-	
-
-	 141 -> 142 ;
-	 141 -> 143 ;
-140 [label="140: + \n  " ]
-	
-
-	 140 -> 146 ;
-	 140 -> 147 ;
-139 [label="139: + \n  " ]
-	
-
-	 139 -> 137 ;
-	 139 -> 138 ;
-138 [label="138: Prune (false branch) \n   PRUNE((0 == 0), false); [line 31]\n " shape="invhouse"]
-	
-
-	 138 -> 135 ;
-137 [label="137: Prune (true branch) \n   PRUNE((0 != 0), true); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="invhouse"]
-	
-
-	 137 -> 136 ;
-136 [label="136: + \n  " ]
-	
-
-	 136 -> 141 ;
-135 [label="135:  Return Stmt \n   n$0=*&target:class A * [line 32]\n  n$1=_fun_A_x(n$0:class A *) [line 32]\n  *&return:int =n$1 [line 32]\n  REMOVE_TEMPS(n$0,n$1); [line 32]\n  NULLIFY(&target,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
-	
-
-	 135 -> 134 ;
-134 [label="134: Exit test1 \n  " color=yellow style=filled]
-	
-
-133 [label="133: Start test1\nFormals:  target:class A *\nLocals:  __assert_file__:class NSString * __assert_fn__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__,&__assert_fn__); [line 30]\n  NULLIFY(&__assert_file__,false); [line 30]\n  NULLIFY(&__assert_fn__,false); [line 30]\n " color=yellow style=filled]
-	
-
-	 133 -> 136 ;
-132 [label="132:  DeclStmt \n   n$29=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 24]\n  _fun___objc_retain(n$29:class NSString *) [line 24]\n  *&__assert_file__:class NSString *=n$29 [line 24]\n  REMOVE_TEMPS(n$29); [line 24]\n " shape="box"]
-	
-
-	 132 -> 127 ;
-	 132 -> 128 ;
-131 [label="131:  BinaryOperatorStmt: Assign \n   n$27=*&SIL_temp_conditional___126:class NSString * [line 24]\n  NULLIFY(&SIL_temp_conditional___126,true); [line 24]\n  _fun___objc_retain(n$27:class NSString *) [line 24]\n  n$28=*&__assert_file__:class NSString * [line 24]\n  *&__assert_file__:class NSString *=n$27 [line 24]\n  _fun___objc_release(n$28:class NSString *) [line 24]\n  REMOVE_TEMPS(n$27,n$28); [line 24]\n  NULLIFY(&__assert_file__,false); [line 24]\n " shape="box"]
-	
-
-	 131 -> 125 ;
-130 [label="130:  ConditinalStmt Branch \n   n$26=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___126); [line 24]\n  *&SIL_temp_conditional___126:class NSString *=n$26 [line 24]\n  REMOVE_TEMPS(n$26); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
-	
-
-	 130 -> 126 ;
-129 [label="129:  ConditinalStmt Branch \n   n$25=*&__assert_file__:class NSString * [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___126); [line 24]\n  *&SIL_temp_conditional___126:class NSString *=n$25 [line 24]\n  REMOVE_TEMPS(n$25); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
-	
-
-	 129 -> 126 ;
-128 [label="128: Prune (false branch) \n   n$24=*&__assert_file__:class NSString * [line 24]\n  PRUNE((n$24 == 0), false); [line 24]\n  REMOVE_TEMPS(n$24); [line 24]\n " shape="invhouse"]
-	
-
-	 128 -> 130 ;
-127 [label="127: Prune (true branch) \n   n$24=*&__assert_file__:class NSString * [line 24]\n  PRUNE((n$24 != 0), true); [line 24]\n  REMOVE_TEMPS(n$24); [line 24]\n " shape="invhouse"]
-	
-
-	 127 -> 129 ;
-126 [label="126: + \n  " ]
-	
-
-	 126 -> 131 ;
-125 [label="125:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
-	
-
-	 125 -> 111 ;
-124 [label="124: Prune (false branch) \n   n$18=*&SIL_temp_conditional___117:int  [line 24]\n  NULLIFY(&SIL_temp_conditional___117,true); [line 24]\n  PRUNE((n$18 == 0), false); [line 24]\n  REMOVE_TEMPS(n$18); [line 24]\n " shape="invhouse"]
-	
-
-	 124 -> 116 ;
-123 [label="123: Prune (true branch) \n   n$18=*&SIL_temp_conditional___117:int  [line 24]\n  NULLIFY(&SIL_temp_conditional___117,true); [line 24]\n  PRUNE((n$18 != 0), true); [line 24]\n  REMOVE_TEMPS(n$18); [line 24]\n  NULLIFY(&a,false); [line 24]\n " shape="invhouse"]
-	
-
-	 123 -> 132 ;
-122 [label="122:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___117); [line 24]\n  *&SIL_temp_conditional___117:int =1 [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
-	
-
-	 122 -> 117 ;
-121 [label="121:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___117); [line 24]\n  *&SIL_temp_conditional___117:int =0 [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
-	
-
-	 121 -> 117 ;
-120 [label="120: Prune (false branch) \n   PRUNE(((n$17 != (void *)0) == 0), false); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
-	
-
-	 120 -> 122 ;
-119 [label="119: Prune (true branch) \n   PRUNE(((n$17 != (void *)0) != 0), true); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
-	
-
-	 119 -> 121 ;
-118 [label="118:  BinaryOperatorStmt: NE \n   n$17=*&a:class A * [line 24]\n " shape="box"]
-	
-
-	 118 -> 119 ;
-	 118 -> 120 ;
-117 [label="117: + \n  " ]
-	
-
-	 117 -> 123 ;
-	 117 -> 124 ;
-116 [label="116: + \n  " ]
-	
-
-	 116 -> 114 ;
-	 116 -> 115 ;
-115 [label="115: Prune (false branch) \n   PRUNE((0 == 0), false); [line 24]\n " shape="invhouse"]
-	
-
-	 115 -> 112 ;
-114 [label="114: Prune (true branch) \n   PRUNE((0 != 0), true); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="invhouse"]
-	
-
-	 114 -> 113 ;
-113 [label="113: + \n  " ]
-	
-
-	 113 -> 118 ;
-112 [label="112:  Return Stmt \n   n$15=*&a:class A * [line 25]\n  n$16=_fun_A_x(n$15:class A *) [line 25]\n  *&return:int =n$16 [line 25]\n  REMOVE_TEMPS(n$15,n$16); [line 25]\n  NULLIFY(&a,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
-	
-
-	 112 -> 111 ;
-111 [label="111: Exit A_initWithRequest: \n  " color=yellow style=filled]
-	
-
-110 [label="110: Start A_initWithRequest:\nFormals:  self:class A * a:class A *\nLocals:  __assert_file__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__); [line 23]\n  NULLIFY(&__assert_file__,false); [line 23]\n  NULLIFY(&self,false); [line 23]\n " color=yellow style=filled]
-	
-
-	 110 -> 113 ;
-109 [label="109:  DeclStmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 19]\n  _fun___objc_retain(n$14:class NSString *) [line 19]\n  *&__assert_file__:class NSString *=n$14 [line 19]\n  REMOVE_TEMPS(n$14); [line 19]\n " shape="box"]
-	
-
-	 109 -> 104 ;
-	 109 -> 105 ;
-108 [label="108:  BinaryOperatorStmt: Assign \n   n$12=*&SIL_temp_conditional___103:class NSString * [line 19]\n  NULLIFY(&SIL_temp_conditional___103,true); [line 19]\n  _fun___objc_retain(n$12:class NSString *) [line 19]\n  n$13=*&__assert_file__:class NSString * [line 19]\n  *&__assert_file__:class NSString *=n$12 [line 19]\n  _fun___objc_release(n$13:class NSString *) [line 19]\n  REMOVE_TEMPS(n$12,n$13); [line 19]\n  NULLIFY(&__assert_file__,false); [line 19]\n " shape="box"]
-	
-
-	 108 -> 102 ;
-107 [label="107:  ConditinalStmt Branch \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 19]\n  DECLARE_LOCALS(&SIL_temp_conditional___103); [line 19]\n  *&SIL_temp_conditional___103:class NSString *=n$11 [line 19]\n  REMOVE_TEMPS(n$11); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
-	
-
+	 107 -> 102 ;
 	 107 -> 103 ;
-106 [label="106:  ConditinalStmt Branch \n   n$10=*&__assert_file__:class NSString * [line 19]\n  DECLARE_LOCALS(&SIL_temp_conditional___103); [line 19]\n  *&SIL_temp_conditional___103:class NSString *=n$10 [line 19]\n  REMOVE_TEMPS(n$10); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+106 [label="106:  BinaryOperatorStmt: Assign \n   n$18=*&SIL_temp_conditional___101:class NSString * [line 36]\n  NULLIFY(&SIL_temp_conditional___101,true); [line 36]\n  _fun___objc_retain(n$18:class NSString *) [line 36]\n  n$19=*&__assert_fn__:class NSString * [line 36]\n  *&__assert_fn__:class NSString *=n$18 [line 36]\n  _fun___objc_release(n$19:class NSString *) [line 36]\n  REMOVE_TEMPS(n$18,n$19); [line 36]\n  NULLIFY(&__assert_fn__,false); [line 36]\n " shape="box"]
 	
 
-	 106 -> 103 ;
-105 [label="105: Prune (false branch) \n   n$9=*&__assert_file__:class NSString * [line 19]\n  PRUNE((n$9 == 0), false); [line 19]\n  REMOVE_TEMPS(n$9); [line 19]\n " shape="invhouse"]
+	 106 -> 100 ;
+105 [label="105:  ConditinalStmt Branch \n   n$17=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___101); [line 36]\n  *&SIL_temp_conditional___101:class NSString *=n$17 [line 36]\n  REMOVE_TEMPS(n$17); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
-	 105 -> 107 ;
-104 [label="104: Prune (true branch) \n   n$9=*&__assert_file__:class NSString * [line 19]\n  PRUNE((n$9 != 0), true); [line 19]\n  REMOVE_TEMPS(n$9); [line 19]\n " shape="invhouse"]
+	 105 -> 101 ;
+104 [label="104:  ConditinalStmt Branch \n   n$16=*&__assert_fn__:class NSString * [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___101); [line 36]\n  *&SIL_temp_conditional___101:class NSString *=n$16 [line 36]\n  REMOVE_TEMPS(n$16); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
-	 104 -> 106 ;
-103 [label="103: + \n  " ]
+	 104 -> 101 ;
+103 [label="103: Prune (false branch) \n   n$15=*&__assert_fn__:class NSString * [line 36]\n  PRUNE((n$15 == 0), false); [line 36]\n  REMOVE_TEMPS(n$15); [line 36]\n " shape="invhouse"]
 	
 
-	 103 -> 108 ;
-102 [label="102:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+	 103 -> 105 ;
+102 [label="102: Prune (true branch) \n   n$15=*&__assert_fn__:class NSString * [line 36]\n  PRUNE((n$15 != 0), true); [line 36]\n  REMOVE_TEMPS(n$15); [line 36]\n " shape="invhouse"]
 	
 
-	 102 -> 88 ;
-101 [label="101: Prune (false branch) \n   n$3=*&SIL_temp_conditional___94:int  [line 19]\n  NULLIFY(&SIL_temp_conditional___94,true); [line 19]\n  PRUNE((n$3 == 0), false); [line 19]\n  REMOVE_TEMPS(n$3); [line 19]\n " shape="invhouse"]
+	 102 -> 104 ;
+101 [label="101: + \n  " ]
 	
 
-	 101 -> 93 ;
-100 [label="100: Prune (true branch) \n   n$3=*&SIL_temp_conditional___94:int  [line 19]\n  NULLIFY(&SIL_temp_conditional___94,true); [line 19]\n  PRUNE((n$3 != 0), true); [line 19]\n  REMOVE_TEMPS(n$3); [line 19]\n  NULLIFY(&target,false); [line 19]\n " shape="invhouse"]
+	 101 -> 106 ;
+100 [label="100:  DeclStmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 36]\n  _fun___objc_retain(n$14:class NSString *) [line 36]\n  *&__assert_file__:class NSString *=n$14 [line 36]\n  REMOVE_TEMPS(n$14); [line 36]\n " shape="box"]
 	
 
-	 100 -> 109 ;
-99 [label="99:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___94); [line 19]\n  *&SIL_temp_conditional___94:int =1 [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+	 100 -> 95 ;
+	 100 -> 96 ;
+99 [label="99:  BinaryOperatorStmt: Assign \n   n$12=*&SIL_temp_conditional___94:class NSString * [line 36]\n  NULLIFY(&SIL_temp_conditional___94,true); [line 36]\n  _fun___objc_retain(n$12:class NSString *) [line 36]\n  n$13=*&__assert_file__:class NSString * [line 36]\n  *&__assert_file__:class NSString *=n$12 [line 36]\n  _fun___objc_release(n$13:class NSString *) [line 36]\n  REMOVE_TEMPS(n$12,n$13); [line 36]\n  NULLIFY(&__assert_file__,false); [line 36]\n " shape="box"]
 	
 
-	 99 -> 94 ;
-98 [label="98:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___94); [line 19]\n  *&SIL_temp_conditional___94:int =0 [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+	 99 -> 93 ;
+98 [label="98:  ConditinalStmt Branch \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___94); [line 36]\n  *&SIL_temp_conditional___94:class NSString *=n$11 [line 36]\n  REMOVE_TEMPS(n$11); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 98 -> 94 ;
-97 [label="97: Prune (false branch) \n   PRUNE(((n$2 != (void *)0) == 0), false); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
+97 [label="97:  ConditinalStmt Branch \n   n$10=*&__assert_file__:class NSString * [line 36]\n  DECLARE_LOCALS(&SIL_temp_conditional___94); [line 36]\n  *&SIL_temp_conditional___94:class NSString *=n$10 [line 36]\n  REMOVE_TEMPS(n$10); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
-	 97 -> 99 ;
-96 [label="96: Prune (true branch) \n   PRUNE(((n$2 != (void *)0) != 0), true); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
+	 97 -> 94 ;
+96 [label="96: Prune (false branch) \n   n$9=*&__assert_file__:class NSString * [line 36]\n  PRUNE((n$9 == 0), false); [line 36]\n  REMOVE_TEMPS(n$9); [line 36]\n " shape="invhouse"]
 	
 
 	 96 -> 98 ;
-95 [label="95:  BinaryOperatorStmt: NE \n   n$2=*&target:class A * [line 19]\n " shape="box"]
+95 [label="95: Prune (true branch) \n   n$9=*&__assert_file__:class NSString * [line 36]\n  PRUNE((n$9 != 0), true); [line 36]\n  REMOVE_TEMPS(n$9); [line 36]\n " shape="invhouse"]
 	
 
-	 95 -> 96 ;
 	 95 -> 97 ;
 94 [label="94: + \n  " ]
 	
 
-	 94 -> 100 ;
-	 94 -> 101 ;
-93 [label="93: + \n  " ]
+	 94 -> 99 ;
+93 [label="93:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
-	 93 -> 91 ;
-	 93 -> 92 ;
-92 [label="92: Prune (false branch) \n   PRUNE((0 == 0), false); [line 19]\n " shape="invhouse"]
+	 93 -> 80 ;
+92 [label="92: Prune (false branch) \n   n$3=*&SIL_temp_conditional___86:int  [line 36]\n  NULLIFY(&SIL_temp_conditional___86,true); [line 36]\n  PRUNE((n$3 == 0), false); [line 36]\n  REMOVE_TEMPS(n$3); [line 36]\n " shape="invhouse"]
 	
 
-	 92 -> 89 ;
-91 [label="91: Prune (true branch) \n   PRUNE((0 != 0), true); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
+	 92 -> 85 ;
+91 [label="91: Prune (true branch) \n   n$3=*&SIL_temp_conditional___86:int  [line 36]\n  NULLIFY(&SIL_temp_conditional___86,true); [line 36]\n  PRUNE((n$3 != 0), true); [line 36]\n  REMOVE_TEMPS(n$3); [line 36]\n  NULLIFY(&target,false); [line 36]\n " shape="invhouse"]
 	
 
-	 91 -> 90 ;
-90 [label="90: + \n  " ]
+	 91 -> 107 ;
+90 [label="90:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___86); [line 36]\n  *&SIL_temp_conditional___86:int =1 [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
-	 90 -> 95 ;
-89 [label="89:  Return Stmt \n   n$0=*&target:class A * [line 20]\n  n$1=_fun_A_x(n$0:class A *) [line 20]\n  *&return:int =n$1 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&target,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+	 90 -> 86 ;
+89 [label="89:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___86); [line 36]\n  *&SIL_temp_conditional___86:int =0 [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
-	 89 -> 88 ;
-88 [label="88: Exit A_addTarget: \n  " color=yellow style=filled]
+	 89 -> 86 ;
+88 [label="88: Prune (false branch) \n   n$2=*&target:class A * [line 36]\n  PRUNE((n$2 == 0), false); [line 36]\n  REMOVE_TEMPS(n$2); [line 36]\n " shape="invhouse"]
 	
 
-87 [label="87: Start A_addTarget:\nFormals:  self:class A * target:class A *\nLocals:  __assert_file__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__); [line 18]\n  NULLIFY(&__assert_file__,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+	 88 -> 90 ;
+87 [label="87: Prune (true branch) \n   n$2=*&target:class A * [line 36]\n  PRUNE((n$2 != 0), true); [line 36]\n  REMOVE_TEMPS(n$2); [line 36]\n " shape="invhouse"]
 	
 
-	 87 -> 90 ;
-86 [label="86: Exit A_frontendChecks \n  " color=yellow style=filled]
+	 87 -> 89 ;
+86 [label="86: + \n  " ]
 	
 
-85 [label="85: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 86 -> 91 ;
+	 86 -> 92 ;
+85 [label="85: + \n  " ]
 	
 
-	 85 -> 86 ;
-84 [label="84: Exit NSUserActivityDelegate_frontendChecks \n  " color=yellow style=filled]
+	 85 -> 83 ;
+	 85 -> 84 ;
+84 [label="84: Prune (false branch) \n   PRUNE((0 == 0), false); [line 36]\n " shape="invhouse"]
 	
 
-83 [label="83: Start NSUserActivityDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 84 -> 81 ;
+83 [label="83: Prune (true branch) \n   PRUNE((0 != 0), true); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="invhouse"]
 	
 
-	 83 -> 84 ;
-82 [label="82: Exit NSURLSessionStreamDelegate_frontendChecks \n  " color=yellow style=filled]
+	 83 -> 82 ;
+82 [label="82: + \n  " ]
 	
 
-81 [label="81: Start NSURLSessionStreamDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 82 -> 87 ;
+	 82 -> 88 ;
+81 [label="81:  Return Stmt \n   n$0=*&target:class A * [line 37]\n  n$1=_fun_A_x(n$0:class A *) [line 37]\n  *&return:int =n$1 [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&target,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
-	 81 -> 82 ;
-80 [label="80: Exit NSURLSessionDownloadDelegate_frontendChecks \n  " color=yellow style=filled]
+	 81 -> 80 ;
+80 [label="80: Exit test2 \n  " color=yellow style=filled]
 	
 
-79 [label="79: Start NSURLSessionDownloadDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+79 [label="79: Start test2\nFormals:  target:class A *\nLocals:  __assert_file__:class NSString * __assert_fn__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__,&__assert_fn__); [line 35]\n  NULLIFY(&__assert_file__,false); [line 35]\n  NULLIFY(&__assert_fn__,false); [line 35]\n " color=yellow style=filled]
 	
 
-	 79 -> 80 ;
-78 [label="78: Exit NSURLSessionDataDelegate_frontendChecks \n  " color=yellow style=filled]
+	 79 -> 82 ;
+78 [label="78:  DeclStmt \n   n$19=_fun_NSString_stringWithUTF8String:(\"\":char *) [line 31]\n  _fun___objc_retain(n$19:class NSString *) [line 31]\n  *&__assert_fn__:class NSString *=n$19 [line 31]\n  REMOVE_TEMPS(n$19); [line 31]\n " shape="box"]
 	
 
-77 [label="77: Start NSURLSessionDataDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 78 -> 73 ;
+	 78 -> 74 ;
+77 [label="77:  BinaryOperatorStmt: Assign \n   n$17=*&SIL_temp_conditional___72:class NSString * [line 31]\n  NULLIFY(&SIL_temp_conditional___72,true); [line 31]\n  _fun___objc_retain(n$17:class NSString *) [line 31]\n  n$18=*&__assert_fn__:class NSString * [line 31]\n  *&__assert_fn__:class NSString *=n$17 [line 31]\n  _fun___objc_release(n$18:class NSString *) [line 31]\n  REMOVE_TEMPS(n$17,n$18); [line 31]\n  NULLIFY(&__assert_fn__,false); [line 31]\n " shape="box"]
 	
 
-	 77 -> 78 ;
-76 [label="76: Exit NSURLSessionTaskDelegate_frontendChecks \n  " color=yellow style=filled]
+	 77 -> 71 ;
+76 [label="76:  ConditinalStmt Branch \n   n$16=_fun_NSString_stringWithUTF8String:(\"<Unknown Function>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___72); [line 31]\n  *&SIL_temp_conditional___72:class NSString *=n$16 [line 31]\n  REMOVE_TEMPS(n$16); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-75 [label="75: Start NSURLSessionTaskDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 76 -> 72 ;
+75 [label="75:  ConditinalStmt Branch \n   n$15=*&__assert_fn__:class NSString * [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___72); [line 31]\n  *&SIL_temp_conditional___72:class NSString *=n$15 [line 31]\n  REMOVE_TEMPS(n$15); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-	 75 -> 76 ;
-74 [label="74: Exit NSURLSessionDelegate_frontendChecks \n  " color=yellow style=filled]
+	 75 -> 72 ;
+74 [label="74: Prune (false branch) \n   n$14=*&__assert_fn__:class NSString * [line 31]\n  PRUNE((n$14 == 0), false); [line 31]\n  REMOVE_TEMPS(n$14); [line 31]\n " shape="invhouse"]
 	
 
-73 [label="73: Start NSURLSessionDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 74 -> 76 ;
+73 [label="73: Prune (true branch) \n   n$14=*&__assert_fn__:class NSString * [line 31]\n  PRUNE((n$14 != 0), true); [line 31]\n  REMOVE_TEMPS(n$14); [line 31]\n " shape="invhouse"]
 	
 
-	 73 -> 74 ;
-72 [label="72: Exit NSNetServiceBrowserDelegate_frontendChecks \n  " color=yellow style=filled]
+	 73 -> 75 ;
+72 [label="72: + \n  " ]
 	
 
-71 [label="71: Start NSNetServiceBrowserDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 72 -> 77 ;
+71 [label="71:  DeclStmt \n   n$13=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 31]\n  _fun___objc_retain(n$13:class NSString *) [line 31]\n  *&__assert_file__:class NSString *=n$13 [line 31]\n  REMOVE_TEMPS(n$13); [line 31]\n " shape="box"]
 	
 
-	 71 -> 72 ;
-70 [label="70: Exit NSNetServiceDelegate_frontendChecks \n  " color=yellow style=filled]
+	 71 -> 66 ;
+	 71 -> 67 ;
+70 [label="70:  BinaryOperatorStmt: Assign \n   n$11=*&SIL_temp_conditional___65:class NSString * [line 31]\n  NULLIFY(&SIL_temp_conditional___65,true); [line 31]\n  _fun___objc_retain(n$11:class NSString *) [line 31]\n  n$12=*&__assert_file__:class NSString * [line 31]\n  *&__assert_file__:class NSString *=n$11 [line 31]\n  _fun___objc_release(n$12:class NSString *) [line 31]\n  REMOVE_TEMPS(n$11,n$12); [line 31]\n  NULLIFY(&__assert_file__,false); [line 31]\n " shape="box"]
 	
 
-69 [label="69: Start NSNetServiceDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 70 -> 64 ;
+69 [label="69:  ConditinalStmt Branch \n   n$10=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___65); [line 31]\n  *&SIL_temp_conditional___65:class NSString *=n$10 [line 31]\n  REMOVE_TEMPS(n$10); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-	 69 -> 70 ;
-68 [label="68: Exit NSMetadataQueryDelegate_frontendChecks \n  " color=yellow style=filled]
+	 69 -> 65 ;
+68 [label="68:  ConditinalStmt Branch \n   n$9=*&__assert_file__:class NSString * [line 31]\n  DECLARE_LOCALS(&SIL_temp_conditional___65); [line 31]\n  *&SIL_temp_conditional___65:class NSString *=n$9 [line 31]\n  REMOVE_TEMPS(n$9); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-67 [label="67: Start NSMetadataQueryDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 68 -> 65 ;
+67 [label="67: Prune (false branch) \n   n$8=*&__assert_file__:class NSString * [line 31]\n  PRUNE((n$8 == 0), false); [line 31]\n  REMOVE_TEMPS(n$8); [line 31]\n " shape="invhouse"]
 	
 
-	 67 -> 68 ;
-66 [label="66: Exit NSFilePresenter_frontendChecks \n  " color=yellow style=filled]
+	 67 -> 69 ;
+66 [label="66: Prune (true branch) \n   n$8=*&__assert_file__:class NSString * [line 31]\n  PRUNE((n$8 != 0), true); [line 31]\n  REMOVE_TEMPS(n$8); [line 31]\n " shape="invhouse"]
 	
 
-65 [label="65: Start NSFilePresenter_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 66 -> 68 ;
+65 [label="65: + \n  " ]
 	
 
-	 65 -> 66 ;
-64 [label="64: Exit NSExtensionRequestHandling_frontendChecks \n  " color=yellow style=filled]
+	 65 -> 70 ;
+64 [label="64:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-63 [label="63: Start NSExtensionRequestHandling_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 64 -> 50 ;
+63 [label="63: Prune (false branch) \n   n$3=*&SIL_temp_conditional___56:int  [line 31]\n  NULLIFY(&SIL_temp_conditional___56,true); [line 31]\n  PRUNE((n$3 == 0), false); [line 31]\n  REMOVE_TEMPS(n$3); [line 31]\n " shape="invhouse"]
 	
 
-	 63 -> 64 ;
-62 [label="62: Exit NSCacheDelegate_frontendChecks \n  " color=yellow style=filled]
+	 63 -> 55 ;
+62 [label="62: Prune (true branch) \n   n$3=*&SIL_temp_conditional___56:int  [line 31]\n  NULLIFY(&SIL_temp_conditional___56,true); [line 31]\n  PRUNE((n$3 != 0), true); [line 31]\n  REMOVE_TEMPS(n$3); [line 31]\n  NULLIFY(&target,false); [line 31]\n " shape="invhouse"]
 	
 
-61 [label="61: Start NSCacheDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 62 -> 78 ;
+61 [label="61:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___56); [line 31]\n  *&SIL_temp_conditional___56:int =1 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-	 61 -> 62 ;
-60 [label="60: Exit NSXMLParserDelegate_frontendChecks \n  " color=yellow style=filled]
+	 61 -> 56 ;
+60 [label="60:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___56); [line 31]\n  *&SIL_temp_conditional___56:int =0 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-59 [label="59: Start NSXMLParserDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 60 -> 56 ;
+59 [label="59: Prune (false branch) \n   PRUNE(((n$2 != (void *)0) == 0), false); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
 	
 
-	 59 -> 60 ;
-58 [label="58: Exit NSURLProtocolClient_frontendChecks \n  " color=yellow style=filled]
+	 59 -> 61 ;
+58 [label="58: Prune (true branch) \n   PRUNE(((n$2 != (void *)0) != 0), true); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
 	
 
-57 [label="57: Start NSURLProtocolClient_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 58 -> 60 ;
+57 [label="57:  BinaryOperatorStmt: NE \n   n$2=*&target:class A * [line 31]\n " shape="box"]
 	
 
 	 57 -> 58 ;
-56 [label="56: Exit NSURLConnectionDownloadDelegate_frontendChecks \n  " color=yellow style=filled]
+	 57 -> 59 ;
+56 [label="56: + \n  " ]
 	
 
-55 [label="55: Start NSURLConnectionDownloadDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 56 -> 62 ;
+	 56 -> 63 ;
+55 [label="55: + \n  " ]
 	
 
-	 55 -> 56 ;
-54 [label="54: Exit NSURLConnectionDataDelegate_frontendChecks \n  " color=yellow style=filled]
+	 55 -> 53 ;
+	 55 -> 54 ;
+54 [label="54: Prune (false branch) \n   PRUNE((0 == 0), false); [line 31]\n " shape="invhouse"]
 	
 
-53 [label="53: Start NSURLConnectionDataDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 54 -> 51 ;
+53 [label="53: Prune (true branch) \n   PRUNE((0 != 0), true); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="invhouse"]
 	
 
-	 53 -> 54 ;
-52 [label="52: Exit NSURLConnectionDelegate_frontendChecks \n  " color=yellow style=filled]
+	 53 -> 52 ;
+52 [label="52: + \n  " ]
 	
 
-51 [label="51: Start NSURLConnectionDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 52 -> 57 ;
+51 [label="51:  Return Stmt \n   n$0=*&target:class A * [line 32]\n  n$1=_fun_A_x(n$0:class A *) [line 32]\n  *&return:int =n$1 [line 32]\n  REMOVE_TEMPS(n$0,n$1); [line 32]\n  NULLIFY(&target,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
-	 51 -> 52 ;
-50 [label="50: Exit NSURLAuthenticationChallengeSender_frontendChecks \n  " color=yellow style=filled]
+	 51 -> 50 ;
+50 [label="50: Exit test1 \n  " color=yellow style=filled]
 	
 
-49 [label="49: Start NSURLAuthenticationChallengeSender_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+49 [label="49: Start test1\nFormals:  target:class A *\nLocals:  __assert_file__:class NSString * __assert_fn__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__,&__assert_fn__); [line 30]\n  NULLIFY(&__assert_file__,false); [line 30]\n  NULLIFY(&__assert_fn__,false); [line 30]\n " color=yellow style=filled]
 	
 
-	 49 -> 50 ;
-48 [label="48: Exit NSStreamDelegate_frontendChecks \n  " color=yellow style=filled]
+	 49 -> 52 ;
+48 [label="48:  DeclStmt \n   n$29=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 24]\n  _fun___objc_retain(n$29:class NSString *) [line 24]\n  *&__assert_file__:class NSString *=n$29 [line 24]\n  REMOVE_TEMPS(n$29); [line 24]\n " shape="box"]
 	
 
-47 [label="47: Start NSStreamDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 48 -> 43 ;
+	 48 -> 44 ;
+47 [label="47:  BinaryOperatorStmt: Assign \n   n$27=*&SIL_temp_conditional___42:class NSString * [line 24]\n  NULLIFY(&SIL_temp_conditional___42,true); [line 24]\n  _fun___objc_retain(n$27:class NSString *) [line 24]\n  n$28=*&__assert_file__:class NSString * [line 24]\n  *&__assert_file__:class NSString *=n$27 [line 24]\n  _fun___objc_release(n$28:class NSString *) [line 24]\n  REMOVE_TEMPS(n$27,n$28); [line 24]\n  NULLIFY(&__assert_file__,false); [line 24]\n " shape="box"]
 	
 
-	 47 -> 48 ;
-46 [label="46: Exit NSMachPortDelegate_frontendChecks \n  " color=yellow style=filled]
+	 47 -> 41 ;
+46 [label="46:  ConditinalStmt Branch \n   n$26=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___42); [line 24]\n  *&SIL_temp_conditional___42:class NSString *=n$26 [line 24]\n  REMOVE_TEMPS(n$26); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-45 [label="45: Start NSMachPortDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 46 -> 42 ;
+45 [label="45:  ConditinalStmt Branch \n   n$25=*&__assert_file__:class NSString * [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___42); [line 24]\n  *&SIL_temp_conditional___42:class NSString *=n$25 [line 24]\n  REMOVE_TEMPS(n$25); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 45 -> 46 ;
-44 [label="44: Exit NSPortDelegate_frontendChecks \n  " color=yellow style=filled]
+	 45 -> 42 ;
+44 [label="44: Prune (false branch) \n   n$24=*&__assert_file__:class NSString * [line 24]\n  PRUNE((n$24 == 0), false); [line 24]\n  REMOVE_TEMPS(n$24); [line 24]\n " shape="invhouse"]
 	
 
-43 [label="43: Start NSPortDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 44 -> 46 ;
+43 [label="43: Prune (true branch) \n   n$24=*&__assert_file__:class NSString * [line 24]\n  PRUNE((n$24 != 0), true); [line 24]\n  REMOVE_TEMPS(n$24); [line 24]\n " shape="invhouse"]
 	
 
-	 43 -> 44 ;
-42 [label="42: Exit NSLocking_frontendChecks \n  " color=yellow style=filled]
+	 43 -> 45 ;
+42 [label="42: + \n  " ]
 	
 
-41 [label="41: Start NSLocking_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 42 -> 47 ;
+41 [label="41:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 41 -> 42 ;
-40 [label="40: Exit NSKeyedUnarchiverDelegate_frontendChecks \n  " color=yellow style=filled]
+	 41 -> 27 ;
+40 [label="40: Prune (false branch) \n   n$18=*&SIL_temp_conditional___33:int  [line 24]\n  NULLIFY(&SIL_temp_conditional___33,true); [line 24]\n  PRUNE((n$18 == 0), false); [line 24]\n  REMOVE_TEMPS(n$18); [line 24]\n " shape="invhouse"]
 	
 
-39 [label="39: Start NSKeyedUnarchiverDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 40 -> 32 ;
+39 [label="39: Prune (true branch) \n   n$18=*&SIL_temp_conditional___33:int  [line 24]\n  NULLIFY(&SIL_temp_conditional___33,true); [line 24]\n  PRUNE((n$18 != 0), true); [line 24]\n  REMOVE_TEMPS(n$18); [line 24]\n  NULLIFY(&a,false); [line 24]\n " shape="invhouse"]
 	
 
-	 39 -> 40 ;
-38 [label="38: Exit NSKeyedArchiverDelegate_frontendChecks \n  " color=yellow style=filled]
+	 39 -> 48 ;
+38 [label="38:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___33); [line 24]\n  *&SIL_temp_conditional___33:int =1 [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-37 [label="37: Start NSKeyedArchiverDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 38 -> 33 ;
+37 [label="37:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___33); [line 24]\n  *&SIL_temp_conditional___33:int =0 [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 37 -> 38 ;
-36 [label="36: Exit NSFileManagerDelegate_frontendChecks \n  " color=yellow style=filled]
+	 37 -> 33 ;
+36 [label="36: Prune (false branch) \n   PRUNE(((n$17 != (void *)0) == 0), false); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
 	
 
-35 [label="35: Start NSFileManagerDelegate_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 36 -> 38 ;
+35 [label="35: Prune (true branch) \n   PRUNE(((n$17 != (void *)0) != 0), true); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
 	
 
-	 35 -> 36 ;
-34 [label="34: Exit NSDecimalNumberBehaviors_frontendChecks \n  " color=yellow style=filled]
+	 35 -> 37 ;
+34 [label="34:  BinaryOperatorStmt: NE \n   n$17=*&a:class A * [line 24]\n " shape="box"]
 	
 
-33 [label="33: Start NSDecimalNumberBehaviors_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 34 -> 35 ;
+	 34 -> 36 ;
+33 [label="33: + \n  " ]
 	
 
-	 33 -> 34 ;
-32 [label="32: Exit NSProgressReporting_frontendChecks \n  " color=yellow style=filled]
+	 33 -> 39 ;
+	 33 -> 40 ;
+32 [label="32: + \n  " ]
 	
 
-31 [label="31: Start NSProgressReporting_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 32 -> 30 ;
+	 32 -> 31 ;
+31 [label="31: Prune (false branch) \n   PRUNE((0 == 0), false); [line 24]\n " shape="invhouse"]
 	
 
-	 31 -> 32 ;
-30 [label="30: Exit NSFastEnumeration_frontendChecks \n  " color=yellow style=filled]
+	 31 -> 28 ;
+30 [label="30: Prune (true branch) \n   PRUNE((0 != 0), true); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="invhouse"]
 	
 
-29 [label="29: Start NSFastEnumeration_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 30 -> 29 ;
+29 [label="29: + \n  " ]
 	
 
-	 29 -> 30 ;
-28 [label="28: Exit NSDiscardableContent_frontendChecks \n  " color=yellow style=filled]
+	 29 -> 34 ;
+28 [label="28:  Return Stmt \n   n$15=*&a:class A * [line 25]\n  n$16=_fun_A_x(n$15:class A *) [line 25]\n  *&return:int =n$16 [line 25]\n  REMOVE_TEMPS(n$15,n$16); [line 25]\n  NULLIFY(&a,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
-27 [label="27: Start NSDiscardableContent_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 28 -> 27 ;
+27 [label="27: Exit A_initWithRequest: \n  " color=yellow style=filled]
 	
 
-	 27 -> 28 ;
-26 [label="26: Exit NSSecureCoding_frontendChecks \n  " color=yellow style=filled]
+26 [label="26: Start A_initWithRequest:\nFormals:  self:class A * a:class A *\nLocals:  __assert_file__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__); [line 23]\n  NULLIFY(&__assert_file__,false); [line 23]\n  NULLIFY(&self,false); [line 23]\n " color=yellow style=filled]
 	
 
-25 [label="25: Start NSSecureCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 26 -> 29 ;
+25 [label="25:  DeclStmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"infer/tests/codetoanalyze/objc/frontend/assertions/NSAssert_example.m\":char *) [line 19]\n  _fun___objc_retain(n$14:class NSString *) [line 19]\n  *&__assert_file__:class NSString *=n$14 [line 19]\n  REMOVE_TEMPS(n$14); [line 19]\n " shape="box"]
 	
 
-	 25 -> 26 ;
-24 [label="24: Exit NSCoding_frontendChecks \n  " color=yellow style=filled]
+	 25 -> 20 ;
+	 25 -> 21 ;
+24 [label="24:  BinaryOperatorStmt: Assign \n   n$12=*&SIL_temp_conditional___19:class NSString * [line 19]\n  NULLIFY(&SIL_temp_conditional___19,true); [line 19]\n  _fun___objc_retain(n$12:class NSString *) [line 19]\n  n$13=*&__assert_file__:class NSString * [line 19]\n  *&__assert_file__:class NSString *=n$12 [line 19]\n  _fun___objc_release(n$13:class NSString *) [line 19]\n  REMOVE_TEMPS(n$12,n$13); [line 19]\n  NULLIFY(&__assert_file__,false); [line 19]\n " shape="box"]
 	
 
-23 [label="23: Start NSCoding_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 24 -> 18 ;
+23 [label="23:  ConditinalStmt Branch \n   n$11=_fun_NSString_stringWithUTF8String:(\"<Unknown File>\":char *) [line 19]\n  DECLARE_LOCALS(&SIL_temp_conditional___19); [line 19]\n  *&SIL_temp_conditional___19:class NSString *=n$11 [line 19]\n  REMOVE_TEMPS(n$11); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
-	 23 -> 24 ;
-22 [label="22: Exit NSMutableCopying_frontendChecks \n  " color=yellow style=filled]
+	 23 -> 19 ;
+22 [label="22:  ConditinalStmt Branch \n   n$10=*&__assert_file__:class NSString * [line 19]\n  DECLARE_LOCALS(&SIL_temp_conditional___19); [line 19]\n  *&SIL_temp_conditional___19:class NSString *=n$10 [line 19]\n  REMOVE_TEMPS(n$10); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
-21 [label="21: Start NSMutableCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 22 -> 19 ;
+21 [label="21: Prune (false branch) \n   n$9=*&__assert_file__:class NSString * [line 19]\n  PRUNE((n$9 == 0), false); [line 19]\n  REMOVE_TEMPS(n$9); [line 19]\n " shape="invhouse"]
 	
 
-	 21 -> 22 ;
-20 [label="20: Exit NSCopying_frontendChecks \n  " color=yellow style=filled]
+	 21 -> 23 ;
+20 [label="20: Prune (true branch) \n   n$9=*&__assert_file__:class NSString * [line 19]\n  PRUNE((n$9 != 0), true); [line 19]\n  REMOVE_TEMPS(n$9); [line 19]\n " shape="invhouse"]
 	
 
-19 [label="19: Start NSCopying_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 20 -> 22 ;
+19 [label="19: + \n  " ]
 	
 
-	 19 -> 20 ;
-18 [label="18: Exit OS_dispatch_io_frontendChecks \n  " color=yellow style=filled]
+	 19 -> 24 ;
+18 [label="18:  Assertion failure \n   _fun___infer_fail(\"ASSERTION_FAILURE\":void ) [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
-17 [label="17: Start OS_dispatch_io_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 18 -> 4 ;
+17 [label="17: Prune (false branch) \n   n$3=*&SIL_temp_conditional___10:int  [line 19]\n  NULLIFY(&SIL_temp_conditional___10,true); [line 19]\n  PRUNE((n$3 == 0), false); [line 19]\n  REMOVE_TEMPS(n$3); [line 19]\n " shape="invhouse"]
 	
 
-	 17 -> 18 ;
-16 [label="16: Exit OS_dispatch_data_frontendChecks \n  " color=yellow style=filled]
+	 17 -> 9 ;
+16 [label="16: Prune (true branch) \n   n$3=*&SIL_temp_conditional___10:int  [line 19]\n  NULLIFY(&SIL_temp_conditional___10,true); [line 19]\n  PRUNE((n$3 != 0), true); [line 19]\n  REMOVE_TEMPS(n$3); [line 19]\n  NULLIFY(&target,false); [line 19]\n " shape="invhouse"]
 	
 
-15 [label="15: Start OS_dispatch_data_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 16 -> 25 ;
+15 [label="15:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___10); [line 19]\n  *&SIL_temp_conditional___10:int =1 [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
-	 15 -> 16 ;
-14 [label="14: Exit OS_dispatch_semaphore_frontendChecks \n  " color=yellow style=filled]
+	 15 -> 10 ;
+14 [label="14:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___10); [line 19]\n  *&SIL_temp_conditional___10:int =0 [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
-13 [label="13: Start OS_dispatch_semaphore_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 14 -> 10 ;
+13 [label="13: Prune (false branch) \n   PRUNE(((n$2 != (void *)0) == 0), false); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
 	
 
-	 13 -> 14 ;
-12 [label="12: Exit OS_dispatch_group_frontendChecks \n  " color=yellow style=filled]
+	 13 -> 15 ;
+12 [label="12: Prune (true branch) \n   PRUNE(((n$2 != (void *)0) != 0), true); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
 	
 
-11 [label="11: Start OS_dispatch_group_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 12 -> 14 ;
+11 [label="11:  BinaryOperatorStmt: NE \n   n$2=*&target:class A * [line 19]\n " shape="box"]
 	
 
 	 11 -> 12 ;
-10 [label="10: Exit OS_dispatch_source_frontendChecks \n  " color=yellow style=filled]
+	 11 -> 13 ;
+10 [label="10: + \n  " ]
 	
 
-9 [label="9: Start OS_dispatch_source_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 10 -> 16 ;
+	 10 -> 17 ;
+9 [label="9: + \n  " ]
 	
 
-	 9 -> 10 ;
-8 [label="8: Exit OS_dispatch_queue_attr_frontendChecks \n  " color=yellow style=filled]
+	 9 -> 7 ;
+	 9 -> 8 ;
+8 [label="8: Prune (false branch) \n   PRUNE((0 == 0), false); [line 19]\n " shape="invhouse"]
 	
 
-7 [label="7: Start OS_dispatch_queue_attr_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 8 -> 5 ;
+7 [label="7: Prune (true branch) \n   PRUNE((0 != 0), true); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
 	
 
-	 7 -> 8 ;
-6 [label="6: Exit OS_dispatch_queue_frontendChecks \n  " color=yellow style=filled]
+	 7 -> 6 ;
+6 [label="6: + \n  " ]
 	
 
-5 [label="5: Start OS_dispatch_queue_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	 6 -> 11 ;
+5 [label="5:  Return Stmt \n   n$0=*&target:class A * [line 20]\n  n$1=_fun_A_x(n$0:class A *) [line 20]\n  *&return:int =n$1 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&target,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
-	 5 -> 6 ;
-4 [label="4: Exit OS_dispatch_object_frontendChecks \n  " color=yellow style=filled]
+	 5 -> 4 ;
+4 [label="4: Exit A_addTarget: \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start OS_dispatch_object_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+3 [label="3: Start A_addTarget:\nFormals:  self:class A * target:class A *\nLocals:  __assert_file__:class NSString * \n   DECLARE_LOCALS(&return,&__assert_file__); [line 18]\n  NULLIFY(&__assert_file__,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
 	
 
-	 3 -> 4 ;
-2 [label="2: Exit NSObject_frontendChecks \n  " color=yellow style=filled]
+	 3 -> 6 ;
+2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start NSObject_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
 	
 
 	 1 -> 2 ;
