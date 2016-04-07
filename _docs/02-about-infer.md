@@ -21,4 +21,3 @@ Within Facebook, Infer has been undergoing iterative development and changing in
 We are continuing development of Infer as open-source so that others can benefit from using it, and so that we
 can partner with the community on a journey aimed at making program verification technology more broadly practical.  
 
-<iframe width="560" height="315" src="https://www.facebook.com/plugins/video.php?width=560&height=315&href=https%3A%2F%2Fwww.facebook.com%2Fatscaleevents%2Fvideos%2F1708059786133785%2F&show_text=0"></iframe>
