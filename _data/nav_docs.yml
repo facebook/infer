@@ -23,3 +23,6 @@
 - title: Contribute
   items:
   - id: adding-checkers
+- title: Talks about Infer
+  items:
+  - id: mobileatscale-london
