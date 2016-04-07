@@ -131,7 +131,7 @@ endif
 DEPENDENCIES = IR backend checkers eradicate harness \
 	facebook/checkers facebook/checkers/graphql facebook/scripts $(EXTRA_DEPS)
 
-OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -j 0 $(addprefix -I , $(DEPENDENCIES))
+OCAMLBUILD = ocamlbuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))
 
 .PHONY: all java clang llvm unit checkCopyright build_java build_clang build_llvm build_unit \
 	build_checkCopyright java_annotations clang_annotations llvm_annotations \

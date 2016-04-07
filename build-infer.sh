@@ -14,6 +14,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INFER_ROOT="$SCRIPT_DIR/../"
 PLATFORM="$(uname)"
+NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 
 function usage() {
   echo "Usage: $0 [-y] [targets]"
@@ -161,7 +162,7 @@ if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-
   fi
 fi
 
-make -j $TARGETS || (
+make -j $NCPU $TARGETS || (
   echo
   echo '  compilation failure; you can try running'
   echo

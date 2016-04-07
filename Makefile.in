@@ -29,8 +29,6 @@ TARGETS_TO_TEST += objc
 endif
 TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
-NCPU = @NCPU@
-
 all: $(INFER_ANALYZERS)
 
 java: inferTraceBugs
