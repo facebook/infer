@@ -200,7 +200,7 @@ module Make
 
   let create_test test_program _ =
     let pdesc, assert_map = structured_program_to_cfg test_program in
-    let inv_map = I.exec_pdesc pdesc in
+    let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ())) in
 
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
       let post_str =

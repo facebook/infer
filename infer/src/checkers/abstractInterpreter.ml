@@ -22,11 +22,11 @@ module Make
   (* invariant map from node id -> abstract state representing postcondition for node id *)
   type inv_map = state M.t
 
-  let exec_node node astate_pre work_queue inv_map pdesc =
+  let exec_node node astate_pre work_queue inv_map proc_data =
     let exec_instrs astate_acc instr =
       if A.is_bottom astate_acc
       then astate_acc
-      else T.exec_instr astate_acc pdesc instr in
+      else T.exec_instr astate_acc proc_data instr in
     let node_id = C.node_id node in
     L.out "Doing analysis of node %a from pre %a@." C.pp_node_id node_id A.pp astate_pre;
     let instrs = C.instrs node in
@@ -59,10 +59,10 @@ module Make
         M.add node_id { post=astate_post; visit_count; } inv_map in
       inv_map', S.schedule_succs work_queue node
 
-  let rec exec_worklist work_queue inv_map pdesc =
+  let rec exec_worklist work_queue inv_map proc_data =
     match S.pop work_queue with
     | Some (_, [], work_queue') ->
-        exec_worklist work_queue' inv_map pdesc
+        exec_worklist work_queue' inv_map proc_data
     | Some (node, visited_pred :: visited_preds, work_queue') ->
         let get_post pred_id =
           (M.find pred_id inv_map).post in
@@ -70,25 +70,25 @@ module Make
         let join_pred_posts astate_acc pred_id =
           A.join (get_post pred_id) astate_acc in
         let astate_pre = IList.fold_left join_pred_posts (get_post visited_pred) visited_preds in
-        let inv_map', work_queue'' = exec_node node astate_pre work_queue' inv_map pdesc in
-        exec_worklist work_queue'' inv_map' pdesc
+        let inv_map', work_queue'' = exec_node node astate_pre work_queue' inv_map proc_data in
+        exec_worklist work_queue'' inv_map' proc_data
     | None -> inv_map
 
   (* compute and return an invariant map for [cfg] *)
-  let exec_cfg cfg pdesc =
+  let exec_cfg cfg proc_data =
     let start_node = C.start_node cfg in
-    let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty pdesc in
-    exec_worklist work_queue' inv_map' pdesc
+    let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty proc_data in
+    exec_worklist work_queue' inv_map' proc_data
 
   (* compute and return an invariant map for [pdesc] *)
-  let exec_pdesc pdesc =
+  let exec_pdesc ({ ProcData.pdesc; } as proc_data) =
     L.out "Starting analysis of %a@." Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
-    exec_cfg (C.from_pdesc pdesc) pdesc
+    exec_cfg (C.from_pdesc pdesc) proc_data
 
   (* compute and return the postcondition of [pdesc] *)
-  let compute_post pdesc =
+  let compute_post ({ ProcData.pdesc; } as proc_data) =
     let cfg = C.from_pdesc pdesc in
-    let inv_map = exec_cfg cfg pdesc in
+    let inv_map = exec_cfg cfg proc_data in
     try
       let end_state = M.find (C.node_id (C.exit_node cfg)) inv_map in
       Some (end_state.post)
@@ -102,9 +102,9 @@ module Make
 
   module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
 
-    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; } =
+    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } =
       let analyze_ondemand pdesc =
-        match compute_post pdesc with
+        match compute_post (ProcData.make pdesc tenv) with
         | Some post ->
             Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post
         | None -> () in

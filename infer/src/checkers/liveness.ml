@@ -64,4 +64,5 @@ module Analyzer =
     (Domain)
     (TransferFunctions)
 
-let checker { Callbacks.proc_desc; } = ignore(Analyzer.exec_pdesc proc_desc)
+let checker { Callbacks.proc_desc; tenv; } =
+  ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv))

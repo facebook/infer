@@ -281,7 +281,7 @@ let add_dead_pvars_after_conditionals_join cfg n deads =
 
 (** Find the set of dead variables for the procedure pname and add nullify instructions.
     The variables whose addresses may be taken are only considered just before the exit node. *)
-let analyze_and_annotate_proc cfg pname pdesc =
+let analyze_and_annotate_proc cfg tenv pname pdesc =
   let exit_node = Cfg.Procdesc.get_exit_node pdesc in
   let exit_node_is_succ node =
     match Cfg.Node.get_succs node with
@@ -293,7 +293,7 @@ let analyze_and_annotate_proc cfg pname pdesc =
     if !Config.curr_language = Config.Java
     then Vset.empty
     else
-      match AddressTaken.Analyzer.compute_post pdesc with
+      match AddressTaken.Analyzer.compute_post (ProcData.make pdesc tenv) with
       | Some post -> post
       | None -> Vset.empty in
 
@@ -445,7 +445,7 @@ let add_removetemps_instructions cfg =
 let doit ?(f_translate_typ=None) cfg cg tenv =
   add_removetemps_instructions cfg;
   AllPreds.mk_table cfg;
-  Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg);
+  Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
   AllPreds.clear_table ();
   if !Config.curr_language = Config.Java
   then add_dispatch_calls cfg cg tenv f_translate_typ;

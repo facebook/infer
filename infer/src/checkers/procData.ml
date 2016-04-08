@@ -7,11 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+type t = { pdesc : Cfg.Procdesc.t; tenv : Tenv.t }
 
-module type S = sig
-  type astate
-
-  (* {A} instr {A'}. [caller_pdesc] is the procdesc of the current procedure *)
-  val exec_instr : astate -> ProcData.t -> Sil.instr -> astate
-
-end
+let make pdesc tenv = { pdesc; tenv }
