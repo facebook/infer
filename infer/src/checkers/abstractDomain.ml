@@ -52,6 +52,42 @@ module BottomLifted (Domain : S) = struct
     | NonBottom astate -> Domain.pp fmt astate
 end
 
+(* cartestian product of two domains *)
+module Pair (Domain1 : S) (Domain2 : S) = struct
+  type astate = Domain1.astate * Domain2.astate
+
+  let is_bottom (astate1, astate2) =
+    Domain1.is_bottom astate1 || Domain2.is_bottom astate2
+
+  let initial = Domain1.initial, Domain2.initial
+
+  let (<=) ~lhs ~rhs =
+    if lhs == rhs
+    then true
+    else
+      match is_bottom lhs, is_bottom rhs with
+      | true, _ -> true
+      | _, true -> false
+      | _ ->
+          Domain1.(<=) ~lhs:(fst lhs) ~rhs:(fst rhs) && Domain2.(<=) ~lhs:(snd lhs) ~rhs:(snd rhs)
+
+  let join astate1 astate2 =
+    if astate1 == astate2
+    then astate1
+    else
+      match is_bottom astate1, is_bottom astate2 with
+      | true, _ -> astate2
+      | _, true -> astate1
+      | _ -> Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2)
+
+  let widen ~prev:(astate1_next, astate2_next) ~next:(astate1_prev, astate2_prev) ~num_iters =
+    Domain1.widen ~prev:astate1_next ~next:astate1_prev ~num_iters,
+    Domain2.widen ~prev:astate2_next ~next:astate2_prev ~num_iters
+
+  let pp fmt (astate1, astate2) =
+    F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
+end
+
 (* lift a set to a domain. the elements of the set should be drawn from a *finite* collection of
    possible values, since the widening operator here is just union. *)
 module FiniteSet (S : PrettyPrintable.PPSet) = struct
