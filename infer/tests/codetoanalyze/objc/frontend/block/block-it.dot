@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 53 -> 52 ;
-52 [label="52:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 40]\n  n$42=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array_trans______2 ):unsigned long ) [line 40]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:class __objc_anonymous_block_MyBlock_array_trans______2 =n$42 [line 40]\n  *&enumerateObjectsUsingBlock:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 40]\n  REMOVE_TEMPS(n$42); [line 40]\n " shape="box"]
+52 [label="52:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 40]\n  n$42=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MyBlock_array_trans______2 ):unsigned long ) [line 40]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:class __objc_anonymous_block_MyBlock_array_trans______2 =n$42 [line 40]\n  *&enumerateObjectsUsingBlock:_fn_ (*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 39]\n  REMOVE_TEMPS(n$42); [line 39]\n " shape="box"]
 	
 
 	 52 -> 45 ;

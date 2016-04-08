@@ -1675,10 +1675,9 @@ struct
         (* Nothing to do if no init expression *)
         { empty_res_trans with root_nodes = trans_state.succ_nodes }
     | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
-        let stmt_info, _ = Clang_ast_proj.get_stmt_tuple ie in
         let var_exp, _ = var_exp_typ in
         let context = trans_state.context in
-        let sil_loc = CLocation.get_sil_location stmt_info context in
+        let sil_loc = CLocation.get_sil_location var_stmt_info context in
         let trans_state_pri = PriorityNode.try_claim_priority_node trans_state var_stmt_info in
         (* if ie is a block the translation need to be done
            with the block special cases by exec_with_block_priority *)
@@ -2537,12 +2536,13 @@ struct
   and cxx_constructor_init_trans ctor_init trans_state =
     (*let tenv = trans_state.context.CContext.tenv in*)
     let class_name = CContext.get_curr_class_name trans_state.context.CContext.curr_class in
-    let sil_loc =
-      CLocation.get_sil_location_from_range ctor_init.Clang_ast_t.xci_source_range true in
+    let source_range = ctor_init.Clang_ast_t.xci_source_range in
+    let sil_loc = CLocation.get_sil_location_from_range source_range true in
     (* its pointer will be used in PriorityNode *)
     let this_stmt_info = Ast_expressions.dummy_stmt_info () in
     (* this will be used to avoid creating node in init_expr_trans *)
-    let child_stmt_info = Ast_expressions.dummy_stmt_info () in
+    let child_stmt_info =
+      { (Ast_expressions.dummy_stmt_info ()) with Clang_ast_t.si_source_range = source_range } in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
     let class_type_ptr = Ast_expressions.create_pointer_type
         (Ast_expressions.create_class_type (class_name, `CPP)) in
