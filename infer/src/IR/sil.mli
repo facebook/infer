@@ -561,6 +561,8 @@ val is_cpp_class : typ -> bool
 
 val is_java_class : typ -> bool
 
+val is_array_of_cpp_class : typ -> bool
+
 val exp_is_zero : exp -> bool
 
 val exp_is_null_literal : exp -> bool
@@ -666,6 +668,9 @@ val const_kind_equal : const -> const -> bool
 val exp_compare : exp -> exp -> int
 
 val exp_equal : exp -> exp -> bool
+
+(** exp_is_array_index_of index arr returns true is index is an array index of arr. *)
+val exp_is_array_index_of : exp -> exp -> bool
 
 val call_flags_compare : call_flags -> call_flags -> int
 

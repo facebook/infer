@@ -82,4 +82,10 @@ public class ConstructorsTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("constructor_new.cpp");
   }
+
+  @Test
+  public void testConstructorArrayFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("constructor_array.cpp");
+  }
 }

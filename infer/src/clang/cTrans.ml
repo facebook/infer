@@ -200,6 +200,9 @@ struct
   let collect_exprs res_trans_list =
     IList.flatten (IList.map (fun res_trans -> res_trans.exps) res_trans_list)
 
+  let collect_initid_exprs res_trans_list =
+    IList.flatten (IList.map (fun res_trans -> res_trans.initd_exps) res_trans_list)
+
   (* If e is a block and the calling node has the priority then *)
   (* we need to release the priority to allow*)
   (* creation of nodes inside the block.*)
@@ -1590,6 +1593,26 @@ struct
     let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
+  and initListExpr_initializers_trans trans_state var_exp n stmts typ =
+    let (var_exp_inside, typ_inside) = match typ with
+      | Sil.Tarray (t, _) when Sil.is_array_of_cpp_class typ ->
+          Sil.Lindex (var_exp, Sil.Const (Sil.Cint (Sil.Int.of_int n))), t
+      | _ -> var_exp, typ in
+    let trans_state' = { trans_state with var_exp_typ = Some (var_exp_inside, typ_inside) } in
+    match stmts with
+    | [] -> []
+    | stmt :: rest ->
+        let rest_stmts_res_trans =
+          initListExpr_initializers_trans trans_state var_exp (n + 1) rest typ in
+        match stmt with
+        | Clang_ast_t.InitListExpr (_ , stmts , _) ->
+            let inside_stmts_res_trans =
+              initListExpr_initializers_trans trans_state var_exp_inside 0 stmts typ_inside in
+            inside_stmts_res_trans @ rest_stmts_res_trans
+        | _ ->
+            let stmt_res_trans = instruction trans_state' stmt in
+            stmt_res_trans :: rest_stmts_res_trans
+
   and initListExpr_trans trans_state stmt_info expr_info stmts =
     let context = trans_state.context in
     let tenv = context.tenv in
@@ -1604,11 +1627,7 @@ struct
     let var_type =
       CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let lh = var_or_zero_in_init_list tenv var_exp var_type ~return_zero:false in
-    let rec collect_right_hand_exprs stmt = match stmt with
-      | Clang_ast_t.InitListExpr (_ , stmts , _) ->
-          CTrans_utils.collect_res_trans (IList.map collect_right_hand_exprs stmts)
-      | _ -> instruction trans_state stmt in
-    let res_trans_subexpr_list = IList.map collect_right_hand_exprs stmts in
+    let res_trans_subexpr_list = initListExpr_initializers_trans trans_state var_exp 0 stmts typ in
     let rh_exps = collect_exprs res_trans_subexpr_list in
     if IList.length rh_exps == 0 then
       let exp = Sil.zero_value_of_numerical_type var_type in
@@ -1624,7 +1643,17 @@ struct
       if IList.length rh_exps == IList.length lh then
         (* Creating new instructions by assigning right hand side to left hand side expressions *)
         let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Set (lh_exp, lh_t, rh_exp, sil_loc) in
-        let assign_instrs = IList.map2 assign_instr lh rh_exps in
+        let assign_instrs =
+          let initd_exps = collect_initid_exprs res_trans_subexpr_list in
+          (* If the variable var_exp is of type array, and some of its indices were initialized *)
+          (* by some constructor call, which we can tell by the fact that the index is returned *)
+          (* in initd_exps, then we assume that all the indices were initialized and *)
+          (* we don't need any assignments. *)
+          if IList.exists
+              ((fun arr index -> Sil.exp_is_array_index_of index arr) var_exp)
+              initd_exps
+          then []
+          else IList.map2 assign_instr lh rh_exps in
         let initlist_expr_res =
           { empty_res_trans with
             exps = [(var_exp, var_type)];

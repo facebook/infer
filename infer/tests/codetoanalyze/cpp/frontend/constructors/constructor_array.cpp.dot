@@ -1,0 +1,117 @@
+digraph iCFG {
+31 [label="31:  DeclStmt \n   _fun_Z_Z(&old:class Z *) [line 40]\n " shape="box"]
+	
+
+	 31 -> 30 ;
+30 [label="30:  DeclStmt \n   _fun_Z_Z(&z[1]:class Z *,&old:class Z &) [line 41]\n " shape="box"]
+	
+
+	 30 -> 29 ;
+29 [label="29:  DeclStmt \n   _fun_Z_Z(&z2:class Z *) [line 42]\n  NULLIFY(&old,false); [line 42]\n  NULLIFY(&z,false); [line 42]\n  NULLIFY(&z2,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+	
+
+	 29 -> 28 ;
+28 [label="28: Exit initialization_mixed_styles_not_handled_correctly \n  " color=yellow style=filled]
+	
+
+27 [label="27: Start initialization_mixed_styles_not_handled_correctly\nFormals: \nLocals:  z2:class Z  z:class Z [2] old:class Z  \n   DECLARE_LOCALS(&return,&z2,&z,&old); [line 39]\n " color=yellow style=filled]
+	
+
+	 27 -> 31 ;
+26 [label="26:  DeclStmt \n   *&z[0].a:int =1 [line 33]\n  *&z[0].b:int =2 [line 33]\n  *&z[1].a:int =2 [line 33]\n  *&z[1].b:int =3 [line 33]\n " shape="box"]
+	
+
+	 26 -> 25 ;
+25 [label="25:  DeclStmt \n   _fun_Z_Z(&z2:class Z *) [line 34]\n  NULLIFY(&z2,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+	
+
+	 25 -> 24 ;
+24 [label="24: Exit initialization_c_style \n  " color=yellow style=filled]
+	
+
+23 [label="23: Start initialization_c_style\nFormals: \nLocals:  z2:class Z  z:class Z [2] \n   DECLARE_LOCALS(&return,&z2,&z); [line 32]\n  NULLIFY(&z,false); [line 32]\n " color=yellow style=filled]
+	
+
+	 23 -> 26 ;
+22 [label="22:  Constructor Init \n   n$3=*&this:class Z * [line 27]\n  n$4=*&__param_0:class Z & [line 27]\n  n$5=*n$4.a:int  [line 27]\n  *n$3.a:int =n$5 [line 27]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 27]\n " shape="box"]
+	
+
+	 22 -> 21 ;
+21 [label="21:  Constructor Init \n   n$0=*&this:class Z * [line 27]\n  n$1=*&__param_0:class Z & [line 27]\n  n$2=*n$1.b:int  [line 27]\n  *n$0.b:int =n$2 [line 27]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 27]\n  NULLIFY(&__param_0,false); [line 27]\n  NULLIFY(&this,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+	
+
+	 21 -> 20 ;
+20 [label="20: Exit Z_Z \n  " color=yellow style=filled]
+	
+
+19 [label="19: Start Z_Z\nFormals:  this:class Z * __param_0:class Z &\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
+	
+
+	 19 -> 22 ;
+18 [label="18: Exit Z_Z \n  " color=yellow style=filled]
+	
+
+17 [label="17: Start Z_Z\nFormals:  this:class Z *\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n  NULLIFY(&this,false); [line 27]\n " color=yellow style=filled]
+	
+
+	 17 -> 18 ;
+16 [label="16:  DeclStmt \n   _fun_Person_Person(&SIL_materialize_temp__n$4:class Person *) [line 23]\n  _fun_Person_Person(&arr[0][0]:class Person *,&SIL_materialize_temp__n$4:class Person &) [line 23]\n  _fun_Person_Person(&SIL_materialize_temp__n$3:class Person *) [line 23]\n  _fun_Person_Person(&arr[0][1]:class Person *,&SIL_materialize_temp__n$3:class Person &) [line 23]\n  _fun_Person_Person(&SIL_materialize_temp__n$2:class Person *) [line 23]\n  _fun_Person_Person(&arr[1][0]:class Person *,&SIL_materialize_temp__n$2:class Person &) [line 23]\n  _fun_Person_Person(&SIL_materialize_temp__n$1:class Person *) [line 23]\n  _fun_Person_Person(&arr[1][1]:class Person *,&SIL_materialize_temp__n$1:class Person &) [line 23]\n " shape="box"]
+	
+
+	 16 -> 15 ;
+15 [label="15:  Return Stmt \n   n$0=*&arr[0][1].x:int  [line 24]\n  *&return:int =n$0 [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$4,false); [line 24]\n  NULLIFY(&arr,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	
+
+	 15 -> 14 ;
+14 [label="14: Exit matrix_of_person \n  " color=yellow style=filled]
+	
+
+13 [label="13: Start matrix_of_person\nFormals: \nLocals:  arr:class Person [2][2] SIL_materialize_temp__n$1:class Person  SIL_materialize_temp__n$2:class Person  SIL_materialize_temp__n$3:class Person  SIL_materialize_temp__n$4:class Person  \n   DECLARE_LOCALS(&return,&arr,&SIL_materialize_temp__n$1,&SIL_materialize_temp__n$2,&SIL_materialize_temp__n$3,&SIL_materialize_temp__n$4); [line 22]\n " color=yellow style=filled]
+	
+
+	 13 -> 16 ;
+12 [label="12:  DeclStmt \n   _fun_Person_Person(&SIL_materialize_temp__n$3:class Person *) [line 18]\n  _fun_Person_Person(&arr[0]:class Person *,&SIL_materialize_temp__n$3:class Person &) [line 18]\n  _fun_Person_Person(&SIL_materialize_temp__n$2:class Person *) [line 18]\n  _fun_Person_Person(&arr[1]:class Person *,&SIL_materialize_temp__n$2:class Person &) [line 18]\n  _fun_Person_Person(&SIL_materialize_temp__n$1:class Person *) [line 18]\n  _fun_Person_Person(&arr[2]:class Person *,&SIL_materialize_temp__n$1:class Person &) [line 18]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11:  Return Stmt \n   n$0=*&arr[0].x:int  [line 19]\n  *&return:int =n$0 [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 19]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 19]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 19]\n  NULLIFY(&arr,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+	
+
+	 11 -> 10 ;
+10 [label="10: Exit array_of_person \n  " color=yellow style=filled]
+	
+
+9 [label="9: Start array_of_person\nFormals: \nLocals:  arr:class Person [10] SIL_materialize_temp__n$1:class Person  SIL_materialize_temp__n$2:class Person  SIL_materialize_temp__n$3:class Person  \n   DECLARE_LOCALS(&return,&arr,&SIL_materialize_temp__n$1,&SIL_materialize_temp__n$2,&SIL_materialize_temp__n$3); [line 17]\n " color=yellow style=filled]
+	
+
+	 9 -> 12 ;
+8 [label="8:  Constructor Init \n   n$0=*&this:class Person * [line 10]\n  n$1=*&__param_0:class Person & [line 10]\n  n$2=*n$1.x:int  [line 10]\n  *n$0.x:int =n$2 [line 10]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+	
+
+	 8 -> 7 ;
+7 [label="7: Exit Person_Person \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start Person_Person\nFormals:  this:class Person * __param_0:class Person &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 6 -> 8 ;
+5 [label="5: Exit Person_Person \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start Person_Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n  NULLIFY(&this,false); [line 13]\n " color=yellow style=filled]
+	
+
+	 4 -> 5 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 12]\n  n$1=*&i:int  [line 12]\n  *n$0.x:int =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&i,false); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit Person_Person \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start Person_Person\nFormals:  this:class Person * i:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

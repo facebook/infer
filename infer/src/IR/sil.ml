@@ -900,6 +900,12 @@ let is_cpp_class typ =
 let is_java_class typ =
   is_class_of_kind typ Csu.Java
 
+let rec is_array_of_cpp_class typ =
+  match typ with
+  | Tarray (typ, _) ->
+      is_array_of_cpp_class typ
+  | _ -> is_cpp_class typ
+
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let typ_strip_ptr = function
   | Tptr (t, _) -> t
@@ -1437,6 +1443,12 @@ let typ_equal t1 t2 =
 
 let exp_equal e1 e2 =
   exp_compare e1 e2 = 0
+
+let rec exp_is_array_index_of exp1 exp2 =
+  match exp1 with
+  | Lindex (exp, _) ->
+      exp_is_array_index_of exp exp2
+  | _ -> exp_equal exp1 exp2
 
 let ident_exp_compare =
   pair_compare Ident.compare exp_compare
