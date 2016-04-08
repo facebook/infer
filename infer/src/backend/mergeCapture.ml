@@ -57,9 +57,9 @@ let link_exists s =
 (** Create symbolic links recursively from the destination to the source.
     Replicate the structure of the source directory in the destination,
     with files replaced by links to the source. *)
-let rec slink ~stats src dst =
+let rec slink ~stats ~skiplevels src dst =
   if debug >=3
-  then L.stderr "slink src:%s dst:%s@." src dst;
+  then L.stderr "slink src:%s dst:%s skiplevels:%d@." src dst skiplevels;
   if Sys.is_directory src
   then
     begin
@@ -67,9 +67,12 @@ let rec slink ~stats src dst =
       then Unix.mkdir dst 0o700;
       let items = Sys.readdir src in
       Array.iter
-        (fun item -> slink ~stats (Filename.concat src item) (Filename.concat dst item))
+        (fun item ->
+           slink ~stats ~skiplevels:(skiplevels - 1)
+             (Filename.concat src item) (Filename.concat dst item))
         items
     end
+  else if skiplevels > 0 then ()
   else
     begin
       if link_exists dst then Unix.unlink dst;
@@ -148,8 +151,9 @@ let process_merge_file deps_file =
     match Str.split_delim (Str.regexp (Str.quote "\t")) line with
     | target :: _ :: target_results_dir :: _ ->
         let infer_out_src = Filename.concat (Filename.dirname (buck_out ())) target_results_dir in
+        let skiplevels = 2 in (** Don't link toplevel files, definitely not .start *)
         if should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst
-        then slink ~stats infer_out_src infer_out_dst
+        then slink ~stats ~skiplevels infer_out_src infer_out_dst
     | _ ->
         () in
   Option.may
