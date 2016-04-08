@@ -32,22 +32,6 @@ let sources = [
   };
   (* actual specs *)
   {
-    classname = "com.facebook.katana.urimap.Fb4aUriIntentMapper";
-    method_name = "getIntentForUri";
-    ret_type = "android.content.Intent";
-    params = ["android.content.Context"; "java.lang.String"];
-    is_static = false;
-    language = Config.Java
-  };
-  {
-    classname = "com.facebook.prefs.shared.FbSharedPreferences";
-    method_name = "getString";
-    ret_type = "java.lang.String";
-    params = ["com.facebook.prefs.shared.PrefKey"; "java.lang.String"];
-    is_static = false;
-    language = Config.Java
-  };
-  {
     classname = "android.content.SharedPreferences";
     method_name = "getString";
     ret_type = "java.lang.String";
@@ -87,6 +71,79 @@ let sinks = [
     is_static = true;
     language = Config.Java
   }, [0;1]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openInputStream";
+    ret_type = "java.io.InputStream";
+    params = ["android.net.Uri"];
+    is_static = false;
+    language = Config.Java;
+  }, [1]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openOutputStream";
+    ret_type = "java.io.OutputStream";
+    params = ["android.net.Uri"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openOutputStream";
+    ret_type = "java.io.OutputStream";
+    params = ["android.net.Uri"; "java.lang.String"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openAssetFileDescriptor";
+    ret_type = "android.content.res.AssetFileDescriptor";
+    params = ["android.net.Uri"; "java.lang.String"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openAssetFileDescriptor";
+    ret_type = "android.content.res.AssetFileDescriptor";
+    params = ["android.net.Uri"; "java.lang.String"; "android.os.CancellationSignal"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openFileDescriptor";
+    ret_type = "android.os.ParcelFileDescriptor";
+    params = ["android.net.Uri"; "java.lang.String"; "android.os.CancellationSignal"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openFileDescriptor";
+    ret_type = "android.os.ParcelFileDescriptor";
+    params = ["android.net.Uri"; "java.lang.String"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openTypedAssetFileDescriptor";
+    ret_type = "android.content.res.AssetFileDescriptor";
+    params = ["android.net.Uri"; "java.lang.String"; "android.os.Bundle";
+              "android.os.CancellationSignal"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
+  ({
+    classname = "android.content.ContentResolver";
+    method_name = "openTypedAssetFileDescriptor";
+    ret_type = "android.content.res.AssetFileDescriptor";
+    params = ["android.net.Uri"; "java.lang.String"; "android.os.Bundle"];
+    is_static = false;
+    language = Config.Java;
+  }, [0]);
 
   (*  ==== iOS for testing only ==== *)
   ({
