@@ -29,7 +29,7 @@ type struct_init_mode =
   | No_init
   | Fld_init
 
-exception Cannot_star of ml_loc
+exception Cannot_star of Logging.ml_loc
 
 (** {2 Basic Functions for propositions} *)
 

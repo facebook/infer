@@ -68,15 +68,6 @@ module StringMap : Map.S with type key = string
 
 (** {2 Printing} *)
 
-(** Type of location in ml source: __POS__ *)
-type ml_loc = string * int * int * int
-
-(** Convert a ml location to a string *)
-val ml_loc_to_string : ml_loc -> string
-
-(** Pretty print a location of ml source *)
-val pp_ml_loc_opt : Format.formatter -> ml_loc option -> unit
-
 (** Colors supported in printing *)
 type color = Black | Blue | Green | Orange | Red
 
@@ -380,6 +371,3 @@ val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
 (** [set_reference_and_call_function ref val f x] calls f x with ref set to val.
     Restore the initial value also in case of exception. *)
 val set_reference_and_call_function : 'a ref -> 'a -> ('b -> 'c) -> 'b -> 'c
-
-(** Pritn stack trace and throw assert false *)
-val assert_false : ml_loc -> 'a

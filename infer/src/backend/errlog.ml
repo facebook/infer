@@ -23,7 +23,7 @@ type loc_trace = loc_trace_elem list
 
 (** Data associated to a specific error *)
 type err_data =
-  (int * int) * int * Location.t * ml_loc option * loc_trace *
+  (int * int) * int * Location.t * L.ml_loc option * loc_trace *
   Prop.normal Prop.t option * Exceptions.err_class
 
 let err_data_compare
@@ -65,7 +65,7 @@ let empty () = ErrLogHash.create 13
 type iter_fun =
   (int * int) ->
   Location.t ->
-  ml_loc option ->
+  L.ml_loc option ->
   Exceptions.err_kind ->
   bool ->
   Localise.t -> Localise.error_desc -> string ->

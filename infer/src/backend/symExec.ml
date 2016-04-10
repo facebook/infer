@@ -1216,7 +1216,7 @@ and instrs ?(mask_errors=false) tenv pdesc instrs ppl =
     with exn when exn_not_failure exn && mask_errors ->
       let err_name, _, ml_source, _ , _, _, _ = Exceptions.recognize_exception exn in
       let loc = (match ml_source with
-          | Some ml_loc -> "at " ^ (ml_loc_to_string ml_loc)
+          | Some ml_loc -> "at " ^ (L.ml_loc_to_string ml_loc)
           | None -> "") in
       L.d_warning
         ("Generated Instruction Failed with: " ^

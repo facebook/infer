@@ -27,59 +27,60 @@ type err_kind =
 (** class of error *)
 type err_class = Checker | Prover | Nocat
 
-exception Abduction_case_not_implemented of ml_loc
-exception Analysis_stops of Localise.error_desc * ml_loc option
-exception Array_of_pointsto of ml_loc
-exception Array_out_of_bounds_l1 of Localise.error_desc * ml_loc
-exception Array_out_of_bounds_l2 of Localise.error_desc * ml_loc
-exception Array_out_of_bounds_l3 of Localise.error_desc * ml_loc
-exception Bad_footprint of ml_loc
-exception Bad_pointer_comparison of Localise.error_desc * ml_loc
-exception Class_cast_exception of Localise.error_desc * ml_loc
+exception Abduction_case_not_implemented of Logging.ml_loc
+exception Analysis_stops of Localise.error_desc * Logging.ml_loc option
+exception Array_of_pointsto of Logging.ml_loc
+exception Array_out_of_bounds_l1 of Localise.error_desc * Logging.ml_loc
+exception Array_out_of_bounds_l2 of Localise.error_desc * Logging.ml_loc
+exception Array_out_of_bounds_l3 of Localise.error_desc * Logging.ml_loc
+exception Bad_footprint of Logging.ml_loc
+exception Bad_pointer_comparison of Localise.error_desc * Logging.ml_loc
+exception Class_cast_exception of Localise.error_desc * Logging.ml_loc
 exception Codequery of Localise.error_desc
-exception Comparing_floats_for_equality of Localise.error_desc * ml_loc
-exception Condition_always_true_false of Localise.error_desc * bool * ml_loc
-exception Condition_is_assignment of Localise.error_desc * ml_loc
-exception Context_leak of Localise.error_desc * ml_loc
+exception Comparing_floats_for_equality of Localise.error_desc * Logging.ml_loc
+exception Condition_always_true_false of Localise.error_desc * bool * Logging.ml_loc
+exception Condition_is_assignment of Localise.error_desc * Logging.ml_loc
+exception Context_leak of Localise.error_desc * Logging.ml_loc
 exception Custom_error of string * Localise.error_desc
-exception Dangling_pointer_dereference of Sil.dangling_kind option * Localise.error_desc * ml_loc
+exception Dangling_pointer_dereference of
+    Sil.dangling_kind option * Localise.error_desc * Logging.ml_loc
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc
-exception Deallocation_mismatch of Localise.error_desc * ml_loc
-exception Divide_by_zero of Localise.error_desc * ml_loc
-exception Field_not_null_checked of Localise.error_desc * ml_loc
+exception Deallocation_mismatch of Localise.error_desc * Logging.ml_loc
+exception Divide_by_zero of Localise.error_desc * Logging.ml_loc
+exception Field_not_null_checked of Localise.error_desc * Logging.ml_loc
 exception Eradicate of string * Localise.error_desc
 exception Checkers of string * Localise.error_desc
-exception Frontend_warning of string * Localise.error_desc * ml_loc
+exception Frontend_warning of string * Localise.error_desc * Logging.ml_loc
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
     bool * Prop.normal Prop.t * Sil.hpred * (exception_visibility * Localise.error_desc)
-    * bool * Sil.resource * ml_loc
-exception Missing_fld of Ident.fieldname * ml_loc
-exception Premature_nil_termination of Localise.error_desc * ml_loc
-exception Null_dereference of Localise.error_desc * ml_loc
-exception Null_test_after_dereference of Localise.error_desc * ml_loc
-exception Parameter_not_null_checked of Localise.error_desc * ml_loc
-exception Pointer_size_mismatch of Localise.error_desc * ml_loc
-exception Precondition_not_found of Localise.error_desc * ml_loc
-exception Precondition_not_met of Localise.error_desc * ml_loc
-exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * ml_loc
-exception Registered_observer_being_deallocated of Localise.error_desc * ml_loc
-exception Return_expression_required of Localise.error_desc * ml_loc
-exception Return_statement_missing of Localise.error_desc * ml_loc
-exception Return_value_ignored of Localise.error_desc * ml_loc
+    * bool * Sil.resource * Logging.ml_loc
+exception Missing_fld of Ident.fieldname * Logging.ml_loc
+exception Premature_nil_termination of Localise.error_desc * Logging.ml_loc
+exception Null_dereference of Localise.error_desc * Logging.ml_loc
+exception Null_test_after_dereference of Localise.error_desc * Logging.ml_loc
+exception Parameter_not_null_checked of Localise.error_desc * Logging.ml_loc
+exception Pointer_size_mismatch of Localise.error_desc * Logging.ml_loc
+exception Precondition_not_found of Localise.error_desc * Logging.ml_loc
+exception Precondition_not_met of Localise.error_desc * Logging.ml_loc
+exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * Logging.ml_loc
+exception Registered_observer_being_deallocated of Localise.error_desc * Logging.ml_loc
+exception Return_expression_required of Localise.error_desc * Logging.ml_loc
+exception Return_statement_missing of Localise.error_desc * Logging.ml_loc
+exception Return_value_ignored of Localise.error_desc * Logging.ml_loc
 exception Skip_function of Localise.error_desc
-exception Skip_pointer_dereference of Localise.error_desc * ml_loc
-exception Stack_variable_address_escape of Localise.error_desc * ml_loc
-exception Symexec_memory_error of ml_loc
-exception Tainted_value_reaching_sensitive_function of Localise.error_desc * ml_loc
-exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * ml_loc
-exception Uninitialized_value of Localise.error_desc * ml_loc
+exception Skip_pointer_dereference of Localise.error_desc * Logging.ml_loc
+exception Stack_variable_address_escape of Localise.error_desc * Logging.ml_loc
+exception Symexec_memory_error of Logging.ml_loc
+exception Tainted_value_reaching_sensitive_function of Localise.error_desc * Logging.ml_loc
+exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Logging.ml_loc
+exception Uninitialized_value of Localise.error_desc * Logging.ml_loc
 exception Unknown_proc
-exception Use_after_free of Localise.error_desc * ml_loc
-exception Wrong_argument_number of ml_loc
+exception Use_after_free of Localise.error_desc * Logging.ml_loc
+exception Wrong_argument_number of Logging.ml_loc
 
 (** string describing an error class *)
 val err_class_string : err_class -> string
@@ -96,10 +97,10 @@ val print_exception_html : string -> exn -> unit
 (** pretty print an error given its (id,key), location, kind, name, description,
     and optional ml location *)
 val pp_err : int * int -> Location.t -> err_kind -> Localise.t -> Localise.error_desc ->
-  ml_loc option -> Format.formatter -> unit -> unit
+  Logging.ml_loc option -> Format.formatter -> unit -> unit
 
 (** Turn an exception into an error name, error description,
     location in ml source, and category *)
 val recognize_exception : exn ->
-  (Localise.t * Localise.error_desc * (ml_loc option) * exception_visibility *
+  (Localise.t * Localise.error_desc * (Logging.ml_loc option) * exception_visibility *
    exception_severity * err_kind option * err_class)

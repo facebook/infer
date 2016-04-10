@@ -46,7 +46,7 @@ type 'a t =
     foot_pi: pi;  (** abduced pure part *)
   }
 
-exception Cannot_star of ml_loc
+exception Cannot_star of L.ml_loc
 
 (** {2 Basic Functions for Propositions} *)
 

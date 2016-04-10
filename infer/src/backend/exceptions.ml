@@ -28,59 +28,59 @@ type err_class = Checker | Prover | Nocat
 type err_kind =
     Kwarning | Kerror | Kinfo
 
-exception Abduction_case_not_implemented of ml_loc
-exception Analysis_stops of Localise.error_desc * ml_loc option
-exception Array_out_of_bounds_l1 of Localise.error_desc * ml_loc
-exception Array_out_of_bounds_l2 of Localise.error_desc * ml_loc
-exception Array_out_of_bounds_l3 of Localise.error_desc * ml_loc
-exception Array_of_pointsto of ml_loc
-exception Bad_footprint of ml_loc
-exception Bad_pointer_comparison of Localise.error_desc * ml_loc
-exception Class_cast_exception of Localise.error_desc * ml_loc
+exception Abduction_case_not_implemented of L.ml_loc
+exception Analysis_stops of Localise.error_desc * L.ml_loc option
+exception Array_out_of_bounds_l1 of Localise.error_desc * L.ml_loc
+exception Array_out_of_bounds_l2 of Localise.error_desc * L.ml_loc
+exception Array_out_of_bounds_l3 of Localise.error_desc * L.ml_loc
+exception Array_of_pointsto of L.ml_loc
+exception Bad_footprint of L.ml_loc
+exception Bad_pointer_comparison of Localise.error_desc * L.ml_loc
+exception Class_cast_exception of Localise.error_desc * L.ml_loc
 exception Codequery of Localise.error_desc
-exception Comparing_floats_for_equality of Localise.error_desc * ml_loc
-exception Condition_is_assignment of Localise.error_desc * ml_loc
-exception Condition_always_true_false of Localise.error_desc * bool * ml_loc
-exception Context_leak of Localise.error_desc * ml_loc
+exception Comparing_floats_for_equality of Localise.error_desc * L.ml_loc
+exception Condition_is_assignment of Localise.error_desc * L.ml_loc
+exception Condition_always_true_false of Localise.error_desc * bool * L.ml_loc
+exception Context_leak of Localise.error_desc * L.ml_loc
 exception Custom_error of string * Localise.error_desc
-exception Dangling_pointer_dereference of Sil.dangling_kind option * Localise.error_desc * ml_loc
+exception Dangling_pointer_dereference of Sil.dangling_kind option * Localise.error_desc * L.ml_loc
 exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc
-exception Deallocation_mismatch of Localise.error_desc * ml_loc
-exception Divide_by_zero of Localise.error_desc * ml_loc
+exception Deallocation_mismatch of Localise.error_desc * L.ml_loc
+exception Divide_by_zero of Localise.error_desc * L.ml_loc
 exception Eradicate of string * Localise.error_desc
-exception Field_not_null_checked of Localise.error_desc * ml_loc
-exception Frontend_warning of string * Localise.error_desc * ml_loc
+exception Field_not_null_checked of Localise.error_desc * L.ml_loc
+exception Frontend_warning of string * Localise.error_desc * L.ml_loc
 exception Checkers of string * Localise.error_desc
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typename.t * string * Localise.error_desc
 exception Leak of
     bool * Prop.normal Prop.t * Sil.hpred * (exception_visibility * Localise.error_desc)
-    * bool * Sil.resource * ml_loc
-exception Missing_fld of Ident.fieldname * ml_loc
-exception Premature_nil_termination of Localise.error_desc * ml_loc
-exception Null_dereference of Localise.error_desc * ml_loc
-exception Null_test_after_dereference of Localise.error_desc * ml_loc
-exception Parameter_not_null_checked of Localise.error_desc * ml_loc
-exception Pointer_size_mismatch of Localise.error_desc * ml_loc
-exception Precondition_not_found of Localise.error_desc * ml_loc
-exception Precondition_not_met of Localise.error_desc * ml_loc
-exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * ml_loc
-exception Registered_observer_being_deallocated of Localise.error_desc * ml_loc
-exception Return_expression_required of Localise.error_desc * ml_loc
-exception Return_statement_missing of Localise.error_desc * ml_loc
-exception Return_value_ignored of Localise.error_desc * ml_loc
+    * bool * Sil.resource * L.ml_loc
+exception Missing_fld of Ident.fieldname * L.ml_loc
+exception Premature_nil_termination of Localise.error_desc * L.ml_loc
+exception Null_dereference of Localise.error_desc * L.ml_loc
+exception Null_test_after_dereference of Localise.error_desc * L.ml_loc
+exception Parameter_not_null_checked of Localise.error_desc * L.ml_loc
+exception Pointer_size_mismatch of Localise.error_desc * L.ml_loc
+exception Precondition_not_found of Localise.error_desc * L.ml_loc
+exception Precondition_not_met of Localise.error_desc * L.ml_loc
+exception Retain_cycle of Prop.normal Prop.t * Sil.hpred * Localise.error_desc * L.ml_loc
+exception Registered_observer_being_deallocated of Localise.error_desc * L.ml_loc
+exception Return_expression_required of Localise.error_desc * L.ml_loc
+exception Return_statement_missing of Localise.error_desc * L.ml_loc
+exception Return_value_ignored of Localise.error_desc * L.ml_loc
 exception Skip_function of Localise.error_desc
-exception Skip_pointer_dereference of Localise.error_desc * ml_loc
-exception Stack_variable_address_escape of Localise.error_desc * ml_loc
-exception Symexec_memory_error of ml_loc
-exception Tainted_value_reaching_sensitive_function of Localise.error_desc * ml_loc
-exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * ml_loc
-exception Uninitialized_value of Localise.error_desc * ml_loc
+exception Skip_pointer_dereference of Localise.error_desc * L.ml_loc
+exception Stack_variable_address_escape of Localise.error_desc * L.ml_loc
+exception Symexec_memory_error of L.ml_loc
+exception Tainted_value_reaching_sensitive_function of Localise.error_desc * L.ml_loc
+exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ml_loc
+exception Uninitialized_value of Localise.error_desc * L.ml_loc
 exception Unknown_proc
-exception Use_after_free of Localise.error_desc * ml_loc
-exception Wrong_argument_number of ml_loc
+exception Use_after_free of Localise.error_desc * L.ml_loc
+exception Wrong_argument_number of L.ml_loc
 
 
 (** Turn an exception into a descriptive string, error description, location in ml source, and category *)
@@ -90,7 +90,7 @@ let recognize_exception exn =
     match Localise.error_desc_get_bucket desc with
     | None -> false
     | Some bucket -> bucket <> Localise.BucketLevel.b1 in
-  let err_name, desc, (ml_loc_opt : ml_loc option), visibility, severity, force_kind, eclass =
+  let err_name, desc, (ml_loc_opt : L.ml_loc option), visibility, severity, force_kind, eclass =
     match exn with (* all the names of Exn_user errors must be defined in Localise *)
     | Abduction_case_not_implemented ml_loc ->
         (Localise.from_string "Abduction_case_not_implemented",
@@ -304,7 +304,7 @@ let print_exception_html s exn =
   let err_name, desc, ml_loc_opt, _, _, _, _ = recognize_exception exn in
   let ml_loc_string = match ml_loc_opt with
     | None -> ""
-    | Some ml_loc -> " " ^ ml_loc_to_string ml_loc in
+    | Some ml_loc -> " " ^ L.ml_loc_to_string ml_loc in
   let desc_str = pp_to_string Localise.pp_error_desc desc in
   (L.d_strln_color Red) (s ^ (Localise.to_string err_name) ^ " " ^ desc_str ^ ml_loc_string)
 
@@ -334,7 +334,7 @@ let pp_err (_, node_key) loc ekind ex_name desc ml_loc_opt fmt () =
     Localise.pp ex_name
     Localise.pp_error_desc desc
     pp_key node_key
-    pp_ml_loc_opt ml_loc_opt
+    L.pp_ml_loc_opt ml_loc_opt
 
 (** Return true if the exception is not serious and should be handled in timeout mode *)
 let handle_exception exn =

@@ -237,22 +237,6 @@ let pp_elapsed_time fmt () =
   let elapsed = Unix.gettimeofday () -. initial_timeofday in
   Format.fprintf fmt "%f" elapsed
 
-(** Type of location in ml source: __POS__ *)
-type ml_loc = string * int * int * int
-
-(** Convert a ml location to a string *)
-let ml_loc_to_string (file, lnum, cnum, enum) =
-  Printf.sprintf "%s:%d:%d-%d:" file lnum cnum enum
-
-(** Pretty print a location of ml source *)
-let pp_ml_loc fmt ml_loc =
-  F.fprintf fmt "%s" (ml_loc_to_string ml_loc)
-
-let pp_ml_loc_opt fmt ml_loc_opt =
-  if !Config.developer_mode then match ml_loc_opt with
-    | None -> ()
-    | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
-
 (** {2 SymOp and Failures: units of symbolic execution} *)
 
 type failure_kind =
@@ -1000,9 +984,3 @@ let run_in_footprint_mode f x =
 
 let run_with_abs_val_equal_zero f x =
   set_reference_and_call_function Config.abs_val 0 f x
-
-let assert_false ((file, lnum, cnum, _) as ml_loc) =
-  Printf.eprintf "\nASSERT FALSE %s\nCALL STACK\n%s\n%!"
-    (ml_loc_to_string ml_loc)
-    (Printexc.raw_backtrace_to_string (Printexc.get_callstack 1000));
-  raise (Assert_failure (file, lnum, cnum))

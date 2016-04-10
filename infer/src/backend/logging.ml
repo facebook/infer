@@ -129,6 +129,28 @@ let stderr fmt_string =
 let stdout fmt_string =
   do_print F.std_formatter fmt_string
 
+(** Type of location in ml source: __POS__ *)
+type ml_loc = string * int * int * int
+
+(** Convert a ml location to a string *)
+let ml_loc_to_string (file, lnum, cnum, enum) =
+  Printf.sprintf "%s:%d:%d-%d:" file lnum cnum enum
+
+(** Pretty print a location of ml source *)
+let pp_ml_loc fmt ml_loc =
+  F.fprintf fmt "%s" (ml_loc_to_string ml_loc)
+
+let pp_ml_loc_opt fmt ml_loc_opt =
+  if !Config.developer_mode then match ml_loc_opt with
+    | None -> ()
+    | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
+
+let assert_false ((file, lnum, cnum, _) as ml_loc) =
+  Printf.eprintf "\nASSERT FALSE %s\nCALL STACK\n%s\n%!"
+    (ml_loc_to_string ml_loc)
+    (Printexc.raw_backtrace_to_string (Printexc.get_callstack 1000));
+  raise (Assert_failure (file, lnum, cnum))
+
 (** print a warning with information of the position in the ml source where it oririnated.
     use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
 let warning_position (s: string) (ml_loc: ml_loc) =
