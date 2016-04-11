@@ -47,6 +47,14 @@ public class ExpensiveCallTest {
         "callsFindViewByIdFromView",
         "callsFindViewByIdFromActivity",
         "annotatedPerformanceCriticalInInterface",
+        "performanceCriticalMethod1",
+        "performanceCriticalMethod2",
+        "performanceCriticalMethod3",
+        // TODO: make subclassing work
+        //"subclassPerformanceCriticalMethod1",
+        //"subclassPerformanceCriticalMethod2",
+        //"subclassPerformanceCriticalMethod3",
+        "callMethodOnExpensiveClass"
     };
     assertThat(
         "Results should contain " + CALLS_EXPENSIVE_METHOD,

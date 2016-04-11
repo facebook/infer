@@ -35,6 +35,66 @@ class Other {
     expensive();
   }
 
+  void inexpensiveMethod() {
+  }
+
+}
+
+@Expensive
+class ExpensiveClass {
+
+  void anExpensiveMethod() {
+  }
+
+}
+
+@PerformanceCritical
+class PerformanceCriticalClass {
+
+  void performanceCriticalMethod1(ExpensiveClass c) {
+    c.anExpensiveMethod(); // should report
+  }
+
+  void performanceCriticalMethod2(Other o) {
+    o.expensive(); // should report
+  }
+
+  void performanceCriticalMethod3(Other o) {
+    o.callsExpensive1(); // should report
+  }
+
+  void performanceCriticalMethod4(Other o) {
+    o.inexpensiveMethod(); // should not report
+  }
+
+
+}
+
+class ExpensiveSubclass extends ExpensiveClass {
+
+  void anotherExpensiveMethod() {
+  }
+
+}
+
+class PerformanceCriticalSubclass extends PerformanceCriticalClass {
+
+  void subclassPerformanceCriticalMethod1(ExpensiveClass c) {
+    c.anExpensiveMethod(); // should report
+  }
+
+  void subclassPerformanceCriticalMethod2(ExpensiveSubclass c) {
+    c.anotherExpensiveMethod(); // should report
+  }
+
+  void subclassPerformanceCriticalMethod3(Other o) {
+    o.callsExpensive1(); // should report;
+  }
+
+  void subclassPerformanceCriticalMethod4(Other o) {
+    o.inexpensiveMethod(); // should not report;
+  }
+
 }
 
 
@@ -91,6 +151,11 @@ public class ExpensiveCallExample implements AnnotatedInterface {
   @PerformanceCritical
   View callsFindViewByIdFromActivity(FragmentActivity activity, int id) {
     return activity.findViewById(id);
+  }
+
+  @PerformanceCritical
+  void callMethodOnExpensiveClass(ExpensiveClass c) {
+    c.anExpensiveMethod();
   }
 
   public void annotatedPerformanceCriticalInInterface() {

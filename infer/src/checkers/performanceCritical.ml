@@ -39,39 +39,41 @@ let is_modeled_expensive =
         false
 
 
-let check_attributes check attributes =
-  let annotated_signature = Annotations.get_annotated_signature attributes in
-  let ret_annotation, _ = annotated_signature.Annotations.ret in
-  check ret_annotation
+let check_attributes check tenv pname =
+  let check_class_attributes check tenv pname =
+    match Annotations.get_declaring_class_annotations pname tenv with
+    | Some annotations -> check annotations
+    | None -> false in
+  let check_method_attributes check pname =
+    match Specs.proc_resolve_attributes pname with
+    | None -> false
+    | Some attributes ->
+        let annotated_signature = Annotations.get_annotated_signature attributes in
+        let ret_annotation, _ = annotated_signature.Annotations.ret in
+        check ret_annotation in
+  check_class_attributes check tenv pname || check_method_attributes check pname
 
 
-let is_expensive attributes =
-  check_attributes Annotations.ia_is_expensive attributes
+let is_expensive tenv pname =
+  check_attributes Annotations.ia_is_expensive tenv pname
 
 
-let check_method check pname =
-  match Specs.proc_resolve_attributes pname with
-  | None -> false
-  | Some attributes ->
-      check_attributes check attributes
+let method_is_performance_critical tenv pname =
+  check_attributes Annotations.ia_is_performance_critical tenv pname
 
 
-let method_is_performance_critical pname =
-  check_method Annotations.ia_is_performance_critical pname
-
-
-let method_is_no_allcation pname =
-  check_method Annotations.ia_is_no_allocation pname
+let method_is_no_allocation tenv pname =
+  check_attributes Annotations.ia_is_no_allocation tenv pname
 
 
 let method_overrides is_annotated tenv pname =
   let overrides () =
     let found = ref false in
     PatternMatch.proc_iter_overridden_methods
-      (fun pn -> found := is_annotated pn)
+      (fun pn -> found := is_annotated tenv pn)
       tenv pname;
     !found in
-  is_annotated pname
+  is_annotated tenv pname
   || overrides ()
 
 
@@ -80,12 +82,12 @@ let method_overrides_performance_critical tenv pname =
 
 
 let method_overrides_no_allocation tenv pname =
-  method_overrides method_is_no_allcation tenv pname
+  method_overrides method_is_no_allocation tenv pname
 
 
 let method_is_expensive tenv pname =
-  is_modeled_expensive tenv pname
-  || check_method Annotations.ia_is_expensive pname
+  is_modeled_expensive tenv pname ||
+  check_attributes Annotations.ia_is_expensive tenv pname
 
 
 let lookup_call_summary pname =
@@ -131,7 +133,7 @@ let is_allocator tenv pname = match pname with
 
 let method_allocates tenv pname =
   let annotated_ignore_allocation =
-    check_method Annotations.ia_is_ignore_allocations pname in
+    check_attributes Annotations.ia_is_ignore_allocations tenv pname in
   let allocates () =
     match lookup_call_summary pname with
     | Some { Specs.allocations } ->
@@ -265,10 +267,8 @@ let report_allocations pname pdesc loc calls =
 
 
 let check_one_procedure tenv pname pdesc =
-
   let loc = Cfg.Procdesc.get_loc pdesc in
-  let attributes = Cfg.Procdesc.get_attributes pdesc in
-  let expensive = is_expensive attributes
+  let expensive = is_expensive tenv pname
   and performance_critical =
     method_overrides_performance_critical tenv pname
   and no_allocation =
@@ -323,8 +323,3 @@ let callback_performance_checker
       check_one_procedure tenv proc_name proc_desc;
       Ondemand.unset_callbacks ()
     end
-
-(*
-let is_performance_critical attributes =
-  check_attributes Annotations.ia_is_performance_critical attributes
-*)
