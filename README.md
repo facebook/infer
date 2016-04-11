@@ -15,3 +15,6 @@ from source, see INSTALL.md.
 ## License
 
 Infer is BSD-licensed. We also provide an additional patent grant.
+
+Note: Enabling Java support may require you to download and install 
+components licensed under the GPL.
