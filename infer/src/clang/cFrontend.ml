@@ -25,7 +25,7 @@ let compute_icfg tenv ast =
       Printing.log_out "\n Start creating icfg\n";
       let cg = Cg.create () in
       let cfg = Cfg.Node.create_cfg () in
-      IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg ast) decl_list;
+      IList.iter (CFrontend_declImpl.translate_one_declaration tenv cg cfg) decl_list;
       Printing.log_out "\n Finished creating icfg\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)

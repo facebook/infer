@@ -25,5 +25,5 @@ module type CFrontend = sig
     block_data option -> unit
 
   val translate_one_declaration : Tenv.t -> Cg.t -> Cfg.cfg ->
-    Clang_ast_t.decl -> Clang_ast_t.decl -> unit
+    Clang_ast_t.decl -> unit
 end

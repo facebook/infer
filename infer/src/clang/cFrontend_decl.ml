@@ -18,7 +18,7 @@ module type CFrontend_decl = sig
     CModule_type.block_data option -> unit
 
   val translate_one_declaration :
-    Tenv.t -> Cg.t -> Cfg.cfg -> Clang_ast_t.decl -> Clang_ast_t.decl -> unit
+    Tenv.t -> Cg.t -> Cfg.cfg -> Clang_ast_t.decl -> unit
 end
 
 module CFrontend_decl_funct(T: CModule_type.CTranslation) : CFrontend_decl =
@@ -127,7 +127,7 @@ struct
     translate_location || always_translate_decl
 
   (* Translate one global declaration *)
-  let rec translate_one_declaration tenv cg cfg parent_dec dec =
+  let rec translate_one_declaration tenv cg cfg dec =
     let open Clang_ast_t in
     (* Run the frontend checkers on this declaration *)
     CFrontend_errors.run_frontend_checkers_on_decl tenv cg cfg dec;
@@ -175,12 +175,11 @@ struct
        | CXXConversionDecl (decl_info, _, _, _, _)
        | CXXDestructorDecl (decl_info, _, _, _, _) ->
            (* di_parent_pointer has pointer to lexical context such as class.*)
-           (* If it's not defined, then it's the same as parent in AST *)
            let class_decl = match decl_info.Clang_ast_t.di_parent_pointer with
              | Some ptr ->
                  Ast_utils.get_decl ptr
              | None ->
-                 Some parent_dec in
+                 assert false in
            (match class_decl with
             | Some (CXXRecordDecl _ as d)
             | Some (ClassTemplateSpecializationDecl _ as d) ->
@@ -203,19 +202,19 @@ struct
               true
           | _ -> false in
         let method_decls, no_method_decls = IList.partition is_method_decl decl_list in
-        IList.iter (translate_one_declaration tenv cg cfg dec) no_method_decls;
+        IList.iter (translate_one_declaration tenv cg cfg) no_method_decls;
         ignore (CTypes_decl.add_types_from_decl_to_tenv tenv dec);
-        IList.iter (translate_one_declaration tenv cg cfg dec) method_decls
+        IList.iter (translate_one_declaration tenv cg cfg) method_decls
     | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
     | LinkageSpecDecl (_, decl_list, _) ->
         Printing.log_out "ADDING: LinkageSpecDecl decl list\n";
-        IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
+        IList.iter (translate_one_declaration tenv cg cfg) decl_list
     | NamespaceDecl (_, _, decl_list, _, _) ->
-        IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
+        IList.iter (translate_one_declaration tenv cg cfg) decl_list
     | ClassTemplateDecl (_, _, template_decl_info)
     | FunctionTemplateDecl (_, _, template_decl_info) ->
         let decl_list = template_decl_info.Clang_ast_t.tdi_specializations in
-        IList.iter (translate_one_declaration tenv cg cfg dec) decl_list
+        IList.iter (translate_one_declaration tenv cg cfg) decl_list
     | _ -> ()
 
 end
