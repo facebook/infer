@@ -20,18 +20,24 @@ module Domain = struct
   (* return true if the key-value bindings in [rhs] are a subset of the key-value bindings in
      [lhs] *)
   let (<=) ~lhs ~rhs =
-    Var.Map.for_all
-      (fun k v ->
-         try Var.var_equal v (Var.Map.find k lhs)
-         with Not_found -> false)
-      rhs
+    if lhs == rhs
+    then true
+    else
+      Var.Map.for_all
+        (fun k v ->
+           try Var.var_equal v (Var.Map.find k lhs)
+           with Not_found -> false)
+        rhs
 
   let join astate1 astate2 =
-    let keep_if_same _ v1_opt v2_opt = match v1_opt, v2_opt with
-      | Some v1, Some v2 ->
-          if Var.var_equal v1 v2 then Some v1 else None
-      | _ -> None in
-    Var.Map.merge keep_if_same astate1 astate2
+    if astate1 == astate2
+    then astate1
+    else
+      let keep_if_same _ v1_opt v2_opt = match v1_opt, v2_opt with
+        | Some v1, Some v2 ->
+            if Var.var_equal v1 v2 then Some v1 else None
+        | _ -> None in
+      Var.Map.merge keep_if_same astate1 astate2
 
   let widen ~prev ~next ~num_iters:_=
     join prev next

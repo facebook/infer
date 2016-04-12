@@ -30,22 +30,32 @@ module BottomLifted (Domain : S) = struct
 
   let initial = NonBottom Domain.initial
 
-  let (<=) ~lhs ~rhs = match lhs, rhs with
-    | Bottom, _ -> true
-    | _ , Bottom -> false
-    | NonBottom lhs, NonBottom rhs -> Domain.(<=) ~lhs ~rhs
+  let (<=) ~lhs ~rhs =
+    if lhs == rhs
+    then true
+    else
+      match lhs, rhs with
+      | Bottom, _ -> true
+      | _ , Bottom -> false
+      | NonBottom lhs, NonBottom rhs -> Domain.(<=) ~lhs ~rhs
 
   let join astate1 astate2 =
-    match astate1, astate2 with
-    | Bottom, _ -> astate2
-    | _, Bottom -> astate1
-    | NonBottom a1, NonBottom a2 -> NonBottom (Domain.join a1 a2)
+    if astate1 == astate2
+    then astate1
+    else
+      match astate1, astate2 with
+      | Bottom, _ -> astate2
+      | _, Bottom -> astate1
+      | NonBottom a1, NonBottom a2 -> NonBottom (Domain.join a1 a2)
 
   let widen ~prev ~next ~num_iters =
-    match prev, next with
-    | Bottom, _ -> next
-    | _, Bottom -> prev
-    | NonBottom prev, NonBottom next -> NonBottom (Domain.widen ~prev ~next ~num_iters)
+    if prev == next
+    then prev
+    else
+      match prev, next with
+      | Bottom, _ -> next
+      | _, Bottom -> prev
+      | NonBottom prev, NonBottom next -> NonBottom (Domain.widen ~prev ~next ~num_iters)
 
   let pp fmt = function
     | Bottom -> F.fprintf fmt "_|_"
@@ -80,9 +90,12 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
       | _, true -> astate1
       | _ -> Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2)
 
-  let widen ~prev:(astate1_next, astate2_next) ~next:(astate1_prev, astate2_prev) ~num_iters =
-    Domain1.widen ~prev:astate1_next ~next:astate1_prev ~num_iters,
-    Domain2.widen ~prev:astate2_next ~next:astate2_prev ~num_iters
+  let widen ~prev ~next ~num_iters =
+    if prev == next
+    then prev
+    else
+      Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters,
+      Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters
 
   let pp fmt (astate1, astate2) =
     F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
@@ -95,8 +108,19 @@ module FiniteSet (S : PrettyPrintable.PPSet) = struct
   type astate = t
 
   let initial = empty
+
   let is_bottom _ = false
-  let (<=) ~lhs ~rhs = subset lhs rhs
-  let join = union
-  let widen ~prev ~next ~num_iters:_ = union prev next
+
+  let (<=) ~lhs ~rhs =
+    if lhs == rhs
+    then true
+    else subset lhs rhs
+
+  let join astate1 astate2 =
+    if astate1 == astate2
+    then astate1
+    else union astate1 astate2
+
+  let widen ~prev ~next ~num_iters:_ =
+    join prev next
 end
