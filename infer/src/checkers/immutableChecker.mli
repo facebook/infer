@@ -7,4 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 val callback_check_immutable_cast : Callbacks.proc_callback_t

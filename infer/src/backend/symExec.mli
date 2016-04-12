@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Symbolic Execution *)
 
 (** Symbolic execution of the instructions of a node, lifted to sets of propositions. *)

@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Implementation of "Smart" Pattern Matching for higher order singly-linked list predicate.
 
     Used for detecting on a given program if some data scructures are matching some predefined higher-order list predicates. When it is the case, these predicates can be used as possible candidates for abstracting the data-structures.

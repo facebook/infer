@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 open Clang_ast_t
 
 (** This module creates extra ast constructs that are needed for the translation *)

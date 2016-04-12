@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 val sources : PatternMatch.method_str list
 
 val sinks : (PatternMatch.method_str * int list) list

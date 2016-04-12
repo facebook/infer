@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 open Javalib_pack
 
 (** [path_of_cached_classname cn] returns the path of a cached classname *)

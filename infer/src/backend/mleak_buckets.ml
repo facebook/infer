@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** This module handles buckets of memory leaks in Objective-C/C++ *)
 
 let objc_arc_flag = "objc_arc"

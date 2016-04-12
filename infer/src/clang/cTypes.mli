@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Utility module for retrieving types *)
 
 val add_pointer_to_typ : Sil.typ -> Sil.typ

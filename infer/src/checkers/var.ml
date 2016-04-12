@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** single abstraction for all the kinds of variables in SIL *)
 
 type var =

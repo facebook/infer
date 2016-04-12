@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Interprocedural Analysis *)
 
 (** Perform the analysis of an exe_env *)

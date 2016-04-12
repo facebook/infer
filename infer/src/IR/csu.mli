@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Internal representation of data structure for Java, Objective-C and C++ classes,
     C-style structs struct and union,
     And Objective C protocol *)

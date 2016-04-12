@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 val is_cf_non_null_alloc : Procname.t option -> bool
 
 val is_alloc : Procname.t option -> bool

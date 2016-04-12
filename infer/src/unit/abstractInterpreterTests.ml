@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 module F = Format
 
 (** Test the generic abstract interpreter by using a simple path counting domain. Path counting is

@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Create descriptions of analysis errors *)
 
 (** find the dexp, if any, where the given value is stored

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 let arg_desc =
   let options_to_keep = ["-results_dir"; "-project_root"] in
   let desc =

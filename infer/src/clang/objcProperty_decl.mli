@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Process properties by creating their getters and setters in the case that they need to be syntethized *)
 (** or in the case of dynamic. *)
 

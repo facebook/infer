@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** In this module an ObjC category declaration or implementation is processed. The category    *)
 (** is saved in the tenv as a struct with the corresponding fields and methods , and the class it belongs to *)
 

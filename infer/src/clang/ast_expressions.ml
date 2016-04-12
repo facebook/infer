@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 open CFrontend_utils
 
 (** This module creates extra ast constructs that are needed for the translation *)

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Check the sequence of calls to tracing APIs in a method (intraprocedural). *)
 
 val callback_check_trace_call_sequence: Callbacks.proc_callback_t

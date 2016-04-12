@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 type block_data = CContext.t * Clang_ast_t.type_ptr * Procname.t * (Pvar.t * Sil.typ) list
 
 type instr_type = [

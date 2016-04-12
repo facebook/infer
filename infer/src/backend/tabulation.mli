@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Interprocedural footprint analysis *)
 
 (** Frame and anti-frame *)

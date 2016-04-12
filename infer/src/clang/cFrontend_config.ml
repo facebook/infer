@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module that contains constants and variables used in the frontend *)
 
 let no_translate_libs = ref true

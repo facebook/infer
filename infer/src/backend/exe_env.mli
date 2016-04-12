@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Support for Execution environments *)
 
 (** initial state, used to add cg's *)

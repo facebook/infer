@@ -7,5 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Simple check for dead code. *)
 val callback_check_dead_code: Callbacks.proc_callback_t

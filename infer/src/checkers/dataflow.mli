@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 type throws =
   | DontKnow (** May or may not throw an exception. *)
   | Throws (** Definitely throws an exception. *)

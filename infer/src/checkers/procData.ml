@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 type t = { pdesc : Cfg.Procdesc.t; tenv : Tenv.t }
 
 let make pdesc tenv = { pdesc; tenv }

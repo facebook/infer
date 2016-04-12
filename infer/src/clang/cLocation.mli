@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module for function to retrieve the location (file, line, etc) of instructions *)
 
 (* Inside the json there may be code or type definitions from other files *)

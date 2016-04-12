@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** In this module an ObjC protocol declaration or implementation is processed. The protocol    *)
 (** is saved in the tenv as a struct with the corresponding methods  *)
 

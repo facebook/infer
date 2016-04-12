@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Make sure callbacks are always unregistered. drive the point home by reporting possible NPE's *)
 
 module L = Logging

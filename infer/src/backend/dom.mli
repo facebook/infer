@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Join and Meet Operators *)
 
 (** {2 Join Operators} *)

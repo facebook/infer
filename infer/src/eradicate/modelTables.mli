@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 type model_table_t = (string, bool * bool list) Hashtbl.t
 
 (** Name of this file. *)

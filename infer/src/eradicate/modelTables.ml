@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (*
  * This file is a big bunch of tables; they read better with really long lines.
  * @nolint

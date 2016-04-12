@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** The Smallfoot Intermediate Language *)
 
 module L = Logging

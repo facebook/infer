@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Handle timeout events *)
 
 (** Execute the function up to a given timeout. *)

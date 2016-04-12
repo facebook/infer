@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Representation of LLVM constructs *)
 
 module MetadataMap = IntMap;;

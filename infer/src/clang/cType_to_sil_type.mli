@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 val get_builtin_objc_typename :  [< `ObjCClass | `ObjCId ] -> Typename.t
 
 val get_builtin_objc_type : [< `ObjCClass | `ObjCId ] -> Sil.typ

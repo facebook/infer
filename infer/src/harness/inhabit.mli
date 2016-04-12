@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Generate a procedure that calls a given sequence of methods. Useful for harness/test generation. *)
 
 type lifecycle_trace = (Procname.t * Sil.typ option) list

@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module to handle IO. Includes html and xml modules. *)
 
 module Html : sig

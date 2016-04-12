@@ -7,4 +7,6 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 val tracing_methods : (string * string * string * string) list

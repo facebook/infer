@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 module L = Logging
 
 (** Look up a key in a json file containing a list of strings *)

@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Functions for logging and printing exceptions *)
 
 type exception_visibility = (** visibility of the exception *)

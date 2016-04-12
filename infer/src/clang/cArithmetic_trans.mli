@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Utility module for translating unary and binary operations and compound assignments *)
 
 val bin_op_to_string : Clang_ast_t.binary_operator_info -> string

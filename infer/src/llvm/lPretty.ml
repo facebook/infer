@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 open LAst
 
 let concatmap (sep : string) (f : 'a -> string) (l : 'a list) : string =

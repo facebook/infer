@@ -7,5 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 
 val callback_performance_checker : Callbacks.proc_callback_t

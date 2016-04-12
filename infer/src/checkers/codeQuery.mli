@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module for code queries. *)
 
 val code_query_callback : Callbacks.proc_callback_t

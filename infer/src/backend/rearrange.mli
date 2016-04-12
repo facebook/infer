@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Re-arrangement and extension of structures with fresh variables *) (* TODO: this description is not clear *)
 
 exception ARRAY_ACCESS

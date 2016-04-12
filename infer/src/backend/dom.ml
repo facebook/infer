@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Operators for the abstract domain. In particular, join and meet. *)
 
 module L = Logging

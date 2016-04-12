@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Identifiers: program variables and logical variables *)
 
 (** Program and logical variables. *)

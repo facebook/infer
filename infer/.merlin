@@ -10,6 +10,5 @@ PKG str
 PKG unix
 PKG yojson
 PKG zip
-FLG -open Utils
 FLG -principal -safe-string -short-paths -strict-formats -strict-sequence
 FLG -w +a-4-9-40-41-42-45-48-50

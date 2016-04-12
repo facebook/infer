@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)

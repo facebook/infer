@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 type const_map = Cfg.Node.t -> Sil.exp -> Sil.const option
 
 (** Build a const map lazily. *)

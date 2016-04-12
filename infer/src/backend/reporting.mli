@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Type of functions to report issues to the error_log in a spec. *)
 
 type log_t =

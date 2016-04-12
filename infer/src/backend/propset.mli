@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Functions for Sets of Propositions with and without sharing *)
 
 (** {2 Sets of Propositions} *)

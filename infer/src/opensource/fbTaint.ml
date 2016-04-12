@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 let sources = []
 let sinks = []
 let functions_with_tainted_params = []

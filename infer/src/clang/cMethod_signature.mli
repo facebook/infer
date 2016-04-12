@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Define the signature of a method consisting of its name, its arguments, *)
 (** return type, location and whether its an instance method.  *)
 

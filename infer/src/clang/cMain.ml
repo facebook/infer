@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (* Take as input an ast file and a C or ObjectiveC file such that the ast file
    corresponds to the compilation of the C file with clang.
    Parse the ast file into a data structure and translates it into a cfg. *)

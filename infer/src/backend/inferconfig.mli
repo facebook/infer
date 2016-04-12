@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** get the path to the .inferconfig file *)
 val inferconfig : unit -> string
 

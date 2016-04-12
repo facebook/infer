@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** This module handles C or Objective-C types for which there are special rules for memory management *)
 
 (** This module models special c struct types from the Apple's Core Foundation libraries

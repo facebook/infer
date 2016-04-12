@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (**  Control Flow Graph for Interprocedural Analysis *)
 
 (** {2 ADT node and proc_desc} *)

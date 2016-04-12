@@ -40,7 +40,6 @@ OCAMLBUILD_OPTIONS = \
                      -cflags -strict-sequence \
                      -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48-50 \
                      -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*}>: warn(-27-32-35-39)" \
-                     -tag-line "not <**/{config,iList,utils}.*>: open(Utils)" \
                      -pkgs atdgen,extlib,oUnit,str,unix,yojson,zip
 
 ifeq (@ENABLE_OCAML_ANNOT@,yes)

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Methods for creating a procdesc from a method or function declaration
     and for resolving a method call and finding the right callee *)
 

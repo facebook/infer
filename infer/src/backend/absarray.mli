@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Abstraction for Arrays *)
 
 (** Apply array abstraction and check the result *)

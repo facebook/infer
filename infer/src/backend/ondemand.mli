@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module for on-demand analysis. *)
 
 (** Optional set of source dirs to analyze in on-demand mode. *)

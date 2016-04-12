@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Escape a string for use in a CSV or XML file: replace reserved
     characters with escape sequences *)
 

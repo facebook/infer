@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** In this module an ObjC interface declaration is processed. The class  *)
 (** is saved in the tenv as a struct with the corresponding fields, potential superclass and *)
 (** list of defined methods *)

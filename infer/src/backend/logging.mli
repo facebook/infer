@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** log messages at different levels of verbosity *)
 
 (** type of printable elements *)

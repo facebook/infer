@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Main module of InferClang. Take as input AST files produced by clang during compilation *)
 (** and their corresponding C/C++/ObjectiveC source files. *)
 (** Parse the arguments, parse and validate the input AST into a data structure *)

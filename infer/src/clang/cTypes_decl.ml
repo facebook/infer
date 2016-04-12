@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Processes types and record declarations by adding them to the tenv *)
 
 open CFrontend_utils

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Location in the original source file *)
 type t = {
   line: int; (** The line number. -1 means "do not know" *)

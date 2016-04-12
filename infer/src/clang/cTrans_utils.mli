@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Utility methods to support the translation of clang ast constructs into sil instructions.  *)
 
 type continuation = {

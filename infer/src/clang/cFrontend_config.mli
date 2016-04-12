@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module that contains constants and variables used in the frontend *)
 
 val global_translation_unit_decls : Clang_ast_t.decl list ref

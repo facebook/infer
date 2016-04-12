@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Preanalysis for eliminating dead local variables *)
 
 (** Perform liveness analysis *)

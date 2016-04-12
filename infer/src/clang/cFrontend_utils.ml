@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module for utility functions for the whole frontend. Includes functions for printing,  *)
 (** for transformations of ast nodes and general utility functions such as  functions on lists *)
 

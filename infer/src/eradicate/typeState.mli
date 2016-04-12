@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module for typestates: maps from expressions to annotated types, with extensions. *)
 
 (** Parameters of a call. *)

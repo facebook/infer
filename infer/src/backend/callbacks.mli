@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args = {

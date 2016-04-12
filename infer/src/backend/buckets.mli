@@ -8,6 +8,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Classify bugs into buckets *)
 
 (** Classify the bucket of an error desc using Location.access and nullable information *)

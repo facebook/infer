@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Utility module for translating unary and binary operations and compound assignments *)
 
 open CFrontend_utils

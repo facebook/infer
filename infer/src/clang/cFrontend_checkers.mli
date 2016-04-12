@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 type warning_desc = {
   name : string; (* name for the checker, this will be a kind of bug *)
   description : string; (* Description in the error message *)

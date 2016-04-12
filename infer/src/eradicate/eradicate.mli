@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 (** Eradicate NPEs. *)
 
 val callback_eradicate : Callbacks.proc_callback_t
