@@ -582,11 +582,15 @@ let typecheck_instr
                      else Printf.sprintf "arg%d" i in
                    (Mangled.from_string arg, typ))
                 etl_ in
-            let ret_typ_str = Procname.java_get_return_type callee_pname_java in
             let ret_type =
-              match Tenv.lookup_java_typ_from_string tenv ret_typ_str with
-              | Sil.Tstruct _ as typ -> Sil.Tptr (typ, Sil.Pk_pointer)
-              | typ -> typ in
+              match Tenv.proc_extract_return_typ tenv callee_pname_java with
+              | Some (Sil.Tstruct _ as typ) ->
+                  Sil.Tptr (typ, Pk_pointer)
+              | Some typ ->
+                  typ
+              | None ->
+                  let ret_typ_string = Procname.java_get_return_type callee_pname_java in
+                  Sil.Tptr (Tvar (Typename.Java.from_string ret_typ_string), Pk_pointer) in
             let proc_attributes =
               { (ProcAttributes.default callee_pname Config.Java) with
                 ProcAttributes.formals;

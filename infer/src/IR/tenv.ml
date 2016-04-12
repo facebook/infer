@@ -32,35 +32,63 @@ let lookup tenv name =
   try Some (TypenameHash.find tenv name)
   with Not_found -> None
 
-exception Cannot_convert_string_to_typ of string
-
 (** Lookup Java types by name *)
 let lookup_java_typ_from_string tenv typ_str =
   let rec loop = function
-    | "" | "void" -> Sil.Tvoid
-    | "int" -> Sil.Tint Sil.IInt
-    | "byte" -> Sil.Tint Sil.IShort
-    | "short" -> Sil.Tint Sil.IShort
-    | "boolean" -> Sil.Tint Sil.IBool
-    | "char" -> Sil.Tint Sil.IChar
-    | "long" -> Sil.Tint Sil.ILong
-    | "float" -> Sil.Tfloat Sil.FFloat
-    | "double" -> Sil.Tfloat Sil.FDouble
+    | "" | "void" ->
+        Some Sil.Tvoid
+    | "int" ->
+        Some (Sil.Tint Sil.IInt)
+    | "byte" ->
+        Some (Sil.Tint Sil.IShort)
+    | "short" ->
+        Some (Sil.Tint Sil.IShort)
+    | "boolean" ->
+        Some (Sil.Tint Sil.IBool)
+    | "char" ->
+        Some (Sil.Tint Sil.IChar)
+    | "long" ->
+        Some (Sil.Tint Sil.ILong)
+    | "float" ->
+        Some (Sil.Tfloat Sil.FFloat)
+    | "double" ->
+        Some (Sil.Tfloat Sil.FDouble)
     | typ_str when String.contains typ_str '[' ->
         let stripped_typ = String.sub typ_str 0 ((String.length typ_str) - 2) in
         let array_typ_size = Sil.exp_get_undefined false in
-        Sil.Tptr (Sil.Tarray (loop stripped_typ, array_typ_size), Sil.Pk_pointer)
+        begin
+          match loop stripped_typ with
+          | Some typ -> Some (Sil.Tptr (Sil.Tarray (typ, array_typ_size), Sil.Pk_pointer))
+          | None -> None
+        end
     | typ_str ->
         (* non-primitive/non-array type--resolve it in the tenv *)
-        let typename = Typename.TN_csu (Csu.Class Csu.Java, (Mangled.from_string typ_str)) in
-        match lookup tenv typename with
-        | Some struct_typ -> Sil.Tstruct struct_typ
-        | _ -> raise (Cannot_convert_string_to_typ typ_str) in
+        let typename = Typename.Java.from_string typ_str in
+        begin
+          match lookup tenv typename with
+          | Some struct_typ -> Some (Sil.Tstruct struct_typ)
+          | None -> None
+        end in
   loop typ_str
+
+(** resolve a type string to a Java *class* type. For strings that may represent primitive or array
+    typs, use [lookup_java_typ_from_string] *)
+let lookup_java_class_from_string tenv typ_str =
+  match lookup_java_typ_from_string tenv typ_str with
+  | Some (Sil.Tstruct struct_typ) -> Some struct_typ
+  | _ -> None
 
 (** Add a (name,type) pair to the global type environment. *)
 let add tenv name struct_typ =
   TypenameHash.replace tenv name struct_typ
+
+(** Return the declaring class type of [pname_java] *)
+let proc_extract_declaring_class_typ tenv pname_java =
+  lookup_java_class_from_string tenv (Procname.java_get_class_name pname_java)
+
+(** Return the return type of [pname_java]. *)
+let proc_extract_return_typ tenv pname_java =
+  lookup_java_typ_from_string tenv (Procname.java_get_return_type pname_java)
 
 (** expand a type if it is a typename by looking it up in the type environment *)
 let expand_type tenv typ =

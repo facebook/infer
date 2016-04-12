@@ -32,9 +32,18 @@ val load_from_file : DB.filename -> t option
 (** Look up a name in the global type environment. *)
 val lookup : t -> Typename.t -> Sil.struct_typ option
 
-(** Lookup Java types by name. May raise [Cannot_convert_string_to_typ]. *)
-exception Cannot_convert_string_to_typ of string
-val lookup_java_typ_from_string : t -> string -> Sil.typ
+(** Lookup Java types by name. *)
+val lookup_java_typ_from_string : t -> string -> Sil.typ option
+
+(** resolve a type string to a Java *class* type. For strings that may represent primitive or array
+    typs, use [lookup_java_typ_from_string]. *)
+val lookup_java_class_from_string : t -> string -> Sil.struct_typ option
+
+(** Return the declaring class type of [pname_java] *)
+val proc_extract_declaring_class_typ : t -> Procname.java -> Sil.struct_typ option
+
+(** Return the return type of [pname_java]. *)
+val proc_extract_return_typ : t -> Procname.java -> Sil.typ option
 
 (** Check if typename is found in t *)
 val mem : t -> Typename.t -> bool

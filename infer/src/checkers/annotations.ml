@@ -46,16 +46,9 @@ let get_field_type_and_annotation fn = function
 
 (** Return the annotations on the declaring class of [pname]. Only works for Java *)
 let get_declaring_class_annotations pname tenv =
-  match pname with
-  | Procname.Java pname_java ->
-      let receiver_typ_str = Procname.java_get_class_name pname_java in
-      begin
-        match Tenv.lookup_java_typ_from_string tenv receiver_typ_str with
-        | Sil.Tstruct { struct_annotations; } -> Some struct_annotations
-        | exception Tenv.Cannot_convert_string_to_typ _ -> None
-        | _ -> None
-      end
-  | _ -> None
+  match Tenv.proc_extract_declaring_class_typ tenv pname with
+  | Some { Sil.struct_annotations } -> Some struct_annotations
+  | None -> None
 
 let ia_iter f =
   let ann_iter (a, _) = f a in

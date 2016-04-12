@@ -40,10 +40,14 @@ let is_modeled_expensive =
 
 
 let check_attributes check tenv pname =
-  let check_class_attributes check tenv pname =
-    match Annotations.get_declaring_class_annotations pname tenv with
-    | Some annotations -> check annotations
-    | None -> false in
+  let check_class_attributes check tenv = function
+    | Procname.Java java_pname ->
+        begin
+          match Annotations.get_declaring_class_annotations java_pname tenv with
+          | Some annotations -> check annotations
+          | None -> false
+        end
+    | _ -> false in
   let check_method_attributes check pname =
     match Specs.proc_resolve_attributes pname with
     | None -> false
