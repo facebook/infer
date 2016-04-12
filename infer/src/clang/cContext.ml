@@ -19,6 +19,8 @@ type curr_class =
   | ContextProtocol of string  (* category name and corresponding class *)
   | ContextNoCls
 
+type str_node_map = (string, Cfg.Node.t) Hashtbl.t
+
 type t =
   {
     tenv : Tenv.t;
@@ -31,6 +33,7 @@ type t =
     is_callee_expression : bool;
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
     mutable blocks_static_vars : ((Pvar.t * Sil.typ) list) Procname.Map.t;
+    label_map : str_node_map;
   }
 
 let create_context tenv cg cfg procdesc curr_class return_param_typ is_objc_method context_opt =
@@ -43,7 +46,8 @@ let create_context tenv cg cfg procdesc curr_class return_param_typ is_objc_meth
     is_callee_expression = false;
     is_objc_method = is_objc_method;
     outer_context = context_opt;
-    blocks_static_vars = Procname.Map.empty
+    blocks_static_vars = Procname.Map.empty;
+    label_map = Hashtbl.create 17;
   }
 
 let get_cfg context = context.cfg

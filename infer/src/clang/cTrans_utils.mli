@@ -177,9 +177,6 @@ end
 module GotoLabel :
 sig
   val find_goto_label : CContext.t -> string -> Location.t -> Cfg.Node.t
-
-  val reset_all_labels : unit -> unit
-
 end
 
 (** Module that provides utility functions for translating different types of loops. *)

@@ -17,6 +17,8 @@ type curr_class =
   | ContextProtocol of string  (* category name and corresponding class *)
   | ContextNoCls
 
+type str_node_map = (string, Cfg.Node.t) Hashtbl.t
+
 type t =
   {
     tenv : Tenv.t;
@@ -29,6 +31,7 @@ type t =
     is_callee_expression : bool;
     outer_context : t option; (* in case of objc blocks, the context of the method containing the block *)
     mutable blocks_static_vars : ((Pvar.t * Sil.typ) list) Procname.Map.t;
+    label_map : str_node_map;
   }
 
 val get_procdesc : t -> Cfg.Procdesc.t
