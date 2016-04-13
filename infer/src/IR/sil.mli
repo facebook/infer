@@ -565,6 +565,8 @@ val is_java_class : typ -> bool
 
 val is_array_of_cpp_class : typ -> bool
 
+val is_pointer_to_cpp_class : typ -> bool
+
 val exp_is_zero : exp -> bool
 
 val exp_is_null_literal : exp -> bool

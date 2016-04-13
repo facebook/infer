@@ -9,6 +9,7 @@
 
 class Person {
  public:
+  Person() { x = 0; }
   Person(int i) { x = i; }
 
   Person(int i, int j, int k) {
@@ -81,4 +82,18 @@ int int_array() {
 int int_array_init() {
   int* arr = new int[100]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   return 1 / ((arr[0] + arr[1] + arr[2] + arr[3] + arr[4]) - 15);
+}
+
+// cfg ok, but size not known at frontend time, so no initialization
+void array_of_class_with_not_constant_size() {
+  Person* tarray = new Person[getValue(5) == 5 ? 5 : 3];
+}
+
+// constructor called for tarray[0]..tarray[9]
+void array_of_person_with_constant_size() { Person* tarray = new Person[10]; }
+
+// Also works fine for multidimendional arrays
+void matrix_of_person() {
+  Person** tarray = new Person*[10];
+  tarray[0] = new Person[10];
 }

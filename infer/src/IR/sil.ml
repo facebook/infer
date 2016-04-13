@@ -908,6 +908,11 @@ let rec is_array_of_cpp_class typ =
       is_array_of_cpp_class typ
   | _ -> is_cpp_class typ
 
+let is_pointer_to_cpp_class typ =
+  match typ with
+  | Tptr (t, _) -> is_cpp_class t
+	| _ -> false
+
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let typ_strip_ptr = function
   | Tptr (t, _) -> t

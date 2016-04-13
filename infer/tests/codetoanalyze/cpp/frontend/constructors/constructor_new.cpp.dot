@@ -1,302 +1,375 @@
 digraph iCFG {
-78 [label="78:  DeclStmt \n   n$10=_fun___new_array((sizeof(int ) * 100):unsigned long ) [line 82]\n  *n$10[0]:int =1 [line 82]\n  *n$10[1]:int =2 [line 82]\n  *n$10[2]:int =3 [line 82]\n  *n$10[3]:int =4 [line 82]\n  *n$10[4]:int =5 [line 82]\n  *n$10[5]:int =6 [line 82]\n  *n$10[6]:int =7 [line 82]\n  *n$10[7]:int =8 [line 82]\n  *n$10[8]:int =9 [line 82]\n  *n$10[9]:int =10 [line 82]\n  *&arr:int *=n$10 [line 82]\n  REMOVE_TEMPS(n$10); [line 82]\n " shape="box"]
+97 [label="97:  DeclStmt \n   n$2=_fun___new_array((sizeof(class Person *) * 10):unsigned long ) [line 97]\n  *&tarray:class Person **=n$2 [line 97]\n  REMOVE_TEMPS(n$2); [line 97]\n " shape="box"]
 	
 
-	 78 -> 77 ;
-77 [label="77:  Return Stmt \n   n$0=*&arr:int * [line 83]\n  n$1=*n$0[0]:int  [line 83]\n  n$2=*&arr:int * [line 83]\n  n$3=*n$2[1]:int  [line 83]\n  n$4=*&arr:int * [line 83]\n  n$5=*n$4[2]:int  [line 83]\n  n$6=*&arr:int * [line 83]\n  n$7=*n$6[3]:int  [line 83]\n  n$8=*&arr:int * [line 83]\n  n$9=*n$8[4]:int  [line 83]\n  *&return:int =(1 / (((((n$1 + n$3) + n$5) + n$7) + n$9) - 15)) [line 83]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5,n$6,n$7,n$8,n$9); [line 83]\n  NULLIFY(&arr,false); [line 83]\n  APPLY_ABSTRACTION; [line 83]\n " shape="box"]
+	 97 -> 96 ;
+96 [label="96:  BinaryOperatorStmt: Assign \n   n$0=*&tarray:class Person ** [line 98]\n  n$1=_fun___new_array((sizeof(class Person ) * 10):unsigned long ) [line 98]\n  _fun_Person_Person(n$1[0]:class Person *) [line 98]\n  _fun_Person_Person(n$1[1]:class Person *) [line 98]\n  _fun_Person_Person(n$1[2]:class Person *) [line 98]\n  _fun_Person_Person(n$1[3]:class Person *) [line 98]\n  _fun_Person_Person(n$1[4]:class Person *) [line 98]\n  _fun_Person_Person(n$1[5]:class Person *) [line 98]\n  _fun_Person_Person(n$1[6]:class Person *) [line 98]\n  _fun_Person_Person(n$1[7]:class Person *) [line 98]\n  _fun_Person_Person(n$1[8]:class Person *) [line 98]\n  _fun_Person_Person(n$1[9]:class Person *) [line 98]\n  *n$0[0]:class Person *=n$1 [line 98]\n  REMOVE_TEMPS(n$0,n$1); [line 98]\n  NULLIFY(&tarray,false); [line 98]\n  APPLY_ABSTRACTION; [line 98]\n " shape="box"]
 	
 
-	 77 -> 76 ;
-76 [label="76: Exit int_array_init \n  " color=yellow style=filled]
+	 96 -> 95 ;
+95 [label="95: Exit matrix_of_person \n  " color=yellow style=filled]
 	
 
-75 [label="75: Start int_array_init\nFormals: \nLocals:  arr:int * \n   DECLARE_LOCALS(&return,&arr); [line 81]\n  NULLIFY(&arr,false); [line 81]\n " color=yellow style=filled]
+94 [label="94: Start matrix_of_person\nFormals: \nLocals:  tarray:class Person ** \n   DECLARE_LOCALS(&return,&tarray); [line 96]\n  NULLIFY(&tarray,false); [line 96]\n " color=yellow style=filled]
 	
 
-	 75 -> 78 ;
-74 [label="74:  DeclStmt \n   n$8=*&SIL_temp_conditional___68:int  [line 75]\n  NULLIFY(&SIL_temp_conditional___68,true); [line 75]\n  n$9=_fun___new_array((sizeof(int ) * n$8):unsigned long ) [line 75]\n  *&x2:int *=n$9 [line 75]\n  REMOVE_TEMPS(n$8,n$9); [line 75]\n " shape="box"]
+	 94 -> 97 ;
+93 [label="93:  DeclStmt \n   n$0=_fun___new_array((sizeof(class Person ) * 10):unsigned long ) [line 93]\n  _fun_Person_Person(n$0[0]:class Person *) [line 93]\n  _fun_Person_Person(n$0[1]:class Person *) [line 93]\n  _fun_Person_Person(n$0[2]:class Person *) [line 93]\n  _fun_Person_Person(n$0[3]:class Person *) [line 93]\n  _fun_Person_Person(n$0[4]:class Person *) [line 93]\n  _fun_Person_Person(n$0[5]:class Person *) [line 93]\n  _fun_Person_Person(n$0[6]:class Person *) [line 93]\n  _fun_Person_Person(n$0[7]:class Person *) [line 93]\n  _fun_Person_Person(n$0[8]:class Person *) [line 93]\n  _fun_Person_Person(n$0[9]:class Person *) [line 93]\n  *&tarray:class Person *=n$0 [line 93]\n  REMOVE_TEMPS(n$0); [line 93]\n  NULLIFY(&tarray,false); [line 93]\n  APPLY_ABSTRACTION; [line 93]\n " shape="box"]
 	
 
-	 74 -> 67 ;
-73 [label="73:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___68); [line 75]\n  *&SIL_temp_conditional___68:int =3 [line 75]\n  APPLY_ABSTRACTION; [line 75]\n " shape="box"]
+	 93 -> 92 ;
+92 [label="92: Exit array_of_person_with_constant_size \n  " color=yellow style=filled]
 	
 
-	 73 -> 68 ;
-72 [label="72:  ConditinalStmt Branch \n   n$7=_fun_getValue(5:int ) [line 75]\n  DECLARE_LOCALS(&SIL_temp_conditional___68); [line 75]\n  *&SIL_temp_conditional___68:int =n$7 [line 75]\n  REMOVE_TEMPS(n$7); [line 75]\n  APPLY_ABSTRACTION; [line 75]\n " shape="box"]
+91 [label="91: Start array_of_person_with_constant_size\nFormals: \nLocals:  tarray:class Person * \n   DECLARE_LOCALS(&return,&tarray); [line 93]\n  NULLIFY(&tarray,false); [line 93]\n " color=yellow style=filled]
 	
 
-	 72 -> 68 ;
-71 [label="71: Prune (false branch) \n   PRUNE((n$6 == 0), false); [line 75]\n  REMOVE_TEMPS(n$6); [line 75]\n " shape="invhouse"]
+	 91 -> 93 ;
+90 [label="90:  DeclStmt \n   n$1=*&SIL_temp_conditional___84:int  [line 89]\n  NULLIFY(&SIL_temp_conditional___84,true); [line 89]\n  n$2=_fun___new_array((sizeof(class Person ) * n$1):unsigned long ) [line 89]\n  *&tarray:class Person *=n$2 [line 89]\n  REMOVE_TEMPS(n$1,n$2); [line 89]\n  NULLIFY(&tarray,false); [line 89]\n  APPLY_ABSTRACTION; [line 89]\n " shape="box"]
 	
 
-	 71 -> 73 ;
-70 [label="70: Prune (true branch) \n   PRUNE((n$6 != 0), true); [line 75]\n  REMOVE_TEMPS(n$6); [line 75]\n " shape="invhouse"]
+	 90 -> 83 ;
+89 [label="89:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___84); [line 89]\n  *&SIL_temp_conditional___84:int =3 [line 89]\n  APPLY_ABSTRACTION; [line 89]\n " shape="box"]
 	
 
-	 70 -> 72 ;
-69 [label="69:  Call _fun_getValue \n   n$6=_fun_getValue(5:int ) [line 75]\n " shape="box"]
+	 89 -> 84 ;
+88 [label="88:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___84); [line 89]\n  *&SIL_temp_conditional___84:int =5 [line 89]\n  APPLY_ABSTRACTION; [line 89]\n " shape="box"]
 	
 
-	 69 -> 70 ;
-	 69 -> 71 ;
-68 [label="68: + \n  " ]
+	 88 -> 84 ;
+87 [label="87: Prune (false branch) \n   PRUNE(((n$0 == 5) == 0), false); [line 89]\n  REMOVE_TEMPS(n$0); [line 89]\n " shape="invhouse"]
 	
 
-	 68 -> 74 ;
-67 [label="67:  BinaryOperatorStmt: Assign \n   n$5=*&x2:int * [line 76]\n  *n$5[0]:int =1 [line 76]\n  REMOVE_TEMPS(n$5); [line 76]\n " shape="box"]
+	 87 -> 89 ;
+86 [label="86: Prune (true branch) \n   PRUNE(((n$0 == 5) != 0), true); [line 89]\n  REMOVE_TEMPS(n$0); [line 89]\n " shape="invhouse"]
 	
 
-	 67 -> 66 ;
-66 [label="66:  BinaryOperatorStmt: Assign \n   n$4=*&x2:int * [line 77]\n  *n$4[1]:int =2 [line 77]\n  REMOVE_TEMPS(n$4); [line 77]\n " shape="box"]
+	 86 -> 88 ;
+85 [label="85:  BinaryOperatorStmt: EQ \n   n$0=_fun_getValue(5:int ) [line 89]\n " shape="box"]
 	
 
-	 66 -> 65 ;
-65 [label="65:  Return Stmt \n   n$0=*&x2:int * [line 78]\n  n$1=*n$0[0]:int  [line 78]\n  n$2=*&x2:int * [line 78]\n  n$3=*n$2[1]:int  [line 78]\n  *&return:int =(1 / ((n$1 + n$3) - 3)) [line 78]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 78]\n  NULLIFY(&x2,false); [line 78]\n  APPLY_ABSTRACTION; [line 78]\n " shape="box"]
+	 85 -> 86 ;
+	 85 -> 87 ;
+84 [label="84: + \n  " ]
 	
 
-	 65 -> 64 ;
-64 [label="64: Exit int_array \n  " color=yellow style=filled]
+	 84 -> 90 ;
+83 [label="83: Exit array_of_class_with_not_constant_size \n  " color=yellow style=filled]
 	
 
-63 [label="63: Start int_array\nFormals: \nLocals:  x2:int * \n   DECLARE_LOCALS(&return,&x2); [line 74]\n  NULLIFY(&x2,false); [line 74]\n " color=yellow style=filled]
+82 [label="82: Start array_of_class_with_not_constant_size\nFormals: \nLocals:  tarray:class Person * \n   DECLARE_LOCALS(&return,&tarray); [line 88]\n  NULLIFY(&tarray,false); [line 88]\n " color=yellow style=filled]
 	
 
-	 63 -> 69 ;
-62 [label="62:  DeclStmt \n   *&z:int =6 [line 69]\n " shape="box"]
+	 82 -> 85 ;
+81 [label="81:  DeclStmt \n   n$10=_fun___new_array((sizeof(int ) * 100):unsigned long ) [line 83]\n  *n$10[0]:int =1 [line 83]\n  *n$10[1]:int =2 [line 83]\n  *n$10[2]:int =3 [line 83]\n  *n$10[3]:int =4 [line 83]\n  *n$10[4]:int =5 [line 83]\n  *n$10[5]:int =6 [line 83]\n  *n$10[6]:int =7 [line 83]\n  *n$10[7]:int =8 [line 83]\n  *n$10[8]:int =9 [line 83]\n  *n$10[9]:int =10 [line 83]\n  *&arr:int *=n$10 [line 83]\n  REMOVE_TEMPS(n$10); [line 83]\n " shape="box"]
 	
 
-	 62 -> 56 ;
-61 [label="61:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 70]\n  n$6=*&SIL_temp_conditional___55:int  [line 70]\n  NULLIFY(&SIL_temp_conditional___55,true); [line 70]\n  _fun_Person_Person(n$2:class Person *,n$6:int ) [line 70]\n  *&p:class Person *=n$2 [line 70]\n  REMOVE_TEMPS(n$2,n$6); [line 70]\n " shape="box"]
+	 81 -> 80 ;
+80 [label="80:  Return Stmt \n   n$0=*&arr:int * [line 84]\n  n$1=*n$0[0]:int  [line 84]\n  n$2=*&arr:int * [line 84]\n  n$3=*n$2[1]:int  [line 84]\n  n$4=*&arr:int * [line 84]\n  n$5=*n$4[2]:int  [line 84]\n  n$6=*&arr:int * [line 84]\n  n$7=*n$6[3]:int  [line 84]\n  n$8=*&arr:int * [line 84]\n  n$9=*n$8[4]:int  [line 84]\n  *&return:int =(1 / (((((n$1 + n$3) + n$5) + n$7) + n$9) - 15)) [line 84]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5,n$6,n$7,n$8,n$9); [line 84]\n  NULLIFY(&arr,false); [line 84]\n  APPLY_ABSTRACTION; [line 84]\n " shape="box"]
 	
 
-	 61 -> 54 ;
-60 [label="60:  ConditinalStmt Branch \n   n$5=*&z:int  [line 70]\n  DECLARE_LOCALS(&SIL_temp_conditional___55); [line 70]\n  *&SIL_temp_conditional___55:int =(1 + n$5) [line 70]\n  REMOVE_TEMPS(n$5); [line 70]\n  NULLIFY(&z,false); [line 70]\n  APPLY_ABSTRACTION; [line 70]\n " shape="box"]
+	 80 -> 79 ;
+79 [label="79: Exit int_array_init \n  " color=yellow style=filled]
 	
 
-	 60 -> 55 ;
-59 [label="59:  ConditinalStmt Branch \n   NULLIFY(&z,false); [line 70]\n  n$4=_fun_getValue(1:int ) [line 70]\n  DECLARE_LOCALS(&SIL_temp_conditional___55); [line 70]\n  *&SIL_temp_conditional___55:int =n$4 [line 70]\n  REMOVE_TEMPS(n$4); [line 70]\n  APPLY_ABSTRACTION; [line 70]\n " shape="box"]
+78 [label="78: Start int_array_init\nFormals: \nLocals:  arr:int * \n   DECLARE_LOCALS(&return,&arr); [line 82]\n  NULLIFY(&arr,false); [line 82]\n " color=yellow style=filled]
 	
 
-	 59 -> 55 ;
-58 [label="58: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 70]\n  REMOVE_TEMPS(n$3); [line 70]\n " shape="invhouse"]
+	 78 -> 81 ;
+77 [label="77:  DeclStmt \n   n$8=*&SIL_temp_conditional___71:int  [line 76]\n  NULLIFY(&SIL_temp_conditional___71,true); [line 76]\n  n$9=_fun___new_array((sizeof(int ) * n$8):unsigned long ) [line 76]\n  *&x2:int *=n$9 [line 76]\n  REMOVE_TEMPS(n$8,n$9); [line 76]\n " shape="box"]
 	
 
-	 58 -> 60 ;
-57 [label="57: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 70]\n  REMOVE_TEMPS(n$3); [line 70]\n " shape="invhouse"]
+	 77 -> 70 ;
+76 [label="76:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___71); [line 76]\n  *&SIL_temp_conditional___71:int =3 [line 76]\n  APPLY_ABSTRACTION; [line 76]\n " shape="box"]
 	
 
-	 57 -> 59 ;
-56 [label="56:  Call _fun_getValue \n   n$3=_fun_getValue(0:int ) [line 70]\n " shape="box"]
+	 76 -> 71 ;
+75 [label="75:  ConditinalStmt Branch \n   n$7=_fun_getValue(5:int ) [line 76]\n  DECLARE_LOCALS(&SIL_temp_conditional___71); [line 76]\n  *&SIL_temp_conditional___71:int =n$7 [line 76]\n  REMOVE_TEMPS(n$7); [line 76]\n  APPLY_ABSTRACTION; [line 76]\n " shape="box"]
 	
 
-	 56 -> 57 ;
-	 56 -> 58 ;
-55 [label="55: + \n  " ]
+	 75 -> 71 ;
+74 [label="74: Prune (false branch) \n   PRUNE((n$6 == 0), false); [line 76]\n  REMOVE_TEMPS(n$6); [line 76]\n " shape="invhouse"]
 	
 
-	 55 -> 61 ;
-54 [label="54:  Return Stmt \n   n$0=*&p:class Person * [line 71]\n  n$1=*n$0.x:int  [line 71]\n  *&return:int =(1 / (n$1 - 7)) [line 71]\n  REMOVE_TEMPS(n$0,n$1); [line 71]\n  NULLIFY(&p,false); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
+	 74 -> 76 ;
+73 [label="73: Prune (true branch) \n   PRUNE((n$6 != 0), true); [line 76]\n  REMOVE_TEMPS(n$6); [line 76]\n " shape="invhouse"]
+	
+
+	 73 -> 75 ;
+72 [label="72:  Call _fun_getValue \n   n$6=_fun_getValue(5:int ) [line 76]\n " shape="box"]
+	
+
+	 72 -> 73 ;
+	 72 -> 74 ;
+71 [label="71: + \n  " ]
+	
+
+	 71 -> 77 ;
+70 [label="70:  BinaryOperatorStmt: Assign \n   n$5=*&x2:int * [line 77]\n  *n$5[0]:int =1 [line 77]\n  REMOVE_TEMPS(n$5); [line 77]\n " shape="box"]
+	
+
+	 70 -> 69 ;
+69 [label="69:  BinaryOperatorStmt: Assign \n   n$4=*&x2:int * [line 78]\n  *n$4[1]:int =2 [line 78]\n  REMOVE_TEMPS(n$4); [line 78]\n " shape="box"]
+	
+
+	 69 -> 68 ;
+68 [label="68:  Return Stmt \n   n$0=*&x2:int * [line 79]\n  n$1=*n$0[0]:int  [line 79]\n  n$2=*&x2:int * [line 79]\n  n$3=*n$2[1]:int  [line 79]\n  *&return:int =(1 / ((n$1 + n$3) - 3)) [line 79]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 79]\n  NULLIFY(&x2,false); [line 79]\n  APPLY_ABSTRACTION; [line 79]\n " shape="box"]
+	
+
+	 68 -> 67 ;
+67 [label="67: Exit int_array \n  " color=yellow style=filled]
+	
+
+66 [label="66: Start int_array\nFormals: \nLocals:  x2:int * \n   DECLARE_LOCALS(&return,&x2); [line 75]\n  NULLIFY(&x2,false); [line 75]\n " color=yellow style=filled]
+	
+
+	 66 -> 72 ;
+65 [label="65:  DeclStmt \n   *&z:int =6 [line 70]\n " shape="box"]
+	
+
+	 65 -> 59 ;
+64 [label="64:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 71]\n  n$6=*&SIL_temp_conditional___58:int  [line 71]\n  NULLIFY(&SIL_temp_conditional___58,true); [line 71]\n  _fun_Person_Person(n$2:class Person *,n$6:int ) [line 71]\n  *&p:class Person *=n$2 [line 71]\n  REMOVE_TEMPS(n$2,n$6); [line 71]\n " shape="box"]
+	
+
+	 64 -> 57 ;
+63 [label="63:  ConditinalStmt Branch \n   n$5=*&z:int  [line 71]\n  DECLARE_LOCALS(&SIL_temp_conditional___58); [line 71]\n  *&SIL_temp_conditional___58:int =(1 + n$5) [line 71]\n  REMOVE_TEMPS(n$5); [line 71]\n  NULLIFY(&z,false); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
+	
+
+	 63 -> 58 ;
+62 [label="62:  ConditinalStmt Branch \n   NULLIFY(&z,false); [line 71]\n  n$4=_fun_getValue(1:int ) [line 71]\n  DECLARE_LOCALS(&SIL_temp_conditional___58); [line 71]\n  *&SIL_temp_conditional___58:int =n$4 [line 71]\n  REMOVE_TEMPS(n$4); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
+	
+
+	 62 -> 58 ;
+61 [label="61: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 71]\n  REMOVE_TEMPS(n$3); [line 71]\n " shape="invhouse"]
+	
+
+	 61 -> 63 ;
+60 [label="60: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 71]\n  REMOVE_TEMPS(n$3); [line 71]\n " shape="invhouse"]
+	
+
+	 60 -> 62 ;
+59 [label="59:  Call _fun_getValue \n   n$3=_fun_getValue(0:int ) [line 71]\n " shape="box"]
+	
+
+	 59 -> 60 ;
+	 59 -> 61 ;
+58 [label="58: + \n  " ]
+	
+
+	 58 -> 64 ;
+57 [label="57:  Return Stmt \n   n$0=*&p:class Person * [line 72]\n  n$1=*n$0.x:int  [line 72]\n  *&return:int =(1 / (n$1 - 7)) [line 72]\n  REMOVE_TEMPS(n$0,n$1); [line 72]\n  NULLIFY(&p,false); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
+	
+
+	 57 -> 56 ;
+56 [label="56: Exit constructor_nodes \n  " color=yellow style=filled]
+	
+
+55 [label="55: Start constructor_nodes\nFormals: \nLocals:  p:class Person * z:int  \n   DECLARE_LOCALS(&return,&p,&z); [line 69]\n  NULLIFY(&p,false); [line 69]\n  NULLIFY(&z,false); [line 69]\n " color=yellow style=filled]
+	
+
+	 55 -> 65 ;
+54 [label="54:  DeclStmt \n   *&z:int =6 [line 63]\n  NULLIFY(&z,false); [line 63]\n " shape="box"]
 	
 
 	 54 -> 53 ;
-53 [label="53: Exit constructor_nodes \n  " color=yellow style=filled]
+53 [label="53:  DeclStmt \n   n$8=_fun___new(sizeof(int ):unsigned long ) [line 64]\n  n$9=_fun_getValue(4:int ) [line 64]\n  *n$8:int =n$9 [line 64]\n  *&y:int *=n$8 [line 64]\n  REMOVE_TEMPS(n$8,n$9); [line 64]\n " shape="box"]
 	
 
-52 [label="52: Start constructor_nodes\nFormals: \nLocals:  p:class Person * z:int  \n   DECLARE_LOCALS(&return,&p,&z); [line 68]\n  NULLIFY(&p,false); [line 68]\n  NULLIFY(&z,false); [line 68]\n " color=yellow style=filled]
+	 53 -> 47 ;
+52 [label="52:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 65]\n  n$7=*&SIL_temp_conditional___46:int  [line 65]\n  NULLIFY(&SIL_temp_conditional___46,true); [line 65]\n  *n$2:int =n$7 [line 65]\n  *&x:int *=n$2 [line 65]\n  REMOVE_TEMPS(n$2,n$7); [line 65]\n " shape="box"]
 	
 
-	 52 -> 62 ;
-51 [label="51:  DeclStmt \n   *&z:int =6 [line 62]\n  NULLIFY(&z,false); [line 62]\n " shape="box"]
+	 52 -> 45 ;
+51 [label="51:  ConditinalStmt Branch \n   n$5=*&y:int * [line 65]\n  n$6=*n$5:int  [line 65]\n  DECLARE_LOCALS(&SIL_temp_conditional___46); [line 65]\n  *&SIL_temp_conditional___46:int =(1 + n$6) [line 65]\n  REMOVE_TEMPS(n$5,n$6); [line 65]\n  NULLIFY(&y,false); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
 	
 
-	 51 -> 50 ;
-50 [label="50:  DeclStmt \n   n$8=_fun___new(sizeof(int ):unsigned long ) [line 63]\n  n$9=_fun_getValue(4:int ) [line 63]\n  *n$8:int =n$9 [line 63]\n  *&y:int *=n$8 [line 63]\n  REMOVE_TEMPS(n$8,n$9); [line 63]\n " shape="box"]
+	 51 -> 46 ;
+50 [label="50:  ConditinalStmt Branch \n   NULLIFY(&y,false); [line 65]\n  n$4=_fun_getValue(1:int ) [line 65]\n  DECLARE_LOCALS(&SIL_temp_conditional___46); [line 65]\n  *&SIL_temp_conditional___46:int =n$4 [line 65]\n  REMOVE_TEMPS(n$4); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
 	
 
-	 50 -> 44 ;
-49 [label="49:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 64]\n  n$7=*&SIL_temp_conditional___43:int  [line 64]\n  NULLIFY(&SIL_temp_conditional___43,true); [line 64]\n  *n$2:int =n$7 [line 64]\n  *&x:int *=n$2 [line 64]\n  REMOVE_TEMPS(n$2,n$7); [line 64]\n " shape="box"]
+	 50 -> 46 ;
+49 [label="49: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 65]\n  REMOVE_TEMPS(n$3); [line 65]\n " shape="invhouse"]
 	
 
-	 49 -> 42 ;
-48 [label="48:  ConditinalStmt Branch \n   n$5=*&y:int * [line 64]\n  n$6=*n$5:int  [line 64]\n  DECLARE_LOCALS(&SIL_temp_conditional___43); [line 64]\n  *&SIL_temp_conditional___43:int =(1 + n$6) [line 64]\n  REMOVE_TEMPS(n$5,n$6); [line 64]\n  NULLIFY(&y,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+	 49 -> 51 ;
+48 [label="48: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 65]\n  REMOVE_TEMPS(n$3); [line 65]\n " shape="invhouse"]
 	
 
-	 48 -> 43 ;
-47 [label="47:  ConditinalStmt Branch \n   NULLIFY(&y,false); [line 64]\n  n$4=_fun_getValue(1:int ) [line 64]\n  DECLARE_LOCALS(&SIL_temp_conditional___43); [line 64]\n  *&SIL_temp_conditional___43:int =n$4 [line 64]\n  REMOVE_TEMPS(n$4); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+	 48 -> 50 ;
+47 [label="47:  Call _fun_getValue \n   n$3=_fun_getValue(0:int ) [line 65]\n " shape="box"]
 	
 
-	 47 -> 43 ;
-46 [label="46: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 64]\n  REMOVE_TEMPS(n$3); [line 64]\n " shape="invhouse"]
+	 47 -> 48 ;
+	 47 -> 49 ;
+46 [label="46: + \n  " ]
 	
 
-	 46 -> 48 ;
-45 [label="45: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 64]\n  REMOVE_TEMPS(n$3); [line 64]\n " shape="invhouse"]
+	 46 -> 52 ;
+45 [label="45:  Return Stmt \n   n$0=*&x:int * [line 66]\n  n$1=*n$0:int  [line 66]\n  *&return:int =(1 / (n$1 - 5)) [line 66]\n  REMOVE_TEMPS(n$0,n$1); [line 66]\n  NULLIFY(&x,false); [line 66]\n  APPLY_ABSTRACTION; [line 66]\n " shape="box"]
 	
 
-	 45 -> 47 ;
-44 [label="44:  Call _fun_getValue \n   n$3=_fun_getValue(0:int ) [line 64]\n " shape="box"]
+	 45 -> 44 ;
+44 [label="44: Exit int_init_nodes \n  " color=yellow style=filled]
 	
 
-	 44 -> 45 ;
-	 44 -> 46 ;
-43 [label="43: + \n  " ]
+43 [label="43: Start int_init_nodes\nFormals: \nLocals:  x:int * y:int * z:int  \n   DECLARE_LOCALS(&return,&x,&y,&z); [line 62]\n  NULLIFY(&x,false); [line 62]\n  NULLIFY(&y,false); [line 62]\n  NULLIFY(&z,false); [line 62]\n " color=yellow style=filled]
 	
 
-	 43 -> 49 ;
-42 [label="42:  Return Stmt \n   n$0=*&x:int * [line 65]\n  n$1=*n$0:int  [line 65]\n  *&return:int =(1 / (n$1 - 5)) [line 65]\n  REMOVE_TEMPS(n$0,n$1); [line 65]\n  NULLIFY(&x,false); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
+	 43 -> 54 ;
+42 [label="42:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 58]\n  *n$2:int *=0 [line 58]\n  *&x1:int *=n$2 [line 58]\n  REMOVE_TEMPS(n$2); [line 58]\n " shape="box"]
 	
 
 	 42 -> 41 ;
-41 [label="41: Exit int_init_nodes \n  " color=yellow style=filled]
+41 [label="41:  Return Stmt \n   n$0=*&x1:int * [line 59]\n  n$1=*n$0:int  [line 59]\n  *&return:int =(1 / n$1) [line 59]\n  REMOVE_TEMPS(n$0,n$1); [line 59]\n  NULLIFY(&x1,false); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
 	
 
-40 [label="40: Start int_init_nodes\nFormals: \nLocals:  x:int * y:int * z:int  \n   DECLARE_LOCALS(&return,&x,&y,&z); [line 61]\n  NULLIFY(&x,false); [line 61]\n  NULLIFY(&y,false); [line 61]\n  NULLIFY(&z,false); [line 61]\n " color=yellow style=filled]
+	 41 -> 40 ;
+40 [label="40: Exit int_init_empty_list_new \n  " color=yellow style=filled]
 	
 
-	 40 -> 51 ;
-39 [label="39:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 57]\n  *n$2:int *=0 [line 57]\n  *&x1:int *=n$2 [line 57]\n  REMOVE_TEMPS(n$2); [line 57]\n " shape="box"]
+39 [label="39: Start int_init_empty_list_new\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 57]\n  NULLIFY(&x1,false); [line 57]\n " color=yellow style=filled]
 	
 
-	 39 -> 38 ;
-38 [label="38:  Return Stmt \n   n$0=*&x1:int * [line 58]\n  n$1=*n$0:int  [line 58]\n  *&return:int =(1 / n$1) [line 58]\n  REMOVE_TEMPS(n$0,n$1); [line 58]\n  NULLIFY(&x1,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
+	 39 -> 42 ;
+38 [label="38:  DeclStmt \n   *&x1:int =0 [line 53]\n " shape="box"]
 	
 
 	 38 -> 37 ;
-37 [label="37: Exit int_init_empty_list_new \n  " color=yellow style=filled]
+37 [label="37:  Return Stmt \n   n$0=*&x1:int  [line 54]\n  *&return:int =(1 / n$0) [line 54]\n  REMOVE_TEMPS(n$0); [line 54]\n  NULLIFY(&x1,false); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
 	
 
-36 [label="36: Start int_init_empty_list_new\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 56]\n  NULLIFY(&x1,false); [line 56]\n " color=yellow style=filled]
+	 37 -> 36 ;
+36 [label="36: Exit int_init_empty_list \n  " color=yellow style=filled]
 	
 
-	 36 -> 39 ;
-35 [label="35:  DeclStmt \n   *&x1:int =0 [line 52]\n " shape="box"]
+35 [label="35: Start int_init_empty_list\nFormals: \nLocals:  x1:int  \n   DECLARE_LOCALS(&return,&x1); [line 52]\n  NULLIFY(&x1,false); [line 52]\n " color=yellow style=filled]
 	
 
-	 35 -> 34 ;
-34 [label="34:  Return Stmt \n   n$0=*&x1:int  [line 53]\n  *&return:int =(1 / n$0) [line 53]\n  REMOVE_TEMPS(n$0); [line 53]\n  NULLIFY(&x1,false); [line 53]\n  APPLY_ABSTRACTION; [line 53]\n " shape="box"]
+	 35 -> 38 ;
+34 [label="34:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 48]\n  *n$2:int =0 [line 48]\n  *&x1:int *=n$2 [line 48]\n  REMOVE_TEMPS(n$2); [line 48]\n " shape="box"]
 	
 
 	 34 -> 33 ;
-33 [label="33: Exit int_init_empty_list \n  " color=yellow style=filled]
+33 [label="33:  Return Stmt \n   n$0=*&x1:int * [line 49]\n  n$1=*n$0:int  [line 49]\n  *&return:int =(1 / n$1) [line 49]\n  REMOVE_TEMPS(n$0,n$1); [line 49]\n  NULLIFY(&x1,false); [line 49]\n  APPLY_ABSTRACTION; [line 49]\n " shape="box"]
 	
 
-32 [label="32: Start int_init_empty_list\nFormals: \nLocals:  x1:int  \n   DECLARE_LOCALS(&return,&x1); [line 51]\n  NULLIFY(&x1,false); [line 51]\n " color=yellow style=filled]
+	 33 -> 32 ;
+32 [label="32: Exit int_init_empty \n  " color=yellow style=filled]
 	
 
-	 32 -> 35 ;
-31 [label="31:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 47]\n  *n$2:int =0 [line 47]\n  *&x1:int *=n$2 [line 47]\n  REMOVE_TEMPS(n$2); [line 47]\n " shape="box"]
+31 [label="31: Start int_init_empty\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 47]\n  NULLIFY(&x1,false); [line 47]\n " color=yellow style=filled]
 	
 
-	 31 -> 30 ;
-30 [label="30:  Return Stmt \n   n$0=*&x1:int * [line 48]\n  n$1=*n$0:int  [line 48]\n  *&return:int =(1 / n$1) [line 48]\n  REMOVE_TEMPS(n$0,n$1); [line 48]\n  NULLIFY(&x1,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+	 31 -> 34 ;
+30 [label="30:  DeclStmt \n   n$2=_fun___new(sizeof(float ):unsigned long ) [line 43]\n  *n$2:float =5.400000 [line 43]\n  *&x1:float *=n$2 [line 43]\n  REMOVE_TEMPS(n$2); [line 43]\n " shape="box"]
 	
 
 	 30 -> 29 ;
-29 [label="29: Exit int_init_empty \n  " color=yellow style=filled]
+29 [label="29:  Return Stmt \n   n$0=*&x1:float * [line 44]\n  n$1=*n$0:float  [line 44]\n  *&return:float =(1 / (n$1 - 5.400000)) [line 44]\n  REMOVE_TEMPS(n$0,n$1); [line 44]\n  NULLIFY(&x1,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
-28 [label="28: Start int_init_empty\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 46]\n  NULLIFY(&x1,false); [line 46]\n " color=yellow style=filled]
+	 29 -> 28 ;
+28 [label="28: Exit float_init_number \n  " color=yellow style=filled]
 	
 
-	 28 -> 31 ;
-27 [label="27:  DeclStmt \n   n$2=_fun___new(sizeof(float ):unsigned long ) [line 42]\n  *n$2:float =5.400000 [line 42]\n  *&x1:float *=n$2 [line 42]\n  REMOVE_TEMPS(n$2); [line 42]\n " shape="box"]
+27 [label="27: Start float_init_number\nFormals: \nLocals:  x1:float * \n   DECLARE_LOCALS(&return,&x1); [line 42]\n  NULLIFY(&x1,false); [line 42]\n " color=yellow style=filled]
 	
 
-	 27 -> 26 ;
-26 [label="26:  Return Stmt \n   n$0=*&x1:float * [line 43]\n  n$1=*n$0:float  [line 43]\n  *&return:float =(1 / (n$1 - 5.400000)) [line 43]\n  REMOVE_TEMPS(n$0,n$1); [line 43]\n  NULLIFY(&x1,false); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+	 27 -> 30 ;
+26 [label="26:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 38]\n  *n$2:int =5 [line 38]\n  *&x1:int *=n$2 [line 38]\n  REMOVE_TEMPS(n$2); [line 38]\n " shape="box"]
 	
 
 	 26 -> 25 ;
-25 [label="25: Exit float_init_number \n  " color=yellow style=filled]
+25 [label="25:  Return Stmt \n   n$0=*&x1:int * [line 39]\n  n$1=*n$0:int  [line 39]\n  *&return:int =(1 / (n$1 - 5)) [line 39]\n  REMOVE_TEMPS(n$0,n$1); [line 39]\n  NULLIFY(&x1,false); [line 39]\n  APPLY_ABSTRACTION; [line 39]\n " shape="box"]
 	
 
-24 [label="24: Start float_init_number\nFormals: \nLocals:  x1:float * \n   DECLARE_LOCALS(&return,&x1); [line 41]\n  NULLIFY(&x1,false); [line 41]\n " color=yellow style=filled]
+	 25 -> 24 ;
+24 [label="24: Exit int_init_number \n  " color=yellow style=filled]
 	
 
-	 24 -> 27 ;
-23 [label="23:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 37]\n  *n$2:int =5 [line 37]\n  *&x1:int *=n$2 [line 37]\n  REMOVE_TEMPS(n$2); [line 37]\n " shape="box"]
+23 [label="23: Start int_init_number\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 37]\n  NULLIFY(&x1,false); [line 37]\n " color=yellow style=filled]
 	
 
-	 23 -> 22 ;
-22 [label="22:  Return Stmt \n   n$0=*&x1:int * [line 38]\n  n$1=*n$0:int  [line 38]\n  *&return:int =(1 / (n$1 - 5)) [line 38]\n  REMOVE_TEMPS(n$0,n$1); [line 38]\n  NULLIFY(&x1,false); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+	 23 -> 26 ;
+22 [label="22:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 33]\n  _fun_Person_Person(n$2:class Person *,5:int ,6:int ,7:int ) [line 33]\n  *&p:class Person *=n$2 [line 33]\n  REMOVE_TEMPS(n$2); [line 33]\n " shape="box"]
 	
 
 	 22 -> 21 ;
-21 [label="21: Exit int_init_number \n  " color=yellow style=filled]
+21 [label="21:  Return Stmt \n   n$0=*&p:class Person * [line 34]\n  n$1=*n$0.z:int  [line 34]\n  *&return:int =(1 / (n$1 - 7)) [line 34]\n  REMOVE_TEMPS(n$0,n$1); [line 34]\n  NULLIFY(&p,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
 	
 
-20 [label="20: Start int_init_number\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 36]\n  NULLIFY(&x1,false); [line 36]\n " color=yellow style=filled]
+	 21 -> 20 ;
+20 [label="20: Exit constructor_3_args_new_div0 \n  " color=yellow style=filled]
 	
 
-	 20 -> 23 ;
-19 [label="19:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 32]\n  _fun_Person_Person(n$2:class Person *,5:int ,6:int ,7:int ) [line 32]\n  *&p:class Person *=n$2 [line 32]\n  REMOVE_TEMPS(n$2); [line 32]\n " shape="box"]
+19 [label="19: Start constructor_3_args_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 32]\n  NULLIFY(&p,false); [line 32]\n " color=yellow style=filled]
 	
 
-	 19 -> 18 ;
-18 [label="18:  Return Stmt \n   n$0=*&p:class Person * [line 33]\n  n$1=*n$0.z:int  [line 33]\n  *&return:int =(1 / (n$1 - 7)) [line 33]\n  REMOVE_TEMPS(n$0,n$1); [line 33]\n  NULLIFY(&p,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+	 19 -> 22 ;
+18 [label="18:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 28]\n  _fun_Person_Person(n$2:class Person *,5:int ) [line 28]\n  *&p:class Person *=n$2 [line 28]\n  REMOVE_TEMPS(n$2); [line 28]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17: Exit constructor_3_args_new_div0 \n  " color=yellow style=filled]
+17 [label="17:  Return Stmt \n   n$0=*&p:class Person * [line 29]\n  n$1=*n$0.x:int  [line 29]\n  *&return:int =(1 / (n$1 - 5)) [line 29]\n  REMOVE_TEMPS(n$0,n$1); [line 29]\n  NULLIFY(&p,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
-16 [label="16: Start constructor_3_args_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 31]\n  NULLIFY(&p,false); [line 31]\n " color=yellow style=filled]
+	 17 -> 16 ;
+16 [label="16: Exit constructor_1_arg_new_div0 \n  " color=yellow style=filled]
 	
 
-	 16 -> 19 ;
-15 [label="15:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 27]\n  _fun_Person_Person(n$2:class Person *,5:int ) [line 27]\n  *&p:class Person *=n$2 [line 27]\n  REMOVE_TEMPS(n$2); [line 27]\n " shape="box"]
+15 [label="15: Start constructor_1_arg_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 27]\n  NULLIFY(&p,false); [line 27]\n " color=yellow style=filled]
 	
 
-	 15 -> 14 ;
-14 [label="14:  Return Stmt \n   n$0=*&p:class Person * [line 28]\n  n$1=*n$0.x:int  [line 28]\n  *&return:int =(1 / (n$1 - 5)) [line 28]\n  REMOVE_TEMPS(n$0,n$1); [line 28]\n  NULLIFY(&p,false); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+	 15 -> 18 ;
+14 [label="14:  Return Stmt \n   n$0=*&x:int  [line 25]\n  *&return:int =n$0 [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&x,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13: Exit constructor_1_arg_new_div0 \n  " color=yellow style=filled]
+13 [label="13: Exit getValue \n  " color=yellow style=filled]
 	
 
-12 [label="12: Start constructor_1_arg_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 26]\n  NULLIFY(&p,false); [line 26]\n " color=yellow style=filled]
+12 [label="12: Start getValue\nFormals:  x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
-	 12 -> 15 ;
-11 [label="11:  Return Stmt \n   n$0=*&x:int  [line 24]\n  *&return:int =n$0 [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  NULLIFY(&x,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	 12 -> 14 ;
+11 [label="11:  BinaryOperatorStmt: Assign \n   n$4=*&this:class Person * [line 16]\n  n$5=*&i:int  [line 16]\n  *n$4.x:int =n$5 [line 16]\n  REMOVE_TEMPS(n$4,n$5); [line 16]\n  NULLIFY(&i,false); [line 16]\n " shape="box"]
 	
 
 	 11 -> 10 ;
-10 [label="10: Exit getValue \n  " color=yellow style=filled]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$2=*&this:class Person * [line 17]\n  n$3=*&j:int  [line 17]\n  *n$2.y:int =n$3 [line 17]\n  REMOVE_TEMPS(n$2,n$3); [line 17]\n  NULLIFY(&j,false); [line 17]\n " shape="box"]
 	
 
-9 [label="9: Start getValue\nFormals:  x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	 10 -> 9 ;
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 18]\n  n$1=*&k:int  [line 18]\n  *n$0.z:int =n$1 [line 18]\n  REMOVE_TEMPS(n$0,n$1); [line 18]\n  NULLIFY(&k,false); [line 18]\n  NULLIFY(&this,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
-	 9 -> 11 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   n$4=*&this:class Person * [line 15]\n  n$5=*&i:int  [line 15]\n  *n$4.x:int =n$5 [line 15]\n  REMOVE_TEMPS(n$4,n$5); [line 15]\n  NULLIFY(&i,false); [line 15]\n " shape="box"]
+	 9 -> 8 ;
+8 [label="8: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-	 8 -> 7 ;
-7 [label="7:  BinaryOperatorStmt: Assign \n   n$2=*&this:class Person * [line 16]\n  n$3=*&j:int  [line 16]\n  *n$2.y:int =n$3 [line 16]\n  REMOVE_TEMPS(n$2,n$3); [line 16]\n  NULLIFY(&j,false); [line 16]\n " shape="box"]
+7 [label="7: Start Person_Person\nFormals:  this:class Person * i:int  j:int  k:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 7 -> 6 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 17]\n  n$1=*&k:int  [line 17]\n  *n$0.z:int =n$1 [line 17]\n  REMOVE_TEMPS(n$0,n$1); [line 17]\n  NULLIFY(&k,false); [line 17]\n  NULLIFY(&this,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+	 7 -> 11 ;
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 13]\n  n$1=*&i:int  [line 13]\n  *n$0.x:int =n$1 [line 13]\n  REMOVE_TEMPS(n$0,n$1); [line 13]\n  NULLIFY(&i,false); [line 13]\n  NULLIFY(&this,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 6 -> 5 ;
 5 [label="5: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start Person_Person\nFormals:  this:class Person * i:int  j:int  k:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+4 [label="4: Start Person_Person\nFormals:  this:class Person * i:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
-	 4 -> 8 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 12]\n  n$1=*&i:int  [line 12]\n  *n$0.x:int =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&i,false); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+	 4 -> 6 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 12]\n  *n$0.x:int =0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Person_Person\nFormals:  this:class Person * i:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start Person_Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

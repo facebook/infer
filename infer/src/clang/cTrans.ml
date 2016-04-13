@@ -1606,26 +1606,6 @@ struct
     let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
-  and initListExpr_initializers_trans trans_state var_exp n stmts typ =
-    let (var_exp_inside, typ_inside) = match typ with
-      | Sil.Tarray (t, _) when Sil.is_array_of_cpp_class typ ->
-          Sil.Lindex (var_exp, Sil.Const (Sil.Cint (Sil.Int.of_int n))), t
-      | _ -> var_exp, typ in
-    let trans_state' = { trans_state with var_exp_typ = Some (var_exp_inside, typ_inside) } in
-    match stmts with
-    | [] -> []
-    | stmt :: rest ->
-        let rest_stmts_res_trans =
-          initListExpr_initializers_trans trans_state var_exp (n + 1) rest typ in
-        match stmt with
-        | Clang_ast_t.InitListExpr (_ , stmts , _) ->
-            let inside_stmts_res_trans =
-              initListExpr_initializers_trans trans_state var_exp_inside 0 stmts typ_inside in
-            inside_stmts_res_trans @ rest_stmts_res_trans
-        | _ ->
-            let stmt_res_trans = instruction trans_state' stmt in
-            stmt_res_trans :: rest_stmts_res_trans
-
   and initListExpr_trans trans_state stmt_info expr_info stmts =
     let context = trans_state.context in
     let tenv = context.tenv in
@@ -1640,7 +1620,8 @@ struct
     let var_type =
       CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let lh = var_or_zero_in_init_list tenv var_exp var_type ~return_zero:false in
-    let res_trans_subexpr_list = initListExpr_initializers_trans trans_state var_exp 0 stmts typ in
+    let res_trans_subexpr_list =
+      initListExpr_initializers_trans trans_state var_exp 0 stmts typ false stmt_info in
     let rh_exps = collect_exprs res_trans_subexpr_list in
     if IList.length rh_exps == 0 then
       let exp = Sil.zero_value_of_numerical_type var_type in
@@ -2069,13 +2050,39 @@ struct
         }
     | _ -> assert false
 
+  and initListExpr_initializers_trans trans_state var_exp n stmts typ is_dyn_array stmt_info =
+    let (var_exp_inside, typ_inside) = match typ with
+      | Sil.Tarray (t, _)
+      | Sil.Tptr (t, _) when Sil.is_array_of_cpp_class typ || is_dyn_array ->
+          Sil.Lindex (var_exp, Sil.Const (Sil.Cint (Sil.Int.of_int n))), t
+      | _ -> var_exp, typ in
+    let trans_state' = { trans_state with var_exp_typ = Some (var_exp_inside, typ_inside) } in
+    match stmts with
+    | [] -> []
+    | stmt :: rest ->
+        let rest_stmts_res_trans = initListExpr_initializers_trans trans_state var_exp (n + 1) rest
+            typ is_dyn_array stmt_info in
+        match stmt with
+        | Clang_ast_t.InitListExpr (_ , stmts , _) ->
+            let inside_stmts_res_trans = initListExpr_initializers_trans trans_state var_exp_inside
+                0 stmts typ_inside is_dyn_array stmt_info in
+            inside_stmts_res_trans @ rest_stmts_res_trans
+        | _ ->
+            let stmt_res_trans = if is_dyn_array then
+                let init_stmt_info = { stmt_info with
+                                       Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
+                init_expr_trans trans_state' (var_exp_inside, typ_inside) init_stmt_info (Some stmt)
+              else instruction trans_state' stmt in
+            stmt_res_trans :: rest_stmts_res_trans
+
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
     let typ = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+    let is_dyn_array = cxx_new_expr_info.Clang_ast_t.xnei_is_array in
     let size_exp_opt, res_trans_size =
-      if cxx_new_expr_info.Clang_ast_t.xnei_is_array then
+      if is_dyn_array then
         match Ast_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_array_size_expr with
         | Some stmt ->
             let trans_state_size = { trans_state_pri with succ_nodes = []; } in
@@ -2094,7 +2101,19 @@ struct
     let init_stmt_info = { stmt_info with
                            Clang_ast_t.si_pointer = Ast_utils.get_fresh_pointer () } in
     let res_trans_init =
-      init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt in
+      if is_dyn_array && Sil.is_pointer_to_cpp_class typ then
+        let rec create_stmts stmt_opt size_exp_opt =
+          match stmt_opt, size_exp_opt with
+          | Some stmt, Some (Sil.Const (Sil.Cint n)) when not (Sil.Int.iszero n) ->
+              let n_minus_1 = Some ((Sil.Const (Sil.Cint (Sil.Int.sub n Sil.Int.one)))) in
+              stmt :: create_stmts stmt_opt n_minus_1
+          | _ -> [] in
+        let stmts = create_stmts stmt_opt size_exp_opt in
+        let (var_exp, typ) = var_exp_typ in
+        let res_trans_init_list = initListExpr_initializers_trans trans_state_init var_exp 0 stmts
+            typ is_dyn_array stmt_info in
+        CTrans_utils.collect_res_trans res_trans_init_list
+      else init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt in
     let all_res_trans = [res_trans_size; res_trans_new; res_trans_init] in
     let nname = "CXXNewExpr" in
     let result_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
