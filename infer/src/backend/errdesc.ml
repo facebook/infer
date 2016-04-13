@@ -511,7 +511,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
         (try
            let t2 = Tenv.expand_type tenv _t2 in
            Sil.typ_equal t1 t2
-         with exn when exn_not_failure exn -> false)
+         with exn when SymOp.exn_not_failure exn -> false)
     | Some (Sil.Sizeof (Sil.Tint _, _)), Some (Sil.Sizeof (Sil.Tint _, _))
       when is_file -> (* must be a file opened with "open" *)
         true
@@ -948,7 +948,7 @@ let explain_nth_function_parameter use_buckets deref_str prop n pvar_off =
                Some (dexp_apply_pvar_off de pvar_off)
            | None -> None in
          create_dereference_desc ~use_buckets dexp_opt' deref_str prop loc
-       with exn when exn_not_failure exn -> Localise.no_desc)
+       with exn when SymOp.exn_not_failure exn -> Localise.no_desc)
   | _ -> Localise.no_desc
 
 (** Find a program variable whose value is [exp] or pointing to a struct containing [exp] *)

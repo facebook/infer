@@ -16,12 +16,6 @@ module F = Format
     functions and builtin equality. Use IList instead. *)
 module List = struct end
 
-(** initial time of the analysis, i.e. when this module is loaded, gotten from Unix.time *)
-let initial_analysis_time = Unix.time ()
-
-(** precise time of day at the start of the analysis *)
-let initial_timeofday = Unix.gettimeofday ()
-
 (** {2 Generic Utility Functions} *)
 
 (** Compare police: generic compare disabled. *)
@@ -232,174 +226,13 @@ let pp_current_time f () =
   let tm = Unix.localtime (Unix.time ()) in
   F.fprintf f "%02d/%02d/%4d %02d:%02d" tm.Unix.tm_mday tm.Unix.tm_mon (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
 
+(** precise time of day at the start of the analysis *)
+let initial_timeofday = Unix.gettimeofday ()
+
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 let pp_elapsed_time fmt () =
   let elapsed = Unix.gettimeofday () -. initial_timeofday in
   Format.fprintf fmt "%f" elapsed
-
-(** {2 SymOp and Failures: units of symbolic execution} *)
-
-type failure_kind =
-  | FKtimeout (* max time exceeded *)
-  | FKsymops_timeout of int (* max symop's exceeded *)
-  | FKrecursion_timeout of int (* max recursion level exceeded *)
-  | FKcrash of string (* uncaught exception or failed assertion *)
-
-(** failure that prevented analysis from finishing *)
-exception Analysis_failure_exe of failure_kind
-
-let exn_not_failure = function
-  | Analysis_failure_exe _ -> false
-  | _ -> true
-
-let pp_failure_kind fmt = function
-  | FKtimeout -> F.fprintf fmt "TIMEOUT"
-  | FKsymops_timeout symops -> F.fprintf fmt "SYMOPS TIMEOUT (%d)" symops
-  | FKrecursion_timeout level -> F.fprintf fmt "RECURSION TIMEOUT(%d)" level
-  | FKcrash msg -> F.fprintf fmt "CRASH (%s)" msg
-
-let symops_timeout, seconds_timeout =
-  (* default timeout and long timeout are the same for now, but this will change shortly *)
-  let default_symops_timeout = 333 in
-  let default_seconds_timeout = 10.0 in
-  let long_symops_timeout = 1000 in
-  let long_seconds_timeout = 30.0 in
-  if Config.analyze_models then
-    (* use longer timeouts when analyzing models *)
-    long_symops_timeout, long_seconds_timeout
-  else
-    default_symops_timeout, default_seconds_timeout
-
-(** number of symops to multiply by the number of iterations, after which there is a timeout *)
-let symops_per_iteration = ref symops_timeout
-
-(** number of seconds to multiply by the number of iterations, after which there is a timeout *)
-let seconds_per_iteration = ref seconds_timeout
-
-(** Timeout in seconds for each function *)
-let timeout_seconds = ref !seconds_per_iteration
-
-(** Timeout in SymOps *)
-let timeout_symops = ref !symops_per_iteration
-
-(** Set the timeout values in seconds and symops, computed as a multiple of the integer parameter *)
-let set_iterations n =
-  timeout_symops := !symops_per_iteration * n;
-  timeout_seconds := !seconds_per_iteration *. (float_of_int n)
-
-let get_timeout_seconds () = !timeout_seconds
-
-(** Count the number of symbolic operations *)
-module SymOp = struct
-
-  (** Internal state of the module *)
-  type t =
-    {
-      (** Only throw timeout exception when alarm is active *)
-      mutable alarm_active : bool;
-
-      (** last wallclock set by an alarm, if any *)
-      mutable last_wallclock : float option;
-
-      (** Number of symop's *)
-      mutable symop_count : int;
-
-      (** Counter for the total number of symop's.
-          The new state created when save_state is called shares this counter
-          if keep_symop_total is true. Otherwise, a new counter is created. *)
-      symop_total : int ref;
-    }
-
-  let initial () : t =
-    {
-      alarm_active = false;
-      last_wallclock = None;
-      symop_count = 0;
-      symop_total = ref 0;
-    }
-
-  (** Global State *)
-  let gs : t ref = ref (initial ())
-
-  (** Restore the old state. *)
-  let restore_state state =
-    gs := state
-
-  (** Return the old state, and revert the current state to the initial one.
-      If keep_symop_total is true, share the total counter. *)
-  let save_state ~keep_symop_total =
-    let old_state = !gs in
-    let new_state =
-      let st = initial () in
-      if keep_symop_total
-      then
-        { st with symop_total = old_state.symop_total }
-      else
-        st in
-    gs := new_state;
-    old_state
-
-  (** handler for the wallclock timeout *)
-  let wallclock_timeout_handler = ref None
-
-  (** set the handler for the wallclock timeout *)
-  let set_wallclock_timeout_handler handler =
-    wallclock_timeout_handler := Some handler
-
-  (** Set the wallclock alarm checked at every pay() *)
-  let set_wallclock_alarm nsecs =
-    !gs.last_wallclock <- Some (Unix.gettimeofday () +. nsecs)
-
-  (** Unset the wallclock alarm checked at every pay() *)
-  let unset_wallclock_alarm () =
-    !gs.last_wallclock <- None
-
-  (** if the wallclock alarm has expired, raise a timeout exception *)
-  let check_wallclock_alarm () =
-    match !gs.last_wallclock, !wallclock_timeout_handler with
-    | Some alarm_time, Some handler when Unix.gettimeofday () >= alarm_time ->
-        unset_wallclock_alarm ();
-        handler ()
-    | _ -> ()
-
-  (** Return the time remaining before the wallclock alarm expires *)
-  let get_remaining_wallclock_time () =
-    match !gs.last_wallclock with
-    | Some alarm_time ->
-        max 0.0 (alarm_time -. Unix.gettimeofday ())
-    | None ->
-        0.0
-
-  (** Return the total number of symop's since the beginning *)
-  let get_total () =
-    !(!gs.symop_total)
-
-  (** Reset the total number of symop's *)
-  let reset_total () =
-    !gs.symop_total := 0
-
-  (** Count one symop *)
-  let pay () =
-    !gs.symop_count <- !gs.symop_count + 1;
-    !gs.symop_total := !(!gs.symop_total) + 1;
-    if !gs.symop_count > !timeout_symops &&
-       !gs.alarm_active
-    then raise (Analysis_failure_exe (FKsymops_timeout !gs.symop_count));
-    check_wallclock_alarm ()
-
-  (** Reset the counter *)
-  let reset_count () =
-    !gs.symop_count <- 0
-
-  (** Reset the counter and activate the alarm *)
-  let set_alarm () =
-    reset_count ();
-    !gs.alarm_active <- true
-
-  (** De-activate the alarm *)
-  let unset_alarm () =
-    !gs.alarm_active <- false
-end
 
 (** Check if the lhs is a substring of the rhs. *)
 let string_is_prefix s1 s2 =

@@ -81,7 +81,7 @@ let set_status status =
 
 let timeout_action _ =
   unset_alarm ();
-  raise (Analysis_failure_exe (FKtimeout))
+  raise (SymOp.Analysis_failure_exe (FKtimeout))
 
 let () = begin
   match Config.os_type with
@@ -111,7 +111,7 @@ let resume_previous_timeout () =
 let exe_timeout f x =
   let suspend_existing_timeout_and_start_new_one () =
     suspend_existing_timeout ~keep_symop_total:true;
-    set_alarm (get_timeout_seconds ());
+    set_alarm (SymOp.get_timeout_seconds ());
     SymOp.set_alarm () in
   try
     suspend_existing_timeout_and_start_new_one ();
@@ -119,10 +119,10 @@ let exe_timeout f x =
     resume_previous_timeout ();
     None
   with
-  | Analysis_failure_exe kind ->
+  | SymOp.Analysis_failure_exe kind ->
       resume_previous_timeout ();
       L.log_progress_timeout_event kind;
-      Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." pp_failure_kind kind;
+      Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." SymOp.pp_failure_kind kind;
       Some kind
   | exe ->
       resume_previous_timeout ();

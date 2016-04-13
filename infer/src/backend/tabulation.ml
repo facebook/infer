@@ -427,7 +427,7 @@ let rec fsel_star_fld fsel1 fsel2 = match fsel1, fsel2 with
 
 and array_content_star se1 se2 =
   try sexp_star_fld se1 se2 with
-  | exn when exn_not_failure exn -> se1 (* let postcondition override *)
+  | exn when SymOp.exn_not_failure exn -> se1 (* let postcondition override *)
 
 and esel_star_fld esel1 esel2 = match esel1, esel2 with
   | [], esel2 -> (* don't know whether element is read or written in fun call with array *)
@@ -504,7 +504,7 @@ let sigma_star_fld (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpr
         end
   in
   try star sigma1 sigma2
-  with exn when exn_not_failure exn ->
+  with exn when SymOp.exn_not_failure exn ->
     L.d_str "cannot star ";
     Prop.d_sigma sigma1; L.d_str " and "; Prop.d_sigma sigma2;
     L.d_ln ();
@@ -537,7 +537,7 @@ let sigma_star_typ
           | _ -> star sg1 typings2'
         end in
   try star sigma1 typings2
-  with exn when exn_not_failure exn ->
+  with exn when SymOp.exn_not_failure exn ->
     L.d_str "cannot star ";
     Prop.d_sigma sigma1; L.d_str " and "; Prover.d_typings typings2;
     L.d_ln ();

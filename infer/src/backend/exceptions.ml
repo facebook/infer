@@ -252,7 +252,7 @@ let recognize_exception exn =
     | Return_value_ignored (desc, ml_loc) ->
         (Localise.return_value_ignored,
          desc, Some ml_loc, Exn_user, Medium, None, Nocat)
-    | Analysis_failure_exe _ ->
+    | SymOp.Analysis_failure_exe _ ->
         (Localise.from_string "Failure_exe",
          Localise.no_desc, None, Exn_system, Low, None, Nocat)
     | Skip_function desc ->

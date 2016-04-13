@@ -947,7 +947,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
     if recursion_level > !Config.max_recursion then
       begin
         L.err "Reached maximum level of recursion, raising a Timeout@.";
-        raise (Analysis_failure_exe (FKrecursion_timeout recursion_level))
+        raise (SymOp.Analysis_failure_exe (FKrecursion_timeout recursion_level))
       end in
 
   let compute_footprint : (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase) =
@@ -1330,7 +1330,7 @@ let perform_transition exe_env tenv proc_name =
               let start_node = Cfg.Procdesc.get_start_node pdesc in
               f start_node
           | None -> ()
-        with exn when exn_not_failure exn -> () in
+        with exn when SymOp.exn_not_failure exn -> () in
       apply_start_node (do_before_node 0);
       try
         Config.allowleak := true;
@@ -1338,7 +1338,7 @@ let perform_transition exe_env tenv proc_name =
         Config.allowleak := allowleak;
         apply_start_node do_after_node;
         res
-      with exn when exn_not_failure exn ->
+      with exn when SymOp.exn_not_failure exn ->
         apply_start_node do_after_node;
         Config.allowleak := allowleak;
         L.err "Error in collect_preconditions for %a@." Procname.pp proc_name;

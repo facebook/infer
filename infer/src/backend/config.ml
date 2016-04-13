@@ -362,6 +362,29 @@ let default_failure_name = "ASSERTION_FAILURE"
 
 let analyze_models = from_env_variable "INFER_ANALYZE_MODELS"
 
+(** initial time of the analysis, i.e. when this module is loaded, gotten from Unix.time *)
+let initial_analysis_time = Unix.time ()
+
+let symops_timeout, seconds_timeout =
+  let default_symops_timeout = 333 in
+  let default_seconds_timeout = 10.0 in
+  let long_symops_timeout = 1000 in
+  let long_seconds_timeout = 30.0 in
+  if analyze_models then
+    (* use longer timeouts when analyzing models *)
+    long_symops_timeout, long_seconds_timeout
+  else
+    default_symops_timeout, default_seconds_timeout
+
+(** number of symops to multiply by the number of iterations, after which there is a timeout *)
+let symops_per_iteration = ref symops_timeout
+
+(** number of seconds to multiply by the number of iterations, after which there is a timeout *)
+let seconds_per_iteration = ref seconds_timeout
+
+(** Set the timeout values in seconds and symops, computed as a multiple of the integer parameter *)
+let iterations = ref 1
+
 (** experimental: dynamic dispatch for interface calls only in Java. off by default because of the
     cost *)
 let sound_dynamic_dispatch = from_env_variable "INFER_SOUND_DYNAMIC_DISPATCH"

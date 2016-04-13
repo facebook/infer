@@ -210,12 +210,12 @@ let log_progress_timeout_event failure_kind =
   if !Config.developer_mode then
     begin
       match failure_kind with
-      | FKtimeout ->
+      | SymOp.FKtimeout ->
           log_progress_simple "T"
-      | FKsymops_timeout _ ->
+      | SymOp.FKsymops_timeout _ ->
           log_progress_simple "S"
-      | FKrecursion_timeout _ ->
+      | SymOp.FKrecursion_timeout _ ->
           log_progress_simple "R"
-      | FKcrash _ ->
+      | SymOp.FKcrash _ ->
           log_progress_simple "C"
     end

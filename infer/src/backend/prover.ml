@@ -17,7 +17,7 @@ module F = Format
 
 let decrease_indent_when_exception thunk =
   try (thunk ())
-  with exn when exn_not_failure exn -> (L.d_decrease_indent 1; raise exn)
+  with exn when SymOp.exn_not_failure exn -> (L.d_decrease_indent 1; raise exn)
 
 let compute_max_from_nonempty_int_list l =
   IList.hd (IList.rev (IList.sort Sil.Int.compare_value l))
@@ -1853,7 +1853,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                         decrease_indent_when_exception
                           (fun () ->
                              try sigma_imply tenv calc_index_frame calc_missing subs prop1 hpred_list2
-                             with exn when exn_not_failure exn ->
+                             with exn when SymOp.exn_not_failure exn ->
                                begin
                                  (L.d_strln_color Red) "backtracking lseg: trying rhs of length exactly 1";
                                  let (_, para_inst3) = Sil.hpara_instantiate para2 _e2 _f2 elist2 in

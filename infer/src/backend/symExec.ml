@@ -1212,7 +1212,7 @@ and instrs ?(mask_errors=false) tenv pdesc instrs ppl =
   let exe_instr instr (p, path) =
     L.d_str "Executing Generated Instruction "; Sil.d_instr instr; L.d_ln ();
     try sym_exec tenv pdesc instr p path
-    with exn when exn_not_failure exn && mask_errors ->
+    with exn when SymOp.exn_not_failure exn && mask_errors ->
       let err_name, _, ml_source, _ , _, _, _ = Exceptions.recognize_exception exn in
       let loc = (match ml_source with
           | Some ml_loc -> "at " ^ (L.ml_loc_to_string ml_loc)
@@ -1409,7 +1409,7 @@ and check_variadic_sentinel
     let letderef = Sil.Letderef (tmp_id_deref, lexp, typ, loc) in
     try
       instrs tenv pdesc [letderef] result
-    with e when exn_not_failure e ->
+    with e when SymOp.exn_not_failure e ->
       if not fails_on_nil then
         let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
         let err_desc =
