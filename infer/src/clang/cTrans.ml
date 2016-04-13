@@ -270,6 +270,13 @@ struct
       f trans_state e
     else f { trans_state with priority = Free } e
 
+  let call_translation context decl =
+    let open CContext in
+    (* translation will reset Ident counter, save it's state and restore it afterwards *)
+    let ident_state = Ident.NameGenerator.get_current () in
+    F.translate_one_declaration context.tenv context.cg context.cfg `Translation decl;
+    Ident.NameGenerator.set_current ident_state
+
   let mk_temp_sil_var procdesc var_name_prefix =
     let procname = Cfg.Procdesc.get_proc_name procdesc in
     let id = Ident.create_fresh Ident.knormal in
@@ -454,6 +461,8 @@ struct
     let open CContext in
     let context = trans_state.context in
     let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
+    let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
+    Option.may (call_translation context) decl_opt;
     let name = Ast_utils.get_qualified_name name_info in
     let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let pname =
@@ -548,6 +557,8 @@ struct
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
+    let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
+    Option.may (call_translation context) decl_opt;
     let method_name = Ast_utils.get_unqualified_name name_info in
     let class_name = Ast_utils.get_class_name_from_member name_info in
     Printing.log_out "!!!!! Dealing with method '%s' @." method_name;

@@ -128,6 +128,8 @@ sig
   val add_type_from_decl_ref_list : type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl_ref list ->
     unit
 
+  val get_function_decl_with_body : Clang_ast_t.pointer -> Clang_ast_t.decl option
+
 end
 
 module General_utils :
@@ -171,9 +173,6 @@ sig
   val get_next_block_pvar : Procname.t -> Pvar.t
 
   val reset_block_counter : unit -> unit
-
-  val mk_function_decl_info_from_block :
-    Clang_ast_t.block_decl_info -> Clang_ast_t.function_decl_info
 
   val zip: 'a list -> 'b list -> ('a * 'b) list
 

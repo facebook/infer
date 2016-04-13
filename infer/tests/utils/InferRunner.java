@@ -257,7 +257,8 @@ public class InferRunner {
       @Nullable String isysroot,
       @Nullable String ml_buckets,
       boolean arc,
-      boolean headers) {
+      boolean headers,
+      boolean testingMode) {
     File resultsDir = createResultsDir(folder);
     String resultsDirName = resultsDir.getAbsolutePath();
     InferRunner.bugsFile = new File(resultsDir, BUGS_FILE_NAME);
@@ -278,13 +279,19 @@ public class InferRunner {
     ml_bucketsOption
         .add("--ml_buckets")
         .add(ml_buckets == null ? "all" : ml_buckets);
+
+    ImmutableList.Builder<String> testingModeOption =
+        new ImmutableList.Builder<>();
+    if (testingMode) {
+      testingModeOption.add("--testing_mode");
+    }
     ImmutableList<String> inferCmd = new ImmutableList.Builder<String>()
         .add("infer")
         .add("--no-progress-bar")
         .add("--no-filtering")
         .add("--out")
         .add(resultsDirName)
-        .add("--testing_mode")
+        .addAll(testingModeOption.build())
         .add("--cxx")
         .addAll(analyzeOption.build())
         .addAll(ml_bucketsOption.build())
@@ -310,7 +317,8 @@ public class InferRunner {
         isysroot,
         ml_buckets,
         arc,
-        false);
+        false,
+        true);
   }
 
   public static ImmutableList<String> createCInferCommandFrontend(
@@ -401,6 +409,8 @@ public class InferRunner {
         true,
         null,
         null,
+        false,
+        false,
         false);
   }
 
@@ -415,6 +425,7 @@ public class InferRunner {
         null,
         null,
         false,
+        true,
         true);
   }
 

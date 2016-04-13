@@ -1,19 +1,19 @@
 digraph iCFG {
-7 [label="7:  Return Stmt \n   n$0=*&a:int  [line 25]\n  n$1=*&b:int  [line 25]\n  *&return:int =(n$0 + n$1) [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n  NULLIFY(&a,false); [line 25]\n  NULLIFY(&b,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+7 [label="7:  BinaryOperatorStmt: Assign \n   n$0=_fun_sum(2:int ,3:int ) [line 20]\n  *&total:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&total,false); [line 20]\n " shape="box"]
 	
 
-	 7 -> 6 ;
-6 [label="6: Exit sum \n  " color=yellow style=filled]
+	 7 -> 3 ;
+6 [label="6:  Return Stmt \n   n$0=*&a:int  [line 25]\n  n$1=*&b:int  [line 25]\n  *&return:int =(n$0 + n$1) [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n  NULLIFY(&a,false); [line 25]\n  NULLIFY(&b,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
-5 [label="5: Start sum\nFormals:  a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+	 6 -> 5 ;
+5 [label="5: Exit sum \n  " color=yellow style=filled]
 	
 
-	 5 -> 7 ;
-4 [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_sum(2:int ,3:int ) [line 20]\n  *&total:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&total,false); [line 20]\n " shape="box"]
+4 [label="4: Start sum\nFormals:  a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
-	 4 -> 3 ;
+	 4 -> 6 ;
 3 [label="3:  Return Stmt \n   *&return:int =0 [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
 	
 
@@ -24,5 +24,5 @@ digraph iCFG {
 1 [label="1: Start main\nFormals: \nLocals:  total:int  \n   DECLARE_LOCALS(&return,&total); [line 17]\n  NULLIFY(&total,false); [line 17]\n " color=yellow style=filled]
 	
 
-	 1 -> 4 ;
+	 1 -> 7 ;
 }

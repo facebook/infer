@@ -16,6 +16,8 @@ type instr_type = [
   | `CXXConstructorInit of Clang_ast_t.cxx_ctor_initializer
 ]
 
+type decl_trans_context = [ `DeclTraversal | `Translation ]
+
 module type CTranslation =
 sig
   val instructions_trans : CContext.t -> Clang_ast_t.stmt -> instr_type list ->
@@ -27,5 +29,5 @@ module type CFrontend = sig
     block_data option -> unit
 
   val translate_one_declaration : Tenv.t -> Cg.t -> Cfg.cfg ->
-    Clang_ast_t.decl -> unit
+    decl_trans_context -> Clang_ast_t.decl -> unit
 end

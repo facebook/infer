@@ -91,7 +91,7 @@ let should_do_frontend_check (loc_start, _) =
 (* the headers because the dot files in the frontend tests should contain nothing *)
 (* else than the source file to avoid conflicts between different versions of the *)
 (* libraries in the CI *)
-let should_translate (loc_start, loc_end) =
+let should_translate (loc_start, loc_end) decl_trans_context =
   let map_path_of pred loc =
     match loc.Clang_ast_t.sl_file with
     | Some f -> pred f
@@ -117,12 +117,12 @@ let should_translate (loc_start, loc_end) =
   || map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models
-  || (!CFrontend_config.cxx_experimental && file_in_project
+  || (!CFrontend_config.cxx_experimental && decl_trans_context = `Translation && file_in_project
       && not (!CFrontend_config.testing_mode))
 
-let should_translate_lib source_range =
+let should_translate_lib source_range decl_trans_context =
   not !CFrontend_config.no_translate_libs
-  || should_translate source_range
+  || should_translate source_range decl_trans_context
 
 let get_sil_location_from_range source_range prefer_first =
   let sloc1, sloc2 = source_range in
