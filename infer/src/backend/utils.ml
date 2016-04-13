@@ -16,6 +16,12 @@ module F = Format
     functions and builtin equality. Use IList instead. *)
 module List = struct end
 
+(** initial process times *)
+let initial_times = Unix.times ()
+
+(** precise time of day at the start of the analysis *)
+let initial_timeofday = Unix.gettimeofday ()
+
 (** {2 Generic Utility Functions} *)
 
 (** Compare police: generic compare disabled. *)
@@ -225,9 +231,6 @@ let pp_to_string pp x =
 let pp_current_time f () =
   let tm = Unix.localtime (Unix.time ()) in
   F.fprintf f "%02d/%02d/%4d %02d:%02d" tm.Unix.tm_mday tm.Unix.tm_mon (tm.Unix.tm_year + 1900) tm.Unix.tm_hour tm.Unix.tm_min
-
-(** precise time of day at the start of the analysis *)
-let initial_timeofday = Unix.gettimeofday ()
 
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 let pp_elapsed_time fmt () =

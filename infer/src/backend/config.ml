@@ -37,6 +37,10 @@ let attributes_dir_name = "attributes"
 let captured_dir_name = "captured"
 let sources_dir_name = "sources"
 let specs_dir_name = "specs"
+let perf_stats_prefix = "perf_stats"
+let backend_stats_dir_name = "backend_stats"
+let frontend_stats_dir_name = "frontend_stats"
+let reporting_stats_dir_name = "reporting_stats"
 
 let default_in_zip_results_dir = "infer"
 

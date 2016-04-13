@@ -16,6 +16,12 @@
     functions and builtin equality. Use IList instead. *)
 module List : sig end
 
+(** initial process times *)
+val initial_times : Unix.process_times
+
+(** precise time of day at the start of the analysis *)
+val initial_timeofday : float
+
 (** Compare police: generic compare disabled. *)
 val compare : unit
 
@@ -141,6 +147,7 @@ val pp_current_time : Format.formatter -> unit -> unit
 
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 val pp_elapsed_time : Format.formatter -> unit -> unit
+
 
 module Arg : sig
   include module type of Arg with type spec = Arg.spec

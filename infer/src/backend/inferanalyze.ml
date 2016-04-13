@@ -353,7 +353,17 @@ let process_cluster_cmdline fname =
   | Some (nr, cluster) ->
       analyze_cluster (nr - 1)  cluster
 
+let register_perf_stats_report () =
+  let stats_dir = Filename.concat !Config.results_dir Config.backend_stats_dir_name in
+  let cluster = match !cluster_cmdline with Some cl -> "_" ^ cl | None -> "" in
+  let stats_file = Filename.concat stats_dir (Config.perf_stats_prefix ^ cluster ^ ".json") in
+  DB.create_dir !Config.results_dir ;
+  DB.create_dir stats_dir ;
+  PerfStats.register_report_at_exit stats_file
+
 let () =
+  register_perf_stats_report () ;
+
   if !Config.developer_mode then
     Printexc.record_backtrace true;
   print_prolog ();
