@@ -10,11 +10,7 @@
 package codetoanalyze.java.infer;
 
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.PushbackInputStream;
+import java.io.*;
 import java.security.DigestInputStream;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.DeflaterInputStream;
@@ -263,4 +259,10 @@ public class FilterInputStreamLeaks {
       if (pms != null) pms.close();
     }
   }
+
+  public void twoLevelWrapperNoLeak(File file) throws IOException {
+    DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
+    in.close();
+  }
+
 }

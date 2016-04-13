@@ -28,9 +28,13 @@ public class FilterInputStream extends InputStream {
     }
 
     public void close() throws IOException {
-        if (in != null)
-            if (in instanceof FileInputStream)
+        if (in != null) {
+            if (in instanceof FileInputStream) {
                 ((FileInputStream) in).close();
+            } else {
+                in.close();
+            }
+        }
     }
 
     public int read() throws IOException {
