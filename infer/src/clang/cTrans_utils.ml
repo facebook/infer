@@ -87,9 +87,6 @@ end
 module GotoLabel =
 struct
 
-  (* stores goto labels local to a function, with the relative node in the cfg *)
-  let goto_label_node_map : CContext.str_node_map = Hashtbl.create 17
-
   let find_goto_label context label sil_loc =
     try
       Hashtbl.find context.CContext.label_map label
