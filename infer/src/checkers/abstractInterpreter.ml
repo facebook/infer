@@ -105,11 +105,14 @@ module Make
   module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
 
     let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } =
+      let post_opt = ref None in
       let analyze_ondemand pdesc =
         match compute_post (ProcData.make pdesc tenv) with
         | Some post ->
-            Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post
-        | None -> () in
+            Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post;
+            post_opt := Some post
+        | None ->
+            post_opt := None in
       let callbacks =
         {
           Ondemand.analyze_ondemand;
@@ -120,8 +123,9 @@ module Make
         begin
           Ondemand.set_callbacks callbacks;
           analyze_ondemand proc_desc;
-          Ondemand.unset_callbacks ()
-        end
+          Ondemand.unset_callbacks ();
+        end;
+      !post_opt
   end
 end
 
