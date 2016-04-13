@@ -20,4 +20,5 @@ import java.lang.annotation.Target;
   )
 
 public @interface PrivacySink {
+  String[] value();
 }
