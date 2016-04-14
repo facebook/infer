@@ -161,5 +161,20 @@ let tests =
               invariant "T"]);
       invariant "T";
     ];
+    "try",
+    [
+      Try (
+        [
+          invariant "1"; (* we expect the try block to be visited *)
+        ],
+        [
+          invariant "_|_"; (* but not the catch block *)
+        ],
+        [
+          invariant "1"; (* we expect the finally block to be visited *)
+        ]
+      );
+      invariant "1"
+    ];
   ] |> TestInterpreter.create_tests in
   "analyzer_tests_suite">:::test_list
