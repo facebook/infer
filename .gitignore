@@ -123,3 +123,6 @@ buck-out/
 /infer/annotations/processor_classes/
 /infer/lib/java/processor.jar
 infer/src/.project
+/dependencies/ocamldot/ocamldot
+/dependencies/ocamldot/ocamldot.ml
+/infer/src/mod_dep.dot

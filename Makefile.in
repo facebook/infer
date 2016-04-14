@@ -150,6 +150,7 @@ test:
 	$(MAKE) -C $(INFER_DIR) $(INFER_BIN)
 	$(MAKE) -C $(SRC_DIR) init
 	$(MAKE) -j$(NCPU) test_build
+	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 	$(MAKE) ocaml_unit_test buck_test inferTraceBugs_test
 
 test_xml: buck_test_xml

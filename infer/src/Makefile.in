@@ -192,6 +192,19 @@ test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_
 	  $(INFERUNIT_MAIN).byte \
 	  $(CHECKCOPYRIGHT_MAIN).byte
 
+$(DEPENDENCIES_DIR)/ocamldot/ocamldot:
+	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
+
+roots:=Inferanalyze CMain JMain Inferprint
+src_dirs:=$(shell find * -type d)
+src_files:=$(shell find $(src_dirs) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
+inc_flags:=$(foreach dir,$(src_dirs),-I $(dir))
+root_flags:=$(foreach root,$(roots),-r $(root))
+mod_dep.dot: $(DEPENDENCIES_DIR)/ocamldot/ocamldot $(src_files)
+	ocamldep.opt $(inc_flags) $(src_files) \
+	| $(DEPENDENCIES_DIR)/ocamldot/ocamldot -lr $(root_flags) \
+        > mod_dep.dot
+
 ifeq (@ENABLE_OCAML_ANNOT@,yes)
 java_annotations: build_java
 	rsync -a --include '*/' --include '*.annot' --exclude '*' $(JAVA_BUILD_DIR)/ $(ANNOT_DIR)/
@@ -312,3 +325,4 @@ endif
 	$(REMOVE) $(INFERANALYZE_BIN) $(INFERPRINT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
+	$(REMOVE) mod_dep.dot
