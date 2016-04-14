@@ -45,3 +45,10 @@ void* builtin_no_leak(size_t s) {
     return memset(str, 0, s);
     }
 }
+
+void conditional_last_instruction() {
+  int* p = malloc(sizeof(int));
+  if (0) {
+    free(p);
+  }
+}

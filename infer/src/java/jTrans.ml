@@ -301,7 +301,7 @@ let create_local_procdesc program linereader cfg tenv node m =
             let start_node = Cfg.Node.create cfg Location.dummy start_kind [] procdesc [] in
             let exit_kind = (Cfg.Node.Exit_node procdesc) in
             let exit_node = Cfg.Node.create cfg Location.dummy exit_kind [] procdesc [] in
-            Cfg.Node.set_succs_exn start_node [exit_node] [exit_node];
+            Cfg.Node.set_succs_exn cfg start_node [exit_node] [exit_node];
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node
         | Javalib.ConcreteMethod cm when is_java_native cm ->

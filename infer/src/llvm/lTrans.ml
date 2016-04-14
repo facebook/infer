@@ -148,8 +148,10 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
           [sil_instr] procdesc [] in
       let rec link_nodes (start_node : Cfg.Node.t) : Cfg.Node.t list -> unit = function
         (* link all nodes in a chain for now *)
-        | [] -> Cfg.Node.set_succs_exn start_node [exit_node] [exit_node]
-        | nd :: nds -> Cfg.Node.set_succs_exn start_node [nd] [exit_node]; link_nodes nd nds in
+        | [] ->
+            Cfg.Node.set_succs_exn cfg start_node [exit_node] [exit_node]
+        | nd :: nds ->
+            Cfg.Node.set_succs_exn cfg start_node [nd] [exit_node]; link_nodes nd nds in
       let (sil_instrs, locals) =
         trans_annotated_instructions cfg procdesc metadata annotated_instrs in
       let nodes = IList.map (node_of_sil_instr cfg procdesc) sil_instrs in

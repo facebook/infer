@@ -1,44 +1,48 @@
 digraph iCFG {
-19 [label="19:  DeclStmt \n   *&foo_g:int =(2 + 10) [line 23]\n " shape="box"]
+20 [label="20:  DeclStmt \n   *&foo_g:int =(2 + 10) [line 23]\n " shape="box"]
 	
 
-	 19 -> 18 ;
-18 [label="18:  DeclStmt \n   *&foo_a:int =0 [line 24]\n " shape="box"]
+	 20 -> 19 ;
+19 [label="19:  DeclStmt \n   *&foo_a:int =0 [line 24]\n " shape="box"]
 	
 
-	 18 -> 13 ;
-17 [label="17:  Return Stmt \n   NULLIFY(&foo_a,false); [line 28]\n  NULLIFY(&foo_g,false); [line 28]\n  *&return:int =0 [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+	 19 -> 14 ;
+18 [label="18:  Return Stmt \n   NULLIFY(&foo_a,false); [line 28]\n  NULLIFY(&foo_g,false); [line 28]\n  *&return:int =0 [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+	
+
+	 18 -> 11 ;
+17 [label="17:  Return Stmt \n   n$1=*&foo_g:int  [line 26]\n  n$2=*&foo_a:int  [line 26]\n  *&return:int =(n$1 / n$2) [line 26]\n  REMOVE_TEMPS(n$1,n$2); [line 26]\n  NULLIFY(&foo_a,false); [line 26]\n  NULLIFY(&foo_g,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
 	 17 -> 11 ;
-16 [label="16:  Return Stmt \n   n$1=*&foo_g:int  [line 26]\n  n$2=*&foo_a:int  [line 26]\n  *&return:int =(n$1 / n$2) [line 26]\n  REMOVE_TEMPS(n$1,n$2); [line 26]\n  NULLIFY(&foo_a,false); [line 26]\n  NULLIFY(&foo_g,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+16 [label="16: Prune (false branch) \n   PRUNE(((n$0 == 12) == 0), false); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n " shape="invhouse"]
 	
 
-	 16 -> 11 ;
-15 [label="15: Prune (false branch) \n   PRUNE(((n$0 == 12) == 0), false); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n " shape="invhouse"]
+	 16 -> 18 ;
+15 [label="15: Prune (true branch) \n   PRUNE(((n$0 == 12) != 0), true); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n " shape="invhouse"]
 	
 
 	 15 -> 17 ;
-14 [label="14: Prune (true branch) \n   PRUNE(((n$0 == 12) != 0), true); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n " shape="invhouse"]
+14 [label="14:  BinaryOperatorStmt: EQ \n   n$0=*&foo_g:int  [line 25]\n " shape="box"]
 	
 
+	 14 -> 15 ;
 	 14 -> 16 ;
-13 [label="13:  BinaryOperatorStmt: EQ \n   n$0=*&foo_g:int  [line 25]\n " shape="box"]
+13 [label="13:  between_join_and_exit \n   NULLIFY(&foo_a,false); [line 25]\n  NULLIFY(&foo_g,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
-	 13 -> 14 ;
-	 13 -> 15 ;
-12 [label="12: + \n   NULLIFY(&foo_a,false); [line 25]\n  NULLIFY(&foo_g,false); [line 25]\n " ]
+	 13 -> 11 ;
+12 [label="12: + \n  " ]
 	
 
-	 12 -> 11 ;
+	 12 -> 13 ;
 11 [label="11: Exit test \n  " color=yellow style=filled]
 	
 
 10 [label="10: Start test\nFormals: \nLocals:  foo_a:int  foo_g:int  \n   DECLARE_LOCALS(&return,&foo_a,&foo_g); [line 22]\n  NULLIFY(&foo_a,false); [line 22]\n  NULLIFY(&foo_g,false); [line 22]\n " color=yellow style=filled]
 	
 
-	 10 -> 19 ;
+	 10 -> 20 ;
 9 [label="9:  DeclStmt \n   *&foo_a:int =0 [line 13]\n  NULLIFY(&foo_a,false); [line 13]\n " shape="box"]
 	
 

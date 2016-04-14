@@ -145,7 +145,7 @@ module Make
       Cfg.Node.create cfg dummy_loc kind cmds pdesc no_tmp_idents in
     let set_succs cur_node succs =
       let no_exc_succs = [] in
-      Cfg.Node.set_succs_exn cur_node succs no_exc_succs in
+      Cfg.Node.set_succs_exn cfg cur_node succs no_exc_succs in
     let mk_prune_nodes_for_cond cond_exp if_kind =
       let mk_prune_node cond_exp if_kind true_branch =
         let prune_instr = Sil.Prune (cond_exp, dummy_loc, true_branch, if_kind) in

@@ -156,7 +156,7 @@ let empty_res_trans = {
 }
 
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
-let collect_res_trans l =
+let collect_res_trans cfg l =
   let rec collect l rt =
     match l with
     | [] -> rt
@@ -168,7 +168,7 @@ let collect_res_trans l =
           if rt'.leaf_nodes <> [] then rt'.leaf_nodes
           else rt.leaf_nodes in
         if rt'.root_nodes <> [] then
-          IList.iter (fun n -> Cfg.Node.set_succs_exn n rt'.root_nodes []) rt.leaf_nodes;
+          IList.iter (fun n -> Cfg.Node.set_succs_exn cfg n rt'.root_nodes []) rt.leaf_nodes;
         collect l'
           { root_nodes = root_nodes;
             leaf_nodes = leaf_nodes;
@@ -238,7 +238,8 @@ struct
   (* deals with creating or not a cfg node depending of owning the *)
   (* priority_node. It returns nodes, ids, instrs that should be passed to parent *)
   let compute_results_to_parent trans_state loc nd_name stmt_info res_states_children =
-    let res_state = collect_res_trans res_states_children in
+    let cfg = trans_state.context.cfg in
+    let res_state = collect_res_trans cfg res_states_children in
     let create_node = own_priority_node trans_state.priority stmt_info && res_state.instrs <> [] in
     if create_node then
       (* We need to create a node *)
@@ -246,8 +247,8 @@ struct
       let ids_parent = ids_to_parent trans_state.continuation res_state.ids in
       let node_kind = Cfg.Node.Stmt_node (nd_name) in
       let node = Nodes.create_node node_kind ids_node res_state.instrs loc trans_state.context in
-      Cfg.Node.set_succs_exn node trans_state.succ_nodes [];
-      IList.iter (fun leaf -> Cfg.Node.set_succs_exn leaf [node] []) res_state.leaf_nodes;
+      Cfg.Node.set_succs_exn cfg node trans_state.succ_nodes [];
+      IList.iter (fun leaf -> Cfg.Node.set_succs_exn cfg leaf [node] []) res_state.leaf_nodes;
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
       let root_nodes = (if res_state.root_nodes <> [] then res_state.root_nodes
                         else [node]) in
@@ -445,13 +446,13 @@ let trans_assertion_failure sil_loc context =
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
     Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [] [call_instr] sil_loc context in
-  Cfg.Node.set_succs_exn failure_node [exit_node] [];
+  Cfg.Node.set_succs_exn context.CContext.cfg failure_node [exit_node] [];
   { empty_res_trans with root_nodes = [failure_node]; }
 
 let trans_assume_false sil_loc context succ_nodes =
   let instrs_cond = [Sil.Prune (Sil.exp_zero, sil_loc, true, Sil.Ik_land_lor)] in
   let prune_node = Nodes.create_node (Nodes.prune_kind true) [] instrs_cond sil_loc context in
-  Cfg.Node.set_succs_exn prune_node succ_nodes [];
+  Cfg.Node.set_succs_exn context.CContext.cfg prune_node succ_nodes [];
   { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }
 
 let define_condition_side_effects e_cond instrs_cond sil_loc =

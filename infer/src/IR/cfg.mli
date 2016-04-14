@@ -262,7 +262,7 @@ module Node : sig
   val set_proc_desc : t -> Procdesc.t -> unit
 
   (** Set the successor nodes and exception nodes, and build predecessor links *)
-  val set_succs_exn : t -> t list -> t list -> unit
+  val set_succs_exn : cfg -> t -> t list -> t list -> unit
 
   (** Set the temporary variables *)
   val set_temps : t -> Ident.t list -> unit

@@ -1,36 +1,40 @@
 digraph iCFG {
-51 [label="51:  Return Stmt \n   *&return:int =0 [line 98]\n  APPLY_ABSTRACTION; [line 98]\n " shape="box"]
+52 [label="52:  Return Stmt \n   *&return:int =0 [line 98]\n  APPLY_ABSTRACTION; [line 98]\n " shape="box"]
+	
+
+	 52 -> 45 ;
+51 [label="51:  Return Stmt \n   *&return:int =1 [line 96]\n  APPLY_ABSTRACTION; [line 96]\n " shape="box"]
 	
 
 	 51 -> 45 ;
-50 [label="50:  Return Stmt \n   *&return:int =1 [line 96]\n  APPLY_ABSTRACTION; [line 96]\n " shape="box"]
+50 [label="50: Prune (false branch) \n   PRUNE(((sizeof(class A ) != n$15) == 0), false); [line 95]\n  REMOVE_TEMPS(n$15); [line 95]\n " shape="invhouse"]
 	
 
-	 50 -> 45 ;
-49 [label="49: Prune (false branch) \n   PRUNE(((sizeof(class A ) != n$15) == 0), false); [line 95]\n  REMOVE_TEMPS(n$15); [line 95]\n " shape="invhouse"]
+	 50 -> 52 ;
+49 [label="49: Prune (true branch) \n   PRUNE(((sizeof(class A ) != n$15) != 0), true); [line 95]\n  REMOVE_TEMPS(n$15); [line 95]\n " shape="invhouse"]
 	
 
 	 49 -> 51 ;
-48 [label="48: Prune (true branch) \n   PRUNE(((sizeof(class A ) != n$15) != 0), true); [line 95]\n  REMOVE_TEMPS(n$15); [line 95]\n " shape="invhouse"]
+48 [label="48:  BinaryOperatorStmt: NE \n   n$15=*&c:struct objc_class * [line 95]\n  NULLIFY(&c,false); [line 95]\n " shape="box"]
 	
 
+	 48 -> 49 ;
 	 48 -> 50 ;
-47 [label="47:  BinaryOperatorStmt: NE \n   n$15=*&c:struct objc_class * [line 95]\n  NULLIFY(&c,false); [line 95]\n " shape="box"]
+47 [label="47:  between_join_and_exit \n   NULLIFY(&c,false); [line 95]\n  APPLY_ABSTRACTION; [line 95]\n " shape="box"]
 	
 
-	 47 -> 48 ;
-	 47 -> 49 ;
-46 [label="46: + \n   NULLIFY(&c,false); [line 95]\n " ]
+	 47 -> 45 ;
+46 [label="46: + \n  " ]
 	
 
-	 46 -> 45 ;
+	 46 -> 47 ;
 45 [label="45: Exit A_used_in_binary_op: \n  " color=yellow style=filled]
 	
 
 44 [label="44: Start A_used_in_binary_op:\nFormals:  c:struct objc_class *\nLocals:  \n   DECLARE_LOCALS(&return); [line 94]\n " color=yellow style=filled]
 	
 
-	 44 -> 47 ;
+	 44 -> 48 ;
 43 [label="43:  Return Stmt \n   n$14=_fun_NSStringFromClass(sizeof(class A ):unsigned long ) [line 91]\n  *&return:class NSString *=n$14 [line 91]\n  REMOVE_TEMPS(n$14); [line 91]\n  APPLY_ABSTRACTION; [line 91]\n " shape="box"]
 	
 

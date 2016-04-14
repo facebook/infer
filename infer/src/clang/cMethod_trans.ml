@@ -458,7 +458,7 @@ let get_method_for_frontend_checks cfg cg loc =
       let exit_node = Cfg.Node.create cfg loc (Cfg.Node.Exit_node pdesc) [] pdesc [] in
       Cfg.Procdesc.set_start_node pdesc start_node;
       Cfg.Procdesc.set_exit_node pdesc exit_node;
-      Cfg.Node.set_succs_exn start_node [exit_node] [];
+      Cfg.Node.set_succs_exn cfg start_node [exit_node] [];
       Cg.add_defined_node cg proc_name;
       pdesc
 

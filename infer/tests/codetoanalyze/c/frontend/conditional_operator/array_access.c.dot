@@ -1,77 +1,81 @@
 digraph iCFG {
-18 [label="18: Prune (false branch) \n   n$14=*&p:int ** [line 11]\n  n$15=*n$14[0]:int * [line 11]\n  PRUNE((n$15 == 0), false); [line 11]\n  REMOVE_TEMPS(n$14,n$15); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="invhouse"]
+19 [label="19: Prune (false branch) \n   n$14=*&p:int ** [line 11]\n  n$15=*n$14[0]:int * [line 11]\n  PRUNE((n$15 == 0), false); [line 11]\n  REMOVE_TEMPS(n$14,n$15); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="invhouse"]
 	
 
-	 18 -> 16 ;
-17 [label="17: Prune (true branch) \n   n$14=*&p:int ** [line 11]\n  n$15=*n$14[0]:int * [line 11]\n  PRUNE((n$15 != 0), true); [line 11]\n  REMOVE_TEMPS(n$14,n$15); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="invhouse"]
+	 19 -> 17 ;
+18 [label="18: Prune (true branch) \n   n$14=*&p:int ** [line 11]\n  n$15=*n$14[0]:int * [line 11]\n  PRUNE((n$15 != 0), true); [line 11]\n  REMOVE_TEMPS(n$14,n$15); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="invhouse"]
 	
 
-	 17 -> 16 ;
-16 [label="16: + \n  " ]
+	 18 -> 17 ;
+17 [label="17: + \n  " ]
+	
+
+	 17 -> 14 ;
+16 [label="16: Prune (false branch) \n   n$12=*n$11:int * [line 13]\n  n$13=*n$12[1]:int  [line 13]\n  PRUNE((n$13 == 0), false); [line 13]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="invhouse"]
 	
 
 	 16 -> 13 ;
-15 [label="15: Prune (false branch) \n   n$12=*n$11:int * [line 13]\n  n$13=*n$12[1]:int  [line 13]\n  PRUNE((n$13 == 0), false); [line 13]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="invhouse"]
+15 [label="15: Prune (true branch) \n   n$12=*n$11:int * [line 13]\n  n$13=*n$12[1]:int  [line 13]\n  PRUNE((n$13 != 0), true); [line 13]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="invhouse"]
 	
 
-	 15 -> 12 ;
-14 [label="14: Prune (true branch) \n   n$12=*n$11:int * [line 13]\n  n$13=*n$12[1]:int  [line 13]\n  PRUNE((n$13 != 0), true); [line 13]\n  REMOVE_TEMPS(n$11,n$12,n$13); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="invhouse"]
+	 15 -> 13 ;
+14 [label="14:  UnaryOperator \n   n$11=*&p:int ** [line 13]\n " shape="box"]
 	
 
-	 14 -> 12 ;
-13 [label="13:  UnaryOperator \n   n$11=*&p:int ** [line 13]\n " shape="box"]
+	 14 -> 15 ;
+	 14 -> 16 ;
+13 [label="13: + \n  " ]
 	
 
-	 13 -> 14 ;
-	 13 -> 15 ;
-12 [label="12: + \n  " ]
+	 13 -> 10 ;
+12 [label="12: Prune (false branch) \n   n$6=*&p:int ** [line 15]\n  n$9=*n$8:int  [line 15]\n  n$10=*n$6[n$9]:int * [line 15]\n  PRUNE((n$10 == 0), false); [line 15]\n  REMOVE_TEMPS(n$7,n$8,n$9,n$6,n$10); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
 	
 
 	 12 -> 9 ;
-11 [label="11: Prune (false branch) \n   n$6=*&p:int ** [line 15]\n  n$9=*n$8:int  [line 15]\n  n$10=*n$6[n$9]:int * [line 15]\n  PRUNE((n$10 == 0), false); [line 15]\n  REMOVE_TEMPS(n$7,n$8,n$9,n$6,n$10); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
+11 [label="11: Prune (true branch) \n   n$6=*&p:int ** [line 15]\n  n$9=*n$8:int  [line 15]\n  n$10=*n$6[n$9]:int * [line 15]\n  PRUNE((n$10 != 0), true); [line 15]\n  REMOVE_TEMPS(n$7,n$8,n$9,n$6,n$10); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
 	
 
-	 11 -> 8 ;
-10 [label="10: Prune (true branch) \n   n$6=*&p:int ** [line 15]\n  n$9=*n$8:int  [line 15]\n  n$10=*n$6[n$9]:int * [line 15]\n  PRUNE((n$10 != 0), true); [line 15]\n  REMOVE_TEMPS(n$7,n$8,n$9,n$6,n$10); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
+	 11 -> 9 ;
+10 [label="10:  UnaryOperator \n   n$7=*&p:int ** [line 15]\n  n$8=*n$7:int * [line 15]\n " shape="box"]
 	
 
-	 10 -> 8 ;
-9 [label="9:  UnaryOperator \n   n$7=*&p:int ** [line 15]\n  n$8=*n$7:int * [line 15]\n " shape="box"]
+	 10 -> 11 ;
+	 10 -> 12 ;
+9 [label="9: + \n  " ]
 	
 
-	 9 -> 10 ;
-	 9 -> 11 ;
-8 [label="8: + \n  " ]
+	 9 -> 5 ;
+8 [label="8: Prune (false branch) \n   n$1=*n$0:int * [line 17]\n  n$4=*n$3:int  [line 17]\n  n$5=*n$1[n$4]:int  [line 17]\n  PRUNE((n$5 == 0), false); [line 17]\n  REMOVE_TEMPS(n$2,n$3,n$4,n$0,n$1,n$5); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="invhouse"]
 	
 
-	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   n$1=*n$0:int * [line 17]\n  n$4=*n$3:int  [line 17]\n  n$5=*n$1[n$4]:int  [line 17]\n  PRUNE((n$5 == 0), false); [line 17]\n  REMOVE_TEMPS(n$2,n$3,n$4,n$0,n$1,n$5); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="invhouse"]
+	 8 -> 3 ;
+7 [label="7: Prune (true branch) \n   n$1=*n$0:int * [line 17]\n  n$4=*n$3:int  [line 17]\n  n$5=*n$1[n$4]:int  [line 17]\n  PRUNE((n$5 != 0), true); [line 17]\n  REMOVE_TEMPS(n$2,n$3,n$4,n$0,n$1,n$5); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;
-6 [label="6: Prune (true branch) \n   n$1=*n$0:int * [line 17]\n  n$4=*n$3:int  [line 17]\n  n$5=*n$1[n$4]:int  [line 17]\n  PRUNE((n$5 != 0), true); [line 17]\n  REMOVE_TEMPS(n$2,n$3,n$4,n$0,n$1,n$5); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="invhouse"]
+6 [label="6:  UnaryOperator \n   n$2=*&p:int ** [line 17]\n  n$3=*n$2:int * [line 17]\n  NULLIFY(&p,false); [line 17]\n " shape="box"]
 	
 
-	 6 -> 3 ;
-5 [label="5:  UnaryOperator \n   n$2=*&p:int ** [line 17]\n  n$3=*n$2:int * [line 17]\n  NULLIFY(&p,false); [line 17]\n " shape="box"]
+	 6 -> 7 ;
+	 6 -> 8 ;
+5 [label="5:  UnaryOperator \n   n$0=*&p:int ** [line 17]\n " shape="box"]
 	
 
 	 5 -> 6 ;
-	 5 -> 7 ;
-4 [label="4:  UnaryOperator \n   n$0=*&p:int ** [line 17]\n " shape="box"]
+4 [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
-	 4 -> 5 ;
+	 4 -> 2 ;
 3 [label="3: + \n  " ]
 	
 
-	 3 -> 2 ;
+	 3 -> 4 ;
 2 [label="2: Exit dereference_in_array_access \n  " color=yellow style=filled]
 	
 
 1 [label="1: Start dereference_in_array_access\nFormals:  p:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
-	 1 -> 17 ;
 	 1 -> 18 ;
+	 1 -> 19 ;
 }

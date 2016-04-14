@@ -41,6 +41,7 @@ public class MemoryLeakTest {
         "simple_leak",
         "uses_allocator",
         "common_realloc_leak",
+        "conditional_last_instruction",
     };
     assertThat(
         "Results should contain the expected memory leak errors",
