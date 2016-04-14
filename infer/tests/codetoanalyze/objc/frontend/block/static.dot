@@ -1,124 +1,117 @@
 digraph iCFG {
-33 [label="33:  Return Stmt \n   *&return:int =0 [line 60]\n  APPLY_ABSTRACTION; [line 60]\n " shape="box"]
+31 [label="31:  Return Stmt \n   *&return:int =0 [line 60]\n  APPLY_ABSTRACTION; [line 60]\n " shape="box"]
 	
 
-	 33 -> 32 ;
-32 [label="32: Exit main \n  " color=yellow style=filled]
+	 31 -> 30 ;
+30 [label="30: Exit main \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start main\nFormals:  argc:int  argv:char **\nLocals:  \n   DECLARE_LOCALS(&return); [line 60]\n  NULLIFY(&argc,false); [line 60]\n  NULLIFY(&argv,false); [line 60]\n " color=yellow style=filled]
+29 [label="29: Start main\nFormals:  argc:int  argv:char **\nLocals:  \n   DECLARE_LOCALS(&return); [line 60]\n  NULLIFY(&argc,false); [line 60]\n  NULLIFY(&argv,false); [line 60]\n " color=yellow style=filled]
 	
 
-	 31 -> 33 ;
-30 [label="30:  Call (_fun___objc_anonymous_block_A_test3______4) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test3______4); [line 50]\n  n$17=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test3______4 ):unsigned long ) [line 50]\n  *&__objc_anonymous_block_A_test3______4:class __objc_anonymous_block_A_test3______4 =n$17 [line 50]\n  n$18=*&#GB$A_test3_i:int  [line 50]\n  *n$17.A_test3_i:int =n$18 [line 50]\n  (_fun___objc_anonymous_block_A_test3______4)() [line 50]\n  REMOVE_TEMPS(n$17,n$18); [line 50]\n " shape="box"]
+	 29 -> 31 ;
+28 [label="28:  Call (_fun___objc_anonymous_block_A_test3______4) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test3______4); [line 50]\n  n$17=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test3______4 ):unsigned long ) [line 50]\n  *&__objc_anonymous_block_A_test3______4:class __objc_anonymous_block_A_test3______4 =n$17 [line 50]\n  n$18=*&#GB$A_test3_i:int  [line 50]\n  *n$17.A_test3_i:int =n$18 [line 50]\n  (_fun___objc_anonymous_block_A_test3______4)() [line 50]\n  REMOVE_TEMPS(n$17,n$18); [line 50]\n " shape="box"]
 	
 
-	 30 -> 26 ;
-29 [label="29:  UnaryOperator \n   n$16=*&#GB$A_test3_i:int  [line 52]\n  *&#GB$A_test3_i:int =(n$16 + 1) [line 52]\n  REMOVE_TEMPS(n$16); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
+	 28 -> 24 ;
+27 [label="27:  UnaryOperator \n   n$16=*&#GB$A_test3_i:int  [line 52]\n  *&#GB$A_test3_i:int =(n$16 + 1) [line 52]\n  REMOVE_TEMPS(n$16); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
 	
 
-	 29 -> 28 ;
-28 [label="28: Exit __objc_anonymous_block_A_test3______4 \n  " color=yellow style=filled]
+	 27 -> 26 ;
+26 [label="26: Exit __objc_anonymous_block_A_test3______4 \n  " color=yellow style=filled]
 	
 
-27 [label="27: Start __objc_anonymous_block_A_test3______4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 50]\n " color=yellow style=filled]
+25 [label="25: Start __objc_anonymous_block_A_test3______4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 50]\n " color=yellow style=filled]
 	
 
-	 27 -> 29 ;
-26 [label="26:  Return Stmt \n   n$15=*&#GB$A_test3_i:int  [line 55]\n  *&return:int =n$15 [line 55]\n  REMOVE_TEMPS(n$15); [line 55]\n  NULLIFY(&__objc_anonymous_block_A_test3______4,true); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
+	 25 -> 27 ;
+24 [label="24:  Return Stmt \n   n$15=*&#GB$A_test3_i:int  [line 55]\n  *&return:int =n$15 [line 55]\n  REMOVE_TEMPS(n$15); [line 55]\n  NULLIFY(&__objc_anonymous_block_A_test3______4,true); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
 	
 
-	 26 -> 25 ;
-25 [label="25: Exit A_test3 \n  " color=yellow style=filled]
+	 24 -> 23 ;
+23 [label="23: Exit A_test3 \n  " color=yellow style=filled]
 	
 
-24 [label="24: Start A_test3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
+22 [label="22: Start A_test3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
 	
 
-	 24 -> 30 ;
-23 [label="23:  BinaryOperatorStmt: Assign \n   n$13=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 38]\n  n$14=_fun_A_init(n$13:class A *) virtual [line 38]\n  *&#GB$A_test2_sharedInstance:struct objc_object *=n$14 [line 38]\n  REMOVE_TEMPS(n$13,n$14); [line 38]\n " shape="box"]
-	
-
-	 23 -> 22 ;
-22 [label="22:  Call (_fun___objc_anonymous_block_A_test2______3) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test2______3); [line 39]\n  n$11=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test2______3 ):unsigned long ) [line 39]\n  *&__objc_anonymous_block_A_test2______3:class __objc_anonymous_block_A_test2______3 =n$11 [line 39]\n  n$12=*&#GB$A_test2_sharedInstance:struct objc_object * [line 39]\n  *n$11.A_test2_sharedInstance:struct objc_object *=n$12 [line 39]\n  (_fun___objc_anonymous_block_A_test2______3)() [line 39]\n  REMOVE_TEMPS(n$11,n$12); [line 39]\n " shape="box"]
-	
-
-	 22 -> 18 ;
-21 [label="21:  DeclStmt \n   n$10=*&#GB$A_test2_sharedInstance:struct objc_object * [line 41]\n  *&p:struct objc_object *=n$10 [line 41]\n  REMOVE_TEMPS(n$10); [line 41]\n  NULLIFY(&p,false); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
+	 22 -> 28 ;
+21 [label="21:  BinaryOperatorStmt: Assign \n   n$13=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 38]\n  n$14=_fun_A_init(n$13:class A *) virtual [line 38]\n  *&#GB$A_test2_sharedInstance:struct objc_object *=n$14 [line 38]\n  REMOVE_TEMPS(n$13,n$14); [line 38]\n " shape="box"]
 	
 
 	 21 -> 20 ;
-20 [label="20: Exit __objc_anonymous_block_A_test2______3 \n  " color=yellow style=filled]
+20 [label="20:  Call (_fun___objc_anonymous_block_A_test2______3) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test2______3); [line 39]\n  n$11=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test2______3 ):unsigned long ) [line 39]\n  *&__objc_anonymous_block_A_test2______3:class __objc_anonymous_block_A_test2______3 =n$11 [line 39]\n  n$12=*&#GB$A_test2_sharedInstance:struct objc_object * [line 39]\n  *n$11.A_test2_sharedInstance:struct objc_object *=n$12 [line 39]\n  (_fun___objc_anonymous_block_A_test2______3)() [line 39]\n  REMOVE_TEMPS(n$11,n$12); [line 39]\n " shape="box"]
 	
 
-19 [label="19: Start __objc_anonymous_block_A_test2______3\nFormals: \nLocals:  p:struct objc_object * \n   DECLARE_LOCALS(&return,&p); [line 39]\n  NULLIFY(&p,false); [line 39]\n " color=yellow style=filled]
+	 20 -> 16 ;
+19 [label="19:  DeclStmt \n   n$10=*&#GB$A_test2_sharedInstance:struct objc_object * [line 41]\n  *&p:struct objc_object *=n$10 [line 41]\n  REMOVE_TEMPS(n$10); [line 41]\n  NULLIFY(&p,false); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
 	
 
-	 19 -> 21 ;
-18 [label="18:  Return Stmt \n   n$9=*&#GB$A_test2_sharedInstance:struct objc_object * [line 44]\n  *&return:struct objc_object *=n$9 [line 44]\n  REMOVE_TEMPS(n$9); [line 44]\n  NULLIFY(&__objc_anonymous_block_A_test2______3,true); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+	 19 -> 18 ;
+18 [label="18: Exit __objc_anonymous_block_A_test2______3 \n  " color=yellow style=filled]
 	
 
-	 18 -> 17 ;
-17 [label="17: Exit A_test2 \n  " color=yellow style=filled]
+17 [label="17: Start __objc_anonymous_block_A_test2______3\nFormals: \nLocals:  p:struct objc_object * \n   DECLARE_LOCALS(&return,&p); [line 39]\n  NULLIFY(&p,false); [line 39]\n " color=yellow style=filled]
 	
 
-16 [label="16: Start A_test2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 36]\n " color=yellow style=filled]
+	 17 -> 19 ;
+16 [label="16:  Return Stmt \n   n$9=*&#GB$A_test2_sharedInstance:struct objc_object * [line 44]\n  *&return:struct objc_object *=n$9 [line 44]\n  REMOVE_TEMPS(n$9); [line 44]\n  NULLIFY(&__objc_anonymous_block_A_test2______3,true); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
-	 16 -> 23 ;
-15 [label="15:  Call (_fun___objc_anonymous_block_A_test_leak______2) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test_leak______2); [line 30]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test_leak______2 ):unsigned long ) [line 30]\n  *&__objc_anonymous_block_A_test_leak______2:class __objc_anonymous_block_A_test_leak______2 =n$7 [line 30]\n  n$8=*&#GB$A_test_leak_sharedInstance:struct objc_object * [line 30]\n  *n$7.A_test_leak_sharedInstance:struct objc_object *=n$8 [line 30]\n  (_fun___objc_anonymous_block_A_test_leak______2)() [line 30]\n  REMOVE_TEMPS(n$7,n$8); [line 30]\n  NULLIFY(&__objc_anonymous_block_A_test_leak______2,true); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	 16 -> 15 ;
+15 [label="15: Exit A_test2 \n  " color=yellow style=filled]
 	
 
-	 15 -> 11 ;
-14 [label="14:  BinaryOperatorStmt: Assign \n   n$5=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 31]\n  n$6=_fun_A_init(n$5:class A *) virtual [line 31]\n  *&#GB$A_test_leak_sharedInstance:struct objc_object *=n$6 [line 31]\n  REMOVE_TEMPS(n$5,n$6); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+14 [label="14: Start A_test2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 36]\n " color=yellow style=filled]
 	
 
-	 14 -> 13 ;
-13 [label="13: Exit __objc_anonymous_block_A_test_leak______2 \n  " color=yellow style=filled]
+	 14 -> 21 ;
+13 [label="13:  Call (_fun___objc_anonymous_block_A_test_leak______2) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test_leak______2); [line 30]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test_leak______2 ):unsigned long ) [line 30]\n  *&__objc_anonymous_block_A_test_leak______2:class __objc_anonymous_block_A_test_leak______2 =n$7 [line 30]\n  n$8=*&#GB$A_test_leak_sharedInstance:struct objc_object * [line 30]\n  *n$7.A_test_leak_sharedInstance:struct objc_object *=n$8 [line 30]\n  (_fun___objc_anonymous_block_A_test_leak______2)() [line 30]\n  REMOVE_TEMPS(n$7,n$8); [line 30]\n  NULLIFY(&__objc_anonymous_block_A_test_leak______2,true); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
-12 [label="12: Start __objc_anonymous_block_A_test_leak______2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
+	 13 -> 9 ;
+12 [label="12:  BinaryOperatorStmt: Assign \n   n$5=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 31]\n  n$6=_fun_A_init(n$5:class A *) virtual [line 31]\n  *&#GB$A_test_leak_sharedInstance:struct objc_object *=n$6 [line 31]\n  REMOVE_TEMPS(n$5,n$6); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
-	 12 -> 14 ;
-11 [label="11: Exit A_test_leak \n  " color=yellow style=filled]
+	 12 -> 11 ;
+11 [label="11: Exit __objc_anonymous_block_A_test_leak______2 \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start A_test_leak\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
+10 [label="10: Start __objc_anonymous_block_A_test_leak______2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
 	
 
-	 10 -> 15 ;
-9 [label="9:  Call (_fun___objc_anonymous_block_A_test______1) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test______1); [line 20]\n  n$3=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test______1 ):unsigned long ) [line 20]\n  *&__objc_anonymous_block_A_test______1:class __objc_anonymous_block_A_test______1 =n$3 [line 20]\n  n$4=*&#GB$A_test_sharedInstance:struct objc_object * [line 20]\n  *n$3.A_test_sharedInstance:struct objc_object *=n$4 [line 20]\n  (_fun___objc_anonymous_block_A_test______1)() [line 20]\n  REMOVE_TEMPS(n$3,n$4); [line 20]\n " shape="box"]
+	 10 -> 12 ;
+9 [label="9: Exit A_test_leak \n  " color=yellow style=filled]
 	
 
-	 9 -> 5 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 21]\n  n$2=_fun_A_init(n$1:class A *) virtual [line 21]\n  *&#GB$A_test_sharedInstance:struct objc_object *=n$2 [line 21]\n  REMOVE_TEMPS(n$1,n$2); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+8 [label="8: Start A_test_leak\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
 	
 
-	 8 -> 7 ;
-7 [label="7: Exit __objc_anonymous_block_A_test______1 \n  " color=yellow style=filled]
+	 8 -> 13 ;
+7 [label="7:  Call (_fun___objc_anonymous_block_A_test______1) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test______1); [line 20]\n  n$3=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test______1 ):unsigned long ) [line 20]\n  *&__objc_anonymous_block_A_test______1:class __objc_anonymous_block_A_test______1 =n$3 [line 20]\n  n$4=*&#GB$A_test_sharedInstance:struct objc_object * [line 20]\n  *n$3.A_test_sharedInstance:struct objc_object *=n$4 [line 20]\n  (_fun___objc_anonymous_block_A_test______1)() [line 20]\n  REMOVE_TEMPS(n$3,n$4); [line 20]\n " shape="box"]
 	
 
-6 [label="6: Start __objc_anonymous_block_A_test______1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+	 7 -> 3 ;
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 21]\n  n$2=_fun_A_init(n$1:class A *) virtual [line 21]\n  *&#GB$A_test_sharedInstance:struct objc_object *=n$2 [line 21]\n  REMOVE_TEMPS(n$1,n$2); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
-	 6 -> 8 ;
-5 [label="5:  Return Stmt \n   n$0=*&#GB$A_test_sharedInstance:struct objc_object * [line 25]\n  *&return:struct objc_object *=n$0 [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&__objc_anonymous_block_A_test______1,true); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+	 6 -> 5 ;
+5 [label="5: Exit __objc_anonymous_block_A_test______1 \n  " color=yellow style=filled]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit A_test \n  " color=yellow style=filled]
+4 [label="4: Start __objc_anonymous_block_A_test______1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-3 [label="3: Start A_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	 4 -> 6 ;
+3 [label="3:  Return Stmt \n   n$0=*&#GB$A_test_sharedInstance:struct objc_object * [line 25]\n  *&return:struct objc_object *=n$0 [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&__objc_anonymous_block_A_test______1,true); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
-	 3 -> 9 ;
-2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
+	 3 -> 2 ;
+2 [label="2: Exit A_test \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+1 [label="1: Start A_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 1 -> 2 ;
+	 1 -> 7 ;
 }

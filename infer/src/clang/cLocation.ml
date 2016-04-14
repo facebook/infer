@@ -76,14 +76,19 @@ let clang_to_sil_location clang_loc procdesc_opt =
         | None -> !curr_file, !Config.nLOC in
   Location.{line; col; file; nLOC}
 
+let file_in_project file = match !Config.project_root with
+  | Some root -> string_is_prefix root file
+  | None -> false
+
 let should_do_frontend_check (loc_start, _) =
-  let equal_current_source loc =
-    match loc.Clang_ast_t.sl_file with
-    | Some f -> DB.source_file_equal (source_file_from_path f) !DB.current_source
-    | None -> false in
-  if !CFrontend_config.testing_mode then
-    equal_current_source loc_start
-  else true
+  let file =
+    match loc_start.Clang_ast_t.sl_file with
+    | Some f -> f
+    | None -> assert false in
+  let equal_current_source file =
+    DB.source_file_equal (source_file_from_path file) !DB.current_source in
+  equal_current_source file ||
+  (file_in_project file &&  not !CFrontend_config.testing_mode)
 
 (* We translate by default the instructions in the current file.*)
 (* In C++ development, we also translate the headers that are part *)
@@ -103,10 +108,6 @@ let should_translate (loc_start, loc_end) decl_trans_context =
   in
   let equal_current_source file =
     DB.source_file_equal file !DB.current_source
-  in
-  let file_in_project file = match !Config.project_root with
-    | Some root -> string_is_prefix root file
-    | None -> false
   in
   let file_in_project = map_path_of file_in_project loc_end
                         || map_path_of file_in_project loc_start in

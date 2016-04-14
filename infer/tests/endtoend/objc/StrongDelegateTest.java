@@ -10,7 +10,7 @@
 package endtoend.objc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsExactly.containsExactly;
+import static utils.matchers.ResultContainsLineNumbers.containsLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -50,16 +50,9 @@ public class StrongDelegateTest {
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmdFraction);
     assertThat(
-        "Results should contain a strong delegate warning",
+        "Results should contain " + STRONG_DELEGATE_WARNING,
         inferResults,
-        containsExactly(
-            STRONG_DELEGATE_WARNING,
-            FILE,
-            new String[]{
-                "frontendChecks",
-            }
-        )
-    );
+        containsLines(new int[]{15, 19, 21, 23, 25}));
   }
 
 }

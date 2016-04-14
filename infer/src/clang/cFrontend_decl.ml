@@ -131,7 +131,8 @@ struct
     let open Clang_ast_t in
     (* Run the frontend checkers on this declaration *)
     if decl_trans_context = `DeclTraversal then
-      CFrontend_errors.run_frontend_checkers_on_decl tenv cg cfg dec;
+      CFrontend_errors.run_frontend_checkers_on_decl cfg cg dec;
+
     (* each procedure has different scope: start names from id 0 *)
     Ident.NameGenerator.reset ();
 

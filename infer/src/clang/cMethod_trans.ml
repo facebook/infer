@@ -443,23 +443,22 @@ let create_procdesc_with_pointer context pointer class_name_opt name tp =
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
-let get_method_for_frontend_checks cfg cg tenv class_name decl_info =
-  let stmt_info = Ast_expressions.make_stmt_info decl_info in
-  let source_range = decl_info.Clang_ast_t.di_source_range in
-  let proc_name = General_utils.mk_procname_from_objc_method class_name "frontendChecks"
-      Procname.Class_objc_method in
+let get_method_for_frontend_checks cfg cg loc =
+  let mangled = string_crc_hex32 (DB.source_file_to_string loc.Location.file) in
+  let proc_name = Procname.from_string_c_fun ("frontend_checks_" ^ mangled) in
   match Cfg.Procdesc.find_from_name cfg proc_name with
   | Some pdesc -> pdesc
   | None ->
-      let ms_type_ptr = Clang_ast_types.pointer_to_type_ptr (Ast_utils.get_invalid_pointer ()) in
-      let ms = CMethod_signature.make_ms proc_name [] ms_type_ptr [] source_range false
-          CFrontend_config.OBJC None None None in
-      let body = [Clang_ast_t.CompoundStmt (stmt_info, [])] in
-      ignore (create_local_procdesc cfg tenv ms body [] false);
-      let pdesc = Option.get (Cfg.Procdesc.find_from_name cfg proc_name) in
-      let start_node = Cfg.Procdesc.get_start_node pdesc in
-      let end_node = Cfg.Procdesc.get_exit_node pdesc in
-      Cfg.Node.set_succs_exn start_node [end_node] [];
+      let attrs = { (ProcAttributes.default proc_name Config.C_CPP) with
+                    is_defined = true;
+                    loc = loc;
+                  } in
+      let pdesc = Cfg.Procdesc.create cfg attrs in
+      let start_node = Cfg.Node.create cfg loc (Cfg.Node.Start_node pdesc) [] pdesc [] in
+      let exit_node = Cfg.Node.create cfg loc (Cfg.Node.Exit_node pdesc) [] pdesc [] in
+      Cfg.Procdesc.set_start_node pdesc start_node;
+      Cfg.Procdesc.set_exit_node pdesc exit_node;
+      Cfg.Node.set_succs_exn start_node [exit_node] [];
       Cg.add_defined_node cg proc_name;
       pdesc
 

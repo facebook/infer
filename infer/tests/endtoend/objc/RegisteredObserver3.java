@@ -10,7 +10,7 @@
 package endtoend.objc;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsExactly.containsExactly;
+import static utils.matchers.ResultContainsLineNumbers.containsLines;
 
 import com.google.common.collect.ImmutableList;
 
@@ -56,11 +56,6 @@ public class RegisteredObserver3 {
     assertThat(
         "Results should contain " + REGISTERED_OBSERVER,
         inferResults,
-        containsExactly(
-            REGISTERED_OBSERVER,
-            VCFile3,
-            methods
-        )
-    );
+        containsLines(new int[]{14}));
   }
 }

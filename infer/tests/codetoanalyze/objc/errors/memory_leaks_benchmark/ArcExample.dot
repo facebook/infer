@@ -1,39 +1,32 @@
 digraph iCFG {
-10 [label="10:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 29]\n  *&s:class NSString *=n$4 [line 29]\n  REMOVE_TEMPS(n$4); [line 29]\n " shape="box"]
+8 [label="8:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 29]\n  *&s:class NSString *=n$4 [line 29]\n  REMOVE_TEMPS(n$4); [line 29]\n " shape="box"]
 	
 
-	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$3=*&s:class NSString * [line 30]\n  *&return:class NSString *=n$3 [line 30]\n  REMOVE_TEMPS(n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	 8 -> 7 ;
+7 [label="7:  Return Stmt \n   n$3=*&s:class NSString * [line 30]\n  *&return:class NSString *=n$3 [line 30]\n  REMOVE_TEMPS(n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
-	 9 -> 8 ;
-8 [label="8: Exit A_newS \n  " color=yellow style=filled]
+	 7 -> 6 ;
+6 [label="6: Exit A_newS \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start A_newS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 28]\n  NULLIFY(&s,false); [line 28]\n  NULLIFY(&self,false); [line 28]\n " color=yellow style=filled]
+5 [label="5: Start A_newS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 28]\n  NULLIFY(&s,false); [line 28]\n  NULLIFY(&self,false); [line 28]\n " color=yellow style=filled]
 	
 
-	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 23]\n  *&s:class NSString *=n$2 [line 23]\n  REMOVE_TEMPS(n$2); [line 23]\n " shape="box"]
+	 5 -> 8 ;
+4 [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString ):unsigned long ) [line 23]\n  *&s:class NSString *=n$2 [line 23]\n  REMOVE_TEMPS(n$2); [line 23]\n " shape="box"]
 	
 
-	 6 -> 5 ;
-5 [label="5:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  *&return:class NSString *=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  *&return:class NSString *=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit A_getS \n  " color=yellow style=filled]
+	 3 -> 2 ;
+2 [label="2: Exit A_getS \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start A_getS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n  NULLIFY(&s,false); [line 22]\n  NULLIFY(&self,false); [line 22]\n " color=yellow style=filled]
+1 [label="1: Start A_getS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n  NULLIFY(&s,false); [line 22]\n  NULLIFY(&self,false); [line 22]\n " color=yellow style=filled]
 	
 
-	 3 -> 6 ;
-2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
-	
-
-1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 1 -> 2 ;
+	 1 -> 4 ;
 }

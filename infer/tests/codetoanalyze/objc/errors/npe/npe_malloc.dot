@@ -1,28 +1,21 @@
 digraph iCFG {
-7 [label="7:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(struct Person ):struct Person ) [line 25]\n  *&person:struct Person *=n$2 [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n " shape="box"]
-	
-
-	 7 -> 6 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$1=*&person:struct Person * [line 26]\n  *n$1.x:int =10 [line 26]\n  REMOVE_TEMPS(n$1); [line 26]\n " shape="box"]
-	
-
-	 6 -> 5 ;
-5 [label="5:  Return Stmt \n   n$0=*&person:struct Person * [line 27]\n  *&return:struct Person *=n$0 [line 27]\n  REMOVE_TEMPS(n$0); [line 27]\n  NULLIFY(&person,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(struct Person ):struct Person ) [line 25]\n  *&person:struct Person *=n$2 [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4: Exit C_test \n  " color=yellow style=filled]
+4 [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&person:struct Person * [line 26]\n  *n$1.x:int =10 [line 26]\n  REMOVE_TEMPS(n$1); [line 26]\n " shape="box"]
 	
 
-3 [label="3: Start C_test\nFormals:  self:class C *\nLocals:  person:struct Person * \n   DECLARE_LOCALS(&return,&person); [line 24]\n  NULLIFY(&person,false); [line 24]\n  NULLIFY(&self,false); [line 24]\n " color=yellow style=filled]
+	 4 -> 3 ;
+3 [label="3:  Return Stmt \n   n$0=*&person:struct Person * [line 27]\n  *&return:struct Person *=n$0 [line 27]\n  REMOVE_TEMPS(n$0); [line 27]\n  NULLIFY(&person,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
-	 3 -> 7 ;
-2 [label="2: Exit C_frontendChecks \n  " color=yellow style=filled]
+	 3 -> 2 ;
+2 [label="2: Exit C_test \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start C_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+1 [label="1: Start C_test\nFormals:  self:class C *\nLocals:  person:struct Person * \n   DECLARE_LOCALS(&return,&person); [line 24]\n  NULLIFY(&person,false); [line 24]\n  NULLIFY(&self,false); [line 24]\n " color=yellow style=filled]
 	
 
-	 1 -> 2 ;
+	 1 -> 5 ;
 }

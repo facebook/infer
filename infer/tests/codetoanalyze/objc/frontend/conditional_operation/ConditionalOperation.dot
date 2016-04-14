@@ -1,52 +1,45 @@
 digraph iCFG {
-13 [label="13:  Return Stmt \n   n$1=*&self:class A * [line 24]\n  n$4=*&SIL_temp_conditional___8:int  [line 24]\n  NULLIFY(&SIL_temp_conditional___8,true); [line 24]\n  n$5=_fun_A_test4:(n$1:class A *,n$4:int ) virtual [line 24]\n  *&return:int =n$5 [line 24]\n  REMOVE_TEMPS(n$1,n$4,n$5); [line 24]\n  NULLIFY(&self,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+11 [label="11:  Return Stmt \n   n$1=*&self:class A * [line 24]\n  n$4=*&SIL_temp_conditional___6:int  [line 24]\n  NULLIFY(&SIL_temp_conditional___6,true); [line 24]\n  n$5=_fun_A_test4:(n$1:class A *,n$4:int ) virtual [line 24]\n  *&return:int =n$5 [line 24]\n  REMOVE_TEMPS(n$1,n$4,n$5); [line 24]\n  NULLIFY(&self,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 13 -> 7 ;
-12 [label="12:  ConditinalStmt Branch \n   NULLIFY(&b,false); [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___8); [line 24]\n  *&SIL_temp_conditional___8:int =1 [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	 11 -> 5 ;
+10 [label="10:  ConditinalStmt Branch \n   NULLIFY(&b,false); [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___6); [line 24]\n  *&SIL_temp_conditional___6:int =1 [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 12 -> 8 ;
-11 [label="11:  ConditinalStmt Branch \n   n$3=*&b:_Bool  [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___8); [line 24]\n  *&SIL_temp_conditional___8:int =n$3 [line 24]\n  REMOVE_TEMPS(n$3); [line 24]\n  NULLIFY(&b,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+	 10 -> 6 ;
+9 [label="9:  ConditinalStmt Branch \n   n$3=*&b:_Bool  [line 24]\n  DECLARE_LOCALS(&SIL_temp_conditional___6); [line 24]\n  *&SIL_temp_conditional___6:int =n$3 [line 24]\n  REMOVE_TEMPS(n$3); [line 24]\n  NULLIFY(&b,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
-	 11 -> 8 ;
-10 [label="10: Prune (false branch) \n   n$2=*&b:_Bool  [line 24]\n  PRUNE((n$2 == 0), false); [line 24]\n  REMOVE_TEMPS(n$2); [line 24]\n " shape="invhouse"]
+	 9 -> 6 ;
+8 [label="8: Prune (false branch) \n   n$2=*&b:_Bool  [line 24]\n  PRUNE((n$2 == 0), false); [line 24]\n  REMOVE_TEMPS(n$2); [line 24]\n " shape="invhouse"]
 	
 
-	 10 -> 12 ;
-9 [label="9: Prune (true branch) \n   n$2=*&b:_Bool  [line 24]\n  PRUNE((n$2 != 0), true); [line 24]\n  REMOVE_TEMPS(n$2); [line 24]\n " shape="invhouse"]
+	 8 -> 10 ;
+7 [label="7: Prune (true branch) \n   n$2=*&b:_Bool  [line 24]\n  PRUNE((n$2 != 0), true); [line 24]\n  REMOVE_TEMPS(n$2); [line 24]\n " shape="invhouse"]
 	
 
-	 9 -> 11 ;
-8 [label="8: + \n  " ]
+	 7 -> 9 ;
+6 [label="6: + \n  " ]
 	
 
-	 8 -> 13 ;
-7 [label="7: Exit A_test5: \n  " color=yellow style=filled]
+	 6 -> 11 ;
+5 [label="5: Exit A_test5: \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start A_test5:\nFormals:  self:class A * b:_Bool \nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+4 [label="4: Start A_test5:\nFormals:  self:class A * b:_Bool \nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
-	 6 -> 9 ;
-	 6 -> 10 ;
-5 [label="5:  Return Stmt \n   n$0=*&x:int  [line 20]\n  *&return:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&x,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+	 4 -> 7 ;
+	 4 -> 8 ;
+3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 20]\n  *&return:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&x,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit A_test4: \n  " color=yellow style=filled]
+	 3 -> 2 ;
+2 [label="2: Exit A_test4: \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start A_test4:\nFormals:  self:class A * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n  NULLIFY(&self,false); [line 19]\n " color=yellow style=filled]
+1 [label="1: Start A_test4:\nFormals:  self:class A * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n  NULLIFY(&self,false); [line 19]\n " color=yellow style=filled]
 	
 
-	 3 -> 5 ;
-2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
-	
-
-1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 1 -> 2 ;
+	 1 -> 3 ;
 }

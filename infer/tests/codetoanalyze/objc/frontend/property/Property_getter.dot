@@ -1,20 +1,13 @@
 digraph iCFG {
-5 [label="5:  Return Stmt \n   n$0=*&target:class A * [line 19]\n  n$1=_fun_A_x(n$0:class A *) [line 19]\n  *&return:int =n$1 [line 19]\n  REMOVE_TEMPS(n$0,n$1); [line 19]\n  NULLIFY(&target,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&target:class A * [line 19]\n  n$1=_fun_A_x(n$0:class A *) [line 19]\n  *&return:int =n$1 [line 19]\n  REMOVE_TEMPS(n$0,n$1); [line 19]\n  NULLIFY(&target,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit A_addTarget: \n  " color=yellow style=filled]
+	 3 -> 2 ;
+2 [label="2: Exit A_addTarget: \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start A_addTarget:\nFormals:  self:class A * target:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+1 [label="1: Start A_addTarget:\nFormals:  self:class A * target:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
 	
 
-	 3 -> 5 ;
-2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
-	
-
-1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 1 -> 2 ;
+	 1 -> 3 ;
 }

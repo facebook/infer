@@ -1,28 +1,21 @@
 digraph iCFG {
-7 [label="7:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 21]\n  n$4=_fun_NSObject_init(n$3:class A *) virtual [line 21]\n  *&a:class A *=n$4 [line 21]\n  REMOVE_TEMPS(n$3,n$4); [line 21]\n " shape="box"]
-	
-
-	 7 -> 6 ;
-6 [label="6:  Message Call: retain \n   n$1=*&a:class A * [line 22]\n  n$2=_fun___objc_retain(n$1:class A *) [line 22]\n  REMOVE_TEMPS(n$1,n$2); [line 22]\n " shape="box"]
-	
-
-	 6 -> 5 ;
-5 [label="5:  Message Call: release \n   n$0=*&a:class A * [line 23]\n  _fun___objc_release(n$0:class A *) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 21]\n  n$4=_fun_NSObject_init(n$3:class A *) virtual [line 21]\n  *&a:class A *=n$4 [line 21]\n  REMOVE_TEMPS(n$3,n$4); [line 21]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4: Exit test \n  " color=yellow style=filled]
+4 [label="4:  Message Call: retain \n   n$1=*&a:class A * [line 22]\n  n$2=_fun___objc_retain(n$1:class A *) [line 22]\n  REMOVE_TEMPS(n$1,n$2); [line 22]\n " shape="box"]
 	
 
-3 [label="3: Start test\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 20]\n  NULLIFY(&a,false); [line 20]\n " color=yellow style=filled]
+	 4 -> 3 ;
+3 [label="3:  Message Call: release \n   n$0=*&a:class A * [line 23]\n  _fun___objc_release(n$0:class A *) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
-	 3 -> 7 ;
-2 [label="2: Exit A_frontendChecks \n  " color=yellow style=filled]
+	 3 -> 2 ;
+2 [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+1 [label="1: Start test\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 20]\n  NULLIFY(&a,false); [line 20]\n " color=yellow style=filled]
 	
 
-	 1 -> 2 ;
+	 1 -> 5 ;
 }

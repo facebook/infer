@@ -16,5 +16,5 @@ open! Utils
 val run_frontend_checkers_on_stmt : CTrans_utils.trans_state -> Clang_ast_t.stmt -> unit
 
 (* Run frontend checkers on a declaration *)
-val run_frontend_checkers_on_decl : Tenv.t -> Cg.t -> Cfg.cfg -> Clang_ast_t.decl -> unit
+val run_frontend_checkers_on_decl : Cfg.cfg -> Cg.t -> Clang_ast_t.decl -> unit
 

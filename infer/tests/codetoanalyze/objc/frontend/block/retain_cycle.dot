@@ -1,87 +1,73 @@
 digraph iCFG {
-23 [label="23:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 63]\n  *&a:class A *=n$2 [line 63]\n  REMOVE_TEMPS(n$2); [line 63]\n " shape="box"]
+19 [label="19:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 63]\n  *&a:class A *=n$2 [line 63]\n  REMOVE_TEMPS(n$2); [line 63]\n " shape="box"]
 	
 
-	 23 -> 22 ;
-22 [label="22:  BinaryOperatorStmt: Assign \n   n$0=*&a:class A * [line 65]\n  n$1=_fun_foo(n$0:class A *) [line 65]\n  *&a:class A *=n$1 [line 65]\n  REMOVE_TEMPS(n$0,n$1); [line 65]\n  NULLIFY(&a,false); [line 65]\n " shape="box"]
-	
-
-	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   *&return:int =0 [line 67]\n  APPLY_ABSTRACTION; [line 67]\n " shape="box"]
-	
-
-	 21 -> 20 ;
-20 [label="20: Exit main \n  " color=yellow style=filled]
-	
-
-19 [label="19: Start main\nFormals:  argc:int  argv:char **\nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 61]\n  NULLIFY(&a,false); [line 61]\n  NULLIFY(&argc,false); [line 61]\n  NULLIFY(&argv,false); [line 61]\n " color=yellow style=filled]
-	
-
-	 19 -> 23 ;
-18 [label="18:  Message Call: capture \n   n$1=*&a:class A * [line 56]\n  _fun_A_capture(n$1:class A *) virtual [line 56]\n  REMOVE_TEMPS(n$1); [line 56]\n " shape="box"]
+	 19 -> 18 ;
+18 [label="18:  BinaryOperatorStmt: Assign \n   n$0=*&a:class A * [line 65]\n  n$1=_fun_foo(n$0:class A *) [line 65]\n  *&a:class A *=n$1 [line 65]\n  REMOVE_TEMPS(n$0,n$1); [line 65]\n  NULLIFY(&a,false); [line 65]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  Return Stmt \n   n$0=*&a:class A * [line 58]\n  *&return:class A *=n$0 [line 58]\n  REMOVE_TEMPS(n$0); [line 58]\n  NULLIFY(&a,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
+17 [label="17:  Return Stmt \n   *&return:int =0 [line 67]\n  APPLY_ABSTRACTION; [line 67]\n " shape="box"]
 	
 
 	 17 -> 16 ;
-16 [label="16: Exit foo \n  " color=yellow style=filled]
+16 [label="16: Exit main \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start foo\nFormals:  a:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 54]\n " color=yellow style=filled]
+15 [label="15: Start main\nFormals:  argc:int  argv:char **\nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 61]\n  NULLIFY(&a,false); [line 61]\n  NULLIFY(&argc,false); [line 61]\n  NULLIFY(&argv,false); [line 61]\n " color=yellow style=filled]
 	
 
-	 15 -> 18 ;
-14 [label="14:  BinaryOperatorStmt: Assign \n   n$8=*&self:class A * [line 46]\n  n$9=_fun___objc_alloc_no_fail(sizeof(class B ):unsigned long ) [line 46]\n  *n$8._b:class B *=n$9 [line 46]\n  REMOVE_TEMPS(n$8,n$9); [line 46]\n " shape="box"]
+	 15 -> 19 ;
+14 [label="14:  Message Call: capture \n   n$1=*&a:class A * [line 56]\n  _fun_A_capture(n$1:class A *) virtual [line 56]\n  REMOVE_TEMPS(n$1); [line 56]\n " shape="box"]
 	
 
 	 14 -> 13 ;
-13 [label="13:  Message Call: sHandler: \n   n$0=*&self:class A * [line 47]\n  n$1=*n$0._b:class B * [line 47]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_capture______1); [line 47]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_capture______1 ):unsigned long ) [line 47]\n  *&__objc_anonymous_block_A_capture______1:class __objc_anonymous_block_A_capture______1 =n$5 [line 47]\n  n$6=*&self:class A * [line 47]\n  *n$5.self:class A *=n$6 [line 47]\n  n$2=*&self:class A * [line 47]\n  n$7=*&__objc_anonymous_block_A_capture______1:_fn_ (*) [line 47]\n  _fun_B_sHandler:(n$1:class B *,n$7:_fn_ (*),n$2:_fn_ (*)) virtual [line 47]\n  REMOVE_TEMPS(n$0,n$1,n$5,n$6,n$2,n$7); [line 47]\n  NULLIFY(&__objc_anonymous_block_A_capture______1,true); [line 47]\n  NULLIFY(&self,false); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$0=*&a:class A * [line 58]\n  *&return:class A *=n$0 [line 58]\n  REMOVE_TEMPS(n$0); [line 58]\n  NULLIFY(&a,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
 	
 
-	 13 -> 9 ;
-12 [label="12:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 48]\n  n$4=*&d:class D * [line 48]\n  *n$3._data:class D *=n$4 [line 48]\n  REMOVE_TEMPS(n$3,n$4); [line 48]\n  NULLIFY(&d,false); [line 48]\n  NULLIFY(&self,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+	 13 -> 12 ;
+12 [label="12: Exit foo \n  " color=yellow style=filled]
 	
 
-	 12 -> 11 ;
-11 [label="11: Exit __objc_anonymous_block_A_capture______1 \n  " color=yellow style=filled]
+11 [label="11: Start foo\nFormals:  a:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 54]\n " color=yellow style=filled]
 	
 
-10 [label="10: Start __objc_anonymous_block_A_capture______1\nFormals:  self:class A * d:class D *\nLocals: \nCaptured:  self:class A * \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
+	 11 -> 14 ;
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$8=*&self:class A * [line 46]\n  n$9=_fun___objc_alloc_no_fail(sizeof(class B ):unsigned long ) [line 46]\n  *n$8._b:class B *=n$9 [line 46]\n  REMOVE_TEMPS(n$8,n$9); [line 46]\n " shape="box"]
 	
 
-	 10 -> 12 ;
-9 [label="9: Exit A_capture \n  " color=yellow style=filled]
+	 10 -> 9 ;
+9 [label="9:  Message Call: sHandler: \n   n$0=*&self:class A * [line 47]\n  n$1=*n$0._b:class B * [line 47]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_capture______1); [line 47]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_capture______1 ):unsigned long ) [line 47]\n  *&__objc_anonymous_block_A_capture______1:class __objc_anonymous_block_A_capture______1 =n$5 [line 47]\n  n$6=*&self:class A * [line 47]\n  *n$5.self:class A *=n$6 [line 47]\n  n$2=*&self:class A * [line 47]\n  n$7=*&__objc_anonymous_block_A_capture______1:_fn_ (*) [line 47]\n  _fun_B_sHandler:(n$1:class B *,n$7:_fn_ (*),n$2:_fn_ (*)) virtual [line 47]\n  REMOVE_TEMPS(n$0,n$1,n$5,n$6,n$2,n$7); [line 47]\n  NULLIFY(&__objc_anonymous_block_A_capture______1,true); [line 47]\n  NULLIFY(&self,false); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
 	
 
-8 [label="8: Start A_capture\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
+	 9 -> 5 ;
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$3=*&self:class A * [line 48]\n  n$4=*&d:class D * [line 48]\n  *n$3._data:class D *=n$4 [line 48]\n  REMOVE_TEMPS(n$3,n$4); [line 48]\n  NULLIFY(&d,false); [line 48]\n  NULLIFY(&self,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
 	
 
-	 8 -> 14 ;
-7 [label="7: Exit A_frontendChecks \n  " color=yellow style=filled]
+	 8 -> 7 ;
+7 [label="7: Exit __objc_anonymous_block_A_capture______1 \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start A_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+6 [label="6: Start __objc_anonymous_block_A_capture______1\nFormals:  self:class A * d:class D *\nLocals: \nCaptured:  self:class A * \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
 	
 
-	 6 -> 7 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&self:class B * [line 30]\n  n$1=*&h:_fn_ (*) [line 30]\n  *n$0._h:_fn_ (*)=n$1 [line 30]\n  REMOVE_TEMPS(n$0,n$1); [line 30]\n  NULLIFY(&h,false); [line 30]\n  NULLIFY(&self,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+	 6 -> 8 ;
+5 [label="5: Exit A_capture \n  " color=yellow style=filled]
 	
 
-	 5 -> 4 ;
-4 [label="4: Exit B_sHandler: \n  " color=yellow style=filled]
+4 [label="4: Start A_capture\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
 	
 
-3 [label="3: Start B_sHandler:\nFormals:  self:class B * h:_fn_ (*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
+	 4 -> 10 ;
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:class B * [line 30]\n  n$1=*&h:_fn_ (*) [line 30]\n  *n$0._h:_fn_ (*)=n$1 [line 30]\n  REMOVE_TEMPS(n$0,n$1); [line 30]\n  NULLIFY(&h,false); [line 30]\n  NULLIFY(&self,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
-	 3 -> 5 ;
-2 [label="2: Exit B_frontendChecks \n  " color=yellow style=filled]
+	 3 -> 2 ;
+2 [label="2: Exit B_sHandler: \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start B_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
+1 [label="1: Start B_sHandler:\nFormals:  self:class B * h:_fn_ (*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
 	
 
-	 1 -> 2 ;
+	 1 -> 3 ;
 }

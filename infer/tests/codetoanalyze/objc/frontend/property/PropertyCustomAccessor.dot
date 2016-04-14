@@ -1,9 +1,0 @@
-digraph iCFG {
-2 [label="2: Exit ASDisplayNode_frontendChecks \n  " color=yellow style=filled]
-	
-
-1 [label="1: Start ASDisplayNode_frontendChecks\nFormals: \nLocals:  \n  " color=yellow style=filled]
-	
-
-	 1 -> 2 ;
-}

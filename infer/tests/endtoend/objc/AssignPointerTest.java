@@ -53,7 +53,7 @@ public class AssignPointerTest {
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     assertThat(
-        "Results should contain the correct assign pointer warnings",
+        "Results should contain the correct " + ASSIGN_POINTER_WARNING,
         inferResults,
         containsLines(new int[]{
             18,
