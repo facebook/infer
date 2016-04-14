@@ -48,7 +48,7 @@ end
 module Forward : Wrapper with type node = Cfg.node = struct
   type t = Cfg.Procdesc.t
   type node = Cfg.node
-  type node_id = int
+  type node_id = Cfg.Node.id
 
   let node_id = Cfg.Node.get_id
   let succs _ n = Cfg.Node.get_succs n
@@ -63,10 +63,10 @@ module Forward : Wrapper with type node = Cfg.node = struct
 
   let from_pdesc pdesc = pdesc
 
-  let node_id_compare = int_compare
+  let node_id_compare = Cfg.Node.id_compare
 
   let pp_node = Cfg.Node.pp
-  let pp_node_id fmt n = F.fprintf fmt "%d" n
+  let pp_node_id fmt (n : Cfg.Node.id) = F.fprintf fmt "%d" (n :> int)
 
 end
 

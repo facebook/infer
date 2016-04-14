@@ -115,7 +115,7 @@ let find_normal_variable_funcall
        ("find_normal_variable_funcall could not find " ^
         Ident.to_string id ^
         " in node " ^
-        string_of_int (Cfg.Node.get_id node));
+        string_of_int (Cfg.Node.get_id node :> int));
      L.d_ln ());
   !res
 
@@ -257,7 +257,7 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp 
        ("find_normal_variable_letderef could not find " ^
         Ident.to_string id ^
         " in node " ^
-        string_of_int (Cfg.Node.get_id node));
+        string_of_int (Cfg.Node.get_id node :> int));
      L.d_ln ());
   !res
 

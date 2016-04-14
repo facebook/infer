@@ -78,7 +78,7 @@ let check_final_state proc_name proc_desc final_s =
         IList.filter (fun n -> not (Cfg.NodeSet.mem n (State.get_visited final_s))) proc_nodes in
       let do_node n =
         let loc = Cfg.Node.get_loc n in
-        let description = Format.sprintf "Node not visited: %d" (Cfg.Node.get_id n) in
+        let description = Format.sprintf "Node not visited: %d" (Cfg.Node.get_id n :> int) in
         let report = match Cfg.Node.get_kind n with
           | Cfg.Node.Join_node -> false
           | k when k = Cfg.Node.exn_sink_kind -> false

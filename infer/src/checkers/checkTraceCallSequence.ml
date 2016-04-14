@@ -303,7 +303,7 @@ end
 
 (** State transformation for a cfg node. *)
 let do_node pn pd idenv _ node (s : State.t) : (State.t list) * (State.t list) =
-  if verbose then L.stderr "N:%d S:%s@." (Cfg.Node.get_id node) (State.to_string s);
+  if verbose then L.stderr "N:%d S:%s@." (Cfg.Node.get_id node :> int) (State.to_string s);
 
   let curr_state = ref s in
 

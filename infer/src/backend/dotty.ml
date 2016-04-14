@@ -924,7 +924,7 @@ let pp_proplist_parsed2dotty_file filename plist =
 (* channel. You have to compute an interprocedural cfg first               *)
 
 let pp_cfgnodename fmt (n : Cfg.Node.t) =
-  F.fprintf fmt "%d" (Cfg.Node.get_id n)
+  F.fprintf fmt "%d" (Cfg.Node.get_id n :> int)
 
 let pp_etlist fmt etl =
   IList.iter (fun (id, ty) ->
@@ -962,7 +962,7 @@ let pp_cfgnodelabel fmt (n : Cfg.Node.t) =
   let pp_instrs fmt instrs =
     IList.iter (fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs in
   let instrs = Cfg.Node.get_instrs n in
-  F.fprintf fmt "%d: %a \\n  %a" (Cfg.Node.get_id n) pp_label n pp_instrs instrs
+  F.fprintf fmt "%d: %a \\n  %a" (Cfg.Node.get_id n :> int) pp_label n pp_instrs instrs
 
 let pp_cfgnodeshape fmt (n: Cfg.Node.t) =
   match Cfg.Node.get_kind n with
@@ -987,7 +987,10 @@ let pp_cfgnode fmt (n: Cfg.Node.t) =
     | Cfg.Node.Exit_node _ when is_exn = true -> (* don't print exception edges to the exit node *)
         ()
     | _ ->
-        F.fprintf fmt "\n\t %d -> %d %s;" (Cfg.Node.get_id n1) (Cfg.Node.get_id n2) color in
+        F.fprintf fmt "\n\t %d -> %d %s;"
+          (Cfg.Node.get_id n1 :> int)
+          (Cfg.Node.get_id n2 :> int)
+          color in
   IList.iter (fun n' -> print_edge n n' false) (Cfg.Node.get_succs n);
   IList.iter (fun n' -> print_edge n n' true) (Cfg.Node.get_exn n)
 

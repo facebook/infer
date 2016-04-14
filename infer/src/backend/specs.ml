@@ -143,8 +143,8 @@ end
 
 module Visitedset =
   Set.Make (struct
-    type t = int * int list
-    let compare (node_id1, _) (node_id2, _) = int_compare node_id1 node_id2
+    type t = Cfg.Node.id * int list
+    let compare (node_id1, _) (node_id2, _) = Cfg.Node.id_compare node_id1 node_id2
   end)
 
 let visited_str vis =
@@ -324,7 +324,7 @@ type payload =
 
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
-    nodes: int list; (** ids of cfg nodes of the procedure *)
+    nodes: Cfg.Node.id list; (** ids of cfg nodes of the procedure *)
     phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
     payload: payload;  (** payload containing the result of some analysis *)
     sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)

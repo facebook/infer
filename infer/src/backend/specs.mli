@@ -61,7 +61,7 @@ module Jprop : sig
 end
 
 (** set of visited nodes: node id and list of lines of all the instructions *)
-module Visitedset : Set.S with type elt = int * int list
+module Visitedset : Set.S with type elt = Cfg.Node.id * int list
 
 (** convert a Visitedset to a string *)
 val visited_str : Visitedset.t -> string
@@ -137,7 +137,7 @@ type payload =
 (** Procedure summary *)
 type summary =
   { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
-    nodes: int list; (** ids of cfg nodes of the procedure *)
+    nodes: Cfg.Node.id list; (** ids of cfg nodes of the procedure *)
     phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
     payload: payload;  (** payload containing the result of some analysis *)
     sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
@@ -220,7 +220,7 @@ val is_inactive : Procname.t -> bool
     Do nothing if a summary exists already. *)
 val init_summary :
   (Procname.t list * (** depend list *)
-   int list * (** nodes *)
+   Cfg.Node.id list * (** nodes *)
    proc_flags * (** procedure flags *)
    (Procname.t * Location.t) list * (** calls *)
    (Cg.in_out_calls option) * (** in and out calls *)

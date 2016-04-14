@@ -1153,7 +1153,7 @@ struct
          let var_typ = add_reference_if_glvalue typ expr_info in
          let join_node = create_node (Cfg.Node.Join_node) [] [] sil_loc context in
          Cfg.Node.set_succs_exn cfg join_node succ_nodes [];
-         let pvar = mk_temp_var (Cfg.Node.get_id join_node) in
+         let pvar = mk_temp_var (Cfg.Node.get_id join_node :> int) in
          let continuation' = mk_cond_continuation trans_state.continuation in
          let trans_state' = { trans_state with continuation = continuation'; succ_nodes = [] } in
          let res_trans_cond = exec_with_priority_exception trans_state' cond cond_trans in

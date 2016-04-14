@@ -271,7 +271,7 @@ end = struct
   let get_path_pos node =
     let pn = Cfg.Procdesc.get_proc_name (Cfg.Node.get_proc_desc node) in
     let n_id = Cfg.Node.get_id node in
-    (pn, n_id)
+    (pn, (n_id :> int))
 
   let contains_position path pos =
     let found = ref false in
@@ -291,10 +291,13 @@ end = struct
       | Pstart _ -> f level path session prev_exn_opt
       | Pnode (_, exn_opt, session', p, _, _) ->
           let next_exn_opt = if prev_exn_opt <> None then None else exn_opt in (* no two consecutive exceptions *)
-          doit level session' p next_exn_opt;
+          doit level (session' :> int) p next_exn_opt;
           f level path session prev_exn_opt
       | Pjoin (p1, p2, _) ->
-          if (Invariant.get_stats p1).max_length >= (Invariant.get_stats p2).max_length then doit level session p1 prev_exn_opt else doit level session p2 prev_exn_opt
+          if (Invariant.get_stats p1).max_length >= (Invariant.get_stats p2).max_length then
+            doit level session p1 prev_exn_opt
+          else
+            doit level session p2 prev_exn_opt
       | Pcall (p1, _, p2, _) ->
           let next_exn_opt = None in (* exn must already be inside the call *)
           doit level session p1 next_exn_opt;
@@ -367,7 +370,7 @@ end = struct
       "linear paths: " ^ string_of_float (Invariant.get_stats path).linear_num ^
       " max length: " ^ string_of_int (Invariant.get_stats path).max_length ^
       " has repetitions: " ^ string_of_int repetitions ^
-      " of node " ^ (string_of_int (Cfg.Node.get_id node)) in
+      " of node " ^ (string_of_int (Cfg.Node.get_id node :> int)) in
     Invariant.reset_stats path;
     str
 
@@ -411,7 +414,7 @@ end = struct
       | Pstart (node, _) ->
           F.fprintf fmt "n%a" Cfg.Node.pp node
       | Pnode (node, _, session, path, _, _) ->
-          F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path session Cfg.Node.pp node
+          F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path (session :> int) Cfg.Node.pp node
       | Pjoin (path1, path2, _) ->
           F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
       | Pcall (path1, _, path2, _) ->

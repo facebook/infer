@@ -277,7 +277,7 @@ let get_path_pos () =
     | Some (_, _, pdesc) -> Cfg.Procdesc.get_proc_name pdesc
     | None -> Procname.from_string_c_fun "unknown_procedure" in
   let nid = get_node_id () in
-  (pname, nid)
+  (pname, (nid :> int))
 
 let mark_execution_start node =
   let fs = get_failure_stats node in
@@ -298,11 +298,12 @@ let mark_instr_ok () =
 
 let mark_instr_fail pre_opt exn =
   let loc = get_loc () in
-  let key = get_node_id_key () in
+  let key = (get_node_id_key () :> int * int) in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
   let fs = get_failure_stats (get_node ()) in
-  if fs.first_failure = None then fs.first_failure <- Some (loc, key, session, loc_trace, pre_opt, exn);
+  if fs.first_failure = None then
+    fs.first_failure <- Some (loc, key, (session :> int), loc_trace, pre_opt, exn);
   fs.instr_fail <- fs.instr_fail + 1
 
 type log_issue =

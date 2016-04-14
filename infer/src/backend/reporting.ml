@@ -37,10 +37,10 @@ let log_issue_from_errlog
     | None -> State.get_loc ()
     | Some loc -> loc in
   let node_id = match node_id with
-    | None -> State.get_node_id_key ()
+    | None -> (State.get_node_id_key () :> int * int)
     | Some node_id -> node_id in
   let session = match session with
-    | None -> State.get_session ()
+    | None -> (State.get_session () :> int)
     | Some session -> session in
   let ltr = match ltr with
     | None -> State.get_loc_trace ()

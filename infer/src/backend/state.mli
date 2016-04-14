@@ -45,10 +45,10 @@ val get_loc_trace : unit -> Errlog.loc_trace
 val get_node : unit -> Cfg.Node.t
 
 (** Get id of last node seen in symbolic execution *)
-val get_node_id : unit -> int
+val get_node_id : unit -> Cfg.Node.id
 
 (** Get id and key of last node seen in symbolic execution *)
-val get_node_id_key : unit -> int * int
+val get_node_id_key : unit -> Cfg.Node.id * int
 
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)

@@ -17,6 +17,8 @@ module F = Format
 
 (* =============== START of module Node =============== *)
 module Node = struct
+  type id = int
+
   type nodekind =
     | Start_node of proc_desc
     | Exit_node of proc_desc
@@ -27,7 +29,7 @@ module Node = struct
 
   and t = { (** a node *)
     (** unique id of the node *)
-    nd_id : int;
+    nd_id : id;
 
     (** distance to the exit node *)
     mutable nd_dist_exit : int option;
@@ -203,6 +205,9 @@ module Node = struct
 
   (** Get the unique id of the node *)
   let get_id node = node.nd_id
+
+  (** compare node ids *)
+  let id_compare = int_compare
 
   let get_succs node = node.nd_succs
 

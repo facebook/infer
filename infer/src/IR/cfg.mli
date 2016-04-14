@@ -127,6 +127,8 @@ end
 module Node : sig
   type t = node (** type of nodes *)
 
+  type id = private int
+
   (** kind of cfg node *)
   type nodekind =
     | Start_node of Procdesc.t
@@ -192,7 +194,10 @@ module Node : sig
   val get_exn : t -> t list
 
   (** Get the unique id of the node *)
-  val get_id : t -> int
+  val get_id : t -> id
+
+  (** compare node ids *)
+  val id_compare : id -> id -> int
 
   (** Get the source location of the node *)
   val get_loc : t -> Location.t
