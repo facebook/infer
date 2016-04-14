@@ -29,9 +29,6 @@ val get_diverging_states_node : unit -> Paths.PathSet.t
 (** Get the diverging states for the procedure *)
 val get_diverging_states_proc : unit -> Paths.PathSet.t
 
-(** Get the node target of a Sil.Goto_node instruction, if any *)
-val get_goto_node : unit -> int option
-
 (** Get update instrumentation for the current loc *)
 val get_inst_update : Sil.path_pos -> Sil.inst
 
@@ -103,8 +100,8 @@ val process_execution_failures : log_issue -> Procname.t -> unit
 (** Reset all the global data. *)
 val reset : unit -> unit
 
-(** Reset the diverging states and goto information for the node *)
-val reset_diverging_states_goto_node : unit -> unit
+(** Reset the diverging states information for the node *)
+val reset_diverging_states_node : unit -> unit
 
 (** Restore the old state. *)
 val restore_state : t -> unit
@@ -114,9 +111,6 @@ val save_state : unit -> t
 
 (** Set the constant map for the current procedure. *)
 val set_const_map : const_map -> unit
-
-(** Set the node target of a Sil.Goto_node instruction *)
-val set_goto_node : int -> unit
 
 (** Set last instruction seen in symbolic execution *)
 val set_instr : Sil.instr -> unit

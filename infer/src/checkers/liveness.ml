@@ -42,7 +42,7 @@ module TransferFunctions = struct
     | Sil.Set (lhs_exp, _, rhs_exp, _) ->
         exp_add_live lhs_exp astate
         |> exp_add_live rhs_exp
-    | Sil.Prune (exp, _, _, _) | Sil.Goto_node (exp, _) ->
+    | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
     | Sil.Call (ret_ids, call_exp, params, _, _) ->
         IList.fold_right

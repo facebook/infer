@@ -752,13 +752,10 @@ type instr =
   | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
   | Stackop of stackop * Location.t (** operation on the stack of propsets *)
   | Declare_locals of (Pvar.t * typ) list * Location.t (** declare local variables *)
-  (** jump to a specific cfg node,
-      assuming all the possible target nodes are successors of the current node *)
-  | Goto_node of exp * Location.t
 
 (** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 let instr_is_auxiliary = function
-  | Letderef _ | Set _ | Prune _ | Call _ | Goto_node _ ->
+  | Letderef _ | Set _ | Prune _ | Call _ ->
       false
   | Nullify _ | Abstract _ | Remove_temps _ | Stackop _ | Declare_locals _ ->
       true
@@ -2073,8 +2070,7 @@ let instr_get_loc = function
   | Abstract loc
   | Remove_temps (_, loc)
   | Stackop (_, loc)
-  | Declare_locals (_, loc)
-  | Goto_node (_, loc) ->
+  | Declare_locals (_, loc) ->
       loc
 
 (** get the expressions occurring in the instruction *)
@@ -2097,8 +2093,6 @@ let instr_get_exps = function
       []
   | Declare_locals _ ->
       []
-  | Goto_node (e, _) ->
-      [e]
 
 (** Pretty print call flags *)
 let pp_call_flags f cf =
@@ -2147,8 +2141,6 @@ let pp_instr pe0 f instr =
    | Declare_locals (ptl, loc) ->
        let pp_typ fmt (pvar, _) = F.fprintf fmt "%a" (Pvar.pp pe) pvar in
        F.fprintf f "DECLARE_LOCALS(%a); %a" (pp_comma_seq pp_typ) ptl Location.pp loc
-   | Goto_node (e, loc) ->
-       F.fprintf f "Goto_node %a %a" (pp_exp pe) e Location.pp loc
   );
   color_post_wrapper changed pe0 f
 
@@ -2243,8 +2235,6 @@ let instr_iter_types f instr = match instr with
       ()
   | Declare_locals (ptl, _) ->
       IList.iter (fun (_, t) -> typ_iter_types f t) ptl
-  | Goto_node _ ->
-      ()
 
 (** Dump an instruction. *)
 let d_instr (i: instr) = L.add_print_action (L.PTinstr, Obj.repr i)
@@ -3430,8 +3420,6 @@ let instr_sub (subst: subst) instr =
   | Declare_locals (ptl, loc) ->
       let pt_s (pv, t) = (pv, typ_s t) in
       Declare_locals (IList.map pt_s ptl, loc)
-  | Goto_node (e, loc) ->
-      Goto_node (exp_s e, loc)
 
 let call_flags_compare cflag1 cflag2 =
   bool_compare cflag1.cf_virtual cflag2.cf_virtual
@@ -3499,11 +3487,6 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
         if n <> 0 then n else typ_compare t1 t2 in
 
       let n = IList.compare pt_compare ptl1 ptl2 in
-      if n <> 0 then n else Location.compare loc1 loc2
-  | Declare_locals _, _ -> -1
-  | _, Declare_locals _ -> 1
-  | Goto_node (e1, loc1), Goto_node (e2, loc2) ->
-      let n = exp_compare e1 e2 in
       if n <> 0 then n else Location.compare loc1 loc2
 
 (** compare expressions from different procedures without considering loc's, ident's, and pvar's.
@@ -3627,8 +3610,6 @@ let instr_compare_structural instr1 instr2 exp_map =
           (0, exp_map)
           ptl1
           ptl2
-  | Goto_node (e1, _), Goto_node (e2, _) ->
-      exp_compare_structural e1 e2 exp_map
   | _ -> instr_compare instr1 instr2, exp_map
 
 let atom_sub subst =

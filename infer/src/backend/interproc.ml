@@ -274,13 +274,9 @@ let propagate
 (** propagate a set of results, including exceptions and divergence *)
 let propagate_nodes_divergence
     tenv (pdesc: Cfg.Procdesc.t) (pset: Paths.PathSet.t)
-    (succ_nodes_: Cfg.node list) (exn_nodes: Cfg.node list) (wl : Worklist.t) =
+    (succ_nodes: Cfg.node list) (exn_nodes: Cfg.node list) (wl : Worklist.t) =
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
-  let succ_nodes = match State.get_goto_node () with (* handle Sil.Goto_node target, if any *)
-    | Some node_id ->
-        IList.filter (fun n -> Cfg.Node.get_id n = node_id) succ_nodes_
-    | None -> succ_nodes_ in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then
     begin
       Errdesc.warning_err (State.get_loc ()) "Propagating Divergence@.";
@@ -581,7 +577,7 @@ let forward_tabulate tenv wl =
                  L.d_strln
                    ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths);
                  L.d_increase_indent 1;
-                 State.reset_diverging_states_goto_node ();
+                 State.reset_diverging_states_node ();
                  let pset =
                    do_symbolic_execution (handle_exn curr_node) tenv curr_node prop path in
                  L.d_decrease_indent 1; L.d_ln();

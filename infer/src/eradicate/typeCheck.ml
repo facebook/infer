@@ -1072,8 +1072,6 @@ let typecheck_instr
       check_condition node' ncond
   | Sil.Stackop _ ->
       typestate
-  | Sil.Goto_node _ ->
-      typestate
 
 (** Typecheck the instructions in a cfg node. *)
 let typecheck_node

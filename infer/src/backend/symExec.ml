@@ -1190,18 +1190,6 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       ret_old_path [prop']
   | Sil.Stackop _ -> (* this should be handled at the propset level *)
       assert false
-  | Sil.Goto_node (node_e, _) ->
-      let n_node_e, prop = check_arith_norm_exp current_pname node_e prop_ in
-      begin
-        match n_node_e with
-        | Sil.Const (Sil.Cint i) ->
-            let node_id = Sil.Int.to_int i in
-            State.set_goto_node node_id;
-            [(prop, path)]
-        | _ -> (* target not known, do nothing as the next nodes
-                  are set to the possible targets by the front-end *)
-            [(prop, path)]
-      end
 and diverge prop path =
   State.add_diverging_states (Paths.PathSet.from_renamed_list [(prop, path)]); (* diverge *)
   []

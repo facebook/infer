@@ -40,9 +40,6 @@ type t = {
   (** Diverging states since the last reset for the procedure *)
   mutable diverging_states_proc : Paths.PathSet.t;
 
-  (** Node target of a Sil.Goto_node instruction *)
-  mutable goto_node : int option;
-
   (** Last instruction seen *)
   mutable last_instr : Sil.instr option;
 
@@ -66,7 +63,6 @@ let initial () = {
   const_map = (fun _ _ -> None);
   diverging_states_node = Paths.PathSet.empty;
   diverging_states_proc = Paths.PathSet.empty;
-  goto_node = None;
   last_instr = None;
   last_node = Cfg.Node.dummy ();
   last_path = None;
@@ -88,9 +84,8 @@ let save_state () =
 let restore_state st =
   gs := st
 
-let reset_diverging_states_goto_node () =
-  !gs.diverging_states_node <- Paths.PathSet.empty;
-  !gs.goto_node <- None
+let reset_diverging_states_node () =
+  !gs.diverging_states_node <- Paths.PathSet.empty
 
 let reset () =
   gs := initial ()
@@ -111,12 +106,6 @@ let get_diverging_states_node () =
 
 let get_diverging_states_proc () =
   !gs.diverging_states_proc
-
-let set_goto_node node_id =
-  !gs.goto_node <- Some node_id
-
-let get_goto_node () =
-  !gs.goto_node
 
 let get_instr () =
   !gs.last_instr
@@ -144,8 +133,7 @@ let node_simple_key node =
       | Sil.Abstract _ -> add_key 6
       | Sil.Remove_temps _ -> add_key 7
       | Sil.Stackop _ -> add_key 8
-      | Sil.Declare_locals _ -> add_key 9
-      | Sil.Goto_node _ -> add_key 10 in
+      | Sil.Declare_locals _ -> add_key 9 in
   IList.iter do_instr (Cfg.Node.get_instrs node);
   Hashtbl.hash !key
 

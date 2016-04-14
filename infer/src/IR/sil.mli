@@ -407,9 +407,6 @@ type instr =
   | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
   | Stackop of stackop * Location.t (** operation on the stack of propsets *)
   | Declare_locals of (Pvar.t * typ) list * Location.t (** declare local variables *)
-  (** jump to a specific cfg node,
-      assuming all the possible target nodes are successors of the current node *)
-  | Goto_node of exp * Location.t
 
 (** Check if an instruction is auxiliary, or if it comes from source instructions. *)
 val instr_is_auxiliary : instr -> bool
