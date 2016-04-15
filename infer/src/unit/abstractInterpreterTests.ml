@@ -56,8 +56,14 @@ module PathCountTransferFunctions = struct
 end
 
 
-module TestInterpreter = AnalyzerTester.Make
+module NormalTestInterpreter = AnalyzerTester.Make
     (ProcCfg.Normal)
+    (Scheduler.ReversePostorder)
+    (PathCountDomain)
+    (PathCountTransferFunctions)
+
+module ExceptionalTestInterpreter = AnalyzerTester.Make
+    (ProcCfg.Exceptional)
     (Scheduler.ReversePostorder)
     (PathCountDomain)
     (PathCountTransferFunctions)
@@ -65,7 +71,7 @@ module TestInterpreter = AnalyzerTester.Make
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
-  let test_list = [
+  let normal_test_list = [
     "straightline",
     [
       invariant "1";
@@ -176,5 +182,41 @@ let tests =
       );
       invariant "1"
     ];
-  ] |> TestInterpreter.create_tests in
-  "analyzer_tests_suite">:::test_list
+  ] |> NormalTestInterpreter.create_tests in
+  let exceptional_test_list = [
+    "try1",
+    [
+      Try (
+        [
+          invariant "1";
+        ],
+        [
+          invariant "1"; (* catch block should be visited *)
+        ],
+        [
+          invariant "2"; (* could come from try or catch block *)
+        ]
+      );
+      invariant "2"
+    ];
+    "try1",
+    [
+      Try (
+        [
+          (* note: each instruction in try block is treated as potentially-excepting... *)
+          (* point 1 *)
+          invariant "1"; (* point 2 *)
+          invariant "1"; (* point 3 *)
+        ],
+        [
+          (* ... so |paths through catch block| shoud be |number of instructions in try block| *)
+          invariant "2"; (* point 4 *)
+        ],
+        [
+          invariant "3"; (* could arrive here via (1, 2, 3), (1, 4), or (2, 4) *)
+        ]
+      );
+      invariant "3"
+    ];
+  ] |> ExceptionalTestInterpreter.create_tests in
+  "analyzer_tests_suite">:::(normal_test_list @ exceptional_test_list)

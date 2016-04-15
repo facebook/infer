@@ -20,9 +20,29 @@ module Make
   module S = Sched (C)
   module M = ProcCfg.NodeIdMap (C)
 
-  type state = { post: A.astate; visit_count: int; }
+  type state = { pre: A.astate; post: A.astate; visit_count: int; }
   (* invariant map from node id -> abstract state representing postcondition for node id *)
   type inv_map = state M.t
+
+  (** extract the state of node [n] from [inv_map] *)
+  let extract_state node_id inv_map =
+    try
+      Some (M.find node_id inv_map)
+    with Not_found ->
+      L.err "Warning: No state found for node %a" C.pp_node_id node_id;
+      None
+
+  (** extract the postcondition of node [n] from [inv_map] *)
+  let extract_post node_id inv_map =
+    match extract_state node_id inv_map with
+    | Some state -> Some state.post
+    | None -> None
+
+  (** extract the precondition of node [n] from [inv_map] *)
+  let extract_pre node_id inv_map =
+    match extract_state node_id inv_map with
+    | Some state -> Some state.pre
+    | None -> None
 
   let exec_node node astate_pre work_queue inv_map proc_data =
     let exec_instrs astate_acc instr =
@@ -51,36 +71,43 @@ module Make
             A.pp astate_post A.pp old_state.post A.pp widened_post;
           let inv_map' =
             let visit_count = old_state.visit_count + 1 in
-            M.add node_id { post=widened_post; visit_count; } inv_map in
+            M.add node_id { pre=astate_pre; post=widened_post; visit_count; } inv_map in
           inv_map', S.schedule_succs work_queue node
         end
     else
       (* first time visiting this node *)
       let inv_map' =
         let visit_count = 0 in
-        M.add node_id { post=astate_post; visit_count; } inv_map in
+        M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
       inv_map', S.schedule_succs work_queue node
 
-  let rec exec_worklist work_queue inv_map proc_data =
+  let rec exec_worklist cfg work_queue inv_map proc_data =
+    let compute_pre node inv_map =
+      (* if the [pred] -> [node] transition was normal, use post([pred]) *)
+      let extract_post_ pred = extract_post (C.node_id pred) inv_map in
+      let normal_posts = IList.map extract_post_ (C.normal_preds cfg node) in
+      (* if the [pred] -> [node] transition was exceptional, use pre([pred]) *)
+      let extract_pre_f acc pred = extract_pre (C.node_id pred) inv_map :: acc in
+      let all_posts = IList.fold_left extract_pre_f normal_posts (C.exceptional_preds cfg node) in
+      match IList.flatten_options all_posts with
+      | post :: posts -> Some (IList.fold_left A.join post posts)
+      | [] -> None in
     match S.pop work_queue with
     | Some (_, [], work_queue') ->
-        exec_worklist work_queue' inv_map proc_data
-    | Some (node, visited_pred :: visited_preds, work_queue') ->
-        let get_post pred_id =
-          (M.find pred_id inv_map).post in
-        (* compute the precondition for node by joining post of all visited preds *)
-        let join_pred_posts astate_acc pred_id =
-          A.join (get_post pred_id) astate_acc in
-        let astate_pre = IList.fold_left join_pred_posts (get_post visited_pred) visited_preds in
-        let inv_map', work_queue'' = exec_node node astate_pre work_queue' inv_map proc_data in
-        exec_worklist work_queue'' inv_map' proc_data
-    | None -> inv_map
+        exec_worklist cfg work_queue' inv_map proc_data
+    | Some (node, _, work_queue') ->
+        let inv_map_post, work_queue_post = match compute_pre node inv_map with
+          | Some astate_pre -> exec_node node astate_pre work_queue' inv_map proc_data
+          | None -> inv_map, work_queue' in
+        exec_worklist cfg work_queue_post inv_map_post proc_data
+    | None ->
+        inv_map
 
   (* compute and return an invariant map for [cfg] *)
   let exec_cfg cfg proc_data =
     let start_node = C.start_node cfg in
     let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty proc_data in
-    exec_worklist work_queue' inv_map' proc_data
+    exec_worklist cfg work_queue' inv_map' proc_data
 
   (* compute and return an invariant map for [pdesc] *)
   let exec_pdesc ({ ProcData.pdesc; } as proc_data) =
@@ -91,16 +118,7 @@ module Make
   let compute_post ({ ProcData.pdesc; } as proc_data) =
     let cfg = C.from_pdesc pdesc in
     let inv_map = exec_cfg cfg proc_data in
-    try
-      let end_state = M.find (C.node_id (C.exit_node cfg)) inv_map in
-      Some (end_state.post)
-    with Not_found ->
-      (* TODO: this happens when we get a malformed CFG due to a frontend failure. can eliminate in
-         the future once we fix the frontends. *)
-      L.err
-        "Warning: No postcondition found for exit node of %a"
-        Procname.pp (Cfg.Procdesc.get_proc_name pdesc);
-      None
+    extract_post (C.node_id (C.exit_node cfg)) inv_map
 
   module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
 

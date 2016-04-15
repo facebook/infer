@@ -57,7 +57,6 @@ module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
       let visited_preds' = IdSet.add node_id t.visited_preds in
       let priority' = compute_priority cfg t.node visited_preds' in
       { t with visited_preds = visited_preds'; priority = priority'; }
-
   end
 
   type t = { worklist : WorkUnit.t M.t; cfg : C.t; }
@@ -100,5 +99,4 @@ module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
     with Not_found -> None
 
   let empty cfg = { worklist = M.empty; cfg; }
-
 end
