@@ -57,7 +57,7 @@ end
 
 
 module TestInterpreter = AnalyzerTester.Make
-    (ProcCfg.Forward)
+    (ProcCfg.Normal)
     (Scheduler.ReversePostorder)
     (PathCountDomain)
     (PathCountTransferFunctions)

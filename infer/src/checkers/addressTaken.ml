@@ -49,4 +49,4 @@ end
 
 module Analyzer =
   AbstractInterpreter.Make
-    (ProcCfg.Forward) (Scheduler.ReversePostorder) (Domain) (TransferFunctions)
+    (ProcCfg.Exceptional) (Scheduler.ReversePostorder) (Domain) (TransferFunctions)

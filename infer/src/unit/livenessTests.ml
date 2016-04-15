@@ -12,7 +12,7 @@ open! Utils
 module F = Format
 
 module TestInterpreter = AnalyzerTester.Make
-    (ProcCfg.Backward (ProcCfg.Forward))
+    (ProcCfg.Backward (ProcCfg.Exceptional))
     (Scheduler.ReversePostorder)
     (Liveness.Domain)
     (Liveness.TransferFunctions)

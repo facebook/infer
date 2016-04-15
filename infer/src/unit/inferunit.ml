@@ -17,6 +17,7 @@ let () =
     AbstractInterpreterTests.tests;
     AddressTakenTests.tests;
     CopyPropagationTests.tests;
+    ProcCfgTests.tests;
     LivenessTests.tests;
     SchedulerTests.tests;
   ] in
