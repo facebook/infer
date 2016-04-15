@@ -462,6 +462,16 @@ let get_method_for_frontend_checks cfg cg loc =
       Cg.add_defined_node cg proc_name;
       pdesc
 
+let get_procname_from_cpp_lambda context dec =
+  match dec with
+  | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rdi) ->
+      (match cxx_rdi.xrdi_lambda_call_operator with
+       | Some dr ->
+           let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref dr in
+           create_procdesc_with_pointer context decl_ptr None name_info.ni_name type_ptr
+       | _ -> assert false (* We should not get here *))
+  | _ -> assert false (* We should not get here *)
+
 (*
 let instance_to_method_call_type instance =
   if instance then MCVirtual

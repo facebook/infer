@@ -595,12 +595,6 @@ let rec is_method_call s =
       | [] -> false
       | s'':: _ -> is_method_call s'')
 
-let get_info_from_decl_ref decl_ref =
-  let name_info = match decl_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
-  let decl_ptr = decl_ref.Clang_ast_t.dr_decl_pointer in
-  let type_ptr = match decl_ref.Clang_ast_t.dr_type_ptr with Some tp -> tp | _ -> assert false in
-  name_info, decl_ptr, type_ptr
-
 let rec get_decl_ref_info s =
   match s with
   | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) ->

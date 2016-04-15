@@ -195,9 +195,9 @@ struct
        | _ -> ());
     match dec with
     (* Currently C/C++ record decl treated in the same way *)
-    | ClassTemplateSpecializationDecl (decl_info, _, _, _, decl_list, _, _, _)
-    | CXXRecordDecl (decl_info, _, _, _, decl_list, _, _, _)
-    | RecordDecl (decl_info, _, _, _, decl_list, _, _) when not decl_info.di_is_implicit ->
+    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _)
+    | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+    | RecordDecl (_, _, _, _, decl_list, _, _) ->
         let is_method_decl decl = match decl with
           | CXXMethodDecl _ | CXXConstructorDecl _ | CXXConversionDecl _
           | CXXDestructorDecl _ | FunctionTemplateDecl _ ->

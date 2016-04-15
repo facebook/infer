@@ -460,7 +460,7 @@ struct
   let function_deref_trans trans_state decl_ref =
     let open CContext in
     let context = trans_state.context in
-    let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
+    let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
     Option.may (call_translation context) decl_opt;
     let name = Ast_utils.get_qualified_name name_info in
@@ -491,7 +491,7 @@ struct
   let var_deref_trans trans_state stmt_info decl_ref =
     let open CContext in
     let context = trans_state.context in
-    let _, _, type_ptr = get_info_from_decl_ref decl_ref in
+    let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -518,7 +518,7 @@ struct
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let name_info, _, type_ptr = get_info_from_decl_ref decl_ref in
+    let name_info, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     Printing.log_out "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
     let field_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
@@ -556,7 +556,7 @@ struct
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let name_info, decl_ptr, type_ptr = get_info_from_decl_ref decl_ref in
+    let name_info, decl_ptr, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = Ast_utils.get_function_decl_with_body decl_ptr in
     Option.may (call_translation context) decl_opt;
     let method_name = Ast_utils.get_unqualified_name name_info in
@@ -701,7 +701,7 @@ struct
 
   and enum_constant_trans trans_state decl_ref =
     let context = trans_state.context in
-    let _, _, type_ptr = get_info_from_decl_ref decl_ref in
+    let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
     let typ = CTypes_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
     let const_exp = get_enum_constant_expr context decl_ref.Clang_ast_t.dr_decl_pointer in
     { empty_res_trans with exps = [(const_exp, typ)] }
@@ -2082,6 +2082,21 @@ struct
               else instruction trans_state' stmt in
             stmt_res_trans :: rest_stmts_res_trans
 
+  and lambdaExpr_trans trans_state expr_info decl =
+    let open CContext in
+    let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
+    let context = trans_state.context in
+    call_translation context decl;
+    let procname = Cfg.Procdesc.get_proc_name context.procdesc in
+    let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context decl in
+    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    (* We need to set the explicit dependency between the newly created lambda and the *)
+    (* defining procedure. We add an edge in the call graph.*)
+    Cg.add_edge context.cg procname lambda_pname;
+    let captured_vars = [] in  (* TODO *)
+    let closure = Sil.Cclosure { name = lambda_pname; captured_vars } in
+    { empty_res_trans with exps = [(Sil.Const closure, typ)] }
+
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
     let typ = CTypes_decl.get_type_from_expr_info expr_info context.CContext.tenv in
@@ -2563,6 +2578,10 @@ struct
 
     | CXXStdInitializerListExpr (stmt_info, stmts, expr_info) ->
         cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info
+
+    | LambdaExpr(_, _, expr_info, decl) ->
+        let trans_state' = { trans_state with priority = Free } in
+        lambdaExpr_trans trans_state' expr_info decl
 
     | s -> (Printing.log_stats
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \

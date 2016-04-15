@@ -386,6 +386,12 @@ struct
     if decl_ptr' = (Some decl_ptr) then decl_opt
     else get_decl_opt decl_ptr'
 
+  let get_info_from_decl_ref decl_ref =
+    let name_info = match decl_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
+    let decl_ptr = decl_ref.Clang_ast_t.dr_decl_pointer in
+    let type_ptr = match decl_ref.Clang_ast_t.dr_type_ptr with Some tp -> tp | _ -> assert false in
+    name_info, decl_ptr, type_ptr
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with
@@ -617,6 +623,7 @@ struct
 
   let is_cpp_translation language =
     language = CFrontend_config.CPP || language = CFrontend_config.OBJCPP
+
 end
 
 

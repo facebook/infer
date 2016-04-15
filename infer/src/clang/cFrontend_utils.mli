@@ -130,6 +130,9 @@ sig
 
   val get_function_decl_with_body : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
+  val get_info_from_decl_ref : Clang_ast_t.decl_ref ->
+    Clang_ast_t.named_decl_info * Clang_ast_t.pointer * Clang_ast_t.type_ptr
+
 end
 
 module General_utils :
@@ -195,4 +198,5 @@ sig
     Pvar.t
 
   val is_cpp_translation : CFrontend_config.lang -> bool
+
 end
