@@ -26,6 +26,8 @@ public class FilterOutputStream extends OutputStream {
         if (out != null) {
             if (out instanceof FileOutputStream) {
                 ((FileOutputStream) out).close();
+            } else {
+                out.close();
             }
         }
     }

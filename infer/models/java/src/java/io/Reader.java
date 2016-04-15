@@ -9,18 +9,14 @@
 
 package java.io;
 
+import com.facebook.infer.models.InferBuiltins;
 import com.facebook.infer.models.InferUndefined;
 
-public abstract class Reader implements Closeable {
+public abstract class Reader {
 
     public void close() throws IOException {
-        if (this instanceof InputStreamReader) {
-            ((InputStreamReader) this).close();
-        } else if (this instanceof BufferedReader) {
-            ((BufferedReader) this).close();
-        } else if (this instanceof FilterReader) {
-            ((FilterReader) this).close();
-        }
+        InferBuiltins.__set_mem_attribute(this);
+        InferUndefined.can_throw_ioexception_void();
     }
 
     public int read() throws IOException {

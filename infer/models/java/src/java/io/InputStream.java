@@ -9,16 +9,14 @@
 
 package java.io;
 
+import com.facebook.infer.models.InferBuiltins;
 import com.facebook.infer.models.InferUndefined;
 
-public class InputStream implements Closeable {
+public class InputStream {
 
     public void close() throws IOException {
-        if (this instanceof FileInputStream) {
-            ((FileInputStream) this).close();
-        } else if (this instanceof FilterInputStream) {
-            ((FilterInputStream) this).close();
-        }
+        InferBuiltins.__set_mem_attribute(this);
+        InferUndefined.can_throw_ioexception_void();
     }
 
     public int read() throws IOException {

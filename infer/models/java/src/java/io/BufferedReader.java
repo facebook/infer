@@ -24,8 +24,13 @@ public class BufferedReader extends Reader {
     }
 
     public void close() throws IOException {
-        if (in instanceof InputStreamReader)
+        if (in instanceof InputStreamReader) {
             ((InputStreamReader) in).close();
+        } else if (in instanceof BufferedReader) {
+            ((BufferedReader) in).close();
+        } else {
+            in.close();
+        }
     }
 
     public int read() throws IOException {

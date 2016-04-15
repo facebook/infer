@@ -10,20 +10,13 @@
 
 package android.database;
 
-import java.io.Closeable;
-
 import com.facebook.infer.models.InferUndefined;
 import com.facebook.infer.models.InferBuiltins;
 
-import android.database.sqlite.SQLiteCursor;
-
-
-public class Cursor implements Closeable {
+public class Cursor {
 
     public void close() {
-        if (this instanceof SQLiteCursor) {
-            ((SQLiteCursor) this).close();
-        }
+        InferBuiltins.__set_mem_attribute(this);
     }
 
     public int getInt(int position) {

@@ -10,8 +10,6 @@
 
 package com.facebook.infer.models;
 
-import com.facebook.infer.models.InferBuiltins;
-
 import java.io.IOException;
 import java.net.SocketException;
 import java.sql.SQLException;

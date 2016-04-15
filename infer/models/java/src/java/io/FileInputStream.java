@@ -45,6 +45,10 @@ public class FileInputStream extends InputStream {
         init();
     }
 
+    public void close() throws IOException {
+        super.close();
+    }
+
     public FileChannel getChannel() {
         channel = new FileChannelImpl(this, fd, InferUndefined.int_undefined());
         return channel;
@@ -52,11 +56,6 @@ public class FileInputStream extends InputStream {
 
     public int available() throws IOException {
         return InferUndefined.can_throw_ioexception_int();
-    }
-
-    public void close() throws IOException {
-        InferBuiltins.__set_mem_attribute(this);
-        InferUndefined.can_throw_ioexception_void();
     }
 
     @Override

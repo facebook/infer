@@ -9,8 +9,8 @@
 
 package com.fasterxml.jackson.core;
 
+import com.facebook.infer.models.InferBuiltins;
 import com.facebook.infer.models.InferUndefined;
-import com.fasterxml.jackson.core.json.UTF8StreamJsonParser;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -19,9 +19,8 @@ public abstract class JsonParser
         implements Closeable, Versioned {
 
     public void close() throws IOException {
-        if (this instanceof UTF8StreamJsonParser) {
-            ((UTF8StreamJsonParser) this).close();
-        }
+        InferBuiltins.__set_mem_attribute(this);
+        InferUndefined.can_throw_ioexception_void();
     }
 
     private void throwExceptions()
