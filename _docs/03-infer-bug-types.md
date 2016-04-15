@@ -30,6 +30,7 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Parameter not null checked](/docs/infer-bug-types.html#PARAMETER_NOT_NULL_CHECKED)
   - [Strong delegate warning](/docs/infer-bug-types.html#STRONG_DELEGATE_WARNING)
   - [C++ reference captured in Objective-C block](/docs/infer-bug-types.html#CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK)
+  - [Assign pointer warning](/docs/infer-bug-types.html#ASSIGN_POINTER_WARNING)
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
@@ -515,3 +516,8 @@ const int copied_v = v;
 // use copied_v not v
 };
 ```
+
+## <a name="ASSIGN_POINTER_WARNING"></a> Assign pointer warning
+
+This check fires when a pointer to an Obj-C object is tagged with an `assign` property (similar to the `-Warc-unsafe-retained-assign` compiler flag). Not holding a strong reference to the object makes it easy to accidentally create and use a dangling pointer.
+
