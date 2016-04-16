@@ -838,7 +838,7 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
             (* bind return id to the abducted value pointed to by the pvar we introduced *)
             bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
         let prop'' = add_ret_non_null ret_exp typ prop' in
-        if !Config.taint_analysis && Taint.returns_tainted callee_pname then
+        if !Config.taint_analysis && Taint.returns_tainted callee_pname None then
           add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind = Unknown } prop''
         else prop''
     else add_ret_non_null ret_exp typ prop
@@ -1331,7 +1331,7 @@ and unknown_or_scan_call ~is_scan ret_type_option
     IList.fold_left do_exp prop actual_pars in
   let add_tainted_pre prop actuals caller_pname callee_pname =
     if !Config.taint_analysis then
-      match Taint.accepts_sensitive_params callee_pname with
+      match Taint.accepts_sensitive_params callee_pname None with
       | [] -> prop
       | param_nums ->
           let check_taint_if_nums_match (prop_acc, param_num) (actual_exp, _actual_typ) =
@@ -1524,13 +1524,14 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
     check_return_value_ignored ();
     (* In case we call an objc instance method we add and extra spec *)
     (* were the receiver is null and the semantics of the call is nop*)
+    let callee_attrs = Specs.get_attributes summary in
     if (!Config.curr_language <> Config.Java) && !Config.objc_method_call_semantics &&
        (Specs.get_attributes summary).ProcAttributes.is_objc_instance_method then
       handle_objc_method_call actual_pars actual_params pre tenv ret_ids pdesc callee_pname loc
-        path Tabulation.exe_function_call
+        path (Tabulation.exe_function_call callee_attrs)
     else  (* non-objective-c method call. Standard tabulation *)
       Tabulation.exe_function_call
-        tenv ret_ids pdesc callee_pname loc actual_params pre path
+        callee_attrs tenv ret_ids pdesc callee_pname loc actual_params pre path
   end
 
 (** perform symbolic execution for a single prop, and check for junk *)

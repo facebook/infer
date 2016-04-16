@@ -44,7 +44,7 @@ val d_splitting : splitting -> unit
 
 (** Execute the function call and return the list of results with return value *)
 val exe_function_call:
-  Tenv.t -> Ident.t list -> Cfg.Procdesc.t -> Procname.t -> Location.t ->
+  ProcAttributes.t -> Tenv.t -> Ident.t list -> Cfg.Procdesc.t -> Procname.t -> Location.t ->
   (Sil.exp * Sil.typ) list -> Prop.normal Prop.t -> Paths.Path.t ->
   (Prop.normal Prop.t * Paths.Path.t) list
 

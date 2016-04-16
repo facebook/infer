@@ -126,6 +126,8 @@ let performance_critical = "PerformanceCritical"
 let no_allocation = "NoAllocation"
 let ignore_allocations = "IgnoreAllocations"
 let suppress_warnings = "SuppressWarnings"
+let privacy_source = "PrivacySource"
+let privacy_sink = "PrivacySink"
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
@@ -201,6 +203,11 @@ let ia_is_ignore_allocations ia =
 let ia_is_suppress_warnings ia =
   ia_ends_with ia suppress_warnings
 
+let ia_is_privacy_source ia =
+  ia_ends_with ia privacy_source
+
+let ia_is_privacy_sink ia =
+  ia_ends_with ia privacy_sink
 
 type annotation =
   | Nullable

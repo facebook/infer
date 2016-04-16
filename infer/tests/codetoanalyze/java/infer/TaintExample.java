@@ -25,6 +25,8 @@ import android.content.ContentValues;
 import android.content.SharedPreferences;
 
 import com.facebook.infer.models.InferTaint;
+import com.facebook.infer.annotation.PrivacySource;
+import com.facebook.infer.annotation.PrivacySink;
 
 public class TaintExample {
 
@@ -168,6 +170,41 @@ public class TaintExample {
 
   public void contentValuesPutOk(ContentValues values, String key, String value) {
     values.put(key, value);
+  }
+
+  @PrivacySource("")
+  public String privacySource() {
+    return "source";
+  }
+
+  public void testPrivacySourceAnnot() {
+    InferTaint.inferSensitiveSinkUndefined(privacySource()); // should report
+  }
+
+  public void instancePrivacySink(@PrivacySink("") String s1, String s2) {
+  }
+
+  public static void staticPrivacySink(@PrivacySink("") String s1, String s2) {
+  }
+
+  public void testPrivacySinkAnnot1() {
+    String source = privacySource();
+    instancePrivacySink(source, ""); // should report
+  }
+
+  public void testPrivacySinkAnnot2() {
+    String source = privacySource();
+    instancePrivacySink("", source); // should not report
+  }
+
+  public void testPrivacySinkAnnot3() {
+    String source = privacySource();
+    staticPrivacySink(source, ""); // should report
+  }
+
+  public void testPrivacySinkAnnot4() {
+    String source = privacySource();
+    staticPrivacySink("", source); // should not report
   }
 
 }

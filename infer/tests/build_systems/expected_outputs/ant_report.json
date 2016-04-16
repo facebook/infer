@@ -110,6 +110,21 @@
     "procedure": "InputStream TaintExample.taintingShouldNotPreventInference2(SSLSocketFactory)"
   },
   {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testPrivacySinkAnnot1()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testPrivacySinkAnnot3()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testPrivacySourceAnnot()"
+  },
+  {
     "bug_type": "NULL_DEREFERENCE",
     "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
     "procedure": "int NullPointerExceptions.NPEvalueOfFromHashmapBad(HashMap,int)"

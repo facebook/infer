@@ -216,15 +216,21 @@ let mk_pname_param_num methods =
     (fun (mname, param_num) -> method_str_to_pname mname, param_num)
     methods
 
-let sinks =
+let taint_sinks =
   mk_pname_param_num sinks
 
 let func_with_tainted_params =
   mk_pname_param_num functions_with_tainted_params
 
+let attrs_opt_get_annots = function
+  | Some attrs -> attrs.ProcAttributes.method_annotation
+  | None -> Sil.method_annotation_empty
+
 (** returns true if [callee_pname] returns a tainted value *)
-let returns_tainted callee_pname =
-  IList.exists (fun pname -> Procname.equal pname callee_pname) sources
+let returns_tainted callee_pname callee_attrs_opt =
+  IList.exists (fun pname -> Procname.equal pname callee_pname) sources ||
+  let ret_annot, _ = attrs_opt_get_annots callee_attrs_opt in
+  Annotations.ia_is_privacy_source ret_annot
 
 let find_callee methods callee_pname =
   try
@@ -232,8 +238,15 @@ let find_callee methods callee_pname =
   with Not_found -> []
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
-let accepts_sensitive_params callee_pname =
-  find_callee sinks callee_pname
+let accepts_sensitive_params callee_pname callee_attrs_opt =
+  match find_callee taint_sinks callee_pname with
+  | [] ->
+      let _, param_annots = attrs_opt_get_annots callee_attrs_opt in
+      let offset = if Procname.java_is_static callee_pname then 0 else 1 in
+      IList.mapi (fun param_num attr  -> (param_num + offset, attr)) param_annots
+      |> IList.filter (fun (_, attr) -> Annotations.ia_is_privacy_sink attr)
+      |> IList.map fst
+  | tainted_params -> tainted_params
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)

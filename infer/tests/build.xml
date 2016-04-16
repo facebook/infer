@@ -13,6 +13,7 @@
             <classpath>
               <pathelement location="../../dependencies/java/jackson/jackson-2.2.3.jar"/>
               <pathelement location="../lib/java/models.jar"/>
+              <pathelement location="../annotations//annotations.jar"/>
             </classpath>
         </javac>
     </target>

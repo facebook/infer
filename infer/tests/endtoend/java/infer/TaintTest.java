@@ -54,7 +54,10 @@ public class TaintTest {
         "interprocTaintErrorWithModelMethodsUndefined1",
         "interprocTaintErrorWithModelMethodsUndefined2",
         "interprocTaintErrorWithModelMethodsUndefined3",
-        "contentValuesPutWithTaintedString"
+        "contentValuesPutWithTaintedString",
+        "testPrivacySourceAnnot",
+        "testPrivacySinkAnnot1",
+        "testPrivacySinkAnnot3"
     };
 
     assertThat(

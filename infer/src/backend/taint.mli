@@ -10,10 +10,10 @@
 open! Utils
 
 (** returns true if [callee_pname] returns a tainted value *)
-val returns_tainted : Procname.t -> bool
+val returns_tainted : Procname.t -> ProcAttributes.t option -> bool
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
-val accepts_sensitive_params : Procname.t -> int list
+val accepts_sensitive_params : Procname.t -> ProcAttributes.t option -> int list
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)

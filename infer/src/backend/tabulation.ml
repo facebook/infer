@@ -826,13 +826,15 @@ let add_param_taint proc_name formal_params prop param_nums =
   add_tainting_att_param_list prop param_nums formal_params' (Sil.Ataint taint_info)
 
 (* add Auntaint attribute to a callee_pname precondition *)
-let mk_pre pre formal_params callee_pname =
+let mk_pre pre formal_params callee_pname callee_attrs =
   if !Config.taint_analysis then
-    let pre' = add_tainting_att_param_list (Prop.normalize pre)
-        (Taint.accepts_sensitive_params callee_pname) formal_params (Sil.Auntaint) in
-    (Prop.expose pre')
+    add_tainting_att_param_list
+      (Prop.normalize pre)
+      (Taint.accepts_sensitive_params callee_pname (Some callee_attrs))
+      formal_params
+      Sil.Auntaint
+    |> Prop.expose
   else pre
-
 
 (** Construct the actual precondition: add to the current state a copy
     of the (callee's) formal parameters instantiated with the actual
@@ -864,7 +866,7 @@ let mk_actual_precondition prop actual_params formal_params =
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize actual_pre
 
-let mk_posts ret_ids prop callee_pname posts =
+let mk_posts ret_ids prop callee_pname callee_attrs posts =
   match ret_ids with
   | [ret_id] ->
       let mk_getter_idempotent posts =
@@ -891,7 +893,7 @@ let mk_posts ret_ids prop callee_pname posts =
           IList.filter (fun (prop, _) -> not (returns_null prop)) posts
         else posts in
       let mk_retval_tainted posts =
-        if Taint.returns_tainted callee_pname then
+        if Taint.returns_tainted callee_pname (Some callee_attrs) then
           let taint_retval (prop, path) =
             let prop_normal = Prop.normalize prop in
             let prop' =
@@ -1004,12 +1006,13 @@ let check_uninitialize_dangling_deref callee_pname actual_pre sub formal_params 
 
 (** Perform symbolic execution for a single spec *)
 let exe_spec
-    tenv ret_ids (n, nspecs) caller_pdesc callee_pname loc prop path_pre
+    tenv ret_ids (n, nspecs) caller_pdesc callee_pname  callee_attrs loc prop path_pre
     (spec : Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
-  let posts = mk_posts ret_ids prop callee_pname spec.Specs.posts in
+  let posts = mk_posts ret_ids prop callee_pname callee_attrs spec.Specs.posts in
   let actual_pre = mk_actual_precondition prop actual_params formal_params in
-  let spec_pre = mk_pre (Specs.Jprop.to_prop spec.Specs.pre) formal_params callee_pname in
+  let spec_pre =
+    mk_pre (Specs.Jprop.to_prop spec.Specs.pre) formal_params callee_pname callee_attrs in
   L.d_strln ("EXECUTING SPEC " ^ string_of_int n ^ "/" ^ string_of_int nspecs);
   L.d_strln "ACTUAL PRECONDITION =";
   L.d_increase_indent 1; Prop.d_prop actual_pre; L.d_decrease_indent 1; L.d_ln ();
@@ -1262,7 +1265,8 @@ let exe_call_postprocess ret_ids trace_call callee_pname loc results =
   | _ -> res
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call tenv ret_ids caller_pdesc callee_pname loc actual_params prop path =
+let exe_function_call
+    callee_attrs tenv ret_ids caller_pdesc callee_pname loc actual_params prop path =
   let caller_pname = Cfg.Procdesc.get_proc_name caller_pdesc in
   let trace_call res =
     match Specs.get_summary caller_pname with
@@ -1280,8 +1284,19 @@ let exe_function_call tenv ret_ids caller_pdesc callee_pname loc actual_params p
   L.d_strln ("START EXECUTING SPECS FOR " ^ Procname.to_string callee_pname ^ " from state");
   Prop.d_prop prop; L.d_ln ();
   let exe_one_spec (n, spec) =
-    exe_spec tenv ret_ids (n, nspecs) caller_pdesc callee_pname loc prop path
-      spec actual_params formal_params in
+    exe_spec
+      tenv
+      ret_ids
+      (n, nspecs)
+      caller_pdesc
+      callee_pname
+      callee_attrs
+      loc
+      prop
+      path
+      spec
+      actual_params
+      formal_params in
   let results = IList.map exe_one_spec spec_list in
   exe_call_postprocess ret_ids trace_call callee_pname loc results
 
