@@ -1135,7 +1135,8 @@ let exp_imply calc_missing subs e1_in e2_in : subst2 =
           raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | e1, Sil.BinOp (Sil.PlusA, Sil.Var v2, e2)
     | e1, Sil.BinOp (Sil.PlusA, e2, Sil.Var v2) when Ident.is_primed v2 || Ident.is_footprint v2 ->
-        do_imply subs (Sil.BinOp (Sil.MinusA, e1, e2)) (Sil.Var v2)
+        let e' = Sil.BinOp (Sil.MinusA, e1, e2) in
+        do_imply subs (Prop.exp_normalize_noabs Sil.sub_empty e') (Sil.Var v2)
     | Sil.Var _, e2 ->
         if calc_missing then
           let () = ProverState.add_missing_pi (Sil.Aeq (e1_in, e2_in)) in
@@ -1247,13 +1248,17 @@ let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subs
   | Sil.Earray (size1, esel1, inst1), Sil.Earray (size2, esel2, _) ->
       let indices2 = IList.map fst esel2 in
       let subs' = array_size_imply calc_missing subs size1 size2 indices2 in
-      if Sil.strexp_equal se1 se2 then subs', None, None
-      else begin
-        let subs'', index_frame, index_missing = array_imply source calc_index_frame calc_missing subs' esel1 esel2 typ2 in
-        let index_frame_opt = if index_frame != [] then Some (Sil.Earray (size1, index_frame, inst1)) else None in
-        let index_missing_opt = if index_missing != [] && (!Config.Experiment.allow_missing_index_in_proc_call || !Config.footprint) then Some (Sil.Earray (size1, index_missing, inst1)) else None in
-        subs'', index_frame_opt, index_missing_opt
-      end
+      let subs'', index_frame, index_missing =
+        array_imply source calc_index_frame calc_missing subs' esel1 esel2 typ2 in
+      let index_frame_opt = if index_frame != []
+        then Some (Sil.Earray (size1, index_frame, inst1))
+        else None in
+      let index_missing_opt =
+        if index_missing != [] &&
+           (!Config.Experiment.allow_missing_index_in_proc_call || !Config.footprint)
+        then Some (Sil.Earray (size1, index_missing, inst1))
+        else None in
+      subs'', index_frame_opt, index_missing_opt
   | Sil.Eexp (_, inst), Sil.Estruct (fsel, inst') ->
       d_impl_err ("WARNING: function call with parameters of struct type, treating as unknown", subs, (EXC_FALSE_SEXPS (se1, se2)));
       let fsel' =
