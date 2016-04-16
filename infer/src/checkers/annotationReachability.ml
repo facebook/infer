@@ -188,7 +188,7 @@ let lookup_location pname =
 let string_of_pname =
   Procname.to_simplified_string ~withclass:true
 
-let update_trace trace loc =
+let update_trace loc trace =
   if Location.equal loc Location.dummy then trace
   else
     let trace_elem = {
@@ -200,7 +200,7 @@ let update_trace trace loc =
     trace_elem :: trace
 
 let report_expensive_call_stack pname loc trace stack_str expensive_pname call_loc =
-  let final_trace = IList.rev (update_trace trace call_loc) in
+  let final_trace = IList.rev (update_trace call_loc trace) in
   let exp_pname_str = string_of_pname expensive_pname in
   let description =
     Printf.sprintf
@@ -215,8 +215,8 @@ let report_expensive_call_stack pname loc trace stack_str expensive_pname call_l
     Exceptions.Checkers (calls_expensive_method, Localise.verbatim_desc description) in
   Reporting.log_error pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
 
-let report_allocation_stack pname loc trace stack_str constructor_pname call_loc =
-  let final_trace = IList.rev (update_trace trace call_loc) in
+let report_allocation_stack pname fst_call_loc trace stack_str constructor_pname call_loc =
+  let final_trace = IList.rev (update_trace call_loc trace) in
   let constr_str = string_of_pname constructor_pname in
   let description =
     Printf.sprintf
@@ -228,46 +228,48 @@ let report_allocation_stack pname loc trace stack_str constructor_pname call_loc
       ("new "^constr_str) in
   let exn =
     Exceptions.Checkers (allocates_memory, Localise.verbatim_desc description) in
-  Reporting.log_error pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
+  Reporting.log_error pname ~loc: (Some fst_call_loc) ~ltr: (Some final_trace) exn
 
-let report_call_stack end_of_stack lookup_next_calls report pname pdesc loc calls =
-  let rec loop visited_pnames (trace, stack_str) (callee_pname, callee_loc) =
+let report_call_stack end_of_stack lookup_next_calls report pname loc calls =
+  let rec loop fst_call_loc visited_pnames (trace, stack_str) (callee_pname, call_loc) =
     if end_of_stack callee_pname then
-      report pname loc trace stack_str callee_pname callee_loc
+      report pname fst_call_loc trace stack_str callee_pname call_loc
     else
+      let callee_def_loc = lookup_location callee_pname in
       let next_calls = lookup_next_calls callee_pname in
       let callee_pname_str = string_of_pname callee_pname in
       let new_stack_str = stack_str ^ callee_pname_str ^ " -> " in
-      let new_trace = update_trace trace callee_loc in
+      let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_pnames, updated_visited =
         IList.fold_left
           (fun (accu, set) (p, loc) ->
              if Procname.Set.mem p set then (accu, set)
              else ((p, loc) :: accu, Procname.Set.add p set))
           ([], visited_pnames) next_calls in
-      IList.iter (loop updated_visited (new_trace, new_stack_str)) unseen_pnames in
-  let start_trace = update_trace [] (Cfg.Procdesc.get_loc pdesc) in
-  IList.iter (loop Procname.Set.empty (start_trace, "")) calls
+      IList.iter (loop fst_call_loc updated_visited (new_trace, new_stack_str)) unseen_pnames in
+  IList.iter
+    (fun (fst_callee_pname, fst_call_loc) ->
+       let start_trace = update_trace loc [] in
+       loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
+    calls
 
-let report_expensive_calls tenv pname pdesc loc calls =
+let report_expensive_calls tenv pname loc calls =
   report_call_stack
     (method_is_expensive tenv) lookup_expensive_calls
-    report_expensive_call_stack pname pdesc loc calls
+    report_expensive_call_stack pname loc calls
 
-let report_allocations pname pdesc loc calls =
+let report_allocations pname loc calls =
   report_call_stack
     Procname.is_constructor lookup_allocations
-    report_allocation_stack pname pdesc loc calls
+    report_allocation_stack pname loc calls
 
 module TransferFunctions = struct
   type astate = Domain.astate
 
   let exec_instr astate { ProcData.pdesc; tenv; } = function
-    | Sil.Call (_, Const (Cfun callee_pname), _, _, _) ->
-        (* populates the summary for pname; needed for [lookup_location],
-           [method_calls_expensive], and [method_allocates] *)
-        ignore(Summary.read_summary pdesc callee_pname);
-        let call_loc = lookup_location callee_pname in
+    | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
+        (* Run the analysis of callee_pname if not already analyzed *)
+        ignore (Summary.read_summary pdesc callee_pname);
         let add_expensive_calls astate =
           if method_calls_expensive tenv callee_pname
           then Domain.add_expensive (callee_pname, call_loc) astate
@@ -290,11 +292,6 @@ module Analyzer =
 
 module Interprocedural = struct
   include Analyzer.Interprocedural(Summary)
-
-  let report_expensive_calls tenv pname pdesc loc calls =
-    report_call_stack
-      (method_is_expensive tenv) lookup_expensive_calls
-      report_expensive_call_stack pname pdesc loc calls
 
   let check_and_report ({ Callbacks.proc_desc; proc_name; tenv; } as proc_data) =
     let loc = Cfg.Procdesc.get_loc proc_desc in
@@ -324,9 +321,9 @@ module Interprocedural = struct
     match checker proc_data with
     | Some astate ->
         if performance_critical then
-          report_expensive_calls tenv proc_name proc_desc loc (CallSet.elements (fst astate));
+          report_expensive_calls tenv proc_name loc (CallSet.elements (fst astate));
         if no_allocation then
-          report_allocations proc_name proc_desc loc (CallSet.elements (snd astate))
+          report_allocations proc_name loc (CallSet.elements (snd astate))
     | None -> ()
 
 end
