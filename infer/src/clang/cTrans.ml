@@ -139,7 +139,7 @@ struct
     Tenv.add tenv block_name block_struct_typ;
     let trans_res =
       CTrans_utils.alloc_trans
-        trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true in
+        trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true None in
     let id_block = match trans_res.exps with
       | [(Sil.Var id, _)] -> id
       | _ -> assert false in

@@ -154,7 +154,7 @@ digraph iCFG {
 	
 
 	 33 -> 32 ;
-32 [label="32:  DeclStmt \n   n$25=_fun_CGPathCreateMutable() [line 62]\n  *&path1:struct CGPath *=n$25 [line 62]\n  REMOVE_TEMPS(n$25); [line 62]\n " shape="box"]
+32 [label="32:  DeclStmt \n   n$25=_fun___objc_alloc_no_fail(sizeof(struct CGPath ):unsigned long ,_fun_CGPathCreateMutable:void ) [line 62]\n  *&path1:struct CGPath *=n$25 [line 62]\n  REMOVE_TEMPS(n$25); [line 62]\n " shape="box"]
 	
 
 	 32 -> 31 ;
@@ -173,7 +173,7 @@ digraph iCFG {
 	
 
 	 28 -> 27 ;
-27 [label="27:  Call _fun_CGPathCreateMutable \n   n$21=_fun_CGPathCreateMutable() [line 55]\n  REMOVE_TEMPS(n$21); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
+27 [label="27:  Call alloc \n   n$21=_fun___objc_alloc_no_fail(sizeof(struct CGPath ):unsigned long ,_fun_CGPathCreateMutable:void ) [line 55]\n  REMOVE_TEMPS(n$21); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
 	
 
 	 27 -> 26 ;
@@ -210,7 +210,7 @@ digraph iCFG {
 	
 
 	 18 -> 20 ;
-17 [label="17:  DeclStmt \n   n$16=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 40]\n  *&maString:struct __CFAttributedString *=n$16 [line 39]\n  REMOVE_TEMPS(n$16); [line 39]\n " shape="box"]
+17 [label="17:  DeclStmt \n   n$16=_fun___objc_alloc_no_fail(sizeof(struct __CFAttributedString ):unsigned long ,_fun_CFAttributedStringCreateMutable:void ) [line 40]\n  *&maString:struct __CFAttributedString *=n$16 [line 39]\n  REMOVE_TEMPS(n$16); [line 39]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -225,7 +225,7 @@ digraph iCFG {
 	
 
 	 14 -> 17 ;
-13 [label="13:  Call _fun_CFAttributedStringCreateMutable \n   n$14=_fun_CFAttributedStringCreateMutable(0:struct __CFAllocator *,0:long ) [line 35]\n  REMOVE_TEMPS(n$14); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+13 [label="13:  Call alloc \n   n$14=_fun___objc_alloc_no_fail(sizeof(struct __CFAttributedString ):unsigned long ,_fun_CFAttributedStringCreateMutable:void ) [line 35]\n  REMOVE_TEMPS(n$14); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -236,7 +236,7 @@ digraph iCFG {
 	
 
 	 11 -> 13 ;
-10 [label="10:  DeclStmt \n   n$10=*&self:class MemoryLeakExample * [line 30]\n  n$11=_fun_MemoryLeakExample_backgroundCoveringView(n$10:class MemoryLeakExample *) [line 30]\n  n$12=_fun_UIView_bounds(n$11:class UIView *) [line 30]\n  n$13=_fun_CGPathCreateWithRect(n$12:struct CGRect ,0:struct CGAffineTransform *) [line 30]\n  *&shadowPath:struct CGPath *=n$13 [line 29]\n  REMOVE_TEMPS(n$10,n$11,n$12,n$13); [line 29]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$13=_fun___objc_alloc_no_fail(sizeof(struct CGPath ):unsigned long ,_fun_CGPathCreateWithRect:void ) [line 30]\n  *&shadowPath:struct CGPath *=n$13 [line 29]\n  REMOVE_TEMPS(n$13); [line 29]\n " shape="box"]
 	
 
 	 10 -> 9 ;
@@ -255,7 +255,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   n$2=*&attachmentContainerView:class UIView * [line 22]\n  n$3=_fun_UIView_bounds(n$2:class UIView *) [line 22]\n  n$4=_fun_CGPathCreateWithRect(n$3:struct CGRect ,0:struct CGAffineTransform *) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 21]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 21]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(struct CGPath ):unsigned long ,_fun_CGPathCreateWithRect:void ) [line 22]\n  *&shadowPath:struct CGPath *=n$4 [line 21]\n  REMOVE_TEMPS(n$4); [line 21]\n " shape="box"]
 	
 
 	 5 -> 4 ;

@@ -17,18 +17,3 @@ void CGGradientRelease(CGGradientRef gradient) {
 }
 
 CGGradientRef __cf_non_null_alloc(CGGradientRef);
-
-CGGradientRef CGGradientCreateWithColors(CGColorSpaceRef space,
-                                         CFArrayRef colors,
-                                         const CGFloat locations[]) {
-  CGGradientRef c;
-  return __cf_non_null_alloc(c);
-}
-
-CGGradientRef CGGradientCreateWithColorComponents(CGColorSpaceRef space,
-                                                  const CGFloat components[],
-                                                  const CGFloat locations[],
-                                                  size_t count) {
-  CGGradientRef c;
-  return __cf_non_null_alloc(c);
-}

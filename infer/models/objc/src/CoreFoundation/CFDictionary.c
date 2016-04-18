@@ -15,13 +15,6 @@ CFDictionaryRef __cf_non_null_alloc(CFDictionaryRef);
 
 CFDictionaryRef __cf_alloc(CFDictionaryRef);
 
-CFDictionaryRef CGImageSourceCopyPropertiesAtIndex(CGImageSourceRef isrc,
-                                                   size_t index,
-                                                   CFDictionaryRef options) {
-  CFDictionaryRef c;
-  return __cf_non_null_alloc(c);
-}
-
 CFDictionaryRef CFDictionaryCreate(
     CFAllocatorRef allocator,
     const void** keys,
@@ -39,17 +32,6 @@ CFDictionaryRef CFDictionaryCreateCopy(CFAllocatorRef allocator,
   return __cf_alloc(c);
 }
 
-CFDictionaryRef CFNetworkCopySystemProxySettings(void) {
-  CFDictionaryRef c;
-  return __cf_non_null_alloc(c);
-}
-
-CFDictionaryRef CGImageSourceCopyProperties(CGImageSourceRef isrc,
-                                            CFDictionaryRef options) {
-  CFDictionaryRef c;
-  return __cf_non_null_alloc(c);
-}
-
 CFDictionaryRef CMCopyDictionaryOfAttachments(CFAllocatorRef allocator,
                                               CMAttachmentBearerRef target,
                                               CMAttachmentMode attachmentMode) {
@@ -60,11 +42,6 @@ CFDictionaryRef CMCopyDictionaryOfAttachments(CFAllocatorRef allocator,
 CFDictionaryRef CFHTTPMessageCopyAllHeaderFields(CFHTTPMessageRef message) {
   CFDictionaryRef c;
   return __cf_alloc(c);
-}
-
-CFDictionaryRef CNCopyCurrentNetworkInfo(CFStringRef interfaceName) {
-  CFDictionaryRef c;
-  return __cf_non_null_alloc(c);
 }
 
 CFDictionaryRef CMTimeCopyAsDictionary(CMTime time, CFAllocatorRef allocator) {

@@ -23,10 +23,3 @@ CFMutableDictionaryRef CFDictionaryCreateMutable(
   CFMutableDictionaryRef c;
   return __cf_alloc(c);
 }
-
-CFMutableDictionaryRef CFDictionaryCreateMutableCopy(CFAllocatorRef allocator,
-                                                     CFIndex capacity,
-                                                     CFDictionaryRef theDict) {
-  CFMutableDictionaryRef c;
-  return __cf_non_null_alloc(c);
-}

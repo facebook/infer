@@ -18,13 +18,3 @@ SecKeyRef SecTrustCopyPublicKey(SecTrustRef trust) {
   SecKeyRef c;
   return __cf_alloc(c);
 }
-
-SecPolicyRef SecPolicyCreateSSL(Boolean server, CFStringRef hostname) {
-  SecPolicyRef c;
-  return __cf_non_null_alloc(c);
-}
-
-SecPolicyRef SecPolicyCreateBasicX509(void) {
-  SecPolicyRef c;
-  return __cf_non_null_alloc(c);
-}

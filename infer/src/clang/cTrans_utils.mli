@@ -101,7 +101,8 @@ val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Sil.typ -> Procname.t option -> trans_result option
 
 val alloc_trans :
-  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Sil.typ -> bool -> trans_result
+  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Sil.typ -> bool ->
+  Procname.t option -> trans_result
 
 val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Clang_ast_t.type_ptr -> string option -> string -> trans_result

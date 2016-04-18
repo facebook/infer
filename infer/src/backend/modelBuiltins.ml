@@ -748,11 +748,11 @@ let execute_alloc mk can_return_null
     | Sil.Sizeof _ -> e in
   let handle_sizeof_exp size_exp =
     Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size_exp), Sil.Subtype.exact) in
-  let size_exp = match args with
+  let size_exp, procname = match args with
     | [(size_exp, _)] -> (* for malloc and __new *)
-        size_exp
-    | [(num_obj, _); (base_exp, _)] -> (* for __new_array *)
-        Sil.BinOp (Sil.Mult, num_obj, base_exp)
+        size_exp, Sil.mem_alloc_pname mk
+    | [(size_exp, _); (Sil.Const (Sil.Cfun pname), _)] ->
+        size_exp, pname
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let ret_id = match ret_ids with
@@ -768,12 +768,11 @@ let execute_alloc mk can_return_null
   let ptsto_new =
     Prop.mk_ptsto_exp (Some tenv) Prop.Fld_init (exp_new, cnt_te, None) Sil.Ialloc in
   let prop_plus_ptsto =
-    let pname = Sil.mem_alloc_pname mk in
     let prop' = Prop.normalize (Prop.prop_sigma_star prop [ptsto_new]) in
     let ra =
       { Sil.ra_kind = Sil.Racquire;
         Sil.ra_res = Sil.Rmemory mk;
-        Sil.ra_pname = pname;
+        Sil.ra_pname = procname;
         Sil.ra_loc = loc;
         Sil.ra_vpath = None } in
     (* mark value as allocated *)
@@ -1123,62 +1122,72 @@ let _ = Builtin.register
     "wscanf" (execute_scan_function 1)
 
 let execute_objc_alloc_no_fail
-    symb_state typ
+    symb_state typ alloc_fun_opt
     { Builtin.pdesc; tenv; ret_ids; loc; } =
   let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
   let ptr_typ = Sil.Tptr (typ, Sil.Pk_pointer) in
   let sizeof_typ = Sil.Sizeof (typ, Sil.Subtype.exact) in
-  let alloc_instr = Sil.Call (ret_ids, alloc_fun, [sizeof_typ, ptr_typ], loc, Sil.cf_default) in
+  let alloc_fun_exp =
+    match alloc_fun_opt with
+    | Some pname -> [Sil.Const (Sil.Cfun pname), Sil.Tvoid]
+    | None -> [] in
+  let alloc_instr =
+    Sil.Call (ret_ids, alloc_fun, [(sizeof_typ, ptr_typ)] @ alloc_fun_exp, loc, Sil.cf_default) in
   SymExec.instrs tenv pdesc [alloc_instr] symb_state
 
+let mk_objc_class_method class_name method_name =
+  let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
+  (Procname.ObjC_Cpp
+     (Procname.objc_cpp class_name method_name method_kind))
+
+(* NSArray models *)
+
+let arrayWithObjects_pname = mk_objc_class_method "NSArray" "arrayWithObjects:"
+
+let arrayWithObjectsCount_pname = mk_objc_class_method "NSArray" "arrayWithObjects:count:"
+
 let execute_objc_NSArray_alloc_no_fail
-    ({ Builtin.tenv; } as builtin_args) symb_state =
+    ({ Builtin.tenv; } as builtin_args) symb_state pname =
   let nsarray_typ_ =
     Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string "NSArray")) in
   let nsarray_typ = Tenv.expand_type tenv nsarray_typ_ in
-  execute_objc_alloc_no_fail symb_state nsarray_typ builtin_args
+  execute_objc_alloc_no_fail symb_state nsarray_typ (Some pname) builtin_args
 
 let execute_NSArray_arrayWithObjects_count builtin_args =
   let n_formals = 1 in
   let res = SymExec.check_variadic_sentinel ~fails_on_nil: true n_formals (0,1) builtin_args in
-  execute_objc_NSArray_alloc_no_fail builtin_args res
+  execute_objc_NSArray_alloc_no_fail builtin_args res arrayWithObjectsCount_pname
 
 let execute_NSArray_arrayWithObjects builtin_args =
   let n_formals = 1 in
   let res = SymExec.check_variadic_sentinel n_formals (0,1) builtin_args in
-  execute_objc_NSArray_alloc_no_fail builtin_args res
+  execute_objc_NSArray_alloc_no_fail builtin_args res arrayWithObjects_pname
 
 let _ =
-  let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
-  Builtin.register_procname
-    (Procname.ObjC_Cpp
-       (Procname.objc_cpp "NSArray" "arrayWithObjects:count:" method_kind))
-    execute_NSArray_arrayWithObjects_count
-let _ =
-  let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
-  Builtin.register_procname
-    (Procname.ObjC_Cpp
-       (Procname.objc_cpp "NSArray" "arrayWithObjects:" method_kind))
-    execute_NSArray_arrayWithObjects
+  Builtin.register_procname arrayWithObjectsCount_pname execute_NSArray_arrayWithObjects_count;
+  Builtin.register_procname arrayWithObjects_pname execute_NSArray_arrayWithObjects
+
+(* NSDictionary models *)
 
 let execute_objc_NSDictionary_alloc_no_fail
-    symb_state
+    symb_state pname
     ({ Builtin.tenv; } as builtin_args) =
   let nsdictionary_typ_ =
     Sil.Tvar (Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string "NSDictionary")) in
   let nsdictionary_typ =
     Tenv.expand_type tenv nsdictionary_typ_ in
-  execute_objc_alloc_no_fail symb_state nsdictionary_typ builtin_args
+  execute_objc_alloc_no_fail symb_state nsdictionary_typ (Some pname) builtin_args
+
+let __objc_dictionary_literal_pname =
+  mk_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:"
 
 let execute___objc_dictionary_literal builtin_args =
   let n_formals = 1 in
   let res' = SymExec.check_variadic_sentinel ~fails_on_nil: true n_formals (0,1) builtin_args in
-  execute_objc_NSDictionary_alloc_no_fail res' builtin_args
+  let pname = __objc_dictionary_literal_pname in
+  execute_objc_NSDictionary_alloc_no_fail res' pname builtin_args
 
 let __objc_dictionary_literal =
-  let method_kind = Procname.mangled_of_objc_method_kind Procname.Class_objc_method in
-  let pname =
-    Procname.ObjC_Cpp
-      (Procname.objc_cpp "NSDictionary" "__objc_dictionary_literal:" method_kind) in
+  let pname = __objc_dictionary_literal_pname in
   Builtin.register_procname pname execute___objc_dictionary_literal;
   pname

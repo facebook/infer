@@ -291,7 +291,7 @@ struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs context sil_loc function_type fname size_exp_opt =
+let create_alloc_instrs context sil_loc function_type fname size_exp_opt procname_opt =
   let function_type, function_type_np =
     match function_type with
     | Sil.Tptr (styp, Sil.Pk_pointer)
@@ -306,17 +306,21 @@ let create_alloc_instrs context sil_loc function_type fname size_exp_opt =
     | Some exp -> Sil.BinOp (Sil.Mult, sizeof_exp_, exp)
     | None -> sizeof_exp_ in
   let exp = (sizeof_exp, Sil.Tint Sil.IULong) in
+  let procname_arg = match procname_opt with
+    | Some procname -> [Sil.Const (Sil.Cfun (procname)), Sil.Tvoid]
+    | None -> [] in
+  let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
-  let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), [exp], sil_loc, Sil.cf_default) in
+  let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), args, sil_loc, Sil.cf_default) in
   (function_type, ret_id, stmt_call, Sil.Var ret_id)
 
-let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc =
+let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc procname_opt =
   let fname = if is_cf_non_null_alloc then
       ModelBuiltins.__objc_alloc_no_fail
     else
       ModelBuiltins.__objc_alloc in
   let (function_type, ret_id, stmt_call, exp) =
-    create_alloc_instrs trans_state.context loc function_type fname None in
+    create_alloc_instrs trans_state.context loc function_type fname None procname_opt in
   let res_trans_tmp = { empty_res_trans with ids =[ret_id]; instrs =[stmt_call]} in
   let res_trans =
     let nname = "Call alloc" in
@@ -326,7 +330,7 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc =
 let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let fname = ModelBuiltins.__objc_alloc_no_fail in
   let (alloc_ret_type, alloc_ret_id, alloc_stmt_call, _) =
-    create_alloc_instrs trans_state.context loc function_type fname None in
+    create_alloc_instrs trans_state.context loc function_type fname None None in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
   let call_flags = { Sil.cf_default with Sil.cf_virtual = is_instance; } in
@@ -350,7 +354,7 @@ let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selecto
     | Some class_name -> class_name
     | None -> CTypes.classname_of_type function_type in
   if selector = CFrontend_config.alloc then
-    alloc_trans trans_state loc stmt_info function_type true
+    alloc_trans trans_state loc stmt_info function_type true None
   else if selector = CFrontend_config.new_str then
     objc_new_trans trans_state loc stmt_info class_name function_type
   else assert false
@@ -361,7 +365,7 @@ let cpp_new_trans trans_state sil_loc function_type size_exp_opt =
     | Some _ -> ModelBuiltins.__new_array
     | None -> ModelBuiltins.__new in
   let (function_type, ret_id, stmt_call, exp) =
-    create_alloc_instrs trans_state.context sil_loc function_type fname size_exp_opt  in
+    create_alloc_instrs trans_state.context sil_loc function_type fname size_exp_opt None in
   { empty_res_trans with ids = [ret_id]; instrs = [stmt_call]; exps = [(exp, function_type)] }
 
 let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
@@ -385,9 +389,9 @@ let cast_trans context exps sil_loc callee_pname_opt function_type =
 let builtin_trans trans_state loc stmt_info function_type callee_pname_opt =
   if CTrans_models.is_cf_non_null_alloc callee_pname_opt ||
      CTrans_models.is_alloc_model function_type callee_pname_opt then
-    Some (alloc_trans trans_state loc stmt_info function_type true)
+    Some (alloc_trans trans_state loc stmt_info function_type true callee_pname_opt)
   else if CTrans_models.is_alloc callee_pname_opt then
-    Some (alloc_trans trans_state loc stmt_info function_type false)
+    Some (alloc_trans trans_state loc stmt_info function_type false None)
   else None
 
 let dereference_var_sil (exp, typ) sil_loc =

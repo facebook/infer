@@ -18,10 +18,3 @@ CFMutableSetRef CFSetCreateMutable(CFAllocatorRef allocator,
   CFMutableSetRef c;
   return __cf_alloc(c);
 }
-
-CFMutableSetRef CFSetCreateMutableCopy(CFAllocatorRef allocator,
-                                       CFIndex capacity,
-                                       CFSetRef theSet) {
-  CFMutableSetRef c;
-  return __cf_non_null_alloc(c);
-}

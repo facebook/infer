@@ -18,16 +18,6 @@ void CGColorRelease(CGColorRef color) {
     __objc_release_cf(color);
 }
 
-CGColorRef CGColorCreate(CGColorSpaceRef space, const CGFloat components[]) {
-  CGColorRef c;
-  return __cf_non_null_alloc(c);
-}
-
-CGColorRef CGColorCreateCopyWithAlpha(CGColorRef color, CGFloat alpha) {
-  CGColorRef c;
-  return __cf_non_null_alloc(c);
-}
-
 // FB own code
 
 CGColorRef FBColorCreateWithGray(CGFloat gray, CGFloat a) {

@@ -20,33 +20,8 @@ CGDataProviderRef __cf_alloc(CGDataProviderRef);
 
 CGDataProviderRef __cf_non_null_alloc(CGDataProviderRef);
 
-CGDataProviderRef CGDataProviderCreateWithCFData(CFDataRef data) {
-  CGDataProviderRef c;
-  return __cf_non_null_alloc(c);
-}
-
-CGDataProviderRef CGDataProviderCreateWithData(
-    void* info,
-    const void* data,
-    size_t size,
-    CGDataProviderReleaseDataCallback releaseData) {
-  CGDataProviderRef c;
-  return __cf_non_null_alloc(c);
-}
-
 CGDataProviderRef CGDataProviderCreateWithURL(CFURLRef url) {
   CGDataProviderRef c;
   return __cf_alloc(c);
 }
 
-CGDataProviderRef CGDataProviderCreateDirect(
-    void* info, off_t size, const CGDataProviderDirectCallbacks* callbacks) {
-  CGDataProviderRef c;
-  return __cf_non_null_alloc(c);
-}
-
-CGDataProviderRef CGDataProviderCreateSequential(
-    void* info, const CGDataProviderSequentialCallbacks* callbacks) {
-  CGDataProviderRef c;
-  return __cf_non_null_alloc(c);
-}
