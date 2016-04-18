@@ -531,8 +531,7 @@ it is never unregistered. This is problematic as if the object is not unregister
 the notification center can still send notification even after the object has been deallocated.
 In that case we would get a crash.
 
-## <a name="GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"></a> 
-Global variable initialized with function or method call
+## <a name="GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"></a> Global variable initialized with function or method call
 
 This checker warns you when the initialization of global variable contain a method or function call. 
 The warning wants to make you aware that some functions are expensive.
