@@ -17,9 +17,6 @@ val get_lifecycles : (string * string * string list) list
 (** return true if [typ] is a subclass of [lifecycle_typ] *)
 val typ_is_lifecycle_typ : Sil.typ -> Sil.typ -> Tenv.t -> bool
 
-(** return true if [typ] is a known callback class, false otherwise *)
-val is_callback_class : Sil.typ -> Tenv.t -> bool
-
 (** return true if [typ] <: android.content.Context *)
 val is_context : Sil.typ -> Tenv.t -> bool
 
@@ -36,14 +33,6 @@ val is_fragment : Sil.typ -> Tenv.t -> bool
 
 (** return true if [procname] is a special lifecycle cleanup method *)
 val is_destroy_method : Procname.t -> bool
-
-(** returns an option containing the var name and type of a callback registered by [procname],
-    None if no callback is registered *)
-val get_callback_registered_by :
-  Procname.java -> (Sil.exp * Sil.typ) list -> Tenv.t -> (Sil.exp * Sil.typ) option
-
-(** return a list of typ's corresponding to callback classes registered by [procdesc] *)
-val get_callbacks_registered_by_proc : Cfg.Procdesc.t -> Tenv.t -> Sil.typ list
 
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity)
     and a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)

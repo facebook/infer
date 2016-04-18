@@ -21,7 +21,6 @@ let active_procedure_checkers () =
   let java_checkers =
     let l =
       [
-        CallbackChecker.callback_checker_main, false;
         Checkers.callback_check_access, false;
         Checkers.callback_monitor_nullcheck, false;
         Checkers.callback_test_state , false;
