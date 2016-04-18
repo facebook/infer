@@ -1,0 +1,133 @@
+digraph iCFG {
+34 [label="34:  DeclStmt \n   _fun_X_X(&a:class X *) [line 26]\n " shape="box"]
+	
+
+	 34 -> 28 ;
+33 [label="33:  DeclStmt \n   n$6=*&SIL_temp_conditional___27:class X  [line 27]\n  NULLIFY(&SIL_temp_conditional___27,true); [line 27]\n  *&SIL_materialize_temp__n$0:class X =n$6 [line 27]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$0:class X &) [line 27]\n  REMOVE_TEMPS(n$6); [line 27]\n  NULLIFY(&SIL_materialize_temp__n$0,false); [line 27]\n  NULLIFY(&SIL_materialize_temp__n$4,false); [line 27]\n  NULLIFY(&__temp_return_n$2,false); [line 27]\n  NULLIFY(&a,false); [line 27]\n  NULLIFY(&x,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+	
+
+	 33 -> 26 ;
+32 [label="32:  ConditinalStmt Branch \n   _fun_X_X(&SIL_materialize_temp__n$0:class X *,&a:class X &) [line 27]\n  DECLARE_LOCALS(&SIL_temp_conditional___27); [line 27]\n  *&SIL_temp_conditional___27:class X =&SIL_materialize_temp__n$0 [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+	
+
+	 32 -> 27 ;
+31 [label="31:  ConditinalStmt Branch \n   _fun_getX(&SIL_materialize_temp__n$4:class X *) [line 27]\n  _fun_X_X(&SIL_materialize_temp__n$0:class X *,&SIL_materialize_temp__n$4:class X &) [line 27]\n  DECLARE_LOCALS(&SIL_temp_conditional___27); [line 27]\n  *&SIL_temp_conditional___27:class X =&SIL_materialize_temp__n$0 [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+	
+
+	 31 -> 27 ;
+30 [label="30: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 27]\n  REMOVE_TEMPS(n$3); [line 27]\n " shape="invhouse"]
+	
+
+	 30 -> 32 ;
+29 [label="29: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 27]\n  REMOVE_TEMPS(n$3); [line 27]\n " shape="invhouse"]
+	
+
+	 29 -> 31 ;
+28 [label="28:  Call _fun_X_operator bool \n   _fun_getX(&__temp_return_n$2:class X *) [line 27]\n  n$3=_fun_X_operator bool(&__temp_return_n$2:class X &) [line 27]\n " shape="box"]
+	
+
+	 28 -> 29 ;
+	 28 -> 30 ;
+27 [label="27: + \n  " ]
+	
+
+	 27 -> 33 ;
+26 [label="26: Exit conditional \n  " color=yellow style=filled]
+	
+
+25 [label="25: Start conditional\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$0:class X  __temp_return_n$2:class X  SIL_materialize_temp__n$4:class X  a:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$0,&__temp_return_n$2,&SIL_materialize_temp__n$4,&a); [line 25]\n " color=yellow style=filled]
+	
+
+	 25 -> 34 ;
+24 [label="24:  DeclStmt \n   _fun_X_X(&a:class X *) [line 21]\n " shape="box"]
+	
+
+	 24 -> 22 ;
+23 [label="23:  DeclStmt \n   n$4=*&SIL_temp_conditional___16:class X  [line 22]\n  NULLIFY(&SIL_temp_conditional___16,true); [line 22]\n  *&SIL_materialize_temp__n$0:class X =n$4 [line 22]\n  _fun_X_X(&x:class X *,&SIL_materialize_temp__n$0:class X &) [line 22]\n  REMOVE_TEMPS(n$4); [line 22]\n  NULLIFY(&SIL_materialize_temp__n$0,false); [line 22]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 22]\n  NULLIFY(&a,false); [line 22]\n  NULLIFY(&x,false); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+	
+
+	 23 -> 15 ;
+22 [label="22:  BinaryConditinalStmt Init \n   _fun_getX(&SIL_materialize_temp__n$0:class X *) [line 22]\n " shape="box"]
+	
+
+	 22 -> 17 ;
+21 [label="21:  ConditinalStmt Branch \n   _fun_X_X(&SIL_materialize_temp__n$0:class X *,&a:class X &) [line 22]\n  DECLARE_LOCALS(&SIL_temp_conditional___16); [line 22]\n  *&SIL_temp_conditional___16:class X =&SIL_materialize_temp__n$0 [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+	
+
+	 21 -> 16 ;
+20 [label="20:  ConditinalStmt Branch \n   *&SIL_materialize_temp__n$3:class X =&SIL_materialize_temp__n$0 [line 22]\n  _fun_X_X(&SIL_materialize_temp__n$0:class X *,&SIL_materialize_temp__n$3:class X &) [line 22]\n  DECLARE_LOCALS(&SIL_temp_conditional___16); [line 22]\n  *&SIL_temp_conditional___16:class X =&SIL_materialize_temp__n$0 [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+	
+
+	 20 -> 16 ;
+19 [label="19: Prune (false branch) \n   PRUNE((n$2 == 0), false); [line 22]\n  REMOVE_TEMPS(n$2); [line 22]\n " shape="invhouse"]
+	
+
+	 19 -> 21 ;
+18 [label="18: Prune (true branch) \n   PRUNE((n$2 != 0), true); [line 22]\n  REMOVE_TEMPS(n$2); [line 22]\n " shape="invhouse"]
+	
+
+	 18 -> 20 ;
+17 [label="17:  Call _fun_X_operator bool \n   n$2=_fun_X_operator bool(&SIL_materialize_temp__n$0:class X &) [line 22]\n " shape="box"]
+	
+
+	 17 -> 18 ;
+	 17 -> 19 ;
+16 [label="16: + \n  " ]
+	
+
+	 16 -> 23 ;
+15 [label="15: Exit binaryConditional \n  " color=yellow style=filled]
+	
+
+14 [label="14: Start binaryConditional\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$0:class X  SIL_materialize_temp__n$3:class X  a:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$0,&SIL_materialize_temp__n$3,&a); [line 20]\n " color=yellow style=filled]
+	
+
+	 14 -> 24 ;
+13 [label="13:  DeclStmt \n   _fun_X_X(&x:class X *) [line 15]\n " shape="box"]
+	
+
+	 13 -> 12 ;
+12 [label="12:  Return Stmt \n   n$0=*&__return_param:class X * [line 16]\n  _fun_X_X(n$0:class X *,&x:class X &) [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&__return_param,false); [line 16]\n  NULLIFY(&x,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+	
+
+	 12 -> 11 ;
+11 [label="11: Exit getX \n  " color=yellow style=filled]
+	
+
+10 [label="10: Start getX\nFormals:  __return_param:class X *\nLocals:  x:class X  \n   DECLARE_LOCALS(&return,&x); [line 14]\n " color=yellow style=filled]
+	
+
+	 10 -> 13 ;
+9 [label="9: Exit X_X \n  " color=yellow style=filled]
+	
+
+8 [label="8: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+	
+
+	 8 -> 9 ;
+7 [label="7: Exit X_X \n  " color=yellow style=filled]
+	
+
+6 [label="6: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+	
+
+	 6 -> 7 ;
+5 [label="5: Exit X_X \n  " color=yellow style=filled]
+	
+
+4 [label="4: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+	
+
+	 4 -> 5 ;
+3 [label="3:  Return Stmt \n   *&return:_Bool =1 [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+	
+
+	 3 -> 2 ;
+2 [label="2: Exit X_operator bool \n  " color=yellow style=filled]
+	
+
+1 [label="1: Start X_operator bool\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+	
+
+	 1 -> 3 ;
+}

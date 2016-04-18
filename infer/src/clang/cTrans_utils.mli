@@ -27,6 +27,7 @@ type trans_state = {
   continuation: continuation option;
   priority: priority_node;
   var_exp_typ: (Sil.exp * Sil.typ) option;
+  opaque_exp: (Sil.exp * Sil.typ) option;
 }
 
 type trans_result = {

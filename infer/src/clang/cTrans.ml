@@ -1175,6 +1175,32 @@ struct
          }
      | _ -> assert false)
 
+  and binaryConditionalOperator_trans trans_state stmt_info stmt_list expr_info =
+    match stmt_list with
+    | [stmt1; ostmt1; ostmt2; stmt2]
+      when contains_opaque_value_expr ostmt1 && contains_opaque_value_expr ostmt2 ->
+        let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+        let trans_state_pri = PriorityNode.force_claim_priority_node trans_state stmt_info in
+        let trans_state_cond = { trans_state_pri with
+                                 continuation = mk_cond_continuation trans_state_pri.continuation
+                               } in
+        (* evaluate stmt1 once. Then, use it as replacement for OpaqueValueExpr*)
+        (* when translating ostmt1 and ostmt2 *)
+        let init_res_trans = instruction trans_state_cond stmt1 in
+        let opaque_exp = extract_exp_from_list init_res_trans.exps "" in
+        let trans_state' = { trans_state_pri with opaque_exp = Some opaque_exp } in
+        let op_res_trans = conditionalOperator_trans trans_state' stmt_info
+            [ostmt1; ostmt2; stmt2] expr_info in
+        let trans_state'' = { trans_state_cond with succ_nodes = op_res_trans.root_nodes } in
+        let init_res_trans' = PriorityNode.compute_results_to_parent trans_state'' sil_loc
+            "BinaryConditinalStmt Init" stmt_info [init_res_trans] in
+        let root_nodes = init_res_trans'.root_nodes in
+        let root_nodes' = if root_nodes <> [] then root_nodes else op_res_trans.root_nodes in
+        let ids = op_res_trans.ids @ init_res_trans'.ids in
+        { op_res_trans with root_nodes = root_nodes'; ids = ids }
+    | _ -> Printing.log_stats "BinaryConditionalOperator not translated@.";
+        assert false
+
   (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
   (* The invariant is that the translation of a condition always contains (at least) *)
   (* the prune nodes. Moreover these are always the leaf nodes of the translation. *)
@@ -1772,9 +1798,12 @@ struct
   and opaqueValueExpr_trans trans_state opaque_value_expr_info =
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
-    match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
-    | Some stmt -> instruction trans_state stmt
-    | _ -> assert false
+    match trans_state.opaque_exp with
+    | Some exp -> { empty_res_trans with exps = [exp] }
+    | _ ->
+        (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
+         | Some stmt -> instruction trans_state stmt
+         | _ -> assert false)
 
   (* NOTE: This translation has several hypothesis. Need to be verified when we have more*)
   (* experience with this construct. Assert false will help to see if we encounter programs*)
@@ -2531,14 +2560,7 @@ struct
         stringLiteral_trans trans_state expr_info ""
 
     | BinaryConditionalOperator (stmt_info, stmts, expr_info) ->
-        (match stmts with
-         | [stmt1; ostmt1; ostmt2; stmt2]
-           when contains_opaque_value_expr ostmt1 && contains_opaque_value_expr ostmt2 ->
-             conditionalOperator_trans trans_state stmt_info [stmt1; stmt1; stmt2] expr_info
-         | _ -> Printing.log_stats
-                  "BinaryConditionalOperator not translated %s @."
-                  (Ast_utils.string_of_stmt instr);
-             assert false)
+        binaryConditionalOperator_trans trans_state stmt_info stmts expr_info
     | CXXNewExpr (stmt_info, _, expr_info, cxx_new_expr_info) ->
         cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info
     | CXXDeleteExpr (stmt_info, stmt_list, _, delete_expr_info) ->
@@ -2663,6 +2685,7 @@ struct
       continuation = None;
       priority = Free;
       var_exp_typ = None;
+      opaque_exp = None;
     } in
     let res_trans_stmt = instruction trans_state stmt in
     fst (CTrans_utils.extract_exp_from_list res_trans_stmt.exps warning)
@@ -2674,6 +2697,7 @@ struct
       continuation = None;
       priority = Free;
       var_exp_typ = None;
+      opaque_exp = None;
     } in
     let instrs = extra_instrs @ [`ClangStmt body] in
     let instrs_trans = IList.map get_custom_stmt_trans instrs in

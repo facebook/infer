@@ -31,3 +31,5 @@ int test6(int* p) {
   int z = 1 ? *p : 0;
   return z;
 }
+
+int test7(int b) { return test2(2 + test2(2)) ?: 2; }

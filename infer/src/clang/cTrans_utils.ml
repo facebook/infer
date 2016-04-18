@@ -131,6 +131,7 @@ type trans_state = {
   continuation: continuation option; (* current continuation *)
   priority: priority_node;
   var_exp_typ: (Sil.exp * Sil.typ) option;
+  opaque_exp: (Sil.exp * Sil.typ) option;
 }
 
 (* A translation result. It is returned by the translation function. *)

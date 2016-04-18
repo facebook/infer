@@ -34,4 +34,10 @@ public class ConditionalTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("lvalue_conditional.cpp");
   }
+
+  @Test
+  public void testBinaryConditionalDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("binary_conditional.cpp");
+  }
 }
