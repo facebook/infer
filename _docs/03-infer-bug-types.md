@@ -31,6 +31,8 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Strong delegate warning](/docs/infer-bug-types.html#STRONG_DELEGATE_WARNING)
   - [C++ reference captured in Objective-C block](/docs/infer-bug-types.html#CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK)
   - [Assign pointer warning](/docs/infer-bug-types.html#ASSIGN_POINTER_WARNING)
+  - [Registered observer being deallocated](/docs/infer-bug-types.html#REGISTERED_OBSERVER_BEING_DEALLOCATED)
+  - [Global variable initialized with function or method call](/docs/infer-bug-types.html#GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL)
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
