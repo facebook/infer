@@ -521,3 +521,18 @@ const int copied_v = v;
 
 This check fires when a pointer to an Obj-C object is tagged with an `assign` property (similar to the `-Warc-unsafe-retained-assign` compiler flag). Not holding a strong reference to the object makes it easy to accidentally create and use a dangling pointer.
 
+## <a name="REGISTERED_OBSERVER_BEING_DEALLOCATED"></a> Registered observer being deallocated
+
+Objects register with a notification center to receive notifications. 
+This check warns you when an object is registered as observer of a NSNotificationCenter but 
+it is never unregistered. This is problematic as if the object is not unregistered
+the notification center can still send notification even after the object has been deallocated.
+In that case we would get a crash.
+
+## <a name="GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"></a> 
+Global variable initialized with function or method call
+
+This checker warns you when the initialization of global variable contain a method or function call. 
+The warning wants to make you aware that some functions are expensive.
+As the global variables are initialized before main() is called, these initializations can slow down the
+start-up time of an app.
