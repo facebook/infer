@@ -28,6 +28,14 @@ It is used as part of the Facebook development process, where it runs on code ch
 apps - these include the main Facebook apps for Android and iOS, Facebook Messenger, Instagram, 
 and other apps which are used by over a billion people.
 
+In addition to Facebook, where Infer is being developed, Infer is used by a number of companies:
+
+- [Kiuwan](https://www.kiuwan.com/)
+- [Spotify](https://www.spotify.com/)
+- [Uber](https://www.uber.com/)
+
+Do you run Infer on your app or program? Add yourself to this list with a [pull request](https://github.com/facebook/infer/edit/gh-pages/index.md)!
+
 ## Using Infer
 
 Start with the [Getting Started](docs/getting-started.html) guide and our other [docs](docs/) to download and try 
