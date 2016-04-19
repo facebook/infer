@@ -20,9 +20,6 @@ let latex = ref None
 (** command line flag: if true, print whole seconds only *)
 let whole_seconds = ref false
 
-(** If true, read all .specs files from the results dir *)
-let results_dir_cmdline = ref false
-
 (** Outfile to save bugs stats in csv format *)
 let bugs_csv = ref None
 
@@ -136,7 +133,7 @@ let arg_desc =
         "create file procs.xml containing statistics for each procedure in XML format"
         ;
         "-results_dir",
-        Arg.String (fun s -> results_dir_cmdline := true; Config.results_dir := s),
+        Arg.String (fun s -> Config.results_dir := s),
         Some "dir",
         "read all the .specs files in the results dir"
         ;
@@ -252,11 +249,8 @@ let load_specfiles () =
     let all_filepaths = IList.map (fun fname -> Filename.concat dir fname) all_filenames in
     IList.filter is_specs_file all_filepaths in
   let specs_dirs =
-    if !results_dir_cmdline then
-      let result_specs_dir = DB.filename_to_string (DB.Results_dir.specs_dir ()) in
-      result_specs_dir :: !Config.specs_library
-    else
-      !Config.specs_library in
+    let result_specs_dir = DB.filename_to_string (DB.Results_dir.specs_dir ()) in
+    result_specs_dir :: !Config.specs_library in
   IList.flatten (IList.map specs_files_in_dir specs_dirs)
 
 (** Create and initialize latex file *)
