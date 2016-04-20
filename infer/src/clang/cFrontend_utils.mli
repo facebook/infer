@@ -133,6 +133,8 @@ sig
   val get_info_from_decl_ref : Clang_ast_t.decl_ref ->
     Clang_ast_t.named_decl_info * Clang_ast_t.pointer * Clang_ast_t.type_ptr
 
+  val exists_eventually_st : ('a -> Clang_ast_t.stmt -> bool) -> 'a -> Clang_ast_t.stmt -> bool
+
 end
 
 module General_utils :

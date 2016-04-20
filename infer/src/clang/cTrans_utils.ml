@@ -132,6 +132,7 @@ type trans_state = {
   priority: priority_node;
   var_exp_typ: (Sil.exp * Sil.typ) option;
   opaque_exp: (Sil.exp * Sil.typ) option;
+  obj_bridged_cast_typ : Sil.typ option
 }
 
 (* A translation result. It is returned by the translation function. *)
@@ -414,35 +415,38 @@ let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   }
 
 
-let cast_operation context cast_kind exps cast_typ sil_loc is_objc_bridged =
+let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
   let (exp, typ) = extract_exp_from_list exps "" in
-  let exp_typ = match cast_kind with
-    | `UncheckedDerivedToBase | `DerivedToBase -> typ  (* These casts ignore change of type *)
-    | _ -> cast_typ (* by default use the return type of cast expr *) in 
-  if is_objc_bridged then
-    let id, instr, exp = create_cast_instrs context exp typ cast_typ sil_loc in
-    [id], [instr], (exp, exp_typ)
-  else
-    match cast_kind with
-    | `NoOp
-    | `BitCast
-    | `IntegralCast
-    | `DerivedToBase
-    | `UncheckedDerivedToBase
-    | `IntegralToBoolean -> (* This is treated as a nop by returning the same expressions exps*)
-        ([], [], (exp, exp_typ))
-    | `LValueToRValue ->
-        (* Takes an LValue and allow it to use it as RValue. *)
-        (* So we assign the LValue to a temp and we pass it to the parent.*)
-        let ids, instrs, deref_exp = dereference_var_sil (exp, typ) sil_loc in
-        ids, instrs, (deref_exp, exp_typ)
-    | `CPointerToObjCPointerCast ->
-        [], [], (Sil.Cast(typ, exp), exp_typ)
-    | _ ->
-        Printing.log_err
-          "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
-          (Clang_ast_j.string_of_cast_kind cast_kind);
-        ([],[], (exp, exp_typ))
+  let is_objc_bridged = Option.is_some trans_state.obj_bridged_cast_typ || is_objc_bridged in
+  match cast_kind with
+  | `DerivedToBase
+  | `UncheckedDerivedToBase ->  (* These casts ignore change of type *)
+      ([], [], (exp, typ))
+  | `NoOp
+  | `BitCast
+  | `IntegralCast
+  | `IntegralToBoolean -> (* This is treated as a nop by returning the same expressions exps*)
+      ([], [], (exp, cast_typ))
+  | `CPointerToObjCPointerCast
+  | `ARCProduceObject
+  | `ARCConsumeObject when is_objc_bridged ->
+      (* Translation of __bridge_transfer or __bridge_retained *)
+      let objc_cast_typ =
+        match trans_state.obj_bridged_cast_typ with
+        | Some typ -> typ
+        | None -> cast_typ in
+      let id, instr, exp = create_cast_instrs trans_state.context exp typ objc_cast_typ sil_loc in
+      [id], [instr], (exp, cast_typ)
+  | `LValueToRValue ->
+      (* Takes an LValue and allow it to use it as RValue. *)
+      (* So we assign the LValue to a temp and we pass it to the parent.*)
+      let ids, instrs, deref_exp = dereference_var_sil (exp, typ) sil_loc in
+      ids, instrs, (deref_exp, cast_typ)
+  | _ ->
+      Printing.log_err
+        "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
+        (Clang_ast_j.string_of_cast_kind cast_kind);
+      ([],[], (exp, cast_typ))
 
 let trans_assertion_failure sil_loc context =
   let assert_fail_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__infer_fail) in

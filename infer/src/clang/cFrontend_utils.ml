@@ -392,6 +392,13 @@ struct
     let type_ptr = match decl_ref.Clang_ast_t.dr_type_ptr with Some tp -> tp | _ -> assert false in
     name_info, decl_ptr, type_ptr
 
+  (* st |= EF (atomic_pred param) *)
+  let rec exists_eventually_st atomic_pred param  st =
+    if atomic_pred param st then true
+    else
+      let _, st_list = Clang_ast_proj.get_stmt_tuple st in
+      IList.exists (exists_eventually_st atomic_pred param) st_list
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with

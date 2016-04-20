@@ -70,18 +70,11 @@ let call_method_on_nth pred pn m st =
        with _ -> false)
   | _ -> false
 
-(* st |= EF (atomic_pred param) *)
-let rec exists_eventually_st atomic_pred param  st =
-  if atomic_pred param st then true
-  else
-    let _, st_list = Clang_ast_proj.get_stmt_tuple st in
-    IList.exists (exists_eventually_st atomic_pred param) st_list
-
 let dec_body_eventually atomic_pred param dec =
   match dec with
   | Clang_ast_t.ObjCMethodDecl (_, _, omdi) ->
       (match omdi.Clang_ast_t.omdi_body with
-       | Some body -> exists_eventually_st atomic_pred param body
+       | Some body -> Ast_utils.exists_eventually_st atomic_pred param body
        | _ -> false)
   | _ -> false
 

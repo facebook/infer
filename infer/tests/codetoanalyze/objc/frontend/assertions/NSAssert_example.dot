@@ -197,11 +197,11 @@ digraph iCFG {
 	
 
 	 58 -> 54 ;
-57 [label="57: Prune (false branch) \n   PRUNE(((n$2 != (void *)0) == 0), false); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
+57 [label="57: Prune (false branch) \n   PRUNE(((n$2 != 0) == 0), false); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
 	
 
 	 57 -> 59 ;
-56 [label="56: Prune (true branch) \n   PRUNE(((n$2 != (void *)0) != 0), true); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
+56 [label="56: Prune (true branch) \n   PRUNE(((n$2 != 0) != 0), true); [line 31]\n  REMOVE_TEMPS(n$2); [line 31]\n " shape="invhouse"]
 	
 
 	 56 -> 58 ;
@@ -292,11 +292,11 @@ digraph iCFG {
 	
 
 	 35 -> 31 ;
-34 [label="34: Prune (false branch) \n   PRUNE(((n$17 != (void *)0) == 0), false); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
+34 [label="34: Prune (false branch) \n   PRUNE(((n$17 != 0) == 0), false); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
 	
 
 	 34 -> 36 ;
-33 [label="33: Prune (true branch) \n   PRUNE(((n$17 != (void *)0) != 0), true); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
+33 [label="33: Prune (true branch) \n   PRUNE(((n$17 != 0) != 0), true); [line 24]\n  REMOVE_TEMPS(n$17); [line 24]\n " shape="invhouse"]
 	
 
 	 33 -> 35 ;
@@ -387,11 +387,11 @@ digraph iCFG {
 	
 
 	 12 -> 8 ;
-11 [label="11: Prune (false branch) \n   PRUNE(((n$2 != (void *)0) == 0), false); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
+11 [label="11: Prune (false branch) \n   PRUNE(((n$2 != 0) == 0), false); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
 	
 
 	 11 -> 13 ;
-10 [label="10: Prune (true branch) \n   PRUNE(((n$2 != (void *)0) != 0), true); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
+10 [label="10: Prune (true branch) \n   PRUNE(((n$2 != 0) != 0), true); [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="invhouse"]
 	
 
 	 10 -> 12 ;

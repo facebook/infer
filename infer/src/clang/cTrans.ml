@@ -1838,7 +1838,7 @@ struct
     | _ -> assert false
 
   (* Cast expression are treated the same apart from the cast operation kind*)
-  and cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_expr_info is_objc_bridged =
+  and cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_expr_info =
     let context = trans_state.context in
     Printing.log_out "  priority node free = '%s'\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
@@ -1850,8 +1850,11 @@ struct
       CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     (* This gives the differnece among cast operations kind*)
+    let is_objc_bridged_cast_expr _ stmt =
+      match stmt with | Clang_ast_t.ObjCBridgedCastExpr _ -> true | _ -> false in
+    let is_objc_bridged = Ast_utils.exists_eventually_st is_objc_bridged_cast_expr () stmt in
     let cast_ids, cast_inst, cast_exp =
-      cast_operation context cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged in
+      cast_operation trans_state cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged in
     { res_trans_stmt with
       ids = res_trans_stmt.ids @ cast_ids;
       instrs = res_trans_stmt.instrs @ cast_inst;
@@ -2329,6 +2332,13 @@ struct
         "CXXStdInitializerListExpr" stmt_info all_res_trans in
     { res_trans_to_parent with exps = res_trans_call.exps }
 
+  and objCBridgedCastExpr_trans trans_state stmts expr_info =
+    let stmt = extract_stmt_from_singleton stmts "" in
+    let tenv = trans_state.context.CContext.tenv in
+    let typ = CTypes_decl.get_type_from_expr_info expr_info tenv in
+    let trans_state' = { trans_state with obj_bridged_cast_typ = Some typ } in
+    instruction trans_state' stmt
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2439,15 +2449,16 @@ struct
     | UnaryExprOrTypeTraitExpr(_, _, expr_info, ei) ->
         unaryExprOrTypeTraitExpr_trans trans_state expr_info ei
 
-    | ObjCBridgedCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _) ->
-        cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind true
+    | ObjCBridgedCastExpr(_, stmt_list, expr_info, _, _) ->
+        objCBridgedCastExpr_trans trans_state stmt_list expr_info
+
     | ImplicitCastExpr(stmt_info, stmt_list, expr_info, cast_kind)
     | CStyleCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _)
     | CXXReinterpretCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXConstCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXStaticCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _, _)
     | CXXFunctionalCastExpr(stmt_info, stmt_list, expr_info, cast_kind, _)->
-        cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind false
+        cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind
 
     | IntegerLiteral(_, _, expr_info, integer_literal_info) ->
         integerLiteral_trans trans_state expr_info integer_literal_info
@@ -2686,6 +2697,7 @@ struct
       priority = Free;
       var_exp_typ = None;
       opaque_exp = None;
+      obj_bridged_cast_typ = None;
     } in
     let res_trans_stmt = instruction trans_state stmt in
     fst (CTrans_utils.extract_exp_from_list res_trans_stmt.exps warning)
@@ -2698,6 +2710,7 @@ struct
       priority = Free;
       var_exp_typ = None;
       opaque_exp = None;
+      obj_bridged_cast_typ = None
     } in
     let instrs = extra_instrs @ [`ClangStmt body] in
     let instrs_trans = IList.map get_custom_stmt_trans instrs in

@@ -28,6 +28,7 @@ type trans_state = {
   priority: priority_node;
   var_exp_typ: (Sil.exp * Sil.typ) option;
   opaque_exp: (Sil.exp * Sil.typ) option;
+  obj_bridged_cast_typ : Sil.typ option
 }
 
 type trans_result = {
@@ -81,7 +82,7 @@ val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
 val dereference_value_from_result : Location.t -> trans_result -> strip_pointer:bool -> trans_result
 
 val cast_operation :
-  CContext.t -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
+  trans_state -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
   bool -> Ident.t list * Sil.instr list * (Sil.exp * Sil.typ)
 
 val trans_assertion_failure : Location.t -> CContext.t -> trans_result

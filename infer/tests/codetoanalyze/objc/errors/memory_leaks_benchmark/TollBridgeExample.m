@@ -41,4 +41,9 @@ CTFontRef cfautorelease_test() {
   return CFAutorelease(CTFontCreateWithName(CFSTR("Icon"), 17.0, NULL));
 }
 
+void bridgeDictionaryNoLeak() {
+  NSDictionary* bufferAttributes = @{(NSString*)@"key" : @{} };
+  CFDictionaryRef dict = (__bridge CFDictionaryRef)bufferAttributes;
+}
+
 @end

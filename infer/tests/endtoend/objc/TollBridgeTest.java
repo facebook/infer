@@ -12,6 +12,7 @@ package endtoend.objc;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.InferError.inferError;
 import static utils.matchers.ResultContainsErrorInMethod.contains;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
 
 import com.google.common.collect.ImmutableList;
@@ -50,74 +51,20 @@ public class TollBridgeTest {
   }
 
   @Test
-  public void whenInferRunsOnTollBridgeExampleThenMLIsNotFound()
+  public void whenInferRunsOnTollBridgeExampleThenMLIsFound()
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     assertThat(
-        "Results should not contain memory leak",
+        "Results should contain memory leaks",
         inferResults,
-        doesNotContain(
-                MEMORY_LEAK,
-                memory_leak_file,
-                "bridgeTransfer"));
-  }
-
-  @Test
-  public void whenInferRunsOnTollBridgeExampleTest1ThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain memory leak",
-        inferResults,
-        doesNotContain(
-                MEMORY_LEAK,
-                memory_leak_file,
-                "bridge"));
-  }
-
-  @Test
-  public void whenInferRunsOnTollBridgeExampleTest2ThenMLIsFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should contain memory leak",
-        inferResults,
-        contains(
+        containsExactly(
             MEMORY_LEAK,
             memory_leak_file,
-            "brideRetained"
+            new String[]{
+                "bridge",
+                "brideRetained",
+            }
         )
     );
   }
-
-  @Test
-  public void whenInferRunsOnTollBridgeExampleTest3ThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "_readHTTPHeader"
-        )
-    );
-  }
-
-  @Test
-  public void whenInferRunsOnCfautorelease_testThenMLIsNotFound()
-      throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
-    assertThat(
-        "Results should not contain memory leak",
-        inferResults,
-        doesNotContain(
-            MEMORY_LEAK,
-            memory_leak_file,
-            "cfautorelease_test"
-        )
-    );
-  }
-
 }
