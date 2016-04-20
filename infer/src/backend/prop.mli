@@ -302,6 +302,9 @@ val get_observer_attribute : 'a t -> exp -> attribute option
 (** Get the objc null attribute associated to the expression, if any *)
 val get_objc_null_attribute : 'a t -> exp -> attribute option
 
+(** Get the retval null attribute associated to the expression, if any *)
+val get_retval_attribute : 'a t -> exp -> attribute option
+
 (** Get all the attributes of the prop *)
 val get_all_attributes : 'a t -> (exp * attribute) list
 

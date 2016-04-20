@@ -878,7 +878,7 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
           IList.exists
             (fun (exp, attr) ->
                match attr with
-               | Sil.Aretval pname when Procname.equal callee_pname pname ->
+               | Sil.Aretval (pname, _) when Procname.equal callee_pname pname ->
                    Prover.check_disequal prop exp Sil.exp_zero
                | _ -> false)
             (Prop.get_all_attributes prop) in
@@ -910,7 +910,6 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
         else posts in
       if !Config.taint_analysis then mk_retval_tainted posts' else posts'
   | _ -> posts
-
 
 (** Check if actual_pre * missing_footprint |- false *)
 let inconsistent_actualpre_missing actual_pre split_opt =
@@ -1124,7 +1123,7 @@ let prop_pure_to_footprint (p: 'a Prop.t) : Prop.normal Prop.t =
     Prop.normalize (Prop.replace_pi_footprint (Prop.get_pi_footprint p @ new_footprint_atoms) p)
 
 (** post-process the raw result of a function call *)
-let exe_call_postprocess ret_ids trace_call callee_pname loc results =
+let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc results =
   let filter_valid_res = function
     | Invalid_res _ -> false
     | Valid_res _ -> true in
@@ -1245,21 +1244,24 @@ let exe_call_postprocess ret_ids trace_call callee_pname loc results =
     IList.map
       (fun (p, path) -> (quantify_path_idents_remove_constant_strings p, path))
       res_with_path_idents in
+  let ret_annot, _ = callee_attrs.ProcAttributes.method_annotation in
+  let returns_nullable ret_annot = Annotations.ia_is_nullable ret_annot in
   let should_add_ret_attr _ =
     let is_likely_getter = function
       | Procname.Java pn_java ->
           IList.length (Procname.java_get_parameters pn_java) = 0
       | _ ->
           false in
-    !Config.idempotent_getters &&
-    !Config.curr_language = Config.Java &&
-    is_likely_getter callee_pname in
+    (!Config.idempotent_getters &&
+     !Config.curr_language = Config.Java &&
+     is_likely_getter callee_pname)
+    || returns_nullable ret_annot in
   match ret_ids with
   | [ret_id] when should_add_ret_attr ()->
       (* add attribute to remember what function call a return id came from *)
       let ret_var = Sil.Var ret_id in
       let mark_id_as_retval (p, path) =
-        let att_retval = Sil.Aretval callee_pname in
+        let att_retval = Sil.Aretval (callee_pname, ret_annot) in
         Prop.set_exp_attribute p ret_var att_retval, path in
       IList.map mark_id_as_retval res
   | _ -> res
@@ -1298,7 +1300,7 @@ let exe_function_call
       actual_params
       formal_params in
   let results = IList.map exe_one_spec spec_list in
-  exe_call_postprocess ret_ids trace_call callee_pname loc results
+  exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc results
 
 (*
 let check_splitting_precondition sub1 sub2 =

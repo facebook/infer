@@ -265,7 +265,7 @@ and attribute =
   (** the exp. is null because of a call to a method with exp as a null receiver *)
   | Aobjc_null of exp
   (** value was returned from a call to the given procedure *)
-  | Aretval of Procname.t
+  | Aretval of Procname.t * item_annotation
   (** denotes an object registered as an observers to a notification center *)
   | Aobserver
   (** denotes an object unsubscribed from observers of a notification center *)

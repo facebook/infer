@@ -627,8 +627,8 @@ and attribute =
   | Adiv0 of path_pos
   (** the exp. is null because of a call to a method with exp as a null receiver *)
   | Aobjc_null of exp
-  (** value was returned from a call to the given procedure *)
-  | Aretval of Procname.t
+  (** value was returned from a call to the given procedure, plus the annots of the return value *)
+  | Aretval of Procname.t * item_annotation
   (** denotes an object registered as an observers to a notification center *)
   | Aobserver
   (** denotes an object unsubscribed from observers of a notification center *)
@@ -1381,7 +1381,11 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
       exp_compare exp1 exp2
   | Aobjc_null _, _ -> -1
   | _, Aobjc_null _ -> 1
-  | Aretval pn1, Aretval pn2 -> Procname.compare pn1 pn2
+  | Aretval (pn1, annots1), Aretval (pn2, annots2) ->
+      let n = Procname.compare pn1 pn2 in
+      if n <> 0
+      then n
+      else item_annotation_compare annots1 annots2
   | Aretval _, _ -> -1
   | _, Aretval _ -> 1
   | Aobserver, Aobserver -> 0
@@ -1900,7 +1904,7 @@ and attribute_to_string pe = function
         | Lfield _ -> "FIELD " ^ (exp_to_string exp)
         | _ -> "" in
       "OBJC_NULL["^ info_s ^"]"
-  | Aretval pn -> "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
+  | Aretval (pn, _) -> "RET" ^ str_binop pe Lt ^ Procname.to_string pn ^ str_binop pe Gt
   | Aobserver -> "OBSERVER"
   | Aunsubscribed_observer -> "UNSUBSCRIBED_OBSERVER"
 

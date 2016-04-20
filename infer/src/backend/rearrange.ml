@@ -945,9 +945,21 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
          match hpred with
          | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var _ as exp, _), _)
            when Sil.exp_equal exp deref_exp ->
-             let is_nullable = Annotations.param_is_nullable pvar ann_sig in
-             if is_nullable then
-               nullable_obj_str := Some (Pvar.to_string pvar);
+
+             let is_nullable =
+               if Annotations.param_is_nullable pvar ann_sig
+               then
+                 begin
+                   nullable_obj_str := Some (Pvar.to_string pvar);
+                   true
+                 end
+               else
+                 match Prop.get_retval_attribute prop exp with
+                 | Some (Sil.Aretval (pname, ret_attr)) when Annotations.ia_is_nullable ret_attr ->
+                     nullable_obj_str := Some (Procname.to_string pname);
+                     true
+                 | _ ->
+                     false in
              (* it's ok for a non-nullable local to point to deref_exp *)
              is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Sil.Sizeof (typ, _)) ->

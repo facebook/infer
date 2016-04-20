@@ -247,6 +247,11 @@
   {
     "bug_type": "NULL_DEREFERENCE",
     "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.derefNullableRet(boolean)"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
     "procedure": "void NullPointerExceptions.dereferenceAfterLoopOnList(NullPointerExceptions$L)"
   },
   {

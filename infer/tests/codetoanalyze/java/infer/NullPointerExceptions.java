@@ -396,6 +396,39 @@ public class NullPointerExceptions {
     o.toString();
   }
 
+  public @Nullable Object nullableRet(boolean b) {
+    if (b) {
+      return null;
+    }
+    return new Object();
+  }
+
+  public void derefNullableRet(boolean b) {
+    Object ret = nullableRet(b);
+    ret.toString();
+  }
+
+  public void derefNullableRetOK(boolean b) {
+    Object ret = nullableRet(b);
+    if (ret != null) {
+      ret.toString();
+    }
+  }
+
+  public native @Nullable Object undefNullableRet();
+
+  public void derefUndefNullableRetTODO() { // TODO: should warn here
+    Object ret = undefNullableRet();
+    ret.toString();
+  }
+
+  public void derefUndefNullableRetOK() {
+    Object ret = undefNullableRet();
+    if (ret != null) {
+      ret.toString();
+    }
+  }
+
   public @Nullable String testSystemGetPropertyArgument() {
     String s = System.getProperty(null);
     return s;
