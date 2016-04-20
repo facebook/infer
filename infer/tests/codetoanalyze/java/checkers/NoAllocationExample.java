@@ -66,4 +66,13 @@ public class NoAllocationExample {
     acceptableAllocation();
   }
 
+  native boolean rareCase();
+
+  @NoAllocation
+  void onlyAllocatesUsingUnlikely() {
+    if (Branch.unlikely(rareCase())) {
+      allocates();
+    }
+  }
+
 }

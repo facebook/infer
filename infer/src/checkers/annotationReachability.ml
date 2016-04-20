@@ -7,7 +7,10 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! Utils
+
 module F = Format
+module L = Logging
 
 let compare_call (pname1, loc1) (pname2, loc2) =
   let n = Procname.compare pname1 pname2 in
@@ -26,22 +29,50 @@ module CallSet = PrettyPrintable.MakePPSet(struct
 module CallSetDomain = AbstractDomain.FiniteSet(CallSet)
 
 module Domain = struct
-  include AbstractDomain.Pair(CallSetDomain)(CallSetDomain)
+  module CallsDomain = AbstractDomain.Pair(CallSetDomain)(CallSetDomain)
+  module TrackingVar = AbstractDomain.FiniteSet(Var.Set)
+  module TrackingDomain =
+    AbstractDomain.Pair(CallsDomain)(TrackingVar)
+  include AbstractDomain.BottomLifted(TrackingDomain)
 
-  let add_expensive call (expensive_calls, allocations) =
-    CallSetDomain.add call expensive_calls, allocations
+  let add_expensive call = function
+    | Bottom -> Bottom
+    | NonBottom ((expensive_calls, allocations), vars) ->
+        NonBottom ((CallSetDomain.add call expensive_calls, allocations), vars)
 
-  let add_allocation alloc (expensive_calls, allocations) =
-    expensive_calls, CallSetDomain.add alloc allocations
+  let add_allocation alloc = function
+    | Bottom -> Bottom
+    | NonBottom ((expensive_calls, allocations), vars) ->
+        NonBottom ((expensive_calls, CallSetDomain.add alloc allocations), vars)
+
+  let stop_tracking (_ : astate) = Bottom
+
+  let add_tracking_var var = function
+    | Bottom -> Bottom
+    | NonBottom (calls, previous_vars) ->
+        NonBottom (calls, TrackingVar.add var previous_vars)
+
+  let remove_tracking_var var = function
+    | Bottom -> Bottom
+    | NonBottom (calls, previous_vars) ->
+        NonBottom (calls, TrackingVar.remove var previous_vars)
+
+  let is_tracked_var var = function
+    | Bottom -> false
+    | NonBottom (_, vars) ->
+        TrackingVar.mem var vars
+
 end
-
-let call_summary_of_astate (astate_expensive, astate_allocations) =
-  let expensive_calls = CallSet.elements astate_expensive in
-  let allocations = CallSet.elements astate_allocations in
-  { Specs.expensive_calls; allocations; }
 
 module Summary = Summary.Make (struct
     type summary = Domain.astate
+
+    let call_summary_of_astate = function
+      | Domain.Bottom -> assert false
+      | Domain.NonBottom ((astate_expensive, astate_allocations), _) ->
+          let expensive_calls = CallSet.elements astate_expensive in
+          let allocations = CallSet.elements astate_allocations in
+          { Specs.expensive_calls; allocations; }
 
     let update_payload astate payload =
       let call_summary = call_summary_of_astate astate in
@@ -50,9 +81,12 @@ module Summary = Summary.Make (struct
     let read_from_payload payload =
       match payload.Specs.calls with
       | Some call_summary ->
-          CallSet.of_list call_summary.Specs.expensive_calls,
-          CallSet.of_list call_summary.Specs.allocations
+          Domain.NonBottom
+            ((CallSet.of_list call_summary.Specs.expensive_calls,
+              CallSet.of_list call_summary.Specs.allocations),
+             Domain.TrackingVar.initial)
       | None -> Domain.initial
+
   end)
 
 (* Warning name when a performance critical method directly or indirectly
@@ -266,7 +300,34 @@ let report_allocations pname loc calls =
 module TransferFunctions = struct
   type astate = Domain.astate
 
+  (* This is specific to the @NoAllocation and @PerformanceCritical checker
+     and the "unlikely" method is used to guard branches that are expected to run sufficiently
+     rarely to not affect the performances *)
+  let is_unlikely pname =
+    match pname with
+    | Procname.Java java_pname ->
+        (Procname.java_get_method java_pname) = "unlikely"
+    | _ -> false
+
+  let is_tracking_exp astate = function
+    | Sil.Var id -> Domain.is_tracked_var (Var.LogicalVar id) astate
+    | Sil.Lvar pvar -> Domain.is_tracked_var (Var.ProgramVar pvar) astate
+    | _ -> false
+
+  let prunes_tracking_var astate = function
+    | Sil.BinOp (Sil.Eq, lhs, rhs)
+      when is_tracking_exp astate lhs ->
+        Sil.exp_equal rhs Sil.exp_one
+    | Sil.UnOp (Sil.LNot, Sil.BinOp (Sil.Eq, lhs, rhs), _)
+      when is_tracking_exp astate lhs ->
+        Sil.exp_equal rhs Sil.exp_zero
+    | _ ->
+        false
+
   let exec_instr astate { ProcData.pdesc; tenv; } = function
+    | Sil.Call ([id], Const (Cfun callee_pname), _, _, _)
+      when is_unlikely callee_pname ->
+        Domain.add_tracking_var (Var.LogicalVar id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
         (* Run the analysis of callee_pname if not already analyzed *)
         ignore (Summary.read_summary pdesc callee_pname);
@@ -280,7 +341,22 @@ module TransferFunctions = struct
           else astate in
         add_expensive_calls astate
         |> add_allocations
-    | _ -> astate
+    | Sil.Letderef (id, exp, _, _)
+      when is_tracking_exp astate exp ->
+        Domain.add_tracking_var (Var.LogicalVar id) astate
+    | Sil.Set (Sil.Lvar pvar, _, exp, _)
+      when is_tracking_exp astate exp ->
+        Domain.add_tracking_var (Var.ProgramVar pvar) astate
+    | Sil.Set (Sil.Lvar pvar, _, _, _) ->
+        Domain.remove_tracking_var (Var.ProgramVar pvar) astate
+    | Sil.Prune (exp, _, _, _)
+      when prunes_tracking_var astate exp ->
+        Domain.stop_tracking astate
+    | Sil.Call (_::_, _, _, _, _) ->
+        failwith "Expecting a singleton for the return value"
+    | _ ->
+        astate
+
 end
 
 module Analyzer =
@@ -320,10 +396,15 @@ module Interprocedural = struct
 
     match checker proc_data with
     | Some astate ->
-        if performance_critical then
-          report_expensive_calls tenv proc_name loc (CallSet.elements (fst astate));
-        if no_allocation then
-          report_allocations proc_name loc (CallSet.elements (snd astate))
+        begin
+          match astate with
+          | Domain.Bottom -> ()
+          | Domain.NonBottom ((expensive_calls, allocations), _) ->
+              if performance_critical then
+                report_expensive_calls tenv proc_name loc (CallSet.elements expensive_calls);
+              if no_allocation then
+                report_allocations proc_name loc (CallSet.elements allocations)
+        end
     | None -> ()
 
 end

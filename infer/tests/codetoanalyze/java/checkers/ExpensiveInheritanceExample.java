@@ -65,7 +65,7 @@ public class ExpensiveInheritanceExample {
   }
 
   @PerformanceCritical
-  void doesReportBecauseFlowInsensitive(A a) {
+  void doesReportBecauseTypeFlowInsensitive(A a) {
     if (a instanceof B) {
       a.foo();
     }

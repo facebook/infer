@@ -54,7 +54,12 @@ public class ExpensiveCallTest {
         //"subclassPerformanceCriticalMethod1",
         //"subclassPerformanceCriticalMethod2",
         //"subclassPerformanceCriticalMethod3",
-        "callMethodOnExpensiveClass"
+        "callMethodOnExpensiveClass",
+        "onlyOneExpensiveCallUsingUnlikely",
+        "callsExpensiveInTheUnlikelyElseBranch",
+        "callsExpensiveWithDisjunctionAfterUnlikely",
+        "callsExpensiveWithOverriddenUnlikelyCondition",
+        "callsExpensiveInConditionalBranch",
     };
     assertThat(
         "Results should contain " + CALLS_EXPENSIVE_METHOD,
