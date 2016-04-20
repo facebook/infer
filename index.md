@@ -25,7 +25,7 @@ In addition to this, it reports memory leak problems in iOS and C code.
 ## Who Uses Infer?
 
 It is used as part of the Facebook development process, where it runs on code changes for mobile 
-apps - these include the main Facebook apps for Android and iOS, Facebook Messenger, Instagram, 
+apps - these include the main Facebook apps for Android and iOS, Facebook Messenger, Instagram, WhatsApp,
 and other apps which are used by over a billion people.
 
 In addition to Facebook, where Infer is being developed, Infer is used by a number of companies:
