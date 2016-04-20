@@ -18,4 +18,4 @@ if [ -z "$INFER_RESULTS_DIR" ]; then
 fi
 
 
-"${CLANG_WRAPPERS_PATH%/}/clang_general_wrapper$XX" "$@"
+"${CLANG_WRAPPERS_PATH%/}/clang_general_wrapper$XX" "$@" -fno-cxx-modules
