@@ -158,4 +158,3 @@ let pp fmt (tenv : t) =
        Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
        Format.fprintf fmt "@[<6>TYPE: %a@." (Sil.pp_struct_typ pe_text (fun _ () -> ())) typ)
     tenv
-
