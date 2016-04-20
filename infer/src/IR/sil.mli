@@ -355,7 +355,11 @@ and exp =
   (** A sizeof expression *)
   | Sizeof of typ * Subtype.t
 
+val struct_typ_equal : struct_typ -> struct_typ -> bool
+
 (** Sets of types. *)
+module StructTypSet : Set.S with type elt = struct_typ
+
 module TypSet : Set.S with type elt = typ
 
 (** Maps with type keys. *)

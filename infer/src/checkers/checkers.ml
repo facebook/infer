@@ -203,7 +203,10 @@ let callback_check_write_to_parcel_java
     let type_match () =
       let class_name =
         Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "android.os.Parcelable") in
-      PatternMatch.is_direct_subtype_of this_type class_name in
+      match this_type with
+      | Sil.Tptr (Sil.Tstruct struct_typ, _) | Sil.Tstruct struct_typ ->
+          PatternMatch.is_immediate_subtype struct_typ class_name
+      | _ -> false in
     method_match () && expr_match () && type_match () in
 
   let is_parcel_constructor proc_name =

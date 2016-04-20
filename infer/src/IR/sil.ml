@@ -908,7 +908,7 @@ let rec is_array_of_cpp_class typ =
 let is_pointer_to_cpp_class typ =
   match typ with
   | Tptr (t, _) -> is_cpp_class t
-	| _ -> false
+  | _ -> false
 
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let typ_strip_ptr = function
@@ -1300,6 +1300,9 @@ and struct_typ_compare struct_typ1 struct_typ2 =
       if n <> 0 then n else let n = Csu.compare struct_typ1.csu struct_typ2.csu in
         if n <> 0 then n else cname_opt_compare struct_typ1.struct_name struct_typ2.struct_name
 
+and struct_typ_equal struct_typ1 struct_typ2 =
+  struct_typ_compare struct_typ1 struct_typ2 = 0
+
 (** Comparision for types. *)
 and typ_compare t1 t2 =
   if t1 == t2 then 0 else match t1, t2 with
@@ -1610,6 +1613,11 @@ let hpara_dll_equal hpara1 hpara2 =
   (hpara_dll_compare hpara1 hpara2 = 0)
 
 (** {2 Sets and maps of types} *)
+module StructTypSet = Set.Make(struct
+    type t = struct_typ
+    let compare = struct_typ_compare
+  end)
+
 module TypSet = Set.Make(struct
     type t = typ
     let compare = typ_compare

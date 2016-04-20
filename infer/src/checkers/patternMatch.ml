@@ -36,10 +36,36 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
      Procname.java_get_method pn_java = method_name
    with _ -> false)
 
-let is_direct_subtype_of this_type super_type_name =
-  match this_type with
-  | Sil.Tptr (Sil.Tstruct { Sil.superclasses }, _) ->
-      IList.exists (fun cn -> Typename.equal cn super_type_name) superclasses
+(** get the superclasses of [typ]. does not include [typ] itself *)
+let get_strict_supertypes tenv orig_struct_typ =
+  let get_direct_supers = function
+    | { Sil.csu = Csu.Class _; superclasses } -> superclasses
+    | _ -> [] in
+  let rec add_typ class_name struct_typs =
+    match Tenv.lookup tenv class_name with
+    | Some struct_typ -> get_supers_rec struct_typ (Sil.StructTypSet.add struct_typ struct_typs)
+    | None -> struct_typs
+  and get_supers_rec struct_typ all_supers =
+    let direct_supers = get_direct_supers struct_typ in
+    IList.fold_left
+      (fun struct_typs class_name -> add_typ class_name struct_typs)
+      all_supers
+      direct_supers in
+  get_supers_rec orig_struct_typ Sil.StructTypSet.empty
+
+let is_immediate_subtype this_type super_type_name =
+  IList.exists (fun cn -> Typename.equal cn super_type_name) this_type.Sil.superclasses
+
+(** return true if [typ0] <: [typ1] *)
+let is_subtype tenv struct_typ0 struct_typ1 =
+  Sil.struct_typ_equal struct_typ0 struct_typ1 ||
+  Sil.StructTypSet.mem struct_typ1 (get_strict_supertypes tenv struct_typ0)
+
+let is_subtype_of_str tenv cn1 classname_str =
+  let typename = Typename.Java.from_string classname_str in
+  let lookup = Tenv.lookup tenv in
+  match lookup cn1, lookup typename with
+  | Some struct_typ1, Some struct_typ2 -> is_subtype tenv struct_typ1 struct_typ2
   | _ -> false
 
 (** The type the method is invoked on *)
@@ -48,10 +74,11 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
   | _ -> None
 
 let type_get_direct_supertypes = function
-  | Sil.Tptr (Sil.Tstruct { Sil.superclasses }, _)
-  | Sil.Tstruct { Sil.superclasses } ->
+  | Sil.Tptr (Tstruct { superclasses }, _)
+  | Sil.Tstruct { superclasses } ->
       superclasses
-  | _ -> []
+  | _ ->
+      []
 
 let type_get_class_name t = match t with
   | Sil.Tptr (Sil.Tstruct { Sil.struct_name = Some cn }, _) ->
@@ -363,3 +390,15 @@ let get_fields_nullified procdesc =
     Cfg.Procdesc.fold_instrs
       collect_nullified_flds (Ident.FieldSet.empty, Ident.IdentSet.empty) procdesc in
   nullified_flds
+
+(** Checks if the exception is an unchecked exception *)
+let is_runtime_exception tenv typename =
+  is_subtype_of_str tenv typename "java.lang.RuntimeException"
+
+(** Checks if the class name is a Java exception *)
+let is_exception tenv typename =
+  is_subtype_of_str tenv typename "java.lang.Exception"
+
+(** Checks if the class name is a Java exception *)
+let is_throwable tenv typename =
+  is_subtype_of_str tenv typename "java.lang.Throwable"

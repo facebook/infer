@@ -612,13 +612,14 @@ let report_context_leaks pname sigma tenv =
       Prop.compute_reachable_hpreds sigma fld_exps in
     (* raise an error if any Context expression is in [reachable_exps] *)
     IList.iter
-      (fun (context_exp, typ) ->
+      (fun (context_exp, struct_typ) ->
          if Sil.ExpSet.mem context_exp reachable_exps then
            let leak_path =
              match Prop.get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
              | Some path -> path
              | None -> assert false in (* a path must exist in order for a leak to be reported *)
-           let err_desc = Errdesc.explain_context_leak pname typ fld_name leak_path in
+           let err_desc =
+             Errdesc.explain_context_leak pname (Sil.Tstruct struct_typ) fld_name leak_path in
            let exn = Exceptions.Context_leak (err_desc, __POS__) in
            Reporting.log_error pname exn)
       context_exps in
@@ -626,10 +627,10 @@ let report_context_leaks pname sigma tenv =
   let context_exps =
     IList.fold_left
       (fun exps hpred -> match hpred with
-         | Sil.Hpointsto (_, Sil.Eexp (exp, _), Sil.Sizeof (Sil.Tptr (typ, _), _))
-           when AndroidFramework.is_context typ tenv
-             && not (AndroidFramework.is_application typ tenv) ->
-             (exp, typ) :: exps
+         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct struct_typ, _), _))
+           when AndroidFramework.is_context tenv struct_typ &&
+                not (AndroidFramework.is_application tenv struct_typ) ->
+             (exp, struct_typ) :: exps
          | _ -> exps)
       []
       sigma in
@@ -1067,7 +1068,7 @@ let exception_preconditions tenv pname summary =
   let collect_exceptions pre exns (prop, _) =
     if Tabulation.prop_is_exn pname prop then
       let exn_name = Tabulation.prop_get_exn_name pname prop in
-      if AndroidFramework.is_runtime_exception tenv exn_name then
+      if PatternMatch.is_runtime_exception tenv exn_name then
         (pre, exn_name):: exns
       else exns
     else exns in

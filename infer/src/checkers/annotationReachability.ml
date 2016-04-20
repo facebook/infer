@@ -113,7 +113,7 @@ let is_modeled_expensive =
         not (Builtin.is_registered proc_name) &&
         let classname =
           Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
-        (Lazy.force matcher) (AndroidFramework.is_subclass tenv classname) proc_name
+        (Lazy.force matcher) (PatternMatch.is_subtype_of_str tenv classname) proc_name
     | _ ->
         false
 
@@ -196,7 +196,7 @@ let is_allocator tenv pname = match pname with
       let is_throwable () =
         let class_name =
           Typename.Java.from_string (Procname.java_get_class_name pname_java) in
-        AndroidFramework.is_throwable tenv class_name in
+        PatternMatch.is_throwable tenv class_name in
       Procname.is_constructor pname
       && not (Builtin.is_registered pname)
       && not (is_throwable ())

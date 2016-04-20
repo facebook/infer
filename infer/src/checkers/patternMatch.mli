@@ -49,8 +49,17 @@ val is_getter : Procname.java -> bool
 (** Is this a setter proc name? *)
 val is_setter : Procname.java -> bool
 
-(** Is the type a direct subtype of *)
-val is_direct_subtype_of : Sil.typ -> Typename.t -> bool
+(** Is the type a direct subtype of the typename? *)
+val is_immediate_subtype : Sil.struct_typ -> Typename.t -> bool
+
+(** Is the type a transitive subtype of the typename? *)
+val is_subtype : Tenv.t -> Sil.struct_typ -> Sil.struct_typ -> bool
+
+(** Resolve [typ_str] in [tenv], then check [typ] <: [typ_str] *)
+val is_subtype_of_str : Tenv.t -> Typename.t -> string -> bool
+
+(** get the superclasses of [typ]. does not include [typ] itself *)
+val get_strict_supertypes : Tenv.t -> Sil.struct_typ -> Sil.StructTypSet.t
 
 (** Get the name of the type of a constant *)
 val java_get_const_type_name : Sil.const -> string
@@ -95,3 +104,13 @@ val type_is_object : Sil.typ -> bool
 
 (** return the set of instance fields that are assigned to a null literal in [procdesc] *)
 val get_fields_nullified : Cfg.Procdesc.t -> Ident.FieldSet.t
+
+(** [is_exception tenv class_name] checks if class_name is of type java.lang.Exception *)
+val is_exception : Tenv.t -> Typename.t -> bool
+
+(** [is_throwable tenv class_name] checks if class_name is of type java.lang.Throwable *)
+val is_throwable : Tenv.t -> Typename.t -> bool
+
+(** [is_runtime_exception tenv class_name] checks if classname is
+    of type java.lang.RuntimeException *)
+val is_runtime_exception : Tenv.t -> Typename.t -> bool
