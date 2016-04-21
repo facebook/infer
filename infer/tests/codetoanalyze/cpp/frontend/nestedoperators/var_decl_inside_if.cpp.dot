@@ -71,20 +71,20 @@ digraph iCFG {
 	
 
 	 56 -> 64 ;
-55 [label="55:  Return Stmt \n   n$2=*&a:int  [line 44]\n  *&return:int =(1 / (n$2 - 1)) [line 44]\n  REMOVE_TEMPS(n$2); [line 44]\n  NULLIFY(&a,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+55 [label="55:  Return Stmt \n   n$3=*&a:int  [line 44]\n  *&return:int =(1 / (n$3 - 1)) [line 44]\n  REMOVE_TEMPS(n$3); [line 44]\n  NULLIFY(&a,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
 	 55 -> 44 ;
-54 [label="54:  DeclStmt \n   n$1=*&SIL_temp_conditional___49:int  [line 43]\n  NULLIFY(&SIL_temp_conditional___49,true); [line 43]\n  *&a:int =n$1 [line 43]\n  REMOVE_TEMPS(n$1); [line 43]\n " shape="box"]
+54 [label="54:  DeclStmt \n   n$2=*&SIL_temp_conditional___n$1:int  [line 43]\n  *&a:int =n$2 [line 43]\n  REMOVE_TEMPS(n$2); [line 43]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 43]\n " shape="box"]
 	
 
 	 54 -> 47 ;
 	 54 -> 48 ;
-53 [label="53:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___49); [line 43]\n  *&SIL_temp_conditional___49:int =0 [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+53 [label="53:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =0 [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	
 
 	 53 -> 49 ;
-52 [label="52:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___49); [line 43]\n  *&SIL_temp_conditional___49:int =1 [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+52 [label="52:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	
 
 	 52 -> 49 ;
@@ -119,7 +119,7 @@ digraph iCFG {
 44 [label="44: Exit conditional_init_div0 \n  " color=yellow style=filled]
 	
 
-43 [label="43: Start conditional_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 42]\n  NULLIFY(&a,false); [line 42]\n " color=yellow style=filled]
+43 [label="43: Start conditional_init_div0\nFormals: \nLocals:  a:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&a,&SIL_temp_conditional___n$1); [line 42]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 42]\n  NULLIFY(&a,false); [line 42]\n " color=yellow style=filled]
 	
 
 	 43 -> 50 ;

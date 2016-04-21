@@ -1,14 +1,14 @@
 digraph iCFG {
-20 [label="20:  BinaryOperatorStmt: Assign \n   n$10=*&SIL_temp_conditional___15:int * [line 12]\n  NULLIFY(&SIL_temp_conditional___15,true); [line 12]\n  n$11=*n$10:int  [line 12]\n  *&x:int =n$11 [line 12]\n  REMOVE_TEMPS(n$10,n$11); [line 12]\n  NULLIFY(&x,false); [line 12]\n " shape="box"]
+20 [label="20:  BinaryOperatorStmt: Assign \n   n$13=*&SIL_temp_conditional___n$10:int * [line 12]\n  n$14=*n$13:int  [line 12]\n  *&x:int =n$14 [line 12]\n  REMOVE_TEMPS(n$13,n$14); [line 12]\n  NULLIFY(&SIL_temp_conditional___n$10,false); [line 12]\n  NULLIFY(&x,false); [line 12]\n " shape="box"]
 	
 
 	 20 -> 10 ;
 	 20 -> 11 ;
-19 [label="19:  ConditinalStmt Branch \n   n$9=*&p:int * [line 12]\n  DECLARE_LOCALS(&SIL_temp_conditional___15); [line 12]\n  *&SIL_temp_conditional___15:int *=n$9 [line 12]\n  REMOVE_TEMPS(n$9); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+19 [label="19:  ConditinalStmt Branch \n   n$12=*&p:int * [line 12]\n  *&SIL_temp_conditional___n$10:int *=n$12 [line 12]\n  REMOVE_TEMPS(n$12); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 19 -> 15 ;
-18 [label="18:  ConditinalStmt Branch \n   n$8=*&p:int * [line 12]\n  DECLARE_LOCALS(&SIL_temp_conditional___15); [line 12]\n  *&SIL_temp_conditional___15:int *=n$8 [line 12]\n  REMOVE_TEMPS(n$8); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+18 [label="18:  ConditinalStmt Branch \n   n$11=*&p:int * [line 12]\n  *&SIL_temp_conditional___n$10:int *=n$11 [line 12]\n  REMOVE_TEMPS(n$11); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 18 -> 15 ;
@@ -24,16 +24,16 @@ digraph iCFG {
 	
 
 	 15 -> 20 ;
-14 [label="14:  DeclStmt \n   n$6=*&SIL_temp_conditional___9:int * [line 14]\n  NULLIFY(&SIL_temp_conditional___9,true); [line 14]\n  n$7=*n$6:int  [line 14]\n  *&y:int =n$7 [line 14]\n  REMOVE_TEMPS(n$6,n$7); [line 14]\n  NULLIFY(&y,false); [line 14]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$8=*&SIL_temp_conditional___n$5:int * [line 14]\n  n$9=*n$8:int  [line 14]\n  *&y:int =n$9 [line 14]\n  REMOVE_TEMPS(n$8,n$9); [line 14]\n  NULLIFY(&SIL_temp_conditional___n$5,false); [line 14]\n  NULLIFY(&y,false); [line 14]\n " shape="box"]
 	
 
 	 14 -> 4 ;
 	 14 -> 5 ;
-13 [label="13:  ConditinalStmt Branch \n   n$5=*&p:int * [line 14]\n  DECLARE_LOCALS(&SIL_temp_conditional___9); [line 14]\n  *&SIL_temp_conditional___9:int *=n$5 [line 14]\n  REMOVE_TEMPS(n$5); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+13 [label="13:  ConditinalStmt Branch \n   n$7=*&p:int * [line 14]\n  *&SIL_temp_conditional___n$5:int *=n$7 [line 14]\n  REMOVE_TEMPS(n$7); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 13 -> 9 ;
-12 [label="12:  ConditinalStmt Branch \n   n$4=*&p:int * [line 14]\n  DECLARE_LOCALS(&SIL_temp_conditional___9); [line 14]\n  *&SIL_temp_conditional___9:int *=n$4 [line 14]\n  REMOVE_TEMPS(n$4); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+12 [label="12:  ConditinalStmt Branch \n   n$6=*&p:int * [line 14]\n  *&SIL_temp_conditional___n$5:int *=n$6 [line 14]\n  REMOVE_TEMPS(n$6); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 12 -> 9 ;
@@ -49,15 +49,15 @@ digraph iCFG {
 	
 
 	 9 -> 14 ;
-8 [label="8:  UnaryOperator \n   n$2=*&SIL_temp_conditional___3:int * [line 16]\n  NULLIFY(&SIL_temp_conditional___3,true); [line 16]\n  REMOVE_TEMPS(n$2); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+8 [label="8:  UnaryOperator \n   n$3=*&SIL_temp_conditional___n$0:int * [line 16]\n  REMOVE_TEMPS(n$3); [line 16]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
 	 8 -> 2 ;
-7 [label="7:  ConditinalStmt Branch \n   n$1=*&p:int * [line 16]\n  DECLARE_LOCALS(&SIL_temp_conditional___3); [line 16]\n  *&SIL_temp_conditional___3:int *=n$1 [line 16]\n  REMOVE_TEMPS(n$1); [line 16]\n  NULLIFY(&p,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+7 [label="7:  ConditinalStmt Branch \n   n$2=*&p:int * [line 16]\n  *&SIL_temp_conditional___n$0:int *=n$2 [line 16]\n  REMOVE_TEMPS(n$2); [line 16]\n  NULLIFY(&p,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
 	 7 -> 3 ;
-6 [label="6:  ConditinalStmt Branch \n   n$0=*&p:int * [line 16]\n  DECLARE_LOCALS(&SIL_temp_conditional___3); [line 16]\n  *&SIL_temp_conditional___3:int *=n$0 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&p,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+6 [label="6:  ConditinalStmt Branch \n   n$1=*&p:int * [line 16]\n  *&SIL_temp_conditional___n$0:int *=n$1 [line 16]\n  REMOVE_TEMPS(n$1); [line 16]\n  NULLIFY(&p,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
 	 6 -> 3 ;
@@ -76,7 +76,7 @@ digraph iCFG {
 2 [label="2: Exit dereference_ifthenelse \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start dereference_ifthenelse\nFormals:  p:int *\nLocals:  y:int  x:int  \n   DECLARE_LOCALS(&return,&y,&x); [line 10]\n  NULLIFY(&x,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start dereference_ifthenelse\nFormals:  p:int *\nLocals:  SIL_temp_conditional___n$0:int * y:int  SIL_temp_conditional___n$5:int * SIL_temp_conditional___n$10:int * x:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&y,&SIL_temp_conditional___n$5,&SIL_temp_conditional___n$10,&x); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$10,false); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$5,false); [line 10]\n  NULLIFY(&x,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 16 ;

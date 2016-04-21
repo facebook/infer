@@ -1123,9 +1123,7 @@ struct
     let context = trans_state.context in
     let cfg = context.cfg in
     let succ_nodes = trans_state.succ_nodes in
-    let procname = Cfg.Procdesc.get_proc_name context.CContext.procdesc in
-    let mk_temp_var id =
-      Pvar.mk (Mangled.from_string ("SIL_temp_conditional___"^(string_of_int id))) procname in
+    let procdesc = context.CContext.procdesc in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let do_branch branch stmt var_typ prune_nodes join_node pvar =
       let trans_state_pri = PriorityNode.force_claim_priority_node trans_state stmt_info in
@@ -1134,7 +1132,6 @@ struct
       let (e', _) = extract_exp_from_list res_trans_b.exps
           "\nWARNING: Missing branch expression for Conditional operator. Need to be fixed\n" in
       let set_temp_var = [
-        Sil.Declare_locals([(pvar, var_typ)], sil_loc);
         Sil.Set (Sil.Lvar pvar, var_typ, e', sil_loc)
       ] in
       let tmp_var_res_trans = { empty_res_trans with instrs = set_temp_var } in
@@ -1153,7 +1150,8 @@ struct
          let var_typ = add_reference_if_glvalue typ expr_info in
          let join_node = create_node (Cfg.Node.Join_node) [] [] sil_loc context in
          Cfg.Node.set_succs_exn cfg join_node succ_nodes [];
-         let pvar = mk_temp_var (Cfg.Node.get_id join_node :> int) in
+         let pvar = mk_temp_sil_var procdesc "SIL_temp_conditional___" in
+         Cfg.Procdesc.append_locals procdesc [(Pvar.get_name pvar, var_typ)];
          let continuation' = mk_cond_continuation trans_state.continuation in
          let trans_state' = { trans_state with continuation = continuation'; succ_nodes = [] } in
          let res_trans_cond = exec_with_priority_exception trans_state' cond cond_trans in
@@ -1161,10 +1159,7 @@ struct
          do_branch true exp1 var_typ res_trans_cond.leaf_nodes join_node pvar;
          do_branch false exp2 var_typ res_trans_cond.leaf_nodes join_node pvar;
          let id = Ident.create_fresh Ident.knormal in
-         let instrs = [
-           Sil.Letderef (id, Sil.Lvar pvar, var_typ, sil_loc);
-           Sil.Nullify (pvar, sil_loc, true)
-         ] in
+         let instrs = [Sil.Letderef (id, Sil.Lvar pvar, var_typ, sil_loc)] in
          { empty_res_trans with
            root_nodes = res_trans_cond.root_nodes;
            leaf_nodes = [join_node];

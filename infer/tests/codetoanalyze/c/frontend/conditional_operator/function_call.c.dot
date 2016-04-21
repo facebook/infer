@@ -1,13 +1,13 @@
 digraph iCFG {
-67 [label="67:  Call n$0 \n   n$0=*&SIL_temp_conditional___52:_fn_ (*) [line 20]\n  NULLIFY(&SIL_temp_conditional___52,true); [line 20]\n  n$1=*&SIL_temp_conditional___57:int  [line 20]\n  NULLIFY(&SIL_temp_conditional___57,true); [line 20]\n  n$2=*&SIL_temp_conditional___62:int  [line 20]\n  NULLIFY(&SIL_temp_conditional___62,true); [line 20]\n  n$0(n$1:int ,2:int ,n$2:int ) [line 20]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+67 [label="67:  Call n$1 \n   n$1=*&SIL_temp_conditional___n$0:_fn_ (*) [line 20]\n  n$3=*&SIL_temp_conditional___n$2:int  [line 20]\n  n$5=*&SIL_temp_conditional___n$4:int  [line 20]\n  n$1(n$3:int ,2:int ,n$5:int ) [line 20]\n  REMOVE_TEMPS(n$1,n$3,n$5); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 67 -> 51 ;
-66 [label="66:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___62); [line 20]\n  *&SIL_temp_conditional___62:int =3 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+66 [label="66:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$4:int =3 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 66 -> 62 ;
-65 [label="65:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___62); [line 20]\n  *&SIL_temp_conditional___62:int =3 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+65 [label="65:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$4:int =3 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 65 -> 62 ;
@@ -23,11 +23,11 @@ digraph iCFG {
 	
 
 	 62 -> 67 ;
-61 [label="61:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___57); [line 20]\n  *&SIL_temp_conditional___57:int =1 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+61 [label="61:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =1 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 61 -> 57 ;
-60 [label="60:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___57); [line 20]\n  *&SIL_temp_conditional___57:int =1 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+60 [label="60:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =1 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 60 -> 57 ;
@@ -44,11 +44,11 @@ digraph iCFG {
 
 	 57 -> 63 ;
 	 57 -> 64 ;
-56 [label="56:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___52); [line 20]\n  *&SIL_temp_conditional___52:_fn_ (*)=_fun_some_f [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+56 [label="56:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:_fn_ (*)=_fun_some_f [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 56 -> 52 ;
-55 [label="55:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___52); [line 20]\n  *&SIL_temp_conditional___52:_fn_ (*)=_fun_some_f [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+55 [label="55:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:_fn_ (*)=_fun_some_f [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 55 -> 52 ;
@@ -68,20 +68,20 @@ digraph iCFG {
 51 [label="51: Exit fun_ifthenelse4 \n  " color=yellow style=filled]
 	
 
-50 [label="50: Start fun_ifthenelse4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+50 [label="50: Start fun_ifthenelse4\nFormals: \nLocals:  SIL_temp_conditional___n$0:_fn_ (*) SIL_temp_conditional___n$2:int  SIL_temp_conditional___n$4:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$2,&SIL_temp_conditional___n$4); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 20]\n " color=yellow style=filled]
 	
 
 	 50 -> 53 ;
 	 50 -> 54 ;
-49 [label="49:  Call _fun_some_f \n   n$0=*&SIL_temp_conditional___34:int  [line 18]\n  NULLIFY(&SIL_temp_conditional___34,true); [line 18]\n  n$1=*&SIL_temp_conditional___39:int  [line 18]\n  NULLIFY(&SIL_temp_conditional___39,true); [line 18]\n  n$2=*&SIL_temp_conditional___44:int  [line 18]\n  NULLIFY(&SIL_temp_conditional___44,true); [line 18]\n  _fun_some_f(n$0:int ,n$1:int ,n$2:int ) [line 18]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+49 [label="49:  Call _fun_some_f \n   n$1=*&SIL_temp_conditional___n$0:int  [line 18]\n  n$3=*&SIL_temp_conditional___n$2:int  [line 18]\n  n$5=*&SIL_temp_conditional___n$4:int  [line 18]\n  _fun_some_f(n$1:int ,n$3:int ,n$5:int ) [line 18]\n  REMOVE_TEMPS(n$1,n$3,n$5); [line 18]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 18]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 18]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 49 -> 33 ;
-48 [label="48:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___44); [line 18]\n  *&SIL_temp_conditional___44:int =3 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+48 [label="48:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$4:int =3 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 48 -> 44 ;
-47 [label="47:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___44); [line 18]\n  *&SIL_temp_conditional___44:int =3 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+47 [label="47:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$4:int =3 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 47 -> 44 ;
@@ -97,11 +97,11 @@ digraph iCFG {
 	
 
 	 44 -> 49 ;
-43 [label="43:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___39); [line 18]\n  *&SIL_temp_conditional___39:int =2 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+43 [label="43:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =2 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 43 -> 39 ;
-42 [label="42:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___39); [line 18]\n  *&SIL_temp_conditional___39:int =2 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+42 [label="42:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =2 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 42 -> 39 ;
@@ -118,11 +118,11 @@ digraph iCFG {
 
 	 39 -> 45 ;
 	 39 -> 46 ;
-38 [label="38:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___34); [line 18]\n  *&SIL_temp_conditional___34:int =1 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+38 [label="38:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:int =1 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 38 -> 34 ;
-37 [label="37:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___34); [line 18]\n  *&SIL_temp_conditional___34:int =1 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+37 [label="37:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:int =1 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 37 -> 34 ;
@@ -142,20 +142,20 @@ digraph iCFG {
 33 [label="33: Exit fun_ifthenelse3 \n  " color=yellow style=filled]
 	
 
-32 [label="32: Start fun_ifthenelse3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+32 [label="32: Start fun_ifthenelse3\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$2:int  SIL_temp_conditional___n$4:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$2,&SIL_temp_conditional___n$4); [line 18]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 18]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 18]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 18]\n " color=yellow style=filled]
 	
 
 	 32 -> 35 ;
 	 32 -> 36 ;
-31 [label="31:  Call n$0 \n   n$0=*&SIL_temp_conditional___11:_fn_ (*) [line 15]\n  NULLIFY(&SIL_temp_conditional___11,true); [line 15]\n  n$1=*&SIL_temp_conditional___16:int  [line 15]\n  NULLIFY(&SIL_temp_conditional___16,true); [line 15]\n  n$2=*&SIL_temp_conditional___21:int  [line 15]\n  NULLIFY(&SIL_temp_conditional___21,true); [line 15]\n  n$3=*&SIL_temp_conditional___26:int  [line 15]\n  NULLIFY(&SIL_temp_conditional___26,true); [line 15]\n  n$0(n$1:int ,n$2:int ,n$3:int ) [line 15]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+31 [label="31:  Call n$1 \n   n$1=*&SIL_temp_conditional___n$0:_fn_ (*) [line 15]\n  n$3=*&SIL_temp_conditional___n$2:int  [line 15]\n  n$5=*&SIL_temp_conditional___n$4:int  [line 15]\n  n$7=*&SIL_temp_conditional___n$6:int  [line 15]\n  n$1(n$3:int ,n$5:int ,n$7:int ) [line 15]\n  REMOVE_TEMPS(n$1,n$3,n$5,n$7); [line 15]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 15]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 15]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 15]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 31 -> 10 ;
-30 [label="30:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___26); [line 15]\n  *&SIL_temp_conditional___26:int =3 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+30 [label="30:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$6:int =3 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 30 -> 26 ;
-29 [label="29:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___26); [line 15]\n  *&SIL_temp_conditional___26:int =3 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+29 [label="29:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$6:int =3 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 29 -> 26 ;
@@ -171,11 +171,11 @@ digraph iCFG {
 	
 
 	 26 -> 31 ;
-25 [label="25:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___21); [line 15]\n  *&SIL_temp_conditional___21:int =2 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+25 [label="25:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$4:int =2 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 25 -> 21 ;
-24 [label="24:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___21); [line 15]\n  *&SIL_temp_conditional___21:int =2 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+24 [label="24:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$4:int =2 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 24 -> 21 ;
@@ -192,11 +192,11 @@ digraph iCFG {
 
 	 21 -> 27 ;
 	 21 -> 28 ;
-20 [label="20:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___16); [line 15]\n  *&SIL_temp_conditional___16:int =1 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+20 [label="20:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =1 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 20 -> 16 ;
-19 [label="19:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___16); [line 15]\n  *&SIL_temp_conditional___16:int =1 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+19 [label="19:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =1 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 19 -> 16 ;
@@ -213,11 +213,11 @@ digraph iCFG {
 
 	 16 -> 22 ;
 	 16 -> 23 ;
-15 [label="15:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___11); [line 15]\n  *&SIL_temp_conditional___11:_fn_ (*)=_fun_some_f [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+15 [label="15:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:_fn_ (*)=_fun_some_f [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 15 -> 11 ;
-14 [label="14:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___11); [line 15]\n  *&SIL_temp_conditional___11:_fn_ (*)=_fun_some_f [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+14 [label="14:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:_fn_ (*)=_fun_some_f [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 14 -> 11 ;
@@ -237,20 +237,20 @@ digraph iCFG {
 10 [label="10: Exit fun_ifthenelse2 \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start fun_ifthenelse2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+9 [label="9: Start fun_ifthenelse2\nFormals: \nLocals:  SIL_temp_conditional___n$0:_fn_ (*) SIL_temp_conditional___n$2:int  SIL_temp_conditional___n$4:int  SIL_temp_conditional___n$6:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$2,&SIL_temp_conditional___n$4,&SIL_temp_conditional___n$6); [line 14]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 14]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 14]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 14]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 14]\n " color=yellow style=filled]
 	
 
 	 9 -> 12 ;
 	 9 -> 13 ;
-8 [label="8:  Call n$0 \n   n$0=*&SIL_temp_conditional___3:_fn_ (*) [line 12]\n  NULLIFY(&SIL_temp_conditional___3,true); [line 12]\n  n$0(1:int ,2:int ,3:int ) [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+8 [label="8:  Call n$1 \n   n$1=*&SIL_temp_conditional___n$0:_fn_ (*) [line 12]\n  n$1(1:int ,2:int ,3:int ) [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 8 -> 2 ;
-7 [label="7:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___3); [line 12]\n  *&SIL_temp_conditional___3:_fn_ (*)=_fun_some_f [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+7 [label="7:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:_fn_ (*)=_fun_some_f [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 7 -> 3 ;
-6 [label="6:  ConditinalStmt Branch \n   DECLARE_LOCALS(&SIL_temp_conditional___3); [line 12]\n  *&SIL_temp_conditional___3:_fn_ (*)=_fun_some_f [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+6 [label="6:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:_fn_ (*)=_fun_some_f [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 6 -> 3 ;
@@ -269,7 +269,7 @@ digraph iCFG {
 2 [label="2: Exit fun_ifthenelse1 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start fun_ifthenelse1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start fun_ifthenelse1\nFormals: \nLocals:  SIL_temp_conditional___n$0:_fn_ (*) \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0); [line 12]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;
