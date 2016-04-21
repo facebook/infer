@@ -332,8 +332,10 @@ inline bool operator>=(nullptr_t, const unique_ptr<_T1, _D1>& __x) {
   return !(nullptr < __x);
 }
 
-template <class T>
-struct hash<unique_ptr<T>> : public hash<std__unique_ptr<T>> {};
+template <class T, class D>
+struct hash<unique_ptr<T, D>> : public hash<std__unique_ptr<T, D>> {
+  size_t operator()(const unique_ptr<T, D>& __u) const noexcept {}
+};
 
 template <typename _Tp>
 struct _MakeUniq2 {
