@@ -251,9 +251,11 @@ endif
 
 clean:
 	$(REMOVE) test.xml
+ifeq (@IS_RELEASE_TREE@,no)
 ifeq (@BUILD_C_ANALYZERS@,yes)
 	$(MAKE) -C $(FCP_DIR) clean
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
+endif
 endif
 	$(MAKE) -C $(INFER_DIR) clean
 
