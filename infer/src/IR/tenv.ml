@@ -111,7 +111,7 @@ let get_overriden_method tenv pname_java =
   in
   match (proc_extract_declaring_class_typ tenv pname_java) with
   | Some proc_struct_typ ->
-      (get_overriden_method_in_superclasses pname_java proc_struct_typ.superclasses)
+      get_overriden_method_in_superclasses pname_java proc_struct_typ.superclasses
   | _ -> None
 
 
