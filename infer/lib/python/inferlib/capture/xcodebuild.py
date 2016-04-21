@@ -75,5 +75,4 @@ class XcodebuildCapture:
         except subprocess.CalledProcessError as exc:
             if self.args.debug:
                 traceback.print_exc()
-            utils.stdout(exc.output)
             return exc.returncode
