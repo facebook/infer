@@ -76,8 +76,16 @@ let clang_to_sil_location clang_loc procdesc_opt =
         | None -> !curr_file, !Config.nLOC in
   Location.{line; col; file; nLOC}
 
-let file_in_project file = match !Config.project_root with
-  | Some root -> string_is_prefix root file
+let file_in_project file =
+  match !Config.project_root with
+  | Some root ->
+      let file_in_project = string_is_prefix root file in
+      let paths = Lazy.force Inferconfig.skip_translation_headers in
+      let file_should_be_skipped =
+        IList.exists
+          (fun path -> string_is_prefix (Filename.concat root path) file)
+          paths in
+      file_in_project && not (file_should_be_skipped)
   | None -> false
 
 let should_do_frontend_check (loc_start, _) =

@@ -52,3 +52,5 @@ end
 
 (** Load the config file and list the files to report on *)
 val test: unit -> unit
+
+val skip_translation_headers : string list Lazy.t

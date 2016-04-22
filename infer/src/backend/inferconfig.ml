@@ -414,3 +414,12 @@ let test () =
              (DB.source_file_to_rel_path source_file)
              matching_s)
     (Sys.getcwd ())
+
+let skip_translation_headers =
+  lazy (
+    match
+      lookup_string_list "skip_translation_headers"
+        (Yojson.Basic.from_file (inferconfig ()))
+    with
+    | exception _ -> []
+    | headers -> headers)

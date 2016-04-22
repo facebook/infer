@@ -88,6 +88,10 @@ let arg_desc =
       None,
       "Analyze C++ methods, still experimental"
       ;
+      "-inferconfig_home",
+      Arg.String (fun s -> Config.inferconfig_home := Some s),
+      Some "dir",
+      "Path to the .inferconfig file";
     ] in
   Arg.create_options_desc false "Parsing Options" desc
 
@@ -137,6 +141,9 @@ let do_run source_path ast_path =
     CFrontend_config.json := ast_filename;
     CLocation.check_source_file source_path;
     let source_file = CLocation.source_file_from_path source_path in
+    (match !Config.inferconfig_home with
+     | Some _ -> ()
+     | None -> Config.inferconfig_home := !Config.project_root);
     Printf.printf "Start translation of AST from %s\n" !CFrontend_config.json;
     CFrontend.do_source_file  source_file ast_decl;
     Printf.printf "End translation AST file %s... OK!\n" !CFrontend_config.json;
