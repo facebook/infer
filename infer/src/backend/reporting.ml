@@ -45,7 +45,13 @@ let log_issue_from_errlog
   let ltr = match ltr with
     | None -> State.get_loc_trace ()
     | Some ltr -> ltr in
-  Errlog.log_issue err_kind err_log loc node_id session ltr pre exn
+  let err_name =  match exn with
+    | Exceptions.Frontend_warning (err_name, _, _) -> err_name
+    | _ -> let err_name, _, _, _, _, _, _ =  Exceptions.recognize_exception exn in
+        (Localise.to_string err_name) in
+  if (Inferconfig.is_checker_enabled err_name) then
+    Errlog.log_issue err_kind err_log loc node_id session ltr pre exn
+
 
 let log_issue
     err_kind

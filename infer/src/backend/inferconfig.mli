@@ -54,3 +54,6 @@ end
 val test: unit -> unit
 
 val skip_translation_headers : string list Lazy.t
+
+(* is_checker_enabled error_name is true if error_name is whitelisted in .inferconfig or if it's enabled by default *)
+val is_checker_enabled : string -> bool
