@@ -14,13 +14,15 @@ import locale
 import os
 
 
-LOCALE = locale.getpreferredencoding()
-
+locale.setlocale(locale.LC_ALL, '')
+CODESET = locale.getlocale(locale.LC_CTYPE)[1]
+if CODESET is None:
+    CODESET = 'ascii'
 
 # this assumes that this file lives in infer/lib/python/infer/ and the binaries
 # are in infer/bin/
 INFER_PYTHON_DIRECTORY = os.path.dirname(os.path.realpath(__file__)
-                                         .decode(LOCALE))
+                                         .decode(CODESET))
 INFER_INFER_DIRECTORY = os.path.join(INFER_PYTHON_DIRECTORY,
                                      os.pardir, os.pardir, os.pardir)
 INFER_ROOT_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, os.pardir)
@@ -34,7 +36,7 @@ ANNOT_PROCESSOR_NAMES = 'com.facebook.infer.annotprocess.CollectSuppressWarnings
 WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
 XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
 
-DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(LOCALE), 'infer-out')
+DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(CODESET), 'infer-out')
 CSV_PERF_FILENAME = 'performances.csv'
 STATS_FILENAME = 'stats.json'
 PROC_STATS_FILENAME = 'proc_stats.json'

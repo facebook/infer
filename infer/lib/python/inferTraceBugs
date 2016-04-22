@@ -345,7 +345,7 @@ def generate_html_report(args, reports):
     for bug in sel:
         bug_trace_path = path_of_bug_number(traces_dir, i)
         with codecs.open(bug_trace_path, 'w',
-                         encoding=config.LOCALE,
+                         encoding=config.CODESET,
                          errors='xmlcharrefreplace') as bug_trace_file:
             bug_trace_file.write(html_bug_trace(args, bug, i))
         i += 1
@@ -353,7 +353,7 @@ def generate_html_report(args, reports):
     remote_source_template = get_remote_source_template()
     bug_list_path = os.path.join(html_dir, 'index.html')
     with codecs.open(bug_list_path, 'w',
-                     encoding=config.LOCALE,
+                     encoding=config.CODESET,
                      errors='xmlcharrefreplace') as bug_list_file:
         bug_list_file.write(html_list_of_bugs(args,
                                               remote_source_template,

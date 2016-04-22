@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import argparse
 import imp
 import json
+import locale
 import logging
 import os
 import platform
@@ -138,6 +139,10 @@ def main():
         logging.info('PATH=%s', os.getenv('PATH'))
         logging.info('SHELL=%s', os.getenv('SHELL'))
         logging.info('PWD=%s', os.getenv('PWD'))
+        logging.info('output of locale.getdefaultlocale(): %s',
+                     str(locale.getdefaultlocale()))
+        logging.info('encoding we chose in the end: %s',
+                     config.CODESET)
 
         capture_exitcode = imported_module.gen_instance(args, cmd).capture()
         if capture_exitcode != os.EX_OK:

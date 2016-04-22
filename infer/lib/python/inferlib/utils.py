@@ -55,7 +55,7 @@ if 'check_output' not in dir(subprocess):
 def locale_csv_reader(iterable, dialect='excel', **kwargs):
     rows = csv.reader(iterable, dialect=dialect, **kwargs)
     for row in rows:
-        yield [unicode(cell, config.LOCALE) for cell in row]
+        yield [unicode(cell, config.CODESET) for cell in row]
 
 
 def configure_logging(args):
@@ -89,8 +89,8 @@ def get_cmd_in_bin_dir(binary_name):
 
 def load_json_from_path(path, errors='replace'):
     with codecs.open(path, 'r',
-                     encoding=config.LOCALE, errors=errors) as file_in:
-        return json.load(file_in, encoding=config.LOCALE)
+                     encoding=config.CODESET, errors=errors) as file_in:
+        return json.load(file_in, encoding=config.CODESET)
 
 
 def dump_json_to_path(
@@ -99,10 +99,10 @@ def dump_json_to_path(
         cls=None,
         indent=2,  # customized
         separators=None,
-        encoding=config.LOCALE,  # customized
+        encoding=config.CODESET,  # customized
         default=None, sort_keys=False, **kw):
     with codecs.open(path, 'w',
-                     encoding=config.LOCALE, errors='replace') as file_out:
+                     encoding=config.CODESET, errors='replace') as file_out:
         json.dump(data, file_out, skipkeys=skipkeys, ensure_ascii=ensure_ascii,
                   check_circular=check_circular, allow_nan=allow_nan, cls=cls,
                   indent=indent, separators=separators, encoding=encoding,
@@ -288,11 +288,11 @@ def get_plural(_str, count):
 
 
 def decode(s, errors='replace'):
-    return s.decode(encoding=config.LOCALE, errors=errors)
+    return s.decode(encoding=config.CODESET, errors=errors)
 
 
 def encode(u, errors='replace'):
-    return u.encode(encoding=config.LOCALE, errors=errors)
+    return u.encode(encoding=config.CODESET, errors=errors)
 
 
 def stdout(s, errors='replace'):

@@ -44,7 +44,7 @@ class Indenter(str):
 
     def add(self, x):
         if type(x) != unicode:
-            x = x.decode(config.LOCALE)
+            x = x.decode(config.CODESET)
         lines = x.splitlines()
         indent = self.indent_get()
         lines = [indent + l for l in lines]
@@ -55,7 +55,7 @@ class Indenter(str):
         return self.text
 
     def __str__(self):
-        return unicode(self).encode(config.LOCALE)
+        return unicode(self).encode(config.CODESET)
 
 
 def build_source_context(source_name, mode, report_line):
@@ -67,7 +67,7 @@ def build_source_context(source_name, mode, report_line):
     line_number = 1
     excerpt = ''
     with codecs.open(source_name, 'r',
-                     encoding=config.LOCALE, errors="replace") as source_file:
+                     encoding=config.CODESET, errors="replace") as source_file:
         # avoid going past the end of the file
         for line in source_file:
             if start_line <= line_number <= end_line:

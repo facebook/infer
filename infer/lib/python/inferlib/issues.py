@@ -269,11 +269,12 @@ def print_and_save_errors(json_report, bugs_out, xml_out):
     plain_out = _text_of_report_list(errors,
                                      formatter=colorize.PLAIN_FORMATTER)
     with codecs.open(bugs_out, 'w',
-                     encoding=config.LOCALE, errors='replace') as file_out:
+                     encoding=config.CODESET, errors='replace') as file_out:
         file_out.write(plain_out)
     if xml_out is not None:
         with codecs.open(xml_out, 'w',
-                         encoding=config.LOCALE, errors='replace') as file_out:
+                         encoding=config.CODESET,
+                         errors='replace') as file_out:
             file_out.write(_pmd_xml_of_issues(errors))
 
 
@@ -323,7 +324,7 @@ def _pmd_xml_of_issues(issues):
         violation.text = issue[JSON_INDEX_QUALIFIER]
         file_node.append(violation)
         root.append(file_node)
-    return etree.tostring(root, pretty_print=True, encoding=config.LOCALE)
+    return etree.tostring(root, pretty_print=True, encoding=config.CODESET)
 
 
 def _sort_and_uniq_rows(l):
