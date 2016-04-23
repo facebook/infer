@@ -42,7 +42,7 @@ public abstract class Lock {
           InferBuiltins.__set_locked_attribute(this);
           return true;
         } else {
-          return false; /*Could add unlocked, but not for now*/
+          return false;
         }
     }
 
@@ -53,7 +53,7 @@ public abstract class Lock {
           InferBuiltins.__set_locked_attribute(this);
           return true;
         } else {
-          return false; /*Could add unlocked, but not for not*/
+          return false;
         }
     }
 
@@ -62,7 +62,7 @@ public abstract class Lock {
      * is not held by the current thread. This model does not consider that possibility.
      */
     public void unlock() {
-        InferBuiltins.__set_unlocked_attribute(this);
+        InferBuiltins.__delete_locked_attribute(this);
     }
 
 }

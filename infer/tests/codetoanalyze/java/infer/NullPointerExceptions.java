@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.lang.System;
+import java.util.concurrent.locks.Lock;
 import java.util.HashMap;
 
 public class NullPointerExceptions {
@@ -516,6 +517,22 @@ public class NullPointerExceptions {
   void dereferenceAfterLoopOnList(L l) {
     Object obj = returnsNullAfterLoopOnList(l);
     obj.toString();
+  }
+
+  void dereferenceAfterUnlock1(Lock l) {
+    l.unlock();
+    String s = l.toString();
+    s = null;
+    s.toString(); // Expect NPE here
+  }
+
+  void dereferenceAfterUnlock2(Lock l) {
+    synchronized(l){
+      String b = null;
+    }
+    String s = l.toString();
+    s = null;
+    s.toString(); // Expect NPE here
   }
 
 }

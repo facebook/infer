@@ -22,6 +22,8 @@ public class InferBuiltins {
 
     public native static void __set_unlocked_attribute(Object o);
 
+    public native static void __delete_locked_attribute(Object o);
+
     public native static void _exit();
 
     private native static void __infer_assume(boolean condition);

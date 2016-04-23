@@ -13,7 +13,7 @@
 * A reentrant lock is one where if you try to lock() a lock already held by
 * the current thread, you succeed and continue. In a non-reentrant lock you could deadlock.
 * This is not reflected.  java.util.concurrent ReentrantLocks have some fairness
-* guarantees and some tings about scheduling
+* guarantees and some things about scheduling
 * when the lock is held by another thread, not considered here..
 *
 */
@@ -23,18 +23,6 @@ import com.facebook.infer.models.InferBuiltins;
 import com.facebook.infer.models.InferUndefined;
 
 public abstract class ReentrantLock extends Lock implements java.io.Serializable {
-
-   /* Assuming a lock starts off in this "unlocked" state */
-    public ReentrantLock() {
-      InferBuiltins.__set_unlocked_attribute(this);
-    }
-
-    /**
-     ignoring fairness (hey, this is partial corretness!)
-     */
-    public ReentrantLock(boolean fair) {
-      InferBuiltins.__set_unlocked_attribute(this);
-    }
 
     /**
     * We should be able to delete this and inherit from the modle in Lock.java,
@@ -51,7 +39,7 @@ public abstract class ReentrantLock extends Lock implements java.io.Serializable
      * when improved treatment of dynamic dispatch lands
      */
     public void unlock() {
-      InferBuiltins.__set_unlocked_attribute(this);
+      InferBuiltins.__delete_locked_attribute(this);
     }
 
      /**

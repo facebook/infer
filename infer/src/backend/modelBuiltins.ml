@@ -588,6 +588,12 @@ let set_attr pdesc prop path exp attr =
   let n_lexp, prop = check_arith_norm_exp pname exp prop in
   [(Prop.add_or_replace_exp_attribute prop n_lexp attr, path)]
 
+let delete_attr pdesc prop path exp attr =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  let n_lexp, prop = check_arith_norm_exp pname exp prop in
+  [(Prop.remove_attribute_from_exp attr prop n_lexp, path)]
+
+
 (** Set attibute att *)
 let execute___set_attr attr { Builtin.pdesc; prop_; path; args; }
   : Builtin.ret_typ =
@@ -608,6 +614,21 @@ let execute___set_locked_attribute
     ra_loc = loc;
     ra_vpath = None; } in
   execute___set_attr (Sil.Aresource ra) builtin_args
+
+(** Delete the resource/locked attibute of the value, if it is locked*)
+let execute___delete_locked_attribute { Builtin.pdesc; loc; prop_; path; args; }
+  : Builtin.ret_typ =
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  (* ra_kind = Racquire in following indicates locked *)
+  let ra = {
+    Sil.ra_kind = Sil.Racquire;
+    ra_res = Sil.Rlock;
+    ra_pname = pname;
+    ra_loc = loc;
+    ra_vpath = None; } in
+  match args with
+  | [(lexp, _)] -> delete_attr pdesc prop_ path lexp (Sil.Aresource ra)
+  | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** Set the attibute of the value as resource/unlocked*)
 let execute___set_unlocked_attribute
@@ -1061,6 +1082,9 @@ let __set_locked_attribute = Builtin.register
 let __set_unlocked_attribute = Builtin.register
     (* set the attribute of the parameter as unlocked *)
     "__set_unlocked_attribute" execute___set_unlocked_attribute
+let __delete_locked_attribute = Builtin.register
+    (* delete the locked attribute, when it exists *)
+    "__delete_locked_attribute" execute___delete_locked_attribute
 let _ = Builtin.register
     "__throw" execute_skip
 let __unwrap_exception = Builtin.register

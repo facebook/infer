@@ -255,6 +255,16 @@
     "procedure": "void NullPointerExceptions.dereferenceAfterLoopOnList(NullPointerExceptions$L)"
   },
   {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.dereferenceAfterUnlock1(Lock)"
+  },
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "infer/tests/codetoanalyze/java/infer/NullPointerExceptions.java",
+    "procedure": "void NullPointerExceptions.dereferenceAfterUnlock2(Lock)"
+  },
+  {
     "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/FilterInputStreamLeaks.java",
     "procedure": "void FilterInputStreamLeaks.digestInputStreamNotClosedAfterRead()"

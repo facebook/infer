@@ -1128,7 +1128,7 @@ let rec instruction context pc instr : translation =
 
     | JBir.MonitorExit expr ->
         trans_monitor_enter_exit
-          context expr pc loc ModelBuiltins.__set_unlocked_attribute "MonitorExit"
+          context expr pc loc ModelBuiltins.__delete_locked_attribute "MonitorExit"
 
     | _ -> Skip
   with Frontend_error s ->
