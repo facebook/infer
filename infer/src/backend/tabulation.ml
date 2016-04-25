@@ -322,7 +322,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
           Some (Deref_freed ra, desc true (Localise.deref_str_freed ra))
       | _ ->
           (match Prop.get_undef_attribute actual_pre e_sub with
-           | Some (Sil.Aundef (s, loc, pos)) ->
+           | Some (Sil.Aundef (s, _, loc, pos)) ->
                Some (Deref_undef (s, loc, pos), desc false (Localise.deref_str_undef (s, loc)))
            | _ -> None) in
   let check_hpred = function

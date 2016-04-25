@@ -945,7 +945,6 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
          match hpred with
          | Sil.Hpointsto (Sil.Lvar pvar, Sil.Eexp (Sil.Var _ as exp, _), _)
            when Sil.exp_equal exp deref_exp ->
-
              let is_nullable =
                if Annotations.param_is_nullable pvar ann_sig
                then
@@ -954,12 +953,13 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                    true
                  end
                else
-                 match Prop.get_retval_attribute prop exp with
-                 | Some (Sil.Aretval (pname, ret_attr)) when Annotations.ia_is_nullable ret_attr ->
-                     nullable_obj_str := Some (Procname.to_string pname);
-                     true
-                 | _ ->
-                     false in
+                 let is_nullable_attr = function
+                   | Sil.Aretval (pname, ret_attr)
+                   | Sil.Aundef (pname, ret_attr, _, _) when Annotations.ia_is_nullable ret_attr ->
+                       nullable_obj_str := Some (Procname.to_string pname);
+                       true
+                   | _ -> false in
+                 IList.exists is_nullable_attr (Prop.get_exp_attributes prop exp) in
              (* it's ok for a non-nullable local to point to deref_exp *)
              is_nullable || Pvar.is_local pvar
          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Sil.Sizeof (typ, _)) ->
@@ -1025,7 +1025,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
       let deref_str = Localise.deref_str_dangling (Some dk) in
       let err_desc = Errdesc.explain_dereference deref_str prop (State.get_loc ()) in
       raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
-  | Some (Sil.Aundef (s, undef_loc, _)) ->
+  | Some (Sil.Aundef (s, _, undef_loc, _)) ->
       if !Config.angelic_execution then ()
       else
         let deref_str = Localise.deref_str_undef (s, undef_loc) in

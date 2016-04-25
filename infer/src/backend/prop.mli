@@ -319,8 +319,8 @@ val add_or_replace_exp_attribute_check_changed : (Sil.attribute -> Sil.attribute
 val add_or_replace_exp_attribute : normal t -> exp -> attribute -> normal t
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
-val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Location.t ->
-  Sil.path_pos -> normal t
+val mark_vars_as_undefined : normal t -> Sil.exp list -> Procname.t -> Sil.item_annotation ->
+  Location.t -> Sil.path_pos -> normal t
 
 (** Remove an attribute from all the atoms in the heap *)
 val remove_attribute : Sil.attribute -> 'a t -> normal t

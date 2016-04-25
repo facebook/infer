@@ -861,7 +861,11 @@ let execute_scan_function skip_n_arguments ({ Builtin.args } as call_args)
   | _ when IList.length args >= skip_n_arguments ->
       let varargs = ref args in
       for _ = 1 to skip_n_arguments do varargs := IList.tl !varargs done;
-      SymExec.unknown_or_scan_call ~is_scan:true None { call_args with args = !varargs }
+      SymExec.unknown_or_scan_call
+        ~is_scan:true
+        None
+        Sil.item_annotation_empty
+        { call_args with args = !varargs }
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 let execute__unwrap_exception { Builtin.pdesc; prop_; path; ret_ids; args; }

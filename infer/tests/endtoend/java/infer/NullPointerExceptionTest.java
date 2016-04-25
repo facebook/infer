@@ -63,8 +63,8 @@ public class NullPointerExceptionTest {
         "someNPEAfterResourceLeak",
         "derefNullableGetter",
         "derefNullableRet",
-        // TODO: report on this test
-        // "derefUndefNullableRet
+        "derefUndefNullableRet",
+        "derefUndefNullableRetWrapper",
         "testSystemGetPropertyArgument",
         "testSystemGetPropertyReturn",
         "derefNull",

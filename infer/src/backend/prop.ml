@@ -1888,8 +1888,8 @@ let add_or_replace_exp_attribute prop exp att =
   add_or_replace_exp_attribute_check_changed check_attr_changed prop exp att
 
 (** mark Sil.Var's or Sil.Lvar's as undefined *)
-let mark_vars_as_undefined prop vars_to_mark callee_pname loc path_pos =
-  let att_undef = Sil.Aundef (callee_pname, loc, path_pos) in
+let mark_vars_as_undefined prop vars_to_mark callee_pname ret_annots loc path_pos =
+  let att_undef = Sil.Aundef (callee_pname, ret_annots, loc, path_pos) in
   let mark_var_as_undefined exp prop =
     match exp with
     | Sil.Var _ | Sil.Lvar _ -> add_or_replace_exp_attribute prop exp att_undef

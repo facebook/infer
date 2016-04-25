@@ -418,7 +418,7 @@ public class NullPointerExceptions {
 
   public native @Nullable Object undefNullableRet();
 
-  public void derefUndefNullableRetTODO() { // TODO: should warn here
+  public void derefUndefNullableRet() {
     Object ret = undefNullableRet();
     ret.toString();
   }
@@ -427,6 +427,29 @@ public class NullPointerExceptions {
     Object ret = undefNullableRet();
     if (ret != null) {
       ret.toString();
+    }
+  }
+
+  public Object undefNullableWrapper() {
+    return undefNullableRet();
+  }
+
+  public void derefUndefNullableRetWrapper() {
+    undefNullableWrapper().toString();
+  }
+
+  private int returnsThreeOnlyIfRetNotNull(Object obj) {
+    if (obj == null) {
+      return 2;
+    }
+    return 3;
+  }
+
+
+  public void testNullablePrecision() {
+    Object ret = undefNullableRet();
+    if (returnsThreeOnlyIfRetNotNull(ret) == 3) {
+      ret.toString(); // shouldn't warn here
     }
   }
 

@@ -255,7 +255,7 @@ and attribute =
   | Aautorelease
   | Adangling of dangling_kind (** dangling pointer *)
   (** undefined value obtained by calling the given procedure *)
-  | Aundef of Procname.t * Location.t * path_pos
+  | Aundef of Procname.t * item_annotation * Location.t * path_pos
   | Ataint of taint_info
   | Auntaint
   | Alocked

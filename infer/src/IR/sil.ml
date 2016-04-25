@@ -617,8 +617,8 @@ and attribute =
   | Aresource of res_action (** resource acquire/release *)
   | Aautorelease
   | Adangling of dangling_kind (** dangling pointer *)
-  (** undefined value obtained by calling the given procedure *)
-  | Aundef of Procname.t * Location.t * path_pos
+  (** undefined value obtained by calling the given procedure, plus its return value annots *)
+  | Aundef of Procname.t * item_annotation * Location.t * path_pos
   | Ataint of taint_info
   | Auntaint
   | Alocked
@@ -1360,7 +1360,7 @@ and attribute_compare (att1 : attribute) (att2 : attribute) : int =
   | Adangling dk1, Adangling dk2 -> dangling_kind_compare dk1 dk2
   | Adangling _, _ -> - 1
   | _, Adangling _ -> 1
-  | Aundef (pn1, _, _), Aundef (pn2, _, _) -> Procname.compare pn1 pn2
+  | Aundef (pn1, _, _, _), Aundef (pn2, _, _, _) -> Procname.compare pn1 pn2
   | Ataint ti1, Ataint ti2 -> taint_info_compare ti1 ti2
   | Ataint _, _ -> -1
   | _, Ataint _ -> 1
@@ -1889,7 +1889,7 @@ and attribute_to_string pe = function
         | DAaddr_stack_var -> "ADDR_STACK"
         | DAminusone -> "MINUS1" in
       "DANGL" ^ (str_binop pe Lt) ^ dks ^ (str_binop pe Gt)
-  | Aundef (pn, loc, _) ->
+  | Aundef (pn, _, loc, _) ->
       "UND" ^ (str_binop pe Lt) ^ Procname.to_string pn ^
       (str_binop pe Gt) ^ ":" ^ (string_of_int loc.Location.line)
   | Ataint { taint_source; } -> "TAINTED[" ^ (Procname.to_string taint_source) ^ "]"
