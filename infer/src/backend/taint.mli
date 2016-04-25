@@ -18,3 +18,6 @@ val accepts_sensitive_params : Procname.t -> ProcAttributes.t option -> int list
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)
 val tainted_params : Procname.t -> int list
+
+(** returns true if [fieldname] has a taint source annotation *)
+val has_taint_annotation : Ident.fieldname -> Sil.struct_typ -> bool

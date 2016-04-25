@@ -125,6 +125,21 @@
     "procedure": "void TaintExample.testPrivacySourceAnnot()"
   },
   {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testPrivacySourceFieldAnnotPropagation()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testPrivacySourceInstanceFieldAnnot()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testPrivacySourceStaticFieldAnnot()"
+  },
+  {
     "bug_type": "NULL_DEREFERENCE",
     "file": "codetoanalyze/java/infer/NullPointerExceptions.java",
     "procedure": "int NullPointerExceptions.NPEvalueOfFromHashmapBad(HashMap,int)"

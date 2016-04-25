@@ -843,6 +843,27 @@ let add_constraints_on_retval pdesc prop ret_exp typ callee_pname callee_loc =
         else prop''
     else add_ret_non_null ret_exp typ prop
 
+let add_taint prop lhs_id rhs_exp pname tenv  =
+  let add_attribute_if_field_tainted prop fieldname struct_typ =
+    if Taint.has_taint_annotation fieldname struct_typ
+    then
+      let taint_info = { Sil.taint_source = pname; taint_kind = Unknown; } in
+      Prop.add_or_replace_exp_attribute prop (Sil.Var lhs_id) (Sil.Ataint taint_info)
+    else
+      prop in
+  match rhs_exp with
+  | Sil.Lfield (_, fieldname, Tptr (Tstruct struct_typ, _))
+  | Sil.Lfield (_, fieldname, Tstruct struct_typ) ->
+      add_attribute_if_field_tainted prop fieldname struct_typ
+  | Sil.Lfield (_, fieldname, Tptr (Tvar typname, _))
+  | Sil.Lfield (_, fieldname, Tvar typname) ->
+      begin
+        match Tenv.lookup tenv typname with
+        | Some struct_typ -> add_attribute_if_field_tainted prop fieldname struct_typ
+        | None -> prop
+      end
+  | _ -> prop
+
 let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc prop_ =
   let execute_letderef_ pdesc tenv id loc acc_in iter =
     let iter_ren = Prop.prop_iter_make_id_primed id iter in
@@ -860,7 +881,11 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
             if lookup_uninitialized then
               Prop.add_or_replace_exp_attribute prop' (Sil.Var id) (Sil.Adangling Sil.DAuninit)
             else prop' in
-          prop'' :: acc in
+          let prop''' =
+            if !Config.taint_analysis
+            then add_taint prop'' id rhs_exp pname tenv
+            else prop'' in
+          prop''' :: acc in
         begin
           match pred_insts_op with
           | None -> update acc_in ([],[])

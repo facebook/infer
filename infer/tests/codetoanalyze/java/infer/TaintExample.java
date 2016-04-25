@@ -207,4 +207,25 @@ public class TaintExample {
     staticPrivacySink("", source); // should not report
   }
 
+  @PrivacySource("") String mPrivacySource;
+
+  @PrivacySource("") String sPrivacySource;
+
+  public void testPrivacySourceInstanceFieldAnnot() {
+    String source = mPrivacySource;
+    InferTaint.inferSensitiveSinkUndefined(source); // should report
+  }
+
+  public void testPrivacySourceStaticFieldAnnot() {
+    String source = sPrivacySource;
+    InferTaint.inferSensitiveSinkUndefined(source); // should report
+  }
+
+  String aFieldWithoutAnnotations;
+
+  public void testPrivacySourceFieldAnnotPropagation() {
+    aFieldWithoutAnnotations = mPrivacySource;
+    InferTaint.inferSensitiveSinkUndefined(aFieldWithoutAnnotations); // should report
+  }
+
 }

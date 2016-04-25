@@ -57,7 +57,10 @@ public class TaintTest {
         "contentValuesPutWithTaintedString",
         "testPrivacySourceAnnot",
         "testPrivacySinkAnnot1",
-        "testPrivacySinkAnnot3"
+        "testPrivacySinkAnnot3",
+        "testPrivacySourceInstanceFieldAnnot",
+        "testPrivacySourceStaticFieldAnnot",
+        "testPrivacySourceFieldAnnotPropagation",
     };
 
     assertThat(

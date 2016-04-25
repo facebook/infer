@@ -252,3 +252,10 @@ let accepts_sensitive_params callee_pname callee_attrs_opt =
     considered tainted during symbolic execution *)
 let tainted_params callee_pname =
   find_callee func_with_tainted_params callee_pname
+
+let has_taint_annotation fieldname struct_typ =
+  let fld_has_taint_annot (fname, _, annot) =
+    Ident.fieldname_equal fieldname fname &&
+    Annotations.ia_is_privacy_source annot in
+  IList.exists fld_has_taint_annot struct_typ.Sil.instance_fields ||
+  IList.exists fld_has_taint_annot struct_typ.Sil.static_fields
