@@ -59,7 +59,10 @@ val is_subtype : Tenv.t -> Sil.struct_typ -> Sil.struct_typ -> bool
 val is_subtype_of_str : Tenv.t -> Typename.t -> string -> bool
 
 (** get the superclasses of [typ]. does not include [typ] itself *)
-val get_strict_supertypes : Tenv.t -> Sil.struct_typ -> Sil.StructTypSet.t
+val strict_supertype_iter : Tenv.t -> (Sil.struct_typ -> unit) -> Sil.struct_typ -> unit
+
+(** Return [true] if [f_typ] evaluates to true on a strict supertype of [orig_struct_typ] *)
+val strict_supertype_exists : Tenv.t -> (Sil.struct_typ -> bool) -> Sil.struct_typ -> bool
 
 (** Get the name of the type of a constant *)
 val java_get_const_type_name : Sil.const -> string

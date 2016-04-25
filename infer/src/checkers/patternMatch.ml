@@ -37,29 +37,39 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
    with _ -> false)
 
 (** get the superclasses of [typ]. does not include [typ] itself *)
-let get_strict_supertypes tenv orig_struct_typ =
+let strict_supertype_iter tenv f_typ orig_struct_typ =
   let get_direct_supers = function
-    | { Sil.csu = Csu.Class _; superclasses } -> superclasses
-    | _ -> [] in
-  let rec add_typ class_name struct_typs =
-    match Tenv.lookup tenv class_name with
-    | Some struct_typ -> get_supers_rec struct_typ (Sil.StructTypSet.add struct_typ struct_typs)
-    | None -> struct_typs
-  and get_supers_rec struct_typ all_supers =
+    | { Sil.csu = Csu.Class _; superclasses } ->
+        IList.map (Tenv.lookup tenv) superclasses
+        |> IList.flatten_options
+    | _ ->
+        [] in
+  let rec get_supers_rec struct_typ =
     let direct_supers = get_direct_supers struct_typ in
-    IList.fold_left
-      (fun struct_typs class_name -> add_typ class_name struct_typs)
-      all_supers
-      direct_supers in
-  get_supers_rec orig_struct_typ Sil.StructTypSet.empty
+    IList.iter f_typ direct_supers;
+    IList.iter get_supers_rec direct_supers in
+  get_supers_rec orig_struct_typ
+
+exception Found_supertype_match
+
+(** Return [true] if [f_typ] evaluates to true on a strict supertype of [orig_struct_typ] *)
+let strict_supertype_exists tenv f_typ orig_struct_typ =
+  let wrapped_f_typ struct_typ =
+    if f_typ struct_typ
+    then raise Found_supertype_match in
+  try
+    strict_supertype_iter tenv wrapped_f_typ orig_struct_typ;
+    false
+  with Found_supertype_match ->
+    true
 
 let is_immediate_subtype this_type super_type_name =
-  IList.exists (fun cn -> Typename.equal cn super_type_name) this_type.Sil.superclasses
+  IList.exists (Typename.equal super_type_name) this_type.Sil.superclasses
 
 (** return true if [typ0] <: [typ1] *)
 let is_subtype tenv struct_typ0 struct_typ1 =
   Sil.struct_typ_equal struct_typ0 struct_typ1 ||
-  Sil.StructTypSet.mem struct_typ1 (get_strict_supertypes tenv struct_typ0)
+  strict_supertype_exists tenv (Sil.struct_typ_equal struct_typ1) struct_typ0
 
 let is_subtype_of_str tenv cn1 classname_str =
   let typename = Typename.Java.from_string classname_str in

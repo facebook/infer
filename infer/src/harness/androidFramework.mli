@@ -14,9 +14,6 @@ open! Utils
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 val get_lifecycles : (string * string * string list) list
 
-(** return true if [typ] is a subclass of [lifecycle_typ] *)
-val typ_is_lifecycle_typ : Tenv.t -> Sil.struct_typ -> Sil.struct_typ -> bool
-
 (** return true if [typ] <: android.content.Context *)
 val is_context : Tenv.t -> Sil.struct_typ -> bool
 

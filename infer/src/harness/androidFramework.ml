@@ -78,10 +78,6 @@ let is_fragment tenv typ =
   is_subtype_package_class tenv typ "android.app" "Fragment" ||
   is_subtype_package_class tenv typ "android.support.v4.app" "Fragment"
 
-(** return true if [struct_typ] is a subclass of [lifecycle_struct_typ] *)
-let typ_is_lifecycle_typ tenv struct_typ lifecycle_struct_typ =
-  TypSet.mem lifecycle_struct_typ (PatternMatch.get_strict_supertypes tenv struct_typ)
-
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 let is_android_lib_class class_name =
   let class_str = Typename.name class_name in

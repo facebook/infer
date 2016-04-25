@@ -20,7 +20,7 @@ let try_create_lifecycle_trace struct_typ lifecycle_struct_typ lifecycle_procs t
   match struct_typ with
   | { Sil.csu = Csu.Class Java; struct_name = Some name } ->
       let class_name = Typename.TN_csu (Csu.Class Java, name) in
-      if AndroidFramework.typ_is_lifecycle_typ tenv struct_typ lifecycle_struct_typ &&
+      if PatternMatch.is_subtype tenv struct_typ lifecycle_struct_typ &&
          not (AndroidFramework.is_android_lib_class class_name) then
         let ptr_to_struct_typ = Some (Sil.Tptr (Tstruct struct_typ, Pk_pointer)) in
         IList.fold_left
