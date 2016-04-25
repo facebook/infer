@@ -845,6 +845,28 @@ let rec texp_normalize sub exp = match exp with
   | Sil.Sizeof (typ, st) -> Sil.Sizeof (typ_normalize sub typ, st)
   | _ -> exp_normalize sub exp
 
+(* NOTE: usage of == operator in flds_norm and typ_normalize is intended*)
+(* to decrease pressure on ocaml's GC and not allocate new objects if typ_normalize*)
+(* doesn't change anything in structure of the type *)
+and flds_norm sub fields =
+  let fld_norm ((f, t, a) as field) =
+    let t' = typ_normalize sub t in
+    if t' == t then
+      field
+    else
+      (f, t', a) in
+
+  let rec flds_norm_aux fields = match fields with
+    | [] -> fields
+    | field :: rest ->
+        let rest' = flds_norm_aux rest in
+        let field' = fld_norm field in
+        if field == field' && rest == rest' then
+          fields
+        else
+          field' :: rest' in
+  flds_norm_aux fields
+
 and typ_normalize sub typ = match typ with
   | Sil.Tvar _
   | Sil.Tint _
@@ -852,18 +874,29 @@ and typ_normalize sub typ = match typ with
   | Sil.Tvoid
   | Sil.Tfun _ ->
       typ
-  | Sil.Tptr (t', pk) ->
-      Sil.Tptr (typ_normalize sub t', pk)
+  | Sil.Tptr (t, pk) ->
+      let t' = typ_normalize sub t in
+      if t == t' then
+        typ
+      else
+        Sil.Tptr (t', pk)
   | Sil.Tstruct struct_typ ->
-      let fld_norm = IList.map (fun (f, t, a) -> (f, typ_normalize sub t, a)) in
-      let instance_fields = fld_norm struct_typ.Sil.instance_fields in
-      let static_fields = fld_norm struct_typ.Sil.static_fields in
-      Sil.Tstruct
-        { struct_typ with
-          Sil.instance_fields;
-          static_fields;
+      let instance_fields = struct_typ.Sil.instance_fields in
+      let instance_fields' = flds_norm sub instance_fields in
+      let static_fields = struct_typ.Sil.static_fields in
+      let static_fields' = flds_norm sub static_fields in
+      if instance_fields == instance_fields' && static_fields == static_fields' then
+        typ
+      else
+        Sil.Tstruct
+          { struct_typ with
+            Sil.instance_fields = instance_fields';
+            static_fields = static_fields';
         }
   | Sil.Tarray (t, e) ->
+      (* this case is not optimized for less GC allocations since it requires*)
+      (* to make exp_normalize GC-friendly as well. Profiling showed that it's fine*)
+      (* to keep this code not optimized *)
       Sil.Tarray (typ_normalize sub t, exp_normalize sub e)
 
 let run_with_abs_val_eq_zero f =
