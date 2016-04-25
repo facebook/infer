@@ -59,6 +59,14 @@ let rec is_self s =
        | _ -> false)
   | _ -> false
 
+let is_function_or_method_call _ st =
+  match st with
+  | Clang_ast_t.CallExpr _  (* for C *)
+  | CXXMemberCallExpr _ | CXXOperatorCallExpr _
+  | CXXConstructExpr _ | CXXTemporaryObjectExpr _ (* for C++ *)
+  | Clang_ast_t.ObjCMessageExpr _ -> true (* for ObjC *)
+  | _ -> false
+
 (* Call method m and on the pn parameter pred holds *)
 (* st |= call_method(m(p1,...,pn,...pk)) /\ pred(pn) *)
 let call_method_on_nth pred pn m st =
@@ -77,6 +85,19 @@ let dec_body_eventually atomic_pred param dec =
        | Some body -> Ast_utils.exists_eventually_st atomic_pred param body
        | _ -> false)
   | _ -> false
+
+(* true if a variable is initialized with a method/function call.*)
+(* implemented as decl |= EF is_function_or_method_call *)
+let is_initialized_with_call decl =
+  match decl with
+  | Clang_ast_t.VarDecl (_, _ ,_, vdi) ->
+      (match vdi.vdi_init_expr with
+       | Some init_expr ->
+           CFrontend_utils.Ast_utils.exists_eventually_st is_function_or_method_call () init_expr
+       | _ -> false)
+  | _ -> false
+
+
 
 (* === Warnings on properties === *)
 
@@ -116,6 +137,26 @@ let strong_delegate_warning decl_info pname obj_c_property_decl_info =
            description = "Property or ivar "^pname.Clang_ast_t.ni_name^" declared strong";
            suggestion = "In general delegates should be declared weak or assign";
            loc = location_from_dinfo decl_info; }
+  else None
+
+(* GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL warning: a global variable initialization should not *)
+(* contain calls to functions or methods as these can be expensive an delay the starting time *)
+(* of an app *)
+let global_var_init_with_calls_warning decl =
+  let decl_info, gvar =
+    match Clang_ast_proj.get_named_decl_tuple decl with
+    | Some (di, ndi) -> di, ndi.ni_name
+    | None -> assert false (* we cannot be here *) in
+  let condition = (CFrontend_utils.Ast_utils.is_objc () || CFrontend_utils.Ast_utils.is_objcpp ())
+                  && CFrontend_utils.Ast_utils.is_global_var decl
+                  && is_initialized_with_call decl in
+  if condition then
+    Some {
+      name = "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
+      description = "Global variable " ^ gvar ^ 
+                    " is initialized using a function or method call";
+      suggestion = "If the function/method call is expensive, it can affect the starting time of the app.";
+      loc = location_from_dinfo decl_info; }
   else None
 
 (* Direct Atomic Property access:

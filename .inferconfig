@@ -1,4 +1,7 @@
 {
+ "enable_checks": [                                                                   
+      "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"                         
+    ],  
   "skip_translation": [
     {
       "language": "Java",

@@ -399,6 +399,21 @@ struct
       let _, st_list = Clang_ast_proj.get_stmt_tuple st in
       IList.exists (exists_eventually_st atomic_pred param) st_list
 
+  let is_global_var decl =
+    match decl with
+    | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_global
+    | _ -> false
+
+  let is_objc () =
+    match !CFrontend_config.language with
+    | CFrontend_config.OBJC -> true
+    | _ -> false
+
+  let is_objcpp () =
+    match !CFrontend_config.language with
+    | CFrontend_config.OBJCPP -> true
+    | _ -> false
+
 (*
   let rec getter_attribute_opt attributes =
     match attributes with

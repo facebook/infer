@@ -40,3 +40,8 @@ val captured_cxx_ref_in_objc_block_warning : Clang_ast_t.stmt_info -> (Pvar.t * 
 (* REGISTERED_OBSERVER_BEING_DEALLOCATED: an object is registered in a notification center
    but not removed before deallocation *)
 val checker_NSNotificationCenter : Clang_ast_t.decl_info -> Clang_ast_t.decl list -> warning_desc option
+
+(* GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL warning: a global variable initialization should not *)
+(* contain calls to functions or methods as these can be expensive an delay the starting time *)
+(* of a program *)
+val global_var_init_with_calls_warning : Clang_ast_t.decl -> warning_desc option

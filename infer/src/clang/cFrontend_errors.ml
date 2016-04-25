@@ -40,6 +40,13 @@ let ns_notification_checker_list = [CFrontend_checkers.checker_NSNotificationCen
 let checkers_for_ns decl_info decls checker =
   checker decl_info decls
 
+(* List of checkers on global variables *)
+let global_var_checker_list = [CFrontend_checkers.global_var_init_with_calls_warning]
+
+(* Invocation of checker belonging to global_var_checker_list *)
+let checker_for_global_var dec checker =
+  checker dec
+
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_warning pdesc warn_desc =
   let open CFrontend_checkers in
@@ -133,4 +140,7 @@ let rec run_frontend_checkers_on_decl cfg cg dec =
          invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
          IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list)
       else ()
+  | VarDecl _ ->
+      let call_global_checker = checker_for_global_var dec in
+      invoke_set_of_checkers call_global_checker cfg cg None global_var_checker_list
   | _ -> ()

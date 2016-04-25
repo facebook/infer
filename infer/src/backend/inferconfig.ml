@@ -333,7 +333,9 @@ module ModeledExpensiveMatcher = OverridesMatcher(struct
     let json_key = "modeled_expensive"
   end)
 
-let disabled_checks_by_default = []
+let disabled_checks_by_default = [
+  "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
+]
 
 let inferconfig () =
   match !Config.inferconfig_home with
