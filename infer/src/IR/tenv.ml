@@ -92,6 +92,37 @@ let proc_extract_declaring_class_typ tenv pname_java =
 let proc_extract_return_typ tenv pname_java =
   lookup_java_typ_from_string tenv (Procname.java_get_return_type pname_java)
 
+(** Get method that is being overriden by java_pname (if any) **)
+let get_overriden_method tenv pname_java =
+  let struct_typ_get_def_method_by_name struct_typ method_name =
+    IList.find
+      (fun def_method -> method_name = Procname.get_method def_method)
+      struct_typ.Sil.def_methods in
+  let rec get_overriden_method_in_superclasses pname_java superclasses=
+    match superclasses with
+    | superclass :: superclasses_tail ->
+        begin
+          match lookup tenv superclass with
+          | Some struct_typ ->
+              begin
+                try
+                  Some (struct_typ_get_def_method_by_name
+                          struct_typ
+                          (Procname.java_get_method pname_java))
+                with Not_found ->
+                  get_overriden_method_in_superclasses
+                    pname_java
+                    (superclasses_tail @ struct_typ.Sil.superclasses)
+              end
+          | None -> get_overriden_method_in_superclasses pname_java superclasses_tail
+        end
+    | [] -> None in
+  match proc_extract_declaring_class_typ tenv pname_java with
+  | Some proc_struct_typ ->
+      get_overriden_method_in_superclasses pname_java proc_struct_typ.superclasses
+  | _ -> None
+
+
 (** expand a type if it is a typename by looking it up in the type environment *)
 let expand_type tenv typ =
   match typ with

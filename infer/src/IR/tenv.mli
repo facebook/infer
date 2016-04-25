@@ -55,3 +55,6 @@ val pp : Format.formatter -> t -> unit
 
 (** Save a type environment into a file *)
 val store_to_file : DB.filename -> t -> unit
+
+(** Get method that is being overriden by java_pname (if any) **)
+val get_overriden_method : t -> Procname.java -> Procname.t option
