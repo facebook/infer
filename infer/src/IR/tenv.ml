@@ -106,7 +106,7 @@ let get_overriden_method tenv pname_java =
               Some (struct_typ_get_def_method_by_name struct_typ (Procname.java_get_method pname_java))
             with Not_found -> (get_overriden_method_in_superclasses pname_java (superclasses_tail@struct_typ.superclasses))
           )
-        | None -> get_overriden_method_in_superclasses java_pname superclasses_tail
+        | None -> get_overriden_method_in_superclasses pname_java superclasses_tail
       )
     | [] -> None
   in
