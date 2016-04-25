@@ -21,6 +21,10 @@ INFER_SOURCE="$ROOT_INFER_DIR"/infer-source
 cd "$ROOT_INFER_DIR"
 # This assumes the current commit is the one with the release bump
 ./build-infer.sh
+# strip clang binaries -- on linux they get huge for some reason
+strip facebook-clang-plugins/clang/bin/*
+find facebook-clang-plugins/clang/lib -type f -name '*.so' -exec strip \{\} \+
+find facebook-clang-plugins/clang/lib -type f -name '*.a' -exec strip \{\} \+
 
 # Get a copy of the github repo
 git clone https://github.com/facebook/infer.git "$INFER_SOURCE"
