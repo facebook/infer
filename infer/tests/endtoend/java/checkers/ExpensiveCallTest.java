@@ -50,10 +50,9 @@ public class ExpensiveCallTest {
         "performanceCriticalMethod1",
         "performanceCriticalMethod2",
         "performanceCriticalMethod3",
-        // TODO: make subclassing work
-        //"subclassPerformanceCriticalMethod1",
-        //"subclassPerformanceCriticalMethod2",
-        //"subclassPerformanceCriticalMethod3",
+        "subclassPerformanceCriticalMethod1",
+        "subclassPerformanceCriticalMethod2",
+        "subclassPerformanceCriticalMethod3",
         "callMethodOnExpensiveClass",
         "onlyOneExpensiveCallUsingUnlikely",
         "callsExpensiveInTheUnlikelyElseBranch",

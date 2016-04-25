@@ -120,9 +120,13 @@ let is_modeled_expensive =
 let check_attributes check tenv pname =
   let check_class_attributes check tenv = function
     | Procname.Java java_pname ->
+        let check_class_annots { Sil.struct_annotations; } =
+          check struct_annotations in
         begin
-          match Annotations.get_declaring_class_annotations java_pname tenv with
-          | Some annotations -> check annotations
+          match Tenv.proc_extract_declaring_class_typ tenv java_pname with
+          | Some current_class ->
+              check_class_annots current_class ||
+              PatternMatch.strict_supertype_exists tenv check_class_annots current_class
           | None -> false
         end
     | _ -> false in
