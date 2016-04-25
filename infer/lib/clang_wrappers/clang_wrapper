@@ -8,6 +8,13 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 CLANG_COMPILER="${SCRIPT_DIR}/../../../facebook-clang-plugins/clang/bin/clang"
 
+# WARNING: use at your own risk, not needed in most cases
+# Path that points to clang internal headers to be replaced with
+# path to infer's clang internal headers.
+CLANG_INCLUDE_TO_REPLACE="${FCP_CLANG_INCLUDE_TO_REPLACE}"
+
+CLANG_LIB_INCLUDE="${SCRIPT_DIR}/../../../facebook-clang-plugins/clang/lib/clang/3.8.0/include"
+
 if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
 
 COMMAND=("${CLANG_COMPILER}${XX}")
@@ -21,6 +28,8 @@ do
     elif [ "$X" == "armv7k" ] && [ "$PREV" == "-arch" ]; then
         # replace armv7k arch with armv7
         COMMAND+=("armv7")
+    elif [ "$X" == "$CLANG_INCLUDE_TO_REPLACE" ] && [ "$PREV" == "-isystem" ]; then
+        COMMAND+=("$CLANG_LIB_INCLUDE")
     else
         COMMAND+=("$X")
     fi
