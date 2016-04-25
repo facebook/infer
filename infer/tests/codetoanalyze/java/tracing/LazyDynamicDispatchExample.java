@@ -9,7 +9,11 @@
 
 package codetoanalyze.java.tracing;
 
-class A {
+interface I {
+  T get();
+}
+
+class A implements I {
 
   public T get() {
     return new T();
@@ -17,7 +21,7 @@ class A {
 
 }
 
-class B extends A  {
+class B extends A {
 
   public T get() {
     return null;
@@ -27,13 +31,27 @@ class B extends A  {
 
 public class LazyDynamicDispatchExample {
 
-  static T foo(A a) {
+  static T fromSupertype(A a) {
     return a.get();
   }
 
-  static void bar() {
+  static T fromInterface(I i) {
+    return i.get();
+  }
+
+  static void callWithSubtype() {
     B b = new B();
-    foo(b).f();
+    fromSupertype(b).f();
+  }
+
+  static void shouldNotReportLocalVarTypeIsKnown() {
+    A a = new A();
+    fromInterface(a).f();
+  }
+
+  static void shouldReportLocalVarTypeIsKnown() {
+    B b = new B();
+    fromInterface(b).f();
   }
 
 }

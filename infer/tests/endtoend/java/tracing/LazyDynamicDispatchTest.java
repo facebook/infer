@@ -42,7 +42,8 @@ public class LazyDynamicDispatchTest {
   public void matchErrors()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "bar"
+        "callWithSubtype",
+        "shouldReportLocalVarTypeIsKnown",
     };
     assertThat(
         "Results should contain " + NPE,
