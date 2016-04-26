@@ -36,32 +36,28 @@ let java_proc_name_with_class_method pn_java class_with_path method_name =
      Procname.java_get_method pn_java = method_name
    with _ -> false)
 
+let get_direct_supers tenv = function
+  | { Sil.csu = Csu.Class _; superclasses } ->
+      IList.map (Tenv.lookup tenv) superclasses
+      |> IList.flatten_options
+  | _ ->
+      []
+
 (** get the superclasses of [typ]. does not include [typ] itself *)
 let strict_supertype_iter tenv f_typ orig_struct_typ =
-  let get_direct_supers = function
-    | { Sil.csu = Csu.Class _; superclasses } ->
-        IList.map (Tenv.lookup tenv) superclasses
-        |> IList.flatten_options
-    | _ ->
-        [] in
   let rec get_supers_rec struct_typ =
-    let direct_supers = get_direct_supers struct_typ in
+    let direct_supers = get_direct_supers tenv struct_typ in
     IList.iter f_typ direct_supers;
     IList.iter get_supers_rec direct_supers in
   get_supers_rec orig_struct_typ
 
-exception Found_supertype_match
-
 (** Return [true] if [f_typ] evaluates to true on a strict supertype of [orig_struct_typ] *)
 let strict_supertype_exists tenv f_typ orig_struct_typ =
-  let wrapped_f_typ struct_typ =
-    if f_typ struct_typ
-    then raise Found_supertype_match in
-  try
-    strict_supertype_iter tenv wrapped_f_typ orig_struct_typ;
-    false
-  with Found_supertype_match ->
-    true
+  let rec get_supers_rec struct_typ =
+    let direct_supers = get_direct_supers tenv struct_typ in
+    IList.exists f_typ direct_supers ||
+    IList.exists get_supers_rec direct_supers in
+  get_supers_rec orig_struct_typ
 
 let is_immediate_subtype this_type super_type_name =
   IList.exists (Typename.equal super_type_name) this_type.Sil.superclasses
