@@ -39,6 +39,22 @@ void fileClosed() {
   }
 }
 
+FILE* handler;
+
+void fdopen_example() {
+  int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+  if (fd != -1) {
+    handler = fdopen(fd, "w");
+  }
+}
+
+void gzdopen_example() {
+  int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+  if (fd != -1) {
+    handler = gzdopen(fd, "w");
+  }
+}
+
 void socketNotClosed() {
   int fd = socket(AF_LOCAL, SOCK_RAW, 0);
   if (fd != -1) {

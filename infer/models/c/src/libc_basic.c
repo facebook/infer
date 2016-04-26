@@ -494,6 +494,9 @@ FILE* fdopen(int fildes, const char* mode) {
   return fopen("foo", mode);
 }
 
+// modeled using fdopen
+FILE* gzdopen(int fildes, const char* mode) { return fdopen(fildes, mode); }
+
 // return nonteterministically 0 or -1
 // requires stream to be allocated
 int fseek(FILE* stream, long int offset, int whence) {

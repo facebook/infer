@@ -10,7 +10,7 @@
 package endtoend.c;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static utils.matchers.ResultContainsTheseErrors.contains;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,11 +41,10 @@ public class ResourceLeakTest {
         "fileNotClosed",
         "socketNotClosed"
     };
-
     assertThat(
         "Results should contain " + RESOURCE_LEAK,
         inferResults,
-        contains(
+        containsExactly(
             RESOURCE_LEAK,
             SOURCE_FILE,
             functions
