@@ -256,7 +256,7 @@ let propagate
     let f prop path edgeset_curr =
       let exn_opt =
         if is_exception
-        then Some (Tabulation.prop_get_exn_name pname prop)
+        then Tabulation.prop_get_exn_name pname prop
         else None in
       Paths.PathSet.add_renamed_prop
         prop
@@ -1066,12 +1066,10 @@ let reset_global_values proc_desc =
 (* Collect all pairs of the kind (precondition, runtime exception) from a summary *)
 let exception_preconditions tenv pname summary =
   let collect_exceptions pre exns (prop, _) =
-    if Tabulation.prop_is_exn pname prop then
-      let exn_name = Tabulation.prop_get_exn_name pname prop in
-      if PatternMatch.is_runtime_exception tenv exn_name then
-        (pre, exn_name):: exns
-      else exns
-    else exns in
+    match Tabulation.prop_get_exn_name pname prop with
+    | Some exn_name when PatternMatch.is_runtime_exception tenv exn_name ->
+        (pre, exn_name) :: exns
+    | _ -> exns in
   let collect_spec errors spec =
     IList.fold_left (collect_exceptions spec.Specs.pre) errors spec.Specs.posts in
   IList.fold_left collect_spec [] (Specs.get_specs_from_payload summary)

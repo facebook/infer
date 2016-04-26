@@ -34,7 +34,7 @@ val raise_cast_exception :
 val prop_is_exn : Procname.t -> 'a Prop.t -> bool
 
 (** when prop is an exception, return the exception name *)
-val prop_get_exn_name : Procname.t -> 'a Prop.t -> Typename.t
+val prop_get_exn_name : Procname.t -> 'a Prop.t -> Typename.t option
 
 (** search in prop contains an error state *)
 val lookup_custom_errors : 'a Prop.t -> string option

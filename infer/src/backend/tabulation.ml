@@ -627,24 +627,21 @@ let prop_is_exn pname prop =
 (** when prop is an exception, return the exception name *)
 let prop_get_exn_name pname prop =
   let ret_pvar = Sil.Lvar (Pvar.get_ret_pvar pname) in
-  let exn_name = ref (Typename.Java.from_string "") in
-  let find_exn_name e =
-    let do_hpred = function
-      | Sil.Hpointsto (e1, _, Sil.Sizeof (Sil.Tstruct  { Sil.struct_name = Some name }, _))
-        when Sil.exp_equal e1 e ->
-          let found_exn_name = Typename.TN_csu (Csu.Class Csu.Java, name) in
-          exn_name := found_exn_name
-      | _ -> () in
-    IList.iter do_hpred (Prop.get_sigma prop) in
-  let find_ret () =
-    let do_hpred = function
-      | Sil.Hpointsto (e1, Sil.Eexp(Sil.Const (Sil.Cexn e2), _), _)
-        when Sil.exp_equal e1 ret_pvar ->
-          find_exn_name e2
-      | _ -> () in
-    IList.iter do_hpred (Prop.get_sigma prop) in
-  find_ret ();
-  !exn_name
+  let rec search_exn e = function
+    | [] -> None
+    | Sil.Hpointsto (e1, _, Sil.Sizeof (Sil.Tstruct  { Sil.struct_name = Some name }, _)) :: _
+      when Sil.exp_equal e1 e ->
+        Some (Typename.TN_csu (Csu.Class Csu.Java, name))
+    | _ :: tl -> search_exn e tl in
+  let rec find_exn_name hpreds = function
+    | [] -> None
+    | Sil.Hpointsto (e1, Sil.Eexp(Sil.Const (Sil.Cexn e2), _), _) :: _
+      when Sil.exp_equal e1 ret_pvar ->
+        search_exn e2 hpreds
+    | _ :: tl -> find_exn_name hpreds tl in
+  let hpreds = Prop.get_sigma prop in
+  find_exn_name hpreds hpreds
+
 
 (** search in prop for some assignment of global errors *)
 let lookup_custom_errors prop =
