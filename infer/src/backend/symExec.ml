@@ -1150,11 +1150,6 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             (call_args prop_r callee_pname actual_params ret_ids loc)
         else [(prop_r, path)] in
       let do_call (prop, path) =
-        let attrs_opt = Option.map Cfg.Procdesc.get_attributes callee_pdesc_opt in
-        let objc_property_accessor =
-          match attrs_opt with
-          | Some attrs -> attrs.ProcAttributes.objc_accessor
-          | None -> None in
         let summary = Specs.get_summary resolved_pname in
         let should_skip resolved_pname summary =
           match summary with
@@ -1162,12 +1157,25 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           | Some summary -> call_should_be_skipped resolved_pname summary in
         if should_skip resolved_pname summary then
           (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
-          match objc_property_accessor with
-          | Some objc_property_accessor ->
+          let attrs_opt =
+            let attr_opt = Option.map Cfg.Procdesc.get_attributes callee_pdesc_opt in
+            match attr_opt, resolved_pname with
+            | Some attrs, Procname.ObjC_Cpp _ -> Some attrs
+            | None, Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
+            | _ -> None in
+          let objc_property_accessor_ret_typ_opt =
+            match attrs_opt with
+            | Some attrs ->
+                (match attrs.ProcAttributes.objc_accessor with
+                 | Some objc_accessor -> Some (objc_accessor, attrs.ProcAttributes.ret_type)
+                 | None -> None)
+            | None -> None in
+          match objc_property_accessor_ret_typ_opt with
+          | Some (objc_property_accessor, ret_typ) ->
               handle_objc_method_call
                 n_actual_params n_actual_params prop tenv ret_ids
                 current_pdesc callee_pname loc path
-                (sym_exec_objc_accessor objc_property_accessor ret_typ_opt)
+                (sym_exec_objc_accessor objc_property_accessor ret_typ)
           | None ->
               let ret_annots = match summary with
                 | Some summ ->
@@ -1479,17 +1487,13 @@ and check_variadic_sentinel_if_present
           let formals = callee_attributes.ProcAttributes.formals in
           check_variadic_sentinel (IList.length formals) sentinel_arg builtin_args
 
-and sym_exec_objc_getter field_name ret_typ_opt tenv ret_ids pdesc pname loc args prop =
+and sym_exec_objc_getter field_name ret_typ tenv ret_ids pdesc pname loc args prop =
   L.d_strln ("No custom getter found. Executing the ObjC builtin getter with ivar "^
              (Ident.fieldname_to_string field_name)^".");
   let ret_id =
     match ret_ids with
     | [ret_id] -> ret_id
     | _ -> assert false in
-  let ret_typ =
-    match ret_typ_opt with
-    | Some ret_typ -> ret_typ
-    | None -> assert false in
   match args with
   | [(lexp, typ)] ->
       let typ' = (match Tenv.expand_type tenv typ with
@@ -1514,7 +1518,7 @@ and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
       execute_set ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-and sym_exec_objc_accessor property_accesor ret_typ_opt tenv ret_ids pdesc _ loc args prop path
+and sym_exec_objc_accessor property_accesor ret_typ tenv ret_ids pdesc _ loc args prop path
   : Builtin.ret_typ =
   let f_accessor =
     match property_accesor with
@@ -1523,7 +1527,7 @@ and sym_exec_objc_accessor property_accesor ret_typ_opt tenv ret_ids pdesc _ loc
   (* we want to execute in the context of the current procedure, not in the context of callee_pname,
      since this is the procname of the setter/getter method *)
   let cur_pname = Cfg.Procdesc.get_proc_name pdesc in
-  f_accessor ret_typ_opt tenv ret_ids pdesc cur_pname loc args prop
+  f_accessor ret_typ tenv ret_ids pdesc cur_pname loc args prop
   |> IList.map (fun p -> (p, path))
 
 (** Perform symbolic execution for a function call *)
