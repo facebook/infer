@@ -42,7 +42,9 @@ public class NullPointerExceptionTest {
   public void matchErrors()
       throws IOException, InterruptedException, InferException {
     String[] methods = {
-        "callDeref"
+        "callDeref",
+        "callLeadToNpe",
+        "npeOnBothBranches",
     };
     assertThat(
         "Results should contain " + NPE,

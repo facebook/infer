@@ -1065,24 +1065,24 @@ let reset_global_values proc_desc =
 
 (* Collect all pairs of the kind (precondition, runtime exception) from a summary *)
 let exception_preconditions tenv pname summary =
-  let collect_exceptions pre exns (prop, _) =
+  let collect_exceptions pre (exns, all_post_exn) (prop, _) =
     match Tabulation.prop_get_exn_name pname prop with
     | Some exn_name when PatternMatch.is_runtime_exception tenv exn_name ->
-        (pre, exn_name) :: exns
-    | _ -> exns in
+        ((pre, exn_name) :: exns, all_post_exn)
+    | _ -> (exns, false) in
   let collect_spec errors spec =
     IList.fold_left (collect_exceptions spec.Specs.pre) errors spec.Specs.posts in
-  IList.fold_left collect_spec [] (Specs.get_specs_from_payload summary)
+  IList.fold_left collect_spec ([], true) (Specs.get_specs_from_payload summary)
 
 (* Collect all pairs of the kind (precondition, custom error) from a summary *)
 let custom_error_preconditions summary =
-  let collect_errors pre errors (prop, _) =
+  let collect_errors pre (errors, all_post_error) (prop, _) =
     match Tabulation.lookup_custom_errors prop with
-    | None -> errors
-    | Some e -> (pre, e) :: errors in
+    | None -> (errors, false)
+    | Some e -> ((pre, e) :: errors, all_post_error) in
   let collect_spec errors spec =
     IList.fold_left (collect_errors spec.Specs.pre) errors spec.Specs.posts in
-  IList.fold_left collect_spec [] (Specs.get_specs_from_payload summary)
+  IList.fold_left collect_spec ([], true) (Specs.get_specs_from_payload summary)
 
 
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
@@ -1138,8 +1138,10 @@ let report_runtime_exceptions tenv pdesc summary =
     let annotated_signature = Annotations.get_annotated_signature proc_attributes in
     let ret_annotation, _ = annotated_signature.Annotations.ret in
     Annotations.ia_is_verify ret_annotation in
+  let (exn_preconditions, all_post_exn) =
+    exception_preconditions tenv pname summary in
   let should_report pre =
-    is_main || is_annotated || is_unavoidable pre in
+    all_post_exn || is_main || is_annotated || is_unavoidable pre in
   let report (pre, runtime_exception) =
     if should_report pre then
       let pre_str =
@@ -1147,18 +1149,20 @@ let report_runtime_exceptions tenv pdesc summary =
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
       Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
-  IList.iter report (exception_preconditions tenv pname summary)
+  IList.iter report exn_preconditions
 
 
 let report_custom_errors summary =
   let pname = Specs.get_proc_name summary in
+  let error_preconditions, all_post_error =
+    custom_error_preconditions summary in
   let report (pre, custom_error) =
-    if is_unavoidable pre then
+    if all_post_error || is_unavoidable pre then
       let loc = summary.Specs.attributes.ProcAttributes.loc in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
       Reporting.log_error pname ~pre: (Some (Specs.Jprop.to_prop pre)) exn in
-  IList.iter report (custom_error_preconditions summary)
+  IList.iter report error_preconditions
 
 module SpecMap = Map.Make (struct
     type t = Prop.normal Specs.Jprop.t

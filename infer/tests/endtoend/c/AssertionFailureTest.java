@@ -42,6 +42,7 @@ public class AssertionFailureTest {
         "should_report_assertion_failure",
         "assertion_failure_with_heap",
         "assignemt_before_check",
+        "failure_on_both_branches",
     };
     assertThat(
         "Results should contain " + ASSERTION_FAILURE,

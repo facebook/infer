@@ -75,3 +75,11 @@ void assignemt_before_check() {
   global = 0;
   check_global();
 }
+
+void failure_on_both_branches(int x) {
+  if (x > 3) {
+    simple_check(x);
+  } else {
+    simple_check(42);
+  }
+}

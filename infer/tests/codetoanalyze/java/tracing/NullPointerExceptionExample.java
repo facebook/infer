@@ -24,4 +24,20 @@ public class NullPointerExceptionExample {
     }
   }
 
+  void callDoesNotLeadToNpe() {
+    callDeref(null, false);
+  }
+
+  void callLeadToNpe() {
+    callDeref(null, true);
+  }
+
+  void npeOnBothBranches(int x) {
+    if (x < 2) {
+      callDeref(null, x < 3);
+    } else {
+      callDeref(null, true);
+    }
+  }
+
 }
