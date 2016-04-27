@@ -975,9 +975,11 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   let error_filter error_desc error_name =
     let always_report () =
       Localise.error_desc_extract_tag_value error_desc "always_report" = "true" in
+    (!Config.write_html || not (Localise.equal error_name Localise.skip_function)) &&
     (filters.Inferconfig.path_filter summary.Specs.attributes.ProcAttributes.loc.Location.file
      || always_report ()) &&
-    filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name in
+    filters.Inferconfig.error_filter error_name &&
+    filters.Inferconfig.proc_filter proc_name in
   do_outf procs_csv (fun outf -> ProcsCsv.pp_summary top_proc_set outf.fmt summary);
   do_outf calls_csv (fun outf -> CallsCsv.pp_calls outf.fmt summary);
   do_outf procs_xml (fun outf -> ProcsXml.pp_proc top_proc_set outf.fmt summary);

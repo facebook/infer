@@ -29,6 +29,9 @@ let to_string s = s
 (** compare two localised strings *)
 let compare (s1: string) (s2: string) = Pervasives.compare s1 s2
 
+let equal s1 s2 =
+  compare s1 s2 = 0
+
 let context_leak = "CONTEXT_LEAK"
 let analysis_stops = "ANALYSIS_STOPS"
 let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"

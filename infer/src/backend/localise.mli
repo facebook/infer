@@ -27,6 +27,8 @@ val to_string : t -> string
 (** compare two localised strings *)
 val compare : t -> t -> int
 
+val equal : t -> t -> bool
+
 val context_leak : t
 val analysis_stops : t
 val array_out_of_bounds_l1 : t
