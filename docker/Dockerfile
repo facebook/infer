@@ -12,14 +12,17 @@ RUN ["/opt/sdk-tools/android-accept-licenses.sh", \
 # Debian config
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-            build-essential \
+            autoconf \
             curl \
+            gcc \
             git \
             groff \
+            libc6-dev \
             libgmp-dev \
             libmpc-dev \
             libmpfr-dev \
             m4 \
+            make \
             ncurses-dev \
             ocaml \
             pkg-config \
