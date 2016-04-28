@@ -45,41 +45,38 @@ module Make
     | None -> None
 
   let exec_node node astate_pre work_queue inv_map proc_data =
-    let exec_instrs astate_acc instr =
-      if A.is_bottom astate_acc
-      then astate_acc
-      else T.exec_instr astate_acc proc_data instr in
     let node_id = C.node_id node in
     L.out "Doing analysis of node %a from pre %a@." C.pp_node_id node_id A.pp astate_pre;
-    let instrs = C.instrs node in
-    let astate_post =
-      IList.fold_left exec_instrs astate_pre instrs in
-    L.out "Post for node %a is %a@." C.pp_node_id node_id A.pp astate_post;
+    let update_inv_map astate_pre visit_count =
+      let astate_post =
+        let exec_instrs astate_acc instr =
+          if A.is_bottom astate_acc
+          then astate_acc
+          else T.exec_instr astate_acc proc_data instr in
+        IList.fold_left exec_instrs astate_pre (C.instrs node) in
+      L.out "Post for node %a is %a@." C.pp_node_id node_id A.pp astate_post;
+      let inv_map' = M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
+      inv_map', S.schedule_succs work_queue node in
     if M.mem node_id inv_map then
       let old_state = M.find node_id inv_map in
-      let widened_post =
-        A.widen ~prev:old_state.post ~next:astate_post ~num_iters:old_state.visit_count in
-      if A.(<=) ~lhs:widened_post ~rhs:old_state.post
+      let widened_pre =
+        A.widen ~prev:old_state.pre ~next:astate_pre ~num_iters:old_state.visit_count in
+      if A.(<=) ~lhs:widened_pre ~rhs:old_state.pre
       then
         begin
-          L.out "Old state contains new, not adding succs@.";
+          L.out "Old state contains new, not updating invariant or scheduling succs@.";
           inv_map, work_queue
         end
       else
         begin
           L.out "Widening: %a <widen> %a = %a@."
-            A.pp astate_post A.pp old_state.post A.pp widened_post;
-          let inv_map' =
-            let visit_count = old_state.visit_count + 1 in
-            M.add node_id { pre=astate_pre; post=widened_post; visit_count; } inv_map in
-          inv_map', S.schedule_succs work_queue node
+            A.pp astate_pre A.pp old_state.post A.pp widened_pre;
+          update_inv_map widened_pre (old_state.visit_count + 1)
         end
     else
       (* first time visiting this node *)
-      let inv_map' =
-        let visit_count = 0 in
-        M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
-      inv_map', S.schedule_succs work_queue node
+      let visit_count = 1 in
+      update_inv_map astate_pre visit_count
 
   let rec exec_worklist cfg work_queue inv_map proc_data =
     let compute_pre node inv_map =
