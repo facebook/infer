@@ -199,6 +199,9 @@ module Node : sig
   (** compare node ids *)
   val id_compare : id -> id -> int
 
+  (** convert an integer to a node id. FOR TESTING ONLY *)
+  val  id_of_int__FOR_TESTING_ONLY : int -> id
+
   (** Get the source location of the node *)
   val get_loc : t -> Location.t
 
@@ -245,6 +248,8 @@ module Node : sig
   (** Pretty print the node *)
   val pp : Format.formatter -> t -> unit
 
+  val pp_id : Format.formatter -> id -> unit
+
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
   val pp_instrs :
@@ -282,6 +287,12 @@ module NodeHash : Hashtbl.S with type key = Node.t
 
 (** Set of nodes. *)
 module NodeSet : Set.S with type elt = Node.t
+
+(** Map with node id keys. *)
+module IdMap : Map.S with type key = Node.id
+
+(** Set of node ids. *)
+module IdSet : Set.S with type elt = Node.id
 
 val pp_node_list : Format.formatter -> Node.t list -> unit
 

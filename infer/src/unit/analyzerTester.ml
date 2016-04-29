@@ -141,7 +141,7 @@ module Make
   open StructuredSil
 
   module I = AbstractInterpreter.Make (C) (S) (A) (T)
-  module M = ProcCfg.NodeIdMap (C)
+  module M = Cfg.IdMap
 
   type assert_map = string M.t
 

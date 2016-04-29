@@ -145,7 +145,12 @@ module Node = struct
       with Not_found -> () in
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 
-  let node_id_gen cfg = incr cfg.node_id; !(cfg.node_id)
+
+  let id_of_int__FOR_TESTING_ONLY i = i
+
+  let node_id_gen cfg =
+    incr cfg.node_id;
+    !(cfg.node_id)
 
   let pdesc_tbl_add cfg proc_name proc_desc =
     Procname.Hash.add cfg.name_pdesc_tbl proc_name proc_desc
@@ -221,6 +226,16 @@ module Node = struct
   module NodeMap = Map.Make(struct
       type t = node
       let compare = compare
+    end)
+
+  module IdSet = Set.Make(struct
+      type t = id
+      let compare = id_compare
+    end)
+
+  module IdMap = Map.Make(struct
+      type t = id
+      let compare = id_compare
     end)
 
   let get_sliced_succs node f =
@@ -356,8 +371,11 @@ module Node = struct
   (** Set the location of the node *)
   let set_loc n loc = n.nd_loc <- loc
 
+  let pp_id f id =
+    F.fprintf f "%d" id
+
   let pp f node =
-    F.fprintf f "%n" (get_id node)
+    pp_id f (get_id node)
 
   let proc_desc_from_name cfg proc_name =
     try Some (pdesc_tbl_find cfg proc_name)
@@ -818,6 +836,12 @@ module NodeHash = Hashtbl.Make(Node)
 
 (** Set of nodes. *)
 module NodeSet = Node.NodeSet
+
+(** Set of node ids. *)
+module IdSet = Node.IdSet
+
+(** Map with node id keys. *)
+module IdMap = Node.IdMap
 
 let iter_proc_desc = Node.iter_proc_desc
 

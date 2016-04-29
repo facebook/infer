@@ -18,7 +18,7 @@ module Make
     (T : TransferFunctions.S with type astate = A.astate) = struct
 
   module S = Sched (C)
-  module M = ProcCfg.NodeIdMap (C)
+  module M = Cfg.IdMap
 
   type state = { pre: A.astate; post: A.astate; visit_count: int; }
   (* invariant map from node id -> abstract state representing postcondition for node id *)
@@ -29,7 +29,7 @@ module Make
     try
       Some (M.find node_id inv_map)
     with Not_found ->
-      L.err "Warning: No state found for node %a" C.pp_node_id node_id;
+      L.err "Warning: No state found for node %a" Cfg.Node.pp_id node_id;
       None
 
   (** extract the postcondition of node [n] from [inv_map] *)
@@ -46,7 +46,7 @@ module Make
 
   let exec_node node astate_pre work_queue inv_map proc_data =
     let node_id = C.node_id node in
-    L.out "Doing analysis of node %a from pre %a@." C.pp_node_id node_id A.pp astate_pre;
+    L.out "Doing analysis of node %a from pre %a@." Cfg.Node.pp_id node_id A.pp astate_pre;
     let update_inv_map astate_pre visit_count =
       let astate_post =
         let exec_instrs astate_acc instr =
@@ -54,7 +54,7 @@ module Make
           then astate_acc
           else T.exec_instr astate_acc proc_data instr in
         IList.fold_left exec_instrs astate_pre (C.instrs node) in
-      L.out "Post for node %a is %a@." C.pp_node_id node_id A.pp astate_post;
+      L.out "Post for node %a is %a@." Cfg.Node.pp_id node_id A.pp astate_post;
       let inv_map' = M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
       inv_map', S.schedule_succs work_queue node in
     if M.mem node_id inv_map then

@@ -19,7 +19,7 @@ module type S = functor (C : ProcCfg.Base) -> sig
   val schedule_succs : t -> C.node -> t
   (* remove and return the node with the highest priority, the ids of its visited
      predecessors, and the new schedule *)
-  val pop : t -> (C.node * C.node_id list * t) option
+  val pop : t -> (C.node * Cfg.Node.id list * t) option
   val empty : C.t -> t
 
 end
@@ -27,10 +27,10 @@ end
 (* simple scheduler that visits CFG nodes in reverse postorder. fast/precise for straightline code
    and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
 module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
-  module M = ProcCfg.NodeIdMap (C)
+  module M = Cfg.IdMap
 
   module WorkUnit = struct
-    module IdSet = ProcCfg.NodeIdSet(C)
+    module IdSet = Cfg.IdSet
 
     type t = {
       node : C.node; (* node whose instructions will be analyzed *)

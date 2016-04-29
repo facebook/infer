@@ -15,23 +15,24 @@ module F = Format
 (* mock for creating CFG's from adjacency lists *)
 module MockProcCfg = struct
   type node = int
-  type node_id = int
   type t = (node * node list) list
 
-  let node_id_compare = int_compare
+  let node_id_compare = Cfg.Node.id_compare
 
-  let node_id n = n
+  let node_id n = Cfg.Node.id_of_int__FOR_TESTING_ONLY n
 
   let succs t n =
     try
-      IList.find (fun (node, _) -> node_id_compare node n = 0) t
+      let id = node_id n in
+      IList.find (fun (node, _) -> node_id_compare (node_id node) id = 0) t
       |> snd
     with Not_found -> []
 
   let preds t n =
     try
+      let id = node_id n in
       IList.filter
-        (fun (_, succs) -> IList.exists (fun node -> node_id_compare node n = 0) succs) t
+        (fun (_, succs) -> IList.exists (fun node -> node_id_compare (node_id node) id = 0) succs) t
       |> IList.map fst
     with Not_found -> []
 
