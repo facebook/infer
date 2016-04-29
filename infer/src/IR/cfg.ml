@@ -692,6 +692,13 @@ module Node = struct
               (pvar_name, origin_typ) in
           subst_map := Ident.IdentMap.add id specialized_typ !subst_map;
           Sil.Letderef (id, convert_exp origin_exp, specialized_typ, loc) :: instrs
+      | Sil.Letderef (id, (Sil.Var origin_id as origin_exp), origin_typ, loc) ->
+          let updated_typ =
+            match Ident.IdentMap.find origin_id !subst_map with
+            | Sil.Tptr (typ, _) -> typ
+            | _ -> failwith "Expecting a pointer type"
+            | exception Not_found -> origin_typ in
+          Sil.Letderef (id, convert_exp origin_exp, updated_typ, loc) :: instrs
       | Sil.Letderef (id, origin_exp, origin_typ, loc) ->
           Sil.Letderef (id, convert_exp origin_exp, origin_typ, loc) :: instrs
       | Sil.Set (assignee_exp, origin_typ, origin_exp, loc) ->
@@ -733,8 +740,8 @@ module Node = struct
       let loc = get_loc node
       and kind = convert_node_kind (get_kind node)
       and instrs =
-        IList.fold_left convert_instr [] (get_instrs node) in
-      create cfg loc kind (IList.rev instrs) resolved_proc_desc (get_temps node)
+        IList.fold_left convert_instr [] (get_instrs node) |> IList.rev in
+      create cfg loc kind instrs resolved_proc_desc (get_temps node)
     and loop callee_nodes =
       match callee_nodes with
       | [] -> []
