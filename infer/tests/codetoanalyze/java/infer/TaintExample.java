@@ -172,7 +172,7 @@ public class TaintExample {
     values.put(key, value);
   }
 
-  @PrivacySource("")
+  @PrivacySource
   public String privacySource() {
     return "source";
   }
@@ -181,10 +181,10 @@ public class TaintExample {
     InferTaint.inferSensitiveSinkUndefined(privacySource()); // should report
   }
 
-  public void instancePrivacySink(@PrivacySink("") String s1, String s2) {
+  public void instancePrivacySink(@PrivacySink String s1, String s2) {
   }
 
-  public static void staticPrivacySink(@PrivacySink("") String s1, String s2) {
+  public static void staticPrivacySink(@PrivacySink String s1, String s2) {
   }
 
   public void testPrivacySinkAnnot1() {
@@ -207,9 +207,9 @@ public class TaintExample {
     staticPrivacySink("", source); // should not report
   }
 
-  @PrivacySource("") String mPrivacySource;
+  @PrivacySource String mPrivacySource;
 
-  @PrivacySource("") String sPrivacySource;
+  @PrivacySource String sPrivacySource;
 
   public void testPrivacySourceInstanceFieldAnnot() {
     String source = mPrivacySource;
