@@ -20,6 +20,7 @@ module Domain = AbstractDomain.FiniteSet(Var.Set)
    read, kill the variable when it is assigned *)
 module TransferFunctions = struct
   type astate = Domain.astate
+  type extras = ProcData.no_extras
 
   (* add all of the vars read in [exp] to the live set *)
   let exp_add_live exp astate =
@@ -67,4 +68,4 @@ module Analyzer =
     (TransferFunctions)
 
 let checker { Callbacks.proc_desc; tenv; } =
-  ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv))
+  ignore(Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv))

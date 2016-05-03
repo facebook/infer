@@ -19,6 +19,7 @@ module Domain = AbstractDomain.FiniteSet(PvarSet)
 
 module TransferFunctions = struct
   type astate = Domain.astate
+  type extras = ProcData.no_extras
 
   let rec add_address_taken_pvars exp astate = match exp with
     | Sil.Lvar pvar ->

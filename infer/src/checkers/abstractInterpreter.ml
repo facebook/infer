@@ -119,10 +119,10 @@ module Make
 
   module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
 
-    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } =
+    let checker { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } extras =
       let post_opt = ref None in
       let analyze_ondemand pdesc =
-        match compute_post (ProcData.make pdesc tenv) with
+        match compute_post (ProcData.make pdesc tenv extras) with
         | Some post ->
             Summ.write_summary (Cfg.Procdesc.get_proc_name pdesc) post;
             post_opt := Some post

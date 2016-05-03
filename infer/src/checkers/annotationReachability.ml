@@ -303,6 +303,7 @@ let report_allocations pname loc calls =
 
 module TransferFunctions = struct
   type astate = Domain.astate
+  type extras = ProcData.no_extras
 
   (* This is specific to the @NoAllocation and @PerformanceCritical checker
      and the "unlikely" method is used to guard branches that are expected to run sufficiently
@@ -398,7 +399,7 @@ module Interprocedural = struct
       PatternMatch.proc_iter_overridden_methods
         check_expensive_subtyping_rules tenv proc_name;
 
-    match checker proc_data with
+    match checker proc_data ProcData.empty_extras with
     | Some astate ->
         begin
           match astate with

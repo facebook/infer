@@ -293,7 +293,7 @@ let analyze_and_annotate_proc cfg tenv pname pdesc =
     if !Config.curr_language = Config.Java
     then Vset.empty
     else
-      match AddressTaken.Analyzer.compute_post (ProcData.make pdesc tenv) with
+      match AddressTaken.Analyzer.compute_post (ProcData.make_default pdesc tenv) with
       | Some post -> post
       | None -> Vset.empty in
 

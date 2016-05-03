@@ -80,8 +80,8 @@ module Domain = struct
 end
 
 module TransferFunctions = struct
-
   type astate = Domain.astate
+  type extras = ProcData.no_extras
 
   let exec_instr astate _ = function
     | Sil.Letderef (lhs_id, Sil.Var rhs_id, _, _) ->
@@ -127,4 +127,4 @@ module Analyzer =
     (TransferFunctions)
 
 let checker { Callbacks.proc_desc; tenv; } =
-  ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv))
+  ignore(Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv))

@@ -7,16 +7,12 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Utils
-
 type 'a t = { pdesc : Cfg.Procdesc.t; tenv : Tenv.t; extras : 'a; }
 
-type no_extras = unit
+type no_extras
 
-let empty_extras = ()
+val empty_extras : no_extras
 
-let make pdesc tenv extras =
-  { pdesc; tenv; extras; }
+val make : Cfg.Procdesc.t -> Tenv.t -> 'a -> 'a t
 
-let make_default pdesc tenv =
-  make pdesc tenv empty_extras
+val make_default : Cfg.Procdesc.t -> Tenv.t -> no_extras t
