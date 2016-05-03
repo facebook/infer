@@ -305,6 +305,8 @@ module TransferFunctions = struct
   type astate = Domain.astate
   type extras = ProcData.no_extras
 
+  let postprocess = TransferFunctions.no_postprocessing
+
   (* This is specific to the @NoAllocation and @PerformanceCritical checker
      and the "unlikely" method is used to guard branches that are expected to run sufficiently
      rarely to not affect the performances *)

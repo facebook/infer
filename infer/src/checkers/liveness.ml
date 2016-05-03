@@ -22,6 +22,8 @@ module TransferFunctions = struct
   type astate = Domain.astate
   type extras = ProcData.no_extras
 
+  let postprocess = TransferFunctions.no_postprocessing
+
   (* add all of the vars read in [exp] to the live set *)
   let exp_add_live exp astate =
     let (ids, pvars) = Sil.exp_get_vars exp in

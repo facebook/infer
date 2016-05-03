@@ -53,7 +53,8 @@ module Make
           if A.is_bottom astate_acc
           then astate_acc
           else T.exec_instr astate_acc proc_data instr in
-        IList.fold_left exec_instrs astate_pre (C.instrs node) in
+        let astate_post_instrs = IList.fold_left exec_instrs astate_pre (C.instrs node) in
+        T.postprocess astate_post_instrs node_id proc_data in
       L.out "Post for node %a is %a@." Cfg.Node.pp_id node_id A.pp astate_post;
       let inv_map' = M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
       inv_map', S.schedule_succs work_queue node in

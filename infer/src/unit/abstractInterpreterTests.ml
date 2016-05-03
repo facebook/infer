@@ -52,6 +52,8 @@ module PathCountTransferFunctions = struct
   type astate = PathCountDomain.astate
   type extras = ProcData.no_extras
 
+  let postprocess = TransferFunctions.no_postprocessing
+
   (* just propagate the current path count *)
   let exec_instr astate _ _ = astate
 end

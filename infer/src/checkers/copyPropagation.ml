@@ -83,6 +83,8 @@ module TransferFunctions = struct
   type astate = Domain.astate
   type extras = ProcData.no_extras
 
+  let postprocess = TransferFunctions.no_postprocessing
+
   let exec_instr astate _ = function
     | Sil.Letderef (lhs_id, Sil.Var rhs_id, _, _) ->
         (* note: logical vars are SSA, don't need to worry about overwriting existing bindings *)
