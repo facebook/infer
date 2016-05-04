@@ -450,6 +450,7 @@ type inst =
   | Itaint
   | Iupdate of zero_flag * null_case_flag * int * path_pos
   | Ireturn_from_call of int
+  | Ireturn_from_pointer_wrapper_call of int
 
 val inst_abstraction : inst
 val inst_actual_precondition : inst

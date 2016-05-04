@@ -15,6 +15,24 @@ open! Utils
 module L = Logging
 module F = Format
 
+let pointer_wrapper_classes = [
+  ["std"; "shared_ptr"];
+  ["std"; "unique_ptr"]
+]
+
+let is_pointer_wrapper_class class_name =
+  IList.exists (fun wrapper_class ->
+      IList.for_all (fun wrapper_class_substring ->
+          Utils.string_contains wrapper_class_substring class_name) wrapper_class)
+    pointer_wrapper_classes
+
+let method_of_pointer_wrapper pname =
+  match pname with
+  | Procname.ObjC_Cpp name ->
+      let class_name = Procname.objc_cpp_get_class_name name in
+      is_pointer_wrapper_class class_name
+  | _ -> false
+
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 let hpred_is_open_resource prop = function
   | Sil.Hpointsto(e, _, _) ->
@@ -738,6 +756,10 @@ let explain_dexp_access prop dexp is_nullable =
          | Sil.Cfun _ -> (* Treat function as an update *)
              Some (Sil.Eexp (Sil.Const c, Sil.Ireturn_from_call loc.Location.line))
          | _ -> None)
+    | Sil.Dretcall (Sil.Dconst (Sil.Cfun pname as c ) , _, loc, _ )
+      when method_of_pointer_wrapper pname ->
+        if !verbose then (L.d_strln "lookup: found Dretcall ");
+        Some (Sil.Eexp (Sil.Const c, Sil.Ireturn_from_pointer_wrapper_call loc.Location.line))
     | de ->
         if !verbose then (L.d_strln ("lookup: unknown case not matched " ^ Sil.dexp_to_string de));
         None in
@@ -753,6 +775,8 @@ let explain_dexp_access prop dexp is_nullable =
         Some (Localise.Last_accessed (n, is_nullable))
     | Some (Sil.Ireturn_from_call n) ->
         Some (Localise.Returned_from_call n)
+    | Some (Sil.Ireturn_from_pointer_wrapper_call n) ->
+        Some (Localise.Returned_from_pointer_wrapper_call n)
     | Some Sil.Ialloc when !Config.curr_language = Config.Java ->
         Some Localise.Initialized_automatically
     | Some inst ->

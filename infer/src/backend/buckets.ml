@@ -115,6 +115,8 @@ let check_access access_opt de_opt =
       find_bucket n ncf
   | Some (Localise.Returned_from_call n) ->
       find_bucket n false
+  | Some (Localise.Returned_from_pointer_wrapper_call _) ->
+      Some Localise.BucketLevel.b2
   | Some (Localise.Last_accessed (_, is_nullable)) when is_nullable ->
       Some Localise.BucketLevel.b1
   | _ ->

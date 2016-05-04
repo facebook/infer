@@ -464,6 +464,7 @@ type access =
   | Last_accessed of int * bool (* line, is_nullable flag *)
   | Initialized_automatically
   | Returned_from_call of int
+  | Returned_from_pointer_wrapper_call of int
 
 let dereference_string deref_str value_str access_opt loc =
   let tags = deref_str.tags in
@@ -489,6 +490,7 @@ let dereference_string deref_str value_str access_opt loc =
         Tags.add tags Tags.assigned_line line_str;
         ["last assigned on line " ^ line_str]
     | Some (Returned_from_call _) -> []
+    | Some (Returned_from_pointer_wrapper_call _) -> []
     | Some Initialized_automatically ->
         ["initialized automatically"] in
   let problem_desc =
