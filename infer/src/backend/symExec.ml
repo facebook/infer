@@ -1220,7 +1220,11 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               | true -> sigma' in
             let eprop_res = Prop.replace_sigma sigma'' eprop in
             ret_old_path [Prop.normalize eprop_res]
-        | _ -> assert false
+        | [], _ ->
+            ret_old_path [prop_]
+        | _ ->
+            L.err "Pvar %a appears on the LHS of >1 heap predicate!@." (Pvar.pp pe_text) pvar;
+            assert false
       end
   | Sil.Abstract _ ->
       let node = State.get_node () in
