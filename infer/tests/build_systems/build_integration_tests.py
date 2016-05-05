@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+# -*- coding: utf-8 -*-
 # Copyright (c) 2015 - present Facebook, Inc.
 # All rights reserved.
 #
@@ -34,7 +35,7 @@ sys.path.insert(0,
                 os.path.join(SCRIPT_DIR,
                              os.pardir, os.pardir, 'lib', 'python'))
 
-from inferlib import issues, utils
+from inferlib import config, issues, utils
 
 
 ROOT_DIR = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, os.pardir)
@@ -54,7 +55,17 @@ REPORT_FIELDS = [
 CODETOANALYZE_DIR = os.path.join(SCRIPT_DIR, 'codetoanalyze')
 EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 
-ALL_TESTS = ['ant', 'buck', 'gradle', 'make', 'locale', 'waf']
+ALL_TESTS = [
+    'ant',
+    'buck',
+    'cmake',
+    'gradle',
+    'javac',
+    'locale',
+    'make',
+    'utf8_in_pwd',
+    'waf',
+]
 
 to_test = ALL_TESTS
 
@@ -188,6 +199,13 @@ def do_test(errors, expected_errors_filename):
         check_results(errors, patterns)
 
 
+def make_paths_relative_in_report(root, errors):
+    for error in errors:
+        # remove "root/" from each file name
+        rel_fname = error[issues.JSON_INDEX_FILENAME][len(root) + 1:]
+        error[issues.JSON_INDEX_FILENAME] = rel_fname
+
+
 class BuildIntegrationTest(unittest.TestCase):
 
     def test_ant_integration(self):
@@ -205,14 +223,38 @@ class BuildIntegrationTest(unittest.TestCase):
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'ant_report.json')
         do_test(errors, original)
 
+    def test_javac_integration(
+            self,
+            enabled=None,
+            root=os.path.join(ROOT_DIR, 'examples'),
+            report_name='javac_report.json'):
+        if enabled is None:
+            enabled = 'javac' in to_test
+        if not enabled:
+            print('\nSkipping javac integration test')
+            return
 
-    def test_gradle_integration(self):
-        if 'gradle' not in to_test:
+        print('\nRunning javac integration test')
+        errors = run_analysis(
+            root,
+            [],
+            [['javac', 'Hello.java']],
+            INFER_EXECUTABLE)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
+        do_test(errors, original)
+
+    def test_gradle_integration(
+            self,
+            enabled=None,
+            root=os.path.join(ROOT_DIR, 'examples', 'java_hello'),
+            report_name='gradle_report.json'):
+        if enabled is None:
+            enabled = 'gradle' in to_test
+        if not enabled:
             print('\nSkipping Gradle integration test')
             return
 
         print('\nRunning Gradle integration test using mock gradle')
-        root = os.path.join(ROOT_DIR, 'examples', 'java_hello')
         env = os.environ
         env['PATH'] = '{}:{}'.format(
             os.path.join(SCRIPT_DIR, 'mock'),
@@ -224,7 +266,7 @@ class BuildIntegrationTest(unittest.TestCase):
             [['gradle', 'build']],
             INFER_EXECUTABLE,
             env=env)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'gradle_report.json')
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
         do_test(errors, original)
 
     def test_buck_integration(self):
@@ -242,19 +284,24 @@ class BuildIntegrationTest(unittest.TestCase):
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'buck_report.json')
         do_test(errors, original)
 
-    def test_make_integration(self):
-        if 'make' not in to_test:
+    def test_make_integration(
+            self,
+            enabled=None,
+            root=os.path.join(CODETOANALYZE_DIR, 'make'),
+            report_name='make_report.json'):
+        if enabled is None:
+            enabled = 'make' in to_test
+        if not enabled:
             print('\nSkipping make integration test')
             return
 
         print('\nRunning make integration test')
-        root = os.path.join(CODETOANALYZE_DIR, 'make')
         errors = run_analysis(
             root,
             [['make', 'clean']],
             [['make', 'all']],
             INFER_EXECUTABLE)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'make_report.json')
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
         do_test(errors, original)
 
     def test_wonky_locale_integration(self):
@@ -293,14 +340,23 @@ class BuildIntegrationTest(unittest.TestCase):
         original = os.path.join(EXPECTED_OUTPUTS_DIR, 'waf_report.json')
         do_test(errors, original)
 
-    def test_cmake_integration(self):
-        if not ('cmake' in to_test and
+    def test_cmake_integration(
+            self,
+            enabled=None,
+            root=os.path.join(CODETOANALYZE_DIR, 'cmake'),
+            report_name='cmake_report.json'):
+        if enabled is None:
+            enabled = 'cmake' in to_test
+        if not (enabled and
                 is_tool_available(['cmake', '--version'])):
             print('\nSkipping cmake integration test')
             return
 
         print('\nRunning cmake integration test')
-        root = os.path.join(CODETOANALYZE_DIR, 'cmake', 'build')
+        orig_root = root
+        root = os.path.join(root, 'build')
+        # remove build/ directory just in case
+        shutil.rmtree(root, True)
         errors = run_analysis(
             root,
             [],
@@ -308,8 +364,41 @@ class BuildIntegrationTest(unittest.TestCase):
             INFER_EXECUTABLE)
         # remove build/ directory
         shutil.rmtree(root)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'cmake_report.json')
+        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
+        # cmake produces absolute paths using the real path
+        make_paths_relative_in_report(os.path.realpath(orig_root), errors)
         do_test(errors, original)
+
+    def test_utf8_in_pwd_integration(self):
+        if not 'utf8_in_pwd' in to_test:
+            print('\nSkipping utf8_in_pwd integration test')
+            return
+        print('\nRunning utf8_in_pwd integration test')
+
+        utf8_in_pwd_path = os.path.join(CODETOANALYZE_DIR, 'utf8_ιn_pwd')
+
+        # copy non-unicode dir to one with unicode in it
+        shutil.rmtree(utf8_in_pwd_path, True) # remove just in case
+        shutil.copytree(os.path.join(CODETOANALYZE_DIR, 'utf8_in_pwd'),
+                        utf8_in_pwd_path)
+
+        self.test_cmake_integration(
+            enabled=True,
+            root=os.path.join(utf8_in_pwd_path, 'cmake'),
+            report_name='utf8_in_pwd_cmake_report.json')
+        self.test_gradle_integration(
+            enabled=True,
+            root=os.path.join(utf8_in_pwd_path, 'gradle'),
+            report_name='utf8_in_pwd_gradle_report.json')
+        self.test_javac_integration(
+            enabled=True,
+            root=os.path.join(utf8_in_pwd_path),
+            report_name='utf8_in_pwd_javac_report.json')
+        self.test_make_integration(
+            enabled=True,
+            root=os.path.join(utf8_in_pwd_path, 'make'),
+            report_name='utf8_in_pwd_make_report.json')
+        shutil.rmtree(utf8_in_pwd_path, True) # remove copied dir
 
 
 if __name__ == '__main__':

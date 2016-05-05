@@ -35,7 +35,7 @@ from inferlib import analyze, config, issues, utils
 
 ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
 
-DEFAULT_BUCK_OUT = os.path.join(os.getcwd(), 'buck-out')
+DEFAULT_BUCK_OUT = os.path.join(utils.decode(os.getcwd()), 'buck-out')
 DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
 INFER_CSV_REPORT = os.path.join(config.BUCK_INFER_OUT,
@@ -103,7 +103,7 @@ def prepare_build(args):
                                      dir='.') as infer_script:
         logging.info('Creating %s' % infer_script.name)
         infer_script.file.write(
-            INFER_SCRIPT.format(sys.executable, infer).encode())
+            utils.encode(INFER_SCRIPT.format(sys.executable, infer)))
 
     st = os.stat(infer_script.name)
     os.chmod(infer_script.name, st.st_mode | stat.S_IEXEC)
@@ -148,7 +148,7 @@ def init_stats(args, start_time):
             'analyzer': args.analyzer,
             'machine': platform.machine(),
             'node': platform.node(),
-            'project': os.path.basename(os.getcwd()),
+            'project': utils.decode(os.path.basename(os.getcwd())),
             'revision': utils.vcs_revision(),
             'branch': utils.vcs_branch(),
             'system': platform.system(),
@@ -415,7 +415,7 @@ def cleanup(temp_files):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--build-report', metavar='PATH', type=str)
+parser.add_argument('--build-report', metavar='PATH', type=utils.decode)
 parser.add_argument('--deep', action='store_true')
 parser.add_argument('--keep-going', action='store_true')
 parser.add_argument('--load-limit', '-L')

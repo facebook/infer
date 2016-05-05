@@ -1,0 +1,7 @@
+[
+  {
+    "bug_type": "NULL_DEREFERENCE",
+    "file": "Hello.java",
+    "procedure": "int Hello.test()"
+  }
+]

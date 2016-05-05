@@ -56,7 +56,9 @@ class VersionAction(argparse._VersionAction):
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
 base_group.add_argument('-o', '--out', metavar='<directory>',
-                        default=config.DEFAULT_INFER_OUT, dest='infer_out',
+                        default=utils.encode(config.DEFAULT_INFER_OUT),
+                        dest='infer_out',
+                        type=utils.decode,
                         action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
 base_group.add_argument('-i', '--incremental',
@@ -129,10 +131,11 @@ infer_group.add_argument('--infer_cache', metavar='<directory>',
                            help='Select a directory to contain the infer cache')
 
 infer_group.add_argument('-pr', '--project_root',
-                          dest='project_root',
-                          default=os.getcwd(),
-                          help='Location of the project root '
-                          '(default is current directory)')
+                         dest='project_root',
+                         default=os.getcwd(),
+                         type=utils.decode,
+                         help='Location of the project root '
+                         '(default is current directory)')
 
 infer_group.add_argument('--absolute-paths',
                           action='store_true',
@@ -280,7 +283,7 @@ class AnalyzerWrapper(object):
         # to be reported
         infer_options += ['-allow_specs_cleanup']
 
-        infer_options += ['-inferconfig_home', os.getcwd()]
+        infer_options += ['-inferconfig_home', utils.decode(os.getcwd())]
 
         if self.args.analyzer == config.ANALYZER_ERADICATE:
             infer_options += ['-eradicate']
@@ -336,7 +339,8 @@ class AnalyzerWrapper(object):
         exit_status = os.EX_OK
 
         if self.javac is not None and self.args.buck:
-            infer_options += ['-project_root', os.getcwd(), '-java']
+            infer_options += ['-project_root', utils.decode(os.getcwd()),
+                              '-java']
             if self.javac.args.classpath is not None:
                 for path in self.javac.args.classpath.split(os.pathsep):
                     if os.path.isfile(path):
@@ -348,7 +352,9 @@ class AnalyzerWrapper(object):
                                   config.ANALYZER_TRACING]:
             os.environ['INFER_ONDEMAND'] = 'Y'
 
-        os.environ['INFER_OPTIONS'] = ' '.join(infer_options)
+        infer_options = map(utils.decode_or_not, infer_options)
+        infer_options_str = ' '.join(infer_options)
+        os.environ['INFER_OPTIONS'] = utils.encode(infer_options_str)
 
         javac_original_arguments = \
             self.javac.original_arguments if self.javac is not None else []

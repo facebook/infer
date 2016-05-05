@@ -50,7 +50,7 @@ class XcodebuildCapture:
         self.cmd = cmd
 
     def get_envvars(self):
-        env_vars = dict(os.environ)
+        env_vars = utils.read_env()
 
         env_vars['FCP_APPLE_CLANG'] = self.apple_clang_path
 
@@ -70,7 +70,9 @@ class XcodebuildCapture:
         self.cmd += ['GCC_PRECOMPILE_PREFIX_HEADER=NO']
 
         try:
-            subprocess.check_call(self.cmd, env=self.get_envvars())
+            env = utils.encode_env(self.get_envvars())
+            cmd = map(utils.encode, self.cmd)
+            subprocess.check_call(cmd, env=env)
             return os.EX_OK
         except subprocess.CalledProcessError as exc:
             if self.args.debug:

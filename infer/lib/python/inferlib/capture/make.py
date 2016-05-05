@@ -48,7 +48,7 @@ class MakeCapture:
             cmd[0] = command_name
 
     def get_envvars(self):
-        env_vars = dict(os.environ)
+        env_vars = utils.read_env()
         wrappers_path = config.WRAPPERS_DIRECTORY
         env_vars['INFER_OLD_PATH'] = env_vars['PATH']
         env_vars['PATH'] = '{wrappers}{sep}{path}'.format(
@@ -63,9 +63,10 @@ class MakeCapture:
 
     def capture(self):
         try:
-            env = self.get_envvars()
-            logging.info('Running command %s with env:\n%s' % (self.cmd, env))
-            subprocess.check_call(self.cmd, env=env)
+            env = utils.encode_env(self.get_envvars())
+            cmd = map(utils.encode, self.cmd)
+            logging.info('Running command %s with env:\n%s' % (cmd, env))
+            subprocess.check_call(cmd, env=env)
             capture_dir = os.path.join(self.args.infer_out, 'captured')
             if len(os.listdir(capture_dir)) < 1:
                 # Don't return with a failure code unless we're

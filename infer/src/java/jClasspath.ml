@@ -162,26 +162,39 @@ let add_source_file path map =
 
 let load_sources_and_classes () =
   let file_in = open_in !javac_verbose_out in
+  let class_filename_re =
+    Str.regexp
+      "\\[wrote RegularFileObject\\[\\(.*\\)\\]\\]" in
+  let source_filename_re =
+    Str.regexp
+      "\\[parsing started RegularFileObject\\[\\(.*\\)\\]\\]" in
+  let classpath_re =
+    Str.regexp
+      "\\[search path for class files: \\(.*\\)\\]" in
   let rec loop paths roots sources classes =
     try
-      let lexbuf = Lexing.from_string (input_line file_in) in
-      match JVerboseParser.line JVerboseLexer.token lexbuf with
-      | JVerbose.Source path ->
-          loop paths roots (add_source_file path sources) classes
-      | JVerbose.Class path ->
-          let cn, root_info = Javalib.extract_class_name_from_file path in
-          let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
-          let updated_roots =
-            if IList.exists (fun p -> p = root_dir) roots then roots
-            else root_dir:: roots in
-          loop paths updated_roots sources (JBasics.ClassSet.add cn classes)
-      | JVerbose.Classpath parsed_paths ->
-          loop parsed_paths roots sources classes
+      let line = input_line file_in in
+      if Str.string_match class_filename_re line 0 then
+        let path = Str.matched_group 1 line in
+        let cn, root_info = Javalib.extract_class_name_from_file path in
+        let root_dir = if root_info = "" then Filename.current_dir_name else root_info in
+        let updated_roots =
+          if IList.exists (fun p -> p = root_dir) roots then roots
+          else root_dir:: roots in
+        loop paths updated_roots sources (JBasics.ClassSet.add cn classes)
+      else if Str.string_match source_filename_re line 0 then
+        let path = Str.matched_group 1 line in
+        loop paths roots (add_source_file path sources) classes
+      else if Str.string_match classpath_re line 0 then
+        let classpath = Str.matched_group 1 line in
+        let parsed_paths = Str.split (Str.regexp_string ",") classpath in
+        loop parsed_paths roots sources classes
+      else
+        (* skip this line *)
+        loop paths roots sources classes
     with
     | JBasics.Class_structure_error _
-    | Parsing.Parse_error
-    | Invalid_argument _
-    | Failure "lexing: empty token" -> loop paths roots sources classes
+    | Invalid_argument _ -> loop paths roots sources classes
     | End_of_file ->
         close_in file_in;
         let classpath = IList.fold_left append_path "" (roots @ (add_android_jar paths)) in

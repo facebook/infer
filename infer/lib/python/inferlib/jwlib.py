@@ -22,16 +22,16 @@ from . import analyze, config, utils
 # javac options
 parser = argparse.ArgumentParser()
 
-current_directory = os.getcwd()
+current_directory = utils.decode(os.getcwd())
 
 parser.add_argument('-version', action='store_true')
 parser.add_argument('-deprecation', action='store_true')
-parser.add_argument('-cp', '-classpath', type=str,
+parser.add_argument('-cp', '-classpath', type=utils.decode,
                     dest='classpath', default=os.getcwd())
-parser.add_argument('-bootclasspath', type=str)
+parser.add_argument('-bootclasspath', type=utils.decode)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
-parser.add_argument('-processorpath', type=str, dest='processorpath')
-parser.add_argument('-processor', type=str, dest='processor')
+parser.add_argument('-processorpath', type=utils.decode, dest='processorpath')
+parser.add_argument('-processor', type=utils.decode, dest='processor')
 
 
 def _get_javac_args(args):

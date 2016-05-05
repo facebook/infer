@@ -69,11 +69,11 @@ def load_module(mod_name):
 
 
 def split_args_to_parse():
+    sys_argv = map(utils.decode, sys.argv)
     dd_index = \
-        sys.argv.index(CMD_MARKER) if CMD_MARKER in sys.argv else len(sys.argv)
-    cmd_raw = sys.argv[dd_index + 1:]
-    return (map(utils.decode, sys.argv[1:dd_index]),
-            map(utils.decode, cmd_raw))
+        sys_argv.index(CMD_MARKER) if CMD_MARKER in sys_argv else len(sys_argv)
+    cmd_raw = sys_argv[dd_index + 1:]
+    return (sys_argv[1:dd_index], cmd_raw)
 
 
 def create_argparser(parents=[]):
@@ -131,18 +131,28 @@ def main():
                                  touch_if_present=not args.continue_capture)
 
         utils.configure_logging(args)
-        logging.info('Running command %s', ' '.join(sys.argv))
-        logging.info('Path to infer script %s (%s)', __file__,
-                 os.path.realpath(__file__))
-        logging.info(analyze.get_infer_version())
-        logging.info('Platform: %s', platform.platform())
-        logging.info('PATH=%s', os.getenv('PATH'))
-        logging.info('SHELL=%s', os.getenv('SHELL'))
-        logging.info('PWD=%s', os.getenv('PWD'))
         logging.info('output of locale.getdefaultlocale(): %s',
                      str(locale.getdefaultlocale()))
         logging.info('encoding we chose in the end: %s',
                      config.CODESET)
+        logging.info('Running command %s',
+                     ' '.join(map(utils.decode, sys.argv)))
+        logging.info('Path to infer script %s (%s)', utils.decode(__file__),
+                     os.path.realpath(utils.decode(__file__)))
+        logging.info(analyze.get_infer_version())
+        logging.info('Platform: %s', utils.decode(platform.platform()))
+
+        def log_getenv(k):
+            v = os.getenv(k)
+            if v is not None:
+                v = utils.decode(v)
+            else:
+                v = '<NOT SET>'
+            logging.info('%s=%s', k, v)
+
+        log_getenv('PATH')
+        log_getenv('SHELL')
+        log_getenv('PWD')
 
         capture_exitcode = imported_module.gen_instance(args, cmd).capture()
         if capture_exitcode != os.EX_OK:
