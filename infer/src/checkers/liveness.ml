@@ -32,8 +32,7 @@ module TransferFunctions = struct
     IList.fold_left (fun astate_acc pvar -> Domain.add (ProgramVar pvar) astate_acc) astate' pvars
 
   let exec_instr astate _ = function
-    | Sil.Letderef (lhs_id, rhs_exp, _, _)
-    | Sil.Set (Sil.Var lhs_id, _, rhs_exp, _) ->
+    | Sil.Letderef (lhs_id, rhs_exp, _, _) ->
         Domain.remove (LogicalVar lhs_id) astate
         |> exp_add_live rhs_exp
     | Sil.Set (Lvar lhs_pvar, _, rhs_exp, _) ->
