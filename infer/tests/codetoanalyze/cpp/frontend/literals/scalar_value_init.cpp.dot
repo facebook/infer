@@ -26,7 +26,7 @@ digraph iCFG {
 17 [label="17: Exit test \n  " color=yellow style=filled]
 	
 
-16 [label="16: Start test\nFormals: \nLocals:  f2:float  x:int  fp:float * f:float  i:int  \n   DECLARE_LOCALS(&return,&f2,&x,&fp,&f,&i); [line 17]\n  NULLIFY(&f,false); [line 17]\n  NULLIFY(&f2,false); [line 17]\n  NULLIFY(&fp,false); [line 17]\n  NULLIFY(&i,false); [line 17]\n  NULLIFY(&x,false); [line 17]\n " color=yellow style=filled]
+16 [label="16: Start test\nFormals: \nLocals:  f2:float  x:int  fp:float * f:float  i:int  \n   DECLARE_LOCALS(&return,&f2,&x,&fp,&f,&i); [line 17]\n " color=yellow style=filled]
 	
 
 	 16 -> 23 ;

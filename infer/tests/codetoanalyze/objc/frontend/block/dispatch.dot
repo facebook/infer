@@ -39,7 +39,7 @@ digraph iCFG {
 18 [label="18: Exit main \n  " color=yellow style=filled]
 	
 
-17 [label="17: Start main\nFormals: \nLocals:  p:int * b:class A * \n   DECLARE_LOCALS(&return,&p,&b); [line 42]\n  NULLIFY(&b,false); [line 42]\n  NULLIFY(&p,false); [line 42]\n " color=yellow style=filled]
+17 [label="17: Start main\nFormals: \nLocals:  p:int * b:class A * \n   DECLARE_LOCALS(&return,&p,&b); [line 42]\n " color=yellow style=filled]
 	
 
 	 17 -> 27 ;
@@ -69,7 +69,7 @@ digraph iCFG {
 10 [label="10: Exit A_trans \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start A_trans\nFormals: \nLocals:  dummy_block:_fn_ (*) \n   DECLARE_LOCALS(&return,&dummy_block); [line 32]\n  NULLIFY(&dummy_block,false); [line 32]\n " color=yellow style=filled]
+9 [label="9: Start A_trans\nFormals: \nLocals:  dummy_block:_fn_ (*) \n   DECLARE_LOCALS(&return,&dummy_block); [line 32]\n " color=yellow style=filled]
 	
 
 	 9 -> 16 ;
@@ -99,7 +99,7 @@ digraph iCFG {
 2 [label="2: Exit A_sharedInstance \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_sharedInstance\nFormals: \nLocals:  infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_sharedInstance______1); [line 23]\n  NULLIFY(&infer___objc_anonymous_block_A_sharedInstance______1,false); [line 23]\n " color=yellow style=filled]
+1 [label="1: Start A_sharedInstance\nFormals: \nLocals:  infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_sharedInstance______1); [line 23]\n " color=yellow style=filled]
 	
 
 	 1 -> 8 ;

@@ -10,7 +10,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  option2:int  option1:int  \n   DECLARE_LOCALS(&return,&option2,&option1); [line 15]\n  NULLIFY(&option1,false); [line 15]\n  NULLIFY(&option2,false); [line 15]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  option2:int  option1:int  \n   DECLARE_LOCALS(&return,&option2,&option1); [line 15]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

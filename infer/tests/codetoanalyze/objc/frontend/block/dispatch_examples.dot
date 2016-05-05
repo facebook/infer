@@ -33,7 +33,7 @@ digraph iCFG {
 52 [label="52: Exit A_dispatch_barrier_example \n  " color=yellow style=filled]
 	
 
-51 [label="51: Start A_dispatch_barrier_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_barrier_example______6); [line 71]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_barrier_example______6,false); [line 71]\n " color=yellow style=filled]
+51 [label="51: Start A_dispatch_barrier_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_barrier_example______6); [line 71]\n " color=yellow style=filled]
 	
 
 	 51 -> 60 ;
@@ -71,7 +71,7 @@ digraph iCFG {
 42 [label="42: Exit A_dispatch_group_notify_example \n  " color=yellow style=filled]
 	
 
-41 [label="41: Start A_dispatch_group_notify_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_group_notify_example______5); [line 62]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_notify_example______5,false); [line 62]\n " color=yellow style=filled]
+41 [label="41: Start A_dispatch_group_notify_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_group_notify_example______5); [line 62]\n " color=yellow style=filled]
 	
 
 	 41 -> 50 ;
@@ -109,7 +109,7 @@ digraph iCFG {
 32 [label="32: Exit A_dispatch_group_example \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start A_dispatch_group_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_group_example______4); [line 53]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_example______4,false); [line 53]\n " color=yellow style=filled]
+31 [label="31: Start A_dispatch_group_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_group_example______4); [line 53]\n " color=yellow style=filled]
 	
 
 	 31 -> 40 ;
@@ -147,7 +147,7 @@ digraph iCFG {
 22 [label="22: Exit A_dispatch_after_example \n  " color=yellow style=filled]
 	
 
-21 [label="21: Start A_dispatch_after_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_after_example______3); [line 42]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_after_example______3,false); [line 42]\n " color=yellow style=filled]
+21 [label="21: Start A_dispatch_after_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_after_example______3); [line 42]\n " color=yellow style=filled]
 	
 
 	 21 -> 30 ;
@@ -185,7 +185,7 @@ digraph iCFG {
 12 [label="12: Exit A_dispatch_async_example \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start A_dispatch_async_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_async_example______2); [line 32]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_async_example______2,false); [line 32]\n " color=yellow style=filled]
+11 [label="11: Start A_dispatch_async_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_async_example______2); [line 32]\n " color=yellow style=filled]
 	
 
 	 11 -> 20 ;
@@ -223,7 +223,7 @@ digraph iCFG {
 2 [label="2: Exit A_dispatch_once_example \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_dispatch_once_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_once_example______1); [line 20]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_once_example______1,false); [line 20]\n " color=yellow style=filled]
+1 [label="1: Start A_dispatch_once_example\nFormals: \nLocals:  infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*) \n   DECLARE_LOCALS(&return,&infer___objc_anonymous_block_A_dispatch_once_example______1); [line 20]\n " color=yellow style=filled]
 	
 
 	 1 -> 10 ;

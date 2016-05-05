@@ -35,7 +35,7 @@ digraph iCFG {
 26 [label="26: Exit conditional \n  " color=yellow style=filled]
 	
 
-25 [label="25: Start conditional\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$0:class X  SIL_temp_conditional___n$1:class X  __temp_return_n$3:class X  SIL_materialize_temp__n$5:class X  a:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$0,&SIL_temp_conditional___n$1,&__temp_return_n$3,&SIL_materialize_temp__n$5,&a); [line 25]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 25]\n " color=yellow style=filled]
+25 [label="25: Start conditional\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$0:class X  SIL_temp_conditional___n$1:class X  __temp_return_n$3:class X  SIL_materialize_temp__n$5:class X  a:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$0,&SIL_temp_conditional___n$1,&__temp_return_n$3,&SIL_materialize_temp__n$5,&a); [line 25]\n " color=yellow style=filled]
 	
 
 	 25 -> 34 ;
@@ -79,7 +79,7 @@ digraph iCFG {
 15 [label="15: Exit binaryConditional \n  " color=yellow style=filled]
 	
 
-14 [label="14: Start binaryConditional\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$0:class X  SIL_temp_conditional___n$2:class X  SIL_materialize_temp__n$4:class X  a:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$0,&SIL_temp_conditional___n$2,&SIL_materialize_temp__n$4,&a); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 20]\n " color=yellow style=filled]
+14 [label="14: Start binaryConditional\nFormals: \nLocals:  x:class X  SIL_materialize_temp__n$0:class X  SIL_temp_conditional___n$2:class X  SIL_materialize_temp__n$4:class X  a:class X  \n   DECLARE_LOCALS(&return,&x,&SIL_materialize_temp__n$0,&SIL_temp_conditional___n$2,&SIL_materialize_temp__n$4,&a); [line 20]\n " color=yellow style=filled]
 	
 
 	 14 -> 24 ;
@@ -101,21 +101,21 @@ digraph iCFG {
 9 [label="9: Exit X_X \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+8 [label="8: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 8 -> 9 ;
 7 [label="7: Exit X_X \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+6 [label="6: Start X_X\nFormals:  this:class X * __param_0:class X &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 6 -> 7 ;
 5 [label="5: Exit X_X \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+4 [label="4: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 4 -> 5 ;
@@ -126,7 +126,7 @@ digraph iCFG {
 2 [label="2: Exit X_operator bool \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start X_operator bool\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+1 [label="1: Start X_operator bool\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

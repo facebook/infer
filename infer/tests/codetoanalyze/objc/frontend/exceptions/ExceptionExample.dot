@@ -27,7 +27,7 @@ digraph iCFG {
 6 [label="6: Exit ExceptionExample_test1 \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start ExceptionExample_test1\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 27]\n  NULLIFY(&s,false); [line 27]\n  NULLIFY(&self,false); [line 27]\n " color=yellow style=filled]
+5 [label="5: Start ExceptionExample_test1\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 27]\n " color=yellow style=filled]
 	
 
 	 5 -> 12 ;
@@ -42,7 +42,7 @@ digraph iCFG {
 2 [label="2: Exit ExceptionExample_test \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start ExceptionExample_test\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 18]\n  NULLIFY(&s,false); [line 18]\n " color=yellow style=filled]
+1 [label="1: Start ExceptionExample_test\nFormals:  self:class ExceptionExample *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 18]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

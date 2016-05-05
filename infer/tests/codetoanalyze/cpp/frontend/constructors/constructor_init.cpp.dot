@@ -22,7 +22,7 @@ digraph iCFG {
 39 [label="39: Exit f_f2_div1 \n  " color=yellow style=filled]
 	
 
-38 [label="38: Start f_f2_div1\nFormals: \nLocals:  v3:int  v2:int  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v3,&v2,&v,&b); [line 54]\n  NULLIFY(&v,false); [line 54]\n  NULLIFY(&v2,false); [line 54]\n  NULLIFY(&v3,false); [line 54]\n " color=yellow style=filled]
+38 [label="38: Start f_f2_div1\nFormals: \nLocals:  v3:int  v2:int  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v3,&v2,&v,&b); [line 54]\n " color=yellow style=filled]
 	
 
 	 38 -> 44 ;
@@ -41,7 +41,7 @@ digraph iCFG {
 34 [label="34: Exit delegate_constr_f2_div0 \n  " color=yellow style=filled]
 	
 
-33 [label="33: Start delegate_constr_f2_div0\nFormals: \nLocals:  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v,&b); [line 48]\n  NULLIFY(&v,false); [line 48]\n " color=yellow style=filled]
+33 [label="33: Start delegate_constr_f2_div0\nFormals: \nLocals:  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v,&b); [line 48]\n " color=yellow style=filled]
 	
 
 	 33 -> 37 ;
@@ -60,7 +60,7 @@ digraph iCFG {
 29 [label="29: Exit delegate_constr_f_div0 \n  " color=yellow style=filled]
 	
 
-28 [label="28: Start delegate_constr_f_div0\nFormals: \nLocals:  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v,&b); [line 42]\n  NULLIFY(&v,false); [line 42]\n " color=yellow style=filled]
+28 [label="28: Start delegate_constr_f_div0\nFormals: \nLocals:  v:int  b:class B  \n   DECLARE_LOCALS(&return,&v,&b); [line 42]\n " color=yellow style=filled]
 	
 
 	 28 -> 32 ;

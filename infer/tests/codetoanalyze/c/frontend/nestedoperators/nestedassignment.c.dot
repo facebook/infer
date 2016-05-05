@@ -30,7 +30,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  t:double  s:double  r:double  q:double  x:double  \n   DECLARE_LOCALS(&return,&t,&s,&r,&q,&x); [line 10]\n  NULLIFY(&q,false); [line 10]\n  NULLIFY(&x,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  t:double  s:double  r:double  q:double  x:double  \n   DECLARE_LOCALS(&return,&t,&s,&r,&q,&x); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 9 ;

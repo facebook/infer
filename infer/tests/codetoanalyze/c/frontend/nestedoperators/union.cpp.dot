@@ -22,14 +22,14 @@ digraph iCFG {
 4 [label="4: Exit main \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start main\nFormals: \nLocals:  l:int  \n   DECLARE_LOCALS(&return,&l); [line 29]\n  NULLIFY(&l,false); [line 29]\n " color=yellow style=filled]
+3 [label="3: Start main\nFormals: \nLocals:  l:int  \n   DECLARE_LOCALS(&return,&l); [line 29]\n " color=yellow style=filled]
 	
 
 	 3 -> 9 ;
 2 [label="2: Exit (anonymous union at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.cpp:17:1)_ \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start (anonymous union at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.cpp:17:1)_\nFormals:  this:class (anonymous union at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.cpp:17:1) *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n  NULLIFY(&this,false); [line 17]\n " color=yellow style=filled]
+1 [label="1: Start (anonymous union at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.cpp:17:1)_\nFormals:  this:class (anonymous union at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.cpp:17:1) *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 1 -> 2 ;

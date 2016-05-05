@@ -25,7 +25,7 @@ digraph iCFG {
 2 [label="2: Exit A_fun_default \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_fun_default\nFormals:  this:class A * a:int  b:int  c:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n  NULLIFY(&this,false); [line 13]\n " color=yellow style=filled]
+1 [label="1: Start A_fun_default\nFormals:  this:class A * a:int  b:int  c:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

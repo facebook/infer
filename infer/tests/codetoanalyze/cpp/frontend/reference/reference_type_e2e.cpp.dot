@@ -26,7 +26,7 @@ digraph iCFG {
 50 [label="50: Exit ref_div1_nested_assignment \n  " color=yellow style=filled]
 	
 
-49 [label="49: Start ref_div1_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 62]\n  NULLIFY(&b,false); [line 62]\n  NULLIFY(&r1,false); [line 62]\n  NULLIFY(&r2,false); [line 62]\n " color=yellow style=filled]
+49 [label="49: Start ref_div1_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 62]\n " color=yellow style=filled]
 	
 
 	 49 -> 56 ;
@@ -57,7 +57,7 @@ digraph iCFG {
 42 [label="42: Exit ref_div0_nested_assignment \n  " color=yellow style=filled]
 	
 
-41 [label="41: Start ref_div0_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 53]\n  NULLIFY(&b,false); [line 53]\n  NULLIFY(&r1,false); [line 53]\n  NULLIFY(&r2,false); [line 53]\n " color=yellow style=filled]
+41 [label="41: Start ref_div0_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 53]\n " color=yellow style=filled]
 	
 
 	 41 -> 48 ;
@@ -80,7 +80,7 @@ digraph iCFG {
 36 [label="36: Exit ref_div0_function_temp_var \n  " color=yellow style=filled]
 	
 
-35 [label="35: Start ref_div0_function_temp_var\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 46]\n  NULLIFY(&r,false); [line 46]\n " color=yellow style=filled]
+35 [label="35: Start ref_div0_function_temp_var\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 46]\n " color=yellow style=filled]
 	
 
 	 35 -> 40 ;
@@ -122,7 +122,7 @@ digraph iCFG {
 25 [label="25: Exit ref_div0 \n  " color=yellow style=filled]
 	
 
-24 [label="24: Start ref_div0\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 33]\n  NULLIFY(&r,false); [line 33]\n " color=yellow style=filled]
+24 [label="24: Start ref_div0\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 33]\n " color=yellow style=filled]
 	
 
 	 24 -> 29 ;
@@ -145,7 +145,7 @@ digraph iCFG {
 19 [label="19: Exit ptr_div0_function_temp_var \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start ptr_div0_function_temp_var\nFormals: \nLocals:  r:int * a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 26]\n  NULLIFY(&r,false); [line 26]\n " color=yellow style=filled]
+18 [label="18: Start ptr_div0_function_temp_var\nFormals: \nLocals:  r:int * a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 26]\n " color=yellow style=filled]
 	
 
 	 18 -> 23 ;
@@ -187,7 +187,7 @@ digraph iCFG {
 8 [label="8: Exit ptr_div0 \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start ptr_div0\nFormals: \nLocals:  p:int * a:int  \n   DECLARE_LOCALS(&return,&p,&a); [line 13]\n  NULLIFY(&p,false); [line 13]\n " color=yellow style=filled]
+7 [label="7: Start ptr_div0\nFormals: \nLocals:  p:int * a:int  \n   DECLARE_LOCALS(&return,&p,&a); [line 13]\n " color=yellow style=filled]
 	
 
 	 7 -> 12 ;

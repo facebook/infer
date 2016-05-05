@@ -10,7 +10,7 @@ digraph iCFG {
 51 [label="51: Exit call_virtual_destructor \n  " color=yellow style=filled]
 	
 
-50 [label="50: Start call_virtual_destructor\nFormals: \nLocals:  trgl:class Polygon * \n   DECLARE_LOCALS(&return,&trgl); [line 70]\n  NULLIFY(&trgl,false); [line 70]\n " color=yellow style=filled]
+50 [label="50: Start call_virtual_destructor\nFormals: \nLocals:  trgl:class Polygon * \n   DECLARE_LOCALS(&return,&trgl); [line 70]\n " color=yellow style=filled]
 	
 
 	 50 -> 53 ;
@@ -37,7 +37,7 @@ digraph iCFG {
 44 [label="44: Exit tri_not_virtual_area \n  " color=yellow style=filled]
 	
 
-43 [label="43: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:class Polygon * poly:class Polygon  trgl:class Triangle  \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 59]\n  NULLIFY(&ppoly2,false); [line 59]\n " color=yellow style=filled]
+43 [label="43: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:class Polygon * poly:class Polygon  trgl:class Triangle  \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 59]\n " color=yellow style=filled]
 	
 
 	 43 -> 49 ;
@@ -56,7 +56,7 @@ digraph iCFG {
 39 [label="39: Exit poly_area \n  " color=yellow style=filled]
 	
 
-38 [label="38: Start poly_area\nFormals: \nLocals:  ppoly3:class Polygon * poly:class Polygon  \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 53]\n  NULLIFY(&ppoly3,false); [line 53]\n " color=yellow style=filled]
+38 [label="38: Start poly_area\nFormals: \nLocals:  ppoly3:class Polygon * poly:class Polygon  \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 53]\n " color=yellow style=filled]
 	
 
 	 38 -> 42 ;
@@ -83,7 +83,7 @@ digraph iCFG {
 32 [label="32: Exit tri_area \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start tri_area\nFormals: \nLocals:  ppoly2:class Polygon * poly:class Polygon  trgl:class Triangle  \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 45]\n  NULLIFY(&ppoly2,false); [line 45]\n " color=yellow style=filled]
+31 [label="31: Start tri_area\nFormals: \nLocals:  ppoly2:class Polygon * poly:class Polygon  trgl:class Triangle  \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 45]\n " color=yellow style=filled]
 	
 
 	 31 -> 37 ;
@@ -106,7 +106,7 @@ digraph iCFG {
 26 [label="26: Exit rect_area \n  " color=yellow style=filled]
 	
 
-25 [label="25: Start rect_area\nFormals: \nLocals:  ppoly1:class Polygon * rect:class Rectangle  \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 38]\n  NULLIFY(&ppoly1,false); [line 38]\n " color=yellow style=filled]
+25 [label="25: Start rect_area\nFormals: \nLocals:  ppoly1:class Polygon * rect:class Rectangle  \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 38]\n " color=yellow style=filled]
 	
 
 	 25 -> 30 ;
@@ -132,14 +132,14 @@ digraph iCFG {
 19 [label="19: Exit Triangle_area \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start Triangle_area\nFormals:  this:class Triangle *\nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 32]\n  NULLIFY(&x,false); [line 32]\n " color=yellow style=filled]
+18 [label="18: Start Triangle_area\nFormals:  this:class Triangle *\nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 32]\n " color=yellow style=filled]
 	
 
 	 18 -> 21 ;
 17 [label="17: Exit Triangle_~Triangle \n  " color=yellow style=filled]
 	
 
-16 [label="16: Start Triangle_~Triangle\nFormals:  this:class Triangle *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n  NULLIFY(&this,false); [line 31]\n " color=yellow style=filled]
+16 [label="16: Start Triangle_~Triangle\nFormals:  this:class Triangle *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
 	 16 -> 17 ;
@@ -168,7 +168,7 @@ digraph iCFG {
 9 [label="9: Exit Polygon_Polygon \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start Polygon_Polygon\nFormals:  this:class Polygon *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+8 [label="8: Start Polygon_Polygon\nFormals:  this:class Polygon *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 8 -> 9 ;
@@ -179,7 +179,7 @@ digraph iCFG {
 6 [label="6: Exit Polygon_area \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start Polygon_area\nFormals:  this:class Polygon *\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n  NULLIFY(&this,false); [line 20]\n " color=yellow style=filled]
+5 [label="5: Start Polygon_area\nFormals:  this:class Polygon *\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
 	 5 -> 7 ;

@@ -323,10 +323,16 @@ let analyze_and_annotate_proc cfg tenv pname pdesc =
       if !dead_pvars_added < dead_pvars_limit
       then add_dead_pvars_after_conditionals_join cfg n dead_pvars_to_add);
 
-  IList.iter (fun n -> (* generate nullify instructions *)
-      let dead_pvs_after = Cfg.Node.get_dead_pvars n true in
-      let dead_pvs_before = Cfg.Node.get_dead_pvars n false in
-      node_add_nullify_instrs n dead_pvs_after dead_pvs_before)
+  IList.iter
+    (fun n -> (* generate nullify instructions *)
+       match Cfg.Node.get_kind n with
+       | Cfg.Node.Start_node _ ->
+           (* avoid nullifying declared locals/params *)
+           ()
+       | _ ->
+           let dead_pvs_after = Cfg.Node.get_dead_pvars n true in
+           let dead_pvs_before = Cfg.Node.get_dead_pvars n false in
+           node_add_nullify_instrs n dead_pvs_after dead_pvs_before)
     (Cfg.Procdesc.get_nodes pdesc);
   Table.reset ()
 

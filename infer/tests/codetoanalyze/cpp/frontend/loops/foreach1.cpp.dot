@@ -47,7 +47,7 @@ digraph iCFG {
 32 [label="32: Exit test \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start test\nFormals: \nLocals:  __end:class iterator  SIL_materialize_temp__n$0:class iterator  __begin:class iterator  SIL_materialize_temp__n$4:class iterator  __temp_return_n$9:class iterator  __temp_construct_n$10:class iterator  __temp_construct_n$11:class iterator  temp:int  value:int  __range:class vec & vector:class vec  \n   DECLARE_LOCALS(&return,&__end,&SIL_materialize_temp__n$0,&__begin,&SIL_materialize_temp__n$4,&__temp_return_n$9,&__temp_construct_n$10,&__temp_construct_n$11,&temp,&value,&__range,&vector); [line 35]\n  NULLIFY(&__range,false); [line 35]\n  NULLIFY(&temp,false); [line 35]\n  NULLIFY(&value,false); [line 35]\n " color=yellow style=filled]
+31 [label="31: Start test\nFormals: \nLocals:  __end:class iterator  SIL_materialize_temp__n$0:class iterator  __begin:class iterator  SIL_materialize_temp__n$4:class iterator  __temp_return_n$9:class iterator  __temp_construct_n$10:class iterator  __temp_construct_n$11:class iterator  temp:int  value:int  __range:class vec & vector:class vec  \n   DECLARE_LOCALS(&return,&__end,&SIL_materialize_temp__n$0,&__begin,&SIL_materialize_temp__n$4,&__temp_return_n$9,&__temp_construct_n$10,&__temp_construct_n$11,&temp,&value,&__range,&vector); [line 35]\n " color=yellow style=filled]
 	
 
 	 31 -> 43 ;
@@ -121,7 +121,7 @@ digraph iCFG {
 12 [label="12: Exit iterator_iterator \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start iterator_iterator\nFormals:  this:class iterator *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+11 [label="11: Start iterator_iterator\nFormals:  this:class iterator *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 11 -> 12 ;

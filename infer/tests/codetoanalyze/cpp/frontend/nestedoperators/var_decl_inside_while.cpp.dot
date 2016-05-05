@@ -64,7 +64,7 @@ digraph iCFG {
 13 [label="13: Exit conditional_assignment \n  " color=yellow style=filled]
 	
 
-12 [label="12: Start conditional_assignment\nFormals: \nLocals:  a:int  SIL_temp_conditional___n$1:int  result:int  x:int  \n   DECLARE_LOCALS(&return,&a,&SIL_temp_conditional___n$1,&result,&x); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 20]\n  NULLIFY(&a,false); [line 20]\n  NULLIFY(&result,false); [line 20]\n  NULLIFY(&x,false); [line 20]\n " color=yellow style=filled]
+12 [label="12: Start conditional_assignment\nFormals: \nLocals:  a:int  SIL_temp_conditional___n$1:int  result:int  x:int  \n   DECLARE_LOCALS(&return,&a,&SIL_temp_conditional___n$1,&result,&x); [line 20]\n " color=yellow style=filled]
 	
 
 	 12 -> 28 ;
@@ -108,7 +108,7 @@ digraph iCFG {
 2 [label="2: Exit simple_assignment \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start simple_assignment\nFormals: \nLocals:  a:int  result:int  x:int  \n   DECLARE_LOCALS(&return,&a,&result,&x); [line 10]\n  NULLIFY(&a,false); [line 10]\n  NULLIFY(&result,false); [line 10]\n  NULLIFY(&x,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start simple_assignment\nFormals: \nLocals:  a:int  result:int  x:int  \n   DECLARE_LOCALS(&return,&a,&result,&x); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 11 ;

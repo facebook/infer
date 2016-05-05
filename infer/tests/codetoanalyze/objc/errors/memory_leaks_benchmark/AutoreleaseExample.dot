@@ -18,7 +18,7 @@ digraph iCFG {
 33 [label="33: Exit test3 \n  " color=yellow style=filled]
 	
 
-32 [label="32: Start test3\nFormals: \nLocals:  c:class NSString * string:class NSString * pool:class NSAutoreleasePool * \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59]\n  NULLIFY(&c,false); [line 59]\n  NULLIFY(&pool,false); [line 59]\n  NULLIFY(&string,false); [line 59]\n " color=yellow style=filled]
+32 [label="32: Start test3\nFormals: \nLocals:  c:class NSString * string:class NSString * pool:class NSAutoreleasePool * \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59]\n " color=yellow style=filled]
 	
 
 	 32 -> 37 ;
@@ -115,7 +115,7 @@ digraph iCFG {
 8 [label="8: Exit createA \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start createA\nFormals: \nLocals:  s1:class A * \n   DECLARE_LOCALS(&return,&s1); [line 29]\n  NULLIFY(&s1,false); [line 29]\n " color=yellow style=filled]
+7 [label="7: Start createA\nFormals: \nLocals:  s1:class A * \n   DECLARE_LOCALS(&return,&s1); [line 29]\n " color=yellow style=filled]
 	
 
 	 7 -> 10 ;
@@ -130,7 +130,7 @@ digraph iCFG {
 4 [label="4: Exit A_main \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start A_main\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n  NULLIFY(&s,false); [line 22]\n  NULLIFY(&self,false); [line 22]\n " color=yellow style=filled]
+3 [label="3: Start A_main\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
 	
 
 	 3 -> 6 ;

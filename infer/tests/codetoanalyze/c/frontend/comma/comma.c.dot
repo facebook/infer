@@ -22,7 +22,7 @@ digraph iCFG {
 14 [label="14: Exit comma_3 \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start comma_3\nFormals: \nLocals:  d:int  c:int  b:int  a:int  \n   DECLARE_LOCALS(&return,&d,&c,&b,&a); [line 22]\n  NULLIFY(&a,false); [line 22]\n  NULLIFY(&b,false); [line 22]\n  NULLIFY(&c,false); [line 22]\n  NULLIFY(&d,false); [line 22]\n " color=yellow style=filled]
+13 [label="13: Start comma_3\nFormals: \nLocals:  d:int  c:int  b:int  a:int  \n   DECLARE_LOCALS(&return,&d,&c,&b,&a); [line 22]\n " color=yellow style=filled]
 	
 
 	 13 -> 19 ;
@@ -45,7 +45,7 @@ digraph iCFG {
 8 [label="8: Exit comma_2 \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start comma_2\nFormals: \nLocals:  d:int  b:int  a:int  \n   DECLARE_LOCALS(&return,&d,&b,&a); [line 16]\n  NULLIFY(&a,false); [line 16]\n  NULLIFY(&b,false); [line 16]\n  NULLIFY(&d,false); [line 16]\n " color=yellow style=filled]
+7 [label="7: Start comma_2\nFormals: \nLocals:  d:int  b:int  a:int  \n   DECLARE_LOCALS(&return,&d,&b,&a); [line 16]\n " color=yellow style=filled]
 	
 
 	 7 -> 12 ;
@@ -68,7 +68,7 @@ digraph iCFG {
 2 [label="2: Exit comma_1 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start comma_1\nFormals: \nLocals:  d:int  b:int  a:int  \n   DECLARE_LOCALS(&return,&d,&b,&a); [line 10]\n  NULLIFY(&a,false); [line 10]\n  NULLIFY(&b,false); [line 10]\n  NULLIFY(&d,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start comma_1\nFormals: \nLocals:  d:int  b:int  a:int  \n   DECLARE_LOCALS(&return,&d,&b,&a); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 6 ;

@@ -22,7 +22,7 @@ digraph iCFG {
 10 [label="10: Exit main \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start main\nFormals: \nLocals:  ab:class A * a2:class A * aa:class A * a1:class A * \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 35]\n  NULLIFY(&a1,false); [line 35]\n  NULLIFY(&a2,false); [line 35]\n  NULLIFY(&aa,false); [line 35]\n  NULLIFY(&ab,false); [line 35]\n " color=yellow style=filled]
+9 [label="9: Start main\nFormals: \nLocals:  ab:class A * a2:class A * aa:class A * a1:class A * \n   DECLARE_LOCALS(&return,&ab,&a2,&aa,&a1); [line 35]\n " color=yellow style=filled]
 	
 
 	 9 -> 15 ;
@@ -37,7 +37,7 @@ digraph iCFG {
 6 [label="6: Exit A_someA \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start A_someA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 27]\n  NULLIFY(&a,false); [line 27]\n " color=yellow style=filled]
+5 [label="5: Start A_someA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 27]\n " color=yellow style=filled]
 	
 
 	 5 -> 8 ;
@@ -52,7 +52,7 @@ digraph iCFG {
 2 [label="2: Exit A_newA \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_newA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 22]\n  NULLIFY(&a,false); [line 22]\n " color=yellow style=filled]
+1 [label="1: Start A_newA\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 22]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

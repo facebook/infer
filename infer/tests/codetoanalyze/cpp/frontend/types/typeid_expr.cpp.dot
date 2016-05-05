@@ -134,7 +134,7 @@ digraph iCFG {
 37 [label="37: Exit employee_typeid \n  " color=yellow style=filled]
 	
 
-36 [label="36: Start employee_typeid\nFormals: \nLocals:  ptr:class Person * employee:class Employee  \n   DECLARE_LOCALS(&return,&ptr,&employee); [line 39]\n  NULLIFY(&ptr,false); [line 39]\n " color=yellow style=filled]
+36 [label="36: Start employee_typeid\nFormals: \nLocals:  ptr:class Person * employee:class Employee  \n   DECLARE_LOCALS(&return,&ptr,&employee); [line 39]\n " color=yellow style=filled]
 	
 
 	 36 -> 46 ;
@@ -186,7 +186,7 @@ digraph iCFG {
 24 [label="24: Exit person_typeid_name \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start person_typeid_name\nFormals: \nLocals:  person_type_info:char * t_type_info:char * t:int  person:class Person  \n   DECLARE_LOCALS(&return,&person_type_info,&t_type_info,&t,&person); [line 28]\n  NULLIFY(&person_type_info,false); [line 28]\n  NULLIFY(&t,false); [line 28]\n  NULLIFY(&t_type_info,false); [line 28]\n " color=yellow style=filled]
+23 [label="23: Start person_typeid_name\nFormals: \nLocals:  person_type_info:char * t_type_info:char * t:int  person:class Person  \n   DECLARE_LOCALS(&return,&person_type_info,&t_type_info,&t,&person); [line 28]\n " color=yellow style=filled]
 	
 
 	 23 -> 35 ;
@@ -230,7 +230,7 @@ digraph iCFG {
 13 [label="13: Exit person_typeid \n  " color=yellow style=filled]
 	
 
-12 [label="12: Start person_typeid\nFormals: \nLocals:  t:int  person:class Person  \n   DECLARE_LOCALS(&return,&t,&person); [line 19]\n  NULLIFY(&t,false); [line 19]\n " color=yellow style=filled]
+12 [label="12: Start person_typeid\nFormals: \nLocals:  t:int  person:class Person  \n   DECLARE_LOCALS(&return,&t,&person); [line 19]\n " color=yellow style=filled]
 	
 
 	 12 -> 22 ;
@@ -248,28 +248,28 @@ digraph iCFG {
 8 [label="8: Exit Employee_~Employee \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start Employee_~Employee\nFormals:  this:class Employee *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n  NULLIFY(&this,false); [line 17]\n " color=yellow style=filled]
+7 [label="7: Start Employee_~Employee\nFormals:  this:class Employee *\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 7 -> 8 ;
 6 [label="6: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start Person_Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n  NULLIFY(&this,false); [line 12]\n " color=yellow style=filled]
+5 [label="5: Start Person_Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 5 -> 6 ;
 4 [label="4: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start Person_Person\nFormals:  this:class Person * __param_0:class Person &\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n  NULLIFY(&__param_0,false); [line 12]\n  NULLIFY(&this,false); [line 12]\n " color=yellow style=filled]
+3 [label="3: Start Person_Person\nFormals:  this:class Person * __param_0:class Person &\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 3 -> 4 ;
 2 [label="2: Exit Person_~Person \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Person_~Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n  NULLIFY(&this,false); [line 14]\n " color=yellow style=filled]
+1 [label="1: Start Person_~Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 1 -> 2 ;

@@ -83,7 +83,7 @@ digraph iCFG {
 8 [label="8: Exit Choose2_extra \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start Choose2_extra\nFormals:  this:class Choose2 * a:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&this,false); [line 18]\n " color=yellow style=filled]
+7 [label="7: Start Choose2_extra\nFormals:  this:class Choose2 * a:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 7 -> 9 ;
@@ -94,7 +94,7 @@ digraph iCFG {
 5 [label="5: Exit Choose2_div \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start Choose2_div\nFormals:  this:class Choose2 * a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n  NULLIFY(&a,false); [line 15]\n  NULLIFY(&this,false); [line 15]\n " color=yellow style=filled]
+4 [label="4: Start Choose2_div\nFormals:  this:class Choose2 * a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
@@ -105,7 +105,7 @@ digraph iCFG {
 2 [label="2: Exit Choose1_div \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Choose1_div\nFormals:  this:class Choose1 * a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&b,false); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+1 [label="1: Start Choose1_div\nFormals:  this:class Choose1 * a:int  b:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

@@ -430,7 +430,7 @@ digraph iCFG {
 11 [label="11: Exit X_X \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+10 [label="10: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 10 -> 11 ;

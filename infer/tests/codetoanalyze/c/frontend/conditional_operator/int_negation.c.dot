@@ -26,7 +26,7 @@ digraph iCFG {
 28 [label="28: Exit neg \n  " color=yellow style=filled]
 	
 
-27 [label="27: Start neg\nFormals:  x:int \nLocals:  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0); [line 29]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 29]\n " color=yellow style=filled]
+27 [label="27: Start neg\nFormals:  x:int \nLocals:  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0); [line 29]\n " color=yellow style=filled]
 	
 
 	 27 -> 30 ;
@@ -83,7 +83,7 @@ digraph iCFG {
 14 [label="14: Exit baz \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start baz\nFormals:  x:int \nLocals:  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 20]\n " color=yellow style=filled]
+13 [label="13: Start baz\nFormals:  x:int \nLocals:  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0); [line 20]\n " color=yellow style=filled]
 	
 
 	 13 -> 18 ;

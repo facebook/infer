@@ -10,7 +10,7 @@ digraph iCFG {
 2 [label="2: Exit get_array \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start get_array\nFormals: \nLocals:  animals:class NSArray * \n   DECLARE_LOCALS(&return,&animals); [line 12]\n  NULLIFY(&animals,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start get_array\nFormals: \nLocals:  animals:class NSArray * \n   DECLARE_LOCALS(&return,&animals); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

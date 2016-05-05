@@ -14,7 +14,7 @@ digraph iCFG {
 6 [label="6: Exit main \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start main\nFormals: \nLocals:  dst:int  src:int  \n   DECLARE_LOCALS(&return,&dst,&src); [line 19]\n  NULLIFY(&src,false); [line 19]\n " color=yellow style=filled]
+5 [label="5: Start main\nFormals: \nLocals:  dst:int  src:int  \n   DECLARE_LOCALS(&return,&dst,&src); [line 19]\n " color=yellow style=filled]
 	
 
 	 5 -> 9 ;

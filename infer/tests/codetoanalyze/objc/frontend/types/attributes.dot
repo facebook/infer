@@ -50,7 +50,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  aStdRef:class A * anAutoRelRef:class A __autoreleasing * anUnsafeUnretRef:class A __unsafe_unretained * aStrongRef:class A * aWeakRef:class A __weak * \n   DECLARE_LOCALS(&return,&aStdRef,&anAutoRelRef,&anUnsafeUnretRef,&aStrongRef,&aWeakRef); [line 20]\n  NULLIFY(&aStdRef,false); [line 20]\n  NULLIFY(&aStrongRef,false); [line 20]\n  NULLIFY(&aWeakRef,false); [line 20]\n  NULLIFY(&anAutoRelRef,false); [line 20]\n  NULLIFY(&anUnsafeUnretRef,false); [line 20]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  aStdRef:class A * anAutoRelRef:class A __autoreleasing * anUnsafeUnretRef:class A __unsafe_unretained * aStrongRef:class A * aWeakRef:class A __weak * \n   DECLARE_LOCALS(&return,&aStdRef,&anAutoRelRef,&anUnsafeUnretRef,&aStrongRef,&aWeakRef); [line 20]\n " color=yellow style=filled]
 	
 
 	 1 -> 14 ;

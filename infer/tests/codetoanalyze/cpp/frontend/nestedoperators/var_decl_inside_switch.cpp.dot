@@ -53,7 +53,7 @@ digraph iCFG {
 2 [label="2: Exit get \n   REMOVE_TEMPS(n$0); [line 20]\n " color=yellow style=filled]
 	
 
-1 [label="1: Start get\nFormals:  a:int \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 10]\n  NULLIFY(&x,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start get\nFormals:  a:int \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

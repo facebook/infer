@@ -10,7 +10,7 @@ digraph iCFG {
 24 [label="24: Exit Boxing_getS \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start Boxing_getS\nFormals:  self:class Boxing *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 41]\n  NULLIFY(&s,false); [line 41]\n  NULLIFY(&self,false); [line 41]\n " color=yellow style=filled]
+23 [label="23: Start Boxing_getS\nFormals:  self:class Boxing *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 41]\n " color=yellow style=filled]
 	
 
 	 23 -> 26 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 20 [label="20: Exit Boxing_getBool \n  " color=yellow style=filled]
 	
 
-19 [label="19: Start Boxing_getBool\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 36]\n  NULLIFY(&n,false); [line 36]\n  NULLIFY(&self,false); [line 36]\n " color=yellow style=filled]
+19 [label="19: Start Boxing_getBool\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 36]\n " color=yellow style=filled]
 	
 
 	 19 -> 22 ;
@@ -40,7 +40,7 @@ digraph iCFG {
 16 [label="16: Exit Boxing_getDouble \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start Boxing_getDouble\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 31]\n  NULLIFY(&n,false); [line 31]\n  NULLIFY(&self,false); [line 31]\n " color=yellow style=filled]
+15 [label="15: Start Boxing_getDouble\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 31]\n " color=yellow style=filled]
 	
 
 	 15 -> 18 ;
@@ -55,7 +55,7 @@ digraph iCFG {
 12 [label="12: Exit Boxing_getFloat \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start Boxing_getFloat\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 26]\n  NULLIFY(&n,false); [line 26]\n  NULLIFY(&self,false); [line 26]\n " color=yellow style=filled]
+11 [label="11: Start Boxing_getFloat\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 26]\n " color=yellow style=filled]
 	
 
 	 11 -> 14 ;
@@ -70,7 +70,7 @@ digraph iCFG {
 8 [label="8: Exit Boxing_getInt \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start Boxing_getInt\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 21]\n  NULLIFY(&n,false); [line 21]\n  NULLIFY(&self,false); [line 21]\n " color=yellow style=filled]
+7 [label="7: Start Boxing_getInt\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * \n   DECLARE_LOCALS(&return,&n); [line 21]\n " color=yellow style=filled]
 	
 
 	 7 -> 10 ;
@@ -93,7 +93,7 @@ digraph iCFG {
 2 [label="2: Exit Boxing_getIntExp \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Boxing_getIntExp\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * y:int  x:int  \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14]\n  NULLIFY(&n,false); [line 14]\n  NULLIFY(&self,false); [line 14]\n  NULLIFY(&x,false); [line 14]\n  NULLIFY(&y,false); [line 14]\n " color=yellow style=filled]
+1 [label="1: Start Boxing_getIntExp\nFormals:  self:class Boxing *\nLocals:  n:class NSNumber * y:int  x:int  \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14]\n " color=yellow style=filled]
 	
 
 	 1 -> 6 ;

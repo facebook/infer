@@ -87,7 +87,7 @@ digraph iCFG {
 13 [label="13: Exit B<A>_B \n  " color=yellow style=filled]
 	
 
-12 [label="12: Start B<A>_B\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n  NULLIFY(&this,false); [line 15]\n " color=yellow style=filled]
+12 [label="12: Start B<A>_B\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 12 -> 13 ;
@@ -98,14 +98,14 @@ digraph iCFG {
 10 [label="10: Exit B<A>_div0 \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start B<A>_div0\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n  NULLIFY(&this,false); [line 16]\n " color=yellow style=filled]
+9 [label="9: Start B<A>_div0\nFormals:  this:class B<A> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 9 -> 11 ;
 8 [label="8: Exit B<int>_B \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start B<int>_B\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n  NULLIFY(&this,false); [line 15]\n " color=yellow style=filled]
+7 [label="7: Start B<int>_B\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 7 -> 8 ;
@@ -116,7 +116,7 @@ digraph iCFG {
 5 [label="5: Exit B<int>_div0 \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start B<int>_div0\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n  NULLIFY(&this,false); [line 16]\n " color=yellow style=filled]
+4 [label="4: Start B<int>_div0\nFormals:  this:class B<int> *\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
@@ -127,7 +127,7 @@ digraph iCFG {
 2 [label="2: Exit A_div0 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_div0\nFormals:  this:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+1 [label="1: Start A_div0\nFormals:  this:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

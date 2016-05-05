@@ -42,14 +42,14 @@ digraph iCFG {
 14 [label="14: Exit main \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start main\nFormals: \nLocals:  rect2:class foo::Rectangle  rect1:class bar::Rectangle  x:class foo::my_record  j:double  i:int  \n   DECLARE_LOCALS(&return,&rect2,&rect1,&x,&j,&i); [line 41]\n  NULLIFY(&i,false); [line 41]\n  NULLIFY(&j,false); [line 41]\n " color=yellow style=filled]
+13 [label="13: Start main\nFormals: \nLocals:  rect2:class foo::Rectangle  rect1:class bar::Rectangle  x:class foo::my_record  j:double  i:int  \n   DECLARE_LOCALS(&return,&rect2,&rect1,&x,&j,&i); [line 41]\n " color=yellow style=filled]
 	
 
 	 13 -> 24 ;
 12 [label="12: Exit bar::Rectangle_Rectangle \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start bar::Rectangle_Rectangle\nFormals:  this:class bar::Rectangle *\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n  NULLIFY(&this,false); [line 32]\n " color=yellow style=filled]
+11 [label="11: Start bar::Rectangle_Rectangle\nFormals:  this:class bar::Rectangle *\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
 	 11 -> 12 ;
@@ -67,7 +67,7 @@ digraph iCFG {
 7 [label="7: Exit foo::Rectangle_Rectangle \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start foo::Rectangle_Rectangle\nFormals:  this:class foo::Rectangle *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n  NULLIFY(&this,false); [line 19]\n " color=yellow style=filled]
+6 [label="6: Start foo::Rectangle_Rectangle\nFormals:  this:class foo::Rectangle *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
 	 6 -> 7 ;
@@ -85,7 +85,7 @@ digraph iCFG {
 2 [label="2: Exit foo::my_record_ \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start foo::my_record_\nFormals:  this:class foo::my_record *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n  NULLIFY(&this,false); [line 13]\n " color=yellow style=filled]
+1 [label="1: Start foo::my_record_\nFormals:  this:class foo::my_record *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 1 -> 2 ;

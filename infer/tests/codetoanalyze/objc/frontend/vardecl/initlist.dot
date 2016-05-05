@@ -14,7 +14,7 @@ digraph iCFG {
 5 [label="5: Exit test \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start test\nFormals: \nLocals:  a:class C *[3] c2:class C * c1:class C * \n   DECLARE_LOCALS(&return,&a,&c2,&c1); [line 21]\n  NULLIFY(&a,false); [line 21]\n  NULLIFY(&c1,false); [line 21]\n  NULLIFY(&c2,false); [line 21]\n " color=yellow style=filled]
+4 [label="4: Start test\nFormals: \nLocals:  a:class C *[3] c2:class C * c1:class C * \n   DECLARE_LOCALS(&return,&a,&c2,&c1); [line 21]\n " color=yellow style=filled]
 	
 
 	 4 -> 8 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  a:int [2][3] z:int  \n   DECLARE_LOCALS(&return,&a,&z); [line 12]\n  NULLIFY(&a,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  a:int [2][3] z:int  \n   DECLARE_LOCALS(&return,&a,&z); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

@@ -26,7 +26,7 @@ digraph iCFG {
 18 [label="18: Exit access_field_in_ife_branch \n  " color=yellow style=filled]
 	
 
-17 [label="17: Start access_field_in_ife_branch\nFormals: \nLocals:  z:int  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$0); [line 22]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 22]\n  NULLIFY(&z,false); [line 22]\n " color=yellow style=filled]
+17 [label="17: Start access_field_in_ife_branch\nFormals: \nLocals:  z:int  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$0); [line 22]\n " color=yellow style=filled]
 	
 
 	 17 -> 20 ;
@@ -58,7 +58,7 @@ digraph iCFG {
 10 [label="10: Exit call_ife_then_access_field \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start call_ife_then_access_field\nFormals: \nLocals:  z:int  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$0); [line 20]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 20]\n  NULLIFY(&z,false); [line 20]\n " color=yellow style=filled]
+9 [label="9: Start call_ife_then_access_field\nFormals: \nLocals:  z:int  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$0); [line 20]\n " color=yellow style=filled]
 	
 
 	 9 -> 12 ;
@@ -90,7 +90,7 @@ digraph iCFG {
 2 [label="2: Exit ife_then_access_field \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start ife_then_access_field\nFormals:  p:struct s * q:struct s *\nLocals:  z:int  SIL_temp_conditional___n$0:struct s * \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$0); [line 16]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 16]\n  NULLIFY(&z,false); [line 16]\n " color=yellow style=filled]
+1 [label="1: Start ife_then_access_field\nFormals:  p:struct s * q:struct s *\nLocals:  z:int  SIL_temp_conditional___n$0:struct s * \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$0); [line 16]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

@@ -18,7 +18,7 @@ digraph iCFG {
 14 [label="14: Exit test \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start test\nFormals:  a2:class A *\nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 38]\n  NULLIFY(&a,false); [line 38]\n " color=yellow style=filled]
+13 [label="13: Start test\nFormals:  a2:class A *\nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 38]\n " color=yellow style=filled]
 	
 
 	 13 -> 18 ;
@@ -58,7 +58,7 @@ digraph iCFG {
 4 [label="4: Exit A_copy \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start A_copy\nFormals:  self:class A *\nLocals:  other:class A * \n   DECLARE_LOCALS(&return,&other); [line 26]\n  NULLIFY(&other,false); [line 26]\n " color=yellow style=filled]
+3 [label="3: Start A_copy\nFormals:  self:class A *\nLocals:  other:class A * \n   DECLARE_LOCALS(&return,&other); [line 26]\n " color=yellow style=filled]
 	
 
 	 3 -> 12 ;

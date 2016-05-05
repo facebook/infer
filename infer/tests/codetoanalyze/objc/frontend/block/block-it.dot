@@ -34,7 +34,7 @@ digraph iCFG {
 46 [label="46: Exit __objc_anonymous_block_MyBlock_array_trans______2 \n  " color=yellow style=filled]
 	
 
-45 [label="45: Start __objc_anonymous_block_MyBlock_array_trans______2\nFormals:  object:struct objc_object * idx:unsigned long  stop:_Bool *\nLocals:  ShouldStop:int  \n   DECLARE_LOCALS(&return,&ShouldStop); [line 40]\n  NULLIFY(&idx,false); [line 40]\n  NULLIFY(&object,false); [line 40]\n " color=yellow style=filled]
+45 [label="45: Start __objc_anonymous_block_MyBlock_array_trans______2\nFormals:  object:struct objc_object * idx:unsigned long  stop:_Bool *\nLocals:  ShouldStop:int  \n   DECLARE_LOCALS(&return,&ShouldStop); [line 40]\n " color=yellow style=filled]
 	
 
 	 45 -> 49 ;
@@ -104,7 +104,7 @@ digraph iCFG {
 29 [label="29: Exit MyBlock_array_trans \n  " color=yellow style=filled]
 	
 
-28 [label="28: Start MyBlock_array_trans\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * enumerateObjectsUsingBlock:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&enumerateObjectsUsingBlock,&objects,&a); [line 32]\n  NULLIFY(&a,false); [line 32]\n  NULLIFY(&enumerateObjectsUsingBlock,false); [line 32]\n  NULLIFY(&idx,false); [line 32]\n  NULLIFY(&object,false); [line 32]\n  NULLIFY(&objects,false); [line 32]\n  NULLIFY(&self,false); [line 32]\n  NULLIFY(&stop,false); [line 32]\n " color=yellow style=filled]
+28 [label="28: Start MyBlock_array_trans\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * enumerateObjectsUsingBlock:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&enumerateObjectsUsingBlock,&objects,&a); [line 32]\n " color=yellow style=filled]
 	
 
 	 28 -> 54 ;
@@ -143,7 +143,7 @@ digraph iCFG {
 19 [label="19: Exit __objc_anonymous_block_MyBlock_array______1 \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start __objc_anonymous_block_MyBlock_array______1\nFormals:  object:struct objc_object * idx:unsigned long  stop:_Bool *\nLocals:  ShouldStop:int  \n   DECLARE_LOCALS(&return,&ShouldStop); [line 21]\n  NULLIFY(&idx,false); [line 21]\n  NULLIFY(&object,false); [line 21]\n " color=yellow style=filled]
+18 [label="18: Start __objc_anonymous_block_MyBlock_array______1\nFormals:  object:struct objc_object * idx:unsigned long  stop:_Bool *\nLocals:  ShouldStop:int  \n   DECLARE_LOCALS(&return,&ShouldStop); [line 21]\n " color=yellow style=filled]
 	
 
 	 18 -> 22 ;
@@ -213,7 +213,7 @@ digraph iCFG {
 2 [label="2: Exit MyBlock_array \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MyBlock_array\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * infer___objc_anonymous_block_MyBlock_array______1:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&infer___objc_anonymous_block_MyBlock_array______1,&objects,&a); [line 18]\n  NULLIFY(&a,false); [line 18]\n  NULLIFY(&idx,false); [line 18]\n  NULLIFY(&infer___objc_anonymous_block_MyBlock_array______1,false); [line 18]\n  NULLIFY(&object,false); [line 18]\n  NULLIFY(&objects,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n  NULLIFY(&stop,false); [line 18]\n " color=yellow style=filled]
+1 [label="1: Start MyBlock_array\nFormals:  self:class MyBlock *\nLocals:  idx:unsigned long  object:struct objc_object * stop:_Bool * infer___objc_anonymous_block_MyBlock_array______1:_fn_ (*) objects:class NSArray * a:class NSArray * \n   DECLARE_LOCALS(&return,&idx,&object,&stop,&infer___objc_anonymous_block_MyBlock_array______1,&objects,&a); [line 18]\n " color=yellow style=filled]
 	
 
 	 1 -> 27 ;

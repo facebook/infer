@@ -137,7 +137,7 @@ digraph iCFG {
 63 [label="63: Exit main \n  " color=yellow style=filled]
 	
 
-62 [label="62: Start main\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$3:int  SIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$3,&SIL_temp_conditional___n$7,&block_size,&spec); [line 42]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 42]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 42]\n  NULLIFY(&SIL_temp_conditional___n$7,false); [line 42]\n  NULLIFY(&block_size,false); [line 42]\n  NULLIFY(&spec,false); [line 42]\n " color=yellow style=filled]
+62 [label="62: Start main\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$3:int  SIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$3,&SIL_temp_conditional___n$7,&block_size,&spec); [line 42]\n " color=yellow style=filled]
 	
 
 	 62 -> 95 ;
@@ -254,7 +254,7 @@ digraph iCFG {
 35 [label="35: Exit test_loop \n  " color=yellow style=filled]
 	
 
-34 [label="34: Start test_loop\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$3:int  SIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$3,&SIL_temp_conditional___n$7,&block_size,&spec); [line 29]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 29]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 29]\n  NULLIFY(&SIL_temp_conditional___n$7,false); [line 29]\n  NULLIFY(&block_size,false); [line 29]\n  NULLIFY(&spec,false); [line 29]\n " color=yellow style=filled]
+34 [label="34: Start test_loop\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$3:int  SIL_temp_conditional___n$7:int  block_size:char * spec:char * \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$3,&SIL_temp_conditional___n$7,&block_size,&spec); [line 29]\n " color=yellow style=filled]
 	
 
 	 34 -> 61 ;
@@ -340,7 +340,7 @@ digraph iCFG {
 14 [label="14: Exit shortcircuit_and \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start shortcircuit_and\nFormals:  x:int *\nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$3:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$3); [line 21]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 21]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 21]\n " color=yellow style=filled]
+13 [label="13: Start shortcircuit_and\nFormals:  x:int *\nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$3:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$3); [line 21]\n " color=yellow style=filled]
 	
 
 	 13 -> 18 ;

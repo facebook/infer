@@ -31,7 +31,7 @@ digraph iCFG {
 66 [label="66: Exit simple_init_null_deref \n  " color=yellow style=filled]
 	
 
-65 [label="65: Start simple_init_null_deref\nFormals: \nLocals:  p:int * \n   DECLARE_LOCALS(&return,&p); [line 56]\n  NULLIFY(&p,false); [line 56]\n " color=yellow style=filled]
+65 [label="65: Start simple_init_null_deref\nFormals: \nLocals:  p:int * \n   DECLARE_LOCALS(&return,&p); [line 56]\n " color=yellow style=filled]
 	
 
 	 65 -> 71 ;
@@ -67,7 +67,7 @@ digraph iCFG {
 57 [label="57: Exit reference_init_div0 \n  " color=yellow style=filled]
 	
 
-56 [label="56: Start reference_init_div0\nFormals: \nLocals:  a:int & r:int  \n   DECLARE_LOCALS(&return,&a,&r); [line 48]\n  NULLIFY(&a,false); [line 48]\n " color=yellow style=filled]
+56 [label="56: Start reference_init_div0\nFormals: \nLocals:  a:int & r:int  \n   DECLARE_LOCALS(&return,&a,&r); [line 48]\n " color=yellow style=filled]
 	
 
 	 56 -> 64 ;
@@ -119,7 +119,7 @@ digraph iCFG {
 44 [label="44: Exit conditional_init_div0 \n  " color=yellow style=filled]
 	
 
-43 [label="43: Start conditional_init_div0\nFormals: \nLocals:  a:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&a,&SIL_temp_conditional___n$1); [line 42]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 42]\n  NULLIFY(&a,false); [line 42]\n " color=yellow style=filled]
+43 [label="43: Start conditional_init_div0\nFormals: \nLocals:  a:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&a,&SIL_temp_conditional___n$1); [line 42]\n " color=yellow style=filled]
 	
 
 	 43 -> 50 ;
@@ -152,7 +152,7 @@ digraph iCFG {
 36 [label="36: Exit function_call_init_div0 \n  " color=yellow style=filled]
 	
 
-35 [label="35: Start function_call_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 36]\n  NULLIFY(&a,false); [line 36]\n " color=yellow style=filled]
+35 [label="35: Start function_call_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 36]\n " color=yellow style=filled]
 	
 
 	 35 -> 41 ;
@@ -220,7 +220,7 @@ digraph iCFG {
 19 [label="19: Exit simple_inif_elseif_div0 \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start simple_inif_elseif_div0\nFormals: \nLocals:  a:int  b:int  \n   DECLARE_LOCALS(&return,&a,&b); [line 24]\n  NULLIFY(&a,false); [line 24]\n  NULLIFY(&b,false); [line 24]\n " color=yellow style=filled]
+18 [label="18: Start simple_inif_elseif_div0\nFormals: \nLocals:  a:int  b:int  \n   DECLARE_LOCALS(&return,&a,&b); [line 24]\n " color=yellow style=filled]
 	
 
 	 18 -> 24 ;
@@ -256,7 +256,7 @@ digraph iCFG {
 10 [label="10: Exit simple_init_div0 \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start simple_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 16]\n  NULLIFY(&a,false); [line 16]\n " color=yellow style=filled]
+9 [label="9: Start simple_init_div0\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 16]\n " color=yellow style=filled]
 	
 
 	 9 -> 15 ;
@@ -288,7 +288,7 @@ digraph iCFG {
 2 [label="2: Exit simple_init_div1 \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start simple_init_div1\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 10]\n  NULLIFY(&a,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start simple_init_div1\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 7 ;

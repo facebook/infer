@@ -51,7 +51,7 @@ digraph iCFG {
 5 [label="5: Exit main \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start main\nFormals: \nLocals:  p:struct Point  \n   DECLARE_LOCALS(&return,&p); [line 17]\n  NULLIFY(&p,false); [line 17]\n " color=yellow style=filled]
+4 [label="4: Start main\nFormals: \nLocals:  p:struct Point  \n   DECLARE_LOCALS(&return,&p); [line 17]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;

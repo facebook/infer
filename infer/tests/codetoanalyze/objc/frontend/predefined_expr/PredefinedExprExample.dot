@@ -6,7 +6,7 @@ digraph iCFG {
 8 [label="8: Exit A_testFunct \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start A_testFunct\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n  NULLIFY(&self,false); [line 26]\n " color=yellow style=filled]
+7 [label="7: Start A_testFunct\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
 	 7 -> 9 ;
@@ -17,7 +17,7 @@ digraph iCFG {
 5 [label="5: Exit A_testFunction \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start A_testFunction\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n  NULLIFY(&self,false); [line 22]\n " color=yellow style=filled]
+4 [label="4: Start A_testFunction\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
@@ -28,7 +28,7 @@ digraph iCFG {
 2 [label="2: Exit A_testPrettyFunction \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_testPrettyFunction\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+1 [label="1: Start A_testPrettyFunction\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

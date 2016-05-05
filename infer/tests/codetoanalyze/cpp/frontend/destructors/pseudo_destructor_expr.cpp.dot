@@ -25,7 +25,7 @@ digraph iCFG {
 7 [label="7: Exit destroy<int *> \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start destroy<int *>\nFormals:  ptr:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&ptr,false); [line 18]\n " color=yellow style=filled]
+6 [label="6: Start destroy<int *>\nFormals:  ptr:int **\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 6 -> 9 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 2 [label="2: Exit f \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start f\nFormals:  p:int *\nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 11]\n  NULLIFY(&x,false); [line 11]\n " color=yellow style=filled]
+1 [label="1: Start f\nFormals:  p:int *\nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 11]\n " color=yellow style=filled]
 	
 
 	 1 -> 5 ;

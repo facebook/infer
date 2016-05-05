@@ -136,7 +136,7 @@ digraph iCFG {
 13 [label="13: Exit X3_X3 \n  " color=yellow style=filled]
 	
 
-12 [label="12: Start X3_X3\nFormals:  this:class X3 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&this,false); [line 18]\n " color=yellow style=filled]
+12 [label="12: Start X3_X3\nFormals:  this:class X3 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 12 -> 13 ;
@@ -147,7 +147,7 @@ digraph iCFG {
 10 [label="10: Exit X3_get \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start X3_get\nFormals:  this:class X3 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n  NULLIFY(&this,false); [line 19]\n " color=yellow style=filled]
+9 [label="9: Start X3_get\nFormals:  this:class X3 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
 	 9 -> 11 ;
@@ -158,14 +158,14 @@ digraph iCFG {
 7 [label="7: Exit X2_getVal \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start X2_getVal\nFormals:  this:class X2 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n  NULLIFY(&this,false); [line 15]\n " color=yellow style=filled]
+6 [label="6: Start X2_getVal\nFormals:  this:class X2 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 6 -> 8 ;
 5 [label="5: Exit X1_X1 \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start X1_X1\nFormals:  this:class X1 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+4 [label="4: Start X1_X1\nFormals:  this:class X1 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 4 -> 5 ;
@@ -176,7 +176,7 @@ digraph iCFG {
 2 [label="2: Exit X1_getVal \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start X1_getVal\nFormals:  this:class X1 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n  NULLIFY(&this,false); [line 11]\n " color=yellow style=filled]
+1 [label="1: Start X1_getVal\nFormals:  this:class X1 *\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

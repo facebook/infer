@@ -10,7 +10,7 @@ digraph iCFG {
 9 [label="9: Exit access_ptr \n  " color=yellow style=filled]
 	
 
-8 [label="8: Start access_ptr\nFormals:  x:class X *\nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 20]\n  NULLIFY(&c,false); [line 20]\n  NULLIFY(&f,false); [line 20]\n " color=yellow style=filled]
+8 [label="8: Start access_ptr\nFormals:  x:class X *\nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 20]\n " color=yellow style=filled]
 	
 
 	 8 -> 11 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 5 [label="5: Exit access_ref \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start access_ref\nFormals:  x:class X &\nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 15]\n  NULLIFY(&c,false); [line 15]\n  NULLIFY(&f,false); [line 15]\n " color=yellow style=filled]
+4 [label="4: Start access_ref\nFormals:  x:class X &\nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 15]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;

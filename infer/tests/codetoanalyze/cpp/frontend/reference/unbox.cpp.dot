@@ -22,7 +22,7 @@ digraph iCFG {
 18 [label="18: Exit unbox_ptr \n  " color=yellow style=filled]
 	
 
-17 [label="17: Start unbox_ptr\nFormals: \nLocals:  p:int * a:int  \n   DECLARE_LOCALS(&return,&p,&a); [line 27]\n  NULLIFY(&p,false); [line 27]\n " color=yellow style=filled]
+17 [label="17: Start unbox_ptr\nFormals: \nLocals:  p:int * a:int  \n   DECLARE_LOCALS(&return,&p,&a); [line 27]\n " color=yellow style=filled]
 	
 
 	 17 -> 23 ;
@@ -49,7 +49,7 @@ digraph iCFG {
 11 [label="11: Exit unbox_ref \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start unbox_ref\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 17]\n  NULLIFY(&r,false); [line 17]\n " color=yellow style=filled]
+10 [label="10: Start unbox_ref\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 17]\n " color=yellow style=filled]
 	
 
 	 10 -> 16 ;

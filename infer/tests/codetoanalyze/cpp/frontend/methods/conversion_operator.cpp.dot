@@ -35,7 +35,7 @@ digraph iCFG {
 53 [label="53: Exit branch_div1 \n  " color=yellow style=filled]
 	
 
-52 [label="52: Start branch_div1\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 61]\n  NULLIFY(&v,false); [line 61]\n " color=yellow style=filled]
+52 [label="52: Start branch_div1\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 61]\n " color=yellow style=filled]
 	
 
 	 52 -> 61 ;
@@ -75,7 +75,7 @@ digraph iCFG {
 43 [label="43: Exit branch_no_div \n  " color=yellow style=filled]
 	
 
-42 [label="42: Start branch_no_div\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 52]\n  NULLIFY(&v,false); [line 52]\n " color=yellow style=filled]
+42 [label="42: Start branch_no_div\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 52]\n " color=yellow style=filled]
 	
 
 	 42 -> 51 ;
@@ -123,7 +123,7 @@ digraph iCFG {
 31 [label="31: Exit y_branch_div0 \n  " color=yellow style=filled]
 	
 
-30 [label="30: Start y_branch_div0\nFormals: \nLocals:  __temp_construct_n$0:class X  SIL_materialize_temp__n$1:class X  __temp_construct_n$5:class X  SIL_materialize_temp__n$6:class X  v:int  __temp_construct_n$11:class X  SIL_materialize_temp__n$12:class X  y:class Y  \n   DECLARE_LOCALS(&return,&__temp_construct_n$0,&SIL_materialize_temp__n$1,&__temp_construct_n$5,&SIL_materialize_temp__n$6,&v,&__temp_construct_n$11,&SIL_materialize_temp__n$12,&y); [line 41]\n  NULLIFY(&v,false); [line 41]\n " color=yellow style=filled]
+30 [label="30: Start y_branch_div0\nFormals: \nLocals:  __temp_construct_n$0:class X  SIL_materialize_temp__n$1:class X  __temp_construct_n$5:class X  SIL_materialize_temp__n$6:class X  v:int  __temp_construct_n$11:class X  SIL_materialize_temp__n$12:class X  y:class Y  \n   DECLARE_LOCALS(&return,&__temp_construct_n$0,&SIL_materialize_temp__n$1,&__temp_construct_n$5,&SIL_materialize_temp__n$6,&v,&__temp_construct_n$11,&SIL_materialize_temp__n$12,&y); [line 41]\n " color=yellow style=filled]
 	
 
 	 30 -> 41 ;
@@ -163,14 +163,14 @@ digraph iCFG {
 21 [label="21: Exit branch_div0 \n  " color=yellow style=filled]
 	
 
-20 [label="20: Start branch_div0\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 32]\n  NULLIFY(&v,false); [line 32]\n " color=yellow style=filled]
+20 [label="20: Start branch_div0\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 32]\n " color=yellow style=filled]
 	
 
 	 20 -> 29 ;
 19 [label="19: Exit Y_Y \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start Y_Y\nFormals:  this:class Y *\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n  NULLIFY(&this,false); [line 25]\n " color=yellow style=filled]
+18 [label="18: Start Y_Y\nFormals:  this:class Y *\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
 	 18 -> 19 ;

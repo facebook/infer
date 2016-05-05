@@ -74,7 +74,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 10]\n  NULLIFY(&x,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 19 ;

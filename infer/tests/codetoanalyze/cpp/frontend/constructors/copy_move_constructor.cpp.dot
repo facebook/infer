@@ -26,7 +26,7 @@ digraph iCFG {
 59 [label="59: Exit copyY_moveY_div1 \n  " color=yellow style=filled]
 	
 
-58 [label="58: Start copyY_moveY_div1\nFormals: \nLocals:  d2:int  __temp_return_n$3:class Y  d1:int  y2:class Y  y1:class Y  \n   DECLARE_LOCALS(&return,&d2,&__temp_return_n$3,&d1,&y2,&y1); [line 72]\n  NULLIFY(&d1,false); [line 72]\n  NULLIFY(&d2,false); [line 72]\n " color=yellow style=filled]
+58 [label="58: Start copyY_moveY_div1\nFormals: \nLocals:  d2:int  __temp_return_n$3:class Y  d1:int  y2:class Y  y1:class Y  \n   DECLARE_LOCALS(&return,&d2,&__temp_return_n$3,&d1,&y2,&y1); [line 72]\n " color=yellow style=filled]
 	
 
 	 58 -> 65 ;
@@ -57,7 +57,7 @@ digraph iCFG {
 51 [label="51: Exit copyX_moveX_div1 \n  " color=yellow style=filled]
 	
 
-50 [label="50: Start copyX_moveX_div1\nFormals: \nLocals:  d2:int  __temp_return_n$3:class X  d1:int  x2:class X  x1:class X  \n   DECLARE_LOCALS(&return,&d2,&__temp_return_n$3,&d1,&x2,&x1); [line 63]\n  NULLIFY(&d1,false); [line 63]\n  NULLIFY(&d2,false); [line 63]\n " color=yellow style=filled]
+50 [label="50: Start copyX_moveX_div1\nFormals: \nLocals:  d2:int  __temp_return_n$3:class X  d1:int  x2:class X  x1:class X  \n   DECLARE_LOCALS(&return,&d2,&__temp_return_n$3,&d1,&x2,&x1); [line 63]\n " color=yellow style=filled]
 	
 
 	 50 -> 57 ;
@@ -211,7 +211,7 @@ digraph iCFG {
 10 [label="10: Exit Y_Y \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start Y_Y\nFormals:  this:class Y *\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n  NULLIFY(&this,false); [line 21]\n " color=yellow style=filled]
+9 [label="9: Start Y_Y\nFormals:  this:class Y *\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
 	
 
 	 9 -> 10 ;
@@ -240,7 +240,7 @@ digraph iCFG {
 2 [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n  NULLIFY(&this,false); [line 13]\n " color=yellow style=filled]
+1 [label="1: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 1 -> 2 ;

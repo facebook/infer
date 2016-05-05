@@ -43,7 +43,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  item:class NSString * germanCars:class NSArray * s:class NSString * \n   DECLARE_LOCALS(&return,&item,&germanCars,&s); [line 12]\n  NULLIFY(&germanCars,false); [line 12]\n  NULLIFY(&item,false); [line 12]\n  NULLIFY(&s,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  item:class NSString * germanCars:class NSArray * s:class NSString * \n   DECLARE_LOCALS(&return,&item,&germanCars,&s); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 12 ;

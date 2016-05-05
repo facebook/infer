@@ -14,7 +14,7 @@ digraph iCFG {
 12 [label="12: Exit init_from_ptr \n  " color=yellow style=filled]
 	
 
-11 [label="11: Start init_from_ptr\nFormals:  par:int *\nLocals:  p:int * d:int & v:int  \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 22]\n  NULLIFY(&d,false); [line 22]\n  NULLIFY(&p,false); [line 22]\n  NULLIFY(&v,false); [line 22]\n " color=yellow style=filled]
+11 [label="11: Start init_from_ptr\nFormals:  par:int *\nLocals:  p:int * d:int & v:int  \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 22]\n " color=yellow style=filled]
 	
 
 	 11 -> 15 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 7 [label="7: Exit init_from_val \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start init_from_val\nFormals:  par:int \nLocals:  p:int * d:int & v:int  \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 16]\n  NULLIFY(&d,false); [line 16]\n  NULLIFY(&p,false); [line 16]\n  NULLIFY(&v,false); [line 16]\n " color=yellow style=filled]
+6 [label="6: Start init_from_val\nFormals:  par:int \nLocals:  p:int * d:int & v:int  \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 16]\n " color=yellow style=filled]
 	
 
 	 6 -> 10 ;
@@ -52,7 +52,7 @@ digraph iCFG {
 2 [label="2: Exit init_from_ref \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start init_from_ref\nFormals:  par:int &\nLocals:  p:int * d:int & v:int  \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 10]\n  NULLIFY(&d,false); [line 10]\n  NULLIFY(&p,false); [line 10]\n  NULLIFY(&v,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start init_from_ref\nFormals:  par:int &\nLocals:  p:int * d:int & v:int  \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 5 ;

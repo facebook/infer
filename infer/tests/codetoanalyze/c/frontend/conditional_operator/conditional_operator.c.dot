@@ -31,7 +31,7 @@ digraph iCFG {
 59 [label="59: Exit test7 \n  " color=yellow style=filled]
 	
 
-58 [label="58: Start test7\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$2:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$2); [line 35]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 35]\n  NULLIFY(&b,false); [line 35]\n " color=yellow style=filled]
+58 [label="58: Start test7\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$2:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$2); [line 35]\n " color=yellow style=filled]
 	
 
 	 58 -> 65 ;
@@ -66,7 +66,7 @@ digraph iCFG {
 50 [label="50: Exit test6 \n  " color=yellow style=filled]
 	
 
-49 [label="49: Start test6\nFormals:  p:int *\nLocals:  z:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$1); [line 30]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 30]\n  NULLIFY(&z,false); [line 30]\n " color=yellow style=filled]
+49 [label="49: Start test6\nFormals:  p:int *\nLocals:  z:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&z,&SIL_temp_conditional___n$1); [line 30]\n " color=yellow style=filled]
 	
 
 	 49 -> 53 ;
@@ -103,7 +103,7 @@ digraph iCFG {
 41 [label="41: Exit test5 \n  " color=yellow style=filled]
 	
 
-40 [label="40: Start test5\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$1); [line 28]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 28]\n " color=yellow style=filled]
+40 [label="40: Start test5\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$1); [line 28]\n " color=yellow style=filled]
 	
 
 	 40 -> 47 ;
@@ -139,7 +139,7 @@ digraph iCFG {
 32 [label="32: Exit test4 \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start test4\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$1); [line 26]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 26]\n " color=yellow style=filled]
+31 [label="31: Start test4\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$1); [line 26]\n " color=yellow style=filled]
 	
 
 	 31 -> 38 ;
@@ -179,7 +179,7 @@ digraph iCFG {
 22 [label="22: Exit test3 \n  " color=yellow style=filled]
 	
 
-21 [label="21: Start test3\nFormals:  b:int \nLocals:  x:int  SIL_temp_conditional___n$2:int  \n   DECLARE_LOCALS(&return,&x,&SIL_temp_conditional___n$2); [line 21]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 21]\n  NULLIFY(&x,false); [line 21]\n " color=yellow style=filled]
+21 [label="21: Start test3\nFormals:  b:int \nLocals:  x:int  SIL_temp_conditional___n$2:int  \n   DECLARE_LOCALS(&return,&x,&SIL_temp_conditional___n$2); [line 21]\n " color=yellow style=filled]
 	
 
 	 21 -> 29 ;
@@ -214,7 +214,7 @@ digraph iCFG {
 13 [label="13: Exit test1 \n  " color=yellow style=filled]
 	
 
-12 [label="12: Start test1\nFormals:  b:int \nLocals:  x:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&x,&SIL_temp_conditional___n$1); [line 16]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 16]\n  NULLIFY(&x,false); [line 16]\n " color=yellow style=filled]
+12 [label="12: Start test1\nFormals:  b:int \nLocals:  x:int  SIL_temp_conditional___n$1:int  \n   DECLARE_LOCALS(&return,&x,&SIL_temp_conditional___n$1); [line 16]\n " color=yellow style=filled]
 	
 
 	 12 -> 16 ;
@@ -246,7 +246,7 @@ digraph iCFG {
 5 [label="5: Exit test \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start test\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0); [line 14]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 14]\n " color=yellow style=filled]
+4 [label="4: Start test\nFormals:  b:int \nLocals:  SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0); [line 14]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;

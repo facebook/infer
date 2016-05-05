@@ -42,7 +42,7 @@ digraph iCFG {
 42 [label="42: Exit A_loggerName \n  " color=yellow style=filled]
 	
 
-41 [label="41: Start A_loggerName\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 90]\n  NULLIFY(&self,false); [line 90]\n " color=yellow style=filled]
+41 [label="41: Start A_loggerName\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 90]\n " color=yellow style=filled]
 	
 
 	 41 -> 43 ;
@@ -75,7 +75,7 @@ digraph iCFG {
 33 [label="33: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-32 [label="32: Start A_use_class_in_other_ways:\nFormals:  self:class A * object:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 78]\n  NULLIFY(&self,false); [line 78]\n " color=yellow style=filled]
+32 [label="32: Start A_use_class_in_other_ways:\nFormals:  self:class A * object:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 78]\n " color=yellow style=filled]
 	
 
 	 32 -> 34 ;
@@ -90,7 +90,7 @@ digraph iCFG {
 29 [label="29: Exit A_t \n  " color=yellow style=filled]
 	
 
-28 [label="28: Start A_t\nFormals:  self:class A *\nLocals:  b:class B * \n   DECLARE_LOCALS(&return,&b); [line 73]\n  NULLIFY(&b,false); [line 73]\n  NULLIFY(&self,false); [line 73]\n " color=yellow style=filled]
+28 [label="28: Start A_t\nFormals:  self:class A *\nLocals:  b:class B * \n   DECLARE_LOCALS(&return,&b); [line 73]\n " color=yellow style=filled]
 	
 
 	 28 -> 31 ;
@@ -101,7 +101,7 @@ digraph iCFG {
 26 [label="26: Exit A_call_class_instance_with_class_name \n  " color=yellow style=filled]
 	
 
-25 [label="25: Start A_call_class_instance_with_class_name\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 69]\n  NULLIFY(&self,false); [line 69]\n " color=yellow style=filled]
+25 [label="25: Start A_call_class_instance_with_class_name\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 69]\n " color=yellow style=filled]
 	
 
 	 25 -> 27 ;
@@ -112,7 +112,7 @@ digraph iCFG {
 23 [label="23: Exit A_call_class_instance \n  " color=yellow style=filled]
 	
 
-22 [label="22: Start A_call_class_instance\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 65]\n  NULLIFY(&self,false); [line 65]\n " color=yellow style=filled]
+22 [label="22: Start A_call_class_instance\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 65]\n " color=yellow style=filled]
 	
 
 	 22 -> 24 ;
@@ -123,7 +123,7 @@ digraph iCFG {
 20 [label="20: Exit A_call_alloc_instance \n  " color=yellow style=filled]
 	
 
-19 [label="19: Start A_call_alloc_instance\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 61]\n  NULLIFY(&self,false); [line 61]\n " color=yellow style=filled]
+19 [label="19: Start A_call_alloc_instance\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 61]\n " color=yellow style=filled]
 	
 
 	 19 -> 21 ;
@@ -170,7 +170,7 @@ digraph iCFG {
 7 [label="7: Exit A_test \n  " color=yellow style=filled]
 	
 
-6 [label="6: Start A_test\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n  NULLIFY(&self,false); [line 43]\n " color=yellow style=filled]
+6 [label="6: Start A_test\nFormals:  self:class A *\nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
 	
 
 	 6 -> 7 ;
@@ -181,7 +181,7 @@ digraph iCFG {
 4 [label="4: Exit B_isC: \n  " color=yellow style=filled]
 	
 
-3 [label="3: Start B_isC:\nFormals:  self:class B * aClass:struct objc_class *\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n  NULLIFY(&aClass,false); [line 23]\n  NULLIFY(&self,false); [line 23]\n " color=yellow style=filled]
+3 [label="3: Start B_isC:\nFormals:  self:class B * aClass:struct objc_class *\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
 	 3 -> 5 ;

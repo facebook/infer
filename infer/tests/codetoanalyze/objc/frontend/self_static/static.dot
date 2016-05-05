@@ -17,7 +17,7 @@ digraph iCFG {
 11 [label="11: Exit MyClass_getX \n  " color=yellow style=filled]
 	
 
-10 [label="10: Start MyClass_getX\nFormals:  self:class MyClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n  NULLIFY(&self,false); [line 32]\n " color=yellow style=filled]
+10 [label="10: Start MyClass_getX\nFormals:  self:class MyClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
 	 10 -> 12 ;
@@ -39,7 +39,7 @@ digraph iCFG {
 5 [label="5: Exit MyClass_anInstanceMethod \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start MyClass_anInstanceMethod\nFormals:  self:class MyClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n  NULLIFY(&self,false); [line 24]\n " color=yellow style=filled]
+4 [label="4: Start MyClass_anInstanceMethod\nFormals:  self:class MyClass *\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
@@ -50,7 +50,7 @@ digraph iCFG {
 2 [label="2: Exit MyClass_aClassMethod \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MyClass_aClassMethod\nFormals: \nLocals:  myClass:class MyClass * \n   DECLARE_LOCALS(&return,&myClass); [line 20]\n  NULLIFY(&myClass,false); [line 20]\n " color=yellow style=filled]
+1 [label="1: Start MyClass_aClassMethod\nFormals: \nLocals:  myClass:class MyClass * \n   DECLARE_LOCALS(&return,&myClass); [line 20]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

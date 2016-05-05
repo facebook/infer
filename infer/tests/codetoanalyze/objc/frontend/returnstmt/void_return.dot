@@ -56,7 +56,7 @@ digraph iCFG {
 2 [label="2: Exit MyClass_aMethod \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MyClass_aMethod\nFormals:  self:class MyClass *\nLocals:  j:int  i:int  \n   DECLARE_LOCALS(&return,&j,&i); [line 18]\n  NULLIFY(&i,false); [line 18]\n  NULLIFY(&j,false); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+1 [label="1: Start MyClass_aMethod\nFormals:  self:class MyClass *\nLocals:  j:int  i:int  \n   DECLARE_LOCALS(&return,&j,&i); [line 18]\n " color=yellow style=filled]
 	
 
 	 1 -> 15 ;

@@ -10,7 +10,7 @@ digraph iCFG {
 95 [label="95: Exit matrix_of_person \n  " color=yellow style=filled]
 	
 
-94 [label="94: Start matrix_of_person\nFormals: \nLocals:  tarray:class Person ** \n   DECLARE_LOCALS(&return,&tarray); [line 96]\n  NULLIFY(&tarray,false); [line 96]\n " color=yellow style=filled]
+94 [label="94: Start matrix_of_person\nFormals: \nLocals:  tarray:class Person ** \n   DECLARE_LOCALS(&return,&tarray); [line 96]\n " color=yellow style=filled]
 	
 
 	 94 -> 97 ;
@@ -21,7 +21,7 @@ digraph iCFG {
 92 [label="92: Exit array_of_person_with_constant_size \n  " color=yellow style=filled]
 	
 
-91 [label="91: Start array_of_person_with_constant_size\nFormals: \nLocals:  tarray:class Person * \n   DECLARE_LOCALS(&return,&tarray); [line 93]\n  NULLIFY(&tarray,false); [line 93]\n " color=yellow style=filled]
+91 [label="91: Start array_of_person_with_constant_size\nFormals: \nLocals:  tarray:class Person * \n   DECLARE_LOCALS(&return,&tarray); [line 93]\n " color=yellow style=filled]
 	
 
 	 91 -> 93 ;
@@ -57,7 +57,7 @@ digraph iCFG {
 83 [label="83: Exit array_of_class_with_not_constant_size \n  " color=yellow style=filled]
 	
 
-82 [label="82: Start array_of_class_with_not_constant_size\nFormals: \nLocals:  tarray:class Person * SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&tarray,&SIL_temp_conditional___n$0); [line 88]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 88]\n  NULLIFY(&tarray,false); [line 88]\n " color=yellow style=filled]
+82 [label="82: Start array_of_class_with_not_constant_size\nFormals: \nLocals:  tarray:class Person * SIL_temp_conditional___n$0:int  \n   DECLARE_LOCALS(&return,&tarray,&SIL_temp_conditional___n$0); [line 88]\n " color=yellow style=filled]
 	
 
 	 82 -> 85 ;
@@ -72,7 +72,7 @@ digraph iCFG {
 79 [label="79: Exit int_array_init \n  " color=yellow style=filled]
 	
 
-78 [label="78: Start int_array_init\nFormals: \nLocals:  arr:int * \n   DECLARE_LOCALS(&return,&arr); [line 82]\n  NULLIFY(&arr,false); [line 82]\n " color=yellow style=filled]
+78 [label="78: Start int_array_init\nFormals: \nLocals:  arr:int * \n   DECLARE_LOCALS(&return,&arr); [line 82]\n " color=yellow style=filled]
 	
 
 	 78 -> 81 ;
@@ -120,7 +120,7 @@ digraph iCFG {
 67 [label="67: Exit int_array \n  " color=yellow style=filled]
 	
 
-66 [label="66: Start int_array\nFormals: \nLocals:  x2:int * SIL_temp_conditional___n$6:int  \n   DECLARE_LOCALS(&return,&x2,&SIL_temp_conditional___n$6); [line 75]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 75]\n  NULLIFY(&x2,false); [line 75]\n " color=yellow style=filled]
+66 [label="66: Start int_array\nFormals: \nLocals:  x2:int * SIL_temp_conditional___n$6:int  \n   DECLARE_LOCALS(&return,&x2,&SIL_temp_conditional___n$6); [line 75]\n " color=yellow style=filled]
 	
 
 	 66 -> 72 ;
@@ -164,7 +164,7 @@ digraph iCFG {
 56 [label="56: Exit constructor_nodes \n  " color=yellow style=filled]
 	
 
-55 [label="55: Start constructor_nodes\nFormals: \nLocals:  p:class Person * SIL_temp_conditional___n$3:int  z:int  \n   DECLARE_LOCALS(&return,&p,&SIL_temp_conditional___n$3,&z); [line 69]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 69]\n  NULLIFY(&p,false); [line 69]\n  NULLIFY(&z,false); [line 69]\n " color=yellow style=filled]
+55 [label="55: Start constructor_nodes\nFormals: \nLocals:  p:class Person * SIL_temp_conditional___n$3:int  z:int  \n   DECLARE_LOCALS(&return,&p,&SIL_temp_conditional___n$3,&z); [line 69]\n " color=yellow style=filled]
 	
 
 	 55 -> 65 ;
@@ -212,7 +212,7 @@ digraph iCFG {
 44 [label="44: Exit int_init_nodes \n  " color=yellow style=filled]
 	
 
-43 [label="43: Start int_init_nodes\nFormals: \nLocals:  x:int * SIL_temp_conditional___n$3:int  y:int * z:int  \n   DECLARE_LOCALS(&return,&x,&SIL_temp_conditional___n$3,&y,&z); [line 62]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 62]\n  NULLIFY(&x,false); [line 62]\n  NULLIFY(&y,false); [line 62]\n  NULLIFY(&z,false); [line 62]\n " color=yellow style=filled]
+43 [label="43: Start int_init_nodes\nFormals: \nLocals:  x:int * SIL_temp_conditional___n$3:int  y:int * z:int  \n   DECLARE_LOCALS(&return,&x,&SIL_temp_conditional___n$3,&y,&z); [line 62]\n " color=yellow style=filled]
 	
 
 	 43 -> 54 ;
@@ -227,7 +227,7 @@ digraph iCFG {
 40 [label="40: Exit int_init_empty_list_new \n  " color=yellow style=filled]
 	
 
-39 [label="39: Start int_init_empty_list_new\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 57]\n  NULLIFY(&x1,false); [line 57]\n " color=yellow style=filled]
+39 [label="39: Start int_init_empty_list_new\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 57]\n " color=yellow style=filled]
 	
 
 	 39 -> 42 ;
@@ -242,7 +242,7 @@ digraph iCFG {
 36 [label="36: Exit int_init_empty_list \n  " color=yellow style=filled]
 	
 
-35 [label="35: Start int_init_empty_list\nFormals: \nLocals:  x1:int  \n   DECLARE_LOCALS(&return,&x1); [line 52]\n  NULLIFY(&x1,false); [line 52]\n " color=yellow style=filled]
+35 [label="35: Start int_init_empty_list\nFormals: \nLocals:  x1:int  \n   DECLARE_LOCALS(&return,&x1); [line 52]\n " color=yellow style=filled]
 	
 
 	 35 -> 38 ;
@@ -257,7 +257,7 @@ digraph iCFG {
 32 [label="32: Exit int_init_empty \n  " color=yellow style=filled]
 	
 
-31 [label="31: Start int_init_empty\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 47]\n  NULLIFY(&x1,false); [line 47]\n " color=yellow style=filled]
+31 [label="31: Start int_init_empty\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 47]\n " color=yellow style=filled]
 	
 
 	 31 -> 34 ;
@@ -272,7 +272,7 @@ digraph iCFG {
 28 [label="28: Exit float_init_number \n  " color=yellow style=filled]
 	
 
-27 [label="27: Start float_init_number\nFormals: \nLocals:  x1:float * \n   DECLARE_LOCALS(&return,&x1); [line 42]\n  NULLIFY(&x1,false); [line 42]\n " color=yellow style=filled]
+27 [label="27: Start float_init_number\nFormals: \nLocals:  x1:float * \n   DECLARE_LOCALS(&return,&x1); [line 42]\n " color=yellow style=filled]
 	
 
 	 27 -> 30 ;
@@ -287,7 +287,7 @@ digraph iCFG {
 24 [label="24: Exit int_init_number \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start int_init_number\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 37]\n  NULLIFY(&x1,false); [line 37]\n " color=yellow style=filled]
+23 [label="23: Start int_init_number\nFormals: \nLocals:  x1:int * \n   DECLARE_LOCALS(&return,&x1); [line 37]\n " color=yellow style=filled]
 	
 
 	 23 -> 26 ;
@@ -302,7 +302,7 @@ digraph iCFG {
 20 [label="20: Exit constructor_3_args_new_div0 \n  " color=yellow style=filled]
 	
 
-19 [label="19: Start constructor_3_args_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 32]\n  NULLIFY(&p,false); [line 32]\n " color=yellow style=filled]
+19 [label="19: Start constructor_3_args_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 32]\n " color=yellow style=filled]
 	
 
 	 19 -> 22 ;
@@ -317,7 +317,7 @@ digraph iCFG {
 16 [label="16: Exit constructor_1_arg_new_div0 \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start constructor_1_arg_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 27]\n  NULLIFY(&p,false); [line 27]\n " color=yellow style=filled]
+15 [label="15: Start constructor_1_arg_new_div0\nFormals: \nLocals:  p:class Person * \n   DECLARE_LOCALS(&return,&p); [line 27]\n " color=yellow style=filled]
 	
 
 	 15 -> 18 ;

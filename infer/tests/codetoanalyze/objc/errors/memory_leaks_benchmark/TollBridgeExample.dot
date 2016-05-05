@@ -10,7 +10,7 @@ digraph iCFG {
 21 [label="21: Exit bridgeDictionaryNoLeak \n  " color=yellow style=filled]
 	
 
-20 [label="20: Start bridgeDictionaryNoLeak\nFormals: \nLocals:  dict:struct __CFDictionary * bufferAttributes:class NSDictionary * \n   DECLARE_LOCALS(&return,&dict,&bufferAttributes); [line 44]\n  NULLIFY(&bufferAttributes,false); [line 44]\n  NULLIFY(&dict,false); [line 44]\n " color=yellow style=filled]
+20 [label="20: Start bridgeDictionaryNoLeak\nFormals: \nLocals:  dict:struct __CFDictionary * bufferAttributes:class NSDictionary * \n   DECLARE_LOCALS(&return,&dict,&bufferAttributes); [line 44]\n " color=yellow style=filled]
 	
 
 	 20 -> 23 ;
@@ -36,7 +36,7 @@ digraph iCFG {
 14 [label="14: Exit TollBridgeExample__readHTTPHeader \n  " color=yellow style=filled]
 	
 
-13 [label="13: Start TollBridgeExample__readHTTPHeader\nFormals:  self:class TollBridgeExample *\nLocals:  ref:struct __CFDictionary * \n   DECLARE_LOCALS(&return,&ref); [line 34]\n  NULLIFY(&ref,false); [line 34]\n  NULLIFY(&self,false); [line 34]\n " color=yellow style=filled]
+13 [label="13: Start TollBridgeExample__readHTTPHeader\nFormals:  self:class TollBridgeExample *\nLocals:  ref:struct __CFDictionary * \n   DECLARE_LOCALS(&return,&ref); [line 34]\n " color=yellow style=filled]
 	
 
 	 13 -> 16 ;
@@ -51,7 +51,7 @@ digraph iCFG {
 10 [label="10: Exit TollBridgeExample_brideRetained \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start TollBridgeExample_brideRetained\nFormals:  self:class TollBridgeExample *\nLocals:  a:struct __CFLocale * observer:struct objc_object * \n   DECLARE_LOCALS(&return,&a,&observer); [line 29]\n  NULLIFY(&a,false); [line 29]\n  NULLIFY(&observer,false); [line 29]\n  NULLIFY(&self,false); [line 29]\n " color=yellow style=filled]
+9 [label="9: Start TollBridgeExample_brideRetained\nFormals:  self:class TollBridgeExample *\nLocals:  a:struct __CFLocale * observer:struct objc_object * \n   DECLARE_LOCALS(&return,&a,&observer); [line 29]\n " color=yellow style=filled]
 	
 
 	 9 -> 12 ;
@@ -66,7 +66,7 @@ digraph iCFG {
 6 [label="6: Exit TollBridgeExample_bridge \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start TollBridgeExample_bridge\nFormals:  self:class TollBridgeExample *\nLocals:  a:class NSLocale * nameRef:struct __CFLocale * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 24]\n  NULLIFY(&a,false); [line 24]\n  NULLIFY(&nameRef,false); [line 24]\n  NULLIFY(&self,false); [line 24]\n " color=yellow style=filled]
+5 [label="5: Start TollBridgeExample_bridge\nFormals:  self:class TollBridgeExample *\nLocals:  a:class NSLocale * nameRef:struct __CFLocale * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 24]\n " color=yellow style=filled]
 	
 
 	 5 -> 8 ;
@@ -81,7 +81,7 @@ digraph iCFG {
 2 [label="2: Exit TollBridgeExample_bridgeTransfer \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:class TollBridgeExample *\nLocals:  a:class NSLocale * nameRef:struct __CFLocale * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 19]\n  NULLIFY(&a,false); [line 19]\n  NULLIFY(&nameRef,false); [line 19]\n  NULLIFY(&self,false); [line 19]\n " color=yellow style=filled]
+1 [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:class TollBridgeExample *\nLocals:  a:class NSLocale * nameRef:struct __CFLocale * \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 19]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

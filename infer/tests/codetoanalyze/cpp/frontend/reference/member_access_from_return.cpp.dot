@@ -10,7 +10,7 @@ digraph iCFG {
 17 [label="17: Exit test_ptr \n  " color=yellow style=filled]
 	
 
-16 [label="16: Start test_ptr\nFormals: \nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 24]\n  NULLIFY(&c,false); [line 24]\n  NULLIFY(&f,false); [line 24]\n " color=yellow style=filled]
+16 [label="16: Start test_ptr\nFormals: \nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 24]\n " color=yellow style=filled]
 	
 
 	 16 -> 19 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 13 [label="13: Exit test_ref \n  " color=yellow style=filled]
 	
 
-12 [label="12: Start test_ref\nFormals: \nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 19]\n  NULLIFY(&c,false); [line 19]\n  NULLIFY(&f,false); [line 19]\n " color=yellow style=filled]
+12 [label="12: Start test_ref\nFormals: \nLocals:  c:int  f:int  \n   DECLARE_LOCALS(&return,&c,&f); [line 19]\n " color=yellow style=filled]
 	
 
 	 12 -> 15 ;
@@ -54,7 +54,7 @@ digraph iCFG {
 5 [label="5: Exit X_X \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+4 [label="4: Start X_X\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 4 -> 5 ;

@@ -38,7 +38,7 @@ digraph iCFG {
 10 [label="10: Exit __objc_anonymous_block_My_manager_blockReleaseTODO______1 \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start __objc_anonymous_block_My_manager_blockReleaseTODO______1\nFormals:  newImage:struct CGImage * a:int \nLocals: \nCaptured:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return); [line 25]\n  NULLIFY(&a,false); [line 25]\n " color=yellow style=filled]
+9 [label="9: Start __objc_anonymous_block_My_manager_blockReleaseTODO______1\nFormals:  newImage:struct CGImage * a:int \nLocals: \nCaptured:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
 	 9 -> 13 ;
@@ -71,7 +71,7 @@ digraph iCFG {
 2 [label="2: Exit My_manager_blockReleaseTODO \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start My_manager_blockReleaseTODO\nFormals:  self:class My_manager *\nLocals:  newImage:struct CGImage * context:struct CGContext * z:int  b:_fn_ (*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 20]\n  NULLIFY(&b,false); [line 20]\n  NULLIFY(&context,false); [line 20]\n  NULLIFY(&newImage,false); [line 20]\n  NULLIFY(&self,false); [line 20]\n  NULLIFY(&z,false); [line 20]\n " color=yellow style=filled]
+1 [label="1: Start My_manager_blockReleaseTODO\nFormals:  self:class My_manager *\nLocals:  newImage:struct CGImage * context:struct CGContext * z:int  b:_fn_ (*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 20]\n " color=yellow style=filled]
 	
 
 	 1 -> 19 ;

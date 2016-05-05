@@ -18,7 +18,7 @@ digraph iCFG {
 2 [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start main\nFormals: \nLocals:  honda:class Car * \n   DECLARE_LOCALS(&return,&honda); [line 12]\n  NULLIFY(&honda,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start main\nFormals: \nLocals:  honda:class Car * \n   DECLARE_LOCALS(&return,&honda); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 6 ;

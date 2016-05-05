@@ -29,7 +29,7 @@ digraph iCFG {
 24 [label="24: Exit initialization_c_style \n  " color=yellow style=filled]
 	
 
-23 [label="23: Start initialization_c_style\nFormals: \nLocals:  z2:class Z  z:class Z [2] \n   DECLARE_LOCALS(&return,&z2,&z); [line 32]\n  NULLIFY(&z,false); [line 32]\n " color=yellow style=filled]
+23 [label="23: Start initialization_c_style\nFormals: \nLocals:  z2:class Z  z:class Z [2] \n   DECLARE_LOCALS(&return,&z2,&z); [line 32]\n " color=yellow style=filled]
 	
 
 	 23 -> 26 ;
@@ -51,7 +51,7 @@ digraph iCFG {
 18 [label="18: Exit Z_Z \n  " color=yellow style=filled]
 	
 
-17 [label="17: Start Z_Z\nFormals:  this:class Z *\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n  NULLIFY(&this,false); [line 27]\n " color=yellow style=filled]
+17 [label="17: Start Z_Z\nFormals:  this:class Z *\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
 	
 
 	 17 -> 18 ;
@@ -99,7 +99,7 @@ digraph iCFG {
 5 [label="5: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start Person_Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n  NULLIFY(&this,false); [line 13]\n " color=yellow style=filled]
+4 [label="4: Start Person_Person\nFormals:  this:class Person *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 4 -> 5 ;

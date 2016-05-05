@@ -10,7 +10,7 @@ digraph iCFG {
 10 [label="10: Exit main \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start main\nFormals:  argc:int  argv:char **\nLocals:  a:struct objc_object * \n   DECLARE_LOCALS(&return,&a); [line 40]\n  NULLIFY(&a,false); [line 40]\n  NULLIFY(&argc,false); [line 40]\n  NULLIFY(&argv,false); [line 40]\n " color=yellow style=filled]
+9 [label="9: Start main\nFormals:  argc:int  argv:char **\nLocals:  a:struct objc_object * \n   DECLARE_LOCALS(&return,&a); [line 40]\n " color=yellow style=filled]
 	
 
 	 9 -> 12 ;
@@ -40,7 +40,7 @@ digraph iCFG {
 2 [label="2: Exit B_init \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start B_init\nFormals:  self:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&self,false); [line 18]\n " color=yellow style=filled]
+1 [label="1: Start B_init\nFormals:  self:class B *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

@@ -38,7 +38,7 @@ digraph iCFG {
 16 [label="16: Exit call_static_methods \n  " color=yellow style=filled]
 	
 
-15 [label="15: Start call_static_methods\nFormals: \nLocals:  s2:class Sub * s1:class Base * b:class Base * \n   DECLARE_LOCALS(&return,&s2,&s1,&b); [line 21]\n  NULLIFY(&b,false); [line 21]\n  NULLIFY(&s1,false); [line 21]\n  NULLIFY(&s2,false); [line 21]\n " color=yellow style=filled]
+15 [label="15: Start call_static_methods\nFormals: \nLocals:  s2:class Sub * s1:class Base * b:class Base * \n   DECLARE_LOCALS(&return,&s2,&s1,&b); [line 21]\n " color=yellow style=filled]
 	
 
 	 15 -> 25 ;
@@ -60,14 +60,14 @@ digraph iCFG {
 10 [label="10: Exit Sub_fun_redefine \n  " color=yellow style=filled]
 	
 
-9 [label="9: Start Sub_fun_redefine\nFormals:  this:class Sub *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&this,false); [line 18]\n " color=yellow style=filled]
+9 [label="9: Start Sub_fun_redefine\nFormals:  this:class Sub *\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 9 -> 11 ;
 8 [label="8: Exit Base_Base \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start Base_Base\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n  NULLIFY(&this,false); [line 10]\n " color=yellow style=filled]
+7 [label="7: Start Base_Base\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 7 -> 8 ;
@@ -78,7 +78,7 @@ digraph iCFG {
 5 [label="5: Exit Base_fun_redefine \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start Base_fun_redefine\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n  NULLIFY(&this,false); [line 13]\n " color=yellow style=filled]
+4 [label="4: Start Base_fun_redefine\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
@@ -89,7 +89,7 @@ digraph iCFG {
 2 [label="2: Exit Base_fun \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Base_fun\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n  NULLIFY(&this,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start Base_fun\nFormals:  this:class Base *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

@@ -32,7 +32,7 @@ digraph iCFG {
 19 [label="19: Exit div0_method \n  " color=yellow style=filled]
 	
 
-18 [label="18: Start div0_method\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 34]\n  NULLIFY(&v,false); [line 34]\n " color=yellow style=filled]
+18 [label="18: Start div0_method\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 34]\n " color=yellow style=filled]
 	
 
 	 18 -> 21 ;
@@ -47,7 +47,7 @@ digraph iCFG {
 15 [label="15: Exit div0_function_op \n  " color=yellow style=filled]
 	
 
-14 [label="14: Start div0_function_op\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 28]\n  NULLIFY(&v,false); [line 28]\n " color=yellow style=filled]
+14 [label="14: Start div0_function_op\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 28]\n " color=yellow style=filled]
 	
 
 	 14 -> 17 ;
@@ -73,7 +73,7 @@ digraph iCFG {
 8 [label="8: Exit div0_method_op \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start div0_method_op\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 20]\n  NULLIFY(&v,false); [line 20]\n " color=yellow style=filled]
+7 [label="7: Start div0_method_op\nFormals:  x:class X &\nLocals:  v:int  \n   DECLARE_LOCALS(&return,&v); [line 20]\n " color=yellow style=filled]
 	
 
 	 7 -> 10 ;
@@ -84,7 +84,7 @@ digraph iCFG {
 5 [label="5: Exit operator* \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start operator*\nFormals:  x1:class X & v:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n  NULLIFY(&x1,false); [line 18]\n " color=yellow style=filled]
+4 [label="4: Start operator*\nFormals:  x1:class X & v:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 4 -> 6 ;
@@ -95,7 +95,7 @@ digraph iCFG {
 2 [label="2: Exit X_operator[] \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start X_operator[]\nFormals:  this:class X * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n  NULLIFY(&this,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start X_operator[]\nFormals:  this:class X * x:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

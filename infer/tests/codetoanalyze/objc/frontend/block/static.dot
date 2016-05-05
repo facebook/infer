@@ -6,7 +6,7 @@ digraph iCFG {
 30 [label="30: Exit main \n  " color=yellow style=filled]
 	
 
-29 [label="29: Start main\nFormals:  argc:int  argv:char **\nLocals:  \n   DECLARE_LOCALS(&return); [line 60]\n  NULLIFY(&argc,false); [line 60]\n  NULLIFY(&argv,false); [line 60]\n " color=yellow style=filled]
+29 [label="29: Start main\nFormals:  argc:int  argv:char **\nLocals:  \n   DECLARE_LOCALS(&return); [line 60]\n " color=yellow style=filled]
 	
 
 	 29 -> 31 ;
@@ -51,7 +51,7 @@ digraph iCFG {
 18 [label="18: Exit __objc_anonymous_block_A_test2______3 \n  " color=yellow style=filled]
 	
 
-17 [label="17: Start __objc_anonymous_block_A_test2______3\nFormals: \nLocals:  p:struct objc_object * \n   DECLARE_LOCALS(&return,&p); [line 39]\n  NULLIFY(&p,false); [line 39]\n " color=yellow style=filled]
+17 [label="17: Start __objc_anonymous_block_A_test2______3\nFormals: \nLocals:  p:struct objc_object * \n   DECLARE_LOCALS(&return,&p); [line 39]\n " color=yellow style=filled]
 	
 
 	 17 -> 19 ;

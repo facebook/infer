@@ -44,7 +44,7 @@ digraph iCFG {
 8 [label="8: Exit fun_ignore_param \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start fun_ignore_param\nFormals:  a:int  __param_1:int  __param_2:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n  NULLIFY(&__param_1,false); [line 16]\n  NULLIFY(&__param_2,false); [line 16]\n " color=yellow style=filled]
+7 [label="7: Start fun_ignore_param\nFormals:  a:int  __param_1:int  __param_2:int \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 7 -> 9 ;

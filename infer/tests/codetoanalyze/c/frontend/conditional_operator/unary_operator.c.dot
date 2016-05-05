@@ -76,7 +76,7 @@ digraph iCFG {
 2 [label="2: Exit dereference_ifthenelse \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start dereference_ifthenelse\nFormals:  p:int *\nLocals:  SIL_temp_conditional___n$0:int * y:int  SIL_temp_conditional___n$5:int * SIL_temp_conditional___n$10:int * x:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&y,&SIL_temp_conditional___n$5,&SIL_temp_conditional___n$10,&x); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$10,false); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$5,false); [line 10]\n  NULLIFY(&x,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start dereference_ifthenelse\nFormals:  p:int *\nLocals:  SIL_temp_conditional___n$0:int * y:int  SIL_temp_conditional___n$5:int * SIL_temp_conditional___n$10:int * x:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&y,&SIL_temp_conditional___n$5,&SIL_temp_conditional___n$10,&x); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 16 ;

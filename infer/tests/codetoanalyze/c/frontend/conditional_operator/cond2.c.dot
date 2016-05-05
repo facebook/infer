@@ -81,7 +81,7 @@ digraph iCFG {
 39 [label="39: Exit bar \n  " color=yellow style=filled]
 	
 
-38 [label="38: Start bar\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$1:int  SIL_temp_conditional___n$5:int  y:int  x:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$1,&SIL_temp_conditional___n$5,&y,&x); [line 21]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 21]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 21]\n  NULLIFY(&SIL_temp_conditional___n$5,false); [line 21]\n  NULLIFY(&x,false); [line 21]\n  NULLIFY(&y,false); [line 21]\n " color=yellow style=filled]
+38 [label="38: Start bar\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$1:int  SIL_temp_conditional___n$5:int  y:int  x:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$1,&SIL_temp_conditional___n$5,&y,&x); [line 21]\n " color=yellow style=filled]
 	
 
 	 38 -> 53 ;
@@ -235,7 +235,7 @@ digraph iCFG {
 2 [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start foo\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$2:int  SIL_temp_conditional___n$3:int  n:int  SIL_temp_conditional___n$6:int  y:int  x:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$2,&SIL_temp_conditional___n$3,&n,&SIL_temp_conditional___n$6,&y,&x); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 10]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 10]\n  NULLIFY(&n,false); [line 10]\n  NULLIFY(&x,false); [line 10]\n  NULLIFY(&y,false); [line 10]\n " color=yellow style=filled]
+1 [label="1: Start foo\nFormals: \nLocals:  SIL_temp_conditional___n$0:int  SIL_temp_conditional___n$2:int  SIL_temp_conditional___n$3:int  n:int  SIL_temp_conditional___n$6:int  y:int  x:int  \n   DECLARE_LOCALS(&return,&SIL_temp_conditional___n$0,&SIL_temp_conditional___n$2,&SIL_temp_conditional___n$3,&n,&SIL_temp_conditional___n$6,&y,&x); [line 10]\n " color=yellow style=filled]
 	
 
 	 1 -> 37 ;

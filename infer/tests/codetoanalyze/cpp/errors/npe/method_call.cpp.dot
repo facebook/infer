@@ -28,7 +28,7 @@ digraph iCFG {
 15 [label="15: Exit XForward_call \n  " color=yellow style=filled]
 	
 
-14 [label="14: Start XForward_call\nFormals:  this:class XForward *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n  NULLIFY(&this,false); [line 31]\n " color=yellow style=filled]
+14 [label="14: Start XForward_call\nFormals:  this:class XForward *\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
 	 14 -> 16 ;
@@ -65,7 +65,7 @@ digraph iCFG {
 5 [label="5: Exit npe_call \n  " color=yellow style=filled]
 	
 
-4 [label="4: Start npe_call\nFormals: \nLocals:  x:class X * \n   DECLARE_LOCALS(&return,&x); [line 15]\n  NULLIFY(&x,false); [line 15]\n " color=yellow style=filled]
+4 [label="4: Start npe_call\nFormals: \nLocals:  x:class X * \n   DECLARE_LOCALS(&return,&x); [line 15]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;
@@ -76,7 +76,7 @@ digraph iCFG {
 2 [label="2: Exit X_call \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start X_call\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n  NULLIFY(&this,false); [line 12]\n " color=yellow style=filled]
+1 [label="1: Start X_call\nFormals:  this:class X *\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;

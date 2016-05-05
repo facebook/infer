@@ -26,7 +26,7 @@ digraph iCFG {
 67 [label="67: Exit __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 \n  " color=yellow style=filled]
 	
 
-66 [label="66: Start __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2\nFormals:  x:int *\nLocals:  i:int \nCaptured:  x:int * \n   DECLARE_LOCALS(&return,&i); [line 105]\n  NULLIFY(&i,false); [line 105]\n " color=yellow style=filled]
+66 [label="66: Start __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2\nFormals:  x:int *\nLocals:  i:int \nCaptured:  x:int * \n   DECLARE_LOCALS(&return,&i); [line 105]\n " color=yellow style=filled]
 	
 
 	 66 -> 70 ;
@@ -37,7 +37,7 @@ digraph iCFG {
 64 [label="64: Exit MemoryLeakExample_blockFreeNoLeakTODO \n  " color=yellow style=filled]
 	
 
-63 [label="63: Start MemoryLeakExample_blockFreeNoLeakTODO\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 102]\n  NULLIFY(&blk,false); [line 102]\n  NULLIFY(&self,false); [line 102]\n  NULLIFY(&x,false); [line 102]\n " color=yellow style=filled]
+63 [label="63: Start MemoryLeakExample_blockFreeNoLeakTODO\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 102]\n " color=yellow style=filled]
 	
 
 	 63 -> 73 ;
@@ -71,7 +71,7 @@ digraph iCFG {
 55 [label="55: Exit MemoryLeakExample_blockCapturedVarLeak \n  " color=yellow style=filled]
 	
 
-54 [label="54: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 93]\n  NULLIFY(&blk,false); [line 93]\n  NULLIFY(&self,false); [line 93]\n  NULLIFY(&x,false); [line 93]\n " color=yellow style=filled]
+54 [label="54: Start MemoryLeakExample_blockCapturedVarLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  blk:_fn_ (*) x:int * \n   DECLARE_LOCALS(&return,&blk,&x); [line 93]\n " color=yellow style=filled]
 	
 
 	 54 -> 62 ;
@@ -90,7 +90,7 @@ digraph iCFG {
 50 [label="50: Exit MemoryLeakExample_regularLeak \n  " color=yellow style=filled]
 	
 
-49 [label="49: Start MemoryLeakExample_regularLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  x:int * \n   DECLARE_LOCALS(&return,&x); [line 87]\n  NULLIFY(&self,false); [line 87]\n  NULLIFY(&x,false); [line 87]\n " color=yellow style=filled]
+49 [label="49: Start MemoryLeakExample_regularLeak\nFormals:  self:class MemoryLeakExample *\nLocals:  x:int * \n   DECLARE_LOCALS(&return,&x); [line 87]\n " color=yellow style=filled]
 	
 
 	 49 -> 53 ;
@@ -105,7 +105,7 @@ digraph iCFG {
 46 [label="46: Exit MemoryLeakExample_testFBColorCreateWithGray \n  " color=yellow style=filled]
 	
 
-45 [label="45: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:class MemoryLeakExample *\nLocals:  borderColor:struct CGColor * \n   DECLARE_LOCALS(&return,&borderColor); [line 82]\n  NULLIFY(&borderColor,false); [line 82]\n  NULLIFY(&self,false); [line 82]\n " color=yellow style=filled]
+45 [label="45: Start MemoryLeakExample_testFBColorCreateWithGray\nFormals:  self:class MemoryLeakExample *\nLocals:  borderColor:struct CGColor * \n   DECLARE_LOCALS(&return,&borderColor); [line 82]\n " color=yellow style=filled]
 	
 
 	 45 -> 48 ;
@@ -120,7 +120,7 @@ digraph iCFG {
 42 [label="42: Exit MemoryLeakExample_testImageRefRelease \n  " color=yellow style=filled]
 	
 
-41 [label="41: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return,&newImage); [line 75]\n  NULLIFY(&newImage,false); [line 75]\n " color=yellow style=filled]
+41 [label="41: Start MemoryLeakExample_testImageRefRelease\nFormals: \nLocals:  newImage:struct CGImage * \n   DECLARE_LOCALS(&return,&newImage); [line 75]\n " color=yellow style=filled]
 	
 
 	 41 -> 44 ;
@@ -135,7 +135,7 @@ digraph iCFG {
 38 [label="38: Exit MemoryLeakExample_test2NoLeak \n  " color=yellow style=filled]
 	
 
-37 [label="37: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 70]\n  NULLIFY(&allowedPublicKey,false); [line 70]\n " color=yellow style=filled]
+37 [label="37: Start MemoryLeakExample_test2NoLeak\nFormals: \nLocals:  allowedPublicKey:struct __SecKey * \n   DECLARE_LOCALS(&return,&allowedPublicKey); [line 70]\n " color=yellow style=filled]
 	
 
 	 37 -> 40 ;
@@ -165,7 +165,7 @@ digraph iCFG {
 30 [label="30: Exit MemoryLeakExample_createCloseCrossGlyphNoLeak: \n  " color=yellow style=filled]
 	
 
-29 [label="29: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 58]\n  NULLIFY(&lineThickness,false); [line 58]\n  NULLIFY(&path1,false); [line 58]\n " color=yellow style=filled]
+29 [label="29: Start MemoryLeakExample_createCloseCrossGlyphNoLeak:\nFormals:  rect:struct CGRect \nLocals:  path1:struct CGPath * lineThickness:double  \n   DECLARE_LOCALS(&return,&path1,&lineThickness); [line 58]\n " color=yellow style=filled]
 	
 
 	 29 -> 33 ;
@@ -195,7 +195,7 @@ digraph iCFG {
 22 [label="22: Exit MemoryLeakExample_test1NoLeak \n  " color=yellow style=filled]
 	
 
-21 [label="21: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 48]\n  NULLIFY(&framesetter,false); [line 48]\n " color=yellow style=filled]
+21 [label="21: Start MemoryLeakExample_test1NoLeak\nFormals: \nLocals:  framesetter:struct __CTFramesetter * \n   DECLARE_LOCALS(&return,&framesetter); [line 48]\n " color=yellow style=filled]
 	
 
 	 21 -> 24 ;
@@ -221,7 +221,7 @@ digraph iCFG {
 15 [label="15: Exit MemoryLeakExample_measureFrameSizeForTextNoLeak \n  " color=yellow style=filled]
 	
 
-14 [label="14: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 38]\n  NULLIFY(&maString,false); [line 38]\n " color=yellow style=filled]
+14 [label="14: Start MemoryLeakExample_measureFrameSizeForTextNoLeak\nFormals: \nLocals:  maString:struct __CFAttributedString * \n   DECLARE_LOCALS(&return,&maString); [line 38]\n " color=yellow style=filled]
 	
 
 	 14 -> 17 ;
@@ -247,7 +247,7 @@ digraph iCFG {
 8 [label="8: Exit MemoryLeakExample_test \n  " color=yellow style=filled]
 	
 
-7 [label="7: Start MemoryLeakExample_test\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * \n   DECLARE_LOCALS(&return,&shadowPath); [line 28]\n  NULLIFY(&shadowPath,false); [line 28]\n " color=yellow style=filled]
+7 [label="7: Start MemoryLeakExample_test\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * \n   DECLARE_LOCALS(&return,&shadowPath); [line 28]\n " color=yellow style=filled]
 	
 
 	 7 -> 10 ;
@@ -270,7 +270,7 @@ digraph iCFG {
 2 [label="2: Exit MemoryLeakExample_layoutSubviews \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start MemoryLeakExample_layoutSubviews\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * attachmentContainerView:class UIView * \n   DECLARE_LOCALS(&return,&shadowPath,&attachmentContainerView); [line 19]\n  NULLIFY(&attachmentContainerView,false); [line 19]\n  NULLIFY(&self,false); [line 19]\n  NULLIFY(&shadowPath,false); [line 19]\n " color=yellow style=filled]
+1 [label="1: Start MemoryLeakExample_layoutSubviews\nFormals:  self:class MemoryLeakExample *\nLocals:  shadowPath:struct CGPath * attachmentContainerView:class UIView * \n   DECLARE_LOCALS(&return,&shadowPath,&attachmentContainerView); [line 19]\n " color=yellow style=filled]
 	
 
 	 1 -> 6 ;

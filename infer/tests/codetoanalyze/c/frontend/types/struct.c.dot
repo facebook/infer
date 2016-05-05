@@ -10,7 +10,7 @@ digraph iCFG {
 2 [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start test\nFormals: \nLocals:  x:struct X  \n   DECLARE_LOCALS(&return,&x); [line 15]\n  NULLIFY(&x,false); [line 15]\n " color=yellow style=filled]
+1 [label="1: Start test\nFormals: \nLocals:  x:struct X  \n   DECLARE_LOCALS(&return,&x); [line 15]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;

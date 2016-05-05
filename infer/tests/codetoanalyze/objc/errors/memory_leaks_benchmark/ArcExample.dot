@@ -10,7 +10,7 @@ digraph iCFG {
 6 [label="6: Exit A_newS \n  " color=yellow style=filled]
 	
 
-5 [label="5: Start A_newS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 28]\n  NULLIFY(&s,false); [line 28]\n  NULLIFY(&self,false); [line 28]\n " color=yellow style=filled]
+5 [label="5: Start A_newS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 28]\n " color=yellow style=filled]
 	
 
 	 5 -> 8 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 2 [label="2: Exit A_getS \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start A_getS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n  NULLIFY(&s,false); [line 22]\n  NULLIFY(&self,false); [line 22]\n " color=yellow style=filled]
+1 [label="1: Start A_getS\nFormals:  self:class A *\nLocals:  s:class NSString * \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
 	
 
 	 1 -> 4 ;
