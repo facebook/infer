@@ -355,7 +355,7 @@ let process_cluster_cmdline fname =
 
 let register_perf_stats_report () =
   let stats_dir = Filename.concat !Config.results_dir Config.backend_stats_dir_name in
-  let cluster = match !cluster_cmdline with Some cl -> "_" ^ cl | None -> "" in
+  let cluster = match !cluster_cmdline with Some cl -> "_" ^ (Filename.basename cl) | None -> "" in
   let stats_file = Filename.concat stats_dir (Config.perf_stats_prefix ^ cluster ^ ".json") in
   DB.create_dir !Config.results_dir ;
   DB.create_dir stats_dir ;
