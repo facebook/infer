@@ -17,9 +17,10 @@ module F = Format
 module type Base = sig
   type t
   type node
+  type node_id
 
-  val node_id : node -> Cfg.Node.id
-  val node_id_compare : Cfg.Node.id -> Cfg.Node.id -> int
+  val id : node -> node_id
+  val id_compare : node_id -> node_id -> int
   (** all successors (normal and exceptional) *)
   val succs : t -> node -> node list
   (** all predecessors (normal and exceptional) *)
@@ -48,14 +49,16 @@ module type Wrapper = sig
   val from_pdesc : Cfg.Procdesc.t -> t
 
   val pp_node : F.formatter -> node -> unit
+  val pp_id : F.formatter -> node_id -> unit
 end
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal = struct
   type t = Cfg.Procdesc.t
   type node = Cfg.node
+  type node_id = Cfg.Node.id
 
-  let node_id = Cfg.Node.get_id
+  let id = Cfg.Node.get_id
   let normal_succs _ n = Cfg.Node.get_succs n
   let normal_preds _ n = Cfg.Node.get_preds n
   (* prune away exceptional control flow *)
@@ -72,21 +75,17 @@ module Normal = struct
 
   let from_pdesc pdesc = pdesc
 
-  let node_id_compare = Cfg.Node.id_compare
+  let id_compare = Cfg.Node.id_compare
 
   let pp_node = Cfg.Node.pp
+  let pp_id = Cfg.Node.pp_id
 end
 
 (** Forward CFG with exceptional control-flow *)
-module Exceptional : Wrapper with type node = Cfg.node = struct
-
-  module NodeIdMap = Map.Make(struct
-      type t = Cfg.Node.id
-      let compare = Cfg.Node.id_compare
-    end)
-
+module Exceptional = struct
+  type node_id = Cfg.Node.id
   type node = Cfg.node
-  type id_node_map = node list NodeIdMap.t
+  type id_node_map = node list Cfg.IdMap.t
   type t = Cfg.Procdesc.t * id_node_map
 
   let from_pdesc pdesc =
@@ -95,16 +94,16 @@ module Exceptional : Wrapper with type node = Cfg.node = struct
       let add_exn_pred exn_preds_acc exn_succ_node =
         let exn_succ_node_id = Cfg.Node.get_id exn_succ_node in
         let existing_exn_preds =
-          try NodeIdMap.find exn_succ_node_id exn_preds_acc
+          try Cfg.IdMap.find exn_succ_node_id exn_preds_acc
           with Not_found -> [] in
         if not (IList.mem Cfg.Node.equal n existing_exn_preds)
         then (* don't add duplicates *)
-          NodeIdMap.add exn_succ_node_id (n :: existing_exn_preds) exn_preds_acc
+          Cfg.IdMap.add exn_succ_node_id (n :: existing_exn_preds) exn_preds_acc
         else
           exn_preds_acc in
       IList.fold_left add_exn_pred exn_preds_acc (Cfg.Node.get_exn n) in
     let exceptional_preds =
-      IList.fold_left add_exn_preds NodeIdMap.empty (Cfg.Procdesc.get_nodes pdesc) in
+      IList.fold_left add_exn_preds Cfg.IdMap.empty (Cfg.Procdesc.get_nodes pdesc) in
     pdesc, exceptional_preds
 
   let nodes (t, _) = Cfg.Procdesc.get_nodes t
@@ -116,7 +115,7 @@ module Exceptional : Wrapper with type node = Cfg.node = struct
   let exceptional_succs _ n = Cfg.Node.get_exn n
 
   let exceptional_preds (_, exn_pred_map) n =
-    try NodeIdMap.find (Cfg.Node.get_id n) exn_pred_map
+    try Cfg.IdMap.find (Cfg.Node.get_id n) exn_pred_map
     with Not_found -> []
 
   (** get all normal and exceptional successors of [n]. *)
@@ -145,13 +144,13 @@ module Exceptional : Wrapper with type node = Cfg.node = struct
   let start_node (pdesc, _) = Cfg.Procdesc.get_start_node pdesc
   let exit_node (pdesc, _) = Cfg.Procdesc.get_exit_node pdesc
   let instrs = Cfg.Node.get_instrs
-  let node_id = Cfg.Node.get_id
-  let node_id_compare = Cfg.Node.id_compare
+  let id = Cfg.Node.get_id
+  let id_compare = Cfg.Node.id_compare
   let pp_node = Cfg.Node.pp
+  let pp_id = Cfg.Node.pp_id
   let kind = Cfg.Node.get_kind
 end
 
-(** Turn a forward CFG into a backward cfg *)
 module Backward (W : Wrapper) = struct
   include W
 
@@ -165,3 +164,13 @@ module Backward (W : Wrapper) = struct
   let exceptional_succs = W.exceptional_preds
   let exceptional_preds = W.exceptional_succs
 end
+
+module NodeIdMap (B : Base) = Map.Make(struct
+    type t = B.node_id
+    let compare = B.id_compare
+  end)
+
+module NodeIdSet (B : Base) = Set.Make(struct
+    type t = B.node_id
+    let compare = B.id_compare
+  end)

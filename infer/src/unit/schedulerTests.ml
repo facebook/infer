@@ -16,23 +16,24 @@ module F = Format
 module MockProcCfg = struct
   type node = int
   type t = (node * node list) list
+  type node_id = int
 
-  let node_id_compare = Cfg.Node.id_compare
+  let id_compare = int_compare
 
-  let node_id n = Cfg.Node.id_of_int__FOR_TESTING_ONLY n
+  let id n = n
 
   let succs t n =
     try
-      let id = node_id n in
-      IList.find (fun (node, _) -> node_id_compare (node_id node) id = 0) t
+      let node_id = id n in
+      IList.find (fun (node, _) -> id_compare (id node) node_id = 0) t
       |> snd
     with Not_found -> []
 
   let preds t n =
     try
-      let id = node_id n in
+      let node_id = id n in
       IList.filter
-        (fun (_, succs) -> IList.exists (fun node -> node_id_compare (node_id node) id = 0) succs) t
+        (fun (_, succs) -> IList.exists (fun node -> id_compare (id node) node_id = 0) succs) t
       |> IList.map fst
     with Not_found -> []
 

@@ -10,9 +10,10 @@
 module type Base = sig
   type t
   type node
+  type node_id
 
-  val node_id : node -> Cfg.Node.id
-  val node_id_compare : Cfg.Node.id -> Cfg.Node.id -> int
+  val id : node -> node_id
+  val id_compare : node_id -> node_id -> int
   (** all successors (normal and exceptional) *)
   val succs : t -> node -> node list
   (** all predecessors (normal and exceptional) *)
@@ -41,10 +42,16 @@ module type Wrapper = sig
   val from_pdesc : Cfg.Procdesc.t -> t
 
   val pp_node : Format.formatter -> node -> unit
+  val pp_id : Format.formatter -> node_id -> unit
 end
 
-module Normal : Wrapper with type node = Cfg.Node.t
+module Normal : Wrapper with type node = Cfg.Node.t and type node_id = Cfg.Node.id
 
-module Exceptional : Wrapper with type node = Cfg.Node.t
+module Exceptional : Wrapper with type node = Cfg.Node.t and type node_id = Cfg.Node.id
 
-module Backward : functor (W : Wrapper) -> Wrapper with type node = W.node
+module Backward (W : Wrapper) : Wrapper with type node = W.node and type node_id = W.node_id
+
+module NodeIdMap (B : Base) : Map.S with type key = B.node_id
+
+module NodeIdSet (B : Base) : Set.S with type elt = B.node_id
+

@@ -21,6 +21,7 @@ module Domain = AbstractDomain.FiniteSet(Var.Set)
 module TransferFunctions = struct
   type astate = Domain.astate
   type extras = ProcData.no_extras
+  type node_id = Cfg.Node.id
 
   let postprocess = TransferFunctions.no_postprocessing
 

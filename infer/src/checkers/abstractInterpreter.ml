@@ -15,10 +15,10 @@ module Make
     (C : ProcCfg.Wrapper)
     (Sched : Scheduler.S)
     (A : AbstractDomain.S)
-    (T : TransferFunctions.S with type astate = A.astate) = struct
+    (T : TransferFunctions.S with type astate = A.astate and type node_id = C.node_id) = struct
 
   module S = Sched (C)
-  module M = Cfg.IdMap
+  module M = ProcCfg.NodeIdMap (C)
 
   type state = { pre: A.astate; post: A.astate; visit_count: int; }
   (* invariant map from node id -> abstract state representing postcondition for node id *)
@@ -29,7 +29,7 @@ module Make
     try
       Some (M.find node_id inv_map)
     with Not_found ->
-      L.err "Warning: No state found for node %a" Cfg.Node.pp_id node_id;
+      L.err "Warning: No state found for node %a" C.pp_id node_id;
       None
 
   (** extract the postcondition of node [n] from [inv_map] *)
@@ -45,8 +45,8 @@ module Make
     | None -> None
 
   let exec_node node astate_pre work_queue inv_map proc_data =
-    let node_id = C.node_id node in
-    L.out "Doing analysis of node %a from pre %a@." Cfg.Node.pp_id node_id A.pp astate_pre;
+    let node_id = C.id node in
+    L.out "Doing analysis of node %a from pre %a@." C.pp_id node_id A.pp astate_pre;
     let update_inv_map astate_pre visit_count =
       let astate_post =
         let exec_instrs astate_acc instr =
@@ -55,7 +55,7 @@ module Make
           else T.exec_instr astate_acc proc_data instr in
         let astate_post_instrs = IList.fold_left exec_instrs astate_pre (C.instrs node) in
         T.postprocess astate_post_instrs node_id proc_data in
-      L.out "Post for node %a is %a@." Cfg.Node.pp_id node_id A.pp astate_post;
+      L.out "Post for node %a is %a@." C.pp_id node_id A.pp astate_post;
       let inv_map' = M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
       inv_map', S.schedule_succs work_queue node in
     if M.mem node_id inv_map then
@@ -82,10 +82,10 @@ module Make
   let rec exec_worklist cfg work_queue inv_map proc_data =
     let compute_pre node inv_map =
       (* if the [pred] -> [node] transition was normal, use post([pred]) *)
-      let extract_post_ pred = extract_post (C.node_id pred) inv_map in
+      let extract_post_ pred = extract_post (C.id pred) inv_map in
       let normal_posts = IList.map extract_post_ (C.normal_preds cfg node) in
       (* if the [pred] -> [node] transition was exceptional, use pre([pred]) *)
-      let extract_pre_f acc pred = extract_pre (C.node_id pred) inv_map :: acc in
+      let extract_pre_f acc pred = extract_pre (C.id pred) inv_map :: acc in
       let all_posts = IList.fold_left extract_pre_f normal_posts (C.exceptional_preds cfg node) in
       match IList.flatten_options all_posts with
       | post :: posts -> Some (IList.fold_left A.join post posts)
@@ -116,7 +116,7 @@ module Make
   let compute_post ({ ProcData.pdesc; } as proc_data) =
     let cfg = C.from_pdesc pdesc in
     let inv_map = exec_cfg cfg proc_data in
-    extract_post (C.node_id (C.exit_node cfg)) inv_map
+    extract_post (C.id (C.exit_node cfg)) inv_map
 
   module Interprocedural (Summ : Summary.S with type summary = A.astate) = struct
 

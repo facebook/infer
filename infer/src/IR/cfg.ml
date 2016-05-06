@@ -145,9 +145,6 @@ module Node = struct
       with Not_found -> () in
     Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 
-
-  let id_of_int__FOR_TESTING_ONLY i = i
-
   let node_id_gen cfg =
     incr cfg.node_id;
     !(cfg.node_id)
@@ -226,11 +223,6 @@ module Node = struct
   module NodeMap = Map.Make(struct
       type t = node
       let compare = compare
-    end)
-
-  module IdSet = Set.Make(struct
-      type t = id
-      let compare = id_compare
     end)
 
   module IdMap = Map.Make(struct
@@ -836,9 +828,6 @@ module NodeHash = Hashtbl.Make(Node)
 
 (** Set of nodes. *)
 module NodeSet = Node.NodeSet
-
-(** Set of node ids. *)
-module IdSet = Node.IdSet
 
 (** Map with node id keys. *)
 module IdMap = Node.IdMap

@@ -19,7 +19,7 @@ module type S = functor (C : ProcCfg.Base) -> sig
   val schedule_succs : t -> C.node -> t
   (* remove and return the node with the highest priority, the ids of its visited
      predecessors, and the new schedule *)
-  val pop : t -> (C.node * Cfg.Node.id list * t) option
+  val pop : t -> (C.node * C.node_id list * t) option
   val empty : C.t -> t
 
 end
@@ -27,10 +27,10 @@ end
 (* simple scheduler that visits CFG nodes in reverse postorder. fast/precise for straightline code
    and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
 module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
-  module M = Cfg.IdMap
+  module M = ProcCfg.NodeIdMap (C)
 
   module WorkUnit = struct
-    module IdSet = Cfg.IdSet
+    module IdSet = ProcCfg.NodeIdSet (C)
 
     type t = {
       node : C.node; (* node whose instructions will be analyzed *)
@@ -63,10 +63,10 @@ module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
 
   (* schedule the succs of [node] for analysis *)
   let schedule_succs t node =
-    let node_id = C.node_id node in
+    let node_id = C.id node in
     (* mark [node] as a visited pred of [node_to_schedule] and schedule it *)
     let schedule_succ worklist_acc node_to_schedule =
-      let id_to_schedule = C.node_id node_to_schedule in
+      let id_to_schedule = C.id node_to_schedule in
       let old_work =
         try M.find id_to_schedule worklist_acc
         with Not_found -> WorkUnit.make t.cfg node_to_schedule in
@@ -94,7 +94,7 @@ module ReversePostorder : S = functor (C : ProcCfg.Base) -> struct
           (init_id, init_priority) in
       let max_priority_work = M.find max_priority_id t.worklist in
       let node = WorkUnit.node max_priority_work in
-      let t' = { t with worklist = M.remove (C.node_id node) t.worklist } in
+      let t' = { t with worklist = M.remove (C.id node) t.worklist } in
       Some (node, WorkUnit.visited_preds max_priority_work, t')
     with Not_found -> None
 
