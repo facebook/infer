@@ -40,11 +40,14 @@
 // llvm's libc++. This way folly can forward declare decls from std library
 // even when they are infer models
 // https://github.com/facebook/folly/blob/b1eb6819f3ffe6b645f39d505ca8ace3116b7873/folly/Portability.h#L253-L255
+// On top of that, define platform-dependent STL iterators.
 #if INFER_USE_LIBCPP
 #include <__config>
 #define INFER_NAMESPACE_STD_BEGIN _LIBCPP_BEGIN_NAMESPACE_STD
 #define INFER_NAMESPACE_STD_END _LIBCPP_END_NAMESPACE_STD
+#define STD_ITER(T, C) __wrap_iter<T>
 #else
 #define INFER_NAMESPACE_STD_BEGIN namespace std {
 #define INFER_NAMESPACE_STD_END }
+#define STD_ITER(T, C) __gnu_cxx::__normal_iterator<T, C>
 #endif
