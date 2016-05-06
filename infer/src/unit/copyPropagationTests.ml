@@ -32,10 +32,23 @@ let tests =
       id_assign_id "a" "a";
       assert_empty
     ];
-    "id_assign_id_gen",
+    "id_letderef_id_no_gen",
     [
-      id_assign_id "b" "a";
-      invariant "{ b$0 -> a$0 }"
+      id_assign_id "b" "a"; (* means b = *a *)
+      assert_empty
+    ];
+    "id_set_id_no_gen",
+    [
+      id_set_id "b" "a"; (* means *b = a *)
+      assert_empty
+    ];
+
+    "id_set_id_no_kill",
+    [
+      id_assign_var "b" "a";
+      invariant "{ b$0 -> &a }";
+      id_set_id "b" "x";
+      invariant "{ b$0 -> &a }"
     ];
     "id_assign_var_gen",
     [

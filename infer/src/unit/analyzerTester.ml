@@ -104,6 +104,11 @@ module StructuredSil = struct
     let rhs_exp = var_of_str rhs in
     make_letderef ~rhs_typ lhs_id rhs_exp
 
+  let id_set_id ?(rhs_typ=dummy_typ) lhs_id rhs_id =
+    let lhs_exp = Sil.Var (ident_of_str lhs_id) in
+    let rhs_exp = Sil.Var (ident_of_str rhs_id) in
+    make_set ~rhs_typ ~lhs_exp ~rhs_exp
+
   let var_assign_exp ~rhs_typ lhs rhs_exp =
     let lhs_exp = var_of_str lhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp

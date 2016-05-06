@@ -30,11 +30,6 @@ let tests =
   let unknown_cond =
     (* don't want to use AnalyzerTest.unknown_exp because we'll treat it as a live var! *)
     Sil.exp_zero in
-  let id_set_id lhs_id rhs_id =
-    let lhs_exp = Sil.Var (ident_of_str lhs_id) in
-    let rhs_exp = Sil.Var (ident_of_str rhs_id) in
-    let rhs_typ = dummy_typ in
-    make_set ~rhs_typ ~lhs_exp ~rhs_exp in
   let test_list = [
     "basic_live",
     [

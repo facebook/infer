@@ -87,9 +87,6 @@ module TransferFunctions = struct
   let postprocess = TransferFunctions.no_postprocessing
 
   let exec_instr astate _ = function
-    | Sil.Letderef (lhs_id, Sil.Var rhs_id, _, _) ->
-        (* note: logical vars are SSA, don't need to worry about overwriting existing bindings *)
-        Domain.gen (LogicalVar lhs_id) (LogicalVar rhs_id) astate
     | Sil.Letderef (lhs_id, Sil.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
         Domain.gen (LogicalVar lhs_id) (ProgramVar rhs_pvar) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
@@ -97,12 +94,15 @@ module TransferFunctions = struct
     | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Lvar rhs_pvar, _)
       when not (Pvar.is_global lhs_pvar || Pvar.is_global rhs_pvar)  ->
         Domain.kill_then_gen (ProgramVar lhs_pvar) (ProgramVar rhs_pvar) astate
-    | Sil.Letderef (lhs_id, _, _, _) ->
-        (* non-copy assignment (or assignment to global); can only kill *)
-        Domain.kill_copies_with_var (LogicalVar lhs_id) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
         (* non-copy assignment (or assignment to global); can only kill *)
         Domain.kill_copies_with_var (ProgramVar lhs_pvar) astate
+    | Sil.Letderef _
+    (* lhs = *rhs where rhs isn't a pvar (or is a global). in any case, not a copy *)
+    (* note: since logical vars can't be reassigned, don't need to kill bindings for lhs id *)
+    | Sil.Set (Var _, _, _, _) ->
+        (* *lhs = rhs. not a copy, and not a write to lhs *)
+        astate
     | Sil.Call (ret_ids, _, actuals, _, _) ->
         let kill_ret_ids astate_acc id =
           Domain.kill_copies_with_var (LogicalVar id) astate_acc in
@@ -113,9 +113,6 @@ module TransferFunctions = struct
         if !Config.curr_language = Config.Java
         then astate' (* Java doesn't have pass-by-reference *)
         else IList.fold_left kill_actuals_by_ref astate' actuals
-    | Sil.Set (Sil.Var _, _, _, _) ->
-        (* this should never happen *)
-        assert false
     | Sil.Set _ | Sil.Prune _ | Sil.Nullify _ | Sil.Abstract _ | Sil.Remove_temps _
     | Sil.Declare_locals _ | Sil.Stackop _ ->
         (* none of these can assign to program vars or logical vars *)
