@@ -50,6 +50,8 @@ let proc_stats_filename = "proc_stats.json"
 
 let global_tenv_filename = "global.tenv"
 
+let specs_files_suffix = ".specs"
+
 (** Name of the infer configuration file *)
 let inferconfig_file = ".inferconfig"
 
@@ -85,7 +87,7 @@ struct
     let entries = Zip.entries zip_channel in
     let extract_entry entry =
       let dest_file = Filename.concat dest_dir (Filename.basename entry.Zip.filename) in
-      if Filename.check_suffix entry.Zip.filename ".specs"
+      if Filename.check_suffix entry.Zip.filename specs_files_suffix
       then Zip.copy_entry_to_file zip_channel entry dest_file in
     List.iter extract_entry entries;
     Zip.close_in zip_channel
@@ -118,6 +120,7 @@ let zip_channel zip_library =
 
 (** list of the zip files to search for specs files *)
 let zip_libraries : zip_library list ref = ref []
+let zip_models : zip_library list ref = ref []
 
 let add_zip_library zip_filename =
   if !JarCache.infer_cache != None
@@ -126,10 +129,23 @@ let add_zip_library zip_filename =
   else
     (* The order matters, the jar files should be added following the order *)
     (* specs files should be searched in them *)
-    zip_libraries := !zip_libraries @ [{ zip_filename = zip_filename; zip_channel = Zip.open_in zip_filename; models = false }]
+    let zip_library = {
+      zip_filename = zip_filename;
+      zip_channel = Zip.open_in zip_filename;
+      models = false
+    } in
+    zip_libraries := zip_library :: !zip_libraries
 
 let add_models zip_filename =
-  zip_libraries := !zip_libraries @ [{ zip_filename = zip_filename; zip_channel = Zip.open_in zip_filename; models = true }]
+  let zip_library = {
+    zip_filename = zip_filename;
+    zip_channel = Zip.open_in zip_filename;
+    models = true
+  } in
+  zip_models := zip_library :: !zip_models
+
+let get_zip_libraries () =
+  (IList.rev !zip_models) @ (IList.rev !zip_libraries)
 
 let project_root : string option ref = ref None
 

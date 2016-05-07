@@ -52,7 +52,7 @@ let collect_specs_filenames jar_filename =
   let zip_channel = Zip.open_in jar_filename in
   let collect set e =
     let filename = e.Zip.filename in
-    if not (Filename.check_suffix filename ".specs") then set
+    if not (Filename.check_suffix filename Config.specs_files_suffix) then set
     else
       let proc_filename = (Filename.chop_extension (Filename.basename filename)) in
       StringSet.add proc_filename set in

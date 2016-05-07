@@ -348,9 +348,6 @@ class AnalyzerWrapper(object):
         elif self.args.project_root:
             infer_options += ['-project_root', self.args.project_root]
 
-        if self.args.analyzer in [config.ANALYZER_CHECKERS,
-                                  config.ANALYZER_TRACING]:
-            os.environ['INFER_ONDEMAND'] = 'Y'
 
         infer_options = map(utils.decode_or_not, infer_options)
         infer_options_str = ' '.join(infer_options)

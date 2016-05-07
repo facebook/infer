@@ -77,8 +77,7 @@ def prepare_build(args):
     infer_cache_dir = os.path.join(args.infer_out, 'cache')
     if not os.path.isdir(infer_cache_dir):
        os.mkdir(infer_cache_dir)
-    infer_options.append('--infer_cache')
-    infer_options.append(infer_cache_dir)
+    infer_options += ['--infer_cache', infer_cache_dir]
     temp_files = [infer_cache_dir]
 
     try:

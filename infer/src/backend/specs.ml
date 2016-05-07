@@ -515,7 +515,7 @@ let add_summary (proc_name : Procname.t) (summary: summary) : unit =
 
 let specs_filename pname =
   let pname_file = Procname.to_filename pname in
-  pname_file ^ ".specs"
+  pname_file ^ Config.specs_files_suffix
 
 (** path to the .specs file for the given procedure in the current results directory *)
 let res_dir_specs_filename pname =
@@ -613,7 +613,7 @@ let load_summary_to_spec_table proc_name =
   | None ->
       (* search on models, libzips, and libs *)
       if load_summary_models (specs_models_filename proc_name) then true
-      else if load_summary_ziplibs !Config.zip_libraries then true
+      else if load_summary_ziplibs (Config.get_zip_libraries ()) then true
       else load_summary_libs (specs_library_filenames proc_name)
 
   | Some summ ->

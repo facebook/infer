@@ -244,7 +244,7 @@ let print_usage_exit err_s =
 let load_specfiles () =
   let specs_files_in_dir dir =
     let is_specs_file fname =
-      not (Sys.is_directory fname) && Filename.check_suffix fname ".specs" in
+      not (Sys.is_directory fname) && Filename.check_suffix fname Config.specs_files_suffix in
     let all_filenames = Array.to_list (Sys.readdir dir) in
     let all_filepaths = IList.map (fun fname -> Filename.concat dir fname) all_filenames in
     IList.filter is_specs_file all_filepaths in
@@ -1032,7 +1032,7 @@ module AnalysisResults = struct
     (* parse command-line arguments, and find spec files specified there *)
     let args = ref [] in
     let f arg =
-      if not (Filename.check_suffix arg ".specs") && arg <> "."
+      if not (Filename.check_suffix arg Config.specs_files_suffix) && arg <> "."
       then print_usage_exit "arguments must be .specs files"
       else args := arg::!args in
     Arg.parse "INFERPRINT_ARGS" arg_desc f usage;
@@ -1044,7 +1044,9 @@ module AnalysisResults = struct
     IList.append (if !args = ["."] then begin
         let arr = Sys.readdir "." in
         let all_files = Array.to_list arr in
-        IList.filter (fun fname -> (Filename.check_suffix fname ".specs")) all_files
+        IList.filter
+          (fun fname -> (Filename.check_suffix fname Config.specs_files_suffix))
+          all_files
       end
        else !args) (load_specfiles ())
 
