@@ -184,6 +184,17 @@ byte: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MI
 	  $(INFERUNIT_MAIN).byte \
 	  $(CHECKCOPYRIGHT_MAIN).byte
 
+# to build only the single module <Module> (and its dependencies) with extra flags execute:
+#   make INFER_CFLAGS=<flags> M=<Module>.cm{o,x} module
+M=
+INFER_CFLAGS=
+
+module: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+	$(OCAMLBUILD) -build-dir $(TEST_BUILD_DIR) $(JAVA_OCAMLBUILD_OPTIONS) \
+	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
+          -cflags $(INFER_CFLAGS) \
+	  $(M)
+
 test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(OCAMLBUILD) -build-dir $(TEST_BUILD_DIR) $(JAVA_OCAMLBUILD_OPTIONS) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
