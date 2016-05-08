@@ -520,7 +520,7 @@ let base_arg_desc =
     "root directory of the project";
 
     "-infer_cache",
-    Arg.String (fun s -> Config.JarCache.infer_cache := Some (filename_to_absolute s)),
+    Arg.String (fun s -> Config.infer_cache := Some (filename_to_absolute s)),
     Some "dir",
     "Select a directory to contain the infer cache";
 

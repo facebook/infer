@@ -334,13 +334,7 @@ type summary =
     attributes : ProcAttributes.t; (** Attributes of the procedure *)
   }
 
-(** origin of a summary: current results dir, a spec library, or models *)
-type origin =
-  | Res_dir
-  | Spec_lib
-  | Models
-
-type spec_tbl = (summary * origin) Procname.Hash.t
+type spec_tbl = (summary * DB.origin) Procname.Hash.t
 
 let spec_tbl: spec_tbl = Procname.Hash.create 128
 
@@ -505,13 +499,13 @@ let summary_compact sh summary =
 let set_summary_origin proc_name summary origin =
   Procname.Hash.replace spec_tbl proc_name (summary, origin)
 
-let add_summary_origin (proc_name : Procname.t) (summary: summary) (origin: origin) : unit =
+let add_summary_origin (proc_name : Procname.t) (summary: summary) (origin: DB.origin) : unit =
   L.out "Adding summary for %a@\n@[<v 2>  %a@]@." Procname.pp proc_name (pp_summary pe_text false) summary;
   set_summary_origin proc_name summary origin
 
 (** Add the summary to the table for the given function *)
 let add_summary (proc_name : Procname.t) (summary: summary) : unit =
-  add_summary_origin proc_name summary Res_dir
+  add_summary_origin proc_name summary DB.Res_dir
 
 let specs_filename pname =
   let pname_file = Procname.to_filename pname in
@@ -560,22 +554,6 @@ let store_summary pname (summ: summary) =
 let load_summary specs_file =
   Serialization.from_file summary_serializer specs_file
 
-(** Load procedure summary from the given zip file *)
-(* TODO: instead of always going through the same list for zip files for every proc_name, *)
-(* create beforehand a map from specs filenames to zip filenames, so that looking up the specs for a given procedure is fast *)
-let load_summary_from_zip zip_specs_path zip_channel =
-  let found_summary =
-    try
-      let entry = Zip.find_entry zip_channel zip_specs_path in
-      begin
-        match Serialization.from_string summary_serializer (Zip.read_entry zip_channel entry) with
-        | Some summ -> Some summ
-        | None ->
-            L.err "Could not load specs datastructure from %s@." zip_specs_path;
-            None
-      end
-    with Not_found -> None in
-  found_summary
 
 (** Load procedure summary for the given procedure name and update spec table *)
 let load_summary_to_spec_table proc_name =
@@ -585,7 +563,7 @@ let load_summary_to_spec_table proc_name =
   let load_summary_models models_dir =
     match load_summary models_dir with
     | None -> false
-    | Some summ -> add summ Models in
+    | Some summ -> add summ DB.Models in
   let rec load_summary_libs = function (* try to load the summary from a list of libs *)
     | [] -> false
     | spec_path :: spec_paths ->
@@ -593,31 +571,20 @@ let load_summary_to_spec_table proc_name =
          | None -> load_summary_libs spec_paths
          | Some summ ->
              add summ Spec_lib) in
-  let rec load_summary_ziplibs zip_libraries = (* try to load the summary from a list of zip libraries *)
-    let zip_specs_filename = specs_filename proc_name in
-    let zip_specs_path =
-      let root = Filename.concat Config.default_in_zip_results_dir Config.specs_dir_name in
-      Filename.concat root zip_specs_filename in
-    match zip_libraries with
-    | [] -> false
-    | zip_library:: zip_libraries ->
-        begin
-          match load_summary_from_zip zip_specs_path (Config.zip_channel zip_library) with
-          | None -> load_summary_ziplibs zip_libraries
-          | Some summ ->
-              let origin = if zip_library.Config.models then Models else Spec_lib in
-              add summ origin
-        end in
+  let load_summary_ziplibs zip_specs_filename =
+    let zip_specs_path = Filename.concat Config.specs_dir_name zip_specs_filename in
+    match ZipLib.load summary_serializer zip_specs_path with
+    | None -> false
+    | Some (summary, origin) -> add summary origin in
   let default_spec_dir = res_dir_specs_filename proc_name in
   match load_summary default_spec_dir with
   | None ->
       (* search on models, libzips, and libs *)
-      if load_summary_models (specs_models_filename proc_name) then true
-      else if load_summary_ziplibs (Config.get_zip_libraries ()) then true
-      else load_summary_libs (specs_library_filenames proc_name)
-
+      load_summary_models (specs_models_filename proc_name) ||
+      load_summary_ziplibs (specs_filename proc_name) ||
+      load_summary_libs (specs_library_filenames proc_name)
   | Some summ ->
-      add summ Res_dir
+      add summ DB.Res_dir
 
 let rec get_summary_origin proc_name =
   try
@@ -687,7 +654,7 @@ let pdesc_resolve_attributes proc_desc =
 let get_origin proc_name =
   match get_summary_origin proc_name with
   | Some (_, origin) -> origin
-  | None -> Res_dir
+  | None -> DB.Res_dir
 
 let summary_exists proc_name =
   match get_summary proc_name with
@@ -806,7 +773,7 @@ let init_summary
         { proc_attributes with
           ProcAttributes.proc_flags = proc_flags; };
     } in
-  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, Res_dir)
+  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name (summary, DB.Res_dir)
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary call_graph proc_name attributes_opt =

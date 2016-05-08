@@ -63,6 +63,12 @@ module Results_dir : sig
   val create_file : path_kind -> path -> Unix.file_descr
 end
 
+(** origin of a analysis artifact: current results dir, a spec library, or models *)
+type origin =
+  | Res_dir
+  | Spec_lib
+  | Models
+
 (** {2 Source Files} *)
 
 type source_file
@@ -144,6 +150,10 @@ val find_source_dirs : unit -> source_dir list
 
 (** create a directory if it does not exist already *)
 val create_dir : string -> unit
+
+(** [make_directory path] will create a directory [path] creating all the
+    sub directories if non-existing *)
+val create_path : string -> unit
 
 (** Read a file using a lock to allow write attempts in parallel. *)
 val read_file_with_lock : string -> string -> bytes option

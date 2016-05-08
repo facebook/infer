@@ -147,12 +147,6 @@ type summary =
     attributes : ProcAttributes.t; (** Attributes of the procedure *)
   }
 
-(** origin of a summary: current results dir, a spec library, or models *)
-type origin =
-  | Res_dir
-  | Spec_lib
-  | Models
-
 (** Add the summary to the table for the given function *)
 val add_summary : Procname.t -> summary -> unit
 
@@ -184,7 +178,7 @@ val get_flag : Procname.t -> string -> string option
 val get_phase : Procname.t -> phase
 
 (** Return the origin of the spec file *)
-val get_origin: Procname.t -> origin
+val get_origin: Procname.t -> DB.origin
 
 (** Return the signature of a procedure declaration as a string *)
 val get_signature : summary -> string

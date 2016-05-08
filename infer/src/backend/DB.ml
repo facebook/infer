@@ -209,6 +209,17 @@ let filename_create_dir fname =
   if not (Sys.file_exists dirname)
   then create_dir dirname
 
+
+let rec create_path path =
+  try
+    Unix.mkdir path 0o700
+  with
+  | Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+  | Unix.Unix_error (Unix.ENOENT, _, _) ->
+      create_path (Filename.dirname path);
+      create_path path
+
+
 let read_whole_file fd =
   let stats = Unix.fstat fd in
   let size = stats.Unix.st_size in
@@ -327,6 +338,12 @@ module Results_dir = struct
     let full_fname = Filename.concat (create dir_path) filename in
     Unix.openfile full_fname [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC] 0o777
 end
+
+(** origin of a analysis artifact: current results dir, a spec library, or models *)
+type origin =
+  | Res_dir
+  | Spec_lib
+  | Models
 
 let global_tenv_fname () =
   let basename = Config.global_tenv_filename in

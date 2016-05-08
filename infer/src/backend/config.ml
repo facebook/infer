@@ -72,9 +72,10 @@ let models_dir =
 let string_crc_hex32 s =
   Digest.to_hex (Digest.string s)
 
+let infer_cache : string option ref = ref None
+
 module JarCache =
 struct
-  let infer_cache : string option ref = ref None
 
   let mkdir s =
     try
@@ -108,7 +109,7 @@ end
 
 type zip_library = {
   zip_filename: string;
-  zip_channel: Zip.in_file;
+  zip_channel: Zip.in_file Lazy.t;
   models: bool;
 }
 
@@ -116,22 +117,26 @@ let zip_filename zip_library =
   zip_library.zip_filename
 
 let zip_channel zip_library =
-  zip_library.zip_channel
+  Lazy.force zip_library.zip_channel
+
+let is_models zip_library =
+  zip_library.models
 
 (** list of the zip files to search for specs files *)
 let zip_libraries : zip_library list ref = ref []
 let zip_models : zip_library list ref = ref []
 
+let use_jar_cache = from_env_variable "INFER_USE_JAR_CACHE"
+
 let add_zip_library zip_filename =
-  if !JarCache.infer_cache != None
-  then
+  if !infer_cache != None && use_jar_cache then
     JarCache.handle_jar zip_filename
   else
     (* The order matters, the jar files should be added following the order *)
     (* specs files should be searched in them *)
     let zip_library = {
       zip_filename = zip_filename;
-      zip_channel = Zip.open_in zip_filename;
+      zip_channel = lazy (Zip.open_in zip_filename);
       models = false
     } in
     zip_libraries := zip_library :: !zip_libraries
@@ -139,7 +144,7 @@ let add_zip_library zip_filename =
 let add_models zip_filename =
   let zip_library = {
     zip_filename = zip_filename;
-    zip_channel = Zip.open_in zip_filename;
+    zip_channel = lazy (Zip.open_in zip_filename);
     models = true
   } in
   zip_models := zip_library :: !zip_models
