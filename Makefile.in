@@ -146,6 +146,11 @@ endif
 	  --only-show > /dev/null
 	@rm -fr __test-infer-out__
 
+check_missing_mli:
+	@bash -c '\
+	for x in `find infer/src -name "*.ml"`; do \
+		test -f "$$x"i || echo Missing "$$x"i; done'
+
 test:
 	$(MAKE) -C $(INFER_DIR) $(INFER_BIN_RELPATH)
 	$(MAKE) -C $(SRC_DIR) init
@@ -285,5 +290,5 @@ conf-clean: clean
 
 .PHONY: all buck_test buck_test_xml clean clang
 .PHONY: clang_plugin clang_setup inferTraceBugs inferTraceBugs_test java
-.PHONY: ocaml_unit_test test test_xml test_build unit
+.PHONY: ocaml_unit_test check_missing_mli test test_xml test_build unit
 .PHONY: install uninstall
