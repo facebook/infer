@@ -464,6 +464,11 @@ let trans_assume_false sil_loc context succ_nodes =
   Cfg.Node.set_succs_exn context.CContext.cfg prune_node succ_nodes [];
   { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }
 
+let trans_assertion sil_loc context succ_nodes =
+  if Config.report_custom_error then
+    trans_assertion_failure sil_loc context
+  else trans_assume_false sil_loc context succ_nodes
+
 let define_condition_side_effects e_cond instrs_cond sil_loc =
   let (e', typ) = extract_exp_from_list e_cond "\nWARNING: Missing expression in IfStmt. Need to be fixed\n" in
   match e' with

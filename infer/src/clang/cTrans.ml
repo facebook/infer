@@ -855,10 +855,7 @@ struct
       res_trans_callee :: res_trans_p in
     let sil_fe, is_cf_retain_release = CTrans_models.builtin_predefined_model fun_exp_stmt sil_fe in
     if CTrans_models.is_assert_log sil_fe then
-      if Config.report_custom_error then
-        CTrans_utils.trans_assertion_failure sil_loc context
-      else
-        CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes
+      CTrans_utils.trans_assertion sil_loc context trans_state.succ_nodes
     else
       let act_params =
         let params = IList.tl (collect_exprs result_trans_subexprs) in
@@ -912,7 +909,10 @@ struct
     let callee_pname = match sil_method with
       | Sil.Const (Sil.Cfun pn) -> pn
       | _ -> assert false (* method pointer not implemented, this shouldn't happen *) in
-    (* As we may have nodes coming from different parameters we need to  *)
+    if CTrans_models.is_assert_log sil_method then
+      CTrans_utils.trans_assertion sil_loc context trans_state_pri.succ_nodes
+    else
+      (* As we may have nodes coming from different parameters we need to  *)
     (* call instruction for each parameter and collect the results       *)
     (* afterwards. The 'instructions' function does not do that          *)
     let trans_state_param =
@@ -1015,9 +1015,7 @@ struct
       | _ -> None
       (* assertions *)
     else if CTrans_models.is_handleFailureInMethod selector then
-      if Config.report_custom_error then
-        Some (CTrans_utils.trans_assertion_failure sil_loc context)
-      else Some (CTrans_utils.trans_assume_false sil_loc context trans_state.succ_nodes)
+      Some (CTrans_utils.trans_assertion sil_loc context trans_state.succ_nodes)
     else None
 
 

@@ -143,6 +143,8 @@ val handleFailureInMethod : string
 
 val handleFailureInFunction : string
 
+val google_LogMessageFatal : string
+
 val pseudo_object_type : string
 
 val count : string

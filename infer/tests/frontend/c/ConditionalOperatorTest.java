@@ -48,12 +48,6 @@ public class ConditionalOperatorTest {
     frontendTest("cond2.c");
   }
 
-  @Ignore @Test
-  public void whenCaptureRunOnAssertExampleThenDotFilesAreTheSame()
-      throws InterruptedException, IOException, InferException {
-    frontendTest("assert_example.c");
-  }
-
   @Test
   public void whenCaptureRunOnIntNegationThenDotFilesAreTheSame()
       throws InterruptedException, IOException, InferException {

@@ -78,6 +78,9 @@ let is_assert_log_s funct =
   funct = CFrontend_config.assert_fail ||
   funct = CFrontend_config.fbAssertWithSignalAndLogFunctionHelper
 
+let is_assert_log_method m =
+  m = CFrontend_config.google_LogMessageFatal
+
 let is_handleFailureInMethod funct =
   funct = CFrontend_config.handleFailureInMethod ||
   funct = CFrontend_config.handleFailureInFunction
@@ -114,8 +117,10 @@ let builtin_predefined_model fun_stmt sil_fe =
 (** If the function is a builtin model, return the model, otherwise return the function *)
 let is_assert_log sil_fe =
   match sil_fe with
-  | Sil.Const (Sil.Cfun pn) when is_assert_log_s (Procname.to_string pn) -> true
+  | Sil.Const (Sil.Cfun (Procname.ObjC_Cpp _ as pn)) -> is_assert_log_method (Procname.to_string pn)
+  | Sil.Const (Sil.Cfun (Procname.C _ as pn)) -> is_assert_log_s (Procname.to_string pn)
   | _ -> false
+
 
 let is_objc_memory_model_controlled o =
   Core_foundation_model.is_objc_memory_model_controlled o

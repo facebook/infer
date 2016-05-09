@@ -151,6 +151,8 @@ let handleFailureInFunction = "handleFailureInFunction:file:lineNumber:descripti
 
 let fbAssertWithSignalAndLogFunctionHelper = "FBAssertWithSignalAndLogFunctionHelper"
 
+let google_LogMessageFatal = "google::LogMessageFatal_LogMessageFatal"
+
 let pseudo_object_type = "<pseudo-object type>"
 
 let count = "count"

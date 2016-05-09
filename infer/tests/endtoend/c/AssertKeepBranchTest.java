@@ -10,6 +10,7 @@
 package endtoend.c;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static utils.matchers.ResultContainsExactly.containsExactly;
 import static utils.matchers.ResultContainsNoErrorInMethod.doesNotContain;
 
 import com.google.common.collect.ImmutableList;
@@ -25,34 +26,36 @@ import utils.InferException;
 import utils.InferResults;
 import utils.InferRunner;
 
-public class AssertTest {
+public class AssertKeepBranchTest {
 
-  public static final String source_file =
-      "infer/tests/codetoanalyze/c/frontend/assertions/assert_example.c";
+  public static final String source_file = "assertions/assertion_example.c";
 
   private static ImmutableList<String> inferCmd;
 
-  public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
+  public static final String DIVIDE_BY_ZERO = "DIVIDE_BY_ZERO";
 
-  @ClassRule
-  public static DebuggableTemporaryFolder folder = new DebuggableTemporaryFolder();
+  private static InferResults inferResults;
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferCmd = InferRunner.createCInferCommand(folder, source_file);
+    inferResults = InferResults.loadCInferResults(AssertKeepBranchTest.class, source_file);
   }
 
   @Test
-  public void whenInferRunsOnAssertExampleThenNPENotFound()
+  public void whenRunsOnAssertionExampleThenDiv0AndNoNPEIsFound()
       throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferC(inferCmd);
+    String[] methods = {
+        "report_div0_and_no_npe",
+    };
     assertThat(
-        "Results should not contain a null dereference error",
+        "Results should contain " + DIVIDE_BY_ZERO,
         inferResults,
-        doesNotContain(
-            NULL_DEREFERENCE,
+        containsExactly(
+            DIVIDE_BY_ZERO,
             source_file,
-            "test"));
+            methods
+        )
+    );
   }
 
 }

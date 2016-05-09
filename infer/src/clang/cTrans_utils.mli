@@ -85,9 +85,7 @@ val cast_operation :
   trans_state -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
   bool -> Ident.t list * Sil.instr list * (Sil.exp * Sil.typ)
 
-val trans_assertion_failure : Location.t -> CContext.t -> trans_result
-
-val trans_assume_false : Location.t -> CContext.t -> Cfg.Node.t list ->  trans_result
+val trans_assertion: Location.t -> CContext.t -> Cfg.Node.t list ->  trans_result
 
 val is_owning_method : Clang_ast_t.stmt -> bool
 
