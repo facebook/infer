@@ -32,7 +32,7 @@ digraph iCFG {
 	
 
 	 9 -> 11 ;
-8 [label="8:  Return Stmt \n   NULLIFY(&p,false); [line 12]\n  *&return:int =\"Null pointer!\" [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+8 [label="8:  Return Stmt \n   *&return:int =\"Null pointer!\" [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 8 -> 2 ;

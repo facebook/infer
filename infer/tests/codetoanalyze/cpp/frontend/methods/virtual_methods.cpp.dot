@@ -30,11 +30,11 @@ digraph iCFG {
 	
 
 	 46 -> 45 ;
-45 [label="45:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 64]\n  n$1=*n$0:class Polygon  [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) [line 64]\n  *&return:int =(1 / n$2) [line 64]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 64]\n  NULLIFY(&ppoly2,false); [line 64]\n  NULLIFY(&poly,false); [line 64]\n  NULLIFY(&trgl,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+45 [label="45:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 64]\n  n$1=*n$0:class Polygon  [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) [line 64]\n  *&return:int =(1 / n$2) [line 64]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 64]\n  NULLIFY(&ppoly2,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
 	
 
 	 45 -> 44 ;
-44 [label="44: Exit tri_not_virtual_area \n  " color=yellow style=filled]
+44 [label="44: Exit tri_not_virtual_area \n   NULLIFY(&trgl,false); [line 65]\n  NULLIFY(&poly,false); [line 65]\n " color=yellow style=filled]
 	
 
 43 [label="43: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:class Polygon * poly:class Polygon  trgl:class Triangle  \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 59]\n " color=yellow style=filled]
@@ -49,11 +49,11 @@ digraph iCFG {
 	
 
 	 41 -> 40 ;
-40 [label="40:  Return Stmt \n   n$0=*&ppoly3:class Polygon * [line 56]\n  n$1=*n$0:class Polygon  [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 56]\n  *&return:int =(1 / n$2) [line 56]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 56]\n  NULLIFY(&ppoly3,false); [line 56]\n  NULLIFY(&poly,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
+40 [label="40:  Return Stmt \n   n$0=*&ppoly3:class Polygon * [line 56]\n  n$1=*n$0:class Polygon  [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 56]\n  *&return:int =(1 / n$2) [line 56]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 56]\n  NULLIFY(&ppoly3,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
 	
 
 	 40 -> 39 ;
-39 [label="39: Exit poly_area \n  " color=yellow style=filled]
+39 [label="39: Exit poly_area \n   NULLIFY(&poly,false); [line 57]\n " color=yellow style=filled]
 	
 
 38 [label="38: Start poly_area\nFormals: \nLocals:  ppoly3:class Polygon * poly:class Polygon  \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 53]\n " color=yellow style=filled]
@@ -76,11 +76,11 @@ digraph iCFG {
 	
 
 	 34 -> 33 ;
-33 [label="33:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 50]\n  n$1=*n$0:class Polygon  [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 50]\n  *&return:int =(1 / (n$2 - 10)) [line 50]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 50]\n  NULLIFY(&ppoly2,false); [line 50]\n  NULLIFY(&poly,false); [line 50]\n  NULLIFY(&trgl,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
+33 [label="33:  Return Stmt \n   n$0=*&ppoly2:class Polygon * [line 50]\n  n$1=*n$0:class Polygon  [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 50]\n  *&return:int =(1 / (n$2 - 10)) [line 50]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 50]\n  NULLIFY(&ppoly2,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
 	
 
 	 33 -> 32 ;
-32 [label="32: Exit tri_area \n  " color=yellow style=filled]
+32 [label="32: Exit tri_area \n   NULLIFY(&trgl,false); [line 51]\n  NULLIFY(&poly,false); [line 51]\n " color=yellow style=filled]
 	
 
 31 [label="31: Start tri_area\nFormals: \nLocals:  ppoly2:class Polygon * poly:class Polygon  trgl:class Triangle  \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 45]\n " color=yellow style=filled]
@@ -99,11 +99,11 @@ digraph iCFG {
 	
 
 	 28 -> 27 ;
-27 [label="27:  Return Stmt \n   n$0=*&ppoly1:class Polygon * [line 42]\n  n$1=*n$0:class Polygon  [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 42]\n  *&return:int =(1 / (n$2 - 20)) [line 42]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 42]\n  NULLIFY(&ppoly1,false); [line 42]\n  NULLIFY(&rect,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+27 [label="27:  Return Stmt \n   n$0=*&ppoly1:class Polygon * [line 42]\n  n$1=*n$0:class Polygon  [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon *) virtual [line 42]\n  *&return:int =(1 / (n$2 - 20)) [line 42]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 42]\n  NULLIFY(&ppoly1,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 27 -> 26 ;
-26 [label="26: Exit rect_area \n  " color=yellow style=filled]
+26 [label="26: Exit rect_area \n   NULLIFY(&rect,false); [line 43]\n " color=yellow style=filled]
 	
 
 25 [label="25: Start rect_area\nFormals: \nLocals:  ppoly1:class Polygon * rect:class Rectangle  \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 38]\n " color=yellow style=filled]

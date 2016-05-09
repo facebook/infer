@@ -22,11 +22,11 @@ digraph iCFG {
 	
 
 	 36 -> 35 ;
-35 [label="35:  Return Stmt \n   n$0=*&z:class Z  [line 58]\n  n$1=_fun_Z_getF(&z:class Z &) [line 58]\n  *&return:int =(1 / n$1) [line 58]\n  REMOVE_TEMPS(n$0,n$1); [line 58]\n  NULLIFY(&z,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
+35 [label="35:  Return Stmt \n   n$0=*&z:class Z  [line 58]\n  n$1=_fun_Z_getF(&z:class Z &) [line 58]\n  *&return:int =(1 / n$1) [line 58]\n  REMOVE_TEMPS(n$0,n$1); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
 	
 
 	 35 -> 34 ;
-34 [label="34: Exit Z_div0 \n  " color=yellow style=filled]
+34 [label="34: Exit Z_div0 \n   NULLIFY(&z,false); [line 59]\n " color=yellow style=filled]
 	
 
 33 [label="33: Start Z_div0\nFormals: \nLocals:  z:class Z  \n   DECLARE_LOCALS(&return,&z); [line 55]\n " color=yellow style=filled]
@@ -46,7 +46,7 @@ digraph iCFG {
 
 	 30 -> 27 ;
 	 30 -> 28 ;
-29 [label="29:  Return Stmt \n   *&return:int =1 [line 50]\n  NULLIFY(&x,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
+29 [label="29:  Return Stmt \n   *&return:int =1 [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
 	
 
 	 29 -> 24 ;
@@ -62,11 +62,11 @@ digraph iCFG {
 	
 
 	 26 -> 25 ;
-25 [label="25:  Return Stmt \n   n$0=*&x:class X  [line 52]\n  n$1=_fun_X_getF(&x:class X &) [line 52]\n  *&return:int =(1 / n$1) [line 52]\n  REMOVE_TEMPS(n$0,n$1); [line 52]\n  NULLIFY(&x,false); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
+25 [label="25:  Return Stmt \n   n$0=*&x:class X  [line 52]\n  n$1=_fun_X_getF(&x:class X &) [line 52]\n  *&return:int =(1 / n$1) [line 52]\n  REMOVE_TEMPS(n$0,n$1); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
 	
 
 	 25 -> 24 ;
-24 [label="24: Exit X_Y_div0 \n  " color=yellow style=filled]
+24 [label="24: Exit X_Y_div0 \n   NULLIFY(&x,false); [line 53]\n " color=yellow style=filled]
 	
 
 23 [label="23: Start X_Y_div0\nFormals: \nLocals:  x:class X  \n   DECLARE_LOCALS(&return,&x); [line 45]\n " color=yellow style=filled]
@@ -96,11 +96,11 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  Return Stmt \n   n$0=*&x:class X  [line 37]\n  n$1=_fun_X_getF(&x:class X &) [line 37]\n  *&return:int =(1 / n$1) [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&x,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+16 [label="16:  Return Stmt \n   n$0=*&x:class X  [line 37]\n  n$1=_fun_X_getF(&x:class X &) [line 37]\n  *&return:int =(1 / n$1) [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
 	 16 -> 15 ;
-15 [label="15: Exit X_div0 \n  " color=yellow style=filled]
+15 [label="15: Exit X_div0 \n   NULLIFY(&x,false); [line 38]\n " color=yellow style=filled]
 	
 
 14 [label="14: Start X_div0\nFormals: \nLocals:  x:class X  \n   DECLARE_LOCALS(&return,&x); [line 34]\n " color=yellow style=filled]

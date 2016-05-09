@@ -42,7 +42,9 @@ public class ResourceLeaksTest {
     String[] methods = {
         "fileOutputStreamNotClosed",
         "fileOutputStreamNotClosedAfterWrite",
-        "fileOutputStreamTwoLeaks",
+        "fileOutputStreamOneLeak",
+        "fileOutputStreamTwoLeaks1",
+        "fileOutputStreamTwoLeaks2",
         "twoResources",
         "twoResourcesServerSocket",
         "twoResourcesRandomAccessFile",
@@ -88,17 +90,46 @@ public class ResourceLeaksTest {
     );
   }
 
-
   @Test
-  public void whenInferRunsOnFileOutputStreamTwoLeaksThenTwoLeaksAreFound()
+  public void whenInferRunsOnFileOutputStreamOneLeakThenOneLeaksIsFound()
       throws InterruptedException, IOException, InferException {
     assertThat(
-        "Results should contain 2 resource leak error",
+        "Results should contain 1 resource leak error",
         inferResults,
         containsNumberOfErrors(
             RESOURCE_LEAK,
             SOURCE_FILE,
-            "fileOutputStreamTwoLeaks",
+            "fileOutputStreamOneLeak",
+            1
+        )
+    );
+  }
+
+  @Test
+  public void whenInferRunsOnFileOutputStreamTwoLeaks1ThenTwoLeaksAreFound()
+      throws InterruptedException, IOException, InferException {
+    assertThat(
+        "Results should contain 2 resource leak errors",
+        inferResults,
+        containsNumberOfErrors(
+            RESOURCE_LEAK,
+            SOURCE_FILE,
+            "fileOutputStreamTwoLeaks1",
+            2
+        )
+    );
+  }
+
+  @Test
+  public void whenInferRunsOnFileOutputStreamTwoLeaks2ThenTwoLeaksAreFound()
+      throws InterruptedException, IOException, InferException {
+    assertThat(
+        "Results should contain 2 resource leak errors",
+        inferResults,
+        containsNumberOfErrors(
+            RESOURCE_LEAK,
+            SOURCE_FILE,
+            "fileOutputStreamTwoLeaks2",
             2
         )
     );

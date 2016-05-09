@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 19 -> 14 ;
-18 [label="18:  Return Stmt \n   NULLIFY(&foo_a,false); [line 28]\n  NULLIFY(&foo_g,false); [line 28]\n  *&return:int =0 [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+18 [label="18:  Return Stmt \n   *&return:int =0 [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
 	
 
 	 18 -> 11 ;
@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 17 -> 11 ;
-16 [label="16: Prune (false branch) \n   PRUNE(((n$0 == 12) == 0), false); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n " shape="invhouse"]
+16 [label="16: Prune (false branch) \n   PRUNE(((n$0 == 12) == 0), false); [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&foo_a,false); [line 25]\n  NULLIFY(&foo_g,false); [line 25]\n " shape="invhouse"]
 	
 
 	 16 -> 18 ;
@@ -28,7 +28,7 @@ digraph iCFG {
 
 	 14 -> 15 ;
 	 14 -> 16 ;
-13 [label="13:  between_join_and_exit \n   NULLIFY(&foo_a,false); [line 25]\n  NULLIFY(&foo_g,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+13 [label="13:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 13 -> 11 ;

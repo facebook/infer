@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 26 -> 21 ;
-25 [label="25:  Return Stmt \n   NULLIFY(&p,false); [line 48]\n  *&return:int =0 [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+25 [label="25:  Return Stmt \n   *&return:int =0 [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
 	
 
 	 25 -> 18 ;
@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 24 -> 18 ;
-23 [label="23: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 45]\n  REMOVE_TEMPS(n$0); [line 45]\n " shape="invhouse"]
+23 [label="23: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 45]\n  REMOVE_TEMPS(n$0); [line 45]\n  NULLIFY(&p,false); [line 45]\n " shape="invhouse"]
 	
 
 	 23 -> 25 ;
@@ -28,7 +28,7 @@ digraph iCFG {
 
 	 21 -> 22 ;
 	 21 -> 23 ;
-20 [label="20:  between_join_and_exit \n   NULLIFY(&b,false); [line 45]\n  NULLIFY(&p,false); [line 45]\n  APPLY_ABSTRACTION; [line 45]\n " shape="box"]
+20 [label="20:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 45]\n " shape="box"]
 	
 
 	 20 -> 18 ;
@@ -43,7 +43,7 @@ digraph iCFG {
 	
 
 	 17 -> 27 ;
-16 [label="16:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_trans______2); [line 34]\n  n$11=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_trans______2 ):unsigned long ) [line 34]\n  *&__objc_anonymous_block_A_trans______2:class __objc_anonymous_block_A_trans______2 =n$11 [line 34]\n  n$12=*&#GB$A_trans_sharedInstance:struct objc_object * [line 34]\n  *n$11.A_trans_sharedInstance:struct objc_object *=n$12 [line 34]\n  *&dummy_block:_fn_ (*)=(_fun___objc_anonymous_block_A_trans______2) [line 34]\n  REMOVE_TEMPS(n$11,n$12); [line 34]\n " shape="box"]
+16 [label="16:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_trans______2); [line 34]\n  n$11=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_trans______2 ):unsigned long ) [line 34]\n  *&__objc_anonymous_block_A_trans______2:class __objc_anonymous_block_A_trans______2 =n$11 [line 34]\n  n$12=*&#GB$A_trans_sharedInstance:struct objc_object * [line 34]\n  *n$11.A_trans_sharedInstance:struct objc_object *=n$12 [line 34]\n  *&dummy_block:_fn_ (*)=(_fun___objc_anonymous_block_A_trans______2) [line 34]\n  REMOVE_TEMPS(n$11,n$12); [line 34]\n  NULLIFY(&__objc_anonymous_block_A_trans______2,false); [line 34]\n " shape="box"]
 	
 
 	 16 -> 12 ;
@@ -62,7 +62,7 @@ digraph iCFG {
 	
 
 	 12 -> 11 ;
-11 [label="11:  Return Stmt \n   n$7=*&#GB$A_trans_sharedInstance:struct objc_object * [line 38]\n  *&return:struct objc_object *=n$7 [line 38]\n  REMOVE_TEMPS(n$7); [line 38]\n  NULLIFY(&__objc_anonymous_block_A_trans______2,true); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+11 [label="11:  Return Stmt \n   n$7=*&#GB$A_trans_sharedInstance:struct objc_object * [line 38]\n  *&return:struct objc_object *=n$7 [line 38]\n  REMOVE_TEMPS(n$7); [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
 	
 
 	 11 -> 10 ;
@@ -73,7 +73,7 @@ digraph iCFG {
 	
 
 	 9 -> 16 ;
-8 [label="8:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_sharedInstance______1); [line 26]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_sharedInstance______1 ):unsigned long ) [line 26]\n  *&__objc_anonymous_block_A_sharedInstance______1:class __objc_anonymous_block_A_sharedInstance______1 =n$5 [line 26]\n  n$6=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 26]\n  *n$5.A_sharedInstance_sharedInstance:struct objc_object *=n$6 [line 26]\n  *&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*)=(_fun___objc_anonymous_block_A_sharedInstance______1) [line 26]\n  REMOVE_TEMPS(n$5,n$6); [line 26]\n " shape="box"]
+8 [label="8:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_sharedInstance______1); [line 26]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_sharedInstance______1 ):unsigned long ) [line 26]\n  *&__objc_anonymous_block_A_sharedInstance______1:class __objc_anonymous_block_A_sharedInstance______1 =n$5 [line 26]\n  n$6=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 26]\n  *n$5.A_sharedInstance_sharedInstance:struct objc_object *=n$6 [line 26]\n  *&infer___objc_anonymous_block_A_sharedInstance______1:_fn_ (*)=(_fun___objc_anonymous_block_A_sharedInstance______1) [line 26]\n  REMOVE_TEMPS(n$5,n$6); [line 26]\n  NULLIFY(&__objc_anonymous_block_A_sharedInstance______1,false); [line 26]\n " shape="box"]
 	
 
 	 8 -> 4 ;
@@ -92,7 +92,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 29]\n  *&return:struct objc_object *=n$0 [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  NULLIFY(&__objc_anonymous_block_A_sharedInstance______1,true); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&#GB$A_sharedInstance_sharedInstance:struct objc_object * [line 29]\n  *&return:struct objc_object *=n$0 [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 3 -> 2 ;

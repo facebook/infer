@@ -19,11 +19,11 @@ digraph iCFG {
 	
 
 	 52 -> 51 ;
-51 [label="51:  Return Stmt \n   n$0=*&b:int  [line 68]\n  *&return:int =(1 / n$0) [line 68]\n  REMOVE_TEMPS(n$0); [line 68]\n  NULLIFY(&b,false); [line 68]\n  NULLIFY(&a,false); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
+51 [label="51:  Return Stmt \n   n$0=*&b:int  [line 68]\n  *&return:int =(1 / n$0) [line 68]\n  REMOVE_TEMPS(n$0); [line 68]\n  NULLIFY(&b,false); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
 	
 
 	 51 -> 50 ;
-50 [label="50: Exit ref_div1_nested_assignment \n  " color=yellow style=filled]
+50 [label="50: Exit ref_div1_nested_assignment \n   NULLIFY(&a,false); [line 69]\n " color=yellow style=filled]
 	
 
 49 [label="49: Start ref_div1_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 62]\n " color=yellow style=filled]
@@ -50,11 +50,11 @@ digraph iCFG {
 	
 
 	 44 -> 43 ;
-43 [label="43:  Return Stmt \n   n$0=*&a:int  [line 59]\n  *&return:int =(1 / n$0) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  NULLIFY(&a,false); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
+43 [label="43:  Return Stmt \n   n$0=*&a:int  [line 59]\n  *&return:int =(1 / n$0) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
 	
 
 	 43 -> 42 ;
-42 [label="42: Exit ref_div0_nested_assignment \n  " color=yellow style=filled]
+42 [label="42: Exit ref_div0_nested_assignment \n   NULLIFY(&a,false); [line 60]\n " color=yellow style=filled]
 	
 
 41 [label="41: Start ref_div0_nested_assignment\nFormals: \nLocals:  r2:int & r1:int & b:int  a:int  \n   DECLARE_LOCALS(&return,&r2,&r1,&b,&a); [line 53]\n " color=yellow style=filled]
@@ -73,11 +73,11 @@ digraph iCFG {
 	
 
 	 38 -> 37 ;
-37 [label="37:  Return Stmt \n   n$0=*&a:int  [line 50]\n  *&return:int =(1 / n$0) [line 50]\n  REMOVE_TEMPS(n$0); [line 50]\n  NULLIFY(&a,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
+37 [label="37:  Return Stmt \n   n$0=*&a:int  [line 50]\n  *&return:int =(1 / n$0) [line 50]\n  REMOVE_TEMPS(n$0); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
 	
 
 	 37 -> 36 ;
-36 [label="36: Exit ref_div0_function_temp_var \n  " color=yellow style=filled]
+36 [label="36: Exit ref_div0_function_temp_var \n   NULLIFY(&a,false); [line 51]\n " color=yellow style=filled]
 	
 
 35 [label="35: Start ref_div0_function_temp_var\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 46]\n " color=yellow style=filled]
@@ -92,11 +92,11 @@ digraph iCFG {
 	
 
 	 33 -> 32 ;
-32 [label="32:  Return Stmt \n   n$0=*&a:int  [line 43]\n  *&return:int =(1 / n$0) [line 43]\n  REMOVE_TEMPS(n$0); [line 43]\n  NULLIFY(&a,false); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+32 [label="32:  Return Stmt \n   n$0=*&a:int  [line 43]\n  *&return:int =(1 / n$0) [line 43]\n  REMOVE_TEMPS(n$0); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	
 
 	 32 -> 31 ;
-31 [label="31: Exit ref_div0_function \n  " color=yellow style=filled]
+31 [label="31: Exit ref_div0_function \n   NULLIFY(&a,false); [line 44]\n " color=yellow style=filled]
 	
 
 30 [label="30: Start ref_div0_function\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 40]\n " color=yellow style=filled]
@@ -115,11 +115,11 @@ digraph iCFG {
 	
 
 	 27 -> 26 ;
-26 [label="26:  Return Stmt \n   n$0=*&a:int  [line 37]\n  *&return:int =(1 / n$0) [line 37]\n  REMOVE_TEMPS(n$0); [line 37]\n  NULLIFY(&a,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+26 [label="26:  Return Stmt \n   n$0=*&a:int  [line 37]\n  *&return:int =(1 / n$0) [line 37]\n  REMOVE_TEMPS(n$0); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
 	 26 -> 25 ;
-25 [label="25: Exit ref_div0 \n  " color=yellow style=filled]
+25 [label="25: Exit ref_div0 \n   NULLIFY(&a,false); [line 38]\n " color=yellow style=filled]
 	
 
 24 [label="24: Start ref_div0\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 33]\n " color=yellow style=filled]
@@ -138,11 +138,11 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  Return Stmt \n   n$0=*&a:int  [line 30]\n  *&return:int =(1 / n$0) [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  NULLIFY(&a,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+20 [label="20:  Return Stmt \n   n$0=*&a:int  [line 30]\n  *&return:int =(1 / n$0) [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
 	 20 -> 19 ;
-19 [label="19: Exit ptr_div0_function_temp_var \n  " color=yellow style=filled]
+19 [label="19: Exit ptr_div0_function_temp_var \n   NULLIFY(&a,false); [line 31]\n " color=yellow style=filled]
 	
 
 18 [label="18: Start ptr_div0_function_temp_var\nFormals: \nLocals:  r:int * a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 26]\n " color=yellow style=filled]
@@ -157,11 +157,11 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  Return Stmt \n   n$0=*&a:int  [line 23]\n  *&return:int =(1 / n$0) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+15 [label="15:  Return Stmt \n   n$0=*&a:int  [line 23]\n  *&return:int =(1 / n$0) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 15 -> 14 ;
-14 [label="14: Exit ptr_div0_function \n  " color=yellow style=filled]
+14 [label="14: Exit ptr_div0_function \n   NULLIFY(&a,false); [line 24]\n " color=yellow style=filled]
 	
 
 13 [label="13: Start ptr_div0_function\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 20]\n " color=yellow style=filled]
@@ -180,11 +180,11 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$0=*&a:int  [line 17]\n  *&return:int =(1 / n$0) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&a,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&a:int  [line 17]\n  *&return:int =(1 / n$0) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8: Exit ptr_div0 \n  " color=yellow style=filled]
+8 [label="8: Exit ptr_div0 \n   NULLIFY(&a,false); [line 18]\n " color=yellow style=filled]
 	
 
 7 [label="7: Start ptr_div0\nFormals: \nLocals:  p:int * a:int  \n   DECLARE_LOCALS(&return,&p,&a); [line 13]\n " color=yellow style=filled]

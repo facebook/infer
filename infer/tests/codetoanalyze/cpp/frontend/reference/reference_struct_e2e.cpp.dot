@@ -219,7 +219,7 @@ digraph iCFG {
 	
 
 	 66 -> 61 ;
-65 [label="65: Prune (false branch) \n   n$0=*&x:class X * [line 55]\n  PRUNE((n$0 == 0), false); [line 55]\n  REMOVE_TEMPS(n$0); [line 55]\n " shape="invhouse"]
+65 [label="65: Prune (false branch) \n   n$0=*&x:class X * [line 55]\n  PRUNE((n$0 == 0), false); [line 55]\n  REMOVE_TEMPS(n$0); [line 55]\n  NULLIFY(&x,false); [line 55]\n " shape="invhouse"]
 	
 
 	 65 -> 62 ;
@@ -227,7 +227,7 @@ digraph iCFG {
 	
 
 	 64 -> 67 ;
-63 [label="63:  between_join_and_exit \n   NULLIFY(&x,false); [line 55]\n  APPLY_ABSTRACTION; [line 55]\n " shape="box"]
+63 [label="63:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 55]\n " shape="box"]
 	
 
 	 63 -> 61 ;
@@ -251,7 +251,7 @@ digraph iCFG {
 	
 
 	 58 -> 53 ;
-57 [label="57: Prune (false branch) \n   n$0=*&x:class X * [line 48]\n  PRUNE((n$0 == 0), false); [line 48]\n  REMOVE_TEMPS(n$0); [line 48]\n " shape="invhouse"]
+57 [label="57: Prune (false branch) \n   n$0=*&x:class X * [line 48]\n  PRUNE((n$0 == 0), false); [line 48]\n  REMOVE_TEMPS(n$0); [line 48]\n  NULLIFY(&x,false); [line 48]\n " shape="invhouse"]
 	
 
 	 57 -> 54 ;
@@ -259,7 +259,7 @@ digraph iCFG {
 	
 
 	 56 -> 59 ;
-55 [label="55:  between_join_and_exit \n   NULLIFY(&x,false); [line 48]\n  APPLY_ABSTRACTION; [line 48]\n " shape="box"]
+55 [label="55:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 48]\n " shape="box"]
 	
 
 	 55 -> 53 ;
@@ -283,7 +283,7 @@ digraph iCFG {
 	
 
 	 50 -> 45 ;
-49 [label="49: Prune (false branch) \n   n$0=*&x:class X * [line 41]\n  PRUNE((n$0 == 0), false); [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n " shape="invhouse"]
+49 [label="49: Prune (false branch) \n   n$0=*&x:class X * [line 41]\n  PRUNE((n$0 == 0), false); [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&x,false); [line 41]\n " shape="invhouse"]
 	
 
 	 49 -> 46 ;
@@ -291,7 +291,7 @@ digraph iCFG {
 	
 
 	 48 -> 51 ;
-47 [label="47:  between_join_and_exit \n   NULLIFY(&x,false); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
+47 [label="47:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 41]\n " shape="box"]
 	
 
 	 47 -> 45 ;
@@ -315,7 +315,7 @@ digraph iCFG {
 	
 
 	 42 -> 37 ;
-41 [label="41: Prune (false branch) \n   n$0=*&x:class X * [line 34]\n  PRUNE((n$0 == 0), false); [line 34]\n  REMOVE_TEMPS(n$0); [line 34]\n " shape="invhouse"]
+41 [label="41: Prune (false branch) \n   n$0=*&x:class X * [line 34]\n  PRUNE((n$0 == 0), false); [line 34]\n  REMOVE_TEMPS(n$0); [line 34]\n  NULLIFY(&x,false); [line 34]\n " shape="invhouse"]
 	
 
 	 41 -> 38 ;
@@ -323,7 +323,7 @@ digraph iCFG {
 	
 
 	 40 -> 43 ;
-39 [label="39:  between_join_and_exit \n   NULLIFY(&x,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+39 [label="39:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 34]\n " shape="box"]
 	
 
 	 39 -> 37 ;

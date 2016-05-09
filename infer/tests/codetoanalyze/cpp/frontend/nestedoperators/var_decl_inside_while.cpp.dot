@@ -45,7 +45,7 @@ digraph iCFG {
 	
 
 	 18 -> 24 ;
-17 [label="17: Prune (false branch) \n   n$0=*&a:int  [line 23]\n  PRUNE((n$0 == 0), false); [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n " shape="invhouse"]
+17 [label="17: Prune (false branch) \n   n$0=*&a:int  [line 23]\n  PRUNE((n$0 == 0), false); [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a,false); [line 23]\n  NULLIFY(&result,false); [line 23]\n  NULLIFY(&x,false); [line 23]\n " shape="invhouse"]
 	
 
 	 17 -> 14 ;
@@ -57,7 +57,7 @@ digraph iCFG {
 	
 
 	 15 -> 19 ;
-14 [label="14:  Return Stmt \n   NULLIFY(&a,false); [line 27]\n  NULLIFY(&result,false); [line 27]\n  NULLIFY(&x,false); [line 27]\n  *&return:int =0 [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+14 [label="14:  Return Stmt \n   *&return:int =0 [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -89,7 +89,7 @@ digraph iCFG {
 
 	 7 -> 5 ;
 	 7 -> 6 ;
-6 [label="6: Prune (false branch) \n   n$0=*&a:int  [line 13]\n  PRUNE((n$0 == 0), false); [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n " shape="invhouse"]
+6 [label="6: Prune (false branch) \n   n$0=*&a:int  [line 13]\n  PRUNE((n$0 == 0), false); [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&a,false); [line 13]\n  NULLIFY(&result,false); [line 13]\n  NULLIFY(&x,false); [line 13]\n " shape="invhouse"]
 	
 
 	 6 -> 3 ;
@@ -101,7 +101,7 @@ digraph iCFG {
 	
 
 	 4 -> 7 ;
-3 [label="3:  Return Stmt \n   NULLIFY(&a,false); [line 17]\n  NULLIFY(&result,false); [line 17]\n  NULLIFY(&x,false); [line 17]\n  *&return:int =0 [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 3 -> 2 ;

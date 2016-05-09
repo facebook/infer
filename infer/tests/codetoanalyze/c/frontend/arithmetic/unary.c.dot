@@ -47,11 +47,11 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 32]\n  NULLIFY(&a,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 3 -> 2 ;
-2 [label="2: Exit main \n  " color=yellow style=filled]
+2 [label="2: Exit main \n   NULLIFY(&a,false); [line 33]\n " color=yellow style=filled]
 	
 
 1 [label="1: Start main\nFormals: \nLocals:  b:int * a:int  y:int  x:int  \n   DECLARE_LOCALS(&return,&b,&a,&y,&x); [line 10]\n " color=yellow style=filled]

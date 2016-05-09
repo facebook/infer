@@ -448,11 +448,124 @@ let add_removetemps_instructions cfg =
     if temps != [] then Node.append_instrs_temps node [Sil.Remove_temps (temps, loc)] [] in
   IList.iter do_node all_nodes
 
+module BackwardCfg = ProcCfg.Backward(ProcCfg.Exceptional)
+
+module LivenessAnalysis =
+  AbstractInterpreter.Make
+    (BackwardCfg)
+    (Scheduler.ReversePostorder)
+    (Liveness.Domain)
+    (Liveness.TransferFunctions)
+
+module VarDomain = AbstractDomain.FiniteSet(Var.Set)
+
+(* (reaching non-nullified vars) * (vars to nullify) *)
+module NullifyDomain = AbstractDomain.Pair (VarDomain) (VarDomain)
+
+(** computes the non-nullified reaching definitions at the end of each node by building on the
+    results of a liveness analysis to be precise, what we want to compute is:
+    to_nullify := (live_before U non_nullifed_reaching_defs) - live_after
+    non_nullified_reaching_defs := non_nullified_reaching_defs - to_nullify
+    Note that this can't be done with by combining the results of reaching definitions and liveness
+    after the fact, nor can it be done with liveness alone. We will insert nullify instructions for
+    each pvar in to_nullify afer we finish the analysis. Nullify instructions speed up the analysis
+    by enabling it to GC state that will no longer be read. *)
+module NullifyTransferFunctions = struct
+  type astate = NullifyDomain.astate
+  type extras = LivenessAnalysis.inv_map
+  type node_id = BackwardCfg.node_id
+
+  let postprocess ((reaching_defs, _) as astate) node_id { ProcData.extras; } =
+    match LivenessAnalysis.extract_state node_id extras with
+    (* note: because the analysis backward, post and pre are reversed *)
+    | Some { LivenessAnalysis.post = live_before; pre = live_after; } ->
+        let to_nullify = VarDomain.diff (VarDomain.union live_before reaching_defs) live_after in
+        let reaching_defs' = VarDomain.diff reaching_defs to_nullify in
+        (reaching_defs', to_nullify)
+    | None -> astate
+
+  let exec_instr ((active_defs, to_nullify) as astate) _ = function
+    | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
+        VarDomain.add (Var.ProgramVar lhs_pvar) active_defs, to_nullify
+    | Sil.Set _ | Letderef _ | Call _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
+    | Abstract _ ->
+        astate
+    | Sil.Nullify _ ->
+        failwith "Should not add nullify instructions before running nullify analysis!"
+end
+
+
+module NullifyAnalysis =
+  AbstractInterpreter.Make
+    (ProcCfg.Exceptional)
+    (Scheduler.ReversePostorder)
+    (NullifyDomain)
+    (NullifyTransferFunctions)
+
+let add_nullify_instrs tenv _ pdesc =
+  let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
+  let proc_data_no_extras = ProcData.make_default pdesc tenv in
+  let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg proc_data_no_extras in
+
+  let address_taken_vars =
+    if Procname.is_java (Cfg.Procdesc.get_proc_name pdesc)
+    then AddressTaken.Domain.empty (* can't take the address of a variable in Java *)
+    else
+      match AddressTaken.Analyzer.compute_post proc_data_no_extras with
+      | Some post -> post
+      | None -> AddressTaken.Domain.empty in
+
+  let nullify_proc_cfg = ProcCfg.Exceptional.from_pdesc pdesc in
+  let nullify_proc_data = ProcData.make pdesc tenv liveness_inv_map in
+  let nullify_inv_map = NullifyAnalysis.exec_cfg nullify_proc_cfg nullify_proc_data in
+
+  (* only nullify pvars that are local; don't nullify those that can escape *)
+  let is_local pvar =
+    not (Pvar.is_return pvar || Pvar.is_global pvar) in
+
+  let node_add_nullify_instructions node pvars =
+    let loc = Cfg.Node.get_last_loc node in
+    let nullify_instrs =
+      IList.filter is_local pvars
+      |> IList.map (fun pvar -> Sil.Nullify (pvar, loc, false)) in
+    if nullify_instrs <> []
+    then Cfg.Node.append_instrs_temps node (IList.rev nullify_instrs) [] in
+
+  IList.iter
+    (fun node ->
+       match NullifyAnalysis.extract_post (ProcCfg.Exceptional.id node) nullify_inv_map with
+       | Some (_, to_nullify) ->
+           let pvars_to_nullify =
+             Var.Set.fold
+               (fun var acc -> match var with
+                  (* we nullify all address taken variables at the end of the procedure *)
+                  | ProgramVar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
+                      pvar :: acc
+                  | _ -> acc)
+               to_nullify
+               [] in
+           node_add_nullify_instructions node pvars_to_nullify
+       | None -> ())
+    (ProcCfg.Exceptional.nodes nullify_proc_cfg);
+  (* nullify all address taken variables *)
+  if not (AddressTaken.Domain.is_empty address_taken_vars)
+  then
+    let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in
+    node_add_nullify_instructions exit_node (AddressTaken.Domain.elements address_taken_vars)
+
+let old_nullify_analysis = false
+
 let doit ?(f_translate_typ=None) cfg cg tenv =
   add_removetemps_instructions cfg;
-  AllPreds.mk_table cfg;
-  Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
-  AllPreds.clear_table ();
+  if old_nullify_analysis
+  then
+    begin
+      AllPreds.mk_table cfg;
+      Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
+      AllPreds.clear_table ()
+    end
+  else
+    Cfg.iter_proc_desc cfg (add_nullify_instrs tenv);
   if !Config.curr_language = Config.Java
   then add_dispatch_calls cfg cg tenv f_translate_typ;
   add_abstraction_instructions cfg;

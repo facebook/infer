@@ -39,7 +39,7 @@ digraph iCFG {
 	
 
 	 57 -> 51 ;
-56 [label="56:  ConditinalStmt Branch \n   NULLIFY(&p,false); [line 31]\n  *&SIL_temp_conditional___n$1:int =0 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+56 [label="56:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =0 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 56 -> 52 ;
@@ -187,7 +187,7 @@ digraph iCFG {
 	
 
 	 20 -> 14 ;
-19 [label="19:  ConditinalStmt Branch \n   NULLIFY(&b,false); [line 17]\n  *&SIL_temp_conditional___n$1:int =1 [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+19 [label="19:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 19 -> 15 ;
@@ -195,7 +195,7 @@ digraph iCFG {
 	
 
 	 18 -> 15 ;
-17 [label="17: Prune (false branch) \n   n$2=*&b:int  [line 17]\n  PRUNE((n$2 == 0), false); [line 17]\n  REMOVE_TEMPS(n$2); [line 17]\n " shape="invhouse"]
+17 [label="17: Prune (false branch) \n   n$2=*&b:int  [line 17]\n  PRUNE((n$2 == 0), false); [line 17]\n  REMOVE_TEMPS(n$2); [line 17]\n  NULLIFY(&b,false); [line 17]\n " shape="invhouse"]
 	
 
 	 17 -> 19 ;
@@ -223,7 +223,7 @@ digraph iCFG {
 	
 
 	 11 -> 5 ;
-10 [label="10:  ConditinalStmt Branch \n   NULLIFY(&b,false); [line 14]\n  *&SIL_temp_conditional___n$0:int =1 [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+10 [label="10:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:int =1 [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 10 -> 6 ;
@@ -231,7 +231,7 @@ digraph iCFG {
 	
 
 	 9 -> 6 ;
-8 [label="8: Prune (false branch) \n   n$1=*&b:int  [line 14]\n  PRUNE((n$1 == 0), false); [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n " shape="invhouse"]
+8 [label="8: Prune (false branch) \n   n$1=*&b:int  [line 14]\n  PRUNE((n$1 == 0), false); [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n  NULLIFY(&b,false); [line 14]\n " shape="invhouse"]
 	
 
 	 8 -> 10 ;

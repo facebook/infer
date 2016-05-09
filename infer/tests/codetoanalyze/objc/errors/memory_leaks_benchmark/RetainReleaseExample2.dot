@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 33 -> 29 ;
-32 [label="32: Prune (false branch) \n   n$0=*&a:class A * [line 64]\n  PRUNE((n$0 == 0), false); [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="invhouse"]
+32 [label="32: Prune (false branch) \n   n$0=*&a:class A * [line 64]\n  PRUNE((n$0 == 0), false); [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  NULLIFY(&a,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="invhouse"]
 	
 
 	 32 -> 29 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 31 -> 33 ;
-30 [label="30:  between_join_and_exit \n   NULLIFY(&a,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+30 [label="30:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 64]\n " shape="box"]
 	
 
 	 30 -> 28 ;

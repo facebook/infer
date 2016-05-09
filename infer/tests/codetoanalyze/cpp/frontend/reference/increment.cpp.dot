@@ -11,11 +11,11 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  DeclStmt \n   n$0=*&vr:int & [line 20]\n  n$1=*n$0:int  [line 20]\n  *n$0:int =(n$1 - 1) [line 20]\n  *&q:int &=n$0 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&q,false); [line 20]\n  NULLIFY(&vr,false); [line 20]\n  NULLIFY(&v,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+8 [label="8:  DeclStmt \n   n$0=*&vr:int & [line 20]\n  n$1=*n$0:int  [line 20]\n  *n$0:int =(n$1 - 1) [line 20]\n  *&q:int &=n$0 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&q,false); [line 20]\n  NULLIFY(&vr,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7: Exit using_ref \n  " color=yellow style=filled]
+7 [label="7: Exit using_ref \n   NULLIFY(&v,false); [line 21]\n " color=yellow style=filled]
 	
 
 6 [label="6: Start using_ref\nFormals: \nLocals:  q:int & r:int & vr:int & v:int  \n   DECLARE_LOCALS(&return,&q,&r,&vr,&v); [line 16]\n " color=yellow style=filled]
@@ -30,11 +30,11 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  DeclStmt \n   n$0=*&v:int  [line 13]\n  *&v:int =(n$0 - 1) [line 13]\n  *&q:int &=&v [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&q,false); [line 13]\n  NULLIFY(&v,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=*&v:int  [line 13]\n  *&v:int =(n$0 - 1) [line 13]\n  *&q:int &=&v [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&q,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 3 -> 2 ;
-2 [label="2: Exit using_value \n  " color=yellow style=filled]
+2 [label="2: Exit using_value \n   NULLIFY(&v,false); [line 14]\n " color=yellow style=filled]
 	
 
 1 [label="1: Start using_value\nFormals: \nLocals:  q:int & r:int & v:int  \n   DECLARE_LOCALS(&return,&q,&r,&v); [line 10]\n " color=yellow style=filled]

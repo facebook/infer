@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_blockReleaseTODO______1); [line 25]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_blockReleaseTODO______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_My_manager_blockReleaseTODO______1:class __objc_anonymous_block_My_manager_blockReleaseTODO______1 =n$8 [line 25]\n  n$9=*&newImage:struct CGImage * [line 25]\n  *n$8.newImage:struct CGImage *=n$9 [line 25]\n  n$5=*&newImage:struct CGImage * [line 25]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_blockReleaseTODO______1,n$5) [line 25]\n  REMOVE_TEMPS(n$8,n$9,n$5); [line 25]\n  NULLIFY(&newImage,false); [line 25]\n " shape="box"]
+16 [label="16:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_blockReleaseTODO______1); [line 25]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_blockReleaseTODO______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_My_manager_blockReleaseTODO______1:class __objc_anonymous_block_My_manager_blockReleaseTODO______1 =n$8 [line 25]\n  n$9=*&newImage:struct CGImage * [line 25]\n  *n$8.newImage:struct CGImage *=n$9 [line 25]\n  n$5=*&newImage:struct CGImage * [line 25]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_blockReleaseTODO______1,n$5) [line 25]\n  REMOVE_TEMPS(n$8,n$9,n$5); [line 25]\n  NULLIFY(&__objc_anonymous_block_My_manager_blockReleaseTODO______1,false); [line 25]\n  NULLIFY(&newImage,false); [line 25]\n " shape="box"]
 	
 
 	 16 -> 8 ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 15 -> 11 ;
-14 [label="14: Prune (false branch) \n   n$6=*&newImage:struct CGImage * [line 26]\n  PRUNE((n$6 == 0), false); [line 26]\n  REMOVE_TEMPS(n$6); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="invhouse"]
+14 [label="14: Prune (false branch) \n   n$6=*&newImage:struct CGImage * [line 26]\n  PRUNE((n$6 == 0), false); [line 26]\n  REMOVE_TEMPS(n$6); [line 26]\n  NULLIFY(&newImage,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="invhouse"]
 	
 
 	 14 -> 11 ;
@@ -27,7 +27,7 @@ digraph iCFG {
 	
 
 	 13 -> 15 ;
-12 [label="12:  between_join_and_exit \n   NULLIFY(&newImage,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+12 [label="12:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
 	 12 -> 10 ;
@@ -52,7 +52,7 @@ digraph iCFG {
 	
 
 	 7 -> 4 ;
-6 [label="6: Prune (false branch) \n   n$1=*&context:struct CGContext * [line 30]\n  PRUNE((n$1 == 0), false); [line 30]\n  REMOVE_TEMPS(n$1); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="invhouse"]
+6 [label="6: Prune (false branch) \n   n$1=*&context:struct CGContext * [line 30]\n  PRUNE((n$1 == 0), false); [line 30]\n  REMOVE_TEMPS(n$1); [line 30]\n  NULLIFY(&context,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="invhouse"]
 	
 
 	 6 -> 4 ;
@@ -64,7 +64,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   NULLIFY(&context,false); [line 32]\n  n$0=*&z:int  [line 32]\n  *&return:int =n$0 [line 32]\n  REMOVE_TEMPS(n$0); [line 32]\n  NULLIFY(&__objc_anonymous_block_My_manager_blockReleaseTODO______1,true); [line 32]\n  NULLIFY(&z,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&z:int  [line 32]\n  *&return:int =n$0 [line 32]\n  REMOVE_TEMPS(n$0); [line 32]\n  NULLIFY(&z,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 3 -> 2 ;

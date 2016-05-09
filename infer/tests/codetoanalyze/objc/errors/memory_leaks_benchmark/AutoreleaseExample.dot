@@ -50,11 +50,11 @@ digraph iCFG {
 	
 
 	 25 -> 24 ;
-24 [label="24:  Return Stmt \n   *&return:int =0 [line 56]\n  NULLIFY(&s1,false); [line 56]\n  NULLIFY(&s2,false); [line 56]\n  NULLIFY(&s3,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
+24 [label="24:  Return Stmt \n   *&return:int =0 [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
 	
 
 	 24 -> 23 ;
-23 [label="23: Exit test2 \n  " color=yellow style=filled]
+23 [label="23: Exit test2 \n   NULLIFY(&s3,false); [line 57]\n  NULLIFY(&s2,false); [line 57]\n  NULLIFY(&s1,false); [line 57]\n " color=yellow style=filled]
 	
 
 22 [label="22: Start test2\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 47]\n " color=yellow style=filled]
@@ -93,11 +93,11 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   *&return:int =0 [line 44]\n  NULLIFY(&s1,false); [line 44]\n  NULLIFY(&s2,false); [line 44]\n  NULLIFY(&s3,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+13 [label="13:  Return Stmt \n   *&return:int =0 [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
 	 13 -> 12 ;
-12 [label="12: Exit test1 \n  " color=yellow style=filled]
+12 [label="12: Exit test1 \n   NULLIFY(&s3,false); [line 45]\n  NULLIFY(&s2,false); [line 45]\n  NULLIFY(&s1,false); [line 45]\n " color=yellow style=filled]
 	
 
 11 [label="11: Start test1\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34]\n " color=yellow style=filled]

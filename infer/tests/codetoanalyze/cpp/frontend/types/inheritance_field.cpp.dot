@@ -79,11 +79,11 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  Return Stmt \n   n$0=*&b:class Base1 & [line 46]\n  n$1=*n$0.b1:int  [line 46]\n  *&return:int =(1 / n$1) [line 46]\n  REMOVE_TEMPS(n$0,n$1); [line 46]\n  NULLIFY(&b,false); [line 46]\n  NULLIFY(&s,false); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+20 [label="20:  Return Stmt \n   n$0=*&b:class Base1 & [line 46]\n  n$1=*n$0.b1:int  [line 46]\n  *&return:int =(1 / n$1) [line 46]\n  REMOVE_TEMPS(n$0,n$1); [line 46]\n  NULLIFY(&b,false); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	
 
 	 20 -> 19 ;
-19 [label="19: Exit div0_cast_ref \n  " color=yellow style=filled]
+19 [label="19: Exit div0_cast_ref \n   NULLIFY(&s,false); [line 47]\n " color=yellow style=filled]
 	
 
 18 [label="18: Start div0_cast_ref\nFormals:  s:class Sub \nLocals:  b:class Base1 & \n   DECLARE_LOCALS(&return,&b); [line 43]\n " color=yellow style=filled]

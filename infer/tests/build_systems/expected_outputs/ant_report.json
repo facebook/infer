@@ -342,12 +342,27 @@
   {
     "bug_type": "RESOURCE_LEAK",
     "file": "codetoanalyze/java/infer/ResourceLeaks.java",
-    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)"
+    "procedure": "void ResourceLeaks.fileOutputStreamOneLeak()"
   },
   {
     "bug_type": "RESOURCE_LEAK",
     "file": "codetoanalyze/java/infer/ResourceLeaks.java",
-    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks(boolean)"
+    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks1(boolean)"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "codetoanalyze/java/infer/ResourceLeaks.java",
+    "procedure": "int ResourceLeaks.fileOutputStreamTwoLeaks1(boolean)"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "codetoanalyze/java/infer/ResourceLeaks.java",
+    "procedure": "void ResourceLeaks.fileOutputStreamTwoLeaks2()"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
+    "file": "codetoanalyze/java/infer/ResourceLeaks.java",
+    "procedure": "void ResourceLeaks.fileOutputStreamTwoLeaks2()"
   },
   {
     "bug_type": "RESOURCE_LEAK",

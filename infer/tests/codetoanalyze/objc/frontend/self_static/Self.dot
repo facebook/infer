@@ -20,7 +20,7 @@ digraph iCFG {
 
 	 48 -> 49 ;
 	 48 -> 50 ;
-47 [label="47:  between_join_and_exit \n   NULLIFY(&c,false); [line 95]\n  APPLY_ABSTRACTION; [line 95]\n " shape="box"]
+47 [label="47:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 95]\n " shape="box"]
 	
 
 	 47 -> 45 ;

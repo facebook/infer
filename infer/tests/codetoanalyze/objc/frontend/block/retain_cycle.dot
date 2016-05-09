@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  Message Call: sHandler: \n   n$0=*&self:class A * [line 47]\n  n$1=*n$0._b:class B * [line 47]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_capture______1); [line 47]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_capture______1 ):unsigned long ) [line 47]\n  *&__objc_anonymous_block_A_capture______1:class __objc_anonymous_block_A_capture______1 =n$5 [line 47]\n  n$6=*&self:class A * [line 47]\n  *n$5.self:class A *=n$6 [line 47]\n  n$2=*&self:class A * [line 47]\n  n$7=*&__objc_anonymous_block_A_capture______1:_fn_ (*) [line 47]\n  _fun_B_sHandler:(n$1:class B *,n$7:_fn_ (*),n$2:_fn_ (*)) virtual [line 47]\n  REMOVE_TEMPS(n$0,n$1,n$5,n$6,n$2,n$7); [line 47]\n  NULLIFY(&__objc_anonymous_block_A_capture______1,true); [line 47]\n  NULLIFY(&self,false); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
+9 [label="9:  Message Call: sHandler: \n   n$0=*&self:class A * [line 47]\n  n$1=*n$0._b:class B * [line 47]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_capture______1); [line 47]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_capture______1 ):unsigned long ) [line 47]\n  *&__objc_anonymous_block_A_capture______1:class __objc_anonymous_block_A_capture______1 =n$5 [line 47]\n  n$6=*&self:class A * [line 47]\n  *n$5.self:class A *=n$6 [line 47]\n  n$2=*&self:class A * [line 47]\n  n$7=*&__objc_anonymous_block_A_capture______1:_fn_ (*) [line 47]\n  _fun_B_sHandler:(n$1:class B *,n$7:_fn_ (*),n$2:_fn_ (*)) virtual [line 47]\n  REMOVE_TEMPS(n$0,n$1,n$5,n$6,n$2,n$7); [line 47]\n  NULLIFY(&__objc_anonymous_block_A_capture______1,false); [line 47]\n  NULLIFY(&self,false); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
 	
 
 	 9 -> 5 ;

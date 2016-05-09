@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 9 -> 6 ;
-8 [label="8: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n " shape="invhouse"]
+8 [label="8: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n  NULLIFY(&b,false); [line 12]\n  NULLIFY(&j,false); [line 12]\n " shape="invhouse"]
 	
 
 	 8 -> 3 ;
@@ -28,7 +28,7 @@ digraph iCFG {
 
 	 4 -> 7 ;
 	 4 -> 8 ;
-3 [label="3:  Return Stmt \n   NULLIFY(&b,false); [line 15]\n  NULLIFY(&j,false); [line 15]\n  *&return:int =0 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

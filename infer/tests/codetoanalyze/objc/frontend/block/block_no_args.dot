@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_m______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:class __objc_anonymous_block_My_manager_m______1 =n$7 [line 25]\n  n$8=*&z:int  [line 25]\n  n$9=*&#GB$g:int  [line 25]\n  *n$7.z:int =n$8 [line 25]\n  *n$7.g:int =n$9 [line 25]\n  n$5=*&z:int  [line 25]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n  REMOVE_TEMPS(n$7,n$8,n$9,n$5); [line 25]\n " shape="box"]
+15 [label="15:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_m______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:class __objc_anonymous_block_My_manager_m______1 =n$7 [line 25]\n  n$8=*&z:int  [line 25]\n  n$9=*&#GB$g:int  [line 25]\n  *n$7.z:int =n$8 [line 25]\n  *n$7.g:int =n$9 [line 25]\n  n$5=*&z:int  [line 25]\n  *&b:_fn_ (*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n  REMOVE_TEMPS(n$7,n$8,n$9,n$5); [line 25]\n  NULLIFY(&__objc_anonymous_block_My_manager_m______1,false); [line 25]\n " shape="box"]
 	
 
 	 15 -> 11 ;
@@ -30,19 +30,19 @@ digraph iCFG {
 	
 
 	 10 -> 5 ;
-9 [label="9:  Return Stmt \n   NULLIFY(&p,false); [line 33]\n  n$3=*&z:int  [line 33]\n  *&return:int =n$3 [line 33]\n  REMOVE_TEMPS(n$3); [line 33]\n  NULLIFY(&__objc_anonymous_block_My_manager_m______1,true); [line 33]\n  NULLIFY(&z,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$3=*&z:int  [line 33]\n  *&return:int =n$3 [line 33]\n  REMOVE_TEMPS(n$3); [line 33]\n  NULLIFY(&z,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 9 -> 2 ;
-8 [label="8:  Return Stmt \n   NULLIFY(&z,false); [line 31]\n  n$1=*&p:int * [line 31]\n  n$2=*n$1:int  [line 31]\n  *&return:int =n$2 [line 31]\n  REMOVE_TEMPS(n$1,n$2); [line 31]\n  NULLIFY(&__objc_anonymous_block_My_manager_m______1,true); [line 31]\n  NULLIFY(&p,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+8 [label="8:  Return Stmt \n   n$1=*&p:int * [line 31]\n  n$2=*n$1:int  [line 31]\n  *&return:int =n$2 [line 31]\n  REMOVE_TEMPS(n$1,n$2); [line 31]\n  NULLIFY(&p,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 8 -> 2 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 == 6) == 0), false); [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 == 6) == 0), false); [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  NULLIFY(&p,false); [line 30]\n " shape="invhouse"]
 	
 
 	 7 -> 9 ;
-6 [label="6: Prune (true branch) \n   PRUNE(((n$0 == 6) != 0), true); [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n " shape="invhouse"]
+6 [label="6: Prune (true branch) \n   PRUNE(((n$0 == 6) != 0), true); [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  NULLIFY(&z,false); [line 30]\n " shape="invhouse"]
 	
 
 	 6 -> 8 ;
@@ -51,7 +51,7 @@ digraph iCFG {
 
 	 5 -> 6 ;
 	 5 -> 7 ;
-4 [label="4:  between_join_and_exit \n   NULLIFY(&b,false); [line 30]\n  NULLIFY(&p,false); [line 30]\n  NULLIFY(&self,false); [line 30]\n  NULLIFY(&z,false); [line 30]\n  NULLIFY(&__objc_anonymous_block_My_manager_m______1,true); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+4 [label="4:  between_join_and_exit \n   APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
 	 4 -> 2 ;

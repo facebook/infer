@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 72 -> 71 ;
-71 [label="71:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2); [line 105]\n  n$56=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 ):unsigned long ) [line 105]\n  *&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2:class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 =n$56 [line 105]\n  n$57=*&x:int * [line 105]\n  *n$56.x:int *=n$57 [line 105]\n  n$51=*&x:int * [line 105]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,n$51) [line 105]\n  REMOVE_TEMPS(n$56,n$57,n$51); [line 105]\n  NULLIFY(&x,false); [line 105]\n " shape="box"]
+71 [label="71:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2); [line 105]\n  n$56=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 ):unsigned long ) [line 105]\n  *&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2:class __objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2 =n$56 [line 105]\n  n$57=*&x:int * [line 105]\n  *n$56.x:int *=n$57 [line 105]\n  n$51=*&x:int * [line 105]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,n$51) [line 105]\n  REMOVE_TEMPS(n$56,n$57,n$51); [line 105]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,false); [line 105]\n  NULLIFY(&x,false); [line 105]\n " shape="box"]
 	
 
 	 71 -> 65 ;
@@ -30,7 +30,7 @@ digraph iCFG {
 	
 
 	 66 -> 70 ;
-65 [label="65:  Return Stmt \n   n$49=*&blk:_fn_ (*) [line 110]\n  n$50=n$49() [line 110]\n  *&return:int =n$50 [line 110]\n  REMOVE_TEMPS(n$49,n$50); [line 110]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,true); [line 110]\n  NULLIFY(&blk,false); [line 110]\n  APPLY_ABSTRACTION; [line 110]\n " shape="box"]
+65 [label="65:  Return Stmt \n   n$49=*&blk:_fn_ (*) [line 110]\n  n$50=n$49() [line 110]\n  *&return:int =n$50 [line 110]\n  REMOVE_TEMPS(n$49,n$50); [line 110]\n  NULLIFY(&blk,false); [line 110]\n  APPLY_ABSTRACTION; [line 110]\n " shape="box"]
 	
 
 	 65 -> 64 ;
@@ -49,7 +49,7 @@ digraph iCFG {
 	
 
 	 61 -> 60 ;
-60 [label="60:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1); [line 96]\n  n$45=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 ):unsigned long ) [line 96]\n  *&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1:class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 =n$45 [line 96]\n  n$46=*&x:int * [line 96]\n  *n$45.x:int *=n$46 [line 96]\n  n$42=*&x:int * [line 96]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,n$42) [line 96]\n  REMOVE_TEMPS(n$45,n$46,n$42); [line 96]\n  NULLIFY(&x,false); [line 96]\n " shape="box"]
+60 [label="60:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1); [line 96]\n  n$45=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 ):unsigned long ) [line 96]\n  *&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1:class __objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1 =n$45 [line 96]\n  n$46=*&x:int * [line 96]\n  *n$45.x:int *=n$46 [line 96]\n  n$42=*&x:int * [line 96]\n  *&blk:_fn_ (*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,n$42) [line 96]\n  REMOVE_TEMPS(n$45,n$46,n$42); [line 96]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,false); [line 96]\n  NULLIFY(&x,false); [line 96]\n " shape="box"]
 	
 
 	 60 -> 56 ;
@@ -64,7 +64,7 @@ digraph iCFG {
 	
 
 	 57 -> 59 ;
-56 [label="56:  Return Stmt \n   n$40=*&blk:_fn_ (*) [line 99]\n  n$41=n$40() [line 99]\n  *&return:int =n$41 [line 99]\n  REMOVE_TEMPS(n$40,n$41); [line 99]\n  NULLIFY(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,true); [line 99]\n  NULLIFY(&blk,false); [line 99]\n  APPLY_ABSTRACTION; [line 99]\n " shape="box"]
+56 [label="56:  Return Stmt \n   n$40=*&blk:_fn_ (*) [line 99]\n  n$41=n$40() [line 99]\n  *&return:int =n$41 [line 99]\n  REMOVE_TEMPS(n$40,n$41); [line 99]\n  NULLIFY(&blk,false); [line 99]\n  APPLY_ABSTRACTION; [line 99]\n " shape="box"]
 	
 
 	 56 -> 55 ;
@@ -150,7 +150,7 @@ digraph iCFG {
 	
 
 	 34 -> 36 ;
-33 [label="33:  DeclStmt \n   n$26=*&rect:struct CGRect  [line 59]\n  n$27=_fun_CGRectGetHeight(n$26:struct CGRect ) [line 59]\n  *&lineThickness:double =(0.200000 * n$27) [line 59]\n  REMOVE_TEMPS(n$26,n$27); [line 59]\n  NULLIFY(&rect,false); [line 59]\n  NULLIFY(&lineThickness,false); [line 59]\n " shape="box"]
+33 [label="33:  DeclStmt \n   n$26=*&rect:struct CGRect  [line 59]\n  n$27=_fun_CGRectGetHeight(n$26:struct CGRect ) [line 59]\n  *&lineThickness:double =(0.200000 * n$27) [line 59]\n  REMOVE_TEMPS(n$26,n$27); [line 59]\n  NULLIFY(&lineThickness,false); [line 59]\n  NULLIFY(&rect,false); [line 59]\n " shape="box"]
 	
 
 	 33 -> 32 ;

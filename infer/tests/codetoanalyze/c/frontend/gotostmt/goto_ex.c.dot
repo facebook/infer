@@ -12,11 +12,11 @@ digraph iCFG {
 
 	 250 -> 248 ;
 	 250 -> 249 ;
-249 [label="249: Prune (false branch) \n   n$10=*&q:int  [line 171]\n  PRUNE((n$10 == 0), false); [line 171]\n  REMOVE_TEMPS(n$10); [line 171]\n " shape="invhouse"]
+249 [label="249: Prune (false branch) \n   n$10=*&q:int  [line 171]\n  PRUNE((n$10 == 0), false); [line 171]\n  REMOVE_TEMPS(n$10); [line 171]\n  NULLIFY(&q,false); [line 171]\n " shape="invhouse"]
 	
 
 	 249 -> 247 ;
-248 [label="248: Prune (true branch) \n   n$10=*&q:int  [line 171]\n  PRUNE((n$10 != 0), true); [line 171]\n  REMOVE_TEMPS(n$10); [line 171]\n  APPLY_ABSTRACTION; [line 171]\n " shape="invhouse"]
+248 [label="248: Prune (true branch) \n   n$10=*&q:int  [line 171]\n  PRUNE((n$10 != 0), true); [line 171]\n  REMOVE_TEMPS(n$10); [line 171]\n  NULLIFY(&q,false); [line 171]\n  APPLY_ABSTRACTION; [line 171]\n " shape="invhouse"]
 	
 
 	 248 -> 245 ;
@@ -28,7 +28,7 @@ digraph iCFG {
 	
 
 	 246 -> 241 ;
-245 [label="245: Skip GotoLabel_print \n   NULLIFY(&q,false); [line 178]\n " color="gray"]
+245 [label="245: Skip GotoLabel_print \n  " color="gray"]
 	
 
 	 245 -> 244 ;
@@ -87,7 +87,7 @@ digraph iCFG {
 	
 
 	 232 -> 233 ;
-231 [label="231: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 173]\n  REMOVE_TEMPS(n$2); [line 173]\n " shape="invhouse"]
+231 [label="231: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 173]\n  REMOVE_TEMPS(n$2); [line 173]\n  NULLIFY(&i,false); [line 173]\n  NULLIFY(&j,false); [line 173]\n  NULLIFY(&k,false); [line 173]\n " shape="invhouse"]
 	
 
 	 231 -> 227 ;
@@ -95,7 +95,7 @@ digraph iCFG {
 	
 
 	 230 -> 232 ;
-229 [label="229:  BinaryOperatorStmt: LT \n   NULLIFY(&q,false); [line 173]\n  n$2=*&i:int  [line 173]\n " shape="box"]
+229 [label="229:  BinaryOperatorStmt: LT \n   n$2=*&i:int  [line 173]\n " shape="box"]
 	
 
 	 229 -> 230 ;
@@ -104,7 +104,7 @@ digraph iCFG {
 	
 
 	 228 -> 229 ;
-227 [label="227: Skip GotoLabel_out \n   NULLIFY(&i,false); [line 185]\n  NULLIFY(&j,false); [line 185]\n  NULLIFY(&k,false); [line 185]\n " color="gray"]
+227 [label="227: Skip GotoLabel_out \n  " color="gray"]
 	
 
 	 227 -> 226 ;
@@ -155,7 +155,7 @@ digraph iCFG {
 	
 
 	 215 -> 212 ;
-214 [label="214: Prune (true branch) \n   PRUNE(((n$5 >= 15) != 0), true); [line 152]\n  REMOVE_TEMPS(n$5); [line 152]\n  APPLY_ABSTRACTION; [line 152]\n " shape="invhouse"]
+214 [label="214: Prune (true branch) \n   PRUNE(((n$5 >= 15) != 0), true); [line 152]\n  REMOVE_TEMPS(n$5); [line 152]\n  NULLIFY(&i,false); [line 152]\n  NULLIFY(&j,false); [line 152]\n  NULLIFY(&k,false); [line 152]\n  APPLY_ABSTRACTION; [line 152]\n " shape="invhouse"]
 	
 
 	 214 -> 199 ;
@@ -202,7 +202,7 @@ digraph iCFG {
 	
 
 	 204 -> 205 ;
-203 [label="203: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 148]\n  REMOVE_TEMPS(n$2); [line 148]\n  APPLY_ABSTRACTION; [line 148]\n " shape="invhouse"]
+203 [label="203: Prune (false branch) \n   PRUNE(((n$2 < 10) == 0), false); [line 148]\n  REMOVE_TEMPS(n$2); [line 148]\n  NULLIFY(&i,false); [line 148]\n  NULLIFY(&j,false); [line 148]\n  NULLIFY(&k,false); [line 148]\n  APPLY_ABSTRACTION; [line 148]\n " shape="invhouse"]
 	
 
 	 203 -> 199 ;
@@ -219,7 +219,7 @@ digraph iCFG {
 	
 
 	 200 -> 201 ;
-199 [label="199: Skip GotoLabel_out \n   NULLIFY(&i,false); [line 161]\n  NULLIFY(&j,false); [line 161]\n  NULLIFY(&k,false); [line 161]\n " color="gray"]
+199 [label="199: Skip GotoLabel_out \n  " color="gray"]
 	
 
 	 199 -> 198 ;
@@ -254,11 +254,11 @@ digraph iCFG {
 	
 
 	 191 -> 184 ;
-190 [label="190: Prune (false branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 128]\n  PRUNE((n$8 == 0), false); [line 128]\n  REMOVE_TEMPS(n$8); [line 128]\n " shape="invhouse"]
+190 [label="190: Prune (false branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 128]\n  PRUNE((n$8 == 0), false); [line 128]\n  REMOVE_TEMPS(n$8); [line 128]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 128]\n " shape="invhouse"]
 	
 
 	 190 -> 182 ;
-189 [label="189: Prune (true branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 128]\n  PRUNE((n$8 != 0), true); [line 128]\n  REMOVE_TEMPS(n$8); [line 128]\n  APPLY_ABSTRACTION; [line 128]\n " shape="invhouse"]
+189 [label="189: Prune (true branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 128]\n  PRUNE((n$8 != 0), true); [line 128]\n  REMOVE_TEMPS(n$8); [line 128]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 128]\n  APPLY_ABSTRACTION; [line 128]\n " shape="invhouse"]
 	
 
 	 189 -> 164 ;
@@ -292,11 +292,11 @@ digraph iCFG {
 	
 
 	 182 -> 175 ;
-181 [label="181: Prune (false branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 130]\n  PRUNE((n$5 == 0), false); [line 130]\n  REMOVE_TEMPS(n$5); [line 130]\n " shape="invhouse"]
+181 [label="181: Prune (false branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 130]\n  PRUNE((n$5 == 0), false); [line 130]\n  REMOVE_TEMPS(n$5); [line 130]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 130]\n " shape="invhouse"]
 	
 
 	 181 -> 173 ;
-180 [label="180: Prune (true branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 130]\n  PRUNE((n$5 != 0), true); [line 130]\n  REMOVE_TEMPS(n$5); [line 130]\n  APPLY_ABSTRACTION; [line 130]\n " shape="invhouse"]
+180 [label="180: Prune (true branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 130]\n  PRUNE((n$5 != 0), true); [line 130]\n  REMOVE_TEMPS(n$5); [line 130]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 130]\n  APPLY_ABSTRACTION; [line 130]\n " shape="invhouse"]
 	
 
 	 180 -> 162 ;
@@ -316,7 +316,7 @@ digraph iCFG {
 	
 
 	 176 -> 178 ;
-175 [label="175:  Call _fun_getValue \n   NULLIFY(&SIL_temp_conditional___n$6,false); [line 130]\n  n$4=_fun_getValue() [line 130]\n " shape="box"]
+175 [label="175:  Call _fun_getValue \n   n$4=_fun_getValue() [line 130]\n " shape="box"]
 	
 
 	 175 -> 176 ;
@@ -342,7 +342,7 @@ digraph iCFG {
 	
 
 	 170 -> 172 ;
-169 [label="169:  BinaryOperatorStmt: GT \n   NULLIFY(&SIL_temp_conditional___n$3,false); [line 132]\n  n$2=_fun_getValue() [line 132]\n " shape="box"]
+169 [label="169:  BinaryOperatorStmt: GT \n   n$2=_fun_getValue() [line 132]\n " shape="box"]
 	
 
 	 169 -> 170 ;
@@ -363,7 +363,7 @@ digraph iCFG {
 	
 
 	 165 -> 161 ;
-164 [label="164: Skip GotoLabel_exit_step \n   NULLIFY(&SIL_temp_conditional___n$6,false); [line 141]\n " color="gray"]
+164 [label="164: Skip GotoLabel_exit_step \n  " color="gray"]
 	
 
 	 164 -> 163 ;
@@ -371,7 +371,7 @@ digraph iCFG {
 	
 
 	 163 -> 162 ;
-162 [label="162: Skip GotoLabel_stepA \n   NULLIFY(&SIL_temp_conditional___n$3,false); [line 143]\n " color="gray"]
+162 [label="162: Skip GotoLabel_stepA \n  " color="gray"]
 	
 
 	 162 -> 167 ;
@@ -386,11 +386,11 @@ digraph iCFG {
 	
 
 	 159 -> 152 ;
-158 [label="158: Prune (false branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 106]\n  PRUNE((n$8 == 0), false); [line 106]\n  REMOVE_TEMPS(n$8); [line 106]\n " shape="invhouse"]
+158 [label="158: Prune (false branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 106]\n  PRUNE((n$8 == 0), false); [line 106]\n  REMOVE_TEMPS(n$8); [line 106]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 106]\n " shape="invhouse"]
 	
 
 	 158 -> 150 ;
-157 [label="157: Prune (true branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 106]\n  PRUNE((n$8 != 0), true); [line 106]\n  REMOVE_TEMPS(n$8); [line 106]\n  APPLY_ABSTRACTION; [line 106]\n " shape="invhouse"]
+157 [label="157: Prune (true branch) \n   n$8=*&SIL_temp_conditional___n$6:int  [line 106]\n  PRUNE((n$8 != 0), true); [line 106]\n  REMOVE_TEMPS(n$8); [line 106]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 106]\n  APPLY_ABSTRACTION; [line 106]\n " shape="invhouse"]
 	
 
 	 157 -> 132 ;
@@ -424,11 +424,11 @@ digraph iCFG {
 	
 
 	 150 -> 143 ;
-149 [label="149: Prune (false branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 108]\n  PRUNE((n$5 == 0), false); [line 108]\n  REMOVE_TEMPS(n$5); [line 108]\n " shape="invhouse"]
+149 [label="149: Prune (false branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 108]\n  PRUNE((n$5 == 0), false); [line 108]\n  REMOVE_TEMPS(n$5); [line 108]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 108]\n " shape="invhouse"]
 	
 
 	 149 -> 141 ;
-148 [label="148: Prune (true branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 108]\n  PRUNE((n$5 != 0), true); [line 108]\n  REMOVE_TEMPS(n$5); [line 108]\n  APPLY_ABSTRACTION; [line 108]\n " shape="invhouse"]
+148 [label="148: Prune (true branch) \n   n$5=*&SIL_temp_conditional___n$3:int  [line 108]\n  PRUNE((n$5 != 0), true); [line 108]\n  REMOVE_TEMPS(n$5); [line 108]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 108]\n  APPLY_ABSTRACTION; [line 108]\n " shape="invhouse"]
 	
 
 	 148 -> 130 ;
@@ -448,7 +448,7 @@ digraph iCFG {
 	
 
 	 144 -> 146 ;
-143 [label="143:  Call _fun_getValue \n   NULLIFY(&SIL_temp_conditional___n$6,false); [line 108]\n  n$4=_fun_getValue() [line 108]\n " shape="box"]
+143 [label="143:  Call _fun_getValue \n   n$4=_fun_getValue() [line 108]\n " shape="box"]
 	
 
 	 143 -> 144 ;
@@ -474,7 +474,7 @@ digraph iCFG {
 	
 
 	 138 -> 140 ;
-137 [label="137:  BinaryOperatorStmt: GT \n   NULLIFY(&SIL_temp_conditional___n$3,false); [line 110]\n  n$2=_fun_getValue() [line 110]\n " shape="box"]
+137 [label="137:  BinaryOperatorStmt: GT \n   n$2=_fun_getValue() [line 110]\n " shape="box"]
 	
 
 	 137 -> 138 ;
@@ -495,7 +495,7 @@ digraph iCFG {
 	
 
 	 133 -> 129 ;
-132 [label="132: Skip GotoLabel_exit_step \n   NULLIFY(&SIL_temp_conditional___n$6,false); [line 119]\n " color="gray"]
+132 [label="132: Skip GotoLabel_exit_step \n  " color="gray"]
 	
 
 	 132 -> 131 ;
@@ -503,7 +503,7 @@ digraph iCFG {
 	
 
 	 131 -> 130 ;
-130 [label="130: Skip GotoLabel_stepA \n   NULLIFY(&SIL_temp_conditional___n$3,false); [line 121]\n " color="gray"]
+130 [label="130: Skip GotoLabel_stepA \n  " color="gray"]
 	
 
 	 130 -> 135 ;
@@ -518,11 +518,11 @@ digraph iCFG {
 	
 
 	 127 -> 120 ;
-126 [label="126: Prune (false branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 85]\n  PRUNE((n$9 == 0), false); [line 85]\n  REMOVE_TEMPS(n$9); [line 85]\n " shape="invhouse"]
+126 [label="126: Prune (false branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 85]\n  PRUNE((n$9 == 0), false); [line 85]\n  REMOVE_TEMPS(n$9); [line 85]\n  NULLIFY(&SIL_temp_conditional___n$7,false); [line 85]\n " shape="invhouse"]
 	
 
 	 126 -> 118 ;
-125 [label="125: Prune (true branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 85]\n  PRUNE((n$9 != 0), true); [line 85]\n  REMOVE_TEMPS(n$9); [line 85]\n  APPLY_ABSTRACTION; [line 85]\n " shape="invhouse"]
+125 [label="125: Prune (true branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 85]\n  PRUNE((n$9 != 0), true); [line 85]\n  REMOVE_TEMPS(n$9); [line 85]\n  NULLIFY(&SIL_temp_conditional___n$7,false); [line 85]\n  APPLY_ABSTRACTION; [line 85]\n " shape="invhouse"]
 	
 
 	 125 -> 99 ;
@@ -556,11 +556,11 @@ digraph iCFG {
 	
 
 	 118 -> 111 ;
-117 [label="117: Prune (false branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 87]\n  PRUNE((n$6 == 0), false); [line 87]\n  REMOVE_TEMPS(n$6); [line 87]\n " shape="invhouse"]
+117 [label="117: Prune (false branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 87]\n  PRUNE((n$6 == 0), false); [line 87]\n  REMOVE_TEMPS(n$6); [line 87]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 87]\n " shape="invhouse"]
 	
 
 	 117 -> 109 ;
-116 [label="116: Prune (true branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 87]\n  PRUNE((n$6 != 0), true); [line 87]\n  REMOVE_TEMPS(n$6); [line 87]\n  APPLY_ABSTRACTION; [line 87]\n " shape="invhouse"]
+116 [label="116: Prune (true branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 87]\n  PRUNE((n$6 != 0), true); [line 87]\n  REMOVE_TEMPS(n$6); [line 87]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 87]\n  APPLY_ABSTRACTION; [line 87]\n " shape="invhouse"]
 	
 
 	 116 -> 102 ;
@@ -580,7 +580,7 @@ digraph iCFG {
 	
 
 	 112 -> 114 ;
-111 [label="111:  Call _fun_getValue \n   NULLIFY(&SIL_temp_conditional___n$7,false); [line 87]\n  n$5=_fun_getValue() [line 87]\n " shape="box"]
+111 [label="111:  Call _fun_getValue \n   n$5=_fun_getValue() [line 87]\n " shape="box"]
 	
 
 	 111 -> 112 ;
@@ -606,7 +606,7 @@ digraph iCFG {
 	
 
 	 106 -> 108 ;
-105 [label="105:  BinaryOperatorStmt: GT \n   NULLIFY(&SIL_temp_conditional___n$4,false); [line 89]\n  n$3=_fun_getValue() [line 89]\n " shape="box"]
+105 [label="105:  BinaryOperatorStmt: GT \n   n$3=_fun_getValue() [line 89]\n " shape="box"]
 	
 
 	 105 -> 106 ;
@@ -619,7 +619,7 @@ digraph iCFG {
 	
 
 	 103 -> 102 ;
-102 [label="102: Skip GotoLabel_stepA \n   NULLIFY(&SIL_temp_conditional___n$4,false); [line 93]\n " color="gray"]
+102 [label="102: Skip GotoLabel_stepA \n  " color="gray"]
 	
 
 	 102 -> 101 ;
@@ -631,7 +631,7 @@ digraph iCFG {
 	
 
 	 100 -> 99 ;
-99 [label="99: Skip GotoLabel_exit_step \n   NULLIFY(&SIL_temp_conditional___n$7,false); [line 97]\n " color="gray"]
+99 [label="99: Skip GotoLabel_exit_step \n  " color="gray"]
 	
 
 	 99 -> 98 ;
@@ -654,11 +654,11 @@ digraph iCFG {
 	
 
 	 94 -> 87 ;
-93 [label="93: Prune (false branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 63]\n  PRUNE((n$9 == 0), false); [line 63]\n  REMOVE_TEMPS(n$9); [line 63]\n " shape="invhouse"]
+93 [label="93: Prune (false branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 63]\n  PRUNE((n$9 == 0), false); [line 63]\n  REMOVE_TEMPS(n$9); [line 63]\n  NULLIFY(&SIL_temp_conditional___n$7,false); [line 63]\n " shape="invhouse"]
 	
 
 	 93 -> 85 ;
-92 [label="92: Prune (true branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 63]\n  PRUNE((n$9 != 0), true); [line 63]\n  REMOVE_TEMPS(n$9); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="invhouse"]
+92 [label="92: Prune (true branch) \n   n$9=*&SIL_temp_conditional___n$7:int  [line 63]\n  PRUNE((n$9 != 0), true); [line 63]\n  REMOVE_TEMPS(n$9); [line 63]\n  NULLIFY(&SIL_temp_conditional___n$7,false); [line 63]\n  APPLY_ABSTRACTION; [line 63]\n " shape="invhouse"]
 	
 
 	 92 -> 65 ;
@@ -692,11 +692,11 @@ digraph iCFG {
 	
 
 	 85 -> 78 ;
-84 [label="84: Prune (false branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 65]\n  PRUNE((n$6 == 0), false); [line 65]\n  REMOVE_TEMPS(n$6); [line 65]\n " shape="invhouse"]
+84 [label="84: Prune (false branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 65]\n  PRUNE((n$6 == 0), false); [line 65]\n  REMOVE_TEMPS(n$6); [line 65]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 65]\n " shape="invhouse"]
 	
 
 	 84 -> 76 ;
-83 [label="83: Prune (true branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 65]\n  PRUNE((n$6 != 0), true); [line 65]\n  REMOVE_TEMPS(n$6); [line 65]\n " shape="invhouse"]
+83 [label="83: Prune (true branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 65]\n  PRUNE((n$6 != 0), true); [line 65]\n  REMOVE_TEMPS(n$6); [line 65]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 65]\n " shape="invhouse"]
 	
 
 	 83 -> 68 ;
@@ -716,7 +716,7 @@ digraph iCFG {
 	
 
 	 79 -> 81 ;
-78 [label="78:  Call _fun_getValue \n   NULLIFY(&SIL_temp_conditional___n$7,false); [line 65]\n  n$5=_fun_getValue() [line 65]\n " shape="box"]
+78 [label="78:  Call _fun_getValue \n   n$5=_fun_getValue() [line 65]\n " shape="box"]
 	
 
 	 78 -> 79 ;
@@ -742,7 +742,7 @@ digraph iCFG {
 	
 
 	 73 -> 75 ;
-72 [label="72:  BinaryOperatorStmt: GT \n   NULLIFY(&SIL_temp_conditional___n$4,false); [line 67]\n  n$3=_fun_getValue() [line 67]\n " shape="box"]
+72 [label="72:  BinaryOperatorStmt: GT \n   n$3=_fun_getValue() [line 67]\n " shape="box"]
 	
 
 	 72 -> 73 ;
@@ -759,7 +759,7 @@ digraph iCFG {
 	
 
 	 69 -> 62 ;
-68 [label="68: Skip GotoLabel_stepA \n   NULLIFY(&SIL_temp_conditional___n$4,false); [line 72]\n " color="gray"]
+68 [label="68: Skip GotoLabel_stepA \n  " color="gray"]
 	
 
 	 68 -> 67 ;
@@ -771,7 +771,7 @@ digraph iCFG {
 	
 
 	 66 -> 65 ;
-65 [label="65: Skip GotoLabel_exit_step \n   NULLIFY(&SIL_temp_conditional___n$7,false); [line 76]\n " color="gray"]
+65 [label="65: Skip GotoLabel_exit_step \n  " color="gray"]
 	
 
 	 65 -> 64 ;
@@ -798,11 +798,11 @@ digraph iCFG {
 	
 
 	 59 -> 52 ;
-58 [label="58: Prune (false branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 42]\n  PRUNE((n$6 == 0), false); [line 42]\n  REMOVE_TEMPS(n$6); [line 42]\n " shape="invhouse"]
+58 [label="58: Prune (false branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 42]\n  PRUNE((n$6 == 0), false); [line 42]\n  REMOVE_TEMPS(n$6); [line 42]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 42]\n " shape="invhouse"]
 	
 
 	 58 -> 50 ;
-57 [label="57: Prune (true branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 42]\n  PRUNE((n$6 != 0), true); [line 42]\n  REMOVE_TEMPS(n$6); [line 42]\n " shape="invhouse"]
+57 [label="57: Prune (true branch) \n   n$6=*&SIL_temp_conditional___n$4:int  [line 42]\n  PRUNE((n$6 != 0), true); [line 42]\n  REMOVE_TEMPS(n$6); [line 42]\n  NULLIFY(&SIL_temp_conditional___n$4,false); [line 42]\n " shape="invhouse"]
 	
 
 	 57 -> 31 ;
@@ -836,11 +836,11 @@ digraph iCFG {
 	
 
 	 50 -> 43 ;
-49 [label="49: Prune (false branch) \n   n$3=*&SIL_temp_conditional___n$1:int  [line 44]\n  PRUNE((n$3 == 0), false); [line 44]\n  REMOVE_TEMPS(n$3); [line 44]\n " shape="invhouse"]
+49 [label="49: Prune (false branch) \n   n$3=*&SIL_temp_conditional___n$1:int  [line 44]\n  PRUNE((n$3 == 0), false); [line 44]\n  REMOVE_TEMPS(n$3); [line 44]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 44]\n " shape="invhouse"]
 	
 
 	 49 -> 41 ;
-48 [label="48: Prune (true branch) \n   n$3=*&SIL_temp_conditional___n$1:int  [line 44]\n  PRUNE((n$3 != 0), true); [line 44]\n  REMOVE_TEMPS(n$3); [line 44]\n " shape="invhouse"]
+48 [label="48: Prune (true branch) \n   n$3=*&SIL_temp_conditional___n$1:int  [line 44]\n  PRUNE((n$3 != 0), true); [line 44]\n  REMOVE_TEMPS(n$3); [line 44]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 44]\n " shape="invhouse"]
 	
 
 	 48 -> 34 ;
@@ -860,7 +860,7 @@ digraph iCFG {
 	
 
 	 44 -> 46 ;
-43 [label="43:  Call _fun_getValue \n   NULLIFY(&SIL_temp_conditional___n$4,false); [line 44]\n  n$2=_fun_getValue() [line 44]\n " shape="box"]
+43 [label="43:  Call _fun_getValue \n   n$2=_fun_getValue() [line 44]\n " shape="box"]
 	
 
 	 43 -> 44 ;
@@ -886,7 +886,7 @@ digraph iCFG {
 	
 
 	 38 -> 40 ;
-37 [label="37:  BinaryOperatorStmt: GT \n   NULLIFY(&SIL_temp_conditional___n$1,false); [line 46]\n  n$0=_fun_getValue() [line 46]\n " shape="box"]
+37 [label="37:  BinaryOperatorStmt: GT \n   n$0=_fun_getValue() [line 46]\n " shape="box"]
 	
 
 	 37 -> 38 ;
@@ -899,7 +899,7 @@ digraph iCFG {
 	
 
 	 35 -> 28 ;
-34 [label="34: Skip GotoLabel_stepA \n   NULLIFY(&SIL_temp_conditional___n$1,false); [line 50]\n " color="gray"]
+34 [label="34: Skip GotoLabel_stepA \n  " color="gray"]
 	
 
 	 34 -> 33 ;
@@ -911,7 +911,7 @@ digraph iCFG {
 	
 
 	 32 -> 28 ;
-31 [label="31: Skip GotoLabel_exit_step \n   NULLIFY(&SIL_temp_conditional___n$4,false); [line 54]\n " color="gray"]
+31 [label="31: Skip GotoLabel_exit_step \n  " color="gray"]
 	
 
 	 31 -> 30 ;

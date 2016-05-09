@@ -7,26 +7,26 @@ digraph iCFG {
 	
 
 	 30 -> 29 ;
-29 [label="29:  DeclStmt \n   _fun_Z_Z(&z2:class Z *) [line 42]\n  NULLIFY(&old,false); [line 42]\n  NULLIFY(&z,false); [line 42]\n  NULLIFY(&z2,false); [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
+29 [label="29:  DeclStmt \n   _fun_Z_Z(&z2:class Z *) [line 42]\n  APPLY_ABSTRACTION; [line 42]\n " shape="box"]
 	
 
 	 29 -> 28 ;
-28 [label="28: Exit initialization_mixed_styles_not_handled_correctly \n  " color=yellow style=filled]
+28 [label="28: Exit initialization_mixed_styles_not_handled_correctly \n   NULLIFY(&z2,false); [line 43]\n  NULLIFY(&z,false); [line 43]\n  NULLIFY(&old,false); [line 43]\n " color=yellow style=filled]
 	
 
 27 [label="27: Start initialization_mixed_styles_not_handled_correctly\nFormals: \nLocals:  z2:class Z  z:class Z [2] old:class Z  \n   DECLARE_LOCALS(&return,&z2,&z,&old); [line 39]\n " color=yellow style=filled]
 	
 
 	 27 -> 31 ;
-26 [label="26:  DeclStmt \n   *&z[0].a:int =1 [line 33]\n  *&z[0].b:int =2 [line 33]\n  *&z[1].a:int =2 [line 33]\n  *&z[1].b:int =3 [line 33]\n " shape="box"]
+26 [label="26:  DeclStmt \n   *&z[0].a:int =1 [line 33]\n  *&z[0].b:int =2 [line 33]\n  *&z[1].a:int =2 [line 33]\n  *&z[1].b:int =3 [line 33]\n  NULLIFY(&z,false); [line 33]\n " shape="box"]
 	
 
 	 26 -> 25 ;
-25 [label="25:  DeclStmt \n   _fun_Z_Z(&z2:class Z *) [line 34]\n  NULLIFY(&z2,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+25 [label="25:  DeclStmt \n   _fun_Z_Z(&z2:class Z *) [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
 	
 
 	 25 -> 24 ;
-24 [label="24: Exit initialization_c_style \n  " color=yellow style=filled]
+24 [label="24: Exit initialization_c_style \n   NULLIFY(&z2,false); [line 35]\n " color=yellow style=filled]
 	
 
 23 [label="23: Start initialization_c_style\nFormals: \nLocals:  z2:class Z  z:class Z [2] \n   DECLARE_LOCALS(&return,&z2,&z); [line 32]\n " color=yellow style=filled]
@@ -59,11 +59,11 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  Return Stmt \n   n$0=*&arr[0][1].x:int  [line 24]\n  *&return:int =n$0 [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$4,false); [line 24]\n  NULLIFY(&arr,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+15 [label="15:  Return Stmt \n   n$0=*&arr[0][1].x:int  [line 24]\n  *&return:int =n$0 [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 15 -> 14 ;
-14 [label="14: Exit matrix_of_person \n  " color=yellow style=filled]
+14 [label="14: Exit matrix_of_person \n   NULLIFY(&arr,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$4,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 25]\n " color=yellow style=filled]
 	
 
 13 [label="13: Start matrix_of_person\nFormals: \nLocals:  arr:class Person [2][2] SIL_materialize_temp__n$1:class Person  SIL_materialize_temp__n$2:class Person  SIL_materialize_temp__n$3:class Person  SIL_materialize_temp__n$4:class Person  \n   DECLARE_LOCALS(&return,&arr,&SIL_materialize_temp__n$1,&SIL_materialize_temp__n$2,&SIL_materialize_temp__n$3,&SIL_materialize_temp__n$4); [line 22]\n " color=yellow style=filled]
@@ -74,11 +74,11 @@ digraph iCFG {
 	
 
 	 12 -> 11 ;
-11 [label="11:  Return Stmt \n   n$0=*&arr[0].x:int  [line 19]\n  *&return:int =n$0 [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 19]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 19]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 19]\n  NULLIFY(&arr,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+11 [label="11:  Return Stmt \n   n$0=*&arr[0].x:int  [line 19]\n  *&return:int =n$0 [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
 	 11 -> 10 ;
-10 [label="10: Exit array_of_person \n  " color=yellow style=filled]
+10 [label="10: Exit array_of_person \n   NULLIFY(&arr,false); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 20]\n " color=yellow style=filled]
 	
 
 9 [label="9: Start array_of_person\nFormals: \nLocals:  arr:class Person [10] SIL_materialize_temp__n$1:class Person  SIL_materialize_temp__n$2:class Person  SIL_materialize_temp__n$3:class Person  \n   DECLARE_LOCALS(&return,&arr,&SIL_materialize_temp__n$1,&SIL_materialize_temp__n$2,&SIL_materialize_temp__n$3); [line 17]\n " color=yellow style=filled]

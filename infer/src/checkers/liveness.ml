@@ -54,12 +54,8 @@ module TransferFunctions = struct
           astate
         |> exp_add_live call_exp
         |> IList.fold_right exp_add_live (IList.map fst params)
-    | Sil.Declare_locals _ | Stackop _ ->
+    | Sil.Declare_locals _ | Stackop _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
-    | Sil.Nullify _ | Remove_temps _ | Abstract _ ->
-        failwith
-          "Nullify, Remove_temps, and Abstract instructions should be added after running liveness"
-
 end
 
 module Analyzer =

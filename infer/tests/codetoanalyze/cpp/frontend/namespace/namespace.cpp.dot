@@ -35,11 +35,11 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  Return Stmt \n   *&return:int =0 [line 58]\n  NULLIFY(&rect1,false); [line 58]\n  NULLIFY(&rect2,false); [line 58]\n  NULLIFY(&x,false); [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
+15 [label="15:  Return Stmt \n   *&return:int =0 [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
 	
 
 	 15 -> 14 ;
-14 [label="14: Exit main \n  " color=yellow style=filled]
+14 [label="14: Exit main \n   NULLIFY(&x,false); [line 59]\n  NULLIFY(&rect2,false); [line 59]\n  NULLIFY(&rect1,false); [line 59]\n " color=yellow style=filled]
 	
 
 13 [label="13: Start main\nFormals: \nLocals:  rect2:class foo::Rectangle  rect1:class bar::Rectangle  x:class foo::my_record  j:double  i:int  \n   DECLARE_LOCALS(&return,&rect2,&rect1,&x,&j,&i); [line 41]\n " color=yellow style=filled]

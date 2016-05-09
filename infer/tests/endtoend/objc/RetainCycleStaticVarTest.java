@@ -50,7 +50,7 @@ public class RetainCycleStaticVarTest {
       throws InterruptedException, IOException, InferException {
     InferResults inferResults = InferRunner.runInferObjC(inferCmd);
     String[] procedures = {
-        "main",
+      "main",
     };
     assertThat(
         "Results should contain the expected retain cycles",

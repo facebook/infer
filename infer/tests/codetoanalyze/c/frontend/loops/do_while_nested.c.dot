@@ -32,7 +32,7 @@ digraph iCFG {
 	
 
 	 8 -> 12 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 20) == 0), false); [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 20) == 0), false); [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&b,false); [line 18]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;
@@ -49,7 +49,7 @@ digraph iCFG {
 	
 
 	 4 -> 13 ;
-3 [label="3:  Return Stmt \n   NULLIFY(&b,false); [line 20]\n  *&return:int =0 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 3 -> 2 ;

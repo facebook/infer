@@ -7,11 +7,11 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  DeclStmt \n   _fun_X_X(&x3:class X *,0:int ,1:int ) [line 23]\n  NULLIFY(&x1,false); [line 23]\n  NULLIFY(&x2,false); [line 23]\n  NULLIFY(&x3,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+9 [label="9:  DeclStmt \n   _fun_X_X(&x3:class X *,0:int ,1:int ) [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8: Exit test \n  " color=yellow style=filled]
+8 [label="8: Exit test \n   NULLIFY(&x3,false); [line 24]\n  NULLIFY(&x2,false); [line 24]\n  NULLIFY(&x1,false); [line 24]\n " color=yellow style=filled]
 	
 
 7 [label="7: Start test\nFormals: \nLocals:  x3:class X  x2:class X  x1:class X  \n   DECLARE_LOCALS(&return,&x3,&x2,&x1); [line 20]\n " color=yellow style=filled]

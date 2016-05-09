@@ -51,7 +51,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  Return Stmt \n   NULLIFY(&self,false); [line 33]\n  n$0=*&other:class A * [line 33]\n  *&return:class A *=n$0 [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n  NULLIFY(&other,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+5 [label="5:  Return Stmt \n   n$0=*&other:class A * [line 33]\n  *&return:class A *=n$0 [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n  NULLIFY(&other,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 5 -> 4 ;

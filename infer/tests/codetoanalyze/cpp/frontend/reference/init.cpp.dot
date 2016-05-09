@@ -26,11 +26,11 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  DeclStmt \n   *&p:int *=&par [line 19]\n  NULLIFY(&p,false); [line 19]\n  NULLIFY(&par,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+8 [label="8:  DeclStmt \n   *&p:int *=&par [line 19]\n  NULLIFY(&p,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7: Exit init_from_val \n  " color=yellow style=filled]
+7 [label="7: Exit init_from_val \n   NULLIFY(&par,false); [line 20]\n " color=yellow style=filled]
 	
 
 6 [label="6: Start init_from_val\nFormals:  par:int \nLocals:  p:int * d:int & v:int  \n   DECLARE_LOCALS(&return,&p,&d,&v); [line 16]\n " color=yellow style=filled]

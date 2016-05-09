@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   *&x.b:int =20 [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   *&x.b:int =20 [line 18]\n  NULLIFY(&x,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 3 -> 2 ;

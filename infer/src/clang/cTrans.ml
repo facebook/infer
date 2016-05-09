@@ -146,17 +146,6 @@ struct
     let block_var = Pvar.mk mblock procname in
     let declare_block_local =
       Sil.Declare_locals ([(block_var, Sil.Tptr (block_type, Sil.Pk_pointer))], loc) in
-    (* Adds Nullify of the temp block variable in the predecessors of the exit node. *)
-    let pred_exit = Cfg.Node.get_preds (Cfg.Procdesc.get_exit_node procdesc) in
-    let block_nullify_instr =
-      if pred_exit = [] then
-        [Sil.Nullify (block_var, loc, true)]
-      else
-        (IList.iter
-           (fun n -> let loc = Cfg.Node.get_loc n in
-             Cfg.Node.append_instrs_temps n [Sil.Nullify(block_var, loc, true)] [])
-           pred_exit;
-         []) in
     let set_instr = Sil.Set (Sil.Lvar block_var, block_type, Sil.Var id_block, loc) in
     let create_field_exp (var, typ) =
       let id = Ident.create_fresh Ident.knormal in
@@ -168,8 +157,7 @@ struct
     (declare_block_local :: trans_res.instrs) @
     [set_instr] @
     captured_instrs @
-    set_fields @
-    block_nullify_instr,
+    set_fields,
     id_block :: ids
 
   (* From a list of expression extract blocks from tuples and *)
@@ -1094,25 +1082,12 @@ struct
     instruction trans_state transformed_stmt
 
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
-    let declare_nullify_vars loc preds pvar =
-      (* Add nullify of the temp block var to the last node (predecessor or the successor nodes)*)
-      IList.iter
-        (fun n -> Cfg.Node.append_instrs_temps n [Sil.Nullify(pvar, loc, true)] [])
-        preds in
-
     Printing.log_out "\n Call to a block enumeration function treated as special case...\n@.";
     let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
-    let transformed_stmt, vars_to_register =
+    let transformed_stmt, _ =
       Ast_expressions.translate_block_enumerate (Pvar.to_string pvar) stmt_info stmt_list ei in
-    let pvars = IList.map (fun (v, _, _) ->
-        Pvar.mk (Mangled.from_string v) procname
-      ) vars_to_register in
-    let loc = CLocation.get_sil_location stmt_info trans_state.context in
-    let res_state = instruction trans_state transformed_stmt in
-    let preds = IList.flatten (IList.map (fun n -> Cfg.Node.get_preds n) trans_state.succ_nodes) in
-    IList.iter (declare_nullify_vars loc preds) pvars;
-    res_state
+    instruction trans_state transformed_stmt
 
   and compoundStmt_trans trans_state stmt_list =
     instructions trans_state stmt_list
