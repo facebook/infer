@@ -138,17 +138,17 @@ module StructuredSil = struct
 end
 
 module Make
-    (C : ProcCfg.Wrapper with type node = Cfg.Node.t and type node_id = Cfg.Node.id)
+    (CFG : ProcCfg.S with type node = Cfg.Node.t)
     (S : Scheduler.S)
     (A : AbstractDomain.S)
     (T : TransferFunctions.S
      with type astate = A.astate and type extras = ProcData.no_extras
-                                 and type node_id = C.node_id) = struct
+                                 and type node_id = CFG.id) = struct
 
   open StructuredSil
 
-  module I = AbstractInterpreter.Make (C) (S) (A) (T)
-  module M = ProcCfg.NodeIdMap (C)
+  module I = AbstractInterpreter.Make (CFG) (S) (A) (T)
+  module M = ProcCfg.NodeIdMap (CFG)
 
   type assert_map = string M.t
 
@@ -214,7 +214,7 @@ module Make
           let node = create_node (Cfg.Node.Stmt_node "Invariant") [] in
           set_succs last_node [node] ~exn_handlers;
           (* add the assertion to be checked after analysis converges *)
-          node, M.add (C.id node) (inv_str, inv_label) assert_map
+          node, M.add (CFG.id node) (inv_str, inv_label) assert_map
     and structured_instrs_to_node last_node assert_map exn_handlers instrs =
       IList.fold_left
         (fun acc instr -> structured_instr_to_node acc exn_handlers instr)

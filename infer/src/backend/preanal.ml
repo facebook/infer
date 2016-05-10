@@ -473,7 +473,7 @@ module NullifyDomain = AbstractDomain.Pair (VarDomain) (VarDomain)
 module NullifyTransferFunctions = struct
   type astate = NullifyDomain.astate
   type extras = LivenessAnalysis.inv_map
-  type node_id = BackwardCfg.node_id
+  type node_id = BackwardCfg.id
 
   let postprocess ((reaching_defs, _) as astate) node_id { ProcData.extras; } =
     match LivenessAnalysis.extract_state node_id extras with

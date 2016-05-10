@@ -7,23 +7,29 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module type Base = sig
+(** Control-flow graph for a single procedure (as opposed to cfg.ml, which represents a cfg for a
+    file). Defines useful wrappers that allows us to do tricks like turn a forward cfg to into a
+    backward one, or view a cfg as having a single instruction per block *)
+
+module type Node = sig
+  type t
+  type id
+
+  val instrs : t -> Sil.instr list
+  val kind : t -> Cfg.Node.nodekind
+  val id : t -> id
+  val id_compare : id -> id -> int
+  val pp_id : Format.formatter -> id -> unit
+end
+
+module type S = sig
   type t
   type node
-  type node_id
+  include (Node with type t := node)
 
-  val id : node -> node_id
-  val id_compare : node_id -> node_id -> int
-  (** all successors (normal and exceptional) *)
   val succs : t -> node -> node list
   (** all predecessors (normal and exceptional) *)
   val preds : t -> node -> node list
-end
-
-(** Wrapper that allows us to do tricks like turn a forward cfg to into a backward one *)
-module type Wrapper = sig
-  include Base
-
   (** non-exceptional successors *)
   val normal_succs : t -> node -> node list
   (** non-exceptional predecessors *)
@@ -34,24 +40,28 @@ module type Wrapper = sig
   val exceptional_preds : t -> node -> node list
   val start_node : t -> node
   val exit_node : t -> node
-  val instrs : node -> Sil.instr list
-  val kind : node -> Cfg.Node.nodekind
   val proc_desc : t -> Cfg.Procdesc.t
   val nodes : t -> node list
-
   val from_pdesc : Cfg.Procdesc.t -> t
-
-  val pp_node : Format.formatter -> node -> unit
-  val pp_id : Format.formatter -> node_id -> unit
 end
 
-module Normal : Wrapper with type node = Cfg.Node.t and type node_id = Cfg.Node.id
+module DefaultNode : Node with type t = Cfg.Node.t and type id = Cfg.Node.id
 
-module Exceptional : Wrapper with type node = Cfg.Node.t and type node_id = Cfg.Node.id
+(** Forward CFG with no exceptional control-flow *)
+module Normal : S with type t = Cfg.Procdesc.t
+                   and type node = DefaultNode.t
+                   and type id = DefaultNode.id
 
-module Backward (W : Wrapper) : Wrapper with type node = W.node and type node_id = W.node_id
+(** Forward CFG with exceptional control-flow *)
+module Exceptional : S with type t = Cfg.Procdesc.t * DefaultNode.t list Cfg.IdMap.t
+                        and type node = DefaultNode.t
+                        and type id = DefaultNode.id
 
-module NodeIdMap (B : Base) : Map.S with type key = B.node_id
+(** Wrapper that reverses the direction of the CFG *)
+module Backward (Base : S) : S with type t = Base.t
+                                and type node = Base.node
+                                and type id = Base.id
 
-module NodeIdSet (B : Base) : Set.S with type elt = B.node_id
+module NodeIdMap (CFG : S) : Map.S with type key = CFG.id
 
+module NodeIdSet (CFG : S) : Set.S with type elt = CFG.id

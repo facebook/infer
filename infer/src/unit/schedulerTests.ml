@@ -12,20 +12,33 @@ open! Utils
 module F = Format
 
 
-(* mock for creating CFG's from adjacency lists *)
+
+(** mocks for creating CFG's from adjacency lists *)
+module MockNode = struct
+  type t = int
+  type id = int
+
+  let instrs _ = []
+  let id n = n
+  let kind _ = Cfg.Node.Stmt_node ""
+  let id_compare = int_compare
+  let pp_id fmt i =
+    F.fprintf fmt "%i" i
+end
+
 module MockProcCfg = struct
   type node = int
+  include (MockNode : module type of MockNode with type t := node)
   type t = (node * node list) list
-  type node_id = int
 
   let id_compare = int_compare
-
-  let id n = n
 
   let succs t n =
     try
       let node_id = id n in
-      IList.find (fun (node, _) -> id_compare (id node) node_id = 0) t
+      IList.find
+        (fun (node, _) -> id_compare (id node) node_id = 0)
+        t
       |> snd
     with Not_found -> []
 
@@ -33,12 +46,24 @@ module MockProcCfg = struct
     try
       let node_id = id n in
       IList.filter
-        (fun (_, succs) -> IList.exists (fun node -> id_compare (id node) node_id = 0) succs) t
+        (fun (_, succs) ->
+           IList.exists (fun node -> id_compare (id node) node_id = 0) succs)
+        t
       |> IList.map fst
     with Not_found -> []
 
-  let from_adjacency_list t = t
+  let nodes t = IList.map fst t
 
+  let normal_succs = succs
+  let normal_preds = preds
+  let exceptional_succs _ _ = []
+  let exceptional_preds _ _ = []
+  let from_adjacency_list t = t
+  (* not called by the scheduler *)
+  let start_node _ = assert false
+  let exit_node _ = assert false
+  let proc_desc _ = assert false
+  let from_pdesc _ = assert false
 end
 
 module S = Scheduler.ReversePostorder (MockProcCfg)

@@ -12,25 +12,39 @@ open! Utils
 module F = Format
 
 (** Control-flow graph for a single procedure (as opposed to cfg.ml, which represents a cfg for a
-    file). *)
+    file). Defines useful wrappers that allows us to do tricks like turn a forward cfg into a
+    backward one, or view a cfg as having a single instruction per node. *)
 
-module type Base = sig
+module type Node = sig
+  type t
+  type id
+
+  val instrs : t -> Sil.instr list
+  val kind : t -> Cfg.Node.nodekind
+  val id : t -> id
+  val id_compare : id -> id -> int
+  val pp_id : F.formatter -> id -> unit
+end
+
+module DefaultNode = struct
+  type t = Cfg.Node.t
+  type id = Cfg.Node.id
+
+  let instrs = Cfg.Node.get_instrs
+  let kind = Cfg.Node.get_kind
+  let id = Cfg.Node.get_id
+  let id_compare = Cfg.Node.id_compare
+  let pp_id = Cfg.Node.pp_id
+end
+
+module type S = sig
   type t
   type node
-  type node_id
+  include (Node with type t := node)
 
-  val id : node -> node_id
-  val id_compare : node_id -> node_id -> int
-  (** all successors (normal and exceptional) *)
   val succs : t -> node -> node list
   (** all predecessors (normal and exceptional) *)
   val preds : t -> node -> node list
-end
-
-(** Wrapper that allows us to do tricks like turn a forward cfg to into a backward one *)
-module type Wrapper = sig
-  include Base
-
   (** non-exceptional successors *)
   val normal_succs : t -> node -> node list
   (** non-exceptional predecessors *)
@@ -41,24 +55,17 @@ module type Wrapper = sig
   val exceptional_preds : t -> node -> node list
   val start_node : t -> node
   val exit_node : t -> node
-  val instrs : node -> Sil.instr list
-  val kind : node -> Cfg.Node.nodekind
   val proc_desc : t -> Cfg.Procdesc.t
   val nodes : t -> node list
-
   val from_pdesc : Cfg.Procdesc.t -> t
-
-  val pp_node : F.formatter -> node -> unit
-  val pp_id : F.formatter -> node_id -> unit
 end
 
 (** Forward CFG with no exceptional control-flow *)
 module Normal = struct
   type t = Cfg.Procdesc.t
-  type node = Cfg.node
-  type node_id = Cfg.Node.id
+  type node = DefaultNode.t
+  include (DefaultNode : module type of DefaultNode with type t := node)
 
-  let id = Cfg.Node.get_id
   let normal_succs _ n = Cfg.Node.get_succs n
   let normal_preds _ n = Cfg.Node.get_preds n
   (* prune away exceptional control flow *)
@@ -68,25 +75,17 @@ module Normal = struct
   let preds = normal_preds
   let start_node = Cfg.Procdesc.get_start_node
   let exit_node = Cfg.Procdesc.get_exit_node
-  let instrs = Cfg.Node.get_instrs
-  let kind = Cfg.Node.get_kind
   let proc_desc t = t
   let nodes = Cfg.Procdesc.get_nodes
-
   let from_pdesc pdesc = pdesc
-
-  let id_compare = Cfg.Node.id_compare
-
-  let pp_node = Cfg.Node.pp
-  let pp_id = Cfg.Node.pp_id
 end
 
 (** Forward CFG with exceptional control-flow *)
 module Exceptional = struct
-  type node_id = Cfg.Node.id
-  type node = Cfg.node
+  type node = DefaultNode.t
   type id_node_map = node list Cfg.IdMap.t
   type t = Cfg.Procdesc.t * id_node_map
+  include (DefaultNode : module type of DefaultNode with type t := node)
 
   let from_pdesc pdesc =
     (* map from a node to its exceptional predecessors *)
@@ -143,34 +142,29 @@ module Exceptional = struct
   let proc_desc (pdesc, _) = pdesc
   let start_node (pdesc, _) = Cfg.Procdesc.get_start_node pdesc
   let exit_node (pdesc, _) = Cfg.Procdesc.get_exit_node pdesc
-  let instrs = Cfg.Node.get_instrs
-  let id = Cfg.Node.get_id
-  let id_compare = Cfg.Node.id_compare
-  let pp_node = Cfg.Node.pp
-  let pp_id = Cfg.Node.pp_id
-  let kind = Cfg.Node.get_kind
 end
 
-module Backward (W : Wrapper) = struct
-  include W
+(** Wrapper that reverses the direction of the CFG *)
+module Backward (Base : S) = struct
+  include Base
+  let instrs n = IList.rev (Base.instrs n)
 
-  let succs = W.preds
-  let preds = W.succs
-  let start_node = W.exit_node
-  let exit_node = W.start_node
-  let instrs t = IList.rev (W.instrs t)
-  let normal_succs = W.normal_preds
-  let normal_preds = W.normal_succs
-  let exceptional_succs = W.exceptional_preds
-  let exceptional_preds = W.exceptional_succs
+  let succs = Base.preds
+  let preds = Base.succs
+  let start_node = Base.exit_node
+  let exit_node = Base.start_node
+  let normal_succs = Base.normal_preds
+  let normal_preds = Base.normal_succs
+  let exceptional_succs = Base.exceptional_preds
+  let exceptional_preds = Base.exceptional_succs
 end
 
-module NodeIdMap (B : Base) = Map.Make(struct
-    type t = B.node_id
-    let compare = B.id_compare
+module NodeIdMap (CFG : S) = Map.Make(struct
+    type t = CFG.id
+    let compare = CFG.id_compare
   end)
 
-module NodeIdSet (B : Base) = Set.Make(struct
-    type t = B.node_id
-    let compare = B.id_compare
+module NodeIdSet (CFG : S) = Set.Make(struct
+    type t = CFG.id
+    let compare = CFG.id_compare
   end)
