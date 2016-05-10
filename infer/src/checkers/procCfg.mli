@@ -47,6 +47,11 @@ end
 
 module DefaultNode : Node with type t = Cfg.Node.t and type id = Cfg.Node.id
 
+type instr_index = int
+type instr_node = { node: DefaultNode.t; instr_index: instr_index; num_instrs: int; }
+
+module OneInstrNode : Node with type t = instr_node and type id = Cfg.Node.id * instr_index
+
 (** Forward CFG with no exceptional control-flow *)
 module Normal : S with type t = Cfg.Procdesc.t
                    and type node = DefaultNode.t
@@ -61,6 +66,11 @@ module Exceptional : S with type t = Cfg.Procdesc.t * DefaultNode.t list Cfg.IdM
 module Backward (Base : S) : S with type t = Base.t
                                 and type node = Base.node
                                 and type id = Base.id
+
+module OneInstrPerNode (Base : S with type node = DefaultNode.t) :
+  S with type t = Base.t
+     and type node = OneInstrNode.t
+     and type id = OneInstrNode.id
 
 module NodeIdMap (CFG : S) : Map.S with type key = CFG.id
 

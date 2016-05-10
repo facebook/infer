@@ -37,6 +37,33 @@ module DefaultNode = struct
   let pp_id = Cfg.Node.pp_id
 end
 
+type instr_index = int
+type instr_node = { node: DefaultNode.t; instr_index: instr_index; num_instrs: int; }
+
+module OneInstrNode = struct
+  type t = instr_node
+  type id = DefaultNode.id * instr_index
+
+  let instrs t =
+    match DefaultNode.instrs t.node with
+    | [] -> []
+    | instrs -> [IList.nth instrs t.instr_index]
+
+  let kind t =
+    DefaultNode.kind t.node
+
+  let id t =
+    DefaultNode.id t.node, t.instr_index
+
+  let id_compare (t_id1, i_index1) (t_id2, i_index2) =
+    let n = DefaultNode.id_compare t_id1 t_id2 in
+    if n <> 0 then n
+    else int_compare i_index1 i_index2
+
+  let pp_id fmt (id, index) =
+    F.fprintf fmt "(%a: %d)" DefaultNode.pp_id id index
+end
+
 module type S = sig
   type t
   type node
@@ -157,6 +184,66 @@ module Backward (Base : S) = struct
   let normal_preds = Base.normal_succs
   let exceptional_succs = Base.exceptional_preds
   let exceptional_preds = Base.exceptional_succs
+end
+
+(** Wrapper that views the CFG as if it has at most one instruction per node *)
+module OneInstrPerNode (Base : S with type node = DefaultNode.t) = struct
+  type t = Base.t
+  type node = OneInstrNode.t
+  include (OneInstrNode : module type of OneInstrNode with type t := node)
+
+  let create_node cfg_node =
+    let num_instrs = IList.length (Base.instrs cfg_node) in
+    { node = cfg_node; instr_index = 0; num_instrs; }
+
+  let create_pred_node cfg_node =
+    let num_instrs = IList.length (Base.instrs cfg_node) in
+    { node = cfg_node; instr_index = num_instrs - 1; num_instrs; }
+
+  let get_succs n f_get_succs =
+    if n.instr_index >= n.num_instrs - 1 then
+      IList.map create_node (f_get_succs n.node)
+    else
+      let instr_index = n.instr_index + 1 in
+      [{ n with instr_index; }]
+
+  let succs t n =
+    get_succs n (Base.succs t)
+
+  let normal_succs t n =
+    get_succs n (Base.normal_succs t)
+
+  let exceptional_succs t n =
+    get_succs n (Base.exceptional_succs t)
+
+  let get_preds n f_get_preds =
+    if n.instr_index <= 0 then
+      IList.map create_pred_node (f_get_preds n.node)
+    else
+      let instr_index = n.instr_index - 1 in
+      [{ n with instr_index; }]
+
+  let preds t n =
+    get_preds n (Base.preds t)
+
+  let normal_preds t n =
+    get_preds n (Base.normal_preds t)
+
+  let exceptional_preds t n =
+    get_preds n (Base.exceptional_preds t)
+
+  let start_node t =
+    create_node (Base.start_node t)
+
+  let exit_node t =
+    create_node (Base.exit_node t)
+
+  let proc_desc = Base.proc_desc
+
+  let nodes t =
+    IList.map create_node (Base.nodes t)
+
+  let from_pdesc = Base.from_pdesc
 end
 
 module NodeIdMap (CFG : S) = Map.Make(struct
