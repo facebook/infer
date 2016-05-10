@@ -12,8 +12,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
+import codecs
 import os
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -32,6 +34,12 @@ parser.add_argument('-bootclasspath', type=utils.decode)
 parser.add_argument('-d', dest='classes_out', default=current_directory)
 parser.add_argument('-processorpath', type=utils.decode, dest='processorpath')
 parser.add_argument('-processor', type=utils.decode, dest='processor')
+parser.add_argument('-o', '--out', metavar='<directory>',
+                    default=utils.encode(config.DEFAULT_INFER_OUT),
+                    dest='infer_out',
+                    type=utils.decode,
+                    action=utils.AbsolutePathAction,
+                    help='Set the Infer results directory')
 
 
 def _get_javac_args(args):
@@ -94,7 +102,6 @@ class CompilerCall(object):
                 raise AnnotationProcessorNotFound(config.ANNOT_PROCESSOR_JAR)
             if self.args.classes_out is not None:
                 javac_cmd += ['-d', self.args.classes_out]
-            javac_cmd += self.remaining_args
 
             javac_cmd.append('-J-Duser.language=en')
 
@@ -110,7 +117,38 @@ class CompilerCall(object):
                 classpath = os.pathsep.join([config.ANNOT_PROCESSOR_JAR,
                                              classpath])
 
-            javac_cmd += ['-classpath', classpath]
+            at_args = [
+                arg for arg in self.remaining_args if arg.startswith('@')]
+            found_classpath = False
+            for at_arg in at_args:
+                # remove @ character
+                args_file_name = at_arg[1:]
+                with codecs.open(args_file_name, 'r',
+                                 encoding=config.CODESET) as args_file:
+                    args_file_contents = args_file.read()
+                prefix_suffix = args_file_contents.split('-classpath\n', 1)
+                if len(prefix_suffix) == 2:
+                    prefix, suffix = prefix_suffix
+                    with tempfile.NamedTemporaryFile(
+                            dir=self.args.infer_out,
+                            prefix=args_file_name + '_',
+                            suffix='_cp',
+                            delete=False) as args_file_cp:
+                        args_file_name_cp = args_file_cp.name
+                        args_file_cp.write(
+                            prefix + '-classpath\n' + classpath + ':' + suffix)
+                        at_arg_cp = '@' + args_file_name_cp
+                        self.remaining_args = [
+                            at_arg_cp if arg == at_arg else arg
+                            for arg in self.remaining_args]
+                        found_classpath = True
+                        break
+
+            javac_cmd += self.remaining_args
+
+            if not found_classpath:
+                # -classpath option not found in any args file
+                javac_cmd += ['-classpath', classpath]
 
             # this overrides the default mechanism for discovering annotation
             # processors (checking the manifest of the annotation processor
