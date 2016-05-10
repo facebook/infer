@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12:  Call n$0 \n   n$0=*&callback:_fn_ (*) [line 46]\n  n$0(0:class NSError *,0:struct objc_object *) [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n  NULLIFY(&callback,false); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+12 [label="12:  Call n$0 \n   n$0=*&callback:_fn_ (*) [line 46]\n  n$0(0:class NSError *,0:struct objc_object *) [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n  NULLIFY(&callback); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	
 
 	 12 -> 11 ;
@@ -18,15 +18,15 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  DeclStmt \n   n$3=*&a:class A * [line 39]\n  n$4=_fun_A_getA(n$3:class A *) virtual [line 39]\n  _fun___objc_retain(n$4:class A *) [line 39]\n  *&a1:class A *=n$4 [line 39]\n  REMOVE_TEMPS(n$3,n$4); [line 39]\n  NULLIFY(&a,false); [line 39]\n " shape="box"]
+8 [label="8:  DeclStmt \n   n$3=*&a:class A * [line 39]\n  n$4=_fun_A_getA(n$3:class A *) virtual [line 39]\n  _fun___objc_retain(n$4:class A *) [line 39]\n  *&a1:class A *=n$4 [line 39]\n  REMOVE_TEMPS(n$3,n$4); [line 39]\n  NULLIFY(&a); [line 39]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  DeclStmt \n   n$1=*&a1:class A * [line 40]\n  n$2=*n$1.x:int  [line 40]\n  *&y:int =n$2 [line 40]\n  REMOVE_TEMPS(n$1,n$2); [line 40]\n  NULLIFY(&a1,false); [line 40]\n  NULLIFY(&y,false); [line 40]\n " shape="box"]
+7 [label="7:  DeclStmt \n   n$1=*&a1:class A * [line 40]\n  n$2=*n$1.x:int  [line 40]\n  *&y:int =n$2 [line 40]\n  REMOVE_TEMPS(n$1,n$2); [line 40]\n  NULLIFY(&a1); [line 40]\n  NULLIFY(&y); [line 40]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  Return Stmt \n   n$0=*&self:class C * [line 41]\n  *&return:struct objc_object *=n$0 [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&self,false); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&self:class C * [line 41]\n  *&return:struct objc_object *=n$0 [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&self); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
 	
 
 	 6 -> 5 ;

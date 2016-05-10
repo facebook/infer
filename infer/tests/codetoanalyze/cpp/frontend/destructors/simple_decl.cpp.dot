@@ -1,5 +1,5 @@
 digraph iCFG {
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B * [line 20]\n  *n$0.f:int =1 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&this,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class B * [line 20]\n  *n$0.f:int =1 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&this); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -10,7 +10,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A * [line 12]\n  *n$0.f:int =0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A * [line 12]\n  *n$0.f:int =0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

@@ -1,9 +1,9 @@
 digraph iCFG {
-33 [label="33:  Call _fun___objc_release \n   n$1=*&a:class A * [line 65]\n  _fun___objc_release(n$1:class A *) [line 65]\n  REMOVE_TEMPS(n$1); [line 65]\n  NULLIFY(&a,false); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
+33 [label="33:  Call _fun___objc_release \n   n$1=*&a:class A * [line 65]\n  _fun___objc_release(n$1:class A *) [line 65]\n  REMOVE_TEMPS(n$1); [line 65]\n  NULLIFY(&a); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
 	
 
 	 33 -> 29 ;
-32 [label="32: Prune (false branch) \n   n$0=*&a:class A * [line 64]\n  PRUNE((n$0 == 0), false); [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  NULLIFY(&a,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="invhouse"]
+32 [label="32: Prune (false branch) \n   n$0=*&a:class A * [line 64]\n  PRUNE((n$0 == 0), false); [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  NULLIFY(&a); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="invhouse"]
 	
 
 	 32 -> 29 ;
@@ -35,7 +35,7 @@ digraph iCFG {
 	
 
 	 25 -> 24 ;
-24 [label="24:  Message Call: release \n   n$0=*&a:class A * [line 59]\n  _fun___objc_release(n$0:class A *) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  NULLIFY(&a,false); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
+24 [label="24:  Message Call: release \n   n$0=*&a:class A * [line 59]\n  _fun___objc_release(n$0:class A *) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  NULLIFY(&a); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
 	
 
 	 24 -> 23 ;
@@ -50,7 +50,7 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  Message Call: release \n   n$0=*&a:class A * [line 52]\n  _fun___objc_release(n$0:class A *) [line 52]\n  REMOVE_TEMPS(n$0); [line 52]\n  NULLIFY(&a,false); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
+20 [label="20:  Message Call: release \n   n$0=*&a:class A * [line 52]\n  _fun___objc_release(n$0:class A *) [line 52]\n  REMOVE_TEMPS(n$0); [line 52]\n  NULLIFY(&a); [line 52]\n  APPLY_ABSTRACTION; [line 52]\n " shape="box"]
 	
 
 	 20 -> 19 ;
@@ -65,7 +65,7 @@ digraph iCFG {
 	
 
 	 17 -> 16 ;
-16 [label="16:  Message Call: release \n   n$0=*&b:class A * [line 46]\n  _fun___objc_release(n$0:class A *) [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n  NULLIFY(&b,false); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+16 [label="16:  Message Call: release \n   n$0=*&b:class A * [line 46]\n  _fun___objc_release(n$0:class A *) [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n  NULLIFY(&b); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	
 
 	 16 -> 15 ;
@@ -76,7 +76,7 @@ digraph iCFG {
 	
 
 	 14 -> 17 ;
-13 [label="13:  DeclStmt \n   n$0=_fun_test() [line 40]\n  *&b:class A *=n$0 [line 40]\n  REMOVE_TEMPS(n$0); [line 40]\n  NULLIFY(&b,false); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
+13 [label="13:  DeclStmt \n   n$0=_fun_test() [line 40]\n  *&b:class A *=n$0 [line 40]\n  REMOVE_TEMPS(n$0); [line 40]\n  NULLIFY(&b); [line 40]\n  APPLY_ABSTRACTION; [line 40]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -91,7 +91,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$0=*&b:class A * [line 36]\n  *&#GB$g:class A *=n$0 [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&b,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$0=*&b:class A * [line 36]\n  *&#GB$g:class A *=n$0 [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&b); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -114,7 +114,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&a:class A * [line 29]\n  *&return:class A *=n$0 [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  NULLIFY(&a,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&a:class A * [line 29]\n  *&return:class A *=n$0 [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  NULLIFY(&a); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 3 -> 2 ;

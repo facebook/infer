@@ -11,14 +11,14 @@ digraph iCFG {
 	
 
 	 29 -> 28 ;
-28 [label="28: Exit initialization_mixed_styles_not_handled_correctly \n   NULLIFY(&z2,false); [line 43]\n  NULLIFY(&z,false); [line 43]\n  NULLIFY(&old,false); [line 43]\n " color=yellow style=filled]
+28 [label="28: Exit initialization_mixed_styles_not_handled_correctly \n   NULLIFY(&z2); [line 43]\n  NULLIFY(&z); [line 43]\n  NULLIFY(&old); [line 43]\n " color=yellow style=filled]
 	
 
 27 [label="27: Start initialization_mixed_styles_not_handled_correctly\nFormals: \nLocals:  z2:class Z  z:class Z [2] old:class Z  \n   DECLARE_LOCALS(&return,&z2,&z,&old); [line 39]\n " color=yellow style=filled]
 	
 
 	 27 -> 31 ;
-26 [label="26:  DeclStmt \n   *&z[0].a:int =1 [line 33]\n  *&z[0].b:int =2 [line 33]\n  *&z[1].a:int =2 [line 33]\n  *&z[1].b:int =3 [line 33]\n  NULLIFY(&z,false); [line 33]\n " shape="box"]
+26 [label="26:  DeclStmt \n   *&z[0].a:int =1 [line 33]\n  *&z[0].b:int =2 [line 33]\n  *&z[1].a:int =2 [line 33]\n  *&z[1].b:int =3 [line 33]\n  NULLIFY(&z); [line 33]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -26,7 +26,7 @@ digraph iCFG {
 	
 
 	 25 -> 24 ;
-24 [label="24: Exit initialization_c_style \n   NULLIFY(&z2,false); [line 35]\n " color=yellow style=filled]
+24 [label="24: Exit initialization_c_style \n   NULLIFY(&z2); [line 35]\n " color=yellow style=filled]
 	
 
 23 [label="23: Start initialization_c_style\nFormals: \nLocals:  z2:class Z  z:class Z [2] \n   DECLARE_LOCALS(&return,&z2,&z); [line 32]\n " color=yellow style=filled]
@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 22 -> 21 ;
-21 [label="21:  Constructor Init \n   n$0=*&this:class Z * [line 27]\n  n$1=*&__param_0:class Z & [line 27]\n  n$2=*n$1.b:int  [line 27]\n  *n$0.b:int =n$2 [line 27]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 27]\n  NULLIFY(&__param_0,false); [line 27]\n  NULLIFY(&this,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+21 [label="21:  Constructor Init \n   n$0=*&this:class Z * [line 27]\n  n$1=*&__param_0:class Z & [line 27]\n  n$2=*n$1.b:int  [line 27]\n  *n$0.b:int =n$2 [line 27]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 27]\n  NULLIFY(&__param_0); [line 27]\n  NULLIFY(&this); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -63,7 +63,7 @@ digraph iCFG {
 	
 
 	 15 -> 14 ;
-14 [label="14: Exit matrix_of_person \n   NULLIFY(&arr,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$4,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 25]\n " color=yellow style=filled]
+14 [label="14: Exit matrix_of_person \n   NULLIFY(&arr); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$4); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$3); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$2); [line 25]\n  NULLIFY(&SIL_materialize_temp__n$1); [line 25]\n " color=yellow style=filled]
 	
 
 13 [label="13: Start matrix_of_person\nFormals: \nLocals:  arr:class Person [2][2] SIL_materialize_temp__n$1:class Person  SIL_materialize_temp__n$2:class Person  SIL_materialize_temp__n$3:class Person  SIL_materialize_temp__n$4:class Person  \n   DECLARE_LOCALS(&return,&arr,&SIL_materialize_temp__n$1,&SIL_materialize_temp__n$2,&SIL_materialize_temp__n$3,&SIL_materialize_temp__n$4); [line 22]\n " color=yellow style=filled]
@@ -78,14 +78,14 @@ digraph iCFG {
 	
 
 	 11 -> 10 ;
-10 [label="10: Exit array_of_person \n   NULLIFY(&arr,false); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$3,false); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$2,false); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 20]\n " color=yellow style=filled]
+10 [label="10: Exit array_of_person \n   NULLIFY(&arr); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$3); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$2); [line 20]\n  NULLIFY(&SIL_materialize_temp__n$1); [line 20]\n " color=yellow style=filled]
 	
 
 9 [label="9: Start array_of_person\nFormals: \nLocals:  arr:class Person [10] SIL_materialize_temp__n$1:class Person  SIL_materialize_temp__n$2:class Person  SIL_materialize_temp__n$3:class Person  \n   DECLARE_LOCALS(&return,&arr,&SIL_materialize_temp__n$1,&SIL_materialize_temp__n$2,&SIL_materialize_temp__n$3); [line 17]\n " color=yellow style=filled]
 	
 
 	 9 -> 12 ;
-8 [label="8:  Constructor Init \n   n$0=*&this:class Person * [line 10]\n  n$1=*&__param_0:class Person & [line 10]\n  n$2=*n$1.x:int  [line 10]\n  *n$0.x:int =n$2 [line 10]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 10]\n  NULLIFY(&__param_0,false); [line 10]\n  NULLIFY(&this,false); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+8 [label="8:  Constructor Init \n   n$0=*&this:class Person * [line 10]\n  n$1=*&__param_0:class Person & [line 10]\n  n$2=*n$1.x:int  [line 10]\n  *n$0.x:int =n$2 [line 10]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 10]\n  NULLIFY(&__param_0); [line 10]\n  NULLIFY(&this); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -103,7 +103,7 @@ digraph iCFG {
 	
 
 	 4 -> 5 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 12]\n  n$1=*&i:int  [line 12]\n  *n$0.x:int =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&i,false); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 12]\n  n$1=*&i:int  [line 12]\n  *n$0.x:int =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&i); [line 12]\n  NULLIFY(&this); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

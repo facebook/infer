@@ -93,7 +93,7 @@ let rec def_instr cfg (instr: Sil.instr) acc =
   match instr with
   | Sil.Set (e, _, _, _) -> def_exp cfg e acc
   | Sil.Call _ | Sil.Letderef _ | Sil.Prune _ -> acc
-  | Sil.Nullify (x, _, _) ->
+  | Sil.Nullify (x, _) ->
       if is_not_function cfg x then Vset.add x acc else acc
   | Sil.Abstract _ | Sil.Remove_temps _ | Sil.Stackop _ | Sil.Declare_locals _ -> acc
 
@@ -212,7 +212,7 @@ let analyze_proc cfg pdesc cand =
 (* Instruction i is nullifying a block variable *)
 let is_block_nullify i =
   match i with
-  | Sil.Nullify(pvar, _, true) -> Sil.is_block_pvar pvar
+  | Sil.Nullify(pvar, _) -> Sil.is_block_pvar pvar
   | _ -> false
 
 (** Add nullify instructions to the node given dead program variables  *)
@@ -223,11 +223,11 @@ let node_add_nullify_instrs n dead_vars_after dead_vars_before =
     pvars_tmp @ pvars_notmp in
   let instrs_after =
     IList.map
-      (fun pvar -> Sil.Nullify (pvar, loc, false))
+      (fun pvar -> Sil.Nullify (pvar, loc))
       (move_tmp_pvars_first dead_vars_after) in
   let instrs_before =
     IList.map
-      (fun pvar -> Sil.Nullify (pvar, loc, false))
+      (fun pvar -> Sil.Nullify (pvar, loc))
       (move_tmp_pvars_first dead_vars_before) in
   (* Nullify(bloc_var,_,true) can be placed in the middle
      of the block because when we add this instruction*)
@@ -527,7 +527,7 @@ let add_nullify_instrs tenv _ pdesc =
     let loc = Cfg.Node.get_last_loc node in
     let nullify_instrs =
       IList.filter is_local pvars
-      |> IList.map (fun pvar -> Sil.Nullify (pvar, loc, false)) in
+      |> IList.map (fun pvar -> Sil.Nullify (pvar, loc)) in
     if nullify_instrs <> []
     then Cfg.Node.append_instrs_temps node (IList.rev nullify_instrs) [] in
 

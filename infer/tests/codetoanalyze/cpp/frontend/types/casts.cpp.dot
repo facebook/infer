@@ -1,5 +1,5 @@
 digraph iCFG {
-6 [label="6:  DeclStmt \n   *&a:int =(2 + 3.400000) [line 15]\n  NULLIFY(&a,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+6 [label="6:  DeclStmt \n   *&a:int =(2 + 3.400000) [line 15]\n  NULLIFY(&a); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -10,7 +10,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  DeclStmt \n   n$0=*&a:int  [line 12]\n  *&la:long long =n$0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&a,false); [line 12]\n  NULLIFY(&la,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=*&a:int  [line 12]\n  *&la:long long =n$0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&a); [line 12]\n  NULLIFY(&la); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

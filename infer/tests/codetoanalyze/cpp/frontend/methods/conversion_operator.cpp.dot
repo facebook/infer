@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 60 -> 59 ;
-59 [label="59:  Return Stmt \n   n$4=*&v:int  [line 65]\n  *&return:int =(1 / n$4) [line 65]\n  REMOVE_TEMPS(n$4); [line 65]\n  NULLIFY(&v,false); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
+59 [label="59:  Return Stmt \n   n$4=*&v:int  [line 65]\n  *&return:int =(1 / n$4) [line 65]\n  REMOVE_TEMPS(n$4); [line 65]\n  NULLIFY(&v); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
 	
 
 	 59 -> 53 ;
@@ -32,7 +32,7 @@ digraph iCFG {
 	
 
 	 54 -> 53 ;
-53 [label="53: Exit branch_div1 \n   NULLIFY(&x,false); [line 68]\n " color=yellow style=filled]
+53 [label="53: Exit branch_div1 \n   NULLIFY(&x); [line 68]\n " color=yellow style=filled]
 	
 
 52 [label="52: Start branch_div1\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 61]\n " color=yellow style=filled]
@@ -47,7 +47,7 @@ digraph iCFG {
 	
 
 	 50 -> 49 ;
-49 [label="49:  Return Stmt \n   n$4=*&v:int  [line 56]\n  *&return:int =(1 / n$4) [line 56]\n  REMOVE_TEMPS(n$4); [line 56]\n  NULLIFY(&v,false); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
+49 [label="49:  Return Stmt \n   n$4=*&v:int  [line 56]\n  *&return:int =(1 / n$4) [line 56]\n  REMOVE_TEMPS(n$4); [line 56]\n  NULLIFY(&v); [line 56]\n  APPLY_ABSTRACTION; [line 56]\n " shape="box"]
 	
 
 	 49 -> 43 ;
@@ -72,7 +72,7 @@ digraph iCFG {
 	
 
 	 44 -> 43 ;
-43 [label="43: Exit branch_no_div \n   NULLIFY(&x,false); [line 59]\n " color=yellow style=filled]
+43 [label="43: Exit branch_no_div \n   NULLIFY(&x); [line 59]\n " color=yellow style=filled]
 	
 
 42 [label="42: Start branch_no_div\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 52]\n " color=yellow style=filled]
@@ -95,7 +95,7 @@ digraph iCFG {
 	
 
 	 38 -> 37 ;
-37 [label="37:  Return Stmt \n   n$10=*&v:int  [line 47]\n  *&return:int =(1 / n$10) [line 47]\n  REMOVE_TEMPS(n$10); [line 47]\n  NULLIFY(&v,false); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
+37 [label="37:  Return Stmt \n   n$10=*&v:int  [line 47]\n  *&return:int =(1 / n$10) [line 47]\n  REMOVE_TEMPS(n$10); [line 47]\n  NULLIFY(&v); [line 47]\n  APPLY_ABSTRACTION; [line 47]\n " shape="box"]
 	
 
 	 37 -> 31 ;
@@ -120,7 +120,7 @@ digraph iCFG {
 	
 
 	 32 -> 31 ;
-31 [label="31: Exit y_branch_div0 \n   NULLIFY(&y,false); [line 50]\n  NULLIFY(&__temp_construct_n$5,false); [line 50]\n  NULLIFY(&__temp_construct_n$11,false); [line 50]\n  NULLIFY(&__temp_construct_n$0,false); [line 50]\n  NULLIFY(&SIL_materialize_temp__n$6,false); [line 50]\n  NULLIFY(&SIL_materialize_temp__n$12,false); [line 50]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 50]\n " color=yellow style=filled]
+31 [label="31: Exit y_branch_div0 \n   NULLIFY(&y); [line 50]\n  NULLIFY(&__temp_construct_n$5); [line 50]\n  NULLIFY(&__temp_construct_n$11); [line 50]\n  NULLIFY(&__temp_construct_n$0); [line 50]\n  NULLIFY(&SIL_materialize_temp__n$6); [line 50]\n  NULLIFY(&SIL_materialize_temp__n$12); [line 50]\n  NULLIFY(&SIL_materialize_temp__n$1); [line 50]\n " color=yellow style=filled]
 	
 
 30 [label="30: Start y_branch_div0\nFormals: \nLocals:  __temp_construct_n$0:class X  SIL_materialize_temp__n$1:class X  __temp_construct_n$5:class X  SIL_materialize_temp__n$6:class X  v:int  __temp_construct_n$11:class X  SIL_materialize_temp__n$12:class X  y:class Y  \n   DECLARE_LOCALS(&return,&__temp_construct_n$0,&SIL_materialize_temp__n$1,&__temp_construct_n$5,&SIL_materialize_temp__n$6,&v,&__temp_construct_n$11,&SIL_materialize_temp__n$12,&y); [line 41]\n " color=yellow style=filled]
@@ -135,7 +135,7 @@ digraph iCFG {
 	
 
 	 28 -> 27 ;
-27 [label="27:  Return Stmt \n   n$4=*&v:int  [line 36]\n  *&return:int =(1 / n$4) [line 36]\n  REMOVE_TEMPS(n$4); [line 36]\n  NULLIFY(&v,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+27 [label="27:  Return Stmt \n   n$4=*&v:int  [line 36]\n  *&return:int =(1 / n$4) [line 36]\n  REMOVE_TEMPS(n$4); [line 36]\n  NULLIFY(&v); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 27 -> 21 ;
@@ -160,7 +160,7 @@ digraph iCFG {
 	
 
 	 22 -> 21 ;
-21 [label="21: Exit branch_div0 \n   NULLIFY(&x,false); [line 39]\n " color=yellow style=filled]
+21 [label="21: Exit branch_div0 \n   NULLIFY(&x); [line 39]\n " color=yellow style=filled]
 	
 
 20 [label="20: Start branch_div0\nFormals: \nLocals:  v:int  x:class X  \n   DECLARE_LOCALS(&return,&v,&x); [line 32]\n " color=yellow style=filled]
@@ -174,11 +174,11 @@ digraph iCFG {
 	
 
 	 18 -> 19 ;
-17 [label="17:  Return Stmt \n   n$0=*&__return_param:class X * [line 27]\n  n$2=*&this:class Y * [line 27]\n  n$3=*n$2.f:int  [line 27]\n  n$4=*&this:class Y * [line 27]\n  n$5=*n$4.b:int  [line 27]\n  _fun_X_X(&SIL_materialize_temp__n$1:class X *,n$3:int ,n$5:_Bool ) [line 27]\n  _fun_X_X(n$0:class X *,&SIL_materialize_temp__n$1:class X &) [line 27]\n  REMOVE_TEMPS(n$0,n$2,n$3,n$4,n$5); [line 27]\n  NULLIFY(&__return_param,false); [line 27]\n  NULLIFY(&this,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+17 [label="17:  Return Stmt \n   n$0=*&__return_param:class X * [line 27]\n  n$2=*&this:class Y * [line 27]\n  n$3=*n$2.f:int  [line 27]\n  n$4=*&this:class Y * [line 27]\n  n$5=*n$4.b:int  [line 27]\n  _fun_X_X(&SIL_materialize_temp__n$1:class X *,n$3:int ,n$5:_Bool ) [line 27]\n  _fun_X_X(n$0:class X *,&SIL_materialize_temp__n$1:class X &) [line 27]\n  REMOVE_TEMPS(n$0,n$2,n$3,n$4,n$5); [line 27]\n  NULLIFY(&__return_param); [line 27]\n  NULLIFY(&this); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 17 -> 16 ;
-16 [label="16: Exit Y_operator X \n   NULLIFY(&SIL_materialize_temp__n$1,false); [line 27]\n " color=yellow style=filled]
+16 [label="16: Exit Y_operator X \n   NULLIFY(&SIL_materialize_temp__n$1); [line 27]\n " color=yellow style=filled]
 	
 
 15 [label="15: Start Y_operator X\nFormals:  this:class Y * __return_param:class X *\nLocals:  SIL_materialize_temp__n$1:class X  \n   DECLARE_LOCALS(&return,&SIL_materialize_temp__n$1); [line 27]\n " color=yellow style=filled]
@@ -189,7 +189,7 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 21]\n  n$1=*&x:class X & [line 21]\n  n$2=*n$1.b_:_Bool  [line 21]\n  *n$0.b_:_Bool =n$2 [line 21]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 21]\n  NULLIFY(&this,false); [line 21]\n  NULLIFY(&x,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+13 [label="13:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 21]\n  n$1=*&x:class X & [line 21]\n  n$2=*n$1.b_:_Bool  [line 21]\n  *n$0.b_:_Bool =n$2 [line 21]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 21]\n  NULLIFY(&this); [line 21]\n  NULLIFY(&x); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -200,11 +200,11 @@ digraph iCFG {
 	
 
 	 11 -> 14 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$2=*&this:class X * [line 16]\n  n$3=*&f:int  [line 16]\n  *n$2.f_:int =n$3 [line 16]\n  REMOVE_TEMPS(n$2,n$3); [line 16]\n  NULLIFY(&f,false); [line 16]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$2=*&this:class X * [line 16]\n  n$3=*&f:int  [line 16]\n  *n$2.f_:int =n$3 [line 16]\n  REMOVE_TEMPS(n$2,n$3); [line 16]\n  NULLIFY(&f); [line 16]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 17]\n  n$1=*&b:_Bool  [line 17]\n  *n$0.b_:_Bool =n$1 [line 17]\n  REMOVE_TEMPS(n$0,n$1); [line 17]\n  NULLIFY(&b,false); [line 17]\n  NULLIFY(&this,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 17]\n  n$1=*&b:_Bool  [line 17]\n  *n$0.b_:_Bool =n$1 [line 17]\n  REMOVE_TEMPS(n$0,n$1); [line 17]\n  NULLIFY(&b); [line 17]\n  NULLIFY(&this); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -215,7 +215,7 @@ digraph iCFG {
 	
 
 	 7 -> 10 ;
-6 [label="6:  Return Stmt \n   n$0=*&this:class X * [line 12]\n  n$1=*n$0.b_:_Bool  [line 12]\n  *&return:_Bool =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&this:class X * [line 12]\n  n$1=*n$0.b_:_Bool  [line 12]\n  *&return:_Bool =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&this); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -226,7 +226,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   n$0=*&this:class X * [line 11]\n  n$1=*n$0.f_:int  [line 11]\n  *&return:int =n$1 [line 11]\n  REMOVE_TEMPS(n$0,n$1); [line 11]\n  NULLIFY(&this,false); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&this:class X * [line 11]\n  n$1=*n$0.f_:int  [line 11]\n  *&return:int =n$1 [line 11]\n  REMOVE_TEMPS(n$0,n$1); [line 11]\n  NULLIFY(&this); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
 	
 
 	 3 -> 2 ;

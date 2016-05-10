@@ -735,8 +735,8 @@ module Node = struct
           call_instr :: instrs
       | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
           Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind):: instrs
-      | Sil.Nullify (origin_pvar, loc, deallocate) ->
-          Sil.Nullify (convert_pvar origin_pvar, loc, deallocate) :: instrs
+      | Sil.Nullify (origin_pvar, loc) ->
+          Sil.Nullify (convert_pvar origin_pvar, loc) :: instrs
       | Sil.Declare_locals (typed_vars, loc) ->
           let new_typed_vars = IList.map (fun (pvar, typ) -> (convert_pvar pvar, typ)) typed_vars in
           (Sil.Declare_locals (new_typed_vars, loc)) :: instrs

@@ -32,7 +32,7 @@ digraph iCFG {
 	
 
 	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 <= 10) == 0), false); [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&i,false); [line 13]\n  NULLIFY(&k,false); [line 13]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 <= 10) == 0), false); [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&i); [line 13]\n  NULLIFY(&k); [line 13]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;

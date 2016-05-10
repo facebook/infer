@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"%d\":char *) [line 15]\n  n$1=*&honda:class Car * [line 15]\n  n$2=_fun_Car_running(n$1:class Car *) [line 15]\n  _fun_NSLog(n$0:struct objc_object *,n$2:int ) [line 15]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 15]\n  NULLIFY(&honda,false); [line 15]\n " shape="box"]
+4 [label="4:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"%d\":char *) [line 15]\n  n$1=*&honda:class Car * [line 15]\n  n$2=_fun_Car_running(n$1:class Car *) [line 15]\n  _fun_NSLog(n$0:struct objc_object *,n$2:int ) [line 15]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 15]\n  NULLIFY(&honda); [line 15]\n " shape="box"]
 	
 
 	 4 -> 3 ;

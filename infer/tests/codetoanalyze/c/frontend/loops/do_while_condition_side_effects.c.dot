@@ -1,13 +1,13 @@
 digraph iCFG {
-10 [label="10:  DeclStmt \n   *&a:int =10 [line 11]\n  NULLIFY(&a,false); [line 11]\n " shape="box"]
+10 [label="10:  DeclStmt \n   *&a:int =10 [line 11]\n  NULLIFY(&a); [line 11]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  DeclStmt \n   *&b:int =0 [line 12]\n  NULLIFY(&b,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+9 [label="9:  DeclStmt \n   *&b:int =0 [line 12]\n  NULLIFY(&b); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 9 -> 4 ;
-8 [label="8:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 14]\n  NULLIFY(&a,false); [line 14]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 14]\n  NULLIFY(&a); [line 14]\n " shape="box"]
 	
 
 	 8 -> 5 ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 6 -> 4 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   *&b:int =40 [line 15]\n  n$0=*&b:int  [line 15]\n  NULLIFY(&b,false); [line 15]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: Assign \n   *&b:int =40 [line 15]\n  n$0=*&b:int  [line 15]\n  NULLIFY(&b); [line 15]\n " shape="box"]
 	
 
 	 5 -> 6 ;

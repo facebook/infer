@@ -3,19 +3,19 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  DeclStmt \n   n$3=*&a:int  [line 12]\n  *&a:int =(n$3 + 1) [line 12]\n  *&b:int =(n$3 + 1) [line 12]\n  REMOVE_TEMPS(n$3); [line 12]\n  NULLIFY(&b,false); [line 12]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$3=*&a:int  [line 12]\n  *&a:int =(n$3 + 1) [line 12]\n  *&b:int =(n$3 + 1) [line 12]\n  REMOVE_TEMPS(n$3); [line 12]\n  NULLIFY(&b); [line 12]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   n$2=*&a:int  [line 13]\n  *&a:int =(n$2 + 1) [line 13]\n  *&c:int =n$2 [line 13]\n  REMOVE_TEMPS(n$2); [line 13]\n  NULLIFY(&c,false); [line 13]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$2=*&a:int  [line 13]\n  *&a:int =(n$2 + 1) [line 13]\n  *&c:int =n$2 [line 13]\n  REMOVE_TEMPS(n$2); [line 13]\n  NULLIFY(&c); [line 13]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   n$1=*&a:int  [line 14]\n  *&a:int =(n$1 - 1) [line 14]\n  *&d:int =(n$1 - 1) [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n  NULLIFY(&d,false); [line 14]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$1=*&a:int  [line 14]\n  *&a:int =(n$1 - 1) [line 14]\n  *&d:int =(n$1 - 1) [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n  NULLIFY(&d); [line 14]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  DeclStmt \n   n$0=*&a:int  [line 15]\n  *&a:int =(n$0 - 1) [line 15]\n  *&e:int =n$0 [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&a,false); [line 15]\n  NULLIFY(&e,false); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=*&a:int  [line 15]\n  *&a:int =(n$0 - 1) [line 15]\n  *&e:int =n$0 [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&a); [line 15]\n  NULLIFY(&e); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

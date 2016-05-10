@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  GCCAstStmt \n   n$0=*&src:int  [line 27]\n  _fun___infer_skip_gcc_ast_stmt(&dst:int &,n$0:int ) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&src,false); [line 23]\n " shape="box"]
+8 [label="8:  GCCAstStmt \n   n$0=*&src:int  [line 27]\n  _fun___infer_skip_gcc_ast_stmt(&dst:int &,n$0:int ) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&src); [line 23]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6: Exit main \n   NULLIFY(&dst,false); [line 29]\n " color=yellow style=filled]
+6 [label="6: Exit main \n   NULLIFY(&dst); [line 29]\n " color=yellow style=filled]
 	
 
 5 [label="5: Start main\nFormals: \nLocals:  dst:int  src:int  \n   DECLARE_LOCALS(&return,&dst,&src); [line 19]\n " color=yellow style=filled]
@@ -26,7 +26,7 @@ digraph iCFG {
 	
 
 	 3 -> 2 ;
-2 [label="2: Exit test \n   NULLIFY(&z,false); [line 17]\n  NULLIFY(&y,false); [line 17]\n  NULLIFY(&x,false); [line 17]\n  NULLIFY(&h,false); [line 17]\n " color=yellow style=filled]
+2 [label="2: Exit test \n   NULLIFY(&z); [line 17]\n  NULLIFY(&y); [line 17]\n  NULLIFY(&x); [line 17]\n  NULLIFY(&h); [line 17]\n " color=yellow style=filled]
 	
 
 1 [label="1: Start test\nFormals: \nLocals:  h:int  z:int  y:int  x:int  \n   DECLARE_LOCALS(&return,&h,&z,&y,&x); [line 10]\n " color=yellow style=filled]

@@ -1,5 +1,5 @@
 digraph iCFG {
-8 [label="8:  DeclStmt \n   *&d:int =0 [line 11]\n  NULLIFY(&d,false); [line 11]\n " shape="box"]
+8 [label="8:  DeclStmt \n   *&d:int =0 [line 11]\n  NULLIFY(&d); [line 11]\n " shape="box"]
 	
 
 	 8 -> 5 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 6 -> 4 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   *&d:int =0 [line 12]\n  NULLIFY(&d,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: Assign \n   *&d:int =0 [line 12]\n  NULLIFY(&d); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 5 -> 4 ;

@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 18 -> 17 ;
-17 [label="17:  Return Stmt \n   n$0=*&imageDrawRect.origin.x.a:int  [line 59]\n  *&return:int =(1 / n$0) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  NULLIFY(&imageDrawRect,false); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
+17 [label="17:  Return Stmt \n   n$0=*&imageDrawRect.origin.x.a:int  [line 59]\n  *&return:int =(1 / n$0) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  NULLIFY(&imageDrawRect); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$0=*&e.ssn:int  [line 36]\n  *&return:int =(1 / (n$0 - 12)) [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&e,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$0=*&e.ssn:int  [line 36]\n  *&return:int =(1 / (n$0 - 12)) [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&e); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$0=*&p:struct Point * [line 21]\n  n$1=*n$0.x:int  [line 21]\n  *&return:int =(1 / (n$1 - 4)) [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&p,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&p:struct Point * [line 21]\n  n$1=*n$0.x:int  [line 21]\n  *&return:int =(1 / (n$1 - 4)) [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&p); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   n$0=_fun_foo() [line 17]\n  *&p.x:int =1 [line 17]\n  *&p.y:int =(n$0 + 3) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&p,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$0=_fun_foo() [line 17]\n  *&p.x:int =1 [line 17]\n  *&p.y:int =(n$0 + 3) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&p); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;

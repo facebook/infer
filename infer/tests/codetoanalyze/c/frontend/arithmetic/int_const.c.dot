@@ -3,11 +3,11 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   *&large_int:int =9223372036854775807 [line 19]\n  NULLIFY(&large_int,false); [line 19]\n " shape="box"]
+5 [label="5:  DeclStmt \n   *&large_int:int =9223372036854775807 [line 19]\n  NULLIFY(&large_int); [line 19]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   *&overflow_int:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&overflow_int,false); [line 20]\n " shape="box"]
+4 [label="4:  DeclStmt \n   *&overflow_int:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&overflow_int); [line 20]\n " shape="box"]
 	
 
 	 4 -> 3 ;

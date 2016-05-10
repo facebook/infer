@@ -3,11 +3,11 @@ digraph iCFG {
 	
 
 	 18 -> 17 ;
-17 [label="17:  Message Call: setLast_name: \n   n$1=*&a:class A * [line 40]\n  n$2=*&a2:class A * [line 40]\n  _fun_A_setLast_name:(n$1:class A *,n$2:class A *) [line 40]\n  REMOVE_TEMPS(n$1,n$2); [line 40]\n  NULLIFY(&a2,false); [line 40]\n " shape="box"]
+17 [label="17:  Message Call: setLast_name: \n   n$1=*&a:class A * [line 40]\n  n$2=*&a2:class A * [line 40]\n  _fun_A_setLast_name:(n$1:class A *,n$2:class A *) [line 40]\n  REMOVE_TEMPS(n$1,n$2); [line 40]\n  NULLIFY(&a2); [line 40]\n " shape="box"]
 	
 
 	 17 -> 16 ;
-16 [label="16:  Message Call: release \n   n$0=*&a:class A * [line 41]\n  _fun___objc_release(n$0:class A *) [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&a,false); [line 41]\n " shape="box"]
+16 [label="16:  Message Call: release \n   n$0=*&a:class A * [line 41]\n  _fun___objc_release(n$0:class A *) [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&a); [line 41]\n " shape="box"]
 	
 
 	 16 -> 15 ;
@@ -35,7 +35,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$2=*&other:class A * [line 31]\n  n$3=*&self:class A * [line 31]\n  n$4=*n$3._child:class A * [line 31]\n  *n$2._child:class A *=n$4 [line 31]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 31]\n  NULLIFY(&self,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$2=*&other:class A * [line 31]\n  n$3=*&self:class A * [line 31]\n  n$4=*n$3._child:class A * [line 31]\n  *n$2._child:class A *=n$4 [line 31]\n  REMOVE_TEMPS(n$2,n$3,n$4); [line 31]\n  NULLIFY(&self); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 9 -> 6 ;
@@ -51,7 +51,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  Return Stmt \n   n$0=*&other:class A * [line 33]\n  *&return:class A *=n$0 [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n  NULLIFY(&other,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+5 [label="5:  Return Stmt \n   n$0=*&other:class A * [line 33]\n  *&return:class A *=n$0 [line 33]\n  REMOVE_TEMPS(n$0); [line 33]\n  NULLIFY(&other); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 5 -> 4 ;

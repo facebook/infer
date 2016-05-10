@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 6 -> 8 ;
-5 [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla * [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla *,\"Foo\":class Protocol *) virtual [line 25]\n  NULLIFY(&self,false); [line 25]\n " shape="box"]
+5 [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla * [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla *,\"Foo\":class Protocol *) virtual [line 25]\n  NULLIFY(&self); [line 25]\n " shape="box"]
 	
 
 	 5 -> 6 ;

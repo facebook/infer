@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 20 -> 14 ;
-19 [label="19:  BinaryOperatorStmt: AddAssign \n   n$3=*&x:int  [line 20]\n  n$4=*&result:int  [line 20]\n  *&result:int =(n$4 + n$3) [line 20]\n  REMOVE_TEMPS(n$3,n$4); [line 20]\n  NULLIFY(&x,false); [line 20]\n " shape="box"]
+19 [label="19:  BinaryOperatorStmt: AddAssign \n   n$3=*&x:int  [line 20]\n  n$4=*&result:int  [line 20]\n  *&result:int =(n$4 + n$3) [line 20]\n  REMOVE_TEMPS(n$3,n$4); [line 20]\n  NULLIFY(&x); [line 20]\n " shape="box"]
 	
 
 	 19 -> 15 ;
@@ -12,7 +12,7 @@ digraph iCFG {
 
 	 18 -> 16 ;
 	 18 -> 17 ;
-17 [label="17: Prune (false branch) \n   n$1=*&x:int  [line 19]\n  PRUNE((n$1 == 0), false); [line 19]\n  REMOVE_TEMPS(n$1); [line 19]\n  NULLIFY(&i,false); [line 19]\n  NULLIFY(&result,false); [line 19]\n  NULLIFY(&x,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
+17 [label="17: Prune (false branch) \n   n$1=*&x:int  [line 19]\n  PRUNE((n$1 == 0), false); [line 19]\n  REMOVE_TEMPS(n$1); [line 19]\n  NULLIFY(&i); [line 19]\n  NULLIFY(&result); [line 19]\n  NULLIFY(&x); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
 	
 
 	 17 -> 12 ;
@@ -43,7 +43,7 @@ digraph iCFG {
 	
 
 	 10 -> 4 ;
-9 [label="9:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int  [line 13]\n  n$3=*&result:int  [line 13]\n  *&result:int =(n$3 + n$2) [line 13]\n  REMOVE_TEMPS(n$2,n$3); [line 13]\n  NULLIFY(&x,false); [line 13]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int  [line 13]\n  n$3=*&result:int  [line 13]\n  *&result:int =(n$3 + n$2) [line 13]\n  REMOVE_TEMPS(n$2,n$3); [line 13]\n  NULLIFY(&x); [line 13]\n " shape="box"]
 	
 
 	 9 -> 5 ;
@@ -52,7 +52,7 @@ digraph iCFG {
 
 	 8 -> 6 ;
 	 8 -> 7 ;
-7 [label="7: Prune (false branch) \n   n$1=*&x:int  [line 12]\n  PRUNE((n$1 == 0), false); [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&i,false); [line 12]\n  NULLIFY(&result,false); [line 12]\n  NULLIFY(&x,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   n$1=*&x:int  [line 12]\n  PRUNE((n$1 == 0), false); [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&i); [line 12]\n  NULLIFY(&result); [line 12]\n  NULLIFY(&x); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="invhouse"]
 	
 
 	 7 -> 2 ;

@@ -1,5 +1,5 @@
 digraph iCFG {
-15 [label="15:  DeclStmt \n   *&a:int =10 [line 11]\n  NULLIFY(&a,false); [line 11]\n " shape="box"]
+15 [label="15:  DeclStmt \n   *&a:int =10 [line 11]\n  NULLIFY(&a); [line 11]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -7,11 +7,11 @@ digraph iCFG {
 	
 
 	 14 -> 4 ;
-13 [label="13:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 14]\n  NULLIFY(&a,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+13 [label="13:  BinaryOperatorStmt: Assign \n   *&a:int =1 [line 14]\n  NULLIFY(&a); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 13 -> 8 ;
-12 [label="12:  BinaryOperatorStmt: Assign \n   *&a:int =2 [line 16]\n  NULLIFY(&a,false); [line 16]\n " shape="box"]
+12 [label="12:  BinaryOperatorStmt: Assign \n   *&a:int =2 [line 16]\n  NULLIFY(&a); [line 16]\n " shape="box"]
 	
 
 	 12 -> 9 ;
@@ -32,7 +32,7 @@ digraph iCFG {
 	
 
 	 8 -> 12 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 20) == 0), false); [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&b,false); [line 18]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 20) == 0), false); [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&b); [line 18]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;

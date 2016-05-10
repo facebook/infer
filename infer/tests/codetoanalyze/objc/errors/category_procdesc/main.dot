@@ -3,11 +3,11 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  Message Call: performDaysWork \n   n$1=*&person:class EOCPerson * [line 14]\n  _fun_EOCPerson_performDaysWork(n$1:class EOCPerson *) virtual [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n  NULLIFY(&person,false); [line 14]\n " shape="box"]
+5 [label="5:  Message Call: performDaysWork \n   n$1=*&person:class EOCPerson * [line 14]\n  _fun_EOCPerson_performDaysWork(n$1:class EOCPerson *) virtual [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n  NULLIFY(&person); [line 14]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   n$0=_fun_malloc_no_fail(sizeof(int ):int ) [line 15]\n  *&x:int *=n$0 [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&x,false); [line 15]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$0=_fun_malloc_no_fail(sizeof(int ):int ) [line 15]\n  *&x:int *=n$0 [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&x); [line 15]\n " shape="box"]
 	
 
 	 4 -> 3 ;

@@ -4,7 +4,7 @@ digraph iCFG {
 
 	 105 -> 100 ;
 	 105 -> 101 ;
-104 [label="104:  BinaryOperatorStmt: Assign \n   n$21=*&SIL_temp_conditional___n$17:class NSString * [line 36]\n  _fun___objc_retain(n$21:class NSString *) [line 36]\n  n$22=*&__assert_fn__:class NSString * [line 36]\n  *&__assert_fn__:class NSString *=n$21 [line 36]\n  _fun___objc_release(n$22:class NSString *) [line 36]\n  REMOVE_TEMPS(n$21,n$22); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$17,false); [line 36]\n  NULLIFY(&__assert_fn__,false); [line 36]\n " shape="box"]
+104 [label="104:  BinaryOperatorStmt: Assign \n   n$21=*&SIL_temp_conditional___n$17:class NSString * [line 36]\n  _fun___objc_retain(n$21:class NSString *) [line 36]\n  n$22=*&__assert_fn__:class NSString * [line 36]\n  *&__assert_fn__:class NSString *=n$21 [line 36]\n  _fun___objc_release(n$22:class NSString *) [line 36]\n  REMOVE_TEMPS(n$21,n$22); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$17); [line 36]\n  NULLIFY(&__assert_fn__); [line 36]\n " shape="box"]
 	
 
 	 104 -> 98 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 
 	 98 -> 93 ;
 	 98 -> 94 ;
-97 [label="97:  BinaryOperatorStmt: Assign \n   n$14=*&SIL_temp_conditional___n$10:class NSString * [line 36]\n  _fun___objc_retain(n$14:class NSString *) [line 36]\n  n$15=*&__assert_file__:class NSString * [line 36]\n  *&__assert_file__:class NSString *=n$14 [line 36]\n  _fun___objc_release(n$15:class NSString *) [line 36]\n  REMOVE_TEMPS(n$14,n$15); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$10,false); [line 36]\n  NULLIFY(&__assert_file__,false); [line 36]\n " shape="box"]
+97 [label="97:  BinaryOperatorStmt: Assign \n   n$14=*&SIL_temp_conditional___n$10:class NSString * [line 36]\n  _fun___objc_retain(n$14:class NSString *) [line 36]\n  n$15=*&__assert_file__:class NSString * [line 36]\n  *&__assert_file__:class NSString *=n$14 [line 36]\n  _fun___objc_release(n$15:class NSString *) [line 36]\n  REMOVE_TEMPS(n$14,n$15); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$10); [line 36]\n  NULLIFY(&__assert_file__); [line 36]\n " shape="box"]
 	
 
 	 97 -> 91 ;
@@ -61,11 +61,11 @@ digraph iCFG {
 	
 
 	 91 -> 78 ;
-90 [label="90: Prune (false branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 36]\n  PRUNE((n$4 == 0), false); [line 36]\n  REMOVE_TEMPS(n$4); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 36]\n " shape="invhouse"]
+90 [label="90: Prune (false branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 36]\n  PRUNE((n$4 == 0), false); [line 36]\n  REMOVE_TEMPS(n$4); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 36]\n " shape="invhouse"]
 	
 
 	 90 -> 83 ;
-89 [label="89: Prune (true branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 36]\n  PRUNE((n$4 != 0), true); [line 36]\n  REMOVE_TEMPS(n$4); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 36]\n " shape="invhouse"]
+89 [label="89: Prune (true branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 36]\n  PRUNE((n$4 != 0), true); [line 36]\n  REMOVE_TEMPS(n$4); [line 36]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 36]\n " shape="invhouse"]
 	
 
 	 89 -> 105 ;
@@ -108,7 +108,7 @@ digraph iCFG {
 
 	 80 -> 85 ;
 	 80 -> 86 ;
-79 [label="79:  Return Stmt \n   n$0=*&target:class A * [line 37]\n  n$1=_fun_A_x(n$0:class A *) [line 37]\n  *&return:int =n$1 [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&target,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+79 [label="79:  Return Stmt \n   n$0=*&target:class A * [line 37]\n  n$1=_fun_A_x(n$0:class A *) [line 37]\n  *&return:int =n$1 [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  NULLIFY(&target); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
 	 79 -> 78 ;
@@ -124,7 +124,7 @@ digraph iCFG {
 
 	 76 -> 71 ;
 	 76 -> 72 ;
-75 [label="75:  BinaryOperatorStmt: Assign \n   n$20=*&SIL_temp_conditional___n$16:class NSString * [line 31]\n  _fun___objc_retain(n$20:class NSString *) [line 31]\n  n$21=*&__assert_fn__:class NSString * [line 31]\n  *&__assert_fn__:class NSString *=n$20 [line 31]\n  _fun___objc_release(n$21:class NSString *) [line 31]\n  REMOVE_TEMPS(n$20,n$21); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$16,false); [line 31]\n  NULLIFY(&__assert_fn__,false); [line 31]\n " shape="box"]
+75 [label="75:  BinaryOperatorStmt: Assign \n   n$20=*&SIL_temp_conditional___n$16:class NSString * [line 31]\n  _fun___objc_retain(n$20:class NSString *) [line 31]\n  n$21=*&__assert_fn__:class NSString * [line 31]\n  *&__assert_fn__:class NSString *=n$20 [line 31]\n  _fun___objc_release(n$21:class NSString *) [line 31]\n  REMOVE_TEMPS(n$20,n$21); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$16); [line 31]\n  NULLIFY(&__assert_fn__); [line 31]\n " shape="box"]
 	
 
 	 75 -> 69 ;
@@ -153,7 +153,7 @@ digraph iCFG {
 
 	 69 -> 64 ;
 	 69 -> 65 ;
-68 [label="68:  BinaryOperatorStmt: Assign \n   n$13=*&SIL_temp_conditional___n$9:class NSString * [line 31]\n  _fun___objc_retain(n$13:class NSString *) [line 31]\n  n$14=*&__assert_file__:class NSString * [line 31]\n  *&__assert_file__:class NSString *=n$13 [line 31]\n  _fun___objc_release(n$14:class NSString *) [line 31]\n  REMOVE_TEMPS(n$13,n$14); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$9,false); [line 31]\n  NULLIFY(&__assert_file__,false); [line 31]\n " shape="box"]
+68 [label="68:  BinaryOperatorStmt: Assign \n   n$13=*&SIL_temp_conditional___n$9:class NSString * [line 31]\n  _fun___objc_retain(n$13:class NSString *) [line 31]\n  n$14=*&__assert_file__:class NSString * [line 31]\n  *&__assert_file__:class NSString *=n$13 [line 31]\n  _fun___objc_release(n$14:class NSString *) [line 31]\n  REMOVE_TEMPS(n$13,n$14); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$9); [line 31]\n  NULLIFY(&__assert_file__); [line 31]\n " shape="box"]
 	
 
 	 68 -> 62 ;
@@ -181,11 +181,11 @@ digraph iCFG {
 	
 
 	 62 -> 48 ;
-61 [label="61: Prune (false branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 31]\n  PRUNE((n$4 == 0), false); [line 31]\n  REMOVE_TEMPS(n$4); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 31]\n " shape="invhouse"]
+61 [label="61: Prune (false branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 31]\n  PRUNE((n$4 == 0), false); [line 31]\n  REMOVE_TEMPS(n$4); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 31]\n " shape="invhouse"]
 	
 
 	 61 -> 53 ;
-60 [label="60: Prune (true branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 31]\n  PRUNE((n$4 != 0), true); [line 31]\n  REMOVE_TEMPS(n$4); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 31]\n " shape="invhouse"]
+60 [label="60: Prune (true branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 31]\n  PRUNE((n$4 != 0), true); [line 31]\n  REMOVE_TEMPS(n$4); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 31]\n " shape="invhouse"]
 	
 
 	 60 -> 76 ;
@@ -232,7 +232,7 @@ digraph iCFG {
 	
 
 	 50 -> 55 ;
-49 [label="49:  Return Stmt \n   n$0=*&target:class A * [line 32]\n  n$1=_fun_A_x(n$0:class A *) [line 32]\n  *&return:int =n$1 [line 32]\n  REMOVE_TEMPS(n$0,n$1); [line 32]\n  NULLIFY(&target,false); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+49 [label="49:  Return Stmt \n   n$0=*&target:class A * [line 32]\n  n$1=_fun_A_x(n$0:class A *) [line 32]\n  *&return:int =n$1 [line 32]\n  REMOVE_TEMPS(n$0,n$1); [line 32]\n  NULLIFY(&target); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
 	
 
 	 49 -> 48 ;
@@ -248,7 +248,7 @@ digraph iCFG {
 
 	 46 -> 41 ;
 	 46 -> 42 ;
-45 [label="45:  BinaryOperatorStmt: Assign \n   n$31=*&SIL_temp_conditional___n$27:class NSString * [line 24]\n  _fun___objc_retain(n$31:class NSString *) [line 24]\n  n$32=*&__assert_file__:class NSString * [line 24]\n  *&__assert_file__:class NSString *=n$31 [line 24]\n  _fun___objc_release(n$32:class NSString *) [line 24]\n  REMOVE_TEMPS(n$31,n$32); [line 24]\n  NULLIFY(&SIL_temp_conditional___n$27,false); [line 24]\n  NULLIFY(&__assert_file__,false); [line 24]\n " shape="box"]
+45 [label="45:  BinaryOperatorStmt: Assign \n   n$31=*&SIL_temp_conditional___n$27:class NSString * [line 24]\n  _fun___objc_retain(n$31:class NSString *) [line 24]\n  n$32=*&__assert_file__:class NSString * [line 24]\n  *&__assert_file__:class NSString *=n$31 [line 24]\n  _fun___objc_release(n$32:class NSString *) [line 24]\n  REMOVE_TEMPS(n$31,n$32); [line 24]\n  NULLIFY(&SIL_temp_conditional___n$27); [line 24]\n  NULLIFY(&__assert_file__); [line 24]\n " shape="box"]
 	
 
 	 45 -> 39 ;
@@ -276,11 +276,11 @@ digraph iCFG {
 	
 
 	 39 -> 25 ;
-38 [label="38: Prune (false branch) \n   n$21=*&SIL_temp_conditional___n$19:int  [line 24]\n  PRUNE((n$21 == 0), false); [line 24]\n  REMOVE_TEMPS(n$21); [line 24]\n  NULLIFY(&SIL_temp_conditional___n$19,false); [line 24]\n " shape="invhouse"]
+38 [label="38: Prune (false branch) \n   n$21=*&SIL_temp_conditional___n$19:int  [line 24]\n  PRUNE((n$21 == 0), false); [line 24]\n  REMOVE_TEMPS(n$21); [line 24]\n  NULLIFY(&SIL_temp_conditional___n$19); [line 24]\n " shape="invhouse"]
 	
 
 	 38 -> 30 ;
-37 [label="37: Prune (true branch) \n   n$21=*&SIL_temp_conditional___n$19:int  [line 24]\n  PRUNE((n$21 != 0), true); [line 24]\n  REMOVE_TEMPS(n$21); [line 24]\n  NULLIFY(&SIL_temp_conditional___n$19,false); [line 24]\n " shape="invhouse"]
+37 [label="37: Prune (true branch) \n   n$21=*&SIL_temp_conditional___n$19:int  [line 24]\n  PRUNE((n$21 != 0), true); [line 24]\n  REMOVE_TEMPS(n$21); [line 24]\n  NULLIFY(&SIL_temp_conditional___n$19); [line 24]\n " shape="invhouse"]
 	
 
 	 37 -> 46 ;
@@ -327,7 +327,7 @@ digraph iCFG {
 	
 
 	 27 -> 32 ;
-26 [label="26:  Return Stmt \n   n$17=*&a:class A * [line 25]\n  n$18=_fun_A_x(n$17:class A *) [line 25]\n  *&return:int =n$18 [line 25]\n  REMOVE_TEMPS(n$17,n$18); [line 25]\n  NULLIFY(&a,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+26 [label="26:  Return Stmt \n   n$17=*&a:class A * [line 25]\n  n$18=_fun_A_x(n$17:class A *) [line 25]\n  *&return:int =n$18 [line 25]\n  REMOVE_TEMPS(n$17,n$18); [line 25]\n  NULLIFY(&a); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -343,7 +343,7 @@ digraph iCFG {
 
 	 23 -> 18 ;
 	 23 -> 19 ;
-22 [label="22:  BinaryOperatorStmt: Assign \n   n$14=*&SIL_temp_conditional___n$10:class NSString * [line 19]\n  _fun___objc_retain(n$14:class NSString *) [line 19]\n  n$15=*&__assert_file__:class NSString * [line 19]\n  *&__assert_file__:class NSString *=n$14 [line 19]\n  _fun___objc_release(n$15:class NSString *) [line 19]\n  REMOVE_TEMPS(n$14,n$15); [line 19]\n  NULLIFY(&SIL_temp_conditional___n$10,false); [line 19]\n  NULLIFY(&__assert_file__,false); [line 19]\n " shape="box"]
+22 [label="22:  BinaryOperatorStmt: Assign \n   n$14=*&SIL_temp_conditional___n$10:class NSString * [line 19]\n  _fun___objc_retain(n$14:class NSString *) [line 19]\n  n$15=*&__assert_file__:class NSString * [line 19]\n  *&__assert_file__:class NSString *=n$14 [line 19]\n  _fun___objc_release(n$15:class NSString *) [line 19]\n  REMOVE_TEMPS(n$14,n$15); [line 19]\n  NULLIFY(&SIL_temp_conditional___n$10); [line 19]\n  NULLIFY(&__assert_file__); [line 19]\n " shape="box"]
 	
 
 	 22 -> 16 ;
@@ -371,11 +371,11 @@ digraph iCFG {
 	
 
 	 16 -> 2 ;
-15 [label="15: Prune (false branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 19]\n  PRUNE((n$4 == 0), false); [line 19]\n  REMOVE_TEMPS(n$4); [line 19]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 19]\n " shape="invhouse"]
+15 [label="15: Prune (false branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 19]\n  PRUNE((n$4 == 0), false); [line 19]\n  REMOVE_TEMPS(n$4); [line 19]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 19]\n " shape="invhouse"]
 	
 
 	 15 -> 7 ;
-14 [label="14: Prune (true branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 19]\n  PRUNE((n$4 != 0), true); [line 19]\n  REMOVE_TEMPS(n$4); [line 19]\n  NULLIFY(&SIL_temp_conditional___n$2,false); [line 19]\n " shape="invhouse"]
+14 [label="14: Prune (true branch) \n   n$4=*&SIL_temp_conditional___n$2:int  [line 19]\n  PRUNE((n$4 != 0), true); [line 19]\n  REMOVE_TEMPS(n$4); [line 19]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 19]\n " shape="invhouse"]
 	
 
 	 14 -> 23 ;
@@ -422,7 +422,7 @@ digraph iCFG {
 	
 
 	 4 -> 9 ;
-3 [label="3:  Return Stmt \n   n$0=*&target:class A * [line 20]\n  n$1=_fun_A_x(n$0:class A *) [line 20]\n  *&return:int =n$1 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&target,false); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&target:class A * [line 20]\n  n$1=_fun_A_x(n$0:class A *) [line 20]\n  *&return:int =n$1 [line 20]\n  REMOVE_TEMPS(n$0,n$1); [line 20]\n  NULLIFY(&target); [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
 	
 
 	 3 -> 2 ;

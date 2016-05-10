@@ -1,5 +1,5 @@
 digraph iCFG {
-8 [label="8:  BinaryOperatorStmt: Assign \n   *&today:int =0 [line 22]\n  NULLIFY(&today,false); [line 22]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: Assign \n   *&today:int =0 [line 22]\n  NULLIFY(&today); [line 22]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -7,15 +7,15 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&today:int  [line 24]\n  *&today:int =(n$0 + 4) [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  NULLIFY(&today,false); [line 24]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&today:int  [line 24]\n  *&today:int =(n$0 + 4) [line 24]\n  REMOVE_TEMPS(n$0); [line 24]\n  NULLIFY(&today); [line 24]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   *&today:int =(2 + 1) [line 25]\n  NULLIFY(&today,false); [line 25]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: Assign \n   *&today:int =(2 + 1) [line 25]\n  NULLIFY(&today); [line 25]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   *&i:int =(2 + (2 - 0)) [line 26]\n  NULLIFY(&i,false); [line 26]\n " shape="box"]
+4 [label="4:  DeclStmt \n   *&i:int =(2 + (2 - 0)) [line 26]\n  NULLIFY(&i); [line 26]\n " shape="box"]
 	
 
 	 4 -> 3 ;

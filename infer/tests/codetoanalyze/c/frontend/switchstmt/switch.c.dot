@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 192 -> 184 ;
-191 [label="191:  Switch_stmt \n   n$2=*&SIL_temp_conditional___n$0:int  [line 193]\n  *&value:int =n$2 [line 193]\n  n$3=*&value:int  [line 193]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 193]\n  NULLIFY(&value,false); [line 193]\n " shape="box"]
+191 [label="191:  Switch_stmt \n   n$2=*&SIL_temp_conditional___n$0:int  [line 193]\n  *&value:int =n$2 [line 193]\n  n$3=*&value:int  [line 193]\n  NULLIFY(&SIL_temp_conditional___n$0); [line 193]\n  NULLIFY(&value); [line 193]\n " shape="box"]
 	
 
 	 191 -> 193 ;
@@ -36,7 +36,7 @@ digraph iCFG {
 	
 
 	 187 -> 189 ;
-186 [label="186:  BinaryOperatorStmt: EQ \n   n$1=*&value:int  [line 193]\n  NULLIFY(&value,false); [line 193]\n " shape="box"]
+186 [label="186:  BinaryOperatorStmt: EQ \n   n$1=*&value:int  [line 193]\n  NULLIFY(&value); [line 193]\n " shape="box"]
 	
 
 	 186 -> 187 ;
@@ -56,11 +56,11 @@ digraph iCFG {
 	
 
 	 182 -> 195 ;
-181 [label="181:  DeclStmt \n   *&value:int =0 [line 186]\n  NULLIFY(&value,false); [line 186]\n " shape="box"]
+181 [label="181:  DeclStmt \n   *&value:int =0 [line 186]\n  NULLIFY(&value); [line 186]\n " shape="box"]
 	
 
 	 181 -> 180 ;
-180 [label="180:  Switch_stmt \n   *&value:int =7 [line 187]\n  n$0=*&value:int  [line 187]\n  NULLIFY(&value,false); [line 187]\n " shape="box"]
+180 [label="180:  Switch_stmt \n   *&value:int =7 [line 187]\n  n$0=*&value:int  [line 187]\n  NULLIFY(&value); [line 187]\n " shape="box"]
 	
 
 	 180 -> 179 ;
@@ -79,7 +79,7 @@ digraph iCFG {
 	
 
 	 176 -> 175 ;
-175 [label="175:  Switch_stmt \n   n$0=*&value:int  [line 181]\n  NULLIFY(&value,false); [line 181]\n " shape="box"]
+175 [label="175:  Switch_stmt \n   n$0=*&value:int  [line 181]\n  NULLIFY(&value); [line 181]\n " shape="box"]
 	
 
 	 175 -> 174 ;
@@ -103,7 +103,7 @@ digraph iCFG {
 
 	 170 -> 165 ;
 	 170 -> 166 ;
-169 [label="169: Prune (true branch) \n   PRUNE(((n$3 == 0) != 0), true); [line 161]\n  NULLIFY(&value,false); [line 161]\n " shape="invhouse"]
+169 [label="169: Prune (true branch) \n   PRUNE(((n$3 == 0) != 0), true); [line 161]\n  NULLIFY(&value); [line 161]\n " shape="invhouse"]
 	
 
 	 169 -> 168 ;
@@ -128,7 +128,7 @@ digraph iCFG {
 	
 
 	 164 -> 163 ;
-163 [label="163:  UnaryOperator \n   n$4=*&something:int  [line 166]\n  *&something:int =(n$4 + 1) [line 166]\n  REMOVE_TEMPS(n$4); [line 166]\n  NULLIFY(&something,false); [line 166]\n  APPLY_ABSTRACTION; [line 166]\n " shape="box"]
+163 [label="163:  UnaryOperator \n   n$4=*&something:int  [line 166]\n  *&something:int =(n$4 + 1) [line 166]\n  REMOVE_TEMPS(n$4); [line 166]\n  NULLIFY(&something); [line 166]\n  APPLY_ABSTRACTION; [line 166]\n " shape="box"]
 	
 
 	 163 -> 146 ;
@@ -153,7 +153,7 @@ digraph iCFG {
 	
 
 	 158 -> 150 ;
-157 [label="157:  Switch_stmt \n   n$3=*&SIL_temp_conditional___n$1:int  [line 160]\n  NULLIFY(&SIL_temp_conditional___n$1,false); [line 160]\n " shape="box"]
+157 [label="157:  Switch_stmt \n   n$3=*&SIL_temp_conditional___n$1:int  [line 160]\n  NULLIFY(&SIL_temp_conditional___n$1); [line 160]\n " shape="box"]
 	
 
 	 157 -> 169 ;
@@ -183,11 +183,11 @@ digraph iCFG {
 	
 
 	 151 -> 157 ;
-150 [label="150:  DeclStmt \n   *&a:int =0 [line 174]\n  REMOVE_TEMPS(n$3); [line 174]\n  NULLIFY(&a,false); [line 174]\n  APPLY_ABSTRACTION; [line 174]\n " shape="box"]
+150 [label="150:  DeclStmt \n   *&a:int =0 [line 174]\n  REMOVE_TEMPS(n$3); [line 174]\n  NULLIFY(&a); [line 174]\n  APPLY_ABSTRACTION; [line 174]\n " shape="box"]
 	
 
 	 150 -> 146 ;
-149 [label="149: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 159]\n  REMOVE_TEMPS(n$0); [line 159]\n  NULLIFY(&value,false); [line 159]\n " shape="invhouse"]
+149 [label="149: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 159]\n  REMOVE_TEMPS(n$0); [line 159]\n  NULLIFY(&value); [line 159]\n " shape="invhouse"]
 	
 
 	 149 -> 145 ;
@@ -215,7 +215,7 @@ digraph iCFG {
 	
 
 	 143 -> 171 ;
-142 [label="142:  DeclStmt \n   *&value:int =0 [line 140]\n  NULLIFY(&value,false); [line 140]\n " shape="box"]
+142 [label="142:  DeclStmt \n   *&value:int =0 [line 140]\n  NULLIFY(&value); [line 140]\n " shape="box"]
 	
 
 	 142 -> 129 ;
@@ -245,7 +245,7 @@ digraph iCFG {
 	
 
 	 136 -> 135 ;
-135 [label="135:  UnaryOperator \n   n$1=*&something:int  [line 147]\n  *&something:int =(n$1 + 1) [line 147]\n  REMOVE_TEMPS(n$1); [line 147]\n  NULLIFY(&something,false); [line 147]\n  APPLY_ABSTRACTION; [line 147]\n " shape="box"]
+135 [label="135:  UnaryOperator \n   n$1=*&something:int  [line 147]\n  *&something:int =(n$1 + 1) [line 147]\n  REMOVE_TEMPS(n$1); [line 147]\n  NULLIFY(&something); [line 147]\n  APPLY_ABSTRACTION; [line 147]\n " shape="box"]
 	
 
 	 135 -> 128 ;
@@ -327,7 +327,7 @@ digraph iCFG {
 	
 
 	 116 -> 115 ;
-115 [label="115:  UnaryOperator \n   n$3=*&something:int  [line 127]\n  *&something:int =(n$3 + 1) [line 127]\n  REMOVE_TEMPS(n$3); [line 127]\n  NULLIFY(&something,false); [line 127]\n  APPLY_ABSTRACTION; [line 127]\n " shape="box"]
+115 [label="115:  UnaryOperator \n   n$3=*&something:int  [line 127]\n  *&something:int =(n$3 + 1) [line 127]\n  REMOVE_TEMPS(n$3); [line 127]\n  NULLIFY(&something); [line 127]\n  APPLY_ABSTRACTION; [line 127]\n " shape="box"]
 	
 
 	 115 -> 102 ;
@@ -352,7 +352,7 @@ digraph iCFG {
 	
 
 	 110 -> 102 ;
-109 [label="109:  Switch_stmt \n   n$2=*&SIL_temp_conditional___n$0:int  [line 121]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 121]\n " shape="box"]
+109 [label="109:  Switch_stmt \n   n$2=*&SIL_temp_conditional___n$0:int  [line 121]\n  NULLIFY(&SIL_temp_conditional___n$0); [line 121]\n " shape="box"]
 	
 
 	 109 -> 120 ;
@@ -373,7 +373,7 @@ digraph iCFG {
 	
 
 	 105 -> 107 ;
-104 [label="104:  BinaryOperatorStmt: GT \n   n$1=*&value:int  [line 121]\n  NULLIFY(&value,false); [line 121]\n " shape="box"]
+104 [label="104:  BinaryOperatorStmt: GT \n   n$1=*&value:int  [line 121]\n  NULLIFY(&value); [line 121]\n " shape="box"]
 	
 
 	 104 -> 105 ;
@@ -426,7 +426,7 @@ digraph iCFG {
 
 	 92 -> 94 ;
 	 92 -> 95 ;
-91 [label="91: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 105]\n  REMOVE_TEMPS(n$0); [line 105]\n  NULLIFY(&value,false); [line 105]\n " shape="invhouse"]
+91 [label="91: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 105]\n  REMOVE_TEMPS(n$0); [line 105]\n  NULLIFY(&value); [line 105]\n " shape="invhouse"]
 	
 
 	 91 -> 87 ;
@@ -500,11 +500,11 @@ digraph iCFG {
 	
 
 	 74 -> 73 ;
-73 [label="73:  UnaryOperator \n   n$1=*&something:int  [line 92]\n  *&something:int =(n$1 + 1) [line 92]\n  REMOVE_TEMPS(n$1); [line 92]\n  NULLIFY(&something,false); [line 92]\n " shape="box"]
+73 [label="73:  UnaryOperator \n   n$1=*&something:int  [line 92]\n  *&something:int =(n$1 + 1) [line 92]\n  REMOVE_TEMPS(n$1); [line 92]\n  NULLIFY(&something); [line 92]\n " shape="box"]
 	
 
 	 73 -> 72 ;
-72 [label="72:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 94]\n  NULLIFY(&z,false); [line 94]\n  APPLY_ABSTRACTION; [line 94]\n " shape="box"]
+72 [label="72:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 94]\n  NULLIFY(&z); [line 94]\n  APPLY_ABSTRACTION; [line 94]\n " shape="box"]
 	
 
 	 72 -> 65 ;
@@ -529,7 +529,7 @@ digraph iCFG {
 	
 
 	 67 -> 74 ;
-66 [label="66:  Switch_stmt \n   n$0=*&value:int  [line 80]\n  NULLIFY(&value,false); [line 80]\n " shape="box"]
+66 [label="66:  Switch_stmt \n   n$0=*&value:int  [line 80]\n  NULLIFY(&value); [line 80]\n " shape="box"]
 	
 
 	 66 -> 79 ;
@@ -575,7 +575,7 @@ digraph iCFG {
 	
 
 	 56 -> 55 ;
-55 [label="55:  UnaryOperator \n   n$1=*&something:int  [line 68]\n  *&something:int =(n$1 + 1) [line 68]\n  REMOVE_TEMPS(n$1); [line 68]\n  NULLIFY(&something,false); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
+55 [label="55:  UnaryOperator \n   n$1=*&something:int  [line 68]\n  *&something:int =(n$1 + 1) [line 68]\n  REMOVE_TEMPS(n$1); [line 68]\n  NULLIFY(&something); [line 68]\n  APPLY_ABSTRACTION; [line 68]\n " shape="box"]
 	
 
 	 55 -> 48 ;
@@ -600,7 +600,7 @@ digraph iCFG {
 	
 
 	 50 -> 48 ;
-49 [label="49:  Switch_stmt \n   n$0=*&value:int  [line 62]\n  NULLIFY(&value,false); [line 62]\n " shape="box"]
+49 [label="49:  Switch_stmt \n   n$0=*&value:int  [line 62]\n  NULLIFY(&value); [line 62]\n " shape="box"]
 	
 
 	 49 -> 60 ;
@@ -662,11 +662,11 @@ digraph iCFG {
 	
 
 	 35 -> 34 ;
-34 [label="34:  UnaryOperator \n   n$1=*&something:int  [line 49]\n  *&something:int =(n$1 + 1) [line 49]\n  REMOVE_TEMPS(n$1); [line 49]\n  NULLIFY(&something,false); [line 49]\n " shape="box"]
+34 [label="34:  UnaryOperator \n   n$1=*&something:int  [line 49]\n  *&something:int =(n$1 + 1) [line 49]\n  REMOVE_TEMPS(n$1); [line 49]\n  NULLIFY(&something); [line 49]\n " shape="box"]
 	
 
 	 34 -> 33 ;
-33 [label="33:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 51]\n  NULLIFY(&z,false); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="box"]
+33 [label="33:  BinaryOperatorStmt: Assign \n   *&z:int =42 [line 51]\n  NULLIFY(&z); [line 51]\n  APPLY_ABSTRACTION; [line 51]\n " shape="box"]
 	
 
 	 33 -> 26 ;
@@ -691,7 +691,7 @@ digraph iCFG {
 	
 
 	 28 -> 35 ;
-27 [label="27:  Switch_stmt \n   n$0=*&value:int  [line 37]\n  NULLIFY(&value,false); [line 37]\n " shape="box"]
+27 [label="27:  Switch_stmt \n   n$0=*&value:int  [line 37]\n  NULLIFY(&value); [line 37]\n " shape="box"]
 	
 
 	 27 -> 40 ;
@@ -774,7 +774,7 @@ digraph iCFG {
 	
 
 	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&value,false); [line 14]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 < 10) == 0), false); [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&value); [line 14]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;

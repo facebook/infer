@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  DeclStmt \n   n$0=*&a:int  [line 10]\n  *&b:int =(n$0 + 2) [line 10]\n  REMOVE_TEMPS(n$0); [line 10]\n  NULLIFY(&a,false); [line 10]\n  NULLIFY(&b,false); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=*&a:int  [line 10]\n  *&b:int =(n$0 + 2) [line 10]\n  REMOVE_TEMPS(n$0); [line 10]\n  NULLIFY(&a); [line 10]\n  NULLIFY(&b); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
 	
 
 	 3 -> 2 ;

@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 8 -> 7 ;
-7 [label="7:  Return Stmt \n   n$3=*&s:class NSString * [line 30]\n  *&return:class NSString *=n$3 [line 30]\n  REMOVE_TEMPS(n$3); [line 30]\n  NULLIFY(&s,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+7 [label="7:  Return Stmt \n   n$3=*&s:class NSString * [line 30]\n  *&return:class NSString *=n$3 [line 30]\n  REMOVE_TEMPS(n$3); [line 30]\n  NULLIFY(&s); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
 	 7 -> 6 ;
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  *&return:class NSString *=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  *&return:class NSString *=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 3 -> 2 ;

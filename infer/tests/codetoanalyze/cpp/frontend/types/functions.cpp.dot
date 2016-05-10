@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 10 -> 16 ;
-9 [label="9:  Return Stmt \n   n$0=*&a:int  [line 16]\n  *&return:int =n$0 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&a,false); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&a:int  [line 16]\n  *&return:int =n$0 [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&a); [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -48,7 +48,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  Return Stmt \n   n$0=*&a:int  [line 14]\n  n$1=*&b:int  [line 14]\n  *&return:int =(n$0 + n$1) [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&a,false); [line 14]\n  NULLIFY(&b,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&a:int  [line 14]\n  n$1=*&b:int  [line 14]\n  *&return:int =(n$0 + n$1) [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&a); [line 14]\n  NULLIFY(&b); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -59,7 +59,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   n$0=*&a:int  [line 10]\n  n$1=*&b:int  [line 10]\n  *&return:int =(n$0 + n$1) [line 10]\n  REMOVE_TEMPS(n$0,n$1); [line 10]\n  NULLIFY(&a,false); [line 10]\n  NULLIFY(&b,false); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&a:int  [line 10]\n  n$1=*&b:int  [line 10]\n  *&return:int =(n$0 + n$1) [line 10]\n  REMOVE_TEMPS(n$0,n$1); [line 10]\n  NULLIFY(&a); [line 10]\n  NULLIFY(&b); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
 	
 
 	 3 -> 2 ;

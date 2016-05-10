@@ -19,11 +19,11 @@ digraph iCFG {
 	
 
 	 61 -> 60 ;
-60 [label="60:  Return Stmt \n   n$0=*&d1:int  [line 78]\n  n$1=*&d2:int  [line 78]\n  *&return:int =(n$0 + n$1) [line 78]\n  REMOVE_TEMPS(n$0,n$1); [line 78]\n  NULLIFY(&d1,false); [line 78]\n  NULLIFY(&d2,false); [line 78]\n  APPLY_ABSTRACTION; [line 78]\n " shape="box"]
+60 [label="60:  Return Stmt \n   n$0=*&d1:int  [line 78]\n  n$1=*&d2:int  [line 78]\n  *&return:int =(n$0 + n$1) [line 78]\n  REMOVE_TEMPS(n$0,n$1); [line 78]\n  NULLIFY(&d1); [line 78]\n  NULLIFY(&d2); [line 78]\n  APPLY_ABSTRACTION; [line 78]\n " shape="box"]
 	
 
 	 60 -> 59 ;
-59 [label="59: Exit copyY_moveY_div1 \n   NULLIFY(&y2,false); [line 79]\n  NULLIFY(&y1,false); [line 79]\n  NULLIFY(&__temp_return_n$3,false); [line 79]\n " color=yellow style=filled]
+59 [label="59: Exit copyY_moveY_div1 \n   NULLIFY(&y2); [line 79]\n  NULLIFY(&y1); [line 79]\n  NULLIFY(&__temp_return_n$3); [line 79]\n " color=yellow style=filled]
 	
 
 58 [label="58: Start copyY_moveY_div1\nFormals: \nLocals:  d2:int  __temp_return_n$3:class Y  d1:int  y2:class Y  y1:class Y  \n   DECLARE_LOCALS(&return,&d2,&__temp_return_n$3,&d1,&y2,&y1); [line 72]\n " color=yellow style=filled]
@@ -50,11 +50,11 @@ digraph iCFG {
 	
 
 	 53 -> 52 ;
-52 [label="52:  Return Stmt \n   n$0=*&d1:int  [line 69]\n  n$1=*&d2:int  [line 69]\n  *&return:int =(n$0 + n$1) [line 69]\n  REMOVE_TEMPS(n$0,n$1); [line 69]\n  NULLIFY(&d1,false); [line 69]\n  NULLIFY(&d2,false); [line 69]\n  APPLY_ABSTRACTION; [line 69]\n " shape="box"]
+52 [label="52:  Return Stmt \n   n$0=*&d1:int  [line 69]\n  n$1=*&d2:int  [line 69]\n  *&return:int =(n$0 + n$1) [line 69]\n  REMOVE_TEMPS(n$0,n$1); [line 69]\n  NULLIFY(&d1); [line 69]\n  NULLIFY(&d2); [line 69]\n  APPLY_ABSTRACTION; [line 69]\n " shape="box"]
 	
 
 	 52 -> 51 ;
-51 [label="51: Exit copyX_moveX_div1 \n   NULLIFY(&x2,false); [line 70]\n  NULLIFY(&x1,false); [line 70]\n  NULLIFY(&__temp_return_n$3,false); [line 70]\n " color=yellow style=filled]
+51 [label="51: Exit copyX_moveX_div1 \n   NULLIFY(&x2); [line 70]\n  NULLIFY(&x1); [line 70]\n  NULLIFY(&__temp_return_n$3); [line 70]\n " color=yellow style=filled]
 	
 
 50 [label="50: Start copyX_moveX_div1\nFormals: \nLocals:  d2:int  __temp_return_n$3:class X  d1:int  x2:class X  x1:class X  \n   DECLARE_LOCALS(&return,&d2,&__temp_return_n$3,&d1,&x2,&x1); [line 63]\n " color=yellow style=filled]
@@ -73,7 +73,7 @@ digraph iCFG {
 	
 
 	 47 -> 46 ;
-46 [label="46: Exit moveY_moveY_copyY_div0 \n   NULLIFY(&y2,false); [line 61]\n  NULLIFY(&y1,false); [line 61]\n  NULLIFY(&SIL_materialize_temp__n$1,false); [line 61]\n " color=yellow style=filled]
+46 [label="46: Exit moveY_moveY_copyY_div0 \n   NULLIFY(&y2); [line 61]\n  NULLIFY(&y1); [line 61]\n  NULLIFY(&SIL_materialize_temp__n$1); [line 61]\n " color=yellow style=filled]
 	
 
 45 [label="45: Start moveY_moveY_copyY_div0\nFormals: \nLocals:  y2:class Y  y1:class Y  SIL_materialize_temp__n$1:class Y  \n   DECLARE_LOCALS(&return,&y2,&y1,&SIL_materialize_temp__n$1); [line 57]\n " color=yellow style=filled]
@@ -84,7 +84,7 @@ digraph iCFG {
 	
 
 	 44 -> 43 ;
-43 [label="43: Exit moveY_div0 \n   NULLIFY(&__temp_return_n$1,false); [line 55]\n " color=yellow style=filled]
+43 [label="43: Exit moveY_div0 \n   NULLIFY(&__temp_return_n$1); [line 55]\n " color=yellow style=filled]
 	
 
 42 [label="42: Start moveY_div0\nFormals: \nLocals:  __temp_return_n$1:class Y  \n   DECLARE_LOCALS(&return,&__temp_return_n$1); [line 55]\n " color=yellow style=filled]
@@ -107,7 +107,7 @@ digraph iCFG {
 	
 
 	 38 -> 37 ;
-37 [label="37: Exit copyY_div0 \n   NULLIFY(&y2,false); [line 53]\n  NULLIFY(&y1,false); [line 53]\n " color=yellow style=filled]
+37 [label="37: Exit copyY_div0 \n   NULLIFY(&y2); [line 53]\n  NULLIFY(&y1); [line 53]\n " color=yellow style=filled]
 	
 
 36 [label="36: Start copyY_div0\nFormals: \nLocals:  y2:class Y  y1:class Y  \n   DECLARE_LOCALS(&return,&y2,&y1); [line 48]\n " color=yellow style=filled]
@@ -118,7 +118,7 @@ digraph iCFG {
 	
 
 	 35 -> 34 ;
-34 [label="34: Exit moveX_div0 \n   NULLIFY(&__temp_return_n$1,false); [line 46]\n " color=yellow style=filled]
+34 [label="34: Exit moveX_div0 \n   NULLIFY(&__temp_return_n$1); [line 46]\n " color=yellow style=filled]
 	
 
 33 [label="33: Start moveX_div0\nFormals: \nLocals:  __temp_return_n$1:class X  \n   DECLARE_LOCALS(&return,&__temp_return_n$1); [line 46]\n " color=yellow style=filled]
@@ -141,7 +141,7 @@ digraph iCFG {
 	
 
 	 29 -> 28 ;
-28 [label="28: Exit copyX_div0 \n   NULLIFY(&x2,false); [line 44]\n  NULLIFY(&x1,false); [line 44]\n " color=yellow style=filled]
+28 [label="28: Exit copyX_div0 \n   NULLIFY(&x2); [line 44]\n  NULLIFY(&x1); [line 44]\n " color=yellow style=filled]
 	
 
 27 [label="27: Start copyX_div0\nFormals: \nLocals:  x2:class X  x1:class X  \n   DECLARE_LOCALS(&return,&x2,&x1); [line 39]\n " color=yellow style=filled]
@@ -152,15 +152,15 @@ digraph iCFG {
 	
 
 	 26 -> 25 ;
-25 [label="25:  BinaryOperatorStmt: Assign \n   n$1=*&f:int  [line 35]\n  *&y.f:int =n$1 [line 35]\n  REMOVE_TEMPS(n$1); [line 35]\n  NULLIFY(&f,false); [line 35]\n " shape="box"]
+25 [label="25:  BinaryOperatorStmt: Assign \n   n$1=*&f:int  [line 35]\n  *&y.f:int =n$1 [line 35]\n  REMOVE_TEMPS(n$1); [line 35]\n  NULLIFY(&f); [line 35]\n " shape="box"]
 	
 
 	 25 -> 24 ;
-24 [label="24:  Return Stmt \n   n$0=*&__return_param:class Y * [line 36]\n  _fun_Y_Y(n$0:class Y *,&y:class Y &) [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&__return_param,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+24 [label="24:  Return Stmt \n   n$0=*&__return_param:class Y * [line 36]\n  _fun_Y_Y(n$0:class Y *,&y:class Y &) [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&__return_param); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 24 -> 23 ;
-23 [label="23: Exit getY \n   NULLIFY(&y,false); [line 37]\n " color=yellow style=filled]
+23 [label="23: Exit getY \n   NULLIFY(&y); [line 37]\n " color=yellow style=filled]
 	
 
 22 [label="22: Start getY\nFormals:  f:int  __return_param:class Y *\nLocals:  y:class Y  \n   DECLARE_LOCALS(&return,&y); [line 33]\n " color=yellow style=filled]
@@ -171,22 +171,22 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  BinaryOperatorStmt: Assign \n   n$1=*&f:int  [line 29]\n  *&x.f:int =n$1 [line 29]\n  REMOVE_TEMPS(n$1); [line 29]\n  NULLIFY(&f,false); [line 29]\n " shape="box"]
+20 [label="20:  BinaryOperatorStmt: Assign \n   n$1=*&f:int  [line 29]\n  *&x.f:int =n$1 [line 29]\n  REMOVE_TEMPS(n$1); [line 29]\n  NULLIFY(&f); [line 29]\n " shape="box"]
 	
 
 	 20 -> 19 ;
-19 [label="19:  Return Stmt \n   n$0=*&__return_param:class X * [line 30]\n  _fun_X_X(n$0:class X *,&x:class X &) [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  NULLIFY(&__return_param,false); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+19 [label="19:  Return Stmt \n   n$0=*&__return_param:class X * [line 30]\n  _fun_X_X(n$0:class X *,&x:class X &) [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  NULLIFY(&__return_param); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
 	
 
 	 19 -> 18 ;
-18 [label="18: Exit getX \n   NULLIFY(&x,false); [line 31]\n " color=yellow style=filled]
+18 [label="18: Exit getX \n   NULLIFY(&x); [line 31]\n " color=yellow style=filled]
 	
 
 17 [label="17: Start getX\nFormals:  f:int  __return_param:class X *\nLocals:  x:class X  \n   DECLARE_LOCALS(&return,&x); [line 27]\n " color=yellow style=filled]
 	
 
 	 17 -> 21 ;
-16 [label="16:  Constructor Init \n   n$0=*&this:class Y * [line 24]\n  n$1=*&y:class Y & [line 24]\n  n$2=*n$1.f:int  [line 24]\n  *n$0.f:int =(n$2 - 1) [line 24]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 24]\n  NULLIFY(&this,false); [line 24]\n  NULLIFY(&y,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+16 [label="16:  Constructor Init \n   n$0=*&this:class Y * [line 24]\n  n$1=*&y:class Y & [line 24]\n  n$2=*n$1.f:int  [line 24]\n  *n$0.f:int =(n$2 - 1) [line 24]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 24]\n  NULLIFY(&this); [line 24]\n  NULLIFY(&y); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 16 -> 15 ;
@@ -197,7 +197,7 @@ digraph iCFG {
 	
 
 	 14 -> 16 ;
-13 [label="13:  Constructor Init \n   n$0=*&this:class Y * [line 22]\n  n$1=*&y:class Y & [line 22]\n  n$2=*n$1.f:int  [line 22]\n  *n$0.f:int =n$2 [line 22]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 22]\n  NULLIFY(&this,false); [line 22]\n  NULLIFY(&y,false); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+13 [label="13:  Constructor Init \n   n$0=*&this:class Y * [line 22]\n  n$1=*&y:class Y & [line 22]\n  n$2=*n$1.f:int  [line 22]\n  *n$0.f:int =n$2 [line 22]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 22]\n  NULLIFY(&this); [line 22]\n  NULLIFY(&y); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -215,7 +215,7 @@ digraph iCFG {
 	
 
 	 9 -> 10 ;
-8 [label="8:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  n$1=*&__param_0:class X & [line 13]\n  n$2=*n$1.f:int  [line 13]\n  *n$0.f:int =n$2 [line 13]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 13]\n  NULLIFY(&__param_0,false); [line 13]\n  NULLIFY(&this,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+8 [label="8:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  n$1=*&__param_0:class X & [line 13]\n  n$2=*n$1.f:int  [line 13]\n  *n$0.f:int =n$2 [line 13]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 13]\n  NULLIFY(&__param_0); [line 13]\n  NULLIFY(&this); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -226,7 +226,7 @@ digraph iCFG {
 	
 
 	 6 -> 8 ;
-5 [label="5:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  n$1=*&__param_0:class X & [line 13]\n  n$2=*n$1.f:int  [line 13]\n  *n$0.f:int =n$2 [line 13]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 13]\n  NULLIFY(&__param_0,false); [line 13]\n  NULLIFY(&this,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+5 [label="5:  Constructor Init \n   n$0=*&this:class X * [line 13]\n  n$1=*&__param_0:class X & [line 13]\n  n$2=*n$1.f:int  [line 13]\n  *n$0.f:int =n$2 [line 13]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 13]\n  NULLIFY(&__param_0); [line 13]\n  NULLIFY(&this); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 5 -> 4 ;

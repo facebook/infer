@@ -1,5 +1,5 @@
 digraph iCFG {
-6 [label="6:  Return Stmt \n   n$0=*&v:int  [line 14]\n  *&return:int =n$0 [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&v,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&v:int  [line 14]\n  *&return:int =n$0 [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&v); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 6 -> 5 ;

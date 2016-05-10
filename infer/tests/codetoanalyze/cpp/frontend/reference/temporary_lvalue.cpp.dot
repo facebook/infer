@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12: Exit div0_no_const_ref \n   NULLIFY(&a,false); [line 23]\n " color=yellow style=filled]
+12 [label="12: Exit div0_no_const_ref \n   NULLIFY(&a); [line 23]\n " color=yellow style=filled]
 	
 
 11 [label="11: Start div0_no_const_ref\nFormals: \nLocals:  a:int  \n   DECLARE_LOCALS(&return,&a); [line 20]\n " color=yellow style=filled]
@@ -18,7 +18,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9: Exit div0_function_param_cast \n   NULLIFY(&SIL_materialize_temp__n$0,false); [line 17]\n " color=yellow style=filled]
+9 [label="9: Exit div0_function_param_cast \n   NULLIFY(&SIL_materialize_temp__n$0); [line 17]\n " color=yellow style=filled]
 	
 
 8 [label="8: Start div0_function_param_cast\nFormals: \nLocals:  SIL_materialize_temp__n$0:int  \n   DECLARE_LOCALS(&return,&SIL_materialize_temp__n$0); [line 17]\n " color=yellow style=filled]
@@ -29,18 +29,18 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  Return Stmt \n   n$0=*&a:int & [line 14]\n  n$1=_fun_div(n$0:int &) [line 14]\n  *&return:int =n$1 [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&a,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&a:int & [line 14]\n  n$1=_fun_div(n$0:int &) [line 14]\n  *&return:int =n$1 [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&a); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5: Exit div0_init_expr \n   NULLIFY(&SIL_materialize_temp__n$2,false); [line 15]\n " color=yellow style=filled]
+5 [label="5: Exit div0_init_expr \n   NULLIFY(&SIL_materialize_temp__n$2); [line 15]\n " color=yellow style=filled]
 	
 
 4 [label="4: Start div0_init_expr\nFormals: \nLocals:  a:int & SIL_materialize_temp__n$2:int  \n   DECLARE_LOCALS(&return,&a,&SIL_materialize_temp__n$2); [line 12]\n " color=yellow style=filled]
 	
 
 	 4 -> 7 ;
-3 [label="3:  Return Stmt \n   n$0=*&v:int & [line 10]\n  n$1=*n$0:int  [line 10]\n  *&return:int =(1 / n$1) [line 10]\n  REMOVE_TEMPS(n$0,n$1); [line 10]\n  NULLIFY(&v,false); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&v:int & [line 10]\n  n$1=*n$0:int  [line 10]\n  *&return:int =(1 / n$1) [line 10]\n  REMOVE_TEMPS(n$0,n$1); [line 10]\n  NULLIFY(&v); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
 	
 
 	 3 -> 2 ;

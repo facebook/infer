@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 60 -> 59 ;
-59 [label="59:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_barrier_example______6); [line 73]\n  n$52=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_barrier_example______6 ):unsigned long ) [line 73]\n  *&__objc_anonymous_block_A_dispatch_barrier_example______6:class __objc_anonymous_block_A_dispatch_barrier_example______6 =n$52 [line 73]\n  n$53=*&#GB$A_dispatch_barrier_example_a:class A * [line 73]\n  *n$52.A_dispatch_barrier_example_a:class A *=n$53 [line 73]\n  *&infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_barrier_example______6) [line 73]\n  REMOVE_TEMPS(n$52,n$53); [line 73]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_barrier_example______6,false); [line 73]\n " shape="box"]
+59 [label="59:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_barrier_example______6); [line 73]\n  n$52=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_barrier_example______6 ):unsigned long ) [line 73]\n  *&__objc_anonymous_block_A_dispatch_barrier_example______6:class __objc_anonymous_block_A_dispatch_barrier_example______6 =n$52 [line 73]\n  n$53=*&#GB$A_dispatch_barrier_example_a:class A * [line 73]\n  *n$52.A_dispatch_barrier_example_a:class A *=n$53 [line 73]\n  *&infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_barrier_example______6) [line 73]\n  REMOVE_TEMPS(n$52,n$53); [line 73]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_barrier_example______6); [line 73]\n " shape="box"]
 	
 
 	 59 -> 54 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 55 -> 58 ;
-54 [label="54:  Call n$47 \n   n$47=*&infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*) [line 73]\n  n$48=n$47() [line 73]\n  REMOVE_TEMPS(n$47,n$48); [line 73]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_barrier_example______6,false); [line 73]\n " shape="box"]
+54 [label="54:  Call n$47 \n   n$47=*&infer___objc_anonymous_block_A_dispatch_barrier_example______6:_fn_ (*) [line 73]\n  n$48=n$47() [line 73]\n  REMOVE_TEMPS(n$47,n$48); [line 73]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_barrier_example______6); [line 73]\n " shape="box"]
 	
 
 	 54 -> 53 ;
@@ -41,7 +41,7 @@ digraph iCFG {
 	
 
 	 50 -> 49 ;
-49 [label="49:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_notify_example______5); [line 64]\n  n$43=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_notify_example______5 ):unsigned long ) [line 64]\n  *&__objc_anonymous_block_A_dispatch_group_notify_example______5:class __objc_anonymous_block_A_dispatch_group_notify_example______5 =n$43 [line 64]\n  n$44=*&#GB$A_dispatch_group_notify_example_a:class A * [line 64]\n  *n$43.A_dispatch_group_notify_example_a:class A *=n$44 [line 64]\n  *&infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_notify_example______5) [line 64]\n  REMOVE_TEMPS(n$43,n$44); [line 64]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_group_notify_example______5,false); [line 64]\n " shape="box"]
+49 [label="49:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_notify_example______5); [line 64]\n  n$43=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_notify_example______5 ):unsigned long ) [line 64]\n  *&__objc_anonymous_block_A_dispatch_group_notify_example______5:class __objc_anonymous_block_A_dispatch_group_notify_example______5 =n$43 [line 64]\n  n$44=*&#GB$A_dispatch_group_notify_example_a:class A * [line 64]\n  *n$43.A_dispatch_group_notify_example_a:class A *=n$44 [line 64]\n  *&infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_notify_example______5) [line 64]\n  REMOVE_TEMPS(n$43,n$44); [line 64]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_group_notify_example______5); [line 64]\n " shape="box"]
 	
 
 	 49 -> 44 ;
@@ -60,7 +60,7 @@ digraph iCFG {
 	
 
 	 45 -> 48 ;
-44 [label="44:  Call n$38 \n   n$38=*&infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*) [line 64]\n  n$39=n$38() [line 64]\n  REMOVE_TEMPS(n$38,n$39); [line 64]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_notify_example______5,false); [line 64]\n " shape="box"]
+44 [label="44:  Call n$38 \n   n$38=*&infer___objc_anonymous_block_A_dispatch_group_notify_example______5:_fn_ (*) [line 64]\n  n$39=n$38() [line 64]\n  REMOVE_TEMPS(n$38,n$39); [line 64]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_notify_example______5); [line 64]\n " shape="box"]
 	
 
 	 44 -> 43 ;
@@ -79,7 +79,7 @@ digraph iCFG {
 	
 
 	 40 -> 39 ;
-39 [label="39:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_example______4); [line 55]\n  n$34=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_example______4 ):unsigned long ) [line 55]\n  *&__objc_anonymous_block_A_dispatch_group_example______4:class __objc_anonymous_block_A_dispatch_group_example______4 =n$34 [line 55]\n  n$35=*&#GB$A_dispatch_group_example_a:class A * [line 55]\n  *n$34.A_dispatch_group_example_a:class A *=n$35 [line 55]\n  *&infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_example______4) [line 55]\n  REMOVE_TEMPS(n$34,n$35); [line 55]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_group_example______4,false); [line 55]\n " shape="box"]
+39 [label="39:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_group_example______4); [line 55]\n  n$34=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_group_example______4 ):unsigned long ) [line 55]\n  *&__objc_anonymous_block_A_dispatch_group_example______4:class __objc_anonymous_block_A_dispatch_group_example______4 =n$34 [line 55]\n  n$35=*&#GB$A_dispatch_group_example_a:class A * [line 55]\n  *n$34.A_dispatch_group_example_a:class A *=n$35 [line 55]\n  *&infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_group_example______4) [line 55]\n  REMOVE_TEMPS(n$34,n$35); [line 55]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_group_example______4); [line 55]\n " shape="box"]
 	
 
 	 39 -> 34 ;
@@ -98,7 +98,7 @@ digraph iCFG {
 	
 
 	 35 -> 38 ;
-34 [label="34:  Call n$29 \n   n$29=*&infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*) [line 55]\n  n$30=n$29() [line 55]\n  REMOVE_TEMPS(n$29,n$30); [line 55]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_example______4,false); [line 55]\n " shape="box"]
+34 [label="34:  Call n$29 \n   n$29=*&infer___objc_anonymous_block_A_dispatch_group_example______4:_fn_ (*) [line 55]\n  n$30=n$29() [line 55]\n  REMOVE_TEMPS(n$29,n$30); [line 55]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_group_example______4); [line 55]\n " shape="box"]
 	
 
 	 34 -> 33 ;
@@ -117,7 +117,7 @@ digraph iCFG {
 	
 
 	 30 -> 29 ;
-29 [label="29:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_after_example______3); [line 46]\n  n$25=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_after_example______3 ):unsigned long ) [line 46]\n  *&__objc_anonymous_block_A_dispatch_after_example______3:class __objc_anonymous_block_A_dispatch_after_example______3 =n$25 [line 46]\n  n$26=*&#GB$A_dispatch_after_example_a:class A * [line 46]\n  *n$25.A_dispatch_after_example_a:class A *=n$26 [line 46]\n  *&infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_after_example______3) [line 44]\n  REMOVE_TEMPS(n$25,n$26); [line 44]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_after_example______3,false); [line 44]\n " shape="box"]
+29 [label="29:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_after_example______3); [line 46]\n  n$25=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_after_example______3 ):unsigned long ) [line 46]\n  *&__objc_anonymous_block_A_dispatch_after_example______3:class __objc_anonymous_block_A_dispatch_after_example______3 =n$25 [line 46]\n  n$26=*&#GB$A_dispatch_after_example_a:class A * [line 46]\n  *n$25.A_dispatch_after_example_a:class A *=n$26 [line 46]\n  *&infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_after_example______3) [line 44]\n  REMOVE_TEMPS(n$25,n$26); [line 44]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_after_example______3); [line 44]\n " shape="box"]
 	
 
 	 29 -> 24 ;
@@ -136,7 +136,7 @@ digraph iCFG {
 	
 
 	 25 -> 28 ;
-24 [label="24:  Call n$20 \n   n$20=*&infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*) [line 44]\n  n$21=n$20() [line 44]\n  REMOVE_TEMPS(n$20,n$21); [line 44]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_after_example______3,false); [line 44]\n " shape="box"]
+24 [label="24:  Call n$20 \n   n$20=*&infer___objc_anonymous_block_A_dispatch_after_example______3:_fn_ (*) [line 44]\n  n$21=n$20() [line 44]\n  REMOVE_TEMPS(n$20,n$21); [line 44]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_after_example______3); [line 44]\n " shape="box"]
 	
 
 	 24 -> 23 ;
@@ -155,7 +155,7 @@ digraph iCFG {
 	
 
 	 20 -> 19 ;
-19 [label="19:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_async_example______2); [line 35]\n  n$16=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_async_example______2 ):unsigned long ) [line 35]\n  *&__objc_anonymous_block_A_dispatch_async_example______2:class __objc_anonymous_block_A_dispatch_async_example______2 =n$16 [line 35]\n  n$17=*&#GB$A_dispatch_async_example_a:class A * [line 35]\n  *n$16.A_dispatch_async_example_a:class A *=n$17 [line 35]\n  *&infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_async_example______2) [line 34]\n  REMOVE_TEMPS(n$16,n$17); [line 34]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_async_example______2,false); [line 34]\n " shape="box"]
+19 [label="19:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_async_example______2); [line 35]\n  n$16=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_async_example______2 ):unsigned long ) [line 35]\n  *&__objc_anonymous_block_A_dispatch_async_example______2:class __objc_anonymous_block_A_dispatch_async_example______2 =n$16 [line 35]\n  n$17=*&#GB$A_dispatch_async_example_a:class A * [line 35]\n  *n$16.A_dispatch_async_example_a:class A *=n$17 [line 35]\n  *&infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_async_example______2) [line 34]\n  REMOVE_TEMPS(n$16,n$17); [line 34]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_async_example______2); [line 34]\n " shape="box"]
 	
 
 	 19 -> 14 ;
@@ -174,7 +174,7 @@ digraph iCFG {
 	
 
 	 15 -> 18 ;
-14 [label="14:  Call n$11 \n   n$11=*&infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*) [line 34]\n  n$12=n$11() [line 34]\n  REMOVE_TEMPS(n$11,n$12); [line 34]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_async_example______2,false); [line 34]\n " shape="box"]
+14 [label="14:  Call n$11 \n   n$11=*&infer___objc_anonymous_block_A_dispatch_async_example______2:_fn_ (*) [line 34]\n  n$12=n$11() [line 34]\n  REMOVE_TEMPS(n$11,n$12); [line 34]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_async_example______2); [line 34]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -193,7 +193,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_once_example______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_once_example______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_A_dispatch_once_example______1:class __objc_anonymous_block_A_dispatch_once_example______1 =n$7 [line 25]\n  n$8=*&#GB$A_dispatch_once_example_a:class A * [line 25]\n  *n$7.A_dispatch_once_example_a:class A *=n$8 [line 25]\n  *&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_once_example______1) [line 25]\n  REMOVE_TEMPS(n$7,n$8); [line 25]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_once_example______1,false); [line 25]\n " shape="box"]
+9 [label="9:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_once_example______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_once_example______1 ):unsigned long ) [line 25]\n  *&__objc_anonymous_block_A_dispatch_once_example______1:class __objc_anonymous_block_A_dispatch_once_example______1 =n$7 [line 25]\n  n$8=*&#GB$A_dispatch_once_example_a:class A * [line 25]\n  *n$7.A_dispatch_once_example_a:class A *=n$8 [line 25]\n  *&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_once_example______1) [line 25]\n  REMOVE_TEMPS(n$7,n$8); [line 25]\n  NULLIFY(&__objc_anonymous_block_A_dispatch_once_example______1); [line 25]\n " shape="box"]
 	
 
 	 9 -> 4 ;
@@ -212,7 +212,7 @@ digraph iCFG {
 	
 
 	 5 -> 8 ;
-4 [label="4:  Call n$2 \n   n$2=*&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*) [line 25]\n  n$3=n$2() [line 25]\n  REMOVE_TEMPS(n$2,n$3); [line 25]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_once_example______1,false); [line 25]\n " shape="box"]
+4 [label="4:  Call n$2 \n   n$2=*&infer___objc_anonymous_block_A_dispatch_once_example______1:_fn_ (*) [line 25]\n  n$3=n$2() [line 25]\n  REMOVE_TEMPS(n$2,n$3); [line 25]\n  NULLIFY(&infer___objc_anonymous_block_A_dispatch_once_example______1); [line 25]\n " shape="box"]
 	
 
 	 4 -> 3 ;

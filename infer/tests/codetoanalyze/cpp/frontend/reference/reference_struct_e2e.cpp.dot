@@ -79,7 +79,7 @@ digraph iCFG {
 	
 
 	 103 -> 102 ;
-102 [label="102:  Return Stmt \n   n$0=*&x:class X & [line 102]\n  n$1=*n$0:class X  [line 102]\n  n$2=_fun_X_div(n$0:class X &) [line 102]\n  *&return:int =n$2 [line 102]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 102]\n  NULLIFY(&x,false); [line 102]\n  APPLY_ABSTRACTION; [line 102]\n " shape="box"]
+102 [label="102:  Return Stmt \n   n$0=*&x:class X & [line 102]\n  n$1=*n$0:class X  [line 102]\n  n$2=_fun_X_div(n$0:class X &) [line 102]\n  *&return:int =n$2 [line 102]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 102]\n  NULLIFY(&x); [line 102]\n  APPLY_ABSTRACTION; [line 102]\n " shape="box"]
 	
 
 	 102 -> 101 ;
@@ -94,7 +94,7 @@ digraph iCFG {
 	
 
 	 99 -> 98 ;
-98 [label="98:  Return Stmt \n   n$0=*&x:class X & [line 97]\n  n$1=*n$0:class X  [line 97]\n  n$2=_fun_X_div(n$0:class X &) [line 97]\n  *&return:int =n$2 [line 97]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 97]\n  NULLIFY(&x,false); [line 97]\n  APPLY_ABSTRACTION; [line 97]\n " shape="box"]
+98 [label="98:  Return Stmt \n   n$0=*&x:class X & [line 97]\n  n$1=*n$0:class X  [line 97]\n  n$2=_fun_X_div(n$0:class X &) [line 97]\n  *&return:int =n$2 [line 97]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 97]\n  NULLIFY(&x); [line 97]\n  APPLY_ABSTRACTION; [line 97]\n " shape="box"]
 	
 
 	 98 -> 97 ;
@@ -109,7 +109,7 @@ digraph iCFG {
 	
 
 	 95 -> 94 ;
-94 [label="94:  Return Stmt \n   n$0=*&x:class X & [line 92]\n  n$1=*n$0:class X  [line 92]\n  n$2=_fun_X_div(n$0:class X &) [line 92]\n  *&return:int =n$2 [line 92]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 92]\n  NULLIFY(&x,false); [line 92]\n  APPLY_ABSTRACTION; [line 92]\n " shape="box"]
+94 [label="94:  Return Stmt \n   n$0=*&x:class X & [line 92]\n  n$1=*n$0:class X  [line 92]\n  n$2=_fun_X_div(n$0:class X &) [line 92]\n  *&return:int =n$2 [line 92]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 92]\n  NULLIFY(&x); [line 92]\n  APPLY_ABSTRACTION; [line 92]\n " shape="box"]
 	
 
 	 94 -> 93 ;
@@ -124,7 +124,7 @@ digraph iCFG {
 	
 
 	 91 -> 90 ;
-90 [label="90:  Return Stmt \n   n$0=*&x:class X & [line 87]\n  n$1=*n$0:class X  [line 87]\n  n$2=_fun_X_div(n$0:class X &) [line 87]\n  *&return:int =n$2 [line 87]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 87]\n  NULLIFY(&x,false); [line 87]\n  APPLY_ABSTRACTION; [line 87]\n " shape="box"]
+90 [label="90:  Return Stmt \n   n$0=*&x:class X & [line 87]\n  n$1=*n$0:class X  [line 87]\n  n$2=_fun_X_div(n$0:class X &) [line 87]\n  *&return:int =n$2 [line 87]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 87]\n  NULLIFY(&x); [line 87]\n  APPLY_ABSTRACTION; [line 87]\n " shape="box"]
 	
 
 	 90 -> 89 ;
@@ -215,11 +215,11 @@ digraph iCFG {
 	
 
 	 67 -> 66 ;
-66 [label="66:  Return Stmt \n   n$1=*&x:class X * [line 57]\n  n$2=*n$1:class X  [line 57]\n  n$3=_fun_X_div(n$1:class X *) [line 57]\n  *&return:int =n$3 [line 57]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 57]\n  NULLIFY(&x,false); [line 57]\n  APPLY_ABSTRACTION; [line 57]\n " shape="box"]
+66 [label="66:  Return Stmt \n   n$1=*&x:class X * [line 57]\n  n$2=*n$1:class X  [line 57]\n  n$3=_fun_X_div(n$1:class X *) [line 57]\n  *&return:int =n$3 [line 57]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 57]\n  NULLIFY(&x); [line 57]\n  APPLY_ABSTRACTION; [line 57]\n " shape="box"]
 	
 
 	 66 -> 61 ;
-65 [label="65: Prune (false branch) \n   n$0=*&x:class X * [line 55]\n  PRUNE((n$0 == 0), false); [line 55]\n  REMOVE_TEMPS(n$0); [line 55]\n  NULLIFY(&x,false); [line 55]\n " shape="invhouse"]
+65 [label="65: Prune (false branch) \n   n$0=*&x:class X * [line 55]\n  PRUNE((n$0 == 0), false); [line 55]\n  REMOVE_TEMPS(n$0); [line 55]\n  NULLIFY(&x); [line 55]\n " shape="invhouse"]
 	
 
 	 65 -> 62 ;
@@ -247,11 +247,11 @@ digraph iCFG {
 	
 
 	 59 -> 58 ;
-58 [label="58:  Return Stmt \n   n$1=*&x:class X * [line 50]\n  n$2=*n$1:class X  [line 50]\n  n$3=_fun_X_div(n$1:class X *) [line 50]\n  *&return:int =n$3 [line 50]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 50]\n  NULLIFY(&x,false); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
+58 [label="58:  Return Stmt \n   n$1=*&x:class X * [line 50]\n  n$2=*n$1:class X  [line 50]\n  n$3=_fun_X_div(n$1:class X *) [line 50]\n  *&return:int =n$3 [line 50]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 50]\n  NULLIFY(&x); [line 50]\n  APPLY_ABSTRACTION; [line 50]\n " shape="box"]
 	
 
 	 58 -> 53 ;
-57 [label="57: Prune (false branch) \n   n$0=*&x:class X * [line 48]\n  PRUNE((n$0 == 0), false); [line 48]\n  REMOVE_TEMPS(n$0); [line 48]\n  NULLIFY(&x,false); [line 48]\n " shape="invhouse"]
+57 [label="57: Prune (false branch) \n   n$0=*&x:class X * [line 48]\n  PRUNE((n$0 == 0), false); [line 48]\n  REMOVE_TEMPS(n$0); [line 48]\n  NULLIFY(&x); [line 48]\n " shape="invhouse"]
 	
 
 	 57 -> 54 ;
@@ -279,11 +279,11 @@ digraph iCFG {
 	
 
 	 51 -> 50 ;
-50 [label="50:  Return Stmt \n   n$1=*&x:class X * [line 43]\n  n$2=*n$1:class X  [line 43]\n  n$3=_fun_X_div(n$1:class X *) [line 43]\n  *&return:int =n$3 [line 43]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 43]\n  NULLIFY(&x,false); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+50 [label="50:  Return Stmt \n   n$1=*&x:class X * [line 43]\n  n$2=*n$1:class X  [line 43]\n  n$3=_fun_X_div(n$1:class X *) [line 43]\n  *&return:int =n$3 [line 43]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 43]\n  NULLIFY(&x); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	
 
 	 50 -> 45 ;
-49 [label="49: Prune (false branch) \n   n$0=*&x:class X * [line 41]\n  PRUNE((n$0 == 0), false); [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&x,false); [line 41]\n " shape="invhouse"]
+49 [label="49: Prune (false branch) \n   n$0=*&x:class X * [line 41]\n  PRUNE((n$0 == 0), false); [line 41]\n  REMOVE_TEMPS(n$0); [line 41]\n  NULLIFY(&x); [line 41]\n " shape="invhouse"]
 	
 
 	 49 -> 46 ;
@@ -311,11 +311,11 @@ digraph iCFG {
 	
 
 	 43 -> 42 ;
-42 [label="42:  Return Stmt \n   n$1=*&x:class X * [line 36]\n  n$2=*n$1:class X  [line 36]\n  n$3=_fun_X_div(n$1:class X *) [line 36]\n  *&return:int =n$3 [line 36]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 36]\n  NULLIFY(&x,false); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+42 [label="42:  Return Stmt \n   n$1=*&x:class X * [line 36]\n  n$2=*n$1:class X  [line 36]\n  n$3=_fun_X_div(n$1:class X *) [line 36]\n  *&return:int =n$3 [line 36]\n  REMOVE_TEMPS(n$1,n$2,n$3); [line 36]\n  NULLIFY(&x); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
 	
 
 	 42 -> 37 ;
-41 [label="41: Prune (false branch) \n   n$0=*&x:class X * [line 34]\n  PRUNE((n$0 == 0), false); [line 34]\n  REMOVE_TEMPS(n$0); [line 34]\n  NULLIFY(&x,false); [line 34]\n " shape="invhouse"]
+41 [label="41: Prune (false branch) \n   n$0=*&x:class X * [line 34]\n  PRUNE((n$0 == 0), false); [line 34]\n  REMOVE_TEMPS(n$0); [line 34]\n  NULLIFY(&x); [line 34]\n " shape="invhouse"]
 	
 
 	 41 -> 38 ;
@@ -361,7 +361,7 @@ digraph iCFG {
 	
 
 	 30 -> 32 ;
-29 [label="29:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X & [line 27]\n  n$1=*&val:int  [line 27]\n  *n$0.f:int =n$1 [line 27]\n  REMOVE_TEMPS(n$0,n$1); [line 27]\n  NULLIFY(&val,false); [line 27]\n  NULLIFY(&x,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+29 [label="29:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X & [line 27]\n  n$1=*&val:int  [line 27]\n  *n$0.f:int =n$1 [line 27]\n  REMOVE_TEMPS(n$0,n$1); [line 27]\n  NULLIFY(&val); [line 27]\n  NULLIFY(&x); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 29 -> 28 ;
@@ -372,7 +372,7 @@ digraph iCFG {
 	
 
 	 27 -> 29 ;
-26 [label="26:  Call _fun_X_nonzero \n   n$0=*&x:class X & [line 25]\n  n$1=*n$0:class X  [line 25]\n  _fun_X_nonzero(n$0:class X &) [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n  NULLIFY(&x,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+26 [label="26:  Call _fun_X_nonzero \n   n$0=*&x:class X & [line 25]\n  n$1=*n$0:class X  [line 25]\n  _fun_X_nonzero(n$0:class X &) [line 25]\n  REMOVE_TEMPS(n$0,n$1); [line 25]\n  NULLIFY(&x); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -383,7 +383,7 @@ digraph iCFG {
 	
 
 	 24 -> 26 ;
-23 [label="23:  Call _fun_X_zero \n   n$0=*&x:class X & [line 23]\n  n$1=*n$0:class X  [line 23]\n  _fun_X_zero(n$0:class X &) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&x,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+23 [label="23:  Call _fun_X_zero \n   n$0=*&x:class X & [line 23]\n  n$1=*n$0:class X  [line 23]\n  _fun_X_zero(n$0:class X &) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&x); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 23 -> 22 ;
@@ -394,7 +394,7 @@ digraph iCFG {
 	
 
 	 21 -> 23 ;
-20 [label="20:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X * [line 21]\n  n$1=*&val:int  [line 21]\n  *n$0.f:int =n$1 [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&val,false); [line 21]\n  NULLIFY(&x,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+20 [label="20:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X * [line 21]\n  n$1=*&val:int  [line 21]\n  *n$0.f:int =n$1 [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&val); [line 21]\n  NULLIFY(&x); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 20 -> 19 ;
@@ -405,7 +405,7 @@ digraph iCFG {
 	
 
 	 18 -> 20 ;
-17 [label="17:  Call _fun_X_nonzero \n   n$0=*&x:class X * [line 19]\n  n$1=*n$0:class X  [line 19]\n  _fun_X_nonzero(n$0:class X *) [line 19]\n  REMOVE_TEMPS(n$0,n$1); [line 19]\n  NULLIFY(&x,false); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+17 [label="17:  Call _fun_X_nonzero \n   n$0=*&x:class X * [line 19]\n  n$1=*n$0:class X  [line 19]\n  _fun_X_nonzero(n$0:class X *) [line 19]\n  REMOVE_TEMPS(n$0,n$1); [line 19]\n  NULLIFY(&x); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -416,7 +416,7 @@ digraph iCFG {
 	
 
 	 15 -> 17 ;
-14 [label="14:  Call _fun_X_zero \n   n$0=*&x:class X * [line 17]\n  n$1=*n$0:class X  [line 17]\n  _fun_X_zero(n$0:class X *) [line 17]\n  REMOVE_TEMPS(n$0,n$1); [line 17]\n  NULLIFY(&x,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+14 [label="14:  Call _fun_X_zero \n   n$0=*&x:class X * [line 17]\n  n$1=*n$0:class X  [line 17]\n  _fun_X_zero(n$0:class X *) [line 17]\n  REMOVE_TEMPS(n$0,n$1); [line 17]\n  NULLIFY(&x); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -434,7 +434,7 @@ digraph iCFG {
 	
 
 	 10 -> 11 ;
-9 [label="9:  Return Stmt \n   n$0=*&this:class X * [line 14]\n  n$1=*n$0.f:int  [line 14]\n  *&return:int =(1 / n$1) [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&this,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&this:class X * [line 14]\n  n$1=*n$0.f:int  [line 14]\n  *&return:int =(1 / n$1) [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&this); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -445,7 +445,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 13]\n  *n$0.f:int =0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&this,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 13]\n  *n$0.f:int =0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&this); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -456,7 +456,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 12]\n  *n$0.f:int =1 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 12]\n  *n$0.f:int =1 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

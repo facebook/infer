@@ -54,7 +54,7 @@ digraph iCFG {
 	
 
 	 7 -> 4 ;
-6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n  NULLIFY(&x,false); [line 12]\n " shape="invhouse"]
+6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n  NULLIFY(&x); [line 12]\n " shape="invhouse"]
 	
 
 	 6 -> 3 ;

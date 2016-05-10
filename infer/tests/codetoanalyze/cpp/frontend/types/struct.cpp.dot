@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&xs:class X_struct * [line 25]\n  *n$2.b:int =20 [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n  NULLIFY(&xs,false); [line 25]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&xs:class X_struct * [line 25]\n  *n$2.b:int =20 [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n  NULLIFY(&xs); [line 25]\n " shape="box"]
 	
 
 	 5 -> 4 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&xc:class X_class * [line 29]\n  *n$0.b:int =20 [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  NULLIFY(&xc,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&xc:class X_class * [line 29]\n  *n$0.b:int =20 [line 29]\n  REMOVE_TEMPS(n$0); [line 29]\n  NULLIFY(&xc); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 3 -> 2 ;

@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 10 -> 6 ;
-9 [label="9: Prune (false branch) \n   PRUNE(((n$1 < 10) == 0), false); [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&i,false); [line 12]\n  NULLIFY(&j,false); [line 12]\n " shape="invhouse"]
+9 [label="9: Prune (false branch) \n   PRUNE(((n$1 < 10) == 0), false); [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&i); [line 12]\n  NULLIFY(&j); [line 12]\n " shape="invhouse"]
 	
 
 	 9 -> 3 ;

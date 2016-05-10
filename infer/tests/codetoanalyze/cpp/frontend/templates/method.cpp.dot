@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 72 -> 71 ;
-71 [label="71: Exit div1_getter_templ2 \n   NULLIFY(&x1_2,false); [line 75]\n  NULLIFY(&x1_1,false); [line 75]\n  NULLIFY(&g,false); [line 75]\n " color=yellow style=filled]
+71 [label="71: Exit div1_getter_templ2 \n   NULLIFY(&x1_2); [line 75]\n  NULLIFY(&x1_1); [line 75]\n  NULLIFY(&g); [line 75]\n " color=yellow style=filled]
 	
 
 70 [label="70: Start div1_getter_templ2\nFormals: \nLocals:  g:class GetterTempl<X1>  x1_2:class X1  x1_1:class X1  \n   DECLARE_LOCALS(&return,&g,&x1_2,&x1_1); [line 70]\n " color=yellow style=filled]
@@ -38,7 +38,7 @@ digraph iCFG {
 	
 
 	 66 -> 65 ;
-65 [label="65: Exit div1_getter_templ \n   NULLIFY(&x2,false); [line 68]\n  NULLIFY(&x1,false); [line 68]\n  NULLIFY(&g,false); [line 68]\n " color=yellow style=filled]
+65 [label="65: Exit div1_getter_templ \n   NULLIFY(&x2); [line 68]\n  NULLIFY(&x1); [line 68]\n  NULLIFY(&g); [line 68]\n " color=yellow style=filled]
 	
 
 64 [label="64: Start div1_getter_templ\nFormals: \nLocals:  g:class GetterTempl<X2>  x2:class X2  x1:class X1  \n   DECLARE_LOCALS(&return,&g,&x2,&x1); [line 63]\n " color=yellow style=filled]
@@ -61,7 +61,7 @@ digraph iCFG {
 	
 
 	 60 -> 59 ;
-59 [label="59: Exit div0_getter_templ2 \n   NULLIFY(&x2_2,false); [line 61]\n  NULLIFY(&x2_1,false); [line 61]\n  NULLIFY(&g,false); [line 61]\n " color=yellow style=filled]
+59 [label="59: Exit div0_getter_templ2 \n   NULLIFY(&x2_2); [line 61]\n  NULLIFY(&x2_1); [line 61]\n  NULLIFY(&g); [line 61]\n " color=yellow style=filled]
 	
 
 58 [label="58: Start div0_getter_templ2\nFormals: \nLocals:  g:class GetterTempl<X2>  x2_2:class X2  x2_1:class X2  \n   DECLARE_LOCALS(&return,&g,&x2_2,&x2_1); [line 56]\n " color=yellow style=filled]
@@ -84,7 +84,7 @@ digraph iCFG {
 	
 
 	 54 -> 53 ;
-53 [label="53: Exit div0_getter_templ \n   NULLIFY(&x3,false); [line 54]\n  NULLIFY(&x2,false); [line 54]\n  NULLIFY(&g,false); [line 54]\n " color=yellow style=filled]
+53 [label="53: Exit div0_getter_templ \n   NULLIFY(&x3); [line 54]\n  NULLIFY(&x2); [line 54]\n  NULLIFY(&g); [line 54]\n " color=yellow style=filled]
 	
 
 52 [label="52: Start div0_getter_templ\nFormals: \nLocals:  g:class GetterTempl<X3>  x3:class X3  x2:class X2  \n   DECLARE_LOCALS(&return,&g,&x3,&x2); [line 49]\n " color=yellow style=filled]
@@ -103,7 +103,7 @@ digraph iCFG {
 	
 
 	 49 -> 48 ;
-48 [label="48: Exit div1_getter \n   NULLIFY(&x1,false); [line 47]\n  NULLIFY(&g,false); [line 47]\n " color=yellow style=filled]
+48 [label="48: Exit div1_getter \n   NULLIFY(&x1); [line 47]\n  NULLIFY(&g); [line 47]\n " color=yellow style=filled]
 	
 
 47 [label="47: Start div1_getter\nFormals: \nLocals:  g:class Getter  x1:class X1  \n   DECLARE_LOCALS(&return,&g,&x1); [line 43]\n " color=yellow style=filled]
@@ -122,7 +122,7 @@ digraph iCFG {
 	
 
 	 44 -> 43 ;
-43 [label="43: Exit div0_getter \n   NULLIFY(&x2,false); [line 41]\n  NULLIFY(&g,false); [line 41]\n " color=yellow style=filled]
+43 [label="43: Exit div0_getter \n   NULLIFY(&x2); [line 41]\n  NULLIFY(&g); [line 41]\n " color=yellow style=filled]
 	
 
 42 [label="42: Start div0_getter\nFormals: \nLocals:  g:class Getter  x2:class X2  \n   DECLARE_LOCALS(&return,&g,&x2); [line 37]\n " color=yellow style=filled]
@@ -136,7 +136,7 @@ digraph iCFG {
 	
 
 	 40 -> 41 ;
-39 [label="39:  Return Stmt \n   n$0=*&t:class X1 & [line 33]\n  n$1=*n$0:class X1  [line 33]\n  n$2=_fun_X1_get(n$0:class X1 &) [line 33]\n  n$3=*&s:class X1 & [line 33]\n  n$4=*n$3:class X1  [line 33]\n  n$5=_fun_X1_get(n$3:class X1 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s,false); [line 33]\n  NULLIFY(&t,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+39 [label="39:  Return Stmt \n   n$0=*&t:class X1 & [line 33]\n  n$1=*n$0:class X1  [line 33]\n  n$2=_fun_X1_get(n$0:class X1 &) [line 33]\n  n$3=*&s:class X1 & [line 33]\n  n$4=*n$3:class X1  [line 33]\n  n$5=_fun_X1_get(n$3:class X1 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s); [line 33]\n  NULLIFY(&t); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 39 -> 38 ;
@@ -154,7 +154,7 @@ digraph iCFG {
 	
 
 	 35 -> 36 ;
-34 [label="34:  Return Stmt \n   n$0=*&t:class X2 & [line 33]\n  n$1=*n$0:class X2  [line 33]\n  n$2=_fun_X2_get(n$0:class X2 &) [line 33]\n  n$3=*&s:class X1 & [line 33]\n  n$4=*n$3:class X1  [line 33]\n  n$5=_fun_X1_get(n$3:class X1 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s,false); [line 33]\n  NULLIFY(&t,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+34 [label="34:  Return Stmt \n   n$0=*&t:class X2 & [line 33]\n  n$1=*n$0:class X2  [line 33]\n  n$2=_fun_X2_get(n$0:class X2 &) [line 33]\n  n$3=*&s:class X1 & [line 33]\n  n$4=*n$3:class X1  [line 33]\n  n$5=_fun_X1_get(n$3:class X1 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s); [line 33]\n  NULLIFY(&t); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 34 -> 33 ;
@@ -165,7 +165,7 @@ digraph iCFG {
 	
 
 	 32 -> 34 ;
-31 [label="31:  Return Stmt \n   n$0=*&t:class X2 & [line 33]\n  n$1=*n$0:class X2  [line 33]\n  n$2=_fun_X2_get(n$0:class X2 &) [line 33]\n  n$3=*&s:class X2 & [line 33]\n  n$4=*n$3:class X2  [line 33]\n  n$5=_fun_X2_get(n$3:class X2 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s,false); [line 33]\n  NULLIFY(&t,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+31 [label="31:  Return Stmt \n   n$0=*&t:class X2 & [line 33]\n  n$1=*n$0:class X2  [line 33]\n  n$2=_fun_X2_get(n$0:class X2 &) [line 33]\n  n$3=*&s:class X2 & [line 33]\n  n$4=*n$3:class X2  [line 33]\n  n$5=_fun_X2_get(n$3:class X2 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s); [line 33]\n  NULLIFY(&t); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 31 -> 30 ;
@@ -183,7 +183,7 @@ digraph iCFG {
 	
 
 	 27 -> 28 ;
-26 [label="26:  Return Stmt \n   n$0=*&t:class X3 & [line 33]\n  n$1=*n$0:class X3  [line 33]\n  n$2=_fun_X3_get(n$0:class X3 &) [line 33]\n  n$3=*&s:class X2 & [line 33]\n  n$4=*n$3:class X2  [line 33]\n  n$5=_fun_X2_get(n$3:class X2 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s,false); [line 33]\n  NULLIFY(&t,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+26 [label="26:  Return Stmt \n   n$0=*&t:class X3 & [line 33]\n  n$1=*n$0:class X3  [line 33]\n  n$2=_fun_X3_get(n$0:class X3 &) [line 33]\n  n$3=*&s:class X2 & [line 33]\n  n$4=*n$3:class X2  [line 33]\n  n$5=_fun_X2_get(n$3:class X2 &) [line 33]\n  *&return:int =(n$2 + n$5) [line 33]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5); [line 33]\n  NULLIFY(&s); [line 33]\n  NULLIFY(&t); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -201,7 +201,7 @@ digraph iCFG {
 	
 
 	 22 -> 23 ;
-21 [label="21:  Return Stmt \n   n$0=*&s:class X1 & [line 25]\n  n$1=*n$0:class X1  [line 25]\n  n$2=_fun_X1_get(n$0:class X1 &) [line 25]\n  *&return:int =n$2 [line 25]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 25]\n  NULLIFY(&s,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+21 [label="21:  Return Stmt \n   n$0=*&s:class X1 & [line 25]\n  n$1=*n$0:class X1  [line 25]\n  n$2=_fun_X1_get(n$0:class X1 &) [line 25]\n  *&return:int =n$2 [line 25]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 25]\n  NULLIFY(&s); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -212,7 +212,7 @@ digraph iCFG {
 	
 
 	 19 -> 21 ;
-18 [label="18:  Return Stmt \n   n$0=*&s:class X2 & [line 25]\n  n$1=*n$0:class X2  [line 25]\n  n$2=_fun_X2_get(n$0:class X2 &) [line 25]\n  *&return:int =n$2 [line 25]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 25]\n  NULLIFY(&s,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+18 [label="18:  Return Stmt \n   n$0=*&s:class X2 & [line 25]\n  n$1=*n$0:class X2  [line 25]\n  n$2=_fun_X2_get(n$0:class X2 &) [line 25]\n  *&return:int =n$2 [line 25]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 25]\n  NULLIFY(&s); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 18 -> 17 ;

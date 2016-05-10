@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&person:struct Person * [line 27]\n  *&return:struct Person *=n$0 [line 27]\n  REMOVE_TEMPS(n$0); [line 27]\n  NULLIFY(&person,false); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&person:struct Person * [line 27]\n  *&return:struct Person *=n$0 [line 27]\n  REMOVE_TEMPS(n$0); [line 27]\n  NULLIFY(&person); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
 	
 
 	 3 -> 2 ;

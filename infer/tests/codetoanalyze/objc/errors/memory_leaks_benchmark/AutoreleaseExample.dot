@@ -7,11 +7,11 @@ digraph iCFG {
 	
 
 	 36 -> 35 ;
-35 [label="35:  Message Call: release \n   n$1=*&pool:class NSAutoreleasePool * [line 63]\n  _fun___objc_release_autorelease_pool(n$1:class NSAutoreleasePool *) [line 63]\n  REMOVE_TEMPS(n$1); [line 63]\n  NULLIFY(&pool,false); [line 63]\n " shape="box"]
+35 [label="35:  Message Call: release \n   n$1=*&pool:class NSAutoreleasePool * [line 63]\n  _fun___objc_release_autorelease_pool(n$1:class NSAutoreleasePool *) [line 63]\n  REMOVE_TEMPS(n$1); [line 63]\n  NULLIFY(&pool); [line 63]\n " shape="box"]
 	
 
 	 35 -> 34 ;
-34 [label="34:  DeclStmt \n   n$0=*&string:class NSString * [line 64]\n  *&c:class NSString *=n$0 [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  NULLIFY(&c,false); [line 64]\n  NULLIFY(&string,false); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
+34 [label="34:  DeclStmt \n   n$0=*&string:class NSString * [line 64]\n  *&c:class NSString *=n$0 [line 64]\n  REMOVE_TEMPS(n$0); [line 64]\n  NULLIFY(&c); [line 64]\n  NULLIFY(&string); [line 64]\n  APPLY_ABSTRACTION; [line 64]\n " shape="box"]
 	
 
 	 34 -> 33 ;
@@ -54,7 +54,7 @@ digraph iCFG {
 	
 
 	 24 -> 23 ;
-23 [label="23: Exit test2 \n   NULLIFY(&s3,false); [line 57]\n  NULLIFY(&s2,false); [line 57]\n  NULLIFY(&s1,false); [line 57]\n " color=yellow style=filled]
+23 [label="23: Exit test2 \n   NULLIFY(&s3); [line 57]\n  NULLIFY(&s2); [line 57]\n  NULLIFY(&s1); [line 57]\n " color=yellow style=filled]
 	
 
 22 [label="22: Start test2\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 47]\n " color=yellow style=filled]
@@ -97,7 +97,7 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12: Exit test1 \n   NULLIFY(&s3,false); [line 45]\n  NULLIFY(&s2,false); [line 45]\n  NULLIFY(&s1,false); [line 45]\n " color=yellow style=filled]
+12 [label="12: Exit test1 \n   NULLIFY(&s3); [line 45]\n  NULLIFY(&s2); [line 45]\n  NULLIFY(&s1); [line 45]\n " color=yellow style=filled]
 	
 
 11 [label="11: Start test1\nFormals: \nLocals:  s3:class A * s2:class A * s1:class A * \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34]\n " color=yellow style=filled]
@@ -108,7 +108,7 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$0=*&s1:class A * [line 31]\n  n$1=_fun___set_autorelease_attribute(n$0:class A *) [line 31]\n  *&return:class A *=n$1 [line 31]\n  REMOVE_TEMPS(n$0,n$1); [line 31]\n  NULLIFY(&s1,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&s1:class A * [line 31]\n  n$1=_fun___set_autorelease_attribute(n$0:class A *) [line 31]\n  *&return:class A *=n$1 [line 31]\n  REMOVE_TEMPS(n$0,n$1); [line 31]\n  NULLIFY(&s1); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -123,7 +123,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  *&return:class NSString *=n$1 [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s,false); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+5 [label="5:  Return Stmt \n   n$0=*&s:class NSString * [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString *) [line 24]\n  *&return:class NSString *=n$1 [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  NULLIFY(&s); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	
 
 	 5 -> 4 ;

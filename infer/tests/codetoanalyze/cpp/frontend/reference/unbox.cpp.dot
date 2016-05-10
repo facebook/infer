@@ -15,11 +15,11 @@ digraph iCFG {
 	
 
 	 20 -> 19 ;
-19 [label="19:  Call _fun_fun_r \n   n$0=*&p:int * [line 33]\n  n$1=_fun_fun_r(n$0:int &) [line 33]\n  REMOVE_TEMPS(n$0,n$1); [line 33]\n  NULLIFY(&p,false); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
+19 [label="19:  Call _fun_fun_r \n   n$0=*&p:int * [line 33]\n  n$1=_fun_fun_r(n$0:int &) [line 33]\n  REMOVE_TEMPS(n$0,n$1); [line 33]\n  NULLIFY(&p); [line 33]\n  APPLY_ABSTRACTION; [line 33]\n " shape="box"]
 	
 
 	 19 -> 18 ;
-18 [label="18: Exit unbox_ptr \n   NULLIFY(&a,false); [line 34]\n " color=yellow style=filled]
+18 [label="18: Exit unbox_ptr \n   NULLIFY(&a); [line 34]\n " color=yellow style=filled]
 	
 
 17 [label="17: Start unbox_ptr\nFormals: \nLocals:  p:int * a:int  \n   DECLARE_LOCALS(&return,&p,&a); [line 27]\n " color=yellow style=filled]
@@ -42,18 +42,18 @@ digraph iCFG {
 	
 
 	 13 -> 12 ;
-12 [label="12:  Call _fun_fun_r \n   n$0=*&r:int & [line 23]\n  n$1=_fun_fun_r(n$0:int &) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&r,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+12 [label="12:  Call _fun_fun_r \n   n$0=*&r:int & [line 23]\n  n$1=_fun_fun_r(n$0:int &) [line 23]\n  REMOVE_TEMPS(n$0,n$1); [line 23]\n  NULLIFY(&r); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 12 -> 11 ;
-11 [label="11: Exit unbox_ref \n   NULLIFY(&a,false); [line 24]\n " color=yellow style=filled]
+11 [label="11: Exit unbox_ref \n   NULLIFY(&a); [line 24]\n " color=yellow style=filled]
 	
 
 10 [label="10: Start unbox_ref\nFormals: \nLocals:  r:int & a:int  \n   DECLARE_LOCALS(&return,&r,&a); [line 17]\n " color=yellow style=filled]
 	
 
 	 10 -> 16 ;
-9 [label="9:  Return Stmt \n   n$0=*&p:int & [line 12]\n  n$1=*n$0:int  [line 12]\n  *&return:int =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&p,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&p:int & [line 12]\n  n$1=*n$0:int  [line 12]\n  *&return:int =n$1 [line 12]\n  REMOVE_TEMPS(n$0,n$1); [line 12]\n  NULLIFY(&p); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -64,7 +64,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  Return Stmt \n   n$0=*&p:int  [line 11]\n  *&return:int =n$0 [line 11]\n  REMOVE_TEMPS(n$0); [line 11]\n  NULLIFY(&p,false); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&p:int  [line 11]\n  *&return:int =n$0 [line 11]\n  REMOVE_TEMPS(n$0); [line 11]\n  NULLIFY(&p); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -75,7 +75,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   n$0=*&p:int * [line 10]\n  n$1=*n$0:int  [line 10]\n  *&return:int =n$1 [line 10]\n  REMOVE_TEMPS(n$0,n$1); [line 10]\n  NULLIFY(&p,false); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&p:int * [line 10]\n  n$1=*n$0:int  [line 10]\n  *&return:int =n$1 [line 10]\n  REMOVE_TEMPS(n$0,n$1); [line 10]\n  NULLIFY(&p); [line 10]\n  APPLY_ABSTRACTION; [line 10]\n " shape="box"]
 	
 
 	 3 -> 2 ;

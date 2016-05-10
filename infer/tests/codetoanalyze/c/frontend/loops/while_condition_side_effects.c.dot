@@ -1,13 +1,13 @@
 digraph iCFG {
-9 [label="9:  DeclStmt \n   *&i:int =0 [line 11]\n  NULLIFY(&i,false); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+9 [label="9:  DeclStmt \n   *&i:int =0 [line 11]\n  NULLIFY(&i); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
 	
 
 	 9 -> 4 ;
-8 [label="8:  UnaryOperator \n   n$1=*&i:int  [line 13]\n  *&i:int =(n$1 + 1) [line 13]\n  REMOVE_TEMPS(n$1); [line 13]\n  NULLIFY(&i,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+8 [label="8:  UnaryOperator \n   n$1=*&i:int  [line 13]\n  *&i:int =(n$1 + 1) [line 13]\n  REMOVE_TEMPS(n$1); [line 13]\n  NULLIFY(&i); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   PRUNE((n$0 == 0), false); [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&i,false); [line 12]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE((n$0 == 0), false); [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&i); [line 12]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;

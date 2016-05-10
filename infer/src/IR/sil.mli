@@ -405,8 +405,8 @@ type instr =
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return *)
   | Call of Ident.t list * exp * (exp * typ) list * Location.t * call_flags
-  (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
-  | Nullify of Pvar.t * Location.t * bool
+  (** nullify stack variable *)
+  | Nullify of Pvar.t * Location.t
   | Abstract of Location.t (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
   | Stackop of stackop * Location.t (** operation on the stack of propsets *)

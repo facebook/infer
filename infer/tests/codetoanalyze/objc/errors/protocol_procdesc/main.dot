@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  Message Call: signalStop \n   n$0=*&bike:class Bicycle * [line 16]\n  _fun_Bicycle_signalStop(n$0:class Bicycle *) virtual [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&bike,false); [line 16]\n " shape="box"]
+4 [label="4:  Message Call: signalStop \n   n$0=*&bike:class Bicycle * [line 16]\n  _fun_Bicycle_signalStop(n$0:class Bicycle *) virtual [line 16]\n  REMOVE_TEMPS(n$0); [line 16]\n  NULLIFY(&bike); [line 16]\n " shape="box"]
 	
 
 	 4 -> 3 ;

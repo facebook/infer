@@ -1,5 +1,5 @@
 digraph iCFG {
-4 [label="4:  DeclStmt \n   n$3=_fun_NSString_stringWithUTF8String:(\"cat\":char *) [line 13]\n  n$4=_fun_NSString_stringWithUTF8String:(\"dog\":char *) [line 13]\n  n$5=_fun_NSArray_arrayWithObjects:(n$3:struct objc_object *,n$4:class NSString *,0:void *) [line 13]\n  *&animals:class NSArray *=n$5 [line 13]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 13]\n  NULLIFY(&animals,false); [line 13]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$3=_fun_NSString_stringWithUTF8String:(\"cat\":char *) [line 13]\n  n$4=_fun_NSString_stringWithUTF8String:(\"dog\":char *) [line 13]\n  n$5=_fun_NSArray_arrayWithObjects:(n$3:struct objc_object *,n$4:class NSString *,0:void *) [line 13]\n  *&animals:class NSArray *=n$5 [line 13]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 13]\n  NULLIFY(&animals); [line 13]\n " shape="box"]
 	
 
 	 4 -> 3 ;

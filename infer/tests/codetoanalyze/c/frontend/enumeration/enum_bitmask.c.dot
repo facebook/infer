@@ -1,9 +1,9 @@
 digraph iCFG {
-4 [label="4:  DeclStmt \n   *&option1:int =(1 << 0) [line 16]\n  NULLIFY(&option1,false); [line 16]\n " shape="box"]
+4 [label="4:  DeclStmt \n   *&option1:int =(1 << 0) [line 16]\n  NULLIFY(&option1); [line 16]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  DeclStmt \n   *&option2:int =(1 << 1) [line 17]\n  NULLIFY(&option2,false); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+3 [label="3:  DeclStmt \n   *&option2:int =(1 << 1) [line 17]\n  NULLIFY(&option2); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	
 
 	 3 -> 2 ;

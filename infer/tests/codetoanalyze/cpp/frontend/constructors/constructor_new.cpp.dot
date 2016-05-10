@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 97 -> 96 ;
-96 [label="96:  BinaryOperatorStmt: Assign \n   n$0=*&tarray:class Person ** [line 98]\n  n$1=_fun___new_array((sizeof(class Person ) * 10):unsigned long ) [line 98]\n  _fun_Person_Person(n$1[0]:class Person *) [line 98]\n  _fun_Person_Person(n$1[1]:class Person *) [line 98]\n  _fun_Person_Person(n$1[2]:class Person *) [line 98]\n  _fun_Person_Person(n$1[3]:class Person *) [line 98]\n  _fun_Person_Person(n$1[4]:class Person *) [line 98]\n  _fun_Person_Person(n$1[5]:class Person *) [line 98]\n  _fun_Person_Person(n$1[6]:class Person *) [line 98]\n  _fun_Person_Person(n$1[7]:class Person *) [line 98]\n  _fun_Person_Person(n$1[8]:class Person *) [line 98]\n  _fun_Person_Person(n$1[9]:class Person *) [line 98]\n  *n$0[0]:class Person *=n$1 [line 98]\n  REMOVE_TEMPS(n$0,n$1); [line 98]\n  NULLIFY(&tarray,false); [line 98]\n  APPLY_ABSTRACTION; [line 98]\n " shape="box"]
+96 [label="96:  BinaryOperatorStmt: Assign \n   n$0=*&tarray:class Person ** [line 98]\n  n$1=_fun___new_array((sizeof(class Person ) * 10):unsigned long ) [line 98]\n  _fun_Person_Person(n$1[0]:class Person *) [line 98]\n  _fun_Person_Person(n$1[1]:class Person *) [line 98]\n  _fun_Person_Person(n$1[2]:class Person *) [line 98]\n  _fun_Person_Person(n$1[3]:class Person *) [line 98]\n  _fun_Person_Person(n$1[4]:class Person *) [line 98]\n  _fun_Person_Person(n$1[5]:class Person *) [line 98]\n  _fun_Person_Person(n$1[6]:class Person *) [line 98]\n  _fun_Person_Person(n$1[7]:class Person *) [line 98]\n  _fun_Person_Person(n$1[8]:class Person *) [line 98]\n  _fun_Person_Person(n$1[9]:class Person *) [line 98]\n  *n$0[0]:class Person *=n$1 [line 98]\n  REMOVE_TEMPS(n$0,n$1); [line 98]\n  NULLIFY(&tarray); [line 98]\n  APPLY_ABSTRACTION; [line 98]\n " shape="box"]
 	
 
 	 96 -> 95 ;
@@ -14,7 +14,7 @@ digraph iCFG {
 	
 
 	 94 -> 97 ;
-93 [label="93:  DeclStmt \n   n$0=_fun___new_array((sizeof(class Person ) * 10):unsigned long ) [line 93]\n  _fun_Person_Person(n$0[0]:class Person *) [line 93]\n  _fun_Person_Person(n$0[1]:class Person *) [line 93]\n  _fun_Person_Person(n$0[2]:class Person *) [line 93]\n  _fun_Person_Person(n$0[3]:class Person *) [line 93]\n  _fun_Person_Person(n$0[4]:class Person *) [line 93]\n  _fun_Person_Person(n$0[5]:class Person *) [line 93]\n  _fun_Person_Person(n$0[6]:class Person *) [line 93]\n  _fun_Person_Person(n$0[7]:class Person *) [line 93]\n  _fun_Person_Person(n$0[8]:class Person *) [line 93]\n  _fun_Person_Person(n$0[9]:class Person *) [line 93]\n  *&tarray:class Person *=n$0 [line 93]\n  REMOVE_TEMPS(n$0); [line 93]\n  NULLIFY(&tarray,false); [line 93]\n  APPLY_ABSTRACTION; [line 93]\n " shape="box"]
+93 [label="93:  DeclStmt \n   n$0=_fun___new_array((sizeof(class Person ) * 10):unsigned long ) [line 93]\n  _fun_Person_Person(n$0[0]:class Person *) [line 93]\n  _fun_Person_Person(n$0[1]:class Person *) [line 93]\n  _fun_Person_Person(n$0[2]:class Person *) [line 93]\n  _fun_Person_Person(n$0[3]:class Person *) [line 93]\n  _fun_Person_Person(n$0[4]:class Person *) [line 93]\n  _fun_Person_Person(n$0[5]:class Person *) [line 93]\n  _fun_Person_Person(n$0[6]:class Person *) [line 93]\n  _fun_Person_Person(n$0[7]:class Person *) [line 93]\n  _fun_Person_Person(n$0[8]:class Person *) [line 93]\n  _fun_Person_Person(n$0[9]:class Person *) [line 93]\n  *&tarray:class Person *=n$0 [line 93]\n  REMOVE_TEMPS(n$0); [line 93]\n  NULLIFY(&tarray); [line 93]\n  APPLY_ABSTRACTION; [line 93]\n " shape="box"]
 	
 
 	 93 -> 92 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 	
 
 	 91 -> 93 ;
-90 [label="90:  DeclStmt \n   n$2=*&SIL_temp_conditional___n$0:int  [line 89]\n  n$3=_fun___new_array((sizeof(class Person ) * n$2):unsigned long ) [line 89]\n  *&tarray:class Person *=n$3 [line 89]\n  REMOVE_TEMPS(n$2,n$3); [line 89]\n  NULLIFY(&SIL_temp_conditional___n$0,false); [line 89]\n  NULLIFY(&tarray,false); [line 89]\n  APPLY_ABSTRACTION; [line 89]\n " shape="box"]
+90 [label="90:  DeclStmt \n   n$2=*&SIL_temp_conditional___n$0:int  [line 89]\n  n$3=_fun___new_array((sizeof(class Person ) * n$2):unsigned long ) [line 89]\n  *&tarray:class Person *=n$3 [line 89]\n  REMOVE_TEMPS(n$2,n$3); [line 89]\n  NULLIFY(&SIL_temp_conditional___n$0); [line 89]\n  NULLIFY(&tarray); [line 89]\n  APPLY_ABSTRACTION; [line 89]\n " shape="box"]
 	
 
 	 90 -> 83 ;
@@ -65,7 +65,7 @@ digraph iCFG {
 	
 
 	 81 -> 80 ;
-80 [label="80:  Return Stmt \n   n$0=*&arr:int * [line 84]\n  n$1=*n$0[0]:int  [line 84]\n  n$2=*&arr:int * [line 84]\n  n$3=*n$2[1]:int  [line 84]\n  n$4=*&arr:int * [line 84]\n  n$5=*n$4[2]:int  [line 84]\n  n$6=*&arr:int * [line 84]\n  n$7=*n$6[3]:int  [line 84]\n  n$8=*&arr:int * [line 84]\n  n$9=*n$8[4]:int  [line 84]\n  *&return:int =(1 / (((((n$1 + n$3) + n$5) + n$7) + n$9) - 15)) [line 84]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5,n$6,n$7,n$8,n$9); [line 84]\n  NULLIFY(&arr,false); [line 84]\n  APPLY_ABSTRACTION; [line 84]\n " shape="box"]
+80 [label="80:  Return Stmt \n   n$0=*&arr:int * [line 84]\n  n$1=*n$0[0]:int  [line 84]\n  n$2=*&arr:int * [line 84]\n  n$3=*n$2[1]:int  [line 84]\n  n$4=*&arr:int * [line 84]\n  n$5=*n$4[2]:int  [line 84]\n  n$6=*&arr:int * [line 84]\n  n$7=*n$6[3]:int  [line 84]\n  n$8=*&arr:int * [line 84]\n  n$9=*n$8[4]:int  [line 84]\n  *&return:int =(1 / (((((n$1 + n$3) + n$5) + n$7) + n$9) - 15)) [line 84]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5,n$6,n$7,n$8,n$9); [line 84]\n  NULLIFY(&arr); [line 84]\n  APPLY_ABSTRACTION; [line 84]\n " shape="box"]
 	
 
 	 80 -> 79 ;
@@ -76,7 +76,7 @@ digraph iCFG {
 	
 
 	 78 -> 81 ;
-77 [label="77:  DeclStmt \n   n$9=*&SIL_temp_conditional___n$6:int  [line 76]\n  n$10=_fun___new_array((sizeof(int ) * n$9):unsigned long ) [line 76]\n  *&x2:int *=n$10 [line 76]\n  REMOVE_TEMPS(n$9,n$10); [line 76]\n  NULLIFY(&SIL_temp_conditional___n$6,false); [line 76]\n " shape="box"]
+77 [label="77:  DeclStmt \n   n$9=*&SIL_temp_conditional___n$6:int  [line 76]\n  n$10=_fun___new_array((sizeof(int ) * n$9):unsigned long ) [line 76]\n  *&x2:int *=n$10 [line 76]\n  REMOVE_TEMPS(n$9,n$10); [line 76]\n  NULLIFY(&SIL_temp_conditional___n$6); [line 76]\n " shape="box"]
 	
 
 	 77 -> 70 ;
@@ -113,7 +113,7 @@ digraph iCFG {
 	
 
 	 69 -> 68 ;
-68 [label="68:  Return Stmt \n   n$0=*&x2:int * [line 79]\n  n$1=*n$0[0]:int  [line 79]\n  n$2=*&x2:int * [line 79]\n  n$3=*n$2[1]:int  [line 79]\n  *&return:int =(1 / ((n$1 + n$3) - 3)) [line 79]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 79]\n  NULLIFY(&x2,false); [line 79]\n  APPLY_ABSTRACTION; [line 79]\n " shape="box"]
+68 [label="68:  Return Stmt \n   n$0=*&x2:int * [line 79]\n  n$1=*n$0[0]:int  [line 79]\n  n$2=*&x2:int * [line 79]\n  n$3=*n$2[1]:int  [line 79]\n  *&return:int =(1 / ((n$1 + n$3) - 3)) [line 79]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 79]\n  NULLIFY(&x2); [line 79]\n  APPLY_ABSTRACTION; [line 79]\n " shape="box"]
 	
 
 	 68 -> 67 ;
@@ -128,11 +128,11 @@ digraph iCFG {
 	
 
 	 65 -> 59 ;
-64 [label="64:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 71]\n  n$7=*&SIL_temp_conditional___n$3:int  [line 71]\n  _fun_Person_Person(n$2:class Person *,n$7:int ) [line 71]\n  *&p:class Person *=n$2 [line 71]\n  REMOVE_TEMPS(n$2,n$7); [line 71]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 71]\n " shape="box"]
+64 [label="64:  DeclStmt \n   n$2=_fun___new(sizeof(class Person ):unsigned long ) [line 71]\n  n$7=*&SIL_temp_conditional___n$3:int  [line 71]\n  _fun_Person_Person(n$2:class Person *,n$7:int ) [line 71]\n  *&p:class Person *=n$2 [line 71]\n  REMOVE_TEMPS(n$2,n$7); [line 71]\n  NULLIFY(&SIL_temp_conditional___n$3); [line 71]\n " shape="box"]
 	
 
 	 64 -> 57 ;
-63 [label="63:  ConditinalStmt Branch \n   n$6=*&z:int  [line 71]\n  *&SIL_temp_conditional___n$3:int =(1 + n$6) [line 71]\n  REMOVE_TEMPS(n$6); [line 71]\n  NULLIFY(&z,false); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
+63 [label="63:  ConditinalStmt Branch \n   n$6=*&z:int  [line 71]\n  *&SIL_temp_conditional___n$3:int =(1 + n$6) [line 71]\n  REMOVE_TEMPS(n$6); [line 71]\n  NULLIFY(&z); [line 71]\n  APPLY_ABSTRACTION; [line 71]\n " shape="box"]
 	
 
 	 63 -> 58 ;
@@ -144,7 +144,7 @@ digraph iCFG {
 	
 
 	 61 -> 63 ;
-60 [label="60: Prune (true branch) \n   PRUNE((n$4 != 0), true); [line 71]\n  REMOVE_TEMPS(n$4); [line 71]\n  NULLIFY(&z,false); [line 71]\n " shape="invhouse"]
+60 [label="60: Prune (true branch) \n   PRUNE((n$4 != 0), true); [line 71]\n  REMOVE_TEMPS(n$4); [line 71]\n  NULLIFY(&z); [line 71]\n " shape="invhouse"]
 	
 
 	 60 -> 62 ;
@@ -157,7 +157,7 @@ digraph iCFG {
 	
 
 	 58 -> 64 ;
-57 [label="57:  Return Stmt \n   n$0=*&p:class Person * [line 72]\n  n$1=*n$0.x:int  [line 72]\n  *&return:int =(1 / (n$1 - 7)) [line 72]\n  REMOVE_TEMPS(n$0,n$1); [line 72]\n  NULLIFY(&p,false); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
+57 [label="57:  Return Stmt \n   n$0=*&p:class Person * [line 72]\n  n$1=*n$0.x:int  [line 72]\n  *&return:int =(1 / (n$1 - 7)) [line 72]\n  REMOVE_TEMPS(n$0,n$1); [line 72]\n  NULLIFY(&p); [line 72]\n  APPLY_ABSTRACTION; [line 72]\n " shape="box"]
 	
 
 	 57 -> 56 ;
@@ -168,7 +168,7 @@ digraph iCFG {
 	
 
 	 55 -> 65 ;
-54 [label="54:  DeclStmt \n   *&z:int =6 [line 63]\n  NULLIFY(&z,false); [line 63]\n " shape="box"]
+54 [label="54:  DeclStmt \n   *&z:int =6 [line 63]\n  NULLIFY(&z); [line 63]\n " shape="box"]
 	
 
 	 54 -> 53 ;
@@ -176,11 +176,11 @@ digraph iCFG {
 	
 
 	 53 -> 47 ;
-52 [label="52:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 65]\n  n$8=*&SIL_temp_conditional___n$3:int  [line 65]\n  *n$2:int =n$8 [line 65]\n  *&x:int *=n$2 [line 65]\n  REMOVE_TEMPS(n$2,n$8); [line 65]\n  NULLIFY(&SIL_temp_conditional___n$3,false); [line 65]\n " shape="box"]
+52 [label="52:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 65]\n  n$8=*&SIL_temp_conditional___n$3:int  [line 65]\n  *n$2:int =n$8 [line 65]\n  *&x:int *=n$2 [line 65]\n  REMOVE_TEMPS(n$2,n$8); [line 65]\n  NULLIFY(&SIL_temp_conditional___n$3); [line 65]\n " shape="box"]
 	
 
 	 52 -> 45 ;
-51 [label="51:  ConditinalStmt Branch \n   n$6=*&y:int * [line 65]\n  n$7=*n$6:int  [line 65]\n  *&SIL_temp_conditional___n$3:int =(1 + n$7) [line 65]\n  REMOVE_TEMPS(n$6,n$7); [line 65]\n  NULLIFY(&y,false); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
+51 [label="51:  ConditinalStmt Branch \n   n$6=*&y:int * [line 65]\n  n$7=*n$6:int  [line 65]\n  *&SIL_temp_conditional___n$3:int =(1 + n$7) [line 65]\n  REMOVE_TEMPS(n$6,n$7); [line 65]\n  NULLIFY(&y); [line 65]\n  APPLY_ABSTRACTION; [line 65]\n " shape="box"]
 	
 
 	 51 -> 46 ;
@@ -192,7 +192,7 @@ digraph iCFG {
 	
 
 	 49 -> 51 ;
-48 [label="48: Prune (true branch) \n   PRUNE((n$4 != 0), true); [line 65]\n  REMOVE_TEMPS(n$4); [line 65]\n  NULLIFY(&y,false); [line 65]\n " shape="invhouse"]
+48 [label="48: Prune (true branch) \n   PRUNE((n$4 != 0), true); [line 65]\n  REMOVE_TEMPS(n$4); [line 65]\n  NULLIFY(&y); [line 65]\n " shape="invhouse"]
 	
 
 	 48 -> 50 ;
@@ -205,7 +205,7 @@ digraph iCFG {
 	
 
 	 46 -> 52 ;
-45 [label="45:  Return Stmt \n   n$0=*&x:int * [line 66]\n  n$1=*n$0:int  [line 66]\n  *&return:int =(1 / (n$1 - 5)) [line 66]\n  REMOVE_TEMPS(n$0,n$1); [line 66]\n  NULLIFY(&x,false); [line 66]\n  APPLY_ABSTRACTION; [line 66]\n " shape="box"]
+45 [label="45:  Return Stmt \n   n$0=*&x:int * [line 66]\n  n$1=*n$0:int  [line 66]\n  *&return:int =(1 / (n$1 - 5)) [line 66]\n  REMOVE_TEMPS(n$0,n$1); [line 66]\n  NULLIFY(&x); [line 66]\n  APPLY_ABSTRACTION; [line 66]\n " shape="box"]
 	
 
 	 45 -> 44 ;
@@ -220,7 +220,7 @@ digraph iCFG {
 	
 
 	 42 -> 41 ;
-41 [label="41:  Return Stmt \n   n$0=*&x1:int * [line 59]\n  n$1=*n$0:int  [line 59]\n  *&return:int =(1 / n$1) [line 59]\n  REMOVE_TEMPS(n$0,n$1); [line 59]\n  NULLIFY(&x1,false); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
+41 [label="41:  Return Stmt \n   n$0=*&x1:int * [line 59]\n  n$1=*n$0:int  [line 59]\n  *&return:int =(1 / n$1) [line 59]\n  REMOVE_TEMPS(n$0,n$1); [line 59]\n  NULLIFY(&x1); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
 	
 
 	 41 -> 40 ;
@@ -235,7 +235,7 @@ digraph iCFG {
 	
 
 	 38 -> 37 ;
-37 [label="37:  Return Stmt \n   n$0=*&x1:int  [line 54]\n  *&return:int =(1 / n$0) [line 54]\n  REMOVE_TEMPS(n$0); [line 54]\n  NULLIFY(&x1,false); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
+37 [label="37:  Return Stmt \n   n$0=*&x1:int  [line 54]\n  *&return:int =(1 / n$0) [line 54]\n  REMOVE_TEMPS(n$0); [line 54]\n  NULLIFY(&x1); [line 54]\n  APPLY_ABSTRACTION; [line 54]\n " shape="box"]
 	
 
 	 37 -> 36 ;
@@ -250,7 +250,7 @@ digraph iCFG {
 	
 
 	 34 -> 33 ;
-33 [label="33:  Return Stmt \n   n$0=*&x1:int * [line 49]\n  n$1=*n$0:int  [line 49]\n  *&return:int =(1 / n$1) [line 49]\n  REMOVE_TEMPS(n$0,n$1); [line 49]\n  NULLIFY(&x1,false); [line 49]\n  APPLY_ABSTRACTION; [line 49]\n " shape="box"]
+33 [label="33:  Return Stmt \n   n$0=*&x1:int * [line 49]\n  n$1=*n$0:int  [line 49]\n  *&return:int =(1 / n$1) [line 49]\n  REMOVE_TEMPS(n$0,n$1); [line 49]\n  NULLIFY(&x1); [line 49]\n  APPLY_ABSTRACTION; [line 49]\n " shape="box"]
 	
 
 	 33 -> 32 ;
@@ -265,7 +265,7 @@ digraph iCFG {
 	
 
 	 30 -> 29 ;
-29 [label="29:  Return Stmt \n   n$0=*&x1:float * [line 44]\n  n$1=*n$0:float  [line 44]\n  *&return:float =(1 / (n$1 - 5.400000)) [line 44]\n  REMOVE_TEMPS(n$0,n$1); [line 44]\n  NULLIFY(&x1,false); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
+29 [label="29:  Return Stmt \n   n$0=*&x1:float * [line 44]\n  n$1=*n$0:float  [line 44]\n  *&return:float =(1 / (n$1 - 5.400000)) [line 44]\n  REMOVE_TEMPS(n$0,n$1); [line 44]\n  NULLIFY(&x1); [line 44]\n  APPLY_ABSTRACTION; [line 44]\n " shape="box"]
 	
 
 	 29 -> 28 ;
@@ -280,7 +280,7 @@ digraph iCFG {
 	
 
 	 26 -> 25 ;
-25 [label="25:  Return Stmt \n   n$0=*&x1:int * [line 39]\n  n$1=*n$0:int  [line 39]\n  *&return:int =(1 / (n$1 - 5)) [line 39]\n  REMOVE_TEMPS(n$0,n$1); [line 39]\n  NULLIFY(&x1,false); [line 39]\n  APPLY_ABSTRACTION; [line 39]\n " shape="box"]
+25 [label="25:  Return Stmt \n   n$0=*&x1:int * [line 39]\n  n$1=*n$0:int  [line 39]\n  *&return:int =(1 / (n$1 - 5)) [line 39]\n  REMOVE_TEMPS(n$0,n$1); [line 39]\n  NULLIFY(&x1); [line 39]\n  APPLY_ABSTRACTION; [line 39]\n " shape="box"]
 	
 
 	 25 -> 24 ;
@@ -295,7 +295,7 @@ digraph iCFG {
 	
 
 	 22 -> 21 ;
-21 [label="21:  Return Stmt \n   n$0=*&p:class Person * [line 34]\n  n$1=*n$0.z:int  [line 34]\n  *&return:int =(1 / (n$1 - 7)) [line 34]\n  REMOVE_TEMPS(n$0,n$1); [line 34]\n  NULLIFY(&p,false); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
+21 [label="21:  Return Stmt \n   n$0=*&p:class Person * [line 34]\n  n$1=*n$0.z:int  [line 34]\n  *&return:int =(1 / (n$1 - 7)) [line 34]\n  REMOVE_TEMPS(n$0,n$1); [line 34]\n  NULLIFY(&p); [line 34]\n  APPLY_ABSTRACTION; [line 34]\n " shape="box"]
 	
 
 	 21 -> 20 ;
@@ -310,7 +310,7 @@ digraph iCFG {
 	
 
 	 18 -> 17 ;
-17 [label="17:  Return Stmt \n   n$0=*&p:class Person * [line 29]\n  n$1=*n$0.x:int  [line 29]\n  *&return:int =(1 / (n$1 - 5)) [line 29]\n  REMOVE_TEMPS(n$0,n$1); [line 29]\n  NULLIFY(&p,false); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
+17 [label="17:  Return Stmt \n   n$0=*&p:class Person * [line 29]\n  n$1=*n$0.x:int  [line 29]\n  *&return:int =(1 / (n$1 - 5)) [line 29]\n  REMOVE_TEMPS(n$0,n$1); [line 29]\n  NULLIFY(&p); [line 29]\n  APPLY_ABSTRACTION; [line 29]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -321,7 +321,7 @@ digraph iCFG {
 	
 
 	 15 -> 18 ;
-14 [label="14:  Return Stmt \n   n$0=*&x:int  [line 25]\n  *&return:int =n$0 [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&x,false); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+14 [label="14:  Return Stmt \n   n$0=*&x:int  [line 25]\n  *&return:int =n$0 [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&x); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -332,15 +332,15 @@ digraph iCFG {
 	
 
 	 12 -> 14 ;
-11 [label="11:  BinaryOperatorStmt: Assign \n   n$4=*&this:class Person * [line 16]\n  n$5=*&i:int  [line 16]\n  *n$4.x:int =n$5 [line 16]\n  REMOVE_TEMPS(n$4,n$5); [line 16]\n  NULLIFY(&i,false); [line 16]\n " shape="box"]
+11 [label="11:  BinaryOperatorStmt: Assign \n   n$4=*&this:class Person * [line 16]\n  n$5=*&i:int  [line 16]\n  *n$4.x:int =n$5 [line 16]\n  REMOVE_TEMPS(n$4,n$5); [line 16]\n  NULLIFY(&i); [line 16]\n " shape="box"]
 	
 
 	 11 -> 10 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$2=*&this:class Person * [line 17]\n  n$3=*&j:int  [line 17]\n  *n$2.y:int =n$3 [line 17]\n  REMOVE_TEMPS(n$2,n$3); [line 17]\n  NULLIFY(&j,false); [line 17]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$2=*&this:class Person * [line 17]\n  n$3=*&j:int  [line 17]\n  *n$2.y:int =n$3 [line 17]\n  REMOVE_TEMPS(n$2,n$3); [line 17]\n  NULLIFY(&j); [line 17]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 18]\n  n$1=*&k:int  [line 18]\n  *n$0.z:int =n$1 [line 18]\n  REMOVE_TEMPS(n$0,n$1); [line 18]\n  NULLIFY(&k,false); [line 18]\n  NULLIFY(&this,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 18]\n  n$1=*&k:int  [line 18]\n  *n$0.z:int =n$1 [line 18]\n  REMOVE_TEMPS(n$0,n$1); [line 18]\n  NULLIFY(&k); [line 18]\n  NULLIFY(&this); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -351,7 +351,7 @@ digraph iCFG {
 	
 
 	 7 -> 11 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 13]\n  n$1=*&i:int  [line 13]\n  *n$0.x:int =n$1 [line 13]\n  REMOVE_TEMPS(n$0,n$1); [line 13]\n  NULLIFY(&i,false); [line 13]\n  NULLIFY(&this,false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 13]\n  n$1=*&i:int  [line 13]\n  *n$0.x:int =n$1 [line 13]\n  REMOVE_TEMPS(n$0,n$1); [line 13]\n  NULLIFY(&i); [line 13]\n  NULLIFY(&this); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -362,7 +362,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 12]\n  *n$0.x:int =0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this,false); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Person * [line 12]\n  *n$0.x:int =0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&this); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

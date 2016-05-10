@@ -1,5 +1,5 @@
 digraph iCFG {
-4 [label="4:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char *) [line 13]\n  *&lastName:class NSString *=n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&lastName,false); [line 13]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char *) [line 13]\n  *&lastName:class NSString *=n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&lastName); [line 13]\n " shape="box"]
 	
 
 	 4 -> 3 ;

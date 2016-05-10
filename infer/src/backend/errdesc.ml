@@ -78,7 +78,7 @@ let find_nullify_after_instr node instr pvar : bool =
   let node_instrs = Cfg.Node.get_instrs node in
   let found_instr = ref false in
   let find_nullify = function
-    | Sil.Nullify (pv, _, _) when !found_instr -> Pvar.equal pv pvar
+    | Sil.Nullify (pv, _) when !found_instr -> Pvar.equal pv pvar
     | _instr ->
         if instr = _instr then found_instr := true;
         false in
@@ -538,7 +538,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     | None ->
         if !verbose then (L.d_str "explain_leak: no current instruction"; L.d_ln ());
         value_str_from_pvars_vpath [] vpath
-    | Some (Sil.Nullify (pvar, _, _)) when check_pvar pvar ->
+    | Some (Sil.Nullify (pvar, _)) when check_pvar pvar ->
         if !verbose
         then
           (L.d_str "explain_leak: current instruction is Nullify for pvar ";
@@ -549,7 +549,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     | Some (Sil.Abstract _) ->
         if !verbose then (L.d_str "explain_leak: current instruction is Abstract"; L.d_ln ());
         let get_nullify = function
-          | Sil.Nullify (pvar, _, _) when check_pvar pvar ->
+          | Sil.Nullify (pvar, _) when check_pvar pvar ->
               if !verbose
               then
                 (L.d_str "explain_leak: found nullify before Abstract for pvar ";

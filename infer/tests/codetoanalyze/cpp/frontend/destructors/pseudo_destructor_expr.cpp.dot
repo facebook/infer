@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 12 -> 11 ;
-11 [label="11: Exit test \n   NULLIFY(&t,false); [line 26]\n " color=yellow style=filled]
+11 [label="11: Exit test \n   NULLIFY(&t); [line 26]\n " color=yellow style=filled]
 	
 
 10 [label="10: Start test\nFormals: \nLocals:  t:int * \n   DECLARE_LOCALS(&return,&t); [line 23]\n " color=yellow style=filled]
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 6 -> 9 ;
-5 [label="5:  DeclStmt \n   n$1=*&p:int * [line 12]\n  n$2=*n$1:int  [line 12]\n  *&x:int =n$2 [line 12]\n  REMOVE_TEMPS(n$1,n$2); [line 12]\n  NULLIFY(&p,false); [line 12]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$1=*&p:int * [line 12]\n  n$2=*n$1:int  [line 12]\n  *&x:int =n$2 [line 12]\n  REMOVE_TEMPS(n$1,n$2); [line 12]\n  NULLIFY(&p); [line 12]\n " shape="box"]
 	
 
 	 5 -> 4 ;
@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 14]\n  *&return:int =n$0 [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&x,false); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 14]\n  *&return:int =n$0 [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&x); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 3 -> 2 ;

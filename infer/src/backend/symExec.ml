@@ -46,7 +46,7 @@ let rec unroll_type tenv typ off =
 (** Given a node, returns a list of pvar of blocks that have been nullified in the block. *)
 let get_blocks_nullified node =
   let null_blocks = IList.flatten(IList.map (fun i -> match i with
-      | Sil.Nullify(pvar, _, true) when Sil.is_block_pvar pvar -> [pvar]
+      | Sil.Nullify(pvar, _) when Sil.is_block_pvar pvar -> [pvar]
       | _ -> []) (Cfg.Node.get_instrs node)) in
   null_blocks
 
@@ -1205,7 +1205,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             pdesc= current_pdesc; instr; tenv; prop_= prop_r; path; ret_ids; args= n_actual_params;
             proc_name= callee_pname; loc; }
       end
-  | Sil.Nullify (pvar, _, deallocate) ->
+  | Sil.Nullify (pvar, _) ->
       begin
         let eprop = Prop.expose prop_ in
         match IList.partition
@@ -1213,11 +1213,9 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                   | Sil.Hpointsto (Sil.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
                   | _ -> false) (Prop.get_sigma eprop) with
         | [Sil.Hpointsto(e, se, typ)], sigma' ->
-            let sigma'' = match deallocate with
-              | false ->
-                  let se' = execute_nullify_se se in
-                  Sil.Hpointsto(e, se', typ):: sigma'
-              | true -> sigma' in
+            let sigma'' =
+              let se' = execute_nullify_se se in
+              Sil.Hpointsto(e, se', typ):: sigma' in
             let eprop_res = Prop.replace_sigma sigma'' eprop in
             ret_old_path [Prop.normalize eprop_res]
         | [], _ ->

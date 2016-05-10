@@ -7,7 +7,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Message Call: release \n   n$0=*&a:class A * [line 23]\n  _fun___objc_release(n$0:class A *) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a,false); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+3 [label="3:  Message Call: release \n   n$0=*&a:class A * [line 23]\n  _fun___objc_release(n$0:class A *) [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&a); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
 	
 
 	 3 -> 2 ;

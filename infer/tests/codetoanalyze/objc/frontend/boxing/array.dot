@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 12 -> 11 ;
-11 [label="11:  BinaryOperatorStmt: Assign \n   n$7=*&germanCars:class NSArray * [line 24]\n  n$8=_fun_NSArray_objectAtIndexedSubscript:(n$7:class NSArray *,3:unsigned long ) virtual [line 24]\n  *&s:class NSString *=n$8 [line 24]\n  REMOVE_TEMPS(n$7,n$8); [line 24]\n  NULLIFY(&s,false); [line 24]\n " shape="box"]
+11 [label="11:  BinaryOperatorStmt: Assign \n   n$7=*&germanCars:class NSArray * [line 24]\n  n$8=_fun_NSArray_objectAtIndexedSubscript:(n$7:class NSArray *,3:unsigned long ) virtual [line 24]\n  *&s:class NSString *=n$8 [line 24]\n  REMOVE_TEMPS(n$7,n$8); [line 24]\n  NULLIFY(&s); [line 24]\n " shape="box"]
 	
 
 	 11 -> 10 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 10 -> 4 ;
-9 [label="9:  Call _fun_NSLog \n   n$3=_fun_NSString_stringWithUTF8String:(\"%@\":char *) [line 27]\n  n$4=*&item:class NSString * [line 27]\n  _fun_NSLog(n$3:struct objc_object *,n$4:class NSString *) [line 27]\n  REMOVE_TEMPS(n$3,n$4); [line 27]\n  NULLIFY(&item,false); [line 27]\n " shape="box"]
+9 [label="9:  Call _fun_NSLog \n   n$3=_fun_NSString_stringWithUTF8String:(\"%@\":char *) [line 27]\n  n$4=*&item:class NSString * [line 27]\n  _fun_NSLog(n$3:struct objc_object *,n$4:class NSString *) [line 27]\n  REMOVE_TEMPS(n$3,n$4); [line 27]\n  NULLIFY(&item); [line 27]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   PRUNE(((n$0 != 0) == 0), false); [line 26]\n  REMOVE_TEMPS(n$0); [line 26]\n  NULLIFY(&germanCars,false); [line 26]\n  NULLIFY(&item,false); [line 26]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE(((n$0 != 0) == 0), false); [line 26]\n  REMOVE_TEMPS(n$0); [line 26]\n  NULLIFY(&germanCars); [line 26]\n  NULLIFY(&item); [line 26]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;

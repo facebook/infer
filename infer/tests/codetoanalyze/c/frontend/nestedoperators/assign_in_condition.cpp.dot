@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 6 -> 8 ;
-5 [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&p:int * [line 11]\n  *n$0:int =0 [line 11]\n  NULLIFY(&p,false); [line 11]\n " shape="box"]
+5 [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&p:int * [line 11]\n  *n$0:int =0 [line 11]\n  NULLIFY(&p); [line 11]\n " shape="box"]
 	
 
 	 5 -> 6 ;

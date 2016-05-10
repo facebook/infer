@@ -1,5 +1,5 @@
 digraph iCFG {
-26 [label="26:  DeclStmt \n   n$15=_fun_strdup(\"hello world\":char *) [line 42]\n  n$16=_fun_NSString_stringWithUTF8String:(n$15:char *) [line 42]\n  *&s:class NSString *=n$16 [line 42]\n  REMOVE_TEMPS(n$15,n$16); [line 42]\n  NULLIFY(&s,false); [line 42]\n " shape="box"]
+26 [label="26:  DeclStmt \n   n$15=_fun_strdup(\"hello world\":char *) [line 42]\n  n$16=_fun_NSString_stringWithUTF8String:(n$15:char *) [line 42]\n  *&s:class NSString *=n$16 [line 42]\n  REMOVE_TEMPS(n$15,n$16); [line 42]\n  NULLIFY(&s); [line 42]\n " shape="box"]
 	
 
 	 26 -> 25 ;
@@ -14,7 +14,7 @@ digraph iCFG {
 	
 
 	 23 -> 26 ;
-22 [label="22:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 37]\n  *&n:class NSNumber *=n$13 [line 37]\n  REMOVE_TEMPS(n$13); [line 37]\n  NULLIFY(&n,false); [line 37]\n " shape="box"]
+22 [label="22:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool ) [line 37]\n  *&n:class NSNumber *=n$13 [line 37]\n  REMOVE_TEMPS(n$13); [line 37]\n  NULLIFY(&n); [line 37]\n " shape="box"]
 	
 
 	 22 -> 21 ;
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 19 -> 22 ;
-18 [label="18:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double ) [line 32]\n  *&n:class NSNumber *=n$11 [line 32]\n  REMOVE_TEMPS(n$11); [line 32]\n  NULLIFY(&n,false); [line 32]\n " shape="box"]
+18 [label="18:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double ) [line 32]\n  *&n:class NSNumber *=n$11 [line 32]\n  REMOVE_TEMPS(n$11); [line 32]\n  NULLIFY(&n); [line 32]\n " shape="box"]
 	
 
 	 18 -> 17 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 15 -> 18 ;
-14 [label="14:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float ) [line 27]\n  *&n:class NSNumber *=n$9 [line 27]\n  REMOVE_TEMPS(n$9); [line 27]\n  NULLIFY(&n,false); [line 27]\n " shape="box"]
+14 [label="14:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float ) [line 27]\n  *&n:class NSNumber *=n$9 [line 27]\n  REMOVE_TEMPS(n$9); [line 27]\n  NULLIFY(&n); [line 27]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -59,7 +59,7 @@ digraph iCFG {
 	
 
 	 11 -> 14 ;
-10 [label="10:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int ) [line 22]\n  *&n:class NSNumber *=n$7 [line 22]\n  REMOVE_TEMPS(n$7); [line 22]\n  NULLIFY(&n,false); [line 22]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int ) [line 22]\n  *&n:class NSNumber *=n$7 [line 22]\n  REMOVE_TEMPS(n$7); [line 22]\n  NULLIFY(&n); [line 22]\n " shape="box"]
 	
 
 	 10 -> 9 ;
@@ -82,11 +82,11 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   n$3=*&x:int  [line 17]\n  n$4=*&y:int  [line 17]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int ) [line 17]\n  *&n:class NSNumber *=n$5 [line 17]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 17]\n  NULLIFY(&n,false); [line 17]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$3=*&x:int  [line 17]\n  n$4=*&y:int  [line 17]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int ) [line 17]\n  *&n:class NSNumber *=n$5 [line 17]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 17]\n  NULLIFY(&n); [line 17]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 18]\n  n$1=*&y:int  [line 18]\n  n$2=_fun_NSNumber_numberWithInt:((n$0 + n$1):int ) [line 18]\n  *&return:class NSNumber *=n$2 [line 18]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 18]\n  NULLIFY(&x,false); [line 18]\n  NULLIFY(&y,false); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 18]\n  n$1=*&y:int  [line 18]\n  n$2=_fun_NSNumber_numberWithInt:((n$0 + n$1):int ) [line 18]\n  *&return:class NSNumber *=n$2 [line 18]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 18]\n  NULLIFY(&x); [line 18]\n  NULLIFY(&y); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
 	
 
 	 3 -> 2 ;

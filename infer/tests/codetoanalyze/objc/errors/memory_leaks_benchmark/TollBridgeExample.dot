@@ -3,7 +3,7 @@ digraph iCFG {
 	
 
 	 23 -> 22 ;
-22 [label="22:  DeclStmt \n   n$0=*&bufferAttributes:class NSDictionary * [line 46]\n  *&dict:struct __CFDictionary *=n$0 [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n  NULLIFY(&bufferAttributes,false); [line 46]\n  NULLIFY(&dict,false); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
+22 [label="22:  DeclStmt \n   n$0=*&bufferAttributes:class NSDictionary * [line 46]\n  *&dict:struct __CFDictionary *=n$0 [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n  NULLIFY(&bufferAttributes); [line 46]\n  NULLIFY(&dict); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	
 
 	 22 -> 21 ;
@@ -29,7 +29,7 @@ digraph iCFG {
 	
 
 	 16 -> 15 ;
-15 [label="15:  Call _fun_CFBridgingRelease \n   n$6=*&ref:struct __CFDictionary * [line 37]\n  n$7=_fun___objc_cast(n$6:void *,sizeof(struct objc_object ):unsigned long ) [line 37]\n  REMOVE_TEMPS(n$6,n$7); [line 37]\n  NULLIFY(&ref,false); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+15 [label="15:  Call _fun_CFBridgingRelease \n   n$6=*&ref:struct __CFDictionary * [line 37]\n  n$7=_fun___objc_cast(n$6:void *,sizeof(struct objc_object ):unsigned long ) [line 37]\n  REMOVE_TEMPS(n$6,n$7); [line 37]\n  NULLIFY(&ref); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 12 -> 11 ;
-11 [label="11:  DeclStmt \n   n$4=*&observer:struct objc_object * [line 31]\n  *&a:struct __CFLocale *=n$4 [line 31]\n  REMOVE_TEMPS(n$4); [line 31]\n  NULLIFY(&a,false); [line 31]\n  NULLIFY(&observer,false); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+11 [label="11:  DeclStmt \n   n$4=*&observer:struct objc_object * [line 31]\n  *&a:struct __CFLocale *=n$4 [line 31]\n  REMOVE_TEMPS(n$4); [line 31]\n  NULLIFY(&a); [line 31]\n  NULLIFY(&observer); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
 	
 
 	 11 -> 10 ;
@@ -59,7 +59,7 @@ digraph iCFG {
 	
 
 	 8 -> 7 ;
-7 [label="7:  DeclStmt \n   n$2=*&nameRef:struct __CFLocale * [line 26]\n  *&a:class NSLocale *=n$2 [line 26]\n  REMOVE_TEMPS(n$2); [line 26]\n  NULLIFY(&a,false); [line 26]\n  NULLIFY(&nameRef,false); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+7 [label="7:  DeclStmt \n   n$2=*&nameRef:struct __CFLocale * [line 26]\n  *&a:class NSLocale *=n$2 [line 26]\n  REMOVE_TEMPS(n$2); [line 26]\n  NULLIFY(&a); [line 26]\n  NULLIFY(&nameRef); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
 	
 
 	 7 -> 6 ;
@@ -74,7 +74,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  DeclStmt \n   n$0=*&nameRef:struct __CFLocale * [line 21]\n  *&a:class NSLocale *=n$0 [line 21]\n  REMOVE_TEMPS(n$0); [line 21]\n  NULLIFY(&a,false); [line 21]\n  NULLIFY(&nameRef,false); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+3 [label="3:  DeclStmt \n   n$0=*&nameRef:struct __CFLocale * [line 21]\n  *&a:class NSLocale *=n$0 [line 21]\n  REMOVE_TEMPS(n$0); [line 21]\n  NULLIFY(&a); [line 21]\n  NULLIFY(&nameRef); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 3 -> 2 ;

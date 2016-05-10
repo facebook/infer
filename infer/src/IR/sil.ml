@@ -746,8 +746,8 @@ type instr =
       [ret_id1..ret_idn = e_fun(arg_ts);]
       where n = 0 for void return and n > 1 for struct return *)
   | Call of Ident.t list * exp * (exp * typ) list * Location.t * call_flags
-  (** nullify stack variable, the bool parameter indicates whether to deallocate the variable *)
-  | Nullify of Pvar.t * Location.t * bool
+  (** nullify stack variable *)
+  | Nullify of Pvar.t * Location.t
   | Abstract of Location.t (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t (** remove temporaries *)
   | Stackop of stackop * Location.t (** operation on the stack of propsets *)
@@ -2079,7 +2079,7 @@ let instr_get_loc = function
   | Set (_, _, _, loc)
   | Prune (_, loc, _, _)
   | Call (_, _, _, loc, _)
-  | Nullify (_, loc, _)
+  | Nullify (_, loc)
   | Abstract loc
   | Remove_temps (_, loc)
   | Stackop (_, loc)
@@ -2096,7 +2096,7 @@ let instr_get_exps = function
       [cond]
   | Call (ret_ids, e, _, _, _) ->
       e :: (IList.map (fun id -> Var id)) ret_ids
-  | Nullify (pvar, _, _) ->
+  | Nullify (pvar, _) ->
       [Lvar pvar]
   | Abstract _ ->
       []
@@ -2139,8 +2139,8 @@ let pp_instr pe0 f instr =
          (pp_comma_seq (pp_exp_typ pe)) (arg_ts)
          pp_call_flags cf
          Location.pp loc
-   | Nullify (pvar, loc, deallocate) ->
-       F.fprintf f "NULLIFY(%a,%b); %a" (Pvar.pp pe) pvar deallocate Location.pp loc
+   | Nullify (pvar, loc) ->
+       F.fprintf f "NULLIFY(%a); %a" (Pvar.pp pe) pvar Location.pp loc
    | Abstract loc ->
        F.fprintf f "APPLY_ABSTRACTION; %a" Location.pp loc
    | Remove_temps (temps, loc) ->
@@ -2238,7 +2238,7 @@ let instr_iter_types f instr = match instr with
   | Call (_, e, arg_ts, _, _) ->
       exp_iter_types f e;
       IList.iter (fun (e, t) -> exp_iter_types f e; typ_iter_types f t) arg_ts
-  | Nullify (_, _, _) ->
+  | Nullify (_, _) ->
       ()
   | Abstract _ ->
       ()
@@ -3478,10 +3478,9 @@ let instr_compare instr1 instr2 = match instr1, instr2 with
             if n <> 0 then n else call_flags_compare cf1 cf2
   | Call _, _ -> -1
   | _, Call _ -> 1
-  | Nullify (pvar1, loc1, deallocate1), Nullify (pvar2, loc2, deallocate2) ->
+  | Nullify (pvar1, loc1), Nullify (pvar2, loc2) ->
       let n = Pvar.compare pvar1 pvar2 in
-      if n <> 0 then n else let n = Location.compare loc1 loc2 in
-        if n <> 0 then n else bool_compare deallocate1 deallocate2
+      if n <> 0 then n else Location.compare loc1 loc2
   | Nullify _, _ -> -1
   | _, Nullify _ -> 1
   | Abstract loc1, Abstract loc2 ->
@@ -3606,9 +3605,8 @@ let instr_compare_structural instr1 instr2 exp_map =
         else
           let n, exp_map = args_compare_structural arg_ts1 arg_ts2 exp_map in
           (if n <> 0 then n else call_flags_compare cf1 cf2), exp_map
-  | Nullify (pvar1, _, deallocate1), Nullify (pvar2, _, deallocate2) ->
-      let n, exp_map = exp_compare_structural (Lvar pvar1) (Lvar pvar2) exp_map in
-      (if n <> 0 then n else bool_compare deallocate1 deallocate2), exp_map
+  | Nullify (pvar1, _), Nullify (pvar2, _) ->
+      exp_compare_structural (Lvar pvar1) (Lvar pvar2) exp_map
   | Abstract _, Abstract _ -> 0, exp_map
   | Remove_temps (temps1, _), Remove_temps (temps2, _) ->
       id_list_compare_structural temps1 temps2 exp_map
