@@ -123,7 +123,21 @@ let output_json_makefile_stats clusters =
 let print_prolog () =
   match Config.cluster_cmdline with
   | None ->
-      L.stdout "Starting analysis (Infer version %s)@." Version.versionString;
+      L.stdout "Starting analysis (Infer version %s)@\n" Version.versionString;
+      L.stdout "@\n";
+      L.stdout "legend:@\n";
+      L.stdout "  \"%s\" analyzing a file@\n" Config.log_analysis_file;
+      L.stdout "  \"%s\" analyzing a procedure@\n" Config.log_analysis_procedure;
+      if Config.developer_mode then (
+        L.stdout "  \"%s\" analyzer crashed@\n" Config.log_analysis_crash;
+        L.stdout "  \"%s\" timeout: procedure analysis took too much time@\n"
+          Config.log_analysis_wallclock_timeout;
+        L.stdout "  \"%s\" timeout: procedure analysis took too many symbolic execution steps@\n"
+          Config.log_analysis_symops_timeout;
+        L.stdout "  \"%s\" timeout: procedure analysis took too many recursive iterations@\n"
+          Config.log_analysis_recursion_timeout;
+      );
+      L.stdout "@\n@?";
   | Some clname -> L.stdout "Cluster %s@." clname
 
 let process_cluster_cmdline fname =

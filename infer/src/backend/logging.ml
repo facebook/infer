@@ -201,21 +201,21 @@ let log_progress_simple text =
     F.fprintf Format.err_formatter "%s@?" text
 
 let log_progress_file () =
-  log_progress_simple "F"
+  log_progress_simple Config.log_analysis_file
 
 let log_progress_procedure () =
-  log_progress_simple "."
+  log_progress_simple Config.log_analysis_procedure
 
 let log_progress_timeout_event failure_kind =
   if Config.developer_mode then
     begin
       match failure_kind with
       | SymOp.FKtimeout ->
-          log_progress_simple "T"
+          log_progress_simple Config.log_analysis_wallclock_timeout
       | SymOp.FKsymops_timeout _ ->
-          log_progress_simple "S"
+          log_progress_simple Config.log_analysis_symops_timeout
       | SymOp.FKrecursion_timeout _ ->
-          log_progress_simple "R"
-      | SymOp.FKcrash _ ->
-          log_progress_simple "C"
+          log_progress_simple Config.log_analysis_recursion_timeout
+      | SymOp.FKcrash msg ->
+          log_progress_simple (Printf.sprintf "%s(%s)" Config.log_analysis_crash msg)
     end

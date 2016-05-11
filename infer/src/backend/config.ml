@@ -147,6 +147,14 @@ let unsafe_unret = "<\"Unsafe_unretained\">"
 
 let weak = "<\"Weak\">"
 
+(** letters used in the analysis output *)
+let log_analysis_file = "F"
+let log_analysis_procedure = "."
+let log_analysis_wallclock_timeout = "T"
+let log_analysis_symops_timeout = "S"
+let log_analysis_recursion_timeout = "R"
+let log_analysis_crash = "C"
+
 
 (** Compile time configuration values *)
 
