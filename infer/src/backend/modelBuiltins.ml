@@ -770,6 +770,13 @@ let execute_alloc mk can_return_null
   let handle_sizeof_exp size_exp =
     Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size_exp), Sil.Subtype.exact) in
   let size_exp, procname = match args with
+    | [(Sil.Sizeof (Sil.Tstruct
+                      { Sil.csu = Csu.Class Csu.Objc; struct_name = Some c } as s, subt), _)] ->
+        let struct_type =
+          match AttributesTable.get_correct_type_from_objc_class_name c with
+          | Some struct_type -> struct_type
+          | None -> s in
+        Sil.Sizeof (struct_type, subt), pname
     | [(size_exp, _)] -> (* for malloc and __new *)
         size_exp, Sil.mem_alloc_pname mk
     | [(size_exp, _); (Sil.Const (Sil.Cfun pname), _)] ->

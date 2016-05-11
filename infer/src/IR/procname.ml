@@ -182,6 +182,10 @@ let objc_cpp class_name method_name mangled =
     mangled = mangled;
   }
 
+let get_default_objc_class_method objc_class =
+  let objc_cpp = objc_cpp objc_class "__find_class_" (Some "internal") in
+  ObjC_Cpp objc_cpp
+
 (** Create an objc procedure name from a class_name and method_name. *)
 let mangled_objc_block name =
   Block name

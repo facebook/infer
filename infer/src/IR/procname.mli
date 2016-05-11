@@ -108,6 +108,8 @@ val mangled_of_objc_method_kind : objc_method_kind -> string option
 (** Create an objc procedure name from a class_name and method_name. *)
 val objc_cpp : string -> string -> string option -> objc_cpp
 
+val get_default_objc_class_method : string -> t
+
 (** Get the class name of a Objective-C/C++ procedure name. *)
 val objc_cpp_get_class_name : objc_cpp -> string
 

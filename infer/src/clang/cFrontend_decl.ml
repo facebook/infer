@@ -166,10 +166,12 @@ struct
            ignore (ObjcCategory_decl.category_impl_decl CTypes_decl.type_ptr_to_sil_type tenv dec);
            process_methods tenv cg cfg curr_class decl_list;
 
-       | ObjCImplementationDecl(_, _, decl_list, _, idi) ->
+       | ObjCImplementationDecl(decl_info, _, decl_list, _, idi) ->
            let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
+           let class_name = CContext.get_curr_class_name curr_class in
            let type_ptr_to_sil_type = CTypes_decl.type_ptr_to_sil_type in
            ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
+           CMethod_trans.add_default_method_for_class class_name decl_info;
            process_methods tenv cg cfg curr_class decl_list;
 
        | CXXMethodDecl (decl_info, _, _, _, _)

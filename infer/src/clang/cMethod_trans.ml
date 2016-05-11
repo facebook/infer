@@ -462,6 +462,12 @@ let get_method_for_frontend_checks cfg cg loc =
       Cg.add_defined_node cg proc_name;
       pdesc
 
+let add_default_method_for_class class_name decl_info =
+  let loc = CLocation.get_sil_location_from_range decl_info.Clang_ast_t.di_source_range true in
+  let proc_name = Procname.get_default_objc_class_method class_name in
+  let attrs = { (ProcAttributes.default proc_name Config.C_CPP) with loc = loc; } in
+  AttributesTable.store_attributes attrs
+
 let get_procname_from_cpp_lambda context dec =
   match dec with
   | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rdi) ->
