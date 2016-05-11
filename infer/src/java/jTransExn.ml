@@ -31,7 +31,7 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
   let exn_message = "exception handler" in
   let procdesc = JContext.get_procdesc context in
   let cfg = JContext.get_cfg context in
-  let create_node loc node_kind instrs temps = Cfg.Node.create cfg loc node_kind instrs procdesc temps in
+  let create_node loc node_kind instrs = Cfg.Node.create cfg loc node_kind instrs procdesc in
   let ret_var = Cfg.Procdesc.get_ret_var procdesc in
   let ret_type = Cfg.Procdesc.get_ret_type procdesc in
   let id_ret_val = Ident.create_fresh Ident.knormal in
@@ -43,12 +43,15 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
     let instr_unwrap_ret_val =
       let unwrap_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__unwrap_exception) in
       Sil.Call([id_exn_val], unwrap_builtin, [(Sil.Var id_ret_val, ret_type)], loc, Sil.cf_default) in
-    create_node loc Cfg.Node.exn_handler_kind [instr_get_ret_val; instr_deactivate_exn; instr_unwrap_ret_val] [id_ret_val; id_deactivate] in
+    create_node
+      loc
+      Cfg.Node.exn_handler_kind
+      [instr_get_ret_val; instr_deactivate_exn; instr_unwrap_ret_val] in
   let create_entry_block handler_list =
     try
       ignore (Hashtbl.find catch_block_table handler_list)
     with Not_found ->
-      let collect succ_nodes last_handler rethrow_exception handler =
+      let collect succ_nodes rethrow_exception handler =
         let catch_nodes = get_body_nodes handler.JBir.e_handler in
         let loc = match catch_nodes with
           | n:: _ -> Cfg.Node.get_loc n
@@ -77,12 +80,10 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
         let node_kind_false = Cfg.Node.Prune_node (false, if_kind, exn_message) in
         let node_true =
           let instrs_true = [instr_call_instanceof; instr_prune_true; instr_set_catch_var] in
-          let ids_true = [id_exn_val; id_instanceof] in
-          create_node loc node_kind_true instrs_true ids_true in
+          create_node loc node_kind_true instrs_true in
         let node_false =
           let instrs_false = [instr_call_instanceof; instr_prune_false] @ (if rethrow_exception then [instr_rethrow_exn] else []) in
-          let ids_false = (if last_handler then [id_exn_val] else []) @ [id_instanceof] in
-          create_node loc node_kind_false instrs_false ids_false in
+          create_node loc node_kind_false instrs_false in
         Cfg.Node.set_succs_exn cfg node_true catch_nodes exit_nodes;
         Cfg.Node.set_succs_exn cfg node_false succ_nodes exit_nodes;
         let is_finally = handler.JBir.e_catch_type = None in
@@ -91,11 +92,9 @@ let translate_exceptions context exit_nodes get_body_nodes handler_table =
         else [node_true; node_false] in
       let is_last_handler = ref true in
       let process_handler succ_nodes handler = (* process handlers starting from the last one *)
-        let is_finally_handler = handler.JBir.e_catch_type = None in
         let remove_temps = !is_last_handler in (* remove temporary variables on last handler *)
-        let rethrow_exception = !is_last_handler && not is_finally_handler in (* rethrow exception if there is no finally *)
         is_last_handler := false;
-        collect succ_nodes remove_temps rethrow_exception handler in
+        collect succ_nodes remove_temps handler in
 
       let nodes_first_handler =
         IList.fold_left process_handler exit_nodes (IList.rev handler_list) in

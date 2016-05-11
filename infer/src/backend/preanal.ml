@@ -236,8 +236,8 @@ let node_add_nullify_instrs n dead_vars_after dead_vars_before =
   (* nullification of blocks at the end of existing instructions. *)
   let block_nullify, no_block_nullify = IList.partition is_block_nullify (Cfg.Node.get_instrs n) in
   Cfg.Node.replace_instrs n (no_block_nullify @ block_nullify);
-  Cfg.Node.append_instrs_temps n instrs_after [];
-  Cfg.Node.prepend_instrs_temps n instrs_before []
+  Cfg.Node.append_instrs n instrs_after;
+  Cfg.Node.prepend_instrs n instrs_before
 
 (** return true if the node does not assign any variables *)
 let node_assigns_no_variables cfg node =
@@ -435,17 +435,7 @@ let add_abstraction_instructions cfg =
   let all_nodes = Node.get_all_nodes cfg in
   let do_node node =
     let loc = Node.get_last_loc node in
-    if node_requires_abstraction node then Node.append_instrs_temps node [Sil.Abstract loc] [] in
-  IList.iter do_node all_nodes
-
-(** add instructions to remove temporaries *)
-let add_removetemps_instructions cfg =
-  let open Cfg in
-  let all_nodes = Node.get_all_nodes cfg in
-  let do_node node =
-    let loc = Node.get_last_loc node in
-    let temps = Node.get_temps node in
-    if temps != [] then Node.append_instrs_temps node [Sil.Remove_temps (temps, loc)] [] in
+    if node_requires_abstraction node then Node.append_instrs node [Sil.Abstract loc] in
   IList.iter do_node all_nodes
 
 module BackwardCfg = ProcCfg.Backward(ProcCfg.Exceptional)
@@ -538,12 +528,12 @@ let add_nullify_instrs tenv _ pdesc =
       IList.filter is_local pvars
       |> IList.map (fun pvar -> Sil.Nullify (pvar, loc)) in
     if nullify_instrs <> []
-    then Cfg.Node.append_instrs_temps node (IList.rev nullify_instrs) [] in
+    then Cfg.Node.append_instrs node (IList.rev nullify_instrs) in
 
   let node_add_removetmps_instructions node ids =
     if ids <> [] then
       let loc = Cfg.Node.get_last_loc node in
-      Cfg.Node.append_instrs_temps node [Sil.Remove_temps (IList.rev ids, loc)] [] in
+      Cfg.Node.append_instrs node [Sil.Remove_temps (IList.rev ids, loc)] in
 
   IList.iter
     (fun node ->
@@ -576,7 +566,6 @@ let doit ?(f_translate_typ=None) cfg cg tenv =
   if old_nullify_analysis
   then
     begin
-      add_removetemps_instructions cfg;
       AllPreds.mk_table cfg;
       Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
       AllPreds.clear_table ()

@@ -34,9 +34,6 @@ module Node = struct
     (** distance to the exit node *)
     mutable nd_dist_exit : int option;
 
-    (** temporary variables *)
-    mutable nd_temps : Ident.t list;
-
     (** dead program variables after executing the instructions *)
     mutable nd_dead_pvars_after : Pvar.t list;
 
@@ -164,7 +161,6 @@ module Node = struct
   let dummy () = {
     nd_id = 0;
     nd_dist_exit = None;
-    nd_temps = [];
     nd_dead_pvars_after = [];
     nd_deads_before = [];
     nd_instrs = [];
@@ -185,12 +181,11 @@ module Node = struct
 
   let get_all_nodes cfg = !(cfg.node_list)
 
-  let create cfg loc kind instrs pdesc temps =
+  let create cfg loc kind instrs pdesc =
     let node_id = node_id_gen cfg in
     let node =
       { nd_id = node_id;
         nd_dist_exit = None;
-        nd_temps = temps;
         nd_dead_pvars_after = [];
         nd_deads_before = [];
         nd_instrs = instrs;
@@ -280,7 +275,7 @@ module Node = struct
     | Join_node, [({nd_kind = (Exit_node _)} as exit_node)] ->
         let kind = Stmt_node "between_join_and_exit" in
         let pdesc = get_proc_desc node in
-        let node' = create cfg node.nd_loc kind node.nd_instrs pdesc node.nd_temps in
+        let node' = create cfg node.nd_loc kind node.nd_instrs pdesc in
         set_succs_exn_base node [node'] exn;
         set_succs_exn_base node' [exit_node] exn
     | _ ->
@@ -373,12 +368,6 @@ module Node = struct
     try Some (pdesc_tbl_find cfg proc_name)
     with Not_found -> None
 
-  let set_temps node temps =
-    node.nd_temps <- temps
-
-  let get_temps node =
-    node.nd_temps
-
   let set_dead_pvars node after dead =
     if after then node.nd_dead_pvars_after <- dead
     else node.nd_deads_before <- dead
@@ -390,16 +379,13 @@ module Node = struct
   let get_distance_to_exit node =
     node.nd_dist_exit
 
-  (** Append the instructions and temporaries to the list of instructions to execute *)
-  let append_instrs_temps node instrs temps =
-    node.nd_instrs <- node.nd_instrs @ instrs;
-    node.nd_temps <- node.nd_temps @ temps
+  (** Append the instructions to the list of instructions to execute *)
+  let append_instrs node instrs =
+    node.nd_instrs <- node.nd_instrs @ instrs
 
-  (** Add the instructions and temporaties at the beginning
-      of the list of instructions to execute *)
-  let prepend_instrs_temps node instrs temps =
-    node.nd_instrs <- instrs @ node.nd_instrs;
-    node.nd_temps <- temps @ node.nd_temps
+  (** Add the instructions at the beginning of the list of instructions to execute *)
+  let prepend_instrs node instrs =
+    node.nd_instrs <- instrs @ node.nd_instrs
 
   (** Replace the instructions to be executed. *)
   let replace_instrs node instrs =
@@ -420,7 +406,7 @@ module Node = struct
       (Pvar.mk x proc_name, typ) in
     let ptl = ret_var :: IList.map construct_decl locals in
     let instr = Sil.Declare_locals (ptl, loc) in
-    prepend_instrs_temps node [instr] []
+    prepend_instrs node [instr]
 
   (** Counter for identifiers of procdescs *)
   let proc_desc_id_counter = ref 0
@@ -751,7 +737,7 @@ module Node = struct
       and kind = convert_node_kind (get_kind node)
       and instrs =
         IList.fold_left convert_instr [] (get_instrs node) |> IList.rev in
-      create cfg loc kind instrs resolved_proc_desc (get_temps node)
+      create cfg loc kind instrs resolved_proc_desc
     and loop callee_nodes =
       match callee_nodes with
       | [] -> []

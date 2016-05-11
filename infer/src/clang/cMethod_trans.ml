@@ -398,9 +398,9 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
       (if !Config.arc_mode then
          Cfg.Procdesc.set_flag procdesc Mleak_buckets.objc_arc_flag "true";
        let start_kind = Cfg.Node.Start_node procdesc in
-       let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc [] in
+       let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc in
        let exit_kind = Cfg.Node.Exit_node procdesc in
-       let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc [] in
+       let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc in
        Cfg.Procdesc.set_start_node procdesc start_node;
        Cfg.Procdesc.set_exit_node procdesc exit_node) in
   if should_create_procdesc cfg proc_name defined then
@@ -454,8 +454,8 @@ let get_method_for_frontend_checks cfg cg loc =
                     loc = loc;
                   } in
       let pdesc = Cfg.Procdesc.create cfg attrs in
-      let start_node = Cfg.Node.create cfg loc (Cfg.Node.Start_node pdesc) [] pdesc [] in
-      let exit_node = Cfg.Node.create cfg loc (Cfg.Node.Exit_node pdesc) [] pdesc [] in
+      let start_node = Cfg.Node.create cfg loc (Cfg.Node.Start_node pdesc) [] pdesc in
+      let exit_node = Cfg.Node.create cfg loc (Cfg.Node.Exit_node pdesc) [] pdesc in
       Cfg.Procdesc.set_start_node pdesc start_node;
       Cfg.Procdesc.set_exit_node pdesc exit_node;
       Cfg.Node.set_succs_exn cfg start_node [exit_node] [];

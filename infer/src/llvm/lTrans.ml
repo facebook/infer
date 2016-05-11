@@ -140,12 +140,12 @@ let trans_function_def (cfg : Cfg.cfg) (cg: Cg.t) (metadata : LAst.metadata_map)
         } in
       let procdesc = Cfg.Procdesc.create cfg proc_attrs in
       let start_kind = Cfg.Node.Start_node procdesc in
-      let start_node = Cfg.Node.create cfg (source_only_location ()) start_kind [] procdesc [] in
+      let start_node = Cfg.Node.create cfg (source_only_location ()) start_kind [] procdesc in
       let exit_kind = Cfg.Node.Exit_node procdesc in
-      let exit_node = Cfg.Node.create cfg (source_only_location ()) exit_kind [] procdesc [] in
+      let exit_node = Cfg.Node.create cfg (source_only_location ()) exit_kind [] procdesc in
       let node_of_sil_instr cfg procdesc sil_instr =
         Cfg.Node.create cfg (Sil.instr_get_loc sil_instr) (Cfg.Node.Stmt_node "method_body")
-          [sil_instr] procdesc [] in
+          [sil_instr] procdesc in
       let rec link_nodes (start_node : Cfg.Node.t) : Cfg.Node.t list -> unit = function
         (* link all nodes in a chain for now *)
         | [] ->

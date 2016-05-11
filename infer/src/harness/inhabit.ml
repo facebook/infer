@@ -24,7 +24,6 @@ type lifecycle_trace = (Procname.t * Sil.typ option) list
 (** list of instrs and temporary variables created during inhabitation and a cache of types that
  * have already been inhabited *)
 type env = { instrs : Sil.instr list;
-             tmp_vars : Ident.t list;
              cache : Sil.exp TypMap.t;
              (* set of types currently being inhabited. consult to prevent infinite recursion *)
              cur_inhabiting : TypSet.t;
@@ -46,9 +45,9 @@ let formals_from_name cfg pname =
   | None -> []
 
 (** add an instruction to the env, update tmp_vars, and bump the pc *)
-let env_add_instr instr tmp_vars env =
+let env_add_instr instr env =
   let incr_pc pc = { pc with Location.line = pc.Location.line + 1 } in
-  { env with instrs = instr :: env.instrs; tmp_vars = tmp_vars @ env.tmp_vars; pc = incr_pc env.pc }
+  { env with instrs = instr :: env.instrs; pc = incr_pc env.pc }
 
 (** call flags for an allocation or call to a constructor *)
 let cf_alloc = Sil.cf_default
@@ -77,7 +76,7 @@ let inhabit_alloc sizeof_typ ret_typ alloc_kind env =
     let sizeof_exp = Sil.Sizeof (sizeof_typ, Sil.Subtype.exact) in
     let args = [(sizeof_exp, Sil.Tptr (ret_typ, Sil.Pk_pointer))] in
     Sil.Call ([retval], fun_new, args, env.pc, cf_alloc) in
-  (inhabited_exp, env_add_instr call_instr [retval] env)
+  (inhabited_exp, env_add_instr call_instr env)
 
 (** find or create a Sil expression with type typ *)
 (* TODO: this should be done in a differnt way: just make typ a param of the harness procedure *)
@@ -127,10 +126,10 @@ let rec inhabit_typ typ cfg env =
             Sil.Lvar (Pvar.mk typ_class_name (Procname.Java env.harness_name)) in
           let write_to_local_instr =
             Sil.Set (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
-          let env' = env_add_instr write_to_local_instr [] env in
+          let env' = env_add_instr write_to_local_instr env in
           let fresh_id = Ident.create_fresh Ident.knormal in
           let read_from_local_instr = Sil.Letderef (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
-          (Sil.Var fresh_id, env_add_instr read_from_local_instr [fresh_id] env')
+          (Sil.Var fresh_id, env_add_instr read_from_local_instr env')
       | Sil.Tint (_) -> (Sil.Const (Sil.Cint (Sil.Int.zero)), env)
       | Sil.Tfloat (_) -> (Sil.Const (Sil.Cfloat 0.0), env)
       | typ ->
@@ -160,7 +159,7 @@ and inhabit_constructor constr_name (allocated_obj, obj_type) cfg env =
     let constr_instr =
       let fun_exp = fun_exp_from_name constr_name in
       Sil.Call ([], fun_exp, (allocated_obj, obj_type) :: args, env.pc, Sil.cf_default) in
-    env_add_instr constr_instr [] env
+    env_add_instr constr_instr env
   with Not_found -> env
 
 let inhabit_call_with_args procname procdesc args env =
@@ -171,7 +170,7 @@ let inhabit_call_with_args procname procdesc args env =
     let fun_exp = fun_exp_from_name procname in
     let flags = { Sil.cf_default with Sil.cf_virtual = not (Procname.java_is_static procname); } in
     Sil.Call (retval, fun_exp, args, env.pc, flags) in
-  env_add_instr call_instr retval env
+  env_add_instr call_instr env
 
 (** create Sil that inhabits args to and calls proc_name *)
 let inhabit_call (procname, receiver) cfg env =
@@ -240,9 +239,9 @@ let setup_harness_cfg harness_name env cg cfg =
     (* important to reverse the list or there will be scoping issues! *)
     let instrs = (IList.rev env.instrs) in
     let nodekind = Cfg.Node.Stmt_node "method_body" in
-    Cfg.Node.create cfg env.pc nodekind instrs procdesc env.tmp_vars in
+    Cfg.Node.create cfg env.pc nodekind instrs procdesc in
   let (start_node, exit_node) =
-    let create_node kind = Cfg.Node.create cfg env.pc kind [] procdesc [] in
+    let create_node kind = Cfg.Node.create cfg env.pc kind [] procdesc in
     let start_kind = Cfg.Node.Start_node procdesc in
     let exit_kind = Cfg.Node.Exit_node procdesc in
     (create_node start_kind, create_node exit_kind) in
@@ -263,7 +262,6 @@ let inhabit_trace trace harness_name cg cfg =
     let empty_env =
       let pc = { Location.line = start_line; col = 1; file = source_file; nLOC = 0; } in
       { instrs = [];
-        tmp_vars = [];
         cache = TypMap.empty;
         pc = pc;
         cur_inhabiting = TypSet.empty;

@@ -36,22 +36,22 @@ let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
       let id = Ident.create_fresh Ident.knormal in
       let tmp_assign = Sil.Letderef(id, e1, typ, loc) in
       let release = mk_call release_pname (Sil.Var id) typ in
-      (e1,[retain; tmp_assign; assign; release ], [id])
+      (e1,[retain; tmp_assign; assign; release])
   | Sil.Tptr (_, Sil.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
       (* for A __strong *e1 = e2 the semantics is*)
       (* retain(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in
-      (e1,[retain; assign ], [])
+      (e1,[retain; assign])
   | Sil.Tptr (_, Sil.Pk_objc_weak)
   | Sil.Tptr (_, Sil.Pk_objc_unsafe_unretained) ->
-      (e1, [assign],[])
+      (e1, [assign])
   | Sil.Tptr (_, Sil.Pk_objc_autoreleasing) ->
       (* for __autoreleasing e1 = e2 the semantics is*)
       (* retain(e2); autorelease(e2); e1=e2; *)
       let retain = mk_call retain_pname e2 typ in
       let autorelease = mk_call autorelease_pname e2 typ in
-      (e1, [retain; autorelease; assign], [])
-  | _ -> (e1, [assign], [])
+      (e1, [retain; autorelease; assign])
+  | _ -> (e1, [assign])
 
 (* Returns a pair ([binary_expression], instructions) for binary operator representing a *)
 (* CompoundAssignment. "binary_expression" is returned when we are calculating an expression*)
@@ -92,7 +92,7 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
         let e1_xor_e2 = Sil.BinOp(Sil.BXor, Sil.Var id, e2) in
         (e1, [Sil.Set (e1, typ, e1_xor_e2, loc)])
     | _ -> assert false in
-  (e_res, instr1:: instr_op, [id])
+  (e_res, instr1:: instr_op)
 
 (* Returns a pair ([binary_expression], instructions). "binary_expression" *)
 (* is returned when we are calculating an expression "instructions" is not *)
@@ -101,30 +101,30 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
 let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
   let binop_exp op = Sil.BinOp(op, e1, e2) in
   match boi.Clang_ast_t.boi_kind with
-  | `Add -> (binop_exp (Sil.PlusA), [], [])
-  | `Mul -> (binop_exp (Sil.Mult), [], [])
-  | `Div -> (binop_exp (Sil.Div), [], [])
-  | `Rem -> (binop_exp (Sil.Mod), [], [])
-  | `Sub -> (binop_exp (Sil.MinusA), [], [])
-  | `Shl -> (binop_exp (Sil.Shiftlt), [], [])
-  | `Shr -> (binop_exp(Sil.Shiftrt), [], [])
-  | `Or -> (binop_exp (Sil.BOr), [], [])
-  | `And -> (binop_exp (Sil.BAnd), [], [])
-  | `Xor -> (binop_exp (Sil.BXor), [], [])
-  | `LT -> (binop_exp (Sil.Lt), [], [])
-  | `GT -> (binop_exp (Sil.Gt), [], [])
-  | `LE -> (binop_exp (Sil.Le), [], [])
-  | `GE -> (binop_exp (Sil.Ge), [], [])
-  | `NE -> (binop_exp (Sil.Ne), [], [])
-  | `EQ -> (binop_exp (Sil.Eq), [], [])
-  | `LAnd -> (binop_exp (Sil.LAnd), [], [])
-  | `LOr -> (binop_exp (Sil.LOr), [], [])
+  | `Add -> (binop_exp (Sil.PlusA), [])
+  | `Mul -> (binop_exp (Sil.Mult), [])
+  | `Div -> (binop_exp (Sil.Div), [])
+  | `Rem -> (binop_exp (Sil.Mod), [])
+  | `Sub -> (binop_exp (Sil.MinusA), [])
+  | `Shl -> (binop_exp (Sil.Shiftlt), [])
+  | `Shr -> (binop_exp(Sil.Shiftrt), [])
+  | `Or -> (binop_exp (Sil.BOr), [])
+  | `And -> (binop_exp (Sil.BAnd), [])
+  | `Xor -> (binop_exp (Sil.BXor), [])
+  | `LT -> (binop_exp (Sil.Lt), [])
+  | `GT -> (binop_exp (Sil.Gt), [])
+  | `LE -> (binop_exp (Sil.Le), [])
+  | `GE -> (binop_exp (Sil.Ge), [])
+  | `NE -> (binop_exp (Sil.Ne), [])
+  | `EQ -> (binop_exp (Sil.Eq), [])
+  | `LAnd -> (binop_exp (Sil.LAnd), [])
+  | `LOr -> (binop_exp (Sil.LOr), [])
   | `Assign ->
       if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class context.CContext.tenv typ then
         assignment_arc_mode e1 typ e2 loc rhs_owning_method false
       else
-        (e1, [Sil.Set (e1, typ, e2, loc)], [])
-  | `Comma -> (e2, [], []) (* C99 6.5.17-2 *)
+        (e1, [Sil.Set (e1, typ, e2, loc)])
+  | `Comma -> (e2, []) (* C99 6.5.17-2 *)
   | `MulAssign | `DivAssign | `RemAssign | `AddAssign | `SubAssign
   | `ShlAssign | `ShrAssign | `AndAssign | `XorAssign | `OrAssign ->
       compound_assignment_binary_operation_instruction boi e1 typ e2 loc
@@ -134,7 +134,7 @@ let binary_operation_instruction context boi e1 typ e2 loc rhs_owning_method =
       Printing.log_stats
         "\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
         (Clang_ast_j.string_of_binary_operator_kind bok);
-      (Sil.exp_minus_one, [], [])
+      (Sil.exp_minus_one, [])
 
 let unary_operation_instruction uoi e typ loc =
   let uok = Clang_ast_j.string_of_unary_operator_kind (uoi.Clang_ast_t.uoi_kind) in
@@ -145,7 +145,7 @@ let unary_operation_instruction uoi e typ loc =
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
       let e_plus_1 = Sil.BinOp(Sil.PlusA, Sil.Var id, Sil.Const(Sil.Cint (Sil.Int.one))) in
-      ([id], Sil.Var id, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
+      (Sil.Var id, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
   | `PreInc ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
@@ -154,12 +154,12 @@ let unary_operation_instruction uoi e typ loc =
           e
         else
           e_plus_1 in
-      ([id], exp, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
+      (exp, instr1::[Sil.Set (e, typ, e_plus_1, loc)])
   | `PostDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
       let e_minus_1 = Sil.BinOp(Sil.MinusA, Sil.Var id, Sil.Const(Sil.Cint (Sil.Int.one))) in
-      ([id], Sil.Var id, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
+      (Sil.Var id, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
   | `PreDec ->
       let id = Ident.create_fresh Ident.knormal in
       let instr1 = Sil.Letderef (id, e, typ, loc) in
@@ -168,19 +168,19 @@ let unary_operation_instruction uoi e typ loc =
           e
         else
           e_minus_1 in
-      ([id], exp, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
-  | `Not -> ([], un_exp (Sil.BNot), [])
-  | `Minus -> ([], un_exp (Sil.Neg), [])
-  | `Plus -> ([], e, [])
-  | `LNot -> ([], un_exp (Sil.LNot), [])
+      (exp, instr1::[Sil.Set (e, typ, e_minus_1, loc)])
+  | `Not -> (un_exp (Sil.BNot), [])
+  | `Minus -> (un_exp (Sil.Neg), [])
+  | `Plus -> (e, [])
+  | `LNot -> (un_exp (Sil.LNot), [])
   | `Deref ->
       (* Actual dereferencing is handled by implicit cast from rvalue to lvalue *)
-      ([], e, [])
-  | `AddrOf -> ([], e, [])
+      (e, [])
+  | `AddrOf -> (e, [])
   | `Real | `Imag | `Extension | `Coawait ->
       Printing.log_stats
         "\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...\n" uok;
-      ([], e, [])
+      (e, [])
 
 let bin_op_to_string boi =
   match boi.Clang_ast_t.boi_kind with

@@ -147,12 +147,11 @@ module Node : sig
   (** kind of Stmt_node for a throw instruction. *)
   val throw_kind : nodekind
 
-  (** Append the instructions and temporaries to the list of instructions to execute *)
-  val append_instrs_temps : t -> Sil.instr list -> Ident.t list -> unit
+  (** Append the instructions to the list of instructions to execute *)
+  val append_instrs : t -> Sil.instr list -> unit
 
-  (** Add the instructions and temporaries at the beginning
-      of the list of instructions to execute *)
-  val prepend_instrs_temps : t -> Sil.instr list -> Ident.t list -> unit
+  (** Add the instructions at the beginning of the list of instructions to execute *)
+  val prepend_instrs : t -> Sil.instr list -> unit
 
   (** Add declarations for local variables and return variable to the node *)
   val add_locals_ret_declaration : t -> (Mangled.t * Sil.typ) list -> unit
@@ -160,10 +159,10 @@ module Node : sig
   (** Compare two nodes *)
   val compare : t -> t -> int
 
-  (** [create cfg loc kind instrs proc_desc temps] create a new cfg node
+  (** [create cfg loc kind instrs proc_desc] create a new cfg node
       with the given location, kind, list of instructions,
-      procdesc and list of temporary variables *)
-  val create : cfg -> Location.t -> nodekind -> Sil.instr list -> Procdesc.t -> Ident.t list -> t
+      procdesc *)
+  val create : cfg -> Location.t -> nodekind -> Sil.instr list -> Procdesc.t -> t
 
   (** create a new empty cfg *)
   val create_cfg : unit -> cfg
@@ -233,9 +232,6 @@ module Node : sig
   (** Get the predecessor nodes of a node where the given predicate evaluates to true *)
   val get_sliced_preds : t -> (t -> bool) -> t list
 
-  (** Get the temporary variables introduced for the instructions stored in the node *)
-  val get_temps: t -> Ident.t list
-
   (** Hash function for nodes *)
   val hash : t -> int
 
@@ -270,13 +266,6 @@ module Node : sig
 
   (** Set the successor nodes and exception nodes, and build predecessor links *)
   val set_succs_exn : cfg -> t -> t list -> t list -> unit
-
-  (** Set the temporary variables *)
-  val set_temps : t -> Ident.t list -> unit
-(*
-  (** Replace the instructions to be executed. *)
-  val replace_instrs : t -> Sil.instr list -> unit
-*)
 end
 
 (** Hash table with nodes as keys. *)

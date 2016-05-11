@@ -189,7 +189,7 @@ let translate_instr_static_field context callee_procdesc fs field_type loc =
   let field_arg = Sil.Const (Sil.Cstr (JBasics.fs_name fs)) in
   let call_instr = Sil.Call([ret_id], callee_fun, [field_arg, field_type], loc, Sil.cf_default) in
   Cg.add_edge cg caller_procname callee_procname;
-  ([ret_id], [call_instr], Sil.Var ret_id)
+  ([call_instr], Sil.Var ret_id)
 
 
 let is_static_final_field context cn fs =

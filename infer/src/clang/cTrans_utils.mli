@@ -34,7 +34,6 @@ type trans_state = {
 type trans_result = {
   root_nodes: Cfg.Node.t list;
   leaf_nodes: Cfg.Node.t list;
-  ids: Ident.t list;
   instrs: Sil.instr list;
   exps: (Sil.exp * Sil.typ) list;
   initd_exps: Sil.exp list;
@@ -83,7 +82,7 @@ val dereference_value_from_result : Location.t -> trans_result -> strip_pointer:
 
 val cast_operation :
   trans_state -> Clang_ast_t.cast_kind -> (Sil.exp * Sil.typ) list -> Sil.typ -> Location.t ->
-  bool -> Ident.t list * Sil.instr list * (Sil.exp * Sil.typ)
+  bool -> Sil.instr list * (Sil.exp * Sil.typ)
 
 val trans_assertion: Location.t -> CContext.t -> Cfg.Node.t list ->  trans_result
 
@@ -111,9 +110,9 @@ val cpp_new_trans : trans_state -> Location.t -> Sil.typ -> Sil.exp option -> tr
 
 val cast_trans :
   CContext.t -> (Sil.exp * Sil.typ) list -> Location.t -> Procname.t option -> Sil.typ ->
-  (Ident.t * Sil.instr * Sil.exp) option
+  (Sil.instr * Sil.exp) option
 
-val dereference_var_sil : Sil.exp * Sil.typ -> Location.t -> Ident.t list * Sil.instr list * Sil.exp
+val dereference_var_sil : Sil.exp * Sil.typ -> Location.t -> Sil.instr list * Sil.exp
 
 (** Module for creating cfg nodes and other utility functions related to them.  *)
 module Nodes :
@@ -122,14 +121,13 @@ sig
 
   val need_unary_op_node : Clang_ast_t.unary_operator_info -> bool
 
-  val create_node : Cfg.Node.nodekind -> Ident.t list -> Sil.instr list ->
-    Location.t -> CContext.t -> Cfg.Node.t
+  val create_node : Cfg.Node.nodekind -> Sil.instr list -> Location.t -> CContext.t -> Cfg.Node.t
 
   val is_join_node : Cfg.Node.t -> bool
 
   val create_prune_node :
-    bool -> (Sil.exp * Sil.typ) list -> Ident.t list -> Sil.instr list -> Location.t ->
-    Sil.if_kind -> CContext.t -> Cfg.Node.t
+    bool -> (Sil.exp * Sil.typ) list -> Sil.instr list -> Location.t -> Sil.if_kind ->
+    CContext.t -> Cfg.Node.t
 
   val is_prune_node : Cfg.Node.t -> bool
 

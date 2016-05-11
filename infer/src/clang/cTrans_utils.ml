@@ -52,11 +52,11 @@ struct
     | Cfg.Node.Prune_node(true, _, _) -> true
     | _ -> false
 
-  let create_node node_kind temps instrs loc context =
+  let create_node node_kind instrs loc context =
     let procdesc = CContext.get_procdesc context in
-    Cfg.Node.create (CContext.get_cfg context) loc node_kind instrs procdesc temps
+    Cfg.Node.create (CContext.get_cfg context) loc node_kind instrs procdesc
 
-  let create_prune_node branch e_cond ids_cond instrs_cond loc ik context =
+  let create_prune_node branch e_cond instrs_cond loc ik context =
     let (e_cond', _) = extract_exp_from_list e_cond
         "\nWARNING: Missing expression for Conditional operator. Need to be fixed" in
     let e_cond'' =
@@ -65,7 +65,7 @@ struct
       else
         Sil.BinOp(Sil.Eq, e_cond', Sil.exp_zero) in
     let instrs_cond'= instrs_cond @ [Sil.Prune(e_cond'', loc, branch, ik)] in
-    create_node (prune_kind branch) ids_cond instrs_cond' loc context
+    create_node (prune_kind branch) instrs_cond' loc context
 
   (** Check if this binary opertor requires the creation of a node in the cfg. *)
   let is_binary_assign_op boi =
@@ -92,7 +92,7 @@ struct
       Hashtbl.find context.CContext.label_map label
     with Not_found ->
       let node_name = Format.sprintf "GotoLabel_%s" label in
-      let new_node = Nodes.create_node (Cfg.Node.Skip_node node_name) [] [] sil_loc context in
+      let new_node = Nodes.create_node (Cfg.Node.Skip_node node_name) [] sil_loc context in
       Hashtbl.add context.CContext.label_map label new_node;
       new_node
 end
@@ -139,7 +139,6 @@ type trans_state = {
 type trans_result = {
   root_nodes: Cfg.Node.t list; (* Top cfg nodes (root) created by the translation *)
   leaf_nodes: Cfg.Node.t list; (* Bottom cfg nodes (leaf) created by the translate *)
-  ids: Ident.t list; (* list of temp identifiers created that need to be removed by the caller *)
   instrs: Sil.instr list; (* list of SIL instruction that need to be placed in cfg nodes of the parent*)
   exps: (Sil.exp * Sil.typ) list; (* SIL expressions resulting from the translation of the clang stmt *)
   initd_exps: Sil.exp list;
@@ -150,7 +149,6 @@ type trans_result = {
 let empty_res_trans = {
   root_nodes = [];
   leaf_nodes = [];
-  ids = [];
   instrs = [];
   exps = [];
   initd_exps = [];
@@ -174,7 +172,6 @@ let collect_res_trans cfg l =
         collect l'
           { root_nodes = root_nodes;
             leaf_nodes = leaf_nodes;
-            ids = IList.rev_append rt'.ids rt.ids;
             instrs = IList.rev_append rt'.instrs rt.instrs;
             exps = IList.rev_append rt'.exps rt.exps;
             initd_exps = IList.rev_append rt'.initd_exps rt.initd_exps;
@@ -182,7 +179,6 @@ let collect_res_trans cfg l =
   let rt = collect l empty_res_trans in
   {
     rt with
-    ids = IList.rev rt.ids;
     instrs = IList.rev rt.instrs;
     exps = IList.rev rt.exps;
     initd_exps = IList.rev rt.initd_exps;
@@ -245,10 +241,8 @@ struct
     let create_node = own_priority_node trans_state.priority stmt_info && res_state.instrs <> [] in
     if create_node then
       (* We need to create a node *)
-      let ids_node = ids_to_node trans_state.continuation res_state.ids in
-      let ids_parent = ids_to_parent trans_state.continuation res_state.ids in
       let node_kind = Cfg.Node.Stmt_node (nd_name) in
-      let node = Nodes.create_node node_kind ids_node res_state.instrs loc trans_state.context in
+      let node = Nodes.create_node node_kind res_state.instrs loc trans_state.context in
       Cfg.Node.set_succs_exn cfg node trans_state.succ_nodes [];
       IList.iter (fun leaf -> Cfg.Node.set_succs_exn cfg leaf [node] []) res_state.leaf_nodes;
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
@@ -257,7 +251,6 @@ struct
       { res_state with
         root_nodes = root_nodes;
         leaf_nodes = [node];
-        ids = ids_parent;
         instrs = [];
         exps = [];
       }
@@ -314,16 +307,16 @@ let create_alloc_instrs context sil_loc function_type fname size_exp_opt procnam
   let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
   let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun fname)), args, sil_loc, Sil.cf_default) in
-  (function_type, ret_id, stmt_call, Sil.Var ret_id)
+  (function_type, stmt_call, Sil.Var ret_id)
 
 let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc procname_opt =
   let fname = if is_cf_non_null_alloc then
       ModelBuiltins.__objc_alloc_no_fail
     else
       ModelBuiltins.__objc_alloc in
-  let (function_type, ret_id, stmt_call, exp) =
+  let (function_type, stmt_call, exp) =
     create_alloc_instrs trans_state.context loc function_type fname None procname_opt in
-  let res_trans_tmp = { empty_res_trans with ids =[ret_id]; instrs =[stmt_call]} in
+  let res_trans_tmp = { empty_res_trans with instrs =[stmt_call]} in
   let res_trans =
     let nname = "Call alloc" in
     PriorityNode.compute_results_to_parent trans_state loc nname stmt_info [res_trans_tmp] in
@@ -331,18 +324,17 @@ let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc pro
 
 let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let fname = ModelBuiltins.__objc_alloc_no_fail in
-  let (alloc_ret_type, alloc_ret_id, alloc_stmt_call, _) =
+  let (alloc_ret_type, alloc_stmt_call, alloc_ret_exp) =
     create_alloc_instrs trans_state.context loc function_type fname None None in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
   let call_flags = { Sil.cf_default with Sil.cf_virtual = is_instance; } in
   let pname = General_utils.mk_procname_from_objc_method cls_name CFrontend_config.init Procname.Instance_objc_method in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname is_instance None;
-  let args = [(Sil.Var alloc_ret_id, alloc_ret_type)] in
+  let args = [(alloc_ret_exp, alloc_ret_type)] in
   let init_stmt_call = Sil.Call([init_ret_id], (Sil.Const (Sil.Cfun pname)), args, loc, call_flags) in
   let instrs = [alloc_stmt_call; init_stmt_call] in
-  let ids = [alloc_ret_id; init_ret_id] in
-  let res_trans_tmp = { empty_res_trans with ids = ids; instrs = instrs } in
+  let res_trans_tmp = { empty_res_trans with instrs = instrs } in
   let res_trans =
     let nname = "Call objC new" in
     PriorityNode.compute_results_to_parent trans_state loc nname stmt_info [res_trans_tmp] in
@@ -366,9 +358,9 @@ let cpp_new_trans trans_state sil_loc function_type size_exp_opt =
     match size_exp_opt with
     | Some _ -> ModelBuiltins.__new_array
     | None -> ModelBuiltins.__new in
-  let (function_type, ret_id, stmt_call, exp) =
+  let (function_type, stmt_call, exp) =
     create_alloc_instrs trans_state.context sil_loc function_type fname size_exp_opt None in
-  { empty_res_trans with ids = [ret_id]; instrs = [stmt_call]; exps = [(exp, function_type)] }
+  { empty_res_trans with instrs = [stmt_call]; exps = [(exp, function_type)] }
 
 let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
@@ -378,7 +370,7 @@ let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let pname = ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Sil.Tint Sil.IULong)] in
   let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun pname)), args, sil_loc, Sil.cf_default) in
-  (ret_id, stmt_call, Sil.Var ret_id)
+  (stmt_call, Sil.Var ret_id)
 
 let cast_trans context exps sil_loc callee_pname_opt function_type =
   if CTrans_models.is_toll_free_bridging callee_pname_opt then
@@ -399,17 +391,16 @@ let builtin_trans trans_state loc stmt_info function_type callee_pname_opt =
 let dereference_var_sil (exp, typ) sil_loc =
   let id = Ident.create_fresh Ident.knormal in
   let sil_instr = Sil.Letderef (id, exp, typ, sil_loc) in
-  ([id], [sil_instr], Sil.Var id)
+  ([sil_instr], Sil.Var id)
 
 (** Given trans_result with ONE expression, create temporary variable with *)
 (** value of an expression assigned to it *)
 let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let (obj_sil, class_typ) = extract_exp_from_list trans_result.exps "" in
-  let cast_ids, cast_inst, cast_exp = dereference_var_sil (obj_sil, class_typ) sil_loc in
+  let cast_inst, cast_exp = dereference_var_sil (obj_sil, class_typ) sil_loc in
   let typ_no_ptr = match class_typ with | Sil.Tptr (typ, _) -> typ | _ -> assert false in
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
   { trans_result with
-    ids = trans_result.ids @ cast_ids;
     instrs = trans_result.instrs @ cast_inst;
     exps = [(cast_exp, cast_typ)]
   }
@@ -421,12 +412,12 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
   match cast_kind with
   | `DerivedToBase
   | `UncheckedDerivedToBase ->  (* These casts ignore change of type *)
-      ([], [], (exp, typ))
+      ([], (exp, typ))
   | `NoOp
   | `BitCast
   | `IntegralCast
   | `IntegralToBoolean -> (* This is treated as a nop by returning the same expressions exps*)
-      ([], [], (exp, cast_typ))
+      ([], (exp, cast_typ))
   | `CPointerToObjCPointerCast
   | `ARCProduceObject
   | `ARCConsumeObject when is_objc_bridged ->
@@ -435,18 +426,18 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
         match trans_state.obj_bridged_cast_typ with
         | Some typ -> typ
         | None -> cast_typ in
-      let id, instr, exp = create_cast_instrs trans_state.context exp typ objc_cast_typ sil_loc in
-      [id], [instr], (exp, cast_typ)
+      let instr, exp = create_cast_instrs trans_state.context exp typ objc_cast_typ sil_loc in
+      [instr], (exp, cast_typ)
   | `LValueToRValue ->
       (* Takes an LValue and allow it to use it as RValue. *)
       (* So we assign the LValue to a temp and we pass it to the parent.*)
-      let ids, instrs, deref_exp = dereference_var_sil (exp, typ) sil_loc in
-      ids, instrs, (deref_exp, cast_typ)
+      let instrs, deref_exp = dereference_var_sil (exp, typ) sil_loc in
+      instrs, (deref_exp, cast_typ)
   | _ ->
       Printing.log_err
         "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
         (Clang_ast_j.string_of_cast_kind cast_kind);
-      ([],[], (exp, cast_typ))
+      ([], (exp, cast_typ))
 
 let trans_assertion_failure sil_loc context =
   let assert_fail_builtin = Sil.Const (Sil.Cfun ModelBuiltins.__infer_fail) in
@@ -454,13 +445,13 @@ let trans_assertion_failure sil_loc context =
   let call_instr = Sil.Call ([], assert_fail_builtin, args, sil_loc, Sil.cf_default) in
   let exit_node = Cfg.Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
-    Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [] [call_instr] sil_loc context in
+    Nodes.create_node (Cfg.Node.Stmt_node "Assertion failure") [call_instr] sil_loc context in
   Cfg.Node.set_succs_exn context.CContext.cfg failure_node [exit_node] [];
   { empty_res_trans with root_nodes = [failure_node]; }
 
 let trans_assume_false sil_loc context succ_nodes =
   let instrs_cond = [Sil.Prune (Sil.exp_zero, sil_loc, true, Sil.Ik_land_lor)] in
-  let prune_node = Nodes.create_node (Nodes.prune_kind true) [] instrs_cond sil_loc context in
+  let prune_node = Nodes.create_node (Nodes.prune_kind true) instrs_cond sil_loc context in
   Cfg.Node.set_succs_exn context.CContext.cfg prune_node succ_nodes [];
   { empty_res_trans with root_nodes = [prune_node]; leaf_nodes = [prune_node] }
 
@@ -549,16 +540,15 @@ struct
 
   let add_self_parameter_for_super_instance context procname loc mei =
     if is_superinstance mei then
-      let typ, self_expr, id, ins =
+      let typ, self_expr, ins =
         let t' = CTypes.add_pointer_to_typ
             (CTypes_decl.get_type_curr_class_objc
                context.CContext.tenv context.CContext.curr_class) in
         let e = Sil.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
-        t', Sil.Var id, [id], [Sil.Letderef (id, e, t', loc)] in
+        t', Sil.Var id, [Sil.Letderef (id, e, t', loc)] in
       { empty_res_trans with
         exps = [(self_expr, typ)];
-        ids = id;
         instrs = ins }
     else empty_res_trans
 

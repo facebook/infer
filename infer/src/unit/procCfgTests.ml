@@ -25,7 +25,7 @@ let tests =
   let instrs3 = [] in
   let instrs4 = [] in
   let create_node cfg instrs =
-    Cfg.Node.create cfg Location.dummy (Cfg.Node.Stmt_node "") instrs test_pdesc [] in
+    Cfg.Node.create cfg Location.dummy (Cfg.Node.Stmt_node "") instrs test_pdesc in
   let n1 = create_node cfg instrs1 in
   let n2 = create_node cfg instrs2 in
   let n3 = create_node cfg instrs3 in

@@ -158,8 +158,7 @@ module Make
       Cfg.Procdesc.create cfg (ProcAttributes.default dummy_procname !Config.curr_language) in
 
     let create_node kind cmds =
-      let no_tmp_idents = [] in
-      Cfg.Node.create cfg dummy_loc kind cmds pdesc no_tmp_idents in
+      Cfg.Node.create cfg dummy_loc kind cmds pdesc in
     let set_succs cur_node succs ~exn_handlers=
       Cfg.Node.set_succs_exn cfg cur_node succs exn_handlers in
     let mk_prune_nodes_for_cond cond_exp if_kind =
