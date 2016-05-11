@@ -919,7 +919,7 @@ let post_parsing_initialization () =
 
 let parse_args_and_return_usage_exit =
   let usage_exit = CLOpt.parse "INFER_ARGS" exe_usage in
-  if !debug || !developer_mode then
+  if !debug || (!developer_mode && not (CLOpt.current_exe = CLOpt.P)) then
     prerr_endline
       ((Filename.basename Sys.executable_name) ^ " got args "
        ^ (try Unix.getenv "INFER_ARGS" with Not_found -> "")) ;
