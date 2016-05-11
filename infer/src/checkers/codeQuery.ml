@@ -15,7 +15,6 @@ module L = Logging
 module F = Format
 
 let verbose = false
-let query = ref None
 
 let parse_query s =
   let buf = Lexing.from_string s in
@@ -34,7 +33,7 @@ let parse_query s =
       assert false
 
 let query_ast =
-  lazy (match !query with None -> parse_query "x(y)" | Some s -> parse_query s)
+  lazy (match Config.code_query with None -> parse_query "x(y)" | Some s -> parse_query s)
 
 module Err = struct
   (** Update the summary with stats from the checker. *)

@@ -46,7 +46,7 @@ let get_field_annotation fn typ =
       let ia' =
         (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
         (* outside of Eradicate in some other way *)
-        if (Models.Inference.enabled || not !Config.eradicate)
+        if (Models.Inference.enabled || not Config.eradicate)
         && Models.Inference.field_is_marked fn
         then Annotations.mk_ia Annotations.Nullable ia
         else ia in

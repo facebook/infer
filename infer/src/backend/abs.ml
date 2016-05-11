@@ -211,7 +211,7 @@ let mk_rule_lsls_ls k1 k2 impl_ok1 impl_ok2 para =
     r_condition = condition }
 
 let mk_rules_for_sll (para : Sil.hpara) : rule list =
-  if not !Config.nelseg then
+  if not Config.nelseg then
     begin
       let pts_pts = mk_rule_ptspts_ls true true para in
       let pts_pels = mk_rule_ptsls_ls Sil.Lseg_PE true false para in
@@ -384,7 +384,7 @@ let mk_rule_dlldll_dll k1 k2 impl_ok1 impl_ok2 para =
     r_condition = condition }
 
 let mk_rules_for_dll (para : Sil.hpara_dll) : rule list =
-  if not !Config.nelseg then
+  if not Config.nelseg then
     begin
       let pts_pts = mk_rule_ptspts_dll true true para in
       let pts_pedll = mk_rule_ptsdll_dll Sil.Lseg_PE true false para in
@@ -1026,7 +1026,7 @@ let check_observer_is_unsubscribed_deallocation prop e =
   match Prop.get_observer_attribute prop e with
   | Some Sil.Aobserver ->
       (match pvar_opt with
-       |  Some pvar when !Config.nsnotification_center_checker_backend ->
+       |  Some pvar when Config.nsnotification_center_checker_backend ->
            L.d_strln (" ERROR: Object " ^ (Pvar.to_string pvar) ^
                       " is being deallocated while still registered in a notification center");
            let desc = Localise.desc_registered_observer_being_deallocated pvar loc in
@@ -1109,8 +1109,8 @@ let check_junk ?original_prop pname tenv prop =
                 match resource with
                 | Sil.Rmemory Sil.Mobjc -> should_raise_objc_leak hpred
                 | Sil.Rmemory Sil.Mnew | Sil.Rmemory Sil.Mnew_array
-                  when !Config.curr_language = Config.C_CPP ->
-                    Mleak_buckets.should_raise_cpp_leak ()
+                  when !Config.curr_language = Config.Clang ->
+                    Mleak_buckets.should_raise_cpp_leak
                 | _ -> None in
               let exn_retain_cycle cycle =
                 let cycle_dotty = get_retain_cycle_dotty original_prop cycle in
@@ -1137,7 +1137,7 @@ let check_junk ?original_prop pname tenv prop =
                      ignore_cycle, exn_retain_cycle cycle
                  | Some _, Sil.Rmemory Sil.Mobjc
                  | Some _, Sil.Rmemory Sil.Mnew
-                 | Some _, Sil.Rmemory Sil.Mnew_array when !Config.curr_language = Config.C_CPP ->
+                 | Some _, Sil.Rmemory Sil.Mnew_array when !Config.curr_language = Config.Clang ->
                      ml_bucket_opt = None, exn_leak
                  | Some _, Sil.Rmemory _ -> !Config.curr_language = Config.Java, exn_leak
                  | Some _, Sil.Rignore -> true, exn_leak
@@ -1160,7 +1160,7 @@ let check_junk ?original_prop pname tenv prop =
                 (* None attribute only reported if it's the first one *)
                 IList.mem attr_opt_equal alloc_attribute !leaks_reported in
               let ignore_leak =
-                !Config.allowleak || ignore_resource || is_undefined || already_reported () in
+                !Config.allow_leak || ignore_resource || is_undefined || already_reported () in
               let report_and_continue =
                 !Config.curr_language = Config.Java || !Config.footprint in
               let report_leak () =

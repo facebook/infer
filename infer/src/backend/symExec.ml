@@ -387,7 +387,7 @@ let call_should_be_skipped callee_pname summary =
   (* skip abstract methods *)
   || summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
-  || (!Config.angelic_execution && Specs.get_specs_from_payload summary == [])
+  || (Config.angelic_execution && Specs.get_specs_from_payload summary == [])
 
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
@@ -828,7 +828,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
     let add_tainted_post ret_exp callee_pname prop =
       Prop.add_or_replace_exp_attribute prop ret_exp (Sil.Ataint callee_pname) in
 
-    if !Config.angelic_execution && not (is_rec_call callee_pname) then
+    if Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
       let abducted_ret_pv = Pvar.mk_abducted_ret callee_pname callee_loc in
       (* prevent introducing multiple abducted retvals for a single call site in a loop *)
@@ -842,7 +842,7 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
             (* bind return id to the abducted value pointed to by the pvar we introduced *)
             bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
         let prop'' = add_ret_non_null ret_exp typ prop' in
-        if !Config.taint_analysis && Taint.returns_tainted callee_pname None then
+        if Config.taint_analysis && Taint.returns_tainted callee_pname None then
           add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind = Unknown } prop''
         else prop''
     else add_ret_non_null ret_exp typ prop
@@ -886,7 +886,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
               Prop.add_or_replace_exp_attribute prop' (Sil.Var id) (Sil.Adangling Sil.DAuninit)
             else prop' in
           let prop''' =
-            if !Config.taint_analysis
+            if Config.taint_analysis
             then add_taint prop'' id rhs_exp pname tenv
             else prop'' in
           prop''' :: acc in
@@ -917,7 +917,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
             else callee_opt in
           IList.fold_left fold_undef_pname None (Prop.get_exp_attributes prop exp) in
         let prop' =
-          if !Config.angelic_execution then
+          if Config.angelic_execution then
             (* when we try to deref an undefined value, add it to the footprint *)
             match exp_get_undef_attr n_rhs_exp' with
             | Some (Sil.Aundef (callee_pname, ret_annots, callee_loc, _)) ->
@@ -930,7 +930,7 @@ let execute_letderef ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ
           Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop' loc in
         IList.rev (IList.fold_left (execute_letderef_ pdesc tenv id loc) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
-    if (!Config.array_level = 0) then assert false
+    if (Config.array_level = 0) then assert false
     else
       let undef = Sil.exp_get_undefined false in
       [Prop.conjoin_eq (Sil.Var id) undef prop_]
@@ -969,7 +969,7 @@ let execute_set ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
     IList.rev (IList.fold_left (execute_set_ pdesc tenv n_rhs_exp) [] iter_list)
   with Rearrange.ARRAY_ACCESS ->
-    if (!Config.array_level = 0) then assert false
+    if (Config.array_level = 0) then assert false
     else [prop_]
 
 (** Execute [instr] with a symbolic heap [prop].*)
@@ -1034,7 +1034,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         (* in comparisons, nil is translated as (void * ) 0 rather than 0 *)
         let is_comparison_to_nil = function
           | Sil.Cast ((Sil.Tptr (Sil.Tvoid, _)), exp) ->
-              !Config.curr_language = Config.C_CPP && Sil.exp_is_zero exp
+              !Config.curr_language = Config.Clang && Sil.exp_is_zero exp
           | _ -> false in
         match Prop.exp_normalize_prop Prop.prop_emp cond with
         | Sil.Const (Sil.Cint i) when report_condition_always_true_false i ->
@@ -1065,7 +1065,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               let exn = Exceptions.Bad_pointer_comparison (desc, __POS__) in
               Reporting.log_warning current_pname exn
         | _ -> () in
-      if not !Config.report_runtime_exceptions then
+      if not Config.report_runtime_exceptions then
         check_already_dereferenced current_pname cond prop__;
       check_condition_always_true_false ();
       let n_cond, prop = check_arith_norm_exp current_pname cond prop__ in
@@ -1145,7 +1145,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
 
       let ret_typ_opt = Option.map Cfg.Procdesc.get_ret_type callee_pdesc_opt in
       let sentinel_result =
-        if !Config.curr_language = Config.C_CPP then
+        if !Config.curr_language = Config.Clang then
           check_variadic_sentinel_if_present
             (call_args prop_r callee_pname actual_params ret_ids loc)
         else [(prop_r, path)] in
@@ -1244,7 +1244,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           IList.map
             (Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_initial)
             (IList.map add_None ptl) in
-        run_in_re_execution_mode (* no footprint vars for locals *)
+        Config.run_in_re_execution_mode (* no footprint vars for locals *)
           sigma_locals () in
       let sigma' = Prop.get_sigma prop_ @ sigma_locals in
       let prop' = Prop.normalize (Prop.replace_sigma sigma' prop_) in
@@ -1283,7 +1283,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
           | hpred -> hpred)
         (Prop.get_sigma prop) in
     Prop.normalize (Prop.replace_sigma sigma' prop) in
-  if !Config.angelic_execution then
+  if Config.angelic_execution then
     let add_actual_by_ref_to_footprint prop (actual, actual_typ) =
       match actual with
       | Sil.Lvar actual_pv ->
@@ -1391,7 +1391,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       IList.fold_left do_attribute p (Prop.get_exp_attributes p e) in
     IList.fold_left do_exp prop actual_pars in
   let add_tainted_pre prop actuals caller_pname callee_pname =
-    if !Config.taint_analysis then
+    if Config.taint_analysis then
       match Taint.accepts_sensitive_params callee_pname None with
       | [] -> prop
       | param_nums ->
@@ -1587,7 +1587,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_ids; args= act
     (* In case we call an objc instance method we add and extra spec *)
     (* were the receiver is null and the semantics of the call is nop*)
     let callee_attrs = Specs.get_attributes summary in
-    if (!Config.curr_language <> Config.Java) && !Config.objc_method_call_semantics &&
+    if (!Config.curr_language <> Config.Java) && Config.objc_method_call_semantics &&
        (Specs.get_attributes summary).ProcAttributes.is_objc_instance_method then
       handle_objc_method_call actual_pars actual_params pre tenv ret_ids pdesc callee_pname loc
         path (Tabulation.exe_function_call callee_attrs)
@@ -1646,7 +1646,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
     L.d_str "Instruction "; Sil.d_instr instr; L.d_ln ();
     let prop', fav_normal = pre_process_prop prop in
     let res_list =
-      run_with_abs_val_equal_zero (* no exp abstraction during sym exe *)
+      Config.run_with_abs_val_equal_zero (* no exp abstraction during sym exe *)
         (fun () -> sym_exec tenv pdesc instr prop' path)
         () in
     let res_list_nojunk =
@@ -1663,7 +1663,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
     Paths.PathSet.from_renamed_list results
   with exn when Exceptions.handle_exception exn && !Config.footprint ->
     handle_exn exn; (* calls State.mark_instr_fail *)
-    if !Config.nonstop
+    if Config.nonstop
     then
       (* in nonstop mode treat the instruction as skip *)
       (Paths.PathSet.from_renamed_list [(prop, path)])

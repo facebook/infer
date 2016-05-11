@@ -13,36 +13,6 @@ open! Utils
 
 val global_translation_unit_decls : Clang_ast_t.decl list ref
 
-(** arguments of InferClang *)
-
-val debug_mode : bool ref
-
-val stats_mode : bool ref
-
-val models_mode : bool ref
-
-val source_file : string option ref
-
-type lang =
-  | C
-  | CPP
-  | OBJC
-  | OBJCPP
-
-val lang_from_string : string -> unit
-
-val lang_to_string : lang -> string
-
-val language : lang ref
-
-val ast_file : string option ref
-
-val no_translate_libs : bool ref
-
-val testing_mode : bool ref
-
-val cxx_experimental : bool ref
-
 (** constants *)
 
 val json : string ref

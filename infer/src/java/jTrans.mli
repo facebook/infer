@@ -13,9 +13,6 @@ open! Utils
 open Javalib_pack
 open Sawja_pack
 
-(** If active, disable special treatment of static final fields. *)
-val no_static_final : bool ref
-
 (** Data structure for storing the results of the translation of an instruction.   *)
 type translation =
   | Skip

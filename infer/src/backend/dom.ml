@@ -254,7 +254,7 @@ module CheckJoinPre : InfoLossCheckerSig = struct
     | Sil.Lvar _ -> false
     | Sil.Var id when Ident.is_normal id -> IList.length es >= 1
     | Sil.Var _ ->
-        if !Config.join_cond = 0 then
+        if Config.join_cond = 0 then
           IList.exists (Sil.exp_equal Sil.exp_zero) es
         else if Dangling.check side e then
           begin
@@ -689,7 +689,7 @@ end = struct
 
   let get_other_atoms side atom_in =
     let build_other_atoms construct side e =
-      if !Config.trace_join then (L.d_str "build_other_atoms: "; Sil.d_exp e; L.d_ln ());
+      if Config.trace_join then (L.d_str "build_other_atoms: "; Sil.d_exp e; L.d_ln ());
       let others1 = get_others_direct_or_induced side e in
       let others2 = match others1 with None -> get_others_deep side e | Some _ -> others1 in
       match others2 with
@@ -697,7 +697,7 @@ end = struct
       | Some (e_res, e_op) ->
           let a_res = construct e_res in
           let a_op = construct e_op in
-          if !Config.trace_join then begin
+          if Config.trace_join then begin
             L.d_str "build_other_atoms (successful) ";
             Sil.d_atom a_res; L.d_str ", "; Sil.d_atom a_op; L.d_ln ()
           end;
@@ -1392,7 +1392,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
   try
     let todo_curr = Todo.pop () in
     let e1, e2, e = todo_curr in
-    if !Config.trace_join then begin
+    if Config.trace_join then begin
       L.d_strln ".... sigma_partial_join' ....";
       L.d_str "TODO: "; Sil.d_exp e1; L.d_str ","; Sil.d_exp e2; L.d_str ","; Sil.d_exp e; L.d_ln ();
       L.d_strln "SIGMA1 ="; Prop.d_sigma sigma1_in; L.d_ln ();
@@ -1407,7 +1407,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
 
     | Some (Sil.Hlseg (k, _, _, _, _) as lseg), None
     | Some (Sil.Hdllseg (k, _, _, _, _, _, _) as lseg), None ->
-        if (not !Config.nelseg) || (Sil.lseg_kind_equal k Sil.Lseg_PE) then
+        if (not Config.nelseg) || (Sil.lseg_kind_equal k Sil.Lseg_PE) then
           let sigma_acc' = join_list_and_non Lhs e lseg e1 e2 :: sigma_acc in
           sigma_partial_join' mode sigma_acc' sigma1 sigma2
         else
@@ -1415,7 +1415,7 @@ let rec sigma_partial_join' mode (sigma_acc: Prop.sigma)
 
     | None, Some (Sil.Hlseg (k, _, _, _, _) as lseg)
     | None, Some (Sil.Hdllseg (k, _, _, _, _, _, _) as lseg) ->
-        if (not !Config.nelseg) || (Sil.lseg_kind_equal k Sil.Lseg_PE) then
+        if (not Config.nelseg) || (Sil.lseg_kind_equal k Sil.Lseg_PE) then
           let sigma_acc' = join_list_and_non Rhs e lseg e2 e1 :: sigma_acc in
           sigma_partial_join' mode sigma_acc' sigma1 sigma2
         else
@@ -1643,21 +1643,23 @@ let pi_partial_join mode
     | Sil.Aneq _ -> false
     | e -> Prop.atom_is_inequality e in
   begin
-    if !Config.trace_join then begin
+    if Config.trace_join then begin
       L.d_str "pi1: "; Prop.d_pi pi1; L.d_ln ();
       L.d_str "pi2: "; Prop.d_pi pi2; L.d_ln ()
     end;
     let atom_list1 =
       let p2 = Prop.normalize ep2 in
       IList.fold_left (handle_atom_with_widening Lhs p2 pi2) [] pi1 in
-    if !Config.trace_join then (L.d_str "atom_list1: "; Prop.d_pi atom_list1; L.d_ln ());
+    if Config.trace_join then (L.d_str "atom_list1: "; Prop.d_pi atom_list1; L.d_ln ());
     let atom_list_combined =
       let p1 = Prop.normalize ep1 in
       IList.fold_left (handle_atom_with_widening Rhs p1 pi1) atom_list1 pi2 in
-    if !Config.trace_join then (L.d_str "atom_list_combined: "; Prop.d_pi atom_list_combined; L.d_ln ());
+    if Config.trace_join then
+      (L.d_str "atom_list_combined: "; Prop.d_pi atom_list_combined; L.d_ln ());
     let atom_list_filtered =
       IList.filter filter_atom atom_list_combined in
-    if !Config.trace_join then (L.d_str "atom_list_filtered: "; Prop.d_pi atom_list_filtered; L.d_ln ());
+    if Config.trace_join then
+      (L.d_str "atom_list_filtered: "; Prop.d_pi atom_list_filtered; L.d_ln ());
     let atom_list_res =
       IList.rev atom_list_filtered in
     atom_list_res
@@ -2001,7 +2003,7 @@ let proplist_meet_generate plist =
 
 let propset_meet_generate_pre pset =
   let plist = Propset.to_proplist pset in
-  if !Config.meet_level = 0 then plist
+  if Config.meet_level = 0 then plist
   else
     let pset1 = proplist_meet_generate plist in
     let pset_new = Propset.diff pset1 pset in

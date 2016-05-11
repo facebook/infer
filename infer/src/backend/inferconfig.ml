@@ -338,9 +338,9 @@ let disabled_checks_by_default = [
 ]
 
 let inferconfig () =
-  match !Config.inferconfig_home with
-  | Some dir -> Filename.concat dir Config.inferconfig_file
-  | None -> Config.inferconfig_file
+  match Config.inferconfig_home, Config.project_root with
+  | Some dir, _ | _, Some dir -> Filename.concat dir Config.inferconfig_file
+  | None, None -> Config.inferconfig_file
 
 let load_filters analyzer =
   let inferconfig_file = inferconfig () in
@@ -386,7 +386,6 @@ let filters_from_inferconfig inferconfig : filters =
 (* Create filters based on .inferconfig *)
 (* The environment varialble NO_PATH_FILTERING disables path filtering. *)
 let create_filters analyzer =
-  Config.project_root := Some (Sys.getcwd ());
   if Config.from_env_variable "NO_PATH_FILTERING" then do_not_filter
   else
     match load_filters (Utils.string_of_analyzer analyzer) with
@@ -420,7 +419,6 @@ let is_checker_enabled checker_name =
 (* are of the form: path/to/file.java -> {infer, eradicate} meaning that analysis results will *)
 (* be reported on path/to/file.java both for infer and for eradicate *)
 let test () =
-  Config.project_root := Some (Sys.getcwd ());
   let filters =
     IList.map (fun analyzer -> (analyzer, create_filters analyzer)) analyzers in
   let matching_analyzers path =

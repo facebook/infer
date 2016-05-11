@@ -24,7 +24,7 @@ let source_file_from_path path =
        "ERROR: Path %s is relative. Please pass an absolute path in the -c argument.@."
        path;
      exit 1);
-  match !Config.project_root with
+  match Config.project_root with
   | Some root ->
       (try
          DB.rel_source_file_from_abs_path root path
@@ -77,7 +77,7 @@ let clang_to_sil_location clang_loc procdesc_opt =
   Location.{line; col; file; nLOC}
 
 let file_in_project file =
-  match !Config.project_root with
+  match Config.project_root with
   | Some root ->
       let file_in_project = string_is_prefix root file in
       let paths = Lazy.force Inferconfig.skip_translation_headers in
@@ -96,7 +96,7 @@ let should_do_frontend_check (loc_start, _) =
   let equal_current_source file =
     DB.source_file_equal (source_file_from_path file) !DB.current_source in
   equal_current_source file ||
-  (file_in_project file &&  not !CFrontend_config.testing_mode)
+  (file_in_project file &&  not Config.testing_mode)
 
 (* We translate by default the instructions in the current file.*)
 (* In C++ development, we also translate the headers that are part *)
@@ -126,11 +126,11 @@ let should_translate (loc_start, loc_end) decl_trans_context =
   || map_file_of equal_current_source loc_end
   || map_file_of equal_current_source loc_start
   || file_in_models
-  || (!CFrontend_config.cxx_experimental && decl_trans_context = `Translation && file_in_project
-      && not (!CFrontend_config.testing_mode))
+  || (Config.cxx_experimental && decl_trans_context = `Translation && file_in_project
+      && not Config.testing_mode)
 
 let should_translate_lib source_range decl_trans_context =
-  not !CFrontend_config.no_translate_libs
+  not Config.no_translate_libs
   || should_translate source_range decl_trans_context
 
 let get_sil_location_from_range source_range prefer_first =

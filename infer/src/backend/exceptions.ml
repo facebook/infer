@@ -88,7 +88,7 @@ exception Wrong_argument_number of L.ml_loc
 (** Turn an exception into a descriptive string, error description, location in ml source, and category *)
 let recognize_exception exn =
   let filter_out_bucket desc =
-    !Config.filter_buckets &&
+    Config.filter_buckets &&
     match Localise.error_desc_get_bucket desc with
     | None -> false
     | Some bucket -> bucket <> Localise.BucketLevel.b1 in
@@ -101,7 +101,7 @@ let recognize_exception exn =
         (Localise.context_leak,
          desc, None, Exn_user, High, None, Nocat)
     | Analysis_stops (desc, ml_loc_opt) ->
-        let visibility = if !Config.analysis_stops then Exn_user else Exn_developer in
+        let visibility = if Config.analysis_stops then Exn_user else Exn_developer in
         (Localise.analysis_stops, desc, ml_loc_opt, visibility, Medium, None, Nocat)
     | Array_of_pointsto ml_loc ->
         (Localise.from_string "Array_of_pointsto",

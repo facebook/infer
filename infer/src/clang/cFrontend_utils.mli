@@ -197,7 +197,7 @@ sig
   val mk_procname_from_objc_method : string -> string -> Procname.objc_method_kind -> Procname.t
 
   val mk_procname_from_function : string -> (Clang_ast_t.decl_info * Clang_ast_t.function_decl_info)
-      option -> Clang_ast_t.type_ptr -> CFrontend_config.lang -> Procname.t
+      option -> Clang_ast_t.type_ptr -> Config.clang_lang -> Procname.t
 
   val mk_procname_from_cpp_method : string -> string -> Clang_ast_t.type_ptr -> Procname.t
 
@@ -208,6 +208,6 @@ sig
   val mk_sil_var : Clang_ast_t.named_decl_info -> var_info option -> Procname.t -> Procname.t ->
     Pvar.t
 
-  val is_cpp_translation : CFrontend_config.lang -> bool
+  val is_cpp_translation : Config.clang_lang -> bool
 
 end

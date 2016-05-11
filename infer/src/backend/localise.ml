@@ -680,7 +680,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     [("is not " ^ rxxx ^ " after " ^ _line tags loc)] in
   let bucket_str =
     match bucket_opt with
-    | Some bucket when !Config.show_ml_buckets -> bucket
+    | Some bucket when Config.show_buckets -> bucket
     | _ -> "" in
   { no_desc with descriptions = bucket_str :: xxx_allocated_to @ by_call_to @ is_not_rxxx_after;
                  tags = !tags }

@@ -18,11 +18,11 @@ module F = Format
 module Printing =
 struct
   let log_out fmt =
-    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
+    let pp = if Config.debug_mode then Format.fprintf else Format.ifprintf in
     pp Format.std_formatter fmt
 
   let log_err fmt =
-    let pp = if !CFrontend_config.debug_mode then Format.fprintf else Format.ifprintf in
+    let pp = if Config.debug_mode then Format.fprintf else Format.ifprintf in
     pp Format.err_formatter fmt
 
 
@@ -36,7 +36,7 @@ struct
 
   let log_stats fmt =
     let pp =
-      if !CFrontend_config.stats_mode || !CFrontend_config.debug_mode
+      if Config.stats_mode || Config.debug_mode
       then Format.fprintf else Format.ifprintf in
     pp Format.std_formatter fmt
 
@@ -405,13 +405,13 @@ struct
     | _ -> false
 
   let is_objc () =
-    match !CFrontend_config.language with
-    | CFrontend_config.OBJC -> true
+    match Config.clang_lang with
+    | Config.OBJC -> true
     | _ -> false
 
   let is_objcpp () =
-    match !CFrontend_config.language with
-    | CFrontend_config.OBJCPP -> true
+    match Config.clang_lang with
+    | Config.OBJCPP -> true
     | _ -> false
 
 (*
@@ -569,7 +569,7 @@ struct
   let get_rel_file_path file_opt =
     match file_opt with
     | Some file ->
-        (match !Config.project_root with
+        (match Config.project_root with
          | Some root ->
              DB.source_file_to_rel_path (DB.rel_source_file_from_abs_path root file)
          | None -> file)
@@ -587,8 +587,8 @@ struct
       | None -> "" in
     let type_string =
       match language with
-      | CFrontend_config.CPP
-      | CFrontend_config.OBJCPP -> Ast_utils.string_of_type_ptr tp
+      | Config.CPP
+      | Config.OBJCPP -> Ast_utils.string_of_type_ptr tp
       | _ -> "" in
     (* remove __restrict from type name to avoid mismatches. Clang allows to declare function*)
     (* with __restrict parameters and then define it without (it mostly applies to models).*)
@@ -644,10 +644,6 @@ struct
     | None -> Pvar.mk (Mangled.from_string name_string) procname
 
   let is_cpp_translation language =
-    language = CFrontend_config.CPP || language = CFrontend_config.OBJCPP
+    language = Config.CPP || language = Config.OBJCPP
 
 end
-
-
-
-

@@ -709,7 +709,7 @@ let get_smt_key a p =
 let check_atom prop a0 =
   let a = Prop.atom_normalize_prop prop a0 in
   let prop_no_fp = Prop.replace_sigma_footprint [] (Prop.replace_pi_footprint [] prop) in
-  if !Config.smt_output then begin
+  if Config.smt_output then begin
     let key = get_smt_key a prop_no_fp in
     let key_filename =
       DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir [(key ^ ".cns")] in
@@ -823,11 +823,11 @@ let check_inconsistency_base prop =
     let is_java_this pvar =
       !Config.curr_language = Config.Java && Pvar.is_this pvar in
     let is_objc_instance_self pvar =
-      !Config.curr_language = Config.C_CPP &&
+      !Config.curr_language = Config.Clang &&
       Pvar.get_name pvar = Mangled.from_string "self" &&
       procedure_attr.ProcAttributes.is_objc_instance_method in
     let is_cpp_this pvar =
-      !Config.curr_language = Config.C_CPP && Pvar.is_this pvar &&
+      !Config.curr_language = Config.Clang && Pvar.is_this pvar &&
       procedure_attr.ProcAttributes.is_cpp_instance_method in
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
@@ -1255,7 +1255,7 @@ let rec sexp_imply source calc_index_frame calc_missing subs se1 se2 typ2 : subs
         else None in
       let index_missing_opt =
         if index_missing != [] &&
-           (!Config.Experiment.allow_missing_index_in_proc_call || !Config.footprint)
+           (Config.allow_missing_index_in_proc_call || !Config.footprint)
         then Some (Sil.Earray (size1, index_missing, inst1))
         else None in
       subs'', index_frame_opt, index_missing_opt
@@ -1600,7 +1600,7 @@ end
 let cast_exception tenv texp1 texp2 e1 subs =
   let _ = match texp1, texp2 with
     | Sil.Sizeof (t1, _), Sil.Sizeof (t2, st2) ->
-        if !Config.developer_mode ||
+        if Config.developer_mode ||
            (Sil.Subtype.is_cast st2 &&
             not (Subtyping_check.check_subtype tenv t1 t2)) then
           ProverState.checks := Class_cast_check (texp1, texp2, e1) :: !ProverState.checks
@@ -1679,7 +1679,7 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
 (** pre-process implication between a non-array and an array: the non-array is turned into an array of size given by its type
     only active in type_size mode *)
 let sexp_imply_preprocess se1 texp1 se2 = match se1, texp1, se2 with
-  | Sil.Eexp (_, inst), Sil.Sizeof _, Sil.Earray _ when !Config.type_size ->
+  | Sil.Eexp (_, inst), Sil.Sizeof _, Sil.Earray _ when Config.type_size ->
       let se1' = Sil.Earray (texp1, [(Sil.exp_zero, se1)], inst) in
       L.d_strln_color Orange "sexp_imply_preprocess"; L.d_str " se1: "; Sil.d_sexp se1; L.d_ln (); L.d_str " se1': "; Sil.d_sexp se1'; L.d_ln ();
       se1'
@@ -1934,7 +1934,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let sexp =
       let index = Sil.exp_int (Sil.Int.of_int (String.length s)) in
       match !Config.curr_language with
-      | Config.C_CPP ->
+      | Config.Clang ->
           Sil.Earray (size, [(index, Sil.Eexp (Sil.exp_zero, Sil.inst_none))], Sil.inst_none)
       | Config.Java ->
           let mk_fld_sexp s =
@@ -1945,7 +1945,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
           Sil.Estruct (IList.map mk_fld_sexp fields, Sil.inst_none) in
     let const_string_texp =
       match !Config.curr_language with
-      | Config.C_CPP -> Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size), Sil.Subtype.exact)
+      | Config.Clang -> Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size), Sil.Subtype.exact)
       | Config.Java ->
           let object_type =
             Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string "java.lang.String") in
@@ -2088,7 +2088,8 @@ let check_array_bounds (sub1, sub2) prop =
   let check_failed atom =
     ProverState.checks := Bounds_check :: !ProverState.checks;
     L.d_str_color Red "bounds_check failed: provable atom: "; Sil.d_atom atom; L.d_ln();
-    if (not !Config.Experiment.bound_error_allowed_in_procedure_call) then raise (IMPL_EXC ("bounds check", (sub1, sub2), EXC_FALSE)) in
+    if (not Config.bound_error_allowed_in_procedure_call) then
+      raise (IMPL_EXC ("bounds check", (sub1, sub2), EXC_FALSE)) in
   let fail_if_le e' e'' =
     let lt_ineq = Prop.mk_inequality (Sil.BinOp(Sil.Le, e', e'')) in
     if check_atom prop lt_ineq then check_failed lt_ineq in

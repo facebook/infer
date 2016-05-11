@@ -17,7 +17,7 @@ let is_suppress_warnings_annotated =
   let matcher =
     lazy
       (let default_matcher = fun _ -> false in
-       match !Config.suppress_warnings_annotations with
+       match Config.suppress_warnings_annotations with
        | Some f ->
            (try
               let m = Inferconfig.SuppressWarningsMatcher.load_matcher f in

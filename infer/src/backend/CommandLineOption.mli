@@ -1,0 +1,96 @@
+(*
+ * Copyright (c) 2016 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
+
+(** Definition and parsing of command line arguments *)
+
+open! Utils
+
+type exe = A | C | J | L | P | T
+
+val current_exe : exe
+
+(** The [mk_*] functions declare command line options, while [parse] parses then according to the
+    declared options.
+
+    The arguments of the declaration functions are largely treated uniformly:
+    - [long] declares the option [--long]
+    - [short] declares the option [-short] as an alias
+    - [deprecated] declares the option [-key] as an alias, for each [key] in [deprecated]
+    - [default] specifies the default value
+    - [default_to_string] is used to document the default value
+    - [f] specifies a transformation to be performed on the parsed value before setting the config
+      variable
+    - [symbols] is an association list sometimes used in place of [f]
+    - [exes] declares that the option should be included in the external documentation (--help) for
+      each [exe] in [exes], otherwise it appears only in --help-full
+    - [meta] is a meta-variable naming the parsed value for documentation purposes
+    - a documentation string
+*)
+type 'a t =
+  ?deprecated:string list -> long:string -> ?short:string ->
+  ?exes:exe list -> ?meta:string -> string ->
+  'a
+
+(** [mk_set variable value] defines a command line option which sets [variable] to [value]. *)
+val mk_set : 'a ref -> 'a -> unit t
+
+val mk_option :
+  ?default:'a option -> ?default_to_string:('a option -> string) -> f:(string -> 'a option) ->
+  'a option ref t
+
+(** [mk_bool long short doc] defines a [bool ref] set by the command line flag [--long] (and
+    [-short]), and cleared by the flag [--no-long] (and [-nshort]).  If [long] already has a "no-",
+    or [short] nas an "n", prefix, then the existing prefixes will instead be removed. The default
+    value is [false] unless overridden by [~default:true].  The [doc] string will be prefixed with
+    either "Activates:" or "Deactivates:", so should be phrased accordingly. *)
+val mk_bool : ?deprecated_no:string list ->  ?default:bool -> ?f:(bool -> bool) -> bool ref t
+
+(** [mk_bool_group children] behaves as [mk_bool] with the addition that all the [children] are also
+    set. A child can be unset by including "--no-child" later in the arguments. *)
+val mk_bool_group : ?deprecated_no:string list -> ?default:bool -> (bool ref list -> bool ref) t
+
+val mk_int : default:int -> int ref t
+
+val mk_float : default:float -> float ref t
+
+val mk_string : default:string -> ?f:(string -> string) -> string ref t
+
+val mk_string_opt : ?default:string -> ?f:(string -> string) -> string option ref t
+
+(** [mk_string_list] defines a [string list ref], initialized to [[]] unless overridden by
+    [~default].  Each argument of an occurrence of the option will be prepended to the list, so the
+    final value will be in the reverse order they appeared on the command line. *)
+val mk_string_list :
+  ?default:string list -> ?f:(string -> string) -> string list ref t
+
+(** [mk_symbol long symbols] defines a command line flag [--long <symbol>] where [(<symbol>,_)] is
+    an element of [symbols]. *)
+val mk_symbol : default:'a -> symbols:(string * 'a) list -> 'a ref t
+
+(** [mk_symbol_opt] is similar to [mk_symbol] but defaults to [None]. *)
+val mk_symbol_opt : symbols:(string * 'a) list -> 'a option ref t
+
+(** [mk_symbol_seq long symbols] defines a command line flag [--long <symbol sequence>] where
+    [<symbol sequence>] is a comma-separated sequence of [<symbol>]s such that [(<symbol>,_)] is an
+    element of [symbols]. *)
+val mk_symbol_seq : ?default:'a list -> symbols:(string * 'a) list -> 'a list ref t
+
+(** [mk_anon ()] defines a [string list ref] of the anonymous command line arguments, in the reverse
+    order they appeared on the command line. *)
+val mk_anon :
+  unit ->
+  string list ref
+
+(** [parse env_var exe_usage] parses command line arguments as specified by preceding calls to the
+    [mk_*] functions, and returns a function that prints the usage message and help text then exits.
+    The decoded value of environment variable [env_var] is prepended to [Sys.argv] before parsing.
+    Therefore arguments passed on the command line supercede those specified in the environment
+    variable.  WARNING: If an argument appears both in the environment variable and on the command
+    line, it will be interpreted twice. *)
+val parse : string -> (exe -> Arg.usage_msg) -> (int -> 'a)

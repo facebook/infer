@@ -21,7 +21,7 @@ let use_models = true
 module Inference = struct
   let enabled = false
 
-  let get_dir () = Filename.concat !Config.results_dir "eradicate"
+  let get_dir () = Filename.concat Config.results_dir "eradicate"
 
   let field_get_dir_fname fn =
     let fname = Ident.fieldname_to_string fn in

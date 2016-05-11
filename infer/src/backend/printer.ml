@@ -167,7 +167,7 @@ end
 (** Execute the delayed print actions *)
 let force_delayed_print fmt =
   let pe_default =
-    if !Config.write_html then pe_html Black else pe_text in
+    if Config.write_html then pe_html Black else pe_text in
   function
   | (L.PTatom, a) ->
       let (a: Sil.atom) = Obj.obj a in
@@ -191,7 +191,7 @@ let force_delayed_print fmt =
       F.fprintf fmt "%s@[" !s
   | (L.PTinstr, i) ->
       let (i: Sil.instr) = Obj.obj i in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%a%a%a"
           Io_infer.Html.pp_start_color Green
@@ -201,7 +201,7 @@ let force_delayed_print fmt =
         Sil.pp_instr pe_text fmt i
   | (L.PTinstr_list, il) ->
       let (il: Sil.instr list) = Obj.obj il in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%a%a%a"
           Io_infer.Html.pp_start_color Green
@@ -220,7 +220,7 @@ let force_delayed_print fmt =
       Location.pp fmt loc
   | (L.PTnode_instrs, b_n) ->
       let (b: bool), (io: Sil.instr option), (n: Cfg.node) = Obj.obj b_n in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%a%a%a"
           Io_infer.Html.pp_start_color Green
@@ -271,14 +271,14 @@ let force_delayed_print fmt =
   | (L.PTspec, spec) ->
       let (spec: Prop.normal Specs.spec) = Obj.obj spec in
       Specs.pp_spec
-        (if !Config.write_html then pe_html Blue else pe_text)
+        (if Config.write_html then pe_html Blue else pe_text)
         None fmt spec
   | (L.PTstr, s) ->
       let (s: string) = Obj.obj s in
       F.fprintf fmt "%s" s
   | (L.PTstr_color, s) ->
       let (s: string), (c: color) = Obj.obj s in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%a%s%a"
           Io_infer.Html.pp_start_color c
@@ -291,7 +291,7 @@ let force_delayed_print fmt =
       F.fprintf fmt "%s@\n" s
   | (L.PTstrln_color, s) ->
       let (s: string), (c: color) = Obj.obj s in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%a%s%a@\n"
           Io_infer.Html.pp_start_color c
@@ -313,7 +313,7 @@ let force_delayed_print fmt =
       (pp_seq (Sil.pp_typ pe_default)) fmt tl
   | (L.PTerror, s) ->
       let (s: string) = Obj.obj s in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%aERROR: %s%a"
           Io_infer.Html.pp_start_color Red
@@ -323,7 +323,7 @@ let force_delayed_print fmt =
         F.fprintf fmt "ERROR: %s" s
   | (L.PTwarning, s) ->
       let (s: string) = Obj.obj s in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%aWARNING: %s%a"
           Io_infer.Html.pp_start_color Orange
@@ -333,7 +333,7 @@ let force_delayed_print fmt =
         F.fprintf fmt "WARNING: %s" s
   | (L.PTinfo, s) ->
       let (s: string) = Obj.obj s in
-      if !Config.write_html
+      if Config.write_html
       then
         F.fprintf fmt "%aINFO: %s%a"
           Io_infer.Html.pp_start_color Blue
@@ -377,14 +377,14 @@ let start_session node (loc: Location.t) proc_name session =
     Io_infer.Html.pp_start_color Black
 
 let node_start_session node loc proc_name session =
-  if !Config.write_html then
+  if Config.write_html then
     start_session node loc proc_name session
 
 (** Finish a session, and perform delayed print actions if required *)
 let node_finish_session node =
-  if !Config.test == false then force_delayed_prints ()
+  if Config.test == false then force_delayed_prints ()
   else L.reset_delayed_prints ();
-  if !Config.write_html then begin
+  if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"
       Io_infer.Html.pp_end_color ();
     NodesHtml.finish_node (Cfg.Node.get_id node :> int)
@@ -393,7 +393,7 @@ let node_finish_session node =
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only *)
 let write_proc_html whole_seconds pdesc =
-  if !Config.write_html then
+  if Config.write_html then
     begin
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let nodes = IList.sort Cfg.Node.compare (Cfg.Procdesc.get_nodes pdesc) in
@@ -561,7 +561,7 @@ let write_html_file linereader filename cfg =
 
 (** Create filename.ext.html for each file in the exe_env. *)
 let write_all_html_files linereader exe_env =
-  if !Config.write_html then
+  if Config.write_html then
     Exe_env.iter_files
       (fun _ cfg ->
          let source_files_in_cfg =

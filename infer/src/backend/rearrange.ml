@@ -76,7 +76,7 @@ let check_bad_index pname p size index loc =
 
 (** Perform bounds checking *)
 let bounds_check pname prop size e =
-  if !Config.trace_rearrange then
+  if Config.trace_rearrange then
     begin
       L.d_str "Bounds check index:"; Sil.d_exp e;
       L.d_str " size: "; Sil.d_exp size;
@@ -86,7 +86,7 @@ let bounds_check pname prop size e =
 
 let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp t
     (off: Sil.offset list) inst : Sil.atom list * Sil.strexp * Sil.typ =
-  if !Config.trace_rearrange then
+  if Config.trace_rearrange then
     begin
       L.d_increase_indent 1;
       L.d_strln "entering create_struct_values";
@@ -167,7 +167,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         L.d_str "create_struct_values type:"; Sil.d_typ_full t; L.d_str " off: "; Sil.d_offset_list off; L.d_ln();
         assert false in
 
-  if !Config.trace_rearrange then
+  if Config.trace_rearrange then
     begin
       let _, se, _ = res in
       L.d_strln "exiting create_struct_values, returning";
@@ -246,7 +246,7 @@ let rec _strexp_extend_values
       let size = match se with
         | Sil.Eexp (_, Sil.Ialloc) -> Sil.exp_one (* if allocated explicitly, we know size is 1 *)
         | _ ->
-            if !Config.type_size then Sil.exp_one (* Sil.Sizeof (typ, Sil.Subtype.exact) *)
+            if Config.type_size then Sil.exp_one (* Sil.Sizeof (typ, Sil.Subtype.exact) *)
             else Sil.exp_get_undefined false in
 
       let se_new = Sil.Earray(size, [(Sil.exp_zero, se)], inst) in
@@ -379,8 +379,10 @@ let strexp_extend_values
     if footprint_part then
       off', IList.map (fun (id, e) -> Prop.mk_eq (Sil.Var id) e) eqs
     else off, [] in
-  if !Config.trace_rearrange then (L.d_str "entering strexp_extend_values se: "; Sil.d_sexp se; L.d_str " typ: ";
-                                   Sil.d_typ_full typ; L.d_str " off': "; Sil.d_offset_list off'; L.d_strln (if footprint_part then " FP" else " RE"));
+  if Config.trace_rearrange then
+    (L.d_str "entering strexp_extend_values se: "; Sil.d_sexp se; L.d_str " typ: ";
+     Sil.d_typ_full typ; L.d_str " off': "; Sil.d_offset_list off';
+     L.d_strln (if footprint_part then " FP" else " RE"));
   let atoms_se_typ_list =
     _strexp_extend_values
       pname tenv orig_prop footprint_part kind max_stamp se typ off' inst in
@@ -389,7 +391,7 @@ let strexp_extend_values
     let check_neg_atom atom = Prover.check_atom Prop.prop_emp (neg_atom atom) in
     let check_not_inconsistent (atoms, _, _) = not (IList.exists check_neg_atom atoms) in
     IList.filter check_not_inconsistent atoms_se_typ_list in
-  if !Config.trace_rearrange then L.d_strln "exiting strexp_extend_values";
+  if Config.trace_rearrange then L.d_strln "exiting strexp_extend_values";
   let st = match te with
     | Sil.Sizeof(_, st) -> st
     | _ -> Sil.Subtype.exact in
@@ -408,9 +410,9 @@ let mk_ptsto_exp_footprint
   then begin
     (* in angelic mode, purposely ignore dangling pointer warnings during the footprint phase -- we
      * will fix them during the re - execution phase *)
-    if not (!Config.angelic_execution && !Config.footprint) then
+    if not (Config.angelic_execution && !Config.footprint) then
       begin
-        if !Config.developer_mode then
+        if Config.developer_mode then
           L.err "!!!! Footprint Error, Bad Root : %a !!!! @\n" (Sil.pp_exp pe_text) lexp;
         let deref_str = Localise.deref_str_dangling None in
         let err_desc =
@@ -422,7 +424,7 @@ let mk_ptsto_exp_footprint
   end;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
   let st = match !Config.curr_language with
-    | Config.C_CPP -> Sil.Subtype.exact
+    | Config.Clang -> Sil.Subtype.exact
     | Config.Java -> Sil.Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ with
     | Sil.Lvar pvar, [], Sil.Tfun _ ->
@@ -477,7 +479,8 @@ let fav_max_stamp fav =
     [lexp] -- field splitting model. It also materializes all
     indices accessed in lexp. *)
 let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
-  if !Config.trace_rearrange then (L.d_str "entering prop_iter_extend_ptsto lexp: "; Sil.d_exp lexp; L.d_ln ());
+  if Config.trace_rearrange then
+    (L.d_str "entering prop_iter_extend_ptsto lexp: "; Sil.d_exp lexp; L.d_ln ());
   let offset = Sil.exp_get_offsets lexp in
   let max_stamp = fav_max_stamp (Prop.prop_iter_fav iter) in
   let max_stamp_val = !max_stamp in
@@ -507,7 +510,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
     let iter' = IList.fold_left (Prop.prop_iter_add_atom !Config.footprint) iter atoms in
     Prop.prop_iter_update_current iter' (Sil.Hpointsto (e, se, te)) in
   let do_extend e se te =
-    if !Config.trace_rearrange then begin
+    if Config.trace_rearrange then begin
       L.d_strln "entering do_extend";
       L.d_str "e: "; Sil.d_exp e; L.d_str " se : "; Sil.d_sexp se; L.d_str " te: "; Sil.d_texp_full te;
       L.d_ln (); L.d_ln ()
@@ -618,12 +621,12 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
 exception ARRAY_ACCESS
 
 let rearrange_arith lexp prop =
-  if !Config.trace_rearrange then begin
+  if Config.trace_rearrange then begin
     L.d_strln "entering rearrange_arith";
     L.d_str "lexp: "; Sil.d_exp lexp; L.d_ln ();
     L.d_str "prop: "; L.d_ln (); Prop.d_prop prop; L.d_ln (); L.d_ln ()
   end;
-  if (!Config.array_level >= 2) then raise ARRAY_ACCESS
+  if (Config.array_level >= 2) then raise ARRAY_ACCESS
   else
     let root = Sil.root_of_lexp lexp in
     if Prover.check_allocatedness prop root then
@@ -638,7 +641,7 @@ let pp_rearrangement_error message prop lexp =
 
 (** do re-arrangment for an iter whose current element is a pointsto *)
 let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
-  if !Config.trace_rearrange then begin
+  if Config.trace_rearrange then begin
     L.d_increase_indent 1;
     L.d_strln "entering iter_rearrange_ptsto";
     L.d_str "lexp: "; Sil.d_exp lexp; L.d_ln ();
@@ -677,7 +680,7 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
         | _ -> [iter]
       end in
   begin
-    if !Config.trace_rearrange then begin
+    if Config.trace_rearrange then begin
       L.d_strln "exiting iter_rearrange_ptsto, returning results";
       Prop.d_proplist_with_typ (IList.map Prop.prop_iter_to_prop res);
       L.d_decrease_indent 1;
@@ -688,7 +691,7 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
 
 (** do re-arrangment for an iter whose current element is a nonempty listseg *)
 let iter_rearrange_ne_lseg recurse_on_iters iter para e1 e2 elist =
-  if (!Config.nelseg) then
+  if Config.nelseg then
     let iter_inductive_case =
       let n' = Sil.Var (Ident.create_fresh Ident.kprimed) in
       let (_, para_inst1) = Sil.hpara_instantiate para e1 n' elist in
@@ -848,7 +851,7 @@ let rec iter_rearrange
     inst: (Sil.offset list) Prop.prop_iter list =
   let typ = match Sil.exp_get_offsets lexp with
     | Sil.Off_fld (f, ((Sil.Tstruct _) as struct_typ)) :: _ -> (* access through field: get the struct type from the field *)
-        if !Config.trace_rearrange then begin
+        if Config.trace_rearrange then begin
           L.d_increase_indent 1;
           L.d_str "iter_rearrange: root of lexp accesses field "; L.d_strln (Ident.fieldname_to_string f);
           L.d_str "  type from instruction: "; Sil.d_typ_full typ_from_instr; L.d_ln();
@@ -859,7 +862,7 @@ let rec iter_rearrange
         struct_typ
     | _ ->
         typ_from_instr in
-  if !Config.trace_rearrange then begin
+  if Config.trace_rearrange then begin
     L.d_increase_indent 1;
     L.d_strln "entering iter_rearrange";
     L.d_str "lexp: "; Sil.d_exp lexp; L.d_ln ();
@@ -869,11 +872,11 @@ let rec iter_rearrange
     L.d_ln (); L.d_ln ()
   end;
   let default_case_iter (iter': unit Prop.prop_iter) =
-    if !Config.trace_rearrange then L.d_strln "entering default_case_iter";
+    if Config.trace_rearrange then L.d_strln "entering default_case_iter";
     if !Config.footprint then
       prop_iter_add_hpred_footprint pname tenv prop iter' (lexp, typ) inst
     else
-    if (!Config.array_level >= 1 && not !Config.footprint && Sil.exp_pointer_arith lexp)
+    if (Config.array_level >= 1 && not !Config.footprint && Sil.exp_pointer_arith lexp)
     then rearrange_arith lexp prop
     else begin
       pp_rearrangement_error "cannot find predicate with root" prop lexp;
@@ -906,7 +909,7 @@ let rec iter_rearrange
     | Some iter ->
         match Prop.prop_iter_current iter with
         | (Sil.Hpointsto (_, _, texp), off) ->
-            if !Config.type_size then check_type_size pname prop texp off typ_from_instr;
+            if Config.type_size then check_type_size pname prop texp off typ_from_instr;
             iter_rearrange_ptsto pname tenv prop iter lexp inst
         | (Sil.Hlseg (Sil.Lseg_NE, para, e1, e2, elist), _) ->
             iter_rearrange_ne_lseg recurse_on_iters iter para e1 e2 elist
@@ -926,7 +929,7 @@ let rec iter_rearrange
               | Some _, _ -> iter_rearrange_pe_dllseg_first recurse_on_iters default_case_iter iter para_dll e1 e2 e3 e4 elist
               | _, Some _ -> iter_rearrange_pe_dllseg_last recurse_on_iters default_case_iter iter para_dll e1 e2 e3 e4 elist
             end in
-  if !Config.trace_rearrange then begin
+  if Config.trace_rearrange then begin
     L.d_strln "exiting iter_rearrange, returning results";
     Prop.d_proplist_with_typ (IList.map Prop.prop_iter_to_prop res);
     L.d_decrease_indent 1;
@@ -983,7 +986,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
   let is_deref_of_nullable =
     let is_definitely_non_null exp prop =
       Prover.check_disequal prop exp Sil.exp_zero in
-    !Config.report_nullable_inconsistency && not (is_definitely_non_null root prop)
+    Config.report_nullable_inconsistency && not (is_definitely_non_null root prop)
     && is_only_pt_by_nullable_fld_or_param root in
   let relevant_attributes_getters = [
     Prop.get_resource_attribute;
@@ -1026,7 +1029,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
       let err_desc = Errdesc.explain_dereference deref_str prop (State.get_loc ()) in
       raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
   | Some (Sil.Aundef (s, _, undef_loc, _)) ->
-      if !Config.angelic_execution then ()
+      if Config.angelic_execution then ()
       else
         let deref_str = Localise.deref_str_undef (s, undef_loc) in
         let err_desc = Errdesc.explain_dereference deref_str prop loc in
@@ -1071,7 +1074,7 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
         Some (Sil.Lfield(e'', fn, t)), true (* the block dereferences is a field of an object*)
     | Some (_, e) -> Some e, false
     | _ -> None, false in
-  if (!Config.curr_language = Config.C_CPP) &&
+  if (!Config.curr_language = Config.Clang) &&
      fun_exp_may_be_null () &&
      not (is_fun_exp_captured_var ()) then
     begin
@@ -1085,7 +1088,7 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
               | _ -> err_desc_nobuckets) in
           let err_desc =
             Localise.error_desc_set_bucket
-              err_desc_nobuckets' Localise.BucketLevel.b1 !Config.show_buckets in
+              err_desc_nobuckets' Localise.BucketLevel.b1 Config.show_buckets in
           if is_field_deref then
             raise
               (Exceptions.Field_not_null_checked
@@ -1099,7 +1102,7 @@ let check_call_to_objc_block_error pdesc prop fun_exp loc =
              either is a local or it's a modified param *)
           let err_desc =
             Localise.error_desc_set_bucket
-              err_desc_nobuckets Localise.BucketLevel.b1 !Config.show_buckets in
+              err_desc_nobuckets Localise.BucketLevel.b1 Config.show_buckets in
           raise (Exceptions.Null_dereference
                    (err_desc, __POS__))
     end

@@ -136,7 +136,7 @@ module Node = struct
         let old_pdesc = Procname.Hash.find old_procs pname in
         let changed =
           (* in continue_capture mode keep the old changed bit *)
-          (!Config.continue_capture && old_pdesc.pd_attributes.ProcAttributes.changed) ||
+          (Config.continue_capture && old_pdesc.pd_attributes.ProcAttributes.changed) ||
           not (pdescs_eq old_pdesc new_pdesc) in
         new_pdesc.pd_attributes.changed <- changed
       with Not_found -> () in
@@ -937,13 +937,13 @@ let remove_abducted_retvars p =
 let remove_locals (curr_f : Procdesc.t) p =
   let names_of_locals = IList.map (get_name_of_local curr_f) (Procdesc.get_locals curr_f) in
   let names_of_locals' = match !Config.curr_language with
-    | Config.C_CPP -> (* in ObjC to deal with block we need to remove static locals *)
+    | Config.Clang -> (* in ObjC to deal with block we need to remove static locals *)
         let names_of_static_locals = get_name_of_objc_static_locals curr_f p in
         let names_of_block_locals = get_name_of_objc_block_locals p in
         names_of_block_locals @ names_of_locals @ names_of_static_locals
     | _ -> names_of_locals in
   let removed, p' = Prop.deallocate_stack_vars p names_of_locals' in
-  (removed, if !Config.angelic_execution then remove_abducted_retvars p' else p')
+  (removed, if Config.angelic_execution then remove_abducted_retvars p' else p')
 
 let remove_formals (curr_f : Procdesc.t) p =
   let pname = Procdesc.get_proc_name curr_f in
@@ -1158,7 +1158,7 @@ let inline_java_synthetic_methods cfg =
 let store_cfg_to_file (filename : DB.filename) (save_sources : bool) (cfg : cfg) =
   inline_java_synthetic_methods cfg;
   if save_sources then save_source_files cfg;
-  if !Config.incremental_procs then
+  if Config.incremental_procs then
     begin
       match load_cfg_from_file filename with
       | Some old_cfg -> Node.mark_unchanged_pdescs cfg old_cfg

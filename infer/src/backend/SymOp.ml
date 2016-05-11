@@ -38,10 +38,10 @@ let pp_failure_kind fmt = function
 (** Count the number of symbolic operations *)
 
 (** Timeout in seconds for each function *)
-let timeout_seconds = ref (!Config.seconds_per_iteration *. (float_of_int !Config.iterations))
+let timeout_seconds = ref (Config.seconds_per_iteration *. (float_of_int Config.iterations))
 
 (** Timeout in SymOps *)
-let timeout_symops = ref (!Config.symops_per_iteration * !Config.iterations)
+let timeout_symops = ref (Config.symops_per_iteration * Config.iterations)
 
 let get_timeout_seconds () = !timeout_seconds
 

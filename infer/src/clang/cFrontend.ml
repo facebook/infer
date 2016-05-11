@@ -34,16 +34,16 @@ let compute_icfg tenv ast =
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
 
 let register_perf_stats_report source_file =
-  let stats_dir = Filename.concat !Config.results_dir Config.frontend_stats_dir_name in
+  let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
   let abbrev_source_file = DB.source_file_encoding source_file in
   let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json" in
-  DB.create_dir !Config.results_dir ;
+  DB.create_dir Config.results_dir ;
   DB.create_dir stats_dir ;
   PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
 
 let init_global_state source_file =
   register_perf_stats_report source_file ;
-  Config.curr_language := Config.C_CPP;
+  Config.curr_language := Config.Clang;
   DB.current_source := source_file;
   DB.Results_dir.init ();
   Ident.NameGenerator.reset ();
@@ -74,8 +74,8 @@ let do_source_file source_file ast =
   (*Printing.print_procedures cfg; *)
   General_utils.sort_fields_tenv tenv;
   Tenv.store_to_file tenv_file tenv;
-  if !CFrontend_config.stats_mode then Cfg.check_cfg_connectedness cfg;
-  if !CFrontend_config.stats_mode
-  || !CFrontend_config.debug_mode || !CFrontend_config.testing_mode then
+  if Config.stats_mode then Cfg.check_cfg_connectedness cfg;
+  if Config.stats_mode
+  || Config.debug_mode || Config.testing_mode then
     (Dotty.print_icfg_dotty cfg [];
      Cg.save_call_graph_dotty None Specs.get_specs call_graph)

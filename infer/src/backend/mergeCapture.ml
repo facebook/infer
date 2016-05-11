@@ -19,13 +19,13 @@ module F = Format
 let check_timestamp_of_symlinks = true
 
 let buck_out () =
-  match !Config.project_root with
+  match Config.project_root with
   | Some root ->
       Filename.concat root "buck-out"
   | None ->
-      Filename.concat (Filename.dirname !Config.results_dir) "buck-out"
+      Filename.concat (Filename.dirname Config.results_dir) "buck-out"
 
-let infer_deps () = Filename.concat !Config.results_dir "infer-deps.txt"
+let infer_deps () = Filename.concat Config.results_dir "infer-deps.txt"
 
 let modified_targets = ref StringSet.empty
 
@@ -147,7 +147,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
     and  to determine whether the destination has never been copied.
     In both cases, perform the link. *)
 let process_merge_file deps_file =
-  let infer_out_dst = !Config.results_dir in
+  let infer_out_dst = Config.results_dir in
   let stats = empty_stats () in
   let process_line line =
     match Str.split_delim (Str.regexp (Str.quote "\t")) line with

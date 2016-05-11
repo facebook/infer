@@ -114,7 +114,7 @@ and fsel_match fsel1 sub vars fsel2 =
   | [], [] -> Some (sub, vars)
   | [], _ -> None
   | _, [] ->
-      if (!Config.abs_struct <= 0) then None
+      if (Config.abs_struct <= 0) then None
       else Some (sub, vars) (* This can lead to great information loss *)
   | (fld1, se1') :: fsel1', (fld2, se2') :: fsel2' ->
       let n = Sil.fld_compare fld1 fld2 in
@@ -123,7 +123,7 @@ and fsel_match fsel1 sub vars fsel2 =
         | None -> None
         | Some (sub', vars') -> fsel_match fsel1' sub' vars' fsel2'
       end
-      else if (n < 0 && !Config.abs_struct > 0) then
+      else if (n < 0 && Config.abs_struct > 0) then
         fsel_match fsel1' sub vars fsel2
         (* This can lead to great information loss *)
       else None

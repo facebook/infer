@@ -154,7 +154,7 @@ let sinks = [
     ret_type = "void";
     params = [];
     is_static = false;
-    language = Config.C_CPP
+    language = Config.Clang
   }, [1]); (* it's instance method *)
 ] @ FbTaint.sinks
 
@@ -166,7 +166,7 @@ let functions_with_tainted_params = [
     ret_type = "BOOL";
     params = [];
     is_static = false; (* it's instance method *)
-    language = Config.C_CPP
+    language = Config.Clang
   }, [2]);
 
   (* actual specs *)
@@ -180,7 +180,7 @@ let functions_with_tainted_params = [
     ret_type = "BOOL";
     params = [];
     is_static = false; (* it's instance method *)
-    language = Config.C_CPP
+    language = Config.Clang
   }, [2]);
 ] @ FbTaint.functions_with_tainted_params
 
@@ -203,7 +203,7 @@ let objc_method_to_procname objc_method =
 
 let method_str_to_pname method_str =
   match method_str.language with
-  | Config.C_CPP ->
+  | Config.Clang ->
       objc_method_to_procname method_str
   | Config.Java ->
       java_method_to_procname method_str

@@ -24,12 +24,14 @@ let check_nested_loop path pos_opt =
   let loop_visits_log = ref [] in
   let in_nested_loop () = match !loop_visits_log with
     | true :: true :: _ ->
-        if !verbose then L.d_strln "in nested loop";
+        if verbose then L.d_strln "in nested loop";
         true (* last two loop visits were entering loops *)
     | _ -> false in
   let do_node_caller node = match Cfg.Node.get_kind node with
     | Cfg.Node.Prune_node (b, (Sil.Ik_dowhile | Sil.Ik_for | Sil.Ik_while), _) ->
-        (* if !verbose then L.d_strln ((if b then "enter" else "exit") ^ " node " ^ (string_of_int (Cfg.Node.get_id node))); *)
+        (* if verbose then *)
+        (*   L.d_strln ((if b then "enter" else "exit") ^ " node " *)
+        (*              ^ (string_of_int (Cfg.Node.get_id node))); *)
         loop_visits_log := b :: !loop_visits_log
     | _ -> () in
   let do_any_node _level _node =
@@ -129,7 +131,7 @@ let check_access access_opt de_opt =
 
 let classify_access desc access_opt de_opt is_nullable =
   let default_bucket = if is_nullable then Localise.BucketLevel.b1 else Localise.BucketLevel.b5 in
-  let show_in_message = !Config.show_buckets in
+  let show_in_message = Config.show_buckets in
   match check_access access_opt de_opt with
   | None -> Localise.error_desc_set_bucket desc default_bucket show_in_message
   | Some bucket -> Localise.error_desc_set_bucket desc bucket show_in_message

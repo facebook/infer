@@ -148,36 +148,6 @@ val pp_current_time : Format.formatter -> unit -> unit
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 val pp_elapsed_time : Format.formatter -> unit -> unit
 
-
-module Arg : sig
-  include module type of Arg with type spec = Arg.spec
-
-  (** type of aligned commend-line options *)
-  type aligned = private (key * spec * doc)
-
-  val align : (key * spec * doc) list -> aligned list
-
-  (** [parse env_var arg_desc anon_fun usage_msg] prepends the decoded value of environment variable
-      [env_var] to [Sys.argv] and then parses the result using the standard [Arg.parse].  Therefore
-      arguments passed on the command line supercede those specified in the environment variable.
-      WARNING: If an argument appears both in the environment variable and on the command line, it
-      will be interpreted twice. *)
-  val parse : string -> aligned list -> anon_fun -> usage_msg -> unit
-
-  val usage : aligned list -> usage_msg -> unit
-
-  (** [create_options_desc double_minus unsorted_desc title] creates a group of sorted command-line arguments.
-      [double_minus] is a booleand indicating whether the [-- option = nn] format or [- option n] format is to be used.
-      [title] is the title of this group of options.
-      It expects a list [opname, desc, param_opt, text] where
-      [opname] is the name of the option
-      [desc] is the Arg.spec
-      [param_opt] is the optional parameter to [opname]
-      [text] is the description of the option *)
-  val create_options_desc : bool -> string -> (string * Arg.spec * string option * string) list -> aligned list
-
-end
-
 (** Compute a 32-character hexadecimal crc using the Digest module  *)
 val string_crc_hex32 : string -> string
 
@@ -229,22 +199,10 @@ type outfile =
 val create_outfile : string -> outfile option
 
 (** operate on an outfile reference if it is not None *)
-val do_outf : outfile option ref -> (outfile -> unit) -> unit
+val do_outf : outfile option -> (outfile -> unit) -> unit
 
 (** close an outfile *)
 val close_outf : outfile -> unit
-
-(* Type of command-line arguments before processing *)
-type arg_list = (string * Arg.spec * string option * string) list
-
-(* Filter arguments by name, i.e. keep those whose name appears in the name list *)
-val arg_desc_filter : string list -> arg_list -> arg_list
-
-(** Basic command-line arguments *)
-val base_arg_desc : arg_list
-
-(** Reserved command-line arguments *)
-val reserved_arg_desc : arg_list
 
 (** flags for a procedure *)
 type proc_flags = (string, string) Hashtbl.t
@@ -282,25 +240,12 @@ val directory_iter : (string -> unit) -> string -> unit
 (** Various kind of analyzers *)
 type analyzer = Infer | Eradicate | Checkers | Tracing
 
+(** Association list of analyzers and their names *)
+val string_to_analyzer : (string * analyzer) list
+
 (** List of analyzers *)
 val analyzers: analyzer list
 
 val string_of_analyzer: analyzer -> string
 
 val analyzer_of_string: string -> analyzer
-
-(** Call f x with Config.abs_val set to zero.
-    Restore the initial value also in case of exception. *)
-val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b
-
-(** Call f x with Config.footprint set to true.
-    Restore the initial value of footprint also in case of exception. *)
-val run_in_footprint_mode : ('a -> 'b) -> 'a -> 'b
-
-(** Call f x with Config.footprint set to false.
-    Restore the initial value of footprint also in case of exception. *)
-val run_in_re_execution_mode : ('a -> 'b) -> 'a -> 'b
-
-(** [set_reference_and_call_function ref val f x] calls f x with ref set to val.
-    Restore the initial value also in case of exception. *)
-val set_reference_and_call_function : 'a ref -> 'a -> ('b -> 'c) -> 'b -> 'c

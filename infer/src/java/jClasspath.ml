@@ -16,11 +16,6 @@ module L = Logging
 
 let models_specs_filenames = ref StringSet.empty
 
-let javac_verbose_out = ref ""
-
-let set_verbose_out path =
-  javac_verbose_out := path
-
 let models_jar = ref ""
 
 
@@ -81,7 +76,7 @@ let java_source_file_from_path path =
   if Filename.is_relative path then
     failwith "Expect absolute path for java source files"
   else
-    match !Config.project_root with
+    match Config.project_root with
     | None -> DB.abs_source_file_from_path path
     | Some project_root -> DB.rel_source_file_from_abs_path project_root path
 
@@ -161,7 +156,7 @@ let add_source_file path map =
 
 
 let load_sources_and_classes () =
-  let file_in = open_in !javac_verbose_out in
+  let file_in = open_in Config.javac_verbose_out in
   let class_filename_re =
     Str.regexp
       "\\[wrote RegularFileObject\\[\\(.*\\)\\]\\]" in

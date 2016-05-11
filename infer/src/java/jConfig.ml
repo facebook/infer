@@ -118,20 +118,10 @@ let class_code cl = "L"^cl
 let errors_db_file = "errors.db"
 let main_errors_file = "Java_frontend.errors"
 
-let classpath : string option ref = ref None
-
-let class_source_map : string option ref = ref None
-
 (** {2 Flags } *)
 
 (* the Sawja representation of the Java Bytecode will be printed *)
 let html_mode = ref false
-
-(* debug information will be printed *)
-let debug_mode = ref false
-
-(* The classes in the given jar file will be translated. No sources needed *)
-let dependency_mode = ref false
 
 (* The dynamic dispatch will be handled partially statically *)
 let static_dispatch = ref false
@@ -142,9 +132,3 @@ let init_count = ref 0
 let normalize_string s =
   let rexp = Str.regexp_string "$" in
   Str.global_replace rexp "_" s
-
-(* Translate the safety checks doen by the JVM *)
-let translate_checks = ref false
-
-(* Generate harness for Android code *)
-let create_harness = ref false

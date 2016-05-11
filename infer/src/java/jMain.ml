@@ -14,73 +14,8 @@ open Javalib_pack
 
 module L = Logging
 
-let arg_desc =
-  let options_to_keep = ["-results_dir"; "-project_root"] in
-  let desc =
-    (arg_desc_filter options_to_keep base_arg_desc) @
-    [
-      "-classpath",
-      Arg.String (fun classpath -> JConfig.classpath := Some classpath),
-      None,
-      "set the classpath"
-      ;
-      "-class_source_map",
-      Arg.String (fun filename -> JConfig.class_source_map := Some filename),
-      None,
-      "path to class -> source map in JSON format"
-      ;
-      "-models",
-      Arg.String (fun filename -> JClasspath.add_models filename),
-      Some "paths",
-      "set the path to the jar containing the models"
-      ;
-      "-debug",
-      Arg.Unit (fun () -> JConfig.debug_mode := true),
-      None,
-      "write extra translation information"
-      ;
-      "-dependencies",
-      Arg.Unit (fun _ -> JConfig.dependency_mode := true),
-      None,
-      "translate all the dependencies during the capture"
-      ;
-      "-no-static_final",
-      Arg.Unit (fun () -> JTrans.no_static_final := true),
-      None,
-      "no special treatment for static final fields"
-      ;
-      "-tracing",
-      Arg.Unit (fun () -> JConfig.translate_checks := true),
-      None,
-      "Translate JVM checks"
-      ;
-      "-harness",
-      Arg.Unit (fun () -> JConfig.create_harness := true),
-      None,
-      "Create Android lifecycle harness"
-      ;
-      "-verbose_out",
-      Arg.String (fun path -> JClasspath.set_verbose_out path),
-      None,
-      "Set the path to the javac verbose output"
-      ;
-      "-suppress_warnings_out",
-      Arg.String (fun s -> Config.suppress_warnings_annotations := Some s),
-      Some "Path",
-      "Path to list of collected @SuppressWarnings annotations"
-      ;
-    ] in
-  Arg.create_options_desc false "Parsing Options" desc
-
-let usage =
-  "Usage: InferJava -d compilation_dir -sources filename\n"
-
-let print_usage_exit () =
-  Arg.usage arg_desc usage;
-  exit(1)
-
 let () =
-  Arg.parse "INFERJAVA_ARGS" arg_desc (fun _ -> ()) usage;
+  (match Config.models_file with Some file -> JClasspath.add_models file | None -> ());
   if Config.analyze_models && !JClasspath.models_jar <> "" then
     failwith "Not expecting model file when analyzing the models";
   if not Config.analyze_models && !JClasspath.models_jar = "" then
@@ -88,10 +23,10 @@ let () =
 
 
 let register_perf_stats_report source_file =
-  let stats_dir = Filename.concat !Config.results_dir Config.frontend_stats_dir_name in
+  let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
   let abbrev_source_file = DB.source_file_encoding source_file in
   let stats_file = Config.perf_stats_prefix ^ "_" ^ abbrev_source_file ^ ".json" in
-  DB.create_dir !Config.results_dir ;
+  DB.create_dir Config.results_dir ;
   DB.create_dir stats_dir ;
   PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
 
@@ -115,14 +50,12 @@ let store_icfg tenv cg cfg program =
   begin
     let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
     let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
-    if !JConfig.create_harness then Harness.create_harness cfg cg tenv;
+    if Config.create_harness then Harness.create_harness cfg cg tenv;
     Preanal.doit ~f_translate_typ:(Some f_translate_typ) cfg cg tenv;
     Cg.store_to_file cg_file cg;
     Cfg.store_cfg_to_file cfg_file true cfg;
-    if !JConfig.debug_mode then
+    if Config.debug_mode then
       begin
-        Config.write_dotty := true;
-        Config.print_types := true;
         Dotty.print_icfg_dotty cfg [];
         Cg.save_call_graph_dotty None Specs.get_specs cg
       end
@@ -224,7 +157,7 @@ let do_all_files classpath sources classes =
                 translate_source_file basename (Some package, source_file) source_file)
              source_files)
     sources;
-  if !JConfig.dependency_mode then
+  if Config.dependency_mode then
     capture_libs never_null_matcher linereader program tenv;
   save_tenv tenv;
   JClasspath.cleanup program;

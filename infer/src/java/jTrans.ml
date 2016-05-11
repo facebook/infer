@@ -255,8 +255,6 @@ let update_init_loc cn ms loc_start =
     try ignore(JBasics.ClassMap.find cn !init_loc_map)
     with Not_found -> init_loc_map := (JBasics.ClassMap.add cn loc_start !init_loc_map)
 
-let no_static_final = ref false
-
 (** Creates a procedure description. *)
 let create_local_procdesc program linereader cfg tenv node m =
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
@@ -264,7 +262,7 @@ let create_local_procdesc program linereader cfg tenv node m =
     if JBasics.ms_equal ms JBasics.clinit_signature then JContext.Init
     else JContext.Normal in
   if not (
-      !no_static_final = false &&
+      Config.no_static_final = false &&
       meth_kind = JContext.Init &&
       not (JTransStaticField.has_static_final_fields node))
   then
@@ -394,7 +392,7 @@ let rec get_method_procdesc program cfg tenv cn ms kind =
   | Created status -> status
 
 let use_static_final_fields context =
-  (not !no_static_final) && (JContext.get_meth_kind context) <> JContext.Init
+  (not Config.no_static_final) && (JContext.get_meth_kind context) <> JContext.Init
 
 let builtin_new =
   Sil.Const (Sil.Cfun ModelBuiltins.__new)
@@ -570,7 +568,7 @@ let method_invocation context loc pc var_opt cn ms sil_obj_opt expr_list invoke_
             | I_Special -> false
             | _ -> true in
           match sil_obj_expr with
-          | Sil.Var _ when is_non_constructor_call && not !JConfig.translate_checks ->
+          | Sil.Var _ when is_non_constructor_call && not Config.report_runtime_exceptions ->
               let obj_typ_no_ptr =
                 match sil_obj_type with
                 | Sil.Tptr (typ, _) -> typ
@@ -992,7 +990,8 @@ let rec instruction context pc instr : translation =
         Cg.add_edge cg caller_procname callee_procname;
         Instr call_node
 
-    | JBir.Check (JBir.CheckNullPointer expr) when !JConfig.translate_checks && is_this expr ->
+    | JBir.Check (JBir.CheckNullPointer expr)
+      when Config.report_runtime_exceptions && is_this expr ->
         (* TODO #6509339: refactor the boilterplate code in the translattion of JVM checks *)
         let (instrs, sil_expr, _) = expression context pc expr in
         let this_not_null_node =
@@ -1000,7 +999,7 @@ let rec instruction context pc instr : translation =
             (Cfg.Node.Stmt_node "this not null") (instrs @ [assume_not_null loc sil_expr]) in
         Instr this_not_null_node
 
-    | JBir.Check (JBir.CheckNullPointer expr) when !JConfig.translate_checks ->
+    | JBir.Check (JBir.CheckNullPointer expr) when Config.report_runtime_exceptions ->
         let (instrs, sil_expr, _) = expression context pc expr in
         let not_null_node =
           let sil_not_null = Sil.BinOp (Sil.Ne, sil_expr, Sil.exp_null) in
@@ -1028,8 +1027,8 @@ let rec instruction context pc instr : translation =
           create_node npe_kind npe_instrs in
         Prune (not_null_node, throw_npe_node)
 
-    | JBir.Check (JBir.CheckArrayBound (array_expr, index_expr)) when !JConfig.translate_checks ->
-
+    | JBir.Check (JBir.CheckArrayBound (array_expr, index_expr))
+      when Config.report_runtime_exceptions ->
         let instrs, _, sil_length_expr, sil_index_expr =
           let array_instrs, sil_array_expr, _ =
             expression context pc array_expr
@@ -1084,7 +1083,7 @@ let rec instruction context pc instr : translation =
 
         Prune (in_bound_node, throw_out_of_bound_node)
 
-    | JBir.Check (JBir.CheckCast (expr, object_type)) when !JConfig.translate_checks ->
+    | JBir.Check (JBir.CheckCast (expr, object_type)) when Config.report_runtime_exceptions ->
         let sil_type = JTransType.expr_type context expr
         and instrs, sil_expr, _ = expression context pc expr
         and ret_id = Ident.create_fresh Ident.knormal

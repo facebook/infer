@@ -11,12 +11,6 @@ open! Utils
 
 (** Module that contains constants and variables used in the frontend *)
 
-let no_translate_libs = ref true
-
-let testing_mode = ref false
-
-let cxx_experimental = ref false
-
 let array_with_objects_count_m = "arrayWithObjects:count:"
 
 let object_at_indexed_subscript_m = "objectAtIndexedSubscript:"
@@ -49,45 +43,11 @@ let free = "free"
 
 let static = "static"
 
-let source_file : string option ref = ref None
-
-let ast_file : string option ref = ref None
-
 let json = ref ""
 
 let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
 
 let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
-
-let debug_mode = ref false
-
-let stats_mode = ref false
-
-let models_mode = ref false
-
-type lang =
-  | C
-  | CPP
-  | OBJC
-  | OBJCPP
-
-let language = ref OBJC (* Default is objc, since it's the default for clang (at least in Mac OS) *)
-
-let lang_from_string lang_string =
-  let lang =
-    if lang_string = "c" then C
-    else if lang_string = "objective-c" then OBJC
-    else if lang_string = "c++" then CPP
-    else if lang_string = "objective-c++" then OBJCPP
-    else assert false in
-  language := lang
-
-let lang_to_string lang =
-  match lang with
-  | C -> "c"
-  | OBJC -> "objective-c"
-  | CPP -> "c++"
-  | OBJCPP -> "objective-c++"
 
 let emtpy_name_category ="EMPTY_NAME_CATEGORY_FOR_"
 

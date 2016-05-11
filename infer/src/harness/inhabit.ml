@@ -209,7 +209,7 @@ let create_dummy_harness_file harness_name =
 let write_harness_to_file harness_instrs harness_file =
   let harness_file =
     let harness_file_name = DB.source_file_to_string harness_file in
-    ref (create_outfile harness_file_name) in
+    create_outfile harness_file_name in
   let pp_harness fmt = IList.iter (fun instr ->
       Format.fprintf fmt "%a\n" (Sil.pp_instr pe_text) instr) harness_instrs in
   do_outf harness_file (fun outf ->

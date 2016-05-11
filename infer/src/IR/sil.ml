@@ -238,7 +238,7 @@ module Subtype = struct
     | NORMAL -> ""
 
   let pp f (t, flag) =
-    if !Config.print_types then
+    if Config.print_types then
       match t with
       | Exact ->
           F.fprintf f "%s" (flag_to_string flag)
@@ -428,7 +428,7 @@ module Subtype = struct
       and in case return the updated subtype [st1] *)
   let case_analysis (c1, st1) (c2, st2) f is_interface =
     let f = check_subtype f in
-    if (!Config.subtype_multirange) then
+    if Config.subtype_multirange then
       get_subtypes (c1, st1) (c2, st2) f is_interface
     else case_analysis_basic (c1, st1) (c2, st2) f
 
@@ -1662,7 +1662,7 @@ module HpredSet = Set.Make
 
 (** Begin change color if using diff printing, return updated printenv and change status *)
 let color_pre_wrapper pe f x =
-  if !Config.print_using_diff && pe.pe_kind != PP_TEXT then begin
+  if Config.print_using_diff && pe.pe_kind != PP_TEXT then begin
     let color = pe.pe_cmap_norm (Obj.repr x) in
     if color != pe.pe_color then begin
       (if pe.pe_kind == PP_HTML then Io_infer.Html.pp_start_color else Latex.pp_color) f color;
@@ -1681,7 +1681,7 @@ let color_post_wrapper changed pe f =
 
 (** Print a sequence with difference mode if enabled. *)
 let pp_seq_diff pp pe0 f =
-  if not !Config.print_using_diff
+  if not Config.print_using_diff
   then pp_comma_seq pp f
   else
     let rec doit = function
@@ -1780,7 +1780,7 @@ let ptr_kind_string = function
   | Pk_objc_autoreleasing -> "__autoreleasing *"
 
 let java () = !Config.curr_language = Config.Java
-let eradicate_java () = !Config.eradicate && java ()
+let eradicate_java () = Config.eradicate && java ()
 
 (** convert a dexp to a string *)
 let rec dexp_to_string = function
@@ -1878,7 +1878,7 @@ and attribute_to_string pe = function
         | Racquire, Rlock -> "LOCKED"
         | Rrelease, Rlock -> "UNLOCKED" in
       let str_vpath =
-        if !Config.trace_error
+        if Config.trace_error
         then pp_to_string (pp_vpath pe) ra.ra_vpath
         else "" in
       name ^ (str_binop pe Lt) ^ Procname.to_string ra.ra_pname ^ ":" ^
@@ -1927,7 +1927,7 @@ and pp_const pe f = function
 
 (** Pretty print a type. Do nothing by default. *)
 and pp_typ pe f te =
-  if !Config.print_types then pp_typ_full pe f te else ()
+  if Config.print_types then pp_typ_full pe f te else ()
 
 and pp_struct_typ pe pp_base f struct_typ = match struct_typ.struct_name with
   | Some name when false ->
@@ -2004,7 +2004,7 @@ and _pp_exp pe0 pp_t f e0 =
        | Const c -> F.fprintf f "%a" (pp_const pe) c
        | Cast (typ, e) -> F.fprintf f "(%a)%a" pp_t typ pp_exp e
        | UnOp (op, e, _) -> F.fprintf f "%s%a" (str_unop op) pp_exp e
-       | BinOp (op, Const c, e2) when !Config.smt_output -> print_binop_stm_output (Const c) op e2
+       | BinOp (op, Const c, e2) when Config.smt_output -> print_binop_stm_output (Const c) op e2
        | BinOp (op, e1, e2) -> F.fprintf f "(%a %s %a)" pp_exp e1 (str_binop pe op) pp_exp e2
        | Lvar pv -> Pvar.pp pe f pv
        | Lfield (e, fld, _) -> F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
@@ -2569,7 +2569,7 @@ let pp_inst pe f inst =
     F.fprintf f "%s%s%s" (str_binop pe Lt) str (str_binop pe Gt)
 
 let pp_inst_if_trace pe f inst =
-  if !Config.trace_error then pp_inst pe f inst
+  if Config.trace_error then pp_inst pe f inst
 
 (** pretty print a strexp with an optional predicate env *)
 let rec pp_sexp_env pe0 envo f se =
@@ -3779,7 +3779,7 @@ let exp_add_offsets exp offsets =
 
 (** Convert all the lseg's in sigma to nonempty lsegs. *)
 let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
-  if !Config.nelseg then
+  if Config.nelseg then
     let f eqs_sigma_list hpred = match hpred with
       | Hpointsto _ | Hlseg(Lseg_NE, _, _, _, _) | Hdllseg(Lseg_NE, _, _, _, _, _, _) ->
           let g (eqs, sigma) = (eqs, hpred:: sigma) in

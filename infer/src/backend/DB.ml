@@ -71,8 +71,8 @@ let source_file_to_string fname =
 exception No_project_root
 
 let project_root () =
-  match !Config.project_root with
-  | None -> L.err "No -project_root option passed@."; raise No_project_root
+  match Config.project_root with
+  | None -> L.err "No --project-root option passed@."; raise No_project_root
   | Some path -> path
 
 (* Checking if the path exists may be needed only in some cases, hence the flag check_exists *)
@@ -122,10 +122,10 @@ let source_dir_get_internal_file source_dir extension =
   Filename.concat source_dir fname
 
 let captured_dir () =
-  Filename.concat !Config.results_dir Config.captured_dir_name
+  Filename.concat Config.results_dir Config.captured_dir_name
 
 let sources_dir () =
-  Filename.concat !Config.results_dir Config.sources_dir_name
+  Filename.concat Config.results_dir Config.sources_dir_name
 
 (** get the source directory corresponding to a source file *)
 let source_dir_from_source_file source_file =
@@ -295,7 +295,7 @@ module Results_dir = struct
   (** convert a path to a filename *)
   let path_to_filename pk path =
     let base = match pk with
-      | Abs_root -> !Config.results_dir
+      | Abs_root -> Config.results_dir
       | Abs_source_dir ->
           let dir = source_dir_from_source_file !current_source in
           source_dir_to_string dir
@@ -307,7 +307,7 @@ module Results_dir = struct
 
   (** initialize the results directory *)
   let init () =
-    create_dir !Config.results_dir;
+    create_dir Config.results_dir;
     create_dir (specs_dir ());
     create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
     create_dir (path_to_filename Abs_root [Config.sources_dir_name]);

@@ -519,7 +519,7 @@ let res_dir_specs_filename pname =
 let specs_library_filenames pname =
   IList.map
     (fun specs_dir -> DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
-    !Config.specs_library
+    Config.specs_library
 
 (** paths to the .specs file for the given procedure in the models folder *)
 let specs_models_filename pname =
@@ -540,10 +540,10 @@ let store_summary pname (summ: summary) =
         }
     | None -> payload in
   let summ1 = { summ with payload = process_payload summ.payload } in
-  let summ2 = if !Config.save_compact_summaries
+  let summ2 = if Config.save_compact_summaries
     then summary_compact (Sil.create_sharing_env ()) summ1
     else summ1 in
-  let summ3 = if !Config.save_time_in_summaries
+  let summ3 = if Config.save_time_in_summaries
     then summ2
     else
       { summ2 with

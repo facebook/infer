@@ -14,68 +14,7 @@ module L = Logging
 module F = Format
 open Jsonbug_j
 
-(** Outfile to save the latex report *)
-let latex = ref None
-
-(** command line flag: if true, print whole seconds only *)
-let whole_seconds = ref false
-
-(** Outfile to save bugs stats in csv format *)
-let bugs_csv = ref None
-
-(** Outfile to save bugs stats in JSON format *)
-let bugs_json = ref None
-
-(** Outfile to save bugs stats in txt format *)
-let bugs_txt = ref None
-
-(** Outfile to save bugs stats in xml format *)
-let bugs_xml = ref None
-
-(** Outfile to save procedures stats in csv format *)
-let procs_csv = ref None
-
-(** Outfile to save procedures stats in xml format *)
-let procs_xml = ref None
-
-(** Outfile to save call stats in csv format *)
-let calls_csv = ref None
-
-(** Outfile to save the analysis report *)
-let report = ref None
-
-(** command line flag: if true, produce a svg file *)
-let svg = ref false
-
-(** command line flag: if true, export specs to xml files *)
-let xml_specs = ref false
-
-(** command line flag: if true, produce unit test for each spec *)
-let unit_test = ref false
-
-(** command line flag: if true, do not print the spec to standard output *)
-let quiet = ref false
-
-(** command line flag: if true, print stats about preconditions to standard output *)
-let precondition_stats = ref false
-
-(** name of the file to load analysis results from *)
-let load_analysis_results = ref None
-
-(** If true then include Infer source code locations in json reports *)
-let reports_include_ml_loc = ref false
-
-(** name of the file to load save results to *)
-let save_analysis_results = ref None
-
-(** command-line option to print the location of the copy of a source file *)
 let source_file_copy = ref None
-
-(** command line option to test the filtering based on .inferconfig *)
-let test_filtering = ref false
-
-(** Setup the analyzer in order to filter out errors for this analyzer only *)
-let analyzer = ref None
 
 let handle_source_file_copy_option () = match !source_file_copy with
   | None -> ()
@@ -88,157 +27,9 @@ let canonic_path_from_string s =
   if s = Filename.dir_sep then s
   else Filename.concat (Filename.dirname s) (Filename.basename s) ^ Filename.dir_sep
 
-let arg_desc =
-  let base_arg =
-    let desc =
-      [
-        "-bugs",
-        Arg.String (fun s -> bugs_csv := create_outfile s),
-        Some "bugs.csv",
-        "create file bugs.csv containing a list of bugs in CSV format"
-        ;
-        "-bugs_json",
-        Arg.String (fun s -> bugs_json := create_outfile s),
-        Some "bugs.json",
-        "create file bugs.json containing a list of bugs in JSON format"
-        ;
-        "-bugs_txt",
-        Arg.String (fun s -> bugs_txt := create_outfile s),
-        Some "bugs.txt",
-        "create file bugs.txt containing a list of bugs in text format"
-        ;
-        "-bugs_xml",
-        Arg.String (fun s -> bugs_xml := create_outfile s),
-        Some "bugs.xml",
-        "create file bugs.xml containing a list of bugs in XML format"
-        ;
-        "-calls",
-        Arg.String (fun s -> calls_csv := create_outfile s),
-        Some "calls.csv",
-        "write individual calls in csv format to file.csv"
-        ;
-        "-load_results",
-        Arg.String (fun s -> load_analysis_results := Some s),
-        Some "file.iar",
-        "load analysis results from Infer Analysis Results file file.iar"
-        ;
-        "-procs",
-        Arg.String (fun s -> procs_csv := create_outfile s),
-        Some "procs.csv",
-        "create file procs.csv containing statistics for each procedure in CSV format"
-        ;
-        "-procs_xml",
-        Arg.String (fun s -> procs_xml := create_outfile s),
-        Some "procs.xml",
-        "create file procs.xml containing statistics for each procedure in XML format"
-        ;
-        "-results_dir",
-        Arg.String (fun s -> Config.results_dir := s),
-        Some "dir",
-        "read all the .specs files in the results dir"
-        ;
-        "-lib",
-        Arg.String (fun s ->
-            Config.specs_library := filename_to_absolute s :: !Config.specs_library),
-        Some "dir",
-        "add dir to the list of directories to be searched for spec files"
-        ;
-        "-q",
-        Arg.Set quiet,
-        None,
-        "quiet: do not print specs on standard output"
-        ;
-        "-save_results",
-        Arg.String (fun s -> save_analysis_results := Some s),
-        Some "file.iar",
-        "save analysis results to Infer Analysis Results file file.iar"
-        ;
-        "-unit_test",
-        Arg.Set unit_test,
-        None,
-        "print unit test code"
-        ;
-        "-xml",
-        Arg.Set xml_specs,
-        None,
-        "export specs into XML files file1.xml ... filen.xml"
-        ;
-        "-test_filtering",
-        Arg.Set test_filtering,
-        None,
-        "list all the files Infer can report on (should be call at the root of the procject, \
-        where .inferconfig lives)."
-        ;
-        "-analyzer",
-        Arg.String (fun s -> analyzer := Some (Utils.analyzer_of_string s)),
-        Some "analyzer",
-        "setup the analyzer for the path filtering"
-        ;
-        "-inferconfig_home",
-        Arg.String (fun s -> Config.inferconfig_home := Some s),
-        Some "dir",
-        "Path to the .inferconfig file"
-        ;
-        "-with_infer_src_loc",
-        Arg.Set reports_include_ml_loc,
-        None,
-        "include the location (in the Infer source code) from where reports are generated"
-        ;
-      ] in
-    Arg.create_options_desc false "Options" desc in
-  let reserved_arg =
-    let desc =
-      [
-        "-latex",
-        Arg.String (fun s -> latex := create_outfile s),
-        Some "file.tex",
-        "print latex report to file.tex"
-        ;
-        "-print_types",
-        Arg.Set Config.print_types,
-        None,
-        "print types in symbolic heaps"
-        ;
-        "-precondition_stats",
-        Arg.Set precondition_stats,
-        None,
-        "print stats about preconditions to standard output"
-        ;
-        "-report",
-        Arg.String (fun s -> report := create_outfile s),
-        Some "report_file",
-        "create file report_file containing a report of the analysis results"
-        ;
-        "-source_file_copy",
-        Arg.String (fun s -> source_file_copy := Some (DB.abs_source_file_from_path s)),
-        Some "source_file",
-        "print the path of the copy of source_file in the results directory"
-        ;
-        "-svg",
-        Arg.Set svg,
-        None,
-        "generate .dot and .svg"
-        ;
-        "-whole_seconds",
-        Arg.Set whole_seconds,
-        None,
-        "print whole seconds only"
-        ;
-      ] in
-    Arg.create_options_desc false "Reserved Options" desc in
-  base_arg @ reserved_arg
-
-let usage =
-  "Usage: InferPrint [options] name1.specs ... namen.specs\n\
-   Read, convert, and print .specs files. \
-   To process all the .specs in the current directory, pass . as only parameter \
-   To process all the .specs in the results directory, use option -results_dir \
-   Each spec is printed to standard output unless option -q is used."
-
 let print_usage_exit err_s =
   L.err "Load Error: %s@.@." err_s;
-  Arg.usage arg_desc usage;
-  exit(1)
+  Config.print_usage_exit ()
 
 (** return the list of the .specs files in the results dir and libs, if they're defined *)
 let load_specfiles () =
@@ -250,7 +41,7 @@ let load_specfiles () =
     IList.filter is_specs_file all_filepaths in
   let specs_dirs =
     let result_specs_dir = DB.filename_to_string (DB.Results_dir.specs_dir ()) in
-    result_specs_dir :: !Config.specs_library in
+    result_specs_dir :: Config.specs_library in
   IList.flatten (IList.map specs_files_in_dir specs_dirs)
 
 (** Create and initialize latex file *)
@@ -265,7 +56,7 @@ let write_summary_latex fmt summary =
   let proc_name = Specs.get_proc_name summary in
   Latex.pp_section fmt ("Analysis of function "
                         ^ (Latex.convert_string (Procname.to_string proc_name)));
-  F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary (pe_latex Black) !whole_seconds) summary
+  F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary (pe_latex Black) Config.whole_seconds) summary
 
 let error_desc_to_csv_string error_desc =
   let pp fmt () = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in
@@ -591,7 +382,7 @@ module BugsJson = struct
         let file =
           DB.source_file_to_string summary.Specs.attributes.ProcAttributes.loc.Location.file in
         let json_ml_loc = match ml_loc_opt with
-          | Some (file, lnum, cnum, enum)  when !reports_include_ml_loc ->
+          | Some (file, lnum, cnum, enum)  when Config.reports_include_ml_loc ->
               Some Jsonbug_j.{ file; lnum; cnum; enum; }
           | _ -> None in
         let bug = {
@@ -969,30 +760,30 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
   let base = DB.chop_extension (DB.filename_from_string fname) in
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true;
-  if !quiet then ()
+  if Config.quiet then ()
   else L.out "Procedure: %a@\n%a@."
-      Procname.pp proc_name (Specs.pp_summary pe_text !whole_seconds) summary;
+      Procname.pp proc_name (Specs.pp_summary pe_text Config.whole_seconds) summary;
   let error_filter error_desc error_name =
     let always_report () =
       Localise.error_desc_extract_tag_value error_desc "always_report" = "true" in
-    (!Config.write_html || not (Localise.equal error_name Localise.skip_function)) &&
+    (Config.write_html || not (Localise.equal error_name Localise.skip_function)) &&
     (filters.Inferconfig.path_filter summary.Specs.attributes.ProcAttributes.loc.Location.file
      || always_report ()) &&
     filters.Inferconfig.error_filter error_name &&
     filters.Inferconfig.proc_filter proc_name in
-  do_outf procs_csv (fun outf -> ProcsCsv.pp_summary top_proc_set outf.fmt summary);
-  do_outf calls_csv (fun outf -> CallsCsv.pp_calls outf.fmt summary);
-  do_outf procs_xml (fun outf -> ProcsXml.pp_proc top_proc_set outf.fmt summary);
-  do_outf bugs_csv (fun outf -> BugsCsv.pp_bugs error_filter outf.fmt summary);
-  do_outf bugs_json (fun outf -> BugsJson.pp_bugs error_filter outf.fmt summary);
-  do_outf bugs_txt (fun outf -> BugsTxt.pp_bugs error_filter outf.fmt summary);
-  do_outf bugs_xml (fun outf -> BugsXml.pp_bugs error_filter linereader outf.fmt summary);
-  do_outf report (fun _ -> Stats.process_summary error_filter summary linereader stats);
-  if !precondition_stats then PreconditionStats.do_summary proc_name summary;
-  if !unit_test then UnitTest.print_unit_test proc_name summary;
+  do_outf Config.procs_csv (fun outf -> ProcsCsv.pp_summary top_proc_set outf.fmt summary);
+  do_outf Config.calls_csv (fun outf -> CallsCsv.pp_calls outf.fmt summary);
+  do_outf Config.procs_xml (fun outf -> ProcsXml.pp_proc top_proc_set outf.fmt summary);
+  do_outf Config.bugs_csv (fun outf -> BugsCsv.pp_bugs error_filter outf.fmt summary);
+  do_outf Config.bugs_json (fun outf -> BugsJson.pp_bugs error_filter outf.fmt summary);
+  do_outf Config.bugs_txt (fun outf -> BugsTxt.pp_bugs error_filter outf.fmt summary);
+  do_outf Config.bugs_xml (fun outf -> BugsXml.pp_bugs error_filter linereader outf.fmt summary);
+  do_outf Config.report (fun _ -> Stats.process_summary error_filter summary linereader stats);
+  if Config.precondition_stats then PreconditionStats.do_summary proc_name summary;
+  if Config.unit_test then UnitTest.print_unit_test proc_name summary;
   Config.pp_simple := pp_simple_saved;
-  do_outf latex (fun outf -> write_summary_latex outf.fmt summary);
-  if !svg then begin
+  do_outf Config.latex (fun outf -> write_summary_latex outf.fmt summary);
+  if Config.svg then begin
     let specs = Specs.get_specs_from_payload summary in
     let dot_file = DB.filename_add_suffix base ".dot" in
     let svg_file = DB.filename_add_suffix base ".svg" in
@@ -1008,14 +799,14 @@ let process_summary filters linereader stats (top_proc_set: Procname.Set.t) (fna
                            "\" >\"" ^
                            (DB.filename_to_string svg_file) ^"\""))
   end;
-  if !xml_specs then begin
+  if Config.xml_specs then begin
     let xml_file = DB.filename_add_suffix base ".xml" in
     let specs = Specs.get_specs_from_payload summary in
     if not (DB.file_exists xml_file)
     || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
     then
       begin
-        let xml_out = ref (create_outfile (DB.filename_to_string xml_file)) in
+        let xml_out = create_outfile (DB.filename_to_string xml_file) in
         do_outf xml_out (fun outf ->
             Dotty.print_specs_xml
               (Specs.get_signature summary)
@@ -1029,26 +820,28 @@ module AnalysisResults = struct
   type t = (string * Specs.summary) list
 
   let spec_files_from_cmdline =
-    (* parse command-line arguments, and find spec files specified there *)
-    let args = ref [] in
-    let f arg =
-      if not (Filename.check_suffix arg Config.specs_files_suffix) && arg <> "."
-      then print_usage_exit "arguments must be .specs files"
-      else args := arg::!args in
-    Arg.parse "INFERPRINT_ARGS" arg_desc f usage;
-    if !test_filtering then
+    (* find spec files specified by command-line arguments *)
+    IList.iter (fun arg ->
+        if not (Filename.check_suffix arg Config.specs_files_suffix) && arg <> "."
+        then print_usage_exit "arguments must be .specs files"
+      ) Config.anon_args ;
+    (match Config.source_file_copy with
+     | Some s -> source_file_copy := Some (DB.abs_source_file_from_path s)
+     | None -> ()
+    );
+    if Config.test_filtering then
       begin
         Inferconfig.test ();
         exit(0)
       end;
-    IList.append (if !args = ["."] then begin
+    IList.append (if Config.anon_args = ["."] then begin
         let arr = Sys.readdir "." in
         let all_files = Array.to_list arr in
         IList.filter
           (fun fname -> (Filename.check_suffix fname Config.specs_files_suffix))
           all_files
       end
-       else !args) (load_specfiles ())
+       else Config.anon_args) (load_specfiles ())
 
   (** apply [f] to [arg] with the gc compaction disabled during the execution *)
   let apply_without_gc f arg =
@@ -1113,10 +906,10 @@ module AnalysisResults = struct
   let get_summary_iterator () =
     let iterator_of_summary_list r =
       fun f -> IList.iter f r in
-    match !load_analysis_results with
+    match Config.load_analysis_results with
     | None ->
         begin
-          match !save_analysis_results with
+          match Config.save_analysis_results with
           | None ->
               iterator_of_spec_files ()
           | Some s ->
@@ -1139,54 +932,53 @@ end
 let compute_top_procedures = ref false
 
 let register_perf_stats_report () =
-  let stats_dir = Filename.concat !Config.results_dir Config.reporting_stats_dir_name in
+  let stats_dir = Filename.concat Config.results_dir Config.reporting_stats_dir_name in
   let stats_file = Filename.concat stats_dir (Config.perf_stats_prefix ^ ".json") in
-  DB.create_dir !Config.results_dir ;
+  DB.create_dir Config.results_dir ;
   DB.create_dir stats_dir ;
   PerfStats.register_report_at_exit stats_file
 
 let () =
   register_perf_stats_report () ;
 
-  Config.developer_mode := true;
-  Config.print_using_diff := true;
   handle_source_file_copy_option ();
   let iterate_summaries = AnalysisResults.get_summary_iterator () in
   let filters =
-    match !analyzer with
+    match Config.analyzer with
     | None -> Inferconfig.do_not_filter
     | Some analyzer -> Inferconfig.create_filters analyzer in
 
   let pdflatex fname = ignore (Sys.command ("pdflatex " ^ fname)) in
-  do_outf latex (fun outf -> begin_latex_file outf.fmt);
-  do_outf procs_csv (fun outf -> ProcsCsv.pp_header outf.fmt ());
-  do_outf procs_xml (fun outf -> ProcsXml.pp_procs_open outf.fmt ());
-  do_outf calls_csv (fun outf -> CallsCsv.pp_header outf.fmt ());
-  do_outf bugs_csv (fun outf -> BugsCsv.pp_header outf.fmt ());
-  do_outf bugs_json (fun outf -> BugsJson.pp_json_open outf.fmt ());
-  do_outf bugs_xml (fun outf -> BugsXml.pp_bugs_open outf.fmt ());
-  do_outf report (fun outf -> Report.pp_header outf.fmt ());
+  do_outf Config.latex (fun outf -> begin_latex_file outf.fmt);
+  do_outf Config.procs_csv (fun outf -> ProcsCsv.pp_header outf.fmt ());
+  do_outf Config.procs_xml (fun outf -> ProcsXml.pp_procs_open outf.fmt ());
+  do_outf Config.calls_csv (fun outf -> CallsCsv.pp_header outf.fmt ());
+  do_outf Config.bugs_csv (fun outf -> BugsCsv.pp_header outf.fmt ());
+  do_outf Config.bugs_json (fun outf -> BugsJson.pp_json_open outf.fmt ());
+  do_outf Config.bugs_xml (fun outf -> BugsXml.pp_bugs_open outf.fmt ());
+  do_outf Config.report (fun outf -> Report.pp_header outf.fmt ());
   let top_proc = TopProcedures.create () in
-  if !compute_top_procedures && (!procs_csv != None || !procs_xml != None)
+  if !compute_top_procedures && (Config.procs_csv != None || Config.procs_xml != None)
   then iterate_summaries (TopProcedures.process_summary top_proc);
   let top_proc_set = TopProcedures.top_set top_proc in
   let linereader = Printer.LineReader.create () in
   let stats = Stats.create () in
   iterate_summaries (process_summary filters linereader stats top_proc_set);
-  if !unit_test then UnitTest.print_unit_test_main ();
-  do_outf procs_csv close_outf;
-  do_outf procs_xml (fun outf -> ProcsXml.pp_procs_close outf.fmt (); close_outf outf);
-  do_outf bugs_csv close_outf;
-  do_outf bugs_json (fun outf -> BugsJson.pp_json_close outf.fmt (); close_outf outf);
-  do_outf bugs_json close_outf;
-  do_outf calls_csv close_outf;
-  do_outf bugs_txt close_outf;
-  do_outf bugs_xml (fun outf -> BugsXml.pp_bugs_close outf.fmt (); close_outf outf);
-  do_outf latex (fun outf ->
+  if Config.unit_test then UnitTest.print_unit_test_main ();
+  do_outf Config.procs_csv close_outf;
+  do_outf Config.procs_xml (fun outf -> ProcsXml.pp_procs_close outf.fmt (); close_outf outf);
+  do_outf Config.bugs_csv close_outf;
+  do_outf Config.bugs_json (fun outf -> BugsJson.pp_json_close outf.fmt (); close_outf outf);
+  do_outf Config.bugs_json close_outf;
+  do_outf Config.calls_csv close_outf;
+  do_outf Config.bugs_txt close_outf;
+  do_outf Config.bugs_xml (fun outf -> BugsXml.pp_bugs_close outf.fmt (); close_outf outf);
+  do_outf Config.latex (fun outf ->
       Latex.pp_end outf.fmt ();
       close_outf outf;
       pdflatex outf.fname;
       let pdf_name = (Filename.chop_extension outf.fname) ^ ".pdf" in
       ignore (Sys.command ("open " ^ pdf_name)));
-  do_outf report (fun outf -> F.fprintf outf.fmt "%a@?" Report.pp_stats stats; close_outf outf);
-  if !precondition_stats then PreconditionStats.pp_stats ()
+  do_outf Config.report
+    (fun outf -> F.fprintf outf.fmt "%a@?" Report.pp_stats stats; close_outf outf);
+  if Config.precondition_stats then PreconditionStats.pp_stats ()

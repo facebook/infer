@@ -78,7 +78,7 @@ let add_cmethod never_null_matcher program icfg node cm is_static =
   let tenv = icfg.JContext.tenv in
   let cn, ms = JBasics.cms_split cm.Javalib.cm_class_method_signature in
   let is_clinit = JBasics.ms_equal ms JBasics.clinit_signature in
-  if !JTrans.no_static_final = false
+  if Config.no_static_final = false
   && is_clinit
   && not (JTransStaticField.has_static_final_fields node) then
     JUtils.log "\t\tskipping class initializer: %s@." (JBasics.ms_name ms)
@@ -96,7 +96,7 @@ let add_cmethod never_null_matcher program icfg node cm is_static =
           | None -> assert false in
         let impl = JTrans.get_implementation cm in
         let instrs, meth_kind =
-          if is_clinit && not !JTrans.no_static_final then
+          if is_clinit && not Config.no_static_final then
             let instrs = JTransStaticField.static_field_init node cn (JBir.code impl) in
             (instrs, JContext.Init)
           else (JBir.code impl), JContext.Normal in
@@ -126,7 +126,7 @@ let add_amethod program icfg am is_static =
 
 
 let path_of_cached_classname cn =
-  let root_path = Filename.concat !Config.results_dir "classnames" in
+  let root_path = Filename.concat Config.results_dir "classnames" in
   let package_path = IList.fold_left Filename.concat root_path (JBasics.cn_package cn) in
   Filename.concat package_path ((JBasics.cn_simple_name cn)^".java")
 

@@ -54,7 +54,7 @@ let get_procedure_definition exe_env proc_name =
        (idenv, tenv, proc_name, proc_desc, language))
     (Exe_env.get_proc_desc exe_env proc_name)
 
-let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.C_CPP
+let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.Clang
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
 let iterate_procedure_callbacks exe_env caller_pname =

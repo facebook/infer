@@ -58,7 +58,7 @@ struct
       | Procname.ObjC_Cpp objc_cpp ->
           let class_name = Procname.objc_cpp_get_class_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
-            General_utils.mk_procname_from_objc_method CFrontend_config.OBJC
+            General_utils.mk_procname_from_objc_method Config.OBJC
       | _ ->
           None in
     match predefined_ms_opt, ms_opt with
@@ -458,8 +458,8 @@ struct
     (* As e.g. in fun_ptr = foo; *)
     let non_mangled_func_name =
       if name = CFrontend_config.malloc &&
-         (!CFrontend_config.language = CFrontend_config.OBJC ||
-          !CFrontend_config.language = CFrontend_config.OBJCPP) then
+         (Config.clang_lang = Config.OBJC ||
+          Config.clang_lang = Config.OBJCPP) then
         ModelBuiltins.malloc_no_fail
       else Procname.from_string_c_fun name in
     let is_builtin = Builtin.is_registered non_mangled_func_name in
@@ -771,7 +771,7 @@ struct
                if (is_binary_assign_op binary_operator_info)
                (* assignment operator result is lvalue in CPP, rvalue in C, *)
                (* hence the difference *)
-               && (not (General_utils.is_cpp_translation !CFrontend_config.language))
+               && (not (General_utils.is_cpp_translation Config.clang_lang))
                && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
                  (* We are in this case when an assignment is inside        *)
                  (* another operator that creates a node. Eg. another       *)

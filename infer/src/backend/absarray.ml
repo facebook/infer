@@ -321,7 +321,7 @@ let generic_strexp_abstract
     try
       let matched, footprint_part, matchings_cur_fp' = match_select_next matchings_cur_fp in
       let n = IList.length (snd matchings_cur_fp') + 1 in
-      if !Config.trace_absarray then (L.d_strln ("Num of fp candidates " ^ (string_of_int n)));
+      if Config.trace_absarray then (L.d_strln ("Num of fp candidates " ^ (string_of_int n)));
       let strexp_data = StrexpMatch.get_data matched in
       let p1, changed = do_abstract footprint_part p0 strexp_data in
       if changed then (p1, true)
@@ -331,7 +331,8 @@ let generic_strexp_abstract
   let rec find_then_abstract bound p0 =
     if bound = 0 then p0
     else begin
-      if !Config.trace_absarray then (L.d_strln ("Applying " ^ abstraction_name ^ " to"); Prop.d_prop p0; L.d_ln (); L.d_ln ());
+      if Config.trace_absarray then
+        (L.d_strln ("Applying " ^ abstraction_name ^ " to"); Prop.d_prop p0; L.d_ln (); L.d_ln ());
       let matchings_cur_fp = find_strexp_to_abstract p0 in
       let p1, changed = match_abstract p0 matchings_cur_fp in
       if changed then find_then_abstract (bound - 1) p1 else p0
@@ -443,19 +444,21 @@ let strexp_can_abstract ((_, se, typ) : StrexpMatch.strexp_data) : bool =
 (** This function abstracts a strexp *)
 let strexp_do_abstract
     footprint_part p ((path, se_in, _) : StrexpMatch.strexp_data) : Prop.normal Prop.t * bool =
-  if !Config.trace_absarray && footprint_part then (L.d_str "strexp_do_abstract (footprint)"; L.d_ln ());
-  if !Config.trace_absarray && not footprint_part then (L.d_str "strexp_do_abstract (nonfootprint)"; L.d_ln ());
+  if Config.trace_absarray && footprint_part then
+    (L.d_str "strexp_do_abstract (footprint)"; L.d_ln ());
+  if Config.trace_absarray && not footprint_part then
+    (L.d_str "strexp_do_abstract (nonfootprint)"; L.d_ln ());
   let prune_and_blur d_keys keep blur path keep_keys blur_keys =
     let p2, changed2 =
-      if !Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys; L.d_ln ());
+      if Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys; L.d_ln ());
       keep p path keep_keys in
     let p3, changed3 =
       if blur_keys == [] then (p2, false)
       else begin
-        if !Config.trace_absarray then (L.d_str "blur "; d_keys blur_keys; L.d_ln ());
+        if Config.trace_absarray then (L.d_str "blur "; d_keys blur_keys; L.d_ln ());
         blur p2 path blur_keys
       end in
-    if !Config.trace_absarray then (L.d_strln "Returns"; Prop.d_prop p3; L.d_ln (); L.d_ln ());
+    if Config.trace_absarray then (L.d_strln "Returns"; Prop.d_prop p3; L.d_ln (); L.d_ln ());
     (p3, changed2 || changed3) in
   let prune_and_blur_indices =
     prune_and_blur Sil.d_exp_list keep_only_indices blur_array_indices in
@@ -484,7 +487,7 @@ let strexp_do_abstract
     let keep_ksel = IList.filter should_keep ksel in
     let keep_keys = IList.map fst keep_ksel in
     let keep_keys' = if keep_keys == [] then default_keys else keep_keys in
-    if !Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys'; L.d_ln ());
+    if Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys'; L.d_ln ());
     abstract keep_keys' [] in
   let do_array_reexecution esel =
     (* array case re-execution: remove and blur constant and primed indices *)

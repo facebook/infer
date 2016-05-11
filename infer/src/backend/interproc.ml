@@ -48,7 +48,7 @@ module NodeVisitSet =
       if n <> 0 then n else compare_distance_to_exit x1 x2
     let compare x1 x2 =
       if !Config.footprint then
-        match !Config.worklist_mode with
+        match Config.worklist_mode with
         | 0 -> compare_ids x1.node x2.node
         | 1 -> compare_distance_to_exit x1 x2
         | _ -> compare_number_of_visits x1 x2
@@ -167,7 +167,7 @@ let path_set_checkout_todo (wl : Worklist.t) (node: Cfg.node) : Paths.PathSet.t 
 let collect_do_abstract_pre pname tenv (pset : Propset.t) : Propset.t =
   if !Config.footprint
   then
-    run_in_re_execution_mode
+    Config.run_in_re_execution_mode
       (Abs.lifted_abstract pname tenv)
       pset
   else
@@ -179,7 +179,7 @@ let collect_do_abstract_post pname tenv (pathset : Paths.PathSet.t) : Paths.Path
     else Some (Abs.abstract pname tenv p) in
   if !Config.footprint
   then
-    run_in_re_execution_mode
+    Config.run_in_re_execution_mode
       (Paths.PathSet.map_option abs_option)
       pathset
   else
@@ -189,13 +189,13 @@ let do_join_pre plist =
   Dom.proplist_collapse_pre plist
 
 let do_join_post pname tenv (pset: Paths.PathSet.t) =
-  if !Config.spec_abs_level <= 0 then
+  if Config.spec_abs_level <= 0 then
     Dom.pathset_collapse pset
   else
     Dom.pathset_collapse (Dom.pathset_collapse_impl pname tenv pset)
 
 let do_meet_pre pset =
-  if !Config.meet_level > 0 then
+  if Config.meet_level > 0 then
     Dom.propset_meet_generate_pre pset
   else
     Propset.to_proplist pset
@@ -206,7 +206,7 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
   let collect_do_abstract_one tenv prop =
     if !Config.footprint
     then
-      run_in_re_execution_mode
+      Config.run_in_re_execution_mode
         (Abs.abstract_no_symop tenv)
         prop
     else
@@ -325,7 +325,7 @@ let check_prop_size p _ =
 
 (* Check prop size and filter out possible unabstracted lists *)
 let check_prop_size edgeset_todo =
-  if !Config.monitor_prop_size then Paths.PathSet.iter check_prop_size edgeset_todo
+  if Config.monitor_prop_size then Paths.PathSet.iter check_prop_size edgeset_todo
 
 let reset_prop_metrics () =
   prop_max_size := (0, Prop.prop_emp);
@@ -436,7 +436,7 @@ let check_assignement_guard node =
     let check_guard n =
       IList.for_all check_instr (Cfg.Node.get_instrs n) in
     IList.for_all check_guard succs in
-  if !Config.curr_language = Config.C_CPP &&
+  if !Config.curr_language = Config.Clang &&
      succs_are_all_prune_nodes () &&
      succs_same_loc_as_node () &&
      succs_have_simple_guards () then
@@ -566,7 +566,7 @@ let forward_tabulate tenv wl =
           exe_iter
             (fun prop path cnt num_paths ->
                try
-                 let prop = if !Config.taint_analysis then
+                 let prop = if Config.taint_analysis then
                      let tainted_params = Taint.tainted_params proc_name in
                      Tabulation.add_param_taint proc_name formal_params prop tainted_params
                    else prop in
@@ -581,7 +581,7 @@ let forward_tabulate tenv wl =
                with
                | exn when Exceptions.handle_exception exn && !Config.footprint ->
                    handle_exn curr_node exn;
-                   if !Config.nonstop then
+                   if Config.nonstop then
                      propagate_nodes_divergence
                        tenv proc_desc (Paths.PathSet.from_renamed_list [(prop, path)])
                        succ_nodes exn_nodes wl;
@@ -794,7 +794,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp = match !Config.curr_language with
-        | Config.C_CPP -> Sil.Sizeof (typ, Sil.Subtype.exact)
+        | Config.Clang -> Sil.Sizeof (typ, Sil.Subtype.exact)
         | Config.Java -> Sil.Sizeof (typ, Sil.Subtype.subtypes) in
       Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     IList.map do_formal new_formals in
@@ -937,7 +937,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
   let check_recursion_level () =
     let summary = Specs.get_summary_unsafe "check_recursion_level" pname in
     let recursion_level = Specs.get_timestamp summary in
-    if recursion_level > !Config.max_recursion then
+    if recursion_level > Config.max_recursion then
       begin
         L.err "Reached maximum level of recursion, raising a Timeout@.";
         raise (SymOp.Analysis_failure_exe (FKrecursion_timeout recursion_level))
@@ -1017,7 +1017,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
           (pp_intra_stats wl pdesc) proc_name
           outcome;
         speco in
-      if !Config.undo_join then
+      if Config.undo_join then
         ignore (Specs.Jprop.filter filter candidate_preconditions)
       else
         ignore (IList.map filter candidate_preconditions) in
@@ -1031,7 +1031,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Cfg.Procdesc.t)
         DB.Results_dir.path_to_filename
           DB.Results_dir.Abs_source_dir
           [(Procname.to_filename proc_name)] in
-      if !Config.write_dotty then
+      if Config.write_dotty then
         Dotty.pp_speclist_dotty_file filename specs;
       L.out "@.@.================================================";
       L.out "@. *** CANDIDATE PRECONDITIONS FOR %a: " Procname.pp proc_name;
@@ -1273,9 +1273,9 @@ let analyze_proc exe_env proc_desc : Specs.summary =
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
     update_summary prev_summary specs phase proc_name elapsed res in
-  if !Config.curr_language == Config.C_CPP && Config.report_custom_error then
+  if !Config.curr_language == Config.Clang && Config.report_custom_error then
     report_custom_errors updated_summary;
-  if !Config.curr_language == Config.Java && !Config.report_runtime_exceptions then
+  if !Config.curr_language == Config.Java && Config.report_runtime_exceptions then
     report_runtime_exceptions tenv proc_desc updated_summary;
   updated_summary
 
@@ -1284,7 +1284,7 @@ let transition_footprint_re_exe proc_name joined_pres =
   L.out "Transition %a from footprint to re-exe@." Procname.pp proc_name;
   let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
   let summary' =
-    if !Config.only_footprint then
+    if Config.only_footprint then
       { summary with
         Specs.phase = Specs.RE_EXECUTION;
       }
@@ -1316,7 +1316,7 @@ let perform_transition exe_env tenv proc_name =
   let transition () =
     (* disable exceptions for leaks and protect against any other errors *)
     let joined_pres =
-      let allowleak = !Config.allowleak in
+      let allow_leak = !Config.allow_leak in
       (* apply the start node to f, and do nothing in case of exception *)
       let apply_start_node f =
         try
@@ -1328,14 +1328,14 @@ let perform_transition exe_env tenv proc_name =
         with exn when SymOp.exn_not_failure exn -> () in
       apply_start_node (do_before_node 0);
       try
-        Config.allowleak := true;
+        Config.allow_leak := true;
         let res = collect_preconditions tenv proc_name in
-        Config.allowleak := allowleak;
+        Config.allow_leak := allow_leak;
         apply_start_node do_after_node;
         res
       with exn when SymOp.exn_not_failure exn ->
         apply_start_node do_after_node;
-        Config.allowleak := allowleak;
+        Config.allow_leak := allow_leak;
         L.err "Error in collect_preconditions for %a@." Procname.pp proc_name;
         let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let err_str = "exception raised " ^ (Localise.to_string err_name) in
@@ -1357,7 +1357,7 @@ let interprocedural_algorithm exe_env : unit =
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some proc_desc ->
         let reactive_changed =
-          if !Config.reactive_mode
+          if Config.reactive_mode
           then (Cfg.Procdesc.get_attributes proc_desc).ProcAttributes.changed
           else true in
         if
@@ -1417,13 +1417,13 @@ let do_analysis exe_env =
       let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in
       let summaryfp =
-        run_in_footprint_mode (analyze_proc exe_env) proc_desc in
+        Config.run_in_footprint_mode (analyze_proc exe_env) proc_desc in
       Specs.add_summary proc_name summaryfp;
 
       perform_transition exe_env tenv proc_name;
 
       let summaryre =
-        run_in_re_execution_mode (analyze_proc exe_env) proc_desc in
+        Config.run_in_re_execution_mode (analyze_proc exe_env) proc_desc in
       Specs.add_summary proc_name summaryre in
     {
       Ondemand.analyze_ondemand;
@@ -1538,7 +1538,7 @@ let print_stats_cfg proc_shadowed cfg =
 
 (** Print the stats for all the files in the exe_env *)
 let print_stats exe_env =
-  if !Config.developer_mode then
+  if Config.developer_mode then
     Exe_env.iter_files
       (fun fname cfg ->
          let proc_shadowed proc_desc =

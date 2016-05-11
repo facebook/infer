@@ -24,33 +24,33 @@ let load_from_cache serializer zip_path cache_dir zip_library =
     if not (Sys.file_exists to_path) then
       begin
         DB.create_path (Filename.dirname to_path);
-        let zip_channel = Config.zip_channel zip_library in
+        let lazy zip_channel = zip_library.Config.zip_channel in
         let entry = Zip.find_entry zip_channel zip_path in
         Zip.copy_entry_to_file zip_channel entry to_path
       end;
     DB.filename_from_string to_path in
   match deserialize (extract absolute_path) with
-  | Some data when Config.is_models zip_library -> Some (data, DB.Models)
+  | Some data when zip_library.Config.models -> Some (data, DB.Models)
   | Some data -> Some (data, DB.Spec_lib)
   | None -> None
   | exception Not_found -> None
 
 let load_from_zip serializer zip_path zip_library =
-  let zip_channel = Config.zip_channel zip_library in
+  let lazy zip_channel = zip_library.Config.zip_channel in
   let deserialize = Serialization.from_string serializer in
   match deserialize (Zip.read_entry zip_channel (Zip.find_entry zip_channel zip_path)) with
-  | Some data when Config.is_models zip_library -> Some (data, DB.Models)
+  | Some data when zip_library.Config.models -> Some (data, DB.Models)
   | Some data -> Some (data, DB.Spec_lib)
   | None -> None
   | exception Not_found -> None
 
 let load_data serializer path zip_library =
   let zip_path = Filename.concat Config.default_in_zip_results_dir path in
-  match !Config.infer_cache with
+  match Config.infer_cache with
   | None ->
       load_from_zip serializer zip_path zip_library
   | Some infer_cache ->
-      let cache_dir = get_cache_dir infer_cache (Config.zip_filename zip_library) in
+      let cache_dir = get_cache_dir infer_cache zip_library.Config.zip_filename in
       load_from_cache serializer zip_path cache_dir zip_library
 
 (* Search path in the list of zip libraries and use a cache directory to save already
@@ -62,4 +62,4 @@ let load serializer path =
         let opt = load_data serializer path zip_library in
         if Option.is_some opt then opt
         else loop other_libraries in
-  loop (Config.get_zip_libraries ())
+  loop Config.zip_libraries

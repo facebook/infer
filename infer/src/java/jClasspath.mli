@@ -25,8 +25,6 @@ val add_models : string -> unit
 (** Check if there is a model for the given procname *)
 val is_model : Procname.t -> bool
 
-val set_verbose_out: string -> unit
-
 (** create a source file from an absolute path.
     Source files are relative if the project root is specified and absolute otherwise *)
 val java_source_file_from_path : string -> DB.source_file

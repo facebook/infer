@@ -1007,7 +1007,7 @@ let pp_cfgnode fmt (n: Cfg.Node.t) =
 let print_icfg fmt cfg =
   let print_node node =
     let loc = Cfg.Node.get_loc node in
-    if (!Config.dotty_cfg_libs || DB.source_file_equal loc.Location.file !DB.current_source) then
+    if (Config.dotty_cfg_libs || DB.source_file_equal loc.Location.file !DB.current_source) then
       F.fprintf fmt "%a\n" pp_cfgnode node in
   IList.iter print_node (Cfg.Node.get_all_nodes cfg)
 
@@ -1019,7 +1019,10 @@ let print_edges fmt edges =
   IList.iter print_edge edges
 
 let print_icfg_dotty cfg (extra_edges : (Cfg.Node.t * Cfg.Node.t) list) =
-  let chan = open_out (DB.filename_to_string (DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir [!Config.dotty_output])) in
+  let chan =
+    open_out
+      (DB.filename_to_string
+         (DB.Results_dir.path_to_filename DB.Results_dir.Abs_source_dir [Config.dotty_output])) in
   let fmt = Format.formatter_of_out_channel chan in
   F.fprintf fmt "digraph iCFG {\n";
   print_icfg fmt cfg;

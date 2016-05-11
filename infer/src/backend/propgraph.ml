@@ -205,7 +205,7 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
     if extract_stack then Prop.replace_sigma (base_stack @ Prop.get_sigma prop) prop
     else Prop.expose prop in
   let update_pe_diff (prop: Prop.normal Prop.t) : printenv =
-    if !Config.print_using_diff then
+    if Config.print_using_diff then
       let diff = compute_diff Blue (from_prop base_prop) (from_prop prop) in
       let cmap_norm = diff_get_colormap false diff in
       let cmap_foot = diff_get_colormap true diff in

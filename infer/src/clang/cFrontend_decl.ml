@@ -27,7 +27,7 @@ module CFrontend_decl_funct(T: CModule_type.CTranslation) : CFrontend_decl =
 struct
 
   let model_exists procname =
-    Specs.summary_exists_in_models procname && not !CFrontend_config.models_mode
+    Specs.summary_exists_in_models procname && not Config.models_mode
 
   (* Translates the method/function's body into nodes of the cfg. *)
   let add_method tenv cg cfg class_decl_opt procname body has_return_param is_objc_method
@@ -189,7 +189,7 @@ struct
             | Some (ClassTemplateSpecializationDecl _ as d) ->
                 let class_name = CTypes_decl.get_record_name d in
                 let curr_class = CContext.ContextCls(class_name, None, []) in
-                if !CFrontend_config.cxx_experimental then
+                if Config.cxx_experimental then
                   process_methods tenv cg cfg curr_class [dec]
             | Some dec ->
                 Printing.log_stats "Methods of %s skipped\n" (Ast_utils.string_of_decl dec)

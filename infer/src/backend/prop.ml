@@ -153,12 +153,12 @@ let pp_sub_entry pe0 f entry =
 
 (** Pretty print a substitution as a list of (ident,exp) pairs *)
 let pp_subl pe =
-  if !Config.smt_output then pp_semicolon_seq pe (pp_sub_entry pe)
+  if Config.smt_output then pp_semicolon_seq pe (pp_sub_entry pe)
   else pp_semicolon_seq_oneline pe (pp_sub_entry pe)
 
 (** Pretty print a pi. *)
 let pp_pi pe =
-  if !Config.smt_output then pp_semicolon_seq pe (Sil.pp_atom pe)
+  if Config.smt_output then pp_semicolon_seq pe (Sil.pp_atom pe)
   else pp_semicolon_seq_oneline pe (Sil.pp_atom pe)
 
 (** Dump a pi. *)
@@ -1395,7 +1395,7 @@ let footprint_normalize prop =
     sigma_fav_add fav nsigma;
     fav in
   (* TODO (t4893479): make this check less angelic *)
-  if Sil.fav_exists fp_vars Ident.is_normal && not !Config.angelic_execution then
+  if Sil.fav_exists fp_vars Ident.is_normal && not Config.angelic_execution then
     begin
       L.d_strln "footprint part contains normal variables";
       d_pi npi; L.d_ln ();

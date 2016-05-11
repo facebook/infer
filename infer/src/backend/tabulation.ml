@@ -336,7 +336,7 @@ let check_dereferences callee_pname actual_pre sub spec_pre formal_params =
   match deref_err_list with
   | [] -> None
   | deref_err :: _ ->
-      if !Config.angelic_execution then
+      if Config.angelic_execution then
         (* In angelic mode, prefer to report Deref_null over other kinds of deref errors. this
          * makes sure we report a NULL_DEREFERENCE instead of
            a less interesting PRECONDITION_NOT_MET
@@ -554,7 +554,7 @@ let prop_footprint_add_pi_sigma_starfld_sigma
         let fav = Prop.sigma_fav [hpred] in
         (* TODO (t4893479): make this check less angelic *)
         if Sil.fav_exists fav
-            (fun id -> not (Ident.is_footprint id) && not !Config.angelic_execution)
+            (fun id -> not (Ident.is_footprint id) && not Config.angelic_execution)
         then begin
           L.d_warning "found hpred with non-footprint variable, dropping the spec";
           L.d_ln (); Sil.d_hpred hpred; L.d_ln ();
@@ -824,7 +824,7 @@ let add_param_taint proc_name formal_params prop param_nums =
 
 (* add Auntaint attribute to a callee_pname precondition *)
 let mk_pre pre formal_params callee_pname callee_attrs =
-  if !Config.taint_analysis then
+  if Config.taint_analysis then
     add_tainting_att_param_list
       (Prop.normalize pre)
       (Taint.accepts_sensitive_params callee_pname (Some callee_attrs))
@@ -902,10 +902,10 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
           IList.map taint_retval posts
         else posts in
       let posts' =
-        if !Config.idempotent_getters && !Config.curr_language = Config.Java
+        if Config.idempotent_getters && !Config.curr_language = Config.Java
         then mk_getter_idempotent posts
         else posts in
-      if !Config.taint_analysis then mk_retval_tainted posts' else posts'
+      if Config.taint_analysis then mk_retval_tainted posts' else posts'
   | _ -> posts
 
 (** Check if actual_pre * missing_footprint |- false *)
@@ -1025,7 +1025,7 @@ let exe_spec
         Reporting.log_warning caller_pname exn in
       let do_split () =
         let missing_pi' =
-          if !Config.taint_analysis then
+          if Config.taint_analysis then
             do_taint_check caller_pname callee_pname actual_pre missing_pi sub2
           else missing_pi in
         process_splitting
@@ -1054,7 +1054,7 @@ let exe_spec
         IList.iter log_check_exn checks;
         let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
         match check_dereferences callee_pname subbed_pre sub2 spec_pre formal_params with
-        | Some (Deref_undef _, _) when !Config.angelic_execution ->
+        | Some (Deref_undef _, _) when Config.angelic_execution ->
             let split = do_split () in
             report_valid_res split
         | Some (deref_error, desc) ->
@@ -1249,7 +1249,7 @@ let exe_call_postprocess ret_ids trace_call callee_pname callee_attrs loc result
           IList.length (Procname.java_get_parameters pn_java) = 0
       | _ ->
           false in
-    (!Config.idempotent_getters &&
+    (Config.idempotent_getters &&
      !Config.curr_language = Config.Java &&
      is_likely_getter callee_pname)
     || returns_nullable ret_annot in

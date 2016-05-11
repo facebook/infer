@@ -140,7 +140,7 @@ let execute___print_value { Builtin.pdesc; prop_; path; args; }
 let is_undefined_opt prop n_lexp =
   let is_undef =
     Option.is_some (Prop.get_undef_attribute prop n_lexp) in
-  is_undef && (!Config.angelic_execution || !Config.optimistic_cast)
+  is_undef && (Config.angelic_execution || Config.optimistic_cast)
 
 (** Creates an object in the heap with a given type, when the object is not known to be null or when
     it doesn't appear already in the heap. *)
@@ -512,7 +512,7 @@ let execute___objc_retain_impl
 
 let execute___objc_retain builtin_args
   : Builtin.ret_typ =
-  if !Config.objc_memory_model_on then
+  if Config.objc_memory_model_on then
     execute___objc_retain_impl builtin_args
   else execute___no_op builtin_args.Builtin.prop_ builtin_args.Builtin.path
 
@@ -531,7 +531,7 @@ let execute___objc_release_impl
 
 let execute___objc_release builtin_args
   : Builtin.ret_typ =
-  if !Config.objc_memory_model_on then
+  if Config.objc_memory_model_on then
     execute___objc_release_impl builtin_args
   else execute___no_op builtin_args.Builtin.prop_ builtin_args.Builtin.path
 
@@ -547,7 +547,7 @@ let execute___set_autorelease_attribute
   | [(lexp, _)], _ ->
       let pname = Cfg.Procdesc.get_proc_name pdesc in
       let prop = return_result lexp prop_ ret_ids in
-      if !Config.objc_memory_model_on then
+      if Config.objc_memory_model_on then
         let n_lexp, prop = check_arith_norm_exp pname lexp prop in
         let prop' = Prop.add_or_replace_exp_attribute prop n_lexp Sil.Aautorelease in
         [(prop', path)]
@@ -558,7 +558,7 @@ let execute___set_autorelease_attribute
 let execute___release_autorelease_pool
     ({ Builtin.prop_; path; } as builtin_args)
   : Builtin.ret_typ =
-  if !Config.objc_memory_model_on then
+  if Config.objc_memory_model_on then
     let autoreleased_objects = Prop.get_atoms_with_attribute Sil.Aautorelease prop_ in
     let prop_without_attribute = Prop.remove_attribute Sil.Aautorelease prop_ in
     let call_release res exp =
@@ -725,7 +725,7 @@ let _execute_free_nonzero mk pdesc tenv instr prop lexp typ loc =
           IList.rev prop_list
     end
   with Rearrange.ARRAY_ACCESS ->
-    if (!Config.array_level = 0) then assert false
+    if (Config.array_level = 0) then assert false
     else begin
       L.d_strln ".... Array containing allocated heap cells ....";
       L.d_str "  Instr: "; Sil.d_instr instr; L.d_ln ();

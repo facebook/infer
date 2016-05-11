@@ -29,7 +29,7 @@ type method_call_type =
   | MCStatic
 
 type function_method_decl_info =
-  | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.type_ptr * CFrontend_config.lang
+  | Func_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.type_ptr * Config.clang_lang
   | Cpp_Meth_decl_info of Clang_ast_t.function_decl_info * Clang_ast_t.cxx_method_decl_info * string * Clang_ast_t.type_ptr
   | ObjC_Meth_decl_info of Clang_ast_t.obj_c_method_decl_info * string
   | Block_decl_info of Clang_ast_t.block_decl_info * Clang_ast_t.type_ptr * CContext.t
@@ -92,9 +92,9 @@ let get_param_decls function_method_decl_info =
 let get_language function_method_decl_info =
   match function_method_decl_info with
   | Func_decl_info (_, _, language) -> language
-  | Cpp_Meth_decl_info _ -> CFrontend_config.CPP
-  | ObjC_Meth_decl_info _ -> CFrontend_config.OBJC
-  | Block_decl_info _ -> CFrontend_config.OBJC
+  | Cpp_Meth_decl_info _ -> Config.CPP
+  | ObjC_Meth_decl_info _ -> Config.OBJC
+  | Block_decl_info _ -> Config.OBJC
 
 let is_cpp_virtual function_method_decl_info =
   match function_method_decl_info with
@@ -155,7 +155,7 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, name_info, tp, fdi), _ ->
       let name = Ast_utils.get_qualified_name name_info in
-      let language = !CFrontend_config.language in
+      let language = Config.clang_lang in
       let func_decl = Func_decl_info (fdi, tp, language) in
       let function_info = Some (decl_info, fdi) in
       let procname = General_utils.mk_procname_from_function name function_info tp language in
@@ -306,9 +306,9 @@ let get_formal_parameters tenv ms =
     | (name, raw_type):: pl' ->
         let should_add_pointer name ms =
           let is_objc_self = name = CFrontend_config.self &&
-                             CMethod_signature.ms_get_lang ms = CFrontend_config.OBJC in
+                             CMethod_signature.ms_get_lang ms = Config.OBJC in
           let is_cxx_this = name = CFrontend_config.this &&
-                            CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
+                            CMethod_signature.ms_get_lang ms = Config.CPP in
           (is_objc_self && CMethod_signature.ms_is_instance ms) || is_cxx_this in
         let tp = if should_add_pointer name ms then
             (Ast_expressions.create_pointer_type raw_type)
@@ -366,7 +366,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
   let method_annotation =
     sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) in
   let is_cpp_inst_method = CMethod_signature.ms_is_instance ms
-                           && CMethod_signature.ms_get_lang ms = CFrontend_config.CPP in
+                           && CMethod_signature.ms_get_lang ms = Config.CPP in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_str =
@@ -381,7 +381,7 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     let captured' = IList.map (fun (var, t) -> (Pvar.get_name var, t)) captured in
     let procdesc =
       let proc_attributes =
-        { (ProcAttributes.default proc_name Config.C_CPP) with
+        { (ProcAttributes.default proc_name Config.Clang) with
           ProcAttributes.captured = captured';
           ProcAttributes.objc_accessor = get_objc_property_accessor tenv ms;
           formals;
@@ -419,7 +419,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
          | None -> Sil.Tvoid, []) in
       let loc = Location.dummy in
       let proc_attributes =
-        { (ProcAttributes.default proc_name Config.C_CPP) with
+        { (ProcAttributes.default proc_name Config.Clang) with
           ProcAttributes.formals;
           is_objc_instance_method = is_objc_inst_method;
           loc;
@@ -439,7 +439,7 @@ let create_procdesc_with_pointer context pointer class_name_opt name tp =
         | Some class_name ->
             General_utils.mk_procname_from_cpp_method class_name name tp
         | None ->
-            General_utils.mk_procname_from_function name None tp !CFrontend_config.language in
+            General_utils.mk_procname_from_function name None tp Config.clang_lang in
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 
@@ -449,7 +449,7 @@ let get_method_for_frontend_checks cfg cg loc =
   match Cfg.Procdesc.find_from_name cfg proc_name with
   | Some pdesc -> pdesc
   | None ->
-      let attrs = { (ProcAttributes.default proc_name Config.C_CPP) with
+      let attrs = { (ProcAttributes.default proc_name Config.Clang) with
                     is_defined = true;
                     loc = loc;
                   } in
@@ -465,7 +465,7 @@ let get_method_for_frontend_checks cfg cg loc =
 let add_default_method_for_class class_name decl_info =
   let loc = CLocation.get_sil_location_from_range decl_info.Clang_ast_t.di_source_range true in
   let proc_name = Procname.get_default_objc_class_method class_name in
-  let attrs = { (ProcAttributes.default proc_name Config.C_CPP) with loc = loc; } in
+  let attrs = { (ProcAttributes.default proc_name Config.Clang) with loc = loc; } in
   AttributesTable.store_attributes attrs
 
 let get_procname_from_cpp_lambda context dec =

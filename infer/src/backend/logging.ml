@@ -83,7 +83,7 @@ let set_err_formatter fmt =
 
 (** Flush the current streams *)
 let flush_streams () =
-  if !Config.developer_mode then
+  if Config.developer_mode then
     begin
       F.fprintf !current_out_formatter "@?";
       F.fprintf !current_err_formatter "@?"
@@ -91,8 +91,8 @@ let flush_streams () =
 
 (** extend the current print log *)
 let add_print_action pact =
-  if !Config.write_html then delayed_actions := pact :: !delayed_actions
-  else if not !Config.test then !printer_hook !current_out_formatter pact
+  if Config.write_html then delayed_actions := pact :: !delayed_actions
+  else if not Config.test then !printer_hook !current_out_formatter pact
 
 (** reset the delayed print actions *)
 let reset_delayed_prints () =
@@ -110,7 +110,7 @@ let do_print fmt fmt_string =
   F.fprintf fmt fmt_string
 
 let do_print_in_developer_mode fmt fmt_string =
-  if !Config.developer_mode then
+  if Config.developer_mode then
     F.fprintf fmt fmt_string
   else
     F.ifprintf fmt fmt_string
@@ -143,7 +143,7 @@ let pp_ml_loc fmt ml_loc =
   F.fprintf fmt "%s" (ml_loc_to_string ml_loc)
 
 let pp_ml_loc_opt fmt ml_loc_opt =
-  if !Config.developer_mode then match ml_loc_opt with
+  if Config.developer_mode then match ml_loc_opt with
     | None -> ()
     | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
 
@@ -197,7 +197,7 @@ let d_decrease_indent (indent: int) =
   add_print_action (PTdecrease_indent, Obj.repr indent)
 
 let log_progress_simple text =
-  if !Config.show_progress_bar then
+  if Config.show_progress_bar then
     F.fprintf Format.err_formatter "%s@?" text
 
 let log_progress_file () =
@@ -207,7 +207,7 @@ let log_progress_procedure () =
   log_progress_simple "."
 
 let log_progress_timeout_event failure_kind =
-  if !Config.developer_mode then
+  if Config.developer_mode then
     begin
       match failure_kind with
       | SymOp.FKtimeout ->

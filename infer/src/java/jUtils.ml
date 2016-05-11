@@ -12,7 +12,7 @@ open! Utils
 
 
 let rec log fmt =
-  if !JConfig.debug_mode then
+  if Config.debug_mode then
     Logging.stdout fmt
   else
     Obj.magic log

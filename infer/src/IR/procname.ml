@@ -255,11 +255,11 @@ let get_method = function
 (** Return the language of the procedure. *)
 let get_language = function
   | ObjC_Cpp _ ->
-      Config.C_CPP
+      Config.Clang
   | C _ ->
-      Config.C_CPP
+      Config.Clang
   | Block _ ->
-      Config.C_CPP
+      Config.Clang
   | Java _ ->
       Config.Java
 

@@ -362,8 +362,8 @@ let create_outfile fname =
     None
 
 (** operate on an outfile reference if it is not None *)
-let do_outf outf_ref f =
-  match !outf_ref with
+let do_outf outf_opt f =
+  match outf_opt with
   | None -> ()
   | Some outf ->
       f outf
@@ -464,238 +464,6 @@ let filename_to_relative root fname =
   remainder
 
 
-(* Type of command-line arguments before processing *)
-type arg_list = (string * Arg.spec * string option * string) list
-
-let arg_desc_filter options_to_keep =
-  IList.filter (function (option_name, _, _, _) -> IList.mem string_equal option_name options_to_keep)
-
-(* Given a filename with a list of paths, convert it into a list of string iff they are absolute *)
-let read_specs_dir_list_file fname =
-  let validate_path path =
-    if Filename.is_relative path then
-      failwith ("Failing because path " ^ path ^ " is not absolute") in
-  match read_file fname with
-  | Some pathlist ->
-      IList.iter validate_path pathlist;
-      pathlist
-  | None -> failwith ("cannot read file " ^ fname)
-
-let base_arg_desc =
-  [
-    "-results_dir",
-    Arg.String (fun s -> Config.results_dir := s),
-    Some "dir",
-    "set the project results directory (default dir=" ^ Config.default_results_dir ^ ")";
-
-    "-coverage",
-    Arg.Unit (fun () -> Config.worklist_mode:= 2),
-    None,
-    "analysis mode to maximize coverage (can take longer)";
-
-    "-lib",
-    Arg.String (fun s -> Config.specs_library := filename_to_absolute s :: !Config.specs_library),
-    Some "dir",
-    "add dir to the list of directories to be searched for spec files";
-
-    "-specs-dir-list-file",
-    Arg.String (fun s -> Config.specs_library := (read_specs_dir_list_file s) @ !Config.specs_library),
-    Some "file",
-    "add the newline-separated directories listed in <file> to the list of directories to \
-     be searched for spec files";
-
-    "-models",
-    Arg.String (fun s -> Config.add_models (filename_to_absolute s)),
-    Some "zip file",
-    "add a zip file containing the models";
-
-    "-ziplib",
-    Arg.String (fun s -> Config.add_zip_library (filename_to_absolute s)),
-    Some "zip file",
-    "add a zip file containing library spec files";
-
-    "-project_root",
-    Arg.String (fun s -> Config.project_root := Some (filename_to_absolute s)),
-    Some "dir",
-    "root directory of the project";
-
-    "-infer_cache",
-    Arg.String (fun s -> Config.infer_cache := Some (filename_to_absolute s)),
-    Some "dir",
-    "Select a directory to contain the infer cache";
-
-    "-inferconfig_home",
-    Arg.String (fun s -> Config.inferconfig_home := Some s),
-    Some "dir",
-    "Path to the .inferconfig file";
-  ]
-
-let reserved_arg_desc =
-  [
-    "-absstruct",
-    Arg.Set_int Config.abs_struct,
-    Some "n",
-    "abstraction level for fields of structs (default n = 1)"
-    ;
-    "-absval",
-    Arg.Set_int Config.abs_val,
-    Some "n",
-    "abstraction level for expressions (default n = 2)";
-    "-arraylevel",
-    Arg.Set_int Config.array_level,
-    Some "n",
-    "the level of treating the array indexing and pointer arithmetic (default n = 0)"
-    ;
-    "-developer_mode",
-    Arg.Set Config.developer_mode,
-    None,
-    "reserved"
-    ;
-    "-dotty",
-    Arg.Set Config.write_dotty,
-    None,
-    "produce dotty files in the results directory";
-    "-exit_node_bias",
-    Arg.Unit (fun () -> Config.worklist_mode:= 1),
-    None,
-    "nodes nearest the exit node are analyzed first";
-    "-html",
-    Arg.Set Config.write_html,
-    None,
-    "produce hmtl output in the results directory"
-    ;
-    "-join_cond",
-    Arg.Set_int Config.join_cond,
-    Some "n",
-    "set the strength of the final information-loss check used by the join (default n=1)"
-    ;
-    "-leak",
-    Arg.Set Config.allowleak,
-    None,
-    "forget leaks during abstraction"
-    ;
-    "-monitor_prop_size",
-    Arg.Set Config.monitor_prop_size,
-    None,
-    "monitor size of props"
-    ;
-    "-nelseg",
-    Arg.Set Config.nelseg,
-    None,
-    "use only nonempty lsegs"
-    ;
-    "-noliveness",
-    Arg.Clear Config.liveness,
-    None,
-    "turn the dead program variable elimination off"
-    ;
-    "-noprintdiff",
-    Arg.Clear Config.print_using_diff,
-    None,
-    "turn off highlighting diff w.r.t. previous prop in printing"
-    ;
-    "-notest",
-    Arg.Clear Config.test,
-    None,
-    "turn test mode off"
-    ;
-    "-only_footprint",
-    Arg.Set Config.only_footprint,
-    None,
-    "skip the re-execution phase"
-    ;
-    "-print_types",
-    Arg.Set Config.print_types,
-    None,
-    "print types in symbolic heaps"
-    ;
-    "-set_pp_margin",
-    Arg.Int (fun i -> F.set_margin i),
-    Some "n",
-    "set right margin for the pretty printing functions"
-    ;
-    "-spec_abs_level",
-    Arg.Set_int Config.spec_abs_level,
-    Some "n",
-    "set the level of abstracting the postconditions of discovered specs (default n=1)"
-    ;
-    "-trace_error",
-    Arg.Set Config.trace_error,
-    None,
-    "turn on tracing of error explanation"
-    ;
-    "-trace_join",
-    Arg.Set Config.trace_join,
-    None,
-    "turn on tracing of join"
-    ;
-    "-trace_rearrange",
-    Arg.Set Config.trace_rearrange,
-    None,
-    "turn on tracing of rearrangement"
-    ;
-    "-visits_bias",
-    Arg.Unit (fun () -> Config.worklist_mode:= 2),
-    None,
-    "nodes visited fewer times are analyzed first"
-    ;
-  ]
-
-
-module Arg = struct
-
-  include Arg
-
-  (** Custom version of Arg.aling so that keywords are on one line and documentation is on the next *)
-  let align arg_desc =
-    let do_arg (key, spec, doc) =
-      let first_space =
-        try
-          let index = String.index doc ' ' in
-          if String.get doc index = '=' then 0 else index
-        with Not_found -> 0 in
-      let len = String.length doc in
-      let doc1 = String.sub doc 0 first_space in
-      let doc2 = String.sub doc first_space (len - first_space) in
-      if len = 0 then (key, spec, doc)
-      else (key, spec, doc1 ^ "\n     " ^ doc2) in
-    IList.map do_arg arg_desc
-
-  type aligned = (key * spec * doc)
-
-  (** Create a group of sorted command-line arguments *)
-  let create_options_desc double_minus title unsorted_desc =
-    let handle_double_minus (opname, spec, param_opt, text) = match param_opt with
-      | None ->
-          if double_minus then ("-"^opname, spec, " " ^ text)
-          else (opname, spec, " " ^ text)
-      | Some param ->
-          if double_minus then ("-"^opname, spec, "=" ^ param ^ " " ^ text)
-          else (opname, spec, param ^ " " ^ text) in
-    let unsorted_desc' = IList.map handle_double_minus unsorted_desc in
-    let dlist =
-      ("", Arg.Unit (fun () -> ()), " \n  " ^ title ^ "\n") ::
-      IList.sort (fun (x, _, _) (y, _, _) -> Pervasives.compare x y) unsorted_desc' in
-    align dlist
-
-  let env_to_argv env =
-    Str.split (Str.regexp ":") env
-
-  let prepend_to_argv args =
-    let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in
-    Sys.executable_name :: args @ cl_args
-
-  let parse env_var spec anon usage =
-    let env_args = env_to_argv (try Unix.getenv env_var with Not_found -> "") in
-    let env_cl_args = prepend_to_argv env_args in
-    try
-      Arg.parse_argv (Array.of_list env_cl_args) spec anon usage
-    with
-    | Bad usage -> Pervasives.prerr_string usage; exit 2;
-    | Help usage -> Pervasives.print_string usage; exit 0;
-
-end
-
 (** flags for a procedure *)
 type proc_flags = (string, string) Hashtbl.t
 
@@ -767,26 +535,24 @@ let directory_iter f path =
 
 type analyzer = Infer | Eradicate | Checkers | Tracing
 
-let analyzers = [Infer; Eradicate; Checkers; Tracing]
+let string_to_analyzer =
+  [("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers); ("tracing", Tracing)]
 
-let string_of_analyzer = function
-  | Infer -> "infer"
-  | Eradicate -> "eradicate"
-  | Checkers -> "checkers"
-  | Tracing -> "tracing"
+let analyzers = IList.map snd string_to_analyzer
+
+let string_of_analyzer =
+  let analyzer_to_string = IList.map (fun (a,n) -> (n,a)) string_to_analyzer in
+  fun analyzer ->
+    IList.assoc ( = ) analyzer analyzer_to_string
 
 exception Unknown_analyzer
 
-let analyzer_of_string = function
-  | "infer" -> Infer
-  | "eradicate" -> Eradicate
-  | "checkers" -> Checkers
-  | "tracing" -> Tracing
-  | _ -> raise Unknown_analyzer
+let analyzer_of_string name =
+  try IList.assoc string_equal name string_to_analyzer
+  with Not_found -> raise Unknown_analyzer
 
 
-let string_crc_hex32 =
-  Config.string_crc_hex32 (* implemented in Config to avoid circularities *)
+let string_crc_hex32 s = Digest.to_hex (Digest.string s)
 
 let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
   let name_up_to_cutoff =
@@ -797,26 +563,3 @@ let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
     let name_for_crc = name ^ key in
     string_crc_hex32 name_for_crc in
   name_up_to_cutoff ^ "." ^ crc_str
-
-let set_reference_and_call_function reference value f x =
-  let saved = !reference in
-  let restore () =
-    reference := saved in
-  try
-    reference := value;
-    let res = f x in
-    restore ();
-    res
-  with
-  | exn ->
-      restore ();
-      raise exn
-
-let run_in_re_execution_mode f x =
-  set_reference_and_call_function Config.footprint false f x
-
-let run_in_footprint_mode f x =
-  set_reference_and_call_function Config.footprint true f x
-
-let run_with_abs_val_equal_zero f x =
-  set_reference_and_call_function Config.abs_val 0 f x
