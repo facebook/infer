@@ -1,5 +1,5 @@
 digraph iCFG {
-8 [label="8:  Return Stmt \n   n$2=*&p:int * [line 22]\n  n$3=*n$2:int  [line 22]\n  *&x:int =n$3 [line 22]\n  *&y:int =1 [line 23]\n  n$0=*&x:int  [line 24]\n  n$1=*&y:int  [line 24]\n  n$4=*(n$0 + n$1):int  [line 21]\n  *&return:int =n$4 [line 21]\n  REMOVE_TEMPS(n$4,n$0,n$1,n$2,n$3); [line 21]\n  NULLIFY(&p); [line 21]\n  NULLIFY(&x); [line 21]\n  NULLIFY(&y); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+8 [label="8:  Return Stmt \n   n$2=*&p:int * [line 22]\n  n$3=*n$2:int  [line 22]\n  *&x:int =n$3 [line 22]\n  *&y:int =1 [line 23]\n  n$0=*&x:int  [line 24]\n  n$1=*&y:int  [line 24]\n  n$4=*(n$0 + n$1):int  [line 21]\n  *&return:int =n$4 [line 21]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4); [line 21]\n  NULLIFY(&p); [line 21]\n  NULLIFY(&x); [line 21]\n  NULLIFY(&y); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -14,7 +14,7 @@ digraph iCFG {
 	
 
 	 5 -> 4 ;
-4 [label="4:  BinaryOperatorStmt: Assign \n   *&X:int =4 [line 14]\n  n$0=*&X:int  [line 15]\n  n$1=*n$0:int  [line 13]\n  *&y:int =n$1 [line 13]\n  REMOVE_TEMPS(n$1,n$0); [line 13]\n  NULLIFY(&X); [line 13]\n  NULLIFY(&y); [line 13]\n " shape="box"]
+4 [label="4:  BinaryOperatorStmt: Assign \n   *&X:int =4 [line 14]\n  n$0=*&X:int  [line 15]\n  n$1=*n$0:int  [line 13]\n  *&y:int =n$1 [line 13]\n  REMOVE_TEMPS(n$0,n$1); [line 13]\n  NULLIFY(&X); [line 13]\n  NULLIFY(&y); [line 13]\n " shape="box"]
 	
 
 	 4 -> 3 ;

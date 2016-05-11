@@ -11,15 +11,15 @@ digraph iCFG {
 	
 
 	 68 -> 62 ;
-67 [label="67: Prune (false branch) \n   PRUNE(((n$0 == n$3) == 0), false); [line 64]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 64]\n " shape="invhouse"]
+67 [label="67: Prune (false branch) \n   PRUNE(((n$0 == n$3) == 0), false); [line 64]\n  REMOVE_TEMPS(n$0,n$3); [line 64]\n " shape="invhouse"]
 	
 
 	 67 -> 69 ;
-66 [label="66: Prune (true branch) \n   PRUNE(((n$0 == n$3) != 0), true); [line 64]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 64]\n " shape="invhouse"]
+66 [label="66: Prune (true branch) \n   PRUNE(((n$0 == n$3) != 0), true); [line 64]\n  REMOVE_TEMPS(n$0,n$3); [line 64]\n " shape="invhouse"]
 	
 
 	 66 -> 68 ;
-65 [label="65:  BinaryOperatorStmt: EQ \n   n$0=_fun_template_typeid<Person>(&person:class Person &) [line 64]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,&person:class Person ) [line 64]\n  n$2=*n$1:class std::type_info  [line 64]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 64]\n " shape="box"]
+65 [label="65:  BinaryOperatorStmt: EQ \n   n$0=_fun_template_typeid<Person>(&person:class Person &) [line 64]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,&person:class Person ) [line 64]\n  n$2=*n$1:class std::type_info  [line 64]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 64]\n  REMOVE_TEMPS(n$1,n$2); [line 64]\n " shape="box"]
 	
 
 	 65 -> 66 ;
@@ -66,15 +66,15 @@ digraph iCFG {
 	
 
 	 54 -> 48 ;
-53 [label="53: Prune (false branch) \n   PRUNE(((n$3 == n$6) == 0), false); [line 50]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5,n$6); [line 50]\n " shape="invhouse"]
+53 [label="53: Prune (false branch) \n   PRUNE(((n$3 == n$6) == 0), false); [line 50]\n  REMOVE_TEMPS(n$3,n$6); [line 50]\n " shape="invhouse"]
 	
 
 	 53 -> 55 ;
-52 [label="52: Prune (true branch) \n   PRUNE(((n$3 == n$6) != 0), true); [line 50]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3,n$4,n$5,n$6); [line 50]\n " shape="invhouse"]
+52 [label="52: Prune (true branch) \n   PRUNE(((n$3 == n$6) != 0), true); [line 50]\n  REMOVE_TEMPS(n$3,n$6); [line 50]\n " shape="invhouse"]
 	
 
 	 52 -> 54 ;
-51 [label="51:  BinaryOperatorStmt: EQ \n   n$0=*&ptr:class Person * [line 50]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,n$0:class Person ) [line 50]\n  n$2=*n$1:class std::type_info  [line 50]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 50]\n  n$4=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$4.__type_name:void ,&person:class Person ) [line 50]\n  n$5=*n$4:class std::type_info  [line 50]\n  n$6=_fun_std::type_info_name(n$4:class std::type_info &) [line 50]\n  NULLIFY(&ptr); [line 50]\n " shape="box"]
+51 [label="51:  BinaryOperatorStmt: EQ \n   n$0=*&ptr:class Person * [line 50]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,n$0:class Person ) [line 50]\n  n$2=*n$1:class std::type_info  [line 50]\n  n$3=_fun_std::type_info_name(n$1:class std::type_info &) [line 50]\n  n$4=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$4.__type_name:void ,&person:class Person ) [line 50]\n  n$5=*n$4:class std::type_info  [line 50]\n  n$6=_fun_std::type_info_name(n$4:class std::type_info &) [line 50]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$4,n$5); [line 50]\n  NULLIFY(&ptr); [line 50]\n " shape="box"]
 	
 
 	 51 -> 52 ;
@@ -110,15 +110,15 @@ digraph iCFG {
 	
 
 	 43 -> 37 ;
-42 [label="42: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 42]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 42]\n " shape="invhouse"]
+42 [label="42: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 42]\n  REMOVE_TEMPS(n$3); [line 42]\n " shape="invhouse"]
 	
 
 	 42 -> 44 ;
-41 [label="41: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 42]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 42]\n " shape="invhouse"]
+41 [label="41: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 42]\n  REMOVE_TEMPS(n$3); [line 42]\n " shape="invhouse"]
 	
 
 	 41 -> 43 ;
-40 [label="40:  Call _fun_std::type_info_operator== \n   n$0=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$0.__type_name:void ,&employee:class Employee ) [line 42]\n  n$1=*&ptr:class Person * [line 42]\n  n$2=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$2.__type_name:void ,n$1:class Person ) [line 42]\n  n$3=_fun_std::type_info_operator==(n$0:class std::type_info &,n$2:class std::type_info &) [line 42]\n  NULLIFY(&ptr); [line 42]\n " shape="box"]
+40 [label="40:  Call _fun_std::type_info_operator== \n   n$0=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$0.__type_name:void ,&employee:class Employee ) [line 42]\n  n$1=*&ptr:class Person * [line 42]\n  n$2=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$2.__type_name:void ,n$1:class Person ) [line 42]\n  n$3=_fun_std::type_info_operator==(n$0:class std::type_info &,n$2:class std::type_info &) [line 42]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 42]\n  NULLIFY(&ptr); [line 42]\n " shape="box"]
 	
 
 	 40 -> 41 ;
@@ -206,15 +206,15 @@ digraph iCFG {
 	
 
 	 19 -> 13 ;
-18 [label="18: Prune (false branch) \n   PRUNE((n$2 == 0), false); [line 22]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 22]\n " shape="invhouse"]
+18 [label="18: Prune (false branch) \n   PRUNE((n$2 == 0), false); [line 22]\n  REMOVE_TEMPS(n$2); [line 22]\n " shape="invhouse"]
 	
 
 	 18 -> 20 ;
-17 [label="17: Prune (true branch) \n   PRUNE((n$2 != 0), true); [line 22]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 22]\n " shape="invhouse"]
+17 [label="17: Prune (true branch) \n   PRUNE((n$2 != 0), true); [line 22]\n  REMOVE_TEMPS(n$2); [line 22]\n " shape="invhouse"]
 	
 
 	 17 -> 19 ;
-16 [label="16:  Call _fun_std::type_info_operator== \n   n$0=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$0.__type_name:void ,&t:int ) [line 22]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,&person:class Person ) [line 22]\n  n$2=_fun_std::type_info_operator==(n$0:class std::type_info &,n$1:class std::type_info &) [line 22]\n  NULLIFY(&t); [line 22]\n " shape="box"]
+16 [label="16:  Call _fun_std::type_info_operator== \n   n$0=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$0.__type_name:void ,&t:int ) [line 22]\n  n$1=_fun___cxx_typeid(sizeof(class std::type_info ):void ,n$1.__type_name:void ,&person:class Person ) [line 22]\n  n$2=_fun_std::type_info_operator==(n$0:class std::type_info &,n$1:class std::type_info &) [line 22]\n  REMOVE_TEMPS(n$0,n$1); [line 22]\n  NULLIFY(&t); [line 22]\n " shape="box"]
 	
 
 	 16 -> 17 ;

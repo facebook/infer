@@ -4,7 +4,7 @@ digraph iCFG {
 
 	 14 -> 11 ;
 	 14 -> 12 ;
-13 [label="13: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 12]\n  NULLIFY(&x); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="invhouse"]
+13 [label="13: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&x); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="invhouse"]
 	
 
 	 13 -> 10 ;
@@ -13,7 +13,7 @@ digraph iCFG {
 
 	 12 -> 8 ;
 	 12 -> 9 ;
-11 [label="11: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 13]\n  NULLIFY(&x); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="invhouse"]
+11 [label="11: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&x); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="invhouse"]
 	
 
 	 11 -> 10 ;
@@ -21,11 +21,11 @@ digraph iCFG {
 	
 
 	 10 -> 2 ;
-9 [label="9: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 15]\n " shape="invhouse"]
+9 [label="9: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n " shape="invhouse"]
 	
 
 	 9 -> 5 ;
-8 [label="8: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 15]\n  NULLIFY(&x); [line 15]\n " shape="invhouse"]
+8 [label="8: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&x); [line 15]\n " shape="invhouse"]
 	
 
 	 8 -> 7 ;
@@ -50,7 +50,7 @@ digraph iCFG {
 
 	 3 -> 13 ;
 	 3 -> 14 ;
-2 [label="2: Exit get \n   REMOVE_TEMPS(n$0); [line 20]\n " color=yellow style=filled]
+2 [label="2: Exit get \n  " color=yellow style=filled]
 	
 
 1 [label="1: Start get\nFormals:  a:int \nLocals:  x:int  \n   DECLARE_LOCALS(&return,&x); [line 10]\n " color=yellow style=filled]

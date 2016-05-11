@@ -485,9 +485,18 @@ module NullifyTransferFunctions = struct
     | None -> astate
 
   let exec_instr ((active_defs, to_nullify) as astate) _ = function
+    | Sil.Letderef (lhs_id, _, _, _) ->
+        VarDomain.add (Var.LogicalVar lhs_id) active_defs, to_nullify
+    | Sil.Call (lhs_ids, _, _, _, _) ->
+        let active_defs' =
+          IList.fold_left
+            (fun acc id -> VarDomain.add (Var.LogicalVar id) acc)
+            active_defs
+            lhs_ids in
+        active_defs', to_nullify
     | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
         VarDomain.add (Var.ProgramVar lhs_pvar) active_defs, to_nullify
-    | Sil.Set _ | Letderef _ | Call _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
+    | Sil.Set _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
     | Abstract _ ->
         astate
     | Sil.Nullify _ ->
@@ -531,19 +540,27 @@ let add_nullify_instrs tenv _ pdesc =
     if nullify_instrs <> []
     then Cfg.Node.append_instrs_temps node (IList.rev nullify_instrs) [] in
 
+  let node_add_removetmps_instructions node ids =
+    if ids <> [] then
+      let loc = Cfg.Node.get_last_loc node in
+      Cfg.Node.append_instrs_temps node [Sil.Remove_temps (IList.rev ids, loc)] [] in
+
   IList.iter
     (fun node ->
        match NullifyAnalysis.extract_post (ProcCfg.Exceptional.id node) nullify_inv_map with
        | Some (_, to_nullify) ->
-           let pvars_to_nullify =
+           let pvars_to_nullify, ids_to_remove =
              Var.Set.fold
-               (fun var acc -> match var with
+               (fun var (pvars_acc, ids_acc) -> match var with
                   (* we nullify all address taken variables at the end of the procedure *)
                   | ProgramVar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
-                      pvar :: acc
-                  | _ -> acc)
+                      pvar :: pvars_acc, ids_acc
+                  | LogicalVar id ->
+                      pvars_acc, id :: ids_acc
+                  | _ -> pvars_acc, ids_acc)
                to_nullify
-               [] in
+               ([], []) in
+           node_add_removetmps_instructions node ids_to_remove;
            node_add_nullify_instructions node pvars_to_nullify
        | None -> ())
     (ProcCfg.Exceptional.nodes nullify_proc_cfg);
@@ -556,10 +573,10 @@ let add_nullify_instrs tenv _ pdesc =
 let old_nullify_analysis = false
 
 let doit ?(f_translate_typ=None) cfg cg tenv =
-  add_removetemps_instructions cfg;
   if old_nullify_analysis
   then
     begin
+      add_removetemps_instructions cfg;
       AllPreds.mk_table cfg;
       Cfg.iter_proc_desc cfg (analyze_and_annotate_proc cfg tenv);
       AllPreds.clear_table ()

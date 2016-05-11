@@ -11,15 +11,15 @@ digraph iCFG {
 	
 
 	 59 -> 53 ;
-58 [label="58: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 63]\n  REMOVE_TEMPS(n$2,n$3); [line 63]\n " shape="invhouse"]
+58 [label="58: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 63]\n  REMOVE_TEMPS(n$3); [line 63]\n " shape="invhouse"]
 	
 
 	 58 -> 55 ;
-57 [label="57: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 63]\n  REMOVE_TEMPS(n$2,n$3); [line 63]\n " shape="invhouse"]
+57 [label="57: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 63]\n  REMOVE_TEMPS(n$3); [line 63]\n " shape="invhouse"]
 	
 
 	 57 -> 60 ;
-56 [label="56:  Call _fun_X_operator bool \n   n$2=*&x:class X  [line 63]\n  n$3=_fun_X_operator bool(&x:class X &) [line 63]\n " shape="box"]
+56 [label="56:  Call _fun_X_operator bool \n   n$2=*&x:class X  [line 63]\n  n$3=_fun_X_operator bool(&x:class X &) [line 63]\n  REMOVE_TEMPS(n$2); [line 63]\n " shape="box"]
 	
 
 	 56 -> 57 ;
@@ -51,15 +51,15 @@ digraph iCFG {
 	
 
 	 49 -> 43 ;
-48 [label="48: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 54]\n  REMOVE_TEMPS(n$2,n$3); [line 54]\n " shape="invhouse"]
+48 [label="48: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 54]\n  REMOVE_TEMPS(n$3); [line 54]\n " shape="invhouse"]
 	
 
 	 48 -> 45 ;
-47 [label="47: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 54]\n  REMOVE_TEMPS(n$2,n$3); [line 54]\n " shape="invhouse"]
+47 [label="47: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 54]\n  REMOVE_TEMPS(n$3); [line 54]\n " shape="invhouse"]
 	
 
 	 47 -> 50 ;
-46 [label="46:  Call _fun_X_operator bool \n   n$2=*&x:class X  [line 54]\n  n$3=_fun_X_operator bool(&x:class X &) [line 54]\n " shape="box"]
+46 [label="46:  Call _fun_X_operator bool \n   n$2=*&x:class X  [line 54]\n  n$3=_fun_X_operator bool(&x:class X &) [line 54]\n  REMOVE_TEMPS(n$2); [line 54]\n " shape="box"]
 	
 
 	 46 -> 47 ;
@@ -99,15 +99,15 @@ digraph iCFG {
 	
 
 	 37 -> 31 ;
-36 [label="36: Prune (false branch) \n   PRUNE((n$9 == 0), false); [line 45]\n  REMOVE_TEMPS(n$7,n$9); [line 45]\n " shape="invhouse"]
+36 [label="36: Prune (false branch) \n   PRUNE((n$9 == 0), false); [line 45]\n  REMOVE_TEMPS(n$9); [line 45]\n " shape="invhouse"]
 	
 
 	 36 -> 33 ;
-35 [label="35: Prune (true branch) \n   PRUNE((n$9 != 0), true); [line 45]\n  REMOVE_TEMPS(n$7,n$9); [line 45]\n " shape="invhouse"]
+35 [label="35: Prune (true branch) \n   PRUNE((n$9 != 0), true); [line 45]\n  REMOVE_TEMPS(n$9); [line 45]\n " shape="invhouse"]
 	
 
 	 35 -> 38 ;
-34 [label="34:  Call _fun_X_operator bool \n   n$7=*&y:class Y  [line 45]\n  _fun_Y_operator X(&y:class Y &,&SIL_materialize_temp__n$6:class X *) [line 45]\n  _fun_X_X(&__temp_construct_n$5:class X *,&SIL_materialize_temp__n$6:class X &) [line 45]\n  n$9=_fun_X_operator bool(&__temp_construct_n$5:class X &) [line 45]\n " shape="box"]
+34 [label="34:  Call _fun_X_operator bool \n   n$7=*&y:class Y  [line 45]\n  _fun_Y_operator X(&y:class Y &,&SIL_materialize_temp__n$6:class X *) [line 45]\n  _fun_X_X(&__temp_construct_n$5:class X *,&SIL_materialize_temp__n$6:class X &) [line 45]\n  n$9=_fun_X_operator bool(&__temp_construct_n$5:class X &) [line 45]\n  REMOVE_TEMPS(n$7); [line 45]\n " shape="box"]
 	
 
 	 34 -> 35 ;
@@ -139,15 +139,15 @@ digraph iCFG {
 	
 
 	 27 -> 21 ;
-26 [label="26: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 34]\n  REMOVE_TEMPS(n$2,n$3); [line 34]\n " shape="invhouse"]
+26 [label="26: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 34]\n  REMOVE_TEMPS(n$3); [line 34]\n " shape="invhouse"]
 	
 
 	 26 -> 23 ;
-25 [label="25: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 34]\n  REMOVE_TEMPS(n$2,n$3); [line 34]\n " shape="invhouse"]
+25 [label="25: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 34]\n  REMOVE_TEMPS(n$3); [line 34]\n " shape="invhouse"]
 	
 
 	 25 -> 28 ;
-24 [label="24:  Call _fun_X_operator bool \n   n$2=*&x:class X  [line 34]\n  n$3=_fun_X_operator bool(&x:class X &) [line 34]\n " shape="box"]
+24 [label="24:  Call _fun_X_operator bool \n   n$2=*&x:class X  [line 34]\n  n$3=_fun_X_operator bool(&x:class X &) [line 34]\n  REMOVE_TEMPS(n$2); [line 34]\n " shape="box"]
 	
 
 	 24 -> 25 ;

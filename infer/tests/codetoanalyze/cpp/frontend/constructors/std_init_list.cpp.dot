@@ -10,15 +10,15 @@ digraph iCFG {
 	
 
 	 9 -> 11 ;
-8 [label="8: Prune (false branch) \n   PRUNE(((n$3 != n$5) == 0), false); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n  NULLIFY(&i); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
+8 [label="8: Prune (false branch) \n   PRUNE(((n$3 != n$5) == 0), false); [line 15]\n  REMOVE_TEMPS(n$3,n$5); [line 15]\n  NULLIFY(&i); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
 	
 
 	 8 -> 2 ;
-7 [label="7: Prune (true branch) \n   PRUNE(((n$3 != n$5) != 0), true); [line 15]\n  REMOVE_TEMPS(n$3,n$4,n$5); [line 15]\n " shape="invhouse"]
+7 [label="7: Prune (true branch) \n   PRUNE(((n$3 != n$5) != 0), true); [line 15]\n  REMOVE_TEMPS(n$3,n$5); [line 15]\n " shape="invhouse"]
 	
 
 	 7 -> 5 ;
-6 [label="6:  BinaryOperatorStmt: NE \n   n$3=*&i:int * [line 15]\n  n$4=*&list:class std::initializer_list<int>  [line 15]\n  n$5=_fun_std::initializer_list<int>_end(&list:class std::initializer_list<int> &) [line 15]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: NE \n   n$3=*&i:int * [line 15]\n  n$4=*&list:class std::initializer_list<int>  [line 15]\n  n$5=_fun_std::initializer_list<int>_end(&list:class std::initializer_list<int> &) [line 15]\n  REMOVE_TEMPS(n$4); [line 15]\n " shape="box"]
 	
 
 	 6 -> 7 ;
