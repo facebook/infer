@@ -61,6 +61,10 @@ public class TaintTest {
         "testPrivacySourceInstanceFieldAnnot",
         "testPrivacySourceStaticFieldAnnot",
         "testPrivacySourceFieldAnnotPropagation",
+        "testIntegritySourceAnnot",
+        "testIntegritySourceInstanceFieldAnnot",
+        "testIntegritySourceStaticFieldAnnot",
+        "testIntegritySinkAnnotReport",
     };
 
     assertThat(

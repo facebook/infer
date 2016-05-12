@@ -112,6 +112,26 @@
   {
     "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
     "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySinkAnnotReport(String)"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySourceAnnot()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySourceInstanceFieldAnnot()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
+    "procedure": "void TaintExample.testIntegritySourceStaticFieldAnnot()"
+  },
+  {
+    "bug_type": "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION",
+    "file": "codetoanalyze/java/infer/TaintExample.java",
     "procedure": "void TaintExample.testPrivacySinkAnnot1()"
   },
   {

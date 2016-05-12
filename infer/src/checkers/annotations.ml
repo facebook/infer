@@ -128,6 +128,8 @@ let ignore_allocations = "IgnoreAllocations"
 let suppress_warnings = "SuppressWarnings"
 let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"
+let integrity_source = "IntegritySource"
+let integrity_sink = "IntegritySink"
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
@@ -208,6 +210,12 @@ let ia_is_privacy_source ia =
 
 let ia_is_privacy_sink ia =
   ia_ends_with ia privacy_sink
+
+let ia_is_integrity_source ia =
+  ia_ends_with ia integrity_source
+
+let ia_is_integrity_sink ia =
+  ia_ends_with ia integrity_sink
 
 type annotation =
   | Nullable

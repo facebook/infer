@@ -230,7 +230,8 @@ let attrs_opt_get_annots = function
 let returns_tainted callee_pname callee_attrs_opt =
   IList.exists (fun pname -> Procname.equal pname callee_pname) sources ||
   let ret_annot, _ = attrs_opt_get_annots callee_attrs_opt in
-  Annotations.ia_is_privacy_source ret_annot
+  Annotations.ia_is_privacy_source ret_annot ||
+  Annotations.ia_is_integrity_source ret_annot
 
 let find_callee methods callee_pname =
   try
@@ -244,7 +245,9 @@ let accepts_sensitive_params callee_pname callee_attrs_opt =
       let _, param_annots = attrs_opt_get_annots callee_attrs_opt in
       let offset = if Procname.java_is_static callee_pname then 0 else 1 in
       IList.mapi (fun param_num attr  -> (param_num + offset, attr)) param_annots
-      |> IList.filter (fun (_, attr) -> Annotations.ia_is_privacy_sink attr)
+      |> IList.filter
+        (fun (_, attr) ->
+           Annotations.ia_is_privacy_sink attr || Annotations.ia_is_integrity_sink attr)
       |> IList.map fst
   | tainted_params -> tainted_params
 
@@ -256,6 +259,6 @@ let tainted_params callee_pname =
 let has_taint_annotation fieldname struct_typ =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.fieldname_equal fieldname fname &&
-    Annotations.ia_is_privacy_source annot in
+    (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in
   IList.exists fld_has_taint_annot struct_typ.Sil.instance_fields ||
   IList.exists fld_has_taint_annot struct_typ.Sil.static_fields

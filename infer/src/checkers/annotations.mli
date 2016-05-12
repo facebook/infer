@@ -91,6 +91,8 @@ val ia_is_ignore_allocations : Sil.item_annotation -> bool
 val ia_is_suppress_warnings : Sil.item_annotation -> bool
 val ia_is_privacy_source : Sil.item_annotation -> bool
 val ia_is_privacy_sink : Sil.item_annotation -> bool
+val ia_is_integrity_source : Sil.item_annotation -> bool
+val ia_is_integrity_sink : Sil.item_annotation -> bool
 
 val ia_iter : (Sil.annotation -> unit) -> Sil.item_annotation -> unit
 

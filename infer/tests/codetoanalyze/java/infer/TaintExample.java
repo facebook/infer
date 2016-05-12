@@ -25,6 +25,8 @@ import android.content.ContentValues;
 import android.content.SharedPreferences;
 
 import com.facebook.infer.models.InferTaint;
+import com.facebook.infer.annotation.IntegritySource;
+import com.facebook.infer.annotation.IntegritySink;
 import com.facebook.infer.annotation.PrivacySource;
 import com.facebook.infer.annotation.PrivacySink;
 
@@ -226,6 +228,40 @@ public class TaintExample {
   public void testPrivacySourceFieldAnnotPropagation() {
     aFieldWithoutAnnotations = mPrivacySource;
     InferTaint.inferSensitiveSinkUndefined(aFieldWithoutAnnotations); // should report
+  }
+
+  @IntegritySource
+  public String integritySource() {
+    return "source";
+  }
+
+  @IntegritySource String mIntegritySource;
+
+  @IntegritySource String sIntegritySource;
+
+  public void testIntegritySourceAnnot() {
+    InferTaint.inferSensitiveSinkUndefined(integritySource()); // should report
+  }
+
+  public void testIntegritySourceInstanceFieldAnnot() {
+    String source = mIntegritySource;
+    InferTaint.inferSensitiveSinkUndefined(source); // should report
+  }
+
+  public void testIntegritySourceStaticFieldAnnot() {
+    String source = sIntegritySource;
+    InferTaint.inferSensitiveSinkUndefined(source); // should report
+  }
+
+  public void integritySink(@IntegritySink String s1, String s2) {
+  }
+
+  void testIntegritySinkAnnotReport(String s) {
+    integritySink(integritySource(), s); // should report
+  }
+
+  void testIntegritySinkAnnotNoReport(String s) {
+    integritySink(s, integritySource()); // should not report
   }
 
 }
