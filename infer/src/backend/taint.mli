@@ -10,7 +10,7 @@
 open! Utils
 
 (** returns true if [callee_pname] returns a tainted value *)
-val returns_tainted : Procname.t -> ProcAttributes.t option -> bool
+val returns_tainted : Procname.t -> ProcAttributes.t option -> Sil.taint_kind option
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
 val accepts_sensitive_params : Procname.t -> ProcAttributes.t option -> int list

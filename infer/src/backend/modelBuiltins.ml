@@ -652,8 +652,8 @@ let execute___set_taint_attribute
   | (exp, _) :: [(Sil.Const (Sil.Cstr taint_kind_str), _)] ->
       let taint_source = Cfg.Procdesc.get_proc_name pdesc in
       let taint_kind = match taint_kind_str with
-        | "UnverifiedSSLSocket" -> Sil.UnverifiedSSLSocket
-        | "SharedPreferenceData" -> Sil.SharedPreferencesData
+        | "UnverifiedSSLSocket" -> Sil.Tk_unverified_SSL_socket
+        | "SharedPreferenceData" -> Sil.Tk_shared_preferences_data
         | other_str -> failwith ("Unrecognized taint kind " ^ other_str) in
       set_attr pdesc prop_ path exp (Sil.Ataint { Sil.taint_source; taint_kind})
   | _ ->

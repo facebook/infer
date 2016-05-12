@@ -818,8 +818,7 @@ let add_tainting_att_param_list prop param_nums formal_params att =
 let add_param_taint proc_name formal_params prop param_nums =
   let formal_params' = IList.map
       (fun (p, _) -> Pvar.mk p proc_name) formal_params in
-  (* TODO: add taint_kind as part of specification format in taint.ml *)
-  let taint_info = { Sil.taint_source = proc_name; taint_kind = Unknown; } in
+  let taint_info = { Sil.taint_source = proc_name; taint_kind = Tk_unknown; } in
   add_tainting_att_param_list prop param_nums formal_params' (Sil.Ataint taint_info)
 
 (* add Auntaint attribute to a callee_pname precondition *)
@@ -890,17 +889,18 @@ let mk_posts ret_ids prop callee_pname callee_attrs posts =
           IList.filter (fun (prop, _) -> not (returns_null prop)) posts
         else posts in
       let mk_retval_tainted posts =
-        if Taint.returns_tainted callee_pname (Some callee_attrs) then
-          let taint_retval (prop, path) =
-            let prop_normal = Prop.normalize prop in
-            let prop' =
-              Prop.add_or_replace_exp_attribute prop_normal
-                (Sil.Var ret_id)
-                (Sil.Ataint { Sil.taint_source = callee_pname; taint_kind = Unknown })
-              |> Prop.expose in
-            (prop', path) in
-          IList.map taint_retval posts
-        else posts in
+        match Taint.returns_tainted callee_pname (Some callee_attrs) with
+        | Some taint_kind ->
+            let taint_retval (prop, path) =
+              let prop_normal = Prop.normalize prop in
+              let prop' =
+                Prop.add_or_replace_exp_attribute prop_normal
+                  (Sil.Var ret_id)
+                  (Sil.Ataint { Sil.taint_source = callee_pname; taint_kind; })
+                |> Prop.expose in
+              (prop', path) in
+            IList.map taint_retval posts
+        | None -> posts in
       let posts' =
         if Config.idempotent_getters && !Config.curr_language = Config.Java
         then mk_getter_idempotent posts

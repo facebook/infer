@@ -11,12 +11,13 @@ open! Utils
 
 (** Module for Pattern matching. *)
 
-type method_str = {
+type taint_spec = {
   classname : string;
   method_name : string;
   ret_type : string;
   params : string list;
   is_static : bool;
+  taint_kind : Sil.taint_kind;
   language : Config.language
 }
 

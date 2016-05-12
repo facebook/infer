@@ -816,22 +816,36 @@ let desc_tainted_value_reaching_sensitive_function
   Tags.add tags Tags.value expr_str;
   let description =
     match taint_kind with
-    | Sil.UnverifiedSSLSocket ->
-        Format.sprintf
+    | Sil.Tk_unverified_SSL_socket ->
+        F.sprintf
           "The hostname of SSL socket `%s` (returned from %s) has not been verified! Reading from the socket via the call to %s %s is dangerous. You should verify the hostname of the socket using a HostnameVerifier before reading; otherwise, you may be vulnerable to a man-in-the-middle attack."
           expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
-    | Sil.SharedPreferencesData ->
-        Format.sprintf
+    | Sil.Tk_shared_preferences_data ->
+        F.sprintf
           "`%s` holds sensitive data read from a SharedPreferences object (via call to %s). This data may leak via the call to %s %s."
           expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
-    | Sil.Unknown ->
-        Format.sprintf
+    | Sil.Tk_privacy_annotation ->
+        F.sprintf
+          "`%s` holds privacy-sensitive data (source: call to %s). This data may leak via the call to %s %s."
+          expr_str
+          (format_method tainting_fun)
+          (format_method sensitive_fun)
+          (at_line tags loc)
+    | Sil.Tk_integrity_annotation ->
+        F.sprintf
+          "`%s` holds untrusted user-controlled data (source: call to %s). This data may flow into a security-sensitive sink via the call to %s %s."
+          expr_str
+          (format_method tainting_fun)
+          (format_method sensitive_fun)
+          (at_line tags loc)
+    | Sil.Tk_unknown ->
+        F.sprintf
           "Value `%s` could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
           expr_str
           (format_method tainting_fun)

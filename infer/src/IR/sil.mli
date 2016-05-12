@@ -240,9 +240,11 @@ and res_action =
   }
 
 and taint_kind =
-  | UnverifiedSSLSocket
-  | SharedPreferencesData
-  | Unknown
+  | Tk_unverified_SSL_socket
+  | Tk_shared_preferences_data
+  | Tk_privacy_annotation
+  | Tk_integrity_annotation
+  | Tk_unknown
 
 and taint_info = {
   taint_source : Procname.t;

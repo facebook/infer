@@ -842,8 +842,11 @@ let add_constraints_on_retval pdesc prop ret_exp ~has_nullable_annot typ callee_
             (* bind return id to the abducted value pointed to by the pvar we introduced *)
             bind_exp_to_abducted_val ret_exp abducted_ret_pv prop in
         let prop'' = add_ret_non_null ret_exp typ prop' in
-        if Config.taint_analysis && Taint.returns_tainted callee_pname None then
-          add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind = Unknown } prop''
+        if Config.taint_analysis then
+          match Taint.returns_tainted callee_pname None with
+          | Some taint_kind ->
+              add_tainted_post ret_exp { Sil.taint_source = callee_pname; taint_kind; } prop''
+          | None -> prop''
         else prop''
     else add_ret_non_null ret_exp typ prop
 
@@ -851,7 +854,7 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
   let add_attribute_if_field_tainted prop fieldname struct_typ =
     if Taint.has_taint_annotation fieldname struct_typ
     then
-      let taint_info = { Sil.taint_source = pname; taint_kind = Unknown; } in
+      let taint_info = { Sil.taint_source = pname; taint_kind = Tk_unknown; } in
       Prop.add_or_replace_exp_attribute prop (Sil.Var lhs_id) (Sil.Ataint taint_info)
     else
       prop in

@@ -603,9 +603,11 @@ and res_action =
   }
 
 and taint_kind =
-  | UnverifiedSSLSocket
-  | SharedPreferencesData
-  | Unknown
+  | Tk_unverified_SSL_socket
+  | Tk_shared_preferences_data
+  | Tk_privacy_annotation
+  | Tk_integrity_annotation
+  | Tk_unknown
 
 and taint_info = {
   taint_source : Procname.t;
@@ -1125,13 +1127,19 @@ let dangling_kind_compare dk1 dk2 = match dk1, dk2 with
   | DAminusone, DAminusone -> 0
 
 let taint_kind_compare tk1 tk2 = match tk1, tk2 with
-  | UnverifiedSSLSocket, UnverifiedSSLSocket -> 0
-  | UnverifiedSSLSocket, _ -> - 1
-  | _, UnverifiedSSLSocket -> 1
-  | SharedPreferencesData, SharedPreferencesData -> 0
-  | SharedPreferencesData, _ -> 1
-  | _, SharedPreferencesData -> - 1
-  | Unknown, Unknown -> 0
+  | Tk_unverified_SSL_socket, Tk_unverified_SSL_socket -> 0
+  | Tk_unverified_SSL_socket, _ -> - 1
+  | _, Tk_unverified_SSL_socket -> 1
+  | Tk_shared_preferences_data, Tk_shared_preferences_data -> 0
+  | Tk_shared_preferences_data, _ -> 1
+  | _, Tk_shared_preferences_data -> - 1
+  | Tk_privacy_annotation, Tk_privacy_annotation -> 0
+  | Tk_privacy_annotation, _ -> 1
+  | _, Tk_privacy_annotation -> - 1
+  | Tk_integrity_annotation, Tk_integrity_annotation -> 0
+  | Tk_integrity_annotation, _ -> 1
+  | _, Tk_integrity_annotation -> - 1
+  | Tk_unknown, Tk_unknown -> 0
 
 let taint_info_compare { taint_source=ts1; taint_kind=tk1; } { taint_source=ts2; taint_kind=tk2; } =
   taint_kind_compare tk1 tk2
