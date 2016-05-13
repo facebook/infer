@@ -160,7 +160,13 @@ struct
           top_qual = "google" &&
           IList.mem (=) fun_name CFrontend_config.google_whitelisting_functions
       | _ -> false in
-    translate_location || always_translate_decl
+    let never_translate_decl = match dec with
+      | Clang_ast_t.FunctionDecl (_, name_info, _, _)
+      | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _) ->
+          let fun_name = name_info.Clang_ast_t.ni_name in
+          Str.string_match (Str.regexp "__infer_skip__" ) fun_name 0
+      | _ -> false in
+    (not never_translate_decl) && (translate_location || always_translate_decl)
 
   (* Translate one global declaration *)
   let rec translate_one_declaration tenv cg cfg decl_trans_context dec =
