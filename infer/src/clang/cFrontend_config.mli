@@ -115,6 +115,10 @@ val handleFailureInFunction : string
 
 val google_LogMessageFatal : string
 
+val google_MakeCheckOpString : string
+
+val google_whitelisting_functions : string list
+
 val pseudo_object_type : string
 
 val count : string

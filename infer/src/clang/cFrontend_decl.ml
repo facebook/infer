@@ -147,14 +147,18 @@ struct
     let source_range = info.Clang_ast_t.di_source_range in
     let translate_location = CLocation.should_translate_lib source_range decl_trans_context in
     let always_translate_decl = match dec with
-      | Clang_ast_t.FunctionDecl (_, name_info, _, _) ->
+      | Clang_ast_t.FunctionDecl (_, name_info, _, _)
+      | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _) ->
           (* named_decl_info.ni_name has name without template parameters.*)
           (* It makes it possible to capture whole family of function instantiations*)
           (* to be named the same *)
           let fun_name = name_info.Clang_ast_t.ni_name in
-          let top_qual = IList.hd (IList.rev name_info.Clang_ast_t.ni_qual_name) in
+          let qual_name = name_info.Clang_ast_t.ni_qual_name in
+          let top_qual = IList.hd (IList.rev qual_name) in
           (* Always translate std::move so that it can be analyzed *)
-          top_qual="std" && fun_name = "move"
+          top_qual = "std" && fun_name = "move" ||
+          top_qual = "google" &&
+          IList.mem (=) fun_name CFrontend_config.google_whitelisting_functions
       | _ -> false in
     translate_location || always_translate_decl
 

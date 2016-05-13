@@ -26,6 +26,11 @@ int check_example(int* a) {
   return *a; // no null deref flagged by Infer
 }
 
+int check_not_null_example(int* p) {
+  CHECK_NOTNULL(p);
+  return *p;
+}
+
 int log_non_fatal_example() {
   int* a = nullptr;
   LOG_IF(INFO, a) << "well\n";
@@ -40,8 +45,6 @@ int log_if_fatal_example() {
   return *a; // no null deref
 }
 
-// Still not modelled
-
 int check_ne_example(int x) {
   CHECK_NE(x, 5);
   return x;
@@ -52,7 +55,12 @@ int check_eq_example(int x, int y) {
   return x;
 }
 
-int check_not_null_example(int* p) {
-  CHECK_NOTNULL(p);
-  return *p;
+int check_le_example(int x) {
+  CHECK_LE(x, 5);
+  return x;
+}
+
+int check_gt_example(int x) {
+  CHECK_GT(x, 5);
+  return x;
 }

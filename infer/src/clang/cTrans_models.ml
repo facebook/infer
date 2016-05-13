@@ -76,7 +76,8 @@ let is_modeled_builtin funct =
 let is_assert_log_s funct =
   funct = CFrontend_config.assert_rtn ||
   funct = CFrontend_config.assert_fail ||
-  funct = CFrontend_config.fbAssertWithSignalAndLogFunctionHelper
+  funct = CFrontend_config.fbAssertWithSignalAndLogFunctionHelper ||
+  Utils.string_contains CFrontend_config.google_MakeCheckOpString funct
 
 let is_assert_log_method m =
   m = CFrontend_config.google_LogMessageFatal
