@@ -22,11 +22,6 @@
   {
     "bug_type": "CONTEXT_LEAK",
     "file": "codetoanalyze/java/infer/ContextLeaks.java",
-    "procedure": "void ContextLeaks.indirectHandlerLeak()"
-  },
-  {
-    "bug_type": "CONTEXT_LEAK",
-    "file": "codetoanalyze/java/infer/ContextLeaks.java",
     "procedure": "void ContextLeaks.indirectLeak()"
   },
   {

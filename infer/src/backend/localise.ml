@@ -402,10 +402,7 @@ let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
 
 let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let fld_str = Ident.fieldname_to_string fieldname in
-  let leak_root =
-    if fld_str = "android.os.Handler.sFakeHandlerQueue"
-    then " Runnable passed to Handler.postDelayed |->\n "
-    else " Static field " ^ fld_str ^ " |->\n " in
+  let leak_root = " Static field " ^ fld_str ^ " |->\n " in
   let leak_path_entry_to_str acc entry =
     let entry_str = match entry with
       | (Some fld, _) -> Ident.fieldname_to_string fld

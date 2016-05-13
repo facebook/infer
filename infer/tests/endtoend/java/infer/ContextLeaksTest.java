@@ -45,7 +45,6 @@ public class ContextLeaksTest {
         "nonStaticInnerClassLeak",
         "leakAfterInstanceFieldWrite",
         "singletonLeak",
-        "indirectHandlerLeak",
         "getInstance",
     };
     assertThat(

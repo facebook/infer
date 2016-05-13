@@ -11,8 +11,6 @@ package codetoanalyze.java.infer;
 
 import android.content.Context;
 import android.app.Activity;
-import android.os.Handler;
-
 
 public class ContextLeaks extends Activity {
 
@@ -90,31 +88,6 @@ public class ContextLeaks extends Activity {
 
   public Singleton singletonNoLeak() {
     return Singleton.getInstance(this.getApplicationContext());
-  }
-
-  private Handler handler = new Handler();
-
-  public void indirectHandlerLeak() {
-    handlerLeak();
-  }
-
-  private void handlerLeak() {
-    Runnable r =
-        new Runnable() {
-          public void run() {
-          }
-        };
-    handler.postDelayed(r, 10000);
-  }
-
-  public void handlerNoLeak() {
-    Runnable r =
-        new Runnable() {
-          public void run() {
-          }
-        };
-    handler.postDelayed(r, 10000);
-    handler.removeCallbacks(r);
   }
 
 }
