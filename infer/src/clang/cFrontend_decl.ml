@@ -92,6 +92,36 @@ struct
             None extra_instrs
     | None -> ()
 
+  let process_property_implementation obj_c_property_impl_decl_info =
+    let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
+    match Ast_utils.get_decl_opt_with_decl_ref property_decl_opt with
+    | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
+        let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
+        (match Ast_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
+         | Some ObjCIvarDecl (_, named_decl_info, _, _, _) ->
+             let field_name = General_utils.mk_class_field_name named_decl_info in
+             let process_accessor pointer ~getter =
+               (match Ast_utils.get_decl_opt_with_decl_ref pointer with
+                | Some ObjCMethodDecl (decl_info, name_info, mdi) ->
+                    let source_range = decl_info.Clang_ast_t.di_source_range in
+                    let loc = CLocation.get_sil_location_from_range source_range true in
+                    let property_accessor =
+                      if getter then
+                        Some (ProcAttributes.Objc_getter field_name)
+                      else
+                        Some (ProcAttributes.Objc_setter field_name) in
+                    let class_name = Ast_utils.get_class_name_from_member name_info in
+                    let procname = CMethod_trans.get_objc_method_name name_info mdi class_name in
+                    let attrs = { (ProcAttributes.default procname Config.Clang) with
+                                  loc = loc;
+                                  objc_accessor = property_accessor; } in
+                    AttributesTable.store_attributes attrs
+                | _ -> ()) in
+             process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_getter_method ~getter:true;
+             process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_setter_method ~getter:false
+         | _ -> ())
+    | _ -> ()
+
   let process_one_method_decl tenv cg cfg curr_class dec =
     let open Clang_ast_t in
     match dec with
@@ -99,7 +129,9 @@ struct
         process_method_decl tenv cg cfg curr_class dec ~is_objc:false
     | ObjCMethodDecl _ ->
         process_method_decl tenv cg cfg curr_class dec ~is_objc:true
-    | ObjCPropertyImplDecl _ | EmptyDecl _
+    | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) ->
+        process_property_implementation obj_c_property_impl_decl_info
+    | EmptyDecl _
     | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
         Printing.log_stats

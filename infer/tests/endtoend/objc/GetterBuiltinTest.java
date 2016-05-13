@@ -57,7 +57,6 @@ public class GetterBuiltinTest {
             DIVIDE_BY_ZERO,
             FILE,
             new String[]{
-                "should_have_div0",
             }
         )
     );

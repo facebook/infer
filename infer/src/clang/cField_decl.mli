@@ -26,6 +26,3 @@ val build_sil_field : Ast_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.na
 val add_missing_fields : Tenv.t -> string -> Csu.class_kind -> field_type list -> unit
 
 val is_ivar_atomic : Ident.fieldname -> Sil.struct_fields -> bool
-
-val get_property_corresponding_ivar : Tenv.t -> Ast_utils.type_ptr_to_sil_type -> string ->
-  Clang_ast_t.decl -> Ident.fieldname

@@ -150,6 +150,12 @@ let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
   IList.map create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
 
+let get_objc_method_name name_info mdi class_name =
+  let method_name = name_info.Clang_ast_t.ni_name in
+  let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
+  let method_kind = Procname.objc_method_kind_of_bool is_instance in
+  General_utils.mk_procname_from_objc_method class_name method_name method_kind
+
 let method_signature_of_decl tenv meth_decl block_data_opt =
   let open Clang_ast_t in
   match meth_decl, block_data_opt with
@@ -176,11 +182,8 @@ let method_signature_of_decl tenv meth_decl block_data_opt =
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
   | ObjCMethodDecl (decl_info, name_info, mdi), _ ->
-      let method_name = name_info.ni_name in
       let class_name = Ast_utils.get_class_name_from_member name_info in
-      let is_instance = mdi.omdi_is_instance_method in
-      let method_kind = Procname.objc_method_kind_of_bool is_instance in
-      let procname = General_utils.mk_procname_from_objc_method class_name method_name method_kind in
+      let procname = get_objc_method_name name_info mdi class_name in
       let method_decl = ObjC_Meth_decl_info (mdi, class_name) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let pointer_to_property_opt =
@@ -284,20 +287,12 @@ let get_objc_method_data obj_c_message_expr_info =
   | `Class _
   | `SuperClass -> (selector, pointer, MCStatic)
 
-let get_objc_property_accessor tenv ms =
+let skip_property_accessor ms =
   let open Clang_ast_t in
   let pointer_to_property_opt = CMethod_signature.ms_get_pointer_to_property_opt ms in
-  match Ast_utils.get_decl_opt pointer_to_property_opt, CMethod_signature.ms_get_name ms with
-  | Some (ObjCPropertyDecl _ as d), Procname.ObjC_Cpp objc_cpp ->
-      let class_name = Procname.objc_cpp_get_class_name objc_cpp in
-      let field_name = CField_decl.get_property_corresponding_ivar tenv
-          CTypes_decl.type_ptr_to_sil_type class_name d in
-      if CMethod_signature.ms_is_getter ms then
-        Some (ProcAttributes.Objc_getter field_name)
-      else if CMethod_signature.ms_is_setter ms then
-        Some (ProcAttributes.Objc_setter field_name)
-      else None
-  | _ -> None
+  match Ast_utils.get_decl_opt pointer_to_property_opt with
+  | Some (ObjCPropertyDecl _ as d) -> true
+  | _ -> false
 
 let get_formal_parameters tenv ms =
   let rec defined_parameters pl =
@@ -379,30 +374,31 @@ let create_local_procdesc cfg tenv ms fbody captured is_objc_inst_method =
     let loc_exit = CLocation.get_sil_location_from_range source_range false in
     let ret_type = get_return_type tenv ms in
     let captured' = IList.map (fun (var, t) -> (Pvar.get_name var, t)) captured in
-    let procdesc =
-      let proc_attributes =
-        { (ProcAttributes.default proc_name Config.Clang) with
-          ProcAttributes.captured = captured';
-          ProcAttributes.objc_accessor = get_objc_property_accessor tenv ms;
-          formals;
-          func_attributes = attributes;
-          is_defined = defined;
-          is_objc_instance_method = is_objc_inst_method;
-          is_cpp_instance_method = is_cpp_inst_method;
-          loc = loc_start;
-          method_annotation;
-          ret_type;
-        } in
-      Cfg.Procdesc.create cfg proc_attributes in
-    if defined then
-      (if !Config.arc_mode then
-         Cfg.Procdesc.set_flag procdesc Mleak_buckets.objc_arc_flag "true";
-       let start_kind = Cfg.Node.Start_node procdesc in
-       let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc in
-       let exit_kind = Cfg.Node.Exit_node procdesc in
-       let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc in
-       Cfg.Procdesc.set_start_node procdesc start_node;
-       Cfg.Procdesc.set_exit_node procdesc exit_node) in
+    if skip_property_accessor ms then ()
+    else
+      let procdesc =
+        let proc_attributes =
+          { (ProcAttributes.default proc_name Config.Clang) with
+            ProcAttributes.captured = captured';
+            formals;
+            func_attributes = attributes;
+            is_defined = defined;
+            is_objc_instance_method = is_objc_inst_method;
+            is_cpp_instance_method = is_cpp_inst_method;
+            loc = loc_start;
+            method_annotation;
+            ret_type;
+          } in
+        Cfg.Procdesc.create cfg proc_attributes in
+      if defined then
+        (if !Config.arc_mode then
+           Cfg.Procdesc.set_flag procdesc Mleak_buckets.objc_arc_flag "true";
+         let start_kind = Cfg.Node.Start_node procdesc in
+         let start_node = Cfg.Node.create cfg loc_start start_kind [] procdesc in
+         let exit_kind = Cfg.Node.Exit_node procdesc in
+         let exit_node = Cfg.Node.create cfg loc_exit exit_kind [] procdesc in
+         Cfg.Procdesc.set_start_node procdesc start_node;
+         Cfg.Procdesc.set_exit_node procdesc exit_node) in
   if should_create_procdesc cfg proc_name defined then
     (create_new_procdesc (); true)
   else false
