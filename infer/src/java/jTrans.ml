@@ -353,8 +353,10 @@ let create_local_procdesc program linereader cfg tenv node m =
             Cfg.Procdesc.set_start_node procdesc start_node;
             Cfg.Procdesc.set_exit_node procdesc exit_node;
             Cfg.Node.add_locals_ret_declaration start_node locals;
-      with JBir.Subroutine ->
-        L.err "create_local_procdesc raised JBir.Subroutine on %a@." Procname.pp proc_name in
+      with JBir.Subroutine | JBasics.Class_structure_error _ ->
+        L.err
+          "create_local_procdesc raised JBir.Subroutine or JBasics.Class_structure_error on %a@."
+          Procname.pp proc_name in
     match lookup_procdesc cfg proc_name with
     | Unknown ->
         create_new_procdesc ()
