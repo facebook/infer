@@ -13,9 +13,11 @@ module L = Logging
 
 (** Look up a key in a json file containing a list of strings *)
 let lookup_string_list key json =
-  Yojson.Basic.Util.filter_member key [json]
-  |> Yojson.Basic.Util.flatten
-  |> Yojson.Basic.Util.filter_string
+  try
+    Yojson.Basic.Util.filter_member key [json]
+    |> Yojson.Basic.Util.flatten
+    |> Yojson.Basic.Util.filter_string
+  with Yojson.Basic.Util.Type_error _ -> []
 
 type path_filter = DB.source_file -> bool
 type error_filter = Localise.t -> bool
@@ -145,11 +147,11 @@ let rec translate json_key accu (json : Yojson.Basic.json) : pattern list =
   | _ -> assert false
 
 (* Creates a list of matching patterns for the given inferconfig file *)
-let load_patterns json_key inferconfig =
+let load_patterns json_key json =
   let found =
     Yojson.Basic.Util.filter_member
       json_key
-      [Yojson.Basic.from_file inferconfig] in
+      [json] in
   IList.fold_left (translate json_key) [] found
 
 
@@ -200,7 +202,7 @@ end
 
 module type Matcher = sig
   type matcher = DB.source_file -> Procname.t -> bool
-  val load_matcher : string -> matcher
+  val load_matcher : Yojson.Basic.json Lazy.t -> matcher
 end
 
 (* Module to create matcher based on source file names or class names and method names *)
@@ -211,7 +213,6 @@ struct
 
   let default_matcher : matcher =
     fun _ _ -> false
-
 
   let create_method_matcher m_patterns =
     if m_patterns = [] then
@@ -260,12 +261,8 @@ struct
     fun source_file proc_name ->
       m_matcher source_file proc_name || s_matcher source_file proc_name
 
-  let load_matcher inferconfig =
-    if Sys.file_exists inferconfig then
-      create_file_matcher (load_patterns M.json_key inferconfig)
-    else
-      default_matcher
-
+  let load_matcher json =
+    create_file_matcher (load_patterns M.json_key (Lazy.force json))
 
   let _pp_pattern fmt pattern =
     let pp_string fmt s =
@@ -301,19 +298,15 @@ struct
 
   type matcher = (string -> bool) -> Procname.t -> bool
 
-  let default_matcher _ _ = false
-
-  let load_matcher inferconfig =
-    if Sys.file_exists inferconfig then
-      fun is_subtype proc_name ->
-        let is_matching = function
-          | Method_pattern (language, mp) ->
-              is_subtype mp.class_name
-              && Option.map_default (match_method language proc_name) false mp.method_name
-          | _ -> failwith "Expecting method pattern" in
-        IList.exists is_matching (load_patterns M.json_key inferconfig)
-    else
-      default_matcher
+  let load_matcher json =
+    let patterns = load_patterns M.json_key (Lazy.force json) in
+    fun is_subtype proc_name ->
+      let is_matching = function
+        | Method_pattern (language, mp) ->
+            is_subtype mp.class_name
+            && Option.map_default (match_method language proc_name) false mp.method_name
+        | _ -> failwith "Expecting method pattern" in
+      IList.exists is_matching patterns
 
 end
 
@@ -333,32 +326,17 @@ module ModeledExpensiveMatcher = OverridesMatcher(struct
     let json_key = "modeled_expensive"
   end)
 
-let disabled_checks_by_default = [
-  "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
-]
-
-let inferconfig () =
-  match Config.inferconfig_home, Config.project_root with
-  | Some dir, _ | _, Some dir -> Filename.concat dir Config.inferconfig_file
-  | None, None -> Config.inferconfig_file
-
 let load_filters analyzer =
-  let inferconfig_file = inferconfig () in
-  if Sys.file_exists inferconfig_file then
-    try
-      let json = Yojson.Basic.from_file inferconfig_file in
-      let inferconfig =
-        {
-          whitelist = lookup_string_list (analyzer ^ "_whitelist") json;
-          blacklist = lookup_string_list (analyzer ^ "_blacklist") json;
-          blacklist_files_containing =
-            lookup_string_list (analyzer ^ "_blacklist_files_containing") json;
-          suppress_errors = lookup_string_list (analyzer ^ "_suppress_errors") json;
-        } in
-      Some inferconfig
-    with Sys_error _ -> None
-  else None
-
+  let lazy json = Config.inferconfig_json in
+  let inferconfig =
+    {
+      whitelist = lookup_string_list (analyzer ^ "_whitelist") json;
+      blacklist = lookup_string_list (analyzer ^ "_blacklist") json;
+      blacklist_files_containing =
+        lookup_string_list (analyzer ^ "_blacklist_files_containing") json;
+      suppress_errors = lookup_string_list (analyzer ^ "_suppress_errors") json;
+    } in
+  Some inferconfig
 
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
@@ -394,20 +372,17 @@ let create_filters analyzer =
 
 (* Decide whether a checker or error type is enabled or disabled based on*)
 (* white/black listing in .inferconfig and the default value *)
-let is_checker_enabled checker_name =
+let is_checker_enabled =
   let black_listed_checks = lazy (
-    try
-      lookup_string_list "disable_checks"
-        (Yojson.Basic.from_file (inferconfig ()))
-    with _ -> []) in
+    lookup_string_list "disable_checks" (Lazy.force Config.inferconfig_json)) in
   let white_listed_checks = lazy (
-    try
-      lookup_string_list "enable_checks"
-        (Yojson.Basic.from_file (inferconfig ()))
-    with _ -> []) in
-  match IList.mem (=) checker_name (Lazy.force black_listed_checks), IList.mem (=) checker_name (Lazy.force white_listed_checks) with
+    lookup_string_list "enable_checks" (Lazy.force Config.inferconfig_json)) in
+  (* return a closure so that we automatically memoize the json lookups thanks to lazy *)
+  function checker_name ->
+  match IList.mem (=) checker_name (Lazy.force black_listed_checks),
+        IList.mem (=) checker_name (Lazy.force white_listed_checks) with
   | false, false -> (* if it's not amond white/black listed then we use default value *)
-      not (IList.mem (=) checker_name disabled_checks_by_default)
+      not (IList.mem (=) checker_name Config.checks_disabled_by_default)
   | true, false -> (* if it's blacklisted and not whitelisted then it should be disabled *)
       false
   | false, true -> (* if it is not blacklisted and it is whitelisted then it should be enabled *)
@@ -440,10 +415,4 @@ let test () =
     (Sys.getcwd ())
 
 let skip_translation_headers =
-  lazy (
-    match
-      lookup_string_list "skip_translation_headers"
-        (Yojson.Basic.from_file (inferconfig ()))
-    with
-    | exception _ -> []
-    | headers -> headers)
+  lazy (lookup_string_list "skip_translation_headers" (Lazy.force Config.inferconfig_json))

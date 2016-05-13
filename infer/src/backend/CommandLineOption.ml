@@ -262,14 +262,14 @@ let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
     ~mk_spec:(fun set -> Arg.Symbol (strings, set))
 
 let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(meta="") doc =
-  let strings = IList.map fst symbols in
   let sym_to_str = IList.map (fun (x,y) -> (y,x)) symbols in
   let of_string str = IList.assoc string_equal str symbols in
   let to_string sym = IList.assoc ( = ) sym sym_to_str in
   mk ~deprecated ~long ?short ~default ?exes ~meta:(" ,-separated sequence" ^ meta) doc
     ~default_to_string:(fun syms -> String.concat " " (IList.map to_string syms))
-    ~mk_setter:(fun var str_seq -> var := IList.map of_string (Str.split (Str.regexp ",") str_seq))
-    ~mk_spec:(fun set -> Arg.Symbol (strings, set))
+    ~mk_setter:(fun var str_seq ->
+        var := IList.map of_string (Str.split (Str.regexp_string ",") str_seq))
+    ~mk_spec:(fun set -> Arg.String set)
 
 let anon_fun = ref (fun arg -> raise (Arg.Bad ("unexpected anonymous argument: " ^ arg)))
 

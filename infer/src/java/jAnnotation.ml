@@ -14,17 +14,9 @@ open Javalib_pack
 
 
 let is_suppress_warnings_annotated =
-  let matcher =
-    lazy
-      (let default_matcher = fun _ -> false in
-       match Config.suppress_warnings_annotations with
-       | Some f ->
-           (try
-              let m = Inferconfig.SuppressWarningsMatcher.load_matcher f in
-              (m DB.source_file_empty)
-            with Yojson.Json_error _ ->
-              default_matcher)
-       | None -> failwith "Local config expected!") in
+  let matcher = lazy (
+    Inferconfig.SuppressWarningsMatcher.load_matcher Config.suppress_warnings_json
+      DB.source_file_empty) in
   fun proc_name ->
     (Lazy.force matcher) proc_name
 

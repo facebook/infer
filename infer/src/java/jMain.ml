@@ -136,9 +136,8 @@ let do_all_files classpath sources classes =
   let tenv = load_tenv () in
   let linereader = Printer.LineReader.create () in
   let skip_translation_matcher =
-    Inferconfig.SkipTranslationMatcher.load_matcher (Inferconfig.inferconfig ()) in
-  let never_null_matcher =
-    Inferconfig.NeverReturnNull.load_matcher (Inferconfig.inferconfig ()) in
+    Inferconfig.SkipTranslationMatcher.load_matcher Config.inferconfig_json in
+  let never_null_matcher = Inferconfig.NeverReturnNull.load_matcher Config.inferconfig_json in
   let skip source_file =
     skip_translation_matcher source_file Procname.empty_block in
   let translate_source_file basename (package_opt, _) source_file =

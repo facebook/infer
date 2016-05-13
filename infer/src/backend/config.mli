@@ -38,6 +38,7 @@ val assign : string
 val attributes_dir_name : string
 val backend_stats_dir_name : string
 val bound_error_allowed_in_procedure_call : bool
+val checks_disabled_by_default : string list
 val captured_dir_name : string
 val default_failure_name : string
 val default_in_zip_results_dir : string
@@ -123,7 +124,7 @@ val dotty_cfg_libs : bool
 val eradicate : bool
 val err_file_cmdline : string
 val infer_cache : string option
-val inferconfig_home : string option
+val inferconfig_json : Yojson.Basic.json Lazy.t
 val iterations : int
 val javac_verbose_out : string
 val join_cond : int
@@ -168,7 +169,7 @@ val spec_abs_level : int
 val specs_library : string list
 val stats_mode : bool
 val subtype_multirange : bool
-val suppress_warnings_annotations : string option
+val suppress_warnings_json : Yojson.Basic.json Lazy.t
 val svg : bool
 val symops_per_iteration : int
 val test : bool

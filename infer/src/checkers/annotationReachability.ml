@@ -106,8 +106,7 @@ let expensive_overrides_unexpensive =
 
 let is_modeled_expensive =
   let matcher =
-    lazy (let config_file = Inferconfig.inferconfig () in
-          Inferconfig.ModeledExpensiveMatcher.load_matcher config_file) in
+    lazy (Inferconfig.ModeledExpensiveMatcher.load_matcher Config.inferconfig_json) in
   fun tenv proc_name -> match proc_name with
     | Procname.Java proc_name_java ->
         not (Builtin.is_registered proc_name) &&

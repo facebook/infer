@@ -277,6 +277,12 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
         if not self.args.absolute_paths:
             infer_cmd += ['-project_root', self.args.project_root]
 
+        if os.path.isfile(self.javac.suppress_warnings_out) and \
+           os.path.getsize(self.javac.suppress_warnings_out) == 0:
+            with codecs.open(self.javac.suppress_warnings_out, 'w',
+                             encoding=config.CODESET) as json_file:
+                json_file.write('{}')
+
         infer_cmd += [
             '-results_dir', self.args.infer_out,
             '-verbose_out', self.javac.verbose_out,

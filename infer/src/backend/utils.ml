@@ -16,6 +16,10 @@ module F = Format
     functions and builtin equality. Use IList instead. *)
 module List = struct end
 
+type ('a, 'b) result =
+  | Ok of 'a
+  | Error of 'b
+
 (** initial process times *)
 let initial_times = Unix.times ()
 
@@ -563,3 +567,11 @@ let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
     let name_for_crc = name ^ key in
     string_crc_hex32 name_for_crc in
   name_up_to_cutoff ^ "." ^ crc_str
+
+let read_optional_json_file path =
+  if Sys.file_exists path then
+    try
+      Ok (Yojson.Basic.from_file path)
+    with Sys_error msg | Yojson.Json_error msg ->
+      Error msg
+  else Ok (`Assoc [])

@@ -16,6 +16,10 @@
     functions and builtin equality. Use IList instead. *)
 module List : sig end
 
+type ('a, 'b) result =
+  | Ok of 'a
+  | Error of 'b
+
 (** initial process times *)
 val initial_times : Unix.process_times
 
@@ -249,3 +253,5 @@ val analyzers: analyzer list
 val string_of_analyzer: analyzer -> string
 
 val analyzer_of_string: string -> analyzer
+
+val read_optional_json_file : string -> (Yojson.Basic.json, string) result

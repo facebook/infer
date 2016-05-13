@@ -9,9 +9,6 @@
 
 open! Utils
 
-(** get the path to the .inferconfig file *)
-val inferconfig : unit -> string
-
 (** Filter type for a source file *)
 type path_filter = DB.source_file -> bool
 
@@ -36,7 +33,7 @@ val create_filters : analyzer -> filters
 
 module type Matcher = sig
   type matcher = DB.source_file -> Procname.t -> bool
-  val load_matcher : string -> matcher
+  val load_matcher : Yojson.Basic.json Lazy.t -> matcher
 end
 
 module NeverReturnNull : Matcher
@@ -47,7 +44,7 @@ module SuppressWarningsMatcher : Matcher
 
 module ModeledExpensiveMatcher : sig
   type matcher = (string -> bool) -> Procname.t -> bool
-  val load_matcher : string -> matcher
+  val load_matcher : Yojson.Basic.json Lazy.t -> matcher
 end
 
 (** Load the config file and list the files to report on *)
@@ -55,5 +52,6 @@ val test: unit -> unit
 
 val skip_translation_headers : string list Lazy.t
 
-(* is_checker_enabled error_name is true if error_name is whitelisted in .inferconfig or if it's enabled by default *)
+(** is_checker_enabled [error_name] is [true] if [error_name] is whitelisted in .inferconfig or if
+    it's enabled by default *)
 val is_checker_enabled : string -> bool

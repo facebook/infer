@@ -58,6 +58,10 @@ let bound_error_allowed_in_procedure_call = true
 
 let captured_dir_name = "captured"
 
+let checks_disabled_by_default = [
+  "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";
+]
+
 let default_failure_name = "ASSERTION_FAILURE"
 
 let default_in_zip_results_dir = "infer"
@@ -133,6 +137,8 @@ let specs_dir_name = "specs"
 let specs_files_suffix = ".specs"
 
 let start_filename = ".start"
+
+let suppress_warnings_annotations_long = "suppress-warnings-annotations"
 
 (** If true performs taint analysis *)
 let taint_analysis = true
@@ -627,7 +633,7 @@ and subtype_multirange =
     "Use the multirange subtyping domain"
 
 and suppress_warnings_out =
-  CLOpt.mk_string_opt ~deprecated:["suppress_warnings_out"] ~long:"suppress-warnings-annotations"
+  CLOpt.mk_string_opt ~deprecated:["suppress_warnings_out"] ~long:suppress_warnings_annotations_long
     ~exes:CLOpt.[J] ~meta:"path" "Path to list of collected @SuppressWarnings annotations"
 
 (** command line flag: if true, produce a svg file *)
@@ -962,7 +968,6 @@ and dotty_cfg_libs = !dotty_cfg_libs
 and eradicate = !eradicate
 and err_file_cmdline = !err_file
 and infer_cache = !infer_cache
-and inferconfig_home = !inferconfig_home
 and iterations = !iterations
 and javac_verbose_out = !verbose_out
 and join_cond = !join_cond
@@ -1006,7 +1011,6 @@ and spec_abs_level = !spec_abs_level
 and specs_library = !specs_library
 and stats_mode = !stats
 and subtype_multirange = !subtype_multirange
-and suppress_warnings_annotations = !suppress_warnings_out
 and svg = !svg
 and symops_per_iteration = !symops_per_iteration
 and test = !test
@@ -1023,3 +1027,32 @@ and write_dotty = !write_dotty
 and write_html = !write_html
 and xml_specs = !xml_specs
 and zip_libraries = !zip_libraries
+
+let inferconfig_json =
+  let inferconfig_path =
+    match !inferconfig_home, project_root with
+    | Some dir, _ | _, Some dir -> Filename.concat dir inferconfig_file
+    | None, None -> inferconfig_file in
+  lazy (
+    match read_optional_json_file inferconfig_path with
+    | Ok json -> json
+    | Error msg ->
+        F.fprintf F.err_formatter "Could not read or parse Infer config in %s:@\n%s@."
+          inferconfig_path msg;
+        exit 1)
+
+and suppress_warnings_json = lazy (
+  let error msg =
+    F.fprintf F.err_formatter "There was an issue reading the option %s.@\n"
+      suppress_warnings_annotations_long ;
+    F.fprintf F.err_formatter "If you did not call %s directly, this is likely a bug in Infer.@\n"
+      (Filename.basename Sys.executable_name) ;
+    F.fprintf F.err_formatter "%s@." msg ;
+    exit 1 in
+  match !suppress_warnings_out with
+  | Some path -> (
+      match read_optional_json_file path with
+      | Ok json -> json
+      | Error msg -> error ("Could not read or parse the supplied " ^ path ^ ":\n" ^ msg))
+  | None ->
+      error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided"))
