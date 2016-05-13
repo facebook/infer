@@ -122,25 +122,25 @@ let run_frontend_checkers_on_stmt trans_state instr =
 
 let rec run_frontend_checkers_on_decl cfg cg dec =
   let open Clang_ast_t in
-  match dec with
-  | ObjCCategoryImplDecl(_, _, decl_list, _, ocidi) ->
-      let decls = (get_categories_decls ocidi.Clang_ast_t.ocidi_category_decl) @ decl_list in
-      check_for_property_errors cfg cg decls;
-      IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
-  | ObjCImplementationDecl(decl_info, _, decl_list, _, idi) ->
-      let decls = (get_categories_decls idi.Clang_ast_t.oidi_class_interface) @ decl_list in
-      check_for_property_errors cfg cg decls;
-      let call_ns_checker = checkers_for_ns decl_info decl_list in
-      invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
-      IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
-  | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
-      if CLocation.should_do_frontend_check decl_info.Clang_ast_t.di_source_range then
-        (check_for_property_errors cfg cg decl_list;
-         let call_ns_checker = checkers_for_ns decl_info decl_list in
-         invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
-         IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list)
-      else ()
-  | VarDecl _ ->
-      let call_global_checker = checker_for_global_var dec in
-      invoke_set_of_checkers call_global_checker cfg cg None global_var_checker_list
-  | _ -> ()
+  let decl_info = Clang_ast_proj.get_decl_tuple dec in
+  if CLocation.should_do_frontend_check decl_info.Clang_ast_t.di_source_range then
+    match dec with
+    | ObjCCategoryImplDecl(_, _, decl_list, _, ocidi) ->
+        let decls = (get_categories_decls ocidi.Clang_ast_t.ocidi_category_decl) @ decl_list in
+        check_for_property_errors cfg cg decls;
+        IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
+    | ObjCImplementationDecl(decl_info, _, decl_list, _, idi) ->
+        let decls = (get_categories_decls idi.Clang_ast_t.oidi_class_interface) @ decl_list in
+        check_for_property_errors cfg cg decls;
+        let call_ns_checker = checkers_for_ns decl_info decl_list in
+        invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
+        IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
+    | ObjCProtocolDecl (decl_info, _, decl_list, _, _) ->
+        check_for_property_errors cfg cg decl_list;
+        let call_ns_checker = checkers_for_ns decl_info decl_list in
+        invoke_set_of_checkers call_ns_checker cfg cg None ns_notification_checker_list;
+        IList.iter (run_frontend_checkers_on_decl cfg cg) decl_list
+    | VarDecl _ ->
+        let call_global_checker = checker_for_global_var dec in
+        invoke_set_of_checkers call_global_checker cfg cg None global_var_checker_list
+    | _ -> ()

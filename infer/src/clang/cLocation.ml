@@ -89,14 +89,13 @@ let file_in_project file =
   | None -> false
 
 let should_do_frontend_check (loc_start, _) =
-  let file =
-    match loc_start.Clang_ast_t.sl_file with
-    | Some f -> f
-    | None -> assert false in
-  let equal_current_source file =
-    DB.source_file_equal (source_file_from_path file) !DB.current_source in
-  equal_current_source file ||
-  (file_in_project file &&  not Config.testing_mode)
+  match loc_start.Clang_ast_t.sl_file with
+  | Some file ->
+      let equal_current_source file =
+        DB.source_file_equal (source_file_from_path file) !DB.current_source in
+      equal_current_source file ||
+      (file_in_project file &&  not Config.testing_mode)
+  | None -> false
 
 (* We translate by default the instructions in the current file.*)
 (* In C++ development, we also translate the headers that are part *)
