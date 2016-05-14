@@ -219,13 +219,6 @@ let objc_method_to_procname objc_method =
   Procname.ObjC_Cpp
     (Procname.objc_cpp objc_method.classname objc_method.method_name mangled)
 
-let method_str_to_pname method_str =
-  match method_str.language with
-  | Config.Clang ->
-      objc_method_to_procname method_str
-  | Config.Java ->
-      java_method_to_procname method_str
-
 let taint_spec_to_taint_info taint_spec =
   let taint_source =
     match taint_spec.language with

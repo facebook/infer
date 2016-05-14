@@ -291,7 +291,7 @@ let skip_property_accessor ms =
   let open Clang_ast_t in
   let pointer_to_property_opt = CMethod_signature.ms_get_pointer_to_property_opt ms in
   match Ast_utils.get_decl_opt pointer_to_property_opt with
-  | Some (ObjCPropertyDecl _ as d) -> true
+  | Some (ObjCPropertyDecl _) -> true
   | _ -> false
 
 let get_formal_parameters tenv ms =

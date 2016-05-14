@@ -86,6 +86,9 @@ endif
 clang: clang_plugin
 endif
 
+test_build_src:
+	$(MAKE) -C $(SRC_DIR) test_build
+
 test_build_clang: clang_plugin
 	$(MAKE) -C $(INFER_DIR) clang
 
@@ -95,7 +98,7 @@ test_build_java:
 test_build_llvm:
 	$(MAKE) -C $(INFER_DIR) llvm
 
-test_build: test_build_clang test_build_java test_build_llvm
+test_build: test_build_src test_build_clang test_build_java test_build_llvm
 
 unit:
 	$(MAKE) -C $(SRC_DIR) unit
