@@ -308,7 +308,7 @@ let prefix_before_rest args =
   prefix_before_rest_ [] args
 
 
-let parse env_var exe_usage =
+let parse ?(incomplete=false) env_var exe_usage =
   let curr_speclist = ref []
   and full_speclist = ref []
   in
@@ -368,11 +368,17 @@ let parse env_var exe_usage =
   let env_args = c_args @ env_args in
   (* end transitional support for INFERCLANG_ARGS *)
   let exe_name, env_cl_args = prepend_to_argv env_args in
-  Unix.putenv env_var (encode_argv_to_env (prefix_before_rest env_cl_args)) ;
-  (try
-     Arg.parse_argv (Array.of_list (exe_name :: env_cl_args)) !curr_speclist !anon_fun usage_msg
-   with
-   | Arg.Bad usage_msg -> Pervasives.prerr_string usage_msg; exit 2
-   | Arg.Help usage_msg -> Pervasives.print_string usage_msg; exit 0
-  );
+  let current = ref 0 in
+  let rec parse_loop () =
+    try
+      Arg.parse_argv_dynamic ~current (Array.of_list (exe_name :: env_cl_args))
+        curr_speclist !anon_fun usage_msg
+    with
+    | Arg.Bad _ when incomplete -> parse_loop ()
+    | Arg.Bad usage_msg -> Pervasives.prerr_string usage_msg; exit 2
+    | Arg.Help usage_msg -> Pervasives.print_string usage_msg; exit 0
+  in
+  parse_loop () ;
+  if not incomplete then
+    Unix.putenv env_var (encode_argv_to_env (prefix_before_rest env_cl_args)) ;
   curr_usage

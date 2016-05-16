@@ -93,4 +93,4 @@ val mk_anon :
     Therefore arguments passed on the command line supercede those specified in the environment
     variable.  WARNING: If an argument appears both in the environment variable and on the command
     line, it will be interpreted twice. *)
-val parse : string -> (exe -> Arg.usage_msg) -> (int -> 'a)
+val parse : ?incomplete:bool -> string -> (exe -> Arg.usage_msg) -> (int -> 'a)

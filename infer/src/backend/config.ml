@@ -191,6 +191,34 @@ let os_type = match Sys.os_type with
 
 (** Command Line options *)
 
+(* Declare the phase 1 options *)
+
+let inferconfig_home =
+  CLOpt.mk_string_opt ~deprecated:["inferconfig_home"] ~long:"inferconfig-home"
+    ~exes:CLOpt.[A] ~meta:"dir" "Path to the .inferconfig file"
+
+and project_root =
+  CLOpt.mk_string_opt ~deprecated:["project_root"] ~long:"project-root" ~short:"pr"
+    ?default:(if CLOpt.(current_exe = P) then Some (Sys.getcwd ()) else None)
+    ~f:filename_to_absolute
+    ~exes:CLOpt.[A;C;J;L;P] ~meta:"dir" "Specify the root directory of the project"
+
+(* Parse the phase 1 options, ignoring the rest *)
+
+let _ = CLOpt.parse ~incomplete:true "INFER_ARGS" (fun _ -> "")
+
+(* Define the values that depend on phase 1 options *)
+
+let inferconfig_home = !inferconfig_home
+and project_root = !project_root
+
+let inferconfig_path =
+  match inferconfig_home, project_root with
+  | Some dir, _ | _, Some dir -> Filename.concat dir inferconfig_file
+  | None, None -> inferconfig_file
+
+(* Proceed to declare and parse the remaining options *)
+
 (** The references representing the command line options are defined in a single
     simultaneous let...and...and... binding in order to allow the type-checker to catch
     uses of one reference in code for another. This avoids being sensitive to
@@ -391,10 +419,6 @@ and infer_cache =
     ~f:filename_to_absolute
     ~meta:"dir" "Select a directory to contain the infer cache"
 
-and inferconfig_home =
-  CLOpt.mk_string_opt ~deprecated:["inferconfig_home"] ~long:"inferconfig-home"
-    ~exes:CLOpt.[A] ~meta:"dir" "Path to the .inferconfig file"
-
 (** Set the timeout values in seconds and symops, computed as a multiple of the integer
     parameter *)
 and iterations =
@@ -528,12 +552,6 @@ and procs_xml =
 and progress_bar =
   CLOpt.mk_bool ~deprecated_no:["no_progress_bar"] ~long:"progress-bar" ~short:"pb" ~default:true
     "Show a progress bar"
-
-and project_root =
-  CLOpt.mk_string_opt ~deprecated:["project_root"] ~long:"project-root" ~short:"pr"
-    ?default:(if CLOpt.(current_exe = P) then Some (Sys.getcwd ()) else None)
-    ~f:filename_to_absolute
-    ~exes:CLOpt.[A;C;J;L;P] ~meta:"dir" "Specify the root directory of the project"
 
 (** command line flag: if true, do not print the spec to standard output *)
 and quiet =
@@ -994,7 +1012,6 @@ and print_types = !print_types
 and print_using_diff = !print_using_diff
 and procs_csv = !procs_csv
 and procs_xml = !procs_xml
-and project_root = !project_root
 and quiet = !quiet
 and reactive_mode = !reactive
 and report = !report
@@ -1029,10 +1046,6 @@ and xml_specs = !xml_specs
 and zip_libraries = !zip_libraries
 
 let inferconfig_json =
-  let inferconfig_path =
-    match !inferconfig_home, project_root with
-    | Some dir, _ | _, Some dir -> Filename.concat dir inferconfig_file
-    | None, None -> inferconfig_file in
   lazy (
     match read_optional_json_file inferconfig_path with
     | Ok json -> json
