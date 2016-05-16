@@ -805,7 +805,10 @@ let add_tainting_attribute att pvar_param prop =
 
 (* add tainting attributes to a list of paramenters *)
 let add_tainting_att_param_list prop param_nums formal_params att =
-  try
+  match param_nums with
+  | [n] when n<0 -> prop
+  | _ ->
+      try
     IList.map (fun n -> IList.nth formal_params n) param_nums
     |> IList.fold_left (fun prop param -> add_tainting_attribute att param prop) prop
   with Failure _ | Invalid_argument _  ->
@@ -831,6 +834,41 @@ let mk_pre pre formal_params callee_pname callee_attrs =
       Sil.Auntaint
     |> Prop.expose
   else pre
+
+let report_taint_error e taint_info callee_pname caller_pname calling_prop =
+  let err_desc  =
+    Errdesc.explain_tainted_value_reaching_sensitive_function
+      calling_prop
+      e
+      taint_info
+      callee_pname
+      (State.get_loc ()) in
+  let exn =
+    Exceptions.Tainted_value_reaching_sensitive_function
+      (err_desc, __POS__) in
+  Reporting.log_warning caller_pname exn
+
+let check_taint_on_variadic_function callee_pname caller_pname actual_params calling_prop =
+  let rec n_tail lst n = (* return the tail of a list from element n *)
+    if n = 1 then lst
+    else match lst with
+      | [] -> []
+      | _::lst' -> n_tail lst' (n-1) in
+  let tainted_params = Taint.accepts_sensitive_params callee_pname None in
+  match tainted_params with
+  | [tp] when tp<0 ->
+      (* All actual params from abs(tp) should not be tainted. If we find one we give the warning *)
+      let tp_abs = abs tp in
+      L.d_strln ("Checking tainted actual parameters from parameter number "^ (string_of_int tp_abs) ^ " onwards.");
+      let actual_params' = n_tail actual_params tp_abs in
+      L.d_str "Paramters to be checked:  [ ";
+      IList.iter(fun (e,_) ->
+          L.d_str (" " ^ (Sil.exp_to_string e) ^ " ");
+          match Prop.get_taint_attribute calling_prop e with
+          | Some (Sil.Ataint taint_info) -> report_taint_error e taint_info callee_pname caller_pname calling_prop
+          | _ -> ()) actual_params';
+      L.d_strln" ]"
+  | _ ->  ()
 
 (** Construct the actual precondition: add to the current state a copy
     of the (callee's) formal parameters instantiated with the actual
@@ -919,7 +957,7 @@ let inconsistent_actualpre_missing actual_pre split_opt =
 
 (* perform the taint analysis check by comparing the taint atoms in [calling_pi] with the untaint
    atoms required by the [missing_pi] computed during abduction *)
-let do_taint_check caller_pname callee_pname calling_prop missing_pi sub =
+let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_params =
   let calling_pi = Prop.get_pi calling_prop in
   (* get a version of [missing_pi] whose var names match the names in calling pi *)
   let missing_pi_sub = Prop.pi_sub sub missing_pi in
@@ -948,17 +986,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub =
       let taint_info = match Prop.atom_get_exp_attribute taint_atom with
         | Some (_, Sil.Ataint taint_info) -> taint_info
         | _ -> failwith "Expected to get taint attr on atom" in
-      let err_desc =
-        Errdesc.explain_tainted_value_reaching_sensitive_function
-          calling_prop
-          e
-          taint_info
-          callee_pname
-          (State.get_loc ()) in
-      let exn =
-        Exceptions.Tainted_value_reaching_sensitive_function
-          (err_desc, __POS__) in
-      Reporting.log_warning caller_pname exn in
+      report_taint_error e taint_info callee_pname caller_pname calling_prop in
     IList.iter report_one_error taint_atoms in
   Sil.ExpMap.iter report_taint_errors taint_untaint_exp_map;
   (* filter out UNTAINT(e) atoms from [missing_pi] such that we have already reported a taint
@@ -974,6 +1002,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub =
               (fun a -> Sil.atom_equal atom a)
               untaint_atoms)
          taint_untaint_exp_map) in
+  check_taint_on_variadic_function callee_pname caller_pname actual_params calling_prop;
   IList.filter not_untaint_atom missing_pi_sub
 
 let class_cast_exn pname_opt texp1 texp2 exp ml_loc =
@@ -1026,7 +1055,7 @@ let exe_spec
       let do_split () =
         let missing_pi' =
           if Config.taint_analysis then
-            do_taint_check caller_pname callee_pname actual_pre missing_pi sub2
+            do_taint_check caller_pname callee_pname actual_pre missing_pi sub2 actual_params
           else missing_pi in
         process_splitting
           actual_pre sub1 sub2 frame missing_pi' missing_sigma

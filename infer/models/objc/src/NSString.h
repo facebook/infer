@@ -14,5 +14,9 @@
 }
 
 + (instancetype)stringWithUTF8String:(const char*)bytes;
-
++ (instancetype)stringWithString:(NSString*)aString;
++ (instancetype)stringWithFormat:(NSString*)format, ...;
++ (instancetype)localizedStringWithFormat:(NSString*)format, ...;
+- (instancetype)initWithFormat:(NSString*)format, ...;
+- (instancetype)initWithFormat:(NSString*)format arguments:(va_list)argList;
 @end

@@ -44,6 +44,17 @@ let sources = [
     taint_kind = Sil.Tk_shared_preferences_data;
     language = Config.Java
   };
+  (* === iOS === *)
+  {
+    classname = "NSHTTPCookie";
+    method_name = "value";
+    ret_type = "NSString *";
+    params = [];
+    is_static = false;
+    taint_kind = Sil.Tk_privacy_annotation;
+    language = Config.Clang
+  };
+
 ] @ FbTaint.sources
 
 (* list of (sensitive sinks, zero-indexed numbers of parameters that should not be tainted). note:
@@ -160,6 +171,53 @@ let sinks = [
     is_static = false;
     taint_kind = Sil.Tk_privacy_annotation;
     language = Config.Java;
+  }, [0]);
+
+  (* === iOS === *)
+  ({
+    classname = "NSString";
+    method_name = "stringWithFormat:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Sil.Tk_unknown;
+    language = Config.Clang;
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "stringWithUTF8String:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Sil.Tk_unknown;
+    language = Config.Clang
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "localizedStringWithFormat:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Sil.Tk_unknown;
+    language = Config.Clang
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "initWithFormat:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = false;
+    taint_kind = Sil.Tk_unknown;
+    language = Config.Clang
+  }, [-2]);
+  ({
+    classname = "NSString";
+    method_name = "stringWithString:";
+    ret_type = "instancetype";
+    params = [];
+    is_static = true;
+    taint_kind = Sil.Tk_unknown;
+    language = Config.Clang
   }, [0]);
 
   (*  ==== iOS for testing only ==== *)
