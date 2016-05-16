@@ -22,6 +22,7 @@ module type S = sig
   val pp : F.formatter -> astate -> unit
 end
 
+(** Lift a domain without bottom to a domain with bottom. *)
 module BottomLifted (Domain : S) = struct
   type astate =
     | Bottom
@@ -64,7 +65,7 @@ module BottomLifted (Domain : S) = struct
     | NonBottom astate -> Domain.pp fmt astate
 end
 
-(* cartestian product of two domains *)
+(** Cartestian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) = struct
   type astate = Domain1.astate * Domain2.astate
 
@@ -103,8 +104,8 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
     F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
 end
 
-(* lift a set to a domain. the elements of the set should be drawn from a *finite* collection of
-   possible values, since the widening operator here is just union. *)
+(** Lift a set to a domain. The elements of the set should be drawn from a *finite* collection of
+    possible values, since the widening operator here is just union. *)
 module FiniteSet (S : PrettyPrintable.PPSet) = struct
   include S
   type astate = t
@@ -125,4 +126,43 @@ module FiniteSet (S : PrettyPrintable.PPSet) = struct
 
   let widen ~prev ~next ~num_iters:_ =
     join prev next
+end
+
+(** Lift a map whose value type is an abstract domain to a domain. *)
+module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
+  include M
+  type astate = ValueDomain.astate M.t
+
+  let initial = M.empty
+
+  let is_bottom _ = false
+
+  (** true if all keys in [lhs] are in [rhs], and each lhs value <= corresponding rhs value *)
+  let (<=) ~lhs ~rhs =
+    if lhs == rhs
+    then true
+    else
+      M.for_all
+        (fun k lhs_v ->
+           try ValueDomain.(<=) ~lhs:lhs_v ~rhs:(M.find k rhs)
+           with Not_found -> false)
+        lhs
+
+  let join astate1 astate2 =
+    if astate1 == astate2
+    then astate1
+    else
+      M.merge
+        (fun _ v1_opt v2_opt -> match v1_opt, v2_opt with
+           | Some v1, Some v2 -> Some (ValueDomain.join v1 v2)
+           | Some v, _ | _, Some v -> Some v
+           | None, None -> None)
+        astate1
+        astate2
+
+  let widen ~prev ~next ~num_iters:_ =
+    join prev next
+
+  let pp fmt astate =
+    M.pp ~pp_value:ValueDomain.pp fmt astate
 end
