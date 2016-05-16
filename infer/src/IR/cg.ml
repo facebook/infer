@@ -260,9 +260,10 @@ let get_nodes_and_defined_children (g: t) =
   let nodes_list = Procname.Set.elements !nodes in
   IList.map (fun n -> (n, get_defined_children g n)) nodes_list
 
+(** nodes with defined flag, and edges *)
 type nodes_and_edges =
-  (node * bool) list * (* nodes with defined flag *)
-  (node * node) list (* edges *)
+  (node * bool) list *
+  (node * node) list
 
 (** Return the list of nodes, with defined+disabled flags, and the list of edges *)
 let get_nodes_and_edges (g: t) : nodes_and_edges =

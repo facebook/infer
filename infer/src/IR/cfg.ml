@@ -27,7 +27,8 @@ module Node = struct
     | Prune_node of bool * Sil.if_kind * string (** (true/false branch, if_kind, comment) *)
     | Skip_node of string
 
-  and t = { (** a node *)
+  (** a node *)
+  and t = {
     (** unique id of the node *)
     nd_id : id;
 
@@ -61,7 +62,9 @@ module Node = struct
     (** successor nodes in the cfg *)
     mutable nd_succs : t list;
   }
-  and proc_desc = { (** procedure description *)
+
+  (** procedure description *)
+  and proc_desc = {
     pd_attributes : ProcAttributes.t; (** attributes of the procedure *)
     pd_id : int; (** unique proc_desc identifier *)
     mutable pd_nodes : t list; (** list of nodes of this procedure *)
@@ -73,7 +76,8 @@ module Node = struct
   let exn_sink_kind = Stmt_node "exceptions sink"
   let throw_kind = Stmt_node "throw"
 
-  type cfg = (** data type for the control flow graph *)
+  (** data type for the control flow graph *)
+  type cfg =
     { node_id : int ref;
       node_list : t list ref;
       name_pdesc_tbl : proc_desc Procname.Hash.t;  (** Map proc name to procdesc *)
