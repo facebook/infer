@@ -12,6 +12,15 @@ package java.lang;
 import com.facebook.infer.models.InferUndefined;
 
 public class Object {
+    private boolean __inferIsLocked;
+
+    public void __inferLock() {
+      __inferIsLocked = true;
+    }
+
+    public void __inferUnlock() {
+      __inferIsLocked = false;
+    }
 
     public Class getClass() {
         Class c = new Class();
