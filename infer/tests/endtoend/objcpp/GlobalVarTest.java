@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-package endtoend.objc;
+package endtoend.objcpp;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static utils.matchers.ResultContainsLineNumbers.containsLines;
@@ -52,7 +52,7 @@ public class GlobalVarTest {
     assertThat(
         "Results should contain " + GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL,
         inferResults,
-        containsLines(new int[]{29, 31, 33}));
+        containsLines(new int[]{30, 32, 34}));
   }
 
 }

@@ -138,6 +138,9 @@ sig
   (* true if a declaration is a global variable *)
   val is_global_var : Clang_ast_t.decl -> bool
 
+  (* true if a declaration is a constexpr variable *)
+  val is_const_expr_var : Clang_ast_t.decl -> bool
+
   (* true if CFrontend_config.language is set ot ObjC *)
   val is_objc : unit -> bool
 

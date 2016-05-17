@@ -7,7 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-#import <Foundation/NSObject.h>
+#import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 @interface A : NSObject
 + (int)bar;
@@ -33,6 +34,19 @@ static float kPadding = [A bar] ? 10.0 : 11.0; // Error
 static const float kLineSize = 1 / [A scale]; // Error
 
 static const float ok = 37;
+
+const NSRange NSNotFoundRange =
+    (NSRange){.location = NSNotFound, .length = 0}; // OK
+
+const static CFRange FBCFNotFoundRange =
+    (CFRange){.location = kCFNotFound, .length = 7}; // OK
+
+const CGPoint offset = CGPointMake(0, 0); // OK
+
+constexpr double square(double x) { return x * x; }
+
+const int dmv = 17;
+constexpr double max1 = 1.4 * square(dmv); // OK
 
 void bla() {
   static const int kInsets = foo(); // Error

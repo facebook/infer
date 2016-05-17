@@ -59,12 +59,33 @@ let rec is_self s =
        | _ -> false)
   | _ -> false
 
-let is_function_or_method_call _ st =
+let decl_ref_is_in names st =
   match st with
-  | Clang_ast_t.CallExpr _  (* for C *)
+  | Clang_ast_t.DeclRefExpr (_, _, _, drti) ->
+      (match drti.drti_decl_ref with
+       | Some dr -> let ndi, _, _ = CFrontend_utils.Ast_utils.get_info_from_decl_ref dr in
+           IList.exists (fun n -> n = ndi.ni_name) names
+       | _ -> false)
+  | _ -> false
+
+let call_function_named st names =
+  Ast_utils.exists_eventually_st decl_ref_is_in names st
+
+let rec eventually_makes_a_call exp =
+  CFrontend_utils.Ast_utils.exists_eventually_st is_expensive_function_or_method_call () exp
+
+and is_expensive_function_or_method_call _ st =
+  let white_list_functions = ["CGPointMake"] in
+  let open Clang_ast_t in
+  match st with
+  | CallExpr (_, st :: _, _) -> (* for C *)
+      not (call_function_named st white_list_functions)
+  | CXXConstructExpr (_, stmt_list, _, _) ->
+      (* Assumption: constructor is expensive iff it has a call inside *)
+      (IList.exists eventually_makes_a_call) stmt_list
+  | CXXTemporaryObjectExpr _ (* for C++ *)
   | CXXMemberCallExpr _ | CXXOperatorCallExpr _
-  | CXXConstructExpr _ | CXXTemporaryObjectExpr _ (* for C++ *)
-  | Clang_ast_t.ObjCMessageExpr _ -> true (* for ObjC *)
+  | ObjCMessageExpr _ -> true (* for ObjC *)
   | _ -> false
 
 (* Call method m and on the pn parameter pred holds *)
@@ -88,16 +109,14 @@ let dec_body_eventually atomic_pred param dec =
 
 (* true if a variable is initialized with a method/function call.*)
 (* implemented as decl |= EF is_function_or_method_call *)
-let is_initialized_with_call decl =
+let is_initialized_with_expensive_call decl =
   match decl with
   | Clang_ast_t.VarDecl (_, _ ,_, vdi) ->
       (match vdi.vdi_init_expr with
        | Some init_expr ->
-           CFrontend_utils.Ast_utils.exists_eventually_st is_function_or_method_call () init_expr
+           eventually_makes_a_call init_expr
        | _ -> false)
   | _ -> false
-
-
 
 (* === Warnings on properties === *)
 
@@ -149,7 +168,8 @@ let global_var_init_with_calls_warning decl =
     | None -> assert false (* we cannot be here *) in
   let condition = (CFrontend_utils.Ast_utils.is_objc () || CFrontend_utils.Ast_utils.is_objcpp ())
                   && CFrontend_utils.Ast_utils.is_global_var decl
-                  && is_initialized_with_call decl in
+                  && (not (CFrontend_utils.Ast_utils.is_const_expr_var decl))
+                  && is_initialized_with_expensive_call decl in
   if condition then
     Some {
       name = "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL";

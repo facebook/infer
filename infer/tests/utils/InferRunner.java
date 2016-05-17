@@ -195,6 +195,9 @@ public class InferRunner {
       case CPP:
         stdParam = "-std=c++11";
         break;
+      case ObjCPP:
+        stdParam = "-std=c++11";
+        break;
     }
     return stdParam;
   }

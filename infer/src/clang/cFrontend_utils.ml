@@ -404,6 +404,11 @@ struct
     | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_global
     | _ -> false
 
+  let is_const_expr_var decl =
+    match decl with
+    | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_const_expr
+    | _ -> false
+
   let is_objc () =
     match Config.clang_lang with
     | Config.OBJC -> true

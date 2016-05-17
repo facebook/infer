@@ -55,6 +55,7 @@ let empty_var_decl_info = {
   vdi_is_static_local = false;
   vdi_is_module_private = false;
   vdi_is_nrvo_variable = false;
+  vdi_is_const_expr = false;
   vdi_init_expr = None;
   vdi_parm_index_in_function = None;
 }
