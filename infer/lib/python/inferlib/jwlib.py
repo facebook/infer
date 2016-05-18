@@ -173,6 +173,9 @@ class CompilerCall(object):
                     suffix='.out',
                     prefix='annotations_',
                     delete=False) as annot_out:
+                # Initialize the contents of the file to a valid empty
+                # json object.
+                annot_out.write('{}')
                 self.suppress_warnings_out = annot_out.name
             javac_cmd += ['-A%s=%s' %
                           (config.SUPRESS_WARNINGS_OUTPUT_FILENAME_OPTION,
@@ -276,12 +279,6 @@ class AnalyzerWithFrontendWrapper(analyze.AnalyzerWrapper):
 
         if not self.args.absolute_paths:
             infer_cmd += ['-project_root', self.args.project_root]
-
-        if os.path.isfile(self.javac.suppress_warnings_out) and \
-           os.path.getsize(self.javac.suppress_warnings_out) == 0:
-            with codecs.open(self.javac.suppress_warnings_out, 'w',
-                             encoding=config.CODESET) as json_file:
-                json_file.write('{}')
 
         infer_cmd += [
             '-results_dir', self.args.infer_out,
