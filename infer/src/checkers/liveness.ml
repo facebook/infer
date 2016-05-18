@@ -29,18 +29,18 @@ module TransferFunctions = struct
   let exp_add_live exp astate =
     let (ids, pvars) = Sil.exp_get_vars exp in
     let astate' =
-      IList.fold_left (fun astate_acc id -> Domain.add (LogicalVar id) astate_acc) astate ids in
-    IList.fold_left (fun astate_acc pvar -> Domain.add (ProgramVar pvar) astate_acc) astate' pvars
+      IList.fold_left (fun astate_acc id -> Domain.add (Var.of_id id) astate_acc) astate ids in
+    IList.fold_left (fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc) astate' pvars
 
   let exec_instr astate _ = function
     | Sil.Letderef (lhs_id, rhs_exp, _, _) ->
-        Domain.remove (LogicalVar lhs_id) astate
+        Domain.remove (Var.of_id lhs_id) astate
         |> exp_add_live rhs_exp
     | Sil.Set (Lvar lhs_pvar, _, rhs_exp, _) ->
         let astate' =
           if Pvar.is_global lhs_pvar
           then astate (* never kill globals *)
-          else Domain.remove (ProgramVar lhs_pvar) astate in
+          else Domain.remove (Var.of_pvar lhs_pvar) astate in
         exp_add_live rhs_exp astate'
     | Sil.Set (lhs_exp, _, rhs_exp, _) ->
         exp_add_live lhs_exp astate
@@ -49,7 +49,7 @@ module TransferFunctions = struct
         exp_add_live exp astate
     | Sil.Call (ret_ids, call_exp, params, _, _) ->
         IList.fold_right
-          (fun ret_id astate_acc -> Domain.remove (LogicalVar ret_id) astate_acc)
+          (fun ret_id astate_acc -> Domain.remove (Var.of_id ret_id) astate_acc)
           ret_ids
           astate
         |> exp_add_live call_exp

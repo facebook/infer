@@ -150,16 +150,16 @@ module NullifyTransferFunctions = struct
 
   let exec_instr ((active_defs, to_nullify) as astate) _ = function
     | Sil.Letderef (lhs_id, _, _, _) ->
-        VarDomain.add (Var.LogicalVar lhs_id) active_defs, to_nullify
+        VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify
     | Sil.Call (lhs_ids, _, _, _, _) ->
         let active_defs' =
           IList.fold_left
-            (fun acc id -> VarDomain.add (Var.LogicalVar id) acc)
+            (fun acc id -> VarDomain.add (Var.of_id id) acc)
             active_defs
             lhs_ids in
         active_defs', to_nullify
     | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
-        VarDomain.add (Var.ProgramVar lhs_pvar) active_defs, to_nullify
+        VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify
     | Sil.Set _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
     | Abstract _ ->
         astate
@@ -214,11 +214,11 @@ let add_nullify_instrs tenv _ pdesc =
        | Some (_, to_nullify) ->
            let pvars_to_nullify, ids_to_remove =
              Var.Set.fold
-               (fun var (pvars_acc, ids_acc) -> match var with
+               (fun var (pvars_acc, ids_acc) -> match Var.to_exp var with
                   (* we nullify all address taken variables at the end of the procedure *)
-                  | ProgramVar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
+                  | Sil.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
                       pvar :: pvars_acc, ids_acc
-                  | LogicalVar id ->
+                  | Sil.Var id ->
                       pvars_acc, id :: ids_acc
                   | _ -> pvars_acc, ids_acc)
                to_nullify

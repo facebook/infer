@@ -9,7 +9,7 @@
 
 open! Utils
 
-(** single abstraction for all the kinds of variables in SIL *)
+(** Single abstraction for all the kinds of variables in SIL *)
 
 type var =
   | ProgramVar of Pvar.t
@@ -17,27 +17,37 @@ type var =
 
 type t = var
 
-let var_compare v1 v2 = match v1, v2 with
+let of_id id =
+  LogicalVar id
+
+let of_pvar pvar =
+  ProgramVar pvar
+
+let to_exp = function
+  | ProgramVar pvar -> Sil.Lvar pvar
+  | LogicalVar id -> Sil.Var id
+
+let compare v1 v2 = match v1, v2 with
   | ProgramVar pv1, ProgramVar pv2 -> Pvar.compare pv1 pv2
   | LogicalVar sv1, LogicalVar sv2 -> Ident.compare sv1 sv2
   | ProgramVar _, _ -> 1
   | LogicalVar _, _ -> -1
 
-let var_equal v1 v2 =
-  var_compare v1 v2 = 0
+let equal v1 v2 =
+  compare v1 v2 = 0
 
-let pp_var fmt = function
+let pp fmt = function
   | ProgramVar pv -> (Pvar.pp pe_text) fmt pv
   | LogicalVar id -> (Ident.pp pe_text) fmt id
 
 module Map = PrettyPrintable.MakePPMap(struct
     type t = var
-    let compare = var_compare
-    let pp_key = pp_var
+    let compare = compare
+    let pp_key = pp
   end)
 
 module Set = PrettyPrintable.MakePPSet(struct
     type t = var
-    let compare = var_compare
-    let pp_element = pp_var
+    let compare = compare
+    let pp_element = pp
   end)

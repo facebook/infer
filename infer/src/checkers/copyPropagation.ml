@@ -27,7 +27,7 @@ module Domain = struct
     else
       Var.Map.for_all
         (fun k v ->
-           try Var.var_equal v (Var.Map.find k lhs)
+           try Var.equal v (Var.Map.find k lhs)
            with Not_found -> false)
         rhs
 
@@ -37,7 +37,7 @@ module Domain = struct
     else
       let keep_if_same _ v1_opt v2_opt = match v1_opt, v2_opt with
         | Some v1, Some v2 ->
-            if Var.var_equal v1 v2 then Some v1 else None
+            if Var.equal v1 v2 then Some v1 else None
         | _ -> None in
       Var.Map.merge keep_if_same astate1 astate2
 
@@ -45,21 +45,21 @@ module Domain = struct
     join prev next
 
   let pp fmt astate =
-    let pp_value = Var.pp_var in
+    let pp_value = Var.pp in
     Var.Map.pp ~pp_value fmt astate
 
   let gen var1 var2 astate =
     (* don't add tautological copies *)
-    if Var.var_equal var1 var2
+    if Var.equal var1 var2
     then astate
     else Var.Map.add var1 var2 astate
 
   let kill_copies_with_var var astate =
     let do_kill lhs_var rhs_var astate_acc =
-      if Var.var_equal var lhs_var
+      if Var.equal var lhs_var
       then astate_acc (* kill copies vith [var] on lhs *)
       else
-      if Var.var_equal var rhs_var
+      if Var.equal var rhs_var
       then (* delete [var] = [rhs_var] copy, but add [lhs_var] = M(rhs_var) copy*)
         try Var.Map.add lhs_var (Var.Map.find rhs_var astate) astate_acc
         with Not_found -> astate_acc
@@ -70,9 +70,9 @@ module Domain = struct
   (* kill the previous binding for [lhs_var], and add a new [lhs_var] -> [rhs_var] binding *)
   let kill_then_gen lhs_var rhs_var astate =
     let already_has_binding lhs_var rhs_var astate =
-      try Var.var_equal rhs_var (Var.Map.find lhs_var astate)
+      try Var.equal rhs_var (Var.Map.find lhs_var astate)
       with Not_found -> false in
-    if Var.var_equal lhs_var rhs_var || already_has_binding lhs_var rhs_var astate
+    if Var.equal lhs_var rhs_var || already_has_binding lhs_var rhs_var astate
     then astate (* already have this binding; no need to kill or gen *)
     else
       kill_copies_with_var lhs_var astate
@@ -88,15 +88,15 @@ module TransferFunctions = struct
 
   let exec_instr astate _ = function
     | Sil.Letderef (lhs_id, Sil.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
-        Domain.gen (LogicalVar lhs_id) (ProgramVar rhs_pvar) astate
+        Domain.gen (Var.of_id lhs_id) (Var.of_pvar rhs_pvar) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
-        Domain.kill_then_gen (ProgramVar lhs_pvar) (LogicalVar rhs_id) astate
+        Domain.kill_then_gen (Var.of_pvar lhs_pvar) (Var.of_id rhs_id) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Lvar rhs_pvar, _)
       when not (Pvar.is_global lhs_pvar || Pvar.is_global rhs_pvar)  ->
-        Domain.kill_then_gen (ProgramVar lhs_pvar) (ProgramVar rhs_pvar) astate
+        Domain.kill_then_gen (Var.of_pvar lhs_pvar) (Var.of_pvar rhs_pvar) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
         (* non-copy assignment (or assignment to global); can only kill *)
-        Domain.kill_copies_with_var (ProgramVar lhs_pvar) astate
+        Domain.kill_copies_with_var (Var.of_pvar lhs_pvar) astate
     | Sil.Letderef _
     (* lhs = *rhs where rhs isn't a pvar (or is a global). in any case, not a copy *)
     (* note: since logical vars can't be reassigned, don't need to kill bindings for lhs id *)
@@ -105,9 +105,9 @@ module TransferFunctions = struct
         astate
     | Sil.Call (ret_ids, _, actuals, _, _) ->
         let kill_ret_ids astate_acc id =
-          Domain.kill_copies_with_var (LogicalVar id) astate_acc in
+          Domain.kill_copies_with_var (Var.of_id id) astate_acc in
         let kill_actuals_by_ref astate_acc = function
-          | (Sil.Lvar pvar, Sil.Tptr _) -> Domain.kill_copies_with_var (ProgramVar pvar) astate_acc
+          | (Sil.Lvar pvar, Sil.Tptr _) -> Domain.kill_copies_with_var (Var.of_pvar pvar) astate_acc
           | _ -> astate_acc in
         let astate' = IList.fold_left kill_ret_ids astate ret_ids in
         if !Config.curr_language = Config.Java
