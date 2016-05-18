@@ -175,6 +175,15 @@ let map2 f l1 l2 =
     | _ -> raise Fail in
   go l1 l2 []
 
+(** Return the first non-None result found when applying f to elements of l *)
+let rec find_map_opt f = function
+  | [] -> None
+  | e :: l' ->
+      let e' = f e in
+      if e' <> None
+      then e'
+      else find_map_opt f l'
+
 let to_string f l =
   let rec aux l =
     match l with
