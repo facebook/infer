@@ -77,14 +77,18 @@ let ia_has_annotation_with
     ia;
   !found
 
-(** Check if there is an annotation which ends with the given name *)
-let ia_ends_with ia ann_name =
-  let found = ref false in
+(** Return true if [annot] ends with [ann_name] *)
+let annot_ends_with annot ann_name =
   let filter s =
     let sl = String.length s in
     let al = String.length ann_name in
     sl >= al && String.sub s (sl - al) al = ann_name in
-  ia_iter (fun a -> if filter a.Sil.class_name then found := true) ia;
+  filter annot.Sil.class_name
+
+(** Check if there is an annotation in [ia] which ends with the given name *)
+let ia_ends_with ia ann_name =
+  let found = ref false in
+  ia_iter (fun a -> if annot_ends_with a ann_name then found := true) ia;
   !found
 
 let ia_contains ia ann_name =
@@ -130,6 +134,7 @@ let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"
 let integrity_source = "IntegritySource"
 let integrity_sink = "IntegritySink"
+let guarded_by = "GuardedBy"
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable
@@ -216,6 +221,9 @@ let ia_is_integrity_source ia =
 
 let ia_is_integrity_sink ia =
   ia_ends_with ia integrity_sink
+
+let ia_is_guarded_by ia =
+  ia_ends_with ia guarded_by
 
 type annotation =
   | Nullable

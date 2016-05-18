@@ -77,6 +77,7 @@ val specs_dir_name : string
 val specs_files_suffix : string
 val start_filename : string
 val taint_analysis : bool
+val csl_analysis : bool
 val trace_absarray : bool
 val undo_join : bool
 val unsafe_unret : string

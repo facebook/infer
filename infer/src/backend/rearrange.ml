@@ -600,14 +600,75 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   let offsets_default = Sil.exp_get_offsets lexp in
   Prop.prop_iter_set_state iter offsets_default
 
+(* TODO: have to call this on both reads and writes *)
+let add_guarded_by_constraints prop lexp =
+  let sigma = Prop.get_sigma prop in
+  (** if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
+  let get_guarded_by_fld_str fld typ =
+    let extract_guarded_by_str (annot, _) =
+      if Annotations.annot_ends_with annot Annotations.guarded_by
+      then
+        match annot.Sil.parameters with
+        | [guarded_by_str] -> Some guarded_by_str
+        | _ -> None
+      else
+        None in
+    match Annotations.get_field_type_and_annotation fld typ with
+    | Some (_, item_annot) -> IList.find_map_opt extract_guarded_by_str item_annot
+    | _ -> None in
+  (* find A.guarded_by_fld_str |-> B and return Some B, or None if there is no such hpred *)
+  let find_guarded_by_exp fld typ sigma =
+    match get_guarded_by_fld_str fld typ with
+    | Some guarded_by_fld_str ->
+        let extract_guarded_by_strexp (fld, strexp) =
+          (* this comparison needs to be somewhat fuzzy, since programmers are free to write
+             @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
+          if Ident.fieldname_to_flat_string fld = guarded_by_fld_str ||
+             Ident.fieldname_to_string fld = guarded_by_fld_str
+          then Some strexp
+          else None in
+        IList.find_map_opt
+          (function
+            | Sil.Hpointsto (_, Estruct (flds, _), _) ->
+                IList.find_map_opt extract_guarded_by_strexp flds
+            | _ ->
+                None)
+          sigma
+    | None ->
+        None in
+  let check_fld_locks typ prop_acc (fld, strexp) = match strexp with
+    | Sil.Eexp (exp, _) when Sil.exp_equal exp lexp ->
+        begin
+          match find_guarded_by_exp fld typ sigma with
+          | Some guarded_by_strexp ->
+              L.stderr "Got guarded_by_exp %a@." (Sil.pp_sexp pe_text) guarded_by_strexp;
+              (* TODO: check if the lock is held, act accordingly *)
+              prop_acc
+          | None ->
+              (* field not guarded; proceed with abduction as we normally would *)
+              prop_acc
+        end
+    | _ ->
+        prop_acc in
+  let hpred_check_flds prop_acc = function
+    | Sil.Hpointsto (_, Estruct (flds, _), Sizeof (typ, _)) ->
+        IList.fold_left (check_fld_locks typ) prop_acc flds
+    | _ ->
+        prop_acc in
+  IList.fold_left hpred_check_flds prop sigma
+
 (** Add a pointsto for [root(lexp): typ] to the iterator and to the
     footprint, if it's compatible with the allowed footprint
     variables. This function ensures that [root(lexp): typ] is the
     current hpred of the iterator. typ is the type of the root of lexp. *)
 let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
+  let orig_prop' =
+    if Config.csl_analysis && Procname.is_java pname
+    then add_guarded_by_constraints orig_prop lexp
+    else orig_prop in
   let max_stamp = fav_max_stamp (Prop.prop_iter_footprint_fav iter) in
   let ptsto, ptsto_foot, atoms =
-    mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst in
+    mk_ptsto_exp_footprint pname tenv orig_prop' (lexp, typ) max_stamp inst in
   L.d_strln "++++ Adding footprint frame";
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto);
   L.d_ln (); L.d_ln ();

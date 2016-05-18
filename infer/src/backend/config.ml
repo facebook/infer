@@ -143,6 +143,9 @@ let suppress_warnings_annotations_long = "suppress-warnings-annotations"
 (** If true performs taint analysis *)
 let taint_analysis = true
 
+(** Experimental: if true do some specialized analysis of concurrent constructs. *)
+let csl_analysis = true
+
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 

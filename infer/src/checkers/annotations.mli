@@ -61,7 +61,13 @@ val get_declaring_class_annotations : Procname.java -> Tenv.t -> Sil.item_annota
 
 val nullable : string
 
+(** Return true if [annot] ends with [ann_name] *)
+val annot_ends_with : Sil.annotation -> string -> bool
+
 val ia_contains : Sil.item_annotation -> string -> bool
+
+(** Check if there is an annotation in [ia] which ends with the given name *)
+val ia_ends_with : Sil.item_annotation -> string -> bool
 
 val ia_has_annotation_with : Sil.item_annotation -> (Sil.annotation -> bool) -> bool
 
@@ -93,6 +99,7 @@ val ia_is_privacy_source : Sil.item_annotation -> bool
 val ia_is_privacy_sink : Sil.item_annotation -> bool
 val ia_is_integrity_source : Sil.item_annotation -> bool
 val ia_is_integrity_sink : Sil.item_annotation -> bool
+val ia_is_guarded_by : Sil.item_annotation -> bool
 
 val ia_iter : (Sil.annotation -> unit) -> Sil.item_annotation -> unit
 
@@ -112,3 +119,4 @@ val mk_ia : annotation -> Sil.item_annotation -> Sil.item_annotation
 val pp_annotated_signature : Procname.t -> Format.formatter -> annotated_signature -> unit
 
 val visibleForTesting : string
+val guarded_by : string
