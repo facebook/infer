@@ -339,3 +339,10 @@ endif
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) mod_dep.dot
+
+# convert to reason
+%.re : %.ml
+	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.re
+
+%.rei : %.mli
+	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
