@@ -365,3 +365,9 @@ let file_was_updated_after_start fname =
   else
     (* since file doesn't exist, it wasn't modified *)
     false
+
+(** Returns true if the file is a C++ model *)
+let file_is_in_cpp_model file =
+  let normalized_file_dir = filename_to_absolute (Filename.dirname file) in
+  let normalized_cpp_models_dir = filename_to_absolute Config.cpp_models_dir in
+  string_is_prefix normalized_cpp_models_dir normalized_file_dir

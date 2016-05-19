@@ -169,3 +169,6 @@ val global_tenv_fname : unit -> filename
 
 (** Check if a path is a Java, C, C++ or Objectve C source file according to the file extention *)
 val is_source_file: string -> bool
+
+(** Returns true if the file is a C++ model *)
+val file_is_in_cpp_model : string -> bool

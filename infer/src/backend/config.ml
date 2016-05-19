@@ -186,6 +186,13 @@ let models_dir =
   let lib_specs_dir = Filename.concat lib_dir specs_dir_name in
   lib_specs_dir
 
+let cpp_models_dir =
+  let bin_dir = Filename.dirname Sys.executable_name in
+  let cpp_models_dir =
+    Filename.concat (Filename.concat bin_dir Filename.parent_dir_name)
+      "models/cpp/include" in
+  cpp_models_dir
+
 let os_type = match Sys.os_type with
   | "Win32" -> Win32
   | "Cygwin" -> Cygwin
