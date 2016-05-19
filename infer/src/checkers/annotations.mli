@@ -64,10 +64,10 @@ val nullable : string
 (** Return true if [annot] ends with [ann_name] *)
 val annot_ends_with : Sil.annotation -> string -> bool
 
-val ia_contains : Sil.item_annotation -> string -> bool
-
 (** Check if there is an annotation in [ia] which ends with the given name *)
 val ia_ends_with : Sil.item_annotation -> string -> bool
+
+val ia_contains : Sil.item_annotation -> string -> bool
 
 val ia_has_annotation_with : Sil.item_annotation -> (Sil.annotation -> bool) -> bool
 

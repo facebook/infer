@@ -107,6 +107,11 @@ let item_annotation_to_string ann => {
 let pp_method_annotation s fmt (ia, ial) =>
   F.fprintf fmt "%a %s(%a)" pp_item_annotation ia s (pp_seq pp_item_annotation) ial;
 
+let module AnnotMap = PrettyPrintable.MakePPMap {
+    type t = annotation;
+    let compare = annotation_compare;
+    let pp_key = pp_annotation;
+};
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
 let get_sentinel_func_attribute_value attr_list =>

@@ -118,13 +118,11 @@ type phase = FOOTPRINT | RE_EXECUTION
 type dependency_map_t = int Procname.Map.t
 
 (** Type for calls consiting in the name of the callee and the location of the call *)
-type call = Procname.t * Location.t
+type call_site = Procname.t * Location.t
 
-(** Collection of first step calls toward expensive call stacks or call stack allocating memory *)
-type call_summary = {
-  expensive_calls: call list;
-  allocations: call list
-}
+module CallSiteSet : PrettyPrintable.PPSet with type elt = call_site
+
+type call_summary = CallSiteSet.t Sil.AnnotMap.t
 
 (** Payload: results of some analysis *)
 type payload =

@@ -129,6 +129,8 @@ let expensive = "Expensive"
 let performance_critical = "PerformanceCritical"
 let no_allocation = "NoAllocation"
 let ignore_allocations = "IgnoreAllocations"
+
+
 let suppress_warnings = "SuppressWarnings"
 let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"

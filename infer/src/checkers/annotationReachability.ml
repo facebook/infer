@@ -12,38 +12,50 @@ open! Utils
 module F = Format
 module L = Logging
 
-let compare_call (pname1, loc1) (pname2, loc2) =
-  let n = Procname.compare pname1 pname2 in
-  if n <> 0
-  then n
-  else Location.compare loc1 loc2
+module CallSiteSet = AbstractDomain.FiniteSet (Specs.CallSiteSet)
+module CallsDomain = AbstractDomain.Map (Sil.AnnotMap) (CallSiteSet)
 
-let pp_call fmt (pname, loc) = F.fprintf fmt "%a at %a" Procname.pp pname Location.pp loc
+let dummy_constructor_annot = "__infer_is_constructor"
 
-module CallSet = PrettyPrintable.MakePPSet(struct
-    type t = Specs.call
-    let compare = compare_call
-    let pp_element = pp_call
-  end)
+let annotation_of_str annot_str =
+  { Sil.class_name = annot_str; parameters = []; }
 
-module CallSetDomain = AbstractDomain.FiniteSet(CallSet)
+(* TODO: read custom source/sink pairs from user code here *)
+let src_snk_pairs () =
+  let specs =
+    [
+      ([Annotations.performance_critical], Annotations.expensive);
+      ([Annotations.no_allocation], dummy_constructor_annot);
+    ] in
+  IList.map
+    (fun (src_annot_str_list, snk_annot_str) ->
+       IList.map annotation_of_str src_annot_str_list, annotation_of_str snk_annot_str)
+    specs
 
 module Domain = struct
-  module CallsDomain = AbstractDomain.Pair(CallSetDomain)(CallSetDomain)
-  module TrackingVar = AbstractDomain.FiniteSet(Var.Set)
-  module TrackingDomain =
-    AbstractDomain.Pair(CallsDomain)(TrackingVar)
-  include AbstractDomain.BottomLifted(TrackingDomain)
+  module TrackingVar = AbstractDomain.FiniteSet (Var.Set)
+  module TrackingDomain = AbstractDomain.Pair (CallsDomain) (TrackingVar)
+  include AbstractDomain.BottomLifted (TrackingDomain)
 
-  let add_expensive call = function
-    | Bottom -> Bottom
-    | NonBottom ((expensive_calls, allocations), vars) ->
-        NonBottom ((CallSetDomain.add call expensive_calls, allocations), vars)
+  let initial =
+    let init_map =
+      IList.fold_left
+        (fun astate_acc (_, snk_annot) -> CallsDomain.add snk_annot CallSiteSet.empty astate_acc)
+        CallsDomain.initial
+        (src_snk_pairs ()) in
+    NonBottom
+      (init_map, TrackingVar.empty)
 
-  let add_allocation alloc = function
+  let add_call key call = function
     | Bottom -> Bottom
-    | NonBottom ((expensive_calls, allocations), vars) ->
-        NonBottom ((expensive_calls, CallSetDomain.add alloc allocations), vars)
+    | NonBottom (call_map, vars) as astate ->
+        let call_set =
+          try CallsDomain.find key call_map
+          with Not_found -> CallSiteSet.empty in
+        let call_set' = CallSiteSet.add call call_set in
+        if call_set' == call_set
+        then astate
+        else NonBottom (CallsDomain.add key call_set' call_map, vars)
 
   let stop_tracking (_ : astate) = Bottom
 
@@ -61,7 +73,6 @@ module Domain = struct
     | Bottom -> false
     | NonBottom (_, vars) ->
         TrackingVar.mem var vars
-
 end
 
 module Summary = Summary.Make (struct
@@ -69,24 +80,17 @@ module Summary = Summary.Make (struct
 
     let call_summary_of_astate = function
       | Domain.Bottom -> assert false
-      | Domain.NonBottom ((astate_expensive, astate_allocations), _) ->
-          let expensive_calls = CallSet.elements astate_expensive in
-          let allocations = CallSet.elements astate_allocations in
-          { Specs.expensive_calls; allocations; }
+      | Domain.NonBottom (call_map, _) ->
+          call_map
 
     let update_payload astate payload =
-      let call_summary = call_summary_of_astate astate in
-      { payload with Specs.calls = Some call_summary }
+      let calls = Some (call_summary_of_astate astate) in
+      { payload with Specs.calls; }
 
     let read_from_payload payload =
       match payload.Specs.calls with
-      | Some call_summary ->
-          Domain.NonBottom
-            ((CallSet.of_list call_summary.Specs.expensive_calls,
-              CallSet.of_list call_summary.Specs.allocations),
-             Domain.TrackingVar.initial)
+      | Some call_summary -> Domain.NonBottom (call_summary, Domain.TrackingVar.empty)
       | None -> Domain.initial
-
   end)
 
 (* Warning name when a performance critical method directly or indirectly
@@ -104,6 +108,8 @@ let allocates_memory =
 let expensive_overrides_unexpensive =
   "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
 
+let annotation_reachability_error = "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
+
 let is_modeled_expensive =
   let matcher =
     lazy (Inferconfig.ModeledExpensiveMatcher.load_matcher Config.inferconfig_json) in
@@ -115,6 +121,19 @@ let is_modeled_expensive =
         (Lazy.force matcher) (PatternMatch.is_subtype_of_str tenv classname) proc_name
     | _ ->
         false
+
+let is_allocator tenv pname =
+  match pname with
+  | Procname.Java pname_java ->
+      let is_throwable () =
+        let class_name =
+          Typename.Java.from_string (Procname.java_get_class_name pname_java) in
+        PatternMatch.is_throwable tenv class_name in
+      Procname.is_constructor pname
+      && not (Builtin.is_registered pname)
+      && not (is_throwable ())
+  | _ ->
+      false
 
 let check_attributes check tenv pname =
   let check_class_attributes check tenv = function
@@ -138,18 +157,6 @@ let check_attributes check tenv pname =
         check ret_annotation in
   check_class_attributes check tenv pname || check_method_attributes check pname
 
-let is_expensive tenv pname =
-  check_attributes Annotations.ia_is_expensive tenv pname
-
-
-let method_is_performance_critical tenv pname =
-  check_attributes Annotations.ia_is_performance_critical tenv pname
-
-
-let method_is_no_allocation tenv pname =
-  check_attributes Annotations.ia_is_no_allocation tenv pname
-
-
 let method_overrides is_annotated tenv pname =
   let overrides () =
     let found = ref false in
@@ -160,70 +167,28 @@ let method_overrides is_annotated tenv pname =
   is_annotated tenv pname ||
   overrides ()
 
-let method_overrides_performance_critical tenv pname =
-  method_overrides method_is_performance_critical tenv pname
+let method_has_annot annot tenv pname =
+  let has_annot ia = Annotations.ia_ends_with ia annot.Sil.class_name in
+  if Annotations.annot_ends_with annot dummy_constructor_annot
+  then is_allocator tenv pname
+  else if Annotations.annot_ends_with annot Annotations.expensive
+  then check_attributes has_annot tenv pname || is_modeled_expensive tenv pname
+  else check_attributes has_annot tenv pname
 
-let method_overrides_no_allocation tenv pname =
-  method_overrides method_is_no_allocation tenv pname
+let method_overrides_annot annot tenv pname =
+  method_overrides (method_has_annot annot) tenv pname
 
-let method_is_expensive tenv pname =
-  is_modeled_expensive tenv pname ||
-  check_attributes Annotations.ia_is_expensive tenv pname
-
-let lookup_call_summary pname =
+let lookup_annotation_calls annot pname =
   match Specs.get_summary pname with
-  | None -> None
-  | Some summary -> summary.Specs.payload.Specs.calls
-
-let lookup_expensive_calls pname =
-  match lookup_call_summary pname with
-  | None -> []
-  | Some { Specs.expensive_calls } -> expensive_calls
-
-let lookup_allocations pname =
-  match lookup_call_summary pname with
-  | None -> []
-  | Some { Specs.allocations } -> allocations
-
-let method_calls_expensive tenv pname =
-  let calls_expensive () =
-    match lookup_call_summary pname with
-    | Some { Specs.expensive_calls } ->
-        expensive_calls <> []
-    | None -> false in
-  method_is_expensive tenv pname ||
-  calls_expensive ()
-
-let is_allocator tenv pname = match pname with
-  | Procname.Java pname_java ->
-      let is_throwable () =
-        let class_name =
-          Typename.Java.from_string (Procname.java_get_class_name pname_java) in
-        PatternMatch.is_throwable tenv class_name in
-      Procname.is_constructor pname
-      && not (Builtin.is_registered pname)
-      && not (is_throwable ())
-  | _ ->
-      false
-
-let method_allocates tenv pname =
-  let annotated_ignore_allocation =
-    check_attributes Annotations.ia_is_ignore_allocations tenv pname in
-  let allocates () =
-    match lookup_call_summary pname with
-    | Some { Specs.allocations } ->
-        allocations <> []
-    | None -> false in
-  not annotated_ignore_allocation
-  && (is_allocator tenv pname || allocates ())
-
-let lookup_location pname =
-  match Specs.get_summary pname with
-  | None -> Location.dummy
-  | Some summary -> summary.Specs.attributes.ProcAttributes.loc
-
-let string_of_pname =
-  Procname.to_simplified_string ~withclass:true
+  | Some { Specs.payload = { Specs.calls = Some call_map; }; } ->
+      begin
+        try
+          Sil.AnnotMap.find annot call_map
+          |> Specs.CallSiteSet.elements
+        with Not_found ->
+          []
+      end
+  | _ -> []
 
 let update_trace loc trace =
   if Location.equal loc Location.dummy then trace
@@ -236,21 +201,8 @@ let update_trace loc trace =
     } in
     trace_elem :: trace
 
-let report_expensive_call_stack pname loc trace stack_str expensive_pname call_loc =
-  let final_trace = IList.rev (update_trace call_loc trace) in
-  let exp_pname_str = string_of_pname expensive_pname in
-  let description =
-    Printf.sprintf
-      "Method `%s` annotated with `@%s` calls `%s%s` where `%s` is annotated with `@%s`"
-      (Procname.to_simplified_string pname)
-      Annotations.performance_critical
-      stack_str
-      exp_pname_str
-      exp_pname_str
-      Annotations.expensive in
-  let exn =
-    Exceptions.Checkers (calls_expensive_method, Localise.verbatim_desc description) in
-  Reporting.log_error pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
+let string_of_pname =
+  Procname.to_simplified_string ~withclass:true
 
 let report_allocation_stack pname fst_call_loc trace stack_str constructor_pname call_loc =
   let final_trace = IList.rev (update_trace call_loc trace) in
@@ -267,7 +219,35 @@ let report_allocation_stack pname fst_call_loc trace stack_str constructor_pname
     Exceptions.Checkers (allocates_memory, Localise.verbatim_desc description) in
   Reporting.log_error pname ~loc: (Some fst_call_loc) ~ltr: (Some final_trace) exn
 
+let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str snk_pname call_loc =
+  if src_annot = Annotations.no_allocation
+  then report_allocation_stack src_pname loc trace stack_str snk_pname call_loc
+  else
+    let final_trace = IList.rev (update_trace call_loc trace) in
+    let exp_pname_str = string_of_pname snk_pname in
+    let description =
+      Printf.sprintf
+        "Method `%s` annotated with `@%s` calls `%s%s` where `%s` is annotated with `@%s`"
+        (Procname.to_simplified_string src_pname)
+        src_annot
+        stack_str
+        exp_pname_str
+        exp_pname_str
+        snk_annot in
+    let msg =
+      if src_annot = Annotations.performance_critical
+      then calls_expensive_method
+      else annotation_reachability_error in
+    let exn =
+      Exceptions.Checkers (msg, Localise.verbatim_desc description) in
+    Reporting.log_error src_pname ~loc: (Some loc) ~ltr: (Some final_trace) exn
+
 let report_call_stack end_of_stack lookup_next_calls report pname loc calls =
+  (* TODO: stop using this; we can use the call site instead *)
+  let lookup_location pname =
+    match Specs.get_summary pname with
+    | None -> Location.dummy
+    | Some summary -> summary.Specs.attributes.ProcAttributes.loc in
   let rec loop fst_call_loc visited_pnames (trace, stack_str) (callee_pname, call_loc) =
     if end_of_stack callee_pname then
       report pname fst_call_loc trace stack_str callee_pname call_loc
@@ -289,16 +269,6 @@ let report_call_stack end_of_stack lookup_next_calls report pname loc calls =
        let start_trace = update_trace loc [] in
        loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
     calls
-
-let report_expensive_calls tenv pname loc calls =
-  report_call_stack
-    (method_is_expensive tenv) lookup_expensive_calls
-    report_expensive_call_stack pname loc calls
-
-let report_allocations pname loc calls =
-  report_call_stack
-    Procname.is_constructor lookup_allocations
-    report_allocation_stack pname loc calls
 
 module TransferFunctions = struct
   type astate = Domain.astate
@@ -331,23 +301,51 @@ module TransferFunctions = struct
     | _ ->
         false
 
+  let method_has_ignore_allocation_annot tenv pname =
+    check_attributes Annotations.ia_is_ignore_allocations tenv pname
+
+  (* TODO: generalize this to allow sanitizers for other annotation types, store it in [extras] so
+     we can compute it just once *)
+  let method_is_sanitizer annot tenv pname =
+    if annot.Sil.class_name = dummy_constructor_annot
+    then method_has_ignore_allocation_annot tenv pname
+    else false
+
+  let add_call call_map tenv callee_pname caller_pname call_site astate =
+    let add_call_for_annot annot _ astate =
+      let calls =
+        try Sil.AnnotMap.find annot call_map
+        with Not_found -> Specs.CallSiteSet.empty in
+      if (not (Specs.CallSiteSet.is_empty calls) || method_has_annot annot tenv callee_pname) &&
+         (not (method_is_sanitizer annot tenv caller_pname))
+      then
+        Domain.add_call annot call_site astate
+      else
+        astate in
+    match astate with
+    | Domain.Bottom -> astate
+    | Domain.NonBottom (map, _) ->
+        (* for each annotation type T in domain(astate), check if method calls something annotated
+           with T *)
+        Sil.AnnotMap.fold add_call_for_annot map astate
+
   let exec_instr astate { ProcData.pdesc; tenv; } = function
     | Sil.Call ([id], Const (Cfun callee_pname), _, _, _)
       when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
     | Sil.Call (_, Const (Cfun callee_pname), _, call_loc, _) ->
-        (* Run the analysis of callee_pname if not already analyzed *)
-        ignore (Summary.read_summary pdesc callee_pname);
-        let add_expensive_calls astate =
-          if method_calls_expensive tenv callee_pname
-          then Domain.add_expensive (callee_pname, call_loc) astate
-          else astate in
-        let add_allocations astate =
-          if method_allocates tenv callee_pname
-          then Domain.add_allocation (callee_pname, call_loc) astate
-          else astate in
-        add_expensive_calls astate
-        |> add_allocations
+        let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
+        let call_site = callee_pname, call_loc in
+        begin
+          (* Runs the analysis of callee_pname if not already analyzed *)
+          match Summary.read_summary pdesc callee_pname with
+          | Some Domain.NonBottom (call_map, _) ->
+              add_call call_map tenv callee_pname caller_pname call_site astate
+          | None ->
+              add_call Sil.AnnotMap.empty tenv callee_pname caller_pname call_site astate
+          | Some Domain.Bottom ->
+              astate
+        end
     | Sil.Letderef (id, exp, _, _)
       when is_tracking_exp astate exp ->
         Domain.add_tracking_var (Var.of_id id) astate
@@ -363,7 +361,6 @@ module TransferFunctions = struct
         failwith "Expecting a singleton for the return value"
     | _ ->
         astate
-
 end
 
 module Analyzer =
@@ -376,14 +373,16 @@ module Analyzer =
 module Interprocedural = struct
   include Analyzer.Interprocedural(Summary)
 
+  let is_expensive tenv pname =
+    check_attributes Annotations.ia_is_expensive tenv pname
+
+  let method_is_expensive tenv pname =
+    is_modeled_expensive tenv pname || is_expensive tenv pname
+
   let check_and_report ({ Callbacks.proc_desc; proc_name; tenv; } as proc_data) =
     let loc = Cfg.Procdesc.get_loc proc_desc in
-    let expensive = is_expensive tenv proc_name
-    and performance_critical =
-      method_overrides_performance_critical tenv proc_name
-    and no_allocation =
-      method_overrides_no_allocation tenv proc_name in
-
+    let expensive = is_expensive tenv proc_name in
+    (* TODO: generalize so we can check subtyping on arbitrary annotations *)
     let check_expensive_subtyping_rules overridden_pname =
       if not (method_is_expensive tenv overridden_pname) then
         let description =
@@ -401,17 +400,31 @@ module Interprocedural = struct
       PatternMatch.proc_iter_overridden_methods
         check_expensive_subtyping_rules tenv proc_name;
 
-    match checker proc_data ProcData.empty_extras with
-    | Some astate ->
-        begin
-          match astate with
-          | Domain.Bottom -> ()
-          | Domain.NonBottom ((expensive_calls, allocations), _) ->
-              if performance_critical then
-                report_expensive_calls tenv proc_name loc (CallSet.elements expensive_calls);
-              if no_allocation then
-                report_allocations proc_name loc (CallSet.elements allocations)
-        end
-    | None -> ()
+    let report_src_snk_paths call_map (src_annot_list, snk_annot) =
+      let extract_calls_with_annot annot call_map =
+        try
+          Sil.AnnotMap.find annot call_map
+          |> Specs.CallSiteSet.elements
+        with Not_found -> [] in
+      let report_src_snk_path calls src_annot =
+        if method_overrides_annot src_annot tenv proc_name
+        then
+          let f_report =
+            report_annotation_stack src_annot.Sil.class_name snk_annot.Sil.class_name in
+          report_call_stack
+            (method_has_annot snk_annot tenv)
+            (lookup_annotation_calls snk_annot)
+            f_report
+            proc_name
+            loc
+            calls in
+      let calls = extract_calls_with_annot snk_annot call_map in
+      if not (IList.length calls = 0)
+      then IList.iter (report_src_snk_path calls) src_annot_list in
 
+    match checker proc_data ProcData.empty_extras with
+    | Some Domain.NonBottom (call_map, _) ->
+        IList.iter (report_src_snk_paths call_map) (src_snk_pairs ())
+    | Some Domain.Bottom | None ->
+        ()
 end

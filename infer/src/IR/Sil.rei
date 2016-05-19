@@ -355,6 +355,8 @@ let module TypSet: Set.S with type elt = typ;
 let module TypMap: Map.S with type key = typ;
 
 
+let module AnnotMap : PrettyPrintable.PPMap with type key = annotation;
+
 /** Sets of expressions. */
 let module ExpSet: Set.S with type elt = exp;
 
