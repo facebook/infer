@@ -103,8 +103,6 @@ buck-out/
 /infer/src/backend/.projectSettings
 /infer/models/out/
 
-/infer/_build-infer/
-
 /infer/src/clang/clang_ast_b.ml
 /infer/src/clang/clang_ast_b.mli
 /infer/src/clang/clang_ast_j.ml
@@ -117,6 +115,9 @@ buck-out/
 /infer/src/clang/clang_ast_v.mli
 /infer/src/clang/clang_ast_visit.ml
 /infer/src/clang/clang_ast_main.ml
+
+/infer/src/llvm/lLexer.ml
+/infer/src/llvm/lParser.ml
 
 /infer/annotations/annot_classes/
 /infer/annotations/annotations.jar

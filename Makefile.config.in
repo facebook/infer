@@ -44,15 +44,9 @@ INFERTRACEBUGS_BIN = $(BIN_DIR)/inferTraceBugs
 INFER_BIN_RELPATH = bin/infer
 INFERTRACEBUGS_BIN_RELPATH = bin/inferTraceBugs
 
-INFER_ANALYZERS=
-ifeq (@BUILD_C_ANALYZERS@,yes)
-INFER_ANALYZERS+=clang
-endif
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
-INFER_ANALYZERS+=java
 JAVA_HOME=@USER_JAVA_HOME@
 endif
-
 
 JAVA_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
               analyze.py config.py issues.py jwlib.py source.py utils.py) \

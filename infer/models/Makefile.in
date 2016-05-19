@@ -19,6 +19,14 @@ ifneq (no, @XCODE_SELECT@)
 CLANG_SUBDIRS += $(OBJC_MODELS_DIR)
 endif
 
+all:
+ifeq (@BUILD_C_ANALYZERS@,yes)
+all: clang
+endif
+ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+all: java
+endif
+
 .PHONY: java clang clean $(CLANG_SUBDIRS)
 
 clang: $(CLANG_SUBDIRS)

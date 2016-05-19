@@ -67,6 +67,14 @@ AC_ARG_ENABLE(java-analyzers,
 BUILD_JAVA_ANALYZERS=$enable_java_analyzers
 AC_SUBST([BUILD_JAVA_ANALYZERS])
 
+AC_ARG_ENABLE(llvm-analyzers,
+  AS_HELP_STRING([--enable-llvm-analyzers],
+    [build the LLVM experimental analyzers (default is not to build them)]),
+  ,
+  enable_llvm_analyzers=no)
+BUILD_LLVM_ANALYZERS=$enable_llvm_analyzers
+AC_SUBST([BUILD_LLVM_ANALYZERS])
+
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--without-fcp-clang],
     [do not use $CLANG_PREFIX/bin/clang to override the default compiler (default is to override if in an infer release)]),

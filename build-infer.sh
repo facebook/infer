@@ -113,14 +113,6 @@ if [ ! -f .release ]; then
   ./autogen.sh > /dev/null
 fi
 
-TARGETS=""
-if [ "$BUILD_JAVA" = "yes" ]; then
-  TARGETS+=" java"
-fi
-if [ "$BUILD_CLANG" = "yes" ]; then
-  TARGETS+=" clang"
-fi
-
 CONFIGURE_ARGS=
 if [ "$BUILD_CLANG" = "no" ]; then
   CONFIGURE_ARGS+=" --disable-c-analyzers"
@@ -162,7 +154,7 @@ if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-
   fi
 fi
 
-make -j $NCPU $TARGETS || (
+make -j $NCPU all || (
   echo
   echo '  compilation failure; you can try running'
   echo
