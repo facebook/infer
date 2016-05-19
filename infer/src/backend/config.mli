@@ -101,7 +101,11 @@ val sound_dynamic_dispatch : bool
 val anon_args : string list
 val abs_struct : int
 val allow_specs_cleanup : bool
+val analysis_path_regex_whitelist : analyzer -> string list
+val analysis_path_regex_blacklist : analyzer -> string list
+val analysis_blacklist_files_containing : analyzer -> string list
 val analysis_stops : bool
+val analysis_suppress_errors : analyzer -> string list
 val analyzer : analyzer option
 val angelic_execution : bool
 val array_level : int

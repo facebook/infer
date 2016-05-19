@@ -269,6 +269,41 @@ and allow_specs_cleanup =
   CLOpt.mk_bool ~deprecated:["allow_specs_cleanup"] ~long:"allow-specs-cleanup"
     "Allow to remove existing specs before running analysis when it's not incremental"
 
+and (
+  analysis_path_regex_whitelist_options,
+  analysis_path_regex_blacklist_options,
+  analysis_blacklist_files_containing_options,
+  analysis_suppress_errors_options) =
+  let mk_filtering_options ~suffix ?(deprecated_suffix=[]) ~help ~meta =
+    let mk_option analyzer =
+      let long = Printf.sprintf "%s-%s" (string_of_analyzer analyzer) suffix in
+      let deprecated =
+        IList.map (Printf.sprintf "%s_%s" (string_of_analyzer analyzer)) deprecated_suffix in
+      let help_string = Printf.sprintf "%s (%s only)" help (string_of_analyzer analyzer) in
+      CLOpt.mk_string_list ~deprecated ~long ~exes:CLOpt.[A] ~meta help_string in
+    IList.map (fun analyzer -> (analyzer, mk_option analyzer)) analyzers in
+  (
+    mk_filtering_options
+      ~suffix:"whitelist-path-regex"
+      ~deprecated_suffix:["whitelist"]
+      ~help:"whitelist the analysis of files whose relative path matches the specified OCaml-style regex"
+      ~meta:"path regex",
+    mk_filtering_options
+      ~suffix:"blacklist-path-regex"
+      ~deprecated_suffix:["blacklist"]
+      ~help:"blacklist the analysis of files whose relative path matches the specified OCaml-style regex"
+      ~meta:"path regex",
+    mk_filtering_options
+      ~suffix:"blacklist-files-containing"
+      ~deprecated_suffix:["blacklist_files_containing"]
+      ~help:"blacklist files containing the specified string"
+      ~meta:"string",
+    mk_filtering_options
+      ~suffix:"suppress-errors"
+      ~deprecated_suffix:["suppress_errors"]
+      ~help:"do not report a type of errors"
+      ~meta:"error name")
+
 (** Check whether to report Analysis_stops message in user mode *)
 and analysis_stops =
   CLOpt.mk_bool ~deprecated:["analysis_stops"] ~long:"analysis-stops"
@@ -969,6 +1004,14 @@ let print_usage_exit () =
 let anon_args = !anon_args
 and abs_struct = !abs_struct
 and allow_specs_cleanup = !allow_specs_cleanup
+and analysis_path_regex_whitelist_options =
+  IList.map (fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options
+and analysis_path_regex_blacklist_options =
+  IList.map (fun (a, b) -> (a, !b)) analysis_path_regex_blacklist_options
+and analysis_blacklist_files_containing_options =
+  IList.map (fun (a, b) -> (a, !b)) analysis_blacklist_files_containing_options
+and analysis_suppress_errors_options =
+  IList.map (fun (a, b) -> (a, !b)) analysis_suppress_errors_options
 and analysis_stops = !analysis_stops
 and analyzer = !analyzer
 and angelic_execution = !angelic_execution
@@ -1054,6 +1097,16 @@ and write_dotty = !write_dotty
 and write_html = !write_html
 and xml_specs = !xml_specs
 and zip_libraries = !zip_libraries
+
+
+let analysis_path_regex_whitelist analyzer =
+  IList.assoc (=) analyzer analysis_path_regex_whitelist_options
+and analysis_path_regex_blacklist analyzer =
+  IList.assoc (=) analyzer analysis_path_regex_blacklist_options
+and analysis_blacklist_files_containing analyzer =
+  IList.assoc (=) analyzer analysis_blacklist_files_containing_options
+and analysis_suppress_errors analyzer =
+  IList.assoc (=) analyzer analysis_suppress_errors_options
 
 let inferconfig_json = lazy !CLOpt.inferconfig_json
 

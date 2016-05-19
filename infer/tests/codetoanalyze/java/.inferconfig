@@ -10,7 +10,7 @@
       "method": "get"
     }
   ],
-  "infer_blacklist_files_containing": [
+  "infer-blacklist-files-containing": [
     "@generated"
   ],
   "skip_translation": [

@@ -324,7 +324,11 @@ let decode_inferconfig_to_argv path =
   let json_config = YBU.to_assoc json in
   let one_config_item result (key, json_val) =
     try
-      let {decode_json} = IList.find (fun {long} -> string_equal key long) desc_list in
+      let {decode_json} =
+        IList.find
+          (fun {long; short} ->
+             string_equal key long || (* for deprecated options *) string_equal key short)
+          desc_list in
       decode_json json_val @ result
     with
     | Not_found ->

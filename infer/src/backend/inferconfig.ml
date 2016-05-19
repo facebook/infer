@@ -327,16 +327,12 @@ module ModeledExpensiveMatcher = OverridesMatcher(struct
   end)
 
 let load_filters analyzer =
-  let lazy json = Config.inferconfig_json in
-  let inferconfig =
-    {
-      whitelist = lookup_string_list (analyzer ^ "_whitelist") json;
-      blacklist = lookup_string_list (analyzer ^ "_blacklist") json;
-      blacklist_files_containing =
-        lookup_string_list (analyzer ^ "_blacklist_files_containing") json;
-      suppress_errors = lookup_string_list (analyzer ^ "_suppress_errors") json;
-    } in
-  Some inferconfig
+  {
+    whitelist = Config.analysis_path_regex_whitelist analyzer;
+    blacklist = Config.analysis_path_regex_blacklist analyzer;
+    blacklist_files_containing = Config.analysis_blacklist_files_containing analyzer;
+    suppress_errors = Config.analysis_suppress_errors analyzer;
+  }
 
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
@@ -365,10 +361,7 @@ let filters_from_inferconfig inferconfig : filters =
 (* The environment varialble NO_PATH_FILTERING disables path filtering. *)
 let create_filters analyzer =
   if Config.from_env_variable "NO_PATH_FILTERING" then do_not_filter
-  else
-    match load_filters (Utils.string_of_analyzer analyzer) with
-    | None -> do_not_filter
-    | Some inferconfig -> filters_from_inferconfig inferconfig
+  else filters_from_inferconfig (load_filters analyzer)
 
 (* Decide whether a checker or error type is enabled or disabled based on*)
 (* white/black listing in .inferconfig and the default value *)
