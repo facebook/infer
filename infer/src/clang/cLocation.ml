@@ -131,6 +131,14 @@ let should_translate_lib source_range decl_trans_context =
   not Config.no_translate_libs
   || should_translate source_range decl_trans_context
 
+let is_file_blacklisted file =
+  let paths = Lazy.force Inferconfig.skip_clang_analysis_in_path in
+  let is_file_blacklisted =
+    IList.exists
+      (fun path -> Str.string_match (Str.regexp ("^.*/" ^ path)) file 0)
+      paths in
+  is_file_blacklisted
+
 let get_sil_location_from_range source_range prefer_first =
   let sloc1, sloc2 = source_range in
   let sloc = if not prefer_first then sloc2 else choose_sloc sloc1 sloc2 in
@@ -142,10 +150,7 @@ let get_sil_location stmt_info context =
   clang_to_sil_location sloc (Some (CContext.get_procdesc context))
 
 let check_source_file source_file =
-  let extensions_allowed = [".m"; ".mm"; ".c"; ".cc"; ".cpp"; ".h"] in
-  let allowed = IList.exists (fun ext -> Filename.check_suffix source_file ext) extensions_allowed in
-  if not allowed then
+  if is_file_blacklisted source_file then
     (Printing.log_stats "%s"
-       ("\nThe source file "^source_file^
-        " should end with "^(IList.to_string (fun x -> x) extensions_allowed)^"\n\n");
-     assert false)
+       ("\n Skip the analysis of source file" ^ source_file ^ "\n\n");
+     exit(0));
