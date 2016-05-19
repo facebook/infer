@@ -11,6 +11,10 @@
 
 open! Utils
 
+(* begin temporarily export inferconfig_json while .inferconfig-specific options still exist *)
+val inferconfig_json : Yojson.Basic.json ref
+(* end temporarily export inferconfig_json *)
+
 type exe = A | C | J | L | P | T
 
 val current_exe : exe
@@ -89,8 +93,11 @@ val mk_anon :
 
 (** [parse env_var exe_usage] parses command line arguments as specified by preceding calls to the
     [mk_*] functions, and returns a function that prints the usage message and help text then exits.
-    The decoded value of environment variable [env_var] is prepended to [Sys.argv] before parsing.
-    Therefore arguments passed on the command line supercede those specified in the environment
-    variable.  WARNING: If an argument appears both in the environment variable and on the command
-    line, it will be interpreted twice. *)
-val parse : ?incomplete:bool -> string -> (exe -> Arg.usage_msg) -> (int -> 'a)
+    The decoded values of the inferconfig file [config_file], if provided, and of the environment
+    variable [env_var] are prepended to [Sys.argv] before parsing.  Therefore arguments passed on
+    the command line supersede those specified in the environment variable, which themselves
+    supersede those passed via the config file.  WARNING: An argument will be interpreted as many
+    times as it appears in all of the config file, the environment variable, and the command
+    line. *)
+val parse : ?incomplete:bool -> ?config_file:string ->
+  string -> (exe -> Arg.usage_msg) -> (int -> 'a)

@@ -823,7 +823,7 @@ module AnalysisResults = struct
     (* find spec files specified by command-line arguments *)
     IList.iter (fun arg ->
         if not (Filename.check_suffix arg Config.specs_files_suffix) && arg <> "."
-        then print_usage_exit "arguments must be .specs files"
+        then print_usage_exit ("file "^ arg ^ ": arguments must be .specs files")
       ) Config.anon_args ;
     (match Config.source_file_copy with
      | Some s -> source_file_copy := Some (DB.abs_source_file_from_path s)

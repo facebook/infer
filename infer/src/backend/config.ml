@@ -952,7 +952,7 @@ let post_parsing_initialization () =
 
 
 let parse_args_and_return_usage_exit =
-  let usage_exit = CLOpt.parse "INFER_ARGS" exe_usage in
+  let usage_exit = CLOpt.parse ~config_file:inferconfig_path "INFER_ARGS" exe_usage in
   if !debug || (!developer_mode && not (CLOpt.current_exe = CLOpt.P)) then
     prerr_endline
       ((Filename.basename Sys.executable_name) ^ " got args "
@@ -1055,22 +1055,15 @@ and write_html = !write_html
 and xml_specs = !xml_specs
 and zip_libraries = !zip_libraries
 
-let inferconfig_json =
-  lazy (
-    match read_optional_json_file inferconfig_path with
-    | Ok json -> json
-    | Error msg ->
-        F.fprintf F.err_formatter "Could not read or parse Infer config in %s:@\n%s@."
-          inferconfig_path msg;
-        exit 1)
+let inferconfig_json = lazy !CLOpt.inferconfig_json
 
 and suppress_warnings_json = lazy (
   let error msg =
-    F.fprintf F.err_formatter "There was an issue reading the option %s.@\n"
+    F.eprintf "There was an issue reading the option %s.@\n"
       suppress_warnings_annotations_long ;
-    F.fprintf F.err_formatter "If you did not call %s directly, this is likely a bug in Infer.@\n"
+    F.eprintf "If you did not call %s directly, this is likely a bug in Infer.@\n"
       (Filename.basename Sys.executable_name) ;
-    F.fprintf F.err_formatter "%s@." msg ;
+    F.eprintf "%s@." msg ;
     exit 1 in
   match !suppress_warnings_out with
   | Some path -> (
