@@ -640,11 +640,24 @@ let add_guarded_by_constraints prop lexp =
     | Sil.Eexp (exp, _) when Sil.exp_equal exp lexp ->
         begin
           match find_guarded_by_exp fld typ sigma with
-          | Some guarded_by_strexp ->
-              L.stderr "Got guarded_by_exp %a@." (Sil.pp_sexp pe_text) guarded_by_strexp;
-              (* TODO: check if the lock is held, act accordingly *)
-              prop_acc
-          | None ->
+          | Some (Sil.Eexp (guarded_by_exp, _)) ->
+              let has_lock =
+                IList.exists
+                  (function
+                    | Sil.Alocked -> true
+                    | _ -> false)
+                  (Prop.get_exp_attributes prop_acc guarded_by_exp) in
+              if has_lock
+              then
+                (* we have the lock; no need to add a proof obligation *)
+                (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
+                prop_acc
+              else
+                (* the lock is not known to be held. add a "lock held" proof obligation *)
+                (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
+                let locked_attr = Sil.Const (Cattribute Alocked) in
+                Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop_acc
+          | _ ->
               (* field not guarded; proceed with abduction as we normally would *)
               prop_acc
         end
@@ -662,13 +675,9 @@ let add_guarded_by_constraints prop lexp =
     variables. This function ensures that [root(lexp): typ] is the
     current hpred of the iterator. typ is the type of the root of lexp. *)
 let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
-  let orig_prop' =
-    if Config.csl_analysis && Procname.is_java pname
-    then add_guarded_by_constraints orig_prop lexp
-    else orig_prop in
   let max_stamp = fav_max_stamp (Prop.prop_iter_footprint_fav iter) in
   let ptsto, ptsto_foot, atoms =
-    mk_ptsto_exp_footprint pname tenv orig_prop' (lexp, typ) max_stamp inst in
+    mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst in
   L.d_strln "++++ Adding footprint frame";
   Prop.d_prop (Prop.prop_hpred_star Prop.prop_emp ptsto);
   L.d_ln (); L.d_ln ();
@@ -1186,16 +1195,20 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
   L.d_str "Prop: "; L.d_ln(); Prop.d_prop prop; L.d_ln (); L.d_ln ();
   if report_deref_errors then check_dereference_error pdesc prop nlexp (State.get_loc ());
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  match Prop.prop_iter_create prop with
+  let prop' =
+    if Config.csl_analysis && !Config.footprint && Procname.is_java pname
+    then add_guarded_by_constraints prop lexp
+    else prop in
+  match Prop.prop_iter_create prop' with
   | None ->
       if !Config.footprint then
-        [prop_iter_add_hpred_footprint_to_prop pname tenv prop (nlexp, typ) inst]
+        [prop_iter_add_hpred_footprint_to_prop pname tenv prop' (nlexp, typ) inst]
       else
         begin
           pp_rearrangement_error "sigma is empty" prop nlexp;
           raise (Exceptions.Symexec_memory_error __POS__)
         end
-  | Some iter -> iter_rearrange pname tenv nlexp typ prop iter inst
+  | Some iter -> iter_rearrange pname tenv nlexp typ prop' iter inst
 
 (*
 let pp_off fmt off =
