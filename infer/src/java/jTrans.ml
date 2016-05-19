@@ -337,6 +337,7 @@ let create_local_procdesc program linereader cfg tenv node m =
                   is_bridge_method = cm.Javalib.cm_bridge;
                   is_defined = true;
                   is_synthetic_method = cm.Javalib.cm_synthetic;
+                  is_java_synchronized_method = cm.Javalib.cm_synchronized;
                   loc = loc_start;
                   locals;
                   method_annotation;

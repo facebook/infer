@@ -26,6 +26,7 @@ type t = {
   is_defined: bool, /** true if the procedure is defined, and not just declared */
   is_objc_instance_method: bool, /** the procedure is an objective-C instance method */
   is_cpp_instance_method: bool, /** the procedure is an C++ instance method */
+  is_java_synchronized_method: bool, /** the procedure is a Java synchronized method */
   mutable is_synthetic_method: bool, /** the procedure is a synthetic method */
   language: Config.language, /** language of the procedure */
   loc: Location.t, /** location of this procedure in the source code */
