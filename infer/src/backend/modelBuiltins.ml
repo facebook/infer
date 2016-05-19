@@ -601,34 +601,18 @@ let execute___set_attr attr { Builtin.pdesc; prop_; path; args; }
   | [(lexp, _)] -> set_attr pdesc prop_ path lexp attr
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
-(** Set the attibute of the value as resource/locked*)
-let execute___set_locked_attribute
-    ({ Builtin.pdesc; loc; } as builtin_args)
+(** Delete the locked attibute of the value*)
+let execute___delete_locked_attribute { Builtin.prop_; pdesc; path; args; }
   : Builtin.ret_typ =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
-  (* ra_kind = Racquire in following indicates locked *)
-  let ra = {
-    Sil.ra_kind = Sil.Racquire;
-    ra_res = Sil.Rlock;
-    ra_pname = pname;
-    ra_loc = loc;
-    ra_vpath = None; } in
-  execute___set_attr (Sil.Aresource ra) builtin_args
-
-(** Delete the resource/locked attibute of the value, if it is locked*)
-let execute___delete_locked_attribute { Builtin.pdesc; loc; prop_; path; args; }
-  : Builtin.ret_typ =
-  let pname = Cfg.Procdesc.get_proc_name pdesc in
-  (* ra_kind = Racquire in following indicates locked *)
-  let ra = {
-    Sil.ra_kind = Sil.Racquire;
-    ra_res = Sil.Rlock;
-    ra_pname = pname;
-    ra_loc = loc;
-    ra_vpath = None; } in
   match args with
-  | [(lexp, _)] -> delete_attr pdesc prop_ path lexp (Sil.Aresource ra)
+  | [(lexp, _)] -> delete_attr pdesc prop_ path lexp Sil.Alocked
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
+
+
+(** Set the attibute of the value as locked*)
+let execute___set_locked_attribute builtin_args
+  : Builtin.ret_typ =
+  execute___set_attr (Sil.Alocked) builtin_args
 
 (** Set the attibute of the value as resource/unlocked*)
 let execute___set_unlocked_attribute
