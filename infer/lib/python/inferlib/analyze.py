@@ -52,6 +52,22 @@ class VersionAction(argparse._VersionAction):
                                             option_string)
 
 
+def get_pwd():
+    pwd = os.getenv('PWD')
+    if pwd is not None:
+        try:
+            # Compare whether 'PWD' and '.' point to same place
+            # Approach is borrowed from llvm implementation of
+            # llvm::sys::fs::current_path (implemented in Path.inc file)
+            pwd_stat = os.stat(pwd)
+            dot_stat = os.stat('.')
+            if pwd_stat.st_dev == dot_stat.st_dev and \
+               pwd_stat.st_ino == dot_stat.st_ino:
+                return pwd
+        except OSError:
+            # fallthrough to default case
+            pass
+    return os.getcwd()
 
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')
@@ -132,7 +148,7 @@ infer_group.add_argument('--infer_cache', metavar='<directory>',
 
 infer_group.add_argument('-pr', '--project_root',
                          dest='project_root',
-                         default=os.getcwd(),
+                         default=get_pwd(),
                          type=utils.decode,
                          help='Location of the project root '
                          '(default is current directory)')
