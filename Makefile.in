@@ -74,8 +74,17 @@ endif
 
 inferTraceBugs: $(INFERTRACEBUGS_BIN_RELPATH)
 
-test_build: clang_plugin
+test_this_build: clang_plugin
 	$(MAKE) -C $(SRC_DIR) test_build
+
+test_oss_build: clang_plugin
+# make sure we don't break the opensource build
+	$(MAKE) -C $(SRC_DIR) EXTRA_DEPS=opensource LLVM_BUILD_DIR=$(BUILD_DIR)/llvm_opensource TEST_BUILD_DIR=$(BUILD_DIR)/opensource test_build
+
+test_build: test_this_build
+ifeq (@IS_FACEBOOK_TREE@,yes)
+test_build: test_oss_build
+endif
 
 ocaml_unit_test: infer
 	$(INFERUNIT_BIN)
@@ -83,16 +92,12 @@ ocaml_unit_test: infer
 buck_test: infer
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test $(TARGETS_TO_TEST)
-ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
-endif
 
 buck_test_xml: infer
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test --xml test.xml $(TARGETS_TO_TEST)
-ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
-endif
 
 inferTraceBugs_test: infer
 	$(INFER_BIN) -o __test-infer-out__ -- \

@@ -17,7 +17,6 @@ ATDGEN = @ATDGEN@
 
 #### Global declarations ####
 
-BUILD_DIR = $(INFER_DIR)/_build
 INFER_BUILD_DIR = $(BUILD_DIR)/infer
 TEST_BUILD_DIR = $(BUILD_DIR)/test
 LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
@@ -121,13 +120,12 @@ CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
 #### End of declarations ####
 
 ifeq (@IS_FACEBOOK_TREE@,yes)
-EXTRA_DEPS = facebook
+EXTRA_DEPS = facebook facebook/checkers facebook/checkers/graphql facebook/scripts
 else
 EXTRA_DEPS = opensource
 endif
 
-DEPENDENCIES = IR backend checkers eradicate harness \
-	facebook/checkers facebook/checkers/graphql facebook/scripts $(EXTRA_DEPS)
+DEPENDENCIES = IR backend checkers eradicate harness $(EXTRA_DEPS)
 
 # ocamlbuild command with options common to all build targets
 OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))
