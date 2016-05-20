@@ -132,7 +132,7 @@ let should_translate_lib source_range decl_trans_context =
   || should_translate source_range decl_trans_context
 
 let is_file_blacklisted file =
-  let paths = Lazy.force Inferconfig.skip_clang_analysis_in_path in
+  let paths = Config.skip_clang_analysis_in_path in
   let is_file_blacklisted =
     IList.exists
       (fun path -> Str.string_match (Str.regexp ("^.*/" ^ path)) file 0)

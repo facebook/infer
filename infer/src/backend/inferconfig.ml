@@ -406,6 +406,3 @@ let test () =
              (DB.source_file_to_rel_path source_file)
              matching_s)
     (Sys.getcwd ())
-
-let skip_clang_analysis_in_path =
-  lazy (lookup_string_list "skip-clang-analysis-in-path" (Lazy.force Config.inferconfig_json))

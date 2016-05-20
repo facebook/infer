@@ -50,8 +50,6 @@ end
 (** Load the config file and list the files to report on *)
 val test: unit -> unit
 
-val skip_clang_analysis_in_path : string list Lazy.t
-
 (** is_checker_enabled [error_name] is [true] if [error_name] is whitelisted in .inferconfig or if
     it's enabled by default *)
 val is_checker_enabled : string -> bool
