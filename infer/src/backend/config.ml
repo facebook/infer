@@ -427,10 +427,18 @@ and developer_mode =
     ~default:(CLOpt.current_exe = CLOpt.P)
     "Reserved"
 
+and disable_checks =
+  CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
+    "do not show reports coming from this type of errors"
+
 (** if true, print cfg nodes in the dot file that are not defined in that file *)
 and dotty_cfg_libs =
   CLOpt.mk_bool ~deprecated:["dotty_no_cfg_libs"] ~long:"dotty-cfg-libs" ~default:true
     "Prints the cfg of the code coming from the libraries"
+
+and enable_checks =
+  CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
+    "show reports coming from this type of errors"
 
 (** command line option to activate the eradicate checker. *)
 and eradicate, checkers =
@@ -1043,7 +1051,9 @@ and cxx_experimental = !cxx_experimental
 and debug_mode = !debug
 and dependency_mode = !dependencies
 and developer_mode = !developer_mode
+and disable_checks = !disable_checks
 and dotty_cfg_libs = !dotty_cfg_libs
+and enable_checks = !enable_checks
 and eradicate = !eradicate
 and err_file_cmdline = !err_file
 and infer_cache = !infer_cache

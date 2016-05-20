@@ -11,14 +11,6 @@ open! Utils
 
 module L = Logging
 
-(** Look up a key in a json file containing a list of strings *)
-let lookup_string_list key json =
-  try
-    Yojson.Basic.Util.filter_member key [json]
-    |> Yojson.Basic.Util.flatten
-    |> Yojson.Basic.Util.filter_string
-  with Yojson.Basic.Util.Type_error _ -> []
-
 type path_filter = DB.source_file -> bool
 type error_filter = Localise.t -> bool
 type proc_filter = Procname.t -> bool
@@ -365,15 +357,9 @@ let create_filters analyzer =
 
 (* Decide whether a checker or error type is enabled or disabled based on*)
 (* white/black listing in .inferconfig and the default value *)
-let is_checker_enabled =
-  let black_listed_checks = lazy (
-    lookup_string_list "disable_checks" (Lazy.force Config.inferconfig_json)) in
-  let white_listed_checks = lazy (
-    lookup_string_list "enable_checks" (Lazy.force Config.inferconfig_json)) in
-  (* return a closure so that we automatically memoize the json lookups thanks to lazy *)
-  function checker_name ->
-  match IList.mem (=) checker_name (Lazy.force black_listed_checks),
-        IList.mem (=) checker_name (Lazy.force white_listed_checks) with
+let is_checker_enabled checker_name =
+  match IList.mem (=) checker_name Config.disable_checks,
+        IList.mem (=) checker_name Config.enable_checks with
   | false, false -> (* if it's not amond white/black listed then we use default value *)
       not (IList.mem (=) checker_name Config.checks_disabled_by_default)
   | true, false -> (* if it's blacklisted and not whitelisted then it should be disabled *)

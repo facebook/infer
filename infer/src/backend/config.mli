@@ -126,7 +126,9 @@ val cxx_experimental : bool
 val debug_mode : bool
 val dependency_mode : bool
 val developer_mode : bool
+val disable_checks : string list
 val dotty_cfg_libs : bool
+val enable_checks : string list
 val eradicate : bool
 val err_file_cmdline : string
 val infer_cache : string option
