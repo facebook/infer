@@ -407,8 +407,5 @@ let test () =
              matching_s)
     (Sys.getcwd ())
 
-let skip_translation_headers =
-  lazy (lookup_string_list "skip_translation_headers" (Lazy.force Config.inferconfig_json))
-
 let skip_clang_analysis_in_path =
   lazy (lookup_string_list "skip-clang-analysis-in-path" (Lazy.force Config.inferconfig_json))

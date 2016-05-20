@@ -634,6 +634,10 @@ and seconds_per_iteration =
   CLOpt.mk_float ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration" ~default:0.
     ~meta:"float" "Set the number of seconds per iteration"
 
+and skip_translation_headers =
+  CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
+    ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
+
 and source_file =
   CLOpt.mk_string_opt ~long:"source-file" ~short:"c" ~meta:"file" "File to translate"
 
@@ -1075,6 +1079,7 @@ and save_analysis_results = !save_results
 and seconds_per_iteration = !seconds_per_iteration
 and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
+and skip_translation_headers = !skip_translation_headers
 and source_file = !source_file
 and source_file_copy = !source_file_copy
 and spec_abs_level = !spec_abs_level

@@ -80,7 +80,7 @@ let file_in_project file =
   match Config.project_root with
   | Some root ->
       let file_in_project = string_is_prefix root file in
-      let paths = Lazy.force Inferconfig.skip_translation_headers in
+      let paths = Config.skip_translation_headers in
       let file_should_be_skipped =
         IList.exists
           (fun path -> string_is_prefix (Filename.concat root path) file)

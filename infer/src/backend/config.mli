@@ -169,6 +169,7 @@ val save_analysis_results : string option
 val seconds_per_iteration : float
 val show_buckets : bool
 val show_progress_bar : bool
+val skip_translation_headers : string list
 val source_file : string option
 val source_file_copy : string option
 val spec_abs_level : int
