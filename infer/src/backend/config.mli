@@ -58,7 +58,6 @@ val frontend_stats_dir_name : string
 val global_tenv_filename : string
 val idempotent_getters : bool
 val incremental_procs : bool
-val inferconfig_file : string
 val initial_analysis_time : float
 val ivar_attributes : string
 val log_analysis_file : string
@@ -146,7 +145,6 @@ val enable_checks : string list
 val eradicate : bool
 val err_file_cmdline : string
 val infer_cache : string option
-val inferconfig_json : Yojson.Basic.json Lazy.t
 val iterations : int
 val javac_verbose_out : string
 val join_cond : int
@@ -193,7 +191,6 @@ val spec_abs_level : int
 val specs_library : string list
 val stats_mode : bool
 val subtype_multirange : bool
-val suppress_warnings_json : Yojson.Basic.json Lazy.t
 val svg : bool
 val symops_per_iteration : int
 val test : bool

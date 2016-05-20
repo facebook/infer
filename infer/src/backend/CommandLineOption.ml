@@ -313,17 +313,9 @@ let mk_anon () =
   anon
 
 
-(* begin temporarily export inferconfig_json while .inferconfig-specific options still exist *)
-let inferconfig_json = ref (`Assoc [])
-(* end temporarily export inferconfig_json *)
-
 let decode_inferconfig_to_argv path =
   let json = match read_optional_json_file path with
     | Ok json ->
-        (* begin temporarily export inferconfig_json while
-           .inferconfig-specific options still exist *)
-        inferconfig_json := json ;
-        (* end temporarily export inferconfig_json *)
         json
     | Error msg ->
         F.eprintf "WARNING: Could not read or parse Infer config in %s:@\n%s@." path msg ;
@@ -340,8 +332,7 @@ let decode_inferconfig_to_argv path =
       decode_json json_val @ result
     with
     | Not_found ->
-        (* TODO: have all json options be regular options as well. When this is done, we can show a
-           warning if a json key is not a valid option. *)
+        F.eprintf "WARNING: while reading config file %s:@\nUnknown option %s@." path key ;
         result
     | YBU.Type_error (msg, json) ->
         F.eprintf "WARNING: while reading config file %s:@\nIll-formed value %s for option %s: %s@."

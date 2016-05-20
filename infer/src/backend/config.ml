@@ -217,26 +217,25 @@ let patterns_of_json_with_key json_key json =
 
   let default_source_contains = "" in
 
-  let language_of_string json_key = function
+  let language_of_string = function
     | "Java" ->
         Ok Java
     | l ->
         Error ("Inferconfig JSON key " ^ json_key ^ " not supported for language " ^ l) in
 
-  let detect_language json_key assoc =
-    let rec loop = function
-      | [] ->
-          Error ("No language found for " ^ json_key ^ " in " ^ inferconfig_file)
-      | ("language", `String s) :: _ ->
-          language_of_string json_key s
-      | _:: tl -> loop tl in
-    loop assoc in
+  let rec detect_language = function
+    | [] ->
+        Error ("No language found for " ^ json_key ^ " in " ^ inferconfig_file)
+    | ("language", `String s) :: _ ->
+        language_of_string s
+    | _:: tl ->
+        detect_language tl in
 
   (* Detect the kind of pattern, method pattern or pattern based on the content of the source file.
      Detecting the kind of patterns in a first step makes it easier to parse the parts of the
      pattern in a second step *)
-  let detect_pattern json_key assoc =
-    match detect_language json_key assoc with
+  let detect_pattern assoc =
+    match detect_language assoc with
     | Ok language ->
         let is_method_pattern key = IList.exists (string_equal key) ["class"; "method"]
         and is_source_contains key = IList.exists (string_equal key) ["source_contains"] in
@@ -253,7 +252,7 @@ let patterns_of_json_with_key json_key json =
         error in
 
   (* Translate a JSON entry into a matching pattern *)
-  let create_pattern json_key (assoc : (string * Yojson.Basic.json) list) =
+  let create_pattern (assoc : (string * Yojson.Basic.json) list) =
     let collect_params l =
       let collect accu = function
         | `String s -> s:: accu
@@ -276,7 +275,7 @@ let patterns_of_json_with_key json_key json =
         | (key, _) when key = "language" -> sc
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
       IList.fold_left loop default_source_contains assoc in
-    match detect_pattern json_key assoc with
+    match detect_pattern assoc with
     | Ok (Method_pattern (language, _)) ->
         Ok (Method_pattern (language, create_method_pattern assoc))
     | Ok (Source_contains (language, _)) ->
@@ -284,27 +283,26 @@ let patterns_of_json_with_key json_key json =
     | Error _ as error ->
         error in
 
-  let warn_user key msg =
+  let warn_user msg =
     F.eprintf "WARNING: in file %s: error parsing option %s@\n%s" inferconfig_file json_key msg in
 
   (* Translate all the JSON entries into matching patterns *)
-  let rec translate json_key accu = function
+  let rec translate accu = function
     | `Assoc l -> (
-        match create_pattern json_key l with
+        match create_pattern l with
         | Ok pattern ->
             pattern :: accu
         | Error msg ->
-            warn_user json_key msg;
+            warn_user msg;
             accu)
     | `List l ->
-        IList.fold_left (translate json_key) accu l
+        IList.fold_left translate accu l
     | json ->
-        warn_user json_key
-          (Printf.sprintf "expected list or assoc json type, but got value %s"
-             (Yojson.Basic.to_string json));
+        warn_user (Printf.sprintf "expected list or assoc json type, but got value %s"
+                     (Yojson.Basic.to_string json));
         accu in
 
-  translate json_key [] json
+  translate [] json
 
 
 (** Command Line options *)
@@ -1256,30 +1254,23 @@ and analysis_blacklist_files_containing analyzer =
 and analysis_suppress_errors analyzer =
   IList.assoc (=) analyzer analysis_suppress_errors_options
 
-let inferconfig_json = lazy !CLOpt.inferconfig_json
-
-and suppress_warnings_json = lazy (
+let patterns_suppress_warnings =
   let error msg =
     F.eprintf "There was an issue reading the option %s.@\n"
       suppress_warnings_annotations_long ;
     F.eprintf "If you did not call %s directly, this is likely a bug in Infer.@\n"
       (Filename.basename Sys.executable_name) ;
     F.eprintf "%s@." msg ;
-    exit 1 in
+    [] in
   match !suppress_warnings_out with
   | Some path -> (
       match read_optional_json_file path with
-      | Ok json -> json
+      | Ok json -> (
+          let json_key = "suppress_warnings" in
+          match Yojson.Basic.Util.member json_key json with
+          | `Null -> []
+          | json -> patterns_of_json_with_key json_key json)
       | Error msg -> error ("Could not read or parse the supplied " ^ path ^ ":\n" ^ msg))
   | None ->
-      if CLOpt.(current_exe <> J) then `Null
-      else error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided"))
-
-let patterns_suppress_warnings =
-  let json_key = "suppress_warnings" in
-  match Lazy.force suppress_warnings_json with
-  | `Null -> []
-  | json ->
-      match Yojson.Basic.Util.member json_key json with
-      | `Null -> []
-      | json -> patterns_of_json_with_key json_key json
+      if CLOpt.(current_exe <> J) then []
+      else error ("Error: The option " ^ suppress_warnings_annotations_long ^ " was not provided")

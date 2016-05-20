@@ -11,10 +11,6 @@
 
 open! Utils
 
-(* begin temporarily export inferconfig_json while .inferconfig-specific options still exist *)
-val inferconfig_json : Yojson.Basic.json ref
-(* end temporarily export inferconfig_json *)
-
 type exe = A | C | J | L | P | T
 
 val current_exe : exe
