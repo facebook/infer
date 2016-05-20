@@ -19,6 +19,7 @@ ATDGEN = @ATDGEN@
 
 BUILD_DIR = $(INFER_DIR)/_build
 INFER_BUILD_DIR = $(BUILD_DIR)/infer
+TEST_BUILD_DIR = $(BUILD_DIR)/test
 LLVM_BUILD_DIR = $(BUILD_DIR)/llvm
 ANNOT_DIR = $(SRC_DIR)/_build
 ETC_DIR = $(INFER_DIR)/etc
@@ -28,7 +29,6 @@ ETC_DIR = $(INFER_DIR)/etc
 OCAML_FATAL_WARNINGS = +5+6+8+10+11+12+18+19+20+26+29+27+32+33+34+35+37+38+39
 
 OCAMLBUILD_OPTIONS = \
-                     -classic-display \
                      -r \
                      -cflags -g -lflags -g \
                      -cflags -short-paths \
@@ -220,16 +220,9 @@ module: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_
 
 test_build: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES) \
   $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
+	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
-	  $(INFER_ALL_TARGETS)
-	$(COPY) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(INFERJAVA_MAIN).native $(INFERJAVA_BIN)
-	$(COPY) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
+	  $(INFER_ALL_TARGETS:.native=.byte)
 
 $(DEPENDENCIES_DIR)/ocamldot/ocamldot:
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
@@ -311,7 +304,7 @@ $(BUILD_DIR):
 	$(MKDIR_P) $(BUILD_DIR)
 
 test_clean:
-	$(REMOVE_DIR) $(INFER_BUILD_DIR)
+	$(REMOVE_DIR) $(TEST_BUILD_DIR)
 
 clean:
 	$(REMOVE_DIR) $(BUILD_DIR)

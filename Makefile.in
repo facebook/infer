@@ -66,17 +66,17 @@ endif
 test_build: clang_plugin
 	$(MAKE) -C $(SRC_DIR) test_build
 
-ocaml_unit_test: test_build
+ocaml_unit_test: infer
 	$(INFERUNIT_BIN)
 
-buck_test: test_build
+buck_test: infer
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test $(TARGETS_TO_TEST)
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 endif
 
-buck_test_xml: test_build
+buck_test_xml: infer
 	NO_BUCKD=1 buck clean
 	NO_BUCKD=1 buck test --xml test.xml $(TARGETS_TO_TEST)
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
@@ -86,7 +86,7 @@ endif
 inferTraceBugs:
 	$(MAKE) -C $(INFER_DIR) $(INFERTRACEBUGS_BIN_RELPATH)
 
-inferTraceBugs_test: test_build
+inferTraceBugs_test: infer
 	$(INFER_BIN) -o __test-infer-out__ -- \
 	  javac $(EXAMPLES_DIR)/Hello.java \
 	   > /dev/null
@@ -109,7 +109,8 @@ check_missing_mli:
 test: test_build ocaml_unit_test buck_test inferTraceBugs_test
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
-test_xml: buck_test_xml
+test_xml: test_build ocaml_unit_test buck_test_xml inferTraceBugs_test
+	$(MAKE) -C $(SRC_DIR) mod_dep.dot
 
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
@@ -239,7 +240,6 @@ conf-clean: clean
 	$(REMOVE_DIR) infer/models/objc/out/
 	$(REMOVE) infer/src/Makefile
 
-.PHONY: all buck_test buck_test_xml clean
-.PHONY: clang_plugin clang_setup infer inferTraceBugs inferTraceBugs_test
-.PHONY: ocaml_unit_test check_missing_mli test test_xml test_build
-.PHONY: install uninstall
+.PHONY: all buck_test buck_test_xml clean clang_plugin clang_setup infer inferTraceBugs
+.PHONY: inferTraceBugs_test ocaml_unit_test check_missing_mli test test_xml test_build install
+.PHONY: uninstall
