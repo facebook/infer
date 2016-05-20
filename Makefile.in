@@ -31,8 +31,17 @@ TARGETS_TO_TEST := $(shell echo $(TARGETS_TO_TEST))
 
 all: infer inferTraceBugs
 
-infer:
-	$(MAKE) -C $(INFER_DIR) infer
+$(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH):
+	($(REMOVE) $@ && \
+	 cd $(@D) && \
+	 $(LN_S) ../lib/python/$(@F) $(@F))
+
+infer: $(INFER_BIN_RELPATH)
+	$(MAKE) -C $(SRC_DIR) infer
+ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+	$(MAKE) -C $(ANNOTATIONS_DIR)
+endif
+	$(MAKE) -C $(MODELS_DIR) all
 
 ifeq (@BUILD_C_ANALYZERS@,yes)
 infer: clang_plugin
@@ -63,6 +72,8 @@ ifeq (@IS_RELEASE_TREE@,no)
 	  CLANG_INCLUDES=@CLANG_INCLUDES@
 endif
 
+inferTraceBugs: $(INFERTRACEBUGS_BIN_RELPATH)
+
 test_build: clang_plugin
 	$(MAKE) -C $(SRC_DIR) test_build
 
@@ -82,9 +93,6 @@ buck_test_xml: infer
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 	NO_BUCKD=1 ./infer/tests/build_systems/build_integration_tests.py
 endif
-
-inferTraceBugs:
-	$(MAKE) -C $(INFER_DIR) $(INFERTRACEBUGS_BIN_RELPATH)
 
 inferTraceBugs_test: infer
 	$(INFER_BIN) -o __test-infer-out__ -- \
@@ -214,7 +222,10 @@ ifeq (@BUILD_C_ANALYZERS@,yes)
 	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
 endif
 endif
-	$(MAKE) -C $(INFER_DIR) clean
+	$(MAKE) -C $(SRC_DIR) clean
+	$(MAKE) -C $(ANNOTATIONS_DIR) clean
+	$(MAKE) -C $(MODELS_DIR) clean
+	$(REMOVE) $(INFER_BIN_RELPATH) $(INFERTRACEBUGS_BIN_RELPATH)
 
 conf-clean: clean
 	$(REMOVE) infer/lib/python/inferlib/*.pyc
@@ -228,7 +239,6 @@ conf-clean: clean
 	$(REMOVE) config.log
 	$(REMOVE) config.status
 	$(REMOVE) configure
-	$(REMOVE) infer/Makefile
 	$(REMOVE) infer/models/Makefile
 	$(REMOVE) infer/models/c/Makefile
 	$(REMOVE_DIR) infer/models/c/out/

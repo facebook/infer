@@ -268,7 +268,6 @@ AC_SUBST([NCPU])
 AC_CONFIG_FILES([
   Makefile.config
   Makefile
-  infer/Makefile
   infer/models/Makefile
   infer/models/c/Makefile
   infer/models/cpp/Makefile

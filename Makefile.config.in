@@ -40,9 +40,9 @@ INFERPRINT_BIN = $(BIN_DIR)/InferPrint
 INFERUNIT_BIN = $(BIN_DIR)/InferUnit
 INFER_BIN = $(BIN_DIR)/infer
 INFERTRACEBUGS_BIN = $(BIN_DIR)/inferTraceBugs
-# paths relative to $(INFER_DIR)
-INFER_BIN_RELPATH = bin/infer
-INFERTRACEBUGS_BIN_RELPATH = bin/inferTraceBugs
+# paths relative to $(ROOT_DIR)
+INFER_BIN_RELPATH = infer/bin/infer
+INFERTRACEBUGS_BIN_RELPATH = infer/bin/inferTraceBugs
 
 ifeq (@BUILD_JAVA_ANALYZERS@,yes)
 JAVA_HOME=@USER_JAVA_HOME@
