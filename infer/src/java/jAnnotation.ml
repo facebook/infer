@@ -14,12 +14,7 @@ open Javalib_pack
 
 
 let is_suppress_warnings_annotated =
-  let matcher = lazy (
-    Inferconfig.SuppressWarningsMatcher.load_matcher Config.suppress_warnings_json
-      DB.source_file_empty) in
-  fun proc_name ->
-    (Lazy.force matcher) proc_name
-
+  Inferconfig.suppress_warnings_matcher DB.source_file_empty
 
 let suppress_warnings =
   ({ Sil.class_name = Annotations.suppress_warnings;

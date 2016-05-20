@@ -45,7 +45,6 @@ type t
 
 (** cretes a context for a given method.   *)
 val create_context :
-  Inferconfig.NeverReturnNull.matcher ->
   icfg ->
   Cfg.Procdesc.t ->
   JBir.t ->
@@ -102,10 +101,6 @@ val get_program : t -> JClasspath.program
 
 (** returns the current node *)
 val get_node : t -> JCode.jcode Javalib.interface_or_class
-
-(** returns a match function for procedures that are never returning null
-    according to .inferfonfig *)
-val get_never_null_matcher : t -> Inferconfig.NeverReturnNull.matcher
 
 (** [set_pvar context var type] adds a variable with a type to the context  *)
 val set_pvar : t -> JBir.var -> Sil.typ -> Pvar.t

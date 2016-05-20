@@ -85,6 +85,9 @@ val mk_symbol_opt : symbols:(string * 'a) list -> 'a option ref t
     element of [symbols]. *)
 val mk_symbol_seq : ?default:'a list -> symbols:(string * 'a) list -> 'a list ref t
 
+val mk_set_from_json : default:'a -> default_to_string:('a -> string)
+  -> f:(Yojson.Basic.json -> 'a) -> 'a ref t
+
 (** [mk_anon ()] defines a [string list ref] of the anonymous command line arguments, in the reverse
     order they appeared on the command line. *)
 val mk_anon :

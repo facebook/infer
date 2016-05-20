@@ -42,10 +42,9 @@ type t =
     meth_kind : meth_kind;
     node : JCode.jcode Javalib.interface_or_class;
     program : JClasspath.program;
-    never_null_matcher: Inferconfig.NeverReturnNull.matcher;
   }
 
-let create_context never_null_matcher icfg procdesc impl cn meth_kind node program =
+let create_context icfg procdesc impl cn meth_kind node program =
   { icfg = icfg;
     procdesc = procdesc;
     impl = impl;
@@ -56,7 +55,6 @@ let create_context never_null_matcher icfg procdesc impl cn meth_kind node progr
     meth_kind = meth_kind;
     node = node;
     program = program;
-    never_null_matcher = never_null_matcher;
   }
 
 let get_icfg context = context.icfg
@@ -71,7 +69,6 @@ let get_impl context = context.impl
 let get_var_map context = context.var_map
 let set_var_map context var_map = context.var_map <- var_map
 let get_meth_kind context = context.meth_kind
-let get_never_null_matcher context = context.never_null_matcher
 
 let get_or_set_pvar_type context var typ =
   let var_map = get_var_map context in

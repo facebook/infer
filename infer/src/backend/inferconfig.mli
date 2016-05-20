@@ -31,21 +31,10 @@ val do_not_filter : filters
 (** Create filters based on the config file *)
 val create_filters : analyzer -> filters
 
-module type Matcher = sig
-  type matcher = DB.source_file -> Procname.t -> bool
-  val load_matcher : Yojson.Basic.json Lazy.t -> matcher
-end
-
-module NeverReturnNull : Matcher
-
-module SkipTranslationMatcher : Matcher
-
-module SuppressWarningsMatcher : Matcher
-
-module ModeledExpensiveMatcher : sig
-  type matcher = (string -> bool) -> Procname.t -> bool
-  val load_matcher : Yojson.Basic.json Lazy.t -> matcher
-end
+val never_return_null_matcher : DB.source_file -> Procname.t -> bool
+val suppress_warnings_matcher : DB.source_file -> Procname.t -> bool
+val skip_translation_matcher : DB.source_file -> Procname.t -> bool
+val modeled_expensive_matcher : (string -> bool) -> Procname.t -> bool
 
 (** Load the config file and list the files to report on *)
 val test: unit -> unit

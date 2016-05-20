@@ -65,18 +65,18 @@ let store_icfg tenv cg cfg program =
 (* Given a source file, its code is translated, and the call-graph, control-flow-graph and type *)
 (* environment are obtained and saved. *)
 let do_source_file
-    never_null_matcher linereader classes program tenv
+    linereader classes program tenv
     source_basename (package_opt, source_file) =
   JUtils.log "\nfilename: %s (%s)@."
     (DB.source_file_to_string source_file) source_basename;
   let call_graph, cfg =
     JFrontend.compute_source_icfg
-      never_null_matcher linereader classes program tenv
+      linereader classes program tenv
       source_basename package_opt in
   store_icfg tenv call_graph cfg program
 
 
-let capture_libs never_null_matcher linereader program tenv =
+let capture_libs linereader program tenv =
   let capture_class tenv cn node =
     match node with
     | Javalib.JInterface _ -> ()
@@ -87,7 +87,7 @@ let capture_libs never_null_matcher linereader program tenv =
             JClasspath.java_source_file_from_path (JFrontend.path_of_cached_classname cn) in
           init_global_state fake_source_file;
           let call_graph, cfg =
-            JFrontend.compute_class_icfg never_null_matcher linereader program tenv node in
+            JFrontend.compute_class_icfg linereader program tenv node in
           store_icfg tenv call_graph cfg program;
           JFrontend.cache_classname cn;
         end in
@@ -135,16 +135,11 @@ let do_all_files classpath sources classes =
   let program = JClasspath.load_program classpath classes in
   let tenv = load_tenv () in
   let linereader = Printer.LineReader.create () in
-  let skip_translation_matcher =
-    Inferconfig.SkipTranslationMatcher.load_matcher Config.inferconfig_json in
-  let never_null_matcher = Inferconfig.NeverReturnNull.load_matcher Config.inferconfig_json in
-  let skip source_file =
-    skip_translation_matcher source_file Procname.empty_block in
+  let skip source_file = Inferconfig.skip_translation_matcher source_file Procname.empty_block in
   let translate_source_file basename (package_opt, _) source_file =
     init_global_state source_file;
     if not (skip source_file) then
-      do_source_file
-        never_null_matcher linereader classes program tenv basename (package_opt, source_file) in
+      do_source_file linereader classes program tenv basename (package_opt, source_file) in
   StringMap.iter
     (fun basename file_entry ->
        match file_entry with
@@ -157,7 +152,7 @@ let do_all_files classpath sources classes =
              source_files)
     sources;
   if Config.dependency_mode then
-    capture_libs never_null_matcher linereader program tenv;
+    capture_libs linereader program tenv;
   save_tenv tenv;
   JClasspath.cleanup program;
   JUtils.log "done @."

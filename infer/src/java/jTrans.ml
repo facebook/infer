@@ -784,7 +784,7 @@ let rec instruction context pc instr : translation =
   let ret_var = Pvar.get_ret_pvar proc_name in
   let ret_type = Cfg.Procdesc.get_ret_type (JContext.get_procdesc context) in
   let loc = get_location (JContext.get_impl context) pc meth_kind cn in
-  let match_never_null = JContext.get_never_null_matcher context in
+  let match_never_null = Inferconfig.never_return_null_matcher in
   let create_node node_kind sil_instrs =
     Cfg.Node.create
       cfg

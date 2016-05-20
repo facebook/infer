@@ -110,17 +110,15 @@ let expensive_overrides_unexpensive =
 
 let annotation_reachability_error = "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
 
-let is_modeled_expensive =
-  let matcher =
-    lazy (Inferconfig.ModeledExpensiveMatcher.load_matcher Config.inferconfig_json) in
-  fun tenv proc_name -> match proc_name with
-    | Procname.Java proc_name_java ->
-        not (Builtin.is_registered proc_name) &&
-        let classname =
-          Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
-        (Lazy.force matcher) (PatternMatch.is_subtype_of_str tenv classname) proc_name
-    | _ ->
-        false
+let is_modeled_expensive tenv = function
+  | Procname.Java proc_name_java as proc_name ->
+      not (Builtin.is_registered proc_name) &&
+      let is_subclass =
+        let classname = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
+        PatternMatch.is_subtype_of_str tenv classname in
+      Inferconfig.modeled_expensive_matcher is_subclass proc_name
+  | _ ->
+      false
 
 let is_allocator tenv pname =
   match pname with

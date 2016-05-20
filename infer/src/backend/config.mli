@@ -18,6 +18,16 @@ type language = Clang | Java
 
 val string_of_language : language -> string
 
+type method_pattern = {
+  class_name : string;
+  method_name : string option;
+  parameters : (string list) option;
+}
+
+type pattern =
+  | Method_pattern of language * method_pattern
+  | Source_contains of language * string
+
 type clang_lang = C | CPP | OBJC | OBJCPP
 
 type os_type = Unix | Win32 | Cygwin
@@ -64,6 +74,10 @@ val cpp_models_dir : string
 val nsnotification_center_checker_backend : bool
 val objc_method_call_semantics : bool
 val os_type : os_type
+val patterns_never_returning_null : pattern list
+val patterns_suppress_warnings : pattern list
+val patterns_skip_translation : pattern list
+val patterns_modeled_expensive : pattern list
 val perf_stats_prefix : string
 val proc_stats_filename : string
 val property_attributes : string

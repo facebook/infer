@@ -297,6 +297,14 @@ let mk_symbol_seq ?(default=[]) ~symbols ?(deprecated=[]) ~long ?short ?exes ?(m
          String.concat "," (YBU.convert_each YBU.to_string json)])
     ~mk_spec:(fun set -> Arg.String set)
 
+let mk_set_from_json ~default ~default_to_string ~f
+    ?(deprecated=[]) ~long ?short ?exes ?(meta="json") doc =
+  mk ~deprecated ~long ?short ?exes ~meta doc
+    ~default ~default_to_string
+    ~mk_setter:(fun var json -> var := f (Yojson.Basic.from_string json))
+    ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
+    ~mk_spec:(fun set -> Arg.String set)
+
 let anon_fun = ref (fun arg -> raise (Arg.Bad ("unexpected anonymous argument: " ^ arg)))
 
 let mk_anon () =
