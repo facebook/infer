@@ -56,10 +56,18 @@ let store_attributes proc_attributes => {
   }
 };
 
-let load_attributes proc_name => {
-  let attributes_file = res_dir_attr_filename proc_name;
-  Serialization.from_file serializer attributes_file
-};
+let attr_tbl = Procname.Hash.create 16;
+
+let load_attributes proc_name =>
+  try (Procname.Hash.find attr_tbl proc_name) {
+  | Not_found =>
+    let attributes_file = res_dir_attr_filename proc_name;
+    let attr = Serialization.from_file serializer attributes_file;
+    if (attr != None) {
+      Procname.Hash.add attr_tbl proc_name attr
+    };
+    attr
+  };
 
 
 /** Given a procdesure name, find the file where it is defined and */
@@ -97,3 +105,22 @@ let pname_is_cpp_model callee_pname =>
     DB.file_is_in_cpp_model file
   | None => false
   };
+
+let stats () => {
+  let stats = Procname.Hash.stats attr_tbl;
+  let {Hashtbl.num_bindings: num_bindings, num_buckets, max_bucket_length} = stats;
+  let serialized_size = lazy (Marshal.data_size (Marshal.to_bytes attr_tbl []) 0 / 1024);
+  (
+    "AttributesTable.attr_tbl",
+    `Assoc (
+      [
+        ("num_bindings", `Int num_bindings),
+        ("num_buckets", `Int num_buckets),
+        ("max_bucket_length", `Int max_bucket_length)
+      ]
+        @ (
+        Config.developer_mode ? [("serialized_size_kb", `Int (Lazy.force serialized_size))] : []
+      )
+    )
+  )
+};

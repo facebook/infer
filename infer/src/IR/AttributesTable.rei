@@ -9,11 +9,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+/** Module to manage the table of attributes. */
 
 open! Utils;
 
 
-/** Module to manage the table of attributes. */
 /** Save .attr file for the procedure into the attributes database. */
 let store_attributes: ProcAttributes.t => unit;
 
@@ -32,5 +32,8 @@ let find_tenv_from_class_of_proc: Procname.t => option Tenv.t;
 /** finding the tenv that corresponds to the class definition.  */
 let get_correct_type_from_objc_class_name: Mangled.t => option Sil.typ;
 
+
 /** Returns true if the method is defined as a C++ model */
-let pname_is_cpp_model : Procname.t => bool;
+let pname_is_cpp_model: Procname.t => bool;
+
+let stats: unit => (string, Yojson.json);

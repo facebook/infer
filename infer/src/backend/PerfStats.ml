@@ -25,23 +25,23 @@ let register_report_at_exit file =
         let exit_timeofday = Unix.gettimeofday () in
         let exit_times = Unix.times () in
         let stats =
-          `Assoc [
-            ("rtime", `Float (exit_timeofday -. initial_timeofday)) ;
-            ("utime", `Float (exit_times.tms_utime -. initial_times.tms_utime)) ;
-            ("stime", `Float (exit_times.tms_stime -. initial_times.tms_stime)) ;
-            ("cutime", `Float (exit_times.tms_cutime -. initial_times.tms_cutime)) ;
-            ("cstime", `Float (exit_times.tms_cstime -. initial_times.tms_cstime)) ;
-            ("minor_gb", `Float (words_to_gb gc_stats.minor_words)) ;
-            ("promoted_gb", `Float (words_to_gb gc_stats.promoted_words)) ;
-            ("major_gb", `Float (words_to_gb gc_stats.major_words)) ;
-            ("allocated_gb", `Float (words_to_gb allocated_words)) ;
-            ("minor_collections", `Int gc_stats.minor_collections) ;
-            ("major_collections", `Int gc_stats.major_collections) ;
-            ("compactions", `Int gc_stats.compactions) ;
-            ("top_heap_gb", `Float (words_to_gb (float_of_int gc_stats.top_heap_words))) ;
-            ("stack_kb", `Float (words_to_kb (float_of_int gc_stats.stack_size))) ;
-            ("minor_heap_kb", `Float (words_to_kb (float_of_int gc_ctrl.minor_heap_size))) ;
-          ] in
+          `Assoc ([
+              ("rtime", `Float (exit_timeofday -. initial_timeofday)) ;
+              ("utime", `Float (exit_times.tms_utime -. initial_times.tms_utime)) ;
+              ("stime", `Float (exit_times.tms_stime -. initial_times.tms_stime)) ;
+              ("cutime", `Float (exit_times.tms_cutime -. initial_times.tms_cutime)) ;
+              ("cstime", `Float (exit_times.tms_cstime -. initial_times.tms_cstime)) ;
+              ("minor_gb", `Float (words_to_gb gc_stats.minor_words)) ;
+              ("promoted_gb", `Float (words_to_gb gc_stats.promoted_words)) ;
+              ("major_gb", `Float (words_to_gb gc_stats.major_words)) ;
+              ("allocated_gb", `Float (words_to_gb allocated_words)) ;
+              ("minor_collections", `Int gc_stats.minor_collections) ;
+              ("major_collections", `Int gc_stats.major_collections) ;
+              ("compactions", `Int gc_stats.compactions) ;
+              ("top_heap_gb", `Float (words_to_gb (float_of_int gc_stats.top_heap_words))) ;
+              ("stack_kb", `Float (words_to_kb (float_of_int gc_stats.stack_size))) ;
+              ("minor_heap_kb", `Float (words_to_kb (float_of_int gc_ctrl.minor_heap_size)))
+            ] @ [AttributesTable.stats ()]) in
         try
           let stats_oc = open_out file in
           Yojson.pretty_to_channel stats_oc stats ;
