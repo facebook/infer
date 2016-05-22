@@ -111,10 +111,11 @@ let pp_method_annotation s fmt (ia, ial) =>
   F.fprintf fmt "%a %s(%a)" pp_item_annotation ia s (pp_seq pp_item_annotation) ial;
 
 let module AnnotMap = PrettyPrintable.MakePPMap {
-    type t = annotation;
-    let compare = annotation_compare;
-    let pp_key = pp_annotation;
+  type t = annotation;
+  let compare = annotation_compare;
+  let pp_key = pp_annotation;
 };
+
 
 /** Return the value of the FA_sentinel attribute in [attr_list] if it is found */
 let get_sentinel_func_attribute_value attr_list =>
@@ -562,8 +563,9 @@ let module Int: {
     if (area unsigned i == 3) {
       None
     } else {
-      /* not representable as signed */
-      Some (false, i, ptr)
+      Some
+        /* not representable as signed */
+        (false, i, ptr)
     };
   let compare (unsigned1, i1, _) (unsigned2, i2, _) => {
     let n = bool_compare unsigned1 unsigned2;
@@ -1522,7 +1524,8 @@ and attribute_compare (att1: attribute) (att2: attribute) :int =>
       n
     } else {
       /* ignore other values beside resources: arbitrary merging into one */
-      resource_compare ra1.ra_res ra2.ra_res
+      resource_compare
+        ra1.ra_res ra2.ra_res
     }
   | (Aresource _, _) => (-1)
   | (_, Aresource _) => 1
@@ -1932,8 +1935,7 @@ let color_pre_wrapper pe f x =>
       )
         f color;
       if (color === Red) {
-        /** All subexpressiona red */
-        ({...pe, pe_cmap_norm: colormap_red, pe_color: Red}, true)
+        (/** All subexpressiona red */ {...pe, pe_cmap_norm: colormap_red, pe_color: Red}, true)
       } else {
         ({...pe, pe_color: color}, true)
       }
@@ -2540,82 +2542,6 @@ let is_block_pvar pvar => has_block_prefix (Mangled.to_string (Pvar.get_name pva
 
 /* A block pvar used to explain retain cycles */
 let block_pvar = Pvar.mk (Mangled.from_string "block") (Procname.from_string_c_fun "");
-
-
-/** Iterate over all the subtypes in the type (including the type itself) */
-let rec typ_iter_types (f: typ => unit) typ => {
-  f typ;
-  switch typ {
-  | Tvar _
-  | Tint _
-  | Tfloat _
-  | Tvoid
-  | Tfun _ => ()
-  | Tptr t' _ => typ_iter_types f t'
-  | Tstruct struct_typ =>
-    IList.iter (fun (_, t, _) => typ_iter_types f t) struct_typ.instance_fields
-  | Tarray t e =>
-    typ_iter_types f t;
-    exp_iter_types f e
-  }
-}
-/** Iterate over all the subtypes in the type (including the type itself) */
-and exp_iter_types f e =>
-  switch e {
-  | Var _ => ()
-  | Const (Cexn e1) => exp_iter_types f e1
-  | Const (Cclosure {captured_vars}) => IList.iter (fun (_, _, typ) => f typ) captured_vars
-  | Const _ => ()
-  | Cast t e1 =>
-    typ_iter_types f t;
-    exp_iter_types f e1
-  | UnOp _ e1 typo =>
-    exp_iter_types f e1;
-    switch typo {
-    | Some t => typ_iter_types f t
-    | None => ()
-    }
-  | BinOp _ e1 e2 =>
-    exp_iter_types f e1;
-    exp_iter_types f e2
-  | Lvar _ => ()
-  | Lfield e1 _ typ =>
-    exp_iter_types f e1;
-    typ_iter_types f typ
-  | Lindex e1 e2 =>
-    exp_iter_types f e1;
-    exp_iter_types f e2
-  | Sizeof t _ => typ_iter_types f t
-  };
-
-
-/** Iterate over all the types (and subtypes) in the instruction */
-let instr_iter_types f instr =>
-  switch instr {
-  | Letderef _ e t _ =>
-    exp_iter_types f e;
-    typ_iter_types f t
-  | Set e1 t e2 _ =>
-    exp_iter_types f e1;
-    typ_iter_types f t;
-    exp_iter_types f e2
-  | Prune cond _ _ _ => exp_iter_types f cond
-  | Call _ e arg_ts _ _ =>
-    exp_iter_types f e;
-    IList.iter
-      (
-        fun (e, t) => {
-          exp_iter_types f e;
-          typ_iter_types f t
-        }
-      )
-      arg_ts
-  | Nullify _ _ => ()
-  | Abstract _ => ()
-  | Remove_temps _ _ => ()
-  | Stackop _ _ => ()
-  | Declare_locals ptl _ => IList.iter (fun (_, t) => typ_iter_types f t) ptl
-  };
 
 
 /** Dump an instruction. */

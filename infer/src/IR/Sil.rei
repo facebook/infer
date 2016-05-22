@@ -357,8 +357,8 @@ let module TypSet: Set.S with type elt = typ;
 /** Maps with type keys. */
 let module TypMap: Map.S with type key = typ;
 
+let module AnnotMap: PrettyPrintable.PPMap with type key = annotation;
 
-let module AnnotMap : PrettyPrintable.PPMap with type key = annotation;
 
 /** Sets of expressions. */
 let module ExpSet: Set.S with type elt = exp;
@@ -1467,17 +1467,5 @@ let hpara_instantiate: hpara => exp => exp => list exp => (list Ident.t, list hp
     [b\[cell / x, blink / y, flink / z, elist / xs, _zs'/ zs\]]
     for some fresh [_zs'].*/
 let hpara_dll_instantiate: hpara_dll => exp => exp => exp => list exp => (list Ident.t, list hpred);
-
-
-/** Iterate over all the subtypes in the type (including the type itself) */
-let typ_iter_types: (typ => unit) => typ => unit;
-
-
-/** Iterate over all the types (and subtypes) in the expression */
-let exp_iter_types: (typ => unit) => exp => unit;
-
-
-/** Iterate over all the types (and subtypes) in the instruction */
-let instr_iter_types: (typ => unit) => instr => unit;
 
 let custom_error: Pvar.t;
