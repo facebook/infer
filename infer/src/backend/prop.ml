@@ -608,7 +608,7 @@ let sym_eval abs e =
              let size' = Sil.BinOp(Sil.PlusA, size, num_elem) in
              let ltfa' = (fname, Sil.Tarray(typ, size'), Sil.item_annotation_empty) :: ltfa in
              let struct_typ' =
-               { struct_typ with Sil.instance_fields = ltfa' } in
+               { struct_typ with Sil.instance_fields = IList.rev ltfa' } in
              Sil.Sizeof (Sil.Tstruct struct_typ', st)
          | _ -> Sil.BinOp(Sil.PlusA, e1', e2'))
     | Sil.BinOp (Sil.PlusA as oplus, e1, e2)
