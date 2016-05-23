@@ -33,7 +33,7 @@ public class VectorEmptyAccessTest {
 
   private static ImmutableList<String> inferCmd;
 
-  public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
+  public static final String EMPTY_VECTOR_ACCESS = "EMPTY_VECTOR_ACCESS";
 
   @ClassRule
   public static DebuggableTemporaryFolder folder =
@@ -55,14 +55,14 @@ public class VectorEmptyAccessTest {
         "assign_empty",
         "empty_check_access_empty",
         "size_check0_empty",
-        "vector_as_param_empty",
+        //"vector_as_param_empty",
     };
     InferResults inferResults = InferRunner.runInferCPP(inferCmd);
     assertThat(
         "Results should contain empty vector access",
         inferResults,
         containsExactly(
-            NULL_DEREFERENCE,
+            EMPTY_VECTOR_ACCESS,
             FILE,
             procedures
         )

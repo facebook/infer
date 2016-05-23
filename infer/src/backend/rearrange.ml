@@ -1091,6 +1091,8 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
         raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
       else if Localise.is_field_not_null_checked_desc err_desc then
         raise (Exceptions.Field_not_null_checked (err_desc, __POS__))
+      else if (Localise.is_empty_vector_access_desc err_desc) then
+        raise (Exceptions.Empty_vector_access (err_desc, __POS__))
       else raise (Exceptions.Null_dereference (err_desc, __POS__))
     end;
   match attribute_opt with

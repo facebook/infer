@@ -50,6 +50,7 @@ exception Deallocate_stack_variable of Localise.error_desc
 exception Deallocate_static_memory of Localise.error_desc
 exception Deallocation_mismatch of Localise.error_desc * L.ml_loc
 exception Divide_by_zero of Localise.error_desc * L.ml_loc
+exception Empty_vector_access of Localise.error_desc * L.ml_loc
 exception Eradicate of string * Localise.error_desc
 exception Field_not_null_checked of Localise.error_desc * L.ml_loc
 exception Frontend_warning of string * Localise.error_desc * L.ml_loc
@@ -168,6 +169,9 @@ let recognize_exception exn =
          desc, Some ml_loc, Exn_user, High, Some Kerror, Checker)
     | Eradicate (kind_s, desc) ->
         (Localise.from_string kind_s, desc, None, Exn_user, High, None, Prover)
+    | Empty_vector_access (desc, ml_loc) ->
+        (Localise.empty_vector_access,
+         desc, Some ml_loc, Exn_user, High, None, Prover)
     | Field_not_null_checked (desc, ml_loc) ->
         (Localise.field_not_null_checked,
          desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat)

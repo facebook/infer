@@ -48,6 +48,7 @@ let deallocate_stack_variable = "DEALLOCATE_STACK_VARIABLE"
 let deallocate_static_memory = "DEALLOCATE_STATIC_MEMORY"
 let deallocation_mismatch = "DEALLOCATION_MISMATCH"
 let divide_by_zero = "DIVIDE_BY_ZERO"
+let empty_vector_access = "EMPTY_VECTOR_ACCESS"
 let field_not_null_checked = "IVAR_NOT_NULL_CHECKED"
 let inherently_dangerous_function = "INHERENTLY_DANGEROUS_FUNCTION"
 let memory_leak = "MEMORY_LEAK"
@@ -134,6 +135,7 @@ module Tags = struct
   let parameter_not_null_checked = "parameter_not_null_checked" (* describes a NPE that comes from parameter not nullable *)
   let field_not_null_checked = "field_not_null_checked" (* describes a NPE that comes from field not nullable *)
   let nullable_src = "nullable_src" (* @Nullable-annoted field/param/retval that causes a warning *)
+  let empty_vector_access = "empty_vector_access"
   let create () = ref []
   let add tags tag value = tags := (tag, value) :: !tags
   let update tags tag value =
@@ -290,6 +292,10 @@ let _deref_str_null proc_name_opt _problem_str tags =
 (** dereference strings for null dereference *)
 let deref_str_null proc_name_opt =
   let problem_str = "could be null and is dereferenced" in
+  _deref_str_null proc_name_opt problem_str (Tags.create ())
+
+let access_str_empty proc_name_opt =
+  let problem_str = "could be empty and is accessed" in
   _deref_str_null proc_name_opt problem_str (Tags.create ())
 
 (** dereference strings for null dereference due to Nullable annotation *)
@@ -625,6 +631,16 @@ let desc_divide_by_zero expr_str loc =
       expr_str
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
+
+let desc_empty_vector_access pname object_str loc =
+  let vector_str = Format.sprintf "Vector %s" object_str in
+  let desc = access_str_empty (Some pname) in
+  let tags = desc.tags in
+  Tags.add tags Tags.empty_vector_access object_str;
+  let descriptions = [vector_str; desc.problem_str; (at_line tags loc)] in
+  { no_desc with descriptions; tags = !tags }
+
+let is_empty_vector_access_desc desc = has_tag desc Tags.empty_vector_access
 
 let desc_frontend_warning desc sugg loc =
   let tags = Tags.create () in

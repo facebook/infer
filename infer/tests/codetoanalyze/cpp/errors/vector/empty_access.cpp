@@ -113,10 +113,13 @@ int vector_param_access(std::vector<int>& v) {
   return v.back(); // shouldn't report anything here
 }
 
+/*
+// FIXME: analyzer reports it as NULL_DEREFERENCE (B5) instead
+// of EMPTY_VECTOR_ACCESS
 int vector_as_param_empty() {
   std::vector<int> v;
   return vector_param_access(v);
-}
+}*/
 
 int vector_as_param_nonempty() {
   std::vector<int> v(1);

@@ -20,18 +20,26 @@ let pointer_wrapper_classes = [
   ["std"; "unique_ptr"]
 ]
 
-let is_pointer_wrapper_class class_name =
+let vector_class = ["std"; "vector"]
+
+let is_one_of_classes class_name classes =
   IList.exists (fun wrapper_class ->
       IList.for_all (fun wrapper_class_substring ->
           Utils.string_contains wrapper_class_substring class_name) wrapper_class)
-    pointer_wrapper_classes
+    classes
 
-let method_of_pointer_wrapper pname =
+let is_method_of_objc_cpp_class pname classes =
   match pname with
   | Procname.ObjC_Cpp name ->
       let class_name = Procname.objc_cpp_get_class_name name in
-      is_pointer_wrapper_class class_name
+      is_one_of_classes class_name classes
   | _ -> false
+
+let method_of_pointer_wrapper pname =
+  is_method_of_objc_cpp_class pname pointer_wrapper_classes
+
+let is_vector_method pname =
+  is_method_of_objc_cpp_class pname [vector_class]
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 let hpred_is_open_resource prop = function
@@ -837,6 +845,9 @@ let create_dereference_desc
           (match Prop.get_objc_null_attribute prop (Sil.Lvar pvar) with
            | Some (Sil.Aobjc_null info) -> Localise.parameter_field_not_null_checked_desc desc info
            | _ -> desc)
+      | Some (Sil.Dretcall (Dconst (Cfun pname), this_dexp :: _, loc, _ ))
+        when is_vector_method pname ->
+          Localise.desc_empty_vector_access pname (Sil.dexp_to_string this_dexp) loc
       | _ -> desc
     else desc in
   if use_buckets then Buckets.classify_access desc access_opt' de_opt is_nullable

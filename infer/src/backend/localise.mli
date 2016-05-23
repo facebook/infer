@@ -45,6 +45,7 @@ val deallocate_stack_variable : t
 val deallocate_static_memory : t
 val deallocation_mismatch : t
 val divide_by_zero : t
+val empty_vector_access : t
 val field_not_null_checked : t
 val inherently_dangerous_function : t
 val memory_leak : t
@@ -200,6 +201,10 @@ val desc_deallocate_stack_variable : string -> Procname.t -> Location.t -> error
 val desc_deallocate_static_memory : string -> Procname.t -> Location.t -> error_desc
 
 val desc_divide_by_zero : string -> Location.t -> error_desc
+
+val desc_empty_vector_access : Procname.t -> string -> Location.t -> error_desc
+
+val is_empty_vector_access_desc : error_desc -> bool
 
 val desc_frontend_warning : string -> string -> Location.t -> error_desc
 
