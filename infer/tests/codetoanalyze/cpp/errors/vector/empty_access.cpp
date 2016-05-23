@@ -108,3 +108,17 @@ int size_check1_nonempty() {
   }
   return 1;
 }
+
+int vector_param_access(std::vector<int>& v) {
+  return v.back(); // shouldn't report anything here
+}
+
+int vector_as_param_empty() {
+  std::vector<int> v;
+  return vector_param_access(v);
+}
+
+int vector_as_param_nonempty() {
+  std::vector<int> v(1);
+  return vector_param_access(v);
+}
