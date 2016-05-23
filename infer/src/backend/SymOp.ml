@@ -28,6 +28,26 @@ let exn_not_failure = function
   | Analysis_failure_exe _ -> false
   | _ -> true
 
+let try_finally ?(fail_early=false) f g =
+  match f () with
+  | r ->
+      g () ;
+      r
+  | exception (Analysis_failure_exe _ as f_exn) ->
+      if not fail_early then
+        (try g () with _ -> ());
+      raise f_exn
+  | exception f_exn ->
+      match g () with
+      | () ->
+          raise f_exn
+      | exception (Analysis_failure_exe _ as g_exn) ->
+          raise g_exn
+      | exception _ ->
+          raise f_exn
+
+let finally_try g f = try_finally f g
+
 let pp_failure_kind fmt = function
   | FKtimeout -> F.fprintf fmt "TIMEOUT"
   | FKsymops_timeout symops -> F.fprintf fmt "SYMOPS TIMEOUT (%d)" symops

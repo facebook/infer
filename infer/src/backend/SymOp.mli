@@ -68,4 +68,14 @@ exception Analysis_failure_exe of failure_kind
 (** check that the exception is not a timeout exception *)
 val exn_not_failure : exn -> bool
 
+(** [try_finally ~fail_early f g] executes [f] and then [g] even if [f] raises an exception.
+    Assuming that [g ()] terminates quickly [Analysis_failure_exe] exceptions are handled correctly.
+    In particular, an exception raised by [f ()] is delayed until [g ()] finishes, so [g ()] should
+    return reasonably quickly.  [~fail_early=true] can be passed to skip executing [g ()] when [f
+    ()] raises a [Analysis_failure_exe] exception. *)
+val try_finally : ?fail_early:bool -> (unit -> 'a) -> (unit -> unit) -> 'a
+
+(** [finally_try g f] is equivalent to [try_finally f g]. *)
+val finally_try : (unit -> unit) -> (unit -> 'a) -> 'a
+
 val pp_failure_kind : Format.formatter -> failure_kind -> unit
