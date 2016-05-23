@@ -11,7 +11,7 @@
 #import <Foundation/NSString.h>
 
 @interface NSHTTPCookie : NSObject
-@property(readonly, copy) NSString* value;
+@property(nonatomic, readonly, copy) NSString* value;
 @end
 
 @implementation NSHTTPCookie
