@@ -676,25 +676,28 @@ let add_guarded_by_constraints prop lexp pdesc =
           (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
           prop
         else
-        if proc_has_matching_annot pdesc guarded_by_str
+          (* we don't know if we have the lock or not. *)
+        if Cfg.Procdesc.get_access pdesc <> Sil.Private
         then
-          (* procedure is annotated and holding the same lock as the field. add locked proof
-             obligation to the current *)
-          (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
-          let locked_attr = Sil.Const (Cattribute Alocked) in
-          Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop
-        else
           begin
-            (* lock is not held. warn *)
+            (* non-private method; can't ensure that the lock is held. warn. *)
             warn pdesc accessed_fld guarded_by_str;
             prop
           end
+        else
+          (* private method. add locked proof obligation to [pdesc] *)
+          let locked_attr = Sil.Const (Cattribute Alocked) in
+          Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop
     | _ ->
         if not (proc_has_matching_annot pdesc guarded_by_str)
         then
           (* can't find the object the annotation refers to, and procedure is not annotated. warn *)
           warn pdesc accessed_fld guarded_by_str
-        else ();(* TODO: add proof obligation here *)
+        else
+          (* procedure has same GuardedBy annotation as the field. we would like to add a proof
+             obligation, but we can't (because we can't find an expression corresponding to the
+             lock in the current prop). so just be silent. *)
+          ();
         prop in
   let check_fld_locks typ prop_acc (fld, strexp) = match strexp with
     | Sil.Eexp (exp, _) when Sil.exp_equal exp lexp ->

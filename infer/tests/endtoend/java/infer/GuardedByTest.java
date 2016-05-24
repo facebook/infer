@@ -48,6 +48,10 @@ public class GuardedByTest {
       "readGFromCopyBad",
       "readHBad",
       "readHBadSynchronizedMethodShouldntHelp",
+      // TODO: report these
+      // "unguardedCallSiteBad1",
+      // "unguardedCallSiteBad2",
+      // "unguardedCallSiteBad3",
     };
     assertThat(
         "Results should contain " + UNSAFE_GUARDED_BY_ACCESS,

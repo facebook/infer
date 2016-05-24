@@ -63,11 +63,6 @@ public class GuardedByExample {
     this.f.toString();
   }
 
-  @GuardedBy("this")
-  void guardedByThisOk() {
-    this.g.toString();
-  }
-
   synchronized void synchronizedMethodOk() {
     this.g.toString();
   }
@@ -99,5 +94,45 @@ public class GuardedByExample {
   synchronized void readHBadSynchronizedMethodShouldntHelp() {
     this.h.toString(); // h is not protected by this
   }
+
+  private void privateUnguardedAccess() {
+    // not protected, but safe if all call sites guard the access to f
+    this.g.toString();
+  }
+
+  public void guardedCallSite1() {
+    synchronized (this) {
+      privateUnguardedAccess(); // should not warn; lock is held
+    }
+  }
+
+  public synchronized void guardedCallSite2() {
+    privateUnguardedAccess(); // should not warn; lock is held
+  }
+
+  private void wrapper() {
+    privateUnguardedAccess(); // should not warn, just propagate the proof obl
+  }
+
+  public void guardedCallSite3() {
+    synchronized (this) {
+      wrapper(); // should not  warn
+    }
+  }
+
+  // TODO: report on these cases
+  /*
+  public void unguardedCallSiteBad1() {
+    privateUnguardedAccess(); // should warn; lock is not held
+  }
+
+  protected void unguardedCallSiteBad2() {
+    privateUnguardedAccess(); // should warn; lock is not held
+  }
+
+  void unguardedCallSiteBad3() {
+    privateUnguardedAccess(); // should warn; lock is not held
+  }
+  */
 
 }
