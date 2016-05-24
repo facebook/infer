@@ -70,6 +70,7 @@ val max_recursion : int
 val meet_level : int
 val models_dir : string
 val cpp_models_dir : string
+val whitelisted_cpp_methods : string list list
 val nsnotification_center_checker_backend : bool
 val objc_method_call_semantics : bool
 val os_type : os_type

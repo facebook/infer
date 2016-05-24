@@ -203,6 +203,16 @@ let cpp_models_dir =
       "models/cpp/include" in
   cpp_models_dir
 
+let whitelisted_cpp_methods = [
+  ["std"; "move"];
+  ["google"; "CheckNotNull"];
+  ["google"; "GetReferenceableValue"];
+  ["google"; "Check_NEImpl"];
+  ["google"; "Check_LEImpl"];
+  ["google"; "Check_GTImpl"];
+  ["google"; "Check_EQImpl"]
+]
+
 let os_type = match Sys.os_type with
   | "Win32" -> Win32
   | "Cygwin" -> Cygwin

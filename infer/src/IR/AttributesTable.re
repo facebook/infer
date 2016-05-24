@@ -106,6 +106,20 @@ let pname_is_cpp_model callee_pname =>
   | None => false
   };
 
+
+let is_whitelisted_cpp_method method_name =>
+  IList.exists
+    (
+      fun whitelisting_class =>
+        IList.for_all
+          (
+            fun whitelisting_class_substring =>
+              Utils.string_contains whitelisting_class_substring method_name
+          )
+          whitelisting_class
+    )
+    Config.whitelisted_cpp_methods;
+
 let stats () => {
   let stats = Procname.Hash.stats attr_tbl;
   let {Hashtbl.num_bindings: num_bindings, num_buckets, max_bucket_length} = stats;

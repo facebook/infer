@@ -115,14 +115,6 @@ let google_LogMessageFatal = "google::LogMessageFatal_LogMessageFatal"
 
 let google_MakeCheckOpString = "google::MakeCheckOpString"
 
-let google_whitelisting_functions = [
-  "CheckNotNull";
-  "GetReferenceableValue";
-  "Check_NEImpl";
-  "Check_LEImpl";
-  "Check_GTImpl";
-  "Check_EQImpl"]
-
 let pseudo_object_type = "<pseudo-object type>"
 
 let count = "count"

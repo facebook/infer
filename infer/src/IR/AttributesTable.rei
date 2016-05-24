@@ -36,4 +36,6 @@ let get_correct_type_from_objc_class_name: Mangled.t => option Sil.typ;
 /** Returns true if the method is defined as a C++ model */
 let pname_is_cpp_model: Procname.t => bool;
 
+let is_whitelisted_cpp_method : string => bool;
+
 let stats: unit => (string, Yojson.json);

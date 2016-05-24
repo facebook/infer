@@ -152,13 +152,8 @@ struct
           (* named_decl_info.ni_name has name without template parameters.*)
           (* It makes it possible to capture whole family of function instantiations*)
           (* to be named the same *)
-          let fun_name = name_info.Clang_ast_t.ni_name in
-          let qual_name = name_info.Clang_ast_t.ni_qual_name in
-          let top_qual = IList.hd (IList.rev qual_name) in
-          (* Always translate std::move so that it can be analyzed *)
-          top_qual = "std" && fun_name = "move" ||
-          top_qual = "google" &&
-          IList.mem (=) fun_name CFrontend_config.google_whitelisting_functions
+          let name = Ast_utils.get_qualified_name name_info in
+          AttributesTable.is_whitelisted_cpp_method name
       | _ -> false in
     let never_translate_decl = match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)
