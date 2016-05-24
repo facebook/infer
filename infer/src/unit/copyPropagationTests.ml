@@ -14,7 +14,6 @@ module F = Format
 module TestInterpreter = AnalyzerTester.Make
     (ProcCfg.Exceptional)
     (Scheduler.ReversePostorder)
-    (CopyPropagation.Domain)
     (CopyPropagation.TransferFunctions)
 
 let tests =
@@ -192,5 +191,5 @@ let tests =
       var_assign_var "c" "b";
       invariant "{ &b -> &a, &c -> &b }"
     ];
-  ] |> TestInterpreter.create_tests in
+  ] |> TestInterpreter.create_tests ProcData.empty_extras in
   "copy_propagation_test_suite">:::test_list

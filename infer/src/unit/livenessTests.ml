@@ -14,7 +14,6 @@ module F = Format
 module TestInterpreter = AnalyzerTester.Make
     (ProcCfg.Backward(ProcCfg.Normal))
     (Scheduler.ReversePostorder)
-    (Liveness.Domain)
     (Liveness.TransferFunctions)
 
 let tests =
@@ -192,5 +191,5 @@ let tests =
       invariant "{ &b }";
       var_assign_var "a" "b"
     ];
-  ] |> TestInterpreter.create_tests in
+  ] |> TestInterpreter.create_tests ProcData.empty_extras in
   "liveness_test_suite">:::test_list

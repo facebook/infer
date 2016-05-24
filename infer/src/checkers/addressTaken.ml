@@ -17,12 +17,10 @@ module PvarSet = PrettyPrintable.MakePPSet(struct
 
 module Domain = AbstractDomain.FiniteSet(PvarSet)
 
-module TransferFunctions = struct
-  type astate = Domain.astate
+module TransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = Domain
   type extras = ProcData.no_extras
-  type node_id = ProcCfg.DefaultNode.id
-
-  let postprocess = TransferFunctions.no_postprocessing
 
   let rec add_address_taken_pvars exp astate = match exp with
     | Sil.Lvar pvar ->
@@ -37,7 +35,7 @@ module TransferFunctions = struct
     | Var _ | Sizeof _ ->
         astate
 
-  let exec_instr astate _ = function
+  let exec_instr astate _ _ = function
     | Sil.Set (_, Tptr _, rhs_exp, _) ->
         add_address_taken_pvars rhs_exp astate
     | Sil.Call (_, _, actuals, _, _) ->
@@ -48,9 +46,8 @@ module TransferFunctions = struct
     | Sil.Set _ | Letderef _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Stackop _
     | Declare_locals _ ->
         astate
-
 end
 
 module Analyzer =
   AbstractInterpreter.Make
-    (ProcCfg.Exceptional) (Scheduler.ReversePostorder) (Domain) (TransferFunctions)
+    (ProcCfg.Exceptional) (Scheduler.ReversePostorder) (TransferFunctions)

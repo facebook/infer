@@ -12,7 +12,8 @@ open! Utils
 module F = Format
 module L = Logging
 
-module type S = functor (CFG : ProcCfg.S) -> sig
+module type S = sig
+  module CFG : ProcCfg.S
   type t
 
   (* schedule the successors of [node] *)
@@ -21,12 +22,16 @@ module type S = functor (CFG : ProcCfg.S) -> sig
      predecessors, and the new schedule *)
   val pop : t -> (CFG.node * CFG.id list * t) option
   val empty : CFG.t -> t
+end
 
+module type Make = functor (CFG : ProcCfg.S) -> sig
+  include (S with module CFG = CFG)
 end
 
 (* simple scheduler that visits CFG nodes in reverse postorder. fast/precise for straightline code
    and conditionals; not as good for loops (may visit nodes after a loop multiple times). *)
-module ReversePostorder : S = functor (CFG : ProcCfg.S) -> struct
+module ReversePostorder (CFG : ProcCfg.S) = struct
+  module CFG = CFG
   module M = ProcCfg.NodeIdMap (CFG)
 
   module WorkUnit = struct

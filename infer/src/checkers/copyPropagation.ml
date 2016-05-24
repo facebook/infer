@@ -79,14 +79,12 @@ module Domain = struct
       |> gen lhs_var rhs_var
 end
 
-module TransferFunctions = struct
-  type astate = Domain.astate
+module TransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = Domain
   type extras = ProcData.no_extras
-  type node_id = Cfg.Node.id
 
-  let postprocess = TransferFunctions.no_postprocessing
-
-  let exec_instr astate _ = function
+  let exec_instr astate _ _ = function
     | Sil.Letderef (lhs_id, Sil.Lvar rhs_pvar, _, _) when not (Pvar.is_global rhs_pvar) ->
         Domain.gen (Var.of_id lhs_id) (Var.of_pvar rhs_pvar) astate
     | Sil.Set (Sil.Lvar lhs_pvar, _, Sil.Var rhs_id, _) when not (Pvar.is_global lhs_pvar) ->
@@ -123,7 +121,6 @@ module Analyzer =
   AbstractInterpreter.Make
     (ProcCfg.Exceptional)
     (Scheduler.ReversePostorder)
-    (Domain)
     (TransferFunctions)
 
 let checker { Callbacks.proc_desc; tenv; } =

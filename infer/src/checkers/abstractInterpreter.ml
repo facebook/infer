@@ -11,18 +11,26 @@ open! Utils
 
 module L = Logging
 
-module Make
-    (CFG : ProcCfg.S)
-    (Sched : Scheduler.S)
-    (A : AbstractDomain.S)
-    (T : TransferFunctions.S with type astate = A.astate and type node_id = CFG.id) = struct
+type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
-  module S = Sched (CFG)
-  module M = ProcCfg.NodeIdMap (CFG)
+module type S = sig
+  module TF : TransferFunctions.S
+  module M : Map.S with type key = TF.CFG.id
+  type inv_map = TF.Domain.astate state M.t
 
-  type state = { pre: A.astate; post: A.astate; visit_count: int; }
+  val exec_pdesc : TF.extras ProcData.t -> inv_map
+  val compute_post : TF.extras ProcData.t -> TF.Domain.astate option
+end
+
+module MakeNoCFG
+    (Sched : Scheduler.S) (TF : TransferFunctions.S with module CFG = Sched.CFG) = struct
+
+  module CFG = Sched.CFG
+  module M = ProcCfg.NodeIdMap (Sched.CFG)
+  module A = TF.Domain
+
   (* invariant map from node id -> abstract state representing postcondition for node id *)
-  type inv_map = state M.t
+  type inv_map = A.astate state M.t
 
   (** extract the state of node [n] from [inv_map] *)
   let extract_state node_id inv_map =
@@ -52,12 +60,17 @@ module Make
         let exec_instrs astate_acc instr =
           if A.is_bottom astate_acc
           then astate_acc
-          else T.exec_instr astate_acc proc_data instr in
-        let astate_post_instrs = IList.fold_left exec_instrs astate_pre (CFG.instrs node) in
-        T.postprocess astate_post_instrs node_id proc_data in
+          else TF.exec_instr astate_acc proc_data node instr in
+        (* hack to ensure that the transfer functions see every node *)
+        let node_instrs = match CFG.instrs node with
+          | [] ->
+              (* TODO: get rid of Stackop and replace it with Skip *)
+              [Sil.Stackop (Push, Location.dummy)]
+          | instrs -> instrs in
+        IList.fold_left exec_instrs astate_pre node_instrs in
       L.out "Post for node %a is %a@." CFG.pp_id node_id A.pp astate_post;
       let inv_map' = M.add node_id { pre=astate_pre; post=astate_post; visit_count; } inv_map in
-      inv_map', S.schedule_succs work_queue node in
+      inv_map', Sched.schedule_succs work_queue node in
     if M.mem node_id inv_map then
       let old_state = M.find node_id inv_map in
       let widened_pre =
@@ -90,7 +103,7 @@ module Make
       match IList.flatten_options all_posts with
       | post :: posts -> Some (IList.fold_left A.join post posts)
       | [] -> None in
-    match S.pop work_queue with
+    match Sched.pop work_queue with
     | Some (_, [], work_queue') ->
         exec_worklist cfg work_queue' inv_map proc_data
     | Some (node, _, work_queue') ->
@@ -104,7 +117,8 @@ module Make
   (* compute and return an invariant map for [cfg] *)
   let exec_cfg cfg proc_data =
     let start_node = CFG.start_node cfg in
-    let inv_map', work_queue' = exec_node start_node A.initial (S.empty cfg) M.empty proc_data in
+    let inv_map', work_queue' =
+      exec_node start_node A.initial (Sched.empty cfg) M.empty proc_data in
     exec_worklist cfg work_queue' inv_map' proc_data
 
   (* compute and return an invariant map for [pdesc] *)
@@ -145,3 +159,5 @@ module Make
   end
 end
 
+module Make (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.Make) =
+  MakeNoCFG (S (C)) (T (C))

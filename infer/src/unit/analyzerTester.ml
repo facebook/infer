@@ -139,16 +139,13 @@ end
 
 module Make
     (CFG : ProcCfg.S with type node = Cfg.Node.t)
-    (S : Scheduler.S)
-    (A : AbstractDomain.S)
-    (T : TransferFunctions.S
-     with type astate = A.astate and type extras = ProcData.no_extras
-                                 and type node_id = CFG.id) = struct
+    (S : Scheduler.Make)
+    (T : TransferFunctions.Make) = struct
 
   open StructuredSil
 
-  module I = AbstractInterpreter.Make (CFG) (S) (A) (T)
-  module M = ProcCfg.NodeIdMap (CFG)
+  module I = AbstractInterpreter.Make (CFG) (S) (T)
+  module M = I.M
 
   type assert_map = string M.t
 
@@ -229,15 +226,15 @@ module Make
     Cfg.Procdesc.set_exit_node pdesc exit_node;
     pdesc, assert_map
 
-  let create_test test_program _ =
+  let create_test test_program extras _ =
     let pdesc, assert_map = structured_program_to_cfg test_program in
-    let inv_map = I.exec_pdesc (ProcData.make_default pdesc (Tenv.create ())) in
+    let inv_map = I.exec_pdesc (ProcData.make pdesc (Tenv.create ()) extras) in
 
     let collect_invariant_mismatches node_id (inv_str, inv_label) error_msgs_acc =
       let post_str =
         try
           let state = M.find node_id inv_map in
-          pp_to_string A.pp state.post
+          pp_to_string I.A.pp state.post
         with Not_found -> "_|_" in
       if inv_str <> post_str then
         let error_msg =
@@ -262,8 +259,8 @@ module Make
           |> F.flush_str_formatter in
         OUnit2.assert_failure assert_fail_message
 
-  let create_tests tests =
+  let create_tests extras tests =
     let open OUnit2 in
-    IList.map (fun (name, test_program) -> name>::create_test test_program) tests
+    IList.map (fun (name, test_program) -> name>::create_test test_program extras) tests
 
 end

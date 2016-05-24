@@ -268,12 +268,10 @@ let report_call_stack end_of_stack lookup_next_calls report pname loc calls =
        loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
     calls
 
-module TransferFunctions = struct
-  type astate = Domain.astate
+module TransferFunctions (CFG : ProcCfg.S) = struct
+  module CFG = CFG
+  module Domain = Domain
   type extras = ProcData.no_extras
-  type node_id = ProcCfg.DefaultNode.id
-
-  let postprocess = TransferFunctions.no_postprocessing
 
   (* This is specific to the @NoAllocation and @PerformanceCritical checker
      and the "unlikely" method is used to guard branches that are expected to run sufficiently
@@ -327,7 +325,7 @@ module TransferFunctions = struct
            with T *)
         Sil.AnnotMap.fold add_call_for_annot map astate
 
-  let exec_instr astate { ProcData.pdesc; tenv; } = function
+  let exec_instr astate { ProcData.pdesc; tenv; } _ = function
     | Sil.Call ([id], Const (Cfun callee_pname), _, _, _)
       when is_unlikely callee_pname ->
         Domain.add_tracking_var (Var.of_id id) astate
@@ -365,7 +363,6 @@ module Analyzer =
   AbstractInterpreter.Make
     (ProcCfg.Exceptional)
     (Scheduler.ReversePostorder)
-    (Domain)
     (TransferFunctions)
 
 module Interprocedural = struct

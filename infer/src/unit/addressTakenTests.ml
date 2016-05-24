@@ -14,7 +14,6 @@ module F = Format
 module TestInterpreter = AnalyzerTester.Make
     (ProcCfg.Exceptional)
     (Scheduler.ReversePostorder)
-    (AddressTaken.Domain)
     (AddressTaken.TransferFunctions)
 
 let tests =
@@ -99,5 +98,5 @@ let tests =
       var_assign_var ~rhs_typ:int_ptr_typ "e" "f";
       invariant "{ &b, &d, &f }"
     ];
-  ] |> TestInterpreter.create_tests in
+  ] |> TestInterpreter.create_tests ProcData.empty_extras in
   "address_taken_suite">:::test_list

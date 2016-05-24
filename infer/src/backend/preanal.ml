@@ -118,13 +118,9 @@ module LivenessAnalysis =
   AbstractInterpreter.Make
     (BackwardCfg)
     (Scheduler.ReversePostorder)
-    (Liveness.Domain)
     (Liveness.TransferFunctions)
 
 module VarDomain = AbstractDomain.FiniteSet(Var.Set)
-
-(* (reaching non-nullified vars) * (vars to nullify) *)
-module NullifyDomain = AbstractDomain.Pair (VarDomain) (VarDomain)
 
 (** computes the non-nullified reaching definitions at the end of each node by building on the
     results of a liveness analysis to be precise, what we want to compute is:
@@ -135,43 +131,53 @@ module NullifyDomain = AbstractDomain.Pair (VarDomain) (VarDomain)
     each pvar in to_nullify afer we finish the analysis. Nullify instructions speed up the analysis
     by enabling it to GC state that will no longer be read. *)
 module NullifyTransferFunctions = struct
-  type astate = NullifyDomain.astate
+  (* (reaching non-nullified vars) * (vars to nullify) *)
+  module Domain = AbstractDomain.Pair (VarDomain) (VarDomain)
+  module CFG = ProcCfg.Exceptional
   type extras = LivenessAnalysis.inv_map
-  type node_id = BackwardCfg.id
 
   let postprocess ((reaching_defs, _) as astate) node_id { ProcData.extras; } =
     match LivenessAnalysis.extract_state node_id extras with
     (* note: because the analysis backward, post and pre are reversed *)
-    | Some { LivenessAnalysis.post = live_before; pre = live_after; } ->
+    | Some { AbstractInterpreter.post = live_before; pre = live_after; } ->
         let to_nullify = VarDomain.diff (VarDomain.union live_before reaching_defs) live_after in
         let reaching_defs' = VarDomain.diff reaching_defs to_nullify in
         (reaching_defs', to_nullify)
     | None -> astate
 
-  let exec_instr ((active_defs, to_nullify) as astate) _ = function
-    | Sil.Letderef (lhs_id, _, _, _) ->
-        VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify
-    | Sil.Call (lhs_ids, _, _, _, _) ->
-        let active_defs' =
-          IList.fold_left
-            (fun acc id -> VarDomain.add (Var.of_id id) acc)
-            active_defs
-            lhs_ids in
-        active_defs', to_nullify
-    | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
-        VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify
-    | Sil.Set _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
-    | Abstract _ ->
-        astate
-    | Sil.Nullify _ ->
-        failwith "Should not add nullify instructions before running nullify analysis!"
+  let is_last_instr_in_node instr node =
+    let rec is_last_instr instr = function
+      | [] -> true
+      | last_instr :: [] -> Sil.instr_compare instr last_instr = 0
+      | _ :: instrs -> is_last_instr instr instrs in
+    is_last_instr instr (CFG.instrs node)
+
+  let exec_instr ((active_defs, to_nullify) as astate) extras node instr =
+    let astate' = match instr with
+      | Sil.Letderef (lhs_id, _, _, _) ->
+          VarDomain.add (Var.of_id lhs_id) active_defs, to_nullify
+      | Sil.Call (lhs_ids, _, _, _, _) ->
+          let active_defs' =
+            IList.fold_left
+              (fun acc id -> VarDomain.add (Var.of_id id) acc)
+              active_defs
+              lhs_ids in
+          active_defs', to_nullify
+      | Sil.Set (Sil.Lvar lhs_pvar, _, _, _) ->
+          VarDomain.add (Var.of_pvar lhs_pvar) active_defs, to_nullify
+      | Sil.Set _ | Prune _ | Declare_locals _ | Stackop _ | Remove_temps _
+      | Abstract _ ->
+          astate
+      | Sil.Nullify _ ->
+          failwith "Should not add nullify instructions before running nullify analysis!" in
+    if is_last_instr_in_node instr node
+    then postprocess astate' (CFG.id node) extras
+    else astate'
 end
 
 module NullifyAnalysis =
-  AbstractInterpreter.Make
-    (ProcCfg.Exceptional)
-    (Scheduler.ReversePostorder)
-    (NullifyDomain)
+  AbstractInterpreter.MakeNoCFG
+    (Scheduler.ReversePostorder (ProcCfg.Exceptional))
     (NullifyTransferFunctions)
 
 let add_nullify_instrs tenv _ pdesc =
