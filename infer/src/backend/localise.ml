@@ -70,6 +70,7 @@ let skip_pointer_dereference = "SKIP_POINTER_DEREFERENCE"
 let stack_variable_address_escape = "STACK_VARIABLE_ADDRESS_ESCAPE"
 let tainted_value_reaching_sensitive_function = "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
 let unary_minus_applied_to_unsigned_expression = "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
+let unsafe_guarded_by_access = "UNSAFE_GUARDED_BY_ACCESS"
 let uninitialized_value = "UNINITIALIZED_VALUE"
 let use_after_free = "USE_AFTER_FREE"
 
@@ -431,6 +432,23 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
           "" in
     "Context " ^ context_str ^ "may leak during method " ^ pname_str ^ ":\n" in
   { no_desc with descriptions = [preamble; leak_root; path_str] }
+
+let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
+  let line_info = at_line (Tags.create ()) loc in
+  let accessed_fld_str = Ident.fieldname_to_string accessed_fld in
+  let annot_str = Printf.sprintf "`@GuardedBy(\"%s\")`" guarded_by_str in
+  let msg =
+    Printf.sprintf
+      "The field `%s` is annotated with %s, but the lock `%s` is not held during the access to the field `%s`. Consider wrapping the access in a `synchronized(%s)` block or annotating %s with %s"
+      accessed_fld_str
+      annot_str
+      guarded_by_str
+      line_info
+      guarded_by_str
+      (Procname.to_string pname)
+      annot_str in
+  { no_desc with descriptions = [msg]; }
+
 
 let desc_fragment_retains_view fragment_typ fieldname fld_typ pname : error_desc =
   (* TODO: try advice *)

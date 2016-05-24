@@ -65,6 +65,7 @@ val return_statement_missing : t
 val stack_variable_address_escape : t
 val unary_minus_applied_to_unsigned_expression : t
 val uninitialized_value : t
+val unsafe_guarded_by_access : t
 val use_after_free : t
 val skip_function : t
 val skip_pointer_dereference : t
@@ -256,6 +257,9 @@ val desc_inherently_dangerous_function : Procname.t -> error_desc
 
 val desc_unary_minus_applied_to_unsigned_expression :
   string option -> string -> Location.t -> error_desc
+
+val desc_unsafe_guarded_by_access :
+  Procname.t -> Ident.fieldname -> string -> Location.t -> error_desc
 
 val desc_tainted_value_reaching_sensitive_function :
   Sil.taint_kind -> string -> Procname.t -> Procname.t -> Location.t -> error_desc

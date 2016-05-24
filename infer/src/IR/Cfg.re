@@ -481,6 +481,7 @@ let module Node = {
 
   /** Return [true] iff the procedure is defined, and not just declared */
   let proc_desc_is_defined proc_desc => proc_desc.pd_attributes.ProcAttributes.is_defined;
+  let proc_desc_is_java_synchroinized proc_desc => proc_desc.pd_attributes.ProcAttributes.is_java_synchronized_method;
   let proc_desc_get_loc proc_desc => proc_desc.pd_attributes.ProcAttributes.loc;
 
   /** Return name and type of formal parameters */
@@ -800,6 +801,7 @@ let module Procdesc = {
   let get_ret_var pdesc => Pvar.mk Ident.name_return (get_proc_name pdesc);
   let get_start_node = Node.proc_desc_get_start_node;
   let is_defined = Node.proc_desc_is_defined;
+  let is_java_synchronized = Node.proc_desc_is_java_synchroinized;
   let iter_nodes = Node.proc_desc_iter_nodes;
   let fold_calls = Node.proc_desc_fold_calls;
   let iter_calls = Node.proc_desc_iter_calls;

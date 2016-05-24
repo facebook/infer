@@ -87,6 +87,9 @@ let module Procdesc: {
   /** Return [true] iff the procedure is defined, and not just declared */
   let is_defined: t => bool;
 
+  /** Return [true] if the procedure signature has the Java synchronized keyword */
+  let is_java_synchronized: t => bool;
+
   /** iterate over all the nodes of a procedure */
   let iter_nodes: (node => unit) => t => unit;
 

@@ -600,12 +600,12 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   let offsets_default = Sil.exp_get_offsets lexp in
   Prop.prop_iter_set_state iter offsets_default
 
-(* TODO: have to call this on both reads and writes *)
-let add_guarded_by_constraints prop lexp =
+(** If [lexp] is an access to a field that is annotated with @GuardedBy, add constraints to [prop]
+    expressing the safety conditions for the access. Complain if these conditions cannot be met. *)
+let add_guarded_by_constraints prop lexp pdesc =
   let sigma = Prop.get_sigma prop in
-  (** if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
-  let get_guarded_by_fld_str fld typ =
-    let extract_guarded_by_str (annot, _) =
+  let extract_guarded_by_str item_annot =
+    let annot_extract_guarded_by_str (annot, _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by
       then
         match annot.Sil.parameters with
@@ -613,53 +613,95 @@ let add_guarded_by_constraints prop lexp =
         | _ -> None
       else
         None in
+    IList.find_map_opt annot_extract_guarded_by_str item_annot in
+  (** if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
+  let get_guarded_by_fld_str fld typ =
     match Annotations.get_field_type_and_annotation fld typ with
-    | Some (_, item_annot) -> IList.find_map_opt extract_guarded_by_str item_annot
+    | Some (_, item_annot) -> extract_guarded_by_str item_annot
     | _ -> None in
+  let guarded_by_str_is_this guarded_by_str =
+    guarded_by_str = "this" in
   (* find A.guarded_by_fld_str |-> B and return Some B, or None if there is no such hpred *)
-  let find_guarded_by_exp fld typ sigma =
-    match get_guarded_by_fld_str fld typ with
-    | Some guarded_by_fld_str ->
-        let extract_guarded_by_strexp (fld, strexp) =
-          (* this comparison needs to be somewhat fuzzy, since programmers are free to write
-             @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
-          if Ident.fieldname_to_flat_string fld = guarded_by_fld_str ||
-             Ident.fieldname_to_string fld = guarded_by_fld_str
-          then Some strexp
-          else None in
-        IList.find_map_opt
-          (function
-            | Sil.Hpointsto (_, Estruct (flds, _), _) ->
-                IList.find_map_opt extract_guarded_by_strexp flds
-            | _ ->
-                None)
-          sigma
-    | None ->
-        None in
+  let find_guarded_by_exp guarded_by_str sigma =
+    let extract_guarded_by_strexp (fld, strexp) =
+      (* this comparison needs to be somewhat fuzzy, since programmers are free to write
+         @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
+      if Ident.fieldname_to_flat_string fld = guarded_by_str ||
+         Ident.fieldname_to_string fld = guarded_by_str
+      then Some strexp
+      else None in
+    IList.find_map_opt
+      (function
+        | Sil.Hpointsto (_, Estruct (flds, _), _) ->
+            IList.find_map_opt extract_guarded_by_strexp flds
+        | Sil.Hpointsto (Lvar pvar, rhs_exp, _)
+          when guarded_by_str_is_this guarded_by_str && Pvar.is_this pvar ->
+            Some rhs_exp
+        | _ ->
+            None)
+      sigma in
+  (* warn if the access to [lexp] is not protected by the [guarded_by_fld_str] lock *)
+  let enforce_guarded_access accessed_fld guarded_by_str prop =
+    (* return true if [pdesc] has an annotation that matches [guarded_by_str] *)
+    let proc_has_matching_annot pdesc guarded_by_str =
+      let proc_signature =
+        Annotations.get_annotated_signature (Cfg.Procdesc.get_attributes pdesc) in
+      let proc_annot, _ = proc_signature.Annotations.ret in
+      match extract_guarded_by_str proc_annot with
+      | Some proc_guarded_by_str ->
+          (* the lock is not held, but the procedure is annotated with @GuardedBy *)
+          proc_guarded_by_str = guarded_by_str
+      | None -> false in
+    let warn pdesc accessed_fld guarded_by_str =
+      let pname = Cfg.Procdesc.get_proc_name pdesc in
+      let loc = State.get_loc () in
+      let err_desc =
+        Localise.desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc in
+      let exn = Exceptions.Unsafe_guarded_by_access (err_desc, __POS__) in
+      Reporting.log_error pname exn in
+    match find_guarded_by_exp guarded_by_str (Prop.get_sigma prop) with
+    | Some (Sil.Eexp (guarded_by_exp, _)) ->
+        let has_lock =
+          (* procedure is synchronized and guarded by this *)
+          (guarded_by_str_is_this guarded_by_str && Cfg.Procdesc.is_java_synchronized pdesc) ||
+          (* or the prop says we already have the lock *)
+          IList.exists
+            (function
+              | Sil.Alocked -> true
+              | _ -> false)
+            (Prop.get_exp_attributes prop guarded_by_exp) in
+        if has_lock
+        then
+          (* we have the lock; no need to add a proof obligation *)
+          (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
+          prop
+        else
+        if proc_has_matching_annot pdesc guarded_by_str
+        then
+          (* procedure is annotated and holding the same lock as the field. add locked proof
+             obligation to the current *)
+          (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
+          let locked_attr = Sil.Const (Cattribute Alocked) in
+          Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop
+        else
+          begin
+            (* lock is not held. warn *)
+            warn pdesc accessed_fld guarded_by_str;
+            prop
+          end
+    | _ ->
+        if not (proc_has_matching_annot pdesc guarded_by_str)
+        then
+          (* can't find the object the annotation refers to, and procedure is not annotated. warn *)
+          warn pdesc accessed_fld guarded_by_str
+        else ();(* TODO: add proof obligation here *)
+        prop in
   let check_fld_locks typ prop_acc (fld, strexp) = match strexp with
     | Sil.Eexp (exp, _) when Sil.exp_equal exp lexp ->
         begin
-          match find_guarded_by_exp fld typ sigma with
-          | Some (Sil.Eexp (guarded_by_exp, _)) ->
-              let has_lock =
-                IList.exists
-                  (function
-                    | Sil.Alocked -> true
-                    | _ -> false)
-                  (Prop.get_exp_attributes prop_acc guarded_by_exp) in
-              if has_lock
-              then
-                (* we have the lock; no need to add a proof obligation *)
-                (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
-                prop_acc
-              else
-                (* the lock is not known to be held. add a "lock held" proof obligation *)
-                (* TODO: materialize [fld], but don't add [fld] to the footprint. *)
-                let locked_attr = Sil.Const (Cattribute Alocked) in
-                Prop.conjoin_neq ~footprint:true guarded_by_exp locked_attr prop_acc
-          | _ ->
-              (* field not guarded; proceed with abduction as we normally would *)
-              prop_acc
+          match get_guarded_by_fld_str fld typ with
+          | Some guarded_by_fld_str -> enforce_guarded_access fld guarded_by_fld_str prop_acc
+          | None -> prop_acc (* field not annotated; proceed as normal *)
         end
     | _ ->
         prop_acc in
@@ -1199,7 +1241,7 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
   let pname = Cfg.Procdesc.get_proc_name pdesc in
   let prop' =
     if Config.csl_analysis && !Config.footprint && Procname.is_java pname
-    then add_guarded_by_constraints prop lexp
+    then add_guarded_by_constraints prop lexp pdesc
     else prop in
   match Prop.prop_iter_create prop' with
   | None ->
