@@ -31,6 +31,7 @@ and other apps which are used by over a billion people.
 In addition to Facebook, where Infer is being developed, Infer is used by a number of companies:
 
 - [Kiuwan](https://www.kiuwan.com/)
+- [Marks & Spencer](https://www.marksandspencer.com/)
 - [Spotify](https://www.spotify.com/)
 - [Uber](https://www.uber.com/)
 
