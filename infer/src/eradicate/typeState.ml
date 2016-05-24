@@ -84,7 +84,7 @@ let range_add_locs (typ, ta, locs1) locs2 =
   let locs' = locs_join locs1 locs2 in
   (typ, ta, locs')
 
-(** Join m2 to m1 if there are no inconsistencies, otherwise return t1. *)
+(** Join m2 to m1 if there are no inconsistencies, otherwise return m1. *)
 let map_join m1 m2 =
   let tjoined = ref m1 in
   let range_join (typ1, ta1, locs1) (typ2, ta2, locs2) =
@@ -101,11 +101,7 @@ let map_join m1 m2 =
        | None -> ()
        | Some range' -> tjoined := M.add exp2 range' !tjoined)
     with Not_found ->
-      let (t2, ta2, locs2) = range2 in
-      let range2' =
-        let ta2' = TypeAnnotation.with_origin ta2 TypeOrigin.Undef in
-        (t2, ta2', locs2) in
-      tjoined := M.add exp2 range2' !tjoined in
+      tjoined := M.add exp2 range2 !tjoined in
   let missing_rhs exp1 range1 = (* handle elements missing in the rhs *)
     try
       ignore (M.find exp1 m2)
@@ -123,6 +119,10 @@ let map_join m1 m2 =
   )
 
 let join ext t1 t2 =
+  if Config.from_env_variable "ERADICATE_TRACE"
+  then L.stderr "@.@.**********join@.-------@.%a@.------@.%a@.********@.@."
+      (pp ext) t1
+      (pp ext) t2;
   {
     map = map_join t1.map t2.map;
     extension = ext.join t1.extension t2.extension;
