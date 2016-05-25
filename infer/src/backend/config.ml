@@ -1023,8 +1023,7 @@ let report_custom_error = from_env_variable "INFER_REPORT_CUSTOM_ERROR"
     cost *)
 let sound_dynamic_dispatch = from_env_variable "INFER_SOUND_DYNAMIC_DISPATCH"
 
-let use_jar_cache = from_env_variable "INFER_USE_JAR_CACHE"
-
+let use_jar_cache = true
 
 (** Parse Command Line Args *)
 
