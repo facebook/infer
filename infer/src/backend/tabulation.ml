@@ -819,22 +819,20 @@ let add_tainting_att_param_list prop param_nums formal_params att =
                " to be set as tainted/untainted ");
     prop
 
-(* Set Ataint attribute to list of parameters in a prop *)
-let add_param_taint proc_name formal_params prop param_nums =
-  let formal_params' = IList.map
-      (fun (p, _) -> Pvar.mk p proc_name) formal_params in
-  let taint_info = { Sil.taint_source = proc_name; taint_kind = Tk_unknown; } in
-  add_tainting_att_param_list prop param_nums formal_params' (Sil.Ataint taint_info)
-
-(* add Auntaint attribute to a callee_pname precondition *)
+(* Add Auntaint attribute to a callee_pname precondition *)
 let mk_pre pre formal_params callee_pname callee_attrs =
-  if Config.taint_analysis then
-    add_tainting_att_param_list
-      (Prop.normalize pre)
-      (Taint.accepts_sensitive_params callee_pname (Some callee_attrs))
-      formal_params
-      Sil.Auntaint
-    |> Prop.expose
+  if Config.taint_analysis
+  then
+    match Taint.accepts_sensitive_params callee_pname (Some callee_attrs) with
+    | [] -> pre
+    | tainted_param_nums ->
+        Taint.get_params_to_taint tainted_param_nums formal_params
+        |> IList.fold_left
+          (fun prop_acc (param, taint_kind) ->
+             let attr = Sil.Auntaint { taint_source = callee_pname; taint_kind; } in
+             Taint.add_tainting_attribute attr param prop_acc)
+          (Prop.normalize pre)
+        |> Prop.expose
   else pre
 
 let report_taint_error e taint_info callee_pname caller_pname calling_prop =
@@ -858,7 +856,7 @@ let check_taint_on_variadic_function callee_pname caller_pname actual_params cal
       | _::lst' -> n_tail lst' (n-1) in
   let tainted_params = Taint.accepts_sensitive_params callee_pname None in
   match tainted_params with
-  | [tp] when tp<0 ->
+  | [(tp, _)] when tp < 0 ->
       (* All actual params from abs(tp) should not be tainted. If we find one we give the warning *)
       let tp_abs = abs tp in
       L.d_strln ("Checking tainted actual parameters from parameter number "^ (string_of_int tp_abs) ^ " onwards.");
@@ -970,7 +968,7 @@ let do_taint_check caller_pname callee_pname calling_prop missing_pi sub actual_
     | Some (e, Sil.Ataint _) ->
         let taint_atoms, untaint_atoms = try Sil.ExpMap.find e acc_map with Not_found -> ([], []) in
         Sil.ExpMap.add e (atom :: taint_atoms, untaint_atoms) acc_map
-    | Some (e, Sil.Auntaint) ->
+    | Some (e, Sil.Auntaint _) ->
         let taint_atoms, untaint_atoms = try Sil.ExpMap.find e acc_map with Not_found -> ([], []) in
         Sil.ExpMap.add e (taint_atoms, atom :: untaint_atoms) acc_map
     | _ -> acc_map in

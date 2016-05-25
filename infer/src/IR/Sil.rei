@@ -266,7 +266,7 @@ and attribute =
   /** undefined value obtained by calling the given procedure */
   | Aundef of Procname.t item_annotation Location.t path_pos
   | Ataint of taint_info
-  | Auntaint
+  | Auntaint of taint_info
   | Alocked
   | Aunlocked
   /** value appeared in second argument of division at given path position */

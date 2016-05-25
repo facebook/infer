@@ -1358,24 +1358,25 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
       replace_actual_hpred actual actual_pt_havocd_var prop in
     IList.fold_left (fun p var -> havoc_actual_by_ref var p) prop actuals_by_ref
 
-and check_untainted exp caller_pname callee_pname prop =
+and check_untainted exp taint_kind caller_pname callee_pname prop =
   match Prop.get_taint_attribute prop exp with
-  | Some (Sil.Ataint source_pname) ->
+  | Some (Sil.Ataint taint_info) ->
       let err_desc =
         Errdesc.explain_tainted_value_reaching_sensitive_function
           prop
           exp
-          source_pname
+          taint_info
           callee_pname
           (State.get_loc ()) in
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, __POS__) in
       Reporting.log_warning caller_pname exn;
-      Prop.add_or_replace_exp_attribute prop exp (Sil.Auntaint)
+      Prop.add_or_replace_exp_attribute prop exp (Sil.Auntaint taint_info)
   | _ ->
       if !Config.footprint then
-        let untaint_attr = Sil.Const (Sil.Cattribute (Sil.Auntaint)) in
+        let taint_info = { Sil.taint_source = callee_pname; taint_kind; } in
+        let untaint_attr = Sil.Const (Sil.Cattribute (Sil.Auntaint taint_info)) in
         (* add untained(n_lexp) to the footprint *)
         Prop.conjoin_neq ~footprint:true exp untaint_attr prop
       else prop
@@ -1400,9 +1401,10 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       | param_nums ->
           let check_taint_if_nums_match (prop_acc, param_num) (actual_exp, _actual_typ) =
             let prop_acc' =
-              if IList.exists (fun num -> num = param_num) param_nums
-              then check_untainted actual_exp caller_pname callee_pname prop_acc
-              else prop_acc in
+              try
+                let _, taint_kind = IList.find (fun (num, _) -> num = param_num) param_nums in
+                check_untainted actual_exp taint_kind caller_pname callee_pname prop_acc
+              with Not_found -> prop_acc in
             prop_acc', param_num + 1 in
           IList.fold_left
             check_taint_if_nums_match

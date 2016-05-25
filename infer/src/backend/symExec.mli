@@ -31,7 +31,7 @@ val unknown_or_scan_call : is_scan:bool -> Sil.typ option -> Sil.item_annotation
 val check_variadic_sentinel : ?fails_on_nil:bool -> int -> int * int -> Builtin.t
 
 val check_untainted :
-  Sil.exp -> Procname.t -> Procname.t -> Prop.normal Prop.t -> Prop.normal Prop.t
+  Sil.exp -> Sil.taint_kind -> Procname.t -> Procname.t -> Prop.normal Prop.t -> Prop.normal Prop.t
 
 (** Check for arithmetic problems and normalize an expression. *)
 val check_arith_norm_exp :

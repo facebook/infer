@@ -320,29 +320,37 @@ let returns_tainted callee_pname callee_attrs_opt =
 
 let find_callee taint_infos callee_pname =
   try
-    IList.find
-      (fun (taint_info, _) -> Procname.equal taint_info.Sil.taint_source callee_pname)
-      taint_infos
-    |> snd
-  with Not_found -> []
+    Some
+      (IList.find
+         (fun (taint_info, _) -> Procname.equal taint_info.Sil.taint_source callee_pname)
+         taint_infos)
+  with Not_found -> None
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
 let accepts_sensitive_params callee_pname callee_attrs_opt =
   match find_callee taint_sinks callee_pname with
-  | [] ->
+  | None ->
       let _, param_annots = attrs_opt_get_annots callee_attrs_opt in
       let offset = if Procname.java_is_static callee_pname then 0 else 1 in
-      IList.mapi (fun param_num attr  -> (param_num + offset, attr)) param_annots
-      |> IList.filter
-        (fun (_, attr) ->
-           Annotations.ia_is_integrity_sink attr || Annotations.ia_is_privacy_sink attr)
-      |> IList.map fst
-  | tainted_params -> tainted_params
+      let indices_and_annots =
+        IList.mapi (fun param_num attr  -> param_num + offset, attr) param_annots in
+      let tag_tainted_indices acc (index, attr) =
+        if Annotations.ia_is_integrity_sink attr
+        then (index, Sil.Tk_privacy_annotation) :: acc
+        else if Annotations.ia_is_privacy_sink attr
+        then (index, Sil.Tk_privacy_annotation) :: acc
+        else acc in
+      IList.fold_left tag_tainted_indices [] indices_and_annots
+  | Some (taint_info, tainted_param_indices) ->
+      IList.map (fun param_num -> param_num, taint_info.Sil.taint_kind) tainted_param_indices
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)
 let tainted_params callee_pname =
-  find_callee func_with_tainted_params callee_pname
+  match find_callee func_with_tainted_params callee_pname with
+  | Some (taint_info, tainted_param_indices) ->
+      IList.map (fun param_num -> param_num, taint_info.Sil.taint_kind) tainted_param_indices
+  | None -> []
 
 let has_taint_annotation fieldname struct_typ =
   let fld_has_taint_annot (fname, _, annot) =
@@ -350,3 +358,28 @@ let has_taint_annotation fieldname struct_typ =
     (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in
   IList.exists fld_has_taint_annot struct_typ.Sil.instance_fields ||
   IList.exists fld_has_taint_annot struct_typ.Sil.static_fields
+
+(* add tainting attributes to a list of paramenters *)
+let get_params_to_taint tainted_param_nums formal_params =
+  let get_taint_kind index =
+    try Some (IList.find (fun (taint_index, _) -> index = taint_index) tainted_param_nums)
+    with Not_found -> None in
+  let collect_params_to_taint params_to_taint_acc (index, param) =
+    match get_taint_kind index with
+    | Some (_, taint_kind) -> (param, taint_kind) :: params_to_taint_acc
+    | None -> params_to_taint_acc in
+  let numbered_params = IList.mapi (fun i param -> (i, param)) formal_params in
+  IList.fold_left collect_params_to_taint [] numbered_params
+
+(* add tainting attribute to a pvar in a prop *)
+let add_tainting_attribute att pvar_param prop =
+  IList.fold_left
+    (fun prop_acc hpred ->
+       match hpred with
+       | Sil.Hpointsto (Sil.Lvar pvar, (Sil.Eexp (rhs, _)), _)
+         when Pvar.equal pvar pvar_param ->
+           L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
+                      (Pvar.to_string pvar));
+           Prop.add_or_replace_exp_attribute prop_acc rhs att
+       | _ -> prop_acc)
+    prop (Prop.get_sigma prop)

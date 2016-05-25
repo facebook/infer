@@ -541,6 +541,19 @@ let forward_tabulate tenv wl =
       let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
       let timestamp = Specs.get_timestamp summary in
       F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
+    let add_taint_attrs proc_name prop =
+      match Taint.tainted_params proc_name with
+      | [] -> prop
+      | tainted_param_nums ->
+          let formal_params' =
+            IList.map (fun (p, _) -> Pvar.mk p proc_name) formal_params in
+          Taint.get_params_to_taint tainted_param_nums formal_params'
+          |> IList.fold_left
+            (fun prop_acc (param, taint_kind) ->
+               let attr =
+                 Sil.Ataint { taint_source = proc_name; taint_kind; } in
+               Taint.add_tainting_attribute attr param prop_acc)
+            prop in
     let doit () =
       handled_some_exception := false;
       check_prop_size pathset_todo;
@@ -566,9 +579,9 @@ let forward_tabulate tenv wl =
           exe_iter
             (fun prop path cnt num_paths ->
                try
-                 let prop = if Config.taint_analysis then
-                     let tainted_params = Taint.tainted_params proc_name in
-                     Tabulation.add_param_taint proc_name formal_params prop tainted_params
+                 let prop =
+                   if Config.taint_analysis
+                   then add_taint_attrs proc_name prop
                    else prop in
                  L.d_strln
                    ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths);

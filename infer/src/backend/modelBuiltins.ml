@@ -380,7 +380,7 @@ let execute___check_untainted
   | [(lexp, _)], _ ->
       let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
       let n_lexp, prop = check_arith_norm_exp caller_pname lexp prop_ in
-      [(check_untainted n_lexp caller_pname callee_pname prop, path)]
+      [(check_untainted n_lexp Sil.Tk_unknown caller_pname callee_pname prop, path)]
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** take a pointer to a struct, and return the value of a hidden field in the struct *)
@@ -642,6 +642,18 @@ let execute___set_taint_attribute
       set_attr pdesc prop_ path exp (Sil.Ataint { Sil.taint_source; taint_kind})
   | _ ->
       (* note: we can also get this if [taint_kind] is not a string literal *)
+      raise (Exceptions.Wrong_argument_number __POS__)
+
+(** Set the attibute of the value as tainted *)
+let execute___set_untaint_attribute
+    ({ Builtin.pdesc; args; prop_; path; })
+  : Builtin.ret_typ =
+  match args with
+  | (exp, _) :: [] ->
+      let taint_source = Cfg.Procdesc.get_proc_name pdesc in
+      let taint_kind = Sil.Tk_unknown in (* TODO: change builtin to specify taint kind *)
+      set_attr pdesc prop_ path exp (Sil.Auntaint { Sil.taint_source; taint_kind})
+  | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
 let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
@@ -1070,7 +1082,7 @@ let _ = Builtin.register
     "__set_taint_attribute" execute___set_taint_attribute
 let _ = Builtin.register
     (* set the attribute of the parameter as untainted *)
-    "__set_untaint_attribute" (execute___set_attr Sil.Auntaint)
+    "__set_untaint_attribute" execute___set_untaint_attribute
 let __set_locked_attribute = Builtin.register
     (* set the attribute of the parameter as locked *)
     "__set_locked_attribute" execute___set_locked_attribute

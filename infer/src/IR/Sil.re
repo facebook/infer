@@ -693,7 +693,7 @@ and attribute =
   /** undefined value obtained by calling the given procedure, plus its return value annots */
   | Aundef of Procname.t item_annotation Location.t path_pos
   | Ataint of taint_info
-  | Auntaint
+  | Auntaint of taint_info
   | Alocked
   | Aunlocked
   /** value appeared in second argument of division at given path position */
@@ -1276,7 +1276,7 @@ let attribute_to_category att =>
   | Aresource _
   | Adangling _ => ACresource
   | Ataint _
-  | Auntaint => ACtaint
+  | Auntaint _ => ACtaint
   | Alocked
   | Aunlocked => AClock
   | Aautorelease => ACautorelease
@@ -1539,9 +1539,9 @@ and attribute_compare (att1: attribute) (att2: attribute) :int =>
   | (Ataint ti1, Ataint ti2) => taint_info_compare ti1 ti2
   | (Ataint _, _) => (-1)
   | (_, Ataint _) => 1
-  | (Auntaint, Auntaint) => 0
-  | (Auntaint, _) => (-1)
-  | (_, Auntaint) => 1
+  | (Auntaint ti1, Auntaint ti2) => taint_info_compare ti1 ti2
+  | (Auntaint _, _) => (-1)
+  | (_, Auntaint _) => 1
   | (Alocked, Alocked) => 0
   | (Alocked, _) => (-1)
   | (_, Alocked) => 1
@@ -2236,7 +2236,7 @@ and attribute_to_string pe =>
       ":" ^
       string_of_int loc.Location.line
   | Ataint {taint_source} => "TAINTED[" ^ Procname.to_string taint_source ^ "]"
-  | Auntaint => "UNTAINTED"
+  | Auntaint _ => "UNTAINTED"
   | Alocked => "LOCKED"
   | Aunlocked => "UNLOCKED"
   | Adiv0 (_, _) => "DIV0"
