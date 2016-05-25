@@ -766,8 +766,10 @@ and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
 
+(* clang-plugin normalizes filenames *)
 and source_file =
-  CLOpt.mk_string_opt ~long:"source-file" ~short:"c" ~meta:"file" "File to translate"
+  CLOpt.mk_string_opt ~long:"source-file" ~short:"c" ~f:filename_to_absolute
+    ~meta:"file" "File to translate"
 
 (** command-line option to print the location of the copy of a source file *)
 and source_file_copy =
