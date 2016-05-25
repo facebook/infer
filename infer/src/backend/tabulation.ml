@@ -792,33 +792,6 @@ let combine
     print_results actual_pre (IList.map fst results);
     Some results
 
-(* add tainting attribute to a pvar in a prop *)
-let add_tainting_attribute att pvar_param prop =
-  IList.fold_left
-    (fun prop_acc hpred ->
-       match hpred with
-       | Sil.Hpointsto (Sil.Lvar pvar, (Sil.Eexp (rhs, _)), _)
-         when Pvar.equal pvar pvar_param ->
-           L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
-                      (Pvar.to_string pvar));
-           Prop.add_or_replace_exp_attribute prop_acc rhs att
-       | _ -> prop_acc)
-    prop (Prop.get_sigma prop)
-
-(* add tainting attributes to a list of paramenters *)
-let add_tainting_att_param_list prop param_nums formal_params att =
-  match param_nums with
-  | [n] when n<0 -> prop
-  | _ ->
-      try
-    IList.map (fun n -> IList.nth formal_params n) param_nums
-    |> IList.fold_left (fun prop param -> add_tainting_attribute att param prop) prop
-  with Failure _ | Invalid_argument _  ->
-    L.d_strln ("TAINT ANALYSIS: WARNING, tainting framework " ^
-               "specifies incorrect parameter number " ^
-               " to be set as tainted/untainted ");
-    prop
-
 (* Add Auntaint attribute to a callee_pname precondition *)
 let mk_pre pre formal_params callee_pname callee_attrs =
   if Config.taint_analysis
