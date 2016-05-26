@@ -110,7 +110,12 @@ let get_parameters tenv function_method_decl_info =
     match par with
     | Clang_ast_t.ParmVarDecl (_, name_info, type_ptr, var_decl_info) ->
         let name = General_utils.get_var_name_string name_info var_decl_info in
-        (name, type_ptr)
+        let param_typ = CTypes_decl.type_ptr_to_sil_type tenv type_ptr in
+        let type_ptr' = match param_typ with
+          | Sil.Tstruct _ when General_utils.is_cpp_translation Config.clang_lang ->
+              Ast_expressions.create_reference_type type_ptr
+          | _ -> type_ptr in
+        (name, type_ptr')
     | _ -> assert false in
   let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
   get_class_param function_method_decl_info @ pars @ get_return_param tenv function_method_decl_info

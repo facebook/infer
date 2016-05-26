@@ -107,6 +107,8 @@ let create_struct_type struct_name = `StructType struct_name
 
 let create_pointer_type typ = `PointerOf typ
 
+let create_reference_type typ = `ReferenceOf typ
+
 let create_integer_literal n =
   let stmt_info = dummy_stmt_info () in
   let expr_info = {

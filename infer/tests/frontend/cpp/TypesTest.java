@@ -34,4 +34,10 @@ public class TypesTest {
       throws InterruptedException, IOException, InferException {
     frontendTest("typeid_expr.cpp");
   }
+
+  @Test
+  public void structPassByValueDotFilesMatch()
+      throws InterruptedException, IOException, InferException {
+    frontendTest("struct_pass_by_value.cpp");
+  }
 }

@@ -96,14 +96,14 @@ digraph iCFG {
 	
 
 	 19 -> 24 ;
-18 [label="18:  Return Stmt \n   n$0=*&i1.val:int  [line 21]\n  n$1=*&i2.val:int  [line 21]\n  *&return:_Bool =(n$0 != n$1) [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&i1); [line 21]\n  NULLIFY(&i2); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+18 [label="18:  Return Stmt \n   n$0=*&i1:class iterator & [line 21]\n  n$1=*n$0.val:int  [line 21]\n  n$2=*&i2:class iterator & [line 21]\n  n$3=*n$2.val:int  [line 21]\n  *&return:_Bool =(n$1 != n$3) [line 21]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 21]\n  NULLIFY(&i1); [line 21]\n  NULLIFY(&i2); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
 	
 
 	 18 -> 17 ;
 17 [label="17: Exit operator!= \n  " color=yellow style=filled]
 	
 
-16 [label="16: Start operator!=\nFormals:  i1:class iterator  i2:class iterator \nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+16 [label="16: Start operator!=\nFormals:  i1:class iterator & i2:class iterator &\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
 	
 
 	 16 -> 18 ;

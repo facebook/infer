@@ -475,7 +475,13 @@ struct
     let open CContext in
     let context = trans_state.context in
     let _, _, type_ptr = Ast_utils.get_info_from_decl_ref decl_ref in
-    let typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let ast_typ = CTypes_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let typ = match ast_typ with
+      | Sil.Tstruct _ when decl_ref.Clang_ast_t.dr_kind = `ParmVar ->
+          if General_utils.is_cpp_translation Config.clang_lang then
+            Sil.Tptr (ast_typ, Sil.Pk_reference)
+          else ast_typ
+      | _ -> ast_typ in
     let procname = Cfg.Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
@@ -492,10 +498,11 @@ struct
       else [(e, typ)] in
     Printing.log_out "\n\n PVAR ='%s'\n\n" (Pvar.to_string pvar);
     let res_trans = { empty_res_trans with exps = exps } in
-    if CTypes.is_reference_type type_ptr then
-      (* dereference pvar due to the behavior of reference types in clang's AST *)
-      dereference_value_from_result sil_loc res_trans ~strip_pointer:true
-    else res_trans
+    match typ with
+    | Sil.Tptr (_, Sil.Pk_reference) ->
+        (* dereference pvar due to the behavior of reference types in clang's AST *)
+        dereference_value_from_result sil_loc res_trans ~strip_pointer:true
+    | _ -> res_trans
 
   let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init =
     let open CContext in

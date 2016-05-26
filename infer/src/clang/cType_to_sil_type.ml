@@ -177,6 +177,9 @@ and type_ptr_to_sil_type translate_decl tenv type_ptr =
   | `PointerOf typ ->
       let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
       Sil.Tptr (sil_typ, Sil.Pk_pointer)
+  | `ReferenceOf typ ->
+      let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
+      Sil.Tptr (sil_typ, Sil.Pk_reference)
   | `ClassType (name, lang) ->
       let kind = match lang with `OBJC -> Csu.Objc | `CPP -> Csu.CPP in
       Sil.Tvar (CTypes.mk_classname name kind)

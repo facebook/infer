@@ -10,14 +10,14 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Constructor Init \n   n$0=*&this:class Person * [line 14]\n  n$1=*&l.top:int  [line 14]\n  *n$0.age:int =n$1 [line 14]\n  REMOVE_TEMPS(n$0,n$1); [line 14]\n  NULLIFY(&l); [line 14]\n  NULLIFY(&this); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+3 [label="3:  Constructor Init \n   n$0=*&this:class Person * [line 14]\n  n$1=*&l:class Insets & [line 14]\n  n$2=*n$1.top:int  [line 14]\n  *n$0.age:int =n$2 [line 14]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 14]\n  NULLIFY(&l); [line 14]\n  NULLIFY(&this); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
 	
 
 	 3 -> 2 ;
 2 [label="2: Exit Person_Person \n  " color=yellow style=filled]
 	
 
-1 [label="1: Start Person_Person\nFormals:  this:class Person * l:class Insets \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+1 [label="1: Start Person_Person\nFormals:  this:class Person * l:class Insets &\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 1 -> 3 ;
