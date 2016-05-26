@@ -747,57 +747,57 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let typ =
       CTypes_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
-    (match stmt_list with
-     | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
-         let rhs_owning_method = CTrans_utils.is_owning_method s2 in
-         (* NOTE: we create a node only if required. In that case this node *)
-         (* becomes the successor of the nodes that may be created when     *)
-         (* translating the operands.                                       *)
-         let res_trans_e1 = exec_with_self_exception instruction trans_state' s1 in
-         let (var_exp, var_exp_typ)  = extract_exp_from_list res_trans_e1.exps
-             "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
-         let trans_state'' = { trans_state' with var_exp_typ = Some (var_exp, var_exp_typ)  } in
-         let res_trans_e2 =
-           (* translation of s2 is done taking care of block special case *)
-           exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state''
-             s2 stmt_info in
-         let (sil_e2, _) = extract_exp_from_list res_trans_e2.exps
-             "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
-         let binop_res_trans, exp_to_parent =
-           if IList.exists (Sil.exp_equal var_exp) res_trans_e2.initd_exps then [], []
-           else
-             let exp_op, instr_bin =
-               CArithmetic_trans.binary_operation_instruction
-                 context binary_operator_info var_exp typ sil_e2 sil_loc rhs_owning_method in
+    match stmt_list with
+    | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
+        let rhs_owning_method = CTrans_utils.is_owning_method s2 in
+        (* NOTE: we create a node only if required. In that case this node *)
+        (* becomes the successor of the nodes that may be created when     *)
+        (* translating the operands.                                       *)
+        let res_trans_e1 = exec_with_self_exception instruction trans_state' s1 in
+        let (var_exp, var_exp_typ)  = extract_exp_from_list res_trans_e1.exps
+            "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
+        let trans_state'' = { trans_state' with var_exp_typ = Some (var_exp, var_exp_typ)  } in
+        let res_trans_e2 =
+          (* translation of s2 is done taking care of block special case *)
+          exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state''
+            s2 stmt_info in
+        let (sil_e2, _) = extract_exp_from_list res_trans_e2.exps
+            "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
+        let binop_res_trans, exp_to_parent =
+          if IList.exists (Sil.exp_equal var_exp) res_trans_e2.initd_exps then [], []
+          else
+            let exp_op, instr_bin =
+              CArithmetic_trans.binary_operation_instruction
+                context binary_operator_info var_exp typ sil_e2 sil_loc rhs_owning_method in
 
-             (* Create a node if the priority if free and there are instructions *)
-             let creating_node =
-               (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
-               (IList.length instr_bin >0) in
-             let extra_instrs, exp_to_parent =
-               if (is_binary_assign_op binary_operator_info)
-               (* assignment operator result is lvalue in CPP, rvalue in C, *)
-               (* hence the difference *)
-               && (not (General_utils.is_cpp_translation Config.clang_lang))
-               && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
-                 (* We are in this case when an assignment is inside        *)
-                 (* another operator that creates a node. Eg. another       *)
-                 (* assignment.  *)
-                 (* As no node is created here ids are passed to the parent *)
-                 let id = Ident.create_fresh Ident.knormal in
-                 let res_instr = Sil.Letderef (id, var_exp, var_exp_typ, sil_loc) in
-                 [res_instr], Sil.Var id
-               ) else (
-                 [], exp_op) in
-             let binop_res_trans = { empty_res_trans with
-                                     instrs = instr_bin @ extra_instrs
-                                   } in
-             [binop_res_trans], [(exp_to_parent, var_exp_typ)] in
-         let all_res_trans = [res_trans_e1; res_trans_e2] @ binop_res_trans in
-         let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
-             nname stmt_info all_res_trans in
-         { res_trans_to_parent with exps = exp_to_parent }
-     | _ -> assert false) (* Binary operator should have two operands *)
+            (* Create a node if the priority if free and there are instructions *)
+            let creating_node =
+              (PriorityNode.own_priority_node trans_state_pri.priority stmt_info) &&
+              (IList.length instr_bin >0) in
+            let extra_instrs, exp_to_parent =
+              if (is_binary_assign_op binary_operator_info)
+              (* assignment operator result is lvalue in CPP, rvalue in C, *)
+              (* hence the difference *)
+              && (not (General_utils.is_cpp_translation Config.clang_lang))
+              && ((not creating_node) || (is_return_temp trans_state.continuation)) then (
+                (* We are in this case when an assignment is inside        *)
+                (* another operator that creates a node. Eg. another       *)
+                (* assignment.  *)
+                (* As no node is created here ids are passed to the parent *)
+                let id = Ident.create_fresh Ident.knormal in
+                let res_instr = Sil.Letderef (id, var_exp, var_exp_typ, sil_loc) in
+                [res_instr], Sil.Var id
+              ) else (
+                [], exp_op) in
+            let binop_res_trans = { empty_res_trans with
+                                    instrs = instr_bin @ extra_instrs
+                                  } in
+            [binop_res_trans], [(exp_to_parent, var_exp_typ)] in
+        let all_res_trans = [res_trans_e1; res_trans_e2] @ binop_res_trans in
+        let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+            nname stmt_info all_res_trans in
+        { res_trans_to_parent with exps = exp_to_parent }
+    | _ -> assert false (* Binary operator should have two operands *)
 
   and callExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
@@ -1140,6 +1140,7 @@ struct
          }
      | _ -> assert false)
 
+  (* The GNU extension to the conditional operator which allows the middle operand to be omitted. *)
   and binaryConditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     match stmt_list with
     | [stmt1; ostmt1; ostmt2; stmt2]
@@ -1240,7 +1241,7 @@ struct
         instrs = res_trans_s1.instrs@res_trans_s2.instrs;
         exps = [(e_cond, typ1)];
       } in
-    Printing.log_out "Translating Condition for Conditional/Loop \n";
+    Printing.log_out "Translating Condition for If-then-else/Loop/Conditional Operator \n";
     let open Clang_ast_t in
     match cond with
     | BinaryOperator(_, [s1; s2], _, boi) ->
@@ -2286,6 +2287,20 @@ struct
     let trans_state' = { trans_state with obj_bridged_cast_typ = Some typ } in
     instruction trans_state' stmt
 
+  and binaryOperator_trans_shortc trans_state stmt_info stmt_list expr_info binary_operator_info =
+    let open Clang_ast_t in
+    match binary_operator_info.boi_kind with
+    | `LAnd | `LOr  ->
+        (* For LAnd/LOr we compiles a binary expression bo into an semantic equivalent
+           conditional operator 'bo ? 1:0'.
+           The conditional operator takes care of shortcircuit when/where needed *)
+        let bo = BinaryOperator (stmt_info, stmt_list, expr_info, binary_operator_info) in
+        let stmt_list' =
+          [bo; Ast_expressions.create_integer_literal "1"; Ast_expressions.create_integer_literal "0"] in
+        conditionalOperator_trans trans_state stmt_info stmt_list' expr_info
+    | _  -> binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
+
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -2307,8 +2322,8 @@ struct
     | ArraySubscriptExpr(_, stmt_list, expr_info) ->
         arraySubscriptExpr_trans trans_state expr_info stmt_list
 
-    | BinaryOperator(stmt_info, stmt_list, expr_info, binary_operator_info) ->
-        binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
+    | BinaryOperator (stmt_info, stmt_list, expr_info, binary_operator_info) ->
+        binaryOperator_trans_shortc trans_state stmt_info stmt_list expr_info binary_operator_info
 
     | CallExpr(stmt_info, stmt_list, ei) ->
         (match is_dispatch_function stmt_list with
@@ -2373,7 +2388,7 @@ struct
     | NullStmt _ ->
         nullStmt_trans trans_state.succ_nodes
 
-    | CompoundAssignOperator(stmt_info, stmt_list, expr_info, binary_operator_info, _) ->
+    | CompoundAssignOperator (stmt_info, stmt_list, expr_info, binary_operator_info, _) ->
         binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
 
     | DeclStmt(stmt_info, _, decl_list) ->

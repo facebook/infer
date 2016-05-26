@@ -45,6 +45,8 @@ val create_struct_type : string -> type_ptr
 
 val create_pointer_type : type_ptr -> type_ptr
 
+val create_integer_literal : string -> stmt
+
 val create_reference_type : type_ptr -> type_ptr
 
 val make_objc_ivar_decl : decl_info -> type_ptr -> named_decl_info -> decl

@@ -20,30 +20,39 @@ import java.io.IOException;
 import utils.InferException;
 import utils.InferResults;
 
-public class LocalVarsTest {
+public class NullDereferenceShortCircuitTest {
 
-  public static final String local_vars_file =
-      "local_vars/local_vars.c";
+  public static final String SOURCE_FILE =
+      "null_dereference/short.c";
 
-  public static final String DIVIDE_BY_ZERO = "DIVIDE_BY_ZERO";
+
+  public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
 
   private static InferResults inferResults;
 
   @BeforeClass
   public static void runInfer() throws InterruptedException, IOException {
-    inferResults = InferResults.loadCInferResults(LocalVarsTest.class, local_vars_file);
+    inferResults = InferResults.loadCInferResults(
+        NullDereferenceShortCircuitTest.class,
+        SOURCE_FILE);
   }
 
   @Test
-  public void whenInferRunsOnLocalVarsThenOnlyTheExpectedErrorsAreFound()
-      throws InterruptedException, IOException, InferException {
-    String[] expectedProcedures = {"m1", "m2", "mm", "t"};
+  public void nullDereferenceTest() throws InterruptedException, IOException, InferException {
+    String[] procedures = {
+        "f_error",
+        "g_error",
+        "l_error"
+    };
+    System.out.println(inferResults.toString());
     assertThat(
-        "No unexpected errors should be found", inferResults,
+        "Results should contain null pointer dereference error",
+        inferResults,
         containsExactly(
-            DIVIDE_BY_ZERO,
-            local_vars_file,
-            expectedProcedures));
+            NULL_DEREFERENCE,
+            SOURCE_FILE,
+            procedures
+        )
+    );
   }
-
 }
