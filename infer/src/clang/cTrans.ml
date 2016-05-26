@@ -2463,8 +2463,11 @@ struct
     | CXXScalarValueInitExpr (_, _, expr_info) ->
         cxxScalarValueInitExpr_trans trans_state expr_info
 
-    | ObjCBoxedExpr (stmt_info, stmts, info, sel) ->
-        objCBoxedExpr_trans trans_state info sel stmt_info stmts
+    | ObjCBoxedExpr (stmt_info, stmts, info, boxed_expr_info) ->
+        (match boxed_expr_info.Clang_ast_t.obei_boxing_method with
+         | Some sel ->
+             objCBoxedExpr_trans trans_state info sel stmt_info stmts
+         | None -> assert false)
 
     | ObjCArrayLiteral (stmt_info, stmts, info) ->
         objCArrayLiteral_trans trans_state info stmt_info stmts
