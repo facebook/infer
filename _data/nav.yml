@@ -21,3 +21,7 @@
 - title: GitHub
   href: http://github.com/facebook/infer
   category: github
+
+- title: Who Uses Infer?
+  href: users.html
+  category: users

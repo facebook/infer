@@ -22,21 +22,6 @@ Infer reports null pointer exceptions and resource leaks in Android and Java cod
 ### iOS
 In addition to this, it reports memory leak problems in iOS and C code.  
 
-## Who Uses Infer?
-
-It is used as part of the Facebook development process, where it runs on code changes for mobile 
-apps - these include the main Facebook apps for Android and iOS, Facebook Messenger, Instagram, WhatsApp,
-and other apps which are used by over a billion people.
-
-In addition to Facebook, where Infer is being developed, Infer is used by a number of companies:
-
-- [Kiuwan](https://www.kiuwan.com/)
-- [Marks & Spencer](https://www.marksandspencer.com/)
-- [Spotify](https://www.spotify.com/)
-- [Uber](https://www.uber.com/)
-
-Do you run Infer on your app or program? Add yourself to this list with a [pull request](https://github.com/facebook/infer/edit/gh-pages/index.md)!
-
 ## Using Infer
 
 Start with the [Getting Started](docs/getting-started.html) guide and our other [docs](docs/) to download and try 
