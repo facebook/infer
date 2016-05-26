@@ -2528,17 +2528,6 @@ let prop_normal_vars_to_primed_vars p =
   Sil.fav_filter_ident fav Ident.is_normal;
   exist_quantify fav p
 
-(** Rename all primed variables fresh *)
-let prop_rename_primed_fresh (p : normal t) : normal t =
-  let ids_primed =
-    let fav = prop_fav p in
-    let ids = Sil.fav_to_list fav in
-    IList.filter Ident.is_primed ids in
-  let ren_sub =
-    let f i = (i, Sil.Var (Ident.create_fresh Ident.kprimed)) in
-    Sil.sub_of_list (IList.map f ids_primed) in
-  prop_ren_sub ren_sub p
-
 (** convert the primed vars to normal vars. *)
 let prop_primed_vars_to_normal_vars (p : normal t) : normal t =
   let fav = prop_fav p in

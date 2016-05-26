@@ -398,9 +398,6 @@ val prop_normal_vars_to_primed_vars : normal t -> normal t
 (** convert the primed vars to normal vars. *)
 val prop_primed_vars_to_normal_vars : normal t -> normal t
 
-(** Rename all primed variables. *)
-val prop_rename_primed_fresh : normal t -> normal t
-
 (** Build an exposed prop from pi *)
 val from_pi : pi -> exposed t
 
