@@ -21,8 +21,8 @@ In addition to Facebook, Infer is used at
 
 - [Kiuwan](https://www.kiuwan.com/)
 - [Marks & Spencer](https://www.marksandspencer.com/)
+- [Sky](https://www.sky.com/)
 - [Spotify](https://www.spotify.com/)
 - [Uber](https://www.uber.com/)
-- [Sky](https://www.sky.com/)
 
 *Do you run Infer on your app or program? Add yourself to this list with a [pull request](https://github.com/facebook/infer/edit/gh-pages/users.md)!*
