@@ -66,7 +66,7 @@ let do_source_file source_file ast =
   let tenv_file = DB.source_dir_get_internal_file source_dir ".tenv" in
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
-  Preanal.doit cfg call_graph tenv;
+  Cfg.iter_proc_desc cfg (fun _ pdesc -> Preanal.doit pdesc call_graph tenv);
   Cg.store_to_file cg_file call_graph;
   Cfg.store_cfg_to_file cfg_file true cfg;
   (*Logging.out "Tenv %a@." Sil.pp_tenv tenv;*)

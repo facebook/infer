@@ -51,7 +51,9 @@ let store_icfg tenv cg cfg program =
     let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
     let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
     if Config.create_harness then Harness.create_harness cfg cg tenv;
-    Preanal.doit ~f_translate_typ:(Some f_translate_typ) cfg cg tenv;
+    Cfg.iter_proc_desc
+      cfg
+      (fun _ pdesc -> Preanal.doit ~f_translate_typ:(Some f_translate_typ) pdesc cg tenv);
     Cg.store_to_file cg_file cg;
     Cfg.store_cfg_to_file cfg_file true cfg;
     if Config.debug_mode then

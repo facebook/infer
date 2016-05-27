@@ -35,7 +35,7 @@ let store_icfg tenv cg cfg =
   let get_internal_file = DB.source_dir_get_internal_file source_dir in
   let cg_file = get_internal_file ".cg" in
   let cfg_file = get_internal_file ".cfg" in
-  Preanal.doit cfg cg tenv;
+  Cfg.iter_proc_desc cfg (fun _ pdesc -> Preanal.doit pdesc cg tenv);
   Cg.store_to_file cg_file cg;
   Cfg.store_cfg_to_file cfg_file true cfg;
   if Config.debug_mode then

@@ -11,7 +11,7 @@
 open! Utils
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
-let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
+let add_dispatch_calls pdesc cg tenv f_translate_typ_opt =
   let pname_translate_types pname =
     match f_translate_typ_opt with
     | Some f_translate_typ ->
@@ -78,12 +78,11 @@ let add_dispatch_calls cfg cg tenv f_translate_typ_opt =
     if has_dispatch_call instrs then
       IList.map replace_dispatch_calls instrs
       |> Cfg.Node.replace_instrs node in
-  let proc_add_dispach_calls pname pdesc =
-    Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc in
-  Cfg.iter_proc_desc cfg proc_add_dispach_calls
+  let pname = Cfg.Procdesc.get_proc_name pdesc in
+  Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
 
 (** add instructions to perform abstraction *)
-let add_abstraction_instructions cfg =
+let add_abstraction_instructions pdesc =
   let open Cfg in
   (* true if there is a succ node s.t.: it is an exit node, or the succ of >1 nodes *)
   let converging_node node =
@@ -106,11 +105,10 @@ let add_abstraction_instructions cfg =
     | Node.Prune_node _
     | Node.Skip_node _ ->
         converging_node node in
-  let all_nodes = Node.get_all_nodes cfg in
   let do_node node =
     let loc = Node.get_last_loc node in
     if node_requires_abstraction node then Node.append_instrs node [Sil.Abstract loc] in
-  IList.iter do_node all_nodes
+  Cfg.Procdesc.iter_nodes do_node pdesc
 
 module BackwardCfg = ProcCfg.Backward(ProcCfg.Exceptional)
 
@@ -180,7 +178,7 @@ module NullifyAnalysis =
     (Scheduler.ReversePostorder (ProcCfg.Exceptional))
     (NullifyTransferFunctions)
 
-let add_nullify_instrs tenv _ pdesc =
+let add_nullify_instrs pdesc tenv =
   let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
   let proc_data_no_extras = ProcData.make_default pdesc tenv in
   let liveness_inv_map = LivenessAnalysis.exec_cfg liveness_proc_cfg proc_data_no_extras in
@@ -239,8 +237,8 @@ let add_nullify_instrs tenv _ pdesc =
     let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in
     node_add_nullify_instructions exit_node (AddressTaken.Domain.elements address_taken_vars)
 
-let doit ?(f_translate_typ=None) cfg cg tenv =
-  Cfg.iter_proc_desc cfg (add_nullify_instrs tenv);
+let doit ?(f_translate_typ=None) pdesc cg tenv =
+  add_nullify_instrs pdesc tenv;
   if !Config.curr_language = Config.Java
-  then add_dispatch_calls cfg cg tenv f_translate_typ;
-  add_abstraction_instructions cfg;
+  then add_dispatch_calls pdesc cg tenv f_translate_typ;
+  add_abstraction_instructions pdesc;
