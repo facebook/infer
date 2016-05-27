@@ -1,11 +1,8 @@
 ---
-id: adding-checkers
+docid: adding-checkers
 title: Adding checkers
 layout: docs
 permalink: /docs/adding-checkers.html
-section: Dev Guide
-section_order: 04
-order: 01
 ---
 
 ## How can I create my own checkers?
@@ -42,7 +39,7 @@ It is important that you understand the generated CFG since this is the abstract
 Infer is built with [OCaml](https://ocaml.org).
 This is a programming language that combines both functional and imperative programming.
 If you are not familiar with OCaml, it might be hard at the beginning to understand the code.
-Take your time to review the [basics](https://ocaml.org/learn/tutorials/basics.html) and do some [exercises](https://ocaml.org/learn/tutorials/99problems.html). 
+Take your time to review the [basics](https://ocaml.org/learn/tutorials/basics.html) and do some [exercises](https://ocaml.org/learn/tutorials/99problems.html).
 
 
 ## Let's go
@@ -150,7 +147,7 @@ And in file ```procname.mli``` add the respective signature:
 val java_is_print_method : t -> bool
 ```
 
-So our implementation is done. 
+So our implementation is done.
 Now we have to register it as an enabled Checker.
 
 First we have to make ```callback_my_simple_checker``` available outside module ```Checkers``` by adding its signature to ```checkers.mli```:
@@ -191,7 +188,7 @@ class Hello {
 		println();
 		return s.length();
 	}
-}	
+}
 ```
 
 Notice that only ```System.out.println``` is being detected.

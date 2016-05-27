@@ -1,11 +1,8 @@
 ---
-id: adding-models
+docid: adding-models
 title: Adding models
 layout: docs
 permalink: /docs/adding-models.html
-section: User Guide
-section_order: 01
-order: 06
 ---
 
 ## Why do we need models

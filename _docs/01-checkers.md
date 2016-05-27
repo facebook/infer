@@ -1,11 +1,8 @@
 ---
-id: checkers
+docid: checkers
 title: "Infer : Checkers"
 layout: docs
 permalink: /docs/checkers.html
-section: User Guide
-section_order: 01
-order: 04
 ---
 
 The Infer analyzer performs sophisticated interprocedural static
@@ -22,5 +19,5 @@ The checkers can be run by adding the option `-a checkers` to the analysis comma
 infer -a checkers -- javac Test.java
 ```
 
-At the moment, we have the checker 
-[immutable cast](docs/checkers-bug-types.html#CHECKERS_IMMUTABLE_CAST). 
+At the moment, we have the checker
+[immutable cast](docs/checkers-bug-types.html#CHECKERS_IMMUTABLE_CAST).

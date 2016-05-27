@@ -1,11 +1,8 @@
 ---
-id: getting-started
+docid: getting-started
 title: Getting started with Infer
 layout: docs
 permalink: /docs/getting-started.html
-section: Quick Start
-section_order: 00
-order: 01
 ---
 
 ## Install Infer on Mac

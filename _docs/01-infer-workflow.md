@@ -1,11 +1,8 @@
 ---
-id: infer-workflow
+docid: infer-workflow
 title: Infer workflow
 layout: docs
 permalink: /docs/infer-workflow.html
-section: User Guide
-section_order: 01
-order: 01
 ---
 
 This page documents several ways of running Infer, that you can adapt

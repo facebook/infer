@@ -1,14 +1,11 @@
 ---
-id: eradicate-warnings
+docid: eradicate-warnings
 title: Eradicate warnings
 layout: docs
 permalink: /docs/eradicate-warnings.html
-section: Bug Types Reference
-section_order: 03
-order: 02
 ---
 
-Below you will find a description of all the warnings reported by 
+Below you will find a description of all the warnings reported by
 [Eradicate](/docs/eradicate.html).
 
 - [Eradicate null field access](/docs/eradicate-warnings.html#ERADICATE_NULL_FIELD_ACCESS)

@@ -1,23 +1,20 @@
 ---
-id: infer-bug-types
+docid: infer-bug-types
 title: Infer bug types
 layout: docs
 permalink: /docs/infer-bug-types.html
-section: Bug Types Reference
-section_order: 03
-order: 01
 ---
 
 Here is an overview of the types of bugs currently reported by Infer.
 
 - Bugs reported in Java
-  - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
+  - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK)
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
   - [Context leak](/docs/infer-bug-types.html#CONTEXT_LEAK)
   - [Tainted value reaching sensitive function](/docs/infer-bug-types.html#TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION)
 
 - Bugs reported in C and Objective-C
-  - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK) 
+  - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK)
   - [Memory leak](/docs/infer-bug-types.html#MEMORY_LEAK)
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
   - [Premature nil termination argument](/docs/infer-bug-types.html#PREMATURE_NIL_TERMINATION_ARGUMENT)
@@ -36,7 +33,7 @@ Here is an overview of the types of bugs currently reported by Infer.
 
 ## <a name="RESOURCE_LEAK"></a> Resource leak
 
-Infer reports resource leaks in C, Objective-C and Java. In general, resources are entities such as files, sockets, connections, etc, that need to be closed after being used. 
+Infer reports resource leaks in C, Objective-C and Java. In general, resources are entities such as files, sockets, connections, etc, that need to be closed after being used.
 
 ### Resource leak in C
 
@@ -293,17 +290,17 @@ This error type is only reported in C and Objective-C code. In Java we do not re
 In C, Infer reports memory leaks when objects are created with `malloc` and not freed. For example:
 
 ```c
--(void) memory_leak_bug { 
+-(void) memory_leak_bug {
     struct Person *p = malloc(sizeof(struct Person));
 }
 ```
 
 ### Memory leak in Objective-C
 
-Additionally, in Objective-C, Infer reports memory leaks that happen when objects from Core Foundation or Core Graphics don't get released. 
+Additionally, in Objective-C, Infer reports memory leaks that happen when objects from Core Foundation or Core Graphics don't get released.
 
 ```objc
--(void) memory_leak_bug_cf { 
+-(void) memory_leak_bug_cf {
     CGPathRef shadowPath = CGPathCreateWithRect(self.inputView.bounds, NULL); //object created and not released.
 }
 ```
@@ -341,7 +338,7 @@ You can fix a retain cycle in ARC by using __weak variables or weak properties f
 
 ## <a name="NULL_DEREFERENCE"></a> Null Dereference
 
-Infer reports null dereference bugs in C, Objective-C and Java. The issue is about a pointer that can be `null` 
+Infer reports null dereference bugs in C, Objective-C and Java. The issue is about a pointer that can be `null`
 and it is dereferenced. This leads to a crash in all the above languages.
 
 ### Null dereference in C
@@ -359,14 +356,14 @@ int get_age(struct Person *who) {
 }
 int null_pointer_interproc() {
   struct Person *joe = 0;
-  return get_age(joe); 
+  return get_age(joe);
 }
 ```
 
-### Null dereference in Objective-C 
+### Null dereference in Objective-C
 
-In Objective-C, null dereferences are less common than in Java, but they still happen and their cause can be hidden. 
-In general, passing a message to nil does not cause a crash and returns `nil`, but dereferencing a pointer directly 
+In Objective-C, null dereferences are less common than in Java, but they still happen and their cause can be hidden.
+In general, passing a message to nil does not cause a crash and returns `nil`, but dereferencing a pointer directly
 does cause a crash as well as calling a `nil` block.C
 
 ```objc
@@ -379,7 +376,7 @@ does cause a crash as well as calling a `nil` block.C
 }
 ```
 
-Moreover, there are functions from the libraries that do not allow `nil` to 
+Moreover, there are functions from the libraries that do not allow `nil` to
 be passed as argument. Here are some examples:
 
 
@@ -451,8 +448,8 @@ or when the parameter is a block:
    }
 ```
 
-Possible solutions are adding a check for `nil`, or making sure that the method is not called with `nil`. When an argument will never 
-be `nil`,  you can add the annotation `nonnull` to the argument's type, to tell Infer (and the type system), that the argument 
+Possible solutions are adding a check for `nil`, or making sure that the method is not called with `nil`. When an argument will never
+be `nil`,  you can add the annotation `nonnull` to the argument's type, to tell Infer (and the type system), that the argument
 won't be `nil`. This will silence the warning.
 
 ## <a name="IVAR_NOT_NULL_CHECKED"></a> Ivar not null checked
@@ -493,20 +490,20 @@ The branch in the above code will be taken when the pointer `n` is non-`nil`, bu
 
 ## <a name="DIRECT_ATOMIC_PROPERTY_ACCESS"></a> Direct atomic property access
 
-This check warns you when you are accessing an atomic property directly with an ivar. 
+This check warns you when you are accessing an atomic property directly with an ivar.
 This makes the atomic property not atomic anymore. So potentially you may get a race condition.
 
 To fix the problem you need to access properties with their getter or setter.
 
 ## <a name="STRONG_DELEGATE_WARNING"></a> Strong delegate warning
 
-This check warns you when you have a property called delegate or variations thereof which is declared strong. The idea is that 
+This check warns you when you have a property called delegate or variations thereof which is declared strong. The idea is that
 delegates should generally be weak, otherwise this may cause retain cycles.
 
 ## <a name="CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK"></a> C++ reference captured in Objective-C block
 
-With this check, Infer detects C++ references captured in a block. Doing this is almost always wrong. 
-The reason is that C++ references are not managed pointers (like ARC pointers) and so the referent is 
+With this check, Infer detects C++ references captured in a block. Doing this is almost always wrong.
+The reason is that C++ references are not managed pointers (like ARC pointers) and so the referent is
 likely to be gone by the time the block gets executed.
 One solution is to do a local copy of the reference and pass that to the block. Example:
 
@@ -525,15 +522,15 @@ This check fires when a pointer to an Obj-C object is tagged with an `assign` pr
 
 ## <a name="REGISTERED_OBSERVER_BEING_DEALLOCATED"></a> Registered observer being deallocated
 
-Objects register with a notification center to receive notifications. 
-This check warns you when an object is registered as observer of a NSNotificationCenter but 
+Objects register with a notification center to receive notifications.
+This check warns you when an object is registered as observer of a NSNotificationCenter but
 it is never unregistered. This is problematic as if the object is not unregistered
 the notification center can still send notification even after the object has been deallocated.
 In that case we would get a crash.
 
 ## <a name="GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"></a> Global variable initialized with function or method call
 
-This checker warns you when the initialization of global variable contain a method or function call. 
+This checker warns you when the initialization of global variable contain a method or function call.
 The warning wants to make you aware that some functions are expensive.
 As the global variables are initialized before main() is called, these initializations can slow down the
 start-up time of an app.

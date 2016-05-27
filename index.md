@@ -2,47 +2,34 @@
 layout: home
 title: Infer | A static analyzer for mobile apps
 id: home
+excerpt: >
+  Facebook Infer is a static analysis tool - if you give Infer some Objective-C, Java, or C code, it produces a list of potential bugs. Anyone can use Infer to intercept critical bugs before they have shipped to people's phones, and help prevent crashes or poor performance.
 ---
 
-## What is Infer?
+{% include content/gridblocks.html data_source=site.data.features align="center" %}
 
-Facebook Infer is a static analysis tool - if you give Infer some Objective-C, Java, or C code, it 
-produces a list of potential bugs. 
+<div class="gridBlock">
+  <div class="blockElement twoByGridBlock alignCenter">
+    <div class="blockContent">
+    <h3>Infer in Action</h3>
+    {% include plugins/ascii_cinema.html href="32101" %}
+    </div>
+  </div>
 
-Anyone can use Infer to intercept critical bugs before they have shipped to people's phones, and 
-help prevent crashes or poor performance.
-
-![Infer as part of the development process](static/images/Infer-landing.png)
-
-## Features
-
-### Android and Java
-Infer reports null pointer exceptions and resource leaks in Android and Java code.
-  
-### iOS
-In addition to this, it reports memory leak problems in iOS and C code.  
-
-## Who Uses Infer?
-
-It is used as part of the Facebook development process, where it runs on code changes for mobile 
-apps - these include the main Facebook apps for Android and iOS, Facebook Messenger, Instagram, WhatsApp,
-and other apps which are used by over a billion people.
-
-In addition to Facebook, where Infer is being developed, Infer is used by a number of companies:
-
-- [Kiuwan](https://www.kiuwan.com/)
-- [Marks & Spencer](https://www.marksandspencer.com/)
-- [Spotify](https://www.spotify.com/)
-- [Uber](https://www.uber.com/)
-
-Do you run Infer on your app or program? Add yourself to this list with a [pull request](https://github.com/facebook/infer/edit/gh-pages/index.md)!
+  <div class="blockElement twoByGridBlock alignCenter">
+    <div class="blockContent">
+    <h3>Try Infer</h3>
+    {% include plugins/iframe.html href="https://codeboard.io/projects/11587?view=2.1-21.0-22.0" text="Try Infer in your Browser" %}
+    </div>
+  </div>
+</div>
 
 ## Using Infer
 
-Start with the [Getting Started](docs/getting-started.html) guide and our other [docs](docs/) to download and try 
+Start with the [Getting Started](docs/getting-started.html) guide and our other [docs](docs/) to download and try
 Infer yourself.
 
 Infer is still evolving, and we want to continue to develop it in the open.
 
-We hope it will be useful for other projects, so please try it out or contribute to it, join the 
+We hope it will be useful for other projects, so please try it out or contribute to it, join the
 community and give us feedback!

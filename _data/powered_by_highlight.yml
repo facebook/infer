@@ -1,0 +1,27 @@
+- title: Who Uses Infer?
+  items:
+  - name: Facebook
+    url: https://facebook.com
+    img: static/images/facebook.png
+  - name: Marks and Spencer
+    url: https://www.marksandspencer.com/
+    img: static/images/mands.svg
+  - name: Spotify
+    url: blog/2016/03/17/collaboration-with-spotify.html
+    img: static/images/spotify.png
+  - name: Uber
+    url: https://www.uber.com
+    img: static/images/uber.svg
+  - name: Sky
+    url: https://www.sky.com
+    img: static/images/sky.svg
+  - name: Instagram
+    url: https://www.instagram.com
+    img: static/images/instagram.png
+  - name: WhatsApp
+    url: https://www.whatsapp.com
+    img: static/images/whatsapp.svg
+  - name: Kiuwan
+    url: https://www.kiuwan.com/
+    img: static/images/kiuwan.png
+
