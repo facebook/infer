@@ -6,14 +6,16 @@
     {% else %}
     <h2>{{ site.data.powered_by.first.title }}</h2>
     {% endif %}
+    {% if site.data.powered_by_highlight.first.items %}
     <div class="poweredByItems">
-      {% if site.data.powered_by_highlight.first.items %}
       {% for item in site.data.powered_by_highlight.first.items %}
       <div class="poweredByItem itemLarge">
         <a href="{{ item.url }}" target="_blank"><img src="{{ item.img }}" alt="{{ item.name }}" /></a>
       </div>
       {% endfor %}
-      {% endif %}
+    </div>
+    {% endif %}
+    <div class="poweredByItems">
       {% for item in site.data.powered_by.first.items %}
       <div class="poweredByItem itemSmall">
         <a href="{{ item.url }}" target="_blank">{{ item.name }}</a>
