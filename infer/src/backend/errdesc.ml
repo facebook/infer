@@ -69,17 +69,26 @@ let explain_deallocate_constant_string s ra =
 
 let verbose = Config.trace_error
 
+let find_in_node_or_preds start_node f_node_instr =
+  let visited = ref Cfg.NodeSet.empty in
+  let rec find node =
+    if Cfg.NodeSet.mem node !visited then None
+    else
+      begin
+        visited := Cfg.NodeSet.add node !visited;
+        let instrs = Cfg.Node.get_instrs node in
+        match IList.find_map_opt (f_node_instr node) (IList.rev instrs) with
+        | Some res -> Some res
+        | None -> IList.find_map_opt find (Cfg.Node.get_preds node)
+      end in
+  find start_node
+
 (** Find the Set instruction used to assign [id] to a program variable, if any *)
 let find_variable_assigment node id : Sil.instr option =
-  let res = ref None in
-  let node_instrs = Cfg.Node.get_instrs node in
-  let find_set instr = match instr with
-    | Sil.Set (Sil.Lvar _, _, e, _) when Sil.exp_equal (Sil.Var id) e ->
-        res := Some instr;
-        true
-    | _ -> false in
-  ignore (IList.exists find_set node_instrs);
-  !res
+  let find_set _ instr = match instr with
+    | Sil.Set (Sil.Lvar _, _, e, _) when Sil.exp_equal (Sil.Var id) e -> Some instr
+    | _ -> None in
+  find_in_node_or_preds node find_set
 
 (** Check if a nullify instruction exists for the program variable after the given instruction *)
 let find_nullify_after_instr node instr pvar : bool =
@@ -127,15 +136,12 @@ let id_is_assigned_then_dead node id =
 let find_normal_variable_funcall
     (node: Cfg.Node.t)
     (id: Ident.t): (Sil.exp * (Sil.exp list) * Location.t * Sil.call_flags) option =
-  let res = ref None in
-  let node_instrs = Cfg.Node.get_instrs node in
-  let find_declaration = function
+  let find_declaration _ = function
     | Sil.Call ([id0], fun_exp, args, loc, call_flags) when Ident.equal id id0 ->
-        res := Some (fun_exp, IList.map fst args, loc, call_flags);
-        true
-    | _ -> false in
-  ignore (IList.exists find_declaration node_instrs);
-  if verbose && !res == None
+        Some (fun_exp, IList.map fst args, loc, call_flags)
+    | _ -> None in
+  let res = find_in_node_or_preds node find_declaration in
+  if verbose && res == None
   then
     (L.d_str
        ("find_normal_variable_funcall could not find " ^
@@ -143,62 +149,23 @@ let find_normal_variable_funcall
         " in node " ^
         string_of_int (Cfg.Node.get_id node :> int));
      L.d_ln ());
-  !res
+  res
 
 (** Find a program variable assignment in the current node or predecessors. *)
 let find_program_variable_assignment node pvar : (Cfg.Node.t * Ident.t) option =
-  let visited = ref Cfg.NodeSet.empty in
-  let rec find node =
-    if Cfg.NodeSet.mem node !visited then None
-    else
-      begin
-        visited := Cfg.NodeSet.add node !visited;
-        let res = ref None in
-        let find_instr = function
-          | Sil.Set (Sil.Lvar _pvar, _, Sil.Var id, _)
-            when Pvar.equal pvar _pvar && Ident.is_normal id ->
-              res := Some (node, id);
-              true
-          | _ -> false in
-        if IList.exists find_instr (Cfg.Node.get_instrs node)
-        then !res
-        else match Cfg.Node.get_preds node with
-          | [pred_node] ->
-              find pred_node
-          | [pn1; pn2] ->
-              (match find pn1 with
-               | None -> find pn2
-               | x -> x)
-          | _ -> None (* either 0 or >2 predecessors *)
-      end in
-  find node
+  let find_instr node = function
+    | Sil.Set (Sil.Lvar _pvar, _, Sil.Var id, _) when Pvar.equal pvar _pvar && Ident.is_normal id ->
+        Some (node, id)
+    | _ ->
+        None in
+  find_in_node_or_preds node find_instr
 
 (** Find a program variable assignment to id in the current node or predecessors. *)
 let find_ident_assignment node id : (Cfg.Node.t * Sil.exp) option =
-  let visited = ref Cfg.NodeSet.empty in
-  let rec find node =
-    if Cfg.NodeSet.mem node !visited then None
-    else
-      begin
-        visited := Cfg.NodeSet.add node !visited;
-        let res = ref None in
-        let find_instr = function
-          | Sil.Letderef(_id, e, _, _) when Ident.equal _id id ->
-              res := Some (node, e);
-              true
-          | _ -> false in
-        if IList.exists find_instr (Cfg.Node.get_instrs node)
-        then !res
-        else match Cfg.Node.get_preds node with
-          | [pred_node] ->
-              find pred_node
-          | [pn1; pn2] ->
-              (match find pn1 with
-               | None -> find pn2
-               | x -> x)
-          | _ -> None (* either 0 or >2 predecessors *)
-      end in
-  find node
+  let find_instr node = function
+    | Sil.Letderef(_id, e, _, _) when Ident.equal _id id -> Some (node, e)
+    | _ -> None in
+  find_in_node_or_preds node find_instr
 
 (** Find a boolean assignment to a temporary variable holding a boolean condition.
     The boolean parameter indicates whether the true or false branch is required. *)
@@ -239,24 +206,20 @@ let pvar_is_frontend_tmp pvar =
 (** Find the Letderef instruction used to declare normal variable [id],
     and return the expression dereferenced to initialize [id] *)
 let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp option =
-  let res = ref None in
-  let node_instrs = Cfg.Node.get_instrs node in
-  let find_declaration = function
+  let find_declaration node = function
     | Sil.Letderef (id0, e, _, _) when Ident.equal id id0 ->
         if verbose
         then
           (L.d_str "find_normal_variable_letderef defining ";
            Sil.d_exp e; L.d_ln ());
-        res := _exp_lv_dexp seen node e;
-        true
+        _exp_lv_dexp seen node e
     | Sil.Call ([id0], Sil.Const (Sil.Cfun pn), (e, _):: _, _, _)
       when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
         if verbose
         then
           (L.d_str "find_normal_variable_letderef cast on ";
            Sil.d_exp e; L.d_ln ());
-        res := _exp_rv_dexp seen node e;
-        true
+        _exp_rv_dexp seen node e
     | Sil.Call ([id0], (Sil.Const (Sil.Cfun pname) as fun_exp), args, loc, call_flags)
       when Ident.equal id id0 ->
         if verbose
@@ -273,11 +236,10 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp 
             let unNone = function Some x -> x | None -> assert false in
             IList.map unNone args_dexpo in
 
-        res := Some (Sil.Dretcall (fun_dexp, args_dexp, loc, call_flags));
-        true
-    | _ -> false in
-  ignore (IList.exists find_declaration node_instrs);
-  if verbose && !res == None
+        Some (Sil.Dretcall (fun_dexp, args_dexp, loc, call_flags))
+    | _ -> None in
+  let res = find_in_node_or_preds node find_declaration in
+  if verbose && res == None
   then
     (L.d_str
        ("find_normal_variable_letderef could not find " ^
@@ -285,7 +247,7 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp 
         " in node " ^
         string_of_int (Cfg.Node.get_id node :> int));
      L.d_ln ());
-  !res
+  res
 
 (** describe lvalue [e] as a dexp *)
 and _exp_lv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =

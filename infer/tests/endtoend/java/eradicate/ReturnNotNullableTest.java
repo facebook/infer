@@ -59,6 +59,7 @@ public class ReturnNotNullableTest {
         "return_null_in_catch",
         "return_null_in_catch_after_throw",
         "getResourceNullable",
+        "tryWithResourcesReturnNullable",
     };
     List<ErrorPattern> errorPatterns = createPatterns(
         RETURN_NOT_NULLABLE,
