@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 58 [label="58:  BinaryOperatorStmt: Assign \n   n$9=*&SIL_temp_conditional___n$5:int  [line 23]\n  *&y:int =n$9 [line 23]\n  REMOVE_TEMPS(n$9); [line 23]\n  NULLIFY(&SIL_temp_conditional___n$5); [line 23]\n  NULLIFY(&y); [line 23]\n " shape="box"]
 	

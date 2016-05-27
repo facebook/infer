@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 24 [label="24:  DeclStmt \n   _fun_foo::my_record_(&x:class foo::my_record *) [line 46]\n " shape="box"]
 	

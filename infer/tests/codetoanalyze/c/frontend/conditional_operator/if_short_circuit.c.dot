@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 95 [label="95:  BinaryOperatorStmt: Assign \n   n$13=_fun_getenv(\"BLOCK\":char *) [line 47]\n  *&spec:char *=n$13 [line 47]\n  REMOVE_TEMPS(n$13); [line 47]\n " shape="box"]
 	

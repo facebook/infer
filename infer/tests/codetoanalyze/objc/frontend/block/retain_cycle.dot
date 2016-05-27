@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 19 [label="19:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 63]\n  *&a:class A *=n$2 [line 63]\n  REMOVE_TEMPS(n$2); [line 63]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 6 [label="6:  DeclStmt \n   *&#GB$main_kDuration:int =3 [line 17]\n " shape="box"]
 	

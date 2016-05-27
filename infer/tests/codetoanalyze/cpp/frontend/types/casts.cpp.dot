@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 6 [label="6:  DeclStmt \n   *&a:int =(2 + 3.400000) [line 15]\n  NULLIFY(&a); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
 	

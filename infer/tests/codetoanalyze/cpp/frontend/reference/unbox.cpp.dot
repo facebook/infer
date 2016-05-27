@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 23 [label="23:  DeclStmt \n   *&a:int =3 [line 28]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 9 [label="9:  BinaryOperatorStmt: Assign \n   n$3=*&#GB$x:class (anonymous struct at infer_tests_codetoanalyze_c_frontend_nestedoperators_union.cpp:12:1) * [line 32]\n  *n$3.a:int =1 [line 32]\n  REMOVE_TEMPS(n$3); [line 32]\n " shape="box"]
 	

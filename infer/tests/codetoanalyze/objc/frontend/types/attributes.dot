@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 14 [label="14:  DeclStmt \n   *&aWeakRef:class A __weak *=0 [line 22]\n " shape="box"]
 	

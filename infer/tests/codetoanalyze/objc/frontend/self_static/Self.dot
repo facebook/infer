@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 52 [label="52:  Return Stmt \n   *&return:int =0 [line 98]\n  APPLY_ABSTRACTION; [line 98]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 7 [label="7:  DeclStmt \n   *&p.x:int =32 [line 18]\n  *&p.y:int =52 [line 18]\n  n$1=*&p:struct point  [line 18]\n  REMOVE_TEMPS(n$1); [line 18]\n " shape="box"]
 	

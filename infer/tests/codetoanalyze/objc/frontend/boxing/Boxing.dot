@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 26 [label="26:  DeclStmt \n   n$15=_fun_strdup(\"hello world\":char *) [line 42]\n  n$16=_fun_NSString_stringWithUTF8String:(n$15:char *) [line 42]\n  *&s:class NSString *=n$16 [line 42]\n  REMOVE_TEMPS(n$15,n$16); [line 42]\n  NULLIFY(&s); [line 42]\n " shape="box"]
 	

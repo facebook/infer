@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 24 [label="24:  DeclStmt \n   n$3=*&SIL_temp_conditional___n$0:int  [line 22]\n  *&z:int =n$3 [line 22]\n  REMOVE_TEMPS(n$3); [line 22]\n  NULLIFY(&SIL_temp_conditional___n$0); [line 22]\n  NULLIFY(&z); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
 	

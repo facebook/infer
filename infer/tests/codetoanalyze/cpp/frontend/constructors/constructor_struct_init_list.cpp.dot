@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 6 [label="6:  DeclStmt \n   *&SIL_init_list__n$0.top:int =0 [line 17]\n  *&SIL_init_list__n$0.left:int =0 [line 17]\n  *&SIL_init_list__n$0.bottom:int =0 [line 17]\n  *&SIL_init_list__n$0.right:int =0 [line 17]\n  _fun_Person_Person(&p:class Person *,&SIL_init_list__n$0:class Insets ) [line 17]\n  NULLIFY(&SIL_init_list__n$0); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	

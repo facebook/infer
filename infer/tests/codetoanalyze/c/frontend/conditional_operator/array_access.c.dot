@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 19 [label="19: Prune (false branch) \n   n$14=*&p:int ** [line 11]\n  n$15=*n$14[0]:int * [line 11]\n  PRUNE((n$15 == 0), false); [line 11]\n  REMOVE_TEMPS(n$14,n$15); [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="invhouse"]
 	

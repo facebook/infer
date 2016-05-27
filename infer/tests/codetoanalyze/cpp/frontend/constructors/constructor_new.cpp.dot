@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 97 [label="97:  DeclStmt \n   n$2=_fun___new_array((sizeof(class Person *) * 10):unsigned long ) [line 97]\n  *&tarray:class Person **=n$2 [line 97]\n  REMOVE_TEMPS(n$2); [line 97]\n " shape="box"]
 	

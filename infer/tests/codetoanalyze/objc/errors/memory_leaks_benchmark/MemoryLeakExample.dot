@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 73 [label="73:  DeclStmt \n   n$59=_fun_malloc_no_fail(sizeof(int ):int ) [line 103]\n  *&x:int *=n$59 [line 103]\n  REMOVE_TEMPS(n$59); [line 103]\n " shape="box"]
 	

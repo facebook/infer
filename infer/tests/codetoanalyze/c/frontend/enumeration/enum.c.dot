@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 8 [label="8:  BinaryOperatorStmt: Assign \n   *&today:int =0 [line 22]\n  NULLIFY(&today); [line 22]\n " shape="box"]
 	

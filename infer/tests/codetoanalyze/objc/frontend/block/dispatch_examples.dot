@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 60 [label="60:  DeclStmt \n   *&#GB$A_dispatch_barrier_example_a:class A *=0 [line 72]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 7 [label="7:  BinaryOperatorStmt: Assign \n   n$0=_fun_sum(2:int ,3:int ) [line 20]\n  *&total:int =n$0 [line 20]\n  REMOVE_TEMPS(n$0); [line 20]\n  NULLIFY(&total); [line 20]\n " shape="box"]
 	

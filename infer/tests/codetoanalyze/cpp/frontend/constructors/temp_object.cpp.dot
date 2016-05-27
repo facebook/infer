@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 43 [label="43:  Return Stmt \n   _fun_getX(1:int ,0:int ,&__temp_return_n$1:class X *) [line 43]\n  n$2=*&__temp_return_n$1.f:int  [line 43]\n  n$3=_fun_div(n$2:int ) [line 43]\n  *&return:int =n$3 [line 43]\n  REMOVE_TEMPS(n$2,n$3); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
 	

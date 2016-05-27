@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 123 [label="123:  Call _fun_X_zero \n   n$4=_fun_get_global_ref() [line 124]\n  n$5=*n$4:class X  [line 124]\n  _fun_X_zero(n$4:class X &) [line 124]\n  REMOVE_TEMPS(n$4,n$5); [line 124]\n " shape="box"]
 	

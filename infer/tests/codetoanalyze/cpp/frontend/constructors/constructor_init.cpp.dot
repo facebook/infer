@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 44 [label="44:  DeclStmt \n   _fun_B_B(&b:class B *,1:int ) [line 55]\n " shape="box"]
 	

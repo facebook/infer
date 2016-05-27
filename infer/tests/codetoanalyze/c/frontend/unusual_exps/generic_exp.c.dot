@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 4 [label="4:  DeclStmt \n   *&x:void =_t$1 [line 15]\n  REMOVE_TEMPS(_t$1); [line 15]\n  NULLIFY(&x); [line 15]\n " shape="box"]
 	

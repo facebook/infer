@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 18 [label="18:  BinaryOperatorStmt: Assign \n   *&imageDrawRect.origin.x.a:int =0 [line 58]\n  *&imageDrawRect.origin.x.b:int =0 [line 58]\n  *&imageDrawRect.origin.y:int =0 [line 58]\n  *&imageDrawRect.z:int =0 [line 58]\n  *&imageDrawRect.size:int =5 [line 58]\n  n$1=*&imageDrawRect:struct rect  [line 58]\n  REMOVE_TEMPS(n$1); [line 58]\n " shape="box"]
 	

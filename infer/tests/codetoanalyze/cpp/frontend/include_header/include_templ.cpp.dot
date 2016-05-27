@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 36 [label="36:  Call _fun_div0_templ<A> \n   n$0=_fun_div0_templ<A>() [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
 	

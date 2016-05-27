@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 4 [label="4:  DeclStmt \n   n$1=*&self:class MySubclass * [line 17]\n  n$2=_fun_MyClass_myNumber(n$1:class MySubclass *) [line 17]\n  *&subclassNumber:int =(n$2 + 1) [line 17]\n  REMOVE_TEMPS(n$1,n$2); [line 17]\n  NULLIFY(&self); [line 17]\n " shape="box"]
 	

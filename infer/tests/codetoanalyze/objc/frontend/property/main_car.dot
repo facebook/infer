@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 6 [label="6:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class Car ):unsigned long ) [line 13]\n  n$5=_fun_NSObject_init(n$4:class Car *) virtual [line 13]\n  *&honda:class Car *=n$5 [line 13]\n  REMOVE_TEMPS(n$4,n$5); [line 13]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 11 [label="11:  DeclStmt \n   n$3=*&x:class X * [line 21]\n  n$4=*n$3.f:int  [line 21]\n  *&f:int =n$4 [line 21]\n  REMOVE_TEMPS(n$3,n$4); [line 21]\n  NULLIFY(&f); [line 21]\n " shape="box"]
 	

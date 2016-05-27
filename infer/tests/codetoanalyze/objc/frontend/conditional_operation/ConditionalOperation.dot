@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 11 [label="11:  Return Stmt \n   n$1=*&self:class A * [line 24]\n  n$5=*&SIL_temp_conditional___n$2:int  [line 24]\n  n$6=_fun_A_test4:(n$1:class A *,n$5:int ) virtual [line 24]\n  *&return:int =n$6 [line 24]\n  REMOVE_TEMPS(n$1,n$5,n$6); [line 24]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 24]\n  NULLIFY(&self); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	

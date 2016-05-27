@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 12 [label="12:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 42]\n  n$2=_fun_NSObject_init(n$1:class A *) virtual [line 42]\n  *&a:struct objc_object *=n$2 [line 42]\n  REMOVE_TEMPS(n$1,n$2); [line 42]\n  NULLIFY(&a); [line 42]\n " shape="box"]
 	

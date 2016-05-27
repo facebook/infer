@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 30 [label="30:  Return Stmt \n   n$0=*&s:class ExecStore<Choose2> & [line 41]\n  n$1=*n$0.f:class Choose2  [line 41]\n  n$2=_fun_Choose2_extra(n$0.f:class Choose2 &,1:int ) [line 41]\n  *&return:int =n$2 [line 41]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 41]\n  NULLIFY(&s); [line 41]\n  APPLY_ABSTRACTION; [line 41]\n " shape="box"]
 	

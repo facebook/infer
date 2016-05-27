@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 9 [label="9:  Return Stmt \n   n$0=*&a:class A * [line 17]\n  n$1=*n$0:class A  [line 17]\n  n$2=_fun_A_meth_with_self(n$0:class A *,1:int ,2:int ) [line 17]\n  n$3=_fun_fun_with_self(10:int ) [line 17]\n  *&return:int =(n$2 + n$3) [line 17]\n  REMOVE_TEMPS(n$0,n$1,n$2,n$3); [line 17]\n  NULLIFY(&a); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
 	

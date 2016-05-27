@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 8 [label="8:  DeclStmt \n   *&d:int =0 [line 11]\n  NULLIFY(&d); [line 11]\n " shape="box"]
 	

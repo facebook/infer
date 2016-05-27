@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 25 [label="25:  DeclStmt \n   n$20=_fun___new(sizeof(class Base ):unsigned long ) [line 22]\n  _fun_Base_Base(n$20:class Base *) [line 22]\n  *&b:class Base *=n$20 [line 22]\n  REMOVE_TEMPS(n$20); [line 22]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 22 [label="22:  Call _fun_call_with_forward_declaration \n   _fun_call_with_forward_declaration(null:class XForward *) [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
 	

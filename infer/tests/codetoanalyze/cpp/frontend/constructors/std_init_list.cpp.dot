@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 11 [label="11:  DeclStmt \n   *&SIL_materialize_temp__n$0[0]:int =1 [line 24]\n  *&SIL_materialize_temp__n$0[1]:int =2 [line 24]\n  *&SIL_materialize_temp__n$0[2]:int =3 [line 24]\n  *&SIL_materialize_temp__n$0[3]:int =4 [line 24]\n  *&SIL_materialize_temp__n$0[4]:int =5 [line 24]\n  n$1=_fun___infer_skip_function(&SIL_materialize_temp__n$0:int [5]) [line 24]\n  _fun_X_X(&x:class X *,n$1:class std::initializer_list<int> ) [line 24]\n  REMOVE_TEMPS(n$1); [line 24]\n  NULLIFY(&SIL_materialize_temp__n$0); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
 	

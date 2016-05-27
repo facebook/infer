@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 11]\n " shape="invhouse"]
 	

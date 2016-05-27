@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 43 [label="43:  DeclStmt \n   _fun_vec_vec(&vector:class vec *,10:int ) [line 36]\n " shape="box"]
 	

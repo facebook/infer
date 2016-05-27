@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 17 [label="17:  BinaryOperatorStmt: Assign \n   *&#GB$g:int =7 [line 22]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 6 [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&xs:class X_struct * [line 24]\n  *n$3.a:int =10 [line 24]\n  REMOVE_TEMPS(n$3); [line 24]\n " shape="box"]
 	

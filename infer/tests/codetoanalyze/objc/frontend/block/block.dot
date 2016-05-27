@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 25 [label="25:  Return Stmt \n   n$0=_fun_main1(4:int ) [line 46]\n  *&return:int =n$0 [line 46]\n  REMOVE_TEMPS(n$0); [line 46]\n  APPLY_ABSTRACTION; [line 46]\n " shape="box"]
 	

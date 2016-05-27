@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 13 [label="13:  Call _fun___infer_assume \n   n$1=*&callback:_fn_ (*) [line 46]\n  n$2=_fun___infer_assume((n$1 != 0):_fn_ (*)) [line 46]\n  REMOVE_TEMPS(n$1,n$2); [line 46]\n " shape="box"]
 	

@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 3 [label="3:  Return Stmt \n   n$0=*&e:_Bool  [line 12]\n  *&return:_Bool =n$0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&e); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
 	

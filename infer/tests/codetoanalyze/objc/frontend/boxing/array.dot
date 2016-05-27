@@ -1,3 +1,4 @@
+/* @generated */
 digraph iCFG {
 12 [label="12:  DeclStmt \n   n$9=_fun_NSString_stringWithUTF8String:(\"Mercedes-Benz\":char *) [line 17]\n  n$10=_fun_NSString_stringWithUTF8String:(\"BMW\":char *) [line 18]\n  n$11=_fun_NSString_stringWithUTF8String:(\"Porsche\":char *) [line 19]\n  n$12=_fun_NSString_stringWithUTF8String:(\"Opel\":char *) [line 20]\n  n$13=_fun_NSString_stringWithUTF8String:(\"Volkswagen\":char *) [line 21]\n  n$14=_fun_NSString_stringWithUTF8String:(\"Audi\":char *) [line 22]\n  n$15=_fun_NSArray_arrayWithObjects:count:(n$9:struct objc_object *,n$10:struct objc_object *,n$11:struct objc_object *,n$12:struct objc_object *,n$13:struct objc_object *,n$14:struct objc_object *,0:struct objc_object *) [line 16]\n  *&germanCars:class NSArray *=n$15 [line 16]\n  REMOVE_TEMPS(n$9,n$10,n$11,n$12,n$13,n$14,n$15); [line 16]\n " shape="box"]
 	
