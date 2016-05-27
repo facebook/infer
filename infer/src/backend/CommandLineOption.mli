@@ -11,7 +11,7 @@
 
 open! Utils
 
-type exe = A | C | J | L | P | T
+type exe = A | C | J | L | P | StatsAggregator | T
 
 val current_exe : exe
 

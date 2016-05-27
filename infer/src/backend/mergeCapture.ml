@@ -25,7 +25,7 @@ let buck_out () =
   | None ->
       Filename.concat (Filename.dirname Config.results_dir) "buck-out"
 
-let infer_deps () = Filename.concat Config.results_dir "infer-deps.txt"
+let infer_deps () = Filename.concat Config.results_dir Config.buck_infer_deps_file_name
 
 let modified_targets = ref StringSet.empty
 

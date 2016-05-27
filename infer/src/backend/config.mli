@@ -48,6 +48,7 @@ val assign : string
 val attributes_dir_name : string
 val backend_stats_dir_name : string
 val bound_error_allowed_in_procedure_call : bool
+val buck_infer_deps_file_name : string
 val checks_disabled_by_default : string list
 val captured_dir_name : string
 val default_failure_name : string
@@ -124,6 +125,7 @@ val analyzer : analyzer option
 val angelic_execution : bool
 val array_level : int
 val ast_file : string option
+val buck_out : string option
 val bugs_csv : outfile option
 val bugs_json : outfile option
 val bugs_txt : outfile option

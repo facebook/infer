@@ -17,7 +17,7 @@ module YBU = Yojson.Basic.Util
 
 (* Each command line option may appear in the --help list of any executable, these tags are used to
    specify which executables for which an option will be documented. *)
-type exe = A | C | J | L | P | T
+type exe = A | C | J | L | P | StatsAggregator | T
 
 let current_exe =
   match Filename.basename Sys.executable_name with
@@ -26,6 +26,7 @@ let current_exe =
   | "InferJava" -> J
   | "InferLLVM" -> L
   | "InferPrint" -> P
+  | "InferStatsAggregator" -> StatsAggregator
   | _ -> T
 
 
@@ -115,7 +116,15 @@ let check_no_duplicates desc_list =
 
 let full_desc_list = ref []
 
-let exe_desc_lists = [(A, ref []); (C, ref []); (J, ref []); (L, ref []); (P, ref []); (T, ref [])]
+let exe_desc_lists = [
+  (A, ref []);
+  (C, ref []);
+  (J, ref []);
+  (L, ref []);
+  (P, ref []);
+  (StatsAggregator, ref []);
+  (T, ref []);
+]
 
 (* add desc to all desc_lists for the purposes of parsing, include desc in --help only for exes *)
 let add exes desc =

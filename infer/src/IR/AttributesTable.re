@@ -106,7 +106,6 @@ let pname_is_cpp_model callee_pname =>
   | None => false
   };
 
-
 let is_whitelisted_cpp_method method_name =>
   IList.exists
     (
@@ -120,21 +119,57 @@ let is_whitelisted_cpp_method method_name =>
     )
     Config.whitelisted_cpp_methods;
 
+type t = {
+  num_bindings: int,
+  num_buckets: int,
+  max_bucket_length: int,
+  serialized_size_kb: option int
+};
+
+let to_json at => {
+  let extra_field =
+    switch at.serialized_size_kb {
+    | Some v => [("serialized_size_kb", `Int v)]
+    | None => []
+    };
+  `Assoc (
+    [
+      ("num_bindings", `Int at.num_bindings),
+      ("num_buckets", `Int at.num_buckets),
+      ("max_bucket_length", `Int at.num_buckets)
+    ]
+      @ extra_field
+  )
+};
+
+let from_json json => {
+  let open! Yojson.Basic.Util;
+  {
+    num_bindings: json |> member "num_bindings" |> to_int,
+    num_buckets: json |> member "num_buckets" |> to_int,
+    max_bucket_length: json |> member "max_bucket_length" |> to_int,
+    serialized_size_kb: json |> member "serialized_size_kb" |> to_option to_int
+  }
+};
+
+let aggregate s => {
+  let all_num_bindings = IList.map (fun stats => float_of_int stats.num_bindings) s;
+  let all_num_buckets = IList.map (fun stats => float_of_int stats.num_buckets) s;
+  let all_max_bucket_length = IList.map (fun stats => float_of_int stats.max_bucket_length) s;
+  let aggr_num_bindings = StatisticsToolbox.compute_statistics all_num_bindings;
+  let aggr_num_buckets = StatisticsToolbox.compute_statistics all_num_buckets;
+  let aggr_max_bucket_length = StatisticsToolbox.compute_statistics all_max_bucket_length;
+  `Assoc [
+    ("num_bindings", StatisticsToolbox.to_json aggr_num_bindings),
+    ("num_buckets", StatisticsToolbox.to_json aggr_num_buckets),
+    ("max_bucket_length", StatisticsToolbox.to_json aggr_max_bucket_length)
+  ]
+};
+
 let stats () => {
   let stats = Procname.Hash.stats attr_tbl;
   let {Hashtbl.num_bindings: num_bindings, num_buckets, max_bucket_length} = stats;
-  let serialized_size = lazy (Marshal.data_size (Marshal.to_bytes attr_tbl []) 0 / 1024);
-  (
-    "AttributesTable.attr_tbl",
-    `Assoc (
-      [
-        ("num_bindings", `Int num_bindings),
-        ("num_buckets", `Int num_buckets),
-        ("max_bucket_length", `Int max_bucket_length)
-      ]
-        @ (
-        Config.developer_mode ? [("serialized_size_kb", `Int (Lazy.force serialized_size))] : []
-      )
-    )
-  )
+  let serialized_size_kb =
+    Config.developer_mode ? Some (Marshal.data_size (Marshal.to_bytes attr_tbl []) 0 / 1024) : None;
+  {num_bindings, num_buckets, max_bucket_length, serialized_size_kb}
 };

@@ -73,6 +73,7 @@ buck-out/
 /infer/bin/InferJava
 /infer/bin/InferLLVM
 /infer/bin/InferPrint
+/infer/bin/InferStatsAggregator
 /infer/bin/InferUnit
 /infer/bin/Typeprop
 /infer/bin/infer
