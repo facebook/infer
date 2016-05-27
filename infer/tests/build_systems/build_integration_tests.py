@@ -63,6 +63,7 @@ ALL_TESTS = [
     'javac',
     'locale',
     'make',
+    'unknown_ext',
     'utf8_in_pwd',
     'waf',
 ]
@@ -375,7 +376,7 @@ class BuildIntegrationTest(unittest.TestCase):
             return
         print('\nRunning utf8_in_pwd integration test')
 
-        utf8_in_pwd_path = os.path.join(CODETOANALYZE_DIR, 'utf8_ιn_pwd')
+        utf8_in_pwd_path = os.path.join(CODETOANALYZE_DIR, u'utf8_\u03B9n_pwd')
 
         # copy non-unicode dir to one with unicode in it
         shutil.rmtree(utf8_in_pwd_path, True) # remove just in case
@@ -399,6 +400,22 @@ class BuildIntegrationTest(unittest.TestCase):
             root=os.path.join(utf8_in_pwd_path, 'make'),
             report_name='utf8_in_pwd_make_report.json')
         shutil.rmtree(utf8_in_pwd_path, True) # remove copied dir
+
+    def test_unknown_extension(self):
+        if 'unknown_ext' not in to_test:
+            print('\nSkipping unknown extension integration test')
+            return
+
+        print('\nRunning unknown extension integration test')
+        root = CODETOANALYZE_DIR
+        errors = run_analysis(
+            root,
+            [],
+            [['clang', '-x', 'c', '-c', 'hello.unknown_ext']],
+            INFER_EXECUTABLE)
+        original = os.path.join(EXPECTED_OUTPUTS_DIR,
+                                'unknown_ext_report.json')
+        do_test(errors, original)
 
 
 if __name__ == '__main__':
