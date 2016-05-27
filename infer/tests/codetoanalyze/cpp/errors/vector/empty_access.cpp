@@ -69,32 +69,28 @@ int assign_nonempty() {
   return vec2[0];
 }
 
-int empty_check_nonempty() {
-  std::vector<int> vec;
+int empty_check_nonempty(std::vector<int>& vec) {
   if (vec.empty()) {
     return 1;
   }
   return vec[0];
 }
 
-int empty_check_nonempty2() {
-  std::vector<int> vec;
+int empty_check_nonempty2(std::vector<int>& vec) {
   if (vec.empty()) {
     vec.push_back(1);
   }
   return vec[0];
 }
 
-int empty_check_access_empty() {
-  std::vector<int> vec;
+int empty_check_access_empty(std::vector<int>& vec) {
   if (vec.empty()) {
     return vec[0];
   }
   return 1;
 }
 
-int size_check0_empty() {
-  std::vector<int> vec;
+int size_check0_empty(std::vector<int>& vec) {
   if (vec.size() == 0) {
     return vec[0];
   }
