@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-@SET_MAKE@
 ROOT_DIR = ../..
 include $(ROOT_DIR)/Makefile.config
 
@@ -15,15 +14,15 @@ JAVA_MODELS_DIR = java
 OBJC_MODELS_DIR = objc
 
 CLANG_SUBDIRS = $(C_MODELS_DIR) $(CPP_MODELS_DIR)
-ifneq (no, @XCODE_SELECT@)
+ifneq (no, $(XCODE_SELECT))
 CLANG_SUBDIRS += $(OBJC_MODELS_DIR)
 endif
 
 all:
-ifeq (@BUILD_C_ANALYZERS@,yes)
+ifeq ($(BUILD_C_ANALYZERS),yes)
 all: clang
 endif
-ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 all: java
 endif
 
@@ -39,6 +38,6 @@ clean:
 	$(MAKE) -C $(JAVA_MODELS_DIR) clean
 	$(MAKE) -C $(C_MODELS_DIR) clean
 	$(MAKE) -C $(CPP_MODELS_DIR) clean
-ifneq (no, @XCODE_SELECT@)
+ifneq (no, $(XCODE_SELECT))
 	$(MAKE) -C $(OBJC_MODELS_DIR) clean
 endif

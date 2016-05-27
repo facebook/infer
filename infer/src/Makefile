@@ -8,13 +8,6 @@
 ROOT_DIR = ../..
 include $(ROOT_DIR)/Makefile.config
 
-INFER_MAJOR = @INFER_MAJOR@
-INFER_MINOR = @INFER_MINOR@
-INFER_PATCH = @INFER_PATCH@
-IS_RELEASE_TREE = @IS_RELEASE_TREE@
-
-ATDGEN = @ATDGEN@
-
 #### Global declarations ####
 
 INFER_BUILD_DIR = $(BUILD_DIR)/infer
@@ -39,11 +32,11 @@ OCAMLBUILD_OPTIONS = \
                      -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*}>: warn(-27-32-35-39)" \
                      -pkgs atdgen,extlib,oUnit,str,unix,yojson,zip
 
-ifeq (@ENABLE_OCAML_ANNOT@,yes)
+ifeq ($(ENABLE_OCAML_ANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -annot
 endif
 
-ifeq (@ENABLE_OCAML_BINANNOT@,yes)
+ifeq ($(ENABLE_OCAML_BINANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -bin-annot
 endif
 
@@ -122,7 +115,7 @@ STATSAGGREGATOR_MAIN = $(SCRIPT_SOURCES)/StatsAggregator
 
 #### End of declarations ####
 
-ifeq (@IS_FACEBOOK_TREE@,yes)
+ifeq ($(IS_FACEBOOK_TREE),yes)
 EXTRA_DEPS = facebook facebook/checkers facebook/checkers/graphql facebook/scripts
 else
 EXTRA_DEPS = opensource
@@ -154,16 +147,16 @@ INFER_ALL_TARGETS = $(INFER_BASE_TARGETS) \
 OCAMLBUILD_CONFIG = $(OCAMLBUILD_BASE)
 INFER_CONFIG_TARGETS = $(INFER_BASE_TARGETS)
 
-ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 OCAMLBUILD_CONFIG += $(JAVA_OCAMLBUILD_OPTIONS)
 INFER_CONFIG_TARGETS += $(INFERJAVA_MAIN).native
 DEPENDENCIES += java
 endif
-ifeq (@BUILD_C_ANALYZERS@,yes)
+ifeq ($(BUILD_C_ANALYZERS),yes)
 INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
 DEPENDENCIES += clang
 endif
-ifeq (@BUILD_LLVM_ANALYZERS@,yes)
+ifeq ($(BUILD_LLVM_ANALYZERS),yes)
 INFER_CONFIG_TARGETS += $(INFERLLVM_MAIN).native
 DEPENDENCIES += llvm
 endif
@@ -179,23 +172,23 @@ infer: init $(INFERPRINT_ATDGEN_STUBS) $(CLANG_BINIOU_DICT)
 	$(COPY) $(INFER_BUILD_DIR)/$(CHECKCOPYRIGHT_MAIN).native $(CHECKCOPYRIGHT_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(STATSAGGREGATOR_MAIN).native $(STATSAGGREGATOR_BIN)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
-ifeq (@BUILD_LLVM_ANALYZERS@,yes)
+ifeq ($(BUILD_LLVM_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERLLVM_MAIN).native $(INFERLLVM_BIN)
 endif
-ifeq (@BUILD_JAVA_ANALYZERS@,yes)
+ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERJAVA_MAIN).native $(INFERJAVA_BIN)
 endif
-ifeq (@BUILD_C_ANALYZERS@,yes)
+ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(COPY) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
 endif
-ifeq (@ENABLE_OCAML_ANNOT@,yes)
+ifeq ($(ENABLE_OCAML_ANNOT),yes)
 	rsync -a --include '*/' --include '*.annot' --exclude '*' $(INFER_BUILD_DIR)/ $(ANNOT_DIR)/
 endif
 
-ifeq (@BUILD_C_ANALYZERS@,yes)
+ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 endif
-ifeq (@BUILD_LLVM_ANALYZERS@,yes)
+ifeq ($(BUILD_LLVM_ANALYZERS),yes)
 infer: $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
 endif
 
@@ -270,7 +263,7 @@ $(foreach atd_type,b j t v,\
 
 define mirror_fcp_file
 $(CLANG_SOURCES)/$(notdir $(1)): $(1)
-	@INSTALL@ -m 644 -C $$< $$@
+	$(INSTALL) -m 644 -C $$< $$@
 endef
 
 $(foreach file, $(FCP_FILES_TO_MIRROR), $(eval $(call mirror_fcp_file,$(file))))
@@ -303,7 +296,7 @@ version: backend/version.ml.in Makefile
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
 	  $< > "$$TMPFILE"; \
-	@INSTALL@ -m 644 -C "$$TMPFILE" backend/version.ml; \
+	$(INSTALL) -m 644 -C "$$TMPFILE" backend/version.ml; \
 	rm -f "$$TMPFILE"
 
 $(BUILD_DIR):
@@ -315,10 +308,10 @@ test_clean:
 clean:
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
-ifeq (@ENABLE_OCAML_ANNOT@,yes)
+ifeq ($(ENABLE_OCAML_ANNOT),yes)
 	$(REMOVE_DIR) $(ANNOT_DIR)
 endif
-ifeq (@BUILD_LLVM_ANALYZERS@,yes)
+ifeq ($(BUILD_LLVM_ANALYZERS),yes)
 	$(REMOVE) $(LLVM_SOURCES)/lLexer.ml $(LLVM_SOURCES)/lParser.ml
 endif
 	$(REMOVE) backend/version.ml

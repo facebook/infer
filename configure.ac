@@ -267,13 +267,6 @@ AC_SUBST([NCPU])
 
 AC_CONFIG_FILES([
   Makefile.config
-  Makefile
-  infer/models/Makefile
-  infer/models/c/Makefile
-  infer/models/cpp/Makefile
-  infer/models/objc/Makefile
-  infer/models/java/Makefile
-  infer/src/Makefile
 ])
 
 AC_OUTPUT

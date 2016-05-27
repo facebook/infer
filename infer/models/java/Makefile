@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-@SET_MAKE@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
@@ -42,7 +41,7 @@ $(MODELS_JAR): $(INFER_REPORT)
 	cd $(MODELS_OUT); jar cf ../$(MODELS_JAR) *
 
 $(DEPLOYED_MODELS_JAR): $(MODELS_JAR)
-	@INSTALL@ -m 644 -C $(MODELS_JAR) $(DEPLOYED_MODELS_JAR)
+	$(INSTALL) -m 644 -C $(MODELS_JAR) $(DEPLOYED_MODELS_JAR)
 
 install: $(DEPLOYED_MODELS_JAR)
 

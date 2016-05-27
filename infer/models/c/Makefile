@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-@SET_MAKE@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
@@ -23,7 +22,7 @@ $(C_MODELS_FILE): $(C_MODELS_SOURCES) $(CLANG_DEPS)
 	touch $(C_MODELS_FILE)
 
 install: $(C_MODELS_FILE)
-	@INSTALL@ -m 644 -C out/specs/*.specs $(SPECS_LIB_DIR)
+	$(INSTALL) -m 644 -C out/specs/*.specs $(SPECS_LIB_DIR)
 
 clean:
 	@rm -f $(C_MODELS_FILE)

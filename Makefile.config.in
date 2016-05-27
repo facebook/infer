@@ -5,9 +5,56 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+@SET_MAKE@
+
 PLATFORM = $(shell uname)
 
+ATDGEN = @ATDGEN@
+bindir = @bindir@
+BUILD_C_ANALYZERS = @BUILD_C_ANALYZERS@
+BUILD_JAVA_ANALYZERS = @BUILD_JAVA_ANALYZERS@
+BUILD_LLVM_ANALYZERS = @BUILD_LLVM_ANALYZERS@
+CC = @CC@
+CFLAGS = @CFLAGS@
+CLANG_INCLUDES = @CLANG_INCLUDES@
+CLANG_PREFIX = @CLANG_PREFIX@
+CPP = @CPP@
+CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@
+ENABLE_OCAML_ANNOT = @ENABLE_OCAML_ANNOT@
+ENABLE_OCAML_BINANNOT = @ENABLE_OCAML_BINANNOT@
+exec_prefix = @exec_prefix@
+INFER_MAJOR = @INFER_MAJOR@
+INFER_MINOR = @INFER_MINOR@
+INFER_PATCH = @INFER_PATCH@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+IS_FACEBOOK_TREE = @IS_FACEBOOK_TREE@
+IS_RELEASE_TREE = @IS_RELEASE_TREE@
+LDFLAGS = @LDFLAGS@
+libdir = @libdir@
+LIBS = @LIBS@
+LN_S = @LN_S@
+MKDIR_P_CMD = case "@MKDIR_P@" in \
+    ./*) printf "$(ROOT_DIR)/@MKDIR_P@\n";; \
+    *) printf "@MKDIR_P@\n";; \
+    esac
+MKDIR_P = $(shell $(MKDIR_P_CMD))
 NCPU = @NCPU@
+prefix = @prefix@
+USER_JAVA_HOME = @USER_JAVA_HOME@
+XCODE_SELECT = @XCODE_SELECT@
+
+ifneq (,$(findstring s,$(MAKEFLAGS)))
+REMOVE = rm -f
+REMOVE_DIR = rm -rf
+else
+REMOVE = rm -vf
+REMOVE_DIR = rm -rvf
+endif
+COPY = cp -f -p
+COPY_DIR = cp -Rf
 
 ABSOLUTE_ROOT_DIR = $(shell cd $(ROOT_DIR) && pwd)
 
@@ -45,8 +92,8 @@ INFERTRACEBUGS_BIN = $(BIN_DIR)/inferTraceBugs
 INFER_BIN_RELPATH = infer/bin/infer
 INFERTRACEBUGS_BIN_RELPATH = infer/bin/inferTraceBugs
 
-ifeq (@BUILD_JAVA_ANALYZERS@,yes)
-JAVA_HOME=@USER_JAVA_HOME@
+ifeq ($(BUILD_JAVA_ANALYZERS),yes)
+JAVA_HOME=$(USER_JAVA_HOME)
 endif
 
 JAVA_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
@@ -66,19 +113,3 @@ CLANG_DEPS = $(addprefix $(PYTHON_LIB_DIR)/, \
              $(INFERPRINT_BIN)
 
 JAVA_MODELS_JAR = $(LIB_DIR)/java/models.jar
-
-ifneq (,$(findstring s,$(MAKEFLAGS)))
-REMOVE = rm -f
-REMOVE_DIR = rm -rf
-else
-REMOVE = rm -vf
-REMOVE_DIR = rm -rvf
-endif
-COPY = cp -f -p
-COPY_DIR = cp -Rf
-MKDIR_P_CMD = case "@MKDIR_P@" in \
-    ./*) printf "$(ROOT_DIR)/@MKDIR_P@\n";; \
-    *) printf "@MKDIR_P@\n";; \
-    esac
-MKDIR_P = $(shell $(MKDIR_P_CMD))
-LN_S = @LN_S@
