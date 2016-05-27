@@ -1,4 +1,4 @@
-<div class="slideshowBlock pluginBlock" id="slideshow"></div>
+<div class="slideshowBlock pluginWrapper" id="slideshow"></div>
 <script>
   var slideshowData = [
     {% for image in site.data.slideshow %}
@@ -11,7 +11,7 @@
     {% endfor %}
   ];
 </script>
-<script type="text/javascript">  
+<script type="text/javascript">
   var Slideshow = React.createClass({displayName: "Slideshow",
     getInitialState: function() {
       return {
@@ -36,11 +36,11 @@
     },
     render: function() {
       return (
-        React.createElement("div", {className: "slideshow"}, 
-          React.createElement("div", {className: "slides"}, 
+        React.createElement("div", {className: "slideshow"},
+          React.createElement("div", {className: "slides"},
             this.props.data.map(this.renderSlide)
-          ), 
-          React.createElement("div", {className: "pagination"}, 
+          ),
+          React.createElement("div", {className: "pagination"},
             this.props.data.map(this.renderPager)
           )
         )
@@ -51,17 +51,17 @@
         'slide': true,
         'slideActive': this.state.currentSlide === index,
       });
-      if (child.href) {          
+      if (child.href) {
         return (
-          React.createElement("div", {key: index, className: classes}, 
-            React.createElement("a", {href: child.href, alt: child.tooltip, title: child.tooltip}, 
+          React.createElement("div", {key: index, className: classes},
+            React.createElement("a", {href: child.href, alt: child.tooltip, title: child.tooltip},
               React.createElement("img", {src: child.imagesrc, alt: child.tooltip, title: child.tooltip})
             )
           )
         );
-      }  
+      }
       return (
-        React.createElement("div", {key: index, className: classes}, 
+        React.createElement("div", {key: index, className: classes},
           React.createElement("img", {src: child.imagesrc, alt: child.tooltip})
         )
       );
@@ -76,7 +76,7 @@
       );
     },
   });
-  
+
   function render(slideshowData) {
     React.render(
       React.createElement(Slideshow, {data: slideshowData}),

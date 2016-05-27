@@ -1,16 +1,13 @@
 ---
-id: eradicate
+docid: eradicate
 title: "Infer : Eradicate"
 layout: docs
 permalink: /docs/eradicate.html
-section: User Guide
-section_order: 01
-order: 03
 ---
 
 
 > "I call it my billion-dollar mistake. It was the invention of the null reference in 1965."
-> 
+>
 > [Tony Hoare](http://en.wikipedia.org/wiki/Tony_Hoare)
 
 

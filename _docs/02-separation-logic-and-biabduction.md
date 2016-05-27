@@ -1,11 +1,8 @@
 ---
-id: separation-logic-and-bi-abduction
+docid: separation-logic-and-bi-abduction
 title: Separation logic and bi-abduction
 layout: docs
 permalink: /docs/separation-logic-and-bi-abduction.html
-section: Foundations
-section_order: 02
-order: 02
 ---
 {% include katex_import.html %}
 
@@ -25,8 +22,8 @@ Separation logic is based on a logical connective \\( * \\) called the *separati
 \\( A*B \\) holds of a piece of program heap (a heaplet) when it can be divided into two sub-heaplets described by \\(A\\) and \\(B\\).
 For example, the formula
 $$x \mapsto y * y \mapsto x $$ can be read "\\(x\\) points to \\(y\\) and separately \\(y\\) points to \\(x\\)". This formula describes precisely two allocated memory cells. The first cell is allocated at the address denoted by the pointer \\(x\\) and the content of this cell is the value of \\(y\\).
-The second cell is 
-allocated at the address denoted by the pointer \\(y\\) and the content of this second cell is the value of \\(x\\). Crucially, we know that there are precisely two cells because \\( * \\) stipulates that they are separated and therefore the cells are allocated in two different parts of memory. In other words, \\( * \\) 
+The second cell is
+allocated at the address denoted by the pointer \\(y\\) and the content of this second cell is the value of \\(x\\). Crucially, we know that there are precisely two cells because \\( * \\) stipulates that they are separated and therefore the cells are allocated in two different parts of memory. In other words, \\( * \\)
 says that \\(x\\) and \\(y\\) do not hold the same value (i.e., these pointers are not aliased).
 The heaplet partitioning defined by the formula above can visualized like so:
 
@@ -35,7 +32,7 @@ The heaplet partitioning defined by the formula above can visualized like so:
 
 The important thing about separating conjunction is
 the way that it fits together with mutation to computer memory; reasoning about program commands
-tends to work by updating \\(*\\)-conjuncts in-place, mimicking the operational in-place update of RAM. 
+tends to work by updating \\(*\\)-conjuncts in-place, mimicking the operational in-place update of RAM.
 
 Separation logic uses Hoare triples of the form \\( \lbrace pre \rbrace prog \lbrace post \rbrace \\) where \\(pre\\) is the precondition, \\(prog\\) a program part, and \\(post\\)
 the postcondition. Triples are abstract specifications of the behavior of the program. For example, we could take
@@ -92,26 +89,26 @@ A * ?antiframe \vdash B * ?frame
 $$
 is called *bi-abduction*. The problem here is for the theorem prover to <i> discover </i> a pair of frame and antiframe formulae that make the entailment statement valid.
 
-Global analyses of large programs are normally computational untractable. However, 
+Global analyses of large programs are normally computational untractable. However,
 bi-abduction allows to break the large analysis of a large program in small independent analyses of its procedures.  This gives Infer the ability to scale independently of the size of the analyzed code. Moreover, by breaking the analysis in small
-independent parts, when the full program is analyzed again because 
-of a code change the analysis results of the unchanged part of the 
-code can be reused and only the code change needs to be re-analyzed. This process is called incremental analysis and it 
+independent parts, when the full program is analyzed again because
+of a code change the analysis results of the unchanged part of the
+code can be reused and only the code change needs to be re-analyzed. This process is called incremental analysis and it
 is very powerful when integrating a static analysis tool like infer in a development environment.
 
 
 
 In order to be able to decompose a global analysis in small independent analyses, let's first consider how a function
 call is analyzed in separation logic. Assume we have the following spec for a function \\( f() \\):
-$$ \lbrace pre\_f \rbrace \;\; f() \;\; \lbrace post\_f \rbrace $$ 
-and by analyzing the caller function, we compute that before 
+$$ \lbrace pre\_f \rbrace \;\; f() \;\; \lbrace post\_f \rbrace $$
+and by analyzing the caller function, we compute that before
 the call of \\( f \\), the formula \\( CallingState \\) hold. Then
 to utilize the specification of \\( f \\) the following implication must holds:
 
 $$ CallingState \vdash pre\_f  \;\;\;\;\;\;\;\;\;\;\;\; (Function Call)$$
 
 
-Given that, 
+Given that,
 bi-abduction is used at procedure call sites for two reasons: to discover missing state that is needed for the above implication to hold and allow the analysis
 to proceed (the antiframe) as well as state that the procedure leaves unchanged (the frame).
 
@@ -141,18 +138,18 @@ Notice that this satisfy the (Function Call) requirement to correctly make the c
 So let's add that information in the pre, and while we are at it
 record the information in the post of the first statement that comes from (spec).
 
-\\( \lbrace r1 \mapsto open  \rbrace \\)  
-\\( closeResource(r1) \\)  
-\\( \lbrace r1 \mapsto closed \rbrace \\)  
+\\( \lbrace r1 \mapsto open  \rbrace \\)
+\\( closeResource(r1) \\)
+\\( \lbrace r1 \mapsto closed \rbrace \\)
 \\( closeResource(r2) \\)
 
 Now, let's move to the second statement. Its precondition \\(r1 \mapsto closed\\) in the partial symbolic execution trace just given
 does not have the information needed by \\(closeResource(r2)\\), so we can fill that in and continue by
 putting \\(r2 \mapsto open\\) in the pre. While we are at it we can thread this assertion back to the beginning.
 
-\\( \lbrace r1 \mapsto open * r2 \mapsto open  \rbrace \\)  
-\\( closeResource(r1) \\)  
-\\( \lbrace r1 \mapsto closed * r2 \mapsto open\rbrace \\)  
+\\( \lbrace r1 \mapsto open * r2 \mapsto open  \rbrace \\)
+\\( closeResource(r1) \\)
+\\( \lbrace r1 \mapsto closed * r2 \mapsto open\rbrace \\)
 \\( closeResource(r2) \\)
 
 This information on what to thread backwards can be obtained as the antiframe part of the bi-abduction question
@@ -162,13 +159,13 @@ $$
 where the solution picks
 \\(antiframe = r2 \mapsto open\\) and \\(frame = r1 \mapsto closed\\).
 Note that the antiframe is precisely the information missing from the precondition in order for \\(closeResource(r2)\\) to proceed. On the other hand, the frame \\(r1 \mapsto closed\\) is the portion of state not changed by \\(closeResource(r2)\\);
-we can thread that through to the overall postconditon 
+we can thread that through to the overall postconditon
 (as justified by the frame rule), giving us
 
-\\( \lbrace r1 \mapsto open * r2 \mapsto open  \rbrace \\)  
-\\( closeResource(r1) \\)  
-\\( \lbrace r1 \mapsto closed * r2 \mapsto open\rbrace \\)  
-\\( closeResource(r2) \\)  
+\\( \lbrace r1 \mapsto open * r2 \mapsto open  \rbrace \\)
+\\( closeResource(r1) \\)
+\\( \lbrace r1 \mapsto closed * r2 \mapsto open\rbrace \\)
+\\( closeResource(r2) \\)
 \\( \lbrace r1 \mapsto closed * r2 \mapsto closed \rbrace\\)
 
 Thus, we have obtained a pre and post for this code by symbolically executing it, using bi-abduction
@@ -182,7 +179,7 @@ This is the basis for how Infer works, why it can scale, and how it can analyze 
 Context: The logical terminology we have been using here comes from AI and philosophy of science.
 Abductive inference was introduced by the philosopher Charles Peirce, and described as the mechanism
 underpinning  hypothesis formation (or, guessing  what might be true about the world), the most
-creative part of the scientific process. 
+creative part of the scientific process.
 Abduction and the frame problem have both attracted significant attention in AI.
 Infer uses an automated form of abduction to generate
 preconditions describing the memory that a program touches (the antiframe part above), and frame inference to
@@ -193,7 +190,7 @@ In a sense, Infer approaches automated reasoning about programs by mimicking wha
 It is when the reasoning goes wrong that Infer reports a potential bug.
 
 This description is by necessity simplified compared to what Infer actually does.
-More technical information can be found in the following papers. The descriptions in the papers are 
+More technical information can be found in the following papers. The descriptions in the papers are
 precise, but still simplified; there are many engineering decisions not recorded there. Finally, beyond the papers,
 you can read the source code if you wish!
 

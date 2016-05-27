@@ -1,11 +1,8 @@
 ---
-id: limitations
+docid: limitations
 title: Limitations, etc
 layout: docs
 permalink: /docs/limitations.html
-section: Foundations
-section_order: 02
-order: 03
 ---
 
 
@@ -15,7 +12,7 @@ order: 03
 We want to be clear that if you run Infer on your project you might get very good results, but it is also possible that you don't.
 Although we have had good fix rates working with Facebook mobile codebases,
 we are not making strong claims about rates of false alarms or similar when applied to arbitrary
-codebases. For example, we have had some success [getting bugs fixed 
+codebases. For example, we have had some success [getting bugs fixed
 in the DuckDuckGo Android App](blog/2015/05/22/Infer-on-open-source-android-apps.html), but we encountered many false alarms when running Infer on GNU coreutils.
 It typical of program verification and static analysis tools that their results vary,
 and that is to be expected, e.g., because
@@ -50,7 +47,7 @@ Some bug types we don't report as of yet include
 - Leaking of tainted data
 - Concurrency race conditions
 
-and more.  In the first three cases we have partial treatments inside of Infer, but we have not surfaced these capabilities yet; the reports are not of sufficient quality to present to developers. 
+and more.  In the first three cases we have partial treatments inside of Infer, but we have not surfaced these capabilities yet; the reports are not of sufficient quality to present to developers.
 For example, Infer can
 find some potential array bounds errors, but many of its reports are false alarms and it misses still more.
 

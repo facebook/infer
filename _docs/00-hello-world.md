@@ -1,11 +1,8 @@
 ---
-id: hello-world
+docid: hello-world
 title: Hello, World!
 layout: docs
 permalink: /docs/hello-world.html
-section: Quick Start
-section_order: 00
-order: 02
 ---
 
 Follow the instructions in this page to try Infer on a few small
@@ -52,7 +49,7 @@ You should see the following error reported by Infer.
 
 ```bash
 Hello.java:5: error: NULL_DEREFERENCE
-  object s last assigned on line 4 could be null and is dereferenced at line 5  
+  object s last assigned on line 4 could be null and is dereferenced at line 5
 ```
 
 Now edit the file to add null checks:
@@ -203,7 +200,7 @@ app/src/main/java/infer/inferandroidexample/MainActivity.java:29: error: NULL_DE
   29. >         int length = s.length();
   30.           writeToFile();
   31.       }
-  32.   
+  32.
 
 app/src/main/java/infer/inferandroidexample/MainActivity.java:46: error: RESOURCE_LEAK
    resource of type java.io.FileOutputStream acquired to fis by call to FileOutputStream(...) at line 43 is not released after line 46
@@ -212,7 +209,7 @@ app/src/main/java/infer/inferandroidexample/MainActivity.java:46: error: RESOURC
   46. >         } catch (IOException e) {
   47.               //Deal with exception
   48.           }
-  49.   
+  49.
 
 app/src/main/java/infer/other/MainActivity.java:23: error: NULL_DEREFERENCE
   object returned by source() could be null and is dereferenced at line 23
@@ -220,7 +217,7 @@ app/src/main/java/infer/other/MainActivity.java:23: error: NULL_DEREFERENCE
   22.     protected void onCreate(Bundle savedInstanceState) {
   23. >     source().toString();
   24.     }
-  25.   
+  25.
 
 ```
 

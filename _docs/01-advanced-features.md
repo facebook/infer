@@ -1,11 +1,8 @@
 ---
-id: advanced-features
+docid: advanced-features
 title: Advanced usage
 layout: docs
 permalink: /docs/advanced-features.html
-section: User Guide
-section_order: 01
-order: 05
 ---
 
 In this section we discuss how to use Infer if you wish to make contributions to it or just look under the hood

@@ -1,14 +1,11 @@
 ---
-id: analyzing-apps-or-projects
+docid: analyzing-apps-or-projects
 title: Analyzing apps or projects
 layout: docs
 permalink: /docs/analyzing-apps-or-projects.html
-section: User Guide
-section_order: 01
-order: 02
 ---
 
-To analyze files with Infer you can use the compilers `javac` and `clang`. You can also use Infer with `gcc`, however, internally Infer will use `clang` to compile your code. So, it may not work if your code does not compile with `clang`. 
+To analyze files with Infer you can use the compilers `javac` and `clang`. You can also use Infer with `gcc`, however, internally Infer will use `clang` to compile your code. So, it may not work if your code does not compile with `clang`.
 
 Moreover, you can run Infer with a variety of build systems. Notice that you can run infer faster by running the compilation command in parallel, e.g. `infer -- make -j8`.
 Please also take into account that if you wish to analyze a project, you should probably do `clean` beforehand so that the compiler compiles all the files and so Infer also analyses all the files (see the [previous section](docs/infer-workflow.html)).

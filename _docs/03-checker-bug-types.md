@@ -1,11 +1,8 @@
 ---
-id: checkers-bug-types
+docid: checkers-bug-types
 title: Checkers bug types
 layout: docs
 permalink: /docs/checkers-bug-types.html
-section: Bug Types Reference
-section_order: 03
-order: 03
 ---
 
 ## <a name="CHECKERS_IMMUTABLE_CAST"></a>Checkers immutable cast
