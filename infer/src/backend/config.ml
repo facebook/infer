@@ -212,6 +212,7 @@ let whitelisted_cpp_methods = [
   ["google"; "Check_NEImpl"];
   ["google"; "Check_LEImpl"];
   ["google"; "Check_GTImpl"];
+  ["google"; "Check_GEImpl"];
   ["google"; "Check_EQImpl"]
 ]
 

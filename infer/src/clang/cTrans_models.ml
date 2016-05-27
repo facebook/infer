@@ -70,7 +70,6 @@ let get_builtinname method_name =
   else None
 
 let is_modeled_builtin funct =
-  funct = CFrontend_config.builtin_expect ||
   funct = CFrontend_config.builtin_memset_chk
 
 let is_assert_log_s funct =

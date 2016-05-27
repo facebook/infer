@@ -860,29 +860,34 @@ struct
         CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type callee_pname_opt with
       | Some builtin -> builtin
       | None ->
-          let res_trans_call =
-            match cast_trans context act_params sil_loc callee_pname_opt function_type with
-            | Some (instr, cast_exp) ->
-                { empty_res_trans with
-                  instrs = [instr];
-                  exps = [(cast_exp, function_type)]; }
-            | None ->
-                let call_flags = { Sil.cf_default with Sil.cf_is_objc_block = is_call_to_block; } in
-                create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
-                  ~is_objc_method:false in
-          let nname = "Call "^(Sil.exp_to_string sil_fe) in
-          let all_res_trans = result_trans_subexprs @ [res_trans_call] in
-          let res_trans_to_parent =
-            PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
-          (match callee_pname_opt with
-           | Some callee_pname ->
-               let open CContext in
-               if not (Builtin.is_registered callee_pname) then
-                 begin
-                   Cg.add_edge context.cg procname callee_pname;
-                 end
-           | None -> ());
-          { res_trans_to_parent with exps = res_trans_call.exps }
+          (* Translate call to __builtin_expect as the first argument *)
+          (* for simpler symbolic execution *)
+          match callee_pname_opt, result_trans_subexprs with
+          | Some pname, [_; fst_arg_res; _]
+            when Procname.to_string pname = CFrontend_config.builtin_expect ->
+              fst_arg_res
+          | _ ->
+              let res_trans_call =
+                match cast_trans context act_params sil_loc callee_pname_opt function_type with
+                | Some (instr, cast_exp) ->
+                    { empty_res_trans with
+                      instrs = [instr];
+                      exps = [(cast_exp, function_type)]; }
+                | None ->
+                    let call_flags =
+                      { Sil.cf_default with Sil.cf_is_objc_block = is_call_to_block; } in
+                    create_call_instr trans_state function_type sil_fe act_params sil_loc
+                      call_flags ~is_objc_method:false in
+              let nname = "Call "^(Sil.exp_to_string sil_fe) in
+              let all_res_trans = result_trans_subexprs @ [res_trans_call] in
+              let res_trans_to_parent = PriorityNode.compute_results_to_parent trans_state_pri
+                  sil_loc nname si all_res_trans in
+              (match callee_pname_opt with
+               | Some callee_pname ->
+                   if not (Builtin.is_registered callee_pname) then
+                     Cg.add_edge context.CContext.cg procname callee_pname
+               | None -> ());
+              { res_trans_to_parent with exps = res_trans_call.exps }
 
   and cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt
       si function_type is_cpp_call_virtual =
@@ -900,31 +905,31 @@ struct
       CTrans_utils.trans_assertion sil_loc context trans_state_pri.succ_nodes
     else
       (* As we may have nodes coming from different parameters we need to  *)
-    (* call instruction for each parameter and collect the results       *)
-    (* afterwards. The 'instructions' function does not do that          *)
-    let trans_state_param =
-      { trans_state_pri with succ_nodes = []; var_exp_typ = None } in
-    let result_trans_subexprs =
-      let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
-      let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
-      result_trans_callee :: res_trans_p in
-    (* first expr is method address, rest are params including 'this' parameter *)
-    let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
-    let call_flags = {
-      Sil.cf_virtual = is_cpp_call_virtual;
-      Sil.cf_interface = false;
-      Sil.cf_noreturn = false;
-      Sil.cf_is_objc_block = false;
-      Sil.cf_targets = [];
-    } in
-    let res_trans_call = create_call_instr trans_state_pri function_type sil_method actual_params
-        sil_loc call_flags ~is_objc_method:false in
-    let nname = "Call " ^ (Sil.exp_to_string sil_method) in
-    let all_res_trans = result_trans_subexprs @ [res_trans_call] in
-    let result_trans_to_parent =
-      PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
-    Cg.add_edge context.CContext.cg procname callee_pname;
-    { result_trans_to_parent with exps = res_trans_call.exps }
+      (* call instruction for each parameter and collect the results       *)
+      (* afterwards. The 'instructions' function does not do that          *)
+      let trans_state_param =
+        { trans_state_pri with succ_nodes = []; var_exp_typ = None } in
+      let result_trans_subexprs =
+        let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
+        let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
+        result_trans_callee :: res_trans_p in
+      (* first expr is method address, rest are params including 'this' parameter *)
+      let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
+      let call_flags = {
+        Sil.cf_virtual = is_cpp_call_virtual;
+        Sil.cf_interface = false;
+        Sil.cf_noreturn = false;
+        Sil.cf_is_objc_block = false;
+        Sil.cf_targets = [];
+      } in
+      let res_trans_call = create_call_instr trans_state_pri function_type sil_method actual_params
+          sil_loc call_flags ~is_objc_method:false in
+      let nname = "Call " ^ (Sil.exp_to_string sil_method) in
+      let all_res_trans = result_trans_subexprs @ [res_trans_call] in
+      let result_trans_to_parent =
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans in
+      Cg.add_edge context.CContext.cg procname callee_pname;
+      { result_trans_to_parent with exps = res_trans_call.exps }
 
 
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =

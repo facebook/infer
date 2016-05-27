@@ -64,3 +64,8 @@ int check_gt_example(int x) {
   CHECK_GT(x, 5);
   return x;
 }
+
+int empty_check_ok(int index, std::vector<int> v) {
+  CHECK(index >= 1 && index < v.size());
+  return v[index]; // doesn't report empty vector
+}
