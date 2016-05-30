@@ -40,6 +40,11 @@ let rec remove_redundancy have_same_key acc = function
       if have_same_key x y then remove_redundancy have_same_key acc (x:: l')
       else remove_redundancy have_same_key (x:: acc) l
 
+let rec is_java_class = function
+  | Sil.Tstruct struct_typ -> Sil.struct_typ_is_java_class struct_typ
+  | Sil.Tarray (inner_typ, _) | Tptr (inner_typ, _) -> is_java_class inner_typ
+  | _ -> false
+
 (** {2 Ordinary Theorem Proving} *)
 
 let (++) = Sil.Int.add
@@ -821,13 +826,14 @@ let check_inconsistency_base prop =
     let procedure_attr =
       Cfg.Procdesc.get_attributes procdesc in
     let is_java_this pvar =
-      !Config.curr_language = Config.Java && Pvar.is_this pvar in
+      procedure_attr.ProcAttributes.language = Config.Java && Pvar.is_this pvar in
     let is_objc_instance_self pvar =
-      !Config.curr_language = Config.Clang &&
+      procedure_attr.ProcAttributes.language = Config.Clang &&
       Pvar.get_name pvar = Mangled.from_string "self" &&
       procedure_attr.ProcAttributes.is_objc_instance_method in
     let is_cpp_this pvar =
-      !Config.curr_language = Config.Clang && Pvar.is_this pvar &&
+      procedure_attr.ProcAttributes.language = Config.Clang &&
+      Pvar.is_this pvar &&
       procedure_attr.ProcAttributes.is_cpp_instance_method in
     let do_hpred = function
       | Sil.Hpointsto (Sil.Lvar pv, Sil.Eexp (e, _), _) ->
@@ -1528,7 +1534,8 @@ struct
 
   (** check if t1 is a subtype of t2 *)
   let check_subtype tenv t1 t2 =
-    if !Config.curr_language = Config.Java then
+    if is_java_class t1
+    then
       check_subtype_java tenv t1 t2
     else
       match get_cpp_objc_type_name t1, get_cpp_objc_type_name t2 with
@@ -1562,7 +1569,7 @@ struct
         else None, Some st1
 
   let case_analysis_type tenv (t1, st1) (t2, st2) =
-    if !Config.curr_language = Config.Java then
+    if is_java_class t1 then
       case_analysis_type_java tenv (t1, st1) (t2, st2)
     else match get_cpp_objc_type_name t1, get_cpp_objc_type_name t2 with
       | Some cn1, Some cn2 ->
@@ -1639,11 +1646,11 @@ let texp_imply tenv subs texp1 texp2 e1 calc_missing =
   (* classes and arrays in Java, and just classes in C++ and ObjC *)
   let types_subject_to_dynamic_cast =
     match texp1, texp2 with
-    | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tstruct _, _)
-    | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tarray _, _)
-    | Sil.Sizeof (Sil.Tarray _, _), Sil.Sizeof (Sil.Tstruct _, _)
-    | Sil.Sizeof (Sil.Tstruct _, _), Sil.Sizeof (Sil.Tarray _, _)
-      when !Config.curr_language = Config.Java -> true
+    | Sil.Sizeof ((Sil.Tstruct _) as typ1, _), Sil.Sizeof (Sil.Tstruct _, _)
+    | Sil.Sizeof ((Sil.Tarray _) as typ1, _), Sil.Sizeof (Sil.Tarray _, _)
+    | Sil.Sizeof ((Sil.Tarray _) as typ1, _), Sil.Sizeof (Sil.Tstruct _, _)
+    | Sil.Sizeof ((Sil.Tstruct _) as typ1, _), Sil.Sizeof (Sil.Tarray _, _)
+      when is_java_class typ1 -> true
 
     | Sil.Sizeof (typ1, _), Sil.Sizeof (typ2, _) ->
         (Sil.is_cpp_class typ1 && Sil.is_cpp_class typ2) ||

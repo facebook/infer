@@ -348,6 +348,22 @@ and exp =
 let struct_typ_equal: struct_typ => struct_typ => bool;
 
 
+/** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
+let struct_typ_get_class_kind: struct_typ => option Csu.class_kind;
+
+
+/** return true if [struct_typ] is a Java class */
+let struct_typ_is_java_class: struct_typ => bool;
+
+
+/** return true if [struct_typ] is a C++ class. Note that this returns false for raw structs. */
+let struct_typ_is_cpp_class: struct_typ => bool;
+
+
+/** return true if [struct_typ] is an Obj-C class. Note that this returns false for raw structs. */
+let struct_typ_is_objc_class: struct_typ => bool;
+
+
 /** Sets of types. */
 let module StructTypSet: Set.S with type elt = struct_typ;
 

@@ -1882,6 +1882,38 @@ let hpara_equal hpara1 hpara2 => hpara_compare hpara1 hpara2 == 0;
 let hpara_dll_equal hpara1 hpara2 => hpara_dll_compare hpara1 hpara2 == 0;
 
 
+/** if [struct_typ] is a class, return its class kind (Java, CPP, or Obj-C) */
+let struct_typ_get_class_kind struct_typ =>
+  switch struct_typ.csu {
+  | Csu.Class class_kind => Some class_kind
+  | _ => None
+  };
+
+
+/** return true if [struct_typ] is a Java class */
+let struct_typ_is_java_class struct_typ =>
+  switch (struct_typ_get_class_kind struct_typ) {
+  | Some Csu.Java => true
+  | _ => false
+  };
+
+
+/** return true if [struct_typ] is a C++ class. Note that this returns false for raw structs. */
+let struct_typ_is_cpp_class struct_typ =>
+  switch (struct_typ_get_class_kind struct_typ) {
+  | Some Csu.CPP => true
+  | _ => false
+  };
+
+
+/** return true if [struct_typ] is an Obj-C class. Note that this returns false for raw structs. */
+let struct_typ_is_objc_class struct_typ =>
+  switch (struct_typ_get_class_kind struct_typ) {
+  | Some Csu.Objc => true
+  | _ => false
+  };
+
+
 /** {2 Sets and maps of types} */
 let module StructTypSet = Set.Make {
   type t = struct_typ;
