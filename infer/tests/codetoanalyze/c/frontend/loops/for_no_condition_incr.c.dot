@@ -4,11 +4,11 @@ digraph iCFG {
 	
 
 	 9 -> 5 ;
-8 [label="8:  BinaryOperatorStmt: AddAssign \n   n$0=*&j:int  [line 13]\n  n$1=*&j:int  [line 13]\n  *&j:int =(n$1 + n$0) [line 13]\n  REMOVE_TEMPS(n$0,n$1); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: AddAssign \n   n$0=*&j:int  [line 13]\n  n$1=*&j:int  [line 13]\n  *&j:int =(n$1 + n$0) [line 13]\n " shape="box"]
 	
 
 	 8 -> 4 ;
-7 [label="7: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n  NULLIFY(&j); [line 12]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n " shape="invhouse"]
 	
 
 	 7 -> 3 ;
@@ -16,7 +16,7 @@ digraph iCFG {
 	
 
 	 6 -> 8 ;
-5 [label="5:  DeclStmt \n   *&b:int =0 [line 12]\n  NULLIFY(&b); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+5 [label="5:  DeclStmt \n   *&b:int =0 [line 12]\n " shape="box"]
 	
 
 	 5 -> 4 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 
 	 4 -> 6 ;
 	 4 -> 7 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

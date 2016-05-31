@@ -1,23 +1,23 @@
 /* @generated */
 digraph iCFG {
-66 [label="66:  Return Stmt \n   n$3=*&SIL_temp_conditional___n$2:int  [line 35]\n  *&return:int =n$3 [line 35]\n  REMOVE_TEMPS(n$3); [line 35]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+66 [label="66:  Return Stmt \n   n$3=*&SIL_temp_conditional___n$2:int  [line 35]\n  *&return:int =n$3 [line 35]\n " shape="box"]
 	
 
 	 66 -> 59 ;
-65 [label="65:  BinaryConditinalStmt Init \n   n$0=_fun_test2(2:int ) [line 35]\n  n$1=_fun_test2((2 + n$0):int ) [line 35]\n  REMOVE_TEMPS(n$0); [line 35]\n " shape="box"]
+65 [label="65:  BinaryConditinalStmt Init \n   n$0=_fun_test2(2:int ) [line 35]\n  n$1=_fun_test2((2 + n$0):int ) [line 35]\n " shape="box"]
 	
 
 	 65 -> 61 ;
 	 65 -> 62 ;
-64 [label="64:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =2 [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+64 [label="64:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =2 [line 35]\n " shape="box"]
 	
 
 	 64 -> 60 ;
-63 [label="63:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =n$1 [line 35]\n  REMOVE_TEMPS(n$1); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+63 [label="63:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =n$1 [line 35]\n " shape="box"]
 	
 
 	 63 -> 60 ;
-62 [label="62: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 35]\n  REMOVE_TEMPS(n$1); [line 35]\n " shape="invhouse"]
+62 [label="62: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 35]\n " shape="invhouse"]
 	
 
 	 62 -> 64 ;
@@ -36,15 +36,15 @@ digraph iCFG {
 	
 
 	 58 -> 65 ;
-57 [label="57:  DeclStmt \n   n$4=*&SIL_temp_conditional___n$1:int  [line 31]\n  *&z:int =n$4 [line 31]\n  REMOVE_TEMPS(n$4); [line 31]\n  NULLIFY(&SIL_temp_conditional___n$1); [line 31]\n " shape="box"]
+57 [label="57:  DeclStmt \n   n$4=*&SIL_temp_conditional___n$1:int  [line 31]\n  *&z:int =n$4 [line 31]\n " shape="box"]
 	
 
 	 57 -> 51 ;
-56 [label="56:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =0 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+56 [label="56:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =0 [line 31]\n " shape="box"]
 	
 
 	 56 -> 52 ;
-55 [label="55:  ConditinalStmt Branch \n   n$2=*&p:int * [line 31]\n  n$3=*n$2:int  [line 31]\n  *&SIL_temp_conditional___n$1:int =n$3 [line 31]\n  REMOVE_TEMPS(n$2,n$3); [line 31]\n  NULLIFY(&p); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+55 [label="55:  ConditinalStmt Branch \n   n$2=*&p:int * [line 31]\n  n$3=*n$2:int  [line 31]\n  *&SIL_temp_conditional___n$1:int =n$3 [line 31]\n " shape="box"]
 	
 
 	 55 -> 52 ;
@@ -60,7 +60,7 @@ digraph iCFG {
 	
 
 	 52 -> 57 ;
-51 [label="51:  Return Stmt \n   n$0=*&z:int  [line 32]\n  *&return:int =n$0 [line 32]\n  REMOVE_TEMPS(n$0); [line 32]\n  NULLIFY(&z); [line 32]\n  APPLY_ABSTRACTION; [line 32]\n " shape="box"]
+51 [label="51:  Return Stmt \n   n$0=*&z:int  [line 32]\n  *&return:int =n$0 [line 32]\n " shape="box"]
 	
 
 	 51 -> 50 ;
@@ -72,24 +72,24 @@ digraph iCFG {
 
 	 49 -> 53 ;
 	 49 -> 54 ;
-48 [label="48:  Return Stmt \n   n$2=*&SIL_temp_conditional___n$1:int  [line 28]\n  *&return:int =n$2 [line 28]\n  REMOVE_TEMPS(n$2); [line 28]\n  NULLIFY(&SIL_temp_conditional___n$1); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+48 [label="48:  Return Stmt \n   n$2=*&SIL_temp_conditional___n$1:int  [line 28]\n  *&return:int =n$2 [line 28]\n " shape="box"]
 	
 
 	 48 -> 41 ;
-47 [label="47:  BinaryConditinalStmt Init \n   n$0=*&b:int  [line 28]\n  NULLIFY(&b); [line 28]\n " shape="box"]
+47 [label="47:  BinaryConditinalStmt Init \n   n$0=*&b:int  [line 28]\n " shape="box"]
 	
 
 	 47 -> 43 ;
 	 47 -> 44 ;
-46 [label="46:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+46 [label="46:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 28]\n " shape="box"]
 	
 
 	 46 -> 42 ;
-45 [label="45:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =n$0 [line 28]\n  REMOVE_TEMPS(n$0); [line 28]\n  APPLY_ABSTRACTION; [line 28]\n " shape="box"]
+45 [label="45:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =n$0 [line 28]\n " shape="box"]
 	
 
 	 45 -> 42 ;
-44 [label="44: Prune (false branch) \n   PRUNE((n$0 == 0), false); [line 28]\n  REMOVE_TEMPS(n$0); [line 28]\n " shape="invhouse"]
+44 [label="44: Prune (false branch) \n   PRUNE((n$0 == 0), false); [line 28]\n " shape="invhouse"]
 	
 
 	 44 -> 46 ;
@@ -108,24 +108,24 @@ digraph iCFG {
 	
 
 	 40 -> 47 ;
-39 [label="39:  Return Stmt \n   n$2=*&SIL_temp_conditional___n$1:int  [line 26]\n  n$3=_fun_test2(n$2:int ) [line 26]\n  *&return:int =n$3 [line 26]\n  REMOVE_TEMPS(n$2,n$3); [line 26]\n  NULLIFY(&SIL_temp_conditional___n$1); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+39 [label="39:  Return Stmt \n   n$2=*&SIL_temp_conditional___n$1:int  [line 26]\n  n$3=_fun_test2(n$2:int ) [line 26]\n  *&return:int =n$3 [line 26]\n " shape="box"]
 	
 
 	 39 -> 32 ;
-38 [label="38:  BinaryConditinalStmt Init \n   n$0=*&b:int  [line 26]\n  NULLIFY(&b); [line 26]\n " shape="box"]
+38 [label="38:  BinaryConditinalStmt Init \n   n$0=*&b:int  [line 26]\n " shape="box"]
 	
 
 	 38 -> 34 ;
 	 38 -> 35 ;
-37 [label="37:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+37 [label="37:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 26]\n " shape="box"]
 	
 
 	 37 -> 33 ;
-36 [label="36:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =n$0 [line 26]\n  REMOVE_TEMPS(n$0); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+36 [label="36:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =n$0 [line 26]\n " shape="box"]
 	
 
 	 36 -> 33 ;
-35 [label="35: Prune (false branch) \n   PRUNE((n$0 == 0), false); [line 26]\n  REMOVE_TEMPS(n$0); [line 26]\n " shape="invhouse"]
+35 [label="35: Prune (false branch) \n   PRUNE((n$0 == 0), false); [line 26]\n " shape="invhouse"]
 	
 
 	 35 -> 37 ;
@@ -144,24 +144,24 @@ digraph iCFG {
 	
 
 	 31 -> 38 ;
-30 [label="30:  DeclStmt \n   n$3=*&SIL_temp_conditional___n$2:int  [line 22]\n  *&x:int =n$3 [line 22]\n  REMOVE_TEMPS(n$3); [line 22]\n  NULLIFY(&SIL_temp_conditional___n$2); [line 22]\n " shape="box"]
+30 [label="30:  DeclStmt \n   n$3=*&SIL_temp_conditional___n$2:int  [line 22]\n  *&x:int =n$3 [line 22]\n " shape="box"]
 	
 
 	 30 -> 23 ;
-29 [label="29:  BinaryConditinalStmt Init \n   n$1=*&b:int  [line 22]\n  NULLIFY(&b); [line 22]\n " shape="box"]
+29 [label="29:  BinaryConditinalStmt Init \n   n$1=*&b:int  [line 22]\n " shape="box"]
 	
 
 	 29 -> 25 ;
 	 29 -> 26 ;
-28 [label="28:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =1 [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+28 [label="28:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =1 [line 22]\n " shape="box"]
 	
 
 	 28 -> 24 ;
-27 [label="27:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =n$1 [line 22]\n  REMOVE_TEMPS(n$1); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+27 [label="27:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$2:int =n$1 [line 22]\n " shape="box"]
 	
 
 	 27 -> 24 ;
-26 [label="26: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 22]\n  REMOVE_TEMPS(n$1); [line 22]\n " shape="invhouse"]
+26 [label="26: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 22]\n " shape="invhouse"]
 	
 
 	 26 -> 28 ;
@@ -173,7 +173,7 @@ digraph iCFG {
 	
 
 	 24 -> 30 ;
-23 [label="23:  Return Stmt \n   n$0=*&x:int  [line 23]\n  *&return:int =n$0 [line 23]\n  REMOVE_TEMPS(n$0); [line 23]\n  NULLIFY(&x); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+23 [label="23:  Return Stmt \n   n$0=*&x:int  [line 23]\n  *&return:int =n$0 [line 23]\n " shape="box"]
 	
 
 	 23 -> 22 ;
@@ -184,23 +184,23 @@ digraph iCFG {
 	
 
 	 21 -> 29 ;
-20 [label="20:  DeclStmt \n   n$4=*&SIL_temp_conditional___n$1:int  [line 17]\n  *&x:int =n$4 [line 17]\n  REMOVE_TEMPS(n$4); [line 17]\n  NULLIFY(&SIL_temp_conditional___n$1); [line 17]\n " shape="box"]
+20 [label="20:  DeclStmt \n   n$4=*&SIL_temp_conditional___n$1:int  [line 17]\n  *&x:int =n$4 [line 17]\n " shape="box"]
 	
 
 	 20 -> 14 ;
-19 [label="19:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+19 [label="19:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$1:int =1 [line 17]\n " shape="box"]
 	
 
 	 19 -> 15 ;
-18 [label="18:  ConditinalStmt Branch \n   n$3=*&b:int  [line 17]\n  *&SIL_temp_conditional___n$1:int =n$3 [line 17]\n  REMOVE_TEMPS(n$3); [line 17]\n  NULLIFY(&b); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+18 [label="18:  ConditinalStmt Branch \n   n$3=*&b:int  [line 17]\n  *&SIL_temp_conditional___n$1:int =n$3 [line 17]\n " shape="box"]
 	
 
 	 18 -> 15 ;
-17 [label="17: Prune (false branch) \n   n$2=*&b:int  [line 17]\n  PRUNE((n$2 == 0), false); [line 17]\n  REMOVE_TEMPS(n$2); [line 17]\n  NULLIFY(&b); [line 17]\n " shape="invhouse"]
+17 [label="17: Prune (false branch) \n   n$2=*&b:int  [line 17]\n  PRUNE((n$2 == 0), false); [line 17]\n " shape="invhouse"]
 	
 
 	 17 -> 19 ;
-16 [label="16: Prune (true branch) \n   n$2=*&b:int  [line 17]\n  PRUNE((n$2 != 0), true); [line 17]\n  REMOVE_TEMPS(n$2); [line 17]\n " shape="invhouse"]
+16 [label="16: Prune (true branch) \n   n$2=*&b:int  [line 17]\n  PRUNE((n$2 != 0), true); [line 17]\n " shape="invhouse"]
 	
 
 	 16 -> 18 ;
@@ -208,7 +208,7 @@ digraph iCFG {
 	
 
 	 15 -> 20 ;
-14 [label="14:  Return Stmt \n   n$0=*&x:int  [line 18]\n  *&return:int =n$0 [line 18]\n  REMOVE_TEMPS(n$0); [line 18]\n  NULLIFY(&x); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+14 [label="14:  Return Stmt \n   n$0=*&x:int  [line 18]\n  *&return:int =n$0 [line 18]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -220,23 +220,23 @@ digraph iCFG {
 
 	 12 -> 16 ;
 	 12 -> 17 ;
-11 [label="11:  Return Stmt \n   n$3=*&SIL_temp_conditional___n$0:int  [line 14]\n  n$4=_fun_test2(n$3:int ) [line 14]\n  *&return:int =n$4 [line 14]\n  REMOVE_TEMPS(n$3,n$4); [line 14]\n  NULLIFY(&SIL_temp_conditional___n$0); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+11 [label="11:  Return Stmt \n   n$3=*&SIL_temp_conditional___n$0:int  [line 14]\n  n$4=_fun_test2(n$3:int ) [line 14]\n  *&return:int =n$4 [line 14]\n " shape="box"]
 	
 
 	 11 -> 5 ;
-10 [label="10:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:int =1 [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+10 [label="10:  ConditinalStmt Branch \n   *&SIL_temp_conditional___n$0:int =1 [line 14]\n " shape="box"]
 	
 
 	 10 -> 6 ;
-9 [label="9:  ConditinalStmt Branch \n   n$2=*&b:int  [line 14]\n  *&SIL_temp_conditional___n$0:int =n$2 [line 14]\n  REMOVE_TEMPS(n$2); [line 14]\n  NULLIFY(&b); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+9 [label="9:  ConditinalStmt Branch \n   n$2=*&b:int  [line 14]\n  *&SIL_temp_conditional___n$0:int =n$2 [line 14]\n " shape="box"]
 	
 
 	 9 -> 6 ;
-8 [label="8: Prune (false branch) \n   n$1=*&b:int  [line 14]\n  PRUNE((n$1 == 0), false); [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n  NULLIFY(&b); [line 14]\n " shape="invhouse"]
+8 [label="8: Prune (false branch) \n   n$1=*&b:int  [line 14]\n  PRUNE((n$1 == 0), false); [line 14]\n " shape="invhouse"]
 	
 
 	 8 -> 10 ;
-7 [label="7: Prune (true branch) \n   n$1=*&b:int  [line 14]\n  PRUNE((n$1 != 0), true); [line 14]\n  REMOVE_TEMPS(n$1); [line 14]\n " shape="invhouse"]
+7 [label="7: Prune (true branch) \n   n$1=*&b:int  [line 14]\n  PRUNE((n$1 != 0), true); [line 14]\n " shape="invhouse"]
 	
 
 	 7 -> 9 ;
@@ -252,7 +252,7 @@ digraph iCFG {
 
 	 4 -> 7 ;
 	 4 -> 8 ;
-3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 12]\n  *&return:int =n$0 [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  NULLIFY(&x); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&x:int  [line 12]\n  *&return:int =n$0 [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

@@ -30,12 +30,11 @@ let init_global_state source_filename =
   Ident.NameGenerator.reset ();
   Config.nLOC := FileLOC.file_get_loc source_filename
 
-let store_icfg tenv cg cfg =
+let store_icfg cg cfg =
   let source_dir = DB.source_dir_from_source_file !DB.current_source in
   let get_internal_file = DB.source_dir_get_internal_file source_dir in
   let cg_file = get_internal_file ".cg" in
   let cfg_file = get_internal_file ".cfg" in
-  Cfg.iter_proc_desc cfg (fun _ pdesc -> Preanal.doit pdesc cg tenv);
   Cg.store_to_file cg_file cg;
   Cfg.store_cfg_to_file cfg_file true cfg;
   if Config.debug_mode then
@@ -57,5 +56,5 @@ let () =
   let lexbuf = Lexing.from_channel stdin in
   let prog = LParser.program LLexer.token lexbuf in
   let (cfg, cg, tenv) = LTrans.trans_program prog in
-  store_icfg tenv cg cfg;
+  store_icfg cg cfg;
   store_tenv tenv

@@ -8,18 +8,18 @@ digraph iCFG {
 	
 
 	 10 -> 9 ;
-9 [label="9:  DeclStmt \n   _fun_X_X(&x3:class X *,0:int ,1:int ) [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+9 [label="9:  DeclStmt \n   _fun_X_X(&x3:class X *,0:int ,1:int ) [line 23]\n " shape="box"]
 	
 
 	 9 -> 8 ;
-8 [label="8: Exit test \n   NULLIFY(&x3); [line 24]\n  NULLIFY(&x2); [line 24]\n  NULLIFY(&x1); [line 24]\n " color=yellow style=filled]
+8 [label="8: Exit test \n  " color=yellow style=filled]
 	
 
 7 [label="7: Start test\nFormals: \nLocals:  x3:class X  x2:class X  x1:class X  \n   DECLARE_LOCALS(&return,&x3,&x2,&x1); [line 20]\n " color=yellow style=filled]
 	
 
 	 7 -> 11 ;
-6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 18]\n  n$1=*&a:int  [line 18]\n  n$2=*&b:int  [line 18]\n  *n$0.f:int =(n$1 + n$2) [line 18]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 18]\n  NULLIFY(&a); [line 18]\n  NULLIFY(&b); [line 18]\n  NULLIFY(&this); [line 18]\n  APPLY_ABSTRACTION; [line 18]\n " shape="box"]
+6 [label="6:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X * [line 18]\n  n$1=*&a:int  [line 18]\n  n$2=*&b:int  [line 18]\n  *n$0.f:int =(n$1 + n$2) [line 18]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -30,7 +30,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   n$0=*&this:class X * [line 15]\n  n$1=*n$0.f:int  [line 15]\n  *&return:int =(1 / n$1) [line 15]\n  REMOVE_TEMPS(n$0,n$1); [line 15]\n  NULLIFY(&this); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&this:class X * [line 15]\n  n$1=*n$0.f:int  [line 15]\n  *&return:int =(1 / n$1) [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

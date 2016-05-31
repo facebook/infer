@@ -8,7 +8,7 @@ digraph iCFG {
 	
 
 	 23 -> 22 ;
-22 [label="22:  Call _fun_bar::Rectangle_set_values \n   n$4=*&rect1:class bar::Rectangle  [line 49]\n  _fun_bar::Rectangle_set_values(&rect1:class bar::Rectangle &,3:int ,4:int ) [line 49]\n  REMOVE_TEMPS(n$4); [line 49]\n " shape="box"]
+22 [label="22:  Call _fun_bar::Rectangle_set_values \n   n$4=*&rect1:class bar::Rectangle  [line 49]\n  _fun_bar::Rectangle_set_values(&rect1:class bar::Rectangle &,3:int ,4:int ) [line 49]\n " shape="box"]
 	
 
 	 22 -> 21 ;
@@ -16,7 +16,7 @@ digraph iCFG {
 	
 
 	 21 -> 20 ;
-20 [label="20:  Call _fun_foo::Rectangle_set_values \n   n$3=*&rect2:class foo::Rectangle  [line 52]\n  _fun_foo::Rectangle_set_values(&rect2:class foo::Rectangle &,7:int ,10:int ) [line 52]\n  REMOVE_TEMPS(n$3); [line 52]\n " shape="box"]
+20 [label="20:  Call _fun_foo::Rectangle_set_values \n   n$3=*&rect2:class foo::Rectangle  [line 52]\n  _fun_foo::Rectangle_set_values(&rect2:class foo::Rectangle &,7:int ,10:int ) [line 52]\n " shape="box"]
 	
 
 	 20 -> 19 ;
@@ -24,23 +24,23 @@ digraph iCFG {
 	
 
 	 19 -> 18 ;
-18 [label="18:  BinaryOperatorStmt: Assign \n   n$2=_fun_foo::value() [line 55]\n  *&i:int =n$2 [line 55]\n  REMOVE_TEMPS(n$2); [line 55]\n  NULLIFY(&i); [line 55]\n " shape="box"]
+18 [label="18:  BinaryOperatorStmt: Assign \n   n$2=_fun_foo::value() [line 55]\n  *&i:int =n$2 [line 55]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  BinaryOperatorStmt: Assign \n   n$1=_fun_bar::value() [line 56]\n  *&i:int =n$1 [line 56]\n  REMOVE_TEMPS(n$1); [line 56]\n  NULLIFY(&i); [line 56]\n " shape="box"]
+17 [label="17:  BinaryOperatorStmt: Assign \n   n$1=_fun_bar::value() [line 56]\n  *&i:int =n$1 [line 56]\n " shape="box"]
 	
 
 	 17 -> 16 ;
-16 [label="16:  BinaryOperatorStmt: Assign \n   n$0=*&#GB$bar::pi:double  [line 57]\n  *&j:double =n$0 [line 57]\n  REMOVE_TEMPS(n$0); [line 57]\n  NULLIFY(&j); [line 57]\n " shape="box"]
+16 [label="16:  BinaryOperatorStmt: Assign \n   n$0=*&#GB$bar::pi:double  [line 57]\n  *&j:double =n$0 [line 57]\n " shape="box"]
 	
 
 	 16 -> 15 ;
-15 [label="15:  Return Stmt \n   *&return:int =0 [line 58]\n  APPLY_ABSTRACTION; [line 58]\n " shape="box"]
+15 [label="15:  Return Stmt \n   *&return:int =0 [line 58]\n " shape="box"]
 	
 
 	 15 -> 14 ;
-14 [label="14: Exit main \n   NULLIFY(&x); [line 59]\n  NULLIFY(&rect2); [line 59]\n  NULLIFY(&rect1); [line 59]\n " color=yellow style=filled]
+14 [label="14: Exit main \n  " color=yellow style=filled]
 	
 
 13 [label="13: Start main\nFormals: \nLocals:  rect2:class foo::Rectangle  rect1:class bar::Rectangle  x:class foo::my_record  j:double  i:int  \n   DECLARE_LOCALS(&return,&rect2,&rect1,&x,&j,&i); [line 41]\n " color=yellow style=filled]
@@ -54,7 +54,7 @@ digraph iCFG {
 	
 
 	 11 -> 12 ;
-10 [label="10:  Return Stmt \n   n$0=*&#GB$bar::pi:double  [line 30]\n  *&return:double =(2 * n$0) [line 30]\n  REMOVE_TEMPS(n$0); [line 30]\n  APPLY_ABSTRACTION; [line 30]\n " shape="box"]
+10 [label="10:  Return Stmt \n   n$0=*&#GB$bar::pi:double  [line 30]\n  *&return:double =(2 * n$0) [line 30]\n " shape="box"]
 	
 
 	 10 -> 9 ;
@@ -72,7 +72,7 @@ digraph iCFG {
 	
 
 	 6 -> 7 ;
-5 [label="5:  Return Stmt \n   *&return:int =5 [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+5 [label="5:  Return Stmt \n   *&return:int =5 [line 17]\n " shape="box"]
 	
 
 	 5 -> 4 ;

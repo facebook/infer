@@ -4,19 +4,19 @@ digraph iCFG {
 	
 
 	 19 -> 18 ;
-18 [label="18:  DeclStmt \n   *&b:int =7 [line 23]\n  NULLIFY(&b); [line 23]\n " shape="box"]
+18 [label="18:  DeclStmt \n   *&b:int =7 [line 23]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  DeclStmt \n   *&c:int =3 [line 23]\n  NULLIFY(&c); [line 23]\n " shape="box"]
+17 [label="17:  DeclStmt \n   *&c:int =3 [line 23]\n " shape="box"]
 	
 
 	 17 -> 16 ;
-16 [label="16:  DeclStmt \n   n$1=*&a:int  [line 24]\n  *&a:int =(n$1 * 2) [line 24]\n  n$2=*&a:int  [line 24]\n  n$3=*&a:int  [line 24]\n  *&a:int =(n$3 + 1) [line 24]\n  *&b:int =(7 * n$3) [line 24]\n  n$4=*&b:int  [line 24]\n  n$5=*&a:int  [line 24]\n  n$6=*&b:int  [line 24]\n  *&c:int =((n$5 + n$6) + 9) [line 24]\n  n$7=*&c:int  [line 24]\n  n$8=*&c:int  [line 24]\n  *&d:int =n$8 [line 24]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$4,n$5,n$6,n$7,n$8); [line 24]\n  NULLIFY(&a); [line 24]\n  NULLIFY(&b); [line 24]\n  NULLIFY(&c); [line 24]\n " shape="box"]
+16 [label="16:  DeclStmt \n   n$1=*&a:int  [line 24]\n  *&a:int =(n$1 * 2) [line 24]\n  n$2=*&a:int  [line 24]\n  n$3=*&a:int  [line 24]\n  *&a:int =(n$3 + 1) [line 24]\n  *&b:int =(7 * n$3) [line 24]\n  n$4=*&b:int  [line 24]\n  n$5=*&a:int  [line 24]\n  n$6=*&b:int  [line 24]\n  *&c:int =((n$5 + n$6) + 9) [line 24]\n  n$7=*&c:int  [line 24]\n  n$8=*&c:int  [line 24]\n  *&d:int =n$8 [line 24]\n " shape="box"]
 	
 
 	 16 -> 15 ;
-15 [label="15:  Return Stmt \n   n$0=*&d:int  [line 25]\n  *&return:int =n$0 [line 25]\n  REMOVE_TEMPS(n$0); [line 25]\n  NULLIFY(&d); [line 25]\n  APPLY_ABSTRACTION; [line 25]\n " shape="box"]
+15 [label="15:  Return Stmt \n   n$0=*&d:int  [line 25]\n  *&return:int =n$0 [line 25]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -31,15 +31,15 @@ digraph iCFG {
 	
 
 	 12 -> 11 ;
-11 [label="11:  DeclStmt \n   *&b:int =7 [line 17]\n  NULLIFY(&b); [line 17]\n " shape="box"]
+11 [label="11:  DeclStmt \n   *&b:int =7 [line 17]\n " shape="box"]
 	
 
 	 11 -> 10 ;
-10 [label="10:  DeclStmt \n   n$1=*&a:int  [line 18]\n  *&a:int =(n$1 * 2) [line 18]\n  n$2=*&a:int  [line 18]\n  n$3=*&a:int  [line 18]\n  *&a:int =(n$3 + 1) [line 18]\n  *&b:int =(7 * n$3) [line 18]\n  n$4=*&b:int  [line 18]\n  n$5=*&a:int  [line 18]\n  n$6=*&b:int  [line 18]\n  *&d:int =((n$5 + n$6) + 9) [line 18]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$4,n$5,n$6); [line 18]\n  NULLIFY(&a); [line 18]\n  NULLIFY(&b); [line 18]\n " shape="box"]
+10 [label="10:  DeclStmt \n   n$1=*&a:int  [line 18]\n  *&a:int =(n$1 * 2) [line 18]\n  n$2=*&a:int  [line 18]\n  n$3=*&a:int  [line 18]\n  *&a:int =(n$3 + 1) [line 18]\n  *&b:int =(7 * n$3) [line 18]\n  n$4=*&b:int  [line 18]\n  n$5=*&a:int  [line 18]\n  n$6=*&b:int  [line 18]\n  *&d:int =((n$5 + n$6) + 9) [line 18]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$0=*&d:int  [line 19]\n  *&return:int =n$0 [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&d); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&d:int  [line 19]\n  *&return:int =n$0 [line 19]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -54,15 +54,15 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   *&b:int =7 [line 11]\n  NULLIFY(&b); [line 11]\n " shape="box"]
+5 [label="5:  DeclStmt \n   *&b:int =7 [line 11]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  DeclStmt \n   n$1=*&a:int  [line 12]\n  *&a:int =(n$1 * 2) [line 12]\n  n$2=*&a:int  [line 12]\n  n$3=*&a:int  [line 12]\n  *&a:int =(n$3 + 1) [line 12]\n  *&b:int =(7 * n$3) [line 12]\n  n$4=*&b:int  [line 12]\n  *&d:int =n$4 [line 12]\n  REMOVE_TEMPS(n$1,n$2,n$3,n$4); [line 12]\n  NULLIFY(&a); [line 12]\n  NULLIFY(&b); [line 12]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$1=*&a:int  [line 12]\n  *&a:int =(n$1 * 2) [line 12]\n  n$2=*&a:int  [line 12]\n  n$3=*&a:int  [line 12]\n  *&a:int =(n$3 + 1) [line 12]\n  *&b:int =(7 * n$3) [line 12]\n  n$4=*&b:int  [line 12]\n  *&d:int =n$4 [line 12]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&d:int  [line 13]\n  *&return:int =n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&d); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&d:int  [line 13]\n  *&return:int =n$0 [line 13]\n " shape="box"]
 	
 
 	 3 -> 2 ;

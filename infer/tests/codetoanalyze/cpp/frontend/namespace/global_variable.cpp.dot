@@ -8,7 +8,7 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 43]\n  n$1=*&#GB$B::v:int  [line 43]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 43]\n  REMOVE_TEMPS(n$0,n$1); [line 43]\n  APPLY_ABSTRACTION; [line 43]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 43]\n  n$1=*&#GB$B::v:int  [line 43]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 43]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -27,7 +27,7 @@ digraph iCFG {
 	
 
 	 9 -> 8 ;
-8 [label="8:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 37]\n  n$1=*&#GB$B::v:int  [line 37]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 37]\n  REMOVE_TEMPS(n$0,n$1); [line 37]\n  APPLY_ABSTRACTION; [line 37]\n " shape="box"]
+8 [label="8:  Return Stmt \n   n$0=*&#GB$f1::A::v:int  [line 37]\n  n$1=*&#GB$B::v:int  [line 37]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 37]\n " shape="box"]
 	
 
 	 8 -> 7 ;
@@ -46,7 +46,7 @@ digraph iCFG {
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&#GB$f1::val:int  [line 31]\n  n$1=*&#GB$f2::val:int  [line 31]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 31]\n  REMOVE_TEMPS(n$0,n$1); [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&#GB$f1::val:int  [line 31]\n  n$1=*&#GB$f2::val:int  [line 31]\n  *&return:int =(1 / ((n$0 + n$1) + 1)) [line 31]\n " shape="box"]
 	
 
 	 3 -> 2 ;

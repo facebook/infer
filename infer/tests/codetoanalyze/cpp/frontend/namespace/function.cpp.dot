@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-15 [label="15:  Return Stmt \n   n$0=_fun_f1::get() [line 24]\n  n$1=_fun_f2::get() [line 24]\n  *&return:int =(1 / (n$0 + n$1)) [line 24]\n  REMOVE_TEMPS(n$0,n$1); [line 24]\n  APPLY_ABSTRACTION; [line 24]\n " shape="box"]
+15 [label="15:  Return Stmt \n   n$0=_fun_f1::get() [line 24]\n  n$1=_fun_f2::get() [line 24]\n  *&return:int =(1 / (n$0 + n$1)) [line 24]\n " shape="box"]
 	
 
 	 15 -> 14 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 13 -> 15 ;
-12 [label="12:  Return Stmt \n   n$0=_fun_f1::get0() [line 21]\n  *&return:int =(1 / n$0) [line 21]\n  REMOVE_TEMPS(n$0); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+12 [label="12:  Return Stmt \n   n$0=_fun_f1::get0() [line 21]\n  *&return:int =(1 / n$0) [line 21]\n " shape="box"]
 	
 
 	 12 -> 11 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 10 -> 12 ;
-9 [label="9:  Return Stmt \n   *&return:int =-1 [line 16]\n  APPLY_ABSTRACTION; [line 16]\n " shape="box"]
+9 [label="9:  Return Stmt \n   *&return:int =-1 [line 16]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  Return Stmt \n   *&return:int =0 [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+6 [label="6:  Return Stmt \n   *&return:int =0 [line 12]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   *&return:int =1 [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =1 [line 11]\n " shape="box"]
 	
 
 	 3 -> 2 ;

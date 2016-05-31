@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-22 [label="22:  Call _fun_call_with_forward_declaration \n   _fun_call_with_forward_declaration(null:class XForward *) [line 38]\n  APPLY_ABSTRACTION; [line 38]\n " shape="box"]
+22 [label="22:  Call _fun_call_with_forward_declaration \n   _fun_call_with_forward_declaration(null:class XForward *) [line 38]\n " shape="box"]
 	
 
 	 22 -> 21 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 20 -> 22 ;
-19 [label="19:  Call _fun_XForward_call \n   n$0=*&x:class XForward * [line 35]\n  n$1=*n$0:class XForward  [line 35]\n  n$2=_fun_XForward_call(n$0:class XForward *) [line 35]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 35]\n  NULLIFY(&x); [line 35]\n  APPLY_ABSTRACTION; [line 35]\n " shape="box"]
+19 [label="19:  Call _fun_XForward_call \n   n$0=*&x:class XForward * [line 35]\n  n$1=*n$0:class XForward  [line 35]\n  n$2=_fun_XForward_call(n$0:class XForward *) [line 35]\n " shape="box"]
 	
 
 	 19 -> 18 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 17 -> 19 ;
-16 [label="16:  Return Stmt \n   *&return:int =0 [line 31]\n  APPLY_ABSTRACTION; [line 31]\n " shape="box"]
+16 [label="16:  Return Stmt \n   *&return:int =0 [line 31]\n " shape="box"]
 	
 
 	 16 -> 15 ;
@@ -33,7 +33,7 @@ digraph iCFG {
 	
 
 	 14 -> 16 ;
-13 [label="13:  Call _fun_X_call \n   n$0=_fun_getX() [line 22]\n  n$1=*n$0:class X  [line 22]\n  n$2=_fun_X_call(n$0:class X *) [line 22]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 22]\n  APPLY_ABSTRACTION; [line 22]\n " shape="box"]
+13 [label="13:  Call _fun_X_call \n   n$0=_fun_getX() [line 22]\n  n$1=*n$0:class X  [line 22]\n  n$2=_fun_X_call(n$0:class X *) [line 22]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 11 -> 13 ;
-10 [label="10:  Return Stmt \n   *&return:class X *=null [line 20]\n  APPLY_ABSTRACTION; [line 20]\n " shape="box"]
+10 [label="10:  Return Stmt \n   *&return:class X *=null [line 20]\n " shape="box"]
 	
 
 	 10 -> 9 ;
@@ -59,7 +59,7 @@ digraph iCFG {
 	
 
 	 7 -> 6 ;
-6 [label="6:  Return Stmt \n   n$0=*&x:class X * [line 17]\n  n$1=*n$0:class X  [line 17]\n  n$2=_fun_X_call(n$0:class X *) [line 17]\n  *&return:int =n$2 [line 17]\n  REMOVE_TEMPS(n$0,n$1,n$2); [line 17]\n  NULLIFY(&x); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&x:class X * [line 17]\n  n$1=*n$0:class X  [line 17]\n  n$2=_fun_X_call(n$0:class X *) [line 17]\n  *&return:int =n$2 [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -70,7 +70,7 @@ digraph iCFG {
 	
 
 	 4 -> 7 ;
-3 [label="3:  Return Stmt \n   *&return:int =1 [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =1 [line 12]\n " shape="box"]
 	
 
 	 3 -> 2 ;

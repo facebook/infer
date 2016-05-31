@@ -1,10 +1,10 @@
 /* @generated */
 digraph iCFG {
-18 [label="18:  BinaryOperatorStmt: Assign \n   *&imageDrawRect.origin.x.a:int =0 [line 58]\n  *&imageDrawRect.origin.x.b:int =0 [line 58]\n  *&imageDrawRect.origin.y:int =0 [line 58]\n  *&imageDrawRect.z:int =0 [line 58]\n  *&imageDrawRect.size:int =5 [line 58]\n  n$1=*&imageDrawRect:struct rect  [line 58]\n  REMOVE_TEMPS(n$1); [line 58]\n " shape="box"]
+18 [label="18:  BinaryOperatorStmt: Assign \n   *&imageDrawRect.origin.x.a:int =0 [line 58]\n  *&imageDrawRect.origin.x.b:int =0 [line 58]\n  *&imageDrawRect.origin.y:int =0 [line 58]\n  *&imageDrawRect.z:int =0 [line 58]\n  *&imageDrawRect.size:int =5 [line 58]\n  n$1=*&imageDrawRect:struct rect  [line 58]\n " shape="box"]
 	
 
 	 18 -> 17 ;
-17 [label="17:  Return Stmt \n   n$0=*&imageDrawRect.origin.x.a:int  [line 59]\n  *&return:int =(1 / n$0) [line 59]\n  REMOVE_TEMPS(n$0); [line 59]\n  NULLIFY(&imageDrawRect); [line 59]\n  APPLY_ABSTRACTION; [line 59]\n " shape="box"]
+17 [label="17:  Return Stmt \n   n$0=*&imageDrawRect.origin.x.a:int  [line 59]\n  *&return:int =(1 / n$0) [line 59]\n " shape="box"]
 	
 
 	 17 -> 16 ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 14 -> 13 ;
-13 [label="13:  Return Stmt \n   n$0=*&e.ssn:int  [line 36]\n  *&return:int =(1 / (n$0 - 12)) [line 36]\n  REMOVE_TEMPS(n$0); [line 36]\n  NULLIFY(&e); [line 36]\n  APPLY_ABSTRACTION; [line 36]\n " shape="box"]
+13 [label="13:  Return Stmt \n   n$0=*&e.ssn:int  [line 36]\n  *&return:int =(1 / (n$0 - 12)) [line 36]\n " shape="box"]
 	
 
 	 13 -> 12 ;
@@ -30,11 +30,11 @@ digraph iCFG {
 	
 
 	 11 -> 14 ;
-10 [label="10:  BinaryOperatorStmt: Assign \n   n$2=*&p:struct Point * [line 20]\n  *n$2.x:int =4 [line 20]\n  *n$2.y:int =5 [line 20]\n  n$3=*n$2:struct Point  [line 20]\n  REMOVE_TEMPS(n$2,n$3); [line 20]\n " shape="box"]
+10 [label="10:  BinaryOperatorStmt: Assign \n   n$2=*&p:struct Point * [line 20]\n  *n$2.x:int =4 [line 20]\n  *n$2.y:int =5 [line 20]\n  n$3=*n$2:struct Point  [line 20]\n " shape="box"]
 	
 
 	 10 -> 9 ;
-9 [label="9:  Return Stmt \n   n$0=*&p:struct Point * [line 21]\n  n$1=*n$0.x:int  [line 21]\n  *&return:int =(1 / (n$1 - 4)) [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&p); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+9 [label="9:  Return Stmt \n   n$0=*&p:struct Point * [line 21]\n  n$1=*n$0.x:int  [line 21]\n  *&return:int =(1 / (n$1 - 4)) [line 21]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -45,7 +45,7 @@ digraph iCFG {
 	
 
 	 7 -> 10 ;
-6 [label="6:  DeclStmt \n   n$0=_fun_foo() [line 17]\n  *&p.x:int =1 [line 17]\n  *&p.y:int =(n$0 + 3) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  NULLIFY(&p); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+6 [label="6:  DeclStmt \n   n$0=_fun_foo() [line 17]\n  *&p.x:int =1 [line 17]\n  *&p.y:int =(n$0 + 3) [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -56,7 +56,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   *&return:int =5 [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =5 [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

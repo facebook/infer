@@ -1,10 +1,10 @@
 /* @generated */
 digraph iCFG {
-4 [label="4:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char *) [line 13]\n  *&lastName:class NSString *=n$0 [line 13]\n  REMOVE_TEMPS(n$0); [line 13]\n  NULLIFY(&lastName); [line 13]\n " shape="box"]
+4 [label="4:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char *) [line 13]\n  *&lastName:class NSString *=n$0 [line 13]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 14]\n " shape="box"]
 	
 
 	 3 -> 2 ;

@@ -1,18 +1,18 @@
 /* @generated */
 digraph iCFG {
-6 [label="6:  DeclStmt \n   *&x:int =2 [line 11]\n  NULLIFY(&x); [line 11]\n " shape="box"]
+6 [label="6:  DeclStmt \n   *&x:int =2 [line 11]\n " shape="box"]
 	
 
 	 6 -> 5 ;
-5 [label="5:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 12]\n  *&i:int *=n$2 [line 12]\n  REMOVE_TEMPS(n$2); [line 12]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$2=_fun___new(sizeof(int ):unsigned long ) [line 12]\n  *&i:int *=n$2 [line 12]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(int ):unsigned long ) [line 13]\n  REMOVE_TEMPS(n$1); [line 13]\n " shape="box"]
+4 [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(int ):unsigned long ) [line 13]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Call delete \n   n$0=*&i:int * [line 14]\n  _fun___delete(n$0:int *) [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&i); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+3 [label="3:  Call delete \n   n$0=*&i:int * [line 14]\n  _fun___delete(n$0:int *) [line 14]\n " shape="box"]
 	
 
 	 3 -> 2 ;

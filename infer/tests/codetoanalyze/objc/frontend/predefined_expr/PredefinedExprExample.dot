@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-9 [label="9:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"%s\":char *) [line 27]\n  _fun_NSLog(n$2:struct objc_object *,\"\":char *) [line 27]\n  REMOVE_TEMPS(n$2); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+9 [label="9:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"%s\":char *) [line 27]\n  _fun_NSLog(n$2:struct objc_object *,\"\":char *) [line 27]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"%s\":char *) [line 23]\n  _fun_NSLog(n$1:struct objc_object *,\"\":char *) [line 23]\n  REMOVE_TEMPS(n$1); [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+6 [label="6:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"%s\":char *) [line 23]\n  _fun_NSLog(n$1:struct objc_object *,\"\":char *) [line 23]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"%s\":char *) [line 19]\n  _fun_NSLog(n$0:struct objc_object *,\"\":char *) [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+3 [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"%s\":char *) [line 19]\n  _fun_NSLog(n$0:struct objc_object *,\"\":char *) [line 19]\n " shape="box"]
 	
 
 	 3 -> 2 ;

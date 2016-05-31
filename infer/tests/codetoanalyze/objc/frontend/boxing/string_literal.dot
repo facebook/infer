@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-6 [label="6:  Return Stmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Hello World!\":char *) [line 17]\n  *&return:class NSString *=n$0 [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Hello World!\":char *) [line 17]\n  *&return:class NSString *=n$0 [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Hello World!\":char *) [line 14]\n  *&return:class NSString *=n$0 [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Hello World!\":char *) [line 14]\n  *&return:class NSString *=n$0 [line 14]\n " shape="box"]
 	
 
 	 3 -> 2 ;

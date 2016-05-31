@@ -1,10 +1,10 @@
 /* @generated */
 digraph iCFG {
-7 [label="7:  DeclStmt \n   *&p.x:int =32 [line 18]\n  *&p.y:int =52 [line 18]\n  n$1=*&p:struct point  [line 18]\n  REMOVE_TEMPS(n$1); [line 18]\n " shape="box"]
+7 [label="7:  DeclStmt \n   *&p.x:int =32 [line 18]\n  *&p.y:int =52 [line 18]\n  n$1=*&p:struct point  [line 18]\n " shape="box"]
 	
 
 	 7 -> 6 ;
-6 [label="6:  Return Stmt \n   n$0=*&p.x:int  [line 19]\n  *&return:int =(1 / (n$0 - 32)) [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  NULLIFY(&p); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+6 [label="6:  Return Stmt \n   n$0=*&p.x:int  [line 19]\n  *&return:int =(1 / (n$0 - 32)) [line 19]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 4 -> 7 ;
-3 [label="3:  Return Stmt \n   *&SIL_compound_literal__n$0.x:int =52 [line 15]\n  *&SIL_compound_literal__n$0.y:int =32 [line 15]\n  n$1=*&SIL_compound_literal__n$0.x:int  [line 15]\n  *&return:int =n$1 [line 15]\n  REMOVE_TEMPS(n$1); [line 15]\n  NULLIFY(&SIL_compound_literal__n$0); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&SIL_compound_literal__n$0.x:int =52 [line 15]\n  *&SIL_compound_literal__n$0.y:int =32 [line 15]\n  n$1=*&SIL_compound_literal__n$0.x:int  [line 15]\n  *&return:int =n$1 [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

@@ -1429,6 +1429,7 @@ let do_analysis exe_env =
     let analyze_ondemand proc_desc =
       let proc_name = Cfg.Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in
+      Preanal.doit proc_desc (Exe_env.get_cg exe_env) tenv;
       let summaryfp =
         Config.run_in_footprint_mode (analyze_proc exe_env) proc_desc in
       Specs.add_summary proc_name summaryfp;

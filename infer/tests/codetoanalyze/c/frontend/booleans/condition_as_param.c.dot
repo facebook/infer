@@ -4,7 +4,7 @@ digraph iCFG {
 	
 
 	 6 -> 5 ;
-5 [label="5:  Call _fun_check \n   n$0=*&x:int  [line 14]\n  _fun_check((n$0 < 2):int ) [line 14]\n  REMOVE_TEMPS(n$0); [line 14]\n  NULLIFY(&x); [line 14]\n  APPLY_ABSTRACTION; [line 14]\n " shape="box"]
+5 [label="5:  Call _fun_check \n   n$0=*&x:int  [line 14]\n  _fun_check((n$0 < 2):int ) [line 14]\n " shape="box"]
 	
 
 	 5 -> 4 ;

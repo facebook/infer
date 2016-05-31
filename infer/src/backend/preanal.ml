@@ -11,25 +11,7 @@
 open! Utils
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
-let add_dispatch_calls pdesc cg tenv f_translate_typ_opt =
-  let pname_translate_types pname =
-    match f_translate_typ_opt with
-    | Some f_translate_typ ->
-        (match pname with
-         | Procname.Java pname_java ->
-             let param_type_strs =
-               IList.map Procname.java_type_to_string (Procname.java_get_parameters pname_java) in
-             let receiver_type_str = Procname.java_get_class_name pname_java in
-             let return_type_str = Procname.java_get_return_type pname_java in
-             IList.iter
-               (fun typ_str -> f_translate_typ tenv typ_str)
-               (return_type_str :: (receiver_type_str :: param_type_strs))
-         | Procname.C _
-         | Procname.ObjC_Cpp _
-         | Procname.Block _ ->
-             (* TODO: support this for C/CPP/Obj-C *)
-             ())
-    | None -> () in
+let add_dispatch_calls pdesc cg tenv =
   let node_add_dispatch_calls caller_pname node =
     (* TODO: handle dynamic dispatch for virtual calls as well *)
     let call_flags_is_dispatch call_flags =
@@ -65,9 +47,7 @@ let add_dispatch_calls pdesc cg tenv f_translate_typ_opt =
                       because choosing all targets is too expensive for everyday use *)
                    [target_pname] in
                IList.iter
-                 (fun target_pname ->
-                    pname_translate_types target_pname;
-                    Cg.add_edge cg caller_pname target_pname)
+                 (fun target_pname -> Cg.add_edge cg caller_pname target_pname)
                  targets_to_add;
                let call_flags' = { call_flags with Sil.cf_targets = targets_to_add; } in
                Sil.Call (ret_ids, call_exp, args, loc, call_flags')
@@ -79,7 +59,8 @@ let add_dispatch_calls pdesc cg tenv f_translate_typ_opt =
       IList.map replace_dispatch_calls instrs
       |> Cfg.Node.replace_instrs node in
   let pname = Cfg.Procdesc.get_proc_name pdesc in
-  Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
+  if Procname.is_java pname then
+    Cfg.Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
 
 (** add instructions to perform abstraction *)
 let add_abstraction_instructions pdesc =
@@ -237,8 +218,7 @@ let add_nullify_instrs pdesc tenv =
     let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in
     node_add_nullify_instructions exit_node (AddressTaken.Domain.elements address_taken_vars)
 
-let doit ?(f_translate_typ=None) pdesc cg tenv =
+let doit pdesc cg tenv =
   add_nullify_instrs pdesc tenv;
-  if !Config.curr_language = Config.Java
-  then add_dispatch_calls pdesc cg tenv f_translate_typ;
+  add_dispatch_calls pdesc cg tenv;
   add_abstraction_instructions pdesc;

@@ -1,18 +1,18 @@
 /* @generated */
 digraph iCFG {
-19 [label="19:  DeclStmt \n   *&x:int =0 [line 11]\n  APPLY_ABSTRACTION; [line 11]\n " shape="box"]
+19 [label="19:  DeclStmt \n   *&x:int =0 [line 11]\n " shape="box"]
 	
 
 	 19 -> 4 ;
-18 [label="18:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int  [line 14]\n  *&x:int =(n$2 + 1) [line 14]\n  REMOVE_TEMPS(n$2); [line 14]\n " shape="box"]
+18 [label="18:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int  [line 14]\n  *&x:int =(n$2 + 1) [line 14]\n " shape="box"]
 	
 
 	 18 -> 15 ;
-17 [label="17: Prune (false branch) \n   PRUNE(((n$1 > 5) == 0), false); [line 15]\n  REMOVE_TEMPS(n$1); [line 15]\n " shape="invhouse"]
+17 [label="17: Prune (false branch) \n   PRUNE(((n$1 > 5) == 0), false); [line 15]\n " shape="invhouse"]
 	
 
 	 17 -> 14 ;
-16 [label="16: Prune (true branch) \n   PRUNE(((n$1 > 5) != 0), true); [line 15]\n  REMOVE_TEMPS(n$1); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="invhouse"]
+16 [label="16: Prune (true branch) \n   PRUNE(((n$1 > 5) != 0), true); [line 15]\n " shape="invhouse"]
 	
 
 	 16 -> 8 ;
@@ -25,7 +25,7 @@ digraph iCFG {
 	
 
 	 14 -> 11 ;
-13 [label="13: Prune (false branch) \n   PRUNE((2 == 0), false); [line 13]\n  APPLY_ABSTRACTION; [line 13]\n " shape="invhouse"]
+13 [label="13: Prune (false branch) \n   PRUNE((2 == 0), false); [line 13]\n " shape="invhouse"]
 	
 
 	 13 -> 8 ;
@@ -38,11 +38,11 @@ digraph iCFG {
 
 	 11 -> 12 ;
 	 11 -> 13 ;
-10 [label="10: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n " shape="invhouse"]
+10 [label="10: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 19]\n " shape="invhouse"]
 	
 
 	 10 -> 7 ;
-9 [label="9: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
+9 [label="9: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 19]\n " shape="invhouse"]
 	
 
 	 9 -> 4 ;
@@ -55,11 +55,11 @@ digraph iCFG {
 	
 
 	 7 -> 4 ;
-6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n  NULLIFY(&x); [line 12]\n " shape="invhouse"]
+6 [label="6: Prune (false branch) \n   PRUNE((1 == 0), false); [line 12]\n " shape="invhouse"]
 	
 
 	 6 -> 3 ;
-5 [label="5: Prune (true branch) \n   PRUNE((1 != 0), true); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="invhouse"]
+5 [label="5: Prune (true branch) \n   PRUNE((1 != 0), true); [line 12]\n " shape="invhouse"]
 	
 
 	 5 -> 11 ;
@@ -68,7 +68,7 @@ digraph iCFG {
 
 	 4 -> 5 ;
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   *&return:int =0 [line 23]\n  APPLY_ABSTRACTION; [line 23]\n " shape="box"]
+3 [label="3:  Return Stmt \n   *&return:int =0 [line 23]\n " shape="box"]
 	
 
 	 3 -> 2 ;

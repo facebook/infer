@@ -4,28 +4,28 @@ digraph iCFG {
 	
 
 	 20 -> 14 ;
-19 [label="19:  BinaryOperatorStmt: AddAssign \n   n$3=*&x:int  [line 20]\n  n$4=*&result:int  [line 20]\n  *&result:int =(n$4 + n$3) [line 20]\n  REMOVE_TEMPS(n$3,n$4); [line 20]\n  NULLIFY(&x); [line 20]\n " shape="box"]
+19 [label="19:  BinaryOperatorStmt: AddAssign \n   n$3=*&x:int  [line 20]\n  n$4=*&result:int  [line 20]\n  *&result:int =(n$4 + n$3) [line 20]\n " shape="box"]
 	
 
 	 19 -> 15 ;
-18 [label="18:  DeclStmt \n   n$2=*&i:int  [line 19]\n  *&x:int =n$2 [line 19]\n  REMOVE_TEMPS(n$2); [line 19]\n " shape="box"]
+18 [label="18:  DeclStmt \n   n$2=*&i:int  [line 19]\n  *&x:int =n$2 [line 19]\n " shape="box"]
 	
 
 	 18 -> 16 ;
 	 18 -> 17 ;
-17 [label="17: Prune (false branch) \n   n$1=*&x:int  [line 19]\n  PRUNE((n$1 == 0), false); [line 19]\n  REMOVE_TEMPS(n$1); [line 19]\n  NULLIFY(&i); [line 19]\n  NULLIFY(&result); [line 19]\n  NULLIFY(&x); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="invhouse"]
+17 [label="17: Prune (false branch) \n   n$1=*&x:int  [line 19]\n  PRUNE((n$1 == 0), false); [line 19]\n " shape="invhouse"]
 	
 
 	 17 -> 12 ;
-16 [label="16: Prune (true branch) \n   n$1=*&x:int  [line 19]\n  PRUNE((n$1 != 0), true); [line 19]\n  REMOVE_TEMPS(n$1); [line 19]\n " shape="invhouse"]
+16 [label="16: Prune (true branch) \n   n$1=*&x:int  [line 19]\n  PRUNE((n$1 != 0), true); [line 19]\n " shape="invhouse"]
 	
 
 	 16 -> 19 ;
-15 [label="15:  UnaryOperator \n   n$0=*&i:int  [line 19]\n  *&i:int =(n$0 - 1) [line 19]\n  REMOVE_TEMPS(n$0); [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+15 [label="15:  UnaryOperator \n   n$0=*&i:int  [line 19]\n  *&i:int =(n$0 - 1) [line 19]\n " shape="box"]
 	
 
 	 15 -> 13 ;
-14 [label="14:  DeclStmt \n   *&i:int =10 [line 19]\n  APPLY_ABSTRACTION; [line 19]\n " shape="box"]
+14 [label="14:  DeclStmt \n   *&i:int =10 [line 19]\n " shape="box"]
 	
 
 	 14 -> 13 ;
@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 10 -> 4 ;
-9 [label="9:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int  [line 13]\n  n$3=*&result:int  [line 13]\n  *&result:int =(n$3 + n$2) [line 13]\n  REMOVE_TEMPS(n$2,n$3); [line 13]\n  NULLIFY(&x); [line 13]\n " shape="box"]
+9 [label="9:  BinaryOperatorStmt: AddAssign \n   n$2=*&x:int  [line 13]\n  n$3=*&result:int  [line 13]\n  *&result:int =(n$3 + n$2) [line 13]\n " shape="box"]
 	
 
 	 9 -> 5 ;
@@ -53,19 +53,19 @@ digraph iCFG {
 
 	 8 -> 6 ;
 	 8 -> 7 ;
-7 [label="7: Prune (false branch) \n   n$1=*&x:int  [line 12]\n  PRUNE((n$1 == 0), false); [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n  NULLIFY(&i); [line 12]\n  NULLIFY(&result); [line 12]\n  NULLIFY(&x); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="invhouse"]
+7 [label="7: Prune (false branch) \n   n$1=*&x:int  [line 12]\n  PRUNE((n$1 == 0), false); [line 12]\n " shape="invhouse"]
 	
 
 	 7 -> 2 ;
-6 [label="6: Prune (true branch) \n   n$1=*&x:int  [line 12]\n  PRUNE((n$1 != 0), true); [line 12]\n  REMOVE_TEMPS(n$1); [line 12]\n " shape="invhouse"]
+6 [label="6: Prune (true branch) \n   n$1=*&x:int  [line 12]\n  PRUNE((n$1 != 0), true); [line 12]\n " shape="invhouse"]
 	
 
 	 6 -> 9 ;
-5 [label="5:  UnaryOperator \n   n$0=*&i:int  [line 12]\n  *&i:int =(n$0 + 1) [line 12]\n  REMOVE_TEMPS(n$0); [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+5 [label="5:  UnaryOperator \n   n$0=*&i:int  [line 12]\n  *&i:int =(n$0 + 1) [line 12]\n " shape="box"]
 	
 
 	 5 -> 3 ;
-4 [label="4:  DeclStmt \n   *&i:int =0 [line 12]\n  APPLY_ABSTRACTION; [line 12]\n " shape="box"]
+4 [label="4:  DeclStmt \n   *&i:int =0 [line 12]\n " shape="box"]
 	
 
 	 4 -> 3 ;

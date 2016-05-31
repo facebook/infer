@@ -1,10 +1,10 @@
 /* @generated */
 digraph iCFG {
-8 [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&v:class X & [line 25]\n  *n$2.field:int =0 [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n " shape="box"]
+8 [label="8:  BinaryOperatorStmt: Assign \n   n$2=*&v:class X & [line 25]\n  *n$2.field:int =0 [line 25]\n " shape="box"]
 	
 
 	 8 -> 7 ;
-7 [label="7:  Return Stmt \n   n$0=*&v:class X & [line 26]\n  n$1=*n$0.field:int  [line 26]\n  *&return:int =(1 / n$1) [line 26]\n  REMOVE_TEMPS(n$0,n$1); [line 26]\n  NULLIFY(&v); [line 26]\n  APPLY_ABSTRACTION; [line 26]\n " shape="box"]
+7 [label="7:  Return Stmt \n   n$0=*&v:class X & [line 26]\n  n$1=*n$0.field:int  [line 26]\n  *&return:int =(1 / n$1) [line 26]\n " shape="box"]
 	
 
 	 7 -> 6 ;
@@ -15,11 +15,11 @@ digraph iCFG {
 	
 
 	 5 -> 8 ;
-4 [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&v:class Container<int> & [line 20]\n  *n$2.field:int =0 [line 20]\n  REMOVE_TEMPS(n$2); [line 20]\n " shape="box"]
+4 [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&v:class Container<int> & [line 20]\n  *n$2.field:int =0 [line 20]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&v:class Container<int> & [line 21]\n  n$1=*n$0.field:int  [line 21]\n  *&return:int =(1 / n$1) [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&v); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&v:class Container<int> & [line 21]\n  n$1=*n$0.field:int  [line 21]\n  *&return:int =(1 / n$1) [line 21]\n " shape="box"]
 	
 
 	 3 -> 2 ;

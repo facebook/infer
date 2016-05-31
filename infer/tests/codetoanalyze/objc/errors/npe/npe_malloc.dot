@@ -1,14 +1,14 @@
 /* @generated */
 digraph iCFG {
-5 [label="5:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(struct Person ):struct Person ) [line 25]\n  *&person:struct Person *=n$2 [line 25]\n  REMOVE_TEMPS(n$2); [line 25]\n " shape="box"]
+5 [label="5:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(struct Person ):struct Person ) [line 25]\n  *&person:struct Person *=n$2 [line 25]\n " shape="box"]
 	
 
 	 5 -> 4 ;
-4 [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&person:struct Person * [line 26]\n  *n$1.x:int =10 [line 26]\n  REMOVE_TEMPS(n$1); [line 26]\n " shape="box"]
+4 [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&person:struct Person * [line 26]\n  *n$1.x:int =10 [line 26]\n " shape="box"]
 	
 
 	 4 -> 3 ;
-3 [label="3:  Return Stmt \n   n$0=*&person:struct Person * [line 27]\n  *&return:struct Person *=n$0 [line 27]\n  REMOVE_TEMPS(n$0); [line 27]\n  NULLIFY(&person); [line 27]\n  APPLY_ABSTRACTION; [line 27]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&person:struct Person * [line 27]\n  *&return:struct Person *=n$0 [line 27]\n " shape="box"]
 	
 
 	 3 -> 2 ;

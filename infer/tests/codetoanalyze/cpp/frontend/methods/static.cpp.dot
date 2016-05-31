@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-9 [label="9:  Call _fun_A_fun \n   n$0=*&a:class A * [line 21]\n  n$1=_fun_A_fun(0:int ) [line 21]\n  REMOVE_TEMPS(n$0,n$1); [line 21]\n  NULLIFY(&a); [line 21]\n  APPLY_ABSTRACTION; [line 21]\n " shape="box"]
+9 [label="9:  Call _fun_A_fun \n   n$0=*&a:class A * [line 21]\n  n$1=_fun_A_fun(0:int ) [line 21]\n " shape="box"]
 	
 
 	 9 -> 8 ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 7 -> 9 ;
-6 [label="6:  Call _fun_A_fun \n   n$0=_fun_A_fun(0:int ) [line 17]\n  REMOVE_TEMPS(n$0); [line 17]\n  APPLY_ABSTRACTION; [line 17]\n " shape="box"]
+6 [label="6:  Call _fun_A_fun \n   n$0=_fun_A_fun(0:int ) [line 17]\n " shape="box"]
 	
 
 	 6 -> 5 ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 4 -> 6 ;
-3 [label="3:  Return Stmt \n   n$0=*&a:int  [line 15]\n  *&return:int =(1 / n$0) [line 15]\n  REMOVE_TEMPS(n$0); [line 15]\n  NULLIFY(&a); [line 15]\n  APPLY_ABSTRACTION; [line 15]\n " shape="box"]
+3 [label="3:  Return Stmt \n   n$0=*&a:int  [line 15]\n  *&return:int =(1 / n$0) [line 15]\n " shape="box"]
 	
 
 	 3 -> 2 ;

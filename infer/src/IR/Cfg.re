@@ -727,11 +727,15 @@ let module Node = {
           Sil.Prune (convert_exp origin_exp) loc is_true_branch if_kind,
           ...instrs
         ]
-      | Sil.Nullify origin_pvar loc => [Sil.Nullify (convert_pvar origin_pvar) loc, ...instrs]
       | Sil.Declare_locals typed_vars loc => {
           let new_typed_vars = IList.map (fun (pvar, typ) => (convert_pvar pvar, typ)) typed_vars;
           [Sil.Declare_locals new_typed_vars loc, ...instrs]
         }
+      | Sil.Nullify _
+      | Abstract _
+      | Sil.Remove_temps _ =>
+        /* these are generated instructions that will be replaced by the preanalysis */
+        instrs
       | instr => [instr, ...instrs];
     let convert_node_kind =
       fun
