@@ -28,13 +28,19 @@ endif
 
 .PHONY: java clang clean $(CLANG_SUBDIRS)
 
-clang: $(CLANG_SUBDIRS)
+clean_specs:
+	$(REMOVE) $(SPECS_LIB_DIR)/*.specs
 
-$(CLANG_SUBDIRS) $(JAVA_MODELS_DIR):
+$(CLANG_SUBDIRS):
 	$(MAKE) -C $@ install
 
-clean:
-	@rm -f $(SPECS_LIB_DIR)/*.specs
+clang: clean_specs
+	$(MAKE) $(CLANG_SUBDIRS)
+
+java: clean_specs
+	$(MAKE) -C $@ install
+
+clean: clean_specs
 	$(MAKE) -C $(JAVA_MODELS_DIR) clean
 	$(MAKE) -C $(C_MODELS_DIR) clean
 	$(MAKE) -C $(CPP_MODELS_DIR) clean
