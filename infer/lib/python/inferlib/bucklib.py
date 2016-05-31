@@ -171,7 +171,8 @@ def store_performances_csv(infer_out, stats):
         flat_stats = dict(int_stats + normal_stats)
         values = []
         for key in keys:
-            values.append(flat_stats[key])
+            if key in flat_stats:
+                values.append(flat_stats[key])
         csv_writer.writerow(keys)
         csv_writer.writerow(values)
         csv_file_out.flush()
@@ -190,13 +191,13 @@ def get_harness_code():
 
 def get_basic_stats(stats):
     files_analyzed = '{0} files ({1} lines) analyzed in {2}s\n\n'.format(
-        stats['int']['files'],
-        stats['int']['lines'],
+        stats['int'].get('files', 0),
+        stats['int'].get('lines', 0),
         stats['int']['total_time'],
     )
     phase_times = 'Capture time: {0}s\nAnalysis time: {1}s\n\n'.format(
-        stats['int']['capture_time'],
-        stats['int']['analysis_time'],
+        stats['int'].get('capture_time', 0),
+        stats['int'].get('analysis_time', 0),
     )
 
     to_skip = {
@@ -344,12 +345,7 @@ def collect_results(args, start_time):
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
 
-    if len(headers) == 0:
-        with open(csv_report, 'w'):
-            pass
-        logging.info('No reports found')
-        return
-    elif len(headers) > 1:
+    if len(headers) > 1:
         if any(map(lambda x: x != headers[0], headers)):
             raise Exception('Inconsistent reports found')
 
@@ -361,10 +357,11 @@ def collect_results(args, start_time):
     del(stats['float'])
 
     with open(csv_report, 'w') as report:
-        writer = csv.writer(report)
-        all_csv_rows = [list(row) for row in all_csv_rows]
-        writer.writerows([headers[0]] + all_csv_rows)
-        report.flush()
+        if len(headers) > 0:
+            writer = csv.writer(report)
+            all_csv_rows = [list(row) for row in all_csv_rows]
+            writer.writerows([headers[0]] + all_csv_rows)
+            report.flush()
 
     with open(json_report, 'w') as report:
         json_string = '['
@@ -467,7 +464,7 @@ class Wrapper:
             if not os.path.isdir(self.infer_args.infer_out):
                 os.mkdir(self.infer_args.infer_out)
 
-            self.timer.start('Preparing build...')
+            self.timer.start('Preparing build ...')
             temp_files2, infer_script = prepare_build(self.infer_args)
             temp_files += temp_files2
             self.timer.stop('Build prepared')
@@ -475,14 +472,14 @@ class Wrapper:
             if len(self.normalized_targets) == 0:
                 logging.info('Nothing to analyze')
             else:
-                self.timer.start('Running buck...')
+                self.timer.start('Running Buck ...')
                 javac_config = ['--config', 'tools.javac=' + infer_script]
                 buck_cmd = self.buck_cmd + javac_config
                 subprocess.check_call(buck_cmd)
                 self.timer.stop('Buck finished')
-                self.timer.start('Collecting results...')
-                collect_results(self.infer_args, start_time)
-                self.timer.stop('Done')
+            self.timer.start('Collecting results ...')
+            collect_results(self.infer_args, start_time)
+            self.timer.stop('Done')
             return os.EX_OK
         except KeyboardInterrupt as e:
             self.timer.stop('Exiting')
