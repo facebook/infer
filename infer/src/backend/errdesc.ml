@@ -693,6 +693,14 @@ let explain_dexp_access prop dexp is_nullable =
                (L.d_str "lookup: case not matched on Darray ";
                 Sil.d_sexp se1; L.d_str " "; Sil.d_sexp se2; L.d_ln());
              None)
+    | Sil.Darrow ((Sil.Dpvaraddr pvar), f) ->
+        (match lookup (Sil.Dpvaraddr pvar) with
+         | None -> None
+         | Some Sil.Estruct (fsel, _) ->
+             lookup_fld fsel f
+         | Some _ ->
+             if verbose then (L.d_str "lookup: case not matched on Darrow "; L.d_ln ());
+             None)
     | Sil.Darrow (de1, f) ->
         (match lookup (Sil.Dderef de1) with
          | None -> None
@@ -730,6 +738,9 @@ let explain_dexp_access prop dexp is_nullable =
       when method_of_pointer_wrapper pname ->
         if verbose then (L.d_strln "lookup: found Dretcall ");
         Some (Sil.Eexp (Sil.Const c, Sil.Ireturn_from_pointer_wrapper_call loc.Location.line))
+    | Sil.Dpvaraddr pvar ->
+        (L.d_strln ("lookup: found Dvaraddr " ^ Sil.dexp_to_string (Sil.Dpvaraddr pvar)));
+        find_ptsto (Sil.Lvar pvar)
     | de ->
         if verbose then (L.d_strln ("lookup: unknown case not matched " ^ Sil.dexp_to_string de));
         None in

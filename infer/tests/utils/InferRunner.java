@@ -261,7 +261,8 @@ public class InferRunner {
       @Nullable String ml_buckets,
       boolean arc,
       boolean headers,
-      boolean testingMode) {
+      boolean testingMode,
+      boolean filter) {
     File resultsDir = createResultsDir(folder);
     String resultsDirName = resultsDir.getAbsolutePath();
     InferRunner.bugsFile = new File(resultsDir, BUGS_FILE_NAME);
@@ -288,10 +289,15 @@ public class InferRunner {
     if (testingMode) {
       testingModeOption.add("--testing_mode");
     }
+    ImmutableList.Builder<String> doNotFilterOption =
+        new ImmutableList.Builder<>();
+    if (!filter) {
+      doNotFilterOption.add("--no-filtering");
+    }
     ImmutableList<String> inferCmd = new ImmutableList.Builder<String>()
         .add("infer")
         .add("--no-progress-bar")
-        .add("--no-filtering")
+        .addAll(doNotFilterOption.build())
         .add("--out")
         .add(resultsDirName)
         .addAll(testingModeOption.build())
@@ -302,6 +308,29 @@ public class InferRunner {
         .addAll(createClangCommand(sourceFile, lang, isysroot, arc))
         .build();
     return inferCmd;
+  }
+
+  public static ImmutableList<String> createClangInferCommand(
+      TemporaryFolder folder,
+      String sourceFile,
+      Language lang,
+      boolean analyze,
+      @Nullable String isysroot,
+      @Nullable String ml_buckets,
+      boolean arc,
+      boolean headers,
+      boolean testingMode) {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        lang,
+        analyze,
+        isysroot,
+        ml_buckets,
+        arc,
+        headers,
+        testingMode,
+        false);
   }
 
   public static ImmutableList<String> createClangInferCommand(
@@ -444,6 +473,22 @@ public class InferRunner {
         null,
         ml_bucket,
         false);
+  }
+
+  public static ImmutableList<String> createCPPInferCommandFilter(
+      TemporaryFolder folder,
+      String sourceFile) throws IOException, InterruptedException {
+    return createClangInferCommand(
+        folder,
+        sourceFile,
+        Language.CPP,
+        true,
+        null,
+        null,
+        false,
+        false,
+        false,
+        true);
   }
 
   public static ImmutableList<String> createObjCInferCommand(
