@@ -15,10 +15,12 @@ open! Utils
 module L = Logging
 module F = Format
 
-let pointer_wrapper_classes = [
+let smart_pointers = [
   ["std"; "shared_ptr"];
   ["std"; "unique_ptr"]
 ]
+
+let pointer_wrapper_classes = smart_pointers
 
 let vector_class = ["std"; "vector"]
 
@@ -788,6 +790,12 @@ let explain_dereference_access outermost_array is_nullable _de_opt prop =
     | Some de ->
         Some (if outermost_array then remove_outermost_array_access de else de) in
   let value_str = match de_opt with
+    | Some (Sil.Darrow ((Sil.Dpvaraddr pvar), f) as de) ->
+        let complete_fieldname = Ident.fieldname_to_complete_string f in
+        if is_one_of_classes complete_fieldname smart_pointers &&
+           Utils.string_contains "data" complete_fieldname then
+          Sil.dexp_to_string (Sil.Dpvaraddr pvar)
+        else Sil.dexp_to_string de
     | Some de ->
         Sil.dexp_to_string de
     | None -> "" in

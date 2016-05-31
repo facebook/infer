@@ -105,6 +105,9 @@ let name_to_string: name => string;
 /** Convert a field name to a string. */
 let fieldname_to_string: fieldname => string;
 
+/** Convert a fieldname to a string, including the mangled part. */
+let fieldname_to_complete_string: fieldname => string;
+
 
 /** Convert a fieldname to a simplified string with at most one-level path. */
 let fieldname_to_simplified_string: fieldname => string;

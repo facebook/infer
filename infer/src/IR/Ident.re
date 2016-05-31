@@ -66,9 +66,8 @@ let compare i1 i2 => {
   }
 };
 
-let equal i1 i2 =>
-  i1.stamp === i2.stamp && i1.kind === i2.kind && name_equal i1.name i2.name
-  /* most unlikely first */;
+let equal i1 i2 => i1.stamp === i2.stamp && i1.kind === i2.kind && name_equal i1.name i2.name
+/* most unlikely first */;
 
 let fieldname_equal fn1 fn2 => fieldname_compare fn1 fn2 == 0;
 
@@ -147,6 +146,9 @@ let name_to_string (name: name) => name;
 
 /** Convert a fieldname to a string. */
 let fieldname_to_string fn => Mangled.to_string fn.fname;
+
+/** Convert a fieldname to a string, including the mangled part. */
+let fieldname_to_complete_string fn => Mangled.to_string_full fn.fname;
 
 
 /** Convert a fieldname to a simplified string with at most one-level path. */
