@@ -129,6 +129,22 @@ def infer_key(analyzer):
     return os.pathsep.join([analyzer, infer_version()])
 
 
+def run_infer_stats_aggregator(infer_out, buck_out=None):
+    buck_out_args = []
+    if buck_out is not None:
+        buck_out_args = ['--buck-out', buck_out]
+    try:
+        cmd = get_cmd_in_bin_dir('InferStatsAggregator')
+        return subprocess.check_output(
+            [cmd, '--results-dir', infer_out] + buck_out_args,
+            stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        output = 'Error while aggregating stats ({ec}): {output}'\
+            .format(ec=exc.returncode, output=exc.output)
+        stderr(output)
+        return output
+
+
 def vcs_branch(dir='.'):
     cwd = os.getcwd()
     devnull = open(os.devnull, 'w')
