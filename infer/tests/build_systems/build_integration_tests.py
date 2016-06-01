@@ -107,11 +107,7 @@ def save_report(reports, filename):
                             separators=(',', ': '), sort_keys=True)
 
 
-def run_analysis(root, clean_cmds, build_cmds, analyzer, env=None):
-    if not os.path.exists(root):
-        os.makedirs(root)
-    os.chdir(root)
-
+def run_analysis(clean_cmds, build_cmds, analyzer, env=None):
     for clean_cmd in clean_cmds:
         subprocess.check_call(clean_cmd, env=env)
 
@@ -182,7 +178,8 @@ def check_results(errors, patterns):
 
 def is_tool_available(cmd):
     try:
-        subprocess.call(cmd)
+        with open(os.devnull, 'w') as devnull:
+            subprocess.call(cmd, stdout=devnull)
     except OSError as e:
         if e.errno == os.errno.ENOENT:
             return False
@@ -205,170 +202,168 @@ def make_paths_relative_in_report(root, errors):
         # remove "root/" from each file name
         rel_fname = error[issues.JSON_INDEX_FILENAME][len(root) + 1:]
         error[issues.JSON_INDEX_FILENAME] = rel_fname
+    return errors
 
+
+def test(name,
+         readable_name,
+         root,
+         compile_commands,
+         clean_commands=[],
+         env=None,
+         available=lambda: True,
+         enabled=None,
+         report_fname=None,
+         preprocess=lambda: None,
+         postprocess=lambda errors: errors):
+    """Run a test.
+
+    Arguments:
+    - [name] is used to test if the test is enabled by default (but
+      see [enabled])
+    - [root] the directory from which to run the test
+    - [compile_commands] the commands to be captured by Infer
+    - [clean_commands] commands to setup the build directory prior to
+      running Infer
+    - [env] the environment in which to run all the commands
+    - [available] a test to determine whether the test can be run
+    - [enabled] whether the test should attempt to run. By default it
+      is enabled if [[name] in [to_test]]
+    - [report_fname] where to find the expected Infer results
+    - [preprocess] a function to run before the clean and compile
+      commands. If the function returns something non-None, use that as
+      the compile commands.
+    - [postprocess] a function that takes in an Infer report and can
+      modify them. It must return an Infer report.
+
+    Returns [True] if the test ran, [False] otherwise.
+    """
+    # python can't into using values of arguments in the default
+    # values of other arguments
+    if enabled is None:
+        enabled = name in to_test
+    if report_fname is None:
+        report_fname = '%s_report.json' % name
+
+    if not (enabled and available()):
+        print('Skipping %s integration test' % readable_name)
+        return False
+
+    print('\nRunning %s integration test' % readable_name)
+
+    if not os.path.exists(root):
+        os.makedirs(root)
+    os.chdir(root)
+
+    pre = preprocess()
+    if pre is not None:
+        compile_commands = pre
+
+    # rerun this in case preprocess() deleted the current directory
+    if not os.path.exists(root):
+        os.makedirs(root)
+    os.chdir(root)
+
+    errors = run_analysis(
+        clean_commands,
+        compile_commands,
+        INFER_EXECUTABLE,
+        env=env)
+    original = os.path.join(EXPECTED_OUTPUTS_DIR, report_fname)
+    do_test(postprocess(errors), original)
+    return True
 
 class BuildIntegrationTest(unittest.TestCase):
 
     def test_ant_integration(self):
-        if not ('ant' in to_test and is_tool_available(['ant', '-version'])):
-            print('\nSkipping Ant integration test')
-            return
-
-        print('\nRunning Ant integration test')
-        root = os.path.join(SCRIPT_DIR, os.pardir)
-        errors = run_analysis(
-            root,
-            [['ant', 'clean']],
-            [['ant', 'compile']],
-            INFER_EXECUTABLE)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'ant_report.json')
-        do_test(errors, original)
+        test('ant', 'Ant',
+             os.path.join(SCRIPT_DIR, os.pardir),
+             [['ant', 'compile']],
+             clean_commands=[['ant', 'clean']],
+             available=lambda: is_tool_available(['ant', '-version']))
 
     def test_javac_integration(
             self,
             enabled=None,
             root=os.path.join(ROOT_DIR, 'examples'),
-            report_name='javac_report.json'):
-        if enabled is None:
-            enabled = 'javac' in to_test
-        if not enabled:
-            print('\nSkipping javac integration test')
-            return
-
-        print('\nRunning javac integration test')
-        errors = run_analysis(
-            root,
-            [],
-            [['javac', 'Hello.java']],
-            INFER_EXECUTABLE)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
-        do_test(errors, original)
+            report_fname='javac_report.json'):
+        test('javac', 'javac',
+             root,
+             [['javac', 'Hello.java']],
+             enabled=enabled,
+             report_fname=report_fname)
 
     def test_gradle_integration(
             self,
             enabled=None,
             root=os.path.join(ROOT_DIR, 'examples', 'java_hello'),
-            report_name='gradle_report.json'):
-        if enabled is None:
-            enabled = 'gradle' in to_test
-        if not enabled:
-            print('\nSkipping Gradle integration test')
-            return
-
-        print('\nRunning Gradle integration test using mock gradle')
-        env = os.environ
+            report_fname='gradle_report.json'):
+        env = os.environ.copy()
         env['PATH'] = '{}:{}'.format(
             os.path.join(SCRIPT_DIR, 'mock'),
             os.getenv('PATH'),
         )
-        errors = run_analysis(
-            root,
-            [],
-            [['gradle', 'build']],
-            INFER_EXECUTABLE,
-            env=env)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
-        do_test(errors, original)
+        test('gradle', 'Gradle',
+             root,
+             [['gradle', 'build']],
+             enabled=enabled,
+             report_fname=report_fname,
+             env=env)
 
     def test_buck_integration(self):
-        if not ('buck' in to_test and
-                is_tool_available(['buck', '--version'])):
-            print('\nSkipping Buck integration test')
-            return
-
-        print('\nRunning Buck integration test')
-        errors = run_analysis(
-            ROOT_DIR,
-            [['buck', 'clean']],
-            [['buck', 'build', 'infer']],
-            INFER_EXECUTABLE)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'buck_report.json')
-        do_test(errors, original)
+        test('buck', 'Buck',
+             ROOT_DIR,
+             [['buck', 'build', 'infer']],
+             clean_commands=[['buck', 'clean']],
+             available=lambda: is_tool_available(['buck', '--version']))
 
     def test_make_integration(
             self,
             enabled=None,
             root=os.path.join(CODETOANALYZE_DIR, 'make'),
-            report_name='make_report.json'):
-        if enabled is None:
-            enabled = 'make' in to_test
-        if not enabled:
-            print('\nSkipping make integration test')
-            return
-
-        print('\nRunning make integration test')
-        errors = run_analysis(
-            root,
-            [['make', 'clean']],
-            [['make', 'all']],
-            INFER_EXECUTABLE)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
-        do_test(errors, original)
+            report_fname='make_report.json'):
+        test('make', 'make',
+             root,
+             [['make', 'all']],
+             clean_commands=[['make', 'clean']],
+             enabled=enabled,
+             report_fname=report_fname)
 
     def test_wonky_locale_integration(self):
-        if 'locale' not in to_test:
-            print('\nSkipping wonky locale integration test')
-            return
-
-        print('\nRunning wonky locale integration test')
-        root = os.path.join(CODETOANALYZE_DIR, 'make')
-        env = os.environ
+        env = os.environ.copy()
         env['LC_ALL'] = 'C'
-        # check that we are able to remove the previous results by
-        # running the analysis twice
-        errors = run_analysis(
-            root,
-            [],
-            [['clang', '-c', 'utf8_in_function_names.c'],
-             ['clang', '-c', 'utf8_in_function_names.c']],
-            INFER_EXECUTABLE,
-            env=env)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'locale_report.json')
-        do_test(errors, original)
+        test('locale', 'wonky locale',
+             os.path.join(CODETOANALYZE_DIR, 'make'),
+             [['clang', '-c', 'utf8_in_function_names.c'],
+              ['clang', '-c', 'utf8_in_function_names.c']],
+             env=env)
 
     def test_waf_integration(self):
-        if 'waf' not in to_test:
-            print('\nSkipping waf integration test')
-            return
-
-        print('\nRunning waf integration test')
-        root = os.path.join(CODETOANALYZE_DIR, 'make')
-        errors = run_analysis(
-            root,
-            [['make', 'clean']],
-            [['./waf', 'build']],
-            INFER_EXECUTABLE)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, 'waf_report.json')
-        do_test(errors, original)
+        test('waf', 'waf',
+             os.path.join(CODETOANALYZE_DIR, 'make'),
+             [['./waf', 'build']],
+             clean_commands=[['make', 'clean']])
 
     def test_cmake_integration(
             self,
             enabled=None,
             root=os.path.join(CODETOANALYZE_DIR, 'cmake'),
-            report_name='cmake_report.json'):
-        if enabled is None:
-            enabled = 'cmake' in to_test
-        if not (enabled and
-                is_tool_available(['cmake', '--version'])):
-            print('\nSkipping cmake integration test')
-            return
+            report_fname='cmake_report.json'):
+        build_root = os.path.join(root, 'build')
+        if test('cmake', 'CMake',
+                build_root,
+                [['cmake', '..'], ['make', 'clean', 'all']],
+                available=lambda: is_tool_available(['cmake', '--version']),
+                enabled=enabled,
+                # remove build/ directory just in case
+                preprocess=lambda: shutil.rmtree(build_root, True),
+                # cmake produces absolute paths using the real path
+                postprocess=(lambda errors:
+                             make_paths_relative_in_report(
+                                 os.path.realpath(root), errors))):
+            # remove build/ directory
+            shutil.rmtree(build_root)
 
-        print('\nRunning cmake integration test')
-        orig_root = root
-        root = os.path.join(root, 'build')
-        # remove build/ directory just in case
-        shutil.rmtree(root, True)
-        errors = run_analysis(
-            root,
-            [],
-            [['cmake', '..'], ['make', 'clean', 'all']],
-            INFER_EXECUTABLE)
-        # remove build/ directory
-        shutil.rmtree(root)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR, report_name)
-        # cmake produces absolute paths using the real path
-        make_paths_relative_in_report(os.path.realpath(orig_root), errors)
-        do_test(errors, original)
 
     def test_utf8_in_pwd_integration(self):
         if not 'utf8_in_pwd' in to_test:
@@ -386,36 +381,25 @@ class BuildIntegrationTest(unittest.TestCase):
         self.test_cmake_integration(
             enabled=True,
             root=os.path.join(utf8_in_pwd_path, 'cmake'),
-            report_name='utf8_in_pwd_cmake_report.json')
+            report_fname='utf8_in_pwd_cmake_report.json')
         self.test_gradle_integration(
             enabled=True,
             root=os.path.join(utf8_in_pwd_path, 'gradle'),
-            report_name='utf8_in_pwd_gradle_report.json')
+            report_fname='utf8_in_pwd_gradle_report.json')
         self.test_javac_integration(
             enabled=True,
             root=os.path.join(utf8_in_pwd_path),
-            report_name='utf8_in_pwd_javac_report.json')
+            report_fname='utf8_in_pwd_javac_report.json')
         self.test_make_integration(
             enabled=True,
             root=os.path.join(utf8_in_pwd_path, 'make'),
-            report_name='utf8_in_pwd_make_report.json')
+            report_fname='utf8_in_pwd_make_report.json')
         shutil.rmtree(utf8_in_pwd_path, True) # remove copied dir
 
     def test_unknown_extension(self):
-        if 'unknown_ext' not in to_test:
-            print('\nSkipping unknown extension integration test')
-            return
-
-        print('\nRunning unknown extension integration test')
-        root = CODETOANALYZE_DIR
-        errors = run_analysis(
-            root,
-            [],
-            [['clang', '-x', 'c', '-c', 'hello.unknown_ext']],
-            INFER_EXECUTABLE)
-        original = os.path.join(EXPECTED_OUTPUTS_DIR,
-                                'unknown_ext_report.json')
-        do_test(errors, original)
+        test('unknown_ext', 'unknown extension',
+             CODETOANALYZE_DIR,
+             [['clang', '-x', 'c', '-c', 'hello.unknown_ext']])
 
 
 if __name__ == '__main__':
