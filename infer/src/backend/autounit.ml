@@ -332,7 +332,7 @@ let create_idmap sigma : idmap =
         extend_idmap id { typ = t; alloc = true } idmap
     | _ -> () in
   let do_hpred = function
-    | Sil.Hpointsto (e, se, Sil.Sizeof (typ, _)) ->
+    | Sil.Hpointsto (e, se, Sil.Sizeof (typ, _, _)) ->
         do_lhs_e e (Sil.Tptr (typ, Sil.Pk_pointer));
         do_se se typ
     | Sil.Hlseg (_, _, e, f, el) ->
@@ -427,7 +427,7 @@ let pp_texp_for_malloc fmt =
     | Sil.Tarray (t, e) ->
         Sil.Tarray (handle_arr_size t, e) in
   function
-  | Sil.Sizeof (typ, _) ->
+  | Sil.Sizeof (typ, _, _) ->
       let typ' = handle_arr_size typ in
       F.fprintf fmt "sizeof(%a)" (pp_typ_c pe) typ'
   | e -> pp_exp_c pe fmt e

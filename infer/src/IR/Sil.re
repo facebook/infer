@@ -657,7 +657,7 @@ type dexp =
   | Darray of dexp dexp
   | Dbinop of binop dexp dexp
   | Dconst of const
-  | Dsizeof of typ Subtype.t
+  | Dsizeof of typ (option exp) Subtype.t
   | Dderef of dexp
   | Dfcall of dexp (list dexp) Location.t call_flags
   | Darrow of dexp Ident.fieldname
@@ -769,8 +769,10 @@ and exp =
   | Lfield of exp Ident.fieldname typ
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex of exp exp
-  /** A sizeof expression */
-  | Sizeof of typ Subtype.t;
+  /** A sizeof expression. [Sizeof typ (Some len)] represents the size of a value of type [typ]
+      which ends in an extensible array of length [len].  The lengths in [Tarray] record the
+      statically determined lengths, while the lengths in [Sizeof] record the dynamic lengths. */
+  | Sizeof of typ (option exp) Subtype.t;
 
 
 /** Kind of prune instruction */
@@ -937,7 +939,7 @@ let is_objc_ref_counter_field (fld, _, a) =>
 
 let has_objc_ref_counter hpred =>
   switch hpred {
-  | Hpointsto _ _ (Sizeof (Tstruct struct_typ) _) =>
+  | Hpointsto _ _ (Sizeof (Tstruct struct_typ) _ _) =>
     IList.exists is_objc_ref_counter_field struct_typ.instance_fields
   | _ => false
   };
@@ -1642,12 +1644,17 @@ and exp_compare (e1: exp) (e2: exp) :int =>
     }
   | (Lindex _, _) => (-1)
   | (_, Lindex _) => 1
-  | (Sizeof t1 s1, Sizeof t2 s2) =>
+  | (Sizeof t1 l1 s1, Sizeof t2 l2 s2) =>
     let n = typ_compare t1 t2;
     if (n != 0) {
       n
     } else {
-      Subtype.compare s1 s2
+      let n = opt_compare exp_compare l1 l2;
+      if (n != 0) {
+        n
+      } else {
+        Subtype.compare s1 s2
+      }
     }
   };
 
@@ -2190,7 +2197,7 @@ let rec dexp_to_string =
       ampersand ^ s
     }
   | Dunop op de => str_unop op ^ dexp_to_string de
-  | Dsizeof typ _ => pp_to_string (pp_typ_full pe_text) typ
+  | Dsizeof typ _ _ => pp_to_string (pp_typ_full pe_text) typ
   | Dunknown => "unknown"
   | Dretcall de _ _ _ => "returned by " ^ dexp_to_string de
 /** Pretty print a dexp. */
@@ -2397,7 +2404,9 @@ and _pp_exp pe0 pp_t f e0 => {
     | Lvar pv => Pvar.pp pe f pv
     | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
     | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
-    | Sizeof t s => F.fprintf f "sizeof(%a%a)" pp_t t Subtype.pp s
+    | Sizeof t l s =>
+      let pp_len f l => Option.map_default (F.fprintf f "[%a]" pp_exp) () l;
+      F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
     }
   };
   color_post_wrapper changed pe0 f
@@ -2434,14 +2443,20 @@ let d_exp_list (el: list exp) => L.add_print_action (L.PTexp_list, Obj.repr el);
 
 let pp_texp pe f =>
   fun
-  | Sizeof t s => F.fprintf f "%a%a" (pp_typ pe) t Subtype.pp s
+  | Sizeof t l s => {
+      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
+      F.fprintf f "%a%a%a" (pp_typ pe) t pp_len l Subtype.pp s
+    }
   | e => (pp_exp pe) f e;
 
 
 /** Pretty print a type with all the details. */
 let pp_texp_full pe f =>
   fun
-  | Sizeof t s => F.fprintf f "%a%a" (pp_typ_full pe) t Subtype.pp s
+  | Sizeof t l s => {
+      let pp_len f l => Option.map_default (F.fprintf f "[%a]" (pp_exp pe)) () l;
+      F.fprintf f "%a%a%a" (pp_typ_full pe) t pp_len l Subtype.pp s
+    }
   | e => (_pp_exp pe) (pp_typ_full pe) f e;
 
 
@@ -3290,7 +3305,7 @@ let unsome_typ s =>
     If not a sizeof, return the default type if given, otherwise raise an exception */
 let texp_to_typ default_opt =>
   fun
-  | Sizeof t _ => t
+  | Sizeof t _ _ => t
   | _ => unsome_typ "texp_to_typ" default_opt;
 
 
@@ -3416,7 +3431,10 @@ let rec exp_fpv =
   | Lvar name => [name]
   | Lfield e _ _ => exp_fpv e
   | Lindex e1 e2 => exp_fpv e1 @ exp_fpv e2
-  | Sizeof _ => []
+  /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
+  /* | Sizeof _ None _ => [] */
+  /* | Sizeof _ (Some l) _ => exp_fpv l */
+  | Sizeof _ _ _ => []
 and exp_list_fpv el => IList.flatten (IList.map exp_fpv el);
 
 let atom_fpv =
@@ -3611,7 +3629,10 @@ let rec exp_fav_add fav =>
       exp_fav_add fav e1;
       exp_fav_add fav e2
     }
-  | Sizeof _ => ();
+  /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
+  /* | Sizeof _ None _ => () */
+  /* | Sizeof _ (Some l) _ => exp_fav_add fav l; */
+  | Sizeof _ _ _ => ();
 
 let exp_fav = fav_imperative_to_functional exp_fav_add;
 
@@ -4051,7 +4072,7 @@ and exp_sub (subst: subst) e =>
     let e1' = exp_sub subst e1;
     let e2' = exp_sub subst e2;
     Lindex e1' e2'
-  | Sizeof t s => Sizeof (typ_sub subst t) s
+  | Sizeof t l s => Sizeof (typ_sub subst t) (Option.map (exp_sub subst) l) s
   };
 
 let instr_sub (subst: subst) instr => {
@@ -4599,8 +4620,11 @@ let exp_get_vars exp => {
         (fun vars_acc (captured_exp, _, _) => exp_get_vars_ captured_exp vars_acc)
         vars
         captured_vars
-    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _)
-    | Sizeof _ => vars
+    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cattribute _ | Cclass _ | Cptr_to_fld _) => vars
+    /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
+    /* | Sizeof _ None _ => vars */
+    /* | Sizeof _ (Some l) _ => exp_get_vars_ l vars */
+    | Sizeof _ _ _ => vars
     };
   exp_get_vars_ exp ([], [])
 };
@@ -4615,7 +4639,8 @@ let exp_get_offsets exp => {
     | UnOp _
     | BinOp _
     | Lvar _
-    | Sizeof _ => offlist_past
+    | Sizeof _ None _ => offlist_past
+    | Sizeof _ (Some l) _ => f offlist_past l
     | Cast _ sub_exp => f offlist_past sub_exp
     | Lfield sub_exp fldname typ => f [Off_fld fldname typ, ...offlist_past] sub_exp
     | Lindex sub_exp e => f [Off_index e, ...offlist_past] sub_exp

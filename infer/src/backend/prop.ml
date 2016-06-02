@@ -456,9 +456,10 @@ let sym_eval abs e =
         Sil.Const (Sil.Cclosure { c with captured_vars; })
     | Sil.Const _ ->
         e
-    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, e), _)
+    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, l), None, _)
+    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, _), Some l, _)
       when Sil.ikind_is_char ik && !Config.curr_language <> Config.Java ->
-        eval e
+        eval l
     | Sil.Sizeof _ ->
         e
     | Sil.Cast (_, e1) ->
@@ -593,7 +594,7 @@ let sym_eval abs e =
         eval (Sil.BinOp (Sil.PlusPI, e11, e2'))
     | Sil.BinOp
         (Sil.PlusA,
-         (Sil.Sizeof (Sil.Tstruct struct_typ, _) as e1),
+         (Sil.Sizeof (Sil.Tstruct struct_typ, None, _) as e1),
          e2) ->
         (* pattern for extensible structs given a struct declatead as struct s { ... t arr[n] ... },
            allocation pattern malloc(sizeof(struct s) + k * siezof(t)) turn it into
@@ -603,13 +604,13 @@ let sym_eval abs e =
         let instance_fields = struct_typ.Sil.instance_fields in
         (match IList.rev instance_fields, e2' with
            (fname, Sil.Tarray (typ, size), _) :: ltfa,
-           Sil.BinOp(Sil.Mult, num_elem, Sil.Sizeof (texp, st))
+           Sil.BinOp(Sil.Mult, num_elem, Sil.Sizeof (texp, None, st))
            when instance_fields != [] && Sil.typ_equal typ texp ->
              let size' = Sil.BinOp(Sil.PlusA, size, num_elem) in
              let ltfa' = (fname, Sil.Tarray(typ, size'), Sil.item_annotation_empty) :: ltfa in
              let struct_typ' =
                { struct_typ with Sil.instance_fields = IList.rev ltfa' } in
-             Sil.Sizeof (Sil.Tstruct struct_typ', st)
+             Sil.Sizeof (Sil.Tstruct struct_typ', None, st)
          | _ -> Sil.BinOp(Sil.PlusA, e1', e2'))
     | Sil.BinOp (Sil.PlusA as oplus, e1, e2)
     | Sil.BinOp (Sil.PlusPI as oplus, e1, e2) ->
@@ -625,6 +626,19 @@ let sym_eval abs e =
           | _ -> Sil.BinOp (ominus, x, y) in
         begin
           match e1', e2' with
+          | Sil.Sizeof (typ, Some len1, st),
+            Sil.BinOp (Sil.Mult, len2, Sil.Sizeof (elt, None, _))
+            when isPlusA
+              && (match typ with
+                  | Sil.Tarray (elt2, _) ->
+                      Sil.typ_equal elt elt2
+                  | Sil.Tstruct {instance_fields= _::_ as flds} ->
+                      Sil.typ_equal elt (snd3 (IList.last flds))
+                  | _ ->
+                      false) ->
+              (* pattern for extensible structs:
+                 sizeof(struct s {... t[l]}) + k * sizeof(elt)) = sizeof(struct s {... t[l + k]}) *)
+              Sil.Sizeof (typ, Some (len1 +++ len2), st)
           | Sil.Const c, _ when iszero_int_float c ->
               e2'
           | _, Sil.Const c when iszero_int_float c ->
@@ -691,13 +705,6 @@ let sym_eval abs e =
     | Sil.BinOp (Sil.MinusPP, e1, e2) ->
         if abs then Sil.exp_get_undefined false
         else Sil.BinOp (Sil.MinusPP, eval e1, eval e2)
-    | Sil.BinOp (Sil.Mult, esize, Sil.Sizeof (t, st))
-    | Sil.BinOp(Sil.Mult, Sil.Sizeof (t, st), esize) ->
-        begin
-          match eval esize, eval (Sil.Sizeof (t, st)) with
-          | Sil.Const (Sil.Cint i), e' when Sil.Int.isone i -> e'
-          | esize', e' -> Sil.BinOp(Sil.Mult, esize', e')
-        end
     | Sil.BinOp (Sil.Mult, e1, e2) ->
         let e1' = eval e1 in
         let e2' = eval e2 in
@@ -721,6 +728,9 @@ let sym_eval abs e =
               Sil.exp_float (v *. w)
           | Sil.Var _, Sil.Var _ ->
               Sil.BinOp(Sil.Mult, e1', e2')
+          | _, Sil.Sizeof _
+          | Sil.Sizeof _, _ ->
+              Sil.BinOp(Sil.Mult, e1', e2')
           | _, _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp(Sil.Mult, e1', e2')
         end
@@ -739,10 +749,11 @@ let sym_eval abs e =
               Sil.exp_int (Sil.Int.div n m)
           | Sil.Const (Sil.Cfloat v), Sil.Const (Sil.Cfloat w) ->
               Sil.exp_float (v /.w)
-          | Sil.Sizeof(Sil.Tarray(typ, size), _), Sil.Sizeof(_typ, _)
-            (* pattern: sizeof(arr) / sizeof(arr[0]) = size of arr *)
-            when Sil.typ_equal _typ typ ->
-              size
+          | Sil.Sizeof (Sil.Tarray (elt, _), Some len, _), Sil.Sizeof (elt2, None, _)
+          | Sil.Sizeof (Sil.Tarray (elt, len), None, _), Sil.Sizeof (elt2, None, _)
+            (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
+            when Sil.typ_equal elt elt2 ->
+              len
           | _ ->
               if abs then Sil.exp_get_undefined false else Sil.BinOp (Sil.Div, e1', e2')
         end
@@ -842,7 +853,8 @@ let exp_normalize sub exp =
   else sym_eval false exp'
 
 let rec texp_normalize sub exp = match exp with
-  | Sil.Sizeof (typ, st) -> Sil.Sizeof (typ_normalize sub typ, st)
+  | Sil.Sizeof (typ, len, st) ->
+      Sil.Sizeof (typ_normalize sub typ, Option.map (exp_normalize sub) len, st)
   | _ -> exp_normalize sub exp
 
 (* NOTE: usage of == operator in flds_norm and typ_normalize is intended*)
@@ -1141,7 +1153,7 @@ let rec strexp_normalize sub se =
       end
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
-let rec create_strexp_of_type tenvo struct_init_mode typ inst =
+let rec create_strexp_of_type tenvo struct_init_mode typ len inst =
   let init_value () =
     let create_fresh_var () =
       let fresh_id =
@@ -1154,24 +1166,30 @@ let rec create_strexp_of_type tenvo struct_init_mode typ inst =
       | _ -> Sil.exp_zero
     else
       create_fresh_var () in
-  match typ with
-  | Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _ ->
+  match typ, len with
+  | (Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _), None ->
       Sil.Eexp (init_value (), inst)
-  | Sil.Tstruct { Sil.instance_fields } ->
-      begin
-        match struct_init_mode with
-        | No_init -> Sil.Estruct ([], inst)
-        | Fld_init ->
-            let f (fld, t, a) =
-              if Sil.is_objc_ref_counter_field (fld, t, a) then
-                (fld, Sil.Eexp (Sil.exp_one, inst))
-              else
-                (fld, create_strexp_of_type tenvo struct_init_mode t inst) in
-            Sil.Estruct (IList.map f instance_fields, inst)
-      end
-  | Sil.Tarray (_, size) ->
+  | Sil.Tstruct { Sil.instance_fields }, _ -> (
+      match struct_init_mode with
+      | No_init ->
+          Sil.Estruct ([], inst)
+      | Fld_init ->
+          (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
+             field, but always return None so that only the last field receives len *)
+          let f (fld, t, a) (flds, len) =
+            if Sil.is_objc_ref_counter_field (fld, t, a) then
+              ((fld, Sil.Eexp (Sil.exp_one, inst)) :: flds, None)
+            else
+              ((fld, create_strexp_of_type tenvo struct_init_mode t len inst) :: flds, None) in
+          let flds, _ = IList.fold_right f instance_fields ([], len) in
+          Sil.Estruct (flds, inst)
+    )
+  | Sil.Tarray (_, size), None ->
       Sil.Earray (size, [], inst)
-  | Sil.Tvar _ ->
+  | Sil.Tarray _, Some len ->
+      Sil.Earray (len, [], inst)
+  | Sil.Tvar _, _
+  | (Sil.Tint _ | Sil.Tfloat _ | Sil.Tvoid | Sil.Tfun _ | Sil.Tptr _), Some _ ->
       assert false
 
 (** Sil.Construct a pointsto. *)
@@ -1185,8 +1203,8 @@ let mk_ptsto lexp sexp te =
     initialize the fields of structs with fresh variables. *)
 let mk_ptsto_exp tenvo struct_init_mode (exp, te, expo) inst : Sil.hpred =
   let default_strexp () = match te with
-    | Sil.Sizeof (typ, _) ->
-        create_strexp_of_type tenvo struct_init_mode typ inst
+    | Sil.Sizeof (typ, len, _) ->
+        create_strexp_of_type tenvo struct_init_mode typ len inst
     | Sil.Var _ ->
         Sil.Estruct ([], inst)
     | te ->
@@ -1214,19 +1232,24 @@ let rec hpred_normalize sub hpred =
       let normalized_cnt = strexp_normalize sub cnt in
       let normalized_te = texp_normalize sub te in
       begin match normalized_cnt, normalized_te with
-        | Sil.Earray (Sil.Sizeof (t, st1), [], inst), Sil.Sizeof (Sil.Tarray _, _) ->
+        | Sil.Earray (Sil.Sizeof _ as size, [], inst), Sil.Sizeof (Sil.Tarray _, _, _) ->
             (* check for an empty array whose size expression is (Sizeof type), and turn the array
                into a strexp of the given type *)
-            let hpred' = mk_ptsto_exp None Fld_init (root, Sil.Sizeof (t, st1), None) inst in
+            let hpred' = mk_ptsto_exp None Fld_init (root, size, None) inst in
             replace_hpred hpred'
-        | Sil.Earray (Sil.BinOp(Sil.Mult, Sil.Sizeof (t, st1), x), esel, inst),
-          Sil.Sizeof (Sil.Tarray _, _)
-        | Sil.Earray (Sil.BinOp(Sil.Mult, x, Sil.Sizeof (t, st1)), esel, inst),
-          Sil.Sizeof (Sil.Tarray _, _) ->
-            (* check for an array whose size expression is n * (Sizeof type), and turn the array
-               into a strexp of the given type *)
-            let hpred' =
-              mk_ptsto_exp None Fld_init (root, Sil.Sizeof (Sil.Tarray(t, x), st1), None) inst in
+        | ( Sil.Earray (Sil.BinOp (Sil.Mult, Sil.Sizeof (t, None, st1), x), esel, inst)
+          | Sil.Earray (Sil.BinOp (Sil.Mult, x, Sil.Sizeof (t, None, st1)), esel, inst)),
+          Sil.Sizeof (Sil.Tarray (elt, _) as arr, _, _)
+          when Sil.typ_equal t elt ->
+            let len = Some x in
+            let hpred' = mk_ptsto_exp None Fld_init (root, Sil.Sizeof (arr, len, st1), None) inst in
+            replace_hpred (replace_array_contents hpred' esel)
+        | ( Sil.Earray (Sil.BinOp (Sil.Mult, Sil.Sizeof (t, Some len, st1), x), esel, inst)
+          | Sil.Earray (Sil.BinOp (Sil.Mult, x, Sil.Sizeof (t, Some len, st1)), esel, inst)),
+          Sil.Sizeof (Sil.Tarray (elt, _) as arr, _, _)
+          when Sil.typ_equal t elt ->
+            let len = Some (Sil.BinOp(Sil.Mult, x, len)) in
+            let hpred' = mk_ptsto_exp None Fld_init (root, Sil.Sizeof (arr, len, st1), None) inst in
             replace_hpred (replace_array_contents hpred' esel)
         | _ -> Sil.Hpointsto (normalized_root, normalized_cnt, normalized_te)
       end
@@ -1337,7 +1360,8 @@ let rec pi_sorted_remove_redundant = function
 let sigma_get_unsigned_exps sigma =
   let uexps = ref [] in
   let do_hpred = function
-    | Sil.Hpointsto(_, Sil.Eexp(e, _), Sil.Sizeof (Sil.Tint ik, _)) when Sil.ikind_is_unsigned ik ->
+    | Sil.Hpointsto (_, Sil.Eexp (e, _), Sil.Sizeof (Sil.Tint ik, _, _))
+      when Sil.ikind_is_unsigned ik ->
         uexps := e :: !uexps
     | _ -> () in
   IList.iter do_hpred sigma;
@@ -1622,13 +1646,13 @@ let get_fld_typ_path_opt src_exps snk_exp_ reachable_hpreds_ =
     | (_, Sil.Eexp (e, _)) -> Sil.exp_equal target_exp e
     | _ -> false in
   let extend_path hpred (snk_exp, path, reachable_hpreds) = match hpred with
-    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Sil.Sizeof (typ, _)) ->
+    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Sil.Sizeof (typ, _, _)) ->
         (try
            let fld, _ = IList.find (fun fld -> strexp_matches snk_exp fld) flds in
            let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
            (lhs, (Some fld, typ) :: path, reachable_hpreds')
          with Not_found -> (snk_exp, path, reachable_hpreds))
-    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Sil.Sizeof (typ, _)) ->
+    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Sil.Sizeof (typ, _, _)) ->
         if IList.exists (fun pair -> strexp_matches snk_exp pair) elems
         then
           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
@@ -2039,7 +2063,8 @@ let find_arithmetic_problem proc_node_session prop exp =
     | Sil.Lvar _ -> ()
     | Sil.Lfield (e, _, _) -> walk e
     | Sil.Lindex (e1, e2) -> walk e1; walk e2
-    | Sil.Sizeof _ -> () in
+    | Sil.Sizeof (_, None, _) -> ()
+    | Sil.Sizeof (_, Some len, _) -> walk len in
   walk exp;
   try Some (Div0 (IList.find check_zero !exps_divided)), !res
   with Not_found ->
@@ -2320,7 +2345,8 @@ let rec exp_captured_ren ren = function
   | Sil.Var id -> Sil.Var (ident_captured_ren ren id)
   | Sil.Const (Sil.Cexn e) -> Sil.Const (Sil.Cexn (exp_captured_ren ren e))
   | Sil.Const _ as e -> e
-  | Sil.Sizeof (t, st) -> Sil.Sizeof (typ_captured_ren ren t, st)
+  | Sil.Sizeof (t, len, st) ->
+      Sil.Sizeof (typ_captured_ren ren t, Option.map (exp_captured_ren ren) len, st)
   | Sil.Cast (t, e) -> Sil.Cast (t, exp_captured_ren ren e)
   | Sil.UnOp (op, e, topt) ->
       let topt' = match topt with

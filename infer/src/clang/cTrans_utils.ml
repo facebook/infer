@@ -296,7 +296,7 @@ let create_alloc_instrs context sil_loc function_type fname size_exp_opt procnam
         function_type, styp
     | _ -> Sil.Tptr (function_type, Sil.Pk_pointer), function_type in
   let function_type_np = CTypes.expand_structured_type context.CContext.tenv function_type_np in
-  let sizeof_exp_ = Sil.Sizeof (function_type_np, Sil.Subtype.exact) in
+  let sizeof_exp_ = Sil.Sizeof (function_type_np, None, Sil.Subtype.exact) in
   let sizeof_exp = match size_exp_opt with
     | Some exp -> Sil.BinOp (Sil.Mult, sizeof_exp_, exp)
     | None -> sizeof_exp_ in
@@ -366,7 +366,7 @@ let create_cast_instrs context exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
   let typ = CTypes.remove_pointer_to_typ cast_to_typ in
   let cast_typ_no_pointer = CTypes.expand_structured_type context.CContext.tenv typ in
-  let sizeof_exp = Sil.Sizeof (cast_typ_no_pointer, Sil.Subtype.exact) in
+  let sizeof_exp = Sil.Sizeof (cast_typ_no_pointer, None, Sil.Subtype.exact) in
   let pname = ModelBuiltins.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Sil.Tint Sil.IULong)] in
   let stmt_call = Sil.Call([ret_id], (Sil.Const (Sil.Cfun pname)), args, sil_loc, Sil.cf_default) in

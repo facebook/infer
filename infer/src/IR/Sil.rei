@@ -230,7 +230,7 @@ type dexp =
   | Darray of dexp dexp
   | Dbinop of binop dexp dexp
   | Dconst of const
-  | Dsizeof of typ Subtype.t
+  | Dsizeof of typ (option exp) Subtype.t
   | Dderef of dexp
   | Dfcall of dexp (list dexp) Location.t call_flags
   | Darrow of dexp Ident.fieldname
@@ -343,7 +343,7 @@ and exp =
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex of exp exp
   /** A sizeof expression */
-  | Sizeof of typ Subtype.t;
+  | Sizeof of typ (option exp) Subtype.t;
 
 let struct_typ_equal: struct_typ => struct_typ => bool;
 
@@ -539,7 +539,7 @@ type strexp =
 and hpred =
   | Hpointsto of exp strexp exp
   /** represents [exp|->strexp:typexp] where [typexp]
-      is an expression representing a type, e.h. [sizeof(t)]. */
+      is an expression representing a type, e.g. [sizeof(t)]. */
   | Hlseg of lseg_kind hpara exp exp (list exp)
   /** higher - order predicate for singly - linked lists.
       Should ensure that exp1!= exp2 implies that exp1 is allocated.

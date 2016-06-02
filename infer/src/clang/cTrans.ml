@@ -216,7 +216,7 @@ struct
         CTypes_decl.objc_class_name_to_sil_type trans_state.context.CContext.tenv class_name in
       let expanded_type = CTypes.expand_structured_type trans_state.context.CContext.tenv typ in
       { empty_res_trans with
-        exps = [(Sil.Sizeof(expanded_type, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
+        exps = [(Sil.Sizeof(expanded_type, None, Sil.Subtype.exact), Sil.Tint Sil.IULong)] }
 
   let add_reference_if_glvalue typ expr_info =
     (* glvalue definition per C++11:*)
@@ -426,7 +426,8 @@ struct
           match tp with
           | Some tp -> CTypes_decl.type_ptr_to_sil_type tenv tp
           | None -> typ in (* Some default type since the type is missing *)
-        { empty_res_trans with exps = [(Sil.Sizeof(sizeof_typ, Sil.Subtype.exact), sizeof_typ)]}
+        { empty_res_trans with
+          exps = [(Sil.Sizeof (sizeof_typ, None, Sil.Subtype.exact), sizeof_typ)] }
     | k -> Printing.log_stats
              "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: \
               %s . Expression ignored, returned -1... \n"
@@ -2189,7 +2190,7 @@ struct
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let cast_type = CTypes_decl.type_ptr_to_sil_type tenv cast_type_ptr in
     let sizeof_expr = match cast_type with
-      | Sil.Tptr (typ, _) -> Sil.Sizeof (typ, subtypes)
+      | Sil.Tptr (typ, _) -> Sil.Sizeof (typ, None, subtypes)
       | _ -> assert false in
     let builtin = Sil.Const (Sil.Cfun ModelBuiltins.__cast) in
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
@@ -2247,7 +2248,7 @@ struct
     let fun_name = ModelBuiltins.__cxx_typeid in
     let sil_fun = Sil.Const (Sil.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
-    let type_info_objc = (Sil.Sizeof (typ, Sil.Subtype.exact), Sil.Tvoid) in
+    let type_info_objc = (Sil.Sizeof (typ, None, Sil.Subtype.exact), Sil.Tvoid) in
     let field_name_decl = Ast_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
     let field_name = General_utils.mk_class_field_name field_name_decl in
     let ret_exp = Sil.Var ret_id in

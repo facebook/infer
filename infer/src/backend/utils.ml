@@ -48,6 +48,13 @@ let opt_equal cmp x1 x2 = match x1, x2 with
   | None, Some _ -> false
   | Some y1, Some y2 -> cmp y1 y2
 
+let opt_compare cmp x1 x2 =
+  match x1, x2 with
+  | Some y1, Some y2 -> cmp y1 y2
+  | None, None -> 0
+  | None, _ -> -1
+  | _, None -> 1
+
 (** Efficient comparison for integers *)
 let int_compare (i: int) (j: int) = i - j
 
@@ -63,6 +70,10 @@ let triple_compare compare compare' compare'' (x1, y1, z1) (x2, y2, z2) =
   let n = compare x1 x2 in
   if n <> 0 then n else let n = compare' y1 y2 in
     if n <> 0 then n else compare'' z1 z2
+
+let fst3 (x,_,_) = x
+let snd3 (_,x,_) = x
+let trd3 (_,_,x) = x
 
 (** {2 Useful Modules} *)
 

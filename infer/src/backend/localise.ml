@@ -687,7 +687,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
       | Some (Sil.Sizeof (Sil.Tstruct
                             { Sil.csu = Csu.Class _;
                               Sil.struct_name = Some classname;
-                            }, _)) ->
+                            }, _, _)) ->
           " of type " ^ Mangled.to_string classname ^ " "
       | _ -> " " in
     let desc_str =
@@ -772,7 +772,7 @@ let desc_retain_cycle prop cycle loc cycle_dotty =
           else e_str in
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining "^e_str^"."^(Ident.fieldname_to_string f)^", ";
         ct:=!ct +1
-    | Sil.Eexp(Sil.Sizeof(typ, _), _) ->
+    | Sil.Eexp (Sil.Sizeof (typ, _, _), _) ->
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") an object of "^(Sil.typ_to_string typ)^" retaining another object via instance variable "^(Ident.fieldname_to_string f)^", ";
         ct:=!ct +1
     | _ -> () in

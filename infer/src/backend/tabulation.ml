@@ -473,8 +473,8 @@ let texp_star texp1 texp2 =
         if ftal_sub instance_fields1 instance_fields2 then t2 else t1
     | _ -> t1 in
   match texp1, texp2 with
-  | Sil.Sizeof (t1, st1), Sil.Sizeof (t2, st2) ->
-      Sil.Sizeof (typ_star t1 t2, Sil.Subtype.join st1 st2)
+  | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, _, st2) ->
+      Sil.Sizeof (typ_star t1 t2, len1, Sil.Subtype.join st1 st2)
   | _ ->
       texp1
 
@@ -629,7 +629,7 @@ let prop_get_exn_name pname prop =
   let ret_pvar = Sil.Lvar (Pvar.get_ret_pvar pname) in
   let rec search_exn e = function
     | [] -> None
-    | Sil.Hpointsto (e1, _, Sil.Sizeof (Sil.Tstruct  { Sil.struct_name = Some name }, _)) :: _
+    | Sil.Hpointsto (e1, _, Sil.Sizeof (Sil.Tstruct  { Sil.struct_name = Some name }, _, _)) :: _
       when Sil.exp_equal e1 e ->
         Some (Typename.TN_csu (Csu.Class Csu.Java, name))
     | _ :: tl -> search_exn e tl in
@@ -868,7 +868,7 @@ let mk_actual_precondition prop actual_params formal_params =
     Prop.mk_ptsto
       (Sil.Lvar formal_var)
       (Sil.Eexp (actual_e, Sil.inst_actual_precondition))
-      (Sil.Sizeof (actual_t, Sil.Subtype.exact)) in
+      (Sil.Sizeof (actual_t, None, Sil.Subtype.exact)) in
   let instantiated_formals = IList.map mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize actual_pre

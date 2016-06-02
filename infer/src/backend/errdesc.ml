@@ -388,9 +388,9 @@ and _exp_rv_dexp (_seen : Sil.ExpSet.t) node e : Sil.dexp option =
     | Sil.Cast (_, e1) ->
         if verbose then (L.d_str "exp_rv_dexp: Cast "; Sil.d_exp e; L.d_ln ());
         _exp_rv_dexp seen node e1
-    | Sil.Sizeof (typ, sub) ->
+    | Sil.Sizeof (typ, len, sub) ->
         if verbose then (L.d_str "exp_rv_dexp: type "; Sil.d_exp e; L.d_ln ());
-        Some (Sil.Dsizeof (typ, sub))
+        Some (Sil.Dsizeof (typ, len, sub))
     | _ ->
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None
@@ -497,12 +497,12 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     (Pvar.is_local pvar || Pvar.is_global pvar) &&
     not (pvar_is_frontend_tmp pvar) &&
     match hpred_typ_opt, find_typ_without_ptr prop pvar with
-    | Some (Sil.Sizeof (t1, _)), Some (Sil.Sizeof (Sil.Tptr (_t2, _), _)) ->
+    | Some (Sil.Sizeof (t1, _, _)), Some (Sil.Sizeof (Sil.Tptr (t2_, _), _, _)) ->
         (try
-           let t2 = Tenv.expand_type tenv _t2 in
+           let t2 = Tenv.expand_type tenv t2_ in
            Sil.typ_equal t1 t2
          with exn when SymOp.exn_not_failure exn -> false)
-    | Some (Sil.Sizeof (Sil.Tint _, _)), Some (Sil.Sizeof (Sil.Tint _, _))
+    | Some (Sil.Sizeof (Sil.Tint _, _, _)), Some (Sil.Sizeof (Sil.Tint _, _, _))
       when is_file -> (* must be a file opened with "open" *)
         true
     | _ -> false in
@@ -570,7 +570,7 @@ let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
           (match lexp with
            | Sil.Lvar pv ->
                let typo = match texp with
-                 | Sil.Sizeof (Sil.Tstruct struct_typ, _) ->
+                 | Sil.Sizeof (Sil.Tstruct struct_typ, _, _) ->
                      (try
                         let _, t, _ =
                           IList.find (fun (f', _, _) ->
@@ -596,7 +596,7 @@ let vpath_find prop _exp : Sil.dexp option * Sil.typ option =
           (match lexp with
            | Sil.Lvar pv when not (pvar_is_frontend_tmp pv) ->
                let typo = match texp with
-                 | Sil.Sizeof (typ, _) -> Some typ
+                 | Sil.Sizeof (typ, _, _) -> Some typ
                  | _ -> None in
                Some (Sil.Dpvar pv), typo
            | Sil.Var id ->

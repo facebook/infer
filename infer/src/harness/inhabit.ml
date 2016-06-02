@@ -68,12 +68,12 @@ let get_non_receiver_formals formals = tl_or_empty formals
 (** create Sil corresponding to x = new typ() or x = new typ[]. For ordinary allocation, sizeof_typ
  * and ret_typ should be the same, but arrays are slightly odd in that sizeof_typ will have a size
  * component but the size component of ret_typ is always -1. *)
-let inhabit_alloc sizeof_typ ret_typ alloc_kind env =
+let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
   let retval = Ident.create_fresh Ident.knormal in
   let inhabited_exp = Sil.Var retval in
   let call_instr =
     let fun_new = fun_exp_from_name alloc_kind in
-    let sizeof_exp = Sil.Sizeof (sizeof_typ, Sil.Subtype.exact) in
+    let sizeof_exp = Sil.Sizeof (sizeof_typ, sizeof_len, Sil.Subtype.exact) in
     let args = [(sizeof_exp, Sil.Tptr (ret_typ, Sil.Pk_pointer))] in
     Sil.Call ([retval], fun_new, args, env.pc, cf_alloc) in
   (inhabited_exp, env_add_instr call_instr env)
@@ -87,11 +87,11 @@ let rec inhabit_typ typ cfg env =
       | Sil.Tptr (Sil.Tarray (inner_typ, Sil.Const (Sil.Cint _)), Sil.Pk_pointer) ->
           let arr_size = Sil.Const (Sil.Cint (Sil.Int.one)) in
           let arr_typ = Sil.Tarray (inner_typ, arr_size) in
-          inhabit_alloc arr_typ typ ModelBuiltins.__new_array env
+          inhabit_alloc arr_typ (Some arr_size) typ ModelBuiltins.__new_array env
       | Sil.Tptr (typ, Sil.Pk_pointer) as ptr_to_typ ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently
            * broken in Infer anyway (see t4592290) *)
-          let (allocated_obj_exp, env) = inhabit_alloc typ typ ModelBuiltins.__new env in
+          let (allocated_obj_exp, env) = inhabit_alloc typ None typ ModelBuiltins.__new env in
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors typ = match typ with

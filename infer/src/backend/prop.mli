@@ -221,7 +221,8 @@ val mk_neq : exp -> exp -> atom
 val mk_eq : exp -> exp -> atom
 
 (** create a strexp of the given type, populating the structures if [expand_structs] is true *)
-val create_strexp_of_type: Tenv.t option -> struct_init_mode -> Sil.typ -> Sil.inst -> Sil.strexp
+val create_strexp_of_type :
+  Tenv.t option -> struct_init_mode -> Sil.typ -> Sil.exp option -> Sil.inst -> Sil.strexp
 
 (** Construct a pointsto. *)
 val mk_ptsto : exp -> strexp -> exp -> hpred

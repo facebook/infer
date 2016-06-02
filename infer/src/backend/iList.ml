@@ -28,6 +28,11 @@ let sort = List.sort
 let stable_sort = List.stable_sort
 let tl = List.tl
 
+let rec last = function
+  | [] -> invalid_arg "IList.last"
+  | [x] -> x
+  | _ :: xs -> last xs
+
 (** tail-recursive variant of List.fold_right *)
 let fold_right f l a =
   let g x y = f y x in

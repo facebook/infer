@@ -640,7 +640,7 @@ let report_context_leaks pname sigma tenv =
   let context_exps =
     IList.fold_left
       (fun exps hpred -> match hpred with
-         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct struct_typ, _), _))
+         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct struct_typ, _), _, _))
            when AndroidFramework.is_context tenv struct_typ &&
                 not (AndroidFramework.is_application tenv struct_typ) ->
              (exp, struct_typ) :: exps
@@ -807,8 +807,8 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp = match !Config.curr_language with
-        | Config.Clang -> Sil.Sizeof (typ, Sil.Subtype.exact)
-        | Config.Java -> Sil.Sizeof (typ, Sil.Subtype.subtypes) in
+        | Config.Clang -> Sil.Sizeof (typ, None, Sil.Subtype.exact)
+        | Config.Java -> Sil.Sizeof (typ, None, Sil.Subtype.subtypes) in
       Prop.mk_ptsto_lvar (Some tenv) Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     IList.map do_formal new_formals in
   let sigma_seed =

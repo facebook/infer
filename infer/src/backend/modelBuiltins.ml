@@ -76,7 +76,8 @@ let add_array_to_prop pdesc prop_ lexp typ =
           let size = Sil.Var(Ident.create_fresh Ident.kfootprint) in
           let s = mk_empty_array_rearranged size in
           let hpred =
-            Prop.mk_ptsto n_lexp s (Sil.Sizeof(Sil.Tarray(typ', size), Sil.Subtype.exact)) in
+            Prop.mk_ptsto n_lexp s
+              (Sil.Sizeof (Sil.Tarray (typ', size), None, Sil.Subtype.exact)) in
           let sigma = Prop.get_sigma prop in
           let sigma_fp = Prop.get_sigma_footprint prop in
           let prop'= Prop.replace_sigma (hpred:: sigma) prop in
@@ -157,13 +158,13 @@ let create_type tenv n_lexp typ prop =
         | Sil.Tptr (typ', _) ->
             let sexp = Sil.Estruct ([], Sil.inst_none) in
             let typ'' = Tenv.expand_type tenv typ' in
-            let texp = Sil.Sizeof (typ'', Sil.Subtype.subtypes) in
+            let texp = Sil.Sizeof (typ'', None, Sil.Subtype.subtypes) in
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
         | Sil.Tarray _ ->
             let size = Sil.Var(Ident.create_fresh Ident.kfootprint) in
             let sexp = mk_empty_array size in
-            let texp = Sil.Sizeof (typ, Sil.Subtype.subtypes) in
+            let texp = Sil.Sizeof (typ, None, Sil.Subtype.subtypes) in
             let hpred = Prop.mk_ptsto n_lexp sexp texp in
             Some hpred
         | _ -> None in
@@ -569,7 +570,7 @@ let execute___release_autorelease_pool
                  | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 exp
                  | _ -> false) (Prop.get_sigma prop_) in
              match hpred with
-             | Sil.Hpointsto(_, _, Sil.Sizeof (typ, _)) ->
+             | Sil.Hpointsto (_, _, Sil.Sizeof (typ, _, _)) ->
                  let res1 =
                    execute___objc_release
                      { builtin_args with
@@ -668,7 +669,7 @@ let execute___objc_cast { Builtin.pdesc; prop_; path; ret_ids; args; }
              | Sil.Hpointsto(e1, _, _) -> Sil.exp_equal e1 val1
              | _ -> false) (Prop.get_sigma prop) in
          match hpred, texp2 with
-         | Sil.Hpointsto(val1, _, _), Sil.Sizeof (_, _) ->
+         | Sil.Hpointsto (val1, _, _), Sil.Sizeof _ ->
              let prop' = replace_ptsto_texp prop val1 texp2 in
              [(return_result val1 prop' ret_ids, path)]
          | _ -> [(return_result val1 prop ret_ids, path)]
@@ -760,19 +761,22 @@ let execute_alloc mk can_return_null
     | Sil.BinOp (bop, e1', e2') ->
         Sil.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
     | Sil.Const _ | Sil.Cast _ | Sil.Lvar _ | Sil.Lfield _ | Sil.Lindex _ -> e
-    | Sil.Sizeof (Sil.Tarray(Sil.Tint ik, size), _) when Sil.ikind_is_char ik ->
-        evaluate_char_sizeof size
+    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, _), Some len, _) when Sil.ikind_is_char ik ->
+        evaluate_char_sizeof len
+    | Sil.Sizeof (Sil.Tarray (Sil.Tint ik, len), None, _) when Sil.ikind_is_char ik ->
+        evaluate_char_sizeof len
     | Sil.Sizeof _ -> e in
-  let handle_sizeof_exp size_exp =
-    Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, size_exp), Sil.Subtype.exact) in
+  let handle_sizeof_exp len =
+    Sil.Sizeof (Sil.Tarray (Sil.Tint Sil.IChar, len), Some len, Sil.Subtype.exact) in
   let size_exp, procname = match args with
-    | [(Sil.Sizeof (Sil.Tstruct
-                      { Sil.csu = Csu.Class Csu.Objc; struct_name = Some c } as s, subt), _)] ->
+    | [(Sil.Sizeof
+          (Sil.Tstruct
+             { Sil.csu = Csu.Class Csu.Objc; struct_name = Some c } as s, len, subt), _)] ->
         let struct_type =
           match AttributesTable.get_correct_type_from_objc_class_name c with
           | Some struct_type -> struct_type
           | None -> s in
-        Sil.Sizeof (struct_type, subt), pname
+        Sil.Sizeof (struct_type, len, subt), pname
     | [(size_exp, _)] -> (* for malloc and __new *)
         size_exp, Sil.mem_alloc_pname mk
     | [(size_exp, _); (Sil.Const (Sil.Cfun pname), _)] ->
@@ -822,7 +826,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
                    | Sil.Hpointsto (e, _, _) -> Sil.exp_equal e n_lexp
                    | _ -> false) (Prop.get_sigma prop) in
                match hpred with
-               | Sil.Hpointsto (_, _, Sil.Sizeof (dynamic_type, _)) -> dynamic_type
+               | Sil.Hpointsto (_, _, Sil.Sizeof (dynamic_type, _, _)) -> dynamic_type
                | _ -> typ
              with Not_found -> typ in
            let typ_string = Sil.typ_to_string typ in
@@ -1157,7 +1161,7 @@ let execute_objc_alloc_no_fail
     { Builtin.pdesc; tenv; ret_ids; loc; } =
   let alloc_fun = Sil.Const (Sil.Cfun __objc_alloc_no_fail) in
   let ptr_typ = Sil.Tptr (typ, Sil.Pk_pointer) in
-  let sizeof_typ = Sil.Sizeof (typ, Sil.Subtype.exact) in
+  let sizeof_typ = Sil.Sizeof (typ, None, Sil.Subtype.exact) in
   let alloc_fun_exp =
     match alloc_fun_opt with
     | Some pname -> [Sil.Const (Sil.Cfun pname), Sil.Tvoid]

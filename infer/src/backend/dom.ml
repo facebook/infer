@@ -821,8 +821,10 @@ let rec exp_construct_fresh side e =
       let e1' = exp_construct_fresh side e1 in
       let e2' = exp_construct_fresh side e2 in
       Sil.Lindex(e1', e2')
-  | Sil.Sizeof _ ->
+  | Sil.Sizeof (_, None, _) ->
       e
+  | Sil.Sizeof (typ, Some len, st) ->
+      Sil.Sizeof (typ, Some (exp_construct_fresh side len), st)
 
 let strexp_construct_fresh side =
   let f (e, inst_opt) = (exp_construct_fresh side e, inst_opt) in
@@ -948,11 +950,17 @@ let rec exp_partial_join (e1: Sil.exp) (e2: Sil.exp) : Sil.exp =
       let e1'' = exp_partial_join e1 e2 in
       let e2'' = exp_partial_join e1' e2' in
       Sil.Lindex(e1'', e2'')
-  | Sil.Sizeof (t1, st1), Sil.Sizeof (t2, st2) ->
-      Sil.Sizeof (typ_partial_join t1 t2, Sil.Subtype.join st1 st2)
+  | Sil.Sizeof (t1, len1, st1), Sil.Sizeof (t2, len2, st2) ->
+      Sil.Sizeof (typ_partial_join t1 t2, len_partial_join len1 len2, Sil.Subtype.join st1 st2)
   | _ ->
       L.d_str "exp_partial_join no match "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln ();
       raise IList.Fail
+
+and len_partial_join len1 len2 =
+  match len1, len2 with
+  | None, _ -> len2
+  | _, None -> len1
+  | Some len1, Some len2 -> Some (size_partial_join len1 len2)
 
 and size_partial_join size1 size2 = match size1, size2 with
   | Sil.BinOp(Sil.PlusA, e1, Sil.Const c1), Sil.BinOp(Sil.PlusA, e2, Sil.Const c2) ->

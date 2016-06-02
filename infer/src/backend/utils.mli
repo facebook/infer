@@ -44,6 +44,9 @@ val int_equal : int -> int -> bool
 (** Extend and equality function to an option type. *)
 val opt_equal : ('a -> 'a -> bool) -> 'a option -> 'a option -> bool
 
+(** Comparison of option type. *)
+val opt_compare : ('a -> 'a -> int) -> 'a option -> 'a option -> int
+
 (** Generic comparison of pairs given a compare function for each element of the pair. *)
 val pair_compare : ('a -> 'b -> int) -> ('c -> 'd -> int) -> ('a * 'c) -> ('b * 'd) -> int
 
@@ -58,6 +61,15 @@ val string_equal : string -> string -> bool
 
 (** Comparison for floats *)
 val float_compare : float -> float -> int
+
+(** Return the first component of a triple. *)
+val fst3 : 'a * 'b * 'c -> 'a
+
+(** Return the second component of a triple. *)
+val snd3 : 'a * 'b * 'c -> 'b
+
+(** Return the third component of a triple. *)
+val trd3 : 'a * 'b * 'c -> 'c
 
 (** {2 Useful Modules} *)
 

@@ -397,11 +397,11 @@ and value_type program tenv vt =
 (**  Translate object types into Sil.Sizeof expressions *)
 let sizeof_of_object_type program tenv ot subtypes =
   match object_type program tenv ot with
-  | Sil.Tptr (Sil.Tarray (vtyp, s), Sil.Pk_pointer) ->
-      let typ = (Sil.Tarray (vtyp, s)) in
-      Sil.Sizeof (typ, subtypes)
+  | Sil.Tptr (Sil.Tarray (vtyp, len), Sil.Pk_pointer) ->
+      let typ = (Sil.Tarray (vtyp, len)) in
+      Sil.Sizeof (typ, Some len, subtypes)
   | Sil.Tptr (typ, _) ->
-      Sil.Sizeof (typ, subtypes)
+      Sil.Sizeof (typ, None, subtypes)
   | _ ->
       raise (Type_tranlsation_error "Pointer or array type expected in tenv")
 

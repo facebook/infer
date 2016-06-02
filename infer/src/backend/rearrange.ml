@@ -392,10 +392,11 @@ let strexp_extend_values
     let check_not_inconsistent (atoms, _, _) = not (IList.exists check_neg_atom atoms) in
     IList.filter check_not_inconsistent atoms_se_typ_list in
   if Config.trace_rearrange then L.d_strln "exiting strexp_extend_values";
-  let st = match te with
-    | Sil.Sizeof(_, st) -> st
-    | _ -> Sil.Subtype.exact in
-  IList.map (fun (atoms', se', typ') -> (laundry_atoms @ atoms', se', Sil.Sizeof (typ', st))) atoms_se_typ_list_filtered
+  let len, st = match te with
+    | Sil.Sizeof(_, len, st) -> (len, st)
+    | _ -> None, Sil.Subtype.exact in
+  IList.map (fun (atoms', se', typ') -> (laundry_atoms @ atoms', se', Sil.Sizeof (typ', len, st)))
+    atoms_se_typ_list_filtered
 
 let collect_root_offset exp =
   let root = Sil.root_of_lexp exp in
@@ -430,17 +431,17 @@ let mk_ptsto_exp_footprint
     | Sil.Lvar pvar, [], Sil.Tfun _ ->
         let fun_name = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
         let fun_exp = Sil.Const (Sil.Cfun fun_name) in
-        ([], Prop.mk_ptsto root (Sil.Eexp (fun_exp, inst)) (Sil.Sizeof (typ, st)))
+        ([], Prop.mk_ptsto root (Sil.Eexp (fun_exp, inst)) (Sil.Sizeof (typ, None, st)))
     | _, [], Sil.Tfun _ ->
         let atoms, se, t =
           create_struct_values
             pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ off0 inst in
-        (atoms, Prop.mk_ptsto root se (Sil.Sizeof (t, st)))
+        (atoms, Prop.mk_ptsto root se (Sil.Sizeof (t, None, st)))
     | _ ->
         let atoms, se, t =
           create_struct_values
             pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ off0 inst in
-        (atoms, Prop.mk_ptsto root se (Sil.Sizeof (t, st))) in
+        (atoms, Prop.mk_ptsto root se (Sil.Sizeof (t, None, st))) in
   let atoms, ptsto_foot = create_ptsto true off_foot in
   let sub = Sil.sub_of_list eqs in
   let ptsto = Sil.hpred_sub sub ptsto_foot in
@@ -709,7 +710,7 @@ let add_guarded_by_constraints prop lexp pdesc =
     | _ ->
         prop_acc in
   let hpred_check_flds prop_acc = function
-    | Sil.Hpointsto (_, Estruct (flds, _), Sizeof (typ, _)) ->
+    | Sil.Hpointsto (_, Estruct (flds, _), Sizeof (typ, _, _)) ->
         IList.fold_left (check_fld_locks typ) prop_acc flds
     | _ ->
         prop_acc in
@@ -926,7 +927,7 @@ let type_at_offset texp off =
         strip_offset off' typ'
     | _ -> None in
   match texp with
-  | Sil.Sizeof(typ, _) ->
+  | Sil.Sizeof(typ, _, _) ->
       strip_offset off typ
   | _ -> None
 
@@ -1080,7 +1081,7 @@ let check_dereference_error pdesc (prop : Prop.normal Prop.t) lexp loc =
                  IList.exists is_nullable_attr (Prop.get_exp_attributes prop exp) in
              (* it's ok for a non-nullable local to point to deref_exp *)
              is_nullable || Pvar.is_local pvar
-         | Sil.Hpointsto (_, Sil.Estruct (flds, _), Sil.Sizeof (typ, _)) ->
+         | Sil.Hpointsto (_, Sil.Estruct (flds, _), Sil.Sizeof (typ, _, _)) ->
              let fld_is_nullable fld =
                match Annotations.get_field_type_and_annotation fld typ with
                | Some (_, annot) -> Annotations.ia_is_nullable annot
