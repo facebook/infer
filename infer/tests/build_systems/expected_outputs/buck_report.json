@@ -761,6 +761,11 @@
   },
   {
     "bug_type": "RESOURCE_LEAK",
+    "file": "infer/tests/codetoanalyze/java/infer/CloseableAsResourceExample.java",
+    "procedure": "void CloseableAsResourceExample.skippedVritualCallDoesNotCloseResourceOnReceiver()"
+  },
+  {
+    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
     "procedure": "void ResourceLeaks.socketNotClosed()"
   },

@@ -45,47 +45,47 @@ public class InferResults {
     this.inferCmd = inferCmd;
   }
 
-  public void parseInferResultsFromString(
-      Pattern pattern,
-      String errorString) throws IOException, InferException {
+  public void parseInferResultsFromString(Pattern pattern, String errorString)
+    throws IOException, InferException {
 
-    CSVReader reader = new CSVReader(new StringReader(errorString));
-    List<String[]> lines = reader.readAll();
-    Path root = Paths.get(System.getProperty("user.dir"));
+    try (CSVReader reader = new CSVReader(new StringReader(errorString))) {
+      List<String[]> lines = reader.readAll();
+      Path root = Paths.get(System.getProperty("user.dir"));
 
-    for (String[] items : lines) {
-      String errorKind = items[1].trim();
-      String errorType = items[2].trim();
-      if (errorKind.equals("ERROR") ||
-          errorType.equals("RETURN_VALUE_IGNORED") ||
-          errorType.equals("ASSIGN_POINTER_WARNING") ||
-          errorType.equals("STRONG_DELEGATE_WARNING") ||
-          errorType.equals("DIRECT_ATOMIC_PROPERTY_ACCESS") ||
-          errorType.equals("CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK") ||
-          errorType.equals("REGISTERED_OBSERVER_BEING_DEALLOCATED") ||
-          errorType.equals("GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL") ||
-          errorType.equals("IMMUTABLE_CAST") ||
-          errorType.equals("PARAMETER_NOT_NULL_CHECKED") ||
-          errorType.equals("DANGLING_POINTER_DEREFERENCE") ||
-          errorType.equals("IVAR_NOT_NULL_CHECKED") ||
-          errorType.startsWith("ERADICATE")) {
-        Integer errorLine = Integer.parseInt(items[5].trim());
-        String procedure = items[6];
-        Path path = Paths.get(items[8]);
-        if (path.isAbsolute()) {
-          path = root.relativize(Paths.get(items[8]));
-        }
-        Matcher methodMatcher = pattern.matcher(procedure);
-        boolean matching = methodMatcher.find();
-        if (matching) {
-          procedure = methodMatcher.group(2);
-          if (procedure == null) {
-            throw new InferException("Unexpected method name structure.");
+      for (String[] items : lines) {
+        String errorKind = items[1].trim();
+        String errorType = items[2].trim();
+        if (errorKind.equals("ERROR") ||
+            errorType.equals("RETURN_VALUE_IGNORED") ||
+            errorType.equals("ASSIGN_POINTER_WARNING") ||
+            errorType.equals("STRONG_DELEGATE_WARNING") ||
+            errorType.equals("DIRECT_ATOMIC_PROPERTY_ACCESS") ||
+            errorType.equals("CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK") ||
+            errorType.equals("REGISTERED_OBSERVER_BEING_DEALLOCATED") ||
+            errorType.equals("GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL") ||
+            errorType.equals("IMMUTABLE_CAST") ||
+            errorType.equals("PARAMETER_NOT_NULL_CHECKED") ||
+            errorType.equals("DANGLING_POINTER_DEREFERENCE") ||
+            errorType.equals("IVAR_NOT_NULL_CHECKED") ||
+            errorType.startsWith("ERADICATE")) {
+          Integer errorLine = Integer.parseInt(items[5].trim());
+          String procedure = items[6];
+          Path path = Paths.get(items[8]);
+          if (path.isAbsolute()) {
+            path = root.relativize(Paths.get(items[8]));
           }
+          Matcher methodMatcher = pattern.matcher(procedure);
+          boolean matching = methodMatcher.find();
+          if (matching) {
+            procedure = methodMatcher.group(2);
+            if (procedure == null) {
+              throw new InferException("Unexpected method name structure.");
+            }
+          }
+          procedure = procedure.trim();
+          InferError error = new InferError(errorType, path, procedure, errorLine);
+          errors.add(error);
         }
-        procedure = procedure.trim();
-        InferError error = new InferError(errorType, path, procedure, errorLine);
-        errors.add(error);
       }
     }
   }

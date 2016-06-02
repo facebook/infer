@@ -44,9 +44,10 @@ public class CloseableAsResourceTest {
         "failToCloseWithCloseQuietly",
         "sourceOfNullWithResourceLeak",
         "leakFoundWhenIndirectlyImplementingCloseable",
+        "skippedVritualCallDoesNotCloseResourceOnReceiver",
     };
     assertThat(
-        "Results should not contain resource leak errors",
+        "Results should contain resource leak errors",
         inferResults,
         containsExactly(
             RESOURCE_LEAK,

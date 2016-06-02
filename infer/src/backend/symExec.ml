@@ -1384,7 +1384,7 @@ and check_untainted exp taint_kind caller_pname callee_pname prop =
 (** execute a call for an unknown or scan function *)
 and unknown_or_scan_call ~is_scan ret_type_option ret_annots
     { Builtin.tenv; pdesc; prop_= pre; path; ret_ids;
-      args= actual_pars; proc_name= callee_pname; loc; } =
+      args; proc_name= callee_pname; loc; instr; } =
   let remove_file_attribute prop =
     let do_exp p (e, _) =
       let do_attribute q = function
@@ -1393,7 +1393,13 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
             Prop.remove_attribute res q
         | _ -> q in
       IList.fold_left do_attribute p (Prop.get_exp_attributes p e) in
-    IList.fold_left do_exp prop actual_pars in
+    let filtered_args =
+      match args, instr with
+      | _:: other_args, Sil.Call (_, _, _, _, { Sil.cf_virtual }) when cf_virtual ->
+          (* Do not remove the file attribute on the reciver for virtual calls *)
+          other_args
+      | _ -> args in
+    IList.fold_left do_exp prop filtered_args in
   let add_tainted_pre prop actuals caller_pname callee_pname =
     if Config.taint_analysis then
       match Taint.accepts_sensitive_params callee_pname None with
@@ -1417,11 +1423,14 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       (function
         | Sil.Lvar _, Sil.Tptr _ -> true
         | _ -> false)
-      actual_pars in
+      args in
   let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
   let pre_final =
     (* in Java, assume that skip functions close resources passed as params *)
-    let pre_1 = if !Config.curr_language = Config.Java then remove_file_attribute pre else pre in
+    let pre_1 =
+      if Procname.is_java callee_pname
+      then remove_file_attribute pre
+      else pre in
     let pre_2 = match ret_ids, ret_type_option with
       | [ret_id], Some ret_typ ->
           add_constraints_on_retval
@@ -1430,7 +1439,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
           pre_1 in
     let pre_3 = add_constraints_on_actuals_by_ref tenv pre_2 actuals_by_ref callee_pname loc in
     let caller_pname = Cfg.Procdesc.get_proc_name pdesc in
-    add_tainted_pre pre_3 actual_pars caller_pname callee_pname in
+    add_tainted_pre pre_3 args caller_pname callee_pname in
   if is_scan (* if scan function, don't mark anything with undef attributes *)
   then [(Tabulation.remove_constant_string_class pre_final, path)]
   else
