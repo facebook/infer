@@ -730,41 +730,6 @@
     "procedure": "int ResourceLeaks.readConfigNotCloseStream(String)"
   },
   {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.readFAfterBlockBad()"
-  },
-  {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.readFBad()"
-  },
-  {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.readFBadWrongAnnotation()"
-  },
-  {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.readFBadWrongLock()"
-  },
-  {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.readGFromCopyBad()"
-  },
-  {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.readHBad()"
-  },
-  {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.readHBadSynchronizedMethodShouldntHelp()"
-  },
-  {
     "bug_type": "RESOURCE_LEAK",
     "file": "codetoanalyze/java/infer/ResourceLeaks.java",
     "procedure": "String ResourceLeaks.readInstallationFileBad(File)"
@@ -808,11 +773,6 @@
     "bug_type": "RESOURCE_LEAK",
     "file": "codetoanalyze/java/infer/CloseableAsResourceExample.java",
     "procedure": "T CloseableAsResourceExample.sourceOfNullWithResourceLeak()"
-  },
-  {
-    "bug_type": "UNSAFE_GUARDED_BY_ACCESS",
-    "file": "codetoanalyze/java/infer/GuardedByExample.java",
-    "procedure": "void GuardedByExample.synchronizedMethodBad()"
   },
   {
     "bug_type": "NULL_DEREFERENCE",
