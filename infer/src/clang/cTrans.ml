@@ -1911,10 +1911,10 @@ struct
               if IList.length res_trans_stmt.root_nodes >0
               then res_trans_stmt.root_nodes
               else [ret_node] in
-            { empty_res_trans with root_nodes = root_nodes_to_parent; leaf_nodes = [ret_node]}
+            { empty_res_trans with root_nodes = root_nodes_to_parent; leaf_nodes = []}
         | [] -> (* return; *)
             let ret_node = mk_ret_node [] in
-            { empty_res_trans with root_nodes = [ret_node]; leaf_nodes = [ret_node]}
+            { empty_res_trans with root_nodes = [ret_node]; leaf_nodes = []}
         | _ -> Printing.log_out
                  "\nWARNING: Missing translation of Return Expression. \
                   Return Statement ignored. Need fixing!\n";
