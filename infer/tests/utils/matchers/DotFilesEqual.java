@@ -38,8 +38,9 @@ public class DotFilesEqual extends BaseMatcher<File> {
     } else {
       diffCommand = "diff -u " + dotFile + " " + newDotFile.getAbsolutePath();
     }
+    Process diff_process = null;
     try {
-      Process diff_process = Runtime.getRuntime().exec(diffCommand);
+      diff_process = Runtime.getRuntime().exec(diffCommand);
       try (BufferedReader inputReader =
                new BufferedReader(new InputStreamReader(diff_process.getInputStream()));
            BufferedReader errorReader =
@@ -64,6 +65,8 @@ public class DotFilesEqual extends BaseMatcher<File> {
     } catch (Exception e) {
       e.printStackTrace();
       return false;
+    } finally {
+      if (diff_process != null) diff_process.destroy();
     }
   }
 

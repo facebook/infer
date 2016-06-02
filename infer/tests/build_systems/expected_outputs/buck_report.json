@@ -496,11 +496,6 @@
   },
   {
     "bug_type": "RESOURCE_LEAK",
-    "file": "infer/tests/utils/matchers/DotFilesEqual.java",
-    "procedure": "boolean DotFilesEqual.matches(Object)"
-  },
-  {
-    "bug_type": "RESOURCE_LEAK",
     "file": "infer/tests/codetoanalyze/java/infer/ResourceLeaks.java",
     "procedure": "void ResourceLeaks.nestedBad1()"
   },
