@@ -100,6 +100,11 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 
   AC_CHECK_TOOL([SHASUM], [shasum], [no])
   AC_ASSERT_PROG([shasum], [$SHASUM])
+  # cmake is required to build llvm+clang
+  AS_IF([test "x$is_release_tree" = "xno"], [
+    AC_CHECK_TOOL([CMAKE], [cmake], [no])
+    AC_ASSERT_PROG([cmake], [$CMAKE])
+  ])
 ])
 # end if($enable_c_analyzers)
 
