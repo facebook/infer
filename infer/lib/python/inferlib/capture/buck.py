@@ -155,8 +155,11 @@ class BuckAnalyzer:
             print('Please run this command from the folder where .buckconfig '
                   'is located')
             return os.EX_USAGE
+        env_vars = utils.read_env()
+        env_vars['FCP_RUN_SYNTAX_ONLY'] = '1'
+        env = utils.encode_env(env_vars)
         subprocess.check_call(
-            self.cmd + self.create_cxx_buck_configuration_args())
+            self.cmd + self.create_cxx_buck_configuration_args(), env=env)
         return os.EX_OK
 
     def capture_with_flavors(self):
