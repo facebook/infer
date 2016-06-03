@@ -30,7 +30,7 @@ public class ContentProviderClient {
             ContentResolver contentResolver, IContentProvider contentProvider, boolean stable) {
         mContentResolver = contentResolver;
         mContentProvider = contentProvider;
-        mPackageName = InferUndefined.string_undefined();
+        mPackageName = (String)InferUndefined.object_undefined();
         mStable = stable;
     }
 

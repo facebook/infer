@@ -132,7 +132,7 @@ public final class UTF8StreamJsonParser
     public String getText()
             throws IOException, JsonParseException {
         throwExceptions();
-        return InferUndefined.string_undefined();
+        return (String)InferUndefined.object_undefined();
     }
 
     @Override

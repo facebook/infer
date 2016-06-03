@@ -45,7 +45,7 @@ public final class System {
       if (InferUndefined.boolean_undefined()) {
         return null;
       }
-      return InferUndefined.string_undefined();
+      return (String)InferUndefined.object_undefined();
     }
 
 }

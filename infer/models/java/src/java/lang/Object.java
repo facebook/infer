@@ -15,7 +15,7 @@ public class Object {
 
     public Class getClass() {
         Class c = new Class();
-        c.name = InferUndefined.string_undefined();
+        c.name = (String)InferUndefined.object_undefined();
         return c;
     }
 
