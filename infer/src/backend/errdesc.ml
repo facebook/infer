@@ -208,6 +208,7 @@ let pvar_is_frontend_tmp pvar =
 (** Find the Letderef instruction used to declare normal variable [id],
     and return the expression dereferenced to initialize [id] *)
 let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp option =
+  let is_infer = Config.analyzer = Some Infer in
   let find_declaration node = function
     | Sil.Letderef (id0, e, _, _) when Ident.equal id id0 ->
         if verbose
@@ -237,8 +238,14 @@ let rec _find_normal_variable_letderef (seen : Sil.ExpSet.t) node id : Sil.dexp 
           else
             let unNone = function Some x -> x | None -> assert false in
             IList.map unNone args_dexpo in
-
         Some (Sil.Dretcall (fun_dexp, args_dexp, loc, call_flags))
+    | Sil.Set (Sil.Lvar pvar, _, Sil.Var id0, _) when is_infer && Ident.equal id id0 ->
+        (* this case is a hack to make bucketing continue to work in the presence of copy
+           propagation. previously, we would have code like:
+           n1 = foo(); x = n1; n2 = x; n2.toString(), but copy-propagation will optimize this to:
+           n1 = foo(); x = n1; n1.toString(). This case allows us to recognize the association
+           between n1 and x. Eradicate/checkers don't use copy-prop, so they don't need this. *)
+        Some (Sil.Dpvar pvar)
     | _ -> None in
   let res = find_in_node_or_preds node find_declaration in
   if verbose && res == None
