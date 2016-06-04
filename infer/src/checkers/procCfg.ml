@@ -214,7 +214,12 @@ module OneInstrPerNode (Base : S with type node = DefaultNode.t) = struct
     get_succs n (Base.normal_succs t)
 
   let exceptional_succs t n =
-    get_succs n (Base.exceptional_succs t)
+    (* nodes are structured in such a way that exceptions should not occur in the middle. so if the
+       next instruction is in the same node as the current instruction, there are no exceptional
+       succs. *)
+    if n.instr_index < n.num_instrs - 1
+    then []
+    else get_succs n (Base.exceptional_succs t)
 
   let get_preds n f_get_preds =
     if n.instr_index <= 0 then
@@ -230,7 +235,12 @@ module OneInstrPerNode (Base : S with type node = DefaultNode.t) = struct
     get_preds n (Base.normal_preds t)
 
   let exceptional_preds t n =
-    get_preds n (Base.exceptional_preds t)
+    (* nodes are structured in such a way that exceptions should not occur in the middle. so if the
+       last instruction is in the same node as the current instruction, there are no exceptional
+       preds. *)
+    if n.instr_index > 0
+    then []
+    else get_preds n (Base.exceptional_preds t)
 
   let start_node t =
     create_node (Base.start_node t)
