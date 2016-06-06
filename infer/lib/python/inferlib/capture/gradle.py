@@ -19,7 +19,7 @@ gradle [options] [task]
 Analysis examples:
 infer -- gradle build
 infer -- ./gradlew build'''
-
+LANG = ['java']
 
 
 def gen_instance(*args):

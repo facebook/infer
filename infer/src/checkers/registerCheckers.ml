@@ -44,7 +44,7 @@ let active_procedure_checkers () =
     let l =
       [
         Checkers.callback_print_c_method_calls, false;
-        CheckDeadCode.callback_check_dead_code, checkers_enabled;
+        CheckDeadCode.callback_check_dead_code, false;
       ] in
     IList.map (fun (x, y) -> (x, y, Some Config.Clang)) l in
 

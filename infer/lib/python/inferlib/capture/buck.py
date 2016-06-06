@@ -26,6 +26,7 @@ buck [options] [target]
 
 Analysis examples:
 infer -- buck build HelloWorld'''
+LANG = ['clang', 'java']
 
 
 def gen_instance(*args):

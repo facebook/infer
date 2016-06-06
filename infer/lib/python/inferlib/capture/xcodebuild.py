@@ -21,6 +21,7 @@ xcodebuild [options]
 Analysis examples:
 infer -- xcodebuild -target HelloWorldApp -sdk iphonesimulator
 infer -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld'''
+LANG = ['clang']
 
 CLANG_WRAPPER = os.path.join(config.XCODE_WRAPPERS_DIRECTORY, 'clang')
 CLANGPLUSPLUS_WRAPPER = os.path.join(config.XCODE_WRAPPERS_DIRECTORY,

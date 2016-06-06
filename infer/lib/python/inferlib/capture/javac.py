@@ -19,6 +19,7 @@ javac <options> <source files>
 Analysis examples:
 infer -- javac srcfile.java
 infer -- /path/to/javac srcfile.java'''
+LANG = ['java']
 
 
 def gen_instance(*args):

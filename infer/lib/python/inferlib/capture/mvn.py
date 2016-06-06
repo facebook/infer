@@ -18,6 +18,8 @@ mvn [options] [task]
 
 Analysis examples:
 infer -- mvn build'''
+LANG = ['java']
+
 
 def gen_instance(*args):
     return MavenCapture(*args)

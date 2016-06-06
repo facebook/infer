@@ -17,6 +17,7 @@ ant [options] [target]
 
 Analysis examples:
 infer -- ant compile'''
+LANG = ['java']
 
 def gen_instance(*args):
     return AntCapture(*args)

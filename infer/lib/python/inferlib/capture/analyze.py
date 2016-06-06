@@ -13,6 +13,7 @@ MODULE_DESCRIPTION = '''Run analysis of what has already been captured:
 Usage:
 infer -- analyze
 infer --out <capture_folder> -- analyze'''
+LANG = ['clang', 'java']
 
 
 def gen_instance(*args):

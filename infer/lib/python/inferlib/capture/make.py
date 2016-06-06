@@ -24,6 +24,7 @@ Analysis examples:
 infer -- make all
 infer -- clang -c srcfile.m
 infer -- gcc -c srcfile.c'''
+LANG = ['clang']
 
 ALIASED_COMMANDS = ['clang', 'clang++', 'cc', 'gcc', 'g++']
 BUILD_COMMANDS = ['cmake', 'configure', 'make', 'waf']
