@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Copyright (c) 2016 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+# Given the more-or-less raw arguments passed to clang as arguments,
+# this normalizes them via `clang -###` if needed to call the script
+# that actually attaches the plugin on each source file. Unless we
+# don't want to attach the plugin, in which case just run the original
+# command.
+
+#### Configuration ####
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# script to run our own clang
+CLANG_COMPILER="${SCRIPT_DIR}/filter_args_and_run_fcp_clang"
+# script to attach the plugin to clang -cc1 commands and run InferClang
+CLANG_CC1_CAPTURE="${SCRIPT_DIR}/attach_plugin_and_run_clang_frontend.sh"
+# path to Apple's clang
+APPLE_CLANG="$FCP_APPLE_CLANG"
+
+# Main
+if [ "${0%++}" != "$0" ]; then XX="++"; fi
+
+# Normalize clang command if not -cc1 already. -cc1 is always the first argument if present.
+if [ "$1" = "-cc1" ]; then
+    "$CLANG_CC1_CAPTURE" "$@"
+    STATUS=$?
+else
+    # Run `clang -###` to get one compile command per source file.
+    # Slow since it spawns clang as a separate process
+    #
+    # Generate a command containing all the commands in the output of `clang -###`. These are
+    # the lines that start with ' "/absolute/path/to/binary"'.
+    #
+    # In that command, replace /absolute/path/to/clang with our own wrapper, but only for the
+    # core compiler commands (those that start with "-cc1"). This means we'll capture all
+    # compilation commands (one per source file), without interfering with non-compiler commands
+    # (as they run with absolute paths, so they won't get captured again further down the line).
+    #
+    # Fail on errors: if we detect an error in the output of `clang -###`, we add the line
+    # `echo <error>; exit 1` to the generated command. This is because `clang -###` pretty much
+    # never fails, but warns of failures on stderr instead.
+    CC_COMMAND=$("$CLANG_COMPILER$XX" -### "$@" 2>&1 | \
+        # only keep lines that are commands or errors
+        grep -e '^\([[:space:]]\"\|clang: error:\)' | \
+        # replace -cc1 commands with our clang wrapper
+        sed -e "s#^[[:space:]]\"\([^\"]*\)\" \"-cc1\" \(.*\)\$# \"$CLANG_CC1_CAPTURE\" \"-cc1\" \2#g" | \
+        # replace error messages by failures
+        sed -e 's#^\(^clang: error:.*$\)#echo "\1"; exit 1#g' | \
+        # add trailing ; to each line
+        sed -e 's/$/;/g')
+    eval $CC_COMMAND
+    STATUS=$?
+fi
+
+# run Apple clang if required (and if any)
+if [ -n "$APPLE_CLANG" ]; then
+    "$APPLE_CLANG$XX" "$@" || exit $?
+fi
+
+exit $STATUS

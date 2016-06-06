@@ -40,6 +40,9 @@ from inferlib import config, issues, utils
 
 ROOT_DIR = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, os.pardir)
 
+CLANG_BIN = os.path.join(ROOT_DIR,
+                         'facebook-clang-plugins', 'clang', 'bin', 'clang')
+
 REPORT_JSON = 'report.json'
 
 INFER_EXECUTABLE = 'infer'
@@ -58,11 +61,13 @@ EXPECTED_OUTPUTS_DIR = os.path.join(SCRIPT_DIR, 'expected_outputs')
 ALL_TESTS = [
     'ant',
     'buck',
+    'cc1',
     'cmake',
     'gradle',
     'javac',
     'locale',
     'make',
+    'multiclang',
     'unknown_ext',
     'utf8_in_pwd',
     'waf',
@@ -400,6 +405,31 @@ class BuildIntegrationTest(unittest.TestCase):
         test('unknown_ext', 'unknown extension',
              CODETOANALYZE_DIR,
              [['clang', '-x', 'c', '-c', 'hello.unknown_ext']])
+
+    def test_clang_multiple_source_files(self):
+        test('multiclang', 'clang multiple source files',
+             CODETOANALYZE_DIR,
+             [['clang', '-c', 'hello.c', 'hello2.c']])
+
+    def test_clang_cc1(self):
+        def preprocess():
+            hashhashhash = subprocess.check_output(
+                [CLANG_BIN, '-###', '-c', 'hello.c'],
+                # `clang -### -c hello.c` prints on stderr
+                stderr=subprocess.STDOUT)
+            # pick the line containing the compilation command, which
+            # should be the only one to include "-cc1"
+            cc1_line = filter(lambda s: s.find('"-cc1"') != -1,
+                              hashhashhash.splitlines())[0]
+            # [cc1_line] usually looks like ' "/foo/clang" "bar" "baz"'.
+            # return [['clang', 'bar', 'baz']]
+            cmd = [s.strip('"') for s in cc1_line.strip().split('" "')]
+            cmd[0] = 'clang'
+            return [cmd]
+        test('cc1', 'clang -cc1',
+             CODETOANALYZE_DIR,
+             [],
+             preprocess=preprocess)
 
 
 if __name__ == '__main__':
