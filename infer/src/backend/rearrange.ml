@@ -604,14 +604,18 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
 (** If [lexp] is an access to a field that is annotated with @GuardedBy, add constraints to [prop]
     expressing the safety conditions for the access. Complain if these conditions cannot be met. *)
 let add_guarded_by_constraints prop lexp pdesc =
+  let excluded_guardedby_string str =
+    str = "ui_thread" in (* don't warn on @GuardedBy("ui_thread") *)
   let sigma = Prop.get_sigma prop in
   let extract_guarded_by_str item_annot =
     let annot_extract_guarded_by_str (annot, _) =
       if Annotations.annot_ends_with annot Annotations.guarded_by
       then
         match annot.Sil.parameters with
-        | [guarded_by_str] -> Some guarded_by_str
-        | _ -> None
+        | [guarded_by_str] when not (excluded_guardedby_string guarded_by_str) ->
+            Some guarded_by_str
+        | _ ->
+            None
       else
         None in
     IList.find_map_opt annot_extract_guarded_by_str item_annot in

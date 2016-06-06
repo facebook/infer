@@ -37,6 +37,10 @@ public class GuardedByExample {
   @GuardedBy("SomeLockThatDoesntExist")
   Object h = new Object();
 
+  @GuardedBy("ui_thread")
+  Object t = new Object();
+
+
   void readFBad() {
     this.f.toString();
   }
@@ -118,6 +122,10 @@ public class GuardedByExample {
     synchronized (this) {
       wrapper(); // should not  warn
     }
+  }
+
+  void readTok() {
+    this.t.toString();
   }
 
   // TODO: report on these cases
