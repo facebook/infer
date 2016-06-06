@@ -293,40 +293,16 @@ let make_next_object_exp stmt_info item items =
   let loop_cond = make_binary_stmt cast nil_exp stmt_info expr_info boi' in
   assignment, loop_cond
 
-(* dispatch_once(v,block_def) is transformed as: *)
-(* void (^block_var)()=block_def; block_var() *)
-let translate_dispatch_function block_name stmt_info stmt_list n =
-  let block_expr =
-    try IList.nth stmt_list (n + 1)
-    with Not_found -> assert false in
-  let block_name_info = {
-    Clang_ast_t.ni_name = block_name;
-    Clang_ast_t.ni_qual_name = [block_name]
-  } in
+(* 1. dispatch_once(v,block_def) is transformed as: block_def() *)
+(* 2. dispatch_once(v,block_var) is transformed as n$1 = *&block_var; n$2=n$1() *)
+let translate_dispatch_function stmt_info stmt_list n =
   let open Clang_ast_t in
-  match block_expr with
-  | BlockExpr (_, _, bei, _) ->
-      let tp = bei.ei_type_ptr in
-      let cast_info = { cei_cast_kind = `BitCast; cei_base_path =[]} in
-      let block_def = ImplicitCastExpr(stmt_info,[block_expr], bei, cast_info) in
-      let decl_info = { empty_decl_info
-                        with di_pointer = Ast_utils.get_fresh_pointer();
-                             di_source_range = stmt_info.si_source_range } in
-      let stmt_info = { stmt_info with si_pointer = Ast_utils.get_fresh_pointer(); } in
-      let var_decl_info = { empty_var_decl_info with vdi_init_expr = Some block_def} in
-      let block_var_decl = VarDecl(decl_info, block_name_info, tp, var_decl_info) in
-      let decl_stmt = DeclStmt(stmt_info,[], [block_var_decl]) in
-
+  match stmt_list with
+  | _:: args_stmts ->
       let expr_info_call = make_general_expr_info create_void_star_type `XValue `Ordinary in
-      let expr_info_dre = make_expr_info_with_objc_kind tp `Ordinary in
-      let decl_ref = make_decl_ref_tp `Var stmt_info.si_pointer block_name_info false tp in
-      let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
-      let cast_info_call = { cei_cast_kind = `LValueToRValue; cei_base_path =[]} in
-      let decl_ref_exp = DeclRefExpr(stmt_info, [], expr_info_dre, decl_ref_expr_info) in
-      let stmt_call = ImplicitCastExpr(stmt_info, [decl_ref_exp], bei, cast_info_call) in
-      let call_block_var = CallExpr(stmt_info, [stmt_call], expr_info_call) in
-      CompoundStmt (stmt_info, [decl_stmt; call_block_var]), tp
-  | _ -> assert false (* when we call this function we have already checked that this cannot be possible *)
+      let arg_stmt = try IList.nth args_stmts n with Failure _ -> assert false in
+      CallExpr (stmt_info, [arg_stmt], expr_info_call)
+  | _ -> assert false
 
 (* Create declaration statement: tp vname = iexp *)
 let make_DeclStmt stmt_info di tp vname iexp =

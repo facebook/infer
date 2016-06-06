@@ -624,27 +624,42 @@ let is_logical_negation_of_int tenv ei uoi =
   | Sil.Tint Sil.IInt,`LNot -> true
   | _, _ -> false
 
+let rec is_block_stmt stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | BlockExpr _ -> true
+  | DeclRefExpr (_, _, expr_info, _) ->
+      let tp = expr_info.Clang_ast_t.ei_type_ptr in
+      CTypes.is_block_type tp
+  | _ -> (match snd (Clang_ast_proj.get_stmt_tuple stmt) with
+      | [sub_stmt] -> is_block_stmt sub_stmt
+      | _ -> false)
+
 (* Checks if stmt_list is a call to a special dispatch function *)
 let is_dispatch_function stmt_list =
   let open Clang_ast_t in
+  let rec is_dispatch_function stmt arg_stmts =
+    match stmt with
+    | DeclRefExpr (_, _, _, di) ->
+        (match di.Clang_ast_t.drti_decl_ref with
+         | None -> None
+         | Some d ->
+             (match d.Clang_ast_t.dr_kind, d.Clang_ast_t.dr_name with
+              | `Function, Some name_info ->
+                  let s = name_info.Clang_ast_t.ni_name in
+                  (match (CTrans_models.is_dispatch_function_name s) with
+                   | None -> None
+                   | Some (_, block_arg_pos) ->
+                       try
+                         let arg_stmt = IList.nth arg_stmts block_arg_pos in
+                         if is_block_stmt arg_stmt then Some block_arg_pos else None
+                       with Failure _ -> None)
+              | _ -> None))
+    | _ -> match snd (Clang_ast_proj.get_stmt_tuple stmt) with
+      | [sub_stmt] -> is_dispatch_function sub_stmt arg_stmts
+      | _ -> None in
   match stmt_list with
-  | ImplicitCastExpr(_,[DeclRefExpr(_, _, _, di)], _, _):: stmts ->
-      (match di.Clang_ast_t.drti_decl_ref with
-       | None -> None
-       | Some d ->
-           (match d.Clang_ast_t.dr_kind, d.Clang_ast_t.dr_name with
-            | `Function, Some name_info ->
-                let s = name_info.Clang_ast_t.ni_name in
-                (match (CTrans_models.is_dispatch_function_name s) with
-                 | None -> None
-                 | Some (_, block_arg_pos) ->
-                     try
-                       (match IList.nth stmts block_arg_pos with
-                        | BlockExpr _ -> Some block_arg_pos
-                        | _ -> None)
-                     with Not_found -> None
-                )
-            | _ -> None))
+  | stmt:: arg_stmts -> is_dispatch_function stmt arg_stmts
   | _ -> None
 
 let is_block_enumerate_function mei =

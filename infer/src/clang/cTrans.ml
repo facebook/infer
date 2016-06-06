@@ -1078,11 +1078,7 @@ struct
 
   and dispatch_function_trans trans_state stmt_info stmt_list n =
     Printing.log_out "\n Call to a dispatch function treated as special case...\n";
-    let procname = Cfg.Procdesc.get_proc_name trans_state.context.CContext.procdesc in
-    let pvar = CFrontend_utils.General_utils.get_next_block_pvar procname in
-    let transformed_stmt, _ =
-      Ast_expressions.translate_dispatch_function
-        (Pvar.to_string pvar) stmt_info stmt_list n in
+    let transformed_stmt = Ast_expressions.translate_dispatch_function stmt_info stmt_list n in
     instruction trans_state transformed_stmt
 
   and block_enumeration_trans trans_state stmt_info stmt_list ei =

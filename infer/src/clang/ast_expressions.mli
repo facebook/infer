@@ -77,7 +77,7 @@ val make_obj_c_message_expr_info_class : string -> string -> pointer option ->
 
 val make_obj_c_message_expr_info_instance : string -> obj_c_message_expr_info
 
-val translate_dispatch_function : string -> stmt_info -> stmt list -> int -> stmt * type_ptr
+val translate_dispatch_function : stmt_info -> stmt list -> int -> stmt
 
 val translate_block_enumerate : string ->  stmt_info  -> stmt list -> expr_info ->
   stmt * (string * Clang_ast_t.pointer * type_ptr) list

@@ -37,6 +37,17 @@
   dummy_block();
   return sharedInstance;
 }
+
++ (instancetype)dispatch_a_block_variable {
+  static __typeof__([self new]) static_storage__;
+  void (^initialization_block__)() = ^{
+    static_storage__ = ([self new]);
+  };
+  static dispatch_once_t once_token__;
+  _dispatch_once(&once_token__, initialization_block__);
+  return static_storage__;
+}
+
 @end
 
 int main() {
