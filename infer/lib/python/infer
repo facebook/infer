@@ -36,7 +36,8 @@ MODULE_TO_COMMAND = {
     'javac': ['javac'],
     'make': make.SUPPORTED_COMMANDS,
     'xcodebuild': ['xcodebuild'],
-    'mvn': ['mvn']
+    'mvn': ['mvn'],
+    'ndk-build': ['ndk-build'],
 }
 
 def get_commands():
