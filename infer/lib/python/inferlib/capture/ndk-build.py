@@ -17,7 +17,7 @@ MODULE_DESCRIPTION = '''Run analysis of code built with ndk-build
 
     Analysis examples:
     infer -- ndk-build'''
-
+LANG = ['clang']
 
 def gen_instance(*args):
     return NdkBuildCapture(*args)
