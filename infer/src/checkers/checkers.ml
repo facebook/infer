@@ -566,3 +566,31 @@ let callback_print_c_method_calls { Callbacks.proc_desc; proc_name } =
           description
     | _ -> () in
   Cfg.Procdesc.iter_instrs do_instr proc_desc
+
+(** Print access to globals. *)
+let callback_print_access_to_globals { Callbacks.proc_desc; proc_name } =
+  let do_pvar is_read pvar loc =
+    let description =
+      Printf.sprintf "%s of global %s"
+        (if is_read then "read" else "write")
+        (Pvar.to_string pvar) in
+    ST.report_error
+      proc_name
+      proc_desc
+      "CHECKERS_ACCESS_GLOBAL"
+      loc
+      description in
+  let rec get_global_var = function
+    | Sil.Lvar pvar when Pvar.is_global pvar ->
+        Some pvar
+    | Sil.Lfield (e, _, _) ->
+        get_global_var e
+    | _ ->
+        None in
+  let do_instr _ = function
+    | Sil.Letderef (_, e, _, loc) when get_global_var e <> None ->
+        Option.may (fun pvar -> do_pvar true pvar loc) (get_global_var e)
+    | Sil.Set (e, _, _, loc) when get_global_var e <> None ->
+        Option.may (fun pvar -> do_pvar false pvar loc) (get_global_var e)
+    | _ -> () in
+  Cfg.Procdesc.iter_instrs do_instr proc_desc

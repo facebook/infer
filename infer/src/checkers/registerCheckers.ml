@@ -38,6 +38,7 @@ let active_procedure_checkers () =
         RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
         PrintfArgs.callback_printf_args, checkers_enabled;
         AnnotationReachability.Interprocedural.check_and_report, checkers_enabled;
+        Checkers.callback_print_access_to_globals, false;
       ] in
     IList.map (fun (x, y) -> (x, y, Some Config.Java)) l in
   let c_cpp_checkers =
@@ -45,6 +46,7 @@ let active_procedure_checkers () =
       [
         Checkers.callback_print_c_method_calls, false;
         CheckDeadCode.callback_check_dead_code, false;
+        Checkers.callback_print_access_to_globals, false;
       ] in
     IList.map (fun (x, y) -> (x, y, Some Config.Clang)) l in
 
