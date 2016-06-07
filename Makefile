@@ -211,6 +211,10 @@ endif
 	 $(REMOVE) inferTraceBugs && \
 	 $(LN_S) $(libdir)/infer/infer/lib/python/inferTraceBugs inferTraceBugs)
 
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(MAKE) -C facebook install
+endif
+
 clean:
 	$(REMOVE) test.xml
 ifeq ($(IS_RELEASE_TREE),no)
