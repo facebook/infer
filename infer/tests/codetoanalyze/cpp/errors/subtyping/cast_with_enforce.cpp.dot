@@ -23,7 +23,7 @@ digraph iCFG {
 	
 
 	 104 -> 103 ;
-103 [label="103:  DeclStmt \n   n$11=_fun___cast(&base:class Base *,sizeof(class Derived ( sub )(cast)):void ) [line 47]\n  *&derived:class Derived *=n$11 [line 47]\n " shape="box"]
+103 [label="103:  DeclStmt \n   n$10=_fun___cast(&base:class Base *,sizeof(class Derived ( sub )(cast)):void ) [line 47]\n  *&derived:class Derived *=n$10 [line 47]\n " shape="box"]
 	
 
 	 103 -> 102 ;
@@ -67,7 +67,7 @@ digraph iCFG {
 	
 
 	 93 -> 104 ;
-92 [label="92:  DeclStmt \n   n$11=*&certificate:class Base & [line 40]\n  n$12=_fun___cast(n$11:class Base *,sizeof(class Derived ( sub )(cast)):void ) [line 40]\n  *&cert:class Derived *=n$12 [line 40]\n " shape="box"]
+92 [label="92:  DeclStmt \n   n$10=*&certificate:class Base & [line 40]\n  n$11=_fun___cast(n$10:class Base *,sizeof(class Derived ( sub )(cast)):void ) [line 40]\n  *&cert:class Derived *=n$11 [line 40]\n " shape="box"]
 	
 
 	 92 -> 91 ;

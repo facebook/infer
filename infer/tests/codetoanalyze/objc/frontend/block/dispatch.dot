@@ -1,49 +1,90 @@
 /* @generated */
 digraph iCFG {
-34 [label="34:  DeclStmt \n   n$3=_fun_A_sharedInstance() [line 54]\n  *&b:class A *=n$3 [line 54]\n " shape="box"]
+45 [label="45:  DeclStmt \n   n$3=_fun_A_sharedInstance() [line 72]\n  *&b:class A *=n$3 [line 72]\n " shape="box"]
+	
+
+	 45 -> 44 ;
+44 [label="44:  DeclStmt \n   *&p:int *=0 [line 73]\n " shape="box"]
+	
+
+	 44 -> 39 ;
+43 [label="43:  Return Stmt \n   *&return:int =0 [line 77]\n " shape="box"]
+	
+
+	 43 -> 36 ;
+42 [label="42:  Return Stmt \n   n$1=*&p:int * [line 75]\n  n$2=*n$1:int  [line 75]\n  *&return:int =n$2 [line 75]\n " shape="box"]
+	
+
+	 42 -> 36 ;
+41 [label="41: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 74]\n " shape="invhouse"]
+	
+
+	 41 -> 43 ;
+40 [label="40: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 74]\n " shape="invhouse"]
+	
+
+	 40 -> 42 ;
+39 [label="39:  BinaryOperatorStmt: EQ \n   n$0=*&b:class A * [line 74]\n " shape="box"]
+	
+
+	 39 -> 40 ;
+	 39 -> 41 ;
+38 [label="38:  between_join_and_exit \n  " shape="box"]
+	
+
+	 38 -> 36 ;
+37 [label="37: + \n  " ]
+	
+
+	 37 -> 38 ;
+36 [label="36: Exit main \n  " color=yellow style=filled]
+	
+
+35 [label="35: Start main\nFormals: \nLocals:  p:int * b:class A * \n   DECLARE_LOCALS(&return,&p,&b); [line 71]\n " color=yellow style=filled]
+	
+
+	 35 -> 45 ;
+34 [label="34:  DeclStmt \n   n$29=_fun_A_dispatch_a_block_variable_from_macro() [line 64]\n  *&a:class A *=n$29 [line 64]\n " shape="box"]
 	
 
 	 34 -> 33 ;
-33 [label="33:  DeclStmt \n   *&p:int *=0 [line 55]\n " shape="box"]
+33 [label="33:  BinaryOperatorStmt: Assign \n   n$28=*&a:class A * [line 65]\n  *n$28._x:int =5 [line 65]\n " shape="box"]
 	
 
-	 33 -> 28 ;
-32 [label="32:  Return Stmt \n   *&return:int =0 [line 59]\n " shape="box"]
+	 33 -> 32 ;
+32 [label="32:  Return Stmt \n   n$26=*&a:class A * [line 66]\n  n$27=*n$26._x:int  [line 66]\n  *&return:int =(1 / (n$27 - 5)) [line 66]\n " shape="box"]
 	
 
-	 32 -> 25 ;
-31 [label="31:  Return Stmt \n   n$1=*&p:int * [line 57]\n  n$2=*n$1:int  [line 57]\n  *&return:int =n$2 [line 57]\n " shape="box"]
+	 32 -> 31 ;
+31 [label="31: Exit A_dispatch_a_block_variable_from_macro_delivers_initialised_object \n  " color=yellow style=filled]
 	
 
-	 31 -> 25 ;
-30 [label="30: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 56]\n " shape="invhouse"]
+30 [label="30: Start A_dispatch_a_block_variable_from_macro_delivers_initialised_object\nFormals: \nLocals:  a:class A * \n   DECLARE_LOCALS(&return,&a); [line 63]\n " color=yellow style=filled]
 	
 
-	 30 -> 32 ;
-29 [label="29: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 56]\n " shape="invhouse"]
+	 30 -> 34 ;
+29 [label="29:  Return Stmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_a_block_variable_from_macro______4); [line 54]\n  n$24=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_a_block_variable_from_macro______4 ):unsigned long ) [line 54]\n  *&__objc_anonymous_block_A_dispatch_a_block_variable_from_macro______4:class __objc_anonymous_block_A_dispatch_a_block_variable_from_macro______4 =n$24 [line 54]\n  n$25=*&#GB$A_dispatch_a_block_variable_from_macro_static_storage__:struct objc_object * [line 54]\n  *n$24.A_dispatch_a_block_variable_from_macro_static_storage__:struct objc_object *=n$25 [line 54]\n  *&initialization_block__:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_a_block_variable_from_macro______4) [line 54]\n  n$20=*&initialization_block__:_fn_ (*) [line 58]\n  n$21=n$20() [line 58]\n  n$19=*&#GB$A_dispatch_a_block_variable_from_macro_static_storage__:struct objc_object * [line 59]\n  *&return:struct objc_object *=n$19 [line 52]\n " shape="box"]
 	
 
-	 29 -> 31 ;
-28 [label="28:  BinaryOperatorStmt: EQ \n   n$0=*&b:class A * [line 56]\n " shape="box"]
+	 29 -> 25 ;
+28 [label="28:  BinaryOperatorStmt: Assign \n   n$22=_fun___objc_alloc_no_fail(sizeof(class A ):unsigned long ) [line 55]\n  n$23=_fun_A_init(n$22:class A *) virtual [line 55]\n  *&#GB$A_dispatch_a_block_variable_from_macro_static_storage__:struct objc_object *=n$23 [line 55]\n " shape="box"]
 	
 
-	 28 -> 29 ;
-	 28 -> 30 ;
-27 [label="27:  between_join_and_exit \n  " shape="box"]
+	 28 -> 27 ;
+27 [label="27: Exit __objc_anonymous_block_A_dispatch_a_block_variable_from_macro______4 \n  " color=yellow style=filled]
 	
 
-	 27 -> 25 ;
-26 [label="26: + \n  " ]
+26 [label="26: Start __objc_anonymous_block_A_dispatch_a_block_variable_from_macro______4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 54]\n " color=yellow style=filled]
 	
 
-	 26 -> 27 ;
-25 [label="25: Exit main \n  " color=yellow style=filled]
+	 26 -> 28 ;
+25 [label="25: Exit A_dispatch_a_block_variable_from_macro \n  " color=yellow style=filled]
 	
 
-24 [label="24: Start main\nFormals: \nLocals:  p:int * b:class A * \n   DECLARE_LOCALS(&return,&p,&b); [line 53]\n " color=yellow style=filled]
+24 [label="24: Start A_dispatch_a_block_variable_from_macro\nFormals: \nLocals:  initialization_block__:_fn_ (*) \n   DECLARE_LOCALS(&return,&initialization_block__); [line 51]\n " color=yellow style=filled]
 	
 
-	 24 -> 34 ;
+	 24 -> 29 ;
 23 [label="23:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_A_dispatch_a_block_variable______3); [line 43]\n  n$17=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_dispatch_a_block_variable______3 ):unsigned long ) [line 43]\n  *&__objc_anonymous_block_A_dispatch_a_block_variable______3:class __objc_anonymous_block_A_dispatch_a_block_variable______3 =n$17 [line 43]\n  n$18=*&#GB$A_dispatch_a_block_variable_static_storage__:struct objc_object * [line 43]\n  *n$17.A_dispatch_a_block_variable_static_storage__:struct objc_object *=n$18 [line 43]\n  *&initialization_block__:_fn_ (*)=(_fun___objc_anonymous_block_A_dispatch_a_block_variable______3) [line 43]\n " shape="box"]
 	
 

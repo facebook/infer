@@ -1441,27 +1441,15 @@ struct
         { empty_res_trans with root_nodes = top_nodes; leaf_nodes = succ_nodes }
     | _ -> assert false
 
-  and stmtExpr_trans trans_state stmt_info stmt_list =
-    let context = trans_state.context in
+  and stmtExpr_trans trans_state stmt_list =
     let stmt =
-      extract_stmt_from_singleton stmt_list
-        "ERROR: StmtExpr should have only one statement.\n" in
+      extract_stmt_from_singleton stmt_list "ERROR: StmtExpr should have only one statement.\n" in
     let res_trans_stmt = instruction trans_state stmt in
     let exps' = IList.rev res_trans_stmt.exps in
     match exps' with
-    | (last, typ) :: _ ->
-        (* The StmtExpr contains a single CompoundStmt node, which it evaluates and *)
-        (* takes the value of the last subexpression. *)
-        (* Exp returned by StmtExpr is always a RValue.
-           So we need to assign to a temp and return the temp. *)
-        let id = Ident.create_fresh Ident.knormal in
-        let loc = CLocation.get_sil_location stmt_info context in
-        let instr' = Sil.Letderef (id, last, typ, loc) in
-        { res_trans_stmt with
-          instrs = res_trans_stmt.instrs @ [instr'];
-          exps = [(Sil.Var id, typ)];
-        }
-    | _ -> assert false
+    | last_exp :: _ ->
+        { res_trans_stmt with exps = [last_exp]; }
+    | [] -> res_trans_stmt
 
   and loop_instruction trans_state loop_kind stmt_info =
     let outer_continuation = trans_state.continuation in
@@ -2369,8 +2357,8 @@ struct
           "FATAL: Passing from CaseStmt outside of SwitchStmt, terminating.\n";
         assert false
 
-    | StmtExpr(stmt_info, stmt_list, _) ->
-        stmtExpr_trans trans_state stmt_info stmt_list
+    | StmtExpr(_, stmt_list, _) ->
+        stmtExpr_trans trans_state stmt_list
 
     | ForStmt(stmt_info, [init; decl_stmt; cond; incr; body]) ->
         forStmt_trans trans_state init decl_stmt cond incr body stmt_info

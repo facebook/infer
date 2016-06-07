@@ -32,7 +32,7 @@ public class BlockDispatchTest {
 
   private static ImmutableList<String> inferCmd;
 
-  public static final String NULL_DEREFERENCE = "NULL_DEREFERENCE";
+  public static final String DIVIDE_BY_ZERO = "DIVIDE_BY_ZERO";
 
   @ClassRule
   public static DebuggableTemporaryFolder folder =
@@ -46,15 +46,16 @@ public class BlockDispatchTest {
   @Test
   public void whenInferRunsOnMThenNPEIsFound()
       throws InterruptedException, IOException, InferException {
-    InferResults inferResults = InferRunner.runInferObjC(inferCmd);
+    InferResults inferResults = InferRunner.runInferC(inferCmd);
     String[] procedures = {
+        "A_dispatch_a_block_variable_from_macro_delivers_initialised_object"
     };
     assertThat(
-        "Results should contain the expected null pointer exception",
+        "Results should contain the expected " + DIVIDE_BY_ZERO,
         inferResults,
         containsExactly(
-            NULL_DEREFERENCE, //No NPEs are found. If the call to dispatch_once didn't work
-                              // we would get an NPE.
+            DIVIDE_BY_ZERO, //No NPEs are found. If the call to dispatch_once didn't work
+                              // we would get an NPE. We find only one divide by zero.
             FILE,
             procedures
         )

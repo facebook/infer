@@ -11,7 +11,7 @@
 
 @interface A : NSObject
 
-@property int x;
+@property(nonatomic) int x;
 
 + (instancetype)sharedInstance;
 
@@ -46,6 +46,24 @@
   static dispatch_once_t once_token__;
   _dispatch_once(&once_token__, initialization_block__);
   return static_storage__;
+}
+
++ (instancetype)dispatch_a_block_variable_from_macro {
+  return ({
+    static __typeof__([self new]) static_storage__;
+    void (^initialization_block__)() = ^{
+      static_storage__ = ([self new]);
+    };
+    static dispatch_once_t once_token__;
+    _dispatch_once(&once_token__, initialization_block__);
+    static_storage__;
+  });
+}
+
++ (int)dispatch_a_block_variable_from_macro_delivers_initialised_object {
+  A* a = [A dispatch_a_block_variable_from_macro];
+  a->_x = 5;
+  return 1 / (a->_x - 5);
 }
 
 @end
